@@ -257,14 +257,14 @@ theorem openFrameSatPrepared_pre : ∃ s, (Spec.Gcm.openPreparedContract X86_64.
 
 theorem openPreparedCode_framed {c : Prog isa}
     (hv : Verified X86_64.target c (Proof.AesGcm.openPreparedScratchContract X86_64.abi 32))
-    (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
+    (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 32) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
       (Spec.Gcm.openPreparedContract X86_64.abi 2640) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openPreparedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPreparedPre X86_64.abi.ptrBits)
     (post := Spec.Gcm.openPost X86_64.abi.ptrBits) (wa := true) (stack := 32)
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv
-    (by decide) (by decide) (by decide) hsp (by omega)
+    (by decide) (by decide) (by decide) hsp hxd
     (Proof.AesGcm.openPreparedPre_local _) (Proof.AesGcm.openPrecomputedPost_local _) openFrameSatPrepared_pre
     (hleak := Proof.AesGcm.openPrecomputedLeak_local _)
 
@@ -272,7 +272,7 @@ theorem openPrepared_framed (v : GcmImpl) (B : BlkFn CtxMode.prepared) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» (v.withBlk B)))
       (Spec.Gcm.openPreparedContract X86_64.abi 2640) :=
-  openPreparedCode_framed (openPrepared_verified v B) (openM_spSafe v B) (openM_xdepth v B)
+  openPreparedCode_framed (openPrepared_verified v B) (openM_spSafe v B) (by have := openM_xdepth v B; omega)
 
 theorem streamEncryptFrameSatPrepared_pre : ∃ s, (Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608).pre s := by
   refine ⟨crFrameSatP, ?_⟩

@@ -858,11 +858,12 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     name := Spec.Gcm.openPreparedApi.name ++ v.impl.suffix
     target := X86_64.target
     doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl ++ openFastNote v.impl)
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4
+      (v.impl.openCodeP (v.impl.withBlk (blkR v)) ((v.decI.map (decFnI v.impl)).map (·.fn)))
     contract := Spec.Gcm.openPreparedContract X86_64.abi 2640
     stack := 2640
-    verified := openSelPrepared_framed v.impl (blkR v) Short.shortFacts
-    spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v))
+    verified := openSelPrepared_framed v.impl (blkR v) Short.shortFacts (v.decI.map (decFnI v.impl))
+    spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v) (v.decI.map (decFnI v.impl)))
     features := v.impl.features },
   { Spec.Gcm.streamEncryptPreparedApi with
     name := Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix

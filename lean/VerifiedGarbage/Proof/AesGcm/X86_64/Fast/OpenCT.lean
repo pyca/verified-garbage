@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenSel
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenSel
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenICT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenICT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.CT
@@ -122,9 +124,9 @@ theorem tagRel_tagP : TagRel CtxMode.prepared tagP := fun {_ _ _} _ {R _ _ _ n _
 
 /-- `sel` in two runs: the same path, and on it the same addresses and
 branches. -/
-theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {other : Prog isa}
-    (ho : LongRel CtxMode.prepared other) :
-    LongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none other) := by
+theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
+    (DI : Option (DecFnI CtxMode.prepared)) {other : Prog isa} (ho : LongRel CtxMode.prepared other) :
+    LongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (DI.map (·.fn)) other) := by
   intro s₀ s₀' Ctx W SP Np A D Tp nl al n R t C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok K32
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.FastOpen.sel
@@ -145,13 +147,18 @@ theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
   · obtain ⟨h12, h17, -⟩ := hs
     subst h12
     have L := C.lay
-    exact (openOkW_rel v B tagRel_tagP (tagP_ok hF) C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
-      hres hok ((Fast.aad_rel L C.dE (M := CtxMode.prepared) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
+    have har := (Fast.aad_rel L C.dE (M := CtxMode.prepared) (R := R) (Np := Np) (A := A) (al := al) (by omega)).mono
         (P' := fun (s₁ s₂ : State) => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂)
-        (fun _ _ g => ⟨g.1.1.aadPre C X hNp hnl hal hR, g.2.1.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial)
-      (fun _ h => Fast.aad_mid hF C X h.1 hNp hnl hal (by omega))
-      (fun _ h => Fast.aad_mid hF C' X' h.1 hNp' hnl' hal' (by omega))).mono
-      (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
+        (fun _ _ g => ⟨g.1.1.aadPre C X hNp hnl hal hR, g.2.1.aadPre C' X' hNp' hnl' hal' hR'⟩) fun _ _ _ => trivial
+    rcases DI with _ | F
+    · exact (openOkW_rel v B tagRel_tagP (tagP_ok hF) C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT
+        hres hok har (fun _ h => Fast.aad_mid hF C X h.1 hNp hnl hal (by omega))
+        (fun _ h => Fast.aad_mid hF C' X' h.1 hNp' hnl' hal' (by omega))).mono
+        (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
+    · exact (openOkWI_rel v B F tagRel_tagP (tagP_ok hF) C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr'
+        oT hres hok K32 rfl har (fun _ h => Fast.aad_mid hF C X h.1 hNp hnl hal (by omega))
+        (fun _ h => Fast.aad_mid hF C' X' h.1 hNp' hnl' hal' (by omega))).mono
+        (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
   · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 
 end VG.Proof.AesGcm.X86_64.FastOpen

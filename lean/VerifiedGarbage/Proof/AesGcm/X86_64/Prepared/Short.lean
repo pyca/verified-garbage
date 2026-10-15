@@ -36,15 +36,15 @@ theorem sealSelPrepared_framed (hF : Short.ShortFacts) :
     · exact sealPrepared_framed v B
 
 /-- `vg_aes_gcm_open_prepared`, with the short path if `v` has it. -/
-theorem openSelPrepared_framed (hF : Short.ShortFacts) :
+theorem openSelPrepared_framed (hF : Short.ShortFacts) (DI : Option (DecFnI CtxMode.prepared)) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCodeP (v.withBlk B)))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCodeP (v.withBlk B) (DI.map (·.fn))))
       (Spec.Gcm.openPreparedContract X86_64.abi 2640) := by
   unfold GcmImpl.openCodeP GcmImpl.openCode; split
-  · exact openPreparedCode_framed (openPreparedCode_verified (Short.openMP_correct v B hF)
+  · exact openPreparedCode_framed (openPreparedCode_verified (Short.openMP_correct v B hF DI)
       (Short.openMW_ct hF v B Short.powOk_powersP Short.powersP_ct
-        (FastOpen.openSel_rel hF v B (Short.longRel_openLong v B)))) (Short.openMP_spSafe v B)
-      (Short.openMP_xdepth v B)
+        (FastOpen.openSel_rel hF v B DI (Short.longRel_openLong v B)))) (Short.openMP_spSafe v B DI)
+      (Short.openMP_xdepth v B DI)
   · exact openPrepared_framed v B
 
 end VG.Proof.AesGcm.X86_64

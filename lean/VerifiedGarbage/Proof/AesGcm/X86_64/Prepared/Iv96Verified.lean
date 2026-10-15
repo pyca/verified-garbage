@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Iv96Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Iv96CT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Iv96CT
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CallI
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -133,18 +134,39 @@ theorem idx16 (s : State) :
     s.mem.readW (Blocks.SP s + BitVec.ofNat 64 16) 32 = (Proof.AesGcm.arg s 1).setWidth 32 :=
   Proof.AesGcm.idx_readW s 1
 
+theorem decryptI_correct (v : GcmImpl) (c : Blocks.DecCodeI CtxMode.prepared) :
+    ∀ s, (Proof.AesGcm.decryptBlocksIv96X86_64M CtxMode.prepared).pre s →
+      ∃ t s', Exec isa (Blocks.decrypt v.callees.ctr v.callees.gh (some c.dec) true true) s t s' ∧
+        abiPreserved s s' ∧ Proof.AesGcm.decryptBlocksX86_64.post s s' := fun s h => by
+  obtain ⟨hp, hx⟩ := Blocks.BP.ofMI h
+  obtain ⟨t, s', he, hg, hq⟩ := Blocks.decryptI_wp v c hp hx
+  exact ⟨t, s', he, abiPreserved_of_exec (decryptI_mx v c.S) he hg, hq⟩
+
+theorem decryptI_ctP (v : GcmImpl) (c : Blocks.DecCodeI CtxMode.prepared) :
+    ConstantTime isa (Proof.AesGcm.decryptBlocksIv96X86_64M CtxMode.prepared).pre Proof.AesGcm.blocksPubI
+      (Blocks.decrypt v.callees.ctr v.callees.gh (some c.dec) true true) :=
+  Blocks.decryptI_ct v c (k := Proof.AesGcm.decryptBlocksIv96X86_64M CtxMode.prepared) (fun _ h => Blocks.BP.ofMI h)
+    fun s s' h => ⟨h.1, by rw [idx16, idx16]; exact h.2⟩
+
 /-- With a loop given the block index. -/
 theorem decryptBlocksPreparedIv96_verifiedI (v : GcmImpl) (c : Blocks.DecCodeI CtxMode.prepared) :
     Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh (some c.dec) true true)
       (Spec.Gcm.decryptBlocksPreparedIv96Contract X86_64.abi 8) :=
-  Verified.of_correct (k := Proof.AesGcm.decryptBlocksIv96X86_64M CtxMode.prepared)
-    (fun s h => by
-      obtain ⟨hp, hx⟩ := Blocks.BP.ofMI h
-      obtain ⟨t, s', he, hg, hq⟩ := Blocks.decryptI_wp v c hp hx
-      exact ⟨t, s', he, abiPreserved_of_exec (decryptI_mx v c.S) he hg, hq⟩)
-    (Blocks.decryptI_ct v c (k := Proof.AesGcm.decryptBlocksIv96X86_64M CtxMode.prepared) (fun _ h => Blocks.BP.ofMI h)
-      fun s s' h => ⟨h.1, by rw [idx16, idx16]; exact h.2⟩)
-    decryptBlocksIv96_implies
+  Verified.of_correct (k := Proof.AesGcm.decryptBlocksIv96X86_64M CtxMode.prepared) (decryptI_correct v c)
+    (decryptI_ctP v c) decryptBlocksIv96_implies
+
+/-- `vg_aes_gcm_decrypt_blocks_prepared_iv96` with a loop given the block
+index, for its callers. -/
+def decFnI (v : GcmImpl) (c : Blocks.DecCodeI CtxMode.prepared) : DecFnI CtxMode.prepared where
+  fn := ⟨Spec.Gcm.decryptBlocksPreparedIv96Api.name ++ v.suffix,
+    Blocks.decrypt v.callees.ctr v.callees.gh (some c.dec) true true⟩
+  ok := decryptI_correct v c
+  ct := decryptI_ctP v c
+  nosp := decryptI_nosp v c.S
+  depth := decryptI_depth v c.S
+  mx := decryptI_mx v c.S
+  sp := decryptI_spSafe v c.S
+  xd := decryptI_xdepth v c.S
 
 /-- With the loops of the function without the index, which ignore it. -/
 theorem decryptBlocksPreparedIv96_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.prepared true)) :

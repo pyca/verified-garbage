@@ -61,35 +61,41 @@ theorem sealMP_xdepth :
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
-theorem openMP_mx : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).allInstrs
+theorem openMP_mx (DI : Option (DecFnI M)) : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
+      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (DI.map (·.fn)) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).allInstrs
     (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
-  simp only [e, d, Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_mx, Fast.fastAad_mx, FastOpen.tagP_mx, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.allInstrs,
+  rcases DI with _ | F
+  all_goals first | have f := F.mx | skip
+  all_goals simp only [e, d, Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Impl.AesGcm.X86_64.FastOpen.runI, Impl.AesGcm.X86_64.FastOpen.bodyI, Option.map_none, Option.map_some, *, Fast.fastCond_mx, Fast.fastAad_mx, FastOpen.tagP_mx, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.allInstrs,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true]
-  decide +kernel
+  all_goals decide +kernel
 
-theorem openMP_spSafe : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).all
+theorem openMP_spSafe (DI : Option (DecFnI M)) : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
+      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (DI.map (·.fn)) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).all
     (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
-  simp only [e, d, Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_spSafe, Fast.fastAad_spSafe, FastOpen.tagP_spSafe, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.all,
+  rcases DI with _ | F
+  all_goals first | have f := F.sp | skip
+  all_goals simp only [e, d, Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Impl.AesGcm.X86_64.FastOpen.runI, Impl.AesGcm.X86_64.FastOpen.bodyI, Option.map_none, Option.map_some, *, Fast.fastCond_spSafe, Fast.fastAad_spSafe, FastOpen.tagP_spSafe, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.all,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
-  decide +kernel
+  all_goals decide +kernel
 
-theorem openMP_xdepth :
+theorem openMP_xdepth (DI : Option (DecFnI M)) :
     (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).x86_64Depth ≤ 24 := by
+      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (DI.map (·.fn)) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).x86_64Depth ≤ 32 := by
   have e := B.encXd
   have d := B.decXd
-  simp only [Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_xdepth,
+  rcases DI with _ | F
+  all_goals first | have f := F.xd | skip
+  all_goals simp only [Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Impl.AesGcm.X86_64.FastOpen.runI, Impl.AesGcm.X86_64.FastOpen.bodyI, Option.map_none, Option.map_some, *, Fast.fastCond_xdepth,
     Fast.fastAad_xdepth, FastOpen.tagP_xdepth, cond_xdepth, openShortP_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState,
     Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte,
     Bool.false_eq_true]
-  omega
+  all_goals omega
 
 section
 variable (B : BlkFn CtxMode.prepared)
@@ -100,13 +106,13 @@ theorem sealMP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.sealX86
   obtain ⟨t, s', he, hg, hp⟩ := sealMW_wp hF v B powOk_powersP hs
   exact ⟨t, s', he, abiPreserved_of_exec (sealMP_mx v B) he hg, hp⟩
 
-theorem openMP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.openX86_64M CtxMode.prepared).pre s) :
+theorem openMP_correct (hF : ShortFacts) (DI : Option (DecFnI CtxMode.prepared)) (s : State) (hs : (Proof.AesGcm.openX86_64M CtxMode.prepared).pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))) s t s' ∧
+      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (DI.map (·.fn)) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))) s t s' ∧
       abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := openMW_wp hF v B powOk_powersP
-    (FastOpen.openSel_ok hF v B (longOk_openLong v B)) hs
-  exact ⟨t, s', he, abiPreserved_of_exec (openMP_mx v B) he hg, hp⟩
+    (FastOpen.openSel_ok hF v B DI (longOk_openLong v B)) hs
+  exact ⟨t, s', he, abiPreserved_of_exec (openMP_mx v B DI) he hg, hp⟩
 
 end
 
@@ -125,11 +131,12 @@ def sealCodeP (v : GcmImpl) (c : Callees) : Prog isa :=
 
 /-- `vg_aes_gcm_open_prepared`'s code calling `c`: `openCode`, with the short
 path's table of powers from the prepared key context, and the path for TLS
-records (`FastOpen.sel`) when the short path does not apply. -/
-def openCodeP (v : GcmImpl) (c : Callees) : Prog isa :=
+records (`FastOpen.sel`, calling the decryption function given the block
+index `fi` if there is one) when the short path does not apply. -/
+def openCodeP (v : GcmImpl) (c : Callees) (fi : Option Fn) : Prog isa :=
   if v.short then
     Impl.AesGcm.X86_64.Short.«open» c Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel c none (Impl.AesGcm.X86_64.Short.openLong c))
+      (Impl.AesGcm.X86_64.FastOpen.sel c fi (Impl.AesGcm.X86_64.Short.openLong c))
   else v.openCode c
 
 end GcmImpl
@@ -142,10 +149,10 @@ theorem sealCodeP_spSafe {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
   · exact Short.sealMP_spSafe v B
   · exact sealCode_spSafe v B
 
-theorem openCodeP_spSafe {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
-    (v.openCodeP (v.withBlk B)).all (fun i => !X86_64.isa.writesSp i) = true := by
+theorem openCodeP_spSafe {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) (DI : Option (DecFnI M)) :
+    (v.openCodeP (v.withBlk B) (DI.map (·.fn))).all (fun i => !X86_64.isa.writesSp i) = true := by
   unfold GcmImpl.openCodeP; split
-  · exact Short.openMP_spSafe v B
+  · exact Short.openMP_spSafe v B DI
   · exact openCode_spSafe v B
 
 end VG.Proof.AesGcm.X86_64
