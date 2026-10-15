@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 meta import VerifiedGarbage.Proof.RsaKeyGen.Bits
 meta import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
@@ -187,9 +188,9 @@ theorem tlw_mm (M : Mont) {p : RPub × Nat} {s : State} (h : TLW p s) : WP isa (
     fun t ⟨hg, _, _, ha', k⟩ => ?_
   have hf : Frm p.1.p.B [(slot p.1.p.w aAcc, 8 * (p.1.p.w + 2)), (slot p.1.p.w aTmp, 8 * (p.1.p.w + 2)),
       (slot p.1.p.w aY, 8 * (p.1.p.w + 2))] s.mem t.mem := Frm.of_arrays ha' (by simp)
-  refine ⟨hk, hp.frm hf (by rng_le) (tvs_lt _ _) hg.rdi k.2.2, hd, hj, mi, c, bm,
-    hc.of_frm hd hf hg.scr hg.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj), ?_⟩
-  rw [hf.wv_eq (d := slot p.1.p.w aXm) (k := p.1.p.w) (by rng_disj)
+  refine ⟨hk, hp.frm hf ((VG.Proof.RsaKeyGen.mm_shape _ _).geD rfl rfl) (tvs_lt _ _) hg.rdi k.2.2, hd, hj, mi, c, bm,
+    hc.of_frm hd hf hg.scr hg.rdi ((VG.Proof.RsaKeyGen.mm_shape _ _).geD rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl), ?_⟩
+  rw [hf.wv_eq (d := slot p.1.p.w aXm) (k := p.1.p.w) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl)
     (by have := hc.good.scr.nowrap; have := slot_le (w := p.1.p.w) (show aXm < 8 by decide); have := hd.z; omega_arith)]
   exact hx
 
@@ -377,9 +378,9 @@ theorem roundPre_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrWitness ++ [M.mm aX
         (slot q.p.w aXm, 8 * (q.p.w + 2))] s.mem t.mem := Frm.of_arrays ha' (by simp)
     rw [hc.n] at hlt hy
     rw [hR2] at hy
-    refine ⟨⟨hk, hp.frm hf (by rng_le) (q.p.vs_lt _ _ [] (by simp) |> fun h e he => h e (by simpa using he))
+    refine ⟨⟨hk, hp.frm hf ((VG.Proof.RsaKeyGen.mm_shape _ _).geD rfl rfl) (q.p.vs_lt _ _ [] (by simp) |> fun h e he => h e (by simpa using he))
       hg.rdi k.2.2⟩, hd, mi, c, bm, wv s.mem q.p.B (slot q.p.w aX) q.p.w,
-      hc.of_frm hd hf hg.scr hg.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj), ?_, hodd, hc1⟩
+      hc.of_frm hd hf hg.scr hg.rdi ((VG.Proof.RsaKeyGen.mm_shape _ _).geD rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl), ?_, hodd, hc1⟩
     rw [← Nat.mod_eq_of_lt hlt, VG.Proof.Bignum.powMod_eq, Nat.pow_one, Nat.mod_mul_mod]
     refine VG.Proof.Bignum.mont_cancel hRc ?_
     rw [hy, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]

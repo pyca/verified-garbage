@@ -11,6 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # A candidate on x86-64: constant time of Miller–Rabin's exponentiation
@@ -204,9 +205,9 @@ theorem lastW_mm (M : Mont) {q : EPub} {s : State} (h : LastW q s) : WP isa (M.m
     fun t ⟨hg, hlt, _, ha', k⟩ => ?_
   have hf : Frm q.p.B [(slot q.p.w aAcc, 8 * (q.p.w + 2)), (slot q.p.w aTmp, 8 * (q.p.w + 2)),
       (slot q.p.w aY, 8 * (q.p.w + 2))] s.mem t.mem := Frm.of_arrays ha' (by simp)
-  refine ⟨hk, hp.frm hf (by rng_le) (q.p.vs_lt _ _ [] (by simp) |> fun h e he => h e (by simpa using he)) hg.rdi k.2.2,
-    hd, mi, c, bm, hc.of_frm hd hf hg.scr hg.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj),
-    hE.of_low hf (by rng_le) (by have := aE_fits hd; have := hd.z; omega_arith), hodd, hc1, by rw [← hc.n]; exact hlt⟩
+  refine ⟨hk, hp.frm hf ((VG.Proof.RsaKeyGen.mm_shape _ _).geD rfl rfl) (q.p.vs_lt _ _ [] (by simp) |> fun h e he => h e (by simpa using he)) hg.rdi k.2.2,
+    hd, mi, c, bm, hc.of_frm hd hf hg.scr hg.rdi ((VG.Proof.RsaKeyGen.mm_shape _ _).geD rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl),
+    hE.of_low hf ((VG.Proof.RsaKeyGen.mm_shape _ _).leD rfl rfl) (by have := aE_fits hd; have := hd.z; omega_arith), hodd, hc1, by rw [← hc.n]; exact hlt⟩
 
 theorem mrLast_eq' (mul : Nat → Nat → Nat → Prog isa) (j : Nat) : mrLast mul j = ([mul aY aY aY] : List (Prog isa)) ++ (eqMask aRm1 ++
     ([.block (extBase aE .rbx ++ ([.mov .r12 (.mem (hdr sW)), .movImm64 .rdx (sigK j),
@@ -247,12 +248,12 @@ theorem lastW_tail {q : EPub} {s : State} (h : LastW q s) (j : Nat) :
   have hf : Frm q.p.B [(8 * kFlag, 8)] s.mem t.mem := by
     rw [hm, hm₂, hm₁]; exact Frm.of_outside (writeW_outside _ _ _ (by unfold kFlag kPlen sFn; omega_arith)) (by simp)
   have hgt : Good t q.p.B q.p.Z q.p.w mi := ⟨hs₂.congr k.2.2, (k.gpr (by decide)).trans hdi₂,
-    Hdr.of_frm hg.hdr hf (by rng_disj)⟩
+    Hdr.of_frm hg.hdr hf ((VG.Proof.RsaKeyGen.hdr_shape 0 _).geD rfl rfl)⟩
   refine ⟨hk, ⟨hgt.rdi, (k.2.2.trans (k₂.2.2.trans k₁.2.2)).trans hp.wr,
     hdr_frm hf (vs_exp' _ _ _) hp.hdr⟩, hd, mi, c, bm,
-    hc.of_frm hd hf hgt.scr hgt.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj),
-    hE.of_frm hf (by rng_disj) (by omega_arith), hodd, hc1, ?_⟩
-  rw [hf.wv_eq (d := slot q.p.w aY) (k := q.p.w) (by rng_disj)
+    hc.of_frm hd hf hgt.scr hgt.rdi ((VG.Proof.RsaKeyGen.hdr_shape 0 _).geD rfl rfl) ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW rfl rfl),
+    hE.of_frm hf ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW1 rfl rfl) (by omega_arith), hodd, hc1, ?_⟩
+  rw [hf.wv_eq (d := slot q.p.w aY) (k := q.p.w) ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW rfl rfl)
     (by have := slot_le (w := q.p.w) (show aY < 8 by decide); have := hd.z; omega_arith)]
   exact hy
 
