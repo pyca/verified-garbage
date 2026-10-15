@@ -51,9 +51,9 @@ theorem nzMask_full_ok {s : State} {base : Addr} {size n z : Nat} (hs : Scr s ba
       t.gpr .x3=mask (wordsVal s.mem base z n≠0) ∧ Keeps [.x1,.x2,.x3,.x7,.x16] s t ∧ t.gpr .x7=0 := by
   rw [nzMask,List.append_assoc,WP.block_append_iff,←List.singleton_append,WP.block_append_iff]
   refine WP.mono (zero7_ok s) fun a ⟨a7,ka⟩ => ?_
-  refine WP.mono (ld_ok (hs.of_keeps ka (by decide)) (d:=z) (by omega) hz8 .x1) fun b ⟨b1,kb,_⟩ => ?_
+  refine WP.mono (ld_ok (hs.of_keeps ka (by decide)) (d:=z) (by omega_using [hn, hz]) hz8 .x1) fun b ⟨b1,kb,_⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (ors_ok ((hs.of_keeps ka (by decide)).of_keeps kb (by decide)) hz8 (n-1) (by omega))
+  refine WP.mono (ors_ok ((hs.of_keeps ka (by decide)).of_keeps kb (by decide)) hz8 (n-1) (by omega_using [hn, hz]))
     fun c ⟨ce,kc⟩ => ?_
   rw [b1,kb.mem,ka.mem] at ce
   have eqz : c.gpr .x1=0 ↔ wordsVal s.mem base z n=0 := by
@@ -62,9 +62,9 @@ theorem nzMask_full_ok {s : State} {base : Addr} {size n z : Nat} (hs : Scr s ba
     · intro ⟨h0,h⟩ j hj
       cases j with
       | zero => simpa using h0
-      | succ j => exact h j (by omega)
+      | succ j => exact h j (by omega_using [hj])
     · intro h
-      exact ⟨by simpa using h 0 hn,fun j hj => h (j+1) (by omega)⟩
+      exact ⟨by simpa using h 0 hn,fun j hj => h (j+1) (by omega_using [hj])⟩
   refine WP.mono (isNonzero_ok c (by rw [kc.gpr _ (by decide),kb.gpr _ (by decide),a7]))
     fun t ⟨ht,kt⟩ => ⟨?_,?_,?_⟩
   · simpa only [mask,ne_eq,eqz] using ht
@@ -79,12 +79,12 @@ theorem nzMask_ok {s : State} {base : Addr} {size n z : Nat} (hs : Scr s base si
   WP.mono (nzMask_full_ok hs hn hz hz8) fun _ h => ⟨h.1,h.2.1⟩
 
 theorem bcar_testBit {w k j : Nat} (hj : 1≤j) : bcar w k j=(k.testBit (w*j-1)).toNat := by
-  simp only [bcar,show j≠0 by omega,↓reduceIte,Nat.testBit_eq_decide_div_mod_eq]
+  simp only [bcar,show j≠0 by omega_using [hj],↓reduceIte,Nat.testBit_eq_decide_div_mod_eq]
   rcases Nat.mod_two_eq_zero_or_one (k/2^(w*j-1)) with h | h <;> simp [h]
 
 theorem bcar_succ_testBit {w : Nat} (hw : 1≤w) (k j : Nat) :
     bcar w k (j+1)=(k.testBit (w*j+(w-1))).toNat := by
-  rw [bcar_testBit (by omega),show w*(j+1)-1=w*j+(w-1) by rw [Nat.mul_succ]; omega]
+  rw [bcar_testBit (by omega_using []),show w*(j+1)-1=w*j+(w-1) by rw [Nat.mul_succ]; omega_using [hw]]
 
 theorem byte_testBit (b : Bool) : (if b then (1 : BitVec 8) else 0)=BitVec.ofNat 8 b.toNat := by
   cases b <;> rfl
@@ -108,7 +108,7 @@ theorem bmagTail_ok (K : TCombCfg) {s : State} {m sb : Nat} (hw : K.w<9)
       t.gpr .x2=BitVec.ofNat 64 (if sb=1 then 2^K.w-m else m) ∧
       Keeps [.x2,.x3,.x4,.x7,.x9] s t := by
   have es : (BitVec.ofNat 8 sb).setWidth 64=BitVec.ofNat 64 sb := by
-    rcases (by omega : sb=0 ∨ sb=1) with rfl | rfl <;> rfl
+    rcases (by omega_using [hs2] : sb=0 ∨ sb=1) with rfl | rfl <;> rfl
   have pre : WP isa (.block [zero7,.ldrb .x4 .x16 (K.bits+K.w-1),.sub .x .x3 .x7 .x4,
       .logic .eor .x .x2 .x2 .x3,.sub .x .x2 .x2 .x3]) s fun a =>
       a.gpr .x2=(BitVec.ofNat 64 m ^^^ ((0 : BitVec 64)-BitVec.ofNat 64 sb))-
@@ -116,7 +116,7 @@ theorem bmagTail_ok (K : TCombCfg) {s : State} {m sb : Nat} (hw : K.w<9)
       a.gpr .x3=(0 : BitVec 64)-BitVec.ofNat 64 sb ∧ Keeps [.x2,.x3,.x4,.x7] s a := by
     apply WP.of_runBlock
     simp only [zero7,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,State.load,addr,
-      Size.bits,Nat.mod_one,show K.bits+K.w-1<4096*1 by omega,and_self,
+      Size.bits,Nat.mod_one,show K.bits+K.w-1<4096*1 by omega_using [hd],and_self,
       show 16*0<64 by decide,ite_true,RegUpd.gpr_write,RegUpd.rd_write,RegUpd.wr_write,
       RegUpd.mem_write,BitVec.setWidth_eq,reduceCtorEq,ite_false,hr,read1_zext,hm,
       Option.map_some,Option.bind_some,Option.some.injEq,exists_eq_left',es,hx]
@@ -147,21 +147,21 @@ theorem bsignMask_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs :
   rw [TCombCfg.bsignMask,WP.block_append_iff]
   refine WP.mono (winIndex_ok s hs hw hx) fun a ⟨a16,ka⟩ => ?_
   have hr : InRegions (a.rd++a.wr) (off base (K.bits+(K.w*j+(K.w-1)))) 1 :=
-    ⟨_,List.mem_append_right _ (ka.wr ▸ hs.wr),hs.contains (by omega) (by decide)⟩
+    ⟨_,List.mem_append_right _ (ka.wr ▸ hs.wr),hs.contains (by omega_using [hw1, hj, hN]) (by decide)⟩
   have he : a.gpr .x16+BitVec.ofNat 64 (K.bits+K.w-1)=off base (K.bits+(K.w*j+(K.w-1))) := by
     rw [a16,off,off,BitVec.add_assoc,BitVec.ofNat_add_ofNat]
-    exact congrArg (base+·) (congrArg _ (by omega))
+    exact congrArg (base+·) (congrArg _ (by omega_using [hw1]))
   have hv : a.mem (off base (K.bits+(K.w*j+(K.w-1))))=BitVec.ofNat 8 (bcar K.w k (j+1)) := by
-    rw [ka.mem,hbits _ (by omega),bcar_succ_testBit hw1,byte_testBit]
+    rw [ka.mem,hbits _ (by omega_using [hw1, hj]),bcar_succ_testBit hw1,byte_testBit]
   have hb := bcar_le K.w k (j+1)
   apply WP.of_runBlock
   simp only [zero7,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,State.load,addr,
     Size.bits,RegUpd.gpr_write,RegUpd.mem_write,RegUpd.rd_write,RegUpd.wr_write,
-    BitVec.setWidth_eq,Nat.mod_one,show K.bits+K.w-1<4096*1 by omega,
+    BitVec.setWidth_eq,Nat.mod_one,show K.bits+K.w-1<4096*1 by omega_using [hbw],
     show 16*0<64 by decide,and_self,he,hr,read1_zext,hv,ite_true,reduceCtorEq,ite_false,
     Option.map_some,Option.bind_some,Option.some.injEq,exists_eq_left']
   refine ⟨?_,fun r hr' => ?_,ka.mem,ka.rd,ka.wr,ka.sp⟩
-  · rcases (by omega : bcar K.w k (j+1)=0 ∨ bcar K.w k (j+1)=1) with h | h <;> rw [h] <;> decide
+  · rcases (by omega_using [hb] : bcar K.w k (j+1)=0 ∨ bcar K.w k (j+1)=1) with h | h <;> rw [h] <;> decide
   · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr'
     simp only [RegUpd.gpr_write,hr'.1,hr'.2.1,hr'.2.2.1,ite_false]
     exact ka.gpr r (by simp [hr'.2.2.2])
@@ -205,10 +205,10 @@ private theorem booth_addByte_ok {s : State} {d m b : Nat} (hd : d<4096) (hb : b
     WP isa (.block [.ldrb .x4 .x16 d,.add .x .x2 .x2 .x4]) s fun t =>
       t.gpr .x2=BitVec.ofNat 64 (m+b) ∧ Keeps [.x2,.x4] s t := by
   have eb : (BitVec.ofNat 8 b).setWidth 64=BitVec.ofNat 64 b := by
-    rcases (by omega : b=0 ∨ b=1) with rfl | rfl <;> rfl
+    rcases (by omega_using [hb] : b=0 ∨ b=1) with rfl | rfl <;> rfl
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,read_x,State.load,addr,Size.bits,
-    Nat.mod_one,show d<4096*1 by omega,and_self,ite_true,hr,read1_zext,hm,
+    Nat.mod_one,show d<4096*1 by omega_using [hd],and_self,ite_true,hr,read1_zext,hm,
     Option.map_some,Option.bind_some,RegUpd.gpr_write,BitVec.setWidth_eq,reduceCtorEq,ite_false,
     hx,Option.some.injEq,exists_eq_left']
   refine ⟨?_,fun r hr' => ?_,rfl,rfl,rfl,rfl⟩
@@ -226,36 +226,36 @@ theorem bdigit_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
       t.gpr .x2=BitVec.ofNat 64 (bmag K.w k j) ∧ Keeps [.x2,.x3,.x4,.x7,.x9,.x16] s t := by
   rw [TCombCfg.bdigit,List.append_assoc,List.append_assoc,List.append_assoc,List.append_assoc,
     WP.block_append_iff]
-  refine WP.mono (winIndex_ok s hs (by omega) hx) fun a ⟨a16,ka⟩ => ?_
+  refine WP.mono (winIndex_ok s hs (by omega_using [hbw]) hx) fun a ⟨a16,ka⟩ => ?_
   rw [WP.block_append_iff]
   have hv : ∀ i,(fun t => (k.testBit (K.w*j+(t-K.bits))).toNat) i≤1 := fun _ => Bool.toNat_le _
-  refine WP.mono (hornerBits_ok hv K.w K.bits (s:=a) (by omega) hbw fun i hi => ?_)
+  refine WP.mono (hornerBits_ok hv K.w K.bits (s:=a) (by omega_using [hw]) hbw fun i hi => ?_)
     fun b ⟨b2,kb⟩ => ?_
   · have he : a.gpr .x16+BitVec.ofNat 64 (K.bits+i)=off base (K.bits+(K.w*j+i)) := by
       rw [a16,off,off,BitVec.add_assoc,BitVec.ofNat_add_ofNat]
-      exact congrArg (base+·) (congrArg _ (by omega))
-    refine ⟨by rw [he]; exact ⟨_,List.mem_append_right _ (ka.wr ▸ hs.wr),hs.contains (by omega) (by decide)⟩,?_⟩
-    rw [he,ka.mem,hbits _ (by omega),show K.bits+i-K.bits=i by omega]
+      exact congrArg (base+·) (congrArg _ (by omega_using []))
+    refine ⟨by rw [he]; exact ⟨_,List.mem_append_right _ (ka.wr ▸ hs.wr),hs.contains (by omega_using [hj, hN, hi]) (by decide)⟩,?_⟩
+    rw [he,ka.mem,hbits _ (by omega_using [hj, hi]),show K.bits+i-K.bits=i by omega_using []]
     cases k.testBit (K.w*j+i) <;> rfl
   have heq : hornerVal (fun t => (k.testBit (K.w*j+(t-K.bits))).toNat) K.bits K.w=combWin K.w k j := by
     have he := hornerVal_eq k K.w j K.w (Nat.le_refl _)
     rw [Nat.sub_self,Nat.add_zero] at he
     rw [combWin,←he]
-    exact hornerVal_congr fun i _ => by simp only [show K.bits+i-K.bits=i by omega]
+    exact hornerVal_congr fun i _ => by simp only [show K.bits+i-K.bits=i by omega_using []]
   rw [heq] at b2
   have b16 : b.gpr .x16=off base (K.w*j) := (kb.gpr _ (by decide)).trans a16
   have reg : ∀ t<N,InRegions (b.rd++b.wr) (off base (K.bits+t)) 1 := fun t ht =>
-    ⟨_,List.mem_append_right _ (kb.wr ▸ ka.wr ▸ hs.wr),hs.contains (by omega) (by decide)⟩
+    ⟨_,List.mem_append_right _ (kb.wr ▸ ka.wr ▸ hs.wr),hs.contains (by omega_using [hN, ht]) (by decide)⟩
   have mid : WP isa (.block (if carry then [.ldrb .x4 .x16 (K.bits-1),.add .x .x2 .x2 .x4] else [])) b
       fun t => t.gpr .x2=BitVec.ofNat 64 (combWin K.w k j+bcar K.w k j) ∧ Keeps [.x2,.x4] b t := by
     rcases hc with ⟨rfl,hj1⟩ | ⟨rfl,rfl⟩
     · have hwj : 1≤K.w*j := Nat.mul_le_mul hw1 hj1
       have he : b.gpr .x16+BitVec.ofNat 64 (K.bits-1)=off base (K.bits+(K.w*j-1)) := by
         rw [b16,off,off,BitVec.add_assoc,BitVec.ofNat_add_ofNat]
-        exact congrArg (base+·) (congrArg _ (by omega))
-      apply booth_addByte_ok (by omega) (Nat.lt_succ_of_le (bcar_le _ _ _)) b2
-      · rw [he]; exact reg _ (by omega)
-      · rw [he,kb.mem,ka.mem,hbits _ (by omega),bcar_testBit hj1,byte_testBit]
+        exact congrArg (base+·) (congrArg _ (by omega_using [hb1, hwj]))
+      apply booth_addByte_ok (by omega_using [hbw]) (Nat.lt_succ_of_le (bcar_le _ _ _)) b2
+      · rw [he]; exact reg _ (by omega_using [hj, hwj])
+      · rw [he,kb.mem,ka.mem,hbits _ (by omega_using [hj, hwj]),bcar_testBit hj1,byte_testBit]
     · change WP isa (.block []) b _
       exact WP.block_nil ⟨by simpa only [bcar,ite_true,Nat.add_zero] using b2,fun _ _ => rfl,rfl,rfl,rfl,rfl⟩
   rw [WP.block_append_iff]
@@ -263,17 +263,17 @@ theorem bdigit_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
   have d16 : d.gpr .x16=off base (K.w*j) := (kd.gpr _ (by decide)).trans b16
   have he : d.gpr .x16+BitVec.ofNat 64 (K.bits+K.w-1)=off base (K.bits+(K.w*j+(K.w-1))) := by
     rw [d16,off,off,BitVec.add_assoc,BitVec.ofNat_add_ofNat]
-    exact congrArg (base+·) (congrArg _ (by omega))
+    exact congrArg (base+·) (congrArg _ (by omega_using [hw1]))
   have dm : d.mem (d.gpr .x16+BitVec.ofNat 64 (K.bits+K.w-1))=BitVec.ofNat 8 (bcar K.w k (j+1)) := by
-    rw [he,kd.mem,kb.mem,ka.mem,hbits _ (by omega),bcar_succ_testBit hw1,byte_testBit]
+    rw [he,kd.mem,kb.mem,ka.mem,hbits _ (by omega_using [hw1, hj]),bcar_succ_testBit hw1,byte_testBit]
   have dr : InRegions (d.rd++d.wr) (d.gpr .x16+BitVec.ofNat 64 (K.bits+K.w-1)) 1 := by
-    rw [he,kd.rd,kd.wr]; exact reg _ (by omega)
+    rw [he,kd.rd,kd.wr]; exact reg _ (by omega_using [hw1, hj])
   have ml : combWin K.w k j+bcar K.w k j<2^K.w+1 := by
     have := combWin_lt K.w k j
     have := bcar_le K.w k j
     omega
   rw [←List.append_assoc]
-  refine WP.mono (bmagTail_ok K hw ml (Nat.lt_succ_of_le (bcar_le _ _ _)) (by omega) d2 dr dm)
+  refine WP.mono (bmagTail_ok K hw ml (Nat.lt_succ_of_le (bcar_le _ _ _)) (by omega_using [hbw]) d2 dr dm)
     fun t ⟨t2,kt⟩ => ?_
   rw [←bmag_eq hw1] at t2
   exact ⟨t2,(((ka.mono (by sub_regs)).trans (kb.mono (by sub_regs))).trans

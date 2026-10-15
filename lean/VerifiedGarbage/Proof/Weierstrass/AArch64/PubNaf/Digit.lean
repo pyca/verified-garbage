@@ -41,8 +41,8 @@ theorem entry_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) {s : State} {bas
   have hW := hL.win
   have hn0 := hW.n0
   have hst : stride K < 65536 := by have := hL.n6; simp only [stride]; omega
-  have hEx : K.E.x ∈ winOther K := by win_in
-  have hEz : K.E.z ∈ winOther K := by win_in
+  have hEx : K.E.x ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
+  have hEz : K.E.z ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
   have tx := hW.tbl K.E.x (List.mem_append_right _ hEx)
   have tz := hW.tbl K.E.z (List.mem_append_right _ hEz)
   have ez := hW.lay.le K.E.z (winOther_mem hEz)
@@ -289,7 +289,7 @@ theorem digit_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Naf
       rcases List.mem_append.mp hx with hx | hx
       · exact winRo_slots K x hx
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with h | h | h | h | h | h <;> subst h <;> win_in
+        rcases hx with h | h | h | h | h | h <;> subst h <;> simp only [winSlots, winRo, winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
     have hVl : ∀ x ∈ V, wordsVal v.mem base x K.M.n < C.p := by
       intro x hx
       rcases List.mem_append.mp hx with hx | hx

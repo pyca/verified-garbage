@@ -32,29 +32,29 @@ theorem jointLoadWords_ok {s : State} {base p : Addr} {size dst n : Nat}
   | k+1, hk => by
     rw [Joint.loadWords,List.range_succ,List.flatMap_append,List.flatMap_singleton,
       WP.block_append_iff]
-    refine WP.mono (jointLoadWords_ok hs hp hd ha hn hr hout k (by omega)) fun a ⟨ea,ka,oa⟩ => ?_
+    refine WP.mono (jointLoadWords_ok hs hp hd ha hn hr hout k (by omega_using [hk])) fun a ⟨ea,ka,oa⟩ => ?_
     have sa := hs.of_keepRegs ka (by decide)
     change WP isa (.block ([.ldr .x .x4 .x16 (8*k)]++[st .x4 (dst+8*k)])) a _
     rw [WP.block_append_iff]
-    refine WP.mono (direct_load (p:=p) (by rw [ka.gpr _ (by decide),hp]) (by omega)
-      (by rw [ka.rd,ka.wr]; exact hr k (by omega))) fun b ⟨eb,kb,_⟩ => ?_
+    refine WP.mono (direct_load (p:=p) (by rw [ka.gpr _ (by decide),hp]) (by omega_using [hn, hk])
+      (by rw [ka.rd,ka.wr]; exact hr k (by omega_using [hk]))) fun b ⟨eb,kb,_⟩ => ?_
     have sb := sa.of_keeps kb (by decide)
-    refine WP.mono (st_ok sb (d:=dst+8*k) (by omega) (by omega) .x4) fun t et => ?_
+    refine WP.mono (st_ok sb (d:=dst+8*k) (by omega_using [hd, hk]) (by omega_using [ha]) .x4) fun t et => ?_
     have mt : t.mem=b.mem.writeW (off base (dst+8*k)) (b.gpr .x4) := by rw [et]
     have kt : KeepRegs [] b t := by subst et; exact ⟨fun _ _ => rfl,rfl,rfl,rfl⟩
     have ot : Outside base (dst+8*k) 8 b.mem t.mem := by
-      rw [mt]; exact writeW_outside _ _ _ (by have := hs.nowrap; omega)
+      rw [mt]; exact writeW_outside _ _ _ (by have := hs.nowrap; omega_using [hd, hk, this])
     have old : word a.mem p (8*k)=word s.mem p (8*k) :=
       Mem.readW_congr fun j hj => oa _ (Or.inr (by
-        have := hout k (by omega) j (by omega); dsimp only [off]; omega))
+        have := hout k (by omega_using [hk]) j (by omega_using [hj]); dsimp only [off]; omega_using [hd, hk, this]))
     refine ⟨fun i hi => ?_,ka.trans ((Keeps.regs kb).trans (kt.mono (by simp))),?_⟩
     · rcases Nat.lt_or_ge i k with h | h
-      · rw [ot.word (by omega) (by have := hs.nowrap; omega),kb.mem,ea i h]
-      · obtain rfl : i=k := by omega
+      · rw [ot.word (by omega_using [h]) (by have := hs.nowrap; omega_using [hd, hk, h, this]),kb.mem,ea i h]
+      · obtain rfl : i=k := by omega_using [hi, h]
         rw [mt,word_writeW_self,eb,old]
-    · refine (oa.mono (Nat.le_refl _) (by omega)).trans ?_
+    · refine (oa.mono (Nat.le_refl _) (by omega_using [])).trans ?_
       rw [←kb.mem]
-      exact ot.mono (by omega) (by omega)
+      exact ot.mono (by omega_using []) (by omega_using [])
 
 theorem jointAddress_ok (c : Joint.Cfg) {s : State} {a : Nat} {T : Addr}
     (ha : 1≤a) (h2 : s.gpr .x2=BitVec.ofNat 64 a) (ht : s.syms c.tsym=T) :
@@ -72,7 +72,7 @@ theorem jointAddress_ok (c : Joint.Cfg) {s : State} {a : Nat} {T : Addr}
     simp only [BitVec.toNat_shiftLeft,BitVec.toNat_ofNat,Nat.shiftLeft_eq]
     rw [Nat.mul_mod, Nat.mod_mod, ←Nat.mul_mod]
     congr 1
-    omega
+    omega_using []
   · intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
     simp only [RegUpd.gpr_write,hr.1,hr.2,ite_false]
@@ -107,16 +107,16 @@ theorem jointFixedLoad_ok (c : Joint.Cfg) {s : State} {base T : Addr} {size a : 
   have hn := hs.nowrap
   have wx : wordsVal d.mem base c.K.E.x 4=wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) 0 4 := by
     refine wordsVal_of_words₂ _ _ _ fun i hi => ?_
-    simpa only [Nat.zero_add,kb.mem] using wd i (by omega)
+    simpa only [Nat.zero_add,kb.mem] using wd i (by omega_using [hi])
   have wy : wordsVal d.mem base c.K.E.y 4=wordsVal s.mem (T+BitVec.ofNat 64 (128*(a-1))) 32 4 := by
     refine wordsVal_of_words₂ _ _ _ fun i hi => ?_
     rw [hy]
-    have e := wd (4+i) (by omega)
+    have e := wd (4+i) (by omega_using [hi])
     simpa only [Nat.mul_add,Nat.add_assoc,kb.mem] using e
   refine ⟨?_,?_,?_,?_,?_⟩
-  · rw [ot.wordsVal (by omega) (by omega),wx]
-  · rw [ot.wordsVal (by omega) (by omega),wy]
-  · rw [zt,od.wordsVal (by omega) (by omega),kb.mem]
+  · rw [ot.wordsVal (by omega_using [hsep]) (by omega_using [hd, hn]),wx]
+  · rw [ot.wordsVal (by omega_using [hy, hsep]) (by omega_using [hy, hd, hn]),wy]
+  · rw [zt,od.wordsVal (by omega_using [hsep1]) (by omega_using [hone, hn]),kb.mem]
   · exact ((Keeps.regs kb).mono (by sub_regs)).trans
       ((kd.mono (by sub_regs)).trans (kt.mono (by sub_regs)))
   · intro x hx
