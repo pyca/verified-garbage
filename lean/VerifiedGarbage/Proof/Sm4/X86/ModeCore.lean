@@ -160,4 +160,10 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   prepare_wp hB hs hR hk hst := WP.mono (prepare_wp d hB hs hR hk hst) fun _ ⟨r, h⟩ => ⟨⟨r, hs.fit⟩, h⟩
   crypt_wp hB hs hr hst := WP.mono (crypt_wp d hB hs hr.1 hst) fun _ ⟨b, e, r, h⟩ => ⟨b, e, ⟨r, hr.2⟩, h⟩
 
+/-- The core's cipher, without unfolding SM4's: elaborating
+`(dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k` by unification unfolds
+`Spec.Sm4.cipher` first, and evaluates the cipher (seconds; minutes in the
+kernel). -/
+theorem dirCoreSpec_cipher (d : Dir) : (dirCoreSpec d).cipher = dirCipher d := rfl
+
 end VG.Proof.Sm4.X86

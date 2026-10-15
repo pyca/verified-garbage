@@ -32,7 +32,7 @@ namespace VG.Proof.Sm4.X86.Fb
 
 open VG VG.X86 VG.Impl.Sm4.X86 VG.Impl.Modes
 open VG.Proof.Modes.X86 (SeqPre ofb_wp cfbEnc_wp cfbDec_wp)
-open VG.Proof.Sm4.X86 (scr_eq disjoint_empty KeyArgs dirCoreSpec)
+open VG.Proof.Sm4.X86 (scr_eq disjoint_empty KeyArgs dirCoreSpec dirCoreSpec_cipher)
 
 /-- SM4 under the schedule at the first argument. -/
 abbrev ciph (s : State) : Spec.Cbc.Cipher := Spec.Sm4.cipher (Spec.Sm4.scheduleAt s.mem ((arg s 0).setWidth 64))
@@ -110,7 +110,8 @@ theorem data_eq (m : Mem) (s : State) :
 theorem iv_eq (m : Mem) (s : State) :
     Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * (dirCore .encrypt).bw) = ivAt m s := rfl
 theorem cipher_eq (s : State) :
-    (dirCoreSpec .encrypt).cipher (Spec.Sm4.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
+    (dirCoreSpec .encrypt).cipher (Spec.Sm4.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := by
+  rw [dirCoreSpec_cipher]; rfl
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 ofbPost).post s₀ s' :=
