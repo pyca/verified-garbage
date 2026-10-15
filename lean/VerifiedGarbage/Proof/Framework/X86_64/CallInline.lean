@@ -1000,4 +1000,87 @@ theorem Verified.of_inline {c : Prog isa} (hc : c.InlineOk = true) {k₀ k : Con
     obtain ⟨t, b, he, -, -⟩ := hcor s (himp.pre s hs)
     exact ⟨t, b, he⟩
 
+/-! ## The checks of a registration file, in one pass
+
+An artifact's code is checked for `Code.InlineOk`, for `spSafe` (no
+instruction writes `rsp`) and, for code that sets MXCSR, for no other load of
+MXCSR. Each is a walk of the code that the kernel evaluates in full; `RegOk`
+checks all three in one walk, and the lemmas below take each one out of it. -/
+
+/-- No instruction of `c` loads MXCSR or writes `rsp`, and `c.InlineOk`. -/
+def _root_.VG.Code.RegOk : Prog isa → Bool
+  | .block l => KList.all l fun i => !Taint.clobbers i .rsp && !isa.writesSp i && !loadsMxcsr i
+  | .seq a b => a.RegOk && b.RegOk
+  | .ite _ t e => t.RegOk && e.RegOk
+  | .loop b _ => b.RegOk
+  | .call _ b => b.noCalls && b.allInstrs fun i => Instr.rspFree i && !isa.writesSp i && !loadsMxcsr i
+  | .frame .. => false
+
+/-- `allInstrs` reads a call's code as inlining does. -/
+theorem _root_.VG.Code.allInstrs_inline {I C : Type} (p : I → Bool) :
+    ∀ c : Code I C, c.inline.allInstrs p = c.allInstrs p
+  | .block _ => rfl
+  | .seq a b => by simp only [Code.inline, Code.allInstrs, Code.allInstrs_inline p a, Code.allInstrs_inline p b]
+  | .ite _ t e => by simp only [Code.inline, Code.allInstrs, Code.allInstrs_inline p t, Code.allInstrs_inline p e]
+  | .loop b _ => by simp only [Code.inline, Code.allInstrs, Code.allInstrs_inline p b]
+  | .call _ _ => rfl
+  | .frame _ b _ => by simp only [Code.inline, Code.allInstrs, Code.allInstrs_inline p b]
+
+/-- `allInstrs` of a conjunction, in one walk. -/
+theorem _root_.VG.Code.allInstrs_and {I C : Type} (p q : I → Bool) (c : Code I C) :
+    c.allInstrs (fun i => p i && q i) = (c.allInstrs p && c.allInstrs q) := by
+  simp only [Code.allInstrs_eq]
+  induction instrs c with
+  | nil => rfl
+  | cons i l ih => simp only [List.all_cons, ih]; cases p i <;> cases q i <;> simp
+
+/-- `allInstrs` of a weaker property. -/
+theorem _root_.VG.Code.allInstrs_mono {I C : Type} {p q : I → Bool} (h : ∀ i, p i = true → q i = true)
+    {c : Code I C} (hc : c.allInstrs p = true) : c.allInstrs q = true := by
+  simp only [Code.allInstrs_eq, List.all_eq_true] at hc ⊢
+  exact fun i hi => h i (hc i hi)
+
+theorem _root_.VG.Code.RegOk.inlineOk : ∀ {c : Prog isa}, c.RegOk = true → c.InlineOk = true
+  | .block l, h => by
+    simp only [Code.RegOk, Code.InlineOk, KList.all_eq, List.all_eq_true, Bool.and_eq_true] at h ⊢
+    exact fun i hi => (h i hi).1.1
+  | .seq a b, h => by
+    simp only [Code.RegOk, Code.InlineOk, Bool.and_eq_true] at h ⊢; exact ⟨Code.RegOk.inlineOk h.1, Code.RegOk.inlineOk h.2⟩
+  | .ite _ t e, h => by
+    simp only [Code.RegOk, Code.InlineOk, Bool.and_eq_true] at h ⊢; exact ⟨Code.RegOk.inlineOk h.1, Code.RegOk.inlineOk h.2⟩
+  | .loop b _, h => by simp only [Code.RegOk, Code.InlineOk] at h ⊢; exact Code.RegOk.inlineOk h
+  | .call _ b, h => by
+    simp only [Code.RegOk, Code.InlineOk, Bool.and_eq_true] at h ⊢
+    exact ⟨h.1, Code.allInstrs_mono (fun i hi => by simp only [Bool.and_eq_true] at hi; exact hi.1.1) h.2⟩
+  | .frame .., h => by simp only [Code.RegOk, Bool.false_eq_true] at h
+
+/-- The instructions of code that passes `RegOk`, and of the code it calls,
+have the properties `RegOk` checks. -/
+theorem _root_.VG.Code.RegOk.allInstrs : ∀ {c : Prog isa}, c.RegOk = true →
+    c.allInstrs (fun i => !isa.writesSp i && !loadsMxcsr i) = true
+  | .block l, h => by
+    simp only [Code.RegOk, KList.all_eq, List.all_eq_true, Bool.and_eq_true] at h
+    simp only [Code.allInstrs_eq, instrs, List.all_eq_true, Bool.and_eq_true]
+    exact fun i hi => ⟨(h i hi).1.2, (h i hi).2⟩
+  | .seq a b, h => by
+    simp only [Code.RegOk, Code.allInstrs, Bool.and_eq_true] at h ⊢; exact ⟨Code.RegOk.allInstrs h.1, Code.RegOk.allInstrs h.2⟩
+  | .ite _ t e, h => by
+    simp only [Code.RegOk, Code.allInstrs, Bool.and_eq_true] at h ⊢; exact ⟨Code.RegOk.allInstrs h.1, Code.RegOk.allInstrs h.2⟩
+  | .loop b _, h => by simp only [Code.RegOk, Code.allInstrs] at h ⊢; exact Code.RegOk.allInstrs h
+  | .call _ b, h => by
+    simp only [Code.RegOk, Code.allInstrs, Bool.and_eq_true] at h ⊢
+    exact Code.allInstrs_mono (fun i hi => by simp only [Bool.and_eq_true] at hi ⊢; exact ⟨hi.1.2, hi.2⟩) h.2
+  | .frame .., h => by simp only [Code.RegOk, Bool.false_eq_true] at h
+
+/-- `spSafe`, from `RegOk`. -/
+theorem _root_.VG.Code.RegOk.spSafe {c : Prog isa} (h : c.RegOk = true) :
+    c.allInstrs (fun i => !isa.writesSp i) = true :=
+  Code.allInstrs_mono (fun i hi => by simp only [Bool.and_eq_true] at hi; exact hi.1) (Code.RegOk.allInstrs h)
+
+/-- No instruction loads MXCSR, in `c` or in its inlining, from `RegOk`. -/
+theorem _root_.VG.Code.RegOk.noMxcsr {c : Prog isa} (h : c.RegOk = true) :
+    c.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
+  rw [Code.allInstrs_inline]
+  exact Code.allInstrs_mono (fun i hi => by simp only [Bool.and_eq_true] at hi; exact hi.2) (Code.RegOk.allInstrs h)
+
 end VG.X86_64
