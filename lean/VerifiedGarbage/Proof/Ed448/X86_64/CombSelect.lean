@@ -172,7 +172,7 @@ private theorem entries_ok (xs : List Nat) (hx : ∀ i ∈ xs, i < 16)
     refine WP.mono (ih (fun j hj => hx j (List.mem_cons_of_mem _ hj)) (kv.scr hs)
       (by rw [kv.gpr _ (by decide), hb]) (bs.keep kv)) fun u ⟨ku, eu, fu⟩ => ?_
     refine ⟨kv.trans ku, ?_, fun j h3 h4 h8 h9 => (fu j h3 h4 h8 h9).trans (fv j h3 h4 h8 h9)⟩
-    rw [eu, ev]; rfl
+    rw [eu, ev]; simp only [picked, List.foldl_cons]
 
 /-- The selected affine point, while preserving the accumulator and curve constant. -/
 theorem select_ok {s : State} {base : Addr} (hs : Scr s base) {k t : Nat}

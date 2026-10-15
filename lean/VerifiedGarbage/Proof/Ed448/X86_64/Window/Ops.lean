@@ -29,7 +29,7 @@ theorem accept_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (copySlot_ok (k1.scr hs) 1 4) fun s2 ⟨k2, e2⟩ => ?_
   refine WP.mono (copySlot_ok (k2.scr (k1.scr hs)) 2 5) fun u ⟨ku, eu⟩ => ?_
   refine ⟨(k1.trans k2).trans ku, ?_, ?_⟩
-  · rw [eu, e2, e1]; rfl
+  · rw [eu, e2, e1]; simp (disch := decide) only [pt, Function.update_self, Function.update_of_ne]
   · intro j hj
     have h0 : j ≠ 0 := by intro h; subst j; contradiction
     have h1 : j ≠ 1 := by intro h; subst j; contradiction

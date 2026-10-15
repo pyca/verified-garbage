@@ -338,7 +338,8 @@ theorem vR_ok {s : State} {base : Addr} (hs : Scr s base) :
     show VG.Proof.X448.toFe (fe s4.mem base RY) = VG.Proof.X448.toFe (fe s.mem base RY)
     rw [(((k1.mem.trans k2.mem).trans k3.mem).trans k4.mem).fe (Or.inr (by decide)) (by decide)]
   refine ⟨((((k1.trans k2).trans k3).trans k4).trans k5).trans kt, ?_, ?_, fun i hi => ?_⟩
-  · rw [et, e5, e4, e3, e2, e1]; rfl
+  · rw [et, e5, e4, e3, e2, e1]
+    simp (disch := decide) only [pt, Function.update_self, Function.update_of_ne]
   · rw [et, e5, e4, fx, fy]; rfl
   · have ne : ∀ j : Index, j.val < 6 → i ≠ j := fun j hj h => by subst h; omega
     rw [et, e5, e4, e3, e2, e1, Function.update_of_ne (ne 2 (by decide)), Function.update_of_ne (ne 1 (by decide)),
@@ -830,7 +831,7 @@ theorem verifyEquation_correct (hR : RecoverOk) (_hE : VerifyEqOk) {rt : Prog is
   have hKb : K < 2 ^ 456 := by
     rw [← hK]; exact decodeLE_below (bytesAt57_len _ _)
   refine WP.mono (Wnaf.joint_ok hf hP hs4' (by decide) (by decide) bs4 bk4 hSb hKb d4
-    (congrArg Spec.Ed448.Point.Z q4) p4) fun s6 ⟨hs6, g6, rd6, wr6, M6, rep6⟩ => ?_
+    (congrArg Spec.Ed448.Point.Z q4 :) p4) fun s6 ⟨hs6, g6, rd6, wr6, M6, rep6⟩ => ?_
   have O7 : Outside base 0 8192 s.mem s6.mem :=
     (O4.trans (o4.mono (by decide) (by decide))).trans (M6.wide.mono (by decide) (by decide))
   have sv7 : Saved base s.gpr s6.mem :=

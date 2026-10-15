@@ -61,8 +61,7 @@ private theorem entries_ok {pick : Nat → List Instr} {value : Mem → Addr →
     rw [eu, ew, kw.2.1, kv.2.1]
     have ev : rv v W = rv s W := rv_congr (fun r _ => kv.1 r (by simp))
     rw [ev]
-    simp only [decide_eq_true_eq]
-    rfl
+    simp only [decide_eq_true_eq, picked, List.foldl_cons]
 
 /-- The selected coordinate is stored once; the digit and all other slots survive. -/
 theorem scanCoord_ok {pick : Nat → List Instr} {value : Mem → Addr → Nat → Spec.X448.Fe}
