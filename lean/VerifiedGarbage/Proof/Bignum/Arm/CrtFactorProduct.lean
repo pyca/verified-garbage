@@ -14,9 +14,9 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-theorem crt_factorProduct_ok (s : State) {base : BitVec 32} {size o a b cp cq w : Nat}
-    (h : CrtProductInput base size o a b cp cq w s) :
-    WP isa factorProduct s fun t =>
+theorem crt_factorProduct_ok (s : State) {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool}
+    (h : CrtProductInput base size o a b cp cq w s coefficient) :
+    WP isa (factorProduct coefficient) s fun t =>
       val32 t.mem (State.addr base) o (2 * w + 2 * w + 2) =
         val32 s.mem (State.addr base) a (2 * w) * val32 s.mem (State.addr base) b (2 * w) ∧
       Outs (State.addr base) [(128, 20), (o, 4 * (2 * w + 2 * w + 2))] s.mem t.mem ∧

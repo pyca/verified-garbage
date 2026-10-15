@@ -21,6 +21,8 @@ theorem secretPower_ok (s : State) {base xp ep : BitVec 32} {len w k eLen M : Na
     WP isa secretPower s fun t => ArithmeticReady base len w t ∧
       numAt t.mem (State.addr base) w 6 = Spec.Rsa.powMod (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip eb) M ∧
       numAt t.mem (State.addr base) w 0 = M ∧
+      numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % M ∧
+      numAt t.mem (State.addr base) w 7 = 1 ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [secretPower, WP.seq_iff]
   refine WP.mono (secretPower_controls_ready s h) ?_
@@ -29,8 +31,8 @@ theorem secretPower_ok (s : State) {base xp ep : BitVec 32} {len w k eLen M : Na
   refine WP.mono (secretPower_import_ready u hu pointer count) ?_
   rintro v ⟨phase, frameV, restV⟩
   refine WP.mono (secretExpPhase_ok v phase) ?_
-  rintro t ⟨ready, value, modulus, frameT, restT⟩
-  exact ⟨ready, value, modulus, frameU.trans (frameV.trans frameT),
+  rintro t ⟨ready, value, modulus, r2, one, frameT, restT⟩
+  exact ⟨ready, value, modulus, r2, one, frameU.trans (frameV.trans frameT),
     (restU.mono (by simp)).trans (restV.trans restT)⟩
 
 end VG.Proof.Bignum.Arm

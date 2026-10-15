@@ -57,7 +57,12 @@ theorem expInit_ok (s : State) {base : BitVec 32} {len w M x : Nat}
     rw [valueT, Nat.mul_mod, r2value, ← Nat.mul_mod, Nat.mul_assoc]
   have powerT := keeps_array_num keepsT fits (op 6 (by simp)) (by decide)
   have oneT := (keeps_array_num keepsT fits (op 7 (by simp)) (by decide)).trans oneV
-  refine ⟨⟨readyT, modT, coprime, boundT, encoded, ?_, ?_, oneT⟩, ?_,
+  have r2T := (keeps_array_num keepsT fits (op 4 (by simp)) (by decide)).trans r2V
+  have r2Exact : numAt s.mem (State.addr base) w 4 = 2 ^ (128 * w) % M := by
+    rw [Nat.mod_eq_of_lt r2bound, ← Nat.pow_add,
+      show 64 * w + 64 * w = 128 * w by omega] at r2value
+    exact r2value
+  refine ⟨⟨readyT, modT, coprime, boundT, encoded, ?_, ?_, oneT, r2T.trans r2Exact⟩, ?_,
     frameU.trans (frameV.trans frameT), restU.trans (restV.trans restT)⟩
   · rw [powerT]; exact boundV
   · rw [powerT, Nat.pow_zero, Nat.one_mul]; exact powerV

@@ -17,27 +17,27 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 open VG.Proof.X25519.Arm (Rest)
 
-theorem crt_productArgs_ok (s : State) {base p q out : BitVec 32} {size cp cq w : Nat}
+theorem crt_productArgs_ok (s : State) {base p q out : BitVec 32} {size cp cq w : Nat} {coefficient : Bool}
     (ws : Workspace s base size) (fit : 236 ≤ size) (hq : 256 ≤ cq)
-    (pFit : cp + 68 ≤ size) (qFit : cq + 68 ≤ size) (ptr : s.gpr .r0 = base)
+    (pFit : cp + productOperandSlot coefficient + 4 ≤ size) (qFit : cq + 68 ≤ size) (ptr : s.gpr .r0 = base)
     (pLink : s.mem.readW (off (State.addr base) 224) 32 = base + BitVec.ofNat 32 cp)
     (qLink : s.mem.readW (off (State.addr base) 228) 32 = base + BitVec.ofNat 32 cq)
-    (pArray : s.mem.readW (off (State.addr base) (cp + 64)) 32 = p)
+    (pArray : s.mem.readW (off (State.addr base) (cp + productOperandSlot coefficient)) 32 = p)
     (qArray : s.mem.readW (off (State.addr base) (cq + 64)) 32 = q)
     (product : s.mem.readW (off (State.addr base) 232) 32 = out)
     (count : s.mem.readW (off (State.addr base) 48) 32 = BitVec.ofNat 32 w) :
-    WP isa productArgs s fun t =>
+    WP isa (productArgs coefficient) s fun t =>
       t.mem = crtProductMem s.mem (State.addr base) p q out (BitVec.ofNat 32 (2 * w)) (BitVec.ofNat 32 (2 * w)) ∧
       Rest [.r1] s t := by
   rw [productArgs, WP.seq_iff]
   refine WP.mono (crt_copyChildPointer_ok s ws (by omega : 224 + 4 ≤ size) (by omega : 128 + 4 ≤ size)
-    (by decide) (by decide) pFit ptr pLink pArray) ?_
+    (by decide) (by decide) (by cases coefficient <;> decide) pFit ptr pLink pArray) ?_
   rintro u ⟨memU, restU⟩
   have outsideU := writeW32_outside s.mem (State.addr base) (d := 128) p (by decide)
   rw [← memU] at outsideU
   rw [WP.seq_iff]
   refine WP.mono (crt_copyChildPointer_ok (value := q) u (ws.congr restU.wr) (by omega : 228 + 4 ≤ size) (by omega : 132 + 4 ≤ size)
-    (by decide) (by decide) qFit ((restU.gpr .r0 (by simp)).trans ptr)
+    (by decide) (by decide) (by decide) qFit ((restU.gpr .r0 (by simp)).trans ptr)
     (by rw [outside_read32 outsideU (d := 228) (by decide) (by decide)]; exact qLink)
     (by rw [outside_read32 outsideU (d := cq + 64) (by omega) (by have := ws.nowrap; omega)]; exact qArray)) ?_
   rintro v ⟨memV, restV⟩

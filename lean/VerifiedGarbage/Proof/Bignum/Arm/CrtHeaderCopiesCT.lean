@@ -18,11 +18,11 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm.Crt VG.Proof.Mont
 open VG.Proof.X25519.Arm (wp_ldr)
 
-theorem crt_copyChildPointer_ct {base child : BitVec 32} {size src dst : Nat}
+theorem crt_copyChildPointer_ct {base child : BitVec 32} {size src dst : Nat} {slot : Nat}
     (fit : src + 4 ≤ size) (hs : src < 4096) :
     let P := fun s : State => Workspace s base size ∧ s.gpr .r0 = base ∧
       s.mem.readW (off (State.addr base) src) 32 = child
-    RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer src dst)) (fun _ _ => True) := by
+    RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer src dst slot)) (fun _ _ => True) := by
   dsimp only
   let P := fun s : State => Workspace s base size ∧ s.gpr .r0 = base ∧
     s.mem.readW (off (State.addr base) src) 32 = child
@@ -41,7 +41,7 @@ theorem crt_copyChildPointer_ct {base child : BitVec 32} {size src dst : Nat}
     refine wp_ldr (a := off (State.addr base) src) hs
       (by rw [h.2.1]; exact addr_add (by have := h.1.nowrap; omega)) (h.1.read fit) fun t j => WP.block_nil ?_
     exact ⟨(j.other .r0 (by decide)).trans h.2.1, j.gpr.trans h.2.2⟩
-  have tail : RelCT isa (fun s t => Q s ∧ Q t) (.block [.ldr .r1 .r1 64, .str .r1 .r0 dst]) (fun _ _ => True) := by
+  have tail : RelCT isa (fun s t => Q s ∧ Q t) (.block [.ldr .r1 .r1 slot, .str .r1 .r0 dst]) (fun _ _ => True) := by
     apply RelCT.taint (A := taint) (Taint.ofRegs [.r0, .r1]) _ (hc := .block []) (by
       rw [← Taint.check_eraseOff _ _ (Taint.noBase_ofRegs [.r0, .r1])]
       rfl)
@@ -52,7 +52,7 @@ theorem crt_copyChildPointer_ct {base child : BitVec 32} {size src dst : Nat}
     rcases hr with rfl | rfl
     · exact h.1.1.trans h.2.1.symm
     · exact h.1.2.trans h.2.2.symm
-  exact RelCT.block_append (M := isa) (l₁ := [.ldr .r1 .r0 src]) (l₂ := [.ldr .r1 .r1 64, .str .r1 .r0 dst]) ((pair_posts head wp).seq tail)
+  exact RelCT.block_append (M := isa) (l₁ := [.ldr .r1 .r0 src]) (l₂ := [.ldr .r1 .r1 slot, .str .r1 .r0 dst]) ((pair_posts head wp).seq tail)
 
 theorem crt_copyHeaderPointer_ct (src dst : Nat) :
     RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0) (.block (copyHeaderPointer src dst)) (fun _ _ => True) := by

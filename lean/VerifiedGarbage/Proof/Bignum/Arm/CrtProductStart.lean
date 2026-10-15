@@ -18,10 +18,10 @@ structure CrtProductStart (base : BitVec 32) (size o a b w : Nat) (s : State) : 
   context : WideProductCtx s base size o a b (2 * w) (2 * w)
   initial : WideProductInv s base o a b (2 * w) (2 * w) 0 s
 
-theorem crt_productArgs_ready (s : State) {base : BitVec 32} {size o a b cp cq w : Nat}
-    (h : CrtProductInput base size o a b cp cq w s)
+theorem crt_productArgs_ready (s : State) {base : BitVec 32} {size o a b cp cq w : Nat} {coefficient : Bool}
+    (h : CrtProductInput base size o a b cp cq w s coefficient)
     (zero : val32 s.mem (State.addr base) o (2 * w + 2 * w + 2) = 0) :
-    WP isa productArgs s fun t => CrtProductStart base size o a b w t ∧
+    WP isa (productArgs coefficient) s fun t => CrtProductStart base size o a b w t ∧
       Outside (State.addr base) 128 20 s.mem t.mem ∧
       Frame [⟨State.addr base, size⟩] s.mem t.mem ∧ Rest [.r1] s t := by
   have outFit := h.outFits
