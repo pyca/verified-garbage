@@ -192,7 +192,10 @@ theorem sepB_v {p : Params} {r r' : Reg} (h : r ≠ r') (hw : r = .x28 ∨ r' = 
   rcases hw with rfl | rfl <;> simp [isW, List.lookup]
 
 /-- Unfolds the checks of pointers into the layout into arithmetic, then `omega`. -/
-tactic_template "vlay" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+syntax "vlay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
+macro_rules
+  | `(tactic| vlay) => `(tactic| vlay [])
+  | `(tactic| vlay [$ls,*]) => `(tactic| plain_simp_names (
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [VG.Proof.MlDsa.AArch64.keepB,
                          VG.Proof.MlDsa.AArch64.sepB_same, VG.Proof.MlDsa.AArch64.Verify.sepB_v,
@@ -207,8 +210,6 @@ tactic_template "vlay" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(
                          VG.Impl.MlDsa.AArch64.KeyGen.oSA4, VG.Impl.MlDsa.AArch64.KeyGen.oR4, VG.Impl.MlDsa.AArch64.KeyGen.oSS, VG.Impl.MlDsa.AArch64.KeyGen.SV, VG.Impl.MlDsa.AArch64.Verify.oCT,
                          VG.Impl.MlDsa.AArch64.Verify.oHint, or_true, true_or, and_true, true_and, $ls,*]
                        and_intros <;> omega_arith))
-
-tactic_template "vlay" : tactic => `(tactic| vlay [])
 
 /-- A check about the layout that mentions no variable but the parameter set and
 bounded indices, decided for each parameter set (`decide_at`): cheaper than

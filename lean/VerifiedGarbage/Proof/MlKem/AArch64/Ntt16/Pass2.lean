@@ -61,14 +61,33 @@ def zsOf (b : Nat) : List Nat :=
     Impl.MlKem.AArch64.Ntt16.zeta (32 + 4 * b + 1), Impl.MlKem.AArch64.Ntt16.zeta (32 + 4 * b + 2),
     Impl.MlKem.AArch64.Ntt16.zeta (32 + 4 * b + 3)]
 
+/-- `blockHalves`, for any zetas `z` and twist `t`: the kernel cannot unfold a
+variable, so the lanes below are read off the list's shape alone. -/
+def blockHalvesG (z t : Nat → Nat) (b : Nat) : List Nat :=
+  let zs := [z (8 + b), z (16 + 2 * b), z (17 + 2 * b), 0] ++
+    (List.range 4).map fun j => z (32 + 4 * b + j)
+  let z7 := (List.range 8).map fun j => z (64 + 8 * b + j)
+  zs ++ zs.map t ++ z7 ++ z7.map t
+
+/-- `zsOf`, for any zetas `z`. -/
+def zsOfG (z : Nat → Nat) (b : Nat) : List Nat :=
+  [z (8 + b), z (16 + 2 * b), z (17 + 2 * b), 0, z (32 + 4 * b), z (32 + 4 * b + 1), z (32 + 4 * b + 2),
+    z (32 + 4 * b + 3)]
+
+theorem blockHalvesG_get (z t : Nat → Nat) (b : Nat) {e : Nat} (he : e < 8) :
+    (blockHalvesG z t b).getD e 0 = (zsOfG z b).getD e 0 ∧
+    (blockHalvesG z t b).getD (8 + e) 0 = t ((zsOfG z b).getD e 0) ∧
+    (blockHalvesG z t b).getD (16 + e) 0 = z (64 + 8 * b + e) ∧
+    (blockHalvesG z t b).getD (24 + e) 0 = t (z (64 + 8 * b + e)) := by
+  match e, he with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ => exact ⟨rfl, rfl, rfl, rfl⟩
+
 theorem blockHalves_get (b : Nat) {e : Nat} (he : e < 8) :
     (blockHalves b).getD e 0 = (zsOf b).getD e 0 ∧
     (blockHalves b).getD (8 + e) 0 = tw ((zsOf b).getD e 0) ∧
     (blockHalves b).getD (16 + e) 0 = Impl.MlKem.AArch64.Ntt16.zeta (64 + 8 * b + e) ∧
-    (blockHalves b).getD (24 + e) 0 = tw (Impl.MlKem.AArch64.Ntt16.zeta (64 + 8 * b + e)) := by
-  match e, he with
-  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>
-    simp [blockHalves, zsOf, List.range_succ]
+    (blockHalves b).getD (24 + e) 0 = tw (Impl.MlKem.AArch64.Ntt16.zeta (64 + 8 * b + e)) :=
+  blockHalvesG_get Impl.MlKem.AArch64.Ntt16.zeta tw b he
 
 theorem tableHalves_get {b : Nat} (hb : b < 8) {i : Nat} (hi : i < 32) :
     tableHalves.getD (32 * b + i) 0 = (blockHalves b).getD i 0 :=
