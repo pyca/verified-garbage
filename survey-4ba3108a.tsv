@@ -1,0 +1,849 @@
+total	kernel	elab	module	top3 (kernel/elab s)	pattern
+89.6	65.8	23.8	MlKem.AArch64.Ntt16.Pass2	blockHalves_get 62.6k/2.5e; p2_body 2.4k/16.8e; trep_zip2_tab 0.1k/1.1e	kernel eval/defeq (concentrated)
+82.6	60.5	22.1	MlKem.AArch64.Ntt16.InvPass1	invBlockHalves_get 56.4k/3.5e; ip1_body 2.3k/15.3e; itrep_z7 0.5k/0.5e	kernel eval/defeq (concentrated)
+71.8	17.9	53.9	ChaCha20Poly1305.X86_64.CT	open_correct 0.1k/3.0e; padTail_ok 0.4k/1.7e; seal_correct 0.1k/2.0e	symbolic execution (diffuse *_ok lemmas)
+64.3	63.5	0.8	MlKem.AArch64.FixedHash.CompiledShapes	deJ1024_compiled 8.9k/0.0e; enH1024_compiled 8.2k/0.0e; deJ768_compiled 7.1k/0.0e	kernel-heavy, diffuse
+58.9	57.2	1.6	MlKem.AArch64.Optimized.Taints	kgRest1024_taint 8.3k/0.2e; deRest1024_taint 8.1k/0.2e; enRest768_taint 8.0k/0.2e	taint kernel
+58.3	14.5	43.8	Poly1305.X86.Blocks	absorb_arith 0.8k/2.3e; absorb_ok 0.6k/2.3e; reduce_arith 1.4k/1.0e	symbolic execution (diffuse *_ok lemmas)
+52.9	51.5	1.4	MlKem.AArch64.FixedHash.Timing	enH1024_taint 7.4k/0.1e; deJ1024_taint 7.0k/0.2e; kgH1024_taint 6.8k/0.2e	taint kernel
+43.2	5.4	37.8	MlKem.AArch64.Ntt16.Vec	vhalf_perm_h8 0.1k/17.0e; vhalf_perm_s4 0.1k/12.2e; vhalf_ofVHalves 1.7k/2.5e	diffuse elab (simp)
+39.7	10.2	29.5	Poly1305.Arm.Bytes	absorb_ok 0.4k/2.4e; setupR_ok 0.3k/1.6e; clampWords_ok 0.3k/1.4e	symbolic execution (diffuse *_ok lemmas)
+38.8	8.5	30.3	Bignum.X86_64.CrtExp	tabPre_ok 0.9k/2.7e; buildStep_ok 1.2k/2.1e; crtWin_ok 0.8k/2.3e	symbolic execution (diffuse *_ok lemmas)
+38.2	11.2	27.0	Weierstrass.X86.LadderP	ladderPBody_ok 6.2k/15.6e; ladderP_ok 4.0k/7.2e; keep 0.5k/0.6e	single elab hot spot: simp
+38.2	5.7	32.4	ChaCha20Poly1305.X86.Stages	copy_step 0.9k/1.5e; stW_ok 0.4k/1.9e; macPad_ok 0.2k/1.6e	symbolic execution (diffuse *_ok lemmas)
+37.0	10.4	26.6	ChaCha20.X86.Xor	last_ok 2.4k/5.3e; next_ok 0.6k/2.0e; tail_ok 0.8k/1.4e	symbolic execution (diffuse *_ok lemmas)
+34.8	2.3	32.5	Framework.X86_64.Taint	step_sound 0.6k/10.5e; exec_nonstore_xmm 0.1k/3.9e; stepK_eq 0.1k/2.1e	diffuse elab (case split)
+34.3	11.9	22.3	Mont.Arm.Ops	subR_ok 2.8k/3.5e; subK_ok 2.0k/3.9e; mulR_ok 1.8k/3.1e	symbolic execution (diffuse *_ok lemmas)
+34.2	8.2	25.9	Poly1305.AArch64.Blocks	absorb_ok 1.0k/1.9e; setup_ok 0.1k/1.6e; reduce_arith 0.7k/0.9e	symbolic execution (diffuse *_ok lemmas)
+32.6	7.7	24.9	Weierstrass.X86_64.InvWords	linR_ok 1.5k/4.6e; lin_ok 1.0k/2.0e; prods_ok 0.7k/2.2e	symbolic execution (diffuse *_ok lemmas)
+32.5	5.5	27.0	Framework.X86.Taint	step_sound 0.2k/2.6e; push 0.6k/1.2e; pop_sound 0.3k/1.3e	diffuse elab (simp)
+31.9	29.1	2.8	Ed448.X86_64.VerifyVerified	[line 106] taint_summary verifyRootAdxIn 6.0k/0.2e; [line 102] taint_summary verifyRootInlin 5.6k/0.3e; rsi]) 5.3k/0.1e	taint kernel
+31.3	5.2	26.0	MlDsa.X86.Sign.PhaseK	hR_piece 0.7k/4.2e; r0R_piece 0.3k/2.6e; checksEnd_piece 0.2k/2.1e	diffuse elab (simp)
+30.4	29.5	0.9	MlKem.AArch64.FixedHash.EncapsChecks	enRest768_taint 7.3k/0.2e; enA1024_taint 7.1k/0.3e; enRest1024_taint 6.7k/0.2e	taint kernel
+29.9	6.3	23.6	Blake2.X86_64.Compress	init_ok 0.1k/2.1e; body_ok 0.1k/2.0e; g_ok 0.1k/1.7e	symbolic execution (diffuse *_ok lemmas)
+29.5	7.1	22.4	Mont.X86_64.SqrM	sqCrossG_ok 1.2k/2.4e; sq01M_ok 0.5k/2.7e; sqrSA_ok 1.0k/1.9e	symbolic execution (diffuse *_ok lemmas)
+28.7	23.6	5.2	Ecdh.X86.P384.Verified	ecdh_ct 22.3k/0.7e; ecdhWide_implies 0.3k/1.1e; ecdh_verified 0.1k/0.9e	taint kernel
+28.7	11.5	17.2	Bignum.X86_64.Ifma.Region	region_ok 1.2k/1.9e; regionB1_ok 1.1k/1.5e; regionA_ok 0.6k/2.0e	symbolic execution (diffuse *_ok lemmas)
+28.7	7.0	21.7	Mont.X86_64.MulPX	xCanon_ok 2.0k/2.4e; xRed_ok 0.4k/2.5e; xRowR_ok 0.4k/2.3e	symbolic execution (diffuse *_ok lemmas)
+28.5	5.1	23.4	Scrypt.Arm.RoMixCT	step3_ok 0.1k/1.7e; step2_ok 0.2k/1.3e; setup2_ok 0.2k/0.8e	symbolic execution (diffuse *_ok lemmas)
+28.3	5.3	23.0	Weierstrass.AArch64.TCombSelectV	tselect_ok 0.4k/2.7e; selXY1_ok 0.6k/2.4e; pairsV_ok 0.6k/2.1e	symbolic execution (diffuse *_ok lemmas)
+28.2	27.3	0.9	MlKem.AArch64.FixedHash.DecapsChecks	deRest1024_taint 10.4k/0.3e; deRest768_taint 9.8k/0.3e; deStart768_taint 4.1k/0.1e	taint kernel
+28.0	4.9	23.1	ChaCha20.X86_64.Avx2.Finish	setup_ok 0.4k/2.8e; swap_holds 0.5k/1.8e; piece_ok 0.8k/1.0e	symbolic execution (diffuse *_ok lemmas)
+27.9	6.0	21.9	ChaCha20.X86.Stream.Apply	tail_ok 0.9k/3.6e; blocks_ok 0.8k/2.1e; check_ok 0.7k/1.8e	symbolic execution (diffuse *_ok lemmas)
+27.8	23.1	4.7	Ecdh.X86.BrainpoolP384r1.Verified	ecdh_ct 21.4k/0.3e; ecdhWide_implies 0.2k/1.4e; ecdh_sp 1.2k/0.0e	taint kernel
+27.4	9.7	17.7	ChaCha20Poly1305.X86_64.Stitch.Verified	chunkO_ok 0.2k/1.1e; openS_implies 0.7k/0.2e; tailAB_taint 0.8k/0.1e	symbolic execution (diffuse *_ok lemmas)
+27.2	22.5	4.7	Ecdsa.Verify.X86_64.BrainpoolP512r1.Verified	verify_ct 10.2k/2.5e; verify_x86 6.9k/0.3e; [line 85] materialize_shared verifyBrain 2.3k/1.6e	taint kernel
+27.1	4.7	22.4	Scrypt.X86_64.RoMixCT	step3_ok 0.3k/2.0e; setup_ok 0.1k/1.6e; step2_ok 0.2k/1.1e	symbolic execution (diffuse *_ok lemmas)
+26.9	6.9	20.1	Weierstrass.AArch64.InvWords	subShRows_ok 0.7k/1.9e; mulAdd_ok 0.8k/1.5e; shrRows_ok 0.3k/1.8e	symbolic execution (diffuse *_ok lemmas)
+26.6	12.2	14.4	Bignum.X86_64.Ifma.Comp	ifmaA_ok 2.5k/3.9e; ifmaR_disj 2.5k/2.0e; resI_mx 2.5k/0.0e	symbolic execution (diffuse *_ok lemmas)
+26.5	21.4	5.1	Weierstrass.Arm.MontVerified	p521n_mul_ct 2.7k/0.1e; p384n_mul_ct 2.1k/0.1e; p521p_mul_ct 1.6k/0.1e	taint kernel
+26.5	25.9	0.6	MlKem.AArch64.FixedHash.KeyGenChecks	kgRest1024_taint 11.2k/0.2e; kgRest768_taint 10.2k/0.3e; kgA768_taint 2.9k/0.1e	taint kernel
+26.4	4.5	22.0	Gcm.X86_64.Ghash	body_ok 0.2k/1.8e; bit_ip 0.3k/0.8e; coeff_sp 0.0k/0.9e	symbolic execution (diffuse *_ok lemmas)
+26.3	6.7	19.6	Aes.Arm.ExpandKey	word_ok 1.1k/3.3e; subAll_wp 0.5k/3.2e; ek_correct 1.2k/2.0e	symbolic execution (diffuse *_ok lemmas)
+26.1	4.4	21.8	Ed25519.X86_64.CombLoop	combAdd_ok 0.8k/3.1e; combIndex_ok 0.7k/2.3e; combDigit_ok 0.1k/2.5e	symbolic execution (diffuse *_ok lemmas)
+26.0	8.0	18.0	Sha3.Arm.Permute	permute_verified 1.4k/0.1e; column_ok 0.2k/1.2e; permute_r1 1.4k/0.0e	taint kernel
+25.8	6.8	19.1	ChaCha20.X86.Quad	chunk_ok 2.1k/2.8e; doubleRound4_ok 0.9k/2.1e; finishRow_ok 0.8k/1.4e	symbolic execution (diffuse *_ok lemmas)
+25.5	4.2	21.4	Cast5.X86.ModesVerified	ofb_pre 0.1k/1.9e; cfb_pre 0.1k/1.6e; cbc_pre 0.1k/1.4e	diffuse elab (simp)
+25.4	21.7	3.7	Ecdsa.X86_64.BrainpoolP512r1.Verified	sign_ct 8.3k/1.5e; sign_x86 4.8k/0.5e; sign_verified 3.5k/0.1e	taint kernel
+25.2	4.9	20.3	ChaCha20Poly1305.X86.Verified	open_verified 2.1k/1.5e; seal_correct 0.1k/3.5e; open_correct 0.1k/2.8e	diffuse elab (decide)
+24.8	4.9	19.9	Aes.X86.Group	ctrBlocks_wp 0.2k/9.0e; xorGroup_wp 1.1k/3.0e; group_ok 1.1k/2.6e	symbolic execution (diffuse *_ok lemmas)
+24.7	4.7	20.0	Blake2.X86.Stream.Update	direct_ok 0.9k/4.2e; fill_ok 0.3k/2.8e; prologue_ok 0.3k/2.5e	symbolic execution (diffuse *_ok lemmas)
+24.4	4.5	19.9	Scrypt.AArch64.RoMixCT	step3_ok 0.1k/1.8e; step2_ok 0.2k/1.0e; roMix_verified 0.0k/0.9e	symbolic execution (diffuse *_ok lemmas)
+24.3	4.7	19.6	RsaKeyGen.AArch64.MrWit	mrWitness_ok 0.6k/4.6e; witForce_ok 0.7k/2.2e; witLoad_ok 0.7k/2.0e	symbolic execution (diffuse *_ok lemmas)
+24.3	18.6	5.7	Blake2.X86.Blake2b	finalize_ct 5.7k/0.7e; [line 66] taint_summary compressBufSum : 5.6k/0.5e; [line 68] taint_summary directSum : tain 5.3k/0.3e	taint kernel
+24.0	4.1	19.9	Scrypt.Arm.Whole.Calls	save2_ok 0.2k/1.4e; romix_pre 0.5k/1.0e; pbk_call 0.1k/1.3e	symbolic execution (diffuse *_ok lemmas)
+23.9	1.6	22.3	Weierstrass.AArch64.WindowTable	buildStep_ok 0.7k/15.5e; build_ok 0.5k/3.5e; storeEntry_ok 0.1k/1.3e	single elab hot spot: simp
+23.9	4.9	19.0	MdStream.X86_64.FinalizeCT	byte_exec 1.4k/3.9e; pad_ok 0.4k/4.6e; prologue_ok 0.3k/2.2e	symbolic execution (diffuse *_ok lemmas)
+23.5	6.8	16.8	MdStream.AArch64.Update	fill_ok 1.1k/2.1e; copy_word_step 0.7k/2.1e; copy_step 0.7k/1.8e	symbolic execution (diffuse *_ok lemmas)
+23.5	6.2	17.3	CmacTripleDes.AArch64.Block	spreadStep_ok 0.7k/2.4e; spreadW_xPos 0.1k/1.8e; kpos_step 0.5k/0.9e	symbolic execution (diffuse *_ok lemmas)
+23.4	22.4	1.0	Sm4.AArch64.Linear	fromBs_check 4.2k/0.0e; toBs_check 3.1k/0.0e; linE2_check 1.6k/0.0e	kernel-heavy, diffuse
+23.3	22.5	0.9	MlDsa.X86.Message.Verified	sign44Fn 3.8k/0.0e; sign87Fn 3.6k/0.0e; sign65Fn 3.3k/0.0e	kernel-heavy, diffuse
+23.0	7.8	15.1	Weierstrass.X86.MontFn	mulFn_ok 2.1k/3.1e; addFn_ok 2.0k/2.6e; subFn_ok 1.4k/2.6e	symbolic execution (diffuse *_ok lemmas)
+22.9	4.0	18.9	ChaCha20Poly1305.Arm.Stages	padZ_ok 0.5k/1.2e; macPad_ok 0.3k/0.9e; stW_ok 0.2k/0.8e	symbolic execution (diffuse *_ok lemmas)
+22.9	6.0	16.9	Sha512.X86_64.Avx2.Compress	first_ok 0.1k/2.0e; addState_ok 0.4k/1.6e; load_ok 0.1k/1.9e	symbolic execution (diffuse *_ok lemmas)
+22.8	19.7	3.1	Ecdsa.Verify.X86.BrainpoolP384r1.Verified	verify_ct 18.7k/1.2e; verifyWide_implies 0.1k/0.7e; verify_sp 0.7k/0.0e	taint kernel
+22.7	3.1	19.6	Weierstrass.X86_64.TCombJ	tentryJ_ok 1.6k/6.1e; stepJ_ok 0.5k/6.5e; tcombJ_ok 0.6k/4.0e	symbolic execution (diffuse *_ok lemmas)
+22.7	20.3	2.3	Weierstrass.X86.PointCurves	p384_double_ct 5.0k/0.3e; p384_add_ct 4.4k/0.3e; p256_double_ct 2.9k/0.1e	taint kernel
+22.7	4.9	17.8	Bignum.X86_64.CrtExp5	crtWin5_ok 1.0k/3.9e; crtExpHead5_ok 0.4k/3.1e; fill_ok 0.3k/2.0e	symbolic execution (diffuse *_ok lemmas)
+22.6	4.7	17.9	MdStream.X86_64.UpdateCT	copy_step 0.7k/1.2e; copy_word_step 0.5k/1.4e; compress_ok 0.3k/1.4e	symbolic execution (diffuse *_ok lemmas)
+22.6	3.7	18.9	ChaCha20Poly1305.X86_64.Stitch.Tail	restLI_ok 1.2k/5.4e; tailKAB_ok 0.3k/2.6e; tailKX_ok 0.1k/2.2e	symbolic execution (diffuse *_ok lemmas)
+22.6	17.8	4.8	Ecdsa.Verify.AArch64.P384.Checks	verify_checks 7.6k/0.8e; add_checks 5.3k/2.0e; window_checks 3.6k/1.2e	kernel-heavy, diffuse
+22.5	5.5	17.0	Sha512.AArch64.Compress	round_ok 0.2k/4.5e; update_ok 0.2k/3.4e; schedule_ok 1.0k/1.5e	symbolic execution (diffuse *_ok lemmas)
+22.4	4.7	17.7	Aes.X86.ExpandKey	ek_correct 0.9k/4.0e; store_wp 1.3k/3.1e; subWord_wp 0.2k/2.5e	diffuse elab (decide)
+22.3	5.3	16.9	Scrypt.Arm.BlockMixVerified	setup_ok 0.5k/1.7e; halves_ok 0.3k/1.4e; xor64_ok 0.2k/1.2e	symbolic execution (diffuse *_ok lemmas)
+22.3	5.5	16.7	X448.X86_64.Chain	mulSteps_ok 0.2k/4.3e; step_arith 1.5k/1.6e; adcs_ok 0.2k/1.8e	symbolic execution (diffuse *_ok lemmas)
+22.2	19.9	2.4	Ecdsa.Verify.AArch64.P521.Verified	verify_checks 14.6k/1.6e; verify_callsKeep 2.6k/0.0e; verify_untouched 1.5k/0.0e	taint kernel
+22.1	8.0	14.0	Sha3.X86.Permute	permute_verified 2.0k/0.2e; permuteCall_ok 0.3k/1.0e; rotateRight_add 0.6k/0.5e	taint kernel
+22.0	19.4	2.6	Ecdsa.Verify.X86_64.P521.JointChecks	joint_before_ct 6.0k/0.5e; joint_adx_before_ct 4.8k/0.4e; [line 96] materialize_shared jointPrefix 2.9k/0.3e	taint kernel
+21.9	4.0	17.9	Sm3.AArch64.Compress	round_ok 0.2k/4.8e; update_ok 0.2k/3.6e; expand_ok 0.9k/1.2e	symbolic execution (diffuse *_ok lemmas)
+21.9	4.5	17.4	Sm3.X86_64.Compress	round_ok 0.6k/7.0e; compress_verified 1.4k/0.2e; body_ok 0.3k/1.3e	symbolic execution (diffuse *_ok lemmas)
+21.8	5.7	16.2	Mont.X86_64.SqrS	sqrDbl_ok 2.1k/6.4e; maddRow_ok 0.4k/2.1e; sqrDiags_ok 0.3k/1.3e	symbolic execution (diffuse *_ok lemmas)
+21.8	6.7	15.1	Bignum.AArch64.CrtP	pPhase_gen 2.4k/5.4e; mqPart_ok 2.5k/3.5e; hPart_ok 0.9k/2.5e	symbolic execution (diffuse *_ok lemmas)
+21.7	3.3	18.4	Blake2.AArch64.Compress	body_ok 0.2k/2.7e; carry 0.5k/1.4e; advance_ok 0.1k/1.2e	symbolic execution (diffuse *_ok lemmas)
+21.7	4.5	17.2	Rsa.X86_64.Inv	invSwap_ok 0.9k/4.3e; inverse_ok 0.8k/2.7e; invHalfX_ok 0.7k/2.5e	symbolic execution (diffuse *_ok lemmas)
+21.7	6.4	15.3	Argon2.X86_64.Avx2.Rows	storeRow_ok 1.3k/3.6e; storeCol_ok 1.9k/3.1e; loadCol_ok 1.1k/3.0e	symbolic execution (diffuse *_ok lemmas)
+21.7	2.3	19.4	MlDsa.X86.KeyGen.Prim	rejBounded_piece 0.3k/2.4e; mulAdd_piece 0.2k/2.4e; sbp_piece 0.4k/2.2e	diffuse elab (simp)
+21.6	4.1	17.6	Weierstrass.X86_64.TComb	tentry_ok 1.6k/5.7e; tstep_ok 0.7k/5.6e; tcomb_init_ok 0.5k/2.1e	symbolic execution (diffuse *_ok lemmas)
+21.6	5.1	16.5	RsaKeyGen.AArch64.MrTab	tabStep_ok 1.9k/5.4e; tabHead_ok 1.5k/5.5e; of_tab 0.6k/1.2e	symbolic execution (diffuse *_ok lemmas)
+21.4	4.5	16.9	ChaCha20.AArch64.Stream.Apply	tail_ok 1.2k/3.0e; blocks_ok 1.0k/2.1e; args_exec 0.1k/2.0e	symbolic execution (diffuse *_ok lemmas)
+21.4	10.8	10.7	TripleDes.X86_64.FbVerified	cfbDecrypt_framed 1.1k/0.1e; ofb_implies 0.1k/1.1e; cfb8_wp' 0.4k/0.7e	kernel-heavy, diffuse
+21.4	4.9	16.4	Sm3.X86.Compress	round_ok 0.2k/5.1e; compress_verified 1.8k/0.2e; expand_ok 0.6k/1.2e	symbolic execution (diffuse *_ok lemmas)
+21.4	5.5	15.9	Aes.X86_64.AesNi.ExpandKey	rcons_ok 0.1k/1.8e; rot_cat 0.9k/1.0e; kstepK 0.3k/1.2e	symbolic execution (diffuse *_ok lemmas)
+21.3	18.3	3.1	Ecdsa.Verify.X86.P384.Verified	verify_ct 17.7k/0.8e; verifyWide_implies 0.1k/1.0e; verify_sp 0.4k/0.0e	taint kernel
+21.3	5.1	16.2	Camellia.Arm.Group	dataGroup_wp 4.5k/15.0e; slot_keep 0.2k/0.2e; frame 0.2k/0.2e	single elab hot spot: decide
+21.3	5.8	15.4	X25519.AArch64.Hybrid.Recombine	place_ok 3.2k/4.7e; recPrefix_ok 0.1k/3.0e; sum_ok 0.8k/2.2e	symbolic execution (diffuse *_ok lemmas)
+21.1	8.0	13.1	Pbkdf2.Md.Arm.Iterate	fill_ok 2.6k/2.3e; digest_ok 1.8k/2.5e; load_ok 1.2k/1.2e	symbolic execution (diffuse *_ok lemmas)
+21.1	3.7	17.3	RsaKeyGen.AArch64.MrWin	mrWin_ok 1.2k/8.1e; of_win 1.2k/2.4e; winTail_ok 0.2k/1.6e	single elab hot spot: decide
+21.0	6.9	14.1	Pbkdf2.AArch64.Iterate	padLen_ok 1.1k/1.4e; fill_ok 0.8k/1.5e; digest_ok 0.8k/1.0e	symbolic execution (diffuse *_ok lemmas)
+21.0	3.2	17.7	ChaCha20Poly1305.AArch64.Stages	stW_ok 0.6k/1.1e; macPad_ok 0.3k/1.3e; padTail_ok 0.2k/0.9e	symbolic execution (diffuse *_ok lemmas)
+20.9	8.2	12.6	Ecdsa.Rfc6979.Arm.Reduce	digits_ok 3.0k/4.6e; subWord_ok 2.5k/2.5e; selWord_ok 1.4k/2.2e	symbolic execution (diffuse *_ok lemmas)
+20.7	17.2	3.5	P521.X86_64.TaintSumsWin	[line 37] taint_summary_map winNormJSum  10.8k/1.0e; [line 41] taint_summary_map winLoopJSum  1.6k/1.0e; [line 36] taint_summary winBuildJSum : t 2.2k/0.3e	taint kernel
+20.5	6.8	13.7	MlDsa.AArch64.Verify.Compute	inv_vpiece 0.7k/1.6e; x28 1.1k/0.9e; nttT_vpiece 0.6k/1.1e	diffuse elab (macro kl)
+20.5	4.5	16.0	RsaKeyGen.AArch64.CTFront	loadCStage_ok 0.3k/1.5e; trial_ct 1.0k/0.3e; geFront_ok 0.4k/0.9e	symbolic execution (diffuse *_ok lemmas)
+20.5	15.0	5.5	Ecdsa.X86.BrainpoolP256r1.Verified	sign_ct 13.6k/0.8e; signWide_implies 0.2k/1.4e; sign_verified 0.0k/0.9e	taint kernel
+20.4	7.1	13.3	Mont.X86_64.MulF	fColSum_total 4.7k/4.0e; fCol_ok 0.5k/3.6e; fCols_ok 1.1k/2.1e	single elab hot spot: simp
+20.4	16.5	3.9	Ecdsa.X86.Verified	sign_ct 15.0k/0.3e; signWide_implies 0.2k/1.2e; sign_sp 1.1k/0.0e	taint kernel
+20.4	3.1	17.3	MlKem.Arm.Decaps	setup_ok 0.4k/2.0e; [line 244] macro "ddecide" : tactic => ` 0.0k/1.0e; hashJ_ok 0.1k/0.8e	symbolic execution (diffuse *_ok lemmas)
+20.4	4.4	15.9	Sha256.X86_64.Avx2.Compress	load_ok 0.1k/2.0e; compress_verified 1.7k/0.2e; first_ok 0.1k/1.6e	symbolic execution (diffuse *_ok lemmas)
+20.4	1.9	18.4	Weierstrass.X86_64.Window	buildStep_ok 0.6k/10.8e; build_ok 0.4k/2.3e; storeEntry_ok 0.3k/1.1e	single elab hot spot: simp
+20.4	19.1	1.2	Ed25519.X86.PointCTBlocks	powersBodyLocal_ct 6.3k/0.2e; accumulate16_ct_regs 5.6k/0.1e; block doubleBody) 4.6k/0.4e	taint kernel
+20.4	6.7	13.6	MlKem1024.X86.CompressEncode	step11 4.1k/4.7e; step5 1.8k/2.7e; st4_spec 0.1k/0.8e	single elab hot spot: decide
+20.3	4.8	15.5	Sm3.Arm.Compress	round_ok 0.2k/3.6e; expand_ok 1.3k/1.5e; update_ok 0.1k/1.5e	symbolic execution (diffuse *_ok lemmas)
+20.3	4.0	16.3	MdStream.Arm.Update	copy_step 0.6k/2.4e; fill_ok 0.5k/2.1e; compress_ok 0.7k/1.7e	symbolic execution (diffuse *_ok lemmas)
+20.2	4.8	15.5	ChaCha20Poly1305.X86_64.Stitch.Crypt	cryptS_ok 0.3k/3.6e; preS_mid 0.5k/2.7e; bulk_mid 0.7k/2.3e	symbolic execution (diffuse *_ok lemmas)
+20.2	3.2	17.0	Weierstrass.AArch64.TComb	tentry_after_digit_ok 1.1k/6.3e; tstep_ok 0.4k/3.6e; tcomb_init_ok 0.6k/3.3e	symbolic execution (diffuse *_ok lemmas)
+20.2	18.5	1.6	Ed448.X86_64.VariantVerified	scalarBaseFor_ct0 10.9k/1.2e; verifyEquationFor_okI 2.4k/0.1e; verifyEquationFor_inlineOk 2.3k/0.0e	taint kernel
+20.2	3.4	16.8	MdStream.Arm.Finalize	prologue_ok 0.9k/4.4e; body_ok 0.3k/4.6e; zero_step 0.4k/1.2e	symbolic execution (diffuse *_ok lemmas)
+19.9	11.7	8.3	Bignum.X86_64.Ifma.CTIfma	ifma_chain 3.9k/3.6e; ifT 6.5k/0.5e; head_ct 0.7k/1.8e	diffuse elab (omega)
+19.9	17.2	2.7	Ecdsa.X86_64.BrainpoolP512r1.MulLit	[line 36] materialize_code bodyCode 8.7k/0.5e; [line 37] materialize_code mulCode 7.1k/1.2e; [line 44] materialize_shared mulCodeEras 1.4k/0.9e	literal rebuild
+19.9	4.5	15.4	Sha512.AArch64.Sha3.Compress	rounds2With_ok 0.2k/3.8e; rounds_ok 0.5k/1.9e; block_ok 0.2k/1.6e	symbolic execution (diffuse *_ok lemmas)
+19.8	2.7	17.1	Poly1305.X86_64.Avx512.Powers	spS_y 0.2k/5.4e; spS_h 0.4k/4.9e; powersV_ok 0.5k/2.1e	symbolic execution (diffuse *_ok lemmas)
+19.8	4.4	15.4	RsaKeyGen.AArch64.MrRound	roundPre_ok 2.2k/6.2e; roundRanges_lt 0.6k/2.1e; mrRound_ok 0.4k/1.7e	single elab hot spot: decide
+19.7	4.8	14.9	Weierstrass.X86_64.InvBatch	abHalves_ok 1.1k/1.6e; words_ok 0.6k/2.0e; batch_ok 0.9k/1.6e	symbolic execution (diffuse *_ok lemmas)
+19.6	3.7	16.0	MlKem.Arm.KeyGen	setup_ok 0.2k/2.0e; tail_ok 0.1k/1.9e; kr2_ok 0.6k/0.6e	symbolic execution (diffuse *_ok lemmas)
+19.6	15.0	4.6	Ecdsa.X86.Secp256k1.Verified	sign_ct 13.4k/0.6e; signWide_implies 0.2k/1.3e; sign_sp 0.9k/0.1e	taint kernel
+19.4	5.3	14.1	Pbkdf2.X86_64.Iterate	padLen_ok 0.9k/1.3e; fill_ok 0.3k/1.3e; digest_ok 0.6k/1.0e	symbolic execution (diffuse *_ok lemmas)
+19.4	11.6	7.8	Seed.X86.CbcVerified	block roundPair) 9.6k/0.5e; seqPre_of 0.0k/1.5e; wide_implies_dec 0.2k/1.0e	taint kernel
+19.3	6.9	12.4	RsaPss.X86_64.SignMain	em_bytes 4.4k/8.1e; signEnc_ok 2.5k/3.7e; simpLemma,* "]" : tactic => `(tactic… 0.0k/0.3e	single elab hot spot: omega
+19.3	2.4	16.9	Ed25519.X86_64.WindowStep	dblOps_neg 0.0k/1.6e; aTableInit_ok 0.1k/1.4e; aTableBody_ok 0.2k/1.1e	symbolic execution (diffuse *_ok lemmas)
+19.3	1.0	18.3	X25519.X86_64.Divstep.Packed	pkStep_ok 0.3k/6.2e; pkChunk_ok 0.2k/2.5e; pkLow_ok 0.2k/2.3e	symbolic execution (diffuse *_ok lemmas)
+19.3	1.4	17.9	RsaPkcs1Sig.AArch64.Callee	pre 0.3k/3.8e; pre 0.1k/2.4e; pre 0.1k/2.0e	diffuse elab (elab (other))
+19.2	1.7	17.6	MlDsa.X86.Verify.Compute	sc 0.6k/8.7e; nil 0.4k/4.5e; nttZ_piece 0.5k/1.0e	single elab hot spot: elab (other)
+19.2	4.4	14.8	Gcm.AArch64.Pmull.Ghash	body_ok 0.3k/1.7e; prologue_ok 0.1k/1.3e; blk_ok 0.3k/1.1e	symbolic execution (diffuse *_ok lemmas)
+19.2	2.9	16.3	Argon2.AArch64.InitFill	initialized_lane 0.4k/0.9e; clearLoop_ok 0.4k/0.9e; lane_ok 0.2k/1.0e	symbolic execution (diffuse *_ok lemmas)
+19.2	5.4	13.8	Seed.Arm.Group	dataGroup_wp 5.0k/12.3e; groupCount_wp 0.0k/0.6e; lsr3_beq 0.2k/0.1e	single elab hot spot: decide
+19.1	3.5	15.6	Weierstrass.Arm.LadderP	ladderPBody_ok 1.6k/7.2e; ladderP_ok 1.5k/3.9e; copyPt_conds 0.0k/0.8e	single elab hot spot: decide
+19.1	10.5	8.6	Seed.X86.FbVerified	block roundPair) 7.4k/0.5e; wide_implies_cfbEnc 0.1k/1.2e; wide_implies_ofb 0.1k/1.2e	taint kernel
+19.1	4.2	14.8	Rsa.AArch64.Inv	invSwap_ok 0.7k/3.0e; invHalfX_ok 0.9k/2.0e; invFirst_ok 0.3k/2.3e	symbolic execution (diffuse *_ok lemmas)
+19.0	7.1	11.9	Weierstrass.AArch64.InvBatch	batch_ok 3.0k/4.1e; fgUpd_ok 1.6k/2.6e; abUpd_ok 1.5k/1.2e	symbolic execution (diffuse *_ok lemmas)
+18.9	5.2	13.8	Ed25519.X86_64.VerifyVerified	verifyEquationPoints_ct 3.7k/1.7e; verifySetup_state_ok 0.1k/1.1e; verify_implies 0.0k/0.9e	taint kernel
+18.9	2.4	16.5	Argon2.X86_64.InitFill	initialized_lane 0.2k/1.1e; lane_ok 0.2k/0.9e; lane_step 0.1k/0.7e	symbolic execution (diffuse *_ok lemmas)
+18.8	13.9	4.9	Ecdsa.X86.P384.Verified	sign_ct 12.7k/0.5e; signWide_implies 0.3k/1.2e; sign_verified 0.1k/0.9e	taint kernel
+18.7	13.8	4.9	Weierstrass.X86.MontVerified	p521p_mul_ct 3.4k/0.0e; p521n_mul_ct 3.3k/0.1e; p384p_mul_ct 1.6k/0.1e	taint kernel
+18.6	16.5	2.1	X25519.X86.Verified	x25519_ct 16.2k/0.8e; x25519_verified 0.1k/0.7e; wf₀ 0.1k/0.3e	taint kernel
+18.6	2.4	16.2	X25519.X86_64.Ifma.Setup	initT_kx1 0.3k/4.5e; initT_a24 0.1k/3.9e; initS_regs 0.4k/3.5e	diffuse elab (case split)
+18.6	4.5	14.1	Gcm.Arm.Ghash	store_ok 0.6k/2.6e; load_ok 0.3k/2.0e; blockAt_w4 1.1k/0.8e	symbolic execution (diffuse *_ok lemmas)
+18.6	4.0	14.5	MlDsa.Arm.KeyGen.Samp	expS_ok 0.7k/3.8e; expA_ok 0.7k/3.7e; expA_two 0.8k/2.4e	symbolic execution (diffuse *_ok lemmas)
+18.5	5.6	12.9	Bignum.X86_64.CrtP	mqPart_ok 2.4k/4.0e; pPhase_ok 1.8k/3.8e; hPart_ok 0.7k/2.4e	symbolic execution (diffuse *_ok lemmas)
+18.5	16.6	1.9	Ed448.X86_64.BaseVerified	scalarBase_ct0 13.7k/0.6e; scalarBase_inlineOk 2.1k/0.0e; scalarBase_okI 0.7k/0.0e	taint kernel
+18.5	3.3	15.2	Sha256.AArch64.Sha2.Compress	rounds_ok 0.4k/2.2e; block_ok 0.5k/2.0e; setLane_three_hi 0.5k/1.3e	symbolic execution (diffuse *_ok lemmas)
+18.5	12.1	6.3	Ecdsa.Verify.X86_64.P384.JointChecks	[line 77] materialize_shared jointPrefix 1.5k/2.5e; joint_before_ct 3.7k/0.2e; joint_adx_before_ct 2.5k/0.2e	literal rebuild
+18.4	4.5	13.8	Weierstrass.X86_64.NafCacheBuild	nafCacheStep_ok 2.4k/5.8e; cacheTableEnv_entry 0.6k/1.1e; nafCacheUnrolled_ok 0.2k/1.3e	single elab hot spot: omega
+18.4	6.9	11.4	Bignum.X86_64.AdxRow	row_ok 3.3k/5.0e; rowHead_ok 1.5k/1.8e; blkStep_ok 1.3k/1.4e	single elab hot spot: omega
+18.3	9.8	8.5	ChaCha20.X86_64.Avx512.LastSel	last16Sel_ok 3.3k/4.0e; condSel_ok 1.6k/2.4e; finishPSelCheck_eq 2.3k/0.0e	symbolic execution (diffuse *_ok lemmas)
+18.3	1.9	16.4	Framework.X86_64.CallInline	exec_patch 0.3k/4.3e; exec_setRsp 0.2k/2.2e; addrs_setRsp 0.0k/1.3e	diffuse elab (simp)
+18.3	7.5	10.7	MdStream.X86_64.PadExec	vec_exec 2.0k/3.5e; chunks_ok 1.4k/3.4e; pad_list 1.4k/1.6e	symbolic execution (diffuse *_ok lemmas)
+18.2	4.9	13.3	MdStream.AArch64.Finalize	prologue_ok 1.4k/3.2e; body_ok 1.0k/3.2e; zero_words_ok 0.5k/0.7e	symbolic execution (diffuse *_ok lemmas)
+18.2	3.1	15.2	RsaPss.X86_64.SignCall	cpys_ok 0.2k/5.6e; priv_pre 1.1k/2.5e; privArgs_ok 0.3k/3.0e	symbolic execution (diffuse *_ok lemmas)
+18.2	4.2	14.0	Blake2.X86_64.Stream.Update	direct_ok 1.6k/3.0e; fill_ok 0.5k/2.1e; copy_ok 0.3k/1.0e	symbolic execution (diffuse *_ok lemmas)
+18.1	4.3	13.8	MlDsa.X86.Verify.Samp	sa_mask 1.7k/4.3e; sa_rej 1.8k/3.7e; sa_st2 0.4k/2.6e	diffuse elab (omega)
+18.1	0.9	17.2	Weierstrass.X86_64.Fprog	opProg_ok 0.0k/4.8e; opMulN_ok 0.0k/4.4e; opMulP_ok 0.0k/4.1e	symbolic execution (diffuse *_ok lemmas)
+18.1	3.2	14.8	MdStream.X86.Finalize	prologue_ok 0.3k/3.5e; body_ok 0.5k/2.9e; zero_step 0.4k/1.0e	symbolic execution (diffuse *_ok lemmas)
+18.0	14.3	3.7	Ecdsa.Verify.X86.Verified	verify_ct 13.3k/0.9e; verifyWide_implies 0.2k/1.2e; verify_sp 0.7k/0.0e	taint kernel
+18.0	4.2	13.8	MlDsa.Arm.Verify.SampA	aOne_ok 2.3k/9.6e; aOne_two 0.3k/1.6e; rho_ok 0.5k/1.1e	single elab hot spot: decide
+18.0	3.6	14.3	RsaPss.X86_64.VerifyBlocks	shiftPass_ok 0.8k/2.5e; shift_ok 0.8k/1.8e; posCheck_ok 0.3k/2.2e	symbolic execution (diffuse *_ok lemmas)
+17.9	5.2	12.8	Sha256.X86.Compress	round_ok 0.4k/2.4e; schedule_ok 0.8k/1.4e; compress_verified 1.2k/0.1e	symbolic execution (diffuse *_ok lemmas)
+17.9	2.3	15.6	Ecdsa.Verify.AArch64.Points	sum_ok 0.2k/7.5e; points_ok 1.7k/5.9e; save_ok 0.1k/0.7e	single elab hot spot: decide
+17.9	5.7	12.2	X25519.X86_64.Sqr	sqrBnd_ok 2.8k/5.1e; sqDbl_ok 0.5k/2.2e; diag_ok 0.7k/1.7e	single elab hot spot: decide
+17.8	1.4	16.4	Framework.AArch64.Interleave	frame 0.1k/3.1e; frame 0.1k/2.5e; dst_eq 0.1k/1.4e	diffuse elab (simp)
+17.7	3.8	14.0	Ed25519.X86_64.Zmm.Half	win_write 1.5k/2.8e; sim1 0.3k/1.9e; ternlog_AC 0.1k/1.3e	diffuse elab (omega)
+17.7	3.5	14.2	Sha1.X86_64.ShaNi.Compress	body_ok 0.3k/1.8e; pshufb_rev 0.3k/1.2e; por_e 0.4k/1.0e	symbolic execution (diffuse *_ok lemmas)
+17.7	3.2	14.5	RsaKeyGen.AArch64.CTMrWin	of_wk 0.7k/2.5e; mmL_ct 0.3k/1.6e; of_frm 0.4k/1.4e	diffuse elab (elab (other))
+17.7	2.5	15.2	Ed25519.X86_64.Zmm.Select	zselect_ok 0.9k/5.1e; zselClear_ok 0.1k/2.3e; zselLoad_ok 0.2k/1.4e	symbolic execution (diffuse *_ok lemmas)
+17.7	2.2	15.5	Weierstrass.AArch64.PubNaf.Table	tableInit_ok 0.3k/4.7e; tableAdd_ok 0.2k/4.0e; tableStep_ok 0.5k/3.3e	symbolic execution (diffuse *_ok lemmas)
+17.6	5.1	12.5	MlDsa.X86_64.Arith.VLay21	vstep1 2.8k/5.1e; vstep2 2.2k/4.9e; vlay1_ok 0.1k/0.7e	single elab hot spot: omega
+17.6	5.2	12.4	Camellia.KeySched	rot128_bit 0.5k/3.5e; lo_eq 1.7k/2.2e; klkr_halves 1.0k/2.3e	diffuse elab (omega)
+17.6	2.7	14.9	Scrypt.AArch64.Whole.Steps	entry_ok 0.5k/1.8e; pbk2Args_ok 0.2k/1.7e; nextBlock_ok 0.2k/1.6e	symbolic execution (diffuse *_ok lemmas)
+17.6	5.8	11.8	Weierstrass.X86.BytesLen	storeBytes_ok 2.5k/2.3e; ldStepsL_ok 1.2k/2.5e; stSteps_wordsL 1.0k/1.9e	symbolic execution (diffuse *_ok lemmas)
+17.6	13.2	4.4	Ecdsa.X86.BrainpoolP384r1.Verified	sign_ct 11.6k/0.4e; signWide_implies 0.2k/1.5e; sign_sp 1.1k/0.0e	taint kernel
+17.5	16.2	1.3	Ecdsa.Verify.AArch64.P224.Verified	verify_checks 13.7k/0.6e; verify_untouched 1.3k/0.0e; verify_callsKeep 0.7k/0.0e	taint kernel
+17.5	2.9	14.6	MlDsa.X86.Sign.PhaseC	maskR_piece 0.8k/5.0e; rowW_piece 0.4k/3.4e; setKappa_piece 0.7k/2.4e	diffuse elab (macro ofsd)
+17.5	14.4	3.1	Ecdsa.X86_64.BrainpoolP384r1.Verified	sign_ct 5.2k/0.9e; sign_x86 3.7k/0.4e; sign_call_x86 2.5k/0.3e	taint kernel
+17.4	2.2	15.2	Mont.AArch64.Ops	mulR_okW 0.2k/3.9e; sub_okW 0.4k/2.2e; addMaskedC_ok 0.4k/1.1e	symbolic execution (diffuse *_ok lemmas)
+17.4	3.0	14.4	RsaPss.X86_64.SignCtEnc	se_me 0.1k/4.0e; sl_he 0.1k/3.1e; sdb_ct 0.4k/1.7e	diffuse elab (simp)
+17.4	5.4	12.0	Sm4.X86.Group	dataGroup_wp 4.9k/10.6e; countR_wp 0.0k/0.4e; dataLoop_wp 0.1k/0.1e	single elab hot spot: decide
+17.4	1.5	15.9	RsaPss.X86_64.PrecomputedContract	sat 1.3k/14.9e; implies 0.2k/0.9e; contract 0.0k/0.0e	single elab hot spot: macro sig_implies_sat
+17.4	3.4	14.0	RsaKeyGen.X86_64.Key.CTLcm	gcdUV_ct 0.5k/2.3e; mulTail_k 0.6k/1.6e; gcdSwap_k 0.4k/1.6e	taint kernel
+17.4	5.0	12.3	MlKem.X86_64.Cbd	grp_ok 0.9k/2.2e; correct 0.3k/1.9e; front_ok 0.5k/1.6e	symbolic execution (diffuse *_ok lemmas)
+17.3	2.1	15.2	Ecdsa.Verify.X86_64.Points	pointsM_ok 0.5k/5.0e; pointsL_ok 0.6k/4.3e; sum_ok 0.3k/2.9e	symbolic execution (diffuse *_ok lemmas)
+17.3	5.2	12.1	Argon2.X86.Derive.Body	frames_ok 0.4k/2.6e; entry_saved 0.9k/1.7e; entry_frame 0.8k/0.9e	symbolic execution (diffuse *_ok lemmas)
+17.3	4.1	13.2	MlDsa.Arm.KeyGen.RestBase	copies_ok 0.7k/3.9e; c4 1.0k/3.4e; c0 1.3k/1.8e	symbolic execution (diffuse *_ok lemmas)
+17.3	1.9	15.4	Weierstrass.X86_64.InvPacked	pchunk_ok 0.4k/4.1e; pstepCode_ok 0.4k/3.5e; plow_ok 0.5k/2.7e	symbolic execution (diffuse *_ok lemmas)
+17.3	2.8	14.5	RsaOaep.AArch64.DecLoops	shift_ok 0.6k/1.9e; passLoop_ok 0.5k/1.5e; copyT_ok 0.4k/1.5e	symbolic execution (diffuse *_ok lemmas)
+17.2	5.1	12.2	Bignum.X86_64.Ifma.Tab	conv1_ok 1.4k/2.5e; copyN_ok 0.9k/2.0e; tabIter_ok 1.0k/1.5e	symbolic execution (diffuse *_ok lemmas)
+17.2	3.1	14.0	CmacTripleDes.Arm.Init	keyStep_ok 1.9k/3.1e; init_wp 0.3k/4.1e; initPre_wp 0.4k/3.9e	symbolic execution (diffuse *_ok lemmas)
+17.1	2.4	14.8	Gcm.X86_64.Vpclmul.Ghash	powersP_ok 0.1k/2.2e; powers16P_ok 0.4k/1.0e; body16_ok 0.2k/1.0e	symbolic execution (diffuse *_ok lemmas)
+17.1	2.7	14.4	Blake2.X86.CompressS.Body	body_ok 1.0k/6.5e; ivMem_hi 0.2k/2.4e; finish_ok 0.4k/0.8e	single elab hot spot: decide
+17.1	1.5	15.6	Ed25519.X86.VerifyMessage.Verified	verifyWide_implies 0.1k/1.6e; equation_call_ct 0.0k/1.3e; lay_args 0.0k/1.1e	diffuse elab (simp)
+17.1	9.8	7.3	ChaCha20.X86_64.Avx512.Last	last16_ok 1.4k/3.0e; finishCheck_eq 3.5k/0.0e; cond_ok 0.7k/1.1e	symbolic execution (diffuse *_ok lemmas)
+17.0	4.5	12.5	RsaPss.X86_64.Mgf	round_ok 2.1k/3.0e; counter_ok 0.5k/2.6e; xorOutBytes_ok 0.5k/1.5e	symbolic execution (diffuse *_ok lemmas)
+17.0	5.8	11.1	Weierstrass.Arm.BytesLen	storeBytes_ok 2.1k/2.8e; ldStepsL_ok 1.1k/2.0e; stSteps_wordsL 0.9k/1.9e	symbolic execution (diffuse *_ok lemmas)
+17.0	5.1	11.9	Seed.X86.Group	dataGroup_wp 4.7k/10.4e; countR_wp 0.0k/0.3e; dataLoop_wp 0.1k/0.2e	single elab hot spot: decide
+16.9	7.4	9.6	ChaCha20.Stream	apply_rest 5.9k/4.9e; wordLE_byte 0.2k/1.3e; restAt_of_bytes 0.2k/0.5e	single elab hot spot: omega
+16.9	2.1	14.8	Ed448.X86_64.VerifyMain	verifyEquation_correct 0.8k/2.9e; vfinish_ok 0.1k/1.9e; vdecodeBody_ok 0.2k/1.5e	symbolic execution (diffuse *_ok lemmas)
+16.9	2.0	14.9	Weierstrass.AArch64.MontRound	roundG_ok 0.8k/6.9e; prodRowG_ok 0.3k/2.3e; roundsG_ok 0.1k/1.4e	single elab hot spot: simp
+16.9	2.8	14.1	Gcm.X86_64.Pclmul.Ghash	body4_ok 0.3k/1.6e; shufDwords_4e 0.6k/0.6e; hInv_ok 0.1k/1.0e	symbolic execution (diffuse *_ok lemmas)
+16.8	4.6	12.2	Poly1305.X86_64.Avx512.Mul	env 0.5k/5.0e; env 0.4k/2.3e; mulMS_nat 0.1k/1.7e	diffuse elab (elab (other))
+16.8	3.2	13.6	AesSiv.Arm.FinishLong	longMac_ok 0.8k/4.3e; longTail_ok 0.6k/2.6e; longArgs₃_ok 0.6k/1.6e	symbolic execution (diffuse *_ok lemmas)
+16.8	4.1	12.7	ChaCha20.Arm.Stream.Apply	tail_ok 1.0k/2.4e; blocks_ok 0.8k/1.6e; rest1_ok 0.6k/1.1e	symbolic execution (diffuse *_ok lemmas)
+16.8	1.9	14.9	Weierstrass.X86_64.WinJStep	sumJ_ok 0.2k/3.9e; quadJ_ok 0.3k/2.8e; selSum_ok 0.1k/2.1e	symbolic execution (diffuse *_ok lemmas)
+16.8	3.5	13.2	Aes.AArch64.Aese.Ctr32	setup_ok 0.8k/4.0e; xorData_ok 0.2k/0.8e; tail8_ok 0.0k/0.9e	symbolic execution (diffuse *_ok lemmas)
+16.7	2.1	14.7	Sha512.X86_64.ShaNi.Compress	body_ok 0.3k/1.7e; rounds_ok 0.3k/1.6e; rounds4_ok 0.1k/1.7e	symbolic execution (diffuse *_ok lemmas)
+16.7	1.2	15.5	MlDsa.Arm.KeyGen.Contracts	ball_pre 0.1k/1.1e; mulAdd_pre 0.0k/0.8e; hbu_pre 0.0k/0.7e	diffuse elab (simp)
+16.7	3.8	12.9	ChaCha20.X86_64.Stream.Apply	tail_ok 1.0k/2.6e; blocks_ok 0.6k/1.7e; part1_ok 0.5k/1.7e	symbolic execution (diffuse *_ok lemmas)
+16.6	3.1	13.5	Cast5.X86.Block	groupDec_ok 0.7k/1.9e; decryptBlock_ok 0.4k/1.6e; groupEnc_ok 0.5k/0.8e	symbolic execution (diffuse *_ok lemmas)
+16.6	3.3	13.3	Argon2.X86_64.DeriveVerified	abi_public 0.1k/1.3e; frameEnd_restore 0.2k/0.7e; private_final_layout 0.1k/0.7e	diffuse elab (macro sig_pub)
+16.6	13.4	3.1	Ecdh.X86_64.P384.Verified	ecdh_ct 10.3k/1.6e; ecdh_inlineOk 2.2k/0.0e; ecdh_x86 0.9k/0.3e	taint kernel
+16.5	3.3	13.3	ChaCha20.X86.Stream.Init	nonceLoads_ok 0.8k/1.2e; dbl_ok 0.3k/0.9e; initLoads_ok 0.1k/1.0e	symbolic execution (diffuse *_ok lemmas)
+16.5	5.0	11.5	Pbkdf2.Md.Arm.HmacFin	mid_ok 2.3k/3.8e; out_ok 0.6k/1.9e; finArgs 0.7k/0.7e	symbolic execution (diffuse *_ok lemmas)
+16.5	10.4	6.2	Ecdh.X86.P521.Verified	Weierst… 5.6k/0.2e; ecdh_ct 3.2k/1.4e; ecdhWide_implies 0.1k/1.3e	taint kernel
+16.5	13.1	3.4	Artifacts.Rsa.X86_64	artifacts 13.1k/3.4e; X86_64 0.0k/0.0e; [line 23] @[expose] public section 0.0k/0.0e	taint kernel
+16.5	2.2	14.3	MlKem.AArch64.Ntt16.InvIdx	firstTwo_ok 0.1k/12.0e; irepI_gs 2.1k/1.6e; irepI_perm 0.0k/0.1e	single elab hot spot: simp
+16.4	5.7	10.7	Weierstrass.AArch64.BytesLen	storeBytes_ok 1.2k/1.6e; ldStepL_ok 0.5k/2.0e; stSteps_wordsL 1.3k/0.9e	symbolic execution (diffuse *_ok lemmas)
+16.4	4.2	12.3	Aes.Arm.Ctr32	correct 0.7k/4.4e; ctrSetup_wp 0.1k/2.3e; ctr32_ct 1.6k/0.1e	diffuse elab (decide)
+16.4	3.3	13.2	Sha256.AArch64.Compress	round_ok 0.1k/2.6e; update_ok 0.1k/2.3e; schedule_ok 0.5k/1.6e	symbolic execution (diffuse *_ok lemmas)
+16.4	11.6	4.8	EcKey.X86.BrainpoolP384r1.Verified	pk_ct 10.6k/0.9e; pkWide_implies 0.2k/1.0e; post_of 0.1k/0.8e	taint kernel
+16.3	3.6	12.7	Weierstrass.X86_64.InvMain	invPow_ok 0.4k/3.5e; finish_ok 0.7k/1.8e; init₂_ok 0.7k/1.0e	symbolic execution (diffuse *_ok lemmas)
+16.3	3.9	12.3	RsaOaep.AArch64.Mgf	round_ok 2.5k/3.0e; updCtr_ok 0.3k/2.6e; xorHead_ok 0.2k/1.2e	symbolic execution (diffuse *_ok lemmas)
+16.3	11.1	5.2	Ecdsa.X86_64.P521.InverseVerified	p_ct 4.9k/0.7e; n_ct 4.9k/0.6e; n_implies 0.0k/0.9e	taint kernel
+16.3	3.6	12.6	MdStream.X86.Update	prologue_ok 0.2k/2.0e; copy_step 0.7k/1.5e; direct_ok 0.7k/1.3e	symbolic execution (diffuse *_ok lemmas)
+16.2	4.3	11.9	X25519.AArch64.Hybrid.Convert	limbOf_words 1.9k/1.8e; limb_ok 0.1k/2.4e; V_ne 0.8k/1.3e	symbolic execution (diffuse *_ok lemmas)
+16.2	5.0	11.2	RsaKeyGen.X86_64.SharedTail	sharedKTail_ok 5.0k/11.2e; SharedTestEnd 0.0k/0.0e; X86_64 0.0k/0.0e	single elab hot spot: omega
+16.2	9.4	6.9	Ed448.X86.VerifyCT	decode_FE 1.8k/0.3e; decode_tr 1.4k/0.5e; vmaskSwap_rel 0.9k/0.7e	kernel-heavy, diffuse
+16.1	3.3	12.9	Ecdsa.AArch64.MulFn	mulFn_ok 1.5k/3.9e; mulBody_ok 0.4k/4.2e; mulAt_ok 0.7k/2.8e	symbolic execution (diffuse *_ok lemmas)
+16.1	2.5	13.6	MlDsa.X86.Sign.PrimD	hbp_piece 1.0k/4.5e; bu_piece 0.5k/4.0e; bp_piece 0.6k/2.6e	diffuse elab (simp)
+16.0	14.9	1.1	Weierstrass.AArch64.Forward.P256Bounds	lit_eq 4.0k/0.0e; lit_eq 3.6k/0.0e; lit_eq 3.1k/0.0e	kernel-heavy, diffuse
+16.0	3.9	12.1	Bignum.X86_64.PdExp	pExpBit_ok 0.7k/2.6e; start_ok 0.8k/1.5e; pByte_ok 0.3k/1.5e	symbolic execution (diffuse *_ok lemmas)
+15.9	11.8	4.2	Ecdh.X86.Secp256k1.Verified	ecdh_ct 10.8k/0.5e; ecdhWide_implies 0.1k/1.0e; ecdh_verified 0.0k/0.8e	taint kernel
+15.9	3.4	12.5	Aes.AArch64.Group	keyBody_ok 0.7k/1.7e; group_ok 0.2k/1.4e; xorPhase_wp 0.4k/0.7e	symbolic execution (diffuse *_ok lemmas)
+15.9	3.0	12.8	Weierstrass.X86.PointCall	callB_ok 1.8k/10.5e; addCallB_ok 0.4k/0.5e; subCallB_ok 0.2k/0.6e	single elab hot spot: simp
+15.8	1.5	14.4	Rc2.X86.PiLookup	orStep_ok 0.0k/3.7e; orLanes 0.0k/2.0e; byte4 0.4k/1.3e	symbolic execution (diffuse *_ok lemmas)
+15.8	5.2	10.7	Camellia.AArch64.Keys	decKeys_wp 1.7k/4.2e; keyOne_step 1.5k/2.4e; keyLoop_wp 0.6k/1.0e	diffuse elab (omega)
+15.8	3.8	12.0	Aes.X86_64.ExpandKey	temp_wp 0.4k/1.3e; copy_ok 0.5k/0.9e; ek_correct 0.2k/1.1e	symbolic execution (diffuse *_ok lemmas)
+15.8	11.3	4.5	Seed.X86.Verified	roundP… 9.1k/0.4e; ecb_taint 1.2k/0.4e; wide_implies 0.2k/1.3e	taint kernel
+15.8	6.5	9.3	Bignum.X86_64.CrtFix	primeFix_ok 1.8k/3.4e; finishSum_ok 2.0k/2.6e; pqProduct_ok 2.1k/1.1e	symbolic execution (diffuse *_ok lemmas)
+15.8	2.5	13.3	Blowfish.AArch64.KeySetup	copyStep 0.7k/5.3e; keyByte_run 0.2k/3.0e; keyP_step 0.5k/1.3e	diffuse elab (omega)
+15.8	15.4	0.3	MlKem.AArch64.Rej8Readonly	tableWords_entry 15.1k/0.0e; tableWords_length 0.2k/0.0e; vector 0.0k/0.2e	kernel eval/defeq (concentrated)
+15.8	3.3	12.5	MlKem.Arm.Encrypt	decT_step 0.4k/0.8e; er8_ok 0.3k/0.8e; enc5b_ok 0.3k/0.7e	symbolic execution (diffuse *_ok lemmas)
+15.8	11.4	4.3	Ecdh.X86.BrainpoolP256r1.Verified	ecdh_ct 10.0k/0.4e; ecdhWide_implies 0.2k/1.1e; ecdh_sp 0.9k/0.0e	taint kernel
+15.7	3.6	12.1	Scrypt.X86_64.BlockMixCT	setup_ok 0.2k/2.1e; halves_ok 0.2k/1.0e; mem_ok 0.6k/0.6e	symbolic execution (diffuse *_ok lemmas)
+15.7	7.8	7.9	TripleDes.X86_64.BitslicedAvx2.Transpose	stageA_step 1.9k/3.0e; stageB_step 1.1k/1.5e; bodyA_check 2.2k/0.0e	symbolic execution (diffuse *_ok lemmas)
+15.6	12.5	3.1	Ecdh.X86_64.BrainpoolP512r1.Verified	ecdh_ct 6.1k/0.9e; ecdh_inlineOk 2.8k/0.1e; ecdh_x86 1.9k/0.3e	taint kernel
+15.6	4.7	10.9	Mont.Arm.Csub	diffK_ok 1.2k/2.0e; selK_ok 1.0k/2.0e; diffWord_ok 0.6k/2.2e	symbolic execution (diffuse *_ok lemmas)
+15.6	3.9	11.7	RsaPkcs1Sig.AArch64.Encode	encode_ok 0.1k/2.1e; write_ok 0.4k/1.5e; compare_ok 0.2k/1.5e	symbolic execution (diffuse *_ok lemmas)
+15.5	8.8	6.7	Camellia.X86.FbVerified	block pairBody) 3.4k/0.1e; ofb_ct 1.8k/0.2e; cfbEncrypt_ct 1.2k/0.1e	taint kernel
+15.5	4.0	11.5	Weierstrass.AArch64.InvMain	invPow_ok 0.4k/3.2e; finish_ok 0.9k/2.3e; init_ok 1.0k/1.9e	symbolic execution (diffuse *_ok lemmas)
+15.5	2.8	12.7	AesGcm.X86_64.StreamText	blocks_ok 0.7k/1.6e; streamText_ok 0.2k/1.9e; partWith_ok 0.5k/1.2e	symbolic execution (diffuse *_ok lemmas)
+15.5	3.5	12.1	Aes.AArch64.ExpandKey	ek_correct 0.6k/1.2e; word_ok 0.3k/1.5e; store_facts 0.4k/1.3e	symbolic execution (diffuse *_ok lemmas)
+15.5	3.3	12.2	Ffdh.X86_64.Pow	pow_ok 2.3k/11.6e; child_frm 0.4k/0.2e; of_frmA 0.3k/0.2e	single elab hot spot: decide
+15.5	3.2	12.3	Framework.X86.StackScratchConsts	stackScratchWipedC 1.2k/4.6e; withStackScratchC_run 1.1k/4.1e; narrowC_pre 0.8k/1.6e	diffuse elab (elab (other))
+15.5	2.3	13.2	AesSiv.X86_64.Ctr	ctr_tail 0.7k/2.9e; ctrWhole_wp 0.4k/2.1e; wholePre_ok 0.1k/1.8e	symbolic execution (diffuse *_ok lemmas)
+15.5	3.2	12.3	X25519.X86_64.AddSub	sub_ok 1.1k/1.2e; addCmovPre_ok 0.3k/1.7e; addPre_ok 0.1k/1.5e	symbolic execution (diffuse *_ok lemmas)
+15.4	3.5	12.0	Sha1.Arm.Compress	body_ok 0.3k/1.4e; schedule_ok 0.7k/0.8e; update_ok 0.1k/1.3e	symbolic execution (diffuse *_ok lemmas)
+15.4	3.8	11.5	Scrypt.X86.RoMixFun	step3_ok 0.2k/1.3e; arg_in 0.6k/0.5e; step2_ok 0.1k/0.9e	symbolic execution (diffuse *_ok lemmas)
+15.3	2.9	12.5	Sha256.X86_64.Compress	round_ok 0.3k/2.9e; schedule_ok 0.4k/1.6e; update_ok 0.1k/1.4e	symbolic execution (diffuse *_ok lemmas)
+15.3	13.0	2.3	Ecdsa.Verify.X86_64.BrainpoolP384r1.Verified	verify_ct 5.8k/1.0e; verify_x86 3.3k/0.2e; verify_verified 2.4k/0.1e	taint kernel
+15.3	1.1	14.3	Weierstrass.AArch64.WindowQuad	jac_ok 0.2k/4.7e; dbl2_ok 0.1k/2.7e; quad_ok 0.2k/1.7e	symbolic execution (diffuse *_ok lemmas)
+15.3	3.2	12.1	Weierstrass.AArch64.PubNaf.Prep	subtractShift_ok 1.2k/2.7e; prepStep_ok 0.4k/1.4e; init_ok 0.2k/1.6e	symbolic execution (diffuse *_ok lemmas)
+15.3	10.2	5.1	Ed25519.X86.Point32.Verified	addFn_check 4.3k/0.1e; doubleFn_ct 2.6k/0.0e; affFn_ct 2.4k/0.1e	taint kernel
+15.3	2.7	12.6	ChaCha20Poly1305.X86_64.Gather.Fn	called_wp 0.6k/1.5e; call 0.2k/1.5e; gatherPre_of 0.7k/0.7e	diffuse elab (omega)
+15.3	3.2	12.1	MlDsa.X86_64.Pack.HintUnpack	upoly_ok 0.2k/2.4e; trail_ok 0.3k/1.2e; next_ok 0.3k/0.8e	symbolic execution (diffuse *_ok lemmas)
+15.3	4.1	11.2	Camellia.Arm.KeyStore	rotWord_ok 1.2k/2.7e; stores_ok 0.5k/3.0e; num_of_rev 0.9k/1.2e	symbolic execution (diffuse *_ok lemmas)
+15.2	1.6	13.7	Ecdh.AArch64.Validate	onCurve_ok 0.2k/2.4e; curve_ok 0.2k/2.1e; checkBody_ok 0.1k/1.5e	symbolic execution (diffuse *_ok lemmas)
+15.2	2.1	13.2	AesGcm.X86_64.Short.Finish	finTail_ok 0.2k/2.3e; finCtrs_ok 0.4k/1.8e; finRest_ok 0.4k/1.7e	symbolic execution (diffuse *_ok lemmas)
+15.2	3.6	11.7	Aes.X86_64.Ctr32	correct 0.6k/5.3e; keySetup_ok 0.4k/0.7e; ctr32_ct 1.0k/0.2e	symbolic execution (diffuse *_ok lemmas)
+15.2	5.1	10.1	Pbkdf2.Md.Arm.Instances	finImp 0.1k/1.7e; initImp 0.1k/1.5e; iterImp 0.1k/1.3e	diffuse elab (macro generic_implies)
+15.2	5.1	10.1	Mont.X86_64.MulP	pColSum_total 2.2k/1.6e; prodCols_ok 0.5k/1.8e; pMulAcc_ok 0.7k/1.0e	symbolic execution (diffuse *_ok lemmas)
+15.2	2.2	13.0	Weierstrass.X86_64.FastNafShift	fastShift10_ok 0.4k/4.4e; fastShift7_ok 0.2k/4.2e; fastShift_ok 0.1k/1.9e	symbolic execution (diffuse *_ok lemmas)
+15.2	14.5	0.7	Camellia.X86.Linear	post2_check 2.7k/0.0e; post1_check 2.1k/0.0e; toBs_check 1.9k/0.0e	kernel-heavy, diffuse
+15.2	3.1	12.1	Bignum.X86_64.R2wDiv	quot_ok 0.1k/1.7e; divLoop_ok 0.3k/1.4e; divBit_ok 0.3k/1.2e	symbolic execution (diffuse *_ok lemmas)
+15.2	5.8	9.3	MlKem.AArch64.KemEnc	v_ok 0.6k/2.0e; u_step 0.8k/1.2e; far_s 0.7k/0.9e	symbolic execution (diffuse *_ok lemmas)
+15.2	3.3	11.9	RsaKeyGen.X86_64.Key.CTD	dEven_ct 1.1k/2.3e; dBlk3_k 0.3k/1.8e; dOdd_ct 0.7k/0.9e	taint kernel
+15.1	3.5	11.6	Framework.X86.StackScratch	narrow_pre 1.4k/2.6e; withStackScratch_run 0.4k/1.7e; argsState_run 0.4k/0.4e	diffuse elab (omega)
+15.1	3.5	11.7	Rsa.AArch64.CvCheck	invSetup_ok 0.7k/3.4e; cvDivPart_ok 0.9k/2.7e; cvInv_ok 0.9k/2.3e	symbolic execution (diffuse *_ok lemmas)
+15.1	10.2	4.9	P521.X86_64.NafTableTiming	nafTable_checks 6.9k/2.6e; nafTable_adx_checks 3.3k/2.2e; [line 35] @[expose] public section 0.0k/0.0e	taint kernel
+15.1	3.5	11.6	ChaCha20.X86_64.Avx2.Last8	last8_ok 0.5k/4.2e; xorRow8_ok 0.6k/2.0e; move67_ok 0.3k/1.7e	symbolic execution (diffuse *_ok lemmas)
+15.1	4.6	10.5	Mont.X86_64.SqrPX	sRow_ok 1.1k/2.3e; sqrPX_ok 0.7k/2.1e; sRow0_ok 0.4k/0.9e	symbolic execution (diffuse *_ok lemmas)
+15.1	14.6	0.5	Ed448.AArch64.CombSum	stepR 7.8k/0.2e; eras… 6.7k/0.3e; CombBase 0.0k/0.0e	literal rebuild
+15.1	2.7	12.4	MlKem.AArch64.Encaps	a_ok 1.2k/4.2e; pre_of 0.3k/2.7e; encaps_verifiedWith 0.0k/1.4e	symbolic execution (diffuse *_ok lemmas)
+15.0	9.5	5.5	Weierstrass.AArch64.P521Literals	combCfg 3.0k/0.2e; nPowI p521) 1.7k/0.3e; pPowI p521) 1.3k/0.1e	literal rebuild
+15.0	3.5	11.5	Blake2.Arm.CompressS.Compress	body_ok 0.6k/3.0e; initW_eq 0.2k/1.7e; linv_zero 0.1k/1.4e	symbolic execution (diffuse *_ok lemmas)
+15.0	1.3	13.7	MlDsa.X86.Verify.Prim	ball_piece 0.2k/3.7e; bu_piece 0.2k/2.5e; useHint_piece 0.2k/2.4e	diffuse elab (simp)
+15.0	2.3	12.7	CmacAes.Stream.AArch64.AbsorbCorrect	absorb_wp 1.7k/9.6e; absorbPre_wp 0.3k/1.7e; uargs 0.1k/0.7e	single elab hot spot: decide
+14.9	3.2	11.7	Blake2.AArch64.Stream.Verified	correctMain 0.9k/3.5e; output_ok 0.5k/0.6e; finalizeS_verified 0.1k/0.9e	symbolic execution (diffuse *_ok lemmas)
+14.9	2.2	12.7	Blowfish.AArch64.KeyLoop	enc_step 0.2k/5.1e; storeS_run 1.1k/3.6e; encryptions_run 0.4k/2.0e	symbolic execution (diffuse *_ok lemmas)
+14.9	3.3	11.6	MlKem.Arm.CompressEncode	body10_ok 0.5k/2.6e; step10 0.6k/1.5e; bit_step 0.4k/1.2e	symbolic execution (diffuse *_ok lemmas)
+14.9	8.7	6.2	Ecdh.X86.BrainpoolP512r1.Verified	[line 142] taint_summary mulSum : taint  4.7k/0.2e; ecdh_ct 2.9k/1.4e; ecdhWide_implies 0.2k/1.1e	taint kernel
+14.9	3.0	11.9	RsaKeyGen.AArch64.MontSetup	montSetup_ok 1.8k/4.9e; checks_sel 0.1k/2.7e; msHead_ok 0.2k/1.2e	single elab hot spot: simp
+14.8	1.1	13.7	Curve448.AArch64.Neon.Math	kara_sum 0.5k/5.1e; cv_mono 0.1k/1.6e; prodU 0.0k/1.5e	diffuse elab (decide)
+14.8	2.8	12.0	RsaPkcs1Sig.X86_64.RecoverCorrect	afterPub_ok 0.4k/2.2e; code_correct 0.5k/1.1e; tail_ok 0.3k/1.3e	symbolic execution (diffuse *_ok lemmas)
+14.8	2.8	12.0	Sha256.X86_64.ShaNi.Compress	rounds_ok 0.3k/1.5e; correct 0.2k/1.5e; body_ok 0.2k/1.4e	symbolic execution (diffuse *_ok lemmas)
+14.7	13.6	1.2	Sm4.X86.CryptSum	crypt8 5.7k/0.4e; crypt8 4.6k/0.3e; crypt8 3.3k/0.3e	taint kernel
+14.7	4.9	9.8	Mont.Arm.Loop	row_ok 2.3k/3.6e; digitRow_ok 1.5k/3.2e; cong_step 0.2k/0.6e	single elab hot spot: omega
+14.7	4.9	9.8	X25519.Arm.Setup	consts_ok 2.1k/3.4e; setup_ok 1.0k/2.5e; decodeStep_ok 0.7k/1.5e	symbolic execution (diffuse *_ok lemmas)
+14.7	4.2	10.5	Ecdsa.Rfc6979.AArch64.Reduce	reduce_ok 0.9k/1.9e; selWord_ok 0.7k/1.2e; subWord_ok 0.2k/1.7e	symbolic execution (diffuse *_ok lemmas)
+14.6	9.5	5.1	EcKey.X86.P384.Verified	pk_ct 8.3k/0.5e; pkWide_implies 0.2k/1.2e; post_of 0.0k/0.9e	taint kernel
+14.6	2.3	12.3	ChaCha20Poly1305.X86.Gather.Fn	entry_ok 0.1k/2.8e; called_wp 0.5k/1.5e; call 0.3k/1.6e	symbolic execution (diffuse *_ok lemmas)
+14.6	11.6	3.0	Ecdsa.X86_64.P384.Verified	sign_ct 5.9k/0.8e; sign_x86 2.7k/0.4e; sign_call_x86 1.5k/0.2e	taint kernel
+14.6	5.0	9.6	Camellia.Bytes	getLsbD_byteOf_f 3.5k/4.3e; getLsbD_cat8 1.0k/4.4e; getLsbD_flinv_lo 0.1k/0.4e	single elab hot spot: omega
+14.5	2.2	12.4	AesGcmSiv.X86_64.Stitch.Open	stitched_ok 0.3k/3.0e; openS_wp' 0.2k/2.1e; sArgs_ok 0.1k/1.9e	symbolic execution (diffuse *_ok lemmas)
+14.5	12.0	2.6	P521.X86_64.TaintSumsWinAdx	[line 39] taint_summary_map winNormJXSum 6.0k/0.9e; [line 38] taint_summary winBuildJXSum :  1.8k/0.3e; [line 46] taint_summary_map winLastJXSum 1.7k/0.3e	taint kernel
+14.5	5.0	9.5	Blake2.Arm.CompressB	body_ok 0.5k/2.3e; compress_verified' 1.6k/0.2e; setup_ok 0.1k/1.4e	symbolic execution (diffuse *_ok lemmas)
+14.5	4.9	9.6	Aes.Arm.Group	group_ok 1.0k/2.4e; dataInv_step 0.7k/1.2e; xorPhase_wp 0.6k/1.1e	symbolic execution (diffuse *_ok lemmas)
+14.5	3.0	11.5	Rsa.X86_64.KeyChecks	mulXR_ok 0.8k/2.6e; loadNum_ok 0.5k/1.6e; mulE_ok 0.3k/1.7e	symbolic execution (diffuse *_ok lemmas)
+14.5	12.2	2.2	Weierstrass.X86_64.P521Literals	pPow p521 2.1k/0.1e; nPow p521 2.0k/0.2e; nPow p521x 2.0k/0.2e	literal rebuild
+14.5	4.4	10.1	ChaCha20.X86.Bytes	xorWide_ok 1.2k/2.2e; chunk_step 0.9k/2.2e; byte_step 0.6k/1.1e	symbolic execution (diffuse *_ok lemmas)
+14.5	3.5	11.0	Rsa.X86_64.Loops	csStep_ok 0.7k/1.5e; shrStep_ok 0.7k/1.3e; subMStep_ok 0.5k/1.2e	symbolic execution (diffuse *_ok lemmas)
+14.5	4.3	10.1	Sha256.X86.Shared	finalize_verified 1.7k/0.3e; update_verified 1.8k/0.2e; compressWide_implies 0.1k/1.2e	taint kernel
+14.5	13.3	1.1	Weierstrass.Arm.PointCurves	p256_double_ct 2.2k/0.1e; p384_double_ct 2.0k/0.1e; p224_add_ct 2.0k/0.1e	taint kernel
+14.4	3.7	10.8	TripleDes.Arm.Key.Body	storeRound_ok 0.4k/1.9e; loopBody_ok 0.3k/2.0e; componentStep_ok 0.6k/0.9e	symbolic execution (diffuse *_ok lemmas)
+14.4	1.4	13.0	AesSiv.X86.S2v	adTail_ok 0.1k/2.1e; startPre_ok 0.1k/1.8e; adBody_ok 0.1k/1.1e	symbolic execution (diffuse *_ok lemmas)
+14.4	8.6	5.8	P521.X86_64.JacTiming	nafCachedJac_checks 3.6k/1.5e; nafMixedJac_checks 2.3k/1.6e; nafCachedJac_adx_checks 1.8k/1.9e	taint kernel
+14.4	2.1	12.3	Argon2.AArch64.DeriveVerified	abi_public 0.1k/1.0e; abi_separation 0.0k/0.8e; return_post 0.1k/0.6e	diffuse elab (simp)
+14.4	3.6	10.8	RsaKeyGen.AArch64.MrShift	lowWord_ok 1.3k/2.6e; expSetup_ok 0.3k/2.4e; halfPass_ok 0.6k/1.5e	symbolic execution (diffuse *_ok lemmas)
+14.4	3.9	10.5	ChaCha20.Arm.Block	swap_step 0.5k/1.0e; copy_step 0.3k/1.1e; store_step 0.5k/0.8e	symbolic execution (diffuse *_ok lemmas)
+14.4	2.7	11.6	Ed25519.AArch64.VerifyPoints	cachedPointStore_ok 0.5k/0.7e; aTableBody_ok 0.2k/0.9e; aTableInit_ok 0.1k/0.9e	symbolic execution (diffuse *_ok lemmas)
+14.4	4.4	10.0	Camellia.AArch64.Group	dataGroup_wp 3.8k/8.0e; frame 0.3k/0.5e; frame2 0.2k/0.3e	single elab hot spot: decide
+14.3	2.4	11.9	Rsa.X86_64.CvCheck	invSetup_ok 0.3k/3.1e; cvInv_ok 0.6k/2.7e; cvCheck_ok 0.3k/2.4e	symbolic execution (diffuse *_ok lemmas)
+14.3	4.3	10.1	Bignum.AArch64.CrtFix	primeFix_ok 0.8k/3.4e; finishSum_ok 1.6k/1.6e; pqProduct_ok 1.1k/1.2e	symbolic execution (diffuse *_ok lemmas)
+14.3	3.4	10.9	Bignum.X86_64.CrtSelVExp	gPassV_ok 1.1k/2.7e; gathHeadV_ok 0.4k/2.4e; gChunksV_ok 0.4k/1.6e	symbolic execution (diffuse *_ok lemmas)
+14.3	4.1	10.2	Bignum.AArch64.CrtFront	nInput_ok 0.9k/3.1e; nPart_ok 0.8k/3.0e; checksPart_ok 1.4k/1.9e	symbolic execution (diffuse *_ok lemmas)
+14.3	1.1	13.2	Ed25519.X86_64.Ifma.CombSelect	vselLoad_ok 0.1k/4.9e; vselClear_ok 0.0k/2.6e; vselect_ok 0.2k/1.6e	symbolic execution (diffuse *_ok lemmas)
+14.3	2.0	12.3	Weierstrass.AArch64.MontFn	bodyF_ok 0.3k/3.0e; mulFnOf_ok 0.4k/2.7e; regs_ok 0.4k/1.1e	symbolic execution (diffuse *_ok lemmas)
+14.3	7.2	7.1	TripleDes.X86_64.BitslicedAvx512.Transpose	stageA_step 2.1k/2.4e; bodyA_check 2.4k/0.0e; stageB_step 0.7k/1.5e	symbolic execution (diffuse *_ok lemmas)
+14.3	12.7	1.6	Ed448.X86_64.FieldVariant	add_verified 4.7k/0.4e; double_verified 3.9k/0.3e; add_kept 1.1k/0.0e	taint kernel
+14.3	0.7	13.5	Framework.X86_64.Inline	exec_widen 0.1k/4.1e; exec_gpr 0.1k/2.0e; exec_frame 0.1k/1.8e	diffuse elab (simp)
+14.2	6.0	8.3	Bignum.X86_64.CrtChk	checks_ok 6.0k/8.3e; X86_64 0.0k/0.0e; X86_64 0.0k/0.0e	single elab hot spot: omega
+14.2	2.7	11.5	AesGcm.Arm.CryptOk	cryptWhole_ok 1.0k/2.3e; cryptHead_ok 0.6k/2.2e; tailXor_ok 0.3k/2.1e	symbolic execution (diffuse *_ok lemmas)
+14.2	5.0	9.3	Weierstrass.X86.PointFn	fn_ok 2.1k/4.6e; enc_lay 0.7k/1.6e; enc_wIds 0.9k/1.2e	single elab hot spot: omega
+14.2	4.3	9.9	Pbkdf2.Md.AArch64.PbkCommon	call 0.4k/0.6e; layout 0.1k/0.3e; end_le 0.2k/0.2e	diffuse elab (elab (other))
+14.2	1.2	13.0	MlDsa.X86_64.KeyGen.Call	bp_pre 0.0k/0.7e; mul_pre 0.0k/0.6e; p2r_pre 0.0k/0.6e	diffuse elab (simp)
+14.2	2.2	12.0	MlDsa.X86.Pack.HintPack	setup_piece 0.4k/1.4e; end_piece 0.5k/1.1e; set_piece 0.3k/1.1e	taint kernel
+14.2	3.7	10.5	Bignum.X86_64.CrtRedc	redcLoad_ok 1.6k/3.1e; redcStep_ok 0.9k/2.5e; redcAcc_ok 0.6k/2.6e	symbolic execution (diffuse *_ok lemmas)
+14.2	4.1	10.1	Ecdsa.Rfc6979.Arm.CT	blks 2.4k/2.3e; rekey_gen_ct 0.2k/0.8e; hmacBlks 0.2k/0.6e	taint kernel
+14.2	4.5	9.7	MlKem.X86_64.MulAvx2	step 0.8k/3.1e; prod_valY 0.8k/1.0e; ystore4 0.4k/0.8e	diffuse elab (decide)
+14.2	2.4	11.8	MlKem.X86.Mul	mul_step 1.1k/6.6e; setup_piece 0.5k/1.1e; verified 0.2k/0.9e	single elab hot spot: omega
+14.1	3.5	10.6	Weierstrass.AArch64.InvRed	mredC_ok 1.6k/4.6e; chainRows_ok 0.9k/1.1e; chainStep_ok 0.2k/1.2e	single elab hot spot: decide
+14.1	11.9	2.2	Ecdh.X86_64.P384.VerifiedAdx	ecdh_ct_adx 9.1k/1.2e; ecdh_x86_adx 1.4k/0.4e; ecdh_inlineOk_adx 1.4k/0.0e	taint kernel
+14.1	6.7	7.4	CmacTripleDes.Arm.Round	round_ok 0.9k/3.1e; boxIn_eq 1.6k/1.2e; sbox0_check 1.2k/0.0e	symbolic execution (diffuse *_ok lemmas)
+14.1	1.9	12.2	Mont.AArch64.P384Mul.Reduce	sStep_ok 0.5k/3.8e; montreds_ok 0.2k/2.9e; xStep_ok 0.3k/1.3e	symbolic execution (diffuse *_ok lemmas)
+14.1	3.3	10.8	Sha1.X86_64.Compress	compress_verified 1.5k/0.1e; body_ok 0.2k/1.3e; update_ok 0.1k/1.3e	taint kernel
+14.1	13.2	0.9	Ed25519.X86.Point32.AddSum	τCall 7.3k/0.6e; taint τCallTbl 6.0k/0.3e; τCallTbl 0.0k/0.0e	taint kernel
+14.1	3.0	11.1	Ed25519.X86_64.Ifma.Double4	vdbl_wp 0.2k/2.4e; vload_wp 0.1k/1.3e; dblB_wp 0.2k/1.0e	diffuse elab (decide)
+14.1	3.4	10.7	Blake2.X86.Stream.Finalize	correct 1.4k/5.1e; zeroLoop_ok 0.6k/1.2e; output_ok 0.4k/0.9e	single elab hot spot: decide
+14.1	3.6	10.5	Ecdh.X86_64.Window	mulPow_ok 0.5k/2.5e; winMul_ok 0.8k/1.8e; winLayQ 0.6k/1.4e	symbolic execution (diffuse *_ok lemmas)
+14.1	6.2	7.8	TripleDes.X86_64.BitslicedSse.Transpose	stageA_step 1.8k/2.8e; stageB_step 1.2k/1.8e; bodyA_check 1.4k/0.0e	symbolic execution (diffuse *_ok lemmas)
+14.0	1.9	12.2	RsaKeyGen.X86_64.SharedSafety	template_all 0.0k/5.8e; template_instrs 0.1k/5.8e; sharedCandidate_sp 1.1k/0.1e	single elab hot spot: elab (other)
+14.0	3.2	10.7	TripleDes.X86.FbVerified	wide_implies_ofb 0.1k/1.4e; wide_implies_cfb8Enc 0.1k/1.0e; wide_implies_cfbEnc 0.1k/1.0e	diffuse elab (omega)
+14.0	0.6	13.4	Ffdh.X86_64.CheckDomain.Safety	template_instrs 0.0k/13.1e; domainCode_safe 0.5k/0.0e; all_seqs 0.0k/0.1e	single elab hot spot: elab (other)
+14.0	11.2	2.8	TripleDes.X86_64.EcbCall.Verified	avx512_verified 4.1k/0.0e; avx2_verified 3.0k/0.0e; sse_verified 1.7k/0.0e	kernel-heavy, diffuse
+13.9	2.3	11.6	Pbkdf2.Md.Arm.HmacInit	correct 0.1k/1.9e; opadW_ok 0.2k/1.0e; opad_ok 0.2k/1.0e	symbolic execution (diffuse *_ok lemmas)
+13.9	4.5	9.4	Modes.AArch64.CbcGroup	cbcDecGroup_wp 4.2k/8.6e; entry_ok 0.2k/0.4e; cbcDecLoop_wp 0.1k/0.2e	single elab hot spot: omega
+13.9	0.6	13.3	AesGcmSiv.AArch64.Fn	open_wp 0.1k/2.8e; seal_wp 0.0k/2.3e; [line 383] macro "disj_tac" L:term : tac 0.0k/1.9e	diffuse elab (macro disj_tac)
+13.8	11.0	2.8	Ecdsa.Verify.X86.BrainpoolP256r1.Verified	verify_ct 10.3k/0.6e; verifyWide_implies 0.1k/1.0e; verify_sp 0.5k/0.0e	taint kernel
+13.8	2.3	11.5	AesGcmSiv.X86_64.Absorb	tailPre_ok 0.2k/2.5e; chunkPre_ok 0.2k/2.0e; revOnes_ok 0.4k/1.0e	symbolic execution (diffuse *_ok lemmas)
+13.8	4.0	9.8	Gcm.X86_64.StitchZ.Loop48	body48_ok 1.3k/2.1e; dbody48_ok 0.6k/1.9e; drainStep_ok 0.4k/0.6e	symbolic execution (diffuse *_ok lemmas)
+13.8	2.6	11.2	MlDsa.Arm.Verify.Row	nttT_piece 0.1k/0.9e; sbpW_piece 0.2k/0.8e; mulW_m 0.5k/0.5e	diffuse elab (decide)
+13.8	0.9	12.9	AesOcb.X86.Offset0	offset0_ok 0.1k/2.9e; stage_words 0.1k/1.8e; stageW_ok 0.2k/1.4e	symbolic execution (diffuse *_ok lemmas)
+13.8	3.1	10.7	Weierstrass.X86.MontRow	rowStepsZ_ok 0.4k/1.7e; rowSteps_ok 0.5k/1.5e; carryUp1_ok 0.4k/1.4e	symbolic execution (diffuse *_ok lemmas)
+13.8	3.0	10.8	Ffdh.X86_64.CheckPublic.Stages	c4_c5 0.3k/2.0e; ce_c1 0.3k/1.3e; c2_c3 0.4k/0.8e	diffuse elab (simp)
+13.8	13.4	0.4	Ecdsa.Verify.X86.CombFinalCT	vFinal_rel 12.1k/0.2e; [line 35] materialize_code vFinalCode 1.3k/0.2e; X86 0.0k/0.0e	taint kernel
+13.8	13.2	0.6	Sm4.X86_64.Linear	fromBs_check 3.2k/0.0e; toBs_check 1.7k/0.0e; linE1_check 1.0k/0.0e	kernel-heavy, diffuse
+13.8	10.4	3.3	Sm4.X86_64.FbVerified	ofb_verified 3.1k/0.9e; cfbEncrypt_verified 2.7k/0.6e; cfbDecrypt_verified 1.9k/0.7e	taint kernel
+13.7	1.7	12.0	X25519.X86_64.Divstep.Sound	run_step 0.2k/2.6e; pkChunkV_rel 0.1k/2.3e; byAlg_eq 0.2k/1.7e	symbolic execution (diffuse *_ok lemmas)
+13.7	2.4	11.3	Weierstrass.X86_64.WinJNorm	back_step 0.6k/2.8e; backOne_ok 0.2k/1.0e; prod_ok 0.2k/0.7e	symbolic execution (diffuse *_ok lemmas)
+13.7	1.6	12.1	Gcm.X86.Ghash	store_ok 0.3k/3.4e; load_ok 0.1k/1.9e; head_ok 0.1k/1.5e	symbolic execution (diffuse *_ok lemmas)
+13.7	9.2	4.4	EcKey.X86.BrainpoolP256r1.Verified	pk_ct 8.0k/0.4e; pkWide_implies 0.2k/1.2e; pk_sp 0.8k/0.0e	taint kernel
+13.7	9.8	3.9	Sha512.Arm.Stream.Digest	finalize512_256_verified 4.4k/0.5e; finalize512_224_verified 2.7k/0.8e; finalize384_verified 2.6k/0.7e	taint kernel
+13.7	3.0	10.6	Sha512.X86_64.Compress	round_ok 0.1k/2.3e; schedule_ok 0.3k/1.2e; compress_verified 0.9k/0.2e	symbolic execution (diffuse *_ok lemmas)
+13.6	4.0	9.6	ChaCha20Poly1305.AArch64.Poly	mulR1_ok 0.7k/2.1e; block_ok 1.3k/1.5e; reduce_arith 1.2k/1.5e	symbolic execution (diffuse *_ok lemmas)
+13.6	2.7	10.9	CmacTripleDes.X86.Init	initPre_wp 0.5k/3.7e; init_wp 0.3k/3.0e; keyStep_ok 1.2k/1.3e	symbolic execution (diffuse *_ok lemmas)
+13.6	3.3	10.2	Bignum.X86_64.R2aCT	fast_ct 1.7k/3.5e; fix_ct 0.4k/1.2e; sf_ok 0.4k/0.6e	taint kernel
+13.5	5.2	8.3	MlDsa.Round.Decompose	decompose_eq 2.3k/3.5e; useHint_eq 1.6k/2.6e; hbF_eq 0.3k/0.4e	single elab hot spot: simp
+13.5	2.2	11.4	Blake2.X86_64.Avx.Round	pair_ok 0.0k/1.4e; mw_block 0.0k/1.3e; undiag_words 0.3k/1.0e	symbolic execution (diffuse *_ok lemmas)
+13.5	3.2	10.3	X448.X86_64.Adx.Sqr	sqRow_ok 0.2k/2.3e; dbls_ok 0.9k/1.3e; sqRows_ok 0.5k/1.4e	symbolic execution (diffuse *_ok lemmas)
+13.5	4.8	8.8	MlDsa.X86_64.Arith.YLay21	ylay1_ok 1.4k/1.2e; ylay2_ok 0.8k/1.8e; yzeta8R_ok 1.0k/0.8e	symbolic execution (diffuse *_ok lemmas)
+13.5	5.0	8.5	Bignum.AArch64.CrtChk	checks_ok 5.0k/8.5e; [line 14] @[expose] public section 0.0k/0.0e; … 0.0k/0.0e	single elab hot spot: omega
+13.5	3.4	10.2	Md5.AArch64.Compress	compress_verified 1.9k/0.2e; update_ok 0.1k/1.8e; step_ok 0.1k/1.6e	taint kernel
+13.5	1.4	12.2	Edwards.Group	add_assoc_x 0.5k/5.5e; onCurve_add 0.4k/3.3e; sq_ne_one 0.1k/0.8e	single elab hot spot: elab (other)
+13.5	4.9	8.6	Mont.AArch64.Round	prodRow_ok 0.2k/3.2e; round_ok 0.6k/2.7e; fresh_wins_lt 2.7k/0.0e	symbolic execution (diffuse *_ok lemmas)
+13.5	3.3	10.2	Sha256.Arm.Compress	schedule_ok 0.8k/1.1e; round_ok 0.1k/1.5e; update_ok 0.1k/1.1e	symbolic execution (diffuse *_ok lemmas)
+13.4	4.3	9.2	Ed448.AArch64.CombBase	combBaseFn_ok 0.8k/1.5e; loopStores 1.5k/0.0e; stqs_ok 0.3k/0.7e	symbolic execution (diffuse *_ok lemmas)
+13.4	3.7	9.7	Camellia.X86_64.Group	dataGroup_wp 3.2k/7.5e; frame 0.2k/0.3e; groupCount_wp 0.1k/0.3e	single elab hot spot: decide
+13.4	6.8	6.6	TripleDes.AArch64.Bitsliced.Transpose	stageA_step 1.8k/2.4e; stageB_step 1.1k/1.7e; bodyA_check 2.2k/0.0e	symbolic execution (diffuse *_ok lemmas)
+13.4	2.8	10.6	Bignum.X86_64.R2wFast	fast_ok 1.0k/4.1e; stepIter_ok 0.8k/2.3e; negStep_ok 0.2k/1.2e	symbolic execution (diffuse *_ok lemmas)
+13.4	1.4	12.0	Weierstrass.X86_64.WinJacA	winJacA_ok 0.4k/4.8e; jstepA_ok 0.4k/4.0e; madd_ok 0.2k/2.1e	symbolic execution (diffuse *_ok lemmas)
+13.4	12.6	0.8	P521.X86_64.TaintSums	[line 62] taint_summary combGSum : (tain 6.4k/0.7e; [line 63] taint_summary invPSum : (taint 6.2k/0.1e; combG 0.0k/0.0e	taint kernel
+13.4	10.7	2.6	Ecdsa.Verify.X86.Secp256k1.Verified	verify_ct 9.9k/0.9e; verifyWide_implies 0.1k/0.6e; verify_sp 0.6k/0.0e	taint kernel
+13.4	3.3	10.0	Aes.X86_64.Group	keyBody_ok 0.8k/1.6e; xorPhase_wp 0.5k/0.8e; ctrBlocks_wp 0.1k/0.7e	symbolic execution (diffuse *_ok lemmas)
+13.3	2.2	11.2	RsaPkcs1Enc.X86_64.DecPrf	msgAM_run 0.3k/2.3e; prf_body 0.5k/1.6e; msgCL_run 0.1k/1.8e	symbolic execution (diffuse *_ok lemmas)
+13.3	12.0	1.3	Ecdsa.X86.CombStagesCT	signTail_rel 7.3k/0.1e; [line 35] materialize_code signTailCode 4.4k/0.2e; [line 34] materialize_code signPrepCode 0.2k/0.1e	taint kernel
+13.3	2.8	10.5	Bignum.X86_64.Ifma.Lemmas	cj_bit 0.3k/0.5e; selMask_ok 0.0k/0.6e; r15Dec_ok 0.0k/0.5e	symbolic execution (diffuse *_ok lemmas)
+13.3	3.6	9.7	Camellia.Arm.Keys	decKeys_wp 1.5k/3.1e; keyOne_step 0.6k/2.1e; keyLoop_wp 0.4k/0.7e	diffuse elab (omega)
+13.3	3.1	10.2	RsaPkcs1Sig.X86_64.Encode	write_ok 0.5k/2.7e; encode_ok 0.4k/2.3e; copyLoop_ok 0.3k/0.8e	symbolic execution (diffuse *_ok lemmas)
+13.3	1.2	12.1	Curve448.AArch64.Neon.Macs	half_ok 0.3k/9.1e; withLoads_ok 0.3k/1.4e; prods_facts 0.3k/0.5e	single elab hot spot: simp
+13.3	2.0	11.3	Blake2.X86_64.Avx2.Compress	finish_ok 0.6k/1.5e; words_init 0.4k/1.1e; body_ok 0.1k/1.2e	symbolic execution (diffuse *_ok lemmas)
+13.2	4.2	9.1	Ed25519.X86_64.ScalarWord	wordFold_ok 2.1k/2.8e; foldMul_ok 0.4k/1.5e; foldPrep_ok 0.1k/1.7e	symbolic execution (diffuse *_ok lemmas)
+13.2	3.1	10.1	MlKem.AArch64.DecapsA	a_ok 1.5k/4.0e; pre_of 0.3k/1.9e; dprod_ok 0.6k/1.6e	single elab hot spot: decide
+13.2	4.0	9.3	Seed.AArch64.Copy	copyOut_loop 1.4k/1.9e; block_writes 1.1k/0.7e; copyIn_loop 0.4k/1.3e	diffuse elab (omega)
+13.2	2.8	10.4	Pbkdf2.Md.AArch64.PbkLoop	tail_ok 0.7k/1.2e; callC_ok 0.1k/1.8e; pieceA_ok 0.1k/1.0e	symbolic execution (diffuse *_ok lemmas)
+13.2	2.9	10.3	Sha1.X86.Compress	body_ok 0.4k/1.4e; schedule_ok 0.3k/0.5e; round_ok 0.0k/0.7e	symbolic execution (diffuse *_ok lemmas)
+13.2	8.7	4.5	EcKey.X86.Secp256k1.Verified	pk_ct 7.4k/0.5e; pkWide_implies 0.2k/1.0e; pk_verified 0.1k/0.8e	taint kernel
+13.2	4.2	9.0	Ed25519.AArch64.ScalarWord	wordFold_ok 1.9k/1.9e; foldSub_ok 0.0k/1.1e; foldPrep_ok 0.0k/1.1e	symbolic execution (diffuse *_ok lemmas)
+13.2	4.1	9.1	Aes.X86_64.AesNi.Ctr32	xorData_ok 0.7k/1.0e; blocks_ok 0.4k/1.1e; body8_ok 0.4k/0.8e	symbolic execution (diffuse *_ok lemmas)
+13.2	1.5	11.7	MlDsa.X86.Sign.PrimC	hint_piece 0.5k/4.1e; norm_piece 0.4k/2.8e; hb_piece 0.3k/2.6e	diffuse elab (simp)
+13.2	2.2	11.0	Ed25519.X86_64.CombSelect	combSelStep_ok 0.0k/1.5e; [line 163] macro_rules 0.0k/1.4e; combSelOne_slots 0.4k/0.6e	symbolic execution (diffuse *_ok lemmas)
+13.2	3.7	9.4	Poly1305.Arm.Update	restore_ok 0.4k/1.0e; rest_ok 0.3k/1.1e; mid_ok 0.4k/0.8e	symbolic execution (diffuse *_ok lemmas)
+13.1	3.6	9.5	Sha1.AArch64.Compress	update_ok 0.2k/1.9e; schedule_ok 0.6k/1.2e; compress_verified 1.0k/0.1e	symbolic execution (diffuse *_ok lemmas)
+13.1	2.8	10.3	Bignum.X86_64.MontFnAdx	adxBody_ok 0.3k/2.0e; mulAdx_ok 0.9k/1.3e; adxRest_ok 0.4k/1.6e	symbolic execution (diffuse *_ok lemmas)
+13.1	4.1	9.1	Gcm.X86_64.StitchAvx8.Ok	lane0_setup 1.4k/0.0e; setupWith_ok 0.1k/0.7e; finishHash 0.3k/0.5e	kernel-heavy, diffuse
+13.1	1.6	11.6	AesGcm.X86_64.Gather.SplitPath	splitT3_ok 0.3k/1.7e; splitEntry_ok 0.1k/1.7e; selT3_ok 0.2k/1.3e	symbolic execution (diffuse *_ok lemmas)
+13.1	8.4	4.8	Ed25519.X86_64.WindowCT	baseAddAffPart_ct 2.7k/0.2e; addDigitA_ct 2.3k/0.3e; baseAddPart_ct 1.6k/0.2e	taint kernel
+13.1	7.4	5.7	TripleDes.X86_64.CbcVerified	cbcDecrypt_ct 2.0k/0.6e; cbcEncrypt_ct 1.9k/0.3e; cbcDec_implies 0.2k/0.9e	taint kernel
+13.1	1.1	12.0	MlDsa.X86.Sign.PrimA	mul_piece 0.3k/3.7e; inPlace_piece 0.2k/3.0e; mulAdd_piece 0.3k/2.8e	diffuse elab (simp)
+13.1	5.5	7.6	Bignum.X86_64.Ifma.Exp	byteIter_ok 0.5k/1.4e; expLoop_ok 0.8k/0.8e; word_at 0.8k/0.7e	symbolic execution (diffuse *_ok lemmas)
+13.1	2.8	10.3	RsaOaep.X86_64.Mgf	round_ok 1.8k/2.9e; xorOut_ok 0.2k/2.0e; updCtr_ok 0.3k/1.8e	symbolic execution (diffuse *_ok lemmas)
+13.1	3.4	9.7	Rsa.X86_64.Div	divSub_ok 1.1k/2.5e; divmod_ok 0.6k/2.2e; divShift_ok 0.8k/1.5e	symbolic execution (diffuse *_ok lemmas)
+13.1	2.5	10.6	Blake2.Arm.Stream.Update	end_ok 0.4k/1.9e; copy_ok 0.3k/1.4e; mid_ok 0.2k/1.0e	symbolic execution (diffuse *_ok lemmas)
+13.1	2.6	10.5	Poly1305.X86.Update	rest_ok 0.2k/1.1e; update_verified 0.1k/0.8e; count_ok 0.1k/0.8e	symbolic execution (diffuse *_ok lemmas)
+13.1	2.1	11.0	Ecdh.AArch64.CheckPoint	keeps_of_unch 1.5k/3.9e; checkBodyR_ok 0.3k/3.5e; post_of_raw 0.0k/1.3e	single elab hot spot: decide
+13.0	0.8	12.2	Weierstrass.AArch64.PubNaf.State	rcbApart_naf 0.5k/9.7e; pt_other 0.0k/0.5e; unch 0.0k/0.4e	single elab hot spot: simp
+13.0	3.9	9.1	Sm4.AArch64.Group	dataGroup_wp 3.3k/7.1e; frame 0.3k/0.4e; frame2 0.2k/0.3e	single elab hot spot: decide
+13.0	0.8	12.2	Weierstrass.X86_64.WinQuad	jac_ok 0.2k/5.1e; quad_ok 0.1k/1.5e; [line 205] local macro "rcb_sub" : tacti 0.0k/0.9e	single elab hot spot: simp
+13.0	9.1	3.9	Ed25519.X86_64.DecodePowers	decodePowers_ct 8.9k/0.7e; rootInput3_eval 0.1k/1.1e; rootInput2_eval 0.1k/0.9e	taint kernel
+13.0	7.6	5.4	Camellia.X86.CbcVerified	block pairBody) 3.0k/0.1e; cbcDecrypt_ct 2.5k/0.2e; cbcEncrypt_ct 1.2k/0.2e	taint kernel
+13.0	3.5	9.5	Weierstrass.X86.PointContract	prePt_of 1.8k/7.8e; sum_x86 1.4k/1.4e; keeps_of_outs 0.4k/0.1e	single elab hot spot: omega
+13.0	4.0	9.0	Sha3.X86.Stream.Squeeze	squeeze_verified 2.7k/0.3e; store_ok 0.4k/1.8e; setup_ok 0.1k/2.0e	taint kernel
+12.9	10.0	3.0	EcKey.X86.Verified	pk_ct 9.1k/0.4e; pkWide_implies 0.2k/0.7e; pk_verified 0.0k/0.5e	taint kernel
+12.9	2.9	10.0	X25519.X86.Column	accMul2_ok 1.3k/2.6e; cols_ok 0.4k/1.0e; colv_congr 0.0k/1.3e	symbolic execution (diffuse *_ok lemmas)
+12.9	1.7	11.2	Pbkdf2.Md.AArch64.HmacInit	keys_ok 0.4k/2.4e; key_step 0.2k/1.1e; opad_ok 0.2k/0.9e	symbolic execution (diffuse *_ok lemmas)
+12.9	7.6	5.4	Weierstrass.JacAdd	jacAddF_cross 7.0k/0.9e; opposite 0.2k/0.8e; jacAddN_run 0.0k/0.8e	kernel eval/defeq (concentrated)
+12.9	2.5	10.4	Gcm.X86_64.StitchZ.Loop	setupZ_ok 0.4k/3.5e; dbody_ok 0.6k/1.4e; body_ok 0.8k/1.1e	symbolic execution (diffuse *_ok lemmas)
+12.9	2.9	10.0	MlDsa.X86_64.Arith.YLay	ystep4 1.3k/3.4e; ystep 0.6k/1.6e; ylay_ok 0.2k/0.9e	symbolic execution (diffuse *_ok lemmas)
+12.9	1.9	11.1	Scrypt.X86.Whole.Calls	lay_ok 0.1k/1.2e; romix_pre 0.1k/0.6e; pbk1Args_ok 0.0k/0.6e	symbolic execution (diffuse *_ok lemmas)
+12.9	3.0	9.9	Poly1305.X86_64.Ifma.Vec	s3S_y 0.2k/1.5e; s2S_y 0.2k/1.3e; s1S_y 0.1k/1.4e	diffuse elab (case split)
+12.9	3.7	9.2	Ecdsa.X86.Setup	setup_ok 2.1k/4.7e; setupShift_ok 0.9k/0.7e; setupSaves_ok 0.2k/1.4e	single elab hot spot: omega
+12.9	3.1	9.7	Ecdsa.Rfc6979.Arm.Hmac	finA 0.9k/1.7e; initA 0.5k/1.8e; upd_step 0.3k/1.4e	diffuse elab (macro anums)
+12.8	5.5	7.3	Argon2.X86.HPrime.Calls	update_ok 2.1k/2.6e; finalize_ok 1.6k/1.9e; init_ok 1.0k/1.7e	symbolic execution (diffuse *_ok lemmas)
+12.8	5.1	7.7	Ed25519.X86.WindowCT	doubleWindow_ct 4.0k/0.1e; skipBody_ct 0.1k/1.8e; addDigit_ct 0.3k/0.9e	taint kernel
+12.8	1.1	11.7	Spec.Cast5	zOfX 0.1k/1.2e; s3 0.1k/1.1e; s5 0.2k/1.0e	diffuse elab (elab (other))
+12.8	0.8	12.0	AesGcmSiv.Arm.Fn	open_wp 0.1k/3.1e; seal_wp 0.0k/2.0e; maskLoop_ok 0.4k/1.0e	symbolic execution (diffuse *_ok lemmas)
+12.8	6.2	6.6	ChaCha20Poly1305.Arm.Verified	open_verified 2.0k/0.7e; open_ct 2.1k/0.3e; seal_ct 1.6k/0.6e	kernel-heavy, diffuse
+12.8	3.0	9.8	Ecdsa.Rfc6979.X86_64.CT	blks 1.1k/1.1e; rekey_gen_ct 0.2k/1.0e; hmacBlks 0.2k/0.5e	taint kernel
+12.8	0.7	12.1	MlDsa.AArch64.Optimized.PairedLowPair	r0Pair_blocks 0.1k/4.7e; lowPair_ok 0.2k/2.3e; lowTailTwo_ok 0.0k/1.2e	symbolic execution (diffuse *_ok lemmas)
+12.8	8.8	4.0	Ecdsa.Verify.X86.P224.Verified	verify_ct 7.9k/1.3e; verifyWide_implies 0.2k/1.1e; verify_sp 0.5k/0.0e	taint kernel
+12.8	1.8	10.9	RsaPkcs1Enc.AArch64.DecEntry	entry_ok 0.5k/2.8e; lay_ok 0.4k/1.8e; privRegs_ok 0.0k/1.5e	symbolic execution (diffuse *_ok lemmas)
+12.8	2.0	10.8	Argon2.AArch64.SegmentSetupCT	code 0.6k/0.1e; code_rel 0.3k/0.1e; prepared_public 0.0k/0.4e	literal rebuild
+12.8	4.6	8.1	MlKem1024.Arm.Decompress	fieldVal5 1.5k/1.3e; fieldVal11 1.7k/1.0e; head_ok 0.1k/0.7e	symbolic execution (diffuse *_ok lemmas)
+12.7	7.6	5.2	Weierstrass.X86_64.MontFnN	mulF_reloc 3.0k/0.0e; mulN_ok 0.5k/1.9e; mulN_keeps 2.2k/0.0e	kernel-heavy, diffuse
+12.7	2.4	10.4	MlKem1024.Arm.CompressEncode	field_step 1.0k/3.0e; acc_group 0.2k/1.1e; step 0.2k/0.7e	symbolic execution (diffuse *_ok lemmas)
+12.7	2.9	9.8	Md5.X86_64.Compress	fn_ok 0.2k/1.9e; step_ok 0.2k/1.1e; body_ok 0.1k/0.8e	symbolic execution (diffuse *_ok lemmas)
+12.7	8.3	4.4	Ecdsa.X86_64.P384.MulBaseVerified	mxcsr_ok 4.9k/0.1e; mb_ct 2.2k/0.7e; keeps_of_unch 0.6k/0.9e	kernel-heavy, diffuse
+12.7	3.6	9.1	Camellia.AArch64.Core	group_wp 1.0k/2.4e; fl_step 0.3k/0.8e; storeHalf_step 0.2k/0.9e	diffuse elab (omega)
+12.7	2.5	10.2	RsaPss.X86_64.CtHash	lenLoop_ok 1.1k/4.4e; pad80_ok 0.4k/2.0e; lenField_ok 0.3k/1.0e	single elab hot spot: decide
+12.7	1.4	11.3	CmacTripleDes.Arm.Update	body_ok 0.8k/7.1e; prologue_wp 0.2k/1.8e; epilogue_wp 0.1k/0.4e	single elab hot spot: decide
+12.7	2.1	10.6	AesGcmSiv.X86_64.PolyvalCT	chunkEnd_wp 0.1k/1.0e; polyvalOne_rel 0.1k/0.9e; polyOneA_wp 0.0k/0.7e	diffuse elab (omega)
+12.7	3.0	9.7	Weierstrass.X86.LadderPCall	ptCall_ok 1.6k/7.0e; copyPt_ok 0.8k/1.1e; zone8 0.4k/0.3e	single elab hot spot: omega
+12.7	7.7	5.0	Ecdh.X86.P224.Verified	ecdh_ct 6.5k/0.6e; ecdhWide_implies 0.2k/1.4e; post_of 0.0k/0.7e	taint kernel
+12.6	1.6	11.0	Blake2.X86.CompressS.Round	vg_ok 0.6k/3.9e; round_ok 0.7k/2.4e; diag_get 0.0k/1.3e	symbolic execution (diffuse *_ok lemmas)
+12.6	3.0	9.7	Bignum.X86_64.AdxSquareDiagonalChoice	value_step 0.5k/0.8e; group8_ok 0.3k/0.9e; group_ok 0.2k/0.9e	symbolic execution (diffuse *_ok lemmas)
+12.6	3.2	9.4	Weierstrass.X86_64.MontFnX	sqrCore_ok 0.7k/1.9e; ptrs_ok 0.5k/0.8e; copyW_ok 0.4k/0.7e	symbolic execution (diffuse *_ok lemmas)
+12.6	9.3	3.3	Seed.X86_64.FbVerified	encrypt)) 5.3k/0.2e; fb_wp' 1.5k/0.3e; cfbDecrypt_verified 0.2k/0.6e	taint kernel
+12.6	4.6	8.0	MlKem.X86_64.PrfBatch	batch_tr 1.4k/0.3e; sig_store 0.6k/0.7e; ext_step 0.5k/0.7e	taint kernel
+12.6	1.7	10.9	MlKem.Arm.RowSum	dot2_ok 0.4k/1.6e; rowA_ok 0.1k/0.7e; rowF_ok 0.1k/0.5e	symbolic execution (diffuse *_ok lemmas)
+12.6	8.6	4.0	Ecdsa.X86.P224.Verified	sign_ct 7.5k/0.6e; signWide_implies 0.2k/1.1e; sign_sp 0.6k/0.0e	taint kernel
+12.6	1.6	11.0	Bignum.X86_64.CrtCTExp	crtWin_ct 0.3k/1.7e; tabPre_ct 0.1k/1.7e; buildBody_ct 0.2k/1.5e	taint kernel
+12.6	3.2	9.4	Ed25519.X86_64.Zmm.Consts	zconsts_ok 1.5k/3.4e; rowCopy_ok 0.3k/1.5e; maskCopy_ok 0.3k/1.0e	symbolic execution (diffuse *_ok lemmas)
+12.6	2.7	9.9	Blowfish.AArch64.Batch	storePair_run 0.7k/2.3e; loadPair_run 0.5k/1.6e; loadBatch_run 0.3k/1.8e	symbolic execution (diffuse *_ok lemmas)
+12.6	2.8	9.8	Cast5.X86_64.Block	decryptBlock_ok 0.8k/1.7e; decStart_ok 0.5k/1.9e; groupDec_ok 0.6k/1.0e	symbolic execution (diffuse *_ok lemmas)
+12.6	12.2	0.3	Ed25519.X86.CombCT	combMultiply_ct 12.2k/0.3e; [line 25] @[expose] public section 0.0k/0.0e	taint kernel
+12.6	1.0	11.5	Ecdh.X86.Validate	validate_ok 0.1k/2.3e; ladPow_ok 0.2k/1.8e; ladLayQ 0.3k/1.6e	symbolic execution (diffuse *_ok lemmas)
+12.6	3.9	8.6	Seed.X86_64.Copy	copyIn_loop 0.8k/1.7e; block_writes 1.3k/1.1e; copyOut_loop 1.1k/1.2e	diffuse elab (omega)
+12.5	1.5	11.1	AesSiv.X86.Ctr	ctrTail_ok 0.5k/3.0e; ctrWhole_ok 0.3k/1.7e; tailArgs_ok' 0.1k/1.2e	symbolic execution (diffuse *_ok lemmas)
+12.5	3.1	9.4	MlKem.X86.DecodeDecompress	step10 1.2k/3.1e; step14 0.5k/1.1e; val10 0.7k/0.8e	diffuse elab (omega)
+12.5	4.3	8.3	X448.X86_64.Reduce	reduce_ok 3.5k/5.1e; reduce_arith 0.2k/1.8e; rot_arith 0.2k/0.3e	single elab hot spot: decide
+12.5	1.4	11.1	RsaKeyGen.X86_64.Key.DOdd	dOdd_k 1.1k/8.6e; loadEv_k 0.2k/0.7e; gcdIsOne_k 0.0k/0.7e	single elab hot spot: decide
+12.5	2.1	10.4	RsaKeyGen.AArch64.MrSq	sqHead_ok 0.7k/2.5e; mrLast_ok 0.3k/1.8e; lastTail_ok 0.2k/1.5e	symbolic execution (diffuse *_ok lemmas)
+12.5	8.0	4.5	Seed.AArch64.FbVerified	cfbDecrypt_verified 2.8k/1.3e; ofb_verified 2.5k/0.8e; cfbEncrypt_verified 2.1k/0.8e	taint kernel
+12.5	3.1	9.4	Ecdh.X86_64.WinJacA	invSpecJACall 1.6k/3.7e; mulQJA_ok 0.6k/2.7e; invSpecJA 0.2k/0.7e	single elab hot spot: omega
+12.5	8.9	3.6	Weierstrass.X86_64.P384Literals	nPow p384x 1.7k/0.7e; nPow p384 1.1k/0.9e; gMulK p384 1.6k/0.1e	literal rebuild
+12.5	1.5	10.9	Rc2.Arm.Stream.Verified	args_ok 0.1k/2.0e; update_rel 0.1k/1.0e; short_ok 0.3k/0.7e	symbolic execution (diffuse *_ok lemmas)
+12.5	1.6	10.9	AesSiv.X86.FinishLong	xorEnd_ok 0.2k/1.9e; finishLong_ok 0.4k/1.6e; lm1_ok 0.1k/1.9e	symbolic execution (diffuse *_ok lemmas)
+12.5	3.5	8.9	Weierstrass.X86_64.BytesLen	ldStepsL_ok 0.9k/1.9e; stSteps_wordsL 0.6k/1.9e; storeBytes_ok 0.8k/1.2e	symbolic execution (diffuse *_ok lemmas)
+12.4	2.9	9.6	Framework.Arm.StackScratch	narrow_pre 0.7k/1.2e; setArgs_run 0.7k/0.9e; withStackScratch_run 0.3k/0.8e	diffuse elab (omega)
+12.4	2.9	9.6	MlKem.AArch64.Mul	step 1.3k/5.6e; vpair_ok 0.2k/1.6e; correct 0.9k/0.5e	single elab hot spot: omega
+12.4	2.3	10.2	AesSiv.X86_64.FinishLong	longMac_wp 0.5k/2.4e; longTail_wp 0.3k/1.8e; m4_ok 0.2k/1.6e	symbolic execution (diffuse *_ok lemmas)
+12.4	2.4	10.0	MlDsa.Arm.Verify.Compute	c0 0.6k/2.1e; stk 0.4k/1.8e; nttZ_ok 0.6k/1.6e	symbolic execution (diffuse *_ok lemmas)
+12.4	4.7	7.7	Rsa.AArch64.RpHalf	halfStep_ok 4.0k/5.0e; halfInit_ok 0.1k/0.8e; halving_ok 0.3k/0.6e	single elab hot spot: omega
+12.4	7.6	4.8	Ecdsa.X86_64.P384.InverseVerified	p_ct 3.5k/0.5e; n_ct 3.0k/0.5e; n_implies 0.0k/0.8e	taint kernel
+12.4	1.8	10.6	Gcm.X86.Step	nextWord_ok 0.3k/3.0e; step_ok 0.1k/1.6e; v_update 0.0k/0.7e	symbolic execution (diffuse *_ok lemmas)
+12.4	9.8	2.6	Ecdsa.X86_64.Verified	sign_ct 3.7k/0.4e; sign_x86 2.8k/0.4e; sign_verified 1.4k/0.0e	taint kernel
+12.4	3.1	9.3	Scrypt.AArch64.BlockMixVerified	setup_ok 0.2k/1.3e; mem_ok 0.4k/1.0e; halves_ok 0.3k/1.0e	symbolic execution (diffuse *_ok lemmas)
+12.4	2.2	10.1	Blake2.AArch64.Stream.Update	fill_ok 0.2k/2.4e; direct_ok 0.8k/1.4e; tail_ok 0.1k/1.0e	symbolic execution (diffuse *_ok lemmas)
+12.3	2.6	9.7	Bignum.X86_64.CrtGPow	gBit_ok 0.6k/3.0e; gHead_ok 0.8k/1.6e; gSlow_ok 0.2k/1.1e	symbolic execution (diffuse *_ok lemmas)
+12.3	8.9	3.5	Ecdsa.X86_64.P224.Verified	sign_ct 3.5k/0.6e; sign_x86 1.7k/0.3e; sign_verified 1.5k/0.1e	taint kernel
+12.3	4.9	7.5	MlKem1024.X86.DecodeDecompress	step11 2.6k/1.5e; step5 1.5k/1.2e; st 0.2k/0.5e	kernel-heavy, diffuse
+12.3	1.9	10.4	MlKem.Arm.Encaps	setup_ok 0.2k/1.7e; hashH_ok 0.3k/1.2e; hashG_ok 0.2k/1.0e	symbolic execution (diffuse *_ok lemmas)
+12.3	2.2	10.1	Ecdsa.AArch64.Fixed	nPow_ok 0.4k/0.9e; invCall_ok 0.0k/1.2e; stAll_ok 0.2k/0.8e	symbolic execution (diffuse *_ok lemmas)
+12.3	1.1	11.1	AesCcm.Arm.Crypt	ctrTail_ok 0.6k/4.2e; ctrTailArgs_ok 0.2k/2.3e; ctr_ok 0.2k/1.8e	symbolic execution (diffuse *_ok lemmas)
+12.3	8.5	3.7	Camellia.X86_64.FbVerified	ofb_ct 1.5k/0.3e; cfbEncrypt_ct 1.4k/0.2e; fb_wp' 1.3k/0.2e	taint kernel
+12.2	0.9	11.4	Scrypt.X86.SalsaRounds	col_get 0.1k/2.8e; fromDiag_ok 0.1k/1.6e; row_get 0.1k/1.6e	symbolic execution (diffuse *_ok lemmas)
+12.2	2.3	10.0	MdStream.AArch64.Common	update_keepsV 0.1k/1.3e; save_ok 0.4k/0.8e; restore_ok 0.3k/0.8e	symbolic execution (diffuse *_ok lemmas)
+12.2	2.3	9.9	X25519.AArch64.Setup	bits_ok 0.1k/1.7e; decodeN_ok 0.4k/1.0e; bitsN_ok 0.4k/0.8e	symbolic execution (diffuse *_ok lemmas)
+12.2	2.8	9.4	CmacTripleDes.Arm.Block	passTail_ok 0.2k/2.2e; block_ok 0.0k/1.0e; ok_at 0.3k/0.6e	symbolic execution (diffuse *_ok lemmas)
+12.2	2.3	9.9	RsaKeyGen.AArch64.Key.Pieces	inverse_k 0.2k/1.2e; constA_k 0.3k/1.0e; selC_k 0.3k/0.8e	diffuse elab (simp)
+12.2	3.1	9.0	MlDsa.X86.Pack.Stream	packBody_ok 0.2k/2.3e; unpackBody_ok 0.6k/1.6e; packCoef_ok 0.7k/1.1e	symbolic execution (diffuse *_ok lemmas)
+12.2	2.4	9.8	ChaCha20.AArch64.Xor	xor_step 0.3k/1.8e; sel_ok 0.4k/0.8e; xor_verified 0.0k/0.7e	symbolic execution (diffuse *_ok lemmas)
+12.2	3.2	9.0	MlDsa.X86_64.Round.YHint	step 0.9k/3.4e; makeHintY_correct 0.5k/0.7e; mhL_toNat 0.4k/0.7e	diffuse elab (simp)
+12.2	2.9	9.3	MlDsa.X86_64.Arith.LazyLay	ystep4 1.4k/3.7e; ystep 0.5k/0.9e; yblock_ok 0.2k/1.0e	single elab hot spot: decide
+12.2	3.2	9.0	MlDsa.Arm.KeyGen.RestRow	rowMulAdd_piece 0.4k/1.0e; rowMul_ok 0.6k/0.9e; rowMul_piece 0.5k/0.7e	symbolic execution (diffuse *_ok lemmas)
+12.2	8.3	3.9	P384.X86_64.JacTiming	nafCachedJac_checks 2.6k/1.1e; nafMixedJac_checks 2.7k/0.9e; nafMixedJac_adx_checks 1.8k/1.0e	taint kernel
+12.2	2.3	9.8	Mont.X86_64.Friendly	shiftRed_ok 0.6k/2.4e; addProd_ok 0.1k/1.4e; shiftProdS_ok 0.2k/1.1e	symbolic execution (diffuse *_ok lemmas)
+12.2	1.5	10.6	Seed.X86.Key	end_ok 0.1k/3.2e; expandKey_wp 0.3k/1.9e; keyChunk_ok 0.2k/1.3e	symbolic execution (diffuse *_ok lemmas)
+12.2	2.7	9.5	Weierstrass.X86_64.MontFnB	pMulAccR_ok 0.5k/1.1e; plusOne_ok 0.1k/1.3e; sqrCols_ok 0.2k/1.0e	symbolic execution (diffuse *_ok lemmas)
+12.2	1.8	10.4	AesGcmSiv.X86_64.Polyval	stageTail_ok 0.3k/2.0e; lensAt_ok 0.3k/1.8e; polyvalOne_ok 0.3k/1.4e	symbolic execution (diffuse *_ok lemmas)
+12.2	2.5	9.7	X448.X86_64.Comba	mulCols_sum 0.6k/1.6e; sqrCols_sum 0.5k/1.6e; columns_ok 0.4k/1.4e	symbolic execution (diffuse *_ok lemmas)
+12.2	12.0	0.1	MlKem.AArch64.Ntt16.Readonly.Words	inverse_words 5.0k/0.0e; forward_words 4.7k/0.0e; gamma_high 1.1k/0.0e	kernel eval/defeq (concentrated)
+12.1	2.2	10.0	Ed448.AArch64.ScalarWord	csubSel_ok 0.1k/3.9e; foldMul_prod_ok 1.3k/2.0e; foldMul_ok 0.1k/1.1e	symbolic execution (diffuse *_ok lemmas)
+12.1	2.3	9.9	AesSiv.AArch64.Ctr	ctr_tail 0.5k/1.9e; ctrWhole_wp 0.4k/1.2e; ctr_head 0.2k/0.7e	diffuse elab (decide)
+12.1	2.5	9.6	RsaOaep.X86_64.DecLoops	scan_ok 0.5k/2.6e; shift_ok 0.6k/1.6e; shiftPass_ok 0.4k/1.7e	symbolic execution (diffuse *_ok lemmas)
+12.1	3.3	8.8	Rc2.AArch64.Vec.Store	xorStore_ok 1.2k/4.5e; scatter_byte 0.8k/0.9e; scatter_ok 0.0k/1.3e	single elab hot spot: decide
+12.1	11.7	0.4	Ecdsa.Verify.X86.CombMidCT	vMid_rel 9.8k/0.1e; [line 37] materialize_code vMidCode 2.0k/0.3e; Mont 0.0k/0.0e	taint kernel
+12.1	2.6	9.5	MlKem.X86.CompressEncode	step10 1.6k/4.0e; step14 0.3k/1.3e; verified 0.1k/1.1e	single elab hot spot: omega
+12.1	2.4	9.7	AesGcm.Arm.Absorb	whole_ok 0.8k/2.7e; headPre_ok 0.4k/2.4e; tail_ok 0.3k/1.3e	symbolic execution (diffuse *_ok lemmas)
+12.1	4.0	8.1	X25519.X86.Arith	sqr_identity 0.8k/2.0e; prod_identity 1.0k/1.3e; mul_ok 0.6k/1.5e	symbolic execution (diffuse *_ok lemmas)
+12.1	2.5	9.5	MlKem.AArch64.Vec	getLsbD_read 0.3k/1.0e; getLsbD_ofVBytes 0.0k/0.7e; read16 0.1k/0.6e	diffuse elab (omega)
+12.1	2.8	9.3	Poly1305.X86_64.Avx512.Load	addPost_of 2.0k/2.2e; addS_0 0.1k/0.8e; addMS_4 0.0k/0.8e	diffuse elab (decide)
+12.1	8.5	3.5	TripleDes.X86_64.Bitsliced.Step	inputStep_run 3.2k/0.7e; output_check 3.7k/0.0e; sboxStep_ok 0.1k/0.9e	kernel-heavy, diffuse
+12.1	2.2	9.8	Ecdsa.Rfc6979.X86.Hmac	initA 0.8k/2.7e; finA 0.3k/1.7e; fin_step 0.3k/1.0e	diffuse elab (macro nums)
+12.1	1.1	10.9	Weierstrass.X86.WinJacEntryState	copy_shared_ok 0.0k/2.7e; co_init_ok 0.1k/1.3e; co_step_ok 0.1k/0.8e	symbolic execution (diffuse *_ok lemmas)
+12.0	3.0	9.1	MlKem.AArch64.KgEnd	apart_R 1.0k/2.5e; restore_ok 0.7k/1.6e; rho_ok 0.3k/1.6e	symbolic execution (diffuse *_ok lemmas)
+12.0	8.5	3.5	Ecdsa.X86_64.P521.Verified	sign_ct 6.0k/1.0e; sign_inlineOk 1.8k/0.0e; sign_x86 0.5k/0.5e	taint kernel
+12.0	10.1	1.9	Variants.RsaPrivateCrt.X86_64.Ifma	variant 10.1k/1.9e; Ifma 0.0k/0.0e; X86_64 0.0k/0.0e	taint kernel
+12.0	5.2	6.8	MlKem.X86.Keccak	absorb_nosp 1.8k/0.0e; absorb_pre 0.3k/1.2e; squeeze_pre 0.2k/1.2e	kernel-heavy, diffuse
+12.0	2.8	9.2	Cast5.AArch64.Block	decryptBlock_ok 0.6k/1.4e; groupDec_ok 0.8k/1.0e; blockStart_ok 0.0k/1.3e	symbolic execution (diffuse *_ok lemmas)
+12.0	3.7	8.3	Curve448.AArch64.Neon.Prep	shiftChunk_ok 1.3k/2.5e; shifted_ok 0.5k/3.0e; sums_ok 1.0k/0.7e	symbolic execution (diffuse *_ok lemmas)
+12.0	3.2	8.8	Mont.AArch64.P256Square.Product	cross_ok 0.3k/2.8e; product_ok 1.1k/1.4e; double_ok 0.1k/1.5e	symbolic execution (diffuse *_ok lemmas)
+12.0	3.2	8.8	Poly1305.X86_64.Avx2.Final	loadH_ok 0.8k/1.5e; finB_env 0.5k/1.7e; fnS_nat 0.2k/1.2e	symbolic execution (diffuse *_ok lemmas)
+12.0	0.6	11.4	X25519.X86_64.Iter	step_eq 0.0k/3.5e; ops_ok 0.0k/3.0e; stepEnv_eval 0.1k/1.7e	symbolic execution (diffuse *_ok lemmas)
+12.0	7.8	4.2	Ed448.X86_64.Window.Timing	round_ct 3.3k/1.0e; joint_ct 2.3k/0.4e; first_ct 1.8k/0.5e	taint kernel
+12.0	2.2	9.8	MlDsa.X86_64.Arith.Mul	step 0.1k/2.5e; mulAddCore_ok 0.5k/1.4e; mulCore_ok 0.5k/1.2e	symbolic execution (diffuse *_ok lemmas)
+12.0	2.2	9.8	Ed25519.AArch64.WindowStep	doubleWindow_ok 0.2k/1.3e; byte_ext 0.3k/0.6e; fromTablePrefixQ_ok 0.4k/0.4e	symbolic execution (diffuse *_ok lemmas)
+12.0	8.0	3.9	Camellia.AArch64.FbVerified	ofb_verified 2.4k/1.0e; cfbDecrypt_verified 2.4k/0.7e; cfbEncrypt_verified 2.1k/0.9e	taint kernel
+11.9	7.7	4.2	Sm4.AArch64.FbVerified	ofb_verified 1.8k/1.2e; cfbEncrypt_verified 1.8k/1.1e; cfbDecrypt_verified 1.7k/0.6e	taint kernel
+11.9	1.3	10.7	AesCcm.X86_64.MacCT	absorbT2_ok 0.3k/1.9e; absorbTail_rel 0.0k/1.1e; aad_rel 0.1k/0.9e	symbolic execution (diffuse *_ok lemmas)
+11.9	4.2	7.7	Ed25519.Arm.ScalarMulAddVerified	scalarMulAdd_ct 1.3k/0.1e; scalarWideAdd_ok 0.4k/1.0e; scalarPackWide_ok 0.2k/0.9e	taint kernel
+11.9	1.5	10.4	AesSiv.X86.CmacOf	cmacOf_ok 0.5k/2.9e; cmacUpd_ok 0.1k/1.2e; cmacC_ok 0.1k/1.1e	symbolic execution (diffuse *_ok lemmas)
+11.9	11.1	0.8	Ecdh.X86_64.P521.CheckVerified	ct 6.9k/0.5e; hvm 3.6k/0.1e; sat 0.4k/0.0e	taint kernel
+11.9	0.7	11.2	Gcm.X86_64.StitchAvx8.AesHash	prefix_ok 0.0k/5.4e; incs_ok 0.1k/0.7e; regCounters_ok 0.0k/0.5e	single elab hot spot: simp
+11.8	3.5	8.3	Bignum.X86_64.AdxTiledSquareChoice	blockStep_ok 0.7k/1.1e; step_inv 0.8k/1.0e; rows_ok 0.2k/1.1e	symbolic execution (diffuse *_ok lemmas)
+11.8	2.6	9.2	Poly1305.AArch64.Radix64.Update	count_ok 0.3k/1.0e; fill_ok 0.3k/0.9e; whole_step 0.2k/0.9e	symbolic execution (diffuse *_ok lemmas)
+11.8	1.8	10.1	Weierstrass.X86_64.WinJacOps	cadd_ok 0.2k/2.7e; dbluN_run 0.6k/2.0e; addApart 0.1k/1.9e	symbolic execution (diffuse *_ok lemmas)
+11.8	3.9	7.9	Bignum.AArch64.CrtQ	qPhase_gen 3.4k/5.9e; of_frm 0.5k/0.7e; of_arrays 0.1k/0.3e	single elab hot spot: decide
+11.8	2.4	9.4	RsaKeyGen.X86_64.Key.CTFront	keyStart_k 0.8k/0.8e; loadE_ct 0.1k/1.3e; inverse_ct 0.2k/0.9e	diffuse elab (omega)
+11.8	3.0	8.8	Aes.X86_64.Vaes.Ctr32	ctrLoad_ok 0.3k/2.3e; blocks_ok 0.5k/1.8e; xorData_ok 1.1k/1.1e	symbolic execution (diffuse *_ok lemmas)
+11.8	2.5	9.3	Sm4.X86.FbVerified	wide_implies_cfbDec 0.1k/1.5e; wide_implies_ofb 0.1k/1.2e; wide_implies_cfbEnc 0.2k/1.0e	diffuse elab (macro sig_pre)
+11.8	1.3	10.5	AesSiv.X86_64.Enc	start_wp 0.1k/1.9e; encPre_ok 0.1k/1.6e; adBody_wp 0.3k/1.1e	symbolic execution (diffuse *_ok lemmas)
+11.8	2.5	9.3	RsaKeyGen.AArch64.Key.CTD	dEven_ct0 0.5k/1.4e; dPart_ct0 0.2k/1.1e; dOddCblk_k 0.2k/1.0e	taint kernel
+11.8	9.3	2.5	Bignum.X86_64.Ifma.Terms	checkStep_4096 4.8k/0.0e; checkStep_3072 3.6k/0.0e; eq_of_beq 0.0k/2.0e	kernel eval/defeq (concentrated)
+11.8	4.2	7.6	Weierstrass.X86.MontRed	sparseStepAddB_ok 0.7k/1.8e; multiChainB_ok 0.8k/1.4e; sparseChainSubB_ok 0.8k/1.3e	symbolic execution (diffuse *_ok lemmas)
+11.8	1.7	10.1	MlDsa.X86.Sample.RejBounded	rbVal_run 0.1k/1.9e; body_piece 0.1k/1.0e; piece 0.9k/0.1e	symbolic execution (diffuse *_ok lemmas)
+11.8	2.0	9.8	AesGcm.AArch64.Crypt	crSeg1_ok 0.5k/3.5e; crSeg2_ok 0.3k/2.1e; crTail_ok 0.2k/1.2e	symbolic execution (diffuse *_ok lemmas)
+11.8	2.3	9.5	Bignum.AArch64.CrtExp	crtByte_ok 0.6k/2.2e; crtWin_ok 0.5k/2.1e; crtByteHead_ok 0.2k/1.4e	symbolic execution (diffuse *_ok lemmas)
+11.8	1.9	9.8	AesSiv.X86.Init	init_wp 0.7k/3.4e; initMid₂_wp 0.5k/1.7e; initPre_wp 0.4k/1.2e	diffuse elab (simp)
+11.8	2.7	9.1	MlKem.X86_64.S4Vec	vput_ok 0.1k/1.2e; vcand_ok 0.2k/0.9e; cand_dword 0.1k/1.1e	symbolic execution (diffuse *_ok lemmas)
+11.8	2.7	9.0	Ed25519.AArch64.CombSelect	combWord_eq 0.7k/1.4e; combSelect_ok 0.0k/1.2e; selectField_ok 0.4k/0.8e	symbolic execution (diffuse *_ok lemmas)
+11.7	3.2	8.6	Bignum.X86_64.R2aFast	fast_ok 1.5k/4.6e; stepIter_ok 0.8k/1.9e; stepsStart_ok 0.5k/0.8e	single elab hot spot: omega
+11.7	10.9	0.8	Ed448.AArch64.VerifyCT.Front	front_ct 4.7k/0.4e; ofReg… 4.1k/0.2e; table_ct 2.1k/0.1e	taint kernel
+11.7	3.2	8.5	RsaKeyGen.AArch64.GcdE	gcdCheck_ok 1.0k/2.7e; gcdE_ok 0.5k/2.1e; modPrep_ok 0.7k/1.4e	symbolic execution (diffuse *_ok lemmas)
+11.7	2.5	9.2	Pbkdf2.Md.X86_64.PbkLoop	tail_ok 0.9k/1.4e; callC_ok 0.1k/1.5e; pieceA_ok 0.2k/1.3e	symbolic execution (diffuse *_ok lemmas)
+11.7	4.1	7.6	Aes.Arm.Ecb	group_ok 1.5k/2.2e; storePhase_wp 0.9k/1.4e; ecbInv_step 0.4k/0.9e	symbolic execution (diffuse *_ok lemmas)
+11.7	3.2	8.5	Sha512.X86.Compress	body_ok 0.8k/2.0e; loadWs_ok 0.2k/0.7e; compress_verified 0.8k/0.1e	symbolic execution (diffuse *_ok lemmas)
+11.7	1.3	10.4	AesGcm.X86_64.Short.Xor	xorText_ok 1.0k/4.9e; xorWord_ok 0.1k/1.8e; xor1Step_ok 0.1k/1.3e	single elab hot spot: decide
+11.7	0.8	10.9	MlDsa.X86.Sign.PrimB	ball_piece 0.3k/3.8e; mask_piece 0.2k/3.7e; rej_piece 0.2k/3.4e	diffuse elab (simp)
+11.7	1.3	10.4	Bignum.AArch64.CrtCTExp	crtExpInit_tpre 0.1k/1.2e; crtExpLoop_ct 0.3k/0.9e; buildBody_ct 0.1k/1.0e	diffuse elab (omega)
+11.7	2.9	8.7	Ecdsa.Rfc6979.AArch64.CT	blks 1.8k/2.2e; hmacBlks 0.2k/0.5e; rekey_gen_ct 0.1k/0.5e	taint kernel
+11.7	1.7	10.0	CmacAes.Stream.AArch64.AbsorbBlocks	fill_wp 0.2k/1.8e; chain2_wp 0.2k/1.6e; chain1_wp 0.1k/1.5e	diffuse elab (simp)
+11.7	2.5	9.2	MlKem.Arm.Sample	accept_ok 0.2k/0.9e; setup_ok 0.1k/0.8e; blk1_ok 0.1k/0.6e	symbolic execution (diffuse *_ok lemmas)
+11.7	3.4	8.2	Aes.Arm.Blocks	correct 0.6k/3.8e; blocksKeyBody_ok 1.0k/1.9e; decryptBlocks_ct 0.9k/0.0e	symbolic execution (diffuse *_ok lemmas)
+11.7	1.2	10.5	Ecdh.X86.Main	exchange_ok 0.6k/4.6e; middle_ok 0.1k/2.3e; ecFinish_ok 0.2k/1.3e	single elab hot spot: decide
+11.7	2.9	8.8	Framework.AArch64.StackArgScratch	narrowS_pre 0.7k/0.7e; stackArgScratch 0.0k/1.3e; setArgs_run 0.6k/0.6e	diffuse elab (omega)
+11.7	2.5	9.2	Ed25519.X86.VerifyMessage.Body	equation_nosp 1.7k/0.0e; equation_call 0.0k/1.1e; finalizeArgs_ok 0.0k/1.0e	kernel-heavy, diffuse
+11.6	2.5	9.1	Gcm.X86_64.StitchZTo.Loop	setupZTo_ok 0.8k/3.2e; setupCTo_ok 0.2k/1.7e; bodyTo_ok 0.8k/1.1e	symbolic execution (diffuse *_ok lemmas)
+11.6	3.4	8.3	Bignum.AArch64.Reduce	reduceRow_ok 0.9k/2.4e; redStep_ok 0.9k/2.0e; redTop_val 0.6k/1.5e	symbolic execution (diffuse *_ok lemmas)
+11.6	4.6	7.1	Curve448.AArch64.Neon.Convert	convChunk_ok 2.3k/4.3e; V_ne 1.0k/1.0e; convert_ok 0.6k/0.6e	single elab hot spot: omega
+11.6	2.8	8.8	RsaKeyGen.X86_64.GcdE	gcdCheck_ok 0.5k/2.7e; gcdE_ok 0.8k/1.7e; loadE_ok 0.3k/1.3e	symbolic execution (diffuse *_ok lemmas)
+11.6	9.9	1.7	Ecdsa.Verify.AArch64.BrainpoolP512r1.Verified	verify_ct 4.6k/1.6e; verify_a64 5.3k/0.1e; pre_of 0.0k/0.0e	taint kernel
+11.6	5.4	6.2	MlDsa.X86_64.Arith.YNtt	nttInvY_correct 1.5k/0.1e; yscale_step 0.2k/1.1e; yscale_ok 0.0k/0.9e	kernel-heavy, diffuse
+11.6	2.9	8.7	RsaPss.AArch64.SignCall	privArgs_ok 0.4k/5.0e; privOk_of 1.6k/1.8e; copies_ok 0.4k/0.7e	single elab hot spot: decide
+11.6	10.1	1.5	CmacTripleDes.Arm.Keys	roundKeys_check 8.0k/0.0e; rkG_lt 1.0k/0.0e; roundKeys_ok 0.1k/0.9e	kernel eval/defeq (concentrated)
+11.6	2.4	9.2	Bignum.X86_64.CrtWs	wsNew_ok 0.5k/4.0e; primeLoad_ok 1.5k/2.5e; wsEndT_ok 0.2k/2.0e	symbolic execution (diffuse *_ok lemmas)
+11.6	2.8	8.8	Bignum.X86_64.R2aD3	refine_ok 0.3k/4.1e; refine_arith 1.3k/1.4e; d3_bounds 0.2k/1.1e	symbolic execution (diffuse *_ok lemmas)
+11.6	2.5	9.0	Poly1305.X86_64.Setup	prods_ok 0.3k/1.2e; carryP_ok 0.6k/0.6e; reduce_ok 0.6k/0.6e	symbolic execution (diffuse *_ok lemmas)
+11.5	2.7	8.9	RsaKeyGen.X86_64.Key.Pieces	subC_k 0.5k/1.4e; ltA_k 0.1k/1.0e; constA_k 0.3k/0.7e	diffuse elab (decide)
+11.5	2.8	8.7	Bignum.AArch64.CrtBuild	buildStepN_ok 1.5k/3.3e; tabPreN_ok 0.9k/3.0e; tabBuildN_ok 0.3k/0.6e	single elab hot spot: decide
+11.5	8.6	3.0	Ecdh.X86.Verified	ecdh_ct 6.1k/0.7e; [line 151] taint_summary mulSum : sseTai 1.5k/0.1e; ecdh_sp 0.6k/0.0e	taint kernel
+11.5	10.3	1.3	Seed.AArch64.G16	g16Out_check 7.4k/0.0e; g16In_check 1.5k/0.0e; g16_keeps 1.2k/0.0e	kernel eval/defeq (concentrated)
+11.5	2.4	9.2	Ed25519.AArch64.Mul	rowR_ok 0.9k/3.0e; rowsAccumulate_ok 0.8k/1.7e; mulWide_ok 0.4k/1.7e	symbolic execution (diffuse *_ok lemmas)
+11.5	3.5	8.0	Weierstrass.X86_64.InvRed	mredC_ok 1.8k/3.5e; addIfNeg_ok 0.6k/1.1e; subP_ok 0.3k/1.0e	single elab hot spot: omega
+11.5	2.9	8.6	Weierstrass.X86_64.WinJacNorm	normA_ok 0.8k/1.6e; backJ_step 0.4k/2.0e; backJ_ok 0.3k/0.9e	symbolic execution (diffuse *_ok lemmas)
+11.5	2.9	8.6	RsaKeyGen.AArch64.Close	closeCheck_ok 2.3k/5.1e; subA_ok 0.2k/0.9e; closeSelHead_ok 0.1k/0.6e	single elab hot spot: omega
+11.5	2.7	8.8	Rsa.AArch64.RpExp	bitBody_ok 0.8k/3.7e; wordStep_ok 1.0k/2.1e; bitSel_ok 0.1k/1.0e	symbolic execution (diffuse *_ok lemmas)
+11.5	3.8	7.7	Mont.X86.Loop	row_ok 2.8k/5.2e; row_zf 0.4k/0.8e; loop_ok 0.4k/0.6e	single elab hot spot: decide
+11.5	3.6	7.9	X25519.AArch64.Codec	freezeF_spec 0.9k/1.8e; packV_words 0.9k/1.6e; packV_eq 0.5k/1.8e	diffuse elab (decide)
+11.5	1.1	10.4	Argon2.X86_64.SegmentSetupCT	body_rel 0.0k/0.5e; loop_rel 0.1k/0.4e; code_rel 0.1k/0.3e	diffuse elab (macro regs)
+11.4	3.0	8.5	X25519.X86_64.Divstep.Rows	prod_ok 0.9k/2.6e; dsRow_ok 0.8k/1.7e; mulStepX_ok 0.1k/1.0e	symbolic execution (diffuse *_ok lemmas)
+11.4	9.4	2.0	Ecdsa.X86_64.P384.VerifiedAdx	sign_ct_adx 4.7k/0.9e; sign_x86_adx 1.8k/0.3e; sign_verified_adx 1.4k/0.1e	taint kernel
+11.4	1.8	9.6	Ecdsa.Rfc6979.AArch64.Hmac	initA 0.4k/2.0e; finA 0.3k/1.8e; upd_step 0.3k/1.5e	diffuse elab (macro anums)
+11.4	4.7	6.7	Bignum.WordStep	mg_quot 2.8k/3.3e; addBack_two 0.4k/0.8e; wordStep_val 0.2k/0.9e	single elab hot spot: omega
+11.4	5.8	5.6	MlKem.X86_64.Prfs	quads_tr 2.1k/0.1e; quads_ok 0.6k/1.3e; prfsAvx2_ok 0.4k/0.9e	taint kernel
+11.4	1.9	9.4	Ed25519.AArch64.RowAcc	rowAcc2_ok 0.1k/1.6e; rowAcc1_ok 0.1k/1.5e; rowAccReduce_ok 0.1k/1.4e	symbolic execution (diffuse *_ok lemmas)
+11.4	2.4	9.0	P256.EcdhJac.Select	storesReg_ok 0.6k/1.6e; row_ok 0.1k/1.2e; setup_ok 0.1k/1.0e	symbolic execution (diffuse *_ok lemmas)
+11.4	1.2	10.2	AesGcm.X86_64.Split.Verified	splitP_implies 0.1k/2.2e; splitPrepared_implies 0.2k/1.9e; splitFrameSatPrepared_pre 0.1k/1.8e	diffuse elab (decide)
+11.4	1.0	10.4	Ed25519.X86.SignCached.CT	update_message 0.0k/1.1e; update_input 0.0k/0.9e; mul_call_ct 0.0k/0.8e	diffuse elab (simp)
+11.4	4.0	7.3	Ecdsa.Rfc6979.Arm.Msg	tailW_ok 1.7k/2.4e; msg_ok 0.6k/1.5e; tail_ok 0.7k/1.0e	symbolic execution (diffuse *_ok lemmas)
+11.4	2.3	9.0	TripleDes.X86.Ecb.Verified	ecb_correct 0.4k/1.8e; wide_implies 0.1k/1.0e; call_ok 0.4k/0.6e	symbolic execution (diffuse *_ok lemmas)
+11.3	3.0	8.4	Ecdsa.Rfc6979.X86_64.Reduce	reduce_ok 0.5k/1.4e; subs_ok 0.6k/1.2e; loadWord_ok 0.3k/1.3e	symbolic execution (diffuse *_ok lemmas)
+11.3	3.2	8.1	Poly1305.X86_64.Avx512.Final	loadH_ok 0.6k/1.2e; sumB_env 0.2k/1.6e; lsum_val 1.1k/0.5e	symbolic execution (diffuse *_ok lemmas)
+11.3	0.7	10.7	MlDsa.AArch64.Sign.CallMore	hint_pre 0.0k/1.0e; mask_inline_pre 0.0k/1.0e; hbp_pre 0.1k/1.0e	diffuse elab (simp)
+11.3	1.6	9.7	AesSiv.Arm.Ctr	ctrTail_ok 0.7k/3.5e; ctrWhole_ok 0.3k/1.2e; counter_ok 0.1k/1.2e	symbolic execution (diffuse *_ok lemmas)
+11.3	4.4	6.9	Seed.AArch64.ModeCore	crypt_wp 0.2k/6.1e; blockCall_vsafe 4.1k/0.1e; prepare_wp 0.1k/0.3e	single elab hot spot: decide
+11.3	2.2	9.1	Ecdsa.Rfc6979.Arm.Wide	conv_ok 0.9k/4.7e; candW_ok 0.4k/2.5e; coreDigest_ok 0.5k/0.6e	single elab hot spot: decide
+11.3	7.7	3.6	Aes.X86.Decrypt	cmpFirst_wp 1.5k/1.6e; invSbox_check 2.3k/0.0e; invMixColumns_check 2.0k/0.0e	diffuse elab (decide)
+11.3	2.9	8.4	Ed25519.X86.CombSelect	combSelect_ok 0.1k/1.5e; selectFieldPrefix_ok 0.7k/0.9e; combWord_eq 0.5k/0.7e	symbolic execution (diffuse *_ok lemmas)
+11.3	1.4	9.9	CmacAes.Arm.Subkeys	subkeys_wp 0.7k/4.8e; dbl_wp 0.2k/2.6e; pre_wp 0.5k/2.0e	single elab hot spot: decide
+11.2	2.4	8.9	RsaPss.AArch64.SignCTEnc	putSalt_sct 1.1k/2.3e; ctHash_sct 0.3k/0.9e; putH_sct 0.2k/0.8e	taint kernel
+11.2	1.2	10.0	Curve448.AArch64.Neon.Pairs	cv_pairs 0.3k/7.8e; perm_q 0.6k/1.6e; prods_pos 0.3k/0.4e	single elab hot spot: case split
+11.2	1.3	9.9	Aes.X86.Ctr32	prologue_ok 0.2k/4.9e; correct 0.5k/2.6e; ctr32_verified 0.1k/0.7e	single elab hot spot: decide
+11.2	7.2	4.0	Aes.X86_64.Encrypt	mixColumns_check 1.7k/0.0e; sbox_check 1.3k/0.0e; toBs_check 0.7k/0.0e	kernel-heavy, diffuse
+11.2	2.7	8.5	Bignum.X86_64.AdxFinish8	subMod8_ok 0.3k/1.5e; cst_ok 0.3k/1.3e; select8_ok 0.2k/1.3e	symbolic execution (diffuse *_ok lemmas)
+11.2	2.9	8.3	ChaCha20.X86_64.Avx512Tail.Tail	scalarT_ok 0.6k/1.5e; partT_ok 0.3k/1.3e; fullT_ok 0.2k/1.3e	symbolic execution (diffuse *_ok lemmas)
+11.2	2.7	8.5	MlDsa.X86_64.Sign.PhaseK	hR_ok 0.1k/1.4e; ksChk_ok 1.4k/0.0e; r0R_ok 0.1k/0.8e	symbolic execution (diffuse *_ok lemmas)
+11.2	5.7	5.5	Rsa.X86_64.CvMain	cvMain_ok 4.4k/4.5e; cvHeadS_ok 0.8k/0.5e; factors_of 0.4k/0.2e	single elab hot spot: simp
+11.2	2.0	9.1	Cast5.X86.Ecb	ecb_correct 0.2k/2.8e; step_ok 0.6k/2.1e; bpre 0.3k/0.8e	symbolic execution (diffuse *_ok lemmas)
+11.2	3.6	7.6	RsaPss.X86_64.VerifyMain	vback_ok 2.1k/3.7e; vmid_ok 1.0k/1.9e; vfront_ok 0.1k/0.9e	single elab hot spot: omega
+11.1	2.5	8.6	AesGcmSiv.AArch64.Absorb	chunkPre_ok 0.4k/3.0e; revLoop_ok 0.6k/1.3e; step 0.5k/0.8e	symbolic execution (diffuse *_ok lemmas)
+11.1	4.1	7.1	Ecdsa.Arm.Setup	setup_ok 2.8k/3.8e; setupShift_ok 0.8k/1.1e; consts_bounds 0.2k/0.6e	single elab hot spot: omega
+11.1	4.3	6.8	Blake2.X86.Stream.Common	call_ok 1.6k/1.6e; copyLoop_ok 0.8k/1.6e; mask_ofNat 1.0k/1.0e	symbolic execution (diffuse *_ok lemmas)
+11.1	4.6	6.5	Bignum.X86_64.AdxFused	fused_ok 2.0k/2.2e; rows_ok 1.2k/1.3e; zeroWin_ok 0.6k/0.8e	symbolic execution (diffuse *_ok lemmas)
+11.1	2.3	8.8	ChaCha20.X86_64.Block	load_ok 0.2k/1.8e; holds_swap 0.2k/1.4e; copy_step 0.3k/0.5e	symbolic execution (diffuse *_ok lemmas)
+11.1	3.5	7.6	Poly1305.X86_64.Avx2.Powers	blend_ok 1.5k/1.8e; powersV_ok 0.3k/2.3e; loadRv_ok 0.5k/0.9e	symbolic execution (diffuse *_ok lemmas)
+11.1	3.4	7.7	RsaPss.AArch64.VerifyB2	b2_ok 2.4k/6.1e; msg_y 1.0k/1.3e; [line 86] include hH in 0.0k/0.1e	single elab hot spot: decide
+11.1	4.3	6.8	MlDsa.X86_64.Arith.LazyLay21	ylay2_ok 1.4k/2.0e; ylay1_ok 1.2k/1.7e; core1_ok 0.8k/0.9e	symbolic execution (diffuse *_ok lemmas)
+11.1	2.4	8.7	Camellia.AArch64.KeySetup	loadKey_wp 0.7k/4.4e; ekPrologue_ok 0.2k/1.4e; sigmaStores_dst 0.9k/0.0e	single elab hot spot: decide
+11.1	0.8	10.3	Camellia.Words	decryptWith_eq 0.5k/5.7e; encryptWith_eq 0.3k/4.5e; group 0.0k/0.0e	single elab hot spot: case split
+11.1	2.2	8.9	Sha3.X86_64.Stream.Absorb	body_word 0.4k/1.8e; body_block 0.2k/1.8e; body_ok 0.3k/0.9e	symbolic execution (diffuse *_ok lemmas)
+11.1	0.1	11.0	Ffdh.X86_64.GenerateKey.PublicOutputCT	public_ct 0.0k/9.8e; bridge_ct 0.0k/0.6e; bridge_ptr 0.0k/0.2e	taint kernel
+11.1	3.1	8.0	Bignum.X86_64.Ifma.Win	mulLoop_ok 0.5k/1.7e; sel2_ok 0.6k/1.3e; winNorm_ok 0.6k/0.9e	symbolic execution (diffuse *_ok lemmas)
+11.1	2.5	8.6	Poly1305.X86.Finalize	fepilogue_ok 0.5k/1.7e; tagWord_ok 0.2k/1.2e; finalize_verified 0.1k/0.8e	symbolic execution (diffuse *_ok lemmas)
+11.1	3.1	8.0	RsaKeyGen.AArch64.LoadC	candBits_ok 1.5k/2.8e; kHead_ok 0.9k/2.7e; loadC_ok 0.5k/2.0e	symbolic execution (diffuse *_ok lemmas)
+11.1	2.2	8.8	RsaKeyGen.AArch64.MrMain	mrIter_ok 1.0k/3.8e; mrInit_ok 0.5k/2.5e; iterHead_ok 0.3k/1.0e	single elab hot spot: simp
+11.1	3.3	7.7	Weierstrass.X86_64.WinEntry	winSelect_ok 2.4k/3.7e; winEntryR_ok 0.9k/3.0e; winSelSetup_ok 0.0k/0.3e	single elab hot spot: omega
+11.1	6.3	4.7	Ecdsa.X86_64.P256.InverseVerified	p_ct 2.7k/0.4e; n_ct 2.5k/0.2e; n_implies 0.0k/1.0e	taint kernel
+11.0	3.2	7.9	Ed25519.X86_64.Ifma.CombAdd	ventry_wp 2.3k/3.1e; vadd_wp 0.4k/2.1e; vaddB_wp 0.1k/1.0e	single elab hot spot: decide
+11.0	3.4	7.6	RsaPss.AArch64.MgfParts	counter_ok 1.4k/2.6e; xorOut_ok 0.8k/1.8e; copyH_ok 0.5k/0.6e	symbolic execution (diffuse *_ok lemmas)
+11.0	1.9	9.1	Framework.X86_64.StraightY	step_ok 0.4k/5.6e; shl_eq 0.5k/0.4e; qw_app 0.2k/0.3e	single elab hot spot: simp
+11.0	8.7	2.3	Ecdsa.AArch64.P521.Verified	sign_ct 3.4k/1.0e; sign_a64 3.9k/0.5e; p521_ok 1.3k/0.6e	taint kernel
+11.0	1.2	9.8	MlKem.AArch64.KgC	cbdNtt_ok 0.6k/5.3e; mul_ok 0.3k/2.4e; add_ok 0.2k/0.9e	single elab hot spot: decide
+11.0	6.3	4.7	Ecdsa.Arm.P521.Verified	sign_ct 6.0k/0.8e; sign_verified 0.1k/1.6e; sign_arm 0.1k/1.4e	taint kernel
+11.0	3.8	7.3	Pbkdf2.Md.AArch64.HmacFin	mid_ok 1.8k/2.6e; out_ok 0.7k/1.4e; sizes 0.8k/0.5e	single elab hot spot: decide
+11.0	3.6	7.5	RsaKeyGen.AArch64.MrLoop	of_exp 1.3k/1.9e; mrWinStep_ok 0.9k/1.5e; wordStart_ok 0.6k/1.8e	symbolic execution (diffuse *_ok lemmas)
+11.0	8.1	2.9	TripleDes.X86.Sbox	input_check 1.5k/0.0e; sbox_check 1.5k/0.0e; output_check 1.4k/0.0e	kernel-heavy, diffuse
+11.0	2.2	8.8	MlDsa.X86.Sample.RejNtt	load_ok 0.5k/2.2e; store_ok 0.1k/1.1e; piece 1.1k/0.1e	symbolic execution (diffuse *_ok lemmas)
+11.0	3.2	7.8	Sm4.X86.KeyEk	ekIter_ok 2.0k/2.8e; ekHead_ok 0.7k/4.0e; expandKey_wp 0.1k/0.5e	single elab hot spot: omega
+11.0	2.9	8.1	X25519.X86_64.Bits	bitsBody_ok 0.5k/4.1e; bits_ok 0.4k/1.3e; bitsLoop_ok 0.6k/0.8e	single elab hot spot: omega
+11.0	3.5	7.5	Bignum.AArch64.CrtSetup	primesSetup_ok 3.5k/7.4e; mk' 0.0k/0.0e; ws 0.0k/0.0e	single elab hot spot: omega
+11.0	1.1	9.9	Weierstrass.AArch64.Comb	combSum_ok 0.6k/6.7e; signMask_ok 0.2k/0.9e; combLay_E 0.1k/1.1e	single elab hot spot: macro comb_mem
+11.0	1.4	9.5	Scrypt.Arm.Whole.Verified	scrypt_implies 0.3k/1.2e; loop_ct 0.1k/0.6e; body_ct 0.1k/0.6e	diffuse elab (macro sig_split)
+11.0	4.2	6.8	Mont.X86.Ops	add_ok 1.4k/1.7e; mul_ok 0.9k/1.8e; sub_ok 1.2k/1.2e	symbolic execution (diffuse *_ok lemmas)
+11.0	2.2	8.8	AesGcmSiv.X86.Absorb	chunkPre_ok 0.3k/2.3e; revLoop_ok 0.6k/0.8e; revStep_ok 0.1k/1.2e	symbolic execution (diffuse *_ok lemmas)
+11.0	3.6	7.3	Modes.X86_64.CbcGroup	cbcDecGroup_wp 3.4k/6.9e; entry_ok 0.1k/0.2e; cbcDecLoop_wp 0.0k/0.1e	single elab hot spot: omega
+10.9	0.9	10.0	Sha512.Arm.Shared	finalizeDigestWide_implies48 0.1k/1.1e; finalizeDigestWide_implies32 0.1k/1.0e; finalizeDigestWide_implies28 0.1k/0.9e	diffuse elab (macro contract_implies)
+10.9	2.5	8.4	MlKem.Arm.Prf	prfBody_ok 1.2k/1.7e; prfStep_ok 0.4k/1.0e; [line 174] macro "kdecide" : tactic => ` 0.0k/1.3e	symbolic execution (diffuse *_ok lemmas)
+10.9	7.4	3.5	EcKey.X86_64.P384.Verified	pk_ct 4.1k/0.5e; pk_x86 1.3k/0.5e; [line 95] materialize_shared publicKeyP3 1.1k/0.4e	taint kernel
+10.9	3.0	8.0	RsaPss.AArch64.PadLen	lenLoop_ok 1.5k/5.0e; or80 0.5k/0.9e; lenField_ok 0.2k/0.8e	single elab hot spot: omega
+10.9	3.5	7.4	Camellia.X86.KeyStore	rotWord_ok 1.1k/2.0e; stores_ok 0.3k/1.8e; num_of_rev 0.6k/0.5e	symbolic execution (diffuse *_ok lemmas)
+10.9	3.2	7.8	Pbkdf2.Md.X86.Iterate	pro_ok 0.5k/1.9e; tail_ok 0.7k/1.0e; load_ok 0.5k/0.5e	symbolic execution (diffuse *_ok lemmas)
+10.9	7.0	3.9	EcKey.X86.BrainpoolP512r1.Verified	pk_ct 5.8k/0.6e; pkWide_implies 0.2k/1.0e; post_of 0.0k/0.7e	taint kernel
+10.9	10.2	0.6	Ecdsa.X86_64.BrainpoolP384r1.MulLit	[line 36] materialize_code bodyCode 5.1k/0.3e; [line 37] materialize_code mulCode 4.7k/0.2e; [line 44] materialize_shared mulCodeEras 0.4k/0.1e	literal rebuild
+10.9	2.3	8.5	Mont.X86_64.AddSubP	subMer_ok 0.3k/1.6e; dbl_arith 0.9k/0.5e; dblMer_ok 0.1k/1.2e	symbolic execution (diffuse *_ok lemmas)
+10.9	1.2	9.7	MlDsa.AArch64.Optimized.PairedLowLane	r0Lane_ok 0.0k/3.8e; lowReduced_spec 0.9k/0.9e; lowTail_ok 0.0k/0.7e	symbolic execution (diffuse *_ok lemmas)
+10.9	2.0	8.9	AesGcm.X86.Verified	seal_verified 0.3k/0.9e; streamEncrypt_verified 0.1k/1.0e; streamFinish_verified 0.1k/0.9e	diffuse elab (decide)
+10.9	3.4	7.5	RsaKeyGen.AArch64.KTail	kTail_ok 3.4k/6.4e; [line 31] macro "kt_disj" : tactic => `( 0.0k/0.9e; [line 32] macro "kt_disj" : tactic => `( 0.0k/0.2e	single elab hot spot: decide
+10.9	3.6	7.3	Bignum.X86_64.Ifma.Pre	prep_ok 0.9k/4.0e; pre_ok 1.3k/1.3e; enterRedc_ok 0.2k/0.6e	single elab hot spot: decide
+10.9	1.3	9.6	Ed25519.AArch64.CombLoop	combStep_ok 0.4k/2.1e; combMultiply_ok 0.0k/1.5e; combLoop_ok 0.2k/1.2e	symbolic execution (diffuse *_ok lemmas)
+10.9	2.7	8.2	RsaOaep.X86_64.DecMain	decMain_ok 2.5k/7.0e; w 0.0k/0.4e; shift_good 0.0k/0.1e	single elab hot spot: omega
+10.8	1.7	9.2	Ed25519.X86_64.RootPair	rootStep_ok 0.1k/2.4e; rootPowerLoop2_ok 0.2k/1.9e; rootPowerUnrolled2_spec 0.4k/1.1e	symbolic execution (diffuse *_ok lemmas)
+10.8	3.9	6.9	Blake2.X86.Blake2s	update_ct 1.6k/0.4e; finalize_framed 0.2k/1.4e; compress_implies 0.2k/1.1e	taint kernel
+10.8	2.8	8.0	Bignum.X86_64.Ifma.Sel	select_ok 1.6k/2.7e; selBody 0.0k/1.5e; selIter_ok 0.2k/1.0e	symbolic execution (diffuse *_ok lemmas)
+10.8	2.1	8.7	Md5.Arm.Compress	load_ok 0.1k/1.1e; body_ok 0.2k/0.9e; step_ok 0.1k/0.7e	symbolic execution (diffuse *_ok lemmas)
+10.8	1.2	9.6	Pbkdf2.Whole.Arm.Calls	pre 0.2k/0.9e; hf_rel 0.0k/0.9e; pre 0.3k/0.7e	diffuse elab (omega)
+10.8	1.7	9.1	ChaCha20.AArch64.Stream.Init	setNonce_exec 0.2k/3.5e; nonceMem_post 0.5k/0.5e; keyMem_key 0.4k/0.6e	diffuse elab (decide)
+10.8	4.0	6.8	X25519.X86_64.Divstep.ARow	foldB_arith 2.4k/2.9e; foldP_ok 0.7k/0.8e; foldA_ok 0.2k/1.1e	single elab hot spot: omega
+10.8	1.2	9.6	RsaKeyGen.AArch64.Key.DOdd	dOdd_k 0.8k/6.5e; dOddC_ok 0.3k/2.2e; dOddD_ok 0.1k/0.8e	single elab hot spot: decide
+10.8	3.2	7.6	Curve448.AArch64.Neon.Mul2	prep_ok 1.1k/2.5e; prods_ok 0.3k/1.1e; mul2_ok 0.1k/0.5e	symbolic execution (diffuse *_ok lemmas)
+10.8	3.1	7.7	Pbkdf2.Md.X86_64.HmacFin	mid_ok 1.6k/2.0e; out_ok 0.6k/2.2e; callOk 0.3k/0.6e	symbolic execution (diffuse *_ok lemmas)
+10.8	10.0	0.8	P256.EcdhJac.Lit	exchange 5.9k/0.3e; multiply 3.1k/0.2e; before 0.8k/0.1e	literal rebuild
+10.8	2.2	8.6	RsaOaep.AArch64.DecEntry	prologue_ok 0.7k/3.1e; lay_ok 0.3k/1.3e; spec_rdwr 0.2k/1.0e	symbolic execution (diffuse *_ok lemmas)
+10.8	4.3	6.5	Bignum.X86_64.AdxRect8Row	streamStep_gen 1.6k/3.2e; rowEnd_ok 1.0k/1.0e; rowLoad_ok 0.6k/0.3e	single elab hot spot: omega
+10.8	8.7	2.0	TripleDes.X86.ConstantTime	block (roundBody ++ roundAdva… 2.1k/0.1e; e… 1.7k/0.1e; d… 1.6k/0.1e	taint kernel
+10.8	2.5	8.3	Ecdsa.Arm.Flags	ltK_ok 0.6k/2.5e; nonzero_ok 0.3k/1.0e; ltDigit_ok 0.2k/1.1e	symbolic execution (diffuse *_ok lemmas)
+10.7	5.5	5.3	TripleDes.X86.CbcVerified	cbcDecrypt_ct 2.7k/0.4e; cbcEncrypt_ct 1.5k/0.4e; wide_implies_enc 0.2k/1.0e	taint kernel
+10.7	9.5	1.3	P256.EcdhDouble.Certificate	evalLeft 2.8k/0.0e; [line 30] materialize_value leftCode :=  2.3k/0.2e; evalRight 2.4k/0.0e	kernel-heavy, diffuse
+10.7	9.3	1.4	Weierstrass.X86_64.BrainpoolP512r1Literals	gMulK brainpoolp512r1 3.3k/0.6e; nPow brainpoolp512r1 2.2k/0.2e; pPow brainpoolp512r1 1.3k/0.1e	literal rebuild
+10.7	1.7	9.1	Ed25519.AArch64.Field	addWords_ok 0.2k/2.1e; addResult_eq 0.1k/1.1e; doubleResult_eq 0.2k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.7	2.8	8.0	Sha3.AArch64.Permute	permute_preserved 0.9k/0.0e; column_ok 0.0k/0.7e; rcStore_ok 0.0k/0.5e	kernel-heavy, diffuse
+10.7	9.5	1.2	TripleDes.X86_64.Bitsliced.ConstantTime	decrypt 5.5k/0.6e; encrypt 4.0k/0.5e; ecbTaint 0.0k/0.0e	taint kernel
+10.7	0.7	10.0	Pbkdf2.Whole.Arm.CT	hashKey_rel 0.2k/2.1e; block_rel 0.1k/1.8e; setup_rel 0.0k/1.2e	diffuse elab (simp)
+10.7	2.0	8.7	AesGcm.X86_64.Gather.Verified	gatherPreP_of 0.2k/1.9e; gatherPre_of 0.2k/1.8e; gatherFrameSatP_pre 0.2k/0.8e	diffuse elab (simp)
+10.7	8.7	2.0	Ecdh.X86_64.P521.Verified	ecdh_ct 5.8k/0.9e; ecdh_inlineOk 2.0k/0.0e; ecdh_mxcsr 0.7k/0.0e	taint kernel
+10.7	1.7	9.0	Blake2.X86.Stream.Init	keyBlock_ok 0.5k/3.1e; initState_ok 0.2k/1.5e; stateAt_init 0.3k/1.3e	symbolic execution (diffuse *_ok lemmas)
+10.7	3.4	7.3	Pbkdf2.Md.X86_64.PbkCommon	call 0.4k/0.6e; layout 0.2k/0.4e; end_le 0.3k/0.1e	diffuse elab (elab (other))
+10.7	0.8	9.9	Argon2.X86_64.InitialBodyReviewedState	code_rel 0.1k/0.8e; input_rel 0.0k/0.6e; loop_rel 0.1k/0.5e	taint kernel
+10.7	1.8	8.8	Blake2.X86.CompressB.Compress	stage1_ok 0.6k/4.4e; body_ok 0.2k/1.3e; V0_get 0.1k/1.1e	single elab hot spot: decide
+10.7	2.5	8.2	Ed25519.X86.WindowTables	bTable_ok 0.9k/2.9e; aTableBody_ok 0.3k/1.6e; tablePoint_of_dwords 0.2k/1.0e	symbolic execution (diffuse *_ok lemmas)
+10.7	4.1	6.5	Camellia.Bitsliced	rot_bit 1.4k/1.8e; flinv_rel 0.6k/1.2e; fl_rel 1.0k/0.5e	diffuse elab (omega)
+10.7	2.3	8.3	AesSiv.AArch64.FinishLong	longTail_wp 0.3k/2.0e; longMac_wp 0.5k/1.4e; m1_ok 0.2k/0.9e	symbolic execution (diffuse *_ok lemmas)
+10.7	1.4	9.3	Pbkdf2.Md.X86_64.HmacInit	keys_ok 0.3k/2.3e; correct 0.1k/1.3e; sizes 0.3k/0.3e	symbolic execution (diffuse *_ok lemmas)
+10.6	2.0	8.6	AesOcb.X86.HashChunk	chunkRest_ok 0.3k/3.1e; hashSum_ok 0.3k/1.3e; fill_step 0.4k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.6	1.3	9.3	Weierstrass.X86_64.WinJacBuild	buildInit_ok 0.3k/3.2e; jbuildDblu_ok 0.2k/2.9e; jbuildStep_ok 0.1k/1.7e	symbolic execution (diffuse *_ok lemmas)
+10.6	3.2	7.5	Rsa.AArch64.CrtKeyTop	reduceTop_ok 2.6k/4.1e; stepsTop_ok 0.3k/0.9e; blkHi_ok 0.1k/0.9e	single elab hot spot: omega
+10.6	2.5	8.2	MlKem.AArch64.Ntt16.InvPass2	ip2_body 1.0k/3.4e; scale_rows 0.7k/2.1e; scale_ok 0.0k/0.9e	single elab hot spot: decide
+10.6	0.3	10.3	Ed25519.X86.ScalarBody	scalarByte_ok 0.1k/8.4e; scalarRead_ok 0.1k/0.6e; scalarBits_ok 0.0k/0.3e	single elab hot spot: decide
+10.6	1.2	9.4	Ed25519.AArch64.Sub	subWords_ok 0.3k/5.4e; borrow38_ok 0.0k/3.1e; sub_ok 0.7k/0.8e	single elab hot spot: omega
+10.6	9.9	0.7	Sm4.X86.Linear	fromBs_check 1.1k/0.0e; pre3_check 1.0k/0.0e; pre0_check 0.9k/0.0e	kernel-heavy, diffuse
+10.6	3.6	7.0	Pbkdf2.Whole.Arm.Loop	tail_ok 1.0k/1.8e; b8_args 0.8k/0.6e; outLoop_ok 0.7k/0.6e	symbolic execution (diffuse *_ok lemmas)
+10.6	1.8	8.8	Rc2.Arm.Stream.Common	copy_wp 0.3k/1.1e; initSat_pre 0.1k/0.6e; init_implies0 0.1k/0.5e	diffuse elab (omega)
+10.6	0.9	9.7	Blake2.Cols	diagonals_eqP 0.1k/4.2e; columns_eqP 0.1k/3.8e; cases16' 0.1k/0.5e	single elab hot spot: simp
+10.6	0.9	9.7	Ecdsa.Verify.X86.Points	points_ok 0.5k/5.1e; sum_ok 0.2k/3.2e; save_ok 0.1k/0.6e	single elab hot spot: decide
+10.6	6.4	4.2	Aes.AArch64.Encrypt	sbox_check 1.5k/0.0e; mixColumns_check 0.9k/0.0e; encrypt4_ok 0.3k/0.6e	kernel-heavy, diffuse
+10.6	3.7	6.9	Modes.AArch64.Group	ctrGroup_wp 3.6k/5.6e; groupCount_wp 0.0k/0.4e; xorArgs_ok 0.0k/0.3e	single elab hot spot: omega
+10.6	2.7	7.9	Bignum.X86_64.CrtCTSetupWs	wsQ_ok 0.4k/0.6e; setup_ct 0.1k/0.8e; wsB1_ok 0.2k/0.5e	symbolic execution (diffuse *_ok lemmas)
+10.6	2.3	8.3	AesGcm.X86_64.Short.Open	openChk_ok 2.0k/6.7e; openTail_ok 0.2k/1.0e; openShort_ok 0.0k/0.3e	single elab hot spot: omega
+10.6	4.9	5.7	Pbkdf2.Whole.Arm.Setup	su2_args 2.2k/1.2e; su5_args 0.9k/0.7e; su5_ok 0.7k/0.6e	kernel-heavy, diffuse
+10.6	3.6	7.0	Bignum.AArch64.Csub	subStep_ok 1.9k/3.0e; selectAcc_ok 1.0k/1.8e; subMod_ok 0.4k/1.6e	single elab hot spot: omega
+10.6	7.0	3.6	EcKey.X86_64.BrainpoolP512r1.Verified	pk_ct 5.0k/1.4e; [line 76] materialize_shared publicKeyBr 1.1k/0.4e; pk_x86 0.3k/0.4e	taint kernel
+10.6	2.2	8.4	Ecdsa.Rfc6979.X86_64.Blocks	coreArgs_ok 0.2k/2.1e; kvN_ok 0.8k/1.3e; wipe_ok 0.2k/1.1e	symbolic execution (diffuse *_ok lemmas)
+10.6	3.2	7.3	Camellia.Arm.Round	round_ok 2.6k/5.0e; frame_ext 0.4k/1.5e; xorBits_sel 0.0k/0.3e	single elab hot spot: simp
+10.5	2.1	8.5	Sha1.AArch64.Sha2.Compress	body_ok 0.3k/2.1e; rounds_ok 0.4k/0.8e; kloads_ok 0.1k/0.7e	symbolic execution (diffuse *_ok lemmas)
+10.5	6.4	4.1	EcKey.X86.P224.Verified	pk_ct 5.6k/0.5e; pkWide_implies 0.1k/1.1e; wf₀ 0.1k/0.6e	taint kernel
+10.5	2.2	8.3	AesOcb.X86_64.LNtz	table_ok 1.3k/4.0e; tableStep_ok 0.3k/1.9e; lAddr_ok 0.0k/1.0e	single elab hot spot: decide
+10.5	6.6	3.9	Blake2.X86_64.Stream.CT	updateS_ct 2.3k/0.8e; updateB_ct 2.0k/0.7e; finalizeS_ct 1.2k/0.2e	taint kernel
+10.5	2.9	7.7	RsaKeyGen.X86_64.SharedKMain	sharedKMain_ok 2.9k/7.6e; kMainWith_eq 0.0k/0.0e; X86_64 0.0k/0.0e	single elab hot spot: omega
+10.5	1.6	8.9	EcKey.AArch64.Main	pkFinish_ok 1.1k/3.0e; publicKeyWith_ok 0.2k/2.2e; pkOps_ok 0.0k/1.5e	symbolic execution (diffuse *_ok lemmas)
+10.5	3.8	6.7	Blake2.X86.CompressB.Verified	compress_verified 3.0k/0.3e; save_ok 0.2k/3.0e; correct 0.2k/0.7e	taint kernel
+10.5	2.0	8.5	AesGcm.X86_64.Verified	openCode_verified 0.1k/0.7e; streamFinish_verified 0.1k/0.6e; streamDecrypt_verified 0.1k/0.6e	diffuse elab (macro sig_implies_pre)
+10.5	3.1	7.4	Ed25519.AArch64.SqrRows	sqrCross_arith 1.6k/2.4e; sqrCross_ok 0.1k/1.6e; sqrDiag_ok 0.1k/1.5e	symbolic execution (diffuse *_ok lemmas)
+10.5	2.3	8.2	Ecdsa.Rfc6979.AArch64.Msg	tailW_ok 0.3k/1.9e; tail_ok 0.8k/1.3e; ptrs_ok 0.1k/1.0e	symbolic execution (diffuse *_ok lemmas)
+10.5	1.1	9.4	Ecdsa.Verify.Arm.Points	points_ok 0.7k/5.2e; sum_ok 0.2k/2.8e; save_ok 0.1k/0.7e	single elab hot spot: decide
+10.5	1.6	8.9	Ed25519.X86_64.Zmm.Tail	ztail_ok 0.5k/2.8e; vcache_wp 0.1k/1.8e; ystores_ok 0.2k/0.9e	symbolic execution (diffuse *_ok lemmas)
+10.5	2.8	7.7	Cast5.Arm.ModesVerified	cfbDecrypt_implies 0.2k/1.1e; ofb_implies 0.1k/0.9e; cfbEncrypt_implies 0.1k/0.8e	diffuse elab (simp)
+10.5	1.5	9.0	RsaKeyGen.X86_64.Key.Main	stores_ok 0.2k/3.5e; front_k 0.8k/2.6e; keyExit_ok 0.2k/1.3e	symbolic execution (diffuse *_ok lemmas)
+10.5	2.3	8.2	CmacTripleDes.AArch64.Init	initPre_wp 0.3k/3.1e; init_wp 1.1k/1.7e; keyStep_ok 0.5k/1.6e	symbolic execution (diffuse *_ok lemmas)
+10.5	7.2	3.3	Argon2.X86.CompressVerified	compress_ct 6.8k/0.3e; correct 0.1k/0.8e; compress_implies 0.1k/0.5e	taint kernel
+10.5	2.8	7.7	RsaKeyGen.X86_64.SharedMid	sharedKernel_hdr 2.1k/3.8e; sharedMid_ok 0.4k/3.2e; kernel_r2 0.2k/0.4e	single elab hot spot: simp
+10.4	2.1	8.3	Poly1305.Arm.Finalize	tag_ok 0.6k/3.0e; zero_step 0.2k/0.7e; pad1_ok 0.0k/0.5e	symbolic execution (diffuse *_ok lemmas)
+10.4	3.5	6.9	Camellia.Bitsliced32	rot_bit 0.8k/1.8e; round_rel 0.7k/1.4e; flinv_rel 0.5k/0.9e	diffuse elab (omega)
+10.4	1.3	9.1	Ed25519.AArch64.SignCached.Preserve	update_step 0.0k/1.3e; finalize_step 0.0k/1.2e; base_call 0.8k/0.4e	symbolic execution (diffuse *_ok lemmas)
+10.4	2.1	8.3	Ed25519.Group.Extended	pointAdd_rep 0.2k/1.5e; pointMul_rep 0.1k/0.4e; params 0.0k/0.4e	diffuse elab (elab (other))
+10.4	2.8	7.6	Bignum.X86_64.CrtArith	addMod_ok 1.2k/2.7e; subModArr_ok 0.9k/1.6e; maStep_ok 0.4k/1.9e	symbolic execution (diffuse *_ok lemmas)
+10.4	1.6	8.8	AesCcm.X86.Crypt	ctrTail_ok 0.9k/3.1e; ctrTailArgs_ok 0.2k/2.0e; ctrWhole_ok 0.3k/1.5e	symbolic execution (diffuse *_ok lemmas)
+10.4	7.4	3.0	Ecdsa.X86.BrainpoolP512r1.Verified	sign_ct 6.6k/0.6e; signWide_implies 0.3k/0.9e; sign_verified 0.0k/0.4e	taint kernel
+10.4	2.0	8.4	AesOcb.X86_64.Pass	pass_ok 0.9k/2.7e; blockStep_ok 0.3k/1.8e; quad_ok 0.4k/1.3e	symbolic execution (diffuse *_ok lemmas)
+10.4	1.3	9.1	MlKem.X86_64.EncMul	wp_all 0.4k/2.3e; termE_ok 0.2k/1.9e; innerStep_ok 0.2k/1.0e	symbolic execution (diffuse *_ok lemmas)
+10.4	3.6	6.8	ChaCha20.X86_64.Avx512.Xor	next_ok 0.8k/1.1e; body_ok 0.2k/1.6e; ctx_of 0.4k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.4	2.9	7.5	Bignum.X86_64.CrtQ	qPhase_ok 2.3k/6.0e; of_frm 0.5k/0.5e; of_arrays 0.1k/0.2e	single elab hot spot: decide
+10.4	2.7	7.7	Camellia.AArch64.Crypt8	tail_ok 0.9k/1.3e; head_ok 0.5k/1.0e; storeWords_step 0.3k/0.6e	symbolic execution (diffuse *_ok lemmas)
+10.4	1.8	8.6	AesGcm.AArch64.Verified	seal_verified 0.1k/0.9e; streamAad_verified 0.1k/0.9e; streamEncrypt_verified 0.1k/0.9e	diffuse elab (macro sig_implies)
+10.4	1.6	8.8	Ecdsa.Rfc6979.X86_64.Hmac	finA 0.4k/1.9e; initA 0.4k/1.6e; updA 0.1k/1.2e	diffuse elab (macro nums)
+10.4	8.7	1.7	Ecdsa.AArch64.BrainpoolP512r1.Verified	sign_ct 4.1k/1.0e; sign_a64 4.6k/0.4e; setup_of 0.0k/0.2e	taint kernel
+10.4	2.3	8.1	Aes.AArch64.Aese.Blocks	common_ok 0.2k/1.5e; encSetup_ok 0.2k/0.8e; loops_ok 0.2k/0.5e	symbolic execution (diffuse *_ok lemmas)
+10.4	2.7	7.6	X25519.X86_64.Divstep.FRow	fRow_ok 0.1k/3.4e; addC_ok 0.6k/1.2e; shW_val 1.2k/0.5e	symbolic execution (diffuse *_ok lemmas)
+10.3	6.8	3.5	P384.X86_64.NafTableTiming	nafTable_adx_checks 3.5k/2.2e; nafTable_checks 3.3k/1.3e; Weier… 0.0k/0.0e	taint kernel
+10.3	3.5	6.9	Camellia.X86_64.Keys	decKeys_wp 1.1k/2.4e; keyOne_step 1.0k/2.0e; keyLoop_wp 0.7k/0.8e	diffuse elab (omega)
+10.3	2.7	7.6	Ed25519.X86_64.CombNeg	negWords_ok 1.2k/2.0e; swapFieldX_ok 0.7k/1.9e; swapPieceX_ok 0.3k/0.7e	symbolic execution (diffuse *_ok lemmas)
+10.3	1.1	9.2	Ed25519.AArch64.SignCached.Verified	signCached_implies 0.0k/1.3e; update_call_ct 0.0k/0.8e; spec_pre 0.1k/0.7e	diffuse elab (simp)
+10.3	3.5	6.8	Camellia.X86.Group	dataGroup_wp 3.0k/5.6e; frame 0.2k/0.2e; slot_keep 0.1k/0.1e	single elab hot spot: decide
+10.3	2.7	7.6	MlKem.X86_64.VLay42	vstep2 0.6k/1.8e; vstep4 0.4k/1.7e; layF_two 0.9k/1.0e	diffuse elab (omega)
+10.3	1.8	8.6	Argon2.X86.Derive.Initial	header_ok 0.0k/1.5e; absU2_ok 0.1k/0.8e; copy_ok 0.4k/0.5e	symbolic execution (diffuse *_ok lemmas)
+10.3	3.7	6.6	Bignum.AArch64.CrtRedc	redcLoad_ok 1.7k/1.7e; redcAcc_ok 0.3k/1.6e; redcHead_ok 0.4k/1.2e	symbolic execution (diffuse *_ok lemmas)
+10.3	1.4	8.9	Weierstrass.RcbIdent	rcbAdd_chord_y 0.4k/2.5e; rcbAdd_scale 0.1k/1.2e; rcbAdd_comm 0.1k/1.2e	diffuse elab (simp)
+10.3	8.4	1.9	P256.X86_64.JacTimingAdx	nafCachedJac_adx_checks 4.9k/1.2e; nafMixedJac_adx_checks 3.6k/0.7e; [line 24] @[expose] public section 0.0k/0.0e	taint kernel
+10.3	2.1	8.2	X448.X86_64.Adx.Mul	rowX_ok 0.2k/1.7e; win_facts 0.5k/0.7e; madds_ok 0.1k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.3	0.8	9.5	Ecdh.Arm.Validate	validate_ok 0.2k/1.9e; ladLayQ 0.1k/1.9e; curve_ok 0.1k/1.3e	symbolic execution (diffuse *_ok lemmas)
+10.3	9.2	1.1	P256.EcdhTable.Zaddu	evalLeft 3.2k/0.0e; evalRight 2.4k/0.0e; [line 30] materialize_value leftCode :=  1.3k/0.2e	kernel-heavy, diffuse
+10.3	2.9	7.5	Ed448.AArch64.ScalarColumns	mulCols_sum 0.8k/1.6e; term_ok 0.7k/1.3e; columns_ok 0.4k/1.3e	symbolic execution (diffuse *_ok lemmas)
+10.3	1.5	8.8	Blowfish.Arm.KeyEnc	encP_step 0.3k/2.0e; encS_step 0.4k/1.4e; storeSHead_run 0.0k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.3	1.4	8.9	Ecdsa.Rfc6979.AArch64.Blocks	initKV_ok 0.1k/1.7e; wipe_ok 0.2k/1.3e; kvN_ok 0.4k/1.0e	symbolic execution (diffuse *_ok lemmas)
+10.3	9.9	0.4	Ecdh.X86_64.BrainpoolP512r1.CheckVerified	ct 7.8k/0.2e; hvm 1.6k/0.0e; sat 0.4k/0.0e	taint kernel
+10.3	5.1	5.2	ChaCha20.X86_64.Avx512Tail.Rounds	diags2_check 2.3k/0.0e; cols2_check 1.0k/0.0e; qround 0.1k/0.7e	kernel-heavy, diffuse
+10.3	2.0	8.3	Scrypt.X86_64.Salsa	finish_step 0.3k/1.2e; load_step 0.5k/0.7e; line_ok 0.2k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.3	1.2	9.1	MlDsa.X86_64.Sign.PrimsB	ballCall_tr 0.1k/0.8e; ballPre 0.1k/0.6e; ballCall_ok 0.1k/0.6e	symbolic execution (diffuse *_ok lemmas)
+10.3	1.2	9.1	Curve448.AArch64.Neon.Carries	wrap_ok 0.4k/3.5e; chainLoop_ok 0.5k/2.2e; chainStep_ok 0.1k/1.1e	symbolic execution (diffuse *_ok lemmas)
+10.3	3.6	6.7	Sm4.Arm.Group	dataGroup_wp 3.2k/5.7e; groupCount_wp 0.0k/0.3e; lsr3_beq 0.1k/0.1e	single elab hot spot: decide
+10.2	3.1	7.1	Mont.X86_64.SqrP	sColSum_total 1.8k/2.3e; sAdd_ok 0.5k/0.8e; sCol_colOk 0.4k/0.7e	single elab hot spot: simp
+10.2	5.9	4.3	P521.X86_64.JointTiming	nafCacheTable_adx_ct 1.9k/0.2e; jointDouble_ct 1.1k/0.3e; nafCacheTable_ct 0.7k/0.4e	taint kernel
+10.2	3.0	7.2	Bignum.X86_64.R2wSub	msStep_ok 1.5k/2.6e; mulSub_ok 1.1k/1.9e; subHead_ok 0.1k/0.9e	single elab hot spot: decide
+10.2	7.8	2.4	Ecdsa.Verify.X86_64.Verified	verify_x86 3.8k/0.1e; verify_checks 1.9k/0.7e; verify_verified 2.0k/0.2e	kernel-heavy, diffuse
+10.2	2.5	7.7	Rc2.Arm.KeyIO	descendLoop_ok 0.8k/0.8e; copyLoop_ok 0.1k/1.1e; fillLoop_ok 0.3k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.2	3.6	6.7	Rsa.X86_64.CrtKeyReduce	reduceTop_ok 3.4k/6.2e; reduceLoopFrom_ok 0.1k/0.3e; wv_low 0.0k/0.2e	single elab hot spot: omega
+10.2	1.8	8.4	RsaKeyGen.AArch64.CTMs	msR2_ok 0.5k/1.1e; msY_ok 0.2k/1.2e; msH_ok 0.3k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.2	1.8	8.4	Poly1305.AArch64.Vector.Setup	powers_ok 0.4k/3.9e; limbs_ok 0.7k/1.9e; lim_val 0.4k/0.4e	single elab hot spot: decide
+10.2	2.6	7.7	CmacTripleDes.X86.Block	passBody_ok 0.2k/1.6e; roundStep_ok 0.2k/1.3e; block_ok 0.0k/1.3e	symbolic execution (diffuse *_ok lemmas)
+10.2	4.8	5.5	CmacTripleDes.X86.Round	round_ok 0.7k/2.5e; boxIn_eq 1.1k/1.2e; sbox0_check 1.0k/0.0e	symbolic execution (diffuse *_ok lemmas)
+10.2	2.4	7.8	Sha512.Arm.Rounds	wp_roundW 0.1k/0.9e; round_ok 0.4k/0.5e; step_ok 0.4k/0.4e	symbolic execution (diffuse *_ok lemmas)
+10.2	9.7	0.5	Ed25519.X86_64.Point64.Keeps	addFn_keeps 3.9k/0.0e; doubleFn_keeps 3.8k/0.0e; addAffineFn_keeps 1.9k/0.0e	kernel-heavy, diffuse
+10.2	4.3	5.9	Sha512.Arm.Stream.Finalize	finalize_verified 3.1k/1.3e; out_ok 1.0k/2.8e; len_ok 0.2k/1.1e	taint kernel
+10.2	1.1	9.2	Ecdh.Arm.Main	exchange_ok 0.5k/5.0e; ecFinish_ok 0.4k/1.6e; middle_ok 0.1k/1.5e	single elab hot spot: decide
+10.2	3.1	7.1	MlKem.AArch64.KgT	apart_scr 0.6k/1.1e; t_step 0.2k/1.5e; apart_cnW 0.5k/0.9e	diffuse elab (decide)
+10.2	7.1	3.1	Seed.X86_64.CbcVerified	cbcEncrypt_ct 3.0k/0.5e; cbcDecrypt_ct 2.3k/0.3e; cbcDecrypt_framed 0.8k/0.2e	taint kernel
+10.2	6.4	3.8	Weierstrass.X86_64.MontFn6	mul6_ok 0.2k/1.5e; sqrSA_reloc 1.4k/0.0e; sqr_keeps 1.2k/0.0e	symbolic execution (diffuse *_ok lemmas)
+10.2	1.4	8.8	Mont.AArch64.Row	chainSkip_ok 0.2k/1.9e; row_ok 0.9k/0.4e; chainCode_ok 0.1k/0.9e	symbolic execution (diffuse *_ok lemmas)
+10.2	3.0	7.2	CmacTripleDes.X86_64.Block	roundStep_ok 0.1k/1.1e; passTail_ok 0.0k/1.0e; block_ok 0.0k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.2	1.2	9.0	RsaKeyGen.X86_64.Key.DPart	dEven_k 0.8k/7.2e; dPart_k 0.1k/0.8e; dOne_k 0.1k/0.5e	single elab hot spot: decide
+10.2	2.5	7.6	Idea.X86.Ecb	step_ok 1.4k/2.7e; prologue_run 0.5k/2.7e; ecb_wp 0.2k/0.8e	single elab hot spot: decide
+10.2	1.6	8.6	Weierstrass.AArch64.JacComb	jacComb_step_ok 0.9k/4.5e; jacComb_init_values_ok 0.6k/3.9e; jacComb_loop_ok 0.0k/0.1e	single elab hot spot: simp
+10.2	3.8	6.4	Sha3.Arm.Stream.Squeeze	squeeze_verified 2.6k/0.3e; store_ok 0.6k/1.6e; prologue_ok 0.1k/1.2e	taint kernel
+10.2	1.4	8.8	Rc2.X86.Stream.Verified	update_correct 0.1k/1.2e; callPre_ok 0.2k/0.9e; update_implies 0.1k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.2	2.6	7.5	X25519.X86_64.Ifma.Phase	s2a_wp 0.5k/1.6e; s3a_wp 0.6k/1.0e; outside 0.3k/0.6e	diffuse elab (simp)
+10.1	0.6	9.5	Weierstrass.X86_64.WinJacIter	jstep_ok 0.5k/5.0e; cadd_apart 0.0k/4.3e; offset_eq 0.1k/0.1e	single elab hot spot: simp
+10.1	8.1	2.0	Ecdh.X86_64.Verified	ecdh_ct 3.4k/0.5e; ecdh_x86 2.5k/0.1e; ecdh_verified 1.2k/0.1e	taint kernel
+10.1	4.6	5.5	Weierstrass.Booth	booth_not_dvd 3.1k/2.3e; bpart_abs_le 0.4k/0.4e; bmag_le 0.4k/0.3e	single elab hot spot: omega
+10.1	5.4	4.7	Weierstrass.X86.Bits	bits_ok 1.9k/1.7e; bit_byte 2.2k/0.0e; bitsBody_ok 0.1k/1.2e	symbolic execution (diffuse *_ok lemmas)
+10.1	8.1	2.0	Ecdsa.Verify.X86.NafPointChecks	nafTable_checks 2.1k/0.4e; nafTableAddTail_ct 2.0k/0.2e; [line 54] materialize_code nafTableDoubl 1.4k/0.3e	taint kernel
+10.1	7.0	3.1	EcKey.X86.P521.Verified	pk_ct 6.0k/0.6e; pk_sp 0.6k/0.0e; pk_verified 0.0k/0.6e	taint kernel
+10.1	1.9	8.2	Sha512.X86.Shared	finalize 0.3k/0.8e; update 0.2k/0.5e; finalizeDigestStack48 0.0k/0.7e	diffuse elab (macro lit_decide)
+10.1	2.6	7.5	Camellia.X86_64.Core	group_wp 1.1k/2.4e; fl_step 0.1k/1.0e; storeHalf_step 0.1k/0.7e	diffuse elab (omega)
+10.1	0.8	9.2	AesGcm.X86.Cmp	tagLenOk_pc 0.2k/2.5e; tagOut_ok 0.1k/1.4e; cmp_ok 0.1k/1.1e	taint kernel
+10.1	5.7	4.3	Pbkdf2.Md.X86_64.Hashes.Sha512	coreOK 3.5k/0.9e; pss_all 1.1k/1.4e; ok 0.2k/0.3e	taint kernel
+10.1	1.8	8.3	X448.X86_64.Bits	bitsBody_ok 0.4k/3.1e; bitJ_ok 0.1k/1.5e; bits_ok 0.4k/1.2e	symbolic execution (diffuse *_ok lemmas)
+10.1	1.8	8.3	AesGcmSiv.AArch64.Crypt	cryptBlock_ok 0.4k/2.6e; crypt_ok 0.3k/1.4e; cryptTail_ok 0.2k/1.2e	symbolic execution (diffuse *_ok lemmas)
+10.1	2.9	7.2	Aes.AArch64.Ecb	ls_step 0.2k/1.3e; storePhase_wp 0.6k/0.8e; ecbGroup_ok 0.3k/0.9e	symbolic execution (diffuse *_ok lemmas)
+10.0	3.5	6.6	Gcm.X86_64.Cached.Loop48	body48_ok 1.1k/2.6e; dbody48_ok 0.9k/1.3e; bigRest_ok 0.3k/0.5e	symbolic execution (diffuse *_ok lemmas)
+10.0	2.1	7.9	Gcm.X86_64.StitchR.Rem	remD_ok 1.5k/5.0e; ksSel_ok 0.3k/1.5e; keyEnd_ok 0.1k/0.3e	single elab hot spot: decide
+10.0	2.7	7.4	Ecdsa.Rfc6979.Arm.Correct	stageB_ok 0.5k/1.2e; entry_ok 0.2k/1.4e; go_iff 0.3k/0.8e	symbolic execution (diffuse *_ok lemmas)
+10.0	1.4	8.6	MlDsa.X86.Arith.Mul	mul_step 0.1k/1.2e; mulAdd_verified 0.1k/1.3e; head_spec 0.1k/1.1e	symbolic execution (diffuse *_ok lemmas)
+10.0	2.9	7.2	MlKem.X86.TopPrim3	sample_call 0.4k/2.7e; ce_call 0.3k/2.3e; dd_call 0.3k/1.8e	diffuse elab (omega)
+10.0	0.8	9.2	Argon2.AArch64.InitialBodyReviewedState	code_rel 0.1k/0.7e; input_rel 0.0k/0.7e; loop_rel 0.1k/0.4e	taint kernel
+10.0	0.8	9.2	Weierstrass.AArch64.WindowEntry	winEntry_ok 0.8k/8.7e; winE_mem 0.0k/0.3e; tblSlot_eq 0.0k/0.1e	single elab hot spot: simp
+10.0	0.8	9.2	AesGcm.Arm.OneShot	oneTag_ok 0.3k/2.8e; oneAad_ok 0.2k/2.2e; one1_wp 0.1k/1.4e	symbolic execution (diffuse *_ok lemmas)
