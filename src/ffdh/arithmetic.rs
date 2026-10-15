@@ -1,11 +1,14 @@
 //! Public arithmetic for parameter generation.
+#[cfg(target_arch = "aarch64")]
 use crate::arch::miller_rabin::vg_miller_rabin_round;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::miller_rabin::vg_miller_rabin_round_adx;
+use crate::arch::rsa_mont::VG_RSA_MONT_MUL_ADX_FEATURES;
+#[cfg(target_arch = "aarch64")]
 use crate::arch::rsa_mont::vg_rsa_mont_mul;
-#[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_mont::{VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_mont_mul_adx};
-use crate::cpu::{Features, detected};
+use crate::cpu::Features;
+#[cfg(target_arch = "aarch64")]
+use crate::cpu::detected;
+#[cfg(target_arch = "aarch64")]
 use crate::rsa::Scratch;
 use alloc::{vec, vec::Vec};
 use core::cmp::Ordering;
@@ -29,6 +32,7 @@ pub(super) fn scalar(a: &[u8], len: usize) -> Vec<u8> {
     out
 }
 /// Subtract one from a public odd modulus, so there is no borrow.
+#[cfg(target_arch = "aarch64")]
 pub(super) fn minus_one(a: &[u8]) -> Vec<u8> {
     let mut out = a.to_vec();
     let last = out.len() - 1;
@@ -54,6 +58,7 @@ impl Backend {
     }
 }
 
+#[cfg(target_arch = "aarch64")]
 #[derive(Clone, Debug)]
 pub(super) struct Montgomery {
     modulus: Vec<u64>,
@@ -61,6 +66,7 @@ pub(super) struct Montgomery {
     minv: u64,
     backend: Backend,
 }
+#[cfg(target_arch = "aarch64")]
 impl Montgomery {
     /// Only public values are used in precomputation. Works for any odd
     /// modulus >=3, including the 511-bit Sophie Germain prime of a 512-bit p.
@@ -89,8 +95,6 @@ impl Montgomery {
         let w = self.modulus.len();
         let at = |j| 32 + j * (w + 2);
         let mut ws = self.workspace(base);
-        #[cfg(target_arch = "x86_64")]
-        let (exponent, one, minus_one) = (24, 25, 26);
         #[cfg(target_arch = "aarch64")]
         let (exponent, one, minus_one) = (27, 9, 10);
         ws.copy_within(at(5)..at(5) + w, at(one));
@@ -117,8 +121,6 @@ impl Montgomery {
         }
         let round = match self.backend {
             Backend::Baseline => vg_miller_rabin_round,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_miller_rabin_round_adx,
         };
         // SAFETY: w is 4..=128, the odd modulus is at least 3, and the
         // stable allocation contains 28 arrays of w+2 words. The Montgomery
@@ -152,8 +154,6 @@ impl Montgomery {
     fn mul(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
         let f = match self.backend {
             Backend::Baseline => vg_rsa_mont_mul,
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx => vg_rsa_mont_mul_adx,
         };
         // SAFETY: ws has at least 32+8*(w+2) words, w>=2 and w<=128. The header
         // points into this allocation, stores the odd modulus' negative
@@ -164,6 +164,7 @@ impl Montgomery {
         unsafe { f(ws.as_mut_ptr(), ws.len(), out, a, b) }
     }
 }
+#[cfg(target_arch = "aarch64")]
 fn words(a: &[u8], w: usize) -> Vec<u64> {
     let mut out = vec![0; w];
     for (i, &b) in a.iter().rev().enumerate() {
@@ -172,6 +173,7 @@ fn words(a: &[u8], w: usize) -> Vec<u64> {
     out
 }
 /// Public modular doubling, retaining the high carry until subtraction.
+#[cfg(target_arch = "aarch64")]
 fn double_mod(a: &mut [u64], m: &[u64]) {
     let mut carry = 0;
     for v in a.iter_mut() {
@@ -194,6 +196,7 @@ fn double_mod(a: &mut [u64], m: &[u64]) {
 mod tests {
     use super::*;
 
+    #[cfg(target_arch = "aarch64")]
     #[test]
     fn strong_witness_matches_integer_arithmetic() {
         // An independent small-integer oracle exercises early acceptance,
@@ -217,6 +220,7 @@ mod tests {
         }
     }
 
+    #[cfg(target_arch = "aarch64")]
     #[test]
     fn strong_witness_matches_power_of_two_moduli() {
         // Construct 2^k+1 arithmetically. Its odd exponent is one, and its

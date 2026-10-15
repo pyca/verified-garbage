@@ -180,9 +180,15 @@ def testQ : Prog isa := seqs [halveOutput, phaseSetup true, loadOutput, primeChe
     leaveStatus,
     .ite .e (testP mul r2 round) (.block [])]) (innerStatus 2)]
 
-def testCandidate : Prog isa := seqs [shapeOriginal, .block consumeCandidate, phaseSetup false, loadOutput,
-  .block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oGen))], generatorCheck,
+/-- Apply the requested generator's candidate congruence policy. -/
+def generatorPolicy : Prog isa := .seq
+  (.block [.mov .rax (.mem (hdr sLink)), .mov .rdx (.mem (ws .rax oGen))]) generatorCheck
+
+/-- Trial checks before the independent q and p witness policies. -/
+def candidateFilter : Prog isa := seqs [phaseSetup false, loadOutput, generatorPolicy,
   .ite .e (.seq primeCheck (.ite .e (.seq (.block [leave]) (testQ mul r2 round)) (innerStatus 2))) (innerStatus 2)]
+
+def testCandidate : Prog isa := seqs [shapeOriginal, .block consumeCandidate, candidateFilter mul r2 round]
 
 /-- Clear rejected outputs, write the consumed count (zero on exhaustion),
 and restore the ABI's callee-saved registers. -/

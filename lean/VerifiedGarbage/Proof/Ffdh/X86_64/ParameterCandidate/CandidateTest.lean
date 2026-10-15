@@ -13,7 +13,6 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-! # FFDH parameter generation on x86-64: the complete candidate test -/
 
@@ -46,6 +45,8 @@ theorem testCandidate_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   refine WP.seq (WP.mono (shapeOriginal_ok h hdi havail) fun s₁ ⟨h₁, hd₁, hv₁, hs₁, hf₁, k₁, _⟩ => ?_)
   refine WP.seq (WP.mono (consumeCandidate_ok h₁ hd₁ havail) fun s₂ ⟨h₂, hs₂, hf₂, k₂, ho₂⟩ => ?_)
   have hd₂ : s₂.gpr .rdi = p.B := (k₂.gpr (by decide)).trans hd₁
+  unfold candidateFilter
+  simp only [seqs]
   refine WP.seq (WP.mono (phaseSetup_state_ok h₂ hd₂ false)
     fun s₃ ⟨mi, h₃, hg₃, hp₃, hs₃, hf₃, k₃, ho₃⟩ => ?_)
   refine WP.seq (WP.mono (loadOutput_ok h₃ hg₃ hp₃ (by rw [ho₃, ho₂]; exact hv₁))
@@ -54,7 +55,6 @@ theorem testCandidate_ok (M : Mont) (R : R2Impl M) (K : Kernel)
   have hf := ((hf₁.trans hf₂).trans hf₃).trans hf₄
   have kk : Keep (.rdi :: mmRegs) s s₄ := (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)
   have hv₄ : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₄.mem p.op p.k) = p.P := by rw [ho₄, ho₃, ho₂]; exact hv₁
-  apply WP.assoc
   refine WP.seq (WP.mono (generatorCheck_state_ok h₄ hg₄ hp₄ hn₄)
     fun s₅ ⟨h₅, hg₅, hp₅, hn₅, hz₅, hm₅, k₅⟩ => ?_)
   obtain ⟨_, hs₅, hf₅⟩ := h₄.same_mem hm₅ k₅ (by decide)

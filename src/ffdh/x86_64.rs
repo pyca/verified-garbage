@@ -8,6 +8,7 @@ use crate::arch::ffdh::{
     vg_ffdh_check_domain, vg_ffdh_check_domain_adx, vg_ffdh_check_private,
     vg_ffdh_check_private_adx, vg_ffdh_check_public, vg_ffdh_check_public_adx, vg_ffdh_exchange,
     vg_ffdh_exchange_adx, vg_ffdh_generate_key, vg_ffdh_generate_key_adx,
+    vg_ffdh_parameter_candidate, vg_ffdh_parameter_candidate_adx,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;
@@ -183,4 +184,38 @@ pub(super) fn generate_key(
             ws.len(),
         )
     }
+}
+
+/// Shape and test one parameter candidate using a public random tape.
+pub(super) fn parameter_candidate(
+    bits: usize,
+    generator: u32,
+    rand: &[u8],
+    p: &mut [u8],
+    scratch: &mut Scratch,
+) -> (u32, usize) {
+    let mut used = [0u64; 1];
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_ffdh_parameter_candidate,
+        Backend::Adx => vg_ffdh_parameter_candidate_adx,
+    };
+    // SAFETY: generation validates bits in 512..=8192 and generator in
+    // {2,5}, allocates ceil(bits/8) output bytes and 16*len+32 scratch
+    // words. Output, used, tape and scratch are separate allocations,
+    // disjoint from the callee's stack. The tape may have any length.
+    // Backend selection checks the generated BMI2+ADX feature set.
+    let status = unsafe {
+        f(
+            p.as_mut_ptr(),
+            p.len(),
+            &mut used,
+            bits,
+            generator,
+            rand.as_ptr(),
+            rand.len(),
+            scratch.as_mut_ptr(),
+            scratch.len(),
+        )
+    };
+    (status, used[0] as usize)
 }
