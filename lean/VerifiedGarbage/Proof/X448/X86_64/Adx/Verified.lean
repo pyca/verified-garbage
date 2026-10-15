@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 public import VerifiedGarbage.Proof.X448.X86_64.Verified
 meta import VerifiedGarbage.Proof.X448.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -39,10 +43,20 @@ theorem x448Adx_ok (s : State) (hs : Proof.X448.x448X86_64.pre s) :
   obtain ⟨t, s', he, h⟩ := hc
   exact ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he h.1, h.2⟩
 
+/-- The code without its displacements: from a taint that knows no region
+bases, the analysis does not read them (`Proof/Framework/X86_64/TaintErase.lean`),
+and the field arithmetic is then the same few blocks, each a constant
+(`materialize_shared`) whose analysis from the same taint the kernel evaluates
+once. -/
+def x448AdxErased : Prog isa := Code.erase Impl.X448.X86_64.x448Adx
+
+materialize_shared x448AdxErased
+
+/-- Constant time by the analysis of the code without its displacements (`x448AdxErased`). -/
 theorem x448Adx_ct : ConstantTime isa Proof.X448.x448X86_64.pre Proof.X448.x448X86_64.pub
     Impl.X448.X86_64.x448Adx := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) ?_
-    (by taint_decide)
+  refine VG.Taint.constantTime_mapBlocks (c' := x448AdxErased) taintS_eraseInv
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) rfl ?_ rfl (by taint_decide)
   intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
