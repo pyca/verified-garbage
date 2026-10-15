@@ -89,6 +89,14 @@ def coeffs (m : Machine) : List Nat :=
 def specNtt (f : List Nat) : List Nat :=
   (Spec.MlKem.ntt (Vector.ofFn fun i => (Fin.ofNat _ (f.getD i.val 0) : Spec.MlKem.Zq))).toList.map (·.val)
 
+def specInv (f : List Nat) : List Nat :=
+  (Spec.MlKem.nttInv (Vector.ofFn fun i => (Fin.ofNat _ (f.getD i.val 0) : Spec.MlKem.Zq))).toList.map (·.val)
+
+def checkInv (f : List Nat) : Except String Nat := do
+  let m ← evaluate 100 Impl.MlKem.AArch64.Ntt16.nttInv (start f)
+  if coeffs m == specInv f then pure m.instructions
+  else throw s!"mismatch: {(coeffs m).take 8} vs {(specInv f).take 8}"
+
 def check (f : List Nat) : Except String Nat := do
   let m ← evaluate 100 Impl.MlKem.AArch64.Ntt16.ntt (start f)
   if coeffs m == specNtt f then pure m.instructions
@@ -104,5 +112,12 @@ def poly (seed : Nat) : List Nat :=
 #eval check (poly 1)
 #eval check (poly 2)
 #eval check (poly 3)
+
+#eval checkInv ((List.range 256).map fun _ => 3328)
+#eval checkInv ((List.range 256).map fun _ => 0)
+#eval checkInv (List.range 256)
+#eval checkInv (poly 1)
+#eval checkInv (poly 2)
+#eval checkInv (poly 3)
 
 end VG.Test.MlKemNtt16Model
