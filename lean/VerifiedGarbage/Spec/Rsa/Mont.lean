@@ -199,12 +199,13 @@ def sqrSig : Sig where
 number at `a`, written to `o`. Each step multiplies by `R⁻¹` once, so after `k`
 steps the number at `o` times `R^(2^k - 1)` is congruent to `a^(2^k)` modulo
 `m`, `R = 2^(64 w)`. As for `mulLazyContract`, neither `a` nor the result need
-be below `m`. -/
+be below `m`. Unlike it, `o` is not the modulus's array: every squaring after
+the first reduces by the modulus, which must still be there. -/
 def sqrLazyContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sqrSig.contract A
     (pre := fun ws wsLen o a k m =>
       let w := wOf m ws
-      Layout m ws wsLen.toNat ∧ Operand o.toNat ∧ Operand a.toNat ∧ 1 ≤ k.toNat ∧
+      Layout m ws wsLen.toNat ∧ Operand o.toNat ∧ o.toNat ≠ aM ∧ Operand a.toNat ∧ 1 ≤ k.toNat ∧
         ((m.readW (ws + BitVec.ofNat 64 (arrAt w aM)) 64).toNat * (wordAt m ws minvWord).toNat + 1) %
           2 ^ 64 = 0)
     (post := fun ws wsLen o a k m m' _ =>
@@ -228,7 +229,7 @@ def sqrLazyApi : Api where
     need be below `m`. The working space is laid out as for `vg_rsa_mont_mul`: a header of 32 \
     words, then 8 arrays of `w + 2` words each; header word 6 holds `w`, word 7 `-m⁻¹ mod \
     2^64`, and words 8 to 15 the addresses of the arrays. The numbers are `w` 64-bit words, \
-    little-endian, at the start of their arrays; `o` may be `a`. Every byte of `ws` but those \
+    little-endian, at the start of their arrays; `o` may be `a`, but not 0, the modulus. Every byte of `ws` but those \
     of arrays 2 and 3 (the function's own) and of array `o` keeps its value.\n\n\
     Contract: `VG.Spec.Rsa.Mont.sqrLazyContract`. Constant time but for `w` and `k`: timing \
     may depend on the pointer, `ws_len`, the indices, `w` and `k`, not on the numbers."
@@ -237,7 +238,7 @@ def sqrLazyApi : Api where
     "Header words 8 to 15 must hold the addresses of the arrays: word `8 + j` the address of \
       word `32 + j * (w + 2)` of `ws`.",
     "Header word 7 must be `-m⁻¹ mod 2^64` for the modulus `m` in array 0, which must be odd.",
-    "`o` and `a` must be below 8, and not 2 or 3.",
+    "`o` and `a` must be below 8, and not 2 or 3; `o` must not be 0 (the modulus).",
     "`k` must be at least 1.",
     "Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the \
       caller must destroy if they are secret."]
