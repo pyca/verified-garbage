@@ -238,8 +238,7 @@ theorem KInv.sched {s₀ : State} {b sc : BitVec 32} {R : Nat} {w : List Byte} (
     bv_omega
   refine hk.sep _ ?_ (hsub _ hc)
   simp only [Region.Contains]
-  rw [show State.addr sc + BitVec.ofNat 64 (16 * j + i) - State.addr sc = BitVec.ofNat 64 (16 * j + i) by
-    bv_omega, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  rw [VG.Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   omega
 
 /-- The round key as a state. -/
