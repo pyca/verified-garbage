@@ -86,7 +86,10 @@ theorem row_ne {r : Nat} (hr : r < 8) :
 /-- The registers pass 1 changes. -/
 abbrev p1Regs : List VReg := [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17, .v20, .v21, .v22, .v23]
 
-theorem row_mem {r : Nat} (hr : r < 8) : row r ∈ p1Regs := by
+/-- The registers butterflies on rows change. -/
+abbrev bfRegs : List VReg := [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v16, .v17]
+
+theorem row_mem {r : Nat} (hr : r < 8) : row r ∈ bfRegs := by
   match r, hr with
   | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ => decide
 
@@ -96,7 +99,7 @@ theorem rows_bf {P : Poly} {c : Nat} (hc : c < 4) {lay : List Nat} {a b K : Nat}
     (hz : Cst (s.v .v22) fun _ => Impl.MlKem.AArch64.Ntt16.zeta K)
     (ht : Cst (s.v .v23) fun _ => tw (Impl.MlKem.AArch64.Ntt16.zeta K))
     (hq : Cst (s.v .v31) fun _ => 3329)
-    (k : ∀ s', VChg p1Regs s s' → Rows P c (layStep lay a b) 8 s' → WP isa (.block rest) s' Q) :
+    (k : ∀ s', VChg bfRegs s s' → Rows P c (layStep lay a b) 8 s' → WP isa (.block rest) s' Q) :
     WP isa (.block (bf (row a) (row b) .v22 .v23 ++ rest)) s Q := by
   simp only [okPair, Bool.and_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq, beq_iff_eq,
     List.all_eq_true, List.mem_range, Bool.not_eq_true', decide_eq_false_iff_not, and_assoc] at hok
@@ -144,6 +147,64 @@ theorem rows_bf {P : Poly} {c : Nat} (hc : c < 4) {lay : List Nat} {a b K : Nat}
           have nr := row_ne hr
           exact ⟨nr.1, nr.2.1, nr.1, fun e => e2 (row_inj r hr b hb e),
             fun e => e1 (row_inj r hr a ha e)⟩
+
+/-- Pairs of rows, each one of the butterflies of the layer after `lay`, with the zeta `K`. -/
+def okPairs (lay : List Nat) (K : Nat) : List (Nat × Nat) → Bool
+  | [] => true
+  | (a, b) :: ps => okPair lay a b K && okPairs (layStep lay a b) K ps
+
+/-- `lay` after the butterflies on the pairs `ps`. -/
+def layAfter (lay : List Nat) : List (Nat × Nat) → List Nat
+  | [] => lay
+  | (a, b) :: ps => layAfter (layStep lay a b) ps
+
+theorem rows_bfs {P : Poly} {c : Nat} (hc : c < 4) {K : Nat} (ps : List (Nat × Nat)) :
+    ∀ (lay : List Nat) (s : State), okPairs lay K ps = true → Rows P c lay 8 s →
+    (Cst (s.v .v22) fun _ => Impl.MlKem.AArch64.Ntt16.zeta K) →
+    (Cst (s.v .v23) fun _ => tw (Impl.MlKem.AArch64.Ntt16.zeta K)) →
+    (Cst (s.v .v31) fun _ => 3329) →
+    (∀ s', VChg bfRegs s s' → Rows P c (layAfter lay ps) 8 s' → WP isa (.block rest) s' Q) →
+    WP isa (.block ((ps.flatMap fun p => bf (row p.1) (row p.2) .v22 .v23) ++ rest)) s Q := by
+  induction ps with
+  | nil => intro lay s _ h _ _ _ k; exact k s (VChg.refl _ _) h
+  | cons p ps ih =>
+    intro lay s hok h hz ht hq k
+    obtain ⟨a, b⟩ := p
+    simp only [okPairs, Bool.and_eq_true] at hok
+    rw [List.flatMap_cons, List.append_assoc]
+    refine rows_bf hc hok.1 h hz ht hq fun s₁ c₁ h₁ => ?_
+    have g22 : s₁.v .v22 = s.v .v22 := c₁.get .v22
+    have g23 : s₁.v .v23 = s.v .v23 := c₁.get .v23
+    have g31 : s₁.v .v31 = s.v .v31 := c₁.get .v31
+    refine ih _ s₁ hok.2 h₁ (by rw [g22]; exact hz) (by rw [g23]; exact ht) (by rw [g31]; exact hq)
+      fun s₂ c₂ h₂ => k s₂ ((c₁.trans c₂).mono fun r hr => ?_) h₂
+    simp only [List.mem_append] at hr
+    exact hr.elim id id
+
+theorem eval_dupE {s : State} {d n : VReg} {k : Nat} (hk : k < 8) :
+    VOp.eval s (.dupE .h8 d n k) = some (d, ofVHalves fun _ => vhalf (s.v n) k) := by
+  simp only [VOp.eval, VArr.esize, show k < 128 / 16 from hk, ite_true, VArr.map2]
+  rfl
+
+/-- `bfRows k ps`: the pairs `ps` with lane `k` of `v18` and `v19`. -/
+theorem rows_bfRows {P : Poly} {c : Nat} (hc : c < 4) {K k : Nat} (hk : k < 8) (ps : List (Nat × Nat))
+    {lay lay' : List Nat} (hok : okPairs lay K ps = true) (hlay : layAfter lay ps = lay')
+    (h : Rows P c lay 8 s)
+    (hz : vhalf (s.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta K))
+    (ht : vhalf (s.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta K)))
+    (hq : Cst (s.v .v31) fun _ => 3329)
+    (kk : ∀ s', VChg (.v22 :: .v23 :: bfRegs) s s' → Rows P c lay' 8 s' →
+      WP isa (.block rest) s' Q) :
+    WP isa (.block (bfRows k ps ++ rest)) s Q := by
+  simp only [bfRows, List.cons_append, List.nil_append]
+  refine wp_vop (eval_dupE hk) fun s₁ h₁ => wp_vop (eval_dupE hk) fun s₂ h₂ => ?_
+  refine rows_bfs hc ps lay s₂ hok (fun r hr => ?_) (fun e he => ?_) (fun e he => ?_) (fun e he => ?_)
+    fun s₃ c₃ h₃ => kk s₃ ((h₁.chg.trans h₂.chg).trans c₃ |>.mono) (hlay ▸ h₃)
+  · have nr := row_ne hr
+    rw [h₂.get _ nr.2.2.2.1, h₁.get _ nr.2.2.1]; exact h r hr
+  · rw [h₂.get .v22, h₁.v, vhalf_ofVHalves _ he, hz]
+  · rw [h₂.v, vhalf_ofVHalves _ he, h₁.get .v19, ht]
+  · rw [h₂.get .v31, h₁.get .v31]; exact hq e he
 
 end
 
