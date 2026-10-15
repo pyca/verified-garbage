@@ -18,15 +18,14 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Proof.Mont
 open VG.Spec.Rsa.Mont (arrAt wOf numAt Layout)
 open VG.Proof.X25519.Arm (Rest wp_mov op2_reg)
 
-theorem exportBE_ok (s : State) {base dst : BitVec 32} {len w o k : Nat}
+theorem exportBE_truncated_ok (s : State) {base dst : BitVec 32} {len w o k : Nat}
     (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
     (width : wOf s.mem (State.addr base) = w) (ho : o < 8) (hk : 0 < k) (hk' : k ≤ 8 * w)
-    (valueFit : numAt s.mem (State.addr base) w o < 2 ^ (8 * k))
     (dstFit : dst.toNat + k ≤ 2 ^ 32) (write : InRegions s.wr (State.addr dst) k)
     (sep : Region.Disjoint ⟨State.addr base, 8 * len⟩ ⟨State.addr dst, k⟩)
     (ptr : s.gpr .r0 = base) (index : s.gpr .r2 = BitVec.ofNat 32 o) (output : s.gpr .r4 = dst) (countReg : s.gpr .r6 = BitVec.ofNat 32 k) :
     WP isa exportBE s fun t =>
-      Spec.Rsa.bytesAt t.mem (State.addr dst) k = Spec.Rsa.i2osp (numAt s.mem (State.addr base) w o) k ∧
+      Spec.Rsa.bytesAt t.mem (State.addr dst) k = Spec.Rsa.i2osp (numAt s.mem (State.addr base) w o % 2 ^ (8 * k)) k ∧
       Frame [⟨State.addr dst, k⟩] s.mem t.mem ∧
       t.gpr .r0 = base ∧ t.gpr .r4 = dst ∧ Rest [.r0, .r1, .r2, .r5, .lr] s t := by
   have nowrap := ws.nowrap
@@ -63,12 +62,28 @@ theorem exportBE_ok (s : State) {base dst : BitVec 32} {len w o k : Nat}
   rintro v ⟨value, frame, _, keep⟩
   refine wp_mov (op2_reg _ _) fun t moved => WP.block_nil ?_
   rw [srcAddr, mem] at value
-  rw [read_prefix_value s.mem _ hk' valueFit] at value
+  rw [read_prefix s.mem _ hk', BitVec.toNat_setWidth] at value
   rw [mem] at frame
   refine ⟨by rw [moved.mem]; exact value, by rw [moved.mem]; exact frame, ?_, ?_, ?_⟩
   · rw [moved.gpr, keep.gpr .r5 (by simp), saved]
   · rw [moved.other .r4 (by decide), keep.gpr .r4 (by simp), rest.gpr .r4 (by simp), output]
   · exact (rest.mono (by simp)).trans
       ((keep.mono (by simp)).trans (moved.rest (by simp)))
+
+theorem exportBE_ok (s : State) {base dst : BitVec 32} {len w o k : Nat}
+    (ws : Workspace s base (8 * len)) (layout : Layout s.mem (State.addr base) len)
+    (width : wOf s.mem (State.addr base) = w) (ho : o < 8) (hk : 0 < k) (hk' : k ≤ 8 * w)
+    (valueFit : numAt s.mem (State.addr base) w o < 2 ^ (8 * k))
+    (dstFit : dst.toNat + k ≤ 2 ^ 32) (write : InRegions s.wr (State.addr dst) k)
+    (sep : Region.Disjoint ⟨State.addr base, 8 * len⟩ ⟨State.addr dst, k⟩)
+    (ptr : s.gpr .r0 = base) (index : s.gpr .r2 = BitVec.ofNat 32 o) (output : s.gpr .r4 = dst) (countReg : s.gpr .r6 = BitVec.ofNat 32 k) :
+    WP isa exportBE s fun t =>
+      Spec.Rsa.bytesAt t.mem (State.addr dst) k = Spec.Rsa.i2osp (numAt s.mem (State.addr base) w o) k ∧
+      Frame [⟨State.addr dst, k⟩] s.mem t.mem ∧
+      t.gpr .r0 = base ∧ t.gpr .r4 = dst ∧ Rest [.r0, .r1, .r2, .r5, .lr] s t := by
+  refine WP.mono (exportBE_truncated_ok s ws layout width ho hk hk' dstFit write sep ptr index output countReg) ?_
+  intro t h
+  rw [Nat.mod_eq_of_lt valueFit] at h
+  exact h
 
 end VG.Proof.Bignum.Arm

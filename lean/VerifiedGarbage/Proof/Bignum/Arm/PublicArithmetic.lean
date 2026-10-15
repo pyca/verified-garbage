@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.Arm.PublicBuffers
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicData
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicStack
 public import VerifiedGarbage.Proof.Bignum.Arm.SmallConst
 import all Init.Data.Array.Basic
@@ -19,10 +19,11 @@ open VG.Proof.X25519.Arm (Rest)
 
 structure PublicArithmetic (base dst np ep xp : BitVec 32) (len k eLen : Nat)
     (nb eb xb : List Byte) (s : State) : Prop where
-  buffers : PublicBuffers base dst np ep xp len k eLen nb eb xb s
+  buffers : PublicData base dst ep xp len k eLen eb xb s
   stack : PublicStack base dst np ep xp len k eLen s
   ready : ArithmeticReady base len (Spec.Rsa.modulusWords k) s
   modulus : numAt s.mem (State.addr base) (Spec.Rsa.modulusWords k) 0 = Spec.Rsa.os2ip nb
+  modulusLength : nb.length = k
   odd : Spec.Rsa.os2ip nb % 2 = 1
   r2 : numAt s.mem (State.addr base) (Spec.Rsa.modulusWords k) 4 =
     2 ^ (128 * Spec.Rsa.modulusWords k) % Spec.Rsa.os2ip nb
@@ -34,7 +35,7 @@ theorem PublicArithmetic.of_mem {s t : State} {base dst np ep xp : BitVec 32} {l
     PublicArithmetic base dst np ep xp len k eLen nb eb xb t := by
   have frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by rw [mem]; exact Frame.refl _ _
   exact ⟨h.buffers.after_workspace frame rest, h.stack.after_workspace frame rest,
-    h.ready.of_mem mem rest ptr, by rw [mem]; exact h.modulus, h.odd, by rw [mem]; exact h.r2⟩
+    h.ready.of_mem mem rest ptr, by rw [mem]; exact h.modulus, h.modulusLength, h.odd, by rw [mem]; exact h.r2⟩
 
 theorem PublicArithmetic.after_array {s t : State} {base dst np ep xp : BitVec 32} {len k eLen o : Nat}
     {nb eb xb : List Byte} {rs : List Reg}
@@ -48,7 +49,7 @@ theorem PublicArithmetic.after_array {s t : State} {base dst np ep xp : BitVec 3
   have op0 : Operand 0 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
   have op4 : Operand 4 := by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
   exact ⟨h.buffers.after_workspace frame rest, h.stack.after_workspace frame rest, ready,
-    (keeps_array_num keeps fits op0 (Ne.symm ho0)).trans h.modulus, h.odd,
+    (keeps_array_num keeps fits op0 (Ne.symm ho0)).trans h.modulus, h.modulusLength, h.odd,
     (keeps_array_num keeps fits op4 (Ne.symm ho4)).trans h.r2⟩
 
 structure PublicOperand (base dst np ep xp : BitVec 32) (len k eLen : Nat)

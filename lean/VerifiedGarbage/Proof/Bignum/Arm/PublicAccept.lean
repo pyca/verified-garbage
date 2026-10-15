@@ -49,7 +49,7 @@ theorem publicSaveAcceptance_ok (s : State) {base dst np ep xp : BitVec 32} {len
   have fits : arrAt (Spec.Rsa.modulusWords k) 8 ≤ 8 * len := h.ready.width ▸ h.ready.layout.2.2.1
   have arithmetic : PublicArithmetic base dst np ep xp len k eLen nb eb xb t :=
     ⟨h.buffers.after_acceptance frame rest, h.stack.after_acceptance mem rest, ready,
-      (eq.number fits (by decide : 0 < 8)).trans h.modulus, h.odd,
+      (eq.number fits (by decide : 0 < 8)).trans h.modulus, h.modulusLength, h.odd,
       (eq.number fits (by decide : 4 < 8)).trans h.r2⟩
   exact ⟨⟨⟨arithmetic, (eq.number fits (by decide : 1 < 8)).trans h.input⟩, saved.trans flag⟩, frame, rest⟩
 

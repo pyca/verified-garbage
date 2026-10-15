@@ -20,7 +20,6 @@ structure ExportMaskedInput (base dst : BitVec 32) (len w o k : Nat) (s : State)
   ready : SmallFnReady base len w o s
   positive : 0 < k
   fits : k ≤ 8 * w
-  valueFit : numAt s.mem (State.addr base) w o < 2 ^ (8 * k)
   outputFit : dst.toNat + k ≤ 2 ^ 32
   write : InRegions s.wr (State.addr dst) k
   separate : Region.Disjoint ⟨State.addr base, 8 * len⟩ ⟨State.addr dst, k⟩
@@ -32,8 +31,8 @@ structure ExportMaskedInput (base dst : BitVec 32) (len w o k : Nat) (s : State)
 theorem exportMasked_ready (s : State) {base dst : BitVec 32} {len w o k : Nat}
     (h : ExportMaskedInput base dst len w o k s) (ho : o < 8) :
     WP isa exportBE s (MaskOutputInput dst k) := by
-  refine WP.mono (exportBE_ok s h.ready.workspace h.ready.layout h.ready.width ho h.positive h.fits
-    h.valueFit h.outputFit h.write h.separate h.ready.ptr h.ready.index h.output h.count) ?_
+  refine WP.mono (exportBE_truncated_ok s h.ready.workspace h.ready.layout h.ready.width ho h.positive h.fits
+    h.outputFit h.write h.separate h.ready.ptr h.ready.index h.output h.count) ?_
   rintro t ⟨_, _, _, output, rest⟩
   exact ⟨output, (rest.gpr .r6 (by simp)).trans h.count, by rw [rest.sp]; exact h.stackFit,
     by rw [rest.rd, rest.wr, rest.sp]; exact h.read⟩

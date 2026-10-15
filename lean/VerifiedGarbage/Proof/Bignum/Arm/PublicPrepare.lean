@@ -87,7 +87,7 @@ theorem publicPrecompute_ok (s : State) {base dst np ep xp : BitVec 32} {len k e
   have ready : ArithmeticReady base len (Spec.Rsa.modulusWords k) t :=
     ⟨done.workspace, done.layout, done.width, done.ptr, done.inverse,
       by rw [modulus, ← h.buffers.modulus.bytes]; exact h.input.large, done.stackRead, done.stackSep, done.saved⟩
-  exact ⟨⟨h.buffers.after_workspace frame rest, h.stack.after_workspace frame rest, ready, modulus,
+  exact ⟨⟨(h.buffers.after_workspace frame rest).data, h.stack.after_workspace frame rest, ready, modulus, h.buffers.modulus.length,
     by rw [← h.buffers.modulus.bytes]; exact h.input.odd, r2⟩, frame, rest⟩
 
 end VG.Proof.Bignum.Arm
