@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.StackRegions
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Verified
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Kernel
 import VerifiedGarbage.Proof.MillerRabin.X86_64.CallerCT
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedVerified
 import VerifiedGarbage.TCB.Axioms
 
 /-! Audit wrapper lemmas before the callable artifacts are registered. -/
@@ -44,3 +45,5 @@ import VerifiedGarbage.TCB.Axioms
 #assert_standard_axioms VG.Proof.MillerRabin.X86_64.Caller.call_result_ok
 #assert_standard_axioms VG.Proof.MillerRabin.X86_64.Caller.call_ct
 #assert_standard_axioms VG.Proof.MillerRabin.X86_64.Kernel.called
+
+#assert_standard_axioms VG.Proof.RsaKeyGen.X86_64.sharedCandidate_verified

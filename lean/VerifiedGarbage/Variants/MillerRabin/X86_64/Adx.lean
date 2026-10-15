@@ -16,6 +16,7 @@ def variant : RoundImpl where
   mxSafe := by decide +kernel
   spSafe := by decide +kernel
   depth := by decide +kernel
+  arithSafe := by intro o a b; rfl
   suffix := "_adx"
   features := ["bmi2", "adx"]
 
