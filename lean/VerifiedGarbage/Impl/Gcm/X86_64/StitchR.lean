@@ -97,18 +97,17 @@ already hashed and decrypted: the counter after them stored and `rax` at
 their powers (`StitchZH.remSetup`), their keystream (`ksSel`), then each
 block hashed as read and decrypted in place with its keystream, read at
 `r11 + r10 + 768` with `r11` lowered by 512: the first alone if `r` is odd
-(`StitchZH.remBodyD`, in the lower lanes), then two at a time (`remPairD`).
-The products of the two lanes are added (`foldLanes`), reduced into `Y`, and
-`Y` stored. -/
+(`StitchZH.remBodyD`, in the lower lanes), then two at a time (`remPairD`),
+after which the products of the two lanes are added (`foldLanes`); then the
+products are reduced into `Y`, and `Y` stored. -/
 def remD : Prog isa :=
   .seq (.block StitchZH.remSetup)
     (.seq ksSel
       (.seq (.block (([.alu .sub .r11 (.imm 512), .mov32 .r10 (.imm 0)] : List Instr) ++ StitchAvx.zero ++
           ([.alu .test .r9 (.imm 1)] : List Instr)))
         (.seq (.ite .e (.block [.alu .cmp .r9 (.imm 16)]) (.block (StitchZH.remBodyD .rdx ++ StitchZH.remNext)))
-          (.seq (.ite .e (.block []) (.loop (.block (remPairD ++ remNextPair)) .ne))
-            (.block (foldLanes ++ StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr) ++
-              storeY))))))
+          (.seq (.ite .e (.block []) (.seq (.loop (.block (remPairD ++ remNextPair)) .ne) (.block foldLanes)))
+            (.block (StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr) ++ storeY))))))
 
 /-- `dec`, for any number of blocks from 16 on: the blocks after the last
 group, if any, by `remD`. -/

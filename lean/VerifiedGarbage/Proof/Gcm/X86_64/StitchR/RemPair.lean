@@ -369,11 +369,11 @@ theorem oddStep_ok {E : REnv} (hE : E.Ok) {t : State} (hI : RInvD E 0 t) (h8 : t
     (h9 : t.lane .xmm9 1 = 0) (h10 : t.lane .xmm10 1 = 0) (y1 : t.lane .xmm2 1 = 0)
     (m0 : t.lane .xmm0 1 = revMask) :
     WP isa (.block (remBodyD E.src ++ remNext)) t fun t' =>
-      RInvP E 1 t' ∧ t'.zf = some (decide (E.r = 1)) := by
+      RInvP E 1 t' ∧ RInvD E 1 t' ∧ t'.zf = some (decide (E.r = 1)) := by
   refine WP.mono (wp_and_run (remStepD_ok hE hE.r1 hI) (R := fun t' => t'.lane .xmm8 1 = 0 ∧
       t'.lane .xmm9 1 = 0 ∧ t'.lane .xmm10 1 = 0 ∧ t'.lane .xmm2 1 = 0 ∧ t'.lane .xmm0 1 = revMask)
       fun t' e => ?_) fun t' ⟨⟨hI', hz⟩, a8, a9, a10, a2, a0⟩ =>
-    ⟨RInvP.of_D hI' a8 a9 a10 a2 a0, by rw [hz, Nat.sub_zero]⟩
+    ⟨RInvP.of_D hI' a8 a9 a10 a2 a0, hI', by rw [hz, Nat.sub_zero]⟩
   rw [runBlock_append] at e
   cases e₁ : runBlock isa (remBodyD E.src) t with
   | none => rw [e₁] at e; cases e
@@ -456,35 +456,41 @@ theorem parity16 : ∀ r < 16, (BitVec.ofNat 64 (16 + r) &&& 1 == 0) = decide (r
 
 theorem zero16 : ∀ r < 16, (BitVec.ofNat 64 (16 + r) - 16 == 0) = decide (r = 0) := by decide
 
-/-- The first block alone if `r` is odd, then the pairs: what `remD` does
-between clearing the products and adding their lanes. -/
+/-- The first block alone if `r` is odd, then the pairs and their lanes
+added: what `remD` does between clearing the products and reducing them. -/
 theorem remMid_ok {E : REnv} (hE : E.Ok) (h2 : Ok2 E) (hsrc : E.src = .rdx) {t : State} (hI : RInvD E 0 t)
     (h8 : t.lane .xmm8 1 = 0) (h9 : t.lane .xmm9 1 = 0) (h10 : t.lane .xmm10 1 = 0) (y1 : t.lane .xmm2 1 = 0)
-    (m0 : t.lane .xmm0 1 = revMask) {X : Prog isa} {Q : State → Prop} (hX : ∀ s, RInvP E E.r s → WP isa X s Q) :
+    (m0 : t.lane .xmm0 1 = revMask) {X : Prog isa} {Q : State → Prop} (hX : ∀ s, RInvD E E.r s → WP isa X s Q) :
     WP isa (.block [.alu .test .r9 (.imm 1)]) t fun s =>
       WP isa (.seq (.ite .e (.block [.alu .cmp .r9 (.imm 16)]) (.block (remBodyD .rdx ++ remNext)))
-        (.seq (.ite .e (.block []) (.loop (.block (remPairD ++ remNextPair)) .ne)) X)) s Q := by
+        (.seq (.ite .e (.block []) (.seq (.loop (.block (remPairD ++ remNextPair)) .ne) (.block foldLanes))) X))
+        s Q := by
   have r1 := hE.r1
   have r15 := hE.r15
   -- After the first ite: `i` blocks done, `i ≤ 1`, an even number left, and `zf` whether none are.
-  have hlast : ∀ s, (∃ i, i ≤ 1 ∧ (E.r - i) % 2 = 0 ∧ RInvP E i s ∧ s.zf = some (decide (E.r = i))) →
-      WP isa (.seq (.ite .e (.block []) (.loop (.block (remPairD ++ remNextPair)) .ne)) X) s Q := by
-    rintro s ⟨i, hi1, hev, hIs, hz⟩
+  have hlast : ∀ s, (∃ i, i ≤ 1 ∧ (E.r - i) % 2 = 0 ∧ RInvP E i s ∧ (E.r = i → RInvD E i s) ∧
+      s.zf = some (decide (E.r = i))) →
+      WP isa (.seq (.ite .e (.block []) (.seq (.loop (.block (remPairD ++ remNextPair)) .ne) (.block foldLanes)))
+        X) s Q := by
+    rintro s ⟨i, hi1, hev, hIs, hD, hz⟩
     refine WP.seq (WP.ite (decide (E.r = i)) (by simp only [eval, hz]) (fun h => ?_) (fun h => ?_))
-    · refine WP.block_nil (hX s ?_)
-      rwa [show E.r = i by simpa using h]
-    · exact WP.mono (pairLoop_ok hE h2 hsrc (by simp at h; omega) hev hIs) hX
+    · have h' : E.r = i := by simpa using h
+      refine WP.block_nil (hX s ?_)
+      rw [h']; exact hD h'
+    · exact WP.seq (WP.mono (pairLoop_ok hE h2 hsrc (by simp at h; omega) hev hIs) fun s' hP =>
+        WP.mono (foldLanes_ok hP) hX)
   refine WP.mono (test91_ok t) fun t₁ ⟨z₁, g₁, l₁, m₁, rd₁, wr₁⟩ => ?_
   have hI₁ := rinvD_keep hI g₁ m₁ rd₁ wr₁ l₁
   rw [hI.r9, Nat.sub_zero, parity16 _ (by omega)] at z₁
   refine WP.seq (WP.ite (decide (E.r % 2 = 0)) (by simp only [eval, z₁]) (fun h => ?_) (fun h => ?_))
-  · refine WP.mono (cmp916_ok t₁) fun t₂ ⟨z₂, g₂, l₂, m₂, rd₂, wr₂⟩ => hlast t₂ ⟨0, by omega, by simpa using h, ?_, ?_⟩
+  · refine WP.mono (cmp916_ok t₁) fun t₂ ⟨z₂, g₂, l₂, m₂, rd₂, wr₂⟩ =>
+      hlast t₂ ⟨0, by omega, by simpa using h, ?_, fun h0 => absurd h0 (by omega), ?_⟩
     · exact RInvP.of_D (rinvD_keep hI₁ g₂ m₂ rd₂ wr₂ l₂) (by rw [l₂, l₁]; exact h8) (by rw [l₂, l₁]; exact h9)
         (by rw [l₂, l₁]; exact h10) (by rw [l₂, l₁]; exact y1) (by rw [l₂, l₁]; exact m0)
     · rw [z₂, g₁, hI.r9, Nat.sub_zero, zero16 _ (by omega)]
   · rw [← hsrc]
     exact WP.mono (oddStep_ok (E := E) hE hI₁ (by rw [l₁]; exact h8) (by rw [l₁]; exact h9)
       (by rw [l₁]; exact h10) (by rw [l₁]; exact y1) (by rw [l₁]; exact m0))
-      fun t₂ ⟨hI₂, z₂⟩ => hlast t₂ ⟨1, Nat.le_refl _, by simp at h; omega, hI₂, z₂⟩
+      fun t₂ ⟨hP₂, hD₂, z₂⟩ => hlast t₂ ⟨1, Nat.le_refl _, by simp at h; omega, hP₂, fun _ => hD₂, z₂⟩
 
 end VG.Proof.Gcm.X86_64.StitchR

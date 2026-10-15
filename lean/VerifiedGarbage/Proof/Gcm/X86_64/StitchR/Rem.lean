@@ -217,10 +217,10 @@ theorem remD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hr 
           Impl.Gcm.X86_64.StitchAvx.zero) ++ ([.alu .test .r9 (.imm 1)] : List Instr)))
         (.seq (.ite .e (.block [.alu .cmp .r9 (.imm 16)])
             (.block (Impl.Gcm.X86_64.StitchZH.remBodyD .rdx ++ Impl.Gcm.X86_64.StitchZH.remNext)))
-          (.seq (.ite .e (.block []) (.loop (.block (Impl.Gcm.X86_64.StitchR.remPairD ++
-              Impl.Gcm.X86_64.StitchR.remNextPair)) .ne))
-            (.block (Impl.Gcm.X86_64.StitchR.foldLanes ++ Impl.Gcm.X86_64.StitchAvx.reduceHash ++
-              ([.alu .add .r11 (.imm 512)] : List Instr) ++ storeY)))))) from rfl]
+          (.seq (.ite .e (.block []) (.seq (.loop (.block (Impl.Gcm.X86_64.StitchR.remPairD ++
+              Impl.Gcm.X86_64.StitchR.remNextPair)) .ne) (.block Impl.Gcm.X86_64.StitchR.foldLanes)))
+            (.block (Impl.Gcm.X86_64.StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr) ++
+              storeY)))))) from rfl]
   -- The counter after all the blocks, and the powers of the `r` blocks.
   refine WP.seq (WP.mono (remSetup_ok s' hr1 hr15 hr9
     (by rw [la' _ _ (by decide)]; exact hI.a.msk 0 (by decide))
@@ -349,16 +349,14 @@ theorem remD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hr 
         rw [hrd₃, hwr₃, Offset.add_add]
         exact in_rdwr (in_sub hp.p_in (by omega)) }
   have z1 : ∀ x, s₃.zlane x 1 = 0 → s₃.lane x 1 = 0 := fun x h => by rw [← State.zlane_lt2 _ _ (by decide)]; exact h
-  -- The first block alone if `r` is odd, then the pairs, and their lanes added.
+  -- The first block alone if `r` is odd, then the pairs and their lanes added.
   refine remMid_ok hE hE2 rfl hI₃ (z1 _ (p₃ 1 (by decide)).1) (z1 _ (p₃ 1 (by decide)).2.1)
     (z1 _ (p₃ 1 (by decide)).2.2)
     (by rw [lk₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 1 (by decide)]; exact hI.y1)
     (by rw [lk₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 1 (by decide)]
-        exact hI.a.msk 1 (by decide)) fun s₄' hP => ?_
-  rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (foldLanes_ok hP) fun s₄ hI₄ => ?_
+        exact hI.a.msk 1 (by decide)) fun s₄ hI₄ => ?_
   -- The products reduced into `Y`, `r11` restored, and `Y` stored.
-  rw [WP.block_append_iff]
+  rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (StitchAvx.reduceHash_ok s₄ hI₄.m1) fun s₅ ⟨y₅, f₅⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (add11_ok s₅) fun s₆ ⟨a11, g₆, l₆, m₆, rd₆, wr₆⟩ => ?_
