@@ -65,7 +65,9 @@ theorem powersBody32_ct (x : BitVec 32) : RelCT isa (PowersCTPre x)
 
 theorem powersBodyLocal_ct (x : BitVec 32) : RelCT isa (PowersCTPre x)
     (powersBody 5120 16 false) (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (pointTaint 24) _ (by taint_decide)
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check (pointTaint 24) (powersBody 5120 16 false) h).isSome = true := by
+    taint_decide_sum [doubleSum]
+  apply VG.RelCT.taint (A := taint) (pointTaint 24) _ hc
   intro s t h
   exact pointTaint_agree h.1 h.2.1 h.2.2.1 (by decide) h.2.2.2
 
