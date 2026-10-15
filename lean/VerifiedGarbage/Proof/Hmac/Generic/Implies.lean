@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Contract
 public meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -26,9 +28,7 @@ namespace VG
 `Sig.contract` from a signature whose sizes are symbolic, with `h` the
 satisfiability of `k'.pre`. The scratch space is `8 * W` bytes in `k` and
 `W * 8` in `k'`. -/
-syntax "generic_implies " "[" Lean.Parser.Tactic.simpLemma,* "]" " using " term : tactic
-macro_rules
-  | `(tactic| generic_implies [$ls,*] using $h) => `(tactic| exact
+tactic_template "generic_implies " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" " using " h:term : tactic => `(tactic| exact
       { pre := by
           intro s h
           sig_pre [$ls,*] at h
@@ -54,9 +54,7 @@ namespace VG
 `Sig.contract` (evaluated by unfolding `ls`), whose facts all hold by
 evaluation: the disjointness of regions at literal addresses by
 `Region.disjoint_of_sep`, the rest by `decide` or `rfl`. -/
-syntax "inst_sat " "[" Lean.Parser.Tactic.simpLemma,* "]" " using " term : tactic
-macro_rules
-  | `(tactic| inst_sat [$ls,*] using $w) => `(tactic| (
+tactic_template "inst_sat " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" " using " w:term : tactic => `(tactic| (
       refine ⟨$w, ?_⟩
       first
         | sig_sat_check [$ls,*]
