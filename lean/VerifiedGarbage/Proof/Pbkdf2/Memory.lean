@@ -133,4 +133,9 @@ theorem iterate_congr {f g : List Byte → List Byte} (hfg : ∀ u, u.length = 3
     rw [hfg u hu]
     exact ih _ _ (hg u)
 
+/-- A byte of the low 32 bits of `i`: `INT (i)`'s bytes. -/
+theorem mod32_div_mod8 (i k : Nat) (hk : k + 8 ≤ 32) : i % 2 ^ 32 / 2 ^ k % 2 ^ 8 = i / 2 ^ k % 2 ^ 8 := by
+  rw [show 2 ^ 32 = 2 ^ k * 2 ^ (32 - k) by rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega)],
+    Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (by omega))]
+
 end VG.Proof.Pbkdf2.Memory
