@@ -28,7 +28,7 @@ theorem ea_disp (s : State) (r : Reg) (e : Nat) :
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
     (hl : len ≤ 2 ^ 64) : ∀ d, d + 8 ≤ len → InRegions rs (p + BitVec.ofNat 64 d) 8 :=
-  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega)⟩
+  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega_using [hl, hd])⟩
 
 /-! ## Loads -/
 
@@ -52,15 +52,15 @@ theorem ldSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ldSteps_ok hs hsrc ho hr hd k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    refine WP.mono (ldSteps_ok hs hsrc ho hr hd k (by omega_using [hk])) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
     have hp₁ : s₁.gpr src = s.gpr src := k₁.gpr _ (by simpa using hsrc)
     have hr₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr src + BitVec.ofNat 64 (8 * (n - 1 - k))) 8 := by
-      rw [k₁.rd, k₁.wr, hp₁]; exact hr _ (by omega)
+      rw [k₁.rd, k₁.wr, hp₁]; exact hr _ (by omega_using [hk])
     have hw : s₁.mem.readW (s.gpr src + BitVec.ofNat 64 (8 * (n - 1 - k))) 64 =
         s.mem.readW (s.gpr src + BitVec.ofNat 64 (8 * (n - 1 - k))) 64 :=
-      readW_keep fun i hi => keep_of_disjoint (O₁.mono (Nat.le_refl _) (by omega)) hd (by omega)
-        (by omega) (by omega)
+      readW_keep fun i hi => keep_of_disjoint (O₁.mono (Nat.le_refl _) (by omega_using [hk])) hd (by omega_using [ho, hn])
+        (by omega_using [hk, hi]) (by omega_using [ho, hn])
     refine WP.mono (show WP isa (.block (ldStep n o src k)) s₁ (fun s₂ =>
         s₂.mem = s₁.mem.writeW (off base (o + 8 * k))
           (bswap64 (s₁.mem.readW (s₁.gpr src + BitVec.ofNat 64 (8 * (n - 1 - k))) 64)) ∧
@@ -68,18 +68,18 @@ theorem ldSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       apply WP.of_runBlock
       simp only [ldStep, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some,
         State.load64, State.store64, ea_disp, ea_sc, hr₁, RegUpd.gpr_setReg, RegUpd.wr_setReg,
-        RegUpd.mem_setReg, reduceCtorEq, ite_true, ite_false, hs₁.rdi, st_sc hs₁ (d := o + 8 * k) (by omega),
+        RegUpd.mem_setReg, reduceCtorEq, ite_true, ite_false, hs₁.rdi, st_sc hs₁ (d := o + 8 * k) (by omega_using [ho, hk]),
         Option.some.injEq, exists_eq_left']
       refine ⟨trivial, ⟨fun r hr => ?_, rfl, rfl⟩⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₂ ⟨m₂, k₂⟩ => ?_
     have O₂ : Outside base (o + 8 * k) 8 s₁.mem s₂.mem := by
-      rw [m₂]; exact writeW_outside _ _ _ (by omega)
+      rw [m₂]; exact writeW_outside _ _ _ (by omega_using [ho, hk, hn])
     refine ⟨fun j hj => ?_, k₁.trans k₂,
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₂.mono (by omega_using []) (by omega_using []))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂.word (by omega) (by omega), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [O₂.word (by omega_using [h]) (by omega_using [ho, hk, hn, h]), e₁ j h]
+    · obtain rfl : j = k := by omega_using [hj, h]
       rw [m₂, word_writeW_self, hp₁, hw]
 
 /-- `[o] = ` the `8 n` bytes at `src`, big-endian. -/
@@ -118,26 +118,26 @@ theorem stSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (stSteps_ok hs hdst hc ha hw hd k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    refine WP.mono (stSteps_ok hs hdst hc ha hw hd k (by omega_using [hk])) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
     have hq₁ : s₁.gpr dst = s.gpr dst := k₁.gpr _ (by simpa using hdst)
     have hc₁ : s₁.gpr .rcx = (if c then BitVec.allOnes 64 else 0) := by rw [k₁.gpr _ (by decide), hc]
     have hq : s.gpr dst + BitVec.ofNat 64 (d + 8 * (n - 1 - k)) =
         s.gpr dst + BitVec.ofNat 64 d + BitVec.ofNat 64 (8 * (n - 1 - k)) := (Offset.add_add _ _ _).symm
     have hw₁ : InRegions s₁.wr (s.gpr dst + BitVec.ofNat 64 d + BitVec.ofNat 64 (8 * (n - 1 - k))) 8 := by
-      rw [k₁.wr]; exact hw _ (by omega)
+      rw [k₁.wr]; exact hw _ (by omega_using [hk])
     have hword : word s₁.mem base (a + 8 * k) = word s.mem base (a + 8 * k) := by
       show s₁.mem.readW (base + BitVec.ofNat 64 (a + 8 * k)) 64 = s.mem.readW (base + BitVec.ofNat 64 (a + 8 * k)) 64
       rw [← Offset.add_add]
-      exact readW_keep fun i hi => keep_of_disjoint' (O₁.mono (Nat.zero_le _) (by omega)) hd (by omega)
-        (by omega) (by omega)
+      exact readW_keep fun i hi => keep_of_disjoint' (O₁.mono (Nat.zero_le _) (by omega_using [hk])) hd (by omega_using [ha, hn])
+        (by omega_using [hk, hi]) (by omega_using [ha, hn])
     refine WP.mono (show WP isa (.block (stStep n dst d a k)) s₁ (fun s₂ =>
         s₂.mem = s₁.mem.writeW (s.gpr dst + BitVec.ofNat 64 d + BitVec.ofNat 64 (8 * (n - 1 - k)))
           (bswap64 (word s₁.mem base (a + 8 * k) &&& (if c then BitVec.allOnes 64 else 0))) ∧
           KeepRegs [.rax] s₁ s₂) by
       apply WP.of_runBlock
       simp only [stStep, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.map_some,
-        Option.bind_some, State.load64, State.store64, ea_disp, ea_sc, hs₁.rdi, ld_sc hs₁ (d := a + 8 * k) (by omega),
+        Option.bind_some, State.load64, State.store64, ea_disp, ea_sc, hs₁.rdi, ld_sc hs₁ (d := a + 8 * k) (by omega_using [ha, hk]),
         RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags,
         RegUpd.mem_setReg, RegUpd.mem_arithFlags, reduceCtorEq, ite_true, ite_false, hdst, hq₁, hc₁, hq, hw₁,
         Option.some.injEq, exists_eq_left']
@@ -145,12 +145,12 @@ theorem stSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun s₂ ⟨m₂, k₂⟩ => ?_
     have O₂ : Outside (s.gpr dst + BitVec.ofNat 64 d) (8 * (n - 1 - k)) 8 s₁.mem s₂.mem := by
-      rw [m₂]; exact writeW_outside _ _ _ (by omega)
+      rw [m₂]; exact writeW_outside _ _ _ (by omega_using [ha, hn])
     refine ⟨fun j hj => ?_, k₁.trans k₂,
-      (O₁.mono (by omega) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (by omega_using []) (by omega_using [])).trans (O₂.mono (by omega_using []) (by omega_using []))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [m₂, Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [m₂, Mem.readW_writeW_sep (Offset.sep _ (by omega_using [hk, h]) (by omega_using [ha, hn]) (by omega_using [ha, hn])) (by decide), e₁ j h]
+    · obtain rfl : j = k := by omega_using [hj, h]
       rw [m₂, Mem.readW_writeW_self64, hword]
 
 /-- The `8 n` bytes at `dst + d` are `[a]` big-endian if the mask `rcx` is all
