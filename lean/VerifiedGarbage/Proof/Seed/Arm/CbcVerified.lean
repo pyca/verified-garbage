@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 public import VerifiedGarbage.Proof.Seed.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Seed.Arm.ModeCore
 public import VerifiedGarbage.Proof.Seed.CbcScratch
@@ -49,10 +51,10 @@ def cbcSat : State where
   wr := [⟨0x3000, 16⟩, ⟨0, 72⟩]
 
 theorem encTaint : SeqTaint (ecbCore .encrypt) cbcEnc :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem decTaint : SeqTaint (ecbCore .decrypt) cbcDec :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem enc_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cbcEnc).Implies
     (Proof.Seed.cbcEncScratchContract Arm.abi 9 752) where

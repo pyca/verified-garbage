@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Seed.X86.Ecb
 meta import VerifiedGarbage.Proof.Seed.X86.Ecb
 public import VerifiedGarbage.Proof.Seed.X86.Lit
@@ -118,8 +120,8 @@ taint_summary roundsSum : VG.X86.taint roundsTaint (.block Impl.Seed.X86.roundPa
 
 theorem ecb_taint (dir : Spec.Seed.Direction) : ∃ h, (VG.X86.taint.check ecbTaint (ecb dir) h).isSome = true := by
   cases dir
-  · taint_decide_sum [roundsSum]
-  · taint_decide_sum [roundsSum]
+  · native_taint_decide_sum [roundsSum]
+  · native_taint_decide_sum [roundsSum]
 
 theorem ecb_ct (dir : Spec.Seed.Direction) : ConstantTime isa (ecbX86 dir).pre (ecbX86 dir).pub (ecb dir) :=
   let ⟨_, h⟩ := ecb_taint dir
