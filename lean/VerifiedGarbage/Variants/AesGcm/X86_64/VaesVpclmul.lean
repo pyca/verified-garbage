@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Lit
 import VerifiedGarbage.Spec.TripleDes
 meta import VerifiedGarbage.Spec.TripleDes
 
@@ -22,16 +24,16 @@ def stitch : Proof.AesGcm.X86_64.StitchPart where
   name := .vaes
   suffix := ""
   features := []
-  encP := by exact ((⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.enc))
-  decP := by exact ((⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.dec))
+  encP := by exact ((⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.enc))
+  decP := by exact ((⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.dec))
   pieceR := by exact (some
-    ⟨(⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchR.enc true false),
-     (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchR.decR true true)⟩)
+    ⟨(⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchR.enc true false),
+     (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchR.decR true true)⟩)
   toPart := some
     { name := .vaes
-      piece := by exact (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel,
+      piece := by exact (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
         ⟨_, by taint_decide⟩⟩)
-      pieceR := by exact (some ⟨⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel,
+      pieceR := by exact (some ⟨⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
         (by exact ⟨_, by taint_decide⟩)⟩⟩) }
 
 def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.vaes, .aesni, .vpclmul, some stitch⟩
