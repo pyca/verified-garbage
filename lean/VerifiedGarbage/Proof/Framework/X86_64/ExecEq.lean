@@ -109,4 +109,150 @@ theorem execCmov_some {cc : Cond} {d : Reg} {src : Src} {s s' : State}
     obtain ⟨v, hv, c, hc, rfl⟩ := h
     exact ⟨v, c, hv, hc, rfl⟩
 
+theorem setReg_ne {s : State} {d r : Reg} {v : BitVec 64} (h : r ≠ d) : (s.setReg d v).gpr r = s.gpr r := by
+  simp only [State.setReg, h, ↓reduceIte]
+
+/-- The general-purpose register an instruction writes, if it writes exactly
+one (none for stores and SSE instructions, and for `mul` and `mulx`, which
+write two). -/
+def dstOf : Instr → Option Reg
+  | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
+  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
+  | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .vpmovmskb _ d _
+  | .movqR d _ | .imul d _ => some d
+  | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
+  | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _ | .vmovdqu32Load ..
+  | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
+  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .lfence
+  | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ => none
+
+/-- Whether an instruction may write the general-purpose register `r`. -/
+def clobbers (i : Instr) (r : Reg) : Bool :=
+  match i with
+  | .mul _ => r == .rax || r == .rdx
+  | .mulx hi lo _ => r == hi || r == lo
+  -- The push and pop of a frame move `rsp`, and the pop loads `d`.
+  | .push _ | .alloc _ | .free _ => r == .rsp
+  | .pop d _ => r == .rsp || r == d
+  | _ => dstOf i == some r
+
+theorem cmov_gpr (s : State) (d : Reg) (c : Bool) (v : BitVec 64) (r : Reg) :
+    (if c then s.setReg d v else s).gpr r = if r = d then (if c then v else s.gpr d) else s.gpr r := by
+  cases c <;> by_cases h : r = d <;>
+    simp only [h, State.setReg, Bool.false_eq_true, ↓reduceIte]
+
+theorem cmov_flags (s : State) (d : Reg) (c : Bool) (v : BitVec 64) :
+    (if c then s.setReg d v else s).cf = s.cf ∧ (if c then s.setReg d v else s).zf = s.zf ∧
+      (if c then s.setReg d v else s).sf = s.sf ∧ (if c then s.setReg d v else s).of = s.of := by
+  cases c <;> exact ⟨rfl, rfl, rfl, rfl⟩
+
+/-- An instruction that writes one general-purpose register changes nothing
+else but the flags. -/
+theorem exec_nonstore_xmm {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : State}
+    (h : exec i s = some s') :
+    s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧ s'.xmm = s.xmm ∧ ∀ r, r ≠ d → s'.gpr r = s.gpr r := by
+  cases i <;> simp only [dstOf, Option.some.injEq, reduceCtorEq] at hd <;> subst hd
+  case mov src =>
+    simp only [exec, Option.map_eq_some_iff] at h
+    obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case mov32 src =>
+    simp only [exec, Option.map_eq_some_iff] at h
+    obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case alu op src =>
+    simp only [exec, execAlu_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    obtain ⟨_, _, _, _, rfl⟩ := h
+    split
+    · exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+    · exact ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
+  case alu32 op src =>
+    simp only [exec, execAlu32_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    obtain ⟨_, _, _, _, rfl⟩ := h
+    split
+    · exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+    · exact ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
+  case shift32 op _ n =>
+    simp only [exec, execShift32] at h
+    split at h
+    · cases op <;> simp only [Option.some.injEq] at h <;> subst h <;>
+        exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+    · cases h
+  case bswap32 =>
+    simp only [exec, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case rorx32 r n =>
+    simp only [exec, execRorx32] at h
+    split at h
+    · simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+    · cases h
+  case andn32 a b =>
+    simp only [exec, execAndn32, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case rorx r n =>
+    simp only [exec, execRorx] at h
+    split at h
+    · simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+    · cases h
+  case andn a b =>
+    simp only [exec, execAndn, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case imul r =>
+    simp only [exec, execImul, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case movzx8 m =>
+    simp only [exec, Option.map_eq_some_iff] at h
+    obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case bswap =>
+    simp only [exec, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case shift op _ n =>
+    simp only [exec, execShift] at h
+    split at h
+    · cases op <;> simp only [Option.some.injEq] at h <;> subst h <;>
+        exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+    · cases h
+  case movImm64 v =>
+    simp only [exec, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case leaSym name =>
+    simp only [exec, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case vpmovmskb len r =>
+    simp only [exec, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case movqR r =>
+    simp only [exec, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case adcx src =>
+    simp only [exec, execAdcx] at h
+    split at h
+    · cases h
+    · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+      obtain ⟨_, _, _, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case adox src =>
+    simp only [exec, execAdox] at h
+    split at h
+    · cases h
+    · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+      obtain ⟨_, _, _, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case cmov cc src =>
+    obtain ⟨_, c, -, -, rfl⟩ := execCmov_some h
+    cases c
+    · exact ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
+    · exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+
+theorem exec_nonstore {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : State}
+    (h : exec i s = some s') :
+    s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧ ∀ r, r ≠ d → s'.gpr r = s.gpr r :=
+  let ⟨a, b, c, _, e⟩ := exec_nonstore_xmm hd h
+  ⟨a, b, c, e⟩
+
+theorem execMul_gpr (r : Reg) (s : State) {q : Reg} (h₁ : q ≠ .rax) (h₂ : q ≠ .rdx) :
+    (execMul r s).gpr q = s.gpr q := by
+  simp only [execMul, State.setReg, Nat.reducePow, State.setFlags, BitVec.ofNat_eq_ofNat, h₂,
+      ↓reduceIte, h₁]
+
+theorem mulx_gpr {hi lo : Reg} (s : State) (v w : BitVec 64) {q : Reg} (h₁ : q ≠ hi)
+    (h₂ : q ≠ lo) : ((s.setReg lo w).setReg hi v).gpr q = s.gpr q := by
+  rw [setReg_ne h₁, setReg_ne h₂]
+
 end VG.X86_64.Taint
