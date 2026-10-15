@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # Constant time of calls, by relating two runs (x86-64)
