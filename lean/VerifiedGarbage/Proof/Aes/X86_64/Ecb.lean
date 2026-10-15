@@ -118,15 +118,15 @@ theorem writeW2_apply (m : Mem) (a x : Addr) (v₁ v₂ : BitVec 64) :
           else v₂.extractLsb' (8 * ((x - a).toNat - 8)) 8)
       else m x := by
   rw [writeW_apply, writeW_apply, BitVec.setWidth_eq, BitVec.setWidth_eq,
-    show x - (a + 8) = x - a - 8 by bv_omega]
+    show x - (a + 8) = x - a - 8 by grind]
   by_cases h8 : (x - a).toNat < 8
-  · have : ¬ (x - a - 8).toNat < 64 / 8 := by bv_omega
+  · have : ¬ (x - a - 8).toNat < 64 / 8 := by grind
     simp only [this, h8, ite_false, ite_true, show (x - a).toNat < 64 / 8 by omega_arith,
       show (x - a).toNat < 16 by omega_arith]
   · by_cases h16 : (x - a).toNat < 16
-    · have e : (x - a - 8).toNat = (x - a).toNat - 8 := by bv_omega
+    · have e : (x - a - 8).toNat = (x - a).toNat - 8 := by grind
       simp only [h8, h16, e, show (x - a).toNat - 8 < 64 / 8 by omega_arith, ite_true, ite_false]
-    · have : ¬ (x - a - 8).toNat < 64 / 8 := by bv_omega
+    · have : ¬ (x - a - 8).toNat < 64 / 8 := by grind
       simp only [this, h8, h16, show ¬ (x - a).toNat < 64 / 8 by omega_arith, ite_false]
 
 /-- One more block stored. -/
