@@ -163,26 +163,26 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZer
       simp only [powWx, List.mem_append, List.mem_singleton] at hw
       rcases hw with hw | rfl
       · have := hL.bits_w w hw; omega
-      · simp only; omega) (by omega), hbits _ (by omega)]
+      · simp only; omega) (by omega_using [hjn, hbl]), hbits _ (by omega_using [hjn, hnb])]
   have hesi₃ : s₃.gpr .r11 = BitVec.ofNat 32 (j - 1) := by
     rw [k₃.rest.gpr _ r11_not_clob, k₂.rest.gpr _ r11_not_clob, b₁]
   have hk₃ : Rest powClob s₀ s₃ :=
     ((hI.keep.trans (u₁.rest (by simp [powClob]))).trans (k₂.rest.mono clob_powClob)).trans
       (k₃.rest.mono clob_powClob)
   simp only [List.append_assoc]
-  refine VG.Proof.X25519.Arm.WP.append (bitMask_bool_ok hs₃ (hf₀.of_rest hk₃) hesi₃ (by omega) hb8 hbyte)
+  refine VG.Proof.X25519.Arm.WP.append (bitMask_bool_ok hs₃ (hf₀.of_rest hk₃) hesi₃ (by omega_using [hjn, hnb, hbl]) hb8 hbyte)
     fun s₄ ⟨c₄, k₄, hm₄⟩ => ?_
   have hs₄ := hs₃.of_rest k₄ (by decide)
   refine VG.Proof.X25519.Arm.WP.append (sel_ok (e.testBit (j - 1)) (2 * P.M.n) hs₄ c₄ (o := P.acc) (a := P.acc)
-    (b := P.tmp) (by omega) (by omega) (by omega) (Or.inl (Nat.le_refl _)) (by omega))
+    (b := P.tmp) (by omega) (by omega) (by omega) (Or.inl (Nat.le_refl _)) (by omega_using [hat]))
     fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   have hesi₅ : s₅.gpr .r11 = BitVec.ofNat 32 (j - 1) := by
     rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), hesi₃]
-  refine wp_testCounter (by omega) hesi₅ fun s₆ f₆ z₆ => WP.block_nil ⟨⟨hs₄.of_rest (k₅.trans (f₆.rest _))
+  refine wp_testCounter (by omega_using [hjn, hbl]) hesi₅ fun s₆ f₆ z₆ => WP.block_nil ⟨⟨hs₄.of_rest (k₅.trans (f₆.rest _))
     (by decide), by rw [f₆.gpr, hesi₅], (hk₃.trans (k₄.mono (by simp [powClob, clob]))).trans
       ((k₅.mono (by simp [powClob, clob])).trans (f₆.rest _)), ?_, ?_, ?_⟩, z₆⟩
   · intro x hx
-    rw [f₆.mem, O₅ x (by rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega]; exact hx _ (List.mem_cons_self ..)),
+    rw [f₆.mem, O₅ x (by rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega_using []]; exact hx _ (List.mem_cons_self ..)),
       hm₄]
     exact hU₃ x hx
   · rw [f₆.mem, wordsVal_eq_val32, e₅, hm₄, ← wordsVal_eq_val32, ← wordsVal_eq_val32]
@@ -215,8 +215,8 @@ theorem pow_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m]
   have hacc := hL.acc
   have hone := hL.one
   rw [pow]
-  refine WP.seq (VG.Proof.X25519.Arm.WP.append (copy_ok (2 * P.M.n) hs (o := P.acc) (a := P.one) (by omega)
-    (by omega) (by have := hL.acc_one; omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
+  refine WP.seq (VG.Proof.X25519.Arm.WP.append (copy_ok (2 * P.M.n) hs (o := P.acc) (a := P.one) (by omega_using [hacc])
+    (by omega_using [hone]) (by have := hL.acc_one; omega_using [this])) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
   refine wp_mov (op2_imm henc) fun s₂ u₂ => WP.block_nil ?_
   refine countLoop_ok (Inv := fun j s' => PowInv P wk base size m e s s' j) (n := P.nbits)
     (fun j s' h1 h2 hi => powBody_ok hL hW hF hm hb8 hf hM hB hbits h1 h2 hi)
@@ -227,7 +227,7 @@ theorem pow_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m]
   refine ⟨(hs.of_rest k₁ (by decide)).of_rest (u₂.rest (ws := [.r11]) (by simp)) (by decide), u₂.gpr,
     (k₁.mono (by simp [powClob, clob])).trans (u₂.rest (by simp [powClob])), ?_, ?_, ?_⟩
   · rw [hm₂]
-    rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega] at O₁
+    rw [show 4 * (2 * P.M.n) = 8 * P.M.n by omega_using []] at O₁
     exact O₁.unch.mono fun w hw => by simp at hw; simp [hw, powWx, powW]
   · rw [hv, hO]; exact Nat.mod_lt _ hm0
   · rw [hv, hO, toM_one hm, shiftRight_eq_zero he, Lean.Grind.Semiring.pow_zero]
