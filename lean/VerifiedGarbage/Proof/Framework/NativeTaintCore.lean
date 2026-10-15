@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Taint
 public meta import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.TaintSum
+public meta import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.NativeHintOps
 public meta import VerifiedGarbage.Proof.Framework.NativeHintOps
 
@@ -73,5 +75,98 @@ private def decide (w : Option Term) : TacticM Unit := do
 
 elab "native_taint_decide" : tactic => decide none
 elab "native_taint_decide_weak " w:term : tactic => decide (some w)
+
+/-! ## With summaries -/
+
+/-- The domains whose frames have a compiled copy: the checked domain's state
+type, the copy's, and the copy's provider. -/
+private meta def frameCopy? (a : Expr) : MetaM (Option (Name × Name × Name)) := do
+  let some r :=
+      if a.getAppFn.isConstOf `VG.X86.taint then
+        some (`VG.X86.Taint.T, `VG.NativeHints.X86.T, `VG.NativeHints.X86.provider)
+      else none
+    | return none
+  let env ← getEnv
+  return if env.contains r.2.1 && env.contains (r.2.2 ++ `hintReport) then some r else none
+
+/-- `Taint.codeBeq` of `M` (in compiled code: `NativeHints.codeBeq`), if `M`
+has a `Taint.CodeEq` instance for `same` (as `TaintSum.sameFn` asks), or for
+`body`; otherwise none. -/
+private meta def codeFn (M : Expr) (needCodeEq : Bool) : MetaM Expr := do
+  let P := mkApp (mkConst ``Prog) M
+  let none := Expr.lam `a P (.lam `b P (mkConst ``Bool.false) .default) .default
+  try
+    if needCodeEq then discard <| synthInstance (mkApp (mkConst ``Taint.CodeEq) M)
+    let I ← whnfD (mkApp (mkConst ``ISA.Instr) M)
+    let C ← whnfD (mkApp (mkConst ``ISA.Cond) M)
+    let bi ← synthInstance (mkApp (mkConst ``BEq [0]) I)
+    let bc ← synthInstance (mkApp (mkConst ``BEq [0]) C)
+    return mkApp4 (mkConst ``VG.NativeHints.codeBeq) I C bi bc
+  catch _ => return none
+
+/-- `TaintSum.hintChecked`, with the domain's compiled copy. -/
+private meta def hintCheckedNative (who : String) (M c : Expr) (ss : List Expr) (τ : Expr)
+    (srcT natT prov : Name) : MetaM Expr := do
+  let natTy := mkConst natT
+  let sTy ← mkAppM ``Prod #[mkApp (mkConst ``Prog) M,
+    ← mkAppM ``Prod #[natTy, ← mkAppM ``Prod #[natTy, natTy]]]
+  -- The summaries, their taints converted to the copy's.
+  let conv (e : Expr) := convertState srcT natT e
+  let nss ← ss.mapM fun s => do
+    let c' ← mkAppM ``Prod.fst #[s]
+    let r ← mkAppM ``Prod.snd #[s]
+    let pre ← conv (← mkAppM ``Prod.fst #[r])
+    let r ← mkAppM ``Prod.snd #[r]
+    let post ← conv (← mkAppM ``Prod.fst #[r])
+    let F ← conv (← mkAppM ``Prod.snd #[r])
+    mkAppM ``Prod.mk #[c', ← mkAppM ``Prod.mk #[pre, ← mkAppM ``Prod.mk #[post, F]]]
+  let S ← mkListLit sTy nss
+  let hTy := mkApp (mkConst ``VG.NativeHints.SHint) natTy
+  let phTy ← mkAppM ``Prod #[natTy, hTy]
+  let repTy := mkApp (mkConst ``List [0]) (mkConst ``String)
+  let r := mkAppN (mkConst (prov ++ `hintReport)) #[S, ← codeFn M true, ← codeFn M false, ← conv τ, c]
+  let e ← withLetDecl `r (← mkAppM ``Prod #[phTy, repTy]) r fun r => do
+    let ph ← mkAppM ``ToExpr.toExpr #[← mkAppM ``Prod.snd #[← mkAppM ``Prod.fst #[r]]]
+    mkLetFVars #[r] (← mkAppM ``Prod.mk #[ph, ← mkAppM ``Prod.snd #[r]])
+  let ty ← mkAppM ``Prod #[mkConst ``Expr, repTy]
+  let (h, missed) ← unsafe evalExpr (Expr × List String) ty e
+  unless missed.isEmpty do
+    throwError "{who}: the calls {missed.eraseDups} are analysed in full, although a summary \
+      of the same function (by its name or its code) is given: its `pre` does not hold \
+      there, or it is stated about another name or code"
+  -- The copy's constructors renamed to the checked domain's.
+  let h := checkedHintExpr natT srcT h
+  return h.replace fun t => match t with
+    | .const n us =>
+      let n' := renamePrefix `VG.NativeHints.SHint `VG.Taint.SHint n
+      if n' == n then none else some (.const n' us)
+    | _ => none
+
+open TaintSum in
+/-- `taint_decide_sum`, with the hint computed by the domain's compiled copy
+(for `X86.taint`, importing `Proof/Framework/NativeTaint.lean`), checked by the
+kernel as `taint_decide_sum`'s; the interpreted search for any other domain. -/
+elab "native_taint_decide_sum " "[" ls:ident,* "]" : tactic => withMainContext do
+  let g ← getMainGoal
+  let ty ← instantiateMVars (← g.getType)
+  let some (_, body) := ty.app2? ``Exists
+    | throwError "native_taint_decide_sum: the goal is not `∃ h, (Taint.check A τ c h).isSome = true`"
+  let .lam _ _ b _ := body
+    | throwError "native_taint_decide_sum: the goal is not `∃ h, (Taint.check A τ c h).isSome = true`"
+  let some chk := b.find? (·.isAppOfArity ``Taint.check 5)
+    | throwError "native_taint_decide_sum: the goal is not `∃ h, (Taint.check A τ c h).isSome = true`"
+  let args := chk.getAppArgs
+  let (M, A, τ, c) := (args[0]!, args[1]!, args[2]!, args[3]!)
+  let names ← ls.getElems.mapM fun l => realizeGlobalConstNoOverloadWithInfo l
+  let (S, hS) ← summaries M A names
+  let hint ← match ← frameCopy? A with
+    | some (srcT, natT, prov) =>
+      let ss ← names.toList.mapM fun l => do
+        return (← instantiateMVars (← inferType (mkConst l))).getArg! 3
+      hintCheckedNative "native_taint_decide_sum" M c ss τ srcT natT prov
+    | none =>
+      let fr ← synthInstance (mkApp2 (mkConst ``Taint.Frame) M A)
+      pure (← hintChecked "native_taint_decide_sum" M A fr S τ c).2
+  proveWith M A S hS c ``Taint.exists_check_of_checkSum #[τ] hint
 
 end VG.NativeHints
