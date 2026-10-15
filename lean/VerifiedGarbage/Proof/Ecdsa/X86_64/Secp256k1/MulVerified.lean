@@ -208,7 +208,8 @@ theorem agree (s₁ s₂ : State) (_ : mK.pre s₁) (_ : mK.pre s₂) (h : mK.pu
 /-- Constant time by taint tracking, `rdi` and `rsp` public. -/
 theorem mul_ct : ConstantTime isa mK.pre mK.pub secp256k1.mulFn := by
   show ConstantTime isa _ _ mulCode
-  exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) agree (by taint_decide)
+  exact VG.Taint.constantTime_mapBlocks (c' := mulCodeErased) taint_eraseInv (Taint.ofRegs [.rdi, .rsp]) rfl
+    agree rfl (by taint_decide)
 
 /-- The memory of `satState`: `p`, one, `a` and `3 b` in Montgomery's form,
 and `G`'s coordinates in Montgomery's form, at their slots for `ws = 0x1000`,
