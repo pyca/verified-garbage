@@ -23,6 +23,8 @@ public import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Gcm.Ctr
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-GCM on x86-64: running straight-line blocks
@@ -44,7 +46,7 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
 
 /-- Runs a block of the instructions the AES-GCM code uses. -/
-macro "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+tactic_template "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                    simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
                      readSrc32, execAlu, execAlu32, execShift, State.load64, State.store64, State.load32, State.store32,
                      State.load8, State.store8, State.ea, State.setReg32, offset_nat, at_, imm, ptr, stO, tO, uO, roundsO, alenO, tlenO, dataO,

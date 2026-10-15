@@ -15,6 +15,8 @@ public import VerifiedGarbage.Proof.Cmac.Block
 public import VerifiedGarbage.Proof.Cmac.Stream
 public import VerifiedGarbage.Proof.Gcm.Be64
 public import VerifiedGarbage.Proof.Gcm.Compose
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-CCM on AArch64: where everything is
@@ -53,7 +55,7 @@ theorem setWidth_8_32 (x : BitVec 64) : BitVec.setWidth 8 (BitVec.setWidth 32 x)
   BitVec.setWidth_setWidth_of_le _ (by decide)
 
 /-- Runs a block of the instructions the AES-CCM code uses. -/
-macro "carun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+tactic_template "carun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr,
                      State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
                      sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self, BitVec.add_zero,

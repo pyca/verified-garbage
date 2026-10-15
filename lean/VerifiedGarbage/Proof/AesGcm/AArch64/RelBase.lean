@@ -7,6 +7,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Relating two runs on AArch64
@@ -103,7 +105,7 @@ end VG.Proof.AesGcm.AArch64
 namespace VG.Proof.AesGcm.AArch64
 
 /-- Proves `∀ r ∈ [r₁, …], σ₁.gpr r = σ₂.gpr r` by rewriting each side with `ts`. -/
-macro "agree_tac" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
+tactic_template "agree_tac" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
   plain_simp_names simp only [List.forall_mem_cons, List.mem_nil_iff, false_imp_iff, implies_true, and_true, and_self, $ts,*])
 
 end VG.Proof.AesGcm.AArch64
