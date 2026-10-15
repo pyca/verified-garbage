@@ -4,6 +4,7 @@ import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazySqrVerified
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Montgomery multiplication in the RSA working space, as a function, on x86-64 -/
@@ -65,6 +66,20 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.X86_64.MontFn.mulAdxLazy
     contract := Spec.Rsa.Mont.mulLazyContract X86_64.abi
     verified := Proof.Bignum.X86_64.MontFn.fnAdxLazy_verified
+    features := ["bmi2", "adx"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.Mont.sqrLazyApi with
+    target := X86_64.target
+    name := "vg_rsa_lazy_mont_sqr_adx"
+    doc := Spec.Rsa.Mont.sqrLazyApi.doc
+      (notes := ["For `w` a multiple of 8 (below 2^30 + 8), BMI2 and ADX: `vg_rsa_lazy_mont_mul_adx`'s \
+        square, `k` times, in one call: the first squaring reads `a`, the others `o`. Other sizes \
+        take `vg_rsa_mont_mul`'s code. It keeps the count of squarings, `k` and `o` in header words \
+        19–21, which it writes back before it returns. It uses no stack: it keeps `rbx`, `rbp` and \
+        `r12`–`r15` in `xmm8`–`xmm13`."])
+    code := Impl.Bignum.X86_64.MontFn.sqrAdxLazy
+    contract := Spec.Rsa.Mont.sqrLazyContract X86_64.abi
+    verified := Proof.Bignum.X86_64.MontFn.fnSqrAdx_verified
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 

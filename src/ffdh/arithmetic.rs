@@ -8,7 +8,7 @@ use crate::arch::rsa_mont::vg_rsa_mont_mul;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_mont::{
     VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_lazy_mont_mul, vg_rsa_lazy_mont_mul_adx,
-    vg_rsa_mont_mul_adx,
+    vg_rsa_lazy_mont_sqr_adx, vg_rsa_mont_mul_adx,
 };
 use crate::cpu::{Features, detected};
 use crate::rsa::Scratch;
@@ -162,9 +162,7 @@ impl Montgomery {
                 digit = (digit << 1) | u64::from((exponent[bit / 8] >> (7 - bit % 8)) & 1);
             }
             if start != 0 {
-                for _ in 0..width {
-                    self.mul_lazy(&mut ws, 5, 5, 5);
-                }
+                self.sqr_lazy(&mut ws, 5, width as u32);
             }
             let (arrays, table) = ws.split_at_mut(table_at);
             let selected = &mut arrays[at(6)..at(6) + w];
@@ -348,6 +346,28 @@ impl Montgomery {
     #[cfg(all(not(target_arch = "x86_64"), test))]
     fn mul_lazy(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
         self.mul(ws, out, a, b);
+    }
+    /// `k ≥ 1` lazy squarings of array `j` in place, in one call where the
+    /// backend has a function for them.
+    #[cfg(target_arch = "x86_64")]
+    fn sqr_lazy(&self, ws: &mut [u64], j: u32, k: u32) {
+        match self.backend {
+            Backend::Baseline => {
+                for _ in 0..k {
+                    self.mul_lazy(ws, j, j, j);
+                }
+            }
+            // SAFETY: as for `mul_lazy`, with `k ≥ 1` (a window has at least
+            // one bit) and `j` not 0, the modulus's array; ADX is selected
+            // only with its generated feature set.
+            Backend::Adx => unsafe { vg_rsa_lazy_mont_sqr_adx(ws.as_mut_ptr(), ws.len(), j, j, k) },
+        }
+    }
+    #[cfg(all(not(target_arch = "x86_64"), test))]
+    fn sqr_lazy(&self, ws: &mut [u64], j: u32, k: u32) {
+        for _ in 0..k {
+            self.mul_lazy(ws, j, j, j);
+        }
     }
     fn mul(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
         let f = match self.backend {
