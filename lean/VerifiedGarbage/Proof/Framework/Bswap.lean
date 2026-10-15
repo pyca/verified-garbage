@@ -79,4 +79,41 @@ theorem byteRev64_readW (m : Mem) (a : Addr) :
       m (a + 1 + 1 + 1 + 1 + 1 + 1 + 1) : BitVec 64) :=
   byteRev64_bytes _ _ _ _ _ _ _ _
 
+/-- Bit `r` of byte `k` of `x ++ b`, for a byte `b`. -/
+theorem getLsbD_append_byte {w : Nat} (x : BitVec w) (b : BitVec 8) (k : Nat) {r : Nat} (hr : r < 8) :
+    (x ++ b).getLsbD (8 * k + r) = if k = 0 then b.getLsbD r else x.getLsbD (8 * (k - 1) + r) := by
+  rw [BitVec.getLsbD_append]
+  cases k with
+  | zero => simp only [Nat.mul_zero, Nat.zero_add, hr, ite_true]
+  | succ k =>
+    rw [show 8 * (k + 1) + r - 8 = 8 * k + r by omega]
+    simp only [show ¬ 8 * (k + 1) + r < 8 by omega, Nat.succ_ne_zero, ↓reduceIte, Nat.add_sub_cancel]
+
+/-- Bit `i` of a byte-reversed 32-bit word. The byte's index is a literal in each case,
+so every `if` and subtraction reduces without `omega`. -/
+theorem byteRev32_getLsbD (w : BitVec 32) {i : Nat} (hi : i < 32) :
+    (byteRev32 w).getLsbD i = w.getLsbD (8 * (3 - i / 8) + i % 8) := by
+  obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ i = 8 * a + b :=
+    ⟨i / 8, i % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod i 8).symm⟩
+  have ha : a < 4 := by omega
+  rw [show (8 * a + b) / 8 = a by omega, show (8 * a + b) % 8 = b by omega]
+  unfold byteRev32
+  match a, ha with
+  | 0, _ | 1, _ | 2, _ | 3, _ =>
+    simp only [getLsbD_append_byte _ _ _ hb, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte]
+    simp only [BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and, Nat.reduceMul, Nat.zero_add]
+
+/-- Bit `i` of a byte-reversed 64-bit word (as `byteRev32_getLsbD`). -/
+theorem byteRev64_getLsbD (w : BitVec 64) {i : Nat} (hi : i < 64) :
+    (byteRev64 w).getLsbD i = w.getLsbD (8 * (7 - i / 8) + i % 8) := by
+  obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ i = 8 * a + b :=
+    ⟨i / 8, i % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod i 8).symm⟩
+  have ha : a < 8 := by omega
+  rw [show (8 * a + b) / 8 = a by omega, show (8 * a + b) % 8 = b by omega]
+  unfold byteRev64
+  match a, ha with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>
+    simp only [getLsbD_append_byte _ _ _ hb, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte]
+    simp only [BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and, Nat.reduceMul, Nat.zero_add]
+
 end VG

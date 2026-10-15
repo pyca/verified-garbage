@@ -33,23 +33,8 @@ theorem ofBytes_toBytes (x : Spec.Gcm.Block) : Spec.Gcm.ofBytes (Spec.Gcm.toByte
   simp [hj]
 
 theorem getLsbD_byteRev32 (a : BitVec 32) {i : Nat} (hi : i < 32) :
-    (byteRev32 a).getLsbD i = a.getLsbD (8 * (3 - i / 8) + i % 8) := by
-  simp only [byteRev32]
-  rw [VG.getLsbD_cat4]
-  have T : ∀ i < 32, (i < 8 → i < 8 ∧ 24 + i = 8 * (3 - i / 8) + i % 8) ∧
-      (¬ i < 8 → i < 16 → i - 8 < 8 ∧ 16 + (i - 8) = 8 * (3 - i / 8) + i % 8) ∧
-      (¬ i < 16 → i < 24 → i - 16 < 8 ∧ 8 + (i - 16) = 8 * (3 - i / 8) + i % 8) ∧
-      (¬ i < 24 → i - 24 < 8 ∧ 0 + (i - 24) = 8 * (3 - i / 8) + i % 8) := by decide +kernel
-  obtain ⟨t0, t1, t2, t3⟩ := T i hi
-  split_ifs with h0 h1 h2
-  · obtain ⟨l, e⟩ := t0 h0
-    rw [BitVec.getLsbD_extractLsb', decide_eq_true l, Bool.true_and, e]
-  · obtain ⟨l, e⟩ := t1 h0 h1
-    rw [BitVec.getLsbD_extractLsb', decide_eq_true l, Bool.true_and, e]
-  · obtain ⟨l, e⟩ := t2 h1 h2
-    rw [BitVec.getLsbD_extractLsb', decide_eq_true l, Bool.true_and, e]
-  · obtain ⟨l, e⟩ := t3 h2
-    rw [BitVec.getLsbD_extractLsb', decide_eq_true l, Bool.true_and, e]
+    (byteRev32 a).getLsbD i = a.getLsbD (8 * (3 - i / 8) + i % 8) :=
+  VG.byteRev32_getLsbD a hi
 
 theorem getD_le4_append4 (a b c d : BitVec 32) {k : Nat} (hk : k < 16) :
     (le4 a ++ le4 b ++ le4 c ++ le4 d).getD k 0 =
