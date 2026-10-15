@@ -47,7 +47,7 @@ def stage(checkout,bench=None):
  return r
 b.stage=stage
 root=Path('private-window-results').resolve();root.mkdir(exist_ok=True)
-modes=['base','lazy','holes','trim','holes_trim'];bins={}
+modes=['base','holes_trim','holes_trim8'];bins={}
 for mode in modes:
  dest=root/f'bench-{mode}';shutil.copy2(b.build(base),dest);bins[mode]=dest
  subprocess.run([str(dest),'--test','^rsa_(private|pss_sha256_mgf1_sha256_sign|oaep_sha256_mgf1_sha256_decrypt)/'],check=True)
