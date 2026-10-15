@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha512
-import VerifiedGarbage.TCB.PPC64LE.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha512
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # SHA-512 compression function: PPC64LE implementation
@@ -19,6 +21,8 @@ on whole 64-bit registers:
 * `r3`–`r6` (the pointers and the block count) are public; no address and
   no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha512.PPC64LE
 

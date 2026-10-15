@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sha512.PPC64LE
+module
+
+public import VerifiedGarbage.Impl.Sha512.PPC64LE
 
 /-!
 # Streaming SHA-512: PPC64LE implementation
@@ -29,6 +31,8 @@ advances, and every comparison is a shift (`len ≥ 128` iff `len >> 7 ≠ 0`)
 or a subtraction tested against zero. Every address and branch depends only
 on the pointers, `count` and `len`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha512.PPC64LE.Stream
 

@@ -1,12 +1,23 @@
-import VerifiedGarbage.Proof.Sha512.PPC64LE.Rounds
-import VerifiedGarbage.Proof.Sha512.PPC64LE.Contract
-import VerifiedGarbage.Proof.Framework.Range
+module
+
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Rounds
+meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Rounds
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Contract
+meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Contract
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 compression function on PPC64LE: the whole function
 
 Untrusted: everything here is checked by Lean.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.PPC64LE
 
