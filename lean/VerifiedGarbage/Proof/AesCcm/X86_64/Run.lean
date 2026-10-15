@@ -15,6 +15,8 @@ public import VerifiedGarbage.Proof.Framework.OffsetBelow
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-CCM on x86-64: running straight-line blocks
@@ -37,7 +39,7 @@ theorem setWidth_imm {n : Nat} : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 
   apply BitVec.eq_of_toNat_eq; simp
 
 /-- Runs a block of the instructions the AES-CCM code uses. -/
-macro "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+tactic_template "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
   simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     readSrc32, execAlu, execAlu32, execShift, State.load64, State.store64, State.load32, State.store32,
     State.load8, State.store8, State.ea, State.setReg32, offset_nat, at_, imm, ptr, bO, c0O, c1O, ksO, uO,
