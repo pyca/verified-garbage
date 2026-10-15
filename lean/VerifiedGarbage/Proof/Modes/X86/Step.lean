@@ -9,6 +9,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.Framework.X86.Mmx
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # One step of a mode on x86 (32-bit)
@@ -86,7 +87,7 @@ theorem rd_cont (A : Loc → Addr) (m : Mem) (l : Loc) (n : Nat) : rd (cont A m)
 
 theorem rd_agree {len : Loc → Nat} {a a' : Areas} (h : Agree len a a') {l : Loc} {n : Nat} (hn : n ≤ len l) :
     rd a l n = rd a' l n :=
-  List.map_congr_left fun i hi => h l i (by have := List.mem_range.mp hi; omega)
+  List.map_congr_left fun i hi => h l i (by have := List.mem_range.mp hi; omega_arith)
 
 theorem cryptBuf_agree {len : Loc → Nat} {n : Nat} (hn : n ≤ len .buf) (ciph : Spec.Cbc.Cipher) {a a' : Areas}
     (h : Agree len a a') : Agree len (cryptBuf n ciph a) (cryptBuf n ciph a') := by
@@ -99,12 +100,12 @@ theorem cryptBuf_agree {len : Loc → Nat} {n : Nat} (hn : n ≤ len .buf) (ciph
 /-- Slot `k` plus `off`, as the code addresses it. -/
 theorem addr_slot {B : BitVec 32} {k off total : Nat} (hfit : B.toNat + 4 * total ≤ 2 ^ 32)
     (h : 4 * k + off < 4 * total) : addr B (4 * k + off) = slotA B k + BitVec.ofNat 64 off := by
-  rw [addr_eq (by omega), VG.Offset.add_add]
+  rw [addr_eq (by omega_arith), VG.Offset.add_add]
 
 theorem slot_contains {B : BitVec 32} {total d n : Nat} (hfit : B.toNat + 4 * total ≤ 2 ^ 32)
     (h : d + n ≤ 4 * total) :
     (⟨B.setWidth 64, 4 * total⟩ : Region).Contains (B.setWidth 64 + BitVec.ofNat 64 d) n :=
-  VG.Offset.contains_base _ h (by omega)
+  VG.Offset.contains_base _ h (by omega_arith)
 
 theorem slot_sub {B : BitVec 32} {total d n : Nat} (h : d + n ≤ 4 * total) :
     Region.Sub ⟨B.setWidth 64 + BitVec.ofNat 64 d, n⟩ ⟨B.setWidth 64, 4 * total⟩ :=
@@ -123,46 +124,46 @@ theorem areasOk {s₀ s : State} {B D : BitVec 32} {n st j : Nat} (hF : Fixed c 
   have hD := hF.dataFit
   have hjn : st * j + st ≤ st * n := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hj
   have hbG : c.bw ≤ c.bw * c.G := Nat.le_mul_of_pos_right _ hG
-  have hbw : c.bw ≤ 4 := by rcases hL.bw with h | h <;> omega
+  have hbw : c.bw ≤ 4 := by rcases hL.bw with h | h <;> omega_arith
   have hW : ∀ l off w, off + w ≤ lens c st l → InRegions s.wr (areas c B D st j l + BitVec.ofNat 64 off) w := by
     intro l off w ho
     rw [hwr]
     cases l
     · simp only [lens, areas] at ho ⊢
       refine ⟨_, hF.dataW, ?_⟩
-      rw [VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega) (by omega)
+      rw [VG.Offset.add_add]; exact VG.Offset.contains_base _ (by omega_arith) (by omega_arith)
     · simp only [lens, areas] at ho ⊢
       refine ⟨_, hF.scr.wr, ?_⟩
-      rw [VG.Offset.add_add]; exact slot_contains hfit (by simp only [Core.chnSlot]; omega)
+      rw [VG.Offset.add_add]; exact slot_contains hfit (by simp only [Core.chnSlot]; omega_arith)
     · simp only [lens, areas] at ho ⊢
       refine ⟨_, hF.scr.wr, ?_⟩
-      rw [VG.Offset.add_add]; exact slot_contains hfit (by omega)
+      rw [VG.Offset.add_add]; exact slot_contains hfit (by omega_arith)
   refine ⟨fun l off ho => ?_, fun l off w ho => ?_, fun l _ off w ho => hW l off w ho, fun l l' hne => ?_, fun l => ?_⟩
   · cases l
     · simp only [Core.loc, lens, areas] at ho ⊢
-      rw [hesi, Nat.zero_add, addr, VG.Offset.add_add, ← addr, addr_eq (by omega), VG.Offset.add_add]
+      rw [hesi, Nat.zero_add, addr, VG.Offset.add_add, ← addr, addr_eq (by omega_arith), VG.Offset.add_add]
     · simp only [Core.loc, lens, areas] at ho ⊢
       rw [hb]
-      exact addr_slot hfit (by simp only [Core.chnSlot]; omega)
+      exact addr_slot hfit (by simp only [Core.chnSlot]; omega_arith)
     · simp only [Core.loc, lens, areas] at ho ⊢
       rw [hb]
-      exact addr_slot hfit (by omega)
+      exact addr_slot hfit (by omega_arith)
   · obtain ⟨r, hr, hc⟩ := hW l off w ho
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   · have dD : ∀ d m, d + m ≤ 4 * c.total →
         Region.Disjoint ⟨D.setWidth 64 + BitVec.ofNat 64 (st * j), st⟩ ⟨B.setWidth 64 + BitVec.ofNat 64 d, m⟩ :=
       fun d m h => (hF.dataScr.sub_left (VG.Offset.sub_base _ hjn)).sub_right (slot_sub h)
     have dCB : Region.Disjoint ⟨slotA B c.chnSlot, 4 * c.bw⟩ ⟨slotA B c.buf, 4 * c.bw⟩ :=
-      VG.Offset.disjoint _ (.inr (by simp only [Core.chnSlot]; omega)) (by simp only [Core.chnSlot]; omega)
-        (by omega)
+      VG.Offset.disjoint _ (.inr (by simp only [Core.chnSlot]; omega_arith)) (by simp only [Core.chnSlot]; omega_arith)
+        (by omega_arith)
     cases l <;> cases l' <;> simp only [ne_eq, not_true_eq_false] at hne <;> simp only [lens, areas]
-    · exact dD _ _ (by simp only [Core.chnSlot]; omega)
-    · exact dD _ _ (by omega)
-    · exact (dD _ _ (by simp only [Core.chnSlot]; omega)).symm
+    · exact dD _ _ (by simp only [Core.chnSlot]; omega_arith)
+    · exact dD _ _ (by omega_arith)
+    · exact (dD _ _ (by simp only [Core.chnSlot]; omega_arith)).symm
     · exact dCB
-    · exact (dD _ _ (by omega)).symm
+    · exact (dD _ _ (by omega_arith)).symm
     · exact dCB.symm
-  · cases l <;> simp only [lens] <;> omega
+  · cases l <;> simp only [lens] <;> omega_arith
 
 /-! ## The slots -/
 
@@ -170,16 +171,16 @@ theorem slot_in {s : State} {B : BitVec 32} {total k : Nat} (hS : ScrIn s B tota
     InRegions (s.rd ++ s.wr) (addr B (4 * k)) 4 := by
   have := hS.fit
   refine ⟨_, List.mem_append_right _ hS.wr, ?_⟩
-  rw [addr_eq (by omega)]; exact slot_contains hS.fit (by omega)
+  rw [addr_eq (by omega_arith)]; exact slot_contains hS.fit (by omega_arith)
 
 theorem slot_inW {s : State} {B : BitVec 32} {total k : Nat} (hS : ScrIn s B total) (hk : k < total) :
     InRegions s.wr (addr B (4 * k)) 4 := by
   have := hS.fit
   refine ⟨_, hS.wr, ?_⟩
-  rw [addr_eq (by omega)]; exact slot_contains hS.fit (by omega)
+  rw [addr_eq (by omega_arith)]; exact slot_contains hS.fit (by omega_arith)
 
 theorem addr_slotA {B : BitVec 32} {total k : Nat} (hfit : B.toNat + 4 * total ≤ 2 ^ 32) (hk : k < total) :
-    addr B (4 * k) = slotA B k := addr_eq (by omega)
+    addr B (4 * k) = slotA B k := addr_eq (by omega_arith)
 
 /-- The data pointer and the steps left to `esi` and `ebp`. -/
 theorem load_wp {s : State} {B : BitVec 32} (hb : s.gpr sb = B) (hS : ScrIn s B c.total) (hL : Layout c)
@@ -189,8 +190,8 @@ theorem load_wp {s : State} {B : BitVec 32} (hb : s.gpr sb = B) (hS : ScrIn s B 
       WP isa (.block is) s' Q) :
     WP isa (.block (c.load ++ is)) s Q := by
   have := hL.room
-  have hd : c.dSlot < c.total := by simp only [Core.dSlot]; omega
-  have hn : c.nSlot < c.total := by simp only [Core.nSlot]; omega
+  have hd : c.dSlot < c.total := by simp only [Core.dSlot]; omega_arith
+  have hn : c.nSlot < c.total := by simp only [Core.nSlot]; omega_arith
   simp only [Core.load, slotAt, at_, List.cons_append, List.nil_append]
   refine wp_ldm hb (slot_in hS hd) fun s₁ u₁ => ?_
   refine wp_ldm (B := B) (by rw [u₁.other _ (by decide)]; exact hb) (by rw [u₁.rd, u₁.wr]; exact slot_in hS hn)
@@ -207,8 +208,8 @@ theorem advance_wp {s : State} {B : BitVec 32} (hb : s.gpr sb = B) (hS : ScrIn s
         (s.gpr .ebp - 1) → s'.rd = s.rd → s'.wr = s.wr → Q s') :
     WP isa (.block (c.advance st)) s Q := by
   have := hL.room
-  have hd : c.dSlot < c.total := by simp only [Core.dSlot]; omega
-  have hn : c.nSlot < c.total := by simp only [Core.nSlot]; omega
+  have hd : c.dSlot < c.total := by simp only [Core.dSlot]; omega_arith
+  have hn : c.nSlot < c.total := by simp only [Core.nSlot]; omega_arith
   simp only [Core.advance, slotAt, at_]
   refine wp_addi fun s₁ u₁ => wp_subi fun s₂ u₂ _ z₂ => ?_
   have b₂ : s₂.gpr sb = B := by rw [u₂.other _ (by decide), u₁.other _ (by decide), hb]
@@ -226,8 +227,8 @@ theorem Agree.trans {len : Loc → Nat} {a b c : Areas} (h₁ : Agree len a b) (
 
 theorem readW_write_sep {m : Mem} {a b : Addr} {v : BitVec 32} (h : Region.Disjoint ⟨a, 4⟩ ⟨b, 4⟩) :
     (m.writeW b v).readW a 32 = m.readW a 32 :=
-  Mem.readW_writeW_sep (fun x h1 h2 => h x (by simp only [Region.Contains]; omega)
-    (by simp only [Region.Contains]; omega)) (by decide)
+  Mem.readW_writeW_sep (fun x h1 h2 => h x (by simp only [Region.Contains]; omega_arith)
+    (by simp only [Region.Contains]; omega_arith)) (by decide)
 
 /-! ## The regions of a step -/
 
@@ -272,9 +273,9 @@ structure Regs (c : Core) (B D : BitVec 32) (n st j : Nat) (E : BitVec 32) : Pro
   datData : Region.Sub (datRegion D st j) (dataRegion D st n)
   toBig : ∀ r ∈ fine c B D st j E ++ dnSlots c B, ∃ r' ∈ big c B D n st E, Region.Sub r r'
 
-/-- `omega`, with the mode's slots unfolded. -/
+/-- `omega_arith`, with the mode's slots unfolded. -/
 local macro "slot_omega" : tactic =>
-  `(tactic| ((try simp only [Core.chnSlot, Core.dSlot, Core.nSlot]); omega))
+  `(tactic| ((try simp only [Core.chnSlot, Core.dSlot, Core.nSlot]); omega_arith))
 
 theorem regs {s₀ : State} {B D : BitVec 32} {n st j : Nat} (hF : Fixed c s₀ B D n st) (hj : j < n) :
     Regs c B D n st j (s₀.gpr .esp) := by
@@ -285,7 +286,7 @@ theorem regs {s₀ : State} {B D : BitVec 32} {n st j : Nat} (hF : Fixed c s₀ 
   have hbuf := hL.buf_le
   have hG := hL.G_pos
   have hbG : c.bw ≤ c.bw * c.G := Nat.le_mul_of_pos_right _ hG
-  have hbw : c.bw ≤ 4 := by rcases hL.bw with h | h <;> omega
+  have hbw : c.bw ≤ 4 := by rcases hL.bw with h | h <;> omega_arith
   have hjn : st * j + st ≤ st * n := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hj
   have subDat : Region.Sub (datRegion D st j) (dataRegion D st n) := VG.Offset.sub_base _ hjn
   have subChn : Region.Sub (chnRegion c B) (dnRegion c B) := VG.Offset.sub _ (by slot_omega) (by slot_omega)
@@ -448,13 +449,13 @@ theorem crypt_step (cs : CoreSpec c) {s₀ : State} {B D : BitVec 32} {n st : Na
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hR.datCore
-      · exact hR.datStk) (by show st ≤ 2 ^ 64; have := hF.layout.bw; omega) hi
+      · exact hR.datStk) (by show st ≤ 2 ^ 64; have := hF.layout.bw; omega_arith) hi
   · simp only [cryptBuf, cont, areas, lens] at hi ⊢
     exact f₃.bytes (R := chnRegion c B) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hR.chnCore
-      · exact hR.chnStk) (by show 4 * c.bw ≤ 2 ^ 64; have := hF.layout.bw; omega) hi
+      · exact hR.chnStk) (by show 4 * c.bw ≤ 2 ^ 64; have := hF.layout.bw; omega_arith) hi
   · simp only [lens] at hi
     have e := enc₃ 0 hF.layout.G_pos
     rw [blkAddr_zero] at e
@@ -470,11 +471,11 @@ theorem chunksAt_getElem {L : Nat} {m : Mem} {p : Addr} {n j : Nat} (hj : j < n)
 theorem Inv.input {cs : CoreSpec c} {s₀ : State} {B D : BitVec 32} {n st : Nat} {k : cs.Key} {F : StepFn}
     {c0 : List Byte} {xs : List (List Byte)} {j : Nat} {s : State} (hI : Inv cs s₀ B D n st k F c0 xs j s)
     (hxs : xs.length = n) (hj : j < n) :
-    bytesAt s.mem (D.setWidth 64 + BitVec.ofNat 64 (st * j)) st = xs[j]'(by omega) := by
-  have hl : (run F c0 (xs.take j)).1.length = j := by rw [run_length, List.length_take]; omega
+    bytesAt s.mem (D.setWidth 64 + BitVec.ofNat 64 (st * j)) st = xs[j]'(by omega_arith) := by
+  have hl : (run F c0 (xs.take j)).1.length = j := by rw [run_length, List.length_take]; omega_arith
   have e := congrArg (·[j]?) hI.data
   simp only [List.getElem?_append_right (Nat.le_of_eq hl), hl, Nat.sub_self, List.getElem?_drop, Nat.add_zero] at e
-  rw [List.getElem?_eq_getElem (by rw [chunksAt_length]; exact hj), List.getElem?_eq_getElem (by omega),
+  rw [List.getElem?_eq_getElem (by rw [chunksAt_length]; exact hj), List.getElem?_eq_getElem (by omega_arith),
     chunksAt_getElem hj] at e
   exact Option.some.inj e
 
@@ -488,7 +489,7 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
       fun s' => Inv cs s₀ B D n st k F c0 xs (j + 1) s' ∧ s'.zf = some (decide (j + 1 = n)) := by
   have hR := regs hF hj
   have hL := hF.layout
-  have hbw : c.bw ≤ 4 := by rcases hL.bw with h | h <;> omega
+  have hbw : c.bw ≤ 4 := by rcases hL.bw with h | h <;> omega_arith
   have hst := hF.step
   have hDf := hF.dataFit
   have hjn : st * j + st ≤ st * n := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hj
@@ -519,13 +520,13 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
     Agree.trans a₅ (applyOps_agree hpost hm.agree)
   obtain ⟨hc1, hc2⟩ := hcomp (cont A s.mem)
   rw [hM] at hc1 hc2
-  have xj : rd (cont A s.mem) .dat st = xs[j]'(by omega) := hI.input hxs hj
+  have xj : rd (cont A s.mem) .dat st = xs[j]'(by omega_arith) := hI.input hxs hj
   have cj : rd (cont A s.mem) .chn (4 * c.bw) = (run F c0 (xs.take j)).2 := hI.chn
   rw [xj, cj] at hc1 hc2
   have out₅ : bytesAt s₅.mem (D.setWidth 64 + BitVec.ofNat 64 (st * j)) st =
-      (F (run F c0 (xs.take j)).2 (xs[j]'(by omega))).1 := by
+      (F (run F c0 (xs.take j)).2 (xs[j]'(by omega_arith))).1 := by
     rw [← hc1]; exact rd_agree hstep (l := .dat) (Nat.le_refl _)
-  have chn₅ : bytesAt s₅.mem (slotA B c.chnSlot) (4 * c.bw) = (F (run F c0 (xs.take j)).2 (xs[j]'(by omega))).2 := by
+  have chn₅ : bytesAt s₅.mem (slotA B c.chnSlot) (4 * c.bw) = (F (run F c0 (xs.take j)).2 (xs[j]'(by omega_arith))).2 := by
     rw [← hc2]; exact rd_agree hstep (l := .chn) (Nat.le_refl _)
   -- The stores of the data pointer and the count.
   have hd4 : (⟨slotA B c.dSlot, 4⟩ : Region).Contains (slotA B c.dSlot) (32 / 8) := Region.contains_self _ _
@@ -551,15 +552,15 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
     · exact hR.dChn.symm
     · exact hR.nChn.symm
   have out₆ : bytesAt s₆.mem (D.setWidth 64 + BitVec.ofNat 64 (st * j)) st =
-      (F (run F c0 (xs.take j)).2 (xs[j]'(by omega))).1 := by
+      (F (run F c0 (xs.take j)).2 (xs[j]'(by omega_arith))).1 := by
     rw [← out₅]
-    exact List.map_congr_left fun i hi => keep6 dDat (by show st ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
-  have chn₆ : bytesAt s₆.mem (slotA B c.chnSlot) (4 * c.bw) = (F (run F c0 (xs.take j)).2 (xs[j]'(by omega))).2 := by
+    exact List.map_congr_left fun i hi => keep6 dDat (by show st ≤ 2 ^ 64; omega_arith) (List.mem_range.mp hi)
+  have chn₆ : bytesAt s₆.mem (slotA B c.chnSlot) (4 * c.bw) = (F (run F c0 (xs.take j)).2 (xs[j]'(by omega_arith))).2 := by
     rw [← chn₅]
-    exact List.map_congr_left fun i hi => keep6 dChn (by show 4 * c.bw ≤ 2 ^ 64; omega) (List.mem_range.mp hi)
-  have hrun : run F c0 (xs.take (j + 1)) = ((run F c0 (xs.take j)).1 ++ [(F (run F c0 (xs.take j)).2 (xs[j]'(by omega))).1],
-      (F (run F c0 (xs.take j)).2 (xs[j]'(by omega))).2) := by
-    rw [List.take_add_one, List.getElem?_eq_getElem (by omega), Option.toList_some, run_snoc]
+    exact List.map_congr_left fun i hi => keep6 dChn (by show 4 * c.bw ≤ 2 ^ 64; omega_arith) (List.mem_range.mp hi)
+  have hrun : run F c0 (xs.take (j + 1)) = ((run F c0 (xs.take j)).1 ++ [(F (run F c0 (xs.take j)).2 (xs[j]'(by omega_arith))).1],
+      (F (run F c0 (xs.take j)).2 (xs[j]'(by omega_arith))).2) := by
+    rw [List.take_add_one, List.getElem?_eq_getElem (by omega_arith), Option.toList_some, run_snoc]
   have gg : ∀ r, r ≠ .esi → r ≠ .ebp → r ≠ .eax → r ≠ .ecx → s₆.gpr r = s₃.gpr r := fun r h1 h2 h3 h4 => by
     rw [g₆ r h1 h2, g₅ r h3 h4, g₄ r h1 h2]
   show Inv cs s₀ B D n st k F c0 xs (j + 1) s₆ ∧ s₆.zf = some (decide (j + 1 = n))
@@ -567,7 +568,7 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
     by rw [gg _ (by decide) (by decide) (by decide) (by decide)]; exact hm.esp,
     by rw [rd₆, rd₅, rd₄, hm.rd], by rw [wr₆, wr₅'], ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [m₆, readW_write_sep hR.dn, Mem.readW_writeW_self32, VG.Offset.add_add, Nat.mul_succ]
-  · rw [m₆, Mem.readW_writeW_self32, Wp.ofNat_pred (by omega)]
+  · rw [m₆, Mem.readW_writeW_self32, Wp.ofNat_pred (by omega_arith)]
     congr 1
   · exact cs.ready_frame hm.ready (by rw [gg _ (by decide) (by decide) (by decide) (by decide)])
       (by rw [rd₆, rd₅, rd₄]) (by rw [wr₆, wr₅, wr₄]) sy₆
@@ -580,28 +581,28 @@ theorem post_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
         rcases List.mem_append.mp hr with h | h
         · exact hR.areasCore r h
         · exact hR.slotsCore r h)
-  · rw [chunksAt_set (j := j) (fun i hi hout => ?_), hI.data, out₆, run_set F c0 (by omega)]
+  · rw [chunksAt_set (j := j) (fun i hi hout => ?_), hI.data, out₆, run_set F c0 (by omega_arith)]
     refine all _ fun r hr hcon => ?_
     rcases List.mem_append.mp hr with h | h
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
       rcases h with rfl | rfl | rfl | rfl
       · simp only [Region.Contains] at hcon
         have e := (VG.Offset.lt_iff (D.setWidth 64 + BitVec.ofNat 64 i) (D.setWidth 64) (d := st * j) (n := st)
-          (by omega)).mp (by omega)
-        rw [sub_self_add _ (by omega)] at e
-        omega
-      · exact hR.dataOut _ (by simp) _ (contains_area hi (by omega)) hcon
-      · exact hR.dataOut _ (by simp) _ (contains_area hi (by omega)) hcon
-      · exact hR.dataOut _ (by simp) _ (contains_area hi (by omega)) hcon
+          (by omega_arith)).mp (by omega_arith)
+        rw [sub_self_add _ (by omega_arith)] at e
+        omega_arith
+      · exact hR.dataOut _ (by simp) _ (contains_area hi (by omega_arith)) hcon
+      · exact hR.dataOut _ (by simp) _ (contains_area hi (by omega_arith)) hcon
+      · exact hR.dataOut _ (by simp) _ (contains_area hi (by omega_arith)) hcon
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
       rcases h with rfl | rfl
-      · exact hR.dataOut _ (by simp) _ (contains_area hi (by omega)) hcon
-      · exact hR.dataOut _ (by simp) _ (contains_area hi (by omega)) hcon
+      · exact hR.dataOut _ (by simp) _ (contains_area hi (by omega_arith)) hcon
+      · exact hR.dataOut _ (by simp) _ (contains_area hi (by omega_arith)) hcon
   · rw [chn₆, hrun]
   · exact hI.frame.trans (all.sub hR.toBig)
-  · have : n ≤ 2 ^ 32 := Nat.le_trans (Nat.le_mul_of_pos_left n hst.1) (by omega)
-    rw [z₆, Wp.ofNat_pred (by omega), Wp.ofNat_beq_zero (by omega)]
-    congr 1; exact decide_eq_decide.mpr (by omega)
+  · have : n ≤ 2 ^ 32 := Nat.le_trans (Nat.le_mul_of_pos_left n hst.1) (by omega_arith)
+    rw [z₆, Wp.ofNat_pred (by omega_arith), Wp.ofNat_beq_zero (by omega_arith)]
+    congr 1; exact decide_eq_decide.mpr (by omega_arith)
 
 /-! ## The step and the loop -/
 
@@ -629,13 +630,13 @@ theorem loop_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {B D : 
     fun _ => ?_
   refine WP.loop (M := isa) (body := c.body M) (c := .ne) (Q := Inv cs s₀ B D n st k F c0 xs n)
     (fun (m : Nat) (t : State) => ∃ j, m = n - j ∧ j < n ∧ Inv cs s₀ B D n st k F c0 xs j t)
-    ?_ n s ⟨0, by omega, by omega, hI⟩
+    ?_ n s ⟨0, by omega_arith, by omega_arith, hI⟩
   rintro _ t ⟨j, rfl, hj, h⟩
   refine WP.mono (body_wp cs hF hM hpre hpost hcomp hxs hj h) fun t' ⟨h', hz'⟩ => ?_
   have ev : isa.eval .ne t' = some !decide (j + 1 = n) := by
     show VG.X86.eval .ne t' = _; simp [VG.X86.eval, hz']
   by_cases he : j + 1 = n
   · left; exact ⟨by rw [ev]; simp [he], he ▸ h'⟩
-  · right; exact ⟨by rw [ev]; simp [he], n - (j + 1), by omega, j + 1, rfl, by omega, h'⟩
+  · right; exact ⟨by rw [ev]; simp [he], n - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, h'⟩
 
 end VG.Proof.Modes.X86
