@@ -9,8 +9,6 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # X25519 on AArch64: splitting field elements into radix-2²⁵·⁵ limbs
@@ -32,8 +30,8 @@ open VG.Proof.Curve448.AArch64.Neon (setMem lane_ushr lane_shl trn1_0 trn1_1 trn
 theorem V_ne : ∀ a < 32, ∀ b < 32, a ≠ b → V a ≠ V b := by decide
 
 /-- Read vector registers through the writes after them (distinctness from the context). -/
-tactic_template "vred" : tactic =>
-  `(tactic| simp (disch := assumption) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne, RegUpd.mem_setV,
+macro "vred" : tactic =>
+  `(tactic| plain_simp_names simp (disch := assumption) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne, RegUpd.mem_setV,
                      VG.Proof.Curve448.AArch64.Neon.setMem_mem, VG.Proof.Curve448.AArch64.Neon.setMem_v])
 
 /-- Word `k` of the elements at `a 0` and `a 1` of `m`, in lanes 0 and 1 of `v_{19+k}`. -/
