@@ -1536,9 +1536,9 @@ theorem sealS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
     (sealStitched { v.callee with pass := 512 } v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [sealStitched, prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks,
+  simp only [sealStitched, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, wholeBlocks,
     padTail, cryptS, preS, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
-    splitM_xdepth, init_xdepth, finalize_xdepth, bigS_xdepth, bulkP_xdepth, tailP_xdepth, Nat.max_le]
+    foldM_xdepth, init_xdepth, finalize_xdepth, bigS_xdepth, bulkP_xdepth, tailP_xdepth, Nat.max_le]
   omega
 
 theorem sealS_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
@@ -3195,7 +3195,7 @@ theorem openStitched_correct (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = 
     (hp : APre false s₀) :
     WP isa (openStitched v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openX86_64.post s₀ s' := by
   have hL' := (Nat.le_of_lt (s₀.gpr .r9).isLt)
-  have hX : XPass v.callee.pass := .inl (avx2_of v hv).2.1
+  have hX : XPass v.callee.pass := (avx2_of v hv).2.1
   refine WP.seq (WP.mono_mx (by decide +kernel) (entry_ok hp) fun s₀' e₀ mx₀ => ?_)
   subst e₀
   refine WP.seq (WP.mono_mx (prologueX_mx v hv hX) (prologueX_ok v hv hX hp) fun s₁ ⟨h₁, X₁⟩ mx₁ => ?_)
@@ -4001,7 +4001,7 @@ theorem openS_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') 
   have hp := APre.of _ h₀
   have hp' := APre.of _ h₀'
   have hfl := v.fold_le
-  have hX : XPass v.callee.pass := .inl (avx2_of v hv).2.1
+  have hX : XPass v.callee.pass := (avx2_of v hv).2.1
   obtain ⟨_, hA⟩ := prologueA_taint false v.fold_poly
   obtain ⟨_, hmid⟩ := midO_taint v.fold_poly
   obtain ⟨_, hS⟩ := smallO_taint v.fold_poly
@@ -4129,9 +4129,9 @@ theorem openS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
     (openStitched v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [openStitched, prologueX, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks,
+  simp only [openStitched, prologueX, prologueA, prologueB, zeroKs, macPad, macPadLengths, wholeBlocks,
     padTail, cryptO, decRest, xorTail, absorbLengths, finalizeTo, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
-    xorTail_xdepth, splitM_xdepth, init_xdepth,
+    xorTail_xdepth, foldM_xdepth, init_xdepth,
     finalize_xdepth, bulkO_xdepth, twoKs_xdepth, Nat.max_le]
   omega
 
