@@ -33,6 +33,25 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64 VG.
 open VG.Impl.Rsa.AArch64.CheckKey (sD sE sElen sDlen sP sPlen sQ sQlen sDP sDQ sQI aX aR aM aA aRem aT aOne aE
   ltA mulE mulXR)
 
+/-- Public byte capacity: enough for either factor and half the modulus.
+The wide arrays hold twice this many limbs, plus two carry limbs. -/
+def capacity (k pl ql : Nat) : Nat := max ((k + 1) / 2) (max pl ql)
+
+/-- Size validation arithmetic from the factor lengths, retaining enough
+space to load the entire modulus even for malformed factors. -/
+def wide : List Instr :=
+  [ldh .x3 Public.sK, .addImm .x .x12 .x3 15, .lsr .x .x12 .x12 4,
+    ldh .x3 sPlen, .addImm .x .x3 .x3 7, .lsr .x .x3 .x3 3,
+    .subs .x .x4 .x12 .x3, .csel .x .x12 .x12 .x3,
+    ldh .x3 sQlen, .addImm .x .x3 .x3 7, .lsr .x .x3 .x3 3,
+    .subs .x .x4 .x12 .x3, .csel .x .x12 .x12 .x3,
+    .add .x .x12 .x12 .x12, .addImm .x .x12 .x12 2, sth .x12 sW]
+
+/-- Header initialization for the compact CRT layout. -/
+def head : List Instr := wide ++ setBases ++
+  [.addImm .x .x3 .x12 2, .lsl .x .x3 .x3 3, sth .x3 sStride, movi .x7 0, .subImm .x .x4 .x7 1,
+    sth .x4 Public.sMask]
+
 /-- The quotient's register of `reduceTop`. -/
 def aQ : Nat := 9
 
@@ -92,7 +111,7 @@ def modChecks (sX sXlen sDX : Nat) : List (Prog isa) :=
 
 /-- The computation, once `n` and `e` are known valid. -/
 def main : Prog isa := seqs (
-  [.block CheckKey.head] ++ loadA 0 Public.sN Public.sK ++ loadA aE sE sElen ++ [zeroA aOne, .block (setOneA aOne)] ++
+  [.block head] ++ loadA 0 Public.sN Public.sK ++ loadA aE sE sElen ++ [zeroA aOne, .block (setOneA aOne)] ++
   -- `p q = n`
   loadA aX sP sPlen ++ loadA aR sQ sQlen ++ mulXR ++ eqA aA 0 ++ [.block andZero] ++
   -- modulo `p - 1` and `q - 1`

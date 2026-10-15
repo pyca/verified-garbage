@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
@@ -32,10 +33,14 @@ open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 def variant : CrtImpl where
   name := Spec.Rsa.privateCrtApi.name ++ "_adx"
   code := Impl.Rsa.X86_64.Crt.code CallMont.adx.mm
-    (Impl.Rsa.X86_64.Crt.expLoop5 CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV)
+    (Impl.Rsa.X86_64.Crt.expLoop5S CallMont.lazyAdx CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV)
   depth := by decide +kernel
-  ok := crt_call_ok (by decide +kernel) (crtCode_correct Mont.fnAdx (CrtExpL.w5 Mont.fnAdx) (by decide +kernel))
-  ct := crt_call_ct (by decide +kernel) (crtCode_correct Mont.fnAdx (CrtExpL.w5 Mont.fnAdx) (by decide +kernel)) (crtCode_constantTime Mont.fnAdx (CrtExpL.w5 Mont.fnAdx) (CrtExpL.w5_ct Mont.fnAdx))
+  ok := crt_call_ok (by decide +kernel)
+    (crtCode_correct Mont.fnAdx (CrtExpL.w5S Mont.fnAdx MontS.fnLazyAdx) (by decide +kernel))
+  ct := crt_call_ct (by decide +kernel)
+    (crtCode_correct Mont.fnAdx (CrtExpL.w5S Mont.fnAdx MontS.fnLazyAdx) (by decide +kernel))
+    (crtCode_constantTime Mont.fnAdx (CrtExpL.w5S Mont.fnAdx MontS.fnLazyAdx)
+      (CrtExpL.w5S_ct Mont.fnAdx MontS.fnLazyAdx))
   nosp := noSp_of (by decide +kernel)
   spSafe := Code.all_of_allInstrs (by decide +kernel)
   montSuffix := "_adx"

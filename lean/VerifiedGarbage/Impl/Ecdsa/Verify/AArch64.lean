@@ -27,9 +27,10 @@ on x86-64 (`Impl/Ecdsa/Verify/X86_64.lean`):
    the entries of the public `u`'s digits directly, saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's window method and
    `[u]G + [v]Q` by the complete addition, into `R`;
-6. for P-256, compare `X` with `rZ` and, when `r+n < p`, `(r+n)Z`, without
-   inversion; for the other curves, compute `x = X Z^(p-2)` and compare it
-   with `r` modulo `n`. Reject `Z = 0` and return the accumulated flag.
+6. compare `X` with `rZ` and, when `r+n < p`, `(r+n)Z`, without inversion
+   (for a curve with `n < p ≤ 2n`, as all these are; otherwise compute
+   `x = X Z^(p-2)` and compare it with `r` modulo `n`). Reject `Z = 0` and
+   return the accumulated flag.
 
 All validity checks run regardless of earlier failures. The comb's
 addresses depend on the public scalar `u`; the remaining memory accesses and
@@ -160,17 +161,23 @@ def projectiveMatch : List Instr :=
 def projectiveChecks : List Instr :=
   projectiveMatch c ++ c.andFlag ++ c.checkNonzero (c.sl RZ) ++ finish c
 
+/-- Convert `r` to Montgomery form, sharing the eight-word product. -/
+def projectiveConvert : Prog isa :=
+  if c.n = 8 then c.mulPP (c.sl XM) (c.sl K) (c.sl XM)
+  else .block (mul c.MP' (c.sl XM) (c.sl K) (c.sl XM))
+
 /-- ECDSA's final check using projective coordinates. The caller establishes
 `n < p ≤ 2n`, so `r` and `r+n` exhaust the possible affine coordinates. -/
 def projectiveFinal : Prog isa :=
   .seq (.seq (.block (projectivePrepare c))
-    (.seq (.block (mul c.MP' (c.sl XM) (c.sl K) (c.sl XM)))
+    (.seq (projectiveConvert c)
       (fprogB c.MP' (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
-/-- P-256 compares projective coordinates directly; the other curves retain
-an affine conversion until the direct path has been benchmarked for them. -/
+/-- A curve with `n < p ≤ 2n` (every curve this verifier serves) compares
+projective coordinates directly, with no inversion; any other would convert
+to affine coordinates first. -/
 def tail : Prog isa :=
-  if c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
+  if c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
   else .seq c.pPow (final c)
 
 /-- Everything after the checks of the key. -/

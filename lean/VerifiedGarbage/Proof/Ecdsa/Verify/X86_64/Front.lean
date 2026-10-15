@@ -126,6 +126,11 @@ theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   exact sl_le c h7 (hl i hi)
 
+theorem slW_le84 (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 84) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
+  intro w hw
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+  exact sl_le84 c h7 (hl i hi)
+
 theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1 + w.2 ≤ size := by
   intro w hw
   rw [List.mem_singleton.mp hw]

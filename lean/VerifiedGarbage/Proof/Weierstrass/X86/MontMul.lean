@@ -41,7 +41,7 @@ theorem MulOk.m_pos {k m : Nat} (h : MulOk k m) : 0 < m := by
   · exact h'
 
 theorem mod_ok (k m : Nat) : (mod k m).ok m = true := by
-  simp only [Mod.ok, mod, Bool.not_false, Bool.true_or, Bool.and_true]
+  simp only [Mod.ok, mod, Option.all_none, Bool.not_false, Bool.true_or, Bool.and_true]
   exact p256RedChoice_ok k m
 
 theorem minv_lt (m : Nat) : minv m < 2 ^ 64 := by unfold minv; exact Nat.mod_lt _ (by decide)

@@ -152,7 +152,7 @@ theorem curve_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base s
     (mem_validAfter _ _).mpr (Or.inr (by simp [Impl.Ecdh.AArch64.Cfg.curveOps, FOp.out]))
   have v₃ : toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₃.mem base (c.sl W1) c.n) = _ := I₃.val _ hW1
   have lt₃ : wordsVal s₃.mem base (c.sl W1) c.n < c.C.p := I₃.lt _ hW1
-  have hout : ∀ op ∈ curveN, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 82 := by decide
+  have hout : ∀ op ∈ curveN, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 61 ∧ op.out ≠ 82 := by decide
   rw [curveOps_eq, congrFun (runOps_rename c.sl curveN _ fun op hop y h =>
       sl_inj c h0 h (.inr (hout op hop).2) (.inl (hout op hop).1)) W1,
     curveN_run] at v₃
@@ -197,7 +197,7 @@ theorem select_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
-  have hap : ∀ {i j}, i ≠ j → (i ≠ TMP ∨ (j ≠ 54 ∧ j ≠ 82)) → (j ≠ TMP ∨ (i ≠ 54 ∧ i ≠ 82)) →
+  have hap : ∀ {i j}, i ≠ j → (i ≠ TMP ∨ (j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82)) → (j ≠ TMP ∨ (i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82)) →
       c.sl i ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := fun h h₁ h₂ => by
     have := sl_apart c h h₁ h₂; omega
   rw [select_eq, WP.block_append_iff]

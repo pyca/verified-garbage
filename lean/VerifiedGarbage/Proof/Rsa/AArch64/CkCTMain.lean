@@ -39,7 +39,7 @@ theorem ld_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen < 32
     (len : CkP → Nat) {js : List Nat} (hjs : ∀ i ∈ js, i ≠ j ∧ i < 16)
     (hA : ∀ (I : CkIn) (m₀ : Mem) (s : State), CkS I m₀ s → CkLens I → word s.mem I.B (8 * sPtr) = ptr I.pub ∧
       word s.mem I.B (8 * sLen) = BitVec.ofNat 64 (len I.pub) ∧
-      (∃ bs, Src s I.B I.Z (ptr I.pub) bs ∧ bs.length = len I.pub) ∧ 1 ≤ len I.pub ∧ len I.pub ≤ I.k)
+      (∃ bs, Src s I.B I.Z (ptr I.pub) bs ∧ bs.length = len I.pub) ∧ 1 ≤ len I.pub ∧ len I.pub ≤ I.cap)
     {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base j .x8 ++ [movi .x7 0])) zeroAcc)
       hc₁).isSome = true)
@@ -53,15 +53,33 @@ theorem ld_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen < 32
     obtain ⟨I, m₀, c, rfl, hs, L, -⟩ := h
     exact hA I m₀ s hs L) ht₁ ht₂ ht₃
 
+theorem ldWide_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen < 32) (ptr : CkP → Addr)
+    (len : CkP → Nat) {js : List Nat} (hjs : ∀ i ∈ js, i ≠ j ∧ i < 16)
+    (hA : ∀ (I : CkIn) (m₀ : Mem) (s : State), CkS I m₀ s → CkLens I → word s.mem I.B (8 * sPtr) = ptr I.pub ∧
+      word s.mem I.B (8 * sLen) = BitVec.ofNat 64 (len I.pub) ∧
+      (∃ bs, Src s I.B I.Z (ptr I.pub) bs ∧ bs.length = len I.pub) ∧ 1 ≤ len I.pub ∧ len I.pub ≤ I.k)
+    {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht₁ : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base j .x8 ++ [movi .x7 0])) zeroAcc)
+      hc₁).isSome = true)
+    {hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht₂ : (taint.check (Taint.ofRegs [.x0]) (.block (ws ++ base j .x8 ++ [ldh .x1 sPtr, ldh .x2 sLen]))
+      hc₂).isSome = true)
+    {hc₃ : VG.Taint.Hint VG.AArch64.Taint.T}
+    (ht₃ : (taint.check (Taint.ofRegs [.x0, .x8, .x1, .x2]) loadBE hc₃).isSome = true) :
+    RelCT isa (Two (GKb js)) (seqs (loadA j sPtr sLen)) (Two (GKb js)) :=
+  loadA_wide_ckct hj hP hL hjs ptr len (fun p s h => by
+    obtain ⟨I, m₀, c, rfl, hs, L, -⟩ := h
+    exact hA I m₀ s hs L) ht₁ ht₂ ht₃
+
 /-! ## The phases -/
 
 theorem ckPQ_ct : RelCT isa (Two GK) (seqs (loadA aX sP sPlen ++ (loadA aR sQ sQlen ++
     (mulXR ++ (eqA aA 0 ++ ([.block andZero] : List (Prog isa))))))) (Two GK) := by
   refine ofGK (ct_app (by simp [loadA]) (by simp [loadA]) (ld_ct (by decide) (by decide) (by decide) CkP.pP CkP.pl
-    (by simp) (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, Nat.le_of_lt L.pl2⟩)
+    (by simp) (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, L.pcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide)) (ct_app (by simp [loadA]) (by simp [mulXR])
     (ld_ct (by decide) (by decide) (by decide) CkP.pQ CkP.ql (by decide)
-      (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, Nat.le_of_lt L.ql2⟩)
+      (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, L.qcap⟩)
       (by taint_decide) (by taint_decide) (by taint_decide))
     (ct_app (by simp [mulXR]) (by simp [eqA]) (mulXR_ckct (by taint_decide) (by taint_decide) |>.mono
       (fun _ _ h => two_mono (fun _ _ h => h.mono (by simp)) h) fun _ _ h => h)
@@ -77,7 +95,7 @@ theorem modOne_ckct : RelCT isa (Two GK) (seqs modOne) (Two GK) := by
 
 theorem ckDN_ct : RelCT isa (Two GK) (seqs (loadA aX sD sDlen ++ ltA aX 0)) (Two GK) :=
   toGK (ofGK (ct_app (by simp [loadA]) (by simp [ltA]) (ld_ct (by decide) (by decide) (by decide) CkP.pD CkP.dl
-    (by decide) (fun I m₀ s hs L => ⟨hs.args.d, hs.args.dl, ⟨_, hs.d, L.dbl⟩, L.dl1, L.dl2⟩)
+    (by decide) (fun I m₀ s hs L => ⟨hs.args.d, hs.args.dl, ⟨_, hs.d, L.dbl⟩, L.dl1, L.dcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide))
     (ltA_ckct (by decide) (by decide) (by decide) (by taint_decide))))
 
@@ -86,10 +104,10 @@ theorem ckMod_ct {sX sXlen sDX : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (hsD : 
     (xl : CkP → Nat)
     (hX : ∀ (I : CkIn) (m₀ : Mem) (s : State), CkS I m₀ s → CkLens I → word s.mem I.B (8 * sX) = pX I.pub ∧
       word s.mem I.B (8 * sXlen) = BitVec.ofNat 64 (xl I.pub) ∧
-      (∃ bs, Src s I.B I.Z (pX I.pub) bs ∧ bs.length = xl I.pub) ∧ 1 ≤ xl I.pub ∧ xl I.pub ≤ I.k)
+      (∃ bs, Src s I.B I.Z (pX I.pub) bs ∧ bs.length = xl I.pub) ∧ 1 ≤ xl I.pub ∧ xl I.pub ≤ I.cap)
     (hDX : ∀ (I : CkIn) (m₀ : Mem) (s : State), CkS I m₀ s → CkLens I → word s.mem I.B (8 * sDX) = pDX I.pub ∧
       word s.mem I.B (8 * sXlen) = BitVec.ofNat 64 (xl I.pub) ∧
-      (∃ bs, Src s I.B I.Z (pDX I.pub) bs ∧ bs.length = xl I.pub) ∧ 1 ≤ xl I.pub ∧ xl I.pub ≤ I.k)
+      (∃ bs, Src s I.B I.Z (pDX I.pub) bs ∧ bs.length = xl I.pub) ∧ 1 ≤ xl I.pub ∧ xl I.pub ≤ I.cap)
     {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
     (htX : (taint.check (Taint.ofRegs [.x0]) (.block (ws ++ base aM .x8 ++ [ldh .x1 sX, ldh .x2 sXlen]))
       hc₁).isSome = true)
@@ -101,7 +119,7 @@ theorem ckMod_ct {sX sXlen sDX : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (hsD : 
   have ldX := toGK (ofGK (ld_ct (j := aM) (by decide) hsX hsL pX xl (by decide) hX (by taint_decide) htX (by taint_decide)))
   have ldDX := ofGK (ld_ct (j := aX) (by decide) hsD hsL pDX xl (by decide) hDX (by taint_decide) htDX (by taint_decide))
   have ldD := ofGK (ld_ct (j := aX) (by decide) (by decide) (by decide) CkP.pD CkP.dl (by decide)
-    (fun I m₀ s hs L => ⟨hs.args.d, hs.args.dl, ⟨_, hs.d, L.dbl⟩, L.dl1, L.dl2⟩)
+    (fun I m₀ s hs L => ⟨hs.args.d, hs.args.dl, ⟨_, hs.d, L.dbl⟩, L.dl1, L.dcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide))
   have mE := mulE_ckct (by taint_decide) (by taint_decide)
   exact ct_app (by simp [loadA]) (by simp) ldX (ct_app (a := [.block (decA aM)]) (by simp) (by simp [loadA])
@@ -119,15 +137,15 @@ theorem ckMod_ct {sX sXlen sDX : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (hsD : 
 theorem ckQI_ct : RelCT isa (Two GK) (seqs (loadA aM sP sPlen ++ (loadA aX sQI sPlen ++ (ltA aX aM ++
     (loadA aR sQ sQlen ++ (mulXR ++ modOne)))))) (Two GK) :=
   ct_app (by simp [loadA]) (by simp [loadA]) (toGK (ofGK (ld_ct (by decide) (by decide) (by decide) CkP.pP CkP.pl
-    (by decide) (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, Nat.le_of_lt L.pl2⟩)
+    (by decide) (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, L.pcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide))))
   (ofGK (ct_app (by simp [loadA]) (by simp [ltA]) (ld_ct (by decide) (by decide) (by decide) CkP.pQi CkP.pl
-    (by decide) (fun I m₀ s hs L => ⟨hs.args.qi, hs.args.pl, ⟨_, hs.qi, L.qibl⟩, L.pl1, Nat.le_of_lt L.pl2⟩)
+    (by decide) (fun I m₀ s hs L => ⟨hs.args.qi, hs.args.pl, ⟨_, hs.qi, L.qibl⟩, L.pl1, L.pcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide))
   (ct_app (by simp [ltA]) (by simp [loadA]) (ltA_ckct (a := aX) (b := aM) (js := [aX]) (by decide) (by decide)
     (by decide) (by taint_decide))
   (ct_app (by simp [loadA]) (by simp [mulXR]) (toGKb (ld_ct (by decide) (by decide) (by decide) CkP.pQ CkP.ql
-    (js := [aX]) (by decide) (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, Nat.le_of_lt L.ql2⟩)
+    (js := [aX]) (by decide) (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, L.qcap⟩)
     (by taint_decide) (by taint_decide) (by taint_decide)) (js' := [aX, aR]) (by decide))
   (ct_app (by simp [mulXR]) (by simp [modOne]) (mulXR_ckct (by taint_decide) (by taint_decide))
     modOne_ckct)))))
@@ -135,16 +153,16 @@ theorem ckQI_ct : RelCT isa (Two GK) (seqs (loadA aM sP sPlen ++ (loadA aX sQI s
 /-! ## `main` -/
 
 /-- On entry to `main`. -/
-def GKM (p : CkP) (s : State) : Prop := ∃ I : CkIn, I.pub = p ∧ CkPre I s
+def GKM (p : CkP) (s : State) : Prop := ∃ I : CkIn, I.pub = p ∧ CkPre I s ∧ I.cap = I.k
 
-theorem pins_GKM : Pins GKM [.x0] := fun _ _ _ ⟨_, e₁, h₁⟩ ⟨_, e₂, h₂⟩ r hr => by
+theorem pins_GKM : Pins GKM [.x0] := fun _ _ _ ⟨_, e₁, h₁, _⟩ ⟨_, e₂, h₂, _⟩ r hr => by
   simp only [List.mem_singleton] at hr; subst hr
   rw [h₁.x0, h₂.x0]
   exact (congrArg CkP.B e₁).trans (congrArg CkP.B e₂).symm
 
 theorem ckHead_ct : RelCT isa (Two GKM) (.block VG.Impl.Rsa.AArch64.CheckKey.head) (Two GK) :=
-  two_piece [.x0] pins_GKM (by taint_decide) fun _ s ⟨I, e, h⟩ =>
-    WP.mono (ckHeadS_ok h) fun _ ⟨ht, hm⟩ => ⟨I, s.mem, true, e, ht, h.L, hm⟩
+  two_piece [.x0] pins_GKM (by taint_decide) fun _ s ⟨I, e, h, hc⟩ =>
+    WP.mono (ckHeadS_ok h hc) fun _ ⟨ht, hm⟩ => ⟨I, s.mem, true, e, ht, h.L, hm⟩
 
 theorem retMaskK_ct : RelCT isa (Two GK) (.block retMask) (Two fun (_ : CkP) (_ : State) => True) :=
   two_post (two_taint [.x0] pins_GK (by taint_decide)) fun _ _ h => by
@@ -155,10 +173,10 @@ theorem retMaskK_ct : RelCT isa (Two GK) (.block retMask) (Two fun (_ : CkP) (_ 
 theorem ckMain_ct : RelCT isa (Two GKM) VG.Impl.Rsa.AArch64.CheckKey.main fun _ _ => True := by
   rw [ckMain_eq]
   refine (ct_app (by simp) (by simp [loadA]) (ct_one ckHead_ct)
-    (ct_app (by simp [loadA]) (by simp [loadA]) (toGK (ofGK (ld_ct (by decide) (by decide) (by decide) CkP.pN CkP.k
+    (ct_app (by simp [loadA]) (by simp [loadA]) (toGK (ofGK (ldWide_ct (by decide) (by decide) (by decide) CkP.pN CkP.k
       (by decide) (fun I m₀ s hs L => ⟨hs.args.n, hs.args.k, ⟨_, hs.n, L.nl⟩, show 1 ≤ I.k by have := L.k1; omega, Nat.le_refl _⟩)
       (by taint_decide) (by taint_decide) (by taint_decide))))
-    (ct_app (by simp [loadA]) (by simp) (toGK (ofGK (ld_ct (by decide) (by decide) (by decide) CkP.pE CkP.el
+    (ct_app (by simp [loadA]) (by simp) (toGK (ofGK (ldWide_ct (by decide) (by decide) (by decide) CkP.pE CkP.el
       (by decide) (fun I m₀ s hs L => ⟨hs.args.e, hs.args.el, ⟨_, hs.e, L.ebl⟩, L.el1, L.el2⟩)
       (by taint_decide) (by taint_decide) (by taint_decide))))
     (ct_app (by simp) (by simp [loadA]) (ct_cons (by simp) (zeroA_ckct (by decide) (by taint_decide))
@@ -166,12 +184,12 @@ theorem ckMain_ct : RelCT isa (Two GKM) VG.Impl.Rsa.AArch64.CheckKey.main fun _ 
     (ct_app (by simp [loadA]) (by simp [loadA]) ckDN_ct
     (ct_app (by simp [loadA]) (by simp [modChecks]) ckPQ_ct
     (ct_app (by simp [modChecks]) (by simp [modChecks]) (ckMod_ct (by decide) (by decide) (by decide) CkP.pP CkP.pDp
-      CkP.pl (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, Nat.le_of_lt L.pl2⟩)
-      (fun I m₀ s hs L => ⟨hs.args.dp, hs.args.pl, ⟨_, hs.dp, L.dpbl⟩, L.pl1, Nat.le_of_lt L.pl2⟩)
+      CkP.pl (fun I m₀ s hs L => ⟨hs.args.p, hs.args.pl, ⟨_, hs.p, L.pbl⟩, L.pl1, L.pcap⟩)
+      (fun I m₀ s hs L => ⟨hs.args.dp, hs.args.pl, ⟨_, hs.dp, L.dpbl⟩, L.pl1, L.pcap⟩)
       (by taint_decide) (by taint_decide))
     (ct_app (by simp [modChecks]) (by simp [loadA]) (ckMod_ct (by decide) (by decide) (by decide) CkP.pQ CkP.pDq
-      CkP.ql (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, Nat.le_of_lt L.ql2⟩)
-      (fun I m₀ s hs L => ⟨hs.args.dq, hs.args.ql, ⟨_, hs.dq, L.dqbl⟩, L.ql1, Nat.le_of_lt L.ql2⟩)
+      CkP.ql (fun I m₀ s hs L => ⟨hs.args.q, hs.args.ql, ⟨_, hs.q, L.qbl⟩, L.ql1, L.qcap⟩)
+      (fun I m₀ s hs L => ⟨hs.args.dq, hs.args.ql, ⟨_, hs.dq, L.dqbl⟩, L.ql1, L.qcap⟩)
       (by taint_decide) (by taint_decide))
     (ct_app (by simp [loadA]) (by simp) ckQI_ct (ct_one retMaskK_ct)))))))))).mono
     (fun _ _ h => h) fun _ _ _ => trivial

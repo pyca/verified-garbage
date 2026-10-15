@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Mont.X86_64
 public import VerifiedGarbage.Spec.Weierstrass.Mont
 
 /-!
-# Montgomery products modulo P-521's `p`, as functions, on x86-64
+# Shared Montgomery products on x86-64
 
 `vg_p521_mul_mod_p(ws, o, a, b)` and `vg_p521_mul_mod_p_adx`
 (`Spec/Weierstrass/Mont.lean`; System V: `ws` in `rdi`, the offsets `o`,
@@ -352,12 +352,52 @@ def mulN6 (adx : Bool) : List Instr :=
 def mulFnN6 (adx : Bool) : Prog isa :=
   .seq (.block zext) (.seq (.block setup) (.seq (.block (mulN6 adx)) (.block restores)))
 
+/-! ## Eight-word general moduli
+
+The wide inline product, with operands passed by offset. The modulus is
+saved in caller-saved vector registers while the product uses it.
+-/
+namespace Wide8
+
+def tmp : Nat := 4032
+def mo : Nat := 3968
+
+def modulus (order : Bool) : Nat :=
+  if order then Spec.Weierstrass.Mont.brainpoolp512r1n.m
+  else Spec.Weierstrass.Mont.brainpoolp512r1p.m
+
+def mod (order : Bool) : Mod where
+  n := 8
+  mo := mo
+  tmp := tmp
+  minv := BitVec.ofNat 64 (if order then 12486603934235586599 else 9483228555485245381)
+
+/-- Save the modulus workspace before installing the constant. -/
+def save : List Instr :=
+  (List.range 8).flatMap fun j => [.mov .rax (.mem (sc (mo + 8 * j))), .xop (.movq (keepX j) .rax)]
+
+def store (order : Bool) : List Instr :=
+  (List.range 8).flatMap fun j =>
+    [.movImm64 .rax (BitVec.ofNat 64 (modulus order >>> (64 * j))), .store (sc (mo + 8 * j)) .rax]
+
+def restore : List Instr :=
+  (List.range 8).flatMap fun j => [.movqR .rax (keepX j), .store (sc (mo + 8 * j)) .rax]
+
+def body (order : Bool) : List Instr :=
+  [.mov .r12 (.reg .rcx), .alu .add .rsi (.reg .rdi)] ++ save ++ store order ++
+    reloc [(mA, .rbx), (mB, .r12), (mO, .rsi)] (mulW (mod order) mO mA mB) ++ restore
+
+def fn (order : Bool) : Prog isa :=
+  .seq (.block zext) (.seq (.block setup) (.seq (.block (body order)) (.block restores)))
+
+end Wide8
+
 /-- The function the products modulo `M` call, and its code: P-521's `p`, with
 the temporary area the functions' (`fnTmp`), or P-384's (`fnTmp6`) unless its
 products are written out (`Mod.inl`), with or without BMI2 and ADX; P-521's
 `n` (`Mod.fnN`), with the temporary area `fnTmp`; P-384's `n` (`Mod.fnN`),
-with the temporary area `fnTmp6`, with or without BMI2 and ADX; none for any
-other modulus. -/
+with the temporary area `fnTmp6`, with or without BMI2 and ADX; BrainpoolP512r1's
+field prime or group order, identified by `fnMod`, with `Wide8.tmp`; none otherwise. -/
 def callOf (M : Mod) : Option (String × Prog isa) :=
   if M.n = 9 ∧ M.red = .friendly p521Ws ∧ M.tmp = fnTmp then
     some (if M.adx then (Spec.Weierstrass.Mont.p521p.mulApi.name ++ "_adx", mulFnX)
@@ -370,14 +410,21 @@ def callOf (M : Mod) : Option (String × Prog isa) :=
   else if M.n = 6 ∧ M.fnN ∧ M.tmp = fnTmp6 then
     some (if M.adx then (Spec.Weierstrass.Mont.p384n.mulApi.name ++ "_adx", mulFnN6 true)
       else (Spec.Weierstrass.Mont.p384n.mulApi.name, mulFnN6 false))
+  else if M.n = 8 ∧ M.tmp = Wide8.tmp then
+    if M.fnMod = some (Wide8.modulus false) then
+      some (Spec.Weierstrass.Mont.brainpoolp512r1p.mulApi.name, Wide8.fn false)
+    else if M.fnMod = some (Wide8.modulus true) then
+      some (Spec.Weierstrass.Mont.brainpoolp512r1n.mulApi.name, Wide8.fn true)
+    else none
   else none
 
 /-- Whether a product's offsets suit the functions of `n` words: below their
-own working space for nine words; for six, apart from their temporary area
+own working space for nine or eight words; for six, apart from their temporary area
 and the modulus `n` that `vg_p384_mul_mod_n` stores below it (`fnMoN6`), and
 within an immediate's reach. -/
 def lowArgs (n o a b : Nat) : Bool :=
   if n = 9 then o + 72 ≤ 3520 && a + 72 ≤ 3520 && b + 72 ≤ 3520
+  else if n = 8 then o + 64 ≤ 3584 && a + 64 ≤ 3584 && b + 64 ≤ 3584
   else (o + 96 ≤ fnTmp6 || 4096 ≤ o && o < 2 ^ 31) && (a + 96 ≤ fnTmp6 || 4096 ≤ a && a < 2 ^ 31) &&
     (b + 96 ≤ fnTmp6 || 4096 ≤ b && b < 2 ^ 31)
 

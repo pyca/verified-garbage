@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 /-!
 # The loop over the blocks after the last group, one at a time
 
-`remLoop_ok`: the loop of `StitchZH.remWith`, over the `r` blocks at `S`
+`remLoop_ok`: the loop of `StitchAvx8`'s tail, over the `r` blocks at `S`
 (read through `src`), their keystream at `P + 768` and their powers at `W`,
 writes their encryption to `A`, and leaves in the lower lanes of `xmm8` …
 `xmm10` the products of each (`Y` added to the first) with its power

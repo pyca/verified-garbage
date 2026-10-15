@@ -59,6 +59,7 @@ theorem p521_sh : p521.sh = 7 := by
   rfl
 
 theorem p521_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p521 where
+  window_tmp := by decide +kernel
   n0 := by decide
   n10 := by decide
   onG := Proof.P521.onCurve_G

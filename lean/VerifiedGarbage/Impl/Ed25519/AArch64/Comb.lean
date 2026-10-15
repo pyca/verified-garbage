@@ -25,8 +25,10 @@ each a call of `vg_ed25519_r64_double_ext`.
 
 The digits are secret: their entries are selected in constant time. The
 masks of the eight magnitudes `k = 1 … 8` (all ones exactly for `|d|`) and
-the bit of `|d| = 0` stay in registers (`magRegs`, `x22`). Each candidate word
-is loaded from the table, masked with the digit's mask and ORed into `x4`:
+the bit of `|d| = 0` stay in registers (`magRegs`, `x22`), and each mask is
+copied into both lanes of a vector register (`maskV`). Each candidate is
+loaded from the table 16 bytes at a time and inserted into `v2` where its
+mask is set (BIT), on the vector pipes, which the additions leave idle:
 every entry of the table is read, at addresses from the static's and the
 loop's counter. Each entry is negated, or not, with the mask of its digit's
 sign (from its nibble's top bit), by exchanging `Y - X` and `Y + X` and
@@ -104,29 +106,39 @@ def tblAddr : List Instr :=
   [.adrSym .x9 combSym, .lsl .x .x2 .x19 8, .add .x .x9 .x9 .x2, .add .x .x9 .x9 .x2,
     .add .x .x9 .x9 .x2]
 
-/-- Word `w` of candidate `k`, at `x9 + d`: loaded, masked with the digit's mask and ORed into
-`x4`. -/
-def selectCand (d k : Nat) : List Instr :=
-  [.ldr .x .x2 .x9 d, .logic .and .x .x2 .x2 (magReg k), .logic .orr .x .x4 .x4 .x2]
+/-- The vector register holding, in both lanes, the mask of magnitude `k = 1 … 8`
+(`v16`–`v23`). -/
+def maskV (k : Nat) : VReg := [VReg.v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23].getD (k - 1) .v16
 
-/-- The start of word `w`'s selection: `1` for `|d| = 0` in word 0 of the identity's
-`Y - X` and `Y + X` (`one`), else `0`. -/
-def selectStart (one : Bool) (w : Nat) : List Instr :=
-  if one && w == 0 then [.addImm .x .x4 .x22 0] else [.movz .w .x4 0 0]
+/-- The vector register candidate `m + 1`'s half is loaded into (`v24`–`v29`, `v0`, `v1`). -/
+def candV (m : Nat) : VReg := [VReg.v24, .v25, .v26, .v27, .v28, .v29, .v0, .v1].getD m .v24
 
-/-- Word `w` of entry `|d|`'s coordinate `c` (at `x9 + 256 c`), to byte `o + 8w`; entry 0's
-(the identity's) is `1` (if `one`) or `0`. -/
-def selectWord (one : Bool) (c o w : Nat) : List Instr :=
-  selectStart one w ++ (List.range 8).flatMap (fun m => selectCand (256 * c + 32 * m + 8 * w) (m + 1)) ++
-    [st .x4 (o + 8 * w)]
+/-- The masks of the eight magnitudes, each in both lanes of `maskV k`. -/
+def selectMasks : List Instr :=
+  (List.range 8).map fun k => .vop (.dup .d2 (maskV (k + 1)) (magReg (k + 1)))
+
+/-- The start of half `h` of a coordinate's selection, in `v2`: words `2h` and `2h + 1` of the
+identity's `Y - X` and `Y + X` (if `one`; `1` and `0` for `|d| = 0`, from `x22`) or zero. -/
+def selectHalfStart (one : Bool) (h : Nat) : List Instr :=
+  [.vop (.movi0 .v2)] ++ if one && h == 0 then [.vop (.ins .d2 .v2 0 .x22)] else []
+
+/-- Candidate `m + 1`'s half `h` of coordinate `c` (at `x9 + 256 c + 32 m + 16 h`), inserted
+into `v2` where its mask is set (BIT). -/
+def selectHalfCand (c h m : Nat) : List Instr :=
+  [.ldrq (candV m) .x9 (256 * c + 32 * m + 16 * h), .vop (.bsel .bit .v2 (candV m) (maskV (m + 1)))]
+
+/-- Half `h` (words `2h`, `2h + 1`) of entry `|d|`'s coordinate `c`, to byte `o + 16 h`. -/
+def selectHalf (one : Bool) (c o h : Nat) : List Instr :=
+  selectHalfStart one h ++ (List.range 8).flatMap (selectHalfCand c h) ++ [.strq .v2 .x0 (o + 16 * h)]
 
 /-- Coordinate `c` of entry `|d|`, to byte `o`. -/
 def selectField (one : Bool) (c o : Nat) : List Instr :=
-  (List.range 4).flatMap fun w => selectWord one c o w
+  (List.range 2).flatMap fun h => selectHalf one c o h
 
-/-- The digit's entry from table `x19`, to slots 4–6. -/
+/-- The digit's entry from table `x19`, to slots 4–6: every candidate is loaded, 16 bytes at a
+time, and inserted where its digit's mask is set, so only the digit's survives. -/
 def combSelect : List Instr :=
-  tblAddr ++ selectField true 0 (offset 4) ++ selectField true 1 (offset 5) ++
+  tblAddr ++ selectMasks ++ selectField true 0 (offset 4) ++ selectField true 1 (offset 5) ++
     selectField false 2 (offset 6)
 
 /-- The cached point in slots `a`, `b`, `c` negated if its digit is negative, that is if the

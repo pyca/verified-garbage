@@ -45,7 +45,7 @@ def RowState (ps : List (Nat × Nat)) (L : RowLayout) (k : Nat) (s : State) : Pr
 /-- At column block `k`, with the loop's state from a start `s₀` whose
 memory has the operands' bases. -/
 def LoopState (ps : List (Nat × Nat)) (a b : Nat) (L : RowLayout) (k : Nat) (s : State) : Prop :=
-  ∃ s₀ mi, Ops s₀.mem L.B L.w ps ∧ StreamInv s₀ L.B L.Z L.w a b L.i L.j₀ k mi s
+  ∃ s₀ mi x cb, Ops s₀.mem L.B L.w ps ∧ StreamInv s₀ L.B L.Z L.w a b L.i L.j₀ k mi x cb s
 
 def AtLoop (ps : List (Nat × Nat)) (a b : Nat) (p : RowLayout × Nat) (s : State) : Prop :=
   p.2 < p.1.n ∧ LoopState ps a b p.1 p.2 s
@@ -76,13 +76,13 @@ theorem load_fw {ps : List (Nat × Nat)} {a b : Nat} (L : RowLayout) (s : State)
   obtain ⟨⟨mi,hg⟩,hv,hI,hJ,hc,ca,cb,co⟩ := h
   have hwN := L.hwN; have hn := L.hn
   exact WP.mono (rowLoad_ok (s₀ := s) hg.scr hg.rdi hg.hdr L.hZ L.hi (by omega) hI hJ (by rw [hc]; rfl)
-    ca cb co rfl (Keep.refl _ _)) fun t ht => ⟨s,mi,hv,ht⟩
+    ca cb co rfl (Keep.refl _ _)) fun t ht => ⟨s,mi,0,2,hv,ht⟩
 
 theorem tile_fw {ps : List (Nat × Nat)} {a b : Nat} (ha : a < 8) (hb : b < 8)
     (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
     (p : RowLayout × Nat) (s : State) (h : AtLoop ps a b p s) :
     WP isa AdxRect8.streamTile s (RowRdi p) := by
-  obtain ⟨hk,s₀,mi,_,h⟩ := h
+  obtain ⟨hk,s₀,mi,_,_,_,h⟩ := h
   have hi := p.1.hi; have hwN := p.1.hwN; have hZ := p.1.hZ
   have nowrap := h.scr.nowrap
   have hj : p.1.j₀+8*p.2+8 ≤ p.1.w := by omega
@@ -96,7 +96,7 @@ theorem tile_fw {ps : List (Nat × Nat)} {a b : Nat} (ha : a < 8) (hb : b < 8)
 
 theorem loop_pins (ps : List (Nat × Nat)) (a b : Nat) :
     Pins (AtLoop ps a b) [.rdi,.rcx,.rbp,.rsi] := by
-  rintro p s t ⟨_,_,_,_,hs⟩ ⟨_,_,_,_,ht⟩ r hr
+  rintro p s t ⟨_,_,_,_,_,_,hs⟩ ⟨_,_,_,_,_,_,ht⟩ r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact hs.rdi.trans ht.rdi.symm
@@ -122,9 +122,9 @@ theorem row_fw {ps : List (Nat × Nat)} {a b : Nat}
     WP isa AdxRect8.rowStep s fun t =>
       isa.eval .ne t = some (decide (k+1 < L.n)) ∧
       (k+1 < L.n → LoopState ps a b L (k+1) t) ∧ (k+1 = L.n → LoopState ps a b L L.n t) := by
-  obtain ⟨s₀,mi,hv,h⟩ := h
+  obtain ⟨s₀,mi,x,_,hv,h⟩ := h
   refine WP.mono (streamStep_inv L.hZ L.hw L.hi ha hb ha1 ha2 hb1 hb2 L.hwN hk h) fun t ⟨zt,ht⟩ => ?_
-  have post : LoopState ps a b L (k+1) t := ⟨s₀,mi,hv,ht⟩
+  have post : LoopState ps a b L (k+1) t := ⟨s₀,mi,x,2,hv,ht⟩
   refine ⟨?_,fun _ => post,fun he => he ▸ post⟩
   simp only [eval,zt,Option.map_some]
   by_cases he : k+1 = L.n
@@ -133,7 +133,7 @@ theorem row_fw {ps : List (Nat × Nat)} {a b : Nat}
 
 theorem end_fw {ps : List (Nat × Nat)} {a b : Nat} (L : RowLayout) (s : State) (h : LoopState ps a b L L.n s) :
     WP isa (.block AdxRotate8.storeCols) s (RowState ps L L.n) := by
-  obtain ⟨s₀,mi,hv,h⟩ := h
+  obtain ⟨s₀,mi,_,_,hv,h⟩ := h
   refine WP.mono (rowEnd_ok L.hZ L.hi L.hwN h) fun t ht => ?_
   exact ⟨mi,⟨ht.scr,ht.rdi,ht.hdr⟩,frame_ops hv (by unfold rawBase slot; omega) ht.frame,ht.indexI,ht.indexJ⟩
 
@@ -159,7 +159,7 @@ theorem row_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
   · rintro s t ⟨L,hs,ht⟩
     exact ⟨L,⟨L.hn,hs⟩,L.hn,ht⟩
   refine two_post (two_taint [.rsi] ?_ (by taint_decide)) end_fw
-  rintro L s t ⟨_,_,_,hs⟩ ⟨_,_,_,ht⟩ r hr
+  rintro L s t ⟨_,_,_,_,_,hs⟩ ⟨_,_,_,_,_,ht⟩ r hr
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
   subst r; exact hs.po.trans ht.po.symm
 

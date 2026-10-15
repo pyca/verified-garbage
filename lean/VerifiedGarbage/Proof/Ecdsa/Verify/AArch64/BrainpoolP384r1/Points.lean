@@ -27,7 +27,7 @@ abbrev ptsW : List Nat := [EXPP, BM, K, EM, RX, RY, RZ, ACC, PT, T0, T1, T2, T3,
 
 /-- A slot apart from what the calls of `vg_brainpoolp384r1_mul` (`qW`) and the slots of `ptsW` write. -/
 theorem apart_pts {i : Nat} (hi : i < 45) (hl : i ∉ ptsW)
-    (hiA : i ≠ 54 ∧ i ≠ 82 := by first | decide | exact ⟨by omega, by omega⟩) :
+    (hiA : i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 := by first | decide | exact ⟨by omega, by omega⟩) :
     ∀ w ∈ Proof.Ecdh.AArch64.BrainpoolP384r1.qW, brainpoolp384r1.sl i + 8 * brainpoolp384r1.n ≤ w.1 ∨ w.1 + w.2 ≤ brainpoolp384r1.sl i := by
   have s₁ : ∀ x ∈ [EXPP], x ∈ ptsW := by decide
   have s₂ : ∀ x ∈ [BM], x ∈ ptsW := by decide

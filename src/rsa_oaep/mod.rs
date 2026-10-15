@@ -215,6 +215,10 @@ type DecryptFn = unsafe extern "C" fn(
 /// ([`modulus_len`](PublicKey::modulus_len) bytes, big-endian). The timing
 /// may depend on the public key and the lengths of the plaintext and the
 /// label, not on their contents.
+///
+/// Repeated operations with the same key reuse its scratch allocation,
+/// shared with signature verification. The buffer is wiped before reuse;
+/// concurrent callers use independent buffers.
 pub fn encrypt(
     key: &PublicKey,
     plaintext: &[u8],
@@ -245,7 +249,7 @@ fn encrypt_with<const L: usize>(
     let mut seed = [0u8; L];
     os_random(&mut seed)?;
     let mut out = vec![0u8; k];
-    let mut scratch = vec![0u64; oaep_scratch_words(k)];
+    let mut scratch = key.verify_scratch.take(oaep_scratch_words(k));
     let pre = key.pre(&mut scratch);
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes, `seed` for `L` bytes, the hash function's length), and none
@@ -276,8 +280,7 @@ fn encrypt_with<const L: usize>(
             pre.len(),
         )
     };
-    // The working space holds the encoded message and its powers.
-    zeroize(&mut scratch);
+    // ScratchLease wipes the encoded message and its powers before reuse.
     zeroize(&mut seed);
     // `PublicKey::new` checked `n`, and the message's length is checked
     // above.

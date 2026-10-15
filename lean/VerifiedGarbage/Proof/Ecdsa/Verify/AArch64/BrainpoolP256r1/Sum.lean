@@ -89,7 +89,7 @@ theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base siz
   refine WP.mono (copySl_ok hc hs₃ (o := RZ) (a := DZ) (by decide) (by decide) (by decide))
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have o : ∀ {s s' : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem s'.mem → i < 45 → i ≠ j →
-      j ≠ 54 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => VG.Proof.Ecdh.AArch64.sv_out O h7 hn hi hij hj
+      j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => VG.Proof.Ecdh.AArch64.sv_out O h7 hn hi hij hj
   have x₄ : sv c base s₄ RX = sv c base s₁ DX := by
     rw [o O₄ (by decide) (by decide) (by decide), o O₃ (by decide) (by decide) (by decide), e₂]
   have y₄ : sv c base s₄ RY = sv c base s₁ DY := by

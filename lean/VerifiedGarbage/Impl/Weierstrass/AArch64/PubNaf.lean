@@ -1,0 +1,131 @@
+module
+
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+
+/-!
+# Public width-five NAF multiplication of any word count
+
+`[k]P` for a public scalar `k` of `n` words, in Jacobian coordinates, for
+fields whose products may be calls (`Mont.callOf`): the signed digits of `k`
+(width five, `64 n + 1` bytes, `prep`), a table of the eight odd multiples
+`[1]P, [3]P, …, [15]P` (`table`), and one doubling per digit, adding the
+table's entry for each nonzero digit (`window`). The table holds no operand
+of a product: `2P` is kept in `E` while the table is built, and an entry is
+copied to `E` before it is added, so the table may lie above the products'
+offsets. The loop alternates between `R` and `D` rather than copying the
+result of each doubling and addition back. Every branch and address depends
+on the digits of `k` and on the points, so only on public values.
+-/
+
+@[expose] public section
+
+namespace VG.Impl.Weierstrass.AArch64.PubNaf
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
+open Jacobian
+
+/-! ## The recoding -/
+
+/-- The registers of the scalar's `n` words (`low`) and its top word (`top`),
+then of the constants `2^5 - 1`, `2^4`, `0` and `1` (`cst`), for `n ≤ 6`. -/
+def regs : List Reg := [.x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15]
+
+def low (n : Nat) : List Reg := regs.take n
+def top (n : Nat) : Reg := regs.getD n .x15
+def limbs (n : Nat) : List Reg := low n ++ [top n]
+def cst (n i : Nat) : Reg := regs.getD (n + 1 + i) .x15
+
+/-- The scalar's words from `[x0 + src]`, a top word of zero, the constants,
+`x19 = 64 n + 1` digits and `x20` at the digits. -/
+def prepInit (K : WinCfg) (src : Nat) : List Instr :=
+  loads (low K.M.n) src ++
+  [.movz .x (top K.M.n) 0 0, .movz .x (cst K.M.n 0) 31 0, .movz .x (cst K.M.n 1) 16 0,
+   .movz .x (cst K.M.n 2) 0 0, .movz .x (cst K.M.n 3) 1 0,
+   .movz .x .x19 (BitVec.ofNat 16 (64 * K.M.n + 1)) 0, .addImm .x .x20 .x0 K.bits]
+
+/-- `x2` = the digit: for an odd scalar its five low bits as a signed residue
+(`-15 … 15`), else zero. -/
+def chooseDigit (n : Nat) : Prog isa :=
+  .seq (.block [.logic .and .x .x1 .x5 (cst n 3)]) <|
+    .ite (.nonzero .x .x1)
+      (.block [.logic .and .x .x2 .x5 (cst n 0), .logic .and .x .x3 .x2 (cst n 1),
+        .lsl .x .x3 .x3 1, .sub .x .x2 .x2 .x3])
+      (.block [.movz .x .x2 0 0])
+
+/-- A right shift of `rs` by one bit. -/
+def shrChain : List Reg → List Instr
+  | [] => []
+  | [r] => [.lsr .x r r 1]
+  | r :: r' :: rs => .extr .x r r' r 1 :: shrChain (r' :: rs)
+
+/-- The scalar less the digit (`x2`, sign-extended by `x3`), shifted right
+by one bit. -/
+def subtractShift (n : Nat) : List Instr :=
+  [.lsr .x .x3 .x2 63, .sub .x .x3 (cst n 2) .x3, .subs .x .x5 .x5 .x2] ++
+    ((limbs n).drop 1).map (fun r => .sbcs .x r r .x3) ++ shrChain (limbs n)
+
+def prepStep (n : Nat) : Prog isa :=
+  .seq (chooseDigit n) (.block (([.strb .x2 .x20 0, .addImm .x .x20 .x20 1] : List Instr) ++
+    subtractShift n ++ [decCounter]))
+
+/-- The `64 n + 1` signed digits of the scalar at `src`, as bytes from `K.bits`. -/
+def prep (K : WinCfg) (src : Nat) : Prog isa :=
+  .seq (.block (prepInit K src)) (.loop (prepStep K.M.n) (.nonzero .x .x19))
+
+/-! ## The table -/
+
+/-- The bytes of an entry. -/
+def stride (K : WinCfg) : Nat := 24 * K.M.n
+
+/-- `R` into the entry at `x0 + x20 + K.tbl`. -/
+def store (K : WinCfg) : List Instr :=
+  (List.range (3 * K.M.n)).flatMap fun i => [ld .x4 (K.R.x + 8 * i), .str .x .x4 .x20 (K.tbl + 8 * i)]
+
+/-- `R = R + 2P` (`2P` in `E`) into `D`, back to `R`, and stored in the next entry. -/
+def tableStep (K : WinCfg) : Prog isa :=
+  .seq (.seq (jacAdd K K.R K.E K.D) (.block (copyPt K.M.n K.R K.D))) <|
+    .block (store K ++ [.addImm .x .x20 .x20 (stride K), decCounter])
+
+/-- `E = 2P`, `R = P` into the first entry, then the seven others. -/
+def table (K : WinCfg) : Prog isa :=
+  .seq (fprogB K.M (dblJ K.S K.P K.E)) <|
+  .seq (.block (copyPt K.M.n K.R K.P ++ [.addImm .x .x20 .x0 0] ++ store K ++
+    [.addImm .x .x20 .x20 (stride K), .movz .x .x19 7 0])) <|
+  .loop (tableStep K) (.nonzero .x .x19)
+
+/-! ## The multiplication -/
+
+/-- Entry `x2` (`1 … 8`, of `[2 x2 - 1]P`), into `E`. -/
+def entry (K : WinCfg) : List Instr :=
+  [.subImm .x .x2 .x2 1, .movz .x .x17 (BitVec.ofNat 16 (stride K)) 0, .mul .x .x2 .x2 .x17,
+   .add .x .x16 .x0 .x2] ++
+  ((List.range (3 * K.M.n)).flatMap fun i => [.ldr .x .x4 .x16 (K.tbl + 8 * i), st .x4 (K.E.x + 8 * i)])
+
+/-- The entry of the digit `x2`'s magnitude, negated for a negative digit. -/
+def signedEntry (K : WinCfg) : Prog isa :=
+  .seq (.block (Naf.digitIndex ++ entry K)) <|
+    .seq (.block (Naf.signRead K)) <|
+      .ite (.nonzero .x .x3) (.block (Mont.AArch64.sub K.M K.E.y K.zero K.E.y)) (.block [])
+
+/-- `R = D + [d]P` for the digit `d` at `x19`. -/
+def digit (K : WinCfg) : Prog isa :=
+  .seq (.block (Naf.digitRead K)) <|
+    .ite (.nonzero .x .x2) (.seq (signedEntry K) (jacAdd K K.D K.E K.R)) (.block (copyPt K.M.n K.R K.D))
+
+/-- `D = 2R`, then `R = D + [d]P` for the next digit. -/
+def step (K : WinCfg) : Prog isa :=
+  .seq (.block [decCounter]) <| .seq (fprogB K.M (dblJ K.S K.R K.D)) (digit K)
+
+/-- `R` to projective coordinates, through `E`: `(XZ : Y : Z³)`, and
+`(0 : 1 : 0)` for the point at infinity. -/
+def finish (K : WinCfg) : Prog isa :=
+  .seq (.block (copyPt K.M.n K.E K.R)) <|
+    .seq (fprogB K.M (fromJ K.S K.E (WinCfg.zeroPt K) K.R)) (.block (WinCfg.ySel K))
+
+/-- `[k]P` into `R`, projective, from the digits at `K.bits`. -/
+def window (K : WinCfg) : Prog isa :=
+  .seq (table K) <|
+  .seq (.block (infinity K K.D ++ [.movz .x .x19 (BitVec.ofNat 16 (64 * K.M.n)) 0])) <|
+  .seq (digit K) <|
+  .seq (.loop (step K) (.nonzero .x .x19)) (finish K)
+
+end VG.Impl.Weierstrass.AArch64.PubNaf

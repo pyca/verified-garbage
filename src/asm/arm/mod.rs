@@ -182,6 +182,9 @@ pub(crate) mod ecdsa_brainpoolp384r1;
 pub(crate) mod ecdsa_brainpoolp384r1_sha384;
 
 #[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp512r1;
+
+#[rustfmt::skip]
 pub(crate) mod ecdsa_p192;
 
 #[rustfmt::skip]

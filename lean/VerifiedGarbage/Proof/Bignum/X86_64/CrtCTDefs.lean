@@ -186,6 +186,10 @@ def EPre (sp sl : Nat) (p : BPub) (s : State) : Prop :=
     word s.mem p.x.B (8 * sl) = BitVec.ofNat 64 eb.length ∧ eb.length = p.len ∧ 1 ≤ eb.length ∧
     eb.length ≤ 1024 ∧ Src s p.x.B p.x.Z p.ptr eb
 
+/-- `expLoopS Sq.mm M.mm sp sl` is constant time. -/
+def ExpCTS (M : Mont) (Sq : MontS) (S : CrtSel) (sp sl : Nat) : Prop :=
+  RelCT isa (Two (EPre sp sl)) (seqs (Crt.expLoopS Sq.mm M.mm S.code sp sl)) fun _ _ => True
+
 /-- `expLoop M.mm sp sl` is constant time. -/
 def ExpCT (M : Mont) (S : CrtSel) (sp sl : Nat) : Prop :=
   RelCT isa (Two (EPre sp sl)) (seqs (Crt.expLoop M.mm S.code sp sl)) fun _ _ => True

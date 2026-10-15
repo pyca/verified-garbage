@@ -238,6 +238,7 @@ GROUPS = {
             "cavp::rsa",
             "rsa_guidance::rsa_pkcs1_appendix_b",
             "rsa_guidance::rsa_pkcs1_bad_keys",
+            "rsa_guidance::rsa_crt_truncated_factors",
             "rsa_guidance::rsa_pkcs1_lengths",
             "wycheproof::rsa",
             "wycheproof::rsa_keygen",

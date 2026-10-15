@@ -27,6 +27,10 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
+/-- `expLoop5S Sq.mm M.mm S.code sp sl` is constant time. -/
+def ExpCT5S (M : Mont) (Sq : MontS) (S : CrtSel 32) (sp sl : Nat) : Prop :=
+  RelCT isa (Two (EPre5 sp sl)) (seqs (Crt.expLoop5S Sq.mm M.mm S.code sp sl)) fun _ _ => True
+
 /-- `expLoop5 M.mm S.code sp sl` is constant time. -/
 def ExpCT5 (M : Mont) (S : CrtSel 32) (sp sl : Nat) : Prop :=
   RelCT isa (Two (EPre5 sp sl)) (seqs (Crt.expLoop5 M.mm S.code sp sl)) fun _ _ => True
@@ -119,23 +123,24 @@ theorem fill_ct : RelCT isa (Two fun (q : BPub × Nat) s => q.2 < K5 q.1 ∧ Win
       (fun _ _ ⟨⟨_, _, _, _, _, _, _, _, _, _, _, _, _, hI⟩, _⟩ => hI.ctx.good.rdi) (by taint_decide)
 
 /-- Within a window, before the selection: the workspace, its table,
-`Y < X` and the bits in `sV`. -/
-def WQ5 (p : XPub) (t : State) : Prop :=
+`Y < bd X R` (`Y < X` but for lazy squarings) and the bits in `sV`. -/
+def WQ5 (p : XPub) (t : State) (bd : Nat → Nat → Nat := fun m _ => m) : Prop :=
   ∃ (minv : BitVec 64) (X Xc b r : Nat), CExpCtx t (off p.B p.o) p.wx minv X Xc 32 ∧
-    CTab t.mem (off p.B p.o) p.wx X False 0 32 ∧ wv t.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < X ∧
+    CTab t.mem (off p.B p.o) p.wx X False 0 32 ∧
+    wv t.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < bd X (2 ^ (64 * p.wx)) ∧
     word t.mem (off p.B p.o) (8 * Crt.sPow) = BitVec.ofNat 64 (2 ^ (56 - b)) ∧
     word t.mem (off p.B p.o) (8 * Crt.sV) = BitVec.ofNat 64 (r * 2 ^ (64 - b)) ∧
     word t.mem (off p.B p.o) (8 * Crt.sBit) = BitVec.ofNat 64 b ∧ 5 ≤ b ∧ b ≤ 12 ∧ r < 2 ^ b ∧
     2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧ Nat.Coprime (2 ^ (64 * p.wx)) X
 
-theorem WQ5.goodW {p : XPub} {t : State} (h : WQ5 p t) : GoodW p.ws t :=
+theorem WQ5.goodW {p : XPub} {t : State} {bd : Nat → Nat → Nat} (h : WQ5 p t bd) : GoodW p.ws t :=
   let ⟨minv, _, _, _, _, hc, _⟩ := h; ⟨minv, hc.good, Nat.le_refl _⟩
 
-/-- A squaring keeps `WQ5`. -/
-theorem winSq5_q (M : Mont) {p : XPub} {s : State} (h : WQ5 p s) :
-    WP isa (M.mm Public.aY Public.aY Public.aY) s (WQ5 p) := by
+/-- A squaring by `Sq` keeps `WQ5` with its bound. -/
+theorem winSq5_q (Sq : MontS) {p : XPub} {s : State} (h : WQ5 p s Sq.bd) :
+    WP isa Sq.mm s (WQ5 p · Sq.bd) := by
   obtain ⟨minv, X, Xc, b, r, hc, htab, hY, hp, hv, hbit, hb5, hb12, hr, hw, hw', hR⟩ := h
-  refine WP.mono (crtSq_ok M (Q := False) (x := 0) (E := 0) hc hw hw' hR hY False.elim)
+  refine WP.mono (crtSqS_ok Sq (Q := False) (x := 0) (E := 0) hc hw hw' hR hY False.elim)
     fun t ⟨hc', hY', _, hh, hf, _⟩ => ⟨minv, X, Xc, b, r, hc', htab.of_win hf hc.scrT.nowrap, hY', ?_, ?_, ?_,
       hb5, hb12, hr, hw, hw', hR⟩
   · rw [hh _ (by decide)]; exact hp
@@ -153,7 +158,8 @@ def WT5 (p : XPub) (t : State) : Prop :=
     wv t.mem (off p.B p.o) (slot p.wx Crt.aT) p.wx < X ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30
 
 /-- `takeWin` gives the selection's hypotheses. -/
-theorem takeWin_sel {p : XPub} {s : State} (h : WQ5 p s) : WP isa (.block Crt.takeWin) s (WS5 p) := by
+theorem takeWin_sel {p : XPub} {s : State} {bd : Nat → Nat → Nat} (h : WQ5 p s bd) :
+    WP isa (.block Crt.takeWin) s (WS5 p) := by
   obtain ⟨minv, X, Xc, b, r, hc, htab, hY, hp, hv, hbit, hb5, hb12, hr, hw, hw', hR⟩ := h
   have hn := hc.scrT.nowrap
   have hnT : slot p.wx 8 + tabBytes p.wx 32 ≤ 2 ^ 64 := by omega_arith
@@ -181,11 +187,11 @@ theorem takeWin_sel {p : XPub} {s : State} (h : WQ5 p s) : WP isa (.block Crt.ta
 
 /-- A window leaks the same in runs with the same workspace and the same
 exponent's pointer and length, whatever the exponent. -/
-theorem crtWin5_ct (M : Mont) (S : CrtSel 32) (hS : S.CT) :
-    RelCT isa (Two fun (q : BPub × Nat) s => q.2 < K5 q.1 ∧ Win5I q.1 q.2 s) (seqs (Crt.expWin5 M.mm S.code))
+theorem crtWin5_ct (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) :
+    RelCT isa (Two fun (q : BPub × Nat) s => q.2 < K5 q.1 ∧ Win5I q.1 q.2 s) (seqs (Crt.expWin5 Sq.mm M.mm S.code))
       fun _ _ => True := by
   rw [expWin5_eq]
-  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_post (Ψ := fun q s => WQ5 q.1.x s) fill_ct
+  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_post (Ψ := fun q s => WQ5 q.1.x s Sq.bd) fill_ct
     fun q s ⟨hj, t₀, minv, X, Xc, eb, ⟨i, b, hib, hb, hiL, hI⟩, hw, hw', hR, hL, _, he, hout⟩ => ?_) ?_)
   · have hK := K5_mul q.1
     rw [← hL] at hK
@@ -193,12 +199,13 @@ theorem crtWin5_ct (M : Mont) (S : CrtSel 32) (hS : S.CT) :
       rcases Nat.lt_or_ge i eb.length with h | h
       · exact h
       · omega) hI) fun t ⟨i', b', hb5, hb12, _, _, hI'⟩ => ?_
-    exact ⟨minv, X, Xc, b', _, hI'.ctx, hI'.tab, hI'.ylt, hI'.pow, hI'.v, hI'.bit, hb5, hb12,
-      Nat.mod_lt _ (Nat.two_pow_pos b'), hw, hw', hR⟩
-  have sq : RelCT isa (Two fun (q : BPub × Nat) s => WQ5 q.1.x s) (M.mm Public.aY Public.aY Public.aY)
-      (Two fun (q : BPub × Nat) s => WQ5 q.1.x s) :=
-    two_post (two_map (fun q : BPub × Nat => q.1.x.ws) (fun _ _ h => h.goodW) (M.ct (by unfold MmUse; decide)))
-      fun _ _ h => winSq5_q M h
+    have hXR : X ≤ 2 ^ (64 * q.1.x.wx) := by rw [← hI'.ctx.n]; exact Nat.le_of_lt (wv_lt _ _ _ _)
+    exact ⟨minv, X, Xc, b', _, hI'.ctx, hI'.tab, Nat.lt_of_lt_of_le hI'.ylt (Sq.le hXR), hI'.pow, hI'.v, hI'.bit,
+      hb5, hb12, Nat.mod_lt _ (Nat.two_pow_pos b'), hw, hw', hR⟩
+  have sq : RelCT isa (Two fun (q : BPub × Nat) s => WQ5 q.1.x s Sq.bd) Sq.mm
+      (Two fun (q : BPub × Nat) s => WQ5 q.1.x s Sq.bd) :=
+    two_post (two_map (fun q : BPub × Nat => q.1.x.ws) (fun _ _ h => h.goodW) Sq.ct)
+      fun _ _ h => winSq5_q Sq h
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two fun (q : BPub × Nat) s => WS5 q.1.x s) ?_ ?_)
   · simp only [seqs]
     exact RelCT.seq sq (RelCT.seq sq (RelCT.seq sq (RelCT.seq sq (RelCT.seq sq
@@ -293,13 +300,13 @@ theorem crtExpHead5_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Ta
 
 /-- `expLoop5 M.mm S.code sp sl` is constant time, given that the taint
 analysis checks its start after the link's load. -/
-theorem crtExpLoop5_ct (M : Mont) (S : CrtSel 32) (hS : S.CT) {sp sl : Nat}
+theorem crtExpLoop5S_ct (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) {sp sl : Nat}
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rdi, .rax]) (.block [.mov .rdx (.mem (Crt.ws .rax sp)),
       .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
       .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) hc).isSome = true) :
-    ExpCT5 M S sp sl := by
-  unfold ExpCT5
+    ExpCT5S M Sq S sp sl := by
+  unfold ExpCT5S
   rw [expLoop5_eq]
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_post
     (Ψ := fun a s => 0 < K5 a ∧ Win5I a 0 s) (crtExpHead5_ct M hT) fun a s h => ?_) ?_)
@@ -323,18 +330,33 @@ theorem crtExpLoop5_ct (M : Mont) (S : CrtSel 32) (hS : S.CT) {sp sl : Nat}
       False.elim hsp hsl hep hel hL2) fun t h0 => ⟨by omega, s, minv, X, _, eb, h0, hw2, by omega_arith,
         VG.Proof.Bignum.coprime_pow2 hodd _, hL, by omega_arith, he, hout⟩
   simp only [seqs]
-  refine (two_loop (Φ := Win5I) (Ψ := fun _ _ => True) K5 (crtWin5_ct M S hS) ?_).mono
+  refine (two_loop (Φ := Win5I) (Ψ := fun _ _ => True) K5 (crtWin5_ct M Sq S hS) ?_).mono
     (fun _ _ h => h) fun _ _ _ => trivial
   rintro a j s hj ⟨t₀, minv, X, Xc, eb, ⟨i, b, hib, hb, hiL, hI⟩, hw, hw', hR, hL, hL', he, hout⟩
   have hK := K5_mul a
-  exact WP.mono (crtWin5_ok M S hw hw' hR rfl hL' he.rd he.val hout (K := K5 a) (by rw [hK, hL]) hj hib hb hiL hI)
+  exact WP.mono (crtWin5_ok M Sq S hw hw' hR rfl hL' he.rd he.val hout (K := K5 a) (by rw [hK, hL]) hj hib hb hiL hI)
     fun s' ⟨hz, i', b', hib', hb', hiL', hI'⟩ => ⟨eval_ne_count hj hz,
       fun _ => ⟨t₀, minv, X, Xc, eb, ⟨i', b', hib', hb', hiL', hI'⟩, hw, hw', hR, hL, hL', he, hout⟩, fun _ => trivial⟩
+
+/-- `crtExpLoop5S_ct` with the squarings by `M`: `expLoop5 M.mm`. -/
+theorem crtExpLoop5_ct (M : Mont) (S : CrtSel 32) (hS : S.CT) {sp sl : Nat}
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.rdi, .rax]) (.block [.mov .rdx (.mem (Crt.ws .rax sp)),
+      .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
+      .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) hc).isSome = true) :
+    ExpCT5 M S sp sl :=
+  crtExpLoop5S_ct M M.toS S hS hT
 
 theorem expLoop5_ct_P (M : Mont) (S : CrtSel 32) (hS : S.CT) : ExpCT5 M S sDp sPlen :=
   crtExpLoop5_ct M S hS (by taint_decide)
 
 theorem expLoop5_ct_Q (M : Mont) (S : CrtSel 32) (hS : S.CT) : ExpCT5 M S sDq sQlen :=
   crtExpLoop5_ct M S hS (by taint_decide)
+
+theorem expLoop5S_ct_P (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) : ExpCT5S M Sq S sDp sPlen :=
+  crtExpLoop5S_ct M Sq S hS (by taint_decide)
+
+theorem expLoop5S_ct_Q (M : Mont) (Sq : MontS) (S : CrtSel 32) (hS : S.CT) : ExpCT5S M Sq S sDq sQlen :=
+  crtExpLoop5S_ct M Sq S hS (by taint_decide)
 
 end VG.Proof.Bignum.X86_64

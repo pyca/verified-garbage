@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.SetupDispatch
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Tail
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.TailD
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Load
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
 public import VerifiedGarbage.Proof.Gcm.Powers
@@ -440,19 +440,26 @@ theorem encRest_ok {s₀ s : State} (hp : SPre s₀) {P : Nat → Block} (hR : R
     WP isa (encRest (nr s₀)) s (EPost s₀) :=
   WP.mono (encRestI_ok (ix := false) hp (SrcOk.inplace hp) hR.toC (hR.src hp) hP) fun _ h => h.1
 
-/-- Decryption, after a setup that leaves what `setup` does. -/
-theorem decRest_ok {s₀ s : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Block}
-    (hR : Ready s₀ P s) (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
-    WP isa (decRest (nr s₀)) s (DPost s₀) := by
+/-- Decryption, after a setup that leaves what `setup` does: of any number
+of blocks from 16 on with `rem`, and of a multiple of 16 without it. -/
+theorem decRest_ok {s₀ s : State} (hp : SPre s₀) {rem : Bool} (hm : rem = false → nb s₀ % 16 = 0)
+    {P : Nat → Block} (hR : Ready s₀ P s) (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
+    WP isa (decRest (nr s₀) rem) s (DPost s₀) := by
   rw [decRest]
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
   refine WP.seq (WP.mono (firstDec_ok hp hR) fun t hI => ?_)
   have hl := loopRun_ok hp (SrcOk.inplace hp) hlaw hI hp.nb16
   refine WP.seq (WP.mono hl fun u ⟨g, hg, hu⟩ => ?_)
-  have h8 := hu.multiple
-  have ht := hu.tail_le
-  simp only [threshold, tailSize, ite_true] at hg ht
-  exact WP.seq (WP.block_nil (finalDec_ok hp hlaw hu (by omega)))
+  simp only [threshold, ite_true] at hg
+  refine WP.seq (WP.block_nil (WP.seq (WP.mono (finalDec_ok hp hlaw hu hg) fun w hw => ?_)))
+  cases rem with
+  | false =>
+    have h8 := hu.multiple
+    have ht := hu.tail_le
+    have h16 := hm rfl
+    simp only [tailSize, ite_true] at ht
+    exact WP.seq (WP.block_nil (tailNone_ok hp hw (by omega)))
+  | true => exact tailD_ok hp (tailLaw hP) hw
 
 /-- The setup leaves the end of the key schedule, which `dispatch` compares. -/
 theorem ready_rounds {s₀ s : State} {P : Nat → Block} (h : Ready s₀ P s) :
@@ -485,7 +492,7 @@ theorem stitch_ok : StitchOk enc dec := by
     refine dispatch_ok hp (setup_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
     all_goals
       intro s t ⟨P, hR, hP⟩ ht hn
-      have hw := decRest_ok hp hm (hR.rax ht) hP
+      have hw := decRest_ok hp (rem := false) (fun _ => hm) (hR.rax ht) hP
       rw [hn] at hw
       exact hw
 
@@ -623,18 +630,18 @@ theorem encR_ok {s₀ : State} (hp : SPrePrepared s₀) : WP isa encR s₀ (EPos
     rw [hn] at hw
     exact hw
 
-/-- Decryption with a prepared key context. -/
-theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) (hm : nb s₀ % 16 = 0) :
+/-- Decryption with a prepared key context, of any number of blocks from 16 on. -/
+theorem decR_ok {s₀ : State} (hp : SPrePrepared s₀) :
     WP isa decR s₀ (DPost s₀) := by
   refine dispatch_ok hp.base (setupR_ok hp) (fun s ⟨P, hR, _⟩ => ready_rounds hR) ?_ ?_ ?_
   all_goals
     intro s t ⟨P, hR, hP⟩ ht hn
-    have hw := decRest_ok hp.base hm (hR.rax ht) hP
+    have hw := decRest_ok hp.base (rem := true) (fun h => Bool.noConfusion h) (hR.rax ht) hP
     rw [hn] at hw
     exact hw
 
-theorem stitchR_ok : StitchOkM CtxMode.prepared encR decR 1 :=
-  ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp hm => decR_ok hp.toPrepared hm⟩
+theorem stitchR_ok : StitchOkM CtxMode.prepared encR decR 1 1 :=
+  ⟨fun _ hp _ => encR_ok hp.toPrepared, fun _ hp _ => decR_ok hp.toPrepared⟩
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 

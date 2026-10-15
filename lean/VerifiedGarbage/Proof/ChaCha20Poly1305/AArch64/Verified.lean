@@ -88,9 +88,9 @@ theorem openCode_eq (c : Impl.ChaCha20.AArch64.XorCallee) (stitched : Bool) :
 theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre true s₀) :
     WP isa (sealMainCode v.callee v.stitched) s₀ (MainS s₀) := by
   unfold sealMainCode
-  refine WP.seq (WP.mono (Short.check_ok s₀) fun s₁ ⟨ag, x9⟩ => ?_)
+  refine WP.seq (WP.mono (Short.check_ok v.callee.sve s₀) fun s₁ ⟨ag, x9⟩ => ?_)
   have hp₁ := Short.APre.agree ag hp
-  refine WP.ite (decide (64 ≤ L s₀ ∧ L s₀ ≤ 256)) (Short.check_eval x9) (fun h => ?_) (fun _ => ?_)
+  refine WP.ite (decide (Short.lo v.callee.sve ≤ L s₀ ∧ L s₀ ≤ 256)) (Short.check_eval x9) (fun h => ?_) (fun _ => ?_)
   · have hL₁ : L s₁ ≤ 256 := by
       rw [L, ag.gpr .x5 (by decide) (by decide)]; exact (of_decide_eq_true h).2
     exact WP.mono (Short.sealMain_ok hp₁ hL₁) fun _ h => Short.MainS.agree ag h
@@ -101,9 +101,9 @@ theorem sealMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
 theorem openMainCode_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
     WP isa (openMainCode v.callee v.stitched) s₀ (MainO s₀) := by
   unfold openMainCode
-  refine WP.seq (WP.mono (Short.check_ok s₀) fun s₁ ⟨ag, x9⟩ => ?_)
+  refine WP.seq (WP.mono (Short.check_ok v.callee.sve s₀) fun s₁ ⟨ag, x9⟩ => ?_)
   have hp₁ := Short.APre.agree ag hp
-  refine WP.ite (decide (64 ≤ L s₀ ∧ L s₀ ≤ 256)) (Short.check_eval x9) (fun h => ?_) (fun _ => ?_)
+  refine WP.ite (decide (Short.lo v.callee.sve ≤ L s₀ ∧ L s₀ ≤ 256)) (Short.check_eval x9) (fun h => ?_) (fun _ => ?_)
   · have hL₁ : L s₁ ≤ 256 := by
       rw [L, ag.gpr .x5 (by decide) (by decide)]; exact (of_decide_eq_true h).2
     exact WP.mono (Short.openMain_ok hp₁ hL₁) fun _ h => Short.MainO.agree ag h

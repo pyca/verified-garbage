@@ -43,20 +43,29 @@ def opCode (M : Mod) : FOp → List Instr
 /-- A straight-line sequence of field operations. -/
 def fprog (M : Mod) (ops : List FOp) : List Instr := ops.flatMap (opCode M)
 
-/-- `[o] = [a] [b] R⁻¹ mod m` by a call of the function `f`, whose code is
-`Mont.mulFn n m`, on the working space at `x0`: `x30`, which the call
-changes, is kept in `v29`, which the function does not write, and the
-offsets are the arguments (below `2¹⁶`). -/
-def mulCall (f : String) (n m o a b : Nat) : Prog isa :=
+/-- A call of the function `f`, whose code is `code`, on the working space
+at `x0` and the offsets `o`, `a` and `b`: `x30`, which the call changes, is
+kept in `v29`, which the function does not write, and the offsets are the
+arguments (below `2¹⁶`). -/
+def callProg (f : String) (code : Prog isa) (o a b : Nat) : Prog isa :=
   .seq (.block [.vop (.ins .d2 .v29 0 .x30), .movz .x .x1 (BitVec.ofNat 16 o) 0,
       .movz .x .x2 (BitVec.ofNat 16 a) 0, .movz .x .x3 (BitVec.ofNat 16 b) 0]) <|
-    .seq (.call f (Mont.mulFn n m)) (.block [.umov .x .x30 .v29 0])
+    .seq (.call f code) (.block [.umov .x .x30 .v29 0])
+
+/-- `[o] = [a] [b] R⁻¹ mod m` by a call of the function `f`, whose code is
+`Mont.mulFn n m`. -/
+def mulCall (f : String) (n m o a b : Nat) : Prog isa := callProg f (Mont.mulFn n m) o a b
+
+/-- `[o] = [a]^2 R⁻¹ mod p` by a call of `vg_p384_sqr_mod_p`. -/
+def sqrCall (o a : Nat) : Prog isa :=
+  callProg (Spec.Weierstrass.Mont.p384p.fn "sqr") Mont.sqrFn384 o a a
 
 /-- The code of a field operation: a call for a product modulo a modulus
-whose products are functions (`Mont.callOf`), else `opCode`. -/
+whose products are functions (`Mont.callOf`), a square modulo P-384's `p`
+calling its square, else `opCode`. -/
 def opProg (M : Mod) (op : FOp) : Prog isa :=
   match op, Mont.callOf M with
-  | .mul o a b, some (f, m) => mulCall f M.n m o a b
+  | .mul o a b, some (f, m) => if a == b && sparseOk M.n m then sqrCall o a else mulCall f M.n m o a b
   | op, _ => .block (opCode M op)
 
 /-- Programs one after the other. -/

@@ -104,7 +104,7 @@ theorem save_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base si
   refine WP.mono (setSl_ok hc hs₅ (o := RZ) (x := 0) (by decide) (Nat.two_pow_pos _))
     fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   have o : ∀ {s s' : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem s'.mem → i < 45 → i ≠ j →
-      j ≠ 54 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => sv_out O h7 hn hi hij hj
+      j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => sv_out O h7 hn hi hij hj
   refine ⟨hs₅.of_keepRegs k₆ (by decide),
     (k₁.trans (k₂.trans (k₃.trans (k₄.trans (k₅.trans k₆))))).mono (by intro r hr; simpa using hr), ?_,
     ?_, ?_, ?_, ?_, ?_, e₆⟩
@@ -154,7 +154,7 @@ theorem fromD_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
   refine WP.mono (copySl_ok hc hs₃ (o := RZ) (a := DZ) (by decide) (by decide) (by decide))
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have o : ∀ {s s' : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem s'.mem → i < 45 → i ≠ j →
-      j ≠ 54 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => sv_out O h7 hn hi hij hj
+      j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => sv_out O h7 hn hi hij hj
   have U₄ : Unch base (slW c [RX, RY, RZ]) s.mem s₄.mem :=
     (O₂.unch.trans (O₃.unch.trans O₄.unch)).mono fun w hw => by
       simp only [List.mem_append, List.mem_singleton] at hw
@@ -185,7 +185,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx; exact sl_mod8 c i, MP'_A c,
     fun f m' h => (hc.call_p f m' h).2⟩
   have o : ∀ {s s' : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem s'.mem → i < 45 → i ≠ j →
-      j ≠ 54 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => sv_out O h7 hn hi hij hj
+      j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => sv_out O h7 hn hi hij hj
   -- The end: `R = D`, for `D` the sum.
   have tail : ∀ {s₁ : State} {W : List Nat}, Scr s₁ base size → s₁.rd = s.rd → s₁.wr = s.wr →
       Unch base (slW c W) s.mem s₁.mem → (∀ i ∈ W, i ∈ sumW) → ModOkA c.MP' size c.C.p s₁.mem base →
@@ -266,7 +266,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
       fun s₂ ⟨cx₂, cy₂, cz₂, k₂, U₂⟩ => ?_
     have hs₂ := hs₁.of_keepRegs k₂ (by decide)
     have U₂' : Unch base (slW c [TX, TY, TZ]) s₁.mem s₂.mem := U₂
-    have v₂ : ∀ {i}, i < 45 → i ∉ [TX, TY, TZ] → i ≠ EM → i ≠ 54 ∧ i ≠ 82 → sv c base s₂ i = sv c base s i :=
+    have v₂ : ∀ {i}, i < 45 → i ∉ [TX, TY, TZ] → i ≠ EM → i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 → sv c base s₂ i = sv c base s i :=
       fun hi hl he ha => (sv_unch U₂' h7 hn hi (apart_slW hl ha)).trans (o O₁ hi he (by decide))
     have em₂ : sv c base s₂ EM = sv c base s BM :=
       (sv_unch U₂' h7 hn (i := EM) (by decide) (apart_slW (by decide))).trans e₁

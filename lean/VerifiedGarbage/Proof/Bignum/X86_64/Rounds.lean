@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Reduce
-public import VerifiedGarbage.Proof.Bignum.Math
+public import VerifiedGarbage.Proof.Bignum.LazyMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -13,7 +13,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 `zeroAccLoop` clears the accumulator (`w + 2` words at `r8`); `round`
 (for `i = r13`) adds `a_i B` and reduces (`round_ok`); `rounds` runs it for
-`i = 0, …, w - 1`, keeping the accumulator `T < 2m` and
+`i = 0, …, w - 1`, keeping the accumulator `T < m + B` (so `T < 2m` if
+`B < m`) and
 `T 2^(64 i) ≡ (a mod 2^(64 i)) B (mod m)` (`rounds_ok`).
 -/
 
@@ -97,20 +98,21 @@ theorem round_ok {s : State} {B : Addr} {Z w eA eb eN ea i : Nat} (hs : Scr s B 
     (sb : eA + 8 * (w + 2) ≤ eb ∨ eb + 8 * w ≤ eA) (sN : eA + 8 * (w + 2) ≤ eN ∨ eN + 8 * w ≤ eA)
     (sa : eA + 8 * (w + 2) ≤ ea ∨ ea + 8 * w ≤ eA)
     (hinv : ((word s.mem B eN).toNat * (s.gpr .r15).toNat + 1) % 2 ^ 64 = 0)
-    (hT : wv s.mem B eA (w + 2) < 2 * wv s.mem B eN w) (hB : wv s.mem B eb w < wv s.mem B eN w) :
+    (hT : wv s.mem B eA (w + 2) < wv s.mem B eN w + wv s.mem B eb w) :
     WP isa round s fun t =>
       (∃ u < 2 ^ 64, 2 ^ 64 * wv t.mem B eA (w + 2) = wv s.mem B eA (w + 2) +
         (word s.mem B (ea + 8 * i)).toNat * wv s.mem B eb w + u * wv s.mem B eN w) ∧
       Outside B eA (8 * (w + 2)) s.mem t.mem ∧ Keep [.rax, .rcx, .rdx, .rbp, .r14] s t := by
   have hn := hs.nowrap
   have hNw : wv s.mem B eN w < 2 ^ (64 * w) := wv_lt _ _ _ _
+  have hBw : wv s.mem B eb w < 2 ^ (64 * w) := wv_lt _ _ _ _
   unfold round
   refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = word s.mem B (ea + 8 * i) ∧ t.mem = s.mem)
     (by xrun [State.ea, ix, addr0 h11 h13, hs.ld (show ea + 8 * i + 8 ≤ Z by omega)]) rfl)
     fun s₁ ⟨⟨hcx, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   have hai := (word s.mem B (ea + 8 * i)).isLt
-  have hbB : (word s.mem B (ea + 8 * i)).toNat * wv s.mem B eb w ≤ (2 ^ 64 - 1) * wv s.mem B eN w :=
+  have hbB : (word s.mem B (ea + 8 * i)).toNat * wv s.mem B eb w ≤ (2 ^ 64 - 1) * 2 ^ (64 * w) :=
     Nat.mul_le_mul (by omega) (by omega)
   refine WP.seq (WP.mono (mulAddRow_ok hs₁ ((k₁.gpr (by decide)).trans h8) ((k₁.gpr (by decide)).trans h9)
     ((k₁.gpr (by decide)).trans h12) (by omega) hw' hA hb sb (by
@@ -142,14 +144,14 @@ theorem round_ok {s : State} {B : Addr} {Z w eA eb eN ea i : Nat} (hs : Scr s B 
 
 /-! ## The rounds -/
 
-/-- After rounds `0, …, i - 1` from `s₀`: the accumulator `T < 2m` and
+/-- After rounds `0, …, i - 1` from `s₀`: the accumulator `T < m + B` and
 `2^(64 i) T ≡ (a mod 2^(64 i)) B (mod m)`. -/
 structure RoundsInv (s₀ : State) (B : Addr) (Z w eA eb eN ea : Nat) (i : Nat) (t : State) : Prop where
   scr : Scr t B Z
   keep : Keep [.rax, .rcx, .rdx, .rbp, .r14, .r13] s₀ t
   r13 : t.gpr .r13 = BitVec.ofNat 64 i
   out : Outside B eA (8 * (w + 2)) s₀.mem t.mem
-  lt : wv t.mem B eA (w + 2) < 2 * wv s₀.mem B eN w
+  lt : wv t.mem B eA (w + 2) < wv s₀.mem B eN w + wv s₀.mem B eb w
   cong : 2 ^ (64 * i) * wv t.mem B eA (w + 2) % wv s₀.mem B eN w =
     wv s₀.mem B ea i * wv s₀.mem B eb w % wv s₀.mem B eN w
 
@@ -161,10 +163,9 @@ theorem rounds_ok {s : State} {B : Addr} {Z w eA eb eN ea : Nat} (hs : Scr s B Z
     (sb : eA + 8 * (w + 2) ≤ eb ∨ eb + 8 * w ≤ eA) (sN : eA + 8 * (w + 2) ≤ eN ∨ eN + 8 * w ≤ eA)
     (sa : eA + 8 * (w + 2) ≤ ea ∨ ea + 8 * w ≤ eA)
     (hinv : ((word s.mem B eN).toNat * (s.gpr .r15).toNat + 1) % 2 ^ 64 = 0)
-    (h0 : wv s.mem B eA (w + 2) = 0) (hB : wv s.mem B eb w < wv s.mem B eN w) :
+    (h0 : wv s.mem B eA (w + 2) = 0) (hN0 : 0 < wv s.mem B eN w) :
     WP isa rounds s (RoundsInv s B Z w eA eb eN ea w) := by
   have hn := hs.nowrap
-  have hN0 : 0 < wv s.mem B eN w := by omega
   unfold rounds
   refine WP.seq (WP.mono (WP.keep [.r13] (Q := fun t => t.gpr .r13 = BitVec.ofNat 64 0 ∧ t.mem = s.mem)
     (by xrun) rfl) fun s₁ ⟨⟨h13, hm₁⟩, k₁⟩ => ?_)
@@ -179,7 +180,7 @@ theorem rounds_ok {s : State} {B : Addr} {Z w eA eb eN ea : Nat} (hs : Scr s B Z
     ((hk.gpr (by decide)).trans h10) ((hk.gpr (by decide)).trans h11) ((hk.gpr (by decide)).trans h12)
     hI.r13 hi hw hw' hA hb hN ha sb sN sa (by
       rw [hI.out.word (by omega) (by omega), (hk.gpr (by decide) : t.gpr .r15 = s.gpr .r15)]; exact hinv)
-    (by rw [frame hN (by omega)]; exact hI.lt) (by rw [frame hb (by omega), frame hN (by omega)]; exact hB))
+    (by rw [frame hN (by omega), frame hb (by omega)]; exact hI.lt))
     fun t₁ ⟨⟨u, hu, hv⟩, ho, k₁'⟩ => ?_)
   have t₁13 : t₁.gpr .r13 = BitVec.ofNat 64 i := (k₁'.gpr (by decide)).trans hI.r13
   have t₁12 : t₁.gpr .r12 = BitVec.ofNat 64 w := (k₁'.gpr (by decide)).trans ((hk.gpr (by decide)).trans h12)
@@ -191,7 +192,7 @@ theorem rounds_ok {s : State} {B : Addr} {Z w eA eb eN ea : Nat} (hs : Scr s B Z
   refine ⟨hI.scr.congr (k'.2.2.trans k₁'.2.2), ((hk.trans k₁').trans k').mono (by decide), h13',
     by rw [hm']; exact hI.out.trans ho, ?_, ?_⟩
   · rw [hm']
-    exact VG.Proof.Bignum.round_lt hv hI.lt (word s.mem B (ea + 8 * i)).isLt hB hu
+    exact VG.Proof.Bignum.round_lt_add hv hI.lt (word s.mem B (ea + 8 * i)).isLt hu
   · rw [hm', show 64 * (i + 1) = 64 * i + 64 by omega, Nat.pow_add,
       VG.Proof.Bignum.round_step hv hI.cong]
     congr 1

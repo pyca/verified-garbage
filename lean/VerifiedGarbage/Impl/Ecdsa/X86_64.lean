@@ -227,6 +227,20 @@ def MN' : Mod :=
   { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n), adx := c.adx,
     fnN := fnNOk c.n c.C.n }
 
+
+/-- Shared products use the high temporary slot after the order inversion has
+consumed its exponent table: for eight words, slot 62 overlaps that table.
+Scalar multiplication and inversion retain their original scratch layout. -/
+def sharedMod (M : Mod) (m : Nat) : Mod :=
+  { M with tmp := if c.n = 8 then c.sl 62 else M.tmp, fnMod := some m }
+
+def MPS : Mod := c.sharedMod c.MP' c.C.p
+def MNS : Mod := c.sharedMod c.MN' c.C.n
+
+/-- Field products after inversion: share eight-word multiplication. -/
+def mulPS (o a b : Nat) : Prog isa :=
+  if c.n = 8 then opProg c.MPS (.mul o a b) else .block (Mont.X86_64.mul c.MPS o a b)
+
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
 def rcbSlots : RcbSlots := ⟨c.sl AP, c.sl B3P, c.sl T0, c.sl T1, c.sl T2, c.sl T3, c.sl T4, c.sl T5⟩
@@ -465,13 +479,13 @@ def finish : List Instr :=
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=
-  progs [opProg c.MN' (.mul (c.sl RM) (c.sl RR) (c.sl R2N)),
-    opProg c.MN' (.mul (c.sl DM) (c.sl D) (c.sl R2N)),
-    opProg c.MN' (.mul (c.sl EM) (c.sl E) (c.sl R2N)),
-    opProg c.MN' (.mul (c.sl TT) (c.sl RM) (c.sl DM)),
+  progs [opProg c.MNS (.mul (c.sl RM) (c.sl RR) (c.sl R2N)),
+    opProg c.MNS (.mul (c.sl DM) (c.sl D) (c.sl R2N)),
+    opProg c.MNS (.mul (c.sl EM) (c.sl E) (c.sl R2N)),
+    opProg c.MNS (.mul (c.sl TT) (c.sl RM) (c.sl DM)),
     .block (Mont.X86_64.add c.MN' (c.sl TT) (c.sl TT) (c.sl EM)),
-    opProg c.MN' (.mul (c.sl SM) (c.sl ACC) (c.sl TT)),
-    opProg c.MN' (.mul (c.sl SS) (c.sl SM) (c.sl ONE)),
+    opProg c.MNS (.mul (c.sl SM) (c.sl ACC) (c.sl TT)),
+    opProg c.MNS (.mul (c.sl SS) (c.sl SM) (c.sl ONE)),
     .block (c.checkNonzero (c.sl SS) ++ c.finish)]
 
 /-- `vg_<curve>_mul_base`'s body: the table of `k`'s bits, then `[k]G` into

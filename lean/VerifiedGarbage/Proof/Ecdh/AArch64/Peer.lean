@@ -183,7 +183,7 @@ theorem peer_eq (c : Cfg) : Impl.Ecdh.AArch64.Cfg.peer c =
 /-- A slot apart from the one an operation wrote keeps its number. -/
 theorem sv_out {base : Addr} {m m' : Mem} {j : Nat} (h : Outside base (c.sl j) (8 * c.n) m m')
     (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45) (hij : i ≠ j)
-    (hjA : j ≠ 54 ∧ j ≠ 82 := by first | decide | exact ⟨by omega_arith, by omega_arith⟩) :
+    (hjA : j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 := by first | decide | exact ⟨by omega_arith, by omega_arith⟩) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n := by
   have := sl_le c h7 hi
   exact h.wordsVal (sl_apart c hij (.inr hjA)) (by omega_arith)

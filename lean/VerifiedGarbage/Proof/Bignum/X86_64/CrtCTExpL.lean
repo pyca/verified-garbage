@@ -29,4 +29,11 @@ theorem CrtExpL.w4_ct (M : Mont) : (CrtExpL.w4 M).CT :=
 theorem CrtExpL.w5_ct (M : Mont) : (CrtExpL.w5 M).CT :=
   ⟨expLoop5_ct_P M CrtSel.avx tabSelV_ct, expLoop5_ct_Q M CrtSel.avx tabSelV_ct⟩
 
+theorem CrtExpL.w4S_ct (M : Mont) (Sq : MontS) : (CrtExpL.w4S M Sq).CT :=
+  ⟨two_map (fun a => a) (fun _ _ h => h.1) (expLoopS_ct_P M Sq CrtSel.sse CrtSel.sse_ct),
+    two_map (fun a => a) (fun _ _ h => h.1) (expLoopS_ct_Q M Sq CrtSel.sse CrtSel.sse_ct)⟩
+
+theorem CrtExpL.w5S_ct (M : Mont) (Sq : MontS) : (CrtExpL.w5S M Sq).CT :=
+  ⟨expLoop5S_ct_P M Sq CrtSel.avx tabSelV_ct, expLoop5S_ct_Q M Sq CrtSel.avx tabSelV_ct⟩
+
 end VG.Proof.Bignum.X86_64

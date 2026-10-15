@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
 public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
 public import VerifiedGarbage.Proof.Bignum.AArch64.WindowCallCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.WindowHelper
+public import VerifiedGarbage.Proof.Bignum.AArch64.WindowSharedInterface
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVerified
 import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
@@ -18,7 +18,7 @@ import VerifiedGarbage.Spec.Rsa.MontSquare
 namespace VG.Proof.Bignum.AArch64.WindowFive
 open VG VG.AArch64
 
-def body : Window := Window.inline Mont.productEight WindowVector.selector
+def body : Window := WindowShared.window
 
 theorem body_keeps_link : ∀ i ∈ instrs body.code, vdstOf i ≠ some .v7 := by
   have hb : body.code.allInstrs (fun i => vdstOf i != some .v7) = true := by decide +kernel

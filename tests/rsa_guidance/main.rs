@@ -243,3 +243,39 @@ fn rsa_pkcs1_bad_keys() {
         Err(verified_garbage::rsa::Error::InvalidPrivateKey)
     );
 }
+
+/// Truncations of the Appendix B key exercise compact CRT workspaces when
+/// either factor dominates the width, and when the modulus dominates both.
+#[test]
+fn rsa_crt_truncated_factors() {
+    let text = TEXT.split_once("\nB.1.1.  Private key\n").unwrap().1;
+    let lines: Vec<&str> = text.lines().map(str::trim).collect();
+    let der = pem(&lines);
+    let v = components(&der);
+    for len in [1, 7, 8, 9, 15, 16, 17, 63, 64, 65] {
+        for (p, q) in [
+            (&v[4][..len], v[5]),
+            (v[4], &v[5][..len]),
+            (&v[4][..len], &v[5][..len]),
+        ] {
+            // Shorten the CRT values too, so the public length checks pass
+            // and validation reaches the arithmetic check that p*q != n.
+            let key =
+                PrivateKey::from_crt(v[1], v[2], v[3], p, q, &v[6][..1], &v[7][..1], &v[8][..1]);
+            assert_eq!(
+                key.map(|_| ()),
+                Err(verified_garbage::rsa::Error::InvalidPrivateKey)
+            );
+        }
+    }
+    // A malformed factor larger than half the modulus must enlarge the
+    // workspace, regardless of which factor it is.
+    let oversized = &v[1][..v[1].len() - 1];
+    for (p, q) in [(oversized, v[5]), (v[4], oversized)] {
+        let key = PrivateKey::from_crt(v[1], v[2], v[3], p, q, v[6], v[7], v[8]);
+        assert_eq!(
+            key.map(|_| ()),
+            Err(verified_garbage::rsa::Error::InvalidPrivateKey)
+        );
+    }
+}

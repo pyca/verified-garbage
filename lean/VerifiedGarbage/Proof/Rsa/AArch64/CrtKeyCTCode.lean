@@ -169,7 +169,7 @@ theorem ckcCode_ct : RelCT isa (Two CkcRel) CheckCrtKey.code fun _ _ => True := 
   refine two_ite (fun p s₁ s₂ ⟨_, _, _, _, _, _, z₁, _⟩ ⟨_, _, _, _, _, _, z₂, _⟩ => by
     rw [eval_zero, eval_zero, z₁, z₂]) (ckcFail_ct.mono (fun _ _ h => h) fun _ _ h => h) ?_
   exact ckcMain_ct.mono (fun _ _ h => two_mono (fun p t ⟨⟨s, t₁, hs, h, hm, k, _⟩, _⟩ =>
-    ⟨ckcIn s, hs.2, ckcPre_of (ckcCtx_of hs.1) h hm k⟩) h) fun _ _ h => h
+    ⟨ckcIn s, hs.2, ckcPre_of (ckcCtx_of hs.1) h hm k, rfl⟩) h) fun _ _ h => h
 
 /-- `vg_rsa_check_crt_key` is constant time but for `n` and `e`. -/
 theorem ckcCode_constantTime : ConstantTime isa ckcA.pre ckcA.pub CheckCrtKey.code := by
@@ -184,7 +184,7 @@ theorem ckcCode_constantTime : ConstantTime isa ckcA.pre ckcA.pub CheckCrtKey.co
   have w₁ := h₁.2.2.1
   have w₂ := h₂.2.2.1
   simp only [CkIn.pub, ckcIn, CkP.mk.injEq]
-  refine ⟨a 6 (by decide), by rw [a 7 (by decide)], by rw [r .x1 (by decide)], by rw [r .x3 (by decide)],
+  refine ⟨a 6 (by decide), by rw [a 7 (by decide)], by rw [r .x1 (by decide)], by rw [r .x1 (by decide), r .x5 (by decide), r .x7 (by decide)], by rw [r .x3 (by decide)],
     by rw [r .x5 (by decide)], by rw [r .x5 (by decide)], by rw [r .x7 (by decide)], r .x0 (by decide),
     r .x2 (by decide), r .x4 (by decide), r .x4 (by decide), r .x6 (by decide), a 0 (by decide), a 2 (by decide),
     a 4 (by decide), hn.symm, he.symm, ?_⟩

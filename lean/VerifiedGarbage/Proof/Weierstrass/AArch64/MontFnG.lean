@@ -37,7 +37,7 @@ words, `m` below `2^(64 n)`, `minv m` its inverse's negation, what the
 inline product needs of it, the general form's reduction, and code that
 writes no vector register. -/
 structure ModOkG (n m : Nat) : Prop where
-  hn : n = 6 ∨ n = 9
+  hn : n = 6 ∨ n = 8 ∨ n = 9
   m_lt : m < 2 ^ (64 * n)
   inv : (m * minv m + 1) % 2 ^ 64 = 0
   red : (mod n m).ok m = true
@@ -50,16 +50,19 @@ def ModOk (n m : Nat) : Prop := ModOkS n m ∨ ModOkG n m
 theorem ModOk.n9 {n m : Nat} (h : ModOk n m) : n ≤ 9 := by
   rcases h with h | h
   · exact h.n9
-  · rcases h.hn with h | h <;> omega
+  · rcases h.hn with h | h | h <;> omega
 
 theorem ModOk.n4 {n m : Nat} (h : ModOk n m) : 4 ≤ n := by
   rcases h with h | h
   · exact h.n4
-  · rcases h.hn with h | h <;> omega
+  · rcases h.hn with h | h | h <;> omega
 
-theorem ModOk.hn' {n m : Nat} (h : ModOk n m) : n = 4 ∨ n = 6 ∨ n = 9 := by
+theorem ModOk.hn' {n m : Nat} (h : ModOk n m) : n = 4 ∨ n = 6 ∨ n = 8 ∨ n = 9 := by
   rcases h with h | h
-  · exact h.hn'
+  · rcases h.hn' with h | h | h
+    · exact .inl h
+    · exact .inr (.inl h)
+    · exact .inr (.inr (.inr h))
   · exact .inr h.hn
 
 theorem ModOk.inv {n m : Nat} (h : ModOk n m) : (m * minv m + 1) % 2 ^ 64 = 0 := by
@@ -79,9 +82,9 @@ structure RegsG (n : Nat) : Prop where
   pres : ∀ r ∈ preserved, r ∉ savedG n → r ∉ clob n ∧ r ∉ [raG, rbG, roG, .x1, .x2, .x3]
   keep0 : ∀ r ∈ [Reg.x0, .x19, .x20], r ∉ clob n ∧ r ∉ savedG n ∧ r ∉ [raG, rbG, roG, .x1, .x2, .x3]
 
-theorem regsG_ok : ∀ n, (n = 6 ∨ n = 9) → RegsG n := by
+theorem regsG_ok : ∀ n, (n = 6 ∨ n = 8 ∨ n = 9) → RegsG n := by
   intro n hn
-  rcases hn with rfl | rfl <;> exact ⟨by decide, ⟨by decide, by decide⟩, ⟨by decide, by decide⟩,
+  rcases hn with rfl | rfl | rfl <;> exact ⟨by decide, ⟨by decide, by decide⟩, ⟨by decide, by decide⟩,
     by decide, by decide, by decide, by decide, by decide, by decide⟩
 
 theorem ptrsG_ok (s : State) :
@@ -115,8 +118,8 @@ theorem mulFnG_ok {n m W : Nat} (hM : ModOkG n m) {s : State} (hp : Pre n W s)
       s'.gpr .x0 = s.gpr .x0 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       ∀ d, (∀ i < 10, d ≠ (slot i).1) → s'.v d = s.v d := by
   have R := regsG_ok n hM.hn
-  have hn9 : n ≤ 9 := by rcases hM.hn with h | h <;> omega
-  have hn4 : 4 ≤ n := by rcases hM.hn with h | h <;> omega
+  have hn9 : n ≤ 9 := by rcases hM.hn with h | h | h <;> omega
+  have hn4 : 4 ≤ n := by rcases hM.hn with h | h | h <;> omega
   have hown := own_eq hn9
   have hfit := hp.fit
   have hw := hp.w

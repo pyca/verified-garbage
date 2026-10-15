@@ -37,20 +37,38 @@ def normalize : List Instr :=
     .store (hdr kLen) .rax, .store (hdr kUsed) .rax, .mov32 .rax (.imm 0)] ++
     zeroWords.map (fun j => .store (hdr j) .rax)
 
-/-- Restore every staged word and preserved register; then return the flag. -/
-def finish : List Instr :=
-  (bookkeeping.zipIdx.map fun (e, j) =>
-    ([.mov .r11 (.mem { base := .rsp, disp := (8 * (8 - j) : Nat) }), .store (hdr e.1) .r11] : List Instr)).flatten ++
+/-- A header word and its byte offset in the two-frame layout. -/
+def restoreSlots : List (Nat × Nat) :=
+  [(kOut, 64), (kLen, 56), (kUsedP, 48), (kRand, 40),
+    (kRandLen, 32), (kChecks, 24), (kI, 16), (kUsed, 8)]
+
+def restorePair (j d : Nat) : List Instr :=
+  [.mov .r11 (.mem { base := .rsp, disp := (d : Int) }), .store (hdr j) .r11]
+
+def restorePairs (ps : List (Nat × Nat)) : List Instr :=
+  ps.flatMap fun p => restorePair p.1 p.2
+
+/-- Restore the unused RSA words from the outer frame. -/
+def restoreBookkeeping : List Instr := restorePairs restoreSlots
+
+/-- Restore five callee-saved registers and return the passing flag.
+The sixth, `rbp`, is restored by the inner frame's pop. -/
+def restoreAndReturn : List Instr :=
   [.mov .rbx (.mem { base := .rsp, disp := 104 }), .mov .r12 (.mem { base := .rsp, disp := 96 }),
     .mov .r13 (.mem { base := .rsp, disp := 88 }), .mov .r14 (.mem { base := .rsp, disp := 80 }),
     .mov .r15 (.mem { base := .rsp, disp := 72 }), .mov .rax (.mem (hdr kFlag)), .alu .and .rax (.imm 1)]
+
+def finish : List Instr := restoreBookkeeping ++ restoreAndReturn
+
+def body (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (.block normalize) (.seq (seqs (preparedRound mul)) (.block finish))
 
 /-- A 112-byte frame, plus the return address used by Montgomery calls. -/
 def round (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block stage)
     (.frame (.push saved)
       (.frame (.push [.rbp])
-        (.seq (.block normalize) (.seq (seqs (preparedRound mul)) (.block finish)))
+        (body mul)
         (.pop .rbp 1))
       (.pop .r11 13))
 

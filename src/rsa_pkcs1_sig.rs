@@ -184,9 +184,11 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
 
 /// RSASSA-PKCS1-V1_5-VERIFY (RFC 8017 §8.2.2): whether `signature` is a
 /// valid signature of the hash value `digest` of the hash function `hash`.
+///
+/// Reuses the public key's verification buffer, wiping it after each call.
 pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> bool {
     let k = key.n.len();
-    let mut scratch = vec![0u64; scratch_words(k)];
+    let mut scratch = key.verify_scratch.take(scratch_words(k));
     let pre = key.pre(&mut scratch);
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_verify_precomputed,
@@ -216,7 +218,7 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
             pre.len(),
         )
     };
-    // The working space holds only public values.
+    // ScratchLease wipes the working space before returning it to the key.
     r == 1
 }
 

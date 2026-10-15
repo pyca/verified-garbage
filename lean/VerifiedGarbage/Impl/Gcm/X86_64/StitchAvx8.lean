@@ -23,7 +23,10 @@ blocks ahead of hashing; decryption hashes ciphertext before overwriting it.
 Encryption takes any number of blocks from 16 on: once the pipeline stops,
 with `t = n mod 8` blocks left, it encrypts the eight counters it prepared
 next, stores their keystream at 832–959, and adds it to the `t` blocks one at
-a time, hashing each with the power `H'ᵗ⁻ⁱ` (`StitchZH.remBody`).
+a time, hashing each with the power `H'ᵗ⁻ⁱ` (`StitchZH.remBody`). Decryption with a
+prepared key context (`decR`) likewise takes any number of blocks from 16
+on: after its last batch, it hashes each of the `t` blocks left before
+decrypting it (`StitchZH.remBodyD`).
 
 The entry and exit follow Stitch's internal interface; scratch fits its
 1024-byte region, and the input data register r8 is restored on exit.
@@ -279,10 +282,23 @@ def decBody8 (nr : Nat) : Prog isa :=
   .seq (.block []) (.seq (batch nr 8 0 (q8 nr))
     (.block [.alu .add .rdx (.imm 128), .alu .sub .r9 (.imm 8), .alu .cmp .r9 (.imm 16)]))
 
-/-- Decryption, after the setup. -/
-def decRest (nr : Nat) : Prog isa :=
+/-- The blocks after the last batch of decryption, if any: `r9 - 8` of them,
+at `rdx + 128`, as `tailT` takes them once `r9` and `rdx` are moved to where
+encryption leaves them (`16` more blocks and `256` bytes before them), each
+hashed before it is decrypted (`StitchZH.remBodyD`). -/
+def tailD (nr : Nat) : Prog isa :=
+  .seq (.block [.alu .add .r9 (.imm 8), .alu .sub .rdx (.imm 128), .alu .cmp .r9 (.imm 16)])
+    (.ite .e (.block [])
+      (.seq (ksTail nr)
+        (.seq (.block (tailSetup ++ StitchAvx.zero))
+          (.seq (.loop (.block (StitchZH.remBodyD .rdx ++ StitchZH.remNext)) .ne)
+            (.block (tailEnd nr))))))
+
+/-- Decryption, after the setup: of any number of blocks from 16 on with
+`rem`, and of a multiple of 16 without it. -/
+def decRest (nr : Nat) (rem : Bool) : Prog isa :=
   .seq (.block []) (.seq (.loop (decBody8 nr) .ae) (.seq (.block [])
-    (.seq (batch nr 8 0 (q8 nr)) (.block finish))))
+    (.seq (batch nr 8 0 (q8 nr)) (.seq (if rem then tailD nr else .block []) (.block finish)))))
 
 /-- The setup `su`, which does not depend on the key size, then the complete
 loop for the key size, chosen once from the public AES round count `nr`: the
@@ -294,9 +310,9 @@ def dispatch (su : List Instr) (a b c : Prog isa) : Prog isa :=
 def enc : Prog isa := dispatch setup (encRest 10) (encRest 12) (encRest 14)
 /-- Encryption with a prepared key context: the powers loaded from it. -/
 def encR : Prog isa := dispatch setupR (encRest 10) (encRest 12) (encRest 14)
-def dec : Prog isa := dispatch setup (decRest 10) (decRest 12) (decRest 14)
+def dec : Prog isa := dispatch setup (decRest 10 false) (decRest 12 false) (decRest 14 false)
 /-- Decryption with a prepared key context: the powers loaded from it. -/
-def decR : Prog isa := dispatch setupR (decRest 10) (decRest 12) (decRest 14)
+def decR : Prog isa := dispatch setupR (decRest 10 true) (decRest 12 true) (decRest 14 true)
 
 /-! ## Out of place
 

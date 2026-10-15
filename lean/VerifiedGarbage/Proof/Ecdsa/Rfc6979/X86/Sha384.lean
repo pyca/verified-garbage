@@ -33,7 +33,7 @@ theorem implies :
     (rfcWide Spec.Ecdsa.Rfc6979.P256Sha384.inst 272 Impl.Ecdsa.X86.p256Comb.combConsts).Implies
       (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract
         (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272) :=
-  comb_implies _ rfl (by decide)
+  comb_implies _ rfl (by decide) rfl
 
 /-- SHA-384, for P-256's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : RfcHash where

@@ -21,9 +21,9 @@ are public, through `Sig.contract`; the contents of every buffer are secret.
 The number of candidates tried may affect timing (`leak`): an implementation
 may stop at the first suitable one. It is 0 for an invalid key and almost
 always 1 otherwise; the key and the hash may not affect timing in any other
-way. `scratch` is 8 KiB of working space, whose contents on return are
-unspecified. `stack` is the number of bytes below the stack pointer that an
-implementation's calls and frames use. The function may overwrite its
+way. `scratch` is `8 * scratchWords` bytes of working space (8 KiB by
+default), whose contents on return are unspecified. `stack` is the number
+of bytes below the stack pointer that an implementation's calls and frames use. The function may overwrite its
 arguments passed in memory, where the calling convention allows it
 (`writeArgs`).
 -/
@@ -47,17 +47,20 @@ structure Instance where
   hashTitle : String
   /-- The most candidates `sign` tries. -/
   tries : Nat
+  /-- Working space in `u64`s. A wrapper may need space beyond the ECDSA
+  core's 8 KiB to retain values across calls of that core. -/
+  scratchWords : Nat := Ecdsa.scratchWords
 
 namespace Instance
 
 variable (I : Instance)
 
 /-- `(out: *mut [u8; 2 len], d: *const [u8; len], digest: *const [u8; hashLen],
-scratch: *mut [u64; 1024]) -> u32`. -/
+scratch: *mut [u64; I.scratchWords]) -> u32`. -/
 def signSig : Sig where
   params := [("out", .array true .u8 (2 * I.ecdsa.curve.len)),
     ("d", .array false .u8 I.ecdsa.curve.len), ("digest", .array false .u8 I.hashLen),
-    ("scratch", .array true .u64 scratchWords)]
+    ("scratch", .array true .u64 I.scratchWords)]
   ret := some .u32
 
 /-- RFC 6979's signature of `digest` with the private key `d`, and the

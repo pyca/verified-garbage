@@ -40,6 +40,7 @@ open VG.Impl.Sha256.X86_64.Stream (Callee params224 finalize224)
 theorem shape224 : ShapeD (P := params224) md 28 where
   le := by decide
   len := shape.len
+  lenV := shape.lenV
   out s hin hout hd := by
     refine (out32_ok (n := 7) true (by decide) (inRegions_prefix hin (by decide)) hout
       (hd.sub_left (Region.sub_prefix (by decide)))).mono fun s' ⟨g, rd, wr, m⟩ => ⟨g, rd, wr, ?_⟩

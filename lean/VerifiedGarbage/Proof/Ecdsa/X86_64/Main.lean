@@ -199,7 +199,7 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s�
   rw [scalar_eq]
   refine scalarIn_ok hc hS.scr (modN_of hc F.mn) F.r2n
     fun s₁₀ hs₁₀ hM₁₀ g₁₀ _ wr₁₀ U₁₀ _ dm em trm tdm tem => ?_
-  have F₁₀ := F.unch h7 hn (fixedOk_slW (l := [RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₀
+  have F₁₀ := F.unch h7 hn (fixedOk_slW (l := [62, RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₀
   refine scalarOut_ok hc hs₁₀ hM₁₀ F₁₀.one dm em
     fun s₁₁ hs₁₁ g₁₁ _ wr₁₁ U₁₁ ss_lt ss => ?_
   have hF := sl_le c h7 (i := FLAG) (by decide)
@@ -207,7 +207,7 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s�
   refine WP.mono (checkNonzero_ok c hs₁₁ h0 (sl_le c h7 (i := SS) (by decide)) (by omega))
     fun s₁₂ ⟨f₁₂, k₁₂, O₁₂⟩ => ?_
   have hs₁₂ := hs₁₁.of_keepRegs k₁₂ (by decide)
-  have F₁₂ := (F₁₀.unch h7 hn (fixedOk_slW (l := [RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₁).unch
+  have F₁₂ := (F₁₀.unch h7 hn (fixedOk_slW (l := [62, RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₁).unch
     h7 hn fixedOk_flag O₁₂.unch
   have acc₁₀ : sv c base s₁₀ ACC = sv c base s ACC := sv_unch U₁₀ h7 hn (by decide) (apart_slW (by decide))
   have rr₁₂ : sv c base s₁₂ RR = sv c base s RR :=

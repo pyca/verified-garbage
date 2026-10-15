@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Mont.AArch64
 public import VerifiedGarbage.Impl.Mont.AArch64.P384Mul
+public import VerifiedGarbage.Impl.Mont.AArch64.P384Sqr
 public import VerifiedGarbage.Spec.Weierstrass.Mont
 public import VerifiedGarbage.TCB.AArch64.Target
 
@@ -262,6 +263,16 @@ def mulFn384 : Prog isa :=
       sparseLoadCode ++ csubM 6 P384Mul.lowRegs .x21 [.x23, .x24, .x25, .x26, .x26, .x26] ++
       storesR (roF 6) P384Mul.lowRegs 0 ++ restoreCode 6))
 
+/-- `vg_p384_sqr_mod_p`: `mulFn384` with `[a]` loaded through `ra` in
+place of `[b]`, and the square (`P384Sqr.sq`, adapted from s2n-bignum's
+`bignum_montsqr_p384_alt`) in place of the product. -/
+def sqrFn384 : Prog isa :=
+  .seq (.block zextCode)
+    (.block (saveCode 6 ++ [.add .x (roF 6) .x0 .x1, .add .x (raF 6) .x0 .x2, .add .x .x3 .x0 .x3] ++
+      loadsR (raF 6) P384Sqr.aRegs 0 ++ zero7 :: P384Sqr.sq ++ P384Mul.reds ++ P384Mul.addHigh ++
+      sparseLoadCode ++ csubM 6 P384Mul.lowRegs .x21 [.x23, .x24, .x25, .x26, .x26, .x26] ++
+      storesR (roF 6) P384Mul.lowRegs 0 ++ restoreCode 6))
+
 /-- `vg_<curve>_mul_mod_<p|n>`. -/
 def mulFn (n m : Nat) : Prog isa :=
   if sparseOk n m then mulFn384 else if general n m then mulFnG n m else mulFnS n m
@@ -270,7 +281,7 @@ open Spec.Weierstrass.Mont in
 /-- The moduli whose products are functions on AArch64: P-384's and P-521's
 `p` and `n`, whose inline products are long. A product of four words is
 short enough inline that calls do not pay. -/
-def fns : List Modulus := [p384p, p521p, p384n, p521n]
+def fns : List Modulus := [p384p, p521p, p384n, p521n, brainpoolp512r1p, brainpoolp512r1n]
 
 /-- The function computing the products of the modulus `M` (its name and its
 modulus), if any: one of `fns` of `M.n` words and `M.minv`, if `M`'s
