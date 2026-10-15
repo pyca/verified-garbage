@@ -235,6 +235,27 @@ theorem Outer.of_mem {t : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64} (h
     Outer t B Z w :=
   ⟨hc.scr, h0, hc.nw, hc.narr, hroom, hw2, hw⟩
 
+/-- Changes inside the child workspace preserve its memory layout even while
+the caller uses the outer workspace's base register. -/
+theorem SubMem.of_child {s t : State} {B : Addr} {Z o w wx : Nat} {mi : BitVec 64}
+    {rs : List (Nat × Nat)} (h : SubMem s B Z o w wx mi) (hf : Frm (off B o) rs s.mem t.mem)
+    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8) (hwr : t.wr = s.wr) :
+    SubMem t B Z o w wx mi := by
+  have hn := h.scr.nowrap
+  have hi := h.hi
+  have hL : o + slot wx 8 ≤ 2 ^ 64 := by omega
+  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hh : ∀ i < 17, word t.mem (off B o) (8 * i) = word s.mem (off B o) (8 * i) := fun i hi' =>
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega)) (by omega)
+  have hb : ∀ i < 32, word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi' =>
+    hf.word_below (fun r hr' => (hr r hr').2) hL (by omega)
+      (by have := hdr_lt_slot w 8 hi'; have := h.lo; omega)
+  exact ⟨h.scr.congr hwr,
+    ⟨(hh _ (by decide)).trans h.hdr.hw, (hh _ (by decide)).trans h.hdr.hminv,
+      fun j hj => (hh _ (by unfold sArr; omega)).trans (h.hdr.harr j hj)⟩,
+    (hh _ (by decide)).trans h.link, (hb _ (by decide)).trans h.nw,
+    fun j hj => (hb _ (by unfold sArr; omega)).trans (h.narr j hj), h.lo, h.hi⟩
+
 /-- `-m⁻¹` of the same odd modulus is the same. -/
 theorem xvals_minv {s t : State} {B : Addr} {o w : Nat} {mi₁ mi₂ : BitVec 64} {X : Nat} (hw : 1 ≤ w)
     (hodd : X % 2 = 1) (h₁ : XVals s B o w mi₁ X) (h₂ : XVals t B o w mi₂ X) : mi₁ = mi₂ := by
