@@ -40,10 +40,11 @@ def arg (j : Nat) : Nat := frameBytes + 56 + 4 * j
 def preWords (r : Reg) : List Instr :=
   [.ldrSp r oK, .dp .add r r (.imm 7), .mov r (.shifted r .lsr 3), .mov r (.shifted r .lsl 1)]
 
-def saveSlots : List Instr :=
-  [.addSp .r12 0, .str .r0 .r12 oOut, .str .r2 .r12 oN, .str .r3 .r12 oK,
-   .ldrSp .r0 (arg 0), .str .r0 .r12 oE, .ldrSp .r0 (arg 1), .str .r0 .r12 oEl,
-   .ldrSp .r0 (arg 2), .str .r0 .r12 oIn]
+def savedArguments : List (Reg × Nat) := [(.r0, oOut), (.r2, oN), (.r3, oK)]
+def saveRegs : List Instr := .addSp .r12 0 :: savedArguments.map (fun p => .str p.1 .r12 p.2)
+def saveIncomingSlot (j : Nat) : List Instr := [.ldrSp .r0 (arg j), .str .r0 .r12 (oE + 4 * j)]
+def saveIncoming : List Instr := (List.range 3).flatMap saveIncomingSlot
+def saveSlots : List Instr := saveRegs ++ saveIncoming
 
 def copyArg (j : Nat) : List Instr := [.ldrSp .r0 (arg (j + 2)), .str .r0 .r12 (4 * j)]
 def copyArgs : List Instr := (List.range 14).flatMap copyArg
@@ -51,17 +52,19 @@ def copyArgs : List Instr := (List.range 14).flatMap copyArg
 def crtRegs : List Instr := [.addSp .r0 oM, .mov .r1 (.reg .r3)]
 def crtArgs : List Instr := saveSlots ++ copyArgs ++ crtRegs
 
-def pcArgs : List Instr :=
-  [.addSp .r12 0, .str .r0 .r12 oR1, .ldrSp .r0 (arg 14), .str .r0 .r12 0,
-   .ldrSp .r0 (arg 15), .str .r0 .r12 4, .addSp .r0 oPre] ++ preWords .r1 ++
-  [.ldrSp .r2 oN, .ldrSp .r3 oK]
+def saveResult (d : Nat) : List Instr := [.addSp .r12 0, .str .r0 .r12 d]
+def copyIncoming (j d : Nat) : List Instr := [.ldrSp .r0 (arg j), .str .r0 .r12 d]
+def preAddress (r : Reg) : List Instr := [.addSp r 0, .dp .add r r (.imm (BitVec.ofNat 32 oPre))]
+def pcPrefix : List Instr := saveResult oR1 ++ copyIncoming 14 0 ++ copyIncoming 15 4 ++ preAddress .r0
+def pcSuffix : List Instr := [.ldrSp .r2 oN, .ldrSp .r3 oK]
+def pcArgs : List Instr := pcPrefix ++ preWords .r1 ++ pcSuffix
 
-def pdArgs : List Instr :=
-  [.addSp .r12 0, .str .r0 .r12 oR3,
-   .ldrSp .r0 oE, .str .r0 .r12 0, .ldrSp .r0 oEl, .str .r0 .r12 4,
-   .addSp .r0 oM, .str .r0 .r12 8, .ldrSp .r1 oK, .str .r1 .r12 12,
-   .ldrSp .r0 (arg 14), .str .r0 .r12 16, .ldrSp .r0 (arg 15), .str .r0 .r12 20,
-   .ldrSp .r0 oOut, .addSp .r2 oPre] ++ preWords .r3
+def copyRetained (i d : Nat) : List Instr := [.ldrSp .r0 (64 + 4 * i), .str .r0 .r12 d]
+def storeTemporary : List Instr := [.addSp .r0 oM, .str .r0 .r12 8]
+def pdPrefix : List Instr := saveResult oR3 ++ copyRetained 3 0 ++ copyRetained 4 4 ++
+  storeTemporary ++ copyRetained 2 12 ++ copyIncoming 14 16 ++ copyIncoming 15 20
+def pdSuffix : List Instr := [.ldrSp .r0 oOut, .ldrSp .r1 oK] ++ preAddress .r2 ++ preWords .r3
+def pdArgs : List Instr := pdPrefix ++ pdSuffix
 
 /-- Keep the three success bits in r4; compare output against the original input. -/
 def cmpArgs : List Instr :=
@@ -88,8 +91,10 @@ def release : Prog isa := .loop (.block releaseStep) .ne
 def releaseTail : Prog isa := .seq (.block maskCore) (.seq (.block releaseArgs)
   (.seq release (.block [.mov .r0 (.reg .r4)])))
 def tail : Prog isa := .seq (.block cmpArgs) (.seq Bignum.Arm.compareBytes releaseTail)
+def check (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
+  .seq (.block pcArgs) (.seq (.call pcName pc) (.seq (.block pdArgs) (.seq (.call pdName pd) tail)))
 def body (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
-  seqs [.block crtArgs, .call crtName crt, .block pcArgs, .call pcName pc, .block pdArgs, .call pdName pd, tail]
+  .seq (.block crtArgs) (.seq (.call crtName crt) (check pcName pc pdName pd))
 def code (crtName : String) (crt : Prog isa) (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) : Prog isa :=
   .frame (.push [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr])
     (.seq (.frame (.alloc frameBytes) (body crtName crt pcName pc pdName pd) (.free frameBytes))
