@@ -207,6 +207,26 @@ theorem slot_zero4 {W : BitVec 32} {out : Nat} (hout : out = 0 ∨ out = 112) (m
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by omega_arith))
     (by decide)
 
+/-- `longMac`'s block before its final `mac` is constant time for both outputs. -/
+theorem lm8_taint {out : Nat} (hout : out = 0 ∨ out = 112) :
+    ∃ hc, (VG.X86.taint.check (τr [.ebp]) (.block (([.mov .eax (slot jO), .alu .add .eax (.reg .eax),
+      .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .mov .esi (slot slenO),
+      .alu .sub .esi (slot nbO), .alu .sub .esi (.reg .eax), .mov .ebx (.reg .ebp),
+      .alu .add .ebx (imm tailOff), .alu .add .ebx (.reg .eax)] : List Instr) ++ macArgs out)) hc).isSome = true := by
+  rcases hout with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+
+/-- `longMac`'s block before its last `mac` is constant time for both outputs. -/
+theorem lm5_taint {out : Nat} (hout : out = 0 ∨ out = 112) :
+    ∃ hc, (VG.X86.taint.check (τr [.ebp]) (.block ([.store (at_ .ebp jO) .esi, .mov .ebx (.reg .ebp),
+      .alu .add .ebx (imm tailOff)] ++ macArgs out)) hc).isSome = true := by
+  rcases hout with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+
+/-- `longMac`'s first block is constant time for both outputs. -/
+theorem lm1_taint {out : Nat} (hout : out = 0 ∨ out = 112) :
+    ∃ hc, (VG.X86.taint.check (τr [.ebp]) (.block (zero4 out ++
+      [.mov .esi (slot nbO), .shift .shr .esi 4, .mov .ebx (slot strO)] ++ macArgs out)) hc).isSome = true := by
+  rcases hout with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+
 theorem longMac_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) {P : BitVec 32} {k : Nat} (h16 : 16 ≤ k) (hk32 : k < 2 ^ 32) {out : Nat}
     (hout : out = 0 ∨ out = 112) {I : State → Prop}
@@ -218,63 +238,61 @@ theorem longMac_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Na
   have hkk : 16 * kOf k ≤ k := by omega_arith
   have hyo : StOk out := by rcases hout with rfl | rfl <;> decide
   have hout' := hout
-  rcases hout with rfl | rfl
-  all_goals
-    refine CT.block_seq [.ebp] (pin_ebp fun s h => (hI s h).1.env.ebp) (by taint_decide)
-      (fun s hs => lm1_ok (C := C) (R := R) (P := P) L (hI s hs).1.env (hI s hs).1.ctx (hI s hs).1.rounds
-        (hI s hs).1.str (hI s hs).2 (by omega_arith) hout') ?_
-    refine CT.seq (J := LMS C W SP R k)
-      (updCall_ct v L hR hyo (Q := P) (n := kOf k) (by omega_arith)
-        fun s₂ ⟨s, hs, _, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ =>
-          have B₂ : Buf W SP s₂ P (16 * kOf k) := ((hI s hs).1.buf.take hkk).of_eq rd wr
-          ⟨⟨bp, sp, (hI s hs).1.env.perm.of_eq rd wr⟩, srcBuf B₂, B₂.w.sub_right (Lay.wSub (by decide)),
-            ax, cx, dx, bx, si, di⟩)
-      (fun s₂ ⟨s, hs, m₂, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ =>
+  refine CT.block_seq [.ebp] (pin_ebp fun s h => (hI s h).1.env.ebp) (lm1_taint hout').choose_spec
+    (fun s hs => lm1_ok (C := C) (R := R) (P := P) L (hI s hs).1.env (hI s hs).1.ctx (hI s hs).1.rounds
+      (hI s hs).1.str (hI s hs).2 (by omega_arith) hout') ?_
+  refine CT.seq (J := LMS C W SP R k)
+    (updCall_ct v L hR hyo (Q := P) (n := kOf k) (by omega_arith)
+      fun s₂ ⟨s, hs, _, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ =>
         have B₂ : Buf W SP s₂ P (16 * kOf k) := ((hI s hs).1.buf.take hkk).of_eq rd wr
-        WP.mono (updCall_ok v L ⟨bp, sp, (hI s hs).1.env.perm.of_eq rd wr⟩ hR hyo (srcBuf B₂)
-          (B₂.w.sub_right (Lay.wSub (by decide))) (by omega_arith) ax cx dx bx si di)
-          fun s₃ ⟨E₃, _, _, _, f₃, _⟩ =>
-            have hs' : ∀ o, 176 ≤ o → o + 4 ≤ 256 → slotv s₃.mem W o = slotv s.mem W o := fun o h₁ h₂ => by
-              rw [slot_call L hout' f₃ h₁ h₂, m₂, slot_zero4 (W := W) hout' _ h₁ h₂]
-            ⟨E₃, by rw [hs' _ (by decide) (by decide)]; exact (hI s hs).1.ctx,
-              by rw [hs' _ (by decide) (by decide)]; exact (hI s hs).1.rounds,
-              by rw [hs' _ (by decide) (by decide)]; exact (hI s hs).1.slen,
-              by rw [hs' _ (by decide) (by decide)]; exact (hI s hs).2⟩) ?_
-    refine CT.block_seq [.ebp] (pin_ebp fun s h => h.env.ebp) (by taint_decide)
-      (fun s hs => cmp17s_ok L hs.env hs.slen hk32) ?_
-    refine CT.seq (J := fun s₅ => LMS C W SP R k s₅ ∧ s₅.gpr .esi = BitVec.ofNat 32 (jOf k))
-      (CT.ite (decide (k < 17)) (fun s ⟨_, _, _, cf, _⟩ => eval_b cf) (fun _ => CT.nil) (fun _ => jSet_ct))
-      (fun s₄ ⟨s, hs, si, cf, g, m, rd, wr⟩ => WP.mono (jBranch_wp si cf)
-        fun s₅ ⟨si₅, g₅, m₅, rd₅, wr₅⟩ =>
-          ⟨hs.of_slots ⟨by rw [g₅ _ (by decide), g _ (by decide) (by decide), hs.env.ebp],
-            by rw [g₅ _ (by decide), g _ (by decide) (by decide), hs.env.esp],
-            hs.env.perm.of_eq (rd₅.trans rd) (wr₅.trans wr)⟩ fun o _ _ => by rw [m₅, m], si₅⟩) ?_
-    refine CT.block_seq [.ebp] (pin_ebp fun s h => h.1.env.ebp) (by taint_decide)
-      (fun s hs => lm3_ok L hs.1.env hs.1.ctx hs.1.rounds hs.2) ?_
-    refine CT.seq (J := fun s₇ => LMS C W SP R k s₇ ∧ slotv s₇.mem W jO = BitVec.ofNat 32 (jOf k))
-      (updCall_ct v L hR hyo (Q := W + BitVec.ofNat 32 32) (n := jOf k) (by omega_arith)
-        fun s₆ ⟨s, hs, _, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ =>
-          have P₆ := hs.1.env.perm.of_eq rd wr
-          ⟨⟨bp, sp, P₆⟩, srcW L P₆ (t := 32) (k := 16 * jOf k) (by omega_arith),
-            by rw [L.aW (o := 32) (by decide)]; exact Lay.w_w (by omega_arith) (by omega_arith) (by omega_arith),
-            ax, cx, dx, bx, si, di⟩)
-      (fun s₆ ⟨s, hs, m₆, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ =>
+        ⟨⟨bp, sp, (hI s hs).1.env.perm.of_eq rd wr⟩, srcBuf B₂, B₂.w.sub_right (Lay.wSub (by rcases hout' with rfl | rfl <;> decide)),
+          ax, cx, dx, bx, si, di⟩)
+    (fun s₂ ⟨s, hs, m₂, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ =>
+      have B₂ : Buf W SP s₂ P (16 * kOf k) := ((hI s hs).1.buf.take hkk).of_eq rd wr
+      WP.mono (updCall_ok v L ⟨bp, sp, (hI s hs).1.env.perm.of_eq rd wr⟩ hR hyo (srcBuf B₂)
+        (B₂.w.sub_right (Lay.wSub (by rcases hout' with rfl | rfl <;> decide))) (by omega_arith) ax cx dx bx si di)
+        fun s₃ ⟨E₃, _, _, _, f₃, _⟩ =>
+          have hs' : ∀ o, 176 ≤ o → o + 4 ≤ 256 → slotv s₃.mem W o = slotv s.mem W o := fun o h₁ h₂ => by
+            rw [slot_call L hout' f₃ h₁ h₂, m₂, slot_zero4 (W := W) hout' _ h₁ h₂]
+          ⟨E₃, by rw [hs' _ (by decide) (by decide)]; exact (hI s hs).1.ctx,
+            by rw [hs' _ (by decide) (by decide)]; exact (hI s hs).1.rounds,
+            by rw [hs' _ (by decide) (by decide)]; exact (hI s hs).1.slen,
+            by rw [hs' _ (by decide) (by decide)]; exact (hI s hs).2⟩) ?_
+  refine CT.block_seq [.ebp] (pin_ebp fun s h => h.env.ebp) (by taint_decide)
+    (fun s hs => cmp17s_ok L hs.env hs.slen hk32) ?_
+  refine CT.seq (J := fun s₅ => LMS C W SP R k s₅ ∧ s₅.gpr .esi = BitVec.ofNat 32 (jOf k))
+    (CT.ite (decide (k < 17)) (fun s ⟨_, _, _, cf, _⟩ => eval_b cf) (fun _ => CT.nil) (fun _ => jSet_ct))
+    (fun s₄ ⟨s, hs, si, cf, g, m, rd, wr⟩ => WP.mono (jBranch_wp si cf)
+      fun s₅ ⟨si₅, g₅, m₅, rd₅, wr₅⟩ =>
+        ⟨hs.of_slots ⟨by rw [g₅ _ (by decide), g _ (by decide) (by decide), hs.env.ebp],
+          by rw [g₅ _ (by decide), g _ (by decide) (by decide), hs.env.esp],
+          hs.env.perm.of_eq (rd₅.trans rd) (wr₅.trans wr)⟩ fun o _ _ => by rw [m₅, m], si₅⟩) ?_
+  refine CT.block_seq [.ebp] (pin_ebp fun s h => h.1.env.ebp) (lm5_taint hout').choose_spec
+    (fun s hs => lm3_ok L hs.1.env hs.1.ctx hs.1.rounds hs.2) ?_
+  refine CT.seq (J := fun s₇ => LMS C W SP R k s₇ ∧ slotv s₇.mem W jO = BitVec.ofNat 32 (jOf k))
+    (updCall_ct v L hR hyo (Q := W + BitVec.ofNat 32 32) (n := jOf k) (by omega_arith)
+      fun s₆ ⟨s, hs, _, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ =>
         have P₆ := hs.1.env.perm.of_eq rd wr
-        WP.mono (updCall_ok v L ⟨bp, sp, P₆⟩ hR hyo (n := jOf k) (srcW L P₆ (t := 32) (k := 16 * jOf k) (by omega_arith))
-          (by rw [L.aW (o := 32) (by decide)]; exact Lay.w_w (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith)
-          ax cx dx bx si di)
-          fun s₇ ⟨E₇, _, _, _, f₇, _⟩ =>
-            ⟨hs.1.of_slots E₇ fun o h₁ h₂ => by
-              rw [slot_call L hout' f₇ h₁ (by simp only [jO] at h₂; omega_arith), m₆, slotv,
-                Proof.AesGcm.X86.readW_writeW_off _ _ _ (.inl h₂) (by simp only [jO] at h₂; omega_arith) (by decide)],
-              by rw [slot_call L hout' f₇ (by decide) (by decide), m₆]; exact Mem.readW_writeW_self32 _ _ _⟩) ?_
-    refine CT.block_seq [.ebp] (pin_ebp fun s h => h.1.env.ebp) (by taint_decide)
-      (fun s hs => lm5_ok L hs.1.env hs.1.ctx hs.1.rounds hs.2 hs.1.slen hs.1.nb hj1 (by omega_arith) hk32) ?_
-    exact finCall_ct v L hR hyo (P := W + BitVec.ofNat 32 (32 + 16 * jOf k)) (l := k - 16 * kOf k - 16 * jOf k)
-      (by omega_arith) fun s₈ ⟨s, hs, _, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ =>
-        have P₈ := hs.1.env.perm.of_eq rd wr
-        ⟨⟨bp, sp, P₈⟩, srcW L P₈ (t := 32 + 16 * jOf k) (k := k - 16 * kOf k - 16 * jOf k) (by omega_arith),
-          by rw [L.aW (by omega_arith)]; exact Lay.w_w (by omega_arith) (by omega_arith) (by omega_arith), ax, cx, dx, bx, si, di⟩
+        ⟨⟨bp, sp, P₆⟩, srcW L P₆ (t := 32) (k := 16 * jOf k) (by omega_arith),
+          by rw [L.aW (o := 32) (by decide)]; exact Lay.w_w (by omega_arith) (by omega_arith) (by omega_arith),
+          ax, cx, dx, bx, si, di⟩)
+    (fun s₆ ⟨s, hs, m₆, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ =>
+      have P₆ := hs.1.env.perm.of_eq rd wr
+      WP.mono (updCall_ok v L ⟨bp, sp, P₆⟩ hR hyo (n := jOf k) (srcW L P₆ (t := 32) (k := 16 * jOf k) (by omega_arith))
+        (by rw [L.aW (o := 32) (by decide)]; exact Lay.w_w (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith)
+        ax cx dx bx si di)
+        fun s₇ ⟨E₇, _, _, _, f₇, _⟩ =>
+          ⟨hs.1.of_slots E₇ fun o h₁ h₂ => by
+            rw [slot_call L hout' f₇ h₁ (by simp only [jO] at h₂; omega_arith), m₆, slotv,
+              Proof.AesGcm.X86.readW_writeW_off _ _ _ (.inl h₂) (by simp only [jO] at h₂; omega_arith) (by decide)],
+            by rw [slot_call L hout' f₇ (by decide) (by decide), m₆]; exact Mem.readW_writeW_self32 _ _ _⟩) ?_
+  refine CT.block_seq [.ebp] (pin_ebp fun s h => h.1.env.ebp) (lm8_taint hout').choose_spec
+    (fun s hs => lm5_ok L hs.1.env hs.1.ctx hs.1.rounds hs.2 hs.1.slen hs.1.nb hj1 (by omega_arith) hk32) ?_
+  exact finCall_ct v L hR hyo (P := W + BitVec.ofNat 32 (32 + 16 * jOf k)) (l := k - 16 * kOf k - 16 * jOf k)
+    (by omega_arith) fun s₈ ⟨s, hs, _, ax, cx, dx, bx, si, di, bp, sp, rd, wr⟩ =>
+      have P₈ := hs.1.env.perm.of_eq rd wr
+      ⟨⟨bp, sp, P₈⟩, srcW L P₈ (t := 32 + 16 * jOf k) (k := k - 16 * kOf k - 16 * jOf k) (by omega_arith),
+        by rw [L.aW (by omega_arith)]; exact Lay.w_w (by omega_arith) (by omega_arith) (by omega_arith), ax, cx, dx, bx, si, di⟩
 
 /-! ## The whole -/
 
