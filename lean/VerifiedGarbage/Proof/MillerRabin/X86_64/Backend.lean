@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -18,6 +19,7 @@ structure RoundImpl where
   mont : Mont
   mxSafe : (round mont.mm).allInstrs (fun i => !loadsMxcsr i) = true
   spSafe : (round mont.mm).all (fun i => !isa.writesSp i) = true
+  depth : (round mont.mm).x86_64Depth ≤ 120
   suffix : String
   features : List String
 
