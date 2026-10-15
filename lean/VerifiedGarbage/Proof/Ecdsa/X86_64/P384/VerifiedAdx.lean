@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -142,14 +143,10 @@ theorem sign_x86_adx (hL : Law Spec.P384.curve)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs) p384x_mulBase
-  have hsp : ∀ i ∈ instrs signP384Adx.inline, Taint.clobbers i .rsp = false := by
-    have h : signP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
+  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signP384Adx) (by lit_decide)
   have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl

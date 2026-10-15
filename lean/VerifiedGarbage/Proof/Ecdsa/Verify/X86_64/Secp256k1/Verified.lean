@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -56,14 +57,10 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre secp256k1 s := by
 theorem verify_x86 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifySecp256k1.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (secp256k1_ok hI) hL secp256k1_tbls (pre_of hs) secp256k1_mulBase.2
-  have hsp : ∀ i ∈ instrs verifySecp256k1.inline, Taint.clobbers i .rsp = false := by
-    have h : verifySecp256k1.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
+  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := verifySecp256k1) (by lit_decide)
   have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, hrs, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
