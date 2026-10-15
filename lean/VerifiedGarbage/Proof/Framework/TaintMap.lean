@@ -395,7 +395,7 @@ elab "taint_summary_map " id:ident " : " a:term:max τ:term:max c:term:max " via
     throwError "taint_summary_map: the taint, the code and the proofs must be closed"
   let fr ← synthInstance (mkApp2 (mkConst ``Taint.Frame) M A)
   let (S, _) ← summaries M A #[]
-  let (post, hint) ← hintChecked "taint_summary_map" M A fr S τ c'
+  let (post, hint) ← hintChecked "taint_summary_map" #[] M A fr S τ c'
   let hAty ← whnfR (← inferType hA)
   unless hAty.isAppOfArity ``Taint.MapInv 4 do throwError "taint_summary_map: {hA} is not a `Taint.MapInv`"
   let hτ ← mkFreshExprSyntheticOpaqueMVar (Expr.headBeta (mkApp hAty.appArg! τ))

@@ -80,7 +80,7 @@ elab "taint_decide_generic " x:ident " := " rep:term " using " hs:ident : tactic
     let r ← instantiateMVars r
     let fr ← synthInstance (mkApp2 (mkConst ``Taint.Frame) M A)
     -- The hint, for `x := rep`, in compiled code; the kernel checks it for any `x`.
-    let (_, hint) ← hintChecked "taint_decide_generic" M A fr (S.replaceFVar xv r) τ
+    let (_, hint) ← hintChecked "taint_decide_generic" #[] M A fr (S.replaceFVar xv r) τ
       (c.replaceFVar xv r)
     let isSome ← mkAppM ``Option.isSome
       #[mkAppN (mkConst ``Taint.checkSum) #[M, A, fr, S, τ, c, hint]]
