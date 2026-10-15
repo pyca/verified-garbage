@@ -122,8 +122,21 @@ theorem rd_wr_ne {B : BitVec 32} {N : Nat} (hfit : B.toNat + N ≤ 2 ^ 32) (m : 
 theorem bswap_bit (v : BitVec 32) {k j : Nat} (hk : k < 4) (hj : j < 8) :
     (bswap v).getLsbD (8 * k + j) = v.getLsbD (8 * (3 - k) + j) := by
   unfold bswap
+  obtain ⟨t0, t1, t2, t3⟩ := of_decide_eq_true (List.all_eq_true.mp (List.all_eq_true.mp
+    (show (List.range 4).all (fun k => (List.range 8).all fun j => decide (
+      (8 * k + j < 8 → 24 + (8 * k + j) = 8 * (3 - k) + j) ∧
+      (¬ 8 * k + j < 8 ∧ 8 * k + j - 8 < 8 → 16 + (8 * k + j - 8) = 8 * (3 - k) + j) ∧
+      (¬ 8 * k + j < 8 ∧ ¬ 8 * k + j - 8 < 8 ∧ 8 * k + j - 8 - 8 < 8 →
+        8 + (8 * k + j - 8 - 8) = 8 * (3 - k) + j) ∧
+      (¬ 8 * k + j < 8 ∧ ¬ 8 * k + j - 8 < 8 ∧ ¬ 8 * k + j - 8 - 8 < 8 →
+        8 * k + j - 8 - 8 - 8 < 8 ∧ 0 + (8 * k + j - 8 - 8 - 8) = 8 * (3 - k) + j))) = true by decide +kernel)
+    k (List.mem_range.mpr hk)) j (List.mem_range.mpr hj))
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  split_ifs <;> (first | omega | (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega))
+  split_ifs with h0 h1 h2
+  · rw [decide_eq_true h0, Bool.true_and, t0 h0]
+  · rw [decide_eq_true h1, Bool.true_and, t1 ⟨h0, h1⟩]
+  · rw [decide_eq_true h2, Bool.true_and, t2 ⟨h0, h1, h2⟩]
+  · rw [decide_eq_true (t3 ⟨h0, h1, h2⟩).1, Bool.true_and, (t3 ⟨h0, h1, h2⟩).2]
 
 /-- Bit `8 i + t` of a little-endian word is bit `t` of its byte `i`. -/
 theorem readW_bit (m : Mem) (a : Addr) {i t : Nat} (hi : i < 4) (ht : t < 8) :

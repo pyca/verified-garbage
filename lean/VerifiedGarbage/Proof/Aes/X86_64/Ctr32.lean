@@ -15,6 +15,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Gcm.Contract
 meta import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -669,7 +670,7 @@ theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32X86_64.pre s) :
     ∃ t s', Exec isa Impl.Aes.X86_64.ctr32 s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.ctr32X86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct hs
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32X86_64.pre Proof.Aes.ctr32X86_64.pub
     Impl.Aes.X86_64.ctr32 := by

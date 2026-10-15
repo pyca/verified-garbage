@@ -113,109 +113,11 @@ theorem o3_of (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} {Z w
   exact this
 
 /-- `pPhase_ok`'s hypotheses give `PO0`. -/
-theorem o0_of (W : Window) (M : Mont) (S : Selector) {p : PPhasePub} {s : State} (h : PPreWide p s) : PO0 W M S p s := by
-  obtain ⟨h,hwide⟩ := h
-  obtain ⟨⟨B, Z, w, minv, N, o, wx, ep, len⟩, oq, wq, qp⟩ := p
-  dsimp only [PPhasePub.pw, Wide] at hwide
-  dsimp only [PPre] at h
-  obtain ⟨mx, mq, X, C, eb, qib, c, h⟩ := h
-  sig_split h
-  rename_i hg hw hw28 hlo hhi hqhi hwx2 hwx hwq hwq' hslv hws hslq hwsq hN hodd hN1 hXm hX hX1 hXodd
-    hmask hc hep hel _ob1 hL1 hL2 he hqp hql hqs hqw
-  obtain rfl := _ob1
-  have hqi := h
-  have hs := hg.scr
-  have hn := hs.nowrap
-  have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
-  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  have hQ8 : 256 ≤ slot wq 8 := by unfold slot hdrBytes; omega
-  have hz : B.toNat + slot w 8 ≤ 2 ^ 64 := by omega
-  have hhi' : o + slot wx 8 + wsTab wx ≤ Z := by omega
-  have hsub : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r ∈ pRanges w ++ [xRange o wx]) → ∀ {m m' : Mem},
-      Frm B rs m m' → Frm B (pRanges w ++ [xRange o wx]) m m' := fun h _ _ f => f.mono h
-  have sgx : ∀ r ∈ gRanges w ++ [xRange o wx], r ∈ pRanges w ++ [xRange o wx] := fun r hr =>
-    (List.mem_append.mp hr).elim (fun h => List.mem_append_left _ (List.mem_append_left _ h))
-      (fun h => List.mem_append_right _ h)
-  have sp : ∀ r ∈ pRanges w, r ∈ pRanges w ++ [xRange o wx] := fun r hr => List.mem_append_left _ hr
-  have sg : ∀ r ∈ gRanges w, r ∈ pRanges w ++ [xRange o wx] := fun r hr =>
-    List.mem_append_left _ (List.mem_append_left _ hr)
-  have hqh : ∀ {m m' : Mem}, Frm B (pRanges w ++ [xRange o wx]) m m' → ∀ i < 32,
-      word m' (off B oq) (8 * i) = word m (off B oq) (8 * i) := fun f i hi => by
-    rw [word_off, word_off]; exact f.px_above hlo (by omega) (by omega)
-  -- `R_p mod p`.
-  refine ⟨⟨mx, X, hg, hw, hw28, hlo, hhi', hwx2, hwx, by decide, by decide, by decide, hslv, hws, hN, hodd, hN1,
-      hX, hX1, hXodd⟩,
-    WP.mono (unitPhase_ok M hg hw hw28 hlo hhi' hwx2 hwx (sl := sWsP) (by decide) (by decide) (by decide) hslv
-      hws hN hodd hN1 hX hX1 hXodd) fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hpl₁, hpy₁, hM₁, f₁, k₁⟩ => ?_⟩
-  have f₁' := hsub sgx f₁
-  have hN₁ := hN.of_frm f₁ hlo hz (by omega)
-  have hslq₁ : word s₁.mem B (8 * sWsQ) = off B oq := by
-    rw [f₁'.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslq
-  have hwsq₁ : WsAt s₁.mem B oq wq mq := hwsq.of_words fun i hi => hqh f₁' i (by omega)
-  -- `m_q G mod N`.
-  refine ⟨mq_chain M hg₁ hw hw28 hN₁ hslq₁ hwsq₁ (show slot w 8 ≤ oq by omega) hqhi hwq hwq',
-    WP.mono (mqPart_ok M hg₁ hw hw28 hN₁ hodd hlt₁ hG₁ hslq₁ hwsq₁ (show slot w 8 ≤ oq by omega) hqhi hwq hwq')
-    fun s₂ ⟨hg₂, _, hmq₂, hY₂, f₂, k₂⟩ => ?_⟩
-  have f₂' := hsub sp f₂
-  have f₀₂ := f₁'.trans f₂'
-  have hN₂ : NVals s₂ B w minv N := by
-    exact ⟨by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.n,
-      by rw [f₂'.word_eq (fun r hr => by
-        have := pxR_bound hlo r hr
-        have := slot_le (w := w) (show Public.aN < 8 by decide)
-        simp only [pRanges, gRanges, xRange, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-          or_false] at hr
-        have s1 := slot_sep (w := w) (show Public.aN ≠ Public.aAcc by decide)
-        have s2 := slot_sep (w := w) (show Public.aN ≠ Public.aTmp by decide)
-        have s3 := slot_sep (w := w) (show Public.aN ≠ Public.aY by decide)
-        have s4 := slot_sep (w := w) (show Public.aN ≠ Public.aX by decide)
-        have := hdr_lt_slot w Public.aN (show 31 < 32 by decide)
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-          simp only [Crt.sD, Public.sCnt, sFn] at * <;> omega)
-        (by have := slot_le (w := w) (show Public.aN < 8 by decide); omega)]; exact hN₁.inv,
-      by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.r2,
-      by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.r2lt,
-      by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.one⟩
-  -- `c G mod N`.
-  refine ⟨⟨minv, hg₂, show slot w 8 ≤ Z by omega⟩,
-    WP.mono (mmY_ok M hg₂ (by omega) (by omega) (by omega) (a := Public.aXm) (by decide) (by decide)
-      (by decide) hN₂ (by rw [hY₂]; exact hlt₁)) fun s₃ ⟨hg₃, _, hm₃, f₃, k₃⟩ => ?_⟩
-  have f₃' := hsub sg f₃
-  have f₀₃ := f₀₂.trans f₃'
-  have hR : Nat.Coprime (2 ^ (64 * w)) N := VG.Proof.Bignum.coprime_pow2 hodd _
-  have hXm₂ : wv s₂.mem B (slot w Public.aXm) w = wv s.mem B (slot w Public.aXm) w :=
-    f₀₂.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)
-  have hcg : wv s₃.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N := by
-    apply VG.Proof.Bignum.mont_cancel hR
-    rw [hm₃, Nat.mul_mod, hXm₂, hXm, hY₂, hG₁, ← Nat.mul_mod]
-    congr 1; ac_rfl
-  have hpo : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Frm B rs m m' → (∀ r ∈ rs, r ∈ pRanges w) → ∀ d,
-      o ≤ d → d + 8 ≤ 2 ^ 64 → word m' B d = word m B d := fun f hrs d hd hd' =>
-    f.word_eq (fun r hr => Or.inr (by have := pRanges_le w r (hrs r hr); omega)) hd'
-  have hpw : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Frm B rs m m' → (∀ r ∈ rs, r ∈ pRanges w) → ∀ i < 32,
-      word m' (off B o) (8 * i) = word m (off B o) (8 * i) := fun f hrs i hi => by
-    rw [word_off, word_off]; exact hpo f hrs _ (by omega) (by omega)
-  have sg' : ∀ r ∈ gRanges w, r ∈ pRanges w := fun r hr => List.mem_append_left _ hr
-  have hpv : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Frm B rs m m' → (∀ r ∈ rs, r ∈ pRanges w) → ∀ d k,
-      d + 8 * k ≤ slot wx 8 → wv m' (off B o) d k = wv m (off B o) d k := fun f hrs d k hd => by
-    rw [wv_off, wv_off]; exact wv_congr fun i hi => hpo f hrs _ (by omega) (by omega)
-  have hY8 := slot_le (w := wx) (show Public.aY < 8 by decide)
-  have hpY₃ : wv s₃.mem (off B o) (slot wx Public.aY) wx = wv s₁.mem (off B o) (slot wx Public.aY) wx := by
-    rw [hpv f₃ sg' _ _ (by omega), hpv f₂ (fun r h => h) _ _ (by omega)]
-  have hws₃ : WsAt s₃.mem B o wx mx := hws₁.of_words fun i hi => by
-    rw [hpw f₃ sg' i (by omega), hpw f₂ (fun r h => h) i (by omega)]
-  have hX₃ : XVals s₃ B o wx mx X :=
-    (hX₁.of_below f₂ (fun r hr => (pRanges_le w r hr).trans hlo) (by omega)).of_below f₃
-      (fun r hr => (pRanges_le w r (sg' r hr)).trans hlo) (by omega)
-  have i03 : InScr B Z s.mem s₃.mem := InScr.of_frm f₀₃ fun r hr => by have := pxR_bound hlo r hr; omega
-  have k03 := (k₁.trans k₂).trans k₃
-  have hM₃ : word s₃.mem (off B o) (8 * sMaskX) = mask c := by
-    rw [hpw f₃ sg' _ (by decide), hpw f₂ (fun r h => h) _ (by decide), hM₁]; exact hmask
-  exact o3_of W M S hg₃ hw28 hlo hhi' hwide hwx2 hwx (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv)
-    hws₃ hX₃ hX1 hXodd hcg (by rw [hpY₃]; exact hpl₁) (fun hd => by rw [hpY₃]; exact hpy₁ hd)
-    (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hep)
-    (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i03 k03) hM₃
-    (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hqp) hql (hqs.congrK i03 k03) hqw hqi
+theorem o0_of (W : Window) (M : Mont) (S : Selector) {p : PPhasePub} {s : State} (h : PPreWide p s) : PO0 W M S p s :=
+  -- `o0_of`'s proof with this exponentiation, whose `o3_of` also takes `Wide`: `tabBytes32` is `wsTab`.
+  o0_gen M (PO3 W M S) (fun hg hw28 hlo hhi hwx2 hwx hslv hws hX hX1 hXodd hcg hpl hpy hep hel hL1 hL2 he hmask hqp
+    hql hqs hqw hqi => o3_of W M S hg hw28 hlo hhi hhi hwx2 hwx hslv hws hX hX1 hXodd hcg hpl hpy hep hel hL1 hL2 he
+      hmask hqp hql hqs hqw hqi) h.1
 
 /-- `p`'s phase is constant time, given its pieces' claims. -/
 theorem pPhase_ct (W : Window) (M : Mont) (S : Selector) (hU : UnitCT M sWsP) (hP : PowCT W M S sWsP sDp sPlen) (hRX : RedcCT M Public.aX)
