@@ -32,22 +32,22 @@ def mix (va vb vc vd x y : BitVec w) : BitVec w × BitVec w × BitVec w × BitVe
   (a, b, c, d)
 
 theorem set_get (v : Work w) (a : Fin 16) (x : BitVec w) (k : Nat) (hk : k < 16) :
-    (v.set a x)[k] = if a.1 = k then x else v[k] := by
+    (v.set a x a.2)[k]'hk = if a.1 = k then x else v[k]'hk := by
   simp [Vector.getElem_set]
 
 theorem set_get_fin (v : Work w) (a b : Fin 16) (x : BitVec w) :
-    (v.set a x)[b] = if a.1 = b.1 then x else v[b] := by
+    (v.set a x a.2)[b]'b.2 = if a.1 = b.1 then x else v[b]'b.2 := by
   simp [Vector.getElem_set]
 
 /-- Word `k` after `G` on four distinct words. -/
 theorem G_get (v : Work w) {a b c d : Fin 16} (hab : a.1 ≠ b.1) (hac : a.1 ≠ c.1)
     (had : a.1 ≠ d.1) (hbc : b.1 ≠ c.1) (hbd : b.1 ≠ d.1) (hcd : c.1 ≠ d.1) (x y : BitVec w)
     (k : Nat) (hk : k < 16) :
-    (G P v a b c d x y)[k] =
-      if b.1 = k then (mix P v[a] v[b] v[c] v[d] x y).2.1
-      else if c.1 = k then (mix P v[a] v[b] v[c] v[d] x y).2.2.1
-      else if d.1 = k then (mix P v[a] v[b] v[c] v[d] x y).2.2.2
-      else if a.1 = k then (mix P v[a] v[b] v[c] v[d] x y).1 else v[k] := by
+    (G P v a b c d x y)[k]'hk =
+      if b.1 = k then (mix P (v[a]'a.2) (v[b]'b.2) (v[c]'c.2) (v[d]'d.2) x y).2.1
+      else if c.1 = k then (mix P (v[a]'a.2) (v[b]'b.2) (v[c]'c.2) (v[d]'d.2) x y).2.2.1
+      else if d.1 = k then (mix P (v[a]'a.2) (v[b]'b.2) (v[c]'c.2) (v[d]'d.2) x y).2.2.2
+      else if a.1 = k then (mix P (v[a]'a.2) (v[b]'b.2) (v[c]'c.2) (v[d]'d.2) x y).1 else v[k]'hk := by
   simp only [G, set_get, set_get_fin, hab, hac, had, hbc, hbd, hcd, Ne.symm hab, Ne.symm hac,
     Ne.symm had, Ne.symm hbc, Ne.symm hbd, Ne.symm hcd, ite_true, ite_false]
   by_cases eb : b.1 = k
