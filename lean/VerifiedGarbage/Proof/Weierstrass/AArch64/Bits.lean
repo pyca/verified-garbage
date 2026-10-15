@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -107,11 +108,14 @@ theorem bits_eq (src dst nbytes : Nat) :
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
     (((((b.setWidth 64 >>> j) &&& 1).setWidth 32).setWidth 8) : BitVec 8) =
-      if b.getLsbD j then 1 else 0 := by decide +kernel
+      if b.getLsbD j then 1 else 0 := fun b j _ => by
+  rw [BitVec.setWidth_setWidth_of_le _ (by decide)]; exact bitByte_getLsbD 64 (by decide) b j
 
 theorem bit_byte0 : ∀ b : BitVec 8,
     ((((b.setWidth 64 &&& 1).setWidth 32).setWidth 8) : BitVec 8) =
-      if b.getLsbD 0 then 1 else 0 := by decide +kernel
+      if b.getLsbD 0 then 1 else 0 := fun b => by
+  rw [BitVec.setWidth_setWidth_of_le _ (by decide), ← BitVec.ushiftRight_zero (b.setWidth 64)]
+  exact bitByte_getLsbD 64 (by decide) b 0
 
 /-- Byte `j` of the eight at `x17 + dst`: bit `j` of the byte in `x1`. -/
 theorem bitJ_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {i : Nat}

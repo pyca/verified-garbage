@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
 import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -107,19 +108,12 @@ theorem bits_eq (src dst nbytes : Nat) :
   rfl
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
-    ((((b.setWidth 32 >>> j) &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD j then 1 else 0 := by
-  intro b j hj
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  have hj32 : j < 32 := by omega_using [hj]
-  rcases Nat.eq_zero_or_pos i with rfl | h0
-  · by_cases h : b.getLsbD j <;> simp [h, hj32]
-  · by_cases h : b.getLsbD j <;> simp [h, Nat.ne_of_gt h0]
+    ((((b.setWidth 32 >>> j) &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD j then 1 else 0 :=
+  fun b j _ => bitByte_getLsbD 32 (by decide) b j
 
 theorem bit_byte0 : ∀ b : BitVec 8,
-    (((b.setWidth 32 &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD 0 then 1 else 0 := by
-  intro b
-  simpa using bit_byte b 0 (by decide)
+    (((b.setWidth 32 &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD 0 then 1 else 0 := fun b => by
+  rw [← BitVec.ushiftRight_zero (b.setWidth 32)]; exact bitByte_getLsbD 32 (by decide) b 0
 
 /-- Byte `j` of the eight at `r5 + dst`: bit `j` of the byte in `r4`. -/
 theorem bitJ_ok {s : State} {base : Addr} {size len : Nat} (hs : Scr s base size) (hf : Far s base len) {i : Nat}
