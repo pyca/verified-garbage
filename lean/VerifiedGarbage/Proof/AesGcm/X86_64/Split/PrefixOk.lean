@@ -221,10 +221,26 @@ theorem tail_ok {s₂ : State} (H : Mid2 Ctx W SP D S R sl s s₂) :
     rw [this, m₃, hs₂]
 
 /-- `prefix`: the whole blocks at `src` encrypted to `dst` and absorbed by a
-call of `vg_aes_gcm_encrypt_blocks_to` (`T`), the bytes left copied, and
+call of `f`, with what `vg_aes_gcm_encrypt_blocks_to` does (`hcall`), the bytes left copied, and
 `len` and the data from them on kept. -/
-theorem prefix_ok (T : BlkToFn M) :
-    WP isa (SealSplit.prefix T.fn) s (PPost Ctx W SP D S R n sl s) := by
+theorem prefix_okG (f : Fn)
+    (hcall : ∀ {q : Nat}, 16 * q ≤ sl → ∀ {st : State}, st.gpr .rsp = SP → st.rd = s.rd → st.wr = s.wr →
+      st.mem = s.mem → st.gpr .rdi = Ctx → st.gpr .rsi = BitVec.ofNat 64 R →
+      st.gpr .rdx = W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48 →
+      st.gpr .rcx = W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16 → st.gpr .r8 = S →
+      st.gpr .r9 = BitVec.ofNat 64 q → st.gpr .r10 = BitVec.ofNat 64 q → st.gpr .r11 = D →
+      st.gpr .rax = W + BitVec.ofNat 64 448 →
+      WP isa (.frame (.push [.rax, .r10, .r11]) (.call f.name f.code) (.pop .rax 3)) st fun st' =>
+        (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
+        Frame (callWr W D q ++ [below SP 56]) st.mem st'.mem ∧
+        blocksAt st'.mem D q = ctr32 (ctxCiph s.mem Ctx R) (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48))
+          (blocksAt s.mem S q) ∧
+        blockAt st'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
+          Nat.repeat inc32 q (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48)) ∧
+        blockAt st'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) =
+          ghashFrom (ctxH s.mem Ctx) (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16))
+            (blocksAt st'.mem D q)) :
+    WP isa (SealSplit.prefix f) s (PPost Ctx W SP D S R n sl s) := by
   have L := h.lay
   have hn := h.data.ok.lt
   have hsl := h.sl_le
@@ -245,13 +261,21 @@ theorem prefix_ok (T : BlkToFn M) :
     refine WP.seq (WP.mono (pre2_ok (R := R) (D := D) (S := S) he₁ (by rw [m₁]; exact h.rounds) (by rw [m₁]; exact h.dat)
       (by rw [m₁]; exact h.src)) fun s₂ ⟨di₂, si₂, dx₂, cx₂, r8₂, r9₂, r10₂, r11₂, ax₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
     have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep g₂ rd₂ wr₂
-    refine WP.mono (preCall_ok h T (q := sl / 16) (by omega) he₂.rsp (rd₂.trans rd₁) (wr₂.trans wr₁)
+    refine WP.mono (hcall (q := sl / 16) (by omega) he₂.rsp (rd₂.trans rd₁) (wr₂.trans wr₁)
       (m₂.trans m₁) di₂ si₂ dx₂ cx₂ r8₂ (by rw [r9₂, ax₁]) (by rw [r10₂, ax₁]) r11₂ ax₂)
       fun s₃ ⟨cs₃, rd₃, wr₃, fr₃, bl₃, ct₃, y₃⟩ => tail_ok h ⟨he₂.keep (fun r hr => cs₃ r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])) rd₃ wr₃,
         rd₃.trans (rd₂.trans rd₁), wr₃.trans (wr₂.trans wr₁), by rw [m₂, m₁] at fr₃; exact fr₃, bl₃, ct₃, y₃⟩
 
+
+/-- `prefix`: the whole blocks at `src` encrypted to `dst` and absorbed by a
+call of `vg_aes_gcm_encrypt_blocks_to` (`T`), the bytes left copied, and
+`len` and the data from them on kept. -/
+theorem prefix_ok (T : BlkToFn M) :
+    WP isa (SealSplit.prefix T.fn) s (PPost Ctx W SP D S R n sl s) :=
+  prefix_okG h T.fn fun hq _ hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax =>
+    preCall_ok h T hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax
 end
 
 end VG.Proof.AesGcm.X86_64.Split

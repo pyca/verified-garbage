@@ -194,9 +194,16 @@ theorem call_rel (T : BlkToFn M) :
     gU₂ _ (by decide : Reg.r9 ≠ .rsp), di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂, r8₁, r8₂, r9₁, r9₂, hU₁, hU₂,
     a0₁, a0₂, a1₁, a1₂, a2₁, a2₂, and_self]
 
-/-- `prefix`, in two runs. -/
-theorem prefix_ct (T : BlkToFn M) :
-    RelCT isa (fun a b => a = σ ∧ b = σ') (SealSplit.prefix T.fn) fun _ _ => True := by
+/-- `prefix` calling `f`, in two runs, given its call frame in two runs
+(`hrel`) and in each (`hw`, `hw'`). -/
+theorem prefix_ctG (f : Fn)
+    (hrel : RelCT isa (fun s₁ s₂ => G₂ Ctx W SP D S R sl σ s₁ ∧ G₂ Ctx W SP D S R sl σ' s₂)
+      (.frame (.push [.rax, .r10, .r11]) (.call f.name f.code) (.pop .rax 3)) fun _ _ => True)
+    (hw : ∀ s, G₂ Ctx W SP D S R sl σ s →
+      WP isa (.frame (.push [.rax, .r10, .r11]) (.call f.name f.code) (.pop .rax 3)) s (Mid2 Ctx W SP D S R sl σ))
+    (hw' : ∀ s, G₂ Ctx W SP D S R sl σ' s →
+      WP isa (.frame (.push [.rax, .r10, .r11]) (.call f.name f.code) (.pop .rax 3)) s (Mid2 Ctx W SP D S R sl σ')) :
+    RelCT isa (fun a b => a = σ ∧ b = σ') (SealSplit.prefix f) fun _ _ => True := by
   have r15 : ∀ {s₁ s₂ : State}, Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ → Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ →
       ∀ r ∈ [Reg.r15], s₁.gpr r = s₂.gpr r := fun e₁ e₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [e₁.r15, e₂.r15]
@@ -219,8 +226,7 @@ theorem prefix_ct (T : BlkToFn M) :
         · rw [e₁.r14, e₂.r14]
         · rw [e₁.r15, e₂.r15])
       (fun _ _ g => g.1) (fun _ g => g₂_wp h g) (fun _ g => g₂_wp h' g)) ?_
-    exact (rel_wp (call_rel h h' T) (fun _ _ g => g) (fun _ g => mid2_call_wp h T g)
-      (fun _ g => mid2_call_wp h' T g)).mono (fun _ _ g => g) fun _ _ g => g.2
+    exact (rel_wp hrel (fun _ _ g => g) hw hw').mono (fun _ _ g => g) fun _ _ g => g.2
   refine RelCT.seq (step [.r15] copyArgs_check (F₁ := Mid2 Ctx W SP D S R sl σ) (F₂ := Mid2 Ctx W SP D S R sl σ')
     (fun _ _ g => r15 g.1.env g.2.env) (fun _ _ g => g) (fun _ g => g₃_wp h g) (fun _ g => g₃_wp h' g)) ?_
   refine RelCT.seq (R := fun a b => G₄ Ctx W SP σ a ∧ G₄ Ctx W SP σ' b)
@@ -239,6 +245,11 @@ theorem prefix_ct (T : BlkToFn M) :
   exact (step [.r15] rest_check (F₁ := G₄ Ctx W SP σ) (F₂ := G₄ Ctx W SP σ') (fun _ _ g => r15 g.1.1 g.2.1)
     (fun _ _ g => g) (fun _ g => rest_runs g.1) (fun _ g => rest_runs g.1)).mono (fun _ _ g => g) fun _ _ _ => trivial
 
+
+/-- `prefix`, in two runs. -/
+theorem prefix_ct (T : BlkToFn M) :
+    RelCT isa (fun a b => a = σ ∧ b = σ') (SealSplit.prefix T.fn) fun _ _ => True :=
+  prefix_ctG h h' T.fn (call_rel h h' T) (fun _ g => mid2_call_wp h T g) (fun _ g => mid2_call_wp h' T g)
 end
 
 /-! ## `body`, in two runs -/

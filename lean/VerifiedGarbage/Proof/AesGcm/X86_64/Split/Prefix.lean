@@ -282,16 +282,22 @@ theorem callIn {q : Nat} (hq : 16 * q ≤ sl) {st : State}
       (covers_cons' (covers_right (covers_tail cSc)) covers_nil'))))))
   exact ⟨hpre, cr, cw, gU, hU, a0.trans h_11, a1.trans h_10, a2.trans h_ax⟩
 
-/-- The call of `vg_aes_gcm_encrypt_blocks_to` on the `q` whole blocks at
-`S`, to `D`, with `D`, `q` and the working space pushed for it. -/
-theorem preCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
+/-- The call of `f`, a function with the post-condition of
+`vg_aes_gcm_encrypt_blocks_to` (`k`, whose precondition holds of the call
+with the regions `rd` it reads), on the `q` whole blocks at `S`, to `D`, with
+`D`, `q` and the working space pushed for it. -/
+theorem preCall_okG (k : Contract isa) (hk : k.post = Proof.AesGcm.blocksToPost) (f : Fn)
+    (fok : ∀ s, k.pre s → ∃ t s', Exec isa f.code s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (fsp : SpSafe f.code) (fxd : f.code.x86_64Depth ≤ 24) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
     (hsp : st.gpr .rsp = SP) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr) (hm : st.mem = s.mem)
     (h_di : st.gpr .rdi = Ctx) (h_si : st.gpr .rsi = BitVec.ofNat 64 R)
     (h_dx : st.gpr .rdx = W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48)
     (h_cx : st.gpr .rcx = W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) (h_8 : st.gpr .r8 = S)
     (h_9 : st.gpr .r9 = BitVec.ofNat 64 q) (h_10 : st.gpr .r10 = BitVec.ofNat 64 q) (h_11 : st.gpr .r11 = D)
-    (h_ax : st.gpr .rax = W + BitVec.ofNat 64 448) :
-    WP isa (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)) st fun st' =>
+    (h_ax : st.gpr .rax = W + BitVec.ofNat 64 448) (rd : List Region)
+    (hkc : k.pre ((pushed [.rax, .r10, .r11] st).callEntry.withRegions rd (callWr W D q)))
+    (hcr : Covers (rd ++ callWr W D q) ((pushed [.rax, .r10, .r11] st).rd ++ (pushed [.rax, .r10, .r11] st).wr)) :
+    WP isa (.frame (.push [.rax, .r10, .r11]) (.call f.name f.code) (.pop .rax 3)) st fun st' =>
       (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
       Frame (callWr W D q ++ [below SP 56]) st.mem st'.mem ∧
       blocksAt st'.mem D q = ctr32 (ctxCiph s.mem Ctx R) (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48))
@@ -320,7 +326,11 @@ theorem preCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
     (hpf'.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide)).trans
       (hE.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact b56 (by decide) (by decide))
   have kM := h.kM
-  obtain ⟨hpre, cr, cw, gU, -, a0, -, -⟩ := callIn h hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax
+  obtain ⟨-, -, cw, -, -, a0', -, -⟩ := callIn h hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax
+  have gU : ∀ r, r ≠ .rsp →
+      ((pushed [.rax, .r10, .r11] st).callEntry.withRegions rd (callWr W D q)).gpr r = st.gpr r :=
+    fun r hr => by rw [State.withRegions_gpr, State.callEntry_gpr _ hr, pushed_gpr _ _ hr]
+  have a0 : stackArg ((pushed [.rax, .r10, .r11] st).callEntry.withRegions rd (callWr W D q)) 0 = D := a0'
   -- What the push and the return address leave as it was.
   have keep : ∀ {p : Addr} {k : Nat}, (⟨p, k⟩ : Region).Disjoint (below SP 56) → k ≤ 2 ^ 64 →
       bytesAt (pushed [.rax, .r10, .r11] st).callEntry.mem p k = bytesAt s.mem p k := fun hd hk => by
@@ -347,10 +357,11 @@ theorem preCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := h.sl_le; omega)
   have hRn : (BitVec.ofNat 64 R).toNat = R := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h.rounds.2 with h | h | h <;> subst h <;> decide)
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := Proof.AesGcm.encryptBlocksToX86_64M M)
-    T.ok T.sp (by have := T.xd; omega) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := k)
+    fok fsp (by omega) hkc hcr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
   have r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)
-  simp only [Proof.AesGcm.encryptBlocksToX86_64M, Proof.AesGcm.blocksToPost, Proof.AesGcm.arg, a0,
+  rw [hk] at hpost
+  simp only [Proof.AesGcm.blocksToPost, Proof.AesGcm.arg, a0,
     State.withRegions_mem, gU _ (by decide : Reg.rdi ≠ .rsp), gU _ (by decide : Reg.rsi ≠ .rsp),
     gU _ (by decide : Reg.rdx ≠ .rsp), gU _ (by decide : Reg.rcx ≠ .rsp), gU _ (by decide : Reg.r8 ≠ .rsp),
     gU _ (by decide : Reg.r9 ≠ .rsp), h_di, h_si, h_dx, h_cx, h_8, h_9, h_11, hqn, hRn, hm₂, eK, eH,
@@ -364,9 +375,9 @@ theorem preCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
       exact BitVec.sub_add_cancel _ _
     · rw [popped_gpr _ _ _ hr' (fun e => by subst e; simp [calleeSaved] at hr), hcs r hr, pushed_gpr _ _ hr']
   · rw [popped_mem]
-    have bT : Region.Sub (below ((pushed [.rax, .r10, .r11] st).gpr .rsp) (T.fn.code.x86_64Depth + 8)) (below SP 56) := by
-      have h₁ := below_sub (sp := (pushed [.rax, .r10, .r11] st).gpr .rsp) (a := T.fn.code.x86_64Depth + 8) (b := 32)
-        (by have := T.xd; omega) (by decide)
+    have bT : Region.Sub (below ((pushed [.rax, .r10, .r11] st).gpr .rsp) (f.code.x86_64Depth + 8)) (below SP 56) := by
+      have h₁ := below_sub (sp := (pushed [.rax, .r10, .r11] st).gpr .rsp) (a := f.code.x86_64Depth + 8) (b := 32)
+        (by omega) (by decide)
       have e : below (SP - BitVec.ofNat 64 24) 32 = ⟨SP - BitVec.ofNat 64 56, 32⟩ := by
         simp only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add]
       rw [hP] at h₁ ⊢
@@ -383,6 +394,27 @@ theorem preCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
   · rw [popped_mem]; exact o₂
   · rw [popped_mem, o₁]; exact o₃
 
+
+/-- The call of `vg_aes_gcm_encrypt_blocks_to` on the `q` whole blocks at
+`S`, to `D`, with `D`, `q` and the working space pushed for it. -/
+theorem preCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ sl) {st : State}
+    (hsp : st.gpr .rsp = SP) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr) (hm : st.mem = s.mem)
+    (h_di : st.gpr .rdi = Ctx) (h_si : st.gpr .rsi = BitVec.ofNat 64 R)
+    (h_dx : st.gpr .rdx = W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48)
+    (h_cx : st.gpr .rcx = W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) (h_8 : st.gpr .r8 = S)
+    (h_9 : st.gpr .r9 = BitVec.ofNat 64 q) (h_10 : st.gpr .r10 = BitVec.ofNat 64 q) (h_11 : st.gpr .r11 = D)
+    (h_ax : st.gpr .rax = W + BitVec.ofNat 64 448) :
+    WP isa (.frame (.push [.rax, .r10, .r11]) (.call T.fn.name T.fn.code) (.pop .rax 3)) st fun st' =>
+      (∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
+      Frame (callWr W D q ++ [below SP 56]) st.mem st'.mem ∧
+      blocksAt st'.mem D q = ctr32 (ctxCiph s.mem Ctx R) (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48))
+        (blocksAt s.mem S q) ∧
+      blockAt st'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
+        Nat.repeat inc32 q (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48)) ∧
+      blockAt st'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) =
+        ghashFrom (ctxH s.mem Ctx) (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16)) (blocksAt st'.mem D q) :=
+  have c := callIn h hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax
+  preCall_okG h _ rfl T.fn T.ok T.sp T.xd hq hsp hrd hwr hm h_di h_si h_dx h_cx h_8 h_9 h_10 h_11 h_ax _ c.1 c.2.1
 end
 
 /-! ## The blocks around the call -/
