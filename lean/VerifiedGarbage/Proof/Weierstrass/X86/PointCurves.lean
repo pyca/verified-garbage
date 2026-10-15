@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P192
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P192
@@ -117,10 +119,10 @@ theorem p192_fn : FnOk (modP p192) :=
   FnOk.of_eq p192p_ok rfl (by simp only [Spec.Weierstrass.Mont.p192p, p192])
 
 theorem p192_add_ct : ConstantTime isa (sumX86 p192 false).pre (sumX86 p192 false).pub (fn (modP p192) false) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem p192_double_ct : ConstantTime isa (sumX86 p192 true).pre (sumX86 p192 true).pub (fn (modP p192) true) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem p192_add_verified (hF : Fermat p192.p) :
     Verified X86.target (pointAdd p192) (p192.addContract X86.abi 20) :=
@@ -134,10 +136,10 @@ theorem p224_fn : FnOk (modP p224) :=
   FnOk.of_eq p224p_ok rfl (by simp only [Spec.Weierstrass.Mont.p224p, p224])
 
 theorem p224_add_ct : ConstantTime isa (sumX86 p224 false).pre (sumX86 p224 false).pub (fn (modP p224) false) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem p224_double_ct : ConstantTime isa (sumX86 p224 true).pre (sumX86 p224 true).pub (fn (modP p224) true) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem p224_add_verified (hF : Fermat p224.p) :
     Verified X86.target (pointAdd p224) (p224.addContract X86.abi 20) :=
@@ -151,10 +153,10 @@ theorem p256_fn : FnOk (modP p256) :=
   FnOk.of_eq p256p_ok rfl (by simp only [Spec.Weierstrass.Mont.p256p, p256])
 
 theorem p256_add_ct : ConstantTime isa (sumX86 p256 false).pre (sumX86 p256 false).pub (fn (modP p256) false) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem p256_double_ct : ConstantTime isa (sumX86 p256 true).pre (sumX86 p256 true).pub (fn (modP p256) true) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem p256_add_verified (hF : Fermat p256.p) :
     Verified X86.target (pointAdd p256) (p256.addContract X86.abi 20) :=
@@ -168,10 +170,10 @@ theorem p384_fn : FnOk (modP p384) :=
   FnOk.of_eq p384p_ok rfl (by simp only [Spec.Weierstrass.Mont.p384p, p384])
 
 theorem p384_add_ct : ConstantTime isa (sumX86 p384 false).pre (sumX86 p384 false).pub (fn (modP p384) false) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem p384_double_ct : ConstantTime isa (sumX86 p384 true).pre (sumX86 p384 true).pub (fn (modP p384) true) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem p384_add_verified (hF : Fermat p384.p) :
     Verified X86.target (pointAdd p384) (p384.addContract X86.abi 20) :=
