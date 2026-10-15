@@ -36,10 +36,13 @@ namespace VG.TacticTemplate
 
 open Lean Elab Command Tactic
 
-/-- The variable of the antiquotation `stx` (`$x`, or `$x:cat`), if it is one. -/
+/-- The variable of the antiquotation `stx` (`$x`, `$x:cat`, or `$(x)`), if
+it is one. -/
 def antiquotVar? (stx : Syntax) : Option Name :=
   if stx.isAntiquots then
     let t := stx.getCanonicalAntiquot.getAntiquotTerm
+    -- `$(x)`: the identifier in parentheses.
+    let t := if t.isOfKind ``Lean.Parser.Term.paren && t[1].isIdent then t[1] else t
     if t.isIdent then some t.getId else none
   else none
 
@@ -53,8 +56,9 @@ partial def setInfo (info : SourceInfo) : Syntax → Syntax
 
 /-- `stx` with its antiquotations replaced by the syntax `arg` gives their
 variables: `$x` by the argument, a splice `$x,*` or `$x*` by the elements
-(and separators) of the argument. An empty splice takes its separator with
-it. -/
+(and separators) of the argument, an optional `$x?` (or `$(x)?`) by the
+argument's element, if any. An empty splice `$x,*` or `$x*` takes its
+separator with it. -/
 partial def subst (arg : Name → Option Syntax) (stx : Syntax) : Except String Syntax := do
   if let some x := antiquotVar? stx then
     let some v := arg x | throw s!"tactic_template: unknown variable `{x}`"
@@ -68,7 +72,10 @@ partial def subst (arg : Name → Option Syntax) (stx : Syntax) : Except String 
         let some x := antiquotVar? a.getAntiquotSuffixSpliceInner
           | throw "tactic_template: unsupported splice"
         let some v := arg x | throw s!"tactic_template: unknown variable `{x}`"
-        if v.getArgs.isEmpty then
+        if a[1].isAtom && a[1].getAtomVal == "?" then
+          -- An optional: its element, if any; it has no separator.
+          out := out ++ v.getArgs
+        else if v.getArgs.isEmpty then
           -- The separator before the splice, or else the one after it.
           if out.back?.any (·.isAtom) then out := out.pop else dropSep := true
         else
@@ -106,7 +113,15 @@ partial def globalNames (stx : Syntax) : CommandElabM (Array (String.Pos.Raw × 
     let [(c, _)] := cs | return #[]
     if isPrivateName c || !env.contains c then return #[]
     return #[(s, e, c)]
-  | .node _ _ args => args.foldlM (fun acc a => return acc ++ (← globalNames a)) #[]
+  | .node _ k args =>
+    -- A field or option name (`(h).symm`, `{ decide := true }`, `+decide`, `(decide := true)`)
+    -- names no constant: leave it as written.
+    if k == ``Lean.Parser.Term.structInstLVal || k == ``Lean.Parser.Tactic.posConfigItem ||
+        k == ``Lean.Parser.Tactic.negConfigItem then return #[]
+    let args :=
+      if k == ``Lean.Parser.Term.proj then args.extract 0 1
+      else if k == ``Lean.Parser.Tactic.valConfigItem then args.filter (!·.isIdent) else args
+    args.foldlM (fun acc a => return acc ++ (← globalNames a)) #[]
   | _ => return #[]
 
 /-- The source text of `stx` with each name of `names` written as the
