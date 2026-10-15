@@ -290,11 +290,24 @@ theorem ix_cases (c : Cfg) (i : Nat) :
           · exact .inr (.inr (ix_of_ne c (.inl ⟨ht, h5, h8⟩)))
     · exact .inr (.inr (ix_of_ne c (.inr fun h => h.elim h9 h6)))
 
+/-- Swapping `a` and `b` twice. -/
+private theorem swap_swap {a b : Nat} (hab : a ≠ b) (i : Nat) :
+    (if (if i = a then b else if i = b then a else i) = a then b
+      else if (if i = a then b else if i = b then a else i) = b then a
+      else (if i = a then b else if i = b then a else i)) = i := by
+  by_cases ha : i = a
+  · subst ha; simp [Ne.symm hab]
+  · by_cases hb : i = b
+    · subst hb; simp
+    · simp [ha, hb]
+
 theorem ix_ix (c : Cfg) (i : Nat) : ix c (ix c i) = i := by
-  have hT : TMP = 2 := rfl
   unfold ix
-  repeat' split
-  all_goals omega
+  by_cases h9 : c.n = 9
+  · simp only [h9, ↓reduceIte]; exact swap_swap (by decide) i
+  · by_cases h6 : c.n = 6
+    · simp only [h6, ↓reduceIte]; exact swap_swap (by decide) i
+    · simp only [h9, h6, ↓reduceIte]
 
 theorem ix_inj (c : Cfg) {i j : Nat} (h : ix c i = ix c j) : i = j := by
   have := congrArg (ix c) h

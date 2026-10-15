@@ -132,17 +132,12 @@ theorem mulBaseSaved_slots (h3 : 3 ≤ c.n) :
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> exact key _ (by decide) (by decide)
 
 theorem mulBaseSaved_spill (hc : BaseCfgOk c) (h3 : 3 ≤ c.n) : Spill.Slots c.mulBaseSaved := by
-  have h7 := hc.n10
-  have eA : c.sl ACC = 64 + 8 * c.n * 29 := sl_eq c ACC
-  have eT : c.sl TT = 64 + 8 * c.n * 41 := sl_eq c TT
-  refine ⟨fun p hp => ?_, ?_⟩
-  · simp only [Cfg.mulBaseSaved, Cfg.saved, List.map_cons, List.map_nil, List.mem_cons,
-      List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> split <;> omega
-  · simp only [Cfg.mulBaseSaved, Cfg.saved, List.map_cons, List.map_nil, List.pairwise_cons,
-      List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.Pairwise.nil,
-      false_implies, implies_true, and_true]
-    split_ifs <;> omega
+  -- The slots depend only on `c.n`: decided once for each of its few values.
+  have key : ∀ n < 10, 3 ≤ n → Spill.Slots (Cfg.saved.map fun p : Reg × Nat =>
+      (p.1, if p.2 < 8 * n then 64 + 8 * n * ACC + p.2 else 64 + 8 * n * TT + (p.2 - 8 * n))) := by
+    decide
+  rw [Cfg.mulBaseSaved, sl_eq c ACC, sl_eq c TT]
+  exact key c.n hc.n10 h3
 
 /-- `vg_<curve>_mul_base`, for a curve of at least three words: the
 callee-saved registers kept (saved in its slots, `mulBaseSlots`, and
