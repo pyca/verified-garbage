@@ -60,7 +60,7 @@ def mulHiV (x y : BitVec 32) : BitVec 32 :=
 
 theorem toNat_lo16 (z : BitVec 32) : (z <<< 16 >>> 16).toNat = z.toNat % 2 ^ 16 := by
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 theorem toNat_hi16 (z : BitVec 32) : (z >>> 16).toNat = z.toNat / 2 ^ 16 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
@@ -68,7 +68,7 @@ theorem toNat_hi16 (z : BitVec 32) : (z >>> 16).toNat = z.toNat / 2 ^ 16 := by
 theorem toNat_mul16 {a b : BitVec 32} (ha : a.toNat < 2 ^ 16) (hb : b.toNat < 2 ^ 16) :
     (a * b).toNat = a.toNat * b.toNat := by
   rw [BitVec.toNat_mul]
-  exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le ha (Nat.le_of_lt hb) (by omega))
+  exact Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le ha (Nat.le_of_lt hb) (by omega_arith))
     (by decide))
 
 theorem toNat_add_lt {a b : BitVec 32} (h : a.toNat + b.toNat < 2 ^ 32) :
@@ -88,10 +88,10 @@ theorem mul_split (X Y : Nat) :
   grind
 
 theorem mul16_lt {a b : Nat} (ha : a < 2 ^ 16) (hb : b < 2 ^ 16) : a * b < 2 ^ 32 :=
-  Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le ha (Nat.le_of_lt hb) (by omega)) (by decide)
+  Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le ha (Nat.le_of_lt hb) (by omega_arith)) (by decide)
 
 theorem mul16_le {a b : Nat} (ha : a < 2 ^ 16) (hb : b < 2 ^ 16) : a * b ≤ (2 ^ 16 - 1) * (2 ^ 16 - 1) :=
-  Nat.mul_le_mul (by omega) (by omega)
+  Nat.mul_le_mul (by omega_arith) (by omega_arith)
 
 theorem mulHiV_eq (x y : BitVec 32) : mulHiV x y = BitVec.ofNat 32 (x.toNat * y.toNat / 2 ^ 32) := by
   have hx := x.isLt
@@ -103,10 +103,10 @@ theorem mulHiV_eq (x y : BitVec 32) : mulHiV x y = BitVec.ofNat 32 (x.toNat * y.
   have ey0 := toNat_lo16 y
   have ex1 := toNat_hi16 x
   have ey1 := toNat_hi16 y
-  have bx0 : (x <<< 16 >>> 16).toNat < 2 ^ 16 := by rw [ex0]; omega
-  have by0 : (y <<< 16 >>> 16).toNat < 2 ^ 16 := by rw [ey0]; omega
-  have bx1 : (x >>> 16).toNat < 2 ^ 16 := by rw [ex1]; omega
-  have by1 : (y >>> 16).toNat < 2 ^ 16 := by rw [ey1]; omega
+  have bx0 : (x <<< 16 >>> 16).toNat < 2 ^ 16 := by rw [ex0]; omega_arith
+  have by0 : (y <<< 16 >>> 16).toNat < 2 ^ 16 := by rw [ey0]; omega_arith
+  have bx1 : (x >>> 16).toNat < 2 ^ 16 := by rw [ex1]; omega_arith
+  have by1 : (y >>> 16).toNat < 2 ^ 16 := by rw [ey1]; omega_arith
   have e00 := toNat_mul16 bx0 by0
   have e01 := toNat_mul16 bx0 by1
   have e10 := toNat_mul16 bx1 by0
@@ -161,7 +161,7 @@ theorem mulHiV_eq (x y : BitVec 32) : mulHiV x y = BitVec.ofNat 32 (x.toNat * y.
   generalize c / 2 ^ 16 = c1 at hc ⊢
   generalize c % 2 ^ 16 = c0 at hc hc' ⊢
   subst ha hb hc split
-  omega
+  omega_arith
 
 /-- Two distinct registers, from the hypotheses, in either order. -/
 macro "ne" : tactic => `(tactic| first | with_reducible assumption | exact Ne.symm (by with_reducible assumption))
@@ -254,7 +254,7 @@ theorem lo_ofNat (p : Nat) : lo (BitVec.ofNat 64 p) = BitVec.ofNat 32 p := by
 
 theorem hi_ofNat {p : Nat} (h : p < 2 ^ 64) : hi (BitVec.ofNat 64 p) = BitVec.ofNat 32 (p / 2 ^ 32) := by
   apply BitVec.eq_of_toNat_eq
-  rw [hi_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega)]
+  rw [hi_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h, Nat.mod_eq_of_lt (by omega_arith)]
 
 theorem mul_lt (a b : BitVec 32) : a.toNat * b.toNat < 2 ^ 64 :=
   Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le a.isLt (Nat.le_of_lt b.isLt) (by decide)) (by decide)
