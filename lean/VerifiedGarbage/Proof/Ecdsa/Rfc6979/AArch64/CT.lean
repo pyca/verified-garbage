@@ -113,7 +113,25 @@ structure Blks (w Q D B : Nat) (wide : Bool) : Prop where
   msg₀f : TaintOk (msgRegs wide) (Cfg.msg w Q D 0 true wide)
   msg₁f : TaintOk (msgRegs wide) (Cfg.msg w Q D 1 true wide)
 
+/-- The blocks of `Blks` that depend only on `D` and `B`: checked once for each
+pair of sizes, rather than again for each size of the scalars. -/
+theorem hmacBlks {D B : Nat} (h : (D = 32 ∧ B = 64) ∨ (D = 48 ∧ B = 128) ∨ (D = 64 ∧ B = 128) ∨
+    (D = 28 ∧ B = 64)) :
+    TaintOk [] (Cfg.hmacArgs₁ D) ∧ TaintOk [] (Cfg.hmacArgs₂ B (Cfg.fr .x2 fV) D) ∧
+      TaintOk [] (Cfg.hmacArgs₃ B D fV) ∧ TaintOk [] (Cfg.hmacArgs₂ B (Cfg.scr .x2 sMsg) (D + 1)) ∧
+      TaintOk [] (Cfg.hmacArgs₃ B (D + 1) fK) := by
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+  exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩⟩
+
 theorem blks (P : RfcHash) : Blks P.w P.Q P.H.D P.H.P.B P.R.wide := by
+  obtain ⟨i, vu, vf, ku, kf⟩ := hmacBlks P.hDB
+  suffices h : TaintOk [] (Cfg.hmacArgs₂ P.H.P.B (Cfg.scr .x2 sMsg) (P.H.D + 2 * P.Q + 1)) ∧
+      TaintOk [] (Cfg.hmacArgs₃ P.H.P.B (P.H.D + 2 * P.Q + 1) fK) ∧
+      TaintOk (msgRegs false) (Cfg.msg P.w P.Q P.H.D 0 false false) ∧
+      TaintOk (msgRegs P.R.wide) (Cfg.msg P.w P.Q P.H.D 0 true P.R.wide) ∧
+      TaintOk (msgRegs P.R.wide) (Cfg.msg P.w P.Q P.H.D 1 true P.R.wide) from
+    ⟨i, vu, vf, ku, kf, h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩
   have hw' : P.w = P.R.E.n := rfl
   cases hw : P.R.wide
   · obtain ⟨hQ8, -, hQD⟩ := P.sizesA hw
@@ -123,13 +141,11 @@ theorem blks (P : RfcHash) : Blks P.w P.Q P.H.D P.H.P.B P.R.wide := by
       | (exfalso; omega)
       | (rw [hw', hn, hq, h, h']
          exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-          ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-          ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩)
+          ⟨_, by taint_decide⟩⟩)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     rw [hQ66, hD64, hB, hw9]
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+      ⟨_, by taint_decide⟩⟩
 
 /-! The blocks that depend on whether two `V`s make a candidate. -/
 
