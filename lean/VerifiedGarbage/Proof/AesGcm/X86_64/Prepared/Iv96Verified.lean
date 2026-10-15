@@ -214,7 +214,11 @@ theorem encryptBlocksToIv96_pre : ∀ s, (Spec.Gcm.encryptBlocksToPreparedIv96Co
         X86_64.argRegs, CtxMode.prepared] []
   sig_and_intros
   sig_close
-  all_goals with_reducible assumption
+  all_goals first
+    | with_reducible assumption
+    | (rw [‹s.rd = _›]; exact Proof.AesGcm.inRegions_args4 _ _ _)
+    | (rw [‹s.rd = _›]; exact Proof.AesGcm.covers_args4 _ _ _)
+    | (rw [‹s.rd = _›]; simp)
 
 theorem encryptBlocksToIv96_implies : (Proof.AesGcm.encryptBlocksToIv96X86_64M CtxMode.prepared).Implies
     (Spec.Gcm.encryptBlocksToPreparedIv96Contract X86_64.abi 24) :=
