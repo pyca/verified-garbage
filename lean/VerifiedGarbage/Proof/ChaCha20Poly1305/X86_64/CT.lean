@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
@@ -3436,32 +3438,36 @@ theorem APre.stk_d' {s₀ : State} (hp : APre e s₀) : (stkR s₀).Disjoint (dR
 theorem APre.stk_a' {s₀ : State} (hp : APre e s₀) : (stkR s₀).Disjoint (aR s₀) := hp.stk_a
 theorem APre.stk_t' {s₀ : State} (hp : APre e s₀) : (stkR s₀).Disjoint (tR s₀) := hp.stk_t
 
+/-- `Region.Disjoint.symm`, by a name that is not also a global constant
+(Mathlib's `symm`), so that `rdisj`'s template keeps it a field. -/
+theorem _root_.VG.Region.Disjoint.dsymm {r₁ r₂ : Region} (h : r₁.Disjoint r₂) : r₂.Disjoint r₁ := h.symm
+
 /-- That two of the regions the parts use are disjoint: parts of the context
 at different offsets, the stack below the return address, and the data.
 (Matching only reducibly, so that a lemma that does not apply fails fast.) -/
-macro "rdisj" : tactic => `(tactic| first
+tactic_template "rdisj" : tactic => `(tactic| first
   | with_reducible exact sub_disj _ (by lit_omega) (by lit_omega) (by lit_omega)
-  | with_reducible exact (APre.stk_sub ‹APre _ _› (by lit_omega)).symm
+  | with_reducible exact (APre.stk_sub ‹APre _ _› (by lit_omega)).dsymm
   | with_reducible exact APre.stk_sub ‹APre _ _› (by lit_omega)
   | with_reducible exact (‹APre _ _›).c_d.sub_left (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_d.symm.sub_right (sub_ctx _ (by lit_omega))
-  | with_reducible exact (APre.stk_d' ‹APre _ _›).symm
-  | with_reducible exact (‹APre _ _›).c_a.symm.sub_right (sub_ctx _ (by lit_omega))
-  | with_reducible exact (APre.stk_a' ‹APre _ _›).symm
+  | with_reducible exact (‹APre _ _›).c_d.dsymm.sub_right (sub_ctx _ (by lit_omega))
+  | with_reducible exact (APre.stk_d' ‹APre _ _›).dsymm
+  | with_reducible exact (‹APre _ _›).c_a.dsymm.sub_right (sub_ctx _ (by lit_omega))
+  | with_reducible exact (APre.stk_a' ‹APre _ _›).dsymm
   | with_reducible exact (‹APre _ _›).a_d
   | with_reducible exact (‹APre _ _›).ret_c.sub_right (sub_ctx _ (by lit_omega))
   | with_reducible exact (‹APre _ _›).ret_d
   | with_reducible exact (‹APre _ _›).ret_t
   | with_reducible exact (‹APre _ _›).c_t.sub_left (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_t.symm.sub_right (sub_ctx _ (by lit_omega))
+  | with_reducible exact (‹APre _ _›).c_t.dsymm.sub_right (sub_ctx _ (by lit_omega))
   | with_reducible exact (‹APre _ _›).d_t
-  | with_reducible exact (‹APre _ _›).d_t.symm
+  | with_reducible exact (‹APre _ _›).d_t.dsymm
   | with_reducible exact APre.stk_t' ‹APre _ _›
-  | with_reducible exact (APre.stk_t' ‹APre _ _›).symm
+  | with_reducible exact (APre.stk_t' ‹APre _ _›).dsymm
   | with_reducible exact ret_stk _)
 
 /-- A region is disjoint from each of a list of regions. -/
-macro "rdisj_all" : tactic => `(tactic| plain_simp_names (
+tactic_template "rdisj_all" : tactic => `(tactic| (
                    simp only [macR, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
                    repeat' apply And.intro
                    all_goals rdisj))

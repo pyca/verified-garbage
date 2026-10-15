@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.Rc2.X86.Lookup
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -37,10 +39,7 @@ theorem ea_memOp (s : State) (b : Reg) (d : Nat) : s.ea (memOp b d) = addr (s.gp
 
 /-- `lrun`: a block run by `simp`, one instruction at a time, the state a
 chain of register, flag and memory updates (as `crun`, `Proof/Cast5/X86/Run.lean`). -/
-syntax "lrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| lrun) => `(tactic| lrun [])
-  | `(tactic| lrun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "lrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        refine ⟨?_, ?_, ?_⟩
                        rotate_left
@@ -58,6 +57,9 @@ macro_rules
                          and_self, eq_self_iff_true, not_false_eq_true, true_and, and_true, List.cons_append,
                          List.nil_append, $ls,*]
                          first | done | rfl))
+
+/-- `lrun []`. -/
+tactic_template "lrun" : tactic => `(tactic| lrun [])
 
 /-! ## Lanes -/
 

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Correct
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.ConstantTime
 import all Init.Data.Array.Basic
@@ -48,16 +50,17 @@ def narrowRd (s : State) : List Region :=
 def narrowWr (s : State) : List Region :=
   [⟨addr32 (arg s 1), 8⟩, ⟨addr32 (arg s 2), 8 * (arg s 3).toNat⟩, ⟨addr32 (arg s 4), 512⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [VG.Proof.Rc2.X86.Cbc.contract, VG.Proof.Rc2.X86.Cbc.wideContract,
+tactic_template "rc2_cbc_narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [VG.Proof.Rc2.X86.Cbc.contract, VG.Proof.Rc2.X86.Cbc.wideContract,
                      VG.Proof.Rc2.X86.Cbc.narrowRd, VG.Proof.Rc2.X86.Cbc.narrowWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
+tactic_template "rc2_cbc_narrow" : tactic => `(tactic| rc2_cbc_narrow at ⊢)
 
 theorem wide_pre (d : Spec.Rc2.Direction) (s : State) (h : (wideContract d).pre s) :
     (contract d).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  rc2_cbc_narrow
   exact ⟨trivial, trivial, h⟩
 
 def satState : State where
@@ -116,10 +119,10 @@ theorem cbc_verified (d : Spec.Rc2.Direction) :
     simp only [narrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    rc2_cbc_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    rc2_cbc_narrow
     exact h
 
 theorem encrypt_verified : Verified target Impl.Rc2.X86.Cbc.encrypt (Spec.Rc2.cbcEncryptContract abi 16) := cbc_verified .encrypt
