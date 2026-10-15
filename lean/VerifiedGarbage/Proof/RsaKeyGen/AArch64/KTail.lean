@@ -10,6 +10,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # A candidate on AArch64: Montgomery setup, Miller–Rabin and the result
@@ -29,7 +31,7 @@ open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Impl.Bignum.Public (aN aAcc aTmp aR2 aY aOne sCnt)
 
 /-- Disjointness of a header word from `montSetup`'s ranges, and their bounds. -/
-macro "kt_disj" : tactic => `(tactic| first | hdr_disj | (
+tactic_template "kt_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, msRanges, msTail,
     List.cons_append, List.nil_append, slot, hdrBytes, aE, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, kChecks, kE, sFn, sMinv, kRand, kLen, Public.sK,
     kRandLen, kUsed, kOut, kUsedP, Public.sMask]
