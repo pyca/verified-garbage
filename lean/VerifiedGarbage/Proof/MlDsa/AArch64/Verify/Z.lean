@@ -7,9 +7,15 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.AArch64.KgC
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA verification on AArch64: the prologue, the hint and `z`

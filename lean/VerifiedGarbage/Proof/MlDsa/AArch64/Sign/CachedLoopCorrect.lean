@@ -11,10 +11,13 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
-import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.OptimizedPairedChecks
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! ## From `CachedLoopFrame.lean` -/
 

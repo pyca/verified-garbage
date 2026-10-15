@@ -4,10 +4,13 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! # ML-DSA (FIPS 204) signing on AArch64 -/
 

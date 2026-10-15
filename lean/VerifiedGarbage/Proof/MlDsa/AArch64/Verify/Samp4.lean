@@ -7,9 +7,12 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! Four-way matrix expansion during verification: preserve decoded hints and z, and mask failed batches without a branch. -/
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
-import VerifiedGarbage.Proof.MlKem.AArch64.KgEnd
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Mono
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -9,6 +8,10 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA on AArch64: the blocks between calls

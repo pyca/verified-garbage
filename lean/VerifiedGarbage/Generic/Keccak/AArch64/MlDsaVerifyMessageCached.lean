@@ -4,8 +4,11 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA (FIPS 204) on AArch64: verifying messages
