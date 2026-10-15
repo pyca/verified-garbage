@@ -40,6 +40,8 @@ private meta def decideAt (chunkSize : Expr) (w : Option Term) : TacticM Unit :=
         some (`VG.X86.Taint.T, `VG.NativeHints.X86.T, `VG.NativeHints.X86.provider)
       else if a.getAppFn.isConstOf `VG.Arm.taint then
         some (`VG.Arm.Taint.T, `VG.NativeHints.Arm.T, `VG.NativeHints.Arm.provider)
+      else if a.getAppFn.isConstOf `VG.X86_64.taint then
+        some (`VG.X86_64.Taint.T, `VG.NativeHints.X86_64.T, `VG.NativeHints.X86_64.provider)
       else none
     | return ← VG.taintDecideAt chunkSize "native_taint_decide" w
   -- The copy of the domain is not imported: the interpreted search.
