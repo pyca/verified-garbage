@@ -349,24 +349,12 @@ theorem tconsts_eq : Impl.ChaCha20.X86_64.Avx2Tail.consts = pairsCode tPairs := 
 
 theorem tPairs_le : ∀ p ∈ tPairs, p.1 + 8 ≤ 320 := by decide
 
-/-- Read back a stored quadword, under both stores. -/
-local macro "tread" : tactic => `(tactic|
-  simp (disch := decide) only [storeAll, constPairs, tPairs, List.foldl_cons, List.foldl_nil,
-    Nat.reduceAdd, readW64_off, Mem.readW_writeW_self64])
-
 theorem tincs_mem (m : Mem) (buf : Addr) :
     Avx2Tail.Incs (storeAll buf constPairs (storeAll buf tPairs m)) buf := by
+  have H : ∀ k < 2, ∀ j < 8, readsTo tPairs constPairs (56 + 8 * k + j)
+      (if j % 4 = 0 then BitVec.ofNat 32 (2 * k + j / 4) else 0) = true := by decide +kernel
   intro k hk j hj
-  have E := readW_extract (storeAll buf constPairs (storeAll buf tPairs m))
-    (buf + BitVec.ofNat 64 (8 * ((56 + 8 * k + j) / 2))) (w := 64)
-    (k := 4 * ((56 + 8 * k + j) % 2)) (n := 4) (by omega)
-  rw [add_ofNat, show 8 * ((56 + 8 * k + j) / 2) + 4 * ((56 + 8 * k + j) % 2) =
-    4 * (56 + 8 * k + j) by omega] at E
-  rw [← E]
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;>
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    (simp only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd]; tread; decide)
+  exact storeAll_readW32 (H k hk j hj) m
 
 theorem prologue_ok {s₀ : State} (hp : APre s₀) :
     WP isa (.block (Impl.ChaCha20.X86_64.Avx2Tail.consts ++ consts ++

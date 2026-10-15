@@ -754,6 +754,73 @@ theorem storeAll_frame {buf : Addr} {rs : List Region} (hr : bufR buf ∈ rs) (p
     exact ((Frame.refl _ _).writeW hr _ (bufR_contains buf (hps p (List.mem_cons_self ..)))).trans
       (ih (fun q hq => hps q (List.mem_cons_of_mem _ hq)) _)
 
+/-- The quadword at offset `d` after the stores `ps`: the last one stored at
+`d`, else `v`. -/
+def lastAt (ps : List (Nat × BitVec 64)) (d : Nat) (v : BitVec 64) : BitVec 64 :=
+  ps.foldl (fun v p => if p.1 = d then p.2 else v) v
+
+/-- A quadword read back after the stores `ps`, none of which overlaps it
+partly: by evaluating `lastAt`, rather than reading through each store. -/
+theorem storeAll_readW {buf : Addr} {d : Nat} (hd : d < 2 ^ 32) :
+    ∀ (ps : List (Nat × BitVec 64)) (m : Mem),
+      (∀ p ∈ ps, p.1 < 2 ^ 32 ∧ (p.1 = d ∨ d + 8 ≤ p.1 ∨ p.1 + 8 ≤ d)) →
+      (storeAll buf ps m).readW (buf + BitVec.ofNat 64 d) 64 =
+        lastAt ps d (m.readW (buf + BitVec.ofNat 64 d) 64)
+  | [], _, _ => rfl
+  | p :: ps, m, h => by
+    rw [storeAll, List.foldl_cons, ← storeAll,
+      storeAll_readW hd ps _ (fun q hq => h q (List.mem_cons_of_mem _ hq))]
+    refine congrArg (lastAt ps d) (show _ = if p.1 = d then p.2 else _ from ?_)
+    obtain ⟨h₁, h₂⟩ := h p (List.mem_cons_self ..)
+    by_cases e : p.1 = d
+    · rw [ite_eq_left e, e, Mem.readW_writeW_self64]
+    · rw [ite_eq_right e]
+      exact readW64_off m buf p.2 hd h₁ (by omega_using [e, h₂])
+
+/-- `lastAt`, as an option: `none` if nothing is stored at `d`. -/
+def lastAt? (ps : List (Nat × BitVec 64)) (d : Nat) : Option (BitVec 64) :=
+  ps.foldl (fun o p => if p.1 = d then some p.2 else o) none
+
+theorem lastAt_eq_getD (ps : List (Nat × BitVec 64)) (d : Nat) (v : BitVec 64) :
+    lastAt ps d v = (lastAt? ps d).getD v := by
+  suffices ∀ o : Option (BitVec 64), lastAt ps d (o.getD v) =
+      (ps.foldl (fun o p => if p.1 = d then some p.2 else o) o).getD v from this none
+  induction ps with
+  | nil => intro o; rfl
+  | cons p ps ih =>
+    intro o
+    rw [List.foldl_cons, ← ih]
+    refine congrArg (lastAt ps d) ?_
+    by_cases e : p.1 = d
+    · rw [ite_eq_left e]; exact ite_eq_left e
+    · rw [ite_eq_right e]; exact ite_eq_right e
+
+/-- Whether doubleword `i` of `buf`, after the stores `ps` and then `qs`, is
+`v`: each store at the quadword holding it or apart from it. -/
+def readsTo (ps qs : List (Nat × BitVec 64)) (i : Nat) (v : BitVec 32) : Bool :=
+  decide (8 * (i / 2) < 2 ^ 32) &&
+  (ps ++ qs).all (fun p => decide (p.1 < 2 ^ 32 ∧ (p.1 = 8 * (i / 2) ∨ 8 * (i / 2) + 8 ≤ p.1 ∨
+    p.1 + 8 ≤ 8 * (i / 2)))) &&
+  ((lastAt? qs (8 * (i / 2))).or (lastAt? ps (8 * (i / 2)))).map
+    (BitVec.extractLsb' (8 * (4 * (i % 2))) (8 * 4)) == some v
+
+/-- A doubleword read back after two lists of stores, by evaluating
+`readsTo`, which `decide` can check for every doubleword at once. -/
+theorem storeAll_readW32 {buf : Addr} {ps qs : List (Nat × BitVec 64)} {i : Nat} {v : BitVec 32}
+    (h : readsTo ps qs i v = true) (m : Mem) :
+    (storeAll buf qs (storeAll buf ps m)).readW (buf + BitVec.ofNat 64 (4 * i)) 32 = v := by
+  simp only [readsTo, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, List.mem_append,
+    beq_iff_eq] at h
+  obtain ⟨⟨hd, hall⟩, hv⟩ := h
+  have E := readW_extract (storeAll buf qs (storeAll buf ps m)) (buf + BitVec.ofNat 64 (8 * (i / 2)))
+    (w := 64) (k := 4 * (i % 2)) (n := 4) (by omega_using [])
+  rw [add_ofNat, show 8 * (i / 2) + 4 * (i % 2) = 4 * i by omega_using []] at E
+  rw [← E, storeAll_readW hd qs _ (fun p hp => hall p (Or.inr hp)),
+    storeAll_readW hd ps _ (fun p hp => hall p (Or.inl hp)), lastAt_eq_getD, lastAt_eq_getD]
+  revert hv
+  cases lastAt? qs (8 * (i / 2)) <;> cases lastAt? ps (8 * (i / 2)) <;>
+    simp only [Option.or, Option.map, Option.getD, Option.some.injEq, reduceCtorEq, imp_self, false_implies]
+
 /-! ## The constants -/
 
 /-- A 256-bit read of four stored quadwords. -/
