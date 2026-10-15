@@ -8,8 +8,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Lit
 public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -53,6 +51,6 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) : RfcCurve where
   coreX := Proof.Ecdsa.Arm.P224.sign_arm hL
   coreCT := Proof.Ecdsa.Arm.P224.sign_ct
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by native_taint_decide⟩)
+  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

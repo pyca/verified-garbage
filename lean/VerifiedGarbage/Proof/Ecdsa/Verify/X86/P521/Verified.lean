@@ -16,8 +16,6 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsP
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P521.CallSumsN
-import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -124,7 +122,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX
 functions (`CallTaint`) in place of the analysis of each call. -/
 theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP521 := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ verifyP521 h).isSome = true := by
-    native_taint_decide_sum [mulPSum, addPSum, subPSum, mulNSum, subNSum]
+    taint_decide_sum [mulPSum, addPSum, subPSum, mulNSum, subNSum]
   exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
