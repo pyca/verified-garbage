@@ -580,7 +580,7 @@ Nothing here needs to be sound: `checkSum` and `fill` check the hint. -/
 variable (A)
 
 /-- Structural equality of code (for `hintSum`, which need not be sound). -/
-def codeBeq {I C : Type} [BEq I] [BEq C] : Code I C → Code I C → Bool
+@[nospecialize] def codeBeq {I C : Type} [BEq I] [BEq C] : Code I C → Code I C → Bool
   | .block a, .block b => a == b
   | .seq a b, .seq c d => codeBeq a c && codeBeq b d
   | .ite x a b, .ite y c d => x == y && codeBeq a c && codeBeq b d
@@ -733,6 +733,14 @@ functions of each check, which cost more than it saves. -/
   let ph := postHintSumOf A S same τ c
   (ph, missedCalls S body c ph.2)
 
+/-- `hintReport`, with the analysis' result as an expression, compiled once
+here: the tactics evaluate a call of it, where `toExpr` would otherwise be
+specialized to the analysis, and compiled again, at every summary. -/
+@[nospecialize] def hintReportExpr [Frame A] [Lean.ToExpr A.T] (S : List (Summary M A.T))
+    (same body : Prog M → Prog M → Bool) (τ : A.T) (c : Prog M) : Lean.Expr × List String :=
+  let r := hintReport A S same body τ c
+  (Lean.toExpr r.1, r.2)
+
 end Taint
 
 namespace TaintSum
@@ -789,12 +797,9 @@ otherwise only cost time, silently. (A summary that is never used is not an
 error: callers share one list of summaries among several checks.) -/
 meta def hintChecked (who : String) (M A fr S τ c : Expr) : MetaM (Expr × Expr) := do
   let T' ← whnfD (mkApp2 (mkConst ``Taint.T) M A)
-  let phTy ← mkAppM ``Prod #[T', mkApp (mkConst ``Taint.SHint) T']
   let repTy := mkApp (mkConst ``List [0]) (mkConst ``String)
-  let r := mkAppN (mkConst ``Taint.hintReport) #[M, A, fr, S, ← sameFn M, ← bodyFn M, τ, c]
-  let e ← withLetDecl `r (← mkAppM ``Prod #[phTy, repTy]) r fun r => do
-    let ph ← mkAppM ``ToExpr.toExpr #[← mkAppM ``Prod.fst #[r]]
-    mkLetFVars #[r] (← mkAppM ``Prod.mk #[ph, ← mkAppM ``Prod.snd #[r]])
+  let instT ← synthInstance (mkApp (mkConst ``ToExpr [0]) T')
+  let e := mkAppN (mkConst ``Taint.hintReportExpr) #[M, A, fr, instT, S, ← sameFn M, ← bodyFn M, τ, c]
   let ty ← mkAppM ``Prod #[mkConst ``Expr, repTy]
   let (ph, missed) ← unsafe evalExpr (Expr × List String) ty e
   unless missed.isEmpty do
