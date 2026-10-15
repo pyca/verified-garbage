@@ -3426,26 +3426,13 @@ theorem APre.stk_t' {s₀ : State} (hp : APre e s₀) : (stkR s₀).Disjoint (tR
 /-- That two of the regions the parts use are disjoint: parts of the context
 at different offsets, the stack below the return address, and the data.
 (Matching only reducibly, so that a lemma that does not apply fails fast.) -/
-macro "rdisj" : tactic => `(tactic| first
-  | with_reducible exact sub_disj _ (by lit_omega) (by lit_omega) (by lit_omega)
-  | with_reducible exact (APre.stk_sub ‹APre _ _› (by lit_omega)).symm
-  | with_reducible exact APre.stk_sub ‹APre _ _› (by lit_omega)
-  | with_reducible exact (‹APre _ _›).c_d.sub_left (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_d.symm.sub_right (sub_ctx _ (by lit_omega))
-  | with_reducible exact (APre.stk_d' ‹APre _ _›).symm
-  | with_reducible exact (‹APre _ _›).c_a.symm.sub_right (sub_ctx _ (by lit_omega))
-  | with_reducible exact (APre.stk_a' ‹APre _ _›).symm
-  | with_reducible exact (‹APre _ _›).a_d
-  | with_reducible exact (‹APre _ _›).ret_c.sub_right (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).ret_d
-  | with_reducible exact (‹APre _ _›).ret_t
-  | with_reducible exact (‹APre _ _›).c_t.sub_left (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_t.symm.sub_right (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).d_t
-  | with_reducible exact (‹APre _ _›).d_t.symm
-  | with_reducible exact APre.stk_t' ‹APre _ _›
-  | with_reducible exact (APre.stk_t' ‹APre _ _›).symm
-  | with_reducible exact ret_stk _)
+meta def rdisjSrc : String := "first\n  | with_reducible exact sub_disj _ (by lit_omega) (by lit_omega) (by lit_omega)\n  | with_reducible exact (APre.stk_sub ‹APre _ _› (by lit_omega)).symm\n  | with_reducible exact APre.stk_sub ‹APre _ _› (by lit_omega)\n  | with_reducible exact (‹APre _ _›).c_d.sub_left (sub_ctx _ (by lit_omega))\n  | with_reducible exact (‹APre _ _›).c_d.symm.sub_right (sub_ctx _ (by lit_omega))\n  | with_reducible exact (APre.stk_d' ‹APre _ _›).symm\n  | with_reducible exact (‹APre _ _›).c_a.symm.sub_right (sub_ctx _ (by lit_omega))\n  | with_reducible exact (APre.stk_a' ‹APre _ _›).symm\n  | with_reducible exact (‹APre _ _›).a_d\n  | with_reducible exact (‹APre _ _›).ret_c.sub_right (sub_ctx _ (by lit_omega))\n  | with_reducible exact (‹APre _ _›).ret_d\n  | with_reducible exact (‹APre _ _›).ret_t\n  | with_reducible exact (‹APre _ _›).c_t.sub_left (sub_ctx _ (by lit_omega))\n  | with_reducible exact (‹APre _ _›).c_t.symm.sub_right (sub_ctx _ (by lit_omega))\n  | with_reducible exact (‹APre _ _›).d_t\n  | with_reducible exact (‹APre _ _›).d_t.symm\n  | with_reducible exact APre.stk_t' ‹APre _ _›\n  | with_reducible exact (APre.stk_t' ‹APre _ _›).symm\n  | with_reducible exact ret_stk _"
+
+open Lean Elab Tactic in
+elab "rdisj" : tactic => do
+  match Parser.runParserCategory (← getEnv) `tactic rdisjSrc with
+  | .ok stx => evalTactic stx
+  | .error e => throwError e
 
 /-- A region is disjoint from each of a list of regions. -/
 macro "rdisj_all" : tactic => `(tactic| (
