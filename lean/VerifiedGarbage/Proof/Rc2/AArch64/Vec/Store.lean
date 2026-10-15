@@ -204,7 +204,7 @@ theorem write4_at (m : Mem) (q : Addr) (V0 V1 V2 V3 : BitVec (8 * 16)) {o : Nat}
   rw [write16_at _ _ (by decide) ho, write16_at _ _ (by decide) ho, write16_at _ _ (by decide) ho,
     write16_at _ _ (by decide) ho]
   rcases (by omega_arith : o < 16 ∨ (16 ≤ o ∧ o < 32) ∨ (32 ≤ o ∧ o < 48) ∨ 48 ≤ o) with h | h | h | h <;>
-    simp (disch := omega_arith) only [ite_eq_left, ite_eq_right] <;>
+    simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right] <;>
     exact congrArg _ (by omega_arith)
 
 theorem vbyte_ofVDwords (a b : BitVec 64) {e : Nat} (he : e < 16) :
@@ -313,7 +313,7 @@ theorem xorStore_ok (t : State) {R : Nat → Spec.Rc2.State} (hsc : Scattered t.
     rfl, rfl, rfl⟩
   · rw [mem, write4_at _ _ _ _ _ _ ho, prevByte]
     rcases (by omega_arith : o < 16 ∨ (16 ≤ o ∧ o < 32) ∨ (32 ≤ o ∧ o < 48) ∨ 48 ≤ o) with h | h | h | h <;>
-      simp (disch := omega_arith) only [ite_eq_left, ite_eq_right]
+      simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
     · rw [V0, vbyte_xor, (hsc _ (by omega_arith)).1, vbyte_ofVDwords _ _ (by omega_arith),
         show o % 16 = o by omega_arith]
       by_cases h8 : o < 8
