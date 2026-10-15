@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prefix
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -602,12 +603,12 @@ theorem cryptS_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     (cryptS { v.callee with pass := 512 }).allInstrs (fun i => !loadsMxcsr i) = true := by
   obtain ⟨hf, -, hw⟩ := avx2_of v hv
   rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
-    (simp only [cryptS, Code.allInstrs, v.mxcsr, hf, hw, hl]; rfl)
+    (simp only [cryptS, preS, Code.allInstrs, v.mxcsr, hf, hw, hl]; lit_decide)
 
 theorem prologueP_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     (prologue { v.callee with pass := 512 }).allInstrs (fun i => !loadsMxcsr i) = true := by
   obtain ⟨hf, -, hw⟩ := avx2_of v hv
-  simp only [prologue, Code.allInstrs, v.mxcsr, hf, hw]; rfl
+  simp only [prologue, Code.allInstrs, v.mxcsr, hf, hw]; lit_decide
 
 /-- The data encrypted, by `bulk` and the implementation `v` of
 `vg_chacha20_xor`, its first `a` bytes of ciphertext absorbed, and the
