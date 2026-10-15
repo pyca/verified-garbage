@@ -31,7 +31,7 @@ from the steps of its code: the first byte of the field shifted down
 `loads_ok`), the reduction modulo `2ᵈ` (`mask_ok`) and `Decompress_d` stored
 (`store_ok`). The value of the field is `bsum` of its bytes, shifted down;
 that it is field `e` of `ByteDecode_d` is `decodeDecompress5_0` …
-`decodeDecompress11_7`, one `omega` for each (`fieldVal5`, `fieldVal11`).
+`decodeDecompress11_7`, one `omega_arith` (the arithmetic facts it needs alone) for each (`fieldVal5`, `fieldVal11`).
 -/
 
 @[expose] public section
@@ -74,7 +74,7 @@ theorem bsum_lt (g : Nat → Byte) (j : Nat) : ∀ n, bsum g j n < 256 ^ n
     have hb := (g (j + n)).isLt
     have : (g (j + n)).toNat * 256 ^ n ≤ 255 * 256 ^ n := Nat.mul_le_mul_right _ (by bdd_omega)
     rw [bsum, Nat.pow_succ]
-    omega
+    omega_arith
 
 /-- A byte shifted up by `8m - t` and added to a number of `m` bytes
 shifted down by `t`. -/
@@ -87,7 +87,7 @@ theorem shift_step {A t m : Nat} (b : Byte) (ht : t < 8) (hm : m = 1 ∨ m = 2) 
       ← Nat.mul_assoc, Nat.mul_comm b.toNat, Nat.mul_assoc, Nat.add_mul_div_left _ _ (Nat.two_pow_pos t)]
   apply BitVec.eq_of_toNat_eq
   rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
-    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (show b.toNat < 2 ^ 32 by have := b.isLt; omega), ← Nat.add_mod]
+    Nat.shiftLeft_eq, Nat.mod_eq_of_lt (show b.toNat < 2 ^ 32 by have := b.isLt; omega_arith), ← Nat.add_mod]
 
 /-- Reduced modulo `2ᵈ` by a pair of shifts. -/
 theorem mask_eq {d V : Nat} (hd : d = 5 ∨ d = 11) (hV : V < 2 ^ 32) :
@@ -127,7 +127,7 @@ theorem head_ok {j t : Nat} (hj : j < 4096) (ht : t < 8) (h0 : s.gpr .r0 = x)
     rw [Nat.pow_zero, Nat.div_one]
     apply BitVec.eq_of_toNat_eq
     rw [setWidth32_toNat, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (by have := (s.mem (State.addr (x + BitVec.ofNat 32 j))).isLt; omega)]
+      Nat.mod_eq_of_lt (by have := (s.mem (State.addr (x + BitVec.ofNat 32 j))).isLt; omega_arith)]
   · simp only [h, ↓reduceIte]
     have hsh : 1 ≤ t ∧ t ≤ 31 := by bdd_omega
     run_block [h0, i0, hj, hsh]
@@ -261,7 +261,7 @@ theorem coeff_at (hT : T = 4 * K) {k : Nat} (hk : K * i + k < 256) :
     InRegions s.wr (coeffAddr (F s₀) (K * i + k)) 4 ∧
     (polyRegion (F s₀)).Contains (coeffAddr (F s₀) (K * i + k)) 4 := by
   have fF := hp.fitF
-  have c := coeff_contains (F s₀) (i := K * i + k) (by rw [n_eq]; omega)
+  have c := coeff_contains (F s₀) (i := K * i + k) (by rw [n_eq]; omega_arith)
   refine ⟨addr_coeff fF (by subst hT; rw [Nat.mul_assoc, ← Nat.mul_add]) (by bdd_omega), ?_, c⟩
   rw [hwr, hp.wr]; exact inRegions_of (by simp) c
 
@@ -291,35 +291,35 @@ theorem fieldVal5 {B : List Byte} (hB : B.length = 160) {i : Nat} (hi : i < 32)
   · rw [Nat.add_zero, decodeDecompress5_0 B hB hi, ← Nat.add_zero (5 * i), ← hg 0 (by decide)]
     refine congrArg (decompress 5) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress5_1 B hB hi, ← Nat.add_zero (5 * i), ← hg 0 (by decide), ← hg 1 (by decide)]
     refine congrArg (decompress 5) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress5_2 B hB hi, ← hg 1 (by decide)]
     refine congrArg (decompress 5) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress5_3 B hB hi, ← hg 1 (by decide), ← hg 2 (by decide)]
     refine congrArg (decompress 5) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress5_4 B hB hi, ← hg 2 (by decide), ← hg 3 (by decide)]
     refine congrArg (decompress 5) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress5_5 B hB hi, ← hg 3 (by decide)]
     refine congrArg (decompress 5) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress5_6 B hB hi, ← hg 3 (by decide), ← hg 4 (by decide)]
     refine congrArg (decompress 5) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress5_7 B hB hi, ← hg 4 (by decide)]
     refine congrArg (decompress 5) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
 
 /-- Field `e` of `ByteDecode₁₁`, from its bytes. -/
 theorem fieldVal11 {B : List Byte} (hB : B.length = 352) {i : Nat} (hi : i < 32)
@@ -335,35 +335,35 @@ theorem fieldVal11 {B : List Byte} (hB : B.length = 352) {i : Nat} (hi : i < 32)
       ← hg 1 (by decide)]
     refine congrArg (decompress 11) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress11_1 B hB hi, ← hg 1 (by decide), ← hg 2 (by decide)]
     refine congrArg (decompress 11) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress11_2 B hB hi, ← hg 2 (by decide), ← hg 3 (by decide), ← hg 4 (by decide)]
     refine congrArg (decompress 11) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress11_3 B hB hi, ← hg 4 (by decide), ← hg 5 (by decide)]
     refine congrArg (decompress 11) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress11_4 B hB hi, ← hg 5 (by decide), ← hg 6 (by decide)]
     refine congrArg (decompress 11) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress11_5 B hB hi, ← hg 6 (by decide), ← hg 7 (by decide), ← hg 8 (by decide)]
     refine congrArg (decompress 11) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress11_6 B hB hi, ← hg 8 (by decide), ← hg 9 (by decide)]
     refine congrArg (decompress 11) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
   · rw [decodeDecompress11_7 B hB hi, ← hg 9 (by decide), ← hg 10 (by decide)]
     refine congrArg (decompress 11) ?_
     simp only [fieldAt, bsum, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reducePow]
-    omega
+    omega_arith
 
 end
 
@@ -392,7 +392,7 @@ theorem field_step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 32) {e : N
   have bat : ∀ k < n, _ := fun k (hk : k < n) =>
     byte_at hp h.rd h.wr h.frame (S := dd s₀) (i := i) (k := j + k) (by
       have : dd s₀ * i + dd s₀ ≤ dd s₀ * 32 := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hi
-      rw [hl]; rw [Nat.mul_comm 32]; omega)
+      rw [hl]; rw [Nat.mul_comm 32]; omega_arith)
   obtain ⟨ec, oc, cc⟩ := coeff_at hp h.wr (T := 32) (K := 8) (i := i) rfl (k := e) (by bdd_omega)
   let g : Nat → Byte := fun k => (bs s₀).getD (dd s₀ * i + k) 0
   have hsum : bsum g j n / 2 ^ t < 2 ^ 32 := by
@@ -405,7 +405,7 @@ theorem field_step {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < 32) {e : N
     (fun k hk => by rw [(bat k hk).1, (bat k hk).2.2.1])) fun s₁ ⟨k₁, v₁⟩ => ?_
   refine WP.mono (mask_ok hd hsum v₁) fun s₂ ⟨k₂, v₂⟩ => ?_
   have k₁₂ := k₁.trans k₂
-  have hsh : 1 ≤ dd s₀ ∧ dd s₀ ≤ 31 := by rcases hd with h | h <;> omega
+  have hsh : 1 ≤ dd s₀ ∧ dd s₀ ≤ 31 := by rcases hd with h | h <;> omega_arith
   refine WP.mono (store_ok (enc_half _ hdl) hsh (by bdd_omega) v₂ (k₁₂.r3.trans h.r3)
     (by rw [ec, k₁₂.wr]; exact oc)) fun s' ⟨r0, r1, r3, pres, m, rd, wr, sp⟩ => ?_
   have hv : dec (dd s₀) (BitVec.ofNat 32 (bsum g j n / 2 ^ t % 2 ^ dd s₀)) = out s₀ (8 * i + e) := by
@@ -462,7 +462,7 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : s₁.gpr = s�
       (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧ PolyIs s.mem (F s₀) (D s₀) := by
   refine wp_loop_ne (fun i s => Mid s₀ i 0 s) (N := 32) (by decide) (fun i hi s h => step hp hi h)
     (fun s h => ⟨h.pres, h.sp, polyIs_of_coeffAt fun j hj => by
-      rw [h.coeff j hj, ite_eq_left (by rw [n_eq] at hj; omega)]; rfl⟩) ?_
+      rw [h.coeff j hj, ite_eq_left (by rw [n_eq] at hj; omega_arith)]; rfl⟩) ?_
   refine ⟨?_, ?_, ?_, rd, wr, sp, fun r _ => by rw [g], by rw [m]; exact Frame.refl _ _,
     fun j _ => by rw [m, Nat.mul_zero, Nat.add_zero, ite_eq_right (Nat.not_lt_zero _)]⟩
   · rw [g]; simp
@@ -480,7 +480,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     rw [cmp_z _ _ (by decide)]) (fun e => ?_) (fun e => ?_)
   · have e5 : dd s₀ = 5 := of_decide_eq_true e
     rw [← e5]; exact loop_ok hp rfl rfl rfl rfl rfl
-  · have e11 : dd s₀ = 11 := by have := of_decide_eq_false e; omega
+  · have e11 : dd s₀ = 11 := by have := of_decide_eq_false e; omega_arith
     rw [← e11]; exact loop_ok hp rfl rfl rfl rfl rfl
 
 theorem pre_of {s : State} (h : (Spec.MlKem1024.decodeDecompressContract Arm.abi).pre s) : Pre s := by
