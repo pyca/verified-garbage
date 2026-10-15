@@ -207,10 +207,15 @@ def body48 : Prog isa :=
 /-- The next group. -/
 def adv : List Instr := [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16)]
 
-/-- From how many blocks the loops with the prepared powers take three
-groups at a time: they load the tables of `pow48` (`StitchZR.powP48`)
+/-- From how many blocks the decryption loops with the prepared powers take
+three groups at a time: they load the tables of `pow48` (`StitchZR.powP48`)
 rather than compute them, which `big` does from 256 blocks on. -/
 def bigMinP : BitVec 32 := 96
+
+/-- `bigMinP` for the encryption loops, which gain less from three groups at
+a time: measured on Emerald Rapids, they are slower with them below 144
+blocks. -/
+def bigMinPE : BitVec 32 := 144
 
 /-- At least 256 blocks, the first group encrypted: the powers, the next two
 groups, the loop, and two of the three groups left to hash. -/

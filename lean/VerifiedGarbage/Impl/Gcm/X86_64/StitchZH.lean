@@ -33,7 +33,7 @@ open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Aes.X86_64.VaesZ (ctrsZ xorDataZ)
-open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin bigMinP)
+open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv fin bigMinP bigMinPE)
 open VG.Impl.Gcm.X86_64.StitchZR (setupP powP48)
 open VG.Impl.Gcm.X86_64.StitchZTo (atIx)
 
@@ -189,7 +189,7 @@ def tailR (r : Prog isa) : Prog isa :=
 def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq first
-      (.seq (.block [.alu .cmp .r9 (.imm bigMinP)])
+      (.seq (.block [.alu .cmp .r9 (.imm bigMinPE)])
         (.seq (.ite .b (.block []) bigP)
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (.loop body .ae)) (tailR rem))))))

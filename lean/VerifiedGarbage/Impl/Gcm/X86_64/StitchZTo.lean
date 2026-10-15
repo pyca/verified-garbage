@@ -104,6 +104,6 @@ def encWith (su : List Instr) (bigC : Prog isa) (big : BitVec 32) : Prog isa :=
 def enc : Prog isa := encWith setup bigTo 256
 
 /-- `StitchZP.enc`, out of place. -/
-def encP : Prog isa := encWith setupP bigPTo StitchZ.bigMinP
+def encP : Prog isa := encWith setupP bigPTo StitchZ.bigMinPE
 
 end VG.Impl.Gcm.X86_64.StitchZTo

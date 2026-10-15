@@ -11,7 +11,7 @@ open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs storeCtr storeY)
 open VG.Impl.Aes.X86_64.VaesZ (ctrsZ)
-open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv bigMinP)
+open VG.Impl.Gcm.X86_64.StitchZ (gq gq48 lastG adv bigMinPE)
 open VG.Impl.Gcm.X86_64.StitchZTo (xorDataZTo)
 open VG.Impl.Gcm.X86_64.StitchZR (powP48)
 open VG.Impl.Gcm.X86_64.StitchZRTo (setupP)
@@ -53,7 +53,7 @@ def remTo : Prog isa := StitchZH.remG [.alu .add .r8 (.reg .rdx)] .r8
 def encR : Prog isa :=
   .seq (.seq (.block setupP) Aes.X86_64.VaesZH.loadKeys)
     (.seq firstTo
-      (.seq (.block [.alu .cmp .r9 (.imm bigMinP)])
+      (.seq (.block [.alu .cmp .r9 (.imm bigMinPE)])
         (.seq (.ite .b (.block []) bigPTo)
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (StitchZH.tailR remTo))))))
