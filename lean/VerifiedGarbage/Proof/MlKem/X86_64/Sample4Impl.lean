@@ -85,15 +85,28 @@ structure Sample4Impl where
 
 namespace Sample4Impl
 
+/-- The checks of every instruction of an implementation's code, at once:
+the kernel builds the code once for all four. -/
+def codeChecks (c : Prog isa) : Bool :=
+  c.allInstrs (fun i => !Taint.clobbers i .rsp) && decide (c.depth ≤ 3) && ctlOk c &&
+    c.allInstrs (fun i => !isa.writesSp i)
+
+theorem codeChecks_spec {c : Prog isa} (h : codeChecks c = true) :
+    NoSp c ∧ c.depth ≤ 3 ∧ ctlOk c = true ∧ c.all (fun i => !isa.writesSp i) = true := by
+  simp only [codeChecks, Bool.and_eq_true, decide_eq_true_eq] at h
+  exact ⟨nosp_of h.1.1.1, h.1.1.2, h.1.2, Code.all_of_allInstrs h.2⟩
+
+theorem scalar_checks : codeChecks (Impl.MlKem.X86_64.Callee4.scalar).code = true := by decide +kernel
+
 /-- The baseline implementation, `vg_mlkem_sample_ntt4`, which calls `vg_mlkem_sample_ntt`. -/
 def scalar : Sample4Impl where
   callee := .scalar
   ok := S4.correct_scalar
   ct := S4.ct_scalar
-  nosp := nosp_of (by decide +kernel)
-  depth_le := by decide +kernel
-  mxcsr := by decide +kernel
-  spSafe := Code.all_of_allInstrs (by decide +kernel)
+  nosp := (codeChecks_spec scalar_checks).1
+  depth_le := (codeChecks_spec scalar_checks).2.1
+  mxcsr := (codeChecks_spec scalar_checks).2.2.1
+  spSafe := (codeChecks_spec scalar_checks).2.2.2
   prfs_ok := fun L hcs => prfsScalar_ok L hcs
   prfs_tr := fun hcs => prfsScalar_tr hcs
   prfs_ctl := prfsScalar_ctl
@@ -103,15 +116,17 @@ def scalar : Sample4Impl where
   prfsDoc := "one at a time"
   features := []
 
+theorem avx2_checks : codeChecks (Impl.MlKem.X86_64.Callee4.avx2).code = true := by decide +kernel
+
 /-- The AVX2 implementation, `vg_mlkem_sample_ntt4_avx2`. -/
 def avx2 : Sample4Impl where
   callee := .avx2
   ok := S4.correct
   ct := S4.ct
-  nosp := nosp_of (by decide +kernel)
-  depth_le := by decide +kernel
-  mxcsr := by decide +kernel
-  spSafe := Code.all_of_allInstrs (by decide +kernel)
+  nosp := (codeChecks_spec avx2_checks).1
+  depth_le := (codeChecks_spec avx2_checks).2.1
+  mxcsr := (codeChecks_spec avx2_checks).2.2.1
+  spSafe := (codeChecks_spec avx2_checks).2.2.2
   prfs_ok := fun L hcs => prfsAvx2_ok L hcs
   prfs_tr := fun hcs => prfsAvx2_tr hcs
   prfs_ctl := prfsAvx2_ctl
@@ -121,15 +136,17 @@ def avx2 : Sample4Impl where
   prfsDoc := "four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2"]
 
+theorem avx512_checks : codeChecks (Impl.MlKem.X86_64.Callee4.avx512).code = true := by decide +kernel
+
 /-- The AVX-512VL implementation, `vg_mlkem_sample_ntt4_avx512`. -/
 def avx512 : Sample4Impl where
   callee := .avx512
   ok := S4.correct
   ct := S4.ct
-  nosp := nosp_of (by decide +kernel)
-  depth_le := by decide +kernel
-  mxcsr := by decide +kernel
-  spSafe := Code.all_of_allInstrs (by decide +kernel)
+  nosp := (codeChecks_spec avx512_checks).1
+  depth_le := (codeChecks_spec avx512_checks).2.1
+  mxcsr := (codeChecks_spec avx512_checks).2.2.1
+  spSafe := (codeChecks_spec avx512_checks).2.2.2
   prfs_ok := fun L hcs => prfsAvx2_ok L hcs
   prfs_tr := fun hcs => prfsAvx2_tr hcs
   prfs_ctl := prfsAvx2_ctl

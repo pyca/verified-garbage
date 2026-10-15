@@ -51,6 +51,11 @@ theorem all_ite {p : Instr → Bool} {c : Cond} {t e : Prog isa} (ht : t.all p =
     (Code.ite c t e : Prog isa).all p = true := by
   simp only [Code.all, ht, he, Bool.and_self]
 
+theorem ctlOk_loop {c : Cond} {b : Prog isa} (h : ctlOk b = true) : ctlOk (.loop b c) = true := h
+
+theorem all_loop {p : Instr → Bool} {c : Cond} {b : Prog isa} (h : b.all p = true) :
+    (Code.loop b c : Prog isa).all p = true := h
+
 theorem all_seq {p : Instr → Bool} {a b : Prog isa} (ha : a.all p = true) (hb : b.all p = true) :
     (Code.seq a b : Prog isa).all p = true := by
   simp only [Code.all, ha, hb, Bool.and_self]
@@ -450,23 +455,44 @@ theorem prfsX4_rtr {fast : Bool} {wl : Nat} (n N₀ o : Nat) :
     exact RelCT.mono (batch_tr (fun _ _ h => h) wl (Nat.le_of_lt (Nat.mod_lt n (by decide)))) (fun _ _ h => h)
       fun _ _ h => h _ (List.mem_cons_self ..)
 
+/-- The permutation never loads MXCSR: evaluated once for each implementation. -/
+theorem permute4_ctl (fast : Bool) : ctlOk (Impl.Sha3.X86_64.X4.permute4 fast) = true := by
+  cases fast <;> kernel_rfl
+
+/-- The permutation never writes the stack pointer: evaluated once for each implementation. -/
+theorem permute4_sp (fast : Bool) : (Impl.Sha3.X86_64.X4.permute4 fast).all (fun i => !isa.writesSp i) = true := by
+  cases fast <;> kernel_rfl
+
+theorem batch_ctl {fast : Bool} {m : Nat} (wl : Nat) (hm : m < 5) : ctlOk (batch m wl fast) = true :=
+  ctlOk_seq (by kernel_rfl) (ctlOk_seq (permute4_ctl fast) (by
+    rcases (by omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl))
+
+theorem batch_sp {fast : Bool} {m : Nat} (wl : Nat) (hm : m < 5) :
+    (batch m wl fast).all (fun i => !isa.writesSp i) = true :=
+  all_seq (by kernel_rfl) (all_seq (permute4_sp fast) (by
+    rcases (by omega : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4) with rfl | rfl | rfl | rfl | rfl <;> kernel_rfl))
+
+theorem quads_ctl {fast : Bool} (N₀ q o wl : Nat) : ctlOk (quads N₀ q o wl fast) = true := by
+  unfold quads
+  exact ctlOk_seq (by kernel_rfl) (ctlOk_loop (ctlOk_seq (batch_ctl wl (by decide)) (by kernel_rfl)))
+
+theorem quads_sp {fast : Bool} (N₀ q o wl : Nat) : (quads N₀ q o wl fast).all (fun i => !isa.writesSp i) = true := by
+  unfold quads
+  exact all_seq (by kernel_rfl) (all_loop (all_seq (batch_sp wl (by decide)) (by kernel_rfl)))
+
 theorem prfsX4_ctl {fast : Bool} {wl : Nat} (n N₀ o : Nat) : ctlOk (prfsX4 fast N₀ n o wl) = true := by
-  have hr := Nat.mod_lt n (show 0 < 4 by decide)
   unfold prfsX4
-  generalize n % 4 = r at hr ⊢
-  refine ctlOk_seq (by split; exacts [rfl, by cases fast <;> kernel_rfl]) ?_
+  refine ctlOk_seq (by split; exacts [rfl, quads_ctl _ _ _ _]) ?_
   split
   · rfl
-  · rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;> cases fast <;> kernel_rfl
+  · exact ctlOk_seq (by kernel_rfl) (batch_ctl wl (by have := Nat.mod_lt n (show 0 < 4 by decide); omega))
 
 theorem prfsX4_sp {fast : Bool} {wl : Nat} (n N₀ o : Nat) : (prfsX4 fast N₀ n o wl).all (fun i => !isa.writesSp i) = true := by
-  have hr := Nat.mod_lt n (show 0 < 4 by decide)
   unfold prfsX4
-  generalize n % 4 = r at hr ⊢
-  refine all_seq (by split; exacts [rfl, by cases fast <;> kernel_rfl]) ?_
+  refine all_seq (by split; exacts [rfl, quads_sp _ _ _ _]) ?_
   split
   · rfl
-  · rcases (by omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;> cases fast <;> kernel_rfl
+  · exact all_seq (by kernel_rfl) (batch_sp wl (by have := Nat.mod_lt n (show 0 < 4 by decide); omega))
 
 end Prf4
 
