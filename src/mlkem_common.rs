@@ -31,9 +31,9 @@ pub(crate) enum Backend {
     /// time; elsewhere, one entry of the matrix at a time), with scalar
     /// Keccak.
     Scalar,
-    /// AArch64 with the SHA-3 extension, for Keccak.
-    #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-    Sha3,
+    /// Paired AArch64 SHAKE and arithmetic with NEON and SHA-3.
+    #[cfg(target_arch = "aarch64")]
+    PairedSha3,
     /// AVX2: four instances of SHAKE128 at once.
     #[cfg(target_arch = "x86_64")]
     Avx2,
@@ -45,7 +45,7 @@ pub(crate) enum Backend {
 impl Backend {
     /// Select the best implementation supported by all three KEM operations.
     /// On x86-64, prefer the AVX-512VL sampler, then AVX2. On AArch64,
-    /// follow the SHA-3 backend selected for the hash functions.
+    /// select paired SHAKE independently of standalone hashing.
     // Each target uses only some of the arguments.
     #[allow(unused_variables)]
     pub(crate) fn select(
@@ -54,25 +54,19 @@ impl Backend {
         avx512: crate::cpu::Features,
         sha3: crate::cpu::Features,
     ) -> Backend {
-        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-        if !f.contains(sha3) {
-            return Backend::Scalar;
+        #[cfg(target_arch = "aarch64")]
+        if f.contains(sha3) {
+            return Backend::PairedSha3;
         }
-        match crate::hashes::sha3::Backend::detected() {
-            crate::hashes::sha3::Backend::Scalar => {
-                #[cfg(target_arch = "x86_64")]
-                if f.contains(avx512) {
-                    return Backend::Avx512;
-                }
-                #[cfg(target_arch = "x86_64")]
-                if f.contains(avx2) {
-                    return Backend::Avx2;
-                }
-                Backend::Scalar
-            }
-            #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-            crate::hashes::sha3::Backend::Sha3 => Backend::Sha3,
+        #[cfg(target_arch = "x86_64")]
+        if f.contains(avx512) {
+            return Backend::Avx512;
         }
+        #[cfg(target_arch = "x86_64")]
+        if f.contains(avx2) {
+            return Backend::Avx2;
+        }
+        Backend::Scalar
     }
 }
 
@@ -96,6 +90,9 @@ macro_rules! ml_kem {
         encaps_h: $encaps_h:path,
         encaps_sha3: ($encaps_sha3:path, $encaps_sha3_features:path),
         decaps_sha3: ($decaps_sha3:path, $decaps_sha3_features:path),
+        keygen_paired_sha3: ($keygen_paired_sha3:path, $keygen_paired_sha3_features:path),
+        encaps_paired_sha3: ($encaps_paired_sha3:path, $encaps_paired_sha3_features:path),
+        decaps_paired_sha3: ($decaps_paired_sha3:path, $decaps_paired_sha3_features:path),
         keygen_avx2: ($keygen_avx2:path, $keygen_avx2_features:path),
         keygen_avx512: ($keygen_avx512:path, $keygen_avx512_features:path),
         encaps_h_avx2: ($encaps_h_avx2:path, $encaps_h_avx2_features:path),
@@ -124,10 +121,10 @@ macro_rules! ml_kem {
                 &[$keygen_avx512_features, $encaps_h_avx512_features, $decaps_avx512_features];
             #[cfg(not(target_arch = "x86_64"))]
             const AVX512: &[$crate::cpu::Features] = &[];
-            #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+            #[cfg(target_arch = "aarch64")]
             const SHA3: &[$crate::cpu::Features] =
-                &[$keygen_sha3_features, $encaps_sha3_features, $decaps_sha3_features];
-            #[cfg(not(all(target_arch = "aarch64", feature = "cpu-features-env")))]
+                &[$keygen_paired_sha3_features, $encaps_paired_sha3_features, $decaps_paired_sha3_features];
+            #[cfg(not(target_arch = "aarch64"))]
             const SHA3: &[$crate::cpu::Features] = &[];
             Backend::select(
                 $crate::cpu::detected(),
@@ -212,7 +209,8 @@ macro_rules! ml_kem {
             pub fn encapsulate_internal(&self, m: &[u8; 32]) -> Result<([u8; 32], [u8; $ct]), Error> {
                 let mut key = [0u8; 32];
                 let mut ct = [0u8; $ct];
-                let mut scratch: Scratch = [0; $scratch];
+                // The verified contract accepts arbitrary initial scratch bytes.
+                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
                 // SAFETY: `self.bytes`, `self.h` (on x86-64), `m`, `key`,
                 // `ct` and `scratch` are valid for reads (and, for the last
                 // three, writes) of their sizes; they are distinct Rust
@@ -226,20 +224,27 @@ macro_rules! ml_kem {
                 let r = unsafe {
                     match backend() {
                         #[cfg(not(target_arch = "x86_64"))]
-                        Backend::Scalar => $encaps(&self.bytes, m, &mut key, &mut ct, &mut scratch),
+                        Backend::Scalar => $encaps(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Scalar => $encaps_h(&self.bytes, &self.h, m, &mut key, &mut ct, &mut scratch),
-                        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-                        Backend::Sha3 => $encaps_sha3(&self.bytes, m, &mut key, &mut ct, &mut scratch),
+                        Backend::Scalar => $encaps_h(&self.bytes, &self.h, m, &mut key, &mut ct, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::PairedSha3 => $encaps_paired_sha3(&self.bytes, m, &mut key, &mut ct, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $encaps_h_avx2(&self.bytes, &self.h, m, &mut key, &mut ct, &mut scratch),
+                        Backend::Avx2 => $encaps_h_avx2(&self.bytes, &self.h, m, &mut key, &mut ct, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx512 => {
-                            $encaps_h_avx512(&self.bytes, &self.h, m, &mut key, &mut ct, &mut scratch)
+                            $encaps_h_avx512(&self.bytes, &self.h, m, &mut key, &mut ct, scratch.as_mut_ptr())
                         }
                     }
                 };
-                zeroize(&mut scratch);
+                // SAFETY: the entire scratch allocation is writable, including
+                // bytes the operation may not have initialized. Wipe on both
+                // success and failure before inspecting the return status.
+                unsafe {
+                    $crate::zeroize::zeroize_raw(
+                        scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>(),
+                    );
+                }
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
                     // the module's documentation gives.
@@ -296,7 +301,8 @@ macro_rules! ml_kem {
                     },
                     dk: [0; $dk],
                 };
-                let mut scratch: Scratch = [0; $scratch];
+                // The verified contract accepts arbitrary initial scratch bytes.
+                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
                 // SAFETY: `seed`, `key.ek.bytes`, `key.dk` and `scratch` are
                 // valid for reads (and, for the last three, writes) of their
                 // sizes; they are distinct Rust objects, so they do not
@@ -305,16 +311,23 @@ macro_rules! ml_kem {
                 // whose features the CPU has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $keygen(seed, &mut key.ek.bytes, &mut key.dk, &mut scratch),
-                        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-                        Backend::Sha3 => $keygen_sha3(seed, &mut key.ek.bytes, &mut key.dk, &mut scratch),
+                        Backend::Scalar => $keygen(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::PairedSha3 => $keygen_paired_sha3(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $keygen_avx2(seed, &mut key.ek.bytes, &mut key.dk, &mut scratch),
+                        Backend::Avx2 => $keygen_avx2(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $keygen_avx512(seed, &mut key.ek.bytes, &mut key.dk, &mut scratch),
+                        Backend::Avx512 => $keygen_avx512(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr()),
                     }
                 };
-                zeroize(&mut scratch);
+                // SAFETY: the entire scratch allocation is writable, including
+                // bytes the operation may not have initialized. Wipe on both
+                // success and failure before inspecting the return status.
+                unsafe {
+                    $crate::zeroize::zeroize_raw(
+                        scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>(),
+                    );
+                }
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
                     // the module's documentation gives; dropping `key`
@@ -346,7 +359,8 @@ macro_rules! ml_kem {
             /// constant time: nothing tells whether it was rejected).
             pub fn decapsulate(&self, ct: &[u8; $ct]) -> Result<[u8; 32], Error> {
                 let mut key = [0u8; 32];
-                let mut scratch: Scratch = [0; $scratch];
+                // The verified contract accepts arbitrary initial scratch bytes.
+                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
                 // SAFETY: `self.dk`, `ct`, `key` and `scratch` are valid for
                 // reads (and, for the last two, writes) of their sizes; they
                 // are distinct Rust objects, so they do not overlap each
@@ -356,16 +370,23 @@ macro_rules! ml_kem {
                 // has.
                 let r = unsafe {
                     match backend() {
-                        Backend::Scalar => $decaps(&self.dk, ct, &mut key, &mut scratch),
-                        #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-                        Backend::Sha3 => $decaps_sha3(&self.dk, ct, &mut key, &mut scratch),
+                        Backend::Scalar => $decaps(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
+                        #[cfg(target_arch = "aarch64")]
+                        Backend::PairedSha3 => $decaps_paired_sha3(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx2 => $decaps_avx2(&self.dk, ct, &mut key, &mut scratch),
+                        Backend::Avx2 => $decaps_avx2(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
                         #[cfg(target_arch = "x86_64")]
-                        Backend::Avx512 => $decaps_avx512(&self.dk, ct, &mut key, &mut scratch),
+                        Backend::Avx512 => $decaps_avx512(&self.dk, ct, &mut key, scratch.as_mut_ptr()),
                     }
                 };
-                zeroize(&mut scratch);
+                // SAFETY: the entire scratch allocation is writable, including
+                // bytes the operation may not have initialized. Wipe on both
+                // success and failure before inspecting the return status.
+                unsafe {
+                    $crate::zeroize::zeroize_raw(
+                        scratch.as_mut_ptr().cast(), core::mem::size_of::<Scratch>(),
+                    );
+                }
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
                     // the module's documentation gives.
@@ -375,6 +396,80 @@ macro_rules! ml_kem {
                     // NO-COVERAGE-END
                 }
                 Ok(key)
+            }
+        }
+
+        #[cfg(all(test, target_arch = "aarch64"))]
+        mod sha3_variant_tests {
+            use super::*;
+            use $crate::mlkem_common::aarch64_tests::{array, vectors};
+
+            // Exercise the retained single-state SHA-3 implementation against
+            // published ACVP answers, independently of production dispatch.
+            #[test]
+            fn legacy_sha3_keygen_acvp() {
+                if !$crate::cpu::detected().contains($keygen_sha3_features) {
+                    return;
+                }
+                for v in vectors($name, None) {
+                    let mut seed = [0; 64];
+                    seed[..32].copy_from_slice(&array::<32>(&v["d"]));
+                    seed[32..].copy_from_slice(&array::<32>(&v["z"]));
+                    let mut ek = [0; $ek];
+                    let mut dk = [0; $dk];
+                    let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
+                    // SAFETY: CPU features were checked. All buffers have the
+                    // generated function's sizes and are separate allocations.
+                    assert_eq!(unsafe { $keygen_sha3(&seed, &mut ek, &mut dk, scratch.as_mut_ptr()) }, 1);
+                    assert_eq!(ek, array::<$ek>(&v["ek"]));
+                    assert_eq!(dk, array::<$dk>(&v["dk"]));
+                    let key = $DecapsulationKey::from_seed(&seed).unwrap();
+                    assert_eq!(key.encapsulation_key().as_bytes(), &ek);
+                    assert_eq!(key.dk, dk);
+                }
+            }
+
+            #[test]
+            fn legacy_sha3_encapsulation_acvp() {
+                if !$crate::cpu::detected().contains($encaps_sha3_features) {
+                    return;
+                }
+                for v in vectors($name, Some("encapsulation")) {
+                    let ek = array::<$ek>(&v["ek"]);
+                    let m = array::<32>(&v["m"]);
+                    let mut key = [0; 32];
+                    let mut ct = [0; $ct];
+                    let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
+                    // SAFETY: Features were checked; published valid key and
+                    // distinct buffers meet the generated function's contract.
+                    assert_eq!(unsafe { $encaps_sha3(&ek, &m, &mut key, &mut ct, scratch.as_mut_ptr()) }, 1);
+                    assert_eq!(key, array::<32>(&v["k"]));
+                    assert_eq!(ct, array::<$ct>(&v["c"]));
+                    assert_eq!($EncapsulationKey::from_bytes(&ek).unwrap().encapsulate_internal(&m).unwrap(), (key, ct));
+                }
+            }
+
+            #[test]
+            fn legacy_sha3_decapsulation_acvp() {
+                let features = $crate::cpu::detected();
+                if !features.contains($decaps_sha3_features) || !features.contains($decaps_paired_sha3_features) {
+                    return;
+                }
+                for v in vectors($name, Some("decapsulation")) {
+                    let dk = array::<$dk>(&v["dk"]);
+                    let ct = array::<$ct>(&v["c"]);
+                    let mut key = [0; 32];
+                    let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
+                    // SAFETY: Features were checked; the published valid
+                    // expanded key and distinct buffers satisfy the contract.
+                    assert_eq!(unsafe { $decaps_sha3(&dk, &ct, &mut key, scratch.as_mut_ptr()) }, 1);
+                    assert_eq!(key, array::<32>(&v["k"]));
+                    let mut paired_key = [0; 32];
+                    // SAFETY: The complete paired feature set was checked;
+                    // buffers satisfy the same verified input contract.
+                    assert_eq!(unsafe { $decaps_paired_sha3(&dk, &ct, &mut paired_key, scratch.as_mut_ptr()) }, 1);
+                    assert_eq!(paired_key, key);
+                }
             }
         }
     };
@@ -406,6 +501,58 @@ mod tests {
         ] {
             assert_eq!(
                 Backend::select(features, avx2, avx512, sha3),
+                Backend::Scalar
+            );
+        }
+    }
+}
+
+#[cfg(all(test, target_arch = "aarch64"))]
+pub(crate) mod aarch64_tests {
+    extern crate std;
+    pub(crate) fn array<const N: usize>(value: &serde_json::Value) -> [u8; N] {
+        let text = value.as_str().unwrap();
+        assert_eq!(text.len(), 2 * N);
+        core::array::from_fn(|i| u8::from_str_radix(&text[2 * i..2 * i + 2], 16).unwrap())
+    }
+
+    pub(crate) fn vectors(name: &str, function: Option<&str>) -> std::vec::Vec<serde_json::Value> {
+        let text = if function.is_none() {
+            include_str!("../vectors/nist-acvp/ML-KEM-keyGen-FIPS203/internalProjection.json")
+        } else {
+            include_str!("../vectors/nist-acvp/ML-KEM-encapDecap-FIPS203/internalProjection.json")
+        };
+        let file: serde_json::Value = serde_json::from_str(text).unwrap();
+        let selected: std::vec::Vec<_> = file["testGroups"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|g| {
+                g["parameterSet"].as_str() == Some(name) && g["function"].as_str() == function
+            })
+            .flat_map(|g| g["tests"].as_array().unwrap().iter().cloned())
+            .collect();
+        assert!(
+            !selected.is_empty(),
+            "missing ACVP vectors for {name} {function:?}"
+        );
+        selected
+    }
+
+    use super::Backend;
+    use crate::cpu::Features;
+
+    #[test]
+    fn selects_complete_feature_sets() {
+        let empty = Features::of(&[]);
+        let required = Features::of(&["neon", "sha3"]);
+        assert_eq!(
+            Backend::select(required, empty, empty, required),
+            Backend::PairedSha3
+        );
+        for available in [empty, Features::of(&["neon"]), Features::of(&["sha3"])] {
+            assert_eq!(
+                Backend::select(available, empty, empty, required),
                 Backend::Scalar
             );
         }

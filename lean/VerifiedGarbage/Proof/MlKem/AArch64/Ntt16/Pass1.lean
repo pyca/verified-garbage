@@ -36,7 +36,12 @@ abbrev P₀ : Poly := polyAt s₀.mem (fP s₀)
 end
 
 /-- The precondition. -/
-abbrev Pre (s₀ : State) : Prop := VG.Proof.MlKem.AArch64.Ntt.Pre s₀
+structure Pre (s₀ : State) : Prop where
+  wr : s₀.wr = [polyRegion (fP s₀),polyRegion (sP s₀)]
+  disj : (polyRegion (fP s₀)).Disjoint (polyRegion (sP s₀))
+  red : Reduced s₀.mem (fP s₀)
+
+theorem pre_of {s₀ : State} (h : Ntt.Pre s₀) : Pre s₀ := ⟨h.wr,h.disj,h.red⟩
 
 /-- What holds throughout. -/
 structure St (s₀ s : State) : Prop where
@@ -61,7 +66,8 @@ theorem St.vmem {s₀ s s' : State} (h : St s₀ s) {m : Mem} (hc : VMem s s' m)
 
 theorem inF {s₀ s : State} (hp : Pre s₀) (h : St s₀ s) {j : Nat} (hj : j + 4 ≤ 256) :
     InRegions (s.rd ++ s.wr) (coeffAddr (fP s₀) j) 16 := by
-  rw [h.rd, h.wr, hp.rd, hp.wr]
+  apply in_rd_wr
+  rw [h.wr,hp.wr]
   exact in_regions (List.mem_cons_self ..) (contains_off (by omega) (by decide))
 
 theorem inF' {s₀ s : State} (hp : Pre s₀) (h : St s₀ s) {j : Nat} (hj : j + 4 ≤ 256) :
@@ -76,7 +82,7 @@ theorem inS {s₀ s : State} (hp : Pre s₀) (h : St s₀ s) {o : Nat} (ho : o +
 
 theorem inS' {s₀ s : State} (hp : Pre s₀) (h : St s₀ s) {o : Nat} (ho : o + 16 ≤ 1024) :
     InRegions (s.rd ++ s.wr) (sP s₀ + BitVec.ofNat 64 o) 16 := by
-  rw [h.rd, hp.rd]; exact inS hp h ho
+  exact in_rd_wr (inS hp h ho)
 
 theorem getD_rep0 (n r : Nat) : (List.replicate n 0).getD r 0 = 0 := by
   simp [List.getD_eq_getElem?_getD, List.getElem?_replicate]; split <;> rfl
@@ -176,13 +182,13 @@ end
 /-! ## A chunk -/
 
 /-- After `c` chunks of pass 1. -/
-structure L1 (s₀ : State) (c : Nat) (s : State) : Prop where
+structure L1 (s₀ : State) (c : Nat) (s : State) (withTable : Bool := true) : Prop where
   st : St s₀ s
   x2 : s.gpr .x2 = coeffAddr (fP s₀) (8 * c)
   x3 : s.gpr .x3 = sP s₀ + BitVec.ofNat 64 (16 * c)
   x5 : (s.gpr .x5).toNat = 4 - c
   frame : Frame [polyRegion (sP s₀)] s₀.mem s.mem
-  tab : ∀ j < 64, s.mem.readW (sP s₀ + BitVec.ofNat 64 (512 + 8 * j)) 64 = hw4 tableHalves j
+  tab : if withTable then ∀ j < 64, s.mem.readW (sP s₀ + BitVec.ofNat 64 (512 + 8 * j)) 64 = hw4 tableHalves j else True
   scr : ∀ r < 8, ∀ c' < c, Rep (s.mem.read (sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c')) 16)
     (fun e => (nttL 3 (P₀ s₀))[32 * r + 8 * c' + e]!) (4 * 3329)
   z : ∀ k < 7, vhalf (s.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
@@ -194,8 +200,8 @@ structure L1 (s₀ : State) (c : Nat) (s : State) : Prop where
 theorem getD_rep_lt {n r a : Nat} (hr : r < n) : (List.replicate n a).getD r 0 = a := by
   simp [List.getD_eq_getElem?_getD, hr]
 
-theorem p1_body {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State} (h : L1 s₀ c s) :
-    WP isa (.block pass1Body) s fun s' => L1 s₀ (c + 1) s' ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ c + 1 ≠ 4) := by
+theorem p1_body {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State} {withTable : Bool} (h : L1 s₀ c s withTable) :
+    WP isa (.block pass1Body) s fun s' => L1 s₀ (c + 1) s' withTable ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ c + 1 ≠ 4) := by
   simp only [pass1Body, List.append_assoc]
   have hpoly : PolyIs s.mem (fP s₀) (P₀ s₀) :=
     polyIs_frame h.frame (fun r hr => by
@@ -262,15 +268,19 @@ theorem p1_body {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State
   have v₉ : w.v = s₈.v := by rw [hv, h₉.v]
   have x5' : (w.gpr .x5).toNat = 4 - (c + 1) := by
     rw [e5, g₉, toNat_sub_n (by rw [h.x5]; simp; omega), h.x5]; simp; omega
-  refine ⟨⟨(st₈.keep h₉.keep).keep kw, ?_, ?_, x5', ?_, fun j hj => ?_, fun r hr c' hc' => ?_, ?_, ?_,
+  refine ⟨⟨(st₈.keep h₉.keep).keep kw, ?_, ?_, x5', ?_, ?_, fun r hr c' hc' => ?_, ?_, ?_,
     ?_, ?_⟩, by rw [x5']; omega⟩
   · rw [e2, g₉, h.x2, coeffAddr, coeffAddr, ptr_add]; congr 2
   · rw [e3, g₉, h.x3, ptr_add]; congr 2
   · rw [mw]; exact h.frame.trans (C.mem ▸ h₉.frame)
-  · have := h.tab j hj
-    simp only [Mem.readW] at this ⊢
-    rw [mw, h₉.other _ (64 / 8) (by omega) (fun r hr => Or.inr (by omega)), C.mem]
-    exact this
+  · cases withTable with
+    | false => trivial
+    | true =>
+      intro j hj
+      have := h.tab j hj
+      simp only [Mem.readW] at this ⊢
+      rw [mw, h₉.other _ (64 / 8) (by omega) (fun r hr => Or.inr (by omega)), C.mem]
+      exact this
   · rw [mw]
     by_cases e : c' = c
     · subst e

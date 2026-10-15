@@ -1,0 +1,47 @@
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Zero
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Reject
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Continue
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Zero
+meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # Constant-time scalar wrappers around the public rejection loop -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Paired
+open VG VG.AArch64 VG.Proof.MlKem.AArch64
+open VG.Impl.MlKem.AArch64
+
+theorem rejectEntry_ct (buf out : Nat) : ConstantTime isa (fun _ => True)
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [])) (.block (rejectEntry buf out)) := by
+  unfold rejectEntry ptrTo
+  split <;> exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [])
+    (fun _ _ _ _ h => h) (hc := .block []) rfl
+
+theorem continueEntry_ct (buf : Nat) : ConstantTime isa (fun _ => True)
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [])) (.block (continueEntry buf)) := by
+  unfold continueEntry
+  exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [])
+    (fun _ _ _ _ h => h) (hc := .block []) rfl
+
+theorem moveFlag_ct (flag : Reg) : ConstantTime isa (fun _ => True)
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [])) (.block [mov flag .x0]) := by
+  cases flag <;> exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [])
+    (fun _ _ _ _ h => h) (hc := .block []) rfl
+
+theorem loadCheckpoint_ct (slot : Nat) : ConstantTime isa (fun _ => True)
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x19]))
+    (.block [.ldr .x .x3 .x19 slot,.ldr .x .x4 .x19 (slot+8)]) :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19]) (fun _ _ _ _ h => h) (hc := .block []) rfl
+
+theorem zeroSuffix_ct : ConstantTime isa (fun _ => True)
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x3,.x4])) Rej8.zeroSuffix :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x3,.x4]) (fun _ _ _ _ h => h) (by taint_decide)
+
+end VG.Proof.MlKem.AArch64.Paired

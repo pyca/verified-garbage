@@ -81,7 +81,7 @@ theorem invConsts_ok (s₀ : State) : WP isa (.block invConsts) s₀ (ZInv s₀ 
 theorem correctInv (s₀ : State) (hs : (inPlaceAArch64 Spec.MlKem.nttInv).pre s₀) :
     ∃ t s', Exec isa Impl.MlKem.AArch64.Ntt16.nttInv s₀ t s' ∧ abiPreserved s₀ s' ∧
       (inPlaceAArch64 Spec.MlKem.nttInv).post s₀ s' := by
-  have hp : Pre s₀ := Ntt.pre_of hs
+  have hp : Pre s₀ := pre_of (Ntt.pre_of hs)
   suffices h : WP isa Impl.MlKem.AArch64.Ntt16.nttInv s₀ fun s' => s'.sp = s₀.sp ∧
       (inPlaceAArch64 Spec.MlKem.nttInv).post s₀ s' by
     obtain ⟨t, s', he, hsp, hpost⟩ := h
@@ -106,13 +106,17 @@ theorem correctInv (s₀ : State) (hs : (inPlaceAArch64 Spec.MlKem.nttInv).pre s
   have kk := (h₁.keep.trans c₂.keep).trans k₃
   have st₃ : St s₀ s₃ := ⟨kk.rd, kk.wr, kk.sp, kk.get .x0, kk.get .x1⟩
   have i₀ : LI1 s₀ 0 s₃ := by
-    refine ⟨st₃, ?_, ?_, ?_, by rw [e5], ?_, fun j hj => ?_, fun r hr => absurd hr (Nat.not_lt_zero _),
+    refine ⟨st₃, ?_, ?_, ?_, by rw [e5], ?_,
+      (fun o ho => by
+        rw [BitVec.add_assoc,←BitVec.ofNat_add]
+        exact in_rd_wr (in_regions hreg (contains_off (by omega) (by decide)))),
+      Or.inl rfl, fun j hj => ?_, fun r hr => absurd hr (Nat.not_lt_zero _),
       by rw [hv₃]; exact c₂.q, by rw [hv₃]; exact c₂.c10, by rw [hv₃]; exact c₂.c0⟩
     · rw [e2, c₂.keep.get .x0, h₁.keep.get .x0]; exact (BitVec.add_zero _).symm
     · rw [e3, c₂.keep.get .x1, h₁.keep.get .x1]
-    · rw [e6, c₂.keep.get .x1, h₁.keep.get .x1]
+    · rw [e6, c₂.keep.get .x1, h₁.keep.get .x1]; exact (BitVec.add_zero _).symm
     · rw [m₃, c₂.mem]; exact h₁.frame
-    · rw [m₃, c₂.mem]; exact h₁.tab j (by rw [length_invTableHalves]; exact hj)
+    · rw [m₃,c₂.mem,BitVec.add_assoc,←BitVec.ofNat_add]; exact h₁.tab j (by rw [length_invTableHalves]; exact hj)
   refine WP.seq (WP.mono (count_loop (n := 8) (by decide) (LI1 s₀) (fun b hb w hw => ip1_body hp hb hw) i₀)
     fun s₄ h₄ => ?_)
   refine WP.seq ?_

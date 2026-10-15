@@ -85,14 +85,16 @@ theorem seg_getD (a : Nat) {e : Nat} (he : e < 8) : (seg a).getD e 0 = a + e := 
 /-! ## A block -/
 
 /-- After `b` blocks of pass 2, from the memory `mB` that pass 1 left. -/
-structure L2 (s₀ : State) (mB : Mem) (b : Nat) (s : State) : Prop where
+structure L2 (s₀ : State) (mB : Mem) (b : Nat) (s : State) (t : Addr := sP s₀ + BitVec.ofNat 64 512) : Prop where
   st : St s₀ s
   x2 : s.gpr .x2 = sP s₀ + BitVec.ofNat 64 (64 * b)
-  x6 : s.gpr .x6 = sP s₀ + BitVec.ofNat 64 (512 + 64 * b)
+  x6 : s.gpr .x6 = t + BitVec.ofNat 64 (64 * b)
   x4 : s.gpr .x4 = coeffAddr (fP s₀) (32 * b)
   x5 : (s.gpr .x5).toNat = 8 - b
   frame : Frame [polyRegion (fP s₀)] mB s.mem
-  tab : ∀ j < 64, mB.readW (sP s₀ + BitVec.ofNat 64 (512 + 8 * j)) 64 = hw4 tableHalves j
+  tableRead : ∀ o, o+16≤512 → InRegions (s₀.rd++s₀.wr) (t+BitVec.ofNat 64 o) 16
+  tableApart : (polyRegion (fP s₀)).Disjoint ⟨t,512⟩
+  tab : ∀ j < 64, mB.readW (t + BitVec.ofNat 64 (8 * j)) 64 = hw4 tableHalves j
   scr : ∀ r < 8, ∀ c' < 4, Rep (mB.read (sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c')) 16)
     (fun e => (nttL 3 (P₀ s₀))[32 * r + 8 * c' + e]!) (4 * 3329)
   out : CoeffsUpTo s.mem (fP s₀) (32 * b)
@@ -102,20 +104,20 @@ structure L2 (s₀ : State) (mB : Mem) (b : Nat) (s : State) : Prop where
   c0 : Cst (s.v .v29) fun _ => 0
 
 /-- `scratch` as pass 1 left it. -/
-theorem L2.read {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} {s : State} (h : L2 s₀ mB b s) {o : Nat}
+theorem L2.read {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} {s : State} {t : Addr} (h : L2 s₀ mB b s t) {o : Nat}
     (ho : o + 16 ≤ 1024) :
     s.mem.read (sP s₀ + BitVec.ofNat 64 o) 16 = mB.read (sP s₀ + BitVec.ofNat 64 o) 16 :=
   h.frame.read (r := polyRegion (sP s₀)) (contains_off ho (by decide))
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.disj.symm) (by decide)
 
-theorem L2.readW {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} {s : State} (h : L2 s₀ mB b s)
+theorem L2.readW {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} {s : State} {t : Addr} (h : L2 s₀ mB b s t)
     {o : Nat} (ho : o + 8 ≤ 1024) :
     s.mem.readW (sP s₀ + BitVec.ofNat 64 o) 64 = mB.readW (sP s₀ + BitVec.ofNat 64 o) 64 :=
   h.frame.readW (r := polyRegion (sP s₀)) (contains_off ho (by decide))
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.disj.symm) (by decide)
 
 /-- The four vectors of block `b` in `scratch`. -/
-theorem L2.ld {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {s : State} (h : L2 s₀ mB b s)
+theorem L2.ld {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {s : State} {t : Addr} (h : L2 s₀ mB b s t)
     {i : Nat} (hi : i < 4) :
     IRep (P₀ s₀) 3 (32 * b) (seg (8 * i)) (s.mem.read (sP s₀ + BitVec.ofNat 64 (64 * b + 16 * i)) 16) := by
   rw [h.read hp (by omega)]
@@ -123,14 +125,17 @@ theorem L2.ld {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {
   rw [seg_getD _ he, Nat.add_assoc]
 
 /-- The table of block `b`. -/
-theorem L2.tl {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {s : State} (h : L2 s₀ mB b s)
+theorem L2.tl {s₀ : State} (_hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {s : State} {t : Addr} (h : L2 s₀ mB b s t)
     {i : Nat} (hi : i < 4) {e : Nat} (he : e < 8) :
-    vhalf (s.mem.read (sP s₀ + BitVec.ofNat 64 (512 + 64 * b + 16 * i)) 16) e =
+    vhalf (s.mem.read (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16) e =
       BitVec.ofNat 16 ((blockHalves b).getD (8 * i + e) 0) := by
-  have ht : ∀ j < 64, s.mem.readW (sP s₀ + BitVec.ofNat 64 (512 + 8 * j)) 64 = hw4 tableHalves j :=
-    fun j hj => by rw [h.readW hp (by omega)]; exact h.tab j hj
-  have := vhalf_table ht (i := 4 * b + i) (by omega) he
-  rw [show 512 + 16 * (4 * b + i) = 512 + 64 * b + 16 * i by omega,
+  have ht : ∀ j < 64, s.mem.readW (t + BitVec.ofNat 64 (8 * j)) 64 = hw4 tableHalves j :=
+    fun j hj => by
+      rw [h.frame.readW (r:=⟨t,512⟩) (contains_off (by omega) (by decide))
+        (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.tableApart.symm) (by decide)]
+      exact h.tab j hj
+  have := vhalf_table (off:=0) (by simpa only [Nat.zero_add] using ht) (i := 4 * b + i) (by omega) he
+  rw [show 0 + 16 * (4 * b + i) = 64 * b + 16 * i by omega,
     show 8 * (4 * b + i) + e = 32 * b + (8 * i + e) by omega, tableHalves_get hb (by omega)] at this
   exact this
 
@@ -153,7 +158,7 @@ theorem ld_step {s w : State} {rs : List VReg} (cw : VChg rs s w) {t : VReg} {n 
 
 /-- The four vectors of block `b` and its table. -/
 theorem p2_loads {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {s : State}
-    (h : L2 s₀ mB b s)
+    {t : Addr} (h : L2 s₀ mB b s t)
     (k : ∀ s', VChg ld2Regs s s' →
       IRep (P₀ s₀) 3 (32 * b) (seg 0) (s'.v .v0) → IRep (P₀ s₀) 3 (32 * b) (seg 8) (s'.v .v1) →
       IRep (P₀ s₀) 3 (32 * b) (seg 16) (s'.v .v2) → IRep (P₀ s₀) 3 (32 * b) (seg 24) (s'.v .v3) →
@@ -167,11 +172,13 @@ theorem p2_loads {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8
   have a2 : ∀ i < 4, s.gpr .x2 + BitVec.ofNat 64 (16 * i) = sP s₀ + BitVec.ofNat 64 (64 * b + 16 * i) :=
     fun i _ => by rw [h.x2, ptr_add]
   have a6 : ∀ i < 4, s.gpr .x6 + BitVec.ofNat 64 (16 * i) =
-      sP s₀ + BitVec.ofNat 64 (512 + 64 * b + 16 * i) := fun i _ => by rw [h.x6, ptr_add]
+      t + BitVec.ofNat 64 (64 * b + 16 * i) := fun i _ => by rw [h.x6, ptr_add]
   have i2 : ∀ i < 4, InRegions (s.rd ++ s.wr) (sP s₀ + BitVec.ofNat 64 (64 * b + 16 * i)) 16 :=
     fun i _ => inS' hp h.st (by omega)
-  have i6 : ∀ i < 4, InRegions (s.rd ++ s.wr) (sP s₀ + BitVec.ofNat 64 (512 + 64 * b + 16 * i)) 16 :=
-    fun i _ => inS' hp h.st (by omega)
+  have i6 : ∀ i < 4, InRegions (s.rd ++ s.wr) (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16 :=
+    fun i hi => by
+      rw [h.st.rd,h.st.wr]
+      exact h.tableRead _ (by omega)
   refine ld_step (VChg.refl [] s) (by decide) (a2 0 (by decide)) (i2 0 (by decide)) fun s₁ c₁ v₁ o₁ => ?_
   refine ld_step c₁ (by decide) (a2 1 (by decide)) (i2 1 (by decide)) fun s₂ c₂ v₂ o₂ => ?_
   refine ld_step c₂ (by decide) (a2 2 (by decide)) (i2 2 (by decide)) fun s₃ c₃ v₃ o₃ => ?_
@@ -264,8 +271,8 @@ theorem lane_zt {s : State} {b k K : Nat} {x y : VReg}
   exact ⟨rfl, rfl⟩
 
 theorem p2_body {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8) {sb : State}
-    (h : L2 s₀ mB b sb) :
-    WP isa (.block pass2Body) sb fun s' => L2 s₀ mB (b + 1) s' ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ b + 1 ≠ 8) := by
+    {t : Addr} (h : L2 s₀ mB b sb t) :
+    WP isa (.block pass2Body) sb fun s' => L2 s₀ mB (b + 1) s' t ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ b + 1 ≠ 8) := by
   simp only [pass2Body, List.cons_append, List.nil_append, List.append_assoc, List.flatMap_cons,
     List.flatMap_nil, List.append_nil]
   refine p2_loads hp hb h fun s c₀ a0 a1 a2 a3 t20 t21 t22 t23 => ?_
@@ -482,7 +489,7 @@ theorem p2_body {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8)
   refine ⟨⟨st.keep kw, by rw [e2, gw, h.x2, ptr_add]; congr 2,
     by rw [e6, gw, h.x6, ptr_add]; congr 2,
     by rw [e4, gw, h.x4, coeffAddr, coeffAddr, ptr_add]; congr 2, x5',
-    by rw [mw]; exact h.frame.trans (by rw [← CC.mem]; exact fr), h.tab, h.scr,
+    by rw [mw]; exact h.frame.trans (by rw [← CC.mem]; exact fr), h.tableRead, h.tableApart, h.tab, h.scr,
     by rw [mw, show 32 * (b + 1) = 32 * b + 8 * 4 by omega]; exact co,
     by rw [vv .v31 (by decide)]; exact h.q, by rw [vv .v30 (by decide)]; exact h.c10,
     by rw [vv .v29 (by decide)]; exact h.c0⟩, by rw [x5']; omega⟩

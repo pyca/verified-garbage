@@ -44,6 +44,7 @@ structure CallKeep (s t : State) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   sp : t.sp = s.sp
+  vcs : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
 
 /-- The caller's part of a call: the function's working space and the return address. -/
 def callR (q : Addr) : Region := ⟨q, 136⟩
@@ -113,7 +114,7 @@ theorem call_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
         State.callEntry_gpr s₄ (show Reg.x1 ∉ linkRegs by decide), h0, h1'] using hpq'⟩
     (by rw [hw]; exact Covers.right (hsub.trans hcov)) (by rw [hw]; exact hsub.trans hcov) ?_
     (code_noFrames sha3))
-  intro t hr hwr hsp hf _ hk _ hpost
+  intro t hr hwr hsp hf _ hk hv hpost
   have hkt : ∀ r, r ≠ .x16 → r ∉ linkRegs → t.gpr r = s₄.gpr r := fun r h16 hl =>
     hk r hl (code_writes sha3 r h16)
   have ht1 : t.gpr .x1 = q := (hkt .x1 (by decide) (by decide)).trans h1'
@@ -132,7 +133,7 @@ theorem call_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
     (by rw [hr, hwr, hw, o₄.rd, m₃.rd, o₂.rd, o₁.rd]
         obtain ⟨R, hR, hc⟩ := hslot
         exact ⟨R, List.mem_append_right _ hR, hc⟩)
-    fun u hu => WP.block_nil ⟨⟨fun r hr' => ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
+    fun u hu => WP.block_nil ⟨⟨fun r hr' => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
   · simp only [clobbered, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
     by_cases h30 : r = .x30
     · subst r; rw [hu.gpr, hval]
@@ -141,6 +142,8 @@ theorem call_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
   · rw [hu.rd, hr, o₄.rd, m₃.rd, o₂.rd, o₁.rd]
   · rw [hu.wr, hwr, hw]
   · rw [hu.sp, hsp, o₄.sp, m₃.sp, o₂.sp, o₁.sp]
+  · intro r hr
+    rw [hu.vec, hv r hr, o₄.vcs r hr, m₃.vec, o₂.vcs r hr, o₁.vcs r hr]
   · rw [hu.mem]
     refine (hf₄.mono (fun r hr => by simp at hr; simp [hr])).trans (hf.sub fun r hr => ?_)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
