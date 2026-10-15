@@ -53,11 +53,8 @@ theorem slot_in {rs : List Region} {b : BitVec 32} (hr : (⟨State.addr b, 2048�
   rw [← slot_addr hfit hk]; exact in_off hr hfit (by omega_arith) (by omega_arith)
 
 theorem slotA_sep (B : Addr) {j k : Nat} (hj : j < 512) (hk : k < 512) (h : j ≠ k) :
-    Mem.Sep (slotA B j) (32 / 8) (slotA B k) (32 / 8) := by
-  intro x h₁ h₂
-  simp only [slotA] at h₁ h₂
-  have : j < k ∨ k < j := by omega_arith
-  rcases this with h' | h' <;> bv_omega
+    Mem.Sep (slotA B j) (32 / 8) (slotA B k) (32 / 8) :=
+  VG.Offset.sep B (by omega_arith) (by omega_arith) (by omega_arith)
 
 theorem readW_writeW_slot (m : Mem) (B : Addr) {j k : Nat} (hj : j < 512) (hk : k < 512) (h : j ≠ k)
     (v : BitVec 32) : (m.writeW (slotA B k) v).readW (slotA B j) 32 = m.readW (slotA B j) 32 :=
@@ -243,7 +240,7 @@ theorem xorW_apply (m : Mem) (a x : Addr) (v : BitVec 32) :
   split
   · rename_i h
     have hx : a + BitVec.ofNat 64 (x - a).toNat = x := by
-      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]; bv_omega
+      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
     have := Mem.extractLsb'_read m a (n := 4) h
     rw [hx] at this
     rw [← this]
@@ -507,18 +504,12 @@ structure GDone (m₀ : Mem) (s₂ : State) (b Dp : BitVec 32) (n R : Nat) (w : 
   data : DataInv m₀ s.mem (State.addr Dp) n (4 * n) (keyStream R w icb)
 
 theorem scr_disj (B : Addr) {lx y ly : Nat} (h : lx ≤ y) (hy : y + ly ≤ 2048) :
-    Region.Disjoint ⟨B, lx⟩ ⟨B + BitVec.ofNat 64 y, ly⟩ := by
-  intro a h₁ h₂
-  simp only [Region.Contains] at h₁ h₂
-  have : (BitVec.ofNat 64 y).toNat = y := by simp; omega_arith
-  bv_omega
+    Region.Disjoint ⟨B, lx⟩ ⟨B + BitVec.ofNat 64 y, ly⟩ :=
+  (VG.Offset.disjoint_base B h (by omega_arith)).symm
 
 theorem scr_sub (B : Addr) {x lx : Nat} (h : x + lx ≤ 2048) :
-    Region.Sub ⟨B + BitVec.ofNat 64 x, lx⟩ ⟨B, 2048⟩ := by
-  intro a h₁
-  simp only [Region.Contains] at h₁ ⊢
-  have : (BitVec.ofNat 64 x).toNat = x := by simp; omega_arith
-  bv_omega
+    Region.Sub ⟨B + BitVec.ofNat 64 x, lx⟩ ⟨B, 2048⟩ :=
+  VG.Offset.sub_base B h
 
 theorem keysAt_frame {m m' : Mem} {b : BitVec 32} (hfit : b.toNat + 2048 ≤ 2 ^ 32) {R : Nat}
     {w : List Byte} {rs : List Region} (hR : R ≤ 14) (hf : Frame rs m m')
@@ -539,8 +530,7 @@ theorem front_frame (m : Mem) (B : Addr) (d l f : BitVec 32) :
       (⟨B + BitVec.ofNat 64 176, 16⟩ : Region).Contains (slotA B k) (32 / 8) := by
     intro k h1 h2
     simp only [Region.Contains, slotA]
-    rw [show B + BitVec.ofNat 64 (4 * k) - (B + BitVec.ofNat 64 176) = BitVec.ofNat 64 (4 * k - 176) by
-      bv_omega, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
+    rw [VG.Offset.add_sub_add B (show 176 ≤ 4 * k by omega_arith), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
     omega_arith
   exact ((((Frame.refl _ m).writeW (List.mem_singleton_self _) _ (c 45 (by omega_arith) (by omega_arith))).writeW
     (List.mem_singleton_self _) _ (c 46 (by omega_arith) (by omega_arith))).writeW (List.mem_singleton_self _) _
@@ -666,7 +656,7 @@ theorem group_ok {m₀ : Mem} {s₂ : State} {b Dp : BitVec 32} {n R : Nat} {w :
     rw [← mm₆]
     exact f₈.mono fun r hr => by simp at hr; simp [hr]
   have ev : Arm.eval .ne s₉ = some (!(s₈.gpr .r11 == 0)) := by
-    have e0 : ∀ x : BitVec 32, x - (0 : BitVec 32) = x := fun x => by bv_omega
+    have e0 : ∀ x : BitVec 32, x - (0 : BitVec 32) = x := BitVec.sub_zero
     simp only [Arm.eval, z₉, e0]
   rcases hz with ⟨z, d⟩ | ⟨h4, d, x10, x11⟩
   · exact .inl ⟨by rw [ev, z]; rfl, base', rd', wr', sp', frame', by rw [f₉.mem]; exact d⟩
