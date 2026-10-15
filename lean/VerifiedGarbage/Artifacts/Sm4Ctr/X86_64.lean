@@ -18,6 +18,6 @@ def artifacts : List Artifact := [
     contract := Spec.Sm4.ctrContract X86_64.abi 3144
     stack := 3144
     verified := Proof.Sm4.X86_64.ctr_framed
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Sm4Ctr.X86_64

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
+public import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
 public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
@@ -159,7 +161,7 @@ theorem cbcDecrypt_ct : ConstantTime isa cbcDecX86_64.pre cbcDecX86_64.pub cbcDe
 theorem cbcDecrypt_correct (s : State) (hs : cbcDecX86_64.pre s) :
     ∃ t s', Exec isa cbcDecrypt s t s' ∧ abiPreserved s s' ∧ cbcDecX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := cbcDecrypt_wp hs
-  exact ⟨t, s', he, abiPreserved_of_exec (c := cbcDecrypt) (by decide +kernel) he hg, hpost⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := cbcDecrypt) (by lit_decide) he hg, hpost⟩
 
 /-- A state satisfying the precondition (one block). -/
 def cbcSat : State where
@@ -186,9 +188,9 @@ theorem cbcDecrypt_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.cbcSig) (nm := "scratch") (e := .u64)
     (n := 392) (post := Proof.Sm4.cbcDecPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3144) cbcDecrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Sm4.cbcDecPostOut_local _)
-    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (X86_64.sat_regs (by decide) (by decide) (by lit_decide) (by rw [Curry.apply_const]; trivial))
 
 /-! ## Encryption -/
 
@@ -223,7 +225,7 @@ theorem cbcEncrypt_ct : ConstantTime isa cbcEncX86_64.pre cbcEncX86_64.pub cbcEn
 theorem cbcEncrypt_correct (s : State) (hs : cbcEncX86_64.pre s) :
     ∃ t s', Exec isa cbcEncrypt s t s' ∧ abiPreserved s s' ∧ cbcEncX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := cbcEncrypt_wp hs
-  exact ⟨t, s', he, abiPreserved_of_exec (c := cbcEncrypt) (by decide +kernel) he hg, hpost⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := cbcEncrypt) (by lit_decide) he hg, hpost⟩
 
 theorem cbcEncrypt_verified :
     Verified X86_64.target cbcEncrypt (Proof.Sm4.cbcEncScratchContract X86_64.abi slots) :=
@@ -239,8 +241,8 @@ theorem cbcEncrypt_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.cbcSig) (nm := "scratch") (e := .u64)
     (n := 392) (post := Proof.Sm4.cbcEncPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3144) cbcEncrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Sm4.cbcEncPostOut_local _)
-    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (X86_64.sat_regs (by decide) (by decide) (by lit_decide) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sm4.X86_64
