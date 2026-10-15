@@ -28,73 +28,115 @@ theorem modulus_lt : modulus order < 2 ^ (64 * 8) := by cases order <;> decide +
 abbrev relocOperands (o a b : Nat) : Instr → Instr :=
   Instr.mapMem (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])
 
-theorem round_reloc_0 (o a b : Nat) :
-    (roundW (mod order) mA mB 0).map (relocOperands o a b) = roundW (mod order) a b 0 := by
-  simp only [roundW, memRow, memSteps, memStep, shiftDown, moveDown,
-    show (mod order).n = 8 from rfl, List.map_append, List.map_cons, List.map_nil]
-  repeat (first | refine congrArg₂ (· ++ ·) ?_ ?_ | rfl)
+/-! The relocated operands: an operand `[rdi + d]` within 4096 bytes past a
+marker is `[rdi + d']` at the same distance past its offset, and one below
+the markers is kept. -/
 
-theorem round_reloc_1 (o a b : Nat) :
-    (roundW (mod order) mA mB 1).map (relocOperands o a b) = roundW (mod order) a b 1 := by
-  simp only [roundW, memRow, memSteps, memStep, shiftDown, moveDown,
-    show (mod order).n = 8 from rfl, List.map_append, List.map_cons, List.map_nil]
-  repeat (first | refine congrArg₂ (· ++ ·) ?_ ?_ | rfl)
+theorem reloc_A {o a b e : Nat} (h : e < 4096) :
+    (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])
+      (sc (mA + e)) = sc (a + e) := by
+  simp only [Function.comp_apply, relocTo, unptr, sc, List.find?, mA, mB, mO]
+  simp (disch := omega) only [decide_eq_true, ite_true,
+    show List.lookup Reg.rbx [(Reg.rbx, a), (Reg.r12, b), (Reg.rsi, o)] = some a from rfl, MemOp.mk.injEq,
+    true_and, Int.natCast_add]
+  omega
 
-theorem round_reloc_2 (o a b : Nat) :
-    (roundW (mod order) mA mB 2).map (relocOperands o a b) = roundW (mod order) a b 2 := by
-  simp only [roundW, memRow, memSteps, memStep, shiftDown, moveDown,
-    show (mod order).n = 8 from rfl, List.map_append, List.map_cons, List.map_nil]
-  repeat (first | refine congrArg₂ (· ++ ·) ?_ ?_ | rfl)
+theorem reloc_B {o a b e : Nat} (h : e < 4096) :
+    (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])
+      (sc (mB + e)) = sc (b + e) := by
+  simp only [Function.comp_apply, relocTo, unptr, sc, List.find?, mA, mB, mO]
+  simp (disch := omega) only [decide_eq_true, decide_eq_false, ite_true,
+    show List.lookup Reg.r12 [(Reg.rbx, a), (Reg.r12, b), (Reg.rsi, o)] = some b from rfl, MemOp.mk.injEq,
+    true_and, Int.natCast_add]
+  omega
 
-theorem round_reloc_3 (o a b : Nat) :
-    (roundW (mod order) mA mB 3).map (relocOperands o a b) = roundW (mod order) a b 3 := by
-  simp only [roundW, memRow, memSteps, memStep, shiftDown, moveDown,
-    show (mod order).n = 8 from rfl, List.map_append, List.map_cons, List.map_nil]
-  repeat (first | refine congrArg₂ (· ++ ·) ?_ ?_ | rfl)
+theorem reloc_O {o a b e : Nat} (h : e < 4096) :
+    (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])
+      (sc (mO + e)) = sc (o + e) := by
+  simp only [Function.comp_apply, relocTo, unptr, sc, List.find?, mA, mB, mO]
+  simp (disch := omega) only [decide_eq_true, decide_eq_false, ite_true,
+    show List.lookup Reg.rsi [(Reg.rbx, a), (Reg.r12, b), (Reg.rsi, o)] = some o from rfl, MemOp.mk.injEq,
+    true_and, Int.natCast_add]
+  omega
 
-theorem round_reloc_4 (o a b : Nat) :
-    (roundW (mod order) mA mB 4).map (relocOperands o a b) = roundW (mod order) a b 4 := by
-  simp only [roundW, memRow, memSteps, memStep, shiftDown, moveDown,
-    show (mod order).n = 8 from rfl, List.map_append, List.map_cons, List.map_nil]
-  repeat (first | refine congrArg₂ (· ++ ·) ?_ ?_ | rfl)
+theorem reloc_low {o a b d : Nat} (h : d < mA) :
+    (unptr [(.rbx, a), (.r12, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .r12), (mO, .rsi)])
+      (sc d) = sc d := by
+  simp only [Function.comp_apply, relocTo, unptr, sc, List.find?, mA, mB, mO] at *
+  simp (disch := omega) only [decide_eq_false]
+  rfl
 
-theorem round_reloc_5 (o a b : Nat) :
-    (roundW (mod order) mA mB 5).map (relocOperands o a b) = roundW (mod order) a b 5 := by
-  simp only [roundW, memRow, memSteps, memStep, shiftDown, moveDown,
-    show (mod order).n = 8 from rfl, List.map_append, List.map_cons, List.map_nil]
-  repeat (first | refine congrArg₂ (· ++ ·) ?_ ?_ | rfl)
+theorem memSteps_low (o a b : Nat) : ∀ (k t d : Nat), t + 8 * k ≤ mA → d + 8 * k ≤ mA →
+    (memSteps k t d).map (relocOperands o a b) = memSteps k t d
+  | 0, _, _, _, _ => rfl
+  | k + 1, t, d, ht, hd => by
+    simp only [memSteps, memStep, mulStep, List.map_cons, Instr.mapMem, Src.mapMem,
+      List.cons_append, List.nil_append]
+    rw [reloc_low (by omega), reloc_low (by omega), memSteps_low o a b k (t + 8) (d + 8) (by omega) (by omega)]
 
-theorem round_reloc_6 (o a b : Nat) :
-    (roundW (mod order) mA mB 6).map (relocOperands o a b) = roundW (mod order) a b 6 := by
-  simp only [roundW, memRow, memSteps, memStep, shiftDown, moveDown,
-    show (mod order).n = 8 from rfl, List.map_append, List.map_cons, List.map_nil]
-  repeat (first | refine congrArg₂ (· ++ ·) ?_ ?_ | rfl)
+theorem memSteps_B (o a b : Nat) : ∀ (k t e : Nat), t + 8 * k ≤ mA → e + 8 * k ≤ 4096 →
+    (memSteps k t (mB + e)).map (relocOperands o a b) = memSteps k t (b + e)
+  | 0, _, _, _, _ => rfl
+  | k + 1, t, e, ht, he => by
+    simp only [memSteps, memStep, mulStep, List.map_cons, Instr.mapMem, Src.mapMem,
+      List.cons_append, List.nil_append]
+    rw [reloc_low (by omega), reloc_B (by omega), Nat.add_assoc,
+      memSteps_B o a b k (t + 8) (e + 8) (by omega) (by omega), Nat.add_assoc]
 
-theorem round_reloc_7 (o a b : Nat) :
-    (roundW (mod order) mA mB 7).map (relocOperands o a b) = roundW (mod order) a b 7 := by
-  simp only [roundW, memRow, memSteps, memStep, shiftDown, moveDown,
-    show (mod order).n = 8 from rfl, List.map_append, List.map_cons, List.map_nil]
-  repeat (first | refine congrArg₂ (· ++ ·) ?_ ?_ | rfl)
+theorem moveDown_low (o a b : Nat) : ∀ (k t : Nat), t + 8 * k + 8 ≤ mA →
+    (moveDown k t).map (relocOperands o a b) = moveDown k t
+  | 0, _, _ => rfl
+  | k + 1, t, ht => by
+    simp only [moveDown, List.map_cons, Instr.mapMem, Src.mapMem,
+      List.cons_append, List.nil_append]
+    rw [reloc_low (by omega), reloc_low (by omega), moveDown_low o a b k (t + 8) (by omega)]
+
+theorem chainW_O (o a b : Nat) (op op' : AluOp) : ∀ (k e t d : Nat), e + 8 * k ≤ 4096 → t + 8 * k ≤ mA →
+    d + 8 * k ≤ mA → (chainW op op' k (mO + e) t d).map (relocOperands o a b) = chainW op op' k (o + e) t d
+  | 0, _, _, _, _, _, _ => rfl
+  | k + 1, e, t, d, he, ht, hd => by
+    simp only [chainW, List.map_cons, Instr.mapMem, Src.mapMem,
+      List.cons_append, List.nil_append]
+    rw [reloc_low (by omega), reloc_low (by omega), reloc_O (by omega), Nat.add_assoc,
+      chainW_O o a b op' op' k (e + 8) (t + 8) (d + 8) (by omega) (by omega) (by omega), Nat.add_assoc]
+
+theorem selectsW_O (o a b : Nat) : ∀ (k x e : Nat), e + 8 * k ≤ 4096 → x + 8 * k ≤ mA →
+    (selectsW k x (mO + e)).map (relocOperands o a b) = selectsW k x (o + e)
+  | 0, _, _, _, _ => rfl
+  | k + 1, x, e, he, hx => by
+    simp only [selectsW, List.map_cons, Instr.mapMem, Src.mapMem,
+      List.cons_append, List.nil_append]
+    rw [reloc_O (by omega), reloc_low (by omega), Nat.add_assoc,
+      selectsW_O o a b k (x + 8) (e + 8) (by omega) (by omega), Nat.add_assoc]
+
+theorem round_reloc (o a b i : Nat) (hi : i < 8) :
+    (roundW (mod order) mA mB i).map (relocOperands o a b) = roundW (mod order) a b i := by
+  have hB := memSteps_B o a b 8 4032 0 (by decide) (by decide)
+  rw [Nat.add_zero, Nat.add_zero] at hB
+  simp only [roundW, memRow, shiftDown, carryUp, show (mod order).n = 8 from rfl,
+    show (mod order).tmp = 4032 from rfl, show (mod order).mo = 3968 from rfl, List.map_append, List.map_cons,
+    List.map_nil, Instr.mapMem, Src.mapMem, reloc_A (show 8 * i < 4096 by omega), hB, Nat.reduceSub,
+    memSteps_low o a b 8 4032 3968 (by decide) (by decide), moveDown_low o a b 7 4032 (by decide),
+    reloc_low (show 4032 + 8 * 7 < mA by decide), reloc_low (show 4032 < mA by decide)]
 
 theorem csub_reloc (o a b : Nat) :
     (csubW (mod order) mO).map (relocOperands o a b) = csubW (mod order) o := by
-  simp only [csubW, chainW, selectsW, show (mod order).n = 8 from rfl,
-    List.map_append, List.map_cons, List.map_nil]
-  repeat (first | refine congrArg₂ (· ++ ·) ?_ ?_ | rfl)
+  have hc := chainW_O o a b .sub .sbb 8 0 4032 3968 (by decide) (by decide) (by decide)
+  have hs := selectsW_O o a b 8 4032 0 (by decide) (by decide)
+  rw [Nat.add_zero, Nat.add_zero] at hc hs
+  simp only [csubW, show (mod order).n = 8 from rfl, show (mod order).tmp = 4032 from rfl,
+    show (mod order).mo = 3968 from rfl, List.map_append, List.map_cons, List.map_nil, Instr.mapMem, Src.mapMem,
+    hc, hs]
 
 theorem mulW_reloc (o a b : Nat) :
     (mulW (mod order) mO mA mB).map (relocOperands o a b) = mulW (mod order) o a b := by
   simp only [mulW, show (mod order).n = 8 from rfl,
     show List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] from rfl,
     List.flatMap_cons, List.flatMap_nil, List.append_nil, List.map_append,
-    round_reloc_0,
-    round_reloc_1,
-    round_reloc_2,
-    round_reloc_3,
-    round_reloc_4,
-    round_reloc_5,
-    round_reloc_6,
-    round_reloc_7, csub_reloc]
+    round_reloc order o a b 0 (by decide), round_reloc order o a b 1 (by decide),
+    round_reloc order o a b 2 (by decide), round_reloc order o a b 3 (by decide),
+    round_reloc order o a b 4 (by decide), round_reloc order o a b 5 (by decide),
+    round_reloc order o a b 6 (by decide), round_reloc order o a b 7 (by decide), csub_reloc]
   refine congrArg₂ (· ++ ·) (congrArg₂ (· ++ ·) (congrArg₂ (· ++ ·) ?_ ?_) rfl) rfl <;> rfl
 
 theorem body_keeps :
