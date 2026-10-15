@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA signing on x86 (32-bit): the body
@@ -180,7 +182,7 @@ def Done (p : Params) (s₀ s : State) : Prop :=
 
 theorem ldsc_tt : (VG.X86.taint.check (τr [.esp]) (.block [.mov .esi (.mem (at_ .esp (20 + 4 * SC)))])
     (VG.X86.taint.hintOf (τr [.esp]) (.block [.mov .esi (.mem (at_ .esp (20 + 4 * SC)))]))).isSome = true := by
-  taint_decide
+  native_taint_decide
 
 /-- The body of `vg_mldsa*_sign`. -/
 theorem body_piece (F : PrimsOk P) (ps : PS p) :

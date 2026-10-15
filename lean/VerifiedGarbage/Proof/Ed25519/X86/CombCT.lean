@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! The comb has a public trace: its loops' counters (`esi`) are public, and every address is
 the workspace pointer `edi` plus a constant or `8 esi`, or the tables' address plus
@@ -30,7 +32,7 @@ theorem combMultiply_ct {x : BitVec 32} : RelCT isa
     (fun s t => PointCTCtx x s ∧ PointCTCtx x t ∧ s.wr = t.wr ∧ s.gpr .esp = t.gpr .esp ∧
       wd s.mem x combTbl = wd t.mem x combTbl) combMultiply (fun _ _ => True) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check (callTaint combTbl) combMultiply h).isSome = true := by
-    taint_decide_sum [affSum, addSum]
+    native_taint_decide_sum [affSum, addSum]
   apply VG.RelCT.taint (A := taint) (callTaint combTbl) _ hc
   intro s t ⟨hs, ht, hw, hsp, hv⟩
   exact callTaint_agree hs ht hw hsp (by decide) hv

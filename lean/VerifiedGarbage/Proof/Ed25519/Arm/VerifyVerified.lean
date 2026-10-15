@@ -28,6 +28,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
 meta import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyCT`. -/
 
@@ -86,7 +88,7 @@ theorem pointDecode_ct (base ptr : BitVec 32) (bs : List Byte) :
   let y := VG.Proof.X25519.toFe (Spec.Ed25519.decodeLE bs % 2 ^ 255)
   have ht : CT (fun s t => DecodeCTPre base ptr bs s ∧ DecodeCTPre base ptr bs t)
       pointDecodeLoad (fun _ _ => True) := by
-    apply ctRegs [.r0, .r12] _ (by taint_decide)
+    apply ctRegs [.r0, .r12] _ (by native_taint_decide)
     intro s t h r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -159,7 +161,7 @@ theorem decodeLoad_ct (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat) :
       (.block [.ldr .r12 .r0 DPTR])
       (fun x y => LoadedCT m b pk sig challenge k x ∧ LoadedCT m b pk sig challenge k y) := by
   apply ctBoth
-  · apply ctRegs [.r0] _ (by taint_decide)
+  · apply ctRegs [.r0] _ (by native_taint_decide)
     intro x y h r hr
     rw [List.mem_singleton] at hr
     subst r
@@ -197,7 +199,7 @@ theorem decodeNext_public_ct (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat
       (fun x y => (x.gpr .r0 = b ∧ x.gpr .r12 = b + BitVec.ofNat 32 (7776 + 128 * k)) ∧
         (y.gpr .r0 = b ∧ y.gpr .r12 = b + BitVec.ofNat 32 (7776 + 128 * k))) := by
     apply ctBoth
-    · apply ctRegs [.r0] _ (by taint_decide)
+    · apply ctRegs [.r0] _ (by native_taint_decide)
       intro x y h r hr
       rw [List.mem_singleton] at hr
       subst r
@@ -219,7 +221,7 @@ theorem decodeNext_public_ct (m : Mem) (b pk sig challenge : BitVec 32) (k : Nat
         rw [h4.gpr, h4.other _ (by decide), c3.r0, h3.mem, h2.mem, h1.mem,
           lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide), htab]
   refine ctBlockAppend head ?_
-  apply ctRegs [.r0, .r12] _ (by taint_decide)
+  apply ctRegs [.r0, .r12] _ (by native_taint_decide)
   intro x y h r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -302,7 +304,7 @@ theorem verifyDecode_ct (m : Mem) (b pk sig challenge : BitVec 32) :
       (VerifyPublic m b pk sig challenge t ∧ AllLim t.mem b)) (.block decodeStart)
       (fun x y => DecCT m b pk sig challenge 0 x ∧ DecCT m b pk sig challenge 0 y) := by
     apply ctBoth
-    · apply ctRegs [.r0] _ (by taint_decide)
+    · apply ctRegs [.r0] _ (by native_taint_decide)
       intro x y h r hr
       rw [List.mem_singleton] at hr
       subst r
@@ -313,7 +315,7 @@ theorem verifyDecode_ct (m : Mem) (b pk sig challenge : BitVec 32) :
       (.block [.ldr .r9 .r0 DOK, .cmp .r9 (.imm 0)])
       (fun x y => TestedCT m b pk sig challenge x ∧ TestedCT m b pk sig challenge y) := by
     apply ctBoth
-    · apply ctRegs [.r0] _ (by taint_decide)
+    · apply ctRegs [.r0] _ (by native_taint_decide)
       intro x y h r hr
       rw [List.mem_singleton] at hr
       subst r
@@ -361,7 +363,7 @@ theorem verifyScalar_ct (b pk sig challenge : BitVec 32) :
       (.block (loadHeader 8164 ++ ([.dp .add .r12 .r12 (.imm 32)] : List Instr)))
       (fun s t => (s.gpr .r0 = b ∧ s.gpr .r12 = sig + 32) ∧ (t.gpr .r0 = b ∧ t.gpr .r12 = sig + 32)) := by
     apply ctBoth
-    · apply ctRegs [.r0] _ (by taint_decide)
+    · apply ctRegs [.r0] _ (by native_taint_decide)
       intro s t h r hr
       rw [List.mem_singleton] at hr
       subst r
@@ -373,7 +375,7 @@ theorem verifyScalar_ct (b pk sig challenge : BitVec 32) :
       exact ⟨(tr.gpr _ (by decide)).trans ((ur.gpr _ (by decide)).trans hc.ctx.r0), by rw [tp, up, hc.sigHeader]⟩
   have tail : CT (fun s t => (s.gpr .r0 = b ∧ s.gpr .r12 = sig + 32) ∧ (t.gpr .r0 = b ∧ t.gpr .r12 = sig + 32))
       (.block (unpackField SR 0 ++ scalarCompare ++ ([.cmp .r5 (.imm 0)] : List Instr))) (fun _ _ => True) := by
-    apply ctRegs [.r0, .r12] _ (by taint_decide)
+    apply ctRegs [.r0, .r12] _ (by native_taint_decide)
     intro s t h r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -406,7 +408,7 @@ theorem verifyInit_ct (m : Mem) (b pk sig challenge : BitVec 32) :
       (.block initFields) (fun s t => (VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b) ∧
         (VerifyPublic m b pk sig challenge t ∧ AllLim t.mem b)) := by
   apply ctBoth
-  · apply ctRegs [.r0] _ (by taint_decide)
+  · apply ctRegs [.r0] _ (by native_taint_decide)
     intro s t h r hr
     rw [List.mem_singleton] at hr
     subst r
@@ -451,7 +453,7 @@ theorem verifySetup_ct (m : Mem) (b pk sig challenge : BitVec 32) :
     CT (fun x y => VerifyWrapPublic m b pk sig challenge x ∧ VerifyWrapPublic m b pk sig challenge y)
       (.block verifySetup) (fun x y => VerifyPublic m b pk sig challenge x ∧ VerifyPublic m b pk sig challenge y) := by
   apply ctBoth
-  · apply ctRegs [.r0, .r1, .r2, .r3] _ (by taint_decide)
+  · apply ctRegs [.r0, .r1, .r2, .r3] _ (by native_taint_decide)
     intro x y h r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -487,7 +489,7 @@ theorem verify_ct_of_body
     have hb' := hb.mono (fun _ _ h => h) (fun x y ⟨_, a, c, h, hx, hy⟩ =>
       And.intro (hx.1.ctx h.1.ctx.ctx).r0 (hy.1.ctx h.2.ctx.ctx).r0)
     refine RelCT.seq (verifySetup_ct m b pk sig challenge) (RelCT.seq hb' ?_)
-    apply ctRegs [.r0] _ (by taint_decide)
+    apply ctRegs [.r0] _ (by native_taint_decide)
     intro x y h r hr
     rw [List.mem_singleton] at hr
     subst r

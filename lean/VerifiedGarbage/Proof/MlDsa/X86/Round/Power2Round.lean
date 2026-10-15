@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_power2round`
@@ -183,7 +185,7 @@ structure P2S (s₀ s : State) : Prop where
   ebp : s.gpr .ebp = arg s₀ 2
 
 theorem p2rInit_piece : Piece P2Pre P2Pub (fun s₀ s => s = P0 s₀) P2S (.block p2rInit) := by
-  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by native_taint_decide)
   · subst e
     have hin : aR s₀ 3 ∈ s₀.rd ++ s₀.wr := by simp [hp.wr]
     obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega) hp.sp hp.sp' hin hp.stk_a
@@ -210,7 +212,7 @@ theorem p2r_piece : Piece P2Pre P2Pub (fun s₀ s => s = s₀) (fun s₀ s' => L
     · exact ⟨by rw [← stk_eq hp.sp]; exact hp.stk_1, hp.ret_1⟩
     · exact ⟨by rw [← stk_eq hp.sp]; exact hp.stk_0, hp.ret_0⟩
   · refine Piece.taint [] (fun s₀ s hp h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-      (by taint_decide)
+      (by native_taint_decide)
     refine wp_movi fun s₁ u₁ => WP.block_nil_iff.mpr ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega),
       fun i hi => absurd hi (by omega)⟩
     · rw [u₁.other _ (by decide), h.esp]
@@ -230,7 +232,7 @@ theorem p2r_piece : Piece P2Pre P2Pub (fun s₀ s => s = s₀) (fun s₀ s' => L
         · rw [h.esi, h'.esi, hq.2.1]
         · rw [h.edi, h'.edi, hq.2.2.1]
         · rw [h.ebp, h'.ebp, hq.2.2.2]
-        · rw [h.ecx, h'.ecx]) (by taint_decide)
+        · rw [h.ecx, h'.ecx]) (by native_taint_decide)
 
 theorem p2r0_lt {a : Nat} : p2r0 a < 2 ^ 32 := by
   have hq : q = 8380417 := rfl

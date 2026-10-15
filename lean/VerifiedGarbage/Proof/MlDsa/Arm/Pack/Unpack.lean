@@ -10,6 +10,8 @@ import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.MlKem.Arm.Add
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_bit_unpack` and `vg_mldsa_unpack_t1`
@@ -93,14 +95,14 @@ theorem unpackLoop_ct18 {P : State → State → Prop} (hP : ∀ a b, P a b → 
   RelCT.taint (A := VG.Arm.taint) (Taint.ofRegs [.r0, .r1]) (fun a b h => Taint.agree_ofRegs fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    exacts [(hP a b h).1, (hP a b h).2]) (by taint_decide)
+    exacts [(hP a b h).1, (hP a b h).2]) (by native_taint_decide)
 
 theorem unpackLoop_ct20 {P : State → State → Prop} (hP : ∀ a b, P a b → a.gpr .r0 = b.gpr .r0 ∧ a.gpr .r1 = b.gpr .r1) :
     RelCT isa P (unpackLoop (buFin 524288) 20 2 5) fun _ _ => True :=
   RelCT.taint (A := VG.Arm.taint) (Taint.ofRegs [.r0, .r1]) (fun a b h => Taint.agree_ofRegs fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    exacts [(hP a b h).1, (hP a b h).2]) (by taint_decide)
+    exacts [(hP a b h).1, (hP a b h).2]) (by native_taint_decide)
 
 /-! ## `vg_mldsa_bit_unpack` -/
 
@@ -229,7 +231,7 @@ theorem bitUnpack_ct :
       rw [h.1, h.2]
       exact ⟨ldrSp_ok s₁ ⟨_, by rw [q₁.rd]; simp, Region.contains_self _ _⟩,
         ldrSp_ok s₂ ⟨_, by rw [q₂.rd]; simp, Region.contains_self _ _⟩⟩
-  have B := frame4_ct (body := bitUnpackBody) [.r0, .r1, .r2, .r3, .r12] (by taint_decide)
+  have B := frame4_ct (body := bitUnpackBody) [.r0, .r1, .r2, .r3, .r12] (by native_taint_decide)
     (P := fun a b => True ∧ ((a.gpr .r12 = stackArg s₁ 0 ∧ a.mem = s₁.mem) ∧ Keep [.r12] s₁ a) ∧
       ((b.gpr .r12 = stackArg s₂ 0 ∧ b.mem = s₂.mem) ∧ Keep [.r12] s₂ b))
     (fun a b ⟨_, ⟨_, ka⟩, ⟨_, kb⟩⟩ => by rw [ka.2.2.2, kb.2.2.2]; exact hsp)
@@ -320,7 +322,7 @@ example : ∃ pre post leak, unpackT1Contract Arm.abi =
 
 theorem unpackT1_verified :
     Verified Arm.target Impl.MlDsa.Arm.Pack.unpackT1 (unpackT1Contract Arm.abi) := by
-  refine ⟨fun s hs => ?_, Proof.MlKem.Arm.Add.ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
+  refine ⟨fun s hs => ?_, Proof.MlKem.Arm.Add.ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpost, hk⟩ := t1_wp (T1Pre.of hs)
     refine ⟨t, s', he, ⟨fun r hr => Exec.gpr (t1_preserves r hr) he, hk.2.2.2⟩, ?_⟩
     sig_post [unpackT1Contract, unpackT1Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]

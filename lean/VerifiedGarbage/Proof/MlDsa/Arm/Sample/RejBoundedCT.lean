@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: the loop of `vg_mldsa_rej_bounded_poly`, constant time
@@ -107,7 +109,7 @@ theorem mid_ct {t : Nat} {L₁ L₂ : List Zq} (hl : L₁.length = L₂.length)
         (fun a c ⟨h, _⟩ => ⟨⟨h.1.base, h.1.r9, h.1.r8⟩, ⟨h.2.base, h.2.r9, h.2.r8⟩⟩) fun _ _ h => h) ?_
     refine RelCT.seq (R := fun (a c : State) => HI P σ₁ X₁ t (hbTry η L₁ ((zAt X₁ t).toNat % 16)) a ∧
         HI P σ₂ X₂ t (hbTry η L₂ ((zAt X₂ t).toNat % 16)) c)
-      (relW (taintRel [] nil_regs (by taint_decide)) fun a c h => ⟨hi_ok h.1.1 h.1.2, hi_ok h.2.1 h.2.2⟩) ?_
+      (relW (taintRel [] nil_regs (by native_taint_decide)) fun a c h => ⟨hi_ok h.1.1 h.1.2, hi_ok h.2.1 h.2.2⟩) ?_
     have hz2 : ∀ a c, (HI P σ₁ X₁ t (hbTry η L₁ ((zAt X₁ t).toNat % 16)) a ∧
         HI P σ₂ X₂ t (hbTry η L₂ ((zAt X₂ t).toNat % 16)) c) → isa.eval .eq a = isa.eval .eq c := fun a c h => by
       rw [eval_eq, eval_eq, h.1.z, h.2.z, hm]
@@ -152,11 +154,11 @@ theorem body_ct {t : Nat} (ht : t < 544) :
         (Base P σ₂ X₂ (t + 1) (Lf η X₂ (t + 1)) c ∧ c.z = decide (t + 1 = 544)) := by
   rw [Lf_succ η hX₁ ht, Lf_succ η hX₂ ht]
   refine RelCT.seq (R := fun a c => LD P σ₁ X₁ t (Lf η X₁ t) a ∧ LD P σ₂ X₂ t (Lf η X₂ t) c)
-    (relW (taintRel [.r0] (fun a c h r hr => ?_) (by taint_decide)) fun a c h =>
+    (relW (taintRel [.r0] (fun a c h r hr => ?_) (by native_taint_decide)) fun a c h =>
       ⟨load_ok hp₁ ht h.1, load_ok hp₂ ht h.2⟩) ?_
   · rw [List.mem_singleton] at hr; subst hr; rw [h.1.r0, h.2.r0]
   refine RelCT.seq (mid_ct hp₁ hp₂ hη c1 c2 c3 (len_eq oks t) (ok_eq hX₁ hX₂ oks ht)) ?_
-  exact relW (taintRel [] nil_regs (by taint_decide)) fun a c h => ⟨stepB_ok ht h.1, stepB_ok ht h.2⟩
+  exact relW (taintRel [] nil_regs (by native_taint_decide)) fun a c h => ⟨stepB_ok ht h.1, stepB_ok ht h.2⟩
 
 include hp₁ hp₂ hη c1 c2 c3 hX₁ hX₂ oks in
 /-- The loop. -/

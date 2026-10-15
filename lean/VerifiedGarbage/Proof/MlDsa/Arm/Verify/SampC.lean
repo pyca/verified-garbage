@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA verification on 32-bit ARM: `c`, and the samplers
@@ -131,7 +133,7 @@ theorem ball_piece : VPiece p STK (VS p STK p.k 0) (VS4 p STK) (sampled (ballAt 
 omit hP hS in
 theorem rho_piece :
     VPiece p STK (fun σ s => V2 p STK p.ℓ σ s ∧ flag (zOk p σ p.ℓ) ≠ 0) (VS p STK 0 0) (copy .r4 0 .r7 oSB 32) := by
-  refine ⟨fun σ s _ ⟨h, hn⟩ => ?_, rel_of (vtaint4 (by taint_decide)) fun σ₁ _ _ _ _ _ pub h₁ h₂ =>
+  refine ⟨fun σ s _ ⟨h, hn⟩ => ?_, rel_of (vtaint4 (by native_taint_decide)) fun σ₁ _ _ _ _ _ pub h₁ h₂ =>
     ⟨σ₁, vc_twoL pub h₁.1.vc h₂.1.vc⟩⟩
   have hz : zOk p σ p.ℓ = true := by
     cases e : zOk p σ p.ℓ

@@ -24,6 +24,8 @@ import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86.Top
 meta import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit), `verify_message`: correct and constant time
@@ -63,7 +65,7 @@ theorem verifyRest_piece (hp : p ∈ params) {n : String} {f : Prog isa} (hf : V
   refine Piece.seq (trHash_piece (vShape hp).pubL (fun _ _ _ h => h) (fun _ _ => by show 5 ≤ 7; decide)
     (fun _ _ => rfl) tt₁ tt₂) (Piece.seq ((muHash_piece (lay := vlay p) (.off oMU)
     (fun s₀ => (vlay p s₀).X32 + BitVec.ofNat 32 840) (fun s₀ => H (bytesAt s₀.mem ((arg s₀ 0).setWidth 64) p.pkLen) 64)
-    (by taint_decide) (vShape hp).pubL (fun _ _ _ h => h.1) (fun _ _ => by show 5 ≤ 7; decide) (fun _ _ => rfl) rfl
+    (by native_taint_decide) (vShape hp).pubL (fun _ _ _ h => h.1) (fun _ _ => by show 5 ≤ 7; decide) (fun _ _ => rfl) rfl
     (fun s₀ s h₀ hc => hc.ctx.off 840) (fun s₀ s₀' h₀ h₀' hq => by rw [((vShape hp).pubL s₀ s₀' h₀ h₀' hq).x])
     (fun s₀ s h₀ h => ?_) (fun _ _ => H_length _ _) (fun s₀ h₀ hL => ?_)).mono
     (fun _ _ _ h => h) fun s₀ s h₀ ⟨hc, hm⟩ => ⟨hc, ?_⟩) (verifyCall_piece hp hf))

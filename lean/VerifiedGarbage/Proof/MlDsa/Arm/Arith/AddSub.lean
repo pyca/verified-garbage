@@ -16,6 +16,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_add` and `vg_mldsa_sub`
@@ -282,7 +284,7 @@ theorem ctRegs {k : Contract isa} (rs : List Reg)
     (fun s₁ s₂ _ _ hp => Taint.agree_ofRegs (hpub s₁ s₂ hp)) h
 
 theorem add_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.add (Spec.MlDsa.addContract Arm.abi) := by
-  refine ⟨fun s hs => ?_, ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
+  refine ⟨fun s hs => ?_, ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · have hp := pre_of hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (add_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp⟩, ?_⟩
@@ -307,7 +309,7 @@ theorem add_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.add (Spec.MlDsa.
         | exact reduced_zero _
 
 theorem sub_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.sub (Spec.MlDsa.subContract Arm.abi) := by
-  refine ⟨fun s hs => ?_, ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
+  refine ⟨fun s hs => ?_, ctRegs [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · have hp := pre_of_sub hs
     obtain ⟨t, s', he, h⟩ := loop_ok hp (sub_hb hp)
     refine ⟨t, s', he, ⟨h.pres, h.sp⟩, ?_⟩
