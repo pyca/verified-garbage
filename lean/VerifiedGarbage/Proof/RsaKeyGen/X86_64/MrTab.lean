@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrExp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -29,6 +30,24 @@ open VG.Proof.MlKem.X86_64 VG.Proof.RsaKeyGen
 def tabRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w 8, tabBytes w), (slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)),
     (8 * kV, 8), (8 * kBits, 8)]
+
+/-- `tabRanges`'s ranges, in the header and in the arrays. -/
+theorem tabRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(208, 8), (224, 8)]
+    [(8, 16), (2, 1), (3, 1), (6, 1)] (tabRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    tabRanges, Public.aAcc, Public.aTmp, Public.aY, aAcc, aTmp, aY, VG.Proof.Bignum.tabBytes, kT0, sFn, kV, kBits, kT2] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(8, 16), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inl (by decide)
 
 theorem powMod_succ' (b e c : Nat) :
     Spec.Rsa.powMod b (e + 1) c = Spec.Rsa.powMod b e c * Spec.Rsa.powMod b 1 c % c := by

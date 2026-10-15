@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.RsaKeyGen.Bits
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -29,6 +30,19 @@ open VG.Proof.MlKem.X86_64
 /-- What `loadC` changes. -/
 def loadCRanges (w : Nat) : List (Nat × Nat) :=
   [(8 * sW, 8), (8 * sArr 0, 64), (slot w aN, 8 * (w + 2)), (8 * kUsed, 8)]
+
+/-- `loadCRanges`'s ranges, in the header and in the arrays. -/
+theorem loadCRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(48, 8), (64, 64), (200, 8)]
+    [(0, 1)] (loadCRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    loadCRanges, Public.aN, aN, sFn, sW, sArr, kUsed] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inr ⟨(0, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
 
 /-- The head of `loadC`: `w`, the bases, and `rand` and `out_len` into `rsi`
 and `rcx`. -/
