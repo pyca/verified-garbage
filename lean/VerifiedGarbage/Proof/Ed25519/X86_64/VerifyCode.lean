@@ -62,6 +62,26 @@ theorem adx_inlineOk : (verifyEquation Impl.X25519.X86_64.adx
 theorem ifma_inlineOk : (verifyEquation Impl.X25519.X86_64.adx Ifma.windows).InlineOk = true := by
   lit_decide
 
+/-- No instruction of code that inlines writes `rsp`, from `Code.InlineOk` rather than a
+second walk of the code. -/
+theorem noSp_of_inlineOk {c : Prog isa} (h : c.InlineOk = true) :
+    c.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+  rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true]
+  intro i hi
+  rw [Code.clobbers_rsp_of_inlineOk h i hi, Bool.not_false]
+
+theorem baseline_noSp : (verifyEquation Impl.X25519.X86_64.baseline
+    (windows Impl.X25519.X86_64.baseline)).allInstrs (fun i => !Taint.clobbers i .rsp) = true :=
+  noSp_of_inlineOk baseline_inlineOk
+
+theorem adx_noSp : (verifyEquation Impl.X25519.X86_64.adx
+    (windows Impl.X25519.X86_64.adx)).allInstrs (fun i => !Taint.clobbers i .rsp) = true :=
+  noSp_of_inlineOk adx_inlineOk
+
+theorem ifma_noSp : (verifyEquation Impl.X25519.X86_64.adx Ifma.windows).allInstrs
+    (fun i => !Taint.clobbers i .rsp) = true :=
+  noSp_of_inlineOk ifma_inlineOk
+
 theorem ifma_windows_inline : Ifma.windows.inline = Ifma.windows :=
   Code.inline_of_noCalls (by lit_decide)
 
