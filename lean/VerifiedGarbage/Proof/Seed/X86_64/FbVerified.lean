@@ -225,30 +225,54 @@ def fbSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩, ⟨0x4000, 8 * 188⟩]
 
+/-- What is public at the core's loop of rounds: the pointers (`rsi` at the
+batch's blocks, `rdi` at the round keys, `r9` at the scratch buffer), the
+round counter, the stack pointer, the flags, and the data's address, the
+blocks left and the IV's address in `xmm13` … `xmm15`. -/
+def fbRoundTaint : X86_64.Taint.T :=
+  { regs := .ofList [.rdx, .rsp, .rsi, .rdi, .r8, .r9], flags := true, lens := [16, 0, 8 * 188],
+    bases := [(.r9, 2, 0), (.rsi, 2, 8 * bufSlot)], xregs := .ofList [.xmm13, .xmm14, .xmm15] }
+
+/-! The loop of rounds, which the three modes run, analysed once, as a summary. -/
+
+taint_summary fbRoundSum : taintS fbRoundTaint (.block (round .encrypt))
+
+theorem ofb_ct : ConstantTime isa ofbX86_64.pre ofbX86_64.pub ofb :=
+  let ⟨_, h⟩ := (by taint_decide_sum [fbRoundSum] : ∃ h, (taintS.check fbTaint ofb h).isSome = true)
+  VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
+
 theorem ofb_verified :
     Verified X86_64.target ofb (Proof.Seed.fbScratchContract X86_64.abi 188 Proof.Seed.ofbPost) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := ofb_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := ofb) (by lit_decide) he hg, hpost⟩)
-    (VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)) (by
+    ofb_ct (by
     sig_implies [Proof.Seed.fbScratchContract, Proof.Seed.fbScratchSig, Spec.Seed.ofbSig,
       Proof.Seed.ofbPost, ofbX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs] [fbSat] using fbSat)
+
+theorem cfbEncrypt_ct : ConstantTime isa cfbEncX86_64.pre cfbEncX86_64.pub cfbEncrypt :=
+  let ⟨_, h⟩ := (by taint_decide_sum [fbRoundSum] : ∃ h, (taintS.check fbTaint cfbEncrypt h).isSome = true)
+  VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
 
 theorem cfbEncrypt_verified :
     Verified X86_64.target cfbEncrypt (Proof.Seed.fbScratchContract X86_64.abi 188 Proof.Seed.cfbEncPost) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cfbEncrypt_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cfbEncrypt) (by lit_decide) he hg, hpost⟩)
-    (VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)) (by
+    cfbEncrypt_ct (by
     sig_implies [Proof.Seed.fbScratchContract, Proof.Seed.fbScratchSig, Spec.Seed.ofbSig,
       Proof.Seed.cfbEncPost, cfbEncX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs] [fbSat] using fbSat)
+
+theorem cfbDecrypt_ct : ConstantTime isa cfbDecX86_64.pre cfbDecX86_64.pub cfbDecrypt :=
+  let ⟨_, h⟩ := (by taint_decide_sum [fbRoundSum] : ∃ h, (taintS.check fbTaint cfbDecrypt h).isSome = true)
+  VG.Taint.constantTime (A := taintS) fbTaint (fbTaint_agree blkLen_congr) h
 
 theorem cfbDecrypt_verified :
     Verified X86_64.target cfbDecrypt (Proof.Seed.fbScratchContract X86_64.abi 188 Proof.Seed.cfbDecPost) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cfbDecrypt_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecrypt) (by lit_decide) he hg, hpost⟩)
-    (VG.Taint.constantTime (A := taint) fbTaint (fbTaint_agree blkLen_congr) (by taint_decide)) (by
+    cfbDecrypt_ct (by
     sig_implies [Proof.Seed.fbScratchContract, Proof.Seed.fbScratchSig, Spec.Seed.ofbSig,
       Proof.Seed.cfbDecPost, cfbDecX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs] [fbSat] using fbSat)
 
