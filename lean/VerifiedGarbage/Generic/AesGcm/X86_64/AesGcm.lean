@@ -26,6 +26,8 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Iv96Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Iv96Piece
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -194,6 +196,20 @@ theorem StitchToName.okR : (n : StitchToName) →
 
 def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
   (v.stitch.bind (·.toPart)).bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.fullR, p.name.okR, q.enc⟩
+
+/-- The prepared decryption loop a variant has given the block index, with
+its proof. -/
+def GcmVariant.decI (v : GcmVariant) : Option (Blocks.DecCodeI Proof.Gcm.X86_64.Stitch.CtxMode.prepared) :=
+  (v.stitch.bind (·.pieceRI)).map fun q =>
+    ⟨Impl.Gcm.X86_64.StitchZH.decR true, fun _ hp hx => Proof.Gcm.X86_64.StitchZH.decRI_ok hp.toPrepared hx,
+      q.decChecks.elim fun _ h => decRI_rel h, q.dec⟩
+
+/-- The prepared out-of-place encryption loop a variant has given the block
+index, with its proof. -/
+def GcmVariant.encI (v : GcmVariant) : Option (BlocksTo.EncCodeI Proof.Gcm.X86_64.Stitch.CtxMode.prepared) :=
+  (v.stitch.bind (·.pieceRI)).map fun q =>
+    ⟨Impl.Gcm.X86_64.StitchZHTo.encR true, fun _ hp hx => Proof.Gcm.X86_64.StitchZHTo.encRToI_ok hp hx,
+      q.encChecks.elim fun _ h => encRI_rel h, q.enc⟩
 
 end VG.Proof.AesGcm.X86_64
 
@@ -769,7 +785,46 @@ def blkR (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   v.impl.blkM v.stitchR (Spec.Gcm.encryptBlocksPreparedApi.name ++ v.impl.suffix)
     (Spec.Gcm.decryptBlocksPreparedApi.name ++ v.impl.suffix)
 
+/-- `vg_aes_gcm_decrypt_blocks_prepared_iv96` of a variant: with its loop
+given the block index, or that of `vg_aes_gcm_decrypt_blocks_prepared`. -/
+def decIv96Code (v : GcmVariant) : Prog X86_64.isa :=
+  match v.decI with
+  | some c => Impl.AesGcm.X86_64.Blocks.decrypt v.impl.callees.ctr v.impl.callees.gh (some c.dec) true true
+  | none => (blkR v).dec.code
+
+theorem decIv96_verified (v : GcmVariant) :
+    Verified X86_64.target (decIv96Code v) (Spec.Gcm.decryptBlocksPreparedIv96Contract X86_64.abi 8) := by
+  unfold decIv96Code
+  split
+  · exact decryptBlocksPreparedIv96_verifiedI v.impl _
+  · exact decryptBlocksPreparedIv96_verified v.impl v.stitchR
+
+theorem decIv96_spSafe (v : GcmVariant) : (decIv96Code v).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold decIv96Code
+  split
+  · exact decryptI_spSafe v.impl (_ : Blocks.DecCodeI _).S
+  · exact (blkR v).decSp
+
+/-- How `vg_aes_gcm_decrypt_blocks_prepared_iv96` and
+`vg_aes_gcm_encrypt_blocks_to_prepared_iv96` of a variant use the index. -/
+def iv96Note (indexed : Bool) (base : String) : String :=
+  if indexed then
+    "This implementation is `" ++ base ++ "`'s, but for the counter blocks of the interleaved loop:       while the low byte of `index` does not wrap around within a batch of 16 blocks, it adds to the       counter blocks as bytes, byte-reversed, and otherwise computes them as `" ++ base ++ "` does."
+  else
+    "This implementation is `" ++ base ++ "`'s, which does not read `index`."
+
 def artifactsR (v : GcmVariant) : List Artifact := [
+  { Spec.Gcm.decryptBlocksPreparedIv96Api with
+    name := Spec.Gcm.decryptBlocksPreparedIv96Api.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.decryptBlocksPreparedIv96Api.doc
+      (notes := [iv96Note v.decI.isSome (Spec.Gcm.decryptBlocksPreparedApi.name ++ v.impl.suffix)])
+    code := decIv96Code v
+    contract := Spec.Gcm.decryptBlocksPreparedIv96Contract X86_64.abi 8
+    stack := 8
+    verified := decIv96_verified v
+    spSafe := decIv96_spSafe v
+    features := v.impl.features },
   { Spec.Gcm.initPreparedApi with
     name := Spec.Gcm.initPreparedApi.name ++ v.impl.suffix
     target := X86_64.target
@@ -866,8 +921,39 @@ def toFnR (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepare
     (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToR v) (encFnR v)))
 
 
+/-- `vg_aes_gcm_encrypt_blocks_to_prepared_iv96` of a variant: with its loop
+given the block index, or that of `vg_aes_gcm_encrypt_blocks_to_prepared`. -/
+def encIv96Code (v : GcmVariant) : Prog X86_64.isa :=
+  match v.encI with
+  | some c => Impl.AesGcm.X86_64.BlocksTo.encrypt (blkR v).enc (some c.enc) true true
+  | none => Impl.AesGcm.X86_64.BlocksTo.encrypt (blkR v).enc (v.stitchToR.map (·.enc)) true (encFullTo v.stitchToR)
+
+theorem encIv96_verified (v : GcmVariant) :
+    Verified X86_64.target (encIv96Code v) (Spec.Gcm.encryptBlocksToPreparedIv96Contract X86_64.abi 24) := by
+  unfold encIv96Code
+  split
+  · exact encryptBlocksToPreparedIv96_verifiedI (blkR v) _
+  · exact encryptBlocksToPreparedIv96_verified (blkR v) v.stitchToR
+
+theorem encIv96_spSafe (v : GcmVariant) : (encIv96Code v).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold encIv96Code
+  split
+  · exact encryptToI_spSafe (blkR v) (_ : BlocksTo.EncCodeI _).S
+  · exact encryptTo_spSafe v.stitchToR (blkR v)
+
 def artifactsToR (v : GcmVariant) : List Artifact :=
-  [{ Spec.Gcm.encryptBlocksToPreparedApi with
+  [{ Spec.Gcm.encryptBlocksToPreparedIv96Api with
+      name := Spec.Gcm.encryptBlocksToPreparedIv96Api.name ++ v.impl.suffix
+      target := X86_64.target
+      doc := Spec.Gcm.encryptBlocksToPreparedIv96Api.doc
+        (notes := [iv96Note v.encI.isSome (Spec.Gcm.encryptBlocksToPreparedApi.name ++ v.impl.suffix)])
+      code := encIv96Code v
+      contract := Spec.Gcm.encryptBlocksToPreparedIv96Contract X86_64.abi 24
+      stack := 24
+      verified := encIv96_verified v
+      spSafe := encIv96_spSafe v
+      features := v.impl.features },
+    { Spec.Gcm.encryptBlocksToPreparedApi with
       name := Spec.Gcm.encryptBlocksToPreparedApi.name ++ v.impl.suffix
       target := X86_64.target
       doc := Spec.Gcm.encryptBlocksToPreparedApi.doc
