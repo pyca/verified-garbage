@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.PublicCompare
+public import VerifiedGarbage.Proof.Dsa.X86.WidthMatch
 
 /-! # Selecting supported public component widths -/
 
@@ -24,27 +24,14 @@ theorem widthDispatch_ok (signing : Bool) (widths : List (Nat × Nat))
     have Brest : ∀ w ∈ rest, w.1 < 2 ^ 32 ∧ w.2 < 2 ^ 32 :=
       fun w hw => bound w (List.mem_cons_of_mem _ hw)
     unfold Entry.widthDispatch
-    refine WP.seq (WP.mono (publicCompare_ok .pLen hs hz hp B.1) fun t ⟨Z, K, O⟩ => ?_)
-    have ht := hs.of_keeps K (by decide)
-    by_cases P : pLen = wp
-    · refine WP.ite true (by simp only [eval, Z, P, decide_true]) (fun _ => ?_) (fun h => Bool.noConfusion h)
-      refine WP.seq (WP.mono (publicCompare_ok (value := qLen) .qLen ht hz
-        (by simpa only [pointerValue, O] using hq) B.2) fun u ⟨Z2, K2, O2⟩ => ?_)
-      have Ksu := K.trans K2
-      have Osu := O2.trans O
-      by_cases Qw : qLen = wq
-      · refine WP.ite true (by simp only [eval, Z2, Qw, decide_true]) (fun _ => ?_) (fun h => Bool.noConfusion h)
-        rw [← P, ← Qw]
-        exact body u Ksu Osu
-      · refine WP.ite false (by simp only [eval, Z2, Qw, decide_false]) (fun h => Bool.noConfusion h) (fun _ => ?_)
-        apply ih (hs.of_keeps Ksu (by decide))
-          (by simpa only [List.mem_cons, Prod.mk.injEq, Qw, and_false, false_or] using member) Brest
-        · simpa only [pointerValue, Osu] using hp
-        · simpa only [pointerValue, Osu] using hq
-        · intro v Kv Ov
-          exact body v (Ksu.trans Kv) (Ov.trans Osu)
-    · refine WP.ite false (by simp only [eval, Z, P, decide_false]) (fun h => Bool.noConfusion h) (fun _ => ?_)
-      apply ih ht (by simpa only [List.mem_cons, Prod.mk.injEq, P, false_and, false_or] using member) Brest
+    refine WP.seq (WP.mono (widthMatch_ok hs hz hp hq B.1 B.2) fun t ⟨Z, K, O⟩ => ?_)
+    by_cases Both : pLen = wp ∧ qLen = wq
+    · refine WP.ite true (by simp only [eval, Z, Both, true_and, decide_true]) (fun _ => ?_) (fun h => Bool.noConfusion h)
+      rw [← Both.1, ← Both.2]
+      exact body t K O
+    · refine WP.ite false (by simp only [eval, Z, Both, decide_false]) (fun h => Bool.noConfusion h) (fun _ => ?_)
+      apply ih (hs.of_keeps K (by decide))
+        (by simpa only [List.mem_cons, Prod.mk.injEq, Both, false_or] using member) Brest
       · simpa only [pointerValue, O] using hp
       · simpa only [pointerValue, O] using hq
       · intro u Ku Ou

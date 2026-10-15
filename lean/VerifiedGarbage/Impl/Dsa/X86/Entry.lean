@@ -69,14 +69,18 @@ def digestDispatch (signing : Bool) (pLen qLen : Nat) : Nat → Prog isa
 def sized (signing : Bool) (pLen qLen : Nat) : Prog isa :=
   .seq (Shape.check pLen qLen) (.ite .e (failure signing) (digestDispatch signing pLen qLen 32))
 
+/-- Test both public widths, retaining a single fallback continuation. -/
+def widthMatch (pLen qLen : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (.mem (sc (Layout.field .pLen))), .alu .cmp .eax (.imm (BitVec.ofNat 32 pLen))])
+    (.ite .e
+      (.block [.mov .eax (.mem (sc (Layout.field .qLen))), .alu .cmp .eax (.imm (BitVec.ofNat 32 qLen))])
+      (.block [.mov .eax (.imm 0), .alu .cmp .eax (.imm 1)]))
+
 def widthDispatch (signing : Bool) : List (Nat × Nat) → Prog isa
   | [] => failure signing
   | (pLen, qLen) :: rest =>
-    .seq (.block [.mov .eax (.mem (sc (Layout.field .pLen))), .alu .cmp .eax (.imm (BitVec.ofNat 32 pLen))])
-      (.ite .e
-        (.seq (.block [.mov .eax (.mem (sc (Layout.field .qLen))), .alu .cmp .eax (.imm (BitVec.ofNat 32 qLen))])
-          (.ite .e (sized signing pLen qLen) (widthDispatch signing rest)))
-        (widthDispatch signing rest))
+    .seq (widthMatch pLen qLen)
+      (.ite .e (sized signing pLen qLen) (widthDispatch signing rest))
 
 def operation (signing : Bool) : Prog isa := Core.sequence [
   .block (if signing then signEntry else verifyEntry),
