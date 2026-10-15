@@ -27,7 +27,7 @@ theorem square_ok {s : State} {B : Addr} {Z w a : Nat} {minv : BitVec 64}
   have hnz := slot_le (w := w) (show aN < 8 by decide)
   unfold VG.Impl.Bignum.AArch64.WindowArithmetic.square
   refine WP.seq (WP.mono (WindowRaw.raw_width_ok hs h0 hH hZ hw hw' hmod ha ha1 ha2)
-    fun u ⟨hu,ho,h8,_,h12,_,h7,ku⟩ => ?_)
+    fun u ⟨hu,ho,h8,h12,h7,ku⟩ => ?_)
   have hHU := (Square.scratch_arrays ho).hdr hH
   have hN : wv u.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho.wv (by omega) (by omega)
   have hi : ((word u.mem B (slot w aN)).toNat * minv.toNat + 1) % 2^64 = 0 := by
@@ -55,7 +55,7 @@ theorem product_ok {s : State} {B : Addr} {Z w o a b : Nat} {minv : BitVec 64}
   have hnz := slot_le (w := w) (show aN < 8 by decide)
   unfold VG.Impl.Bignum.AArch64.WindowArithmetic.product
   refine WP.seq (WP.mono (WindowRaw.product_width_ok hs h0 hH hZ hw hw' hmod ha hb ha1 ha2 hb1 hb2)
-    fun u ⟨hu,hout,h8,_,h12,_,h7,ku⟩ => ?_)
+    fun u ⟨hu,hout,h8,h12,h7,ku⟩ => ?_)
   have hHU := (Square.scratch_arrays hout).hdr hH
   have hN : wv u.mem B (slot w aN) w = wv s.mem B (slot w aN) w := hout.wv (by omega) (by omega)
   have hi : ((word u.mem B (slot w aN)).toNat * minv.toNat + 1) % 2^64 = 0 := by

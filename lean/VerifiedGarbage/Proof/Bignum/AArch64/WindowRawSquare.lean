@@ -20,8 +20,8 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
       wv t.mem B (productBase k) (16*k) =
         wv s.mem B (slot (8*k) a) (8*k) * wv s.mem B (slot (8*k) a) (8*k) ∧
       Outside B (productBase k) (8*(16*k+2)) s.mem t.mem ∧
-      t.gpr .x8 = off B (productBase k) ∧ t.gpr .x10 = off B (slot (8*k) Public.aN) ∧
-      t.gpr .x12 = BitVec.ofNat 64 (8*k) ∧ t.gpr .x15 = minv ∧ t.gpr .x7 = 0 ∧ Keep regs s t := by
+      t.gpr .x8 = off B (productBase k) ∧
+      t.gpr .x12 = BitVec.ofNat 64 (8*k) ∧ t.gpr .x7 = 0 ∧ Keep regs s t := by
   have hn := hs.nowrap
   have hP : productBase k+8*(16*k+2) ≤ Z := by
     unfold productBase slot Public.aAcc at *
@@ -39,10 +39,10 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
       wv t.mem B (productBase k) (16*k) =
         wv s.mem B (slot (8*k) a) (8*k) * wv s.mem B (slot (8*k) a) (8*k) ∧
       Outside B (productBase k) (8*(16*k+2)) s.mem t.mem ∧
-      t.gpr .x8 = off B (productBase k) ∧ t.gpr .x10 = off B (slot (8*k) Public.aN) ∧
-      t.gpr .x12 = BitVec.ofNat 64 (8*k) ∧ t.gpr .x15 = minv ∧ t.gpr .x7 = 0 ∧ Keep regs s t) :=
+      t.gpr .x8 = off B (productBase k) ∧
+      t.gpr .x12 = BitVec.ofNat 64 (8*k) ∧ t.gpr .x7 = 0 ∧ Keep regs s t) :=
     WP.seq (WP.mono (triangle_ok hs h0 hH hZ hk hk' ha ha1 ha2)
-      (fun v ⟨hv, ho, h8, h9, h10, h12, h15, h7, kv⟩ => by
+      (fun v ⟨hv, ho, h8, h9, h12, h7, kv⟩ => by
         have hcross : Square.crossValue v.mem B (slot (8*k) a) (8*k) =
             Square.crossValue s.mem B (slot (8*k) a) (8*k) := by
           apply Square.crossValue_congr
@@ -52,8 +52,8 @@ theorem raw_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
         exact WP.mono (diagonal_finish_ok (hs.congr kv.wr) h8 h9 h12 h7 hk hk' hP hA sep
           (hv.trans hcross.symm)) fun t ⟨ht, hto, kt⟩ =>
             ⟨by simpa only [hread] using ht, ho.trans hto,
-              (kt.gpr _ (by decide)).trans h8, (kt.gpr _ (by decide)).trans h10,
-              (kt.gpr _ (by decide)).trans h12, (kt.gpr _ (by decide)).trans h15,
+              (kt.gpr _ (by decide)).trans h8,
+              (kt.gpr _ (by decide)).trans h12,
               (kt.gpr _ (by decide)).trans h7, (kv.trans kt).mono (by decide)⟩))
   exact hp
 
@@ -65,8 +65,8 @@ theorem raw_width_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       wv t.mem B (slot w Public.aAcc+16) (2*w) =
         wv s.mem B (slot w a) w * wv s.mem B (slot w a) w ∧
       Outside B (slot w Public.aAcc+16) (8*(2*w+2)) s.mem t.mem ∧
-      t.gpr .x8 = off B (slot w Public.aAcc+16) ∧ t.gpr .x10 = off B (slot w Public.aN) ∧
-      t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x15 = minv ∧ t.gpr .x7 = 0 ∧ Keep regs s t := by
+      t.gpr .x8 = off B (slot w Public.aAcc+16) ∧
+      t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x7 = 0 ∧ Keep regs s t := by
   have he : w = 8*(w/8) := by omega
   have hH' : Hdr s.mem B (8*(w/8)) minv := he ▸ hH
   have hZ' : slot (8*(w/8)) 8 ≤ Z := he ▸ hZ

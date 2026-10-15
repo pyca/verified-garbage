@@ -14,32 +14,32 @@ open VG.Proof.Bignum.AArch64.BlockedRedc (FastW RedcPreCtx)
 open VG.Proof.Bignum.AArch64.ProductEight (SetupFast)
 
 theorem triangle_ct : RelCT isa (Two FastW)
-    (VG.Impl.Bignum.AArch64.WindowRaw.triangle 6) (Two (SetupFast 6)) := by
+    (VG.Impl.Bignum.AArch64.WindowRaw.triangle 6) (Two (WindowSetup.DiagCtx 6)) := by
   unfold VG.Impl.Bignum.AArch64.WindowRaw.triangle
   refine RelCT.seq (two_piece _ ProductEight.pins_fast (by taint_decide)
-    (ProductEight.setup_fast_ctx (by decide))) ?_
+    WindowSetup.start_ctx) ?_
   apply RelCT.assoc
-  exact RelCT.seq (two_piece _ (ProductEight.pins_setup 6) (by taint_decide)
+  exact RelCT.seq (two_piece _ WindowSetup.pins_start (by taint_decide)
     (square_preparation_ctx (by decide)))
-    (RelCT.seq (SquareEight.rows_ct (by decide) (by decide) (by decide)
+    (RelCT.seq (WindowSparse.rows_ct (by decide) (by decide) (by decide)
       (by taint_decide) (by taint_decide))
-      (two_piece _ (SquareEight.pins_final 6) (by taint_decide) (square_finish_ctx (by decide))))
+      (two_piece _ (fun L s t hs ht => pins_goodW L s t hs.fast.1 ht.fast.1) (by taint_decide) (square_finish_ctx (by decide))))
 
 theorem square_ct : RelCT isa (Two FastW)
     (VG.Impl.Bignum.AArch64.WindowRaw.square 6) (Two RedcPreCtx) :=
-  RelCT.seq triangle_ct (two_piece _ (SquareEight.pins_diagonal 6) (by taint_decide)
-    (SquareEight.diagonal_ctx (by decide) (by decide) (by decide)))
+  RelCT.seq triangle_ct (two_piece _ (WindowSetup.pins_diagonal 6) (by taint_decide)
+    (WindowSetup.diagonal_ctx (by decide) (by decide) (by decide)))
 
 theorem product_ct : RelCT isa (Two FastW)
     (VG.Impl.Bignum.AArch64.WindowRaw.product 6 5) (Two RedcPreCtx) := by
   unfold VG.Impl.Bignum.AArch64.WindowRaw.product
   refine RelCT.seq (two_piece _ ProductEight.pins_fast (by taint_decide)
-    (ProductEight.setup_fast_ctx (by decide))) ?_
+    WindowSetup.start_ctx) ?_
   apply RelCT.assoc
-  exact RelCT.seq (two_piece _ (ProductEight.pins_setup 6) (by taint_decide)
+  exact RelCT.seq (two_piece _ WindowSetup.pins_start (by taint_decide)
     (preparation_ctx (b := 5) (by decide)))
     (RelCT.seq (ProductEight.rows_ct (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide) (by taint_decide))
-      (two_piece _ (ProductEight.pins_final 6 5) (by taint_decide) (product_finish_ctx (by decide))))
+      (two_piece _ (ProductEight.pins_final 6 5) (by taint_decide) product_finish_ctx))
 
 end VG.Proof.Bignum.AArch64.WindowRaw
