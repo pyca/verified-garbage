@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.SmallTest
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Lit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.TailO
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Crypt
@@ -1387,11 +1389,28 @@ namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
 
+/-- The stitched loops never write the stack pointer, for either rounds. -/
+theorem bulkO_spSafe (vl : Bool) : (bulkO vl).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+
+theorem bulkP_spSafe (vl : Bool) : (bulkP vl).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+
+theorem bigS_spSafe (vl : Bool) : (bigS vl).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+
+/-- As `seal_spSafe`, with the stitched loops' checks above. -/
 theorem sealS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     (sealStitched { v.callee with pass := 512 } v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
   obtain ⟨hf, -, hw⟩ := avx2_of v hv
-  rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
-    (simp only [sealStitched, prologue, cryptS, preS, Code.all, v.spSafe, hf, hw, hv, hl]; lit_decide)
+  have hc := v.spSafe
+  have hb := blocks_spSafe v.poly
+  have h₁ := bigS_spSafe v.callee.vl
+  have h₂ := bulkP_spSafe v.callee.vl
+  generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb h₁ h₂ ⊢
+  simp only [sealStitched, prologue, cryptS, preS, Code.all, hc, hb, h₁, h₂, hf, hw,
+    macPad, macPadLengths, wholeBlocks, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+  subst hP; lit_decide
 
 theorem sealS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa (sealStitched { v.callee with pass := 512 } v.poly) s t s' ∧ abiPreserved s s' ∧
@@ -3827,10 +3846,14 @@ open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_6
 
 theorem openS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     (openStitched v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb | hb⟩ <;>
-    rcases Bool.eq_false_or_eq_true v.callee.vl with hv | hv <;>
-    (simp only [openStitched, prologue, cryptO, decRest, xorTail, Code.all, v.spSafe, hf, hpass, hw, hb, hv]
-     lit_decide)
+  have hc := v.spSafe
+  have hb := blocks_spSafe v.poly
+  have ho := bulkO_spSafe v.callee.vl
+  generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ho ⊢
+  rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
+    (simp only [openStitched, prologue, cryptO, decRest, xorTail, Code.all, hc, hb, ho, hf, hpass, hw,
+       macPad, macPadLengths, wholeBlocks, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+     subst hP; lit_decide)
 
 theorem openS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : openX86_64.pre s) :
     ∃ t s', Exec isa (openStitched v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' :=
