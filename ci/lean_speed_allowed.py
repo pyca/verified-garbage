@@ -91,7 +91,6 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/CmacTripleDes/X86_64/Init.lean": 1,
     "VerifiedGarbage/Proof/CmacTripleDes/X86_64/Update.lean": 1,
     "VerifiedGarbage/Proof/Ct/AArch64.lean": 1,
-    "VerifiedGarbage/Proof/Curve448/AArch64/Fast/Columns.lean": 2,
     "VerifiedGarbage/Proof/Curve448/AArch64/Neon/Macs.lean": 1,
     "VerifiedGarbage/Proof/Curve448/AArch64/Neon/Prep.lean": 2,
     "VerifiedGarbage/Proof/Ed448/X86_64/VerifyChecks.lean": 1,
