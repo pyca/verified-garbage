@@ -98,14 +98,7 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P224.curve)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP224.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
-  have hsp : ∀ i ∈ instrs publicKeyP224.inline, Taint.clobbers i .rsp = false := by
-    have h : publicKeyP224.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
-      rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [Taint.clobbers_erase]]
-      show publicKeyP224Erased.allInstrs _ = true
-      lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
+  have hsp := Code.clobbers_rsp_of_inlineOk pk_inlineOk
   have F := (Exec.regions he (Code.noCalls_inline pk_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by

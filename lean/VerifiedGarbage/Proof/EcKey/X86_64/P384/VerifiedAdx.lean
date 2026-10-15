@@ -86,14 +86,7 @@ theorem pk_x86_adx (hL : Weierstrass.Law Spec.P384.curve)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP384Adx.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs) p384x_mulBase
-  have hsp : ∀ i ∈ instrs publicKeyP384Adx.inline, Taint.clobbers i .rsp = false := by
-    have h : publicKeyP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
-      rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [Taint.clobbers_erase]]
-      show publicKeyP384AdxErased.allInstrs _ = true
-      lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
+  have hsp := Code.clobbers_rsp_of_inlineOk pk_inlineOk_adx
   have F := (Exec.regions he (Code.noCalls_inline pk_inlineOk_adx)).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by
