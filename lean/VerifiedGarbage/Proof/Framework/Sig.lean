@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public meta import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -268,51 +270,6 @@ by evaluation. Only then does `simp` rewrite what is not computation
 conjunctions), on a term that is already small. (Evaluating the lists with
 `simp` instead produces a proof step per list operation, each stated on the
 whole contract, which the kernel spends up to seconds checking.) -/
-
-open Lean Elab Tactic in
-/-- The simp lemma `l` with its name, if a macro wrote it (with macro scopes),
-replaced by the global constant it resolves to. In a module with many imports,
-`simp` elaborates a name with macro scopes an order of magnitude slower than
-the plain name of a constant (about 13K heartbeats more each: 1.2M for the
-lemmas of `sig_eval`, at every use). -/
-meta def plainSimpLemma (l : Syntax) : TacticM Syntax := do
-  let t := l[2]
-  let .ident _ _ n pre := t | return l
-  unless n.hasMacroScopes do return l
-  -- The constant the quotation resolved the name to, if it is the only one.
-  let c ← match pre with
-    | [.decl c []] => pure c
-    | _ =>
-      let cs ← try realizeGlobalConstWithInfos t catch _ => pure []
-      let [c] := cs | return l
-      pure c
-  if isPrivateName c || !(← getEnv).contains c then return l
-  return l.setArg 2 (mkIdentFrom t (`_root_ ++ c))
-
-open Lean Elab Tactic in
-/-- `plainSimpLemma` on every simp lemma in `stx`. -/
-meta partial def plainSimpNames (stx : Syntax) : TacticM Syntax := do
-  if stx.getKind == ``Lean.Parser.Tactic.simpLemma then return ← plainSimpLemma stx
-  match stx with
-  | .node info k args => return .node info k (← args.mapM plainSimpNames)
-  | _ => return stx
-
-open Lean Elab Tactic in
-/-- The simp lemmas `xs`, their names elaborated as plain names (`plainSimpLemma`). -/
-meta def unhygienicSimpArgs (xs : Array (TSyntax ``Lean.Parser.Tactic.simpLemma)) :
-    TacticM (Array (TSyntax ``Lean.Parser.Tactic.simpLemma)) :=
-  xs.mapM fun l => return ⟨← plainSimpLemma l⟩
-
-/-- `plain_simp_names t` runs the tactic `t` (any `simp`, `simp_all`, `dsimp`,
-`simpa`, or a block of tactics) with the names of the simp lemmas a macro
-wrote replaced by the constants they resolve to (`plainSimpLemma`): the same
-lemmas, elaborated an order of magnitude faster. Wrap a macro's expansion in
-it: `` `(tactic| plain_simp_names (simp only [foo, bar] at h)) ``. -/
-syntax "plain_simp_names " tactic : tactic
-
-open Lean Elab Tactic in
-elab_rules : tactic
-  | `(tactic| plain_simp_names $t) => do evalTactic (← plainSimpNames t)
 
 /-- `sig_simp [ls] [xs] (at h)?` is `simp -failIfUnchanged only [xs, ts]`,
 where `ts` are the theorems among `ls` (the definitions among them are
