@@ -37,11 +37,20 @@ def cond : Prog isa :=
             (.ite .b (.block []) (.block [.mov32 .rax (imm 1)]))))))
     (.block [.alu .test .rax (.reg .rax)]))
 
+/-- `copyLoop` for the additional data: its `rcx` (1 to 16) bytes, a word
+and a byte if there are 5, as in a TLS 1.3 record. -/
+def copyAad : Prog isa :=
+  .seq (.block [.alu .cmp .rcx (imm 5)])
+    (.ite .e
+      (.block [.mov32 .rax (.mem (at_ .rsi 0)), .movzx8 .r10 (at_ .rsi 4), .store32 (at_ .rdi 0) .rax,
+        .store8 (at_ .rdi 4) .r10])
+      copyLoop)
+
 /-- The additional data, `rcx` bytes (1 to 16), padded with zeros in `T`. -/
 def aadPad : Prog isa :=
   .seq (.block (([.mov32 .rax (imm 0), .store (at_ .r15 tO) .rax, .store (at_ .r15 (tO + 8)) .rax] : List Instr) ++
       ptr .rdi .r15 tO ++ ([.mov .rsi (.mem (at_ .r15 aadO))] : List Instr)))
-    copyLoop
+    copyAad
 
 /-- The accumulator `mul(T, H')` (`vg_ghash_pclmul`'s multiplication), with
 `H'` the prepared power at `ctx + 272`. -/

@@ -182,6 +182,74 @@ theorem aadPadHead_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVe
     · exact hAd.w.sub_right (Lay.wSub (by omega))
   exact WP.of_runBlock ⟨s₂, run₂, he₂, hrd₂, hwr₂, hm₂, lp⟩
 
+omit L in
+theorem writeW_readW32 (m src : Mem) (a b : Addr) :
+    m.writeW a (src.readW b 32) = writeBytes m a (bytesAt src b 4) := by
+  simp only [Mem.writeW, Mem.readW]
+  rw [show (BitVec.setWidth (8 * (32 / 8)) (BitVec.setWidth 32 (src.read b (32 / 8)))) =
+    src.read b 4 from by simp]
+  rw [write_eq_writeBytes]
+  congr 1
+  simp only [bytesAt]
+  refine List.map_congr_left fun j hj => ?_
+  exact Mem.extractLsb'_read src b (List.mem_range.mp hj)
+
+omit L in
+theorem writeW8_eq' (m : Mem) (a : Addr) (b : Byte) : m.writeW a b = writeBytes m a [b] := by
+  have := writeBytes_snoc m a [] b (by decide)
+  rw [List.nil_append, writeBytes_nil] at this
+  rw [this]; simp
+
+omit L in
+/-- `copyAad` leaves what `copyLoop` does (`copyLoop_ok`): for 5 bytes, the
+word and the byte are loaded before either is stored. -/
+theorem copyAad_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
+    WP isa copyAad s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
+      (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨s₁, run₁, hz₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.alu .cmp .rcx (imm 5)] s = some s₁ ∧
+      s₁.zf = some (decide (n = 5)) ∧ s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+    refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
+    · rw [zf_arithFlags, h.rcx]
+      exact congrArg some (Offset.ofNat_sub_ofNat_beq (by have := h.lt; omega) (by decide))
+    all_goals rfl
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  refine WP.ite (decide (n = 5)) hz₁ (fun he => ?_) (fun _ => ?_)
+  · have hn : n = 5 := by simpa using he
+    subst hn
+    have hsi : s₁.gpr .rsi = S := by rw [hg₁, h.rsi]
+    have hdi : s₁.gpr .rdi = D := by rw [hg₁, h.rdi]
+    have hR : Covers [⟨S, 5⟩] (s₁.rd ++ s₁.wr) := by rw [hrd₁, hwr₁]; exact h.rd
+    have hW : Covers [⟨D, 5⟩] s₁.wr := by rw [hwr₁]; exact h.wr
+    have r₀ : InRegions (s₁.rd ++ s₁.wr) (S + BitVec.ofNat 64 0) 4 :=
+      hR _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base S (show 0 + 4 ≤ 5 by decide) (by decide)⟩
+    have r₁ : InRegions (s₁.rd ++ s₁.wr) (S + BitVec.ofNat 64 4) 1 :=
+      hR _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base S (show 4 + 1 ≤ 5 by decide) (by decide)⟩
+    have w₀ : InRegions s₁.wr (D + BitVec.ofNat 64 0) 4 :=
+      hW _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base D (show 0 + 4 ≤ 5 by decide) (by decide)⟩
+    have w₁ : InRegions s₁.wr (D + BitVec.ofNat 64 4) 1 :=
+      hW _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base D (show 4 + 1 ≤ 5 by decide) (by decide)⟩
+    have e0 : S + BitVec.ofNat 64 0 = S := BitVec.add_zero S
+    have f0 : D + BitVec.ofNat 64 0 = D := BitVec.add_zero D
+    rw [e0] at r₀
+    rw [f0] at w₀
+    refine WP.of_runBlock ⟨_, by xrun [hsi, hdi, r₀, r₁, w₀, w₁, e0, f0], ?_, ?_, ?_, ?_⟩
+    · show (s₁.mem.writeW D (BitVec.setWidth 32 (BitVec.setWidth 64 (s₁.mem.readW S 32)))).writeW
+          (D + BitVec.ofNat 64 4) (BitVec.setWidth 8 (BitVec.setWidth 64 (s₁.mem (S + BitVec.ofNat 64 4)))) = _
+      rw [show BitVec.setWidth 32 (BitVec.setWidth 64 (s₁.mem.readW S 32)) = s₁.mem.readW S 32 by simp,
+        show BitVec.setWidth 8 (BitVec.setWidth 64 (s₁.mem (S + BitVec.ofNat 64 4))) = s₁.mem (S + BitVec.ofNat 64 4) by
+          simp, writeW_readW32, writeW8_eq', hm₁]
+      have e := writeBytes_append s.mem D (bytesAt s.mem S 4) [s.mem (S + BitVec.ofNat 64 4)] (by simp [bytesAt])
+      rw [show (bytesAt s.mem S 4).length = 4 by simp [bytesAt]] at e
+      rw [e]
+      exact congrArg (writeBytes s.mem D) (by simp [bytesAt, List.range_succ])
+    · intro r a b; simp [gpr_setReg, a, b, hg₁]
+    all_goals simp only [hrd₁, hwr₁]
+  · have lp : LoopPre s₁ S D n :=
+      ⟨by rw [hg₁, h.rsi], by rw [hg₁, h.rdi], by rw [hg₁, h.rcx], h.pos, h.lt, by rw [hrd₁, hwr₁]; exact h.rd,
+        by rw [hwr₁]; exact h.wr, h.disj⟩
+    exact WP.mono (copyLoop_ok s₁ lp) fun s' ⟨a, b, c, d⟩ =>
+      ⟨by rw [a, hm₁], fun r h₁ h₂ => by rw [b r h₁ h₂, hg₁], by rw [c, hrd₁], by rw [d, hwr₁]⟩
+
 /-- `aadPad`: the `al` (1 to 16) bytes at `A` padded with zeros in `T`. -/
 theorem aadPad_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s)
     (hAd : DataOk (W + BitVec.ofNat 64 16) W SP s A al) (h1 : 1 ≤ al) (h16 : al ≤ 16)
@@ -191,7 +259,7 @@ theorem aadPad_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVec.of
       Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem t.mem := by
   refine WP.seq (WP.mono (aadPadHead_ok L he hAd h1 h16 haad hcx) fun s₂ ⟨he₂, hrd₂, hwr₂, hm₂, lp⟩ => ?_)
   have hlt := hAd.lt
-  refine WP.mono (copyLoop_ok s₂ lp) fun s₃ ⟨hm₃, hg₃, hrd₃, hwr₃⟩ => ?_
+  refine WP.mono (copyAad_ok s₂ lp) fun s₃ ⟨hm₃, hg₃, hrd₃, hwr₃⟩ => ?_
   have he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := he₂.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₃ _ (by decide) (by decide)) hrd₃ hwr₃

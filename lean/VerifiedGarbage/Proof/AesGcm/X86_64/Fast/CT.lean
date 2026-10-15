@@ -35,7 +35,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64.Fast
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
-open VG.Impl.AesGcm.X86_64.Fast (aadPad aadMul)
+open VG.Impl.AesGcm.X86_64.Fast (aadPad aadMul copyAad)
 open VG.Proof.AesGcm.X86_64
 open VG.Proof.AesGcm.X86_64.Split
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
@@ -129,7 +129,7 @@ theorem aad_rel :
           fun t => t.gpr .rsi = A ∧ t.gpr .rdi = W + BitVec.ofNat 64 96 ∧ t.gpr .rcx = BitVec.ofNat 64 al :=
       fun s h => WP.mono (aadPadHead_ok L h.1.env h.1.dA h1 h16 h.1.aad h.2.1) fun _ ⟨_, _, _, _, lp⟩ =>
         ⟨lp.rsi, lp.rdi, lp.rcx⟩
-    have pad := rel_piece (F₁ := A3 M Ctx W SP R A al D n) (F₂ := A3 M Ctx W SP R A al D n) (c := copyLoop)
+    have pad := rel_piece (F₁ := A3 M Ctx W SP R A al D n) (F₂ := A3 M Ctx W SP R A al D n) (c := copyAad)
       [.rsi, .rdi, .rcx] (fun _ h => h.1.env) (fun _ h => h.1.env) (keepsEnv (by decide +kernel))
       ⟨_, by simp only [tO, aadO, ptr]; taint_decide⟩ hw hw (fun _ _ h₁ h₂ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
