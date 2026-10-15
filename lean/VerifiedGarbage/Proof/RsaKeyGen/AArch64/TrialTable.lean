@@ -42,10 +42,10 @@ theorem movk_word (W : Nat) :
   have e : ∀ m : Nat, m < 64 → (65535 : BitVec 64).getLsbD m = decide (m < 16) := by decide
   simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft,
     BitVec.getLsbD_setWidth, BitVec.getLsbD_ofNat, Nat.testBit_div_two_pow, hk, decide_true, Bool.true_and]
-  rw [e (k - 16 * 1) (by omega), e (k - 16 * 2) (by omega), e (k - 16 * 3) (by omega)]
+  rw [e (k - 16 * 1) (by omega_using [hk]), e (k - 16 * 2) (by omega_using [hk]), e (k - 16 * 3) (by omega_using [hk])]
   simp only [Nat.reduceMul, Nat.sub_zero]
-  rcases (show k < 16 ∨ (16 ≤ k ∧ k < 32) ∨ (32 ≤ k ∧ k < 48) ∨ 48 ≤ k by omega) with h | h | h | h <;>
-    simp (disch := omega) only [decide_eq_true, decide_eq_false, Nat.sub_add_cancel, Bool.not_true,
+  rcases (show k < 16 ∨ (16 ≤ k ∧ k < 32) ∨ (32 ≤ k ∧ k < 48) ∨ 48 ≤ k by omega_using []) with h | h | h | h <;>
+    simp (disch := omega_arith) only [decide_eq_true, decide_eq_false, Nat.sub_add_cancel, Bool.not_true,
       Bool.not_false, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false, Bool.or_false,
       Bool.false_or]
 
@@ -55,7 +55,7 @@ theorem tabStore_ok {t : State} {B : Addr} {Z T n : Nat} (hs : Scr t B Z) (h9 : 
     WP isa (.block (tabStore n)) t fun t' =>
       t'.mem = t.mem.writeW (off B (T + 8 * n)) (BitVec.ofNat 64 (tabWord n)) ∧ Keep [.x3] t t' := by
   have hst : InRegions t.wr (off B (T + 8 * n)) 8 := hs.st hT
-  have ho : 8 * n % 8 = 0 ∧ 8 * n < 32768 := ⟨Nat.mul_mod_right _ _, by omega⟩
+  have ho : 8 * n % 8 = 0 ∧ 8 * n < 32768 := ⟨Nat.mul_mod_right _ _, by omega_using [hn]⟩
   unfold tabStore
   -- Kept opaque: `simp` would otherwise evaluate the table word.
   generalize tabWord n = W
@@ -69,21 +69,21 @@ theorem tabWrites_ok {s : State} {B : Addr} {Z T : Nat} (hs : Scr s B Z) (hT : T
     WP isa (.block ((List.range n).flatMap tabStore)) s fun t =>
       (∀ i < n, word t.mem B (T + 8 * i) = BitVec.ofNat 64 (tabWord i)) ∧ Outside B T (8 * n) s.mem t.mem ∧
       Keep [.x3] s t
-  | 0, _ => WP.block_nil ⟨fun i hi => absurd hi (by omega), Outside.refl _ _ _ _, Keep.refl _ _⟩
+  | 0, _ => WP.block_nil ⟨fun i hi => absurd hi (by omega_using []), Outside.refl _ _ _ _, Keep.refl _ _⟩
   | n + 1, hn => by
     have hb := hs.nowrap
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (tabWrites_ok hs hT h9 n (by omega)) fun t ⟨hv, ho, k⟩ => ?_
+    refine WP.mono (tabWrites_ok hs hT h9 n (by omega_using [hn])) fun t ⟨hv, ho, k⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    refine WP.mono (tabStore_ok (hs.congr k.wr) ((k.gpr .x9 (by decide)).trans h9) (by omega) (by omega))
+    refine WP.mono (tabStore_ok (hs.congr k.wr) ((k.gpr .x9 (by decide)).trans h9) (by omega_using [hT, hn]) (by omega_using [hn]))
       fun t' ⟨hm, k'⟩ => ⟨fun i hi => ?_, ?_, (k.trans k').mono (by decide)⟩
     · rw [hm]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-      · rw [(writeW_outside t.mem B _ (by omega)).word (by omega) (by omega)]; exact hv i hi
+      · rw [(writeW_outside t.mem B _ (by omega_using [hT, hn, hb])).word (by omega_arith) (by omega_arith)]; exact hv i hi
       · exact word_writeW_self _ _ _ _
     · rw [hm]
       intro x hx
-      rw [writeW_outside t.mem B _ (by omega) x (by omega)]
-      exact ho x (by omega)
+      rw [writeW_outside t.mem B _ (by omega_using [hT, hn, hb]) x (by omega_using [hx])]
+      exact ho x (by omega_using [hx])
 
 end VG.Proof.RsaKeyGen.AArch64
