@@ -1,13 +1,13 @@
 //! Finite-field Diffie–Hellman, for the component API used by cryptography.
 //!
-//! Public subgroup checks use variable-time exponentiation of the public order.
+//! Public-key validation calls the verified range and optional subgroup checks.
 //! Secret exponentiation follows a fixed schedule over the public encoding
 //! length supplied at import, or the public sampling bound for generated keys.
 //! Every multiplication calls the verified Montgomery primitive
 //! (`VG.Spec.Rsa.Mont.mulContract`); secret table selection uses the verified
 //! `VG.Spec.Ffdh.chooseContract`. Public exponents may directly index a table.
 //! Rust composes these primitives, validates
-//! domains and keys, samples randomness and encodes the result. These Rust
+//! domains and private keys on x86-64, samples randomness and encodes the result. These Rust
 //! operations, as elsewhere in the crate, are outside the Lean proof boundary.
 //! Parameter generation uses the shared verified windowed Miller–Rabin round;
 //! Rust currently prepares its workspace and selects independent witnesses.
@@ -23,6 +23,7 @@
 mod aarch64;
 mod arithmetic;
 mod generation;
+mod x86_64;
 
 use crate::zeroize::zeroize;
 use alloc::vec::Vec;
@@ -231,12 +232,7 @@ impl Parameters {
 
     #[cfg(not(target_arch = "aarch64"))]
     fn public_valid(&self, y: &[u8]) -> bool {
-        value_cmp(y, &[1]).is_gt()
-            && value_cmp(y, &minus_one(&self.p)).is_lt()
-            && self
-                .q
-                .as_ref()
-                .is_none_or(|q| value_cmp(&self.mont.power_public(y, q), &[1]).is_eq())
+        x86_64::check_public(&self.p, &self.g, self.q.as_deref(), y)
     }
 }
 

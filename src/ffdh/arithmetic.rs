@@ -70,13 +70,13 @@ pub(super) fn divides(q: &[u8], n: &[u8]) -> bool {
 /// The Montgomery implementations FFDH calls. RSA's private-key routines
 /// have additional feature requirements that do not apply to these functions.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Backend {
+pub(super) enum Backend {
     Baseline,
     #[cfg(target_arch = "x86_64")]
     Adx,
 }
 impl Backend {
-    fn select(_features: Features) -> Self {
+    pub(super) fn select(_features: Features) -> Self {
         #[cfg(target_arch = "x86_64")]
         if _features.contains(VG_RSA_MONT_MUL_ADX_FEATURES) {
             return Self::Adx;

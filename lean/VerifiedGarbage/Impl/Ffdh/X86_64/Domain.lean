@@ -18,7 +18,7 @@ return a Boolean in `rax`, without branching on the operands.
 namespace VG.Impl.Ffdh.X86_64.Domain
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64
-open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aR2 aXm aY aOne sK)
+open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aR2 aXm aY aOne sK invalid exit)
 open VG.Impl.Rsa.X86_64.Crt (ws wsEnd wsNew loadArr copyArr zeroArr leave)
 
 def sDom : Nat := sFn 0
@@ -105,5 +105,78 @@ def andF : List Instr := [.alu .and .rax (.mem (hdr sF)), .store (hdr sF) .rax]
 
 def range (a : Nat) : List (Prog isa) :=
   gt1 a ++ [.block [.store (hdr sF) .rax]] ++ ltP a ++ [.block andF]
+
+/-! ## Entry-point control flow -/
+
+/-- Save the callee-saved registers in the outer header. -/
+def save (scratch : Reg) : List Instr :=
+  saved.zipIdx.map fun (r, i) => .store { base := scratch, disp := 8 * i } r
+
+/-- The packed domain's three pointers, followed by RSA's modulus check. -/
+def domHead : List Instr :=
+  ([.mov .rdx (.mem (hdr sDom)), .mov .rcx (.mem (hdr sK)), .mov .rax (.reg .rdx),
+    .alu .add .rax (.reg .rcx), .store (hdr sG) .rax, .alu .add .rax (.reg .rcx), .store (hdr sQ) .rax] : List Instr) ++ invalid
+
+/-- Return a status from the outer workspace; the common epilogue restores
+its saved registers after the algorithm finishes. -/
+def ret (r : Nat) : Prog isa := .block [.mov32 .rax (.imm (BitVec.ofNat 32 r))]
+
+/-- Leave the inner workspace and return a status. -/
+def retInner (r : Nat) : Prog isa := .seq (.block [leave]) (ret r)
+
+/-- Branch on a Boolean computed by a previous stage. -/
+def branchZero (th el : Prog isa) : Prog isa :=
+  .seq (.block [.alu .test .rax (.reg .rax)]) (.ite .e th el)
+
+/-- Compare a value with the FFDH bounds, then test its Boolean result. -/
+def rangeTest (a : Nat) : List (Prog isa) :=
+  range a ++ [.block [.alu .test .rax (.reg .rax)]]
+
+/-- `domain_len - 2 p_len`: zero exactly when q is absent. -/
+def qTest : List Instr :=
+  [.mov .rax (.mem (hdr sDomLen)), .alu .sub .rax (.mem (hdr sK)), .alu .sub .rax (.mem (hdr sK))]
+
+/-- Scan public domain bytes, retaining one byte when all are zero. -/
+def scanBody : List Instr :=
+  [.movzx8 .rax (at0 .rsi), .alu .cmp .rax (.imm 1), .alu .sbb .rbp (.reg .rbp),
+    .mov .rdx (.reg .rcx), .alu .cmp .rdx (.imm 2), .alu .sbb .rdx (.reg .rdx),
+    .alu .xor .rdx (.imm (BitVec.ofInt 32 (-1))), .alu .and .rbp (.reg .rdx), .alu .and .rbp (.imm 1),
+    .alu .add .rsi (.reg .rbp), .alu .sub .rcx (.reg .rbp), .alu .test .rbp (.reg .rbp)]
+
+def scan (sp : Nat) : List (Prog isa) :=
+  [.block [.mov .rsi (.mem (hdr sp)), .mov .rcx (.mem (hdr sK))],
+    .loop (.block scanBody) .ne,
+    .block [.store (hdr sEp) .rsi, .store (hdr sEl) .rcx, .movzx8 .rax (at0 .rsi)]]
+
+/-- The public length and modulus pointer for RSA's existing R² routine. -/
+def r2Head : List Instr :=
+  [.mov .r12 (.mem (hdr sW)), .mov .r10 (.mem (hdr (sArr aN)))]
+
+namespace CheckPublic
+
+/-- `(domain, domain_len, p_len, y, y_len, scratch, scratch_len)`. -/
+def entry : List Instr := save .r9 ++
+  [.store (ws .r9 sDom) .rdi, .store (ws .r9 sDomLen) .rsi, .store (ws .r9 sK) .rdx,
+    .store (ws .r9 sY) .rcx, .mov .rdi (.reg .r9)]
+
+variable (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) (r2 : Prog isa)
+
+/-- With q, check membership in its subgroup. -/
+def subgroup : List (Prog isa) :=
+  scan sQ ++ [.block [enter], r2] ++ pow mul ex sY sK sEp sEl ++ isOne aY ++ [.block [leave]]
+
+def main : Prog isa :=
+  seqs ([.block head] ++ pSetup ++ loadArr aXm sY sK ++ rangeTest aXm ++
+    [.ite .e (retInner 0) (.seq (.block (leave :: qTest))
+      (.ite .e (ret 1) (seqs (subgroup mul ex r2))))])
+
+/-- The validation before the common ABI epilogue. -/
+def body : Prog isa :=
+  .seq (.block (entry ++ domHead)) (.ite .ne (ret 0) (main mul ex r2))
+
+/-- Restore the saved registers on every return path. -/
+def code : Prog isa := .seq (body mul ex r2) (.block exit)
+
+end CheckPublic
 
 end VG.Impl.Ffdh.X86_64.Domain

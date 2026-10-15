@@ -1,0 +1,25 @@
+module
+
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
+
+/-! # Emit FFDH public-key validation for every shared arithmetic backend -/
+
+@[expose] public section
+
+namespace VG.Generic.MillerRabin.X86_64.Ffdh
+
+def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
+  { Spec.Ffdh.checkPublicApi with
+    name := Spec.Ffdh.checkPublicApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Ffdh.checkPublicApi.doc
+      (notes := ["The verified range and optional subgroup checks use fixed four-bit windows \
+        with the selected Montgomery backend. Domain bytes and the public key are public \
+        under the shared contract."])
+    code := Proof.Ffdh.X86_64.CheckPublic.publicCode v
+    contract := Spec.Ffdh.checkPublicContract X86_64.abi
+    verified := by exact Proof.Ffdh.X86_64.CheckPublic.publicCode_verified v
+    spSafe := by exact Proof.Ffdh.X86_64.CheckPublic.publicCode_sp v
+    features := v.features }]
+
+end VG.Generic.MillerRabin.X86_64.Ffdh
