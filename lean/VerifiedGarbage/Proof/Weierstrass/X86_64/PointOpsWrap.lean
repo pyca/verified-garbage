@@ -51,12 +51,15 @@ open VG.Impl.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64
 abbrev keptRegs : List Reg := kept.map Prod.fst
 
 private theorem setXmm_gpr (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).gpr = s.gpr := rfl
+private theorem setXmm_mem (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).mem = s.mem := rfl
+private theorem setXmm_rd (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).rd = s.rd := rfl
+private theorem setXmm_wr (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).wr = s.wr := rfl
 
 theorem saves_ok (s : State) : WP isa (.block saves) s fun t => Keeps [] s t := by
   apply WP.of_runBlock
   simp only [saves, kept, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec,
-    XOp.exec, Option.some.injEq, exists_eq_left', setXmm_gpr]
-  exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+    XOp.exec, Option.some.injEq, exists_eq_left', Keeps, setXmm_gpr, setXmm_mem, setXmm_rd, setXmm_wr,
+    implies_true, and_self]
 
 theorem restores_ok (s : State) : WP isa (.block restores) s fun t => Keeps keptRegs s t := by
   apply WP.of_runBlock

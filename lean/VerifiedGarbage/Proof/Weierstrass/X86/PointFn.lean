@@ -54,14 +54,8 @@ theorem enc_rIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
 writes lie apart from the saved `lr` and within `O` or the own working
 space. -/
 theorem enc_lay {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) : LayR k 17 wIds (enc k dbl) := by
-  have := lay_nums hk3 hk6
-  refine ⟨fun x hx => ?_, fun w hw x hx hne => ?_⟩
-  · rcases (show x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4 ∨ x = 5 ∨ x = 6 ∨ x = 7 ∨ x = 8 ∨ x = 9 ∨ x = 10 ∨ x = 11 ∨ x = 12 ∨ x = 13 ∨ x = 14 ∨ x = 15 ∨ x = 16 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases dbl <;>
-      simp only [enc, Impl.Weierstrass.X86.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] <;> omega
-  · simp only [wIds, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases (show x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4 ∨ x = 5 ∨ x = 6 ∨ x = 7 ∨ x = 8 ∨ x = 9 ∨ x = 10 ∨ x = 11 ∨ x = 12 ∨ x = 13 ∨ x = 14 ∨ x = 15 ∨ x = 16 by omega) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases dbl <;>
-      simp only [enc, Impl.Weierstrass.X86.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] at hne ⊢ <;> omega
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  all_goals cases dbl <;> exact ⟨by decide, by decide⟩
 
 theorem enc_wIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
     ∀ w ∈ wIds, (enc k dbl w + 8 * k ≤ Spec.Weierstrass.Point.ownAt k ∨ Spec.Weierstrass.Point.ownAt k + 4 ≤ enc k dbl w) ∧
