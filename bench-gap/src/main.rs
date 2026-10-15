@@ -8,6 +8,18 @@ use verified_garbage::rsa::PrivateKey;
 use verified_garbage::rsa_pkcs1_sig::{Hash, sign};
 fn main() {
     let a: Vec<String> = std::env::args().collect();
+    if a[1] == "sqr5" {
+        for bits in [1024usize, 1536, 2048] {
+            let mut s = 0x9e3779b97f4a7c15u64 ^ bits as u64;
+            let mut p: Vec<u8> = (0..bits / 8).map(|_| { s ^= s << 13; s ^= s >> 7; s ^= s << 17; s as u8 }).collect();
+            p[0] |= 0xc0; *p.last_mut().unwrap() |= 1;
+            let mut best = [u64::MAX; 2];
+            for _ in 0..5 { let r = verified_garbage::ffdh::mb_sqr5(&p, 2000); for i in 0..2 { best[i] = best[i].min(r[i]); } }
+            println!("{bits}: five lazy squarings: 5 calls {} ticks, 1 call (k = 5) {} ticks ({:.1}% less)", best[0], best[1],
+                100.0 * (best[0] as f64 - best[1] as f64) / best[0] as f64);
+        }
+        return;
+    }
     if a[1] == "mb" { for b in [1024, 1536, 2048] { mb::run(b); } return; }
     let (lib, n, bits): (&str, usize, u32) = (&a[1], a[2].parse().unwrap(), a.get(3).map_or(2048, |s| s.parse().unwrap()));
     let path = format!("{}/key{bits}.pem", env!("CARGO_MANIFEST_DIR"));

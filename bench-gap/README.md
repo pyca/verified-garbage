@@ -6,5 +6,6 @@ Measurement only (never merge): RSA-2048 sign, verified-garbage's ADX path again
     taskset -c 2 target/release/gap ab 1500    # interleaved whole signs: medians and vg/aws ratio
     taskset -c 2 target/release/gap crt 400    # best TSC ticks: vg sign, checked, bare CRT; aws sign, modexp p + q
     taskset -c 2 target/release/gap mb         # best TSC ticks per call: aws bn_mul_mont sqr/mul, vg strict/lazy sqr/mul, aws 1024-bit modexp
+    taskset -c 2 target/release/gap sqr5       # best TSC ticks of five lazy ADX squarings: five calls of vg_rsa_lazy_mont_mul_adx, one of vg_rsa_lazy_mont_sqr_adx (k = 5)
 
 The key is generated on first run and kept in key2048.pem.

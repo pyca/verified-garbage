@@ -533,3 +533,26 @@ pub fn mb_hack(p: &[u8], n: usize) -> [u64; 4] {
     }
     best
 }
+
+/// Scratch: TSC ticks of five lazy ADX squarings, by five calls and by one call.
+pub fn mb_sqr5(p: &[u8], n: usize) -> [u64; 2] {
+    use core::arch::x86_64::_rdtsc;
+    let m = Montgomery::new(p);
+    let mut ws = m.workspace(&p[1..], 0);
+    let mut best = [u64::MAX; 2];
+    for _ in 0..n {
+        let t = unsafe { _rdtsc() };
+        for _ in 0..8 {
+            for _ in 0..5 {
+                unsafe { vg_rsa_lazy_mont_mul_adx(ws.as_mut_ptr(), ws.len(), 5, 5, 5) }
+            }
+        }
+        best[0] = best[0].min((unsafe { _rdtsc() } - t) / 8);
+        let t = unsafe { _rdtsc() };
+        for _ in 0..8 {
+            unsafe { vg_rsa_lazy_mont_sqr_adx(ws.as_mut_ptr(), ws.len(), 5, 5, 5) }
+        }
+        best[1] = best[1].min((unsafe { _rdtsc() } - t) / 8);
+    }
+    best
+}
