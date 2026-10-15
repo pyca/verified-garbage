@@ -521,4 +521,121 @@ def sqd (x y : BitVec 128) : Option (BitVec 128) :=
 #guard printer.instr (.vop (.umin .v0 .v1 .v2)) == ["umin v0.4s, v1.4s, v2.4s"]
 #guard isa.requires (.vop (.sqdmulh .v0 .v1 .v2)) == []
 
+
+/-! ### 16-bit lanes (`.8h`) and their products
+
+Computed as above, under `qemu-aarch64 -cpu max`. -/
+
+#guard vrun 0 (.dup .h8 .v0 .x1) == some 0x09ec09ec09ec09ec09ec09ec09ec09ec#128
+#guard vrun 0 (.ins .h8 .v0 0 .x1) == some 0x47be5543e684460b8caafc59aff909ec#128
+#guard vrun 0 (.ins .h8 .v0 3 .x1) == some 0x47be5543e684460b09ecfc59aff91663#128
+#guard vrun 0 (.ins .h8 .v0 7 .x1) == some 0x09ec5543e684460b8caafc59aff91663#128
+#guard vrun 0 (.add .h8 .v0 .v1 .v2) == some 0xedee4514b4172e290090516bb87da0ed#128
+#guard vrun 0 (.sub .h8 .v0 .v1 .v2) == some 0xbd78ddb0cf196b5f92fc6acfa8235875#128
+#guard vrun 0 (.shift .shl .h8 .v0 .v1 0) == some 0xd5b39162c1984cc4c9c6de1db050fcb1#128
+#guard vrun 0 (.shift .shl .h8 .v0 .v1 5) == some 0xb6602c403300988038c0c3a00a009620#128
+#guard vrun 0 (.shift .ushr .h8 .v0 .v1 1) == some 0x6ad948b160cc266264e36f0e58287e58#128
+#guard vrun 0 (.shift .ushr .h8 .v0 .v1 16) == some 0x00000000000000000000000000000000#128
+#guard vrun 0 (.shift .sshr .h8 .v0 .v1 3) == some 0xfab6f22cf8330998f938fbc3f60aff96#128
+#guard vrun 0 (.shift .sshr .h8 .v0 .v1 16) == some 0xffffffffffff0000ffffffffffffffff#128
+#guard vrun 0 (.shift .sri .h8 .v0 .v1 4) == some 0x4d5b5916ec1944cc8c9cfde1ab051fcb#128
+#guard vrun 0 (.shift .sli .h8 .v0 .v1 9) == some 0x67bec5433084880b8caa3a59a1f96263#128
+#guard vrun 0 (.perm .zip1 .h8 .v0 .v1 .v2) == some 0x36cac9c6734ede1d082db050a43cfcb1#128
+#guard vrun 0 (.perm .zip2 .h8 .v0 .v1 .v2) == some 0x183bd5b3b3b29162f27fc198e1654cc4#128
+#guard vrun 0 (.perm .trn1 .h8 .v0 .v1 .v2) == some 0xb3b29162e1654cc4734ede1da43cfcb1#128
+#guard vrun 0 (.perm .trn2 .h8 .v0 .v1 .v2) == some 0x183bd5b3f27fc19836cac9c6082db050#128
+#guard vrun 0 (.perm .uzp1 .h8 .v0 .v1 .v2) == some 0xb3b2e165734ea43c91624cc4de1dfcb1#128
+#guard vrun 0 (.perm .uzp2 .h8 .v0 .v1 .v2) == some 0x183bf27f36ca082dd5b3c198c9c6b050#128
+#guard vrun 0 (.cmeq .h8 .v0 .v1 .v1) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 0 (.cmeq .h8 .v0 .v1 .v2) == some 0x00000000000000000000000000000000#128
+#guard vrun 0 (.dupE .h8 .v0 .v1 0) == some 0xfcb1fcb1fcb1fcb1fcb1fcb1fcb1fcb1#128
+#guard vrun 0 (.dupE .h8 .v0 .v1 5) == some 0xc198c198c198c198c198c198c198c198#128
+#guard vrun 0 (.insE .h8 .v0 2 .v1 6) == some 0x47be5543e684460b8caa9162aff91663#128
+#guard vrun 0 (.mulH .mul .v0 .v1 .v2) == some 0x08419c24ba688d54fa3cb3d67e109d7c#128
+#guard vrun 0 (.mulH .mul .v0 .v0 .v1) == some 0x3fda96a66260e46c457cc4152dd0ee73#128
+#guard vrun 0 (.mulH .mla .v0 .v1 .v2) == some 0x4ffff167a0ecd35f86e6b02f2e09b3df#128
+#guard vrun 0 (.mulH .mla .v0 .v0 .v1) == some 0x8798ebe948e42a77d226c06eddc904d6#128
+#guard vrun 0 (.mulH .mls .v0 .v1 .v2) == some 0x3f7db91f2c1cb8b7926e488331e978e7#128
+#guard vrun 0 (.mulH .mls .v0 .v0 .v1) == some 0x07e4be9d8424619f472e3844822927f0#128
+#guard vrun 0 (.mulH .sqdmulh .v0 .v1 .v2) == some 0xf7fe41f10695eda5e8c9e179fae8025f#128
+#guard vrun 0 (.mulH .sqdmulh .v0 .v0 .v1) == some 0xe84ab6510c6c2a0130dc00f731d2ff6b#128
+#guard vrun 0 (.mulH .sqrdmulh .v0 .v1 .v2) == some 0xf7fe41f10695eda5e8cae179fae9025f#128
+#guard vrun 0 (.mulH .sqrdmulh .v0 .v0 .v1) == some 0xe84ab6510c6d2a0230dd00f831d2ff6c#128
+
+#guard vrun 1 (.dup .h8 .v0 .x1) == some 0x967b967b967b967b967b967b967b967b#128
+#guard vrun 1 (.ins .h8 .v0 0 .x1) == some 0x55eadb18f6d1d81649d2bf3ef06d967b#128
+#guard vrun 1 (.ins .h8 .v0 3 .x1) == some 0x55eadb18f6d1d816967bbf3ef06dbe6f#128
+#guard vrun 1 (.ins .h8 .v0 7 .x1) == some 0x967bdb18f6d1d81649d2bf3ef06dbe6f#128
+#guard vrun 1 (.add .h8 .v0 .v1 .v2) == some 0x13702f476333dff98e87d9f520e7f3b0#128
+#guard vrun 1 (.sub .h8 .v0 .v1 .v2) == some 0xa2dc6ce90753b2ddb0b5982137a3d3d8#128
+#guard vrun 1 (.shift .shl .h8 .v0 .v1 0) == some 0xdb26ce183543c96b9f9eb90b2c4563c4#128
+#guard vrun 1 (.shift .shl .h8 .v0 .v1 5) == some 0x64c0c300a8602d60f3c0216088a07880#128
+#guard vrun 1 (.shift .ushr .h8 .v0 .v1 1) == some 0x6d93670c1aa164b54fcf5c85162231e2#128
+#guard vrun 1 (.shift .ushr .h8 .v0 .v1 16) == some 0x00000000000000000000000000000000#128
+#guard vrun 1 (.shift .sshr .h8 .v0 .v1 3) == some 0xfb64f9c306a8f92df3f3f72105880c78#128
+#guard vrun 1 (.shift .sshr .h8 .v0 .v1 16) == some 0xffffffff0000ffffffffffff00000000#128
+#guard vrun 1 (.shift .sri .h8 .v0 .v1 4) == some 0x5db2dce1f354dc9649f9bb90f2c4b63c#128
+#guard vrun 1 (.shift .sli .h8 .v0 .v1 9) == some 0x4dea311886d1d6163dd2173e8a6d886f#128
+#guard vrun 1 (.perm .zip1 .h8 .v0 .v1 .v2) == some 0xeee99f9e20eab90bf4a22c458fec63c4#128
+#guard vrun 1 (.perm .zip2 .h8 .v0 .v1 .v2) == some 0x384adb26612fce182df03543168ec96b#128
+#guard vrun 1 (.perm .trn1 .h8 .v0 .v1 .v2) == some 0x612fce18168ec96b20eab90b8fec63c4#128
+#guard vrun 1 (.perm .trn2 .h8 .v0 .v1 .v2) == some 0x384adb262df03543eee99f9ef4a22c45#128
+#guard vrun 1 (.perm .uzp1 .h8 .v0 .v1 .v2) == some 0x612f168e20ea8fecce18c96bb90b63c4#128
+#guard vrun 1 (.perm .uzp2 .h8 .v0 .v1 .v2) == some 0x384a2df0eee9f4a2db2635439f9e2c45#128
+#guard vrun 1 (.cmeq .h8 .v0 .v1 .v1) == some 0xffffffffffffffffffffffffffffffff#128
+#guard vrun 1 (.cmeq .h8 .v0 .v1 .v2) == some 0x00000000000000000000000000000000#128
+#guard vrun 1 (.dupE .h8 .v0 .v1 0) == some 0x63c463c463c463c463c463c463c463c4#128
+#guard vrun 1 (.dupE .h8 .v0 .v1 5) == some 0x35433543354335433543354335433543#128
+#guard vrun 1 (.insE .h8 .v0 2 .v1 6) == some 0x55eadb18f6d1d81649d2ce18f06dbe6f#128
+#guard vrun 1 (.mulH .mul .v0 .v1 .v2) == some 0xa8fcee68b5d0eb5a2ace840ec7aa74b0#128
+#guard vrun 1 (.mulH .mul .v0 .v0 .v1) == some 0xeebcda40ddb39732fd9c05aa8961b9fc#128
+#guard vrun 1 (.mulH .mla .v0 .v1 .v2) == some 0xfee6c980aca1c37074a0434cb817331f#128
+#guard vrun 1 (.mulH .mla .v0 .v0 .v1) == some 0x44a6b558d4846f48476ec4e879ce786b#128
+#guard vrun 1 (.mulH .mls .v0 .v1 .v2) == some 0xaceeecb04101ecbc1f043b3028c349bf#128
+#guard vrun 1 (.mulH .mls .v0 .v0 .v1) == some 0x672e00d8191e40e44c36b994670c0473#128
+#guard vrun 1 (.mulH .sqdmulh .v0 .v1 .v2) == some 0xefcbda1b131df6610cdeedc1fc11a8a4#128
+#guard vrun 1 (.mulH .sqdmulh .v0 .v0 .v1) == some 0xe7430e63fc2d1105c86923e6fa9dcce5#128
+#guard vrun 1 (.mulH .sqrdmulh .v0 .v1 .v2) == some 0xefcbda1c131df6620cdeedc1fc12a8a5#128
+#guard vrun 1 (.mulH .sqrdmulh .v0 .v0 .v1) == some 0xe7440e64fc2e1105c86a23e6fa9dcce5#128
+
+#guard printer.instr (.vop (.dup .h8 .v0 .x1)) == ["dup v0.8h, w1"]
+#guard printer.instr (.vop (.ins .h8 .v0 0 .x1)) == ["mov v0.h[0], w1"]
+#guard printer.instr (.vop (.ins .h8 .v0 3 .x1)) == ["mov v0.h[3], w1"]
+#guard printer.instr (.vop (.ins .h8 .v0 7 .x1)) == ["mov v0.h[7], w1"]
+#guard printer.instr (.vop (.add .h8 .v0 .v1 .v2)) == ["add v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.sub .h8 .v0 .v1 .v2)) == ["sub v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.shift .shl .h8 .v0 .v1 0)) == ["shl v0.8h, v1.8h, #0"]
+#guard printer.instr (.vop (.shift .shl .h8 .v0 .v1 5)) == ["shl v0.8h, v1.8h, #5"]
+#guard printer.instr (.vop (.shift .ushr .h8 .v0 .v1 1)) == ["ushr v0.8h, v1.8h, #1"]
+#guard printer.instr (.vop (.shift .ushr .h8 .v0 .v1 16)) == ["ushr v0.8h, v1.8h, #16"]
+#guard printer.instr (.vop (.shift .sshr .h8 .v0 .v1 3)) == ["sshr v0.8h, v1.8h, #3"]
+#guard printer.instr (.vop (.shift .sshr .h8 .v0 .v1 16)) == ["sshr v0.8h, v1.8h, #16"]
+#guard printer.instr (.vop (.shift .sri .h8 .v0 .v1 4)) == ["sri v0.8h, v1.8h, #4"]
+#guard printer.instr (.vop (.shift .sli .h8 .v0 .v1 9)) == ["sli v0.8h, v1.8h, #9"]
+#guard printer.instr (.vop (.perm .zip1 .h8 .v0 .v1 .v2)) == ["zip1 v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.perm .zip2 .h8 .v0 .v1 .v2)) == ["zip2 v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.perm .trn1 .h8 .v0 .v1 .v2)) == ["trn1 v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.perm .trn2 .h8 .v0 .v1 .v2)) == ["trn2 v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.perm .uzp1 .h8 .v0 .v1 .v2)) == ["uzp1 v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.perm .uzp2 .h8 .v0 .v1 .v2)) == ["uzp2 v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.cmeq .h8 .v0 .v1 .v1)) == ["cmeq v0.8h, v1.8h, v1.8h"]
+#guard printer.instr (.vop (.cmeq .h8 .v0 .v1 .v2)) == ["cmeq v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.dupE .h8 .v0 .v1 0)) == ["dup v0.8h, v1.h[0]"]
+#guard printer.instr (.vop (.dupE .h8 .v0 .v1 5)) == ["dup v0.8h, v1.h[5]"]
+#guard printer.instr (.vop (.insE .h8 .v0 2 .v1 6)) == ["mov v0.h[2], v1.h[6]"]
+#guard printer.instr (.vop (.mulH .mul .v0 .v1 .v2)) == ["mul v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.mulH .mul .v0 .v0 .v1)) == ["mul v0.8h, v0.8h, v1.8h"]
+#guard printer.instr (.vop (.mulH .mla .v0 .v1 .v2)) == ["mla v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.mulH .mla .v0 .v0 .v1)) == ["mla v0.8h, v0.8h, v1.8h"]
+#guard printer.instr (.vop (.mulH .mls .v0 .v1 .v2)) == ["mls v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.mulH .mls .v0 .v0 .v1)) == ["mls v0.8h, v0.8h, v1.8h"]
+#guard printer.instr (.vop (.mulH .sqdmulh .v0 .v1 .v2)) == ["sqdmulh v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.mulH .sqdmulh .v0 .v0 .v1)) == ["sqdmulh v0.8h, v0.8h, v1.8h"]
+#guard printer.instr (.vop (.mulH .sqrdmulh .v0 .v1 .v2)) == ["sqrdmulh v0.8h, v1.8h, v2.8h"]
+#guard printer.instr (.vop (.mulH .sqrdmulh .v0 .v0 .v1)) == ["sqrdmulh v0.8h, v0.8h, v1.8h"]
+#guard isa.requires (.vop (.mulH .sqrdmulh .v0 .v1 .v2)) == []
+/- Both lanes `-2^15`: SQDMULH and SQRDMULH saturate there, which the model makes a fault. -/
+#guard (VOp.eval { s 0 with v := fun _ => 0x8000#128 } (.mulH .sqdmulh .v0 .v1 .v2)).isNone
+#guard (VOp.eval { s 0 with v := fun _ => 0x8000#128 } (.mulH .sqrdmulh .v0 .v1 .v2)).isNone
+
 end VG.Test.AArch64Simd
