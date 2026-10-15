@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 import all Init.Data.Array.Basic
@@ -94,74 +96,11 @@ theorem readW64_hi (m : Mem) (a : Addr) :
   rw [getLsbD_read m _ a (32 + i) (by bdd_omega), getLsbD_read m _ _ i (by bdd_omega), BitVec.add_assoc,
     ← BitVec.ofNat_add, show 4 + i / 8 = (32 + i) / 8 by bdd_omega, show i % 8 = (32 + i) % 8 by bdd_omega]
 
-theorem getLsbD_ofVWords (w0 w1 w2 w3 : BitVec 32) {i : Nat} (hi : i < 128) :
-    (ofVWords w0 w1 w2 w3).getLsbD i =
-      if i < 32 then w0.getLsbD i else if i < 64 then w1.getLsbD (i - 32)
-      else if i < 96 then w2.getLsbD (i - 64) else w3.getLsbD (i - 96) := by
-  simp only [ofVWords, BitVec.getLsbD_append]
-  by_cases h0 : i < 32
-  · simp [h0]
-  by_cases h1 : i < 64
-  · simp [h0, h1, show i - 32 < 32 by bdd_omega]
-  by_cases h2 : i < 96
-  · simp [h0, h1, h2, show ¬ i - 32 < 32 by bdd_omega, show i - 32 - 32 = i - 64 by bdd_omega, show i - 64 < 32 by bdd_omega]
-  · simp [h0, h1, h2, show ¬ i - 32 < 32 by bdd_omega, show ¬ i - 32 - 32 < 32 by bdd_omega,
-      show i - 32 - 32 - 32 = i - 96 by bdd_omega]
-
 theorem write16 (m : Mem) (a : Addr) (w0 w1 w2 w3 : BitVec 32) :
     m.write a 16 (ofVWords w0 w1 w2 w3) =
       (((m.writeW a w0).writeW (a + BitVec.ofNat 64 4) w1).writeW (a + BitVec.ofNat 64 8) w2).writeW
-        (a + BitVec.ofNat 64 12) w3 := by
-  funext x
-  have e : ∀ c : Nat, x - (a + BitVec.ofNat 64 c) = (x - a) - BitVec.ofNat 64 c := fun c =>
-    Offset.sub_add_eq x a _
-  simp only [Mem.writeW, Mem.write, e, show 32 / 8 = 4 from rfl]
-  generalize x - a = d
-  rw [toNat_sub_c d 4 (by bdd_omega), toNat_sub_c d 8 (by bdd_omega), toNat_sub_c d 12 (by bdd_omega)]
-  have := d.isLt
-  have ext : ∀ (k : Nat) (w : BitVec 32), k < 4 → 4 * k ≤ d.toNat → d.toNat < 4 * k + 4 →
-      (∀ b < 8, w.getLsbD (8 * (d.toNat - 4 * k) + b) = (ofVWords w0 w1 w2 w3).getLsbD (8 * d.toNat + b)) →
-      (ofVWords w0 w1 w2 w3).extractLsb' (8 * d.toNat) 8 =
-        (w.setWidth (8 * 4)).extractLsb' (8 * (d.toNat - 4 * k)) 8 := by
-    intro k w hk h1 h2 hw
-    apply BitVec.eq_of_getLsbD_eq
-    intro b hb
-    simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, hb, decide_true, Bool.true_and,
-      show 8 * (d.toNat - 4 * k) + b < 8 * 4 by bdd_omega]
-    exact (hw b hb).symm
-  have g := fun (b : Nat) (h : 8 * d.toNat + b < 128) => getLsbD_ofVWords w0 w1 w2 w3 h
-  by_cases c3 : 12 ≤ d.toNat
-  · by_cases c4 : d.toNat < 16
-    · simp only [c3, c4, ite_true, show d.toNat - 12 < 4 by bdd_omega]
-      refine ext 3 w3 (by bdd_omega) c3 (by bdd_omega) fun b hb => ?_
-      rw [g b (by bdd_omega)]
-      simp only [show ¬ 8 * d.toNat + b < 96 by bdd_omega, show ¬ 8 * d.toNat + b < 64 by bdd_omega,
-        show ¬ 8 * d.toNat + b < 32 by bdd_omega, ite_false, show 8 * (d.toNat - 4 * 3) + b = 8 * d.toNat + b - 96 by bdd_omega]
-    · simp only [c3, c4, ite_true, ite_false, show ¬ d.toNat - 12 < 4 by bdd_omega,
-        show ¬ d.toNat - 8 < 4 by bdd_omega, show ¬ d.toNat - 4 < 4 by bdd_omega, show 8 ≤ d.toNat by bdd_omega,
-        show 4 ≤ d.toNat by bdd_omega, show ¬ d.toNat < 4 by bdd_omega]
-  by_cases c2 : 8 ≤ d.toNat
-  · simp only [c3, c2, ite_true, ite_false, show d.toNat < 16 by bdd_omega, show d.toNat - 8 < 4 by bdd_omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by bdd_omega]
-    refine ext 2 w2 (by bdd_omega) c2 (by bdd_omega) fun b hb => ?_
-    rw [g b (by bdd_omega)]
-    simp only [show 8 * d.toNat + b < 96 by bdd_omega, show ¬ 8 * d.toNat + b < 64 by bdd_omega,
-      show ¬ 8 * d.toNat + b < 32 by bdd_omega, ite_false, ite_true,
-      show 8 * (d.toNat - 4 * 2) + b = 8 * d.toNat + b - 64 by bdd_omega]
-  by_cases c1 : 4 ≤ d.toNat
-  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by bdd_omega, show d.toNat - 4 < 4 by bdd_omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by bdd_omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by bdd_omega]
-    refine ext 1 w1 (by bdd_omega) c1 (by bdd_omega) fun b hb => ?_
-    rw [g b (by bdd_omega)]
-    simp only [show 8 * d.toNat + b < 64 by bdd_omega, show ¬ 8 * d.toNat + b < 32 by bdd_omega, ite_false,
-      ite_true, show 8 * (d.toNat - 4 * 1) + b = 8 * d.toNat + b - 32 by bdd_omega]
-  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by bdd_omega, show d.toNat < 4 by bdd_omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by bdd_omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by bdd_omega,
-      show ¬ 2 ^ 64 + d.toNat - 4 < 4 by bdd_omega]
-    refine ext 0 w0 (by bdd_omega) (by bdd_omega) (by bdd_omega) fun b hb => ?_
-    rw [g b (by bdd_omega)]
-    simp only [show 8 * d.toNat + b < 32 by bdd_omega, ite_true, show 8 * (d.toNat - 4 * 0) + b = 8 * d.toNat + b by bdd_omega]
-
+        (a + BitVec.ofNat 64 12) w3 :=
+  VG.AArch64.write16 m a w0 w1 w2 w3
 
 /-! ## Lanes -/
 
@@ -433,20 +372,9 @@ def writesV : Instr → Bool
   | _ => false
 
 theorem exec_v {i : Instr} (hi : writesV i = false) {s s' : State} (h : exec i s = some s') :
-    s'.v = s.v := by
-  cases i <;> simp only [writesV, Bool.true_eq_false] at hi
-  all_goals
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
-  all_goals
-    repeat' first
-      | split at h
-      | simp only [Option.map_eq_some_iff] at h
-      | rcases h with ⟨_, _, h⟩
-  all_goals
-    simp_all only [State.store]
-  all_goals
-    repeat' first | split at h | cases h
-  all_goals rfl
+    s'.v = s.v :=
+  have hd : vdstOf i = none := by cases i <;> first | rfl | cases hi
+  funext fun _ => exec_vec (by rw [hd]; exact nofun) h
 
 /-- Code that writes no vector register keeps them. -/
 theorem WP.keepV : ∀ {is : List Instr} {s : State} {Q : State → Prop},

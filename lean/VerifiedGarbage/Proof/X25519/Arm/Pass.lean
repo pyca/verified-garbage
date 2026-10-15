@@ -86,7 +86,7 @@ theorem pass_ok {rb : Reg} {o : Nat} {src : Nat → List Instr} {s0 : State} {c 
   have h51 : s1.gpr .r5 = s.gpr .r5 := hr1.gpr _ (by decide)
   have hsum := sum_lt hc hcin hk
   refine WP.mono (carryStep_ok (a := State.addr (s0.gpr rb) + BitVec.ofNat 64 (o + 4 * k))
-    ⟨hr.2.1, hr.2.2.1⟩ (by omega) (by rw [hrb1]; exact ea (by omega))
+    ⟨hr.2.1, hr.2.2.1⟩ (by omega_using [ho, hk]) (by rw [hrb1]; exact ea (by omega_using [hfit, hk]))
     (by rw [hr1.wr, h.rest.wr]; exact hw k hk)
     (by rw [hr1.gpr _ (by decide), h.rest.gpr _ (by decide), h6])
     (by rw [h3, h51, h.r5]; exact hsum)) fun s2 ⟨e5, ⟨v, hv, hm2⟩, hr2⟩ => ?_
@@ -96,12 +96,12 @@ theorem pass_ok {rb : Reg} {o : Nat} {src : Nat → List Instr} {s0 : State} {c 
     fun j hj => ?_⟩
   · rw [hm2]
     refine (h.frame.sub fun r hr' => ⟨_, List.mem_singleton_self _, ?_⟩).writeW
-      (List.mem_singleton_self _) v (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))
+      (List.mem_singleton_self _) v (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [hfit, hk]))
     rw [List.mem_singleton.mp hr']
-    exact Region.sub_prefix (by omega)
+    exact Region.sub_prefix (by omega_using [])
   · rw [hm2]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]; exact h.outs j hj
+    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega_using [hfit, hk])]; exact h.outs j hj
     · rw [wd_write_self, hv]; rfl
 
 end VG.Proof.X25519.Arm

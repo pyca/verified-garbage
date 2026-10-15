@@ -58,6 +58,14 @@ theorem rows_eq (f g : Nat → Nat) (k : Nat) :
 section Mul
 open Mul
 
+/-- The accumulators are distinct: `upd`'s conditions, decided without unfolding `Acc`'s
+equality in `simp`. -/
+theorem accs_ne :
+    (L = H) = False ∧ (L = X) = False ∧ (L = Y) = False ∧ (H = L) = False ∧ (H = X) = False ∧
+      (H = Y) = False ∧ (X = L) = False ∧ (X = H) = False ∧ (X = Y) = False ∧ (Y = L) = False ∧
+      (Y = H) = False ∧ (Y = X) = False := by
+  simp only [eq_iff_iff, iff_false]; decide
+
 variable (f g : Nat → Nat) (v : Src → Nat)
   (h0 : ∀ i j, i < 4 → j < 4 → (v (src 0 (i, j)).1 : Int) * v (src 0 (i, j)).2 = f i * g j)
   (h1 : ∀ i j, i < 4 → j < 4 → (v (src 1 (i, j)).1 : Int) * v (src 1 (i, j)).2 = f (i + 4) * g (j + 4))
@@ -70,10 +78,10 @@ theorem mulCol_ok (e : Env) {d : Nat} (hd : d < 4) :
     sem v e (column d) H = reduced (rows f g 8) (d + 4) := by
   obtain rfl | rfl | rfl | rfl : d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 := by omega
   all_goals
-    simp (config := {decide := true}) only [column, terms, Nat.reduceAdd, pairs_0, pairs_1,
-      pairs_2, pairs_3, pairs_4, pairs_5, pairs_6, pairs_7, start, addTo, shared,
+    simp only [accs_ne, List.length_cons, List.length_nil, Nat.reduceLeDiff, Nat.reduceLT, ↓reduceIte,
+      column, terms, Nat.reduceAdd, pairs_0, pairs_1, pairs_2, pairs_3, pairs_4, pairs_5, pairs_6, pairs_7, start, addTo, shared,
       List.map_cons, List.map_nil, List.cons_append,
-      List.nil_append, List.append_nil, sem, opSem, List.foldl, target, upd, ite_true, ite_false,
+      List.nil_append, List.append_nil, sem, opSem, List.foldl, target, upd,
       h0, h1, h2]
     simp only [reduced, rows_eq, Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, Nat.reduceLeDiff,
       and_true, and_false, and_self, ite_true, ite_false, Nat.add_zero,
@@ -84,6 +92,12 @@ end Mul
 
 section Sqr
 open Sqr
+
+/-- The accumulators are distinct: `upd`'s conditions, decided without unfolding `Acc`'s
+equality in `simp`. -/
+theorem sqrAccs_ne :
+    (L = H) = False ∧ (H = L) = False := by
+  simp only [eq_iff_iff, iff_false]; decide
 
 variable (f : Nat → Nat) (v : Src → Nat)
   (h0 : ∀ i j, i ≤ j → j < 4 → (v (src 0 (i, j)).1 : Int) * v (src 0 (i, j)).2 =
@@ -99,10 +113,10 @@ theorem sqrCol_ok (e : Env) {d : Nat} (hd : d < 4) :
     sem v e (column d) H = reduced (rows f f 8) (d + 4) := by
   obtain rfl | rfl | rfl | rfl : d = 0 ∨ d = 1 ∨ d = 2 ∨ d = 3 := by omega
   all_goals
-    simp (config := {decide := true}) only [column, terms, Nat.reduceAdd, sqPairs_0, sqPairs_1,
-      sqPairs_2, sqPairs_3, sqPairs_4, sqPairs_5, sqPairs_6, sqPairs_7, start, addTo,
+    simp only [sqrAccs_ne, Nat.reduceLeDiff, Nat.reduceLT, ↓reduceIte, column, terms, Nat.reduceAdd,
+      sqPairs_0, sqPairs_1, sqPairs_2, sqPairs_3, sqPairs_4, sqPairs_5, sqPairs_6, sqPairs_7, start, addTo,
       List.map_cons, List.map_nil, List.cons_append,
-      List.nil_append, List.append_nil, sem, opSem, List.foldl, target, upd, ite_true, ite_false,
+      List.nil_append, List.append_nil, sem, opSem, List.foldl, target, upd,
       h0, h1, h2]
     simp only [reduced, rows_eq, Nat.reduceAdd, Nat.reduceSub, Nat.reduceLT, Nat.reduceLeDiff,
       and_true, and_false, and_self, ite_true, ite_false, Nat.add_zero,
