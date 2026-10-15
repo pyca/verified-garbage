@@ -48,7 +48,7 @@ taint_summary ntt : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
   keeping (VectorTaint.ofRegs callee)
 
 taint_summary nttInv : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
-  (.call "vg_mlkem_inv_ntt" Impl.MlKem.AArch64.nttInv)
+  (.call "vg_mlkem_inv_ntt" Impl.MlKem.AArch64.Ntt16.nttInv)
   keeping (VectorTaint.ofRegs callee)
 
 taint_summary mul : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
