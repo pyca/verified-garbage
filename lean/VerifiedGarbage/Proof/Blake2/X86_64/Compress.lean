@@ -1378,7 +1378,7 @@ theorem common0 {P : Params w} (hw : w = 64 ∨ w = 32) {s₀ : State} (hp : Pre
     fun d v hd h => h.writeW (List.mem_singleton_self _) v (contains_off hd (by omega_using [hd]))
   have F0 : Frame [scR (scA s₀)] s₀.mem s₂.mem := by
     rw [hm, proMem]
-    repeat (first | exact Frame.refl _ _ | refine W _ _ (by decide +kernel) ?_)
+    repeat (first | refine W _ _ (by decide +kernel) ?_ | exact Frame.refl _ _)
   have R : ∀ {d : Nat}, s₂.mem.readW (off (scA s₀) d) 64 =
       ((proMem s₀).writeW (off (scA s₀) fOff) (flagW 64 (fl s₀))).readW (off (scA s₀) d) 64 :=
     by intro d; rw [hm]
