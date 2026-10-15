@@ -9,6 +9,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ed25519.Word64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # P-384's Montgomery product on AArch64: one short reduction
@@ -84,7 +85,7 @@ theorem xStep_ok (s : State) {d₀ : Reg} (h1 : d₀ ≠ .x1) (h2 : d₀ ≠ .x2
     have := (s.gpr .x16).isLt
     have := (s.gpr d₀).isLt
     simp only [BitVec.toNat_ofNat, Bool.toNat_false] at e1 e2 m1 m2 ⊢
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr, ite_false]
 
@@ -104,7 +105,7 @@ theorem sbc0_ok (s : State) (d : Reg) (hz : s.gpr .x7 = 0) :
     have hb : ∀ c, (Word64.carryOut (s.gpr d) (~~~0) c).toNat ≤ 1 := fun c => Bool.toNat_le _
     revert e
     cases s.c <;> intro e <;> have := hb false <;> have := hb true <;>
-      simp only [Bool.not_true, Bool.not_false, Bool.toNat_true, Bool.toNat_false] at e ⊢ <;> omega
+      simp only [Bool.not_true, Bool.not_false, Bool.toNat_true, Bool.toNat_false] at e ⊢ <;> omega_arith
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_write, hr, ite_false]
 
@@ -189,13 +190,13 @@ theorem sStep_ok (s : State) {d₀ d₁ d₂ d₃ d₄ d₅ : Reg}
   simp only [Bool.not_true, Bool.toNat_false, show (0 : BitVec 64).toNat = 0 from rfl] at e₁ e₄ e₅
   have := Bool.toNat_le (!s₁.c); have := Bool.toNat_le (!s₂.c); have := Bool.toNat_le (!s₃.c)
   have := Bool.toNat_le (!s₄.c); have := Bool.toNat_le (!s₅.c)
-  omega
+  omega_arith
 
 /-- `w p` cancels `d₀`, the low word of `[d₅ … d₀]`: `c0 w ≡ d₀`. -/
 theorem low_cancel {a W : Nat} (hW : W = (a * 2 ^ 32 % 2 ^ 64 + a) % 2 ^ 64) (ha : a < 2 ^ 64) :
     0xffffffff00000001 * W % 2 ^ 64 = a := by
   subst hW
-  omega
+  omega_arith
 
 /-- The reduction's arithmetic: `[x3 x2 x1] = X` subtracted from `[w d₅ … d₁]`
 does not borrow, and leaves `([d₅ … d₀] + w p) / 2^64`. -/
@@ -205,12 +206,12 @@ theorem montreds_arith {a W X T L j : Nat} (ha : a < 2 ^ 64)
     (hS : T + X = L + 2 ^ 320 * W + 2 ^ 384 * j) (hT : T < 2 ^ 384) (hL : L < 2 ^ 320) :
     2 ^ 64 * T = a + 2 ^ 64 * L + W * p := by
   have hc := low_cancel hW ha
-  have hW64 : W < 2 ^ 64 := by omega
+  have hW64 : W < 2 ^ 64 := by omega_arith
   have hdiv := Nat.div_add_mod (0xffffffff00000001 * W) (2 ^ 64)
   rw [hc] at hdiv
   rw [show W * p = W * 39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
     from rfl]
-  omega
+  omega_arith
 
 /-- One short reduction: `[d₀ d₅ … d₁] = ([d₅ … d₀] + w p) / 2^64` for some
 word `w`. -/
@@ -258,13 +259,13 @@ theorem montreds_ok (s : State) {d₀ d₁ d₂ d₃ d₄ d₅ : Reg}
     rw [w₁] at x₂
     simp only [regsVal]
     rw [show c0.toNat = 0xffffffff00000001 from rfl, show c1.toNat = 0xffffffff from rfl] at x₂
-    omega
+    omega_arith
   have hD : regsVal s₂ [d₁, d₂, d₃, d₄, d₅, d₀] =
       regsVal s [d₁, d₂, d₃, d₄, d₅] + 2 ^ 320 * (s.gpr d₀ <<< 32 + s.gpr d₀).toNat := by
     simp only [regsVal, gd d₁ (Ne.symm h01) h1x1 h1x2 h1x3, gd d₂ (Ne.symm h02) h2x1 h2x2 h2x3,
       gd d₃ (Ne.symm h03) h3x1 h3x2 h3x3, gd d₄ (Ne.symm h04) h4x1 h4x2 h4x3,
       gd d₅ (Ne.symm h05) h5x1 h5x2 h5x3, w₂]
-    omega
+    omega_arith
   rw [hX, hD] at hS
   have hT := regsVal_lt t [d₁, d₂, d₃, d₄, d₅, d₀]
   have hL := regsVal_lt s [d₁, d₂, d₃, d₄, d₅]
@@ -308,8 +309,8 @@ theorem redsN_ok : ∀ n ≤ 6, ∀ (s : State), s.gpr .x7 = 0 → s.gpr .x16 = 
   | 0, _, s, _, _, _ => WP.block_nil ⟨⟨0, by decide, by rw [rot_zero]; simp⟩, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | n + 1, hn, s, hz, h16, h17 => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (redsN_ok n (by omega) s hz h16 h17) fun s₁ ⟨⟨W, hW, e₁⟩, k₁⟩ => ?_
-    obtain ⟨r0, r1, hnd, hsub⟩ := rot_facts n (by omega)
+    refine WP.mono (redsN_ok n (by omega_arith) s hz h16 h17) fun s₁ ⟨⟨W, hW, e₁⟩, k₁⟩ => ?_
+    obtain ⟨r0, r1, hnd, hsub⟩ := rot_facts n (by omega_arith)
     have kx : ∀ r, r ∉ [Reg.x1, .x2, .x3] ++ lowRegs → s₁.gpr r = s.gpr r := k₁.gpr
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
     refine WP.mono (montreds_ok s₁ hnd (by rw [kx _ (by decide), hz]) (by rw [kx _ (by decide), h16])
@@ -318,10 +319,10 @@ theorem redsN_ok : ∀ n ≤ 6, ∀ (s : State), s.gpr .x7 = 0 → s.gpr .x16 = 
     rw [r0] at e₂
     rw [r1] at e₂
     refine ⟨W + 2 ^ (64 * n) * w, ?_, ?_⟩
-    · have : 2 ^ (64 * n) * w ≤ 2 ^ (64 * n) * (2 ^ 64 - 1) := Nat.mul_le_mul_left _ (by omega)
-      rw [show 64 * (n + 1) = 64 * n + 64 by omega, Nat.pow_add]
-      omega
-    · rw [show 64 * (n + 1) = 64 * n + 64 by omega, Nat.pow_add, Nat.mul_assoc, e₂, Nat.mul_add, e₁,
+    · have : 2 ^ (64 * n) * w ≤ 2 ^ (64 * n) * (2 ^ 64 - 1) := Nat.mul_le_mul_left _ (by omega_arith)
+      rw [show 64 * (n + 1) = 64 * n + 64 by omega_arith, Nat.pow_add]
+      omega_arith
+    · rw [show 64 * (n + 1) = 64 * n + 64 by omega_arith, Nat.pow_add, Nat.mul_assoc, e₂, Nat.mul_add, e₁,
         Nat.add_mul, Nat.add_assoc, Nat.mul_assoc]
 
 /-- `x16` and `x17` set, then the six reductions: `2^384 [low'] = [low] + W p`. -/

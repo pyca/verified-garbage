@@ -10,6 +10,7 @@ import Mathlib.Data.Int.ModEq
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 meta import Mathlib.Data.Int.ModEq
 meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with the CRT on AArch64: constant time of the primes' setup
@@ -46,12 +47,12 @@ theorem SSt.frm {p : SetupPub} {t t' : State} (h : SSt p t) {rs : List (Nat × N
     (hr : ∀ r ∈ rs, 8 * 29 ≤ r.1 ∧ r.1 + r.2 ≤ p.Z) {regs : List Reg} (k : Keep regs t t') : SSt p t' := by
   obtain ⟨pb, qb, ib, hs, hH, a1, a2, hZ, b1, b2, b3, b4, b5, c1, c2, c3, d⟩ := h
   have hn := hs.nowrap
-  have h8 : 256 ≤ offQ p.w p.pl := by unfold offQ slot hdrBytes; omega
+  have h8 : 256 ≤ offQ p.w p.pl := by unfold offQ slot hdrBytes; omega_arith
   have hw : ∀ i < 29, word t'.mem p.B (8 * i) = word t.mem p.B (8 * i) := fun i hi =>
-    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega)) (by omega)
+    hf.word_eq (fun r hr' => Or.inl (by have := hr r hr'; omega_arith)) (by omega_arith)
   have hi := InScr.of_frm hf fun r hr' => (hr r hr').2
   exact ⟨pb, qb, ib, hs.congr k.wr, ⟨(hw _ (by decide)).trans hH.hw, (hw _ (by decide)).trans hH.hminv,
-    fun j hj => (hw _ (by unfold sArr; omega)).trans (hH.harr j hj)⟩, a1, a2, hZ, (hw _ (by decide)).trans b1,
+    fun j hj => (hw _ (by unfold sArr; omega_arith)).trans (hH.harr j hj)⟩, a1, a2, hZ, (hw _ (by decide)).trans b1,
     (hw _ (by decide)).trans b2, (hw _ (by decide)).trans b3, (hw _ (by decide)).trans b4,
     (hw _ (by decide)).trans b5, c1.congrK hi k, c2.congrK hi k, c3.congrK hi k, d⟩
 
@@ -77,9 +78,9 @@ theorem WsF.frm {m m' : Mem} {B : Addr} {o wx : Nat} (h : WsF m B o wx) {rs : Li
     (hr : ∀ r ∈ rs, o + 8 * 17 ≤ r.1 ∨ r.1 + r.2 ≤ o) (ho : o + 8 * 17 ≤ 2 ^ 64) : WsF m' B o wx := by
   have hw : ∀ i < 17, word m' (off B o) (8 * i) = word m (off B o) (8 * i) := fun i hi => by
     rw [word_off, word_off]
-    exact hf.word_eq (fun r hr' => by have := hr r hr'; omega) (by omega)
+    exact hf.word_eq (fun r hr' => by have := hr r hr'; omega_arith) (by omega_arith)
   exact ⟨(hw _ (by decide)).trans h.1, (hw _ (by decide)).trans h.2.1,
-    fun j hj => (hw _ (by unfold sArr; omega)).trans (h.2.2 j hj)⟩
+    fun j hj => (hw _ (by unfold sArr; omega_arith)).trans (h.2.2 j hj)⟩
 
 /-- After `p`'s workspace. -/
 def SA (p : SetupPub) (t : State) : Prop :=
@@ -95,15 +96,15 @@ theorem SB.frm {p : SetupPub} {t t' : State} (h : SB p t) {rs : List (Nat × Nat
   obtain ⟨⟨hS, hP, hFP⟩, hQ, hFQ⟩ := h
   have hn := hS.scr.nowrap
   obtain ⟨a1, -, hZ, -, -, -, -⟩ := hS.bounds
-  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
-  have hPQ : offP p.w + 256 ≤ offQ p.w p.pl := by unfold offP offQ slot hdrBytes; omega
+  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega_arith
+  have hPQ : offP p.w + 256 ≤ offQ p.w p.pl := by unfold offP offQ slot hdrBytes; omega_arith
   have hP0 : offP p.w = slot p.w 8 := rfl
-  have hQZ : offQ p.w p.pl + 256 ≤ p.Z := by unfold slot hdrBytes at hZ; omega
-  refine ⟨⟨hS.frm hf (fun r hr' => by have := hr r hr'; omega) k, ?_, hFP.frm hf (fun r hr' => by
-    have := hr r hr'; omega) (by omega)⟩, ?_, hFQ.frm hf (fun r hr' => by have := hr r hr'; omega) (by omega)⟩
-  · rw [hf.word_eq (fun r hr' => by have := hr r hr'; unfold sWsP sFn; omega) (by unfold sWsP sFn; omega)]
+  have hQZ : offQ p.w p.pl + 256 ≤ p.Z := by unfold slot hdrBytes at hZ; omega_arith
+  refine ⟨⟨hS.frm hf (fun r hr' => by have := hr r hr'; omega_arith) k, ?_, hFP.frm hf (fun r hr' => by
+    have := hr r hr'; omega_arith) (by omega_arith)⟩, ?_, hFQ.frm hf (fun r hr' => by have := hr r hr'; omega_arith) (by omega_arith)⟩
+  · rw [hf.word_eq (fun r hr' => by have := hr r hr'; unfold sWsP sFn; omega_arith) (by unfold sWsP sFn; omega_arith)]
     exact hP
-  · rw [hf.word_eq (fun r hr' => by have := hr r hr'; unfold sWsQ sFn; omega) (by unfold sWsQ sFn; omega)]
+  · rw [hf.word_eq (fun r hr' => by have := hr r hr'; unfold sWsQ sFn; omega_arith) (by unfold sWsQ sFn; omega_arith)]
     exact hQ
 
 theorem SA.frm' {p : SetupPub} {t t' : State} (h : SA p t) (hm : t'.mem = t.mem) {regs : List Reg}
@@ -151,12 +152,12 @@ theorem stage1_ok {p : SetupPub} {s : State} (h : SetupPre p s) :
   obtain ⟨hS, h0⟩ := h.sst
   have hS' := hS
   obtain ⟨_, _, _, hs, hH, a1, a2, hZ, -⟩ := hS'
-  have : slot p.w 8 ≤ offQ p.w p.pl := by unfold offQ; omega
+  have : slot p.w 8 ≤ offQ p.w p.pl := by unfold offQ; omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = p.B ∧ t.mem = s.mem) (by brun [h0])
     (by decide) (by decide) (by decide +kernel)) fun s₁ ⟨⟨h5₁, hm₁⟩, k₁⟩ => ?_
-  exact WP.mono (wsEnd_ok (wx := p.w) (hs.congr k₁.wr) h5₁ (by rw [hm₁]; exact hH.hw) (by omega)
-    (by rw [hm₁]; exact hH.harr _ (by decide)) (by omega)) fun t ⟨⟨h4, _, hm₂⟩, k₂⟩ =>
+  exact WP.mono (wsEnd_ok (wx := p.w) (hs.congr k₁.wr) h5₁ (by rw [hm₁]; exact hH.hw) (by omega_arith)
+    (by rw [hm₁]; exact hH.harr _ (by decide)) (by omega_arith)) fun t ⟨⟨h4, _, hm₂⟩, k₂⟩ =>
     ⟨hS.mem (hm₂.trans hm₁) (k₁.trans k₂), (k₂.gpr .x0 (by decide)).trans ((k₁.gpr .x0 (by decide)).trans h0), h4⟩
 
 theorem wsP_ok {p : SetupPub} {s : State} (h : SS1 p s) :
@@ -164,14 +165,14 @@ theorem wsP_ok {p : SetupPub} {s : State} (h : SS1 p s) :
   obtain ⟨hS, h0, h4⟩ := h
   have hS' := hS
   obtain ⟨_, _, _, hs, -, a1, a2, hZ, hpl, -, -, -, -, -, -, -, -, -, -, d1, d2, -, -⟩ := hS'
-  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
-  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
+  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega_arith
+  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega_arith
   unfold offQ at hZ
   exact WP.mono (wsNew_ok (o := offP p.w) (len := p.pl) hs h0 h4 (by decide) (by decide) (by decide) hpl
-    (by omega) (by unfold offP; omega) (by unfold offP; omega))
+    (by omega_arith) (by unfold offP; omega_arith) (by unfold offP; omega_arith))
     fun t ⟨hWs, hl, hw, ha, h0', f, k⟩ => ⟨⟨hS.frm f (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [sWsP, sFn, offP] <;> omega) k, hWs, hl, hw, ha⟩, h0'⟩
+      rcases hr with rfl | rfl <;> simp only [sWsP, sFn, offP] <;> omega_arith) k, hWs, hl, hw, ha⟩, h0'⟩
 
 /-- `q`'s workspace's base: `p`'s, in `x5`. -/
 def SS2 (p : SetupPub) (t : State) : Prop :=
@@ -184,10 +185,10 @@ theorem stage2_ok {p : SetupPub} {s : State} (h : SA p s ∧ s.gpr .x0 = p.B) :
   have hWsP := hA.2.1
   have := hA.1.bounds
   have hn := hs.nowrap
-  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
+  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega_arith
   unfold offQ at this
   exact WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = off p.B (offP p.w) ∧ t.mem = s.mem)
-    (by brun [h0, hdr_enc (show sWsP < 32 by decide), hs.ld (d := 8 * sWsP) (by unfold sWsP sFn; omega), hWsP])
+    (by brun [h0, hdr_enc (show sWsP < 32 by decide), hs.ld (d := 8 * sWsP) (by unfold sWsP sFn; omega_arith), hWsP])
     (by decide) (by decide) (by decide +kernel))
     fun t ⟨⟨h5, hm⟩, k⟩ => ⟨hA.frm' hm k, (k.gpr .x0 (by decide)).trans h0, h5⟩
 
@@ -196,38 +197,38 @@ theorem stage3_ok {p : SetupPub} {s : State} (h : SS2 p s) : WP isa (.block wsEn
   have hA' := hA
   obtain ⟨⟨_, _, _, hs, -, a1, -, hZ, -⟩, -, -, hw, ha⟩ := hA'
   have hn := hs.nowrap
-  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
-  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
-  have hwp : wsWords p.pl < 2 ^ 30 := by have := hA.1.bounds; unfold wsWords; omega
+  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega_arith
+  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega_arith
+  have hwp : wsWords p.pl < 2 ^ 30 := by have := hA.1.bounds; unfold wsWords; omega_arith
   unfold offQ at hZ
   refine WP.mono (wsEndT_ok (wx := wsWords p.pl) (hs.sub (o := offP p.w)
-    (n := slot (wsWords p.pl) 8) (by unfold offP; omega) (by omega)) h5 hw hwp
+    (n := slot (wsWords p.pl) 8) (by unfold offP; omega_arith) (by omega_arith)) h5 hw hwp
     (ha _ (by decide)) (Nat.le_refl _)) fun t ⟨⟨h4, hm⟩, k⟩ => ?_
   rw [off_off] at h4
   exact ⟨hA.frm' hm k, (k.gpr .x0 (by decide)).trans h0, by
-    rw [h4]; exact congrArg (off p.B) (by unfold offQ offP; omega)⟩
+    rw [h4]; exact congrArg (off p.B) (by unfold offQ offP; omega_arith)⟩
 
 theorem wsQ_ok {p : SetupPub} {s : State} (h : SS3 p s) :
     WP isa (.block (wsNew sWsQ sQlen)) s (SBr (·.B) p) := by
   obtain ⟨hA, h0, h4⟩ := h
   have hA' := hA
   obtain ⟨⟨_, _, _, hs, -, a1, a2, hZ, -, hql, -, -, -, -, -, -, -, -, -, d1, d2, d3, d4⟩, hWsP, hF⟩ := hA'
-  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
-  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
-  have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega
+  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega_arith
+  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega_arith
+  have hQ8 : 256 ≤ slot (wsWords p.ql) 8 := by unfold slot hdrBytes; omega_arith
   have hn := hs.nowrap
   unfold offQ at hZ
   refine WP.mono (wsNew_ok (o := offQ p.w p.pl) (len := p.ql) hs h0 h4 (by decide) (by decide) (by decide) hql
-    (by omega) (by unfold offQ; omega) (by unfold offQ; omega))
+    (by omega_arith) (by unfold offQ; omega_arith) (by unfold offQ; omega_arith))
     fun t ⟨hWs, hl, hw, ha, h0', f, k⟩ => ⟨⟨⟨hA.1.frm f (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [sWsQ, sFn, offQ] <;> omega) k, ?_, hF.frm f (fun r hr => by
+      rcases hr with rfl | rfl <;> simp only [sWsQ, sFn, offQ] <;> omega_arith) k, ?_, hF.frm f (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [sWsQ, sFn, offQ, offP] <;> omega) (by unfold offP; omega)⟩,
+      rcases hr with rfl | rfl <;> simp only [sWsQ, sFn, offQ, offP] <;> omega_arith) (by unfold offP; omega_arith)⟩,
       hWs, hl, hw, ha⟩, h0'⟩
   rw [f.word_eq (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only [sWsQ, sWsP, sFn, offQ] <;> omega) (by unfold sWsP sFn; omega)]
+    rcases hr with rfl | rfl <;> simp only [sWsQ, sWsP, sFn, offQ] <;> omega_arith) (by unfold sWsP sFn; omega_arith)]
   exact hWsP
 
 /-- Into a workspace from the modulus' (`enterP`, `enterQ`), or back (`leave`). -/
@@ -254,10 +255,10 @@ theorem SB.load {p : SetupPub} {s : State} {o wx j sp sl len : Nat} {ptr : Addr}
   obtain ⟨minv, bs, hc, hw2, hwx, hw30, hj, hsp, hsl, hp, hl, hbl, hsrc, hk1, hk', hkw⟩ := hL
   have hn : p.B.toNat + p.Z ≤ 2 ^ 64 := hc.scr.nowrap
   have hi : o + slot wx 8 + tabBytes wx ≤ p.Z := hc.hi
-  have h8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have h8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
   exact WP.mono (primeLoad_ok hc hw2 hwx hw30 hj hsp hsl hp hl hsrc hk1 hk' hkw) fun t ⟨hc', _, ho, k⟩ =>
-    ⟨h.frm (Frm.of_load ho hj (by omega) (List.mem_singleton_self _)) (fun r hr => by
-      rw [List.mem_singleton.mp hr]; simp only; omega) k, hc'.x0⟩
+    ⟨h.frm (Frm.of_load ho hj (by omega_arith) (List.mem_singleton_self _)) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; simp only; omega_arith) k, hc'.x0⟩
 
 /-- `LPre` from `SB`, in the workspace at `off B o` (`x0`). -/
 theorem SB.lpre {p : SetupPub} {s : State} (h : SB p s) {o wx j sp sl len : Nat} {ptr : Addr} {bs : List Byte}
@@ -266,7 +267,7 @@ theorem SB.lpre {p : SetupPub} {s : State} (h : SB p s) {o wx j sp sl len : Nat}
     (hsl : sl < 32) (hp : word s.mem p.B (8 * sp) = ptr) (hl : word s.mem p.B (8 * sl) = BitVec.ofNat 64 bs.length)
     (hbl : bs.length = len) (hsrc : Src s p.B p.Z ptr bs) (hk1 : 1 ≤ bs.length) (hk' : bs.length < 2 ^ 31)
     (hkw : (bs.length + 7) / 8 ≤ wx) : LPre j sp sl ⟨⟨p.B, p.Z, o, p.w, wx⟩, ptr, len⟩ s :=
-  ⟨_, bs, h.sub h0 hF hlo hhi, hw2, hwx, by have := h.bounds; show p.w < 2 ^ 30; omega, hj, hsp, hsl, hp, hl,
+  ⟨_, bs, h.sub h0 hF hlo hhi, hw2, hwx, by have := h.bounds; show p.w < 2 ^ 30; omega_arith, hj, hsp, hsl, hp, hl,
     hbl, hsrc, hk1, hk', hkw⟩
 
 theorem lpreP {p : SetupPub} {s : State} (h : SBr (fun p => off p.B (offP p.w)) p s) :
@@ -276,27 +277,27 @@ theorem lpreP {p : SetupPub} {s : State} (h : SBr (fun p => off p.B (offP p.w)) 
   have hB' := hB
   obtain ⟨⟨⟨pb, qb, ib, hs, -, a1, a2, hZ, hpl, -, hpp, -, hip, c1, -, c3, l1, -, l3, d1, d2, -, -⟩, -, hF⟩, -⟩ := hB'
   unfold offQ at hZ
-  have hw := wsWords_le d2 (by omega)
-  exact ⟨hB.lpre h0 hF (Nat.le_refl _) (by unfold offP; omega) (by unfold wsWords; omega) hw (by decide)
-    (by decide) (by decide) hpp (by rw [l1]; exact hpl) l1 c1 (by omega) (by omega) (by unfold wsWords; omega),
-    hB.lpre h0 hF (Nat.le_refl _) (by unfold offP; omega) (by unfold wsWords; omega) hw (by decide)
-    (by decide) (by decide) hip (by rw [l3]; exact hpl) l3 c3 (by omega) (by omega) (by unfold wsWords; omega)⟩
+  have hw := wsWords_le d2 (by omega_arith)
+  exact ⟨hB.lpre h0 hF (Nat.le_refl _) (by unfold offP; omega_arith) (by unfold wsWords; omega_arith) hw (by decide)
+    (by decide) (by decide) hpp (by rw [l1]; exact hpl) l1 c1 (by omega_arith) (by omega_arith) (by unfold wsWords; omega_arith),
+    hB.lpre h0 hF (Nat.le_refl _) (by unfold offP; omega_arith) (by unfold wsWords; omega_arith) hw (by decide)
+    (by decide) (by decide) hip (by rw [l3]; exact hpl) l3 c3 (by omega_arith) (by omega_arith) (by unfold wsWords; omega_arith)⟩
 
 theorem lpreQ {p : SetupPub} {s : State} (h : SBr (fun p => off p.B (offQ p.w p.pl)) p s) :
     LPre Public.aN sQ sQlen ⟨⟨p.B, p.Z, offQ p.w p.pl, p.w, wsWords p.ql⟩, p.qp, p.ql⟩ s := by
   obtain ⟨hB, h0⟩ := h
   have hB' := hB
   obtain ⟨⟨⟨pb, qb, ib, hs, -, a1, a2, hZ, -, hql, -, hqp, -, -, c2, -, -, l2, -, -, -, d3, d4⟩, -, -⟩, -, hF⟩ := hB'
-  exact hB.lpre h0 hF (by unfold offQ; omega) hZ (by unfold wsWords; omega) (wsWords_le d4 (by omega))
-    (by decide) (by decide) (by decide) hqp (by rw [l2]; exact hql) l2 c2 (by omega) (by omega)
-    (by unfold wsWords; omega)
+  exact hB.lpre h0 hF (by unfold offQ; omega_arith) hZ (by unfold wsWords; omega_arith) (wsWords_le d4 (by omega_arith))
+    (by decide) (by decide) (by decide) hqp (by rw [l2]; exact hql) l2 c2 (by omega_arith) (by omega_arith)
+    (by unfold wsWords; omega_arith)
 
 theorem enterP_ok {p : SetupPub} {s : State} (h : SBr (·.B) p s) :
     WP isa (.block [enterP]) s (SBr (fun p => off p.B (offP p.w)) p) := by
   obtain ⟨h, h0⟩ := h
   have := h.bounds
-  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
-  exact h.move (X := p.B) (i := sWsP) h0 (by decide) (h.scr.ld (by unfold sWsP sFn offQ at *; omega)) h.1.2.1
+  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega_arith
+  exact h.move (X := p.B) (i := sWsP) h0 (by decide) (h.scr.ld (by unfold sWsP sFn offQ at *; omega_arith)) h.1.2.1
 
 theorem leaveP_ok {p : SetupPub} {s : State} (h : SBr (fun p => off p.B (offP p.w)) p s) :
     WP isa (.block [leave]) s (SBr (·.B) p) := by
@@ -304,30 +305,30 @@ theorem leaveP_ok {p : SetupPub} {s : State} (h : SBr (fun p => off p.B (offP p.
   have hF := h.1.2.2
   have := h.bounds
   have hn := h.scr.nowrap
-  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega
+  have hP8 : 256 ≤ slot (wsWords p.pl) 8 := by unfold slot hdrBytes; omega_arith
   exact h.move (X := off p.B (offP p.w)) (i := sLink) h0 (by decide) ((h.scr.sub (o := offP p.w)
-    (n := slot (wsWords p.pl) 8) (by unfold offQ offP at *; omega) (by omega)).ld (by unfold sLink sFn; omega)) hF.1
+    (n := slot (wsWords p.pl) 8) (by unfold offQ offP at *; omega_arith) (by omega_arith)).ld (by unfold sLink sFn; omega_arith)) hF.1
 
 theorem enterQ_ok {p : SetupPub} {s : State} (h : SBr (·.B) p s) :
     WP isa (.block [enterQ]) s (SBr (fun p => off p.B (offQ p.w p.pl)) p) := by
   obtain ⟨h, h0⟩ := h
   have := h.bounds
-  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega
-  exact h.move (X := p.B) (i := sWsQ) h0 (by decide) (h.scr.ld (by unfold sWsQ sFn offQ at *; omega)) h.2.1
+  have h8 : 256 ≤ slot p.w 8 := by unfold slot hdrBytes; omega_arith
+  exact h.move (X := p.B) (i := sWsQ) h0 (by decide) (h.scr.ld (by unfold sWsQ sFn offQ at *; omega_arith)) h.2.1
 
 theorem loadP1_ok {p : SetupPub} {s : State} (h : SBr (fun p => off p.B (offP p.w)) p s) :
     WP isa (seqs (loadArr Public.aN sP sPlen)) s (SBr (fun p => off p.B (offP p.w)) p) :=
   SB.load (o := offP p.w) (wx := wsWords p.pl) h.1 (lpreP h).1
-    ⟨by omega, Or.inl (by unfold offQ offP; omega)⟩
+    ⟨by omega_arith, Or.inl (by unfold offQ offP; omega_arith)⟩
 
 theorem loadP2_ok {p : SetupPub} {s : State} (h : SBr (fun p => off p.B (offP p.w)) p s) :
     WP isa (seqs (loadArr aChunk sQinv sPlen)) s (SBr (fun p => off p.B (offP p.w)) p) :=
   SB.load (o := offP p.w) (wx := wsWords p.pl) h.1 (lpreP h).2
-    ⟨by omega, Or.inl (by unfold offQ offP; omega)⟩
+    ⟨by omega_arith, Or.inl (by unfold offQ offP; omega_arith)⟩
 
 theorem loadQ_ok {p : SetupPub} {s : State} (h : SBr (fun p => off p.B (offQ p.w p.pl)) p s) :
     WP isa (seqs (loadArr Public.aN sQ sQlen)) s (SBr (fun p => off p.B (offQ p.w p.pl)) p) :=
-  SB.load (o := offQ p.w p.pl) (wx := wsWords p.ql) h.1 (lpreQ h) ⟨by unfold offQ offP; omega, Or.inr (by omega)⟩
+  SB.load (o := offQ p.w p.pl) (wx := wsWords p.ql) h.1 (lpreQ h) ⟨by unfold offQ offP; omega_arith, Or.inr (by omega_arith)⟩
 
 theorem leaveEnterQ_ct : RelCT isa (Two (SBr fun p => off p.B (offP p.w))) (.block [leave, enterQ])
     (Two (SBr fun p => off p.B (offQ p.w p.pl))) :=
