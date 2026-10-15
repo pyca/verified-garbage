@@ -55,21 +55,6 @@ theorem bodies_ok (v : Impl.Ed448.X86_64.FieldVariant) : Point64.PointOk v.bodie
 one that writes no vector register (`KeepReg.step`). -/
 private def quiet (i : Instr) : Bool := !KeepReg.writesVec i
 
-private theorem step_quiet (r : Reg) (a : KeepReg.Abs) (i : Instr) (h : quiet i = true) :
-    (KeepReg.step r a i).xs = a.xs := by
-  have hv : KeepReg.writesVec i = false := by simpa only [quiet, Bool.not_eq_true'] using h
-  cases i <;> first
-    | (simp only [KeepReg.step, hv, Bool.cond_false]; done)
-    | (rename_i d x; show (bif d == r then _ else a).xs = a.xs; cases d == r <;> rfl)
-    | (simp only [KeepReg.writesVec, Bool.true_eq_false] at hv)
-
-private theorem foldl_quiet (r : Reg) : ∀ (is : List Instr) (a : KeepReg.Abs), is.all quiet = true →
-    (is.foldl (KeepReg.step r) a).xs = a.xs
-  | [], _, _ => rfl
-  | i :: is, a, h => by
-    simp only [List.all_cons, Bool.and_eq_true] at h
-    rw [List.foldl_cons, foldl_quiet r is _ h.2, step_quiet r a i h.1]
-
 /-- `restores` brings back each kept register from where `saves` put it, whatever
 the code between them did to it. -/
 private theorem restores_ok : ∀ r ∈ keptRegs, ∀ b : Bool,
@@ -87,14 +72,7 @@ private theorem keeps_saved {mid : List Instr}
     change ((saves ++ mid ++ restores).drop 5).all quiet = true at hm
     rw [List.append_assoc, List.drop_left' (l₁ := saves) (i := 5) rfl, List.all_append, Bool.and_eq_true] at hm
     exact hm.1
-  change (KeepReg.run r (saves ++ mid ++ restores) (⟨true, .empty⟩ : KeepReg.Abs).ok
-    (⟨true, .empty⟩ : KeepReg.Abs).xs.bits).ok = true
-  rw [KeepReg.run_eq, List.foldl_append, List.foldl_append]
-  have hx := foldl_quiet r mid (saves.foldl (KeepReg.step r) ⟨true, .empty⟩) hm'
-  generalize mid.foldl (KeepReg.step r) (saves.foldl (KeepReg.step r) ⟨true, .empty⟩) = a at hx
-  obtain ⟨b, xs⟩ := a
-  subst hx
-  exact restores_ok r hr b
+  exact KeepReg.keeps_around hm' (restores_ok r hr)
 
 theorem double_kept (v : Impl.Ed448.X86_64.FieldVariant) :
     ∀ r ∈ keptRegs, KeepReg.keeps r v.doubleFn = true := by
