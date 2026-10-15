@@ -7,7 +7,6 @@ public meta import Lean.Meta.Tactic.Util
 public meta import Lean.Meta.Tactic.Cases
 public meta import Lean.Meta.Tactic.Assert
 public meta import Lean.Meta.Tactic.Assumption
-public meta import Lean.Meta.Closure
 
 /-!
 # Linear facts about `Nat`, by a certificate the kernel checks at once
@@ -438,9 +437,7 @@ def closeFalseWith (g : MVarId) (hs : Array (Expr × Bool)) : MetaM Bool := g.wi
   let mut lam := pf
   for (h, _) in ms.reverse do
     lam := .lam `_h (← inferType h) lam .default
-  -- An auxiliary theorem, as `omega`'s, which the kernel checks once for
-  -- every copy of the same goal in a declaration.
-  g.assign (← mkAuxTheorem (← g.getType) (mkAppN lam (ms.map (·.1))) (zetaDelta := true))
+  g.assign (mkAppN lam (ms.map (·.1)))
   return true
 
 /-- Whether `e` is a type `omega` reads facts about. -/
