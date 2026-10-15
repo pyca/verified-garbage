@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Mont.AArch64.Words
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -46,9 +48,15 @@ theorem Fresh.head {t : Reg} {ts : List Reg} (h : Fresh (t :: ts)) :
 
 /-- Closes `∀ r ∈ rs, r ∈ rs'` for literal lists of registers and variables: by
 `decide` for literal registers (most uses, and much cheaper than `grind`),
-else by `grind` on the memberships. -/
-macro "sub_regs" : tactic => `(tactic| plain_simp_names first | decide | (intro q hq; simp only [List.mem_cons,
-                   List.mem_append, List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; grind))
+else by one `simp` on the memberships (each register of `rs` written in
+`rs'`, or a variable list of `rs` a part of `rs'`), else by `grind`. -/
+tactic_template "sub_regs" : tactic => `(tactic| first
+  | decide
+  | (simp (config := { contextual := true }) only [List.mem_cons, List.mem_append, List.mem_singleton,
+      List.not_mem_nil, or_false, false_or, forall_eq_or_imp, forall_eq, eq_self_iff_true, true_or, or_true,
+      and_true, true_and, and_self, imp_self, implies_true]; done)
+  | (intro q hq; simp only [List.mem_cons, List.mem_append, List.mem_singleton, List.not_mem_nil, or_false]
+      at hq ⊢; grind))
 
 /-! ## Pieces -/
 
