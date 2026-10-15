@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Lit
 public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -51,6 +53,6 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
   coreX := Proof.Ecdsa.Arm.Secp256k1.sign_arm hL
   coreCT := Proof.Ecdsa.Arm.Secp256k1.sign_ct
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  reduceT := by exact (Function.const _ ⟨_, by native_taint_decide⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.Arm

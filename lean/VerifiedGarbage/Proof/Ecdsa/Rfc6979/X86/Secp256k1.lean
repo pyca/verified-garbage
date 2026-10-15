@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Secp256k1.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -65,6 +67,6 @@ def secp256k1 (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Proof.Weierstras
       ⟨he, a0, a1, a2, a3, a4⟩
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
-  reduceT := by exact (Function.const _ ⟨_, by taint_decide⟩)
+  reduceT := by exact (Function.const _ ⟨_, by native_taint_decide⟩)
 
 end VG.Proof.Ecdsa.Rfc6979.X86

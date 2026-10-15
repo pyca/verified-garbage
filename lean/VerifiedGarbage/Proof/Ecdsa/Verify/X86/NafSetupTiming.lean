@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulSetup
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafWindowChecks
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -25,7 +27,7 @@ def nafSetB : Prog isa := .block (setConst p256Comb.n (p256Comb.sl EM) (p256Comb
 materialize_code nafSetB
 
 theorem nafSetB_ct : ScratchCT nafSetB :=
-  Taint.constantTime (A:=taint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=taint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 theorem nafSetB_ok (hc : CfgOk p256Comb) {s : State} {base : Addr} (hs : Scr s base size) :
     WP isa nafSetB s fun t => Keeps powClob s t ∧ Scr t base size ∧

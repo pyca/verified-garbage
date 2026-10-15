@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -35,6 +37,6 @@ def vFinalCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.tail p256Comb
 materialize_code vFinalCode
 
 theorem vFinal_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vFinalCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+  RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
 end VG.Proof.Ecdsa.Verify.X86

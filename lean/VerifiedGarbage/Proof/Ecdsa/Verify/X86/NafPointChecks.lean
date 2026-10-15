@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafAddShared
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -27,25 +29,25 @@ def nafTableAddZeroQ : Prog isa := (.block (Jacobian.zeroTest nafK.M.n (Naf.twic
 materialize_code nafTableAddZeroQ
 
 theorem nafTableAddZeroQ_ct : ScratchCT nafTableAddZeroQ :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafTableAddCopyQ : Prog isa := (.block (copyPt nafK.M.n nafK.D (Naf.twice nafK)))
 materialize_code nafTableAddCopyQ
 
 theorem nafTableAddCopyQ_ct : ScratchCT nafTableAddCopyQ :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafTableAddHead : Prog isa := (fprog p256Comb.SP (jacHead nafK.S nafK.R (Naf.twice nafK)))
 materialize_code nafTableAddHead
 
 theorem nafTableAddHead_ct : ScratchCT nafTableAddHead :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafTableAddTail : Prog isa := (fprog p256Comb.SP (jacTail nafK.S nafK.R (Naf.twice nafK) nafK.D))
 materialize_code nafTableAddTail
 
 theorem nafTableAddTail_ct : ScratchCT nafTableAddTail :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 theorem nafTableAdd_checks : JacAddChecks nafK p256Comb.SP nafK.R (Naf.twice nafK) nafK.D :=
   nafAdd_checks nafTableAddZeroQ_ct nafTableAddCopyQ_ct nafTableAddHead_ct nafTableAddTail_ct
@@ -66,7 +68,7 @@ def nafTableCopyStep : Prog isa := .block (copyPt nafK.M.n nafK.R nafK.D)
 materialize_code nafTableCopyStep
 
 theorem nafTableCopyStep_ct : ScratchCT nafTableCopyStep :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafTableStore : Prog isa := .block (Naf.tableStore nafK)
 materialize_code nafTableStore
@@ -78,23 +80,23 @@ theorem nafTable_checks : NafTableChecks nafK p256Comb.SP := by
   refine ⟨?_,?_,?_,?_,nafTableAdd_checks,?_,?_,?_⟩
 
   · change ScratchCT nafTableDouble
-    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
   · change ScratchCT nafTableCopyFirst
-    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
   · change ScratchCT nafTableCopyInit
-    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
   · change ScratchCT nafTableInitCounter
-    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
   · exact nafTableCopyStep_ct
 
   · change RegCT [.edi,.esi] nafTableStore
-    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
   · change RegCT [.esi] nafTableAdvance
-    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+    exact Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 end VG.Proof.Ecdsa.Verify.X86

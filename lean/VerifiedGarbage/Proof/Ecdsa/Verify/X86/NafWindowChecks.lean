@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafDigitChecks
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86.NafWindowTiming
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -27,31 +29,31 @@ def nafRunRead : Prog isa := .block (Naf.digitRead nafK)
 materialize_code nafRunRead
 
 theorem nafRunRead_ct : RegCT [.edi,.esi] nafRunRead :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafRunLookup : Prog isa := .block (Naf.publicEntry nafK)
 materialize_code nafRunLookup
 
 theorem nafRunLookup_ct : RegCT [.edi,.ebx] nafRunLookup :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafRunSign : Prog isa := .block [.alu .cmp .ebx (.imm 128)]
 materialize_code nafRunSign
 
 theorem nafRunSign_ct : RegCT [.ebx] nafRunSign :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafRunAbs : Prog isa := .block [.mov .eax (.imm 256),.alu .sub .eax (.reg .ebx),.mov .ebx (.reg .eax)]
 materialize_code nafRunAbs
 
 theorem nafRunAbs_ct : RegCT [.ebx] nafRunAbs :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafRunNeg : Prog isa := opCode p256Comb.SP (.sub nafK.E.y nafK.zero nafK.E.y)
 materialize_code nafRunNeg
 
 theorem nafRunNeg_ct : ScratchCT nafRunNeg :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 /-- The same copy as the table's step (`nafTableCopyStep`). -/
 theorem nafRunCopy_ct : ScratchCT (.block (copyPt nafK.M.n nafK.R nafK.D)) :=
@@ -65,31 +67,31 @@ def nafRunDec : Prog isa := .block [.alu .sub .esi (.imm 1)]
 materialize_code nafRunDec
 
 theorem nafRunDec_ct : RegCT [.esi] nafRunDec :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafRunTest : Prog isa := .block [.alu .test .esi (.reg .esi)]
 materialize_code nafRunTest
 
 theorem nafRunTest_ct : RegCT [.esi] nafRunTest :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafRunInfinity : Prog isa := .block (Jacobian.infinity nafK nafK.R)
 materialize_code nafRunInfinity
 
 theorem nafRunInfinity_ct : ScratchCT nafRunInfinity :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafRunInitCounter : Prog isa := .block [.mov .esi (.imm 256)]
 materialize_code nafRunInitCounter
 
 theorem nafRunInitCounter_ct : RegCT [.esi] nafRunInitCounter :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafRunFinish : Prog isa := Naf.finish nafK p256Comb.SP
 materialize_code nafRunFinish
 
 theorem nafRunFinish_ct : ScratchCT nafRunFinish :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 theorem nafWindow_checks : NafWindowChecks nafK p256Comb.SP :=
   ⟨nafTable_checks,

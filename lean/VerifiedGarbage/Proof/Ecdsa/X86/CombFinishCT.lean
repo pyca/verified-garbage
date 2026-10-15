@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -35,6 +37,6 @@ theorem combFinish_rel : RelCT isa (VG.X86.Taint.Agree (combτAt scratchSecond))
     (.seq (.block p256K.outFix) (Impl.Weierstrass.X86.fprog p256K.F p256K.outOps)) (fun _ _ => True) := by
   change RelCT isa _ combFinish _
   cases scratchSecond <;>
-    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by taint_decide)
+    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h) (by native_taint_decide)
 
 end VG.Proof.Ecdsa.X86

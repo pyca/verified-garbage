@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86.CombStepCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStepCT
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombFinishCT
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -276,7 +278,7 @@ theorem gMul_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
         rw [List.mem_singleton.mp hr]
         exact widen32_inj (hs₁.edi.trans hs₂.edi.symm))
     (c := .block (Impl.Weierstrass.X86.setConst p256Comb.n (p256Comb.sl EM) (p256Comb.mont p256Comb.C.b)))
-    (by taint_decide)
+    (by native_taint_decide)
   have prep' := prep.wp (fun _ _ h => by
     rcases h with ⟨rfl, rfl⟩
     exact ⟨combPrepare_ok (d := p256d) hc rfl hs₁ F₁ hk₁ hb₁ hTM₁ hout hap₁ hsp₁,

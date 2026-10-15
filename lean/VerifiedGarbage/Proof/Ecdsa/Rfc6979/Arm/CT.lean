@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -197,8 +199,8 @@ theorem hmacBlks {D B : Nat} (h : (D = 32 ∧ B = 64) ∨ (D = 48 ∧ B = 128) �
       TaintOk (Cfg.hmacArgs₃ B D fV) ∧ TaintOk (Cfg.hmacArgs₂ B (scrAt .r1 sMsg) (D + 1)) ∧
       TaintOk (Cfg.hmacArgs₃ B (D + 1) fK) := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
-  exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩⟩
+  exact ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩,
+    ⟨_, by native_taint_decide⟩⟩
 
 theorem blks (P : RfcHash) : Blks P.k P.Q P.F.H.D P.F.H.B P.R.wide := by
   obtain ⟨i, vu, vf, ku, kf⟩ := hmacBlks P.hDB
@@ -216,24 +218,24 @@ theorem blks (P : RfcHash) : Blks P.k P.Q P.F.H.D P.F.H.B P.R.wide := by
       simp only [hk hw, hQ, h, h'] <;>
       first
       | (exfalso; rw [hQ, h] at hQD; omega)
-      | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-          ⟨_, by taint_decide⟩⟩
+      | exact ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩,
+          ⟨_, by native_taint_decide⟩⟩
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     simp only [RfcHash.k, show P.R.E.n = 9 from hw9, show P.R.E.C.len = 66 from hQ66, hD64, hB]
-    exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩⟩
+    exact ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩,
+      ⟨_, by native_taint_decide⟩⟩
 
 /-! The blocks that depend on whether two `V`s make a candidate. -/
 
 theorem coreArgs_blk (wide : Bool) : TaintOk (Cfg.coreArgs wide) := by
   cases wide
-  · exact ⟨_, by taint_decide⟩
-  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by native_taint_decide⟩
+  · exact ⟨_, by native_taint_decide⟩
 
 theorem wipe_blk (wide : Bool) : TaintOk (Cfg.wipe wide) := by
   cases wide
-  · exact ⟨_, by taint_decide⟩
-  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by native_taint_decide⟩
+  · exact ⟨_, by native_taint_decide⟩
 
 /-- If two `V`s make a candidate: the digest for `core` and `V = 0x01…`,
 `K = 0x00…`, `V` kept, and the candidate. -/
@@ -251,7 +253,7 @@ theorem wideBlks (hw : P.R.wide = true) : WideBlks P := by
   have e₃ : (cfgOf P).F.H.D = 64 := hD64
   have e₄ : (cfgOf P).sh = 7 := hsh
   refine ⟨?_, ?_, ?_⟩ <;> simp only [Cfg.coreDigest, Cfg.keepV, Cfg.candTop, Cfg.conv, e₁, e₂, e₃, e₄] <;>
-    exact ⟨_, by taint_decide⟩
+    exact ⟨_, by native_taint_decide⟩
 
 /-! ## The calls of HMAC's functions -/
 
@@ -446,9 +448,9 @@ theorem dec_two {L : Lay P.I.hashLen} {m₁ m₂ : Mem} {i : Nat} (hx : exitAt P
 def After (P : RfcHash) (i : Nat) (L : Lay P.I.hashLen) (_ : Reg → BitVec 32) (m₀ : Mem) (t : State) : Prop :=
   (isa.eval .ne t = some false ∧ Exit P L m₀ i t) ∨ (isa.eval .ne t = some true ∧ LoopInv P L m₀ (i + 1) t)
 
-theorem goOn_blk : TaintOk Cfg.goOn := ⟨_, by taint_decide⟩
-theorem again_blk : TaintOk Cfg.again := ⟨_, by taint_decide⟩
-theorem stop_blk : TaintOk Cfg.stop := ⟨_, by taint_decide⟩
+theorem goOn_blk : TaintOk Cfg.goOn := ⟨_, by native_taint_decide⟩
+theorem again_blk : TaintOk Cfg.again := ⟨_, by native_taint_decide⟩
+theorem stop_blk : TaintOk Cfg.stop := ⟨_, by native_taint_decide⟩
 
 theorem tryOne_trace {i : Nat} :
     RelCT isa (Two P fun L _ m₀ t => LoopInv P L m₀ i t) (cfgOf P).tryOne fun _ _ => True := by
@@ -510,7 +512,7 @@ theorem loop_ct :
 /-! ## The frame's body -/
 
 theorem reduce_eq : (cfgOf P).reduce ++ Cfg.initKV = (cfgC P.R.E).reduce ++ Cfg.initKV := rfl
-theorem initCnt_blk₀ : TaintOk [.movw .r9 (BitVec.ofNat 16 8)] := ⟨_, by taint_decide⟩
+theorem initCnt_blk₀ : TaintOk [.movw .r9 (BitVec.ofNat 16 8)] := ⟨_, by native_taint_decide⟩
 
 /-- The count's initial `movw`, for any count: the analysis does not read its
 immediate (`Taint.check_eraseOff`), so it is that of one count's. -/
@@ -566,7 +568,7 @@ theorem prologue_tail : ∃ hc, (VG.Taint.check taint (τr [.r0, .r1, .r2, .r3, 
     (.block (Impl.Ecdsa.Rfc6979.Arm.saved.map (fun p => Instr.str p.1 .r12 p.2) ++
       ([.mov .r4 (.reg .r0), .mov .r5 (.reg .r1), .mov .r6 (.reg .r2), .mov .r11 (.reg .r3),
         .mov .r8 (.reg .r12)] : List Instr)))
-    hc).isSome = true := ⟨_, by taint_decide⟩
+    hc).isSome = true := ⟨_, by native_taint_decide⟩
 
 /-- The prologue reads `sp`, which agrees, and then addresses the frame through `r12`. -/
 theorem start_blk : RelCT isa (Entered P) (.block Cfg.prologue) fun _ _ => True := by
