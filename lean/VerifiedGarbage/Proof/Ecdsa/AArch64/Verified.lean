@@ -53,6 +53,7 @@ theorem p256_nBits : 64 * p256.n ≤ Spec.Ecdsa.nBits p256.C := by
   omega
 
 theorem p256_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p256 where
+  window_tmp := by decide +kernel
   n0 := by decide
   n10 := by decide
   onG := Proof.P256.onCurve_G

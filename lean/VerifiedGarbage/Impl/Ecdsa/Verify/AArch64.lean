@@ -161,11 +161,16 @@ def projectiveMatch : List Instr :=
 def projectiveChecks : List Instr :=
   projectiveMatch c ++ c.andFlag ++ c.checkNonzero (c.sl RZ) ++ finish c
 
+/-- Convert `r` to Montgomery form, sharing the eight-word product. -/
+def projectiveConvert : Prog isa :=
+  if c.n = 8 then c.mulPP (c.sl XM) (c.sl K) (c.sl XM)
+  else .block (mul c.MP' (c.sl XM) (c.sl K) (c.sl XM))
+
 /-- ECDSA's final check using projective coordinates. The caller establishes
 `n < p ≤ 2n`, so `r` and `r+n` exhaust the possible affine coordinates. -/
 def projectiveFinal : Prog isa :=
   .seq (.seq (.block (projectivePrepare c))
-    (.seq (.block (mul c.MP' (c.sl XM) (c.sl K) (c.sl XM)))
+    (.seq (projectiveConvert c)
       (fprogB c.MP' (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
 /-- A curve with `n < p ≤ 2n` (every curve this verifier serves) compares

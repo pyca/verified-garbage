@@ -37,7 +37,7 @@ theorem projectiveOps_run (hc : BaseCfgOk c) (e : Nat → Fe c.C) :
     runOps (projectiveOps c.sl) e (c.sl W) = e (c.sl RX) - e (c.sl XM) * e (c.sl RZ) ∧
     runOps (projectiveOps c.sl) e (c.sl XN) =
       e (c.sl RX) - (e (c.sl XM) + e (c.sl ACC)) * e (c.sl RZ) := by
-  have hout : ∀ op ∈ projectiveOps id, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 82 := by decide
+  have hout : ∀ op ∈ projectiveOps id, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 61 ∧ op.out ≠ 82 := by decide
   have H := runOps_rename c.sl (projectiveOps id) e (fun op hop _ h =>
     sl_inj c hc.n0 h (.inr (hout op hop).2) (.inl (hout op hop).1))
   rw [← projectiveOps_rename] at H
@@ -117,17 +117,30 @@ theorem projectivePrepare_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : 
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   refine WP.mono (setSl_ok hc hs₂ (o := MN) (by decide) sub) fun s₃ ⟨e₃,k₃,O₃⟩ => ?_
   have o : ∀ {s t : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem t.mem → i < 45 → i ≠ j →
-      j ≠ 54 ∧ j ≠ 82 → sv c base t i = sv c base s i := fun O hi hij hj => sv_out O hc.n10 hs.nowrap hi hij hj
+      j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 → sv c base t i = sv c base s i := fun O hi hij hj => sv_out O hc.n10 hs.nowrap hi hij hj
   exact ⟨hs₂.of_keepRegs k₃ (by decide), O₁.unch.trans (O₂.unch.trans O₃.unch),
     by rw [o O₃ (by decide) (by decide) (by decide), o O₂ (by decide) (by decide) (by decide), e₁],
     by rw [o O₃ (by decide) (by decide) (by decide), e₂], e₃⟩
+
+/-- Convert `r` with the shared eight-word product when available. -/
+theorem projectiveConvert_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
+    (hs : Scr s base size) (hM : ModOkA c.MP' size c.C.p s.mem base)
+    (hB : sv c base s XM < c.C.p) :
+    WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.projectiveConvert c) s fun t =>
+      OpKeep c.MP' base (c.sl XM) s t ∧ sv c base t XM < c.C.p ∧
+      sv c base t XM * 2 ^ (64 * c.n) % c.C.p = sv c base s K * sv c base s XM % c.C.p := by
+  unfold Impl.Ecdsa.Verify.AArch64.Cfg.projectiveConvert
+  split
+  · exact slMulP_ok hc hs hM (by decide) (by decide) (by decide)
+      (by decide) (by decide) (by decide) hB
+  · exact slMul_ok (MP'_n c) hc.n10 hs hM (MP'_A c) (by decide) (by decide) (by decide) hB
 
 /-- Prepare constants, convert `r`, and compute both differences. -/
 theorem projectiveArithmetic_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
     (hs : Scr s base size) (hmp : sv c base s MP = c.C.p)
     (hrx : sv c base s RX < c.C.p) (hrz : sv c base s RZ < c.C.p) :
     WP isa (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.projectivePrepare c))
-      (.seq (.block (mul c.MP' (c.sl XM) (c.sl K) (c.sl XM)))
+      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.projectiveConvert c)
         (fprogB c.MP' (projectiveOps c.sl)))) s fun t =>
       Scr t base size ∧ Unch base (slW c projectiveAllW) s.mem t.mem ∧
       sv c base t MN = c.C.p - c.C.n ∧ sv c base t W < c.C.p ∧ sv c base t XN < c.C.p ∧
@@ -145,8 +158,7 @@ theorem projectiveArithmetic_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
     fun hi hl => sv_unch U₁ h7 hn hi (apart_slW hl)
   have M₁ : ModOkA c.MP' size c.C.p s₁.mem base := modP_of hc
     ((v₁ (i := MP) (by decide) (by decide)).trans hmp)
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs₁ M₁ (MP'_A c) (o := XM) (a := K) (b := XM)
-    (by decide) (by decide) (by decide) (by rw [xm₁]; exact Nat.mod_lt _ (by omega)))
+  refine WP.seq (WP.mono (projectiveConvert_ok hc hs₁ M₁ (by rw [xm₁]; exact Nat.mod_lt _ (by omega)))
     fun s₂ ⟨k₂,lt₂,e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₂ i = sv c base s₁ i :=

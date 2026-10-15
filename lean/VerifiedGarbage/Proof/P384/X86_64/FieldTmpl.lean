@@ -99,7 +99,8 @@ theorem p384XT_ok : p384XT.Ok p384x.MP' where
 theorem p384h_callOf : Mont.callOf { p384.MP' with inl := true } = none := by
   unfold Mont.callOf
   rw [ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel),
-    ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel)]
+    ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel),
+    ite_eq_right_of_eq_false _ _ (by decide +kernel)]
 
 /-- The templates modulo `p`, for the products written out. -/
 theorem p384HT_ok : p384T.Ok { p384.MP' with inl := true } where
@@ -114,7 +115,8 @@ theorem p384HT_ok : p384T.Ok { p384.MP' with inl := true } where
 theorem p384xh_callOf : Mont.callOf { p384x.MP' with inl := true } = none := by
   unfold Mont.callOf
   rw [ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel),
-    ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel)]
+    ite_eq_right_of_eq_false _ _ (by decide +kernel), ite_eq_right_of_eq_false _ _ (by decide +kernel),
+    ite_eq_right_of_eq_false _ _ (by decide +kernel)]
 
 /-- The templates modulo `p` with BMI2 and ADX, for the products written out. -/
 theorem p384XHT_ok : p384XT.Ok { p384x.MP' with inl := true } where

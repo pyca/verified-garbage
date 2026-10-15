@@ -80,6 +80,9 @@ pub(crate) mod brainpoolp512r1_check_point;
 pub(crate) mod brainpoolp512r1_inverse;
 
 #[rustfmt::skip]
+pub(crate) mod brainpoolp512r1_mont;
+
+#[rustfmt::skip]
 pub(crate) mod brainpoolp512r1_mul;
 
 #[rustfmt::skip]

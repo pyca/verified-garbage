@@ -41,7 +41,7 @@ variable {c : Cfg}
 
 /-- Where `vg_<curve>_mul`'s products keep their temporary area (`invTmp`,
 `Cfg.mulLadder`): `TMP`'s slot, or past the words where it keeps `invKept`. -/
-def MulTmp (c : Cfg) : Prop := c.invTmp = c.sl TMP ∨ c.mulSave + c.invSaveLen ≤ c.invTmp
+def MulTmp (c : Cfg) : Prop := c.invTmp = slot c.n TMP ∨ c.mulSave + c.invSaveLen ≤ c.invTmp
 
 /-- What `vg_<curve>_mul`'s body writes: `R`'s slots, `ACC`'s and `PT`'s (its
 copy of `Q`), the ladder's, its products' temporary area and the table of
@@ -130,7 +130,7 @@ theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hL
   have U₃₆ : Unch base (slW c [RX, RY, RZ]) s₃.mem s₆.mem := (O₄.unch.trans O₅.unch).trans O₆.unch
   have U₄₆ : Unch base (slW c [RY, RZ]) s₄.mem s₆.mem := O₅.unch.trans O₆.unch
   have U₅₆ : Unch base (slW c [RZ]) s₅.mem s₆.mem := O₆.unch
-  have abt : ∀ {i}, i < 45 → ∀ {l : List Nat}, i ∉ l → i ≠ 54 ∧ i ≠ 82 → (∀ j ∈ l, j ≠ 54 ∧ j ≠ 82) →
+  have abt : ∀ {i}, i < 45 → ∀ {l : List Nat}, i ∉ l → i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 → (∀ j ∈ l, j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82) →
       ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)] ++ slW c l, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi _ hl ha hb => apart_append (apart_tbl hi 0 h7) (apart_slW hl ha hb)
   have e₁ := fun {i} (hi : i < 45) => sv_unch U₁ h7 hn hi (apart_tbl hi 0 h7)
@@ -150,7 +150,7 @@ theorem mulBody_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hL
     exact h
   have rz₆ : sv c base s₆ RZ = 0 :=
     v₆.trans ((sv_unch U₅ h7 hn (i := ZERO) (by decide) (abt (by decide) (by decide) (by decide) (by decide))).trans hz)
-  have e₆ := fun {i} (hi : i < 45) (hl : i ∉ [ACC, PT, RX, RY, RZ]) (ha : i ≠ 54 ∧ i ≠ 82) =>
+  have e₆ := fun {i} (hi : i < 45) (hl : i ∉ [ACC, PT, RX, RY, RZ]) (ha : i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82) =>
     sv_unch U₆ h7 hn hi (abt hi hl ha (by decide))
   have mp₆ : sv c base s₆ MP = c.C.p := (e₆ (i := MP) (by decide) (by decide) (by decide)).trans hmp
   have ap₆ : sv c base s₆ AP = c.mont c.C.a := (e₆ (i := AP) (by decide) (by decide) (by decide)).trans hap
@@ -249,7 +249,7 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hT :
       rcases h4 with h4 | h4 | h4
       · rw [sl_eq4 c (by omega), Cfg.mulSave, bitsAt_eq, h4]; left; simp only [TMP]; omega
       · rw [sl_tmp c (.inl h4), Cfg.mulSave, bitsAt_eq, h4]; right; simp only [Mont.moAt]; omega
-      · rw [sl_aff c (by omega), Cfg.mulSave, bitsAt_eq, h4]; left; simp only [TMP]; omega
+      · rw [sl_tmp c (.inr (.inl h4)), Cfg.mulSave, bitsAt_eq, h4]; right; simp only [Mont.moAt]; omega
     · left
       have := Nat.mul_le_mul_left (8 * c.n) (show i + 1 ≤ 45 from hi)
       rw [sl_eq c i hT, Cfg.mulSave, bitsAt_eq, Nat.mul_succ] at *; omega
@@ -278,9 +278,11 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hT :
       rcases hw with rfl | rfl
       · rcases hT with h | h
         · rw [h]
-          rcases below (i := TMP) (by decide) with h | h
-          · exact Or.inr (by dsimp only; omega)
-          · exact Or.inl (by dsimp only; omega)
+          exact Or.inr (by
+            unfold Cfg.mulSave at h₁
+            rw [bitsAt_eq] at h₁
+            simp only [slot, TMP]
+            omega)
         · exact Or.inl (by dsimp only; omega)
       · exact Or.inr (by unfold Cfg.mulSave at *; dsimp only; omega)
   refine WP.mono (ldAll_ok hs₂ c.invKept (d := c.mulSave) (by omega) hsv8 (invKept_ne_x0 c))
@@ -390,27 +392,27 @@ theorem Fixed.unchBM {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fix
   rcases List.mem_append.mp hw with hw | hw
   · rw [List.mem_singleton.mp hw]; have := sl_ge64 c BM; dsimp only; omega
   · rcases hW w hw with ⟨h1, -⟩ | h
-    · rw [h1]; have := sl_ge64 c TMP; omega
+    · rw [h1]; simp only [slot]; omega
     · simp (disch := decide) only [sl_eq] at h; omega
 
 /-- A slot apart from what the function writes. -/
 theorem apart_mulWF (hT : MulTmp c) {i : Nat} (hi : i < 45)
     (hl : i ∉ [RX, RY, RZ, ACC, PT, TX, TY, TZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP])
-    (hiA : i ≠ 54 ∧ i ≠ 82 := by first | decide | exact ⟨by omega, by omega⟩) :
+    (hiA : i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 := by first | decide | exact ⟨by omega, by omega⟩) :
     ∀ w ∈ mulWF c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   have hT' : i ≠ TMP := fun h => hl (by simp [h])
   refine apart_append (apart_slW (fun h => hl (List.mem_append_left [TMP] h)) hiA) fun w hw => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl
   · rcases hT with h | h
-    · dsimp only; rw [h]; exact sl_apart c hT' (.inl hT') (.inr hiA)
+    · dsimp only; rw [h]; exact sl_apart_raw_tmp c hT'
     · exact Or.inl (by have := sl_below_bits c hi 0 0 hT'; unfold Cfg.mulSave at h; dsimp only; omega)
   · exact Or.inl (by have := sl_below_bits c hi 0 0 hT'; dsimp only; omega)
 
 /-- The flag's word, apart from what the function and the slots `l` write. -/
 theorem flag_unch_mulWF (hT : MulTmp c) {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW c l ++ mulWF c) m m')
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l)
-    (hlA : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 82 := by decide) :
+    (hlA : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 := by decide) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega)
@@ -435,7 +437,7 @@ theorem mulAt_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hT :
     (hC : Law c.C) (hv : c.mulFn.allInstrs (fun i => (vdstOf i).isNone) = true)
     (hnf : c.mulFn.noFrames = true) {name : String} {px py : Nat}
     (hpx45 : px < 45) (hpy45 : py < 45) (hpxl : px ∉ [RX, RY, BM, TMP]) (hpyl : py ∉ [RX, RY, BM, TMP])
-    (hpyA : py ≠ 54 ∧ py ≠ 82)
+    (hpyA : py ≠ 54 ∧ py ≠ 61 ∧ py ≠ 82)
     {base : Addr} {g : Reg → BitVec 64} {s : State} (hs : Scr s base size) (F : Fixed c base g s.mem)
     (hpx : sv c base s px < c.C.p) (hpy : sv c base s py < c.C.p)
     (hP : onCurve c.C (.affine (tmv c.C c.n base s (c.sl px)) (tmv c.C c.n base s (c.sl py))) = true) :

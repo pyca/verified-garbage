@@ -89,12 +89,12 @@ def scalars : Prog isa :=
 
 /-- `u` and `v`, from `w R mod n` in `ACC`. -/
 def uv : Prog isa :=
-  progs [opProg c.MN' (.mul (c.sl EM') (c.sl D) (c.sl R2N)),
-    opProg c.MN' (.mul (c.sl RM') (c.sl K) (c.sl R2N)),
-    opProg c.MN' (.mul (c.sl UM) (c.sl EM') (c.sl ACC)),
-    opProg c.MN' (.mul (c.sl VM) (c.sl RM') (c.sl ACC)),
-    opProg c.MN' (.mul (c.sl U) (c.sl UM) (c.sl ONE)),
-    opProg c.MN' (.mul (c.sl V) (c.sl VM) (c.sl ONE))]
+  progs [opProg c.MNS (.mul (c.sl EM') (c.sl D) (c.sl R2N)),
+    opProg c.MNS (.mul (c.sl RM') (c.sl K) (c.sl R2N)),
+    opProg c.MNS (.mul (c.sl UM) (c.sl EM') (c.sl ACC)),
+    opProg c.MNS (.mul (c.sl VM) (c.sl RM') (c.sl ACC)),
+    opProg c.MNS (.mul (c.sl U) (c.sl UM) (c.sl ONE)),
+    opProg c.MNS (.mul (c.sl V) (c.sl VM) (c.sl ONE))]
 
 /-- `U = R`, then `R = O = (0 : 1 : 0)`. -/
 def save : List Instr :=
@@ -103,7 +103,7 @@ def save : List Instr :=
 
 /-- `R = U + R`, through `D`. -/
 def sum : Prog isa :=
-  .seq (fprogB c.MP' (rcb c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
+  .seq (fprogB c.MPS (rcb c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
     (.block (copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++
       copy c.n (c.sl RZ) (c.sl DZ)))
 
@@ -115,9 +115,9 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
 and `x R - r R mod n`, the checks of `Z` and of `x ≡ r`, and the result. -/
 def final : Prog isa :=
-  progs [.block (Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)),
-    .block (Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)),
-    opProg c.MN' (.mul (c.sl XN) (c.sl X) (c.sl R2N)),
+  progs [c.mulPS (c.sl XM) (c.sl RX) (c.sl ACC),
+    c.mulPS (c.sl X) (c.sl XM) (c.sl ONE),
+    opProg c.MNS (.mul (c.sl XN) (c.sl X) (c.sl R2N)),
     .block (Mont.X86_64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')),
     .block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.checkZero c (c.sl W) ++ finish c)]
 
