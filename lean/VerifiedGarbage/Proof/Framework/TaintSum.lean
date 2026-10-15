@@ -615,6 +615,26 @@ def findSumCode [Frame A] (same : Prog M → Prog M → Bool) (c : Prog M) (τ :
     if same c' c && Mono.R (A := A) pre τ then some (k, Frame.join post (Frame.frameOf τ F))
     else findSumCode same c τ S (k + 1)
 
+/-- The name of the call that `c` starts with (possibly in a frame), if any. -/
+def entryCall : Prog M → Option String
+  | .call n _ => some n
+  | .seq c _ => entryCall c
+  | .frame _ c _ => entryCall c
+  | _ => none
+
+/-- Whether the hint starts with a summary. -/
+def SHint.leadsWithSum {T : Type} : SHint T → Bool
+  | .sum _ => true
+  | .seq _ h _ => h.leadsWithSum
+  | .frame h => h.leadsWithSum
+  | _ => false
+
+/-- Whether `S` has a summary of a call of `n`. -/
+def hasCallSum {T : Type} (S : List (Summary M T)) (n : String) : Bool :=
+  S.any fun (c, _) => match c with
+    | .call n' _ => n' == n
+    | _ => false
+
 /-- The hint of a summary, if `o` found one, or `k ()`. -/
 def sumOr {T : Type} (o : Option (Nat × T)) (k : Unit → Option (T × SHint T)) :
     Option (T × SHint T) :=
@@ -623,25 +643,48 @@ def sumOr {T : Type} (o : Option (Nat × T)) (k : Unit → Option (T × SHint T)
   | none => k ()
 
 /-- `hint`, using the first summary that applies at each call (by its name),
-and at any other code that is a summary's (by `same`). -/
-def hintSum [Frame A] (S : List (Summary M A.T)) (same : Prog M → Prog M → Bool) :
-    A.T → Prog M → Option (A.T × SHint A.T)
-  | τ, .block is => sumOr (findSumCode A same (.block is) τ S 0) fun _ =>
+and at any other code that is a summary's (by `same`). `anc` are the taints
+on entry to the enclosing `seq`s of the same function, outermost last.
+
+A summarized call that the second part of a `seq` starts with may apply only
+from what an earlier taint knew about memory (`Mono.R` compares memory exactly,
+and the code since then learned more): then the analysis continues after the
+first part from that taint's knowledge with what is public there
+(`Frame.join a (Frame.frameOf τ₁ τ₁)`, if it is at most `τ₁`). The check
+(`checkSum`) checks the `seq` (`le`) and the summary (`Mono.R`), so a wrong
+guess only fails it. -/
+def hintSumA [Frame A] (S : List (Summary M A.T)) (same : Prog M → Prog M → Bool) :
+    List A.T → A.T → Prog M → Option (A.T × SHint A.T)
+  | _, τ, .block is => sumOr (findSumCode A same (.block is) τ S 0) fun _ =>
     (A.checkBlock τ is).map fun τ' => (τ', .block (chunkHints A chunk τ is is.length))
-  | τ, .seq c₁ c₂ => sumOr (findSumCode A same (.seq c₁ c₂) τ S 0) fun _ =>
-    (hintSum S same τ c₁).bind fun (τ₁, h₁) =>
-      (hintSum S same τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
-  | τ, .ite cd t e => sumOr (findSumCode A same (.ite cd t e) τ S 0) fun _ =>
-    (hintSum S same τ t).bind fun (τ₁, h₁) => (hintSum S same τ e).map fun (τ₂, h₂) =>
+  | anc, τ, .seq c₁ c₂ => sumOr (findSumCode A same (.seq c₁ c₂) τ S 0) fun _ =>
+    (hintSumA S same anc τ c₁).bind fun (τ₁, h₁) =>
+      let anc' := τ :: anc
+      let plain := (hintSumA S same anc' τ₁ c₂).map fun (τ₂, h₂) => (τ₂, .seq τ₁ h₁ h₂)
+      match entryCall c₂ with
+      | some n =>
+        if hasCallSum S n && !(plain.any fun (_, h) => match h with
+            | .seq _ _ h₂ => h₂.leadsWithSum
+            | _ => false) then
+          (anc'.findSome? fun a =>
+            let m := Frame.join a (Frame.frameOf τ₁ τ₁)
+            if A.le m τ₁ then
+              (hintSumA S same anc' m c₂).bind fun (τ₂, h₂) =>
+                if h₂.leadsWithSum then some (τ₂, .seq m h₁ h₂) else none
+            else none) <|> plain
+        else plain
+      | none => plain
+  | anc, τ, .ite cd t e => sumOr (findSumCode A same (.ite cd t e) τ S 0) fun _ =>
+    (hintSumA S same anc τ t).bind fun (τ₁, h₁) => (hintSumA S same anc τ e).map fun (τ₂, h₂) =>
       (A.meet τ₁ τ₂, .ite h₁ h₂)
-  | τ, .loop body c => sumOr (findSumCode A same (.loop body c) τ S 0) fun _ =>
-    go c (hintSum S same · body) loopFuel τ
-  | τ, .call n body => match findSum A n τ S 0 with
+  | anc, τ, .loop body c => sumOr (findSumCode A same (.loop body c) τ S 0) fun _ =>
+    go c (hintSumA S same anc · body) loopFuel τ
+  | _, τ, .call n body => match findSum A n τ S 0 with
     | some (k, post) => some (post, .sum k)
-    | none => (A.call τ).bind fun τ₁ => (hintSum S same τ₁ body).bind fun (τ₂, h) =>
+    | none => (A.call τ).bind fun τ₁ => (hintSumA S same [] τ₁ body).bind fun (τ₂, h) =>
       (A.ret τ₂).map (·, .call h)
-  | τ, .frame i body j => sumOr (findSumCode A same (.frame i body j) τ S 0) fun _ =>
-    (A.push τ i).bind fun τ₁ => (hintSum S same τ₁ body).bind fun (τ₂, h) =>
+  | _, τ, .frame i body j => sumOr (findSumCode A same (.frame i body j) τ S 0) fun _ =>
+    (A.push τ i).bind fun τ₁ => (hintSumA S same [] τ₁ body).bind fun (τ₂, h) =>
       (A.pop τ₂ j).map (·, .frame h)
 where
   go (c : M.Cond) (body : A.T → Option (A.T × SHint A.T)) :
@@ -649,6 +692,11 @@ where
     | 0, _ => none
     | n + 1, σ => (body σ).bind fun (σ', h) =>
       if A.le σ σ' && A.condPub σ' c then some (σ', .loop σ h) else go c body n (A.meet σ σ')
+
+/-- `hintSumA` from the start of a function. -/
+def hintSum [Frame A] (S : List (Summary M A.T)) (same : Prog M → Prog M → Bool) (τ : A.T)
+    (c : Prog M) : Option (A.T × SHint A.T) :=
+  hintSumA A S same [] τ c
 
 /-- The taint at the end of `hintSum` and its hint (`τ` and any hint, if the
 analysis fails). -/
