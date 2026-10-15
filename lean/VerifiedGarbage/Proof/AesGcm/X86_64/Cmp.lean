@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+import VerifiedGarbage.Proof.AesGcm.X86_64.CopyTag
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -202,7 +203,7 @@ theorem recv_ok {s : State} (he : Env Ctx St W SP s) {t : Nat} (hbx : s.gpr .rbx
   have lp : LoopPre s₁ T (W + BitVec.ofNat 64 256) t :=
     ⟨hsi₁, hdi, hcx, h1, by omega, by rw [hrd₁, hwr₁]; exact hT, he₁.perm.wC (by omega),
       dW.sub_right (Region.sub_prefix h16)⟩
-  refine WP.mono (copyLoop_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_
+  refine WP.mono (copyTag_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_
   have fz : Frame [⟨W + BitVec.ofNat 64 256, 16⟩] s.mem s₁.mem := by rw [hm₁]; exact zeroT_frame _ _
   have hR : bytesAt s₁.mem T t = bytesAt s.mem T t :=
     bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dW) (by omega)
@@ -254,7 +255,7 @@ theorem cmp_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx St W
   have lp : LoopPre s₁ (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 240) t :=
     ⟨hsi, hdi, hcx, h1, by omega, covers_left (he₁.perm.wC (by omega)), he₁.perm.wC (by omega),
       dW.sub_right (Region.sub_prefix h16)⟩
-  refine WP.seq (WP.mono (copyLoop_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_)
+  refine WP.seq (WP.mono (copyTag_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_)
   have fz : Frame [⟨W + BitVec.ofNat 64 240, 16⟩] s.mem s₁.mem := by rw [hm₁]; exact zeroT_frame _ _
   have hT : bytesAt s₁.mem (W + BitVec.ofNat 64 o) t = bytesAt s.mem (W + BitVec.ofNat 64 o) t :=
     bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dW) (by omega)
