@@ -201,6 +201,52 @@ theorem p2_loads {s₀ : State} (hp : Pre s₀) {mB : Mem} {b : Nat} (hb : b < 8
   · rw [v₈]
     exact h.tl hp hb (i := 3) (by decide) he
 
+/-! ## Zetas -/
+
+theorem zrep_dup {x : BitVec 128} {k K K₀ : Nat} {kz : List Nat}
+    (hx : vhalf x k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta K))
+    (hK : ∀ e < 8, K₀ + kz.getD e 0 = K) : ZRep (ofVHalves fun _ => vhalf x k) K₀ kz :=
+  fun e he => by dsimp only; rw [vhalf_ofVHalves _ he, hx, hK e he]
+
+theorem trep_dup {x : BitVec 128} {k K K₀ : Nat} {kz : List Nat}
+    (hx : vhalf x k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta K)))
+    (hK : ∀ e < 8, K₀ + kz.getD e 0 = K) : TRep (ofVHalves fun _ => vhalf x k) K₀ kz :=
+  fun e he => by dsimp only; rw [vhalf_ofVHalves _ he, hx, hK e he]
+
+theorem zrep_zip2_tab {x : BitVec 128} {b : Nat}
+    (hx : ∀ e < 8, vhalf x e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 0 + e) 0)) :
+    ZRep (VPermOp.eval .zip2 .h8 x x) (32 + 4 * b) [0, 0, 1, 1, 2, 2, 3, 3] := fun e he => by
+  rw [vhalf_perm_h8 _ _ _ he]
+  simp only [ite_self]
+  rw [hx _ (by omega), show 8 * 0 + (4 + e / 2) = 4 + e / 2 by omega,
+    (blockHalves_get b (e := 4 + e / 2) (by omega)).1]
+  match e, he with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ => rfl
+
+theorem trep_zip2_tab {x : BitVec 128} {b : Nat}
+    (hx : ∀ e < 8, vhalf x e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 1 + e) 0)) :
+    TRep (VPermOp.eval .zip2 .h8 x x) (32 + 4 * b) [0, 0, 1, 1, 2, 2, 3, 3] := fun e he => by
+  rw [vhalf_perm_h8 _ _ _ he]
+  simp only [ite_self]
+  rw [hx _ (by omega), show 8 * 1 + (4 + e / 2) = 8 + (4 + e / 2) by omega,
+    (blockHalves_get b (e := 4 + e / 2) (by omega)).2.1]
+  match e, he with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ => rfl
+
+theorem zrep_z7 {x : BitVec 128} {b : Nat}
+    (hx : ∀ e < 8, vhalf x e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 2 + e) 0)) :
+    ZRep x (64 + 8 * b) (seg 0) := fun e he => by
+  dsimp only
+  rw [hx e he, seg_getD _ he, Nat.zero_add, show 8 * 2 + e = 16 + e by omega,
+    (blockHalves_get b he).2.2.1]
+
+theorem trep_z7 {x : BitVec 128} {b : Nat}
+    (hx : ∀ e < 8, vhalf x e = BitVec.ofNat 16 ((blockHalves b).getD (8 * 3 + e) 0)) :
+    TRep x (64 + 8 * b) (seg 0) := fun e he => by
+  dsimp only
+  rw [hx e he, seg_getD _ he, Nat.zero_add, show 8 * 3 + e = 24 + e by omega,
+    (blockHalves_get b he).2.2.2]
+
 end
 
 end VG.Proof.MlKem.AArch64.Ntt16
