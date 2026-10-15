@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.X86.ModeCore
+public import VerifiedGarbage.Proof.Sm4.X86.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.X86.CryptSum
 public import VerifiedGarbage.Proof.Modes.X86.Modes
 meta import VerifiedGarbage.Proof.Modes.X86.Modes
 public import VerifiedGarbage.Proof.Sm4.CbcScratch
@@ -163,13 +165,15 @@ theorem cbcTaint_agree {enc : Bool} {s₁ s₂ : State} (h₁ : (cbcX86 enc).pre
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
-theorem cbcEncrypt_ct : ConstantTime isa (cbcX86 true).pre (cbcX86 true).pub cbcEncrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem cbcEncrypt_ct : ConstantTime isa (cbcX86 true).pre (cbcX86 true).pub cbcEncrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check cbcTaint cbcEncrypt h).isSome = true :=
+    by taint_decide_sum [cryptSumCbc]
+  exact VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp) h
 
-theorem cbcDecrypt_ct : ConstantTime isa (cbcX86 false).pre (cbcX86 false).pub cbcDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem cbcDecrypt_ct : ConstantTime isa (cbcX86 false).pre (cbcX86 false).pub cbcDecrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check cbcTaint cbcDecrypt h).isSome = true :=
+    by taint_decide_sum [cryptSumCbc]
+  exact VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/
 
