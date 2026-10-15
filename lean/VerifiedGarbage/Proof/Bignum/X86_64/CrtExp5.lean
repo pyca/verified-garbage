@@ -55,20 +55,19 @@ theorem crtExpRanges5_arr (wx : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h
     simp only [Crt.sPow, sFn] at *; omega_arith
   · exact crtExpRanges_arr wx hj h1 h2 h3 h4 (n := 32) r hr
 
+/-- Two different header words are disjoint. -/
+theorem hdr_sep {k s : Nat} (h : k ≠ s) : 8 * k + 8 ≤ 8 * s ∨ 8 * s + 8 ≤ 8 * k := by omega
+
 /-- A header slot that `expLoop5`'s ranges miss. -/
 theorem crtExpRanges5_hdr (wx : Nat) {k : Nat} (hk : k < 32) (h0 : k ≠ Crt.sPow) (h1 : k ≠ Crt.sExp)
     (h2 : k ≠ Crt.sExpLen) (h3 : k ≠ Crt.sI) (h4 : k ≠ Crt.sTab) (h5 : k ≠ Crt.sV) (h6 : k ≠ Crt.sBit)
     (h7 : k ≠ Crt.sNib) (h8 : k ≠ Crt.sEnt) (h9 : k ≠ Crt.sJ) :
     ∀ r ∈ crtExpRanges5 wx, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  have := hdr_lt_slot wx 8 hk
-  have := hdr_lt_slot wx aAcc hk
-  have := hdr_lt_slot wx aTmp hk
-  have := hdr_lt_slot wx aY hk
-  have := hdr_lt_slot wx Crt.aT hk
   simp only [crtExpRanges5, crtExpRanges, crtWinRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-    simp only [Crt.sPow, Crt.sExp, Crt.sExpLen, Crt.sI, Crt.sTab, Crt.sV, Crt.sBit, Crt.sNib, Crt.sEnt, Crt.sJ,
-      sFn] at * <;> omega_arith
+  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl)
+  exacts [hdr_sep h0, hdr_sep h1, hdr_sep h2, hdr_sep h3, hdr_sep h4, Or.inl (hdr_lt_slot wx _ hk),
+    Or.inl (hdr_lt_slot wx _ hk), Or.inl (hdr_lt_slot wx _ hk), Or.inl (hdr_lt_slot wx _ hk),
+    Or.inl (hdr_lt_slot wx _ hk), hdr_sep h5, hdr_sep h6, hdr_sep h7, hdr_sep h8, hdr_sep h9]
 
 /-- What changes only within `expLoop5`'s ranges keeps the context. -/
 theorem CExpCtx.of_frm5 {t t' : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc : Nat}
