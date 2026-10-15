@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Finalize
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Update
 public import VerifiedGarbage.Proof.Sha512.Scratch
+public import VerifiedGarbage.Proof.Sha512.Digest
 public import VerifiedGarbage.Spec.Sha512.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -158,5 +159,102 @@ theorem finalize : Verified PPC64LE.target
     finalizeScratch (by decide) (by decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizePost_local _)
     (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-! ## The truncated digests
+
+`finalize384`, `finalize512_256` and `finalize512_224` write the first 48,
+32 and 28 bytes of the final hash value (`finalizeDPPC64LE`); for the
+algorithm's initial hash value, that is its digest. Widened to the shared
+scratch and with their working space in a frame of their own, they are
+`Spec.Sha512.finalizeDigestContract`. -/
+
+/-- `finalizeDPPC64LE D` with 1376 bytes of scratch, for the `D`-byte `digest`
+of the messages hashed from `iv`. -/
+def finalizeDigestWide (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byte → List Byte) :
+    Contract PPC64LE.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .r3, 192⟩
+    let out : Region := ⟨s.gpr .r5, D⟩
+    let scratch : Region := ⟨s.gpr .r6, 1376⟩
+    s.rd = [] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch
+  post s s' := ∀ m, Spec.Sha512.Repr iv s.mem (s.gpr .r3) m → m.length < 2 ^ 64 →
+    s.gpr .r4 = BitVec.ofNat 64 m.length → Spec.Sha512.bytesAt s'.mem (s.gpr .r5) D = digest m
+  pub s₁ s₂ :=
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
+
+theorem finalizeDigestWide_of {code : Prog isa} {D : Nat} {iv : Spec.Sha512.HashValue}
+    {digest : List Byte → List Byte} (hv : Verified PPC64LE.target code (Proof.Sha512.finalizeDPPC64LE D))
+    (hdg : ∀ m, (Spec.Sha512.finalHash iv m).take D = digest m)
+    (hsat : ∃ s, (finalizeDigestWide iv D digest).pre s) :
+    Verified PPC64LE.target code (finalizeDigestWide iv D digest) :=
+  Verified.widen hv
+    (fun s => [⟨s.gpr .r3, 192⟩, ⟨s.gpr .r5, D⟩, ⟨s.gpr .r6, 224⟩])
+    (fun _ ⟨h₁, _, h₃, h₄, h₅⟩ => ⟨h₁, rfl, h₃, h₄.sub_right (sub224 _), h₅.sub_right (sub224 _)⟩)
+    (fun _ ⟨_, h₂, _⟩ => h₂ ▸ .cons (pfx rfl) (.cons ⟨rfl, Nat.le_refl _⟩ (.cons (pfx rfl) .nil)))
+    (fun _ _ _ h m hr hl hc => (h iv m hr hl hc).trans (hdg m)) (fun _ _ _ _ h => h) hsat
+
+/-- A state satisfying `finalizeDigestWide.pre`. -/
+def finalizeDigestSat (D : Nat) : State :=
+  { Proof.Sha512.PPC64LE.Stream.Finalize.sat with
+    wr := [⟨0x1000, 192⟩, ⟨0x2000, D⟩, ⟨0x3000, 1376⟩] }
+
+theorem finalizeDigestScratchImplies48 (iv : Spec.Sha512.HashValue) (digest : List Byte → List Byte) :
+    (finalizeDigestWide iv 48 digest).Implies (Proof.Sha512.finalizeDigestScratchContract PPC64LE.abi iv 48 digest 0) := by
+  contract_implies [Proof.Sha512.finalizeDigestScratchContract, Proof.Sha512.finalizeDigestScratchSig,
+    Spec.Sha512.finalizeDigestPost, finalizeDigestWide, PPC64LE.abi, PPC64LE.argRegs]
+    [finalizeDigestSat, Proof.Sha512.PPC64LE.Stream.Finalize.sat] using finalizeDigestSat 48
+
+theorem finalizeDigestScratchImplies32 (iv : Spec.Sha512.HashValue) (digest : List Byte → List Byte) :
+    (finalizeDigestWide iv 32 digest).Implies (Proof.Sha512.finalizeDigestScratchContract PPC64LE.abi iv 32 digest 0) := by
+  contract_implies [Proof.Sha512.finalizeDigestScratchContract, Proof.Sha512.finalizeDigestScratchSig,
+    Spec.Sha512.finalizeDigestPost, finalizeDigestWide, PPC64LE.abi, PPC64LE.argRegs]
+    [finalizeDigestSat, Proof.Sha512.PPC64LE.Stream.Finalize.sat] using finalizeDigestSat 32
+
+theorem finalizeDigestScratchImplies28 (iv : Spec.Sha512.HashValue) (digest : List Byte → List Byte) :
+    (finalizeDigestWide iv 28 digest).Implies (Proof.Sha512.finalizeDigestScratchContract PPC64LE.abi iv 28 digest 0) := by
+  contract_implies [Proof.Sha512.finalizeDigestScratchContract, Proof.Sha512.finalizeDigestScratchSig,
+    Spec.Sha512.finalizeDigestPost, finalizeDigestWide, PPC64LE.abi, PPC64LE.argRegs]
+    [finalizeDigestSat, Proof.Sha512.PPC64LE.Stream.Finalize.sat] using finalizeDigestSat 28
+
+theorem finalizeDigestScratchImplies (iv : Spec.Sha512.HashValue) (digest : List Byte → List Byte) {D : Nat}
+    (hD : D = 48 ∨ D = 32 ∨ D = 28) :
+    (finalizeDigestWide iv D digest).Implies (Proof.Sha512.finalizeDigestScratchContract PPC64LE.abi iv D digest 0) := by
+  rcases hD with rfl | rfl | rfl
+  exacts [finalizeDigestScratchImplies48 iv digest, finalizeDigestScratchImplies32 iv digest,
+    finalizeDigestScratchImplies28 iv digest]
+
+/-- A truncated digest's `finalize`, with its working space in a frame of its own. -/
+theorem finalizeDigest_of {code : Prog isa} {D : Nat} {iv : Spec.Sha512.HashValue}
+    {digest : List Byte → List Byte} (hD : D = 48 ∨ D = 32 ∨ D = 28)
+    (hv : Verified PPC64LE.target code (Proof.Sha512.finalizeDPPC64LE D))
+    (hdg : ∀ m, (Spec.Sha512.finalHash iv m).take D = digest m) :
+    Verified PPC64LE.target (Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 code)
+      (Spec.Sha512.finalizeDigestContract PPC64LE.abi iv D digest (0 + 1408)) := by
+  have hi := finalizeDigestScratchImplies iv digest hD
+  have h := (finalizeDigestWide_of hv hdg hi.sat_left).of_implies hi
+  rcases hD with rfl | rfl | rfl <;>
+  exact PPC64LE.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 0) (bytes := 1408)
+    h (by decide) (by decide)
+    (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (PPC64LE.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+theorem finalize384 : Verified PPC64LE.target
+    (Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize384)
+    (Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_384 48 Spec.Sha512.sha384 (0 + 1408)) :=
+  finalizeDigest_of (.inl rfl) Proof.Sha512.PPC64LE.Stream.Finalize.finalize384_verified fun _ => rfl
+
+theorem finalize512_256 : Verified PPC64LE.target
+    (Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_256)
+    (Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_512_256 32 Spec.Sha512.sha512_256
+      (0 + 1408)) :=
+  finalizeDigest_of (.inr (.inl rfl)) Proof.Sha512.PPC64LE.Stream.Finalize.finalize512_256_verified fun _ => rfl
+
+theorem finalize512_224 : Verified PPC64LE.target
+    (Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_224)
+    (Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_512_224 28 Spec.Sha512.sha512_224
+      (0 + 1408)) :=
+  finalizeDigest_of (.inr (.inr rfl)) Proof.Sha512.PPC64LE.Stream.Finalize.finalize512_224_verified fun _ => rfl
 
 end VG.Proof.Sha512.PPC64LE.Shared

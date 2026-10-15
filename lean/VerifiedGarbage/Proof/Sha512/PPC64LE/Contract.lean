@@ -115,4 +115,21 @@ def finalizePPC64LE : Contract PPC64LE.isa where
     s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
 
+open PPC64LE in
+/-- `finalizePPC64LE` writing the first `D` bytes of the final hash value (`D`
+at most 64): the digest of SHA-384, SHA-512/256 or SHA-512/224 for `D` = 48,
+32 or 28, of SHA-512 for 64. `out` is `D` bytes. -/
+def finalizeDPPC64LE (D : Nat) : Contract PPC64LE.isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .r3, 192⟩
+    let out : Region := ⟨s.gpr .r5, D⟩
+    let scratch : Region := ⟨s.gpr .r6, 224⟩
+    s.rd = [] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch
+  post s s' := ∀ iv m, Repr iv s.mem (s.gpr .r3) m → m.length < 2 ^ 64 →
+    s.gpr .r4 = BitVec.ofNat 64 m.length → bytesAt s'.mem (s.gpr .r5) D = (finalHash iv m).take D
+  pub s₁ s₂ :=
+    s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
+    s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
+
 end VG.Proof.Sha512

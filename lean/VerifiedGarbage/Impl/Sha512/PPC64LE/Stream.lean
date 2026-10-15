@@ -126,7 +126,16 @@ def finalizeBody : Prog isa :=
   (.seq compressAt
     (.block [.li .r30 0, .subi .r31 .r31 1])))))))
 
-def finalize : Prog isa :=
+/-- Word `k` of the final hash value to `out`, big-endian. -/
+def outW (k : Nat) : List Instr := [.load .d .r8 .r26 (8 * k), .li .r11 (8 * k), .storeRev .d .r8 .r28 .r11]
+
+/-- The high half of word `k` (at offset `8 k + 4`, little-endian) to `out`,
+big-endian: the last 4 bytes of SHA-512/224's digest, for `k = 3`. -/
+def outHi (k : Nat) : List Instr :=
+  [.load .w .r8 .r26 (8 * k + 4), .li .r11 (8 * k), .storeRev .w .r8 .r28 .r11]
+
+/-- `finalize`, writing the digest with `o`. -/
+def finalizeWith (o : List Instr) : Prog isa :=
   .seq (.block (save .r6 ++ [mov .r26 .r3, mov .r27 .r6, mov .r28 .r5, mov .r29 .r4,
       .li .r8 127, .logic .and .r30 .r29 .r8,
       -- The `0x80` byte.
@@ -134,8 +143,19 @@ def finalize : Prog isa :=
       -- Two blocks iff that leaves fewer than 16 bytes for the length (r ≥ 113).
       .addi .r31 .r30 15, .lsr .d .r31 .r31 7]))
   (.seq (.loop finalizeBody (.zero .d .r31))
-    (.block ((List.range 8).flatMap (fun k =>
-        [.load .d .r8 .r26 (8 * k), .li .r11 (8 * k), .storeRev .d .r8 .r28 .r11]) ++
-      restore)))
+    (.block (o ++ restore)))
+
+/-- SHA-512's: all of the final hash value, 8 words. -/
+def finalize : Prog isa := finalizeWith ((List.range 8).flatMap outW)
+
+/-! ## The truncated digests
+
+SHA-384's and SHA-512/256's `finalize` write the first 6 and 4 words of the
+final hash value, SHA-512/224's the first 3 and the high half of the fourth
+(28 bytes). -/
+
+def finalize384 : Prog isa := finalizeWith ((List.range 6).flatMap outW)
+def finalize512_256 : Prog isa := finalizeWith ((List.range 4).flatMap outW)
+def finalize512_224 : Prog isa := finalizeWith ((List.range 3).flatMap outW ++ outHi 3)
 
 end VG.Impl.Sha512.PPC64LE.Stream
