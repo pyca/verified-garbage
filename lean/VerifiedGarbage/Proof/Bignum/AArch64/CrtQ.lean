@@ -249,7 +249,7 @@ theorem qPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVe
     exact VG.Proof.Bignum.mont_cancel hR (by rw [hm₄, hv₃ hd])
   · by_cases h : r = .x0
     · subst h; rw [hdi, hg.x0]
-    · exact kall.gpr r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+    · exact kall.gpr r (by simp only [List.mem_append, List.mem_singleton, hr, h, or_self, not_false_eq_true])
 
 /-- A change to arrays of a prime's workspace but `X` and 1. -/
 theorem SubCtx.of_arrays {s t : State} {B : Addr} {Z o w wx : Nat} {mx : BitVec 64} {X : Nat} {js : List Nat}

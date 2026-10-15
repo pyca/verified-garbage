@@ -354,9 +354,8 @@ theorem addBack_two {W y m qh : Nat} (hm : 0 < m) (hW : 4 * m < W / 2)
   generalize y % m = r at *
   subst hyP
   unfold addIfNeg
-  rcases (show c = 0 ∨ c = 1 ∨ c = 2 by omega_using [hc]) with rfl | rfl | rfl <;>
-    (try simp only [Nat.zero_mul, Nat.one_mul,
-        Nat.add_zero]) <;> push_cast <;> by_cases ha : (P : Int) + r - P < 0 <;> by_cases hb : (P : Int) + r - (P + m) < 0 <;> by_cases hc : (P : Int) + r - (P + 2 * m) < 0 <;> simp_all <;> omega_arith
+  rcases (show c = 0 ∨ c = 1 ∨ c = 2 by omega_using [hc]) with rfl | rfl | rfl <;> push_cast <;>
+    (repeat' split) <;> omega_arith
 
 /-! ## The step -/
 

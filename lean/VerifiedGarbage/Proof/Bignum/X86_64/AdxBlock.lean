@@ -177,8 +177,8 @@ theorem halfA_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z) (h8 : 
     (word s.mem B (e + 8 * j + 8 * 3)).isLt (s.gpr .rcx).isLt (s₃.gpr .r11).isLt (s₄.gpr .r12).isLt
     (s₅.gpr .r13).isLt (s₆.gpr .r15).isLt (t.gpr .rcx).isLt e₀ e₁ e₂ e₃ e₄
   refine ⟨?_, ?_, ?_, ?_, K.mono (by decide)⟩
-  · rw [ca₅]; cases a₅ <;> simp_all
-  · rw [oa₅]; cases p₅ <;> simp_all
+  · rw [ca₅, Bool.toNat_eq_zero.mp z₁]
+  · rw [oa₅, Bool.toNat_eq_zero.mp z₂]
   · rw [(k₇.gpr (by decide)).trans ((k₆.gpr (by decide)).trans x₅)]
     exact x₂
   · rw [r11, r12, r13, r15]; exact e
