@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.PPC64LE.Isa
+module
+
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # Constant-time byte comparison on PPC64LE
@@ -9,6 +11,8 @@ first; if they are equal, the XORs of the bytes at each offset are ORed
 together into `r7`, and the result is `(r7 - 1) >> 63`, which is 1 iff `r7`
 is zero. The branches are on the lengths only.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Ct.PPC64LE
 open VG.PPC64LE

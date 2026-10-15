@@ -1,6 +1,12 @@
-import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
-import VerifiedGarbage.Proof.Hmac.Common
-import VerifiedGarbage.Impl.Hmac.PPC64LE
+module
+
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
+public import VerifiedGarbage.Proof.Hmac.Common
+public import VerifiedGarbage.Impl.Hmac.PPC64LE
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-256 on PPC64LE: common lemmas
@@ -9,6 +15,8 @@ Untrusted: everything here is checked by Lean. Words copied between memory
 regions; the memory lemmas themselves are target-independent and shared with
 the other targets (`VG.Proof.Hmac.Common`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Hmac.PPC64LE
 open VG VG.PPC64LE

@@ -1,12 +1,27 @@
-import VerifiedGarbage.Impl.Ct.PPC64LE
-import VerifiedGarbage.Proof.Ct.Common
-import VerifiedGarbage.Proof.Framework.PPC64LE.Run
-import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
-import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.Ct.Contract
-import VerifiedGarbage.TCB.PPC64LE.Target
+module
+
+public import VerifiedGarbage.Impl.Ct.PPC64LE
+meta import VerifiedGarbage.Impl.Ct.PPC64LE
+public import VerifiedGarbage.Proof.Ct.Common
+meta import VerifiedGarbage.Proof.Ct.Common
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Spec.Ct.Contract
+meta import VerifiedGarbage.Spec.Ct.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Target
+meta import VerifiedGarbage.TCB.PPC64LE.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Constant-time byte comparison on PPC64LE
@@ -14,6 +29,8 @@ import VerifiedGarbage.TCB.PPC64LE.Target
 Untrusted: everything here is checked by Lean. The same structure as the
 AArch64 proof (`VG.Proof.Ct.AArch64`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Ct.PPC64LE
 open VG VG.PPC64LE VG.Impl.Ct.PPC64LE

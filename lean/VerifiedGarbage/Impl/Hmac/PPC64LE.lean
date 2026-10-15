@@ -1,5 +1,7 @@
-import VerifiedGarbage.Impl.Sha256.PPC64LE.Stream
-import VerifiedGarbage.Spec.Sha256.Contract
+module
+
+public import VerifiedGarbage.Impl.Sha256.PPC64LE.Stream
+public import VerifiedGarbage.Spec.Sha256.Contract
 
 /-!
 # HMAC-SHA-256: PPC64LE implementation
@@ -19,6 +21,8 @@ streaming states (`inner`, `outer`; see `VG.Spec.Hmac`).
 Both move the link register to `r0` and save it in a frame around the
 whole function, as the streaming SHA-256 functions do.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Hmac.PPC64LE
 

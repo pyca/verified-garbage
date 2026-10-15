@@ -1,6 +1,12 @@
-import VerifiedGarbage.Spec.Hmac
-import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
-import VerifiedGarbage.Proof.Framework.PowLit
+module
+
+public import VerifiedGarbage.Spec.Hmac
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Contract
+public import VerifiedGarbage.Proof.Framework.PowLit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # HMAC-SHA-256: the PPC64LE contracts
@@ -18,6 +24,8 @@ The arguments are in `r3`–`r7` (ELFv2), and `bl` leaves the return address
 in the link register rather than on the stack, so unlike on x86-64 there is
 no return address for the regions to avoid.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Hmac
 
