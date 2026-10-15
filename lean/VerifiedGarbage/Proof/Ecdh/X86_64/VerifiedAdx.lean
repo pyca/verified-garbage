@@ -49,11 +49,13 @@ theorem mulQJP256x_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.Law 
     (Weierstrass.unitMod_pow_two (p256x_ok hI).p_odd _) hL (p256x_ok hI).am3) (Nat.le_of_eq Proof.P256.X86_64.n_mod32.symm)
     Proof.P256.X86_64.n_ge64
 
+theorem ecdh_inlineOk_adx : exchangeP256Adx.InlineOk = true := by lit_decide
+
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP256Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
   ecdh_x86_of (p256x_ok hI) hL (mulQJP256x_ok hI hL hO) (mulQJ_w (p256x_ok hI))
-    (fun _ h => { pre_of h with }) (fun _ _ => post_of) rfl (by lit_decide) (by lit_decide) (by lit_decide) s hs
+    (fun _ h => { pre_of h with }) (fun _ _ => post_of) rfl ecdh_inlineOk_adx (by lit_decide) s hs
 
 /-- `exchangeP256Adx` without its displacements, as a literal of shared blocks
 (`materialize_shared`): what its constant-time check analyses
@@ -79,7 +81,7 @@ theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstra
     (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
     Verified X86_64.target exchangeP256Adx
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies8
+  Verified.of_inline_ct ecdh_inlineOk_adx (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64

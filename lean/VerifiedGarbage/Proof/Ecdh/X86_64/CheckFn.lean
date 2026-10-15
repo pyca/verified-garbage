@@ -122,6 +122,20 @@ theorem valid_iff (W : Spec.Weierstrass.Curve) (C : CP) (h : W = C.W) (x y : Nat
   unfold Spec.Weierstrass.CheckPoint.Curve.Valid
   rw [onCurve_iff']
 
+/-- `correct`'s `hv` and `hmx` from one walk of the body: the instructions
+`invFnX` adds around it load no MXCSR. -/
+theorem hv_hmx {body : Prog isa}
+    (h : body.allInstrs (fun i => !KeepReg.writesVec i && !loadsMxcsr i) = true) :
+    body.allInstrs (fun i => !KeepReg.writesVec i) = true ∧
+      (Cfg.invFnX body).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [Code.allInstrs_eq, List.all_eq_true, Bool.and_eq_true] at h ⊢
+  refine ⟨fun i hi => (h i hi).1, ?_⟩
+  simp only [Cfg.invFnX, instrs, List.mem_append]
+  rintro i (hi | hi | hi)
+  · revert i; decide
+  · exact (h i hi).2
+  · revert i; decide
+
 /-- `vg_<curve>_check_point`: the contract's postcondition and the ABI's
 registers, from its precondition. -/
 theorem correct (hc : BaseCfgOk c) (A : Agree c C)
