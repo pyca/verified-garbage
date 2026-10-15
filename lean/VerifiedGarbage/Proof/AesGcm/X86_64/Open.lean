@@ -659,6 +659,15 @@ theorem openOk_ok (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s
       (OpenOkPost s Ctx W SP Np A D T nl al n t) :=
   openOkW_ok v B (tagOk_oneTag v) C X hal hTa hTar hTr oT oA htl hok' (oneMid_ok v C E hNp hnl hal)
 
+/-- The 32 bytes below `SP`, which `open` may use, apart from its key context
+(of `cl` bytes), its working space, its data and the received tag. -/
+structure Stk32 (Ctx W SP D T : Addr) (cl n t : Nat) : Prop where
+  c : (below SP 32).Disjoint ⟨Ctx, cl⟩
+  w : (below SP 32).Disjoint ⟨W, 2560⟩
+  d : (below SP 32).Disjoint ⟨D, n⟩
+  t : (below SP 32).Disjoint ⟨T, t⟩
+  sp : 32 ≤ SP.toNat
+
 /-- `open` with any code `mid` for a tag length it allows, after the entry,
 that leaves what `openOk_ok` does: the exit. -/
 theorem openM_of {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s : State}
@@ -669,11 +678,17 @@ theorem openM_of {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s : State}
       s.mem.readW (SP + BitVec.ofNat 64 24) 64 = T → InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 24) 8 →
       Covers [⟨T, t⟩] (s.rd ++ s.wr) → OutWDS W D SP n ⟨T, t⟩ → OutWDS W D SP n ⟨SP + BitVec.ofNat 64 24, 8⟩ →
       s₂.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t → Spec.Gcm.tagLenOk t = true →
-      WP isa mid s₂ (OpenOkPost s Ctx W SP Np A D T nl al n t)) :
+      Stk32 Ctx W SP D T M.len n t → WP isa mid s₂ (OpenOkPost s Ctx W SP Np A D T nl al n t)) :
     WP isa (.seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
       (.seq tagLenOk (.seq (.ite .e (.block [.mov32 .rax (imm 0)]) mid) (.block restore)))) s
       fun s' => gprPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' := by
   have X := CtxExt.ofOpen hp.1 hp.2
+  have K : Stk32 (s.gpr .rdi) (stackArg s 4) (s.gpr .rsp) (stackArg s 0) (stackArg s 2) M.len
+      (stackArg s 1).toNat (stackArg s 3).toNat := by
+    have h := hp.1
+    simp only [Proof.AesGcm.openPre, Proof.AesGcm.stk32, Proof.AesGcm.arg] at h
+    obtain ⟨-, -, -, -, -, -, -, k₁, k₂, k₃, k₄, k₅⟩ := h
+    exact ⟨k₁, k₃, k₂, k₄, k₅⟩
   obtain ⟨C, hTr, d_td, d_tw, t_t⟩ := OneCtx.ofOpen hp.1 M.ge
   have hW' : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 40) 64 = stackArg s 4 := rfl
   have hTa : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 24) 64 = stackArg s 2 := rfl
@@ -692,7 +707,7 @@ theorem openM_of {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s : State}
   generalize hR : (s.gpr .rsi).toNat = R at *
   have hR' : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   refine WP.seq (WP.mono (openEntry_ok C hCtx hSP hA hD hn hW') fun s₁ ⟨E, hbx₁, htl₁, fE⟩ => ?_)
-  generalize ht : (stackArg s 3).toNat = t at hTr d_td d_tw t_t ⊢
+  generalize ht : (stackArg s 3).toNat = t at hTr d_td d_tw t_t K ⊢
   have oT : OutWDS W D SP n ⟨T, t⟩ := fun r hr =>
     hr.elim d_tw.sub_right fun h => h.elim d_td.sub_right t_t.symm.sub_right
   have oA : OutWDS W D SP n ⟨SP + BitVec.ofNat 64 24, 8⟩ := fun r hr => arg24_disj (by decide) C.dA C.dAD hr
@@ -723,7 +738,7 @@ theorem openM_of {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s : State}
     · simp only [OpenRes, Spec.Gcm.openResult, hbad', Bool.false_eq_true, ↓reduceIte]
       exact ⟨hax, by rw [hm₅, k₂.mem, bytesAt_frame fE dDR (by omega)]⟩
   · -- An allowed length.
-    exact hmid C X E₂ rfl rfl rfl rfl hTa hTar hTr oT oA (by rw [k₂.mem]; exact htl₁') (by simpa using hok)
+    exact hmid C X E₂ rfl rfl rfl rfl hTa hTar hTr oT oA (by rw [k₂.mem]; exact htl₁') (by simpa using hok) K
   obtain ⟨he₅, hsv₅, hret₅, hres⟩ := h₅
   rw [hR] at hres
   refine WP.mono (exit_ok he₅.r15 (by rw [he₅.rsp, hSP]) (covers_left he₅.perm.w) hsv₅ (by rw [hSP, hret₅]))
@@ -739,7 +754,7 @@ theorem openM_of {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s : State}
 theorem openM_wp (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State}
     (hp : (Proof.AesGcm.openX86_64M M).pre s) :
     WP isa («open» (v.withBlk B)) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' :=
-  openM_of hp fun C X E hNp hnl hal _ hTa hTar hTr oT oA htl hok =>
+  openM_of hp fun C X E hNp hnl hal _ hTa hTar hTr oT oA htl hok _ =>
     openOk_ok v B C X E hNp hnl hal hTa hTar hTr oT oA htl hok
 
 /-- `vg_aes_gcm_open`. -/

@@ -39,12 +39,12 @@ theorem tagP_xdepth : (Impl.AesGcm.X86_64.FastOpen.tagP : Prog isa).x86_64Depth 
 /-- `sel`: this path for the inputs it takes, `other` for the rest. -/
 theorem openSel_ok (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {other : Prog isa}
     (ho : LongOk CtxMode.prepared other) :
-    LongOk CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) other) := by
-  intro s s₂ Ctx W SP Np A D T nl al n t C X E hNp hnl hal hTa hTar hTr oT oA htl hok
+    LongOk CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none other) := by
+  intro s s₂ Ctx W SP Np A D T nl al n t C X E hNp hnl hal hTa hTar hTr oT oA htl hok K32
   unfold Impl.AesGcm.X86_64.FastOpen.sel
   refine WP.seq (WP.mono (condE_ok C E hnl hal) fun s₃ ⟨hz, E₃, K⟩ => ?_)
   rw [← K.mem] at htl
-  refine WP.ite (decide ¬IsFast nl al n) (eval_e hz) (fun _ => ho C X E₃ hNp hnl hal hTa hTar hTr oT oA htl hok)
+  refine WP.ite (decide ¬IsFast nl al n) (eval_e hz) (fun _ => ho C X E₃ hNp hnl hal hTa hTar hTr oT oA htl hok K32)
     fun h => ?_
   obtain ⟨h12, h17, -⟩ : IsFast nl al n := Decidable.not_not.mp (of_decide_eq_false h)
   subst h12

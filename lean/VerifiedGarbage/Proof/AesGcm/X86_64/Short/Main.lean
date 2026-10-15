@@ -161,11 +161,11 @@ def LongOk (M : Gcm.X86_64.Stitch.CtxMode) (lng : Prog isa) : Prop :=
     s.mem.readW (SP + BitVec.ofNat 64 24) 64 = T → InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 24) 8 →
     Covers [⟨T, t⟩] (s.rd ++ s.wr) → OutWDS W D SP n ⟨T, t⟩ → OutWDS W D SP n ⟨SP + BitVec.ofNat 64 24, 8⟩ →
     s₂.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t → Spec.Gcm.tagLenOk t = true →
-    WP isa lng s₂ (OpenOkPost s Ctx W SP Np A D T nl al n t)
+    Stk32 Ctx W SP D T M.len n t → WP isa lng s₂ (OpenOkPost s Ctx W SP Np A D T nl al n t)
 
 theorem longOk_openLong (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     LongOk M (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)) :=
-  fun C X E hNp hnl hal hTa hTar hTr oT oA htl hok => openOk_ok v B C X E hNp hnl hal hTa hTar hTr oT oA htl hok
+  fun C X E hNp hnl hal hTa hTar hTr oT oA htl hok _ => openOk_ok v B C X E hNp hnl hal hTa hTar hTr oT oA htl hok
 
 /-- `vg_aes_gcm_open` with the short path, the table of powers from `pw`,
 and `lng` when the short path does not apply, for a key context of kind
@@ -174,11 +174,11 @@ theorem openMW_wp (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
     (hpw : PowOk M pw) (hlng : LongOk M lng) {s : State} (hp : (Proof.AesGcm.openX86_64M M).pre s) :
     WP isa (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) pw lng) s fun s' =>
       gprPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' := by
-  refine openM_of hp fun {Ctx W SP Np A D T nl al n t _ _} C X E hNp hnl hal _ hTa hTar hTr oT oA htl hok =>
+  refine openM_of hp fun {Ctx W SP Np A D T nl al n t _ _} C X E hNp hnl hal _ hTa hTar hTr oT oA htl hok K32 =>
     WP.seq (WP.mono (condE_ok C E hnl hal) fun s₂ ⟨hz, E₂, K⟩ => ?_)
   rw [← K.mem] at htl
   refine WP.ite (decide ¬IsShort _ _ _) (eval_e hz)
-    (fun _ => hlng C X E₂ hNp hnl hal hTa hTar hTr oT oA htl hok) fun h => ?_
+    (fun _ => hlng C X E₂ hNp hnl hal hTa hTar hTr oT oA htl hok K32) fun h => ?_
   have h' := Decidable.not_not.mp (of_decide_eq_false h)
   have hb : 1 ≤ t ∧ t ≤ 16 := by
     simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok

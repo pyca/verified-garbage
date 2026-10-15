@@ -62,7 +62,7 @@ theorem sealMP_xdepth :
   omega
 
 theorem openMP_mx : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).allInstrs
+      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).allInstrs
     (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
@@ -71,7 +71,7 @@ theorem openMP_mx : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm
   decide +kernel
 
 theorem openMP_spSafe : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).all
+      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).all
     (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
@@ -81,7 +81,7 @@ theorem openMP_spSafe : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.Ae
 
 theorem openMP_xdepth :
     (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).x86_64Depth ≤ 24 := by
+      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))).x86_64Depth ≤ 24 := by
   have e := B.encXd
   have d := B.decXd
   simp only [Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_xdepth,
@@ -102,7 +102,7 @@ theorem sealMP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.sealX86
 
 theorem openMP_correct (hF : ShortFacts) (s : State) (hs : (Proof.AesGcm.openX86_64M CtxMode.prepared).pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))) s t s' ∧
+      (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)))) s t s' ∧
       abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := openMW_wp hF v B powOk_powersP
     (FastOpen.openSel_ok hF v B (longOk_openLong v B)) hs
@@ -129,7 +129,7 @@ records (`FastOpen.sel`) when the short path does not apply. -/
 def openCodeP (v : GcmImpl) (c : Callees) : Prog isa :=
   if v.short then
     Impl.AesGcm.X86_64.Short.«open» c Impl.AesGcm.X86_64.Short.powersP
-      (Impl.AesGcm.X86_64.FastOpen.sel c (Impl.AesGcm.X86_64.Short.openLong c))
+      (Impl.AesGcm.X86_64.FastOpen.sel c none (Impl.AesGcm.X86_64.Short.openLong c))
   else v.openCode c
 
 end GcmImpl

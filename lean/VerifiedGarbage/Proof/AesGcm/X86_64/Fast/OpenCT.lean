@@ -124,7 +124,7 @@ theorem tagRel_tagP : TagRel CtxMode.prepared tagP := fun {_ _ _} _ {R _ _ _ n _
 branches. -/
 theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {other : Prog isa}
     (ho : LongRel CtxMode.prepared other) :
-    LongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) other) := by
+    LongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none other) := by
   intro s₀ s₀' Ctx W SP Np A D Tp nl al n R t C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.FastOpen.sel
