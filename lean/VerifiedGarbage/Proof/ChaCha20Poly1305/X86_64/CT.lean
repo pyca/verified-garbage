@@ -1159,13 +1159,18 @@ theorem bytesAt_serialize (m : Mem) (p : Addr) {n : Nat} (hn : n ≤ 64) :
 
 /-! ## The keystream from counter 0 -/
 
+/-- For a pass of 512 bytes (`fold` 448), the lengths whose first `fold`
+bytes' keystream the prologue computes (`splitM`): the rest is whole chunks of
+512 and 1 to `512 - fold` bytes, or the length is 513 to 576 or 1025 to 1408. -/
+abbrev PreLen (fold len : Nat) : Prop :=
+  fold ≤ (len - 1) % 512 ∨ (513 ≤ len ∧ len < 513 + 64) ∨ (1025 ≤ len ∧ len < 1025 + 384)
+
 /-- The bytes of more than `fold` whose keystream the prologue computes
 with the one-time key, for a pass of `pass` bytes (`splitM`): for 512, the
-first `fold` if the rest is whole chunks of 512 and 1 to `512 - fold` bytes;
-for another pass, those past the last multiple of `pass`, rounded up to a
-block, if at most `fold`. -/
+first `fold` for `PreLen`; for another pass, those past the last multiple of
+`pass`, rounded up to a block, if at most `fold`. -/
 def splitOf (fold pass len : Nat) : Nat :=
-  if pass = 0 then 0 else if pass = 512 then (if (len - 1) % 512 < fold then 0 else fold) else
+  if pass = 0 then 0 else if pass = 512 then (if PreLen fold len then fold else 0) else
   if (len % pass + 63) / 64 * 64 ≤ fold then (len % pass + 63) / 64 * 64 else 0
 
 /-- The `pass`es `splitM` is proven for: none, 1024, and 512 with `fold` 448
@@ -1193,8 +1198,8 @@ theorem splitOf_dvd {fold pass : Nat} (hp : PassOk fold pass) (len : Nat) : 64 �
         · rw [h] at h₂; exact absurd h₂ (by decide)
         · exact h
       split
-      · exact Nat.dvd_zero _
       · rw [hf]; decide
+      · exact Nat.dvd_zero _
     · split
       · exact Nat.dvd_mul_left _ _
       · exact Nat.dvd_zero _
@@ -1336,48 +1341,109 @@ theorem sub1and511 {len : Nat} (hl : len < 2 ^ 64) (h0 : 0 < len) :
   rw [BitVec.toNat_and, toNat_ofNat_lt (by omega_using [hl]), toNat_ofNat_lt (by decide),
     Nat.and_two_pow_sub_one_eq_mod, toNat_ofNat_lt (by omega_using [])]
 
+/-- `cmp r13, n`: `CF` set if the length in `r13` is below `n`. -/
+theorem cmpLen_ok {n len : Nat} (hn : n < 2 ^ 31) (hl : len < 2 ^ 64) {s : State}
+    (hr13 : s.gpr .r13 = BitVec.ofNat 64 len) :
+    WP isa (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 n))]) s fun s' =>
+      (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧
+      s'.cf = some (decide (len < n)) := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+    RegUpd.cf_arithFlags, Option.bind_some, Option.some.injEq, exists_eq_left', se_ofNat hn, hr13]
+  refine ⟨fun q _ => trivial, trivial, trivial, trivial, ?_⟩
+  rw [toNat_ofNat_lt hl, toNat_ofNat_lt (by omega_using [hn])]
+
+theorem mov32fold_ok {fold : Nat} (hf : fold < 2 ^ 32) (s : State) :
+    WP isa (.block [.mov32 .rdx (.imm (BitVec.ofNat 32 fold))]) s fun s' =>
+      s'.gpr .rdx = BitVec.ofNat 64 fold ∧ (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.mem = s.mem := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, RegUpd.gpr_setReg,
+    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some, Option.some.injEq,
+    exists_eq_left']
+  refine ⟨?_, fun q hq => by simp [hq], trivial, trivial, trivial⟩
+  simp only [ite_true]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by lit_omega),
+    Nat.mod_eq_of_lt (by lit_omega), Nat.mod_eq_of_lt (by lit_omega)]
+
+/-- `mask`: `CF` as `0` or `fold`. -/
+theorem sbb_mask (a : BitVec 64) (c : Bool) :
+    (a - a - (BitVec.ofBool c).setWidth 64) &&& BitVec.signExtend 64 (BitVec.ofNat 32 448) =
+      BitVec.ofNat 64 (if c then 448 else 0) := by
+  rw [BitVec.sub_self]; cases c <;> decide
+
+theorem se_neg384 : BitVec.signExtend 64 (BitVec.ofInt 32 (-((384 : Nat) : Int))) =
+    BitVec.ofNat 64 (2 ^ 64 - 384) := by decide
+
+theorem se_neg448 : BitVec.signExtend 64 (BitVec.ofInt 32 (-((448 : Nat) : Int))) =
+    BitVec.ofNat 64 (2 ^ 64 - 448) := by decide
+
 /-- `splitM` for a pass of 512 bytes. -/
-theorem splitM512_ok {fold len : Nat} (hf : fold < 2 ^ 31) (hl : len < 2 ^ 64) (h0 : 0 < len) {s : State}
+theorem splitM512_ok {fold len : Nat} (hf : fold = 448) (hl : len < 2 ^ 64) (h0 : fold < len) {s : State}
     (hr13 : s.gpr .r13 = BitVec.ofNat 64 len) :
     WP isa (splitM fold 512) s fun s' => s'.gpr .rdx = BitVec.ofNat 64 (splitOf fold 512 len) ∧
       (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
+  subst hf
   simp only [splitM, show (512 : Nat) ≠ 0 by decide, ite_false, ite_true]
-  refine WP.seq (WP.mono (Q := fun (s' : State) =>
-      (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧
-      s'.cf = some (decide ((len - 1) % 512 < fold))) ?_
-    fun s₁ ⟨g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
-  · apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-      RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
-      RegUpd.cf_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-      Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left', se_ofNat hf,
-      ↓reduceIte, hr13, sub1and511 hl h0]
-    refine ⟨fun q hq => by simp [hq], trivial, trivial, trivial, ?_⟩
-    rw [toNat_ofNat_lt (by omega_using []), toNat_ofNat_lt (by lit_omega)]
-  · refine WP.ite (decide ((len - 1) % 512 < fold)) (by simp [eval, c₁]) (fun h => ?_) (fun h => ?_)
-    · simp only [decide_eq_true_eq] at h
-      apply WP.of_runBlock
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, RegUpd.gpr_setReg,
-        RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some, Option.some.injEq,
-        exists_eq_left']
-      refine ⟨by simp only [splitOf, show (512 : Nat) ≠ 0 by decide, ite_false, ite_true, h]; rfl,
-        fun q hq => by simp [hq, g₁ q hq], rd₁, wr₁, m₁⟩
-    · simp only [decide_eq_false_iff_not] at h
-      apply WP.of_runBlock
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, RegUpd.gpr_setReg,
-        RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some, Option.some.injEq,
-        exists_eq_left']
-      refine ⟨?_, fun q hq => by simp [hq, g₁ q hq], rd₁, wr₁, m₁⟩
-      simp only [splitOf, show (512 : Nat) ≠ 0 by decide, ite_false, ite_true, h]
-      apply BitVec.eq_of_toNat_eq
-      rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by lit_omega),
-        Nat.mod_eq_of_lt (by lit_omega), Nat.mod_eq_of_lt (by lit_omega)]
+  have hs : splitOf 448 512 len = if PreLen 448 len then 448 else 0 := by
+    simp only [splitOf, show (512 : Nat) ≠ 0 by decide, ite_false, ite_true]
+  refine WP.seq (WP.mono (cmpLen_ok (n := 1409) (by decide) hl hr13) fun s₀ ⟨g₀, rd₀, wr₀, m₀, c₀⟩ => ?_)
+  have r13₀ : s₀.gpr .r13 = BitVec.ofNat 64 len := by rw [g₀ _ (by decide), hr13]
+  refine WP.ite (decide (len < 1409)) (by simp [eval, c₀]) (fun h₀ => ?_) (fun h₀ => ?_)
+  · -- Below 1409 bytes: any length but 577 to 960.
+    simp only [decide_eq_true_eq] at h₀
+    apply WP.of_runBlock
+    simp only [lenOut, mask, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
+      exec, readSrc, execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
+      RegUpd.wr_arithFlags, RegUpd.cf_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
+      RegUpd.wr_setReg, RegUpd.cf_setReg, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
+      se_ofNat (show 577 < 2 ^ 31 by decide), se_neg384, r13₀, ite_true, sbb_mask]
+    refine ⟨?_, fun q hq => by simp [hq, g₀ q hq], by rw [rd₀], by rw [wr₀], by rw [m₀]⟩
+    have e : 2 ^ 64 ≤ (BitVec.ofNat 64 len - BitVec.ofNat 64 577).toNat + (BitVec.ofNat 64 (2 ^ 64 - 384)).toNat ↔
+        PreLen 448 len := by
+      rw [BitVec.toNat_sub, toNat_ofNat_lt hl, toNat_ofNat_lt (by decide), toNat_ofNat_lt (by decide)]
+      simp only [PreLen]; omega_using [h₀, h0]
+    rw [hs]; simp only [decide_eq_true_eq, e]
+  · -- From 1409 bytes: `(len - 1) mod 512` against `fold`.
+    simp only [decide_eq_false_iff_not] at h₀
+    apply WP.of_runBlock
+    simp only [mask, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
+      exec, readSrc, execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
+      RegUpd.wr_arithFlags, RegUpd.cf_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
+      RegUpd.wr_setReg, RegUpd.cf_setReg, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
+      se_neg448, ↓reduceIte, r13₀, sub1and511 hl (by omega_using [h0]), sbb_mask]
+    refine ⟨?_, fun q hq => by simp [hq, g₀ q hq], by rw [rd₀], by rw [wr₀], by rw [m₀]⟩
+    rw [hs, toNat_ofNat_lt (by omega_using []), toNat_ofNat_lt (by decide)]
+    have e : 2 ^ 64 ≤ (len - 1) % 512 + (2 ^ 64 - 448) ↔ PreLen 448 len := by
+      simp only [PreLen]; omega_using [h₀]
+    simp only [decide_eq_true_eq, e]
 
 theorem foldM_ok {fold pass len : Nat} (hf : fold + 1 < 2 ^ 31) (hpass : PassOk fold pass)
     (hl : len < 2 ^ 64) {s : State} (hr13 : s.gpr .r13 = BitVec.ofNat 64 len) :
     WP isa (foldM fold pass) s fun s' => s'.gpr .rdx = BitVec.ofNat 64 (mOf fold pass len) ∧
       (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
-  unfold foldM
+  by_cases hp512 : pass = 512
+  · subst hp512
+    have hfold : fold = 448 := by rcases hpass with h | h | ⟨-, h⟩ <;> first | exact h | cases h
+    simp only [foldM, ite_true]
+    refine WP.seq (WP.mono (cmpLen_ok (n := fold + 1) (by omega_using [hf]) hl hr13)
+      fun s₁ ⟨g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
+    refine WP.ite (!decide (len < fold + 1)) (by simp [eval, c₁]) (fun h => ?_) (fun h => ?_)
+    · simp only [Bool.not_eq_true', decide_eq_false_iff_not] at h
+      rw [mOf_big (by omega_using [h])]
+      exact WP.mono (splitM512_ok hfold hl (by omega_using [h]) (by rw [g₁ _ (by decide), hr13]))
+        fun s₂ ⟨d₂, g₂, rd₂, wr₂, m₂⟩ =>
+          ⟨d₂, fun q hq => by rw [g₂ q hq, g₁ q hq], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [m₂, m₁]⟩
+    · simp only [Bool.not_eq_false', decide_eq_true_eq] at h
+      apply WP.of_runBlock
+      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, RegUpd.gpr_setReg,
+        RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+        Option.map_some, Option.some.injEq, exists_eq_left', ite_true]
+      refine ⟨by rw [g₁ _ (by decide), hr13]; simp only [mOf, show len ≤ fold from by omega_using [h], ite_true],
+        fun q hq => by simp [hq, g₁ q hq], rd₁, wr₁, m₁⟩
+  simp only [foldM, hp512, ite_false]
   refine WP.seq (WP.mono (Q := fun (s' : State) => s'.gpr .rdx = 0 ∧ (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧ s'.cf = some (decide (len < fold + 1))) ?_
     fun s₁ ⟨d₁, g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
@@ -1404,9 +1470,7 @@ theorem foldM_ok {fold pass len : Nat} (hf : fold + 1 < 2 ^ 31) (hpass : PassOk 
       · exact WP.block_nil (M := isa) ⟨by rw [d₁]; rfl, g₁, rd₁, wr₁, m₁⟩
       · exact WP.mono (splitM_ok hf hl (by rw [g₁ _ (by decide), hr13])) fun s₂ ⟨d₂, g₂, rd₂, wr₂, m₂⟩ =>
           ⟨d₂, fun q hq => by rw [g₂ q hq, g₁ q hq], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [m₂, m₁]⟩
-      · exact WP.mono (splitM512_ok (by omega_using [hf]) hl (by omega_using [h])
-          (by rw [g₁ _ (by decide), hr13])) fun s₂ ⟨d₂, g₂, rd₂, wr₂, m₂⟩ =>
-          ⟨d₂, fun q hq => by rw [g₂ q hq, g₁ q hq], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [m₂, m₁]⟩
+      · exact absurd rfl hp512
 
 theorem se64' : BitVec.signExtend 64 (64 : BitVec 32) = 64 := by decide
 
@@ -1420,6 +1484,46 @@ theorem add64_ok {n : Nat} {s : State} (hrdx : s.gpr .rdx = BitVec.ofNat 64 n) :
     Option.bind_some, Option.some.injEq, exists_eq_left', se64', ite_true]
   refine ⟨by rw [hrdx, BitVec.ofNat_add, BitVec.add_comm]; rfl, fun q hq => by simp [hq], trivial, trivial,
     trivial⟩
+
+
+/-- `mStore` and `rdx + 64`: for a pass of 512, `m` (`rdx`) kept at `ctx + 48`. -/
+theorem mStoreAdd_ok {pass n : Nat} {c : Addr} {s : State} (hr15 : s.gpr .r15 = c)
+    (hrdx : s.gpr .rdx = BitVec.ofNat 64 n) (hw : InRegions s.wr (off c 48) 8) :
+    WP isa (.block (mStore pass ++ ([.alu .add .rdx (.imm 64)] : List Instr))) s fun s' =>
+      s'.gpr .rdx = BitVec.ofNat 64 (64 + n) ∧ (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ Frame [⟨off c 48, 8⟩] s.mem s'.mem ∧
+      (pass = 512 → s'.mem.readW (off c 48) 64 = BitVec.ofNat 64 n) := by
+  unfold mStore
+  split
+  · rename_i hps
+    refine WP.block_append (WP.mono (Q := fun (t : State) => t.mem = s.mem.writeW (off c 48) (s.gpr .rdx) ∧
+        t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ fun t ⟨tm, tg, trd, twr⟩ =>
+      WP.mono (add64_ok (by rw [tg, hrdx])) fun s' ⟨d, g, rd, wr, m⟩ =>
+        ⟨d, fun q hq => by rw [g q hq, tg], by rw [rd, trd], by rw [wr, twr], ?_, fun _ => ?_⟩)
+    · simp only [off] at hw
+      apply WP.of_runBlock
+      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, State.store64, hr15, hw, ite_true,
+        Option.some.injEq, exists_eq_left', off]
+      exact ⟨trivial, trivial, trivial, trivial⟩
+    · rw [m, tm]
+      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+    · rw [m, tm, Mem.readW_writeW_self64, hrdx]
+  · rename_i hps
+    exact WP.mono (add64_ok hrdx) fun s' ⟨d, g, rd, wr, m⟩ =>
+      ⟨d, g, rd, wr, by rw [m]; exact Frame.refl _ _, fun h => absurd h hps⟩
+
+/-- `mLoad`: `m`, from where the prologue stored it. -/
+theorem mLoad_ok {n : Nat} {c : Addr} {s : State} (hr15 : s.gpr .r15 = c) (hw : InRegions s.wr (off c 48) 8)
+    (hm : s.mem.readW (off c 48) 64 = BitVec.ofNat 64 n) :
+    WP isa (.block mLoad) s fun s' => s'.gpr .rdx = BitVec.ofNat 64 n ∧
+      (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
+  obtain ⟨r, hr, hc⟩ := hw
+  have hrw : InRegions (s.rd ++ s.wr) (off c 48) 8 := ⟨r, List.mem_append_right _ hr, hc⟩
+  apply WP.of_runBlock
+  simp only [mLoad, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, ea_at, State.load64, hr15, hrw,
+    ite_true, hm, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    Option.map_some, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, fun q hq => by simp [hq], trivial, trivial, trivial⟩
 
 theorem se16' : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
 
@@ -1612,6 +1716,8 @@ structure FArgs (fold pass : Nat) (s₀ : State) (s : State) : Prop where
   st : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀)
   st' : stateAt s.mem (off (cx s₀) 608) = Spec.ChaCha20.initState (K s₀) 0 (N s₀)
   zero : ∀ k < 64 + mOf fold pass (L s₀), s.mem (off (cx s₀) (672 + k)) = 0
+  /-- For a pass of 512, `m` at `ctx + 48` (`mStore`). -/
+  mslot : pass = 512 → s.mem.readW (off (cx s₀) 48) 64 = BitVec.ofNat 64 (mOf fold pass (L s₀))
 
 theorem B1_eq : save ++ moves ++ initStateQ 64 ++ initStateQ 608 =
     (save ++ moves) ++ (initStateQ 64 ++ initStateQ 608) := by
@@ -1672,7 +1778,10 @@ theorem prologueA_ok {fold pass w : Nat} (hf : fold ≤ 960) (hpass : PassOk fol
   -- `m`, `64 + m` and the zeros.
   refine WP.seq (WP.mono (foldM_ok (fold := fold) (pass := pass) (len := L s₀) (by lit_omega) hpass hL9
     (by rw [g₃' _ (by decide), e13]; simp [L])) fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ => ?_)
-  refine WP.seq (WP.mono (add64_ok (n := mOf fold pass (L s₀)) d₄) fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
+  refine WP.seq (WP.mono (mStoreAdd_ok (pass := pass) (n := mOf fold pass (L s₀)) (c := cx s₀)
+    (by rw [g₄ _ (by decide), g₃' _ (by decide), e15]) d₄
+    (by rw [wr₄, wr₃, wr₂, wr₁]; exact hp.in_ctx (a := 48) (w := 8) (by lit_omega)))
+    fun s₅ ⟨d₅, g₅, rd₅, wr₅, f₅, ms₅⟩ => ?_)
   have r15₅ : s₅.gpr .r15 = cx s₀ := by rw [g₅ _ (by decide), g₄ _ (by decide), g₃' _ (by decide), e15]
   have wr₅' : s₅.wr = s₀.wr := by rw [wr₅, wr₄, wr₃, wr₂, wr₁]
   refine WP.seq (WP.mono (zeroKs_ok hw hp (n := 64 + mOf fold pass (L s₀)) (by omega_using []) (by lit_omega) d₅ r15₅ wr₅')
@@ -1690,7 +1799,7 @@ theorem prologueA_ok {fold pass w : Nat} (hf : fold ≤ 960) (hpass : PassOk fol
   have r15₉ : s₉.gpr .r15 = cx s₀ := by
     rw [gg _ (by decide) (by decide) (by decide) (by decide) (by decide), e15]
   have mm : s₉.mem = s₆.mem := by rw [m₉, m₈, m₇]
-  have m₅' : s₅.mem = s₃.mem := by rw [m₅, m₄]
+  have f₅' : Frame [sub s₀ 48 8] s₃.mem s₅.mem := by rw [← m₄]; exact f₅
   -- The memory.
   have sub1 : ∀ {k n : Nat}, 0 ≤ k → k + n ≤ 1696 → Region.Sub (sub s₀ k n) (workR s₀) :=
     fun h₁ h₂ => sub_sub s₀ h₁ (by lit_omega) (by lit_omega)
@@ -1701,7 +1810,7 @@ theorem prologueA_ok {fold pass w : Nat} (hf : fold ≤ 960) (hpass : PassOk fol
     rw [mm]
     refine (fwork (k := 0) (n := 48) (by lit_omega) f₁).trans ((fwork (k := 64) (n := 64) (by lit_omega) f₂).trans
       ((fwork (k := 608) (n := 64) (by lit_omega) f₃).trans ?_))
-    rw [← m₅']; exact fwork (k := 672) (n := 1024) (by lit_omega) f₆
+    exact (fwork (k := 48) (n := 8) (by lit_omega) f₅').trans (fwork (k := 672) (n := 1024) (by lit_omega) f₆)
   have st₃ : stateAt s₃.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     refine stateAt_initState hp f₁ fun i hi => ?_
     rw [f₃.readW (r := ⟨off (cx s₀) (64 + 4 * i), 4⟩) (Region.contains_self _ _) (by
@@ -1723,14 +1832,21 @@ theorem prologueA_ok {fold pass w : Nat} (hf : fold ≤ 960) (hpass : PassOk fol
     by rw [gg _ (by decide) (by decide) (by decide) (by decide) (by decide), ebp],
     by rw [gg _ (by decide) (by decide) (by decide) (by decide) (by decide), ersp],
     by rw [rd₉, rd₈, rd₇, rd₆, rd₅, rd₄, rd₃, rd₂, rd₁], by rw [wr₉, wr₈, wr₇, wr₆, wr₅'],
-    ?_, ff, ?_, ?_, fun k hk => by rw [mm]; exact z₆ k hk⟩
+    ?_, ff, ?_, ?_, fun k hk => by rw [mm]; exact z₆ k hk, fun hps => ?_⟩
   · rw [mm]
-    refine ((sv₁.frame f₂ ?_).frame f₃ ?_).frame (by rw [← m₅']; exact f₆) ?_
+    refine (((sv₁.frame f₂ ?_).frame f₃ ?_).frame f₅' ?_).frame f₆ ?_
     · simp only [List.mem_singleton, forall_eq]; exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
     · simp only [List.mem_singleton, forall_eq]; exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
     · simp only [List.mem_singleton, forall_eq]; exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
-  · rw [mm, stateAt_frame f₆ (dz (by lit_omega)), m₅', st₃]
-  · rw [mm, stateAt_frame f₆ (dz (by lit_omega)), m₅', st₃']
+    · simp only [List.mem_singleton, forall_eq]; exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
+  · rw [mm, stateAt_frame f₆ (dz (by lit_omega)), stateAt_frame f₅' (by
+      simp only [List.mem_singleton, forall_eq]; exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)), st₃]
+  · rw [mm, stateAt_frame f₆ (dz (by lit_omega)), stateAt_frame f₅' (by
+      simp only [List.mem_singleton, forall_eq]; exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)), st₃']
+  · rw [mm, f₆.readW (r := sub s₀ 48 8) (Region.contains_self _ _) (by
+      simp only [List.mem_singleton, forall_eq]; exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
+      (by decide)]
+    exact ms₅ hps
 
 /-- After the call of `vg_chacha20_xor` in the prologue. -/
 structure AfterF (fold pass : Nat) (s₀ : State) (s : State) : Prop where
@@ -1748,6 +1864,7 @@ structure AfterF (fold pass : Nat) (s₀ : State) (s : State) : Prop where
   st : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀)
   ks : ∀ k < 64 + mOf fold pass (L s₀), s.mem (off (cx s₀) (672 + k)) =
     (keystream (Spec.ChaCha20.initState (K s₀) 0 (N s₀)) (64 + mOf fold pass (L s₀))).getD k 0
+  mslot : pass = 512 → s.mem.readW (off (cx s₀) 48) 64 = BitVec.ofNat 64 (mOf fold pass (L s₀))
 
 /-- The call of the implementation `v` of `vg_chacha20_xor` in the prologue. -/
 theorem foldCall_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} {s₀ : State} (hp : APre e s₀) {s : State}
@@ -1806,7 +1923,17 @@ theorem foldCall_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} {s₀ : Sta
     by rw [cs' _ (by simp [calleeSaved]), h.r12], by rw [cs' _ (by simp [calleeSaved]), h.rbx],
     by rw [cs' _ (by simp [calleeSaved]), h.rbp], by rw [cs' _ (by simp [calleeSaved]), h.rsp],
     by rw [rd', h.rd], by rw [wr', h.wr], h.saved.frame f' dsv, h.fine.trans fw,
-    by rw [stateAt_frame f' dst, h.st], fun k hk => ?_⟩
+    by rw [stateAt_frame f' dst, h.st], fun k hk => ?_, fun hps => ?_⟩
+  rotate_left
+  · rw [f'.readW (r := sub s₀ 48 8) (Region.contains_self _ _) (by
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
+      · exact sub_disj s₀ (b := 672) (by lit_omega) (by lit_omega) (by lit_omega)
+      · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
+      · exact (hp.stk_sub (by lit_omega)).symm) (by decide)]
+    exact h.mslot hps
   rw [h.st'] at ks'
   have := VG.Proof.ChaCha20.X86_64.Avx2.bytes_of_bytesAt (VG.Proof.ChaCha20.length_keystream _ _) ks' hk
   rw [show off (cx s₀) 672 + BitVec.ofNat 64 k = off (cx s₀) (672 + k) by
@@ -1823,6 +1950,7 @@ structure PostP (fold pass : Nat) (s₀ : State) (s : State) : Prop where
   st : stateAt s.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀)
   ks : ∀ k < mOf fold pass (L s₀), s.mem (off (cx s₀) (736 + k)) =
     (keystream (Spec.ChaCha20.initState (K s₀) 1 (N s₀)) (L s₀)).getD k 0
+  mslot : pass = 512 → s.mem.readW (off (cx s₀) 48) 64 = BitVec.ofNat 64 (mOf fold pass (L s₀))
 
 theorem B3_eq : anchor .rsi 128 ++ ptr .rdi .r15 448 ++ ptr .rsi .r15 672 =
     anchor .rsi 128 ++ (ptr .rdi .r15 448 ++ ptr .rsi .r15 672) := by
@@ -1890,7 +2018,8 @@ theorem prologueBF_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp :
       · exact ⟨stkR s₀, by simp, below8_stk s₀⟩
   refine ⟨?_, fr⟩
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, h.rd], by rw [wr₁₀, wr₉, wr₈'], ?_,
-    (h.fine.trans ff).sub fun r hr => ?_⟩, ?_, ?_, h.fine.trans ff, ?_, ?_, fun k hk => ?_⟩
+    (h.fine.trans ff).sub fun r hr => ?_⟩, ?_, ?_, h.fine.trans ff, ?_, ?_, fun k hk => ?_,
+    fun hps => ?_⟩
   · rw [e10, rdi₉, off_sub]
   · rw [cs .r14 (by simp [calleeSaved]) (by decide), h.r14]
   · rw [cs .r13 (by simp [calleeSaved]) (by decide), h.r13]
@@ -1930,6 +2059,9 @@ theorem prologueBF_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp :
         (by simp only [Region.Contains]; rw [BitVec.sub_self]; simp) hc
     rw [e, show 736 + k = 672 + (64 + k) by omega_using [], h.ks (64 + k) (by omega_using [hk]),
       keystream_shift (K s₀) (N s₀) (L := L s₀) (n := 64 + mOf fold pass (L s₀)) (by omega_using [hml, hk]) (by omega_using [hk])]
+  · rw [m₁₀, f₉.readW (r := sub s₀ 48 8) (Region.contains_self _ _)
+      (d9 (by lit_omega) (by lit_omega)) (by decide), mm₈]
+    exact h.mslot hps
 
 theorem prologueB_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
     (h : AfterF fold pass s₀ s) : WP isa prologueB s (PostP fold pass s₀) :=
@@ -2773,6 +2905,28 @@ theorem cmpFold_ok {fold : Nat} (hf : fold + 1 < 2 ^ 31) {s₀ : State} {s : Sta
     Option.bind_some, Option.some.injEq, exists_eq_left', se_ofNat hf]
   refine ⟨trivial, trivial, trivial, trivial, ?_⟩
   rw [hr13, toNat_ofNat_lt (by lit_omega)]
+
+/-- `foldML`: `m`, the length up to `fold`, else from where the prologue
+stored it. -/
+theorem foldML_ok {fold pass : Nat} (hf : fold + 1 < 2 ^ 31) {s₀ s : State} (hr13 : s.gpr .r13 = s₀.gpr .r9)
+    (hr15 : s.gpr .r15 = cx s₀) (hw : InRegions s.wr (off (cx s₀) 48) 8)
+    (hm : fold < L s₀ → s.mem.readW (off (cx s₀) 48) 64 = BitVec.ofNat 64 (mOf fold pass (L s₀))) :
+    WP isa (foldML fold) s fun s' => s'.gpr .rdx = BitVec.ofNat 64 (mOf fold pass (L s₀)) ∧
+      (∀ q, q ≠ .rdx → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem := by
+  unfold foldML
+  refine WP.seq (WP.mono (cmpFold_ok hf hr13) fun s₁ ⟨g₁, rd₁, wr₁, m₁, c₁⟩ => ?_)
+  refine WP.ite (decide (L s₀ < fold + 1)) (by simp [eval, c₁]) (fun h => ?_) (fun h => ?_)
+  · simp only [decide_eq_true_eq] at h
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, RegUpd.gpr_setReg,
+      RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some, Option.some.injEq,
+      exists_eq_left', ite_true]
+    refine ⟨by rw [g₁, hr13, hL s₀]; simp only [mOf, show L s₀ ≤ fold from by omega_using [h], ite_true],
+      fun q hq => by simp [hq, g₁], rd₁, wr₁, m₁⟩
+  · simp only [decide_eq_false_iff_not] at h
+    exact WP.mono (mLoad_ok (n := mOf fold pass (L s₀)) (by rw [g₁, hr15]) (by rw [wr₁]; exact hw)
+      (by rw [m₁]; exact hm (by omega_using [h]))) fun s₂ ⟨d₂, g₂, rd₂, wr₂, m₂⟩ =>
+      ⟨d₂, fun q hq => by rw [g₂ q hq, g₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [m₂, m₁]⟩
 
 /-- After the data is encrypted (or decrypted), before the keystream is wiped. -/
 structure Crypted (s₀ s : State) (s' : State) : Prop where

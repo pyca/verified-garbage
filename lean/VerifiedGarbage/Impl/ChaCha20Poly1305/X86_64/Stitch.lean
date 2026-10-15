@@ -413,7 +413,7 @@ def bigS (vl : Bool) : Prog isa :=
 
 /-- More than `fold` bytes, the keystream of whose first `m` (448) the
 prologue computed: those by `cryptPre`, then the whole chunks after them by
-`bulkP`, or, if there are none, the rest (1 to 64 bytes) by `tailS`, which
+`bulkP`, or, if there are none, the rest (1 to 128 bytes) by `tailS`, which
 absorbs the first 448. -/
 def preS (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (cryptPre x.fold x.pass x.wide)
@@ -465,19 +465,19 @@ def prologueX (x : ChaCha20.X86_64.Callee) : Prog isa :=
 /-- `crypt`, with `rbx`, `rbp` set to the ciphertext not yet absorbed: the
 whole chunks are encrypted and absorbed by `bigS` or `preS`, with the rest if
 at most 256 bytes, and any rest left encrypted by the implementation `x` of
-`vg_chacha20_xor`. -/
+`vg_chacha20_xor`. `m` is the prologue's (`mLoad`, `foldML`). -/
 def cryptS (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
     (.seq (.block (ptr .rsi .r15 736 ++ ([.mov .rdx (.reg .r13)] : List Instr)))
       (.seq (xorBufX x.wide .r14) (.block (ptr .rsi .r15 128 ++ whole))))
-    (.seq (foldM x.fold x.pass)
+    (.seq (.block mLoad)
     (.seq (.block [.alu .test .rdx (.reg .rdx)])
       (.seq (.ite .e (bigS x.vl) (preS x))
         (.seq (.block [.alu .test .rdx (.reg .rdx)])
           (.ite .e (.block [.mov .rsi (.reg .rcx)]) (.call x.name x.code)))))))
   (.seq (.block (anchor .rsi 128))
-  (.seq (foldM x.fold x.pass)
+  (.seq (foldML x.fold)
   (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide)))))
 
 /-- `seal`, with Poly1305 inside the kernel for the whole chunks. -/

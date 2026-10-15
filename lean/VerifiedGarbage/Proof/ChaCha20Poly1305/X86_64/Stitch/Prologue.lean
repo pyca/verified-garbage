@@ -272,18 +272,16 @@ theorem TailKs.frame {s₀ : State} {m m' : Mem} {rs : List Region} (h : TailKs 
 theorem ctr_toNat (S : CState) {v : BitVec 32} {n : Nat} (h : v = BitVec.ofNat 32 n) : ctr S v.toNat = ctr S n := by
   simp only [ctr, BitVec.ofNat_toNat, BitVec.setWidth_eq, h]
 
-/-- The passes for which `twoKs` computes all the call would: none (`open`'s),
-and 512. -/
-abbrev XPass (pass : Nat) : Prop := pass = 0 ∨ pass = 512
+/-- The pass for which `twoKs` computes all the call would: none (`open`'s;
+with a pass of 512 the prologue's keystream covers the first 448 bytes from
+513 to 576, `PreLen`). -/
+abbrev XPass (pass : Nat) : Prop := pass = 0
 
-theorem XPass.ok {pass : Nat} (h : XPass pass) : PassOk 448 pass := by
-  rcases h with rfl | rfl
-  · exact .inl rfl
-  · exact .inr (.inr ⟨rfl, rfl⟩)
+theorem XPass.ok {pass : Nat} (h : XPass pass) : PassOk 448 pass := .inl h
 
 /-- With `twoKs`, the call would have computed only the one-time key's block. -/
 theorem mOf_xlen {pass L : Nat} (h : XPass pass) (hx : XLen L) : mOf 448 pass L = 0 := by
-  rcases h with rfl | rfl <;> simp only [mOf, splitOf] <;> rw [ite_eq_right (by omega)] <;> simp <;> omega
+  subst h; simp only [mOf, splitOf]; rw [ite_eq_right (by omega)]; simp
 
 /-- `twoKs`, from where the prologue would call `vg_chacha20_xor`: as after
 that call (`AfterF`), and the keystream of the last bytes at `ctx + 736`. -/
@@ -340,7 +338,8 @@ theorem twoKs_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass
     by rw [gk _ (by decide) (by decide) (by decide) (by decide), h.rsp],
     by rw [rd'', h.rd], by rw [wr'', h.wr], h.saved.frame f'' (dw (by omega) (by lit_omega)),
     h.fine.trans (f''.sub fun r hr => ?_),
-    by rw [stateAt_frame f'' (dw (k := 64) (n := 64) (by omega) (by lit_omega)), h.st], fun k hk => ?_⟩,
+    by rw [stateAt_frame f'' (dw (k := 64) (n := 64) (by omega) (by lit_omega)), h.st], fun k hk => ?_,
+    fun hps => absurd (hpass.symm.trans hps) (by decide)⟩,
     fun h₁ h₂ h₃ k hk => ?_⟩
   · simp only [w, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -374,7 +373,7 @@ theorem prologueXM_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) 
       by rw [g₁ _ (by decide) (by decide), h.rbx], by rw [g₁ _ (by decide) (by decide), h.rbp],
       by rw [g₁ _ (by decide) (by decide), h.rsp], by rw [rd₁, h.rd], by rw [wr₁, h.wr],
       by rw [m₁]; exact h.saved, by rw [m₁]; exact h.fine, by rw [m₁]; exact h.st, by rw [m₁]; exact h.st',
-      fun k hk => by rw [m₁]; exact h.zero k hk⟩
+      fun k hk => by rw [m₁]; exact h.zero k hk, fun hps => by rw [m₁]; exact h.mslot hps⟩
   have e13 : (s.gpr .r13).toNat = L s₀ := by rw [h.r13]
   rw [e13] at cf₁
   refine WP.ite (decide (XLen (L s₀))) cf₁ (fun hx => ?_) (fun hx => ?_)
@@ -399,7 +398,8 @@ theorem prologueX_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {
 theorem prologueX_mx (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {pass : Nat} (hpass : XPass pass) :
     (prologueX { v.callee with pass := pass }).allInstrs (fun i => !loadsMxcsr i) = true := by
   obtain ⟨hf, -, hw⟩ := avx2_of v hv
-  rcases hpass with rfl | rfl <;> rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
+  subst hpass
+  rcases Bool.eq_false_or_eq_true v.callee.vl with hl | hl <;>
     (simp only [prologueX, Code.allInstrs, v.mxcsr, hf, hw, hl]; rfl)
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Stitch

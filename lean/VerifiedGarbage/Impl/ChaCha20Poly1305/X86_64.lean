@@ -126,19 +126,33 @@ def moves : List Instr :=
   [.mov .r15 (.reg .rax), .mov .r12 (.reg .r11), .mov .rbx (.reg .rdx), .mov .rbp (.reg .rcx),
     .mov .r14 (.reg .r8), .mov .r13 (.reg .r9)]
 
+/-- `rdx = len - lo` (`len` in `r13`) plus `2 ^ 64 - n`: `CF` set if `len` is
+not from `lo` to `lo + n - 1`. -/
+def lenOut (lo n : Nat) : List Instr :=
+  [.mov .rdx (.reg .r13), .alu .sub .rdx (.imm (BitVec.ofNat 32 lo)),
+    .alu .add .rdx (.imm (BitVec.ofInt 32 (-(n : Int))))]
+
+/-- `rdx = fold` if `CF` is set, else 0, without a branch. -/
+def mask (fold : Nat) : List Instr := [.alu .sbb .rdx (.reg .rdx), .alu .and .rdx (.imm (BitVec.ofNat 32 fold))]
+
 /-- For more than `fold` bytes of data (in `r13`), `rdx = m`: if `pass` is
-512 (the stitched AVX2 `seal`, whose first chunk can absorb the `fold` bytes
-before it), `fold` if the bytes after them are whole chunks of 512 and 1 to
-`512 - fold`, else 0; if `pass` is another number but 0, the bytes past the
-last multiple of `pass` rounded up to a multiple of 64 (`pass` a power of
-two), if that is at most `fold`; else (or if `pass` is 0, adding no code)
-`rdx` stays 0. -/
+512 (the stitched AVX2 `seal`, `fold` 448, whose first chunk can absorb the
+`fold` bytes before it), `fold` if the bytes after them are whole chunks of
+512 and 1 to `512 - fold`, or, from 513 to 576 bytes and from 1025 to 1408,
+if no more than one chunk follows them and then 65 to 128 or 448 bytes: the
+prologue's pass computes their keystream with the one-time key's, which
+saves a chunk; else 0. Below 1409 bytes that is any length but 577 to 960
+(`lenOut 577 384`), one test as from 1409, each without a branch (`mask`). If `pass` is another number but 0,
+the bytes past the last multiple of `pass` rounded up to a multiple of 64
+(`pass` a power of two), if that is at most `fold`; else (or if `pass` is 0,
+adding no code) `rdx` stays 0. -/
 def splitM (fold pass : Nat) : Prog isa :=
   if pass = 0 then .block [] else
   if pass = 512 then
-    .seq (.block [.mov .rdx (.reg .r13), .alu .sub .rdx (.imm 1), .alu .and .rdx (.imm 511),
-      .alu .cmp .rdx (.imm (BitVec.ofNat 32 fold))])
-      (.ite .b (.block [.mov32 .rdx (.imm 0)]) (.block [.mov32 .rdx (.imm (BitVec.ofNat 32 fold))]))
+    .seq (.block [.alu .cmp .r13 (.imm 1409)])
+      (.ite .b (.block (lenOut 577 384 ++ mask fold))
+        (.block ([.mov .rdx (.reg .r13), .alu .sub .rdx (.imm 1), .alu .and .rdx (.imm 511),
+          .alu .add .rdx (.imm (BitVec.ofInt 32 (-(fold : Int))))] ++ mask fold)))
   else
   .seq (.block [.mov .rdx (.reg .r13), .alu .and .rdx (.imm (BitVec.ofNat 32 (pass - 1))),
     .alu .add .rdx (.imm 63), .alu .and .rdx (.imm (BitVec.ofInt 32 (-64))),
@@ -148,6 +162,11 @@ def splitM (fold pass : Nat) : Prog isa :=
 /-- `rdx = m`: the length of the data (in `r13`) if it is at most `fold`,
 else as `splitM`. -/
 def foldM (fold pass : Nat) : Prog isa :=
+  if pass = 512 then
+    -- `splitM` last, so that it ends without a jump.
+    .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))])
+      (.ite .ae (splitM fold pass) (.block [.mov .rdx (.reg .r13)]))
+  else
   .seq (.block [.mov32 .rdx (.imm 0), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))])
     (.ite .b (.block [.mov .rdx (.reg .r13)]) (splitM fold pass))
 
@@ -178,6 +197,19 @@ def zeroKs (w : Nat) : Prog isa :=
     (.seq (.loop (.block [storeW w zeroQ, .alu .add .rcx (.imm (BitVec.ofNat 32 (2 ^ w))),
       .alu .cmp .rcx (.reg .rdx)]) .b) (.block (clearW w)))
 
+/-- For a pass of 512 bytes (the stitched AVX2 `seal`), `m` (`rdx`) kept at
+`ctx + 48`, which `seal` does not otherwise use, so that `seal` reads it
+back rather than computing it again (`mLoad`). -/
+def mStore (pass : Nat) : List Instr := if pass = 512 then [.store (at_ .r15 48) .rdx] else []
+
+/-- `m` read back from `ctx + 48` (`mStore`). -/
+def mLoad : List Instr := [.mov .rdx (.mem (at_ .r15 48))]
+
+/-- `rdx = m`, as `foldM`, with `m` past `fold` read back (`mLoad`). -/
+def foldML (fold : Nat) : Prog isa :=
+  .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))])
+    (.ite .b (.block [.mov .rdx (.reg .r13)]) (.block mLoad))
+
 /-- The prologue up to the call of `vg_chacha20_xor`: saves the registers,
 moves the arguments, builds the ChaCha20 state twice (the copy for the call), zeros the first
 `64 + m` bytes of `ctx[672, 1696)` (rounded up to quadwords) and sets up the
@@ -185,7 +217,7 @@ call's arguments, the copy of the state and those bytes. -/
 def prologueA (fold pass w : Nat) : Prog isa :=
   .seq (.block (save ++ moves ++ initStateQ 64 ++ initStateQ 608))
   (.seq (foldM fold pass)
-  (.seq (.block [.alu .add .rdx (.imm 64)])
+  (.seq (.block (mStore pass ++ ([.alu .add .rdx (.imm 64)] : List Instr)))
   (.seq (zeroKs w)
     (.block (ptr .rdi .r15 608 ++ ptr .rsi .r15 672 ++ ptr .rcx .r15 128)))))
 
