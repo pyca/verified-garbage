@@ -35,11 +35,14 @@ Modelling choices:
   their data operands ("Data Operand Independent Timing Instruction Set
   Architecture (ISA) Guidance", which lists `MUL`), and so are BMI2's `mulx`
   and ADX's `adcx` and `adox` (it lists `MULX`, `ADCX` and `ADOX`), `shl`
-  (`SHL`), `cmovcc` (`CMOVcc`), and SSE2's `pcmpeqd` and its VEX forms
-  `vpcmpeqd` (`PCMPEQD`, `VPCMPEQD`). `cmovcc` is not a branch: whether the
-  condition holds changes the destination, not which instructions run or
-  for how long, so the model's leakage of it is only its memory source's
-  address (`addrs`), which it reads whether or not the condition holds.
+  (`SHL`), the shifts by CL `shl`, `shr` and `sar` (`SHL`, `SHR` and `SAR`,
+  each with opcode `0xd3`), BMI2's `shlx` and `shrx` (`SHLX` and `SHRX`; it
+  does not list `SARX`, which the model leaves out), `cmovcc` (`CMOVcc`),
+  and SSE2's `pcmpeqd` and its VEX forms `vpcmpeqd` (`PCMPEQD`,
+  `VPCMPEQD`). `cmovcc` is not a branch: whether the condition holds
+  changes the destination, not which instructions run or for how long, so
+  the model's leakage of it is only its memory source's address (`addrs`),
+  which it reads whether or not the condition holds.
 * Assumed, not proven: the model's instructions take a time independent of
   their data operands on every processor that runs this code. Intel's
   guidance, the only vendor statement the model cites, is narrower. It
@@ -230,6 +233,13 @@ inductive Instr
   /-- `op r64, count` (64-bit) with an immediate count. Only counts `1 ≤ count ≤ 63`
   are modelled; any other count faults. -/
   | shift (op : ShiftOp) (dst : Reg) (count : Nat)
+  /-- `op r64, cl` (64-bit; `REX.W + D3 /4`, `/5`, `/7`): `dst` shifted by
+  `cl` masked to 6 bits (`execShiftCl`). -/
+  | shiftCl (op : VarShiftOp) (dst : Reg)
+  /-- `shlx` or `shrx r64, r64, r64` (`VEX.LZ.66.0F38.W1 F7 /r`,
+  `VEX.LZ.F2.0F38.W1 F7 /r`, BMI2): `src` shifted by `cnt` masked to 6
+  bits, into `dst`, without affecting the flags (`execShiftx`). -/
+  | shiftx (op : ShiftxOp) (dst src cnt : Reg)
   /-- `movabs r64, imm64`: `MOV r64, imm64` (REX.W + B8+rd io), a full 64-bit
   immediate. -/
   | movImm64 (dst : Reg) (v : BitVec 64)
@@ -461,7 +471,7 @@ def Instr.requires : Instr → List String
   | .vop (.vpermq ..) | .vop (.vpermd ..) | .vop (.vperm2i128 ..) | .vop (.vinserti128 ..) | .vop (.vextracti128 ..)
   | .vbroadcasti128 .. | .vpmovmskb .l256 .. => ["avx2"]
   | .vpmovmskb .l128 .. => ["avx"]
-  | .rorx32 .. | .rorx .. | .mulx .. => ["bmi2"]
+  | .rorx32 .. | .rorx .. | .mulx .. | .shiftx .. => ["bmi2"]
   | .adcx .. | .adox .. => ["adx"]
   | .andn32 .. | .andn .. => ["bmi1"]
   | .zop (.zbin .vaesenc ..) | .zop (.zbin .vaesenclast ..)
@@ -504,6 +514,8 @@ def exec : Instr → State → Option State
   | .store8 m r, s => s.store8 (s.ea m) ((s.gpr r).setWidth 8)
   | .bswap d, s => some (s.setReg d (bswap64 (s.gpr d)))
   | .shift op d n, s => execShift op d n s
+  | .shiftCl op d, s => some (execShiftCl op d s)
+  | .shiftx op d r c, s => some (execShiftx op d r c s)
   -- SDM Vol. 2, "MOV": `DEST := SRC`; no flags are affected.
   | .movImm64 d v, s => some (s.setReg d v)
   -- `leaSym`: SDM Vol. 2, "LEA—Load Effective Address", with a 64-bit operand
@@ -646,6 +658,8 @@ def addrs : Instr → State → List Addr
   | .store8 m _, s => [s.ea m]
   | .bswap _, _ => []
   | .shift .., _ => []
+  | .shiftCl .., _ => []
+  | .shiftx .., _ => []
   | .movImm64 .., _ => []
   | .leaSym .., _ => []
   | .movdquLoad _ m, s => [s.ea m]
@@ -779,8 +793,8 @@ two, `rax` and `rdx`, and stores and SSE instructions none. -/
 def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
-  | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .pop d _
-  | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
+  | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _
+  | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..

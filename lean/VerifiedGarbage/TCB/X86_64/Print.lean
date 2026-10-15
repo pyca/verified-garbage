@@ -238,6 +238,12 @@ def AluOp.name : AluOp → String
 def ShiftOp.name : ShiftOp → String
   | .ror => "ror" | .shr => "shr" | .shl => "shl"
 
+def VarShiftOp.name : VarShiftOp → String
+  | .shl => "shl" | .shr => "shr" | .sar => "sar"
+
+def ShiftxOp.name : ShiftxOp → String
+  | .shlx => "shlx" | .shrx => "shrx"
+
 def Cond.name : Cond → String
   | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"
 
@@ -258,6 +264,8 @@ def Instr.asm : Instr → List String
   | .store8 m r => [s!"mov {m.str8}, {r.name8}"]
   | .bswap d => [s!"bswap {d.name}"]
   | .shift op d n => [s!"{op.name} {d.name}, {n}"]
+  | .shiftCl op d => [s!"{op.name} {d.name}, cl"]
+  | .shiftx op d r c => [s!"{op.name} {d.name}, {r.name}, {c.name}"]
   -- `movabs` always selects the `REX.W + B8+rd io` encoding, whatever the value.
   | .movImm64 d v => [s!"movabs {d.name}, {v.toInt}"]
   | .leaSym d name => [s!"lea {d.name}, [rip + {name}]"]
@@ -326,7 +334,8 @@ def Instr.memOps : Instr → List MemOp
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m | .kLoad _ _ m | .kStore m _ _
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
-  | .shift .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .eop _
+  | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
+  | .vpmovmskb .. | .zop _ | .eop _
   | .lfence | .mul _ | .imul ..
   | .push _ | .pop .. | .alloc _ | .free _ => []
 

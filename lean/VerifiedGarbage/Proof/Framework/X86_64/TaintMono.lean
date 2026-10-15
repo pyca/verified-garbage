@@ -471,6 +471,20 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d hw.pubM) h.flags (h.killM d) empty_subset'⟩
+  | shiftCl _ d =>
+    simp only [step, Option.some.injEq] at hs ⊢
+    cases hs
+    have hp : (pub τ d && pub τ .rcx) = true → (pub σ d && pub σ .rcx) = true := fun hp => by
+      simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
+    refine ⟨_, rfl, h.upd (set_mono hw d hp) (fun hf => ?_) (h.killM d) empty_subset'⟩
+    simp only [Bool.and_eq_true] at hf ⊢
+    exact ⟨h.flags hf.1, by simpa only [Bool.and_eq_true] using hp (by simpa only [Bool.and_eq_true] using hf.2)⟩
+  | shiftx _ d r c =>
+    simp only [step, Option.some.injEq] at hs ⊢
+    cases hs
+    have hp : (pub τ r && pub τ c) = true → (pub σ r && pub σ c) = true := fun hp => by
+      simp only [Bool.and_eq_true] at hp ⊢; exact ⟨hw.pubM hp.1, hw.pubM hp.2⟩
+    exact ⟨_, rfl, h.upd (set_mono hw d hp) h.flags (h.killM d) empty_subset'⟩
   | andn32 d a b | andn d a b =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
