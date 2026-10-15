@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.BrainpoolP384r1
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.BrainpoolP384r1
@@ -43,12 +45,12 @@ theorem brainpoolp384r1_fn : FnOk (modP brainpoolp384r1) :=
 theorem brainpoolp384r1_add_ct :
     ConstantTime isa (sumX86 brainpoolp384r1 false).pre (sumX86 brainpoolp384r1 false).pub
       (fn (modP brainpoolp384r1) false) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem brainpoolp384r1_double_ct :
     ConstantTime isa (sumX86 brainpoolp384r1 true).pre (sumX86 brainpoolp384r1 true).pub
       (fn (modP brainpoolp384r1) true) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem brainpoolp384r1_add_verified (hF : Fermat brainpoolp384r1.p) :
     Verified X86.target (pointAdd brainpoolp384r1) (brainpoolp384r1.addContract X86.abi 20) :=
