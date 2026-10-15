@@ -57,8 +57,11 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre brainpoolp256r1 s := 
 theorem verify_x86 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyBrainpoolP256r1.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (brainpoolp256r1_ok hI) hL brainpoolp256r1_tbls (pre_of hs) brainpoolp256r1_mulBase.2
-  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := verifyBrainpoolP256r1) (by lit_decide)
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have hok : verifyBrainpoolP256r1.InlineOk = true := by lit_decide
+  have hsp := Code.clobbers_rsp_of_inlineOk hok
+  have hmx : verifyBrainpoolP256r1.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
+    rw [Code.allInstrs_inline]; lit_decide
+  have F := (Exec.regions he (Code.noCalls_inline hok)).2.2
   obtain ⟨-, hwr, -, -, -, hrs, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩

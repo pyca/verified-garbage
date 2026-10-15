@@ -131,8 +131,11 @@ theorem sign_x86 (hL : Law Spec.P384.curve)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs) p384_mulBase
-  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signP384) (by lit_decide)
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have hok : signP384.InlineOk = true := by lit_decide
+  have hsp := Code.clobbers_rsp_of_inlineOk hok
+  have hmx : signP384.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
+    rw [Code.allInstrs_inline]; lit_decide
+  have F := (Exec.regions he (Code.noCalls_inline hok)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩

@@ -115,8 +115,11 @@ theorem sign_x86 (hL : Law Spec.BrainpoolP384r1.curve)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signBrainpoolP384r1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (brainpoolp384r1_ok hI) hL brainpoolp384r1_tbls (pre_of hs) brainpoolp384r1_mulBase
-  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signBrainpoolP384r1) (by lit_decide)
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have hok : signBrainpoolP384r1.InlineOk = true := by lit_decide
+  have hsp := Code.clobbers_rsp_of_inlineOk hok
+  have hmx : signBrainpoolP384r1.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
+    rw [Code.allInstrs_inline]; lit_decide
+  have F := (Exec.regions he (Code.noCalls_inline hok)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
