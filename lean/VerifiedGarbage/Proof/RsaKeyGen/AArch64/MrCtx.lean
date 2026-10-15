@@ -58,18 +58,18 @@ theorem MrCtx.of_frm {s t : State} {B : Addr} {Z w c bm : Nat} {rs : List (Nat �
   have hZ := hc.ws.hZ
   have hw := hc.ws.w1
   have e : ∀ {j : Nat}, j < 16 → slot w j + 8 * w ≤ Z := fun hj => by
-    have := slot_lt (w := w) hj; omega
+    have := slot_lt (w := w) hj; omega_using [hZ, this]
   have eB := e (show aB < 16 by decide)
   have e1 := e (show aR1 < 16 by decide)
   have em := e (show aRm1 < 16 by decide)
   have eN := e (show aN < 16 by decide)
   refine ⟨hc.ws.congr' hf hm k hr, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [hf.word_eq (d := slot w aN) (fun r hr => by have := dN r hr; omega) (by omega),
-      hf.word_eq (d := 8 * sMinv) dI (by simp only [sMinv] at *; have := hc.ws.h256; omega)]
+  · rw [hf.word_eq (d := slot w aN) (fun r hr => by have := dN r hr; omega_using [hw, this]) (by omega_using [hn, hw, eN]),
+      hf.word_eq (d := 8 * sMinv) dI (by simp only [sMinv] at *; have := hc.ws.h256; omega_using [])]
     exact hc.inv
-  · rw [hf.wv_eq dN (by omega)]; exact hc.n
-  · rw [hf.wv_eq dB (by omega)]; exact hc.b
-  · rw [hf.wv_eq d1 (by omega)]; exact hc.r1
-  · rw [hf.wv_eq dm (by omega)]; exact hc.rm1
+  · rw [hf.wv_eq dN (by omega_using [hn, eN])]; exact hc.n
+  · rw [hf.wv_eq dB (by omega_using [hn, eB])]; exact hc.b
+  · rw [hf.wv_eq d1 (by omega_using [hn, e1])]; exact hc.r1
+  · rw [hf.wv_eq dm (by omega_using [hn, em])]; exact hc.rm1
 
 end VG.Proof.RsaKeyGen.AArch64

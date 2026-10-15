@@ -8,6 +8,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate on x86-64: correctness
@@ -53,7 +54,7 @@ structure KCtx (s : State) : Prop where
 
 theorem stackArgAddr_add (s : State) (i : Nat) :
     stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (8 * i) := by
-  simp only [stackArgAddr]; rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega
+  simp only [stackArgAddr]; rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []
 
 theorem kctx_of {s : State} (h : candPre s) : KCtx s := by
   simp only [candPre] at h
@@ -65,30 +66,30 @@ theorem kctx_of {s : State} (h : candPre s) : KCtx s := by
   have hn := hs.nowrap
   have ha : ∀ i < 4, InRegions (s.rd ++ s.wr) (stackArgAddr s i) 8 := fun i hi =>
     ⟨⟨stackArgAddr s 0, 40⟩, by rw [hrd]; simp,
-      by rw [stackArgAddr_add s i]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      by rw [stackArgAddr_add s i]; exact Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   have hsep : ∀ m', Outside (arg s 3) 0 (8 * 32) s.mem m' → ∀ i < 3, m'.readW (stackArgAddr s i) 64 = stackArg s i :=
     fun m' ho i hi => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * i + b) (by omega) (by omega))
-      rw [stackArgAddr_add s i, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; omega))
-  have he := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega) des
-  have hp := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega) dps
-  have hr := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega) drs
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * i + b) (by omega_using [hi, hb]) (by omega_using []))
+      rw [stackArgAddr_add s i, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; omega_using [hsl, this]))
+  have he := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega_using []) des
+  have hp := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega_using []) dps
+  have hr := src_of_region (s := s) (B := arg s 3) (Z := (arg s 4).toNat * 8) (by rw [hrd]; simp) (by omega_using []) drs
   have ho : OutUp s (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat := by
-    refine ⟨⟨⟨s.gpr .rdx, 8⟩, by rw [hwr]; simp, ?_⟩, fun b hb => out_scr dUs (contains_byte _ (by omega) (by omega)),
-      fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega) (by omega)⟩,
-      fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega)), fun j hj b hb he => ?_⟩
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
-    · exact dOu _ (contains_byte _ (by omega) (by omega)) (by rw [he]; exact contains_byte _ (by omega) (by omega))
-  refine ⟨hk1, hk2, hk8, hl1, hl8, hpl, by omega, hs, ha, hsep, he, hp, hr, ho,
-    fun i hi j hj hh => dOe _ (contains_byte (s.gpr .rdi) (i := j) (by omega) (by omega))
-      (by rw [← hh]; exact contains_byte _ (by omega) (by omega)),
-    fun i hi j hj hh => dOp _ (contains_byte (s.gpr .rdi) (i := j) (by omega) (by omega))
-      (by rw [← hh]; exact contains_byte _ (by omega) (by omega)),
-    fun i hi j hj hh => dOr _ (contains_byte (s.gpr .rdi) (i := j) (by omega) (by omega))
-      (by rw [← hh]; exact contains_byte _ (by omega) (by omega)), fun b hb => ?_⟩
-  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega) (by omega)
-  exact ⟨out_scr dRs hc, fun c hc' he => dRu _ hc (by rw [he]; exact contains_byte _ (by omega) (by omega)),
-    fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega) (by omega))⟩
+    refine ⟨⟨⟨s.gpr .rdx, 8⟩, by rw [hwr]; simp, ?_⟩, fun b hb => out_scr dUs (contains_byte _ (by omega_using [hb]) (by omega_using [])),
+      fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega_using [hj]) (by omega_using [])⟩,
+      fun j hj => out_scr dOs (contains_byte _ (by omega_using [hj]) (by omega_using [])), fun j hj b hb he => ?_⟩
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
+    · exact dOu _ (contains_byte _ (by omega_using [hj]) (by omega_using [])) (by rw [he]; exact contains_byte _ (by omega_using [hb]) (by omega_using []))
+  refine ⟨hk1, hk2, hk8, hl1, hl8, hpl, by omega_using [hsl], hs, ha, hsep, he, hp, hr, ho,
+    fun i hi j hj hh => dOe _ (contains_byte (s.gpr .rdi) (i := j) (by omega_using [hj]) (by omega_using []))
+      (by rw [← hh]; exact contains_byte _ (by omega_using [hi]) (by omega_using [])),
+    fun i hi j hj hh => dOp _ (contains_byte (s.gpr .rdi) (i := j) (by omega_using [hj]) (by omega_using []))
+      (by rw [← hh]; exact contains_byte _ (by omega_using [hi]) (by omega_using [])),
+    fun i hi j hj hh => dOr _ (contains_byte (s.gpr .rdi) (i := j) (by omega_using [hj]) (by omega_using []))
+      (by rw [← hh]; exact contains_byte _ (by omega_using [hi]) (by omega_using [])), fun b hb => ?_⟩
+  have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_using [hb]) (by omega_using [])
+  exact ⟨out_scr dRs hc, fun c hc' he => dRu _ hc (by rw [he]; exact contains_byte _ (by omega_using [hc']) (by omega_using [])),
+    fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega_using [hj]) (by omega_using []))⟩
 
 /-- The postcondition, from how the candidate ended after the entry and the
 zeros to `out`. -/
@@ -118,9 +119,9 @@ theorem candEnd_post {s t₃ t : State} (c : KCtx s)
       · exact (hk.saved 3 (by decide)).trans (hsv 3 (by decide))
       · exact (hk.saved 4 (by decide)).trans (hsv 4 (by decide))
       · exact (hk.saved 5 (by decide)).trans (hsv 5 (by decide))
-    · obtain ⟨hZx, hnu, hno⟩ := c.hret b (by omega)
-      rw [hk.frame _ hZx hnu hno, hret b (by omega)]
-    · rw [hk.rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    · obtain ⟨hZx, hnu, hno⟩ := c.hret b (by omega_using [hb])
+      rw [hk.frame _ hZx hnu hno, hret b (by omega_using [hb])]
+    · rw [hk.rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hst]
     · show outBytes t.mem _ _ = _
       have := hk.out
       cases outv
@@ -169,15 +170,15 @@ theorem front_ok {s t₁ : State} (c : KCtx s) (he : EntryPost s t₁ (arg s 3))
   have hk1 := c.k1
   have hk2 := c.k2
   have hs₁ := hs.congr he.keep.2.2
-  refine WP.seq (WP.mono (zeroOut_ok (k := (s.gpr .rsi).toNat) hs₁ he.rdi (by omega) (by omega) (by omega) he.out
+  refine WP.seq (WP.mono (zeroOut_ok (k := (s.gpr .rsi).toNat) hs₁ he.rdi (by omega_using [hZ, hk1]) (by omega_using [hk1]) (by omega_using [hk2]) he.out
     (by rw [he.len, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (fun j hj => by rw [he.keep.2.2]; exact c.ou.outw j hj))
     fun t₂ ⟨hz₂, hf₂, k₂⟩ => ?_)
   have hs₂ := hs₁.congr k₂.2.2
   have hw₂ : ∀ i < 32, word t₂.mem (arg s 3) (8 * i) = word t₁.mem (arg s 3) (8 * i) := fun i hi =>
     Mem.readW_congr fun b hb => hf₂ _ fun j hj he' => by
-      have := c.ou.outZ j hj; rw [← he', ofs_off _ (by omega)] at this; omega
+      have := c.ou.outZ j hj; rw [← he', ofs_off _ (by omega_using [hi, hb])] at this; omega_using [hZ, hk1, hi, hb, this]
   have hdi₂ : t₂.gpr .rdi = arg s 3 := (k₂.gpr (by decide)).trans he.rdi
-  have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (arg s 3) (8 * i)) 8 := fun i hi => hs₂.ld (by omega)
+  have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (arg s 3) (8 * i)) 8 := fun i hi => hs₂.ld (by omega_using [hZ, hk1, hi])
   refine WP.mono (WP.keep [.rax, .rcx] (Q := fun t => t.cf = some (decide ((arg s 2).toNat < (s.gpr .rsi).toNat)) ∧
       t.mem = t₂.mem) (by
     xrun [State.ea, hdr, hdi₂, hdrOff, hl₂ kRandLen (by decide), hl₂ kLen (by decide), hw₂ kRandLen (by decide),
@@ -191,7 +192,7 @@ theorem Front.word {s t₁ t₃ : State} (c : KCtx s) (h : Front s t₁ t₃) {i
   have hZ := c.hZ
   have hk1 := c.k1
   exact Mem.readW_congr fun b hb => h.frame _ fun j hj he' => by
-    have := c.ou.outZ j hj; rw [← he', ofs_off _ (by omega)] at this; omega
+    have := c.ou.outZ j hj; rw [← he', ofs_off _ (by omega_using [hi, hb])] at this; omega_using [hi, hZ, hk1, hb, this]
 
 /-- What `kMain` needs, after the entry, the zeros and the length check. -/
 theorem mainCtx_of {s t₁ t₃ : State} {w : Nat} (c : KCtx s) (he : EntryPost s t₁ (arg s 3)) (h : Front s t₁ t₃)
@@ -211,16 +212,16 @@ theorem mainCtx_of {s t₁ t₃ : State} {w : Nat} (c : KCtx s) (he : EntryPost 
   have hrs : ∀ i < 32, word t₃.mem (arg s 3) (8 * i) = word t₁.mem (arg s 3) (8 * i) := fun i hi => h.word c hi
   have hhi : ∀ x, 8 * 32 ≤ ofs (arg s 3) x → (∀ j < (s.gpr .rsi).toNat, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
       t₃.mem x = s.mem x := fun x hx hx' => by
-    rw [h.frame x hx', he.frame x (Or.inr (by omega))]
+    rw [h.frame x hx', he.frame x (Or.inr (by omega_using [hx]))]
   have ho₃ : OutUp t₃ (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat :=
     c.ou.congr k13.2.2
   have hsrc : ∀ {p : Addr} {bs : List Byte}, Src s (arg s 3) ((arg s 4).toNat * 8) p bs →
       (∀ i < bs.length, ∀ j < (s.gpr .rsi).toNat, p + BitVec.ofNat 64 i ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
       Src t₃ (arg s 3) ((arg s 4).toNat * 8) p bs := fun {p bs} h hd =>
-    VG.Proof.RsaKeyGen.X86_64.Src.congr' h (fun i hi => hhi _ (by have := h.out i hi; omega) (hd i hi)) k13.2.1 k13.2.2
-  refine ⟨hs₃, hdi₃, by rw [show 8 * w / 8 = w by omega]; unfold slot aTab hdrBytes; omega,
-    by rw [show 8 * w / 8 = w by omega]; unfold slot aRm1 hdrBytes; omega, by omega,
-    by omega, by omega, by rw [hrs _ (by decide)]; exact he.out, ?_, by rw [hrs _ (by decide)]; exact he.usedP,
+    VG.Proof.RsaKeyGen.X86_64.Src.congr' h (fun i hi => hhi _ (by have := h.out i hi; omega_using [hZ, hk1, this]) (hd i hi)) k13.2.1 k13.2.2
+  refine ⟨hs₃, hdi₃, by rw [show 8 * w / 8 = w by omega_using []]; unfold slot aTab hdrBytes; omega_using [hw, hZ, hk1],
+    by rw [show 8 * w / 8 = w by omega_using []]; unfold slot aRm1 hdrBytes; omega_using [hw, hZ, hk1], by omega_using [hw, hk1],
+    by omega_using [hw, hk2], by omega_using [], by rw [hrs _ (by decide)]; exact he.out, ?_, by rw [hrs _ (by decide)]; exact he.usedP,
     by rw [hrs _ (by decide)]; exact he.e, ?_, by rw [hrs _ (by decide)]; exact he.p, ?_,
     by rw [hrs _ (by decide)]; exact he.rand, ?_, hsrc c.esrc (fun i hi => c.doe i (by rwa [bytesAt_length] at hi)),
     hsrc c.psrc (fun i hi => c.dop i (by rwa [bytesAt_length] at hi)),
@@ -244,8 +245,8 @@ theorem code_correct (M : Mont) (hmx : (VG.Impl.RsaKeyGen.X86_64.Candidate.code 
   have hk1 := c.k1
   have hk2 := c.k2
   have hk8 := c.k8
-  obtain ⟨w, hw⟩ : ∃ w, (s.gpr .rsi).toNat = 8 * w := ⟨(s.gpr .rsi).toNat / 8, by omega⟩
-  have hhw : ∀ i < 32, InRegions s.wr (off (arg s 3) (8 * i)) 8 := fun i hi => hs.st (by omega)
+  obtain ⟨w, hw⟩ : ∃ w, (s.gpr .rsi).toNat = 8 * w := ⟨(s.gpr .rsi).toNat / 8, by omega_using [hk8]⟩
+  have hhw : ∀ i < 32, InRegions s.wr (off (arg s 3) (8 * i)) 8 := fun i hi => hs.st (by omega_using [hZ, hk1, hi])
   unfold VG.Impl.RsaKeyGen.X86_64.Candidate.code
   simp only [seqs]
   refine WP.seq (WP.mono (kEntry_ok rfl hhw c.ha c.hsep) fun t₁ he => ?_)
@@ -256,16 +257,16 @@ theorem code_correct (M : Mont) (hmx : (VG.Impl.RsaKeyGen.X86_64.Candidate.code 
   have hdi₃ : t₃.gpr .rdi = arg s 3 := (hf.keep.gpr (by decide)).trans he.rdi
   have hw₃ : ∀ i < 32, word t₃.mem (arg s 3) (8 * i) = word t₁.mem (arg s 3) (8 * i) := fun i hi => hf.word c hi
   have hsv : ∀ i < 6, word t₃.mem (arg s 3) (8 * i) = s.gpr (saved.getD i .rax) := fun i hi =>
-    (hw₃ i (by omega)).trans (he.saved i hi)
+    (hw₃ i (by omega_using [hi])).trans (he.saved i hi)
   have hhi : ∀ x, 8 * 32 ≤ ofs (arg s 3) x → (∀ j < (s.gpr .rsi).toNat, x ≠ s.gpr .rdi + BitVec.ofNat 64 j) →
       t₃.mem x = s.mem x := fun x hx hx' => by
-    rw [hf.frame x hx', he.frame x (Or.inr (by omega))]
+    rw [hf.frame x hx', he.frame x (Or.inr (by omega_using [hx]))]
   have hret : ∀ b < 8, t₃.mem (s.gpr .rsp + BitVec.ofNat 64 b) = s.mem (s.gpr .rsp + BitVec.ofNat 64 b) :=
-    fun b hb => hhi _ (by have := (c.hret b hb).1; omega) (c.hret b hb).2.2
+    fun b hb => hhi _ (by have := (c.hret b hb).1; omega_using [hZ, hk1, this]) (c.hret b hb).2.2
   have hsp : t₃.gpr .rsp = s.gpr .rsp := k13.gpr (by decide)
   have ho₃ : OutUp t₃ (arg s 3) ((arg s 4).toNat * 8) (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rsi).toNat :=
     c.ou.congr k13.2.2
-  have h8 : 8 * 32 ≤ (arg s 4).toNat * 8 := by omega
+  have h8 : 8 * 32 ≤ (arg s 4).toNat * 8 := by omega_using [hZ, hk1]
   refine WP.ite (decide ((arg s 2).toNat < (s.gpr .rsi).toNat)) (by simp [eval, hf.cf]) (fun hlt => ?_) (fun hlt => ?_)
   · -- Too few octets.
     simp only [decide_eq_true_eq] at hlt
@@ -273,7 +274,7 @@ theorem code_correct (M : Mont) (hmx : (VG.Impl.RsaKeyGen.X86_64.Candidate.code 
       fun t ht => candEnd_post c hsv hf.zero hret hsp ?_
     have hnone : candRes s = none := by
       unfold candRes Spec.RsaKeyGen.candidateOp
-      rw [VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega), ite_f (by rw [bytesAt_length]; omega)]
+      rw [VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hlt]), ite_f (by rw [bytesAt_length]; omega_using [hlt])]
     rw [hnone]; exact KEnd.of_fin ho₃ ht
   · -- `kMain`.
     simp only [decide_eq_false_iff_not, Nat.not_lt] at hlt
@@ -285,8 +286,8 @@ theorem code_correct (M : Mont) (hmx : (VG.Impl.RsaKeyGen.X86_64.Candidate.code 
           (Spec.Rsa.os2ip ((Spec.Rsa.bytesAt s.mem (arg s 1) (arg s 2).toNat).take (8 * w))))
         ((Spec.Rsa.bytesAt s.mem (arg s 1) (arg s 2).toNat).drop (8 * w)) := by
       unfold candRes Spec.RsaKeyGen.candidateOp
-      rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega), ite_t (by rw [bytesAt_length]; omega),
-        seg_zero, show 8 * (8 * w) = 64 * w by omega]
+      rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hk1, hw]), ite_t (by rw [bytesAt_length]; omega_using [hw, hlt]),
+        seg_zero, show 8 * (8 * w) = 64 * w by omega_using []]
     rw [hres, ← hw]
     rw [← hw] at ht
     exact ht

@@ -49,9 +49,9 @@ theorem sxm1' : BitVec.signExtend 64 (BitVec.ofInt 32 (-1)) = BitVec.allOnes 64 
 theorem _root_.VG.Proof.Bignum.Hdr.of_frm {m m' : Mem} {B : Addr} {w : Nat} {mi : BitVec 64} {rs : List (Nat × Nat)} (hH : Hdr m B w mi)
     (hf : Frm B rs m m') (hd : ∀ r ∈ rs, 128 ≤ r.1) : Hdr m' B w mi := by
   have hh : ∀ i < 16, word m' B (8 * i) = word m B (8 * i) := fun i hi =>
-    hf.word_eq (fun r hr => Or.inl (by have := hd r hr; omega)) (by omega)
+    hf.word_eq (fun r hr => Or.inl (by have := hd r hr; omega_using [hi, this])) (by omega_using [hi])
   exact ⟨(hh _ (by decide)).trans hH.hw, (hh _ (by decide)).trans hH.hminv,
-    fun j hj => (hh _ (by unfold sArr; omega)).trans (hH.harr j hj)⟩
+    fun j hj => (hh _ (by unfold sArr; omega_using [hj])).trans (hH.harr j hj)⟩
 
 /-- `MrCtx` survives changes away from what it keeps. -/
 theorem MrCtx.of_frm {s t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm : Nat} {rs : List (Nat × Nat)}
@@ -64,16 +64,16 @@ theorem MrCtx.of_frm {s t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm
     MrCtx t B Z w mi c bm := by
   have hn := hc.good.scr.nowrap
   have hx := hd.x
-  have hb : slot w aRm1 + 8 * (w + 2) ≥ slot w aB + 8 * w := by unfold slot aRm1 aB; omega
-  have hb1 : slot w aRm1 + 8 * (w + 2) ≥ slot w aR1 + 8 * w := by unfold slot aRm1 aR1; omega
-  have hb0 : slot w aRm1 + 8 * (w + 2) ≥ slot w aN + 8 * w := by unfold slot aRm1 aN; omega
-  have h128 : 128 ≤ slot w aN := by unfold slot aN hdrBytes; omega
+  have hb : slot w aRm1 + 8 * (w + 2) ≥ slot w aB + 8 * w := by unfold slot aRm1 aB; omega_using []
+  have hb1 : slot w aRm1 + 8 * (w + 2) ≥ slot w aR1 + 8 * w := by unfold slot aRm1 aR1; omega_using []
+  have hb0 : slot w aRm1 + 8 * (w + 2) ≥ slot w aN + 8 * w := by unfold slot aRm1 aN; omega_using []
+  have h128 : 128 ≤ slot w aN := by unfold slot aN hdrBytes; omega_using []
   refine ⟨⟨hs, hdi, Hdr.of_frm hc.good.hdr hf hh⟩, ?_, ?_, ?_, ?_, ?_⟩
   · have := hd.w4
-    rw [hf.word_eq (d := slot w aN) (fun r hr => by have := dN r hr; omega) (by omega)]; exact hc.inv
-  · rw [hf.wv_eq dN (by omega)]; exact hc.n
-  · rw [hf.wv_eq dB (by omega)]; exact hc.b
-  · rw [hf.wv_eq d1 (by omega)]; exact hc.r1
-  · rw [hf.wv_eq dm (by omega)]; exact hc.rm1
+    rw [hf.word_eq (d := slot w aN) (fun r hr => by have := dN r hr; omega_arith) (by omega_using [hn, hx, hb0, this])]; exact hc.inv
+  · rw [hf.wv_eq dN (by omega_using [hn, hx, hb0])]; exact hc.n
+  · rw [hf.wv_eq dB (by omega_using [hn, hx, hb])]; exact hc.b
+  · rw [hf.wv_eq d1 (by omega_using [hn, hx, hb1])]; exact hc.r1
+  · rw [hf.wv_eq dm (by omega_using [hn, hx])]; exact hc.rm1
 
 end VG.Proof.RsaKeyGen.X86_64

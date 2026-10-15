@@ -9,6 +9,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Contract
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! ## Ctx -/
 
@@ -67,7 +68,7 @@ structure KCtx (s : State) : Prop where
 
 theorem kStk_eq (s : State) (j : Nat) : stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) := by
   simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega]
+  rw [show 8 * (0 + 1) + 8 * j = 8 * (j + 1) by omega_using []]
 
 theorem kStk_add (s : State) (j b : Nat) :
     stackArgAddr s j + BitVec.ofNat 64 b = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j + b) := by
@@ -98,60 +99,60 @@ theorem keyCtx_of {s : State} (h : keyPre s) : KCtx s := by
   simp only [hqil] at dnqi ddqi dpqi dqqi dpqi' dqqi' dqie dqis dqia dRqi wqi
   have hwr' : ∀ (o : Addr) (l : Nat), (⟨o, l⟩ : Region) ∈ s.wr → l ≤ 2 ^ 64 → ∀ i < l,
       InRegions s.wr (o + BitVec.ofNat 64 i) 1 := fun o l hm hl i hi => ⟨_, hm, contains_byte o hi hl⟩
-  have hpw : (s.gpr .r9).toNat ≤ 2 ^ 64 := by omega
+  have hpw : (s.gpr .r9).toNat ≤ 2 ^ 64 := by omega_using []
   refine ⟨⟨hpl1, hpl2, hpl8, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, hel1, hel8⟩, hsi, hs,
-    by simp only [keyIn, KIn.W, slot, hdrBytes]; omega,
-    fun j hj => ⟨_, hargs, by rw [kStk_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
+    by simp only [keyIn, KIn.W, slot, hdrBytes]; omega_using [hsi, hsl, hpl1],
+    fun j hj => ⟨_, hargs, by rw [kStk_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 96) (by omega) (by omega))
-      rw [← kStk_add s j b] at this; omega)),
-    src_of_region (by rw [hwr]; simp) (by omega) dps,
-    src_of_region (by rw [hwr]; simp [hql]) (by omega) dqs,
-    src_of_region (by rw [hrd]; simp) (by omega) des,
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 96) (by omega_using [hj, hb]) (by omega_using []))
+      rw [← kStk_add s j b] at this; omega_using [hsl, this])),
+    src_of_region (by rw [hwr]; simp) (by omega_using []) dps,
+    src_of_region (by rw [hwr]; simp [hql]) (by omega_using []) dqs,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) des,
     ⟨fun o ho => ?_, fun o ho => ?_, ?_⟩, fun b hb => ?_⟩
   · simp only [outsL, keyIn, List.mem_cons, List.not_mem_nil, or_false] at ho
     rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only
-    · exact hwr' _ _ (by rw [hwr, hsi]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr, hcx, hsi]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr, hql]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr, hdpl]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr, hdql]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr, hqil]; simp) (by omega)
+    · exact hwr' _ _ (by rw [hwr, hsi]; simp) (by omega_using [wn])
+    · exact hwr' _ _ (by rw [hwr, hcx, hsi]; simp) (by omega_using [wn])
+    · exact hwr' _ _ (by rw [hwr]; simp) (by omega_using [])
+    · exact hwr' _ _ (by rw [hwr, hql]; simp) (by omega_using [])
+    · exact hwr' _ _ (by rw [hwr, hdpl]; simp) (by omega_using [])
+    · exact hwr' _ _ (by rw [hwr, hdql]; simp) (by omega_using [])
+    · exact hwr' _ _ (by rw [hwr, hqil]; simp) (by omega_using [])
   · simp only [outsL, keyIn, List.mem_cons, List.not_mem_nil, or_false] at ho
     rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> intro i hi
-    · exact out_scr dns (contains_byte _ hi (by omega))
-    · exact out_scr dds (contains_byte _ hi (by omega))
-    · exact out_scr dps (contains_byte _ hi (by omega))
-    · exact out_scr dqs (contains_byte _ hi (by omega))
-    · exact out_scr dps' (contains_byte _ hi (by omega))
-    · exact out_scr dqs' (contains_byte _ hi (by omega))
-    · exact out_scr dqis (contains_byte _ hi (by omega))
+    · exact out_scr dns (contains_byte _ hi (by omega_using [wn]))
+    · exact out_scr dds (contains_byte _ hi (by omega_using [wn]))
+    · exact out_scr dps (contains_byte _ hi (by omega_using []))
+    · exact out_scr dqs (contains_byte _ hi (by omega_using []))
+    · exact out_scr dps' (contains_byte _ hi (by omega_using []))
+    · exact out_scr dqs' (contains_byte _ hi (by omega_using []))
+    · exact out_scr dqis (contains_byte _ hi (by omega_using []))
   · simp only [outsL, keyIn, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, List.Pairwise.nil, and_true, IsEmpty.forall_iff, implies_true]
-    exact ⟨⟨kApart_of dnd (by omega) (by omega), kApart_of dnp (by omega) (by omega),
-        kApart_of dnq (by omega) (by omega), kApart_of dndp (by omega) (by omega),
-        kApart_of dndq (by omega) (by omega), kApart_of dnqi (by omega) (by omega)⟩,
-      ⟨kApart_of ddp (by omega) (by omega), kApart_of ddq (by omega) (by omega),
-        kApart_of dddp (by omega) (by omega), kApart_of dddq (by omega) (by omega),
-        kApart_of ddqi (by omega) (by omega)⟩,
-      ⟨kApart_of dpq (by omega) (by omega), kApart_of dpdp (by omega) (by omega),
-        kApart_of dpdq (by omega) (by omega), kApart_of dpqi (by omega) (by omega)⟩,
-      ⟨kApart_of dqdp (by omega) (by omega), kApart_of dqdq (by omega) (by omega),
-        kApart_of dqqi (by omega) (by omega)⟩,
-      ⟨kApart_of dpdq' (by omega) (by omega), kApart_of dpqi' (by omega) (by omega)⟩,
-      kApart_of dqqi' (by omega) (by omega)⟩
-  · have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega) (by omega)
+    exact ⟨⟨kApart_of dnd (by omega_using [wn]) (by omega_using [wn]), kApart_of dnp (by omega_using [wn]) (by omega_using []),
+        kApart_of dnq (by omega_using [wn]) (by omega_using []), kApart_of dndp (by omega_using [wn]) (by omega_using []),
+        kApart_of dndq (by omega_using [wn]) (by omega_using []), kApart_of dnqi (by omega_using [wn]) (by omega_using [])⟩,
+      ⟨kApart_of ddp (by omega_using [wn]) (by omega_using []), kApart_of ddq (by omega_using [wn]) (by omega_using []),
+        kApart_of dddp (by omega_using [wn]) (by omega_using []), kApart_of dddq (by omega_using [wn]) (by omega_using []),
+        kApart_of ddqi (by omega_using [wn]) (by omega_using [])⟩,
+      ⟨kApart_of dpq (by omega_using []) (by omega_using []), kApart_of dpdp (by omega_using []) (by omega_using []),
+        kApart_of dpdq (by omega_using []) (by omega_using []), kApart_of dpqi (by omega_using []) (by omega_using [])⟩,
+      ⟨kApart_of dqdp (by omega_using []) (by omega_using []), kApart_of dqdq (by omega_using []) (by omega_using []),
+        kApart_of dqqi (by omega_using []) (by omega_using [])⟩,
+      ⟨kApart_of dpdq' (by omega_using []) (by omega_using []), kApart_of dpqi' (by omega_using []) (by omega_using [])⟩,
+      kApart_of dqqi' (by omega_using []) (by omega_using [])⟩
+  · have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega_using [hb]) (by omega_using [])
     refine ⟨out_scr dRs hc, fun o ho i hi he => ?_⟩
     simp only [outsL, keyIn, List.mem_cons, List.not_mem_nil, or_false] at ho
     rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only at hi he
-    · exact dRn _ hc (by rw [he]; exact contains_byte _ hi (by omega))
-    · exact dRd _ hc (by rw [he]; exact contains_byte _ hi (by omega))
-    · exact dRp _ hc (by rw [he]; exact contains_byte _ hi (by omega))
-    · exact dRq _ hc (by rw [he]; exact contains_byte _ hi (by omega))
-    · exact dRdp _ hc (by rw [he]; exact contains_byte _ hi (by omega))
-    · exact dRdq _ hc (by rw [he]; exact contains_byte _ hi (by omega))
-    · exact dRqi _ hc (by rw [he]; exact contains_byte _ hi (by omega))
+    · exact dRn _ hc (by rw [he]; exact contains_byte _ hi (by omega_using [wn]))
+    · exact dRd _ hc (by rw [he]; exact contains_byte _ hi (by omega_using [wn]))
+    · exact dRp _ hc (by rw [he]; exact contains_byte _ hi (by omega_using []))
+    · exact dRq _ hc (by rw [he]; exact contains_byte _ hi (by omega_using []))
+    · exact dRdp _ hc (by rw [he]; exact contains_byte _ hi (by omega_using []))
+    · exact dRdq _ hc (by rw [he]; exact contains_byte _ hi (by omega_using []))
+    · exact dRqi _ hc (by rw [he]; exact contains_byte _ hi (by omega_using []))
 
 end VG.Proof.RsaKeyGen.X86_64.Key
 
@@ -201,7 +202,7 @@ theorem keyOp_ok {pl : Nat} {eB pB qB : List Byte} {k : Spec.RsaKeyGen.Key}
   unfold keyOp; rw [h]
 
 theorem setWidth32 (n : Nat) (h : n < 2 ^ 32) : ((BitVec.ofNat 64 n).setWidth 32).toNat = n := by
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega),
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega_using [h]),
     Nat.mod_eq_of_lt h]
 
 /-- The zeros and the status 2, for `d ≤ 2^(8 pl)`. -/
@@ -214,7 +215,7 @@ theorem outsRes_zeros {I : KIn} {s t : State} {d : Nat}
       by_cases h : I.P₀ < I.Q₀ <;> simp [KIn.P, KIn.Q, h]
     rw [hswap]
     dsimp only
-    rw [show Nat.lcm (I.P - 1) (I.Q - 1) = I.L from rfl, hd, show 16 * I.pl / 2 = 8 * I.pl by omega]
+    rw [show Nat.lcm (I.P - 1) (I.Q - 1) = I.L from rfl, hd, show 16 * I.pl / 2 = 8 * I.pl by omega_using []]
     dsimp only
     rw [ite_eq_left hsm]
   rw [OutsRes, keyOp_inr hr, Z.1]
@@ -235,9 +236,9 @@ theorem outsRes_tail {I : KIn} {s t : State} (L : KLens I) {ok : Bool}
     OutsRes I t.mem (t.gpr .rax) := by
   obtain ⟨x, hx, hxl, ⟨hax, hN, hD, hP, hQ, hDp, hDq, hQi⟩, -⟩ := T
   have he : I.E < 2 ^ 64 :=
-    Nat.lt_of_lt_of_le (lt_of_os2ip_len L.ebl) (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega))
+    Nat.lt_of_lt_of_le (lt_of_os2ip_len L.ebl) (Nat.pow_le_pow_right (by decide) (by have := L.el8; omega_using [this]))
   have hk := keyFromPrimes_code (x := x) L.pl1 L.pl2 (lt_of_os2ip_len L.pbl) (lt_of_os2ip_len L.qbl) he hx hxl
-  have hW : 64 * I.W - 1 = 16 * I.pl - 1 := by rw [L.W]; have := L.pl8; omega
+  have hW : 64 * I.W - 1 = 16 * I.pl - 1 := by rw [L.W]; have := L.pl8; omega_using [this]
   simp only [finalOk, hW] at hax hN hD hP hQ hDp hDq hQi
   have hstat : ∀ c : Bool, ((BitVec.ofNat 64 c.toNat).setWidth 32).toNat = c.toNat := fun c =>
     setWidth32 _ (by cases c <;> decide)
@@ -258,12 +259,12 @@ theorem outsRes_tail {I : KIn} {s t : State} (L : KLens I) {ok : Bool}
     have hd := hdd d hi
     rw [hd, Bool.and_true, decide_eq_false_iff_not] at hb
     have hd2 : 2 ≤ d := by
-      have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 1 ≤ 8 * I.pl by have := L.pl1; omega)
-      omega
-    have hqp : I.Q ≤ I.P := by simp only [KIn.P, KIn.Q]; split <;> omega
+      have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 1 ≤ 8 * I.pl by have := L.pl1; omega_using [this])
+      omega_using [hb, this]
+    have hqp : I.Q ≤ I.P := by simp only [KIn.P, KIn.Q]; split <;> omega_arith
     obtain ⟨hP3, hQ2, -⟩ := primes_of_inverse hqp hi hd2
-    have hdvP : dv (I.P - 1) = I.P - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega
-    have hdvQ : dv (I.Q - 1) = I.Q - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega
+    have hdvP : dv (I.P - 1) = I.P - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega_using [hP3]
+    have hdvQ : dv (I.Q - 1) = I.Q - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega_using [hQ2]
     simp only [Bool.and_true, KIn.L] at hax hN hD hP hQ hDp hDq hQi hi hk
     rw [hi] at hk
     simp only [ite_eq_right_iff.mpr (fun h => absurd h hb)] at hk
