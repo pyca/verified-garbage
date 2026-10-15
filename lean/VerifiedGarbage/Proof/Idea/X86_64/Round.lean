@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.Idea.X86_64.Mul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -49,7 +50,7 @@ theorem KeyOk.keep {z : Spec.Idea.Schedule} {rs : List Reg} {s s' : State} (h : 
   · rw [he, hk.mem]
     exact h.last j hj
 
-macro "run_simp" : tactic => `(tactic| plain_simp_names simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
+tactic_template "run_simp" : tactic => `(tactic| simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
                    execAlu, execShift, readSrc, State.load64, isa, Option.map_some, Option.bind_some,
                    signExtend_one, signExtend_mask])
 

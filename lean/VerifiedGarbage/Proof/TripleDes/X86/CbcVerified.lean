@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
 meta import VerifiedGarbage.Proof.TripleDes.X86.ModeCore
 public import VerifiedGarbage.Proof.Modes.X86.Modes
@@ -242,16 +244,22 @@ def narrowRd (s : State) : List Region :=
 def narrowWr (s : State) : List Region :=
   [⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩, ⟨(arg s 4).setWidth 64, 8 * 118⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [VG.Proof.TripleDes.X86.Cbc.cbcX86, VG.Proof.TripleDes.X86.Cbc.wideContract,
+tactic_template "tdes_cbc_narrow" : tactic =>
+  `(tactic| simp only [VG.Proof.TripleDes.X86.Cbc.cbcX86, VG.Proof.TripleDes.X86.Cbc.wideContract,
                      VG.Proof.TripleDes.X86.Cbc.narrowRd, VG.Proof.TripleDes.X86.Cbc.narrowWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+
+tactic_template "tdes_cbc_narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [VG.Proof.TripleDes.X86.Cbc.cbcX86, VG.Proof.TripleDes.X86.Cbc.wideContract,
+                     VG.Proof.TripleDes.X86.Cbc.narrowRd, VG.Proof.TripleDes.X86.Cbc.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem wide_pre (enc : Bool) (s : State) (h : (wideContract enc).pre s) :
     (cbcX86 enc).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  tdes_cbc_narrow
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -353,10 +361,10 @@ theorem cbc_verified (enc : Bool)
     simp only [narrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    tdes_cbc_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    tdes_cbc_narrow
     exact h
 
 theorem cbcEncrypt_verified : Verified X86.target cbcEncrypt (Proof.TripleDes.cbcEncScratchContract X86.abi 118 16) :=

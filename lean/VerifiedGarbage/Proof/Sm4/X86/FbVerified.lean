@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
 meta import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
 public import VerifiedGarbage.Proof.Sm4.FbScratch
@@ -227,16 +229,16 @@ def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 128⟩, ⟨
 def narrowWr (s : State) : List Region :=
   [⟨(arg s 2).setWidth 64, 16 * (arg s 3).toNat⟩, ⟨(arg s 1).setWidth 64, 16⟩, ⟨(arg s 4).setWidth 64, 8 * 181⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [VG.Proof.Sm4.X86.Fb.fbX86, VG.Proof.Sm4.X86.Fb.wideContract,
+tactic_template "sm4_fb_narrow" : tactic =>
+  `(tactic| simp only [VG.Proof.Sm4.X86.Fb.fbX86, VG.Proof.Sm4.X86.Fb.wideContract,
                      VG.Proof.Sm4.X86.Fb.narrowRd, VG.Proof.Sm4.X86.Fb.narrowWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
 
 theorem wide_pre (post : State → State → Prop) (s : State) (h : (wideContract post).pre s) :
     (fbX86 post).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  sm4_fb_narrow
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -356,7 +358,7 @@ theorem fb_verified {post : State → State → Prop} {c : Prog isa}
   · intro s s' _ h
     exact hR _ _ _ _ _ _ h
   · intro s₁ s₂ _ _ h
-    narrow
+    sm4_fb_narrow
     exact h
 
 theorem ofb_verified : Verified X86.target ofb (Proof.Sm4.fbScratchContract X86.abi 181 Proof.Sm4.ofbPost) :=

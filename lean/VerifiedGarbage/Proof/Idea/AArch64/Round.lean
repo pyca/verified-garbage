@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.Idea.AArch64.Mul
 public import VerifiedGarbage.Proof.Framework.CallLay
 import all Init.Data.Array.Basic
@@ -66,7 +67,7 @@ theorem KeyOk.last {z : Spec.Idea.Schedule} {s : State} (h : KeyOk z s) :
   ⟨CallLay.inRegions_sub h.read (by decide) (by decide), fun j hj => by
     rw [subkey_read96 _ _ hj, h.sched]⟩
 
-macro "keep_tac" : tactic => `(tactic| plain_simp_names (
+tactic_template "keep_tac" : tactic => `(tactic| (
                    refine keep_reg_of (fun q hq => ?_) rfl rfl rfl rfl
                    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
                    simp only [RegUpd.gpr_write, hq, ite_false]))
