@@ -24,7 +24,7 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 
 open VG VG.X86_64 VG.X86_64.RegUpd
 open VG.Impl.Aes.X86_64.AesNi (at_)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (xorData srcAt)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (xorData xorDataI xorLoads storeData srcAt)
 open VG.Proof.Gcm.X86_64 (revMask blockAt_eq pshufb_rev_xor)
 open VG.Spec.Gcm (blockAt)
 open VG.Proof.Aes.X86_64.AesNi (ea_at ofInt_natCast inRegions_wr off_toNat
@@ -47,12 +47,12 @@ theorem srcAddr_false (s : State) (d : Nat) : srcAddr s false d = s.gpr .rdx + B
 theorem xorData_one_ok (ix : Bool) (s : State) (b : XReg) (j : Nat)
     (hr : InRegions (s.rd ++ s.wr) (s.ea (srcAt ix (16 * j))) 16)
     (hw : InRegions s.wr (s.ea (at_ .rdx (16 * j))) 16) :
-    WP isa (.block (xorData ix [b] j)) s fun t =>
+    WP isa (.block (xorDataI ix [b] j)) s fun t =>
       t.mem = s.mem.writeW (s.ea (at_ .rdx (16 * j)))
         (s.lane b 0 ^^^ s.mem.readW (s.ea (srcAt ix (16 * j))) 128) ∧
       YFrame [b] (s.setMem t.mem) t := by
   apply WP.of_runBlock
-  simp only [xorData, List.append_nil, runBlock_cons, runStep_some, runBlock_nil,
+  simp only [xorDataI, List.append_nil, runBlock_cons, runStep_some, runBlock_nil,
     exec, isa, State.load128, hr, ite_true, Option.map_some, VBinOp.sse,
     XBinOp.eval, State.store128_eq, State.setV_ea, State.setV_wr, hw,
     xmm_setV, ite_true, State.setV_mem, Option.some.injEq, exists_eq_left']
@@ -66,17 +66,17 @@ theorem xorData_one_ok (ix : Bool) (s : State) (b : XReg) (j : Nat)
     have hn : r ≠ b := by simpa using hr
     simp only [State.lane, State.setMem_xmm, State.setMem_ymmHi, xmm_setV, ymmHi_setV_128, hn, ite_false]
 
-/-- `xorData ix regs j`: block `k` written to `rdx + 16 (j + k)` is the one
+/-- `xorDataI ix regs j`: block `k` written to `rdx + 16 (j + k)` is the one
 read from `srcAddr s ix (16 (j + k))` XORed with lane 0 of register `k`, for
 a source each block of which is apart from the outputs written before it is
 read (in place, the blocks are distinct). -/
-theorem xorData_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), regs.Nodup →
+theorem xorDataI_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), regs.Nodup →
     (∀ k < regs.length, InRegions s.wr (s.gpr .rdx + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16) →
     (∀ k < regs.length, InRegions (s.rd ++ s.wr) (srcAddr s ix (16 * (j + k))) 16) →
     (∀ a b, a < b → b < regs.length → Region.Disjoint
       ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s ix (16 * (j + b)), 16⟩) →
     (s.gpr .rdx).toNat + 16 * (j + regs.length) ≤ 2 ^ 64 →
-    WP isa (.block (xorData ix regs j)) s fun s' =>
+    WP isa (.block (xorDataI ix regs j)) s fun s' =>
       (∀ k (h : k < regs.length), blockAt s'.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) =
         blockAt s.mem (srcAddr s ix (16 * (j + k))) ^^^
           XBinOp.eval .pshufb (s.lane regs[k] 0) revMask) ∧
@@ -88,7 +88,7 @@ theorem xorData_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), r
   | b :: bs, j, s, hnd, hin, hsr, hsep, hw => by
     have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
     simp only [List.length_cons] at hin hsr hsep hw
-    rw [xorData, WP.block_append_iff]
+    rw [xorDataI, WP.block_append_iff]
     have hin0 := hin 0 (by omega)
     rw [Nat.add_zero] at hin0
     have hiw : InRegions s.wr (s.ea (at_ .rdx (16 * j))) 16 := by
@@ -105,7 +105,7 @@ theorem xorData_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), r
     rw [ea_at, ea_srcAt] at m₁
     have hsa : ∀ d, srcAddr s₁ ix d = srcAddr s ix d := fun d => by simp only [srcAddr, g₁]
     have hrdx : s₁.gpr .rdx = s.gpr .rdx := by rw [g₁]
-    refine WP.mono (xorData_ok ix bs (j + 1) s₁ (List.nodup_cons.mp hnd).2 (fun k hk => by
+    refine WP.mono (xorDataI_ok ix bs (j + 1) s₁ (List.nodup_cons.mp hnd).2 (fun k hk => by
         rw [wr₁, hrdx, show j + 1 + k = j + (k + 1) by omega]; exact hin (k + 1) (by omega))
       (fun k hk => by
         rw [rd₁, wr₁, hsa, show j + 1 + k = j + (k + 1) by omega]; exact hsr (k + 1) (by omega))
@@ -153,6 +153,160 @@ theorem xorData_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), r
       omega
     · simp only [List.mem_cons, not_or] at hr'
       rw [hx r hr'.2 l hl, x₁ r hr'.1 l hl]
+
+/-- One block register XORed with the block read from `srcAt ix (16 j)`. -/
+theorem xorLoad_one_ok (ix : Bool) (s : State) (b : XReg) (j : Nat)
+    (hr : InRegions (s.rd ++ s.wr) (s.ea (srcAt ix (16 * j))) 16) :
+    WP isa (.block [.vbinLoad .vpxor .l128 b b (srcAt ix (16 * j))]) s fun t =>
+      t.lane b 0 = s.lane b 0 ^^^ s.mem.readW (s.ea (srcAt ix (16 * j))) 128 ∧ YFrame [b] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.load128, hr, ite_true,
+    Option.map_some, VBinOp.sse, XBinOp.eval, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ?_⟩
+  · simp only [State.lane, xmm_setV, ite_true]
+  · constructor
+    · simp only [State.setV_gpr]
+    · simp only [State.setV_mem]
+    · simp only [State.setV_rd]
+    · simp only [State.setV_wr]
+    · intro r hr l hl
+      have hn : r ≠ b := by simpa using hr
+      simp only [State.lane, xmm_setV, ymmHi_setV_128, hn, ite_false]
+
+/-- `xorLoads ix regs j`: register `k` XORed with the block read from
+`srcAddr s ix (16 (j + k))`; the memory is unchanged. -/
+theorem xorLoads_ok (ix : Bool) : ∀ (regs : List XReg) (j : Nat) (s : State), regs.Nodup →
+    (∀ k < regs.length, InRegions (s.rd ++ s.wr) (srcAddr s ix (16 * (j + k))) 16) →
+    WP isa (.block (xorLoads ix regs j)) s fun s' =>
+      s'.mem = s.mem ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ k (h : k < regs.length), s'.lane regs[k] 0 =
+        s.lane regs[k] 0 ^^^ s.mem.readW (srcAddr s ix (16 * (j + k))) 128) ∧
+      (∀ r, r ∉ regs → ∀ l < 2, s'.lane r l = s.lane r l)
+  | [], _, s, _, _ => WP.block_nil ⟨rfl, rfl, rfl, rfl, fun _ h => absurd h (by simp), fun _ _ _ _ => rfl⟩
+  | b :: bs, j, s, hnd, hsr => by
+    have hbs : b ∉ bs := (List.nodup_cons.mp hnd).1
+    simp only [List.length_cons] at hsr
+    rw [xorLoads, WP.block_append_iff]
+    have hir : InRegions (s.rd ++ s.wr) (s.ea (srcAt ix (16 * j))) 16 := by
+      rw [ea_srcAt]; simpa only [Nat.add_zero] using hsr 0 (by omega)
+    refine WP.mono (xorLoad_one_ok ix s b j hir) fun s₁ ⟨l₁, f₁⟩ => ?_
+    have g₁ : s₁.gpr = s.gpr := f₁.gpr
+    have m₁ : s₁.mem = s.mem := f₁.mem
+    have x₁ : ∀ r, r ≠ b → ∀ l < 2, s₁.lane r l = s.lane r l := fun r hr l hl =>
+      f₁.lane r (by simpa using hr) l hl
+    have hsa : ∀ d, srcAddr s₁ ix d = srcAddr s ix d := fun d => by simp only [srcAddr, g₁]
+    rw [ea_srcAt] at l₁
+    refine WP.mono (xorLoads_ok ix bs (j + 1) s₁ (List.nodup_cons.mp hnd).2 (fun k hk => by
+        rw [f₁.rd, f₁.wr, hsa, show j + 1 + k = j + (k + 1) by omega]; exact hsr (k + 1) (by omega)))
+      fun s' ⟨m, g, rd, wr, hl, hx⟩ => ?_
+    refine ⟨m.trans m₁, g.trans g₁, rd.trans f₁.rd, wr.trans f₁.wr, fun k hk => ?_, fun r hr' l hl' => ?_⟩
+    · cases k with
+      | zero =>
+        simp only [List.getElem_cons_zero, Nat.add_zero]
+        rw [hx b hbs 0 (by decide), l₁]
+      | succ k =>
+        simp only [List.getElem_cons_succ]
+        have hk' : k < bs.length := by simpa using hk
+        rw [hl k hk', m₁, hsa, show j + 1 + k = j + (k + 1) by omega,
+          x₁ _ (fun h => hbs (h ▸ List.getElem_mem hk')) 0 (by decide)]
+    · simp only [List.mem_cons, not_or] at hr'
+      rw [hx r hr'.2 l hl', x₁ r hr'.1 l hl']
+
+/-- One block register stored to `rdx + 16 j`. -/
+theorem storeOne_ok (s : State) (b : XReg) (j : Nat) (hw : InRegions s.wr (s.ea (at_ .rdx (16 * j))) 16) :
+    WP isa (.block [.vmovdquStore .l128 (at_ .rdx (16 * j)) b]) s fun t =>
+      t.mem = s.mem.writeW (s.ea (at_ .rdx (16 * j))) (s.lane b 0) ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧
+      t.wr = s.wr ∧ ∀ r, ∀ l < 2, t.lane r l = s.lane r l := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.store128_eq, hw, ite_true,
+    Option.some.injEq, exists_eq_left']
+  exact ⟨rfl, rfl, rfl, rfl, fun _ _ _ => rfl⟩
+
+/-- `storeData regs j`: block `k` at `rdx + 16 (j + k)` is lane 0 of
+register `k`. -/
+theorem storeData_ok : ∀ (regs : List XReg) (j : Nat) (s : State),
+    (∀ k < regs.length, InRegions s.wr (s.gpr .rdx + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16) →
+    (s.gpr .rdx).toNat + 16 * (j + regs.length) ≤ 2 ^ 64 →
+    WP isa (.block (storeData regs j)) s fun s' =>
+      (∀ k (h : k < regs.length), blockAt s'.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) =
+        XBinOp.eval .pshufb (s.lane regs[k] 0) revMask) ∧
+      Frame [⟨s.gpr .rdx + BitVec.ofNat 64 (16 * j), 16 * regs.length⟩] s.mem s'.mem ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ (∀ r, ∀ l < 2, s'.lane r l = s.lane r l)
+  | [], _, s, _, _ => WP.block_nil ⟨fun _ h => absurd h (by simp), Frame.refl _ _, rfl, rfl, rfl,
+      fun _ _ _ => rfl⟩
+  | b :: bs, j, s, hin, hw => by
+    simp only [List.length_cons] at hin hw
+    rw [storeData, WP.block_append_iff]
+    have hiw : InRegions s.wr (s.ea (at_ .rdx (16 * j))) 16 := by
+      rw [ea_at]; simpa only [Nat.add_zero] using hin 0 (by omega)
+    refine WP.mono (storeOne_ok s b j hiw) fun s₁ ⟨m₁, g₁, rd₁, wr₁, x₁⟩ => ?_
+    have hrdx : s₁.gpr .rdx = s.gpr .rdx := by rw [g₁]
+    refine WP.mono (storeData_ok bs (j + 1) s₁ (fun k hk => by
+        rw [wr₁, hrdx, show j + 1 + k = j + (k + 1) by omega]; exact hin (k + 1) (by omega))
+      (by rw [hrdx]; omega)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
+    rw [hrdx] at hb hf
+    have ofs : ∀ a : Nat, (s.gpr .rdx + BitVec.ofInt 64 (a : Int)) = s.gpr .rdx + BitVec.ofNat 64 a :=
+      fun a => by rw [ofInt_natCast]
+    rw [ea_at, ofs] at m₁
+    have hdj : ∀ r ∈ [(⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + 1)), 16 * bs.length⟩ : Region)],
+        Region.Disjoint ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * j), 16⟩ r := by
+      simp only [List.mem_singleton, forall_eq]
+      intro a h₁ h₂
+      simp only [Region.Contains] at h₁ h₂
+      rw [off_toNat _ _ (by omega)] at h₁ h₂
+      have := (a - s.gpr .rdx).isLt
+      omega
+    refine ⟨fun k hk => ?_, ?_, g.trans g₁, rd.trans rd₁, wr.trans wr₁, fun r l hl => ?_⟩
+    · cases k with
+      | zero =>
+        simp only [List.getElem_cons_zero, Nat.add_zero]
+        rw [blockAt_frame hf hdj, m₁, blockAt_eq, Mem.readW_writeW_self _ _ 16 _ (by decide)]
+      | succ k =>
+        simp only [List.getElem_cons_succ]
+        have hk' : k < bs.length := by simpa using hk
+        rw [show j + (k + 1) = j + 1 + k by omega, hb k hk', x₁ _ 0 (by decide)]
+    · rw [m₁] at hf
+      refine (Frame.writeW (Frame.refl [⟨s.gpr .rdx + BitVec.ofNat 64 (16 * j), 16 * (bs.length + 1)⟩]
+        s.mem) List.mem_cons_self _ (by simp only [Region.Contains, BitVec.sub_self]; simp; omega)).trans
+        (hf.sub fun r hr => ⟨_, List.mem_cons_self, fun a ha => ?_⟩)
+      simp only [List.mem_singleton] at hr
+      subst hr
+      simp only [Region.Contains] at ha ⊢
+      rw [off_toNat _ _ (by omega)] at ha ⊢
+      have := (a - s.gpr .rdx).isLt
+      omega
+    · rw [hx r l hl, x₁ r l hl]
+
+/-- `xorData ix regs j`: block `k` written to `rdx + 16 (j + k)` is the one
+read from `srcAddr s ix (16 (j + k))` XORed with lane 0 of register `k`, for
+a source each block of which is apart from the outputs written before it is
+read (in place, the blocks are distinct; out of place, every block is read
+before any is written). -/
+theorem xorData_ok (ix : Bool) (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
+    (hin : ∀ k < regs.length, InRegions s.wr (s.gpr .rdx + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16)
+    (hsr : ∀ k < regs.length, InRegions (s.rd ++ s.wr) (srcAddr s ix (16 * (j + k))) 16)
+    (hsep : ∀ a b, a < b → b < regs.length → Region.Disjoint
+      ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s ix (16 * (j + b)), 16⟩)
+    (hw : (s.gpr .rdx).toNat + 16 * (j + regs.length) ≤ 2 ^ 64) :
+    WP isa (.block (xorData ix regs j)) s fun s' =>
+      (∀ k (h : k < regs.length), blockAt s'.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) =
+        blockAt s.mem (srcAddr s ix (16 * (j + k))) ^^^
+          XBinOp.eval .pshufb (s.lane regs[k] 0) revMask) ∧
+      Frame [⟨s.gpr .rdx + BitVec.ofNat 64 (16 * j), 16 * regs.length⟩] s.mem s'.mem ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ r, r ∉ regs → ∀ l < 2, s'.lane r l = s.lane r l) := by
+  cases ix
+  · exact xorDataI_ok false regs j s hnd hin hsr hsep hw
+  · simp only [xorData, ↓reduceIte]
+    rw [WP.block_append_iff]
+    refine WP.mono (xorLoads_ok true regs j s hnd hsr) fun s₁ ⟨m₁, g₁, rd₁, wr₁, l₁, x₁⟩ => ?_
+    have hrdx : s₁.gpr .rdx = s.gpr .rdx := by rw [g₁]
+    refine WP.mono (storeData_ok regs j s₁ (fun k hk => by rw [wr₁, hrdx]; exact hin k hk)
+      (by rw [hrdx]; exact hw)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_
+    rw [hrdx, m₁] at hf
+    refine ⟨fun k hk => ?_, hf, g.trans g₁, rd.trans rd₁, wr.trans wr₁, fun r hr l hl => ?_⟩
+    · rw [← hrdx, hb k hk, l₁ k hk, pshufb_rev_xor, ← blockAt_eq, BitVec.xor_comm]
+    · rw [hx r l hl, x₁ r hr l hl]
 
 /-- In place, block `j + a` is apart from block `j + b` for `a ≠ b`. -/
 theorem xorData_sep_inplace (s : State) (j n : Nat) (hw : (s.gpr .rdx).toNat + 16 * (j + n) ≤ 2 ^ 64) :

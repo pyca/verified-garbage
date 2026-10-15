@@ -143,11 +143,30 @@ def srcAt (ix : Bool) (d : Nat) : MemOp :=
   if ix then { base := .rdx, index := some .rbx, disp := d } else at_ .rdx d
 
 /-- XOR block register `i` into the block read from `srcAt ix (16 (j + i))`,
-and store it to `rdx + 16 (j + i)`. -/
-def xorData (ix : Bool) : List XReg → Nat → List Instr
+and store it to `rdx + 16 (j + i)`, one block after another. -/
+def xorDataI (ix : Bool) : List XReg → Nat → List Instr
   | [], _ => []
   | b :: bs, j => ([.vbinLoad .vpxor .l128 b b (srcAt ix (16*j)),
-      .vmovdquStore .l128 (at_ .rdx (16*j)) b] : List Instr) ++ xorData ix bs (j+1)
+      .vmovdquStore .l128 (at_ .rdx (16*j)) b] : List Instr) ++ xorDataI ix bs (j+1)
+
+/-- XOR block register `i` into the block read from `srcAt ix (16 (j + i))`. -/
+def xorLoads (ix : Bool) : List XReg → Nat → List Instr
+  | [], _ => []
+  | b :: bs, j => ([.vbinLoad .vpxor .l128 b b (srcAt ix (16*j))] : List Instr) ++ xorLoads ix bs (j+1)
+
+/-- Store block register `i` to `rdx + 16 (j + i)`. -/
+def storeData : List XReg → Nat → List Instr
+  | [], _ => []
+  | b :: bs, j => ([.vmovdquStore .l128 (at_ .rdx (16*j)) b] : List Instr) ++ storeData bs (j+1)
+
+/-- XOR the block registers into the data and store them. Out of place
+(`ix`), every block is read before any is stored: a load issued after the
+store of an earlier block whose address equals it modulo 4096 (the output a
+few blocks after the input there) waits for that store on Skylake-SP and
+Cascade Lake (4K aliasing), which cost AES-128 seal about 5% there. In
+place, the blocks are read and stored one after another. -/
+def xorData (ix : Bool) (regs : List XReg) (j : Nat) : List Instr :=
+  if ix then xorLoads ix regs j ++ storeData regs j else xorDataI ix regs j
 
 def aesFixed (nr : Nat) (regs : List XReg) (g : Nat → List Instr) : Prog isa :=
   .block (VG.Impl.Aes.X86_64.Vaes.keyOpL .l128 .xmm1 regs .vpxor (at_ .rdi 0) ++
