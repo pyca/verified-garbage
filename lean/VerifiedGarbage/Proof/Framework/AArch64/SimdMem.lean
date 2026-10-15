@@ -152,21 +152,19 @@ theorem vword_rev32b (x : BitVec 128) {e : Nat} (he : e < 4) :
     vword (VRevOp.rev32b.eval x) e = rev32 (vword x e) := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
+  obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ i = 8 * a + b :=
+    ⟨i / 8, i % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod i 8).symm⟩
+  have ha : a < 4 := by omega
   simp only [vword, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, VRevOp.eval]
-  rw [show 32 * e + i = 8 * (4 * e + i / 8) + i % 8 by omega,
-    getLsbD_ofVBytes _ (by omega) (by omega)]
-  simp only [vbyte, BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega, decide_true, Bool.true_and,
-    rev32, VG.getLsbD_cat4]
-  by_cases h0 : i < 8
-  · simp (disch := omega) only [h0, ite_true, decide_eq_true, Bool.true_and]
-    exact congrArg x.getLsbD (by omega)
-  by_cases h1 : i < 16
-  · simp (disch := omega) only [h0, h1, ite_false, ite_true, decide_eq_true, Bool.true_and]
-    exact congrArg x.getLsbD (by omega)
-  by_cases h2 : i < 24
-  · simp (disch := omega) only [h0, h1, h2, ite_false, ite_true, decide_eq_true, Bool.true_and]
-    exact congrArg x.getLsbD (by omega)
-  · simp (disch := omega) only [h0, h1, h2, ite_false, decide_eq_true, Bool.true_and]
+  rw [show 32 * e + (8 * a + b) = 8 * (4 * e + a) + b by omega, getLsbD_ofVBytes _ (by omega) hb,
+    show (4 * e + a) / 4 = e by omega, show (4 * e + a) % 4 = a by omega]
+  unfold rev32
+  -- The byte's index is a literal: each `if` and subtraction reduces without `omega`.
+  match a, ha with
+  | 0, _ | 1, _ | 2, _ | 3, _ =>
+    simp only [getLsbD_append_block _ _ _ hb, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte]
+    simp only [vbyte, BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and, Nat.reduceMul, Nat.zero_add]
+    simp (disch := omega) only [decide_eq_true, Bool.true_and]
     exact congrArg x.getLsbD (by omega)
 
 theorem vword_read16 (m : Mem) (p : Addr) {e : Nat} (he : e < 4) :

@@ -59,12 +59,16 @@ theorem write16_dwords (m : Mem) (p : Addr) (a b : BitVec 64) :
 
 theorem getLsbD_rev64 (x : BitVec 64) {i : Nat} (hi : i < 64) :
     (rev64 x).getLsbD i = x.getLsbD (8 * (7 - i / 8) + i % 8) := by
-  simp only [rev64, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  rcases (show i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ (24 ≤ i ∧ i < 32) ∨
-    (32 ≤ i ∧ i < 40) ∨ (40 ≤ i ∧ i < 48) ∨ (48 ≤ i ∧ i < 56) ∨ 56 ≤ i by omega)
-    with h | h | h | h | h | h | h | h <;>
-    simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and] <;>
-    exact congrArg x.getLsbD (by omega)
+  obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ i = 8 * a + b :=
+    ⟨i / 8, i % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod i 8).symm⟩
+  have ha : a < 8 := by omega
+  rw [show (8 * a + b) / 8 = a by omega, show (8 * a + b) % 8 = b by omega]
+  unfold rev64
+  -- The byte's index is a literal: each `if` and subtraction reduces without `omega`.
+  match a, ha with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>
+    simp only [getLsbD_append_block _ _ _ hb, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte]
+    simp only [BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and, Nat.reduceMul, Nat.zero_add]
 
 theorem vdword_rev64b (x : BitVec 128) {e : Nat} (he : e < 2) :
     vdword (VRevOp.rev64b.eval x) e = rev64 (vdword x e) := by
