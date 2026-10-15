@@ -274,6 +274,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 </table>
@@ -536,6 +538,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -552,6 +556,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -567,6 +573,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -602,6 +610,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -617,6 +627,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅ AES-NI</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -634,6 +646,8 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -649,6 +663,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅ AES-NI</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -666,6 +682,8 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -681,6 +699,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅ AES-NI</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -698,6 +718,8 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -713,6 +735,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅ AES-NI</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -730,6 +754,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -745,6 +771,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -762,6 +790,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -777,6 +807,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -794,6 +826,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -809,6 +843,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -826,6 +862,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -841,6 +879,8 @@ yours to keep:
 <td>✅ bitsliced, 8 blocks at a time</td>
 
 <td>✅ bitsliced, 8 blocks at a time</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -858,6 +898,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -873,6 +915,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -890,6 +934,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -906,6 +952,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -921,6 +969,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -956,6 +1006,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -971,6 +1023,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -988,6 +1042,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1003,6 +1059,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1056,6 +1114,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1071,6 +1131,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1088,6 +1150,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1103,6 +1167,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1120,6 +1186,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1135,6 +1203,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1152,6 +1222,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1168,6 +1240,8 @@ yours to keep:
 
 <td>✅</td>
 
+<td>❌</td>
+
 </tr>
 
 <tr>
@@ -1183,6 +1257,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
@@ -1799,6 +1875,8 @@ yours to keep:
 <td>✅</td>
 
 <td>✅</td>
+
+<td>❌</td>
 
 </tr>
 
