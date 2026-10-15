@@ -185,8 +185,8 @@ structure L1 (s₀ : State) (c : Nat) (s : State) : Prop where
   tab : ∀ j < 64, s.mem.readW (sP s₀ + BitVec.ofNat 64 (512 + 8 * j)) 64 = hw4 tableHalves j
   scr : ∀ r < 8, ∀ c' < c, Rep (s.mem.read (sP s₀ + BitVec.ofNat 64 (64 * r + 16 * c')) 16)
     (fun e => (nttL 3 (P₀ s₀))[32 * r + 8 * c' + e]!) (4 * 3329)
-  z : ∀ k < 7, vhalf (s.v .v18) k = BitVec.ofNat 16 (zeta (k + 1)) ∧
-    vhalf (s.v .v19) k = BitVec.ofNat 16 (tw (zeta (k + 1)))
+  z : ∀ k < 7, vhalf (s.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+    vhalf (s.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)))
   q : Cst (s.v .v31) fun _ => 3329
   c10 : Cst (s.v .v30) fun _ => 10
   c0 : Cst (s.v .v29) fun _ => 0
@@ -201,44 +201,44 @@ theorem p1_body {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 4) {s : State
     polyIs_frame h.frame (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.disj) ⟨hp.red, rfl⟩
   refine p1_loads hp hc h.st h.x2 hpoly fun s₁ c₁ h₁ => ?_
-  have z₁ : ∀ k < 7, vhalf (s₁.v .v18) k = BitVec.ofNat 16 (zeta (k + 1)) ∧
-      vhalf (s₁.v .v19) k = BitVec.ofNat 16 (tw (zeta (k + 1))) := by
+  have z₁ : ∀ k < 7, vhalf (s₁.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+      vhalf (s₁.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1))) := by
     rw [c₁.get .v18, c₁.get .v19]; exact h.z
   have q₁ : Cst (s₁.v .v31) fun _ => 3329 := by rw [c₁.get .v31]; exact h.q
   refine rows_bfRows hc (K := 1) (by decide) _ (lay' := [1, 1, 1, 1, 1, 1, 1, 1]) (by decide) (by decide) h₁ (z₁ 0 (by decide)).1
     (z₁ 0 (by decide)).2 q₁ fun s₂ c₂ h₂ => ?_
-  have z₂ : ∀ k < 7, vhalf (s₂.v .v18) k = BitVec.ofNat 16 (zeta (k + 1)) ∧
-      vhalf (s₂.v .v19) k = BitVec.ofNat 16 (tw (zeta (k + 1))) := by
+  have z₂ : ∀ k < 7, vhalf (s₂.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+      vhalf (s₂.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1))) := by
     rw [c₂.get .v18, c₂.get .v19]; exact z₁
   have q₂ : Cst (s₂.v .v31) fun _ => 3329 := by rw [c₂.get .v31]; exact q₁
   refine rows_bfRows hc (K := 2) (by decide) _ (lay' := [2, 2, 2, 2, 1, 1, 1, 1]) (by decide) (by decide) h₂ (z₂ 1 (by decide)).1
     (z₂ 1 (by decide)).2 q₂ fun s₃ c₃ h₃ => ?_
-  have z₃ : ∀ k < 7, vhalf (s₃.v .v18) k = BitVec.ofNat 16 (zeta (k + 1)) ∧
-      vhalf (s₃.v .v19) k = BitVec.ofNat 16 (tw (zeta (k + 1))) := by
+  have z₃ : ∀ k < 7, vhalf (s₃.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+      vhalf (s₃.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1))) := by
     rw [c₃.get .v18, c₃.get .v19]; exact z₂
   have q₃ : Cst (s₃.v .v31) fun _ => 3329 := by rw [c₃.get .v31]; exact q₂
   refine rows_bfRows hc (K := 3) (by decide) _ (lay' := [2, 2, 2, 2, 2, 2, 2, 2]) (by decide) (by decide) h₃ (z₃ 2 (by decide)).1
     (z₃ 2 (by decide)).2 q₃ fun s₄ c₄ h₄ => ?_
-  have z₄ : ∀ k < 7, vhalf (s₄.v .v18) k = BitVec.ofNat 16 (zeta (k + 1)) ∧
-      vhalf (s₄.v .v19) k = BitVec.ofNat 16 (tw (zeta (k + 1))) := by
+  have z₄ : ∀ k < 7, vhalf (s₄.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+      vhalf (s₄.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1))) := by
     rw [c₄.get .v18, c₄.get .v19]; exact z₃
   have q₄ : Cst (s₄.v .v31) fun _ => 3329 := by rw [c₄.get .v31]; exact q₃
   refine rows_bfRows hc (K := 4) (by decide) _ (lay' := [3, 3, 2, 2, 2, 2, 2, 2]) (by decide) (by decide) h₄ (z₄ 3 (by decide)).1
     (z₄ 3 (by decide)).2 q₄ fun s₅ c₅ h₅ => ?_
-  have z₅ : ∀ k < 7, vhalf (s₅.v .v18) k = BitVec.ofNat 16 (zeta (k + 1)) ∧
-      vhalf (s₅.v .v19) k = BitVec.ofNat 16 (tw (zeta (k + 1))) := by
+  have z₅ : ∀ k < 7, vhalf (s₅.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+      vhalf (s₅.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1))) := by
     rw [c₅.get .v18, c₅.get .v19]; exact z₄
   have q₅ : Cst (s₅.v .v31) fun _ => 3329 := by rw [c₅.get .v31]; exact q₄
   refine rows_bfRows hc (K := 5) (by decide) _ (lay' := [3, 3, 3, 3, 2, 2, 2, 2]) (by decide) (by decide) h₅ (z₅ 4 (by decide)).1
     (z₅ 4 (by decide)).2 q₅ fun s₆ c₆ h₆ => ?_
-  have z₆ : ∀ k < 7, vhalf (s₆.v .v18) k = BitVec.ofNat 16 (zeta (k + 1)) ∧
-      vhalf (s₆.v .v19) k = BitVec.ofNat 16 (tw (zeta (k + 1))) := by
+  have z₆ : ∀ k < 7, vhalf (s₆.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+      vhalf (s₆.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1))) := by
     rw [c₆.get .v18, c₆.get .v19]; exact z₅
   have q₆ : Cst (s₆.v .v31) fun _ => 3329 := by rw [c₆.get .v31]; exact q₅
   refine rows_bfRows hc (K := 6) (by decide) _ (lay' := [3, 3, 3, 3, 3, 3, 2, 2]) (by decide) (by decide) h₆ (z₆ 5 (by decide)).1
     (z₆ 5 (by decide)).2 q₆ fun s₇ c₇ h₇ => ?_
-  have z₇ : ∀ k < 7, vhalf (s₇.v .v18) k = BitVec.ofNat 16 (zeta (k + 1)) ∧
-      vhalf (s₇.v .v19) k = BitVec.ofNat 16 (tw (zeta (k + 1))) := by
+  have z₇ : ∀ k < 7, vhalf (s₇.v .v18) k = BitVec.ofNat 16 (Impl.MlKem.AArch64.Ntt16.zeta (k + 1)) ∧
+      vhalf (s₇.v .v19) k = BitVec.ofNat 16 (tw (Impl.MlKem.AArch64.Ntt16.zeta (k + 1))) := by
     rw [c₇.get .v18, c₇.get .v19]; exact z₆
   have q₇ : Cst (s₇.v .v31) fun _ => 3329 := by rw [c₇.get .v31]; exact q₆
   refine rows_bfRows hc (K := 7) (by decide) _ (by decide) (lay' := List.replicate 8 3) (by decide) h₇
