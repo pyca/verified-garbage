@@ -28,7 +28,7 @@ theorem exportBE_ok (s : State) {base dst : BitVec 32} {len w o k : Nat}
     WP isa exportBE s fun t =>
       Spec.Rsa.bytesAt t.mem (State.addr dst) k = Spec.Rsa.i2osp (numAt s.mem (State.addr base) w o) k ∧
       Frame [⟨State.addr dst, k⟩] s.mem t.mem ∧
-      t.gpr .r0 = base ∧ t.gpr .r4 = dst ∧ Rest roundClobbers s t := by
+      t.gpr .r0 = base ∧ t.gpr .r4 = dst ∧ Rest [.r0, .r1, .r2, .r5, .lr] s t := by
   have nowrap := ws.nowrap
   have hw : 2 ≤ w := width ▸ layout.1
   have fits : arrAt w 8 ≤ 8 * len := width ▸ layout.2.2.1
@@ -68,7 +68,7 @@ theorem exportBE_ok (s : State) {base dst : BitVec 32} {len w o k : Nat}
   refine ⟨by rw [moved.mem]; exact value, by rw [moved.mem]; exact frame, ?_, ?_, ?_⟩
   · rw [moved.gpr, keep.gpr .r5 (by simp), saved]
   · rw [moved.other .r4 (by decide), keep.gpr .r4 (by simp), rest.gpr .r4 (by simp), output]
-  · exact (rest.mono (by simp [roundClobbers])).trans
-      ((keep.mono (by simp [roundClobbers])).trans (moved.rest (by simp [roundClobbers])))
+  · exact (rest.mono (by simp)).trans
+      ((keep.mono (by simp)).trans (moved.rest (by simp)))
 
 end VG.Proof.Bignum.Arm

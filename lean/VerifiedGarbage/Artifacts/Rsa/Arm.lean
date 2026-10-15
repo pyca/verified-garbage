@@ -1,8 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PcVerified
+public import VerifiedGarbage.Proof.Bignum.Arm.PublicVerified
 
-/-! # RSA public precomputation on ARMv7 -/
+/-! # RSA public operations on ARMv7 -/
 
 @[expose] public section
 
@@ -21,6 +22,19 @@ def artifacts : List Artifact := [
     contract := Spec.Rsa.publicPrecomputeContract abi 56
     stack := 56
     verified := Proof.Bignum.Arm.precompute_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Rsa.publicCheckedApi with
+    target := target
+    doc := Spec.Rsa.publicCheckedApi.doc
+      (notes := ["Baseline ARMv7: validates the public modulus and exponent, computes Montgomery \
+        precomputation, and performs binary exponentiation using native 32-bit limbs. The input \
+        is secret: the input-range comparison is retained as a mask, and out-of-range inputs \
+        follow the same arithmetic path before branchless output clearing. Uses a 56-byte \
+        AAPCS stack frame."])
+    code := Impl.Bignum.Arm.PublicFn.code
+    contract := Spec.Rsa.publicCheckedContract abi 56
+    stack := 56
+    verified := Proof.Bignum.Arm.public_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.Rsa.Arm
