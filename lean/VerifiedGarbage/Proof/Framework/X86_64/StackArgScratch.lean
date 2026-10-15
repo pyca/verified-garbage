@@ -63,7 +63,7 @@ theorem allArgs_length (sig : Sig) (s : State) (hk : 6 ≤ (sig.words abi.ptrBit
     (allArgs sig s).length = (sig.words abi.ptrBits).length := by
   simp only [allArgs, List.length_append, List.length_map, List.length_range, argRegs,
     List.length_cons, List.length_nil]
-  omega
+  omega_using [hk]
 
 theorem args_some (sig : Sig) (hk : 6 ≤ (sig.words abi.ptrBits).length) :
     abi.args ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) = some (allArgs sig) := by
@@ -96,11 +96,11 @@ theorem wf_args {sig : Sig} {stack : Nat} {s : State} (hk : 6 ≤ (sig.words abi
   split
   · have h6 : (sig.words 64).length = 6 := by
       have : (sig.words 64).length ≤ argRegs.length := by assumption
-      simp only [argRegs, List.length_cons, List.length_nil] at this; omega
+      simp only [argRegs, List.length_cons, List.length_nil] at this; omega_using [hk', this]
     cases stack <;> simp [h6]
   · have h6 : (sig.words 64).length ≠ 6 := by
       have : ¬ (sig.words 64).length ≤ argRegs.length := by assumption
-      simp only [argRegs, List.length_cons, List.length_nil] at this; omega
+      simp only [argRegs, List.length_cons, List.length_nil] at this; omega_using [this]
     simp only [h6, false_or, argRegs, List.length_cons, List.length_nil]
     cases stack <;> simp
 
@@ -242,9 +242,9 @@ theorem copies_run {bytes : Nat} {u : State} :
   | 0, _, _ => rfl
   | m + 1, hr, hw => by
     rw [List.range_succ, List.flatMap_append, execBlock_append,
-      copies_run m (fun j hj => hr j (by omega)) (fun j hj => hw j (by omega))]
+      copies_run m (fun j hj => hr j (by omega_using [hj])) (fun j hj => hw j (by omega_using [hj]))]
     simp only [Option.bind_some, List.flatMap_singleton]
-    rw [copyArg_run (by simpa using hr m (by omega)) (by simpa using hw m (by omega))]
+    rw [copyArg_run (by simpa using hr m (by omega_using [])) (by simpa using hw m (by omega_using []))]
     simp only [Option.map_some, copiedState, copiedState_rsp, copyTrace, List.range_succ,
       List.flatMap_append, List.flatMap_singleton]
 
@@ -258,10 +258,10 @@ theorem copiedState_mem {bytes : Nat} {u : State} :
         u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 (bytes + 8 + 8 * j)) 64
   | 0, _, _ => ⟨Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | m + 1, hfit, hb => by
-    obtain ⟨f, hv⟩ := copiedState_mem (bytes := bytes) (u := u) m (by omega) (by omega)
+    obtain ⟨f, hv⟩ := copiedState_mem (bytes := bytes) (u := u) m (by omega_using [hfit]) (by omega_using [hb])
     have h8 : u.gpr .rsp + 8 = u.gpr .rsp + BitVec.ofNat 64 8 := rfl
     have hR : Region.Sub ⟨u.gpr .rsp + 8, 8 * m⟩ ⟨u.gpr .rsp + 8, 8 * (m + 1)⟩ :=
-      Region.sub_prefix (by omega)
+      Region.sub_prefix (by omega_using [])
     have f' : Frame [⟨u.gpr .rsp + 8, 8 * (m + 1)⟩] u.mem (copiedState bytes u m).mem :=
       Frame.sub f fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -273,15 +273,15 @@ theorem copiedState_mem {bytes : Nat} {u : State} :
         (Region.contains_self _ _) (fun r hr => ?_) (by decide)
       simp only [List.mem_singleton] at hr; subst hr
       rw [h8]
-      exact Offset.disjoint _ (d := bytes + 8 + 8 * m) (n := 8) (e := 8) (k := 8 * m) (.inr (by omega))
-        (by omega) (by omega)
+      exact Offset.disjoint _ (d := bytes + 8 + 8 * m) (n := 8) (e := 8) (k := 8 * m) (.inr (by omega_using []))
+        (by omega_using [hfit]) (by omega_using [hfit])
     refine ⟨?_, fun j hj => ?_⟩
     · show Frame _ u.mem ((copiedState bytes u m).mem.writeW _ _)
       rw [copiedState_rsp]
       refine f'.writeW (List.mem_singleton_self _) _ ?_
       rw [h8]
-      exact Offset.contains _ (d := 8 + 8 * m) (e := 8) (k := 8 * (m + 1)) (by omega) (by omega)
-        (by omega)
+      exact Offset.contains _ (d := 8 + 8 * m) (e := 8) (k := 8 * (m + 1)) (by omega_using []) (by omega_using [])
+        (by omega_using [hfit])
     · show ((copiedState bytes u m).mem.writeW
           ((copiedState bytes u m).gpr .rsp + BitVec.ofNat 64 (8 + 8 * m))
           ((copiedState bytes u m).mem.readW
@@ -289,10 +289,10 @@ theorem copiedState_mem {bytes : Nat} {u : State} :
       rw [copiedState_rsp]
       rcases Nat.lt_or_ge j m with hj' | hj'
       · rw [Mem.readW_writeW_sep, hv j hj']
-        · exact Offset.sep _ (d := 8 + 8 * j) (n := 8) (e := 8 + 8 * m) (k := 8) (by omega) (by omega)
-            (by omega)
+        · exact Offset.sep _ (d := 8 + 8 * j) (n := 8) (e := 8 + 8 * m) (k := 8) (by omega_using [hj']) (by omega_using [hfit, hj'])
+            (by omega_using [hfit])
         · decide
-      · obtain rfl : j = m := by omega
+      · obtain rfl : j = m := by omega_using [hj, hj']
         rw [Mem.readW_writeW_self64, hsrc]
 
 /-- `mov rax, rsp; add rax, 16 + 8m; mov [rsp + 8 + 8m], rax`: pass the buffer. -/
@@ -308,9 +308,9 @@ theorem tail_run {m : Nat} {w : State}
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_signExtend]
     have : (BitVec.ofNat 32 (16 + 8 * m)).msb = false := by
-      rw [BitVec.msb_eq_decide]; simp; omega
+      rw [BitVec.msb_eq_decide]; simp; omega_using [hm]
     simp [this]
-    omega
+    omega_using [hm]
   simp only [execBlock, isa, exec, readSrc, execAlu, Option.map_some, Option.bind_some, addrs,
     srcAddrs, State.store64, State.ea, ofInt_natCast]
   simp [State.setReg, arithFlags, State.setFlags, hw, hse]
@@ -340,8 +340,8 @@ theorem setArgs_run {bytes m : Nat} {u : State}
         u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 (bytes + 8 + 8 * j)) 64) ∧
       (setArgsState bytes m u).mem.readW (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * m)) 64 =
         u.gpr .rsp + BitVec.ofNat 64 (16 + 8 * m) := by
-  have hc := copies_run (bytes := bytes) (u := u) m hr (fun j hj => hw j (by omega))
-  obtain ⟨f, hv⟩ := copiedState_mem (bytes := bytes) (u := u) m (by omega) (by omega)
+  have hc := copies_run (bytes := bytes) (u := u) m hr (fun j hj => hw j (by omega_using [hj]))
+  obtain ⟨f, hv⟩ := copiedState_mem (bytes := bytes) (u := u) m (by omega_using [hfit]) (by omega_using [hb])
   obtain ⟨w', ht, hrd, hwr, hmx, hg, hmem⟩ := tail_run (m := m) (w := copiedState bytes u m)
     (by simpa using hw m (Nat.le_refl _)) hm
   have hrun : execBlock isa (setArgs bytes m) u = some (w', setArgsTrace bytes (u.gpr .rsp) m) := by
@@ -356,13 +356,13 @@ theorem setArgs_run {bytes m : Nat} {u : State}
   · rw [hmem, copiedState_rsp]
     refine (Frame.sub f fun r hr => ?_).writeW (List.mem_singleton_self _) _ ?_
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [])⟩
     · rw [h8]
-      exact Offset.contains _ (d := 8 + 8 * m) (e := 8) (k := 8 * (m + 1)) (by omega) (by omega)
-        (by omega)
+      exact Offset.contains _ (d := 8 + 8 * m) (e := 8) (k := 8 * (m + 1)) (by omega_using []) (by omega_using [])
+        (by omega_using [hm])
   · rw [hmem, copiedState_rsp, Mem.readW_writeW_sep, hv j hj]
-    · exact Offset.sep _ (d := 8 + 8 * j) (n := 8) (e := 8 + 8 * m) (k := 8) (by omega) (by omega)
-        (by omega)
+    · exact Offset.sep _ (d := 8 + 8 * j) (n := 8) (e := 8 + 8 * m) (k := 8) (by omega_using [hj]) (by omega_using [hm, hj])
+        (by omega_using [hm])
     · decide
   · rw [hmem, copiedState_rsp, Mem.readW_writeW_self64]
 
@@ -420,45 +420,45 @@ theorem argsState_run {s : State} (hs : (sig.contract abi pre post wa (stack + b
   intro u
   rw [pre_args hk] at hs
   obtain ⟨⟨hst, -⟩, hrd, -, -, -, -, -⟩ := hs
-  have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hst with h | h <;> omega
+  have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hst with h | h <;> omega_using [h]
   have hesp : u.gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 bytes := allocState_rsp' _ _
   have hsrc : ∀ j, u.gpr .rsp + BitVec.ofNat 64 (bytes + 8 + 8 * j) = stackArgAddr s j := fun j => by
-    rw [hesp, stackArgAddr, show bytes + 8 + 8 * j = bytes + 8 * (j + 1) by omega, BitVec.ofNat_add,
+    rw [hesp, stackArgAddr, show bytes + 8 + 8 * j = bytes + 8 * (j + 1) by omega_using [], BitVec.ofNat_add,
       ← BitVec.add_assoc, BitVec.sub_add_cancel]
   -- The caller's stack arguments hold the sources.
   have hargs : ∀ j < nStack sig, InRegions (u.rd ++ u.wr) (stackArgAddr s j) 8 := fun j hj => by
-    have h0 : ¬ (sig.words abi.ptrBits).length - 6 = 0 := by simp only [nStack] at hj; omega
+    have h0 : ¬ (sig.words abi.ptrBits).length - 6 = 0 := by simp only [nStack] at hj; omega_using [hj]
     have hmem : (⟨stackArgAddr s 0, 8 * nStack sig⟩, false) ∈ allRegions sig s := by
       simp [allRegions, argArea, h0]
     have hc : (⟨stackArgAddr s 0, 8 * nStack sig⟩ : Region).Contains (stackArgAddr s j) 8 := by
       simp only [stackArgAddr]
       exact Offset.contains _ (d := 8 * (j + 1)) (n := 8) (e := 8 * (0 + 1)) (k := 8 * nStack sig)
-        (by omega) (by omega) (by omega)
+        (by omega_using []) (by omega_using [hj]) (by omega_using [hb, hsb])
     refine ⟨_, List.mem_append_left _ ?_, hc⟩
     show _ ∈ s.rd
     rw [hrd]
     exact List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨hmem, rfl⟩, rfl⟩
   have hframe : ∀ j ≤ nStack sig, InRegions u.wr (u.gpr .rsp + BitVec.ofNat 64 (8 + 8 * j)) 8 :=
     fun j hj => ⟨_, List.mem_cons_self .., by
-      rw [hesp]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      rw [hesp]; exact Offset.contains_base _ (by omega_using [hb, hj]) (by omega_using [hb, hsb, hj])⟩
   obtain ⟨hrun, hrd', hwr', hmx, hg, hf, hv, hlast⟩ := setArgs_run (bytes := bytes)
-    (m := nStack sig) (u := u) (by omega) (by omega) (by omega)
+    (m := nStack sig) (u := u) (by omega_using [hb, hb1]) (by omega_using [hb]) (by omega_using [hb, hb1])
     (fun j hj => by rw [hsrc]; exact hargs j hj) hframe
   have hrsp₂ : (setArgsState bytes (nStack sig) u).gpr .rsp = u.gpr .rsp := hg _ (by decide)
   refine ⟨hrun, hrd', hwr', hmx, hg, hf, fun j hj => ?_, ?_⟩
   · show (setArgsState bytes (nStack sig) u).mem.readW
       ((setArgsState bytes (nStack sig) u).gpr .rsp + BitVec.ofNat 64 (8 * (j + 1))) 64 = _
-    rw [hrsp₂, show 8 * (j + 1) = 8 + 8 * j by omega, hv j hj, hsrc]
+    rw [hrsp₂, show 8 * (j + 1) = 8 + 8 * j by omega_using [], hv j hj, hsrc]
     rfl
   · show (setArgsState bytes (nStack sig) u).mem.readW
       ((setArgsState bytes (nStack sig) u).gpr .rsp + BitVec.ofNat 64 (8 * (nStack sig + 1))) 64 = _
-    rw [hrsp₂, show 8 * (nStack sig + 1) = 8 + 8 * nStack sig by omega, hlast, hesp]
+    rw [hrsp₂, show 8 * (nStack sig + 1) = 8 + 8 * nStack sig by omega_using [], hlast, hesp]
 
 theorem nStack_withScratch (sig : Sig) (nm : String) (e : Elem) (n : Nat)
     (hk : 6 ≤ (sig.words abi.ptrBits).length) :
     nStack (sig.withScratch nm e n) = nStack sig + 1 := by
   simp only [nStack, Sig.words_withScratch, List.length_append, List.length_singleton]
-  omega
+  omega_using [hk]
 
 theorem stackArg_withRegions (u : State) (rd wr : List Region) (j : Nat) :
     stackArg (u.withRegions rd wr) j = stackArg u j := rfl
@@ -506,7 +506,7 @@ theorem narrowS_facts (hk : 6 ≤ (sig.words abi.ptrBits).length)
 /-- `p - b + d` is `p - (b - d)`, for `d ≤ b`. -/
 theorem sub_add_ofNat (p : Addr) {b d : Nat} (h : d ≤ b) :
     p - BitVec.ofNat 64 b + BitVec.ofNat 64 d = p - BitVec.ofNat 64 (b - d) := by
-  rw [Offset.sub_ofNat_eq p (show b - d ≤ b by omega), Nat.sub_sub_self h]
+  rw [Offset.sub_ofNat_eq p (show b - d ≤ b by omega_using []), Nat.sub_sub_self h]
 
 /-- The buffers and the lists of slices lie outside the copies of the stack
 arguments. -/
@@ -516,16 +516,16 @@ theorem area_disj (hb : 16 + 8 * nStack sig + n * e.size ≤ bytes) (hk : 6 ≤ 
       ¬ (⟨s.gpr .rsp - BitVec.ofNat 64 bytes + 8, 8 * (nStack sig + 1)⟩ : Region).Contains x 1 := by
   rw [pre_args hk] at hs
   obtain ⟨⟨hst, -⟩, -, -, -, hres, -, -⟩ := hs
-  have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hst with h | h <;> omega
+  have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hst with h | h <;> omega_using [h]
   have hbelow : below (s.gpr .rsp) (stack + bytes) ∈
       (⟨s.gpr .rsp, 8⟩ :: stackBelow (s.gpr .rsp) (stack + bytes) : List Region) := by
-    rw [stackBelow_pos _ (by omega)]; simp
+    rw [stackBelow_pos _ (by omega_using [hb])]; simp
   intro b hb' x hx hc
   have harea : s.gpr .rsp - BitVec.ofNat 64 bytes + 8 = s.gpr .rsp - BitVec.ofNat 64 (bytes - 8) :=
-    sub_add_ofNat _ (d := 8) (by omega)
+    sub_add_ofNat _ (d := 8) (by omega_using [hb])
   rw [harea] at hc
   exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right
-    (Offset.sub_below _ (a := bytes - 8) (n := 8 * (nStack sig + 1)) (by omega) (by omega)) x hx hc
+    (Offset.sub_below _ (a := bytes - 8) (n := 8 * (nStack sig + 1)) (by omega_using []) (by omega_using [hb])) x hx hc
 
 /-- The buffers and the lists of slices lie outside the frame: `narrowS`'s
 memory is `s`'s there. -/
@@ -574,7 +574,7 @@ theorem allRegions_narrowS (hk : 6 ≤ (sig.words abi.ptrBits).length)
   obtain ⟨hrsp, -, -, hargs, -⟩ := narrowS_facts (nm := nm) hk hb hb1 hs
   have hlen := allArgs_length sig s hk
   have h0 : ((sig.withScratch nm e n).words abi.ptrBits).length - 6 ≠ 0 := by
-    rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega
+    rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk]
   have hm : ((sig.withScratch nm e n).words abi.ptrBits).length - 6 = nStack sig + 1 :=
     nStack_withScratch sig nm e n hk
   rw [allRegions, bufRegions, hargs, argArea, ite_eq_right_of_eq_false _ _ (eq_false h0), hm,
@@ -601,19 +601,19 @@ theorem narrowS_pre (hk : 6 ≤ (sig.words abi.ptrBits).length)
   have hagL := narrowS_agreeLists (e := e) (n := n) hk hb hb1 hs
   have hlists := narrowS_lists (e := e) (n := n) hk hb hb1 hs
   have hk' : 6 ≤ ((sig.withScratch nm e n).words abi.ptrBits).length := by
-    rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega
+    rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk]
   rw [pre_args hk] at hs
   obtain ⟨⟨hst, -⟩, -, -, hpw, hres, hnw, hpr⟩ := hs
-  have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hst with h | h <;> omega
+  have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hst with h | h <;> omega_using [h]
   have hlen := allArgs_length sig s hk
   -- Addresses as offsets below `E`.
   have hscr : s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (16 + 8 * nStack sig) =
-      s.gpr .rsp - BitVec.ofNat 64 (bytes - (16 + 8 * nStack sig)) := sub_add_ofNat _ (by omega)
+      s.gpr .rsp - BitVec.ofNat 64 (bytes - (16 + 8 * nStack sig)) := sub_add_ofNat _ (by omega_using [hb])
   have harea : s.gpr .rsp - BitVec.ofNat 64 bytes + 8 = s.gpr .rsp - BitVec.ofNat 64 (bytes - 8) :=
-    sub_add_ofNat _ (d := 8) (by omega)
+    sub_add_ofNat _ (d := 8) (by omega_using [hb])
   have hbelow : below (s.gpr .rsp) (stack + bytes) ∈
       (⟨s.gpr .rsp, 8⟩ :: stackBelow (s.gpr .rsp) (stack + bytes) : List Region) := by
-    rw [stackBelow_pos _ (by omega)]; simp
+    rw [stackBelow_pos _ (by omega_using [hb])]; simp
   -- The buffers and the lists lie outside the frame.
   have hout : ∀ a ∈ bufRegions sig s, ∀ {x k : Nat}, x ≤ stack + bytes →
       stack + bytes - x + k ≤ stack + bytes →
@@ -628,19 +628,19 @@ theorem narrowS_pre (hk : 6 ≤ (sig.words abi.ptrBits).length)
     List.Pairwise.sublist (List.sublist_append_left _ _) hpw
   have hscrD : ∀ a ∈ bufRegions sig s, a.1.Disjoint
       ⟨s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (16 + 8 * nStack sig), n * e.size⟩ :=
-    fun a ha => by rw [hscr]; exact hout a ha (by omega) (by omega)
+    fun a ha => by rw [hscr]; exact hout a ha (by omega_using []) (by omega_using [hb])
   have hareaD : ∀ a ∈ bufRegions sig s, a.1.Disjoint
       ⟨s.gpr .rsp - BitVec.ofNat 64 bytes + 8, 8 * (nStack sig + 1)⟩ :=
-    fun a ha => by rw [harea]; exact hout a ha (by omega) (by omega)
+    fun a ha => by rw [harea]; exact hout a ha (by omega_using []) (by omega_using [hb])
   refine (pre_args (sig := sig.withScratch nm e n) (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
     (post := Curry.withScratch abi.ptrBits nm e n sig.params post) hk').mpr ?_
   rw [hall, hrsp, hargs]
   refine ⟨⟨.inr ?_, .inr ?_⟩, rfl, rfl, ?_, ?_, ?_, ?_⟩
-  · rw [toNat_sub_ofNat (by omega)]; omega
+  · rw [toNat_sub_ofNat (by omega_using [hsb])]; omega_using [hsb]
   · have hm := nStack_withScratch sig nm e n hk
     have hn : nStack sig = (sig.words abi.ptrBits).length - 6 := rfl
     simp only [nStack] at hm
-    rw [toNat_sub_ofNat (by omega), hm]; omega
+    rw [toNat_sub_ofNat (by omega_using [hsb]), hm]; omega_using [hb, hsb, hn]
   · -- Pairwise disjoint.
     simp only [bufRegions, List.pairwise_append] at hpwB
     obtain ⟨pB, pL, pBL⟩ := hpwB
@@ -649,7 +649,7 @@ theorem narrowS_pre (hk : 6 ≤ (sig.words abi.ptrBits).length)
       rw [show s.gpr .rsp - BitVec.ofNat 64 bytes + 8 =
         s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 8 from rfl]
       exact Offset.disjoint _ (d := 16 + 8 * nStack sig) (n := n * e.size) (e := 8)
-        (k := 8 * (nStack sig + 1)) (.inr (by omega)) (by omega) (by omega)
+        (k := 8 * (nStack sig + 1)) (.inr (by omega_using [])) (by omega_using [hb, hsb]) (by omega_using [hb, hsb])
     simp only [oldRegions, List.pairwise_append, List.pairwise_singleton, List.mem_append,
       List.mem_singleton]
     refine ⟨⟨⟨pB, trivial, fun a ha b hb _ => ?_⟩, pL, fun a ha b hb hab => ?_⟩, trivial,
@@ -674,23 +674,23 @@ theorem narrowS_pre (hk : 6 ≤ (sig.words abi.ptrBits).length)
         · rw [stackBelow_pos _ h0, List.mem_singleton] at hr; exact .inr ⟨h0, hr⟩
     have hold : ∀ a ∈ bufRegions sig s, r.Disjoint a.1 := fun a ha => by
       rcases hr' with rfl | ⟨-, rfl⟩
-      · exact Region.Disjoint.symm (hout a ha (by omega) (by omega))
+      · exact Region.Disjoint.symm (hout a ha (by omega_using []) (by omega_using [hb]))
       · exact (Region.Disjoint.symm (hout a ha (x := stack + bytes) (k := stack + bytes)
-          (by omega) (by omega))).sub_left (below_below _ bytes stack)
+          (by omega_using []) (by omega_using []))).sub_left (below_below _ bytes stack)
     simp only [oldRegions, List.mem_append, List.mem_singleton] at ha
     rcases ha with ((ha | rfl) | ha) | rfl
     · exact hold a (hB a ha)
     · rcases hr' with rfl | ⟨h0, rfl⟩
-      · exact Offset.base_disjoint _ (e := 16 + 8 * nStack sig) (k := 8) (by omega) (by omega)
+      · exact Offset.base_disjoint _ (e := 16 + 8 * nStack sig) (k := 8) (by omega_using []) (by omega_using [hb, hsb])
       · exact Region.Disjoint.symm (Offset.disjoint_below _ (n := stack) (d := 16 + 8 * nStack sig)
-          (k := n * e.size) (by omega))
+          (k := n * e.size) (by omega_using [hb, hsb]))
     · exact hold a (hL a ha)
     · rw [show s.gpr .rsp - BitVec.ofNat 64 bytes + 8 =
         s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 8 from rfl]
       rcases hr' with rfl | ⟨h0, rfl⟩
-      · exact Offset.base_disjoint _ (e := 8) (k := 8) (Nat.le_refl _) (by omega)
+      · exact Offset.base_disjoint _ (e := 8) (k := 8) (Nat.le_refl _) (by omega_using [hb, hsb])
       · exact Region.Disjoint.symm (Offset.disjoint_below _ (n := stack) (d := 8)
-          (k := 8 * (nStack sig + 1)) (by omega))
+          (k := 8 * (nStack sig + 1)) (by omega_using [hb, hsb]))
   · -- No buffer or list wraps around.
     intro a ha
     rw [bufRegions, hargs, show (sig.withScratch nm e n).params = sig.params ++ [((nm, .array true e n) : String × Param)]
@@ -702,9 +702,9 @@ theorem narrowS_pre (hk : 6 ≤ (sig.words abi.ptrBits).length)
       · simp only [List.mem_singleton] at ha; subst ha
         show (s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (16 + 8 * nStack sig)).toNat +
           n * e.size ≤ 2 ^ 64
-        rw [hscr, toNat_sub_ofNat (by omega)]
+        rw [hscr, toNat_sub_ofNat (by omega_using [hsb])]
         have := (s.gpr .rsp).isLt
-        omega
+        omega_using [hb, hsb]
     · exact hnw a (hL a ha)
   · -- The precondition, which reads only the buffers and the lists.
     refine Eq.mpr (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params pre _ _ hlen) _) ?_
@@ -722,7 +722,7 @@ theorem narrowS_pub (hk : 6 ≤ (sig.words abi.ptrBits).length)
     (Sig.scratchContract abi sig nm e n pre post wa stack leak).pub (narrowS sig e n bytes s₁)
       (narrowS sig e n bytes s₂) := by
   have hk' : 6 ≤ ((sig.withScratch nm e n).words abi.ptrBits).length := by
-    rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega
+    rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk]
   rw [pubL_args hk] at hp
   obtain ⟨⟨hsp, hlk⟩, hpa, hdesc⟩ := hp
   obtain ⟨e₁, -, -, a₁, -⟩ := narrowS_facts (nm := nm) (e := e) (n := n) hk hb hb1 h₁
@@ -770,7 +770,7 @@ theorem narrowS_pub (hk : 6 ≤ (sig.words abi.ptrBits).length)
     rw [List.getElem?_append_left (by rw [lp]; exact hik)] at hi
     exact hpa i hi
   · simp only [List.getD_eq_getElem?_getD]
-    rw [List.getElem?_append_right (by omega), List.getElem?_append_right (by omega), l₁, l₂]
+    rw [List.getElem?_append_right (by omega_using [l₁, hik]), List.getElem?_append_right (by omega_using [l₂, hik]), l₁, l₂]
 
 /-- A run of the code from `narrowS s` is a run of `withStackArgScratch`
 from `s`, after `setArgs`'s accesses, which keeps what the calling convention
@@ -790,19 +790,19 @@ theorem withStackArgScratch_run {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBit
   obtain ⟨hrsp, hg, hmx, -, hf⟩ := narrowS_facts (nm := "") hk hb hb1 hs
   rw [pre_args hk] at hs
   obtain ⟨⟨hwf, -⟩, hrd, hwr, -, hres, -, -⟩ := hs
-  have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hwf with h | h <;> omega
+  have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hwf with h | h <;> omega_using [h]
   -- The frame's push and `setArgs`.
   have hpush : isa.push (.alloc bytes) s = some (allocState bytes s) := by
     simp only [isa, push, allocState]
-    exact ite_eq_left ⟨by omega, hb1, hb2, by omega⟩
+    exact ite_eq_left ⟨by omega_using [hb], hb1, hb2, by omega_using [hsb]⟩
   -- The regions of `narrowS`: the buffers, and the frame's buffer and copies.
   have hF : ∀ {a k : Nat}, a ≤ bytes → bytes - a + k ≤ bytes →
       Covers [⟨s.gpr .rsp - BitVec.ofNat 64 a, k⟩] (⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr) :=
-    fun ha hk => Covers.one ⟨_, List.mem_cons_self .., Offset.contains_below _ ha hk (by omega)⟩
+    fun ha hk => Covers.one ⟨_, List.mem_cons_self .., Offset.contains_below _ ha hk (by omega_using [hsb])⟩
   have hscr : s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (16 + 8 * nStack sig) =
-      s.gpr .rsp - BitVec.ofNat 64 (bytes - (16 + 8 * nStack sig)) := sub_add_ofNat _ (by omega)
+      s.gpr .rsp - BitVec.ofNat 64 (bytes - (16 + 8 * nStack sig)) := sub_add_ofNat _ (by omega_using [hb])
   have harea : s.gpr .rsp - BitVec.ofNat 64 bytes + 8 = s.gpr .rsp - BitVec.ofNat 64 (bytes - 8) :=
-    sub_add_ofNat _ (d := 8) (by omega)
+    sub_add_ofNat _ (d := 8) (by omega_using [hb])
   have hbufR : ∀ a ∈ Sig.bufs sig.params (allArgs sig s), a.2 = false → a.1 ∈ s.rd := fun a ha h => by
     rw [hrd]
     exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨List.mem_append_left _ (List.mem_append_left _ ha),
@@ -826,7 +826,7 @@ theorem withStackArgScratch_run {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBit
     rcases ha with ((ha | rfl) | ha) | rfl
     · exact Covers.of_mem fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx; exact List.mem_cons_of_mem _ (hbufW a ha hf')
-    · rw [hscr]; exact hF (by omega) (by omega)
+    · rw [hscr]; exact hF (by omega_using []) (by omega_using [hb])
     · obtain ⟨r, -, rfl⟩ := List.mem_map.mp ha; simp at hf'
     · simp at hf'
   have hcovR : Covers (((oldRegions sig e n bytes s).filter (!·.2)).map (·.1))
@@ -841,7 +841,7 @@ theorem withStackArgScratch_run {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBit
     · simp at hf'
     · exact Covers.left (Covers.of_mem fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx; exact hlistR a ha)
-    · exact Covers.right (by rw [harea]; exact hF (by omega) (by omega))
+    · exact Covers.right (by rw [harea]; exact hF (by omega_using []) (by omega_using [hb]))
   have hw := Exec.widen he (rd := s.rd) (wr := ⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr)
     (Covers.append_left hcovR (Covers.right hcovW)) hcovW
   rw [show (narrowS sig e n bytes s).withRegions s.rd
@@ -858,7 +858,7 @@ theorem withStackArgScratch_run {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBit
       (s₃.withRegions s.rd (⟨s.gpr .rsp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr)) =
       some (popState bytes s s₃) := by
     simp only [isa, pop, State.withRegions_gpr, State.withRegions_wr]
-    refine ite_eq_left ⟨by omega, hb1, hb2, ?_, rfl, ?_⟩
+    refine ite_eq_left ⟨by omega_using [hb], hb1, hb2, ?_, rfl, ?_⟩
     · rw [hrsp₃]; simp [allocState, State.setReg]
     · simp [allocState, State.setReg]
   have hex := Exec.frame hpush (Exec.seq (Exec.block hrun) hw) hpop
@@ -872,15 +872,15 @@ theorem withStackArgScratch_run {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBit
       have hqa : q ≠ .rax := fun h => by subst h; simp [calleeSaved] at hq
       rw [ha.1 q hq, hg q hqa hqs]
   · -- The return address: the code writes only its regions and below `rsp`.
-    have hfs := Exec.stackFrame hsafe he (by omega)
+    have hfs := Exec.stackFrame hsafe he (by omega_using [hd, hsb])
     show s₃.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
     have hR : ∀ {x k : Nat}, x ≤ stack + bytes → stack + bytes - x + k ≤ stack + bytes →
         (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 x, k⟩ := fun hx hk =>
-      (Offset.base_disjoint_below _ (n := stack + bytes) (k := 8) (by omega)).sub_right
+      (Offset.base_disjoint_below _ (n := stack + bytes) (k := 8) (by omega_using [hst])).sub_right
         (Offset.sub_below _ hx hk)
     rw [hfs.readW (r := ⟨s.gpr .rsp, 8⟩) (Region.contains_self _ _) ?_ (by decide)]
     · exact hf.readW (Region.contains_self _ _) (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [harea]; exact hR (by omega) (by omega))
+        simp only [List.mem_singleton] at hr; subst hr; rw [harea]; exact hR (by omega_using []) (by omega_using [hb]))
         (by decide)
     · intro r hr
       rcases List.mem_append.mp hr with hr | hr
@@ -889,15 +889,15 @@ theorem withStackArgScratch_run {c : Prog isa} (hk : 6 ≤ (sig.words abi.ptrBit
         simp only [oldRegions, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at ha
         rcases ha with ((ha | rfl) | ha) | rfl
         · exact hres _ (List.mem_cons_self ..) a (List.mem_append_left _ (List.mem_append_left _ ha))
-        · rw [hscr]; exact hR (by omega) (by omega)
+        · rw [hscr]; exact hR (by omega_using []) (by omega_using [hb])
         · exact hres _ (List.mem_cons_self ..) a (List.mem_append_left _ (List.mem_append_right _ ha))
-        · rw [harea]; exact hR (by omega) (by omega)
+        · rw [harea]; exact hR (by omega_using []) (by omega_using [hb])
       · simp only [List.mem_singleton] at hr; subst hr
         rw [hrsp]
         show (⟨s.gpr .rsp, 8⟩ : Region).Disjoint
           ⟨s.gpr .rsp - BitVec.ofNat 64 bytes - BitVec.ofNat 64 c.x86_64Depth, c.x86_64Depth⟩
         rw [BitVec.sub_sub, ← BitVec.ofNat_add]
-        exact hR (by omega) (by omega)
+        exact hR (by omega_using [hd]) (by omega_using [hd])
   · -- MXCSR.
     show s₃.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
     rw [ha.2.2, hmx]
@@ -932,7 +932,7 @@ theorem Verified.stackArgScratchL {c : Prog isa}
   obtain ⟨hcor, hct, -⟩ := h
   have hsafe := SpSafe.of_all hsp
   have hk' : 6 ≤ ((sig.withScratch nm e n).words abi.ptrBits).length := by
-    rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega
+    rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk]
   -- Every run is `setArgs`, then the code's run from `narrowS`.
   have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃,
       Exec isa c (narrowS sig e n bytes s) t s₃ ∧
