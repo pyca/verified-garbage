@@ -43,7 +43,12 @@ open VG.Proof.Ed25519.AArch64 (read_x)
 private theorem jointByteTest : ∀ b : BitVec 8,
     (b.setWidth 64 != 0)=decide (nafMagnitude b≠0) := by decide +kernel
 
-local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlots,jointLive,jointWork,
+local macro "jslots" : tactic => `(tactic| plain_simp_names first
+  | (simp (config := { contextual := true }) only [jointSlots, jointLive, jointWork, jacWinSlots, nafLive,
+      winRo, winOther, rcbW, rcbR, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, true_or,
+      or_true, and_true, implies_true, and_self, forall_eq_or_imp, forall_eq, eq_self_iff_true,
+      List.forall_mem_append, List.forall_mem_cons]; done)
+  | (intro x hx; simp only [jointSlots,jointLive,jointWork,
                    jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))
 
 theorem jointFixedDigit_ok (certs : Forward.Arithmetic.Cases)
@@ -60,7 +65,7 @@ theorem jointFixedDigit_ok (certs : Forward.Arithmetic.Cases)
         (add A (FastNaf.point C G 7 u j)) t := by
   have hbytes : c.gBits+j<size := by
     have := hL.layout.stableBounds (c.gBits,257) (by simp [jointStableRanges]); dsimp only at this; omega
-  have wsl : ∀ x∈jointWork c,x∈jointSlots c := by intro x hx; jslots
+  have wsl : ∀ x∈jointWork c,x∈jointSlots c := by jslots
   have workBound : ∀ x∈jointWork c,x+8*c.K.M.n≤size := fun x hx => hL.layout.lay.le x (wsl x hx)
   rw [Joint.fixedDigit]
   apply WP.seq
@@ -82,21 +87,21 @@ theorem jointFixedDigit_ok (certs : Forward.Arithmetic.Cases)
       fun b ⟨kb,cb,ib,jb,zb⟩ => ?_
     apply WP.seq
     have sl : ∀ x∈rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E,x∈jointSlots c := by
-      intro x hx; jslots
+      jslots
     have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈[c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c := by
-      intro x hx; jslots
+      jslots
     refine WP.mono_syms (jointMixedAdd_ok certs hL.layout.lay hL.layout.aligned (callOf_small (Nat.le_of_eq hL.layout.n)) hm hsize hC ha hL.addApart sl
       ib vr hOne hA (FastNaf.onCurve_point hC hG 7 u j) cb.point jb zb)
       fun d ⟨Ed,kd,id,jd⟩ sd => ?_
-    have wd : ∀ x∈rcbW c.K.S c.K.D,x∈jointWork c := by intro x hx; jslots
+    have wd : ∀ x∈rcbW c.K.S c.K.D,x∈jointWork c := by jslots
     have slcopy : ∀ x∈rcbW c.K.S c.K.R++rcbR c.K.S c.K.D c.K.D,x∈jointSlots c := by
-      intro x hx; jslots
+      jslots
     have vcopy : ∀ x∈rcbR c.K.S c.K.D c.K.D,x∈[c.K.D.x,c.K.D.y,c.K.D.z]++([c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c) := by
-      intro x hx; jslots
+      jslots
     rw [←hL.layout.n]
     refine WP.mono_syms (copyPoint_ok hL.layout.lay hL.layout.aligned hL.copyApart slcopy id vcopy)
       fun t ⟨Et,kt,it,eq⟩ st => ?_
-    have wt : ∀ x∈rcbW c.K.S c.K.R,x∈jointWork c := by intro x hx; jslots
+    have wt : ∀ x∈rcbW c.K.S c.K.R,x∈jointWork c := by jslots
     have kdt := (kd.mono wd).trans (kt.mono wt)
     have et := cb.external.keep kdt (st.trans sd) workBound cb.field.mod.tmp
     have jt : InvJ C (Et c.K.R.x) (Et c.K.R.y) (Et c.K.R.z)
