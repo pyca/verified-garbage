@@ -12,9 +12,11 @@ namespace VG.Proof.Mont.X86.Dynamic
 open VG VG.X86 VG.Impl.Mont.X86
 
 /-- Public workspace and row pointers, with all arithmetic values secret. -/
-def rowTaint : VG.X86.Taint.T := { regs := .ofList [.edi, .ebp], flags := false }
+def rowTaint (counter : Bool) : VG.X86.Taint.T := { regs := .ofList ([.edi, .ebp] ++ if counter then [.esi] else []), flags := false }
 
-def rowEndTaint : VG.X86.Taint.T := { regs := .ofList [.edi, .ebp, .edx], flags := true }
+def rowEndTaint (counter : Bool) : VG.X86.Taint.T := { regs := .ofList ([.edi, .ebp, .edx] ++ if counter then [.esi] else []), flags := true }
+
+variable (counter : Bool)
 
 private theorem check_append {M : ISA} (A : VG.Taint M) (τ : A.T) (a b : List M.Instr) :
     A.checkBlock τ (a ++ b) = (A.checkBlock τ a).bind (A.checkBlock · b) := by
@@ -37,191 +39,204 @@ private theorem check_flatMap {M : ISA} (A : VG.Taint M) (τ : A.T)
 
 /-- A word multiply-add preserves public address registers. -/
 theorem mulStep_taint (acc b j : Nat) :
-    taint.checkBlock rowTaint (mulStep acc b j) = some rowTaint := by
-  rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases rowTaint = true from rfl)]
-  change taint.checkBlock rowTaint (mulStep 0 0 0) = _
-  rfl
+    taint.checkBlock (rowTaint counter) (mulStep acc b j) = some (rowTaint counter) := by
+  rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (rowTaint counter) = true from rfl)]
+  change taint.checkBlock (rowTaint counter) (mulStep 0 0 0) = _
+  cases counter <;> rfl
 
 /-- Loading the inverse does not publish the inverse or accumulator. -/
 theorem redDigit_taint (acc inv : Nat) :
-    taint.checkBlock rowTaint (VG.Impl.Mont.X86.Dynamic.redDigit acc inv) = some rowTaint := by
-  rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases rowTaint = true from rfl)]
-  change taint.checkBlock rowTaint (VG.Impl.Mont.X86.Dynamic.redDigit 0 0) = _
-  rfl
+    taint.checkBlock (rowTaint counter) (VG.Impl.Mont.X86.Dynamic.redDigit acc inv) = some (rowTaint counter) := by
+  rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (rowTaint counter) = true from rfl)]
+  change taint.checkBlock (rowTaint counter) (VG.Impl.Mont.X86.Dynamic.redDigit 0 0) = _
+  cases counter <;> rfl
 
 /-- A complete multiply-add row, including carry propagation. -/
 theorem mulRow_taint (acc b : Nat) {N : Nat} (hN : 0 < N) :
-    taint.checkBlock rowTaint (mulRow acc b N) = some rowTaint := by
+    taint.checkBlock (rowTaint counter) (mulRow acc b N) = some (rowTaint counter) := by
   obtain ⟨k, rfl⟩ : ∃ k, N = k + 1 := ⟨N - 1, by omega⟩
   -- The first step consumes the initially public zero carry.
-  have first : taint.checkBlock rowTaint
-      ([.mov .ebx (.imm 0)] ++ mulStep acc b 0) = some rowTaint := by
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases rowTaint = true from rfl)]
-    change taint.checkBlock rowTaint ([.mov .ebx (.imm 0)] ++ mulStep 0 0 0) = _
-    rfl
-  have shift (k : Nat) : taint.checkBlock rowTaint
-      ((List.range k).flatMap fun j => mulStep acc b (j + 1)) = some rowTaint := by
+  have first : taint.checkBlock (rowTaint counter)
+      ([.mov .ebx (.imm 0)] ++ mulStep acc b 0) = some (rowTaint counter) := by
+    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (rowTaint counter) = true from rfl)]
+    change taint.checkBlock (rowTaint counter) ([.mov .ebx (.imm 0)] ++ mulStep 0 0 0) = _
+    cases counter <;> rfl
+  have shift (k : Nat) : taint.checkBlock (rowTaint counter)
+      ((List.range k).flatMap fun j => mulStep acc b (j + 1)) = some (rowTaint counter) := by
     induction k with
     | zero => rfl
     | succ k ih =>
-      rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, check_append taint rowTaint, ih]
-      exact mulStep_taint acc b (k + 1)
+      rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, check_append taint (rowTaint counter), ih]
+      exact mulStep_taint counter acc b (k + 1)
   simp only [mulRow, List.range_succ_eq_map, List.flatMap_cons, List.flatMap_map,
     ]
-  change taint.checkBlock rowTaint
+  change taint.checkBlock (rowTaint counter)
     (([.mov .ebx (.imm 0)] ++ mulStep acc b 0) ++
       ((List.range k).flatMap fun j => mulStep acc b (j + 1)) ++ carryUp acc (k + 1)) = _
-  rw [List.append_assoc, check_append taint rowTaint, first]
-  change taint.checkBlock rowTaint (_ ++ _) = _
-  rw [check_append taint rowTaint]
-  change (taint.checkBlock rowTaint ((List.range k).flatMap fun j => mulStep acc b (j + 1))).bind _ = _
+  rw [List.append_assoc, check_append taint (rowTaint counter), first]
+  change taint.checkBlock (rowTaint counter) (_ ++ _) = _
+  rw [check_append taint (rowTaint counter)]
+  change (taint.checkBlock (rowTaint counter) ((List.range k).flatMap fun j => mulStep acc b (j + 1))).bind _ = _
   rw [shift]
-  change taint.checkBlock rowTaint (carryUp acc (k + 1)) = _
-  rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases rowTaint = true from rfl)]
-  change taint.checkBlock rowTaint (KList.map Instr.erase (carryUp 0 0)) = _
-  rfl
+  change taint.checkBlock (rowTaint counter) (carryUp acc (k + 1)) = _
+  rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (rowTaint counter) = true from rfl)]
+  change taint.checkBlock (rowTaint counter) (KList.map Instr.erase (carryUp 0 0)) = _
+  cases counter <;> rfl
 
 /-- A row ends with a public loop comparison. The loaded modulus,
 inverse, multiplicands, accumulator, and carry are all treated as secret. -/
 theorem row_taint (N acc a b mo inv : Nat) (hN : 0 < N) :
-    taint.checkBlock rowTaint (VG.Impl.Mont.X86.Dynamic.row N acc a b mo inv) = some rowEndTaint := by
+    taint.checkBlock (rowTaint counter) (VG.Impl.Mont.X86.Dynamic.row N acc a b mo inv) = some (rowEndTaint counter) := by
   unfold VG.Impl.Mont.X86.Dynamic.row
   simp only [List.append_assoc]
-  rw [check_append taint rowTaint]
-  have load : taint.checkBlock rowTaint [.mov .ecx (.mem (at_ .ebp a))] = some rowTaint := by
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases rowTaint = true from rfl)]
-    change taint.checkBlock rowTaint [.mov .ecx (.mem (at_ .ebp 0))] = _
-    rfl
+  rw [check_append taint (rowTaint counter)]
+  have load : taint.checkBlock (rowTaint counter) [.mov .ecx (.mem (at_ .ebp a))] = some (rowTaint counter) := by
+    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (rowTaint counter) = true from rfl)]
+    change taint.checkBlock (rowTaint counter) [.mov .ecx (.mem (at_ .ebp 0))] = _
+    cases counter <;> rfl
   rw [load]
   dsimp only [Option.bind]
-  rw [check_append taint rowTaint, mulRow_taint acc b hN]
+  rw [check_append taint (rowTaint counter), mulRow_taint counter acc b hN]
   dsimp only [Option.bind]
-  rw [check_append taint rowTaint, redDigit_taint]
+  rw [check_append taint (rowTaint counter), redDigit_taint counter]
   dsimp only [Option.bind]
-  rw [check_append taint rowTaint, mulRow_taint acc mo hN]
+  rw [check_append taint (rowTaint counter), mulRow_taint counter acc mo hN]
   dsimp only [Option.bind]
-  rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases rowTaint = true from rfl)]
-  change taint.checkBlock rowTaint
+  rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (rowTaint counter) = true from rfl)]
+  change taint.checkBlock (rowTaint counter)
     [.alu .add .ebp (.imm 0), .mov .edx (.reg .edi),
      .alu .add .edx (.imm 0), .alu .cmp .ebp (.reg .edx)] = _
-  rfl
+  cases counter <;> rfl
 
 /-- Constant-time execution of the multiplication loop for every positive
 public width and every workspace layout. -/
-theorem loop_constantTime (N acc a b mo inv : Nat) (hN : 0 < N) :
-    ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree rowTaint)
+theorem loop_constantTime_withCounter (N acc a b mo inv : Nat) (hN : 0 < N) :
+    ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree (rowTaint counter))
       (.loop (.block (VG.Impl.Mont.X86.Dynamic.row N acc a b mo inv)) .ne) := by
-  refine VG.Taint.constantTime (A := taint) rowTaint (fun _ _ _ _ h => h)
-    (hc := .loop rowTaint (.block [])) ?_
-  change ((if taint.le rowTaint rowTaint then
-    (taint.checkBlock rowTaint (VG.Impl.Mont.X86.Dynamic.row N acc a b mo inv)).bind
-      (fun t => if taint.le rowTaint t && taint.condPub t .ne then some t else none)
+  refine VG.Taint.constantTime (A := taint) (rowTaint counter) (fun _ _ _ _ h => h)
+    (hc := .loop (rowTaint counter) (.block [])) ?_
+  change ((if taint.le (rowTaint counter) (rowTaint counter) then
+    (taint.checkBlock (rowTaint counter) (VG.Impl.Mont.X86.Dynamic.row N acc a b mo inv)).bind
+      (fun t => if taint.le (rowTaint counter) t && taint.condPub t .ne then some t else none)
     else none).isSome) = true
-  rw [row_taint N acc a b mo inv hN]
-  rfl
+  rw [row_taint counter N acc a b mo inv hN]
+  cases counter <;> rfl
 
 /-- Final conditional subtraction and selection do not branch on the borrow. -/
 theorem csub_taint (M : VG.Impl.Mont.Mod) (src out : Nat) :
-    taint.checkBlock rowTaint (csub M src out) = some rowTaint := by
-  have df : taint.checkBlock rowTaint (diffs M src) = some rowTaint := by
+    taint.checkBlock (rowTaint counter) (csub M src out) = some (rowTaint counter) := by
+  have df : taint.checkBlock (rowTaint counter) (diffs M src) = some (rowTaint counter) := by
     unfold diffs
-    apply check_flatMap taint rowTaint
+    apply check_flatMap taint (rowTaint counter)
     intro j
     split <;>
-      rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases rowTaint = true from rfl)] <;>
-      change taint.checkBlock rowTaint _ = some rowTaint
-    · change taint.checkBlock rowTaint
+      rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (rowTaint counter) = true from rfl)] <;>
+      change taint.checkBlock (rowTaint counter) _ = some (rowTaint counter)
+    · change taint.checkBlock (rowTaint counter)
         [.mov .eax (.mem (sc 0)), .alu .sub .eax (.mem (sc 0)), .store (sc 0) .eax] = _
-      rfl
-    · change taint.checkBlock rowTaint
+      cases counter <;> rfl
+    · change taint.checkBlock (rowTaint counter)
         [.mov .eax (.mem (sc 0)), .alu .sbb .eax (.mem (sc 0)), .store (sc 0) .eax] = _
-      rfl
-  have sl : taint.checkBlock rowTaint (selects M src out) = some rowTaint := by
+      cases counter <;> rfl
+  have sl : taint.checkBlock (rowTaint counter) (selects M src out) = some (rowTaint counter) := by
     unfold selects
-    apply check_flatMap taint rowTaint
+    apply check_flatMap taint (rowTaint counter)
     intro j
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases rowTaint = true from rfl)]
-    change taint.checkBlock rowTaint
+    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (rowTaint counter) = true from rfl)]
+    change taint.checkBlock (rowTaint counter)
       [.mov .ebx (.mem (sc 0)), .mov .edx (.mem (sc 0)), .alu .xor .edx (.reg .ebx),
        .alu .and .edx (.reg .eax), .alu .xor .ebx (.reg .edx), .store (sc 0) .ebx] = _
-    rfl
+    cases counter <;> rfl
   unfold csub
-  rw [List.append_assoc, check_append taint rowTaint, df]
+  rw [List.append_assoc, check_append taint (rowTaint counter), df]
   dsimp only [Option.bind]
-  rw [check_append taint rowTaint]
-  have mask : taint.checkBlock rowTaint
+  rw [check_append taint (rowTaint counter)]
+  have mask : taint.checkBlock (rowTaint counter)
       [.mov .eax (.mem (sc (src + 4 * words M))), .alu .sbb .eax (.imm 0),
-       .alu .sbb .eax (.reg .eax), .alu .xor .eax (.imm (-1))] = some rowTaint := by
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases rowTaint = true from rfl)]
-    change taint.checkBlock rowTaint
+       .alu .sbb .eax (.reg .eax), .alu .xor .eax (.imm (-1))] = some (rowTaint counter) := by
+    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (rowTaint counter) = true from rfl)]
+    change taint.checkBlock (rowTaint counter)
       [.mov .eax (.mem (sc 0)), .alu .sbb .eax (.imm 0),
        .alu .sbb .eax (.reg .eax), .alu .xor .eax (.imm 0)] = _
-    rfl
+    cases counter <;> rfl
   rw [mask]
   exact sl
 
 /-- Only the workspace pointer is public on entry. -/
-def workspaceTaint : VG.X86.Taint.T := { regs := .ofList [.edi], flags := false }
+def workspaceTaint (counter : Bool) : VG.X86.Taint.T := { regs := .ofList ([.edi] ++ if counter then [.esi] else []), flags := false }
 
-def zeroTaint : VG.X86.Taint.T := { regs := .ofList [.edi, .eax], flags := false }
+def zeroTaint (counter : Bool) : VG.X86.Taint.T := { regs := .ofList ([.edi, .eax] ++ if counter then [.esi] else []), flags := false }
 
-def initializedTaint : VG.X86.Taint.T := { regs := .ofList [.edi, .eax, .ebp], flags := false }
+def initializedTaint (counter : Bool) : VG.X86.Taint.T := { regs := .ofList ([.edi, .eax, .ebp] ++ if counter then [.esi] else []), flags := false }
 
 /-- Zeroing the accumulator publishes its zero register, but no input word. -/
 theorem zeros_taint (acc k : Nat) :
-    taint.checkBlock workspaceTaint (zeros acc k) = some zeroTaint := by
-  have stores : taint.checkBlock zeroTaint
-      ((List.range k).map fun j => .store (sc (acc + 4 * j)) .eax) = some zeroTaint := by
+    taint.checkBlock (workspaceTaint counter) (zeros acc k) = some (zeroTaint counter) := by
+  have stores : taint.checkBlock (zeroTaint counter)
+      ((List.range k).map fun j => .store (sc (acc + 4 * j)) .eax) = some (zeroTaint counter) := by
     rw [List.map_eq_flatMap]
-    apply check_flatMap taint zeroTaint
+    apply check_flatMap taint (zeroTaint counter)
     intro j
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases zeroTaint = true from rfl)]
-    change taint.checkBlock zeroTaint [.store (sc 0) .eax] = _
-    rfl
+    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (zeroTaint counter) = true from rfl)]
+    change taint.checkBlock (zeroTaint counter) [.store (sc 0) .eax] = _
+    cases counter <;> rfl
   unfold zeros
-  change (taint.step workspaceTaint (.mov .eax (.imm 0))).bind _ = _
-  have h : taint.step workspaceTaint (.mov .eax (.imm 0)) = some zeroTaint := by rfl
+  change (taint.step (workspaceTaint counter) (.mov .eax (.imm 0))).bind _ = _
+  have h : taint.step (workspaceTaint counter) (.mov .eax (.imm 0)) = some (zeroTaint counter) := by cases counter <;> rfl
   rw [h]
   exact stores
 
 /-- The multiplication prefix sets both pointers independently of all operands. -/
 theorem initialize_taint (acc k : Nat) :
-    taint.checkBlock workspaceTaint (zeros acc k ++ ([.mov .ebp (.reg .edi)] : List Instr)) =
-      some initializedTaint := by
-  rw [check_append taint workspaceTaint, zeros_taint]
-  rfl
+    taint.checkBlock (workspaceTaint counter) (zeros acc k ++ ([.mov .ebp (.reg .edi)] : List Instr)) =
+      some (initializedTaint counter) := by
+  rw [check_append taint (workspaceTaint counter), zeros_taint counter]
+  cases counter <;> rfl
 
-/-- The full multiplication has secret-independent branches and addresses,
-including its initialization and final conditional subtraction. -/
-theorem mul_constantTime (M : VG.Impl.Mont.Mod) (inv acc out a b : Nat) (hN : 0 < words M) :
-    ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree workspaceTaint)
-      (VG.Impl.Mont.X86.Dynamic.mul M inv acc out a b) := by
-  refine VG.Taint.constantTime (A := taint) workspaceTaint (fun _ _ _ _ h => h)
-    (hc := .seq rowTaint (.block [])
-      (.seq rowTaint (.loop rowTaint (.block [])) (.block []))) ?_
+/-- A compositional certificate also preserves the public exponent counter. -/
+def mulHint (counter : Bool) : VG.Taint.Hint VG.X86.Taint.T :=
+  .seq (rowTaint counter) (.block [])
+    (.seq (rowTaint counter) (.loop (rowTaint counter) (.block [])) (.block []))
+
+theorem mul_check (M : VG.Impl.Mont.Mod) (inv acc out a b : Nat) (hN : 0 < words M) :
+    VG.Taint.check taint (workspaceTaint counter)
+      (VG.Impl.Mont.X86.Dynamic.mul M inv acc out a b) (mulHint counter) = some (rowTaint counter) := by
+  unfold mulHint
   unfold VG.Impl.Mont.X86.Dynamic.mul
   simp only [VG.Taint.check, VG.Taint.checkChunks]
-  rw [initialize_taint]
+  rw [initialize_taint counter]
   dsimp only [Option.bind]
-  have le₀ : taint.le rowTaint initializedTaint = true := by rfl
-  have le₁ : taint.le rowTaint rowTaint = true := by rfl
+  have le₀ : taint.le (rowTaint counter) (initializedTaint counter) = true := by cases counter <;> rfl
+  have le₁ : taint.le (rowTaint counter) (rowTaint counter) = true := by cases counter <;> rfl
   rw [le₀, le₁]
   simp only [ite_true]
-  rw [row_taint (words M) acc a b M.mo inv hN]
+  rw [row_taint counter (words M) acc a b M.mo inv hN]
   dsimp only [Option.bind]
-  have le₂ : taint.le rowTaint rowEndTaint = true := by rfl
-  have cond : taint.condPub rowEndTaint .ne = true := by rfl
+  have le₂ : taint.le (rowTaint counter) (rowEndTaint counter) = true := by cases counter <;> rfl
+  have cond : taint.condPub (rowEndTaint counter) .ne = true := by cases counter <;> rfl
   rw [le₂, cond]
   simp only [Bool.true_and, ite_true]
   rw [le₂]
   simp only [ite_true]
-  rw [csub_taint]
+  rw [csub_taint counter]
+
+/-- The full multiplication has secret-independent branches and addresses,
+including its initialization and final conditional subtraction. -/
+theorem mul_constantTime_withCounter (M : VG.Impl.Mont.Mod) (inv acc out a b : Nat) (hN : 0 < words M) :
+    ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree (workspaceTaint counter))
+      (VG.Impl.Mont.X86.Dynamic.mul M inv acc out a b) := by
+  refine VG.Taint.constantTime (A := taint) (workspaceTaint counter) (fun _ _ _ _ h => h)
+    (hc := .seq (rowTaint counter) (.block [])
+      (.seq (rowTaint counter) (.loop (rowTaint counter) (.block [])) (.block []))) ?_
+  change (VG.Taint.check taint (workspaceTaint counter)
+    (VG.Impl.Mont.X86.Dynamic.mul M inv acc out a b) (mulHint counter)).isSome = true
+  rw [mul_check counter M inv acc out a b hN]
   rfl
 
 /-- Newton iteration preserves the only public register, the workspace pointer. -/
 theorem newton_taint :
-    taint.checkBlock workspaceTaint VG.Impl.Mont.X86.Dynamic.newton = some workspaceTaint := by
-  rfl
+    taint.checkBlock (workspaceTaint counter) VG.Impl.Mont.X86.Dynamic.newton = some (workspaceTaint counter) := by
+  cases counter <;> rfl
 
 private theorem check_append_of {M : ISA} (A : VG.Taint M) (τ : A.T)
     {a b : List M.Instr} (ha : A.checkBlock τ a = some τ) (hb : A.checkBlock τ b = some τ) :
@@ -230,39 +245,54 @@ private theorem check_append_of {M : ISA} (A : VG.Taint M) (τ : A.T)
   exact hb
 
 theorem inverse_taint :
-    taint.checkBlock workspaceTaint VG.Impl.Mont.X86.Dynamic.inverse = some workspaceTaint := by
-  have cp : taint.checkBlock workspaceTaint [.mov .ecx (.reg .ebx)] = some workspaceTaint := by rfl
-  have neg : taint.checkBlock workspaceTaint [.mov .eax (.imm 0), .alu .sub .eax (.reg .ecx)] =
-      some workspaceTaint := by rfl
-  exact check_append_of taint workspaceTaint
-    (check_append_of taint workspaceTaint
-      (check_append_of taint workspaceTaint
-        (check_append_of taint workspaceTaint
-          (check_append_of taint workspaceTaint cp newton_taint) newton_taint) newton_taint) newton_taint) neg
+    taint.checkBlock (workspaceTaint counter) VG.Impl.Mont.X86.Dynamic.inverse = some (workspaceTaint counter) := by
+  have cp : taint.checkBlock (workspaceTaint counter) [.mov .ecx (.reg .ebx)] = some (workspaceTaint counter) := by cases counter <;> rfl
+  have neg : taint.checkBlock (workspaceTaint counter) [.mov .eax (.imm 0), .alu .sub .eax (.reg .ecx)] =
+      some (workspaceTaint counter) := by cases counter <;> rfl
+  exact check_append_of taint (workspaceTaint counter)
+    (check_append_of taint (workspaceTaint counter)
+      (check_append_of taint (workspaceTaint counter)
+        (check_append_of taint (workspaceTaint counter)
+          (check_append_of taint (workspaceTaint counter) cp (newton_taint counter)) (newton_taint counter)) (newton_taint counter)) (newton_taint counter)) neg
 
 /-- Inverse initialization never publishes the loaded modulus word. -/
 theorem setupInverse_taint (mo inv : Nat) :
-    taint.checkBlock workspaceTaint (VG.Impl.Mont.X86.Dynamic.setupInverse mo inv) =
-      some workspaceTaint := by
-  have ld : taint.checkBlock workspaceTaint [.mov .ebx (.mem (sc mo))] = some workspaceTaint := by
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases workspaceTaint = true from rfl)]
-    change taint.checkBlock workspaceTaint [.mov .ebx (.mem (sc 0))] = _
-    rfl
-  have st : taint.checkBlock workspaceTaint [.store (sc inv) .eax] = some workspaceTaint := by
-    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases workspaceTaint = true from rfl)]
-    change taint.checkBlock workspaceTaint [.store (sc 0) .eax] = _
-    rfl
-  exact check_append_of taint workspaceTaint
-    (check_append_of taint workspaceTaint ld inverse_taint) st
+    taint.checkBlock (workspaceTaint counter) (VG.Impl.Mont.X86.Dynamic.setupInverse mo inv) =
+      some (workspaceTaint counter) := by
+  have ld : taint.checkBlock (workspaceTaint counter) [.mov .ebx (.mem (sc mo))] = some (workspaceTaint counter) := by
+    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint counter) = true from rfl)]
+    change taint.checkBlock (workspaceTaint counter) [.mov .ebx (.mem (sc 0))] = _
+    cases counter <;> rfl
+  have st : taint.checkBlock (workspaceTaint counter) [.store (sc inv) .eax] = some (workspaceTaint counter) := by
+    rw [← VG.X86.Taint.checkBlock_erase _ _ (show VG.X86.Taint.noBases (workspaceTaint counter) = true from rfl)]
+    change taint.checkBlock (workspaceTaint counter) [.store (sc 0) .eax] = _
+    cases counter <;> rfl
+  exact check_append_of taint (workspaceTaint counter)
+    (check_append_of taint (workspaceTaint counter) ld (inverse_taint counter)) st
 
 /-- Constant-time runtime inverse setup for arbitrary public workspace offsets. -/
-theorem setupInverse_constantTime (mo inv : Nat) :
-    ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree workspaceTaint)
+theorem setupInverse_constantTime_withCounter (mo inv : Nat) :
+    ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree (workspaceTaint counter))
       (.block (VG.Impl.Mont.X86.Dynamic.setupInverse mo inv)) := by
-  refine VG.Taint.constantTime (A := taint) workspaceTaint (fun _ _ _ _ h => h)
+  refine VG.Taint.constantTime (A := taint) (workspaceTaint counter) (fun _ _ _ _ h => h)
     (hc := .block []) ?_
-  change (taint.checkBlock workspaceTaint (VG.Impl.Mont.X86.Dynamic.setupInverse mo inv)).isSome = true
-  rw [setupInverse_taint]
-  rfl
+  change (taint.checkBlock (workspaceTaint counter) (VG.Impl.Mont.X86.Dynamic.setupInverse mo inv)).isSome = true
+  rw [setupInverse_taint counter]
+  cases counter <;> rfl
+
+theorem loop_constantTime (N acc a b mo inv : Nat) (hN : 0 < N) :
+    ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree (rowTaint false))
+      (.loop (.block (VG.Impl.Mont.X86.Dynamic.row N acc a b mo inv)) .ne) :=
+  loop_constantTime_withCounter false N acc a b mo inv hN
+
+theorem mul_constantTime (M : VG.Impl.Mont.Mod) (inv acc out a b : Nat) (hN : 0 < words M) :
+    ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree (workspaceTaint false))
+      (VG.Impl.Mont.X86.Dynamic.mul M inv acc out a b) :=
+  mul_constantTime_withCounter false M inv acc out a b hN
+
+theorem setupInverse_constantTime (mo inv : Nat) :
+    ConstantTime isa (fun _ => True) (VG.X86.Taint.Agree (workspaceTaint false))
+      (.block (VG.Impl.Mont.X86.Dynamic.setupInverse mo inv)) :=
+  setupInverse_constantTime_withCounter false mo inv
 
 end VG.Proof.Mont.X86.Dynamic
