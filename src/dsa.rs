@@ -28,7 +28,7 @@ use crate::arch::dsa::vg_dsa_sign_adx;
 use crate::arch::dsa::vg_dsa_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
-    VG_DSA_SIGN_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES, vg_dsa_sign_random,
+    VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES, vg_dsa_sign_random,
     vg_dsa_sign_random_adx, vg_dsa_verify_adx,
 };
 use crate::cpu::{Features, detected};
@@ -44,7 +44,7 @@ enum Backend {
 impl Backend {
     fn select(_features: Features) -> Self {
         #[cfg(target_arch = "x86_64")]
-        if _features.contains(VG_DSA_SIGN_ADX_FEATURES)
+        if _features.contains(VG_DSA_SIGN_RANDOM_ADX_FEATURES)
             && _features.contains(VG_DSA_VERIFY_ADX_FEATURES)
         {
             return Self::Adx;
