@@ -244,10 +244,10 @@ def cbcNarrowWr (s : State) : List Region :=
   [⟨(arg s 3).setWidth 64, 16 * (arg s 4).toNat⟩, ⟨(arg s 5).setWidth 64, 8 * 341⟩]
 
 local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names (simp only [VG.Proof.Camellia.cbcX86, VG.Proof.Camellia.X86.cbcWideContract,
-                      VG.Proof.Camellia.X86.cbcNarrowRd, VG.Proof.Camellia.X86.cbcNarrowWr, VG.X86.arg_withRegions,
-                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
+  `(tactic| plain_simp_names simp only [VG.Proof.Camellia.cbcX86, VG.Proof.Camellia.X86.cbcWideContract,
+                     VG.Proof.Camellia.X86.cbcNarrowRd, VG.Proof.Camellia.X86.cbcNarrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
 
 theorem cbcWide_pre (enc : Bool) (s : State) (h : (cbcWideContract enc).pre s) :
     (cbcX86 enc).pre (s.withRegions (cbcNarrowRd s) (cbcNarrowWr s)) := by

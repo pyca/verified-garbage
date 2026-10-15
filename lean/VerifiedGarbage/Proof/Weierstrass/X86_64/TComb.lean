@@ -68,10 +68,10 @@ structure TCombVals (K : TCombCfg) (C : Curve) (tbl : List (List (Nat × Nat))) 
     (mul (K.H * geomW K.w K.J) (G C))
 
 /-- `x ∈ l` for the comb's lists, through `toComb`. -/
-macro "tcomb_mem" : tactic => `(tactic| plain_simp_names (first
-                    | list_mem
-                    | (simp only [List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true, combSlots,
-                        combWs, combRo, rcbW, rcbR, List.cons_append, List.nil_append, TCombCfg.toComb])))
+macro "tcomb_mem" : tactic => `(tactic| plain_simp_names first
+                   | list_mem
+                   | (simp only [List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true, combSlots,
+                       combWs, combRo, rcbW, rcbR, List.cons_append, List.nil_append, TCombCfg.toComb]))
 
 /-- `a ≠ b` (or a conjunction of such, or `a ∉ [b, …]`) from `h`, the conjunction of `¬ x = y`
 that a `Nodup` of the slots simplifies to, in either orientation: not `grind`, which takes a tenth

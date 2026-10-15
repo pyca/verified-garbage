@@ -546,10 +546,10 @@ def narrowWr (s : State) : List Region := [⟨(arg s 0).setWidth 64, 64⟩, ⟨(
 /-- Rewrites the contracts at a narrowed state (`arg` does not unfold
 cheaply). -/
 local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names (simp only [Proof.Scrypt.salsaX86, VG.Proof.Scrypt.X86.salsaWide,
-                      VG.Proof.Scrypt.X86.narrowRd, VG.Proof.Scrypt.X86.narrowWr, VG.X86.arg_withRegions,
-                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
+  `(tactic| plain_simp_names simp only [Proof.Scrypt.salsaX86, VG.Proof.Scrypt.X86.salsaWide,
+                     VG.Proof.Scrypt.X86.narrowRd, VG.Proof.Scrypt.X86.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
 
 theorem salsaWide_pre (s : State) (h : salsaWide.pre s) :
     Proof.Scrypt.salsaX86.pre (s.withRegions (narrowRd s) (narrowWr s)) := by

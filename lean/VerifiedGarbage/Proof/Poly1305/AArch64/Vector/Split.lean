@@ -59,7 +59,7 @@ abbrev bAddr (s : State) (off e : Nat) : Addr := s.gpr .x2 + BitVec.ofNat 64 (of
 
 /-- Reads of the vector registers through the writes of the steps so far. -/
 macro "vstep" : tactic =>
-  `(tactic| plain_simp_names (simp (disch := decide) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne]))
+  `(tactic| plain_simp_names simp (disch := decide) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne])
 
 theorem iV_ne : ∀ i < 5, ∀ j < 5, i ≠ j → iV i ≠ iV j := by decide
 

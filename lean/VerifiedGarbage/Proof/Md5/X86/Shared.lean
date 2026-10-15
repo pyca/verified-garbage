@@ -64,8 +64,8 @@ def updateWide : Contract X86.isa :=
 /-- Rewrites the per-target contracts at a narrowed state (`arg` does not
 unfold cheaply). -/
 macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names (simp only [Proof.Md5.updateX86, updateWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-                      State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?))
+  `(tactic| plain_simp_names simp only [Proof.Md5.updateX86, updateWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
+                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
 
 /-- `update` only reads its arguments. -/
 theorem updateWide_verified (hsat : ∃ s, updateWide.pre s) :

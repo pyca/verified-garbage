@@ -217,8 +217,8 @@ theorem KB.call {s₀ s s' : State} (h : KB P s₀ s) {rs : List Region} (hk : K
 /-! ## Regions -/
 
 /-- A bound on an offset into argument `b`. -/
-macro "kl" : tactic => `(tactic| plain_simp_names (first | decide |
-                    ((try have := (‹Pre _ _›).wf.facts); clear_non_arith; simp -failIfUnchanged only [kL] at *; lom)))
+macro "kl" : tactic => `(tactic| plain_simp_names first | decide |
+                   ((try have := (‹Pre _ _›).wf.facts); clear_non_arith; simp -failIfUnchanged only [kL] at *; lom))
 
 theorem sv_disj {s₀ : State} (hp : Pre P s₀) {b o l : Nat} (hb : b < 4) (f : o + l ≤ kL P b)
     (hs : b ≠ 3 ∨ SV P + 48 ≤ o ∨ o + l ≤ SV P) : (svR P s₀).Disjoint (R (kA s₀) b o l) :=

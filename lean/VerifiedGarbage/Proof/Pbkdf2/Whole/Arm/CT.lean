@@ -98,8 +98,8 @@ theorem PubEq.a {i : Nat} (hi : i < 4) : stackArg s₀ i = stackArg s₀' i := b
 
 /-- `s₀'`'s public values are `s₀`'s. -/
 macro "pub_simp" hq:term " at " h:ident : tactic => `(tactic|
-  plain_simp_names (simp only [dO, A, scr, pw, salt, pwl, sl, ol, cc, out, kp, kl, nbk, dn, ← PubEq.r0 $hq, ← PubEq.r1 $hq,
-                      ← PubEq.r2 $hq, ← PubEq.r3 $hq, ← PubEq.a0 $hq, ← PubEq.a1 $hq, ← PubEq.a2 $hq, ← PubEq.a3 $hq] at $h:ident))
+  plain_simp_names simp only [dO, A, scr, pw, salt, pwl, sl, ol, cc, out, kp, kl, nbk, dn, ← PubEq.r0 $hq, ← PubEq.r1 $hq,
+                     ← PubEq.r2 $hq, ← PubEq.r3 $hq, ← PubEq.a0 $hq, ← PubEq.a1 $hq, ← PubEq.a2 $hq, ← PubEq.a3 $hq] at $h:ident)
 
 theorem PubEq.scrEq : scr s₀' = scr s₀ := hq.a3.symm
 theorem PubEq.pwlEq : pwl s₀' = pwl s₀ := by show (s₀'.gpr .r1).toNat = _; rw [← hq.r1]

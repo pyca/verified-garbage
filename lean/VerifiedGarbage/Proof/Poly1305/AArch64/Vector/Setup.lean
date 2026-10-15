@@ -31,9 +31,9 @@ open VG.Proof.Poly1305.AArch64.Radix64 (hval Keeps absorbRegs mul_ok)
 
 /-- Reads of the general-purpose registers through the writes of the steps so far. -/
 macro "gstep" : tactic =>
-  `(tactic| plain_simp_names (simp (disch := decide) only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.v_write,
-                      RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, State.read, Size.bits,
-                      BitVec.setWidth_eq]))
+  `(tactic| plain_simp_names simp (disch := decide) only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.v_write,
+                     RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, State.read, Size.bits,
+                     BitVec.setWidth_eq])
 
 /-- The limbs of `w0 + 2⁶⁴ w1 + 2¹²⁸ w2`, as `limbs` computes them. -/
 def lim (w0 w1 w2 : Nat) : Nat → Nat

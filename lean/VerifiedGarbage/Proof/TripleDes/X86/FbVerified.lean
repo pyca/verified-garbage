@@ -131,9 +131,9 @@ theorem cipher_eq (s : State) :
     (dirCoreSpec .encrypt).cipher (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
 
 local macro "post_eq" h:ident h':ident : tactic =>
-  `(tactic| plain_simp_names (simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.bytes0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp,
-                      Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, bytes_eq, cipher_eq]
-                      at $h:ident $h':ident))
+  `(tactic| plain_simp_names simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.bytes0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp,
+                     Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, bytes_eq, cipher_eq]
+                     at $h:ident $h':ident)
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 8 ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 8 ofbPost).post s₀ s' :=
@@ -269,10 +269,10 @@ def narrowWr (st : Nat) (s : State) : List Region :=
   [⟨(arg s 2).setWidth 64, st * (arg s 3).toNat⟩, ⟨(arg s 1).setWidth 64, 8⟩, ⟨(arg s 4).setWidth 64, 8 * 118⟩]
 
 local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names (simp only [VG.Proof.TripleDes.X86.Fb.fbX86, VG.Proof.TripleDes.X86.Fb.wideContract,
-                      VG.Proof.TripleDes.X86.Fb.narrowRd, VG.Proof.TripleDes.X86.Fb.narrowWr, VG.X86.arg_withRegions,
-                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
+  `(tactic| plain_simp_names simp only [VG.Proof.TripleDes.X86.Fb.fbX86, VG.Proof.TripleDes.X86.Fb.wideContract,
+                     VG.Proof.TripleDes.X86.Fb.narrowRd, VG.Proof.TripleDes.X86.Fb.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
 
 theorem wide_pre (st : Nat) (post : State → State → Prop) (s : State) (h : (wideContract st post).pre s) :
     (fbX86 st post).pre (s.withRegions (narrowRd s) (narrowWr st s)) := by

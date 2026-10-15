@@ -174,22 +174,22 @@ macro "kenc" : tactic => `(tactic| first
 /-- Decides a fact about offsets and regions: by evaluation, or, for one that
 depends on the parameter set (of the `KemLay.WF` in the context), by `omega`
 on the offsets. -/
-macro "kdecide" : tactic => `(tactic| plain_simp_names (first
-                    | decide
-                    | (
-                    (try have := (‹KemLay.WF _›).k1)
-                    (try have := (‹KemLay.WF _›).k4)
-                    (try have := (‹KemLay.WF _›).du)
-                    (try have := (‹KemLay.WF _›).dv)
-                    (try simp only [List.all_cons, List.all_nil, List.any_cons, List.any_nil, List.all_append, List.any_append, sep0,
-                      subB0, inB, sepB, sepAll, List.length_cons, List.length_nil, List.getD_cons_zero, List.getD_cons_succ,
-                      oPoly, oPrf, KemLay.oNtt, oSeed, oSigma, KemLay.oAcc, KemLay.oTmp, KemLay.oAhat, KemLay.oSample, oK,
-                      oKbar, oMsg, oHek, KemLay.oCt, oWork, oSave, oExtra, oG, oCin, KemLay.ekLen, KemLay.ctLen, KemLay.uLen,
-                      KemLay.vLen, KemLay.dkLen, Bool.and_true, Bool.or_false,
-                      Bool.true_and, Bool.false_or, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, bne_iff_ne, ne_eq,
-                      decide_eq_true_eq, true_and, and_true, not_true_eq_false, not_false_eq_true, false_or, or_false, true_or,
-                      or_true])
-                    omega)))
+macro "kdecide" : tactic => `(tactic| plain_simp_names first
+                   | decide
+                   | (
+                   (try have := (‹KemLay.WF _›).k1)
+                   (try have := (‹KemLay.WF _›).k4)
+                   (try have := (‹KemLay.WF _›).du)
+                   (try have := (‹KemLay.WF _›).dv)
+                   (try simp only [List.all_cons, List.all_nil, List.any_cons, List.any_nil, List.all_append, List.any_append, sep0,
+                     subB0, inB, sepB, sepAll, List.length_cons, List.length_nil, List.getD_cons_zero, List.getD_cons_succ,
+                     oPoly, oPrf, KemLay.oNtt, oSeed, oSigma, KemLay.oAcc, KemLay.oTmp, KemLay.oAhat, KemLay.oSample, oK,
+                     oKbar, oMsg, oHek, KemLay.oCt, oWork, oSave, oExtra, oG, oCin, KemLay.ekLen, KemLay.ctLen, KemLay.uLen,
+                     KemLay.vLen, KemLay.dkLen, Bool.and_true, Bool.or_false,
+                     Bool.true_and, Bool.false_or, Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq, bne_iff_ne, ne_eq,
+                     decide_eq_true_eq, true_and, and_true, not_true_eq_false, not_false_eq_true, false_or, or_false, true_or,
+                     or_true])
+                   omega))
 
 theorem slot_eq (p : BitVec 32) {N off : Nat} (_h : off + 1024 * N < 2 ^ 32) :
     p + BitVec.ofNat 32 N <<< 10 + BitVec.ofNat 32 off = p + BitVec.ofNat 32 (off + 1024 * N) := by
