@@ -7,7 +7,8 @@ public import VerifiedGarbage.TCB.X86_64.State
 
 **Trusted.** The semantics of the general-purpose (integer) instructions of
 the x86-64 model in `TCB/X86_64/Isa.lean`: source operands, the ALU
-operations and their flags, shifts, rotates (including BMI2's `rorx`), BMI1's
+operations and their flags, shifts (by an immediate, by CL, and BMI2's
+`shlx` and `shrx`), rotates (including BMI2's `rorx`), BMI1's
 `andn`, byte swaps, `mul`, `imul`, BMI2's `mulx` and ADX's `adcx` and `adox`.
 (`cmovcc`, which reads the flags through a branch condition, is in
 `Isa.lean`, with the conditions.)
@@ -30,6 +31,22 @@ inductive AluOp | add | adc | sub | sbb | and | or | xor | cmp | test
 /-- Shifts and rotates by an immediate count. -/
 inductive ShiftOp | ror | shr | shl
   deriving DecidableEq, Repr
+
+/-- Shifts by a count in a register: `shl`, `shr` and `sar` by CL. -/
+inductive VarShiftOp | shl | shr | sar
+  deriving DecidableEq, Repr
+
+/-- BMI2's shifts by a count in a register that do not affect the flags.
+`sarx` is left out: Intel's list of instructions with data operand
+independent timing (see `TCB/X86_64/Isa.lean`) lists `SHLX` and `SHRX` but
+not `SARX`. -/
+inductive ShiftxOp | shlx | shrx
+  deriving DecidableEq, Repr
+
+/-- The shift of `VarShiftOp` a `ShiftxOp` performs. -/
+def ShiftxOp.var : ShiftxOp → VarShiftOp
+  | .shlx => .shl
+  | .shrx => .shr
 
 /-- Read a source operand. Immediates are sign-extended from 32 bits. -/
 def readSrc (s : State) : Src → Option (BitVec 64)
@@ -208,6 +225,67 @@ def execShift (op : ShiftOp) (dst : Reg) (n : Nat) (s : State) : Option State :=
       some ((s.setFlags (some c) (if n = 1 then some (r.msb ^^ c) else none)
         (some (r == 0)) (some r.msb)).setReg dst r)
   else none
+
+/-- A 64-bit operand `a` shifted by `n` bits, `n < 64`: SDM Vol. 2,
+"SAL/SAR/SHL/SHR", `tempCOUNT` times `DEST := DEST ∗ 2` (SHL), `DEST := DEST
+/ 2; (* Unsigned divide *)` (SHR) or `DEST := DEST / 2; (* Signed divide,
+rounding toward negative infinity *)` (SAR): a logical shift left, a
+logical shift right, and an arithmetic shift right ("The SAR instruction
+sets or clears the most significant bit to correspond to the sign (most
+significant bit) of the original value in the destination operand"). BMI2's
+SHLX and SHRX ("SARX/SHLX/SHRX—Shift Without Affecting Flags") shift as SHL
+and SHR. -/
+def VarShiftOp.eval : VarShiftOp → BitVec 64 → Nat → BitVec 64
+  | .shl, a, n => a <<< n
+  | .shr, a, n => a >>> n
+  | .sar, a, n => a.sshiftRight n
+
+/-- SDM Vol. 2, "SAL/SAR/SHL/SHR", the forms `SHL r/m64, CL` (`REX.W + D3
+/4`), `SHR r/m64, CL` (`REX.W + D3 /5`) and `SAR r/m64, CL` (`REX.W + D3
+/7`), with a register destination. The count is CL masked to 6 bits: `IF
+64-Bit Mode and using REX.W THEN countMASK := 3FH`, `tempCOUNT := (COUNT AND
+countMASK)`; the low 6 bits of CL are those of RCX, so the count `n` is
+`RCX mod 64`. Then (see `VarShiftOp.eval` for the result):
+
+* If `n = 0`, nothing changes: the loop does not run, so the destination
+  keeps its value (written back unchanged: `VarShiftOp.eval a 0 = a`), and
+  "If the count is 0, the flags are not affected" (`ELSE IF (COUNT AND
+  countMASK) = 0 THEN All flags unchanged`).
+* Otherwise CF := the last bit shifted out ("The CF flag contains the value
+  of the last bit shifted out of the destination operand"; it is undefined
+  only for counts of at least the operand size, 64, which the mask rules
+  out): bit `64 − n` of the operand for SHL (each step does `CF :=
+  MSB(DEST)`), and bit `n − 1` for SHR and SAR (`CF := LSB(DEST)`). OF, "if
+  (COUNT AND countMASK) = 1": `OF := MSB(DEST) XOR CF` (of the result) for
+  SHL, `OF := MSB(tempDEST)` (of the original operand) for SHR, and `OF :=
+  0` for SAR; for other counts, undefined. "The SF, ZF, and PF flags are set
+  according to the result." (AF, undefined for a non-zero count, and PF are
+  not modelled.)
+
+The count is read before the destination is written, so `rcx` may be the
+destination. -/
+def execShiftCl (op : VarShiftOp) (dst : Reg) (s : State) : State :=
+  let n := (s.gpr .rcx).toNat % 64
+  let a := s.gpr dst
+  let r := op.eval a n
+  let c := match op with
+    | .shl => a.getLsbD (64 - n)
+    | .shr | .sar => a.getLsbD (n - 1)
+  let o := if n = 1 then
+      some (match op with | .shl => r.msb ^^ c | .shr => a.msb | .sar => false)
+    else none
+  (s.setFlags (if n = 0 then s.cf else some c) (if n = 0 then s.of else o)
+    (if n = 0 then s.zf else some (r == 0)) (if n = 0 then s.sf else some r.msb)).setReg dst r
+
+/-- SDM Vol. 2, "SARX/SHLX/SHRX—Shift Without Affecting Flags", for 64-bit
+operands with a register source: `SHLX r64a, r/m64, r64b`
+(`VEX.LZ.66.0F38.W1 F7 /r`) and `SHRX r64a, r/m64, r64b`
+(`VEX.LZ.F2.0F38.W1 F7 /r`): `src` (the second operand) shifted by `cnt`
+(the third, `r64b`, in VEX.vvvv) masked to 6 bits (`IF VEX.W1 and CS.L = 1 THEN countMASK := 3FH`), into
+`dst` ("Flags Affected: None"). The memory form of `src` is not modelled.
+The count is masked, not checked: every count is modelled. -/
+def execShiftx (op : ShiftxOp) (dst src cnt : Reg) (s : State) : State :=
+  s.setReg dst (op.var.eval (s.gpr src) ((s.gpr cnt).toNat % 64))
 
 /-- SDM Vol. 2, "BSWAP", for a 64-bit operand: `DEST[7:0] := TEMP[63:56];
 DEST[15:8] := TEMP[55:48]; DEST[23:16] := TEMP[47:40]; DEST[31:24] :=
