@@ -123,11 +123,11 @@ theorem storeRow_ok {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg}
   refine ⟨fun k hk => ?_, (((f₁.trans f₂).trans f₃).trans f₄), fun r l n13 => ?_,
     by rw [g₄, g₃, g₂, g₁], by rw [r₄, r₃, r₂, r₁], by rw [w₄, w₃, w₂, w₁]⟩
   · rw [m₄ k hk, m₃ k hk, m₂ k hk, m₁ k hk, e1, e2, e3]
-    rcases (by omega : k / 64 = 0 ∨ k / 64 = 1 ∨ k / 64 = 2 ∨ k / 64 = 3 ∨
+    rcases (by omega_using [hk] : k / 64 = 0 ∨ k / 64 = 1 ∨ k / 64 = 2 ∨ k / 64 = 3 ∨
       k / 64 = 4 ∨ k / 64 = 5 ∨ k / 64 = 6 ∨ k / 64 = 7) with h | h | h | h | h | h | h | h <;>
       by_cases hr : k % 64 / 16 = row <;>
-      simp (disch := omega) only [ite_eq_left, ite_eq_right] <;>
-      simp only [h, Nat.reduceMod, Nat.reduceDiv, List.getD_cons_zero, List.getD_cons_succ]
+      simp only [h, hr, Nat.reduceAdd, Nat.reduceMod, Nat.reduceDiv, Nat.reduceEqDiff, or_true,
+        or_false, and_true, and_false, ↓reduceIte, List.getD_cons_zero, List.getD_cons_succ]
   · rw [l₄ r l n13, l₃ r l n13, l₂ r l n13, l₁ r l n13]
 
 /-- `storeRow`'s effect: row `row` of the blocks `B 0, …, B 7` stored to
