@@ -1,7 +1,7 @@
 //! Finite-field Diffie–Hellman, for the component API used by cryptography.
 //!
-//! Public-key validation calls the verified range and optional subgroup checks.
-//! Secret exponentiation follows a fixed schedule over the public encoding
+//! Public-key validation and exchange call the verified FFDH operations.
+//! Exchange secret exponentiation follows a fixed schedule over the public encoding
 //! length supplied at import, or the public sampling bound for generated keys.
 //! Every multiplication calls the verified Montgomery primitive
 //! (`VG.Spec.Rsa.Mont.mulContract`); secret table selection uses the verified
@@ -367,35 +367,24 @@ impl PrivateKey {
         if params != &peer.params {
             return Err(Error::ParametersMismatch);
         }
+        let mut z = alloc::vec![0; params.p.len()];
+        let x = &self.x[self.x.len() - self.exponent_len..];
         #[cfg(target_arch = "aarch64")]
-        {
-            let mut z = alloc::vec![0; params.p.len()];
-            let x = &self.x[self.x.len() - self.exponent_len..];
-            if params.domain.exchange(x, &peer.y, &mut z) {
-                Ok(z)
-            } else {
-                Err(Error::InvalidSharedSecret)
-            }
+        let ok = params.domain.exchange(x, &peer.y, &mut z);
+        #[cfg(target_arch = "x86_64")]
+        let ok = x86_64::exchange(
+            &params.p,
+            &params.g,
+            params.q.as_deref(),
+            x,
+            &peer.y,
+            &mut z,
+        );
+        if ok {
+            Ok(z)
+        } else {
+            Err(Error::InvalidSharedSecret)
         }
-        #[cfg(not(target_arch = "aarch64"))]
-        self.exchange_rust(peer)
-    }
-
-    #[cfg(not(target_arch = "aarch64"))]
-    fn exchange_rust(&self, peer: &PublicKey) -> Result<Vec<u8>, Error> {
-        let params = &self.public.params;
-        let mut z = params
-            .mont
-            .power(&peer.y, &self.x[self.x.len() - self.exponent_len..]);
-        let one = scalar(&[1], params.p.len());
-        let zero = scalar(&[0], params.p.len());
-        let p1 = minus_one(&params.p);
-        let invalid = crate::ct::eq(&z, &one) | crate::ct::eq(&z, &zero) | crate::ct::eq(&z, &p1);
-        if invalid {
-            zeroize(&mut z);
-            return Err(Error::InvalidSharedSecret);
-        }
-        Ok(z)
     }
 }
 
