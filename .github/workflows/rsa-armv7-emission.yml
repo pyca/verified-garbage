@@ -1,0 +1,46 @@
+name: ARMv7 RSA emission checkpoint
+
+on:
+  push:
+    branches: [rsa-armv7-emission-ci]
+
+permissions:
+  contents: read
+
+jobs:
+  emit:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 120
+    env:
+      LEAN_NUM_THREADS: "4"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Configure the emitter host
+        run: sudo sysctl -w vm.max_map_count=262144
+      - name: Install the pinned Lean toolchain
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o "$RUNNER_TEMP/elan-init.sh"
+          sh "$RUNNER_TEMP/elan-init.sh" -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Restore the published Lean build cache
+        run: |
+          set -o pipefail
+          python3 ci/fetch_lean_cache.py | zstd -dc | tar --no-same-owner -xf - -C lean
+      - name: Check all proofs and emit all artifacts
+        working-directory: lean
+        run: |
+          lake build --log-level=warning
+          lake env lean --run Emit.lean
+          lake env lean --run Emit.lean --check
+      - name: Record the source and generated output
+        run: |
+          git rev-parse HEAD > emission-source.txt
+          git diff --stat -- src/asm > emission-diff.txt
+          tar -czf emitted-assembly.tar.gz src/asm emission-source.txt emission-diff.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: armv7-rsa-emission
+          path: emitted-assembly.tar.gz
+          retention-days: 7
