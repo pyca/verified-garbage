@@ -92,9 +92,7 @@ theorem sharedTail_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {s : 
     rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) ⟨hodd, hlo, hhi⟩,
       VG.Proof.RsaKeyGen.checksW_eq w (by omega_arith) hw4]
   refine wp_seqs_append (by simp [millerRabinWith]) (by simp) ?_
-  refine WP.mono (sharedMillerRabin_ok M R hw4 (by omega_arith) hEZ hc1 ⟨hodd, hlo, hhi⟩ hrl (by
-      unfold VG.Proof.RsaKeyGen.checksW; split <;> (try split) <;> (try split) <;> (try split) <;> (try split) <;>
-        (try split) <;> decide) hc₁ hE₁ hr2₁
+  refine WP.mono (sharedMillerRabin_ok M R hw4 (by omega_arith) hEZ hc1 ⟨hodd, hlo, hhi⟩ hrl (Nat.lt_of_le_of_lt (VG.Proof.RsaKeyGen.checksW_le w) (by decide)) hc₁ hE₁ hr2₁
     ((hW f₁ (by decide) (by kt_disj)).trans hrp)
     ((hW f₁ (by decide) (by kt_disj)).trans hK)
     ((hW f₁ (by decide) (by kt_disj)).trans hrlen) hch₁ hsrc₁

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Fin
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
@@ -28,7 +29,7 @@ open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Impl.Bignum.Public (aN aAcc aTmp aR2 aY aOne sCnt)
 
 /-- Disjointness of a header word from `montSetup`'s ranges, and their bounds. -/
-macro "kt_disj" : tactic => `(tactic| (
+macro "kt_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, msRanges, msTail,
     List.cons_append, List.nil_append, slot, hdrBytes, aE, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, kChecks, kE, sFn, sMinv, kRand, kLen, Public.sK,
     kRandLen, kUsed, kOut, kUsedP, Public.sMask]
@@ -108,9 +109,8 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w c : Nat} {op up rp : Add
     rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) ⟨hodd, hlo, hhi⟩,
       VG.Proof.RsaKeyGen.checksW_eq w (by omega_arith) hw4]
   refine wp_seqs_append (by simp [millerRabin]) (by simp) ?_
-  refine WP.mono (millerRabin_ok M hw4 (by omega_arith) hEZ hc1 ⟨hodd, hlo, hhi⟩ hrl (by
-      unfold VG.Proof.RsaKeyGen.checksW; split <;> (try split) <;> (try split) <;> (try split) <;> (try split) <;>
-        (try split) <;> decide) hc₁ hE₁ hr2₁
+  refine WP.mono (millerRabin_ok M hw4 (by omega_arith) hEZ hc1 ⟨hodd, hlo, hhi⟩ hrl
+    (Nat.lt_of_le_of_lt (VG.Proof.RsaKeyGen.checksW_le w) (by decide)) hc₁ hE₁ hr2₁
     ((hW f₁ (by decide) (by kt_disj)).trans hrp)
     ((hW f₁ (by decide) (by kt_disj)).trans hK)
     ((hW f₁ (by decide) (by kt_disj)).trans hrlen) hch₁ hsrc₁

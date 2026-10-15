@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
@@ -142,8 +143,22 @@ def msTail (w : Nat) : List (Nat × Nat) :=
     (slot w aR2, 8 * (w + 2)), (8 * sCnt, 8), (slot w aY, 8 * (w + 2)), (slot w aR1, 8 * (w + 2)),
     (slot w aRm1, 8 * (w + 2)), (8 * kChecks, 8)]
 
+/-- `msTail`'s ranges are past the header or in its header ranges. -/
+theorem msTail_shape (w : Nat) : ∀ r ∈ msTail w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(208, 8), (152, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+    msTail, slot, hdrBytes, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, kChecks, kE, sFn, sCnt]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
+
 /-- What `montSetup` changes. -/
 def msRanges (w : Nat) : List (Nat × Nat) := (8 * sMinv, 8) :: msTail w
+
+/-- `msRanges`'s ranges are past the header or in its header ranges. -/
+theorem msRanges_shape (w : Nat) : ∀ r ∈ msRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(56, 8), (208, 8), (152, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+    msTail, msRanges, slot, hdrBytes, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, kChecks, kE, sFn, sMinv, sCnt]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
 
 theorem msRanges_mut (w : Nat) : ∀ r ∈ msRanges w, KMut r := by
   simp only [msRanges, msTail, List.mem_cons, List.not_mem_nil, or_false]
@@ -155,7 +170,7 @@ theorem msTail_mut (w : Nat) : ∀ r ∈ msTail w, KMut r :=
 
 /-- Disjointness of a range from each of a list of literal ranges of the
 working space. -/
-macro "ms_disj" : tactic => `(tactic| (
+macro "ms_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, msTail, r2Ranges, slot,
     hdrBytes, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, kChecks, kE, sFn, sMinv]
   and_intros <;> omega_arith))

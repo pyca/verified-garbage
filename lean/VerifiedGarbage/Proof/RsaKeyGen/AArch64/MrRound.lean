@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrWit
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrTab
@@ -50,12 +51,26 @@ def preRanges (w : Nat) : List (Nat × Nat) :=
   witRanges w ++ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2)),
     (slot w aB, 8 * (w + 2))] ++ tabRanges w
 
+/-- `preRanges`'s ranges are past the header or in its header ranges. -/
+theorem preRanges_shape (w : Nat) : ∀ r ∈ preRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(216, 8), (0, 8), (208, 8), (240, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.cons_append,
+    List.nil_append, preRanges, tabRanges, witRanges, slot, hdrBytes, aX, aAcc, aTmp, aXm, aY, aB, aT0, kT0, sFn, sCnt, kV, kBits, kU, kT2, kUsed]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
+
 /-- What a round changes. -/
 def roundRanges (w : Nat) : List (Nat × Nat) :=
   preRanges w ++ expRanges w ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)]
 
+/-- `roundRanges`'s ranges are past the header or in its header ranges. -/
+theorem roundRanges_shape (w : Nat) : ∀ r ∈ roundRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(216, 8), (0, 8), (208, 8), (240, 8), (8, 8), (184, 8), (232, 8), (160, 8), (168, 8), (248, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.cons_append,
+    List.nil_append, expRanges, preRanges, roundRanges, tabRanges, winRanges, witRanges, slot, hdrBytes, aX, aAcc, aTmp, aXm, aY, aB, aT0, kT0, sFn, sCnt, kG, kV, kWords, kBits, kFlag, kPlen, kI, kElen, kU, kUni, kP, kStat, kT1, kT2, kUsed]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
+
 /-- Disjointness of a range from each of a list of literal ranges of a round. -/
-macro "rd_disj" : tactic => `(tactic| (
+macro "rd_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, roundRanges, preRanges,
     witRanges, expRanges, winRanges, tabRanges, List.cons_append, List.nil_append, slot, hdrBytes, aN, aX, aAcc,
     aTmp, aR2, aY, aXm, aB, aR1, aRm1, aT0, aE, kG, kFlag, kPlen, kV, kT0, sCnt, kBits, kT2, kWords, kT1, kUsed, kU,
@@ -63,7 +78,7 @@ macro "rd_disj" : tactic => `(tactic| (
   and_intros <;> omega_arith))
 
 /-- The ranges of a list of literal ranges are `KMut`. -/
-macro "kmut" : tactic => `(tactic| (
+macro "kmut" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   and_intros <;> first | exact KMut.ofSlot _ _ _ | exact KMut.hdr (by decide)))
 

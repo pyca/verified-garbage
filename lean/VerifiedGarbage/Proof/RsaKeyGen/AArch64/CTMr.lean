@@ -78,8 +78,7 @@ theorem loopI_ws {q : FPub} {j : Nat} {s : State} (h : LoopI q j s) : Ws s q.B q
 def AvI (p : FPub × Nat) (s : State) : Prop :=
   LoopI p.1 p.2 s ∧ isa.eval (.zero .x .x5) s = some (decide (p.1.rl < uOf p.1 p.2 + 8 * p.1.w))
 
-theorem checksW_lt (w : Nat) : checksW w < 2 ^ 62 := by
-  unfold checksW; split <;> (try split) <;> (try split) <;> (try split) <;> (try split) <;> (try split) <;> decide
+theorem checksW_lt (w : Nat) : checksW w < 2 ^ 62 := Nat.lt_of_le_of_lt (checksW_le w) (by decide)
 
 /-- What a round needs, at the head of an iteration with the witness's octets. -/
 theorem avI_r0 {p : FPub × Nat} {s : State} (h : AvI p s) (hb : isa.eval (.zero .x .x5) s = some false) :

@@ -30,6 +30,13 @@ open VG.Impl.Bignum.Public (aN aAcc aTmp aXm aY sCnt)
 /-- What the exponentiation changes. -/
 def expRanges (w : Nat) : List (Nat × Nat) := winRanges w ++ [(8 * kWords, 8)]
 
+/-- `expRanges`'s ranges are past the header or in its header ranges. -/
+theorem expRanges_shape (w : Nat) : ∀ r ∈ expRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(8, 8), (184, 8), (208, 8), (240, 8), (232, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.cons_append,
+    List.nil_append, expRanges, winRanges, slot, hdrBytes, aAcc, aTmp, aXm, aY, kT0, sFn, sCnt, kG, kV, kWords, kBits, kFlag, kPlen, kT1, kT2]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
+
 theorem expRanges_low (w : Nat) : ∀ r ∈ expRanges w, r.1 + r.2 ≤ slot w aT0 := by
   intro r hr
   rcases List.mem_append.mp hr with hr | hr
