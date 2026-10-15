@@ -34,12 +34,23 @@ open VG.Impl.Gcm.X86_64.StitchZP (setupGP powP48)
 def atIx (base idx : Reg) (d : Nat) : MemOp := { base, index := some idx, disp := d }
 
 /-- XOR block register `i` into the four plaintext blocks at
-`base + idx + 64 (j + i)`, through `t`, and store the result to
-`base + 64 (j + i)` (`VaesZ.xorDataZ` out of place). -/
-def xorDataZTo (t : XReg) (base idx : Reg) : List XReg → Nat → List Instr
+`base + idx + 64 (j + i)`, through `t`. -/
+def xorsZTo (t : XReg) (base idx : Reg) : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => ([.vmovdqu32Load t (atIx base idx (64 * j)), .zop (.zbin .vpxord b b t),
-      .vmovdqu32Store (at_ base (64 * j)) b] : List Instr) ++ xorDataZTo t base idx bs (j + 1)
+  | b :: bs, j => ([.vmovdqu32Load t (atIx base idx (64 * j)), .zop (.zbin .vpxord b b t)] : List Instr) ++
+      xorsZTo t base idx bs (j + 1)
+
+/-- Store block register `i` to `base + 64 (j + i)`. -/
+def storesZTo (base : Reg) : List XReg → Nat → List Instr
+  | [], _ => []
+  | b :: bs, j => ([.vmovdqu32Store (at_ base (64 * j)) b] : List Instr) ++ storesZTo base bs (j + 1)
+
+/-- `xorsZTo`, then `storesZTo` (`VaesZ.xorDataZ` out of place): every
+plaintext block is loaded before the first output block is stored, so that
+no load waits behind a store to an address 4 KiB apart (when `dst - src`
+is a little less than a multiple of 4096). -/
+def xorDataZTo (t : XReg) (base idx : Reg) (regs : List XReg) (j : Nat) : List Instr :=
+  xorsZTo t base idx regs j ++ storesZTo base regs j
 
 /-- `Y`, the four counters, the increment, `src - dst` in `r8`, `dst` in
 `rdx` and the last round key's address in `r10`. -/
