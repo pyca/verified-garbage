@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -46,42 +48,42 @@ theorem secp256k1n_ok : ModOk secp256k1n.k secp256k1n.m where
 
 theorem secp256k1p_mul_ct : ConstantTime isa (mulArm secp256k1p).pre (mulArm secp256k1p).pub (mulFn secp256k1p.k secp256k1p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem secp256k1p_mul_verified : Verified Arm.target (mulFn secp256k1p.k secp256k1p.m) (secp256k1p.mulContract Arm.abi) :=
   mul_verified secp256k1p secp256k1p_ok (by decide) secp256k1p_mul_ct
 
 theorem secp256k1p_add_ct : ConstantTime isa (addArm secp256k1p).pre (addArm secp256k1p).pub (addFn secp256k1p.k secp256k1p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem secp256k1p_add_verified : Verified Arm.target (addFn secp256k1p.k secp256k1p.m) (secp256k1p.addContract Arm.abi) :=
   add_verified secp256k1p secp256k1p_ok (by decide) secp256k1p_add_ct
 
 theorem secp256k1p_sub_ct : ConstantTime isa (subArm secp256k1p).pre (subArm secp256k1p).pub (subFn secp256k1p.k secp256k1p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem secp256k1p_sub_verified : Verified Arm.target (subFn secp256k1p.k secp256k1p.m) (secp256k1p.subContract Arm.abi) :=
   sub_verified secp256k1p secp256k1p_ok (by decide) secp256k1p_sub_ct
 
 theorem secp256k1n_mul_ct : ConstantTime isa (mulArm secp256k1n).pre (mulArm secp256k1n).pub (mulFn secp256k1n.k secp256k1n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem secp256k1n_mul_verified : Verified Arm.target (mulFn secp256k1n.k secp256k1n.m) (secp256k1n.mulContract Arm.abi) :=
   mul_verified secp256k1n secp256k1n_ok (by decide) secp256k1n_mul_ct
 
 theorem secp256k1n_add_ct : ConstantTime isa (addArm secp256k1n).pre (addArm secp256k1n).pub (addFn secp256k1n.k secp256k1n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem secp256k1n_add_verified : Verified Arm.target (addFn secp256k1n.k secp256k1n.m) (secp256k1n.addContract Arm.abi) :=
   add_verified secp256k1n secp256k1n_ok (by decide) secp256k1n_add_ct
 
 theorem secp256k1n_sub_ct : ConstantTime isa (subArm secp256k1n).pre (subArm secp256k1n).pub (subFn secp256k1n.k secp256k1n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem secp256k1n_sub_verified : Verified Arm.target (subFn secp256k1n.k secp256k1n.m) (secp256k1n.subContract Arm.abi) :=
   sub_verified secp256k1n secp256k1n_ok (by decide) secp256k1n_sub_ct

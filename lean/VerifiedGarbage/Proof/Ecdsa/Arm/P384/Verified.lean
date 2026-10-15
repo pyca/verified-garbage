@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.P384.Point
 meta import VerifiedGarbage.Proof.P384.Point
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -124,7 +126,7 @@ theorem argByte_eq (s : State) (k : Nat) :
   simp [VG.Arm.Taint.argByte, stackArgAddr]
 
 theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP384 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
   intro s t hs ht ⟨hsp, h0, h1, h2, h3, ha⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hs, wf₀ ht,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
