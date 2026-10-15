@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Ed448.Contract
 meta import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -62,7 +64,7 @@ theorem verifyEquation_ok (hR : RecoverOk) (hE : VerifyEqOk) (s : State) (hs : v
 theorem verifyEquation_ct :
     ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquation := by
   refine Taint.constantTime_eraseOff_of_eq (Taint.ofRegs [.r0, .r1, .r2, .r3]) (Taint.noBase_ofRegs _) ?_
-    (c' := verifyEquationErased) rfl (by taint_decide)
+    (c' := verifyEquationErased) rfl (by native_taint_decide)
   intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, _⟩
   apply Taint.agree_ofRegs
   intro r hr
