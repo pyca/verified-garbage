@@ -279,6 +279,24 @@ elab "sig_close" : tactic => do
   setGoals rest.toList
 
 open Elab Tactic in
+/-- Closes a goal `Region.Disjoint a b` with `Region.Disjoint.symm h` for a
+hypothesis `h : Region.Disjoint b a` (up to reducible unfolding), as
+`with_reducible exact Region.Disjoint.symm ‹_›` does, but fails at once on any
+other goal, where elaborating that term searches the hypotheses first. -/
+elab "sig_disjoint_symm" : tactic => liftMetaTactic fun g => g.withContext do
+  let t ← whnfR (← instantiateMVars (← g.getType))
+  unless t.isAppOfArity `VG.Region.Disjoint 2 do throwError "sig_disjoint_symm: not a disjointness"
+  let a := t.appFn!.appArg!
+  let b := t.appArg!
+  let t' := mkApp2 t.appFn!.appFn! b a
+  for d in ← getLCtx do
+    if d.isImplementationDetail then continue
+    if ← withReducible (isDefEq d.type t') then
+      g.assign (mkApp3 (mkConst `VG.Region.Disjoint.symm) b a d.toExpr)
+      return []
+  throwError "sig_disjoint_symm: no hypothesis"
+
+open Elab Tactic in
 /-- On a goal `(k).pre s` where `k` unfolds to `Sig.contract …`, applies
 `VG.Sig.contract_pre_of_check` (`Proof/Framework/Contract.lean`) to the
 arguments of `Sig.contract` directly, rather than finding them by
