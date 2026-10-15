@@ -34,8 +34,8 @@ theorem product_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
       wv t.mem B (productBase k) (16 * k + 2) =
         wv s.mem B (slot (8 * k) a) (8 * k) * wv s.mem B (slot (8 * k) b) (8 * k) ∧
       Outside B (productBase k) (8 * (16 * k + 2)) s.mem t.mem ∧
-      t.gpr .x8 = off B (productBase k) ∧ t.gpr .x10 = off B (slot (8 * k) Public.aN) ∧
-      t.gpr .x12 = BitVec.ofNat 64 (8 * k) ∧ t.gpr .x15 = minv ∧ t.gpr .x7 = 0 ∧
+      t.gpr .x8 = off B (productBase k) ∧
+      t.gpr .x12 = BitVec.ofNat 64 (8 * k) ∧ t.gpr .x7 = 0 ∧
       Keep regs s t := by
   have hn := hs.nowrap
   have hP : productBase k + 8 * (16 * k + 2) ≤ Z := by
@@ -50,8 +50,8 @@ theorem product_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     unfold productBase slot Public.aAcc Public.aTmp at *
     omega
   unfold VG.Impl.Bignum.AArch64.WindowRaw.product
-  refine WP.seq (WP.mono (Square.squareSetup_ok hs h0 hH hZ ha)
-    fun u ⟨⟨hu8, _, _, hu12, _, hu7, hum⟩, ku⟩ => ?_)
+  refine WP.seq (WP.mono (WindowSetup.start_ok hs h0 hH hZ)
+    fun u ⟨⟨hu8, hu12, hu7, hum⟩, ku⟩ => ?_)
   refine WP.seq (WP.mono (WideLoops.zero_ok (hs.congr ku.wr) hu8 hu7 hu12 hP hk hk')
     fun v ⟨hv0, hvo, kv⟩ => ?_)
   have ksv := ku.trans kv
@@ -82,11 +82,11 @@ theorem product_ok {s : State} {B : Addr} {Z k : Nat} {minv : BitVec 64}
     exact hvs1.trans hr.frame
   have hHv3 : Hdr v2.mem B (8 * k) minv :=
     (Square.scratch_arrays (by simpa only [productBase, show 2 * (8 * k) = 16 * k by omega] using hvs3)).hdr hH
-  refine WP.mono (Square.squareSetup_ok (hs.congr kv3.wr)
-    ((kv3.gpr .x0 (by decide)).trans h0) hHv3 hZ ha)
-    fun t ⟨⟨ht8, _, ht10, ht12, ht15, ht7, htm⟩, kt⟩ => ?_
+  refine WP.mono (WindowSetup.product_ok (hs.congr kv3.wr)
+    ((kv3.gpr .x0 (by decide)).trans h0) hHv3 hZ)
+    fun t ⟨⟨ht8, ht12, htm⟩, kt⟩ => ?_
   have kout := kv3.trans kt
-  refine ⟨?_, ?_, ht8, ht10, ht12, ht15, ht7, ?_⟩
+  refine ⟨?_, ?_, ht8, ht12, (kt.gpr .x7 (by decide)).trans ((hr.keep.gpr .x7 (by decide)).trans ((kstart.gpr .x7 (by decide)).trans ((kv.gpr .x7 (by decide)).trans hu7))), ?_⟩
   · have hread : ∀ j < 8, j ≠ Public.aAcc → j ≠ Public.aTmp →
         wv v1.mem B (slot (8 * k) j) (8 * k) = wv s.mem B (slot (8 * k) j) (8 * k) := by
       intro j hj hj1 hj2
@@ -110,16 +110,16 @@ theorem product_width_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       wv t.mem B (slot w Public.aAcc + 16) (2 * w) =
         wv s.mem B (slot w a) w * wv s.mem B (slot w b) w ∧
       Outside B (slot w Public.aAcc + 16) (8 * (2 * w + 2)) s.mem t.mem ∧
-      t.gpr .x8 = off B (slot w Public.aAcc + 16) ∧ t.gpr .x10 = off B (slot w Public.aN) ∧
-      t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x15 = minv ∧ t.gpr .x7 = 0 ∧ Keep regs s t := by
+      t.gpr .x8 = off B (slot w Public.aAcc + 16) ∧
+      t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x7 = 0 ∧ Keep regs s t := by
   have he : w = 8 * (w / 8) := by omega
   have hH' : Hdr s.mem B (8 * (w / 8)) minv := he ▸ hH
   have hZ' : slot (8 * (w / 8)) 8 ≤ Z := he ▸ hZ
   refine WP.mono (product_ok hs h0 hH' hZ' (by omega) (by omega) ha hb ha1 ha2 hb1 hb2)
-    fun t ⟨hv, ho, h8, h10, h12, h15, h7, kt⟩ => ?_
+    fun t ⟨hv, ho, h8, h12, h7, kt⟩ => ?_
   have hlen : 16 * (w / 8) + 2 = 2 * w + 2 := by omega
-  simp only [productBase, ← he, hlen] at hv ho h8 h10 h12
-  refine ⟨low_value hv ?_, ho, h8, h10, h12, h15, h7, kt⟩
+  simp only [productBase, ← he, hlen] at hv ho h8 h12
+  refine ⟨low_value hv ?_, ho, h8, h12, h7, kt⟩
   have hp := Nat.mul_lt_mul'' (wv_lt s.mem B (slot w a) w) (wv_lt s.mem B (slot w b) w)
   rw [← Nat.pow_add, show 64 * w + 64 * w = 64 * (2 * w) by omega] at hp
   exact hp
