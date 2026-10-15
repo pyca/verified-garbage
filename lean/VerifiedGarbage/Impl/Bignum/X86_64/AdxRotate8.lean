@@ -77,7 +77,15 @@ def nextBlock : List Instr :=
     .mov .rax (.mem (hdr sW)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
     .alu .add .rax (.mem (hdr (sArr Public.aN))), .alu .cmp .rbp (.reg .rax)]
 
-def addInputCarry : List Instr := ([.mov .rdx (.mem blockCarry)] : List Instr) ++ AdxDualAdd.addInput
+/-- The block carry, a bit, into the carry flag: `rax + (2^64 - 1)` carries
+exactly when `rax` is 1. -/
+def carryIn : List Instr := [.mov .rax (.mem blockCarry), .alu .add .rax (.imm (-1))]
+
+/-- Add the next input block and the block carry, in one carry chain, the
+overflow, a bit, into `rax`. -/
+def addInputCarry : List Instr :=
+  carryIn ++ addChain (fun k => .mem (at_ .rsi (8 * k))) ++
+    ([.mov32 .rax (.imm 0), .adcx .rax (.reg .rax)] : List Instr)
 
 def accumulate : Prog isa :=
   .seq (.block addInputCarry) (.block [.store blockCarry .rax])

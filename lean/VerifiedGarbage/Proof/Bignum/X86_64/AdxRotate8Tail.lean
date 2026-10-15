@@ -27,7 +27,7 @@ theorem ea_tileCarry {s : State} {B : Addr} {e : Nat} (hc : s.gpr .rcx = off B e
 
 theorem tailCore_ok {s : State} {B : Addr} {Z eU eO : Nat}
     (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (ho : s.gpr .rsi = off B eO)
-    (he : 16 ≤ eU) (huZ : eU ≤ Z) (hoZ : eO + 64 ≤ Z) :
+    (he : 16 ≤ eU) (huZ : eU ≤ Z) (hoZ : eO + 64 ≤ Z) (hb : (word s.mem B (eU - 8)).toNat ≤ 1) :
     WP isa AdxRotate8.tailCore s fun t =>
       wv t.mem B eO 8 + 2 ^ 512 * (t.gpr .rax).toNat =
         cols s + (word s.mem B (eU - 8)).toNat + wv s.mem B eO 8 +
@@ -35,7 +35,7 @@ theorem tailCore_ok {s : State} {B : Addr} {Z eU eO : Nat}
       (t.gpr .rax).toNat ≤ 3 ∧ Outside B eO 64 s.mem t.mem ∧
       Keep [.rdx, .rax, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
   unfold AdxRotate8.tailCore
-  refine WP.seq (WP.mono (addInputCarry_ok hs hc ho (by omega) huZ hoZ)
+  refine WP.seq (WP.mono (addInputCarry_ok hs hc ho (by omega) huZ hoZ hb)
     fun b ⟨eb,bb,cb,kab⟩ => ?_)
   have sb := hs.congr kab.2.2.2
   have hm' := readSrc_word sb (ea_tileCarry ((kab.gpr (by decide)).trans hc) he) (show eU - 16 + 8 ≤ Z by omega)
