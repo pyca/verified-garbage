@@ -431,13 +431,8 @@ theorem t0_last (b : Addr) {R m : Nat} (hR : R ≤ 14) (hm : m + 1 < R) :
     (b + BitVec.ofNat 64 (1920 - 64 * R + 64 * (m + 1)) - b - BitVec.ofNat 64 (lastKey - 64) != 0) =
       !decide (m + 2 = R) := by
   simp only [lastKey]
-  by_cases h : m + 2 = R
-  · have e : b + BitVec.ofNat 64 (1920 - 64 * R + 64 * (m + 1)) - b - BitVec.ofNat 64 (1920 - 64) = 0 := by
-      bv_omega
-    rw [e]; simp [h]
-  · have e : b + BitVec.ofNat 64 (1920 - 64 * R + 64 * (m + 1)) - b - BitVec.ofNat 64 (1920 - 64) ≠ 0 := by
-      intro h'; apply h; bv_omega
-    simpa [h] using e
+  rw [VG.Offset.add_sub_cancel_left, bne, VG.Offset.ofNat_sub_ofNat_beq (by omega) (by omega),
+    decide_eq_decide.mpr (show 1920 - 64 * R + 64 * (m + 1) = 1920 - 64 ↔ m + 2 = R by omega)]
 
 theorem kp_off (K0 b : Addr) {R j : Nat} (hk : K0 = b + BitVec.ofNat 64 (1920 - 64 * R)) :
     K0 + BitVec.ofNat 64 (64 * j) = b + BitVec.ofNat 64 (1920 - 64 * R + 64 * j) := by

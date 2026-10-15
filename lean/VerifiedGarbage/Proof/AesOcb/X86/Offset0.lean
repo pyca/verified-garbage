@@ -320,12 +320,9 @@ theorem stretch_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
 
 /-- The top four of six words. -/
 theorem top4 (a b c d e f : BitVec 32) : (cat6 a b c d e f).extractLsb' 64 128 = a ++ b ++ c ++ d := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, Proof.Ocb.getLsbD_cat6,
-    BitVec.getLsbD_append]
-  simp only [Nat.sub_sub, Nat.reduceAdd]
-  split_ifs <;> first | omega | exact congrArg _ (by omega)
+  rw [Proof.Ocb.cat6, BitVec.extractLsb'_append_eq_of_le (by decide),
+    BitVec.extractLsb'_append_eq_of_le (by decide)]
+  exact BitVec.extractLsb'_eq_self
 
 /-- What `offset0` leaves. -/
 structure Off0Post (p : Prm) (o : Block) (s s' : State) : Prop where
