@@ -48,7 +48,7 @@ theorem toList_getD_toNat (v : Vector Byte 256) (c : Nat) :
 
 theorem sboxN_eq {c : Nat} (hc : c < 256) : sboxN c = (sboxB (BitVec.ofNat 8 c)).toNat := by
   unfold sboxN sboxB sboxL
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show c < 2 ^ 8 by omega)]
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   exact toList_getD_toNat _ _
 
 /-- The truth table of bit `j` of the S-box. -/
