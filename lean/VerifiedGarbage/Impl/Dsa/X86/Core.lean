@@ -43,11 +43,14 @@ def power (len expLen : Nat) (modulus : Field) (a e : Pointer) (output : Nat) : 
   (.seq (.block (load n len (slot n 5) a ++ load n expLen (slot n 8) e))
   (.seq (exponentiate n ((expLen + 3) / 4)) (.block (store n len output))))
 
-def product (len : Nat) (a b : Pointer) (output : Nat) : Prog isa :=
+def productMod (len : Nat) (modulus : Field) (a b : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
-  .seq (setup len .q)
+  .seq (setup len modulus)
   (.seq (.block (load n len (slot n 5) a ++ load n len (slot n 8) b))
   (.seq (ordinaryMul n) (.block (store n len output))))
+
+def product (len : Nat) (a b : Pointer) (output : Nat) : Prog isa :=
+  productMod len .q a b output
 
 def sum (len : Nat) (a b : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
@@ -62,28 +65,34 @@ def reduce (qLen inputLen : Nat) (input : Pointer) (output : Nat) : Prog isa :=
   (.seq (reduceStream n inputLen) (.block (store n qLen output))))
 
 /-- Compute r and s, retaining all range/key checks in the caller's mask. -/
-def sign (pLen qLen digestLen : Nat) : Prog isa := sequence [
+def signStart (pLen qLen : Nat) : Prog isa := sequence [
   power pLen qLen .p (.input .g) (.input .nonce) t,
   reduce qLen pLen (.local t) r,
-  power qLen qLen .q (.input .nonce) (.local qMinusTwo) inverse,
+  power qLen qLen .q (.input .nonce) (.local qMinusTwo) inverse]
+
+def signFinish (qLen digestLen : Nat) : Prog isa := sequence [
   product qLen (.input .x) (.local r) u,
   reduce qLen digestLen (.input .digest) z,
   sum qLen (.local z) (.local u) v,
   product qLen (.local inverse) (.local v) s]
 
+def sign (pLen qLen digestLen : Nat) : Prog isa :=
+  .seq (signStart pLen qLen) (signFinish qLen digestLen)
+
 /-- Verification uses two fixed-iteration powers and a product modulo p. -/
-def verify (pLen qLen digestLen : Nat) : Prog isa := sequence [
+def verifyScalars (qLen digestLen : Nat) : Prog isa := sequence [
   power qLen qLen .q .signatureS (.local qMinusTwo) inverse,
   reduce qLen digestLen (.input .digest) z,
   product qLen (.local z) (.local inverse) u,
-  product qLen (.input .signature) (.local inverse) v,
+  product qLen (.input .signature) (.local inverse) v]
+
+def verifyPowers (pLen qLen : Nat) : Prog isa := sequence [
   power pLen qLen .p (.input .g) (.local u) t,
   power pLen qLen .p (.input .y) (.local v) t2,
-  setup pLen .p,
-  .block (load ((pLen + 7) / 8) pLen (slot ((pLen + 7) / 8) 5) (.local t) ++
-    load ((pLen + 7) / 8) pLen (slot ((pLen + 7) / 8) 8) (.local t2)),
-  ordinaryMul ((pLen + 7) / 8),
-  .block (store ((pLen + 7) / 8) pLen t),
+  productMod pLen .p (.local t) (.local t2) t,
   reduce qLen pLen (.local t) u]
+
+def verify (pLen qLen digestLen : Nat) : Prog isa :=
+  .seq (verifyScalars qLen digestLen) (verifyPowers pLen qLen)
 
 end VG.Impl.Dsa.X86.Core

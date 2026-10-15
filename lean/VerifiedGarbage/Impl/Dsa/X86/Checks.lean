@@ -34,4 +34,7 @@ def checkRange (n a m flag : Nat) : List Instr :=
 def checkNonzero (n a flag : Nat) : List Instr :=
   nonzero n a ++ andFlag flag
 
+def checkZero (n a flag : Nat) (wantNonzero : Bool) : List Instr :=
+  nonzero n a ++ (if wantNonzero then [] else [.alu .xor .edx (.imm (BitVec.allOnes 32))]) ++ andFlag flag
+
 end VG.Impl.Dsa.X86

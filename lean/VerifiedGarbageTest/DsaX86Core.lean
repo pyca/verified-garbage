@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.Dsa.X86.CoreProduct
 import VerifiedGarbage.Proof.Dsa.X86.CoreSum
 import VerifiedGarbage.Proof.Dsa.X86.CorePower
 import VerifiedGarbage.Proof.Dsa.X86.CoreReduce
+import VerifiedGarbage.Proof.Dsa.X86.SignArithmetic
+import VerifiedGarbage.Proof.Dsa.X86.VerifyArithmetic
 import VerifiedGarbage.Spec.Dsa
 import VerifiedGarbage.Spec.Rsa.Contract
 
@@ -11,6 +13,9 @@ import VerifiedGarbage.Spec.Rsa.Contract
 arithmetic. These exercise the ISA model, not a replacement implementation
 of its instruction semantics, and are not known-answer vectors. -/
 
+#assert_standard_axioms VG.Proof.Dsa.X86.signArithmetic_ok
+#assert_standard_axioms VG.Proof.Dsa.X86.verifyArithmetic_ok
+#assert_standard_axioms VG.Proof.Dsa.X86.coreProductMod_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.coreProduct_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.coreSum_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.corePower_ok

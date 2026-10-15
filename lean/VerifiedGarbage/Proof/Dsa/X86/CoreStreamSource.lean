@@ -13,7 +13,7 @@ open VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X8
 
 theorem streamSource_ok {s : State} {base : Addr} {size n m : Nat}
     (h : Context n m base size s) (hz : VG.Impl.Dsa.X86.Layout.saved ≤ size) (p : Pointer) :
-    WP isa (.block (Core.pointer p ++ [.store (sc sourcePointer) .esi])) s fun t =>
+    WP isa (.block (Core.pointer p ++ ([.store (sc sourcePointer) .esi] : List Instr))) s fun t =>
       Context n m base size t ∧ t.mem.readW (off base sourcePointer) 32 = pointerValue base s p ∧
       Outside base 0 (contextBytes n) s.mem t.mem ∧ Keeps [.esi] s t := by
   refine WP.block_append (WP.mono (pointer_ok h.scr hz p) fun u ⟨Pu, Ku, Mu⟩ => ?_)

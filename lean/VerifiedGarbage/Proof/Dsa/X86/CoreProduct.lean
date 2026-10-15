@@ -10,15 +10,15 @@ namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
 
-theorem coreProduct_ok {s : State} {base : Addr} {size len n m output : Nat} {a b : Pointer}
+theorem coreProductMod_ok {s : State} {base : Addr} {size len n m output : Nat} {a b : Pointer} {modulus : Field}
     (hs : Scr s base size) (hz : VG.Impl.Dsa.X86.Layout.saved ≤ size)
     (hn : n = (len + 7) / 8) (h4 : 4 ≤ len) (hmax : len ≤ 384)
-    (Rq : OperandReady s base n (.input .q) len)
+    (Rq : OperandReady s base n (.input modulus) len)
     (Ra : OperandReady s base n a len) (Rb : OperandReady s base n b len)
-    (hm : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .q)).setWidth 64) len) = m)
+    (hm : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input modulus)).setWidth 64) len) = m)
     (hm1 : 1 < m) (hodd : m % 2 = 1)
     (ho : output + len ≤ size) (hfar : contextBytes n ≤ output) :
-    WP isa (Core.product len a b output) s fun t =>
+    WP isa (Core.productMod len modulus a b output) s fun t =>
       Spec.Rsa.bytesAt t.mem (off base output) len = Spec.Dsa.encodeBE len
         (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s a).setWidth 64) len) *
           Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s b).setWidth 64) len) % m) ∧
@@ -27,7 +27,7 @@ theorem coreProduct_ok {s : State} {base : Addr} {size len n m output : Nat} {a 
   have hl : len ≤ 8 * n := by omega
   have b6 := slot_bound (n := n) (i := 6) (by decide)
   simp only [stride] at b6
-  unfold Core.product
+  unfold Core.productMod
   dsimp only
   rw [← hn]
   refine WP.seq (WP.mono (coreSetup_ok hs hz hn h4 hmax Rq.toReadableComponent (Rq.slot (by decide)) hm hm1 hodd)
@@ -47,5 +47,20 @@ theorem coreProduct_ok {s : State} {base : Addr} {size len n m output : Nat} {a 
   · have Opre := (Ou.trans Ov).trans (productRanges_whole Ow)
     exact (Outs.of_outside Opre (by simp)).trans (Outs.of_outside Ot (by simp))
   · exact (((Ku.trans (Kv.mono (by decide))).trans (Kw.mono (by decide))).trans (Kt.mono (by decide)))
+
+theorem coreProduct_ok {s : State} {base : Addr} {size len n m output : Nat} {a b : Pointer}
+    (hs : Scr s base size) (hz : VG.Impl.Dsa.X86.Layout.saved ≤ size)
+    (hn : n = (len + 7) / 8) (h4 : 4 ≤ len) (hmax : len ≤ 384)
+    (Rq : OperandReady s base n (.input .q) len)
+    (Ra : OperandReady s base n a len) (Rb : OperandReady s base n b len)
+    (hm : Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s (.input .q)).setWidth 64) len) = m)
+    (hm1 : 1 < m) (hodd : m % 2 = 1)
+    (ho : output + len ≤ size) (hfar : contextBytes n ≤ output) :
+    WP isa (Core.product len a b output) s fun t =>
+      Spec.Rsa.bytesAt t.mem (off base output) len = Spec.Dsa.encodeBE len
+        (Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s a).setWidth 64) len) *
+          Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem ((pointerValue base s b).setWidth 64) len) % m) ∧
+      Outs base [(0, contextBytes n), (output, len)] s.mem t.mem ∧ Keeps powerClob s t := by
+  exact coreProductMod_ok hs hz hn h4 hmax Rq Ra Rb hm hm1 hodd ho hfar
 
 end VG.Proof.Dsa.X86
