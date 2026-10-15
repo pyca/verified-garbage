@@ -101,7 +101,7 @@ theorem OutArgs.slot {vs : List Value} {t : State} (h : OutArgs L vs t) (hL : L.
 theorem init_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa Impl.Ed25519.X86.VerifyMessage.init s fun t => Ctx L g m₀ t ∧
       Frame (hashWrites L) s.mem t.mem ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (L.scr.setWidth 64) [] := by
-  refine WP.seq (WP.mono (args_ok hc hL ha (vs := [.caller 4 0]) (by decide) (by simp [Whole.valid]))
+  refine WP.seq (WP.mono (args_ok hc hL ha (vs := [.caller 4 0]) (by decide) (Whole.valid_all (by decide)))
     fun u ⟨hu, hf, hs⟩ => ?_)
   have a0 : Whole.slots L.E u 0 = L.scr := by
     have hh := hs.slot hL (j := 0) (by decide) (by decide)
@@ -315,7 +315,7 @@ theorem finalizeArgs_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀
       FinArgs L (BitVec.ofNat 64 (L.len.toNat + 64)) t := by
   rw [finalizeArgs, WP.block_append_iff]
   refine WP.mono (args_ok hc hL ha (vs := [.caller 4 0, .const 0, .const 0, .frame 192, .caller 4 192])
-    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ => ?_
+    (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ => ?_
   have aa := hs.slot hL (j := 0) (by decide) (by decide)
   have ab := hs.slot hL (j := 1) (by decide) (by decide)
   have ac := hs.slot hL (j := 2) (by decide) (by decide)
@@ -558,7 +558,7 @@ theorem message_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
         (prev ++ Spec.Ed25519.bytesAt s.mem (L.msg.setWidth 64) L.len.toNat) := by
   apply update_step hc hL ha (vs := [.caller 4 0, .const 64, .const 0,
     .caller 1 0, .caller 2 0, .caller 4 192]) (by simp)
-    (by simp [Whole.valid]) (c := 64) (p := L.msg) (n := L.len)
+    (Whole.valid_all (by decide)) (c := 64) (p := L.msg) (n := L.len)
     ?_ (input_msg hL) hlen.symm hr
   intro t ht
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -657,7 +657,7 @@ theorem reduce_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
       fun t => Ctx L g m₀ t ∧ Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 128) 32 =
         Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 192) 64) := by
   refine WP.seq (WP.mono (args_ok hc hL ha (vs := [.frame 128, .frame 192, .caller 4 0])
-    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ => ?_)
+    (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ => ?_)
   have a0 := hs.slot hL (j := 0) (by decide) (by decide)
   have a1 := hs.slot hL (j := 1) (by decide) (by decide)
   have a2 := (hs.slot hL (j := 2) (by decide) (by decide)).trans (BitVec.add_zero _)
@@ -736,7 +736,7 @@ theorem equation_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) 
         (Spec.Ed25519.bytesAt m₀ (L.sig.setWidth 64) 64) challenge) := by
   refine WP.seq (WP.mono_syms (args_ok hc hL ha
     (vs := [.caller 0 0, .caller 3 0, .frame 128, .caller 4 0])
-    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ yu => ?_)
+    (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ yu => ?_)
   have a0 := (hs.slot hL (j := 0) (by decide) (by decide)).trans (BitVec.add_zero _)
   have a1 := (hs.slot hL (j := 1) (by decide) (by decide)).trans (BitVec.add_zero _)
   have a2 := hs.slot hL (j := 2) (by decide) (by decide)

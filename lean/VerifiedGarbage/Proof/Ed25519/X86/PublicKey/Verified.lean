@@ -127,7 +127,7 @@ theorem init_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ 
     RelCT isa (Two s₁ s₂ (Slots initValues))
       (.call Spec.Sha512.init512Api.name (Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512))
       (Two s₁ s₂ fun _ _ => True) := by
-  apply call_ct h₁ h₂ pub (by decide : initValues.length ≤ 6) (by simp [initValues, Whole.valid])
+  apply call_ct h₁ h₂ pub (by decide : initValues.length ≤ 6) (Whole.valid_all (by decide))
     (Proof.Sha512.X86.Stream.init_verified _).1 (Proof.Sha512.X86.Stream.init_verified _).2.1
     Whole.init_nosp (by rw [Whole.init_stack]; decide) init_ready
   intro a b ar aw br bw he hj
@@ -136,7 +136,7 @@ theorem init_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ 
 theorem update_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ s₂) :
     RelCT isa (Two s₁ s₂ (Slots updateValues)) (.call Spec.Sha512.updateScratchApi.name Impl.Sha512.X86.Stream.update)
       (Two s₁ s₂ fun _ _ => True) := by
-  apply call_ct h₁ h₂ pub (by decide : updateValues.length ≤ 6) (by simp [updateValues, Whole.valid])
+  apply call_ct h₁ h₂ pub (by decide : updateValues.length ≤ 6) (Whole.valid_all (by decide))
     Proof.Sha512.X86.Stream.Update.update_verified.1 Proof.Sha512.X86.Stream.Update.update_verified.2.1
     Whole.update_nosp (by rw [Whole.update_stack]) update_ready
   intro a b ar aw br bw he hj
@@ -145,7 +145,7 @@ theorem update_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s�
 theorem finalize_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ s₂) :
     RelCT isa (Two s₁ s₂ (Slots finalizeValues)) (.call Spec.Sha512.finalizeScratchApi.name Impl.Sha512.X86.Stream.finalize)
       (Two s₁ s₂ fun _ _ => True) := by
-  apply call_ct h₁ h₂ pub (by decide : finalizeValues.length ≤ 6) (by simp [finalizeValues, Whole.valid])
+  apply call_ct h₁ h₂ pub (by decide : finalizeValues.length ≤ 6) (Whole.valid_all (by decide))
     Proof.Sha512.X86.Stream.Finalize.finalize_verified.1 Proof.Sha512.X86.Stream.Finalize.finalize_verified.2.1
     Whole.finalize_nosp (by rw [Whole.finalize_stack]) finalize_ready
   intro a b ar aw br bw he hj
@@ -162,7 +162,7 @@ theorem base_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ 
     obtain ⟨ca, wa⟩ := ra.covers_state h.1.1
     obtain ⟨cb, wb⟩ := rb.covers_state h.1.2.1
     have hj := fun j (hj : j < baseValues.length) =>
-      call_args_eq h₁ h₂ pub (by decide) (by simp [baseValues, Whole.valid]) h.1 hj
+      call_args_eq h₁ h₂ pub (by decide) (Whole.valid_all (by decide)) h.1 hj
     refine ⟨ra.reads, ra.writes, rb.reads, rb.writes, ra.pre, rb.pre, ⟨congrArg (· - 4) (two_esp pub h.1),
       hj 0 (by decide), hj 1 (by decide), hj 2 (by decide), ?_⟩, ca, wa, cb, wb, two_esp pub h.1⟩
     change a.syms _ = b.syms _
@@ -190,10 +190,10 @@ theorem wipe_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ 
 
 theorem body_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ s₂) :
     RelCT isa (TwoS s₁ s₂ fun _ _ => True) body (TwoS s₁ s₂ fun _ _ => True) := by
-  have i := setup_ct h₁ h₂ pub initValues (by decide) (by simp [initValues, Whole.valid]) (by taint_decide)
-  have u := setup_ct h₁ h₂ pub updateValues (by decide) (by simp [updateValues, Whole.valid]) (by taint_decide)
-  have f := setup_ct h₁ h₂ pub finalizeValues (by decide) (by simp [finalizeValues, Whole.valid]) (by taint_decide)
-  have b := setup_ct h₁ h₂ pub baseValues (by decide) (by simp [baseValues, Whole.valid]) (by taint_decide)
+  have i := setup_ct h₁ h₂ pub initValues (by decide) (Whole.valid_all (by decide)) (by taint_decide)
+  have u := setup_ct h₁ h₂ pub updateValues (by decide) (Whole.valid_all (by decide)) (by taint_decide)
+  have f := setup_ct h₁ h₂ pub finalizeValues (by decide) (Whole.valid_all (by decide)) (by taint_decide)
+  have b := setup_ct h₁ h₂ pub baseValues (by decide) (Whole.valid_all (by decide)) (by taint_decide)
   exact (two_syms ((i.seq (init_ct h₁ h₂ pub)).seq
     ((u.seq (update_ct h₁ h₂ pub)).seq (f.seq (finalize_ct h₁ h₂ pub))))).seq
     ((two_syms (prune_ct h₁ h₂ pub)).seq (((two_syms b).seq (base_ct h₁ h₂ pub)).seq

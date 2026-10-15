@@ -198,7 +198,7 @@ theorem update_prefix (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
         (Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 64) 32) := by
   have e : (L.E + 64).setWidth 64 = L.E.setWidth 64 + 64 :=
     addr_eq (x := L.E) (k := 64) (by have := hL.top; omega)
-  refine WP.mono (update_step hc hL ha (c := 0#32) (by decide) (by simp [Whole.valid]) ?_
+  refine WP.mono (update_step hc hL ha (c := 0#32) (by decide) (by exact Whole.valid_all (by decide)) ?_
     (prefix_input hL) (prev := []) (by decide) hr) fun t ⟨ht, hf, hp⟩ => ⟨ht, hf, ?_⟩
   · intro t ht
     exact update_args hL 0 (.frame 64) (.const 32) ht
@@ -734,7 +734,7 @@ variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem init_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) init (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
-  (setup_ct hL ha hb [.caller 5 0] (by decide) (by simp [Whole.valid]) (by taint_decide)).seq
+  (setup_ct hL ha hb [.caller 5 0] (by decide) (by exact Whole.valid_all (by decide)) (by taint_decide)).seq
     (init_call_ct hL)
 
 theorem update_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
@@ -769,7 +769,7 @@ theorem hashSeed_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) 
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hashSeed
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hs := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 0 (.caller 1 0) (.const 32)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (by simpa [value, Lay.value] using seed_input hL)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa [value, Lay.value] using seed_input hL)
     (by taint_decide)
   exact (init_ct hL ha hb).seq (hs.seq (finalize_ct hL ha hb 32 (by decide) false (by taint_decide)))
 
@@ -777,9 +777,9 @@ theorem hashNonce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hashNonce
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hs := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 0 (.frame 64) (.const 32)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (prefix_input hL) (by taint_decide)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (prefix_input hL) (by taint_decide)
   have hm := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 32 (.caller 3 0) (.caller 4 0)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (by simpa only [value, Lay.value, BitVec.add_zero] using message_input hL)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa only [value, Lay.value, BitVec.add_zero] using message_input hL)
     (by taint_decide)
   exact (init_ct hL ha hb).seq (hs.seq (hm.seq
     (finalize_ct hL ha hb 32 (by decide) true (by taint_decide))))
@@ -788,13 +788,13 @@ theorem hashChallenge_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hashChallenge
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hr := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 0 (.caller 0 0) (.const 32)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (by simpa [value, Lay.value] using point_input hL)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa [value, Lay.value] using point_input hL)
     (by taint_decide)
   have hp := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 32 (.caller 2 0) (.const 32)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (by simpa [value, Lay.value] using key_input hL)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa [value, Lay.value] using key_input hL)
     (by taint_decide)
   have hm := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 64 (.caller 3 0) (.caller 4 0)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (by simpa only [value, Lay.value, BitVec.add_zero] using message_input hL)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa only [value, Lay.value, BitVec.add_zero] using message_input hL)
     (by taint_decide)
   exact (init_ct hL ha hb).seq (hr.seq (hp.seq (hm.seq
     (finalize_ct hL ha hb 64 (by decide) true (by taint_decide)))))
@@ -814,15 +814,15 @@ theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) body
       (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) := by
   have r96 := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.frame 96, .frame 192, .caller 5 0]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)).seq
+    (by decide) (by exact Whole.valid_all (by decide)) (by taint_decide)).seq
     (reduce_call_ct hL 96 (by decide) (by decide))
   have r128 := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.frame 128, .frame 192, .caller 5 0]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)).seq
+    (by decide) (by exact Whole.valid_all (by decide)) (by taint_decide)).seq
     (reduce_call_ct hL 128 (by decide) (by decide))
   have b := (two_syms (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 0 0, .frame 96, .caller 5 0]
-    (by decide) (by simp [Whole.valid]) (by taint_decide))).seq (base_call_ct hL ha hb)
+    (by decide) (by exact Whole.valid_all (by decide)) (by taint_decide))).seq (base_call_ct hL ha hb)
   have m := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 0 32, .frame 96, .frame 128, .frame 32, .caller 5 0]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)).seq (mul_call_ct hL)
+    (by decide) (by exact Whole.valid_all (by decide)) (by taint_decide)).seq (mul_call_ct hL)
   exact (two_syms ((hashSeed_ct hL ha hb).seq (saveSecret_ct hL))).seq
     (((two_syms (hashNonce_ct hL ha hb)).seq ((two_syms r96).seq b)).seq
       (two_syms (((hashChallenge_ct hL ha hb).seq (r128.seq m)).seq (wipe_ct hL))))
@@ -914,8 +914,8 @@ theorem signCached_ct : ConstantTime isa signCachedLocal.pre signCachedLocal.pub
   rintro a b ta tb a' b' ⟨s₁, s₂, ⟨p₁, p₂, hp⟩, rfl, rfl⟩ ea eb
   have he := lay_eq hp
   have h₂ : Ctx (lay s₁) s₂.gpr s₂.mem (pushed (List.replicate 64 .eax) s₂) :=
-    he ▸ push_ctx p₂
-  have ha₂ : Arguments (lay s₁) s₂.mem := he ▸ lay_arguments p₂
+    by rw [he]; exact push_ctx p₂
+  have ha₂ : Arguments (lay s₁) s₂.mem := by rw [he]; exact lay_arguments p₂
   have y₂ : Named (lay s₁) (pushed (List.replicate 64 .eax) s₂) := by
     rw [he]; rfl
   exact ⟨(body_ct (lay_ok p₁) (lay_arguments p₁) ha₂ _ _ _ _ _ _
