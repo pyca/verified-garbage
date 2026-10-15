@@ -149,12 +149,7 @@ theorem qPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
     ac_rfl
   have hxo : ∀ i < 32, word s₂.mem (off B o) (8 * i) = word s₁.mem (off B o) (8 * i) := fun i hi => by
     rw [word_off, word_off]
-    exact f₂.word_eq (fun r hr => Or.inr (by
-      simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      have := slot_le (w := w) (show Public.aAcc < 8 by decide)
-      have := slot_le (w := w) (show Public.aTmp < 8 by decide)
-      have := slot_le (w := w) (show Public.aY < 8 by decide)
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith)) (by omega_using [hX8, hoL, hi])
+    exact f₂.word_eq (fun r hr => Or.inr (by have := gRanges_le w r hr; omega_using [this, hlo])) (by omega_using [hX8, hoL, hi])
   have f02 : Frm B (gRanges w ++ [xRange o wx]) s.mem s₂.mem := f₁.trans f₂'
   have hb₂ : ∀ i < 32, i ≠ Crt.sD → i ≠ Public.sCnt → word s₂.mem B (8 * i) = word s.mem B (8 * i) :=
     hhd f02
@@ -168,22 +163,12 @@ theorem qPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} 
   have hYq₂ : wv s₂.mem (off B o) (slot wx Public.aY) wx = wv s₁.mem (off B o) (slot wx Public.aY) wx := by
     have := slot_le (w := wx) (show Public.aY < 8 by decide)
     rw [wv_off, wv_off]
-    exact f₂.wv_eq (fun r hr => Or.inr (by
-      simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      have := slot_le (w := w) (show Public.aAcc < 8 by decide)
-      have := slot_le (w := w) (show Public.aTmp < 8 by decide)
-      have := slot_le (w := w) (show Public.aY < 8 by decide)
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith)) (by omega_using [hoL, this])
+    exact f₂.wv_eq (fun r hr => Or.inr (by have := gRanges_le w r hr; omega_using [this, hlo])) (by omega_using [hoL, this])
   -- `c^dQ R_q mod q`.
   refine wp_seqs_append (by simp [powSteps]) (by simp) ?_
   refine WP.mono (powPhase_ok M E hg₂ hw28 hlo hhi hwx2 hwx (sl := sWsQ) (by decide)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hslv) (hws₁.of_words fun i hi => hxo i (by omega_using [hi]))
-    (hX₁.of_below f₂ (fun r hr => by
-      simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      have := slot_le (w := w) (show Public.aAcc < 8 by decide)
-      have := slot_le (w := w) (show Public.aTmp < 8 by decide)
-      have := slot_le (w := w) (show Public.aY < 8 by decide)
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith) hoL)
+    (hX₁.of_below f₂ (fun r hr => (gRanges_le w r hr).trans hlo) hoL)
     hX1 hXodd hcg (by rw [hYq₂]; exact hlq₁) (fun hd => by rw [hYq₂]; exact hyq₁ hd) (sd := sDq) (slen := sQlen)
     (by decide) (by decide) (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hep)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i02 (k₁.trans k₂)))

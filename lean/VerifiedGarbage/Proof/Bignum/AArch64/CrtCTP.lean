@@ -165,19 +165,7 @@ theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s 
   have f₀₂ := f₁'.trans f₂'
   have hN₂ : NVals s₂ B w minv N := by
     exact ⟨by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.n,
-      by rw [f₂'.word_eq (fun r hr => by
-        have := pxR_bound hlo r hr
-        have := slot_le (w := w) (show Public.aN < 8 by decide)
-        simp only [pRanges, gRanges, xRange, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-          or_false] at hr
-        have s1 := slot_sep (w := w) (show Public.aN ≠ Public.aAcc by decide)
-        have s2 := slot_sep (w := w) (show Public.aN ≠ Public.aTmp by decide)
-        have s3 := slot_sep (w := w) (show Public.aN ≠ Public.aY by decide)
-        have s4 := slot_sep (w := w) (show Public.aN ≠ Public.aX by decide)
-        have := hdr_lt_slot w Public.aN (show 31 < 32 by decide)
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-          simp only [Crt.sD, Public.sCnt, sFn] at * <;> omega_arith)
-        (by have := slot_le (w := w) (show Public.aN < 8 by decide); omega_arith)]; exact hN₁.inv,
+      by rw [f₂'.px_word hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.inv,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.r2,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.r2lt,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.one⟩
