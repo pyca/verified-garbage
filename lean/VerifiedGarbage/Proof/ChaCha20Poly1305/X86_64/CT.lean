@@ -1266,7 +1266,24 @@ theorem and1023 (len : Nat) (hl : len < 2 ^ 64) :
     toNat_ofNat_lt (by omega_using [])]
 
 theorem round64 : ∀ y < 1087, BitVec.ofNat 64 y &&& BitVec.signExtend 64 (BitVec.ofInt 32 (-64)) =
-    BitVec.ofNat 64 (y / 64 * 64) := by decide +kernel
+    BitVec.ofNat 64 (y / 64 * 64) := by
+  intro y hy
+  rw [show BitVec.signExtend 64 (BitVec.ofInt 32 (-64)) = BitVec.ofNat 64 ((2 ^ 58 - 1) <<< 6) by decide]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega : y < 2 ^ 64), Nat.mod_eq_of_lt (by omega : y / 64 * 64 < 2 ^ 64),
+    Nat.mod_eq_of_lt (by decide : (2 ^ 58 - 1) <<< 6 < 2 ^ 64),
+    show y / 64 * 64 = (y >>> 6) <<< 6 by rw [Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]]
+  apply Nat.eq_of_testBit_eq
+  intro i
+  rw [Nat.testBit_and, Nat.testBit_shiftLeft, Nat.testBit_shiftLeft, Nat.testBit_shiftRight,
+    Nat.testBit_two_pow_sub_one]
+  by_cases h₁ : 6 ≤ i
+  · by_cases h₂ : i - 6 < 58
+    · simp [h₁, h₂, Nat.add_sub_cancel' h₁]
+    · have : y.testBit i = false := Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (by omega) (Nat.pow_le_pow_right (by decide) (by omega : 64 ≤ i)))
+      simp [h₁, h₂, Nat.add_sub_cancel' h₁, this]
+  · simp [h₁]
 
 /-- `splitM` for a pass of 1024 bytes. -/
 theorem splitM_ok {fold len : Nat} (hf : fold + 1 < 2 ^ 31) (hl : len < 2 ^ 64) {s : State}
