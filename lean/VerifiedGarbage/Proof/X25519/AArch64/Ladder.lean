@@ -8,8 +8,6 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # X25519 on AArch64: the ladder
@@ -120,7 +118,7 @@ theorem Sl.weaken {m : Mem} {b : Addr} {vals vals' : Nat → Fe} {bnds bnds' : N
 
 /-- Evaluates the slots' values after an operation, so that they refer to the
 earlier ones only through their values. -/
-tactic_template "vsimp" " at " h:ident : tactic => `(tactic| simp only [Function.update_apply, lvals, ite_true, ite_false,
+macro "vsimp" " at " h:ident : tactic => `(tactic| plain_simp_names simp only [Function.update_apply, lvals, ite_true, ite_false,
                    Nat.reduceEqDiff] at $h:ident)
 
 /-- The field operations of an iteration, after the swaps' mask `x22`. -/

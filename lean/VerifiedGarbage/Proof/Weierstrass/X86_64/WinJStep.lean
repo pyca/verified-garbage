@@ -8,8 +8,6 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Windows in Jacobian coordinates on x86-64: an iteration
@@ -32,7 +30,7 @@ open Spec.Weierstrass
 
 /-- `x ∈ l₂` from `h : x ∈ l₁`, for literal lists with `l₁`'s elements in `l₂`: not by
 `omega` on the disjunctions, which splits cases exponentially. -/
-tactic_template "sub_mem " h:term : tactic => `(tactic| (
+macro "sub_mem " h:term : tactic => `(tactic| plain_simp_names (
                    refine (show (_ : List _) ⊆ _ from ?_) $h
                    simp only [List.cons_subset, List.nil_subset, List.mem_cons, eq_self_iff_true, true_or,
                      or_true, and_true, and_self]))
