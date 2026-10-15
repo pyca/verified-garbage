@@ -253,24 +253,37 @@ where
     | n + 1, σ => (body σ).bind fun (σ', h) =>
       if A.le σ σ' && A.condPub σ' c then some (σ', .loop σ h) else go c body n (A.meet σ σ')
 
+/-- `Taint.sumsOfCall`. -/
+def sumsOfCall (S : List A.Summary) (body : Prog M → Prog M → Bool) (n : String) (b : Prog M) :
+    List Nat :=
+  go S 0
+where
+  go : List A.Summary → Nat → List Nat
+    | [], _ => []
+    | s :: S, k =>
+      let hit := match s.1 with
+        | .call n' b' => n' == n || body b' b
+        | c' => body c' b
+      if hit then k :: go S (k + 1) else go S (k + 1)
+
 def missedCalls (S : List A.Summary) (body : Prog M → Prog M → Bool) :
-    Prog M → SHint A.T → List String
+    Prog M → SHint A.T → List (String × Nat)
   | .seq c₁ c₂, .seq _ h₁ h₂ => missedCalls S body c₁ h₁ ++ missedCalls S body c₂ h₂
   | .ite _ t e, .ite h₁ h₂ => missedCalls S body t h₁ ++ missedCalls S body e h₂
   | .loop b _, .loop _ h => missedCalls S body b h
   | .frame _ b _, .frame h => missedCalls S body b h
   | .call n b, .call h =>
-    let same := S.any fun s => match s.1 with
-      | .call n' b' => n' == n || body b' b
+    let applied := match h with
+      | .sum _ => true
       | _ => false
-    (if same then [n] else []) ++ missedCalls S body b h
+    (if applied then [] else (sumsOfCall A S body n b).map (n, ·)) ++ missedCalls S body b h
   | _, _ => []
 
 /-- `Taint.hintReport`: the taint at the end and the hint (`τ` and any hint, if
 the analysis fails), and the calls the hint analyses in full although a
 summary is of the same function. -/
 def hintReport (S : List A.Summary) (same body : Prog M → Prog M → Bool) (τ : A.T) (c : Prog M) :
-    (A.T × SHint A.T) × List String :=
+    (A.T × SHint A.T) × List (String × Nat) :=
   let ph := (hintSumA A S same [] τ c).getD (τ, .block [])
   (ph, missedCalls A S body c ph.2)
 

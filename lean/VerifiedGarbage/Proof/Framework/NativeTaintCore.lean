@@ -105,7 +105,7 @@ private meta def codeFn (M : Expr) (needCodeEq : Bool) : MetaM Expr := do
   catch _ => return none
 
 /-- `TaintSum.hintChecked`, with the domain's compiled copy. -/
-private meta def hintCheckedNative (who : String) (M c : Expr) (ss : List Expr) (τ : Expr)
+private meta def hintCheckedNative (who : String) (names : Array Name) (M c : Expr) (ss : List Expr) (τ : Expr)
     (srcT natT prov : Name) : MetaM Expr := do
   let natTy := mkConst natT
   let sTy ← mkAppM ``Prod #[mkApp (mkConst ``Prog) M,
@@ -123,24 +123,22 @@ private meta def hintCheckedNative (who : String) (M c : Expr) (ss : List Expr) 
   let S ← mkListLit sTy nss
   let hTy := mkApp (mkConst ``VG.NativeHints.SHint) natTy
   let phTy ← mkAppM ``Prod #[natTy, hTy]
-  let repTy := mkApp (mkConst ``List [0]) (mkConst ``String)
+  let repTy ← mkAppM ``List #[← mkAppM ``Prod #[mkConst ``String, mkConst ``Nat]]
   let r := mkAppN (mkConst (prov ++ `hintReport)) #[S, ← codeFn M true, ← codeFn M false, ← conv τ, c]
   let e ← withLetDecl `r (← mkAppM ``Prod #[phTy, repTy]) r fun r => do
     let ph ← mkAppM ``ToExpr.toExpr #[← mkAppM ``Prod.snd #[← mkAppM ``Prod.fst #[r]]]
     mkLetFVars #[r] (← mkAppM ``Prod.mk #[ph, ← mkAppM ``Prod.snd #[r]])
   let ty ← mkAppM ``Prod #[mkConst ``Expr, repTy]
-  let (h, missed) ← unsafe evalExpr (Expr × List String) ty e
-  unless missed.isEmpty do
-    throwError "{who}: the calls {missed.eraseDups} are analysed in full, although a summary \
-      of the same function (by its name or its code) is given: its `pre` does not hold \
-      there, or it is stated about another name or code"
+  let (h, missed) ← unsafe evalExpr (Expr × List (String × Nat)) ty e
   -- The copy's constructors renamed to the checked domain's.
   let h := checkedHintExpr natT srcT h
-  return h.replace fun t => match t with
+  let h := h.replace fun t => match t with
     | .const n us =>
       let n' := renamePrefix `VG.NativeHints.SHint `VG.Taint.SHint n
       if n' == n then none else some (.const n' us)
     | _ => none
+  TaintSum.checkUsed who names h missed
+  return h
 
 open TaintSum in
 /-- `taint_decide_sum`, with the hint computed by the domain's compiled copy
@@ -163,10 +161,10 @@ elab "native_taint_decide_sum " "[" ls:ident,* "]" : tactic => withMainContext d
     | some (srcT, natT, prov) =>
       let ss ← names.toList.mapM fun l => do
         return (← instantiateMVars (← inferType (mkConst l))).getArg! 3
-      hintCheckedNative "native_taint_decide_sum" M c ss τ srcT natT prov
+      hintCheckedNative "native_taint_decide_sum" names M c ss τ srcT natT prov
     | none =>
       let fr ← synthInstance (mkApp2 (mkConst ``Taint.Frame) M A)
-      pure (← hintChecked "native_taint_decide_sum" M A fr S τ c).2
+      pure (← hintChecked "native_taint_decide_sum" names M A fr S τ c).2
   proveWith M A S hS c ``Taint.exists_check_of_checkSum #[τ] hint
 
 end VG.NativeHints
