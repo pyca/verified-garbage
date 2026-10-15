@@ -1,12 +1,16 @@
-//! OS randomness, rejection sampling and probable safe-prime generation.
+//! Entropy adapters for verified generation and the AArch64 fallback.
+#[cfg(target_arch = "aarch64")]
 use super::arithmetic::{Montgomery, bits, canonical, minus_one, value_cmp};
-use super::{Error, MAX_BITS, MIN_BITS, Parameters};
+use super::{Error, Parameters};
+#[cfg(target_arch = "aarch64")]
+use super::{MAX_BITS, MIN_BITS};
 use crate::zeroize::zeroize;
 use alloc::{vec, vec::Vec};
 
 /// Independent uniform integer in [1,upper-1]. The top-bit mask and byte
 /// width are public. Only acceptance/rejection controls a branch. The
 /// accepted scalar's leading-zero count is never inspected.
+#[cfg(target_arch = "aarch64")]
 fn sample<E>(
     upper: &[u8],
     fill: &mut impl FnMut(&mut [u8]) -> Result<(), E>,
@@ -38,14 +42,90 @@ pub(super) fn parameters<E>(
     generator: u32,
     fill: impl FnMut(&mut [u8]) -> Result<(), E>,
 ) -> Result<Parameters, Error> {
-    parameters_limit(
-        size,
-        generator,
-        size.saturating_mul(size).saturating_mul(64),
-        fill,
-    )
+    #[cfg(target_arch = "x86_64")]
+    {
+        let state = super::x86_64::GenerationState::parameters(size, generator)?;
+        parameters_state(size, generator, state, fill)
+    }
+    #[cfg(target_arch = "aarch64")]
+    {
+        parameters_limit(
+            size,
+            generator,
+            size.saturating_mul(size).saturating_mul(64),
+            fill,
+        )
+    }
 }
 
+/// Service native entropy requests. The callable chooses every retry,
+/// consumption count and refill length; this adapter only preserves the
+/// unconsumed suffix and fills newly allocated bytes.
+#[cfg(target_arch = "x86_64")]
+pub(super) fn native_generation<E>(
+    requested: usize,
+    mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+    mut step: impl FnMut(&[u8]) -> (u32, usize, usize),
+) -> Result<(), Error> {
+    struct Entropy(Vec<u8>);
+    impl Drop for Entropy {
+        fn drop(&mut self) {
+            zeroize(&mut self.0);
+        }
+    }
+    let mut tape = Entropy(vec![0; requested]);
+    fill(&mut tape.0).map_err(|_| Error::Randomness)?;
+    loop {
+        let (status, used, requested) = step(&tape.0);
+        match status {
+            1 => return Ok(()),
+            3 => return Err(Error::TooManyIterations),
+            0 => {
+                let remaining = &tape.0[used..];
+                let mut next = Entropy(vec![0; requested]);
+                next.0[..remaining.len()].copy_from_slice(remaining);
+                fill(&mut next.0[remaining.len()..]).map_err(|_| Error::Randomness)?;
+                // Dropping the old allocation wipes consumed and preserved
+                // secret bytes, including on an entropy-source error.
+                tape = next;
+            }
+            // The verified controllers return only 0, 1 or 3.
+            // NO-COVERAGE-START
+            _ => unreachable!(),
+            // NO-COVERAGE-END
+        }
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+fn parameters_state<E>(
+    size: usize,
+    generator: u32,
+    mut state: super::x86_64::GenerationState,
+    fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+) -> Result<Parameters, Error> {
+    let len = state.width();
+    let mut p = vec![0; len];
+    let mut scratch = crate::rsa::Scratch::new(16 * len + 32);
+    native_generation(state.requested(), fill, |tape| {
+        super::x86_64::generate_parameters(size, generator, tape, &mut p, &mut scratch, &mut state)
+    })?;
+    Parameters::from_components(&p, &generator.to_be_bytes(), None)
+}
+
+#[cfg(all(test, target_arch = "x86_64"))]
+fn parameters_limit<E>(
+    size: usize,
+    generator: u32,
+    limit: usize,
+    fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+) -> Result<Parameters, Error> {
+    let mut state = super::x86_64::GenerationState::parameters(size, generator)?;
+    state.limit_attempts(limit);
+    parameters_state(size, generator, state, fill)
+}
+
+#[cfg(target_arch = "aarch64")]
 fn parameters_limit<E>(
     size: usize,
     generator: u32,
@@ -83,15 +163,18 @@ fn parameters_limit<E>(
     }
     Err(Error::TooManyIterations)
 }
+#[cfg(target_arch = "aarch64")]
 fn rem_small(n: &[u8], divisor: u32) -> u32 {
     n.iter().fold(0, |r, &b| (256 * r + u32::from(b)) % divisor)
 }
+#[cfg(target_arch = "aarch64")]
 fn trial_composite(p: &[u8]) -> bool {
     (3..=251)
         .step_by(2)
         .filter(|&d| (3..d).step_by(2).all(|s| d % s != 0))
         .any(|d| rem_small(p, d) == 0 && value_cmp(p, &d.to_be_bytes()).is_ne())
 }
+#[cfg(target_arch = "aarch64")]
 fn halve(n: &mut [u8]) {
     let mut carry = 0;
     for b in n {
@@ -102,7 +185,8 @@ fn halve(n: &mut [u8]) {
 }
 /// Public probable-primality test. Independent uniform witnesses, never
 /// fixed bases or RSA's lower random-candidate-specific round counts.
-pub(super) fn probable_prime<E>(
+#[cfg(target_arch = "aarch64")]
+fn probable_prime<E>(
     p: &[u8],
     fill: &mut impl FnMut(&mut [u8]) -> Result<(), E>,
 ) -> Result<bool, Error> {
@@ -144,6 +228,7 @@ pub(super) fn probable_prime<E>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(target_arch = "aarch64")]
     #[test]
     fn rejection_sampler_bounds_and_error() {
         let mut zero = |out: &mut [u8]| {
@@ -167,6 +252,7 @@ mod tests {
         assert_eq!(x, [0, 1]);
         assert_eq!(calls, 2);
     }
+    #[cfg(target_arch = "aarch64")]
     #[test]
     fn probable_prime_and_witness_failures() {
         let mut two = |out: &mut [u8]| {
@@ -242,5 +328,182 @@ mod tests {
             parameters_limit(511, 2, 1, |_| Ok::<_, ()>(())).unwrap_err(),
             Error::InvalidParameters
         );
+    }
+}
+
+#[cfg(all(test, target_arch = "x86_64"))]
+mod native_tests {
+    use super::*;
+    use crate::rsa::Scratch;
+
+    fn published_prime(bits: usize) -> alloc::vec::Vec<u8> {
+        let text = if bits == 1024 {
+            include_str!("../../vectors/cryptography-ffdh/dhkey/dhkey.txt")
+        } else {
+            include_str!("../../vectors/cryptography-ffdh/rfc3526/rfc3526.txt")
+        };
+        text.lines()
+            .filter_map(|line| line.strip_prefix("P = "))
+            .map(|hex| {
+                let hex = hex.trim_start_matches('0');
+                hex.as_bytes()
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|pair| {
+                        u8::from_str_radix(core::str::from_utf8(pair).unwrap(), 16).unwrap()
+                    })
+                    .collect::<alloc::vec::Vec<_>>()
+            })
+            .find(|p| p.len() * 8 == bits)
+            .unwrap()
+    }
+
+    #[test]
+    fn published_candidates_and_tape_consumption() {
+        // Published safe primes exercise both 64- and 128-witness policies.
+        // Zero, one, n-1 and n must be skipped independently for q and p.
+        for (bits, generator, rounds) in [(1024, 2, 64), (3072, 5, 128)] {
+            let prime = published_prime(bits);
+            let len = prime.len();
+            let mut tape = prime.clone();
+            let mut carry = 0;
+            let q: alloc::vec::Vec<u8> = prime
+                .iter()
+                .map(|&b| {
+                    let half = (b >> 1) | carry;
+                    carry = b << 7;
+                    half
+                })
+                .collect();
+            for modulus in [&q, &prime] {
+                let mut upper = modulus.clone();
+                *upper.last_mut().unwrap() -= 1;
+                tape.extend_from_slice(&upper);
+                tape.extend_from_slice(modulus);
+                for value in [0, 1].into_iter().chain(core::iter::repeat_n(2, rounds)) {
+                    tape.resize(tape.len() + len, 0);
+                    *tape.last_mut().unwrap() = value;
+                }
+            }
+            let used = tape.len();
+            tape.extend_from_slice(&[0xff; 17]);
+            let mut p = vec![0xaa; len];
+            let mut scratch = Scratch::new(16 * len + 32);
+            assert_eq!(
+                super::super::x86_64::parameter_candidate(
+                    bits,
+                    generator,
+                    &tape,
+                    &mut p,
+                    &mut scratch,
+                ),
+                (1, used)
+            );
+            assert_eq!(p, prime);
+            for cut in [0, len - 1, len, used - 1] {
+                assert_eq!(
+                    super::super::x86_64::parameter_candidate(
+                        bits,
+                        generator,
+                        &tape[..cut],
+                        &mut p,
+                        &mut scratch,
+                    ),
+                    (0, 0)
+                );
+                assert!(p.iter().all(|&b| b == 0));
+            }
+        }
+    }
+
+    #[test]
+    fn tape_extension_preserves_candidate_and_reports_rng_failure() {
+        let prime = published_prime(1024);
+        let mut calls = 0;
+        let params = parameters_limit(1024, 2, 1, |out| {
+            calls += 1;
+            if calls == 1 {
+                out.fill(0);
+                out[..prime.len()].copy_from_slice(&prime);
+                *out.last_mut().unwrap() = 2;
+            } else {
+                for draw in out.chunks_exact_mut(prime.len()) {
+                    draw.fill(0);
+                    *draw.last_mut().unwrap() = 2;
+                }
+            }
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        assert_eq!(params.components().0, prime);
+        assert!(calls > 2);
+        let mut calls = 0;
+        assert_eq!(
+            parameters_limit(1024, 2, 1, |out| {
+                calls += 1;
+                if calls == 1 {
+                    out[..prime.len()].copy_from_slice(&prime);
+                    Ok(())
+                } else {
+                    Err(())
+                }
+            })
+            .unwrap_err(),
+            Error::Randomness
+        );
+        let mut calls = 0;
+        assert_eq!(
+            parameters_limit(1024, 2, 1, |out| {
+                calls += 1;
+                out.fill(0);
+                if calls == 1 {
+                    out[..prime.len()].copy_from_slice(&prime);
+                }
+                Ok::<_, ()>(())
+            })
+            .unwrap_err(),
+            Error::TooManyIterations
+        );
+    }
+
+    #[test]
+    fn composite_q_at_modulus_width_boundaries() {
+        // Construct p with q=(p-1)/2 divisible by seven, while p passes
+        // generator congruences and the small-prime sieve. In particular,
+        // 513-bit p has one more limb than q: loading q must clear that limb.
+        for bits in [512_usize, 513, 2049, 8192] {
+            let len = bits.div_ceil(8);
+            let mut candidate = vec![0; len];
+            candidate[0] = 1 << ((bits - 1) % 8);
+            let rem = |p: &[u8], d: u32| p.iter().fold(0, |r, &b| (256 * r + u32::from(b)) % d);
+            let small_primes: alloc::vec::Vec<u32> = (3..=251)
+                .step_by(2)
+                .filter(|&d| (3..d).step_by(2).all(|s| d % s != 0))
+                .collect();
+            let offset = (1u32..65536)
+                .step_by(2)
+                .find(|&offset| {
+                    candidate[len - 2..].copy_from_slice(&(offset as u16).to_be_bytes());
+                    rem(&candidate, 24) == 11
+                        && rem(&candidate, 14) == 1
+                        && small_primes.iter().all(|&d| rem(&candidate, d) != 0)
+                })
+                .unwrap();
+            candidate[len - 2..].copy_from_slice(&(offset as u16).to_be_bytes());
+            let mut p = vec![0xaa; len];
+            let mut scratch = Scratch::new(16 * len + 32);
+            assert_eq!(
+                super::super::x86_64::parameter_candidate(
+                    bits,
+                    2,
+                    &candidate,
+                    &mut p,
+                    &mut scratch,
+                ),
+                (2, len)
+            );
+            assert!(p.iter().all(|&b| b == 0));
+        }
     }
 }

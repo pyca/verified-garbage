@@ -6,9 +6,11 @@
 //! All domain arithmetic and secret exponentiation run in verified code.
 //! Private-key generation samples and validates the scalar in verified code.
 //! Rust obtains random bytes, retries rejected attempts and packs inputs and
-//! results. Parameter-generation policy remains outside the Lean proof boundary.
-//! Parameter generation uses the shared verified windowed Miller–Rabin round;
-//! Rust currently prepares its workspace and selects independent witnesses.
+//! results. On x86-64, parameter generation also runs in verified code, including
+//! candidate shaping, sieving, Montgomery preparation and independent witness
+//! selection for the shared RSA windowed Miller–Rabin callable. Rust supplies
+//! and extends a public random tape and bounds retries. On AArch64, Rust still
+//! prepares the parameter-generation workspace and selects witnesses.
 //! Imported parameters receive structural and algebraic checks; callers must
 //! establish primality/provenance. Optional q enables subgroup checks.
 //! Exchange returns exactly ceil(bits(p)/8) bytes, without applying a KDF.

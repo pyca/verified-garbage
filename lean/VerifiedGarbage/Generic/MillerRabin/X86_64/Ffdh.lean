@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchVerified
 
 /-! # Emit FFDH domain operations for every shared arithmetic backend -/
 
@@ -71,6 +72,20 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     contract := Spec.Ffdh.checkDomainContract X86_64.abi
     verified := by exact Proof.Ffdh.X86_64.CheckDomain.domainCode_verified v
     spSafe := by exact Proof.Ffdh.X86_64.CheckDomain.domainCode_sp v
+    features := v.features },
+  { Spec.Ffdh.parameterSearchApi with
+    name := Spec.Ffdh.parameterSearchApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Ffdh.parameterSearchApi.doc
+      (notes := ["The complete candidate-search controller runs in verified code, including \
+        retry limits, consumed-prefix accounting and entropy-refill policy. Both primes \
+        use RSA's shared windowed Miller–Rabin callable, with 64 or 128 independent \
+        witnesses per modulus. The supplied random tape is public under this contract."])
+    code := Proof.Ffdh.X86_64.Generation.searchCode v
+    contract := Spec.Ffdh.parameterSearchContract X86_64.abi 160
+    stack := 160
+    verified := by exact Proof.Ffdh.X86_64.Generation.search_verified v
+    spSafe := by exact Proof.Ffdh.X86_64.Generation.searchCode_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.Ffdh
