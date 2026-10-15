@@ -123,16 +123,16 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   have hv : byte s₀ k < 256 := byte_lt _
   obtain ⟨-, -, -, -, hS⟩ := sums_ok _ hv
   have c0 : s.gpr .x1 + BitVec.ofNat 64 0 = coeffAddr (fP s₀) (2 * k) := by
-    rw [h.x1, ptr_zero, coeffAddr, show 4 * (2 * k) = 8 * k by omega]
+    rw [h.x1, ptr_zero, coeffAddr, show 4 * (2 * k) = 8 * k by omega_using [hS, hq, hk]]
   have c1 : s.gpr .x1 + BitVec.ofNat 64 4 = coeffAddr (fP s₀) (2 * k + 1) := by
-    rw [h.x1, ptr_add, coeffAddr, show 8 * k + 4 = 4 * (2 * k + 1) by omega]
+    rw [h.x1, ptr_add, coeffAddr, show 8 * k + 4 = 4 * (2 * k + 1) by omega_using [hS, hq, hk]]
   have hout : ∀ i < 256, InRegions s.wr (coeffAddr (fP s₀) i) 4 := fun i hi => by
     rw [h.wr, hp.wr]
     exact in_regions (List.mem_singleton_self _) (coeff_contains _ (show i < n from hi))
   refine wp_ldrb (a := bP s₀ + BitVec.ofNat 64 k) (by decide) (by rw [h.x0, ptr_zero]) ?_
     fun s₁ h₁ e₁ => ?_
   · rw [h.rd, h.wr, hp.rd, hp.wr]
-    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide)))
+    exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega_using [hS, hq, hk]) (by decide)))
   have v9 : (s₁.gpr .x9).toNat = byte s₀ k := by rw [e₁, toNat_byte, hp.byte_eq h.frame hk]
   refine wp_lsr (by decide) fun s₂ h₂ e₂ => wp_and fun s₃ h₃ e₃ => wp_and fun s₄ h₄ e₄ =>
     wp_add fun s₅ h₅ e₅ => ?_
@@ -148,7 +148,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   have x9 : (s₅.gpr .x9).toNat = sums (byte s₀ k) := by
     have b3 := Nat.and_le_right (n := byte s₀ k) (m := 85)
     have b4 := Nat.and_le_right (n := byte s₀ k / 2) (m := 85)
-    rw [e₅, toNat_add_n (by rw [h₄.get .x9, a3, a4]; omega), h₄.get .x9, a3, a4]
+    rw [e₅, toNat_add_n (by rw [h₄.get .x9, a3, a4]; omega_using [b3, b4]), h₄.get .x9, a3, a4]
     rfl
   refine wp_and fun s₆ h₆ e₆ => wp_lsr (by decide) fun s₇ h₇ e₇ => wp_and fun s₈ h₈ e₈ =>
     wp_add fun s₉ h₉ e₉ => wp_sub fun s₁₀ h₁₀ e₁₀ => ?_
@@ -164,15 +164,15 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
       h₆.get .x9, x9]
   have v9' : (s₉.gpr .x10).toNat = sums (byte s₀ k) % 4 + q := by
     rw [e₉, toNat_add_n (by rw [h₈.get .x10, h₇.get .x10, v6, x12 (((k₅.trans h₆.keep).trans
-      h₇.keep).trans h₈.keep |>.get .x12)]; omega), h₈.get .x10, h₇.get .x10, v6,
+      h₇.keep).trans h₈.keep |>.get .x12)]; omega_using [hS, hq, hk]), h₈.get .x10, h₇.get .x10, v6,
       x12 (((k₅.trans h₆.keep).trans h₇.keep).trans h₈.keep |>.get .x12)]
   have v10 : (s₁₀.gpr .x10).toNat = sums (byte s₀ k) % 4 + q - sums (byte s₀ k) / 4 % 4 := by
-    rw [e₁₀, toNat_sub_n (by rw [v9', h₉.get .x11, v8]; omega), v9', h₉.get .x11, v8]
-  refine csub_ok (by decide) (by decide) (by decide) (by rw [hq]; omega) v10
+    rw [e₁₀, toNat_sub_n (by rw [v9', h₉.get .x11, v8]; omega_using [hS, hq, hk]), v9', h₉.get .x11, v8]
+  refine csub_ok (by decide) (by decide) (by decide) (by rw [hq]; omega_using [hS, hq, hk]) v10
     (x12 (k₁₀.get .x12)) fun s₁₁ h₁₁ e₁₁ => ?_
   have k₁₁ := k₁₀.trans h₁₁.keep
   refine wp_strw (a := coeffAddr (fP s₀) (2 * k)) (by decide) (by rw [k₁₁.get .x1]; exact c0)
-    (by rw [k₁₁.wr]; exact hout _ (by omega)) fun s₁₂ h₁₂ => ?_
+    (by rw [k₁₁.wr]; exact hout _ (by omega_using [hS, hq, hk])) fun s₁₂ h₁₂ => ?_
   refine wp_lsr (by decide) fun s₁₃ h₁₃ e₁₃ => wp_and fun s₁₄ h₁₄ e₁₄ =>
     wp_lsr (by decide) fun s₁₅ h₁₅ e₁₅ => wp_add fun s₁₆ h₁₆ e₁₆ => wp_sub fun s₁₇ h₁₇ e₁₇ => ?_
   have k₁₇ := ((((k₁₁.trans h₁₂.keep).trans h₁₃.keep).trans h₁₄.keep).trans h₁₅.keep).trans
@@ -187,14 +187,14 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
     rw [e₁₅, toNat_lsr, h₁₄.get .x9, h₁₃.get .x9, y9]
   have v16 : (s₁₆.gpr .x10).toNat = sums (byte s₀ k) / 16 % 4 + q := by
     have e12 := x12 ((((k₁₁.trans h₁₂.keep).trans h₁₃.keep).trans h₁₄.keep).trans h₁₅.keep |>.get .x12)
-    rw [e₁₆, toNat_add_n (by rw [h₁₅.get .x10, v14, e12]; omega), h₁₅.get .x10, v14, e12]
+    rw [e₁₆, toNat_add_n (by rw [h₁₅.get .x10, v14, e12]; omega_using [hS, hq, hk]), h₁₅.get .x10, v14, e12]
   have v17 : (s₁₇.gpr .x10).toNat = sums (byte s₀ k) / 16 % 4 + q - sums (byte s₀ k) / 64 := by
-    rw [e₁₇, toNat_sub_n (by rw [v16, h₁₆.get .x11, v15]; omega), v16, h₁₆.get .x11, v15]
-  refine csub_ok (by decide) (by decide) (by decide) (by rw [hq]; omega) v17
+    rw [e₁₇, toNat_sub_n (by rw [v16, h₁₆.get .x11, v15]; omega_using [hS, hq, hk]), v16, h₁₆.get .x11, v15]
+  refine csub_ok (by decide) (by decide) (by decide) (by rw [hq]; omega_using [hS, hq, hk]) v17
     (x12 (k₁₇.get .x12)) fun s₁₈ h₁₈ e₁₈ => ?_
   have k₁₈ := k₁₇.trans h₁₈.keep
   refine wp_strw (a := coeffAddr (fP s₀) (2 * k + 1)) (by decide) (by rw [k₁₈.get .x1]; exact c1)
-    (by rw [k₁₈.wr]; exact hout _ (by omega)) fun s₁₉ h₁₉ => ?_
+    (by rw [k₁₈.wr]; exact hout _ (by omega_using [hS, hq, hk])) fun s₁₉ h₁₉ => ?_
   refine wp_addImm (by decide) fun s₂₀ h₂₀ e₂₀ => wp_addImm (by decide) fun s₂₁ h₂₁ e₂₁ =>
     wp_subImm (by decide) fun s₂₂ h₂₂ e₂₂ => wp_nil ?_
   have k₁₉ := k₁₈.trans h₁₉.keep
@@ -207,20 +207,20 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
       h₁.mem]
   have c16 : (s₂₁.gpr .x16).toNat = 128 - k := by rw [k₂₁.get .x16, h.x16]
   have w16 : (s₂₂.gpr .x16).toNat = 128 - (k + 1) := by
-    rw [e₂₂, toNat_sub_n (by rw [c16]; simp; omega), c16]
+    rw [e₂₂, toNat_sub_n (by rw [c16]; simp; omega_using [hS, hq, hk]), c16]
     simp
-    omega
+    omega_using [hS, hq, hk]
   refine ⟨⟨by rw [k₂₂.rd, h.rd], by rw [k₂₂.wr, h.wr], by rw [k₂₂.sp, h.sp], ?_, ?_,
     by rw [k₂₂.get .x12, h.x12], by rw [k₂₂.get .x14, h.x14], by rw [k₂₂.get .x15, h.x15], w16, ?_,
-    ?_⟩, by rw [w16]; omega⟩
+    ?_⟩, by rw [w16]; omega_using [hS, hq, hk]⟩
   · rw [h₂₂.get .x0, h₂₁.get .x0, e₂₀, k₁₉.get .x0, h.x0, ptr_add]
   · rw [h₂₂.get .x1, e₂₁, h₂₀.get .x1, k₁₉.get .x1, h.x1, ptr_next]
-  · rw [m₂₂, show 2 * (k + 1) = 2 * k + 1 + 1 by omega]
-    exact (h.out.write (by omega) (by rw [setWidth32_of_toNat e₁₁, G_even _ hk])).write (by omega)
+  · rw [m₂₂, show 2 * (k + 1) = 2 * k + 1 + 1 by omega_using [hS, hq, hk]]
+    exact (h.out.write (by omega_using [hS, hq, hk]) (by rw [setWidth32_of_toNat e₁₁, G_even _ hk])).write (by omega_using [hS, hq, hk])
       (by rw [setWidth32_of_toNat e₁₈, G_odd _ hk])
   · rw [m₂₂]
-    exact (h.frame.writeW (List.mem_singleton_self _) _ (coeff_contains _ (show 2 * k < 256 by omega))).writeW
-      (List.mem_singleton_self _) _ (coeff_contains _ (show 2 * k + 1 < 256 by omega))
+    exact (h.frame.writeW (List.mem_singleton_self _) _ (coeff_contains _ (show 2 * k < 256 by omega_using [hS, hq, hk]))).writeW
+      (List.mem_singleton_self _) _ (coeff_contains _ (show 2 * k + 1 < 256 by omega_using [hS, hq, hk]))
 
 theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa cbd2 s₀ (Inv s₀ 128) := by
   refine WP.seq (wp_movz fun s₁ h₁ e₁ => wp_movz fun s₂ h₂ e₂ => wp_movz fun s₃ h₃ e₃ =>
