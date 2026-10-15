@@ -151,6 +151,11 @@ def known : Value → Prop
   | .caller j _ => j < 5
   | _ => True
 
+instance : DecidablePred known
+  | .caller j _ => inferInstanceAs (Decidable (j < 5))
+  | .const _ => inferInstanceAs (Decidable True)
+  | .frame _ => inferInstanceAs (Decidable True)
+
 def value (L : Lay) : Value → BitVec 64
   | .const n => BitVec.ofNat 64 n
   | .frame d => L.E + BitVec.ofNat 64 d

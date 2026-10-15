@@ -34,7 +34,7 @@ theorem init_ok (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
       Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr [] := by
   unfold init VG.Impl.Ed25519.AArch64.Whole.callWith initArgs
   apply WP.seq
-  refine WP.mono (args_ok hc hL ha (args := [(.x0,.caller 4 0)]) (by decide) (by simp [Whole.valid]) (by simp [known]) (by decide)) ?_
+  refine WP.mono (args_ok hc hL ha (args := [(.x0,.caller 4 0)]) (by decide) (by decide) (by decide) (by decide)) ?_
   intro t ⟨ht, _, hv⟩
   have a0 : t.gpr .x0 = L.scr := by
     have hh := hv (.x0,.caller 4 0) (by simp)
@@ -209,7 +209,7 @@ theorem equation_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀
         (Spec.Ed25519.bytesAt s.mem (L.E+128) 64)) := by
   refine WP.seq (WP.mono_syms (args_ok hc hL ha
     (args := [(.x0,.caller 0 0),(.x1,.caller 3 0),(.x2,.frame 128),(.x3,.caller 4 0)])
-    (by simp) (by simp [Whole.valid]) (by simp [known]) (by simp [preserved]))
+    (by simp) (by decide) (by decide) (by decide))
     fun u ⟨hu,hm,hav⟩ su => ?_)
   have a0 := hav (.x0,.caller 0 0) (by simp)
   have a1 := hav (.x1,.caller 3 0) (by simp)
@@ -264,8 +264,8 @@ theorem message_step (backend : Whole.Backend) (hc : Ctx L g v m₀ s) (hL : L.O
     WP isa (update backend.code backend.suffix messageArgs) s fun t =>
       Ctx L g v m₀ t ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr
         (prev ++ Spec.Ed25519.bytesAt s.mem L.msg L.len.toNat) := by
-  apply update_ok backend hc hL ha (by simp) (by simp [Whole.valid])
-    (by simp [known]) (by decide) (p := L.msg) (len := L.len) (prev := prev) ?_
+  apply update_ok backend hc hL ha (by simp) (by decide)
+    (by decide) (by decide) (p := L.msg) (len := L.len) (prev := prev) ?_
     (hL.sc _ (by simp [Lay.inputs])) ?_ hr
   · intro t hav
     have a0 := hav (.x0,.caller 4 0) (by simp)
@@ -310,7 +310,7 @@ theorem finalize_ok (backend : Whole.Backend) (hc : Ctx L g v m₀ s) (hL : L.Ok
   apply WP.seq
   refine WP.mono (args_ok hc hL ha
     (args := [(.x0,.caller 4 0),(.x1,.caller 2 64),(.x2,.frame 192),(.x3,.caller 4 192)])
-    (by decide) (by simp [Whole.valid]) (by simp [known]) (by decide)) ?_
+    (by decide) (by decide) (by decide) (by decide)) ?_
   intro t ⟨ht, htmem, hav⟩
   have a0 : t.gpr .x0 = L.scr := by
     have hh := hav (.x0,.caller 4 0) (by simp)
@@ -459,7 +459,7 @@ theorem reduce_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀) 
         Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt s.mem (L.E + 192) 64) := by
   refine WP.seq (WP.mono (args_ok hc hL ha
     (args := [(.x0, .frame 128), (.x1, .frame 192), (.x2, .caller 4 0)])
-    (by simp) (by simp [Whole.valid]) (by simp [known]) (by simp [preserved]))
+    (by simp) (by decide) (by decide) (by decide))
     fun u ⟨hu, hm, hs⟩ => ?_)
   have a0 := hs (.x0, .frame 128) (by simp)
   have a1 := hs (.x1, .frame 192) (by simp)
