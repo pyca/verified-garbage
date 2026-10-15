@@ -48,8 +48,7 @@ theorem aOne_tr {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {e 
   have hck := aChk_all p hp e he
   have hkl := kl_le p hp
   obtain ⟨hr, hc⟩ := entry_lt hp he
-  simp only [aChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, Bool.or_eq_true, Bool.not_eq_true',
-    decide_eq_false_iff_not, Nat.not_lt] at hck
+  simp only [aChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hck
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h32, h33⟩, hrej⟩, hin⟩, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩, _⟩ := hck
   have hT : ∀ σ s, IA p e σ s → T p σ s := fun _ _ h => h.t
   refine relInv (fun σ s hv ⟨h, hh, hs⟩ => WP.mono (aOne_ok C hp hv he hs) fun _ h' => ⟨h, hh, h'⟩) ?_
@@ -101,7 +100,7 @@ theorem slotBlock_tr {p : Params} {e j : Nat} {P : State → State → Prop}
 
 /-- The bytes of seed `j` of `SB4`, from `GS j` to `GS (j + 1)`. -/
 theorem slot_tr {p : Params} (hp : p ∈ params) {e j : Nat} (hj : j < 4) (he : e + j < p.k * p.ℓ)
-    (hck : slotChk p e j = true) :
+    (hck : slotChk p j = true) :
     RelCT isa (RV p fun σ s => ∃ h, HN p σ h ∧ GS p h e j σ s) (.block (setSR p e j))
       (RV p fun σ s => ∃ h, HN p σ h ∧ GS p h e (j + 1) σ s) :=
   relInv (fun σ s hv ⟨h, hh, g⟩ => WP.mono (slot_ok hp hv hj he hck g) fun _ g' => ⟨h, hh, g'⟩)
