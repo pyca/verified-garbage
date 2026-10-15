@@ -28,6 +28,7 @@ namespace VG.Proof.Ed448.X86_64.FieldVariant
 
 open VG VG.X86_64 VG.Impl.Ed448 VG.Impl.Ed448.X86_64
 open VG.Proof.Ed448 VG.Proof.Ed448.X86_64.Point64
+open VG.Impl.Ed448.X86_64.Point64 (saves restores)
 
 theorem field_ok (v : Impl.Ed448.X86_64.FieldVariant) : Proof.X448.X86_64.FieldOk v.field := by
   cases v
@@ -50,12 +51,57 @@ theorem bodies_ok (v : Impl.Ed448.X86_64.FieldVariant) : Point64.PointOk v.bodie
     rw [addFn_eq]
     exact WP.mono (addFnWith_ok (field_ok v) hs hd) (fun _ ⟨k, e, _⟩ => ⟨k, e⟩)
 
+/-- An instruction after which the SSE registers keeping a value still keep it:
+one that writes no vector register (`KeepReg.step`). -/
+private def quiet (i : Instr) : Bool := !KeepReg.writesVec i
+
+private theorem step_quiet (r : Reg) (a : KeepReg.Abs) (i : Instr) (h : quiet i = true) :
+    (KeepReg.step r a i).xs = a.xs := by
+  have hv : KeepReg.writesVec i = false := by simpa only [quiet, Bool.not_eq_true'] using h
+  cases i <;> first
+    | (simp only [KeepReg.step, hv, Bool.cond_false]; done)
+    | (rename_i d x; show (bif d == r then _ else a).xs = a.xs; cases d == r <;> rfl)
+    | (simp only [KeepReg.writesVec, Bool.true_eq_false] at hv)
+
+private theorem foldl_quiet (r : Reg) : ∀ (is : List Instr) (a : KeepReg.Abs), is.all quiet = true →
+    (is.foldl (KeepReg.step r) a).xs = a.xs
+  | [], _, _ => rfl
+  | i :: is, a, h => by
+    simp only [List.all_cons, Bool.and_eq_true] at h
+    rw [List.foldl_cons, foldl_quiet r is _ h.2, step_quiet r a i h.1]
+
+/-- `restores` brings back each kept register from where `saves` put it, whatever
+the code between them did to it. -/
+private theorem restores_ok : ∀ r ∈ keptRegs, ∀ b : Bool,
+    (restores.foldl (KeepReg.step r) ⟨b, (saves.foldl (KeepReg.step r) ⟨true, .empty⟩).xs⟩).ok =
+      true := by
+  decide
+
+/-- A function `saves ++ mid ++ restores` keeps the kept registers if `mid` writes no
+vector register: only `saves` and `restores` are evaluated for each, not `mid`. -/
+private theorem keeps_saved {mid : List Instr}
+    (hm : ((instrs (Code.block (saves ++ mid ++ restores) : Prog isa)).drop 5).all quiet = true) :
+    ∀ r ∈ keptRegs, KeepReg.keeps r (.block (saves ++ mid ++ restores)) = true := by
+  intro r hr
+  have hm' : mid.all quiet = true := by
+    change ((saves ++ mid ++ restores).drop 5).all quiet = true at hm
+    rw [List.append_assoc, List.drop_left' (l₁ := saves) (i := 5) rfl, List.all_append, Bool.and_eq_true] at hm
+    exact hm.1
+  change (KeepReg.run r (saves ++ mid ++ restores) (⟨true, .empty⟩ : KeepReg.Abs).ok
+    (⟨true, .empty⟩ : KeepReg.Abs).xs.bits).ok = true
+  rw [KeepReg.run_eq, List.foldl_append, List.foldl_append]
+  have hx := foldl_quiet r mid (saves.foldl (KeepReg.step r) ⟨true, .empty⟩) hm'
+  generalize mid.foldl (KeepReg.step r) (saves.foldl (KeepReg.step r) ⟨true, .empty⟩) = a at hx
+  obtain ⟨b, xs⟩ := a
+  subst hx
+  exact restores_ok r hr b
+
 theorem double_kept (v : Impl.Ed448.X86_64.FieldVariant) :
     ∀ r ∈ keptRegs, KeepReg.keeps r v.doubleFn = true := by
-  cases v <;> dsimp only [Impl.Ed448.X86_64.FieldVariant.doubleFn] <;> intro r hr <;>
-    simp only [keptRegs, Point64.kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr <;>
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide
+  have h : ((instrs v.doubleFn).drop 5).all quiet = true := by
+    cases v <;> dsimp only [Impl.Ed448.X86_64.FieldVariant.doubleFn] <;> lit_decide
+  rw [doubleFn_eq] at h ⊢
+  exact keeps_saved h
 
 theorem double_mxcsr (v : Impl.Ed448.X86_64.FieldVariant) :
     v.doubleFn.allInstrs (fun i => !loadsMxcsr i) = true := by
@@ -70,34 +116,12 @@ theorem double_verified (v : Impl.Ed448.X86_64.FieldVariant) :
   · cases v <;> exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp])
       (fun _ _ _ _ hp => fnPub_agree hp) (by taint_decide)
 
-private theorem addAdx_keeps_rbp : KeepReg.keeps .rbp Point64.addAdxFn = true := by lit_decide
-
-private theorem addAdx_keeps_r12 : KeepReg.keeps .r12 Point64.addAdxFn = true := by lit_decide
-
-private theorem addAdx_keeps_r13 : KeepReg.keeps .r13 Point64.addAdxFn = true := by lit_decide
-
-private theorem addAdx_keeps_r14 : KeepReg.keeps .r14 Point64.addAdxFn = true := by lit_decide
-
-private theorem addAdx_keeps_r15 : KeepReg.keeps .r15 Point64.addAdxFn = true := by lit_decide
-
 theorem add_kept (v : Impl.Ed448.X86_64.FieldVariant) :
     ∀ r ∈ keptRegs, KeepReg.keeps r v.addFn = true := by
-  cases v with
-  | scalar =>
-    intro r hr
-    simp only [keptRegs, Point64.kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide
-  | adx =>
-    intro r hr
-    simp only [keptRegs, Point64.kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl
-    · exact addAdx_keeps_rbp
-    · exact addAdx_keeps_r12
-    · exact addAdx_keeps_r13
-    · exact addAdx_keeps_r14
-    · exact addAdx_keeps_r15
+  have h : ((instrs v.addFn).drop 5).all quiet = true := by
+    cases v <;> dsimp only [Impl.Ed448.X86_64.FieldVariant.addFn] <;> lit_decide
+  rw [addFn_eq] at h ⊢
+  exact keeps_saved h
 
 theorem add_mxcsr (v : Impl.Ed448.X86_64.FieldVariant) :
     v.addFn.allInstrs (fun i => !loadsMxcsr i) = true := by
