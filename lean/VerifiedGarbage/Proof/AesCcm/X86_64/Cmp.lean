@@ -25,7 +25,7 @@ namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr recv cmp vO rO copyLoop)
-open VG.Proof.AesGcm.X86_64 (LoopPre copyLoop_ok)
+open VG.Proof.AesGcm.X86_64 (LoopPre copyTag_ok)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Ccm (zeros)
 open VG.Proof.Cmac (le8)
