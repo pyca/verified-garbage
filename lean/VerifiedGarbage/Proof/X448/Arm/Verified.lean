@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -53,7 +55,7 @@ theorem x448_ok (s : State) (hs : Proof.X448.x448Arm.pre s) :
 theorem x448_ct : ConstantTime isa Proof.X448.x448Arm.pre Proof.X448.x448Arm.pub
     Impl.X448.Arm.x448 := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3]) ?_
-    (by taint_decide)
+    (by native_taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, _⟩
   apply Taint.agree_ofRegs
   intro r hr
