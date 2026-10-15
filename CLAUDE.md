@@ -327,7 +327,15 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   not `interval_cases j <;> interval_cases k <;> simp`. For a nested `if`
   on the same index on both sides, split the index into ranges once with
   `omega` and resolve each `if` with
-  `simp (disch := omega) only [ite_eq_left, ite_eq_right]`, not `split_ifs`.
+  `simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]`, not `split_ifs`.
+* **Nested `if`s under a discharger:** give `simp` the lemmas that resolve
+  an `if` (`ite_eq_left`, `ite_eq_right`, a family's `ifp`/`ifn`) as
+  pre-rewrites, `↓ite_eq_left`. Otherwise `simp` simplifies both branches of
+  an `if` before the `if` itself, so its discharger (`omega`) runs, and
+  usually fails twice, on the conditions of branches the outer `if` then
+  discards; a failing `omega` is its slowest case (6–46% of a module's
+  heartbeats in #2374). Lemmas that only rewrote inside those branches then
+  show up as unused simp arguments: remove them.
 * **Instruction lists under `++`:** in a theorem statement, ascribe each
   instruction-list literal next to `++`: `.block (absorb 1 ++
   ([.alu .add .esi (.imm 16)] : List Instr))`, not `absorb 1 ++ [.alu …]`.
