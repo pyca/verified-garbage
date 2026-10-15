@@ -1,5 +1,11 @@
-import VerifiedGarbage.Spec.ChaCha20
-import VerifiedGarbage.TCB.PPC64LE.Target
+module
+
+public import VerifiedGarbage.Spec.ChaCha20
+public import VerifiedGarbage.TCB.PPC64LE.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20: the PPC64LE contract of the block function
@@ -8,6 +14,8 @@ import VerifiedGarbage.TCB.PPC64LE.Target
 primitive `vg_chacha20_block` on PPC64LE, in terms of the specification in
 `Spec/ChaCha20.lean`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 

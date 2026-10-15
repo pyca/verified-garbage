@@ -1,11 +1,25 @@
-import VerifiedGarbage.Impl.Zeroize.PPC64LE
-import VerifiedGarbage.Proof.Zeroize.Common
-import VerifiedGarbage.Proof.Framework.PPC64LE.Run
-import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
-import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Zeroize.Contract
-import VerifiedGarbage.TCB.PPC64LE.Target
+module
+
+public import VerifiedGarbage.Impl.Zeroize.PPC64LE
+meta import VerifiedGarbage.Impl.Zeroize.PPC64LE
+public import VerifiedGarbage.Proof.Zeroize.Common
+meta import VerifiedGarbage.Proof.Zeroize.Common
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Zeroize.Contract
+meta import VerifiedGarbage.Spec.Zeroize.Contract
+public import VerifiedGarbage.TCB.PPC64LE.Target
+meta import VerifiedGarbage.TCB.PPC64LE.Target
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Zeroization on PPC64LE
@@ -13,6 +27,8 @@ import VerifiedGarbage.TCB.PPC64LE.Target
 Untrusted: everything here is checked by Lean. The same structure as the
 AArch64 proof (`VG.Proof.Zeroize.AArch64`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Zeroize.PPC64LE
 open VG VG.PPC64LE VG.Impl.Zeroize.PPC64LE

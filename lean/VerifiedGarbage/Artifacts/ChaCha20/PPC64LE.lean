@@ -1,8 +1,10 @@
-import VerifiedGarbage.TCB.PPC64LE.Target
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Shared
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
-import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.ApplyCT
+module
+
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Shared
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.ApplyCT
 
 /-!
 # The ChaCha20 block function (RFC 8439) on PPC64LE
@@ -16,6 +18,8 @@ implementation. The emitter adds the `# Safety` items that depend on the
 target (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks
 against the contract.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.ChaCha20.PPC64LE
 

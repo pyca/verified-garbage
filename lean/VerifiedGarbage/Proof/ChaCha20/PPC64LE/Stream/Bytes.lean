@@ -1,4 +1,10 @@
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Init
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.Init
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on PPC64LE: XORing bytes
@@ -7,6 +13,8 @@ Untrusted: everything here is checked by Lean. `xorBytes` XORs the `r5`
 bytes at `r4` into those at `r25`, one at a time, advancing both and
 counting them off `r5` and `r26`.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.PPC64LE.Stream
 

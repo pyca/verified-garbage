@@ -1,13 +1,25 @@
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Rounds
-import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Rounds
+meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Rounds
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
+meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # ChaCha20 block function on PPC64LE: the whole function
 
 Untrusted: everything here is checked by Lean.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20.PPC64LE
 

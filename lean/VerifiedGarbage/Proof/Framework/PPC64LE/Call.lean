@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+module
+
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 
 /-!
 # Calls and frames (PPC64LE)
@@ -17,6 +19,8 @@ r1, 48`) runs its body from `pushed r s` and ends in `popped r' s₂`
 narrower permissions, such as the body of a frame proven without the
 frame's region.
 -/
+
+@[expose] public section
 
 namespace VG.PPC64LE
 

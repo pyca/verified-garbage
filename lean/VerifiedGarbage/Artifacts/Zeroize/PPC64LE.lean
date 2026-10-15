@@ -1,4 +1,8 @@
-import VerifiedGarbage.Proof.Zeroize.PPC64LE
+module
+
+public import VerifiedGarbage.Proof.Zeroize.PPC64LE
+
+@[expose] public section
 
 namespace VG.Artifacts.Zeroize.PPC64LE
 open VG.PPC64LE

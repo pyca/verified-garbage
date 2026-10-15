@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Framework.RelCT
-import VerifiedGarbage.Proof.Framework.PPC64LE.Call
+module
+
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 
 /-!
 # Constant time of calls, by relating two runs (PPC64LE)
@@ -11,6 +13,8 @@ data agrees, since the callee's run from the narrowed state is the actual
 run with fewer permissions (`Exec.widen` and determinism), and the callee is
 constant time. `bl` and `blr` leak no addresses of their own.
 -/
+
+@[expose] public section
 
 namespace VG.PPC64LE
 

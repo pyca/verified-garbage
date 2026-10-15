@@ -1,6 +1,15 @@
-import VerifiedGarbage.Proof.ChaCha20.Stream
-import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
-import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Stream
+module
+
+public import VerifiedGarbage.Proof.ChaCha20.Stream
+meta import VerifiedGarbage.Proof.ChaCha20.Stream
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Stream
+meta import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming ChaCha20 on PPC64LE: `init` and `set_nonce`
@@ -9,6 +18,8 @@ Untrusted: everything here is checked by Lean. The same structure as the
 AArch64 proof (`VG.Proof.ChaCha20.AArch64.Stream`), but for the words of the
 state, which are all written 32 bits at a time.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.ChaCha20
 
