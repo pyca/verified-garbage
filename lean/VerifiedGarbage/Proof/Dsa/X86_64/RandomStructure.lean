@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Impl.Dsa.X86_64.RandomSign
 import VerifiedGarbage.TCB.Axioms
 
-/-! Structural checks for the unregistered randomized-signing programs.
-These do not assert functional correctness or constant-time behavior. -/
+/-! Structural checks for the randomized-signing programs.
+The complete contract proof is in `RandomSignVerified`. -/
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86_64
