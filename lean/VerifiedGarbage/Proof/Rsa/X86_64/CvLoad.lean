@@ -96,7 +96,7 @@ theorem eqA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {a b : Nat} (
     refine WP.mono h.ws_ok fun t₁ ⟨e12, e9, n₁, j₁⟩ => ?_
     refine WP.mono (base2_ok a b (r₁ := .rbx) (r₂ := .r10) (by decide) (by decide) (by decide)
       ((j₁.gpr (by decide)).trans h.rdi) e9 (by decide)) fun t ⟨e1, e2, n₂, j₂⟩ => ?_
-    exact ⟨(j₂.gpr (by decide)).trans e12, e1, e2, n₂.trans n₁, (j₁.trans j₂).mono (by simp)⟩
+    exact ⟨(j₂.gpr (by decide)).trans e12, e1, e2, n₂.trans n₁, (j₁.trans j₂).mono (by decide)⟩
   have k12 := k₁.trans k₂
   have hs₂ := h.scr.congr k12.2.2
   have h0 : ∀ t, t.gpr .r14 = BitVec.ofNat 64 0 → t.mem = s₂.mem → Keep [.r14] s₂ t → t.cf = s₂.cf →
@@ -109,7 +109,7 @@ theorem eqA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {a b : Nat} (
     (fun j _ hj t hI => xorStep_ok ((k₂.gpr (by decide)).trans hbx) ((k₂.gpr (by decide)).trans h10)
       ((k₂.gpr (by decide)).trans h12) (by have := h.w2; omega) (by omega) (by omega) hj hI)) fun t hI => ?_
   rw [m₂, m₁] at hI
-  refine ⟨?_, by rw [hI.mem, m₂, m₁], (k12.trans hI.keep).mono (by simp)⟩
+  refine ⟨?_, by rw [hI.mem, m₂, m₁], (k12.trans hI.keep).mono (by decide)⟩
   rw [hI.val]
   exact ⟨fun hw => wv_congr2 fun i hi => hw i hi, fun hw => wv_inj (d := slot w a) (e := slot w b) w hw⟩
 
@@ -162,7 +162,7 @@ theorem andOdd_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} 
       hs₂.ld (d := slot w j) (by omega), hs₂.ld (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by
         have := h.h256; unfold Impl.Bignum.X86_64.Public.sMask sFn; omega), hs₂.st (d := 8 * Impl.Bignum.X86_64.Public.sMask) (by
         have := h.h256; unfold Impl.Bignum.X86_64.Public.sMask sFn; omega), m₂, m₁, hm, mask_low, e0]
-    rw [mask_and']) rfl) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+    rw [mask_and']) rfl) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-- `setOneA j`: word 0 of `[j]` := 1. -/
 theorem setOneA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (hj : j < 16) :
@@ -178,6 +178,6 @@ theorem setOneA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat}
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem.writeW (off B (slot w j)) (1 : BitVec 64)) (by
     xrun [State.ea, at0, hbx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
       hs₂.st (d := slot w j) (by omega), m₂, m₁]
-    rfl) rfl) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+    rfl) rfl) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 end VG.Proof.Rsa.X86_64

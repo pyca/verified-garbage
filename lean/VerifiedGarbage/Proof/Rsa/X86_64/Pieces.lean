@@ -98,7 +98,7 @@ theorem zeroA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (
   refine WP.mono (zeroAccLoop_ok (h.scr.congr (k₁.trans k₂).2.2) h8 ((k₂.gpr (by decide)).trans h12)
     (by have := h.w1; omega) (by have := h.w2; omega) (by omega)) fun t ⟨hz, o, k₃⟩ => ?_
   rw [m₂, m₁] at o
-  exact ⟨hz, o, ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+  exact ⟨hz, o, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-- `copyA o a`: `[o] := [a]` over `w` words. -/
 theorem copyA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {o a : Nat} (ho : o < 16) (ha : a < 16)
@@ -120,7 +120,7 @@ theorem copyA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {o a : Nat}
     (by have := h.w2; omega) (by omega) (fun i hi => hs₂.ld (by omega)) (fun i hi => hs₂.st (by omega))
     (fun i hi b hb => by rw [ofs_off B (by omega)]; omega)) fun t ⟨hv, _, o', k₃⟩ => ?_
   rw [m₂, m₁] at hv o'
-  exact ⟨hv, o', ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+  exact ⟨hv, o', ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-! ## Bytes -/
 
@@ -160,7 +160,7 @@ theorem loadA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sLe
     (by omega) (fun i hi => hsrc₄.rd i (by omega)) (fun i hi => hsrc₄.val i (by omega))
     (fun i hi => Or.inr (by have := hsrc₄.out i (by omega); omega))) fun t ⟨hv, o, k₅⟩ => ?_
   rw [m₄, m₃, m₂] at o
-  refine ⟨?_, fun x hx => by rw [o x (by omega), o₁ x hx], (k14.trans k₅).mono (by simp)⟩
+  refine ⟨?_, fun x hx => by rw [o x (by omega), o₁ x hx], (k14.trans k₅).mono (by decide)⟩
   -- The words above the loaded ones are still zero.
   have hz' : ∀ q < w + 2, word s₁.mem B (slot w j + 8 * q) = 0 := (wv_eq_zero_iff _ _ _ _).mp hz
   have e := wv_add t.mem B (slot w j) ((len + 7) / 8) (w - (len + 7) / 8)
@@ -201,7 +201,7 @@ theorem storeA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sL
     hl1 (by omega) rfl (by omega) (fun i hi => by rw [k24.2.2]; exact hout i hi) hsep)
     fun t ⟨hb, hx, hwr, hrd, k₅⟩ => ?_
   rw [m₄, m₃, m₂] at hb hx
-  exact ⟨hb, hx, hwr.trans k24.2.2, hrd.trans k24.2.1, (k24.trans k₅).mono (by simp)⟩
+  exact ⟨hb, hx, hwr.trans k24.2.2, hrd.trans k24.2.1, (k24.trans k₅).mono (by decide)⟩
 
 /-- A number below `2^(64 v)` is its low `v` words. -/
 theorem wv_low_of_lt {m : Mem} {B : Addr} {e v w : Nat} (hv : v ≤ w) (h : wv m B e w < 2 ^ (64 * v)) :
