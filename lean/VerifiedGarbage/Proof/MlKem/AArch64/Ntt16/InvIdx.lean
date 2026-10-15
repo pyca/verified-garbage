@@ -134,4 +134,124 @@ theorem irepI_gs {x y z t : VReg} (hxy : x ≠ y := by decide) (hx17 : x ≠ .v1
 
 end
 
+/-- The offsets of `firstTwo`, from `op` and `oq`, with the zetas `kz7` (layer 1), `kz6`
+(layer 2). -/
+def okFirst (op oq kz7 kz6 : List Nat) : Bool :=
+  let a := t1d op oq
+  let b := t2d op oq
+  let c := t1s a b
+  let d := t2s a b
+  okGs 0 c d kz7 && okGs 1 (t1s c d) (t2s c d) kz6 && t1d (t1s c d) (t2s c d) == op &&
+    t2d (t1s c d) (t2s c d) == oq
+
+private theorem idx_d1' : ∀ e < 8, (if decide (e < 4) then e else e - 4) < 8 := by decide
+private theorem idx_d2' : ∀ e < 8, (if decide (e < 4) then e + 4 else e) < 8 := by decide
+private theorem idx_s1' : ∀ e < 8, (if (e / 2 % 2 == 0) then e else e - 2) < 8 := by decide
+private theorem idx_s2' : ∀ e < 8, (if (e / 2 % 2 == 0) then e + 2 else e) < 8 := by decide
+
+section
+variable {rest : List Instr} {s : State} {Q : State → Prop}
+
+theorem firstTwo_ok {p q' z7 t7 z6 t6 : VReg}
+    (hd : [p, q', z7, t7, z6, t6, VReg.v4, .v5, .v16, .v17, .v31].Nodup := by decide)
+    {P : Poly} {base K7 K6 : Nat} {op oq kz7 kz6 : List Nat} (hok : okFirst op oq kz7 kz6 = true)
+    (hb : base % 32 = 0) (hb' : base + 32 ≤ 256)
+    (hK7 : K7 + 32 / (2 * (2 <<< 0)) = 256 / (2 <<< 0) - base / (2 * (2 <<< 0)))
+    (hK6 : K6 + 32 / (2 * (2 <<< 1)) = 256 / (2 <<< 1) - base / (2 * (2 <<< 1)))
+    (hp : IRepI P 0 base op 3329 (s.v p)) (hq' : IRepI P 0 base oq 3329 (s.v q'))
+    (hz7 : ZRep (s.v z7) K7 kz7) (ht7 : TRep (s.v t7) K7 kz7)
+    (hz6 : ZRep (s.v z6) K6 kz6) (ht6 : TRep (s.v t6) K6 kz6) (hq : Cst (s.v .v31) fun _ => 3329)
+    (k : ∀ s', VChg (lastRegs p q') s s' → IRepI P 2 base op (4 * 3329) (s'.v p) →
+      IRepI P 2 base oq (4 * 3329) (s'.v q') → WP isa (.block rest) s' Q) :
+    WP isa (.block (firstTwo p q' z7 t7 z6 t6 ++ rest)) s Q := by
+  simp only [okFirst, Bool.and_eq_true, beq_iff_eq] at hok
+  obtain ⟨⟨⟨h1, h2⟩, e1⟩, e2⟩ := hok
+  have n_pq : p ≠ q' := by rintro rfl; simp at hd
+  have n_p4 : p ≠ .v4 := by rintro rfl; simp at hd
+  have n_p5 : p ≠ .v5 := by rintro rfl; simp at hd
+  have n_p17 : p ≠ .v17 := by rintro rfl; simp at hd
+  have n_p31 : p ≠ .v31 := by rintro rfl; simp at hd
+  have n_q4 : q' ≠ .v4 := by rintro rfl; simp at hd
+  have n_q5 : q' ≠ .v5 := by rintro rfl; simp at hd
+  have n_q17 : q' ≠ .v17 := by rintro rfl; simp at hd
+  have n_q31 : q' ≠ .v31 := by rintro rfl; simp at hd
+  have n_z7p : z7 ≠ p := by rintro rfl; simp at hd
+  have n_z7q : z7 ≠ q' := by rintro rfl; simp at hd
+  have n_z74 : z7 ≠ .v4 := by rintro rfl; simp at hd
+  have n_z75 : z7 ≠ .v5 := by rintro rfl; simp at hd
+  have n_z717 : z7 ≠ .v17 := by rintro rfl; simp at hd
+  have n_t7p : t7 ≠ p := by rintro rfl; simp at hd
+  have n_t7q : t7 ≠ q' := by rintro rfl; simp at hd
+  have n_t74 : t7 ≠ .v4 := by rintro rfl; simp at hd
+  have n_t75 : t7 ≠ .v5 := by rintro rfl; simp at hd
+  have n_t717 : t7 ≠ .v17 := by rintro rfl; simp at hd
+  have n_z6p : z6 ≠ p := by rintro rfl; simp at hd
+  have n_z6q : z6 ≠ q' := by rintro rfl; simp at hd
+  have n_z64 : z6 ≠ .v4 := by rintro rfl; simp at hd
+  have n_z65 : z6 ≠ .v5 := by rintro rfl; simp at hd
+  have n_z617 : z6 ≠ .v17 := by rintro rfl; simp at hd
+  have n_t6p : t6 ≠ p := by rintro rfl; simp at hd
+  have n_t6q : t6 ≠ q' := by rintro rfl; simp at hd
+  have n_t64 : t6 ≠ .v4 := by rintro rfl; simp at hd
+  have n_t65 : t6 ≠ .v5 := by rintro rfl; simp at hd
+  have n_t617 : t6 ≠ .v17 := by rintro rfl; simp at hd
+  clear hd
+  simp only [firstTwo, List.cons_append, List.nil_append, List.append_assoc]
+  -- v4, v5 ← trn1, trn2 (.2d) p q'; p, q' ← trn1, trn2 (.4s) v4 v5
+  refine wp_vop rfl fun s₁ h₁ => wp_vop rfl fun s₂ h₂ => wp_vop rfl fun s₃ h₃ => wp_vop rfl fun s₄ h₄ => ?_
+  have a₂ : IRepI P 0 base (t1d op oq) 3329 (s₂.v .v4) := by
+    rw [h₂.get .v4, h₁.v]
+    exact irepI_perm (src_trn1_d2 _ _) idx_d1' hp hq' (permO_apply _ _ _ _ _)
+  have b₂ : IRepI P 0 base (t2d op oq) 3329 (s₂.v .v5) := by
+    rw [h₂.v, h₁.get p n_p4, h₁.get q' n_q4]
+    exact irepI_perm (src_trn2_d2 _ _) idx_d2' hp hq' (permO_apply _ _ _ _ _)
+  have c₄ : IRepI P 0 base (t1s (t1d op oq) (t2d op oq)) 3329 (s₄.v p) := by
+    rw [h₄.get p n_pq, h₃.v]
+    exact irepI_perm (src_s4 .trn1 _ _) idx_s1' a₂ b₂ (permO_apply _ _ _ _ _)
+  have d₄ : IRepI P 0 base (t2s (t1d op oq) (t2d op oq)) 3329 (s₄.v q') := by
+    rw [h₄.v, h₃.get .v4 (Ne.symm n_p4), h₃.get .v5 (Ne.symm n_p5)]
+    exact irepI_perm (src_s4 .trn2 _ _) idx_s2' a₂ b₂ (permO_apply _ _ _ _ _)
+  have c₄' : VChg [.v4, .v5, p, q'] s s₄ :=
+    (((h₁.chg.trans h₂.chg).trans h₃.chg).trans h₄.chg).mono fun r hr => by
+      simp only [List.mem_append, List.mem_singleton] at hr; simp [hr.elim (fun h => h.elim
+        (fun h => h.elim Or.inl (fun h => Or.inr (Or.inl h))) (fun h => Or.inr (Or.inr (Or.inl h))))
+        (fun h => Or.inr (Or.inr (Or.inr h)))]
+  refine irepI_gs n_pq n_p17 n_q17 n_z7p n_z717 n_t7p n_t7q n_t717 (Ne.symm n_p31) (Ne.symm n_q31)
+    h1 hb hb' hK7 c₄ d₄ (by rw [c₄'.get z7 (by simp [n_z74, n_z75, n_z7p, n_z7q])]; exact hz7)
+    (by rw [c₄'.get t7 (by simp [n_t74, n_t75, n_t7p, n_t7q])]; exact ht7)
+    (by rw [c₄'.get .v31 (by simp [Ne.symm n_p31, Ne.symm n_q31])]; exact hq) (by decide)
+    fun s₅ c₅ p₅ q₅ => ?_
+  -- v4, v5 ← trn1, trn2 (.4s) p q'
+  refine wp_vop rfl fun s₆ h₆ => wp_vop rfl fun s₇ h₇ => ?_
+  have a₇ : IRepI P 1 base (t1s (t1s (t1d op oq) (t2d op oq)) (t2s (t1d op oq) (t2d op oq)))
+      (2 * 3329) (s₇.v .v4) := by
+    rw [h₇.get .v4, h₆.v]
+    exact irepI_perm (src_s4 .trn1 _ _) idx_s1' p₅ (q₅.mono (by decide)) (permO_apply _ _ _ _ _)
+  have b₇ : IRepI P 1 base (t2s (t1s (t1d op oq) (t2d op oq)) (t2s (t1d op oq) (t2d op oq)))
+      (2 * 3329) (s₇.v .v5) := by
+    rw [h₇.v, h₆.get p n_p4, h₆.get q' n_q4]
+    exact irepI_perm (src_s4 .trn2 _ _) idx_s2' p₅ (q₅.mono (by decide)) (permO_apply _ _ _ _ _)
+  have g : ∀ r, r ∉ [VReg.v4, .v5] → r ∉ [VReg.v17, p, q', .v17, q'] → r ∉ [VReg.v4, .v5, p, q'] →
+      s₇.v r = s.v r := fun r g1 g2 g3 => by
+    rw [(h₆.chg.trans h₇.chg).get r (by simpa using g1), c₅.get r g2, c₄'.get r g3]
+  refine irepI_gs (by decide) (by decide) (by decide) n_z64 n_z617 n_t64 n_t65 n_t617 (by decide)
+    (by decide) h2 hb hb' hK6 a₇ b₇
+    (by rw [g z6 (by simp [n_z64, n_z65]) (by simp [n_z617, n_z6p, n_z6q])
+          (by simp [n_z64, n_z65, n_z6p, n_z6q])]; exact hz6)
+    (by rw [g t6 (by simp [n_t64, n_t65]) (by simp [n_t617, n_t6p, n_t6q])
+          (by simp [n_t64, n_t65, n_t6p, n_t6q])]; exact ht6)
+    (by rw [g .v31 (by decide) (by simp [Ne.symm n_p31, Ne.symm n_q31])
+          (by simp [Ne.symm n_p31, Ne.symm n_q31])]; exact hq) (by decide)
+    fun s₈ c₈ a₈ b₈ => ?_
+  -- p, q' ← trn1, trn2 (.2d) v4 v5
+  refine wp_vop rfl fun s₉ h₉ => wp_vop rfl fun s₁₀ h₁₀ => ?_
+  refine k s₁₀ ((((c₄'.trans c₅).trans ((h₆.chg.trans h₇.chg))).trans c₈).trans
+    (h₉.chg.trans h₁₀.chg) |>.mono (by simp)) ?_ ?_
+  · rw [h₁₀.get p n_pq, h₉.v, ← e1]
+    exact irepI_perm (src_trn1_d2 _ _) idx_d1' a₈ (b₈.mono (by decide)) (permO_apply _ _ _ _ _)
+  · rw [h₁₀.v, h₉.get .v4 (Ne.symm n_p4), h₉.get .v5 (Ne.symm n_p5), ← e2]
+    exact irepI_perm (src_trn2_d2 _ _) idx_d2' a₈ (b₈.mono (by decide)) (permO_apply _ _ _ _ _)
+
+end
+
 end VG.Proof.MlKem.AArch64.Ntt16
