@@ -1,7 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+public import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.X86_64.ExecEq
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
 
 /-!
 # x86-64: the calling-convention obligations
