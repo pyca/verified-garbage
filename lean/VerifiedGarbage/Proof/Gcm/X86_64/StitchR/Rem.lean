@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOneD
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemD
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.RemPair
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemSetup
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Ks
 import all Init.Data.Array.Basic
@@ -21,9 +22,11 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 (`Stitch.DInv`, the groups already hashed and decrypted), `StitchR.remD`
 stores the counter after all the blocks (`StitchZH.remSetup_ok`), computes the
 keystream of eight or sixteen blocks to `scratch + 256` (`ksSel_ok`), then
-hashes each block as read and decrypts it (`StitchZH.remLoopD1_ok`, with `r11`
+hashes each block as read and decrypts it, the first alone if their number is
+odd and the rest two at a time (`remMid_ok`, `RemPair.lean`, with `r11`
 lowered by 512 so that the loop's keystream at `r11 + 768` is at
-`scratch + 256`), reduces the products into `Y` (`StitchAvx.reduceHash_ok`),
+`scratch + 256`), adds the products of the two lanes (`foldLanes_ok`),
+reduces them into `Y` (`StitchAvx.reduceHash_ok`),
 and stores `Y`, for powers whose products add up to `GHASH` (`RemLaw`, which
 `Ok.lean` proves of the prepared powers). `decTailR_ok` is `decR` after its
 setup.
@@ -41,7 +44,7 @@ open VG.Proof.Gcm.X86_64.Pclmul (Prod prod reduceB toNat_ofNat_lt)
 open VG.Impl.Gcm.X86_64.Pclmul (poly at_)
 open VG.Impl.Gcm.X86_64.Stitch (aregs ordD dbody)
 open VG.Impl.Gcm.X86_64.StitchR (ks ksSel remD decR)
-open VG.Proof.Gcm.X86_64.StitchZH (REnv RInvD accR accR_congr remLoopD1_ok remSetup_ok zeroZ_ok keys_of cmp10_ok
+open VG.Proof.Gcm.X86_64.StitchZH (REnv RInvD accR accR_congr remSetup_ok zeroZ_ok keys_of cmp10_ok
   add9_ok test99_ok)
 open VG.Proof.Aes.X86_64.AesNi (blockAt_frame Keys)
 open VG.Proof.Gcm.X86_64 (revMask)
@@ -211,11 +214,14 @@ theorem remD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hr 
   have hr11 : s'.gpr .r11 = pp s₀ := by
     rw [ga _ (by decide)]; exact hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
   rw [show remD = .seq (.block Impl.Gcm.X86_64.StitchZH.remSetup) (.seq ksSel
-      (.seq (.block (([.alu .sub .r11 (.imm 512), .mov32 .r10 (.imm 0)] : List Instr) ++
-          Impl.Gcm.X86_64.StitchAvx.zero))
-        (.seq (.loop (.block (Impl.Gcm.X86_64.StitchZH.remBodyD .rdx ++ Impl.Gcm.X86_64.StitchZH.remNext)) .ne)
-          (.block (Impl.Gcm.X86_64.StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr) ++
-            storeY))))) from rfl]
+      (.seq (.block ((([.alu .sub .r11 (.imm 512), .mov32 .r10 (.imm 0)] : List Instr) ++
+          Impl.Gcm.X86_64.StitchAvx.zero) ++ ([.alu .test .r9 (.imm 1)] : List Instr)))
+        (.seq (.ite .e (.block [.alu .cmp .r9 (.imm 16)])
+            (.block (Impl.Gcm.X86_64.StitchZH.remBodyD .rdx ++ Impl.Gcm.X86_64.StitchZH.remNext)))
+          (.seq (.ite .e (.block []) (.seq (.loop (.block (Impl.Gcm.X86_64.StitchR.remPairD ++
+              Impl.Gcm.X86_64.StitchR.remNextPair)) .ne) (.block Impl.Gcm.X86_64.StitchR.foldLanes)))
+            (.block (Impl.Gcm.X86_64.StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr) ++
+              storeY)))))) from rfl]
   -- The counter after all the blocks, and the powers of the `r` blocks.
   refine WP.seq (WP.mono (remSetup_ok s' hr1 hr15 hr9
     (by rw [la' _ _ (by decide)]; exact hI.a.msk 0 (by decide))
@@ -251,7 +257,9 @@ theorem remD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hr 
     (by rw [g₁ _ (by decide) (by decide)]; exact hr11) hwr₁)
     fun s₂ ⟨ks₂, g₂, rd₂, wr₂, l₂, f₂⟩ => ?_)
   -- `r11` lowered, `r10 = 0`, the products cleared.
-  refine WP.seq (WP.mono (preV_ok s₂) fun s₃ ⟨d₃, z₃, g₃, p₃, l₃, m₃, rd₃, wr₃⟩ => ?_)
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (preV_ok s₂) fun s₃ ⟨d₃, z₃, g₃, p₃, l₃, m₃, rd₃, wr₃⟩ => ?_
   have gk₃ : ∀ q, q ≠ .r10 → q ≠ .r11 → q ≠ .rax → q ≠ .r9 → s₃.gpr q = s.gpr q := fun q h1 h11 h2 h3 => by
     rw [g₃ q h11 h1, g₂ q h1, gk₁ q h1 h2 h3]
   have lk₃ : ∀ x, x ≠ .xmm8 → x ≠ .xmm9 → x ≠ .xmm10 → x ≠ .xmm13 → x ≠ .xmm14 → x ∉ aregs →
@@ -324,7 +332,30 @@ theorem remD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hr 
       m1 := by
         rw [lk₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 0 (by decide)]
         exact hI.m1 0 (by decide) }
-  refine WP.seq (WP.mono (remLoopD1_ok hE hI₃) fun s₄ hI₄ => ?_)
+  have hE2 : Ok2 E :=
+    { inS := fun j (hj : j + 2 ≤ r) => by
+        show InRegions (s₃.rd ++ s₃.wr) (bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 32
+        rw [hrd₃, hwr₃, Offset.add_add, ← Nat.mul_add]
+        exact in_rdwr (in_sub hp.d_in (by omega))
+      inK := fun j (hj : j + 2 ≤ r) => by
+        show InRegions (s₃.rd ++ s₃.wr) (pp s₀ - BitVec.ofNat 64 512 + BitVec.ofNat 64 (768 + 16 * j)) 32
+        rw [hrd₃, hwr₃, eK]
+        exact in_rdwr (in_sub hp.p_in (by omega))
+      inD := fun j (hj : j + 2 ≤ r) => by
+        show InRegions s₃.wr (bAddr s₀ (16 * e) + BitVec.ofNat 64 (16 * j)) 32
+        rw [hwr₃, Offset.add_add, ← Nat.mul_add]
+        exact in_sub hp.d_in (by omega)
+      inW := fun j (hj : j + 2 ≤ r) => by
+        show InRegions (s₃.rd ++ s₃.wr) (pp s₀ + BitVec.ofNat 64 (256 - 16 * r) + BitVec.ofNat 64 (16 * j)) 32
+        rw [hrd₃, hwr₃, Offset.add_add]
+        exact in_rdwr (in_sub hp.p_in (by omega)) }
+  have z1 : ∀ x, s₃.zlane x 1 = 0 → s₃.lane x 1 = 0 := fun x h => by rw [← State.zlane_lt2 _ _ (by decide)]; exact h
+  -- The first block alone if `r` is odd, then the pairs and their lanes added.
+  refine remMid_ok hE hE2 rfl hI₃ (z1 _ (p₃ 1 (by decide)).1) (z1 _ (p₃ 1 (by decide)).2.1)
+    (z1 _ (p₃ 1 (by decide)).2.2)
+    (by rw [lk₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 1 (by decide)]; exact hI.y1)
+    (by rw [lk₃ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) 1 (by decide)]
+        exact hI.a.msk 1 (by decide)) fun s₄ hI₄ => ?_
   -- The products reduced into `Y`, `r11` restored, and `Y` stored.
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (StitchAvx.reduceHash_ok s₄ hI₄.m1) fun s₅ ⟨y₅, f₅⟩ => ?_
