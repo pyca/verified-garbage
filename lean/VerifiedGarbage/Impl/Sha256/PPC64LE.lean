@@ -1,5 +1,7 @@
-import VerifiedGarbage.Spec.Sha256
-import VerifiedGarbage.TCB.PPC64LE.Isa
+module
+
+public import VerifiedGarbage.Spec.Sha256
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # SHA-256 compression function: PPC64LE implementation
@@ -18,6 +20,8 @@ The same structure as the AArch64 implementation:
 * `r3`–`r6` (the pointers and the block count) are public; no address and
   no branch depends on anything else.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha256.PPC64LE
 

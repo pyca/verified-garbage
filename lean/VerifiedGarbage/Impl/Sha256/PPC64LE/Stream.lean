@@ -1,4 +1,6 @@
-import VerifiedGarbage.Impl.Sha256.PPC64LE
+module
+
+public import VerifiedGarbage.Impl.Sha256.PPC64LE
 
 /-!
 # Streaming SHA-256: PPC64LE implementation
@@ -28,6 +30,8 @@ comparison is a shift (`len ≥ 64` iff `len >> 6 ≠ 0`) or a subtraction
 tested against zero. Every address and branch depends only on the pointers,
 `count` and `len`.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.Sha256.PPC64LE.Stream
 

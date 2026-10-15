@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.PPC64LE.Target
-import VerifiedGarbage.Proof.Sha256.PPC64LE.Shared
+module
+
+public import VerifiedGarbage.TCB.PPC64LE.Target
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Shared
 
 /-!
 # SHA-256 (FIPS 180-4) on PPC64LE
@@ -13,6 +15,8 @@ implementation. The emitter adds the `# Safety` items that depend on the
 target (`Sig.layoutDoc`), from `stack` and `writeArgs`, which `ofSig` checks
 against the contract.
 -/
+
+@[expose] public section
 
 namespace VG.Artifacts.Sha256.PPC64LE
 

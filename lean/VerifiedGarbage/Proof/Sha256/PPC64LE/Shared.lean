@@ -1,12 +1,18 @@
-import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
-import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
-import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
-import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
-import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
-import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Update
-import VerifiedGarbage.Proof.Sha256.Scratch
-import VerifiedGarbage.Spec.Sha256.Contract
+module
+
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratch
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Compress
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Finalize
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Init
+public import VerifiedGarbage.Proof.Sha256.PPC64LE.Stream.Update
+public import VerifiedGarbage.Proof.Sha256.Scratch
+public import VerifiedGarbage.Spec.Sha256.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Sha256 on PPC64LE: the shared contracts
@@ -24,6 +30,8 @@ result), then moved to the shared ones: `update` and `finalize` (as opposed
 to `updateScratch` and `finalizeScratch`, which other code calls) run in a
 frame that allocates it (`Verified.stackScratch`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha256.PPC64LE.Shared
 

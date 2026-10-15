@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.PPC64LE.Isa
+module
+
+public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
 # A scratch buffer on the stack (PPC64LE)
@@ -10,6 +12,8 @@ passes the address of its local variable space, above the frame's 32-byte
 header, in `r`. The buffer is below the stack pointer on entry, where no Rust
 object lies.
 -/
+
+@[expose] public section
 
 namespace VG.Impl.StackScratch.PPC64LE
 
