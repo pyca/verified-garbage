@@ -113,7 +113,7 @@ theorem winW_sqTail {q : WPub} {s : State} (h : WinW q s) :
     rw [hm, hm₁]; exact Frm.of_outside (writeW_outside _ _ _ (by unfold kFlag kPlen sFn; omega_arith)) (by simp)
   have hgt : Good t q.p.B q.p.Z q.p.w mi := ⟨hs₁.congr k.2.2, (k.gpr (by decide)).trans hdi₁,
     Hdr.of_frm hg.hdr hf (by rng_disj)⟩
-  refine ⟨hk, WPub.hp_frm hp hf (by simp only [mrS, List.cons_append, List.nil_append]; rng_disj) hgt.rdi
+  refine ⟨hk, WPub.hp_frm hp hf (by decide) hgt.rdi
     (k.2.2.trans k₁.2.2), hd, mi, c, b, bm,
     hc.of_frm hd hf hgt.scr hgt.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj),
     hT.of_low hf (by rng_le) hw', hodd, hc1, ?_⟩
@@ -132,6 +132,17 @@ theorem mrSq_ct (M : Mont) : RelCT isa (Two WinW) (seqs (mrSq M.mm)) (Two WinW) 
     rw [hc.n]; exact hy
   · exact kt_piece (fun q : WPub => q.p.B) (fun q => q.p.wr) (mrS ++ [kWords, kBits]) WPub.vs [] (by decide)
       WPub.vs_fst (fun _ _ h => ⟨h.1, h.2.1⟩) (pins_nil _) (by taint_decide) fun _ _ h => winW_sqTail h
+
+/-- The public header words apart from `kG` and an array. -/
+theorem mrS_kG_slot (w a : Nat) : ∀ j ∈ mrS ++ [kWords, kBits], j < 32 ∧
+    ∀ r ∈ [(8 * kG, 8), (slot w a, 8 * (w + 2))], 8 * j + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * j := by
+  have h : ∀ j ∈ mrS ++ [kWords, kBits], j < 32 ∧ 8 * j + 8 ≤ VG.Impl.Bignum.hdrBytes ∧
+      (8 * j + 8 ≤ 8 * kG ∨ 8 * kG + 8 ≤ 8 * j) := by
+    decide
+  intro j hj
+  refine ⟨(h j hj).1, ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+  exact ⟨(h j hj).2.2, .inl (Nat.le_trans (h j hj).2.1 (Nat.le_add_right _ _))⟩
 
 /-- The digit and its entry keep `WinW`, with the entry below `c`. -/
 theorem winW_sel {q : WPub} {s : State} (h : WinW q s) :
@@ -164,7 +175,7 @@ theorem winW_sel {q : WPub} {s : State} (h : WinW q s) :
   have hgt : Good t q.p.B q.p.Z q.p.w mi := ⟨hg₁.scr.congr k.2.2, (k.gpr (by decide)).trans hg₁.rdi,
     Hdr.of_frm hg.hdr hf (by rng_disj)⟩
   have hct := hc.of_frm hd hf hgt.scr hgt.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj)
-  refine ⟨⟨hk, WPub.hp_frm hp hf (by simp only [mrS, List.cons_append, List.nil_append]; rng_disj) hgt.rdi
+  refine ⟨⟨hk, WPub.hp_frm hp hf (mrS_kG_slot _ _) hgt.rdi
     (k.2.2.trans k₁.2.2), hd, mi, c, b, bm, hct, hT.of_low hf (by rng_le) (by omega_arith), hodd, hc1, ?_⟩, ?_⟩
   · rw [hf.wv_eq (d := slot q.p.w aY) (k := q.p.w) (by rng_disj)
       (by have := slot_le (w := q.p.w) (show aY < 8 by decide); have := hd.z; omega_arith)]
