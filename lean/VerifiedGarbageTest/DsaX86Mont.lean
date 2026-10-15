@@ -38,6 +38,10 @@ def block (is : List Instr) (m : Machine) : Except String Machine := do
       let a := state.ea dst
       unless a.toNat % 4 == 0 do throw "unaligned test store"
       words := words.insert (a.toNat / 4) (next.mem.readW a 32)
+    if let .store8 dst _ := i then
+      let a := state.ea dst
+      let aligned := BitVec.ofNat 64 (a.toNat / 4 * 4)
+      words := words.insert (a.toNat / 4) (next.mem.readW aligned 32)
     let rs := registers.map next.gpr
     state := { next with gpr := fun r => rs[r.ctorIdx]!, mem := memory words }
   return ⟨state, words⟩
