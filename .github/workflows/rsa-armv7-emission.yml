@@ -10,9 +10,9 @@ permissions:
 jobs:
   emit:
     runs-on: ubuntu-26.04
-    timeout-minutes: 120
+    timeout-minutes: 360
     env:
-      LEAN_NUM_THREADS: "4"
+      LEAN_NUM_THREADS: "2"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -28,10 +28,12 @@ jobs:
         run: |
           set -o pipefail
           python3 ci/fetch_lean_cache.py | zstd -dc | tar --no-same-owner -xf - -C lean
-      - name: Check all proofs and emit all artifacts
+      - name: Check all proofs
+        working-directory: lean
+        run: lake build --log-level=warning
+      - name: Emit all artifacts
         working-directory: lean
         run: |
-          lake build --log-level=warning
           lake env lean --run Emit.lean
           lake env lean --run Emit.lean --check
       - name: Record the source and generated output
