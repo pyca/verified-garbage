@@ -32,7 +32,7 @@ theorem wd_pass {s0 s : State} (hc : CtxN e b s0) {o k d : Nat}
     wd s.mem (State.addr b) d = wd s0.mem (State.addr b) d := by
   rw [hc.r0] at hf
   exact wd_frame hf fun r hr => by
-    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ hd (by omega) (by omega)
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ hd (by omega_using [hd']) (by omega_using [ho])
 
 theorem subK : ∀ k < 16, encodable (subHi k) = true ∧ encodable (subLo k) = true ∧
     (subLo k).toNat ≤ (subHi k).toNat ∧ (subHi k).toNat - (subLo k).toNat = fourP k ∧
@@ -49,7 +49,7 @@ theorem passTail'_ok {o : Nat} (ho : o + 64 ≤ 4096) {src : Nat → List Instr}
       Rest [.r2, .r3, .r4, .r5] s1 s' ∧ Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩] s1.mem s'.mem ∧
       Lim s'.mem (State.addr b) o ∧ V s'.mem (State.addr b) o % P = val16 c 16 % P := by
   refine WP.append (pass_ok (s0 := s1) (c := c) (cin := 0) (by decide) ho
-    (by rw [hc1.r0]; have := hc1.fit; omega) (fun k hk => by rw [hc1.r0]; exact hc1.inW (by omega))
+    (by rw [hc1.r0]; have := hc1.fit; omega_using [ho, this]) (fun k hk => by rw [hc1.r0]; exact hc1.inW (by omega_using [ho, hk]))
     h6 (by rw [h5]; rfl) hc (by decide) hsrc) fun s2 hp => ?_
   have hc2 : CtxN e b s2 := hc1.of_rest hp.rest (by decide)
   have hpo : ∀ j < 16, wd s2.mem (State.addr b) (o + 4 * j) = out c 0 j := fun j hj => by
@@ -92,18 +92,18 @@ theorem add_ok {o x y : Nat} (ho : o + 64 ≤ 4096) (hx : x + 64 ≤ 4096) (hy :
   have hvy := V_lt hly
   refine WP.mono (passTail_ok (c := fun k => limb s.mem (State.addr b) x k + limb s.mem (State.addr b) y k)
     ho (fun k hk => by have := hlx k hk; have := hly k hk; omega)
-    (by rw [val16_add]; exact Nat.lt_of_lt_of_le (Nat.add_lt_add hvx hvy) (by omega)) hc ?_)
+    (by rw [val16_add]; exact Nat.lt_of_lt_of_le (Nat.add_lt_add hvx hvy) (by omega_using [])) hc ?_)
     fun s' ⟨h1, h2, h3, h4⟩ => ⟨h1, h2, h3, by rw [h4, val16_add]; rfl⟩
   intro s1 hc1 _ hm1 k hk s' hp
   have hc' : CtxN e b s' := hc1.of_rest hp.rest (by decide)
-  refine ldr0_ok hc' (d := x + 4 * k) (by omega) fun t1 v1 => ?_
+  refine ldr0_ok hc' (d := x + 4 * k) (by omega_using [hx, hk]) fun t1 v1 => ?_
   have hc1' : CtxN e b t1 := hc'.of_rest (v1.rest (ws := [.r3]) (by decide)) (by decide)
-  refine ldr0_ok hc1' (d := y + 4 * k) (by omega) fun t2 v2 => ?_
+  refine ldr0_ok hc1' (d := y + 4 * k) (by omega_using [hy, hk]) fun t2 v2 => ?_
   refine wp_dp (op2_reg _ _) fun t3 v3 => WP.block_nil ⟨?_, ?_, by rw [v3.mem, v2.mem, v1.mem]⟩
   · have ex : wd s'.mem (State.addr b) (x + 4 * k) = limb s.mem (State.addr b) x k := by
-      rw [wd_pass hc1 hp.frame (by omega) (by omega) (by omega), hm1]; rfl
+      rw [wd_pass hc1 hp.frame (by omega_using [hox, hk]) (by omega_using [hx, hk]) (by omega_using [ho, hk]), hm1]; rfl
     have ey : wd t1.mem (State.addr b) (y + 4 * k) = limb s.mem (State.addr b) y k := by
-      rw [v1.mem, wd_pass hc1 hp.frame (by omega) (by omega) (by omega), hm1]; rfl
+      rw [v1.mem, wd_pass hc1 hp.frame (by omega_using [hoy, hk]) (by omega_using [hy, hk]) (by omega_using [ho, hk]), hm1]; rfl
     have := hlx k hk; have := hly k hk
     rw [v3.gpr]
     show (t2.gpr .r3 + t2.gpr .r2).toNat = _
@@ -125,37 +125,37 @@ theorem sub_ok {o x y : Nat} (ho : o + 64 ≤ 4096) (hx : x + 64 ≤ 4096) (hy :
   have hPv : 4 * P < 2 * 2 ^ 256 := by decide
   change val16 _ 16 + V s.mem (State.addr b) y = V s.mem (State.addr b) x + 4 * P at hcv
   refine WP.mono (passTail_ok (c := subC (limb s.mem (State.addr b) x) (limb s.mem (State.addr b) y))
-    ho hcb (by omega) hc ?_) fun s' ⟨h1, h2, h3, h4⟩ => ⟨h1, h2, h3, by
+    ho hcb (by omega_using [hvx, hPv, hcv]) hc ?_) fun s' ⟨h1, h2, h3, h4⟩ => ⟨h1, h2, h3, by
       rw [Nat.add_mod, h4, ← Nat.add_mod, hcv, Nat.mul_comm, Nat.add_mul_mod_self_left]⟩
   intro s1 hc1 _ hm1 k hk s' hp
   have hc' : CtxN e b s' := hc1.of_rest hp.rest (by decide)
   obtain ⟨e1, e2, e3, e4, e5⟩ := subK k hk
   have ex : wd s'.mem (State.addr b) (x + 4 * k) = limb s.mem (State.addr b) x k := by
-    rw [wd_pass hc1 hp.frame (by omega) (by omega) (by omega), hm1]; rfl
+    rw [wd_pass hc1 hp.frame (by omega_using [hox, hk]) (by omega_using [hx, hk]) (by omega_using [ho, hk]), hm1]; rfl
   have hX := hlx k hk
   have hY := hly k hk
   have hK := fourP_ge k hk
-  refine ldr0_ok hc' (d := x + 4 * k) (by omega) fun t1 v1 => ?_
+  refine ldr0_ok hc' (d := x + 4 * k) (by omega_using [hx, hk]) fun t1 v1 => ?_
   refine wp_dp (op2_imm e1) fun t2 v2 => wp_dp (op2_imm e2) fun t3 v3 => ?_
   have hc3 : CtxN e b t3 :=
     hc'.of_rest ((v1.rest (ws := [.r3]) (by decide)).trans ((v2.rest (by decide)).trans
       (v3.rest (by decide)))) (by decide)
-  refine ldr0_ok hc3 (d := y + 4 * k) (by omega) fun t4 v4 => ?_
+  refine ldr0_ok hc3 (d := y + 4 * k) (by omega_using [hy, hk]) fun t4 v4 => ?_
   refine wp_dp (op2_reg _ _) fun t5 v5 => WP.block_nil ⟨?_, ?_, by
     rw [v5.mem, v4.mem, v3.mem, v2.mem, v1.mem]⟩
   · have ey : wd t3.mem (State.addr b) (y + 4 * k) = limb s.mem (State.addr b) y k := by
-      rw [v3.mem, v2.mem, v1.mem, wd_pass hc1 hp.frame (by omega) (by omega) (by omega), hm1]; rfl
+      rw [v3.mem, v2.mem, v1.mem, wd_pass hc1 hp.frame (by omega_using [hoy, hk]) (by omega_using [hy, hk]) (by omega_using [ho, hk]), hm1]; rfl
     unfold wd at ex ey
     have r1 : (t1.gpr .r3).toNat = limb s.mem (State.addr b) x k := by rw [v1.gpr, ex]
     have r2 : (t2.gpr .r3).toNat = limb s.mem (State.addr b) x k + (subHi k).toNat := by
       rw [v2.gpr]; show (t1.gpr .r3 + subHi k).toNat = _
-      rw [toNat_add_lt (by rw [r1]; omega), r1]
+      rw [toNat_add_lt (by rw [r1]; omega_using [e5, hX]), r1]
     have r3 : (t3.gpr .r3).toNat = limb s.mem (State.addr b) x k + fourP k := by
       rw [v3.gpr]; show (t2.gpr .r3 - subLo k).toNat = _
-      rw [toNat_sub_le (by rw [r2]; omega), r2]; omega
+      rw [toNat_sub_le (by rw [r2]; omega_using [e4, hK]), r2]; omega_using [e4, hK]
     rw [v5.gpr]
     show (t4.gpr .r3 - t4.gpr .r2).toNat = _
-    rw [v4.other .r3 (by decide), v4.gpr, toNat_sub_le (by rw [r3, ey]; omega), r3, ey]; rfl
+    rw [v4.other .r3 (by decide), v4.gpr, toNat_sub_le (by rw [r3, ey]; omega_using [hY, hK]), r3, ey]; rfl
   · exact (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
       ((v4.rest (by decide)).trans (v5.rest (by decide)))))
 
