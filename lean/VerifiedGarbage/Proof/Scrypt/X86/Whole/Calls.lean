@@ -489,13 +489,6 @@ theorem Frame.fr (hL : L.Ok) {m m' : Mem} (hf : Frame [L.FR] m m') {k : Nat} (h�
     (h₂ : k + 4 ≤ 116) (v : BitVec 32) : Frame [L.FR] m (m'.writeW (L.A + BitVec.ofNat 64 k) v) :=
   hf.writeW (List.mem_singleton_self _) _ (Offset.contains _ h₁ (by omega_arith) (by have := hL.nB; omega_arith))
 
-/-- The callee-saved registers, which the blocks leave alone. -/
-macro "scrypt_cs_tac" : tactic => `(tactic| (
-  intro r hr
-  simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;>
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
-
 /-- The arguments of a call of PBKDF2 with the salt `salt` (`sl` bytes) and
 the output `out` (`ol` bytes), in the frame. -/
 structure PbkArgs (L : Lay) (salt sl out ol : BitVec 32) (m : Mem) : Prop where

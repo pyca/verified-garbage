@@ -413,10 +413,6 @@ def satWide : State where
   rd := [⟨0, 0⟩, ⟨0, 0⟩, ⟨0, 0⟩, ⟨0, 0⟩]
   wr := [⟨0x10000, 8192⟩, ⟨0x20000, 16384⟩, ⟨0x30000, 4⟩, ⟨0x40004, 72⟩]
 
-macro "dnarrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [deriveX86, deriveWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-    State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
-
 theorem deriveWide_pre {s : State} (h : deriveWide.pre s) :
     DPre (s.withRegions [⟨(arg s 1).setWidth 64, (arg s 2).toNat⟩, ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩,
       ⟨(arg s 9).setWidth 64, (arg s 10).toNat⟩, ⟨(arg s 11).setWidth 64, (arg s 12).toNat⟩, ⟨argAddr s 0, 72⟩]
@@ -502,8 +498,12 @@ theorem deriveWide_verified : Verified X86.target Impl.Argon2.X86.Derive.derive 
       · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩
       · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), 0, by simp, by simp⟩)
-    (fun _ _ _ h => by dnarrow at h ⊢; exact h)
-    (fun _ _ _ _ h => by dnarrow; exact h)
+    (fun _ _ _ h => by
+      simp only [deriveX86, deriveWide, VG.X86.arg_withRegions, State.withRegions_mem] at h ⊢
+      exact h)
+    (fun _ _ _ _ h => by
+      simp only [deriveX86, VG.X86.arg_withRegions, State.withRegions_gpr]
+      exact h)
     ⟨satWide, by
       have a : ∀ i < 18, arg satWide i = BitVec.ofNat 32 (satArgs[i]?.getD 0) := sat_args
       have e : argAddr satWide 0 = 0x40004 := by decide
