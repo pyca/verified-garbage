@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT3
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT3
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCTBase
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCTBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -31,37 +31,6 @@ open VG.Proof.MlKem.AArch64 (Keep eval_nonzero ne_zero_iff)
 open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt sMask)
 
 namespace Rp
-
-/-! ## Pieces, from correctness -/
-
-theorem copyA_gct {α : Type} {Φ Ψ : α → State → Prop} (B : α → Addr) (Z w : α → Nat)
-    (hws : ∀ a s, Φ a s → Ws s (B a) (Z a) (w a)) {o a : Nat} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block (base a .x16 ++ base o .x17)) copyWords)
-      hc).isSome = true)
-    (hw : ∀ x s, Φ x s → WP isa (copyA o a) s (Ψ x)) : RelCT isa (Two Φ) (copyA o a) (Two Ψ) := by
-  have e : copyA o a = .seq (.block (ws ++ (base a .x16 ++ base o .x17))) copyWords := by
-    simp only [copyA, List.append_assoc]
-  rw [e]
-  exact ws_ct B Z w hws ht fun x s h => by rw [← e]; exact hw x s h
-
-theorem eqA_gct {α : Type} {Φ Ψ : α → State → Prop} (B : α → Addr) (Z w : α → Nat)
-    (hws : ∀ a s, Φ a s → Ws s (B a) (Z a) (w a)) {a b : Nat} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0, .x12, .x11]) (.seq (.block [movi .x9 0, mov .x14 .x12])
-      (.seq (.block (base a .x16 ++ base b .x17)) (countLoop .x14 xorBody))) hc).isSome = true)
-    (hw : ∀ x s, Φ x s → WP isa (seqs (eqA a b)) s (Ψ x)) : RelCT isa (Two Φ) (seqs (eqA a b)) (Two Ψ) :=
-  ws_ct B Z w hws ht hw
-
-theorem blk_gct {α : Type} {Φ Ψ : α → State → Prop} (B : α → Addr) (Z w : α → Nat)
-    (hws : ∀ a s, Φ a s → Ws s (B a) (Z a) (w a)) {l : List Instr} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (ht : (taint.check (Taint.ofRegs [.x0]) (.block l) hc).isSome = true)
-    (hw : ∀ x s, Φ x s → WP isa (.block l) s (Ψ x)) : RelCT isa (Two Φ) (.block l) (Two Ψ) :=
-  two_piece [.x0] (pins_ws B Z w hws) ht hw
-
-theorem mm_gct {α : Type} {Φ Ψ : α → State → Prop} (B : α → Addr) (Z w : α → Nat)
-    (hws : ∀ a s, Φ a s → Ws s (B a) (Z a) (w a)) (M : Mont) {o a b : Nat} (hu : MmUse o a b)
-    (hw : ∀ x s, Φ x s → WP isa (M.mm o a b) s (Ψ x)) : RelCT isa (Two Φ) (M.mm o a b) (Two Ψ) :=
-  two_post (two_map (fun x => (⟨B x, Z x, w x⟩ : VG.Proof.Bignum.AArch64.Ws)) (fun x s h => ⟨_, (hws x s h).good⟩)
-    (M.ct hu)) hw
 
 /-! ## The squarings -/
 

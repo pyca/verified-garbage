@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT4
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT4
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT5
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT5
 import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
@@ -245,17 +247,6 @@ theorem cnt_eq {I : RpIn} (hv : Spec.Rsa.modulusValid I.N I.k = true) (L : RpLen
   simp only [Spec.Rsa.primesKey, L.nbl, hv, ite_true]
   rw [← VG.Proof.Rsa.recoverPrimes_go h1]
   split <;> simp_all
-
-/-- After the candidates: `recoverPrimes.go`'s result, and what the factors
-need. -/
-def GR3 (p : RpP) (s : State) : Prop :=
-  ∃ (I : RpIn) (m₀ : Mem) (minv : BitVec 64) (res : Option Nat) (cnt : Nat), I.pub = p ∧ RpS I m₀ s ∧
-    RpLens I ∧ RpOuts I ∧ Spec.Rsa.modulusValid I.N I.k = true ∧
-    Cst s I.B I.Z (wk I.k) minv I.N I.el (splitTwos (I.D * I.E - 1)).2 (splitTwos (I.D * I.E - 1)).1 ∧
-    recoverPrimes.go I.N (splitTwos (I.D * I.E - 1)).1 (splitTwos (I.D * I.E - 1)).2 recoverTries =
-      (res.map (pqOf I.N), cnt) ∧ word s.mem I.B (8 * sC3) = mask res.isSome ∧
-    (∀ y, res = some y → wv s.mem I.B (slot (wk I.k) aY) (wk I.k) = y * 2 ^ (64 * wk I.k) % I.N ∧ y < I.N ∧
-      y * y % I.N = 1)
 
 theorem candLoop_ct (M : Mont) : RelCT isa (Two GR2) (candLoop M.mm) (Two GR3) := by
   refine two_post (RelCT.seq (blk_gct RpP.B RpP.Z (fun p => wk p.k)

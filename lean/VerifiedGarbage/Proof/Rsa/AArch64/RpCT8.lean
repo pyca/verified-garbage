@@ -1,5 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT2
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT2
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT3
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT3
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT6
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT6
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT7
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT7
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCode

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT1
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCTBase
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCTBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -108,14 +108,6 @@ theorem halfC_pins {s : State} {B : Addr} {Z w el : Nat} (h : Ws s B Z w)
 
 namespace Rp
 
-/-- On entry to `rest`. -/
-def GR0 (p : RpP) (s : State) : Prop :=
-  ∃ (I : RpIn) (m₀ : Mem), I.pub = p ∧ RestPre I m₀ I.N (I.D * I.E - 1) s ∧ RpOuts I ∧
-    Spec.Rsa.modulusValid I.N I.k = true
-
-/-- The halvings' count, `64 Bw`. -/
-abbrev hN (p : RpP) : Nat := 64 * (wk p.k + (p.el + 7) / 8)
-
 /-- After `j` halvings, from `s₁`. -/
 def HL (p : RpP) (j : Nat) (s : State) : Prop :=
   ∃ (s₁ : State) (m : Nat), word s₁.mem p.B (8 * Public.sElen) = BitVec.ofNat 64 p.el ∧ 1 ≤ p.el ∧
@@ -188,16 +180,6 @@ theorem halfBody_ct : RelCT isa (Two fun (q : RpP × Nat) s => q.2 < hN q.1 ∧ 
     (seqs (halfShift ++ [VG.Impl.Rsa.AArch64.Crt.selLoop, .block [.subImm .x .x6 .x6 1]])) fun _ _ => True := by
   rw [halfBody_eq]
   exact (RelCT.assoc (RelCT.seq halfA_ct halfC_ct)).mono (fun _ _ h => h) fun _ _ _ => trivial
-
-/-- After the halvings: `r` and `t`, and what Montgomery form needs. -/
-def GR1 (p : RpP) (s : State) : Prop :=
-  ∃ (I : RpIn) (m₀ : Mem), I.pub = p ∧ RpS I m₀ s ∧ RpLens I ∧ RpOuts I ∧
-    Spec.Rsa.modulusValid I.N I.k = true ∧ I.N % 2 = 1 ∧ 2 ^ (64 * (wk I.k - 1)) ≤ I.N ∧
-    wv s.mem I.B (slot (wk I.k) aN) (wk I.k) = I.N ∧
-    ((word s.mem I.B (slot (wk I.k) aN)).toNat * (word s.mem I.B (8 * sMinv)).toNat + 1) % 2 ^ 64 = 0 ∧
-    wv s.mem I.B (slot (wk I.k) aM) (2 * (wk I.k + 2)) = (splitTwos (I.D * I.E - 1)).2 ∧
-    word s.mem I.B (8 * sT) = BitVec.ofNat 64 (splitTwos (I.D * I.E - 1)).1 ∧
-    0 < I.D * I.E - 1 ∧ (I.D * I.E - 1) % 2 = 0 ∧ I.D * I.E - 1 < 2 ^ (64 * (wk I.k + (I.el + 7) / 8))
 
 theorem halfInit_ct : RelCT isa (Two GR0) (.block halfInit) (Two fun p s => 0 < hN p ∧ HL p 0 s) :=
   two_piece [.x0] (fun _ _ _ ⟨_, _, e₁, h₁, _⟩ ⟨_, _, e₂, h₂, _⟩ r hr => by

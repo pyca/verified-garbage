@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT2
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT2
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCTBase
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCTBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -202,13 +202,6 @@ theorem montT_ct (M : Mont) : RelCT isa (Two GR1) (seqs (mont M.mm)) fun _ _ => 
     (RelCT.seq (Q := fun _ _ => True) (montR2_ct M) ?_)
   simp only [seqs]
   exact RelCT.seq montB_ct (RelCT.seq montSet_ct (RelCT.seq (montY_ct M) (RelCT.seq montO_ct (montNg_ct.mono (fun _ _ h => h) fun _ _ _ => trivial))))
-
-/-- After Montgomery form: what the candidates need. -/
-def GR2 (p : RpP) (s : State) : Prop :=
-  ∃ (I : RpIn) (m₀ : Mem), I.pub = p ∧ RpS I m₀ s ∧ RpLens I ∧ RpOuts I ∧
-    Spec.Rsa.modulusValid I.N I.k = true ∧
-    Cst s I.B I.Z (wk I.k) (word s.mem I.B (8 * sMinv)) I.N I.el (splitTwos (I.D * I.E - 1)).2
-      (splitTwos (I.D * I.E - 1)).1 ∧ 0 < I.D * I.E - 1 ∧ (I.D * I.E - 1) % 2 = 0
 
 theorem mont_ct (M : Mont) : RelCT isa (Two GR1) (seqs (mont M.mm)) (Two GR2) :=
   two_post (montT_ct M) fun p s h => by

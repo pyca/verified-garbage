@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT6
-meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT6
+public import VerifiedGarbage.Proof.Rsa.AArch64.RpCTBase
+meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCTBase
 import VerifiedGarbage.Proof.Rsa.AArch64.RpFin
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpFin
 import all Init.Data.Array.Basic
