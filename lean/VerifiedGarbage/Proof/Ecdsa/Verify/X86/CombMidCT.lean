@@ -11,6 +11,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCallTaint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombCallTaint
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.X25519.X86.Column
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
@@ -36,7 +38,16 @@ open VG.Impl.Ecdsa.Verify.X86
 def vMidCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.combMid p256Comb
 materialize_code vMidCode
 
-theorem vMid_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vMidCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
+/-- The multiplication modulo `n`, whose analysis the summary below does once,
+in place of each call. -/
+def combMulNCode : Prog isa :=
+  Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p256n.k Spec.Weierstrass.Mont.p256n.m
+materialize_code combMulNCode
+taint_summary combMulNSum : taint τComb combMulNCode
+
+theorem vMid_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vMidCode (fun _ _ => True) := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check (scratchArgτ 4 false) vMidCode h).isSome = true := by
+    native_taint_decide_sum [combMulNSum]
+  exact RelCT.taint (A := taint) _ (fun _ _ h => h) hc
 
 end VG.Proof.Ecdsa.Verify.X86
