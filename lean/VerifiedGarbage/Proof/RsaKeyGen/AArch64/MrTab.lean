@@ -8,6 +8,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # A candidate on AArch64: Miller–Rabin's table
@@ -197,9 +198,9 @@ theorem tabStep_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s₀ s : State} (hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> right <;> simp only <;> omega_arith) (by omega_arith)
   have hV₁ : word s₁.mem B (8 * kV) = off B (slot w (aT0 + (i + 2))) := by
-    rw [hf₁.word_eq (by w_disj) (by simp only [kV, kT0, sCnt, sFn]; omega_arith)]; exact hI.v
+    rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kV, kT0, sCnt, sFn]; omega_arith)]; exact hI.v
   have hB₁ : word s₁.mem B (8 * kBits) = BitVec.ofNat 64 (14 - i) := by
-    rw [hf₁.word_eq (by w_disj) (by simp only [kBits, kT2, sFn]; omega_arith)]; exact hI.bits
+    rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kBits, kT2, sFn]; omega_arith)]; exact hI.bits
   -- The entry.
   refine wp_seqs_append (by simp [toEnt]) (by simp) ?_
   refine WP.mono (toEnt_ok hc₁.ws hEZ (a := aY) (e := i + 2) (by decide) (by omega_arith) hV₁)
@@ -209,9 +210,9 @@ theorem tabStep_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s₀ s : State} (hw
     Frm.of_outside (ho₂.mono (o' := slot w aT0) (n' := 128 * (w + 2)) hE.1 (by omega_arith)) (by simp)
   have hc₂ : MrCtx s₂ B Z w c bm := hc₁.of_tab hf₂ (by simp [tabRanges]) k₂ (by decide)
   have hV₂ : word s₂.mem B (8 * kV) = off B (slot w (aT0 + (i + 2))) := by
-    rw [hf₂.word_eq (by w_disj) (by simp only [kV, kT0, sCnt, sFn]; omega_arith)]; exact hV₁
+    rw [hf₂.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kV, kT0, sCnt, sFn]; omega_arith)]; exact hV₁
   have hB₂ : word s₂.mem B (8 * kBits) = BitVec.ofNat 64 (14 - i) := by
-    rw [hf₂.word_eq (by w_disj) (by simp only [kBits, kT2, sFn]; omega_arith)]; exact hB₁
+    rw [hf₂.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kBits, kT2, sFn]; omega_arith)]; exact hB₁
   -- `kV` and `kBits`.
   simp only [seqs]
   refine WP.mono (tabNext_ok hc₂.ws hV₂ hB₂ (by omega_arith) (by omega_arith)) fun t ⟨⟨hm, h3⟩, k⟩ => ⟨?_, ?_⟩
@@ -242,7 +243,7 @@ theorem tabStep_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s₀ s : State} (hw
         exact hI.ent e (by omega_arith)
     · rw [hwv aY (by decide), hcp aY (by decide) (by unfold aY aT0; omega_arith), hY₁]
     · rw [hwv aXm (by decide), hcp aXm (by decide) (by unfold aXm aT0; omega_arith),
-        hf₁.wv_eq (d := slot w aXm) (k := w) (by w_disj) (by omega_arith)]
+        hf₁.wv_eq (d := slot w aXm) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_arith)]
       exact hI.xm
     · rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self, slot_succ,
         show aT0 + (i + 2) + 1 = aT0 + (i + 1 + 2) by omega_arith]
@@ -315,7 +316,7 @@ theorem tabHead_ok {s : State} {B : Addr} {Z w c bm b : Nat} (hEZ : slot w aE + 
     Frm.of_outside (ho₂.mono (o' := slot w aT0) (n' := 128 * (w + 2)) e0.1 (by omega_arith)) (by simp)
   have hc₂ := hc₁.of_tab hf₂ (by simp [tabRanges]) k₂ (by decide)
   have hV₂ : word s₂.mem B (8 * kV) = off B (slot w aT0) := by
-    rw [hf₂.word_eq (d := 8 * kV) (by w_disj) (by decide)]; exact hV₁
+    rw [hf₂.word_eq (d := 8 * kV) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by decide)]; exact hV₁
   -- The next entry.
   refine wp_seqs_append (by simp) (by simp [toEnt]) ?_
   simp only [seqs]
@@ -332,7 +333,7 @@ theorem tabHead_ok {s : State} {B : Addr} {Z w c bm b : Nat} (hEZ : slot w aE + 
     Frm.of_outside (ho₄.mono (o' := slot w aT0) (n' := 128 * (w + 2)) e1.1 (by omega_arith)) (by simp)
   have hc₄ := hc₃.of_tab hf₄ (by simp [tabRanges]) k₄ (by decide)
   have hV₄ : word s₄.mem B (8 * kV) = off B (slot w (aT0 + 1)) := by
-    rw [hf₄.word_eq (d := 8 * kV) (by w_disj) (by decide)]; exact hV₃
+    rw [hf₄.word_eq (d := 8 * kV) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by decide)]; exact hV₃
   simp only [seqs]
   refine WP.seq (WP.mono (nextEnt_ok hc₄.ws hV₄) fun s₅ ⟨hm₅, k₅⟩ => ?_)
   have hf₅ : Frm B [(8 * kV, 8)] s₄.mem s₅.mem := by
@@ -364,7 +365,7 @@ theorem tabHead_ok {s : State} {B : Addr} {Z w c bm b : Nat} (hEZ : slot w aE + 
       rcases slot_sep (w := w) hne with h | h
       · exact Or.inl (by simp only; omega_arith)
       · exact Or.inr (by simp only; omega_arith)) (by omega_arith),
-      hf₅.wv_eq (by w_disj) (by omega_arith)]
+      hf₅.wv_eq (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_arith)]
   have hY5w : ∀ i, i = kV ∨ i = kBits → word t.mem B (8 * i) = word s₅.mem B (8 * i) := fun i hi => by
     refine hft.word_eq ?_ (by rcases hi with rfl | rfl <;> decide)
     rcases hi with rfl | rfl <;> w_disj
@@ -373,12 +374,12 @@ theorem tabHead_ok {s : State} {B : Addr} {Z w c bm b : Nat} (hEZ : slot w aE + 
   · rcases (by omega_arith : e = 0 ∨ e = 1) with rfl | rfl
     · rw [hY5 _ (by decide) (by decide), hT0, hv₂, hR1, powMod_zero' hc1, Nat.one_mul]
     · rw [hY5 _ (by decide) (by decide), hv₄, hX₄, hX]
-  · rw [hv, hf₅.wv_eq (by w_disj) (by omega_arith), ho₄.wv (Or.inl (by omega_arith)) (by omega_arith), hX₄, hX]
+  · rw [hv, hf₅.wv_eq (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_arith), ho₄.wv (Or.inl (by omega_arith)) (by omega_arith), hX₄, hX]
   · rw [hY5 _ (by decide) (by decide), ho₄.wv (Or.inl (by omega_arith)) (by omega_arith), hX₄, hX]
   · rw [hY5w kV (Or.inl rfl), hm₅, word_writeW_self, slot_succ]
   · rw [hY5w kBits (Or.inr rfl), hm₅, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
-      hf₄.word_eq (by w_disj) (by decide), hm₃, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
-      hf₂.word_eq (by w_disj) (by decide), hm₁, word_writeW_self]
+      hf₄.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by decide), hm₃, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
+      hf₂.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by decide), hm₁, word_writeW_self]
 
 /-- The table, from `b R mod c` in `aXm`: `TabOK`, and `y := 1`. -/
 theorem tabBuild_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b : Nat} (hw128 : w ≤ 128)

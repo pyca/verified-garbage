@@ -10,6 +10,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # A candidate on x86-64: one round of Miller–Rabin
@@ -126,8 +127,8 @@ theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
     rw [hy₂, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
   have hf₂ : Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))] s₁.mem s₂.mem :=
     Frm.of_arrays ha₂ (by simp)
-  have hc₂ : MrCtx s₂ B Z w mi c bm := hc₁.of_frm hd hf₂ hg₂.scr hg₂.rdi (by rng_disj) (by rng_disj) (by rng_disj)
-    (by rng_disj) (by rng_disj)
+  have hc₂ : MrCtx s₂ B Z w mi c bm := hc₁.of_frm hd hf₂ hg₂.scr hg₂.rdi (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
   -- The table and `y := 1`.
   refine WP.mono (tabBuild_ok M hd hc₂ hodd hc1 hXm) fun t ⟨hct, hTt, hYt, hft, kt⟩ => ?_
   have hf : Frm B (preRanges w) s.mem t.mem :=

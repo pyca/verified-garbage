@@ -9,6 +9,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
 public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 
@@ -99,7 +100,7 @@ theorem sharedKMain_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {s :
   have hk₃ : ∀ {i : Nat}, i < 32 → (∀ r ∈ loadCRanges w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i) →
       (∀ r ∈ closeRanges w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i) → word s₃.mem B (8 * i) = word s.mem B (8 * i) :=
     fun hi d₁ d₂ => (hW f₃ hi (by k_disj)).trans (hk₂ hi d₁ d₂)
-  have hus₃ : word s₃.mem B (8 * kUsed) = BitVec.ofNat 64 (8 * w) := (hW f₃ (by decide) (by k_disj)).trans hus₂
+  have hus₃ : word s₃.mem B (8 * kUsed) = BitVec.ofNat 64 (8 * w) := (hW f₃ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)).trans hus₂
   rw [seqs_one]
   have hU₃ : word s₃.mem B (8 * kUsedP) = up := (hk₃ (by decide) (by k_disj) (by k_disj)).trans h.usedP
   refine WP.ite (Spec.RsaKeyGen.obviouslyComposite (64 * w) c) (by rw [eval_nonzero, hz₃]) (fun hoc => ?_)
@@ -124,7 +125,7 @@ theorem sharedKMain_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {s :
       (∀ r ∈ closeRanges w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i) → word s₄.mem B (8 * i) = word s.mem B (8 * i) :=
     fun _ hi d₁ d₂ => (hW f₄ hi (by k_disj)).trans (hk₃ hi d₁ d₂)
   have hus₄ : word s₄.mem B (8 * kUsed) = BitVec.ofNat 64 (8 * w) :=
-    (hW f₄ (by decide) (by k_disj)).trans ((hW f₃ (by decide) (by k_disj)).trans hus₂)
+    (hW f₄ (by decide) (by k_disj)).trans ((hW f₃ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)).trans hus₂)
   have hU₄ : word s₄.mem B (8 * kUsedP) = up := (hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.usedP
   rw [seqs_one]
   refine WP.ite (!decide (Nat.gcd (c - 1) (Spec.Rsa.os2ip eB) = 1)) (by rw [eval_nonzero, hz₄]) (fun hgc => ?_)
@@ -139,7 +140,7 @@ theorem sharedKMain_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {s :
     rw [f₄.wv_eq (d := slot w aN) (k := w) (by k_disj) (by have := h₂.hZ; simp only [slot, hdrBytes, aN] at *; omega_arith)]
     exact hc₃
   have hM₄ : word s₄.mem B (8 * Public.sMask) = mask true :=
-    (hW f₄ (by decide) (by k_disj)).trans ((hW f₃ (by decide) (by k_disj)).trans ((hW f₂ (by decide) (by k_disj)).trans hM₁))
+    (hW f₄ (by decide) (by k_disj)).trans ((hW f₃ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl)).trans ((hW f₂ (by decide) (by k_disj)).trans hM₁))
   refine WP.mono (sharedTail_ok M R h₄ hw4 hw64 (by simp only [slot, hdrBytes, aE]; omega_arith) hc₄ hsh ho₄ ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.out)
     ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.len) hU₄ hM₄
     ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.rand) ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.rlen)

@@ -8,6 +8,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrExp
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # A candidate on x86-64: `mrRound`
@@ -210,12 +211,12 @@ theorem mrRound_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64
         (by simp))).trans (Frm.of_outside (writeW_outside _ B _ (d := 8 * kStat) (by unfold kStat sFn; omega_arith))
         (by simp))
   have hgt : Good t B Z w mi := ⟨hg₂.scr.congr k.2.2, (k.gpr (by decide)).trans hg₂.rdi,
-    Hdr.of_frm hg₂.hdr hft (by rng_disj)⟩
-  refine ⟨⟨bm₂, hc₂.of_frm hd hft hgt.scr hgt.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj)⟩,
+    Hdr.of_frm hg₂.hdr hft (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl)⟩
+  refine ⟨⟨bm₂, hc₂.of_frm hd hft hgt.scr hgt.rdi (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)⟩,
     ?_, ?_, ?_, ?_, ?_, ((k₁₂.trans k).mono (by decide))⟩
-  · rw [hft.wv_eq (d := slot w aR2) (k := w) (by rng_disj)
+  · rw [hft.wv_eq (d := slot w aR2) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
       (by have := slot_le (w := w) (show aR2 < 8 by decide); have := hd.z; omega_arith)]; exact hR2₂
-  · rw [hft.word_eq (d := 8 * kUsed) (by rng_disj) (by unfold kUsed sFn; omega_arith)]; exact hUs₂
+  · rw [hft.word_eq (d := 8 * kUsed) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by unfold kUsed sFn; omega_arith)]; exact hUs₂
   · rw [hm]; cases f <;> simp only [↓reduceIte, Bool.false_eq_true, word_writeW_self]
   · intro hf
     rw [hm, hf]

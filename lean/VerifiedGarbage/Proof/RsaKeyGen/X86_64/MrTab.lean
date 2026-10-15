@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # A candidate on x86-64: Miller–Rabin's table
@@ -208,8 +209,8 @@ theorem tabStep_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b : 
     rw [mont_val hR hlt₁ hy₁ rfl rfl, ← powMod_succ']
   have hf₁ : Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2))] s.mem s₁.mem :=
     Frm.of_arrays ha₁ (by simp)
-  have hc₁ : MrCtx s₁ B Z w mi c bm := hI.ctx.of_frm hd hf₁ hg₁.scr hg₁.rdi (by rng_disj) (by rng_disj) (by rng_disj)
-    (by rng_disj) (by rng_disj)
+  have hc₁ : MrCtx s₁ B Z w mi c bm := hI.ctx.of_frm hd hf₁ hg₁.scr hg₁.rdi (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
   have hlo : ∀ e < 16, ∀ m m' : Mem, Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)),
       (slot w aY, 8 * (w + 2))] m m' → wv m' B (slot w (8 + e)) w = wv m B (slot w (8 + e)) w := fun e he m m' hf => by
     have := ent_in_tab w he
@@ -224,7 +225,7 @@ theorem tabStep_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b : 
   have hst : ∀ (t : State), Scr t B Z → ∀ i < 32, InRegions t.wr (off B (8 * i)) 8 := fun t hs i hi =>
     hs.st (by have := hdr_lt_slot w 8 hi; omega_arith)
   have hV₁ : word s₁.mem B (8 * kV) = off B (slot w (8 + (i + 2))) := by
-    rw [hf₁.word_eq (by rng_disj) (by unfold kV kT0 sFn; omega_arith)]; exact hI.v
+    rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by unfold kV kT0 sFn; omega_arith)]; exact hI.v
   refine WP.seq (WP.mono (WP.keep [.r12, .rsi, .rbx] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.gpr .rsi = off B (slot w aY) ∧ t.gpr .rbx = off B (slot w (8 + (i + 2))) ∧ t.mem = s₁.mem) (by
     xrun [State.ea, hdr, hg₁.rdi, hdrOff, hl s₁ hg₁.scr sW (by decide), hl s₁ hg₁.scr (sArr aY) (by decide),
@@ -244,7 +245,7 @@ theorem tabStep_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b : 
       (by unfold kV kT0 sFn; omega_arith), hV₁]
   have hB₃ : word s₃.mem B (8 * kBits) = BitVec.ofNat 64 (14 - i) := by
     rw [ho₃.word (Or.inl (by have := hdr_lt_slot w (8 + (i + 2)) (show kBits < 32 by decide); omega_arith))
-      (by unfold kBits kT2 sFn; omega_arith), hf₁.word_eq (by rng_disj) (by unfold kBits kT2 sFn; omega_arith)]
+      (by unfold kBits kT2 sFn; omega_arith), hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by unfold kBits kT2 sFn; omega_arith)]
     exact hI.bits
   refine WP.mono (WP.keep [.rax, .rdx] (Q := fun t => t.mem = (s₃.mem.writeW (off B (8 * kV))
       (off B (slot w (8 + (i + 2)) + 8 * (w + 2)))).writeW (off B (8 * kBits)) (BitVec.ofNat 64 (14 - i - 1)) ∧
@@ -291,7 +292,7 @@ theorem tabStep_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b : 
       exact hI.ent e (by omega_arith)
   · rw [hwv aY (by decide), hcp aY (by decide) (by unfold aY; omega_arith), hY₁]
   · rw [hwv aXm (by decide), hcp aXm (by decide) (by unfold aXm; omega_arith),
-      hf₁.wv_eq (d := slot w aXm) (k := w) (by rng_disj) (by omega_arith)]
+      hf₁.wv_eq (d := slot w aXm) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_arith)]
     exact hI.xm
   · rw [hm, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self, ← slot_succ,
       show 8 + (i + 2) + 1 = 8 + (i + 1 + 2) by omega_arith]

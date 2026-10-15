@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # A candidate on x86-64: Miller–Rabin's squarings
@@ -99,8 +100,8 @@ theorem sqHead_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
   have hY₁ : wv s₁.mem B (slot w aY) w = y * y % c * 2 ^ (64 * w) % c := mont_val hR hlt₁ hy₁ rfl rfl
   have hf₁ : Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2))] s.mem s₁.mem :=
     Frm.of_arrays ha₁ (by simp)
-  have hc₁ : MrCtx s₁ B Z w mi c bm := hc.of_frm hd hf₁ hg₁.scr hg₁.rdi (by rng_disj) (by rng_disj) (by rng_disj)
-    (by rng_disj) (by rng_disj)
+  have hc₁ : MrCtx s₁ B Z w mi c bm := hc.of_frm hd hf₁ hg₁.scr hg₁.rdi (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
   refine WP.mono (eqMask_ok hg₁ hZ (by omega_arith) hw' (j := aRm1) (by decide) hXZ)
     fun t ⟨hbp, hm, k⟩ => ?_
   have hlt2 : y * y % c < c := Nat.mod_lt _ hc0
@@ -126,7 +127,7 @@ theorem mrSq_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {
   refine WP.mono (sqHead_ok M hd hc hodd hc1 hY) fun s₁ ⟨hc₁, hY₁, hbp, hf₁, k₁⟩ => ?_
   have hg₁ := hc₁.good
   have hP₁ : word s₁.mem B (8 * kFlag) = mask P := by
-    rw [hf₁.word_eq (d := 8 * kFlag) (by rng_disj) (by unfold kFlag kPlen sFn; omega_arith)]; exact hP
+    rw [hf₁.word_eq (d := 8 * kFlag) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by unfold kFlag kPlen sFn; omega_arith)]; exact hP
   have hl : InRegions (s₁.rd ++ s₁.wr) (off B (8 * kFlag)) 8 :=
     hg₁.scr.ld (by have := hdr_lt_slot w 8 (show kFlag < 32 by decide); omega_arith)
   have hs : InRegions s₁.wr (off B (8 * kFlag)) 8 :=
@@ -138,8 +139,8 @@ theorem mrSq_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {
   have hft : Frm B [(8 * kFlag, 8)] s₁.mem t.mem := by
     rw [hm]; exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kFlag) (by unfold kFlag kPlen sFn; omega_arith)) (by simp)
   have hgt : Good t B Z w mi := ⟨hg₁.scr.congr k.2.2, (k.gpr (by decide)).trans hg₁.rdi,
-    Hdr.of_frm hg₁.hdr hft (by rng_disj)⟩
-  refine ⟨hc₁.of_frm hd hft hgt.scr hgt.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj),
+    Hdr.of_frm hg₁.hdr hft (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl)⟩
+  refine ⟨hc₁.of_frm hd hft hgt.scr hgt.rdi (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl),
     ?_, by rw [hm, word_writeW_self], ?_, (k₁.trans k).mono (by decide)⟩
   · rw [hm, hdrStore_wv _ _ _ (by decide) (by decide) (by omega_arith)]; exact hY₁
   · exact (hf₁.mono (by simp [sqRanges])).trans (hft.mono (by simp [sqRanges]))
@@ -177,8 +178,8 @@ theorem mrLast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
   refine WP.mono (sqHead_ok M hd hc hodd hc1 hY) fun s₁ ⟨hc₁, hY₁, hbp, hf₁, k₁⟩ => ?_
   have hg₁ := hc₁.good
   have hP₁ : word s₁.mem B (8 * kFlag) = mask P := by
-    rw [hf₁.word_eq (d := 8 * kFlag) (by rng_disj) (by unfold kFlag kPlen sFn; omega_arith)]; exact hP
-  have hE₁ : ECtx s₁.mem B w c := hE.of_frm hf₁ (by rng_disj) (by unfold slot aE aRm1 at *; omega_arith)
+    rw [hf₁.word_eq (d := 8 * kFlag) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by unfold kFlag kPlen sFn; omega_arith)]; exact hP
+  have hE₁ : ECtx s₁.mem B w c := hE.of_frm hf₁ (VG.Proof.RsaKeyGen.SlotShapeC.apartW1 rfl rfl) (by unfold slot aE aRm1 at *; omega_arith)
   simp only [seqs]
   rw [WP.block_append_iff]
   refine WP.mono (extBase_ok hg₁ hZ hw' (j := aE) (by decide) (r := .rbx) (by decide) rfl rfl)
@@ -203,8 +204,8 @@ theorem mrLast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
     rw [hm, hm₂]
     exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kFlag) (by unfold kFlag kPlen sFn; omega_arith)) (by simp)
   have hgt : Good t B Z w mi := ⟨hg₂.scr.congr k.2.2, (k.gpr (by decide)).trans hg₂.rdi,
-    Hdr.of_frm hg₁.hdr hft (by rng_disj)⟩
-  refine ⟨hc₁.of_frm hd hft hgt.scr hgt.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj),
+    Hdr.of_frm hg₁.hdr hft (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl)⟩
+  refine ⟨hc₁.of_frm hd hft hgt.scr hgt.rdi (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl),
     ?_, by rw [hm, word_writeW_self], ?_, ((k₁.trans k₂).trans k).mono (by decide)⟩
   · rw [hm, hdrStore_wv _ _ _ (by decide) (by decide) (by omega_arith), hm₂]; exact hY₁
   · exact (hf₁.mono (by simp [sqRanges])).trans (hft.mono (by simp [sqRanges]))
