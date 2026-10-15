@@ -47,7 +47,7 @@ theorem regs_ok : ∀ n, 1 ≤ n → n ≤ 6 → Regs n := by
       (∀ r ∈ limbs n ++ csts n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x16, .x17, .x19, .x20]) ∧
       (low n).length = n) := by decide
   intro n h1 h6
-  obtain ⟨a, b, c, d⟩ := h n (by omega) h1
+  obtain ⟨a, b, c, d⟩ := h n (by omega_arith) h1
   exact ⟨a, b, c, d, h1, h6⟩
 
 /-- Registers the recoding writes. -/
@@ -89,7 +89,7 @@ theorem rep_ones : ∀ L, rep (2 ^ 64 - 1) L + 1 = 2 ^ (64 * L)
   | 0 => rfl
   | L + 1 => by
     rw [rep, Nat.mul_succ, Nat.pow_add, Nat.mul_comm (2 ^ (64 * L)), ← rep_ones L]
-    omega
+    omega_arith
 
 /-- `rs -= x3 + !c`, word by word with `sbcs`. -/
 theorem sbcs_ok : ∀ (rs : List Reg) (s : State), rs.Nodup → .x3 ∉ rs →
@@ -112,11 +112,11 @@ theorem sbcs_ok : ∀ (rs : List Reg) (s : State), rs.Nodup → .x3 ∉ rs →
     rw [← da, ← ca] at hb
     rw [a3, ar] at et
     refine ⟨?_, (ka.mono (by sub_regs)).trans (kt.mono (by sub_regs))⟩
-    rw [regsVal, regsVal, List.length_cons, rep, tr, show 64 * (rs.length + 1) = 64 * rs.length + 64 by omega,
+    rw [regsVal, regsVal, List.length_cons, rep, tr, show 64 * (rs.length + 1) = 64 * rs.length + 64 by omega_arith,
       Nat.pow_add]
     generalize 2 ^ (64 * rs.length) = P at et ⊢
     cases ht : t.c <;> simp only [ht, Bool.not_true, Bool.not_false, Bool.toNat_true, Bool.toNat_false,
-      Nat.mul_one, Nat.mul_zero, Nat.add_zero] at et ⊢ <;> omega
+      Nat.mul_one, Nat.mul_zero, Nat.add_zero] at et ⊢ <;> omega_arith
 
 /-- `rs >>= 1`. -/
 theorem shr_ok : ∀ (rs : List Reg) (s : State), rs.Nodup →
@@ -125,7 +125,7 @@ theorem shr_ok : ∀ (rs : List Reg) (s : State), rs.Nodup →
   | [r], s, _ => by
     refine WP.mono (lsr_ok s (d := r) (n := r) (by decide : 1 < 64)) fun t ⟨dt, kt⟩ => ⟨?_, kt⟩
     simp only [regsVal, dt, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    omega
+    omega_arith
   | r :: r' :: rs, s, hd => by
     have hrr : r ∉ r' :: rs := (List.nodup_cons.mp hd).1
     rw [shrChain, ← List.singleton_append, WP.block_append_iff]
@@ -140,12 +140,12 @@ theorem shr_ok : ∀ (rs : List Reg) (s : State), rs.Nodup →
       rw [BitVec.extractLsb'_toNat, BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt lo.isLt,
         Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
       have := hi.isLt; have := lo.isLt
-      omega
+      omega_arith
     have e2 : regsVal t (r :: r' :: rs) = (a.gpr r).toNat + 2 ^ 64 * regsVal t (r' :: rs) := by
       rw [regsVal, tr]
     rw [e2, et, da, extr]
     simp only [regsVal] at ⊢
-    omega
+    omega_arith
 
 /-! ## One digit -/
 
@@ -153,7 +153,7 @@ theorem Regs.cst_ne {n : Nat} (hR : Regs n) {i : Nat} (hi : i < 4) :
     cst n i ≠ .x1 ∧ cst n i ≠ .x2 ∧ cst n i ≠ .x3 ∧ cst n i ≠ .x19 ∧ cst n i ≠ .x20 := by
   have h := hR.avoid (cst n i) (List.mem_append_right _ (by
     simp only [csts, List.mem_cons, List.not_mem_nil, or_false]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;> simp))
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_arith) with rfl | rfl | rfl | rfl <;> simp))
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h
   exact ⟨h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2⟩
 
@@ -208,7 +208,7 @@ theorem subtractShift_ok {n : Nat} (hR : Regs n) (s : State) (k j : Nat)
   have hav : ∀ r ∈ limbs n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x16, .x17, .x19, .x20] :=
     fun r hr => hR.avoid r (List.mem_append_left _ hr)
   rw [hl] at hnd hav hv hlen
-  have hrl : rest.length = n := by simp only [List.length_cons] at hlen; omega
+  have hrl : rest.length = n := by simp only [List.length_cons] at hlen; omega_arith
   have h5 : Reg.x5 ∉ rest := (List.nodup_cons.mp hnd).1
   have h3 : Reg.x3 ∉ rest := fun h => hav .x3 (List.mem_cons_of_mem _ h) (by simp)
   have h2r : Reg.x2 ∉ rest := fun h => hav .x2 (List.mem_cons_of_mem _ h) (by simp)
@@ -243,17 +243,17 @@ theorem subtractShift_ok {n : Nat} (hR : Regs n) (s : State) (k j : Nat)
     rw [← dc, ← cc, b2, b5, h2, nafWord_toNat] at hbor
     rw [c3, b3, cr, hrl, nafSign_toNat] at ed
     have hlt := regsVal_lt d (.x5 :: rest)
-    rw [List.length_cons, hrl, show 64 * (n + 1) = 64 * n + 64 by omega, Nat.pow_add] at hlt
+    rw [List.length_cons, hrl, show 64 * (n + 1) = 64 * n + 64 by omega_arith, Nat.pow_add] at hlt
     simp only [regsVal] at hv hlt et ⊢
     rw [et, d5]
     rw [d5] at hlt
     have hr := Naf5.recurrence k j
     have hm := Naf5.magnitude_le k j
     have hnext := Naf5.residual_boundB (B := 64 * n) (k := Naf5.residual k j) (j := 1) hb (by
-      have := hR.pos; omega)
+      have := hR.pos; omega_arith)
     rw [show Naf5.residual (Naf5.residual k j) 1 = Naf5.residual k (j + 1) from rfl] at hnext
     have hP : 2 ^ (64 * n - 1) * 2 = 2 ^ (64 * n) := by
-      rw [← Nat.pow_succ]; congr 1; have := hR.pos; omega
+      rw [← Nat.pow_succ]; congr 1; have := hR.pos; omega_arith
     have ho := rep_ones n
     -- Name the numbers.
     generalize (c.gpr .x5).toNat = A at hbor hlt ⊢
@@ -268,7 +268,7 @@ theorem subtractShift_ok {n : Nat} (hR : Regs n) (s : State) (k j : Nat)
     revert hbor ed hr ho
     cases Naf5.negative k j <;> cases c.c <;> cases d.c <;>
       simp only [Bool.false_eq_true, ite_false, ite_true, rep_zero, Bool.not_true, Bool.not_false,
-        Bool.toNat_true, Bool.toNat_false, Nat.mul_one, Nat.mul_zero, Nat.add_zero] <;> omega
+        Bool.toNat_true, Bool.toNat_false, Nat.mul_one, Nat.mul_zero, Nat.add_zero] <;> omega_arith
   · exact ((((ka.mono (by sub_regs)).trans (kb.mono (by sub_regs))).trans (kc.mono (by sub_regs))).trans
       (kd.mono (by sub_regs))).trans (kt.mono (by sub_regs))
 
@@ -298,7 +298,7 @@ theorem digitStore_ok {s : State} {base : Addr} {size bits k j : Nat}
     [.strb .x2 .x20 0] ++ [.addImm .x .x20 .x20 1] from rfl, WP.block_append_iff]
   have hw : InRegions s.wr (s.gpr .x20 + BitVec.ofNat 64 0) 1 := by
     rw [hp]; simp only [BitVec.add_zero]
-    exact ⟨_, hs.wr, hs.contains (by omega) (by decide)⟩
+    exact ⟨_, hs.wr, hs.contains (by omega_arith) (by decide)⟩
   refine WP.mono (strb_ok s (by decide) hw) fun a ha => ?_
   subst a
   refine WP.mono (addImm_ok _ (d := .x20) (n := .x20) (imm := 1) (by decide)) fun t ⟨ht, kt⟩ => ?_
@@ -316,7 +316,7 @@ theorem Regs.cst_notin {n : Nat} (hR : Regs n) {i : Nat} (hi : i < 4) : cst n i 
   intro h
   exact hd _ h _ (by
     simp only [csts, List.mem_cons, List.not_mem_nil, or_false]
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega) with rfl | rfl | rfl | rfl <;> simp) rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_arith) with rfl | rfl | rfl | rfl <;> simp) rfl
 
 theorem prepStep_ok {n : Nat} (hR : Regs n) {s : State} {base : Addr} {size bits k j : Nat}
     (hI : PrepSt n base size bits k j s) (hb : bits + (64 * n + 1) ≤ size) (hj : j < 64 * n + 1)
@@ -341,11 +341,11 @@ theorem prepStep_ok {n : Nat} (hR : Regs n) {s : State} {base : Addr} {size bits
     rw [ha]; apply nafRaw_eq
     have hh := hI.value
     rw [limbs_eq hR, regsVal] at hh
-    omega
+    omega_arith
   have pa : a.gpr .x20 = off base (bits + j) := (ka.gpr _ (by decide)).trans hI.ptr
   have sa := hI.scr.of_keeps ka (by decide)
   rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (digitStore_ok sa (by omega) pa da) fun b ⟨pb, mb, kb⟩ => ?_
+  refine WP.mono (digitStore_ok sa (by omega_arith) pa da) fun b ⟨pb, mb, kb⟩ => ?_
   have sb := sa.of_keepRegs kb (by decide)
   have vb : regsVal b (limbs n) = Naf5.residual k j :=
     (regsVal_congr fun r hr => kb.gpr r (ln r hr).2).trans va
@@ -361,11 +361,11 @@ theorem prepStep_ok {n : Nat} (hR : Regs n) {s : State} {base : Addr} {size bits
     rw [kc.gpr _ (by intro h; exact (hR.limb_ne (r := .x19) (by simpa using h)) (by simp)),
       kb.gpr _ (by decide), ka.gpr _ (by decide), hI.count]
   have hle := hR.le
-  refine WP.mono (decCounter_ok c (by omega) (by omega) cc) fun t ⟨ct, kt⟩ => ?_
+  refine WP.mono (decCounter_ok c (by omega_arith) (by omega_arith) cc) fun t ⟨ct, kt⟩ => ?_
   have st := sc.of_keeps kt (by decide)
   have mt : t.mem = s.mem.writeW (off base (bits + j)) (Naf5.byte k j) := by
     rw [kt.mem, kc.mem, mb, ka.mem]
-  have O := writeW8_outside s.mem base (Naf5.byte k j) (d := bits + j) (by have := hI.scr.nowrap; omega)
+  have O := writeW8_outside s.mem base (Naf5.byte k j) (d := bits + j) (by have := hI.scr.nowrap; omega_arith)
   have keepC : ∀ {i}, i < 4 → t.gpr (cst n i) = s.gpr (cst n i) := fun hi => by
     rw [kt.gpr _ (cn hi).2.2.2, kc.gpr _ (cn hi).2.2.1, kb.gpr _ (cn hi).2.1, ka.gpr _ (cn hi).1]
   refine ⟨⟨st, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
@@ -383,9 +383,9 @@ theorem prepStep_ok {n : Nat} (hR : Regs n) {s : State} {base : Addr} {size bits
     by_cases hij : i = j
     · subst i; exact writeW8_self ..
     · rw [O _ (by
-        have hoff : ofs base (off base (bits + i)) = bits + i := ofs_off0 base (by have := hI.scr.nowrap; omega)
-        rw [hoff]; omega)]
-      exact hI.digits i (by omega)
+        have hoff : ofs base (off base (bits + i)) = bits + i := ofs_off0 base (by have := hI.scr.nowrap; omega_arith)
+        rw [hoff]; omega_arith)]
+      exact hI.digits i (by omega_arith)
   · refine ⟨fun r hr => ?_, kt.rd.trans (kc.rd.trans (kb.rd.trans ka.rd)),
       kt.wr.trans (kc.wr.trans (kb.wr.trans ka.wr)), kt.sp.trans (kc.sp.trans (kb.sp.trans ka.sp))⟩
     simp only [clobs, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -394,7 +394,7 @@ theorem prepStep_ok {n : Nat} (hR : Regs n) {s : State} {base : Addr} {size bits
       kb.gpr r (by simpa using hr.1.1.2.2.2.2), ka.gpr r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
         exact ⟨hr.1.1.1, hr.1.1.2.1, hr.1.1.2.2.1⟩)]
-  · rw [mt]; exact O.mono (by omega) (by omega)
+  · rw [mt]; exact O.mono (by omega_arith) (by omega_arith)
 
 theorem init_facts1 : ∀ n < 7, top n ≠ cst n 0 ∧ top n ≠ cst n 1 ∧ top n ≠ cst n 2 ∧
     top n ≠ cst n 3 ∧ top n ≠ .x19 ∧ top n ≠ .x20 := by
@@ -428,11 +428,11 @@ theorem init_ok (K : WinCfg) (hR : Regs K.M.n) {s : State} {base : Addr} {size s
   have hlx0 : Reg.x0 ∉ low K.M.n := fun h =>
     hR.limb_ne (r := .x0) (List.mem_append_left _ h) (by simp)
   rw [prepInit, WP.block_append_iff, loads_eq]
-  refine WP.mono (loadsR_ok (low K.M.n) hs.ptr (a := src) (by rw [hR.len]; omega) hsrc8 hlow hlx0)
+  refine WP.mono (loadsR_ok (low K.M.n) hs.ptr (a := src) (by rw [hR.len]; omega_arith) hsrc8 hlow hlx0)
     fun a ⟨va, ka, _⟩ => ?_
   have sa := hs.of_keeps ka hlx0
   -- The distinct registers written.
-  have h7 : K.M.n < 7 := by have := hR.le; omega
+  have h7 : K.M.n < 7 := by have := hR.le; omega_arith
   obtain ⟨t0, t1, t2, t3, t19, t20⟩ := init_facts1 K.M.n h7
   obtain ⟨c01, c02, c03, c12, c13, c23⟩ := init_facts1' K.M.n h7
   have hlo := init_facts2 K.M.n h7
@@ -475,7 +475,7 @@ theorem init_ok (K : WinCfg) (hR : Regs K.M.n) {s : State} {base : Addr} {size s
     rw [kt.gpr _ (by decide), dg]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
-    omega
+    omega_arith
   have g0 : g.gpr .x0 = s.gpr .x0 := by
     obtain ⟨z0, z1, z2, z3, z4⟩ := init_facts4 K.M.n h7
     rw [kg.gpr _ (by decide), kf.gpr _ (ne z4.symm), ke.gpr _ (ne z3.symm), kd.gpr _ (ne z2.symm),
@@ -487,7 +487,7 @@ theorem init_ok (K : WinCfg) (hR : Regs K.M.n) {s : State} {base : Addr} {size s
     rw [kt.mem, kg.mem, kf.mem, ke.mem, kd.mem, kc.mem, kb.mem, ka.mem]
   have twr : t.wr = s.wr := by
     rw [kt.wr, kg.wr, kf.wr, ke.wr, kd.wr, kc.wr, kb.wr, ka.wr]
-  refine ⟨⟨⟨?_, twr ▸ hs.wr, hs.nowrap, hs.enc⟩, ?_, tC0, tC1, tC2, tC3, ?_, ?_, fun i hi => absurd hi (by omega)⟩,
+  refine ⟨⟨⟨?_, twr ▸ hs.wr, hs.nowrap, hs.enc⟩, ?_, tC0, tC1, tC2, tC3, ?_, ?_, fun i hi => absurd hi (by omega_arith)⟩,
     ⟨fun r hr => ?_, ?_, twr, ?_⟩, tmem⟩
   · rw [kt.gpr _ (by decide), g0, hs.x0]
   · rw [limbs, regsVal_append, regsVal_congr hlow', va, hR.len]
@@ -517,16 +517,16 @@ theorem prep_ok (K : WinCfg) (hR : Regs K.M.n) {s : State} {base : Addr} {size s
     KeepRegs (clobs K.M.n) s t ∧ Outside base K.bits D s.mem t.mem
   rw [prep]
   refine WP.seq (WP.mono (init_ok K hR hs hsrc hsrc8 hbits) fun a ⟨ia, ka, ma⟩ => ?_)
-  refine countLoop_ok (Inv := I) (n := D) (by omega) ?_ ?_ (by omega) ?_
+  refine countLoop_ok (Inv := I) (n := D) (by omega_arith) ?_ ?_ (by omega_arith) ?_
   · intro m t hm hmD hI
-    have hp := Naf5.residual_boundB (B := 64 * K.M.n) (Nat.le_of_lt hk) (j := D - m) (by omega)
+    have hp := Naf5.residual_boundB (B := 64 * K.M.n) (Nat.le_of_lt hk) (j := D - m) (by omega_arith)
     have hp' : Naf5.residual k (D - m) ≤ 2 ^ (64 * K.M.n) :=
-      Nat.le_trans hp (Nat.pow_le_pow_right (by decide) (by omega))
-    refine WP.mono (prepStep_ok hR hI.1 hb (by omega) hp') fun u ⟨iu, ku, ou⟩ => ?_
-    have he : D - (m - 1) = D - m + 1 := by omega
+      Nat.le_trans hp (Nat.pow_le_pow_right (by decide) (by omega_arith))
+    refine WP.mono (prepStep_ok hR hI.1 hb (by omega_arith) hp') fun u ⟨iu, ku, ou⟩ => ?_
+    have he : D - (m - 1) = D - m + 1 := by omega_arith
     refine ⟨⟨?_, hI.2.1.trans ku, hI.2.2.trans ou⟩, ?_⟩
     · rw [he]; exact iu
-    · rw [iu.count]; congr 1; omega
+    · rw [iu.count]; congr 1; omega_arith
   · intro t hI
     exact hI
   · refine ⟨?_, ka, ?_⟩
