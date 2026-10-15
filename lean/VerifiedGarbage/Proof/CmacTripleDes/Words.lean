@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # TDEA-CMAC: 64-bit words as two 32-bit words
@@ -53,10 +54,8 @@ theorem readW64_split (m : Mem) (a : Addr) : m.readW a 64 = m.readW (a + BitVec.
       show 4 + (i - 32) / 8 = i / 8 by omega, show (i - 32) % 8 = i % 8 by omega]
 
 theorem getLsbD_byteRev32 (w : BitVec 32) {i : Nat} (hi : i < 32) :
-    (byteRev32 w).getLsbD i = w.getLsbD (8 * (3 - i / 8) + i % 8) := by
-  have hj : i % 8 < 8 := Nat.mod_lt _ (by decide)
-  simp only [byteRev32, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  split_ifs <;> (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+    (byteRev32 w).getLsbD i = w.getLsbD (8 * (3 - i / 8) + i % 8) :=
+  VG.byteRev32_getLsbD w hi
 
 /-- Two words byte-reversed, as one: the block `y ‖ x` (as a big-endian
 integer) is the bytes of `x` then `y`. -/
