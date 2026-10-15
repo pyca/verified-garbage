@@ -90,7 +90,7 @@ theorem jointFixedLoad_ok {K : WinCfg} {s : State} {base T : Addr} {size a : Nat
     simpa only [hy,ku.2.1] using
       nafExternalCopy_fieldAt (o:=K.E.x) (d:=8*K.M.n) (w:=K.M.n) ev (by omega) (by omega)
   · exact (KeepRegs.mk (fun r h => (congrFun gv r).trans (ku.1 r h))
-      (rv.trans ku.2.2.1) (wv.trans ku.2.2.2)).trans (kt.mono (by simp))
+      (rv.trans ku.2.2.1) (wv.trans ku.2.2.2)).trans (kt.mono (by regions_sub))
   · intro x hx
     rw [ot x (hx (K.E.z,8*K.M.n) (by simp)),ov x (hx (K.E.x,16*K.M.n) (by simp)),ku.2.1]
 

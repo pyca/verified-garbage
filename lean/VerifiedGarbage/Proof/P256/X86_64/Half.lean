@@ -128,7 +128,7 @@ theorem half_core_ok (s : State) :
   rw [WP.block_append_iff]
   refine WP.mono (half_add_ok u hz) fun v ⟨hv,he,kv⟩ => ?_
   refine WP.mono (half_shift_ok v he) fun t ⟨ht,kt⟩ => ?_
-  refine ⟨?_,(ku.mono (by simp)).trans ((kv.mono (by simp)).trans (kt.mono (by simp)))⟩
+  refine ⟨?_,(ku.mono (by regions_sub)).trans ((kv.mono (by regions_sub)).trans (kt.mono (by regions_sub)))⟩
   rw [ht,hv,hu]
   have e (r : Reg) (hr : r∉[.rax,.rcx,.rdx,.rbp,.r12]) : u.gpr r=s.gpr r := ku.1 r hr
   rw [e .r8 (by decide),e .r9 (by decide),e .r10 (by decide),e .r11 (by decide)]

@@ -124,7 +124,7 @@ theorem nafCachedEntry_ok {K : WinCfg} {s : State} {base : Addr} {size tbl dst a
   have su := hs.of_keepRegs ku (by decide)
   have hu8 : u.gpr .r8=BitVec.ofNat 64 a := (ku.gpr .r8 (by decide)).trans h8
   refine WP.mono (nafCacheRead_ok su hu8 ha ha' hodd hc hn hC hD hDC) fun t ⟨et,kt,ot⟩ => ?_
-  refine ⟨fun j hj => ?_,fun j hj => ?_,ku.trans (kt.mono (by simp)),fun x he hd => ?_⟩
+  refine ⟨fun j hj => ?_,fun j hj => ?_,ku.trans (kt.mono (by regions_sub)),fun x he hd => ?_⟩
   · have := entry_end_le (8*K.M.n) hj
     rw [ot.wordsVal (by omega) (by omega),eu j hj]
   · have := entry_end_le (8*K.M.n) hj

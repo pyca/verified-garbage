@@ -44,7 +44,7 @@ theorem linear38_ok {s : State} {base : Addr} {size o a b : Nat}
   have keep : Keeps (clob 4) s s2 :=
     (k1.mono (by unfold formRegs; decide)).trans (k2.mono (by decide))
   have ek : KeepRegs (clob 4) s s2 := ⟨keep.gpr,keep.rd,keep.wr,keep.sp⟩
-  refine ⟨ek.trans (kt.mono (by simp)),?_,?_,?_⟩
+  refine ⟨ek.trans (kt.mono (by regions_sub)),?_,?_,?_⟩
   · simpa only [keep.mem] using ot
   · rw [et,e2]; exact Nat.mod_lt _ (by decide)
   · rw [et,e2,e1]
