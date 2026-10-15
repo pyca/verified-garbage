@@ -162,39 +162,30 @@ open VG VG.X86 VG.Spec.Argon2
 
 /-! ## Constant time -/
 
-/-- The taint analysis starts with the stack arguments public, and the words
-holding `out` and `scratch` known to be the base addresses of the writable
-regions. -/
-def τ₀ : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [1024, 4096], argLen := 20,
-    argBases := [(12, 0), (16, 1)] }
+/-- The taint analysis starts with the stack arguments public. It knows
+nothing of the writable regions: the code never reads back a public value
+from them, and tracking their public bytes would cost the kernel at every
+store. -/
+def τ₀ : VG.X86.Taint.T := { regs := .ofList [.esp], flags := false, argLen := 20 }
 
 theorem wf₀ {s : State} (hp : Pre s) : VG.X86.Taint.Wf τ₀ s := by
-  have ho := hp.out_fits; have hsc := hp.scr_fits; have hs := hp.esp_fits
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀], by simpa [hp.wr] using hp.out_scr, ?_⟩,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨hs, ?_⟩, ?_⟩
-  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
-  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_out hp.arg_out
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_scr hp.arg_scr
-  · intro p hp'
-    simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
-    rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
-      simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
+  have hs := hp.esp_fits
+  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun h => (h rfl).elim, fun _ h => (List.not_mem_nil h).elim,
+    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hs, ?_⟩, fun _ h => (List.not_mem_nil h).elim⟩
+  simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl)
+  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_out hp.arg_out
+  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_scr hp.arg_scr
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : compressX86.pre s₁) (h₂ : compressX86.pre s₂)
     (hpub : compressX86.pub s₁ s₂) : VG.X86.Taint.Agree τ₀ s₁ s₂ := by
   obtain ⟨hesp, ha⟩ := hpub
   have hp₁ := pre_of _ h₁; have hp₂ := pre_of _ h₂
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hp₁, wf₀ hp₂,
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => (h rfl).elim, wf₀ hp₁, wf₀ hp₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
-  · rw [hp₁.wr, hp₂.wr]; simp only [outR, scrR, op, scr, ha 2 (by decide), ha 3 (by decide)]
   · simp only [τ₀] at hk
     rw [show VG.X86.Taint.depth τ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (by have := hp₁.esp_fits; omega) h4 hk,
