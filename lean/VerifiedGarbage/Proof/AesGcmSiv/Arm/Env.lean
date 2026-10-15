@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Spec.GcmSiv.Contract
 public import VerifiedGarbage.Proof.AesGcm.Arm.Run
 public import VerifiedGarbage.Proof.AesGcm.Arm.Loops
@@ -148,7 +150,7 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesGcm.Arm (below covers_off in_off in_left covers_left covers_prefix)
 
 /-- Runs a block of the instructions the AES-GCM-SIV code uses. -/
-macro "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
+tactic_template "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
   arun [Impl.AesGcmSiv.Arm.tagO, Impl.AesGcmSiv.Arm.akO, Impl.AesGcmSiv.Arm.ekO, Impl.AesGcmSiv.Arm.hO,
     Impl.AesGcmSiv.Arm.yO, Impl.AesGcmSiv.Arm.cbO, Impl.AesGcmSiv.Arm.ccO, Impl.AesGcmSiv.Arm.bO,
     Impl.AesGcmSiv.Arm.skO, Impl.AesGcmSiv.Arm.revO, Impl.AesGcmSiv.Arm.ghO,
@@ -158,7 +160,7 @@ macro "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
 abbrev Others (rs : List Reg) (s s' : State) : Prop := ∀ r, r ∉ rs → s'.gpr r = s.gpr r
 
 /-- Proves `Others` of a state `srun` computed. -/
-macro "others_tac" : tactic => `(tactic| plain_simp_names (
+tactic_template "others_tac" : tactic => `(tactic| (
                    intro r hr
                    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
                    simp [gpr_setReg, hr]))

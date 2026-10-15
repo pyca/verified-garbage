@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.Blowfish.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -143,10 +145,7 @@ theorem encodable_4096 : encodable (BitVec.ofNat 32 4096) = true := by decide
 theorem encodable_4160 : encodable (BitVec.ofNat 32 4160) = true := by decide
 
 /-- Runs a block of the Blowfish code. -/
-syntax "brun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| brun) => `(tactic| brun [])
-  | `(tactic| brun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "brun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,
@@ -160,6 +159,8 @@ macro_rules
                          and_self, Option.map_some,
                          Option.some.injEq, exists_eq_left', List.cons_append, List.nil_append, and_true, true_and,
                          $ls,*]))
+/-- `brun` with no extra lemmas. -/
+macro "brun" : tactic => `(tactic| brun [])
 
 /-! ## Offsets from a pointer -/
 

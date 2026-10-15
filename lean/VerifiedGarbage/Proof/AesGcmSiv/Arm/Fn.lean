@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Crypt
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 public import VerifiedGarbage.Proof.AesGcm.Arm.Args
 import all Init.Data.Array.Basic
@@ -369,7 +371,7 @@ theorem tagOut_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.
 
 /-- Proves that a region is disjoint from each of a list of regions: parts
 of `W`, the data, the stack below `SP`, or the key schedule. -/
-macro "disj_tac" L:term : tactic => `(tactic| plain_simp_names (
+tactic_template "disj_tac" L:term : tactic => `(tactic| (
                    simp only [List.forall_mem_cons, List.mem_nil_iff, false_imp_iff, implies_true, and_true]
                    repeat' apply And.intro
                    all_goals first

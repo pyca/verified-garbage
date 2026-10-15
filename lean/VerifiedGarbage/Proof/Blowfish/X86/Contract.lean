@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.SigEval
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Blowfish.Scratch
@@ -103,9 +105,7 @@ def keySat : State where
   rd := [⟨0x1000, 4⟩, ⟨0x6004, 16⟩]
   wr := [⟨0x2000, 4168⟩, ⟨0x4000, 64⟩]
 
-syntax "bf_pre " "[" Lean.Parser.Tactic.simpLemma,* "]" : tactic
-macro_rules
-  | `(tactic| bf_pre [$ls,*]) => `(tactic| (
+tactic_template "bf_pre" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
     intro s h
     sig_pre [$ls,*] at h
     sig_split h

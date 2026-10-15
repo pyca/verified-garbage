@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86.Ecb
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Seed.KeyRot
 public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
 import all Init.Data.Array.Basic
@@ -136,8 +138,8 @@ theorem exec_subI (s : State) (d : Reg) (v : BitVec 32) :
       (subOverflow (s.gpr d) v (s.gpr d - v))).setReg d (s.gpr d - v)) := rfl
 
 /-- Room through the writes of registers other than `sb`. -/
-macro "room" : tactic => `(tactic|
-  plain_simp_names (refine Room.congr ‹Room _› ?_ ?_
+tactic_template "room" : tactic => `(tactic|
+  (refine Room.congr ‹Room _› ?_ ?_
                     · simp only [gpr_setReg, gpr_arithFlags, gpr_rorF, gpr_setMem, sb, reduceCtorEq, ↓reduceIte]
                     · rfl))
 

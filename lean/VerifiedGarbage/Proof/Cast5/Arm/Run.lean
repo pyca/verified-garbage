@@ -166,7 +166,7 @@ tactic_template "crun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(t
                          Nat.reduceAdd, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff, and_self, eq_self_iff_true,
                          true_and, and_true, List.cons_append, List.nil_append, $ls,*]))
 /-- `crun` with no extra lemmas. -/
-macro "crun" : tactic => `(tactic| crun [])
+tactic_template "crun" : tactic => `(tactic| crun [])
 
 /-! ## Branches -/
 
@@ -180,7 +180,7 @@ theorem wp_ite_ne {th el : Prog isa} {s : State} {Q : State → Prop} (ht : s.z 
 /-! ## What a block keeps -/
 
 /-- `∀ r ∉ rs, (s with registers written).gpr r = s.gpr r`. -/
-macro "keep_regs" : tactic => `(tactic| plain_simp_names (
+tactic_template "keep_regs" : tactic => `(tactic| (
                    intro r hr
                    simp only [gpr_setReg, gpr_sub, gpr_mem]
                    repeat' split

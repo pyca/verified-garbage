@@ -396,7 +396,7 @@ set_option hygiene false in
 /-- A list literal's element is in it: the membership of a witness
 `∃ r' ∈ rs, Region.Sub r r'`. Cheaper than `simp`, which also tries to decide
 the equalities of the other regions. -/
-macro "mem_lit" : tactic => `(tactic| simp only [List.mem_append, List.mem_cons, true_or, or_true])
+tactic_template "mem_lit" : tactic => `(tactic| simp only [List.mem_append, List.mem_cons, true_or, or_true])
 
 theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by

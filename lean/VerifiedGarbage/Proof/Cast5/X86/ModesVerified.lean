@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.ModeCore
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Cast5.X86.ModeCore
 public import VerifiedGarbage.Proof.Cast5.X86.ModesLit
 meta import VerifiedGarbage.Proof.Cast5.X86.ModesLit
@@ -231,35 +233,35 @@ theorem invCipher_eq (s : State) :
     (dirCoreSpec false).cipher (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat) =
       invCiph s := rfl
 
-local macro "post_eq" h:ident : tactic =>
-  `(tactic| plain_simp_names simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp,
+tactic_template "post_eq_cast5_x86_modesverified" h:ident : tactic =>
+  `(tactic| simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp,
                      Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Mode.dirCore_bw, Nat.reduceMul, Nat.reduceAdd,
                      data_eq, iv_eq, cipher_eq, invCipher_eq] at $h:ident)
 
 theorem cbcEncrypt_wp {s₀ : State} (hp : (modeX false cbcEncPost).pre s₀) :
     WP isa cbcEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX false cbcEncPost).post s₀ s' :=
   WP.mono (cbcEnc_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2⟩ => by post_eq h2; exact ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => by post_eq_cast5_x86_modesverified h2; exact ⟨h1, h2⟩
 
 theorem cbcDecrypt_wp {s₀ : State} (hp : (modeX false cbcDecPost).pre s₀) :
     WP isa cbcDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX false cbcDecPost).post s₀ s' :=
   WP.mono (cbcDec_wp (dirCoreSpec false) (seqPre_of false rfl rfl hp) (keyArgs_of false hp))
-    fun _ ⟨h1, h2⟩ => by post_eq h2; exact ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => by post_eq_cast5_x86_modesverified h2; exact ⟨h1, h2⟩
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (modeX true ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true ofbPost).post s₀ s' :=
   WP.mono (ofb_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2; post_eq h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbEncrypt_wp {s₀ : State} (hp : (modeX true cfbEncPost).pre s₀) :
     WP isa cfbEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true cfbEncPost).post s₀ s' :=
   WP.mono (cfbEnc_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2; post_eq h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : (modeX true cfbDecPost).pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true cfbDecPost).post s₀ s' :=
   WP.mono (cfbDec_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2; post_eq h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
 
 /-! ## Constant time -/
 

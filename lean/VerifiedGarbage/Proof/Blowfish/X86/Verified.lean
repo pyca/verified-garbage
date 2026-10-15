@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.KeyMain
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Blowfish.X86.KeyMain
 public import VerifiedGarbage.Proof.Blowfish.X86.Contract
 meta import VerifiedGarbage.Proof.Blowfish.X86.Contract
@@ -100,16 +102,19 @@ def ecbRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 4168⟩, ⟨ar
 def ecbWr (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, (arg s 2).toNat * 8⟩, ⟨(arg s 3).setWidth 64, 256⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [VG.Proof.Blowfish.X86.ecbC, VG.Proof.Blowfish.X86.wideEcb,
+tactic_template "narrow_blowfish_x86_verified" : tactic => `(tactic| simp only [VG.Proof.Blowfish.X86.ecbC, VG.Proof.Blowfish.X86.wideEcb,
                      VG.Proof.Blowfish.X86.ecbRd, VG.Proof.Blowfish.X86.ecbWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+tactic_template "narrow_blowfish_x86_verified" loc:Lean.Parser.Tactic.location : tactic => `(tactic| simp only [VG.Proof.Blowfish.X86.ecbC, VG.Proof.Blowfish.X86.wideEcb,
+                     VG.Proof.Blowfish.X86.ecbRd, VG.Proof.Blowfish.X86.ecbWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem wideEcb_pre (up : Bool) (s : State) (h : (wideEcb up).pre s) :
     (ecbC up).pre (s.withRegions (ecbRd s) (ecbWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  narrow_blowfish_x86_verified
   exact ⟨trivial, trivial, h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1,
     h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.2.2.1⟩
 
@@ -138,10 +143,10 @@ theorem ecb_verified (up : Bool) :
     simp only [ecbWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp only [h, true_or, or_true]
   · intro s s' _ h
-    narrow at h ⊢
+    narrow_blowfish_x86_verified at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    narrow_blowfish_x86_verified
     exact h
 
 /-! ## Key expansion -/

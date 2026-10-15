@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.X86.ModeCore
 meta import VerifiedGarbage.Proof.Camellia.X86.ModeCore
@@ -245,16 +247,19 @@ def cbcNarrowRd (s : State) : List Region :=
 def cbcNarrowWr (s : State) : List Region :=
   [⟨(arg s 3).setWidth 64, 16 * (arg s 4).toNat⟩, ⟨(arg s 5).setWidth 64, 8 * 341⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [VG.Proof.Camellia.cbcX86, VG.Proof.Camellia.X86.cbcWideContract,
+tactic_template "narrow_camellia_x86_cbcverified" : tactic => `(tactic| simp only [VG.Proof.Camellia.cbcX86, VG.Proof.Camellia.X86.cbcWideContract,
                      VG.Proof.Camellia.X86.cbcNarrowRd, VG.Proof.Camellia.X86.cbcNarrowWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+tactic_template "narrow_camellia_x86_cbcverified" loc:Lean.Parser.Tactic.location : tactic => `(tactic| simp only [VG.Proof.Camellia.cbcX86, VG.Proof.Camellia.X86.cbcWideContract,
+                     VG.Proof.Camellia.X86.cbcNarrowRd, VG.Proof.Camellia.X86.cbcNarrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem cbcWide_pre (enc : Bool) (s : State) (h : (cbcWideContract enc).pre s) :
     (cbcX86 enc).pre (s.withRegions (cbcNarrowRd s) (cbcNarrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  narrow_camellia_x86_cbcverified
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 18, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -353,10 +358,10 @@ theorem cbcEncrypt_verified : Verified X86.target cbcEncrypt (Proof.Camellia.cbc
     simp only [cbcNarrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    narrow_camellia_x86_cbcverified at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    narrow_camellia_x86_cbcverified
     exact h
 
 /-- cbcEncrypt with its working space on the stack. -/
@@ -394,10 +399,10 @@ theorem cbcDecrypt_verified : Verified X86.target cbcDecrypt (Proof.Camellia.cbc
     simp only [cbcNarrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    narrow_camellia_x86_cbcverified at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    narrow_camellia_x86_cbcverified
     exact h
 
 /-- cbcDecrypt with its working space on the stack. -/
