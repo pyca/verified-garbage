@@ -327,11 +327,10 @@ def CandsFar (s : State) (base : Addr) (vs : List Spec.X25519.Fe) (c : Nat) : Pr
 private theorem read16_congr {m m' : Mem} {p : Addr} (h : ∀ b < 16, m' (p + BitVec.ofNat 64 b) = m (p + BitVec.ofNat 64 b)) :
     m'.read p 16 = m.read p 16 := by
   rw [read16_dwords, read16_dwords]
-  congr 1
-  · exact Mem.readW_congr fun b hb => h b (by omega)
-  · refine Mem.readW_congr fun b hb => ?_
-    rw [tbl_add p 8 b]
-    exact h (8 + b) (by omega)
+  refine congrArg₂ ofVDwords (Mem.readW_congr fun b hb => h b (by omega))
+    (Mem.readW_congr fun b hb => ?_)
+  rw [tbl_add p 8 b]
+  exact h (8 + b) (by omega)
 
 /-- The candidates survive the registers' and the working space's changes. -/
 theorem CandsFar.of_outside {s t : State} {base : Addr} {vs : List Spec.X25519.Fe} {c : Nat}

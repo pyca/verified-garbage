@@ -147,10 +147,10 @@ theorem zmasks_ok (s : State) {a b m : Nat} (hm : m < 2 ^ 31) (ha : a < 2 ^ 31) 
       z₃, l₂ _ _ hi, c₃]
     have n1514 : y 15 ≠ y 14 := by decide
     by_cases h15 : r = y 15
-    · subst h15; split <;> simp
+    · subst h15; simp only [n1514, ite_true, ite_false]
     · by_cases h14 : r = y 14
-      · subst h14; simp [n1514.symm]
-      · simp [h15, h14]
+      · subst h14; simp only [n1514, n1514.symm, ite_true, ite_false]
+      · simp only [h15, h14, n1514, ite_true, ite_false]
   refine ⟨fun i hi => ?_, ⟨fun r hr => ?_, ?_, ?_, ?_, fun r hr i hi => ?_, ?_⟩⟩
   · rw [show xr 15 = y 15 from rfl, l₄ _ _ hi, ite_eq_left rfl]
     split <;> rfl

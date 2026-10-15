@@ -205,11 +205,12 @@ operand of a sum, or the subtrahend of a difference, is at most `2p`, as every
 product is (`mulBnd_ok`): the sum is then below `2²⁵⁷ - 38`, and the
 difference above `-2p`. -/
 
-theorem fe_lt4 (m : Mem) (base : Addr) (a : Nat) : fe m base a < 2 ^ 256 := by
-  simp only [X86_64.fe, val4]
-  have := (word m base a).isLt; have := (word m base (a + 8)).isLt
-  have := (word m base (a + 16)).isLt; have := (word m base (a + 24)).isLt
-  omega
+theorem val4_lt (a0 a1 a2 a3 : BitVec 64) : val4 a0 a1 a2 a3 < 2 ^ 256 := by
+  simp only [val4]
+  have := a0.isLt; have := a1.isLt; have := a2.isLt; have := a3.isLt
+  omega_arith
+
+theorem fe_lt4 (m : Mem) (base : Addr) (a : Nat) : fe m base a < 2 ^ 256 := val4_lt _ _ _ _
 
 /-- `r8–r11 + rax`, and its carry out. -/
 theorem carryAdd_ok (s : State) :
@@ -290,22 +291,16 @@ theorem addL_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : 
     rw [m3, fe_st4 _ _ (by omega)]
     have la := fe_lt4 s.mem base a; have lb := fe_lt4 s.mem base b
     have l1 := fe_lt4 s₃.mem base o
-    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 := by
-      simp only [val4]
-      have := (s₂.gpr .r8).isLt; have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt
-      have := (s₂.gpr .r11).isLt
-      omega
-    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 := by
-      simp only [val4]
-      have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
-      have := (s₁.gpr .r11).isLt
-      omega
+    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 :=
+      val4_lt _ _ _ _
+    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 :=
+      val4_lt _ _ _ _
     rw [x1] at e2
     generalize val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) = V at *
     generalize val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) = U at *
     refine mod_of_add_mul (k := 2 * c) ?_
     simp only [VG.Spec.X25519.P] at hab ⊢
-    omega
+    omega_arith
 
 /-- `[o] = [a] - [b]`, folded once, if `[b]` is at most `2p`. -/
 theorem subL_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : Slot o)
@@ -337,22 +332,16 @@ theorem subL_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : 
     apply toFe_sub
     rw [m3, fe_st4 _ _ (by omega)]
     have la := fe_lt4 s.mem base a; have lb := fe_lt4 s.mem base b
-    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 := by
-      simp only [val4]
-      have := (s₂.gpr .r8).isLt; have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt
-      have := (s₂.gpr .r11).isLt
-      omega
-    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 := by
-      simp only [val4]
-      have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
-      have := (s₁.gpr .r11).isLt
-      omega
+    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 :=
+      val4_lt _ _ _ _
+    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 :=
+      val4_lt _ _ _ _
     rw [x1] at e2
     generalize val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) = V at *
     generalize val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) = U at *
     refine (mod_of_add_mul (k := 2 * c) ?_).symm
     simp only [VG.Spec.X25519.P] at hb2 ⊢
-    omega
+    omega_arith
 
 
 /-! ## Sums and differences with one fold, selected by `cmov` -/
@@ -361,6 +350,19 @@ theorem cmov38 (c : Bool) :
     (if (!c) = true then (0 : BitVec 64) else BitVec.setWidth 64 (38 : BitVec 32)).toNat =
       38 * c.toNat := by
   cases c <;> rfl
+
+/-- A field of the state a `cmov` leaves: of the state it writes or of the one it keeps. -/
+theorem gpr_ite {p : Prop} [Decidable p] (s₁ s₂ : State) (r : Reg) :
+    (if p then s₁ else s₂).gpr r = if p then s₁.gpr r else s₂.gpr r := apply_ite (State.gpr · r) p s₁ s₂
+
+theorem mem_ite {p : Prop} [Decidable p] (s₁ s₂ : State) :
+    (if p then s₁ else s₂).mem = if p then s₁.mem else s₂.mem := apply_ite State.mem p s₁ s₂
+
+theorem rd_ite {p : Prop} [Decidable p] (s₁ s₂ : State) :
+    (if p then s₁ else s₂).rd = if p then s₁.rd else s₂.rd := apply_ite State.rd p s₁ s₂
+
+theorem wr_ite {p : Prop} [Decidable p] (s₁ s₂ : State) :
+    (if p then s₁ else s₂).wr = if p then s₁.wr else s₂.wr := apply_ite State.wr p s₁ s₂
 
 /-- `addCmov`'s start: the sum of `[a]` and `[b]` into `r8–r11`, and `38 ×` its carry into `rax`. -/
 theorem addCmovPre_ok {s : State} {base : Addr} (hs : Scr s base) {a b : Nat} (ha : Slot a)
@@ -375,6 +377,14 @@ theorem addCmovPre_ok {s : State} {base : Addr} (hs : Scr s base) {a b : Nat} (h
         val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) + 2 ^ 256 * c =
           fe s.mem base a + fe s.mem base b ∧
         (s'.gpr .rax).toNat = 38 * c ∧ Keeps [.r8, .r9, .r10, .r11, .rax, .rcx] s s' := by
+  obtain ⟨a0, h0⟩ : ∃ v, s.mem.readW (off base a) 64 = v := ⟨_, rfl⟩
+  obtain ⟨a1, h1⟩ : ∃ v, s.mem.readW (off base (a + 8)) 64 = v := ⟨_, rfl⟩
+  obtain ⟨a2, h2⟩ : ∃ v, s.mem.readW (off base (a + 16)) 64 = v := ⟨_, rfl⟩
+  obtain ⟨a3, h3⟩ : ∃ v, s.mem.readW (off base (a + 24)) 64 = v := ⟨_, rfl⟩
+  obtain ⟨b0, h4⟩ : ∃ v, s.mem.readW (off base b) 64 = v := ⟨_, rfl⟩
+  obtain ⟨b1, h5⟩ : ∃ v, s.mem.readW (off base (b + 8)) 64 = v := ⟨_, rfl⟩
+  obtain ⟨b2, h6⟩ : ∃ v, s.mem.readW (off base (b + 16)) 64 = v := ⟨_, rfl⟩
+  obtain ⟨b3, h7⟩ : ∃ v, s.mem.readW (off base (b + 24)) 64 = v := ⟨_, rfl⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
     execAlu32, execCmov, eval, State.load64, State.setReg32,
@@ -385,23 +395,21 @@ theorem addCmovPre_ok {s : State} {base : Addr} (hs : Scr s base) {a b : Nat} (h
     ld_sc hs (d := b + 8) (by omega), ld_sc hs (d := a + 16) (by omega),
     ld_sc hs (d := b + 16) (by omega), ld_sc hs (d := a + 24) (by omega),
     ld_sc hs (d := b + 24) (by omega), ite_true, ite_false, reduceCtorEq, Option.map_some,
-    Option.bind_some, Option.some.injEq, exists_eq_left', BitVec.xor_self]
-  have e := chain_add (s.mem.readW (off base a) 64) (s.mem.readW (off base (a + 8)) 64)
-    (s.mem.readW (off base (a + 16)) 64) (s.mem.readW (off base (a + 24)) 64)
-    (s.mem.readW (off base b) 64) (s.mem.readW (off base (b + 8)) 64)
-    (s.mem.readW (off base (b + 16)) 64) (s.mem.readW (off base (b + 24)) 64)
+    Option.bind_some, Option.some.injEq, exists_eq_left', BitVec.xor_self, fe, word, h0, h1, h2,
+    h3, h4, h5, h6, h7, gpr_ite, ite_self]
+  have e := chain_add a0 a1 a2 a3 b0 b1 b2 b3
   simp only at e
-  generalize decide (2 ^ 64 ≤ (s.mem.readW (off base (a + 24)) 64).toNat + _ + _) = c at e ⊢
-  refine ⟨c.toNat, Bool.toNat_le _, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩ <;>
-  cases c <;> simp only [Bool.not_true, Bool.not_false, Bool.false_eq_true, ite_true, ite_false,
-    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_arithFlags,
-    RegUpd.rd_setReg, RegUpd.rd_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags,
-    reduceCtorEq] at e ⊢
-  all_goals first
-    | exact e
-    | rfl
-    | (simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-       simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false])
+  obtain ⟨c, hc⟩ : ∃ c, decide (2 ^ 64 ≤ a3.toNat + b3.toNat + (decide (2 ^ 64 ≤ a2.toNat + b2.toNat +
+      (decide (2 ^ 64 ≤ a1.toNat + b1.toNat + (decide (2 ^ 64 ≤ a0.toNat + b0.toNat)).toNat)).toNat)).toNat) = c := ⟨_, rfl⟩
+  simp only [hc] at e ⊢
+  refine ⟨c.toNat, Bool.toNat_le _, e, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
+  · cases c <;> rfl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [gpr_ite, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1,
+      hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false, ite_self]
+  · simp only [mem_ite, RegUpd.mem_setReg, RegUpd.mem_arithFlags, ite_self]
+  · simp only [rd_ite, RegUpd.rd_setReg, RegUpd.rd_arithFlags, ite_self]
+  · simp only [wr_ite, RegUpd.wr_setReg, RegUpd.wr_arithFlags, ite_self]
 
 /-- `subCmov`'s start: the difference of `[a]` and `[b]` into `r8–r11`, and `38 ×` its borrow
 into `rax`. -/
@@ -417,6 +425,14 @@ theorem subCmovPre_ok {s : State} {base : Addr} (hs : Scr s base) {a b : Nat} (h
         val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) + fe s.mem base b =
           fe s.mem base a + 2 ^ 256 * c ∧
         (s'.gpr .rax).toNat = 38 * c ∧ Keeps [.r8, .r9, .r10, .r11, .rax, .rcx] s s' := by
+  obtain ⟨a0, h0⟩ : ∃ v, s.mem.readW (off base a) 64 = v := ⟨_, rfl⟩
+  obtain ⟨a1, h1⟩ : ∃ v, s.mem.readW (off base (a + 8)) 64 = v := ⟨_, rfl⟩
+  obtain ⟨a2, h2⟩ : ∃ v, s.mem.readW (off base (a + 16)) 64 = v := ⟨_, rfl⟩
+  obtain ⟨a3, h3⟩ : ∃ v, s.mem.readW (off base (a + 24)) 64 = v := ⟨_, rfl⟩
+  obtain ⟨b0, h4⟩ : ∃ v, s.mem.readW (off base b) 64 = v := ⟨_, rfl⟩
+  obtain ⟨b1, h5⟩ : ∃ v, s.mem.readW (off base (b + 8)) 64 = v := ⟨_, rfl⟩
+  obtain ⟨b2, h6⟩ : ∃ v, s.mem.readW (off base (b + 16)) 64 = v := ⟨_, rfl⟩
+  obtain ⟨b3, h7⟩ : ∃ v, s.mem.readW (off base (b + 24)) 64 = v := ⟨_, rfl⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
     execAlu32, execCmov, eval, State.load64, State.setReg32,
@@ -427,23 +443,21 @@ theorem subCmovPre_ok {s : State} {base : Addr} (hs : Scr s base) {a b : Nat} (h
     ld_sc hs (d := b + 8) (by omega), ld_sc hs (d := a + 16) (by omega),
     ld_sc hs (d := b + 16) (by omega), ld_sc hs (d := a + 24) (by omega),
     ld_sc hs (d := b + 24) (by omega), ite_true, ite_false, reduceCtorEq, Option.map_some,
-    Option.bind_some, Option.some.injEq, exists_eq_left', BitVec.xor_self]
-  have e := chain_sub (s.mem.readW (off base a) 64) (s.mem.readW (off base (a + 8)) 64)
-    (s.mem.readW (off base (a + 16)) 64) (s.mem.readW (off base (a + 24)) 64)
-    (s.mem.readW (off base b) 64) (s.mem.readW (off base (b + 8)) 64)
-    (s.mem.readW (off base (b + 16)) 64) (s.mem.readW (off base (b + 24)) 64)
+    Option.bind_some, Option.some.injEq, exists_eq_left', BitVec.xor_self, fe, word, h0, h1, h2,
+    h3, h4, h5, h6, h7, gpr_ite, ite_self]
+  have e := chain_sub a0 a1 a2 a3 b0 b1 b2 b3
   simp only at e
-  generalize decide ((s.mem.readW (off base (a + 24)) 64).toNat < _ + _) = c at e ⊢
-  refine ⟨c.toNat, Bool.toNat_le _, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩ <;>
-  cases c <;> simp only [Bool.not_true, Bool.not_false, Bool.false_eq_true, ite_true, ite_false,
-    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_arithFlags,
-    RegUpd.rd_setReg, RegUpd.rd_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags,
-    reduceCtorEq] at e ⊢
-  all_goals first
-    | exact e
-    | rfl
-    | (simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-       simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false])
+  obtain ⟨c, hc⟩ : ∃ c, decide (a3.toNat < b3.toNat + (decide (a2.toNat < b2.toNat +
+      (decide (a1.toNat < b1.toNat + (decide (a0.toNat < b0.toNat)).toNat)).toNat)).toNat) = c := ⟨_, rfl⟩
+  simp only [hc] at e ⊢
+  refine ⟨c.toNat, Bool.toNat_le _, e, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
+  · cases c <;> rfl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [gpr_ite, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1,
+      hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false, ite_self]
+  · simp only [mem_ite, RegUpd.mem_setReg, RegUpd.mem_arithFlags, ite_self]
+  · simp only [rd_ite, RegUpd.rd_setReg, RegUpd.rd_arithFlags, ite_self]
+  · simp only [wr_ite, RegUpd.wr_setReg, RegUpd.wr_arithFlags, ite_self]
 
 
 /-- `[o] = [a] + [b]`, folded once (`cmov`), if `[a]` or `[b]` is at most `2p`. -/
@@ -478,22 +492,16 @@ theorem addCmov_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho
     apply toFe_add
     rw [m3, fe_st4 _ _ (by omega)]
     have la := fe_lt4 s.mem base a; have lb := fe_lt4 s.mem base b
-    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 := by
-      simp only [val4]
-      have := (s₂.gpr .r8).isLt; have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt
-      have := (s₂.gpr .r11).isLt
-      omega
-    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 := by
-      simp only [val4]
-      have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
-      have := (s₁.gpr .r11).isLt
-      omega
+    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 :=
+      val4_lt _ _ _ _
+    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 :=
+      val4_lt _ _ _ _
     rw [x1] at e2
     generalize val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) = V at *
     generalize val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) = U at *
     refine mod_of_add_mul (k := 2 * c) ?_
     simp only [VG.Spec.X25519.P] at hab ⊢
-    omega
+    omega_arith
 
 /-- `[o] = [a] - [b]`, folded once (`cmov`), if `[b]` is at most `2p`. -/
 theorem subCmov_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : Slot o)
@@ -527,21 +535,15 @@ theorem subCmov_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho
     apply toFe_sub
     rw [m3, fe_st4 _ _ (by omega)]
     have la := fe_lt4 s.mem base a; have lb := fe_lt4 s.mem base b
-    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 := by
-      simp only [val4]
-      have := (s₂.gpr .r8).isLt; have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt
-      have := (s₂.gpr .r11).isLt
-      omega
-    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 := by
-      simp only [val4]
-      have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
-      have := (s₁.gpr .r11).isLt
-      omega
+    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 :=
+      val4_lt _ _ _ _
+    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 :=
+      val4_lt _ _ _ _
     rw [x1] at e2
     generalize val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) = V at *
     generalize val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) = U at *
     refine (mod_of_add_mul (k := 2 * c) ?_).symm
     simp only [VG.Spec.X25519.P] at hb2 ⊢
-    omega
+    omega_arith
 
 end VG.Proof.X25519.X86_64
