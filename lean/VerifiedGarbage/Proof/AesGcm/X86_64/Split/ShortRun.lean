@@ -185,7 +185,7 @@ theorem shortPath_ok (hF : ShortFacts) {s : State} (E : SEntry s₀ Ctx W SP A D
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
     · exact ⟨⟨D, n⟩, by simp, fun _ h => h⟩
-    · exact ⟨below SP 56, by simp, below_sub (by decide) (by decide)⟩
+    · exact ⟨below SP 64, by simp, below_sub (by decide) (by decide)⟩
 
 end
 

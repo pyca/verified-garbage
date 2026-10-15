@@ -480,7 +480,7 @@ theorem splitTag_rel {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) (hrel :
       (s₀''.gpr .rcx).toNat = nl → (s₀''.gpr .r9).toNat = al → s₀''.mem.readW (SP + BitVec.ofNat 64 40) 64 = T' →
       ∀ s, SEntry s₀'' Ctx W SP A D S n sl s → WP isa mid s (TagAt Ctx (W + BitVec.ofNat 64 16) W SP .rsp 40 T') := by
     intro s₀'' C X h₁ h₂ h₃ hT s E
-    have dA : ∀ r ∈ [(⟨W, 2560⟩ : Region), ⟨D, n⟩, below SP 56],
+    have dA : ∀ r ∈ [(⟨W, 2560⟩ : Region), ⟨D, n⟩, below SP 64],
         (⟨SP + BitVec.ofNat 64 40, 8⟩ : Region).Disjoint r := by
       have hs : Region.Sub ⟨SP + BitVec.ofNat 64 40, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 6⟩ := by
         rw [show (40 : Nat) = 8 + 32 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega)
@@ -489,7 +489,7 @@ theorem splitTag_rel {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) (hrel :
       rcases hr with rfl | rfl | rfl
       · exact C.dA.sub_left hs
       · exact C.dAD.sub_left hs
-      · exact Offset.disjoint_below SP (n := 56) (d := 40) (k := 8) (by decide)
+      · exact Offset.disjoint_below SP (n := 64) (d := 40) (k := 8) (by decide)
     exact WP.mono (hmid C X kM E h₁ h₂ h₃) fun _ ⟨he, hrd, hwr, _, f, _⟩ => ⟨he, by
       rw [he.rsp, f.readW (r := ⟨SP + BitVec.ofNat 64 40, 8⟩) (Region.contains_self _ _) dA (by decide), hT], by
       rw [he.rsp, hrd, hwr]; exact C.args 4 (by decide)⟩

@@ -160,12 +160,22 @@ theorem PP.ofMid {M : CtxMode} {s₀ s₂ : State} {mE : Mem} {Ctx W SP Np A D S
     by rw [M₂.rd, M₂.wr]; exact C.src, C.sW, C.sD, C.sWrap, C.sl_le, C.kw, C.kd, C.ks, kM, C.sp56,
     X.keep M₂.rd M₂.wr M₂.frame (dM X.cw (X.ct.sub_left (below_sub (by decide) (by decide))))⟩
 
+/-- A frame within the 56 bytes below `SP` is within the 64 bytes `seal_split`
+may use. -/
+theorem frame56_64 {W D SP : Addr} {n : Nat} {m m' : Mem} (h : Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 56] m m') :
+    Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 64] m m' := h.sub fun r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+  · exact ⟨_, by simp, fun _ h => h⟩
+  · exact ⟨below SP 64, by simp, below_sub (by decide) (by decide)⟩
+
 /-- What `seal_split` leaves at the tag at `W`, after the entry: what
 `sealRun_ok` does, for the plaintext of `sl` bytes at `S` and the rest at
 `D`. -/
 abbrev SplitRunPost (s₀ : State) (Ctx W SP Np A D S : Addr) (nl al n sl : Nat) (s₄ : State) : Prop :=
   Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ ∧ s₄.rd = s₀.rd ∧ s₄.wr = s₀.wr ∧
-    SavedAt s₄.mem W s₀ ∧ Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 56] s₀.mem s₄.mem ∧
+    SavedAt s₄.mem W s₀ ∧ Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 64] s₀.mem s₄.mem ∧
     bytesAt s₄.mem D n = gctr (ctxCiph s₀.mem Ctx (s₀.gpr .rsi).toNat)
       (inc32 (Spec.Gcm.j0 (ctxH s₀.mem Ctx) (bytesAt s₀.mem Np nl)))
       (bytesAt s₀.mem S sl ++ (bytesAt s₀.mem D n).drop sl) ∧
@@ -296,7 +306,7 @@ theorem splitRun_of_midB {M : CtxMode} (T : BlkToFn M) {body : Prog isa}
     rw [blockAt_frame fQ (pp_w L C.dE hsl C.kw (d := 16) (k := 16) (.inl (by decide)))]; exact M₂.j0
   refine ⟨e₄, rd₄.trans rd₃, wr₄.trans wr₃, (M₂.saved.frame fQ (pp_w L C.dE hsl C.kw (d := 128) (k := 48)
     (.inr (.inl ⟨Nat.le_refl _, by decide⟩)))).frame f₄ (saved_sf L (C.dE.sub_left sD') C.kw), ?_, ?_, ?_⟩
-  · refine (M₂.frame.sub fun r hr => ?_).trans ((fQ.sub fun r hr => ?_).trans (f₄.sub fun r hr => ?_))
+  · refine frame56_64 <| (M₂.frame.sub fun r hr => ?_).trans ((fQ.sub fun r hr => ?_).trans (f₄.sub fun r hr => ?_))
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
@@ -395,7 +405,7 @@ theorem sealSplitM_wp {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) {s : S
   refine WP.seq (WP.mono (hmid C X kM E hNp hnl hal)
     fun s₄ ⟨he₄, hrd₄, hwr₄, hsv₄, f₄, hC, hT₄⟩ => WP.seq ?_)
   -- The tag copied to `tag`.
-  have dA : ∀ r ∈ [(⟨W, 2560⟩ : Region), ⟨D, n⟩, below SP 56], (⟨SP + BitVec.ofNat 64 40, 8⟩ : Region).Disjoint r := by
+  have dA : ∀ r ∈ [(⟨W, 2560⟩ : Region), ⟨D, n⟩, below SP 64], (⟨SP + BitVec.ofNat 64 40, 8⟩ : Region).Disjoint r := by
     have hs : Region.Sub ⟨SP + BitVec.ofNat 64 40, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * 6⟩ := by
       rw [show (40 : Nat) = 8 + 32 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega)
     intro r hr
@@ -403,7 +413,7 @@ theorem sealSplitM_wp {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) {s : S
     rcases hr with rfl | rfl | rfl
     · exact C.dA.sub_left hs
     · exact C.dAD.sub_left hs
-    · exact Offset.disjoint_below SP (n := 56) (d := 40) (k := 8) (by decide)
+    · exact Offset.disjoint_below SP (n := 64) (d := 40) (k := 8) (by decide)
   have hT₄' : s₄.mem.readW (s₄.gpr .rsp + BitVec.ofNat 64 40) 64 = T' := by
     rw [he₄.rsp, f₄.readW (r := ⟨SP + BitVec.ofNat 64 40, 8⟩) (Region.contains_self _ _) dA (by decide), hT']
   obtain ⟨s₅, run₅, hb₅, f₅, hg₅, hrd₅, hwr₅⟩ := tagOut_ok (b := .rsp) (d := 40) he₄.r15 hT₄'
@@ -421,7 +431,7 @@ theorem sealSplitM_wp {M : CtxMode} {mid : Prog isa} (hmid : MidOk M mid) {s : S
       rcases hr with rfl | rfl | rfl
       · exact C.rW
       · exact C.rD
-      · exact Offset.base_disjoint_below SP (n := 56) (k := 8) (by decide)
+      · exact Offset.base_disjoint_below SP (n := 64) (k := 8) (by decide)
     · simp only [List.mem_singleton] at hr; subst hr; exact C.rT
   refine WP.mono (exit_ok he₅.r15 (by rw [he₅.rsp, hSP]) (covers_left he₅.perm.w) hsv₅ (by rw [hSP, hret]))
     fun s' ⟨hg, hm, _⟩ => ⟨hg, fun _ => ?_⟩
