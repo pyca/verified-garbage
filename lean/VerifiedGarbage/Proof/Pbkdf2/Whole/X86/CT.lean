@@ -204,7 +204,7 @@ theorem hashKey_rel :
       have ekp : kp F t₀ = dO t₀ F.hkO := by simp only [kp, hlt, ↓reduceIte]
       have ekl : kl F t₀ = F.H.D := by simp only [kl, hlt, ↓reduceIte]
       refine ⟨k', by rw [ekp]; exact d, by rw [ekl]; exact c, ?_⟩
-      rw [ekp, ekl, dO_addr hp₀ (by omega), m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega)
+      rw [ekp, ekl, dO_addr hp₀ (hz.hkO_lt), m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega)
         (hash_len hF.hH b)])
   exact r1.seq (r2.seq (r3.seq (r4.seq (r5.seq (r6.seq r7)))))
 
