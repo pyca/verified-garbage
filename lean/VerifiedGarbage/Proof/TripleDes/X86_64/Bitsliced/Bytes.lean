@@ -25,9 +25,17 @@ theorem xor56_eq : ∀ p < 64, p ^^^ 56 = 8 * (7 - p / 8) + p % 8 := by decide
 theorem getLsbD_bswap64 (x : BitVec 64) {p : Nat} (hp : p < 64) :
     (bswap64 x).getLsbD p = x.getLsbD (p ^^^ 56) := by
   rw [xor56_eq p hp]
-  have hj : p % 8 < 8 := Nat.mod_lt _ (by decide)
-  simp only [bswap64, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  split_ifs <;> (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+  obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ p = 8 * a + b :=
+    ⟨p / 8, p % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod p 8).symm⟩
+  have ha : a < 8 := by omega
+  rw [show (8 * a + b) / 8 = a by omega, show (8 * a + b) % 8 = b by omega]
+  simp only [bswap64, BitVec.getLsbD_append]
+  rcases (show a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4 ∨ a = 5 ∨ a = 6 ∨ a = 7 by omega) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 ∨ b = 5 ∨ b = 6 ∨ b = 7 by omega) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  simp only [Nat.reduceMul, Nat.reduceSub, Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, Nat.lt_irrefl,
+    BitVec.getLsbD_extractLsb', decide_true, Bool.true_and]
 
 theorem xor56_lt {p : Nat} (hp : p < 64) : p ^^^ 56 < 64 := Nat.xor_lt_two_pow (n := 6) hp (by decide)
 

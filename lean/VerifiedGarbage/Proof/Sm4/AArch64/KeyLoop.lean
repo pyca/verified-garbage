@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.KeyInit
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -27,21 +28,10 @@ open VG.Proof.Sm4 (WordRel quads ofBlock outBlock keyInit rkOf readW64_bit getLs
 
 /-! ## Bytes -/
 
-theorem rev64_eq (x : BitVec 64) (k : Nat) :
-    (rev64 x).getLsbD k = (x.extractLsb' 0 8 ++ x.extractLsb' 8 8 ++ x.extractLsb' 16 8 ++ x.extractLsb' 24 8 ++
-      x.extractLsb' 32 8 ++ x.extractLsb' 40 8 ++ x.extractLsb' 48 8 ++ x.extractLsb' 56 8 :
-        BitVec (8 + 8 + 8 + 8 + 8 + 8 + 8 + 8)).getLsbD k := rfl
-
 theorem rev64_bit (x : BitVec 64) {t j : Nat} (ht : t < 8) (hj : j < 8) :
     (rev64 x).getLsbD (8 * t + j) = x.getLsbD (8 * (7 - t) + j) := by
-  rw [rev64_eq]
-  simp only [BitVec.getLsbD_append]
-  rcases (show t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 by omega) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [Nat.reduceMul, Nat.reduceSub, Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, Nat.lt_irrefl,
-    BitVec.getLsbD_extractLsb', decide_true, Bool.true_and]
+  rw [VG.AArch64.getLsbD_rev64 _ (by omega)]
+  exact congrArg x.getLsbD (by omega)
 
 /-- A byte of a word written. -/
 theorem writeW_byte (m : Mem) (a : Addr) (v : BitVec 64) {t j : Nat} (ht : t < 8) (hj : j < 8) :
