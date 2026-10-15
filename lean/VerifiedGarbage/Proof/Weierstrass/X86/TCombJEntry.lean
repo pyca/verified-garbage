@@ -194,38 +194,38 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
           omega_using [hzw, ht, this]) (by omega_using [hsz, hzw, hbits', ht])]
     exact hbits t ht
   rw [WP.block_append_iff]
-  refine WP.mono (bsignMask_ok K hs₃ (k := k) (j := i) (N := K.w * K.J) hw.1 (by omega_using [hw]) hwi (by omega)
+  refine WP.mono (bsignMask_ok K hs₃ (k := k) (j := i) (N := K.w * K.J) hw.1 (by omega_using [hw]) hwi (by omega_using [hzw, hbits'])
     hx₃ hbits₃) fun s₄ ⟨x₄, k₄⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄.keeps (by decide)
   refine WP.mono (selWords_ok hs₄ (decide (bcar K.w k (i + 1) = 1)) x₄ (o := K.E.y)
     (a := K.E.y) (b := K.neg) hEy hEy hneg (Or.inl (Nat.le_refl _))
-      (by have := ap (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+      (by have := ap (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega_using [this])) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   -- The values.
   have m₄ : s₄.mem = s₃.mem := k₄.2.1
   have vx : wordsVal s₅.mem base K.E.x K.M.n = wordsVal s₂.mem base K.E.x K.M.n := by
-    rw [O₅.wordsVal (ap (x := K.E.x) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)) (by omega), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (ap (x := K.E.x) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)) (by omega_using [hsz, hEx]), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl
-      · have := ap (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega
-      · have := htmp K.E.x (by tcomb_mem); dsimp only; omega
-      · dsimp only; omega
-      · dsimp only [Mont.outW]; omega) (by omega)]
+      · have := ap (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega_using [this]
+      · have := htmp K.E.x (by tcomb_mem); dsimp only; omega_using [this]
+      · dsimp only; omega_using [hwkx]
+      · dsimp only [Mont.outW]; omega_using [hsz, hEx]) (by omega_using [hsz, hEx])]
   have vz : wordsVal s₅.mem base K.E.z K.M.n = wordsVal s₂.mem base K.E.z K.M.n := by
-    rw [O₅.wordsVal (ap (x := K.E.z) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)) (by omega), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (ap (x := K.E.z) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)) (by omega_using [hsz, hEz]), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl
-      · have := ap (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega
-      · have := htmp K.E.z (by tcomb_mem); dsimp only; omega
-      · dsimp only; omega
-      · dsimp only [Mont.outW]; omega) (by omega)]
+      · have := ap (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega_using [this]
+      · have := htmp K.E.z (by tcomb_mem); dsimp only; omega_using [this]
+      · dsimp only; omega_using [hwkz]
+      · dsimp only [Mont.outW]; omega_using [hsz, hEz]) (by omega_using [hsz, hEz])]
   have vy₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
     U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl
-      · have := ap (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega
-      · have := htmp K.E.y (by tcomb_mem); dsimp only; omega
-      · dsimp only; omega
-      · dsimp only [Mont.outW]; omega) (by omega)
+      · have := ap (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega_using [this]
+      · have := htmp K.E.y (by tcomb_mem); dsimp only; omega_using [this]
+      · dsimp only; omega_using [hwky]
+      · dsimp only [Mont.outW]; omega_using [hsz, hEy]) (by omega_using [hsz, hEy])
   have vy : wordsVal s₅.mem base K.E.y K.M.n = if decide (bcar K.w k (i + 1) = 1) then
       (0 + C.p - wordsVal s₂.mem base K.E.y K.M.n) % C.p else wordsVal s₂.mem base K.E.y K.M.n := by
     rw [e₅, m₄, e₃, hz₂, vy₃]
@@ -237,11 +237,11 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
     by_cases h1 : 1 ≤ a
     · obtain ⟨hx, hy⟩ := hent h1
       simp only [h1, ↓reduceIte, hx, hy, toM_mont hV.unit, hV.one]
-      have := hV.entry i hi (a - 1) (by omega)
+      have := hV.entry i hi (a - 1) (by omega_using [hmag, h1])
       rwa [Nat.sub_add_cancel h1] at this
-    · have h0 : a = 0 := by omega
+    · have h0 : a = 0 := by omega_using [h1]
       subst h0
-      simp only [show ¬ 1 ≤ 0 by omega, ↓reduceIte, toM_zero, hV.one]
+      simp only [show ¬ 1 ≤ 0 by omega_using [], ↓reduceIte, toM_zero, hV.one]
       rw [show combPtW C K.w i 0 = .infinity by simp [combPtW, Spec.Weierstrass.mul]]
       exact rep_infinity' hC
   have hcl : ∀ r ∈ [Reg.eax, .ecx, .edx, .ebx], r ∈ clob := by
@@ -286,7 +286,7 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
         show toM _ _ _ = -toM _ _ _
         rw [vy, decide_eq_true h1]
         simp only [↓reduceIte]
-        rw [toM_sub (by omega), toM_zero]
+        rw [toM_sub (by omega_using [hEy₂]), toM_zero]
         grind
       rw [hy]
       simp only [h1, ↓reduceIte]
