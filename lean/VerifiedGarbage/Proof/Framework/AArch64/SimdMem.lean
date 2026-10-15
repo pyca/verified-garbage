@@ -97,11 +97,11 @@ theorem write16 (m : Mem) (a : Addr) (w0 w1 w2 w3 : BitVec 32) :
       (((m.writeW a w0).writeW (a + BitVec.ofNat 64 4) w1).writeW (a + BitVec.ofNat 64 8) w2).writeW
         (a + BitVec.ofNat 64 12) w3 := by
   funext x
-  have e : ∀ c : Nat, x - (a + BitVec.ofNat 64 c) = (x - a) - BitVec.ofNat 64 c := fun c => by
-    bv_omega
+  have e : ∀ c : Nat, x - (a + BitVec.ofNat 64 c) = (x - a) - BitVec.ofNat 64 c := fun c =>
+    (BitVec.sub_sub _ _ _).symm
   simp only [Mem.writeW, Mem.write, e, show 32 / 8 = 4 from rfl]
   generalize x - a = d
-  rw [toNat_sub_c d 4 (by omega), toNat_sub_c d 8 (by omega), toNat_sub_c d 12 (by omega)]
+  rw [toNat_sub_c d 4 (by omega_using []), toNat_sub_c d 8 (by omega_using []), toNat_sub_c d 12 (by omega_using [])]
   have := d.isLt
   have ext : ∀ (k : Nat) (w : BitVec 32), k < 4 → 4 * k ≤ d.toNat → d.toNat < 4 * k + 4 →
       (∀ b < 8, w.getLsbD (8 * (d.toNat - 4 * k) + b) = (ofVWords w0 w1 w2 w3).getLsbD (8 * d.toNat + b)) →
@@ -111,40 +111,40 @@ theorem write16 (m : Mem) (a : Addr) (w0 w1 w2 w3 : BitVec 32) :
     apply BitVec.eq_of_getLsbD_eq
     intro b hb
     simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, hb, decide_true, Bool.true_and,
-      show 8 * (d.toNat - 4 * k) + b < 8 * 4 by omega]
+      show 8 * (d.toNat - 4 * k) + b < 8 * 4 by omega_using [h2, hb]]
     exact (hw b hb).symm
   have g := fun (b : Nat) (h : 8 * d.toNat + b < 128) => getLsbD_ofVWords w0 w1 w2 w3 h
   by_cases c3 : 12 ≤ d.toNat
   · by_cases c4 : d.toNat < 16
-    · simp only [c3, c4, ite_true, show d.toNat - 12 < 4 by omega]
-      refine ext 3 w3 (by omega) c3 (by omega) fun b hb => ?_
-      rw [g b (by omega)]
-      simp only [show ¬ 8 * d.toNat + b < 96 by omega, show ¬ 8 * d.toNat + b < 64 by omega,
-        show ¬ 8 * d.toNat + b < 32 by omega, ite_false, show 8 * (d.toNat - 4 * 3) + b = 8 * d.toNat + b - 96 by omega]
-    · simp only [c3, c4, ite_true, ite_false, show ¬ d.toNat - 12 < 4 by omega,
-        show ¬ d.toNat - 8 < 4 by omega, show ¬ d.toNat - 4 < 4 by omega, show 8 ≤ d.toNat by omega,
-        show 4 ≤ d.toNat by omega, show ¬ d.toNat < 4 by omega]
+    · simp only [c3, c4, ite_true, show d.toNat - 12 < 4 by omega_using [c4]]
+      refine ext 3 w3 (by omega_using []) c3 (by omega_using [c4]) fun b hb => ?_
+      rw [g b (by omega_using [c4, hb])]
+      simp only [show ¬ 8 * d.toNat + b < 96 by omega_using [c3], show ¬ 8 * d.toNat + b < 64 by omega_using [c3],
+        show ¬ 8 * d.toNat + b < 32 by omega_using [c3], ite_false, show 8 * (d.toNat - 4 * 3) + b = 8 * d.toNat + b - 96 by omega_using [c3]]
+    · simp only [c3, c4, ite_true, ite_false, show ¬ d.toNat - 12 < 4 by omega_using [c4],
+        show ¬ d.toNat - 8 < 4 by omega_using [c4], show ¬ d.toNat - 4 < 4 by omega_using [c4], show 8 ≤ d.toNat by omega_using [c4],
+        show 4 ≤ d.toNat by omega_using [c4], show ¬ d.toNat < 4 by omega_using [c4]]
   by_cases c2 : 8 ≤ d.toNat
-  · simp only [c3, c2, ite_true, ite_false, show d.toNat < 16 by omega, show d.toNat - 8 < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega]
-    refine ext 2 w2 (by omega) c2 (by omega) fun b hb => ?_
-    rw [g b (by omega)]
-    simp only [show 8 * d.toNat + b < 96 by omega, show ¬ 8 * d.toNat + b < 64 by omega,
-      show ¬ 8 * d.toNat + b < 32 by omega, ite_false, ite_true,
-      show 8 * (d.toNat - 4 * 2) + b = 8 * d.toNat + b - 64 by omega]
+  · simp only [c3, c2, ite_true, ite_false, show d.toNat < 16 by omega_using [c3], show d.toNat - 8 < 4 by omega_using [c3],
+      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega_using []]
+    refine ext 2 w2 (by omega_using []) c2 (by omega_using [c3]) fun b hb => ?_
+    rw [g b (by omega_using [c3, hb])]
+    simp only [show 8 * d.toNat + b < 96 by omega_using [c3, hb], show ¬ 8 * d.toNat + b < 64 by omega_using [c2],
+      show ¬ 8 * d.toNat + b < 32 by omega_using [c2], ite_false, ite_true,
+      show 8 * (d.toNat - 4 * 2) + b = 8 * d.toNat + b - 64 by omega_using [c2]]
   by_cases c1 : 4 ≤ d.toNat
-  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by omega, show d.toNat - 4 < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by omega]
-    refine ext 1 w1 (by omega) c1 (by omega) fun b hb => ?_
-    rw [g b (by omega)]
-    simp only [show 8 * d.toNat + b < 64 by omega, show ¬ 8 * d.toNat + b < 32 by omega, ite_false,
-      ite_true, show 8 * (d.toNat - 4 * 1) + b = 8 * d.toNat + b - 32 by omega]
-  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by omega, show d.toNat < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 4 < 4 by omega]
-    refine ext 0 w0 (by omega) (by omega) (by omega) fun b hb => ?_
-    rw [g b (by omega)]
-    simp only [show 8 * d.toNat + b < 32 by omega, ite_true, show 8 * (d.toNat - 4 * 0) + b = 8 * d.toNat + b by omega]
+  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by omega_using [c2], show d.toNat - 4 < 4 by omega_using [c2],
+      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega_using [], show ¬ 2 ^ 64 + d.toNat - 8 < 4 by omega_using []]
+    refine ext 1 w1 (by omega_using []) c1 (by omega_using [c2]) fun b hb => ?_
+    rw [g b (by omega_using [c2, hb])]
+    simp only [show 8 * d.toNat + b < 64 by omega_using [c2, hb], show ¬ 8 * d.toNat + b < 32 by omega_using [c1], ite_false,
+      ite_true, show 8 * (d.toNat - 4 * 1) + b = 8 * d.toNat + b - 32 by omega_using [c1]]
+  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by omega_using [c1], show d.toNat < 4 by omega_using [c1],
+      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega_using [], show ¬ 2 ^ 64 + d.toNat - 8 < 4 by omega_using [],
+      show ¬ 2 ^ 64 + d.toNat - 4 < 4 by omega_using []]
+    refine ext 0 w0 (by omega_using []) (by omega_using []) (by omega_using [c1]) fun b hb => ?_
+    rw [g b (by omega_using [c1, hb])]
+    simp only [show 8 * d.toNat + b < 32 by omega_using [c1, hb], ite_true, show 8 * (d.toNat - 4 * 0) + b = 8 * d.toNat + b by omega_using []]
 
 
 
