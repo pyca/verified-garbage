@@ -58,4 +58,26 @@ theorem RandomSignResultRel.exhausted {p : RandomSignInput} {start used : Nat} {
   obtain ⟨hsig, hstatus, hused⟩ := h
   exact ⟨hsig, hstatus, by simpa only [randomSignRemaining, randomSignLoop, Nat.add_zero] using hused⟩
 
+theorem RandomSignResultRel.sample_none {p : RandomSignInput} {start used fuel : Nat} {result : RandomSignResult}
+    (h : RandomSignResultRel p start result used (fuel + 1))
+    (hd : (randomSignDraw p used).scalar = none) :
+    result.signature = none ∧ result.status = Random.sampleStatus (randomSignDraw p used) ∧
+      start + result.used = used + (randomSignDraw p used).used := by
+  obtain ⟨hsig, hstatus, hused⟩ := h
+  unfold randomSignRemaining at hsig hstatus hused
+  rw [randomSignLoop_sample_none _ _ _ _ _ _ hd] at hsig hstatus hused
+  exact ⟨hsig, hstatus, hused⟩
+
+theorem RandomSignResultRel.success {p : RandomSignInput} {start used fuel k : Nat}
+    {result : RandomSignResult} {sig : List Byte}
+    (h : RandomSignResultRel p start result used (fuel + 1))
+    (hd : (randomSignDraw p used).scalar = some k)
+    (hs : signBytes p.pLen p.qLen p.key (encodeBE p.qLen k) p.digest = some sig) :
+    result.signature = some sig ∧ result.status = 1 ∧
+      start + result.used = used + (randomSignDraw p used).used := by
+  obtain ⟨hsig, hstatus, hused⟩ := h
+  unfold randomSignRemaining at hsig hstatus hused
+  rw [randomSignLoop_step_success _ _ _ _ _ _ _ _ hd hs] at hsig hstatus hused
+  exact ⟨hsig, hstatus, hused⟩
+
 end VG.Proof.Dsa

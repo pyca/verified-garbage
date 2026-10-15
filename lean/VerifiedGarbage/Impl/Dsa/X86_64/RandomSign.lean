@@ -5,8 +5,8 @@ public import VerifiedGarbage.Impl.Dsa.X86_64.Random
 /-! # Randomized signing wrapper on x86-64
 
 The signer is a parameter, so registration can propagate every arithmetic
-backend. This program is not yet registered: its complete Verified proof is
-required before emitting assembly or replacing the Rust retry loop.
+backend. The complete verification covers rejection sampling, bounded signing
+retries, output clearing and the declared leakage trace.
 -/
 
 @[expose] public section

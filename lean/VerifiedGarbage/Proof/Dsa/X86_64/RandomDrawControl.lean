@@ -83,7 +83,7 @@ def randomDrawFinishMem (m : Mem) (B : Addr) (accept : Bool) (draws : Nat) : Mem
     let m' := m.writeW (off B Random.oDraws) (BitVec.ofNat 64 (draws - 1))
     if draws = 1 then m'.writeW (off B Random.oStatus) (0 : BitVec 64) else m'
 
-private theorem decrement_ok {s : State} {B : Addr} {draws : Nat}
+theorem random_decrement_ok {s : State} {B : Addr} {draws : Nat}
     (hs : Scr s B Random.frameBytes) (hsp : s.gpr .rsp = B)
     (hd : word s.mem B Random.oDraws = BitVec.ofNat 64 draws)
     (hpos : 0 < draws) (hbound : draws < 2 ^ 64) :
@@ -117,7 +117,7 @@ theorem random_drawFinish_ok {s : State} {B : Addr} {draws : Nat} {accept : Bool
   | false =>
     refine WP.ite false (by simp only [eval, hz, Bool.not_false, Option.map_some, Bool.not_true])
       (fun h => Bool.noConfusion h) (fun _ => ?_)
-    refine WP.seq (WP.mono (decrement_ok hs hsp hd hpos hbound)
+    refine WP.seq (WP.mono (random_decrement_ok hs hsp hd hpos hbound)
       fun u ⟨hua, huz, hum, hku⟩ => ?_)
     have hus := hs.congr hku.2.2
     have husp := (hku.gpr (by decide)).trans hsp

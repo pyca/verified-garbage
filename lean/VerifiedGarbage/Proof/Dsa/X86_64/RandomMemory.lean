@@ -64,4 +64,27 @@ theorem random_copy_outside {m m' : Mem} {B : Addr} {l n : Nat}
   rw [he, random_nonce_offset B hn hl hi] at hx
   omega
 
+theorem random_outside_offset {B : Addr} {m m' : Mem} {o n d : Nat}
+    (h : Outside B o n m m') (hd : d < 2 ^ 64) (hsep : d < o ∨ o + n ≤ d) :
+    m' (off B d) = m (off B d) := by
+  apply h
+  have he : off B d + BitVec.ofNat 64 0 = off B d := BitVec.add_zero _
+  have ho := ofs_off B (d := d) (i := 0) (by omega)
+  rw [he, Nat.add_zero] at ho
+  rw [ho]
+  exact hsep
+
+theorem random_outside_bytes {B : Addr} {m m' : Mem} {o n d len : Nat}
+    (h : Outside B o n m m') (hd : d + len ≤ 2 ^ 64)
+    (hsep : d + len ≤ o ∨ o + n ≤ d) :
+    Spec.Rsa.bytesAt m' (off B d) len = Spec.Rsa.bytesAt m (off B d) len := by
+  unfold Spec.Rsa.bytesAt
+  apply List.map_congr_left
+  intro i hi
+  have hi' := List.mem_range.mp hi
+  have he : off B d + BitVec.ofNat 64 i = off B (d + i) := by
+    simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
+  rw [he]
+  exact random_outside_offset h (by omega) (by omega)
+
 end VG.Proof.Dsa.X86_64

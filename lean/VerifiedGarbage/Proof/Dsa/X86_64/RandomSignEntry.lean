@@ -48,4 +48,23 @@ theorem random_entry_ok {s : State} {B : Addr}
       rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)))
     fun t ⟨htm, hkt⟩ => ⟨by rw [htm, hum], (hku.trans hkt).mono (by decide)⟩
 
+private theorem extend_entry_frame {B : Addr} {m m' : Mem} {d : Nat} (v : BitVec 64)
+    (h : Outside B 0 Random.frameBytes m m') (hd : d + 8 ≤ Random.frameBytes) :
+    Outside B 0 Random.frameBytes m (m'.writeW (off B d) v) :=
+  h.trans ((writeW_outside _ B _ (by unfold Random.frameBytes at hd; omega)).mono (Nat.zero_le _) hd)
+
+theorem random_entryHeader_outside (s : State) (B : Addr) :
+    Outside B 0 Random.frameBytes s.mem (randomEntryHeaderMem s B) := by
+  unfold randomEntryHeaderMem
+  repeat' apply extend_entry_frame _ _ (by decide)
+  exact Outside.refl _ _ _ _
+
+theorem random_entry_outside (s : State) (B : Addr) :
+    Outside B 0 Random.frameBytes s.mem
+      (randomSlotsMem B (randomEntryHeaderMem s B) RandomSign.incomingSlots) :=
+  (random_entryHeader_outside s B).trans (random_slots_outside _ _ _ _ _ (by
+    intro p hp
+    simp only [RandomSign.incomingSlots, List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide))
+
 end VG.Proof.Dsa.X86_64

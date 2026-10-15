@@ -32,6 +32,17 @@ theorem random_call_frameBytes {extra : Nat} {s : State} {m m' : Mem} (h : Rando
   · exact h.stackScratch.sub_left (random_frame_sub h)
   · exact Offset.base_disjoint_below _ (by unfold Random.frameBytes; omega)
 
+/-- Whole-word reads of the retained private frame are unchanged. -/
+theorem random_frame_words {B : Addr} {m m' : Mem}
+    (h : ∀ i < Random.frameBytes, m' (off B i) = m (off B i)) {d : Nat}
+    (hd : d + 8 ≤ Random.frameBytes) : word m' B d = word m B d := by
+  apply Mem.readW_congr
+  intro i hi
+  have he : off B d + BitVec.ofNat 64 i = off B (d + i) := by
+    simp only [off, BitVec.ofNat_add, BitVec.add_assoc]
+  rw [he]
+  exact h _ (by omega)
+
 /-- An input disjoint from the output, scratch, and reserved stack is retained. -/
 theorem random_call_inputBytes {extra : Nat} {s : State} {m m' : Mem} {p : Addr} {n : Nat}
     (hf : Frame (randomCallWr s ++ [below (randomBase s) (extra + 8)]) m m')
@@ -63,5 +74,33 @@ theorem random_callEntry_bytes {s : State} {B p : Addr} {n : Nat} (hsp : s.gpr .
   apply hsep
   rw [Mem.sub_ofNat_toNat _ (by omega)]
   exact hi'
+
+/-- Preserve a source through the callee and subsequent private-frame writes. -/
+theorem random_call_source {extra : Nat} {s t u : State} {m : Mem} {p : Addr} {bs : List Byte}
+    (hsrc : Src t (randomBase s) Random.frameBytes p bs)
+    (hf : Frame (randomCallWr s ++ [below (randomBase s) (extra + 8)]) t.mem m)
+    (hm : InScr (randomBase s) Random.frameBytes m u.mem)
+    (hrd : u.rd = t.rd) (hwr : u.wr = t.wr)
+    (hout : (⟨p, bs.length⟩ : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩)
+    (hscratch : (⟨p, bs.length⟩ : Region).Disjoint ⟨stackArg s 5, (stackArg s 6).toNat * 8⟩)
+    (hstack : (below (s.gpr .rsp) (extra + 256)).Disjoint ⟨p, bs.length⟩)
+    (hn : bs.length ≤ 2 ^ 64) : Src u (randomBase s) Random.frameBytes p bs := by
+  refine ⟨fun i hi => by rw [hrd, hwr]; exact hsrc.rd i hi, ?_, hsrc.out⟩
+  intro i hi
+  rw [hm _ (hsrc.out i hi)]
+  have hbytes := random_call_inputBytes hf hout hscratch hstack hn
+  have he := congrArg (fun xs : List Byte => xs[i]?) hbytes
+  simp only [Spec.Rsa.bytesAt, List.getElem?_map, List.getElem?_range,
+    hi, Option.map_some] at he
+  exact (Option.some.inj he).trans (hsrc.val i hi)
+
+theorem random_private_bytes {B p : Addr} {n : Nat} {m m' : Mem}
+    (hf : InScr B Random.frameBytes m m')
+    (hd : (⟨p, n⟩ : Region).Disjoint ⟨B, Random.frameBytes⟩) (hn : n ≤ 2 ^ 64) :
+    Spec.Rsa.bytesAt m' p n = Spec.Rsa.bytesAt m p n := by
+  unfold Spec.Rsa.bytesAt
+  apply List.map_congr_left
+  intro i hi
+  exact hf _ (out_scr hd (contains_byte _ (List.mem_range.mp hi) hn))
 
 end VG.Proof.Dsa.X86_64

@@ -10,7 +10,7 @@ namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Dsa.X86_64
 
-private theorem zero_preserves_word {s t : State} {B op : Addr} {k d : Nat}
+theorem random_zero_preserves_word {s t : State} {B op : Addr} {k d : Nat}
     (hf : ∀ x, (∀ i < k, x ≠ op + BitVec.ofNat 64 i) → t.mem x = s.mem x)
     (hsep : Mem.Sep (off B d) 8 op k) (hk : k < 2 ^ 64) :
     word t.mem B d = word s.mem B d := by
@@ -81,7 +81,7 @@ theorem random_finish_ok {s : State} {B op : Addr} {k : Nat}
     refine WP.mono (random_zeroOut_ok (op := op) (k := k) hus husp (by rw [hum]; exact hO) (by rw [hum]; exact hK)
       hk1 hk (fun j hj => by rw [hku.2.2]; exact hout j hj)) fun v ⟨hzero, hf, hkv⟩ => ?_
     exact next v (hkv.mono (by decide))
-      (fun d hd => (zero_preserves_word hf (hdis d hd) hk).trans (by rw [hum]))
+      (fun d hd => (random_zero_preserves_word hf (hdis d hd) hk).trans (by rw [hum]))
       (fun h => False.elim (h1 h)) (fun _ => hzero)
 
 end VG.Proof.Dsa.X86_64

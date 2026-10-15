@@ -97,4 +97,18 @@ theorem random_retry_attempts (m : Mem) (B : Addr) (success : Bool) (attempts : 
     · exact word_writeW_self _ _ _ _
     · rw [(writeW_outside _ B _ (by decide)).word (by decide) (by decide), word_writeW_self]
 
+theorem random_retry_word (m : Mem) (B : Addr) (success : Bool) (attempts d : Nat)
+    (hd : d + 8 ≤ 2 ^ 64) (ha : d + 8 ≤ 152 ∨ 160 ≤ d) (hs : d + 8 ≤ 192 ∨ 200 ≤ d) :
+    word (randomRetryMem m B success attempts) B d = word m B d := by
+  have wa (m : Mem) (v : BitVec 64) : word (m.writeW (off B Random.oAttempts) v) B d = word m B d :=
+    (writeW_outside _ _ _ (by decide)).word ha hd
+  have ws (m : Mem) (v : BitVec 64) : word (m.writeW (off B Random.oStatus) v) B d = word m B d :=
+    (writeW_outside _ _ _ (by decide)).word hs hd
+  cases success with
+  | true => exact ws _ _
+  | false =>
+    unfold randomRetryMem
+    simp only [Bool.false_eq_true, ite_false]
+    split <;> simp only [wa, ws]
+
 end VG.Proof.Dsa.X86_64

@@ -10,7 +10,7 @@ namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Dsa.X86_64 VG.Proof.Dsa.Random
 
-private theorem init_ready {C : RandomContext} {used draws : Nat} {s t : State}
+theorem random_sample_init_ready {C : RandomContext} {used draws : Nat} {s t : State}
     (h : RandomReady C used draws s)
     (hm : t.mem = (s.mem.writeW (off C.B Random.oDraws) (128 : BitVec 64)).writeW
       (off C.B Random.oStatus) (4 : BitVec 64)) (hk : Keep [.rax] s t) :
@@ -58,7 +58,7 @@ theorem random_sample_correct {C : RandomContext} {used draws : Nat} {s : State}
         hr.scr.st (d := Random.oStatus) (by decide)]
           rfl) rfl)
     fun a ⟨ham, hka⟩ => ?_)
-  obtain ⟨har, has⟩ := init_ready hr ham hka
+  obtain ⟨har, has⟩ := random_sample_init_ready hr ham hka
   refine WP.seq (WP.mono (random_sampleLoop_correct hq har has (by decide) (by decide))
     fun b hb => ?_)
   obtain ⟨⟨draws', hbr⟩, hbs, hbv⟩ := hb
@@ -76,6 +76,7 @@ theorem random_sample_encoded {C : RandomContext} {used draws : Nat} {s : State}
     WP isa Random.sample s fun t =>
       let result := randomRemaining C used 128
       t.gpr .rax = BitVec.ofNat 64 (sampleStatus result) ∧
+      word t.mem C.B Random.oStatus = BitVec.ofNat 64 (sampleStatus result) ∧
       word t.mem C.B Random.oUsed = BitVec.ofNat 64 (used + result.used) ∧
       (∀ k, result.scalar = some k →
         Spec.Rsa.bytesAt t.mem (off C.B 200) C.qBytes.length = Spec.Dsa.encodeBE C.qBytes.length k) ∧
@@ -83,8 +84,8 @@ theorem random_sample_encoded {C : RandomContext} {used draws : Nat} {s : State}
       (∃ draws', RandomReady C (used + result.used) draws' t) ∧
       Keep [.rax, .rcx, .rsi, .rdx, .r8, .r9, .r10, .r11] s t := by
   refine WP.mono (WP.keep [.rax, .rcx, .rsi, .rdx, .r8, .r9, .r10, .r11]
-    (random_sample_correct hq hr) (by rfl)) fun t ⟨⟨hta, ⟨draws', htr⟩, _, htv⟩, hkt⟩ => ?_
-  exact ⟨hta, htr.usedWord, fun k hk => random_nonce_encoding htr (htv k hk), htr.frame,
+    (random_sample_correct hq hr) (by rfl)) fun t ⟨⟨hta, ⟨draws', htr⟩, hstatus, htv⟩, hkt⟩ => ?_
+  exact ⟨hta, hstatus, htr.usedWord, fun k hk => random_nonce_encoding htr (htv k hk), htr.frame,
     ⟨draws', htr⟩, hkt⟩
 
 end VG.Proof.Dsa.X86_64
