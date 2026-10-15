@@ -217,14 +217,14 @@ theorem lm8_taint {out : Nat} (hout : out = 0 ∨ out = 112) :
 
 /-- `longMac`'s block before its last `mac` is constant time for both outputs. -/
 theorem lm5_taint {out : Nat} (hout : out = 0 ∨ out = 112) :
-    ∃ hc, (VG.X86.taint.check (τr [.ebp]) (.block ([.store (at_ .ebp jO) .esi, .mov .ebx (.reg .ebp),
-      .alu .add .ebx (imm tailOff)] ++ macArgs out)) hc).isSome = true := by
+    ∃ hc, (VG.X86.taint.check (τr [.ebp]) (.block (([.store (at_ .ebp jO) .esi, .mov .ebx (.reg .ebp),
+      .alu .add .ebx (imm tailOff)] : List Instr) ++ macArgs out)) hc).isSome = true := by
   rcases hout with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 /-- `longMac`'s first block is constant time for both outputs. -/
 theorem lm1_taint {out : Nat} (hout : out = 0 ∨ out = 112) :
     ∃ hc, (VG.X86.taint.check (τr [.ebp]) (.block (zero4 out ++
-      [.mov .esi (slot nbO), .shift .shr .esi 4, .mov .ebx (slot strO)] ++ macArgs out)) hc).isSome = true := by
+      ([.mov .esi (slot nbO), .shift .shr .esi 4, .mov .ebx (slot strO)] : List Instr) ++ macArgs out)) hc).isSome = true := by
   rcases hout with rfl | rfl <;> exact ⟨_, by taint_decide⟩
 
 theorem longMac_ct (v : Ctr32Impl) {C W SP : BitVec 32} (L : Lay C W SP) {R : Nat}
