@@ -50,37 +50,40 @@ def permO (ox oy : List Nat) (c : Nat → Bool) (i₁ i₂ : Nat → Nat) (o : L
   (List.range 8).all fun e => o.getD e 0 == if c e then ox.getD (i₁ e) 0 else oy.getD (i₂ e) 0
 
 theorem irep_perm {P : Poly} {j base : Nat} {ox oy o : List Nat} {r x y : BitVec 128} {c : Nat → Bool}
-    {i₁ i₂ : Nat → Nat} (hs : Src r x y c i₁ i₂) (hi : ∀ e < 8, i₁ e < 8 ∧ i₂ e < 8)
+    {i₁ i₂ : Nat → Nat} (hs : Src r x y c i₁ i₂) (hi : ∀ e < 8, (if c e then i₁ e else i₂ e) < 8)
     (hx : IRep P j base ox x) (hy : IRep P j base oy y) (ho : permO ox oy c i₁ i₂ o = true) :
     IRep P j base o r := fun e he => by
   simp only [permO, List.all_eq_true, List.mem_range, beq_iff_eq] at ho
   dsimp only
   rw [hs e he, ho e he]
+  have hi' := hi e he
   by_cases h : c e
-  · simp only [h, ite_true]; exact hx _ (hi e he).1
-  · simp only [h, ite_false, Bool.false_eq_true]; exact hy _ (hi e he).2
+  · simp only [h, ite_true] at hi' ⊢; exact hx _ hi'
+  · simp only [h, ite_false, Bool.false_eq_true] at hi' ⊢; exact hy _ hi'
 
 theorem zrep_perm {K₀ : Nat} {kx ky k : List Nat} {r x y : BitVec 128} {c : Nat → Bool}
-    {i₁ i₂ : Nat → Nat} (hs : Src r x y c i₁ i₂) (hi : ∀ e < 8, i₁ e < 8 ∧ i₂ e < 8)
+    {i₁ i₂ : Nat → Nat} (hs : Src r x y c i₁ i₂) (hi : ∀ e < 8, (if c e then i₁ e else i₂ e) < 8)
     (hx : ZRep x K₀ kx) (hy : ZRep y K₀ ky) (ho : permO kx ky c i₁ i₂ k = true) :
     ZRep r K₀ k := fun e he => by
   simp only [permO, List.all_eq_true, List.mem_range, beq_iff_eq] at ho
   dsimp only
   rw [hs e he, ho e he]
+  have hi' := hi e he
   by_cases h : c e
-  · simp only [h, ite_true]; exact hx _ (hi e he).1
-  · simp only [h, ite_false, Bool.false_eq_true]; exact hy _ (hi e he).2
+  · simp only [h, ite_true] at hi' ⊢; exact hx _ hi'
+  · simp only [h, ite_false, Bool.false_eq_true] at hi' ⊢; exact hy _ hi'
 
 theorem trep_perm {K₀ : Nat} {kx ky k : List Nat} {r x y : BitVec 128} {c : Nat → Bool}
-    {i₁ i₂ : Nat → Nat} (hs : Src r x y c i₁ i₂) (hi : ∀ e < 8, i₁ e < 8 ∧ i₂ e < 8)
+    {i₁ i₂ : Nat → Nat} (hs : Src r x y c i₁ i₂) (hi : ∀ e < 8, (if c e then i₁ e else i₂ e) < 8)
     (hx : TRep x K₀ kx) (hy : TRep y K₀ ky) (ho : permO kx ky c i₁ i₂ k = true) :
     TRep r K₀ k := fun e he => by
   simp only [permO, List.all_eq_true, List.mem_range, beq_iff_eq] at ho
   dsimp only
   rw [hs e he, ho e he]
+  have hi' := hi e he
   by_cases h : c e
-  · simp only [h, ite_true]; exact hx _ (hi e he).1
-  · simp only [h, ite_false, Bool.false_eq_true]; exact hy _ (hi e he).2
+  · simp only [h, ite_true] at hi' ⊢; exact hx _ hi'
+  · simp only [h, ite_false, Bool.false_eq_true] at hi' ⊢; exact hy _ hi'
 
 theorem src_h8 (op : VPermOp) (x y : BitVec 128) :
     Src (op.eval .h8 x y) x y
