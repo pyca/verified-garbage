@@ -188,4 +188,58 @@ def mulLazyApi : Api where
     "Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the \
       caller must destroy if they are secret."]
 
+/-- `ws: *mut u64, ws_len: usize, o: u32, a: u32, k: u32`, the indices and the
+number of squarings public. -/
+def sqrSig : Sig where
+  params := [("ws", .slice true .u64 "ws_len"), ("o", .int .u32 true), ("a", .int .u32 true),
+    ("k", .int .u32 true)]
+
+/-- `k ≥ 1` lazy Montgomery squarings in one call: the `k`-fold iterate of
+`mulLazyContract`'s squaring `y ↦ y y R⁻¹` (`o = a = b`), starting from the
+number at `a`, written to `o`. Each step multiplies by `R⁻¹` once, so after `k`
+steps the number at `o` times `R^(2^k - 1)` is congruent to `a^(2^k)` modulo
+`m`, `R = 2^(64 w)`. As for `mulLazyContract`, neither `a` nor the result need
+be below `m`. -/
+def sqrLazyContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  sqrSig.contract A
+    (pre := fun ws wsLen o a k m =>
+      let w := wOf m ws
+      Layout m ws wsLen.toNat ∧ Operand o.toNat ∧ Operand a.toNat ∧ 1 ≤ k.toNat ∧
+        ((m.readW (ws + BitVec.ofNat 64 (arrAt w aM)) 64).toNat * (wordAt m ws minvWord).toNat + 1) %
+          2 ^ 64 = 0)
+    (post := fun ws wsLen o a k m m' _ =>
+      let w := wOf m ws
+      let M := numAt m ws w aM
+      numAt m' ws w o.toNat * (2 ^ (64 * w)) ^ (2 ^ k.toNat - 1) % M = numAt m ws w a.toNat ^ 2 ^ k.toNat % M ∧
+        Keeps ws wsLen.toNat w o.toNat m m')
+    (stack := stack)
+    (leak := some fun ws _ _ _ _ m => [wOf m ws])
+
+/-- `vg_rsa_lazy_mont_sqr` on every target. -/
+def sqrLazyApi : Api where
+  module := "rsa_mont"
+  name := "vg_rsa_lazy_mont_sqr"
+  sig := sqrSig
+  contracts := some fun A stack => sqrLazyContract A stack
+  summary := "`k` lazy Montgomery squarings in the working space of the RSA functions, in one \
+    call: starting from the number in array `a`, squares `k` times as `vg_rsa_lazy_mont_mul` \
+    with both operands the same, and writes to array `o` a number of `w` words congruent to \
+    `a^(2^k) 2^(-64 w (2^k - 1))` modulo the modulus `m` (array 0). Neither `a` nor the result \
+    need be below `m`. The working space is laid out as for `vg_rsa_mont_mul`: a header of 32 \
+    words, then 8 arrays of `w + 2` words each; header word 6 holds `w`, word 7 `-m⁻¹ mod \
+    2^64`, and words 8 to 15 the addresses of the arrays. The numbers are `w` 64-bit words, \
+    little-endian, at the start of their arrays; `o` may be `a`. Every byte of `ws` but those \
+    of arrays 2 and 3 (the function's own) and of array `o` keeps its value.\n\n\
+    Contract: `VG.Spec.Rsa.Mont.sqrLazyContract`. Constant time but for `w` and `k`: timing \
+    may depend on the pointer, `ws_len`, the indices, `w` and `k`, not on the numbers."
+  safety := ["Header word 6 of `ws`, `w`, must be in 2..2^31, and `ws_len` at least \
+      `32 + 8 * (w + 2)`.",
+    "Header words 8 to 15 must hold the addresses of the arrays: word `8 + j` the address of \
+      word `32 + j * (w + 2)` of `ws`.",
+    "Header word 7 must be `-m⁻¹ mod 2^64` for the modulus `m` in array 0, which must be odd.",
+    "`o` and `a` must be below 8, and not 2 or 3.",
+    "`k` must be at least 1.",
+    "Arrays 2 and 3 are unspecified on return and may hold intermediate values, which the \
+      caller must destroy if they are secret."]
+
 end VG.Spec.Rsa.Mont
