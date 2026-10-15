@@ -191,21 +191,29 @@ end VG.AArch64
 namespace VG.AArch64
 
 theorem exec_sp {i : Instr} {s s' : State} (h : exec i s = some s') : s'.sp = s.sp := by
-  cases i
-  case ldrSp =>
-    simp only [exec] at h
-    split at h <;> [skip; cases h]
+  cases i with
+  | str sz t n off | strb t n off | strq t n off =>
+    simp only [exec, Option.bind_eq_some_iff, State.store] at h
+    obtain ⟨a, -, h⟩ := h
+    split at h <;> cases h; rfl
+  | ldr sz t n off | ldrb t n off | ldrq t n off =>
+    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    obtain ⟨a, -, v, -, rfl⟩ := h; rfl
+  | vop op =>
+    simp only [exec, Option.map_eq_some_iff] at h
+    obtain ⟨⟨_, _⟩, -, rfl⟩ := h; rfl
+  | ldrSp t off =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
     obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.mp h; rfl
-  all_goals
-  simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff, State.write, State.load,
-    State.store] at h <;>
-  (repeat' split at h) <;>
-  (try simp only [Option.some.injEq, reduceCtorEq] at h) <;>
-  first
-  | (subst h; rfl)
-  | (obtain ⟨_, _, _, _, rfl⟩ := h; rfl)
-  | (obtain ⟨_, _, h⟩ := h; split at h <;> simp only [Option.some.injEq, reduceCtorEq] at h;
-     subst h; rfl)
+  | ccmp sz n imm nzcv cond =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
+    split <;> rfl
+  | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
+  | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
+  | umov _ _ _ _ =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h; rfl
+  | _ => obtain rfl := Option.some.inj h; rfl
 
 theorem execBlock_sp {is : List Instr} {s s' : State} {t : List Leak}
     (h : VG.execBlock isa is s = some (s', t)) : s'.sp = s.sp := by

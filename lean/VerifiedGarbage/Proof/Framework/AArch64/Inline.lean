@@ -109,12 +109,12 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [ho, and_self, ite_true, State.withRegions_sp, load_widen hc hv, Option.map_some]
     rfl
   | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
-  | _ =>
-    simp only [exec] at h ⊢
-    first
-    | (simp only [Option.some.injEq] at h; subst h; rfl)
-    | (split at h <;> [skip; cases h]
-       rename_i hh; simp only [hh, ite_true, Option.some.injEq] at h ⊢; subst h; rfl)
+  | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
+  | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
+  | umov _ _ _ _ =>
+    obtain ⟨hh, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
+    exact ite_eq_left hh
+  | _ => obtain rfl := Option.some.inj h; rfl
 
 theorem addrs_withRegions (i : Instr) (s : State) (rd wr : List Region) :
     addrs i (s.withRegions rd wr) = addrs i s := by
@@ -168,12 +168,12 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     simp only [Option.some.injEq] at h; subst h
     split <;> exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
-  | _ =>
-    simp only [exec] at h
-    first
-    | (simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩)
-    | (split at h <;> [skip; cases h]
-       simp only [Option.some.injEq] at h; subst h; exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩)
+  | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
+  | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
+  | umov _ _ _ _ =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
+    exact ⟨rfl, rfl, rfl, Frame.refl s.wr s.mem⟩
+  | _ => obtain rfl := Option.some.inj h; exact ⟨rfl, rfl, rfl, Frame.refl s.wr s.mem⟩
 
 theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s = some s') :
     s'.gpr r = s.gpr r := by
@@ -221,14 +221,12 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : dstOf i ≠ some r) (h : exec i s =
     simp only [Option.some.injEq] at h; subst h
     split <;> rfl
   | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
-  | _ =>
-    simp only [exec] at h
-    first
-    | (simp only [Option.some.injEq] at h; subst h
-       exact hw _ _ _ _ fun e => hi (by simp [dstOf, e]))
-    | (split at h <;> [skip; cases h]
-       simp only [Option.some.injEq] at h; subst h
-       exact hw _ _ _ _ fun e => hi (by simp [dstOf, e]))
+  | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
+  | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
+  | umov _ _ _ _ =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
+    exact hw _ _ _ _ fun e => hi (by simp [dstOf, e])
+  | _ => obtain rfl := Option.some.inj h; exact hw _ _ _ _ fun e => hi (by simp [dstOf, e])
 
 theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :
     eval c (s.withRegions rd wr) = eval c s := by
