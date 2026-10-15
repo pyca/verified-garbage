@@ -148,7 +148,7 @@ theorem sealSel_framed (hF : Short.ShortFacts) :
 theorem openSel_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees))
-      (Spec.Gcm.openContract X86_64.abi 2632) := by
+      (Spec.Gcm.openContract X86_64.abi 2640) := by
   unfold GcmImpl.openCode; split
   · exact openCode_framed (openCode_verified (fun s hs => Short.openM_correct v v.blkB hF s ⟨hs, trivial⟩)
       (ct_of_rel fun _ _ hp hp' hq => Short.openM_rel hF v v.blkB ⟨hp, trivial⟩ ⟨hp', trivial⟩ hq))
@@ -172,7 +172,7 @@ theorem sealSelP_framed (hF : Short.ShortFacts) :
 theorem openSelP_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode (v.withBlk v.blkP)))
-      (Spec.Gcm.openPrecomputedContract X86_64.abi 2632) := by
+      (Spec.Gcm.openPrecomputedContract X86_64.abi 2640) := by
   unfold GcmImpl.openCode; split
   · exact openPCode_framed (openPCode_verified (Short.openM_correct v v.blkP hF) (Short.openM_ct hF v v.blkP))
       (Short.openM_spSafe v v.blkP) (Short.openM_xdepth v v.blkP)

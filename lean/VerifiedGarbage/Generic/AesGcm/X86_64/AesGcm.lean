@@ -312,8 +312,8 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     target := X86_64.target
     doc := Spec.Gcm.openApi.doc (notes := note v :: shortNote v)
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees)
-    contract := Spec.Gcm.openContract X86_64.abi 2632
-    stack := 2632
+    contract := Spec.Gcm.openContract X86_64.abi 2640
+    stack := 2640
     verified := openSel_framed v Short.shortFacts
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB)
     features := v.features },
@@ -439,8 +439,8 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     target := X86_64.target
     doc := Spec.Gcm.openPrecomputedApi.doc (notes := note v :: shortNote v)
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode (v.withBlk v.blkP))
-    contract := Spec.Gcm.openPrecomputedContract X86_64.abi 2632
-    stack := 2632
+    contract := Spec.Gcm.openPrecomputedContract X86_64.abi 2640
+    stack := 2640
     verified := openSelP_framed v Short.shortFacts
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkP)
     features := v.features },
@@ -859,8 +859,8 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     target := X86_64.target
     doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl ++ openFastNote v.impl)
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))
-    contract := Spec.Gcm.openPreparedContract X86_64.abi 2632
-    stack := 2632
+    contract := Spec.Gcm.openPreparedContract X86_64.abi 2640
+    stack := 2640
     verified := openSelPrepared_framed v.impl (blkR v) Short.shortFacts
     spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },

@@ -35,6 +35,17 @@ abbrev stk (s : State) : Region := below (s.gpr .rsp) 8
 addresses of a call and of its own calls. -/
 abbrev stk24 (s : State) : Region := below (s.gpr .rsp) 24
 
+/-- The stack `open` uses: a frame of up to two arguments (`scratch` and, for
+the call given the block index, the index), and the return addresses of a
+call and of its own calls. -/
+abbrev stk32 (s : State) : Region := below (s.gpr .rsp) 32
+
+/-- The stack `open` uses, from what it may use: what is apart from the 32
+bytes below `rsp` is apart from the 24 bytes below it. -/
+theorem stk24_of_stk32 {sp : Addr} {r : Region} (h : (⟨sp - 32#64, 32⟩ : Region).Disjoint r) :
+    (⟨sp - 24#64, 24⟩ : Region).Disjoint r :=
+  h.sub_left (below_sub (sp := sp) (a := 24) (b := 32) (by decide) (by decide))
+
 /-- The `i`-th argument on the stack. -/
 abbrev arg (s : State) (i : Nat) : BitVec 64 := stackArg s i
 
@@ -252,7 +263,9 @@ def openPre (cl : Nat) (s : State) : Prop :=
   let tag : Region := ⟨arg s 2, (arg s 3).toNat⟩
   let work : Region := ⟨arg s 4, 2560⟩
   s.rd = [ctx, nonce, aad, tag, args s 5] ∧ s.wr = [data, work] ∧ oneLay cl 4 5 s ∧
-    tag.Disjoint data ∧ tag.Disjoint work ∧ (stk24 s).Disjoint tag ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 64
+    tag.Disjoint data ∧ tag.Disjoint work ∧ (stk24 s).Disjoint tag ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 64 ∧
+    (stk32 s).Disjoint ctx ∧ (stk32 s).Disjoint data ∧ (stk32 s).Disjoint work ∧ (stk32 s).Disjoint tag ∧
+    32 ≤ (s.gpr .rsp).toNat
 
 def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧

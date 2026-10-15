@@ -208,18 +208,41 @@ theorem openPCode_verified {c : Prog isa}
     (hc : ∀ s, (Proof.AesGcm.openX86_64M CtxMode.powers).pre s →
       ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s')
     (hct : ConstantTime isa (Proof.AesGcm.openX86_64M CtxMode.powers).pre Proof.AesGcm.openX86_64.pub c) :
-    Verified X86_64.target c (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 24) :=
+    Verified X86_64.target c (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 32) :=
   Verified.of_correct hc hct
-    { pre := by sig_implies_pre [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
+    { pre := by
+        intro s h
+        sig_pre [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
           Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
-          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
+          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.stk32, Proof.AesGcm.ret, Proof.AesGcm.rounds,
+          X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
+          X86_64.argRegs] at h
+        sig_split h
+        sig_reduce [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
+          Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
+          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.stk32, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
+        sig_simp [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
+          Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
+          Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
+          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.stk32, Proof.AesGcm.ret, Proof.AesGcm.rounds,
+          X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
+          X86_64.argRegs] []
+        sig_and_intros
+        sig_close
+        all_goals first
+          | with_reducible assumption
+          | with_reducible exact Region.Disjoint.symm ‹_›
+          | omega
+          | exact Proof.AesGcm.stk24_of_stk32 (by with_reducible assumption)
+          | exact (Proof.AesGcm.stk24_of_stk32 (by with_reducible assumption)).symm
       post := by sig_implies_post [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
           Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
-          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
+          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.stk32, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
       pub := by
@@ -227,20 +250,20 @@ theorem openPCode_verified {c : Prog isa}
         sig_pub [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
           Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
-          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
+          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.stk32, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs] at h
         sig_split h
         sig_reduce [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
           Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
-          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
+          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.stk32, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs]
         sig_simp [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
           Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
-          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.rounds,
+          Proof.AesGcm.onePub, CtxMode.powers, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24, Proof.AesGcm.stk32, Proof.AesGcm.ret, Proof.AesGcm.rounds,
           X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
           X86_64.argRegs] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
         sig_and_intros
@@ -257,7 +280,7 @@ theorem openPCode_verified {c : Prog isa}
           | exact powersRepr_of_zero fun _ _ => rfl⟩ }
 
 theorem openP_verified :
-    Verified X86_64.target («open» (v.withBlk v.blkP)) (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 24) :=
+    Verified X86_64.target («open» (v.withBlk v.blkP)) (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 32) :=
   openPCode_verified (openM_correct v v.blkP) (openM_ct v v.blkP)
 
 /-- A state satisfying the preconditions of `vg_aes_gcm_stream_encrypt_precomputed`
@@ -374,7 +397,7 @@ the working space. -/
 def openFrameSatP : State :=
   { openFrameSat with rd := [⟨0x1000, 1024⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 32⟩] }
 
-theorem openFrameSatP_pre : ∃ s, (Spec.Gcm.openPrecomputedContract X86_64.abi 2632).pre s := by
+theorem openFrameSatP_pre : ∃ s, (Spec.Gcm.openPrecomputedContract X86_64.abi 2640).pre s := by
   refine ⟨openFrameSatP, ?_⟩
   sig_pre [Spec.Gcm.openPrecomputedContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedPre,
     Spec.Gcm.openPost, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs, openFrameSatP, openFrameSat, openSat]
@@ -388,22 +411,22 @@ theorem openFrameSatP_pre : ∃ s, (Spec.Gcm.openPrecomputedContract X86_64.abi 
 /-- `vg_aes_gcm_open_precomputed` in its frame, for any code that meets the
 contract within it. -/
 theorem openPCode_framed {c : Prog isa}
-    (hv : Verified X86_64.target c (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 24))
+    (hv : Verified X86_64.target c (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 32))
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
-      (Spec.Gcm.openPrecomputedContract X86_64.abi 2632) :=
+      (Spec.Gcm.openPrecomputedContract X86_64.abi 2640) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPrecomputedPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (post := Spec.Gcm.openPost X86_64.abi.ptrBits) (wa := true) (stack := 32)
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv
-    (by decide) (by decide) (by decide) hsp hxd
+    (by decide) (by decide) (by decide) hsp (by omega)
     (Proof.AesGcm.openPrecomputedPre_local _) (Proof.AesGcm.openPrecomputedPost_local _) openFrameSatP_pre
     (hleak := Proof.AesGcm.openPrecomputedLeak_local _)
 
 theorem openP_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» (v.withBlk v.blkP)))
-      (Spec.Gcm.openPrecomputedContract X86_64.abi 2632) :=
+      (Spec.Gcm.openPrecomputedContract X86_64.abi 2640) :=
   openPCode_framed (openP_verified v) (openM_spSafe v v.blkP) (openM_xdepth v v.blkP)
 
 /-- A state satisfying the preconditions of `vg_aes_gcm_stream_encrypt_precomputed`

@@ -74,12 +74,11 @@ theorem pre : Proof.AesGcm.blocksPreMI M (s.callEntry.withRegions (rd M s K) (Bl
   have hsa1 : stackArgAddr (s.callEntry.withRegions (rd M s K) (BlkCall.wr C Y D S q)) 1 =
       s.gpr .rsp + BitVec.ofNat 64 8 := by
     simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp]
-    rw [show (8 * (1 + 1) : Nat) = 8 + 8 from rfl, ← BitVec.ofNat_add_ofNat, ← BitVec.add_assoc,
-      BitVec.sub_add_cancel]
+    bv_omega
   have sep1 : Mem.Sep (s.gpr .rsp + BitVec.ofNat 64 8) (64 / 8) (s.gpr .rsp - 8) (64 / 8) := by
-    have := Offset.sep_below (s.gpr .rsp) 8 (a := 8) (n := 8) (b := 8) (k := 8) (by decide) (by decide)
-      (.inr (by decide)) (by decide) (by decide)
-    simpa using this
+    have e : s.gpr .rsp + BitVec.ofNat 64 8 = s.gpr .rsp - 8 + BitVec.ofNat 64 16 := by bv_omega
+    have b := Offset.sep_base (s.gpr .rsp - 8) (n := 8) (e := 16) (k := 8) (by decide) (by decide)
+    rw [e]; exact fun x h₁ h₂ => b x h₂ h₁
   have hidx : (stackArg (s.callEntry.withRegions (rd M s K) (BlkCall.wr C Y D S q)) 1).setWidth 32 =
       ctrIndex (blockAt s.mem C) := by
     unfold stackArg
@@ -89,32 +88,41 @@ theorem pre : Proof.AesGcm.blocksPreMI M (s.callEntry.withRegions (rd M s K) (Bl
       stackArg (s.callEntry.withRegions (BlkCall.rd M s K) (BlkCall.wr C Y D S q)) 0 := rfl
   simp only [Proof.AesGcm.blocksPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret, Proof.AesGcm.stk,
     Proof.AesGcm.rounds, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.withRegions_mem, hsa'] at hp
+    State.withRegions_mem, hsa', State.callEntry_rsp,
+    State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r9 ≠ .rsp),
+    h0.rdi, h0.rsi, h0.rdx, h0.rcx, h0.r8, h0.r9, hq, hR, harg, Nat.mul_one] at hp
   simp only [Proof.AesGcm.blocksPreMI, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret, Proof.AesGcm.stk,
     Proof.AesGcm.rounds, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
-    State.withRegions_mem, hsa, eqA]
+    State.withRegions_mem, hsa, eqA, State.callEntry_rsp,
+    State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r9 ≠ .rsp),
+    h0.rdi, h0.rsi, h0.rdx, h0.rcx, h0.r8, h0.r9, hq, hR, harg, Nat.mul_one]
   obtain ⟨-, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, -, a₁₁, a₁₂, -, a₁₄, -, -, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃, a₂₄,
     a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃⟩ := hp
   have e8 : State.gpr (s.callEntry) .rsp = s.gpr .rsp - 8 := State.callEntry_rsp s
-  refine ⟨rfl, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, ?_, a₁₁, a₁₂, ?_, a₁₄, ?_, ?_, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
+  refine ⟨by simp [rd], a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, ?_, a₁₁, a₁₂, ?_, a₁₄, ?_, ?_, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
     a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, ?_, a₃₂, a₃₃, ?_⟩
   all_goals first
     | exact h.a_c.symm
     | exact h.a_y.symm
     | exact h.a_d.symm
     | exact h.a_s.symm
-    | (rw [e8]; exact h.w_sp2)
-    | (rw [eC] at hidx ⊢; exact hidx.symm)
+    | exact h.w_sp2
+    | (rw [eC]; exact hidx.symm)
 
 /-- The regions the call reads, covered by the caller's. -/
-theorem reads : Covers (rd M s K ++ BlkCall.wr C Y D S q) (s.rd ++ s.wr) := by
+theorem readsI : Covers (rd M s K ++ BlkCall.wr C Y D S q) (s.rd ++ s.wr) := by
   have r := h.toBlkCall.reads
   intro a n ⟨r', hr', hc⟩
-  simp only [List.cons_append, List.mem_cons, List.nil_append] at hr'
-  rcases hr' with rfl | rfl | hr'
-  · exact r a n ⟨_, by simp, hc⟩
-  · exact h.reads2 a n ⟨_, List.mem_singleton_self _, hc⟩
-  · exact r a n ⟨r', by simp [hr'], hc⟩
+  rcases List.mem_append.mp hr' with hr' | hr'
+  · simp only [rd, List.mem_cons, List.not_mem_nil, or_false] at hr'
+    rcases hr' with rfl | rfl
+    · exact r a n ⟨_, by simp, hc⟩
+    · exact h.reads2 a n ⟨_, List.mem_singleton_self _, hc⟩
+  · exact r a n ⟨r', List.mem_append_right _ hr', hc⟩
 
 end BlkCallI
 
@@ -132,7 +140,7 @@ theorem blkDI_call {M : CtxMode} (F : DecFnI M) {s : State} {K C Y D S : Addr} {
   have hR : (BitVec.ofNat 64 R).toNat = R := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by rcases h0.rounds with h | h | h <;> omega)
   refine WP.call (k := Proof.AesGcm.decryptBlocksIv96X86_64M M) F.ok F.nosp (by rw [F.depth]; decide)
-    (rd := BlkCallI.rd M s K) (wr := BlkCall.wr C Y D S q) h.pre h.reads h0.writes ?_
+    (rd := BlkCallI.rd M s K) (wr := BlkCall.wr C Y D S q) h.pre h.readsI h0.writes ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
   rw [F.depth] at hf
   obtain ⟨eK, eC, eY, eD, eH⟩ := h0.entry_eqs

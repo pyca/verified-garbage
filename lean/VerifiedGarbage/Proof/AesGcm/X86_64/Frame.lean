@@ -262,28 +262,28 @@ def openFrameSat : State :=
   { openSat with rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 32⟩],
                  wr := [⟨0, 0⟩] }
 
-theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract X86_64.abi 2632).pre s := by
+theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract X86_64.abi 2640).pre s := by
   implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Spec.Gcm.openPost,
     Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs] [openFrameSat, openSat] using openFrameSat
 
 /-- `vg_aes_gcm_open` in its frame, for any code that meets the contract
 within it. -/
 theorem openCode_framed {c : Prog isa}
-    (hv : Verified X86_64.target c (Proof.AesGcm.openScratchContract X86_64.abi 24))
+    (hv : Verified X86_64.target c (Proof.AesGcm.openScratchContract X86_64.abi 32))
     (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
-      (Spec.Gcm.openContract X86_64.abi 2632) :=
+      (Spec.Gcm.openContract X86_64.abi 2640) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (post := Spec.Gcm.openPost X86_64.abi.ptrBits) (wa := true) (stack := 32)
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv
-    (by decide) (by decide) (by decide) hsp hxd (openPre_local _)
+    (by decide) (by decide) (by decide) hsp (by omega) (openPre_local _)
     (openPost_local _) openFrameSat_pre (hleak := openLeak_local _)
 
 theorem open_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callees))
-      (Spec.Gcm.openContract X86_64.abi 2632) :=
+      (Spec.Gcm.openContract X86_64.abi 2640) :=
   openCode_framed (open_verified v) (open_spSafe v) (open_xdepth v)
 
 end VG.Proof.AesGcm.X86_64

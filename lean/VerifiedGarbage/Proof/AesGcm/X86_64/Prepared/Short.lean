@@ -39,7 +39,7 @@ theorem sealSelPrepared_framed (hF : Short.ShortFacts) :
 theorem openSelPrepared_framed (hF : Short.ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCodeP (v.withBlk B)))
-      (Spec.Gcm.openPreparedContract X86_64.abi 2632) := by
+      (Spec.Gcm.openPreparedContract X86_64.abi 2640) := by
   unfold GcmImpl.openCodeP GcmImpl.openCode; split
   · exact openPreparedCode_framed (openPreparedCode_verified (Short.openMP_correct v B hF)
       (Short.openMW_ct hF v B Short.powOk_powersP Short.powersP_ct
