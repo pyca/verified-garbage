@@ -227,12 +227,15 @@ impl Montgomery {
             }
             self.mul(&mut ws, 5, 7, 1);
         }
+        // The accumulator's squares are lazy, so it is below R, not
+        // necessarily the modulus: it is only ever the first operand of a
+        // reducing multiplication (by a table entry, or by one in `finish`).
         let bit = |i: usize| (exponent[i / 8] >> (7 - i % 8)) & 1;
         let bits = exponent.len() * 8;
         let mut pos = 0;
         while pos < bits {
             if bit(pos) == 0 {
-                self.mul(&mut ws, 5, 5, 5);
+                self.mul_lazy(&mut ws, 5, 5, 5);
                 pos += 1;
                 continue;
             }
@@ -242,7 +245,7 @@ impl Montgomery {
             }
             let mut digit = 0usize;
             for i in pos..end {
-                self.mul(&mut ws, 5, 5, 5);
+                self.mul_lazy(&mut ws, 5, 5, 5);
                 digit = (digit << 1) | usize::from(bit(i));
             }
             // This address and the skipped multiplies depend only on the public
