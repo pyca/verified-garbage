@@ -272,7 +272,7 @@ theorem rotTail_wp {s : State} {b : BitVec 32} (hb : s.gpr sb = b)
         u₃.other (q 1) (by decide), hv]
     rw [u₁₀.mem, u₉.gpr, u₈.gpr, u₇.gpr, v₆, v₇, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem,
       u₂.mem, u₁.mem, rcNext]
-  · have : r ≠ q 0 ∧ r ≠ q 1 ∧ r ≠ q 2 ∧ r ≠ q 3 := by revert hr; cases r <;> simp [qRegs, q]
+  · have : r ≠ q 0 ∧ r ≠ q 1 ∧ r ≠ q 2 ∧ r ≠ q 3 := by revert hr; cases r <;> decide
     rw [u₁₀.gpr, u₉.other _ this.2.1, u₈.other _ this.2.1, u₇.other _ this.2.1, u₆.other _ this.2.2.1,
       u₅.other _ this.2.2.2, u₄.other _ this.2.2.1, u₃.other _ this.1, u₂.other _ this.2.1, u₁.other _ this.1]
   · rw [u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
@@ -304,14 +304,19 @@ theorem xor_byte (x y : BitVec 32) (t : Nat) :
 theorem rot_byte (x : BitVec 32) {t : Nat} (ht : t < 4) :
     (x.rotateRight 8).extractLsb' (8 * t) 8 = x.extractLsb' (8 * ((t + 1) % 4)) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
+  obtain ⟨Ta, Tb, Tc, Td, Te⟩ := of_decide_eq_true (List.all_eq_true.mp (List.all_eq_true.mp
+    (show (List.range 4).all (fun t => (List.range 8).all fun j => decide (8 * t + j < 64 ∧ 8 * t + j < 32 ∧
+      8 * ((t + 1) % 4) + j < 32 ∧ (8 * t + j < 32 - 8 % 32 → 8 % 32 + (8 * t + j) = 8 * ((t + 1) % 4) + j) ∧
+      (¬ 8 * t + j < 32 - 8 % 32 → 8 * t + j - (32 - 8 % 32) = 8 * ((t + 1) % 4) + j))) = true by
+      decide +kernel) t (List.mem_range.mpr ht)) j (List.mem_range.mpr hj))
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateRight]
   simp only [hj, decide_true, Bool.true_and]
-  by_cases h : t < 3
-  · rw [ite_eq_left ((show 8 * t + j < 32 - 8 % 32 by omega_arith)),
-      show 8 % 32 + (8 * t + j) = 8 * ((t + 1) % 4) + j by omega_arith]
-  · rw [ite_eq_right ((show ¬ 8 * t + j < 32 - 8 % 32 by omega_arith)),
-      show 8 * t + j - (32 - 8 % 32) = 8 * ((t + 1) % 4) + j by omega_arith]
-    simp [show 8 * t + j < 32 by omega_arith]
+  by_cases h : 8 * t + j < 32 - 8 % 32
+  · rw [ite_eq_left h,
+      Td h]
+  · rw [ite_eq_right h,
+      Te h]
+    simp [Tb]
 
 theorem ld_byte (m : Mem) (a : Addr) {t : Nat} (ht : t < 4) :
     (m.readW a 32).extractLsb' (8 * t) 8 = m (a + BitVec.ofNat 64 t) :=
@@ -488,7 +493,7 @@ theorem temp_wp {s₀ : State} {S B : BitVec 32} {kl : List Byte} {nk i : Nat} (
       hi.r11, hi.r12]
     rw [chk_beq (by omega_arith) (by omega_arith)]
   have g₄ : ∀ r, r ∉ qRegs → s₄.gpr r = s.gpr r := fun r hr => by
-    have : r ≠ q 1 ∧ r ≠ q 2 := by revert hr; cases r <;> simp [qRegs, q]
+    have : r ≠ q 1 ∧ r ≠ q 2 := by revert hr; cases r <;> decide
     rw [f₄.gpr, u₃.other _ this.1, u₂.other _ this.2, u₁.other _ this.1]
   have hq0 : s₄.gpr (q 0) = s.gpr (q 0) := by
     rw [f₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
@@ -607,12 +612,12 @@ theorem word_ok {s₀ : State} {S B : BitVec 32} {kl : List Byte} {nk i : Nat} (
   refine WP.seq (wp_cmp (op2_imm (by decide)) fun s₁ f₁ z₁ => WP.block_nil ?_)
   have hi₁ := hi.fupd f₁
   refine WP.seq (WP.mono (temp_wp hs hi₁ (by rw [z₁, f₁.gpr])) fun s₂ hm => ?_)
-  have r9₂ : s₂.gpr .r9 = S + BitVec.ofNat 32 (4 * (i - nk)) := (hm.keep _ (by simp [qRegs])).trans hi₁.r9
-  have r10₂ : s₂.gpr .r10 = S + BitVec.ofNat 32 (4 * i) := (hm.keep _ (by simp [qRegs])).trans hi₁.r10
-  have r11₂ : s₂.gpr .r11 = BitVec.ofNat 32 (i % nk) := (hm.keep _ (by simp [qRegs])).trans hi₁.r11
-  have r12₂ : s₂.gpr .r12 = BitVec.ofNat 32 nk := (hm.keep _ (by simp [qRegs])).trans hi₁.r12
-  have lr₂ : s₂.gpr .lr = BitVec.ofNat 32 (4 * (nk + 7) - i) := (hm.keep _ (by simp [qRegs])).trans hi₁.lr
-  have r8₂ : s₂.gpr sb = B := (hm.keep _ (by simp [qRegs, sb])).trans hi₁.r8
+  have r9₂ : s₂.gpr .r9 = S + BitVec.ofNat 32 (4 * (i - nk)) := (hm.keep _ (by decide)).trans hi₁.r9
+  have r10₂ : s₂.gpr .r10 = S + BitVec.ofNat 32 (4 * i) := (hm.keep _ (by decide)).trans hi₁.r10
+  have r11₂ : s₂.gpr .r11 = BitVec.ofNat 32 (i % nk) := (hm.keep _ (by decide)).trans hi₁.r11
+  have r12₂ : s₂.gpr .r12 = BitVec.ofNat 32 nk := (hm.keep _ (by decide)).trans hi₁.r12
+  have lr₂ : s₂.gpr .lr = BitVec.ofNat 32 (4 * (nk + 7) - i) := (hm.keep _ (by decide)).trans hi₁.lr
+  have r8₂ : s₂.gpr sb = B := (hm.keep _ (by decide)).trans hi₁.r8
   have hwS : (⟨State.addr S, 240⟩ : Region) ∈ s₂.wr := by rw [hm.wr, hi₁.wr]; exact hs.sch
   -- `w[i] := w[i − Nk] ⊕ temp`.
   refine WP.seq ?_

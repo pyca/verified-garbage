@@ -247,16 +247,21 @@ theorem rot_byte (x c : BitVec 64) {t : Nat} (ht : t < 4) :
     ((((x.setWidth 32).rotateRight 8) ^^^ c.setWidth 32).setWidth 64).extractLsb' (8 * t) 8 =
       x.extractLsb' (8 * ((t + 1) % 4)) 8 ^^^ c.extractLsb' (8 * t) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
+  obtain ⟨Ta, Tb, Tc, Td, Te⟩ := of_decide_eq_true (List.all_eq_true.mp (List.all_eq_true.mp
+    (show (List.range 4).all (fun t => (List.range 8).all fun j => decide (8 * t + j < 64 ∧ 8 * t + j < 32 ∧
+      8 * ((t + 1) % 4) + j < 32 ∧ (8 * t + j < 32 - 8 % 32 → 8 % 32 + (8 * t + j) = 8 * ((t + 1) % 4) + j) ∧
+      (¬ 8 * t + j < 32 - 8 % 32 → 8 * t + j - (32 - 8 % 32) = 8 * ((t + 1) % 4) + j))) = true by
+      decide +kernel) t (List.mem_range.mpr ht)) j (List.mem_range.mpr hj))
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_xor, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_rotateRight]
-  simp only [hj, decide_true, Bool.true_and, show 8 * t + j < 64 by omega_arith, show 8 * t + j < 32 by omega_arith]
-  by_cases h : t < 3
-  · rw [ite_eq_left ((show 8 * t + j < 32 - 8 % 32 by omega_arith)),
-      show 8 % 32 + (8 * t + j) = 8 * ((t + 1) % 4) + j by omega_arith]
-    simp [show 8 * ((t + 1) % 4) + j < 32 by omega_arith]
-  · rw [ite_eq_right ((show ¬ 8 * t + j < 32 - 8 % 32 by omega_arith)),
-      show 8 * t + j - (32 - 8 % 32) = 8 * ((t + 1) % 4) + j by omega_arith]
-    simp [show 8 * ((t + 1) % 4) + j < 32 by omega_arith]
+  simp only [hj, decide_true, Bool.true_and, Ta, Tb]
+  by_cases h : 8 * t + j < 32 - 8 % 32
+  · rw [ite_eq_left h,
+      Td h]
+    simp [Tc]
+  · rw [ite_eq_right h,
+      Te h]
+    simp [Tc]
 
 theorem ld_byte (m : Mem) (a : Addr) {t : Nat} (ht : t < 4) :
     (m.readW a 32).extractLsb' (8 * t) 8 = m (a + BitVec.ofNat 64 t) :=

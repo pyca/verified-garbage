@@ -158,8 +158,9 @@ theorem ctrBlocks_wp {s : State} {B : BitVec 32} (hb : s.gpr sb = B) (hfit : B.t
     rw [e]
     rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp (disch := decide) only [M₂₃, M₂₀, M₁₆, M₁₄, M₁₂, M₁₀, M₆, M₄, M₂, rd_wr_ne hfit,
-      Mem.readW_writeW_self32, ctrSlot, cw, cnum, cwOff, cNum, c] <;> rfl
+    simp (disch := decide) only [M₂₃, M₂₀, M₁₆, M₁₄, M₁₂, M₁₀, M₆, M₄, M₂, rd_wr hfit,
+      Nat.reduceMul, Nat.reduceEqDiff, ↓reduceIte, ctrSlot, cw, cnum, cwOff, cNum, c, Nat.reduceLT, Nat.reduceDiv,
+      Nat.reduceSub] <;> rfl
   · simp only [cnum, cNum, m₂₃, M₂₃, Mem.readW_writeW_self32, c]
   · rw [m₂₃]
     have c32 : ∀ o, o + 4 ≤ 32 → (reg32 B 32).Contains (addr B o) (32 / 8) :=
