@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
 import VerifiedGarbage.Proof.MlKem.AArch64.Mul
 import VerifiedGarbage.Proof.MlKem.AArch64.NttInv
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
 import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
