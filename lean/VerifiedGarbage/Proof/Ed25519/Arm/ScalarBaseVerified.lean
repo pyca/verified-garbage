@@ -32,6 +32,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseEngine`. -/
 
@@ -118,7 +120,7 @@ theorem scalarBaseEngine_ct (base ptr : BitVec 32) :
   have hp : CT (fun x y => BaseCTPre base ptr x ∧ BaseCTPre base ptr y)
       basePrepareCT (fun x y => FromCTPre base ptr 16 x ∧ FromCTPre base ptr 16 y) := by
     apply ctBoth
-    · apply ctRegs [.r0] _ (by taint_decide)
+    · apply ctRegs [.r0] _ (by native_taint_decide)
       intro x y h r hr
       rw [List.mem_singleton] at hr
       subst r
@@ -133,7 +135,7 @@ theorem scalarBaseEngine_ct (base ptr : BitVec 32) :
     And.intro (hx.1.ctx h.1.1).r0 (hy.1.ctx h.2.1).r0)
   have he : CT (fun (x y : State) => x.gpr .r0 = base ∧ y.gpr .r0 = base)
       pointEncode (fun _ _ => True) := by
-    apply ctRegs [.r0] _ (by taint_decide)
+    apply ctRegs [.r0] _ (by native_taint_decide)
     intro x y h r hr
     rw [List.mem_singleton] at hr
     subst r
@@ -253,7 +255,7 @@ theorem scalarBaseSetup_ct (b p out : BitVec 32) :
     CT (fun x y => BaseWrapCTPre b p out x ∧ BaseWrapCTPre b p out y)
       (.block scalarBaseSetup) (fun x y => BaseWorkCTPre b p out x ∧ BaseWorkCTPre b p out y) := by
   apply ctBoth
-  · apply ctRegs [.r0, .r1, .r2] _ (by taint_decide)
+  · apply ctRegs [.r0, .r1, .r2] _ (by native_taint_decide)
     intro x y h r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -288,7 +290,7 @@ theorem scalarBaseFinish_ct (b out : BitVec 32) :
       (.block ((scratchAddr LRS ++ ([.ldr .lr .r12 0] : List Instr)) ++ ([.ldr .r12 .r0 48] : List Instr)))
       (fun x y => (x.gpr .r0 = b ∧ x.gpr .r12 = out) ∧ (y.gpr .r0 = b ∧ y.gpr .r12 = out)) := by
     apply ctBoth
-    · apply ctRegs [.r0] _ (by taint_decide)
+    · apply ctRegs [.r0] _ (by native_taint_decide)
       intro x y h r hr
       rw [List.mem_singleton] at hr
       subst r
@@ -300,7 +302,7 @@ theorem scalarBaseFinish_ct (b out : BitVec 32) :
   change CT _ (.block (((scratchAddr LRS ++ ([.ldr .lr .r12 0] : List Instr)) ++
     ([.ldr .r12 .r0 48] : List Instr)) ++ (packField FR 0 ++ scalarRestore))) _
   refine ctBlockAppend hh ?_
-  apply ctRegs [.r0, .r12] _ (by taint_decide)
+  apply ctRegs [.r0, .r12] _ (by native_taint_decide)
   intro x y h r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl

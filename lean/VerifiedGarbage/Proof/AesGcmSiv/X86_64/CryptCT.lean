@@ -267,8 +267,8 @@ theorem chunkGen_wp {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {a
   exact G.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by simp, Offset.sub W (by decide) (by decide)⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by simp, fun _ h => h⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by mem_lit, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by mem_lit, fun _ h => h⟩
 
 /-- The call's arguments, and the run's. -/
 def EcbArgs (K W SP : Addr) (R : Nat) (N A D : Addr) (al n b j c : Nat) (t : State) : Prop :=
@@ -296,9 +296,9 @@ theorem ecbCall_wp (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} 
     (by rw [B.saved _ (by decide), I.inv.rbx]) (B.saved _ (by decide)), by rw [B.saved _ (by decide), I.r14]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by simp, Offset.sub W (by decide) (by omega)⟩
-  · exact ⟨_, by simp, fun _ h => h⟩
-  · exact ⟨_, by simp, fun _ h => h⟩
+  · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by mem_lit, Offset.sub W (by decide) (by omega)⟩
+  · exact ⟨_, by mem_lit, fun _ h => h⟩
+  · exact ⟨_, by mem_lit, fun _ h => h⟩
 
 /-- The XOR and the count, in a run: the run before block `j + c`. -/
 theorem xorEnd_wp (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n b j c : Nat} (hb : 16 * b ≤ n)
@@ -355,7 +355,7 @@ theorem xorEnd_wp (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A 
     rw [m₃, ← m₁]
     exact X.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega)⟩
+      exact ⟨⟨D, n⟩, by mem_lit, Offset.sub_base D (by omega)⟩
   refine WP.of_runBlock ⟨t₃, run₃, I.inv.of_frame L E₃ (by rw [wr₃, X.wr, wr₁]) (by rw [rd₃, X.rd, rd₁]) hf
     (by rw [g₃ _ (by decide), X.r12]) rbx₃ ?_, zf₃⟩
   rw [g₃ _ (by decide), X.gpr .rbp (by decide) (by decide) (by decide) (by decide) (by decide),

@@ -48,16 +48,20 @@ abbrev C : CP := Spec.Weierstrass.CheckPoint.brainpoolp512r1
 /-- `vg_brainpoolp512r1_check_point`. -/
 abbrev code : Prog isa := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody cfg)
 
-theorem agree : Agree cfg C := ⟨rfl, rfl, by decide +kernel, keeps_of (by decide +kernel), by decide +kernel⟩
+theorem agree : Agree cfg C := ⟨rfl, rfl, by decide +kernel, keeps_of_covers (by decide +kernel), by decide +kernel⟩
 
-theorem hv : (Impl.Ecdh.X86_64.Cfg.checkBody cfg).allInstrs (fun i => !KeepReg.writesVec i) = true := by
+theorem hvm : (Impl.Ecdh.X86_64.Cfg.checkBody cfg).allInstrs
+    (fun i => !KeepReg.writesVec i && !loadsMxcsr i) = true := by
   lit_decide
+
+theorem hv : (Impl.Ecdh.X86_64.Cfg.checkBody cfg).allInstrs (fun i => !KeepReg.writesVec i) = true :=
+  (hv_hmx hvm).1
 
 theorem hn : (Impl.Ecdh.X86_64.Cfg.checkBody cfg).noCalls = true := by
   lit_decide
 
-theorem hmx : code.allInstrs (fun i => !loadsMxcsr i) = true := by
-  lit_decide
+theorem hmx : code.allInstrs (fun i => !loadsMxcsr i) = true :=
+  (hv_hmx hvm).2
 
 theorem ct : ConstantTime isa (checkK C).pre (checkK C).pub code :=
   VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) (agreeK C) (by taint_decide)

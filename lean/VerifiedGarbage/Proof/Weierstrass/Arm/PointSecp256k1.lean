@@ -11,6 +11,8 @@ public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Spec.Secp256k1
 meta import VerifiedGarbage.Spec.Secp256k1
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -44,13 +46,13 @@ theorem secp256k1_add_ct :
     ConstantTime isa (sumArm point false).pre (sumArm point false).pub
       (fn (modP point) false) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem secp256k1_double_ct :
     ConstantTime isa (sumArm point true).pre (sumArm point true).pub
       (fn (modP point) true) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem secp256k1_add_verified (hF : Fermat point.p) :
     Verified Arm.target (pointAdd point) (point.addContract Arm.abi) :=

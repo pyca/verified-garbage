@@ -384,6 +384,18 @@ macro "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
     Nat.reduceAdd, Nat.reduceMod, Nat.reducePow, setWidth_imm, and_self, and_true, true_and, BitVec.add_zero,
     readW_writeW_W, $ts,*]) <;> try rfl)
 
+/-- A callee-saved register is none of the registers the code uses for its
+arguments and scratch, so reads of it skip their writes. -/
+theorem ne_of_calleeSaved {r : Reg} (h : r ∈ calleeSaved) :
+    r ≠ .rax ∧ r ≠ .rcx ∧ r ≠ .rdx ∧ r ≠ .rsi ∧ r ≠ .rdi ∧ r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r10 ∧ r ≠ .r11 := by
+  revert r; decide
+
+set_option hygiene false in
+/-- A list literal's element is in it: the membership of a witness
+`∃ r' ∈ rs, Region.Sub r r'`. Cheaper than `simp`, which also tries to decide
+the equalities of the other regions. -/
+macro "mem_lit" : tactic => `(tactic| simp only [List.mem_append, List.mem_cons, true_or, or_true])
+
 theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
   rw [BitVec.add_assoc, ofNat_add_ofNat]

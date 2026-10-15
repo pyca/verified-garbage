@@ -83,17 +83,15 @@ theorem mulQJP384_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spec.P
   mulQJA_ok hc (Or.inr h6) hL hO (Weierstrass.X86_64.doubleIn_dblOk_inl
     (Weierstrass.unitMod_pow_two hc.p_odd _) hL hc.am3 c.hot) (hcC ▸ n_mod32) (hcC ▸ n_ge64)
 
+theorem ecdh_inlineOk : exchangeP384.InlineOk = true := by lit_decide
+
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP384.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (p384_ok hI) hL
     (mulQJP384_ok (p384_ok hI) rfl rfl hL hO) (mulQJA_w (p384_ok hI)) (pre_of hs)
-  have hsp : ∀ i ∈ instrs exchangeP384.inline, Taint.clobbers i .rsp = false := by
-    have h : exchangeP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk
+  have F := (Exec.regions he (Code.noCalls_inline ecdh_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
@@ -148,7 +146,7 @@ theorem ecdh_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) :
     Verified X86_64.target exchangeP384 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (ecdh_x86 hL hI hO) ecdh_ct implies8
+  Verified.of_inline_ct ecdh_inlineOk (ecdh_x86 hL hI hO) ecdh_ct implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64.P384

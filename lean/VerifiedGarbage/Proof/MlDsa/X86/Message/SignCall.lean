@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message`: the call of the signing function on `μ`
@@ -262,7 +264,7 @@ theorem signCall_piece (hp : p ∈ params) {n : String} {f : Prog isa} (hf : Sig
     Piece (SPre p) (SPub p) (fun s₀ s => CtxO (slay p) s₀ s ∧ bytesAt s.mem (slay p s₀).MU 64 = sMu p s₀)
       (fun s₀ s => LeafEnd s₀ (sW p s₀) s ∧ SB p s₀ s)
       (.seq (.block (setArgs signArgs)) (Impl.MlKem.X86.callRet rs5 n f)) := by
-  refine argsRet_piece hf.ver.1 hf.ver.2.1 hf.nosp (by decide) (by decide) (by taint_decide) (sShape hp).pubL
+  refine argsRet_piece hf.ver.1 hf.ver.2.1 hf.nosp (by decide) (by decide) (by native_taint_decide) (sShape hp).pubL
     (fun _ _ _ h => h.1) (fun _ _ => by show argsOk 8 signArgs = true; decide) (sRd p) (sWr p)
     (fun s₀ s₀' h₀ h₀' hq => ?_) (fun s₀ s h₀ ha => ?_) (fun s₀ s s₁ h₀ ha hs => ?_)
     (fun s₀ s₀' s s' s₁ s₁' h₀ h₀' hq ha ha' hs hs' => ?_) (fun s₀ s s₁ s' h₀ ha hs e₁ e₂ e₃ fr post => ?_)

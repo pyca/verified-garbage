@@ -87,7 +87,7 @@ theorem phi_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w : Nat} (hW
   rw [hz₆, hm₆, va, vb, Nat.zero_add] at hv
   rw [hm₆] at o
   have f := KF.arr1 (I := I) (j := aL) o (Nat.le_refl _) (by omega_arith)
-  refine ⟨h₁.step f (all_mut_arr (by decide)) (k26.trans k₇) (by decide), (f₁.trans f).mono (by simp), ?_⟩
+  refine ⟨h₁.step f (all_mut_arr (by decide)) (k26.trans k₇) (by decide), (f₁.trans f).mono (by decide), ?_⟩
   rw [show I.W + 2 = w + w + 2 by omega_arith]; exact hv
 
 /-! ## Halving -/
@@ -142,7 +142,7 @@ theorem halfIf_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {j : Nat} 
   rw [m₅, m₄] at hv o
   have f := KF.arr1 (I := I) (j := j) o (Nat.le_refl _) (by omega_arith)
   refine ⟨h₃.step f (all_mut_arr hj) ((k₄.trans k₅).trans k₆) (by decide), (f₃.trans f).mono (by simp), ?_, ?_,
-    (((k13.trans k₄).trans k₅).trans k₆).mono (by simp)⟩
+    (((k13.trans k₄).trans k₅).trans k₆).mono (by decide)⟩
   · dsimp only [av] at hv ⊢; rw [hv]
     cases c <;> simp only [Bool.not_true, Bool.not_false, ite_true, ite_false, Bool.false_eq_true]
     · exact hj₃
@@ -218,7 +218,7 @@ theorem twoStep_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : at
       xrun [State.ea, at0, hdr, hbx₃, h10, hdi₃, hdrOff, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
         hs₃.ld (d := slot I.W aU) (by omega_arith), hs₃.ld (d := slot I.W aV) (by omega_arith),
         hs₃.st (d := 8 * sMo) (by have := h.ws.h256; unfold sMo sFn; omega_arith), hm₃, hmask]) rfl)
-      fun t ⟨hm, k₄⟩ => ⟨hm, (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp)⟩
+      fun t ⟨hm, k₄⟩ => ⟨hm, (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)⟩
   refine wp_seqs_append (by simp) (by simp [halfIf]) (WP.mono hb fun s₁ ⟨hm₁, k₁⟩ => ?_)
   obtain ⟨h₁, f₁, hmo₁⟩ := h.hdrW (i := sMo) (by unfold sMo sFn; omega_arith) hm₁ k₁ (by decide)
   have hok1 : [Rc.hdr sMo].all Rc.ok = true := by decide
@@ -259,7 +259,7 @@ theorem twoStep_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : at
   refine WP.mono (countP_ok s₄ ((k14.gpr (by decide)).trans h13) ((k14.gpr (by decide)).trans h11) (by omega_arith)
     (by omega_arith)) fun t ⟨hz, h13', hm, k₅⟩ => ⟨hz, h13', (k₅.gpr (by decide)).trans ((k14.gpr (by decide)).trans h11),
       ⟨h₄.step (cs := []) (by rw [hm]; exact KF.refl _ _ _) rfl k₅ (by decide),
-        by rw [hm]; exact ((((f₁.trans f₂).trans f₃).trans f₄)).mono (by simp),
+        by rw [hm]; exact ((((f₁.trans f₂).trans f₃).trans f₄)).mono (by decide),
         by rw [hm]; exact tU₄, by rw [hm]; exact tV₄, by rw [hm]; exact tL₄⟩, ?_⟩
   rw [hm, vU₄, vU₂, vV₄, vV₃, vL₄, vU₁, vV₂, vL₃]
   unfold halveStep

@@ -71,7 +71,7 @@ theorem reduceTop_ckct {top : List Instr} (C : CkP → Nat)
     RelCT isa (Two GK) (seqs (reduceTop top)) (Two GK) := by
   -- The facts about the layout `Ws` gives.
   have lay : ∀ {p : CkP} {s : State}, GK p s → slot (wW p.cap) 16 ≤ p.Z ∧ 1 ≤ wW p.cap ∧ wW p.cap < 2 ^ 24 ∧
-      p.B.toNat + p.Z ≤ 2 ^ 64 := fun h => ⟨h.ws.hZ, by have := h.ws.w1; omega, h.ws.w2, h.ws.scr.nowrap⟩
+      p.B.toNat + p.Z ≤ 2 ^ 64 := fun h => ⟨h.ws.hZ, by have := h.ws.w1; omega_using [this], h.ws.w2, h.ws.scr.nowrap⟩
   have hct : RelCT isa (Two GK) (seqs (reduceTop top)) fun _ _ => True := by
     refine (ct_cons (by simp) (zeroA_ckct (by decide) tR) (ct_cons (by simp) (zeroA_ckct (by decide) tQ)
       (ct_cons (Ψ := GK) (by simp) ?_ (ct_cons (Ψ := GK) (by simp) ?_
@@ -93,11 +93,11 @@ theorem reduceTop_ckct {top : List Instr} (C : CkP → Nat)
         have pAR := slot_sep (w := wW p.cap) (show aA ≠ aRem by decide)
         refine WP.seq (WP.mono (blkHi_ok h.ws (hT p s h) hc) fun t ⟨⟨e16, e17, e12, m⟩, k⟩ => ?_)
         have hs := h.ws.scr.congr k.wr
-        refine WP.mono (copyWords_ok e16 e17 e12 (by omega) (by omega) (by omega)
-          (fun i hi => hs.ld (by omega)) (fun i hi => hs.st (by omega))
-          (fun i hi b hb => by rw [ofs_off p.B (by omega)]; omega)) fun u ⟨_, _, o, _, _, k'⟩ => ?_
+        refine WP.mono (copyWords_ok e16 e17 e12 (by omega_using [hc]) (by omega_using [hw]) (by omega_using [hn, sR])
+          (fun i hi => hs.ld (by omega_using [sA, hi])) (fun i hi => hs.st (by omega_using [sR, hi]))
+          (fun i hi b hb => by rw [ofs_off p.B (by omega_using [hn, sA, hi, hb])]; omega_using [pAR, hi, hb])) fun u ⟨_, _, o, _, _, k'⟩ => ?_
         rw [m] at o
-        exact h.arr (show aRem < 16 by decide) (Nat.le_refl _) (o.mono (by omega) (by omega)) (k.trans k')
+        exact h.arr (show aRem < 16 by decide) (Nat.le_refl _) (o.mono (by omega_using []) (by omega_using [])) (k.trans k')
           (by decide)
     -- The low words into the top of `[aQ]`.
     · refine pin_seq [.x0, .x16, .x17, .x12] (loVal C) (two_taint [.x0] pins_GK tLo) (fun p s h => ?_) tCopy
@@ -117,11 +117,11 @@ theorem reduceTop_ckct {top : List Instr} (C : CkP → Nat)
         have pAQ := slot_sep (w := wW p.cap) (show aA ≠ aQ by decide)
         refine WP.seq (WP.mono (blkLo_ok h.ws (hT p s h) hc) fun t ⟨⟨e16, e17, e12, m⟩, k⟩ => ?_)
         have hs := h.ws.scr.congr k.wr
-        refine WP.mono (copyWords_ok e16 e17 e12 hc1 (by omega) (by omega)
-          (fun i hi => hs.ld (by omega)) (fun i hi => hs.st (by omega))
-          (fun i hi b hb => by rw [ofs_off p.B (by omega)]; omega)) fun u ⟨_, _, o, _, _, k'⟩ => ?_
+        refine WP.mono (copyWords_ok e16 e17 e12 hc1 (by omega_using [hw, hc]) (by omega_using [hn, hc, sQ])
+          (fun i hi => hs.ld (by omega_using [hc, sA, hi])) (fun i hi => hs.st (by omega_using [hc, sQ, hi]))
+          (fun i hi b hb => by rw [ofs_off p.B (by omega_using [hn, hc, sA, hi, hb])]; omega_using [hc, pAQ, hi, hb])) fun u ⟨_, _, o, _, _, k'⟩ => ?_
         rw [m] at o
-        exact h.arr (show aQ < 16 by decide) (Nat.le_refl _) (o.mono (by omega) (by omega)) (k.trans k')
+        exact h.arr (show aQ < 16 by decide) (Nat.le_refl _) (o.mono (by omega_using []) (by omega_using [hc])) (k.trans k')
           (by decide)
     -- The count, and the loop.
     · refine pin_seq (Ψ := fun (_ : CkP) (_ : State) => True) [.x0, .x12, .x11, .x6] (cntVal C) (two_taint [.x0] pins_GK tCnt)
@@ -184,7 +184,7 @@ theorem ckModC_ct {sX sXlen sDX : Nat} (hsX : sX < 32) (hsL : sXlen < 32) (hsD :
       (by decide) (by decide) (by taint_decide))
     (ct_app (by simp [mulE]) (by simp [modOne]) mE
       (modOneTop_ckct (fun _ => 1) (fun p _ _ => topE_ok _ _ _)
-        (fun p _ _ => ⟨Nat.le_refl _, by simp only [wW, wk]; omega⟩) (by taint_decide) (by taint_decide) (by taint_decide))))))
+        (fun p _ _ => ⟨Nat.le_refl _, by simp only [wW, wk]; omega_using []⟩) (by taint_decide) (by taint_decide) (by taint_decide))))))
 
 /-- `qInv < p` and `q qInv ≡ 1 (mod p)`. -/
 theorem ckQIC_ct : RelCT isa (Two GK) (seqs (loadA aM sP sPlen ++ (loadA aX sQI sPlen ++ (ltA aX aM ++
@@ -204,7 +204,7 @@ theorem ckQIC_ct : RelCT isa (Two GK) (seqs (loadA aM sP sPlen ++ (loadA aX sQI 
     (modOneTop_ckct (fun p => (p.ql + 7) / 8) (fun p s h => by
         obtain ⟨I, m₀, c, rfl, hs, L, -⟩ := h
         exact topQ_ok hs.args.ql (by simp only [CkIn.pub]; have := L.ql2; have := L.k2; omega)
-          (by simp only [CkIn.pub]; have := hs.ws.h256; omega))
+          (by simp only [CkIn.pub]; have := hs.ws.h256; omega_using [this]))
       (fun p s h => by
         obtain ⟨I, m₀, c, rfl, -, L, -⟩ := h
         have := L.ql1; have := L.qcap
@@ -229,7 +229,7 @@ theorem ckcMain_ct : RelCT isa (Two GKCM) VG.Impl.Rsa.AArch64.CheckCrtKey.main f
   rw [ckcMain_eq]
   refine (ct_app (by simp) (by simp [loadA]) (ct_one ckcHead_ct)
     (ct_app (by simp [loadA]) (by simp [loadA]) (toGK (ofGK (ldWide_ct (by decide) (by decide) (by decide) CkP.pN CkP.k
-      (by decide) (fun I m₀ s hs L => ⟨hs.args.n, hs.args.k, ⟨_, hs.n, L.nl⟩, show 1 ≤ I.k by have := L.k1; omega, Nat.le_refl _⟩)
+      (by decide) (fun I m₀ s hs L => ⟨hs.args.n, hs.args.k, ⟨_, hs.n, L.nl⟩, show 1 ≤ I.k by have := L.k1; omega_using [this], Nat.le_refl _⟩)
       (by taint_decide) (by taint_decide) (by taint_decide))))
     (ct_app (by simp [loadA]) (by simp) (toGK (ofGK (ldWide_ct (by decide) (by decide) (by decide) CkP.pE CkP.el
       (by decide) (fun I m₀ s hs L => ⟨hs.args.e, hs.args.el, ⟨_, hs.e, L.ebl⟩, L.el1, L.el2⟩)

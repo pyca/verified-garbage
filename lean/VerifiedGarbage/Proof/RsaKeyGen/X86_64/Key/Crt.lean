@@ -67,7 +67,7 @@ theorem smallMask_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w : Na
       have ew : BitVec.ofNat 64 I.W >>> 1 = BitVec.ofNat 64 w := by
         rw [ofNat_shr1 (by omega_arith)]; congr 1; omega_arith
       xrun [State.ea, ix, h12₂, ew, addr0 hbx rfl, hs₂.st (d := slot I.W aC + 8 * w) (by omega_arith), mu₂, mu₁]
-      rfl) rfl) fun t ⟨hm, k⟩ => ⟨hm, ((ku₁.trans ku₂).trans k).mono (by simp)⟩
+      rfl) rfl) fun t ⟨hm, k⟩ => ⟨hm, ((ku₁.trans ku₂).trans k).mono (by decide)⟩
   have o₂ := writeW_outside s₁.mem I.B (1 : BitVec 64) (d := slot I.W aC + 8 * w) (by omega_arith)
   rw [← m₂] at o₂
   have f₂ := KF.arr1 (I := I) (j := aC) o₂ (by omega_arith) (by omega_arith)
@@ -104,7 +104,7 @@ theorem smallMask_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w : Na
       rw [Bool.and_self, hd]
       cases (decide (av I s.mem aDd ≤ 2 ^ (64 * w)) && ok) <;> decide) rfl) fun t ⟨⟨hz, m⟩, k⟩ => by
     have f₂' : KF I.B I.W [.arr aC] s₁.mem t.mem := by rw [m, m₃]; exact f₂
-    exact ⟨h₃.step (cs := []) (by rw [m]; exact KF.refl _ _ _) rfl k (by decide), (f₁.trans f₂').mono (by simp), hz⟩
+    exact ⟨h₃.step (cs := []) (by rw [m]; exact KF.refl _ _ _) rfl k (by decide), (f₁.trans f₂').mono (by decide), hz⟩
 
 end VG.Proof.RsaKeyGen.X86_64.Key
 
@@ -227,7 +227,7 @@ theorem qinvPart_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {P Q : N
   have vX : av I t.mem aX₂ = av I s₁₁.mem aX₂ := f₁₂.av (by decide) (by decide) (by decide) hZ
   have f₂₆ : KF I.B I.W [.arr aC] s₁.mem s₆.mem := by rw [hm₆]; exact f₂
   refine ⟨ht, ?_, ok₁₂, by rw [vX]; exact hdv₁₁, by rw [vX]; exact hx₁₁⟩
-  exact ((((((((f₁.trans f₂₆).trans f₇).trans f₈).trans f₉).trans f₁₀).trans f₁₁).trans f₁₂)).mono (by simp)
+  exact ((((((((f₁.trans f₂₆).trans f₇).trans f₈).trans f₉).trans f₁₀).trans f₁₁).trans f₁₂)).mono (by decide)
 
 end VG.Proof.RsaKeyGen.X86_64.Key
 
@@ -292,7 +292,7 @@ theorem divisorOf_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {j : Na
       (if decide (av I s.mem j = 0) then word s₃.mem I.B (slot I.W aM) ||| 1 else word s₃.mem I.B (slot I.W aM))) (by
         xrun [State.ea, at0, hbx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
           hs₂.ld (d := slot I.W aM) (by omega_arith), hs₂.st (d := slot I.W aM) (by omega_arith), hbp, hmu]
-        rw [or_and1_mask]) rfl) fun t ⟨hm, k⟩ => ⟨hm, ((ku₁.trans ku₂).trans k).mono (by simp)⟩
+        rw [or_and1_mask]) rfl) fun t ⟨hm, k⟩ => ⟨hm, ((ku₁.trans ku₂).trans k).mono (by decide)⟩
   have o₄ := writeW_outside s₃.mem I.B (if decide (av I s.mem j = 0) then word s₃.mem I.B (slot I.W aM) ||| 1 else
     word s₃.mem I.B (slot I.W aM)) (d := slot I.W aM) (by omega_arith)
   rw [← m₄] at o₄
@@ -374,7 +374,7 @@ theorem crtPart_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {d a b : 
   have vMb : dv b < 2 ^ (64 * I.W) := by rw [← v₇]; exact wv_lt _ _ _ _
   refine ⟨ht, ?_, ?_, ?_⟩
   · exact (((((((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆).trans f₇).trans f₈).trans f₉).trans
-      f₁₀).mono (by simp)
+      f₁₀).mono (by decide)
   · rw [f₁₀.av hok4 (by decide) (by decide) hZ, f₉.av (by decide) (by decide) (by decide) hZ,
       f₈.av (by decide) (by decide) (by decide) hZ, vX₇]
   · rw [← hR']

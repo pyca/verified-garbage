@@ -61,7 +61,7 @@ def signAccepted (L : ExecutionLayout) (data : SignValues) (yb : List Byte) (val
   (!decide (∀ b ∈ Spec.Dsa.encodeBE L.qLen (data.r L), b = 0) && privateAccepted L data yb valid)
 
 def signCompute (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  Checks.signingKey mul, Checks.privateKey sq mul, Core.sign sq mul,
+  Checks.signingKey sq mul, Checks.privateKey sq mul, Core.sign sq mul,
   Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true]
 
 theorem signCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
@@ -89,7 +89,7 @@ theorem signCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State
   have hr : r + L.qLen ≤ usedBytes := by unfold r usedBytes; omega
   have hs : s + L.qLen ≤ usedBytes := by unfold s usedBytes; omega
   unfold signCompute
-  refine WP.seq (WP.mono (signingKey_ok M h0 hp hq hop hoq hpf hqf hg hy hqb hgl hyl hqlen hqval hm)
+  refine WP.seq (WP.mono (signingKey_ok M Sq h0 hp hq hop hoq hpf hqf hg hy hqb hgl hyl hqlen hqval hm)
     fun s1 ⟨h1, hm1, hqm1, hf1, hk1⟩ => ?_)
   have hg1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.generator]) hg
   have hy1 := h0.preserveExternal h1 hf1 hk1 (by decide) (by simp [stablePointer, Core.publicValue]) hy

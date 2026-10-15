@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Spec.BrainpoolP384r1
 meta import VerifiedGarbage.Spec.BrainpoolP384r1
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -35,13 +37,13 @@ theorem brainpoolp384r1_add_ct :
     ConstantTime isa (sumArm brainpoolp384r1 false).pre (sumArm brainpoolp384r1 false).pub
       (fn (modP brainpoolp384r1) false) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem brainpoolp384r1_double_ct :
     ConstantTime isa (sumArm brainpoolp384r1 true).pre (sumArm brainpoolp384r1 true).pub
       (fn (modP brainpoolp384r1) true) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem brainpoolp384r1_add_verified (hF : Fermat brainpoolp384r1.p) :
     Verified Arm.target (pointAdd brainpoolp384r1) (brainpoolp384r1.addContract Arm.abi) :=

@@ -48,9 +48,9 @@ theorem gstep_bv (u v : BitVec 64) :
       and_z, sub_z, BitVec.xor_self]
   · refine ⟨?_, ?_⟩
     · rw [BitVec.neg_sub, BitVec.add_comm, ← BitVec.sub_eq_add_neg,
-        BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; omega)]
+        BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; omega_using [hl])]
     · rw [BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
-  · exact ⟨by rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; omega)], trivial⟩
+  · exact ⟨by rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; omega_using [hl])], trivial⟩
   · exact ⟨trivial, trivial⟩
   · exact ⟨trivial, trivial⟩
 
@@ -76,19 +76,19 @@ theorem modbit_bv (r e d : BitVec 64) (hre : r.toNat < e.toNat) :
   have hbl : (decide (2 ^ 64 ≤ d.toNat + d.toNat)).toNat ≤ 1 := by cases decide (2 ^ 64 ≤ d.toNat + d.toNat) <;> decide
   generalize (decide (2 ^ 64 ≤ d.toNat + d.toNat)).toNat = bit at hb hbl ⊢
   have hr' : r'.toNat = (r.toNat + r.toNat + bit) % 2 ^ 64 := by
-    simp only [r', BitVec.toNat_add, hb]; omega
+    simp only [r', BitVec.toNat_add, hb]; omega_using []
   have he := e.isLt
   have hrl := r.isLt
   rw [sx_m1]
   have hsub : e.toNat ≤ 2 * r.toNat + bit → (2 * r.toNat + bit) % e.toNat = 2 * r.toNat + bit - e.toNat :=
-    fun h => by rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega)]
+    fun h => by rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega_using [hre, hbl])]
   have hlt : 2 * r.toNat + bit < e.toNat → (2 * r.toNat + bit) % e.toNat = 2 * r.toNat + bit :=
     Nat.mod_eq_of_lt
   by_cases hc : 2 ^ 64 ≤ r.toNat + r.toNat + bit
   · simp only [hc, decide_true]
     rw [show (0#64 - BitVec.setWidth 64 (BitVec.ofBool true)) = BitVec.allOnes 64 from rfl, BitVec.allOnes_or,
-      BitVec.and_allOnes, xor_cancel_l, BitVec.toNat_sub, hr', hsub (by omega)]
-    omega
+      BitVec.and_allOnes, xor_cancel_l, BitVec.toNat_sub, hr', hsub (by omega_using [hc])]
+    omega_using [hre, hbl, hc]
   · simp only [hc, decide_false]
     rw [show (0#64 - BitVec.setWidth 64 (BitVec.ofBool false)) = 0 from rfl, z_or]
     by_cases hl : r'.toNat < e.toNat
@@ -96,14 +96,14 @@ theorem modbit_bv (r e d : BitVec 64) (hre : r.toNat < e.toNat) :
       rw [show (0#64 - BitVec.setWidth 64 (BitVec.ofBool true)) = BitVec.allOnes 64 from rfl, BitVec.xor_self,
         BitVec.and_zero, BitVec.xor_zero, hr']
       rw [hr'] at hl
-      rw [hlt (by omega)]
-      omega
+      rw [hlt (by omega_using [hc, hl])]
+      omega_using [hc]
     · simp only [hl, decide_false]
       rw [show (0#64 - BitVec.setWidth 64 (BitVec.ofBool false)) = 0 from rfl, z_xor, BitVec.and_allOnes,
         xor_cancel_l, BitVec.toNat_sub, hr']
       rw [hr'] at hl
-      rw [hsub (by omega)]
-      omega
+      rw [hsub (by omega_using [hl])]
+      omega_using [hc, hl]
 
 theorem and1_toNat (u : BitVec 64) : (u &&& 1).toNat = u.toNat % 2 := by
   rw [BitVec.toNat_and]; simp [Nat.and_one_is_mod]
@@ -116,7 +116,7 @@ theorem odd_mask (u : BitVec 64) :
   · simp only [h, decide_true, mask_true]
     rw [BitVec.toNat_sub, this, h]; rfl
   · simp only [h, decide_false, mask_false]
-    rw [BitVec.toNat_sub, this, show u.toNat % 2 = 0 by omega]; rfl
+    rw [BitVec.toNat_sub, this, show u.toNat % 2 = 0 by omega_using [h]]; rfl
 
 /-- The gcd's step and count, from `u = rsi`, `v = rbx`. -/
 theorem gcdBody_ok (s : State) :

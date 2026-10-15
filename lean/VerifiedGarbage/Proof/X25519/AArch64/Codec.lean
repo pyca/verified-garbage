@@ -37,14 +37,52 @@ def ulimb (w : Nat → Nat) (i : Nat) : Nat :=
   else (w (17 * i / 64) / 2 ^ (17 * i % 64) + w (17 * i / 64 + 1) * 2 ^ (64 - 17 * i % 64) % 2 ^ 64) % 2 ^ 64 %
     2 ^ 17
 
+theorem uN_nest (w0 w1 w2 w3 : Nat) : uN w0 w1 w2 w3 = w0 + 2 ^ 64 * (w1 + 2 ^ 64 * (w2 + 2 ^ 64 * w3)) := by
+  simp only [uN, Nat.mul_add, ← Nat.mul_assoc, ← Nat.pow_add, Nat.add_assoc]
+
+/-- Dropping a low word below the digit. -/
+theorem div_drop {a b s : Nat} (ha : a < 2 ^ 64) : (a + 2 ^ 64 * b) / 2 ^ (64 + s) = b / 2 ^ s := by
+  rw [Nat.pow_add, ← Nat.div_div_eq_div_mul, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt ha,
+    Nat.zero_add]
+
+theorem pow_split {r k : Nat} (h : r ≤ k) (b : Nat) : 2 ^ k * b = 2 ^ r * (2 ^ (k - r) * b) := by
+  rw [← Nat.mul_assoc, ← Nat.pow_add, Nat.add_sub_cancel' h]
+
+/-- A digit inside the low word. -/
+theorem digit_in {a b r : Nat} (hr : r + 17 ≤ 64) : (a + 2 ^ 64 * b) / 2 ^ r % 2 ^ 17 = a / 2 ^ r % 2 ^ 17 := by
+  rw [pow_split (r := r) (by omega), Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
+    pow_split (r := 17) (by omega), Nat.add_mul_mod_self_left]
+
+/-- A digit across the low word and the next. -/
+theorem digit_across {a b r : Nat} (hr : r ≤ 64) :
+    (a + 2 ^ 64 * b) / 2 ^ r % 2 ^ 17 = (a / 2 ^ r + b * 2 ^ (64 - r) % 2 ^ 64) % 2 ^ 64 % 2 ^ 17 := by
+  have d : 2 ^ 17 ∣ 2 ^ 64 := Nat.pow_dvd_pow 2 (by decide)
+  rw [pow_split hr, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.mod_mod_of_dvd _ d,
+    Nat.add_mod (a / 2 ^ r) (b * _ % _), Nat.mod_mod_of_dvd _ d, ← Nat.add_mod, Nat.mul_comm b]
+
+theorem mul_low {c d k : Nat} : (c + 2 ^ 64 * d) * k % 2 ^ 64 = c * k % 2 ^ 64 := by
+  rw [Nat.add_mul, Nat.mul_assoc, Nat.add_mul_mod_self_left]
+
 theorem ulimb_eq {w : Nat → Nat} (h0 : w 0 < 2 ^ 64) (h1 : w 1 < 2 ^ 64) (h2 : w 2 < 2 ^ 64) : ∀ i < 15, ulimb w i = uN (w 0) (w 1) (w 2) (w 3) / 2 ^ (17 * i) % 2 ^ 17 := by
   intro i hi
-  simp only [uN]
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨
-    i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [ulimb, Nat.reduceMul, Nat.reduceDiv, Nat.reduceMod, Nat.reduceAdd, Nat.reduceSub,
-    Nat.reducePow, Nat.reduceLeDiff, ite_true, ite_false, Nat.pow_zero, Nat.div_one] <;> omega
+  rw [ulimb, uN_nest]
+  generalize hq : 17 * i / 64 = q
+  generalize hr : 17 * i % 64 = r
+  have e : 17 * i = 64 * q + r := by omega_using [hq, hr]
+  rw [e]
+  have hr64 : r < 64 := by omega_using [hr]
+  rcases (by omega_using [hq, hi] : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl <;>
+    simp only [Nat.mul_zero, Nat.zero_add, Nat.mul_one, Nat.reduceMul, Nat.reduceAdd] <;> split
+  · exact (digit_in ‹r + 17 ≤ 64›).symm
+  · rw [digit_across (Nat.le_of_lt hr64), mul_low]
+  · rw [show 64 + r = 64 + (0 + r) by rw [Nat.zero_add], div_drop h0, Nat.zero_add]
+    exact (digit_in ‹r + 17 ≤ 64›).symm
+  · rw [show 64 + r = 64 + (0 + r) by rw [Nat.zero_add], div_drop h0, Nat.zero_add, digit_across (Nat.le_of_lt hr64), mul_low]
+  · rw [show 128 + r = 64 + (64 + r) by omega, div_drop h0, div_drop h1]
+    exact (digit_in ‹r + 17 ≤ 64›).symm
+  · rw [show 128 + r = 64 + (64 + r) by omega, div_drop h0, div_drop h1, digit_across (Nat.le_of_lt hr64)]
+  · rw [show 192 + r = 64 + (64 + (64 + r)) by omega, div_drop h0, div_drop h1, div_drop h2]
+  · exfalso; omega_using [e, hi, hr64, ‹¬_›]
 
 /-! ## The full reduction -/
 
@@ -265,18 +303,29 @@ theorem packV_words {l : Nat → Nat} (hl : Bnd l 17) :
   rw [shl_mod (l 3) (k := 51) (by decide), shl_mod (l 7) (k := 55) (by decide),
     shl_mod (l 11) (k := 59) (by decide)]
   simp only [Nat.reduceSub]
-  refine ⟨?_, ?_, ?_, ?_⟩ <;>
-  simp (disch := omega) only [mod64_of_lt]
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simp (disch := omega_using [h0, h1, h2]) only [mod64_of_lt]
+  · simp (disch := omega_using [h3, h4, h5, h6]) only [mod64_of_lt]
+  · simp (disch := omega_using [h7, h8, h9, h10]) only [mod64_of_lt]
+  · simp (disch := omega_using [h11, h12, h13, h14]) only [mod64_of_lt]
+
+theorem low_word {a b : Nat} (ha : a < 2 ^ 64) : (a + 2 ^ 64 * b) % 2 ^ 64 = a := by
+  rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt ha]
 
 theorem digits4 {w0 w1 w2 w3 : Nat} (h0 : w0 < 2 ^ 64) (h1 : w1 < 2 ^ 64) (h2 : w2 < 2 ^ 64)
     (h3 : w3 < 2 ^ 64) : ∀ j < 4, (w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3) / 2 ^ (64 * j) % 2 ^ 64 =
       [w0, w1, w2, w3].getD j 0 := by
   intro j hj
+  rw [show w0 + 2 ^ 64 * w1 + 2 ^ 128 * w2 + 2 ^ 192 * w3 = uN w0 w1 w2 w3 from rfl, uN_nest]
   rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
-  · simp only [List.getD_cons_zero]; omega
-  · simp only [List.getD_cons_succ, List.getD_cons_zero]; omega
-  · simp only [List.getD_cons_succ, List.getD_cons_zero]; omega
-  · simp only [List.getD_cons_succ, List.getD_cons_zero]; omega
+  · rw [Nat.mul_zero, Nat.pow_zero, Nat.div_one, low_word h0, List.getD_cons_zero]
+  · rw [show 64 * 1 = 64 + 0 from rfl, div_drop h0, Nat.pow_zero, Nat.div_one, low_word h1,
+      List.getD_cons_succ, List.getD_cons_zero]
+  · rw [show 64 * 2 = 64 + (64 + 0) from rfl, div_drop h0, div_drop h1, Nat.pow_zero, Nat.div_one, low_word h2,
+      List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_zero]
+  · rw [show 64 * 3 = 64 + (64 + (64 + 0)) from rfl, div_drop h0, div_drop h1, div_drop h2, Nat.pow_zero,
+      Nat.div_one, Nat.mod_eq_of_lt h3]
+    rfl
 
 theorem packV_eq {l : Nat → Nat} (hl : Bnd l 17) : ∀ j < 4, packV l j = valN l 15 / 2 ^ (64 * j) % 2 ^ 64 := by
   obtain ⟨w0, w1, w2, w3⟩ := packV_words hl

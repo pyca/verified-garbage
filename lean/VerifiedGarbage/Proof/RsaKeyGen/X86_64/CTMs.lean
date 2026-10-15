@@ -333,9 +333,8 @@ theorem montSetup_ct (M : Mont) :
       have : r.1 + r.2 ≤ slot q.w aRm1 + 8 * (q.w + 2) := by revert r hr; simp only [msRanges]; rng_le
       have := hd.x; omega_arith
     have hc1 : 1 < c := by have := Nat.two_pow_pos (64 * q.w - 2); omega_arith
-    have hch : Proof.RsaKeyGen.checksW q.w < 2 ^ 62 := by
-      unfold Proof.RsaKeyGen.checksW; split <;> (try split) <;> (try split) <;> (try split) <;> (try split) <;>
-        (try split) <;> decide
+    have hch : Proof.RsaKeyGen.checksW q.w < 2 ^ 62 :=
+      Nat.lt_of_le_of_lt (Proof.RsaKeyGen.checksW_le q.w) (by decide)
     exact ⟨hk, ⟨hg'.rdi, k.2.2.trans hw, fun _ he => absurd he List.not_mem_nil⟩, hd.mr, hch, hrl, mi', c,
       wv t.mem q.B (slot q.w aB) q.w, r, ⟨hg', hinv, hn', rfl, hr1, hrm1⟩, hr2, hc1, ⟨hodd, hlo, hhi⟩,
       by rw [e _ (Or.inl rfl)]; exact hO, by rw [e _ (Or.inr (Or.inl rfl))]; exact hU,

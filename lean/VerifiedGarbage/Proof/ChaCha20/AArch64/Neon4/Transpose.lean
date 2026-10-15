@@ -34,13 +34,13 @@ theorem zip1_d2 (x y : BitVec 128) :
   simp only [Nat.reduceMul, Nat.zero_add]
   by_cases h : i < 64
   · by_cases h' : i < 32
-    · simp (disch := omega) only [ite_eq_left, decide_eq_true, Bool.true_and]
-    · simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and]
+    · simp (disch := omega) only [↓ite_eq_left, decide_eq_true, Bool.true_and]
+    · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega
   · by_cases h' : i < 96
-    · simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and]
+    · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega
-    · simp (disch := omega) only [ite_eq_right, decide_eq_true, Bool.true_and]
+    · simp (disch := omega) only [↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega
 
 theorem zip2_d2 (x y : BitVec 128) :
@@ -53,13 +53,13 @@ theorem zip2_d2 (x y : BitVec 128) :
   simp only [Nat.reduceMul]
   by_cases h : i < 64
   · by_cases h' : i < 32
-    · simp (disch := omega) only [ite_eq_left, decide_eq_true, Bool.true_and]
-    · simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and]
+    · simp (disch := omega) only [↓ite_eq_left, decide_eq_true, Bool.true_and]
+    · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega
   · by_cases h' : i < 96
-    · simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and]
+    · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega
-    · simp (disch := omega) only [ite_eq_right, decide_eq_true, Bool.true_and]
+    · simp (disch := omega) only [↓ite_eq_right, decide_eq_true, Bool.true_and]
       congr 1 <;> omega
 
 theorem rowWord_inj (r i j : Fin 4) : rowWord r i = rowWord r j ↔ i = j := by

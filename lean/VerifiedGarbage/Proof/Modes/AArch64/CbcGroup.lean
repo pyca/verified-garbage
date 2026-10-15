@@ -49,18 +49,18 @@ theorem entry_ok (hsm : 8 * c.total < 32768) (hroom : c.slots + 12 ≤ c.total) 
     ∃ s', runBlock isa (c.ctrEntry r) s = some s' ∧ s'.gpr sb = B ∧
       (∀ i < 10, s'.mem.readW (wordAddr B (c.slots + i)) 64 = s.gpr (Core.savedRegs.getD i .x19)) ∧
       Frame [modeRegion c B] s.mem s'.mem ∧ (∀ x, x ≠ sb → s'.gpr x = s.gpr x) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hN : 8 * c.total < 2 ^ 64 := by omega_arith
+  have hN : 8 * c.total < 2 ^ 64 := by omega_using [hsm]
   obtain ⟨s₁, e₁, b₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s sb r.scr
   have b₁' : s₁.gpr sb = B := by rw [b₁, hB]
   obtain ⟨s₂, e₂, v₂, f₂, g₂, rd₂, wr₂⟩ := stores_ok (B := B) c.slots (fun i => Core.savedRegs.getD i .x19) 10 s₁
-    b₁' (fun i hi => by rw [wr₁]; exact slot_wr hs.wr hN (by omega_arith)) (by omega_arith)
+    b₁' (fun i hi => by rw [wr₁]; exact slot_wr hs.wr hN (by omega_using [hroom, hi])) (by omega_using [hsm, hroom])
   have hsv : ∀ i < 10, Core.savedRegs.getD i .x19 ≠ sb := by decide
   refine ⟨s₂, by rw [ctrEntry_eq, runBlock_app, e₁, Option.bind_some, e₂], by rw [g₂, b₁'],
     fun i hi => by rw [v₂ i hi, o₁ _ (hsv i hi)], ?_, fun x hx => by rw [g₂, o₁ x hx], by rw [rd₂, rd₁],
     by rw [wr₂, wr₁]⟩
   rw [← m₁]
   exact f₂.sub fun x hx => ⟨_, List.mem_singleton_self _, by
-    simp only [List.mem_singleton] at hx; subst hx; exact VG.Offset.sub B (by omega_arith) (by omega_arith)⟩
+    simp only [List.mem_singleton] at hx; subst hx; exact VG.Offset.sub B (by omega_using []) (by omega_using [])⟩
 
 /-- The data loop, before group `g`, from the IV `iv` with the key `k`. -/
 structure CInv (cs : BlockSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.Key) (iv : List Byte) (g : Nat)
@@ -104,22 +104,22 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
   have hfit := hp.scr.fit
   have hfitD := hp.fitD
   have hk := hi.lt
-  have hL0 : 0 < 8 * c.bw := by omega_arith
+  have hL0 : 0 < 8 * c.bw := by omega_using [hbw0]
   have hGb : c.G ≤ c.bw * c.G := Nat.le_mul_of_pos_left _ hbw0
   obtain ⟨hregs, hdl⟩ := regsOk_ne cs.regs_ok
   obtain ⟨down, dsb, -⟩ := hregs c.dataReg List.mem_cons_self
   obtain ⟨lown, lsb, -⟩ := hregs c.leftReg (List.mem_cons_of_mem _ List.mem_cons_self)
   obtain ⟨-, -, -, -, -, d13, d14, -, d16, -⟩ := not_own down
   obtain ⟨-, -, -, -, -, l13, -, -, -, -⟩ := not_own lown
-  have hN : 8 * c.total < 2 ^ 64 := by omega_arith
+  have hN : 8 * c.total < 2 ^ 64 := by omega_using [hsm]
   let v := n - c.G * g
   let cc := min v c.G
-  have h8n : 8 * n ≤ 8 * c.bw * n := Nat.mul_le_mul_right n (by omega_arith)
-  have hv : v < 2 ^ 64 := by omega_arith
-  have hc0 : 0 < cc := by omega_arith
-  have hcG : cc ≤ c.G := by omega_arith
+  have h8n : 8 * n ≤ 8 * c.bw * n := Nat.mul_le_mul_right n (by omega_using [hL0])
+  have hv : v < 2 ^ 64 := by omega_using [hfitD, h8n]
+  have hc0 : 0 < cc := by omega_using [hG0, hk]
+  have hcG : cc ≤ c.G := by omega_using []
   have hkc : 8 * c.bw * (c.G * g) + 8 * c.bw * cc ≤ 8 * c.bw * n := by
-    rw [← Nat.mul_add]; exact Nat.mul_le_mul_left _ (by omega_arith)
+    rw [← Nat.mul_add]; exact Nat.mul_le_mul_left _ (by omega_using [hc0])
   have hbwcc : 8 * c.bw * cc = 8 * (c.bw * cc) := Nat.mul_assoc _ _ _
   have hbG : c.bw * cc ≤ c.bw * c.G := Nat.mul_le_mul_left _ hcG
   have hcc1 : 8 * c.bw ≤ 8 * c.bw * cc := Nat.le_mul_of_pos_right _ hc0
@@ -131,29 +131,29 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
   have subS : ∀ {d l : Nat}, d + l ≤ 8 * c.total → Region.Sub ⟨B + BitVec.ofNat 64 d, l⟩ ⟨B, 8 * c.total⟩ :=
     fun h => VG.Offset.sub_base B h
   have subCore : Region.Sub (coreRegion c B) ⟨B, 8 * c.total⟩ :=
-    Region.sub_prefix (by omega_arith)
+    Region.sub_prefix (by omega_using [hroom])
   have subA : Region.Sub ⟨A, 8 * c.bw * cc⟩ ⟨D, 8 * c.bw * n⟩ := VG.Offset.sub_base D hkc
-  have subT : Region.Sub ⟨T, 8 * c.bw * cc⟩ ⟨B, 8 * c.total⟩ := subS (by omega_arith)
+  have subT : Region.Sub ⟨T, 8 * c.bw * cc⟩ ⟨B, 8 * c.total⟩ := subS (by omega_using [hroom, hbuf, hbwcc, hbG])
   have subH : Region.Sub ⟨H, 8 * c.bw⟩ ⟨B, 8 * c.total⟩ :=
-    subS (by simp only [Core.hiSlot]; omega_arith)
+    subS (by simp only [Core.hiSlot]; omega_using [hroom, hbw2])
   have subTbuf : Region.Sub ⟨T, 8 * c.bw * cc⟩ (blkRegion c B) := Region.sub_prefix (Nat.mul_le_mul_left _ hcG)
   have dDS : ∀ {r : Region}, Region.Sub r ⟨B, 8 * c.total⟩ → Region.Disjoint ⟨D, 8 * c.bw * n⟩ r :=
     fun h => hp.sep.sub_right h
   have dAT : Region.Disjoint ⟨A, 8 * c.bw * cc⟩ ⟨T, 8 * c.bw * cc⟩ := (dDS subT).sub_left subA
   have dTH : Region.Disjoint ⟨T, 8 * c.bw * cc⟩ ⟨H, 8 * c.bw⟩ :=
-    VG.Offset.disjoint B (.inl (by simp only [Core.hiSlot]; omega_arith)) (by omega_arith) (by simp only [Core.hiSlot]; omega_arith)
+    VG.Offset.disjoint B (.inl (by simp only [Core.hiSlot]; omega_using [hbuf, hbwcc, hbG])) (by omega_using [hroom, hbuf, hN, hbwcc, hbG]) (by simp only [Core.hiSlot]; omega_using [hroom, hbw2, hN])
   have dAH : Region.Disjoint ⟨A, 8 * c.bw * cc⟩ ⟨H, 8 * c.bw⟩ := (dDS subH).sub_left subA
   have dHcore : Region.Disjoint ⟨H, 8 * c.bw⟩ (coreRegion c B) :=
-    VG.Offset.disjoint_base B (by simp only [Core.hiSlot]; omega_arith) (by simp only [Core.hiSlot]; omega_arith)
+    VG.Offset.disjoint_base B (by simp only [Core.hiSlot]; omega_using []) (by simp only [Core.hiSlot]; omega_using [hroom, hbw2, hN])
   have inT : ∀ t, t < c.bw * cc → InRegions s.wr (T + BitVec.ofNat 64 (8 * t)) 8 := fun t ht =>
-    ⟨_, hwS, by rw [addr_add]; exact VG.Offset.contains_base B (by omega_arith) (by omega_arith)⟩
+    ⟨_, hwS, by rw [addr_add]; exact VG.Offset.contains_base B (by omega_using [hroom, hbuf, hbG, ht]) (by omega_using [hroom, hbuf, hN, hbG, ht])⟩
   have inA : ∀ t, t < c.bw * cc → InRegions s.wr (A + BitVec.ofNat 64 (8 * t)) 8 := fun t ht =>
-    ⟨_, hwD, by rw [addr_add]; exact VG.Offset.contains_base D (by omega_arith) (by omega_arith)⟩
+    ⟨_, hwD, by rw [addr_add]; exact VG.Offset.contains_base D (by omega_using [hkc, hbwcc, ht]) (by omega_using [hfitD, hkc, hbwcc, ht])⟩
   have inH : ∀ w < c.bw, InRegions s.wr (H + BitVec.ofNat 64 (8 * w)) 8 := fun w hw =>
     ⟨_, hwS, by
       rw [addr_add]
-      exact VG.Offset.contains_base B (by simp only [Core.hiSlot]; omega_arith)
-        (by simp only [Core.hiSlot]; omega_arith)⟩
+      exact VG.Offset.contains_base B (by simp only [Core.hiSlot]; omega_using [hroom, hbw2, hw])
+        (by simp only [Core.hiSlot]; omega_using [hroom, hbw2, hN, hw])⟩
   unfold Core.cbcDecGroup
   -- The count, the addresses, and the ciphertext blocks to the buffer.
   refine WP.seq (WP.mono_syms (groupCount_wp hL.lgG_lt l13 hi.leftR hv) fun s₁ ⟨c₁, o₁, m₁, rd₁, wr₁⟩ sy₁ => ?_)
@@ -163,7 +163,7 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
   have mem₂ : s₂.mem = s.mem := by rw [m₂, m₁]
   have rd₂' : s₂.rd = s.rd := by rw [rd₂, rd₁]
   have wr₂' : s₂.wr = s.wr := by rw [wr₂, wr₁]
-  refine WP.seq (WP.mono_syms (copyBlocks_wp (S := A) (T := T) hbw0 hbw2 hc0 (by omega_arith)
+  refine WP.seq (WP.mono_syms (copyBlocks_wp (S := A) (T := T) hbw0 hbw2 hc0 (by omega_using [hsm, hroom, hbuf, hbwcc, hbG])
     (fun t ht => by rw [rd₂', wr₂']; exact inRd (inA t ht)) (fun t ht => by rw [wr₂']; exact inT t ht) dAT
     (by rw [a₂]) (by rw [b₂, o₁ _ d13 d16, hi.dataR]) (by rw [t₂, c₁])) fun s₃ ⟨h₃, _⟩ sy₃ => ?_)
   have keep₃ : ∀ r, r ∉ ownRegs → s₃.gpr r = s.gpr r := fun r hr => by
@@ -193,8 +193,8 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
   have wr₆' : s₆.wr = s.wr := by rw [wr₆, wr₅, wr₄, wr₃']
   have base₆ : s₆.gpr sb = B := by rw [o₆ _ (by decide) (by decide) (by decide), base₅]
   -- The plaintext blocks.
-  refine WP.seq (WP.mono_syms (unchainBlocks_wp (c := c) (B := B) (T := T) (A := A) (H := H) hbw0 (by omega_arith)
-    (by simp only [Core.hiSlot]; omega_arith) hc0 (by omega_arith) base₆ rfl (fun t ht => by rw [wr₆']; exact inT t ht)
+  refine WP.seq (WP.mono_syms (unchainBlocks_wp (c := c) (B := B) (T := T) (A := A) (H := H) hbw0 (by omega_using [hbw2])
+    (by simp only [Core.hiSlot]; omega_using [hsm, hroom, hbw2]) hc0 (by omega_using [hsm, hroom, hbuf, hbwcc, hbG]) base₆ rfl (fun t ht => by rw [wr₆']; exact inT t ht)
     (fun t ht => by rw [wr₆']; exact inA t ht) (fun w hw => by rw [wr₆']; exact inH w hw) dAT.symm dTH dAH
     (by rw [a₆]) (by rw [b₆, o₅ _ d13 d16, data₄]) (by rw [t₆, c₅])) fun s₇ ⟨h₇, x15₇⟩ sy₇ => ?_)
   have f₇ : Frame [⟨T, 8 * c.bw * cc⟩, ⟨A, 8 * c.bw * cc⟩, ⟨H, 8 * c.bw⟩] s₄.mem s₇.mem := by
@@ -210,9 +210,9 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
   obtain ⟨s₈, e₈, d₈, l₈, o₈, m₈, rd₈, wr₈⟩ := advance_ok hdl d16 s₇
   refine WP.of_runBlock ⟨s₈, e₈, ?_⟩
   have left₈ : s₈.gpr c.leftReg = BitVec.ofNat 64 (v - cc) := by
-    rw [l₈, left₇, x16₇, VG.Offset.ofNat_sub_ofNat (by omega_arith)]
+    rw [l₈, left₇, x16₇, VG.Offset.ofNat_sub_ofNat (by omega_using [])]
   have hz : isa.eval (.nonzero .x c.leftReg) s₈ = some !(decide (v = cc)) := by
-    rw [eval_nonzero, left₈, ofNat_beq_zero (by omega_arith), decide_eq_decide.mpr (show v - cc = 0 ↔ v = cc by omega_arith)]
+    rw [eval_nonzero, left₈, ofNat_beq_zero (by omega_using [hv]), decide_eq_decide.mpr (show v - cc = 0 ↔ v = cc by omega_using [])]
   have keep₈ : ∀ r, r ∉ modeRegs c → s₈.gpr r = s₄.gpr r := fun r hr => by
     obtain ⟨h1, h2, h3⟩ := of_not_modeRegs hr
     rw [o₈ r h2 h3, g₇ r h1]
@@ -233,7 +233,7 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
     · rw [wr₈, h₇.wr, wr₆', wr₄, wr₃']
     · rw [runBlock_syms e₈, sy₇, runBlock_syms e₆, sy₅]
   -- The bytes, through the steps.
-  have hn64 : 8 * c.bw * n ≤ 2 ^ 64 := by omega_arith
+  have hn64 : 8 * c.bw * n ≤ 2 ^ 64 := by omega_using [hfitD]
   have outCore : ∀ {R : Region}, Region.Disjoint R (coreRegion c B) → R.len ≤ 2 ^ 64 →
       ∀ i < R.len, s₄.mem (R.base + BitVec.ofNat 64 i) = s₃.mem (R.base + BitVec.ofNat 64 i) := fun hd hl i hi =>
     f₄.bytes (R := _) (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd) hl hi
@@ -245,10 +245,10 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
     rw [outCore (R := ⟨D, 8 * c.bw * n⟩) (dDS subCore) hn64 i hin,
       outT (R := ⟨D, 8 * c.bw * n⟩) (dDS subT) hn64 i hin]
   have chain₄ : ∀ u < 8 * c.bw, s₄.mem (H + BitVec.ofNat 64 u) = s.mem (H + BitVec.ofNat 64 u) := fun u hu => by
-    rw [outCore (R := ⟨H, 8 * c.bw⟩) dHcore (show 8 * c.bw ≤ 2 ^ 64 by omega_arith) u hu, outT (R := ⟨H, 8 * c.bw⟩) dTH.symm (show 8 * c.bw ≤ 2 ^ 64 by omega_arith) u hu]
+    rw [outCore (R := ⟨H, 8 * c.bw⟩) dHcore (show 8 * c.bw ≤ 2 ^ 64 by omega_using [hkc, hcc1, hn64]) u hu, outT (R := ⟨H, 8 * c.bw⟩) dTH.symm (show 8 * c.bw ≤ 2 ^ 64 by omega_using [hkc, hcc1, hn64]) u hu]
   have dat0 : ∀ i, 8 * c.bw * (c.G * g) ≤ i → i < 8 * c.bw * n →
       s.mem (D + BitVec.ofNat 64 i) = s₀.mem (D + BitVec.ofNat 64 i) :=
-    fun i h1 h2 => by rw [hi.data i h2, ite_eq_right (by omega_arith)]
+    fun i h1 h2 => by rw [hi.data i h2, ite_eq_right (by omega_using [h1])]
   -- The decrypted blocks in the buffer.
   have dec₄ : ∀ j < cc, ∀ u < 8 * c.bw, s₄.mem (T + BitVec.ofNat 64 (8 * c.bw * j + u)) =
       (cs.cipher k (bytesAt s₀.mem (D + BitVec.ofNat 64 (8 * c.bw * (c.G * g + j))) (8 * c.bw))).getD u 0 := by
@@ -256,15 +256,15 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
     have hjl := idx_lt (L := 8 * c.bw) hj
     have eT : T + BitVec.ofNat 64 (8 * c.bw * j + u) = blkAddr c B j + BitVec.ofNat 64 u := by
       simp only [T, blkAddr]; rw [addr_add, addr_add, Nat.add_assoc]
-    rw [eT, ← bytesAt_getD s₄.mem _ hu, ks₄ _ (by omega_arith)]
+    rw [eT, ← bytesAt_getD s₄.mem _ hu, ks₄ _ (by omega_using [hj])]
     congr 2
     apply List.ext_getElem (by simp [bytesAt])
     intro x h1 _
     have hx : x < 8 * c.bw := by simpa [bytesAt] using h1
     simp only [bytesAt, List.getElem_map, List.getElem_range, blkAddr]
-    rw [addr_add, show 8 * c.buf + 8 * c.bw * j + x = 8 * c.buf + (8 * c.bw * j + x) by omega_arith, ← addr_add,
-      h₃.copied _ (by omega_arith), mem₂, addr_add, addr_add, Nat.mul_add, Nat.add_assoc,
-      dat0 _ (by omega_arith) (by omega_arith)]
+    rw [addr_add, show 8 * c.buf + 8 * c.bw * j + x = 8 * c.buf + (8 * c.bw * j + x) by omega_using [], ← addr_add,
+      h₃.copied _ (by omega_using [hjl, hx]), mem₂, addr_add, addr_add, Nat.mul_add, Nat.add_assoc,
+      dat0 _ (by omega_using []) (by omega_using [hkc, hjl, hx])]
   -- Offsets within the data.
   have eA : ∀ t, D + BitVec.ofNat 64 (8 * c.bw * (c.G * g) + t) = A + BitVec.ofNat 64 t := fun t => by
     rw [← addr_add]
@@ -280,64 +280,64 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
     rw [m₈]
     have hqn := idx_lt (L := 8 * c.bw) hq
     by_cases hin : c.G * g ≤ q ∧ q < c.G * g + cc
-    · obtain ⟨j, rfl⟩ : ∃ j, q = c.G * g + j := ⟨q - c.G * g, by omega_arith⟩
-      have hjc : j < cc := by omega_arith
+    · obtain ⟨j, rfl⟩ : ∃ j, q = c.G * g + j := ⟨q - c.G * g, by omega_using [hin]⟩
+      have hjc : j < cc := by omega_using [hin]
       have hjl := idx_lt (L := 8 * c.bw) hjc
-      rw [Nat.mul_add, Nat.add_assoc, eA, h₇.out _ (by omega_arith), mem₆, dec₄ j hjc r hr, ite_eq_left hin.2,
+      rw [Nat.mul_add, Nat.add_assoc, eA, h₇.out _ (by omega_using [hr, hjl]), mem₆, dec₄ j hjc r hr, ite_eq_left hin.2,
         cbcOut_getD (cs.cipher_len k) _ _ hiv _ hr]
       congr 1
       by_cases hj0 : j = 0
       · subst hj0
         rw [Nat.mul_zero, Nat.zero_add, ite_eq_left hr, chain₄ r hr, hi.chain r hr, Nat.add_zero]
       · have := Nat.le_mul_of_pos_right (8 * c.bw) (Nat.pos_of_ne_zero hj0)
-        rw [ite_eq_right (by omega_arith), show 8 * c.bw * j + r - 8 * c.bw = 8 * c.bw * (j - 1) + r by
+        rw [ite_eq_right (by omega_using [this]), show 8 * c.bw * j + r - 8 * c.bw = 8 * c.bw * (j - 1) + r by
             have := Nat.mul_sub_one (8 * c.bw) j; omega_arith,
-          ← eA, dat₄ _ (by have := idx_lt (L := 8 * c.bw) (show j - 1 < cc by omega_arith); omega_arith),
-          dat0 _ (by omega_arith) (by have := idx_lt (L := 8 * c.bw) (show j - 1 < cc by omega_arith); omega_arith), cbcPrev,
-          ite_eq_right (by omega_arith), bytesAt_getD _ _ hr, addr_add, prevEq (Nat.pos_of_ne_zero hj0)]
+          ← eA, dat₄ _ (by have := idx_lt (L := 8 * c.bw) (show j - 1 < cc by omega_using [hjc]); omega_arith),
+          dat0 _ (by omega_using []) (by have := idx_lt (L := 8 * c.bw) (show j - 1 < cc by omega_using [hjc]); omega_arith), cbcPrev,
+          ite_eq_right (by omega_using [hj0]), bytesAt_getD _ _ hr, addr_add, prevEq (Nat.pos_of_ne_zero hj0)]
     · have hlo : q < c.G * g → 8 * c.bw * q + r < 8 * c.bw * (c.G * g) := fun h => by
-        have := idx_lt (L := 8 * c.bw) h; omega_arith
+        have := idx_lt (L := 8 * c.bw) h; omega_using [hr, this]
       have hhi : c.G * g + cc ≤ q → 8 * c.bw * (c.G * g) + 8 * c.bw * cc ≤ 8 * c.bw * q := fun h => by
         rw [← Nat.mul_add]; exact Nat.mul_le_mul_left _ h
       have hout : ∀ R ∈ [(⟨T, 8 * c.bw * cc⟩ : Region), ⟨A, 8 * c.bw * cc⟩, ⟨H, 8 * c.bw⟩],
           ¬ R.Contains (D + BitVec.ofNat 64 (8 * c.bw * q + r)) 1 := fun R hR => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
         rcases hR with rfl | rfl | rfl
-        · exact fun h => (dDS subT) _ (VG.Offset.contains_base D (by omega_arith) (by omega_arith)) h
-        · exact not_contains_off D (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
-        · exact fun h => (dDS subH) _ (VG.Offset.contains_base D (by omega_arith) (by omega_arith)) h
-      rw [f₇ _ hout, dat₄ _ (by omega_arith), hi.data _ (by omega_arith), idx_div hr, idx_mod hr]
+        · exact fun h => (dDS subT) _ (VG.Offset.contains_base D (by omega_using [hr, hqn]) (by omega_using [hn64, hr, hqn])) h
+        · exact not_contains_off D (by omega_using [hin, hlo, hhi]) (by omega_using [hn64, hr, hqn]) (by omega_using [hcc1, hr]) (by omega_using [hkc, hn64])
+        · exact fun h => (dDS subH) _ (VG.Offset.contains_base D (by omega_using [hr, hqn]) (by omega_using [hn64, hr, hqn])) h
+      rw [f₇ _ hout, dat₄ _ (by omega_using [hr, hqn]), hi.data _ (by omega_using [hr, hqn]), idx_div hr, idx_mod hr]
       by_cases h2 : q < c.G * g
-      · rw [ite_eq_left (hlo h2), ite_eq_left (by omega_arith)]
-      · rw [ite_eq_right (by have := Nat.mul_le_mul_left (8 * c.bw) (Nat.le_of_not_lt h2); omega_arith),
-          ite_eq_right (by omega_arith)]
+      · rw [ite_eq_left (hlo h2), ite_eq_left (by omega_using [h2])]
+      · rw [ite_eq_right (by have := Nat.mul_le_mul_left (8 * c.bw) (Nat.le_of_not_lt h2); omega_using [this]),
+          ite_eq_right (by omega_using [hin, h2])]
   -- The chaining value: the group's last ciphertext block.
   have chain₈ : ∀ u < 8 * c.bw, s₈.mem (H + BitVec.ofNat 64 u) =
       (cbcPrev (8 * c.bw) s₀.mem D iv (c.G * g + cc)).getD u 0 := by
     intro u hu
-    have hl := idx_lt (L := 8 * c.bw) (show cc - 1 < cc by omega_arith)
-    rw [m₈, h₇.chain u hu, ite_eq_right (by omega_arith), mem₆, ← eA, dat₄ _ (by omega_arith), dat0 _ (by omega_arith) (by omega_arith),
-      cbcPrev, ite_eq_right (by omega_arith), bytesAt_getD _ _ hu, addr_add, prevEq hc0]
+    have hl := idx_lt (L := 8 * c.bw) (show cc - 1 < cc by omega_using [hc0])
+    rw [m₈, h₇.chain u hu, ite_eq_right (by omega_using [hc0]), mem₆, ← eA, dat₄ _ (by omega_using [hkc, hu, hl]), dat0 _ (by omega_using []) (by omega_using [hkc, hu, hl]),
+      cbcPrev, ite_eq_right (by omega_using [hc0]), bytesAt_getD _ _ hu, addr_add, prevEq hc0]
   -- The slots.
   have wS : ∀ j, c.slots ≤ j → j < c.slots + 10 → ∀ r ∈ [(⟨T, 8 * c.bw * cc⟩ : Region), ⟨A, 8 * c.bw * cc⟩,
       ⟨H, 8 * c.bw⟩], Region.Disjoint ⟨wordAddr B j, 8⟩ r := fun j h1 h2 r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact VG.Offset.disjoint B (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-    · exact (((dDS (subS (show 8 * j + 8 ≤ 8 * c.total by omega_arith))).sub_left
+    · exact VG.Offset.disjoint B (.inr (by omega_using [hbuf, hbwcc, hbG, h1])) (by omega_using [hroom, hN, h2]) (by omega_using [hroom, hbuf, hN, hbwcc, hbG])
+    · exact (((dDS (subS (show 8 * j + 8 ≤ 8 * c.total by omega_using [hroom, h2]))).sub_left
         subA).symm)
-    · exact VG.Offset.disjoint B (.inl (by simp only [Core.hiSlot]; omega_arith)) (by omega_arith)
-        (by simp only [Core.hiSlot]; omega_arith)
+    · exact VG.Offset.disjoint B (.inl (by simp only [Core.hiSlot]; omega_using [h2])) (by omega_using [hroom, hN, h2])
+        (by simp only [Core.hiSlot]; omega_using [hroom, hbw2, hN])
   have saved₈ : ∀ i < 10, s₈.mem.readW (wordAddr B (c.slots + i)) 64 =
       s₀.mem.readW (wordAddr B (c.slots + i)) 64 := fun i hi10 => by
     rw [m₈, ← hi.saved i hi10]
-    refine (f₇.readW (Region.contains_self _ _) (wS _ (by omega_arith) (by omega_arith)) (by decide)).trans ?_
+    refine (f₇.readW (Region.contains_self _ _) (wS _ (by omega_using []) (by omega_using [hi10])) (by decide)).trans ?_
     refine (f₄.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint_base B (by omega_arith) (by omega_arith)) (by decide)).trans ?_
+      exact VG.Offset.disjoint_base B (by omega_using []) (by omega_using [hroom, hN, hi10])) (by decide)).trans ?_
     exact f₃.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact VG.Offset.disjoint B (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) (by decide)
+      exact VG.Offset.disjoint B (.inr (by omega_using [hbuf, hbwcc, hbG])) (by omega_using [hroom, hN, hi10]) (by omega_using [hroom, hbuf, hN, hbwcc, hbG])) (by decide)
   have fr : Frame [⟨B, 8 * c.total⟩, ⟨D, 8 * c.bw * n⟩] s₀.mem s₈.mem := by
     rw [m₈]
     refine hi.frame.trans (((f₃.sub fun r hr => ⟨⟨B, 8 * c.total⟩, List.mem_cons_self, by
@@ -354,14 +354,14 @@ theorem cbcDecGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} 
   have wr₈' : s₈.wr = s₀.wr := by rw [wr₈, h₇.wr, wr₆', hi.wr]
   by_cases hdone : v = cc
   · refine .inl ⟨by rw [hz, decide_eq_true hdone]; rfl, base₈, saved₈, ?_, fr, rd₈', wr₈'⟩
-    rw [show n = c.G * g + cc by omega_arith] at hdata ⊢
+    rw [show n = c.G * g + cc by omega_using [hc0, hdone]] at hdata ⊢
     exact hdata
-  · have hcc : cc = c.G := by omega_arith
+  · have hcc : cc = c.G := by omega_using [hdone]
     have hg1 : c.G * (g + 1) = c.G * g + cc := by rw [hcc, Nat.mul_succ]
-    refine .inr ⟨by rw [hz, decide_eq_false hdone]; rfl, base₈, ready₈, saved₈, ?_, ?_, by omega_arith, ?_,
+    refine .inr ⟨by rw [hz, decide_eq_false hdone]; rfl, base₈, ready₈, saved₈, ?_, ?_, by omega_using [hdone, hg1], ?_,
       by rw [hg1]; exact hdata, fr, rd₈', wr₈'⟩
     · rw [d₈, x15₇, addr_add, hg1, Nat.mul_add]
-    · rw [left₈, hg1]; congr 1; omega_arith
+    · rw [left₈, hg1]; congr 1; omega_using []
     · rw [hg1]; exact chain₈
 
 /-- The data loop. -/

@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! Merged from `Proof.Ed25519.X86.PointCTBatch`. -/
 
@@ -74,7 +76,7 @@ theorem pointPowers_ct (x : BitVec 32) (o count : Nat) (batch : Bool)
     RelCT isa (PowersCTStart x) (pointPowers o count batch) (fun _ _ => True) := by
   have hi : RelCT isa (PowersCTStart x)
       (.block [.mov .eax (.imm 0), .store (Impl.X25519.X86.sc 24) .eax]) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
     intro s t h
     exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ (h.1.ctx.edi.trans h.2.1.ctx.edi.symm))
   have hw (s : State) (h : PointCTCtx x s) (hd : env s.mem x 16 = Spec.Ed25519.d) :
@@ -100,7 +102,7 @@ private theorem prepareBatch_ct (x : BitVec 32) (j : Nat) (hj : j < 32) :
       prepareBatch (fun _ _ => True) := by
   have hl : RelCT isa (fun s t => PowersCTStart x s t ∧ s.gpr .esi = BitVec.ofNat 32 j ∧ t.gpr .esi = BitVec.ofNat 32 j)
       (.block loadCheckpoint) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .esi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .esi]) _ (by native_taint_decide)
     intro s t h
     apply regsTaint_agree
     intro r hr
@@ -120,7 +122,7 @@ private theorem prepareBatch_ct (x : BitVec 32) (j : Nat) (hj : j < 32) :
     (by decide) (by decide) h.2.2.2.1, pointPowers_ok false h.2.1.ctx 5120 16 (by decide) (by decide)
     (by decide) (by decide) h.2.2.2.2⟩)
   have hr : RelCT isa (fun s t => s.gpr .edi = t.gpr .edi) (.block restorePoint) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
     intro s t h
     exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h)
   rw [prepareBatch]
@@ -140,7 +142,7 @@ theorem pointMulBatch_ct (x : BitVec 32) (j : Nat) (hj : j < 32) :
       pointMulBatch (fun _ _ => True) := by
   have hb : RelCT isa (fun s t => BatchCTState x (j + 1) s ∧ BatchCTState x (j + 1) t ∧ s.wr = t.wr)
       (.block batchBegin) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
     intro s t h
     exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ (h.1.ctx.ctx.edi.trans h.2.1.ctx.ctx.edi.symm))
   have hw (s : State) (h : BatchCTState x (j + 1) s) : WP isa (.block batchBegin) s fun t =>
@@ -158,7 +160,7 @@ theorem pointMulBatch_ct (x : BitVec 32) (j : Nat) (hj : j < 32) :
     exact ⟨⟨h.ctx.keep kt.edi kt.wr kt.esp, (kt.batch_index h.ctx.ctx).trans h.counter, dt⟩, kt.wr⟩
   have prep' := ctWithRuns prep (fun s t h => ⟨pw s h.1 h.2.2.2.1, pw t h.2.1 h.2.2.2.2⟩)
   have test : RelCT isa (fun s t => s.gpr .edi = t.gpr .edi) (.block batchTest) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
     intro s t h
     exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h)
   rw [pointMulBatch]
@@ -250,7 +252,7 @@ private theorem pointMultiplyInit_ct (x : BitVec 32) (count : Nat) (hn : count =
       (.seq (.block (constPoint Spec.Ed25519.identity)) (.block (mulCounterInit count))) (fun _ _ => True) := by
     rcases hn with rfl | rfl
     all_goals
-      apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+      apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
       intro s t h
       exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h)
   rw [pointMultiplyInit]

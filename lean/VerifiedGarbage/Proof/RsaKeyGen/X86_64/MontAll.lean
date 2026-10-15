@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MontRest
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -33,7 +34,7 @@ open VG.Proof.MlKem.X86_64
 
 /-- Disjointness of a range from each of a list of literal ranges of the
 scratch space (header words and arrays). -/
-macro "rng_disj" : tactic => `(tactic| (
+macro "rng_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, slot, hdrBytes, aN, aX, aAcc,
     aTmp, aR2, aXm, aY, aOne, aB, aR1, aRm1, aTab, aT0, aE, VG.Proof.Bignum.tabBytes, kT0, kChecks, kE, sFn, sMinv, sW, sArr, kG, kV, kWords, kBits,
     kFlag, kPlen, kI, kElen, kU, kUni, kP, kStat, kT1, kT2, kUsed, kRand, kLen, kRandLen, kOut, kUsedP]
@@ -51,6 +52,31 @@ def msRanges (w : Nat) : List (Nat × Nat) :=
   [(8 * sMinv, 8), (slot w aOne, 8 * (w + 2)), (slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)),
     (slot w aR2, 8 * (w + 2)), (8 * kT0, 8), (slot w aY, 8 * (w + 2)), (slot w aR1, 8 * (w + 2)),
     (slot w aRm1, 8 * (w + 2)), (8 * kChecks, 8)]
+
+/-- `msRanges`'s ranges, in the header and in the arrays. -/
+theorem msRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(56, 8), (208, 8), (152, 8)]
+    [(7, 1), (2, 1), (3, 1), (4, 1), (6, 1), (25, 1), (26, 1)] (msRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    msRanges, Public.aAcc, Public.aTmp, Public.aR2, Public.aY, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, kT0, kChecks, kE, sFn, sMinv] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inl (by decide)
+  · exact .inr ⟨(7, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(4, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(25, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(26, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
 
 theorem montSetup_eq (mul : Nat → Nat → Nat → Prog isa) : montSetup mul =
     ([.block (([.mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .r10))] :

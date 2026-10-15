@@ -52,25 +52,6 @@ theorem mask_val (x : BitVec 64) (h : x.toNat < 256) :
       omega
     rw [this]; rfl
 
-theorem xor_zero_iff (a b : BitVec 8) : (a.setWidth 64 ^^^ b.setWidth 64 = 0) ↔ a = b := by
-  constructor
-  · intro h
-    have h' := BitVec.xor_eq_zero_iff.mp h
-    apply BitVec.eq_of_toNat_eq
-    have := congrArg BitVec.toNat h'
-    rw [BitVec.toNat_setWidth, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := a.isLt; omega),
-      Nat.mod_eq_of_lt (by have := b.isLt; omega)] at this
-    exact this
-  · intro h; rw [h]; exact BitVec.xor_self
-
-theorem bytesAt_succ' (m : Mem) (p : Addr) (k : Nat) :
-    bytesAt m p (k + 1) = bytesAt m p k ++ [m (p + BitVec.ofNat 64 k)] := by
-  rw [bytesAt_add]
-  refine congrArg (bytesAt m p k ++ ·) (bytesAt_eq rfl fun i hi => ?_)
-  have : i = 0 := by omega
-  subst this
-  rw [ptr_zero]; rfl
-
 /-! ## `c = c'` -/
 
 /-- After `k` bytes of `c` (at `kA s₀ 1`) and `c'` (at `CB`). -/

@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA key generation on x86 (32-bit): `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
@@ -43,7 +45,7 @@ structure KFin (p : Params) (s₀ s : State) : Prop where
 theorem trHash_piece {p : Params} (hF : PFacts p) : KP p (KRx p (p.ℓ + p.k) p.ℓ p.k) (KFin p) (trHash p) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
   refine hash1_piece (Y := YK p) 0 200 136 0x1f ⟨1, 0, p.pkLen⟩ ⟨2, 64, 64⟩ Proof.MlKem.rate136 (by layd)
-    (by rw [YK_stk]; omega) (by show p.pkLen < 2 ^ 32; rw [hF.pk]; omega) (by decide) (by taint_decide) (h₁ := .block [])
+    (by rw [YK_stk]; omega) (by show p.pkLen < 2 ^ 32; rw [hF.pk]; omega) (by decide) (by native_taint_decide) (h₁ := .block [])
     (by kernel_rfl) (h₃ := .block []) (by kernel_rfl) (h₄ := .block []) (by kernel_rfl)
     (fun _ _ _ ⟨_, _, h⟩ => h.ctx) fun s₀ s s' hp ⟨A, S, h⟩ h' fr out => ⟨A, S, ?_, ?_⟩
   · have hs : SafeR p (p.ℓ + p.k) p.k [sb 0 200, sb 200 640, ⟨2, 64, 64⟩] :=

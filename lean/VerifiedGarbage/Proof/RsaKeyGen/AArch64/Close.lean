@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 import VerifiedGarbage.Proof.Bignum.AArch64.R2
@@ -92,12 +93,29 @@ theorem subA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {o a b : Nat
   simp only [ite_true] at hv
   have k36 := k35.trans k₆
   exact ⟨by omega_using [hv], o', (k36.gpr .x7 (by decide)).trans h7, (k36.gpr .x12 (by decide)).trans h12₂,
-    (k36.gpr .x11 (by decide)).trans h11₂, (k15.trans k₆).mono (by simp)⟩
+    (k36.gpr .x11 (by decide)).trans h11₂, (k15.trans k₆).mono (by decide)⟩
 
 /-- What `closeCheck` changes. -/
 def closeRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aX, 8 * (w + 2)), (slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)),
     (8 * kT0, 8)]
+
+/-- `closeRanges`'s ranges, in the header and in the arrays. -/
+theorem closeRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(208, 8)]
+    [(1, 1), (2, 1), (3, 1), (6, 1)] (closeRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    closeRanges, Public.sCnt, Public.aX, Public.aAcc, Public.aTmp, Public.aY, aX, aAcc, aTmp, aY, kT0, sFn] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(1, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
 
 theorem closeRanges_mut (w : Nat) : ∀ r ∈ closeRanges w, KMut r := by
   simp only [closeRanges, List.mem_cons, List.not_mem_nil, or_false]
@@ -140,7 +158,7 @@ theorem closeSelHead_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {b :
   refine WP.mono (base2_ok aTmp aAcc .x16 .x17 ((k₂.gpr .x0 (by decide)).trans h0₁)
     ((k₂.gpr .x11 (by decide)).trans h11)) fun t ⟨⟨h16, h17, m₃, _⟩, k₃⟩ => ?_
   exact ⟨⟨(k₃.gpr .x15 (by decide)).trans h15, (k₃.gpr .x14 (by decide)).trans h14, h16, h17,
-    by rw [m₃, m₂, m₁]⟩, ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+    by rw [m₃, m₂, m₁]⟩, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-- The comparison's head: `x7 := 0`, `x14 := w`, the carry set, `x16` at
 `aY` and `x17` at `aAcc`. -/
@@ -158,7 +176,7 @@ theorem closeCmpHead_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
   refine WP.mono (base2_ok aY aAcc .x16 .x17 ((k₂.gpr .x0 (by decide)).trans h0₁)
     ((k₂.gpr .x11 (by decide)).trans h11)) fun t ⟨⟨h16, h17, m₃, c₃⟩, k₃⟩ => ?_
   exact ⟨⟨(k₃.gpr .x7 (by decide)).trans h7, (k₃.gpr .x14 (by decide)).trans h14, c₃.trans hc, h16, h17,
-    by rw [m₃, m₂, m₁]⟩, ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+    by rw [m₃, m₂, m₁]⟩, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 theorem movz_2p28 : BitVec.setWidth 64 (4096#16) <<< (16 * 1) = BitVec.ofNat 64 (2 ^ 28) := by decide
 

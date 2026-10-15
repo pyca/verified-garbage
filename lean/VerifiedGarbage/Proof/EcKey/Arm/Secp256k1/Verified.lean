@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.Secp256k1.Verified
 public import VerifiedGarbage.Impl.EcKey.Secp256k1.Arm
 meta import VerifiedGarbage.Impl.EcKey.Secp256k1.Arm
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -71,7 +73,7 @@ theorem pk_arm (hL : Weierstrass.Law Spec.Secp256k1.curve) (s : State) (hs : pkA
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
 theorem pk_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeySecp256k1 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
   intro s t _ _ ⟨_, h0, h1, h2⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),

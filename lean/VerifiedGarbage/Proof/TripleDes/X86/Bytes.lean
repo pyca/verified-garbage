@@ -31,7 +31,7 @@ theorem decodeBlock_readW (m : Mem) (p : Addr) :
       (24 ≤ i ∧ i < 32) ∨ (32 ≤ i ∧ i < 40) ∨ (40 ≤ i ∧ i < 48) ∨
       (48 ≤ i ∧ i < 56) ∨ 56 ≤ i := by omega
   rcases ranges with h | h | h | h | h | h | h | h <;>
-    simp (disch := omega) only [BitVec.getLsbD_append, ite_eq_left, ite_eq_right,
+    simp (disch := omega) only [BitVec.getLsbD_append, ↓ite_eq_left, ↓ite_eq_right,
       Nat.sub_sub] <;> rfl
 
 theorem packed28 (c d : BitVec 28) :

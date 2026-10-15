@@ -49,17 +49,21 @@ abbrev C : CP := Spec.Weierstrass.CheckPoint.p224
 abbrev code (adx : Bool) : Prog isa := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx))
 
 theorem agree (adx : Bool) : Agree (cfg adx) C := by
-  cases adx <;> exact ⟨rfl, rfl, by decide +kernel, keeps_of (by decide +kernel), by decide +kernel⟩
+  cases adx <;> exact ⟨rfl, rfl, by decide +kernel, keeps_of_covers (by decide +kernel), by decide +kernel⟩
+
+theorem hvm (adx : Bool) : (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx)).allInstrs
+    (fun i => !KeepReg.writesVec i && !loadsMxcsr i) = true := by
+  cases adx <;> lit_decide
 
 theorem hv (adx : Bool) :
-    (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx)).allInstrs (fun i => !KeepReg.writesVec i) = true := by
-  cases adx <;> lit_decide
+    (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx)).allInstrs (fun i => !KeepReg.writesVec i) = true :=
+  (hv_hmx (hvm adx)).1
 
 theorem hn (adx : Bool) : (Impl.Ecdh.X86_64.Cfg.checkBody (cfg adx)).noCalls = true := by
   cases adx <;> lit_decide
 
-theorem hmx (adx : Bool) : (code adx).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases adx <;> lit_decide
+theorem hmx (adx : Bool) : (code adx).allInstrs (fun i => !loadsMxcsr i) = true :=
+  (hv_hmx (hvm adx)).2
 
 theorem ct (adx : Bool) : ConstantTime isa (checkK C).pre (checkK C).pub (code adx) := by
   cases adx <;>

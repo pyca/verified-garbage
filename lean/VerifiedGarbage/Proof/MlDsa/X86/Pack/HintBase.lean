@@ -26,6 +26,8 @@ meta import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.Framework.WriteBytes
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
 meta import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): what the proofs of the hint encodings share
@@ -230,7 +232,7 @@ theorem countLoopN {body : List Instr} {cnd : Cond} (Inv : Nat → State → Sta
 theorem nil_piece {A B : State → State → Prop} (h : ∀ s₀ s, Pre s₀ → A s₀ s → B s₀ s) :
     Piece Pre Pub A B (.block []) :=
   Piece.taint [] (fun s₀ s hp ha => WP.block_nil_iff.mpr (h s₀ s hp ha))
-    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)
+    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)
 
 end
 

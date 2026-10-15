@@ -183,7 +183,7 @@ theorem WP.narrow {c : Prog isa} {s : State} {rd wr : List Region} {P : State �
 
 theorem read_write_self (m : Mem) (a : Addr) (v : BitVec (8 * 8)) : (m.write a 8 v).read a 8 = v :=
   Mem.read_eq_of_bytes fun i hi => by
-    simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega), hi, ite_true]
+    simp only [Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega_using [hi]), hi, ite_true]
 
 /-! ## Callees with frames -/
 
@@ -192,7 +192,7 @@ abbrev below (sp : Addr) (n : Nat) : Region := ⟨sp - BitVec.ofNat 64 n, n⟩
 
 theorem ofNat_split {a b : Nat} (hab : a ≤ b) :
     BitVec.ofNat 64 b = BitVec.ofNat 64 a + BitVec.ofNat 64 (b - a) := by
-  rw [← BitVec.ofNat_add]; congr 1; omega
+  rw [← BitVec.ofNat_add]; congr 1; omega_using [hab]
 
 theorem below_sub {sp : Addr} {a b : Nat} (hab : a ≤ b) (hb : b < 2 ^ 64) :
     Region.Sub (below sp a) (below sp b) := by
@@ -201,16 +201,16 @@ theorem below_sub {sp : Addr} {a b : Nat} (hab : a ≤ b) (hb : b < 2 ^ 64) :
 /-- A frame's 16 bytes are in the `n + 16` bytes below the stack pointer. -/
 theorem below_frame (sp : Addr) (n : Nat) (hn : n + 16 < 2 ^ 64) :
     Region.Sub ⟨sp - 16, 16⟩ (below sp (n + 16)) := by
-  have := below_sub (sp := sp) (a := 16) (b := n + 16) (by omega) hn
+  have := below_sub (sp := sp) (a := 16) (b := n + 16) (by omega_using []) hn
   simpa using this
 
 theorem below_frame_contains (sp : Addr) (n : Nat) (hn : n + 16 < 2 ^ 64) :
     (below sp (n + 16)).Contains (sp - 16) 8 := by
   simp only [Region.Contains]
   rw [show sp - 16 - (sp - BitVec.ofNat 64 (n + 16)) = BitVec.ofNat 64 n from
-    (Offset.sub_ofNat_sub_sub_ofNat sp (a := 16) (by omega)).trans (by rw [Nat.add_sub_cancel]),
-    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  omega
+    (Offset.sub_ofNat_sub_sub_ofNat sp (a := 16) (by omega_using [])).trans (by rw [Nat.add_sub_cancel]),
+    BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
+  omega_using []
 
 /-- The stack a frame's body uses is below the frame. -/
 theorem below_body (sp : Addr) (n : Nat) : Region.Sub (below (sp - 16) n) (below sp (n + 16)) := by
@@ -218,7 +218,7 @@ theorem below_body (sp : Addr) (n : Nat) : Region.Sub (below (sp - 16) n) (below
   simp only [Region.Contains] at hx ⊢
   rw [show x - (sp - BitVec.ofNat 64 (n + 16)) = x - (sp - 16 - BitVec.ofNat 64 n) by
     rw [BitVec.sub_sub (sp : Addr) 16, BitVec.ofNat_add, BitVec.add_comm (BitVec.ofNat 64 n)]; rfl]
-  omega
+  omega_using [hx]
 
 theorem Frame.below_mono {wr : List Region} {sp : Addr} {a b : Nat} {m m' : Mem}
     (h : Frame (wr ++ [below sp a]) m m') (hab : a ≤ b) (hb : b < 2 ^ 64) :
@@ -248,19 +248,19 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
   | block h => exact Frame.mono (execBlock_regions h).2.2.2 fun r hr => List.mem_append_left _ hr
   | @seq c₁ c₂ _ s₂ _ _ _ h₁ _ ih₁ ih₂ =>
     simp only [Code.aarch64Depth] at hd ⊢
-    have f₁ := Frame.below_mono (ih₁ (by omega)) (b := 16 * max c₁.aarch64Depth c₂.aarch64Depth) (by omega)
-      (by omega)
-    have f₂ := Frame.below_mono (ih₂ (by omega)) (b := 16 * max c₁.aarch64Depth c₂.aarch64Depth) (by omega)
-      (by omega)
+    have f₁ := Frame.below_mono (ih₁ (by omega_using [hd])) (b := 16 * max c₁.aarch64Depth c₂.aarch64Depth) (by omega_using [])
+      (by omega_using [hd])
+    have f₂ := Frame.below_mono (ih₂ (by omega_using [hd])) (b := 16 * max c₁.aarch64Depth c₂.aarch64Depth) (by omega_using [])
+      (by omega_using [hd])
     obtain ⟨-, w₁, p₁⟩ := Exec.rdwr h₁
     rw [w₁, p₁] at f₂
     exact Frame.trans f₁ f₂
   | iteT _ _ ih =>
     simp only [Code.aarch64Depth] at hd ⊢
-    exact Frame.below_mono (ih (by omega)) (by omega) (by omega)
+    exact Frame.below_mono (ih (by omega_using [hd])) (by omega_using []) (by omega_using [hd])
   | iteF _ _ ih =>
     simp only [Code.aarch64Depth] at hd ⊢
-    exact Frame.below_mono (ih (by omega)) (by omega) (by omega)
+    exact Frame.below_mono (ih (by omega_using [hd])) (by omega_using []) (by omega_using [hd])
   | loopExit _ _ ih => exact ih hd
   | loopNext h₁ _ _ ih₁ ih₂ =>
     have f₂ := ih₂ hd
@@ -277,10 +277,10 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
     cases i <;> try { simp only [isa, push, reduceCtorEq] at hp }
     case push r =>
       simp only [Code.aarch64Depth, Instr.frameUnits] at hd ⊢
-      rw [show 16 * (b.aarch64Depth + 1) = 16 * b.aarch64Depth + 16 by omega] at hd ⊢
+      rw [show 16 * (b.aarch64Depth + 1) = 16 * b.aarch64Depth + 16 by omega_using []] at hd ⊢
       obtain ⟨v, m₁, w₁, p₁⟩ := push_mem hp
       rw [pop_mem hq]
-      have f₁ := ih (by omega)
+      have f₁ := ih (by omega_using [hd])
       rw [w₁, p₁, m₁] at f₁
       have f₀ : Frame (s₀.wr ++ [below s₀.sp (16 * b.aarch64Depth + 16)]) s₀.mem
           (s₀.mem.write (s₀.sp - 16) 8 v) :=
@@ -298,22 +298,22 @@ theorem Exec.frameSp {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa
       split at hp <;> [skip; cases hp]
       rename_i hc
       cases hp
-      have heq : 16 * (bytes / 16) = bytes := by omega
+      have heq : 16 * (bytes / 16) = bytes := by omega_using [hc]
       simp only [Code.aarch64Depth, Instr.frameUnits, Nat.mul_add, heq] at hd ⊢
       rw [pop_mem hq]
-      have f₁ := ih (by omega)
+      have f₁ := ih (by omega_using [hd])
       refine Frame.sub f₁ fun r hr => ?_
       simp only [List.cons_append, List.mem_cons, List.mem_append,
         List.not_mem_nil, or_false] at hr
       rcases hr with rfl | hr | rfl
       · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
-          below_sub (by omega) hd⟩
+          below_sub (by omega_using []) hd⟩
       · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
       · refine ⟨_, List.mem_append_right _ (List.mem_singleton_self _), ?_⟩
         intro x hx
         simp only [Region.Contains] at hx ⊢
         rw [BitVec.sub_sub, ← BitVec.ofNat_add, Nat.add_comm bytes] at hx
-        omega
+        omega_using [hx]
 
 /-- Calling verified code that may have frames: as `WP.call`, but the
 callee may also change the `16 * aarch64Depth` bytes below the stack pointer.
@@ -393,9 +393,9 @@ theorem frame_not_below (sp : Addr) {n : Nat} (hn : n + 16 < 2 ^ 64) :
   simp only [Region.Contains] at h₁ h₂
   have e : x - (sp - 16 - BitVec.ofNat 64 n) = (x - (sp - 16)) + BitVec.ofNat 64 n :=
     Offset.sub_sub_eq _ _ _
-  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := n) (by omega),
-    Nat.mod_eq_of_lt (by omega)] at h₂
-  omega
+  rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := n) (by omega_using [hn]),
+    Nat.mod_eq_of_lt (by omega_using [hn, h₁])] at h₂
+  omega_using [h₂]
 
 /-- A frame saving `r` around `main`: `main` runs from `s₀` with the stack
 pointer moved down by 16 and `r` stored there, in the permissions of `s₀`
@@ -407,7 +407,7 @@ theorem WP.frameReg {r : Reg} {main : Prog isa} {s₀ : State} {Q : State → Pr
       fun s₂ => Q { s₂.write .x r (s₀.gpr r) with sp := s₀.sp })
     (hn : 16 * main.aarch64Depth + 16 < 2 ^ 64 := by decide +kernel) :
     WP isa (.frame (.push r) main (.pop r)) s₀ Q := by
-  refine WP.frame hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega))
+  refine WP.frame hsp (WP.narrowF (rd := s₀.rd) (wr := s₀.wr) hmain ?_ ?_ ?_ (by omega_using [hn]))
   · intro a n hi
     exact InRegions_append_cons.mpr (.inr hi)
   · intro a n hi

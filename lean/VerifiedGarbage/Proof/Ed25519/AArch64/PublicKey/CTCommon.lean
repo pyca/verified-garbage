@@ -236,7 +236,7 @@ theorem base_step (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) 
         Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul n Spec.Ed25519.basePoint) := by
   refine WP.seq (WP.mono_syms (setup_ok hc hL ha
     (args := [(.x0, .caller 0 0), (.x1, .frame 32), (.x2, .caller 2 0)])
-    (by decide) (by simp [Whole.valid]) (by simp) (by simp [preserved])) fun u ⟨hu, hm, hav⟩ sy => ?_)
+    (by decide) (by decide) (by simp) (by decide)) fun u ⟨hu, hm, hav⟩ sy => ?_)
   have h0 := hav (.x0, .caller 0 0) (by simp)
   have h1 := hav (.x1, .frame 32) (by simp)
   have h2 := hav (.x2, .caller 2 0) (by simp)
@@ -272,7 +272,7 @@ theorem init_step (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) 
       (Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_512)) t fun u =>
       Ctx L g vec m₀ u ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem L.scr [] := by
   refine WP.seq (WP.mono (setup_ok hc hL ha (args := [(.x0, .caller 2 0)])
-    (by decide) (by simp [Whole.valid]) (by simp) (by simp [preserved])) fun u ⟨hu, _, hs⟩ => ?_)
+    (by decide) (by decide) (by simp) (by decide)) fun u ⟨hu, _, hs⟩ => ?_)
   have h0 := hs (.x0, .caller 2 0) (by simp)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0
   have hw := Whole.init_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
@@ -286,7 +286,7 @@ theorem update_step (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (h
         (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha
     (args := [(.x0, .caller 2 0), (.x1, .const 0), (.x2, .caller 1 0), (.x3, .const 32), (.x4, .caller 2 192)])
-    (by decide) (by simp [Whole.valid]) (by simp) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by decide) (by decide) (by simp) (by decide)) fun u ⟨hu, hm, hs⟩ => ?_)
   have h0 := hs (.x0, .caller 2 0) (by simp)
   have h1 := hs (.x1, .const 0) (by simp)
   have h2 := hs (.x2, .caller 1 0) (by simp)
@@ -327,7 +327,7 @@ theorem finalize_step (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) 
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
   refine WP.seq (WP.mono (setup_ok hc hL ha
     (args := [(.x0, .caller 2 0), (.x1, .const 32), (.x2, .frame 192), (.x3, .caller 2 192)])
-    (by decide) (by simp [Whole.valid]) (by simp) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by decide) (by decide) (by simp) (by decide)) fun u ⟨hu, hm, hs⟩ => ?_)
   have h0 := hs (.x0, .caller 2 0) (by simp)
   have h1 := hs (.x1, .const 32) (by simp)
   have h2 := hs (.x2, .frame 192) (by simp)

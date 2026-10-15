@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
@@ -73,21 +74,21 @@ theorem applyWindow_ct (M : Mont) : RelCT isa (Two SelectPre) (applyWindow M.mm)
       exact WP.mono (select_ok hc hw hw' hv ht hn) (fun _ h => ⟨minv, h.1.good, Nat.le_refl _⟩)
 
 /-- A window's input pins the shifted public exponent byte. -/
-def WindowPre (p : XPub × Nat) (s : State) : Prop :=
+def WindowPre (bd : Nat → Nat → Nat) (p : XPub × Nat) (s : State) : Prop :=
   ∃ (minv : BitVec 64) (X Xc : Nat), CExpCtx s (off p.1.B p.1.o) p.1.wx minv X Xc ∧
     CTab s.mem (off p.1.B p.1.o) p.1.wx X False 0 ∧
-    wv s.mem (off p.1.B p.1.o) (slot p.1.wx aY) p.1.wx < X ∧
+    wv s.mem (off p.1.B p.1.o) (slot p.1.wx aY) p.1.wx < bd X (2 ^ (64 * p.1.wx)) ∧
     word s.mem (off p.1.B p.1.o) (8 * Crt.sV) = BitVec.ofNat 64 p.2 ∧
     p.2 < 2 ^ 56 ∧ 2 ≤ p.1.wx ∧ p.1.wx < 2 ^ 30 ∧ Nat.Coprime (2 ^ (64 * p.1.wx)) X
 
-theorem square_post (M : Mont) {p : XPub × Nat} {s : State} (h : WindowPre p s) :
-    WP isa (M.mm aY aY aY) s (WindowPre p) := by
+theorem square_post (Sq : MontS) {p : XPub × Nat} {s : State} (h : WindowPre Sq.bd p s) :
+    WP isa Sq.mm s (WindowPre Sq.bd p) := by
   obtain ⟨minv, X, Xc, hc, ht, hy, hv, hv', hw, hw', hR⟩ := h
-  exact WP.mono (crtSq_ok M (Q := False) (x := 0) (E := 0) hc hw hw' hR hy False.elim)
+  exact WP.mono (crtSqS_ok Sq (Q := False) (x := 0) (E := 0) hc hw hw' hR hy False.elim)
     fun t ⟨hc', hy', _, hh, hf, _⟩ => ⟨minv, X, Xc, hc', ht.of_win hf hc.scrT.nowrap, hy',
       (hh _ (by decide)).trans hv, hv', hw, hw', hR⟩
 
-theorem mid_post {p : XPub × Nat} {s : State} (h : WindowPre p s) :
+theorem mid_post {bd : Nat → Nat → Nat} {p : XPub × Nat} {s : State} (h : WindowPre bd p s) :
     WP isa (.block [.mov .rdx (.mem (hdr Crt.sV)), .mov .rax (.reg .rdx), .alu .add .rax (.reg .rax),
       .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
       .store (hdr Crt.sV) .rax, .shift .shr .rdx 4, .alu .and .rdx (.imm 15),
@@ -101,11 +102,12 @@ theorem mid_post {p : XPub × Nat} {s : State} (h : WindowPre p s) :
   exact ⟨minv, X, Xc, hc.of_win hf hk.2.2 (hk.gpr (by decide)), hw, hw', Nat.mod_lt _ (by decide),
     (ht.of_win hf hc.scrT.nowrap).tab, by rw [hm, word_writeW_self]⟩
 
-theorem window_ct (M : Mont) : RelCT isa (Two WindowPre) (seqs (window M.mm)) (fun _ _ => True) := by
-  have sq : RelCT isa (Two WindowPre) (M.mm aY aY aY) (Two WindowPre) :=
+theorem window_ct (M : Mont) (Sq : MontS) :
+    RelCT isa (Two (WindowPre Sq.bd)) (seqs (window Sq.mm M.mm)) (fun _ _ => True) := by
+  have sq : RelCT isa (Two (WindowPre Sq.bd)) Sq.mm (Two (WindowPre Sq.bd)) :=
     two_post (two_map (fun p : XPub × Nat => p.1.ws)
       (fun _ _ ⟨minv, _, _, hc, _⟩ => ⟨minv, hc.good, Nat.le_refl _⟩)
-      (M.ct (by unfold MmUse; decide))) (fun _ _ h => square_post M h)
+      Sq.ct) (fun _ _ h => square_post Sq h)
   unfold window seqs
   refine RelCT.seq sq (RelCT.seq sq (RelCT.seq sq (RelCT.seq sq ?_)))
   refine RelCT.seq (two_piece (Ψ := fun p s => SelectPre (p.1, p.2 / 16 % 16) s ∧

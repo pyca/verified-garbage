@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_unpack`, the end
@@ -105,7 +107,7 @@ theorem t0_piece : Piece Pre Pub (fun s₀ s => OM s₀ (K s₀) (PS s₀ (K s�
     (fun s₀ s => (TB s₀ s ∧ s.gpr .eax = BitVec.ofNat 32 (idxOf (PS s₀ (K s₀)))) ∧
       isa.eval .b s = some (decide (idxOf (PS s₀ (K s₀)) < ω s₀)))
     (.block [.alu .cmp .eax (.mem (at_ .esp 28))]) := by
-  refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · have a2 : addr (s.gpr .esp) 28 = argAddr s₀ 2 := argEa h.esp 2
     have i2 := h.argIn hp (i := 2) (by omega)
     have v2 := h.argw hp (i := 2) (by omega) (by omega) (by omega)
@@ -136,7 +138,7 @@ theorem load_piece (k : Nat) : Piece Pre Pub (TI k)
     (fun s₀ s => TI k s₀ s ∧ isa.eval .ne s = some (decide ((Y s₀).getD (i₀ s₀ + k) 0 ≠ 0)))
     (.block hbuTrailLoad) := by
   refine Piece.taint [.edi, .eax] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_)
-    (by taint_decide)
+    (by native_taint_decide)
   · obtain ⟨hb, hax, e, hl, ht⟩ := h
     have hf := hp.facts
     have hy : i₀ s₀ + k < yL s₀ := by omega
@@ -160,7 +162,7 @@ theorem tfail_piece (k : Nat) : Piece Pre Pub
     (fun s₀ s => (TI k s₀ s ∧ isa.eval .ne s = some (decide ((Y s₀).getD (i₀ s₀ + k) 0 ≠ 0))) ∧
       decide ((Y s₀).getD (i₀ s₀ + k) 0 ≠ 0) = true) (TM k) hbuFail := by
   refine Piece.taint [] (fun s₀ s hp ⟨⟨⟨hb, _, e, hl, ht⟩, _⟩, hc⟩ => ?_)
-    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)
+    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)
   have hbk : WP isa hbuFail s fun s' => s'.gpr .eax = 256 ∧ s'.mem = s.mem := by hrun [hbuFail]
   exact (WP.keep [.eax] hbk (by decide)).mono fun s' ⟨⟨e1, m⟩, k'⟩ =>
     ⟨hb.keep k' (by simp) (by simp) m, by rw [e1, tr, ite_pos' (of_decide_eq_true hc)]; rfl, e, hl, ht⟩
@@ -169,7 +171,7 @@ theorem tinc_piece (k : Nat) : Piece Pre Pub
     (fun s₀ s => (TI k s₀ s ∧ isa.eval .ne s = some (decide ((Y s₀).getD (i₀ s₀ + k) 0 ≠ 0))) ∧
       decide ((Y s₀).getD (i₀ s₀ + k) 0 ≠ 0) = false) (TM k) (.block [.alu .add .eax (.imm 1)]) := by
   refine Piece.taint [] (fun s₀ s hp ⟨⟨⟨hb, hax, e, hl, ht⟩, _⟩, hc⟩ => ?_)
-    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)
+    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)
   have hbk : WP isa (.block [.alu .add .eax (.imm 1)]) s fun s' => s'.gpr .eax = s.gpr .eax + 1 ∧
       s'.mem = s.mem := by hrun
   exact (WP.keep [.eax] hbk (by decide)).mono fun s' ⟨⟨e1, m⟩, k'⟩ =>
@@ -181,7 +183,7 @@ theorem tcmp_piece (k : Nat) : Piece Pre Pub (TM k)
     (fun s₀ s => isa.eval .b s = some (decide (tr s₀ k < ω s₀)) ∧ (decide (tr s₀ k < ω s₀) = true → TI (k + 1) s₀ s) ∧
       (decide (tr s₀ k < ω s₀) = false → TFin s₀ s))
     (.block [.alu .cmp .eax (.mem (at_ .esp 28))]) := by
-  refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · obtain ⟨hb, hax, e, hl, ht⟩ := h
     have a2 : addr (s.gpr .esp) 28 = argAddr s₀ 2 := argEa hb.esp 2
     have i2 := hb.argIn hp (i := 2) (by omega)
@@ -278,7 +280,7 @@ def res (s₀ : State) : BitVec 32 := match TS s₀ with
   | some _ => 1
 
 theorem ret_piece : Piece Pre Pub TFin (fun s₀ s => TB s₀ s ∧ s.gpr .eax = res s₀) (.block hbuRet) := by
-  refine Piece.taint [.esp] (fun s₀ s hp ⟨hb, hax⟩ => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp ⟨hb, hax⟩ => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · have a2 : addr (s.gpr .esp) 28 = argAddr s₀ 2 := argEa hb.esp 2
     have i2 := hb.argIn hp (i := 2) (by omega)
     have v2 := hb.argw hp (i := 2) (by omega) (by omega) (by omega)

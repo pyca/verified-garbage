@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_inv_ntt`
@@ -73,30 +75,30 @@ theorem fold_eq (f : Poly) : nttInvLens.foldl nttInvLayer f =
 theorem layers_piece : Piece Pre Pub (fun s₀ s => LB s₀ montNegZetaTable (F s₀) 255 s)
     (fun s₀ s => LB s₀ montNegZetaTable (nttInvLens.foldl nttInvLayer (F s₀)) 0 s)
     (layers (layerCode ibflyBody zDown) [1, 2, 4, 8, 16, 32, 64, 128]) := by
-  refine Piece.seq (lay 1 128 (by decide) (by decide) (by decide) (by decide) F (by taint_decide)
-    (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+  refine Piece.seq (lay 1 128 (by decide) (by decide) (by decide) (by decide) F (by native_taint_decide)
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 2 64 (by decide) (by decide) (by decide) (by decide) (fun s₀ => nttInvLayer (F s₀) 1)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 4 32 (by decide) (by decide) (by decide) (by decide)
     (fun s₀ => nttInvLayer (nttInvLayer (F s₀) 1) 2)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 8 16 (by decide) (by decide) (by decide) (by decide)
     (fun s₀ => nttInvLayer (nttInvLayer (nttInvLayer (F s₀) 1) 2) 4)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 16 8 (by decide) (by decide) (by decide) (by decide)
     (fun s₀ => nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (F s₀) 1) 2) 4) 8)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 32 4 (by decide) (by decide) (by decide) (by decide)
     (fun s₀ => nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (F s₀) 1) 2) 4) 8) 16)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 64 2 (by decide) (by decide) (by decide) (by decide)
     (fun s₀ => nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (F s₀) 1) 2) 4) 8)
       16) 32)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 128 1 (by decide) (by decide) (by decide) (by decide)
     (fun s₀ => nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (nttInvLayer (F s₀) 1)
       2) 4) 8) 16) 32) 64)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   exact nil_piece.mono (fun _ _ _ h => h) fun s₀ _ _ h => by rw [fold_eq]; exact h
 
 /-! ## The scaling by `256⁻¹` -/
@@ -179,7 +181,7 @@ theorem scale_piece : Piece Pre Pub (fun s₀ s => LB s₀ montNegZetaTable (G s
     (.seq (.block [.mov .esi (.mem (at_ .esp 20))]) (.seq (.block [.mov .ecx (.imm 256)])
       (.loop (.block scaleBody) .ne))) := by
   refine Piece.seq (B := fun s₀ s => LB s₀ montNegZetaTable (G s₀) 0 s ∧ s.gpr .esi = fP s₀) ?_ ?_
-  · refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by taint_decide)
+  · refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
     · have hsl : (s.gpr .esp + BitVec.ofNat 32 20).setWidth 64 = argAddr s₀ 0 := by
         rw [h.esp]; exact P0_argAddr s₀ 0
       have ins : InRegions (s.rd ++ s.wr) (argAddr s₀ 0) 4 := hp.in_a h.wr (by decide)
@@ -192,7 +194,7 @@ theorem scale_piece : Piece Pre Pub (fun s₀ s => LB s₀ montNegZetaTable (G s
       rw [h.esp, h'.esp, pub_esp hq]
   refine Piece.seq (B := (SI · 0)) ?_ ?_
   · refine Piece.taint [.esp] (fun s₀ s hp ⟨h, hsi⟩ => ?_) (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_)
-      (by taint_decide)
+      (by native_taint_decide)
     · apply WP.of_runBlock
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some,
         Option.some.injEq, exists_eq_left']
@@ -208,14 +210,14 @@ theorem scale_piece : Piece Pre Pub (fun s₀ s => LB s₀ montNegZetaTable (G s
         rcases hr with rfl | rfl | rfl
         · rw [h.esp, h'.esp, pub_esp hq]
         · rw [h.esi, h'.esi, fP, fP, hq.2.1]
-        · rw [h.ecx, h'.ecx]) (by taint_decide)
+        · rw [h.ecx, h'.ecx]) (by native_taint_decide)
 
 theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) (SI · 256)
     (.seq (.block ldScratch) (.seq (.block (nttSetup montNegZetaTable 255))
       (.seq (layers (layerCode ibflyBody zDown) [1, 2, 4, 8, 16, 32, 64, 128])
         (.seq (.block [.mov .esi (.mem (at_ .esp 20))])
           (.seq (.block [.mov .ecx (.imm 256)]) (.loop (.block scaleBody) .ne)))))) :=
-  Piece.seq ld_piece (Piece.seq (setup_piece montNegZetaTable 255 (by taint_decide))
+  Piece.seq ld_piece (Piece.seq (setup_piece montNegZetaTable 255 (by native_taint_decide))
     (Piece.seq layers_piece scale_piece))
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (SI s₀ 256) s₀ s')

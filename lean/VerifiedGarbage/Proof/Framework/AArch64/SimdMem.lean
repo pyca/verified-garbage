@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-! AArch64 vector loads, stores, and byte reversal. -/
 
@@ -92,81 +93,47 @@ theorem getLsbD_ofVWords (w0 w1 w2 w3 : BitVec 32) {i : Nat} (hi : i < 128) :
   · simp [h0, h1, h2, show ¬ i - 32 < 32 by omega, show ¬ i - 32 - 32 < 32 by omega,
       show i - 32 - 32 - 32 = i - 96 by omega]
 
+/-- `WriteBytes.writeBytes_append`, at an offset given as a literal. -/
+private theorem writeBytes_append_at (m : Mem) (q : Addr) (xs ys : List Byte) (k : Nat)
+    (hk : xs.length = k) (h : k + ys.length < 2 ^ 64) :
+    WriteBytes.writeBytes (WriteBytes.writeBytes m q xs) (q + BitVec.ofNat 64 k) ys =
+      WriteBytes.writeBytes m q (xs ++ ys) := by
+  subst hk; exact WriteBytes.writeBytes_append m q xs ys h
+
 theorem write16 (m : Mem) (a : Addr) (w0 w1 w2 w3 : BitVec 32) :
     m.write a 16 (ofVWords w0 w1 w2 w3) =
       (((m.writeW a w0).writeW (a + BitVec.ofNat 64 4) w1).writeW (a + BitVec.ofNat 64 8) w2).writeW
         (a + BitVec.ofNat 64 12) w3 := by
-  funext x
-  have e : ∀ c : Nat, x - (a + BitVec.ofNat 64 c) = (x - a) - BitVec.ofNat 64 c := fun c => by
-    bv_omega
-  simp only [Mem.writeW, Mem.write, e, show 32 / 8 = 4 from rfl]
-  generalize x - a = d
-  rw [toNat_sub_c d 4 (by omega), toNat_sub_c d 8 (by omega), toNat_sub_c d 12 (by omega)]
-  have := d.isLt
-  have ext : ∀ (k : Nat) (w : BitVec 32), k < 4 → 4 * k ≤ d.toNat → d.toNat < 4 * k + 4 →
-      (∀ b < 8, w.getLsbD (8 * (d.toNat - 4 * k) + b) = (ofVWords w0 w1 w2 w3).getLsbD (8 * d.toNat + b)) →
-      (ofVWords w0 w1 w2 w3).extractLsb' (8 * d.toNat) 8 =
-        (w.setWidth (8 * 4)).extractLsb' (8 * (d.toNat - 4 * k)) 8 := by
-    intro k w hk h1 h2 hw
-    apply BitVec.eq_of_getLsbD_eq
-    intro b hb
-    simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, hb, decide_true, Bool.true_and,
-      show 8 * (d.toNat - 4 * k) + b < 8 * 4 by omega]
-    exact (hw b hb).symm
-  have g := fun (b : Nat) (h : 8 * d.toNat + b < 128) => getLsbD_ofVWords w0 w1 w2 w3 h
-  by_cases c3 : 12 ≤ d.toNat
-  · by_cases c4 : d.toNat < 16
-    · simp only [c3, c4, ite_true, show d.toNat - 12 < 4 by omega]
-      refine ext 3 w3 (by omega) c3 (by omega) fun b hb => ?_
-      rw [g b (by omega)]
-      simp only [show ¬ 8 * d.toNat + b < 96 by omega, show ¬ 8 * d.toNat + b < 64 by omega,
-        show ¬ 8 * d.toNat + b < 32 by omega, ite_false, show 8 * (d.toNat - 4 * 3) + b = 8 * d.toNat + b - 96 by omega]
-    · simp only [c3, c4, ite_true, ite_false, show ¬ d.toNat - 12 < 4 by omega,
-        show ¬ d.toNat - 8 < 4 by omega, show ¬ d.toNat - 4 < 4 by omega, show 8 ≤ d.toNat by omega,
-        show 4 ≤ d.toNat by omega, show ¬ d.toNat < 4 by omega]
-  by_cases c2 : 8 ≤ d.toNat
-  · simp only [c3, c2, ite_true, ite_false, show d.toNat < 16 by omega, show d.toNat - 8 < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega]
-    refine ext 2 w2 (by omega) c2 (by omega) fun b hb => ?_
-    rw [g b (by omega)]
-    simp only [show 8 * d.toNat + b < 96 by omega, show ¬ 8 * d.toNat + b < 64 by omega,
-      show ¬ 8 * d.toNat + b < 32 by omega, ite_false, ite_true,
-      show 8 * (d.toNat - 4 * 2) + b = 8 * d.toNat + b - 64 by omega]
-  by_cases c1 : 4 ≤ d.toNat
-  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by omega, show d.toNat - 4 < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by omega]
-    refine ext 1 w1 (by omega) c1 (by omega) fun b hb => ?_
-    rw [g b (by omega)]
-    simp only [show 8 * d.toNat + b < 64 by omega, show ¬ 8 * d.toNat + b < 32 by omega, ite_false,
-      ite_true, show 8 * (d.toNat - 4 * 1) + b = 8 * d.toNat + b - 32 by omega]
-  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by omega, show d.toNat < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by omega,
-      show ¬ 2 ^ 64 + d.toNat - 4 < 4 by omega]
-    refine ext 0 w0 (by omega) (by omega) (by omega) fun b hb => ?_
-    rw [g b (by omega)]
-    simp only [show 8 * d.toNat + b < 32 by omega, ite_true, show 8 * (d.toNat - 4 * 0) + b = 8 * d.toNat + b by omega]
-
-
+  simp only [Mem.writeW, WriteBytes.write_eq_writeBytes]
+  rw [writeBytes_append_at _ _ _ _ 4 (by simp only [List.length_map, List.length_range]) (by simp),
+    writeBytes_append_at _ _ _ _ 8
+      (by simp only [List.length_append, List.length_map, List.length_range]) (by simp),
+    writeBytes_append_at _ _ _ _ 12
+      (by simp only [List.length_append, List.length_map, List.length_range]) (by simp)]
+  refine congrArg (WriteBytes.writeBytes m a) ?_
+  -- Every offset is a literal: the side conditions are decided, without `omega`.
+  simp (disch := decide) only [List.range, List.range.loop, List.map, List.cons_append,
+    List.nil_append,
+    ofVWords, BitVec.extractLsb'_append_eq_of_add_le, BitVec.extractLsb'_append_eq_of_le,
+    Nat.reduceMul, Nat.reduceSub, Nat.reduceDiv, BitVec.setWidth_eq]
 
 theorem vword_rev32b (x : BitVec 128) {e : Nat} (he : e < 4) :
     vword (VRevOp.rev32b.eval x) e = rev32 (vword x e) := by
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
+  obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ i = 8 * a + b :=
+    ⟨i / 8, i % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod i 8).symm⟩
+  have ha : a < 4 := by omega
   simp only [vword, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and, VRevOp.eval]
-  rw [show 32 * e + i = 8 * (4 * e + i / 8) + i % 8 by omega,
-    getLsbD_ofVBytes _ (by omega) (by omega)]
-  simp only [vbyte, BitVec.getLsbD_extractLsb', show i % 8 < 8 by omega, decide_true, Bool.true_and,
-    rev32, VG.getLsbD_cat4]
-  by_cases h0 : i < 8
-  · simp (disch := omega) only [h0, ite_true, decide_eq_true, Bool.true_and]
-    exact congrArg x.getLsbD (by omega)
-  by_cases h1 : i < 16
-  · simp (disch := omega) only [h0, h1, ite_false, ite_true, decide_eq_true, Bool.true_and]
-    exact congrArg x.getLsbD (by omega)
-  by_cases h2 : i < 24
-  · simp (disch := omega) only [h0, h1, h2, ite_false, ite_true, decide_eq_true, Bool.true_and]
-    exact congrArg x.getLsbD (by omega)
-  · simp (disch := omega) only [h0, h1, h2, ite_false, decide_eq_true, Bool.true_and]
+  rw [show 32 * e + (8 * a + b) = 8 * (4 * e + a) + b by omega, getLsbD_ofVBytes _ (by omega) hb,
+    show (4 * e + a) / 4 = e by omega, show (4 * e + a) % 4 = a by omega]
+  unfold rev32
+  -- The byte's index is a literal: each `if` and subtraction reduces without `omega`.
+  match a, ha with
+  | 0, _ | 1, _ | 2, _ | 3, _ =>
+    simp only [getLsbD_append_block _ _ _ hb, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte]
+    simp only [vbyte, BitVec.getLsbD_extractLsb', hb, decide_true, Bool.true_and, Nat.reduceMul, Nat.zero_add]
+    simp (disch := omega) only [decide_eq_true, Bool.true_and]
     exact congrArg x.getLsbD (by omega)
 
 theorem vword_read16 (m : Mem) (p : Addr) {e : Nat} (he : e < 4) :

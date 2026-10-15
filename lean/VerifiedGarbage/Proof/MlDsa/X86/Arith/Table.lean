@@ -91,14 +91,17 @@ theorem table_spec (t : List Nat) {p : Addr} (is : List Instr) (s : State) (P : 
   rw [table_eq]
   exact tableN_spec t 256 is s P (Nat.le_refl _) hea hin k
 
+theorem getD_map_range {f : Nat → Nat} {n k : Nat} (hk : k < n) : ((List.range n).map f).getD k 0 = f k := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hk, Option.map_some, Option.getD_some]
+
 theorem montZeta_eq {k : Nat} (hk : k < 256) :
     montZetaTable.getD k 0 = (Spec.MlDsa.zetas k).val * 2 ^ 32 % q := by
-  rw [← zetaNat_eq]
-  exact (by decide +kernel : ∀ k < 256, montZetaTable.getD k 0 = zetaNat k * 2 ^ 32 % 8380417) k hk
+  rw [← zetaNat_eq, (by decide +kernel :
+    montZetaTable = (List.range 256).map fun k => zetaNat k * 2 ^ 32 % 8380417), getD_map_range hk]
 
 theorem montNegZeta_eq {k : Nat} (hk : k < 256) :
     montNegZetaTable.getD k 0 = (-Spec.MlDsa.zetas k).val * 2 ^ 32 % q := by
-  rw [← negZetaNat_eq]
-  exact (by decide +kernel : ∀ k < 256, montNegZetaTable.getD k 0 = negZetaNat k * 2 ^ 32 % 8380417) k hk
+  rw [← negZetaNat_eq, (by decide +kernel :
+    montNegZetaTable = (List.range 256).map fun k => negZetaNat k * 2 ^ 32 % 8380417), getD_map_range hk]
 
 end VG.Proof.MlDsa.X86.Arith

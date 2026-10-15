@@ -62,18 +62,16 @@ theorem mulQJP384Cms_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spe
   mulQJA_ok hc (Or.inr h6) hL hO (Weierstrass.X86_64.doubleCms_dblOk hsp
     (Weierstrass.unitMod_pow_two hc.p_odd _) hL hc.am3) (hcC ▸ n_mod32) (hcC ▸ n_ge64)
 
+theorem ecdh_inlineOk_adx : exchangeP384Adx.InlineOk = true := by lit_decide
+
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP384Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := 
     exchangeWith_ok (p384x_ok hI) hL
     (mulQJP384Cms_ok (p384x_ok hI) rfl rfl (by decide +kernel) hL hO) (mulQJA_w (p384x_ok hI)) (pre_of_x hs)
-  have hsp : ∀ i ∈ instrs exchangeP384Adx.inline, Taint.clobbers i .rsp = false := by
-    have h : exchangeP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk_adx
+  have F := (Exec.regions he (Code.noCalls_inline ecdh_inlineOk_adx)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, post_of_x hpost⟩
@@ -109,7 +107,7 @@ theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP38
 theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) :
     Verified X86_64.target exchangeP384Adx (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies8
+  Verified.of_inline_ct ecdh_inlineOk_adx (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64.P384

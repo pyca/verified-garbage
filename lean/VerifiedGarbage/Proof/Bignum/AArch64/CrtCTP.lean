@@ -66,6 +66,24 @@ def PO1 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
 def PO0 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
   UPre sWsP p.u s ∧ WP isa (seqs (unitSteps M.mm sWsP)) s (PO1 M p)
 
+/-- What `o3_of` gives, for any `PO3`: `o0_gen` takes it, so that the phase
+with another exponentiation (5-bit windows) is proven once. -/
+def O3Ok (P3 : PPhasePub → State → Prop) : Prop :=
+  ∀ {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64}
+    {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
+    (_hg : Good s B Z w minv) (_hw28 : w < 2 ^ 28) (_hlo : slot w 8 ≤ o) (_hhi : o + slot wx 8 + wsTab wx ≤ Z)
+    (_hwx2 : 2 ≤ wx) (_hwx : wx ≤ w) (_hslv : word s.mem B (8 * sWsP) = off B o) (_hws : WsAt s.mem B o wx mx)
+    (_hX : XVals s B o wx mx X) (_hX1 : 1 < X) (_hXodd : X % 2 = 1)
+    (_hcg : wv s.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
+    (_hpl : wv s.mem (off B o) (slot wx Public.aY) wx < X)
+    (_hpy : X ∣ N → wv s.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X)
+    (_hep : word s.mem B (8 * sDp) = ep) (_hel : word s.mem B (8 * sPlen) = BitVec.ofNat 64 eb.length)
+    (_hL1 : 1 ≤ eb.length) (_hL2 : eb.length ≤ 1024) (_he : Src s B Z ep eb)
+    (_hmask : word s.mem (off B o) (8 * sMaskX) = mask c)
+    (_hqp : word s.mem B (8 * sQinv) = qp) (_hql : qib.length = eb.length) (_hqs : Src s B Z qp qib)
+    (_hqw : (qib.length + 7) / 8 ≤ wx) (_hqi : c = true → Spec.Rsa.os2ip qib < X),
+    P3 ⟨⟨B, Z, w, minv, N, o, wx, ep, eb.length⟩, oq, wq, qp⟩ s
+
 /-- From before the exponentiation: `PO3`, as `pPhase_ok` runs the rest. -/
 theorem o3_of (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64}
     {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
@@ -120,7 +138,11 @@ theorem o3_of (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64
   exact this
 
 /-- `pPhase_ok`'s hypotheses give `PO0`. -/
-theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s := by
+theorem o0_gen (M : Mont) (P3 : PPhasePub → State → Prop) (ho3 : O3Ok P3) {p : PPhasePub} {s : State}
+    (h : PPre p s) :
+    UPre sWsP p.u s ∧ WP isa (seqs (unitSteps M.mm sWsP)) s fun s =>
+      Mq0 M p.mq s ∧ WP isa (seqs (mqSteps M.mm)) s fun s =>
+        GoodW p.nw s ∧ WP isa (M.mm Public.aY Public.aXm Public.aY) s (P3 p) := by
   obtain ⟨⟨B, Z, w, minv, N, o, wx, ep, len⟩, oq, wq, qp⟩ := p
   dsimp only [PPre] at h
   obtain ⟨mx, mq, X, C, eb, qib, c, h⟩ := h
@@ -165,19 +187,7 @@ theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s 
   have f₀₂ := f₁'.trans f₂'
   have hN₂ : NVals s₂ B w minv N := by
     exact ⟨by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.n,
-      by rw [f₂'.word_eq (fun r hr => by
-        have := pxR_bound hlo r hr
-        have := slot_le (w := w) (show Public.aN < 8 by decide)
-        simp only [pRanges, gRanges, xRange, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-          or_false] at hr
-        have s1 := slot_sep (w := w) (show Public.aN ≠ Public.aAcc by decide)
-        have s2 := slot_sep (w := w) (show Public.aN ≠ Public.aTmp by decide)
-        have s3 := slot_sep (w := w) (show Public.aN ≠ Public.aY by decide)
-        have s4 := slot_sep (w := w) (show Public.aN ≠ Public.aX by decide)
-        have := hdr_lt_slot w Public.aN (show 31 < 32 by decide)
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-          simp only [Crt.sD, Public.sCnt, sFn] at * <;> omega_arith)
-        (by have := slot_le (w := w) (show Public.aN < 8 by decide); omega_arith)]; exact hN₁.inv,
+      by rw [f₂'.px_word hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.inv,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.r2,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.r2lt,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.one⟩
@@ -216,11 +226,14 @@ theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s 
   have k03 := (k₁.trans k₂).trans k₃
   have hM₃ : word s₃.mem (off B o) (8 * sMaskX) = mask c := by
     rw [hpw f₃ sg' _ (by decide), hpw f₂ (fun r h => h) _ (by decide), hM₁]; exact hmask
-  exact o3_of M hg₃ hw28 hlo hhi' hwx2 hwx (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv)
+  exact ho3 hg₃ hw28 hlo hhi' hwx2 hwx (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv)
     hws₃ hX₃ hX1 hXodd hcg (by rw [hpY₃]; exact hpl₁) (fun hd => by rw [hpY₃]; exact hpy₁ hd)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hep)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i03 k03) hM₃
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hqp) hql (hqs.congrK i03 k03) hqw hqi
+
+theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s :=
+  o0_gen M (PO3 M) (@o3_of M) h
 
 /-- `p`'s phase is constant time, given its pieces' claims. -/
 theorem pPhase_ct (M : Mont) (hU : UnitCT M sWsP) (hP : PowCT M sWsP sDp sPlen) (hRX : RedcCT M Public.aX)

@@ -12,6 +12,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
@@ -429,7 +431,7 @@ def satState : State where
   wr := [⟨0x1000, 1024⟩]
 
 theorem mul_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.mul (Spec.MlDsa.mulContract Arm.abi 24) := by
-  refine ⟨fun s hs => ?_, ct_of_saving mulSaved _ [.r0, .r1, .r2] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
+  refine ⟨fun s hs => ?_, ct_of_saving mulSaved _ [.r0, .r1, .r2] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
     sig_post [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
@@ -453,7 +455,7 @@ theorem mul_verified : Verified Arm.target Impl.MlDsa.Arm.Arith.mul (Spec.MlDsa.
 
 theorem mulAdd_verified :
     Verified Arm.target Impl.MlDsa.Arm.Arith.mulAdd (Spec.MlDsa.mulAddContract Arm.abi 24) := by
-  refine ⟨fun s hs => ?_, ct_of_saving mulSaved _ [.r0, .r1, .r2] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
+  refine ⟨fun s hs => ?_, ct_of_saving mulSaved _ [.r0, .r1, .r2] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · obtain ⟨hp, hH⟩ := preAdd_of hs
     obtain ⟨t, s', he, hpres, hsp, h⟩ := correctAdd hp hH
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩

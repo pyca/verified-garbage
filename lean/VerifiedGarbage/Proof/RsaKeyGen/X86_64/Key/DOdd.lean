@@ -53,7 +53,7 @@ theorem loadEv_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e : Nat} 
   have o₄ := writeW_outside s₁.mem I.B (BitVec.ofNat 64 e) (d := slot I.W aE) (by omega)
   rw [← hm] at o₄
   have f₄ := KF.arr1 (I := I) (j := aE) o₄ (Nat.le_refl _) (by omega)
-  refine ⟨h₁.step f₄ (all_mut_arr (by decide)) ((k₂.trans k₃).trans k₄) (by decide), (f₁.trans f₄).mono (by simp), ?_⟩
+  refine ⟨h₁.step f₄ (all_mut_arr (by decide)) ((k₂.trans k₃).trans k₄) (by decide), (f₁.trans f₄).mono (by decide), ?_⟩
   rw [hm]
   have := wv_put (m := s₁.mem) (B := I.B) (d := slot I.W aE) (N := I.W + 2) (k := 0) (BitVec.ofNat 64 e)
     ((wv_eq_zero_iff _ _ _ _).mp z₁) (by omega) (by omega) (I.W + 2) (Nat.le_refl _)
@@ -80,7 +80,7 @@ theorem lGe2_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
     (mask (!decide (av I s.mem aL < 2)))) (by xrun [State.ea, hdr, h₂.ws.rdi, hdrOff, hst, hbp, sxM1, maskNot]) rfl)
     fun t ⟨hm, k₃⟩ => ?_
   obtain ⟨ht, f₃, hw⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega) hm k₃ (by decide)
-  exact ⟨ht, (f₁.trans (by rw [← m₂]; exact f₃)).mono (by simp), hw⟩
+  exact ⟨ht, (f₁.trans (by rw [← m₂]; exact f₃)).mono (by decide), hw⟩
 
 /-- `gcdIsOne`: `kOk &= ` the mask of `[aV] = 1`. -/
 theorem gcdIsOne_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {c : Bool}
@@ -106,7 +106,7 @@ theorem gcdIsOne_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {c : Boo
       xrun [State.ea, hdr, h₂.ws.rdi, hdrOff, hst, hld, hbp, hok₂, mask_and']) rfl)
     fun t ⟨hm, k₃⟩ => ?_
   obtain ⟨ht, f₃, hw⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega) hm k₃ (by decide)
-  exact ⟨ht, (f₁.trans (by rw [← m₂]; exact f₃)).mono (by simp), hw⟩
+  exact ⟨ht, (f₁.trans (by rw [← m₂]; exact f₃)).mono (by decide), hw⟩
 
 /-- `invFrom j`: `v := [j]`, `x₁ := 1`, `x₂ := 0`. -/
 theorem invFrom_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {j : Nat} (hj : j < 16) (hjV : j ≠ aV) :
@@ -120,7 +120,7 @@ theorem invFrom_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {j : Nat}
       WP.seq (WP.mono (zeroA_k h₂ (j := aX₁) (by decide)) fun s₃ ⟨h₃, f₃, z₃, _⟩ =>
         WP.seq (WP.mono (setOne_k h₃ (j := aX₁) (by decide) z₃) fun s₄ ⟨h₄, f₄, o₄, _⟩ =>
           WP.mono (zeroA_k h₄ (j := aX₂) (by decide)) fun t ⟨ht, f₅, z₅, _⟩ => ?_))))
-  refine ⟨ht, ((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).mono (by simp), ?_, ?_, (wv_zero2 z₅).1⟩
+  refine ⟨ht, ((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).mono (by decide), ?_, ?_, (wv_zero2 z₅).1⟩
   · rw [f₅.av (by decide) (by decide) (by decide) hZ, f₄.av (by decide) (by decide) (by decide) hZ,
       f₃.av (by decide) (by decide) (by decide) hZ, v₂, f₁.av (by decide) hj (by simp [hjV]) hZ]
   · rw [f₅.av (by decide) (by decide) (by decide) hZ]
@@ -312,7 +312,7 @@ theorem dOdd_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} 
         rw [hE', hX', ofNat_sub' (by omega_using [hxe]) he64, hR', hei]
         refine ⟨?_, rfl⟩
         simp only [BitVec.toNat_ofNat, BitVec.toNat_add, show (1 : BitVec 64).toNat = 1 from rfl,
-          Nat.mod_eq_of_lt (show e - x < 2 ^ 64 by omega_using [he64])]) rfl) fun t ⟨⟨hc, hm⟩, k⟩ => ⟨hc, hm, (((ku₁.trans ku₂).trans ku₃).trans k).mono (by simp)⟩
+          Nat.mod_eq_of_lt (show e - x < 2 ^ 64 by omega_using [he64])]) rfl) fun t ⟨⟨hc, hm⟩, k⟩ => ⟨hc, hm, (((ku₁.trans ku₂).trans ku₃).trans k).mono (by decide)⟩
   generalize hcv : ((L % e * (e - x) % 2 ^ 64 + 1) % 2 ^ 64 * einv) % 2 ^ 64 = c at c₁₃
   obtain ⟨h₁₃, f₁₃, mo₁₃⟩ := h₁₂.hdrW (i := sMo) (by unfold sMo sFn; omega_using []) m₁₃ k₁₃ (by decide)
   -- `[aDd] := c`.
@@ -350,7 +350,7 @@ theorem dOdd_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} 
           hs₄.ld (d := 8 * sMo) (by have := h.ws.h256; unfold sMo sFn; omega_using [this]), mo₄]) rfl) fun t ⟨⟨h9t, hcxt, mt⟩, kt⟩ =>
       ⟨by rw [mt, mu₄, mu₃], ((ku₄.trans kt).gpr (by decide)).trans ((ku₃.gpr (by decide)).trans h8), h9t, hcxt,
         (((ku₂.trans ku₃).trans ku₄).trans kt).gpr (by decide) |>.trans h12,
-        ((((ku₁.trans ku₂).trans ku₃).trans ku₄).trans kt).mono (by simp)⟩
+        ((((ku₁.trans ku₂).trans ku₃).trans ku₄).trans kt).mono (by decide)⟩
   have o₁₅ := writeW_outside s₁₄.mem I.B (s₁₄.gpr .r15) (d := slot I.W aDd) (by omega_using [hn, sD])
   rw [← m₁₅] at o₁₅
   have f₁₅ := KF.arr1 (I := I) (j := aDd) o₁₅ (Nat.le_refl _) (by omega_using [])
@@ -397,7 +397,7 @@ theorem dOdd_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat} 
   refine ⟨ht, ?_, ⟨_, okt, ?_, ?_⟩⟩
   · have f₁₂ : KF I.B I.W [] s₁₀.mem s₁₂.mem := by rw [hm₁₂]; exact KF.refl _ _ _
     exact ((((((((((((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆).trans f₇).trans f₈).trans f₉).trans
-      f₁₀).trans f₁₂).trans f₁₃).trans f₁₄).trans f₁₅).trans ft).mono (by simp)
+      f₁₀).trans f₁₂).trans f₁₃).trans f₁₄).trans f₁₅).trans ft).mono (by decide)
   · -- The inverse exists iff both hold.
     have hQR : L = e * (L / e) + L % e := (Nat.div_add_mod L e).symm
     constructor

@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.MlKem.X86.NttLoop
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.MlKem.KPke
 meta import VerifiedGarbage.Proof.MlKem.X86.NttLoop
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA signing on x86 (32-bit): copies and hashes
@@ -79,7 +81,7 @@ theorem copy_piece (sa so da dO n : Nat) (hn : 0 < n) (hn' : n < 2 ^ 30)
     exact ⟨c₂.only o₃ (by decide) (by decide), o₃.mem.trans (o₂.mem.trans o₁.mem),
       by rw [o₃.gpr _ (by decide), o₂.gpr _ (by decide), v₁], by rw [o₃.gpr _ (by decide), v₂], v₃⟩
   refine Piece.taint [.edi, .ebp, .ecx] (fun s₀ s₁ hp ⟨s, ha, h₁, m₁, e₁, e₂, e₃⟩ => ?_)
-    (fun s₀ s₀' s s' hp hp' hq ⟨_, _, _, _, e₁, e₂, e₃⟩ ⟨_, _, _, _, e₁', e₂', e₃'⟩ r hr => ?_) (by taint_decide)
+    (fun s₀ s₀' s s' hp hp' hq ⟨_, _, _, _, e₁, e₂, e₃⟩ ⟨_, _, _, _, e₁', e₂', e₃'⟩ r hr => ?_) (by native_taint_decide)
   · have fS : (S.ptr s₀).toNat + 4 * n ≤ 2 ^ 32 := Buf.fit hp hS
     have fD : (D.ptr s₀).toNat + 4 * n ≤ 2 ^ 32 := Buf.fit hp hD₁
     have dd := Buf.disj hp hS hD₁ dSD
@@ -285,7 +287,7 @@ theorem hash2_piece' (rate sfx : Nat) (b₁ b₂ o : Buf) (hr : rate ∈ rates)
       (bytesAt s.mem (b₁.addr s₀) b₁.len ++ bytesAt s.mem (b₂.addr s₀) b₂.len)))
   have cS : ((Y p).okW ⟨SC, oST, 200⟩ && (Y p).okW ⟨SC, oWK, 640⟩ && (Y p).sep ⟨SC, oST, 200⟩ ⟨SC, oWK, 640⟩) = true := by
     simp [hS, hW, dSW]
-  refine Piece.seq (B := P 0) (lift (zeroTop_piece (Y := Y p) oST hS (by taint_decide) hA fun s₀ s s' hp ha h' fr z =>
+  refine Piece.seq (B := P 0) (lift (zeroTop_piece (Y := Y p) oST hS (by native_taint_decide) hA fun s₀ s s' hp ha h' fr z =>
     ⟨s, ha, h', kF_zero hp (show 56 ≤ 96 by decide) fr, fun _ => z, by simp, by simp, by simp⟩)) ?_
   refine Piece.seq (B := P 1) (absorbC_piece' oST oWK rate 0 b₁ hr hr0 (by simp [hS, hW, hb₁, dSW, d₁S, d₁W])
     hl₁ (fun s₀ u _ ⟨_, _, h, _⟩ => h) fun s₀ u u' hp ⟨s, ha, _, fu, z, _⟩ h' fr post => ?_) ?_

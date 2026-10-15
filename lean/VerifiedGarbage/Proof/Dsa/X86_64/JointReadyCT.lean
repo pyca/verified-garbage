@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
@@ -24,7 +25,7 @@ def ReadyProductPublic.joint {d : Nat} (p : ReadyProductPublic .p d) (a b : Oper
     qBound := by have := p.layout.widths; omega
     parentSpace := by change 344 ≤ pWorkspace; decide }
 
-theorem readyJoint_ct (M : Mont) (d : Nat) (a b : Operand)
+theorem readyJoint_ct (M : Mont) (Sq : MontS) (d : Nat) (a b : Operand)
     (ha : pointerFits a.pointer) (hb : pointerFits b.pointer)
     (hpa : stablePointer a.pointer) (hpb : stablePointer b.pointer)
     (hd : d < 2 ^ 31)
@@ -32,8 +33,8 @@ theorem readyJoint_ct (M : Mont) (d : Nat) (a b : Operand)
     (hT : (taint.check (Taint.ofRegs [.rdi])
       (.block (callHead a b (Core.element d) pWorkspace)) hc).isSome = true) :
     RelCT isa (Two fun p : ReadyProductPublic .p d => ReadyCallPre .p d a b p.toReadyCallPublic)
-      (Core.joint M.mm pWorkspace a b (Core.element d)) (fun _ _ => True) := by
-  apply two_map (fun p : ReadyProductPublic .p d => p.joint a b) ?_ (coreJoint_ct M (output := Core.element d) (o := pWorkspace) ha hb hd hT)
+      (Core.joint Sq.mm M.mm pWorkspace a b (Core.element d)) (fun _ _ => True) := by
+  apply two_map (fun p : ReadyProductPublic .p d => p.joint a b) ?_ (coreJoint_ct M Sq (output := Core.element d) (o := pWorkspace) ha hb hd hT)
   intro p s h
   obtain ⟨eb, he, hL⟩ := h.1.availableLocal .q u (by decide) (by have := p.layout.widths; change u + p.layout.qLen ≤ usedBytes; unfold u usedBytes; omega)
   obtain ⟨fb, hf, hF⟩ := h.1.availableLocal .q v (by decide) (by have := p.layout.widths; change v + p.layout.qLen ≤ usedBytes; unfold v usedBytes; omega)

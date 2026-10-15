@@ -50,7 +50,7 @@ theorem dOne_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {L : Nat} (hL : av I
   obtain ⟨h₃, f₃, ok₃⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega) m₃ k₃
   refine WP.seq (WP.mono (zeroA_k h₃ (j := aDd) (by decide)) fun s₄ ⟨h₄, f₄, z₄, _, _⟩ =>
     WP.mono (setOne_k h₄ (j := aDd) (by decide) z₄) fun t ⟨ht, f₅, o₅, _⟩ => ?_)
-  refine ⟨ht, (((f₁.trans (by rw [← m₂]; exact f₃)).trans f₄).trans f₅).mono (by simp),
+  refine ⟨ht, (((f₁.trans (by rw [← m₂]; exact f₃)).trans f₄).trans f₅).mono (by decide),
     ⟨!decide (L = 1), ?_, ?_, ?_⟩⟩
   · rw [f₅.word (by decide) (by decide) (by decide), f₄.word (by decide) (by decide) (by decide), ok₃]
   · rw [VG.Proof.RsaKeyGen.inverse_one]
@@ -97,7 +97,7 @@ theorem dPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 :
       brun [h₁.ws.x0, hdr_enc (show kOk < 32 by decide), hst]
       rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨m, k⟩ => post m₁ t ?_
     obtain ⟨ht, ft, okt⟩ := h₁.hdrW (i := kOk) (by unfold kOk sFn; omega) m k
-    refine ⟨ht, ft.mono (by simp), false, okt, ?_, fun d hd => ?_⟩
+    refine ⟨ht, ft.mono (by decide), false, okt, ?_, fun d hd => ?_⟩
     · rw [he0, VG.Proof.RsaKeyGen.inverse_zero]; simp
     · rw [he0, VG.Proof.RsaKeyGen.inverse_zero] at hd; cases hd
   simp only [decide_eq_false_iff_not] at he0

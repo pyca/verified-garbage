@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedRound
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrMain
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -25,17 +26,7 @@ open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY sCnt sK)
 theorem sharedRoundRanges_hdr (w : Nat) {k : Nat}
     (hk : k = kRand ∨ k = kLen ∨ k = kRandLen ∨ k = kChecks ∨ k = kOut ∨ k = kUsedP) :
     ∀ r ∈ sharedRoundRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals
-    intro r hr
-    simp only [sharedRoundRanges, sharedMidRanges, List.mem_append] at hr
-    rcases hr with (hw | hc) | ht
-    · simp only [witnessRanges, witRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with (rfl | rfl | rfl) | (rfl | rfl | rfl | rfl) <;> rd_disj
-    · apply sharedKernel_hdr w _ (by simp [kRand, kLen, kRandLen, kChecks, kOut, kUsedP, sK, sFn, kE]) r hc
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
-      rcases ht with rfl | rfl | rfl <;> rd_disj
-
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> hdr_disj
 
 /-- At the head of the loop, after `i − 1` witnesses (`uni` of them uniform)
 and `used` octets of `rand`. -/

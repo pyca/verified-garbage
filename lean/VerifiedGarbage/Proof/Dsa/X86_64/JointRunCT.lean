@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointByteCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointByteCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointRun
@@ -56,7 +57,7 @@ theorem jointInit_ct : RelCT isa (Two JointRunPre) (.block Joint.expInit) (fun _
     hc.good.scr.ld (show 8 * Crt.sLink + 8 ≤ slot p.x.wx 8 by
       have := hdr_lt_slot p.x.wx 8 (show Crt.sLink < 32 by decide); omega)]
 
-theorem jointRun_ct (M : Mont) : RelCT isa (Two JointRunPre) (Joint.run M.mm) (fun _ _ => True) := by
+theorem jointRun_ct (M : Mont) (Sq : MontS) : RelCT isa (Two JointRunPre) (Joint.run Sq.mm M.mm) (fun _ _ => True) := by
   unfold Joint.run seqs
   refine RelCT.seq (two_post (Ψ := fun p : JointPublic => fun s => 0 < p.scan.len ∧ JointBytesInv p.scan 0 s)
     jointInit_ct ?_) ?_
@@ -78,7 +79,7 @@ theorem jointRun_ct (M : Mont) : RelCT isa (Two JointRunPre) (Joint.run M.mm) (f
       by have : p.x.wx ≤ 48 := p.width48; omega, coprime_pow2 p.odd _, hL, hF, p.qBound, het, hft,
       by simpa only [hL] using joint_source_out hct het,
       by simpa only [hF] using joint_source_out hct hft⟩
-  refine RelCT.seq (two_map JointPublic.scan (fun _ _ h => h) (jointBytes_ct M)) ?_
+  refine RelCT.seq (two_map JointPublic.scan (fun _ _ h => h) (jointBytes_ct M Sq)) ?_
   exact two_map (fun p : JointBytesPublic => p.x.ws)
     (fun _ _ ⟨_, minv, _, _, _, _, _, _, hI, _⟩ => ⟨minv, hI.ctx.good, Nat.le_refl _⟩)
     (M.ct (by unfold MmUse; decide))

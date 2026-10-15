@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_pack`
@@ -174,7 +176,7 @@ structure ZI (s₀ : State) (t : Nat) (s : State) : Prop extends Base s₀ s whe
   zero : ∀ u < t, s.mem (wA s₀ + BitVec.ofNat 64 u) = 0
 
 theorem zinit_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) (ZI · 0) (.block hbpZeroInit) := by
-  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by native_taint_decide)
   · subst e
     have b₀ : Base s₀ (P0 s₀) := ⟨rfl, rfl, rfl, Frame.refl _ _⟩
     have a3 : addr ((P0 s₀).gpr .esp) 32 = argAddr s₀ 3 := argEa rfl 3
@@ -221,7 +223,7 @@ theorem zloop_piece : Piece Pre Pub (ZI · 0) (fun s₀ s => ZI s₀ (yL s₀) s
     (fun t s₀ s₀' s s' _ _ hq h h' r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
-      rw [h.edi, h'.edi, hq.a3]) (by taint_decide)
+      rw [h.edi, h'.edi, hq.a3]) (by native_taint_decide)
 
 /-! ## The polynomials -/
 
@@ -254,7 +256,7 @@ structure PI (s₀ : State) (i : Nat) (s : State) : Prop extends Base s₀ s whe
   y : bytesAt s.mem (wA s₀) (yL s₀) = (S s₀ i).1.toList
 
 theorem setup_piece : Piece Pre Pub (fun s₀ s => ZI s₀ (yL s₀) s) (PI · 0) (.block hbpSetup) := by
-  refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · have a0 : addr (s.gpr .esp) 20 = argAddr s₀ 0 := argEa h.esp 0
     have a2 : addr (s.gpr .esp) 28 = argAddr s₀ 2 := argEa h.esp 2
     have a3 : addr (s.gpr .esp) 32 = argAddr s₀ 3 := argEa h.esp 3
@@ -293,7 +295,7 @@ theorem setup_piece : Piece Pre Pub (fun s₀ s => ZI s₀ (yL s₀) s) (PI · 0
 theorem b0_piece (i : Nat) : Piece Pre Pub (fun s₀ s => PI s₀ i s ∧ i < K s₀) (fun s₀ s => CI s₀ i 0 0 s)
     (.block [.mov .ebx (.imm 0)]) := by
   refine Piece.taint [] (fun s₀ s hp ⟨h, hi⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-    (by taint_decide)
+    (by native_taint_decide)
   have hb : WP isa (.block [.mov .ebx (.imm 0)]) s fun s' => s'.gpr .ebx = 0 ∧ s'.mem = s.mem := by hrun
   exact (WP.keep [.ebx] hb (by decide)).mono fun s' ⟨⟨e, m⟩, k⟩ =>
     ⟨h.keep k (by decide) (by rw [m]; exact Frame.refl _ _), hi, by rw [k.gpr (by decide), h.esi]; rfl, by rw [e]; rfl,
@@ -306,7 +308,7 @@ theorem ne_zero_eq (v : BitVec 32) : (!(v == 0)) = decide (v ≠ 0) := by
 theorem load_piece (i j : Nat) : Piece Pre Pub (fun s₀ s => CI s₀ i j j s ∧ j < 256)
     (fun s₀ s => (CI s₀ i j j s ∧ j < 256) ∧ isa.eval .ne s = some (bit s₀ i j)) (.block hbpLoad) := by
   refine Piece.taint [.esi] (fun s₀ s hp ⟨h, hj⟩ => ?_) (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_)
-    (by taint_decide)
+    (by native_taint_decide)
   · have hf := hp.facts
     have ht : 256 * i + j < 256 * K s₀ := by have := h.lt; omega
     have ea : addr (s.gpr .esi) 0 = coeffAddr (rA s₀) (256 * i + j) := by rw [h.esi]; exact hAddr hp ht
@@ -326,7 +328,7 @@ theorem set_piece (i j : Nat) : Piece Pre Pub (fun s₀ s => ((CI s₀ i j j s �
       isa.eval .ne s = some (bit s₀ i j)) ∧ bit s₀ i j = true) (fun s₀ s => CI s₀ i j (j + 1) s ∧ j < 256)
     (.block hbpSet) := by
   refine Piece.taint [.edi, .eax] (fun s₀ s hp ⟨⟨⟨h, hj⟩, _⟩, h1⟩ => ?_)
-    (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨h, _⟩, _⟩, _⟩ ⟨⟨⟨h', _⟩, _⟩, _⟩ r hr => ?_) (by taint_decide)
+    (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨h, _⟩, _⟩, _⟩ ⟨⟨⟨h', _⟩, _⟩, _⟩ r hr => ?_) (by native_taint_decide)
   · have hf := hp.facts
     have hw := hp.w_fit
     have hlt : (T s₀ i j).2 < ω s₀ :=
@@ -371,7 +373,7 @@ theorem cmp256 {j : Nat} (hj : j < 256) :
 theorem next_piece (i j : Nat) : Piece Pre Pub (fun s₀ s => CI s₀ i j (j + 1) s ∧ j < 256)
     (fun s₀ s => CI s₀ i (j + 1) (j + 1) s ∧ isa.eval .ne s = some (decide (j + 1 < 256))) (.block hbpNext) := by
   refine Piece.taint [] (fun s₀ s hp ⟨h, hj⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-    (by taint_decide)
+    (by native_taint_decide)
   have hb : WP isa (.block hbpNext) s fun s' => s'.gpr .esi = s.gpr .esi + 4 ∧ s'.gpr .ebx = s.gpr .ebx + 1 ∧
       s'.zf = some (s.gpr .ebx + 1 - 256 == 0) ∧ s'.mem = s.mem := by hrun [hbpNext]
   refine (WP.keep [.esi, .ebx] hb (by decide)).mono fun s' ⟨⟨e1, e2, z, m⟩, k⟩ =>
@@ -394,7 +396,7 @@ theorem coef_piece (i j : Nat) : Piece Pre Pub (fun s₀ s => CI s₀ i j j s �
 
 theorem end_piece (i : Nat) : Piece Pre Pub (fun s₀ s => CI s₀ i 256 256 s)
     (fun s₀ s => PI s₀ (i + 1) s ∧ isa.eval .ne s = some (decide (i + 1 < K s₀))) (.block hbpEnd) := by
-  refine Piece.taint [.ecx] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.ecx] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · have hf := hp.facts
     have hw := hp.w_fit
     have hi := h.lt

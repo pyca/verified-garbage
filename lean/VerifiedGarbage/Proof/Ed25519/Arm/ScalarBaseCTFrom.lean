@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-! Public scalar pointers remain public across point preparation. -/
 
@@ -55,7 +57,7 @@ theorem pointFromScalar_ct (base ptr : BitVec 32) (count : Nat) (hn : count = 16
       (pointFromScalar count) (fun _ _ => True) := by
   have hc : CT (fun x y => FromCTPre base ptr count x ∧ FromCTPre base ptr count y)
       pointFromPrepareCT (fun _ _ => True) := by
-    apply ctRegs [.r0, .r12] _ (by taint_decide)
+    apply ctRegs [.r0, .r12] _ (by native_taint_decide)
     intro x y h r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

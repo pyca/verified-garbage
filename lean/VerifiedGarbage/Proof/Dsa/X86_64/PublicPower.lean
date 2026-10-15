@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponent
 public import VerifiedGarbage.Proof.Dsa.X86_64.Power
 import all Init.Data.Array.Basic
@@ -20,7 +21,7 @@ open VG.Impl.Dsa.X86_64.PublicPower
 /-- DSA modular exponentiation in Montgomery representation. The exponent
 is a nonempty byte string outside the scratch workspace; leading zeroes
 are permitted. This lemma makes no primality or group-order assumption. -/
-theorem expLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat}
+theorem expLoop_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx : Nat}
     {minv : BitVec 64} {m x : Nat}
     (hc : SubCtx s B Z o w wx minv) (hw2 : 2 ≤ wx) (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
     (hn : wv s.mem (off B o) (slot wx aN) wx = m)
@@ -33,12 +34,12 @@ theorem expLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat}
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
     (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
-    WP isa (VG.Impl.Dsa.X86_64.PublicPower.expLoop M.mm sp sl) s fun t =>
-      SubCtx t B Z o w wx minv ∧ wv t.mem (off B o) (slot wx aY) wx < m ∧
+    WP isa (VG.Impl.Dsa.X86_64.PublicPower.expLoop Sq.mm M.mm sp sl) s fun t =>
+      SubCtx t B Z o w wx minv ∧ wv t.mem (off B o) (slot wx aY) wx < Sq.bd m (2 ^ (64 * wx)) ∧
       wv t.mem (off B o) (slot wx aY) wx % m =
         Spec.Dsa.powMod x (Spec.Dsa.decodeBE eb) m * 2 ^ (64 * wx) % m ∧
       Frm (off B o) (crtExpRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.mono (crtExpLoop_ok M (Q := True) hc hw2 hwx hw30 hn hinv hodd hxl
+  refine WP.mono (crtExpLoop_ok M Sq (Q := True) hc hw2 hwx hw30 hn hinv hodd hxl
     (fun _ => hxc) hyl (fun _ => hyc) hsp hsl hep hel hL1 hL2 he) fun t ht => ?_
   obtain ⟨hctx, hlt, hval, hframe, hkeep⟩ := ht
   refine ⟨hctx, hlt, ?_, hframe, hkeep⟩
@@ -47,7 +48,7 @@ theorem expLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat}
 
 /-- The ordinary result of exponentiation, for an odd (possibly composite)
 modulus. The exponent may be caller bytes or bytes in the scratch suffix. -/
-theorem encodedPower_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m x : Nat}
+theorem encodedPower_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx m x : Nat}
     {minv : BitVec 64} (hc : SubCtx s B Z o w wx minv)
     (hw2 : 2 ≤ wx) (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
     (hm : 1 < m) (hodd : m % 2 = 1)
@@ -61,7 +62,7 @@ theorem encodedPower_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m x : Nat}
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
     (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
-    WP isa (VG.Impl.Dsa.X86_64.PublicPower.encodedPower M.mm sp sl) s fun t =>
+    WP isa (VG.Impl.Dsa.X86_64.PublicPower.encodedPower Sq.mm M.mm sp sl) s fun t =>
       SubCtx t B Z o w wx minv ∧
       wv t.mem (off B o) (slot wx aY) wx = Spec.Dsa.powMod x (Spec.Dsa.decodeBE eb) m ∧
       ModCtx t (off B o) (slot wx 8) wx minv m ∧
@@ -70,7 +71,7 @@ theorem encodedPower_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m x : Nat}
   have hnZ := hc.good.scr.nowrap
   have hR := coprime_pow2 hodd (64 * wx)
   unfold VG.Impl.Dsa.X86_64.PublicPower.encodedPower
-  refine WP.seq (WP.mono (expLoop_ok M hc hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc
+  refine WP.seq (WP.mono (expLoop_ok M Sq hc hw2 hwx hw30 hn hinv hodd hxl hxc hyl hyc
     hsp hsl hep hel hL1 hL2 he) fun u ⟨hu, hlt, hv, hf, hk⟩ => ?_)
   have hmu := modCtx_exp hmctx hu.good hf (Nat.le_refl _)
   have oneSep := crtExpRanges_arr wx (j := aOne) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -87,7 +88,7 @@ theorem encodedPower_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m x : Nat}
 
 /-- Exponentiation of an ordinary, possibly unreduced base, using the
 prepared constants and an exponent from the parent call header. -/
-theorem powerCore_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m x : Nat}
+theorem powerCore_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx m x : Nat}
     {minv : BitVec 64} (hc : SubCtx s B Z o w wx minv)
     (hw2 : 2 ≤ wx) (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
     (hm : 1 < m) (hodd : m % 2 = 1)
@@ -99,7 +100,7 @@ theorem powerCore_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m x : Nat}
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
     (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
-    WP isa (VG.Impl.Dsa.X86_64.PublicPower.powerCore M.mm sp sl) s fun t =>
+    WP isa (VG.Impl.Dsa.X86_64.PublicPower.powerCore Sq.mm M.mm sp sl) s fun t =>
       SubCtx t B Z o w wx minv ∧
       wv t.mem (off B o) (slot wx aY) wx = Spec.Dsa.powMod x (Spec.Dsa.decodeBE eb) m ∧
       ModCtx t (off B o) (slot wx 8) wx minv m ∧
@@ -113,7 +114,7 @@ theorem powerCore_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m x : Nat}
   have hcu := arrays_context hc hf (by decide) hk
   have hfu := arrays_work hf (by decide)
   have hsrc := work_source hc hfu hk he
-  refine WP.mono (encodedPower_ok M hcu hw2 hwx hw30 hm hodd hu.modulus hu.inverse huone
+  refine WP.mono (encodedPower_ok M Sq hcu hw2 hwx hw30 hm hodd hu.modulus hu.inverse huone
     (by rw [hux]; exact Nat.mod_lt _ (by omega))
     (by rw [hux, Nat.mod_mod])
     (by rw [huy]; exact Nat.mod_lt _ (by omega))
@@ -124,7 +125,7 @@ theorem powerCore_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m x : Nat}
 
 /-- Complete exponentiation, including constants setup and loading the base.
 Both byte buffers remain valid when they occupy the inactive scratch suffix. -/
-theorem power_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
+theorem power_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx m : Nat}
     {minv : BitVec 64} (hc : SubCtx s B Z o w wx minv)
     (hw2 : 2 ≤ wx) (hw48 : wx ≤ 48) (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
     (hm : 1 < m) (hodd : m % 2 = 1)
@@ -138,7 +139,7 @@ theorem power_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
     (he : word s.mem B (8 * sp) = exp)
     (helen : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
     (hes : Src s B Z exp eb) (he1 : 1 ≤ eb.length) (he2 : eb.length ≤ 1024) :
-    WP isa (VG.Impl.Dsa.X86_64.PublicPower.power M.mm bp bl sp sl) s fun t =>
+    WP isa (VG.Impl.Dsa.X86_64.PublicPower.power Sq.mm M.mm bp bl sp sl) s fun t =>
       SubCtx t B Z o w wx minv ∧
       wv t.mem (off B o) (slot wx aY) wx =
         Spec.Dsa.powMod (Spec.Dsa.decodeBE bb) (Spec.Dsa.decodeBE eb) m ∧
@@ -163,7 +164,7 @@ theorem power_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
   have vr2 := (hfa.wv_of_not_mem (show aR2 < 8 by decide) (by decide) hz).trans hur2
   have hf := hfu.trans hfw
   have hk := (hku.trans hkv).mono (show ∀ r ∈ mmRegs ++ mmRegs, r ∈ mmRegs by decide)
-  refine WP.mono (powerCore_ok M hcv hw2 hwx hw30 hm hodd vn vi vone hvbase vr2
+  refine WP.mono (powerCore_ok M Sq hcv hw2 hwx hw30 hm hodd vn vi vone hvbase vr2
     hsp hsl ((work_parent hc hf hsp).trans he) ((work_parent hc hf hsl).trans helen)
     he1 he2 (work_source hc hf hk hes)) fun t ⟨hct, hresult, hmt, hft, hkt⟩ =>
       ⟨hct, hresult, hmt, hf.trans hft, (hk.trans hkt).mono (by decide)⟩

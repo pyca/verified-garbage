@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_simple_bit_pack`
@@ -105,7 +107,7 @@ example : ∃ pre post leak, simpleBitPackContract Arm.abi =
 
 theorem simpleBitPack_verified :
     Verified Arm.target Impl.MlDsa.Arm.Pack.simpleBitPack (simpleBitPackContract Arm.abi) := by
-  refine ⟨fun s hs => ?_, Proof.MlKem.Arm.Add.ctRegs [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
+  refine ⟨fun s hs => ?_, Proof.MlKem.Arm.Add.ctRegs [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · have hp := SbpPre.of hs
     obtain ⟨t, s', he, hpost, hk⟩ := sbp_wp hp
     refine ⟨t, s', he, ⟨fun r hr => Exec.gpr (sbp_preserves r hr) he, hk.2.2.2⟩, ?_⟩

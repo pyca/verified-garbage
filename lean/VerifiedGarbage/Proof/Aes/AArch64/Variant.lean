@@ -61,32 +61,32 @@ namespace Ctr32Impl
 /-- The bitsliced implementation, `vg_aes_ctr32`, in the baseline ISA. -/
 def scalar : Ctr32Impl where
   callee := .scalar
-  noFrames := by decide +kernel
+  noFrames := by lit_decide
   ok := ctr32_correct
   ct := ctr32_ct
-  keepsV := by decide +kernel
+  keepsV := by lit_decide
   suffix := ""
   features := []
   expand := .scalar
-  expandNoFrames := by decide +kernel
+  expandNoFrames := by lit_decide
   expandOk := expandKey_correct
   expandCt := expandKey_ct
-  expandKeepsV := by decide +kernel
+  expandKeepsV := by lit_decide
 
 /-- The implementation with the Cryptographic Extension, `vg_aes_ctr32_aes`. -/
 def aese : Ctr32Impl where
   callee := .aese
-  noFrames := by decide +kernel
+  noFrames := by lit_decide
   ok := Aese.ctr32_correct
   ct := Aese.ctr32_ct
-  keepsV := by decide +kernel
+  keepsV := by lit_decide
   suffix := "_aes"
   features := ["aes"]
   expand := .aese
-  expandNoFrames := by decide +kernel
+  expandNoFrames := by lit_decide
   expandOk := Aese.Key.expandKey_correct
   expandCt := Aese.Key.expandKey_ct
-  expandKeepsV := by decide +kernel
+  expandKeepsV := by lit_decide
 
 end Ctr32Impl
 

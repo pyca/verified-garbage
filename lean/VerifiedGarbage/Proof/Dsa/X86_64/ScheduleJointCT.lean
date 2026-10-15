@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCallCT
 import VerifiedGarbage.Proof.Dsa.X86_64.JointReadyCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ReadyJoint
@@ -18,7 +19,7 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
-theorem scheduleJoint_ct (M : Mont) (inputs : SchedulePublic → List (Operand × Nat))
+theorem scheduleJoint_ct (M : Mont) (Sq : MontS) (inputs : SchedulePublic → List (Operand × Nat))
     (stable : ∀ p a, a ∈ inputs p → a.1.length ≠ .mask ∧ stablePointer a.1.pointer)
     (d : Nat) (a b : Operand) (an bn : SchedulePublic → Nat)
     (ha : pointerFits a.pointer) (hb : pointerFits b.pointer)
@@ -30,7 +31,7 @@ theorem scheduleJoint_ct (M : Mont) (inputs : SchedulePublic → List (Operand �
     (hT : (taint.check (Taint.ofRegs [.rdi])
       (.block (callHead a b ⟨.local d, ModulusSide.p.lengthField⟩ ModulusSide.p.offset)) hc).isSome = true) :
     RelCT isa (Two (ScheduleBinaryPre inputs a b an bn))
-      (Core.joint M.mm ModulusSide.p.offset a b ⟨.local d, ModulusSide.p.lengthField⟩)
+      (Core.joint Sq.mm M.mm ModulusSide.p.offset a b ⟨.local d, ModulusSide.p.lengthField⟩)
       (Two fun p s => ScheduleState inputs p s ∧ LocalReduced p.layout .p d s) := by
   have hb1024 (p : SchedulePublic) : bn p ≤ 1024 := by
     have := hbw p
@@ -39,13 +40,13 @@ theorem scheduleJoint_ct (M : Mont) (inputs : SchedulePublic → List (Operand �
     omega
   let pub (p : SchedulePublic) : ReadyProductPublic .p d :=
     { scheduleCallPublic .p d an bn ha1 haw hb1 hb1024 hd hend p with secondFits := hbw p }
-  refine two_post (two_map pub ?_ (readyJoint_ct M d a b ha hb hpa hpb hd31 hT)) ?_
+  refine two_post (two_map pub ?_ (readyJoint_ct M Sq d a b ha hb hpa hpb hd31 hT)) ?_
   · intro p s ⟨hs, ⟨ba, has, hbl⟩, ⟨bb, hbs, hel⟩⟩
     exact ⟨hs.1, ba, bb, has, hbs, hbl, hel⟩
   · intro p s ⟨hs, ⟨ba, has, hbl⟩, ⟨bb, hbs, hel⟩⟩
     obtain ⟨eb, he, hL⟩ := hs.1.availableLocal .q u (by decide) (scalar_space (by decide) p)
     obtain ⟨fb, hf, hF⟩ := hs.1.availableLocal .q v (by decide) (scalar_space (by decide) p)
-    refine WP.mono (readyJoint_ok M hs.1 (p.greater .p) (p.odd .p) a b ha hb has hbs
+    refine WP.mono (readyJoint_ok M Sq hs.1 (p.greater .p) (p.odd .p) a b ha hb has hbs
       (hbl ▸ ha1 p) (hbl ▸ haw p) (hel ▸ hb1 p) (hel ▸ hbw p) he hf hL hF d hd (hend p))
       fun t h => ⟨h.schedule hs hd (hend p) (stable p), ?_⟩
     exact h.reduced (Nat.mod_lt _ (by have : 1 < p.layout.modulus := p.greater .p; omega)) (p.fits .p)

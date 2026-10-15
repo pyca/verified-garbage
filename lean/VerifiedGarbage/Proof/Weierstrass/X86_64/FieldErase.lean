@@ -217,4 +217,57 @@ theorem FieldTmpl.Ok.constantTimeB (hT : T.Ok M) (hn : M.n ≠ 4) {Pre : State �
     ConstantTime isa Pre Pub (ForwardField.programB M ops).inline := by
   rw [programB_eq hn]; exact hT.constantTime τ hτ hpub ops h
 
+/-! ## Four-word moduli without BMI2 and ADX
+
+`ForwardField.programB` doubles by `double4` (`ForwardField.code`), and
+otherwise is `fprogB`: its erased code is the templates with the erased
+`double4` as the double. -/
+
+/-- `T` with `d` as its double. -/
+def FieldTmpl.withDbl (T : FieldTmpl) (d : List Instr) : FieldTmpl := { T with dbl := d }
+
+theorem FieldTmpl.Ok.programB4 (hT : T.Ok M) (hn : M.n = 4) (hx : M.adx = false) {d : List Instr}
+    (hd : ∀ o a, KList.map Instr.erase (Impl.Mont.X86_64.double4 M o a) = d) (ops : List FOp) :
+    Code.erase (ForwardField.programB M ops) = (T.withDbl d).prog M ops := by
+  unfold ForwardField.programB
+  rw [ite_eq_right_of_eq_false _ _ (eq_false fun h => by rw [hx] at h; cases h.1), progs_erase,
+    List.map_map]
+  refine congrArg progs (List.map_congr_left fun op _ => ?_)
+  show Code.erase ((opCall? M op).getD (.block (ForwardField.code M op))) = (T.withDbl d).op M op
+  cases op with
+  | add o a b =>
+    have hc : opCall? M (.add o a b) = none := rfl
+    simp only [hc, Option.getD_none, FieldTmpl.op]
+    show Code.block (KList.map Instr.erase (ForwardField.code M (.add o a b))) = _
+    by_cases h : a = b
+    · subst h
+      rw [Nat.beq_refl, Bool.cond_true]
+      simp only [ForwardField.code, hn, and_self, ite_true]
+      exact congrArg _ (hd o a)
+    · have hb : Nat.beq a b = false := Bool.eq_false_iff.mpr fun h' => h (Nat.eq_of_beq_eq_true h')
+      rw [hb, Bool.cond_false]
+      simp only [ForwardField.code, h, false_and, ite_false]
+      exact congrArg _ (hT.add o a b h)
+  | mul o a b =>
+    have e : Code.erase ((opCall? M (.mul o a b)).getD (.block (ForwardField.code M (.mul o a b)))) =
+        Code.erase (Impl.Weierstrass.X86_64.opProg M (.mul o a b)) := rfl
+    rw [e, hT.opProg]; rfl
+  | sub o a b =>
+    have e : Code.erase ((opCall? M (.sub o a b)).getD (.block (ForwardField.code M (.sub o a b)))) =
+        Code.erase (Impl.Weierstrass.X86_64.opProg M (.sub o a b)) := rfl
+    rw [e, hT.opProg]; rfl
+
+/-- `FieldTmpl.Ok.constantTime`, for `ForwardField.programB` of a four-word
+modulus without BMI2 and ADX. -/
+theorem FieldTmpl.Ok.constantTimeB4 (hT : T.Ok M) (hn : M.n = 4) (hx : M.adx = false) {d : List Instr}
+    (hd : ∀ o a, KList.map Instr.erase (Impl.Mont.X86_64.double4 M o a) = d) {Pre : State → Prop}
+    {Pub : State → State → Prop} (τ : X86_64.Taint.T) (hτ : τ.bases = [])
+    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → taint.Agree τ s₁ s₂)
+    (ops : List FOp) {hc : VG.Taint.Hint X86_64.Taint.T}
+    (h : (taint.check τ ((T.withDbl d).prog M ops).inline hc).isSome = true) :
+    ConstantTime isa Pre Pub (ForwardField.programB M ops).inline :=
+  VG.Taint.constantTime_mapBlocks taint_eraseInv τ hτ hpub
+    (by rw [show (ForwardField.programB M ops).inline.mapBlocks Instr.erase =
+      Code.erase (ForwardField.programB M ops).inline from rfl, ← Code.erase_inline, hT.programB4 hn hx hd]) h
+
 end VG.Proof.Weierstrass.X86_64

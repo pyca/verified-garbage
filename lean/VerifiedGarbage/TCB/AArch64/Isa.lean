@@ -183,9 +183,9 @@ structure State where
 inductive LogicOp | and | orr | eor
   deriving DecidableEq, Repr
 
-/-- The arrangement of a vector of 32-bit (`.4s`), 64-bit (`.2d`) or 8-bit
-(`.16b`) lanes. -/
-inductive VArr | s4 | d2 | b16
+/-- The arrangement of a vector of 32-bit (`.4s`), 64-bit (`.2d`), 8-bit
+(`.16b`) or 16-bit (`.8h`) lanes. -/
+inductive VArr | s4 | d2 | b16 | h8
   deriving DecidableEq, Repr
 
 /-- The size of a lane of an arrangement. -/
@@ -193,6 +193,7 @@ abbrev VArr.esize : VArr → Nat
   | .s4 => 32
   | .d2 => 64
   | .b16 => 8
+  | .h8 => 16
 
 /-- Bitwise operations on whole vectors (`.16b`). -/
 inductive VLogicOp | and | orr | eor | bic | orn
@@ -212,6 +213,10 @@ doubleword), `rev64 .4s` (words in each doubleword). -/
 inductive VRevOp | rev32b | rev32h | rev64b | rev64s
   deriving DecidableEq, Repr
 
+/-- The products of 16-bit lanes (`.8h`): MUL, MLA, MLS, SQDMULH and SQRDMULH. -/
+inductive VMulHOp | mul | mla | mls | sqdmulh | sqrdmulh
+  deriving DecidableEq, Repr
+
 /-- The bitwise selects BSL, BIT and BIF. -/
 inductive VSelOp | bsl | bit | bif
   deriving DecidableEq, Repr
@@ -228,9 +233,10 @@ inductive VOp
   | mov (d n : VReg)
   /-- `movi vd.2d, #0` -/
   | movi0 (d : VReg)
-  /-- `dup vd.4s, wn` / `dup vd.2d, xn` / `dup vd.16b, wn` (DUP (general)) -/
+  /-- `dup vd.4s, wn` / `dup vd.2d, xn` / `dup vd.16b, wn` / `dup vd.8h, wn` (DUP (general)) -/
   | dup (a : VArr) (d : VReg) (n : Reg)
-  /-- `mov vd.s[i], wn` / `mov vd.d[i], xn` / `mov vd.b[i], wn` (alias of INS (general)) -/
+  /-- `mov vd.s[i], wn` / `mov vd.d[i], xn` / `mov vd.b[i], wn` / `mov vd.h[i], wn` (alias of
+  INS (general)) -/
   | ins (a : VArr) (d : VReg) (i : Nat) (n : Reg)
   /-- `dup sd, vn.s[i]` (DUP (element), scalar) -/
   | dupS (d n : VReg) (i : Nat)
@@ -277,6 +283,9 @@ inductive VOp
   | sqdmulh (d n m : VReg)
   /-- `umin vd.4s, vn.4s, vm.4s` -/
   | umin (d n m : VReg)
+  /-- `mul`/`mla`/`mls`/`sqdmulh`/`sqrdmulh vd.8h, vn.8h, vm.8h` (MUL, MLA, MLS,
+  SQDMULH and SQRDMULH (vector), 16-bit lanes) -/
+  | mulH (op : VMulHOp) (d n m : VReg)
   /-- `pmull vd.1q, vn.1d, vm.1d`, or `pmull2 vd.1q, vn.2d, vm.2d` if `hi` -/
   | pmull (hi : Bool) (d n m : VReg)
   /-- `aese vd.16b, vn.16b` -/
@@ -562,6 +571,7 @@ def VArr.map2 (a : VArr) (f : (w : Nat) → BitVec w → BitVec w → BitVec w)
       (f 32 (vword x 2) (vword y 2)) (f 32 (vword x 3) (vword y 3))
   | .d2 => ofVDwords (f 64 (vdword x 0) (vdword y 0)) (f 64 (vdword x 1) (vdword y 1))
   | .b16 => ofVBytes fun e => f 8 (vbyte x e) (vbyte y e)
+  | .h8 => ofVHalves fun e => f 16 (vhalf x e) (vhalf y e)
 
 /-- The lanes of `x` in the arrangement `a`, lowest first. -/
 def VArr.lanes (a : VArr) (x : BitVec 128) : List (BitVec 128) :=
@@ -570,6 +580,7 @@ def VArr.lanes (a : VArr) (x : BitVec 128) : List (BitVec 128) :=
       (vword x 3).setWidth 128]
   | .d2 => [(vdword x 0).setWidth 128, (vdword x 1).setWidth 128]
   | .b16 => (List.range 16).map fun e => (vbyte x e).setWidth 128
+  | .h8 => (List.range 8).map fun e => (vhalf x e).setWidth 128
 
 /-- The vector of the arrangement `a` whose lanes are `ls`, lowest first. -/
 def VArr.ofLanes (a : VArr) (ls : List (BitVec 128)) : BitVec 128 :=
@@ -578,6 +589,7 @@ def VArr.ofLanes (a : VArr) (ls : List (BitVec 128)) : BitVec 128 :=
   | .s4 => ofVWords ((l 0).setWidth 32) ((l 1).setWidth 32) ((l 2).setWidth 32) ((l 3).setWidth 32)
   | .d2 => ofVDwords ((l 0).setWidth 64) ((l 1).setWidth 64)
   | .b16 => ofVBytes fun e => (l e).setWidth 8
+  | .h8 => ofVHalves fun e => (l e).setWidth 16
 
 /-- DDI 0487 C7.2, "ZIP1", "ZIP2", "TRN1", "TRN2", "UZP1", "UZP2", with
 `operand1 = V[n]` (lanes `n`) and `operand2 = V[m]` (lanes `m`), and `pairs`
@@ -618,6 +630,32 @@ than saturate. -/
 def sqdmulhLane (a b : BitVec 32) : Option (BitVec 32) :=
   if a = 0x80000000#32 ∧ b = 0x80000000#32 then none
   else some (BitVec.ofInt 32 ((2 * a.toInt * b.toInt) >>> 32))
+
+/-- One lane of SQDMULH (`rnd` false) or SQRDMULH (`rnd` true) on 16-bit
+lanes, DDI 0487 C7.2, "SQDMULH (vector)" and "SQRDMULH (vector)":
+`round_const = if rounding then 1 << (esize - 1) else 0; element1 =
+SInt(Elem[operand1, e]); element2 = SInt(Elem[operand2, e]); product = (2 *
+element1 * element2) + round_const; (Elem[result, e], sat) =
+SignedSatQ(product >> esize, esize)` (`>>` rounding towards minus infinity),
+which saturates, and sets FPSR.QC, exactly when both elements are `-2 ^ 15`.
+`none` there: the model faults rather than saturate. -/
+def sqdmulhHLane (rnd : Bool) (a b : BitVec 16) : Option (BitVec 16) :=
+  if a = 0x8000#16 ∧ b = 0x8000#16 then none
+  else some (BitVec.ofInt 16 ((2 * a.toInt * b.toInt + if rnd then 2 ^ 15 else 0) >>> 16))
+
+/-- One lane of the products of 16-bit lanes, DDI 0487 C7.2, with `operand1 =
+V[n]`, `operand2 = V[m]` and, for MLA and MLS, `operand3 = V[d]` (lane `a`):
+* MUL (vector): `Elem[result, e] = (element1 * element2)<esize-1:0>`;
+* MLA (vector): `Elem[result, e] = Elem[operand3, e] + product`, `product =
+  (UInt(element1) * UInt(element2))<esize-1:0>`;
+* MLS (vector): `Elem[result, e] = Elem[operand3, e] - product`;
+* SQDMULH, SQRDMULH (vector): `sqdmulhHLane`. -/
+def VMulHOp.lane : VMulHOp → BitVec 16 → BitVec 16 → BitVec 16 → Option (BitVec 16)
+  | .mul, _, x, y => some (x * y)
+  | .mla, a, x, y => some (a + x * y)
+  | .mls, a, x, y => some (a - x * y)
+  | .sqdmulh, _, x, y => sqdmulhHLane false x y
+  | .sqrdmulh, _, x, y => sqdmulhHLane true x y
 
 /-- DDI 0487 C7.2, "REV32" and "REV64" (`Reverse` of the elements within
 each container): byte `i` of the result is byte `rev i` of the operand. -/
@@ -755,6 +793,8 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .ins .d2 d i n => if i < 2 then some (d, setLane (s.v d) 64 i (s.gpr n)) else none
   | .dup .b16 d n => let b := (s.gpr n).setWidth 8; some (d, ofVBytes fun _ => b)
   | .ins .b16 d i n => if i < 16 then some (d, setLane (s.v d) 8 i ((s.gpr n).setWidth 8)) else none
+  | .dup .h8 d n => let h := (s.gpr n).setWidth 16; some (d, ofVHalves fun _ => h)
+  | .ins .h8 d i n => if i < 8 then some (d, setLane (s.v d) 16 i ((s.gpr n).setWidth 16)) else none
   | .dupS d n i => if i < 4 then some (d, (vword (s.v n) i).setWidth 128) else none
   | .dupE a d n i =>
     if i < 128 / a.esize then
@@ -811,6 +851,10 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
     | _, _, _, _ => none
   | .umin d n m =>
     some (d, VArr.s4.map2 (fun _ x y => if x.toNat ≤ y.toNat then x else y) (s.v n) (s.v m))
+  | .mulH op d n m =>
+    let r (e : Nat) := op.lane (vhalf (s.v d) e) (vhalf (s.v n) e) (vhalf (s.v m) e)
+    if (List.range 8).all fun e => (r e).isSome then some (d, ofVHalves fun e => (r e).getD 0)
+    else none
   | .pmull hi d n m =>
     let p := if hi then 1 else 0
     some (d, polyMul (vdword (s.v n) p) (vdword (s.v m) p))

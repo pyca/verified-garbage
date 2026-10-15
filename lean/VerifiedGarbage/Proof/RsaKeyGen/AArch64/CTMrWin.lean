@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTMs
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrExp
@@ -79,6 +80,25 @@ theorem WWX.goodW {L : WsP} {s : State} (h : WWX L s) : GoodW L s := by
 def wkRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2)), (8 * kG, 8), (8 * kFlag, 8),
     (8 * kV, 8), (8 * kBits, 8), (8 * kWords, 8)]
+
+/-- `wkRanges`'s ranges, in the header and in the arrays. -/
+theorem wkRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(8, 8), (184, 8), (208, 8), (240, 8), (232, 8)]
+    [(2, 1), (3, 1), (5, 1)] (wkRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    wkRanges, Public.sCnt, Public.aAcc, Public.aTmp, Public.aXm, aAcc, aTmp, aXm, kT0, sFn, sCnt, kG, kV, kWords, kBits, kFlag, kPlen, kT1, kT2] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(5, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
 
 theorem wkRanges_mut (w : Nat) : ∀ r ∈ wkRanges w, KMut r := by unfold wkRanges; w_mut
 

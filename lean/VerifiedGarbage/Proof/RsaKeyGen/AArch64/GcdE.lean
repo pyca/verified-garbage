@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.ModE
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
 import all Init.Data.Array.Basic
@@ -155,6 +156,17 @@ theorem modPrep_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {E : Nat}
 
 /-- What `gcdE` and `gcdCheck` change. -/
 def gcdRanges (w : Nat) : List (Nat × Nat) := [(slot w aX, 8 * (w + 2)), (8 * kG, 8)]
+
+/-- `gcdRanges`'s ranges, in the header and in the arrays. -/
+theorem gcdRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(8, 8)]
+    [(1, 1)] (gcdRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    gcdRanges, Public.aX, aX, kG] at hr
+  rcases hr with rfl | rfl
+  · exact .inr ⟨(1, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
 
 theorem gcdRanges_mut (w : Nat) : ∀ r ∈ gcdRanges w, KMut r := by
   simp only [gcdRanges, List.mem_cons, List.not_mem_nil, or_false]

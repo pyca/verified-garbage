@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_make_hint` and `vg_mldsa_use_hint`
@@ -49,8 +51,8 @@ theorem uh_piece : Piece (HPre false) HPub (fun s₀ s => s = s₀)
     (fun s₀ s' => LeafPost (fun s => HInv (uhV (arg s₀ 2).toNat) false s₀ 256 s) s₀ s') useHint :=
   Piece.leaf (fun s₀ => [pR (pA s₀ 3), aR s₀ 4]) (NoSp.of_all (by decide +kernel))
     (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩) (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
-    ((Piece.seq (hintInit_piece false) (hint_ite (fun g hg => uhCore_spec hg) (by taint_decide)
-      (by taint_decide))).mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
+    ((Piece.seq (hintInit_piece false) (hint_ite (fun g hg => uhCore_spec hg) (by native_taint_decide)
+      (by native_taint_decide))).mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
 
 theorem uhV_lt {g : Nat} (hg : g ∈ gamma2s) (a b : Nat) : uhV g a b < 2 ^ 32 := by
   have hm : 0 < VG.Proof.MlDsa.Round.hbM g := by
@@ -121,14 +123,14 @@ theorem mh_piece : Piece (HPre true) HPub (fun s₀ s => s = s₀) (fun s₀ s' 
     makeHint :=
   Piece.leaf (fun s₀ => [pR (pA s₀ 3), aR s₀ 4]) (NoSp.of_all (by decide +kernel))
     (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩) (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
-    ((Piece.seq (hintInit_piece true) (Piece.seq (hint_ite (fun g hg => mhCore_spec hg) (by taint_decide)
-      (by taint_decide)) (Piece.taint [] (fun s₀ s hp h => wp_mov fun s₁ u₁ => WP.block_nil_iff.mpr
+    ((Piece.seq (hintInit_piece true) (Piece.seq (hint_ite (fun g hg => mhCore_spec hg) (by native_taint_decide)
+      (by native_taint_decide)) (Piece.taint [] (fun s₀ s hp h => wp_mov fun s₁ u₁ => WP.block_nil_iff.mpr
         ⟨⟨by rw [u₁.other _ (by decide), h.esp], by rw [u₁.rd, h.rd], by rw [u₁.wr, h.wr],
           by rw [u₁.other _ (by decide), h.esi], by rw [u₁.other _ (by decide), h.edi],
           by rw [u₁.other _ (by decide), h.ebp], by rw [u₁.mem]; exact h.frame, by rw [u₁.mem]; exact h.slot,
           fun i hi => by rw [u₁.mem]; exact h.out i hi, fun e => by rw [u₁.other _ (by decide)]; exact h.ecx e⟩,
           by rw [u₁.gpr]; exact h.ecx rfl⟩)
-        (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)))).mono (fun _ _ _ h => h)
+        (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)))).mono (fun _ _ _ h => h)
       fun _ _ _ h => ⟨⟨h.1.frame, h.1.esp, h.1.rd, h.1.wr⟩, h⟩)
 
 theorem mhV_le {g a b : Nat} : mhV g a b ≤ 1 := by unfold mhV; split <;> omega

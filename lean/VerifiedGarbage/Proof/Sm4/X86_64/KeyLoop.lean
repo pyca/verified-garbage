@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # The loop of the SM4 key schedule on x86-64
@@ -32,15 +33,8 @@ theorem bswap64_eq (x : BitVec 64) (k : Nat) :
         BitVec (8 + 8 + 8 + 8 + 8 + 8 + 8 + 8)).getLsbD k := rfl
 
 theorem bswap64_bit (x : BitVec 64) {t j : Nat} (ht : t < 8) (hj : j < 8) :
-    (bswap64 x).getLsbD (8 * t + j) = x.getLsbD (8 * (7 - t) + j) := by
-  rw [bswap64_eq]
-  simp only [BitVec.getLsbD_append]
-  rcases (show t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 by omega) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 by omega) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [Nat.reduceMul, Nat.reduceSub, Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, Nat.lt_irrefl,
-    BitVec.getLsbD_extractLsb', decide_true, Bool.true_and]
+    (bswap64 x).getLsbD (8 * t + j) = x.getLsbD (8 * (7 - t) + j) :=
+  (VG.byteRev64_getLsbD x (by omega)).trans (congrArg x.getLsbD (by omega))
 
 /-- A byte of a word written. -/
 theorem writeW_byte (m : Mem) (a : Addr) (v : BitVec 64) {t j : Nat} (ht : t < 8) (hj : j < 8) :

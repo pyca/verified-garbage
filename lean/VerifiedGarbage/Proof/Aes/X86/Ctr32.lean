@@ -148,7 +148,7 @@ theorem prologue_ok {s₀ : State} (hp : CPre s₀) :
   refine wp_ldm (B := C) (o := 12) ecx₁₃ (in_rd (cIn _ (by rw [u₁₃.wr, u₁₂.wr, wr₁₁]) 12 (by omega_arith)))
     fun s₁₄ u₁₄ => wp_bswap fun s₁₅ u₁₅ => ?_
   have v₁₅ : s₁₅.gpr .eax = bswap (c 12) := by
-    rw [u₁₅.gpr, u₁₄.gpr]; congr 1; exact f₁₃.readW (cC 12 (by omega_arith)) dCB (by decide)
+    rw [u₁₅.gpr, u₁₄.gpr]; exact congrArg bswap (f₁₃.readW (cC 12 (by omega_arith)) dCB (by decide))
   have edi₁₅ : s₁₅.gpr .edi = B := by
     rw [u₁₅.other _ (by decide), u₁₄.other _ (by decide), u₁₃.gpr]; exact edi₁₂
   have wr₁₅ : s₁₅.wr = s₀.wr := by rw [u₁₅.wr, u₁₄.wr, u₁₃.wr, u₁₂.wr, wr₁₁]
@@ -164,8 +164,7 @@ theorem prologue_ok {s₀ : State} (hp : CPre s₀) :
     (argIn _ (by rw [u₁₆.rd, rd₁₅]) 4 (by omega_arith)) fun s₁₇ u₁₇ => wp_bswap fun s₁₈ u₁₈ => ?_
   have v₁₈ : s₁₈.gpr .eax = bswap (bswap (c 12) + arg s₀ 4) := by
     rw [u₁₈.gpr, u₁₇.gpr, u₁₆.gpr, v₁₅, arg_eq]
-    congr 2
-    exact f₁₆.readW (argC 4 (by omega_arith)) dAB (by decide)
+    exact congrArg (fun x => bswap (bswap (c 12) + x)) (f₁₆.readW (argC 4 (by omega_arith)) dAB (by decide))
   have ecx₁₈ : s₁₈.gpr .ecx = C := by
     rw [u₁₈.other _ (by decide), u₁₇.other _ (by decide), u₁₆.gpr, u₁₅.other _ (by decide),
       u₁₄.other _ (by decide)]; exact ecx₁₃
