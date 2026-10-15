@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Blowfish.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -145,7 +146,7 @@ theorem encodable_4160 : encodable (BitVec.ofNat 32 4160) = true := by decide
 syntax "brun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| brun) => `(tactic| brun [])
-  | `(tactic| brun [$ls,*]) => `(tactic| (
+  | `(tactic| brun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,

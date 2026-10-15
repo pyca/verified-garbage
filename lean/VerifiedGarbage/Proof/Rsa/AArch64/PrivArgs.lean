@@ -24,7 +24,7 @@ namespace VG.Proof.Rsa.AArch64
 open VG VG.AArch64 VG.Impl.Rsa.AArch64.PrivChecked
 
 /-- The registers a block writes, other than the callee-saved ones. -/
-macro "priv_cs_tac" : tactic => `(tactic| (
+macro "priv_cs_tac" : tactic => `(tactic| plain_simp_names (
   intro r hr _
   revert hr
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false]

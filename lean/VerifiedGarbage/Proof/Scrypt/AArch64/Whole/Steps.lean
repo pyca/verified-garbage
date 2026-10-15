@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Scrypt.AArch64.Scrypt
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
@@ -500,7 +501,7 @@ theorem store (hL : L.Ok) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp
 end Ctx
 
 /-- The registers a block writes, other than the callee-saved ones. -/
-macro "scrypt_cs_tac" : tactic => `(tactic| (
+macro "scrypt_cs_tac" : tactic => `(tactic| plain_simp_names (
   intro r hr _
   revert hr
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false]

@@ -58,7 +58,7 @@ theorem chain {u v v' : State} {F : Addr} (hw : v.wr = u.wr) (hsp : v.gpr .rsp =
   fun a ha => (hk a (hw ▸ ha.1) (hsp ▸ ha.2)).trans (hS a ha)
 
 /-- Safety of a piece of code, by unfolding it. -/
-macro "safe_by " "[" ds:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+macro "safe_by " "[" ds:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
   simp only [$ds,*, Code.allInstrs, rec_all, List.all_append, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl))
 

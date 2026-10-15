@@ -70,7 +70,7 @@ theorem YK_awr3 (p : Params) : (YK p).awr 3 = true := rfl
 syntax "lay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| lay) => `(tactic| lay [])
-  | `(tactic| lay [$ls,*]) => `(tactic| (
+  | `(tactic| lay [$ls,*]) => `(tactic| plain_simp_names (
       set_option linter.unusedSimpArgs false in
       simp (config := { decide := true }) only [VG.Proof.MlKem.X86.Top.Lay.apart, VG.Proof.MlKem.X86.Top.Lay.ok,
         VG.Proof.MlKem.X86.Top.Lay.okW, VG.Proof.MlKem.X86.Top.Lay.sep, VG.Impl.MlDsa.X86.KeyGen.Arg.ok, VG.Impl.MlDsa.X86.KeyGen.sb,

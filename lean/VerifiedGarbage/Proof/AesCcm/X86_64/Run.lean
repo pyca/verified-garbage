@@ -37,7 +37,7 @@ theorem setWidth_imm {n : Nat} : (BitVec.ofNat 32 n).setWidth 64 = BitVec.ofNat 
   apply BitVec.eq_of_toNat_eq; simp
 
 /-- Runs a block of the instructions the AES-CCM code uses. -/
-macro "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+macro "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
   simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     readSrc32, execAlu, execAlu32, execShift, State.load64, State.store64, State.load32, State.store32,
     State.load8, State.store8, State.ea, State.setReg32, offset_nat, at_, imm, ptr, bO, c0O, c1O, ksO, uO,

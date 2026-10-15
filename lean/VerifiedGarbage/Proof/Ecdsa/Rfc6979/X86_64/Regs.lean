@@ -57,7 +57,7 @@ theorem below24 (B : Addr) : below (B + BitVec.ofNat 64 24) 24 = ⟨B, 24⟩ := 
   rw [BitVec.add_sub_cancel]
 
 /-- Callee-saved registers, through writes of others. -/
-macro "cs_tac" : tactic => `(tactic| (
+macro "cs_tac" : tactic => `(tactic| plain_simp_names (
   intro r hr
   revert hr
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]

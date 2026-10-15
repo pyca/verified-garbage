@@ -79,9 +79,9 @@ def finalize224Wide : Contract X86.isa where
 
 /-- Rewrites `finKD` and `finalize224Wide` at a narrowed state. -/
 macro "narrow224" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [MdStream.X86.finKD, Proof.Sha256.countX86, finalize224Wide, MdStream.X86.count,
+  `(tactic| plain_simp_names (simp only [MdStream.X86.finKD, Proof.Sha256.countX86, finalize224Wide, MdStream.X86.count,
     VG.X86.arg_withRegions, VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem,
-    State.withRegions_rd, State.withRegions_wr] $(loc)?)
+    State.withRegions_rd, State.withRegions_wr] $(loc)?))
 
 theorem finalize224Wide_of {code : Prog X86.isa}
     (hv : Verified X86.target code (MdStream.X86.finKD (P := params224) md 160 28))

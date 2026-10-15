@@ -43,7 +43,7 @@ polynomials of zeros (`reduced_zero`). -/
 syntax "mlkem_implies " "[" Lean.Parser.Tactic.simpLemma,* "]" " [" Lean.Parser.Tactic.simpLemma,* "]"
   " using " term : tactic
 macro_rules
-  | `(tactic| mlkem_implies [$ls,*] [$ws,*] using $w) => `(tactic| exact
+  | `(tactic| mlkem_implies [$ls,*] [$ws,*] using $w) => `(tactic| plain_simp_names (exact
       { pre := by sig_implies_pre [$ls,*]
         post := by sig_implies_post [$ls,*]
         pub := by sig_implies_pub [$ls,*]
@@ -60,7 +60,7 @@ macro_rules
             | (intro a h₁ h₂
                set_option linter.unusedSimpArgs false in
                simp only [Region.Contains, $ws,*] at h₁ h₂
-               bv_omega) })
+               bv_omega) }))
 
 /-- No instruction of `c` (without calls) writes a callee-saved register. -/
 theorem preserved_of {c : Prog isa} (h : c.allInstrs (keeps (RegSet.ofList preserved)) = true) :

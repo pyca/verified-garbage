@@ -60,7 +60,7 @@ theorem op2_imm' {s : State} {n : Nat} (h : encodable (BitVec.ofNat 32 n) = true
 theorem encodable_of_decide {v : BitVec 32} (h : encodable v = true) : encodable v = true := h
 
 /-- Runs a block of the instructions the AES-GCM code uses. -/
-macro "arun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+macro "arun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
   simp (disch := first | decide | omega) only [runBlock_cons, runStep_some,
     runBlock_nil, exec, Op2.eval, imm, addI, State.load32, store32_eq, State.load8, store8_eq,
     tO, uO, vO, rO, scrO, List.cons_append, List.nil_append, List.append_assoc, Option.map_some,

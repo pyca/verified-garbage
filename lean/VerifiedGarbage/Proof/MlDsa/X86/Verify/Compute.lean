@@ -127,7 +127,7 @@ theorem SafeC.cons_sc {p : Params} (hF : VFacts p) {nr : Nat} (hnr : nr ≤ p.k)
   exact (SafeC.sc hF hnr h0 h1 (by omega) h3 h4).append (bs₁ := [_]) h
 
 /-- Proves `SafeC` of a list of buffers of `scratch` below `Â` by `SafeC.cons_sc`, with `hnr : nr ≤ p.k`. -/
-macro "safeCs " hF:term:max hnr:term:max : tactic => `(tactic| (
+macro "safeCs " hF:term:max hnr:term:max : tactic => `(tactic| plain_simp_names (
   repeat' (first
     | with_reducible exact VG.Proof.MlDsa.X86.Verify.SafeC.nil $hF $hnr
     | apply VG.Proof.MlDsa.X86.Verify.SafeC.cons_sc $hF $hnr)

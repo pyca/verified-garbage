@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mul32
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
@@ -146,7 +147,7 @@ theorem keep_iff {rs : List Reg} {s s' : State} :
   ⟨fun h => ⟨h.gpr, h.rd, h.wr, h.sp⟩, fun h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2⟩⟩
 
 /-- The lemmas that prove `Keep` after a symbolic execution (`run_block`). -/
-macro "keep_simp" : tactic => `(tactic| (
+macro "keep_simp" : tactic => `(tactic| plain_simp_names (
   set_option linter.unusedSimpArgs false in
   simp (config := {decide := true}) only [keep_iff, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
     implies_true, and_self, and_true, true_and, ite_true, ite_false]))

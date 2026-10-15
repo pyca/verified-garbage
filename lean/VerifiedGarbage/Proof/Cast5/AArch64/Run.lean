@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Cast5.AArch64
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -146,7 +147,7 @@ with extra lemmas (the block's accesses, …). -/
 syntax "crun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| crun) => `(tactic| crun [])
-  | `(tactic| crun [$ls,*]) => `(tactic| (
+  | `(tactic| crun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp only [runBlock_cons, runStep_some, runBlock_nil,

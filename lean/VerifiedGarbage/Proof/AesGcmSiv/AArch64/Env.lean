@@ -144,7 +144,7 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesGcm.AArch64 (covers_off in_off in_left covers_left Others Regs)
 
 /-- Runs a block of the instructions the AES-GCM-SIV code uses. -/
-macro "grun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+macro "grun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr,
     State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
     sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,

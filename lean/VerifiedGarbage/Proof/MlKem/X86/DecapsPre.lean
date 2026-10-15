@@ -73,6 +73,6 @@ theorem addr0 (s₀ : State) (i l : Nat) : Buf.addr s₀ ⟨i, 0, l⟩ = (arg s�
   simp only [Buf.addr, Buf.ptr, BitVec.add_zero]
 
 /-- `sc_taint`, for code with `scratch` at `(Y L).sc`. -/
-macro "yd_taint" : tactic => `(tactic| ((try simp only [show ∀ L, (Y L).sc = 3 from fun _ => rfl]); sc_taint))
+macro "yd_taint" : tactic => `(tactic| plain_simp_names ((try simp only [show ∀ L, (Y L).sc = 3 from fun _ => rfl]); sc_taint))
 
 end VG.Proof.MlKem.X86.Decaps

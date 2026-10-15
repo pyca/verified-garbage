@@ -369,7 +369,7 @@ theorem tagOut_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.
 
 /-- Proves that a region is disjoint from each of a list of regions: parts
 of `W`, the data, the stack below `SP`, or the key schedule. -/
-macro "disj_tac" L:term : tactic => `(tactic| (
+macro "disj_tac" L:term : tactic => `(tactic| plain_simp_names (
   simp only [List.forall_mem_cons, List.mem_nil_iff, false_imp_iff, implies_true, and_true]
   repeat' apply And.intro
   all_goals first

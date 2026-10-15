@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Mont.Words
 import all Init.Data.Array.Basic
@@ -126,12 +127,12 @@ theorem mem_ladRo_ladR {L : LadderCfg} {x : Nat} (h : x ∈ ladRo L) : x ∈ lad
   List.mem_append_left _ h
 
 /-- `∀ x ∈ l₁, x ∈ l₂` for lists written out. -/
-macro "sub_list" : tactic => `(tactic| (show (_ : List Nat) ⊆ _; simp only [List.cons_subset,
+macro "sub_list" : tactic => `(tactic| plain_simp_names (show (_ : List Nat) ⊆ _; simp only [List.cons_subset,
   List.nil_subset, List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true,
   and_true, and_self, ladR, ladRo, ladSlots, ladWs, rcbW, rcbR, List.cons_append, List.nil_append]))
 
 /-- `x ∈ l` for a list written out. -/
-macro "mem_list" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_append,
+macro "mem_list" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.mem_append,
   List.mem_singleton, true_or, or_true, ladR, ladRo, ladSlots, ladWs, rcbW, rcbR, List.cons_append,
   List.nil_append]))
 

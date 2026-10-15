@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Ed448.X86_64.PublicKey
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -293,7 +294,7 @@ theorem ne_cs {r d : Reg} (hr : r ∈ calleeSaved) (hd : d ∉ calleeSaved) : r 
   fun e => hd (e ▸ hr)
 
 /-- Callee-saved registers, through writes of others. -/
-macro "cs_tac" : tactic => `(tactic| (
+macro "cs_tac" : tactic => `(tactic| plain_simp_names (
   intro r hr
   revert hr
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]

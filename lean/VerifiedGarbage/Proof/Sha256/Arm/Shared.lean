@@ -97,10 +97,10 @@ theorem le160 {x : Nat} (h : x + 608 ≤ 2 ^ 32) : x + 160 ≤ 2 ^ 32 := by omeg
 /-- Rewrites the per-target contracts at a narrowed state (`stackArg` does
 not unfold cheaply). -/
 macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [Proof.Sha256.compressArm, Proof.Sha256.updateArm, Proof.Sha256.finalizeArm,
+  `(tactic| plain_simp_names (simp only [Proof.Sha256.compressArm, Proof.Sha256.updateArm, Proof.Sha256.finalizeArm,
     Proof.Sha256.countArm, compressWide, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
     VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp, State.withRegions_mem,
-    State.withRegions_rd, State.withRegions_wr] $(loc)?)
+    State.withRegions_rd, State.withRegions_wr] $(loc)?))
 
 theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
     Verified Arm.target Impl.Sha256.Arm.compress compressWide :=
@@ -264,9 +264,9 @@ def finalize224Wide : Contract Arm.isa where
 
 /-- Rewrites `finKD` and `finalize224Wide` at a narrowed state. -/
 macro "narrow224" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [MdStream.Arm.finKD, Proof.Sha256.countArm, finalize224Wide, MdStream.Arm.count,
+  `(tactic| plain_simp_names (simp only [MdStream.Arm.finKD, Proof.Sha256.countArm, finalize224Wide, MdStream.Arm.count,
     VG.Arm.stackArg_withRegions, VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp,
-    State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
+    State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?))
 
 theorem finalize224Wide_verified (hsat : ∃ s, finalize224Wide.pre s) :
     Verified Arm.target Impl.Sha256.Arm.Stream.finalize224 finalize224Wide :=

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Framework.Block
@@ -84,7 +85,7 @@ writes without expanding the whole state at every step, then normalize the
 final state once for the postcondition. -/
 syntax "run_block " "[" Lean.Parser.Tactic.simpLemma,* "]" : tactic
 macro_rules
-  | `(tactic| run_block [$ls,*]) => `(tactic| (
+  | `(tactic| run_block [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
@@ -97,7 +98,7 @@ macro_rules
       all_goals try simp (config := {decide := true}) only [State.setReg, $ls,*]))
 
 /-- Resolves the `if`s on indices whose ranges `omega` knows. -/
-macro "resolve_ifs" : tactic => `(tactic| (
+macro "resolve_ifs" : tactic => `(tactic| plain_simp_names (
   set_option linter.unusedSimpArgs false in
   simp (disch := omega) only [ite_eq_left, ite_eq_right, ite_true, ite_false]))
 

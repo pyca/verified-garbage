@@ -221,7 +221,7 @@ memory of zeros. -/
 syntax "mldsa_implies " "[" Lean.Parser.Tactic.simpLemma,* "]" " [" Lean.Parser.Tactic.simpLemma,* "]"
   " using " term : tactic
 macro_rules
-  | `(tactic| mldsa_implies [$ls,*] [$ws,*] using $w) => `(tactic| exact
+  | `(tactic| mldsa_implies [$ls,*] [$ws,*] using $w) => `(tactic| plain_simp_names (exact
       { pre := by sig_implies_pre [$ls,*]
         post := by sig_implies_post [$ls,*]
         pub := by sig_implies_pub [$ls,*]
@@ -237,6 +237,6 @@ macro_rules
             | (intro a h₁ h₂
                set_option linter.unusedSimpArgs false in
                simp only [Region.Contains, $ws,*] at h₁ h₂
-               bv_omega) })
+               bv_omega) }))
 
 end VG.Proof.MlDsa.X86_64.Arith

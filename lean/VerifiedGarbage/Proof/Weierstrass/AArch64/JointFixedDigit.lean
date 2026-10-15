@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixed
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -42,7 +43,7 @@ open VG.Proof.Ed25519.AArch64 (read_x)
 private theorem jointByteTest : ∀ b : BitVec 8,
     (b.setWidth 64 != 0)=decide (nafMagnitude b≠0) := by decide +kernel
 
-local macro "jslots" : tactic => `(tactic| (simp only [jointSlots,jointLive,jointWork,
+local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlots,jointLive,jointWork,
   jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))
 
 theorem jointFixedDigit_ok (certs : Forward.Arithmetic.Cases)

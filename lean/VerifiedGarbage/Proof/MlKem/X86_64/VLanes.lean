@@ -78,7 +78,7 @@ theorem mxcsr_setXmm (s : State) (d : XReg) (v : BitVec 128) : (s.setXmm d v).mx
 syntax "vrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| vrun) => `(tactic| vrun [])
-  | `(tactic| vrun [$ls,*]) => `(tactic| (
+  | `(tactic| vrun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,

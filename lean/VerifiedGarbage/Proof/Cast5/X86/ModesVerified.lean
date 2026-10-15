@@ -232,9 +232,9 @@ theorem invCipher_eq (s : State) :
       invCiph s := rfl
 
 local macro "post_eq" h:ident : tactic =>
-  `(tactic| simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp,
+  `(tactic| plain_simp_names (simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp,
     Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Mode.dirCore_bw, Nat.reduceMul, Nat.reduceAdd,
-    data_eq, iv_eq, cipher_eq, invCipher_eq] at $h:ident)
+    data_eq, iv_eq, cipher_eq, invCipher_eq] at $h:ident))
 
 theorem cbcEncrypt_wp {s₀ : State} (hp : (modeX false cbcEncPost).pre s₀) :
     WP isa cbcEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX false cbcEncPost).post s₀ s' :=

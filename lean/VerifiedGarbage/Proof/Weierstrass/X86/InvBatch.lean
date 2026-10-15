@@ -19,7 +19,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
 local macro "apart" : tactic => `(tactic|
-  ((try simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+  plain_simp_names ((try simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
     InvCfg.sF, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sW, InvCfg.sCount]) <;> omega))
 
 theorem batch_ok {P : InvCfg} {s : State} {base : Addr} {size p j : Nat} {I : Divstep.W32.IState}

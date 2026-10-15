@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Cast5.X86.Run
 public import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Framework.X86.Sse
@@ -90,7 +91,7 @@ theorem LoopKeep.arithFlags (s : State) (v : BitVec 32) (c o : Bool) : LoopKeep 
 
 /-- `LoopKeep s t` for `t` made from `s` by writes of `eax`, `ecx`, `edx`, the
 flags and registers other than `xmm0`. -/
-macro "loop_keep" : tactic => `(tactic| (
+macro "loop_keep" : tactic => `(tactic| plain_simp_names (
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro r ha hc hd
     simp only [gpr_setXmm, gpr_setReg, ha, hc, hd, gpr_setFlags, gpr_arithFlags, ite_false]

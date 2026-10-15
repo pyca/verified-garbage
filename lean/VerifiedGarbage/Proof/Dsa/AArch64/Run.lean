@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 /-! Symbolic execution retaining linked workspace base addresses. -/
@@ -13,7 +14,7 @@ open VG.Proof.MlKem.AArch64
 syntax "drun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| drun) => `(tactic| drun [])
-  | `(tactic| drun [$ls,*]) => `(tactic| (
+  | `(tactic| drun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp only [↓reduceIte, Nat.reduceLT, Nat.reduceAdd, Nat.reduceMul, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil,

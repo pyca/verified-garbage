@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Idea.Arith32
 public import VerifiedGarbage.Impl.Idea.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -76,7 +77,7 @@ theorem mul_ofNat32 (x y : BitVec 32) : x * y = BitVec.ofNat 32 (x.toNat * y.toN
 /-- The mask `0xffff` is in `r12`. -/
 abbrev MaskOk (s : State) : Prop := s.gpr .r12 = 65535
 
-macro "keep_tac" : tactic => `(tactic| (
+macro "keep_tac" : tactic => `(tactic| plain_simp_names (
   refine ⟨fun q hq => ?_, rfl, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
   simp only [RegUpd.gpr_setReg, hq, ite_false]))

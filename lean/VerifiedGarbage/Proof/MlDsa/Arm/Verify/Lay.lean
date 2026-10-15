@@ -150,7 +150,7 @@ the facts `hF`. -/
 syntax "vsep " term:max (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| vsep $hF) => `(tactic| vsep $hF [])
-  | `(tactic| vsep $hF [$ls,*]) => `(tactic| (
+  | `(tactic| vsep $hF [$ls,*]) => `(tactic| plain_simp_names (
       have := ($hF).k; have := ($hF).l; have := ($hF).kl; have := ($hF).scr; have := ($hF).pk
       have := ($hF).sig; have := ($hF).hint; have := ($hF).ct; have := ($hF).lz; have := ($hF).om
       have := ($hF).w1; have := ($hF).w1l

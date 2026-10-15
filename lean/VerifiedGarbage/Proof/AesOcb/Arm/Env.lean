@@ -57,7 +57,7 @@ theorem runBlock_append (a b : List Instr) (s : State) :
 abbrev Others (rs : List Reg) (s s' : State) : Prop := ∀ r, r ∉ rs → s'.gpr r = s.gpr r
 
 /-- Proves `Others` of a state `orun` computed. -/
-macro "others_tac" : tactic => `(tactic| (
+macro "others_tac" : tactic => `(tactic| plain_simp_names (
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp [gpr_setReg, hr]))

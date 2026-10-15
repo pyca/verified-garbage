@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Cast5.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -153,7 +154,7 @@ with extra lemmas (the block's accesses, …). -/
 syntax "crun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| crun) => `(tactic| crun [])
-  | `(tactic| crun [$ls,*]) => `(tactic| (
+  | `(tactic| crun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp only [runBlock_cons, runStep_some, runBlock_nil,
@@ -178,7 +179,7 @@ theorem wp_ite_ne {th el : Prog isa} {s : State} {Q : State → Prop} (ht : s.z 
 /-! ## What a block keeps -/
 
 /-- `∀ r ∉ rs, (s with registers written).gpr r = s.gpr r`. -/
-macro "keep_regs" : tactic => `(tactic| (
+macro "keep_regs" : tactic => `(tactic| plain_simp_names (
   intro r hr
   simp only [gpr_setReg, gpr_sub, gpr_mem]
   repeat' split

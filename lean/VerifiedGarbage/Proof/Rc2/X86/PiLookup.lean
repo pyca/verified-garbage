@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Rc2.X86.Lookup
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -39,7 +40,7 @@ chain of register, flag and memory updates (as `crun`, `Proof/Cast5/X86/Run.lean
 syntax "lrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| lrun) => `(tactic| lrun [])
-  | `(tactic| lrun [$ls,*]) => `(tactic| (
+  | `(tactic| lrun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       refine ⟨?_, ?_, ?_⟩
       rotate_left

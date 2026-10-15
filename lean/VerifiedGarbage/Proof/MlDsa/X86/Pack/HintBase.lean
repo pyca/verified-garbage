@@ -66,7 +66,7 @@ theorem setFlags_zf (s : State) (a b c d : Option Bool) : (s.setFlags a b c d).z
 syntax "hrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| hrun) => `(tactic| hrun [])
-  | `(tactic| hrun [$ls,*]) => `(tactic| (
+  | `(tactic| hrun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,

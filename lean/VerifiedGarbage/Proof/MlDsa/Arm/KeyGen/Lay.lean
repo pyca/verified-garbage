@@ -156,7 +156,7 @@ the facts `hF`. -/
 syntax "lsep " term:max (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| lsep $hF) => `(tactic| lsep $hF [])
-  | `(tactic| lsep $hF [$ls,*]) => `(tactic| (
+  | `(tactic| lsep $hF [$ls,*]) => `(tactic| plain_simp_names (
       have := ($hF).k; have := ($hF).l; have := ($hF).kl; have := ($hF).scr; have := ($hF).lens
       have := ($hF).eta; have := ($hF).pk; have := ($hF).sk
       try dsimp only [$ls,*]

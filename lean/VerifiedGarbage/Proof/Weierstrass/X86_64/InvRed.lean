@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import all Init.Data.Array.Basic
@@ -259,7 +260,7 @@ theorem low_high_mod {L A y Q : Nat} (hL : L < A) (hQ : 0 < Q) : L + A * (y % Q)
   exact (Nat.mod_eq_of_lt h1).symm
 
 /-- Apart from each range of a list written out. -/
-local macro "apart" : tactic => `(tactic| (simp only [List.mem_cons, List.not_mem_nil, or_false,
+local macro "apart" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.not_mem_nil, or_false,
   forall_eq_or_imp, forall_eq] <;> omega_arith))
 
 /-- `[dst] = mred p m T` (`n` words), for `[t]` (`n + 1` words) holding `T`, `|T| ≤ 2^63 p`. -/

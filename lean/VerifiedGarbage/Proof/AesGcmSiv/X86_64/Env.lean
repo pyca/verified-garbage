@@ -372,7 +372,7 @@ theorem readW_writeW_W {m : Mem} {W : Addr} {d e w w' : Nat} (v : BitVec w') (h 
   Mem.readW_writeW_sep (Offset.sep W h hd he) hw
 
 /-- Runs a block of the instructions the AES-GCM-SIV code uses. -/
-macro "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+macro "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
   simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     readSrc32, execAlu, execAlu32, execShift, State.load64, State.store64, State.load32, State.store32,
     State.load8, State.store8, State.ea, State.setReg32, offset_nat, at_, imm, ptr, tagO, akO, ekO, hO, yO, cmO,

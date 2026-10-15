@@ -55,7 +55,7 @@ def roundRanges (w : Nat) : List (Nat × Nat) :=
   preRanges w ++ expRanges w ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)]
 
 /-- Disjointness of a range from each of a list of literal ranges of a round. -/
-macro "rd_disj" : tactic => `(tactic| (
+macro "rd_disj" : tactic => `(tactic| plain_simp_names (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, roundRanges, preRanges,
     witRanges, expRanges, winRanges, tabRanges, List.cons_append, List.nil_append, slot, hdrBytes, aN, aX, aAcc,
     aTmp, aR2, aY, aXm, aB, aR1, aRm1, aT0, aE, kG, kFlag, kPlen, kV, kT0, sCnt, kBits, kT2, kWords, kT1, kUsed, kU,
@@ -63,7 +63,7 @@ macro "rd_disj" : tactic => `(tactic| (
   and_intros <;> omega_arith))
 
 /-- The ranges of a list of literal ranges are `KMut`. -/
-macro "kmut" : tactic => `(tactic| (
+macro "kmut" : tactic => `(tactic| plain_simp_names (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   and_intros <;> first | exact KMut.ofSlot _ _ _ | exact KMut.hdr (by decide)))
 

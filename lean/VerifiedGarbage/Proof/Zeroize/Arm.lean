@@ -33,7 +33,7 @@ open VG VG.Arm RegUpd VG.Impl.Zeroize.Arm
 syntax "zrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| zrun) => `(tactic| zrun [])
-  | `(tactic| zrun [$ls,*]) => `(tactic| (
+  | `(tactic| zrun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,

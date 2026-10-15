@@ -459,7 +459,7 @@ theorem rsp_ce (t : State) (rd wr : List Region) :
   rw [State.withRegions_gpr, State.callEntry_rsp]
 
 /-- Callee-saved registers, through writes of others. -/
-macro "cs_tac" : tactic => `(tactic| (
+macro "cs_tac" : tactic => `(tactic| plain_simp_names (
   intro r hr
   revert hr
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]

@@ -29,7 +29,7 @@ open VG.Spec.MlDsa
 open VG.Spec.Sha3 (bytesAt)
 
 /-- Closes the evaluated precondition of a contract from the hypotheses. -/
-macro "cpre" : tactic => `(tactic| (
+macro "cpre" : tactic => `(tactic| plain_simp_names (
   try simp only [State.addr] at *
   and_intros <;> first
     | with_reducible assumption

@@ -137,13 +137,13 @@ theorem MSb.frm {L : WsP} {s t : State} (h : MSb L s) {rs : List (Nat × Nat)} (
   exact ⟨h.1.frm hf hm k hr dN dI, by rw [hf.wv_eq dO (by omega)]; exact h.2⟩
 
 /-- Disjointness from each of a list of literal ranges of the working space. -/
-macro "msb_disj" : tactic => `(tactic| (
+macro "msb_disj" : tactic => `(tactic| plain_simp_names (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, r2Ranges, slot,
     hdrBytes, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, sFn, sMinv]
   and_intros <;> omega))
 
 /-- Ranges of literal arrays and header slots are `KMut`. -/
-macro "msb_mut" : tactic => `(tactic| (
+macro "msb_mut" : tactic => `(tactic| plain_simp_names (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, r2Ranges]
   and_intros <;> first | exact KMut.ofSlot _ _ _ | exact KMut.hdr (by decide)))
 

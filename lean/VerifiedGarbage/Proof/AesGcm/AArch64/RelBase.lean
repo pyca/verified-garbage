@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import all Init.Data.Array.Basic
@@ -103,6 +104,6 @@ namespace VG.Proof.AesGcm.AArch64
 
 /-- Proves `∀ r ∈ [r₁, …], σ₁.gpr r = σ₂.gpr r` by rewriting each side with `ts`. -/
 macro "agree_tac" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
-  simp only [List.forall_mem_cons, List.mem_nil_iff, false_imp_iff, implies_true, and_true, and_self, $ts,*])
+  plain_simp_names (simp only [List.forall_mem_cons, List.mem_nil_iff, false_imp_iff, implies_true, and_true, and_self, $ts,*]))
 
 end VG.Proof.AesGcm.AArch64

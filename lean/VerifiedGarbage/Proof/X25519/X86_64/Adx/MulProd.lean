@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
 public import VerifiedGarbage.Proof.X25519.X86_64.Mem
 import all Init.Data.Array.Basic
@@ -112,7 +113,7 @@ theorem rowX0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
 
 /-- `r ∉ [...]` and `a ≠ b` from the distinctness hypotheses in context. -/
 local macro "nm" : tactic =>
-  `(tactic| (simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, ne_eq] <;>
+  `(tactic| plain_simp_names (simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, ne_eq] <;>
     (repeat' constructor) <;>
     first | with_reducible assumption | exact Ne.symm (by with_reducible assumption) | decide))
 

@@ -190,7 +190,7 @@ theorem sepB_v {p : Params} {r r' : Reg} (h : r ≠ r') (hw : r = .x28 ∨ r' = 
 syntax "vlay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| vlay) => `(tactic| vlay [])
-  | `(tactic| vlay [$ls,*]) => `(tactic| (
+  | `(tactic| vlay [$ls,*]) => `(tactic| plain_simp_names (
       set_option linter.unusedSimpArgs false in
       simp (config := { decide := true }) only [VG.Proof.MlDsa.AArch64.keepB,
         VG.Proof.MlDsa.AArch64.sepB_same, VG.Proof.MlDsa.AArch64.Verify.sepB_v,

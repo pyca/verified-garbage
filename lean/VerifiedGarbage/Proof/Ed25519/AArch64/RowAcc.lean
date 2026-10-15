@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -121,7 +122,7 @@ theorem rowFirst_value (a b0 b1 b2 b3 : Word) :
 
 /-- Run a straight block of register arithmetic, reading registers through
 the writes (literal registers decide each `if`). -/
-macro "reg_exec" hz:term : tactic => `(tactic| (
+macro "reg_exec" hz:term : tactic => `(tactic| plain_simp_names (
   apply WP.of_runBlock
   simp only [rowAcc, rowFirst, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
     RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
@@ -129,7 +130,7 @@ macro "reg_exec" hz:term : tactic => `(tactic| (
     Option.some.injEq, exists_eq_left']))
 
 /-- The registers but those written are kept. -/
-macro "reg_keeps" : tactic => `(tactic| (
+macro "reg_keeps" : tactic => `(tactic| plain_simp_names (
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr, ite_false]))

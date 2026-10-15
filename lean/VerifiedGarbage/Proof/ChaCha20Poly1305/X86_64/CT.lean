@@ -3461,7 +3461,7 @@ macro "rdisj" : tactic => `(tactic| first
   | with_reducible exact ret_stk _)
 
 /-- A region is disjoint from each of a list of regions. -/
-macro "rdisj_all" : tactic => `(tactic| (
+macro "rdisj_all" : tactic => `(tactic| plain_simp_names (
   simp only [macR, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   repeat' apply And.intro
   all_goals rdisj))

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.X25519.X86_64.Step
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -33,7 +34,7 @@ writes and deciding the `cmov`s from the given facts. -/
 syntax "drun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| drun) => `(tactic| drun [])
-  | `(tactic| drun [$ls,*]) => `(tactic| (
+  | `(tactic| drun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,

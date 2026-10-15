@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.RsaOaep.AArch64
 public import VerifiedGarbage.Proof.RsaOaep.Scan
 public import VerifiedGarbage.Proof.RsaOaep.Mask
@@ -279,7 +280,7 @@ theorem v_addWithCarry (s : State) (sz : Size) (d : Reg) (a b : BitVec sz.bits) 
 registers' writes kept folded (`RegUpd`), with the facts `hs`. -/
 syntax "oaep_run" " [" Lean.Parser.Tactic.simpLemma,* "]" : tactic
 macro_rules
-  | `(tactic| oaep_run [$hs,*]) => `(tactic| (apply WP.of_runBlock; simp only [List.cons_append, List.nil_append,
+  | `(tactic| oaep_run [$hs,*]) => `(tactic| plain_simp_names (apply WP.of_runBlock; simp only [List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load, State.store, addr, Size.bits,
       Size.bytes, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, Nat.reduceAdd, and_self,
       ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',

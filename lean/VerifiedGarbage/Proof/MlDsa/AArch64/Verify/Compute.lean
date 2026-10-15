@@ -170,7 +170,7 @@ theorem SCChk.cons_x28 {p : Params} (hF : VFacts p) {r : Nat} (hr : r ≤ p.k) {
   exact (SCChk.x28 hF hr h1 h2 (by omega) h4 h5).append (ws₁ := [_]) h
 
 /-- Proves an `SCChk` of writes to `scratch` by `SCChk.cons_x28`, with `hr : r ≤ p.k`. -/
-macro "scchks " hF:term:max hr:term:max : tactic => `(tactic| (
+macro "scchks " hF:term:max hr:term:max : tactic => `(tactic| plain_simp_names (
   repeat' (first
     | with_reducible exact VG.Proof.MlDsa.AArch64.Verify.SCChk.nil $hF $hr
     | apply VG.Proof.MlDsa.AArch64.Verify.SCChk.cons_x28 $hF $hr)

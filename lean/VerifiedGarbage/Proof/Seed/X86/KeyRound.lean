@@ -137,7 +137,7 @@ theorem exec_subI (s : State) (d : Reg) (v : BitVec 32) :
 
 /-- Room through the writes of registers other than `sb`. -/
 macro "room" : tactic => `(tactic|
-  (refine Room.congr ‹Room _› ?_ ?_
+  plain_simp_names (refine Room.congr ‹Room _› ?_ ?_
    · simp only [gpr_setReg, gpr_arithFlags, gpr_rorF, gpr_setMem, sb, reduceCtorEq, ↓reduceIte]
    · rfl))
 

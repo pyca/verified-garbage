@@ -198,7 +198,7 @@ theorem sepB_13_bp (bs : List (Reg × Nat)) (o l o' l' : Nat) :
 syntax "lay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| lay) => `(tactic| lay [])
-  | `(tactic| lay [$ls,*]) => `(tactic| (
+  | `(tactic| lay [$ls,*]) => `(tactic| plain_simp_names (
       set_option linter.unusedSimpArgs false in
       simp (config := { decide := true }) only [VG.Proof.MlKem.X86_64.keepB, VG.Proof.MlDsa.X86_64.KeyGen.sepB_same,
         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_bp, VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_bx,

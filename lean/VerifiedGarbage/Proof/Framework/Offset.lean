@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
@@ -193,7 +194,7 @@ end VG.Offset
 
 /-- Closes `b + c₁ + c₂ + … = b + c` for literal offsets `cᵢ`, `c` (as
 `BitVec.ofNat` or numerals): the offsets are added by `decide`. -/
-macro "off_rfl" : tactic => `(tactic| (
+macro "off_rfl" : tactic => `(tactic| plain_simp_names (
   simp only [BitVec.add_assoc]
   try exact VG.Offset.add_congr _ (by decide)))
 

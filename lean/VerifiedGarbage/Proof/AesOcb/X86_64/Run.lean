@@ -24,7 +24,7 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesOcb.X86_64
 open VG.Proof.AesCcm.X86_64 (imm_eq offset_nat setWidth_imm)
 
 /-- Runs a block of the instructions the AES-OCB code uses. -/
-macro "orun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+macro "orun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
   simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, execShift, State.load64, State.store64, State.load8, State.store8, State.ea,
     offset_nat, at_, ld, st, mvr, addi, tagO, ofsO, ckO, sumO, ldO, l0O, tblO, tmpO, t2O, ohO, savO,

@@ -175,7 +175,7 @@ theorem sepB_kg {p : Params} {r r' : Reg} (h : r ≠ r') (hr : r ∈ [Reg.x25, .
 syntax "lay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| lay) => `(tactic| lay [])
-  | `(tactic| lay [$ls,*]) => `(tactic| (
+  | `(tactic| lay [$ls,*]) => `(tactic| plain_simp_names (
       set_option linter.unusedSimpArgs false in
       simp (config := { decide := true }) only [VG.Proof.MlDsa.AArch64.keepB,
         VG.Proof.MlDsa.AArch64.sepB_same, VG.Proof.MlDsa.AArch64.KeyGen.sepB_kg,

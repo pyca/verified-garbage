@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.X25519.AArch64.Slots
 public import VerifiedGarbage.Proof.X25519.Ladder
 import all Init.Data.Array.Basic
@@ -117,8 +118,8 @@ theorem Sl.weaken {m : Mem} {b : Addr} {vals vals' : Nat → Fe} {bnds bnds' : N
 
 /-- Evaluates the slots' values after an operation, so that they refer to the
 earlier ones only through their values. -/
-macro "vsimp" " at " h:ident : tactic => `(tactic| simp only [Function.update_apply, lvals, ite_true, ite_false,
-  Nat.reduceEqDiff] at $h:ident)
+macro "vsimp" " at " h:ident : tactic => `(tactic| plain_simp_names (simp only [Function.update_apply, lvals, ite_true, ite_false,
+  Nat.reduceEqDiff] at $h:ident))
 
 /-- The field operations of an iteration, after the swaps' mask `x22`. -/
 theorem ops_ok {b : Addr} {s₀ s : State} {x1 : Fe} {st : Ladder} (h : Inv b s₀ s (lvals x1 st) lbnds)

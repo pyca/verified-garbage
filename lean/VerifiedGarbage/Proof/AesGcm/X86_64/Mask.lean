@@ -43,7 +43,7 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Cmac.Stream (bytesAt_append)
 
 /-- Runs a block of the masking loops. -/
-macro "mrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+macro "mrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
   simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execAlu, State.load64, State.store64, State.load8, State.store8, State.load128, State.store128, XOp.exec,
     State.ea, imm, maskByte, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg,

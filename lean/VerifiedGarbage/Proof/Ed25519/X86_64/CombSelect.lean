@@ -162,7 +162,7 @@ structure CombTbl (s : State) (T : Addr) : Prop where
 syntax "erun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| erun) => `(tactic| erun [])
-  | `(tactic| erun [$ls,*]) => `(tactic| (
+  | `(tactic| erun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,

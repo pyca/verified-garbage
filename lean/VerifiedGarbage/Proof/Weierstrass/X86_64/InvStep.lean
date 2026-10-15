@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 import all Init.Data.Array.Basic
@@ -39,7 +40,7 @@ reading registers through the writes. -/
 syntax "irun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| irun) => `(tactic| irun [])
-  | `(tactic| irun [$ls,*]) => `(tactic| (
+  | `(tactic| irun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,

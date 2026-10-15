@@ -66,7 +66,7 @@ def deL (P : KemLay) : Layout where
   slot k := k
 
 /-- Arithmetic on the offsets and the buffers of `deL`. -/
-macro "dek" : tactic => `(tactic| (
+macro "dek" : tactic => `(tactic| plain_simp_names (
   simp -failIfUnchanged only [deL, List.getD_cons_zero, List.getD_cons_succ, Layout.sc]
   first | decide | kom))
 

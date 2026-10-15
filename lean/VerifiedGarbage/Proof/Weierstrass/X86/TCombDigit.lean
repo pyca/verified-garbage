@@ -55,7 +55,7 @@ theorem CKeeps.trans {rs : List Reg} {s t u : State} (h : CKeeps rs s t) (k : CK
 syntax "crun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| crun) => `(tactic| crun [])
-  | `(tactic| crun [$ls,*]) => `(tactic| (
+  | `(tactic| crun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
@@ -38,8 +39,8 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass
 open VG.Proof.Ed25519.AArch64 (Keeps read_x)
 
-local macro "nmem" : tactic => `(tactic| simp only [nafLive,jacWinSlots,winRo,winOther,rcbR,rcbW,
-  List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true])
+local macro "nmem" : tactic => `(tactic| plain_simp_names (simp only [nafLive,jacWinSlots,winRo,winOther,rcbR,rcbW,
+  List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true]))
 
 theorem nafEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size e j : Nat}
     {β : Nat → BitVec 8} (hL : JacWinLay K size) (hJ : K.J=52)

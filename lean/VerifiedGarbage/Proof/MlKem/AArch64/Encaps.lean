@@ -83,7 +83,7 @@ def enL (P : KemLay) : Layout where
   slot k := [0, 2, 3, 4].getD k 4
 
 /-- Arithmetic on the offsets and the buffers of `enL`. -/
-macro "enk" : tactic => `(tactic| (
+macro "enk" : tactic => `(tactic| plain_simp_names (
   simp -failIfUnchanged only [enL, List.getD_cons_zero, List.getD_cons_succ, Layout.sc]
   first | decide | kom))
 

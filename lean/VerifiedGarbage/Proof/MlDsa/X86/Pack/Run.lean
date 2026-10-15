@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.MlKem.X86.Common
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -60,7 +61,7 @@ end
 syntax "xrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| xrun) => `(tactic| xrun [])
-  | `(tactic| xrun [$ls,*]) => `(tactic| (
+  | `(tactic| xrun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Exec
 public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Radix
 import all Init.Data.Array.Basic
@@ -29,8 +30,8 @@ theorem V_ne : ∀ a < 32, ∀ b < 32, a ≠ b → V a ≠ V b := by decide
 
 /-- Read vector registers through the writes after them (distinctness from the context). -/
 macro "vred" : tactic =>
-  `(tactic| simp (disch := assumption) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne, RegUpd.mem_setV,
-    VG.Proof.Curve448.AArch64.Neon.setMem_mem, VG.Proof.Curve448.AArch64.Neon.setMem_v])
+  `(tactic| plain_simp_names (simp (disch := assumption) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne, RegUpd.mem_setV,
+    VG.Proof.Curve448.AArch64.Neon.setMem_mem, VG.Proof.Curve448.AArch64.Neon.setMem_v]))
 
 /-- Word `k` of the elements at `a 0` and `a 1` of `m`, in lanes 0 and 1 of `v_{19+k}`. -/
 def WordsIn (s : State) (m : Mem) (base : Addr) (a : Nat → Nat) : Prop :=

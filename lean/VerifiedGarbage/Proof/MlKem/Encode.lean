@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.MlKem.Bits
 public import VerifiedGarbage.Proof.MlKem.Compress
 import all Init.Data.Array.Basic
@@ -80,7 +81,7 @@ theorem ofNat8_digits {w : Nat} {L : List Nat} (h : ∀ a ∈ L, a < 2 ^ w) (p :
 closes the goal, a byte or field of a group (`… = BitVec.ofNat 8 x` or
 `… = decompress d x`), by `omega` on the few digits left: much smaller
 problems than the number of the whole group. -/
-macro "win_eval" : tactic => `(tactic| (
+macro "win_eval" : tactic => `(tactic| plain_simp_names (
   set_option linter.unusedSimpArgs false in
   simp only [win, Nat.reduceMul, Nat.reduceLeDiff, Nat.reduceLT, Nat.reduceSub, Nat.reducePow, ↓reduceIte,
     Nat.pow_zero, Nat.div_one, Nat.mod_one, Nat.add_zero, Nat.zero_add, Nat.mul_zero]

@@ -203,7 +203,7 @@ theorem winJ_sl {K : WinCfg} {o p q : Pt} (ho : ∀ x ∈ [o.x, o.y, o.z], x ∈
     · exact hq _ (by simp)
 
 /-- What a program reads is in `V`. -/
-local macro "rcb_sub" : tactic => `(tactic| (
+local macro "rcb_sub" : tactic => `(tactic| plain_simp_names (
   intro x hx
   simp only [rcbR, WinCfg.zeroPt, List.cons_append, List.nil_append, List.mem_cons,
     List.not_mem_nil, or_false] at hx ⊢

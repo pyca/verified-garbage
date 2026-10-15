@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Impl.Rc4.Arm
 public import VerifiedGarbage.Proof.Rc4.Scan32
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -115,7 +116,7 @@ theorem encodable_256 : encodable (256#32) = true := by decide
 syntax "arun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| arun) => `(tactic| arun [])
-  | `(tactic| arun [$ls,*]) => `(tactic| (
+  | `(tactic| arun [$ls,*]) => `(tactic| plain_simp_names (
       apply WP.of_runBlock
       set_option linter.unusedSimpArgs false in
       simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,

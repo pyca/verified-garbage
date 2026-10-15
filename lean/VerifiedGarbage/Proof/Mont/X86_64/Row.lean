@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Mont.X86_64.Words
 public import Mathlib.Tactic.Tauto
 import all Init.Data.Array.Basic
@@ -54,8 +55,8 @@ theorem FreshX.head {t : Reg} {ts : List Reg} (h : FreshX (t :: ts)) :
 /-- Closes `∀ r ∈ rs, r ∈ rs'` for literal lists of registers and variables: by
 `decide` for literal registers (most uses, and much cheaper than `grind`),
 else by `grind` on the memberships. -/
-macro "sub_regs" : tactic => `(tactic| first | decide | (intro q hq; simp only [List.mem_cons,
-  List.mem_append, List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; grind))
+macro "sub_regs" : tactic => `(tactic| plain_simp_names (first | decide | (intro q hq; simp only [List.mem_cons,
+  List.mem_append, List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; grind)))
 
 theorem mulStep_eq (t c ai : Reg) (src : Src) :
     mulStep t c ai src = Impl.X25519.X86_64.mulStep t c ai src := rfl

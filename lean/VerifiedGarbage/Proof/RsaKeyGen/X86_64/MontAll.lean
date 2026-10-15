@@ -33,14 +33,14 @@ open VG.Proof.MlKem.X86_64
 
 /-- Disjointness of a range from each of a list of literal ranges of the
 scratch space (header words and arrays). -/
-macro "rng_disj" : tactic => `(tactic| (
+macro "rng_disj" : tactic => `(tactic| plain_simp_names (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, slot, hdrBytes, aN, aX, aAcc,
     aTmp, aR2, aXm, aY, aOne, aB, aR1, aRm1, aTab, aT0, aE, VG.Proof.Bignum.tabBytes, kT0, kChecks, kE, sFn, sMinv, sW, sArr, kG, kV, kWords, kBits,
     kFlag, kPlen, kI, kElen, kU, kUni, kP, kStat, kT1, kT2, kUsed, kRand, kLen, kRandLen, kOut, kUsedP]
   and_intros <;> omega_arith))
 
 /-- Bounds of a list of literal ranges of the scratch space. -/
-macro "rng_le" : tactic => `(tactic| (
+macro "rng_le" : tactic => `(tactic| plain_simp_names (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, slot, hdrBytes, aN, aX, aAcc,
     aTmp, aR2, aXm, aY, aOne, aB, aR1, aRm1, aTab, aT0, aE, VG.Proof.Bignum.tabBytes, kT0, kChecks, kE, sFn, sMinv, sW, sArr, kG, kV, kWords, kBits,
     kFlag, kPlen, kI, kElen, kU, kUni, kP, kStat, kT1, kT2, kUsed]
