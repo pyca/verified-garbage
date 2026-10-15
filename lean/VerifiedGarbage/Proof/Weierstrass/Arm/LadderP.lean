@@ -101,19 +101,37 @@ def CpOk (L : LadderCfg) (base : Addr) (m m₀ : Mem) : Prop :=
   wordsVal m base (Spec.Weierstrass.Point.aAt L.M.n) L.M.n = wordsVal m₀ base L.S.a L.M.n ∧
   wordsVal m base (Spec.Weierstrass.Point.b3At L.M.n) L.M.n = wordsVal m₀ base L.S.b3 L.M.n
 
+/-- A fact about the layout's numbers for `k` words, `3 ≤ k ≤ 6`, from the
+fact for each `k`, which `decide` proves more cheaply than `omega` the fact
+for any `k`. -/
+@[elab_as_elim]
+theorem lay_cases {P : Nat → Prop} (k : Nat) (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (h3 : P 3) (h4 : P 4)
+    (h5 : P 5) (h6 : P 6) : P k := by
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  exacts [h3, h4, h5, h6]
+
 /-- The copies survive changes apart from them. -/
 theorem CpOk.keep {L : LadderCfg} {base : Addr} {m m' m₀ : Mem} (h : CpOk L base m m₀)
     (hk3 : 3 ≤ L.M.n) (hk6 : L.M.n ≤ 6) {W : List (Nat × Nat)} (hU : Unch base W m m')
     (hW : ∀ w ∈ W, w.1 + w.2 ≤ Spec.Weierstrass.Point.qAt L.M.n ∨ Spec.Weierstrass.Point.ownAt L.M.n ≤ w.1) :
     CpOk L base m' m₀ := by
-  have hl := lay_nums hk3 hk6
+  have ap : ∀ x, Spec.Weierstrass.Point.qAt L.M.n ≤ x ∧ x + 8 * L.M.n ≤ Spec.Weierstrass.Point.ownAt L.M.n →
+      ∀ w ∈ W, x + 8 * L.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := fun x hx w hw =>
+    (hW w hw).elim (fun h => .inr (Nat.le_trans h hx.1)) (fun h => .inl (Nat.le_trans hx.2 h))
+  have hp : ∀ x ∈ [Spec.Weierstrass.Point.qAt L.M.n,
+      Spec.Weierstrass.Point.qAt L.M.n + Spec.Weierstrass.Point.elemBytes L.M.n,
+      Spec.Weierstrass.Point.qAt L.M.n + 2 * Spec.Weierstrass.Point.elemBytes L.M.n,
+      Spec.Weierstrass.Point.aAt L.M.n, Spec.Weierstrass.Point.b3At L.M.n],
+      (Spec.Weierstrass.Point.qAt L.M.n ≤ x ∧ x + 8 * L.M.n ≤ Spec.Weierstrass.Point.ownAt L.M.n) ∧
+        x + 8 * L.M.n ≤ 2 ^ 64 :=
+    lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)
+  rw [List.forall_mem_cons, List.forall_mem_cons, List.forall_mem_cons, List.forall_mem_cons,
+    List.forall_mem_singleton] at hp
+  obtain ⟨p1, p2, p3, p4, p5⟩ := hp
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
-  refine ⟨?_, ?_, ?_, ?_, ?_⟩
-  · rw [hU.wordsVal (fun w hw => by have := hW w hw; omega_arith) (by omega_arith)]; exact h1
-  · rw [hU.wordsVal (fun w hw => by have := hW w hw; omega_arith) (by omega_arith)]; exact h2
-  · rw [hU.wordsVal (fun w hw => by have := hW w hw; omega_arith) (by omega_arith)]; exact h3
-  · rw [hU.wordsVal (fun w hw => by have := hW w hw; omega_arith) (by omega_arith)]; exact h4
-  · rw [hU.wordsVal (fun w hw => by have := hW w hw; omega_arith) (by omega_arith)]; exact h5
+  exact ⟨by rw [hU.wordsVal (ap _ p1.1) p1.2]; exact h1, by rw [hU.wordsVal (ap _ p2.1) p2.2]; exact h2,
+    by rw [hU.wordsVal (ap _ p3.1) p3.2]; exact h3, by rw [hU.wordsVal (ap _ p4.1) p4.2]; exact h4,
+    by rw [hU.wordsVal (ap _ p5.1) p5.2]; exact h5⟩
 
 /-- The loop's invariant at `r11 = j`: `Q j` accepts what `R` holds, and the
 point functions' `Q`, `a` and `3b` hold `G`, `a` and `3b`. -/
@@ -145,10 +163,19 @@ theorem copyPt_conds {k size o : Nat} {a : Pt} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (
       ((ptAt k o).x + 8 * k ≤ (ptAt k o).z ∨ (ptAt k o).z + 8 * k ≤ (ptAt k o).x) ∧
       ((ptAt k o).y + 8 * k ≤ (ptAt k o).z ∨ (ptAt k o).z + 8 * k ≤ (ptAt k o).y)) ∧
     (∀ d ∈ [(ptAt k o).x, (ptAt k o).y, (ptAt k o).z], ∀ e ∈ [a.x, a.y, a.z], d + 8 * k ≤ e ∨ e + 8 * k ≤ d) := by
-  have hl := lay_nums hk3 hk6
-  have hown := own_le k (by omega)
-  simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-  omega_arith
+  subst hsz
+  have he : ∀ e ∈ [a.x, a.y, a.z], e + 8 * k ≤ o := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+    exact ⟨hax, hay, haz⟩
+  have hd : (∀ d ∈ [(ptAt k o).x, (ptAt k o).y, (ptAt k o).z], o ≤ d ∧ d + 8 * k ≤ 4096) ∧
+      (((ptAt k o).x + 8 * k ≤ (ptAt k o).y ∨ (ptAt k o).y + 8 * k ≤ (ptAt k o).x) ∧
+        ((ptAt k o).x + 8 * k ≤ (ptAt k o).z ∨ (ptAt k o).z + 8 * k ≤ (ptAt k o).x) ∧
+        ((ptAt k o).y + 8 * k ≤ (ptAt k o).z ∨ (ptAt k o).z + 8 * k ≤ (ptAt k o).y)) := by
+    rcases ho with rfl | rfl <;> exact lay_cases k hk3 hk6 (by decide) (by decide) (by decide) (by decide)
+  refine ⟨fun d hd' => ?_, hd.2, fun d hd' e he' => Or.inr (Nat.le_trans (he e he') (hd.1 d hd').1)⟩
+  rcases List.mem_append.mp (show d ∈ [(ptAt k o).x, (ptAt k o).y, (ptAt k o).z] ++ _ from hd') with h | h
+  · exact (hd.1 d h).2
+  · have h₁ := he d h; have h₂ := (hd.1 _ (List.mem_cons_self ..)).2; simp only [ptAt] at h₂; omega_using [h₁, h₂]
 
 theorem oAt_le_pAt (k : Nat) : Spec.Weierstrass.Point.oAt k ≤ Spec.Weierstrass.Point.pAt k :=
   Nat.sub_le _ _
@@ -160,10 +187,54 @@ theorem oAt_le_qAt (k : Nat) : Spec.Weierstrass.Point.oAt k ≤ Spec.Weierstrass
 theorem oPt_below {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
     (ptAt k (Spec.Weierstrass.Point.oAt k)).x + 8 * k ≤ Spec.Weierstrass.Point.pAt k ∧
     (ptAt k (Spec.Weierstrass.Point.oAt k)).y + 8 * k ≤ Spec.Weierstrass.Point.pAt k ∧
-    (ptAt k (Spec.Weierstrass.Point.oAt k)).z + 8 * k ≤ Spec.Weierstrass.Point.pAt k := by
-  have hl := lay_nums hk3 hk6
-  simp only [ptAt]
-  omega_arith
+    (ptAt k (Spec.Weierstrass.Point.oAt k)).z + 8 * k ≤ Spec.Weierstrass.Point.pAt k :=
+  lay_cases k hk3 hk6 (by decide) (by decide) (by decide) (by decide)
+
+/-- What `selPt_ok` asks of a selection of `P` or `O` into three slots below
+`O`, for numbers of the layout: proved once rather than by `omega` in the
+iteration. -/
+theorem selPt_conds {k size : Nat} {a : Pt} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (hsz : size = 4096)
+    (hax : a.x + 8 * k ≤ Spec.Weierstrass.Point.oAt k) (hay : a.y + 8 * k ≤ Spec.Weierstrass.Point.oAt k)
+    (haz : a.z + 8 * k ≤ Spec.Weierstrass.Point.oAt k) :
+    (∀ d ∈ [a.x, a.y, a.z, (ptAt k (Spec.Weierstrass.Point.pAt k)).x, (ptAt k (Spec.Weierstrass.Point.pAt k)).y,
+      (ptAt k (Spec.Weierstrass.Point.pAt k)).z, (ptAt k (Spec.Weierstrass.Point.oAt k)).x,
+      (ptAt k (Spec.Weierstrass.Point.oAt k)).y, (ptAt k (Spec.Weierstrass.Point.oAt k)).z], d + 8 * k ≤ size) ∧
+    (∀ d ∈ [a.x, a.y, a.z], ∀ e ∈ [(ptAt k (Spec.Weierstrass.Point.pAt k)).x,
+      (ptAt k (Spec.Weierstrass.Point.pAt k)).y, (ptAt k (Spec.Weierstrass.Point.pAt k)).z,
+      (ptAt k (Spec.Weierstrass.Point.oAt k)).x, (ptAt k (Spec.Weierstrass.Point.oAt k)).y,
+      (ptAt k (Spec.Weierstrass.Point.oAt k)).z], d + 8 * k ≤ e ∨ e + 8 * k ≤ d) := by
+  have hd : ∀ d ∈ [a.x, a.y, a.z], d + 8 * k ≤ Spec.Weierstrass.Point.oAt k := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+    exact ⟨hax, hay, haz⟩
+  have he : ∀ e ∈ [(ptAt k (Spec.Weierstrass.Point.pAt k)).x,
+      (ptAt k (Spec.Weierstrass.Point.pAt k)).y, (ptAt k (Spec.Weierstrass.Point.pAt k)).z,
+      (ptAt k (Spec.Weierstrass.Point.oAt k)).x, (ptAt k (Spec.Weierstrass.Point.oAt k)).y,
+      (ptAt k (Spec.Weierstrass.Point.oAt k)).z], Spec.Weierstrass.Point.oAt k ≤ e ∧ e + 8 * k ≤ size := by
+    subst hsz; exact lay_cases k hk3 hk6 (by decide) (by decide) (by decide) (by decide)
+  refine ⟨fun d hd' => ?_, fun d hd' e he' => Or.inl (Nat.le_trans (hd d hd') (he e he').1)⟩
+  rcases List.mem_append.mp (show d ∈ [a.x, a.y, a.z] ++ _ from hd') with h | h
+  · have h₁ := hd d h; have h₂ := (he _ (List.mem_cons_self ..)).1; have h₃ := (he _ (List.mem_cons_self ..)).2
+    omega_using [h₁, h₂, h₃]
+  · exact (he d h).2
+
+open Spec.Weierstrass.Point in
+/-- An iteration's copies and calls write within the point functions' slots
+and own working space: proved once rather than by `omega` in the iteration. -/
+theorem iterOuts_cover {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
+    ∀ w ∈ [(pAt k, 8 * k), (pAt k + elemBytes k, 8 * k), (pAt k + 2 * elemBytes k, 8 * k)] ++
+        [(oAt k, 3 * elemBytes k), (ownAt k, 4096 - ownAt k)] ++
+        ([(pAt k, 8 * k), (pAt k + elemBytes k, 8 * k), (pAt k + 2 * elemBytes k, 8 * k)] ++
+          [(oAt k, 3 * elemBytes k), (ownAt k, 4096 - ownAt k)]),
+      ∃ w' ∈ [(oAt k, 4096 - oAt k)], w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 :=
+  lay_cases k hk3 hk6 (by decide) (by decide) (by decide) (by decide)
+
+open Spec.Weierstrass.Point in
+/-- The setup's copies write within the point functions' slots. -/
+theorem setupOuts_cover {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
+    ∀ w ∈ [(qAt k, 8 * k), (qAt k + elemBytes k, 8 * k), (qAt k + 2 * elemBytes k, 8 * k)] ++
+        ([(aAt k, 4 * (2 * k))] ++ [(b3At k, 4 * (2 * k))]),
+      ∃ w' ∈ [(oAt k, 4096 - oAt k)], w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 :=
+  lay_cases k hk3 hk6 (by decide) (by decide) (by decide) (by decide)
 
 section body
 variable {L : LadderCfg} {wk : Nat} {C : Spec.Weierstrass.Curve} {base : Addr} {size : Nat}
@@ -209,7 +280,7 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Wei
   rw [hm₁] at px₂ py₂ pz₂ O₂
   have hs₂ := hs₁.of_rest k₂ (by decide)
   have hf₂ : Far s₂ base 8192 := ((hf₀.of_rest hI.keep).of_rest k₁).of_rest k₂
-  have cp₂ : CpOk L base s₂.mem s₀.mem := hI.cp.keep hk3 hk6 (Outs.unch O₂) (by apart_ranges)
+  have cp₂ : CpOk L base s₂.mem s₀.mem := hI.cp.keep hk3 hk6 (Outs.unch O₂) (lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide))
   obtain ⟨gx₂, gy₂, gz₂, ga₂, gb₂⟩ := cp₂
   have la : wordsVal s₀.mem base L.S.a L.M.n < C.p := hlt₀ _ (by simp [ladRo])
   have lb : wordsVal s₀.mem base L.S.b3 L.M.n < C.p := hlt₀ _ (by simp [ladRo])
@@ -249,8 +320,8 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Wei
   have hs₄ := hs₃.of_rest k₄ (by decide)
   have hf₄ : Far s₄ base 8192 := hf₃.of_rest k₄
   have cp₄ : CpOk L base s₄.mem s₀.mem :=
-    (CpOk.keep ⟨gx₂, gy₂, gz₂, ga₂, gb₂⟩ hk3 hk6 (Outs.unch O₃) (by apart_ranges)).keep hk3 hk6 (Outs.unch O₄)
-      (by apart_ranges)
+    (CpOk.keep ⟨gx₂, gy₂, gz₂, ga₂, gb₂⟩ hk3 hk6 (Outs.unch O₃) (lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide))).keep hk3 hk6 (Outs.unch O₄)
+      (lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide))
   obtain ⟨gx₄, gy₄, gz₄, ga₄, gb₄⟩ := cp₄
   -- `O = P + Q`.
   refine WP.seq (WP.mono (ptCall_ok hF.m hF.k hM hodd hk6 false hs₄ hf₄ (rIds_lt_of false fun x hx => by
@@ -276,17 +347,17 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Wei
   -- `P` still holds `D`.
   have p5x : wordsVal s₅.mem base (Spec.Weierstrass.Point.pAt L.M.n) L.M.n =
       wordsVal s₃.mem base (Spec.Weierstrass.Point.oAt L.M.n) L.M.n := by
-    rw [(Outs.unch O₅).wordsVal (by apart_ranges) (by omega_arith), px₄]
+    rw [(Outs.unch O₅).wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), px₄]
   have p5y : wordsVal s₅.mem base (Spec.Weierstrass.Point.pAt L.M.n + Spec.Weierstrass.Point.elemBytes L.M.n) L.M.n =
       wordsVal s₃.mem base (Spec.Weierstrass.Point.oAt L.M.n + Spec.Weierstrass.Point.elemBytes L.M.n) L.M.n := by
-    rw [(Outs.unch O₅).wordsVal (by apart_ranges) (by omega_arith), py₄]
+    rw [(Outs.unch O₅).wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), py₄]
   have p5z : wordsVal s₅.mem base (Spec.Weierstrass.Point.pAt L.M.n + 2 * Spec.Weierstrass.Point.elemBytes L.M.n) L.M.n =
       wordsVal s₃.mem base (Spec.Weierstrass.Point.oAt L.M.n + 2 * Spec.Weierstrass.Point.elemBytes L.M.n) L.M.n := by
-    rw [(Outs.unch O₅).wordsVal (by apart_ranges) (by omega_arith), pz₄]
-  have cp₅ : CpOk L base s₅.mem s₀.mem := CpOk.keep ⟨gx₄, gy₄, gz₄, ga₄, gb₄⟩ hk3 hk6 (Outs.unch O₅) (by apart_ranges)
+    rw [(Outs.unch O₅).wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), pz₄]
+  have cp₅ : CpOk L base s₅.mem s₀.mem := CpOk.keep ⟨gx₄, gy₄, gz₄, ga₄, gb₄⟩ hk3 hk6 (Outs.unch O₅) (lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide))
   -- What changed: the point functions' slots.
   have U₁₅ : Unch base [(Spec.Weierstrass.Point.oAt L.M.n, 4096 - Spec.Weierstrass.Point.oAt L.M.n)] s.mem s₅.mem :=
-    (((Outs.unch O₂).trans (Outs.unch O₃)).trans ((Outs.unch O₄).trans (Outs.unch O₅))).cover (by in_pt)
+    (((Outs.unch O₂).trans (Outs.unch O₃)).trans ((Outs.unch O₄).trans (Outs.unch O₅))).cover (iterOuts_cover hk3 hk6)
   have hU₅ : Unch base (ladWx L wk ++ [(Spec.Weierstrass.Point.oAt L.M.n, 4096 - Spec.Weierstrass.Point.oAt L.M.n)])
       s₀.mem s₅.mem :=
     (hI.unch.trans U₁₅).mono fun w hw => by
@@ -317,12 +388,13 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Wei
       x + 8 * L.M.n ≤ y ∨ y + 8 * L.M.n ≤ x := fun x hx y hy hxy =>
     hL.lay.apart x y (ladPts_slots L x (by simp only [List.mem_cons] at hx ⊢; rcases hx with h | h | h | h <;> simp [h]))
       (ladPts_slots L y (by simp only [List.mem_cons] at hy ⊢; rcases hy with h | h | h | h <;> simp [h])) hxy
+  have sR := selPt_conds (a := L.R) hk3 hk6 hsz rx ry rz
   refine VG.Proof.X25519.Arm.WP.append (selPt_ok hs₆ _ c₆ (n := L.M.n) (o := L.R)
     (a := ptAt L.M.n (Spec.Weierstrass.Point.pAt L.M.n)) (b := ptAt L.M.n (Spec.Weierstrass.Point.oAt L.M.n))
-    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith)
+    sR.1
     ⟨hap L.R.x (by simp) L.R.y (by simp) rxy, hap L.R.x (by simp) L.R.z (by simp) rxz,
       hap L.R.y (by simp) L.R.z (by simp) ryz⟩
-    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith))
+    sR.2)
     fun s₇ ⟨ex, ey, ez, k₇, O₇⟩ => ?_
   simp only [ptAt] at ex ey ez
   rw [hm₆] at ex ey ez
@@ -453,7 +525,7 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Weierst
   have U₂ : Unch base [(Spec.Weierstrass.Point.aAt L.M.n, 4 * (2 * L.M.n))] s₁.mem s₂.mem := O₂.unch
   have U₃ : Unch base [(Spec.Weierstrass.Point.b3At L.M.n, 4 * (2 * L.M.n))] s₂.mem s₃.mem := O₃.unch
   have U₁₃ : Unch base [(Spec.Weierstrass.Point.oAt L.M.n, 4096 - Spec.Weierstrass.Point.oAt L.M.n)] s.mem s₄.mem := by
-    rw [hm₄]; exact ((Outs.unch O₁).trans (U₂.trans U₃)).cover (by in_pt)
+    rw [hm₄]; exact ((Outs.unch O₁).trans (U₂.trans U₃)).cover (setupOuts_cover hk3 hk6)
   have K₄ : Rest powClob s s₄ := (k₁.mono (by simp [powClob, clob])).trans <| (k₂.mono (by simp [powClob, clob])).trans <|
     (k₃.mono (by simp [powClob, clob])).trans (u₄.rest (by simp [powClob]))
   have low : ∀ {x}, x + 8 * L.M.n ≤ Spec.Weierstrass.Point.oAt L.M.n →
@@ -479,10 +551,10 @@ theorem ladderP_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Weierst
     have k₃₄ : Unch base [(Spec.Weierstrass.Point.b3At L.M.n, 4 * (2 * L.M.n))] s₂.mem s₄.mem := by
       rw [hm₄]; exact U₃
     refine ⟨?_, ?_, ?_, ?_, ?_⟩
-    · rw [k₂₄.wordsVal (by apart_ranges) (by omega_arith), gx₁]
-    · rw [k₂₄.wordsVal (by apart_ranges) (by omega_arith), gy₁]
-    · rw [k₂₄.wordsVal (by apart_ranges) (by omega_arith), gz₁]
-    · rw [k₃₄.wordsVal (by apart_ranges) (by omega_arith), a₂, (Outs.unch O₁).wordsVal (by apart_ranges) (by omega_arith)]
+    · rw [k₂₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), gx₁]
+    · rw [k₂₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), gy₁]
+    · rw [k₂₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), gz₁]
+    · rw [k₃₄.wordsVal (by exact lay_cases L.M.n hk3 hk6 (by decide) (by decide) (by decide) (by decide)) (by omega_arith), a₂, (Outs.unch O₁).wordsVal (by apart_ranges) (by omega_arith)]
     · rw [hm₄, b₃, U₂.wordsVal (by apart_ranges) (by omega_arith), (Outs.unch O₁).wordsVal (by apart_ranges) (by omega_arith)]
 
 end body
