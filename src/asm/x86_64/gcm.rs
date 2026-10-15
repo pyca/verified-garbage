@@ -4996,7 +4996,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_FEATURES: crate::cpu::Features = cr
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -8773,7 +8773,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_FEATURES: crate::cpu::Featur
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -21390,7 +21390,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Fe
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -22039,7 +22039,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: crate
 /// * `src_len` must be at most `len`.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_init_prepared` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -43302,7 +43302,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_AESNI_VPCLMUL_FEATURES: crate::cpu::Featu
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -47075,7 +47075,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_PCLMUL_FEATURES: crate::cpu::Features = c
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -50793,7 +50793,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -54561,7 +54561,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_FEATURES: crate::cpu::Features = cra
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -58338,7 +58338,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_PCLMUL_FEATURES: crate::cpu::Feature
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -64889,7 +64889,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_FEATURES: crate::cpu::Featur
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -65358,7 +65358,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_PREPARED_VAES_VPCLMUL_FEATURES: crate::cp
 /// * `src_len` must be at most `len`.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_init_prepared` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -81294,7 +81294,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu:
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -82535,7 +82535,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: cr
 ///
 /// This implementation encrypts the whole blocks at `src` straight to `dst` with `vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512`, copies the bytes of `src` left after them to `dst`, and goes on as `vg_aes_gcm_seal` does from there: it encrypts the rest in place, then the bytes left after its whole blocks, and computes the tag.
 ///
-/// For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this implementation multiplies the additional data by the prepared power of the hash subkey in the key context, without calls.
+/// For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this implementation multiplies the additional data by the prepared power of the hash subkey in the key context, without calls, and encrypts the whole blocks with `vg_aes_gcm_encrypt_blocks_to_prepared_iv96_vaes_vpclmul_avx512`, given the index of the first counter block.
 ///
 /// # Safety
 ///
@@ -82549,7 +82549,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: cr
 /// * `src_len` must be at most `len`.
 /// * `*ctx` must have the prepared format written by `vg_aes_gcm_init_prepared` (not the format of `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
@@ -82699,6 +82699,8 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared_vaes_vpclmul
         "jmp 29f",
         "28:",
         "29:",
+        "mov eax, 2",
+        "push rax",
         "mov rax, QWORD PTR [r15+192]",
         "shr rax, 4",
         "test rax, rax",
@@ -82718,7 +82720,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared_vaes_vpclmul
         "push rax",
         "push r10",
         "push r11",
-        "call {vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512}",
+        "call {vg_aes_gcm_encrypt_blocks_to_prepared_iv96_vaes_vpclmul_avx512}",
         "pop rax",
         "pop rax",
         "pop rax",
@@ -82755,6 +82757,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared_vaes_vpclmul
         "mov QWORD PTR [r15+208], rcx",
         "add rax, QWORD PTR [r15+200]",
         "mov QWORD PTR [r15+200], rax",
+        "pop r10",
         "mov rax, QWORD PTR [r15+208]",
         "cmp rax, 17",
         "jb 216f",
@@ -84548,9 +84551,10 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_prepared_vaes_vpclmul
         "lea rsp, [rsp+2616]",
         "ret",
         ".p2align 6",
-        vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_encrypt_blocks_to_prepared_iv96_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_prepared_iv96_vaes_vpclmul_avx512,
         vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
+        vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
     )
 }
 
@@ -88725,7 +88729,7 @@ pub(crate) const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: crate::c
 ///
 /// For a 12-byte nonce and fewer than 32 blocks of additional data and text, with some text or more than 16 bytes of additional data, this implementation copies the powers of the hash subkey from the key context and computes just the keystream it needs, on 512-bit registers, without calls.
 ///
-/// For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this implementation multiplies the additional data by the prepared power of the hash subkey in the key context, and computes the tag from the prepared powers in the key context, without calls.
+/// For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this implementation multiplies the additional data by the prepared power of the hash subkey in the key context, and computes the tag from the prepared powers in the key context, without calls, and decrypts the whole blocks with `vg_aes_gcm_decrypt_blocks_prepared_iv96_vaes_vpclmul_avx512`, given the index of the first counter block.
 ///
 /// # Safety
 ///
@@ -100131,7 +100135,7 @@ pub(crate) const VG_AES_GCM_SEAL_SPLIT_VPCLMUL_FEATURES: crate::cpu::Features = 
 /// * `rounds` must be 10, 12 or 14.
 /// * `src_len` must be at most `len`.
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2672 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2680 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_split_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
