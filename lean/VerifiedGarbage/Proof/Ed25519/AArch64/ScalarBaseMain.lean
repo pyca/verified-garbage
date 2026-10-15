@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
@@ -95,7 +96,7 @@ theorem farScr {base p : Addr} {n : Nat}
   change (off p i - base).toNat < 8192 at h
   omega
 
-theorem scalarBase_correct {s : State} (hs : scalarBaseLocal.pre s) :
+theorem scalarBase_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hs : scalarBaseLocal.pre s) :
     WP isa scalarBase s fun t => abiPreserved s t ∧ scalarBaseLocal.post s t := by
   apply WP.withPreservedV (hc := by lit_decide)
   obtain ⟨hr, hw, hd, hn, hct⟩ := hs

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
 import VerifiedGarbage.Proof.Framework.ConstMem
@@ -128,7 +129,7 @@ theorem finalize_ct (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb 
       hg (.x2, .frame 192) (by decide), hg (.x3, .caller 2 192) (by decide), hsp⟩
   · simp [finalizeValues, linkRegs]
 
-theorem base_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L baseValues))
+theorem base_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L baseValues))
     (.call "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase)
     (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL ha hb scalarBase_ok scalarBase_ct (Whole.depth_of_noFrames base_noFrames)
@@ -154,7 +155,7 @@ theorem wipe_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun
   · intro t ⟨hc, hy, _⟩; exact WP.mono_syms (wipe_step hc hL) fun _ ⟨hu, _⟩ sy => ⟨hu, sy ▸ hy, trivial⟩
   · intro t ⟨hc, hy, _⟩; exact WP.mono_syms (wipe_step hc hL) fun _ ⟨hu, _⟩ sy => ⟨hu, sy ▸ hy, trivial⟩
 
-theorem body_ct (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem body_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (body v.code v.suffix)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   have i := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb initValues
@@ -176,7 +177,7 @@ theorem lay_eq {s t : State} (hp : pkLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2, hsy⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, hsy]
 
-theorem publicKey_ct (v : Whole.Backend) : ConstantTime isa pkLocal.pre pkLocal.pub (code v.code v.suffix) := by
+theorem publicKey_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) : ConstantTime isa pkLocal.pre pkLocal.pub (code v.code v.suffix) := by
   refine Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
     exact WP.mono (body_ok v (entry_ctx hs hp) (lay_ok hs) (entry_args hs hp) (entry_syms hp))
@@ -268,7 +269,7 @@ theorem pk_implies : pkLocal.Implies
       combConsts_eq, Abi.withConsts]
   sat := sat
 
-theorem publicKey_verified (v : Whole.Backend) :
+theorem publicKey_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) :
     Verified AArch64.target (code v.code v.suffix)
       (Spec.Ed25519.publicKeyContract (AArch64.abi.withConsts combConsts) 352) :=
   Verified.of_implies

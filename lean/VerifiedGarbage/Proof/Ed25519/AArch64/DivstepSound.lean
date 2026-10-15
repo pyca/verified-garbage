@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith
 import VerifiedGarbage.Proof.Ed25519.Group.Extended
@@ -11,7 +11,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 
 /-!
-# X25519 on AArch64: the inversion by divsteps is sound modulo `p = 2²⁵⁵ - 19`
+# Ed25519 and X25519 on AArch64: the inversion by divsteps is sound modulo `p = 2²⁵⁵ - 19`
 
 Untrusted: everything here is checked by Lean. The short Weierstrass curves'
 inversion (`InvCfg.inv`) is proven for any prime modulus (`invSound_of_toM`);
@@ -21,15 +21,15 @@ those take.
 
 @[expose] public section
 
-namespace VG.Proof.X25519.AArch64.Hybrid
+namespace VG.Proof.Ed25519.AArch64.Divstep
 
 open VG.Proof.Weierstrass.AArch64
-
-instance : NeZero VG.Spec.X25519.P := ⟨by decide⟩
 
 theorem p_prime : Nat.Prime VG.Spec.X25519.P := VG.Proof.Ed25519.prime_field
 
 theorem invSound : InvSound VG.Spec.X25519.P :=
   invSound_of_toM p_prime (VG.Proof.Weierstrass.invToM_of_prime p_prime)
 
-end VG.Proof.X25519.AArch64.Hybrid
+instance sound : Sound := ⟨invSound⟩
+
+end VG.Proof.Ed25519.AArch64.Divstep

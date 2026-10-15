@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 import VerifiedGarbage.Proof.Framework.KernelRfl

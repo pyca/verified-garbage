@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PublicKey
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
@@ -198,7 +199,7 @@ theorem base_writes (L : Lay) : ∀ r ∈ L.outputs,
     Whole.Within r (Whole.FR L.E) ∨ ∃ R ∈ L.outputs, Whole.Within r R :=
   fun r hr => .inr ⟨r, hr, 0, (BitVec.add_zero _).symm, by simp⟩
 
-theorem base_call (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : BaseArgs L t)
+theorem base_call [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : BaseArgs L t)
     (hsy : t.syms Impl.Ed25519.AArch64.combSym = L.T) (hm : TblWords L.T t.mem) :
     WP isa (.call "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase) t fun u =>
       Ctx L g vec m₀ u ∧ Spec.Ed25519.bytesAt u.mem L.out 32 =
@@ -228,7 +229,7 @@ theorem prune_step (hc : Ctx L g vec m₀ t) {digest : List Byte}
   · rw [hc.sp] at hp
     exact hp
 
-theorem base_step (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) {n : Nat}
+theorem base_step [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) {n : Nat}
     (hs : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem (L.E + 32) 32) = n)
     (hsy : t.syms Impl.Ed25519.AArch64.combSym = L.T) :
     WP isa (callWith baseArgs "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase) t fun u =>
@@ -430,7 +431,7 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64.PublicKey
 
 variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
 
-theorem body_ok (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
+theorem body_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     (hsy : t.syms Impl.Ed25519.AArch64.combSym = L.T) :
     WP isa (body v.code v.suffix) t fun u => Ctx L g vec m₀ u ∧
       Spec.Ed25519.bytesAt u.mem L.out 32 = Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
@@ -449,7 +450,7 @@ theorem body_depth (v : Whole.Backend) : (body v.code v.suffix).aarch64Depth ≤
     Code.aarch64Depth, Nat.max_le, Impl.Sha512.AArch64.Stream.init, hb]
   omega
 
-theorem publicKey_ok (v : Whole.Backend) {s : State} (h : pkLocal.pre s) :
+theorem publicKey_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) {s : State} (h : pkLocal.pre s) :
     WP isa (code v.code v.suffix) s fun u => abiPreserved s u ∧ pkLocal.post s u := by
   have hw := Whole.wrap_ok (body_depth v) (entry_below h) (entry_writes h)
     (P := fun m m' _ => Spec.Ed25519.bytesAt m' (s.gpr .x0) 32 =
