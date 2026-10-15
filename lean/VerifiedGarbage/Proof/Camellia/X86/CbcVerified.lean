@@ -10,6 +10,8 @@ public import VerifiedGarbage.Proof.Camellia.X86.CbcLit
 meta import VerifiedGarbage.Proof.Camellia.X86.CbcLit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -192,13 +194,28 @@ theorem cbcTaint_agree {enc : Bool} {s₁ s₂ : State} (h₁ : (cbcX86 enc).pre
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
+/-- What is public at the core's loop of pairs of rounds: `eax`, the stack
+pointer, the round keys' and the scratch buffer's pointers, the flags, the
+group's end, and the data pointer and the blocks left in their slots. -/
+def cbcPairTaint : VG.X86.Taint.T :=
+  { regs := .ofList [.eax, .esp, .esi, .edi], flags := true, lens := [0, 4 * (dirCore .encrypt).total],
+    bases := [(.edi, 1, 0)], slots := [(1, 4 * grpSlot, 4), (1, 4 * (dirCore .encrypt).dSlot, 8)],
+    argLen := 28, argBases := [(16, 0), (24, 1)] }
+
+/-! The loop of pairs of rounds, which both directions run for 18 and 24
+rounds, analysed once, as a summary. -/
+
+taint_summary cbcPairSum : VG.X86.taint cbcPairTaint (.block pairBody)
+
 theorem cbcEncrypt_ct : ConstantTime isa (cbcX86 true).pre (cbcX86 true).pub cbcEncrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by taint_decide_sum [cbcPairSum] :
+    ∃ h, (VG.X86.taint.check cbcTaint cbcEncrypt h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp) h
 
 theorem cbcDecrypt_ct : ConstantTime isa (cbcX86 false).pre (cbcX86 false).pub cbcDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by taint_decide_sum [cbcPairSum] :
+    ∃ h, (VG.X86.taint.check cbcTaint cbcDecrypt h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/
 

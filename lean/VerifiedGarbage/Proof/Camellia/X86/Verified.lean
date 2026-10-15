@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Camellia.Scratch
 meta import VerifiedGarbage.Proof.Camellia.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -100,12 +102,26 @@ theorem ecbTaint_agree (dir : Dir) {s₁ s₂ : State} (h₁ : (ecbX86 dir).pre 
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
-theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbX86 dir).pre (ecbX86 dir).pub (ecb dir) := by
+/-- What is public at the loop of pairs of rounds: `eax`, the stack pointer,
+the round keys' and the scratch buffer's pointers, the flags, and the data
+pointer, the blocks left and the group's end in their slots. -/
+def pairTaint : VG.X86.Taint.T :=
+  { regs := .ofList [.eax, .esp, .esi, .edi], flags := true, lens := [0, 4 * Impl.Camellia.X86.slots],
+    bases := [(.edi, 1, 0)], slots := [(1, 4 * dSlot, 12)], argLen := 24, argBases := [(12, 0), (20, 1)] }
+
+/-! The loop of pairs of rounds, which both directions run for 18 and 24
+rounds, analysed once, as a summary. -/
+
+taint_summary pairSum : VG.X86.taint pairTaint (.block pairBody)
+
+theorem ecb_taint (dir : Dir) : ∃ h, (VG.X86.taint.check ecbTaint (ecb dir) h).isSome = true := by
   cases dir
-  · exact VG.Taint.constantTime (A := VG.X86.taint) ecbTaint
-      (fun _ _ h₁ h₂ hp => ecbTaint_agree .encrypt h₁ h₂ hp) (by taint_decide)
-  · exact VG.Taint.constantTime (A := VG.X86.taint) ecbTaint
-      (fun _ _ h₁ h₂ hp => ecbTaint_agree .decrypt h₁ h₂ hp) (by taint_decide)
+  · taint_decide_sum [pairSum]
+  · taint_decide_sum [pairSum]
+
+theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbX86 dir).pre (ecbX86 dir).pub (ecb dir) :=
+  let ⟨_, h⟩ := ecb_taint dir
+  VG.Taint.constantTime (A := VG.X86.taint) ecbTaint (fun _ _ h₁ h₂ hp => ecbTaint_agree dir h₁ h₂ hp) h
 
 theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbX86 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86 dir).post s s' :=
