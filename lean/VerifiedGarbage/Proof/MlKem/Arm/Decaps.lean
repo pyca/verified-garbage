@@ -261,12 +261,13 @@ theorem DEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : DEnv K
     List.all_eq_true.mpr fun w hw => by
       have := List.all_eq_true.mp hW w hw; simp only [okW, Bool.and_eq_true] at this; exact this.2
   have hd := Lay.disjAll hL h1
-  have c872 : (Lay.R (lay s₀ K) 0 840 40).Contains ((lay s₀ K).A 0 872) 4 := by
-    simp only [Region.Contains]; bv_omega
-  have c876 : (Lay.R (lay s₀ K) 0 840 40).Contains ((lay s₀ K).A 0 876) 4 := by
-    simp only [Region.Contains]; bv_omega
+  have c872 : (Lay.R (lay s₀ K) 0 840 40).Contains ((lay s₀ K).A 0 872) 4 :=
+    Offset.contains _ (by decide) (by decide) (by decide)
+  have c876 : (Lay.R (lay s₀ K) 0 840 40).Contains ((lay s₀ K).A 0 876) 4 :=
+    Offset.contains _ (by decide) (by decide) (by decide)
   refine ⟨hk.ctx h7 h.ctx, hk.rd.trans h.rd, hk.wr.trans h.wr, hk.sp.trans h.sp, fun i hi => ?_, ?_, ?_, ?_⟩
-  · rw [hk.frame.readW (r := Lay.R (lay s₀ K) 0 840 40) (by simp only [Region.Contains]; bv_omega) hd (by ddecide)]
+  · rw [hk.frame.readW (r := Lay.R (lay s₀ K) 0 840 40)
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) hd (by ddecide)]
     exact h.sav i hi
   · rw [hk.frame.readW c872 hd (by ddecide)]; exact h.savlr
   · rw [hk.frame.readW c876 hd (by ddecide)]; exact h.key
@@ -305,19 +306,21 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
   run_block [i872, i876, o1, o2]
   have ne1 : ∀ i < 8, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((lay s₀ K).A 0 872) v).readW
       ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
-    fun i hi m v => Mem.readW_writeW_sep (fun x h1 h2 => by bv_omega) (by ddecide)
+    fun i hi m v => Mem.readW_writeW_sep
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by ddecide)
   have ne2 : ∀ i < 9, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((lay s₀ K).A 0 876) v).readW
       ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
-    fun i hi m v => Mem.readW_writeW_sep (fun x h1 h2 => by bv_omega) (by ddecide)
+    fun i hi m v => Mem.readW_writeW_sep
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by ddecide)
   have fr₀ : Frame ((lay s₀ K).RL [(0, 840, 40)]) s₀.mem s₁.mem := by
     refine h₁.frame.sub fun r hr' => ⟨Lay.R (lay s₀ K) 0 840 40, by simp, ?_⟩
     rw [List.mem_singleton] at hr'; subst hr'
     show Region.Sub ⟨State.addr (s₀.gpr .r3) + BitVec.ofNat 64 840, 32⟩ _
     exact Lay.R_sub_R hL (i := 0) (a := 840) (l := 32) (by simp [lay]) (by ddecide) (by ddecide) (by simp [lay]; omega)
-  have c872 : ((lay s₀ K).R 0 840 40).Contains ((lay s₀ K).A 0 872) 4 := by
-    simp only [Region.Contains]; bv_omega
-  have c876 : ((lay s₀ K).R 0 840 40).Contains ((lay s₀ K).A 0 876) 4 := by
-    simp only [Region.Contains]; bv_omega
+  have c872 : ((lay s₀ K).R 0 840 40).Contains ((lay s₀ K).A 0 872) 4 :=
+    Offset.contains _ (by decide) (by decide) (by decide)
+  have c876 : ((lay s₀ K).R 0 840 40).Contains ((lay s₀ K).A 0 876) 4 :=
+    Offset.contains _ (by decide) (by decide) (by decide)
   have fr : Frame ((lay s₀ K).RL [(0, 840, 40)]) s₀.mem
       ((s₁.mem.writeW ((lay s₀ K).A 0 872) (s₁.gpr .lr)).writeW ((lay s₀ K).A 0 876) (s₁.gpr .r2)) :=
     (fr₀.writeW (List.mem_singleton_self _) _ c872).writeW (List.mem_singleton_self _) _ c876

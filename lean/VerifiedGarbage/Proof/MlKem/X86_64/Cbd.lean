@@ -164,7 +164,7 @@ theorem front_ok {s : State} (hc : Consts s) (h1 : InRegions (s.rd ++ s.wr) (s.g
   have h42 : 4 + k / 2 < 8 := by bdd_omega
   obtain ⟨a8, a9, a10, a11, a12⟩ := word_m hk2
   obtain ⟨b8, b9, b10, b11, b12⟩ := word_m h42
-  simp (disch := first | omega | decide) only [word_punpcklwd, word_punpckhwd, word_pand, word_paddw,
+  simp (disch := first | decide | omega) only [word_punpcklwd, word_punpckhwd, word_pand, word_paddw,
     word_psubw, word_psrlw, hc.m8, hc.m9, hc.m10, hc.m11, hc.m12, a8, a9, a10, a11, a12, b8, b9,
     b10, b11, b12, show (1 : BitVec 8).toNat = 1 from rfl, show (2 : BitVec 8).toNat = 2 from rfl,
     show (4 : BitVec 8).toNat = 4 from rfl, show (8 : BitVec 8).toNat = 8 from rfl, word_lo _ _ hk2,
@@ -293,8 +293,11 @@ theorem coeffAt_wr4 (m : Mem) (p : Addr) {c₀ off : Nat} (hoff : off = 0 ∨ of
   rw [e16, e32, e48, ← Nat.add_assoc, ← Nat.add_assoc, ← Nat.add_assoc, hb]
   by_cases hin : b ≤ k ∧ k < b + 16
   · rw [ite_eq_left hin]
-    rcases (by bdd_omega : (k - b) / 4 = 0 ∨ (k - b) / 4 = 1 ∨ (k - b) / 4 = 2 ∨ (k - b) / 4 = 3) with h | h | h | h <;>
-      rw [h] <;> simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right] <;> congr 1 <;> omega
+    obtain ⟨r, rfl, hr⟩ : ∃ r, k = b + r ∧ r < 16 := ⟨k - b, by omega, by omega⟩
+    simp only [Nat.add_assoc, Nat.reduceAdd, Nat.add_le_add_iff_left, Nat.add_lt_add_iff_left, Nat.add_sub_add_left,
+      Nat.add_sub_cancel_left]
+    rcases (by bdd_omega : r / 4 = 0 ∨ r / 4 = 1 ∨ r / 4 = 2 ∨ r / 4 = 3) with h | h | h | h <;>
+      rw [h] <;> simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right] <;> congr 1 <;> bdd_omega
   · rw [ite_eq_right hin]
     simp (disch := bdd_omega) only [ite_eq_right]
 

@@ -81,6 +81,41 @@ theorem outWord_rel {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Nat} {x 
   rw [par_mk hp (Nat.le_refl _) _ (fun q hq => hg q hq), xorA_assign W (hg p hp)]
   simp [hp]
 
+/-- `outWord_rel`, with the output word bounded instead of its atoms (as
+`Bitslice.outWordW_rel_of_lt`). -/
+theorem outWord_rel_of_lt {k : Nat} {W : Nat → BitVec 32} {g : Nat → List Nat} {x : BitVec 32}
+    (hb : mk 32 g 32 < 2 ^ (32 * 2 ^ k)) (h : LaneRel k (assign W (2 ^ k)) (outWord g) x) :
+    ∀ p < 32, x.getLsbD p = xorBits W (g p) := by
+  intro p hp
+  have hM : ∀ q < 32, ∀ a ∈ g q, a < 2 ^ k + (((List.range 32).flatMap g).sum + 1) := by
+    intro q hq a ha
+    have : a ≤ ((List.range 32).flatMap g).sum :=
+      le_sum_of_mem (List.mem_flatMap.mpr ⟨q, List.mem_range.mpr hq, ha⟩)
+    exact Nat.lt_of_le_of_lt this (Nat.lt_add_left _ (Nat.lt_succ_self _))
+  rw [h.2 p hp]
+  simp only [outWord, Nat.zero_testBit, Bool.false_xor]
+  rw [← xorA_assign W (hM p hp), ← (Bool.true_and _ : (true && xorA _ (g p)) = _),
+    ← decide_eq_true hp, ← par_mk hp (Nat.le_refl _) _ hM, par_high hb hp]
+  refine par_congr_assign fun a ha => ?_
+  simp only [assign, testBit_tableOf, ha, decide_true, Bool.true_and,
+    show a < 2 ^ k + (((List.range 32).flatMap g).sum + 1) by omega]
+
+/-- The value `v` is `outWord g`, below `2 ^ (32 2 ^ k)` (`outWord_rel_of_lt`),
+with `g` evaluated once (as `Bitslice.outOkW`). -/
+def outOk (k : Nat) (v : Option (Nat × Nat)) (g : Nat → List Nat) : Bool :=
+  match v with
+  | some v => v == outWord g && decide (v.2 < 2 ^ (32 * 2 ^ k))
+  | none => false
+
+theorem outOk_spec {k : Nat} {v : Option (Nat × Nat)} {g : Nat → List Nat}
+    (h : outOk k v g = true) : v = some (outWord g) ∧ mk 32 g 32 < 2 ^ (32 * 2 ^ k) := by
+  cases v with
+  | none => cases h
+  | some v =>
+    simp only [outOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+    obtain ⟨rfl, h⟩ := h
+    exact ⟨rfl, h⟩
+
 /-! ## The check -/
 
 /-- The registers `ins` hold input words. -/
@@ -90,9 +125,9 @@ def linEnv (ins : List (Reg × Nat)) : Env (Nat × Nat) :=
 /-- External word `j` is input word `xb + j`. -/
 def linExt (xb j : Nat) : Option (Nat × Nat) := some (inWord (xb + j))
 
-/-- Each output register `r` holds `outWord g`, with atoms below `2 ^ k`. -/
+/-- Each output register `r` holds `outWord g`, below `2 ^ (32 2 ^ k)` (`outOk`). -/
 def linPost (k : Nat) (outs : List (Reg × (Nat → List Nat))) (e : Env (Nat × Nat)) : Bool :=
-  outs.all fun o => e.reg o.1 == some (outWord o.2) && (List.range 32).all fun p => (o.2 p).all (· < 2 ^ k)
+  outs.all fun o => outOk k (e.reg o.1) o.2
 
 /-- A linear block that the evaluator accepts, on the machine. -/
 theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat)}
@@ -121,8 +156,7 @@ theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × N
       rw [← h2]; exact inWord_rel W h1
   obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
   refine ⟨s', hs', fun r g hrg q hq => ?_, p.rd, p.wr, p.sp, fun r hr => p.other r (by simp [hr]), p.frame⟩
-  have h := List.all_eq_true.mp hpost (r, g) hrg
-  simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
-  exact outWord_rel (fun p hp a ha => h.2 p hp a ha) (p.rel.reg r _ h.1) q hq
+  obtain ⟨h1, h2⟩ := outOk_spec (List.all_eq_true.mp hpost (r, g) hrg)
+  exact outWord_rel_of_lt h2 (p.rel.reg r _ h1) q hq
 
 end VG.Arm.Straight

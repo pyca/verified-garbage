@@ -126,7 +126,7 @@ theorem table_ok (T : List Nat) (hT : ∀ k < 128, T.getD k 0 < 65536) {b : Reg}
   · rw [m, ea, movw_val (hT k hk)]
     by_cases e : j = k
     · subst e; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (fun x h1 h2 => by bv_omega) (by decide)]
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
       exact h.tab j (by omega)
 
 /-! ## Regions at offsets from a base -/
@@ -205,7 +205,7 @@ theorem saveRegs_ok (b : Reg) {off : Nat} (ho : off + 28 < 4096) {s₀ : State}
     rw [ea, h.gpr]
     by_cases e : j = k
     · subst e; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (fun x h1 h2 => by bv_omega) (by decide)]
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
       exact h.saved j (by omega)
 
 /-- After loading the first `k` registers from `A = b + off`. -/

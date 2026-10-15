@@ -91,11 +91,18 @@ theorem loadRows_ok {pp : Nat} (hp : pp < 4) {s : State} {p : Addr} (hs : Scratc
         (blockAt s.mem p)[rowIndex ⟨2 * pp + h, by omega_arith⟩ ⟨j, hj⟩] from gather_get _ _ ⟨j, hj⟩,
       blockAt_get]
     simp only [rowIndex]
+    have l0 : (4 * 0 + j % 4) / 2 < 2 := by omega_arith
+    have l1 : ¬ (4 * 1 + j % 4) / 2 < 2 := by omega_arith
+    have n0 : ∀ c, 2 * ((4 * c + j % 4) / 2 % 2) + (4 * c + j % 4) % 2 = j % 4 := by
+      intro c; omega_using [hk]
+    have n1 : ∀ c, 2 * (2 + (4 * c + j % 4) / 2 % 2) + (4 * c + j % 4) % 2 = 4 + j % 4 := by
+      intro c; omega_using [hk]
     rcases (by omega_arith : h = 0 ∨ h = 1) with rfl | rfl <;>
       rcases cases_div4 hj with e | e | e | e <;> rw [e] <;>
-      simp (disch := omega_arith) only [vreg, qz_vshufi32x4, qz_load, sel4_44, sel4_ee, ↓reduceIte,
-        reduceCtorEq, show (4 * 0 + j % 4) / 2 < 2 by omega_arith, show ¬ (4 * 1 + j % 4) / 2 < 2 by omega_arith] <;>
-      refine congrArg (Mem.readW _ · 64) (Offset.add_add_eq _ ?_) <;> omega_arith
+      simp (disch := omega_using [hk]) only [vreg, qz_vshufi32x4, qz_load, sel4_44, sel4_ee, ↓reduceIte,
+        reduceCtorEq, l0, l1] <;>
+      refine congrArg (Mem.readW _ · 64) (Offset.add_add_eq _ ?_) <;>
+      simp only [n0, n1] <;> omega_using [e, Nat.div_add_mod j 4]
   · exact (((((((setZ_vkeep _ _ _ _ _ _).trans (setZ_vkeep _ _ _ _ _ _)).trans
       (setZ_vkeep _ _ _ _ _ _)).trans (setZ_vkeep _ _ _ _ _ _)).trans (zop_vkeep _ _)).trans
       (zop_vkeep _ _)).trans (zop_vkeep _ _)).trans (zop_vkeep _ _)

@@ -1,0 +1,47 @@
+module
+
+public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+public import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+meta import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.Framework.RelCT
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-!
+# Taint summaries of the Ed448 x86-64 point functions
+
+The verifier's timing proofs check code that runs the point doubling and
+addition (`FieldVariant.bodies`) many times, in many theorems: each
+`taint_decide` analysed each body again. These summaries analyse each body
+once, from `rdi` public, keeping `rbx` (the loop counter, which the bodies
+do not write) public through it; `relCT_sum` turns a check that uses them
+(`taint_decide_sum`) into the same `RelCT` as `RelCT.taint`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ed448.X86_64
+
+open VG VG.X86_64 VG.Impl.Ed448.X86_64
+
+taint_summary dblSum : taintS (Taint.ofRegs [.rdi]) Point64.doubleFn keeping (Taint.ofRegs [.rbx])
+taint_summary addSum : taintS (Taint.ofRegs [.rdi]) Point64.addFn keeping (Taint.ofRegs [.rbx])
+taint_summary dblAdxSum : taintS (Taint.ofRegs [.rdi]) Point64.doubleAdxFn keeping (Taint.ofRegs [.rbx])
+taint_summary addAdxSum : taintS (Taint.ofRegs [.rdi]) Point64.addAdxFn keeping (Taint.ofRegs [.rbx])
+
+/-- `RelCT.taint` for `taintS`, from a check that `taint_decide_sum` proves. -/
+theorem relCT_sum {P : State → State → Prop} {c : Prog isa} (τ : X86_64.Taint.T)
+    (hp : ∀ s₁ s₂, P s₁ s₂ → X86_64.Taint.Agree τ s₁ s₂) (h : ∃ hc, (taintS.check τ c hc).isSome = true) :
+    RelCT isa P c fun _ _ => True :=
+  let ⟨_, h⟩ := h
+  RelCT.taint (A := taintS) τ hp h
+
+end VG.Proof.Ed448.X86_64

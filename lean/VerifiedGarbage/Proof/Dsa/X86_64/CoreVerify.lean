@@ -134,12 +134,12 @@ theorem coreVerify_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State}
   have hu4 := h4.local (by decide) hv (h3.output (by decide) hu)
     (by simp only [encodeBE_length, ModulusSide.length]; exact hu)
     (Or.inl (by simp only [encodeBE_length, ModulusSide.length]; unfold u v; omega))
-  have step5 := readyJoint_ok M h4.ready hp hop Core.generator Core.publicValue
+  have step5 := readyJoint_ok M Sq h4.ready hp hop Core.generator Core.publicValue
     (by trivial) (by trivial) hg4.active hy4.active
     (by rw [hgl]; omega) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hyl]; omega) (by simp only [hyl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     hu4 (h4.output (by decide) hv) (encodeBE_length _ _) (encodeBE_length _ _) t (by decide) ht
-  have step5' : WP isa (Core.joint M.mm pWorkspace Core.generator Core.publicValue (Core.element t)) s4
+  have step5' : WP isa (Core.joint Sq.mm M.mm pWorkspace Core.generator Core.publicValue (Core.element t)) s4
       (CallResult L .p t prod s4) := by
     simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.length, ModulusSide.value,
       fitq _ huu, fitq _ hvv, prod, tt, tt2] using step5

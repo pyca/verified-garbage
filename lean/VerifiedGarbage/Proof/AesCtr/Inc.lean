@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Ctr
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Bswap
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -157,28 +158,12 @@ theorem toNat_byte {w : Nat} (a : BitVec w) (i : Nat) :
 of the word. -/
 theorem rv64_digit (a : BitVec 64) {i : Nat} (hi : i < 8) :
     (rv64 a).toNat / 256 ^ (8 - 1 - i) % 256 = a.toNat / 256 ^ i % 256 := by
-  rw [← toNat_byte a i]
-  simp only [rv64, toNat_append_eq]
-  have h0 := (a.extractLsb' 0 8).isLt
-  have h1 := (a.extractLsb' 8 8).isLt
-  have h2 := (a.extractLsb' 16 8).isLt
-  have h3 := (a.extractLsb' 24 8).isLt
-  have h4 := (a.extractLsb' 32 8).isLt
-  have h5 := (a.extractLsb' 40 8).isLt
-  have h6 := (a.extractLsb' 48 8).isLt
-  have h7 := (a.extractLsb' 56 8).isLt
-  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 := by omega_arith
-  rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [Nat.reduceMul, Nat.reducePow, Nat.reduceSub] at * <;>
-    generalize (a.extractLsb' 0 8).toNat = t0 at * <;>
-    generalize (a.extractLsb' 8 8).toNat = t1 at * <;>
-    generalize (a.extractLsb' 16 8).toNat = t2 at * <;>
-    generalize (a.extractLsb' 24 8).toNat = t3 at * <;>
-    generalize (a.extractLsb' 32 8).toNat = t4 at * <;>
-    generalize (a.extractLsb' 40 8).toNat = t5 at * <;>
-    generalize (a.extractLsb' 48 8).toNat = t6 at * <;>
-    generalize (a.extractLsb' 56 8).toNat = t7 at * <;>
-    omega_arith
+  rw [← toNat_byte a i, ← toNat_byte (rv64 a) (8 - 1 - i)]
+  refine congrArg BitVec.toNat ?_
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  simp (disch := decide) only [rv64, Nat.reduceMul, Nat.reduceSub, extractLsb'_append_byte_lo,
+    extractLsb'_append_byte_hi, BitVec.extractLsb'_eq_self]
 
 /-- The bytes at `P`, read as the reversed 64-bit word there. -/
 theorem bytesAt_rv64 (m : Mem) (P : Addr) : bytesAt m P 8 = ofNat (rv64 (m.readW P 64)).toNat 8 := by
@@ -230,20 +215,11 @@ def rv32 (a : BitVec 32) : BitVec 32 :=
 
 theorem rv32_digit (a : BitVec 32) {i : Nat} (hi : i < 4) :
     (rv32 a).toNat / 256 ^ (4 - 1 - i) % 256 = a.toNat / 256 ^ i % 256 := by
-  rw [← toNat_byte a i]
-  simp only [rv32, toNat_append_eq]
-  have h0 := (a.extractLsb' 0 8).isLt
-  have h1 := (a.extractLsb' 8 8).isLt
-  have h2 := (a.extractLsb' 16 8).isLt
-  have h3 := (a.extractLsb' 24 8).isLt
-  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 := by omega_arith
-  rcases this with rfl | rfl | rfl | rfl <;>
-    simp only [Nat.reduceMul, Nat.reducePow, Nat.reduceSub] at * <;>
-    generalize (a.extractLsb' 0 8).toNat = t0 at * <;>
-    generalize (a.extractLsb' 8 8).toNat = t1 at * <;>
-    generalize (a.extractLsb' 16 8).toNat = t2 at * <;>
-    generalize (a.extractLsb' 24 8).toNat = t3 at * <;>
-    omega_arith
+  rw [← toNat_byte a i, ← toNat_byte (rv32 a) (4 - 1 - i)]
+  refine congrArg BitVec.toNat ?_
+  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
+  simp (disch := decide) only [rv32, Nat.reduceMul, Nat.reduceSub, extractLsb'_append_byte_lo,
+    extractLsb'_append_byte_hi, BitVec.extractLsb'_eq_self]
 
 /-- The bytes at `P`, read as the reversed 32-bit word there. -/
 theorem bytesAt_rv32 (m : Mem) (P : Addr) : bytesAt m P 4 = ofNat (rv32 (m.readW P 32)).toNat 4 := by

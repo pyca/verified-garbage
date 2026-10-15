@@ -27,14 +27,16 @@ namespace VG.Proof.Ed25519.X86_64.VerifyCode
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
 theorem baseline_mx : ctlOk (verifyEquation Impl.X25519.X86_64.baseline
-    (windows Impl.X25519.X86_64.baseline)) = true := by lit_decide
+    (windows Impl.X25519.X86_64.baseline)) = true := by
+  lit_decide
 
 theorem baseline_spSafe : (verifyEquation Impl.X25519.X86_64.baseline
     (windows Impl.X25519.X86_64.baseline)).all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (by lit_decide)
 
 theorem adx_mx : ctlOk (verifyEquation Impl.X25519.X86_64.adx
-    (windows Impl.X25519.X86_64.adx)) = true := by lit_decide
+    (windows Impl.X25519.X86_64.adx)) = true := by
+  lit_decide
 
 theorem adx_spSafe : (verifyEquation Impl.X25519.X86_64.adx
     (windows Impl.X25519.X86_64.adx)).all (fun i => !isa.writesSp i) = true :=
@@ -50,10 +52,12 @@ theorem ifma_spSafe : (verifyEquation Impl.X25519.X86_64.adx
   Code.all_of_allInstrs (by lit_decide)
 
 theorem baseline_inlineOk : (verifyEquation Impl.X25519.X86_64.baseline
-    (windows Impl.X25519.X86_64.baseline)).InlineOk = true := by lit_decide
+    (windows Impl.X25519.X86_64.baseline)).InlineOk = true := by
+  lit_decide
 
 theorem adx_inlineOk : (verifyEquation Impl.X25519.X86_64.adx
-    (windows Impl.X25519.X86_64.adx)).InlineOk = true := by lit_decide
+    (windows Impl.X25519.X86_64.adx)).InlineOk = true := by
+  lit_decide
 
 theorem ifma_inlineOk : (verifyEquation Impl.X25519.X86_64.adx Ifma.windows).InlineOk = true := by
   lit_decide

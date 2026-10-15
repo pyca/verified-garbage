@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Impl.Dsa.X86_64.Joint
 import VerifiedGarbage.Proof.Dsa.Joint
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
@@ -95,15 +96,33 @@ theorem joint_mont_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b c d : Na
   exact ⟨hc.of_win f hk.2.2 (hk.gpr (by decide)), hl, joint_mul hR hA hv hm,
     fun k hh => hf.hslot hh, f, hk⟩
 
+/-- A squaring of the accumulator, below `Sq.bd n R` before and after. -/
+theorem joint_sq_ok (Sq : MontS) {t : State} {P : Addr} {w n xc g y a b : Nat}
+    {minv : BitVec 64} (hc : CExpCtx t P w minv n xc)
+    (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * w)) n)
+    (hY : wv t.mem P (slot w aY) w < Sq.bd n (2 ^ (64 * w)))
+    (hA : wv t.mem P (slot w aY) w % n = (g ^ a * y ^ b) * 2 ^ (64 * w) % n) :
+    WP isa Sq.mm t fun u =>
+      CExpCtx u P w minv n xc ∧ wv u.mem P (slot w aY) w < Sq.bd n (2 ^ (64 * w)) ∧
+      wv u.mem P (slot w aY) w % n = (g ^ (a + a) * y ^ (b + b)) * 2 ^ (64 * w) % n ∧
+      (∀ k < 32, word u.mem P (8 * k) = word t.mem P (8 * k)) ∧
+      Frm P (crtWinRanges w) t.mem u.mem ∧ Keep mmRegs t u := by
+  refine WP.mono (Sq.ok hc.good (Nat.le_refl _) hw (by omega) hc.inv (by rw [hc.n]; exact hY))
+    fun u ⟨_, hl, hm, hf, hk⟩ => ?_
+  rw [hc.n] at hl hm
+  have f : Frm P (crtWinRanges w) t.mem u.mem := Frm.of_arrays hf (by simp [crtWinRanges])
+  exact ⟨hc.of_win f hk.2.2 (hk.gpr (by decide)), hl, joint_mul hR hA hA hm,
+    fun k hh => hf.hslot hh, f, hk⟩
+
 /-- A pair of two-bit digits advances both exponents with shared squarings. -/
-theorem jointWindow_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b V count : Nat}
+theorem jointWindow_ok (M : Mont) (Sq : MontS) {t : State} {P : Addr} {w n xc g y a b V count : Nat}
     {minv : BitVec 64} (hc : CExpCtx t P w minv n xc) (htab : JointTab t.mem P w n g y)
     (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * w)) n)
     (hY : wv t.mem P (slot w aY) w < n)
     (hYv : wv t.mem P (slot w aY) w % n = (g ^ a * y ^ b) * 2 ^ (64 * w) % n)
     (hV : word t.mem P (8 * Crt.sV) = BitVec.ofNat 64 V) (hV' : V < 2 ^ 56)
     (hb : word t.mem P (8 * Crt.sBit) = BitVec.ofNat 64 count) (hb1 : 1 ≤ count) (hb' : count < 2 ^ 31) :
-    WP isa (Joint.window M.mm) t fun t' =>
+    WP isa (Joint.window Sq.mm M.mm) t fun t' =>
       CExpCtx t' P w minv n xc ∧ JointTab t'.mem P w n g y ∧
       wv t'.mem P (slot w aY) w < n ∧
       wv t'.mem P (slot w aY) w % n =
@@ -114,9 +133,10 @@ theorem jointWindow_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b V count
   have hn := hc.scrT.nowrap
   have hY0 := slot_le (w := w) (show aY < 8 by decide)
   unfold Joint.window seqs
-  refine WP.seq (WP.mono (joint_mont_ok M hc hw hw' hR (Or.inl rfl) hY hYv hYv)
+  have hnR : n ≤ 2 ^ (64 * w) := by rw [← hc.n]; exact Nat.le_of_lt (wv_lt _ _ _ _)
+  refine WP.seq (WP.mono (joint_sq_ok Sq hc hw hw' hR (Nat.lt_of_lt_of_le hY (Sq.le hnR)) hYv)
     fun t₁ ⟨hc₁, hY₁, hYv₁, hh₁, f₁, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (joint_mont_ok M hc₁ hw hw' hR (Or.inl rfl) hY₁ hYv₁ hYv₁)
+  refine WP.seq (WP.mono (joint_sq_ok Sq hc₁ hw hw' hR hY₁ hYv₁)
     fun t₄ ⟨hc₄, hY₄, hYv₄, hh₄, f₄, k₄⟩ => ?_)
   have hh04 : ∀ k < 32, word t₄.mem P (8 * k) = word t.mem P (8 * k) :=
     fun k hk => (hh₄ k hk).trans (hh₁ k hk)

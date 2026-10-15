@@ -266,9 +266,9 @@ def tailEnv (e : Env) : Env := opMul 21 21 20 (opMul 20 20 2 (opSqn 20 20 2 (opS
 
 include hf in
 theorem invTail_spec (base : Addr) : ISpec base (Impl.X448.X86_64.invTail fld) tailEnv :=
-  (sqnI hf base 21 21 (by decide) 225 (by decide) (by decide)).seq <|
+  ((sqnI hf base 21 21 (by decide) 225 (by decide) (by decide)).seq <|
   (sqnI hf base 20 20 (by decide) 2 (by decide) (by decide)).seq
-    ((mulI hf base 20 20 2 (by decide)).append (mulI hf base 21 21 20 (by decide)))
+    ((mulI hf base 20 20 2 (by decide)).append (mulI hf base 21 21 20 (by decide))) :)
 
 /-- The slots after the inversion. -/
 def invEnv (e : Env) : Env := tailEnv (chainEnv 2 e)

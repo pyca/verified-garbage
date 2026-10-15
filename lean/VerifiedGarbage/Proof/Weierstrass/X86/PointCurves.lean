@@ -1,6 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P192
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P192
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P224
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P224
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P256
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P256
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P384
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.P384
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointVerified
 import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontP192

@@ -114,10 +114,10 @@ theorem winAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : W
         (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z)) s) := by
   have hO : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.R K.E, x ∈ winSlots K := by
     intro x hx
-    simp only [rcbW, rcbR, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-      or_false] at hx
-    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-      rfl | rfl | rfl | rfl <;> win_mem
+    rcases List.mem_append.mp hx with hx | hx
+    · exact winOther_mem (List.mem_append_right _ hx)
+    simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> win_mem
   have hI : Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.R K.E) (tmv C K.M.n base s) s :=
     ⟨hs, hM, fun x hx => hO x (List.mem_append_right _ hx), hlt, fun _ _ => rfl⟩
   exact winCopy_ok hL hAcc hs (rcb3_ok hL.lay hAcc.acc hp (hL.rcbApart_D (Or.inr rfl)) hO hI (fun x hx => hx))

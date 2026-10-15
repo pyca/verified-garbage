@@ -1266,7 +1266,24 @@ theorem and1023 (len : Nat) (hl : len < 2 ^ 64) :
     toNat_ofNat_lt (by omega_using [])]
 
 theorem round64 : ∀ y < 1087, BitVec.ofNat 64 y &&& BitVec.signExtend 64 (BitVec.ofInt 32 (-64)) =
-    BitVec.ofNat 64 (y / 64 * 64) := by decide +kernel
+    BitVec.ofNat 64 (y / 64 * 64) := by
+  intro y hy
+  rw [show BitVec.signExtend 64 (BitVec.ofInt 32 (-64)) = BitVec.ofNat 64 ((2 ^ 58 - 1) <<< 6) by decide]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega : y < 2 ^ 64), Nat.mod_eq_of_lt (by omega : y / 64 * 64 < 2 ^ 64),
+    Nat.mod_eq_of_lt (by decide : (2 ^ 58 - 1) <<< 6 < 2 ^ 64),
+    show y / 64 * 64 = (y >>> 6) <<< 6 by rw [Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]]
+  apply Nat.eq_of_testBit_eq
+  intro i
+  rw [Nat.testBit_and, Nat.testBit_shiftLeft, Nat.testBit_shiftLeft, Nat.testBit_shiftRight,
+    Nat.testBit_two_pow_sub_one]
+  by_cases h₁ : 6 ≤ i
+  · by_cases h₂ : i - 6 < 58
+    · simp [h₁, h₂, Nat.add_sub_cancel' h₁]
+    · have : y.testBit i = false := Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (by omega) (Nat.pow_le_pow_right (by decide) (by omega : 64 ≤ i)))
+      simp [h₁, h₂, Nat.add_sub_cancel' h₁, this]
+  · simp [h₁]
 
 /-- `splitM` for a pass of 1024 bytes. -/
 theorem splitM_ok {fold len : Nat} (hf : fold + 1 < 2 ^ 31) (hl : len < 2 ^ 64) {s : State}
@@ -1809,8 +1826,9 @@ theorem B3_eq : anchor .rsi 128 ++ ptr .rdi .r15 448 ++ ptr .rsi .r15 672 =
     anchor .rsi 128 ++ (ptr .rdi .r15 448 ++ ptr .rsi .r15 672) := by
   simp only [List.append_assoc]
 
-theorem prologueB_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
-    (h : AfterF fold pass s₀ s) : WP isa prologueB s (PostP fold pass s₀) := by
+theorem prologueBF_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
+    (h : AfterF fold pass s₀ s) : WP isa prologueB s fun s' =>
+      PostP fold pass s₀ s' ∧ Frame [sub s₀ 448 128, stkR s₀] s.mem s'.mem := by
   have hm := mOf_le fold pass (L s₀)
   have hml := mOf_le_len fold pass (L s₀)
   unfold prologueB
@@ -1861,6 +1879,14 @@ theorem prologueB_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : 
       rcases hr with rfl | rfl
       · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
       · exact ⟨stkR s₀, by simp, below8_stk s₀⟩
+  have fr : Frame [sub s₀ 448 128, stkR s₀] s.mem s₁₀.mem := by
+    rw [m₁₀, ← mm₈]
+    exact f₉.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨sub s₀ 448 128, by simp, fun _ h => h⟩
+      · exact ⟨stkR s₀, by simp, below8_stk s₀⟩
+  refine ⟨?_, fr⟩
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, h.rd], by rw [wr₁₀, wr₉, wr₈'], ?_,
     (h.fine.trans ff).sub fun r hr => ?_⟩, ?_, ?_, h.fine.trans ff, ?_, ?_, fun k hk => ?_⟩
   · rw [e10, rdi₉, off_sub]
@@ -1902,6 +1928,10 @@ theorem prologueB_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : 
         (by simp only [Region.Contains]; rw [BitVec.sub_self]; simp) hc
     rw [e, show 736 + k = 672 + (64 + k) by omega_using [], h.ks (64 + k) (by omega_using [hk]),
       keystream_shift (K s₀) (N s₀) (L := L s₀) (n := 64 + mOf fold pass (L s₀)) (by omega_using [hml, hk]) (by omega_using [hk])]
+
+theorem prologueB_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
+    (h : AfterF fold pass s₀ s) : WP isa prologueB s (PostP fold pass s₀) :=
+  WP.mono (prologueBF_ok hf hp h) fun _ h => h.1
 
 /-- The prologue, for the implementation `v` of `vg_chacha20_xor` and the
 `pass` of `splitM`. -/

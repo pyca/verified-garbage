@@ -36,8 +36,7 @@ Each modulus of `Spec.Weierstrass.Mont.moduli` is one the functions support
 (`FnOk`), so each of its functions meets the contract of its `Api`: the
 proof against `mulX86`, `addX86` or `subX86`, which it implies, constant
 time by taint tracking (only the stack pointer and the arguments, the
-pointer and the offsets, are public; the word of the first argument is the
-working space's base), and a state satisfying it (`sat`).
+pointer and the offsets, are public), and a state satisfying it (`sat`).
 -/
 
 @[expose] public section
@@ -46,36 +45,29 @@ namespace VG.Proof.Weierstrass.X86.Mont
 
 open VG VG.X86 VG.Impl.Weierstrass.X86.Mont Spec.Weierstrass.Mont
 
-/-- The taint analysis starts with the stack arguments public, and the word
-holding `ws` known to be the base address of the writable region. -/
+/-- The taint analysis starts with the stack arguments public. It needs no
+knowledge of the writable region: the functions never read a public value
+back from memory. -/
 def τ₀ : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [8192], argLen := 20, argBases := [(4, 0)] }
+  { regs := .ofList [.esp], flags := false, argLen := 20 }
 
 theorem wf₀ {M : Modulus} {s : State} (hp : x86Pre M s) : VG.X86.Taint.Wf τ₀ s := by
-  obtain ⟨hrd, hwr, haw, hrw, hra, hfit, hsp, -⟩ := hp
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hwr, τ₀], by simp [hwr], ?_⟩,
+  obtain ⟨-, hwr, haw, hrw, -, -, hsp, -⟩ := hp
+  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun h => (h rfl).elim,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨by simp only [τ₀]; omega, ?_⟩, ?_⟩
-  · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r rfl; simp only [BitVec.toNat_setWidth]; omega
-  · simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r rfl
-    exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hrw haw
-  · intro p hp'
-    simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
-    subst hp'
-    refine ⟨by decide, ?_⟩
-    simp [VG.X86.Taint.region, hwr, addr, arg, argAddr]
+    fun _ => ⟨by simp only [τ₀]; omega, ?_⟩, fun _ h => (List.not_mem_nil h).elim⟩
+  simp only [hwr, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r rfl
+  exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hrw haw
 
 theorem agree₀ {M : Modulus} {s₁ s₂ : State} (h₁ : x86Pre M s₁) (h₂ : x86Pre M s₂)
     (hpub : x86Pub s₁ s₂) : VG.X86.Taint.Agree τ₀ s₁ s₂ := by
   obtain ⟨hesp, a0, a1, a2, a3⟩ := hpub
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ h₁, wf₀ h₂,
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => (h rfl).elim, wf₀ h₁, wf₀ h₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_singleton] at hr
     subst hr; exact hesp
-  · rw [h₁.2.1, h₂.2.1, a0]
   · simp only [τ₀] at hk
     rw [show VG.X86.Taint.depth τ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (by have := h₁.2.2.2.2.2.2.1; omega) h4 hk,

@@ -83,16 +83,16 @@ theorem addBase_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K n : N
   apply conditional_ct base S K n SDIG (digitAt S n) _ (by simp only [SDIG]; omega)
     (Proof.Ed448.Wnaf.digit_bounds _) (fun _ h => h.bs n hn)
   · exact RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx]) (fun _ _ h => ctx_agree h) (by taint_decide)
-  cases v <;> exact RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx, .r15])
-    (fun _ _ h => picked_agree h) (by taint_decide)
+  cases v <;> exact relCT_sum (Taint.ofRegs [.rdi, .rbx, .r15])
+    (fun _ _ h => picked_agree h) (by taint_decide_sum [dblSum, addSum, dblAdxSum, addAdxSum])
 
 theorem addKey_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K n : Nat) (hn : n < 461) :
     RelCT isa (fun s u => Ctx base S K n s ∧ Ctx base S K n u) (addKey v.field v.bodies) (fun _ _ => True) := by
   apply conditional_ct base S K n KDIG (digitAt K n) _ (by simp only [KDIG]; omega)
     (Proof.Ed448.Wnaf.digit_bounds _) (fun _ h => h.bk n hn)
   · exact RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx]) (fun _ _ h => ctx_agree h) (by taint_decide)
-  cases v <;> exact RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx, .r15])
-    (fun _ _ h => picked_agree h) (by taint_decide)
+  cases v <;> exact relCT_sum (Taint.ofRegs [.rdi, .rbx, .r15])
+    (fun _ _ h => picked_agree h) (by taint_decide_sum [dblSum, addSum, dblAdxSum, addAdxSum])
 
 theorem dbl_ctx (v : Impl.Ed448.X86_64.FieldVariant) {base : Addr} {S K n : Nat} {s : State}
     (h : Ctx base S K n s) : WP isa v.bodies.dbl s (Ctx base S K n) := by
@@ -130,8 +130,8 @@ theorem step_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K n : Nat)
     RelCT isa (fun s u => Ctx base S K (n + 1) s ∧ Ctx base S K (n + 1) u)
       (step v.field v.bodies) (fun _ _ => True) := by
   have dbl : RelCT isa (fun s u => Ctx base S K n s ∧ Ctx base S K n u) v.bodies.dbl (fun _ _ => True) := by
-    cases v <;> exact RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx])
-      (fun _ _ h => ctx_agree h) (by taint_decide)
+    cases v <;> exact relCT_sum (Taint.ofRegs [.rdi, .rbx])
+      (fun _ _ h => ctx_agree h) (by taint_decide_sum [dblSum, addSum, dblAdxSum, addAdxSum])
   have test : RelCT isa (fun s u => Ctx base S K n s ∧ Ctx base S K n u)
       (.block [.alu .test .rbx (.reg .rbx)]) (fun _ _ => True) :=
     RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx]) (fun _ _ h => ctx_agree h) (by taint_decide)
@@ -205,7 +205,7 @@ theorem joint_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K : Nat)
       (joint v.field v.bodies KBITS) (fun _ _ => True) := by
   have head : RelCT isa (fun s u => JointTimingCtx base S K s ∧ JointTimingCtx base S K u)
       (jointHead v) (fun _ _ => True) := by
-    cases v <;> apply RelCT.taint (A := taint) (Taint.ofRegs [.rdi]) _ (by taint_decide)
+    cases v <;> apply relCT_sum (Taint.ofRegs [.rdi]) _ (by taint_decide_sum [dblSum, addSum, dblAdxSum, addAdxSum])
     all_goals
       intro s u h
       apply Taint.agree_ofRegs

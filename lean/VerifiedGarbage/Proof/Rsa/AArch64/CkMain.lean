@@ -43,9 +43,17 @@ theorem ck_final {k N E D P Q DP DQ QI : Nat} {dn pq gP gQ gQI : Bool} (hv : Spe
     have hb : ∀ a b : Nat, (a == b) = decide (a = b) := fun a b => by
       cases h' : decide (a = b) <;> simp_all
     simp only [hb, h, hPn, hQn, decide_true, Bool.true_and, Bool.and_true, Bool.and_assoc]
-    cases decide (D < N) <;> cases decide (DP < P - 1) <;> cases decide (D * E % (P - 1) = 1) <;>
-      cases decide (E * DP % (P - 1) = 1) <;> cases decide (DQ < Q - 1) <;> cases decide (D * E % (Q - 1) = 1) <;>
-      cases decide (E * DQ % (Q - 1) = 1) <;> cases decide (QI < P) <;> cases decide (Q * QI % P = 1) <;> rfl
+    generalize decide (D < N) = b0
+    generalize decide (DP < P - 1) = b1
+    generalize decide (D * E % (P - 1) = 1) = b2
+    generalize decide (E * DP % (P - 1) = 1) = b3
+    generalize decide (DQ < Q - 1) = b4
+    generalize decide (D * E % (Q - 1) = 1) = b5
+    generalize decide (E * DQ % (Q - 1) = 1) = b6
+    generalize decide (QI < P) = b7
+    generalize decide (Q * QI % P = 1) = b8
+    revert b0 b1 b2 b3 b4 b5 b6 b7 b8
+    decide
   · have : (P * Q == N) = false := by simpa using h
     simp [h, this]
 

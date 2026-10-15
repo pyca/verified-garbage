@@ -26,9 +26,17 @@ open VG Spec.TripleDes Proof.Cmac Spec.Cmac
 
 theorem getLsbD_byteRev64 (w : BitVec 64) {i : Nat} (hi : i < 64) :
     (byteRev64 w).getLsbD i = w.getLsbD (8 * (7 - i / 8) + i % 8) := by
-  have hj : i % 8 < 8 := Nat.mod_lt _ (by decide)
-  simp only [byteRev64, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  split_ifs <;> (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+  obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ i = 8 * a + b :=
+    ⟨i / 8, i % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod i 8).symm⟩
+  have ha : a < 8 := by omega
+  rw [show (8 * a + b) / 8 = a by omega, show (8 * a + b) % 8 = b by omega]
+  simp only [byteRev64, BitVec.getLsbD_append]
+  rcases (show a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4 ∨ a = 5 ∨ a = 6 ∨ a = 7 by omega) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 ∨ b = 5 ∨ b = 6 ∨ b = 7 by omega) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+  simp only [Nat.reduceMul, Nat.reduceSub, Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, Nat.lt_irrefl,
+    BitVec.getLsbD_extractLsb', decide_true, Bool.true_and]
 
 theorem getLsbD_foldl_bytes (L : List Byte) (init : BitVec 64) {i : Nat} (hi : i < 64) :
     (L.foldl (fun (out : BitVec 64) (byte : Byte) => (out <<< 8) ||| byte.zeroExtend 64) init).getLsbD i =

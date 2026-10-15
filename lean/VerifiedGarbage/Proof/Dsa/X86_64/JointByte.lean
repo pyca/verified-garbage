@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindows
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -60,7 +61,7 @@ theorem jointByteHead_ok {t : State} {P ep fp : Addr} {w n xc i : Nat} {minv : B
   rfl
 
 /-- Read one byte from each exponent, run four joint windows, and advance. -/
-theorem jointByte_ok (M : Mont) {t₀ t : State} {P : Addr} {w n xc g y : Nat}
+theorem jointByte_ok (M : Mont) (Sq : MontS) {t₀ t : State} {P : Addr} {w n xc g y : Nat}
     {minv : BitVec 64} {ep fp : Addr} {L : Nat} {eb fb : List Byte} {i : Nat}
     (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * w)) n)
     (hL : eb.length = L) (hF : fb.length = L) (hL' : L < 2 ^ 31) (hi : i < L)
@@ -71,7 +72,7 @@ theorem jointByte_ok (M : Mont) {t₀ t : State} {P : Addr} {w n xc g y : Nat}
     (fbytes : ∀ i (h : i < L), t₀.mem (fp + BitVec.ofNat 64 i) = fb[i]'(by omega))
     (fout : ∀ i < L, slot w 8 + tabBytes w ≤ ofs P (fp + BitVec.ofNat 64 i))
     (hI : JointByteInv t₀ P w minv n xc g y ep fp L eb fb i t) :
-    WP isa (seqs [.block Joint.byteHead, .loop (Joint.window M.mm) .ne,
+    WP isa (seqs [.block Joint.byteHead, .loop (Joint.window Sq.mm M.mm) .ne,
       .block [.mov .rax (.mem (hdr Crt.sI)), .alu .add .rax (.imm 1), .store (hdr Crt.sI) .rax,
         .alu .cmp .rax (.mem (hdr Crt.sExpLen))]]) t fun t' =>
       t'.zf = some (decide (i + 1 = L)) ∧ JointByteInv t₀ P w minv n xc g y ep fp L eb fb (i + 1) t' := by
@@ -111,7 +112,7 @@ theorem jointByte_ok (M : Mont) {t₀ t : State} {P : Addr} {w n xc g y : Nat}
         Nat.add_zero, Nat.add_zero]
     · rw [o2.word (by decide) (by decide), word_writeW_self, Nat.pow_zero, Nat.mul_one]
     · rw [hm₁, word_writeW_self]; rfl
-  refine WP.seq (WP.mono (jointWins_ok M hw hw' hR hv hz hB0) fun t₂ h₂ => ?_)
+  refine WP.seq (WP.mono (jointWins_ok M Sq hw hw' hR hv hz hB0) fun t₂ h₂ => ?_)
   -- The next byte.
   have hc₂ := h₂.ctx
   have hh₂ : ∀ k < 32, k ≠ Crt.sV → k ≠ Crt.sBit → k ≠ Crt.sNib → k ≠ Crt.sEnt → k ≠ Crt.sJ →
@@ -147,7 +148,7 @@ theorem jointByte_ok (M : Mont) {t₀ t : State} {P : Addr} {w n xc g y : Nat}
         (by have := ent_le w hj; omega_arith)]; exact h₂.tab.val j hj⟩
   · rw [hYe, h₂.val, pre_succ eb (by omega), pre_succ fb (by omega)]
     simp only [Nat.reducePow, Nat.reduceSub, Nat.pow_zero, Nat.div_one]
-    simp only [v, z, Nat.mul_comm]
+    simp only [v, z]
     ac_rfl
   · rw [hm', word_writeW_self]
   · rw [hm', hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide)]; exact he₂
@@ -158,7 +159,7 @@ theorem jointByte_ok (M : Mont) {t₀ t : State} {P : Addr} {w n xc g y : Nat}
   · exact (((hI.keep.trans k₁).trans h₂.keep).trans k').mono (by decide)
 
 /-- Both equal-length exponent strings are scanned sequentially. -/
-theorem jointBytes_ok (M : Mont) {t : State} {P : Addr} {w n xc g y : Nat}
+theorem jointBytes_ok (M : Mont) (Sq : MontS) {t : State} {P : Addr} {w n xc g y : Nat}
     {minv : BitVec 64} {ep fp : Addr} {L : Nat} {eb fb : List Byte}
     (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * w)) n)
     (hL : eb.length = L) (hF : fb.length = L) (hL0 : 0 < L) (hL' : L < 2 ^ 31)
@@ -169,9 +170,9 @@ theorem jointBytes_ok (M : Mont) {t : State} {P : Addr} {w n xc g y : Nat}
     (fbytes : ∀ i (h : i < L), t.mem (fp + BitVec.ofNat 64 i) = fb[i]'(by omega))
     (fout : ∀ i < L, slot w 8 + tabBytes w ≤ ofs P (fp + BitVec.ofNat 64 i))
     (h : JointByteInv t P w minv n xc g y ep fp L eb fb 0 t) :
-    WP isa (Joint.bytes M.mm) t (JointByteInv t P w minv n xc g y ep fp L eb fb L) :=
+    WP isa (Joint.bytes Sq.mm M.mm) t (JointByteInv t P w minv n xc g y ep fp L eb fb L) :=
   wp_upto (a := 0) (N := L) hL0 (JointByteInv t P w minv n xc g y ep fp L eb fb)
-    (fun _ _ hi _ hI => jointByte_ok M hw hw' hR hL hF hL' hi hrd hbytes hout frd fbytes fout hI)
+    (fun _ _ hi _ hI => jointByte_ok M Sq hw hw' hR hL hF hL' hi hrd hbytes hout frd fbytes fout hI)
     (fun _ h => h) h
 
 end VG.Proof.Dsa.X86_64

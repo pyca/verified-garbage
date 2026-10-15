@@ -39,9 +39,9 @@ def linEnvC (ins : List (Reg × Nat)) (cs : List (Reg × BitVec 64)) : Env (Nat 
 /-- External word `j` is input word `xb + j`. -/
 def linExt (xb j : Nat) : Option (Nat × Nat) := some (inWord (xb + j))
 
-/-- Each output register `r` holds `outWord g`, with atoms below `2 ^ k`. -/
+/-- Each output register `r` holds `outWord g`, below `2 ^ (64 2 ^ k)` (`outOk`). -/
 def linPost (k : Nat) (outs : List (Reg × (Nat → List Nat))) (e : Env (Nat × Nat)) : Bool :=
-  outs.all fun o => e.reg o.1 == some (outWord o.2) && (List.range 64).all fun p => (o.2 p).all (· < 2 ^ k)
+  outs.all fun o => outOk k (e.reg o.1) o.2
 
 /-- A linear block that the evaluator accepts, on the machine. -/
 theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat)}
@@ -70,9 +70,8 @@ theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × N
       rw [← h2]; exact inWord_rel W h1
   obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
   refine ⟨s', hs', fun r g hrg q hq => ?_, p.rd, p.wr, p.sp, fun r hr => p.other r (by simp [hr]), p.frame⟩
-  have h := List.all_eq_true.mp hpost (r, g) hrg
-  simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
-  exact outWord_rel (fun p hp a ha => h.2 p hp a ha) (p.rel.reg r _ h.1) q hq
+  obtain ⟨h1, h2⟩ := outOkW_spec (List.all_eq_true.mp hpost (r, g) hrg)
+  exact outWord_rel_of_lt h2 (p.rel.reg r _ h1) q hq
 
 /-- `linear_ok`, with the registers `cs` holding known constants. -/
 theorem linear_okC {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat)}
@@ -113,8 +112,7 @@ theorem linear_okC {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × 
       rw [← hr]; exact hcs cv.1 cv.2 (List.mem_of_find?_eq_some hf)
   obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
   refine ⟨s', hs', fun r g hrg q hq => ?_, p.rd, p.wr, p.sp, fun r hr => p.other r (by simp [hr]), p.frame⟩
-  have h := List.all_eq_true.mp hpost (r, g) hrg
-  simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
-  exact outWord_rel (fun p hp a ha => h.2 p hp a ha) (p.rel.reg r _ h.1) q hq
+  obtain ⟨h1, h2⟩ := outOkW_spec (List.all_eq_true.mp hpost (r, g) hrg)
+  exact outWord_rel_of_lt h2 (p.rel.reg r _ h1) q hq
 
 end VG.AArch64.Straight

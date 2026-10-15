@@ -167,14 +167,13 @@ theorem loadMasked512_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) :
     (s.patch H hv u).loadMasked512 a k = s.loadMasked512 a k := by
   simp only [State.loadMasked512, State.patch]
   by_cases hi : ∀ j ∈ State.qOn k, InRegions (s.rd ++ s.wr) (State.qAddr a j) 8
-  · have hq : ∀ j, j < 8 →
+  · -- Not `cases` on the bit and `rfl`: on a clear bit, `rfl` first tries to
+    -- unify the two reads, unfolding them.
+    have hq : ∀ j, j < 8 →
         (if k.getLsbD j then (overlay H hv s.mem).readW (State.qAddr a j) 64 else 0) =
-          (if k.getLsbD j then s.mem.readW (State.qAddr a j) 64 else 0) := fun j hj => by
-      cases hk : k.getLsbD j
-      · rfl
-      · simp only [↓reduceIte]
-        exact overlay_readW (by decide) fun x hx =>
-          hc.miss (fun _ h => h) (hi j (List.mem_filter.mpr ⟨List.mem_range.mpr hj, hk⟩)) hx
+          (if k.getLsbD j then s.mem.readW (State.qAddr a j) 64 else 0) := fun j hj =>
+      ite_congr rfl (fun hk => overlay_readW (by decide) fun _ hx =>
+        hc.miss (fun _ h => h) (hi j (List.mem_filter.mpr ⟨List.mem_range.mpr hj, hk⟩)) hx) fun _ => rfl
     simp only [hq 0 (by decide), hq 1 (by decide), hq 2 (by decide), hq 3 (by decide),
       hq 4 (by decide), hq 5 (by decide), hq 6 (by decide), hq 7 (by decide)]
   · simp only [hi, ↓reduceIte]
@@ -594,7 +593,7 @@ theorem execBlock_length {l : List Instr} {s s' : State} {t : List Leak} (h : ex
 `rsp`, there are no frames, and each function called calls none and has
 only instructions that do not touch `rsp`. -/
 def _root_.VG.Code.InlineOk : Prog isa → Bool
-  | .block l => l.all fun i => !Taint.clobbers i .rsp
+  | .block l => KList.all l fun i => !Taint.clobbers i .rsp
   | .seq a b => a.InlineOk && b.InlineOk
   | .ite _ t e => t.InlineOk && e.InlineOk
   | .loop b _ => b.InlineOk
@@ -855,7 +854,7 @@ theorem Exec.uninline {c : Prog isa} (hc : c.InlineOk = true) {sp : Addr} {b b' 
   induction c generalizing b b' t hv u with
   | block l =>
     simp only [Code.inline] at h
-    simp only [Code.InlineOk, List.all_eq_true, Bool.not_eq_true'] at hc
+    simp only [Code.InlineOk, KList.all_eq, List.all_eq_true, Bool.not_eq_true'] at hc
     refine ⟨hv, u, t, Exec.F (H := hole sp) rfl (fun i _ s hs => ⟨exec_patch hs i, addrs_patch i⟩)
       (fun k _ => eval_patch k) h hb, ?_, Exec.lifts_self _ rfl h⟩
     rw [Exec.gpr (c := .block l) (fun i hi => hc i hi) h, hsp]

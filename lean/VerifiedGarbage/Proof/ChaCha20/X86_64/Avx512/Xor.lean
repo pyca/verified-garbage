@@ -301,21 +301,10 @@ theorem consts_eq : consts = Avx2.pairsCode incPairs := rfl
 
 theorem incPairs_le : ∀ p ∈ incPairs, p.1 + 8 ≤ 320 := by decide
 
-/-- Read back a stored quadword. -/
-local macro "qread" : tactic => `(tactic|
-  simp (disch := decide) only [Avx2.storeAll, incPairs, List.foldl_cons, List.foldl_nil,
-    Nat.reduceAdd, Avx2.readW64_off, Mem.readW_writeW_self64])
-
 theorem incs_mem (m : Mem) (buf : Addr) : Incs (Avx2.storeAll buf incPairs m) buf := by
+  have H : ∀ j < 16, Avx2.readsTo [] incPairs (32 + j) (BitVec.ofNat 32 j) = true := by decide +kernel
   intro j hj
-  have E := readW_extract (Avx2.storeAll buf incPairs m) (buf + BitVec.ofNat 64 (128 + 8 * (j / 2)))
-    (w := 64) (k := 4 * (j % 2)) (n := 4) (by omega)
-  rw [add_ofNat, show 128 + 8 * (j / 2) + 4 * (j % 2) = 4 * (32 + j) by omega] at E
-  rw [← E]
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨
-      j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    (simp only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd]; qread; decide)
+  exact Avx2.storeAll_readW32 (H j hj) m
 
 /-- The offsets in `buf` and values of the quadwords of the lane increments of
 the last bytes (`Impl.ChaCha20.X86_64.Avx512Tail.consts`). -/
@@ -327,25 +316,12 @@ theorem tconsts_eq : Impl.ChaCha20.X86_64.Avx512Tail.consts = Avx2.pairsCode tPa
 
 theorem tPairs_le : ∀ p ∈ tPairs, p.1 + 8 ≤ 320 := by decide
 
-/-- Read back a stored quadword, under both stores. -/
-local macro "tread" : tactic => `(tactic|
-  simp (disch := decide) only [Avx2.storeAll, incPairs, tPairs, List.foldl_cons, List.foldl_nil,
-    Nat.reduceAdd, Avx2.readW64_off, Mem.readW_writeW_self64])
-
 theorem tincs_mem (m : Mem) (buf : Addr) :
     Avx512Tail.Incs (Avx2.storeAll buf incPairs (Avx2.storeAll buf tPairs m)) buf := by
+  have H : ∀ k < 2, ∀ j < 16, Avx2.readsTo tPairs incPairs (Avx512Tail.incB k + j)
+      (if j % 4 = 0 then BitVec.ofNat 32 (4 * k + j / 4) else 0) = true := by decide +kernel
   intro k hk j hj
-  have E := readW_extract (Avx2.storeAll buf incPairs (Avx2.storeAll buf tPairs m))
-    (buf + BitVec.ofNat 64 (8 * ((Avx512Tail.incB k + j) / 2))) (w := 64)
-    (k := 4 * ((Avx512Tail.incB k + j) % 2)) (n := 4) (by omega)
-  rw [add_ofNat, show 8 * ((Avx512Tail.incB k + j) / 2) + 4 * ((Avx512Tail.incB k + j) % 2) =
-    4 * (Avx512Tail.incB k + j) by omega] at E
-  rw [← E]
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;>
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨
-      j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    (simp only [Avx512Tail.incB, Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd]; tread; decide)
+  exact Avx2.storeAll_readW32 (H k hk j hj) m
 
 theorem prologue_ok {s₀ : State} (hp : APre s₀) :
     WP isa (.block (Impl.ChaCha20.X86_64.Avx512Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr))) s₀ fun s =>

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
+public import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Modes.X86_64.Fb
 meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
 public import VerifiedGarbage.Proof.Sm4.FbScratch
@@ -118,7 +120,7 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre s₀) :
     (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .rdi)) rfl rfl rfl rfl ⟨hwS, fitB⟩
     (by rw [hwr]; simp) (by rw [hwr]; simp) dVS dDS dVD fitD
     ⟨s₀.gpr .rdi, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩ ⟨Modes.X86_64.keepsIv_of_scal (by decide +kernel), Modes.X86_64.keepsIv_of_scal (by decide +kernel)⟩)
+      simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩ ⟨Modes.X86_64.keepsIv_of_scal (by lit_decide), Modes.X86_64.keepsIv_of_scal (by lit_decide)⟩)
     fun s' ⟨hcs, hdata, hiv, hf, _, _⟩ =>
     ⟨⟨hcs, ?_⟩, by rw [encCipher_eq] at hdata hiv; exact ⟨hdata, hiv⟩⟩
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
@@ -220,7 +222,7 @@ theorem ofb_verified :
     Verified X86_64.target ofb (Proof.Sm4.fbScratchContract X86_64.abi slots Proof.Sm4.ofbPost) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := ofb_wp hs
-      exact ⟨t, s', he, abiPreserved_of_exec (c := ofb) (by decide +kernel) he hg, hpost⟩)
+      exact ⟨t, s', he, abiPreserved_of_exec (c := ofb) (by lit_decide) he hg, hpost⟩)
     (VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)) (by
     sig_implies [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig,
       Proof.Sm4.ofbPost, ofbX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs, slots, savedSlot, tableEnd, tableSlot] [fbSat] using fbSat)
@@ -229,7 +231,7 @@ theorem cfbEncrypt_verified :
     Verified X86_64.target cfbEncrypt (Proof.Sm4.fbScratchContract X86_64.abi slots Proof.Sm4.cfbEncPost) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cfbEncrypt_wp hs
-      exact ⟨t, s', he, abiPreserved_of_exec (c := cfbEncrypt) (by decide +kernel) he hg, hpost⟩)
+      exact ⟨t, s', he, abiPreserved_of_exec (c := cfbEncrypt) (by lit_decide) he hg, hpost⟩)
     (VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)) (by
     sig_implies [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig,
       Proof.Sm4.cfbEncPost, cfbEncX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs, slots, savedSlot, tableEnd,
@@ -239,7 +241,7 @@ theorem cfbDecrypt_verified :
     Verified X86_64.target cfbDecrypt (Proof.Sm4.fbScratchContract X86_64.abi slots Proof.Sm4.cfbDecPost) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cfbDecrypt_wp hs
-      exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecrypt) (by decide +kernel) he hg, hpost⟩)
+      exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecrypt) (by lit_decide) he hg, hpost⟩)
     (VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)) (by
     sig_implies [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig,
       Proof.Sm4.cfbDecPost, cfbDecX86_64, fbPre, fbPub, X86_64.abi, X86_64.argRegs, slots, savedSlot, tableEnd,
@@ -252,9 +254,9 @@ theorem ofb_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.ofbSig) (nm := "scratch") (e := .u64)
     (n := 392) (post := Proof.Sm4.ofbPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3144) ofb_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Sm4.ofbPostOut_local _)
-    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (X86_64.sat_regs (by decide) (by decide) (by lit_decide) (by rw [Curry.apply_const]; trivial))
 
 /-- CFB128 encryption with its working space on the stack. -/
 theorem cfbEncrypt_framed :
@@ -263,9 +265,9 @@ theorem cfbEncrypt_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.cfbSig) (nm := "scratch") (e := .u64)
     (n := 392) (post := Proof.Sm4.cfbEncPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3144) cfbEncrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Sm4.cfbEncPostOut_local _)
-    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (X86_64.sat_regs (by decide) (by decide) (by lit_decide) (by rw [Curry.apply_const]; trivial))
 
 /-- CFB128 decryption with its working space on the stack. -/
 theorem cfbDecrypt_framed :
@@ -274,8 +276,8 @@ theorem cfbDecrypt_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.cfbSig) (nm := "scratch") (e := .u64)
     (n := 392) (post := Proof.Sm4.cfbDecPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3144) cfbDecrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Sm4.cfbDecPostOut_local _)
-    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (X86_64.sat_regs (by decide) (by decide) (by lit_decide) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sm4.X86_64

@@ -79,6 +79,30 @@ theorem outWordW_rel {w k : Nat} {W : Nat → BitVec w} {g : Nat → List Nat} {
   rw [par_mk hp (Nat.le_refl _) _ (fun q hq => hg q hq), xorA_assign W (hg p hp)]
   simp [hp]
 
+/-- `outWordW_rel`, with the output word bounded instead of its atoms: an
+evaluator compares the value it computed with `outWordW w g` and bounds that
+value, rather than evaluating every `g p` again to bound its atoms. An atom
+from `2 ^ k` on that cancels out (it appears an even number of times in
+`g p`) leaves the value below `2 ^ (w 2 ^ k)`, and its bits cancel out of
+`xorBits` too. -/
+theorem outWordW_rel_of_lt {w k : Nat} {W : Nat → BitVec w} {g : Nat → List Nat} {x : BitVec w}
+    (hb : mk w g w < 2 ^ (w * 2 ^ k)) (h : LaneRel k (assign W (2 ^ k)) (outWordW w g) x) :
+    ∀ p < w, x.getLsbD p = xorBits W (g p) := by
+  intro p hp
+  -- A bound on every atom of `g` below `w`.
+  have hM : ∀ q < w, ∀ a ∈ g q, a < 2 ^ k + (((List.range w).flatMap g).sum + 1) := by
+    intro q hq a ha
+    have : a ≤ ((List.range w).flatMap g).sum :=
+      le_sum_of_mem (List.mem_flatMap.mpr ⟨q, List.mem_range.mpr hq, ha⟩)
+    exact Nat.lt_of_le_of_lt this (Nat.lt_add_left _ (Nat.lt_succ_self _))
+  rw [h.2 p hp]
+  simp only [outWordW, Nat.zero_testBit, Bool.false_xor]
+  rw [← xorA_assign W (hM p hp), ← (Bool.true_and _ : (true && xorA _ (g p)) = _),
+    ← decide_eq_true hp, ← par_mk hp (Nat.le_refl _) _ hM, par_high hb hp]
+  refine par_congr_assign fun a ha => ?_
+  simp only [assign, testBit_tableOf, ha, decide_true, Bool.true_and,
+    show a < 2 ^ k + (((List.range w).flatMap g).sum + 1) by omega]
+
 theorem inWord_rel {k : Nat} (W : Nat → BitVec 64) {i : Nat} (hi : 64 * i + 64 ≤ 2 ^ k) :
     LaneRel k (assign W (2 ^ k)) (inWord i) (W i) :=
   inWordW_rel W hi
@@ -87,5 +111,35 @@ theorem outWord_rel {k : Nat} {W : Nat → BitVec 64} {g : Nat → List Nat} {x 
     (hg : ∀ p < 64, ∀ a ∈ g p, a < 2 ^ k) (h : LaneRel k (assign W (2 ^ k)) (outWord g) x) :
     ∀ p < 64, x.getLsbD p = xorBits W (g p) :=
   outWordW_rel hg h
+
+/-- An evaluator's value `v` for an output is the word `outWordW w g`, below
+`2 ^ (w 2 ^ k)` (`outWordW_rel_of_lt`). The kernel evaluates `g` once, for
+`outWordW w g`; a bound on the atoms of every `g p` would evaluate them
+again. -/
+def outOkW (w k : Nat) (v : Option (Nat × Nat)) (g : Nat → List Nat) : Bool :=
+  match v with
+  | some v => v == outWordW w g && decide (v.2 < 2 ^ (w * 2 ^ k))
+  | none => false
+
+/-- `outOkW` for words of 64 bits. -/
+def outOk (k : Nat) (v : Option (Nat × Nat)) (g : Nat → List Nat) : Bool := outOkW 64 k v g
+
+theorem outOkW_spec {w k : Nat} {v : Option (Nat × Nat)} {g : Nat → List Nat}
+    (h : outOkW w k v g = true) : v = some (outWordW w g) ∧ mk w g w < 2 ^ (w * 2 ^ k) := by
+  cases v with
+  | none => cases h
+  | some v =>
+    simp only [outOkW, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+    obtain ⟨rfl, h⟩ := h
+    exact ⟨rfl, h⟩
+
+theorem outOk_spec {k : Nat} {v : Option (Nat × Nat)} {g : Nat → List Nat}
+    (h : outOk k v g = true) : v = some (outWord g) ∧ mk 64 g 64 < 2 ^ (64 * 2 ^ k) :=
+  outOkW_spec h
+
+theorem outWord_rel_of_lt {k : Nat} {W : Nat → BitVec 64} {g : Nat → List Nat} {x : BitVec 64}
+    (hb : mk 64 g 64 < 2 ^ (64 * 2 ^ k)) (h : LaneRel k (assign W (2 ^ k)) (outWord g) x) :
+    ∀ p < 64, x.getLsbD p = xorBits W (g p) :=
+  outWordW_rel_of_lt hb h
 
 end VG.Bitslice

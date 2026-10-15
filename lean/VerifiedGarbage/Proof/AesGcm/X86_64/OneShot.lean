@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamVerify
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -73,10 +74,10 @@ theorem OneCtx.of {cl w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay cl w k s)
   replace d_cd := d_cd.sub_left c256
   replace d_cw := d_cw.sub_left c256
   replace t_c := t_c.sub_right c256
-  replace wc : (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 := by omega
+  replace wc : (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 := by omega_arith
   replace pc : Covers [⟨s.gpr .rdi, 256⟩] (s.rd ++ s.wr) := fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact pc a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
+    exact pc a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_arith⟩
   have b8 : Region.Sub (below (s.gpr .rsp) 8) (below (s.gpr .rsp) 24) := below_sub (by decide) (by decide)
   have k_c := t_c.sub_left b8
   have k_n := t_n.sub_left b8
@@ -89,18 +90,18 @@ theorem OneCtx.of {cl w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay cl w k s)
   have L : Lay (s.gpr .rdi) (stackArg s w + BitVec.ofNat 64 16) (stackArg s w) (s.gpr .rsp) := by
     refine ⟨wc, ?_, ww, d_cw.sub_right hSt, d_cw, ?_, ?_, k_c, k_w.sub_right hSt, k_w⟩
     · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le ((stackArg s w).toNat + 16 % 2 ^ 64) (2 ^ 64)
-      omega
+      omega_arith
     · simpa using Offset.disjoint (stackArg s w) (d := 16) (n := 80) (e := 0) (k := 16) (.inr (by decide))
-        (by omega) (by omega)
+        (by omega_arith) (by omega_arith)
     · exact Offset.disjoint (stackArg s w) (d := 16) (n := 80) (e := 96) (k := 2464) (.inl (by decide))
-        (by omega) (by omega)
+        (by omega_arith) (by omega_arith)
   refine ⟨L, ⟨pc, covers_off pW (show 16 + 80 ≤ 2560 by decide) (by decide), pW⟩, ww, fun i hi => ?_,
-    d_wa.symm, ⟨pn, by have := (s.gpr .rcx).isLt; omega, wn, d_nw.sub_right hSt, d_nw, k_n⟩,
-    ⟨pa, by have := (s.gpr .r9).isLt; omega, wa, d_aw.sub_right hSt, d_aw, k_a⟩,
-    ⟨⟨covers_left pd, by have := (stackArg s 1).isLt; omega, wd, d_dw.sub_right hSt, d_dw, k_d⟩, pd, d_cd⟩,
+    d_wa.symm, ⟨pn, by have := (s.gpr .rcx).isLt; omega_arith, wn, d_nw.sub_right hSt, d_nw, k_n⟩,
+    ⟨pa, by have := (s.gpr .r9).isLt; omega_arith, wa, d_aw.sub_right hSt, d_aw, k_a⟩,
+    ⟨⟨covers_left pd, by have := (stackArg s 1).isLt; omega_arith, wd, d_dw.sub_right hSt, d_dw, k_d⟩, pd, d_cd⟩,
     r_d, r_w, d_dw, d_da.symm, hR, t_c, t_w, t_d, sp24⟩
-  have := in_off pm (d := 8 * i) (n := 8) (by omega) (by omega)
-  rwa [add_ofNat_assoc, show 8 + 8 * i = 8 * (i + 1) by omega] at this
+  have := in_off pm (d := 8 * i) (n := 8) (by omega_arith) (by omega_arith)
+  rwa [add_ofNat_assoc, show 8 + 8 * i = 8 * (i + 1) by omega_arith] at this
 
 /-- What `seal`'s precondition gives: `OneCtx`, and `tag`, 16 bytes to write
 at `T` (the third argument on the stack). -/
@@ -184,8 +185,8 @@ theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr
   have hD' : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = D := by rw [← hD, ← hSP]; rfl
   have hn' : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n := by
     rw [← hn, BitVec.ofNat_toNat, BitVec.setWidth_eq, ← hSP]; rfl
-  have a₀ := C.args 0 (by omega)
-  have a₁ := C.args 1 (by omega)
+  have a₀ := C.args 0 (by omega_arith)
+  have a₁ := C.args 1 (by omega_arith)
   simp only [Nat.zero_add, Nat.mul_one] at a₀ a₁
   obtain ⟨s₀, run₀, hax₀, hg₀, hm₀, hrd₀, hwr₀⟩ : ∃ s₀', runBlock isa [.mov .rax (.mem (at_ .rsp wo))] s = some s₀' ∧
       s₀'.gpr .rax = W ∧ (∀ r, r ≠ .rax → s₀'.gpr r = s.gpr r) ∧ s₀'.mem = s.mem ∧ s₀'.rd = s.rd ∧ s₀'.wr = s.wr := by
@@ -212,8 +213,8 @@ theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         have := (C.dA.sub_left (show Region.Sub ⟨SP + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * k⟩ by
-          rw [show 8 * (i + 1) = 8 + 8 * i by omega, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega)))
-        exact this.sub_right (Lay.wSub (by omega))) (by decide)
+          rw [show 8 * (i + 1) = 8 + 8 * i by omega_arith, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_arith)))
+        exact this.sub_right (Lay.wSub (by omega_arith))) (by decide)
   have hD₁ : s₁.mem.readW (SP + BitVec.ofNat 64 8) 64 = D := by
     have := dAW 0 (by decide) _ 48 (hm₀ ▸ f₁) (by decide); simpa [hD'] using this
   have hn₁ : s₁.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n := by
@@ -225,9 +226,9 @@ theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr
       (Region.contains_self _ _) (Region.contains_self _ _)
     have hs : Region.Sub ⟨SP + BitVec.ofNat 64 e, 8⟩ ⟨SP + BitVec.ofNat 64 8, 8 * k⟩ := by
       rcases he with rfl | rfl
-      · exact Region.sub_prefix (by omega)
-      · rw [show (16 : Nat) = 8 + 8 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega)
-    exact (C.dA.sub_left hs).sub_right (Lay.wSub (by omega))
+      · exact Region.sub_prefix (by omega_arith)
+      · rw [show (16 : Nat) = 8 + 8 by rfl, ← add_ofNat_assoc]; exact Offset.sub_base _ (by omega_arith)
+    exact (C.dA.sub_left hs).sub_right (Lay.wSub (by omega_arith))
   have p₁ := sA 8 176 (.inl rfl) (by decide) (by decide)
   have p₂ := sA 8 232 (.inl rfl) (by decide) (by decide)
   have p₃ := sA 8 184 (.inl rfl) (by decide) (by decide)
@@ -237,7 +238,7 @@ theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr
   have p₇ := sA 16 200 (.inr rfl) (by decide) (by decide)
   have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2560 → d + 8 ≤ 2560 →
       Mem.Sep (W + BitVec.ofNat 64 a) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
-    fun a d h ha hd => Offset.sep W h (by omega) (by omega)
+    fun a d h ha hd => Offset.sep W h (by omega_arith) (by omega_arith)
   have q₀ := sep 176 232 (by decide) (by decide) (by decide)
   have q₁ := sep 176 184 (by decide) (by decide) (by decide)
   have q₂ := sep 176 200 (by decide) (by decide) (by decide)
@@ -287,7 +288,7 @@ theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr
   have f₂ : Frame [⟨W + BitVec.ofNat 64 176, 64⟩] s₁.mem s₂.mem := by
     rw [hm₂]
     have c : ∀ d, 176 ≤ d → d + 8 ≤ 240 → (⟨W + BitVec.ofNat 64 176, 64⟩ : Region).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
-      fun d h₁ h₂ => Offset.contains _ h₁ (by omega) (by omega)
+      fun d h₁ h₂ => Offset.contains _ h₁ (by omega_arith) (by omega_arith)
     exact (((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 176 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 232 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (c 184 (by decide) (by decide))).writeW
@@ -306,7 +307,7 @@ theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr
   · rw [rd 176 _ (.inl ⟨rfl, rfl⟩)]; exact BitVec.eq_of_toNat_eq (by simp)
   · exact hsv₁'.frame f₂ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact Offset.disjoint _ (.inl (by decide)) (by have := C.ww; omega) (by have := C.ww; omega)
+      exact Offset.disjoint _ (.inl (by decide)) (by have := C.ww; omega_arith) (by have := C.ww; omega_arith)
   · rw [hm₀] at f₁
     exact (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -338,7 +339,7 @@ theorem wFrame_one {W D SP : Addr} {n o : Nat} (ho : o = 0 ∨ o = 112) {m m' : 
     (h : Frame (⟨W + BitVec.ofNat 64 o, 16⟩ :: wFrame W SP) m m') : Frame (oneFrame W D SP n) m m' := h.sub fun r hr => by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact ⟨⟨W, 128⟩, by simp, Offset.sub_base W (by omega)⟩
+  · exact ⟨⟨W, 128⟩, by simp, Offset.sub_base W (by omega_arith)⟩
   · exact ⟨⟨W, 128⟩, by simp, Offset.sub_base W (by decide)⟩
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, fun _ h => h⟩
@@ -351,13 +352,13 @@ theorem w_wFrame {W SP : Addr} {d k : Nat}
     (h : (16 ≤ d ∧ d + k ≤ 128) ∨ (216 ≤ d ∧ d + k ≤ 224) ∨ (240 ≤ d ∧ d + k ≤ 2560)) :
     ∃ r ∈ wFrame W SP, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r := by
   rcases h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-  · exact ⟨⟨W + BitVec.ofNat 64 16, 112⟩, by simp, Offset.sub _ h₁ (by omega)⟩
-  · exact ⟨⟨W + BitVec.ofNat 64 216, 8⟩, by simp, Offset.sub _ h₁ (by omega)⟩
-  · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ h₁ (by omega)⟩
+  · exact ⟨⟨W + BitVec.ofNat 64 16, 112⟩, by simp, Offset.sub _ h₁ (by omega_arith)⟩
+  · exact ⟨⟨W + BitVec.ofNat 64 216, 8⟩, by simp, Offset.sub _ h₁ (by omega_arith)⟩
+  · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ h₁ (by omega_arith)⟩
 
 theorem st_wFrame {W SP : Addr} {d k : Nat} (h : d + k ≤ 80) :
     ∃ r ∈ wFrame W SP, Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 d, k⟩ r := by
-  rw [add_ofNat_assoc]; exact w_wFrame (.inl ⟨by omega, by omega⟩)
+  rw [add_ofNat_assoc]; exact w_wFrame (.inl ⟨by omega_arith, by omega_arith⟩)
 
 section
 variable {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
@@ -369,13 +370,13 @@ theorem w_oneFrame {D SP : Addr} {n d k : Nat} (h : d + k ≤ 128 ∨ (216 ≤ d
     ∃ r ∈ oneFrame W D SP n, Region.Sub ⟨W + BitVec.ofNat 64 d, k⟩ r := by
   rcases h with h | ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
   · exact ⟨⟨W, 128⟩, by simp, Offset.sub_base W h⟩
-  · exact ⟨⟨W + BitVec.ofNat 64 216, 8⟩, by simp, Offset.sub _ h₁ (by omega)⟩
-  · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ h₁ (by omega)⟩
+  · exact ⟨⟨W + BitVec.ofNat 64 216, 8⟩, by simp, Offset.sub _ h₁ (by omega_arith)⟩
+  · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ h₁ (by omega_arith)⟩
 
 omit L in
 theorem st_oneFrame {D SP : Addr} {n d k : Nat} (h : d + k ≤ 80) :
     ∃ r ∈ oneFrame W D SP n, Region.Sub ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 d, k⟩ r := by
-  rw [add_ofNat_assoc]; exact w_oneFrame (.inl (by omega))
+  rw [add_ofNat_assoc]; exact w_oneFrame (.inl (by omega_arith))
 
 /-- The kept values are outside `oneFrame`. -/
 theorem kept_oneFrame {D : Addr} {n d : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
@@ -384,11 +385,11 @@ theorem kept_oneFrame {D : Addr} {n d : Nat} (hD : (⟨D, n⟩ : Region).Disjoin
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · simpa using L.w_w (a := d) (n := 8) (d := 0) (k := 128) (.inr (by omega)) (by omega) (by decide)
-  · exact L.w_w (by omega) (by omega) (by decide)
-  · exact L.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (hD.sub_right (Lay.wSub (by omega))).symm
-  · exact (L.stk_w (by omega)).symm
+  · simpa using L.w_w (a := d) (n := 8) (d := 0) (k := 128) (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · exact L.w_w (by omega_arith) (by omega_arith) (by decide)
+  · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact (hD.sub_right (Lay.wSub (by omega_arith))).symm
+  · exact (L.stk_w (by omega_arith)).symm
 
 theorem saved_oneFrame {D : Addr} {n : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) :
     ∀ r ∈ oneFrame W D SP n, (savedR W).Disjoint r := by
@@ -525,7 +526,7 @@ theorem oneAad_ok {D Np A : Addr} {nl al n : Nat} {H : Block} {s : State} (he : 
     · exact hAd.w.sub_right (Lay.wSub (by decide))
     · exact hAd.stk.symm
   have ha₂ : bytesAt s₂.mem A al = bytesAt s.mem A al := by
-    rw [hm₂]; exact bytesAt_frame jo.frame dAj (by have := hAd.lt; omega)
+    rw [hm₂]; exact bytesAt_frame jo.frame dAj (by have := hAd.lt; omega_arith)
   have hai : AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 H [] A al s₂ :=
     ⟨he₂, h12₂, hbp₂, hbx₂, hAd.of_eq (by rw [hrd₂, hrd₁]) (by rw [hwr₂, hwr₁]), by rw [hm₂]; exact jo.hH⟩
   refine WP.mono (absorbPad_ok v L (yo := 16) (.inr rfl) hai rfl) fun s₅ hf => ?_
@@ -743,7 +744,7 @@ theorem oneTag_ok {o R : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat}
       rcases hr with rfl | rfl | rfl | rfl | rfl
       · simpa using L.st_st (a := 48) (n := 16) (d := 0) (k := 32) (.inr (by decide)) (by decide) (by decide)
       · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
-      · exact L.st_w (by decide) (by omega)
+      · exact L.st_w (by decide) (by omega_arith)
       · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
       · exact (L.stk_st (by decide)).symm
     have d48a : ∀ r ∈ absFrame (W + BitVec.ofNat 64 16) W SP 16,

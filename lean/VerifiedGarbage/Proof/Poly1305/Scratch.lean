@@ -85,35 +85,50 @@ variable (pb : Nat)
 theorem updatePost_local : ∀ vs m₁ m₂ m' r, vs.length = (updateSig.words pb).length →
     (∀ b ∈ Sig.bufs updateSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (updateSig.words pb) (updatePost pb) vs m₁ m' r →
-      Curry.apply (updateSig.words pb) (updatePost pb) vs m₂ m' r
-  | [st, _, data, len], m₁, m₂, m', r, _, hb, h => by
-    simp only [updateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hs := agree_of hb.1
-    have hd := agree_of hb.2
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
-      (updatePost pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
-      (updatePost pb) _ m₂ m' r
-    dsimp only [Curry.apply, updatePost, ArgWord.ofRaw] at h ⊢
-    intro key msg hbuf hc
-    have := Nat.mod_le len.toNat (2 ^ pb)
-    rw [bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-    exact h key msg (buffered_congr (fun i hi => (hs i (by omega)).symm) hbuf) hc
+      Curry.apply (updateSig.words pb) (updatePost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [updateSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs := agree_of hb.1
+  have hd := agree_of hb.2
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (updatePost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.int pb]
+    (updatePost pb) _ m₂ m' r
+  dsimp only [Curry.apply, updatePost, ArgWord.ofRaw] at h ⊢
+  intro key msg hbuf hc
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
+    rw [BitVec.toNat_setWidth] at hi; omega)]
+  exact h key msg (buffered_congr (fun i hi => (hs i (by omega)).symm) hbuf) hc
 
 theorem finalizePost_local : ∀ vs m₁ m₂ m' r, vs.length = (finalizeSig.words pb).length →
     (∀ b ∈ Sig.bufs finalizeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (finalizeSig.words pb) (finalizePost pb) vs m₁ m' r →
-      Curry.apply (finalizeSig.words pb) (finalizePost pb) vs m₂ m' r
-  | [st, _, _], m₁, m₂, m', r, _, hb, h => by
-    simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hs := agree_of hb.1
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr] (finalizePost pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr] (finalizePost pb) _ m₂ m' r
-    dsimp only [Curry.apply, finalizePost, ArgWord.ofRaw] at h ⊢
-    intro key msg hbuf hc
-    exact h key msg (buffered_congr (fun i hi => (hs i (by omega)).symm) hbuf) hc
+      Curry.apply (finalizeSig.words pb) (finalizePost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr] (finalizePost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr] (finalizePost pb) _ m₂ m' r
+  dsimp only [Curry.apply, finalizePost, ArgWord.ofRaw] at h ⊢
+  intro key msg hbuf hc
+  exact h key msg (buffered_congr (fun i hi => (hs i (by omega)).symm) hbuf) hc
 
 end VG.Proof.Poly1305

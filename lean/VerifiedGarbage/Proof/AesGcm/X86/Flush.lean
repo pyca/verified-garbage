@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 meta import VerifiedGarbage.Proof.AesGcm.X86.Absorb
 import VerifiedGarbage.Proof.Gcm.Be64
@@ -57,16 +58,16 @@ theorem t_tFrame {St W SP : BitVec 32} {K yo : Nat} {m m' : Mem}
 theorem bytesAt_writeBytes_prefix (m : Mem) (p : Addr) (xs : List Byte) {n : Nat} (hn : xs.length ≤ n)
     (h : n < 2 ^ 64) :
     bytesAt (writeBytes m p xs) p n = xs ++ bytesAt m (p + BitVec.ofNat 64 xs.length) (n - xs.length) := by
-  rw [show n = xs.length + (n - xs.length) by omega, bytesAt_add, bytesAt_writeBytes_self _ _ _ (by omega),
+  rw [show n = xs.length + (n - xs.length) by omega_arith, bytesAt_add, bytesAt_writeBytes_self _ _ _ (by omega_arith),
     Nat.add_sub_cancel_left]
   congr 1
   simp only [bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
   simp only [writeBytes, BitVec.add_assoc, Offset.add_sub_cancel_left, BitVec.toNat_add, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := xs.length) (by omega), Nat.mod_eq_of_lt (a := i) (by omega),
-    Nat.mod_eq_of_lt (by omega)]
-  simp [show ¬xs.length + i < xs.length by omega]
+  rw [Nat.mod_eq_of_lt (a := xs.length) (by omega_arith), Nat.mod_eq_of_lt (a := i) (by omega_arith),
+    Nat.mod_eq_of_lt (by omega_arith)]
+  simp [show ¬xs.length + i < xs.length by omega_arith]
 
 theorem zeros_eq (n : Nat) : Spec.Cmac.zeros n = zeros n := rfl
 
@@ -98,7 +99,7 @@ theorem ctx_tFrame (hyo : yo = 0 ∨ yo = 16) :
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact L.ctx_st (by decide) (by omega)
+  · exact L.ctx_st (by decide) (by omega_arith)
   · exact L.ctx_w (by decide) (by decide)
   · exact L.ctx_w (by decide) (by decide)
   · exact (L.stk_ctx (by decide)).symm
@@ -108,10 +109,10 @@ theorem slot_tFrame (hyo : yo = 0 ∨ yo = 16) {o : Nat} (h₁ : 112 ≤ o) (h�
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact (L.st_w (by omega) (.inr ⟨by omega, by omega⟩)).symm
-  · exact Lay.w_w (.inr (by omega)) (by omega) (by decide)
-  · exact Lay.w_w (.inl (by omega)) (by omega) (by decide)
-  · exact (L.stk_w (by omega)).symm
+  · exact (L.st_w (by omega_arith) (.inr ⟨by omega_arith, by omega_arith⟩)).symm
+  · exact Lay.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · exact Lay.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
+  · exact (L.stk_w (by omega_arith)).symm
 
 theorem env_tFrame (hyo : yo = 0 ∨ yo = 16) {s s' : State} (he : Env Ctx St W SP s)
     (hf : Frame (tFrame St W SP K yo) s.mem s'.mem)
@@ -140,7 +141,7 @@ theorem flush_pc (hyo : yo = 0 ∨ yo = 16) {b : Nat} (hb : b < 16) :
       (FlOut Ctx St W SP K yo b ·) := by
   refine Pc.seq (Q := fun m₀ s => ((Env Ctx St W SP s ∧ slotv s.mem W bO = BitVec.ofNat 32 b) ∧ s.mem = m₀) ∧
       s.zf = some (decide (b = 0)) ∧ s.gpr .ecx = BitVec.ofNat 32 b)
-    (Pc.taint [.ebp] (fun m₀ s ⟨⟨he, hb'⟩, hm⟩ => WP.mono (test_ok L he .ecx bO (by decide) hb' (by omega))
+    (Pc.taint [.ebp] (fun m₀ s ⟨⟨he, hb'⟩, hm⟩ => WP.mono (test_ok L he .ecx bO (by decide) hb' (by omega_arith))
         fun s' ⟨zf, cx, g, m, rd, wr⟩ => ⟨⟨⟨he.keep (g _ (by decide)) (g _ (by decide)) (g _ (by decide)) rd wr
           (by rw [m]), by rw [m]; exact hb'⟩, by rw [m, hm]⟩, zf, cx⟩)
       (fun _ _ s₁ s₂ h₁ h₂ r hr => by
@@ -148,7 +149,7 @@ theorem flush_pc (hyo : yo = 0 ∨ yo = 16) {b : Nat} (hb : b < 16) :
   refine Pc.ite (decide (b = 0)) (fun _ _ h => h.2.1) (fun ht => ?_) (fun hf => ?_)
   · have h0 : b = 0 := by simpa using ht
     refine Pc.mono Pc.nil (fun _ _ h => h) fun m₀ s ⟨⟨⟨he, _⟩, hm⟩, _⟩ => ⟨he, fun x hx ha => ?_, by rw [hm]; exact Frame.refl _ _⟩
-    rw [Proof.Gcm.padLen_of_mod (by omega), hm]; simpa [zeros] using ha
+    rw [Proof.Gcm.padLen_of_mod (by omega_arith), hm]; simpa [zeros] using ha
   · have h0 : b ≠ 0 := by simpa using hf
     -- `T` zeroed.
     refine Pc.seq (Q := fun m₀ s => Env Ctx St W SP s ∧ s.mem = Cmac.zero4 m₀ (w64 W + BitVec.ofNat 64 96) ∧
@@ -179,22 +180,22 @@ theorem flush_pc (hyo : yo = 0 ∨ yo = 16) {b : Nat} (hb : b < 16) :
     · have eS := L.aS (o := 32) (by decide)
       have eT := L.aW (o := 96) (by decide)
       have lp : LoopPre s (St + BitVec.ofNat 32 32) (W + BitVec.ofNat 32 96) b := by
-        refine ⟨di, dx, cx, by omega, by omega, by rw [L.nS (by decide)]; have := L.fs; omega,
-          by rw [L.nW (by decide)]; have := L.fw; omega, by rw [eS]; exact covers_left (he.stC (by omega)),
-          by rw [eT]; exact he.wC (by omega), by rw [eS, eT]; exact L.st_w (a := 32) (n := b) (d := 96) (k := b) (by omega) (.inr ⟨by decide, by omega⟩)⟩
+        refine ⟨di, dx, cx, by omega_arith, by omega_arith, by rw [L.nS (by decide)]; have := L.fs; omega_arith,
+          by rw [L.nW (by decide)]; have := L.fw; omega_arith, by rw [eS]; exact covers_left (he.stC (by omega_arith)),
+          by rw [eT]; exact he.wC (by omega_arith), by rw [eS, eT]; exact L.st_w (a := 32) (n := b) (d := 96) (k := b) (by omega_arith) (.inr ⟨by decide, by omega_arith⟩)⟩
       refine WP.mono (copyLoop_ok s lp) fun s' c => ?_
       have cm := c.mem
       rw [eS, eT] at cm
       have hS : bytesAt s.mem (w64 St + BitVec.ofNat 64 32) b = bytesAt m₀ (w64 St + BitVec.ofNat 64 32) b := by
         rw [hm]; exact bytesAt_frame (Cmac.frame_store4 _ _ _ _ _) (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩))
-          (by omega)
+          simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩))
+          (by omega_arith)
       have hlen := length_bytesAt s.mem (w64 St + BitVec.ofNat 64 32) b
       have fw : Frame [⟨w64 W + BitVec.ofNat 64 96, b⟩] s.mem s'.mem := by
         rw [cm]; exact writeBytes_frame' _ hlen
       refine ⟨env_tFrame L hyo he (t_tFrame (fw.sub fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩))
+          exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩))
         (c.other _ (by decide) (by decide) (by decide) (by decide)) (c.other _ (by decide) (by decide) (by decide)
         (by decide)) (c.other _ (by decide) (by decide) (by decide) (by decide)) c.rd c.wr, ?_⟩
       rw [cm, hS, hm]
@@ -205,8 +206,8 @@ theorem flush_pc (hyo : yo = 0 ∨ yo = 16) {b : Nat} (hb : b < 16) :
         (⟨w64 (W + BitVec.ofNat 32 96), 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, 256⟩ ∧
         (below SP K).Disjoint ⟨w64 (W + BitVec.ofNat 32 96), 16⟩ := fun s he => by
       rw [L.aW (by decide)]
-      exact ⟨by rw [he.ebp], by rw [L.nW (by decide)]; have := L.fw; omega, covers_left (he.wC (by decide)),
-        L.st_w (by omega) (.inr ⟨by decide, by decide⟩), Lay.w_w (.inl (by decide)) (by decide) (by decide),
+      exact ⟨by rw [he.ebp], by rw [L.nW (by decide)]; have := L.fw; omega_arith, covers_left (he.wC (by decide)),
+        L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩), Lay.w_w (.inl (by decide)) (by decide) (by decide),
         L.stk_w (by decide)⟩
     refine Pc.mono (Pc.of (I := Env Ctx St W SP) (fun s he => ghash1_ok L hyo he .ebp 96 (.inr rfl)
         (hP s he).1 (hP s he).2.1 (hP s he).2.2.1 (hP s he).2.2.2.1 (hP s he).2.2.2.2.1 (hP s he).2.2.2.2.2)
@@ -217,24 +218,24 @@ theorem flush_pc (hyo : yo = 0 ∨ yo = 16) {b : Nat} (hb : b < 16) :
     have fT : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] m₀ s₁.mem := by
       rw [hm]
       exact (Cmac.frame_store4 _ _ _ _ _).trans (writeBytes_frame _ _ _ (by
-        rw [length_bytesAt]; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega))
+        rw [length_bytesAt]; simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_arith))
     have hT : bytesAt s₁.mem (w64 W + BitVec.ofNat 64 96) 16 =
         bytesAt m₀ (w64 St + BitVec.ofNat 64 32) b ++ zeros (16 - b) := by
-      rw [hm, bytesAt_writeBytes_prefix _ _ _ (by rw [length_bytesAt]; omega) (by decide), length_bytesAt]
+      rw [hm, bytesAt_writeBytes_prefix _ _ _ (by rw [length_bytesAt]; omega_arith) (by decide), length_bytesAt]
       congr 1
       have z := zero4_bytes' m₀ (w64 W + BitVec.ofNat 64 96)
-      rw [show (16 : Nat) = b + (16 - b) by omega, bytesAt_add] at z
+      rw [show (16 : Nat) = b + (16 - b) by omega_arith, bytesAt_add] at z
       have := congrArg (List.drop b) z
-      rwa [List.drop_left' (length_bytesAt _ _ _), show b + (16 - b) = 16 by omega, zeros, List.drop_replicate,
+      rwa [List.drop_left' (length_bytesAt _ _ _), show b + (16 - b) = 16 by omega_arith, zeros, List.drop_replicate,
         show 16 - b = 16 - b from rfl] at this
     have hY : blockAt s₁.mem (w64 St + BitVec.ofNat 64 yo) = blockAt m₀ (w64 St + BitVec.ofNat 64 yo) :=
       blockAt_frame fT fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+        simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
     have hH : blockAt s₁.mem (w64 Ctx + BitVec.ofNat 64 240) = Hk m₀ Ctx :=
       blockAt_frame fT fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)
     refine ⟨g.env, fun x hx ha => ?_, (t_tFrame fT).trans (gh_tFrame g.frame)⟩
-    refine Proof.Gcm.absorb_pad ha (by omega) (B := bytesAt s₁.mem (w64 W + BitVec.ofNat 64 96) 16) ?_ ?_
+    refine Proof.Gcm.absorb_pad ha (by omega_arith) (B := bytesAt s₁.mem (w64 W + BitVec.ofNat 64 96) 16) ?_ ?_
     · rw [hT, hx]
     · rw [go, hY, hH]; rfl
 
@@ -266,10 +267,10 @@ theorem le4_be (u v : BitVec 32) :
   rw [show (24 : Nat) = 8 * 3 from rfl, show (16 : Nat) = 8 * 2 from rfl, show (8 : Nat) = 8 * 1 from rfl,
     show (0 : Nat) = 8 * 0 from rfl, ext32, ext32, ext32, ext32, ext32, ext32, ext32, ext32]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> apply BitVec.eq_of_toNat_eq <;> simp only [BitVec.toNat_ofNat] <;>
-    omega
+    omega_arith
 
 theorem dbl3 (x : BitVec 32) : (x + x + (x + x) + (x + x + (x + x))).toNat = 8 * x.toNat % 2 ^ 32 := by
-  simp only [BitVec.toNat_add]; omega
+  simp only [BitVec.toNat_add]; omega_arith
 
 /-- The two words `be64w` computes: `8 x` modulo 2⁶⁴. -/
 theorem be64w_val (hi lo : BitVec 32) :
@@ -277,7 +278,7 @@ theorem be64w_val (hi lo : BitVec 32) :
       (lo + lo + (lo + lo) + (lo + lo + (lo + lo))).toNat = 8 * (hi.toNat * 2 ^ 32 + lo.toNat) % 2 ^ 64 := by
   have hl := lo.isLt
   rw [BitVec.toNat_add, dbl3, dbl3, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  omega
+  omega_arith
 
 /-- The 64-bit value of the words `lo`, `hi`. -/
 abbrev val64 (lo hi : BitVec 32) : Nat := hi.toNat * 2 ^ 32 + lo.toNat
@@ -324,14 +325,14 @@ theorem be64w_ok {lo hi o : Nat} (hlo : lo + 4 ≤ 2560) (hhi : hi + 4 ≤ 2560)
       s'.gpr .ebp = s.gpr .ebp ∧ s'.gpr .esi = s.gpr .esi ∧ s'.gpr .esp = s.gpr .esp ∧ s'.rd = s.rd ∧
       s'.wr = s.wr := by
   rw [slotv_eq] at h1 h2
-  have a1 := L.aW (o := lo) (by omega)
-  have a2 := L.aW (o := hi) (by omega)
-  have a3 := L.aW (o := o) (by omega)
-  have a4 := L.aW (o := o + 4) (by omega)
+  have a1 := L.aW (o := lo) (by omega_arith)
+  have a2 := L.aW (o := hi) (by omega_arith)
+  have a3 := L.aW (o := o) (by omega_arith)
+  have a4 := L.aW (o := o + 4) (by omega_arith)
   have i1 := he.wIn' (d := lo) (n := 4) hlo
   have i2 := he.wIn' (d := hi) (n := 4) hhi
-  have i3 := he.wIn (d := o) (n := 4) (by omega)
-  have i4 := he.wIn (d := o + 4) (n := 4) (by omega)
+  have i3 := he.wIn (d := o) (n := 4) (by omega_arith)
+  have i4 := he.wIn (d := o + 4) (n := 4) (by omega_arith)
   refine ⟨_, by xrun [be64w, he.ebp, a1, a2, a3, a4, i1, i2, i3, i4, h1, h2], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · mems [add_ofNat_assoc]
   · regs []
@@ -353,14 +354,14 @@ theorem lensT_ok {yo al ah tl th : Nat} (hc : LensAt yo al ah tl th) {alo ahi tl
   have hb : 144 ≤ al ∧ al + 4 ≤ 240 ∧ 144 ≤ ah ∧ ah + 4 ≤ 240 ∧ 144 ≤ tl ∧ tl + 4 ≤ 240 ∧ 144 ≤ th ∧
       th + 4 ≤ 240 := by
     rcases hc with ⟨_, rfl, rfl, rfl, rfl⟩ | ⟨_, rfl, rfl, rfl, rfl⟩ | ⟨_, rfl, rfl, rfl, rfl⟩ <;> decide
-  obtain ⟨s₁, run₁, m₁, bp₁, si₁, sp₁, rd₁, wr₁⟩ := be64w_ok L (o := 96) (by omega) (by omega) (by decide) he h1 h2
+  obtain ⟨s₁, run₁, m₁, bp₁, si₁, sp₁, rd₁, wr₁⟩ := be64w_ok L (o := 96) (by omega_arith) (by omega_arith) (by decide) he h1 h2
   have he₁ : Env Ctx St W SP s₁ := he.keep bp₁ si₁ sp₁ rd₁ wr₁ (by
     rw [m₁, add_ofNat_assoc, readW_writeW_off (b := 100) _ _ _ (by decide) (by decide) (by decide),
       readW_writeW_off (b := 96) _ _ _ (by decide) (by decide) (by decide)])
   have k : ∀ {o}, 144 ≤ o → o + 4 ≤ 240 → slotv s₁.mem W o = slotv s.mem W o := fun h₁ h₂ => by
-    rw [slotv_eq, slotv_eq, m₁, add_ofNat_assoc, readW_writeW_off (b := 100) _ _ _ (by omega) (by omega) (by omega),
-      readW_writeW_off (b := 96) _ _ _ (by omega) (by omega) (by omega)]
-  obtain ⟨s₂, run₂, m₂, bp₂, si₂, sp₂, rd₂, wr₂⟩ := be64w_ok L (lo := tl) (hi := th) (o := 104) (by omega) (by omega) (by decide) he₁
+    rw [slotv_eq, slotv_eq, m₁, add_ofNat_assoc, readW_writeW_off (b := 100) _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
+      readW_writeW_off (b := 96) _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
+  obtain ⟨s₂, run₂, m₂, bp₂, si₂, sp₂, rd₂, wr₂⟩ := be64w_ok L (lo := tl) (hi := th) (o := 104) (by omega_arith) (by omega_arith) (by decide) he₁
     (k hb.2.2.2.2.1 hb.2.2.2.2.2.1) (k hb.2.2.2.2.2.2.1 hb.2.2.2.2.2.2.2)
   refine ⟨s₂, runBlock_app_of run₁ run₂, ?_, by rw [bp₂, bp₁], by rw [si₂, si₁], by rw [sp₂, sp₁], by rw [rd₂, rd₁],
     by rw [wr₂, wr₁]⟩
@@ -376,8 +377,8 @@ theorem t_gh {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {s : State} (he : Env Ctx St 
       (⟨w64 (W + BitVec.ofNat 32 96), 16⟩ : Region).Disjoint ⟨w64 W + BitVec.ofNat 64 512, 256⟩ ∧
       (below SP K).Disjoint ⟨w64 (W + BitVec.ofNat 32 96), 16⟩ := by
   rw [L.aW (by decide)]
-  exact ⟨he, by rw [he.ebp], by rw [L.nW (by decide)]; have := L.fw; omega, covers_left (he.wC (by decide)),
-    L.st_w (by omega) (.inr ⟨by decide, by decide⟩), Lay.w_w (.inl (by decide)) (by decide) (by decide),
+  exact ⟨he, by rw [he.ebp], by rw [L.nW (by decide)]; have := L.fw; omega_arith, covers_left (he.wC (by decide)),
+    L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩), Lay.w_w (.inl (by decide)) (by decide) (by decide),
     L.stk_w (by decide)⟩
 
 theorem lens_pc_aux {yo al ah tl th : Nat} (hyo : yo = 0 ∨ yo = 16) (hc : LensAt yo al ah tl th)
@@ -406,7 +407,7 @@ theorem lens_pc_aux {yo al ah tl th : Nat} (hyo : yo = 0 ∨ yo = 16) (hc : Lens
   have fT : Frame [⟨w64 W + BitVec.ofNat 64 96, 16⟩] m₀ s₁.mem := by rw [hm]; exact Cmac.frame_store4 _ _ _ _ _
   have hY : blockAt s₁.mem (w64 St + BitVec.ofNat 64 yo) = blockAt m₀ (w64 St + BitVec.ofNat 64 yo) :=
     blockAt_frame fT fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega) (.inr ⟨by decide, by decide⟩)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by omega_arith) (.inr ⟨by decide, by decide⟩)
   have hH : blockAt s₁.mem (w64 Ctx + BitVec.ofNat 64 240) = Hk m₀ Ctx :=
     blockAt_frame fT fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)

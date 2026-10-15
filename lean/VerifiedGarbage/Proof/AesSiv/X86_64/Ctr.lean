@@ -167,7 +167,7 @@ theorem wholePre_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, fun r hr' => ?_, ?_, ?_, ?_⟩
     rotate_left 6
     · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr'
-      rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]
+      rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte]
     all_goals simp only [reduceCtorEq, ↓reduceIte, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
       rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, hr₂.rbx, hr₂.rbp, hr₂.r13, hr₂.r15,
       rcx₂, cbOff, csOff, sx_ofNat (show 272 < 2 ^ 31 by decide), sx_ofNat (show 96 < 2 ^ 31 by decide),
@@ -264,17 +264,17 @@ theorem ctrPre_ok (h : Env s₀ C D P W R L) {s : State} (hbx : s.gpr .rbx = C) 
       (∀ r ∈ calleeSaved, s₂.gpr r = s₁.gpr r) ∧
       s₂.mem = copyMem s₁.mem (W + BitVec.ofNat 64 96) (W + BitVec.ofNat 64 64) ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
     refine ⟨_, by
-      simp (config := {decide := true}) only [imm, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
+      simp only [reduceCtorEq, ↓reduceIte, imm, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
         readSrc32, execAlu, State.load64, State.store64, State.ea, State.setReg32, offset_nat, Option.bind_some,
         Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg,
-        ite_true, ite_false, h15₁, r₀, r₈, w₀, w₈]
+        h15₁, r₀, r₈, w₀, w₈]
       rfl, ?_⟩
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
     rotate_left 6
     · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]
-    all_goals simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
-      rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ite_true, ite_false, g₁ _ (by decide : Reg.rbx ≠ .rax),
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte]
+    all_goals simp only [reduceCtorEq, ↓reduceIte, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
+      rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, g₁ _ (by decide : Reg.rbx ≠ .rax),
       g₁ _ (by decide : Reg.rbp ≠ .rax), hbx, hbp, cbOff, ksOff, csOff, cntOff, copyMem, Offset.add_add,
       sx_ofNat (show 272 < 2 ^ 31 by decide), sx_ofNat (show 96 < 2 ^ 31 by decide),
       sx_ofNat (show 80 < 2 ^ 31 by decide), sx_ofNat (show 256 < 2 ^ 31 by decide)]
@@ -329,20 +329,20 @@ theorem ctrPost_ok {s : State} {Q : Addr} {left n : Nat} {hi lo : BitVec 64} (h1
       s'.zf = some (decide (left - n = 0)) ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r13 → r ≠ .r14 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine ⟨_, by
-    simp (config := {decide := true}) only [ctrPost, imm, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
+    simp only [reduceCtorEq, ↓reduceIte, ctrPost, imm, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
       readSrc, execAlu, State.load64, State.store64, State.ea, offset_nat, Option.bind_some, Option.map_some,
       gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags,
-      cf_setReg, cf_arithFlags, ite_true, ite_false, h15, r₀, r₈, w₀, w₈]
+      cf_setReg, cf_arithFlags, h15, r₀, r₈, w₀, w₈]
     rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · refine ⟨_, _, ?_, inc_words hi lo⟩
-    simp (config := {decide := true}) only [mem_setReg, mem_arithFlags,
+    simp only [mem_setReg, mem_arithFlags,
       hhi, hlo, Proof.Gcm.X86_64.bswap64_bswap64]
     rfl
-  · simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, h13,
+  · simp only [reduceCtorEq, ↓reduceIte, gpr_setReg, gpr_arithFlags, h13,
       sx_ofNat (show 16 < 2 ^ 31 by decide)]
-  · simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, h14, hrcx,
+  · simp only [↓reduceIte, gpr_setReg, h14, hrcx,
       Offset.ofNat_sub_ofNat hn]
-  · simp (config := {decide := true}) only [zf_setReg, zf_arithFlags,
+  · simp only [zf_setReg, zf_arithFlags,
       h14, hrcx, Offset.ofNat_sub_ofNat hn]
     rw [Proof.CmacAes.Stream.X86_64.beq_zero_iff, toNat_ofNat (by omega_arith)]
   · intro r h₁ h₂ h₃ h₄; simp [gpr_setReg, h₁, h₂, h₃, h₄]

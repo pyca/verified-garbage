@@ -49,15 +49,15 @@ def pow (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (bas
     Arithmetic.power sq mul arg argLen arg2 arg2Len] ++ finish)
 
 /-- Only for exponents declared public by the caller's contract. -/
-def publicPow (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent output : Operand) : Prog isa :=
+def publicPow (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent output : Operand) : Prog isa :=
   seqs ([.block (operand arg argLen base ++ operand arg2 arg2Len exponent ++
     operand result resultLen output ++ enter ws),
-    PublicPower.power mul arg argLen arg2 arg2Len] ++ finish)
+    PublicPower.power sq mul arg argLen arg2 arg2Len] ++ finish)
 
 /-- Joint exponentiation uses the verification scalars u/v. -/
-def joint (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (a b output : Operand) : Prog isa :=
+def joint (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (a b output : Operand) : Prog isa :=
   seqs ([.block (operand arg argLen a ++ operand arg2 arg2Len b ++
-    operand result resultLen output ++ enter ws), Joint.power mul] ++ finish)
+    operand result resultLen output ++ enter ws), Joint.power sq mul] ++ finish)
 
 def product (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (a b output : Operand) : Prog isa :=
   seqs ([.block (operand arg argLen a ++ operand arg2 arg2Len b ++
@@ -103,7 +103,7 @@ def verify (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :
   reduce mul digest (scalar z),
   product mul qWorkspace (scalar z) (scalar inverse) (scalar u),
   product mul qWorkspace signatureR (scalar inverse) (scalar v),
-  joint mul pWorkspace generator publicValue (element t),
+  joint sq mul pWorkspace generator publicValue (element t),
   reduce mul (element t) (scalar u)]
 
 end VG.Impl.Dsa.X86_64.Core

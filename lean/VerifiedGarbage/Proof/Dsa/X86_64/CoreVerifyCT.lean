@@ -58,7 +58,7 @@ theorem coreVerifySchedule_ct (M : Mont) (Sq : MontS) (inputs : SchedulePublic â
     (fun p => p.layout.qLen) (fun p => p.layout.qLen)
     (by trivial) (by change inverse < 2 ^ 31; decide) (by simp [stablePointer, Core.signatureR]) (by trivial)
     qp hqfit qp hqfit (by decide) (by decide) (scalar_space (by decide)) (by taint_decide)
-  have h5 := scheduleJoint_ct M inputs stable t Core.generator Core.publicValue
+  have h5 := scheduleJoint_ct M Sq inputs stable t Core.generator Core.publicValue
     (fun p => p.layout.pLen) (fun p => p.layout.pLen)
     (by trivial) (by trivial) (by simp [stablePointer, Core.generator]) (by simp [stablePointer, Core.publicValue])
     pp hpfit pp hpfit (by decide) (by decide) (element_space (by decide)) (by taint_decide)

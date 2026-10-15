@@ -176,19 +176,19 @@ theorem dblOps_rep (e : Env) (t : Bool) {a : EPoint dZ} (ha : RepP (point e 0 1 
   have hr := dblPoint_rep ha
   obtain ⟨n0, n1, n2, n3⟩ := dblOps_neg e t
   refine ⟨⟨?_, ?_, ?_⟩, fun ht => ⟨?_, ?_, ?_, ?_⟩⟩
-  · show toZ (evalOps _ _ 2) ≠ 0
+  · dsimp only [point]
     rw [n2, toZ_neg]; exact neg_ne_zero.mpr hr.z
-  · show toZ (evalOps _ _ 0) = _ * toZ (evalOps _ _ 2)
+  · dsimp only [point]
     rw [n0, n2, toZ_neg, toZ_neg, hr.x, mul_neg]
-  · show toZ (evalOps _ _ 1) = _ * toZ (evalOps _ _ 2)
+  · dsimp only [point]
     rw [n1, n2, toZ_neg, toZ_neg, hr.y, mul_neg]
-  · show toZ (evalOps _ _ 2) ≠ 0
+  · dsimp only [point]
     rw [n2, toZ_neg]; exact neg_ne_zero.mpr hr.z
-  · show toZ (evalOps _ _ 0) = _ * toZ (evalOps _ _ 2)
+  · dsimp only [point]
     rw [n0, n2, toZ_neg, toZ_neg, hr.x, mul_neg]
-  · show toZ (evalOps _ _ 1) = _ * toZ (evalOps _ _ 2)
+  · dsimp only [point]
     rw [n1, n2, toZ_neg, toZ_neg, hr.y, mul_neg]
-  · show toZ (evalOps _ _ 3) = _ * toZ (evalOps _ _ 2)
+  · dsimp only [point]
     rw [n3 ht, n2, toZ_neg, toZ_neg, hr.t, mul_neg]
 
 /-- The cached addition of the point operations, as `pointAddCachedWide_ok`. -/

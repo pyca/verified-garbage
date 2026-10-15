@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.X86_64.ModeCore
+public import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Modes.X86_64.Ctr
 meta import VerifiedGarbage.Proof.Modes.X86_64.Ctr
 public import VerifiedGarbage.Proof.Sm4.Scratch
@@ -166,7 +168,7 @@ theorem ctr_ct : ConstantTime isa ctrX86_64.pre ctrX86_64.pub ctr :=
 theorem ctr_correct (s : State) (hs : ctrX86_64.pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ ctrX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hpost⟩ := ctr_wp hs
-  exact ⟨t, s', he, abiPreserved_of_exec (c := ctr) (by decide +kernel) he hg, hpost⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (c := ctr) (by lit_decide) he hg, hpost⟩
 
 /-- A state satisfying the precondition (one block). -/
 def ctrSat : State where
@@ -193,8 +195,8 @@ theorem ctr_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64)
     (n := 392) (post := Proof.Sm4.ctrPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 3144) ctr_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Sm4.ctrPostOut_local _)
-    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+    (X86_64.sat_regs (by decide) (by decide) (by lit_decide) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sm4.X86_64

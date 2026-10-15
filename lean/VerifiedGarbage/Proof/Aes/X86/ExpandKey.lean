@@ -168,12 +168,14 @@ theorem rot_byte (x : BitVec 32) {t : Nat} (ht : t < 4) :
     (x.rotateRight 8).extractLsb' (8 * t) 8 = x.extractLsb' (8 * ((t + 1) % 4)) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateRight, hj, decide_true, Bool.true_and]
-  by_cases h : t < 3
-  · rw [ite_eq_left ((show 8 * t + j < 32 - 8 % 32 by omega_arith)),
-      show 8 % 32 + (8 * t + j) = 8 * ((t + 1) % 4) + j by omega_arith]
-  · rw [ite_eq_right ((show ¬ 8 * t + j < 32 - 8 % 32 by omega_arith)),
-      show 8 * t + j - (32 - 8 % 32) = 8 * ((t + 1) % 4) + j by omega_arith]
-    simp; omega_arith
+  obtain ⟨t0, t1⟩ := of_decide_eq_true (List.all_eq_true.mp (List.all_eq_true.mp
+    (show (List.range 4).all (fun t => (List.range 8).all fun j => decide (
+      (8 * t + j < 32 - 8 % 32 → 8 % 32 + (8 * t + j) = 8 * ((t + 1) % 4) + j) ∧
+      (¬ 8 * t + j < 32 - 8 % 32 → 8 * t + j < 32 ∧ 8 * t + j - (32 - 8 % 32) = 8 * ((t + 1) % 4) + j))) = true by
+      decide +kernel) t (List.mem_range.mpr ht)) j (List.mem_range.mpr hj))
+  by_cases h : 8 * t + j < 32 - 8 % 32
+  · rw [ite_eq_left h, t0 h]
+  · rw [ite_eq_right h, (t1 h).2, decide_eq_true (t1 h).1, Bool.true_and]
 
 /-! ## `ROTWORD`, `Rcon` and the next round constant -/
 
@@ -295,9 +297,11 @@ structure Mid (B : BitVec 32) (kl : List Byte) (nk i : Nat) (s s' : State) : Pro
   frame : Frame [reg32 B 256, ⟨addr B rcOff, 4⟩] s.mem s'.mem
   rc : s'.mem.readW (addr B rcOff) 32 = rcW (i / nk)
 
-theorem back_eq (S : BitVec 32) {i nk : Nat} (h1 : 1 ≤ nk) (h : nk ≤ i) (hi : 4 * i < 2 ^ 32) :
+theorem back_eq (S : BitVec 32) {i nk : Nat} (h1 : 1 ≤ nk) (h : nk ≤ i) (_hi : 4 * i < 2 ^ 32) :
     S + BitVec.ofNat 32 (4 * (i - 1)) + 4 - BitVec.ofNat 32 (4 * nk) = S + BitVec.ofNat 32 (4 * (i - nk)) := by
-  bv_omega
+  rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.Offset.add_add, BitVec.sub_eq_add_neg,
+    BitVec.add_assoc, ← BitVec.sub_eq_add_neg, VG.Offset.ofNat_sub_ofNat (by omega_using [h1, h]),
+    show 4 * (i - 1) + 4 - 4 * nk = 4 * (i - nk) by omega_using [h1, h]]
 
 theorem add_four (x : BitVec 32) (a : Nat) : x + BitVec.ofNat 32 a + 4 = x + BitVec.ofNat 32 (a + 4) := by
   rw [BitVec.add_assoc, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ← BitVec.ofNat_add]
@@ -827,7 +831,9 @@ theorem left_setup {K : Nat} (hK : K = 16 ∨ K = 24 ∨ K = 32) :
 
 theorem esi_setup (S : BitVec 32) {K : Nat} (hK : K = 16 ∨ K = 24 ∨ K = 32) :
     S + BitVec.ofNat 32 K - 4 = S + BitVec.ofNat 32 (4 * (K / 4 - 1)) := by
-  rcases hK with rfl | rfl | rfl <;> bv_omega
+  rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, BitVec.sub_eq_add_neg, BitVec.add_assoc,
+    ← BitVec.sub_eq_add_neg]
+  rcases hK with rfl | rfl | rfl <;> rfl
 
 /-- A word of the key, byte by byte. -/
 theorem kw_getD_key {m : Mem} {P : BitVec 32} {K j t : Nat} (hP : P.toNat + K ≤ 2 ^ 32) (hj : j < K / 4)

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointRun
 import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
 public import VerifiedGarbage.Proof.Dsa.X86_64.Prepare
@@ -17,7 +18,7 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Impl.Rsa.X86_64 VG.Impl.Dsa.X86_64 VG.Impl.Dsa.Layout
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
-theorem jointPower_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
+theorem jointPower_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx m : Nat}
     {minv : BitVec 64} (hc : SubCtx s B Z o w wx minv)
     (hw2 : 2 ≤ wx) (hw48 : wx ≤ 48) (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
     (hm : 1 < m) (hodd : m % 2 = 1) (hparent : 344 ≤ o)
@@ -33,7 +34,7 @@ theorem jointPower_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
     {eb fb : List Byte} (he : Src s B Z (off B u) eb) (hf : Src s B Z (off B v) fb)
     (hlen : fb.length = eb.length) (hL0 : 0 < eb.length) (hL' : eb.length < 2 ^ 31)
     (hl : word s.mem B Field.qLen.offset = BitVec.ofNat 64 eb.length) :
-    WP isa (Joint.power M.mm) s fun t =>
+    WP isa (Joint.power Sq.mm M.mm) s fun t =>
       SubCtx t B Z o w wx minv ∧ ModCtx t (off B o) (slot wx 8) wx minv m ∧
       wv t.mem (off B o) (slot wx aY) wx =
         (Spec.Dsa.powMod (Spec.Dsa.decodeBE gb) (Spec.Dsa.decodeBE eb) m *
@@ -50,7 +51,7 @@ theorem jointPower_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
     rw [hf1.word_below (fun r hr => (workRanges_ok wx r hr).2)
       (by omega) (by omega) (show Field.qLen.offset + 8 ≤ o from hparent)]
     exact hl
-  refine WP.mono (jointRun_ok M hc1 hm1 hw2 (by omega) hm hodd ht1 hy1 ho1
+  refine WP.mono (jointRun_ok M Sq hc1 hm1 hw2 (by omega) hm hodd ht1 hy1 ho1
     (work_source hc hf1 hk1 he) (work_source hc hf1 hk1 hf) hlen hL0 hL' (by omega) hlen1)
     fun t ⟨hct, hmt, hv, hft, hkt⟩ => ⟨hct, hmt, ?_, hf1.trans hft, (hk1.trans hkt).mono (by decide)⟩
   simpa only [VG.Proof.Dsa.powMod_eq, Nat.mul_mod_mod, Nat.mod_mul_mod] using hv

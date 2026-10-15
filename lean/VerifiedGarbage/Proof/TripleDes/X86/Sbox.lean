@@ -181,12 +181,10 @@ theorem roundOutput_ok (i : Nat) (hi : i < 8) (s : State) (hok : Ok outputCfg s)
         simpa only [roundOutputs, hne, ite_false, heq, outputCfg] using hr
       · cases h
   obtain ⟨s', hs', post⟩ := run lanes_sound hok hrel he
-  have ho := List.all_eq_true.mp hpost (.esi, outputBits i) (by simp)
-  simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range,
-    decide_eq_true_eq] at ho
+  obtain ⟨ho, hb⟩ := outOk_spec (List.all_eq_true.mp hpost (.esi, outputBits i) (by simp))
   refine ⟨s', hs', ?_, post.rd, post.wr,
     fun r hr => post.other r (by simp [hr]), post.frame⟩
-  exact outWord_rel (fun p hp a ha => ho.2 p hp a ha) (post.rel.reg .esi _ ho.1)
+  exact outWord_rel_of_lt hb (post.rel.reg .esi _ ho)
 end VG.Proof.TripleDes.X86
 
 end

@@ -20,7 +20,7 @@ class LeanCachePublishingTests(unittest.TestCase):
         )[1].split("\n      - ", 1)[0]
         cls.script = textwrap.dedent(step.split("        run: |\n", 1)[1])
 
-    def check_publication(self, annotations=None, *, error="", head="current", fail=""):
+    def check_publication(self, annotations=None, *, error="", status="ahead", fail=""):
         manifest = {"schemaVersion": 2}
         if annotations is not None:
             manifest["annotations"] = annotations
@@ -34,7 +34,7 @@ class LeanCachePublishingTests(unittest.TestCase):
                 " f.write(pathlib.Path(sys.argv[0]).name + ' ' + ' '.join(sys.argv[1:]) + '\\n')\n"
                 "if pathlib.Path(sys.argv[0]).name == 'gh':\n"
                 " if os.environ['FAIL'] == 'api': sys.exit(1)\n"
-                " print(os.environ['HEAD'])\n"
+                " print(os.environ['STATUS'])\n"
                 "else:\n"
                 " with open(os.environ['STDIN'], 'a') as f: f.write(sys.stdin.read())\n"
                 " if os.environ['ERROR']:\n"
@@ -63,7 +63,7 @@ class LeanCachePublishingTests(unittest.TestCase):
                 CACHE_KEY="checked-cache-zstd5-oras-v3",
                 CALLS=str(calls),
                 STDIN=str(stdin),
-                HEAD=head,
+                STATUS=status,
                 FAIL=fail,
                 ERROR=error,
                 MANIFEST=json.dumps(manifest),
@@ -83,18 +83,42 @@ class LeanCachePublishingTests(unittest.TestCase):
             return result, output.read_text(), calls
 
     def test_matching_cache_skips_publication(self):
-        result, output, _ = self.check_publication(
-            {"io.pyca.lean.cache-key": "checked-cache-zstd5-oras-v3"}
+        result, output, calls = self.check_publication(
+            {"io.pyca.lean.cache-key": "checked-cache-zstd5-oras-v3", "org.opencontainers.image.revision": "older"}
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(output, "")
+        self.assertNotIn("gh ", calls)
 
     def test_changed_or_unannotated_cache_is_published(self):
         for annotations in ({"io.pyca.lean.cache-key": "older-cache"}, {}, None):
             with self.subTest(annotations=annotations):
-                result, output, _ = self.check_publication(annotations)
+                result, output, calls = self.check_publication(annotations)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(output, "needed=true\n")
+                # Without a published revision there is nothing to compare.
+                self.assertNotIn("gh ", calls)
+
+    def test_older_commits_cache_is_replaced(self):
+        # Main may have moved past this commit too: an older cache is still
+        # replaced, so a stream of merges cannot keep the cache from updating.
+        for status in ("ahead", "identical", "diverged"):
+            with self.subTest(status=status):
+                result, output, calls = self.check_publication(
+                    {"io.pyca.lean.cache-key": "older-cache", "org.opencontainers.image.revision": "older"},
+                    status=status,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(output, "needed=true\n")
+                self.assertIn("gh api repos/pyca/verified-garbage/compare/older...current --jq .status", calls)
+
+    def test_newer_commits_cache_is_kept(self):
+        result, output, _ = self.check_publication(
+            {"io.pyca.lean.cache-key": "newer-cache", "org.opencontainers.image.revision": "newer"},
+            status="behind",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output, "")
 
     def test_first_publication(self):
         for error in (
@@ -114,17 +138,12 @@ class LeanCachePublishingTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(output, "")
 
-    def test_superseded_commit_skips_registry_access(self):
-        result, output, calls = self.check_publication(head="newer")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(output, "")
-        self.assertNotIn("oras", calls)
-
     def test_api_failure_stops_publication(self):
-        result, output, _ = self.check_publication(fail="api")
+        result, output, _ = self.check_publication(
+            {"io.pyca.lean.cache-key": "older-cache", "org.opencontainers.image.revision": "older"}, fail="api"
+        )
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(output, "")
-
 
 if __name__ == "__main__":
     unittest.main()

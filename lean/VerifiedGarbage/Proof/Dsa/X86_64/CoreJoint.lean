@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Call
 import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
 import all Init.Data.Array.Basic
@@ -20,7 +21,7 @@ open VG.Impl.Dsa.Layout
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Dsa.X86_64
 
-theorem coreJoint_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m k : Nat}
+theorem coreJoint_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx m k : Nat}
     {minv parentMinv : BitVec 64}
     (hg : Good s B Z w parentMinv) (child : ChildReady s.mem B o wx m minv)
     (hZ : pWorkspace ≤ Z) (hlo : slot w 8 ≤ o)
@@ -39,7 +40,7 @@ theorem coreJoint_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m k : Nat}
     (hk1 : 1 ≤ k) (hk' : k < 2 ^ 31) (hkw : wx = (k + 7) / 8)
     (hout : ∀ j < k, InRegions s.wr (pointerValue s.mem B output.pointer + BitVec.ofNat 64 j) 1)
     (hprefix : ∀ j < k, Z ≤ ofs B (pointerValue s.mem B output.pointer + BitVec.ofNat 64 j)) :
-    WP isa (Core.joint M.mm o a b output) s fun t =>
+    WP isa (Core.joint Sq.mm M.mm o a b output) s fun t =>
       Good t B Z w parentMinv ∧ ChildReady t.mem B o wx m minv ∧
       Spec.Rsa.bytesAt t.mem (pointerValue s.mem B output.pointer) k =
         Spec.Dsa.encodeBE k (Spec.Dsa.powMod (Spec.Dsa.decodeBE ba) (Spec.Dsa.decodeBE eb) m *
@@ -51,7 +52,7 @@ theorem coreJoint_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m k : Nat}
   have hq : word st.mem B Field.qLen.offset = BitVec.ofNat 64 eb.length := by
     rw [hframe.word_eq (by simp [argumentRanges, Field.offset]) (by decide)]
     exact hql
-  exact jointPower_ok M hc hw2 hw48 hwx hw30 hm hodd hparent hchild.modulus hchild.inverse
+  exact jointPower_ok M Sq hc hw2 hw48 hwx hw30 hm hodd hparent hchild.modulus hchild.inverse
     hargs.1 (hargs.2.1.trans has.length) (arguments_source hframe hk hz has.source) ha1 haw
     hargs.2.2.1 (hargs.2.2.2.1.trans hbs.length) (arguments_source hframe hk hz hbs.source) hb1 hbw
     (arguments_source hframe hk hz he) (arguments_source hframe hk hz hf) hlen hL0 hL' hq

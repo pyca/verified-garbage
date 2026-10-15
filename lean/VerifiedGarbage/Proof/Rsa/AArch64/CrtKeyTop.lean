@@ -90,7 +90,7 @@ theorem blkHi_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {top : List
     rw [show c * 2 ^ 3 = 8 * c by omega_arith]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨g16, g12, mt⟩,
         kt⟩ => ?_
   exact ⟨⟨g16, (kt.gpr .x17 (by decide)).trans e17, g12, mt.trans (m₄'.trans (m₃'.trans (m₂'.trans m₁')))⟩,
-    ((((k₁'.trans k₂').trans k₃').trans k₄').trans kt).mono (by simp)⟩
+    ((((k₁'.trans k₂').trans k₃').trans k₄').trans kt).mono (by decide)⟩
 
 /-- `reduceTop`'s second block: the bases of `[aA]` and of `[aQ]`'s top `c`
 words, and `c` words to copy. -/
@@ -119,7 +119,7 @@ theorem blkLo_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {top : List
     rw [show (w - c) * 2 ^ 3 = 8 * (w - c)
         by omega_arith]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨g17, g12, mt⟩, kt⟩ => ?_
   exact ⟨⟨(kt.gpr .x16 (by decide)).trans ((k₄'.gpr .x16 (by decide)).trans e16), g17, g12,
-    mt.trans (m₄'.trans (m₃'.trans (m₂'.trans m₁')))⟩, ((((k₁'.trans k₂').trans k₃').trans k₄').trans kt).mono (by simp)⟩
+    mt.trans (m₄'.trans (m₃'.trans (m₂'.trans m₁')))⟩, ((((k₁'.trans k₂').trans k₃').trans k₄').trans kt).mono (by decide)⟩
 
 /-- `reduceTop`'s third block: `x6 := 64 c`, the steps to run. -/
 theorem blkCnt_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {top : List Instr} {c : Nat}
@@ -138,7 +138,7 @@ theorem blkCnt_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {top : Lis
     rw [show c * 2 ^ 6 = 64 * c by omega_arith]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨g6, mt⟩, kt⟩ => ?_
   exact ⟨⟨g6, (kt.gpr .x12 (by decide)).trans ((k₂'.gpr .x12 (by decide)).trans e12),
     (kt.gpr .x11 (by decide)).trans ((k₂'.gpr .x11 (by decide)).trans e11), mt.trans (m₂'.trans m₁')⟩,
-    ((k₁'.trans k₂').trans kt).mono (by simp)⟩
+    ((k₁'.trans k₂').trans kt).mono (by decide)⟩
 
 /-- `reduceTop`'s loop: `64 c` steps of `divmod` on `[aRem]` and `[aQ]`. -/
 theorem stepsTop_ok {s : State} {B : Addr} {Z w c : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B)
@@ -174,7 +174,7 @@ theorem stepsTop_ok {s : State} {B : Addr} {Z w c : Nat} (hs : Scr s B Z) (h0 : 
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide)) fun t' ⟨h6', f', k', hv'⟩ => ⟨?_, h6'⟩
   refine ⟨hsT.congr k'.wr, (k'.gpr .x0 (by decide)).trans h0T, (k'.gpr .x12 (by decide)).trans h12T,
-    (k'.gpr .x11 (by decide)).trans h11T, fT.trans f', (kT.trans k').mono (by simp [stepRegs]), fun hR0 => ?_⟩
+    (k'.gpr .x11 (by decide)).trans h11T, fT.trans f', (kT.trans k').mono (by decide), fun hR0 => ?_⟩
   obtain ⟨q, hlt, -, -, -⟩ := VG.Proof.Rsa.divIter_from hR0 (wv_lt s.mem B (slot w aQ) w) j (by omega_arith)
   have hv := vT hR0
   have hRt : wv t.mem B (slot w aRem) (w + 1) < wv t.mem B (slot w aM) w := by
@@ -281,7 +281,7 @@ theorem reduceTop_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {top : 
   have k17 := ((((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇)
   -- The loop: `64 c` steps.
   refine WP.mono (stepsTop_ok (h₆.scr.congr k₇.wr) ((k₇.gpr .x0 (by decide)).trans h₆.x0) e12₇ e11₇ hw1 hw hZ
-    hc1 (by omega_arith) e6) fun t ⟨h0T, fT, kT, vT⟩ => ⟨h0T, ?_, (k17.trans kT).mono (by simp [topRegs, stepRegs]),
+    hc1 (by omega_arith) e6) fun t ⟨h0T, fT, kT, vT⟩ => ⟨h0T, ?_, (k17.trans kT).mono (by decide),
       fun hlt => ?_⟩
   · have g4 : Outside B (slot w aRem) (8 * (w + 2)) s₂.mem s₄.mem := o₄.mono (by omega_arith) (by omega_arith)
     have g6 : Outside B (slot w aQ) (8 * (w + 2)) s₄.mem s₆.mem := o₆.mono (by omega_arith) (by omega_arith)

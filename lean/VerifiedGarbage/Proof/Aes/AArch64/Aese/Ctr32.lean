@@ -11,6 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Gcm.Spec
+public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Gcm.Spec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -671,7 +672,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32AArch64.pre s) :
     ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32AArch64.post s s' := by
   obtain ⟨t, s', he, h₂, h₁⟩ :=
-    WP.gprs (rs := preserved) (correct (pre_of hs)) (by decide +kernel) (by decide +kernel)
+    WP.gprs (rs := preserved) (correct (pre_of hs)) (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AArch64.pub ctr32 := by

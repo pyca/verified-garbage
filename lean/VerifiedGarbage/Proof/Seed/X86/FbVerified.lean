@@ -183,17 +183,31 @@ theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h�
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
+/-- What is public at the core's loop of rounds (as `cbcRoundsTaint`, with
+the IV's region before the scratch buffer). -/
+def fbRoundsTaint : VG.X86.Taint.T :=
+  { regs := .ofList [.esp, .esi, .edi], flags := true, lens := [0, 16, 4 * (dirCore .encrypt).total],
+    bases := [(.edi, 2, 0)], slots := [(2, 4 * (dirCore .encrypt).dSlot, 8)], argLen := 24,
+    argBases := [(12, 0), (8, 1), (20, 2)] }
+
+/-! The loop of rounds, which the three modes run, analysed once, as a summary. -/
+
+taint_summary fbRoundsSum : VG.X86.taint fbRoundsTaint (.block roundPair)
+
 theorem ofb_ct : ConstantTime isa (fbX86 ofbPost).pre (fbX86 ofbPost).pub ofb :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by taint_decide_sum [fbRoundsSum] :
+    ∃ h, (VG.X86.taint.check fbTaint ofb h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfbEncrypt_ct : ConstantTime isa (fbX86 cfbEncPost).pre (fbX86 cfbEncPost).pub cfbEncrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by taint_decide_sum [fbRoundsSum] :
+    ∃ h, (VG.X86.taint.check fbTaint cfbEncrypt h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfbDecrypt_ct : ConstantTime isa (fbX86 cfbDecPost).pre (fbX86 cfbDecPost).pub cfbDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by taint_decide_sum [fbRoundsSum] :
+    ∃ h, (VG.X86.taint.check fbTaint cfbDecrypt h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/
 

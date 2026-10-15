@@ -17,6 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Aes.Contract
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 meta import VerifiedGarbage.Spec.Aes.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -906,7 +907,7 @@ def satState : State where
 theorem expandKey_correct (s : State) (hs : expandKeyX86_64.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyX86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem expandKey_ct : ConstantTime isa expandKeyX86_64.pre expandKeyX86_64.pub expandKey := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_

@@ -119,7 +119,12 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
 /-- The call keeps the vector registers `v28`, `v27`, `v29`, `v30` and `v31`. -/
 theorem blockCall_vsafe (d : Direction) : vSafe .v28 (blockCall d) = true ∧ vSafe .v27 (blockCall d) = true ∧
     vSafe .v29 (blockCall d) = true ∧ vSafe .v30 (blockCall d) = true ∧ vSafe .v31 (blockCall d) = true := by
-  cases d <;> exact ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
+  -- One evaluation per direction, not one per register.
+  have h : (vSafe .v28 (blockCall d) && vSafe .v27 (blockCall d) && vSafe .v29 (blockCall d) &&
+      vSafe .v30 (blockCall d) && vSafe .v31 (blockCall d)) = true := by
+    cases d <;> lit_decide
+  simp only [Bool.and_eq_true] at h
+  exact ⟨h.1.1.1.1, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
 /-- A block that writes no vector register `v` keeps it, from a run given by `runBlock`. -/
 theorem runBlock_v {is : List Instr} {s s' : State} {v : VReg} (hv : ∀ i ∈ is, vdstOf i ≠ some v)

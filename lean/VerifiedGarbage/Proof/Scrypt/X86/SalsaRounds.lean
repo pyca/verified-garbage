@@ -219,67 +219,87 @@ theorem row_get (v : Vector Word 16) {q : Nat} (hq : q < 4) :
 
 /-! ## Moving the words between the registers' doublewords -/
 
-/-- Executes register-only shuffles, keeping each register's value as four
-doublewords of the registers on entry. -/
-local macro "shuf_tac" : tactic =>
-  `(tactic| (apply WP.of_runBlock
-             simp only [toRows, toCols, toDiag, fromDiag, transpose, shuf, xb, List.cons_append,
-               List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-               RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
-               RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true,
-               eval_movdqa, shuf39, shuf4e, shuf93, punpckldq_eq, punpckhdq_eq, punpcklqdq_eq,
-               punpckhqdq_eq, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3,
-               Option.some.injEq, exists_eq_left']))
-
-/-- Evaluates one doubleword of the result of `shuf_tac`. -/
-local macro "lane_tac" : tactic =>
-  `(tactic| simp only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true,
-    eval_movdqa, shuf39, shuf4e, shuf93, punpckldq_eq, punpckhdq_eq, punpcklqdq_eq, punpckhqdq_eq,
-    dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3])
-
 theorem toRows_ok {v : Vector Word 16} {s : State} (h : Arr ci v s) :
     WP isa (.block toRows) s fun s' => Arr ri v s' ∧ (∀ r, r ≠ .xmm1 → r ≠ .xmm2 → r ≠ .xmm3 →
       s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  shuf_tac
+  apply WP.of_runBlock
+  simp only [toRows, shuf, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
+    RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, shuf39, shuf4e, shuf93,
+    Option.some.injEq, exists_eq_left']
   refine ⟨⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩, fun r h1 h2 h3 => ?_,
     trivial, trivial, trivial, trivial⟩
   rotate_right
   · simp only [RegUpd.xmm_setXmm_of_ne _ _ h1, RegUpd.xmm_setXmm_of_ne _ _ h2,
       RegUpd.xmm_setXmm_of_ne _ _ h3]
   all_goals rcases cases4 hq with rfl | rfl | rfl | rfl
-  all_goals lane_tac
-  all_goals first | exact h.r0 _ (by decide) | exact h.r1 _ (by decide) | exact h.r2 _ (by decide) | exact h.r3 _ (by decide)
+  all_goals simp only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, reduceCtorEq,
+    not_false_eq_true, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3]
+  exacts [h.r0 _ (by decide), h.r0 _ (by decide), h.r0 _ (by decide), h.r0 _ (by decide),
+    h.r1 _ (by decide), h.r1 _ (by decide), h.r1 _ (by decide), h.r1 _ (by decide),
+    h.r2 _ (by decide), h.r2 _ (by decide), h.r2 _ (by decide), h.r2 _ (by decide),
+    h.r3 _ (by decide), h.r3 _ (by decide), h.r3 _ (by decide), h.r3 _ (by decide)]
 
 theorem toCols_ok {v : Vector Word 16} {s : State} (h : Arr ri v s) :
     WP isa (.block toCols) s fun s' => Arr ci v s' ∧ (∀ r, r ≠ .xmm1 → r ≠ .xmm2 → r ≠ .xmm3 →
       s'.xmm r = s.xmm r) ∧ s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  shuf_tac
+  apply WP.of_runBlock
+  simp only [toCols, shuf, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm,
+    RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true, shuf39, shuf4e, shuf93,
+    Option.some.injEq, exists_eq_left']
   refine ⟨⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩, fun r h1 h2 h3 => ?_,
     trivial, trivial, trivial, trivial⟩
   rotate_right
   · simp only [RegUpd.xmm_setXmm_of_ne _ _ h1, RegUpd.xmm_setXmm_of_ne _ _ h2,
       RegUpd.xmm_setXmm_of_ne _ _ h3]
   all_goals rcases cases4 hq with rfl | rfl | rfl | rfl
-  all_goals lane_tac
-  all_goals first | exact h.r0 _ (by decide) | exact h.r1 _ (by decide) | exact h.r2 _ (by decide) | exact h.r3 _ (by decide)
+  all_goals simp only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, reduceCtorEq,
+    not_false_eq_true, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3]
+  exacts [h.r0 _ (by decide), h.r0 _ (by decide), h.r0 _ (by decide), h.r0 _ (by decide),
+    h.r1 _ (by decide), h.r1 _ (by decide), h.r1 _ (by decide), h.r1 _ (by decide),
+    h.r2 _ (by decide), h.r2 _ (by decide), h.r2 _ (by decide), h.r2 _ (by decide),
+    h.r3 _ (by decide), h.r3 _ (by decide), h.r3 _ (by decide), h.r3 _ (by decide)]
 
 theorem toDiag_ok {v : Vector Word 16} {s : State} (h : Arr rowIdx v s) :
     WP isa (.block toDiag) s fun s' => Arr ci v s' ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  shuf_tac
+  apply WP.of_runBlock
+  simp only [toDiag, transpose, shuf, xb, List.cons_append, List.nil_append, runBlock_cons,
+    runStep_some, runBlock_nil, exec, XOp.exec, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
+    RegUpd.rd_setXmm, RegUpd.wr_setXmm, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne,
+    reduceCtorEq, not_false_eq_true, eval_movdqa, shuf39, shuf4e, shuf93, punpckldq_eq,
+    punpckhdq_eq, punpcklqdq_eq, punpckhqdq_eq, dword_ofDwords_0, dword_ofDwords_1,
+    dword_ofDwords_2, dword_ofDwords_3, Option.some.injEq, exists_eq_left']
   refine ⟨⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩, trivial, trivial, trivial,
     trivial⟩ <;>
-  rcases cases4 hq with rfl | rfl | rfl | rfl <;> lane_tac <;>
-  first | exact h.r0 _ (by decide) | exact h.r1 _ (by decide) | exact h.r2 _ (by decide) | exact h.r3 _ (by decide)
+  rcases cases4 hq with rfl | rfl | rfl | rfl <;>
+    simp only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true,
+      dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3]
+  exacts [h.r0 _ (by decide), h.r1 _ (by decide), h.r2 _ (by decide), h.r3 _ (by decide),
+    h.r1 _ (by decide), h.r2 _ (by decide), h.r3 _ (by decide), h.r0 _ (by decide),
+    h.r2 _ (by decide), h.r3 _ (by decide), h.r0 _ (by decide), h.r1 _ (by decide),
+    h.r3 _ (by decide), h.r0 _ (by decide), h.r1 _ (by decide), h.r2 _ (by decide)]
 
 theorem fromDiag_ok {v : Vector Word 16} {s : State} (h : Arr ci v s) :
     WP isa (.block fromDiag) s fun s' => Out v s' ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  shuf_tac
+  apply WP.of_runBlock
+  simp only [fromDiag, transpose, shuf, xb, List.cons_append, List.nil_append, runBlock_cons,
+    runStep_some, runBlock_nil, exec, XOp.exec, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
+    RegUpd.rd_setXmm, RegUpd.wr_setXmm, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne,
+    reduceCtorEq, not_false_eq_true, eval_movdqa, shuf39, shuf4e, shuf93, punpckldq_eq,
+    punpckhdq_eq, punpcklqdq_eq, punpckhqdq_eq, dword_ofDwords_0, dword_ofDwords_1,
+    dword_ofDwords_2, dword_ofDwords_3, Option.some.injEq, exists_eq_left']
   refine ⟨⟨fun q hq => ?_, fun q hq => ?_, fun q hq => ?_, fun q hq => ?_⟩, trivial, trivial, trivial,
     trivial⟩ <;>
-  rcases cases4 hq with rfl | rfl | rfl | rfl <;> lane_tac <;>
-  first | exact h.r0 _ (by decide) | exact h.r1 _ (by decide) | exact h.r2 _ (by decide) | exact h.r3 _ (by decide)
+  rcases cases4 hq with rfl | rfl | rfl | rfl <;>
+    simp only [RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, reduceCtorEq, not_false_eq_true,
+      dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3]
+  exacts [h.r0 _ (by decide), h.r3 _ (by decide), h.r2 _ (by decide), h.r1 _ (by decide),
+    h.r1 _ (by decide), h.r0 _ (by decide), h.r3 _ (by decide), h.r2 _ (by decide),
+    h.r2 _ (by decide), h.r1 _ (by decide), h.r0 _ (by decide), h.r3 _ (by decide),
+    h.r3 _ (by decide), h.r2 _ (by decide), h.r1 _ (by decide), h.r0 _ (by decide)]
 
 /-! ## The double rounds -/
 

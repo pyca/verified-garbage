@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 public import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -57,9 +58,9 @@ theorem invLayJA (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) :
   have h7 := hc.n10
   have h4 : 4 ≤ c.n := by omega_arith
   have hT : bitsAt c.n 2 + invTbl c.n ≤ size := by
-    have := invTbl_below h4; have := sl_le_jw c h46 (i := WB) (by decide); omega
+    have := invTbl_below h4; have := sl_le_jw c h46 (i := WB) (by decide); omega_arith
   have below : ∀ {i}, i < 45 → i ≠ TMP → c.sl i + 8 * c.n ≤ bitsAt c.n 2 := fun hi hT => by
-    have := sl_below_bits c hi 2 0 (.inl hT); omega
+    have := sl_below_bits c hi 2 0 (.inl hT); omega_arith
   have hacc := invJA_acc c
   have above : bitsAt c.n 2 + invTbl c.n ≤ c.sl (WT + 80) := by
     have := invTbl_below h4; have := sl_lt c (show WB < WT + 80 by decide); omega_arith
@@ -118,7 +119,7 @@ theorem invSpecJA (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) {base : Addr} :
       · refine Or.inl ?_
         show c.sl WB + 5 * Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ c.sl TMP
         rw [sl_tmp6 c h6]; simp (disch := sl_ne) only [sl_eq]; unfold WB
-        rw [h6] at hJle ⊢; omega
+        rw [h6] at hJle ⊢; omega_arith
       · exact Or.inr (sl_lt c (show TMP < WB by decide) (.inr (.inr ⟨h6, by decide⟩)))
 
 /-- What the window method with an affine table writes, inversion included. -/
@@ -145,12 +146,12 @@ private theorem word_eq_of_wordsVal {m m' : Mem} {base : Addr} : ∀ {d k : Nat}
     simp only [wordsVal] at h
     have ha := (word m base d).isLt
     have hb := (word m' base d).isLt
-    have e1 : (word m base d).toNat = (word m' base d).toNat := by omega
-    have e2 : wordsVal m base (d + 8) k = wordsVal m' base (d + 8) k := by omega
+    have e1 : (word m base d).toNat = (word m' base d).toNat := by omega_arith
+    have e2 : wordsVal m base (d + 8) k = wordsVal m' base (d + 8) k := by omega_arith
     rcases j with _ | j
     · exact BitVec.eq_of_toNat_eq e1
-    · have := word_eq_of_wordsVal e2 j (by omega)
-      rwa [show d + 8 + 8 * j = d + 8 * (j + 1) by omega] at this
+    · have := word_eq_of_wordsVal e2 j (by omega_arith)
+      rwa [show d + 8 + 8 * j = d + 8 * (j + 1) by omega_arith] at this
 
 /-- Bytes whose word reads the same are the same. -/
 private theorem byte_of_word {m m' : Mem} {base : Addr} {d : Nat} (h : word m base d = word m' base d)
@@ -166,8 +167,8 @@ private theorem byte_of_wordsVal {m m' : Mem} {base : Addr} {d k : Nat}
     (h : wordsVal m base d k = wordsVal m' base d k) {x : Addr} (hx : d ≤ ofs base x)
     (hx' : ofs base x < d + 8 * k) : m x = m' x := by
   obtain ⟨j, hj, i, hi, rfl⟩ : ∃ j < k, ∃ i < 8, x = off base (d + 8 * j) + BitVec.ofNat 64 i := by
-    refine ⟨(ofs base x - d) / 8, by omega, (ofs base x - d) % 8, Nat.mod_lt _ (by decide), ?_⟩
-    rw [off, Offset.add_add, show d + 8 * ((ofs base x - d) / 8) + (ofs base x - d) % 8 = ofs base x by omega,
+    refine ⟨(ofs base x - d) / 8, by omega_arith, (ofs base x - d) % 8, Nat.mod_lt _ (by decide), ?_⟩
+    rw [off, Offset.add_add, show d + 8 * ((ofs base x - d) / 8) + (ofs base x - d) % 8 = ofs base x by omega_arith,
       BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
   exact byte_of_word (word_eq_of_wordsVal h j hj) hi
 
@@ -227,21 +228,21 @@ theorem invSpecJACall (hc : CfgOk c) (h6 : c.n = 6) (hi : c.inverse ≠ none) {b
     refine WP.seq ?_
     rw [WP.block_append_iff]
     refine WP.mono (copy_ok (Impl.Ecdh.X86_64.Cfg.invJAWords c) ht (o := bitsAt c.n 2) (a := c.sl WB)
-      (by omega) (by omega) (by omega)) fun t₁ ⟨e₁, k₁, O₁⟩ => ?_
+      (by omega_arith) (by omega_arith) (by omega_arith)) fun t₁ ⟨e₁, k₁, O₁⟩ => ?_
     have ht₁ := ht.of_keepRegs k₁ (by decide)
     refine WP.mono (copy_ok c.n ht₁ (o := Impl.Ecdh.X86_64.Cfg.invJAPt c) (a := c.sl PT)
-      (by omega) (by omega) (by omega)) fun t₂ ⟨e₂, k₂, O₂⟩ => ?_
+      (by omega_arith) (by omega_arith) (by omega_arith)) fun t₂ ⟨e₂, k₂, O₂⟩ => ?_
     have ht₂ := ht₁.of_keepRegs k₂ (by decide)
     have U₂ : Unch base [(bitsAt c.n 2, 8 * Impl.Ecdh.X86_64.Cfg.invJAWords c),
         (Impl.Ecdh.X86_64.Cfg.invJAPt c, 8 * c.n)] t.mem t₂.mem := O₁.unch.trans O₂.unch
     have hM₂ : ModOkW c.MP' size c.C.p t₂.mem base := hM.unch U₂ (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       show c.sl MP + 8 * c.n ≤ w.1 ∨ _
-      rcases hw with rfl | rfl <;> dsimp only <;> omega) hn
+      rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) hn
     have z₂ : wordsVal t₂.mem base (c.sl RZ) c.n = wordsVal t.mem base (c.sl RZ) c.n :=
       U₂.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-        rcases hw with rfl | rfl <;> dsimp only <;> omega) (by omega)
+        rcases hw with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
     refine WP.seq (WP.mono (show WP isa c.pPow.inline t₂ fun s' => KeepRegs (invClob c.n) t₂ s' ∧
         Unch base (pwW c) t₂.mem s'.mem ∧ wordsVal s'.mem base (c.sl ACC) c.n < c.C.p ∧
         toM c.C.p (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
@@ -251,7 +252,7 @@ theorem invSpecJACall (hc : CfgOk c) (h6 : c.n = 6) (hi : c.inverse ≠ none) {b
       | none => exact absurd hi' hi
       | some C =>
         obtain ⟨h9, -⟩ := hc.inverse (by rw [hi']; rfl)
-        exact WP.mono (invPFn_ok hc (by omega) h9 ht₂ hM₂ (by rw [z₂]; exact hz)) fun _ h => h.2)
+        exact WP.mono (invPFn_ok hc (by omega_arith) h9 ht₂ hM₂ (by rw [z₂]; exact hz)) fun _ h => h.2)
       fun t₃ ⟨K₃, U₃, lt₃, v₃⟩ => ?_)
     have ht₃ := ht₂.of_keepRegs K₃ (rdi_not_invClob _)
     have p₃ : ∀ x, (ofs base x < 1456 ∨ 1552 ≤ ofs base x) → (ofs base x < 3400 ∨ 3848 ≤ ofs base x) →
@@ -259,72 +260,72 @@ theorem invSpecJACall (hc : CfgOk c) (h6 : c.n = 6) (hi : c.inverse ≠ none) {b
       U₃ x fun w hw => by
         simp only [pwW, slW, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
           List.mem_cons, List.not_mem_nil, or_false] at hw
-        rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+        rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
     rw [WP.block_append_iff, WP.block_append_iff]
-    refine WP.mono (copy_ok c.n ht₃ (o := (jwQ c).E.x) (a := c.sl ACC) (by omega) (by omega) (by omega))
+    refine WP.mono (copy_ok c.n ht₃ (o := (jwQ c).E.x) (a := c.sl ACC) (by omega_arith) (by omega_arith) (by omega_arith))
       fun t₄ ⟨e₄, k₄, O₄⟩ => ?_
     have ht₄ := ht₃.of_keepRegs k₄ (by decide)
-    refine WP.mono (copy_ok c.n ht₄ (o := c.sl PT) (a := Impl.Ecdh.X86_64.Cfg.invJAPt c) (by omega)
-      (by omega) (by omega)) fun t₅ ⟨e₅, k₅, O₅⟩ => ?_
+    refine WP.mono (copy_ok c.n ht₄ (o := c.sl PT) (a := Impl.Ecdh.X86_64.Cfg.invJAPt c) (by omega_arith)
+      (by omega_arith) (by omega_arith)) fun t₅ ⟨e₅, k₅, O₅⟩ => ?_
     have ht₅ := ht₄.of_keepRegs k₅ (by decide)
     refine WP.mono (copy_ok (Impl.Ecdh.X86_64.Cfg.invJAWords c) ht₅ (o := c.sl WB) (a := bitsAt c.n 2)
-      (by omega) (by omega) (by omega)) fun t₆ ⟨e₆, k₆, O₆⟩ => ?_
+      (by omega_arith) (by omega_arith) (by omega_arith)) fun t₆ ⟨e₆, k₆, O₆⟩ => ?_
     have hrax : ∀ r ∈ [Reg.rax], r ∈ invClob c.n := fun r hr => by
       rw [List.mem_singleton.mp hr]; simp [invClob, powClob, clob]
     -- What the call and the copies after it keep.
     have far : ∀ x, (ofs base x < 1456 ∨ 1552 ≤ ofs base x) → (ofs base x < 3400 ∨ 3848 ≤ ofs base x) →
         (ofs base x < 4048 ∨ 4096 ≤ ofs base x) → (ofs base x < 7936 ∨ 7984 ≤ ofs base x) →
         t₄.mem x = t₂.mem x := fun x h1 h2 h3 h4 => by
-      rw [O₄ x (by omega), p₃ x h1 h2 h3]
+      rw [O₄ x (by omega_arith), p₃ x h1 h2 h3]
     have U₄ : Unch base [(1456, 96), (3400, 448), (4048, 48), (7936, 48)] t₂.mem t₄.mem := fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
-      exact far x (by omega) (by omega) (by omega) (by omega)
+      exact far x (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
     have W4 : ∀ {d k : Nat}, 3008 ≤ d → d + 8 * k ≤ 3400 →
         wordsVal t₄.mem base d k = wordsVal t₂.mem base d k := fun h1 h2 =>
       U₄.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-        rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by omega)
+        rcases hw with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by omega_arith)
     have B : wordsVal t₅.mem base (bitsAt c.n 2) 35 = wordsVal t.mem base (c.sl WB) 35 := by
-      rw [O₅.wordsVal (by omega) (by omega), W4 (by omega) (by omega), O₂.wordsVal (by omega) (by omega),
+      rw [O₅.wordsVal (by omega_arith) (by omega_arith), W4 (by omega_arith) (by omega_arith), O₂.wordsVal (by omega_arith) (by omega_arith),
         ← eW, e₁]
     have P : wordsVal t₄.mem base (Impl.Ecdh.X86_64.Cfg.invJAPt c) c.n = wordsVal t.mem base (c.sl PT) c.n := by
-      rw [W4 (by omega) (by omega), e₂, O₁.wordsVal (by omega) (by omega)]
+      rw [W4 (by omega_arith) (by omega_arith), e₂, O₁.wordsVal (by omega_arith) (by omega_arith)]
     have X : wordsVal t₆.mem base (jwQ c).E.x c.n = wordsVal t₃.mem base (c.sl ACC) c.n := by
-      rw [O₆.wordsVal (by omega) (by omega), O₅.wordsVal (by omega) (by omega), e₄]
+      rw [O₆.wordsVal (by omega_arith) (by omega_arith), O₅.wordsVal (by omega_arith) (by omega_arith), e₄]
     refine ⟨((((k₁.mono hrax).trans (k₂.mono hrax)).trans K₃).trans ((k₄.mono hrax).trans
       ((k₅.mono hrax).trans (k₆.mono hrax)))), fun x hx => ?_, by rw [hMn, X]; exact lt₃, ?_⟩
     · simp only [invJACallW, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hx
       rw [eEx, eB2, eT, eTMP, eACC, eB3, eWB, hn6] at hx
       by_cases hb' : 3568 ≤ ofs base x ∧ ofs base x < 3848
       · -- The window's bits, put back.
-        refine byte_of_wordsVal (base := base) (d := c.sl WB) (k := 35) (x := x) ?_ (by omega) (by omega)
+        refine byte_of_wordsVal (base := base) (d := c.sl WB) (k := 35) (x := x) ?_ (by omega_arith) (by omega_arith)
         rw [← B, ← eW, e₆]
       · by_cases hp : 1504 ≤ ofs base x ∧ ofs base x < 1552
         · -- `PT`, put back.
-          rw [O₆ x (by omega)]
-          refine byte_of_wordsVal (base := base) (d := c.sl PT) (k := c.n) (x := x) ?_ (by omega) (by omega)
+          rw [O₆ x (by omega_arith)]
+          refine byte_of_wordsVal (base := base) (d := c.sl PT) (k := c.n) (x := x) ?_ (by omega_arith) (by omega_arith)
           rw [e₅, P]
-        · rw [O₆ x (by omega), O₅ x (by omega), far x (by omega) (by omega) (by omega) (by omega),
-            O₂ x (by omega), O₁ x (by omega)]
+        · rw [O₆ x (by omega_arith), O₅ x (by omega_arith), far x (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
+            O₂ x (by omega_arith), O₁ x (by omega_arith)]
     · show toM _ _ _ = toM _ _ _ ^ _
       rw [hMn, X, v₃, z₂]; rfl
   · simp only [invJACallW, List.mem_cons, List.not_mem_nil, or_false] at hw
     rw [hMn, hMmo, hMtmp]
     rcases hw with rfl | rfl | rfl | rfl | rfl
     · exact Or.inl rfl
-    · refine Or.inr (Or.inr ⟨Or.inl (by dsimp only; omega), fun x hx => ?_⟩)
+    · refine Or.inr (Or.inr ⟨Or.inl (by dsimp only; omega_arith), fun x hx => ?_⟩)
       obtain ⟨i, rfl, hi⟩ := key x hx
-      dsimp only; unfold WT ACC PT at hi; omega
+      dsimp only; unfold WT ACC PT at hi; omega_arith
     · exact Or.inr (Or.inl rfl)
-    · refine Or.inr (Or.inr ⟨Or.inl (by dsimp only; omega), fun x hx => ?_⟩)
+    · refine Or.inr (Or.inr ⟨Or.inl (by dsimp only; omega_arith), fun x hx => ?_⟩)
       obtain ⟨i, rfl, hi⟩ := key x hx
-      dsimp only; unfold WT ACC PT at hi; omega
-    · refine Or.inr (Or.inr ⟨Or.inl (by dsimp only; omega), fun x hx => ?_⟩)
+      dsimp only; unfold WT ACC PT at hi; omega_arith
+    · refine Or.inr (Or.inr ⟨Or.inl (by dsimp only; omega_arith), fun x hx => ?_⟩)
       obtain ⟨i, rfl, hi⟩ := key x hx
-      dsimp only; unfold WT ACC PT at hi; omega
+      dsimp only; unfold WT ACC PT at hi; omega_arith
   · simp only [invJACallW, List.mem_cons, List.not_mem_nil, or_false] at hw
     rw [hb, hJ]
-    rcases hw with rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega
+    rcases hw with rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith
 
 /-- What the inversion of `mulQJA`'s table writes, a call or written out. -/
 def invJAW (c : Cfg) : List (Nat × Nat) :=
@@ -363,7 +364,7 @@ theorem invJAP_w (h46 : c.n = 4 ∨ c.n = 6) :
           Nat.le_refl _, ?_⟩
         dsimp only
         rw [bitsAt_eq]; simp (disch := sl_ne) only [sl_eq]; unfold WB
-        rcases h46 with h | h <;> rw [h] <;> omega
+        rcases h46 with h | h <;> rw [h] <;> omega_arith
     · exact ⟨w, List.mem_append_left _ (invJA_w w (List.mem_append_right _ hw)), Nat.le_refl _, Nat.le_refl _⟩
 
 /-! ## `[d]P` and `Z^(p-2)` -/

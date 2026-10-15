@@ -55,38 +55,38 @@ theorem encMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   have cR : oRsa = 8192 := rfl
   have hk3 : W 21 = BitVec.ofNat 64 L.k.toNat := by rw [hS.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have f4 : MFit 1 Hl.D (1 + Hl.D) (L.k.toNat - Hl.D - 1) :=
-    ⟨by rw [cSt]; omega, by rw [cSt]; omega, by omega, by omega, by omega⟩
+    ⟨by rw [cSt]; omega_arith, by rw [cSt]; omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
   have f2 : MFit (1 + Hl.D) (L.k.toNat - Hl.D - 1) 1 Hl.D :=
-    ⟨by rw [cSt]; omega, by rw [cSt]; omega, by omega, by omega, by omega⟩
+    ⟨by rw [cSt]; omega_arith, by rw [cSt]; omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
   unfold Impl.RsaOaep.AArch64.Precomputed.encMain seqs seqs seqs seqs seqs seqs
   -- `EM` before masking.
   refine WP.seq (WP.mono (encEm_ok hH hHh hL hP16 hD hc R hS hk) fun t5 ⟨hc5, V5, R5, E⟩ => ?_)
   -- `DB` masked.
-  refine WP.seq (WP.mono (dbArgs_ok (hc5.lay hL hP16 R5 hS.scr) R5 hk3 (by omega) (by omega) hk1024 [])
+  refine WP.seq (WP.mono (dbArgs_ok (hc5.lay hL hP16 R5 hS.scr) R5 hk3 (by omega_arith) (by omega_arith) hk1024 [])
     fun t6 ⟨_, S6, R6⟩ => ?_)
   have hc6 := hc5.step hL hP16 S6 nil_ws
   have hS6 : Slots L (mW W L.scr 1 Hl.D (1 + Hl.D) (L.k.toNat - Hl.D - 1)) :=
-    hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega)
+    hS.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega_arith)
   refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv (hc6.lay hL hP16 R6 hS6.scr) R6 f4 (mW_args _ _ _ _ _ _))
     fun t7 ⟨_, S7, V7, W7, R7, hW7, hV7⟩ => ?_)
   have hc7 := hc6.step hL hP16 S7 nil_ws
-  have hS7 : Slots L W7 := hS6.of fun j _ h2 h3 => hW7 j (by unfold nW frameBytes; omega) (by omega) (by omega)
+  have hS7 : Slots L W7 := hS6.of fun j _ h2 h3 => hW7 j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)
   -- The seed masked.
   refine WP.seq (WP.mono (seedArgs_ok (hc7.lay hL hP16 R7 hS7.scr) R7 (by rw [hS7.k, BitVec.ofNat_toNat,
-    BitVec.setWidth_eq]) (by omega) (by omega) hk1024 []) fun t8 ⟨_, S8, R8⟩ => ?_)
+    BitVec.setWidth_eq]) (by omega_arith) (by omega_arith) hk1024 []) fun t8 ⟨_, S8, R8⟩ => ?_)
   have hc8 := hc7.step hL hP16 S8 nil_ws
   have hS8 : Slots L (mW W7 L.scr (1 + Hl.D) (L.k.toNat - Hl.D - 1) 1 Hl.D) :=
-    hS7.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega)
+    hS7.of fun j _ _ h3 => mW_eq _ _ _ _ _ _ (by omega_arith)
   refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv (hc8.lay hL hP16 R8 hS8.scr) R8 f2 (mW_args _ _ _ _ _ _))
     fun t9 ⟨_, S9, V9, W9, R9, hW9, hV9⟩ => ?_)
   have hc9 := hc8.step hL hP16 S9 nil_ws
-  have hS9 : Slots L W9 := hS8.of fun j _ h2 h3 => hW9 j (by unfold nW frameBytes; omega) (by omega) (by omega)
+  have hS9 : Slots L W9 := hS8.of fun j _ h2 h3 => hW9 j (by unfold nW frameBytes; omega_arith) (by omega_arith) (by omega_arith)
   -- The call.
   refine WP.seq ?_
   rw [Impl.RsaOaep.AArch64.Precomputed.pubArgs, pubArgs_eq, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (pubW_ok hL hP16 hc9 R9 hS9) fun t10 ⟨hc10, R10⟩ => ?_
   have hS10 : Slots L (pubW L W9) := hS9.of fun j h1 _ _ => by
-    simp only [pubW, upd]; rw [ifn (by omega), ifn (by omega)]
+    simp only [pubW, upd]; rw [ifn (by omega_arith), ifn (by omega_arith)]
   refine WP.mono (pubR_ok hL hP16 hc10 R10 hS10) fun t₁₁ ⟨hc₁₁, hm₁₁, hr₁₁⟩ => ?_
   refine WP.mono (loads_ok hL hP16 hc₁₁ hp hr₁₁) fun t11 ⟨hc11, hm11', hr11⟩ => ?_
   have R11 : Rep t11.mem L.Q L.scr V9 (pubW L W9) := hm11' ▸ hm₁₁ ▸ R10
@@ -96,27 +96,27 @@ theorem encMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
   have hlhl : (Hs.hash (Spec.Rsa.bytesAt m₀ L.lab L.labl.toNat)).length = Hl.D := by rw [hHv.2, hHl]
   have hml : (Spec.Rsa.bytesAt m₀ L.msg L.ml.toNat).length = L.ml.toNat := by simp [Spec.Rsa.bytesAt]
   have hsdl : (Spec.Rsa.bytesAt m₀ L.sd Hl.D).length = Hl.D := by simp [Spec.Rsa.bytesAt]
-  have e1 : L.k.toNat - (Hl.D + 1) = L.k.toNat - Hl.D - 1 := by omega
-  have hm : ∀ o, o < L.k.toNat → mOut o := fun o ho => (mOut_iff o).mpr (.inl (by unfold oSt; omega))
+  have e1 : L.k.toNat - (Hl.D + 1) = L.k.toNat - Hl.D - 1 := by omega_arith
+  have hm : ∀ o, o < L.k.toNat → mOut o := fun o ho => (mOut_iff o).mpr (.inl (by unfold oSt; omega_arith))
   have hsrc : srcB V7 (1 + Hl.D) (L.k.toNat - Hl.D - 1) =
       srcB (mixV V5 (Spec.Mgf1.mgf1 Gs (srcB V5 1 Hl.D) (L.k.toNat - Hl.D - 1)) (1 + Hl.D)
         (L.k.toNat - Hl.D - 1)) (1 + Hl.D) (L.k.toNat - Hl.D - 1) :=
     List.map_congr_left fun i hi => by
       have := List.mem_range.mp hi
-      exact hV7 _ (by unfold oRsa; omega) (hm _ (by omega))
+      exact hV7 _ (by unfold oRsa; omega_arith) (hm _ (by omega_arith))
   have hlist : Spec.Rsa.bytesAt t11.mem (L.scr + BitVec.ofNat 64 0) L.k.toNat =
       emOf Gs Hl.D L.k.toNat L.ml.toNat (Spec.Rsa.bytesAt m₀ L.sd Hl.D)
         (Hs.hash (Spec.Rsa.bytesAt m₀ L.lab L.labl.toNat)) (Spec.Rsa.bytesAt m₀ L.msg L.ml.toNat) := by
     unfold emOf
-    rw [← em_mask hGv (V₁ := V5) (by omega) hsdl (by
-        simp only [List.length_append, List.length_cons, hlhl, hml, Spec.RsaOaep.zeros, List.length_replicate]; omega)
+    rw [← em_mask hGv (V₁ := V5) (by omega_arith) hsdl (by
+        simp only [List.length_append, List.length_cons, hlhl, hml, Spec.RsaOaep.zeros, List.length_replicate]; omega_arith)
       E.z0 E.sd (E.db hlhl hml hk)]
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => ?_
     have hi' := List.mem_range.mp hi
-    rw [BitVec.add_zero, show L.scr + BitVec.ofNat 64 i = off L.scr i from rfl, R11.scr i (by omega),
-      hV9 _ (by omega) (hm _ hi'), hsrc]
-    exact mixV_congr _ _ _ (hV7 _ (by omega) (hm _ hi'))
+    rw [BitVec.add_zero, show L.scr + BitVec.ofNat 64 i = off L.scr i from rfl, R11.scr i (by omega_arith),
+      hV9 _ (by omega_arith) (hm _ hi'), hsrc]
+    exact mixV_congr _ _ _ (hV7 _ (by omega_arith) (hm _ hi'))
   rw [hlist] at hout
   exact hout hq
 
@@ -140,8 +140,8 @@ theorem chkK_ok {H : Hash} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hk' : k �
       ⟨Ly.congr hsp hwr (by rw [hm]), Step.blk _ hrd hwr hsp hv hcs hm, hm, x11⟩
   oaep_run [chkK, sK, h168, Ly.sp, rk, imm16 hD, sbc_self]
   refine ⟨trivial, trivial, trivial, trivial, trivial, cs_rfl, ?_⟩
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega),
-    Nat.mod_eq_of_lt (show 2 * H.D + 2 < 2 ^ 64 by omega)]
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k < 2 ^ 64 by omega_arith),
+    Nat.mod_eq_of_lt (show 2 * H.D + 2 < 2 ^ 64 by omega_arith)]
 
 /-- `x11` all ones iff `mLen > k - 2 hLen - 2`. -/
 theorem chkMsg_ok {H : Hash} {k mLen : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hml : W 28 = BitVec.ofNat 64 mLen)
@@ -157,10 +157,10 @@ theorem chkMsg_ok {H : Hash} {k mLen : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hml
       u'.gpr .x11 = if mLen ≤ k - (2 * H.D + 2) then 0 else BitVec.allOnes 64) ?_
     fun u' ⟨hm, hrd, hwr, hsp, hv, hcs, x11⟩ =>
       ⟨Ly.congr hsp hwr (by rw [hm]), Step.blk _ hrd hwr hsp hv hcs hm, hm, x11⟩
-  oaep_run [chkMsg, sK, sMsgLen, h168, h224, Ly.sp, rk, rml, sbc_self, show 2 * H.D + 2 < 4096 by omega,
+  oaep_run [chkMsg, sK, sMsgLen, h168, h224, Ly.sp, rk, rml, sbc_self, show 2 * H.D + 2 < 4096 by omega_arith,
     Offset.ofNat_sub_ofNat hD]
   refine ⟨trivial, trivial, trivial, trivial, trivial, cs_rfl, ?_⟩
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k - (2 * H.D + 2) < 2 ^ 64 by omega),
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show k - (2 * H.D + 2) < 2 ^ 64 by omega_arith),
     Nat.mod_eq_of_lt hmL]
 
 /-- Zeros to `out`, and 0. -/
@@ -221,7 +221,7 @@ theorem fail_ok {L : ELay} (hL : L.Ok) (hP : 16 ≤ L.P) {g : Reg → BitVec 64}
       Spec.Rsa.written t'.mem L.out L.k.toNat ((t'.gpr .x0).setWidth 32) none := by
   have hk64 := hL.k64
   refine WP.mono (encFail_ok (hc.lay hL hP R hS.scr) R hS.out (by rw [hS.k, BitVec.ofNat_toNat,
-      BitVec.setWidth_eq]) (by omega) hL.k1024
+      BitVec.setWidth_eq]) (by omega_arith) hL.k1024
     (Covers.of_sub fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨L.OUT, by rw [hc.wr]; simp, 0, (BitVec.add_zero _).symm, by simp⟩)
     hL.bO (out_apart hL hP)) fun t' ⟨_, S', hz, x0⟩ =>
@@ -262,7 +262,7 @@ theorem body_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
       Spec.RsaOaep.encrypt Hs Gs (Spec.Rsa.bytesAt s.mem L.n L.k.toNat) (Spec.Rsa.bytesAt s.mem L.e L.el.toNat)
         (Spec.Rsa.bytesAt s.mem L.lab L.labl.toNat) (Spec.Rsa.bytesAt s.mem L.msg L.ml.toNat)
         (Spec.Rsa.bytesAt s.mem L.sd Hs.len) = none := fun hgt =>
-    encrypt_none (by rw [hnB, hmB, hHl]; omega)
+    encrypt_none (by rw [hnB, hmB, hHl]; omega_arith)
   rw [encBody_eq]
   refine WP.seq ?_
   rw [WP.block_append_iff]
@@ -271,31 +271,31 @@ theorem body_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
     ⟨fun _ _ => rfl, fun _ _ => rfl⟩
   have hk3 : (fun j => word t.mem L.Q (8 * j)) 21 = BitVec.ofNat 64 L.k.toNat :=
     hS.k.trans (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])
-  refine WP.mono (chkK_ok (H := Hl) (hc.lay hL hP16 R hS.scr) R hk3 hk1024 (by omega))
+  refine WP.mono (chkK_ok (H := Hl) (hc.lay hL hP16 R hS.scr) R hk3 hk1024 (by omega_arith))
     fun t1 ⟨_, S1, hm1, x11⟩ => ?_
   have hc1 := hc.step hL hP16 S1 nil_ws
   have R1 : Rep t1.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (fun j => word t.mem L.Q (8 * j)) := hm1 ▸ R
   refine WP.ite _ (eval_nonzero t1 .x11) (fun hb => ?_) (fun hb => ?_)
   · have hkD : L.k.toNat < 2 * Hl.D + 2 := by
-      by_contra hc'; rw [x11, ifp (by omega)] at hb; exact absurd hb (by decide)
+      by_contra hc'; rw [x11, ifp (by omega_arith)] at hb; exact absurd hb (by decide)
     refine WP.mono (fail_ok hL hP16 hc1 R1 hS) fun u ⟨hcu, hw⟩ => ⟨hcu, fun _ => ?_⟩
-    rw [enone (by omega)]; exact hw
+    rw [enone (by omega_arith)]; exact hw
   · have hkD : 2 * Hl.D + 2 ≤ L.k.toNat := by
-      by_contra hc'; rw [x11, ifn (by omega)] at hb; exact absurd hb (by decide)
+      by_contra hc'; rw [x11, ifn (by omega_arith)] at hb; exact absurd hb (by decide)
     refine WP.seq (WP.mono (chkMsg_ok (H := Hl) (hc1.lay hL hP16 R1 hS.scr) R1 hk3
       (hS.ml.trans (by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq])) hk1024 L.ml.isLt hkD) fun t2 ⟨_, S2, hm2, x11'⟩ => ?_)
     have hc2 := hc1.step hL hP16 S2 nil_ws
     have R2 : Rep t2.mem L.Q L.scr (fun o => t.mem (off L.scr o)) (fun j => word t.mem L.Q (8 * j)) := hm2 ▸ R1
     refine WP.ite _ (eval_nonzero t2 .x11) (fun hb' => ?_) (fun hb' => ?_)
     · have hmk : L.k.toNat - (2 * Hl.D + 2) < L.ml.toNat := by
-        by_contra hc'; rw [x11', ifp (by omega)] at hb'; exact absurd hb' (by decide)
+        by_contra hc'; rw [x11', ifp (by omega_arith)] at hb'; exact absurd hb' (by decide)
       refine WP.mono (fail_ok hL hP16 hc2 R2 hS) fun u ⟨hcu, hw⟩ => ⟨hcu, fun _ => ?_⟩
-      rw [enone (by omega)]; exact hw
+      rw [enone (by omega_arith)]; exact hw
     · have hmk : L.ml.toNat ≤ L.k.toNat - (2 * Hl.D + 2) := by
-        by_contra hc'; rw [x11', ifn (by omega)] at hb'; exact absurd hb' (by decide)
-      refine WP.mono (encMain_ok hH hG hHh hHl hHv hGh hGl hGv c hL hP hP16 hLD hpo hc2 R2 hS (by omega))
+        by_contra hc'; rw [x11', ifn (by omega_arith)] at hb'; exact absurd hb' (by decide)
+      refine WP.mono (encMain_ok hH hG hHh hHl hHv hGh hGl hGv c hL hP hP16 hLD hpo hc2 R2 hS (by omega_arith))
         fun u ⟨hcu, hw⟩ => ⟨hcu, fun hq => ?_⟩
-      rw [encrypt_some hsB (by rw [hnB, hmB]; omega), hnB, hmB, hHl]
+      rw [encrypt_some hsB (by rw [hnB, hmB]; omega_arith), hnB, hmB, hHl]
       exact hw hq
 
 /-! ## The whole function -/
@@ -329,11 +329,11 @@ theorem enc_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x
     WP isa (Impl.RsaOaep.AArch64.Precomputed.encrypt Hl Gm c.name c.code) s fun s' =>
       abiPreserved s s' ∧ (encSpec Hs Gs P).post s s' := by
   have hsp := spec_sp h
-  refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
+  refine WP.frame (by omega_arith) (WP.alloc (by decide) ?_ ?_)
   · show 272 ≤ (s.sp - 16).toNat
-    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega)]
+    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega_arith)]
     show 272 ≤ s.sp.toNat - 16
-    omega
+    omega_arith
   · show WP isa (encBodyWith Hl (Impl.RsaOaep.AArch64.Precomputed.encMain Hl Gm c.name c.code)) (entered s) _
     refine WP.mono (body_ok hH hG hHh hHl hHv hGh hGl hGv c hP hP16 h) fun u' ⟨hc', hw'⟩ => ?_
     have hsp' : (freed frameBytes u').sp = (lay Hs.len P s).Q + BitVec.ofNat 64 272 := by

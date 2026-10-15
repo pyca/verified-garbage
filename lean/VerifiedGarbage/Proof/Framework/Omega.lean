@@ -117,14 +117,21 @@ def omegaFromFacts (facts : Array Expr) (exactTypeOnly := false) : TacticM Unit 
       let proof ← mkAuxTheorem type (← instantiateMVarsProfiling result) (zetaDelta := true)
       g.assign proof
 
-/-- Elaborate exactly the facts selected by the caller. -/
+/-- Elaborate exactly the facts selected by the caller. A fact that is the
+goal closes it only if its type is the goal's (unifying every fact with the
+goal first costs more than the solver); if the solver then fails, try again
+with a fact the goal is equal to up to unfolding. -/
 def omegaWith (hs : Array Term) : TacticM Unit := do
   let facts ← withMainContext do
     hs.mapM fun h => do
       let e ← Term.elabTerm h none
       Term.synthesizeSyntheticMVarsNoPostponing
       instantiateMVars e
-  omegaFromFacts facts
+  let saved ← saveState
+  try omegaFromFacts facts (exactTypeOnly := true)
+  catch _ =>
+    saved.restore
+    omegaFromFacts facts
 
 /-- Adds the atoms of the arithmetic term or fact `e` to `acc`: its maximal
 subterms that are not arithmetic operations, casts or numerals. -/
@@ -199,6 +206,15 @@ def omegaArith : TacticM Unit := do
         saved.restore
         omegaFromFacts all
 
+/-- `omega` on the arithmetic facts connected to the goal, once: `omega_arith`
+without its retries, for index bounds (`Framework/GetElem.lean`), where Lean
+core's rules follow if it fails. -/
+def omegaArithOnce : TacticM Unit := do
+  let facts ← withMainContext do
+    let all ← (← getLocalHyps).filterM fun h => do isArithProp (← inferType h)
+    relevantFacts all (← getMainTarget)
+  omegaFromFacts facts (exactTypeOnly := true)
+
 /-- Clears every hypothesis `omega` cannot use. -/
 elab "clear_non_arith" : tactic => clearNonArith
 
@@ -220,6 +236,9 @@ end VG.Omega
 
 /-- `omega` using the arithmetic hypotheses in the local context. -/
 elab "omega_arith" : tactic => VG.Omega.omegaArith
+
+/-- `omega_arith` without its retries (`omegaArithOnce`). -/
+elab "omega_arith_once" : tactic => VG.Omega.omegaArithOnce
 
 /-- `bv_omega`, after clearing the hypotheses it cannot use. -/
 macro "bv_omega_arith" : tactic => `(tactic| (clear_non_arith; bv_omega))

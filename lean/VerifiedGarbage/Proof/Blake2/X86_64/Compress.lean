@@ -1015,11 +1015,14 @@ theorem holds_init {P : Params w} {s : State} {scr : Addr} {H : Spec.Blake2.Hash
   intro k hk
   rw [V0_get P H T f k hk]
   by_cases hk8 : k < 8
-  · have e : inReg 9 k = true := by simp only [inReg]; split <;> simp_all; omega
+  · have e : inReg 9 k = true := by
+      simp only [inReg, show ¬(8 ≤ k ∧ k ≤ 11) by omega_using [hk8], ite_false]
     simp only [e, ite_true, hk8, dite_true]; exact hst k hk8
   · have : k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11 ∨ k = 12 ∨ k = 13 ∨ k = 14 ∨ k = 15 := by omega_using [hk, hk8]
     rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp (config := {decide := true}) only [wreg, dite_false, ite_true, ite_false, h8, h10, h11, h14, h10r, h11r, h12r, h13r, Nat.reduceSub]
+    simp only [inReg, wreg, Nat.reduceLeDiff, Nat.reduceLT, Nat.reduceBEq, Nat.reduceEqDiff, and_self,
+      and_false, Bool.false_eq_true, ↓reduceIte, ↓reduceDIte, h8, h10, h11, h14, h10r, h11r, h12r, h13r,
+      Nat.reduceSub]
 
 /-! ## The loop invariant -/
 
@@ -1378,7 +1381,7 @@ theorem common0 {P : Params w} (hw : w = 64 ∨ w = 32) {s₀ : State} (hp : Pre
     fun d v hd h => h.writeW (List.mem_singleton_self _) v (contains_off hd (by omega_using [hd]))
   have F0 : Frame [scR (scA s₀)] s₀.mem s₂.mem := by
     rw [hm, proMem]
-    repeat (first | exact Frame.refl _ _ | refine W _ _ (by decide +kernel) ?_)
+    repeat (first | refine W _ _ (by decide +kernel) ?_ | exact Frame.refl _ _)
   have R : ∀ {d : Nat}, s₂.mem.readW (off (scA s₀) d) 64 =
       ((proMem s₀).writeW (off (scA s₀) fOff) (flagW 64 (fl s₀))).readW (off (scA s₀) d) 64 :=
     by intro d; rw [hm]

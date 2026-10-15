@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.SigEval
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public meta import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.TCB.Artifact
 
 /-!
@@ -288,8 +290,20 @@ elab_rules : tactic
       -- In a module, a theorem imported from another module is an axiom.
       if cs.any fun c => (env.find? c).any (· matches .thmInfo _ | .axiomInfo _) then args := args.push l
     if args.isEmpty then return
+    args ← unhygienicSimpArgs args
     evalTactic (← `(tactic|
       set_option linter.unusedSimpArgs false in simp -failIfUnchanged only [$args,*] $[$loc]?))
+
+/-- `sig_simp_only [xs] (at h)?` is `simp only [xs] (at h)?`, for the simp
+calls of macros: their lemma names are elaborated as plain names
+(`unhygienicSimpArgs`). -/
+syntax "sig_simp_only " "[" Lean.Parser.Tactic.simpLemma,* "]" (Lean.Parser.Tactic.location)? : tactic
+
+open Lean Elab Tactic in
+elab_rules : tactic
+  | `(tactic| sig_simp_only [$xs,*] $[$loc]?) => do
+    let args ← unhygienicSimpArgs xs.getElems
+    evalTactic (← `(tactic| simp only [$args,*] $[$loc]?))
 
 /-- Unfolds a contract built with `Sig.contract` (at `loc`), evaluating the
 signature and the calling convention given by `ls`. -/
@@ -301,7 +315,7 @@ macro_rules
         | (sig_iff $[$loc]?
            sig_reduce [$ls,*] $[$loc]?)
         | (sig_reduce [$ls,*] $[$loc]?
-           try simp only [Sig.pairwise_iff, Sig.forall_mem_disjoint_iff, Sig.forall_mem_bound_iff,
+           try sig_simp_only [Sig.pairwise_iff, Sig.forall_mem_disjoint_iff, Sig.forall_mem_bound_iff,
              Sig.forall_pubs_iff] $[$loc]?
            try sig_reduce [] $[$loc]?)
       -- The tables' regions first, before `List.map` and `forall_eq` take them apart.
@@ -331,7 +345,7 @@ syntax "sig_pub " "[" Lean.Parser.Tactic.simpLemma,* "]" (Lean.Parser.Tactic.loc
 macro_rules
   | `(tactic| sig_pub [$ls,*] $[$loc]?) => `(tactic| (
       sig_eval [$ls,*] $[$loc]?
-      try simp only [BitVec.setWidth_eq, BitVec.setWidth_32_64_32, BitVec.setWidth_32_64_inj,
+      try sig_simp_only [BitVec.setWidth_eq, BitVec.setWidth_32_64_32, BitVec.setWidth_32_64_inj,
         BitVec.append_32_iff, and_assoc, and_true, true_and] $[$loc]?))
 
 end VG

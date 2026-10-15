@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindows
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointWindows
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
@@ -26,31 +27,32 @@ def JointWinI (p : XPub) (j : Nat) (s : State) : Prop :=
     JointWinInv t₀ (off p.B p.o) p.wx minv n xc g y a b v z j s ∧
     2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧ Nat.Coprime (2 ^ (64 * p.wx)) n ∧ v < 256 ∧ z < 256
 
-theorem jointWindow_ct (M : Mont) :
-    RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 4 ∧ JointWinI q.1 q.2 s) (Joint.window M.mm)
+theorem jointWindow_ct (M : Mont) (Sq : MontS) :
+    RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 4 ∧ JointWinI q.1 q.2 s) (Joint.window Sq.mm M.mm)
       fun _ _ => True := by
   unfold Joint.window seqs
-  have sq : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s) (M.mm Public.aY Public.aY Public.aY)
-      (Two fun (q : XPub × Nat) s => WinQ q.1 s) :=
-    two_post (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ h => h.goodW) (M.ct (by unfold MmUse; decide)))
-      fun _ _ h => winSq_q M h
+  have sq : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd) Sq.mm
+      (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd) :=
+    two_post (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ h => h.goodW) Sq.ct)
+      fun _ _ h => winSqS_q Sq h
   -- Two squarings.
-  have sq0 : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 4 ∧ JointWinI q.1 q.2 s) (M.mm Public.aY Public.aY Public.aY)
-      (Two fun (q : XPub × Nat) s => WinQ q.1 s) :=
+  have sq0 : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 4 ∧ JointWinI q.1 q.2 s) Sq.mm
+      (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd) :=
     two_post (two_map (fun q : XPub × Nat => q.1.ws)
       (fun _ _ ⟨_, _, _, _, _, _, _, _, _, _, _, hI, _⟩ => ⟨_, hI.ctx.good, Nat.le_refl _⟩)
-      (M.ct (by unfold MmUse; decide))) fun q s ⟨hj, t₀, minv, n, xc, g, y, a, b, v, z, hI, hw, hw', hR, hv, hz⟩ => by
+      Sq.ct) fun q s ⟨hj, t₀, minv, n, xc, g, y, a, b, v, z, hI, hw, hw', hR, hv, hz⟩ => by
         have hp : (256 * v + z) * 4 ^ q.2 < 2 ^ 56 := by
           have : 4 ^ q.2 ≤ 4 ^ 3 := Nat.pow_le_pow_right (by decide) (by omega)
           have := Nat.mul_le_mul_left (256 * v + z) this
           omega
         have tab : CTab s.mem (off q.1.B q.1.o) q.1.wx n False 0 :=
           ⟨hI.tab.tab, hI.tab.lt, fun h _ _ => False.elim h⟩
-        exact winSq_q M ⟨minv, n, xc, _, hI.ctx, tab, hI.ylt, hI.bytes, hp, hw, hw', hR⟩
+        have hnR : n ≤ 2 ^ (64 * q.1.wx) := by rw [← hI.ctx.n]; exact Nat.le_of_lt (wv_lt _ _ _ _)
+        exact winSqS_q Sq ⟨minv, n, xc, _, hI.ctx, tab, Nat.lt_of_lt_of_le hI.ylt (Sq.le hnR), hI.bytes, hp, hw, hw', hR⟩
   -- The window, and `sV` up.
-  have mid : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s)
+  have mid : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd)
       (.block Joint.windowIndex)
-      (Two fun (q : XPub × Nat) s => WinS q.1 s) := by
+      (Two fun (q : XPub × Nat) s => WinS q.1 s Sq.bd) := by
     refine two_piece [.rdi] (pins_rdi (fun q : XPub × Nat => off q.1.B q.1.o) fun _ _ h => h.rdi) (by unfold Joint.windowIndex; taint_decide)
       fun q s h => ?_
     obtain ⟨minv, X, Xc, V, hc, htab, hY, hV, hV', hw, hw', hR⟩ := h
@@ -89,12 +91,12 @@ theorem jointWindow_ct (M : Mont) :
       (by rw [hc.n]; exact hT)) fun t ⟨hg, _⟩ => hg.rdi
   exact rdi_ct (fun q : XPub × Nat => off q.1.B q.1.o) (fun _ _ h => h) (by taint_decide)
 
-theorem jointWindows_ct (M : Mont) :
-    RelCT isa (Two fun p s => 0 < 4 ∧ JointWinI p 0 s) (.loop (Joint.window M.mm) .ne)
+theorem jointWindows_ct (M : Mont) (Sq : MontS) :
+    RelCT isa (Two fun p s => 0 < 4 ∧ JointWinI p 0 s) (.loop (Joint.window Sq.mm M.mm) .ne)
       (Two fun p s => JointWinI p 4 s) :=
-  two_loop (Φ := JointWinI) (fun _ => 4) (jointWindow_ct M)
+  two_loop (Φ := JointWinI) (fun _ => 4) (jointWindow_ct M Sq)
     fun _ _ _ hj ⟨t₀, minv, n, xc, g, y, a, b, v, z, hI, hw, hw', hR, hv, hz⟩ =>
-      WP.mono (jointWinStep_ok M hw hw' hR hv hz hj hI) fun _ ⟨hflag, hI'⟩ =>
+      WP.mono (jointWinStep_ok M Sq hw hw' hR hv hz hj hI) fun _ ⟨hflag, hI'⟩ =>
         ⟨eval_ne_count hj hflag, fun _ => ⟨t₀, minv, n, xc, g, y, a, b, v, z, hI', hw, hw', hR, hv, hz⟩,
           fun h => h ▸ ⟨t₀, minv, n, xc, g, y, a, b, v, z, hI', hw, hw', hR, hv, hz⟩⟩
 

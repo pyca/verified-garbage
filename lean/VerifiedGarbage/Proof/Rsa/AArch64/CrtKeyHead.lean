@@ -137,7 +137,7 @@ theorem ckcHead_ok {s : State} {B : Addr} {Z k pl ql : Nat} (hs : Scr s B Z) (h0
     rw [ho₁.word (by unfold sW sArr; omega) (by omega), hm₀, word_writeW_self]
   refine ⟨⟨hs₁.congr k₂.wr, (k₂.gpr .x0 (by decide)).trans h0₁, ?_, ?_, fun j hj => ?_, hZ16,
     show 2 ≤ wW (VG.Impl.Rsa.AArch64.CheckCrtKey.capacity k pl ql) by simp only [wW]; omega, show wW (VG.Impl.Rsa.AArch64.CheckCrtKey.capacity k pl ql) < 2 ^ 24 by simp only [wW, wk]; omega⟩,
-    by rw [hm, word_writeW_self], ?_, (k01.trans k₂).mono (by simp)⟩
+    by rw [hm, word_writeW_self], ?_, (k01.trans k₂).mono (by decide)⟩
   · rw [hw sW (by decide) (by decide) (by decide)]; exact hW₁
   · rw [hm, o2.word (by omega) (by omega), word_writeW_self]
   · rw [hw (sArr j) (by unfold sArr; omega) (by unfold sArr sStride sFn; omega)

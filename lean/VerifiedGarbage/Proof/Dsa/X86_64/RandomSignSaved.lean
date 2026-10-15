@@ -26,6 +26,6 @@ theorem random_entry_values (s : State) (B : Addr) :
       Random.oOut, Random.oOutLen, Random.oUsedPtr, Random.oKey, Random.oKeyLen, Random.oPLen,
       Random.oQ, Random.oUsed, Random.oAttempts, Random.oQLen, Random.oDigest, Random.oDigestLen,
       Random.oRand, Random.oRandLen, Random.oScratch, Random.oScratchLen] <;>
-    simp (disch := omega) only [word_writeW_self, random_word_write_other]
+    simp (disch := decide) only [word_writeW_self, random_word_write_other]
 
 end VG.Proof.Dsa.X86_64

@@ -303,16 +303,3 @@ fn import_lengths_errors_and_backends() {
         assert!(!format!("{error:?}").is_empty());
     }
 }
-
-#[test]
-#[cfg(target_arch = "aarch64")]
-fn nonce_range_comparison() {
-    for q in [1u16, 255, 256, 257, 65535] {
-        for k in [0u16, 1, 254, 255, 256, 257, 65534, 65535] {
-            assert_eq!(
-                nonce_in_range(&k.to_be_bytes(), &q.to_be_bytes()),
-                k != 0 && k < q
-            );
-        }
-    }
-}

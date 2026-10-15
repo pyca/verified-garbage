@@ -71,7 +71,7 @@ theorem cand_dword' (a : BitVec 128) {l j : Nat} (hl : l < 2) (hj : j < 4) :
     toNat_dword_ofBytes _ (show 2 < 4 by decide), toNat_dword_ofBytes _ (show 3 < 4 by decide),
     candN, cb, Nat.reduceMul, Nat.reduceAdd, Nat.reduceMod, Nat.reduceDiv, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceEqDiff, Nat.add_zero] <;>
-  omega
+  first | exact S4.cand_lo (hb _) (hb _) | exact S4.cand_hi (hb _) (hb _)
 
 /-! ## The constants -/
 

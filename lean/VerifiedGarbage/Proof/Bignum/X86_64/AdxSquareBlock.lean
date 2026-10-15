@@ -98,8 +98,8 @@ theorem mac4_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z) (h8 : s
     (word s.mem B (e + 8 * j + 8 * 3)).isLt (s.gpr .rcx).isLt (s₃.gpr .r11).isLt (s₄.gpr .r12).isLt
     (s₅.gpr .r13).isLt (s₆.gpr .r15).isLt (t.gpr .rcx).isLt e₀ e₁ e₂ e₃ e₄
   refine ⟨?_, ?_, ?_, ?_, K.mono (by decide)⟩
-  · rw [ca₅]; cases a₅ <;> simp_all
-  · rw [oa₅]; cases p₅ <;> simp_all
+  · rw [ca₅, Bool.toNat_eq_zero.mp z₁]
+  · rw [oa₅, Bool.toNat_eq_zero.mp z₂]
   · rw [(k₇.gpr (by decide)).trans ((k₆.gpr (by decide)).trans x₅)]
     exact x₂
   · rw [r11, r12, r13, r15]; exact e
@@ -169,8 +169,8 @@ theorem mac1_ok {s : State} {B : Addr} {Z e eb j : Nat} (hs : Scr s B Z)
   have hc := (s.gpr .rcx).isLt
   have zl : c'.toNat = 0 ∧ o'.toNat = 0 := by omega_arith
   refine ⟨?_, ?_, ?_, ((ka.trans kb).trans kt).mono (by decide)⟩
-  · rw [ct]; cases c' <;> simp_all
-  · rw [ot]; cases o' <;> simp_all
+  · rw [ct, Bool.toNat_eq_zero.mp zl.1]
+  · rw [ot, Bool.toNat_eq_zero.mp zl.2]
   · rw [lo]; omega_arith
 
 /-- The remainder word, including its store and loop count. -/

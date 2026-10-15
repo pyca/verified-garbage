@@ -170,6 +170,17 @@ theorem e1_dhp (p : CpP) (t : State) (h : E1 p t) : DHP p.d t := by
 def CE (p : CpP) (t : State) : Prop :=
   Fx p t ∧ t.gpr .x0 = p.B ∧ Slots t.mem p.B p.hdQ ∧ t.gpr .x9 = BitVec.ofNat 64 p.mv.toNat
 
+/-- What `domHead` changes, within the header. -/
+theorem domHeadR_le : ∀ r ∈ [(8 * sG, 8), (8 * sQ, 8)], r.1 + r.2 ≤ 256 := by decide
+
+/-- The header slots read before `domHead` are outside what it changes. -/
+theorem hd_domHead (p : CpP) : ∀ q ∈ p.hd,
+    q.1 < 32 ∧ ∀ r ∈ [(8 * sG, 8), (8 * sQ, 8)], 8 * q.1 + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * q.1 := by
+  rintro ⟨i, v⟩ hq
+  dsimp only
+  simp only [CpP.hd, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hq
+  rcases hq with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
+
 theorem e1_ce (p : CpP) (t : State) (h : E1 p t) : WP isa (.block domHead) t (CE p) := by
   obtain ⟨hx, h0, hs⟩ := h
   have c := hx.ctx
@@ -178,15 +189,8 @@ theorem e1_ce (p : CpP) (t : State) (h : E1 p t) : WP isa (.block domHead) t (CE
   have hl : (p.dom.take p.k).length = p.k := by rw [List.length_take, c.doml]; rcases c.dl with h | h <;> omega
   refine WP.mono (domHead_ok c.scr h0 (by omega) c.k1 c.k2 (hs (sDom, p.dp) (by simp)) (hs (sK, BitVec.ofNat 64 p.k) (by simp)) (c.dom.take p.k) hl)
     fun u ⟨h9, _, hQ, f, h0', k⟩ => ⟨hx.keep (InScr.of_frm f fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only [sG, sQ, sFn] <;> omega) k, h0', ?_, h9⟩
-  have hs' : Slots u.mem p.B p.hd := hs.frm f (fun q hq r hr => by
-      simp only [CpP.hd, List.mem_cons, List.not_mem_nil, or_false] at hq hr
-      rcases hq with rfl | rfl | rfl | rfl <;> rcases hr with rfl | rfl <;>
-        simp only [sG, sQ, sDom, sDomLen, sK, sY, sFn] <;> omega)
-    (fun q hq => by
-      simp only [CpP.hd, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl <;> simp only [sDom, sDomLen, sK, sY, sFn] <;> omega)
+      have h1 := domHeadR_le r hr; omega_using [h1, hZ]) k, h0', ?_, h9⟩
+  have hs' : Slots u.mem p.B p.hd := hs.frm f (fun q hq => (hd_domHead p q hq).2) (fun q hq => (hd_domHead p q hq).1)
   intro q hq
   rcases List.mem_append.mp hq with hq | hq
   · exact hs' q hq
@@ -218,6 +222,20 @@ def C1 (p : CpP) (t : State) : Prop :=
   ∃ mi, Fx p t ∧ SubCtx t p.B p.Z (inner p.w) p.w p.w mi ∧ XVals t p.B (inner p.w) p.w mi p.P ∧
     word t.mem p.B (8 * sWs) = off p.B (inner p.w) ∧ Slots t.mem p.B p.hdQ ∧ p.mv = true
 
+theorem hdQ_lt (p : CpP) : ∀ q ∈ p.hdQ, q.1 < 32 := by
+  intro q hq
+  simp only [CpP.hdQ, CpP.hd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp [sDom, sDomLen, sK, sY, sQ, sFn]
+
+/-- The header slots read after `domHead` are outside what `head` and `pSetup` change. -/
+theorem hdQ_setupR (p : CpP) : ∀ q ∈ p.hdQ, ∀ r ∈ setupR p.w, 8 * q.1 + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * q.1 := by
+  rintro ⟨i, v⟩ hq
+  dsimp only
+  simp only [CpP.hdQ, CpP.hd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
+    Prod.mk.injEq] at hq
+  rcases hq with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ <;>
+    exact setupR_word _ (by decide) (by decide) (by decide) (by decide)
+
 theorem ce_c1 (p : CpP) (t : State) (h : CE p t) (he : isa.eval (.zero .x .x9) t = some false) :
     WP isa (seqs (([.block head] : List (Prog isa)) ++ pSetup)) t (C1 p) := by
   have hv := ce_valid h he
@@ -229,28 +247,8 @@ theorem ce_c1 (p : CpP) (t : State) (h : CE p t) (he : isa.eval (.zero .x .x9) t
   have hl : (p.dom.take p.k).length = p.k := by rw [List.length_take, c.doml]; rcases c.dl with h | h <;> omega
   obtain ⟨hodd, -⟩ := valid_facts hv c.k1
   refine WP.mono (setup_ok c.scr h0 c.k1 c.k2 hZ (hs (sDom, p.dp) (by simp)) (hs (sK, BitVec.ofNat 64 p.k) (by simp)) (c.dom.take p.k) hl hodd)
-    fun u ⟨mi, hc, hX, hWs, f, k⟩ => ⟨mi, hx.keep (InScr.of_frm f fun r hr => by
-      simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
-      unfold inner slot hdrBytes tabBytes32 at hroom
-      rcases hr with rfl | rfl | rfl | rfl <;> simp only [sW, sArr, sWs, sFn, inner, slot, hdrBytes] <;> omega_arith) k,
-      hc, hX, hWs, fun q hq => ?_, hv⟩
-  rw [f.word_eq (fun r hr => by
-      simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
-      simp only [CpP.hdQ, CpP.hd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-        or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl | rfl <;>
-        rcases hr with rfl | rfl | rfl | rfl <;>
-          simp only [sW, sArr, sWs, sDom, sDomLen, sK, sY, sQ, sFn, inner, slot, hdrBytes] <;> omega_arith)
-    (by unfold inner slot hdrBytes tabBytes32 at hroom
-        simp only [CpP.hdQ, CpP.hd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-          or_false] at hq
-        rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp only [sDom, sDomLen, sK, sY, sQ, sFn] <;> omega_arith)]
-  exact hs q hq
-
-theorem hdQ_lt (p : CpP) : ∀ q ∈ p.hdQ, q.1 < 32 := by
-  intro q hq
-  simp only [CpP.hdQ, CpP.hd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp [sDom, sDomLen, sK, sY, sQ, sFn]
+    fun u ⟨mi, hc, hX, hWs, f, k⟩ => ⟨mi, hx.keep (InScr.of_frm f (setupR_le _ (Nat.le_trans (Nat.le_add_right _ _) hroom))) k,
+      hc, hX, hWs, hs.frm f (hdQ_setupR p) (hdQ_lt p), hv⟩
 
 /-- In the inner workspace for p, with what the outer one keeps. -/
 def In (p : CpP) (mi : BitVec 64) (t : State) : Prop :=
@@ -342,15 +340,7 @@ theorem c2_c3 (p : CpP) (t : State) (h : C2 p t) : WP isa (seqs (range aXm)) t (
   refine WP.mono (range_ok hc.good (Nat.le_refl _) (show 1 ≤ p.w by omega) (show p.w < 2 ^ 31 by omega)
     (show aXm < 8 by decide) (by decide) hv.one) fun u ⟨h9, _, f, k⟩ => ⟨mi, hI.step f (fun r hr => ?_) k.rd k.wr
       (k.gpr .x0 (by decide)), hm, by rw [h9, hy, hv.n]⟩
-  have := slot_le (w := p.w) (show aTmp < 8 by decide)
-  have := hdr_lt_slot p.w aTmp (show 31 < 32 by decide)
-  have := hdr_lt_slot p.w 8 (show sF < 32 by decide)
-  have := hdr_lt_slot p.w aN (show sF < 32 by decide)
-  have := hdr_lt_slot p.w aOne (show sF < 32 by decide)
-  have s1 := slot_sep (w := p.w) (show aTmp ≠ aN by decide)
-  have s2 := slot_sep (w := p.w) (show aTmp ≠ aOne by decide)
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only [sF, sFn] at * <;> omega
+  exact range_frame _ r hr
 
 theorem c3_eval {p : CpP} {t : State} (h : C3 p t) : isa.eval (.zero .x .x9) t = some (bit p.rg == 0) := by
   obtain ⟨_, _, _, h9⟩ := h
@@ -423,6 +413,15 @@ def C5 (p : CpP) (t : State) : Prop :=
     p.dl = 3 * p.k ∧ word t.mem p.B (8 * sEp) = off (p.dp + BitVec.ofNat 64 (2 * p.k)) (lead p.qb) ∧
     word t.mem p.B (8 * sEl) = BitVec.ofNat 64 (p.k - lead p.qb)
 
+/-- The header slots kept past `scan` are outside what it changes. -/
+theorem hdQ_scan (p : CpP) : ∀ q ∈ p.hdQ ++ [(sWs, off p.B (inner p.w))],
+    8 * q.1 + 8 ≤ 2 ^ 64 ∧ ∀ r ∈ [(8 * sEp, 8), (8 * sEl, 8)], 8 * q.1 + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * q.1 := by
+  rintro ⟨i, v⟩ hq
+  dsimp only
+  simp only [CpP.hdQ, CpP.hd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
+    Prod.mk.injEq] at hq
+  rcases hq with ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ | ⟨rfl, -⟩ <;> decide
+
 theorem c4_c5 (p : CpP) (t : State) (h : C4 p t) (he : isa.eval (.zero .x .x3) t = some false) :
     WP isa (seqs (scan sQ)) t (C5 p) := by
   have hq := c4_q h he
@@ -435,24 +434,11 @@ theorem c4_c5 (p : CpP) (t : State) (h : C4 p t) (he : isa.eval (.zero .x .x3) t
       Src t p.B p.Z (p.dp + BitVec.ofNat 64 (2 * p.k)) p.qb ∧ sQ < 32 := hS
   obtain ⟨hO, hp, hk, hne, hlt, hsrc, -⟩ := hS'
   refine WP.mono (scan_ok hO (show sQ < 32 by decide) hp hk hne hlt hsrc) fun u ⟨hEp, hEl, _, f, k⟩ => ?_
-  have hr : ∀ r ∈ [(8 * sEp, 8), (8 * sEl, 8)], 8 * 16 ≤ r.1 ∧ r.1 + r.2 ≤ 256 := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [sEp, sEl, sFn] <;> omega
-  have hroom := room_k c.k1 c.hZ
+  have hr : ∀ r ∈ [(8 * sEp, 8), (8 * sEl, 8)], 8 * 16 ≤ r.1 ∧ r.1 + r.2 ≤ 256 := by decide
   have i : InScr p.B p.Z t.mem u.mem := InScr.of_frm f fun r hr' => by
-    have := (hr r hr').2; unfold inner slot hdrBytes at hroom; omega
-  have hw : ∀ q ∈ p.hdQ ++ [(sWs, off p.B (inner p.w))], word u.mem p.B (8 * q.1) = word t.mem p.B (8 * q.1) := by
-    intro q hq
-    have hq32 : q.1 < 32 := by
-      rcases List.mem_append.mp hq with hq | hq
-      · exact hdQ_lt p q hq
-      · rw [List.mem_singleton.mp hq]; show sWs < 32; decide
-    refine f.word_eq (fun r hr' => ?_) (by omega)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-    simp only [CpP.hdQ, CpP.hd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-      or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rcases hr' with rfl | rfl <;>
-      simp only [sDom, sDomLen, sK, sY, sQ, sWs, sEp, sEl, sFn] <;> omega
+    have h1 := (hr r hr').2; have h2 := c.hZ; omega_using [h1, h2]
+  have hw : ∀ q ∈ p.hdQ ++ [(sWs, off p.B (inner p.w))], word u.mem p.B (8 * q.1) = word t.mem p.B (8 * q.1) :=
+    fun q hq => f.word_eq (hdQ_scan p q hq).2 (hdQ_scan p q hq).1
   refine ⟨mi, hx.keep i k, hc.of_parent f hr k.wr, hv.of_parent hc f (fun r hr' => (hr r hr').2),
     by rw [hw (sWs, off p.B (inner p.w)) (by simp)]; exact hWs, fun q hq => by rw [hw q (List.mem_append_left _ hq)]; exact hs q hq,
     hm, (k.gpr .x0 (by decide)).trans h0, hq, hEp, by rw [hEl, hl]⟩

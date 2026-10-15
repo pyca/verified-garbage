@@ -73,11 +73,11 @@ theorem val_lit16 (k : Nat) : (no_index (OfNat.ofNat k : Fin 16)).val = k % 16 :
 theorem G_getP (v : Work w) {a c d e : Fin 16} (hab : a.1 ≠ c.1) (hac : a.1 ≠ d.1)
     (had : a.1 ≠ e.1) (hcd : c.1 ≠ d.1) (hce : c.1 ≠ e.1) (hde : d.1 ≠ e.1) (x y : BitVec w)
     (k : Nat) (hk : k < 16) :
-    (G P v a c d e x y)[k] =
-      if c.1 = k then (mix P v[a.1] v[c.1] v[d.1] v[e.1] x y).2.1
-      else if d.1 = k then (mix P v[a.1] v[c.1] v[d.1] v[e.1] x y).2.2.1
-      else if e.1 = k then (mix P v[a.1] v[c.1] v[d.1] v[e.1] x y).2.2.2
-      else if a.1 = k then (mix P v[a.1] v[c.1] v[d.1] v[e.1] x y).1 else v[k] :=
+    (G P v a c d e x y)[k]'hk =
+      if c.1 = k then (mix P (v[a.1]'a.2) (v[c.1]'c.2) (v[d.1]'d.2) (v[e.1]'e.2) x y).2.1
+      else if d.1 = k then (mix P (v[a.1]'a.2) (v[c.1]'c.2) (v[d.1]'d.2) (v[e.1]'e.2) x y).2.2.1
+      else if e.1 = k then (mix P (v[a.1]'a.2) (v[c.1]'c.2) (v[d.1]'d.2) (v[e.1]'e.2) x y).2.2.2
+      else if a.1 = k then (mix P (v[a.1]'a.2) (v[c.1]'c.2) (v[d.1]'d.2) (v[e.1]'e.2) x y).1 else (v[k]'hk) :=
   G_get P v hab hac had hcd hce hde x y k hk
 
 /-- The four column `G`s of a round. -/

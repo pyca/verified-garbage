@@ -183,14 +183,15 @@ theorem EnEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : EnEnv
     List.all_eq_true.mpr fun w hw => by
       have := List.all_eq_true.mp hW w hw; simp only [okW, Bool.and_eq_true] at this; exact this.2
   have hd := Lay.disjAll hL h1
-  have hc : (Lay.R (lay s₀ K) 0 840 36).Contains ((lay s₀ K).A 0 872) 4 := by
-    simp only [Region.Contains]; bv_omega
+  have hc : (Lay.R (lay s₀ K) 0 840 36).Contains ((lay s₀ K).A 0 872) 4 :=
+    Offset.contains _ (by decide) (by decide) (by decide)
   refine ⟨hk.ctx (by simp at hx; exact hx.2.2.1) h.ctx, ?_, ?_, ?_, hk.rd.trans h.rd, hk.wr.trans h.wr,
     hk.sp.trans h.sp, fun i hi => ?_, ?_, ?_⟩
   · rw [hk.cs .r4 (by decide) (by decide) (hx .r4 (by simp)), h.r4]
   · rw [hk.cs .r6 (by decide) (by decide) (hx .r6 (by simp)), h.r6]
   · rw [hk.cs .r8 (by decide) (by decide) (hx .r8 (by simp)), h.r8]
-  · rw [hk.frame.readW (r := Lay.R (lay s₀ K) 0 840 36) (by simp only [Region.Contains]; bv_omega) hd (by decide)]
+  · rw [hk.frame.readW (r := Lay.R (lay s₀ K) 0 840 36)
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) hd (by decide)]
     exact h.sav i hi
   · rw [hk.frame.readW hc hd (by decide)]; exact h.savlr
   · rw [Lay.bytes_keep hL hk.frame h2 (by have := hp.wf; offs)]; exact h.ek
@@ -238,7 +239,8 @@ theorem setup_ok {K : KemLay} {s₀ s₁ : State} (hp : Pre K s₀) (h12 : s₁.
   run_block [i872, o1]
   have ne1 : ∀ i < 8, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((lay s₀ K).A 0 872) v).readW
       ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
-    fun i hi m v => Mem.readW_writeW_sep (fun x h1 h2 => by bv_omega) (by decide)
+    fun i hi m v => Mem.readW_writeW_sep
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
   have g : ∀ r, r ≠ .r12 → s₂.gpr r = s₀.gpr r := fun r hr' => by rw [h₂.gpr, hr r hr']
   have hne : ∀ i < 8, savedRegs.getD i Reg.r4 ≠ Reg.r12 := by decide
   have fr₀ : Frame ((lay s₀ K).RL [(0, 840, 36)]) s₀.mem s₂.mem := by
@@ -248,8 +250,8 @@ theorem setup_ok {K : KemLay} {s₀ s₁ : State} (hp : Pre K s₀) (h12 : s₁.
     show Region.Sub ⟨State.addr (s₁.gpr .r12) + BitVec.ofNat 64 840, 32⟩ _
     rw [h12, ← lay_ptr0]
     exact Lay.R_sub_R hL (by simp [lay]) (by decide) (by decide) (by simp [lay]; omega)
-  have c872 : ((lay s₀ K).R 0 840 36).Contains ((lay s₀ K).A 0 872) 4 := by
-    simp only [Region.Contains]; bv_omega
+  have c872 : ((lay s₀ K).R 0 840 36).Contains ((lay s₀ K).A 0 872) 4 :=
+    Offset.contains _ (by decide) (by decide) (by decide)
   refine ⟨⟨⟨hL, scr, rfl, by simp [lay], ?_, by show 8 ≤ s₂.sp.toNat; rw [h₂.sp, hsp]; exact hp.sp8, ?_, ?_⟩,
     ?_, ?_, ?_, h₂.rd.trans hrd, h₂.wr.trans hwr, h₂.sp.trans hsp, fun i hi => ?_, ?_, ?_⟩, ?_, ?_⟩
   · simp [h₂.gpr, h12]; rfl

@@ -129,10 +129,12 @@ theorem SEnv.frame {s₀ s s' : State} (hp : Pre s₀) (h : SEnv s₀ s) {rs : L
     fun i hi => ?_, ?_, ?_⟩
   · rw [hf.readW (r := ⟨S s₀ + BitVec.ofNat 64 1680, 36⟩) ?_ hsv (by decide)]
     · exact h.sav i hi
-    · simp only [Region.Contains]; bv_omega
+    · (first | (rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) |
+        exact Offset.contains _ (by decide) (by decide) (by decide))
   · rw [hf.readW (r := ⟨S s₀ + BitVec.ofNat 64 1680, 36⟩) ?_ hsv (by decide)]
     · exact h.savlr
-    · simp only [Region.Contains]; bv_omega
+    · (first | (rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) |
+        exact Offset.contains _ (by decide) (by decide) (by decide))
   · rw [bytesAt_frame hf hsd (by decide)]; exact h.seed
 
 /-! ## The setup -/
@@ -162,7 +164,7 @@ theorem zeroWords_ok (b : Reg) {s₁ : State} (h12 : s₁.gpr .r12 = 0) (hfit : 
     rw [ea, h.gpr, h12]
     by_cases e : j = k
     · subst e; exact Mem.readW_writeW_self32 _ _ _
-    · rw [Mem.readW_writeW_sep (fun x h1 h2 => by bv_omega) (by decide)]
+    · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
       exact h.zero j (by omega)
 
 theorem stateAt_zero {m : Mem} {p : Addr} (h : ∀ j < 50, m.readW (p + BitVec.ofNat 64 (4 * j)) 32 = 0) :
@@ -171,7 +173,7 @@ theorem stateAt_zero {m : Mem} {p : Addr} (h : ∀ j < 50, m.readW (p + BitVec.o
   intro i hi
   simp only [stateAt, Vector.getElem_ofFn, Spec.Sha3.zero, Vector.getElem_replicate]
   rw [VG.Proof.Sha512.Arm.readW64, show p + BitVec.ofNat 64 (8 * i) + 4 = p + BitVec.ofNat 64 (4 * (2 * i + 1)) by
-      rw [BitVec.add_assoc]; congr 1; bv_omega,
+      rw [show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, Offset.add_ofNat_add_ofNat]; congr 2; omega,
     show p + BitVec.ofNat 64 (8 * i) = p + BitVec.ofNat 64 (4 * (2 * i)) by congr 2; omega,
     h _ (by omega), h _ (by omega)]
   rfl
@@ -231,10 +233,13 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
   · rw [h₄.gpr, g3]; simp [State.setReg, g, h₁.gpr]
   · rw [h₄.gpr, g3]; simp [State.setReg, g, h₁.gpr]
   · rw [h₄.gpr, g3]; simp [State.setReg, g, h₁.gpr]
-  · rw [hf4.readW (r := ⟨S s₀ + BitVec.ofNat 64 1680, 36⟩) (by simp only [Region.Contains]; bv_omega)
-      hz (by decide), m3, m, e1712, Mem.readW_writeW_sep (fun x h1 h2 => by bv_omega) (by decide)]
+  · rw [hf4.readW (r := ⟨S s₀ + BitVec.ofNat 64 1680, 36⟩) (by (first | (rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) |
+        exact Offset.contains _ (by decide) (by decide) (by decide)))
+      hz (by decide), m3, m, e1712, Mem.readW_writeW_sep
+        (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
     exact h₁.saved i hi
-  · rw [hf4.readW (r := ⟨S s₀ + BitVec.ofNat 64 1680, 36⟩) (by simp only [Region.Contains]; bv_omega)
+  · rw [hf4.readW (r := ⟨S s₀ + BitVec.ofNat 64 1680, 36⟩) (by (first | (rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) |
+        exact Offset.contains _ (by decide) (by decide) (by decide)))
       hz (by decide), m3, m, e1712, Mem.readW_writeW_self32, h₁.gpr]
   · exact bytesAt_frame fr (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.seed_s)
       (by decide)
@@ -586,10 +591,12 @@ theorem SEnv.frameA {s₀ s s' : State} (hp : Pre s₀) (h : SEnv s₀ s) (hf : 
     fun i hi => ?_, ?_, ?_⟩
   · rw [hf.readW (r := ⟨S s₀ + BitVec.ofNat 64 1680, 36⟩) ?_ hsv (by decide)]
     · exact h.sav i hi
-    · simp only [Region.Contains]; bv_omega
+    · (first | (rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) |
+        exact Offset.contains _ (by decide) (by decide) (by decide))
   · rw [hf.readW (r := ⟨S s₀ + BitVec.ofNat 64 1680, 36⟩) ?_ hsv (by decide)]
     · exact h.savlr
-    · simp only [Region.Contains]; bv_omega
+    · (first | (rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) |
+        exact Offset.contains _ (by decide) (by decide) (by decide))
   · rw [bytesAt_frame hf (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.seed_a)
       (by decide)]
     exact h.seed
