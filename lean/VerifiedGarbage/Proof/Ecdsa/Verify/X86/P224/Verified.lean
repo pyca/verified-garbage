@@ -12,14 +12,12 @@ public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P224.CallSumsP
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P224.CallSumsP
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P224.CallSumsN
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P224.CallSumsN
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
 import VerifiedGarbage.Proof.X25519.X86.Column
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
@@ -120,12 +118,11 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-/-- Constant time by taint tracking, with the summaries of the field
-functions (`CallTaint`) in place of the analysis of each call. -/
-theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP224 := by
-  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ verifyP224 h).isSome = true := by
-    taint_decide_sum [mulPSum, addPSum, subPSum, mulNSum, subNSum]
-  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
+/-- Constant time by taint tracking, with the hints computed in compiled code
+(`native_taint_decide`): the interpreter ran the analysis that computes them
+for longer than the kernel checks it. -/
+theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP224 :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by native_taint_decide)
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
