@@ -6,6 +6,7 @@ import Mathlib.Tactic.SplitIfs
 import Mathlib.Util.CompileInductive
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.TCB.Artifact
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-! Loads, stores and byte reversal for pairs of 64-bit lanes. -/
 
@@ -30,32 +31,22 @@ theorem read16_dwords (m : Mem) (p : Addr) :
   · rw [vdword_read16 _ _ (by decide), vdword_ofVDwords_0]; simp
   · rw [vdword_read16 _ _ (by decide), vdword_ofVDwords_1]
 
+/-- `WriteBytes.writeBytes_append`, at an offset given as a literal. -/
+private theorem writeBytes_append_at (m : Mem) (q : Addr) (xs ys : List Byte) (k : Nat)
+    (hk : xs.length = k) (h : k + ys.length < 2 ^ 64) :
+    WriteBytes.writeBytes (WriteBytes.writeBytes m q xs) (q + BitVec.ofNat 64 k) ys =
+      WriteBytes.writeBytes m q (xs ++ ys) := by
+  subst hk; exact WriteBytes.writeBytes_append m q xs ys h
+
 theorem write16_dwords (m : Mem) (p : Addr) (a b : BitVec 64) :
     m.write p 16 (ofVDwords a b) = (m.writeW p a).writeW (p + BitVec.ofNat 64 8) b := by
-  funext x
-  have e : x - (p + BitVec.ofNat 64 8) = (x - p) - BitVec.ofNat 64 8 := by bv_omega
-  simp only [Mem.writeW, Mem.write, e, show 64 / 8 = 8 from rfl]
-  generalize x - p = d
-  rw [toNat_sub_c d 8 (by decide)]
-  have := d.isLt
-  by_cases h : d.toNat < 8
-  · simp only [show ¬ 8 ≤ d.toNat by omega, ite_false, show ¬ 2 ^ 64 + d.toNat - 8 < 8 by omega,
-      h, show d.toNat < 16 by omega, ite_true]
-    apply BitVec.eq_of_getLsbD_eq
-    intro i hi
-    simp only [BitVec.getLsbD_extractLsb', ofVDwords, BitVec.getLsbD_append,
-      BitVec.getLsbD_setWidth, hi, decide_true, Bool.true_and, show 8 * d.toNat + i < 64 by omega, ite_true]
-  · by_cases h16 : d.toNat < 16
-    · simp only [show 8 ≤ d.toNat by omega, ite_true, h16, show d.toNat - 8 < 8 by omega]
-      apply BitVec.eq_of_getLsbD_eq
-      intro i hi
-      simp only [BitVec.getLsbD_extractLsb', ofVDwords, BitVec.getLsbD_append,
-        BitVec.getLsbD_setWidth, hi, decide_true, Bool.true_and,
-        show ¬ 8 * d.toNat + i < 64 by omega, ite_false,
-        show 8 * (d.toNat - 8) + i < 64 by omega,
-        show 8 * d.toNat + i - 64 = 8 * (d.toNat - 8) + i by omega]
-    · simp only [show 8 ≤ d.toNat by omega, ite_true, h16, show ¬ d.toNat - 8 < 8 by omega,
-        h, ite_false]
+  simp only [Mem.writeW, WriteBytes.write_eq_writeBytes]
+  rw [writeBytes_append_at _ _ _ _ 8 (by simp only [List.length_map, List.length_range]) (by simp)]
+  refine congrArg (WriteBytes.writeBytes m p) ?_
+  simp (disch := decide) only [List.range, List.range.loop, List.map, List.cons_append,
+    List.nil_append,
+    ofVDwords, BitVec.extractLsb'_append_eq_of_add_le, BitVec.extractLsb'_append_eq_of_le,
+    Nat.reduceMul, Nat.reduceSub, Nat.reduceDiv, BitVec.setWidth_eq]
 
 theorem getLsbD_rev64 (x : BitVec 64) {i : Nat} (hi : i < 64) :
     (rev64 x).getLsbD i = x.getLsbD (8 * (7 - i / 8) + i % 8) := by
