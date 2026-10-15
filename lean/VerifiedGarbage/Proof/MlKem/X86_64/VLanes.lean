@@ -77,15 +77,14 @@ theorem xmm_setXmm (s : State) (d : XReg) (v : BitVec 128) (r : XReg) :
 theorem mxcsr_setXmm (s : State) (d : XReg) (v : BitVec 128) : (s.setXmm d v).mxcsr = s.mxcsr := rfl
 
 /-- Runs a block of SSE instructions. -/
-syntax "vrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| vrun) => `(tactic| vrun [])
-  | `(tactic| vrun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "vrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
                          Option.some.injEq, exists_eq_left', RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm,
                          RegUpd.wr_setXmm, mxcsr_setXmm, xmm_setXmm, ite_true, ite_false, reduceCtorEq, $ls,*]))
+
+tactic_template "vrun" : tactic => `(tactic| vrun [])
 
 /-! ## Montgomery products and conditional additions, word by word -/
 
