@@ -259,8 +259,10 @@ theorem ip_pre {t : Spec.MlDsa.Poly → Spec.MlDsa.Poly} {stk : Nat} (hstk : stk
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   have L := S.lay
   have hsp := keep_rsp k
+  sig_pre [Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
   rcases stk with _ | n <;>
-  · sig_pre [Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [hv.1, hv.2]
     cpre L hsp S.h24
     exact (ce_reduced (by rw [hsp]; exact L.stkD i1)).mpr (hm ▸ red)
@@ -315,8 +317,10 @@ theorem add_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   obtain ⟨i1, i2, _⟩ := sepB_spec h1
   have L := S.lay
   have hsp := keep_rsp k
+  sig_pre [Spec.MlDsa.addContract, Spec.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs]
   rcases stk with _ | n <;>
-  · sig_pre [Spec.MlDsa.addContract, Spec.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [hv.1, hv.2]
     cpre L hsp S.h24
     · exact (ce_reduced (by rw [hsp]; exact L.stkD i1)).mpr (hm ▸ rf)
@@ -385,8 +389,10 @@ theorem mul_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   obtain ⟨_, i3, _⟩ := sepB_spec h2
   have L := S.lay
   have hsp := keep_rsp k
+  sig_pre [productContract, Spec.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
   rcases stk with _ | n <;>
-  · sig_pre [productContract, Spec.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [hv.1, hv.2.1, hv.2.2]
     cpre L hsp S.h24
     · exact (ce_reduced (by rw [hsp]; exact L.stkD i2)).mpr (hm ▸ rf)
@@ -447,8 +453,10 @@ theorem mulAdd_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   obtain ⟨_, i3, _⟩ := sepB_spec h2
   have L := S.lay
   have hsp := keep_rsp k
+  sig_pre [accumulateContract, Spec.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
   rcases stk with _ | n <;>
-  · sig_pre [accumulateContract, Spec.MlDsa.mulSig, X86_64.abi, VG.X86_64.argRegs]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [hv.1, hv.2.1, hv.2.2]
     cpre L hsp S.h24
     · exact (ce_reduced (by rw [hsp]; exact L.stkD i1)).mpr (hm ▸ rh)
@@ -517,8 +525,10 @@ theorem p2r_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   obtain ⟨_, i3, _⟩ := sepB_spec h2
   have L := S.lay
   have hsp := keep_rsp k
+  sig_pre [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs]
   rcases stk with _ | n <;>
-  · sig_pre [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [hv.1, hv.2.1, hv.2.2]
     cpre L hsp S.h24
     exact (ce_reduced (by rw [hsp]; exact L.stkD i1)).mpr (hm ▸ rt)
@@ -578,8 +588,10 @@ theorem rejNtt_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   obtain ⟨_, _, _⟩ := sepB_spec h3
   have L := S.lay
   have hsp := keep_rsp k
+  sig_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
   rcases stk with _ | n <;>
-  · sig_pre [Spec.MlDsa.rejNTTContract, Spec.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [hv.1, hv.2.1, hv.2.2]
     cpre L hsp S.h24
 
@@ -762,8 +774,10 @@ theorem rejB_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   obtain ⟨_, _, _⟩ := sepB_spec h3
   have L := S.lay
   have hsp := keep_rsp k
+  sig_pre [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs]
   rcases stk with _ | n <;>
-  · sig_pre [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [hv.1, hv.2.1, hv.2.2.1, hv.2.2.2, w32_toNat (eta_lt heta)]
     cpre L hsp S.h24
     exact heta
@@ -837,8 +851,10 @@ theorem sbp_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s)
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have L := S.lay
   have hsp := keep_rsp k
+  sig_pre [Spec.MlDsa.simpleBitPackContract, Spec.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
   rcases stk with _ | n <;>
-  · sig_pre [Spec.MlDsa.simpleBitPackContract, Spec.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [hv.1, hv.2.1, hv.2.2.1, hv.2.2.2, w32_toNat (sbp_lt hb), w64_toNat (sbpLen_lt hb hl)]
     cpre L hsp S.h24
     · exact hb
@@ -918,8 +934,10 @@ theorem bp_pre {stk : Nat} (hstk : stk ≤ 16) {s s1 : State} (S : Site p s) (hi
   have L := S.lay
   have hsp := keep_rsp k
   have hk : (below (s1.gpr .rsp) 32).Disjoint ⟨pa s f, 1024⟩ := by rw [hsp]; exact L.stkD i1
+  sig_pre [Spec.MlDsa.bitPackContract, Spec.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs]
   rcases stk with _ | n <;>
-  · sig_pre [Spec.MlDsa.bitPackContract, Spec.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [hv.1, hv.2.1, hv.2.2.1, hv.2.2.2.1, hv.2.2.2.2, w32_toNat (bp_lt hab).1, w32_toNat (bp_lt hab).2,
       w64_toNat (bpLen_lt hab hl)]
     cpre L hsp S.h24

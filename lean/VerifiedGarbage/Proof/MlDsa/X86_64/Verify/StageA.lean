@@ -93,23 +93,77 @@ structure S3 (p : Params) (h : List (Vector Bool n)) (e : Nat) (σ st : State) :
     (q = false → ∃ r' < p.k, ∃ c' < p.ℓ, Done p.ℓ e r' c' ∧ rejNTTPoly minBounds.rejNTT (aSeed (vPk p σ) r' c') = none)
 
 abbrev wsB : List (Ptr × Nat) := [(sc (oSB + 32), 1), (sc (oSB + 33), 1)]
+/-- The two bytes of seed `j` of `SB4`. -/
+abbrev wsS (j : Nat) : List (Ptr × Nat) := [(sc (oSB4 + 34 * j + 32), 1), (sc (oSB4 + 34 * j + 33), 1)]
 abbrev wsA (e : Nat) : List (Ptr × Nat) := [(pS (20 + e), 1024), (sc oSS, 2048)]
 
 /-- A state keeps what `S3` says across a piece that writes `ws`. -/
 def keepChk (p : Params) (ws : List (Ptr × Nat)) : Bool :=
   tChk p ws && keepB (vB p) ws (pH 0) (1024 * p.k) && (List.range p.ℓ).all (fun i => keepB (vB p) ws (pZ i) 1024)
 
+/-- The slot of entry `e` lies apart from what the entries after it write but their own slots. -/
+def slotKeep (p : Params) (e : Nat) : Bool :=
+  keepB (vB p) wsB (pS (20 + e)) 1024 && keepB (vB p) [(sc oSS, 2048)] (pS (20 + e)) 1024 &&
+    keepB (vB p) [(sc (oR4 p), 8192)] (pS (20 + e)) 1024 &&
+    (List.range 4).all (fun j => keepB (vB p) (wsS j) (pS (20 + e)) 1024)
+
 /-- The facts about the parameters entry `e` needs. -/
 def aChk (p : Params) (e : Nat) : Bool :=
   inB (vW p) (sc (oSB + 32)) 1 && inB (vW p) (sc (oSB + 33)) 1 && rejChk (vB p) (vW p) (pS (20 + e)) &&
     inB (vB p) (pS (20 + e)) 1024 && inB (vW p) (pS (20 + e)) 1024 && keepChk p wsB && keepChk p (wsA e) &&
     keepB (vB p) wsB (sc oSB) 32 && keepB (vB p) (wsA e) (sc oSB) 32 &&
-    (List.range p.k).all (fun r' => (List.range p.ℓ).all fun c' => !decide (p.ℓ * r' + c' < e) ||
-      (keepB (vB p) wsB (pA p.ℓ r' c') 1024 && keepB (vB p) (wsA e) (pA p.ℓ r' c') 1024)) &&
     (List.range 4).all (fun k => keepB (vB p) wsB (sc (oSB4 + 34 * k)) 32 &&
-      keepB (vB p) (wsA e) (sc (oSB4 + 34 * k)) 32)
+      keepB (vB p) (wsA e) (sc (oSB4 + 34 * k)) 32) && slotKeep p e
 
 theorem aChk_all : ∀ p ∈ params, ∀ e < p.k * p.ℓ, aChk p e = true := by decide +kernel
+
+/-- The slot of entry `j` is kept by the writes of a later entry `e`: apart from
+its own slot (`slotKeep`), they write the slot of `e`, after it. -/
+theorem keep_prev {p : Params} {j e : Nat} (hj : j < e) (he : inB (vB p) (pS (20 + e)) 1024 = true)
+    (hk : slotKeep p j = true) :
+    keepB (vB p) wsB (pS (20 + j)) 1024 = true ∧ keepB (vB p) (wsA e) (pS (20 + j)) 1024 = true := by
+  simp only [slotKeep, Bool.and_eq_true] at hk
+  refine ⟨hk.1.1.1, ?_⟩
+  have h2 := hk.1.1.2
+  simp only [keepB, sepB, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true] at h2 ⊢
+  simp only [h2, he, true_and, and_true]
+  simp only [oP, bne_self_eq_false, Bool.false_and, beq_self_eq_true, Bool.true_and, Bool.false_or,
+    Bool.or_eq_true]
+  exact .inl (decide_eq_true (by omega))
+
+/-- The entries done before `e` are kept by the writes of entry `e`. -/
+theorem keep_done {p : Params} (hp : p ∈ params) {e r' c' : Nat} (he : e < p.k * p.ℓ)
+    (hin : inB (vB p) (pS (20 + e)) 1024 = true) (hd : Done p.ℓ e r' c') :
+    keepB (vB p) wsB (pA p.ℓ r' c') 1024 = true ∧ keepB (vB p) (wsA e) (pA p.ℓ r' c') 1024 = true := by
+  unfold Done at hd
+  have hj := aChk_all p hp _ (show p.ℓ * r' + c' < p.k * p.ℓ by omega)
+  simp only [aChk, Bool.and_eq_true] at hj
+  rw [pA_eq]
+  exact keep_prev hd hin hj.2
+
+/-- The entries done before `e` are kept by the writes of seed `j`'s bytes. -/
+theorem keep_slot_done {p : Params} (hp : p ∈ params) {e j r' c' : Nat} (hj : j < 4) (he : e ≤ p.k * p.ℓ)
+    (hd : Done p.ℓ e r' c') : keepB (vB p) (wsS j) (pA p.ℓ r' c') 1024 = true := by
+  unfold Done at hd
+  have hk := aChk_all p hp _ (show p.ℓ * r' + c' < p.k * p.ℓ by omega)
+  simp only [aChk, slotKeep, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hk
+  rw [pA_eq]
+  exact hk.2.2 j hj
+
+/-- The entries done before the four from `e` are kept by their sampling. -/
+theorem keep_grp_done {p : Params} (hp : p ∈ params) {e r' c' : Nat} (he : e ≤ p.k * p.ℓ)
+    (hin : inB (vB p) (pS (20 + e)) 4096 = true) (hd : Done p.ℓ e r' c') :
+    keepB (vB p) [(pS (20 + e), 4096), (sc (oR4 p), 8192)] (pA p.ℓ r' c') 1024 = true := by
+  unfold Done at hd
+  have hk := aChk_all p hp _ (show p.ℓ * r' + c' < p.k * p.ℓ by omega)
+  simp only [aChk, slotKeep, Bool.and_eq_true] at hk
+  have h3 := hk.2.1.2
+  rw [pA_eq]
+  simp only [keepB, sepB, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true] at h3 ⊢
+  simp only [h3, hin, true_and, and_true]
+  simp only [oP, bne_self_eq_false, Bool.false_and, beq_self_eq_true, Bool.true_and, Bool.false_or,
+    Bool.or_eq_true]
+  exact .inl (decide_eq_true (by omega))
 
 
 theorem keepChk_spec {p : Params} {ws : List (Ptr × Nat)} (h : keepChk p ws = true) :
@@ -159,9 +213,8 @@ theorem aOne_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
   have hck := aChk_all p hp e he
   have hkl := kl_le p hp
   obtain ⟨hr, hc⟩ := entry_lt hp he
-  simp only [aChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, Bool.or_eq_true, Bool.not_eq_true',
-    decide_eq_false_iff_not, Nat.not_lt] at hck
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h32, h33⟩, hrej⟩, hin⟩, hwa⟩, kB⟩, kA⟩, kSB⟩, kSA⟩, kE⟩, k4⟩ := hck
+  simp only [aChk, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hck
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h32, h33⟩, hrej⟩, hin⟩, hwa⟩, kB⟩, kA⟩, kSB⟩, kSA⟩, k4⟩, -⟩ := hck
   obtain ⟨tB, hB, zB⟩ := keepChk_spec kB
   obtain ⟨tA, hA, zA⟩ := keepChk_spec kA
   have L := hs.t.lay hp hv
@@ -187,16 +240,14 @@ theorem aOne_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
     fun r' hr' c' hc' hd => ?_,
     ⟨q && (rr == 1), ?_, fun hq r' hr' c' hc' hd => ?_, fun hq => ?_⟩⟩
   · rcases done_succ.mp hd with hd | he'
-    · have := kE r' hr' c' hc'
-      rw [or_iff_right (by unfold Done at hd; omega)] at this
+    · have := keep_done hp he hin hd
       exact L₁.keepRed hP₂ this.2 (L.keepRed hP₁ this.1 (hs.red r' hr' c' hc' hd))
     · rw [(hPA r' c' hc' he').1]; exact hred
   · rw [h15₂]
     exact flag_congr (by cases q <;> simp)
   · simp only [Bool.and_eq_true, beq_iff_eq] at hq
     rcases done_succ.mp hd with hd | he'
-    · have := kE r' hr' c' hc'
-      rw [or_iff_right (by unfold Done at hd; omega)] at this
+    · have := keep_done hp he hin hd
       obtain ⟨b, hb⟩ := hok hq.1 r' hr' c' hc' hd
       exact ⟨b, by rw [hb, L₁.keepPolyAt hP₂ this.2, L.keepPolyAt hP₁ this.1]⟩
     · obtain ⟨e1, e2, e3⟩ := hPA r' c' hc' he'
@@ -217,28 +268,27 @@ theorem aOne_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
 /-! ## Four entries at a time -/
 
 /-- A piece writing `ws` keeps the entries done before `e` but those `ex` says, and `S3`'s other facts. -/
-def s3Chk (p : Params) (e : Nat) (ex : Nat → Nat → Bool) (ws : List (Ptr × Nat)) : Bool :=
-  keepChk p ws && keepB (vB p) ws (sc oSB) 32 && (List.range 4).all (fun k => keepB (vB p) ws (sc (oSB4 + 34 * k)) 32) &&
-    (List.range p.k).all (fun r' => (List.range p.ℓ).all fun c' =>
-      !decide (p.ℓ * r' + c' < e) || ex r' c' || keepB (vB p) ws (pA p.ℓ r' c') 1024)
+def s3Chk (p : Params) (ws : List (Ptr × Nat)) : Bool :=
+  keepChk p ws && keepB (vB p) ws (sc oSB) 32 && (List.range 4).all (fun k => keepB (vB p) ws (sc (oSB4 + 34 * k)) 32)
 
 theorem s3Chk_spec {p : Params} {e : Nat} {ex : Nat → Nat → Bool} {ws : List (Ptr × Nat)}
-    (h : s3Chk p e ex ws = true) :
+    (h : s3Chk p ws = true)
+    (kE : ∀ r' < p.k, ∀ c' < p.ℓ, Done p.ℓ e r' c' → keepB (vB p) ws (pA p.ℓ r' c') 1024 = true) :
     keepChk p ws = true ∧ keepB (vB p) ws (sc oSB) 32 = true ∧
       (∀ k < 4, keepB (vB p) ws (sc (oSB4 + 34 * k)) 32 = true) ∧
       ∀ r' < p.k, ∀ c' < p.ℓ, Done p.ℓ e r' c' → ex r' c' = false → keepB (vB p) ws (pA p.ℓ r' c') 1024 = true := by
   simp only [s3Chk, Bool.and_eq_true] at h
-  obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
-  refine ⟨h1, h2, fun k hk => List.all_eq_true.mp h3 k (List.mem_range.mpr hk), fun r' hr' c' hc' hd hx => ?_⟩
-  have := List.all_eq_true.mp (List.all_eq_true.mp h4 r' (List.mem_range.mpr hr')) c' (List.mem_range.mpr hc')
-  rw [decide_eq_true (show p.ℓ * r' + c' < e from hd), hx] at this
-  simpa using this
+  obtain ⟨⟨h1, h2⟩, h3⟩ := h
+  exact ⟨h1, h2, fun k hk => List.all_eq_true.mp h3 k (List.mem_range.mpr hk),
+    fun r' hr' c' hc' hd _ => kE r' hr' c' hc' hd⟩
 
 /-- `S3` across a piece that writes `ws`, which `s3Chk` says keeps it. -/
 theorem S3.keep {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ) {h : List (Vector Bool n)} {e : Nat}
     {s s' : State} (hs : S3 p h e σ s) {ws : List (Ptr × Nat)} (hP : PPostB s s' ws)
-    (h15 : s'.gpr .r15 = s.gpr .r15) (hc : s3Chk p e (fun _ _ => false) ws = true) : S3 p h e σ s' := by
-  obtain ⟨hk, kSB, k4, kE⟩ := s3Chk_spec hc
+    (h15 : s'.gpr .r15 = s.gpr .r15) (hc : s3Chk p ws = true)
+    (hE : ∀ r' < p.k, ∀ c' < p.ℓ, Done p.ℓ e r' c' → keepB (vB p) ws (pA p.ℓ r' c') 1024 = true) :
+    S3 p h e σ s' := by
+  obtain ⟨hk, kSB, k4, kE⟩ := s3Chk_spec (ex := fun _ _ => false) hc hE
   obtain ⟨tk, hh, zk⟩ := keepChk_spec hk
   have L := hs.t.lay hp hv
   obtain ⟨q, hq, hok, hbad⟩ := hs.ok
@@ -249,13 +299,10 @@ theorem S3.keep {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ) {
   obtain ⟨b, hb⟩ := hok hq' r' hr' c' hc' hd
   exact ⟨b, by rw [hb, L.keepPolyAt hP (kE r' hr' c' hc' hd rfl)]⟩
 
-/-- The two bytes of seed `j` of `SB4`. -/
-abbrev wsS (j : Nat) : List (Ptr × Nat) := [(sc (oSB4 + 34 * j + 32), 1), (sc (oSB4 + 34 * j + 33), 1)]
-
 /-- What setting the bytes of seed `j` needs, after `e` entries. -/
-def slotChk (p : Params) (e j : Nat) : Bool :=
+def slotChk (p : Params) (j : Nat) : Bool :=
   inB (vW p) (sc (oSB4 + 34 * j + 32)) 1 && inB (vW p) (sc (oSB4 + 34 * j + 33)) 1 &&
-    s3Chk p e (fun _ _ => false) (wsS j) &&
+    s3Chk p (wsS j) &&
     (List.range j).all (fun k => keepB (vB p) (wsS j) (sc (oSB4 + 34 * k)) 34)
 
 /-- After the bytes of the first `j` seeds of `SB4`, for the entries `e + k`. -/
@@ -264,7 +311,7 @@ structure GS (p : Params) (h : List (Vector Bool n)) (e j : Nat) (σ st : State)
   done : ∀ k < j, bytesAt st.mem (pa st (sc (oSB4 + 34 * k))) 34 = aSeed (vPk p σ) ((e + k) / p.ℓ) ((e + k) % p.ℓ)
 
 theorem slot_ok {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ) {h : List (Vector Bool n)}
-    {e j : Nat} (hj : j < 4) (he : e + j < p.k * p.ℓ) (hck : slotChk p e j = true) {s : State}
+    {e j : Nat} (hj : j < 4) (he : e + j < p.k * p.ℓ) (hck : slotChk p j = true) {s : State}
     (hs : GS p h e j σ s) : WP isa (.block (setSR p e j)) s (GS p h e (j + 1) σ) := by
   have hkl := kl_le p hp
   obtain ⟨hr, hc⟩ := entry_lt hp he
@@ -273,7 +320,7 @@ theorem slot_ok {p : Params} (hp : p ∈ params) {σ : State} (hv : VPre p σ) {
   have L := hs.s3.t.lay hp hv
   unfold setSR
   refine WP.mono (setB2At_ok L (oSB4 + 34 * j) h32 h33 ((e + j) % p.ℓ) ((e + j) / p.ℓ) (by omega) (by omega))
-    fun s₁ ⟨hP₁, h15₁, hm₁⟩ => ⟨hs.s3.keep hp hv hP₁ h15₁ h3, fun k hk' => ?_⟩
+    fun s₁ ⟨hP₁, h15₁, hm₁⟩ => ⟨hs.s3.keep hp hv hP₁ h15₁ h3 fun _ _ _ _ hd => keep_slot_done hp hj (by omega) hd, fun k hk' => ?_⟩
   rcases (by omega : k < j ∨ k = j) with hk' | rfl
   · rw [L.keepBytes hP₁ (hk k hk'), hs.done k hk']
   · rw [hP₁.pa (show Reg.rbx ∈ bases by decide), hm₁, seed_bytes, hs.s3.rho4 k hj, aSeed, integerToBytes_one,
@@ -284,9 +331,9 @@ abbrev inGrp (l e r' c' : Nat) : Bool := decide (e ≤ l * r' + c') && decide (l
 
 /-- The facts about the parameters the entries `e, …, e + 3` need. -/
 def gChk (p : Params) (e : Nat) : Bool :=
-  (List.range 4).all (fun j => slotChk p e j) && rej4Chk (vB p) (vW p) (pS (20 + e)) (sc (oR4 p)) &&
+  (List.range 4).all (fun j => slotChk p j) && rej4Chk (vB p) (vW p) (pS (20 + e)) (sc (oR4 p)) &&
     inB (vB p) (pS (20 + e)) 4096 && inB (vW p) (pS (20 + e)) 4096 &&
-    s3Chk p e (inGrp p.ℓ e) [(pS (20 + e), 4096), (sc (oR4 p), 8192)] && decide (e + 4 ≤ p.k * p.ℓ)
+    s3Chk p [(pS (20 + e), 4096), (sc (oR4 p), 8192)] && decide (e + 4 ≤ p.k * p.ℓ)
 
 theorem gChk_all : ∀ p ∈ params, ∀ g < p.k * p.ℓ / 4, gChk p (4 * g) = true := by decide +kernel
 
@@ -302,7 +349,7 @@ theorem aGrp_ok {P : Prims} (C : PrimsOk P) {p : Params} (hp : p ∈ params) {σ
   have hkl := kl_le p hp
   simp only [gChk, Bool.and_eq_true, List.all_eq_true, List.mem_range, decide_eq_true_eq] at hck
   obtain ⟨⟨⟨⟨⟨hsl, hrej⟩, hin⟩, hwa⟩, hG⟩, hl⟩ := hck
-  obtain ⟨hk, kSB, k4, kE⟩ := s3Chk_spec hG
+  obtain ⟨hk, kSB, k4, kE⟩ := s3Chk_spec (ex := inGrp p.ℓ (4 * g)) hG fun _ _ _ _ hd => keep_grp_done hp (by omega) hin hd
   obtain ⟨tk, hh, zk⟩ := keepChk_spec hk
   unfold aGrp
   refine WP.seq (WP.mono (slot_ok hp hv (by decide) (by omega) (hsl 0 (by decide))

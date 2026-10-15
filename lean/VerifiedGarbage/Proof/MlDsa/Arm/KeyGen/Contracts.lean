@@ -47,8 +47,10 @@ theorem ip_pre {t : Poly → Poly} {f w : BitVec 32} (g0 : x.gpr .r0 = f) (g1 : 
     (hd : (regA f 1024).Disjoint (regA w 1024)) (kf : (below x stk).Disjoint (regA f 1024))
     (kw : (below x stk).Disjoint (regA w 1024)) (ff : f.toNat + 1024 ≤ 2 ^ 32) (fw : w.toNat + 1024 ≤ 2 ^ 32)
     (hr : Reduced x.mem (State.addr f)) : (inPlaceContract Arm.abi t stk).pre x := by
+  sig_pre [inPlaceContract, inPlaceSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [inPlaceContract, inPlaceSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1]
     cpre
 
@@ -76,8 +78,10 @@ theorem mul_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = f) (g2 : x.gpr .r2 = g)
     (kg : (below x stk).Disjoint (regA g 1024)) (fh : h.toNat + 1024 ≤ 2 ^ 32) (ff : f.toNat + 1024 ≤ 2 ^ 32)
     (fg : g.toNat + 1024 ≤ 2 ^ 32) (rf : Reduced x.mem (State.addr f)) (rg : Reduced x.mem (State.addr g)) :
     (mulContract Arm.abi stk).pre x := by
+  sig_pre [mulContract, mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [mulContract, mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, g2]
     cpre
 
@@ -94,8 +98,10 @@ theorem mulAdd_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = f) (g2 : x.gpr .r2 = g
     (kg : (below x stk).Disjoint (regA g 1024)) (fh : h.toNat + 1024 ≤ 2 ^ 32) (ff : f.toNat + 1024 ≤ 2 ^ 32)
     (fg : g.toNat + 1024 ≤ 2 ^ 32) (rh : Reduced x.mem (State.addr h)) (rf : Reduced x.mem (State.addr f))
     (rg : Reduced x.mem (State.addr g)) : (mulAddContract Arm.abi stk).pre x := by
+  sig_pre [mulAddContract, mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [mulAddContract, mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, g2]
     cpre
 
@@ -127,8 +133,10 @@ theorem add_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = g) (hrd : x.rd = [regA g 
     (kf : (below x stk).Disjoint (regA f 1024)) (kg : (below x stk).Disjoint (regA g 1024))
     (ff : f.toNat + 1024 ≤ 2 ^ 32) (fg : g.toNat + 1024 ≤ 2 ^ 32) (rf : Reduced x.mem (State.addr f))
     (rg : Reduced x.mem (State.addr g)) : (addContract Arm.abi stk).pre x := by
+  sig_pre [addContract, accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [addContract, accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1]
     cpre
 
@@ -148,8 +156,10 @@ theorem sub_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = g) (hrd : x.rd = [regA g 
     (kf : (below x stk).Disjoint (regA f 1024)) (kg : (below x stk).Disjoint (regA g 1024))
     (ff : f.toNat + 1024 ≤ 2 ^ 32) (fg : g.toNat + 1024 ≤ 2 ^ 32) (rf : Reduced x.mem (State.addr f))
     (rg : Reduced x.mem (State.addr g)) : (subContract Arm.abi stk).pre x := by
+  sig_pre [subContract, accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [subContract, accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1]
     cpre
 
@@ -178,8 +188,10 @@ theorem rejNtt_pre (g0 : x.gpr .r0 = sd) (g1 : x.gpr .r1 = a) (g2 : x.gpr .r2 = 
     (k1 : (below x stk).Disjoint (regA sd 34)) (k2 : (below x stk).Disjoint (regA a 1024))
     (k3 : (below x stk).Disjoint (regA w 2048)) (f1 : sd.toNat + 34 ≤ 2 ^ 32) (f2 : a.toNat + 1024 ≤ 2 ^ 32)
     (f3 : w.toNat + 2048 ≤ 2 ^ 32) : (rejNTTContract Arm.abi stk).pre x := by
+  sig_pre [rejNTTContract, rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [rejNTTContract, rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, g2]
     cpre
 
@@ -204,8 +216,10 @@ theorem rejBounded_pre (g0 : x.gpr .r0 = sd) (g1 : x.gpr .r1 = e) (g2 : x.gpr .r
     (k1 : (below x stk).Disjoint (regA sd 66)) (k2 : (below x stk).Disjoint (regA a 1024))
     (k3 : (below x stk).Disjoint (regA w 2048)) (f1 : sd.toNat + 66 ≤ 2 ^ 32) (f2 : a.toNat + 1024 ≤ 2 ^ 32)
     (f3 : w.toNat + 2048 ≤ 2 ^ 32) (he : e.toNat = 2 ∨ e.toNat = 4) : (rejBoundedContract Arm.abi stk).pre x := by
+  sig_pre [rejBoundedContract, rejBoundedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [rejBoundedContract, rejBoundedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, g2, g3]
     cpre
 
@@ -238,8 +252,10 @@ theorem p2r_pre (g0 : x.gpr .r0 = t) (g1 : x.gpr .r1 = t1) (g2 : x.gpr .r2 = t0)
     (k1 : (below x stk).Disjoint (regA t 1024)) (k2 : (below x stk).Disjoint (regA t1 1024))
     (k3 : (below x stk).Disjoint (regA t0 1024)) (f1 : t.toNat + 1024 ≤ 2 ^ 32) (f2 : t1.toNat + 1024 ≤ 2 ^ 32)
     (f3 : t0.toNat + 1024 ≤ 2 ^ 32) (hr : Reduced x.mem (State.addr t)) : (power2RoundContract Arm.abi stk).pre x := by
+  sig_pre [power2RoundContract, power2RoundSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [power2RoundContract, power2RoundSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, g2]
     cpre
 
@@ -269,8 +285,10 @@ theorem sbp_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = b) (g2 : x.gpr .r2 = o) (
     (f1 : f.toNat + 1024 ≤ 2 ^ 32) (f2 : o.toNat + l.toNat ≤ 2 ^ 32) (hb : b.toNat ∈ simpleBitPackBounds)
     (hl : l.toNat = 32 * bitlen b.toNat) (hc : ∀ i < n, (coeffAt x.mem (State.addr f) i).toNat ≤ b.toNat) :
     (simpleBitPackContract Arm.abi stk).pre x := by
+  sig_pre [simpleBitPackContract, simpleBitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [simpleBitPackContract, simpleBitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, g2, g3]
     cpre
 
@@ -297,8 +315,10 @@ theorem bp_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = a) (g2 : x.gpr .r2 = b) (g
     (hc : ∀ i < n, -(a.toNat : Int) ≤ modPm (coeffAt x.mem (State.addr f) i).toNat q ∧
       modPm (coeffAt x.mem (State.addr f) i).toNat q ≤ b.toNat) :
     (bitPackContract Arm.abi stk).pre x := by
+  sig_pre [bitPackContract, bitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [bitPackContract, bitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, g2, g3, ga]
     cpre
 
@@ -333,8 +353,10 @@ theorem ball_pre (g0 : x.gpr .r0 = ct) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = 
     (k3 : (below x stk).Disjoint (regA w 2048)) (k4 : (below x stk).Disjoint ⟨stackArgAddr x 0, 4⟩)
     (f1 : ct.toNat + len.toNat ≤ 2 ^ 32) (f2 : c.toNat + 1024 ≤ 2 ^ 32) (f3 : w.toNat + 2048 ≤ 2 ^ 32)
     (hp : (len.toNat, tau.toNat) ∈ ballParams) : (sampleInBallContract Arm.abi stk).pre x := by
+  sig_pre [sampleInBallContract, sampleInBallSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [sampleInBallContract, sampleInBallSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, g2, g3, ga]
     cpre
 
@@ -368,8 +390,10 @@ theorem useHint_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = r) (gg : x.gpr .r2 = 
     (k3 : (below x stk).Disjoint (regA o 1024)) (f1 : h.toNat + 1024 ≤ 2 ^ 32) (f2 : r.toNat + 1024 ≤ 2 ^ 32)
     (f3 : o.toNat + 1024 ≤ 2 ^ 32) (hg : g2.toNat ∈ gamma2s) (hr : Reduced x.mem (State.addr r)) :
     (useHintContract Arm.abi stk).pre x := by
+  sig_pre [useHintContract, useHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [useHintContract, useHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, gg, g3]
     cpre
 
@@ -402,8 +426,10 @@ theorem bu_pre (g0 : x.gpr .r0 = v) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = a) 
     (f1 : v.toNat + len.toNat ≤ 2 ^ 32) (f2 : f.toNat + 1024 ≤ 2 ^ 32)
     (hab : (a.toNat, b.toNat) ∈ bitPackParams) (hl : len.toNat = 32 * bitlen (a.toNat + b.toNat)) :
     (bitUnpackContract Arm.abi stk).pre x := by
+  sig_pre [bitUnpackContract, bitUnpackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [bitUnpackContract, bitUnpackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, g2, g3, ga]
     cpre
 
@@ -426,8 +452,10 @@ theorem t1_pre (g0 : x.gpr .r0 = v) (g1 : x.gpr .r1 = f)
     (k1 : (below x stk).Disjoint (regA v 320)) (k2 : (below x stk).Disjoint (regA f 1024))
     (f1 : v.toNat + 320 ≤ 2 ^ 32) (f2 : f.toNat + 1024 ≤ 2 ^ 32) :
     (unpackT1Contract Arm.abi stk).pre x := by
+  sig_pre [unpackT1Contract, unpackT1Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [unpackT1Contract, unpackT1Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1]
     cpre
 
@@ -461,8 +489,10 @@ theorem hbu_pre (g0 : x.gpr .r0 = yy) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = o
     (hp : (om.toNat, len.toNat - om.toNat) ∈ hintParams) (ho : om.toNat ≤ len.toNat)
     (hh : hl.toNat = 256 * (len.toNat - om.toNat)) :
     (hintBitUnpackContract Arm.abi stk).pre x := by
+  sig_pre [hintBitUnpackContract, hintBitUnpackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [hintBitUnpackContract, hintBitUnpackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0, g1, g2, g3, ga]
     cpre
 
@@ -492,8 +522,10 @@ variable {stk : Nat} {x y : State} {f : BitVec 32}
 theorem normLt_pre (g0 : x.gpr .r0 = f) (hrd : x.rd = [regA f 1024]) (hwr : x.wr = [])
     (hsp : stk ≤ x.sp.toNat) (k1 : (below x stk).Disjoint (regA f 1024)) (f1 : f.toNat + 1024 ≤ 2 ^ 32)
     (hr : Reduced x.mem (State.addr f)) : (normLtContract Arm.abi stk).pre x := by
+  sig_pre [normLtContract, normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
   rcases stk with _ | n <;>
-  · sig_pre [normLtContract, normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
+      and_assoc]
     simp only [g0]
     cpre
 
