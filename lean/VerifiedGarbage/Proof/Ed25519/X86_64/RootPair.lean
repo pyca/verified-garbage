@@ -451,8 +451,8 @@ theorem rootPowerUnrolled2_spec (base : Addr) :
     (sqn2_spec base (by decide) (by decide) 2 (by decide) (by decide)).seq (RSpec.ops base _),
     fun e => ⟨?_, ?_⟩⟩
   all_goals
-    simp only [↓reduceIte, upd2, evalOps, List.foldl_cons, List.foldl_nil, evalOp,
-      Function.update_apply]
+    dsimp only [Fin.isValue, Fin.reduceEq, ↓reduceIte, upd2, evalOps, List.foldl_cons, List.foldl_nil,
+      evalOp, Function.update_apply]
     rfl
 
 /-- `rootPowerUnrolled2` in the scratch: A's power (of slot 2) into slot 15 and R's (of slot 3) into

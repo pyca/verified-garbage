@@ -409,21 +409,21 @@ theorem run_step {x i : Nat} (hx : x < P) (hi : i < 10) {t : DSt} (h : RInv x i 
   refine ⟨by rw [e], by rw [e]; exact fA, by rw [e]; exact fB, by unfold fRowV; exact Nat.mod_lt _ (by positivity),
     by unfold fRowV; exact Nat.mod_lt _ (by positivity), aAl, aBl, ?_, ?_, fun hx0 => ?_⟩
   · rw [e]
-    show 2 ^ (59 * (i + 1)) * tN.f ≡ x * aRowV _ _ t.a t.b [ZMOD P]
+    dsimp only
     rw [hP, mul_assoc, m1]
     calc 2 ^ (59 * i) * (tN.u * f + tN.v * g) = tN.u * (2 ^ (59 * i) * f) + tN.v * (2 ^ (59 * i) * g) := by ring
       _ ≡ tN.u * (x * t.a) + tN.v * (x * t.b) [ZMOD P] := (hca.mul_left _).add (hcb.mul_left _)
       _ = x * (tN.u * t.a + tN.v * t.b) := by ring
       _ ≡ x * aRowV _ _ t.a t.b [ZMOD P] := (aA.symm.mul_left _)
   · rw [e]
-    show 2 ^ (59 * (i + 1)) * tN.g ≡ x * aRowV _ _ t.a t.b [ZMOD P]
+    dsimp only
     rw [hP, mul_assoc, m2]
     calc 2 ^ (59 * i) * (tN.q * f + tN.r * g) = tN.q * (2 ^ (59 * i) * f) + tN.r * (2 ^ (59 * i) * g) := by ring
       _ ≡ tN.q * (x * t.a) + tN.r * (x * t.b) [ZMOD P] := (hca.mul_left _).add (hcb.mul_left _)
       _ = x * (tN.q * t.a + tN.r * t.b) := by ring
       _ ≡ x * aRowV _ _ t.a t.b [ZMOD P] := (aB.symm.mul_left _)
   · have hv : tN.v = 0 := hg0 (hzero hx0)
-    show (aRowV _ _ t.a t.b : Int) ≡ 0 [ZMOD P]
+    dsimp only
     refine aA.trans ?_
     rw [hv]
     have := (hz hx0).mul_left tN.u

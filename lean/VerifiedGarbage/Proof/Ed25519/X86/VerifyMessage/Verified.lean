@@ -349,13 +349,13 @@ theorem update_outArgs (hL : L.Ok) {source count : Nat} {nv : Value} {s : State}
 
 theorem hash_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hash (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  have ini := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 4 0] (by decide) (by simp [Whole.valid]) (by taint_decide)
+  have ini := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 4 0] (by decide) (by simp only [List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide) (by taint_decide)
   have rs := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 4 0, .const 0, .const 0, .caller 3 0, .const 32, .caller 4 192]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)
+    (by decide) (by simp only [List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide) (by taint_decide)
   have ps := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 4 0, .const 32, .const 0, .caller 0 0, .const 32, .caller 4 192]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)
+    (by decide) (by simp only [List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide) (by taint_decide)
   have ms := setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 4 0, .const 64, .const 0, .caller 1 0, .caller 2 0, .caller 4 192]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)
+    (by decide) (by simp only [List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide) (by taint_decide)
   have r := update_call_ct (g₁ := g₁) (g₂ := g₂) (m₁ := m₁) (m₂ := m₂) hL
     (vs := [.caller 4 0, .const 0, .const 0, .caller 3 0, .const 32, .caller 4 192]) rfl
     (input_sig hL) (fun _ hs => update_outArgs hL hs)
@@ -412,7 +412,7 @@ theorem reduce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (d
       (VG.Impl.Ed25519.X86.PublicKey.callWith reduceArgs "vg_ed25519_scalar_reduce" Impl.Ed25519.X86.scalarReduce)
       (Two L g₁ g₂ m₁ m₂ fun t => Spec.Ed25519.bytesAt t.mem (L.E.setWidth 64 + 128) 32 = Spec.Ed25519.scalarReduce digest) := by
   have ct := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.frame 128, .frame 192, .caller 4 0]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)).seq (reduce_call_ct hL)
+    (by decide) (by simp only [List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide) (by taint_decide)).seq (reduce_call_ct hL)
   refine two_wp (ct.mono (fun _ _ h => ⟨h.1, h.2.1, trivial, trivial⟩) (fun _ _ _ => trivial)) ?_ ?_
   · intro t hc hd
     refine WP.mono (reduce_step hc hL ha) fun _ ⟨hu, hr⟩ => ⟨hu, ?_⟩
