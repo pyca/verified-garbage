@@ -26,25 +26,30 @@ def restore : List Instr := savedRegisters.map fun (reg, d) => .mov reg (.mem (s
 def saveArgument (i : Nat) (f : Field) : List Instr :=
   [.mov .eax (.mem (argument i)), .store (sc (Layout.field f)) .eax]
 
+def addPointer (length dest : Field) : List Instr :=
+  [.alu .add .eax (.mem (sc (Layout.field length))), .store (sc (Layout.field dest)) .eax]
+
 def keyPointers : List Instr :=
-  [.mov .eax (.mem (sc (Layout.field .p))), .alu .add .eax (.mem (sc (Layout.field .pLen))),
-    .store (sc (Layout.field .q)) .eax, .alu .add .eax (.mem (sc (Layout.field .qLen))),
-    .store (sc (Layout.field .g)) .eax, .alu .add .eax (.mem (sc (Layout.field .pLen))),
-    .store (sc (Layout.field .y)) .eax, .alu .add .eax (.mem (sc (Layout.field .pLen))),
-    .store (sc (Layout.field .x)) .eax]
+  ([.mov .eax (.mem (sc (Layout.field .p)))] : List Instr) ++
+    addPointer .pLen .q ++ addPointer .qLen .g ++ addPointer .pLen .y ++ addPointer .pLen .x
+
+def saveArguments (args : List (Nat × Field)) : List Instr :=
+  args.flatMap fun (i, f) => saveArgument i f
+
+def signArguments : List (Nat × Field) :=
+  [(0, .out), (2, .p), (4, .pLen), (5, .nonce), (6, .qLen), (7, .digest), (8, .digestLen)]
+
+def verifyArguments : List (Nat × Field) :=
+  [(0, .p), (2, .pLen), (3, .qLen), (4, .signature), (6, .digest), (7, .digestLen)]
+
+def openScratch (arg : Nat) : List Instr :=
+  ([.mov .eax (.mem (argument arg))] : List Instr) ++ save ++ [.mov .edi (.reg .eax)]
 
 def signEntry : List Instr :=
-  ([.mov .eax (.mem (argument 9))] : List Instr) ++ save ++
-  ([.mov .edi (.reg .eax), .mov .eax (.imm 0), .store (sc (Layout.field .signature)) .eax] : List Instr) ++
-  saveArgument 0 .out ++ saveArgument 2 .p ++ saveArgument 4 .pLen ++ saveArgument 5 .nonce ++
-  saveArgument 6 .qLen ++ saveArgument 7 .digest ++ saveArgument 8 .digestLen ++ keyPointers
+  openScratch 9 ++ saveArguments signArguments ++ keyPointers
 
 def verifyEntry : List Instr :=
-  ([.mov .eax (.mem (argument 8))] : List Instr) ++ save ++
-  ([.mov .edi (.reg .eax), .mov .eax (.imm 0), .store (sc (Layout.field .out)) .eax,
-    .store (sc (Layout.field .nonce)) .eax] : List Instr) ++
-  saveArgument 0 .p ++ saveArgument 2 .pLen ++ saveArgument 3 .qLen ++ saveArgument 4 .signature ++
-  saveArgument 6 .digest ++ saveArgument 7 .digestLen ++ keyPointers
+  openScratch 8 ++ saveArguments verifyArguments ++ keyPointers
 
 def failure (signing : Bool) : Prog isa :=
   if signing then Core.sequence [

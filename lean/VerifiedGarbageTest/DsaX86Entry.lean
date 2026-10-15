@@ -1,5 +1,10 @@
+import VerifiedGarbage.Proof.Dsa.X86.SharedCorrect
+import VerifiedGarbage.Proof.Dsa.X86.InputBuffer
 import VerifiedGarbageTest.DsaX86SignVerify
 import VerifiedGarbage.Impl.Dsa.X86.Entry
+import VerifiedGarbage.Proof.Dsa.X86.InstallArguments
+import VerifiedGarbage.Proof.Dsa.X86.ShapeModuli
+import VerifiedGarbage.Proof.Dsa.X86.CallerSlice
 import VerifiedGarbage.Proof.Dsa.X86.EntrySave
 import VerifiedGarbage.Proof.Dsa.X86.Failure
 import VerifiedGarbage.Proof.Dsa.X86.DigestDispatch
@@ -13,6 +18,13 @@ without reading uninitialized scalar scratch. -/
 #assert_standard_axioms VG.Proof.Dsa.X86.widthDispatch_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.signFailure_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.verifyFailure_ok
+#assert_standard_axioms VG.Proof.Dsa.X86.signingCorrect
+#assert_standard_axioms VG.Proof.Dsa.X86.verifyingCorrect
+#assert_standard_axioms VG.Proof.Dsa.X86.inputBuffer
+#assert_standard_axioms VG.Proof.Dsa.X86.inputBytes_keep
+#assert_standard_axioms VG.Proof.Dsa.X86.installArguments_ok
+#assert_standard_axioms VG.Proof.Dsa.X86.shapeModuli_ok
+#assert_standard_axioms VG.Proof.Dsa.X86.CallerBuffer.slice
 #assert_standard_axioms VG.Proof.Dsa.X86.entrySave_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.entryRestore_ok
 

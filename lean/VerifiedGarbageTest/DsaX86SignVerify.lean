@@ -1,4 +1,9 @@
+import VerifiedGarbage.Proof.Dsa.X86.SignSized
+import VerifiedGarbage.Proof.Dsa.X86.VerifySized
 import VerifiedGarbageTest.DsaX86Core
+import VerifiedGarbage.Proof.Dsa.X86.SignBytesSpec
+import VerifiedGarbage.Proof.Dsa.X86.VerifyBytesSpec
+import VerifiedGarbage.Proof.Dsa.X86.InvalidShapeSpec
 import VerifiedGarbage.Proof.Dsa.X86.SignBody
 import VerifiedGarbage.Proof.Dsa.X86.VerifyBody
 import VerifiedGarbage.Proof.Dsa.X86.SignCompute
@@ -13,6 +18,14 @@ specification on a synthetic small domain. A one-byte digest fits the small
 subgroup bit length, so this test does not assume byte-aligned toy parameters.
 The public supported-size gate is tested separately. -/
 
+#assert_standard_axioms VG.Proof.Dsa.X86.signSized_spec
+#assert_standard_axioms VG.Proof.Dsa.X86.verifySized_spec
+#assert_standard_axioms VG.Proof.Dsa.X86.signBody_spec
+#assert_standard_axioms VG.Proof.Dsa.X86.verifyBody_spec
+#assert_standard_axioms VG.Proof.Dsa.X86.signBytes_compute
+#assert_standard_axioms VG.Proof.Dsa.X86.verifyBytes_compute
+#assert_standard_axioms VG.Proof.Dsa.X86.signBytes_invalid_shape
+#assert_standard_axioms VG.Proof.Dsa.X86.verifyBytes_invalid_shape
 #assert_standard_axioms VG.Proof.Dsa.X86.signBody_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.verifyBody_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.signCompute_ok
