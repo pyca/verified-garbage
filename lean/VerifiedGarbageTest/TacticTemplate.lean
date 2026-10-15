@@ -43,6 +43,12 @@ tactic_template "my_exact " t:term : tactic => `(tactic| exact $t)
 a constant here. -/
 tactic_template "my_symm " t:term : tactic => `(tactic| exact ($t).symm)
 
+/-- `constructor`, then a bullet for each goal, aligned with `constructor`: the body's
+first line starts mid-line. -/
+tactic_template "two_bullets" : tactic => `(tactic| (constructor
+                                                     · exact rfl
+                                                     · exact rfl))
+
 /-- `simp only [two_eq]`, at the location given, if any (`$(loc)?`). -/
 tactic_template "two_simp_at" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| simp only [two_eq] $(loc)?)
@@ -61,6 +67,7 @@ example : (2 : Nat) = 1 + 1 := by cfg_simp''
 example : True := by my_exact trivial
 example (h : 1 = 2) : 1 = 2 := by my_exact h
 example (h : (1 : Nat) = 2) : 2 = 1 := by my_symm h
+example : (2 : Nat) = 2 ∧ (3 : Nat) = 3 := by two_bullets
 -- An optional argument, absent and present.
 example : (2 : Nat) = 1 + 1 := by two_simp_at
 example (h : (2 : Nat) = 3) : 1 + 1 = 3 := by two_simp_at at h; exact h
