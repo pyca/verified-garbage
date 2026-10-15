@@ -106,7 +106,13 @@ partial def globalNames (stx : Syntax) : CommandElabM (Array (String.Pos.Raw × 
     let [(c, _)] := cs | return #[]
     if isPrivateName c || !env.contains c then return #[]
     return #[(s, e, c)]
-  | .node _ _ args => args.foldlM (fun acc a => return acc ++ (← globalNames a)) #[]
+  | .node _ k args =>
+    -- A field or option name (`{ decide := true }`, `+decide`, `(decide := true)`) names no
+    -- constant: leave it as written.
+    if k == ``Lean.Parser.Term.structInstLVal || k == ``Lean.Parser.Tactic.posConfigItem ||
+        k == ``Lean.Parser.Tactic.negConfigItem then return #[]
+    let args := if k == ``Lean.Parser.Tactic.valConfigItem then args.filter (!·.isIdent) else args
+    args.foldlM (fun acc a => return acc ++ (← globalNames a)) #[]
   | _ => return #[]
 
 /-- The source text of `stx` with each name of `names` written as the

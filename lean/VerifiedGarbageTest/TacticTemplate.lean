@@ -22,6 +22,17 @@ tactic_template "two_simp" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
 tactic_template "two_simp'" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
   `(tactic| simp only [$ts,*, two_eq])
 
+/-- A constant with the name of a `simp` option. -/
+def zeta : Nat := 0
+
+/-- `simp` with configuration options whose names are also constants here
+(`zeta`, and `decide` everywhere): they stay option names. -/
+tactic_template "cfg_simp" : tactic => `(tactic| simp (config := { zeta := true }) only [two_eq])
+
+tactic_template "cfg_simp'" : tactic => `(tactic| simp +zeta -decide -failIfUnchanged only [two_eq])
+
+tactic_template "cfg_simp''" : tactic => `(tactic| simp (zeta := true) only [two_eq])
+
 /-- `exact` the term given. -/
 tactic_template "my_exact " t:term : tactic => `(tactic| exact $t)
 
@@ -33,6 +44,9 @@ example : (2 : Nat) + 0 = 1 + 1 := by two_simp [Nat.add_zero]
 example : (2 : Nat) + 0 * 5 = 1 + 1 := by two_simp [Nat.zero_mul, Nat.add_zero]
 example : (2 : Nat) = 1 + 1 := by two_simp' []
 example : (2 : Nat) + 0 = 1 + 1 := by two_simp' [Nat.add_zero]
+example : (2 : Nat) = 1 + 1 := by cfg_simp
+example : (2 : Nat) = 1 + 1 := by cfg_simp'
+example : (2 : Nat) = 1 + 1 := by cfg_simp''
 example : True := by my_exact trivial
 example (h : 1 = 2) : 1 = 2 := by my_exact h
 
