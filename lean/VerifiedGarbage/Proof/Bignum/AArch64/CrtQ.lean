@@ -123,9 +123,9 @@ theorem qPhase_gen (M : Mont) (E : Nat → Nat → List (Prog isa)) (hE : PowOk 
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hep : word s.mem B (8 * sDq) = ep) (hel : word s.mem B (8 * sQlen) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
-    WP isa (seqs (unitSteps M.mm sWsQ ++ ([M.mm Public.aY Public.aXm Public.aY] ++
-      (([.block [ldh .x0 sWsQ]] ++ redc M.mm Public.aY ++ E sDq sQlen) ++
-        [M.mm Public.aY Public.aY Public.aOne, .block [leave]])))) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
+    WP isa (seqs (unitSteps M.mm sWsQ ++ (([M.mm Public.aY Public.aXm Public.aY] : List (Prog isa)) ++
+      ((([.block [ldh .x0 sWsQ]] : List (Prog isa)) ++ redc M.mm Public.aY ++ E sDq sQlen) ++
+        ([M.mm Public.aY Public.aY Public.aOne, .block [leave]] : List (Prog isa)))))) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
       (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb % X) ∧
       Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t := by

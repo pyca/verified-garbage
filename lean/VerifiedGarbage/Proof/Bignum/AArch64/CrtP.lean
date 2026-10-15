@@ -366,8 +366,8 @@ theorem pPhase_gen (M : Mont) (E : Nat → Nat → List (Prog isa)) (hE : PowOk 
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : qib.length = eb.length) (hqs : Src s B Z qp qib)
     (hqw : (qib.length + 7) / 8 ≤ wx) (hqi : c = true → Spec.Rsa.os2ip qib < X) :
-    WP isa (seqs (unitSteps M.mm sWsP ++ (mqSteps M.mm ++ ([M.mm Public.aY Public.aXm Public.aY] ++
-      (([.block [ldh .x0 sWsP]] ++ redc M.mm Public.aY ++ E sDp sPlen) ++
+    WP isa (seqs (unitSteps M.mm sWsP ++ (mqSteps M.mm ++ (([M.mm Public.aY Public.aXm Public.aY] : List (Prog isa)) ++
+      ((([.block [ldh .x0 sWsP]] : List (Prog isa)) ++ redc M.mm Public.aY ++ E sDp sPlen) ++
         (([.block [leave]] : List (Prog isa)) ++ hSteps M.mm)))))) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
       (c = true → ∃ a b, a % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X ∧
