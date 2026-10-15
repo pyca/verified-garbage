@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -42,42 +44,42 @@ theorem brainpoolp384r1n_ok : ModOk brainpoolp384r1n.k brainpoolp384r1n.m where
 
 theorem brainpoolp384r1p_mul_ct : ConstantTime isa (mulArm brainpoolp384r1p).pre (mulArm brainpoolp384r1p).pub (mulFn brainpoolp384r1p.k brainpoolp384r1p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem brainpoolp384r1p_mul_verified : Verified Arm.target (mulFn brainpoolp384r1p.k brainpoolp384r1p.m) (brainpoolp384r1p.mulContract Arm.abi) :=
   mul_verified brainpoolp384r1p brainpoolp384r1p_ok (by decide) brainpoolp384r1p_mul_ct
 
 theorem brainpoolp384r1p_add_ct : ConstantTime isa (addArm brainpoolp384r1p).pre (addArm brainpoolp384r1p).pub (addFn brainpoolp384r1p.k brainpoolp384r1p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem brainpoolp384r1p_add_verified : Verified Arm.target (addFn brainpoolp384r1p.k brainpoolp384r1p.m) (brainpoolp384r1p.addContract Arm.abi) :=
   add_verified brainpoolp384r1p brainpoolp384r1p_ok (by decide) brainpoolp384r1p_add_ct
 
 theorem brainpoolp384r1p_sub_ct : ConstantTime isa (subArm brainpoolp384r1p).pre (subArm brainpoolp384r1p).pub (subFn brainpoolp384r1p.k brainpoolp384r1p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem brainpoolp384r1p_sub_verified : Verified Arm.target (subFn brainpoolp384r1p.k brainpoolp384r1p.m) (brainpoolp384r1p.subContract Arm.abi) :=
   sub_verified brainpoolp384r1p brainpoolp384r1p_ok (by decide) brainpoolp384r1p_sub_ct
 
 theorem brainpoolp384r1n_mul_ct : ConstantTime isa (mulArm brainpoolp384r1n).pre (mulArm brainpoolp384r1n).pub (mulFn brainpoolp384r1n.k brainpoolp384r1n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem brainpoolp384r1n_mul_verified : Verified Arm.target (mulFn brainpoolp384r1n.k brainpoolp384r1n.m) (brainpoolp384r1n.mulContract Arm.abi) :=
   mul_verified brainpoolp384r1n brainpoolp384r1n_ok (by decide) brainpoolp384r1n_mul_ct
 
 theorem brainpoolp384r1n_add_ct : ConstantTime isa (addArm brainpoolp384r1n).pre (addArm brainpoolp384r1n).pub (addFn brainpoolp384r1n.k brainpoolp384r1n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem brainpoolp384r1n_add_verified : Verified Arm.target (addFn brainpoolp384r1n.k brainpoolp384r1n.m) (brainpoolp384r1n.addContract Arm.abi) :=
   add_verified brainpoolp384r1n brainpoolp384r1n_ok (by decide) brainpoolp384r1n_add_ct
 
 theorem brainpoolp384r1n_sub_ct : ConstantTime isa (subArm brainpoolp384r1n).pre (subArm brainpoolp384r1n).pub (subFn brainpoolp384r1n.k brainpoolp384r1n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem brainpoolp384r1n_sub_verified : Verified Arm.target (subFn brainpoolp384r1n.k brainpoolp384r1n.m) (brainpoolp384r1n.subContract Arm.abi) :=
   sub_verified brainpoolp384r1n brainpoolp384r1n_ok (by decide) brainpoolp384r1n_sub_ct
