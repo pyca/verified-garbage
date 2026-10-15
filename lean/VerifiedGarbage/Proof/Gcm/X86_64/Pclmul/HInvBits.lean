@@ -34,13 +34,12 @@ theorem shl1 (h : BitVec 128) :
     BitVec.getLsbD_ushiftRight, qword, BitVec.getLsbD_extractLsb']
   rcases (by omega : i = 0 ∨ (1 ≤ i ∧ i < 64) ∨ i = 64 ∨ 64 < i) with h | h | h | h
   · subst h; simp
-  · simp (disch := omega) only [ite_eq_left, decide_eq_true, decide_eq_false, Bool.true_and,
+  · simp (disch := omega) only [↓ite_eq_left, decide_eq_true, decide_eq_false, Bool.true_and,
       Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true, Bool.not_true]
     exact congrArg _ (by omega)
   · subst h; simp
-  · simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, decide_eq_false,
-      Bool.true_and, Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true,
-      Bool.not_true]
+  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, decide_eq_false,
+      Bool.true_and, Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true]
     exact congrArg _ (by omega)
 
 theorem shr31 (y : BitVec 32) : y >>> 31 = if y.msb then 1#32 else 0#32 := by
