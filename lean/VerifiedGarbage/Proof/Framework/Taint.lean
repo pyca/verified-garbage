@@ -96,6 +96,12 @@ inductive Hint (T : Type) where
   | frame (h : Hint T)
   deriving Lean.ToExpr
 
+/-- `toExpr` of a hint, compiled once here: `taint_decide` evaluates a call of
+it, where `toExpr` of the hint's type would otherwise be specialized to the
+analysis, and compiled again, at every check. -/
+@[nospecialize] def Hint.toExprNS {T : Type} [Lean.ToExpr T] (h : Hint T) : Lean.Expr :=
+  Lean.toExpr h
+
 variable {M : ISA} (A : Taint M)
 
 /-- The analysis of a block. The kernel evaluates this for every instruction
@@ -175,7 +181,7 @@ where
       if A.le σ σ' && A.condPub σ' c then some (σ', .loop σ h) else go c body n (A.meet σ σ')
 
 /-- The hint for `c` from `τ` (any hint, if the analysis fails). -/
-def hintOfSize (chunkSize : Nat) (τ : A.T) (c : Prog M) : Hint A.T :=
+@[nospecialize] def hintOfSize (chunkSize : Nat) (τ : A.T) (c : Prog M) : Hint A.T :=
   ((hint A chunkSize τ c).map (·.2)).getD (.block [] chunkSize)
 
 /-- A hint using the fallback interval, for summary and batch callers. -/
@@ -393,15 +399,14 @@ meta def taintDecideAt (chunkSize : Expr) (name : String) (w : Option Term) : Ta
   let args := chk.getAppArgs
   let (m, a, τ, c, h) := (args[0]!, args[1]!, args[2]!, args[3]!, args[4]!)
   let tT ← whnfD (mkApp2 (mkConst ``Taint.T) m a)
-  let hty := mkApp (mkConst ``Taint.Hint) tT
-  let inst ← synthInstance (mkApp (mkConst ``ToExpr [0]) hty)
   let mut hint := mkApp5 (mkConst ``Taint.hintOfSize) m a chunkSize τ c
   if let some w := w then
     unless h.isMVar do throwError "{name}: the hint is already given"
     let wv ← Term.elabTermEnsuringType w (← mkArrow tT tT)
     Term.synthesizeSyntheticMVarsNoPostponing
     hint := mkApp4 (mkConst ``Taint.Hint.map) tT tT (← instantiateMVars wv) hint
-  let hv ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``ToExpr.toExpr [0]) hty inst hint)
+  let instT ← synthInstance (mkApp (mkConst ``ToExpr [0]) tT)
+  let hv ← unsafe evalExpr Expr (mkConst ``Expr) (mkApp3 (mkConst ``Taint.Hint.toExprNS) tT instT hint)
   if h.isMVar then h.mvarId!.assign hv
   -- The kernel evaluates the literal of any code that has one (`materialize_code`).
   evalTactic (← `(tactic| lit_decide))
