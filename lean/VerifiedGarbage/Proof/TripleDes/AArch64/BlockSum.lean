@@ -37,11 +37,4 @@ taint_summary decSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2])
   (.call "vg_triple_des_decrypt_block" Impl.TripleDes.AArch64.decryptBlock)
   keeping (VectorTaint.ofRegs callee)
 
-/-- Constant time from a check that `taint_decide_sum` proves. -/
-theorem ct_of {Pre : State → Prop} {Pub : State → State → Prop} {c : Prog isa} (τ : VectorTaint.T)
-    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → VectorTaint.taint.Agree τ s₁ s₂)
-    (h : ∃ hc, (VectorTaint.taint.check τ c hc).isSome = true) : ConstantTime isa Pre Pub c := by
-  obtain ⟨_, h⟩ := h
-  exact VG.Taint.constantTime (A := VectorTaint.taint) τ hpub h
-
 end VG.Proof.TripleDes.AArch64

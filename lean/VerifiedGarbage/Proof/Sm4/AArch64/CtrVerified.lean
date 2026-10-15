@@ -112,7 +112,8 @@ theorem ctrTaint_agree (s₁ s₂ : State) (_ : ctrAArch64.pre s₁) (_ : ctrAAr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr_ct : ConstantTime isa ctrAArch64.pre ctrAArch64.pub ctr :=
-  ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+  VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+    (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun s₁ s₂ h₁ h₂ hp => ⟨ctrTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
       simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [cryptSum])
 

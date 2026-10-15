@@ -199,7 +199,8 @@ theorem ofb_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (ofb_wp hs) (by lit_decide) (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide_sum [cryptSum])) (by
     sig_implies [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig, Proof.Sm4.ofbPost,
       ofbAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots, tableEnd, tableSlot] [fbSat] using fbSat)
@@ -210,7 +211,8 @@ theorem cfbEncrypt_verified :
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbEncrypt_wp hs) (by lit_decide)
         (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide_sum [cryptSum])) (by
     sig_implies [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig, Proof.Sm4.cfbEncPost,
       cfbEncAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots, tableEnd, tableSlot] [fbSat] using fbSat)
@@ -221,7 +223,8 @@ theorem cfbDecrypt_verified :
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbDecrypt_wp hs) (by lit_decide)
         (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide_sum [cryptSum])) (by
     sig_implies [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig, Proof.Sm4.cfbDecPost,
       cfbDecAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots, tableEnd, tableSlot] [fbSat] using fbSat)

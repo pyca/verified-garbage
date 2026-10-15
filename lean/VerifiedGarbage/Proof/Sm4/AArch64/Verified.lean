@@ -50,10 +50,12 @@ theorem ecbTaint_agree (dir : Dir) (s₁ s₂ : State) (_ : (ecbAArch64 dir).pre
 
 theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbAArch64 dir).pre (ecbAArch64 dir).pub (ecb dir) := by
   cases dir
-  · exact ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3]) (fun s₁ s₂ h₁ h₂ hp =>
+  · exact VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3]) (fun s₁ s₂ h₁ h₂ hp =>
       ⟨ecbTaint_agree .encrypt s₁ s₂ h₁ h₂ hp, fun v hv => by simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩)
       (by taint_decide_sum [cryptSum])
-  · exact ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3]) (fun s₁ s₂ h₁ h₂ hp =>
+  · exact VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3]) (fun s₁ s₂ h₁ h₂ hp =>
       ⟨ecbTaint_agree .decrypt s₁ s₂ h₁ h₂ hp, fun v hv => by simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩)
       (by taint_decide_sum [cryptSum])
 
@@ -127,7 +129,8 @@ theorem ecbAnyTaint_agree (s₁ s₂ : State) (_ : ecbAnyAArch64.pre s₁) (_ : 
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ecbAny_ct : ConstantTime isa ecbAnyAArch64.pre ecbAnyAArch64.pub ecbAny :=
-  ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) (fun s₁ s₂ h₁ h₂ hp =>
+  VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+    (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) (fun s₁ s₂ h₁ h₂ hp =>
     ⟨ecbAnyTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩)
     (by taint_decide_sum [cryptSum])
 
