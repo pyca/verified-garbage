@@ -36,9 +36,9 @@ theorem nafByte_word (k j : Nat) :
   rw [BitVec.toNat_ofNat,nafWord_toNat,Naf5.byte_toNat]
   have hb := Naf5.magnitude_le k j
   cases hn : Naf5.negative k j
-  · simp only [Bool.false_eq_true,ite_false]; omega
+  · simp only [Bool.false_eq_true,ite_false]; omega_using [hb]
   · have hp := Naf5.negative_magnitude_pos k j hn
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_using [hb, hp]
 
 theorem nafStore_ok {s : State} {base : Addr} {size bits k j : Nat}
     (hs : Scr s base size) (hb : bits+257≤size) (hj : j<257)
@@ -51,7 +51,7 @@ theorem nafStore_ok {s : State} {base : Addr} {size bits k j : Nat}
     [.strb .x2 .x20 0]++[.addImm .x .x20 .x20 1] from rfl,WP.block_append_iff]
   have hw : InRegions s.wr (s.gpr .x20+BitVec.ofNat 64 0) 1 := by
     rw [hp]; simp only [BitVec.add_zero]
-    exact ⟨_,hs.wr,hs.contains (by omega) (by decide)⟩
+    exact ⟨_,hs.wr,hs.contains (by omega_using [hb, hj]) (by decide)⟩
   refine WP.mono (strb_ok s (by decide) hw) fun a ha => ?_
   subst a
   refine WP.mono (addImm_ok _ (d:=.x20) (n:=.x20) (imm:=1) (by decide)) fun t ⟨ht,kt⟩ => ?_
@@ -74,7 +74,7 @@ theorem nafPrepStep_ok {s : State} {base : Addr} {size bits k j : Nat}
     rw [ha]; apply nafRaw_eq
     have hh := hI.value
     dsimp only [nafVal5] at hh
-    omega
+    omega_using [hh]
   have pa : a.gpr .x20=off base (bits+j) := (ka.gpr _ (by decide)).trans hI.ptr
   have sa := hI.scr.of_keeps ka (by decide)
   rw [List.append_assoc,WP.block_append_iff]
@@ -91,10 +91,10 @@ theorem nafPrepStep_ok {s : State} {base : Addr} {size bits k j : Nat}
   have sc := sb.of_keeps kc (by decide)
   have cc : c.gpr .x19=BitVec.ofNat 64 (257-j) := by
     rw [kc.gpr _ (by decide),kb.gpr _ (by decide),ka.gpr _ (by decide),hI.count]
-  refine WP.mono (decCounter_ok c (by omega) (by omega) cc) fun t ⟨ct,kt⟩ => ?_
+  refine WP.mono (decCounter_ok c (by omega_using [hj]) (by omega_using []) cc) fun t ⟨ct,kt⟩ => ?_
   have st := sc.of_keeps kt (by decide)
   have mt : t.mem=s.mem.writeW (off base (bits+j)) (Naf5.byte k j) := by rw [kt.mem,kc.mem,mb,ka.mem]
-  have O := writeW8_outside s.mem base (Naf5.byte k j) (d:=bits+j) (by have:=hI.scr.nowrap; omega)
+  have O := writeW8_outside s.mem base (Naf5.byte k j) (d:=bits+j) (by have:=hI.scr.nowrap; omega_using [hb, hj, this])
   refine ⟨⟨st,?_,?_,?_,?_,?_,?_,?_,?_⟩,?_,?_⟩
   · simp only [kt.gpr .x5 (by decide),kt.gpr .x6 (by decide),kt.gpr .x7 (by decide),
       kt.gpr .x8 (by decide),kt.gpr .x9 (by decide),vc]
@@ -110,9 +110,9 @@ theorem nafPrepStep_ok {s : State} {base : Addr} {size bits k j : Nat}
     · subst i; exact writeW8_self ..
     · rw [O _ (by
         have hoff : ofs base (off base (bits+i))=bits+i := by
-          simpa only [BitVec.add_zero,Nat.add_zero] using (ofs_off base (d:=bits+i) (i:=0) (by have:=hI.scr.nowrap; omega))
-        rw [hoff]; omega)]
-      exact hI.digits i (by omega)
+          simpa only [BitVec.add_zero,Nat.add_zero] using (ofs_off base (d:=bits+i) (i:=0) (by have:=hI.scr.nowrap; omega_using [hb, hj, hi, this]))
+        rw [hoff]; omega_using [hij])]
+      exact hI.digits i (by omega_using [hi, hij])
   · refine ⟨?_,kt.rd.trans (kc.rd.trans (kb.rd.trans ka.rd)),
       kt.wr.trans (kc.wr.trans (kb.wr.trans ka.wr)),kt.sp.trans (kc.sp.trans (kb.sp.trans ka.sp))⟩
     intro r hr
@@ -129,23 +129,23 @@ theorem nafPrepStep_ok {s : State} {base : Addr} {size bits k j : Nat}
       intro hh
       exact hr ((by decide : ∀ q∈[Reg.x19],q∈nafPrepClob) r hh)
     rw [kt.gpr r tR,kc.gpr r cR,kb.gpr r bR,ka.gpr r aR]
-  · rw [mt]; exact O.mono (by omega) (by omega)
+  · rw [mt]; exact O.mono (by omega_using []) (by omega_using [hj])
 
 theorem nafLoads_ok {s : State} {base : Addr} {size src : Nat}
     (hs : Scr s base size) (hsrc : src+32≤size) (hsrc8 : src%8=0) :
     WP isa (.block (VG.Impl.Mont.AArch64.loads [.x5,.x6,.x7,.x8] src)) s fun t =>
       regsVal t [.x5,.x6,.x7,.x8]=wordsVal s.mem base src 4 ∧ Keeps [.x5,.x6,.x7,.x8] s t := by
   rw [VG.Impl.Mont.AArch64.loads,←List.singleton_append,WP.block_append_iff]
-  refine WP.mono (ld_ok hs (d:=src) (by omega) hsrc8 .x5) fun a ⟨va,ka,_⟩ => ?_
+  refine WP.mono (ld_ok hs (d:=src) (by omega_using [hsrc]) hsrc8 .x5) fun a ⟨va,ka,_⟩ => ?_
   have sa := hs.of_keeps ka (by decide)
   rw [VG.Impl.Mont.AArch64.loads,←List.singleton_append,WP.block_append_iff]
-  refine WP.mono (ld_ok sa (d:=src+8) (by omega) (by omega) .x6) fun b ⟨vb,kb,_⟩ => ?_
+  refine WP.mono (ld_ok sa (d:=src+8) (by omega_using [hsrc]) (by omega_using [hsrc8]) .x6) fun b ⟨vb,kb,_⟩ => ?_
   have sb := sa.of_keeps kb (by decide)
   rw [VG.Impl.Mont.AArch64.loads,←List.singleton_append,WP.block_append_iff]
-  refine WP.mono (ld_ok sb (d:=src+8+8) (by omega) (by omega) .x7) fun c ⟨vc,kc,_⟩ => ?_
+  refine WP.mono (ld_ok sb (d:=src+8+8) (by omega_using [hsrc]) (by omega_using [hsrc8]) .x7) fun c ⟨vc,kc,_⟩ => ?_
   have sc := sb.of_keeps kc (by decide)
   rw [VG.Impl.Mont.AArch64.loads,←List.singleton_append,WP.block_append_iff]
-  refine WP.mono (ld_ok sc (d:=src+8+8+8) (by omega) (by omega) .x8) fun t ⟨vt,kt,_⟩ => ?_
+  refine WP.mono (ld_ok sc (d:=src+8+8+8) (by omega_using [hsrc]) (by omega_using [hsrc8]) .x8) fun t ⟨vt,kt,_⟩ => ?_
   apply WP.block_nil
   refine ⟨?_,?_,kt.mem.trans (kc.mem.trans (kb.mem.trans ka.mem)),kt.rd.trans (kc.rd.trans (kb.rd.trans ka.rd)),
     kt.wr.trans (kc.wr.trans (kb.wr.trans ka.wr)),kt.sp.trans (kc.sp.trans (kb.sp.trans ka.sp))⟩
@@ -178,14 +178,14 @@ theorem nafPrepInit_ok (K : WinCfg) {s : State} {base : Addr} {size src : Nat}
   · simp only [Naf5.residual,nafVal5,RegUpd.gpr_write,ite_true,ite_false,reduceCtorEq,BitVec.setWidth_eq] at *
     simp only [regsVal] at va
     change _+2^256*0=_
-    omega
+    omega_using [va]
   · rfl
   · rfl
   · rfl
   · rfl
   · rfl
   · simpa only [Nat.add_zero,RegUpd.gpr_write,ite_true,BitVec.setWidth_eq] using congrArg (fun x => x+BitVec.ofNat 64 K.bits) sa.x0
-  · intro i hi; omega
+  · intro i hi; omega_using [hi]
   · refine ⟨?_,ka.rd,ka.wr,ka.sp⟩
     intro r hr
     have hh : r≠.x9 ∧ r≠.x10 ∧ r≠.x11 ∧ r≠.x12 ∧ r≠.x13 ∧ r≠.x19 ∧ r≠.x20 := by
@@ -212,14 +212,14 @@ theorem nafPrep_ok (K : WinCfg) {s : State} {base : Addr} {size src : Nat}
   refine WP.seq (WP.mono (nafPrepInit_ok K hs hsrc hsrc8 hbits) fun a ⟨ia,ka,ma⟩ => ?_)
   refine countLoop_ok (Inv:=I) (n:=257) (by decide) ?_ ?_ (by decide) ?_
   · intro m t hm hm257 hI
-    have hp := Naf5.residual_bound (Nat.le_of_lt hk) (j:=257-m) (by omega)
+    have hp := Naf5.residual_bound (Nat.le_of_lt hk) (j:=257-m) (by omega_using [hm])
     have hp' : Naf5.residual k (257-m)≤2^256 := Nat.le_trans hp
-      (Nat.pow_le_pow_right (by decide) (by omega))
-    refine WP.mono (nafPrepStep_ok hI.1 hb (by omega) hp') fun u ⟨iu,ku,ou⟩ => ?_
-    have he : 257-(m-1)=257-m+1 := by omega
+      (Nat.pow_le_pow_right (by decide) (by omega_using []))
+    refine WP.mono (nafPrepStep_ok hI.1 hb (by omega_using [hm]) hp') fun u ⟨iu,ku,ou⟩ => ?_
+    have he : 257-(m-1)=257-m+1 := by omega_using [hm, hm257]
     refine ⟨⟨?_,hI.2.1.trans ku,hI.2.2.trans ou⟩,?_⟩
     · rw [he]; exact iu
-    · rw [iu.count]; congr 1; omega
+    · rw [iu.count]; congr 1; omega_using [he]
   · intro t hI
     exact hI
   · refine ⟨ia,ka,?_⟩
