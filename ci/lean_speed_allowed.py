@@ -258,7 +258,6 @@ BARE_ASSUMPTION_ALLOWED = {
     "VerifiedGarbage/Proof/MdStream/Arm/Finalize.lean": 1,
     "VerifiedGarbage/Proof/MdStream/Arm/Update.lean": 1,
     "VerifiedGarbage/Proof/MdStream/X86_64/UpdateCT.lean": 1,
-    "VerifiedGarbage/Proof/MlDsa/Arm/KeyGen/Contracts.lean": 1,
     "VerifiedGarbage/Proof/MlKem/AArch64/DecapsA.lean": 2,
     "VerifiedGarbage/Proof/MlKem/AArch64/Encaps.lean": 2,
     "VerifiedGarbage/Proof/MlKem/AArch64/KgCommon.lean": 1,
