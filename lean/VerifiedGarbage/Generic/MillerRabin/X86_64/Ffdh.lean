@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Backend
 
 /-! # Emit FFDH domain operations for every shared arithmetic backend -/
 
@@ -58,6 +59,18 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     contract := Spec.Ffdh.generateKeyContract X86_64.abi
     verified := by exact Proof.Ffdh.X86_64.GenerateKey.generateCode_verified v
     spSafe := by exact Proof.Ffdh.X86_64.GenerateKey.generateCode_sp v
+    features := v.features },
+  { Spec.Ffdh.checkDomainApi with
+    name := Spec.Ffdh.checkDomainApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Ffdh.checkDomainApi.doc
+      (notes := ["The modulus, generator, optional subgroup range, divisibility, and subgroup \
+        relation are checked in verified code. Divisibility uses RSA's arbitrary-width \
+        Montgomery reduction; fixed four-bit exponentiation uses the selected backend."])
+    code := Proof.Ffdh.X86_64.CheckDomain.domainCode v
+    contract := Spec.Ffdh.checkDomainContract X86_64.abi
+    verified := by exact Proof.Ffdh.X86_64.CheckDomain.domainCode_verified v
+    spSafe := by exact Proof.Ffdh.X86_64.CheckDomain.domainCode_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.Ffdh
