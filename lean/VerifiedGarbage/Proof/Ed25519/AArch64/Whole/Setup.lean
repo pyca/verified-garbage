@@ -27,6 +27,8 @@ def valid : Value → Prop
   | .frame d => d < 4096
   | .caller j d => j < 6 ∧ d < 4096
 
+deriving instance DecidableEq for Value
+
 instance : DecidablePred valid
   | .const n => inferInstanceAs (Decidable (n < 65536))
   | .frame d => inferInstanceAs (Decidable (d < 4096))
