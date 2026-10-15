@@ -322,7 +322,13 @@ theorem entry2_ok {s₁ : State} (h11 : s₁.gpr .r11 = W s)
     simp only [entry2, gDst, gLen, gTag, gOff, gZero, gState, imm]
     xrun [a₂, a₃, a₄, e₂, e₃, e₄, h11, hz, i104, w 32 (by decide), w 40 (by decide), w 48 (by decide),
       w 72 (by decide), w 88 (by decide), w 96 (by decide)],
-    ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?cs, ?_, ?_⟩
+  case cs =>
+    intro r hr
+    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte] <;>
+      exact hg _ (by decide) (by decide) (by decide)
   all_goals try simp (disch := decide) only [gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags, ite_true,
     reduceCtorEq, ↓reduceIte, Mem.readW_writeW_self64, readW_writeW_off, c₀, c₁, c₂, c₃, c₇, c₈, c₁₀]
   · simp
@@ -343,11 +349,6 @@ theorem entry2_ok {s₁ : State} (h11 : s₁.gpr .r11 = W s)
   · exact hg _ (by decide) (by decide) (by decide)
   · exact h11
   · exact hsp
-  · intro r hr
-    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte] <;>
-      exact hg _ (by decide) (by decide) (by decide)
   all_goals simp [rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg, hrd, hwr]
 
 end
