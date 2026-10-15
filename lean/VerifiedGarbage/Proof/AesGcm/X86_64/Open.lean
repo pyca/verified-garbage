@@ -660,12 +660,14 @@ theorem openOk_ok (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s
   openOkW_ok v B (tagOk_oneTag v) C X hal hTa hTar hTr oT oA htl hok' (oneMid_ok v C E hNp hnl hal)
 
 /-- The 32 bytes below `SP`, which `open` may use, apart from its key context
-(of `cl` bytes), its working space, its data and the received tag. -/
-structure Stk32 (Ctx W SP D T : Addr) (cl n t : Nat) : Prop where
+(of `cl` bytes), its working space, its data, the received tag and the
+additional data. -/
+structure Stk32 (Ctx W SP A D T : Addr) (cl al n t : Nat) : Prop where
   c : (below SP 32).Disjoint ⟨Ctx, cl⟩
   w : (below SP 32).Disjoint ⟨W, 2560⟩
   d : (below SP 32).Disjoint ⟨D, n⟩
   t : (below SP 32).Disjoint ⟨T, t⟩
+  a : (below SP 32).Disjoint ⟨A, al⟩
   sp : 32 ≤ SP.toNat
 
 /-- `open` with any code `mid` for a tag length it allows, after the entry,
@@ -678,17 +680,17 @@ theorem openM_of {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s : State}
       s.mem.readW (SP + BitVec.ofNat 64 24) 64 = T → InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 24) 8 →
       Covers [⟨T, t⟩] (s.rd ++ s.wr) → OutWDS W D SP n ⟨T, t⟩ → OutWDS W D SP n ⟨SP + BitVec.ofNat 64 24, 8⟩ →
       s₂.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t → Spec.Gcm.tagLenOk t = true →
-      Stk32 Ctx W SP D T M.len n t → WP isa mid s₂ (OpenOkPost s Ctx W SP Np A D T nl al n t)) :
+      Stk32 Ctx W SP A D T M.len al n t → WP isa mid s₂ (OpenOkPost s Ctx W SP Np A D T nl al n t)) :
     WP isa (.seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
       (.seq tagLenOk (.seq (.ite .e (.block [.mov32 .rax (imm 0)]) mid) (.block restore)))) s
       fun s' => gprPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' := by
   have X := CtxExt.ofOpen hp.1 hp.2
-  have K : Stk32 (s.gpr .rdi) (stackArg s 4) (s.gpr .rsp) (stackArg s 0) (stackArg s 2) M.len
-      (stackArg s 1).toNat (stackArg s 3).toNat := by
+  have K : Stk32 (s.gpr .rdi) (stackArg s 4) (s.gpr .rsp) (s.gpr .r8) (stackArg s 0) (stackArg s 2) M.len
+      (s.gpr .r9).toNat (stackArg s 1).toNat (stackArg s 3).toNat := by
     have h := hp.1
     simp only [Proof.AesGcm.openPre, Proof.AesGcm.stk32, Proof.AesGcm.arg] at h
-    obtain ⟨-, -, -, -, -, -, -, k₁, k₂, k₃, k₄, k₅⟩ := h
-    exact ⟨k₁, k₃, k₂, k₄, k₅⟩
+    obtain ⟨-, -, -, -, -, -, -, k₁, k₂, k₃, k₄, k₅, k₆⟩ := h
+    exact ⟨k₁, k₃, k₂, k₄, k₅, k₆⟩
   obtain ⟨C, hTr, d_td, d_tw, t_t⟩ := OneCtx.ofOpen hp.1 M.ge
   have hW' : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 40) 64 = stackArg s 4 := rfl
   have hTa : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 24) 64 = stackArg s 2 := rfl

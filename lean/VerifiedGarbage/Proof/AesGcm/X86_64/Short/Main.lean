@@ -161,7 +161,7 @@ def LongOk (M : Gcm.X86_64.Stitch.CtxMode) (lng : Prog isa) : Prop :=
     s.mem.readW (SP + BitVec.ofNat 64 24) 64 = T → InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 24) 8 →
     Covers [⟨T, t⟩] (s.rd ++ s.wr) → OutWDS W D SP n ⟨T, t⟩ → OutWDS W D SP n ⟨SP + BitVec.ofNat 64 24, 8⟩ →
     s₂.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t → Spec.Gcm.tagLenOk t = true →
-    Stk32 Ctx W SP D T M.len n t → WP isa lng s₂ (OpenOkPost s Ctx W SP Np A D T nl al n t)
+    Stk32 Ctx W SP A D T M.len al n t → WP isa lng s₂ (OpenOkPost s Ctx W SP Np A D T nl al n t)
 
 theorem longOk_openLong (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     LongOk M (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)) :=

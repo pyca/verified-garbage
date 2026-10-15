@@ -265,7 +265,7 @@ def openPre (cl : Nat) (s : State) : Prop :=
   s.rd = [ctx, nonce, aad, tag, args s 5] ∧ s.wr = [data, work] ∧ oneLay cl 4 5 s ∧
     tag.Disjoint data ∧ tag.Disjoint work ∧ (stk24 s).Disjoint tag ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 64 ∧
     (stk32 s).Disjoint ctx ∧ (stk32 s).Disjoint data ∧ (stk32 s).Disjoint work ∧ (stk32 s).Disjoint tag ∧
-    32 ≤ (s.gpr .rsp).toNat
+    (stk32 s).Disjoint aad ∧ 32 ≤ (s.gpr .rsp).toNat
 
 def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
