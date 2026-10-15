@@ -280,26 +280,26 @@ theorem storeData_ok : ∀ (regs : List XReg) (j : Nat) (s : State),
 /-- `xorData ix regs j`: block `k` written to `rdx + 16 (j + k)` is the one
 read from `srcAddr s ix (16 (j + k))` XORed with lane 0 of register `k`, for
 a source each block of which is apart from the outputs written before it is
-read (in place, the blocks are distinct; out of place, every block is read
+read (in place, the blocks are distinct; with `lf`, every block is read
 before any is written). -/
-theorem xorData_ok (ix : Bool) (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
+theorem xorData_ok (ix lf : Bool) (regs : List XReg) (j : Nat) (s : State) (hnd : regs.Nodup)
     (hin : ∀ k < regs.length, InRegions s.wr (s.gpr .rdx + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16)
     (hsr : ∀ k < regs.length, InRegions (s.rd ++ s.wr) (srcAddr s ix (16 * (j + k))) 16)
     (hsep : ∀ a b, a < b → b < regs.length → Region.Disjoint
       ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (j + a)), 16⟩ ⟨srcAddr s ix (16 * (j + b)), 16⟩)
     (hw : (s.gpr .rdx).toNat + 16 * (j + regs.length) ≤ 2 ^ 64) :
-    WP isa (.block (xorData ix regs j)) s fun s' =>
+    WP isa (.block (xorData ix lf regs j)) s fun s' =>
       (∀ k (h : k < regs.length), blockAt s'.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * (j + k))) =
         blockAt s.mem (srcAddr s ix (16 * (j + k))) ^^^
           XBinOp.eval .pshufb (s.lane regs[k] 0) revMask) ∧
       Frame [⟨s.gpr .rdx + BitVec.ofNat 64 (16 * j), 16 * regs.length⟩] s.mem s'.mem ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ∉ regs → ∀ l < 2, s'.lane r l = s.lane r l) := by
-  cases ix
-  · exact xorDataI_ok false regs j s hnd hin hsr hsep hw
+  cases lf
+  · exact xorDataI_ok ix regs j s hnd hin hsr hsep hw
   · simp only [xorData, ↓reduceIte]
     rw [WP.block_append_iff]
-    refine WP.mono (xorLoads_ok true regs j s hnd hsr) fun s₁ ⟨m₁, g₁, rd₁, wr₁, l₁, x₁⟩ => ?_
+    refine WP.mono (xorLoads_ok ix regs j s hnd hsr) fun s₁ ⟨m₁, g₁, rd₁, wr₁, l₁, x₁⟩ => ?_
     have hrdx : s₁.gpr .rdx = s.gpr .rdx := by rw [g₁]
     refine WP.mono (storeData_ok regs j s₁ (fun k hk => by rw [wr₁, hrdx]; exact hin k hk)
       (by rw [hrdx]; exact hw)) fun s' ⟨hb, hf, g, rd, wr, hx⟩ => ?_

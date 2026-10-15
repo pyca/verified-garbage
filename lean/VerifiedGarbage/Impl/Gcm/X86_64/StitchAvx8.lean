@@ -159,14 +159,15 @@ def storeData : List XReg → Nat → List Instr
   | [], _ => []
   | b :: bs, j => ([.vmovdquStore .l128 (at_ .rdx (16*j)) b] : List Instr) ++ storeData bs (j+1)
 
-/-- XOR the block registers into the data and store them. Out of place
-(`ix`), every block is read before any is stored: a load issued after the
-store of an earlier block whose address equals it modulo 4096 (the output a
-few blocks after the input there) waits for that store on Skylake-SP and
-Cascade Lake (4K aliasing), which cost AES-128 seal about 5% there. In
-place, the blocks are read and stored one after another. -/
-def xorData (ix : Bool) (regs : List XReg) (j : Nat) : List Instr :=
-  if ix then xorLoads ix regs j ++ storeData regs j else xorDataI ix regs j
+/-- XOR the block registers into the data and store them: with `lf`, every
+block is read before any is stored, otherwise one after another. A load
+issued after the store of an earlier block whose address equals it modulo
+4096 (out of place, the output a few blocks after the input there) waits for
+that store on Skylake-SP and Cascade Lake (4K aliasing), which cost AES-128
+seal about 5% there; with AES-256's longer rounds, reading every block first
+measured 1% slower there instead. -/
+def xorData (ix lf : Bool) (regs : List XReg) (j : Nat) : List Instr :=
+  if lf then xorLoads ix regs j ++ storeData regs j else xorDataI ix regs j
 
 def aesFixed (nr : Nat) (regs : List XReg) (g : Nat → List Instr) : Prog isa :=
   .block (VG.Impl.Aes.X86_64.Vaes.keyOpL .l128 .xmm1 regs .vpxor (at_ .rdi 0) ++
@@ -183,7 +184,7 @@ def batchL (ld : List Instr) (nr n j : Nat) (g : Nat → List Instr) (ix : Bool 
   .seq (.block ld)
     (.seq (aesFixed nr (aregs.take n) (fun j => g j ++
        (if 1 ≤ j ∧ j ≤ 2 then (List.range 4).flatMap (fun i => prepCounter (4*(j-1)+i)) else [])))
-     (.block (xorData ix (aregs.take n) j ++ ([.alu32 .add .r8 (.imm 8)] : List Instr))))
+     (.block (xorData ix (ix && nr == 10) (aregs.take n) j ++ ([.alu32 .add .r8 (.imm 8)] : List Instr))))
 
 def batch (nr n j : Nat) (g : Nat → List Instr) (ix : Bool := false) : Prog isa :=
   batchL (loads n) nr n j g ix

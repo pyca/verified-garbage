@@ -326,7 +326,7 @@ theorem batchL_ok {s₀ s : State} {P X : Nat → Block} {y : Block} {c : Nat}
   have hrdx : t.gpr .rdx = s.gpr .rdx := ht.regs _ (by decide)
   have hsa : ∀ d, srcAddr t ix d = srcAddr s ix d := fun d => by
     simp only [srcAddr, hrdx, ht.regs .rbx (by decide)]
-  refine WP.mono (xorData_ok ix aregs j t (by decide) (fun k hk => by
+  refine WP.mono (xorData_ok ix _ aregs j t (by decide) (fun k hk => by
     rw [ht.env.wr, hrdx, BitVec.ofInt_natCast]; exact hw k hk)
     (fun k hk => by rw [ht.env.rd, ht.env.wr, hsa]; exact hsr k hk)
     (fun a b hab hb => by rw [hrdx, hsa]; exact hss a b hab hb)
