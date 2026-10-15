@@ -207,7 +207,7 @@ theorem accN_congr {X X' P P' : Nat → Block} (y : Block)
     (hx : ∀ i < 8, X i = X' i) (hp : ∀ i < 8, P i = P' i) (n : Nat) (hn : n ≤ 8) :
     accN X P y n = accN X' P' y n := by
   induction n with
-  | zero => rfl
+  | zero => simp only [accN, List.range_zero, List.foldl_nil]
   | succ n ih =>
     rw [accN_succ, accN_succ, ih (by omega)]
     have hk : (n + 1) % 8 < 8 := Nat.mod_lt _ (by decide)
