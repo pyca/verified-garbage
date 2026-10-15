@@ -93,8 +93,8 @@ theorem kpCtx_of {s : State} (h : kpPre s) : KpCtx s := by
   obtain ⟨hsp, hrd, hwr, dds, dys, dxs, dsa, wD, wY, wX, wS, ⟨hk1, hk2⟩, hdl, hyl, hxl1, hxl2, hsl⟩ := h
   unfold Spec.Rsa.scratchWords at hsl
   have hs : Scr s (s.gpr .x7) ((stackArg s 0).toNat * 8) := Scr.of_mem (by rw [hwr]; simp) wS
-  exact ⟨hk1, hk2, hdl, hyl, hxl1, hxl2, by omega, hs, src_of_region (by rw [hrd]; simp) (by omega) dds,
-    src_of_region (by rw [hrd]; simp) (by omega) dys, src_of_region (by rw [hrd]; simp) (by omega) dxs⟩
+  exact ⟨hk1, hk2, hdl, hyl, hxl1, hxl2, by omega_arith, hs, src_of_region (by rw [hrd]; simp) (by omega_arith) dds,
+    src_of_region (by rw [hrd]; simp) (by omega_arith) dys, src_of_region (by rw [hrd]; simp) (by omega_arith) dxs⟩
 
 theorem cr_base (p : KpP) (xb : List Byte) (s : State) (h : CR p xb s) : Base (p.D xb) s := by
   have c := kpCtx_of h.1
@@ -140,7 +140,7 @@ theorem kpEntry_ok {s : State} {B : Addr} (hB : s.gpr .x7 = B) (hw : ∀ i < 22,
   rw [hm]
   intro x hx
   have e : ∀ i, i < 22 → ∀ (m : Mem) (v : BitVec 64), (m.writeW (off B (8 * i)) v) x = m x := fun i hi m v =>
-    writeW_outside m B v (d := 8 * i) (by omega) x (by omega)
+    writeW_outside m B v (d := 8 * i) (by omega_arith) x (by omega_arith)
   rw [e sXl (by decide), e sX (by decide), e sY (by decide), e sK (by decide), e sDomLen (by decide),
     e sDom (by decide)]
 
@@ -170,9 +170,9 @@ theorem cr_e1 (p : KpP) (xb : List Byte) (s : State) (h : CR p xb s) :
   have hZ : 128 * p.k + 256 ≤ p.Z := hb.hZ
   have hs : Scr s p.B p.Z := hb.scr
   obtain ⟨-, -, hB, hZ', hk, hdl, hdp, -, hyp, -, hxp, hxl, -⟩ := h
-  have hw : ∀ i < 22, InRegions s.wr (off p.B (8 * i)) 8 := fun i hi => hs.st (by omega)
+  have hw : ∀ i < 22, InRegions s.wr (off p.B (8 * i)) 8 := fun i hi => hs.st (by omega_arith)
   refine WP.mono (kpEntry_ok hB hw) fun t ⟨h0, hD, hL, hK, hY, hX, hXl, ho, k⟩ => ?_
-  refine ⟨⟨hb.keep (InScr.of_outside ho (show 0 + 8 * 22 ≤ p.Z by omega)) k, h0, ?_⟩, k.mono (by decide)⟩
+  refine ⟨⟨hb.keep (InScr.of_outside ho (show 0 + 8 * 22 ≤ p.Z by omega_arith)) k, h0, ?_⟩, k.mono (by decide)⟩
   intro q hq
   simp only [FD.hdr, KpP.D, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl | rfl | rfl | rfl
@@ -241,8 +241,8 @@ theorem k2_k3 (p : KpP) (xb : List Byte) (t : State) (h : K2 p xb t) :
   have ew := hb.ew
   have := hb.k1
   have := hb.k2
-  exact WP.mono (geArr_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega)
-    (show (p.D xb).w < 2 ^ 31 by omega) (show aXm < 8 by decide) (show aOne < 8 by decide))
+  exact WP.mono (geArr_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega_arith)
+    (show (p.D xb).w < 2 ^ 31 by omega_arith) (show aXm < 8 by decide) (show aOne < 8 by decide))
     fun u ⟨h9, hm, k⟩ => ⟨⟨⟨mi, hI.keep hm k (by decide), by rw [hm]; exact hx, by rw [h9, hx, hI.2.2.1.one]⟩, ho⟩,
       k.mono (by decide)⟩
 
@@ -257,7 +257,7 @@ theorem k3_k4 (p : KpP) (xb : List Byte) (t : State) (h : K3 p xb t) :
   have hG := hI.2.1.good.scr.nowrap
   have sX := slot_le (w := (p.D xb).w) (show aXm < 8 by decide)
   have hX0 := hdr_lt_slot (p.D xb).w aXm (show sF < 32 by decide)
-  exact WP.mono hI.stLeave fun u ⟨⟨hP, hF, o⟩, k⟩ => ⟨⟨⟨mi, hP, by rw [o.wv (Or.inr (by omega)) (by omega)]; exact hx,
+  exact WP.mono hI.stLeave fun u ⟨⟨hP, hF, o⟩, k⟩ => ⟨⟨⟨mi, hP, by rw [o.wv (Or.inr (by omega_arith)) (by omega_arith)]; exact hx,
     by rw [hF, h9]⟩, ho⟩, k⟩
 
 /-- After the test of the domain's length. -/
@@ -269,7 +269,7 @@ theorem k4_k5 (p : KpP) (xb : List Byte) (t : State) (h : K4 p xb t) :
     WP isa (.block qTest) t fun u => K5 p xb u ∧ KX t u := by
   obtain ⟨⟨mi, hP, hx, hF⟩, ho⟩ := h
   exact WP.mono hP.qtest fun u ⟨⟨h3, hm⟩, k⟩ => ⟨⟨⟨mi, hP.outside (o := 256) (n := 0) (by decide)
-    (by simp only [inner, slot, hdrBytes]; omega) (fun x _ => by rw [hm]) k.rd k.wr ((k.gpr .x0 (by decide)).trans
+    (by simp only [inner, slot, hdrBytes]; omega_arith) (fun x _ => by rw [hm]) k.rd k.wr ((k.gpr .x0 (by decide)).trans
       hP.2.2.2.2.2.2), by rw [hm]; exact hx, by rw [hm]; exact hF, h3⟩, ho⟩, k.mono (by decide)⟩
 
 theorem k5_eval {p : KpP} {xb : List Byte} {t : State} (h : K5 p xb t) :
@@ -301,21 +301,21 @@ theorem e_k6n (p : KpP) (xb : List Byte) (t : State) (h : K5e p xb t) (h2 : p.dl
   have := hb.k2
   have hT0 := hdr_lt_slot (p.D xb).w aTmp (show sF < 32 by decide)
   have hG := hI.2.1.good.scr.nowrap
-  refine WP.mono (ltP_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega)
-    (show (p.D xb).w < 2 ^ 31 by omega) (show aXm < 8 by decide) (by decide)) fun v ⟨h9, o, k'⟩ => ?_
+  refine WP.mono (ltP_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega_arith)
+    (show (p.D xb).w < 2 ^ 31 by omega_arith) (show aXm < 8 by decide) (by decide)) fun v ⟨h9, o, k'⟩ => ?_
   have hT := hdr_lt_slot (p.D xb).w aTmp (show 31 < 32 by decide)
   refine ⟨⟨⟨mi, hI.step (rs := [(slot (p.D xb).w aTmp, 8 * (p.D xb).w)]) (Frm.of_outside o (by simp)) (fun r hr => by
       rw [List.mem_singleton.mp hr]
       have := slot_le (w := (p.D xb).w) (show aTmp < 8 by decide)
       have s1 := slot_sep (w := (p.D xb).w) (show aTmp ≠ aN by decide)
       have s2 := slot_sep (w := (p.D xb).w) (show aTmp ≠ aOne by decide)
-      refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only <;> omega) k'.rd k'.wr (k'.gpr .x0 (by decide)),
+      refine ⟨?_, ?_, ?_, ?_⟩ <;> simp only <;> omega_arith) k'.rd k'.wr (k'.gpr .x0 (by decide)),
     by rw [o.word (Or.inl hT0) (show 8 * sF + 8 ≤ 2 ^ 64 by decide), hF], ?_⟩, ho⟩, k'.mono (by decide)⟩
   rw [h9, hx, hI.2.2.1.n]
   refine bit_iff ?_
   unfold xr
   have hk1 : 64 ≤ p.k := hb.k1
-  rw [ite_eq_right (by omega)]
+  rw [ite_eq_right (by omega_arith)]
 
 /-- With q in `aY`. -/
 def K5q (p : KpP) (xb : List Byte) (t : State) : Prop :=
@@ -332,7 +332,7 @@ theorem e_lpreQ (p : KpP) (xb : List Byte) (t : State) (h : K5e p xb t) (hq : p.
   have := hb.k1
   have := hI.lpre (sp := sQ) (sl := sK) (show aY < 8 by decide) (by decide) (by decide)
     (hs.get (i := sQ) (v := (p.D xb).dp + BitVec.ofNat 64 (2 * (p.D xb).k)) (by simp))
-    (by rw [hl]; exact hs.get (i := sK) (by simp)) hb.qsrc (by rw [hl]; simp at this ⊢; omega) (by rw [hl])
+    (by rw [hl]; exact hs.get (i := sK) (by simp)) hb.qsrc (by rw [hl]; simp at this ⊢; omega_arith) (by rw [hl])
   rw [hl] at this
   exact this
 
@@ -345,14 +345,14 @@ theorem e_q (p : KpP) (xb : List Byte) (t : State) (h : K5e p xb t) (hq : p.dl =
   have := hb.k1
   refine WP.mono (hI.load (show aY < 8 by decide) (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sQ) (v := (p.D xb).dp + BitVec.ofNat 64 (2 * (p.D xb).k)) (by simp))
-    (by rw [hl]; exact hs.get (i := sK) (by simp)) hb.qsrc (by rw [hl]; simp at this ⊢; omega) (by rw [hl]))
+    (by rw [hl]; exact hs.get (i := sK) (by simp)) hb.qsrc (by rw [hl]; simp at this ⊢; omega_arith) (by rw [hl]))
     fun v ⟨⟨hv, hQ, o⟩, k'⟩ => ?_
   have hG := hI.2.1.good.scr.nowrap
   have sY := slot_le (w := (p.D xb).w) (show aY < 8 by decide)
   have sYX := slot_sep (w := (p.D xb).w) (show aY ≠ aXm by decide)
   have hY0 := hdr_lt_slot (p.D xb).w aY (show sF < 32 by decide)
   have sX := slot_le (w := (p.D xb).w) (show aXm < 8 by decide)
-  exact ⟨⟨⟨mi, hv, by rw [o.wv (by omega) (by omega), hx],
+  exact ⟨⟨⟨mi, hv, by rw [o.wv (by omega_arith) (by omega_arith), hx],
     by rw [o.word (Or.inl hY0) (show 8 * sF + 8 ≤ 2 ^ 64 by decide), hF], hQ⟩, ho, hq⟩, k'⟩
 
 theorem q_k6 (p : KpP) (xb : List Byte) (t : State) (h : K5q p xb t) :
@@ -362,8 +362,8 @@ theorem q_k6 (p : KpP) (xb : List Byte) (t : State) (h : K5q p xb t) :
   have ew := hb.ew
   have := hb.k1
   have := hb.k2
-  refine WP.mono (ltArr_ok hv.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega)
-    (show (p.D xb).w < 2 ^ 31 by omega) (show aXm < 8 by decide) (show aY < 8 by decide)) fun w' ⟨h9, hm', k''⟩ =>
+  refine WP.mono (ltArr_ok hv.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega_arith)
+    (show (p.D xb).w < 2 ^ 31 by omega_arith) (show aXm < 8 by decide) (show aY < 8 by decide)) fun w' ⟨h9, hm', k''⟩ =>
       ⟨⟨⟨mi, hv.keep hm' k'' (by decide), by rw [hm']; exact hF, ?_⟩, ho⟩, k''.mono (by decide)⟩
   rw [h9, hx, hQ]
   refine bit_iff ?_
@@ -397,13 +397,13 @@ theorem xr_iff {p : KpP} {xb : List Byte} {t : State} (hb : Base (p.D xb) t) (hm
   · rw [ite_eq_left hq, ite_eq_left hq]
     simp only [Option.getD_some]
     have e : Spec.Rsa.os2ip (p.D xb).qb = Spec.Rsa.os2ip (List.take p.k (List.drop (2 * p.k) p.dom)) := rfl
-    omega
+    omega_arith
   · rw [ite_eq_right hq, ite_eq_right hq]
     simp only [Option.getD_none]
     have := (lt_pm1 hodd (X xb))
     constructor
-    · rintro ⟨a, b⟩; exact ⟨by omega, this.mp a⟩
-    · rintro ⟨a, b⟩; exact ⟨this.mpr b, by omega⟩
+    · rintro ⟨a, b⟩; exact ⟨by omega_arith, this.mp a⟩
+    · rintro ⟨a, b⟩; exact ⟨this.mpr b, by omega_arith⟩
 
 /-- After the test of x's range. -/
 def K7 (p : KpP) (xb : List Byte) (t : State) : Prop :=
@@ -434,7 +434,7 @@ theorem _root_.VG.Proof.Ffdh.AArch64.In.loadY {p : KpP} {xb : List Byte} {mi : B
   have := hb.k1
   exact hI.load (show aXm < 8 by decide) (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sY) (v := p.yp) (by simp [KpP.D])) (by rw [ho.2.2.2.1]; exact hs.get (i := sK) (by simp))
-    hy (by rw [ho.2.2.2.1]; simp at this; omega) (by rw [ho.2.2.2.1]; simp)
+    hy (by rw [ho.2.2.2.1]; simp at this; omega_arith) (by rw [ho.2.2.2.1]; simp)
 
 theorem _root_.VG.Proof.Ffdh.AArch64.In.lpreY {p : KpP} {xb : List Byte} {mi : BitVec 64} {t : State} (hI : In (p.D xb) mi t) (ho : Ok p xb) :
     LPre aXm sY sK ((p.D xb).ld p.yp p.yb.length) t := by
@@ -444,7 +444,7 @@ theorem _root_.VG.Proof.Ffdh.AArch64.In.lpreY {p : KpP} {xb : List Byte} {mi : B
   have := hb.k1
   exact hI.lpre (show aXm < 8 by decide) (by decide) (by decide)
     (hs.get (i := sY) (v := p.yp) (by simp [KpP.D])) (by rw [ho.2.2.2.1]; exact hs.get (i := sK) (by simp))
-    hy (by rw [ho.2.2.2.1]; simp at this; omega) (by rw [ho.2.2.2.1]; simp)
+    hy (by rw [ho.2.2.2.1]; simp at this; omega_arith) (by rw [ho.2.2.2.1]; simp)
 
 /-- With y in `aXm`. -/
 def K8 (p : KpP) (xb : List Byte) (t : State) : Prop :=
@@ -511,7 +511,7 @@ theorem k11_k12 (p : KpP) (xb : List Byte) (t : State) (h : K11 p xb t) :
     WP isa (.block qTest) t fun u => K12 p xb u ∧ KX t u := by
   obtain ⟨⟨mi, hP, hR⟩, ho, hpv, hr⟩ := h
   exact WP.mono hP.qtest fun u ⟨⟨h3, hm⟩, k⟩ => ⟨⟨⟨mi, hP.outside (o := 256) (n := 0) (by decide)
-    (by simp only [inner, slot, hdrBytes]; omega) (fun x _ => by rw [hm]) k.rd k.wr ((k.gpr .x0 (by decide)).trans
+    (by simp only [inner, slot, hdrBytes]; omega_arith) (fun x _ => by rw [hm]) k.rd k.wr ((k.gpr .x0 (by decide)).trans
       hP.2.2.2.2.2.2), hR.mem hm, h3⟩, ho, hpv, hr⟩, k.mono (by decide)⟩
 
 theorem k12_eval {p : KpP} {xb : List Byte} {t : State} (h : K12 p xb t) :
@@ -541,7 +541,7 @@ theorem k12_k13n (p : KpP) (xb : List Byte) (t : State) (h : K12 p xb t)
       ⟨⟨⟨mi, (hI.md (hR.mem hm)).keep hmv k' (by decide), ?_⟩, ho, hpv, hr⟩, keep_trans k (k'.mono (by decide))⟩
   rw [h9]
   unfold bit
-  rw [ite_eq_left (fun e => absurd (e.symm.trans h2) (by simp at hk1 ⊢; omega))]
+  rw [ite_eq_left (fun e => absurd (e.symm.trans h2) (by simp at hk1 ⊢; omega_arith))]
 
 /-- q's octets from its first nonzero one. -/
 abbrev KpP.qe (p : KpP) (xb : List Byte) : List Byte := (p.D xb).qb.drop (lead (p.D xb).qb)
@@ -553,9 +553,9 @@ theorem qe_facts {p : KpP} {xb : List Byte} {t : State} (hb : Base (p.D xb) t) (
   have hl := hb.qlen hq
   have := hb.k1
   simp only [KpP.D_k] at hl this
-  have hne : (p.D xb).qb ≠ [] := fun he => by rw [he] at hl; simp at hl; omega
+  have hne : (p.D xb).qb ≠ [] := fun he => by rw [he] at hl; simp at hl; omega_arith
   have hlead := lead_lt hne
-  refine ⟨by rw [List.length_drop, hl], by rw [List.length_drop]; omega, by rw [List.length_drop]; omega,
+  refine ⟨by rw [List.length_drop, hl], by rw [List.length_drop]; omega_arith, by rw [List.length_drop]; omega_arith,
     os2ip_drop_lead _, hb.qsrc.drop _⟩
 
 /-- The exponent slots: q from its first nonzero octet. -/
@@ -573,7 +573,7 @@ theorem k12_s (p : KpP) (xb : List Byte) (t : State) (h : K12 p xb t) (hq : p.dl
   have hb := hP.1
   refine WP.mono (hP.scan hq) fun u ⟨⟨⟨hP', hEp, hEl⟩, f⟩, k₁⟩ => ⟨⟨⟨mi, hP', hR.hdr hb f (fun r hr' => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-    rcases hr' with rfl | rfl <;> simp only [sEp, sEl, sFn] <;> omega), hEp, hEl⟩, ho, hpv, hr, hq⟩, k₁⟩
+    rcases hr' with rfl | rfl <;> simp only [sEp, sEl, sFn] <;> omega_arith), hEp, hEl⟩, ho, hpv, hr, hq⟩, k₁⟩
 
 /-- In the inner workspace again, with `R² mod p`. -/
 def K12e (p : KpP) (xb : List Byte) (t : State) : Prop :=
@@ -601,7 +601,7 @@ theorem e_pre (p : KpP) (xb : List Byte) (t : State) (h : K12e p xb t) :
   have hk2 : p.k ≤ 1024 := hb.k2
   have := hM.ps0 (bp := sY) (bl := sK) (ep := sEp) (el := sEl) (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sY) (v := p.yp) (by simp [KpP.D])) (by rw [ho.2.2.2.1]; exact hs.get (i := sK) (by simp)) hy
-    (by rw [ho.2.2.2.1]; omega) (by rw [ho.2.2.2.1]; simp) hEp (by rw [hl]; exact hEl) hsrc h1 (by omega)
+    (by rw [ho.2.2.2.1]; omega_arith) (by rw [ho.2.2.2.1]; simp) hEp (by rw [hl]; exact hEl) hsrc h1 (by omega_arith)
   rw [ho.2.2.2.1, hl] at this
   exact this
 
@@ -616,7 +616,7 @@ theorem e_p (W : Window) (M : Mont) (S : Selector) (p : KpP) (xb : List Byte) (t
   have hk2 : p.k ≤ 1024 := hb.k2
   exact WP.mono (hM.pow W M S (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sY) (v := p.yp) (by simp [KpP.D])) (by rw [ho.2.2.2.1]; exact hs.get (i := sK) (by simp)) hy
-    (by rw [ho.2.2.2.1]; omega) (by rw [ho.2.2.2.1]; simp) hEp (by rw [hl]; exact hEl) hsrc h1 (by omega))
+    (by rw [ho.2.2.2.1]; omega_arith) (by rw [ho.2.2.2.1]; simp) hEp (by rw [hl]; exact hEl) hsrc h1 (by omega_arith))
     fun w' ⟨hM', hY, _, k₃⟩ => ⟨⟨⟨mi, hM', by rw [hY, hQ]⟩, ho, hpv, hr, hq⟩, k₃⟩
 
 theorem p_k13 (p : KpP) (xb : List Byte) (t : State) (h : K12p p xb t) :
@@ -627,8 +627,8 @@ theorem p_k13 (p : KpP) (xb : List Byte) (t : State) (h : K12p p xb t) :
   have hk1 : 64 ≤ p.k := hI'.1.k1
   have hk2 : p.k ≤ 1024 := hI'.1.k2
   have ek : (p.D xb).k = p.k := rfl
-  refine WP.mono (eqArr_ok hI'.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega)
-    (show (p.D xb).w < 2 ^ 31 by omega) (show aY < 8 by decide) (show aOne < 8 by decide))
+  refine WP.mono (eqArr_ok hI'.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega_arith)
+    (show (p.D xb).w < 2 ^ 31 by omega_arith) (show aY < 8 by decide) (show aOne < 8 by decide))
     fun x ⟨h9, hmx, k₄⟩ => ⟨⟨⟨mi, hM'.keep hmx k₄ (by decide), ?_⟩, ho, hpv, hr⟩, k₄.mono (by decide)⟩
   rw [h9, hY, hI'.2.2.1.one]
   exact bit_iff ⟨fun e _ => e, fun e => e hq⟩
@@ -669,10 +669,10 @@ theorem k13_k14 (W : Window) (M : Mont) (S : Selector) (p : KpP) (xb : List Byte
   have hk2 : p.k ≤ 1024 := hb.k2
   exact WP.mono (hM.pow W M S (by decide) (by decide) (by decide) (by decide)
     (hs.get (i := sG) (v := (p.D xb).dp + BitVec.ofNat 64 (p.D xb).k) (by simp))
-    (by rw [hb.glen]; exact hs.get (i := sK) (by simp)) hb.gsrc (by rw [hb.glen]; simp; omega)
+    (by rw [hb.glen]; exact hs.get (i := sK) (by simp)) hb.gsrc (by rw [hb.glen]; simp; omega_arith)
     (by rw [hb.glen]) (hs.get (i := sX) (v := p.xp) (by simp [KpP.D]))
     (by rw [ho.1]; exact hs.get (i := sXl) (by simp [KpP.D])) hx (by rw [ho.1]; exact ho.2.1)
-    (by rw [ho.1]; have := ho.2.2.1; omega)) fun u ⟨hu, hY, _, k⟩ => ⟨⟨⟨mi, hu, hY⟩, ho, hpv, hr, hqc⟩, k⟩
+    (by rw [ho.1]; have := ho.2.2.1; omega_arith)) fun u ⟨hu, hY, _, k⟩ => ⟨⟨⟨mi, hu, hY⟩, ho, hpv, hr, hqc⟩, k⟩
 
 /-- With y in `aXm`. -/
 def K15 (p : KpP) (xb : List Byte) (t : State) : Prop :=
@@ -686,7 +686,7 @@ theorem k14_k15 (p : KpP) (xb : List Byte) (t : State) (h : K14 p xb t) :
   have hG := hI.2.1.good.scr.nowrap
   have sY := slot_le (w := (p.D xb).w) (show aY < 8 by decide)
   have sYX := slot_sep (w := (p.D xb).w) (show aY ≠ aXm by decide)
-  exact WP.mono (hI.loadY ho) fun u ⟨⟨hu, hv, o⟩, k⟩ => ⟨⟨⟨mi, hu, by rw [o.wv (by omega) (by omega)]; exact hY, hv⟩,
+  exact WP.mono (hI.loadY ho) fun u ⟨⟨hu, hv, o⟩, k⟩ => ⟨⟨⟨mi, hu, by rw [o.wv (by omega_arith) (by omega_arith)]; exact hY, hv⟩,
     ho, hpv, hr, hqc⟩, k⟩
 
 /-- After the comparison of `g^x mod p` with y. -/
@@ -700,8 +700,8 @@ theorem k15_k16 (p : KpP) (xb : List Byte) (t : State) (h : K15 p xb t) :
   have ew := hb.ew
   have := hb.k1
   have := hb.k2
-  exact WP.mono (eqArr_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega)
-    (show (p.D xb).w < 2 ^ 31 by omega) (show aY < 8 by decide) (show aXm < 8 by decide))
+  exact WP.mono (eqArr_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega_arith)
+    (show (p.D xb).w < 2 ^ 31 by omega_arith) (show aY < 8 by decide) (show aXm < 8 by decide))
     fun u ⟨h9, _, k⟩ => ⟨⟨by rw [h9, hY, hy], ho, hpv, hr, hqc⟩, k.mono (by decide)⟩
 
 end VG.Proof.Ffdh.AArch64.CheckPrivate
