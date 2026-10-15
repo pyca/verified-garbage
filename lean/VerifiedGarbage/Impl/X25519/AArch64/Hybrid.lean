@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.X25519.AArch64.Word
 public import VerifiedGarbage.Impl.X25519.AArch64.Neon
 public import VerifiedGarbage.Impl.AArch64Weave
+public import VerifiedGarbage.Impl.X25519.AArch64.Invert
 
 /-!
 # X25519 on AArch64: the ladder's products `DA` and `CB` in AdvSIMD
@@ -104,6 +105,6 @@ def finish : List Instr := vrestore ++ Word.finish
 
 def x25519 : Prog isa :=
   .seq (.block setup) <| .seq ladder <| .seq (.block Word.lastSwap) <|
-  .seq VG.Impl.Ed25519.AArch64.invert (.block finish)
+  .seq Invert.invert (.block finish)
 
 end VG.Impl.X25519.AArch64.Hybrid
