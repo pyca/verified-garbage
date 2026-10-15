@@ -5,12 +5,37 @@
 
 use super::arithmetic::{Backend, scalar};
 use crate::arch::ffdh::{
-    vg_ffdh_check_private, vg_ffdh_check_private_adx, vg_ffdh_check_public,
-    vg_ffdh_check_public_adx, vg_ffdh_exchange, vg_ffdh_exchange_adx, vg_ffdh_generate_key,
-    vg_ffdh_generate_key_adx,
+    vg_ffdh_check_domain, vg_ffdh_check_domain_adx, vg_ffdh_check_private,
+    vg_ffdh_check_private_adx, vg_ffdh_check_public, vg_ffdh_check_public_adx, vg_ffdh_exchange,
+    vg_ffdh_exchange_adx, vg_ffdh_generate_key, vg_ffdh_generate_key_adx,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;
+
+/// Check canonical domain components using the verified domain validator.
+pub(super) fn check_domain(p: &[u8], g: &[u8], q: Option<&[u8]>) -> bool {
+    let len = p.len();
+    if !(64..=1024).contains(&len) || g.len() > len || q.is_some_and(|q| q.len() > len) {
+        return false;
+    }
+    let domain = pack_domain(p, g, q);
+    let mut ws = Scratch::new(16 * len + 32);
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_ffdh_check_domain,
+        Backend::Adx => vg_ffdh_check_domain_adx,
+    };
+    // SAFETY: len is 64..=1024, domain is exactly 2 or 3 such widths,
+    // and scratch is 16*len+32 words. The allocations are disjoint.
+    unsafe {
+        f(
+            domain.as_ptr(),
+            domain.len(),
+            len,
+            ws.as_mut_ptr(),
+            ws.len(),
+        ) == 1
+    }
+}
 
 /// Check a canonical public value in an already checked domain.
 pub(super) fn check_public(p: &[u8], g: &[u8], q: Option<&[u8]>, y: &[u8]) -> bool {
@@ -41,7 +66,7 @@ pub(super) fn check_public(p: &[u8], g: &[u8], q: Option<&[u8]>, y: &[u8]) -> bo
     }
 }
 
-/// Lay out the checked domain at the modulus width for the verified ABI.
+/// Lay out domain components at the modulus width for the verified ABI.
 fn pack_domain(p: &[u8], g: &[u8], q: Option<&[u8]>) -> alloc::vec::Vec<u8> {
     let len = p.len();
     let mut bytes = alloc::vec![0; len * if q.is_some() { 3 } else { 2 }];

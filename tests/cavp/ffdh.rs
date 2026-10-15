@@ -157,10 +157,18 @@ fn malformed_components_and_domains() {
     let mut even = p.clone();
     *even.last_mut().unwrap() &= 0xfe;
     assert!(Parameters::from_components(&even, &g, None).is_err());
-    for bad in [vec![], vec![1], p.clone()] {
+    for bad in [vec![], vec![1], p.clone(), vec![0xff; p.len() + 1]] {
         assert!(Parameters::from_components(&p, &bad, None).is_err());
     }
-    for bad in [vec![], vec![1], vec![2], vec![4], vec![9], p.clone()] {
+    for bad in [
+        vec![],
+        vec![1],
+        vec![2],
+        vec![4],
+        vec![9],
+        p.clone(),
+        vec![0xff; p.len() + 1],
+    ] {
         assert!(Parameters::from_components(&p, &g, Some(&bad)).is_err());
     }
     assert!(Parameters::from_components(&p, &[2], Some(&q)).is_err());
