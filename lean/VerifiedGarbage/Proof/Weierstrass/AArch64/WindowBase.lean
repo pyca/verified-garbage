@@ -19,6 +19,8 @@ public import VerifiedGarbage.Proof.Mont.AArch64.RowInit
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # The window method on AArch64: what its proofs share
@@ -38,14 +40,23 @@ open Spec.Weierstrass
 
 
 /-- `x ∈ l` for the window method's lists, by searching `l` (unfolding its
-definitions by unification): cheaper than `win_mem`'s `simp`. -/
-syntax "win_in" : tactic
+definitions by unification). -/
+syntax "win_in_search" : tactic
 macro_rules
-  | `(tactic| win_in) => `(tactic| first
+  | `(tactic| win_in_search) => `(tactic| first
     | exact List.mem_cons_self
-    | exact List.mem_cons_of_mem _ (by win_in)
-    | exact List.mem_append_left _ (by win_in)
-    | exact List.mem_append_right _ (by win_in))
+    | exact List.mem_cons_of_mem _ (by win_in_search)
+    | exact List.mem_append_left _ (by win_in_search)
+    | exact List.mem_append_right _ (by win_in_search))
+
+/-- `x ∈ l` for the window method's lists: one `simp only` with their
+definitions, which costs less than the search (`win_in_search`, at each
+failed step unfolding the lists by unification), else the search, for
+members of the table's slots. -/
+tactic_template "win_in" : tactic => `(tactic| first
+  | simp only [winSlots, winRo, winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true];
+    done
+  | win_in_search)
 
 /-- The window method's slots and modulus at offsets that loads and stores
 can encode, and the table of bits at offsets `ldrb` can encode. -/
