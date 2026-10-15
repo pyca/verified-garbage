@@ -63,6 +63,22 @@ include h
 abbrev rd (M : CtxMode) (s : State) (K : Addr) : List Region :=
   [⟨K, M.len⟩, ⟨s.gpr .rsp, 8⟩, ⟨s.gpr .rsp + BitVec.ofNat 64 8, 8⟩]
 
+omit h in
+theorem e16 : s.gpr .rsp - 8 + BitVec.ofNat 64 16 = s.gpr .rsp + BitVec.ofNat 64 8 := by
+  rw [show BitVec.ofNat 64 16 = (8 : Addr) + BitVec.ofNat 64 8 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
+
+/-- The index, the callee's second stack argument. -/
+theorem arg1 (rd wr : List Region) :
+    (stackArg (s.callEntry.withRegions rd wr) 1).setWidth 32 = ctrIndex (blockAt s.mem C) := by
+  have hsa1 : stackArgAddr (s.callEntry.withRegions rd wr) 1 = s.gpr .rsp + BitVec.ofNat 64 8 := by
+    simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp]
+    exact e16
+  have sep1 : Mem.Sep (s.gpr .rsp + BitVec.ofNat 64 8) (64 / 8) (s.gpr .rsp - 8) (64 / 8) := by
+    have b := Offset.sep_base (s.gpr .rsp - 8) (n := 8) (e := 16) (k := 8) (by decide) (by decide)
+    rw [e16] at b; exact fun x h₁ h₂ => b x h₂ h₁
+  unfold stackArg
+  rw [hsa1, State.withRegions_mem, State.callEntry_mem, Mem.readW_writeW_sep sep1 (by decide), h.idx]
+
 theorem pre : Proof.AesGcm.blocksPreMI M (s.callEntry.withRegions (rd M s K) (BlkCall.wr C Y D S q)) := by
   have h0 := h.toBlkCall
   have hp := h0.pre
@@ -73,18 +89,7 @@ theorem pre : Proof.AesGcm.blocksPreMI M (s.callEntry.withRegions (rd M s K) (Bl
   have hsa := BlkCall.stackArgAddr_eq (s := s) (rd M s K) (BlkCall.wr C Y D S q)
   have hsa' := BlkCall.stackArgAddr_eq (s := s) (BlkCall.rd M s K) (BlkCall.wr C Y D S q)
   have harg := h0.arg_eq
-  have hsa1 : stackArgAddr (s.callEntry.withRegions (rd M s K) (BlkCall.wr C Y D S q)) 1 =
-      s.gpr .rsp + BitVec.ofNat 64 8 := by
-    simp only [stackArgAddr, State.withRegions_gpr, State.callEntry_rsp]
-    bv_omega
-  have sep1 : Mem.Sep (s.gpr .rsp + BitVec.ofNat 64 8) (64 / 8) (s.gpr .rsp - 8) (64 / 8) := by
-    have e : s.gpr .rsp + BitVec.ofNat 64 8 = s.gpr .rsp - 8 + BitVec.ofNat 64 16 := by bv_omega
-    have b := Offset.sep_base (s.gpr .rsp - 8) (n := 8) (e := 16) (k := 8) (by decide) (by decide)
-    rw [e]; exact fun x h₁ h₂ => b x h₂ h₁
-  have hidx : (stackArg (s.callEntry.withRegions (rd M s K) (BlkCall.wr C Y D S q)) 1).setWidth 32 =
-      ctrIndex (blockAt s.mem C) := by
-    unfold stackArg
-    rw [hsa1, State.withRegions_mem, State.callEntry_mem, Mem.readW_writeW_sep sep1 (by decide), h.idx]
+  have hidx := h.arg1 (rd M s K) (BlkCall.wr C Y D S q)
   obtain ⟨-, eC, -, -, -⟩ := h0.entry_eqs
   have eqA : (stackArg (s.callEntry.withRegions (rd M s K) (BlkCall.wr C Y D S q)) 0) =
       stackArg (s.callEntry.withRegions (BlkCall.rd M s K) (BlkCall.wr C Y D S q)) 0 := rfl
@@ -106,9 +111,7 @@ theorem pre : Proof.AesGcm.blocksPreMI M (s.callEntry.withRegions (rd M s K) (Bl
     a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃⟩ := hp
   have e8 : State.gpr (s.callEntry) .rsp = s.gpr .rsp - 8 := State.callEntry_rsp s
   have e8' : s.gpr .rsp - 8 + BitVec.ofNat 64 8 = s.gpr .rsp := BitVec.sub_add_cancel _ _
-  have e16 : s.gpr .rsp - 8 + BitVec.ofNat 64 16 = s.gpr .rsp + BitVec.ofNat 64 8 := by
-    rw [show BitVec.ofNat 64 16 = (8 : Addr) + BitVec.ofNat 64 8 from rfl, ← BitVec.add_assoc,
-      BitVec.sub_add_cancel]
+  have e16 := e16 (s := s)
   refine ⟨by simp [rd], ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by rw [e8']; exact Region.contains_self _ _⟩,
     ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)),
       by rw [e16]; exact Region.contains_self _ _⟩, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, ?_, a₁₁, a₁₂, ?_, a₁₄, ?_, ?_, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,

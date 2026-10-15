@@ -45,6 +45,46 @@ section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
 include L
 
+/-- The call of `vg_aes_gcm_decrypt_blocks_prepared_iv96`, from the frame's
+push, from a state whose `SP` holds the block index of the counter block,
+readable, with the two words below it apart from what the call writes. -/
+theorem ObIn.callI {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State}
+    (h : ObIn M Ctx St W SP R D n q s)
+    (hidx : ctrIndex (blockAt s.mem (St + BitVec.ofNat 64 48)) = (s.mem.readW SP 64).setWidth 32)
+    (a_st : (⟨SP - BitVec.ofNat 64 8, 16⟩ : Region).Disjoint ⟨St, 80⟩)
+    (a_w : (⟨SP - BitVec.ofNat 64 8, 16⟩ : Region).Disjoint ⟨W, 2560⟩)
+    (a_d : (⟨SP - BitVec.ofNat 64 8, 16⟩ : Region).Disjoint ⟨D, n⟩)
+    (r_sp : InRegions (s.rd ++ s.wr) SP 8) (w_sp : SP.toNat + 8 ≤ 2 ^ 64) :
+    BlkCallI M (pushed [.rax] s) Ctx (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 16) D
+      (W + BitVec.ofNat 64 448) R q := by
+  have hsp := h.env.rsp
+  have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega
+  obtain ⟨hf, -⟩ := pushRegs_mem s [.rax] (by decide) hn8
+  rw [hsp] at hf
+  have psp : (pushed [.rax] s).gpr .rsp = SP - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
+  have p8 : (pushed [.rax] s).gpr .rsp + BitVec.ofNat 64 8 = SP := by rw [psp]; exact BitVec.sub_add_cancel _ _
+  obtain ⟨-, -, eC, -, -, -⟩ := ObIn.push_eqs L h
+  have hq := h.q_le
+  have qd : Region.Sub ⟨D, q * 16⟩ ⟨D, n⟩ := Region.sub_prefix (by omega)
+  refine ⟨ObIn.call L h, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [p8, eC, hidx]
+    exact congrArg (BitVec.setWidth 32) (hf.readW (a := SP) (w := 64) (r := ⟨SP, 8⟩) (Region.contains_self _ _)
+      (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact Offset.base_disjoint_below SP (n := 8) (k := 8) (by decide)) (by decide)).symm
+  · rw [psp]; exact a_st.sub_right (Lay.stSub (by decide))
+  · rw [psp]; exact a_st.sub_right (Lay.stSub (by decide))
+  · rw [psp]; exact a_d.sub_right qd
+  · rw [psp]; exact a_w.sub_right (Lay.wSub (by decide))
+  · rw [p8, pushed_rd, pushed_wr]
+    obtain ⟨r, hr, hc⟩ := r_sp
+    refine covers_of_inRegions ⟨r, ?_, hc⟩
+    rcases List.mem_append.mp hr with hr | hr
+    exacts [List.mem_append_left _ hr, List.mem_append_right _ (List.mem_cons_of_mem _ hr)]
+  · have e16 : SP - BitVec.ofNat 64 8 - 8 = SP - BitVec.ofNat 64 16 := by rw [← Offset.sub_add_eq]; rfl
+    rw [psp, e16]; have := h.sp24
+    rw [toNat_sub_ofNat (by omega)]; omega
+
 /-- The frame of the call of `vg_aes_gcm_decrypt_blocks_prepared_iv96`, from a
 state whose `SP` holds the block index of the counter block, readable, with
 the two words below it apart from what the call writes. -/
@@ -66,33 +106,8 @@ theorem obFrameDI_ok {M : CtxMode} (F : DecFnI M) {R : Nat} {D : Addr} {n q : Na
         (blockAt s.mem (St + BitVec.ofNat 64 16)) (blocksAt s.mem D q) := by
   have hsp := h.env.rsp
   have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega
-  obtain ⟨hf, -⟩ := pushRegs_mem s [.rax] (by decide) hn8
-  rw [hsp] at hf
-  have psp : (pushed [.rax] s).gpr .rsp = SP - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
-  have p8 : (pushed [.rax] s).gpr .rsp + BitVec.ofNat 64 8 = SP := by rw [psp]; exact BitVec.sub_add_cancel _ _
   obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
-  have hq := h.q_le
-  have qd : Region.Sub ⟨D, q * 16⟩ ⟨D, n⟩ := Region.sub_prefix (by omega)
-  have hI : BlkCallI M (pushed [.rax] s) Ctx (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 16) D
-      (W + BitVec.ofNat 64 448) R q := by
-    refine ⟨ObIn.call L h, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · rw [p8, eC, hidx]
-      exact congrArg (BitVec.setWidth 32) (hf.readW (a := SP) (w := 64) (r := ⟨SP, 8⟩) (Region.contains_self _ _)
-        (fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.base_disjoint_below SP (n := 8) (k := 8) (by decide)) (by decide)).symm
-    · rw [psp]; exact a_st.sub_right (Lay.stSub (by decide))
-    · rw [psp]; exact a_st.sub_right (Lay.stSub (by decide))
-    · rw [psp]; exact a_d.sub_right qd
-    · rw [psp]; exact a_w.sub_right (Lay.wSub (by decide))
-    · rw [p8, pushed_rd, pushed_wr]
-      obtain ⟨r, hr, hc⟩ := r_sp
-      refine covers_of_inRegions ⟨r, ?_, hc⟩
-      rcases List.mem_append.mp hr with hr | hr
-      exacts [List.mem_append_left _ hr, List.mem_append_right _ (List.mem_cons_of_mem _ hr)]
-    · have e16 : SP - BitVec.ofNat 64 8 - 8 = SP - BitVec.ofNat 64 16 := by rw [← Offset.sub_add_eq]; rfl
-      rw [psp, e16]; have := h.sp24
-      rw [toNat_sub_ofNat (by omega)]; omega
+  have hI := ObIn.callI L h hidx a_st a_w a_d r_sp w_sp
   refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkDI_call F hI) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
   rw [eK, eC, eD] at o₁
