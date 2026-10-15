@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
 meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
 import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
-import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
-meta import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
+import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
+meta import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

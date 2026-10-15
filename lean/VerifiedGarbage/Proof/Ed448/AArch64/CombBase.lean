@@ -34,10 +34,8 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
-meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
-public import VerifiedGarbage.Proof.Framework.TaintSum
-meta import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
+meta import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -76,14 +74,6 @@ products' algebra (`ci/check_lean_speed.py`).
 @[expose] public section
 
 /-! # The function -/
-
-namespace VG
-
-/- The comb's step, built once: the checks of its stores, of its taint (`combSum`) and of its
-callers read the literal. -/
-materialize_code Impl.X448.AArch64.Base.stepR
-
-end VG
 
 namespace VG.Proof.Ed448.AArch64.CombBase
 
@@ -743,13 +733,6 @@ theorem comb_arm (s : State) (hs : combL.pre s) :
     have e := VG.Proof.X448.AArch64.Base.ofs_off0 (s.gpr .x0) (d := i) (by omega)
     have hA : ACC = 3584 := rfl
     exact ho.mem _ (by rw [e]; omega) (by rw [e]; omega)
-
-/- The analysis of the comb without what it does not read, once for all its callers (the
-base-point multiplications of X448 and Ed448, and the verifier's `[S]B`), which analyse its calls
-with it (`taint_decide_sum [combSum]`); `x20`, which the comb does not write, stays as public as
-it was. -/
-taint_summary combSum : (taintS [combSym]) (Taint.ofRegs [.x0, .x1]) (Code.eraseT combBaseFn)
-  keeping (Taint.ofRegs [.x20])
 
 theorem comb_check :
     ∃ h, ((taintS [combSym]).check (Taint.ofRegs [.x0, .x1]) combBaseFn h).isSome = true := by
