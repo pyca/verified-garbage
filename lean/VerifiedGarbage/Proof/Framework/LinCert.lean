@@ -430,17 +430,33 @@ def closeFalseWith (g : MVarId) (hs : Array (Expr × Bool)) : MetaM Bool := g.wi
     holds := mkApp4 (mkConst ``And.intro) ty holdsTy f.pf holds
     holdsTy := mkApp2 (mkConst ``And) ty holdsTy
   let hc ← mkEqRefl (mkConst ``Bool.true)
-  g.assign (mkApp5 (mkConst ``false_of_check) v (mkNatLit n) (mkFacts used) holds hc)
+  let pf := mkApp5 (mkConst ``false_of_check) v (mkNatLit n) (mkFacts used) holds hc
+  -- Mention every fact, as `omega`'s proof does, so that the unused-variables
+  -- linter judges the hypotheses as it does with `omega`.
+  let ms := hs.filter (·.1.isFVar)
+  let mut lam := pf
+  for (h, _) in ms.reverse do
+    lam := .lam `_h (← inferType h) lam .default
+  g.assign (mkAppN lam (ms.map (·.1)))
   return true
 
-/-- `closeFalseWith` on the context's hypotheses, the last one being the
-negated goal. -/
+/-- Whether `t` is a fact `omega` may read: a relation or `Dvd`, or `¬`, `∧`,
+`∨`, `↔`, `→` of them (syntactically; it is cheap). -/
+partial def mentionable (t : Expr) : Bool :=
+  let t := t.consumeMData
+  match t.getAppFn.constName? with
+  | some ``Eq | some ``Ne | some ``LE.le | some ``LT.lt | some ``GE.ge | some ``GT.gt
+  | some ``Dvd.dvd | some ``Not | some ``And | some ``Or | some ``Iff => true
+  | _ => t.isArrow && mentionable t.bindingDomain! && mentionable t.bindingBody!
+
+/-- `closeFalseWith` on the context's hypotheses that `omega` may read, the
+last one being the negated goal. -/
 def closeFalse (g : MVarId) : MetaM Bool := g.withContext do
   let last := (← getLCtx).lastDecl.map (·.fvarId)
   let mut hs := #[]
   for d in ← getLCtx do
-    if d.isImplementationDetail then continue
-    hs := hs.push (d.toExpr, some d.fvarId == last)
+    if d.isImplementationDetail || d.isLet then continue
+    if mentionable d.type then hs := hs.push (d.toExpr, some d.fvarId == last)
   closeFalseWith g hs
 
 /-- Whether `t` is a Nat relation, or a connective of them (what a split may use). -/
