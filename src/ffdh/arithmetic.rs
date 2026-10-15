@@ -11,6 +11,7 @@ use crate::cpu::detected;
 #[cfg(target_arch = "aarch64")]
 use crate::rsa::Scratch;
 use alloc::{vec, vec::Vec};
+#[cfg(target_arch = "aarch64")]
 use core::cmp::Ordering;
 
 pub(super) fn canonical(a: &[u8]) -> &[u8] {
@@ -21,6 +22,7 @@ pub(super) fn bits(a: &[u8]) -> usize {
     a.first()
         .map_or(0, |b| 8 * a.len() - b.leading_zeros() as usize)
 }
+#[cfg(target_arch = "aarch64")]
 pub(super) fn value_cmp(a: &[u8], b: &[u8]) -> Ordering {
     let (a, b) = (canonical(a), canonical(b));
     a.len().cmp(&b.len()).then_with(|| a.cmp(b))
