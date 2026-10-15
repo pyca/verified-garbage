@@ -409,7 +409,7 @@ theorem storeBytes_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
         (if c then Spec.Weierstrass.toBytes len (wordsVal s.mem base a n) else List.replicate len 0) ∧
       Rest [.r4, .r5] s s' ∧ Outside (State.addr (s.gpr dst) + BitVec.ofNat 64 d) 0 len s.mem s'.mem := by
   have hn := hs.nowrap
-  obtain ⟨K, hK⟩ : ∃ K, K = len / 4 := ⟨_, rfl⟩
+  obtain ⟨K, hK⟩ : ∃ K, 4 * K ≤ len ∧ len < 4 * K + 4 := ⟨len / 4, by omega, by omega⟩
   have hKn : K ≤ 2 * n := by omega_arith
   rw [storeBytes_eq, show 2 * n = K + (2 * n - K) by omega_arith, List.range_add, List.flatMap_append,
     flatMap_range_congr (g := stStepW len dst d a) K fun j hj => ite_eq_left_of_eq_true _ _ (eq_true (by omega_arith)),
@@ -426,7 +426,7 @@ theorem storeBytes_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base si
     rw [BitVec.toNat_add, VG.Proof.X25519.Arm.addr_toNat, BitVec.toNat_ofNat]
     have := (s.gpr dst).isLt
     omega_arith
-  by_cases hr : len % 4 = 0
+  by_cases hr : len = 4 * K
   · have hnil : (List.range (2 * n - K)).flatMap (fun i =>
         if 4 * (K + i + 1) ≤ len then stStepW len dst d a (K + i)
         else if 4 * (K + i) < len then stTop (len - 4 * (K + i)) dst d a (K + i) else []) = [] :=
