@@ -152,9 +152,7 @@ theorem sign_x86_adx (hL : Law Spec.P521.curve)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP521Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (c := p521x) (p521x_ok hI).toBaseCfgOk hL (p521x_tbls hT) (pre_of_x hs)
-  have hsp := Code.clobbers_rsp_of_inlineOk sign_inlineOk_adx
-  have hmx : signP521Adx.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
-    rw [Code.allInstrs_inline]; lit_decide
+  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signP521Adx) (by lit_decide)
   have F := (Exec.regions he (Code.noCalls_inline sign_inlineOk_adx)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
