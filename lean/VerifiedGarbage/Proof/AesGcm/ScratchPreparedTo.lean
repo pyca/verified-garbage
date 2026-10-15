@@ -46,38 +46,57 @@ theorem streamEncryptToPreparedPre_local : ∀ vs m₁ m₂,
     vs.length = (streamEncryptToPreparedSig.words pb).length →
     (∀ b ∈ Sig.bufs streamEncryptToPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (streamEncryptToPreparedSig.words pb) (streamEncryptToPreparedPre pb) vs m₁ →
-      Curry.apply (streamEncryptToPreparedSig.words pb) (streamEncryptToPreparedPre pb) vs m₂
-  | [ctx, _, _, _, _, _, _, _, _], m₁, m₂, _, hb, h => by
-    simp only [streamEncryptToPreparedSig, streamEncryptToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    have hc := agree_of hb.1
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-      ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (streamEncryptToPreparedPre pb) _ m₁ at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-      ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (streamEncryptToPreparedPre pb) _ m₂
-    dsimp only [Curry.apply, streamEncryptToPreparedPre, ArgWord.ofRaw] at h ⊢
-    exact ⟨h.1, h.2.1, preparedPowersRepr_congr hc h.2.2⟩
+      Curry.apply (streamEncryptToPreparedSig.words pb) (streamEncryptToPreparedPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 8
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamEncryptToPreparedSig, streamEncryptToPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  have hc := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (streamEncryptToPreparedPre pb) _ m₁ at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (streamEncryptToPreparedPre pb) _ m₂
+  dsimp only [Curry.apply, streamEncryptToPreparedPre, ArgWord.ofRaw] at h ⊢
+  exact ⟨h.1, h.2.1, preparedPowersRepr_congr hc h.2.2⟩
 
 theorem sealGatherPreparedPre_local : ∀ vs m₁ m₂, vs.length = (sealGatherPreparedSig.words pb).length →
     (∀ b ∈ Sig.bufs sealGatherPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     (∀ r ∈ Sig.lists pb m₁ sealGatherPreparedSig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (sealGatherPreparedSig.words pb) (sealGatherPreparedPre pb) vs m₁ →
-      Curry.apply (sealGatherPreparedSig.words pb) (sealGatherPreparedPre pb) vs m₂
-  | [_, _, _, _, _, _, src, cnt, _, _, _], m₁, m₂, _, hb, hl, h => by
-    simp only [sealGatherPreparedSig, sealGatherPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    simp only [sealGatherPreparedSig, sealGatherPrecomputedSig, Sig.lists, List.append_nil] at hl
-    have hc := agree_of hb.1
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-      (sealGatherPreparedPre pb) _ m₁ at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-      (sealGatherPreparedPre pb) _ m₂
-    dsimp only [Curry.apply, sealGatherPreparedPre, ArgWord.ofRaw] at h ⊢
-    have := Nat.mod_le cnt.toNat (2 ^ pb)
-    rw [gatheredLen_congr_le (by rw [BitVec.toNat_setWidth]; exact this) hl]
-    exact ⟨h.1, h.2.1, preparedPowersRepr_congr hc h.2.2⟩
+      Curry.apply (sealGatherPreparedSig.words pb) (sealGatherPreparedPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb hl h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 5
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨cnt, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 3
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealGatherPreparedSig, sealGatherPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  simp only [sealGatherPreparedSig, sealGatherPrecomputedSig, Sig.lists, List.append_nil] at hl
+  have hc := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealGatherPreparedPre pb) _ m₁ at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealGatherPreparedPre pb) _ m₂
+  dsimp only [Curry.apply, sealGatherPreparedPre, ArgWord.ofRaw] at h ⊢
+  have := Nat.mod_le cnt.toNat (2 ^ pb)
+  rw [gatheredLen_congr_le (by rw [BitVec.toNat_setWidth]; exact this) hl]
+  exact ⟨h.1, h.2.1, preparedPowersRepr_congr hc h.2.2⟩
 
 
 private theorem post_local {cl : Nat} (hcl : 256 ≤ cl) {m₁ m₂ m' : Mem}

@@ -77,42 +77,61 @@ variable (pb : Nat)
 theorem sealSplitPre_local : ∀ vs m₁ m₂, vs.length = (sealSplitSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSplitSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (sealSplitSig.words pb) (sealSplitPre pb) vs m₁ →
-      Curry.apply (sealSplitSig.words pb) (sealSplitPre pb) vs m₂
-  | [_, _, _, _, _, _, _, _, _, _, _], _, _, _, _, h => h
+      Curry.apply (sealSplitSig.words pb) (sealSplitPre pb) vs m₂ := by
+  intro vs _ _ hlen _ h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 10
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  exact h
 
 theorem sealSplitPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (sealSplitPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSplitPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (sealSplitPrecomputedSig.words pb) (sealSplitPrecomputedPre pb) vs m₁ →
-      Curry.apply (sealSplitPrecomputedSig.words pb) (sealSplitPrecomputedPre pb) vs m₂
-  | [ctx, _, _, _, _, _, _, _, _, _, _], m₁, m₂, _, hb, h => by
-    simp only [sealSplitPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    have hc := agree_of hb.1
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-      (sealSplitPrecomputedPre pb) _ m₁ at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-      (sealSplitPrecomputedPre pb) _ m₂
-    dsimp only [Curry.apply, sealSplitPrecomputedPre, ArgWord.ofRaw] at h ⊢
-    exact ⟨h.1, h.2.1, powersRepr_congr hc h.2.2⟩
+      Curry.apply (sealSplitPrecomputedSig.words pb) (sealSplitPrecomputedPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 10
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealSplitPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  have hc := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealSplitPrecomputedPre pb) _ m₁ at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealSplitPrecomputedPre pb) _ m₂
+  dsimp only [Curry.apply, sealSplitPrecomputedPre, ArgWord.ofRaw] at h ⊢
+  exact ⟨h.1, h.2.1, powersRepr_congr hc h.2.2⟩
 
 theorem sealSplitPreparedPre_local : ∀ vs m₁ m₂, vs.length = (sealSplitPreparedSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSplitPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (sealSplitPreparedSig.words pb) (sealSplitPreparedPre pb) vs m₁ →
-      Curry.apply (sealSplitPreparedSig.words pb) (sealSplitPreparedPre pb) vs m₂
-  | [ctx, _, _, _, _, _, _, _, _, _, _], m₁, m₂, _, hb, h => by
-    simp only [sealSplitPreparedSig, sealSplitPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil,
-      or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    have hc := agree_of hb.1
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-      (sealSplitPreparedPre pb) _ m₁ at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-      (sealSplitPreparedPre pb) _ m₂
-    dsimp only [Curry.apply, sealSplitPreparedPre, ArgWord.ofRaw] at h ⊢
-    exact ⟨h.1, h.2.1, preparedPowersRepr_congr hc h.2.2⟩
+      Curry.apply (sealSplitPreparedSig.words pb) (sealSplitPreparedPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 10
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealSplitPreparedSig, sealSplitPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil,
+    or_false, forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  have hc := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealSplitPreparedPre pb) _ m₁ at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealSplitPreparedPre pb) _ m₂
+  dsimp only [Curry.apply, sealSplitPreparedPre, ArgWord.ofRaw] at h ⊢
+  exact ⟨h.1, h.2.1, preparedPowersRepr_congr hc h.2.2⟩
 
 /-- `sealSplitPost` reads the memory on entry only within the buffers, for a
 key context of `cl ≥ 256` bytes. -/
@@ -156,36 +175,82 @@ private theorem post_local {cl : Nat} (hcl : 256 ≤ cl) {m₁ m₂ m' : Mem}
 theorem sealSplitPost_local : ∀ vs m₁ m₂ m' r, vs.length = (sealSplitSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSplitSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (sealSplitSig.words pb) (sealSplitPost pb) vs m₁ m' r →
-      Curry.apply (sealSplitSig.words pb) (sealSplitPost pb) vs m₂ m' r
-  | [ctx, rd, nonce, nl, aad, al, src, sl, dst, len, tag], m₁, m₂, m', r, _, hb, h => by
-    simp only [sealSplitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-      (sealSplitPost pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-      (sealSplitPost pb) _ m₂ m' r
-    dsimp only [Curry.apply, sealSplitPost, ArgWord.ofRaw] at h ⊢
-    exact post_local pb (Nat.le_refl _) (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1)
-      (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.1) h
+      Curry.apply (sealSplitSig.words pb) (sealSplitPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨sl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealSplitSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealSplitPost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealSplitPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, sealSplitPost, ArgWord.ofRaw] at h ⊢
+  exact post_local pb (Nat.le_refl _) (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1)
+    (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.1) h
 
 theorem sealSplitPrecomputedPost_local : ∀ vs m₁ m₂ m' r,
     vs.length = (sealSplitPrecomputedSig.words pb).length →
     (∀ b ∈ Sig.bufs sealSplitPrecomputedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (sealSplitPrecomputedSig.words pb) (sealSplitPost pb) vs m₁ m' r →
-      Curry.apply (sealSplitPrecomputedSig.words pb) (sealSplitPost pb) vs m₂ m' r
-  | [ctx, rd, nonce, nl, aad, al, src, sl, dst, len, tag], m₁, m₂, m', r, _, hb, h => by
-    simp only [sealSplitPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-      (sealSplitPost pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
-      (sealSplitPost pb) _ m₂ m' r
-    dsimp only [Curry.apply, sealSplitPost, ArgWord.ofRaw] at h ⊢
-    exact post_local pb (by decide) (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1)
-      (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.1) h
+      Curry.apply (sealSplitPrecomputedSig.words pb) (sealSplitPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 10) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨rd, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nonce, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨nl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨aad, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨al, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨src, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨sl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨dst, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨tag, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealSplitPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealSplitPost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr]
+    (sealSplitPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, sealSplitPost, ArgWord.ofRaw] at h ⊢
+  exact post_local pb (by decide) (agree_of hb.1) (agree_of hb.2.1) (agree_of hb.2.2.1)
+    (agree_of hb.2.2.2.1) (agree_of hb.2.2.2.2.1) h
 
 end VG.Proof.AesGcm
