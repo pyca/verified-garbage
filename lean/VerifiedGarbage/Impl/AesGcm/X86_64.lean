@@ -154,6 +154,15 @@ def copyLoop : Prog isa :=
     (.loop (.block [.movzx8 .rax srcB, .store8 dstB .rax, .alu .add .r10 (imm 1),
       .alu .cmp .r10 (.reg .rcx)]) .ne)
 
+/-- `copyLoop` for a tag: its `rcx` (1 to 16) bytes, a word at a time if
+there are 16, as for a whole tag. -/
+def copyTag : Prog isa :=
+  .seq (.block [.alu .cmp .rcx (imm 16)])
+    (.ite .e
+      (.block [.mov .rax (.mem (at_ .rsi 0)), .mov .r10 (.mem (at_ .rsi 8)), .store (at_ .rdi 0) .rax,
+        .store (at_ .rdi 8) .r10])
+      copyLoop)
+
 /-- XORs the `rcx` (at least 1) bytes at `rsi` into those at `rdi`. -/
 def xorLoop : Prog isa :=
   .seq (.block [.mov32 .r10 (imm 0)])
@@ -344,14 +353,14 @@ def j0 : Prog isa :=
 def recv : Prog isa :=
   .seq (.block (([.mov32 .rax (imm 0), .store (at_ .r15 rO) .rax, .store (at_ .r15 (rO + 8)) .rax] : List Instr) ++
     ptr .rdi .r15 rO ++ ([.mov .rcx (.reg .rbx)] : List Instr)))
-    copyLoop
+    copyTag
 
 /-- The first `rbx` bytes of the tag at `W + o`, padded with zeros at
 `W + vO`, compared with the received one: `eax = 1` if they are equal. -/
 def cmp (o : Nat) : Prog isa :=
   .seq (.block (([.mov32 .rax (imm 0), .store (at_ .r15 vO) .rax, .store (at_ .r15 (vO + 8)) .rax] : List Instr) ++
     ptr .rdi .r15 vO ++ ptr .rsi .r15 o ++ ([.mov .rcx (.reg .rbx)] : List Instr)))
-  (.seq copyLoop
+  (.seq copyTag
     (.block [.mov .rax (.mem (at_ .r15 vO)), .alu .xor .rax (.mem (at_ .r15 rO)),
       .mov .rdx (.mem (at_ .r15 (vO + 8))), .alu .xor .rdx (.mem (at_ .r15 (rO + 8))),
       .alu .or .rax (.reg .rdx), .alu .cmp .rax (imm 1), .mov32 .rax (imm 0), .alu32 .adc .rax (imm 0)]))

@@ -166,6 +166,52 @@ theorem words_eq (m : Mem) (p q : Addr) :
     obtain ⟨h₁, h₂⟩ := List.append_inj h (by rw [Cmac.length_le8, Cmac.length_le8])
     rw [le8_inj h₁, le8_inj h₂, BitVec.xor_self, BitVec.xor_self, BitVec.or_self]; rfl
 
+/-! ## Copying a tag -/
+
+theorem writeW_readW64 (m src : Mem) (a b : Addr) :
+    m.writeW a (src.readW b 64) = writeBytes m a (bytesAt src b 8) := by
+  simp only [Mem.writeW, Mem.readW]
+  rw [show (BitVec.setWidth (8 * (64 / 8)) (BitVec.setWidth 64 (src.read b (64 / 8)))) =
+    src.read b 8 from by simp]
+  rw [write_eq_writeBytes]
+  congr 1
+  simp only [bytesAt]
+  refine List.map_congr_left fun j hj => ?_
+  exact Mem.extractLsb'_read src b (List.mem_range.mp hj)
+
+/-- `copyTag` leaves what `copyLoop` does (`copyLoop_ok`): for 16 bytes, both
+words are loaded before either is stored. -/
+theorem copyTag_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
+    WP isa copyTag s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
+      (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨s₁, run₁, hz₁, -, hg₁, hm₁, hrd₁, hwr₁⟩ :=
+    cmpImm_ok s .rcx h.rcx (by have := h.lt; omega) (show 16 < 2 ^ 31 by decide)
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  refine WP.ite (decide (n = 16)) (eval_e hz₁) (fun he => ?_) (fun _ => ?_)
+  · have hn : n = 16 := by simpa using he
+    subst hn
+    have hsi : s₁.gpr .rsi = S := by rw [hg₁, h.rsi]
+    have hdi : s₁.gpr .rdi = D := by rw [hg₁, h.rdi]
+    have r₀ := in_off (rs := s₁.rd ++ s₁.wr) (by rw [hrd₁, hwr₁]; exact h.rd) (show 0 + 8 ≤ 16 by decide) (by decide)
+    have r₁ := in_off (rs := s₁.rd ++ s₁.wr) (by rw [hrd₁, hwr₁]; exact h.rd) (show 8 + 8 ≤ 16 by decide) (by decide)
+    have w₀ := in_off (rs := s₁.wr) (by rw [hwr₁]; exact h.wr) (show 0 + 8 ≤ 16 by decide) (by decide)
+    have w₁ := in_off (rs := s₁.wr) (by rw [hwr₁]; exact h.wr) (show 8 + 8 ≤ 16 by decide) (by decide)
+    have e0 : S + BitVec.ofNat 64 0 = S := BitVec.add_zero S
+    have f0 : D + BitVec.ofNat 64 0 = D := BitVec.add_zero D
+    rw [e0] at r₀
+    rw [f0] at w₀
+    refine WP.of_runBlock ⟨_, by xrun [hsi, hdi, r₀, r₁, w₀, w₁, e0, f0], ?_, ?_, ?_, ?_⟩
+    · simp only [mem_setReg, gpr_setReg, ite_true, ite_false, reduceCtorEq, hsi, hdi, e0, f0]
+      rw [writeW_readW64, writeW_readW64, ← hm₁, writeBytes_append _ _ _ _ (by rw [length_bytesAt, length_bytesAt]; decide),
+        length_bytesAt, ← bytesAt_add]
+    · intro r a b; simp [gpr_setReg, a, b, hg₁]
+    all_goals simp only [hrd₁, hwr₁]; rfl
+  · have lp : LoopPre s₁ S D n :=
+      ⟨by rw [hg₁, h.rsi], by rw [hg₁, h.rdi], by rw [hg₁, h.rcx], h.pos, h.lt, by rw [hrd₁, hwr₁]; exact h.rd,
+        by rw [hwr₁]; exact h.wr, h.disj⟩
+    exact WP.mono (copyLoop_ok s₁ lp) fun s' ⟨a, b, c, d⟩ =>
+      ⟨by rw [a, hm₁], fun r h₁ h₂ => by rw [b r h₁ h₂, hg₁], by rw [c, hrd₁], by rw [d, hwr₁]⟩
+
 section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
 include L
@@ -202,7 +248,7 @@ theorem recv_ok {s : State} (he : Env Ctx St W SP s) {t : Nat} (hbx : s.gpr .rbx
   have lp : LoopPre s₁ T (W + BitVec.ofNat 64 256) t :=
     ⟨hsi₁, hdi, hcx, h1, by omega, by rw [hrd₁, hwr₁]; exact hT, he₁.perm.wC (by omega),
       dW.sub_right (Region.sub_prefix h16)⟩
-  refine WP.mono (copyLoop_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_
+  refine WP.mono (copyTag_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_
   have fz : Frame [⟨W + BitVec.ofNat 64 256, 16⟩] s.mem s₁.mem := by rw [hm₁]; exact zeroT_frame _ _
   have hR : bytesAt s₁.mem T t = bytesAt s.mem T t :=
     bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dW) (by omega)
@@ -254,7 +300,7 @@ theorem cmp_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx St W
   have lp : LoopPre s₁ (W + BitVec.ofNat 64 o) (W + BitVec.ofNat 64 240) t :=
     ⟨hsi, hdi, hcx, h1, by omega, covers_left (he₁.perm.wC (by omega)), he₁.perm.wC (by omega),
       dW.sub_right (Region.sub_prefix h16)⟩
-  refine WP.seq (WP.mono (copyLoop_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_)
+  refine WP.seq (WP.mono (copyTag_ok s₁ lp) fun s₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_)
   have fz : Frame [⟨W + BitVec.ofNat 64 240, 16⟩] s.mem s₁.mem := by rw [hm₁]; exact zeroT_frame _ _
   have hT : bytesAt s₁.mem (W + BitVec.ofNat 64 o) t = bytesAt s.mem (W + BitVec.ofNat 64 o) t :=
     bytesAt_frame fz (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dW) (by omega)
