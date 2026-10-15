@@ -189,7 +189,25 @@ structure Blks (k Q D B : Nat) (wide : Bool) : Prop where
   msg₀f : TaintOk (Cfg.msg k Q D 0 true wide)
   msg₁f : TaintOk (Cfg.msg k Q D 1 true wide)
 
+/-- The blocks of `Blks` that depend only on `D` and `B`: checked once for each
+pair of sizes, rather than again for each size of the scalars. -/
+theorem hmacBlks {D B : Nat} (h : (D = 32 ∧ B = 64) ∨ (D = 48 ∧ B = 128) ∨ (D = 64 ∧ B = 128) ∨
+    (D = 28 ∧ B = 64)) :
+    TaintOk (Cfg.hmacArgs₁ D) ∧ TaintOk (Cfg.hmacArgs₂ B [.dp .add .r1 .r8 (.imm (BitVec.ofNat 32 fV))] D) ∧
+      TaintOk (Cfg.hmacArgs₃ B D fV) ∧ TaintOk (Cfg.hmacArgs₂ B (scrAt .r1 sMsg) (D + 1)) ∧
+      TaintOk (Cfg.hmacArgs₃ B (D + 1) fK) := by
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+  exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩⟩
+
 theorem blks (P : RfcHash) : Blks P.k P.Q P.F.H.D P.F.H.B P.R.wide := by
+  obtain ⟨i, vu, vf, ku, kf⟩ := hmacBlks P.hDB
+  suffices h : TaintOk (Cfg.hmacArgs₂ P.F.H.B (scrAt .r1 sMsg) (P.F.H.D + 2 * P.Q + 1)) ∧
+      TaintOk (Cfg.hmacArgs₃ P.F.H.B (P.F.H.D + 2 * P.Q + 1) fK) ∧
+      TaintOk (Cfg.msg P.k P.Q P.F.H.D 0 false false) ∧
+      TaintOk (Cfg.msg P.k P.Q P.F.H.D 0 true P.R.wide) ∧
+      TaintOk (Cfg.msg P.k P.Q P.F.H.D 1 true P.R.wide) from
+    ⟨i, vu, vf, ku, kf, h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩
   have hk (hw : P.R.wide = false) : P.k = P.Q / 4 := by have := (P.sizesA hw).1; omega
   cases hw : P.R.wide
   · have hQD := (P.sizesA hw).2.2
@@ -199,13 +217,11 @@ theorem blks (P : RfcHash) : Blks P.k P.Q P.F.H.D P.F.H.B P.R.wide := by
       first
       | (exfalso; rw [hQ, h] at hQD; omega)
       | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-          ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-          ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+          ⟨_, by taint_decide⟩⟩
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     simp only [RfcHash.k, show P.R.E.n = 9 from hw9, show P.R.E.C.len = 66 from hQ66, hD64, hB]
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+      ⟨_, by taint_decide⟩⟩
 
 /-! The blocks that depend on whether two `V`s make a candidate. -/
 
