@@ -7,6 +7,7 @@ public meta import Lean.Meta.Tactic.Util
 public meta import Lean.Meta.Tactic.Cases
 public meta import Lean.Meta.Tactic.Assert
 public meta import Lean.Meta.Tactic.Assumption
+public meta import Lean.Meta.Closure
 
 /-!
 # Linear facts about `Nat`, by a certificate the kernel checks at once
@@ -437,17 +438,27 @@ def closeFalseWith (g : MVarId) (hs : Array (Expr × Bool)) : MetaM Bool := g.wi
   let mut lam := pf
   for (h, _) in ms.reverse do
     lam := .lam `_h (← inferType h) lam .default
-  g.assign (mkAppN lam (ms.map (·.1)))
+  -- An auxiliary theorem, as `omega`'s, which the kernel checks once for
+  -- every copy of the same goal in a declaration.
+  g.assign (← mkAuxTheorem (← g.getType) (mkAppN lam (ms.map (·.1))) (zetaDelta := true))
   return true
 
-/-- Whether `t` is a fact `omega` may read: a relation or `Dvd`, or `¬`, `∧`,
-`∨`, `↔`, `→` of them (syntactically; it is cheap). -/
+/-- Whether `e` is a type `omega` reads facts about. -/
+def arithType (e : Expr) : Bool :=
+  let e := e.consumeMData
+  e.isConstOf ``Nat || e.isConstOf ``Int || e.isAppOfArity ``BitVec 1 || e.isAppOfArity ``Fin 1
+
+/-- Whether `t` is a fact `omega` may read: a relation or `Dvd` over `Nat`,
+`Int`, `Fin` or `BitVec`, or `¬`, `∧`, `∨`, `↔`, `→` of them (syntactically; it
+is cheap). -/
 partial def mentionable (t : Expr) : Bool :=
   let t := t.consumeMData
-  match t.getAppFn.constName? with
-  | some ``Eq | some ``Ne | some ``LE.le | some ``LT.lt | some ``GE.ge | some ``GT.gt
-  | some ``Dvd.dvd | some ``Not | some ``And | some ``Or | some ``Iff => true
-  | _ => t.isArrow && mentionable t.bindingDomain! && mentionable t.bindingBody!
+  match t.getAppFn.constName?, t.getAppNumArgs with
+  | some ``Eq, 3 | some ``Ne, 3 | some ``LE.le, 4 | some ``LT.lt, 4 | some ``GE.ge, 4
+  | some ``GT.gt, 4 | some ``Dvd.dvd, 4 => arithType (t.getArg! 0)
+  | some ``Not, 1 => mentionable (t.getArg! 0)
+  | some ``And, 2 | some ``Or, 2 | some ``Iff, 2 => mentionable (t.getArg! 0) && mentionable (t.getArg! 1)
+  | _, _ => t.isArrow && mentionable t.bindingDomain! && mentionable t.bindingBody!
 
 /-- `closeFalseWith` on the context's hypotheses that `omega` may read, the
 last one being the negated goal. -/
