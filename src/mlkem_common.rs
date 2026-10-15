@@ -451,7 +451,8 @@ macro_rules! ml_kem {
 
             #[test]
             fn legacy_sha3_decapsulation_acvp() {
-                if !$crate::cpu::detected().contains($decaps_sha3_features) {
+                let features = $crate::cpu::detected();
+                if !features.contains($decaps_sha3_features) || !features.contains($decaps_paired_sha3_features) {
                     return;
                 }
                 for v in vectors($name, Some("decapsulation")) {
@@ -463,13 +464,11 @@ macro_rules! ml_kem {
                     // expanded key and distinct buffers satisfy the contract.
                     assert_eq!(unsafe { $decaps_sha3(&dk, &ct, &mut key, scratch.as_mut_ptr()) }, 1);
                     assert_eq!(key, array::<32>(&v["k"]));
-                    if $crate::cpu::detected().contains($decaps_paired_sha3_features) {
-                        let mut paired_key = [0; 32];
-                        // SAFETY: The complete paired feature set was checked;
-                        // buffers satisfy the same verified input contract.
-                        assert_eq!(unsafe { $decaps_paired_sha3(&dk, &ct, &mut paired_key, scratch.as_mut_ptr()) }, 1);
-                        assert_eq!(paired_key, key);
-                    }
+                    let mut paired_key = [0; 32];
+                    // SAFETY: The complete paired feature set was checked;
+                    // buffers satisfy the same verified input contract.
+                    assert_eq!(unsafe { $decaps_paired_sha3(&dk, &ct, &mut paired_key, scratch.as_mut_ptr()) }, 1);
+                    assert_eq!(paired_key, key);
                 }
             }
         }
