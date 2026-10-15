@@ -66,16 +66,14 @@ theorem post_of {s s' : State} (h : EPost p224 s s') : ecdhX86_64.post s s' := b
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * p224.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
+theorem ecdh_inlineOk : exchangeP224.InlineOk = true := by lit_decide
+
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP224.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p224_ok hI) hL (pre_of hs)
-  have hsp : ∀ i ∈ instrs exchangeP224.inline, Taint.clobbers i .rsp = false := by
-    have h : exchangeP224.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk
+  have F := (Exec.regions he (Code.noCalls_inline ecdh_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
@@ -134,7 +132,7 @@ theorem ecdh_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
 
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target exchangeP224 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (ecdh_x86 hL hI) ecdh_ct implies8
+  Verified.of_inline_ct ecdh_inlineOk (ecdh_x86 hL hI) ecdh_ct implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64.P224
