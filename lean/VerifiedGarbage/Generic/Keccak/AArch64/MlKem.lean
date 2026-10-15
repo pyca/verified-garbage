@@ -85,7 +85,7 @@ def legacyArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
 /-- Paired sampling and fused arithmetic for the hardware SHA3 backend. -/
 def optimizedArtifacts : List Artifact := [
   { Spec.MlKem.keyGenApi with
-    name := Spec.MlKem.keyGenApi.name ++ Proof.Sha3.AArch64.Sha3.callee.suffix
+    name := Spec.MlKem.keyGenApi.name ++ "_paired_sha3"
     features := Proof.Sha3.AArch64.Sha3.backend.features
     target := AArch64.target
     doc := Spec.MlKem.keyGenApi.doc
@@ -97,7 +97,7 @@ def optimizedArtifacts : List Artifact := [
     ofSig := by exact ⟨_, _, _, by unfold Proof.MlKem.AArch64.Optimized.keyGen768Contract Spec.MlKem.keyGenContract; rfl⟩
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlKem.encapsApi with
-    name := Spec.MlKem.encapsApi.name ++ Proof.Sha3.AArch64.Sha3.callee.suffix
+    name := Spec.MlKem.encapsApi.name ++ "_paired_sha3"
     features := Proof.Sha3.AArch64.Sha3.backend.features
     target := AArch64.target
     doc := Spec.MlKem.encapsApi.doc
@@ -109,7 +109,7 @@ def optimizedArtifacts : List Artifact := [
     ofSig := by exact ⟨_, _, _, by unfold Proof.MlKem.AArch64.Optimized.encaps768Contract Spec.MlKem.encapsContract; rfl⟩
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlKem.decapsApi with
-    name := Spec.MlKem.decapsApi.name ++ Proof.Sha3.AArch64.Sha3.callee.suffix
+    name := Spec.MlKem.decapsApi.name ++ "_paired_sha3"
     features := Proof.Sha3.AArch64.Sha3.backend.features
     target := AArch64.target
     doc := Spec.MlKem.decapsApi.doc
@@ -121,7 +121,7 @@ def optimizedArtifacts : List Artifact := [
     ofSig := by exact ⟨_, _, _, by unfold Proof.MlKem.AArch64.Optimized.decaps768Contract Spec.MlKem.decapsContract; rfl⟩
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlKem1024.keyGenApi with
-    name := Spec.MlKem1024.keyGenApi.name ++ Proof.Sha3.AArch64.Sha3.callee.suffix
+    name := Spec.MlKem1024.keyGenApi.name ++ "_paired_sha3"
     features := Proof.Sha3.AArch64.Sha3.backend.features
     target := AArch64.target
     doc := Spec.MlKem1024.keyGenApi.doc
@@ -133,7 +133,7 @@ def optimizedArtifacts : List Artifact := [
     ofSig := by exact ⟨_, _, _, by unfold Proof.MlKem.AArch64.Optimized.keyGen1024Contract Spec.MlKem1024.keyGenContract; rfl⟩
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlKem1024.encapsApi with
-    name := Spec.MlKem1024.encapsApi.name ++ Proof.Sha3.AArch64.Sha3.callee.suffix
+    name := Spec.MlKem1024.encapsApi.name ++ "_paired_sha3"
     features := Proof.Sha3.AArch64.Sha3.backend.features
     target := AArch64.target
     doc := Spec.MlKem1024.encapsApi.doc
@@ -145,7 +145,7 @@ def optimizedArtifacts : List Artifact := [
     ofSig := by exact ⟨_, _, _, by unfold Proof.MlKem.AArch64.Optimized.encaps1024Contract Spec.MlKem1024.encapsContract; rfl⟩
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlKem1024.decapsApi with
-    name := Spec.MlKem1024.decapsApi.name ++ Proof.Sha3.AArch64.Sha3.callee.suffix
+    name := Spec.MlKem1024.decapsApi.name ++ "_paired_sha3"
     features := Proof.Sha3.AArch64.Sha3.backend.features
     target := AArch64.target
     doc := Spec.MlKem1024.decapsApi.doc
@@ -158,6 +158,6 @@ def optimizedArtifacts : List Artifact := [
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  if v.callee.pairedSha3 then optimizedArtifacts else legacyArtifacts v
+  legacyArtifacts v ++ if v.callee.pairedSha3 then optimizedArtifacts else []
 
 end VG.Generic.Keccak.AArch64.MlKem

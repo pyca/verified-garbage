@@ -13,9 +13,9 @@ def fwdConsts := [("VG_MLKEM_NTT16_ZETAS",words 16 tableHalves)]
 def invConstsTable := [("VG_MLKEM_INTT16_ZETAS",words 16 invTableHalves)]
 
 def nttAtWith (off ns : Nat) : Prog isa :=
-  .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 ns)) (.call fwdName fwd)
+  .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 ns)) fwd
 def nttInvAtWith (off ns : Nat) : Prog isa :=
-  .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 ns)) (.call invName inv)
+  .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 ns)) inv
 def nttAt (off : Nat) : Prog isa := nttAtWith off KEM.NS
 def nttInvAt (off : Nat) : Prog isa := nttInvAtWith off KEM.NS
 
