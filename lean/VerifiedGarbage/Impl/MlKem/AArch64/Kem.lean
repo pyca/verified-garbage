@@ -83,11 +83,11 @@ def prfCbdWith (c : Impl.Sha3.AArch64.Callee) (N off : Nat) : Prog isa :=
 
 /-- The NTT of the polynomial at `off`. -/
 def nttAt (off : Nat) : Prog isa :=
-  .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 NS)) (.call "vg_mlkem_ntt" ntt)
+  .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 NS)) (.call "vg_mlkem_ntt" Ntt16.ntt)
 
 /-- The inverse NTT of the polynomial at `off`. -/
 def nttInvAt (off : Nat) : Prog isa :=
-  .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 NS)) (.call "vg_mlkem_inv_ntt" nttInv)
+  .seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 NS)) (.call "vg_mlkem_inv_ntt" Ntt16.nttInv)
 
 /-- `h ← f ×_T g`. -/
 def mulAt (h f g : Nat) : Prog isa :=
