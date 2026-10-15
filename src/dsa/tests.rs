@@ -70,7 +70,38 @@ fn cavp_signatures() {
         let expected = [hex(&v["R"], q.len()), hex(&v["S"], q.len())].concat();
         assert_eq!(signature, expected, "vector {i}");
         assert!(key.public_key().verify(&digest, &signature), "vector {i}");
+        let nonce = hex(&v["K"], q.len());
+        let randomized = key
+            .sign_with_rng(&digest, |buf| {
+                buf.copy_from_slice(&nonce);
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(randomized, expected, "random tape vector {i}");
     }
+}
+
+#[test]
+fn random_tape_rejection_and_replay() {
+    let (key, digest, nonce) = sample();
+    let mut expected = vec![0; 2 * key.public.q_len];
+    let mut scratch = Secret(vec![0u64; 16 * key.public.p_len]);
+    assert!(key.sign_once(&digest, &nonce, &mut expected, &mut scratch.0));
+    let mut draws = 0;
+    let signature = key
+        .sign_with_rng(&digest, |buf| {
+            if draws == 0 {
+                buf.fill(0);
+            } else {
+                buf.copy_from_slice(&nonce);
+            }
+            draws += 1;
+            Ok(())
+        })
+        .unwrap();
+    assert_eq!(draws, 2);
+    assert_eq!(signature, expected);
+    assert!(key.public_key().verify(&digest, &signature));
 }
 
 #[test]
@@ -225,6 +256,7 @@ fn malformed_keys_nonces_and_bounded_retries() {
     );
     assert_eq!(draws, 8);
     key.public.packed[128..148].fill(0);
+    key.packed.0[128..148].fill(0);
     assert_eq!(
         key.sign_with_rng(&digest, |_| panic!("zero q needs no RNG")),
         Err(Error::InvalidKeyOrNonce)
@@ -273,6 +305,7 @@ fn import_lengths_errors_and_backends() {
 }
 
 #[test]
+#[cfg(target_arch = "aarch64")]
 fn nonce_range_comparison() {
     for q in [1u16, 255, 256, 257, 65535] {
         for k in [0u16, 1, 254, 255, 256, 257, 65534, 65535] {

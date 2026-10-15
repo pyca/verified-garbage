@@ -1,4 +1,4 @@
-import VerifiedGarbage.Spec.Dsa.RandomSign
+import VerifiedGarbage.Proof.Dsa.RandomSign
 import VerifiedGarbageTest.Dsa
 
 /-! Regression checks for the randomized-signing contract. Small scalars are
@@ -33,6 +33,17 @@ open Lean Elab Command Spec.Dsa
 
 #assert_standard_axioms Spec.Dsa.randomSignContract
 #assert_no_compiler_overrides Spec.Dsa.randomSignApi
+#assert_standard_axioms VG.Proof.Dsa.Random.sample_range
+#assert_standard_axioms VG.Proof.Dsa.Random.sample_used_le
+#assert_standard_axioms VG.Proof.Dsa.Random.sample_used_budget
+#assert_standard_axioms VG.Proof.Dsa.Random.sample_used_multiple
+#assert_standard_axioms VG.Proof.Dsa.Random.sample_used_trace
+#assert_standard_axioms VG.Proof.Dsa.Random.sample_used_eq_of_trace_eq
+#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_used_le
+#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_used_budget
+#assert_standard_axioms VG.Proof.Dsa.randomSignBytes_used_le
+#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_signature
+#assert_standard_axioms VG.Proof.Dsa.randomSignLoop_success
 #assert_spec_origin
 
 run_cmd do
