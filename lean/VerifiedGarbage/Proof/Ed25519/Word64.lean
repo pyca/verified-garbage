@@ -36,6 +36,9 @@ theorem carryWord (c : Bool) : (BitVec.ofNat 64 c.toNat).toNat = c.toNat := by
 theorem carry38_value (c : Bool) : (addCarry 0 0 c * 38).toNat = 38 * c.toNat := by
   cases c <;> decide
 
+theorem carry38_sel (c : Bool) : (if c = true then (38 : Word) else 0).toNat = 38 * c.toNat := by
+  cases c <;> decide
+
 theorem borrow_mask (c : Bool) : addCarry 0 (~~~0) c = if c then 0 else -1 := by
   cases c <;> decide
 

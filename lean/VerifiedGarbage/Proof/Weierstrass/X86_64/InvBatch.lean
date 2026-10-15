@@ -229,7 +229,7 @@ theorem copy1_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   rw [copy, copy, List.append_nil, ← List.singleton_append, WP.block_append_iff]
   refine WP.mono (movMem_ok hs .rax ha) fun s₁ ⟨c₁, _, k₁⟩ => ?_
   refine WP.mono (storeReg_ok (hs.of_keeps k₁ (by decide)) .rax hd) fun t ⟨m, _, _, k⟩ =>
-    ⟨by rw [m, c₁, k₁.2.1], (Keeps.regs k₁).trans (k.mono (by simp))⟩
+    ⟨by rw [m, c₁, k₁.2.1], (Keeps.regs k₁).trans (k.mono (by regions_sub))⟩
 
 theorem xor_m1 (x : BitVec 64) : x ^^^ (-1 : BitVec 32).signExtend 64 = ~~~x := by
   rw [show (-1 : BitVec 32).signExtend 64 = BitVec.allOnes 64 by decide, BitVec.xor_allOnes]
@@ -257,7 +257,7 @@ theorem batchStart_ok {P : InvCfg} {s : State} {base : Addr} {size : Nat} (hs : 
   · rw [k.2.1, m₂, word_apart _ _ _ (by omega_using []) (by omega_using [hT, hn]) (by omega_using [hT, hn]), m₁, word_writeW_self]
   · rw [k.2.1, m₂, word_writeW_self, m₁, word_apart _ _ _ (by omega_using [hGT]) (by omega_using [hT, hGT, hn]) (by omega_using [hT, hn])]
   · rw [b, k₂.gpr _ (by decide), k₁.gpr _ (by decide)]
-  · exact ((k₁.mono (by simp)).trans (k₂.mono (by simp))).trans ((Keeps.regs k).mono (by simp))
+  · exact ((k₁.mono (by regions_sub)).trans (k₂.mono (by regions_sub))).trans ((Keeps.regs k).mono (by regions_sub))
   · rw [k.2.1, m₂, m₁]
     exact ((writeW_outside _ _ _ (by omega_using [hT, hn])).mono (by omega_using []) (by omega_using [])).trans
       ((writeW_outside _ _ _ (by omega_using [hT, hn])).mono (by omega_using []) (by omega_using []))

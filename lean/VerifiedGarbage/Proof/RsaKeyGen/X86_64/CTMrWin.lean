@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
+public import VerifiedGarbage.Proof.RsaKeyGen.Slots
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 
 /-!
@@ -85,9 +86,9 @@ theorem winW_mm (M : Mont) {q : WPub} {s : State} (h : WinW q s) {b : Nat} (hb :
     (by decide) hb (by decide) (by decide) (by decide) d4 hc.inv hB (by decide) d6) fun t ⟨hg, hlt, _, ha', k⟩ => ?_
   have hf : Frm q.p.B [(slot q.p.w aAcc, 8 * (q.p.w + 2)), (slot q.p.w aTmp, 8 * (q.p.w + 2)),
       (slot q.p.w aY, 8 * (q.p.w + 2))] s.mem t.mem := Frm.of_arrays ha' (by simp)
-  refine ⟨hk, hp.frm hf (by rng_le) q.vs_lt hg.rdi k.2.2, hd, mi, c, b', bm,
-    hc.of_frm hd hf hg.scr hg.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj),
-    hT.of_low hf (by rng_le) (by have := hd.w128; omega_arith), hodd, hc1, by rw [← hc.n]; exact hlt⟩
+  refine ⟨hk, hp.frm hf ((VG.Proof.RsaKeyGen.mm_shape _ _).geD rfl rfl) q.vs_lt hg.rdi k.2.2, hd, mi, c, b', bm,
+    hc.of_frm hd hf hg.scr hg.rdi ((VG.Proof.RsaKeyGen.mm_shape _ _).geD rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl),
+    hT.of_low hf ((VG.Proof.RsaKeyGen.mm_shape _ _).leD rfl rfl) (by have := hd.w128; omega_arith), hodd, hc1, by rw [← hc.n]; exact hlt⟩
 
 /-- The comparison and the flag after a squaring keep `WinW`. -/
 theorem winW_sqTail {q : WPub} {s : State} (h : WinW q s) :
@@ -112,12 +113,12 @@ theorem winW_sqTail {q : WPub} {s : State} (h : WinW q s) :
   have hf : Frm q.p.B [(8 * kFlag, 8)] s.mem t.mem := by
     rw [hm, hm₁]; exact Frm.of_outside (writeW_outside _ _ _ (by unfold kFlag kPlen sFn; omega_arith)) (by simp)
   have hgt : Good t q.p.B q.p.Z q.p.w mi := ⟨hs₁.congr k.2.2, (k.gpr (by decide)).trans hdi₁,
-    Hdr.of_frm hg.hdr hf (by rng_disj)⟩
+    Hdr.of_frm hg.hdr hf ((VG.Proof.RsaKeyGen.hdr_shape 0 _).geD rfl rfl)⟩
   refine ⟨hk, WPub.hp_frm hp hf (by decide) hgt.rdi
     (k.2.2.trans k₁.2.2), hd, mi, c, b, bm,
-    hc.of_frm hd hf hgt.scr hgt.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj),
-    hT.of_low hf (by rng_le) hw', hodd, hc1, ?_⟩
-  rw [hf.wv_eq (d := slot q.p.w aY) (k := q.p.w) (by rng_disj)
+    hc.of_frm hd hf hgt.scr hgt.rdi ((VG.Proof.RsaKeyGen.hdr_shape 0 _).geD rfl rfl) ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW rfl rfl),
+    hT.of_low hf ((VG.Proof.RsaKeyGen.hdr_shape _ _).leD rfl rfl) hw', hodd, hc1, ?_⟩
+  rw [hf.wv_eq (d := slot q.p.w aY) (k := q.p.w) ((VG.Proof.RsaKeyGen.hdr_shape _ _).apartW rfl rfl)
     (by have := slot_le (w := q.p.w) (show aY < 8 by decide); have := hd.z; omega_arith)]
   exact hy
 
@@ -144,6 +145,13 @@ theorem mrS_kG_slot (w a : Nat) : ∀ j ∈ mrS ++ [kWords, kBits], j < 32 ∧
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   exact ⟨(h j hj).2.2, .inl (Nat.le_trans (h j hj).2.1 (Nat.le_add_right _ _))⟩
 
+/-- What the digit and its entry change: `kG` and `aXm`. -/
+theorem kgXm_shape (w : Nat) :
+    VG.Proof.RsaKeyGen.SlotShape w [(8 * kG, 8), (slot w aXm, 8 * (w + 2))] [(8 * kG, 8)] [aXm] := fun r hr => by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  exacts [.inl (.head _), .inr ⟨_, .head _, rfl⟩]
+
 /-- The digit and its entry keep `WinW`, with the entry below `c`. -/
 theorem winW_sel {q : WPub} {s : State} (h : WinW q s) :
     WP isa (seqs (([.block [.mov .rax (.mem (hdr kV)), .shift .shr .rax 60, .store (hdr kG) .rax]] : List (Prog isa)) ++ mrSel)) s fun t =>
@@ -167,17 +175,17 @@ theorem winW_sel {q : WPub} {s : State} (h : WinW q s) :
   have hf₁ : Frm q.p.B [(8 * kG, 8)] s.mem s₁.mem := by
     rw [hm₁]; exact Frm.of_outside (writeW_outside _ _ _ (by unfold kG sFn; omega_arith)) (by simp)
   have hg₁ : Good s₁ q.p.B q.p.Z q.p.w mi := ⟨hg.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hg.rdi,
-    Hdr.of_frm hg.hdr hf₁ (by rng_disj)⟩
+    Hdr.of_frm hg.hdr hf₁ ((VG.Proof.RsaKeyGen.hdr_shape 0 _).geD rfl rfl)⟩
   refine WP.mono (mrSel_ok hg₁ hTZ (by have := hd.w4; omega_arith) hw' hd16 (by rw [hm₁, word_writeW_self]))
     fun t ⟨hv, ho, k⟩ => ?_
   have hf : Frm q.p.B [(8 * kG, 8), (slot q.p.w aXm, 8 * (q.p.w + 2))] s.mem t.mem :=
     (hf₁.mono (by simp)).trans (Frm.of_outside ho (by simp))
   have hgt : Good t q.p.B q.p.Z q.p.w mi := ⟨hg₁.scr.congr k.2.2, (k.gpr (by decide)).trans hg₁.rdi,
-    Hdr.of_frm hg.hdr hf (by rng_disj)⟩
-  have hct := hc.of_frm hd hf hgt.scr hgt.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj)
+    Hdr.of_frm hg.hdr hf ((kgXm_shape _).geD rfl rfl)⟩
+  have hct := hc.of_frm hd hf hgt.scr hgt.rdi ((kgXm_shape _).geD rfl rfl) ((kgXm_shape _).apartW rfl rfl) ((kgXm_shape _).apartW rfl rfl) ((kgXm_shape _).apartW rfl rfl) ((kgXm_shape _).apartW rfl rfl)
   refine ⟨⟨hk, WPub.hp_frm hp hf (mrS_kG_slot _ _) hgt.rdi
-    (k.2.2.trans k₁.2.2), hd, mi, c, b, bm, hct, hT.of_low hf (by rng_le) (by omega_arith), hodd, hc1, ?_⟩, ?_⟩
-  · rw [hf.wv_eq (d := slot q.p.w aY) (k := q.p.w) (by rng_disj)
+    (k.2.2.trans k₁.2.2), hd, mi, c, b, bm, hct, hT.of_low hf ((kgXm_shape _).leD rfl rfl) (by omega_arith), hodd, hc1, ?_⟩, ?_⟩
+  · rw [hf.wv_eq (d := slot q.p.w aY) (k := q.p.w) ((kgXm_shape _).apartW rfl rfl)
       (by have := slot_le (w := q.p.w) (show aY < 8 by decide); have := hd.z; omega_arith)]
     exact hy
   · rw [hv, hct.n, hf₁.wv_eq (d := slot q.p.w (8 + d)) (k := q.p.w)

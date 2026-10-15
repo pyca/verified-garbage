@@ -118,8 +118,8 @@ theorem mulFnG_ok {n m W : Nat} (hM : ModOkG n m) {s : State} (hp : Pre n W s)
       s'.gpr .x0 = s.gpr .x0 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       ∀ d, (∀ i < 10, d ≠ (slot i).1) → s'.v d = s.v d := by
   have R := regsG_ok n hM.hn
-  have hn9 : n ≤ 9 := by rcases hM.hn with h | h | h <;> omega
-  have hn4 : 4 ≤ n := by rcases hM.hn with h | h | h <;> omega
+  have hn9 : n ≤ 9 := by rcases hM.hn with h | h | h <;> omega_using [h]
+  have hn4 : 4 ≤ n := by rcases hM.hn with h | h | h <;> omega_using [h]
   have hown := own_eq hn9
   have hfit := hp.fit
   have hw := hp.w
@@ -132,17 +132,17 @@ theorem mulFnG_ok {n m W : Nat} (hM : ModOkG n m) {s : State} (hp : Pre n W s)
   rw [mulFnG_wp, WP.block_append_iff]
   refine WP.mono (zext_ok s) fun s₁ ⟨g1, g2, g3, K₁, V₁⟩ => ?_
   rw [WP.block_append_iff, saveCodeG_eq]
-  refine WP.mono (saves_ok (savedG n) 0 (s := s₁) (by have := R.slen; omega)) fun s₂ ⟨K₂, L₂, _, V₂⟩ => ?_
+  refine WP.mono (saves_ok (savedG n) 0 (s := s₁) (by have := R.slen; omega_using [this])) fun s₂ ⟨K₂, L₂, _, V₂⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (ptrsG_ok s₂) fun s₃ ⟨go, ga, gb, K₃, V₃⟩ => ?_
   have x0₂ : s₂.gpr .x0 = s.gpr .x0 := by rw [K₂.gpr, K₁.gpr _ (by decide)]
   have x0₃ : s₃.gpr .x0 = s.gpr .x0 := by rw [K₃.gpr _ (by decide), x0₂]
-  have hs₃ : Scr s₃ (s.gpr .x0) W := ⟨x0₃, by rw [K₃.wr, K₂.wr, K₁.wr, hp.wr]; simp, hfit, by omega⟩
+  have hs₃ : Scr s₃ (s.gpr .x0) W := ⟨x0₃, by rw [K₃.wr, K₂.wr, K₁.wr, hp.wr]; simp, hfit, by omega_using [hw8]⟩
   have off0 : ∀ x : Reg, s₂.gpr x = s₁.gpr x := fun x => by rw [K₂.gpr]
   -- The modulus into the function's own working space.
   rw [WP.block_append_iff]
   have nv := hM.novec
-  have hSC := setConst_ok hs₃ (n := n) (o := moAt n) (x := m) (by omega) hmo8 hM.m_lt
+  have hSC := setConst_ok hs₃ (n := n) (o := moAt n) (x := m) (by omega_using [hw]) hmo8 hM.m_lt
   rw [← setMod_eq] at hSC
   refine WP.mono (WP.block_novec (fun i hi => nv i (List.mem_append_right _ (List.mem_append_left _ hi)))
     hSC) fun s₄ ⟨⟨v₄, k₄, O₄⟩, V₄⟩ => ?_
@@ -158,40 +158,40 @@ theorem mulFnG_ok {n m W : Nat} (hM : ModOkG n m) {s : State} (hp : Pre n W s)
     have := hs₄.ld (d := e + d) (by have := hd; have := he; omega)
     rwa [hs₄.x0] at this
   have hpa : Ptr s₄ raG (off (s.gpr .x0) (arg s .x2)) (8 * n) :=
-    ⟨by rw [gk raG (by simp), ga, x0₂, off0, g2], fun d hd => hP d _ hd ha, by omega⟩
+    ⟨by rw [gk raG (by simp), ga, x0₂, off0, g2], fun d hd => hP d _ hd ha, by omega_using [hmo2]⟩
   have hpb : Ptr s₄ rbG (off (s.gpr .x0) (arg s .x3)) (8 * n) :=
-    ⟨by rw [gk rbG (by simp), gb, x0₂, off0, g3], fun d hd => hP d _ hd hb', by omega⟩
+    ⟨by rw [gk rbG (by simp), gb, x0₂, off0, g3], fun d hd => hP d _ hd hb', by omega_using [hmo2]⟩
   have hpo : PtrW s₄ roG (off (s.gpr .x0) (arg s .x1)) (8 * n) := by
-    refine ⟨by rw [gk roG (by simp), go, x0₂, off0, g1], fun d hd => ?_, by omega, ?_⟩
+    refine ⟨by rw [gk roG (by simp), go, x0₂, off0, g1], fun d hd => ?_, by omega_using [hmo2], ?_⟩
     · show InRegions _ (off (off (s.gpr .x0) (arg s .x1)) d) 8
       rw [off_off]
-      have := hs₄.st (d := arg s .x1 + d) (by omega)
+      have := hs₄.st (d := arg s .x1 + d) (by omega_using [hw, ho, hmo1, hd])
       rwa [hs₄.x0] at this
     · simp only [off, Nat.add_comm]
-      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := arg s .x1) (by omega),
-        Nat.mod_eq_of_lt (by omega)]; omega
+      rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := arg s .x1) (by omega_using [ho, hmo1, hmo2]),
+        Nat.mod_eq_of_lt (by omega_using [hn4, hfit, hw, ho, hmo1])]; omega_using [hfit, hw, ho, hmo1]
   have hmem₃ : s₃.mem = s.mem := by rw [K₃.mem, K₂.mem, K₁.mem]
   -- The memory below the modulus is the caller's.
   have ev : ∀ d, d + 8 * n ≤ own n →
       wordsVal s₄.mem (off (s.gpr .x0) d) 0 n = wordsVal s.mem (s.gpr .x0) d n := fun d hd => by
-    rw [wordsVal_off, Nat.add_zero, Outside.wordsVal O₄ (Or.inl (by omega)) (by omega), hmem₃]
+    rw [wordsVal_off, Nat.add_zero, Outside.wordsVal O₄ (Or.inl (by omega_using [hmo1, hd])) (by omega_using [hmo1, hmo2, hd]), hmem₃]
   have hM4 : ModOkW (mod n m) W m s₄.mem (s.gpr .x0) :=
-    ⟨by show 0 < n; omega, by show moAt n + 8 * n ≤ W; omega,
-      by show moAt n - 8 * n + 8 * n ≤ W; omega, Or.inr (by show moAt n - 8 * n + 8 * n ≤ moAt n; omega),
+    ⟨by show 0 < n; omega_using [hn4], by show moAt n + 8 * n ≤ W; omega_using [hw],
+      by show moAt n - 8 * n + 8 * n ≤ W; omega_using [hw], Or.inr (by show moAt n - 8 * n + 8 * n ≤ moAt n; omega_using [hb', hmo1]),
       v₄, by
         show (m * (BitVec.ofNat 64 (minv m)).toNat + 1) % 2 ^ 64 = 0
         rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (minv_lt m)]; exact hM.inv, hM.red⟩
-  have hA : ModA (mod n m) := ⟨hmo8, by show (moAt n - 8 * n) % 8 = 0; omega⟩
+  have hA : ModA (mod n m) := ⟨hmo8, by show (moAt n - 8 * n) % 8 = 0; omega_using [hmo8]⟩
   have hB : wordsVal s₄.mem (off (s.gpr .x0) (arg s .x3)) 0 n < m := by rw [ev _ hb']; exact hb
   rw [WP.block_append_iff]
   refine WP.mono (WP.block_novec (fun i hi => nv i (List.mem_append_right _ (List.mem_append_right _ hi)))
-    (mulR_okW hs₄ hM4 (by show n < 10; omega) hA hpa hpb hpo R.pa R.pb R.po (o := 0) (a := 0) (b := 0)
-      (by show 0 + 8 * n ≤ 8 * n; omega) (by show 0 + 8 * n ≤ 8 * n; omega)
-      (by show 0 + 8 * n ≤ 8 * n; omega) rfl rfl rfl hB)) fun s₅ ⟨⟨G₅, V, C⟩, Vv⟩ => ?_
+    (mulR_okW hs₄ hM4 (by show n < 10; omega_using [hn9]) hA hpa hpb hpo R.pa R.pb R.po (o := 0) (a := 0) (b := 0)
+      (by show 0 + 8 * n ≤ 8 * n; omega_using []) (by show 0 + 8 * n ≤ 8 * n; omega_using [])
+      (by show 0 + 8 * n ≤ 8 * n; omega_using []) rfl rfl rfl hB)) fun s₅ ⟨⟨G₅, V, C⟩, Vv⟩ => ?_
   have hMn : (mod n m).n = n := rfl
   rw [hMn] at G₅ V C
   rw [restoreCodeG_eq]
-  refine WP.mono (restores_ok (savedG n) 0 (by have := R.slen; omega) R.snd) fun s₆ ⟨K₆, V₆, R₆⟩ => ?_
+  refine WP.mono (restores_ok (savedG n) 0 (by have := R.slen; omega_using [this]) R.snd) fun s₆ ⟨K₆, V₆, R₆⟩ => ?_
   have mem₆ : s₆.mem = s₅.mem := K₆.mem
   -- The registers kept by everything but the saves and restores.
   have keep : ∀ r, r ∉ savedG n → r ∉ clob n → r ∉ [raG, rbG, roG, .x1, .x2, .x3] →
@@ -223,7 +223,7 @@ theorem mulFnG_ok {n m W : Nat} (hM : ModOkG n m) {s : State} (hp : Pre n W s)
       exact this d hd
     rw [V₆, vv, V₂ d hd', V₁]
   · rw [mem₆]
-    have := Outside.of_off G₅.mem (by omega)
+    have := Outside.of_off G₅.mem (by omega_using [ho, hmo1, hmo2])
     rw [this x hx, O₄ x hx', hmem₃]
   · have e := wordsVal_off s₅.mem (s.gpr .x0) (arg s .x1) 0 n
     rw [Nat.add_zero] at e

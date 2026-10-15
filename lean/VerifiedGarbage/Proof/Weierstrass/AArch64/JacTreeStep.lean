@@ -27,7 +27,7 @@ theorem jacTreeLive_next (K : WinCfg) {m : Nat} (hm : 1≤m) :
     ∀ x∈jacTreeLive K (m+1), x∈jacCoords (Jacobian.tablePt K (m+1)) ++ jacCoords K.R ++
       ([K.E.x,K.E.y,K.E.z,K.D.x,K.D.y,K.D.z]++jacTreeLive K m) := by
   intro x hx
-  simp only [jacTreeLive,show 2≤m+1 by omega,↓reduceIte,List.mem_append] at hx
+  simp only [jacTreeLive,show 2≤m+1 by omega_using [hm],↓reduceIte,List.mem_append] at hx
   have oldro : ∀ x∈winRo K, x∈jacTreeLive K m := by
     intro x hx
     simp only [jacTreeLive,List.mem_append]
@@ -45,7 +45,7 @@ theorem jacTreeLive_next (K : WinCfg) {m : Nat} (hm : 1≤m) :
       simp only [List.mem_append]; grind
     · have hn : K.tbl+32*i∈jacCoords (Jacobian.tablePt K (m+1)) := by
         simp only [jacCoords,Jacobian.tablePt,List.mem_cons,List.not_mem_nil,or_false]
-        omega
+        omega_using [hi', h]
       simp only [List.mem_append]; grind
 
 theorem JacWinLay.rcbApart_RP {K : WinCfg} {size : Nat} (hL : JacWinLay K size) (hJ : K.J=52) :
@@ -63,7 +63,7 @@ theorem JacWinLay.rcbApart_RP {K : WinCfg} {size : Nat} (hL : JacWinLay K size) 
 theorem jacTable_ne {K : WinCfg} {a m x y : Nat} (ha : 1≤a) (ham : a≤m)
     (hx : x∈jacCoords (Jacobian.tablePt K a)) (hy : y∈jacCoords (Jacobian.tablePt K (m+1))) : x≠y := by
   simp only [jacCoords,Jacobian.tablePt,List.mem_cons,List.not_mem_nil,or_false] at hx hy
-  omega
+  omega_using [ha, ham, hx, hy]
 
 theorem jacTree_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     (hL : JacWinLay K size) (hJ : K.J=52) (hAl : Aligned K.M (·∈jacWinSlots K))
@@ -74,10 +74,10 @@ theorem jacTree_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
   have hf := hI.field
   have hv := jacTreeLive_read K m
   have ve : m%2≠1 → ∀ x∈[K.E.x,K.E.y,K.E.z], x∈jacTreeLive K m := by
-    intro ho x hx; apply jacTreeLive_ED K (by omega) x
+    intro ho x hx; apply jacTreeLive_ED K (by omega_using [hm1, ho]) x
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind
-  have vtab := jacTreeLive_table K (a := (m+1)/2) (m := m) (by omega) (by omega)
-  have jtab := hI.table ((m+1)/2) (by omega) (by omega)
+  have vtab := jacTreeLive_table K (a := (m+1)/2) (m := m) (by omega_using [hm1]) (by omega_using [])
+  have jtab := hI.table ((m+1)/2) (by omega_using [hm1]) (by omega_using [])
   unfold Jacobian.jacTreeStep
   apply WP.seq
   refine WP.mono (jacTreeArithmetic_ok hL hJ hAl hm hC ha ht hOne (hL.rcbApart_RP hJ) hm1 hm15
@@ -91,7 +91,7 @@ theorem jacTree_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     simp only [rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
     grind
   rw [WP.block_append_iff]
-  refine WP.mono (jacTreeCopyStore_ok hL hAl (by omega) (by omega) iu vd pu ju)
+  refine WP.mono (jacTreeCopyStore_ok hL hAl (by omega_using []) (by omega_using [hm15]) iu vd pu ju)
     fun v ⟨ks,iv,jr,jnew⟩ => ?_
   let W := winOther K ++ jacCoords (Jacobian.tablePt K (m+1))
   have kas : ProgKeep K.M base W s v := (ka.mono (fun _ hx => List.mem_append_left _ hx)).trans ks
@@ -105,7 +105,7 @@ theorem jacTree_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
     · exact List.mem_append_left _ (List.mem_append_right _ hx)
-    · exact jacTblPt_mem K (by omega) (by omega) x hx
+    · exact jacTblPt_mem K (by omega_using []) (by omega_using [hm15]) x hx
   have kct : KeepRegs (jacTreeClob K) v t := (Keeps.regs kc).mono (fun _ hx => List.mem_append_right _ hx)
   have kst : KeepRegs (jacTreeClob K) s t :=
     (KeepRegs.mono ⟨kas.gpr,kas.rd,kas.wr,kas.sp⟩ (fun _ hx => List.mem_append_left _ hx)).trans kct
@@ -119,12 +119,12 @@ theorem jacTree_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
       rcases List.mem_append.mp hx with hx | hx
       · exact List.mem_append_left _ hx
       · apply List.mem_append_right
-        have hh := jacTblPt_mem K (by omega : 1≤m+1) (by omega : m+1≤16) x hx
+        have hh := jacTblPt_mem K (by omega_using [] : 1≤m+1) (by omega_using [hm15] : m+1≤16) x hx
         simp only [Jacobian.tablePt,jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl | rfl | rfl
-        · exact jacTbl_mem K (by omega) (by omega) (c:=0) (by decide)
-        · exact jacTbl_mem K (by omega) (by omega) (c:=1) (by decide)
-        · exact jacTbl_mem K (by omega) (by omega) (c:=2) (by decide)
+        · exact jacTbl_mem K (by omega_using []) (by omega_using [hm15]) (c:=0) (by decide)
+        · exact jacTbl_mem K (by omega_using []) (by omega_using [hm15]) (c:=1) (by decide)
+        · exact jacTbl_mem K (by omega_using []) (by omega_using [hm15]) (c:=2) (by decide)
     · exact Or.inr rfl
   have roeq (x : Nat) (hx : x∈winRo K) : tmv C K.M.n base t x=tmv C K.M.n base s x := by
     unfold tmv; rw [kc.mem]
@@ -142,16 +142,16 @@ theorem jacTree_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
   · intro a ha1 ham
     by_cases he : a=m+1
     · subst a; simpa only [tmv,kc.mem] using jnew
-    · have ham' : a≤m := by omega
+    · have ham' : a≤m := by omega_using [ham, he]
       have teq (x : Nat) (hx : x∈jacCoords (Jacobian.tablePt K a)) :
           tmv C K.M.n base t x=tmv C K.M.n base s x := by
         unfold tmv; rw [kc.mem]
-        rw [kas.slot hL.lay hf.scr slots (jacTblPt_mem K ha1 (by omega) x hx) ?_]
+        rw [kas.slot hL.lay hf.scr slots (jacTblPt_mem K ha1 (by omega_using [hm15, ham']) x hx) ?_]
         intro hw
         rcases List.mem_append.mp hw with hw | hw
         · have sep := hL.tbl x (List.mem_append_right _ hw)
           simp only [jacCoords,Jacobian.tablePt,List.mem_cons,List.not_mem_nil,or_false] at hx
-          omega
+          omega_using [hm15, ham', sep, hx]
         · exact jacTable_ne ha1 ham' hx hw rfl
       rw [teq _ (by simp [jacCoords]),teq _ (by simp [jacCoords]),teq _ (by simp [jacCoords])]
       exact hI.table a ha1 ham'

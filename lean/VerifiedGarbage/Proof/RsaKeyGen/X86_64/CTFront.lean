@@ -193,8 +193,8 @@ theorem closeStage_ok {q : FPub} {s : State} (h : KSt q s) :
   have ha' := avsW_of ha
   refine WP.mono (closeCheck_ok hg hZ hw4 hd.w64 ha'.p ha'.len (by rw [hpl]; exact ha'.plen)
     (by rw [hpl]; exact hd.pl) hp) fun t ⟨hzf, hgt, hf, k⟩ => ⟨?_, ?_⟩
-  · refine h.step ⟨mi, hgt⟩ hf (by simp only [closeRanges]; rng_le) (fun r hr => ?_) (by simp only [closeRanges]; rng_disj) k
-    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; simp only [closeRanges]; rng_le
+  · refine h.step ⟨mi, hgt⟩ hf (closeRanges_fr q.w).1 (fun r hr => ?_) (closeRanges_fr q.w).2.2.1 k
+    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := (closeRanges_fr q.w).2.2.2 r hr
     omega_arith
   · rw [hzf, hc, hsch]
 
@@ -213,8 +213,8 @@ theorem trialStage_ok {q : FPub} {s : State} (h : KSt q s) (hcl : q.sch.close = 
       (Spec.RsaKeyGen.candidate (64 * q.w) (Spec.Rsa.os2ip (r.take (8 * q.w)))) := by
     rw [← hS, sched_comp hcl', show 8 * (8 * q.w) = 64 * q.w by omega_arith]
   refine WP.mono (trial_ok hg hZ hz (by omega_arith) hd.w64) fun t ⟨hzf, hgt, hf, k⟩ => ⟨?_, ?_⟩
-  · refine h.step ⟨mi, hgt⟩ hf (by rng_le) (fun r hr => ?_) (by rng_disj) k
-    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; rng_le
+  · refine h.step ⟨mi, hgt⟩ hf (trialRanges_fr q.w).1 (fun r hr => ?_) (trialRanges_fr q.w).2.2 k
+    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := (trialRanges_fr q.w).2.1 r hr
     omega_arith
   · rw [hzf, hc, trialAny_eq (cand_gt hw4 _), hsch]
 
@@ -240,8 +240,8 @@ theorem gcdStage_ok {q : FPub} {s : State} (h : KSt q s) (hcl : q.sch.close = fa
   have := hd.w64
   refine WP.mono (gcdCheck_ok hg hZ (by omega_arith) (by omega_arith) (by rw [hc]; exact hodd) (by rw [hc]; omega_arith)
     ha'.e ha'.elen hd.el1 hd.el8 he) fun t ⟨hzf, hgt, hf, k⟩ => ⟨?_, ?_⟩
-  · refine h.step ⟨mi, hgt⟩ hf (by rng_le) (fun r hr => ?_) (by rng_disj) k
-    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; rng_le
+  · refine h.step ⟨mi, hgt⟩ hf (gcdRanges_fr q.w).1 (fun r hr => ?_) (gcdRanges_fr q.w).2.2.1 k
+    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := (gcdRanges_fr q.w).2.2.2 r hr
     omega_arith
   · rw [hzf, hc, hsch, decide_gcd]
 

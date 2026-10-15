@@ -84,7 +84,7 @@ theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) (hm : nb s�
     (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
     (hFin : ∀ T : Nat → Nat → Nat → Block,
       (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
-        FinOk48 (hk s₀) T) (h256 : 256 ≤ nb s₀) {s : State}
+        FinOk48 (hk s₀) T) (h96 : 96 ≤ nb s₀) {s : State}
     (hI : EInvTo s₀ P 1 s) : WP isa bigPTo s fun s' => ∃ e, EInvTo s₀ P e s' := by
   have hP' := hp.toPrepared
   have hdi : s.gpr .rdi = kp s₀ := hI.gpr .rdi (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -107,7 +107,7 @@ theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) (hm : nb s�
     by_cases h2 : g = 2
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
-  exact (bigRestTo_ok hp hm hf hT (fun k l => by simp only [T, ↓reduceIte]) h256 hI
+  exact (bigRestTo_ok hp hm hf hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
     (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl) hv pm g₁
     fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
 

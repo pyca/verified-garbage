@@ -134,8 +134,13 @@ def carry (i : Nat) : List Instr :=
    else []) ++
   [vo (.add .d2 n n (V 2))]
 
-/-- The carry order of curve25519-donna: two chains, `0 → 4` and `4 → 9 → 0 → 1`. -/
-def carryOrder : List Nat := [0, 4, 1, 5, 2, 6, 3, 7, 4, 8, 9, 0]
+/-- The carry order: three rounds, each reading coefficients no earlier carry of
+the round changed, so that their carries run at once rather than in a chain:
+`8 … 0` (every coefficient into the next), then `9` (into `0`, 19 times) and
+`8 … 1`, then `0`. Two of the carries depend on another (`9` on `8`, the last
+`0` on `9`), against eight in the chain `4 → 9 → 0 → 1` of curve25519-donna's
+order. -/
+def carryOrder : List Nat := [8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
 
 def carries : List Instr := [ldq 0 M26, ldq 1 M25] ++ carryOrder.flatMap carry
 

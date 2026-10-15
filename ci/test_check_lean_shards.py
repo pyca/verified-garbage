@@ -1,5 +1,8 @@
 """What the Lean build's plan counts as changed; no builds."""
 
+import contextlib
+import io
+import json
 import pathlib
 import tempfile
 import unittest
@@ -282,6 +285,38 @@ class Prune(Project):
         self.assertFalse((build / "lib/lean/VerifiedGarbage/Gone").exists())
         self.assertFalse((build / "lib/lean/VerifiedGarbageTest").exists())
 
+
+
+class Times(unittest.TestCase):
+    """`times`: the build log's time for each module."""
+
+    LOG = "\n".join([
+        "✔ [10/90] Built VerifiedGarbage.Spec.A (2.5s)",
+        "✔ [11/90] Built VerifiedGarbage.Proof.Framework.Omega (1.2s)",
+        "✔ [12/90] Built VerifiedGarbage.Proof.Framework.Omega:c.o (8.8s)",
+        "✔ [13/90] Built VerifiedGarbage.Proof.Framework.Omega:dynlib (150ms)",
+        "✔ [14/90] Built NativeTactics:shared (209ms)",
+        "✔ [15/90] Built VerifiedGarbage.Spec.B (40ms)",
+    ])
+
+    def times(self) -> dict[str, float]:
+        out = io.StringIO()
+        with mock.patch("sys.stdin", io.StringIO(self.LOG)), contextlib.redirect_stdout(out):
+            self.assertEqual(shards.main(["times"]), 0)
+        return json.loads(out.getvalue())
+
+    def test_a_native_module_s_compile_and_link_are_its_time(self):
+        self.assertAlmostEqual(self.times()["VerifiedGarbage.Proof.Framework.Omega"], 1.2 + 8.8 + 0.15)
+
+    def test_modules_and_libraries(self):
+        times = self.times()
+        self.assertEqual(sorted(times), [
+            "VerifiedGarbage.Proof.Framework.Omega",
+            "VerifiedGarbage.Spec.A",
+            "VerifiedGarbage.Spec.B",
+        ])
+        self.assertEqual(times["VerifiedGarbage.Spec.A"], 2.5)
+        self.assertAlmostEqual(times["VerifiedGarbage.Spec.B"], 0.04)
 
 if __name__ == "__main__":
     unittest.main()

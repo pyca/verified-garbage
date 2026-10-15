@@ -47,8 +47,8 @@ theorem half_ok {s : State} {base : Addr} {size a o : Nat}
     rw [ht,regsVal_four,hv,←regsVal_four,hu]
   refine ⟨he,he ▸ halfValue_lt hx,?_,?_,?_⟩
   · rw [he]; exact halfValue_twice hx
-  · exact ((VG.Proof.Mont.X86_64.Keeps.regs ku).mono (by simp)).trans
-      ((VG.Proof.Mont.X86_64.Keeps.regs kv).trans (kt.mono (by simp)))
+  · exact ((VG.Proof.Mont.X86_64.Keeps.regs ku).mono (by regions_sub)).trans
+      ((VG.Proof.Mont.X86_64.Keeps.regs kv).trans (kt.mono (by regions_sub)))
   · rw [←ku.2.1,←kv.2.1]
     exact ot
 

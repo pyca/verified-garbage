@@ -283,7 +283,7 @@ theorem keepTTo {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat → N
 two of the three groups left to hash, for any tables `T` whose last is `P`. -/
 theorem bigRestTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) (hT2 : ∀ k l, T 2 k l = P k l)
-    (h256 : 256 ≤ nb s₀) {s s₁ : State} (hI : EInvTo s₀ P 1 s) (hA₁ : AInvTo s₀ (16 * 1) s₁)
+    (h96 : 96 ≤ nb s₀) {s s₁ : State} (hI : EInvTo s₀ P 1 s) (hA₁ : AInvTo s₀ (16 * 1) s₁)
     (hv₁ : ∀ g < 3, ∀ k < 4, ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
     (hm₁ : ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) (hg₁ : s₁.gpr = s.gpr)
     (hl₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l) :
@@ -331,11 +331,11 @@ theorem bigRestTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb 
 /-- `bigTo`: from the first group encrypted to all but up to two groups, all
 but the last encrypted group hashed. -/
 theorem bigTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    (hT : FinOk48 (hk s₀) (T48 P)) (h256 : 256 ≤ nb s₀) {s : State} (hI : EInvTo s₀ P 1 s) :
+    (hT : FinOk48 (hk s₀) (T48 P)) (h96 : 96 ≤ nb s₀) {s : State} (hI : EInvTo s₀ P 1 s) :
     WP isa bigTo s fun s' => ∃ e, EInvTo s₀ P e s' := by
   have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
   exact WP.seq (WP.mono (powSetupTo_ok hp (c := 16 * 1) hI.a hr11 hI.pw hI.m1)
-    fun s₁ ⟨hA₁, hv₁, hm₁, hg₁, hl₁⟩ => bigRestTo_ok hp hm hf hT (fun k l => by simp only [T48, ↓reduceIte]) h256 hI
+    fun s₁ ⟨hA₁, hv₁, hm₁, hg₁, hl₁⟩ => bigRestTo_ok hp hm hf hT (fun k l => by simp only [T48, ↓reduceIte]) h96 hI
       hA₁ hv₁ hm₁ hg₁ fun l hl => hl₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
 
 theorem EInvTo.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} (h : EInvTo s₀ P e s)
@@ -371,17 +371,18 @@ theorem loopETo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s�
 
 /-- The encryption after the setup, for any code `bigC` of 256 blocks on. -/
 theorem encTailGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    {bigC : Prog isa} (hbig : ∀ s, 256 ≤ nb s₀ → EInvTo s₀ P 1 s → WP isa bigC s fun s' => ∃ e, EInvTo s₀ P e s')
+    {bigC : Prog isa} {i : BitVec 32} (t : Nat) (hi : BitVec.signExtend 64 i = BitVec.ofNat 64 t)
+    (ht : t < 2 ^ 64) (hbig : ∀ s, t ≤ nb s₀ → EInvTo s₀ P 1 s → WP isa bigC s fun s' => ∃ e, EInvTo s₀ P e s')
     {s : State} (hR : ReadyTo s₀ P s) :
-    WP isa (.seq firstTo (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) bigC)
+    WP isa (.seq firstTo (.seq (.block [.alu .cmp .r9 (.imm i)]) (.seq (.ite .b (.block []) bigC)
       (.seq (.block [.alu .cmp .r9 (.imm 32)])
         (.seq (.ite .b (.block []) (.loop bodyTo .ae)) (.block (storeCtr ++ lastG ++ storeY))))))) s (EPostTo s₀) := by
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   refine WP.seq (WP.mono (firstTo_ok hp hR) fun s₂ hI₂ => ?_)
-  refine WP.seq (WP.mono (cmp_ok s₂ 256 256 (by decide)) fun s₃ ⟨hcf, g, l, m, rd, wr⟩ => ?_)
+  refine WP.seq (WP.mono (cmp_ok s₂ i t hi) fun s₃ ⟨hcf, g, l, m, rd, wr⟩ => ?_)
   have hI₃ := hI₂.of_eq g l m rd wr
-  rw [hI₂.r9, toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt (by decide)] at hcf
-  refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, EInvTo s₀ P e s') (decide (nb s₀ - 16 * (1 - 1) < 256))
+  rw [hI₂.r9, toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt ht] at hcf
+  refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, EInvTo s₀ P e s') (decide (nb s₀ - 16 * (1 - 1) < t))
     (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨1, hI₃⟩)
     (fun h => hbig _ (by simp at h; omega_arith) hI₃)) fun s₄ ⟨e, hI₄⟩ => ?_)
   refine WP.seq (WP.mono (cmpE_ok hI₄) fun s₅ ⟨hI₅, hcf₅⟩ => ?_)

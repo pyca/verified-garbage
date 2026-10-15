@@ -271,7 +271,7 @@ theorem cachedAdd_val (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m (2
   apply WP.seq
   refine WP.mono (cachedHead_val hL hm ib) fun c ⟨kc, ic, eh, er⟩ => ?_
   have pre : ProgKeep K.M base (rcbW K.S K.D) s c :=
-    ((ka.mono (by simp)).trans (kb.mono (by simp))).trans kc
+    ((ka.mono (by regions_sub)).trans (kb.mono (by regions_sub))).trans kc
   let EH := runOps (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) E
   have hro : ∀ x ∈ jacCoords K.R, EH x = E x := fun x hx =>
     CachedJac.head_readonly hL.apart E (by
