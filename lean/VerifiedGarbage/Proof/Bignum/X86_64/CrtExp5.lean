@@ -8,6 +8,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # RSA with the CRT on x86-64: the exponentiation by windows of 5 bits
@@ -158,6 +159,22 @@ theorem padMod_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n L
     xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.st (i := Crt.sBit) (by decide), hdx, hcx, mod5x2_bv, execCmov, eval,
       h2r, show (5 : BitVec 64).toNat = 5 from rfl, h5, e]
 
+/-- One step of `2 ^ (56 - b)`: halve `rcx` once `b ≥ k + 1`. -/
+theorem padStep_ok {s : State} {b k : Nat} (hb : b < 5) (hk : k < 4) (hax : s.gpr .rax = BitVec.ofNat 64 b)
+    (hcx : s.gpr .rcx = BitVec.ofNat 64 (2 ^ (56 - min b k))) :
+    WP isa (.block [.mov .rdx (.reg .rcx), .shift .shr .rdx 1, .alu .cmp .rax (.imm (BitVec.ofNat 32 (k + 1))),
+      .cmov .ae .rcx (.reg .rdx)]) s fun s' => s'.gpr .rax = BitVec.ofNat 64 b ∧
+        s'.gpr .rcx = BitVec.ofNat 64 (2 ^ (56 - min b (k + 1))) ∧ s'.mem = s.mem ∧
+        s'.gpr .rdi = s.gpr .rdi ∧ s'.wr = s.wr := by
+  have e1 : (BitVec.ofNat 64 b).toNat = b := toNat_ofNat_of_lt (by omega)
+  have e2 := (by decide : ∀ k < 4, (BitVec.signExtend 64 (BitVec.ofNat 32 (k + 1))).toNat = k + 1) k hk
+  by_cases h : k + 1 ≤ b
+  · have v : ∀ k < 4, BitVec.ofNat 64 (2 ^ (56 - k)) >>> 1 = BitVec.ofNat 64 (2 ^ (56 - (k + 1))) := by decide
+    xrun [hax, hcx, e1, e2, execCmov, eval, show ¬ b < k + 1 by omega, Nat.min_eq_right (by omega : k ≤ b),
+      Nat.min_eq_right h, v k hk]
+  · xrun [hax, hcx, e1, e2, execCmov, eval, show b < k + 1 by omega, Nat.min_eq_left (by omega : b ≤ k),
+      Nat.min_eq_left (by omega : b ≤ k + 1)]
+
 /-- `sV := 0` and `sPow := 2^(56 - b)` for `b < 5` in `rax`: `2^56` halved
 for each of 1 to 4 that is at most `b`. -/
 theorem padPow_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n b : Nat}
@@ -172,11 +189,23 @@ theorem padPow_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n b
       (BitVec.setWidth 64 (0 : BitVec 32))).writeW (off P (8 * Crt.sPow)) (BitVec.ofNat 64 (2 ^ (56 - b)))) ?_
       (by decide))
     fun t' ⟨h, k⟩ => ⟨h, k⟩
-  simp only [List.range, List.range.loop, List.flatMap_cons, List.flatMap_nil, List.cons_append, List.nil_append,
-    List.append_nil]
-  rcases (by omega_arith : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4) with rfl | rfl | rfl | rfl | rfl <;>
-    (xrun [State.ea, hdr, hc.good.rdi, hdrOff, hc.st (i := Crt.sV) (by decide), hc.st (i := Crt.sPow) (by decide),
-      hax, execCmov, eval]) <;> exact congrArg _ (by decide)
+  have hdi := hc.good.rdi
+  have hsp := hc.st (i := Crt.sPow) (by decide)
+  refine WP.block_append_iff.mpr (WP.block_append_iff.mpr ?_)
+  refine WP.mono (Q := fun (s₁ : State) => s₁.gpr .rax = BitVec.ofNat 64 b ∧
+    s₁.gpr .rcx = BitVec.ofNat 64 (2 ^ (56 - min b 0)) ∧
+    s₁.mem = t.mem.writeW (off P (8 * Crt.sV)) (BitVec.setWidth 64 (0 : BitVec 32)) ∧
+    s₁.gpr .rdi = t.gpr .rdi ∧ s₁.wr = t.wr) ?_ fun s₁ h₁ => ?_
+  · xrun [State.ea, hdr, hdi, hdrOff, hc.st (i := Crt.sV) (by decide), hax, Nat.min_zero, Nat.sub_zero]
+  refine WP.mono (wp_range_flatMap (fun k (s : State) => s.gpr .rax = BitVec.ofNat 64 b ∧
+    s.gpr .rcx = BitVec.ofNat 64 (2 ^ (56 - min b k)) ∧
+    s.mem = t.mem.writeW (off P (8 * Crt.sV)) (BitVec.setWidth 64 (0 : BitVec 32)) ∧
+    s.gpr .rdi = t.gpr .rdi ∧ s.wr = t.wr)
+    (fun k s hk h => WP.mono (padStep_ok hb hk h.1 h.2.1) fun _ h' =>
+      ⟨h'.1, h'.2.1, h'.2.2.1.trans h.2.2.1, h'.2.2.2.1.trans h.2.2.2.1, h'.2.2.2.2.trans h.2.2.2.2⟩)
+    4 (Nat.le_refl _) s₁ h₁) fun s₂ ⟨_, hcx, hm, hdi₂, hwr⟩ => ?_
+  rw [Nat.min_eq_left (by omega : b ≤ 4)] at hcx
+  xrun [State.ea, hdr, hdi₂, hdi, hdrOff, hwr, hsp, hcx, hm]
 
 theorem padInit_eq : Crt.padInit =
     ([.mov .rcx (.mem (hdr Crt.sExpLen)), .movImm64 .rax 0xCCCCCCCCCCCCCCCD, .mul .rcx, .shift .shr .rdx 2] :
@@ -449,6 +478,21 @@ theorem sel_hdr {m m' : Mem} {P : Addr} {wx : Nat} (f : Frm P (selRanges wx) m m
     · simp only [Crt.sEnt, sFn] at h1 ⊢; omega_arith
     · simp only [Crt.sJ, sFn] at h2 ⊢; omega_arith) (by omega_arith)
 
+/-- The last window: no byte nor bit left after it. -/
+theorem win5_last {K p L i j b i' b' : Nat} (hK : 5 * K = p + 8 * L) (hib : p + 8 * i = 5 * j + b)
+    (hrel : 8 * i' + b = 8 * i + b') (hiL : i' ≤ L) (hb5 : 5 ≤ b') (hb12 : b' ≤ 12) :
+    L - i' + (b' - 5) = 0 ↔ j + 1 = K := by
+  have e : 5 * K + 5 = 5 * (j + 1) + 8 * (L - i') + b' := by omega_using [hK, hib, hrel, hiL]
+  constructor
+  · intro h
+    rw [Nat.add_eq_zero_iff, Nat.sub_eq_zero_iff_le, Nat.sub_eq_zero_iff_le] at h
+    rw [Nat.sub_eq_zero_of_le h.1, Nat.le_antisymm h.2 hb5] at e
+    omega_using [e]
+  · intro h
+    subst h
+    have e1 : L - i' = 0 := by omega_using [e, hb5, hb12]
+    rw [e1]; omega_using [e]
+
 /-- Window `j` of `K`: a byte more if fewer than 5 bits are left, then
 `Y := Y³² T_v R⁻¹` for `v` the top 5 of the `b'` bits left;
 `ZF` after the last. -/
@@ -552,7 +596,7 @@ theorem crtWin5_ok (M : Mont) (Sq : MontS) (S : CrtSel 32) {t₀ t : State} {P :
       (by decide)]; exact hI₁.idx)
     (by rw [hh₉' _ (by decide) (by decide) (by decide), hm₇, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
       hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self])
-    hiL' (by omega_arith) (by omega_arith)) fun t' ⟨hz, hm', k'⟩ => ⟨by rw [hz]; congr 1; exact decide_eq_decide.mpr (by omega_arith),
+    hiL' (by omega_arith) (by omega_arith)) fun t' ⟨hz, hm', k'⟩ => ⟨by rw [hz]; congr 1; exact decide_eq_decide.mpr (win5_last hK hib hrel hiL' hb5 hb12),
       i', b' - 5, by omega_arith, by omega_arith, hiL', ?_⟩
   have fall : Frm P (crtExpRanges5 wx) t₁.mem t'.mem := by
     rw [hm']
