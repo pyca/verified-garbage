@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.PowLit
+
 /-!
 # Bit `j` of a byte, as code extracts it
 
