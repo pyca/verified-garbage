@@ -14,6 +14,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Avx2Lit
 
 /-!
 # ML-DSA on x86-64: the polynomial arithmetic with AVX2, as an `ArithImpl`
@@ -32,32 +33,32 @@ open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 def ArithImpl.avx2 : ArithImpl where
   code := .avx2Combined
   ok :=
-    { ntt := FnOk.of Arith.Lazy.verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      invNtt := FnOk.of Arith.MontgomeryInv.verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      mul := FnOk.of Arith.montMulY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      mulAdd := FnOk.of Arith.montMulAddY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      add := FnOk.of Arith.addY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      sub := FnOk.of Arith.subY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      highBits := FnOk.of Round.highBitsY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      lowBits := FnOk.of Round.lowBitsY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      normLt := FnOk.of Round.normLtY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      makeHint := FnOk.of Round.makeHintY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      useHint := FnOk.of Round.useHintY_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      rej4 := ⟨Rej4.Segment.rejNTT4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
-        by decide +kernel, Code.all_of_allInstrs (by decide +kernel), fun _ _ _ => Rej4.Segment.rejNTT4Avx2_ret⟩
-      expandMask4 := ⟨Mask4.expandMask4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel),
-        by decide +kernel, by decide +kernel, Code.all_of_allInstrs (by decide +kernel)⟩ }
+    { ntt := FnOk.of Arith.Lazy.verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      invNtt := FnOk.of Arith.MontgomeryInv.verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      mul := FnOk.of Arith.montMulY_verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      mulAdd := FnOk.of Arith.montMulAddY_verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      add := FnOk.of Arith.addY_verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      sub := FnOk.of Arith.subY_verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      highBits := FnOk.of Round.highBitsY_verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      lowBits := FnOk.of Round.lowBitsY_verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      normLt := FnOk.of Round.normLtY_verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      makeHint := FnOk.of Round.makeHintY_verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      useHint := FnOk.of Round.useHintY_verified (by lit_decide) (by lit_decide) (by lit_decide)
+        (by lit_decide)
+      rej4 := ⟨Rej4.Segment.rejNTT4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide), by lit_decide,
+        by lit_decide, Code.all_of_allInstrs (by lit_decide), fun _ _ _ => Rej4.Segment.rejNTT4Avx2_ret⟩
+      expandMask4 := ⟨Mask4.expandMask4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide),
+        by lit_decide, by lit_decide, Code.all_of_allInstrs (by lit_decide)⟩ }
   features := ["avx", "avx2"]
 
 end VG.Proof.MlDsa.X86_64
