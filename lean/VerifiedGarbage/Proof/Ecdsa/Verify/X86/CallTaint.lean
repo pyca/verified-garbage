@@ -15,9 +15,13 @@ Verification calls its curve's field functions 224 times (95 products
 modulo `p`, 87 sums, 31 differences and 11 calls modulo `n`), from taints
 that all have at least `τV` public on entry to the function: the stack
 pointer, the four words of the call's arguments and the working space's
-base. The summaries of the functions (`<curve>/CallSumsP`,
+base. For P-521 and brainpoolP512r1, whose field functions are the
+largest, the summaries of the functions (`<curve>/CallSumsP`,
 `<curve>/CallSumsN`, each checked in a module of its own, in parallel)
-analyse each function once, in place of every call (`verify_ct`).
+analyse each function once, in place of every call (`verify_ct`). The other
+curves' checks analyse every call, with the hint computed in compiled code
+(`native_taint_decide`), which costs less than computing the hint with
+summaries in the interpreter.
 -/
 
 @[expose] public section
