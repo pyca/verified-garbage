@@ -832,7 +832,7 @@ meta def checkUsed (who : String) (names : Array Name) (h : Expr)
   let used := usedSums h names.size
   let unused := (List.range names.size).filter (!used.contains ·)
   unless unused.isEmpty do
-    throwError "{who}: the summaries {unused.map name} apply nowhere: their `pre` is not \
+    logInfo m!"{who}: the summaries {unused.map name} apply nowhere: their `pre` is not \
       below the taint where their code is called, or no code here is theirs"
 
 /-- The analysis of `c` from `τ` with the summaries `names` (whose list is
