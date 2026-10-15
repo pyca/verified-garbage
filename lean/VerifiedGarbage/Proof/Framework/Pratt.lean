@@ -187,14 +187,43 @@ theorem prime_of_cert (p a n : Nat) (fs : List Nat) (hp : 2 ≤ p) (hn : p - 1 <
   rw [← powMod_eq p (by omega) n a _ (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hn)]
   exact hq q hm
 
-/-- Whether `p < 2^16` has no divisor `d` with `2 ≤ d` and `d² ≤ p`. -/
+/-- Whether no `e` with `d ≤ e < d + k` and `e * e ≤ p` divides `p`, stopping at
+the first `e` with `p < e * e`. For the kernel, as `powMod`: a `Nat.rec`
+testing with `Nat.blt`, `Nat.beq` and `cond`. -/
+def noDiv (p k d : Nat) : Bool :=
+  Nat.rec (motive := fun _ => Nat → Bool) (fun _ => true)
+    (fun _ ih d => bif Nat.blt p (d * d) then true else
+      bif Nat.beq (p % d) 0 then false else ih (d + 1)) k d
+
+theorem noDiv_succ (p k d : Nat) : noDiv p (k + 1) d =
+    bif Nat.blt p (d * d) then true else bif Nat.beq (p % d) 0 then false else noDiv p k (d + 1) :=
+  rfl
+
+theorem noDiv_spec {p : Nat} : ∀ {k d : Nat}, noDiv p k d = true →
+    ∀ e, d ≤ e → e < d + k → e * e ≤ p → p % e ≠ 0
+  | 0, _, _, _, _, h, _ => by omega
+  | k + 1, d, hn, e, hd, hk, hp => by
+    rw [noDiv_succ] at hn
+    cases hlt : Nat.blt p (d * d)
+    · rw [hlt, Bool.cond_false] at hn
+      cases hb : Nat.beq (p % d) 0
+      · rw [hb, Bool.cond_false] at hn
+        rcases Nat.eq_or_lt_of_le hd with rfl | hd'
+        · exact Nat.ne_of_beq_eq_false hb
+        · exact noDiv_spec hn e hd' (by omega) hp
+      · rw [hb, Bool.cond_true] at hn; exact absurd hn Bool.false_ne_true
+    · have := Nat.mul_le_mul hd hd
+      simp only [Nat.blt_eq] at hlt
+      omega
+
+/-- Whether `p < 2^16` has no divisor `d` with `2 ≤ d` and `d² ≤ p`, by trial
+division up to `255` (`noDiv`). -/
 def smallPrime (p : Nat) : Bool :=
-  2 ≤ p && p < 65536 && (List.range 256).all fun d => d < 2 || p < d * d || p % d != 0
+  Nat.ble 2 p && Nat.blt p 65536 && noDiv p 254 2
 
 /-- A prime below `2^16`, by trial division. -/
 theorem prime_small (p : Nat) (h : smallPrime p = true) : p.Prime := by
-  simp only [smallPrime, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, List.mem_range,
-    Bool.or_eq_true, bne_iff_ne, ne_eq] at h
+  simp only [smallPrime, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq] at h
   obtain ⟨⟨hp, hl⟩, hd⟩ := h
   refine Classical.byContradiction fun hnp => ?_
   have hm := Nat.minFac_prime (show p ≠ 1 by omega)
@@ -206,7 +235,6 @@ theorem prime_small (p : Nat) (h : smallPrime p = true) : p.Prime := by
     have := Nat.mul_le_mul h h
     omega
   have hmod : p % p.minFac = 0 := Nat.mod_eq_zero_of_dvd (Nat.minFac_dvd p)
-  have := hd _ hlt
-  omega
+  exact noDiv_spec hd _ h2 (by omega) hsq hmod
 
 end VG.Proof.Pratt
