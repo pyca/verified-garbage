@@ -29,8 +29,8 @@ def windowIndex : List Instr := [
   .shift .shr .rcx 6, .alu .and .rcx (.imm 3),
   .alu .add .rdx (.reg .rcx), .store (hdr Crt.sNib) .rdx]
 
-def window (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  mul aY aY aY, mul aY aY aY, .block windowIndex,
+def window (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+  sq, sq, .block windowIndex,
   seqs Crt.tabSelect, mul aY aY Crt.aT,
   .block [.mov .rax (.mem (hdr Crt.sBit)), .alu .sub .rax (.imm 1), .store (hdr Crt.sBit) .rax]]
 
@@ -45,8 +45,8 @@ def byteValues : List Instr := [
 
 def byteHead : List Instr := bytePointers ++ byteValues
 
-def bytes (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .loop (seqs [.block byteHead, .loop (window mul) .ne,
+def bytes (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .loop (seqs [.block byteHead, .loop (window sq mul) .ne,
     .block [.mov .rax (.mem (hdr Crt.sI)), .alu .add .rax (.imm 1), .store (hdr Crt.sI) .rax,
       .alu .cmp .rax (.mem (hdr Crt.sExpLen))]]) .ne
 
@@ -96,11 +96,11 @@ def prepare (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   encode mul, build mul]
 
 /-- Consume the two scalar buffers and decode the result. -/
-def run (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  seqs [.block expInit, bytes mul, mul aY aY aOne]
+def run (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs [.block expInit, bytes sq mul, mul aY aY aOne]
 
 /-- Two bases in the parent call header, and verification's u/v scalars. -/
-def power (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (prepare mul) (run mul)
+def power (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (prepare mul) (run sq mul)
 
 end VG.Impl.Dsa.X86_64.Joint

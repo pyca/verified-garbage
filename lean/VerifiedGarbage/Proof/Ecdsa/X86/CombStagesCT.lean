@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -34,11 +36,11 @@ materialize_code signTailCode
 
 theorem signPrep_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp]))
     signPrepCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+  RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
 theorem signTail_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 5))
     signTailCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+  RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
 /-- Writes within scratch leave all cdecl argument words unchanged. -/
 theorem Keep.arg {c : Cfg} {s₀ s : State} {extra : List Region}

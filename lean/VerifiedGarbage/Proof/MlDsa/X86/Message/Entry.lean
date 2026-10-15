@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the check, the entry and the leaf
@@ -96,7 +98,7 @@ theorem arg_P0 (hS : Shape Pre Pub lay si p) {s₀ : State} (h₀ : Pre s₀) {i
 
 theorem chk_piece (hS : Shape Pre Pub lay si p) :
     Piece Pre Pub (fun s₀ s => s = P0 s₀) Chk (.block [.mov .eax (.mem (argAt 4)), .alu .cmp .eax (.imm 256)]) := by
-  refine Piece.taint [.esp] (fun s₀ s h₀ e => ?_) (fun s₀ s₀' s s' h₀ h₀' hq e e' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s h₀ e => ?_) (fun s₀ s₀' s s' h₀ h₀' hq e e' r hr => ?_) (by native_taint_decide)
   · subst e
     have h4 : 4 < (lay s₀).nA := by have := hS.n5 s₀ h₀; omega
     refine wp_ldm (b := .esp) (P0_esp s₀) (arg4_in hS h₀ h4) fun s₁ u₁ => wp_cmpi fun s₂ f₂ c₂ _ => WP.block_nil ?_
@@ -112,7 +114,7 @@ theorem ret2_piece {B : State → State → Prop}
     Piece Pre Pub (fun s₀ s => Chk s₀ s ∧ (!decide ((arg s₀ 4).toNat < 256)) = true) B
       (.block [.mov .eax (.imm 2)]) := by
   refine Piece.taint [] (fun s₀ s h₀ ⟨⟨o, _⟩, hb⟩ => wp_movi fun s₁ u₁ => WP.block_nil ?_)
-    (fun _ _ _ _ _ _ _ _ _ _ h => absurd h List.not_mem_nil) (by taint_decide)
+    (fun _ _ _ _ _ _ _ _ _ _ h => absurd h List.not_mem_nil) (by native_taint_decide)
   simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not, Nat.not_lt] at hb
   refine hB s₀ s₁ h₀ ⟨fun r hr => ?_, by rw [u₁.mem, o.mem], by rw [u₁.rd, o.rd], by rw [u₁.wr, o.wr]⟩ hb u₁.gpr
   rw [u₁.other r (by simpa using hr), o.gpr r hr]
@@ -140,7 +142,7 @@ theorem enter_piece (hS : Shape Pre Pub lay si p) {ht : Taint.Hint VG.X86.Taint.
   refine Piece.seq (B := fun s₀ s => Only [.eax, .esi] (P0 s₀) s ∧ s.gpr .esi = (lay s₀).X32 ∧ (lay s₀).Ok)
     (Piece.taint [.esp] (fun s₀ s h₀ ⟨⟨o, _⟩, hb⟩ => ?_) (fun s₀ s₀' s s' h₀ h₀' hq ⟨⟨o, _⟩, _⟩ ⟨⟨o', _⟩, _⟩ r hr => ?_) tt)
     (Piece.taint [.esp, .esi] (fun s₀ s h₀ ⟨o, hx, hL⟩ => ?_)
-      (fun s₀ s₀' s s' h₀ h₀' hq ⟨o, hx, _⟩ ⟨o', hx', _⟩ r hr => ?_) (by taint_decide))
+      (fun s₀ s₀' s s' h₀ h₀' hq ⟨o, hx, _⟩ ⟨o', hx', _⟩ r hr => ?_) (by native_taint_decide))
   · have hc : (arg s₀ 4).toNat < 256 := by simpa using hb
     have hsp : s.gpr .esp = E0 s₀ - 16 := by rw [o.gpr _ (by decide), P0_esp]
     have hin : InRegions (s.rd ++ s.wr) (addr (E0 s₀ - 16) (20 + 4 * si)) 4 := by

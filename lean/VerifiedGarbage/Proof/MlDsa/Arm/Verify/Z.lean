@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA verification on 32-bit ARM: `z`
@@ -136,7 +138,7 @@ theorem nl_piece {j : Nat} (hj : j < p.ℓ) :
 
 omit hP hF hS in
 theorem and11_piece {j : Nat} : VPiece p STK (Z2 p STK j) (V2 p STK (j + 1)) (.block and11) := by
-  refine ⟨fun σ s _ h => ?_, vrel7 (fun _ _ h => h.1.1.vc) (by taint_decide)⟩
+  refine ⟨fun σ s _ h => ?_, vrel7 (fun _ _ h => h.1.1.vc) (by native_taint_decide)⟩
   apply WP.of_runBlock
   simp only [and11, runBlock_cons, runStep_some, runBlock_nil, isa, exec, Op2.eval, Option.map_some,
     Option.some.injEq, exists_eq_left']

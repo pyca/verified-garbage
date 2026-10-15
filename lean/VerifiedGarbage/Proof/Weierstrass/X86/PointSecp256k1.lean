@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Impl.Secp256k1.Point
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.Secp256k1
 meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.Secp256k1
@@ -52,12 +54,12 @@ theorem secp256k1_fn : FnOk (modP point) :=
 theorem secp256k1_add_ct :
     ConstantTime isa (sumX86 point false).pre (sumX86 point false).pub
       (fn (modP point) false) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem secp256k1_double_ct :
     ConstantTime isa (sumX86 point true).pre (sumX86 point true).pub
       (fn (modP point) true) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τP (fun _ _ h₁ h₂ hp => agreeP h₁ h₂ hp) (by native_taint_decide)
 
 theorem secp256k1_add_verified (hF : Fermat point.p) :
     Verified X86.target (pointAdd point) (point.addContract X86.abi 20) :=

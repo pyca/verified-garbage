@@ -167,27 +167,27 @@ theorem em_bytes {G : Spec.Mgf1.Hash} {V5 V9 sf : Nat → Byte} {k lo db sl D : 
   by_cases hz : i = lo
   · rw [hz] at hco hi ⊢
     rw [ifp rfl, h9 _ (by omega_using [hlo, c1, c5]) hco, hHB, mixV, hV8 _ (by omega_using []) (by omega_using [hi])]
-    simp (disch := omega_arith) only [ifp, ifn, Nat.sub_self, ite_true]
+    simp (disch := omega_arith) only [↓ifp, ↓ifn, Nat.sub_self]
     by_cases hdz : db - sl - 1 = 0
-    · simp (disch := omega_arith) only [ifp, ifn]
-    · simp (disch := omega_using [hh, _hsl, hk, hlo, hdb, hfit, hD, hDk, hP', hK', c1, c3, c5, c6, c7, hi, hz, hdz]) only [ifp, ifn]
+    · simp (disch := omega_arith) only [↓ifp, ↓ifn]
+    · simp (disch := omega_using [hh, _hsl, hk, hlo, hdb, hfit, hD, hDk, hP', hK', c1, c3, c5, c6, c7, hi, hz, hdz]) only [↓ifp, ↓ifn]
   · rw [ifn (show ¬ oEm + i = oEm + lo by omega_using [hz]), h9 _ (by omega_using [hk, c1, c5, hi]) hco, hHB, mixV,
       hV8 _ (by omega_using []) (by omega_using [hi])]
     rw [hh]
     by_cases hl : i < lo
-    · simp (disch := omega_arith) only [ifp, ifn]
+    · simp (disch := omega_arith) only [↓ifp, ↓ifn]
     by_cases hj : i - lo < db
     · rw [show oEm + i - (oEm + lo) = i - lo by omega_using []]
       by_cases hs : db - sl ≤ i - lo
       · rw [show oEm + i - ((P + 1)) = i - lo - (db - sl) by omega_using [hfit, hP']]
-        simp (disch := omega_arith) only [ifp, ifn]
+        simp (disch := omega_arith) only [↓ifp, ↓ifn]
       · by_cases ho : i - lo = db - sl - 1
-        · simp (disch := omega_arith) only [ifp, ifn]
-        · simp (disch := omega_arith) only [ifp, ifn]
+        · simp (disch := omega_arith) only [↓ifp, ↓ifn]
+        · simp (disch := omega_arith) only [↓ifp, ↓ifn]
     · by_cases hH : i - lo < db + D
-      · rw [show oEm + i - (oEm + lo + db) = i - lo - db by omega_arith]
-        simp (disch := omega_arith) only [ifp, ifn]
-      · simp (disch := omega_arith) only [ifp, ifn]
+      · rw [show oEm + i - (oEm + lo + db) = i - lo - db by omega_using []]
+        simp (disch := omega_arith) only [↓ifp, ↓ifn]
+      · simp (disch := omega_arith) only [↓ifp, ↓ifn]
 
 include K in
 theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}

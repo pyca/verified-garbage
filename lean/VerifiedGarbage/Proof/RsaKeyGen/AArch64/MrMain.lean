@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -85,7 +86,7 @@ theorem statCmp_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
 /-- The header words a round keeps. -/
 theorem roundRanges_hdr (w : Nat) {k : Nat} (hk : k = kRand ∨ k = kLen ∨ k = kRandLen ∨ k = kChecks ∨ k = kOut ∨
     k = kUsedP) : ∀ r ∈ roundRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> rd_disj
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> hdr_disj
 
 theorem ofNat_sub_ofNat' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by

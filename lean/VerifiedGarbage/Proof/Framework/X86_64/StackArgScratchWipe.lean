@@ -43,11 +43,11 @@ theorem wipeStoresAt_run (R : Region) (u : State) (off : Nat) (hR : R ∈ u.wr) 
         some ({ u with mem := m' }, wipeAtTrace (u.gpr .rsp) off words) ∧ Frame [R] u.mem m'
   | 0, _ => ⟨u.mem, rfl, Frame.refl _ _⟩
   | w + 1, hc => by
-    obtain ⟨m', he, hf⟩ := wipeStoresAt_run R u off hR w fun k hk => hc k (by omega)
+    obtain ⟨m', he, hf⟩ := wipeStoresAt_run R u off hR w fun k hk => hc k (by omega_using [hk])
     have hin : InRegions u.wr (u.gpr .rsp + BitVec.ofNat 64 (off + 8 * w)) 8 :=
-      ⟨R, hR, hc w (by omega)⟩
+      ⟨R, hR, hc w (by omega_using [])⟩
     refine ⟨m'.writeW (u.gpr .rsp + BitVec.ofNat 64 (off + 8 * w)) (u.gpr .r11), ?_,
-      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega))⟩
+      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_using []))⟩
     rw [wipeStoresAt_succ, execBlock_append, he]
     simp only [Option.bind_some, execBlock, isa, exec, State.store64, State.ea, BitVec.ofInt_natCast,
       hin, ↓reduceIte, Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil,
@@ -90,11 +90,11 @@ theorem wipeStoresAtX_run (R : Region) (u : State) (off : Nat) (hR : R ∈ u.wr)
         some ({ u with mem := m' }, wipeAtXTrace (u.gpr .rsp) off n) ∧ Frame [R] u.mem m'
   | 0, _ => ⟨u.mem, rfl, Frame.refl _ _⟩
   | w + 1, hc => by
-    obtain ⟨m', he, hf⟩ := wipeStoresAtX_run R u off hR w fun k hk => hc k (by omega)
+    obtain ⟨m', he, hf⟩ := wipeStoresAtX_run R u off hR w fun k hk => hc k (by omega_using [hk])
     have hin : InRegions u.wr (u.gpr .rsp + BitVec.ofNat 64 (off + 16 * w)) 16 :=
-      ⟨R, hR, hc w (by omega)⟩
+      ⟨R, hR, hc w (by omega_using [])⟩
     refine ⟨m'.writeW (u.gpr .rsp + BitVec.ofNat 64 (off + 16 * w)) (u.xmm .xmm0), ?_,
-      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega))⟩
+      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_using []))⟩
     rw [wipeStoresAtX_succ, execBlock_append, he]
     simp only [Option.bind_some, execBlock, isa, exec, State.store128, State.ea, BitVec.ofInt_natCast,
       hin, ↓reduceIte, Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil,
@@ -142,7 +142,7 @@ def Wiper.q (words : Nat) : Wiper where
   len := 8 * words
   trace sp off := wipeAtTrace sp off words
   run R u off hR hc := by
-    obtain ⟨m', he, hf⟩ := wipeAt_run R u off words hR fun k hk => hc (8 * k) 8 (by omega)
+    obtain ⟨m', he, hf⟩ := wipeAt_run R u off words hR fun k hk => hc (8 * k) 8 (by omega_using [hk])
     refine ⟨_, he, hf, fun r hr => ?_, rfl, rfl, rfl⟩
     have : r ≠ .r11 := by rintro rfl; rcases hr with hr | hr <;> simp [calleeSaved] at hr
     simp [State.setReg32, State.setReg, this]
@@ -154,7 +154,7 @@ def Wiper.x (n : Nat) : Wiper where
   len := 16 * n
   trace sp off := wipeAtXTrace sp off n
   run R u off hR hc := by
-    obtain ⟨m', he, hf⟩ := wipeAtX_run R u off n hR fun k hk => hc (16 * k) 16 (by omega)
+    obtain ⟨m', he, hf⟩ := wipeAtX_run R u off n hR fun k hk => hc (16 * k) 16 (by omega_using [hk])
     exact ⟨_, he, hf, fun r _ => rfl, rfl, rfl, rfl⟩
   spSafe off := wipeAtX_spSafe off n
 
@@ -197,9 +197,9 @@ theorem Verified.stackArgScratchWipedBy (w : Wiper) {c : Prog isa}
     SpSafe.of_all (by simp only [Code.all, hsp, w.spSafe, Bool.and_self])
   have hdep : (Code.seq c (.block (w.code (16 + 8 * nStack sig))) : Prog isa).x86_64Depth ≤
       stack := by
-    simp only [Code.x86_64Depth]; omega
+    simp only [Code.x86_64Depth]; omega_using [hd]
   have hk' : 6 ≤ ((sig.withScratch nm e n).words abi.ptrBits).length := by
-    rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega
+    rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk]
   obtain ⟨hb0, hb1, hb2⟩ := hb
   -- The buffer, below the stack the contract without it reserves, so apart
   -- from its buffers.
@@ -210,13 +210,13 @@ theorem Verified.stackArgScratchWipedBy (w : Wiper) {c : Prog isa}
     intro s hs b hb'
     rw [pre_args hk] at hs
     obtain ⟨⟨hwf, -⟩, -, -, -, hres, -, -⟩ := hs
-    have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hwf with h | h <;> omega
+    have hsb : stack + bytes ≤ (s.gpr .rsp).toNat := by rcases hwf with h | h <;> omega_using [h]
     have hbelow : below (s.gpr .rsp) (stack + bytes) ∈
         (⟨s.gpr .rsp, 8⟩ :: stackBelow (s.gpr .rsp) (stack + bytes) : List Region) := by
-      rw [stackBelow_pos _ (by omega)]; simp
-    rw [sub_add_ofNat _ (by omega)]
+      rw [stackBelow_pos _ (by omega_using [hb0])]; simp
+    rw [sub_add_ofNat _ (by omega_using [hb0])]
     exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ (List.mem_append_left _ hb')))).sub_right
-      (Offset.sub_below _ (by omega) (by omega))
+      (Offset.sub_below _ (by omega_using []) (by omega_using [hb0]))
   -- Every run is `setArgs`, then the code's run from `narrowS`, then the wipe.
   have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → ∃ t s₃ u,
       Exec isa c (narrowS sig e n bytes s) t s₃ ∧
@@ -242,7 +242,7 @@ theorem Verified.stackArgScratchWipedBy (w : Wiper) {c : Prog isa}
     obtain ⟨u, hblk, hfr, hg, hmx, -, -⟩ := w.run _ s₃ (16 + 8 * nStack sig) hbuf
       (fun a k hak => by
         rw [hrsp₃]
-        exact Offset.contains _ (by omega) (by omega) (by omega))
+        exact Offset.contains _ (by omega_using []) (by omega_using [hw, hak]) (by omega_using [hb0, hb1]))
     have he' := Exec.seq he (Exec.block hblk)
     rw [hrsp₃] at he'
     have ha' : abiPreserved (narrowS sig e n bytes s) u := by
@@ -253,7 +253,7 @@ theorem Verified.stackArgScratchWipedBy (w : Wiper) {c : Prog isa}
         rw [hfr.readW (r := ⟨s.gpr .rsp - BitVec.ofNat 64 bytes, 8⟩) (Region.contains_self _ _)
           (fun r' hr' => by
             simp only [List.mem_singleton] at hr'; subst hr'
-            exact Offset.base_disjoint _ (e := 16 + 8 * nStack sig) (k := 8) (by omega) (by omega))
+            exact Offset.base_disjoint _ (e := 16 + 8 * nStack sig) (k := 8) (by omega_using []) (by omega_using [hb0, hb1]))
           (by decide)]
         have h2 := ha.2.1
         rwa [hrsp] at h2

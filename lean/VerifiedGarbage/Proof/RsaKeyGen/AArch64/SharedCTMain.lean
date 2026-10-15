@@ -12,6 +12,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # Constant time of RSA witness policy with a shared prepared round -/
 
@@ -64,15 +65,15 @@ theorem sharedAvI_r0 {p : FPub × Nat} {s : State} (h : SharedAvI p s) (hb : isa
   rw [hcf] at hb
   simp only [Option.some.injEq, decide_eq_false_iff_not, Nat.not_lt] at hb
   obtain ⟨bm, hc⟩ := hI.ctx
-  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
+  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_using [h4]) hsh
   have hiu := hI.iu
   have hul := hI.ul
-  have hi : 32 * (p.2 + 1) ≤ 8 * p.1.w * (p.2 + 1) := Nat.mul_le_mul_right _ (by omega)
+  have hi : 32 * (p.2 + 1) ≤ 8 * p.1.w * (p.2 + 1) := Nat.mul_le_mul_right _ (by omega_using [h4])
   have hun := hI.unii
   refine ⟨h4, h128, hEZ, c, bm, r, p.2 + 1, uni, checksW p.1.w, hc, hI.ex, hI.r2, hc1, hsh, hI.rand, hI.kused, hI.len, hI.src,
-    by rw [hrlen]; exact hb, hI.ki, hI.kuni, hI.chk, by omega, by omega, checksW_lt _, ?_⟩
+    by rw [hrlen]; exact hb, hI.ki, hI.kuni, hI.chk, by omega_using [hrl, hb, hiu, hi], by omega_using [hrl, hb, hiu, hi, hun], checksW_lt _, ?_⟩
   rw [← hS, ← hI.rest, ← hrlen]
-  exact (VG.Proof.RsaKeyGen.mr_pass hI.go hwb (by omega) (by rw [hrlen]; exact hb)).symm
+  exact (VG.Proof.RsaKeyGen.mr_pass hI.go hwb (by omega_using [h4]) (by rw [hrlen]; exact hb)).symm
 
 /-- Where the loop ends. -/
 def SharedLoopEnd (q : FPub) (s : State) : Prop :=
@@ -117,26 +118,26 @@ theorem sharedLoop_ct (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) : Rel
       .block [ldh .x3 kStat, .subImm .x .x3 .x3 4]]) (.zero .x .x3)) (Two SharedLoopEnd) := by
   refine two_loop (Φ := SharedLoopI) Nq (sharedIterB_ct M R) ?_
   rintro q j s hj ⟨h4, h128, hEZ, hrl, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, hE, hit⟩
-  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
-  refine WP.mono (sharedIter_ok M R h4 h128 hEZ hc1 hsh (by omega) (checksW_lt _) s hI) fun t ht => ?_
+  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_using [h4]) hsh
+  refine WP.mono (sharedIter_ok M R h4 h128 hEZ hc1 hsh (by omega_using [hrl, hrlen]) (checksW_lt _) s hI) fun t ht => ?_
   rcases ht with ⟨he, hend, hnone, hsome⟩ | ⟨he, uni', hI'⟩
   · have h1 : itersOf (8 * q.w) q.rl q.sch.mr (uOf q j) = 1 := by
       rcases hres : res with _ | ⟨b, rest⟩
-      · rw [← hS, hres]; exact VG.Proof.RsaKeyGen.iters_end_none (by omega) (by rw [← hrlen]; exact hnone hres)
+      · rw [← hS, hres]; exact VG.Proof.RsaKeyGen.iters_end_none (by omega_using [h4]) (by rw [← hrlen]; exact hnone hres)
       · rw [← hS, hres]
-        exact VG.Proof.RsaKeyGen.iters_end_some (by omega) (by rw [← hrlen]; exact hsome b rest hres)
-    refine ⟨by rw [he]; exact congrArg some (decide_eq_false (by omega)).symm, fun h => absurd h (by omega),
+        exact VG.Proof.RsaKeyGen.iters_end_some (by omega_using [h4]) (by rw [← hrlen]; exact hsome b rest hres)
+    refine ⟨by rw [he]; exact congrArg some (decide_eq_false (by omega_using [hit, h1])).symm, fun h => absurd h (by omega_using [hit, h1]),
       fun _ => ⟨h4, h128, c, r, s₀, res, hend, hS, hrlen, hE⟩⟩
   · have hu' : uOf q (j + 1) = uOf q j + 8 * q.w := by simp only [uOf]; rw [Nat.mul_add, Nat.mul_one, Nat.add_assoc]
     have hc := VG.Proof.RsaKeyGen.iters_cont (L := 8 * q.w) (r := r) (a := (Spec.Rsa.splitTwos (c - 1)).1)
-      (m := (Spec.Rsa.splitTwos (c - 1)).2) hI'.go hwb (by omega) (by omega) hI'.ul
+      (m := (Spec.Rsa.splitTwos (c - 1)).2) hI'.go hwb (by omega_using [h4]) (by omega_using []) hI'.ul
     have hr' : Spec.RsaKeyGen.loop (Spec.RsaKeyGen.mrStep c (checksW q.w) (Spec.Rsa.splitTwos (c - 1)).1
         (Spec.Rsa.splitTwos (c - 1)).2) (j + 1 + 1, uni') (List.drop (uOf q j + 8 * q.w) r) = res := hI'.rest
-    rw [show uOf q j + 8 * q.w - 8 * q.w = uOf q j by omega, hr', hS, hrlen] at hc
-    refine ⟨by rw [he]; exact congrArg some (decide_eq_true (by omega)).symm, fun _ => ?_,
-      fun h => absurd h (by omega)⟩
+    rw [show uOf q j + 8 * q.w - 8 * q.w = uOf q j by omega_using [], hr', hS, hrlen] at hc
+    refine ⟨by rw [he]; exact congrArg some (decide_eq_true (by omega_using [hit, hc])).symm, fun _ => ?_,
+      fun h => absurd h (by omega_using [hit, hc])⟩
     rw [← hu'] at hI'
-    exact ⟨h4, h128, hEZ, hrl, c, r, s₀, res, uni', hI', hS, hrlen, hc1, hsh, hE, by rw [hu']; omega⟩
+    exact ⟨h4, h128, hEZ, hrl, c, r, s₀, res, uni', hI', hS, hrlen, hc1, hsh, hE, by rw [hu']; omega_using [hit, hc]⟩
 
 /-- `millerRabin` leaks the same in runs that agree on the public data. -/
 theorem sharedMillerRabin_ct (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) : RelCT isa (Two MrPre) (seqs (millerRabinWith M.mm R.run)) (Two SharedLoopEnd) := by
@@ -144,11 +145,11 @@ theorem sharedMillerRabin_ct (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel
   refine RelCT.seq (two_piece [.x0] (pins_ws' (fun q : FPub => q.B) (fun q : FPub => q.Z) (fun q : FPub => q.w)
     fun _ _ ⟨_, _, _, _, _, _, _, hc, _⟩ => hc.ws) (by taint_decide) ?_) (sharedLoop_ct M R)
   rintro q s ⟨h4, h128, hEZ, hrl, c, bm, r, hc, hEc, hr2, hc1, hsh, hR, hRL, hrlen, hC, hsrc, hU, hu1, hS, hE⟩
-  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega) hsh
+  obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_using [h4]) hsh
   have hN : 1 ≤ Nq q := by
     have := (VG.Proof.RsaKeyGen.iters_cont (L := 8 * q.w) (r := r) (a := (Spec.Rsa.splitTwos (c - 1)).1)
       (m := (Spec.Rsa.splitTwos (c - 1)).2) (ch := checksW q.w) (i := 1) (uni := 0) (Or.inl (by decide)) hwb
-      (by omega) (Nat.le_refl _) hu1).2
+      (by omega_using [h4]) (Nat.le_refl _) hu1).2
     have hr' : Spec.RsaKeyGen.loop (Spec.RsaKeyGen.mrStep c (checksW q.w) (Spec.Rsa.splitTwos (c - 1)).1
         (Spec.Rsa.splitTwos (c - 1)).2) (1, 0) (List.drop (8 * q.w) r) = mrRest c (checksW q.w) r 1 0 (8 * q.w) :=
       rfl

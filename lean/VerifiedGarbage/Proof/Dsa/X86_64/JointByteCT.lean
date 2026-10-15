@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointHeadCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointHeadCT
 import all Init.Data.Array.Basic
@@ -26,9 +27,9 @@ def JointBytesInv (p : JointBytesPublic) (i : Nat) (s : State) : Prop :=
     (∀ i < p.len, slot p.x.wx 8 + tabBytes p.x.wx ≤ ofs (off p.x.B p.x.o) (p.ep + BitVec.ofNat 64 i)) ∧
     (∀ i < p.len, slot p.x.wx 8 + tabBytes p.x.wx ≤ ofs (off p.x.B p.x.o) (p.fp + BitVec.ofNat 64 i))
 
-theorem jointByte_ct (M : Mont) :
+theorem jointByte_ct (M : Mont) (Sq : MontS) :
     RelCT isa (Two fun (q : JointBytesPublic × Nat) s => q.2 < q.1.len ∧ JointBytesInv q.1 q.2 s)
-      (seqs [.block Joint.byteHead, .loop (Joint.window M.mm) .ne,
+      (seqs [.block Joint.byteHead, .loop (Joint.window Sq.mm M.mm) .ne,
         .block [.mov .rax (.mem (hdr Crt.sI)), .alu .add .rax (.imm 1), .store (hdr Crt.sI) .rax,
           .alu .cmp .rax (.mem (hdr Crt.sExpLen))]]) (fun _ _ => True) := by
   simp only [seqs]
@@ -44,16 +45,16 @@ theorem jointByte_ct (M : Mont) :
     exact ⟨by decide, t, minv, n, xc, g, y, _, _, _, _, ht, hw, hw', hR,
       (eb[q.2]'(by omega)).isLt, (fb[q.2]'(by omega)).isLt⟩
   refine RelCT.seq (two_map (fun q : JointBytesPublic × Nat => q.1.x) (fun _ _ h => h)
-    (jointWindows_ct M)) ?_
+    (jointWindows_ct M Sq)) ?_
   exact rdi_ct (fun p : XPub => off p.B p.o)
     (fun _ _ ⟨_, _, _, _, _, _, _, _, _, _, hI, _⟩ => hI.ctx.good.rdi) (by taint_decide)
 
-theorem jointBytes_ct (M : Mont) :
-    RelCT isa (Two fun p s => 0 < p.len ∧ JointBytesInv p 0 s) (Joint.bytes M.mm)
+theorem jointBytes_ct (M : Mont) (Sq : MontS) :
+    RelCT isa (Two fun p s => 0 < p.len ∧ JointBytesInv p 0 s) (Joint.bytes Sq.mm M.mm)
       (Two fun p s => JointBytesInv p p.len s) := by
-  apply two_loop (Φ := JointBytesInv) (fun p => p.len) (jointByte_ct M)
+  apply two_loop (Φ := JointBytesInv) (fun p => p.len) (jointByte_ct M Sq)
   rintro p i s hi ⟨t₀, minv, n, xc, g, y, eb, fb, hI, hw, hw', hR, hL, hF, hL', he, hf, hout, fout⟩
-  refine WP.mono (jointByte_ok M hw hw' hR hL hF hL' hi
+  refine WP.mono (jointByte_ok M Sq hw hw' hR hL hF hL' hi
     (by simpa only [hL] using he.rd) (by simpa only [hL] using he.val) hout
     (by simpa only [hF] using hf.rd) (by simpa only [hF] using hf.val) fout hI)
     fun t ⟨hz, hI'⟩ => ⟨eval_ne_count hi hz, ?_, ?_⟩

@@ -162,7 +162,7 @@ theorem CrtSel.sse_ct : CrtSel.sse.CT := tabSel_ct
 /-- After `j` windows of a byte, in the prime's workspace of `p`. -/
 def WinI (p : XPub) (j : Nat) (s : State) : Prop :=
   ∃ (t₀ : State) (minv : BitVec 64) (X Xc E v : Nat),
-    CWinInv t₀ (off p.B p.o) p.wx minv X Xc False 0 E v j s ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
+    CWinInv t₀ (off p.B p.o) p.wx minv X Xc X False 0 E v j s ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
     Nat.Coprime (2 ^ (64 * p.wx)) X ∧ Xc < X ∧ v < 256
 
 /-- Within a window: the workspace, its table, `Y < bd X R` (`Y < X` but for
@@ -291,7 +291,7 @@ theorem crtWins_ct (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) :
 /-- After `i` bytes of the exponent (at `a.ptr`, `a.len` bytes). -/
 def CBytesInv (a : BPub) (i : Nat) (s : State) : Prop :=
   ∃ (t₀ : State) (minv : BitVec 64) (X Xc : Nat) (eb : List Byte),
-    CByteInv t₀ (off a.x.B a.x.o) a.x.wx minv X Xc False 0 a.ptr eb.length eb i s ∧ 2 ≤ a.x.wx ∧
+    CByteInv t₀ (off a.x.B a.x.o) a.x.wx minv X Xc X False 0 a.ptr eb.length eb i s ∧ 2 ≤ a.x.wx ∧
     a.x.wx < 2 ^ 30 ∧ Nat.Coprime (2 ^ (64 * a.x.wx)) X ∧ Xc < X ∧
     eb.length = a.len ∧ eb.length < 2 ^ 31 ∧ Src t₀ a.x.B a.x.Z a.ptr eb ∧
     ∀ i < eb.length, slot a.x.wx 8 + tabBytes a.x.wx ≤ ofs (off a.x.B a.x.o) (a.ptr + BitVec.ofNat 64 i)

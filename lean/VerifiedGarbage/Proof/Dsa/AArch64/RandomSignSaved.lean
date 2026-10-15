@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignEntry
-import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Values of the saved arguments and retry state after wrapper entry. -/
 @[expose] public section
@@ -19,14 +18,15 @@ def randomEntryValues (s : State) (B : Addr) : List (Nat × BitVec 64) :=
 theorem random_entry_values (s : State) (B : Addr) :
     ∀ p ∈ randomEntryValues s B,
       word (randomSlotsMem B (randomEntryHeaderMem s B) RandomSign.incomingSlots) B p.1 = p.2 := by
+  simp only [RandomSign.incomingSlots, randomSlotsMem, randomEntryHeaderMem,
+      RandomSign.oLink, Random.oOut, Random.oOutLen, Random.oUsedPtr, Random.oKey, Random.oKeyLen, Random.oPLen,
+      Random.oQ, Random.oUsed, Random.oAttempts, Random.oQLen, Random.oDigest, Random.oDigestLen,
+      Random.oRand, Random.oRandLen, Random.oScratch, Random.oScratchLen]
+  simp (disch := decide) only [random_word_write_other]
   intro p hp
   simp only [randomEntryValues, List.mem_cons, List.not_mem_nil, or_false] at hp
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [RandomSign.incomingSlots, randomSlotsMem, randomEntryHeaderMem,
-      RandomSign.oLink, Random.oOut, Random.oOutLen, Random.oUsedPtr, Random.oKey, Random.oKeyLen, Random.oPLen,
-      Random.oQ, Random.oUsed, Random.oAttempts, Random.oQLen, Random.oDigest, Random.oDigestLen,
-      Random.oRand, Random.oRandLen, Random.oScratch, Random.oScratchLen] <;>
-    simp (disch := omega) only [word_writeW_self, random_word_write_other]
+    simp (disch := decide) only [word_writeW_self, random_word_write_other]
 
 end VG.Proof.Dsa.AArch64

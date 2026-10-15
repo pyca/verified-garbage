@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.X25519.X86_64.Ops
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
@@ -88,19 +89,19 @@ theorem dsRow_ok {s : State} {base : Addr} (hs : Scr s base) {x : Nat} (hx : x +
   refine WP.mono (movZero_ok s .r13) fun s₀ ⟨z0, k0⟩ => ?_
   have hs₀ := hs.of_keeps k0 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mulStepX_ok s₀ (readSrc_sc hs₀ (by omega)) (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (mulStepX_ok s₀ (readSrc_sc hs₀ (by omega_arith)) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun s₁ ⟨e1, k1⟩ => ?_
   have hs₁ := hs₀.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mulStepX_ok s₁ (readSrc_sc hs₁ (by omega)) (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (mulStepX_ok s₁ (readSrc_sc hs₁ (by omega_arith)) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun s₂ ⟨e2, k2⟩ => ?_
   have hs₂ := hs₁.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mulStepX_ok s₂ (readSrc_sc hs₂ (by omega)) (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (mulStepX_ok s₂ (readSrc_sc hs₂ (by omega_arith)) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun s₃ ⟨e3, k3⟩ => ?_
   have hs₃ := hs₂.of_keeps k3 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mulStepX_ok s₃ (readSrc_sc hs₃ (by omega)) (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (mulStepX_ok s₃ (readSrc_sc hs₃ (by omega_arith)) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun s₄ ⟨e4, k4⟩ => ?_
   refine WP.mono (addReg_ok s₄ .r12 .r13) fun t ⟨e5, k5⟩ => ⟨?_, ?_⟩
   · -- The memory, `r14`, `r15` along the way.
@@ -148,7 +149,7 @@ theorem dsRow_ok {s : State} {base : Addr} (hs : Scr s base) {x : Nat} (hx : x +
     have z : (0 : BitVec 64).toNat = 0 := rfl
     rw [z] at e1
     simp only [Nat.mul_add, Nat.mul_left_comm (s.gpr .r14).toNat]
-    omega
+    omega_arith
   · exact ((((k0.mono (by decide)).trans (k1.mono (by decide))).trans (k2.mono (by decide))).trans
       (k3.mono (by decide))).trans (k4.mono (by decide)) |>.trans (k5.mono (by decide))
 
@@ -172,12 +173,12 @@ theorem maskW_eq (w : BitVec 64) : (0 : BitVec 64) - (w >>> 63) = maskW w := by
   · have := (msb_iff w).1 hm
     simp only [hm, ↓reduceIte]
     rw [BitVec.toNat_sub, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_allOnes]
-    simp; omega
+    simp; omega_arith
   · have : ¬ 2 ^ 63 ≤ w.toNat := fun h' => hm ((msb_iff w).2 h')
     simp only [Bool.not_eq_true] at hm
     simp only [hm, Bool.false_eq_true, ↓reduceIte]
     rw [BitVec.toNat_sub, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-    simp; omega
+    simp; omega_arith
 
 theorem absN_eq (w : BitVec 64) : ((w ^^^ maskW w) - maskW w).toNat = absN w := by
   have h := w.isLt
@@ -186,10 +187,10 @@ theorem absN_eq (w : BitVec 64) : ((w ^^^ maskW w) - maskW w).toNat = absN w := 
   by_cases hm : w.msb = true
   · have h63 := (msb_iff w).1 hm
     simp only [hm, ↓reduceIte, BitVec.xor_allOnes, BitVec.toNat_sub, BitVec.toNat_not, BitVec.toNat_allOnes]
-    omega
+    omega_arith
   · simp only [Bool.not_eq_true] at hm
     simp only [hm, Bool.false_eq_true, ↓reduceIte, xor0', sub0']
-    omega
+    omega_arith
 
 theorem xor_word_mask (w : BitVec 64) (m : BitVec 64) :
     (w ^^^ maskW m).toNat = if m.msb then 2 ^ 64 - 1 - w.toNat else w.toNat := by
@@ -204,7 +205,7 @@ theorem feX_mask (mem : Mem) (base : Addr) (x : Nat) (m : BitVec 64) :
   simp only [feX, fe, flipN, val4, xor_word_mask]
   have := (word mem base x).isLt; have := (word mem base (x + 8)).isLt
   have := (word mem base (x + 16)).isLt; have := (word mem base (x + 24)).isLt
-  split <;> omega
+  split <;> omega_arith
 
 theorem and_mask (r m : BitVec 64) : (r &&& maskW m).toNat = if m.msb then r.toNat else 0 := by
   unfold maskW
@@ -232,7 +233,7 @@ theorem topCorr_ok {s : State} {base : Addr} (hs : Scr s base) {x : Nat} (hx : x
       t.gpr .r12 = s.gpr .r12 -
         (if (word s.mem base (x + 24) ^^^ s.gpr .r15).msb then s.gpr .r14 else 0) ∧
       Keeps [.rax, .rdx, .r12] s t := by
-  drun [topCorr, load_sc hs (show x + 24 + 8 ≤ 4096 by omega), zs0, RegUpd.gpr_setReg_self]
+  drun [topCorr, load_sc hs (show x + 24 + 8 ≤ 4096 by omega_arith), zs0, RegUpd.gpr_setReg_self]
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
   · congr 1
     rw [maskW_eq]
@@ -260,7 +261,7 @@ theorem top_iff (mem : Mem) (base : Addr) (x : Nat) (m : BitVec 64) :
   simp only [feX, val4, xor_word_mask]
   have := (word mem base x).isLt; have := (word mem base (x + 8)).isLt
   have := (word mem base (x + 16)).isLt; have := (word mem base (x + 24)).isLt
-  split <;> omega
+  split <;> omega_arith
 
 /-- A product: `r8–r12 += |m| ([x] ^ s)` (less `2²⁵⁶ |m|` if signed and negative),
 `rbx += |m|` if `m < 0`. -/
@@ -292,8 +293,8 @@ theorem prod_ok {s : State} {base : Addr} (hs : Scr s base) {m x : Nat} (hm : m 
         simp only [val5, val4]
         have := (s₂.gpr .r8).isLt; have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt
         have := (s₂.gpr .r11).isLt; have := (s₂.gpr .r12).isLt
-        omega
-      omega
+        omega_arith
+      omega_arith
     · refine WP.mono (topCorr_ok hs₂ hx) fun s₃ ⟨e3, k3⟩ => ⟨?_, k3⟩
       have o8 : s₃.gpr .r8 = s₂.gpr .r8 := k3.1 _ (by decide)
       have o9 : s₃.gpr .r9 = s₂.gpr .r9 := k3.1 _ (by decide)
@@ -313,9 +314,9 @@ theorem prod_ok {s : State} {base : Addr} (hs : Scr s base) {m x : Nat} (hm : m 
       have := (s₂.gpr .r11).isLt; have := (s₂.gpr .r12).isLt
       have : topN (word s.mem base m) (fe s.mem base x) < 2 ^ 64 := by
         unfold topN absN; split
-        · have := (word s.mem base m).toInt_le; have := (word s.mem base m).le_toInt; omega
-        · omega
-      omega
+        · have := (word s.mem base m).toInt_le; have := (word s.mem base m).le_toInt; omega_arith
+        · omega_arith
+      omega_arith
   refine WP.mono hT fun s₃ ⟨e3, k3⟩ => ?_
   refine WP.mono (cAcc_ok s₃) fun t ⟨e4, k4⟩ => ⟨?_, ?_, ?_⟩
   · have o8 : t.gpr .r8 = s₃.gpr .r8 := k4.1 _ (by decide)
@@ -331,7 +332,7 @@ theorem prod_ok {s : State} {base : Addr} (hs : Scr s base) {m x : Nat} (hm : m 
     have s12 : s₁.gpr .r12 = s.gpr .r12 := k1.1 _ (by decide)
     have ev1 : val5 s₁ = val5 s := by simp only [val5, val4, s8, s9, s10, s11, s12]
     rw [ev, e3, e2, ev1]
-    omega
+    omega_arith
   · have r14 : s₃.gpr .r14 = s₁.gpr .r14 := (k3.1 _ (by decide)).trans R14
     have r15 : s₃.gpr .r15 = s₁.gpr .r15 := (k3.1 _ (by decide)).trans R15
     have rb : s₃.gpr .rbx = s.gpr .rbx :=

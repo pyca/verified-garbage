@@ -31,18 +31,18 @@ theorem embed {m m' : Mem} {B : Addr} {e d n : Nat} {extra : List (Nat × Nat)}
     intro r hr
     simp only [List.mem_cons] at hr
     rcases hr with rfl | hr
-    · simp only []; omega_arith
-    · have := hc r hr; omega_arith) (by omega_arith)
+    · simp only []; omega_using []
+    · have := hc r hr; omega_using [this]) (by omega_using [hn, hZ])
   have hi : wv m' B (e+8*(d+16)) (n-(d+16)) = wv m B (e+8*(d+16)) (n-(d+16)) :=
     hf.wv_eq (by
       intro r hr
       simp only [List.mem_cons] at hr
       rcases hr with rfl | hr
-      · simp only []; omega_arith
-      · have := hc r hr; omega_arith) (by omega_arith)
-  have shape : n = d+(16+(n-(d+16))) := by omega_arith
+      · simp only []; omega_using []
+      · have := hc r hr; omega_using [this]) (by omega_using [hn, hZ])
+  have shape : n = d+(16+(n-(d+16))) := by omega_using [hn]
   rw [shape,wv_add,wv_add,wv_add,wv_add]
-  rw [show e+8*d+8*16 = e+8*(d+16) by omega_arith,lo,hi]
+  rw [show e+8*d+8*16 = e+8*(d+16) by omega_using [],lo,hi]
   simp only [show 64*16=1024 from rfl]
   generalize (2 : Nat)^1024 = Q
   exact (VG.Proof.Bignum.Rectangular.surround (A := wv m B e d) (P := (2 : Nat)^(64*d))
@@ -109,8 +109,8 @@ theorem input_preserved {m m' : Mem} {B : Addr} {w a i n : Nat}
   · intro r hr
     simp only [rowRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp only [] <;>
-      simp only [rawBase,carryOffset,sFn,slot,hdrBytes,aAcc,aTmp] at * <;> omega_arith
-  · omega_arith
+      simp only [rawBase,carryOffset,sFn,slot,hdrBytes,aAcc,aTmp] at * <;> omega_using [hi, s1, s2]
+  · omega_using [hi, hZ, sa]
 
 end VG.Proof.Bignum.X86_64.AdxRect8
 
@@ -165,9 +165,9 @@ theorem streamVal_eq {s : State} {B : Addr} {w d : Nat} (hd : d+8 ≤ 2*w)
     (hc : cols s = wv s.mem B (rawBase w+8*d) 8) :
     streamVal s B w d = wv s.mem B (rawBase w) (2*w) := by
   unfold streamVal
-  rw [hc,show 2*w = d+(8+(2*w-(d+8))) by omega_arith,wv_add,wv_add,
-    show rawBase w+8*d+8*8 = rawBase w+8*(d+8) by omega_arith,show d+(8+(2*w-(d+8)))-(d+8) = 2*w-(d+8) by omega_arith,
-    show 64*(d+8) = 64*d+64*8 by omega_arith,Nat.pow_add]
+  rw [hc,show 2*w = d+(8+(2*w-(d+8))) by omega_using [hd],wv_add,wv_add,
+    show rawBase w+8*d+8*8 = rawBase w+8*(d+8) by omega_using [],show d+(8+(2*w-(d+8)))-(d+8) = 2*w-(d+8) by omega_using [],
+    show 64*(d+8) = 64*d+64*8 by omega_using [],Nat.pow_add]
   generalize (2 : Nat)^(64*d) = P
   generalize (2 : Nat)^(64*8) = R
   grind
@@ -176,7 +176,7 @@ theorem streamVal_eq {s : State} {B : Addr} {w d : Nat} (hd : d+8 ≤ 2*w)
 next block (any such, setting ZF to `zfv`). -/
 theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Nat} {mi : BitVec 64}
     {blk : List Instr} {zfv : Bool}
-    (hZ : slot w 8 ≤ Z) (hw : w < (2 : Nat)^31) (hi : i+8 ≤ w)
+    (hZ : slot w 8 ≤ Z) (_hw : w < (2 : Nat)^31) (hi : i+8 ≤ w)
     (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hn : w = j₀+8*n) (hk : k < n)
     (hblk : ∀ u : State, Scr u B Z → u.gpr .rdi = B → Hdr u.mem B w mi →
@@ -188,28 +188,28 @@ theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Na
     WP isa (.seq AdxRect8.streamTile (.block blk)) s fun t =>
       t.zf = some zfv ∧ StreamInv s₀ B Z w a b i j₀ (k+1) mi x 2 t := by
   have nowrap := h.scr.nowrap
-  have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega_arith
-  have hj : j₀+8*k+8 ≤ w := by omega_arith
+  have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega_using [hZ, nowrap]
+  have hj : j₀+8*k+8 ≤ w := by omega_using [hn, hk]
   have ar := tile_ranges hi hj ha ha1 ha2
   have br := tile_ranges hj hi hb hb1 hb2
   have rt := slot_le (w := w) (show aTmp < 8 by decide)
-  have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega_arith
+  have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega_using [hZ]
   -- the tile's output words, after the header, the carry slot and the column index
-  have eOdef : rawBase w+8*(i+j₀+8*k) = slot w aAcc+16+8*(i+(j₀+8*k)) := by unfold rawBase; omega_arith
+  have eOdef : rawBase w+8*(i+j₀+8*k) = slot w aAcc+16+8*(i+(j₀+8*k)) := by unfold rawBase; omega_using []
   have po : s.gpr .rsi = off B (slot w aAcc+16+8*(i+(j₀+8*k))) := by rw [← eOdef]; exact h.po
   have prev := h.val
   generalize hd : i+j₀+8*k = d at *
   generalize he : rawBase w+8*d = e at *
-  have hdw : d+16 ≤ 2*w := by omega_arith
-  have eH : hdrBytes ≤ e := by rw [← he]; unfold rawBase slot; omega_arith
-  have eC : carryOffset+8 ≤ e := by rw [← he]; unfold rawBase carryOffset sFn slot hdrBytes aAcc; omega_arith
-  have eJ : 8*sFn 13+8 ≤ e := by rw [← he]; unfold rawBase sFn slot hdrBytes aAcc; omega_arith
-  have eI : 8*sFn 12+8 ≤ e := by rw [← he]; unfold rawBase sFn slot hdrBytes aAcc; omega_arith
-  have eR : rawBase w ≤ e ∧ e+128 ≤ rawBase w+8*(2*w) := by rw [← he]; omega_arith
-  have cJ : 8*sFn 13+8 ≤ carryOffset ∨ carryOffset+8 ≤ 8*sFn 13 := by unfold carryOffset sFn; omega_arith
-  have cI : 8*sFn 12+8 ≤ carryOffset ∨ carryOffset+8 ≤ 8*sFn 12 := by unfold carryOffset sFn; omega_arith
-  refine WP.seq (WP.mono (streamTile_ok h.scr h.rdi h.pa h.pb po (by omega_arith) (by omega_arith) (by omega_arith)
-    ar.2.2 (by omega_arith) (by rw [← eOdef]; exact eC)) fun u ⟨eq,two,_,fr,pu,bu,ku⟩ => ?_)
+  have hdw : d+16 ≤ 2*w := by omega_using [hi, hj, hd]
+  have eH : hdrBytes ≤ e := by rw [← he]; unfold rawBase slot; omega_using []
+  have eC : carryOffset+8 ≤ e := by rw [← he]; unfold rawBase carryOffset sFn slot hdrBytes aAcc; omega_using []
+  have eJ : 8*sFn 13+8 ≤ e := by rw [← he]; unfold rawBase sFn slot hdrBytes aAcc; omega_using []
+  have eI : 8*sFn 12+8 ≤ e := by rw [← he]; unfold rawBase sFn slot hdrBytes aAcc; omega_using []
+  have eR : rawBase w ≤ e ∧ e+128 ≤ rawBase w+8*(2*w) := by rw [← he]; omega_using [hdw]
+  have cJ : 8*sFn 13+8 ≤ carryOffset ∨ carryOffset+8 ≤ 8*sFn 13 := by unfold carryOffset sFn; omega_using []
+  have cI : 8*sFn 12+8 ≤ carryOffset ∨ carryOffset+8 ≤ 8*sFn 12 := by unfold carryOffset sFn; omega_using []
+  refine WP.seq (WP.mono (streamTile_ok h.scr h.rdi h.pa h.pb po (by omega_using [hZ, ar]) (by omega_using [hZ, br]) (by omega_using [rawZ, eOdef, eR])
+    ar.2.2 (by omega_using [br]) (by rw [← eOdef]; exact eC)) fun u ⟨eq,two,_,fr,pu,bu,ku⟩ => ?_)
   rw [← eOdef] at fr eq pu
   have fr3 : Frm B [(e,64),(carryOffset,8),(8*sFn 13,8)] s.mem u.mem := fr.mono (by simp)
   have hu : Hdr u.mem B w mi := frame_hdr h.hdr eH fr3
@@ -219,7 +219,7 @@ theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Na
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl
       · exact Or.inl eJ
-      · exact cJ) (by unfold sFn; omega_arith)]
+      · exact cJ) (by unfold sFn; omega_using [])]
     exact h.indexJ
   have iu : word u.mem B (8*sFn 12) = BitVec.ofNat 64 i := by
     rw [fr.word_eq (by
@@ -227,12 +227,12 @@ theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Na
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl | rfl
       · exact Or.inl eI
-      · exact cI) (by unfold sFn; omega_arith)]
+      · exact cI) (by unfold sFn; omega_using [])]
     exact h.indexI
   refine WP.mono (hblk u (h.scr.congr ku.2.2) ((ku.gpr (by decide)).trans h.rdi) hu ju)
     fun t ⟨mt,zt,kt⟩ => ?_
   have ot : Outside B (8*sFn 13) 8 u.mem t.mem := by
-    rw [mt]; exact writeW_outside _ _ _ (by unfold sFn; omega_arith)
+    rw [mt]; exact writeW_outside _ _ _ (by unfold sFn; omega_using [])
   have toU : Frm B (rowRanges w) s.mem u.mem := by
     intro x hx
     apply fr x
@@ -241,72 +241,72 @@ theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Na
     have a0 := hx (rawBase w,16*w) (by simp [rowRanges])
     have a1 := hx (carryOffset,8) (by simp [rowRanges])
     rcases hr with rfl | rfl
-    · simp only [] at a0 ⊢; omega_arith
+    · simp only [] at a0 ⊢; omega_using [eR, a0]
     · exact a1
   have wider : Frm B (rowRanges w) s.mem t.mem := toU.trans (Frm.of_outside ot (by simp [rowRanges]))
   have va := input_preserved ha ha1 ha2 hi Z64 h.frame
   have vb := input_preserved hb hb1 hb2 hj Z64 h.frame
   have ct : word t.mem B carryOffset = word u.mem B carryOffset :=
-    ot.word cJ.symm (by omega_arith)
+    ot.word cJ.symm (by omega_using [Z64, br, eOdef, eC])
   have colsT : cols t = cols u := cols_keep kt (by decide)
   refine ⟨?_,⟨h.scr.congr (ku.trans kt).2.2,frame_hdr (n := 64) hu eH (Frm.of_outside ot (by simp)),
     (kt.gpr (by decide)).trans ((ku.gpr (by decide)).trans h.rdi),?_,?_,by rw [ct]; exact two,
     (h.keep.trans (ku.trans kt)).mono (by decide),h.frame.trans wider,
     (kt.gpr (by decide)).trans ((ku.gpr (by decide)).trans h.pa),?_,?_,?_⟩⟩
   · exact zt
-  · rw [ot.word (by unfold sFn; omega_arith) (by unfold sFn; omega_arith)]; exact iu
-  · rw [mt,word_writeW_self,show j₀+8*(k+1) = j₀+8*k+8 by omega_arith]
+  · rw [ot.word (by unfold sFn; omega_using []) (by unfold sFn; omega_using [])]; exact iu
+  · rw [mt,word_writeW_self,show j₀+8*(k+1) = j₀+8*k+8 by omega_using []]
   · rw [kt.gpr (by decide),bu]
-    exact congrArg (off B) (by omega_arith)
-  · rw [kt.gpr (by decide),pu,show i+j₀+8*(k+1) = d+8 by omega_arith,← he]
-    exact congrArg (off B) (by omega_arith)
+    exact congrArg (off B) (by omega_using [])
+  · rw [kt.gpr (by decide),pu,show i+j₀+8*(k+1) = d+8 by omega_using [hd],← he]
+    exact congrArg (off B) (by omega_using [])
   · have below : wv t.mem B (rawBase w) d = wv s.mem B (rawBase w) d := by
-      rw [ot.wv (by unfold rawBase slot sFn hdrBytes aAcc; omega_arith) (by omega_arith)]
+      rw [ot.wv (by unfold rawBase slot sFn hdrBytes aAcc; omega_using []) (by omega_using [Z64, br, he, eOdef])]
       exact fr.wv_eq (by
         intro r hr
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl
-        · exact Or.inl (by simp only []; omega_arith)
-        · exact Or.inr (by simp only []; unfold rawBase slot hdrBytes aAcc carryOffset sFn; omega_arith)) (by omega_arith)
+        · exact Or.inl (by simp only []; omega_using [he])
+        · exact Or.inr (by simp only []; unfold rawBase slot hdrBytes aAcc carryOffset sFn; omega_using [])) (by omega_using [Z64, br, he, eOdef])
     have above : wv t.mem B (e+128) (2*w-(d+16)) = wv s.mem B (e+128) (2*w-(d+16)) := by
-      rw [ot.wv (by omega_arith) (by omega_arith)]
+      rw [ot.wv (by omega_using [eJ]) (by omega_using [nowrap, rawZ, he, eR])]
       exact fr.wv_eq (by
         intro r hr
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl
-        · exact Or.inr (by simp only []; omega_arith)
-        · exact Or.inr (by simp only []; omega_arith)) (by omega_arith)
+        · exact Or.inr (by simp only []; omega_using [])
+        · exact Or.inr (by simp only []; omega_using [eC])) (by omega_using [nowrap, rawZ, he, eR])
     have upper : wv u.mem B (e+64) 8 = wv s.mem B (e+64) 8 := by
       exact fr.wv_eq (by
         intro r hr
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
         rcases hr with rfl | rfl
-        · exact Or.inr (by simp only []; omega_arith)
-        · exact Or.inr (by simp only []; omega_arith)) (by omega_arith)
-    have lowT : wv t.mem B e 8 = wv u.mem B e 8 := ot.wv (by omega_arith) (by omega_arith)
+        · exact Or.inr (by simp only []; omega_using [])
+        · exact Or.inr (by simp only []; omega_using [eC])) (by omega_using [Z64, br, eOdef])
+    have lowT : wv t.mem B e 8 = wv u.mem B e 8 := ot.wv (by omega_using [eJ]) (by omega_using [Z64, br, eOdef])
     have hsplit : streamVal s B w d = wv s.mem B (rawBase w) d + 2^(64*d) * cols s +
         2^(64*d) * 2^512 * (wv s.mem B (e+64) 8 + 2^512 * wv s.mem B (e+128) (2*w-(d+16))) := by
       unfold streamVal
-      rw [show 2*w-(d+8) = 8+(2*w-(d+16)) by omega_arith,wv_add,
-        show rawBase w+8*(d+8) = e+64 by omega_arith,show e+64+8*8 = e+128 by omega_arith,
-        show 64*(d+8) = 64*d+512 by omega_arith,Nat.pow_add,show (64 : Nat)*8 = 512 from rfl]
+      rw [show 2*w-(d+8) = 8+(2*w-(d+16)) by omega_using [hdw],wv_add,
+        show rawBase w+8*(d+8) = e+64 by omega_using [he],show e+64+8*8 = e+128 by omega_using [],
+        show 64*(d+8) = 64*d+512 by omega_using [],Nat.pow_add,show (64 : Nat)*8 = 512 from rfl]
     have tsplit : streamVal t B w (d+8) = (wv s.mem B (rawBase w) d +
           2^(64*d) * wv u.mem B e 8) + 2^(64*d) * 2^512 * cols u +
         2^(64*d) * 2^512 * 2^512 * wv s.mem B (e+128) (2*w-(d+16)) := by
       unfold streamVal
-      rw [wv_add,below,he,lowT,colsT,show rawBase w+8*(d+8+8) = e+128 by omega_arith,
-        show 2*w-(d+8+8) = 2*w-(d+16) by omega_arith,above,
-        show 64*(d+8) = 64*d+512 by omega_arith,show 64*(d+8+8) = 64*d+512+512 by omega_arith,
+      rw [wv_add,below,he,lowT,colsT,show rawBase w+8*(d+8+8) = e+128 by omega_using [he],
+        show 2*w-(d+8+8) = 2*w-(d+16) by omega_using [],above,
+        show 64*(d+8) = 64*d+512 by omega_using [],show 64*(d+8+8) = 64*d+512+512 by omega_using [],
         Nat.pow_add,Nat.pow_add,Nat.pow_add]
     have bk : wv s₀.mem B (slot w b+8*j₀) (8*(k+1)) = wv s₀.mem B (slot w b+8*j₀) (8*k) +
         2^(64*(8*k)) * wv s.mem B (slot w b+8*(j₀+8*k)) 8 := by
-      rw [show 8*(k+1) = 8*k+8 by omega_arith,wv_add,show slot w b+8*j₀+8*(8*k) = slot w b+8*(j₀+8*k) by omega_arith,vb]
-    rw [show i+j₀+8*(k+1) = d+8 by omega_arith,show i+j₀+8*(k+1+1) = d+8+8 by omega_arith,ct,bk,tsplit,
-      show 64*(d+8+8) = 64*d+512+512 by omega_arith,Nat.pow_add,Nat.pow_add]
-    rw [show i+j₀+8*(k+1) = d+8 by omega_arith,hsplit,show 64*(d+8) = 64*d+512 by omega_arith,Nat.pow_add] at prev
+      rw [show 8*(k+1) = 8*k+8 by omega_using [],wv_add,show slot w b+8*j₀+8*(8*k) = slot w b+8*(j₀+8*k) by omega_using [],vb]
+    rw [show i+j₀+8*(k+1) = d+8 by omega_using [hd],show i+j₀+8*(k+1+1) = d+8+8 by omega_using [hd],ct,bk,tsplit,
+      show 64*(d+8+8) = 64*d+512+512 by omega_using [],Nat.pow_add,Nat.pow_add]
+    rw [show i+j₀+8*(k+1) = d+8 by omega_using [hd],hsplit,show 64*(d+8) = 64*d+512 by omega_using [],Nat.pow_add] at prev
     rw [va] at eq
     have hPQ : (2 : Nat)^(64*d) = 2^(64*(i+j₀)) * 2^(64*(8*k)) := by
-      rw [← Nat.pow_add]; exact congrArg (2 ^ ·) (by omega_arith)
+      rw [← Nat.pow_add]; exact congrArg (2 ^ ·) (by omega_using [hd])
     generalize (2 : Nat)^512 = R at eq prev ⊢
     generalize (2 : Nat)^(64*d) = P at hPQ prev ⊢
     exact stream_arith hPQ eq prev
@@ -320,8 +320,8 @@ theorem streamStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Na
       t.zf = some (decide (k+1=n)) ∧ StreamInv s₀ B Z w a b i j₀ (k+1) mi x 2 t := by
   unfold AdxRect8.rowStep
   refine WP.mono (streamStep_gen hZ hw hi ha hb ha1 ha2 hb1 hb2 hn hk
-    (fun u hs hd hh hj => nextColumn_ok hs hd hh hZ (by omega_arith) (by omega_arith) hj) h) fun t ⟨zt,ht⟩ => ⟨?_,ht⟩
-  rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega_arith))
+    (fun u hs hd hh hj => nextColumn_ok hs hd hh hZ (by omega_using [hw, hn, hk]) (by omega_using [hw]) hj) h) fun t ⟨zt,ht⟩ => ⟨?_,ht⟩
+  rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega_using [hn]))
 
 end VG.Proof.Bignum.X86_64.AdxRect8
 
@@ -353,17 +353,17 @@ theorem rowLoad_ok {s₀ u : State} {B : Addr} {Z w a b i j₀ : Nat} {mi : BitV
     WP isa (.block AdxRotate8.loadCols) u (StreamInv s₀ B Z w a b i j₀ 0 mi 0 2) := by
   have nowrap := hs.nowrap
   have rt := slot_le (w := w) (show aTmp < 8 by decide)
-  have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega_arith
+  have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega_using [hZ]
   have uo' : u.gpr .rsi = off B (rawBase w+8*(i+j₀+8*0)) := by
-    rw [uo]; exact congrArg (off B) (by unfold rawBase; omega_arith)
-  refine WP.mono (AdxRotate8.loadCols_ok hs uo' (by omega_arith)) fun v ⟨cv,kv⟩ => ?_
+    rw [uo]; exact congrArg (off B) (by unfold rawBase; omega_using [])
+  refine WP.mono (AdxRotate8.loadCols_ok hs uo' (by omega_using [hi, hj, rawZ])) fun v ⟨cv,kv⟩ => ?_
   have mv : v.mem = u.mem := kv.2.1
   exact ⟨hs.congr kv.2.2.2,mv ▸ hh,(kv.1 .rdi (by decide)).trans hd,mv ▸ hidx,
-    by simpa only [Nat.mul_zero,Nat.add_zero,mv] using hjdx,by rw [mv,hc]; omega_arith,
+    by simpa only [Nat.mul_zero,Nat.add_zero,mv] using hjdx,by rw [mv,hc]; omega_using [],
     (hk.trans kv.keep).mono (by decide),by rw [mv,hm]; exact Frm.refl _ _ _,
     (kv.1 .rcx (by decide)).trans ua,by rw [kv.1 .rbp (by decide),ub]; simp only [Nat.mul_zero,Nat.add_zero],
     (kv.1 .rsi (by decide)).trans uo',by
-      rw [streamVal_eq (by omega_arith) (by rw [cv,mv]),mv,hc,hm]
+      rw [streamVal_eq (by omega_using [hi, hj]) (by rw [cv,mv]),mv,hc,hm]
       simp only [Nat.mul_zero,Nat.add_zero,wv]⟩
 
 /-- The columns stored after the loop's last column block. -/
@@ -372,23 +372,23 @@ theorem rowEnd_ok {s₀ t : State} {B : Addr} {Z w a b i j₀ n x cb : Nat} {mi 
     (ht : StreamInv s₀ B Z w a b i j₀ n mi x cb t) :
     WP isa (.block AdxRotate8.storeCols) t (RowInv s₀ B Z w a b i j₀ n mi x cb) := by
   have rt := slot_le (w := w) (show aTmp < 8 by decide)
-  have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega_arith
+  have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega_using [hZ]
   have tnow := ht.scr.nowrap
-  have hDw : i+j₀+8*n+8 ≤ 2*w := by omega_arith
-  have oI : 8*sFn 12+8 ≤ rawBase w+8*(i+j₀+8*n) := by unfold rawBase sFn slot hdrBytes aAcc; omega_arith
-  have oJ : 8*sFn 13+8 ≤ rawBase w+8*(i+j₀+8*n) := by unfold rawBase sFn slot hdrBytes aAcc; omega_arith
+  have hDw : i+j₀+8*n+8 ≤ 2*w := by omega_using [hi, hwN]
+  have oI : 8*sFn 12+8 ≤ rawBase w+8*(i+j₀+8*n) := by unfold rawBase sFn slot hdrBytes aAcc; omega_using []
+  have oJ : 8*sFn 13+8 ≤ rawBase w+8*(i+j₀+8*n) := by unfold rawBase sFn slot hdrBytes aAcc; omega_using []
   have oC : carryOffset+8 ≤ rawBase w+8*(i+j₀+8*n) := by
-    unfold rawBase carryOffset sFn slot hdrBytes aAcc; omega_arith
-  have oH : hdrBytes ≤ rawBase w+8*(i+j₀+8*n) := by unfold rawBase slot; omega_arith
+    unfold rawBase carryOffset sFn slot hdrBytes aAcc; omega_using []
+  have oH : hdrBytes ≤ rawBase w+8*(i+j₀+8*n) := by unfold rawBase slot; omega_using []
   have small : 8*sFn 13+8 ≤ 2^64 ∧ 8*sFn 12+8 ≤ 2^64 ∧ carryOffset+8 ≤ 2^64 := by
-    unfold carryOffset sFn; omega_arith
-  refine WP.mono (AdxRotate8.storeCols_ok ht.scr ht.po (by omega_arith)) fun x ⟨vx,ox,kx⟩ => ?_
+    unfold carryOffset sFn; omega_using []
+  refine WP.mono (AdxRotate8.storeCols_ok ht.scr ht.po (by omega_using [rawZ, hDw])) fun x ⟨vx,ox,kx⟩ => ?_
   have fx : Frm B (rowRanges w) t.mem x.mem := by
     intro y hy
     apply ox y
     have a0 := hy (rawBase w,16*w) (by simp [rowRanges])
     simp only [] at a0 ⊢
-    omega_arith
+    omega_using [hDw, a0]
   refine ⟨ht.scr.congr kx.2.2,ht.hdr.of_outside ox oH,
     (kx.gpr (by simp)).trans ht.rdi,?_,?_,?_,(ht.keep.trans kx).mono (by simp),ht.frame.trans fx,
     Or.inr ((kx.gpr (by simp)).trans ht.po),?_⟩
@@ -399,7 +399,7 @@ theorem rowEnd_ok {s₀ t : State} {B : Addr} {Z w a b i j₀ n x cb : Nat} {mi 
     rw [ox.word (Or.inl oC) small.2.2]
     have same : streamVal x B w (i+j₀+8*n) = streamVal t B w (i+j₀+8*n) := by
       unfold streamVal
-      rw [cols_keep kx (by decide),ox.wv (Or.inl (by omega_arith)) (by omega_arith),ox.wv (Or.inr (by omega_arith)) (by omega_arith)]
+      rw [cols_keep kx (by decide),ox.wv (Or.inl (by omega_using [])) (by omega_using [rawZ, tnow, hDw]),ox.wv (Or.inr (by omega_using [])) (by omega_using [rawZ, tnow, hDw])]
     rw [← streamVal_eq hDw (by rw [cols_keep kx (by decide),vx]),same]
     exact val
 
@@ -417,7 +417,7 @@ theorem row_ok {s : State} {B : Addr} {Z w a b i j₀ n : Nat} {mi : BitVec 64}
   unfold AdxRect8.row
   refine WP.seq (WP.mono (setup_ok hs hd hh hZ hv pa pb hidx hjdx) fun u ⟨ua,ub,uo,um,ku⟩ => ?_)
   refine WP.seq (WP.mono (rowLoad_ok (s₀ := s) (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (um ▸ hh) hZ hi
-    (by omega_arith) (um ▸ hidx) (um ▸ hjdx) (um ▸ hc) ua ub uo um (ku.mono (by decide))) fun v hv0 => ?_)
+    (by omega_using [hwN, hn]) (um ▸ hidx) (um ▸ hjdx) (um ▸ hc) ua ub uo um (ku.mono (by decide))) fun v hv0 => ?_)
   exact WP.seq (WP.mono (wp_upto (a := 0) (N := n) (Q := StreamInv s B Z w a b i j₀ n mi 0 2) hn
     (StreamInv s B Z w a b i j₀ · mi 0 2)
     (fun _ _ hk _ h => streamStep_inv hZ hw hi ha hb ha1 ha2 hb1 hb2 hwN hk h)

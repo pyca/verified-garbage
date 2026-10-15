@@ -6,6 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # An RSA key from its primes on x86-64: `n` and the final mask
@@ -39,13 +40,13 @@ theorem nPart_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w : Nat} (
   refine WP.seq (WP.mono (zeroA_k h (j := aQt) (by decide)) fun s₁ ⟨h₁, f₁, z₁, _⟩ => ?_)
   have hok : [Rc.arr aQt].all Rc.ok = true := by decide
   have va : wv s₁.mem I.B (slot I.W aPa) w = a := by
-    rw [f₁.wv hok (j := aPa) (by decide) (by decide) (Nat.le_refl _) (by omega) h.hZ, ← ha]
+    rw [f₁.wv hok (j := aPa) (by decide) (by decide) (Nat.le_refl _) (by omega_using [hW]) h.hZ, ← ha]
     dsimp only [av] at ha
-    exact wv_low_of_lt (by omega) (by rw [ha]; exact ha')
+    exact wv_low_of_lt (by omega_using [hW]) (by rw [ha]; exact ha')
   have vb : wv s₁.mem I.B (slot I.W aQa) w = b := by
-    rw [f₁.wv hok (j := aQa) (by decide) (by decide) (Nat.le_refl _) (by omega) h.hZ, ← hb]
+    rw [f₁.wv hok (j := aQa) (by decide) (by decide) (Nat.le_refl _) (by omega_using [hW]) h.hZ, ← hb]
     dsimp only [av] at hb
-    exact wv_low_of_lt (by omega) (by rw [hb]; exact hb')
+    exact wv_low_of_lt (by omega_using [hW]) (by rw [hb]; exact hb')
   simp only [List.append_assoc]
   refine WP.seq (WP.block_append_iff.mpr (WP.mono h₁.ws.ws_ok fun s₂ ⟨h12, h9, m₂, k₂⟩ => ?_))
   have hdi₂ : s₂.gpr .rdi = I.B := (k₂.gpr (by decide)).trans h₁.ws.rdi
@@ -59,20 +60,20 @@ theorem nPart_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w : Nat} (
   have hax₅ : s₅.gpr .rax = off I.B (slot I.W aQa) := (k₅.gpr (by decide)).trans hax
   refine WP.mono (WP.keep [.r9, .r10, .r12] (Q := fun t => t.gpr .r9 = off I.B (slot I.W aQa) ∧
       t.gpr .r10 = BitVec.ofNat 64 w ∧ t.gpr .r12 = BitVec.ofNat 64 w ∧ t.mem = s₅.mem) (by
-    xrun [h12₅, hax₅, ofNat_shr1 (show I.W < 2 ^ 64 by omega)]
-    refine ⟨by rw [hW]; congr 1; omega, ?_⟩
-    rw [ofNat_sub' (by omega) (by omega)]; congr 1; omega) rfl) fun s₆ ⟨⟨h9₆, h10₆, h12₆, m₆⟩, k₆⟩ => ?_
+    xrun [h12₅, hax₅, ofNat_shr1 (show I.W < 2 ^ 64 by omega_using [hw2])]
+    refine ⟨by rw [hW]; congr 1; omega_using [], ?_⟩
+    rw [ofNat_sub' (by omega_using []) (by omega_using [hw2])]; congr 1; omega_using [hW]) rfl) fun s₆ ⟨⟨h9₆, h10₆, h12₆, m₆⟩, k₆⟩ => ?_
   have k26 := (((k₂.trans k₃).trans k₄).trans k₅).trans k₆
   have hm₆ : s₆.mem = s₁.mem := by rw [m₆, m₅, m₄, m₃, m₂]
-  have hz₆ : wv s₆.mem I.B (slot I.W aQt) (w + w + 2) = 0 := by rw [hm₆, ← z₁]; congr 1; omega
+  have hz₆ : wv s₆.mem I.B (slot I.W aQt) (w + w + 2) = 0 := by rw [hm₆, ← z₁]; congr 1; omega_using [hW]
   refine WP.mono (mulRows_ok (h₁.ws.scr.congr k26.2.2) ((k₄.trans k₅ |>.trans k₆).gpr (by decide) |>.trans h11)
-    h9₆ h10₆ h12₆ ((k₆.gpr (by decide)).trans h8) (by omega) (by omega) (by omega) (by omega) (by omega)
-    (by omega) (by omega) (by omega) (by rw [hz₆]; exact Nat.two_pow_pos _)) fun t ⟨hv, o, k₇⟩ => ?_
+    h9₆ h10₆ h12₆ ((k₆.gpr (by decide)).trans h8) (by omega_using [hW, hw1]) (by omega_using [hW, hw1]) (by omega_using [hW, hw2]) (by omega_using [hW, sL]) (by omega_using [hW, sP])
+    (by omega_using [hW, sQ]) (by omega_using [hW, p1]) (by omega_using [hW, p2]) (by rw [hz₆]; exact Nat.two_pow_pos _)) fun t ⟨hv, o, k₇⟩ => ?_
   rw [hz₆, hm₆, va, vb, Nat.zero_add] at hv
   rw [hm₆] at o
-  have f := KF.arr1 (I := I) (j := aQt) o (Nat.le_refl _) (by omega)
+  have f := KF.arr1 (I := I) (j := aQt) o (Nat.le_refl _) (by omega_using [hW])
   refine ⟨h₁.step f (all_mut_arr (by decide)) (k26.trans k₇) (by decide), (f₁.trans f).mono (by simp), ?_⟩
-  rw [show I.W + 2 = w + w + 2 by omega]; exact hv
+  rw [show I.W + 2 = w + w + 2 by omega_using [hW]]; exact hv
 
 
 /-! ## The final mask -/
@@ -81,20 +82,20 @@ theorem nPart_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w : Nat} (
 theorem top_bit {m : Mem} {B : Addr} {d W : Nat} (hW : 1 ≤ W) :
     (word m B (d + 8 * (W - 1))).toNat / 2 ^ 63 = if 2 ^ (64 * W - 1) ≤ wv m B d W then 1 else 0 := by
   have e : wv m B d W = wv m B d (W - 1) + 2 ^ (64 * (W - 1)) * (word m B (d + 8 * (W - 1))).toNat := by
-    rw [show W = W - 1 + 1 from by omega, wv]; simp
+    rw [show W = W - 1 + 1 from by omega_using [hW], wv]; simp
   have ha := wv_lt m B d (W - 1)
   have ht := (word m B (d + 8 * (W - 1))).isLt
   generalize wv m B d (W - 1) = a at e ha
   generalize (word m B (d + 8 * (W - 1))).toNat = t at e ht
-  have hp : 2 ^ (64 * W - 1) = 2 ^ (64 * (W - 1)) * 2 ^ 63 := by rw [← Nat.pow_add]; congr 1; omega
+  have hp : 2 ^ (64 * W - 1) = 2 ^ (64 * (W - 1)) * 2 ^ 63 := by rw [← Nat.pow_add]; congr 1; omega_using [hW]
   generalize 2 ^ (64 * (W - 1)) = R at e ha hp
   rw [e, hp]
   by_cases h63 : 2 ^ 63 ≤ t
   · have : R * 2 ^ 63 ≤ R * t := Nat.mul_le_mul_left _ h63
-    rw [ite_eq_left (show R * 2 ^ 63 ≤ a + R * t by omega)]; omega
+    rw [ite_eq_left (show R * 2 ^ 63 ≤ a + R * t by omega_using [this])]; omega_using [ht, h63]
   · have : R * t + R ≤ R * 2 ^ 63 := by
-      rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega)
-    rw [ite_eq_right (show ¬ R * 2 ^ 63 ≤ a + R * t by omega)]; omega
+      rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega_using [h63])
+    rw [ite_eq_right (show ¬ R * 2 ^ 63 ≤ a + R * t by omega_using [ha, this])]; omega_using [h63]
 
 
 theorem shr63_mask (x : BitVec 64) :
@@ -102,10 +103,10 @@ theorem shr63_mask (x : BitVec 64) :
   have h : x >>> 63 = BitVec.ofNat 64 (x.toNat / 2 ^ 63) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_ofNat, Nat.mod_eq_of_lt]
-    have := x.isLt; omega
+    have := x.isLt; omega_using []
   rw [h]
   have := x.isLt
-  rcases (show x.toNat / 2 ^ 63 = 0 ∨ x.toNat / 2 ^ 63 = 1 by omega) with e | e <;> rw [e] <;> decide
+  rcases (show x.toNat / 2 ^ 63 = 0 ∨ x.toNat / 2 ^ 63 = 1 by omega_using []) with e | e <;> rw [e] <;> decide
 
 /-- `[rbx + 8 r12 − 8]`: word `W − 1` of the array at `rbx`. -/
 theorem addr_last {b : Addr} {B : Addr} {e W : Nat} (hb : b = off B e) (hW : 1 ≤ W) :
@@ -116,7 +117,7 @@ theorem addr_last {b : Addr} {B : Addr} {e W : Nat} (hb : b = off B e) (hW : 1 �
   refine congrArg (B + ·) ?_
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_ofNat]
-  omega
+  omega_using [hW]
 
 
 /-- The mask `finalMask` leaves in `kOk`. -/
@@ -131,9 +132,9 @@ theorem finalMask_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {n P Q 
     WP isa (.block finalMask) s fun t => KS I m₀ t ∧ KF I.B I.W [.hdr kOk] s.mem t.mem ∧
       word t.mem I.B (8 * kOk) = mask (finalOk I.W n P Q e ok) := by
   have hnw := h.ws.scr.nowrap
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_using [this]
   have sN := h.ws.sl (j := aQt) (by decide)
-  have hld := fun (i : Nat) (hi : i < 32) => h.ws.scr.ld (d := 8 * i) (by have := h.ws.h256; omega)
+  have hld := fun (i : Nat) (hi : i < 32) => h.ws.scr.ld (d := 8 * i) (by have := h.ws.h256; omega_using [hi, this])
   unfold finalMask
   simp only [List.append_assoc]
   refine WP.block_append_iff.mpr (WP.mono h.ws.ws_ok fun u₁ ⟨h12, h9, mu₁, ku₁⟩ => WP.block_append_iff.mpr ?_)
@@ -148,8 +149,8 @@ theorem finalMask_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {n P Q 
   refine WP.mono (WP.keep [.rax, .rdx, .rcx] (Q := fun t => t.gpr .rcx = mask (decide (2 ^ (64 * I.W - 1) ≤ n) && ok) ∧
     t.mem = s.mem) (by
       have hok₂ : word u₂.mem I.B (8 * kOk) = mask ok := by rw [hmu₂, hok]
-      xrun [State.ea, ix, hdr, hdrOff, h12₂, addr_last hbx hw1, hs₂.ld (d := slot I.W aQt + 8 * (I.W - 1)) (by omega),
-        ((ku₁.trans ku₂).gpr (by decide)).trans h.ws.rdi, hs₂.ld (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega),
+      xrun [State.ea, ix, hdr, hdrOff, h12₂, addr_last hbx hw1, hs₂.ld (d := slot I.W aQt + 8 * (I.W - 1)) (by omega_using [sN]),
+        ((ku₁.trans ku₂).gpr (by decide)).trans h.ws.rdi, hs₂.ld (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this]),
         shr63_mask, hok₂, mask_and', hmu₂]
       have hok' : s.mem.readW (off I.B (8 * kOk)) 64 = mask ok := hok
       have ht' : decide ((s.mem.readW (off I.B (slot I.W aQt + 8 * (I.W - 1))) 64).toNat / 2 ^ 63 = 1) =
@@ -177,8 +178,8 @@ theorem finalMask_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {n P Q 
   -- `e` valid, and the store.
   refine WP.mono (WP.keep [.rax, .rcx, .rdx] (Q := fun t => t.mem = s.mem.writeW (off I.B (8 * kOk))
     (mask (finalOk I.W n P Q e ok))) (by
-      xrun [State.ea, hdr, hdi₆, hdrOff, hs₆.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega),
-        hs₆.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega), hev₆, hax₆, hcx₆, mask_and', mask_low,
+      xrun [State.ea, hdr, hdi₆, hdrOff, hs₆.ld (d := 8 * kEv) (by have := h.ws.h256; unfold kEv sFn; omega_using [this]),
+        hs₆.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this]), hev₆, hax₆, hcx₆, mask_and', mask_low,
         sxM1, maskNot, hm₆]
       have hev' : s.mem.readW (off I.B (8 * kEv)) 64 = BitVec.ofNat 64 e := hev
       have hT : ((BitVec.ofNat 64 e) >>> 33).toNat = e / 2 ^ 33 := by
@@ -190,12 +191,12 @@ theorem finalMask_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {n P Q 
         unfold Spec.Rsa.exponentValid
         rw [Bool.eq_iff_iff]
         simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not, beq_iff_eq]
-        omega
+        omega_using []
       refine congrArg (fun v => s.mem.writeW (off I.B (8 * kOk)) (mask v)) ?_
       simp only [finalOk]
       rw [← e1]
       simp only [Bool.and_assoc]) rfl) fun t ⟨mt, kt⟩ => ?_
-  obtain ⟨ht, ft, okt⟩ := h.hdrW (i := kOk) (by unfold kOk sFn; omega) mt
+  obtain ⟨ht, ft, okt⟩ := h.hdrW (i := kOk) (by unfold kOk sFn; omega_using []) mt
     ((((k13.trans ku₄).trans ku₅).trans ku₆).trans kt) (by decide)
   exact ⟨ht, ft, okt⟩
 

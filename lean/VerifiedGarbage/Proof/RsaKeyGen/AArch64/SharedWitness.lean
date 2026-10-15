@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -23,6 +24,26 @@ open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY)
 def witnessRanges (w : Nat) : List (Nat × Nat) := witRanges w ++
   [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)),
     (slot w aXm, 8 * (w + 2)), (slot w aB, 8 * (w + 2))]
+
+/-- `witnessRanges`'s ranges, in the header and in the arrays. -/
+theorem witnessRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(216, 8), (0, 8)]
+    [(1, 1), (2, 1), (3, 1), (5, 1), (8, 1)] (witnessRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append,
+    witRanges, witnessRanges, Public.aX, Public.aAcc, Public.aTmp, Public.aXm, aX, aAcc, aTmp, aXm, aB, sFn, kU, kUsed] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(1, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(5, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(8, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
 
 theorem sharedWitness_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 ≤ w) (hw128 : w ≤ 128)
     (hc : MrCtx s B Z w c bm)

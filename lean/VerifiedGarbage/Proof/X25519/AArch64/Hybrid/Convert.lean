@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Exec
 public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Radix
 import all Init.Data.Array.Basic
@@ -57,25 +58,25 @@ theorem words_ok {s : State} {base : Addr} (hs : Scratch s base) {a₁ a₂ : Na
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.flags = s.flags ∧
       (∀ r : VReg, r ∉ wordsRegs → t.v r = s.v r) := by
   rw [words_eq]
-  refine WP.block_cons_iff.mpr ⟨_, exec_ldq hs 27 h₁ (by omega), ?_⟩
-  refine WP.block_cons_iff.mpr ⟨_, exec_ldq (scratch_setV hs _ _) 28 h₂ (by omega), ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_ldq hs 27 h₁ (by omega_arith), ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_ldq (scratch_setV hs _ _) 28 h₂ (by omega_arith), ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_ldq (scratch_setV (scratch_setV (scratch_setV (scratch_setV hs _ _) _ _) _ _) _ _)
-    27 (by omega) (by omega), ?_⟩
+    27 (by omega_arith) (by omega_arith), ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_ldq (scratch_setV (scratch_setV (scratch_setV (scratch_setV
-    (scratch_setV hs _ _) _ _) _ _) _ _) _ _) 28 (by omega) (by omega), ?_⟩
+    (scratch_setV hs _ _) _ _) _ _) _ _) _ _) 28 (by omega_arith) (by omega_arith), ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_nil_iff.mpr ?_
   simp only [RegUpd.mem_setV, RegUpd.gpr_setV, RegUpd.rd_setV, RegUpd.wr_setV, RegUpd.sp_setV, flags_setV,
     true_and]
   refine ⟨fun k hk e he => ?_, fun r hr => ?_⟩
-  · rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;>
-    rcases (show e = 0 ∨ e = 1 by omega) with rfl | rfl <;>
+  · rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega_arith) with rfl | rfl | rfl | rfl <;>
+    rcases (show e = 0 ∨ e = 1 by omega_arith) with rfl | rfl <;>
     simp (disch := decide) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne, Nat.reduceAdd,
       trn1_0, trn1_1, trn2_0, trn2_1, vdword_ld, ↓reduceIte, Nat.reduceEqDiff] <;>
-    exact congrArg (word _ base) (by omega)
+    exact congrArg (word _ base) (by omega_arith)
   · simp only [wordsRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨r1, r2, r3, r4, r5, r6⟩ := hr
     simp only [RegUpd.v_setV_of_ne _ _ r1, RegUpd.v_setV_of_ne _ _ r2, RegUpd.v_setV_of_ne _ _ r3,
@@ -106,7 +107,7 @@ theorem limbOf_words (w0 w1 w2 w3 : Nat) (h0 : w0 < 2 ^ 64) (h1 : w1 < 2 ^ 64) (
   intro x
   simp only [x, limbOf, limbOff, wdIn, width, List.getD_cons_succ, List.getD_cons_zero, Nat.reduceMod,
     ↓reduceIte, Nat.reduceEqDiff]
-  refine ⟨by omega, by omega, by omega, by omega, by omega, by omega, by omega, by omega, by omega, by omega⟩
+  refine ⟨by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
 
 
 /-- The limbs of the element at `o`, from its words. -/
@@ -134,7 +135,7 @@ theorem limb_ok {s : State} {m : Mem} {base : Addr} {a : Nat → Nat} (hw : Word
       (∀ e < 2, (vdword (t.v (V 28)) e).toNat = limbOf (feAt m base (a e)) i) ∧
       t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.flags = s.flags ∧
       ∀ r, r ≠ V 28 → r ≠ V 29 → t.v r = s.v r := by
-  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 := by omega
+  have : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 := by omega_arith
   rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   · simp only [limb, limbOff, width, maskOf, List.getD_cons_succ, List.getD_cons_zero, Nat.reduceMod,
       Nat.reduceDiv, Nat.reduceAdd, Nat.reduceSub, ↓reduceIte, Nat.reduceEqDiff, Nat.reduceLeDiff, or_self,
@@ -169,7 +170,7 @@ theorem uzp1_word (lo hi : BitVec 128) (c : Nat) (hc : c < 4) :
     (vword (VPermOp.eval .uzp1 .s4 lo hi) c).toNat =
       (vdword (if c < 2 then lo else hi) (c % 2)).toNat % 2 ^ 32 := by
   rw [VG.Proof.Curve448.AArch64.Neon.uzp_words lo hi c hc]
-  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 by omega_arith) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- Row `i` of the first operands, from their words. -/
 theorem rowF_ok {s : State} {m : Mem} {base : Addr} {a : Nat → Nat} (hs : Scratch s base)
@@ -184,8 +185,8 @@ theorem rowF_ok {s : State} {m : Mem} {base : Addr} {a : Nat → Nat} (hs : Scra
   refine WP.mono (limb_ok hw hm hi) fun t ⟨tl, tm, tg, tr, tw, tsp, tf, tv⟩ => ?_
   have ht : Scratch t base := scratch_of hs tg tw
   have hF : ∀ e < 2, limbOf (feAt m base (a e)) i < 2 ^ 26 := fun e _ => limbOf_lt26 _ _
-  have hd : (FBUF + 16 * i) % 16 = 0 := by simp only [FBUF]; omega
-  have hd' : FBUF + 16 * i + 16 ≤ 4096 := by simp only [FBUF]; omega
+  have hd : (FBUF + 16 * i) % 16 = 0 := by simp only [FBUF]; omega_arith
+  have hd' : FBUF + 16 * i + 16 ≤ 4096 := by simp only [FBUF]; omega_arith
   rw [WP.block_append_iff]
   have ok : ∀ (x : BitVec 128), (∀ e < 2, (vdword x e).toNat = (if i % 2 = 1 then 2 else 1) * limbOf (feAt m base (a e)) i) →
       ∀ c < 4, (vword (VPermOp.eval .uzp1 .s4 (t.v (V 28)) x) c).toNat = rowWord (fun e => limbOf (feAt m base (a e))) i c := by
@@ -195,10 +196,10 @@ theorem rowF_ok {s : State} {m : Mem} {base : Addr} {a : Nat → Nat} (hs : Scra
     have := hF (c % 2) hc2
     split
     · rw [tl _ hc2]
-      simp only [show ¬(2 ≤ c ∧ i % 2 = 1) by omega, ↓reduceIte, Nat.one_mul]
-      exact Nat.mod_eq_of_lt (by omega)
+      simp only [show ¬(2 ≤ c ∧ i % 2 = 1) by omega_arith, ↓reduceIte, Nat.one_mul]
+      exact Nat.mod_eq_of_lt (by omega_arith)
     · rw [hx _ hc2]
-      split <;> split <;> (first | omega | (rw [Nat.mod_eq_of_lt (by omega)]))
+      split <;> split <;> (first | omega_arith | (rw [Nat.mod_eq_of_lt (by omega_arith)]))
   split
   · rename_i hodd
     refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
@@ -217,7 +218,7 @@ theorem rowF_ok {s : State} {m : Mem} {base : Addr} {a : Nat → Nat} (hs : Scra
       rw [lane_shl _ _ _ he, tl e he]
       simp only [hodd, ↓reduceIte]
       have := hF e he
-      omega
+      omega_arith
     · simp (disch := assumption) only [RegUpd.v_setV_of_ne]; exact tv r h1 h2
   · rename_i hodd
     refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
@@ -275,7 +276,7 @@ theorem convertF_ok {s : State} {base : Addr} (hs : Scratch s base) (hc : Consts
   refine WP.mono (masks_ok hs hc) fun t ⟨tmk, tm, tg, tr, tw, tsp, tf, tv⟩ => ?_
   have ht : Scratch t base := scratch_of hs tg tw
   rw [WP.block_append_iff]
-  refine WP.mono (words_ok ht a1 (by omega) a2 (by omega)) fun u ⟨uw, um, ug, ur, uw', usp, uf, uv⟩ => ?_
+  refine WP.mono (words_ok ht a1 (by omega_arith) a2 (by omega_arith)) fun u ⟨uw, um, ug, ur, uw', usp, uf, uv⟩ => ?_
   have hu : Scratch u base := scratch_of ht ug uw'
   have umk : Masks u := ⟨fun e he => by rw [uv _ (by decide)]; exact tmk.1 e he,
     fun e he => by rw [uv _ (by decide)]; exact tmk.2 e he⟩
@@ -286,19 +287,19 @@ theorem convertF_ok {s : State} {base : Addr} (hs : Scratch s base) (hc : Consts
     Outside base FBUF 160 s.mem x.mem ∧ x.gpr = s.gpr ∧ x.rd = s.rd ∧ x.wr = s.wr ∧ x.sp = s.sp ∧
     x.flags = s.flags
   refine WP.mono (wp_range_flatMap (M := isa) (N := 10) inv (fun n x hn ⟨xw, xm, xr, xo, xg, xr', xw', xsp, xf⟩ => ?_) 10
-    (by decide) u ⟨uw, umk, fun _ h => absurd h (by omega), by rw [um, tm]; exact Outside.refl _ _ _ _,
+    (by decide) u ⟨uw, umk, fun _ h => absurd h (by omega_arith), by rw [um, tm]; exact Outside.refl _ _ _ _,
       ug.trans (tg), ur.trans tr, uw'.trans tw, usp.trans tsp, uf.trans tf⟩)
     fun x ⟨_, _, xr, xo, xg, xr', xw', xsp, xf⟩ => ⟨xr, xo, xg, xr', xw', xsp, xf⟩
   have hx : Scratch x base := scratch_of hs xg xw'
   refine WP.mono (rowF_ok hx xw xm hn) fun y ⟨yr, yo, yg, yr', yw, ysp, yf, yv⟩ =>
-    ⟨fun k hk e he => by rw [yv _ (V_ne _ (by omega) _ (by decide) (by omega)) (V_ne _ (by omega) _ (by decide) (by omega))
-      (V_ne _ (by omega) _ (by decide) (by omega))]; exact xw k hk e he,
+    ⟨fun k hk e he => by rw [yv _ (V_ne _ (by omega_arith) _ (by decide) (by omega_arith)) (V_ne _ (by omega_arith) _ (by decide) (by omega_arith))
+      (V_ne _ (by omega_arith) _ (by decide) (by omega_arith))]; exact xw k hk e he,
      ⟨fun e he => by rw [yv _ (by decide) (by decide) (by decide)]; exact xm.1 e he,
       fun e he => by rw [yv _ (by decide) (by decide) (by decide)]; exact xm.2 e he⟩,
-     fun i hi c hc => ?_, xo.trans (yo.mono (by simp only [FBUF]; omega) (by simp only [FBUF]; omega)),
+     fun i hi c hc => ?_, xo.trans (yo.mono (by simp only [FBUF]; omega_arith) (by simp only [FBUF]; omega_arith)),
      yg.trans xg, yr'.trans xr', yw.trans xw', ysp.trans xsp, yf.trans xf⟩
-  rcases (show i < n ∨ i = n by omega) with h | rfl
-  · rw [Outside.nw yo (by simp only [FBUF]; omega) (by simp only [FBUF]; omega)]; exact xr i h c hc
+  rcases (show i < n ∨ i = n by omega_arith) with h | rfl
+  · rw [Outside.nw yo (by simp only [FBUF]; omega_arith) (by simp only [FBUF]; omega_arith)]; exact xr i h c hc
   · exact yr c hc
 
 
@@ -326,7 +327,7 @@ theorem rowG_ok {s : State} {m : Mem} {base : Addr} {a : Nat → Nat}
     rw [uzp1_word _ _ c hc]
     have hc2 : c % 2 < 2 := Nat.mod_lt _ (by decide)
     have := limbOf_lt26 (feAt m base (a (c % 2))) j
-    split <;> rw [tl _ hc2] <;> exact Nat.mod_eq_of_lt (by omega)
+    split <;> rw [tl _ hc2] <;> exact Nat.mod_eq_of_lt (by omega_arith)
   · rw [RegUpd.v_setV_of_ne _ _ h3]; exact tv r h1 h2
 
 theorem mulG_ok {s : State} {G : Nat → Nat → Nat} (hG : ∀ e j, G e j < 2 ^ 26) {n : Nat} (hn : n < 9)
@@ -338,14 +339,14 @@ theorem mulG_ok {s : State} {G : Nat → Nat → Nat} (hG : ∀ e j, G e j < 2 ^
   refine WP.block_nil_iff.mpr ?_
   simp only [RegUpd.mem_setV, RegUpd.gpr_setV, RegUpd.rd_setV, RegUpd.wr_setV, RegUpd.sp_setV, flags_setV,
     true_and]
-  have n10 : ∀ j < 10, V j ≠ V (10 + n) := fun j hj => V_ne _ (by omega) _ (by omega) (by omega)
+  have n10 : ∀ j < 10, V j ≠ V (10 + n) := fun j hj => V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   refine ⟨⟨fun j hj c hc => ?_, fun j hj c hc => ?_⟩, fun r h => RegUpd.v_setV_of_ne _ _ h⟩
   · rw [RegUpd.v_setV_of_ne _ _ (n10 j hj)]; exact hg.1 j hj c hc
-  · rcases (show j < n ∨ j = n by omega) with h | rfl
-    · rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega) _ (by omega) (by omega))]; exact hg.2 j h c hc
-    · rw [RegUpd.v_setV_self, vword_map2 _ _ _ hc, BitVec.toNat_mul, hg.1 (j + 1) (by omega) c hc, h19 c hc]
+  · rcases (show j < n ∨ j = n by omega_arith) with h | rfl
+    · rw [RegUpd.v_setV_of_ne _ _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]; exact hg.2 j h c hc
+    · rw [RegUpd.v_setV_self, vword_map2 _ _ _ hc, BitVec.toNat_mul, hg.1 (j + 1) (by omega_arith) c hc, h19 c hc]
       have := hG (c % 2) (j + 1)
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mul_comm]
+      rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mul_comm]
 
 
 theorem convertG_eq (g₁ g₂ : Nat) : convertG g₁ g₂ =
@@ -382,7 +383,7 @@ theorem convertG_ok {s : State} {base : Addr} (hs : Scratch s base) (hc : Consts
   generalize t.setV (V 26) (t.mem.read (off base C19) 16) = t' at h19 tmk' t'm t'g t'r t'w t'sp t'f
   have ht' : Scratch t' base := scratch_of hs t'g t'w
   rw [WP.block_append_iff]
-  refine WP.mono (words_ok ht' a1 (by omega) a2 (by omega)) fun u ⟨uw, um, ug, ur, uw', usp, uf, uv⟩ => ?_
+  refine WP.mono (words_ok ht' a1 (by omega_arith) a2 (by omega_arith)) fun u ⟨uw, um, ug, ur, uw', usp, uf, uv⟩ => ?_
   rw [t'm] at uw
   have umk : Masks u := ⟨fun e he => by rw [uv _ (by decide)]; exact tmk'.1 e he,
     fun e he => by rw [uv _ (by decide)]; exact tmk'.2 e he⟩
@@ -395,23 +396,23 @@ theorem convertG_ok {s : State} {base : Addr} (hs : Scratch s base) (hc : Consts
   rw [WP.block_append_iff]
   refine WP.mono (wp_range_flatMap (M := isa) (N := 10) inv
     (fun n x hn ⟨xw, xm, x19, xg, xmm, xgg, xr, xww, xsp, xf⟩ => ?_) 10 (by decide) u
-    ⟨uw, umk, u19, fun _ h => absurd h (by omega), um.trans t'm, ug.trans t'g, ur.trans t'r, uw'.trans t'w,
+    ⟨uw, umk, u19, fun _ h => absurd h (by omega_arith), um.trans t'm, ug.trans t'g, ur.trans t'r, uw'.trans t'w,
       usp.trans t'sp, uf.trans t'f⟩) fun x ⟨_, _, x19, xg, xmm, xgg, xr, xww, xsp, xf⟩ => ?_
   · refine WP.mono (rowG_ok xw xm hn) fun y ⟨yl, ym, yg, yr, yw, ysp, yf, yv⟩ =>
       ⟨fun k hk e he => ?_, ⟨fun e he => ?_, fun e he => ?_⟩, fun c hc' => ?_, fun j hj c hc' => ?_,
         ym.trans xmm, yg.trans xgg, yr.trans xr, yw.trans xww, ysp.trans xsp, yf.trans xf⟩
-    · rw [yv _ (V_ne _ (by omega) _ (by decide) (by omega)) (V_ne _ (by omega) _ (by decide) (by omega))
-        (V_ne _ (by omega) _ (by omega) (by omega))]
+    · rw [yv _ (V_ne _ (by omega_arith) _ (by decide) (by omega_arith)) (V_ne _ (by omega_arith) _ (by decide) (by omega_arith))
+        (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]
       exact xw k hk e he
-    · rw [yv _ (by decide) (by decide) (V_ne _ (by decide) _ (by omega) (by omega))]; exact xm.1 e he
-    · rw [yv _ (by decide) (by decide) (V_ne _ (by decide) _ (by omega) (by omega))]; exact xm.2 e he
-    · rw [yv _ (by decide) (by decide) (V_ne _ (by decide) _ (by omega) (by omega))]; exact x19 c hc'
-    · rcases (show j < n ∨ j = n by omega) with h | rfl
-      · rw [yv _ (V_ne _ (by omega) _ (by decide) (by omega)) (V_ne _ (by omega) _ (by decide) (by omega))
-          (V_ne _ (by omega) _ (by omega) (by omega))]
+    · rw [yv _ (by decide) (by decide) (V_ne _ (by decide) _ (by omega_arith) (by omega_arith))]; exact xm.1 e he
+    · rw [yv _ (by decide) (by decide) (V_ne _ (by decide) _ (by omega_arith) (by omega_arith))]; exact xm.2 e he
+    · rw [yv _ (by decide) (by decide) (V_ne _ (by decide) _ (by omega_arith) (by omega_arith))]; exact x19 c hc'
+    · rcases (show j < n ∨ j = n by omega_arith) with h | rfl
+      · rw [yv _ (V_ne _ (by omega_arith) _ (by decide) (by omega_arith)) (V_ne _ (by omega_arith) _ (by decide) (by omega_arith))
+          (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]
         exact xg j h c hc'
       · exact yl c hc'
-  · have hx : GRegs x G 0 := ⟨xg, fun _ h => absurd h (by omega)⟩
+  · have hx : GRegs x G 0 := ⟨xg, fun _ h => absurd h (by omega_arith)⟩
     let inv2 := fun n (y : State) =>
       GRegs y G n ∧ C19In y ∧ y.mem = s.mem ∧ y.gpr = s.gpr ∧ y.rd = s.rd ∧ y.wr = s.wr ∧ y.sp = s.sp ∧
       y.flags = s.flags
@@ -421,6 +422,6 @@ theorem convertG_ok {s : State} {base : Addr} (hs : Scratch s base) (hc : Consts
         ⟨yg, ymm, ygg, yr, yww, ysp, yf⟩
     refine WP.mono (mulG_ok (fun e j => limbOf_lt26 _ _) hn yg y19) fun z ⟨zg, zm, zgg, zr, zw, zsp, zf, zv⟩ =>
       ⟨zg, fun c hc' => ?_, zm.trans ymm, zgg.trans ygg, zr.trans yr, zw.trans yww, zsp.trans ysp, zf.trans yf⟩
-    rw [zv _ (V_ne _ (by decide) _ (by omega) (by omega))]; exact y19 c hc' 
+    rw [zv _ (V_ne _ (by decide) _ (by omega_arith) (by omega_arith))]; exact y19 c hc' 
 
 end VG.Proof.X25519.AArch64.Hybrid

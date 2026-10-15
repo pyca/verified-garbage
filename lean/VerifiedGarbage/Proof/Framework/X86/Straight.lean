@@ -161,7 +161,7 @@ theorem addr_sub_toNat (b : BitVec 32) {i : Nat} (h : b.toNat + i < 2 ^ 32) :
     (addr b i - b.setWidth 64).toNat = i := by
   rw [addr_eq h, show b.setWidth 64 + BitVec.ofNat 64 i - b.setWidth 64 = BitVec.ofNat 64 i by
     rw [BitVec.add_comm]; exact BitVec.add_sub_cancel _ _, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (by omega)]
+    Nat.mod_eq_of_lt (by omega_using [h])]
 
 theorem slot_sep (b : BitVec 32) {j k : Nat} (hj : b.toNat + 4 * j + 4 ≤ 2 ^ 32)
     (hk : b.toNat + 4 * k + 4 ≤ 2 ^ 32) (h : j ≠ k) :
@@ -170,16 +170,16 @@ theorem slot_sep (b : BitVec 32) {j k : Nat} (hj : b.toNat + 4 * j + 4 ≤ 2 ^ 3
   simp only [wordAddr] at h₁ h₂
   rw [addr_eq (by omega)] at h₁ h₂
   have hb : (b.setWidth 64).toNat = b.toNat := by
-    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
-  have : j < k ∨ k < j := by omega
+    rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
+  have : j < k ∨ k < j := by omega_using [h]
   generalize b.setWidth 64 = B at *
   rcases this with h' | h' <;> bv_omega
 
 theorem slot_contains (b : BitVec 32) {n k : Nat} (hk : k < n) (hn : b.toNat + 4 * n ≤ 2 ^ 32) :
     (⟨b.setWidth 64, 4 * n⟩ : Region).Contains (wordAddr b k) (32 / 8) := by
   simp only [Region.Contains, wordAddr]
-  rw [addr_sub_toNat b (by omega)]
-  omega
+  rw [addr_sub_toNat b (by omega_using [hk, hn])]
+  omega_using [hk]
 
 theorem loc_some_slot {c : Cfg} {m : MemOp} {k : Nat} (h : c.loc m = some (.slot k)) :
     m.base = c.base ∧ m.disp = 4 * k ∧ k < c.slots := by
@@ -189,7 +189,7 @@ theorem loc_some_slot {c : Cfg} {m : MemOp} {k : Nat} (h : c.loc m = some (.slot
     split at h
     · rename_i h2
       cases h
-      exact ⟨h2.1, by omega, h2.2⟩
+      exact ⟨h2.1, by omega_using [h1], h2.2⟩
     · split at h <;> cases h
   · cases h
 
@@ -203,7 +203,7 @@ theorem loc_some_ext {c : Cfg} {m : MemOp} {k : Nat} (h : c.loc m = some (.ext k
     · split at h
       · rename_i h2
         cases h
-        exact ⟨h2.1, by omega, h2.2⟩
+        exact ⟨h2.1, by omega_using [h1], h2.2⟩
       · cases h
   · cases h
 
@@ -312,7 +312,7 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
       simp only [exec, State.store32, hea, hin, ite_true, Option.some.injEq, exists_eq_left']
       have hsep : ∀ j < c.slots, j ≠ k → Mem.Sep (wordAddr (s.gpr c.base) j) (32 / 8)
           (wordAddr (s.gpr c.base) k) (32 / 8) := fun j hj hjk =>
-        slot_sep _ (by have := hok.fit; omega) (by have := hok.fit; omega) hjk
+        slot_sep _ (by have := hok.fit; omega_using [hj, this]) (by have := hok.fit; omega_using [hlt, this]) hjk
       refine ⟨⟨fun r' b hr' => hrel.reg r' b hr', fun j b hj hjb => ?_, fun j b hj hjb => ?_⟩,
         hok.congr rfl rfl rfl rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl, ?_⟩
       · simp only [Env.setSlot] at hjb
@@ -412,11 +412,11 @@ theorem contains_word {r : Region} {b : BitVec 32} {off k n : Nat}
   simp only [Region.Contains, wordAddr, hb]
   have : addr (b + BitVec.ofNat 32 off) (4 * k) = addr b (off + 4 * k) := by
     simp only [addr]; rw [BitVec.add_assoc, BitVec.ofNat_add]
-  rw [this, addr_sub_toNat b (by omega)]
-  omega
+  rw [this, addr_sub_toNat b (by omega_using [hfit, hk])]
+  omega_using [hk, hn]
 
 theorem toNat_setWidth32 (b : BitVec 32) : (b.setWidth 64).toNat = b.toNat := by
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega)]
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := b.isLt; omega_using [])]
 
 /-- Two 4-byte words at offsets `a` and `a'` of `B` that do not overlap. -/
 theorem sep_off (B : Addr) {a a' : Nat} (h₁ : B.toNat + a + 4 ≤ 2 ^ 32)
@@ -431,7 +431,7 @@ theorem addr_add_ofNat (b : BitVec 32) (off d : Nat) :
 
 theorem toNat_add_off {b : BitVec 32} {off : Nat} (h : b.toNat + off < 2 ^ 32) :
     (b + BitVec.ofNat 32 off).toNat = b.toNat + off := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega),
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := off) (by omega_using [h]),
     Nat.mod_eq_of_lt h]
 
 /-- `Ok` for slots at offset `off` of a writable region at `b` (of `n ≤ len`
@@ -446,30 +446,30 @@ theorem Ok.of_off {c : Cfg} {s : State} {r r' : Region} {b b' : BitVec 32} {off 
     (hlen' : off' + 4 * c.exts ≤ n')
     (hsep : c.slots = 0 ∨ c.exts = 0 ∨ r.Disjoint r' ∨
       (b = b' ∧ (off + 4 * c.slots ≤ off' ∨ off' + 4 * c.exts ≤ off))) : Ok c s where
-  slotIn k hk := ⟨r, hr, by rw [hb]; exact contains_word hrb hfit (by omega) hn⟩
-  extIn k hk := ⟨r', hr', by rw [hb']; exact contains_word hrb' hfit' (by omega) hn'⟩
+  slotIn k hk := ⟨r, hr, by rw [hb]; exact contains_word hrb hfit (by omega_using [hlen, hk]) hn⟩
+  extIn k hk := ⟨r', hr', by rw [hb']; exact contains_word hrb' hfit' (by omega_using [hlen', hk]) hn'⟩
   fit := by
     rw [hb]
     by_cases h : b.toNat + off < 2 ^ 32
-    · rw [toNat_add_off h]; omega
-    · have : c.slots = 0 := by omega
-      rw [this]; have := (b + BitVec.ofNat 32 off).isLt; omega
+    · rw [toNat_add_off h]; omega_using [hfit, hlen]
+    · have : c.slots = 0 := by omega_using [hfit, hlen, h]
+      rw [this]; have := (b + BitVec.ofNat 32 off).isLt; omega_using []
   sep k hk j hj := by
     rcases hsep with h | h | h | ⟨rfl, h⟩
-    · omega
-    · omega
+    · omega_using [hk, h]
+    · omega_using [hj, h]
     · intro x h₁ h₂
-      have c₁ := contains_word (b := b) (off := off) (k := k) hrb hfit (by omega) hn
-      have c₂ := contains_word (b := b') (off := off') (k := j) hrb' hfit' (by omega) hn'
+      have c₁ := contains_word (b := b) (off := off) (k := k) hrb hfit (by omega_using [hlen, hk]) hn
+      have c₂ := contains_word (b := b') (off := off') (k := j) hrb' hfit' (by omega_using [hlen', hj]) hn'
       rw [hb] at h₁; rw [hb'] at h₂
       exact h x (c₁.byte h₁) (c₂.byte h₂)
     · intro x h₁ h₂
       have e₁ : wordAddr (s.gpr c.base) k = b.setWidth 64 + BitVec.ofNat 64 (off + 4 * k) := by
-        rw [hb, wordAddr, addr_add_ofNat]; exact addr_eq (by omega)
+        rw [hb, wordAddr, addr_add_ofNat]; exact addr_eq (by omega_using [hfit, hlen, hk])
       have e₂ : wordAddr (s.gpr c.ext) j = b.setWidth 64 + BitVec.ofNat 64 (off' + 4 * j) := by
-        rw [hb', wordAddr, addr_add_ofNat]; exact addr_eq (by omega)
+        rw [hb', wordAddr, addr_add_ofNat]; exact addr_eq (by omega_using [hlen', hj, hfit'])
       rw [e₁] at h₁; rw [e₂] at h₂
-      exact sep_off (b.setWidth 64) (by rw [toNat_setWidth32]; omega) (by rw [toNat_setWidth32]; omega)
-        (by omega) x h₁ h₂
+      exact sep_off (b.setWidth 64) (by rw [toNat_setWidth32]; omega_using [hfit, hlen, hk]) (by rw [toNat_setWidth32]; omega_using [hlen', hj, hfit'])
+        (by omega_using [hk, hj, h]) x h₁ h₂
 
 end VG.X86.Straight

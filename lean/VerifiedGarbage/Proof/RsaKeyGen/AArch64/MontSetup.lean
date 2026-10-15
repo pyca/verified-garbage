@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
@@ -142,8 +143,57 @@ def msTail (w : Nat) : List (Nat × Nat) :=
     (slot w aR2, 8 * (w + 2)), (8 * sCnt, 8), (slot w aY, 8 * (w + 2)), (slot w aR1, 8 * (w + 2)),
     (slot w aRm1, 8 * (w + 2)), (8 * kChecks, 8)]
 
+/-- `msTail`'s ranges, in the header and in the arrays. -/
+theorem msTail_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(208, 8), (152, 8)]
+    [(7, 1), (2, 1), (3, 1), (4, 1), (6, 1), (9, 1), (10, 1)] (msTail w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    msTail, Public.sCnt, Public.aAcc, Public.aTmp, Public.aR2, Public.aY, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, kChecks, kE, sFn, sCnt] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(7, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(4, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(9, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(10, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+
 /-- What `montSetup` changes. -/
 def msRanges (w : Nat) : List (Nat × Nat) := (8 * sMinv, 8) :: msTail w
+
+/-- `msRanges`'s ranges, in the header and in the arrays. -/
+theorem msRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(56, 8), (208, 8), (152, 8)]
+    [(7, 1), (2, 1), (3, 1), (4, 1), (6, 1), (9, 1), (10, 1)] (msRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    msTail, msRanges, Public.sCnt, Public.aAcc, Public.aTmp, Public.aR2, Public.aY, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, kChecks, kE, sFn, sMinv, sCnt] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inl (by decide)
+  · exact .inr ⟨(7, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(4, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(9, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(10, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
 
 theorem msRanges_mut (w : Nat) : ∀ r ∈ msRanges w, KMut r := by
   simp only [msRanges, msTail, List.mem_cons, List.not_mem_nil, or_false]
@@ -155,7 +205,7 @@ theorem msTail_mut (w : Nat) : ∀ r ∈ msTail w, KMut r :=
 
 /-- Disjointness of a range from each of a list of literal ranges of the
 working space. -/
-macro "ms_disj" : tactic => `(tactic| (
+macro "ms_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, msTail, r2Ranges, slot,
     hdrBytes, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, kChecks, kE, sFn, sMinv]
   and_intros <;> omega_arith))

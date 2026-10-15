@@ -49,7 +49,7 @@ def restores (a b : Prog isa) : Bool :=
 /-- Whether every load of MXCSR by `c`, and by the functions it calls, is
 between `mxcsrSave` and `mxcsrRestore` (`restores`). -/
 def ctlOk : Prog isa → Bool
-  | .block is => is.all fun i => !loadsMxcsr i
+  | .block is => KList.all is fun i => !loadsMxcsr i
   | .seq a b => restores a b || (ctlOk a && ctlOk b)
   | .ite _ t e => ctlOk t && ctlOk e
   | .loop b _ => ctlOk b
@@ -59,7 +59,7 @@ def ctlOk : Prog isa → Bool
 /-- A check that implies `ctlOk` and composes like `Code.allInstrs`: `c`
 itself never loads MXCSR, and the functions it calls satisfy `ctlOk`. -/
 def ctlC : Prog isa → Bool
-  | .block is => is.all fun i => !loadsMxcsr i
+  | .block is => KList.all is fun i => !loadsMxcsr i
   | .seq a b => ctlC a && ctlC b
   | .ite _ t e => ctlC t && ctlC e
   | .loop b _ => ctlC b
@@ -146,7 +146,7 @@ theorem execBlock_ctl {is : List Instr} (hc : (is.all fun i => !loadsMxcsr i) = 
 theorem Exec.ctl {c : Prog isa} (hc : ctlOk c = true) {s s' : State} {t : List Leak}
     (h : Exec isa c s t s') : ctl s'.mxcsr = ctl s.mxcsr := by
   induction h with
-  | block h => rw [execBlock_ctl hc h]
+  | block h => rw [execBlock_ctl ((KList.all_eq _ _).symm.trans hc) h]
   | seq h₁ h₂ ih₁ ih₂ =>
     simp only [ctlOk, Bool.or_eq_true, Bool.and_eq_true] at hc
     rcases hc with hr | ⟨ha, hb⟩

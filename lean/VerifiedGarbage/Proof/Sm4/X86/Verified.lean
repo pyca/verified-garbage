@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Sm4.X86.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.X86.CryptSum
 public import VerifiedGarbage.Proof.Sm4.X86.Ecb
 meta import VerifiedGarbage.Proof.Sm4.X86.Ecb
 public import VerifiedGarbage.Proof.Sm4.X86.Lit
@@ -105,11 +107,9 @@ theorem ecbTaint_agree (dir : Dir) {s₁ s₂ : State} (h₁ : (ecbX86 dir).pre 
     exact congrArg _ (ha _ (by omega))
 
 theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbX86 dir).pre (ecbX86 dir).pub (ecb dir) := by
-  cases dir
-  · exact VG.Taint.constantTime (A := VG.X86.taint) ecbTaint
-      (fun _ _ h₁ h₂ hp => ecbTaint_agree .encrypt h₁ h₂ hp) (by taint_decide)
-  · exact VG.Taint.constantTime (A := VG.X86.taint) ecbTaint
-      (fun _ _ h₁ h₂ hp => ecbTaint_agree .decrypt h₁ h₂ hp) (by taint_decide)
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check ecbTaint (ecb dir) h).isSome = true := by
+    cases dir <;> taint_decide_sum [cryptSumEcb]
+  exact VG.Taint.constantTime (A := VG.X86.taint) ecbTaint (fun _ _ h₁ h₂ hp => ecbTaint_agree dir h₁ h₂ hp) h
 
 theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbX86 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86 dir).post s s' :=

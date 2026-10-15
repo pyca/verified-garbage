@@ -28,8 +28,9 @@ theorem ctr_wp_x86 {s₀ : State} (hp : (fbX86 ctrPost).pre s₀) :
       exact ⟨h1, h2, h3⟩
 
 theorem ctr_ct : ConstantTime isa (fbX86 ctrPost).pre (fbX86 ctrPost).pub ctr :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] :
+    ∃ h, (VG.X86.taint.check fbTaint ctr h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem wide_implies_ctr :
     (wideContract ctrPost).Implies (Proof.Camellia.ctrScratchContract X86.abi 341) := by

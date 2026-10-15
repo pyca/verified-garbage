@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Words
+public import VerifiedGarbage.Proof.Ocb.Spec
 import VerifiedGarbage.Proof.AesCcm.X86_64.Callee
 public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 import all Init.Data.Array.Basic

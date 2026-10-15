@@ -145,8 +145,7 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
   have hres : mrRest c (checksW w) r 1 0 (8 * w) = Spec.RsaKeyGen.primalityTest c (r.drop (8 * w)) := by
     rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) ⟨hodd, hlo, hhi⟩, checksW_eq w (by omega_arith) hw4]
   refine wp_seqs_append (by simp [millerRabin]) (by simp) ?_
-  refine WP.mono (millerRabin_ok M hd hc1 ⟨hodd, hlo, hhi⟩ hrl (by unfold checksW; split <;> (try split) <;>
-      (try split) <;> (try split) <;> (try split) <;> (try split) <;> decide) hc₁ hE₁ hr2₁
+  refine WP.mono (millerRabin_ok M hd hc1 ⟨hodd, hlo, hhi⟩ hrl (Nat.lt_of_le_of_lt (checksW_le w) (by decide)) hc₁ hE₁ hr2₁
     (by rw [hw₁ (Or.inl rfl)]; exact hrp) (by rw [hw₁ (Or.inr (Or.inl rfl))]; exact hK)
     (by rw [hw₁ (Or.inr (Or.inr (Or.inl rfl)))]; exact hrlen) hch₁ hsrc₁
     (by rw [hw₁ (Or.inr (Or.inr (Or.inr (Or.inl rfl))))]; exact hus) (Nat.le_refl _) hrk)

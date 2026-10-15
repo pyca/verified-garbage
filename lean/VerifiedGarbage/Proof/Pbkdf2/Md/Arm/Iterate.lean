@@ -254,9 +254,9 @@ theorem callOk_of {s : State} (h : Regs H sc s₀ s) :
     by rw [toNat_sO hp (by simp only [Hash.blkO, buf_eq H]; omega_arith)]; simp only [Hash.blkO, buf_eq H]; omega_arith,
     by omega_arith, ?_, ?_, ?_, ?_, ?_⟩
   all_goals simp only [addr_hv hz hp, addr_blk hz hp, hvA, blkA, Hash.hvO, Hash.blkO, buf_eq H]
-  · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
-  · exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_arith) (by omega_arith)
-  · exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+  · exact Offset.disjoint_base _ (by omega_arith) (hz.bufN_le64)
+  · exact Offset.disjoint _ (.inr (by omega_using [])) (hz.bufNB_le64) (hz.bufN_le64)
+  · exact Offset.disjoint_base _ (by omega_arith) (hz.bufNB_le64)
   · refine Covers.of_sub fun r hr => ⟨scR sc s₀, List.mem_append_right _ hsc, ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -312,7 +312,7 @@ theorem digest_ok {md : Md H.B H.N H.L} (ho : OutOk md H.out) {s : State} (h : R
       bytesAt s'.mem (blkA H s₀ + BitVec.ofNat 64 H.D) (H.B - H.D) = md.tailPad H.D → WP isa (.block rest) s' Q) :
     WP isa (.block (H.digest ++ rest)) s Q := by
   have hz_N64 := hz.N64; have hp_fits := hp.fits; have hz_DN := hz.DN; have hz_NL := hz.NL; have hz_D4 := hz.D4; have hz_N4 := hz.N4; have hz_pad := hz.pad
-  have hp_ns := hp.ns; have hB : 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B with h | h <;> omega_using [h]
+  have hp_ns := hp.ns; have hB := hz.B_range
   have ahv := addr_hv hz hp; have ablk := addr_blk hz hp
   have tb : (blk H s₀).toNat = (scr s₀).toNat + H.blkO := toNat_sO hp (by simp only [Hash.blkO]; omega_using [hz_pad, hp_fits])
   unfold Hash.digest
@@ -329,7 +329,7 @@ theorem digest_ok {md : Md H.B H.N H.L} (ho : OutOk md H.out) {s : State} (h : R
   have f₁ : Frame [⟨blkA H s₀, H.N⟩] s.mem s₁.mem := by
     rw [m₁]; exact writeBytes_frame _ _ _ (by rw [hdl]; exact Region.contains_self _ _)
   have b₁ : bytesAt s₁.mem (blkA H s₀) H.D = (md.digest (md.stateAt s.mem (hvA H s₀))).take H.D := by
-    rw [bytesAt_take _ _ hz.DN, m₁, bytesAt_writeBytes_self' hdl (by omega_using [hz_N64])]
+    rw [bytesAt_take _ _ hz.DN, m₁, bytesAt_writeBytes_self' hdl (hz.N_lt64)]
   have r₁ : bytesAt s₁.mem (blkA H s₀ + BitVec.ofNat 64 H.N) (H.B - H.N) =
       bytesAt s.mem (blkA H s₀ + BitVec.ofNat 64 H.N) (H.B - H.N) := by
     rw [m₁]
@@ -355,8 +355,8 @@ theorem digest_ok {md : Md H.B H.N H.L} (ho : OutOk md H.out) {s : State} (h : R
     · rw [m₂, ablk]
       refine f₁.trans (writeBytes_frame _ _ _ ?_)
       simp only [List.length_append, List.length_singleton, List.length_replicate]
-      exact Offset.contains_base _ (by omega_using [hDN]) (by omega_using [hz_DN, hz_N64])
-    · rw [m₂, ablk, bytesAt_writeBytes_sep _ _ ?_ (by omega_arith), b₁]
+      exact Offset.contains_base _ (by omega_using [hDN]) (hz.D_lt64)
+    · rw [m₂, ablk, bytesAt_writeBytes_sep _ _ ?_ (hz.D_lt64), b₁]
       have := Offset.sep (blkA H s₀) (d := 0) (n := H.D) (e := H.D) (k := H.N - H.D) (.inl (by omega_arith))
         (by omega_using [hz_DN, hz_N64]) (by omega_using [hz_DN, hz_N64])
       rw [add0] at this
@@ -458,7 +458,7 @@ theorem lc_ok {md : Md H.B H.N H.L} (hR : md.Reloc) {name : String} {code : Prog
       WP isa c s' Q) :
     WP isa (.block (H.loadKey o)) s fun s' => WP isa (.seq (compressBlock name code) c) s' Q := by
   have hz_N64 := hz.N64; have hp_fits := hp.fits; have hz_so := hz.so; have hz_DN := hz.DN; have hz_pad := hz.pad; have hz_NL := hz.NL
-  have hB : 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B with h | h <;> omega_arith
+  have hB := hz.B_range
   rw [← List.append_nil (H.loadKey o)]
   refine load_ok hz hp hR h (o := o) ho ho4 fun s₁ g₁ rd₁ wr₁ sp₁ f₁ e₁ => WP.block_nil ?_
   have h₁ := h.write (fun r hr => g₁ r (ne12 r hr)) rd₁ wr₁ sp₁
@@ -470,9 +470,9 @@ theorem lc_ok {md : Md H.B H.N H.L} (hR : md.Reloc) {name : String} {code : Prog
   have p₁ : bytesAt s₁.mem (blkA H s₀ + BitVec.ofNat 64 H.D) (H.B - H.D) = md.tailPad H.D :=
     (Memory.frame_bytesAt f₁ (fh₁ (by omega_arith)) (by omega_using [hB])).trans hpad
   have u₁ : bytesAt s₁.mem (blkA H s₀) H.D = bytesAt s.mem (blkA H s₀) H.D := by
-    have := Memory.frame_bytesAt f₁ (fh₁ (a := 0) (n := H.D) (by omega_using [hz_pad])) (by omega_arith); rwa [add0] at this
+    have := Memory.frame_bytesAt f₁ (fh₁ (a := 0) (n := H.D) (by omega_using [hz_pad])) (hz.D_le64); rwa [add0] at this
   have u₂ : bytesAt s₂.mem (blkA H s₀) H.D = bytesAt s₁.mem (blkA H s₀) H.D := by
-    have := Memory.frame_bytesAt f₂ (blk_disj hz hp (a := 0) (n := H.D) (by omega_arith)) (by omega_arith); rwa [add0] at this
+    have := Memory.frame_bytesAt f₂ (blk_disj hz hp (a := 0) (n := H.D) (by omega_arith)) (hz.D_le64); rwa [add0] at this
   rw [e₁, blockAt_eq (by omega_using [hz_pad]) p₁, u₁] at e₂
   have f : Frame [⟨scA s₀, H.so⟩, ⟨hvA H s₀, H.N⟩] s.mem s₂.mem :=
     (f₁.mono (by simp)).trans (f₂.mono fun r hr => by
@@ -482,7 +482,7 @@ theorem lc_ok {md : Md H.B H.N H.L} (hR : md.Reloc) {name : String} {code : Prog
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨⟨scA s₀, H.so⟩, by simp, fun _ h => h⟩
-  · exact ⟨⟨hvA H s₀, H.N + H.B⟩, by simp, Region.sub_prefix (by omega_arith)⟩
+  · exact ⟨⟨hvA H s₀, H.N + H.B⟩, by simp, Region.sub_prefix (Nat.le_add_right _ _)⟩
 
 /-- The end of a step: the digest into the block, `T ← T ⊕ U` and the count. -/
 theorem tail_ok {md : Md H.B H.N H.L} (ho : OutOk md H.out) {s : State} (h : Regs H sc s₀ s)
@@ -498,7 +498,7 @@ theorem tail_ok {md : Md H.B H.N H.L} (ho : OutOk md H.out) {s : State} (h : Reg
       ([.subs .r5 .r5 (.imm 1)] : List Instr))) s Q := by
   have hz_N64 := hz.N64; have hp_fits := hp.fits; have hz_DN := hz.DN; have hz_D4 := hz.D4; have hz_pad := hz.pad; have hz_NL := hz.NL; have hp_ns := hp.ns
   have hp_nt := hp.nt
-  have hB : 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B with h | h <;> omega_arith
+  have hB := hz.B_range
   rw [List.append_assoc]
   refine digest_ok hz hp ho h hpad fun s₆ g₆ rd₆ wr₆ sp₆ f₆ b₆ p₆ => ?_
   have h₆ := h.write (fun r hr => g₆ r (ne9 r hr) (ne10 r hr) (ne12 r hr)) rd₆ wr₆ sp₆
@@ -528,7 +528,7 @@ theorem tail_ok {md : Md H.B H.N H.L} (ho : OutOk md H.out) {s : State} (h : Reg
   have hT₆ : bytesAt s₆.mem (tA s₀) H.D = bytesAt s.mem (tA s₀) H.D :=
     Memory.frame_bytesAt f₆ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.t_s.sub_right (scr_sub (a := H.blkO) (n := H.N) (by simp only [Hash.blkO]; omega_arith))) (by omega_using [hz_DN, hz_N64])
+      exact hp.t_s.sub_right (scr_sub (a := H.blkO) (n := H.N) (by simp only [Hash.blkO]; omega_arith))) (hz.D_le64)
   refine k s₈ h₈ (by rw [u₈.gpr, x5₇]) (by rw [z₈, x5₇]) ?_ ?_ ?_ ?_
   · rw [u₈.mem]
     refine (f₆.sub fun r hr => ?_).trans (f₇.mono (by simp))
@@ -540,8 +540,8 @@ theorem tail_ok {md : Md H.B H.N H.L} (ho : OutOk md H.out) {s : State} (h : Reg
       exact (hp.t_s.sub_right (by rw [Memory.add_ofNat]; exact scr_sub (by simp only [Hash.blkO]; omega_using [hz_pad, hp_fits]))).symm)
       (by omega_arith)).trans p₆
   · rw [u₈.mem, m₇, bytesAt_writeBytes_sep _ _ (hd.symm.sep (Region.contains_self _ _) (by
-      rw [hxl]; exact Region.contains_self _ _)) (by omega_using [hz_DN, hz_N64]), b₆]
-  · rw [u₈.mem, m₇, bytesAt_writeBytes_self' hxl (by omega_arith), hT₆, b₆]
+      rw [hxl]; exact Region.contains_self _ _)) (hz.D_lt64), b₆]
+  · rw [u₈.mem, m₇, bytesAt_writeBytes_self' hxl (hz.D_lt64), hT₆, b₆]
 
 omit hz hp in
 theorem iterate_succ (f : List Byte → List Byte) (n : Nat) (u t : List Byte) :
@@ -551,8 +551,8 @@ theorem body_ok {md : Md H.B H.N H.L} (ho : OutOk md H.out) (hR : md.Reloc) (hf 
     {r : Nat} {s : State} (h : Inv H sc md s₀ (r + 1) s) :
     WP isa H.body s fun s' => eval .ne s' = some (r != 0) ∧ Inv H sc md s₀ r s' := by
   have hz_N64 := hz.N64; have hp_fits := hp.fits; have hz_DN := hz.DN; have hz_pad := hz.pad; have hz_NL := hz.NL; have hz_N4 := hz.N4
-  have hB : 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B with h | h <;> omega_arith
-  have hB4 : H.B % 4 = 0 := by rcases hz.B with h | h <;> omega_arith
+  have hB := hz.B_range
+  have hB4 := hz.B4
   unfold Hash.body
   refine WP.seq (lc_ok hz hp hR hf (o := 0) (by omega_using []) rfl h.toRegs h.pad fun s₂ h₂ x5₂ f₂ g₂ p₂ _ e₂ => ?_)
   refine WP.seq (digest_ok hz hp ho h₂ p₂ fun s₃ g₃ rd₃ wr₃ sp₃ f₃ b₃ p₃ => ?_)
@@ -575,16 +575,16 @@ theorem body_ok {md : Md H.B H.N H.L} (ho : OutOk md H.out) (hR : md.Reloc) (hf 
   have hT₅ : bytesAt s₅.mem (tA s₀) H.D = bytesAt s.mem (tA s₀) H.D := by
     refine Memory.frame_bytesAt (rs := [⟨scA s₀, H.so⟩, ⟨hvA H s₀, H.N + H.B⟩])
       (((g₂.sub fun r hr => ?_).trans (f₃.sub fun r hr => ?_)).trans (g₅.sub fun r hr => ?_)) (fun r hr => ?_)
-      (by omega_using [hz_DN, hz_N64])
+      (hz.D_le64)
     all_goals simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     · rcases hr with rfl | rfl
       · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨⟨hvA H s₀, H.N + H.B⟩, by simp, Region.sub_prefix (by omega_using [])⟩
+      · exact ⟨⟨hvA H s₀, H.N + H.B⟩, by simp, Region.sub_prefix (Nat.le_add_right _ _)⟩
     · subst hr; exact ⟨⟨hvA H s₀, H.N + H.B⟩, by simp, Offset.sub _ (by simp only [Hash.hvO, Hash.blkO]; omega_arith)
         (by simp only [Hash.hvO, Hash.blkO]; omega_using [hz_NL])⟩
     · rcases hr with rfl | rfl
       · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨⟨hvA H s₀, H.N + H.B⟩, by simp, Region.sub_prefix (by omega_arith)⟩
+      · exact ⟨⟨hvA H s₀, H.N + H.B⟩, by simp, Region.sub_prefix (Nat.le_add_right _ _)⟩
     · have hz_so := hz.so; have hz_W := hz.W
       rcases hr with rfl | rfl
       · exact hp.t_s.sub_right (Region.sub_prefix (by rw [buf_eq H] at *; omega_using [hz_so, hp_fits]))
@@ -643,7 +643,7 @@ theorem setup_ok {rest : List Instr} {Q : State → Prop} (k : ∀ s, Setup H s�
     WP isa (.block (([.ldrSp .r12 0] : List Instr) ++ H.st.save ++ ([.mov .r11 (.reg .r12), .mov .r7 (.reg .r3),
       .mov .r3 (.reg .r12), .mov .r4 (.reg .r0), .mov .r5 (.reg .r2)] : List Instr) ++ H.atHv ++ rest)) s₀ Q := by
   have hp_fits := hp.fits; have hp_ns := hp.ns; have hz_W := hz.W; have hz_N64 := hz.N64
-  have hB : 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B with h | h <;> omega_arith
+  have hB := hz.B_range
   rw [buf_eq H] at *
   simp only [List.append_assoc, List.singleton_append]
   refine wp_ldrSp (a := stackArgAddr s₀ 0) (by decide) rfl ⟨argR s₀, by simp [hp.rd], Region.contains_self _ _⟩
@@ -698,8 +698,8 @@ theorem fill_ok {md : Md H.B H.N H.L}
       fun s' => Inv H sc md s₀ (nn s₀) s' ∧ s'.z = decide (nn s₀ = 0) := by
   have hz_N64 := hz.N64; have hp_fits := hp.fits; have hz_DN := hz.DN; have hz_pad := hz.pad; have hz_NL := hz.NL; have hz_D4 := hz.D4; have hz_L4 := hz.L4
   have hz_L16 := hz.L16; have hp_ns := hp.ns; have hp_nu := hp.nu; have hz_W := hz.W
-  have hB : 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B with h | h <;> omega_arith
-  have hB4 : H.B % 4 = 0 := by rcases hz.B with h | h <;> omega_using [h]
+  have hB := hz.B_range
+  have hB4 := hz.B4
   have hD4 : 4 * (H.D / 4) = H.D := by omega_arith
   have ablk := addr_blk hz hp
   have tb : (blk H s₀).toNat = (scr s₀).toNat + H.blkO := toNat_sO hp (by simp only [Hash.blkO]; omega_arith)
@@ -743,7 +743,7 @@ theorem fill_ok {md : Md H.B H.N H.L}
     · rw [bytesAt_length]
       have := Offset.contains_base (blkA H s₀) (d := 0) (n := H.D) (k := H.B) (by omega_using [hz_pad]) (by omega_arith)
       rwa [add0] at this
-    · rw [lpz]; exact Offset.contains_base _ (by omega_using [hz_pad]) (by omega_using [hz_DN, hz_N64])
+    · rw [lpz]; exact Offset.contains_base _ (by omega_using [hz_pad]) (hz.D_lt64)
     · rw [md.lenBytes_length]; exact Offset.contains_base _ (by omega_using [hz_pad]) (by omega_using [hp_ns, hp_fits])
   have S1 : Mem.Sep (blkA H s₀) H.D (blkA H s₀ + BitVec.ofNat 64 H.D) (H.B - H.L - H.D) := by
     have := Offset.sep (blkA H s₀) (d := 0) (n := H.D) (e := H.D) (k := H.B - H.L - H.D) (.inl (by omega_arith))
@@ -759,10 +759,10 @@ theorem fill_ok {md : Md H.B H.N H.L}
   have hU : bytesAt s.mem (uA s₀) H.D = bytesAt s₀.mem (uA s₀) H.D :=
     Memory.frame_bytesAt h.mem (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.u_s.sub_right (save_sub hp)) (by omega_using [hz_DN, hz_N64])
+      exact hp.u_s.sub_right (save_sub hp)) (hz.D_le64)
   have hT : bytesAt s₄.mem (tA s₀) H.D = bytesAt s₀.mem (tA s₀) H.D := by
-    refine (Memory.frame_bytesAt fM (fun r hr => ?_) (by omega_arith)).trans
-      (Memory.frame_bytesAt h.mem (fun r hr => ?_) (by omega_arith))
+    refine (Memory.frame_bytesAt fM (fun r hr => ?_) (hz.D_le64)).trans
+      (Memory.frame_bytesAt h.mem (fun r hr => ?_) (hz.D_le64))
     · simp only [List.mem_singleton] at hr; subst hr; exact hp.t_s.sub_right sbB
     · simp only [List.mem_singleton] at hr; subst hr; exact hp.t_s.sub_right (save_sub hp)
   refine ⟨⟨⟨by rw [u₄.rd, rd₃, rd₂, rd₁, h.rd], by rw [u₄.wr, wr₃, wr₂, wr₁, h.wr],
@@ -774,20 +774,20 @@ theorem fill_ok {md : Md H.B H.N H.L}
     h.saved.frame H.st fM (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       have hz_W := hz.W; have hp_fits := hp.fits; rw [buf_eq H] at *
-      exact Offset.disjoint _ (.inl (by simp only [Hash.blkO, buf_eq H]; omega_using [])) (by omega_arith)
+      exact Offset.disjoint _ (.inl (by simp only [Hash.blkO, buf_eq H]; omega_using [])) (hz.buf_le64)
         (by simp only [Hash.blkO, buf_eq H]; omega_using [hz_W, hB, hz_N64])), ?_, Nat.le_refl _, ?_⟩, ?_⟩
   · -- The padding and the length field.
     rw [show H.B - H.D = (H.B - H.L - H.D) + H.L by omega_using [hz_pad], bytesAt_add, Memory.add_ofNat (blkA H s₀),
       show H.D + (H.B - H.L - H.D) = H.B - H.L by omega_using [hz_pad], hM,
       bytesAt_writeBytes_self' (md.lenBytes_length _) (by omega_using [hz_L16]),
-      bytesAt_writeBytes_sep _ _ (by rw [md.lenBytes_length]; exact S2 (by omega_using [hz_pad])) (by omega_using [hp_ns, hp_fits]),
-      bytesAt_writeBytes_self' lpz (by omega_arith), Md.tailPad, show H.B - H.L - 1 - H.D = H.B - H.L - H.D - 1 by omega_using []]
+      bytesAt_writeBytes_sep _ _ (by rw [md.lenBytes_length]; exact S2 (by omega_using [hz_pad])) (hz.BLD_lt64),
+      bytesAt_writeBytes_self' lpz (hz.BLD_lt64), Md.tailPad, show H.B - H.L - 1 - H.D = H.B - H.L - H.D - 1 by omega_using []]
   · -- `U` and `T`.
     have hB' : bytesAt s₄.mem (blkA H s₀) H.D = bytesAt s₀.mem (uA s₀) H.D := by
       rw [hM, bytesAt_writeBytes_sep _ _ (by
-          rw [md.lenBytes_length]; have := S2 (a := 0) (n := H.D) (by omega_using [hz_pad]); rwa [add0] at this) (by omega_arith),
-        bytesAt_writeBytes_sep _ _ (by rw [lpz]; exact S1) (by omega_arith),
-        bytesAt_writeBytes_self' (bytesAt_length _ _ _) (by omega_arith), hU]
+          rw [md.lenBytes_length]; have := S2 (a := 0) (n := H.D) (by omega_using [hz_pad]); rwa [add0] at this) (hz.D_lt64),
+        bytesAt_writeBytes_sep _ _ (by rw [lpz]; exact S1) (hz.D_lt64),
+        bytesAt_writeBytes_self' (bytesAt_length _ _ _) (hz.D_lt64), hU]
     rw [hB', hT]
   · have c := MdStream.Arm.cmp0 (s₀.gpr .r2).isLt
     rw [ofNat_toNat32] at c

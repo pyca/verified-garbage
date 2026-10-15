@@ -50,20 +50,20 @@ theorem ckReduceTop_ok {I : CkIn} {m₀ : Mem} {s : State} (h : CkS I m₀ s) {t
     fun i hi h1 h2 h3 => ?_⟩
   · exact f.word_eq (fun r hr' => by
       obtain ⟨j, hj, rfl⟩ := hr r hr'
-      have := hdr_lt_slot (wW I.cap) j (show Public.sMask < 32 by decide); exact Or.inl (by omega))
-      (by simp only [Public.sMask, sFn]; omega)
+      have := hdr_lt_slot (wW I.cap) j (show Public.sMask < 32 by decide); exact Or.inl (by omega_using [this]))
+      (by simp only [Public.sMask, sFn]; omega_using [])
   · have hM : 0 < I.av s.mem aM := Nat.lt_of_le_of_lt (Nat.zero_le _) hlt
     have hr' := hv hlt
     have hlt' : wv t.mem I.B (slot (wW I.cap) aRem) (wW I.cap + 1) < 2 ^ (64 * wW I.cap) := by
       rw [hr']; exact Nat.lt_of_lt_of_le (Nat.mod_lt _ hM) (Nat.le_of_lt (wv_lt _ _ _ _))
     unfold CkIn.av
-    rw [wv_low_of_lt (v := wW I.cap) (w := wW I.cap + 1) (by omega) hlt', hr']
+    rw [wv_low_of_lt (v := wW I.cap) (w := wW I.cap + 1) (by omega_using []) hlt', hr']
   · exact f.wv_eq (fun r hr' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl <;> dsimp only
-      · have := slot_sep (w := wW I.cap) h2; omega
-      · have := slot_sep (w := wW I.cap) h1; omega
-      · have := slot_sep (w := wW I.cap) h3; omega) (by have := h.ws.sl hi; omega)
+      · have := slot_sep (w := wW I.cap) h2; omega_using [this]
+      · have := slot_sep (w := wW I.cap) h1; omega_using [this]
+      · have := slot_sep (w := wW I.cap) h3; omega_using [this]) (by have := h.ws.sl hi; omega_using [hn, this])
 
 /-- `topE`: `x13 := 1`. -/
 theorem topE_ok (B : Addr) (Z : Nat) (m₀ : Mem) : TopOk topE B Z m₀ 1 := fun t _ _ _ =>
@@ -73,11 +73,11 @@ theorem topE_ok (B : Addr) (Z : Nat) (m₀ : Mem) : TopOk topE B Z m₀ 1 := fun
 /-- `topQ`: `x13 := ⌈q_len / 8⌉`, from the header slot of `q_len`. -/
 theorem topQ_ok {B : Addr} {Z : Nat} {m₀ : Mem} {ql : Nat} (hq : word m₀ B (8 * sQlen) = BitVec.ofNat 64 ql)
     (hql : ql < 2 ^ 32) (hZ : 8 * 32 ≤ Z) : TopOk topQ B Z m₀ ((ql + 7) / 8) := fun t hs h0 hh => by
-  have hl := hs.ld (d := 8 * sQlen) (by simp only [sQlen, sFn]; omega)
+  have hl := hs.ld (d := 8 * sQlen) (by simp only [sQlen, sFn]; omega_using [hZ])
   refine WP.mono (WP.keep [.x13] (Q := fun t' => t'.gpr .x13 = BitVec.ofNat 64 ((ql + 7) / 8) ∧ t'.mem = t.mem ∧
     t'.c = t.c) ?_ (by decide) (by decide) (by decide +kernel)) fun _ ⟨h, k⟩ => ⟨h, k.mono (by simp)⟩
   unfold topQ
-  brun [h0, hl, hh sQlen (by decide), hq, BitVec.ofNat_add_ofNat, shr_ofNat (show ql + 7 < 2 ^ 64 by omega)]
+  brun [h0, hl, hh sQlen (by decide), hq, BitVec.ofNat_add_ofNat, shr_ofNat (show ql + 7 < 2 ^ 64 by omega_using [hql])]
   rfl
 
 /-- `modOne top`: the mask of `[aA] mod [aM] = 1`, when the words of `[aA]`
@@ -146,7 +146,7 @@ theorem phModC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ 
   have O₅ : I.av s₅.mem aOne = 1 := by
     rw [o₅ aOne (by decide) (by decide), o₄ aOne (by decide), o₃ aOne (by decide) (by decide),
       o₂ aOne (by decide) (by decide), o₁ aOne (by decide) (by decide), hO]
-  have hw1 : 1 < wW I.cap := by simp only [wW, wk]; omega
+  have hw1 : 1 < wW I.cap := by simp only [wW, wk]; omega_using []
   refine WP.mono (ckModOneTop_ok h₅ (m₅.trans m₄) O₅ (topE_ok _ _ _) (Nat.le_refl _) hw1)
     fun t ⟨ht, ⟨r, hr, mt⟩, ot⟩ => ?_
   have M₅ : I.av s₅.mem aM = I.av s₂.mem aM := by
@@ -199,10 +199,10 @@ theorem phQIC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
     rw [o₅ aOne (by decide) (by decide), o₄ aOne (by decide) (by decide), o₃ aOne (by decide),
       o₂ aOne (by decide) (by decide), o₁ aOne (by decide) (by decide), hO]
   -- `c = ⌈q_len / 8⌉` words: `q < 2^(64 c)`.
-  have hk1 : 1 ≤ (I.ql + 7) / 8 := by have := L.ql1; omega
-  have hk : (I.ql + 7) / 8 < wW I.cap := by have := L.qcap; simp only [wW, wk]; omega
+  have hk1 : 1 ≤ (I.ql + 7) / 8 := by have := L.ql1; omega_using [this]
+  have hk : (I.ql + 7) / 8 < wW I.cap := by have := L.qcap; simp only [wW, wk]; omega_using [this]
   refine WP.mono (ckModOneTop_ok h₅ (m₅.trans (m₄.trans m₃)) O₅ (topQ_ok h₅.args.ql
-    (by have := L.ql2; have := L.k2; omega) (by have := h₅.ws.h256; omega)) hk1 hk)
+    (by have := L.ql2; have := L.k2; omega) (by have := h₅.ws.h256; omega_using [this])) hk1 hk)
     fun t ⟨ht, ⟨r, hr, mt⟩, ot⟩ => ?_
   have M₅ : I.av s₅.mem aM = I.P := by
     rw [o₅ aM (by decide) (by decide), o₄ aM (by decide) (by decide), o₃ aM (by decide), M₂]
@@ -225,7 +225,7 @@ theorem phQIC_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
   · by_cases hlt : I.QI < I.P
     · have hq : I.Q < 2 ^ (64 * ((I.ql + 7) / 8)) := Nat.lt_of_lt_of_le (os2ip_lt I.qb)
         (by rw [L.qbl, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul]
-            exact Nat.pow_le_pow_right (by decide) (by omega))
+            exact Nat.pow_le_pow_right (by decide) (by omega_using []))
       rw [hr (Nat.lt_of_le_of_lt (mul_div_top_le hq) hlt), Nat.mul_comm I.QI I.Q]
     · simp only [hlt, decide_false, Bool.false_and]
 

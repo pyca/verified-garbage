@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA verification on x86 (32-bit): `Â` and `c`
@@ -46,7 +48,7 @@ include hF
 
 theorem rho_piece : VP p (fun s₀ s => VB p s₀ s ∧ accV s₀ s = 1) (SA p · 0) (copyW vS ⟨0, 0, 32⟩ (sb oSB 32) 8) :=
   copyW_piece (Y := YV p) 0 0 vS oSB 8 (by decide) (by decide) (by lvd) (h₁ := .block []) (by kernel_rfl)
-    (by taint_decide) (fun _ _ _ h => h.1.ctx) fun s₀ s s' hp h h' fr cp => by
+    (by native_taint_decide) (fun _ _ _ h => h.1.ctx) fun s₀ s s' hp h h' fr cp => by
       have fr' : Frame (FR s₀ [sb oSB 32] 0) s.mem s'.mem := fr1 fr
       refine ⟨h.1.keep hp (N := 0) (by omega) (by lvd) (fun j hj => by lvd) fr' h', ?_,
         fun _ _ => toRq Proof.MlDsa.KeyGen.zeroI, fun r s hb => absurd hb.2 (by omega),

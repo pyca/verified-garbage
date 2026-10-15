@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
@@ -28,6 +29,18 @@ open VG.Proof.MlKem.X86_64
 
 /-- What `mrWitness` changes. -/
 def witRanges (w : Nat) : List (Nat × Nat) := [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8), (8 * kU, 8)]
+
+/-- `witRanges`'s ranges, in the header and in the arrays. -/
+theorem witRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(200, 8), (240, 8)]
+    [(1, 1)] (witRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    witRanges, Public.aX, aX, sFn, kU, kUsed] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact .inr ⟨(1, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inl (by decide)
 
 theorem mrWitness_eq : mrWitness =
     ([.block [.mov .rsi (.mem (hdr kRand)), .mov .rax (.mem (hdr kUsed)), .alu .add .rsi (.reg .rax),

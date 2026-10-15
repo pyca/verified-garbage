@@ -23,6 +23,7 @@ deriving instance Lean.ToExpr for VShiftOp
 deriving instance Lean.ToExpr for VSelOp
 deriving instance Lean.ToExpr for VPermOp
 deriving instance Lean.ToExpr for VRevOp
+deriving instance Lean.ToExpr for VMulHOp
 deriving instance Lean.ToExpr for Sha1Op
 deriving instance Lean.ToExpr for VOp
 deriving instance Lean.ToExpr for CondCode

@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): the loops of `vg_mldsa_make_hint` and `vg_mldsa_use_hint`
@@ -78,7 +80,7 @@ structure HS1 (s₀ s : State) : Prop where
   zf : s.zf = some (arg s₀ 2 == BitVec.ofNat 32 g32)
 
 theorem hintInit_piece (reqA : Bool) : Piece (HPre reqA) HPub (fun s₀ s => s = P0 s₀) HS1 (.block hintInit) := by
-  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by native_taint_decide)
   · subst e
     have hin : aR s₀ 4 ∈ s₀.rd ++ s₀.wr := by simp [hp.wr]
     obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega) hp.sp hp.sp' hin hp.stk_a

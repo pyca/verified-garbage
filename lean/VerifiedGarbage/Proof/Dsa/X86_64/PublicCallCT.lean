@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicPowerCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicPowerCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
@@ -76,8 +77,8 @@ theorem powerCall_load {p : PowerCallPublic × List Byte} {s : State} (h : Power
     helen, helen ▸ p.1.expPositive, helen ▸ p.1.expLimit, work_source hc hfw hk he⟩,
     (hfa.wv_of_not_mem (by decide) (by decide) hz).trans hr2⟩
 
-theorem powerCall_ct (M : Mont) : RelCT isa (Two PowerCallPre)
-    (VG.Impl.Dsa.X86_64.PublicPower.power M.mm arg argLen arg2 arg2Len) (fun _ _ => True) := by
+theorem powerCall_ct (M : Mont) (Sq : MontS) : RelCT isa (Two PowerCallPre)
+    (VG.Impl.Dsa.X86_64.PublicPower.power Sq.mm M.mm arg argLen arg2 arg2Len) (fun _ _ => True) := by
   unfold VG.Impl.Dsa.X86_64.PublicPower.power
   refine RelCT.seq (two_post (Ψ := PowerCallPrepared)
     (two_map (fun p : PowerCallPublic × List Byte => p.1.toPowerPublic.product) (fun p s h =>
@@ -92,6 +93,6 @@ theorem powerCall_ct (M : Mont) : RelCT isa (Two PowerCallPre)
     have hbw : (bb.length + 7) / 8 ≤ p.1.x.wx := hbl ▸ p.1.baseFits
     have hw48 : p.1.x.wx ≤ 48 := p.1.width48
     omega
-  · exact two_map (fun p : PowerCallPublic × List Byte => (p.1.toPowerPublic, p.2)) (fun _ _ h => h) (powerCore_ct M)
+  · exact two_map (fun p : PowerCallPublic × List Byte => (p.1.toPowerPublic, p.2)) (fun _ _ h => h) (powerCore_ct M Sq)
 
 end VG.Proof.Dsa.X86_64.PublicPower

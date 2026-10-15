@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicFinishCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicFinishCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicPrefix
@@ -94,7 +95,7 @@ theorem publicPrefix_known_ct (M : Mont) (inputs : SchedulePublic → List (Oper
   exact ⟨bs, hs.1.preserveExternal hr hf hk (stable p a ha).1 (stable p a ha).2 hbs, hlen⟩
 
 /-- The subgroup exponent's bytes are fixed by its public value and width. -/
-theorem publicSubgroup_ct (M : Mont) (inputs : SchedulePublic → List (Operand × Nat))
+theorem publicSubgroup_ct (M : Mont) (Sq : MontS) (inputs : SchedulePublic → List (Operand × Nat))
     (stable : ∀ p a, a ∈ inputs p → a.1.length ≠ .mask ∧ stablePointer a.1.pointer)
     (a : Operand) (ha : pointerFits a.pointer) (hpa : stablePointer a.pointer)
     (hin : ∀ p, (a, p.layout.pLen) ∈ inputs p)
@@ -102,7 +103,7 @@ theorem publicSubgroup_ct (M : Mont) (inputs : SchedulePublic → List (Operand 
     (hT : (taint.check (Taint.ofRegs [.rdi])
       (.block (callHead a ⟨.input .q, .qLen⟩ (Core.element t) pWorkspace)) hc).isSome = true) :
     RelCT isa (Two (PublicKeyPre inputs))
-      (Core.publicPow M.mm pWorkspace a ⟨.input .q, .qLen⟩ (Core.element t))
+      (Core.publicPow Sq.mm M.mm pWorkspace a ⟨.input .q, .qLen⟩ (Core.element t))
       (Two (PublicKeyPre inputs)) := by
   let pub (p : SchedulePublic) : ReadyCallPublic .p t :=
     scheduleCallPublic .p t (fun p => p.layout.pLen) (fun p => p.layout.qLen)
@@ -110,7 +111,7 @@ theorem publicSubgroup_ct (M : Mont) (inputs : SchedulePublic → List (Operand 
       (fun p => p.layout.widths.1) (by intro p; have := p.layout.widths; omega)
       (by decide) (element_space (by decide)) p
   refine two_post (two_map (fun p => (pub p, Spec.Dsa.encodeBE p.layout.qLen p.layout.subgroup)) ?_
-    (PublicPower.readyPublicPow_ct M .p t a ⟨.input .q, .qLen⟩ ha (by trivial) hpa (by change Field.q ≠ .mask; decide) (by decide) hT)) ?_
+    (PublicPower.readyPublicPow_ct M Sq .p t a ⟨.input .q, .qLen⟩ ha (by trivial) hpa (by change Field.q ≠ .mask; decide) (by decide) hT)) ?_
   · intro p s ⟨hs, qb, hqb, hql, hqv⟩
     obtain ⟨ab, hab, hal⟩ := hs.2.1 _ (hin p)
     have he : Spec.Dsa.encodeBE p.layout.qLen p.layout.subgroup = qb := by
@@ -119,7 +120,7 @@ theorem publicSubgroup_ct (M : Mont) (inputs : SchedulePublic → List (Operand 
     exact ⟨⟨hs.1, ab, qb, hab.active, hqb.active, hal, hql⟩, hqb.active, hql⟩
   · intro p s ⟨hs, qb, hqb, hql, hqv⟩
     obtain ⟨ab, hab, hal⟩ := hs.2.1 _ (hin p)
-    refine WP.mono (readyPublicPow_ok M hs.1 .p p.pGreater p.pOdd a ⟨.input .q, .qLen⟩ ha (by trivial)
+    refine WP.mono (readyPublicPow_ok M Sq hs.1 .p p.pGreater p.pOdd a ⟨.input .q, .qLen⟩ ha (by trivial)
       hab.active hqb.active (by rw [hal]; have := p.layout.widths; omega)
       (by rw [hal]; exact Nat.le_refl _) (by rw [hql]; exact p.layout.widths.1)
       (by rw [hql]; have := p.layout.widths; omega) t (by decide) (element_space (by decide) p))

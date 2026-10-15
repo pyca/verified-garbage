@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_expand_mask_poly`
@@ -173,12 +175,12 @@ theorem all_ct {σ₁ σ₂ : State} (two : Two σ₁ σ₂) :
         rw [h.1, h.2]
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl
-        exacts [two.r0, two.r1, two.r2, two.r3]) (by taint_decide))
+        exacts [two.r0, two.r1, two.r2, two.r3]) (by native_taint_decide))
     fun a b h => ⟨by rw [h.1]; exact pro_rb two.p₁.ok rfl rfl rfl rfl rfl,
       by rw [h.2]; exact pro_rb ok₂ two.r0.symm two.r1.symm two.r2.symm two.r3.symm rfl⟩) ?_
   refine RelCT.seq (R := fun a b => J6 136 640 (spOf σ₁) σ₁ a ∧ J6 136 640 (spOf σ₂) σ₂ b)
     ((sponge_ct two.p₁.ok ok₂ two.sp (rate := 136) (outlen := 640) (by decide) (by decide) (by decide) (by decide)
-      (by taint_decide) (by taint_decide) (by taint_decide)).mono (fun _ _ h => h)
+      (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)).mono (fun _ _ h => h)
       fun a b h => ⟨h.1, hP ▸ h.2⟩) ?_
   refine RelCT.seq (R := fun a b => EDone σ₁ a ∧ EDone σ₂ b) (relW (taintRel [.r5, .r6, .r7]
       (fun a b h r hr => by
@@ -186,10 +188,10 @@ theorem all_ct {σ₁ σ₂ : State} (two : Two σ₁ σ₂) :
         rcases hr with rfl | rfl | rfl
         · rw [h.1.env.r5, h.2.env.r5, hP]
         · rw [h.1.env.r6, h.2.env.r6, hP]
-        · rw [h.1.r7, h.2.r7, hP]) (by taint_decide))
+        · rw [h.1.r7, h.2.r7, hP]) (by native_taint_decide))
     fun a b h => ⟨tail_ok two.p₁.ok two.p₁.g h.1, tail_ok two.p₂.ok two.p₂.g h.2⟩) ?_
   exact taintRel [.r6] (fun a b h r hr => by
-    rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r6, h.2.env.r6, hP]) (by taint_decide)
+    rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r6, h.2.env.r6, hP]) (by native_taint_decide)
 
 /-! ## Verified -/
 

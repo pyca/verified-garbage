@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicCalls
 public import VerifiedGarbage.Proof.Dsa.Zero
@@ -27,7 +28,7 @@ def signingKeyAccepted (L : ExecutionLayout) (gb yb : List Byte) (valid : Bool) 
   (decide (1 < Spec.Dsa.decodeBE yb ∧ Spec.Dsa.decodeBE yb < L.modulus) &&
   (decide (1 < Spec.Dsa.decodeBE gb ∧ Spec.Dsa.decodeBE gb < L.modulus) && valid)))
 
-theorem signingKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
+theorem signingKey_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
     (hp : 1 < L.modulus) (hq : 255 < L.subgroup)
     (hop : L.modulus % 2 = 1) (hoq : L.subgroup % 2 = 1)
     (hpf : L.modulus ≤ 256 ^ L.pLen) (hqf : L.subgroup ≤ 256 ^ L.qLen)
@@ -38,7 +39,7 @@ theorem signingKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
     (hgl : gb.length = L.pLen) (hyl : yb.length = L.pLen) (hqlen : qb.length = L.qLen)
     (hqval : Spec.Dsa.decodeBE qb = L.subgroup)
     {valid : Bool} (hm : word s0.mem L.base Field.mask.offset = mask valid) :
-    WP isa (Checks.signingKey M.mm) s0 fun s8 =>
+    WP isa (Checks.signingKey Sq.mm M.mm) s0 fun s8 =>
       Ready L s8 ∧ word s8.mem L.base Field.mask.offset = mask (signingKeyAccepted L gb yb valid) ∧
       OperandBytes s8 L.base activeBytes (Core.scalar qMinusTwo) (Spec.Dsa.encodeBE L.qLen (L.subgroup - 2)) ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s8.mem ∧ Keep coreRegs s0 s8 := by
@@ -92,11 +93,11 @@ theorem signingKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
   have hg6 := h6.external (by decide) hqm hg5
   have hq6 := h6.external (by decide) hqm hq5
   have hm6 := (h6.fields (by decide) hqm .mask).trans hm5
-  have step7 := readyPublicPow_ok M h6.ready .p hp hop Core.generator ⟨.input .q, .qLen⟩ (by trivial) (by trivial)
+  have step7 := readyPublicPow_ok M Sq h6.ready .p hp hop Core.generator ⟨.input .q, .qLen⟩ (by trivial) (by trivial)
     hg6.active hq6.active (by rw [hgl]; omega)
     (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hqlen]; omega) (by rw [hqlen]; omega) t (by decide) ht
-  have step7' : WP isa (Core.publicPow M.mm pWorkspace Core.generator ⟨.input .q, .qLen⟩ (Core.element t)) s6
+  have step7' : WP isa (Core.publicPow Sq.mm M.mm pWorkspace Core.generator ⟨.input .q, .qLen⟩ (Core.element t)) s6
       (CallResult L .p t (Spec.Dsa.powMod (Spec.Dsa.decodeBE gb) L.subgroup L.modulus) s6) := by
     simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value, hqval] using step7
   refine WP.seq (WP.mono step7' fun s7 h7 => ?_)

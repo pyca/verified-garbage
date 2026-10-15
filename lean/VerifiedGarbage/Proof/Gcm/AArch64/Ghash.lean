@@ -334,10 +334,11 @@ theorem blockAt_rev (m : Mem) (p : Addr) :
       blockAt m p := by
   have e : ∀ j : Nat, j < 15 → p + BitVec.ofNat 64 j + 1 = p + BitVec.ofNat 64 (j + 1) :=
     fun j _ => Offset.add_add p j 1
-  rw [rev64_readW, rev64_readW, e 0 (by decide), e 1 (by decide), e 2 (by decide),
-    e 3 (by decide), e 4 (by decide), e 5 (by decide), e 6 (by decide), e 8 (by decide), e 9 (by decide),
-    e 10 (by decide), e 11 (by decide), e 12 (by decide), e 13 (by decide), e 14 (by decide),
-    Spec.Gcm.blockAt, bytesAt_16, ofBytes_16]
+  rw [rev64_readW, rev64_readW]
+  simp only [e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide), e 4 (by decide),
+    e 5 (by decide), e 6 (by decide), e 8 (by decide), e 9 (by decide), e 10 (by decide), e 11 (by decide),
+    e 12 (by decide), e 13 (by decide), e 14 (by decide)]
+  rw [Spec.Gcm.blockAt, bytesAt_16, ofBytes_16]
 
 theorem read_8 (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by
   simp only [Mem.readW]; exact (BitVec.setWidth_eq _).symm

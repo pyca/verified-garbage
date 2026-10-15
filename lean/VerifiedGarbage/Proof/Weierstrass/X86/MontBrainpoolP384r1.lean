@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontVerified
 import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
@@ -43,37 +45,37 @@ theorem brainpoolp384r1n_ok : FnOk brainpoolp384r1n where
   nsSub := NoSp.of_all (by lit_decide)
 
 theorem brainpoolp384r1p_mul_ct : ConstantTime isa (mulX86 brainpoolp384r1p).pre (mulX86 brainpoolp384r1p).pub (mulFn brainpoolp384r1p.k brainpoolp384r1p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem brainpoolp384r1p_mul_verified : Verified X86.target (mulFn brainpoolp384r1p.k brainpoolp384r1p.m) (brainpoolp384r1p.mulContract X86.abi) :=
   Verified.of_correct (mul_x86 brainpoolp384r1p_ok) brainpoolp384r1p_mul_ct (mul_implies brainpoolp384r1p brainpoolp384r1p_ok.k9 brainpoolp384r1p_ok.mul.m_pos)
 
 theorem brainpoolp384r1p_add_ct : ConstantTime isa (addX86 brainpoolp384r1p).pre (addX86 brainpoolp384r1p).pub (addFn brainpoolp384r1p.k brainpoolp384r1p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem brainpoolp384r1p_add_verified : Verified X86.target (addFn brainpoolp384r1p.k brainpoolp384r1p.m) (brainpoolp384r1p.addContract X86.abi) :=
   Verified.of_correct (add_x86 brainpoolp384r1p_ok) brainpoolp384r1p_add_ct (add_implies brainpoolp384r1p brainpoolp384r1p_ok.k9 brainpoolp384r1p_ok.mul.m_pos)
 
 theorem brainpoolp384r1p_sub_ct : ConstantTime isa (subX86 brainpoolp384r1p).pre (subX86 brainpoolp384r1p).pub (subFn brainpoolp384r1p.k brainpoolp384r1p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem brainpoolp384r1p_sub_verified : Verified X86.target (subFn brainpoolp384r1p.k brainpoolp384r1p.m) (brainpoolp384r1p.subContract X86.abi) :=
   Verified.of_correct (sub_x86 brainpoolp384r1p_ok) brainpoolp384r1p_sub_ct (sub_implies brainpoolp384r1p brainpoolp384r1p_ok.k9 brainpoolp384r1p_ok.mul.m_pos)
 
 theorem brainpoolp384r1n_mul_ct : ConstantTime isa (mulX86 brainpoolp384r1n).pre (mulX86 brainpoolp384r1n).pub (mulFn brainpoolp384r1n.k brainpoolp384r1n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem brainpoolp384r1n_mul_verified : Verified X86.target (mulFn brainpoolp384r1n.k brainpoolp384r1n.m) (brainpoolp384r1n.mulContract X86.abi) :=
   Verified.of_correct (mul_x86 brainpoolp384r1n_ok) brainpoolp384r1n_mul_ct (mul_implies brainpoolp384r1n brainpoolp384r1n_ok.k9 brainpoolp384r1n_ok.mul.m_pos)
 
 theorem brainpoolp384r1n_add_ct : ConstantTime isa (addX86 brainpoolp384r1n).pre (addX86 brainpoolp384r1n).pub (addFn brainpoolp384r1n.k brainpoolp384r1n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem brainpoolp384r1n_add_verified : Verified X86.target (addFn brainpoolp384r1n.k brainpoolp384r1n.m) (brainpoolp384r1n.addContract X86.abi) :=
   Verified.of_correct (add_x86 brainpoolp384r1n_ok) brainpoolp384r1n_add_ct (add_implies brainpoolp384r1n brainpoolp384r1n_ok.k9 brainpoolp384r1n_ok.mul.m_pos)
 
 theorem brainpoolp384r1n_sub_ct : ConstantTime isa (subX86 brainpoolp384r1n).pre (subX86 brainpoolp384r1n).pub (subFn brainpoolp384r1n.k brainpoolp384r1n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem brainpoolp384r1n_sub_verified : Verified X86.target (subFn brainpoolp384r1n.k brainpoolp384r1n.m) (brainpoolp384r1n.subContract X86.abi) :=
   Verified.of_correct (sub_x86 brainpoolp384r1n_ok) brainpoolp384r1n_sub_ct (sub_implies brainpoolp384r1n brainpoolp384r1n_ok.k9 brainpoolp384r1n_ok.mul.m_pos)

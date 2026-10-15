@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgT
-import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -26,70 +25,6 @@ variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt stateAt Repr)
-
-/-! ## Copies of 32 bytes -/
-
-theorem readW64_byte (m : Mem) (a : Addr) {i : Nat} (hi : i < 8) :
-    (m.readW a 64).extractLsb' (8 * i) 8 = m (a + BitVec.ofNat 64 i) := by
-  rw [← Mem.extractLsb'_read m a (n := 8) hi]
-  simp only [Mem.readW]
-  rfl
-
-theorem writeW64_byte (m : Mem) (a : Addr) (v : BitVec 64) {i : Nat} (hi : i < 8) :
-    m.writeW a v (a + BitVec.ofNat 64 i) = v.extractLsb' (8 * i) 8 := by
-  simp only [Mem.writeW, Mem.write, Mem.sub_ofNat_toNat a (show i < 2 ^ 64 by omega),
-    show i < 64 / 8 by omega, ite_true]
-  rfl
-
-theorem writeW64_off (m : Mem) (a x : Addr) (v : BitVec 64) (h : ¬ (x - a).toNat < 8) :
-    m.writeW a v x = m x := Mem.write_apply h
-
-/-- The 32 bytes at `S + so` copied to `D + dO`, through `x9`. -/
-theorem copy_ok {S D : Addr} {sb db : Reg} {so dO : Nat} (hs9 : sb ≠ .x9) (hd9 : db ≠ .x9)
-    (hso : so % 8 = 0 ∧ so + 32 ≤ 32768) (hdo : dO % 8 = 0 ∧ dO + 32 ≤ 32768)
-    (hsep : Region.Disjoint ⟨S + BitVec.ofNat 64 so, 32⟩ ⟨D + BitVec.ofNat 64 dO, 32⟩)
-    {s : State} (hS : s.gpr sb = S) (hD : s.gpr db = D)
-    (hin : Covers [⟨S + BitVec.ofNat 64 so, 32⟩] (s.rd ++ s.wr))
-    (hout : Covers [⟨D + BitVec.ofNat 64 dO, 32⟩] s.wr) :
-    WP isa (.block (copy32 sb so db dO)) s fun s' => Keep [.x9] s s' ∧
-      Frame [⟨D + BitVec.ofNat 64 dO, 32⟩] s.mem s'.mem ∧
-      bytesAt s'.mem (D + BitVec.ofNat 64 dO) 32 = bytesAt s.mem (S + BitVec.ofNat 64 so) 32 := by
-  have n9s : sb ∉ [Reg.x9] := by simpa using hs9
-  have n9d : db ∉ [Reg.x9] := by simpa using hd9
-  refine WP.mono (wp_range_flatMap (M := isa) (N := 4) (fun k (s' : State) => Keep [.x9] s s' ∧
-      Frame [⟨D + BitVec.ofNat 64 dO, 32⟩] s.mem s'.mem ∧
-      ∀ i < 8 * k, s'.mem (D + BitVec.ofNat 64 (dO + i)) = s.mem (S + BitVec.ofNat 64 (so + i)))
-    (fun k s₁ hk ⟨k₁, f₁, b₁⟩ => ?_) 4 (Nat.le_refl _) s
-    ⟨Keep.refl _ _, Frame.refl _ _, fun i hi => absurd hi (by omega)⟩) fun s' ⟨k', f', b'⟩ =>
-      ⟨k', f', ?_⟩
-  · refine wp_ldrx (a := S + BitVec.ofNat 64 (so + 8 * k)) ⟨by omega, by omega⟩ (by rw [k₁.get sb n9s, hS])
-      (by rw [k₁.rd, k₁.wr]; exact in_R (A := fun _ => S) (b := 0) hin (k := 8 * k) (by omega) (by decide))
-      fun s₂ h₂ e₂ => wp_strx (a := D + BitVec.ofNat 64 (dO + 8 * k)) ⟨by omega, by omega⟩
-      (by rw [h₂.get db n9d, k₁.get db n9d, hD])
-      (by rw [h₂.wr, k₁.wr]; exact in_R (A := fun _ => D) (b := 0) hout (k := 8 * k) (by omega) (by decide))
-      fun s₃ h₃ => wp_nil ?_
-    have m₃ : s₃.mem = s₁.mem.writeW (D + BitVec.ofNat 64 (dO + 8 * k))
-        (s₁.mem.readW (S + BitVec.ofNat 64 (so + 8 * k)) 64) := by
-      rw [h₃.mem, e₂, h₂.mem]
-    refine ⟨((k₁.trans h₂.keep).trans h₃.keep).mono, ?_, fun i hi => ?_⟩
-    · rw [m₃]
-      exact f₁.writeW (List.mem_singleton_self _) _ (by
-        rw [← ptr_add]; exact contains_off (by omega) (by decide))
-    · rw [m₃]
-      rcases (by omega : i < 8 * k ∨ 8 * k ≤ i) with hi' | hi'
-      · rw [writeW64_off _ _ _ _ (sep_off D (a := dO + i) (n := 1) (b := dO + 8 * k) (k := 8) (by omega)
-          (by omega) (by omega) _ (by rw [BitVec.sub_self]; decide))]
-        exact b₁ i hi'
-      · rw [show D + BitVec.ofNat 64 (dO + i) = D + BitVec.ofNat 64 (dO + 8 * k) + BitVec.ofNat 64 (i - 8 * k) by
-          rw [ptr_add, show dO + 8 * k + (i - 8 * k) = dO + i by omega], writeW64_byte _ _ _ (by omega),
-          readW64_byte _ _ (by omega), ptr_add, show so + 8 * k + (i - 8 * k) = so + i by omega]
-        refine f₁ _ fun r hr hc => ?_
-        rw [List.mem_singleton.mp hr] at hc
-        exact hsep _ (R.contains (A := fun _ => S) (b := 0) (k := i) (n := 1) (by omega) (by decide)) hc
-  · refine List.ext_getElem (by simp only [bytesAt_length]) fun i h₁ _ => ?_
-    rw [bytesAt_length] at h₁
-    rw [bytesAt_getElem, bytesAt_getElem, ptr_add, ptr_add]
-    exact b' i (by omega)
 
 /-! ## The bytes of `ek` and `dk` -/
 

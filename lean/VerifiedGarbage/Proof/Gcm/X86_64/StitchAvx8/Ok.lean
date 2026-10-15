@@ -426,7 +426,7 @@ theorem encRestI_ok {s₀ s : State} {ix : Bool} (hp : SPre s₀) (hS : SrcOk s�
     (hP : ∀ k < 8, x * φ (P k) = φ (hk s₀) ^ (8 - k)) :
     WP isa (encRest (nr s₀) ix) s fun t =>
       EPost s₀ t ∧ t.mem.readW (pp s₀ + 816) 64 = s₀.mem.readW (pp s₀ + 816) 64 := by
-  rw [encRest]
+  rw [encRest, ← body8_enc]
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
   refine WP.seq (WP.mono (WP.seq_iff.mp (firstEnc_ok hp hS hR hsrc)) fun t ht =>
     WP.seq (WP.mono ht fun t hI => ?_))

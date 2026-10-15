@@ -49,7 +49,7 @@ theorem modBits_ok {s : State} (h13 : s.gpr .r13 = BitVec.ofNat 64 64) (hre : (s
     WP isa (.loop (.block (modBit ++ ([.alu .sub .r13 (.imm 1)] : List Instr))) .ne) s fun t =>
       (t.gpr .rsi).toNat = ((s.gpr .rsi).toNat * 2 ^ 64 + (s.gpr .rdx).toNat) % (s.gpr .rbx).toNat ∧
       t.mem = s.mem ∧ Keep [.rax, .rcx, .rdx, .rbp, .rsi, .r13] s t := by
-  have he0 : 0 < (s.gpr .rbx).toNat := by omega
+  have he0 : 0 < (s.gpr .rbx).toNat := by omega_using [hre]
   have hX := (s.gpr .rdx).isLt
   refine wp_countdown (cnt := .r13) (N := 64) (by decide) (by decide)
     (fun i t => (t.gpr .rsi).toNat = ((s.gpr .rsi).toNat * 2 ^ i + (s.gpr .rdx).toNat / 2 ^ (64 - i)) %
@@ -60,9 +60,9 @@ theorem modBits_ok {s : State} (h13 : s.gpr .r13 = BitVec.ofNat 64 64) (hre : (s
     have hbx : t.gpr .rbx = s.gpr .rbx := k.gpr (by decide)
     refine WP.mono (modBody_ok t (by rw [hbx, hr]; exact Nat.mod_lt _ he0))
       fun t' ⟨h1, h2, h3, h4, h5, k'⟩ => ⟨⟨?_, ?_, h5.trans hm, (k.trans k').mono (by decide)⟩, h3, h4⟩
-    · obtain ⟨_, hbit, _, hdiv⟩ := shift_step (s.gpr .rdx).toNat (63 - i) i (by omega)
-      rw [show 63 - i + 1 = 64 - i by omega] at hbit hdiv
-      rw [h1, hbx, hd, hbit, hr, show 64 - (i + 1) = 63 - i by omega, ← hdiv, Nat.pow_succ]
+    · obtain ⟨_, hbit, _, hdiv⟩ := shift_step (s.gpr .rdx).toNat (63 - i) i (by omega_using [hi])
+      rw [show 63 - i + 1 = 64 - i by omega_using [hi]] at hbit hdiv
+      rw [h1, hbx, hd, hbit, hr, show 64 - (i + 1) = 63 - i by omega_using [], ← hdiv, Nat.pow_succ]
       have hm2 : ∀ V b E : Nat, (2 * (V % E) + b) % E = (2 * V + b) % E := fun V b E => by
         rw [Nat.add_mod, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, ← Nat.add_mod]
       rw [hm2]
@@ -72,10 +72,10 @@ theorem modBits_ok {s : State} (h13 : s.gpr .r13 = BitVec.ofNat 64 64) (hre : (s
       generalize (s.gpr .rdx).toNat / 2 ^ (64 - i) = Q
       generalize (s.gpr .rdx).toNat / 2 ^ (63 - i) % 2 = b at hb2 ⊢
       rw [Nat.mul_add, Nat.mul_comm 2 (R * 2 ^ i), Nat.mul_assoc, Nat.mul_comm 2 Q]
-      omega
-    · obtain ⟨_, _, hsh, _⟩ := shift_step (s.gpr .rdx).toNat (63 - i) i (by omega)
-      rw [show 63 - i + 1 = 64 - i by omega] at hsh
-      rw [h2, BitVec.toNat_add, hd, hsh, show 64 - (i + 1) = 63 - i by omega]
+      omega_using [hb2]
+    · obtain ⟨_, _, hsh, _⟩ := shift_step (s.gpr .rdx).toNat (63 - i) i (by omega_using [hi])
+      rw [show 63 - i + 1 = 64 - i by omega_using [hi]] at hsh
+      rw [h2, BitVec.toNat_add, hd, hsh, show 64 - (i + 1) = 63 - i by omega_using []]
   · intro t ⟨hr, _, hm, k⟩
     refine ⟨?_, hm, k⟩
     rw [hr, Nat.sub_self, Nat.pow_zero, Nat.div_one]
@@ -88,7 +88,7 @@ abbrev hiw (mem : Mem) (B : Addr) (d w m : Nat) : Nat := wv mem B (d + 8 * m) (w
 theorem hiw_step (mem : Mem) (B : Addr) (d w m : Nat) (hm : m < w) :
     hiw mem B d w m = (word mem B (d + 8 * m)).toNat + 2 ^ 64 * hiw mem B d w (m + 1) := by
   unfold hiw
-  rw [show w - m = 1 + (w - (m + 1)) by omega, wv_add, show d + 8 * m + 8 * 1 = d + 8 * (m + 1) by omega]
+  rw [show w - m = 1 + (w - (m + 1)) by omega_using [hm], wv_add, show d + 8 * m + 8 * 1 = d + 8 * (m + 1) by omega_using []]
   simp [wv]
 
 /-- One word of `modLoop`: word `w − 1 − j` into `r = rsi`. -/
@@ -107,8 +107,8 @@ theorem modWord_ok {s : State} {B : Addr} {Z d w j : Nat} (hs : Scr s B Z) (h8 :
       rw [h12, h14]; apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
       have : (1 : BitVec 64).toNat = 1 := rfl
-      rw [this]; omega
-    xrun [State.ea, ix, addr0 h8 hix, hs.ld (show d + 8 * (w - 1 - j) + 8 ≤ Z by omega), sx_ofNat]
+      rw [this]; omega_arith
+    xrun [State.ea, ix, addr0 h8 hix, hs.ld (show d + 8 * (w - 1 - j) + 8 ≤ Z by omega_arith), sx_ofNat]
   · refine WP.mono (modBits_ok h13 (by
       rw [show t₁.gpr .rsi = s.gpr .rsi from k₁.gpr (by decide),
         show t₁.gpr .rbx = s.gpr .rbx from k₁.gpr (by decide)]; exact hre))
@@ -131,18 +131,18 @@ theorem modWords_ok {s : State} {B : Addr} {Z d w : Nat} (hs : Scr s B Z) (h8 : 
     WP isa (.loop (.seq modWord (.block [.alu .add .r14 (.imm 1), .alu .cmp .r14 (.reg .r12)])) .ne) s fun t =>
       (t.gpr .rsi).toNat = wv s.mem B d w % (s.gpr .rbx).toNat ∧ t.mem = s.mem ∧
       Keep [.rax, .rcx, .rdx, .rbp, .rsi, .r13, .r14] s t := by
-  refine wp_upto (a := 0) (N := w) (by omega) (ModInv s B d w) ?_ (fun t hI => ⟨?_, hI.mem, hI.keep⟩)
+  refine wp_upto (a := 0) (N := w) (by omega_using [hw]) (ModInv s B d w) ?_ (fun t hI => ⟨?_, hI.mem, hI.keep⟩)
     ⟨by rw [hsi, Nat.sub_zero]; unfold hiw; rw [Nat.sub_self]; simp [wv], rfl, h14, Keep.refl _ _⟩
   · intro j _ hj t hI
     have tbx : t.gpr .rbx = s.gpr .rbx := hI.keep.gpr (by decide)
     refine WP.seq (WP.mono (modWord_ok (hs.congr hI.keep.2.2) ((hI.keep.gpr (by decide)).trans h8)
-      ((hI.keep.gpr (by decide)).trans h12) hI.r14 hj hw' hd (by rw [hI.val, tbx]; exact Nat.mod_lt _ (by omega)))
+      ((hI.keep.gpr (by decide)).trans h12) hI.r14 hj hw' hd (by rw [hI.val, tbx]; exact Nat.mod_lt _ (by omega_using [he])))
       fun t₁ ⟨h1, hm₁, k₁⟩ => ?_)
     refine WP.mono (count_ok t₁ ((k₁.gpr (by decide)).trans hI.r14)
-      ((k₁.gpr (by decide)).trans ((hI.keep.gpr (by decide)).trans h12)) (by omega) (by omega))
+      ((k₁.gpr (by decide)).trans ((hI.keep.gpr (by decide)).trans h12)) (by omega_using [hw', hj]) (by omega_using [hw']))
       fun t' ⟨hz, h14', hm', k'⟩ => ⟨hz, ⟨?_, by rw [hm', hm₁, hI.mem], h14', ((hI.keep.trans k₁).trans k').mono (by decide)⟩⟩
-    rw [k'.gpr (by decide), h1, tbx, hI.val, hI.mem, hiw_step s.mem B d w (w - (j + 1)) (by omega),
-      show w - (j + 1) + 1 = w - j by omega, show w - 1 - j = w - (j + 1) by omega]
+    rw [k'.gpr (by decide), h1, tbx, hI.val, hI.mem, hiw_step s.mem B d w (w - (j + 1)) (by omega_using [hj]),
+      show w - (j + 1) + 1 = w - j by omega_using [hj], show w - 1 - j = w - (j + 1) by omega_using []]
     have hm2 : ∀ V x E : Nat, ((V % E) * 2 ^ 64 + x) % E = (x + 2 ^ 64 * V) % E := fun V x E => by
       rw [Nat.add_mod, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, ← Nat.add_mod, Nat.add_comm, Nat.mul_comm]
     exact hm2 _ _ _

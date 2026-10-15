@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Lit
-meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.X86_64.LayersLit
 public import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
 meta import VerifiedGarbage.Impl.Sm4.X86_64.Ecb
 public import VerifiedGarbage.Impl.Sm4.X86_64.ExpandKey

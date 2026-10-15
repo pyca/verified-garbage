@@ -192,15 +192,15 @@ theorem cryptChunk_ok (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K
       below SP 8] t₂.mem t₃.mem := G.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by simp, Offset.sub W (by decide) (by decide)⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by simp, fun _ h => h⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by mem_lit, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by mem_lit, fun _ h => h⟩
   have f₄₅ : Frame [⟨W + BitVec.ofNat 64 96, 48⟩, ⟨W + BitVec.ofNat 64 488, 1024⟩, ⟨W + BitVec.ofNat 64 1768, 2048⟩,
       below SP 8] t₄.mem t₅.mem := fB.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by simp, Offset.sub W (by decide) (by omega_arith)⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by mem_lit, Offset.sub W (by decide) (by omega_arith)⟩
+    · exact ⟨_, by mem_lit, fun _ h => h⟩
+    · exact ⟨_, by mem_lit, fun _ h => h⟩
   have fW : Frame [⟨W + BitVec.ofNat 64 96, 48⟩, ⟨W + BitVec.ofNat 64 488, 1024⟩, ⟨W + BitVec.ofNat 64 1768, 2048⟩,
       below SP 8] t.mem t₆.mem := by
     rw [m₆, ← m₂]; rw [m₄] at f₄₅; exact f₂₃.trans f₄₅
@@ -265,7 +265,7 @@ theorem cryptChunk_ok (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (L : Lay K
   · simp only [mem_setReg, mem_arithFlags]
     exact (fW.mono (by simp)).trans (X.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega_arith)⟩)
+      exact ⟨⟨D, n⟩, by mem_lit, Offset.sub_base D (by omega_arith)⟩)
 
 /-- What the whole blocks of counter mode leave, from `t`. -/
 structure BlocksPost (K W SP : Addr) (D : Addr) (n : Nat) (ciph : Spec.GcmSiv.Cipher) (icb x : List Byte)
@@ -396,12 +396,12 @@ theorem cryptTail_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (h
   · refine (fT.sub fun q hq => ?_).trans (fw.sub fun q hq => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl
-      · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by simp, Offset.sub W (by decide) (by decide)⟩
-      · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by simp, Offset.sub W (by decide) (by decide)⟩
-      · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by mem_lit, Offset.sub W (by decide) (by decide)⟩
+      · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by mem_lit, Offset.sub W (by decide) (by decide)⟩
+      · exact ⟨_, by mem_lit, fun _ h => h⟩
+      · exact ⟨_, by mem_lit, fun _ h => h⟩
     · simp only [List.mem_singleton] at hq; subst hq
-      exact ⟨⟨D, n⟩, by simp, Offset.sub_base D (by omega_arith)⟩
+      exact ⟨⟨D, n⟩, by mem_lit, Offset.sub_base D (by omega_arith)⟩
 
 /-- What `crypt` leaves, from `t`. -/
 structure CryptPost (K W SP : Addr) (R : Nat) (D : Addr) (n : Nat) (t t' : State) : Prop where
@@ -503,7 +503,7 @@ theorem crypt_ok (v : GcmImpl) (eb : BlocksImpl) (wide : Bool) {K W SP : Addr} (
     simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide))
   have fC : ∀ q ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region)], ∃ q' ∈ cryR W SP D n, Region.Sub q q' := fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq
-    exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by simp, Offset.sub W (by decide) (by decide)⟩
+    exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by mem_lit, Offset.sub W (by decide) (by decide)⟩
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   -- The whole blocks.
   have hmid : WP isa (.ite .e (.block []) (.loop (cryptChunk ⟨eb.enc.name, eb.enc.code⟩ wide) .ne)) t₁

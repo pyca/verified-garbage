@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindowCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicWindowCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
@@ -22,40 +23,41 @@ open VG.Impl.Rsa.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X8
 open VG.Impl.Dsa.X86_64.PublicPower
 
 /-- Fixed public byte through its two windows. -/
-def WinI (p : XPub × Nat) (j : Nat) (s : State) : Prop :=
+def WinI (bd : Nat → Nat → Nat) (p : XPub × Nat) (j : Nat) (s : State) : Prop :=
   ∃ (t₀ : State) (minv : BitVec 64) (X Xc E : Nat),
-    CWinInv t₀ (off p.1.B p.1.o) p.1.wx minv X Xc False 0 E p.2 j s ∧
+    CWinInv t₀ (off p.1.B p.1.o) p.1.wx minv X Xc (bd X (2 ^ (64 * p.1.wx))) False 0 E p.2 j s ∧
     2 ≤ p.1.wx ∧ p.1.wx < 2 ^ 30 ∧ Nat.Coprime (2 ^ (64 * p.1.wx)) X ∧ Xc < X ∧ p.2 < 256
 
-theorem wins_ct (M : Mont) :
-    RelCT isa (Two fun p s => 0 < 2 ∧ WinI p 0 s) (.loop (seqs (window M.mm)) .ne)
-      (Two fun p s => WinI p 2 s) := by
-  apply two_loop (Φ := WinI) (fun _ => 2)
-  · apply two_map (fun q : (XPub × Nat) × Nat => (q.1.1, q.1.2 * 16 ^ q.2)) ?_ (window_ct M)
+theorem wins_ct (M : Mont) (Sq : MontS) :
+    RelCT isa (Two fun p s => 0 < 2 ∧ WinI Sq.bd p 0 s) (.loop (seqs (window Sq.mm M.mm)) .ne)
+      (Two fun p s => WinI Sq.bd p 2 s) := by
+  apply two_loop (Φ := WinI Sq.bd) (fun _ => 2)
+  · apply two_map (fun q : (XPub × Nat) × Nat => (q.1.1, q.1.2 * 16 ^ q.2)) ?_ (window_ct M Sq)
     intro q s ⟨hj, t₀, minv, X, Xc, E, hI, hw, hw', hR, _, hv⟩
     have hp : 16 ^ q.2 ≤ 16 := by rcases (show q.2 = 0 ∨ q.2 = 1 by omega) with h | h <;> rw [h] <;> decide
     exact ⟨minv, X, Xc, hI.ctx, hI.tab, hI.ylt, hI.v,
       by have := Nat.mul_le_mul_left q.1.2 hp; omega, hw, hw', hR⟩
   · intro p j s hj ⟨t₀, minv, X, Xc, E, hI, hw, hw', hR, hXN, hv⟩
-    exact WP.mono (crtWinStep_ok M hw hw' hR hv hj hI) fun _ ⟨hz, hI'⟩ =>
+    exact WP.mono (crtWinStep_ok M Sq hw hw' hR hv hj hI) fun _ ⟨hz, hI'⟩ =>
       ⟨eval_ne_count hj hz, fun _ => ⟨t₀, minv, X, Xc, E, hI', hw, hw', hR, hXN, hv⟩,
         fun h => h ▸ ⟨t₀, minv, X, Xc, E, hI', hw, hw', hR, hXN, hv⟩⟩
 
-def CBytesInv (a : BPub × List Byte) (i : Nat) (s : State) : Prop :=
+def CBytesInv (bd : Nat → Nat → Nat) (a : BPub × List Byte) (i : Nat) (s : State) : Prop :=
   ∃ (t₀ : State) (minv : BitVec 64) (X Xc : Nat),
-    CByteInv t₀ (off a.1.x.B a.1.x.o) a.1.x.wx minv X Xc False 0 a.1.ptr a.2.length a.2 i s ∧ 2 ≤ a.1.x.wx ∧
+    CByteInv t₀ (off a.1.x.B a.1.x.o) a.1.x.wx minv X Xc (bd X (2 ^ (64 * a.1.x.wx))) False 0 a.1.ptr a.2.length a.2 i s ∧ 2 ≤ a.1.x.wx ∧
     a.1.x.wx < 2 ^ 30 ∧ Nat.Coprime (2 ^ (64 * a.1.x.wx)) X ∧ Xc < X ∧
     a.2.length = a.1.len ∧ a.2.length < 2 ^ 31 ∧ Src t₀ a.1.x.B a.1.x.Z a.1.ptr a.2 ∧
     ∀ i < a.2.length, slot a.1.x.wx 8 + tabBytes a.1.x.wx ≤ ofs (off a.1.x.B a.1.x.o) (a.1.ptr + BitVec.ofNat 64 i)
 
 /-- After the loads of the byte's address. -/
-def CHeadMid (q : (BPub × List Byte) × Nat) (s : State) : Prop :=
-  q.2 < q.1.1.len ∧ CBytesInv q.1 q.2 s ∧ s.gpr .rax = q.1.1.ptr ∧ s.gpr .rcx = BitVec.ofNat 64 q.2
+def CHeadMid (bd : Nat → Nat → Nat) (q : (BPub × List Byte) × Nat) (s : State) : Prop :=
+  q.2 < q.1.1.len ∧ CBytesInv bd q.1 q.2 s ∧ s.gpr .rax = q.1.1.ptr ∧ s.gpr .rcx = BitVec.ofNat 64 q.2
 
-theorem pins_cBytes : Pins (fun (q : (BPub × List Byte) × Nat) s => q.2 < q.1.1.len ∧ CBytesInv q.1 q.2 s) [.rdi] :=
+theorem pins_cBytes {bd : Nat → Nat → Nat} :
+    Pins (fun (q : (BPub × List Byte) × Nat) s => q.2 < q.1.1.len ∧ CBytesInv bd q.1 q.2 s) [.rdi] :=
   pins_rdi (fun q : (BPub × List Byte) × Nat => off q.1.1.x.B q.1.1.x.o) fun _ _ ⟨_, _, _, _, _, hI, _⟩ => hI.ctx.good.rdi
 
-theorem pins_cHeadMid : Pins CHeadMid [.rdi, .rax, .rcx] := by
+theorem pins_cHeadMid {bd : Nat → Nat → Nat} : Pins (CHeadMid bd) [.rdi, .rax, .rcx] := by
   rintro q s₁ s₂ ⟨-, ⟨_, _, _, _, i₁, _⟩, a₁, c₁⟩ ⟨-, ⟨_, _, _, _, i₂, _⟩, a₂, c₂⟩ r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -65,33 +67,33 @@ theorem pins_cHeadMid : Pins CHeadMid [.rdi, .rax, .rcx] := by
 
 /-- One byte of the exponent leaks the same in runs with the same workspace
 and the same public exponent bytes, pointer and length. -/
-theorem crtByte_ct (M : Mont) : RelCT isa (Two fun (q : (BPub × List Byte) × Nat) s => q.2 < q.1.1.len ∧ CBytesInv q.1 q.2 s)
+theorem crtByte_ct (M : Mont) (Sq : MontS) : RelCT isa (Two fun (q : (BPub × List Byte) × Nat) s => q.2 < q.1.1.len ∧ CBytesInv Sq.bd q.1 q.2 s)
     (seqs [.block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI)),
         .movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax, .mov32 .rax (.imm 2),
         .store (hdr Crt.sBit) .rax],
-      .loop (seqs (window M.mm)) .ne,
+      .loop (seqs (window Sq.mm M.mm)) .ne,
       .block [.mov .rax (.mem (hdr Crt.sI)), .alu .add .rax (.imm 1), .store (hdr Crt.sI) .rax,
         .alu .cmp .rax (.mem (hdr Crt.sExpLen))]]) fun _ _ => True := by
   simp only [seqs]
   rw [crtByteHead_eq]
-  have w₁ : ∀ (q : (BPub × List Byte) × Nat) s, q.2 < q.1.1.len ∧ CBytesInv q.1 q.2 s →
-      WP isa (.block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI))]) s (CHeadMid q) := by
+  have w₁ : ∀ (q : (BPub × List Byte) × Nat) s, q.2 < q.1.1.len ∧ CBytesInv Sq.bd q.1 q.2 s →
+      WP isa (.block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI))]) s (CHeadMid Sq.bd q) := by
     rintro q s ⟨hi, t₀, minv, X, Xc, hI, hrest⟩
     exact WP.mono (crtByteHead1_ok hI) fun t ⟨h1, h2, h3⟩ => ⟨hi, ⟨t₀, minv, X, Xc, h3, hrest⟩, h1, h2⟩
-  have w₂ : ∀ (q : (BPub × List Byte) × Nat) s, CHeadMid q s →
+  have w₂ : ∀ (q : (BPub × List Byte) × Nat) s, CHeadMid Sq.bd q s →
       WP isa (.block [.movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax,
-        .mov32 .rax (.imm 2), .store (hdr Crt.sBit) .rax]) s fun t => 0 < 2 ∧ WinI (q.1.1.x, (q.1.2[q.2]?.getD 0).toNat) 0 t := by
+        .mov32 .rax (.imm 2), .store (hdr Crt.sBit) .rax]) s fun t => 0 < 2 ∧ WinI Sq.bd (q.1.1.x, (q.1.2[q.2]?.getD 0).toNat) 0 t := by
     rintro q s ⟨hi, ⟨t₀, minv, X, Xc, hI, hw, hw', hR, hXN, hL, -, he, hout⟩, hax, hcx⟩
     have hi' : q.2 < q.1.2.length := by omega_arith
     exact WP.mono (crtByteHead2_ok rfl hi' he.rd he.val hout hI hax hcx) fun t ⟨_, _, hB⟩ =>
       ⟨by decide, t, minv, X, Xc, _, by simpa only [List.getElem?_eq_getElem hi', Option.getD_some] using hB, hw, hw', hR, hXN, (q.1.2[q.2]?.getD 0).isLt⟩
-  have h₃ : RelCT isa (Two fun (p : XPub × Nat) s => WinI p 2 s)
+  have h₃ : RelCT isa (Two fun (p : XPub × Nat) s => WinI Sq.bd p 2 s)
       (.block [.mov .rax (.mem (hdr Crt.sI)), .alu .add .rax (.imm 1), .store (hdr Crt.sI) .rax,
         .alu .cmp .rax (.mem (hdr Crt.sExpLen))]) fun _ _ => True :=
     rdi_ct (fun p : XPub × Nat => off p.1.B p.1.o) (fun _ _ ⟨_, _, _, _, _, hI, _⟩ => hI.ctx.good.rdi) (by taint_decide)
   exact RelCT.seq (RelCT.block_append (RelCT.seq (two_piece _ pins_cBytes (by taint_decide) w₁)
       (two_piece _ pins_cHeadMid (by taint_decide) w₂)))
-    (RelCT.seq (two_map (fun q : (BPub × List Byte) × Nat => (q.1.1.x, (q.1.2[q.2]?.getD 0).toNat)) (fun _ _ h => h) (wins_ct M)) h₃)
+    (RelCT.seq (two_map (fun q : (BPub × List Byte) × Nat => (q.1.1.x, (q.1.2[q.2]?.getD 0).toNat)) (fun _ _ h => h) (wins_ct M Sq)) h₃)
 
 def EPre (sp sl : Nat) (p : BPub × List Byte) (s : State) : Prop :=
   ∃ (minv : BitVec 64) (X x y : Nat),
@@ -112,14 +114,14 @@ theorem EPre.secret {sp sl : Nat} {p : BPub × List Byte} {s : State} (h : EPre 
   obtain ⟨minv, X, x, y, hrest⟩ := h
   exact ⟨minv, X, x, y, p.2, hrest⟩
 
-theorem crtExpLoop_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+theorem crtExpLoop_ct (M : Mont) (Sq : MontS) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rdi, .rax]) (.block [.mov .rdx (.mem (Crt.ws .rax sp)),
       .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
       .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) hc).isSome = true) :
-    RelCT isa (Two (EPre sp sl)) (VG.Impl.Dsa.X86_64.PublicPower.expLoop M.mm sp sl) (fun _ _ => True) := by
+    RelCT isa (Two (EPre sp sl)) (VG.Impl.Dsa.X86_64.PublicPower.expLoop Sq.mm M.mm sp sl) (fun _ _ => True) := by
   unfold VG.Impl.Dsa.X86_64.PublicPower.expLoop
   refine RelCT.seq (two_post
-    (Ψ := fun a s => 0 < a.1.len ∧ CBytesInv a 0 s) ?_ fun a s h => ?_) ?_
+    (Ψ := fun a s => 0 < a.1.len ∧ CBytesInv Sq.bd a 0 s) ?_ fun a s h => ?_) ?_
   · -- The start and the table.
     rw [← List.singleton_append]
     refine RelCT.seqs_append (by simp) (by simp [Crt.tabBuild, tabBuild_eq, tabPre]) (RelCT.seq (two_post (Ψ := fun a s => TPre 16 a.1.x s)
@@ -149,13 +151,16 @@ theorem crtExpLoop_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Tai
         · omega_arith
         · omega_arith
     exact WP.mono (crtExpHead_ok M (Q := False) (x := 0) hc hw2 hwx hw30 hn hinv hodd hxl False.elim hyl False.elim
-      hsp hsl hep hel he) fun t hI => ⟨by omega_arith, s, minv, X, _, hI, hw2, by omega_arith,
+      hsp hsl hep hel he) fun t hI => ⟨by omega_arith, s, minv, X, _,
+        CByteInv.mk hI.ctx hI.tab (Nat.lt_of_lt_of_le hI.ylt
+          (Sq.le (by rw [← hn]; exact Nat.le_of_lt (wv_lt _ _ _ _)))) hI.y hI.idx hI.e hI.len hI.frm hI.keep,
+        hw2, by omega_arith,
         VG.Proof.Bignum.coprime_pow2 hodd _, hxl, hL, by omega_arith, he, hout⟩
   unfold VG.Impl.Dsa.X86_64.PublicPower.byte
-  refine (two_loop (Φ := CBytesInv) (Ψ := fun _ _ => True) (fun a => a.1.len) (crtByte_ct M) ?_).mono
+  refine (two_loop (Φ := CBytesInv Sq.bd) (Ψ := fun _ _ => True) (fun a => a.1.len) (crtByte_ct M Sq) ?_).mono
     (fun _ _ h => h) fun _ _ _ => trivial
   rintro a i s hi ⟨t₀, minv, X, Xc, hI, hw, hw', hR, hXN, hL, hL', he, hout⟩
-  exact WP.mono (crtByte_ok M hw hw' hR rfl hL' (by omega_arith) he.rd he.val hout hI)
+  exact WP.mono (crtByte_ok M Sq hw hw' hR rfl hL' (by omega_arith) he.rd he.val hout hI)
     fun s' ⟨hz, hI'⟩ => ⟨eval_ne_count hi (by rw [hz, hL]), fun _ => ⟨t₀, minv, X, Xc, hI', hw, hw', hR, hXN, hL,
       hL', he, hout⟩, fun _ => trivial⟩
 

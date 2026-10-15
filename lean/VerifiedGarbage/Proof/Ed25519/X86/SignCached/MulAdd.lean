@@ -113,7 +113,7 @@ theorem mul_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
         (Spec.Ed25519.bytesAt s.mem ((fp L 128).setWidth 64) 32)
         (Spec.Ed25519.bytesAt s.mem ((fp L 32).setWidth 64) 32) := by
   refine WP.seq (WP.mono (args_ok hc hL ha (vs := [.caller 0 32, .frame 96, .frame 128, .frame 32, .caller 5 0])
-    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ => ?_)
+    (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ => ?_)
   have a0 := hs.slot hL (j := 0) (by decide) (by decide)
   have a1 := hs.slot hL (j := 1) (by decide) (by decide)
   have a2 := hs.slot hL (j := 2) (by decide) (by decide)
