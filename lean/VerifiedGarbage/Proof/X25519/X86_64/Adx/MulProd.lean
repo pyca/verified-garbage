@@ -9,6 +9,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.X25519.Field
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # X25519 on x86-64: a product's rows with BMI2 and ADX
@@ -112,8 +114,8 @@ theorem rowX0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
 /-! ## Rows 1 to 3 -/
 
 /-- `r ∉ [...]` and `a ≠ b` from the distinctness hypotheses in context. -/
-local macro "nm" : tactic =>
-  `(tactic| plain_simp_names (simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, ne_eq] <;>
+tactic_template "adx_nm" : tactic =>
+  `(tactic| (simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, ne_eq] <;>
                      (repeat' constructor) <;>
                      first | with_reducible assumption | exact Ne.symm (by with_reducible assumption) | decide))
 
@@ -148,36 +150,36 @@ theorem maddRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   have hs2 := hs.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (madd_ok s2 (readSrc_sc hs2 (by omega)) (noImm_mem _) c2 o2
-    (by nm) (by nm) (by nm) (by nm) (by nm)) fun s3 ⟨c3, o3, hc3, ho3, e3, k3⟩ => ?_
-  have hs3 := hs2.of_keeps k3 (by nm)
+    (by adx_nm) (by adx_nm) (by adx_nm) (by adx_nm) (by adx_nm)) fun s3 ⟨c3, o3, hc3, ho3, e3, k3⟩ => ?_
+  have hs3 := hs2.of_keeps k3 (by adx_nm)
   rw [WP.block_append_iff]
   refine WP.mono (madd_ok s3 (readSrc_sc hs3 (by omega)) (noImm_mem _) hc3 ho3
-    (by nm) (by nm) (by nm) (by nm) (by nm)) fun s4 ⟨c4, o4, hc4, ho4, e4, k4⟩ => ?_
-  have hs4 := hs3.of_keeps k4 (by nm)
+    (by adx_nm) (by adx_nm) (by adx_nm) (by adx_nm) (by adx_nm)) fun s4 ⟨c4, o4, hc4, ho4, e4, k4⟩ => ?_
+  have hs4 := hs3.of_keeps k4 (by adx_nm)
   rw [WP.block_append_iff]
   refine WP.mono (madd_ok s4 (readSrc_sc hs4 (by omega)) (noImm_mem _) hc4 ho4
-    (by nm) (by nm) (by nm) (by nm) (by nm)) fun s5 ⟨c5, o5, hc5, ho5, e5, k5⟩ => ?_
-  have hs5 := hs4.of_keeps k5 (by nm)
+    (by adx_nm) (by adx_nm) (by adx_nm) (by adx_nm) (by adx_nm)) fun s5 ⟨c5, o5, hc5, ho5, e5, k5⟩ => ?_
+  have hs5 := hs4.of_keeps k5 (by adx_nm)
   have z5 : s5.gpr .rbp = 0 := by
-    rw [k5.1 _ (by nm), k4.1 _ (by nm), k3.1 _ (by nm), z2]
+    rw [k5.1 _ (by adx_nm), k4.1 _ (by adx_nm), k3.1 _ (by adx_nm), z2]
   refine WP.mono (maddLast_ok s5 (readSrc_sc hs5 (by omega)) (noImm_mem _) hc5 ho5 z5
-    (by nm) (by nm) (by nm) (by nm) (by nm)) fun s6 ⟨c6, o6, _, _, e6, k6⟩ => ?_
+    (by adx_nm) (by adx_nm) (by adx_nm) (by adx_nm) (by adx_nm)) fun s6 ⟨c6, o6, _, _, e6, k6⟩ => ?_
   have K : Keeps [r0, r1, r2, r3, r4, .rax, .rcx, .rbp] s s6 :=
     ((((k2.mono (by simp)).trans (k3.mono (by simp))).trans
       (k4.mono (by simp))).trans (k5.mono (by simp))).trans (k6.mono (by simp))
   refine ⟨?_, K⟩
   -- `rdx`, the memory and the registers along the way.
-  have D2 : s2.gpr .rdx = s.gpr .rdx := k2.1 _ (by nm)
-  have D3 : s3.gpr .rdx = s.gpr .rdx := (k3.1 _ (by nm)).trans D2
-  have D4 : s4.gpr .rdx = s.gpr .rdx := (k4.1 _ (by nm)).trans D3
-  have D5 : s5.gpr .rdx = s.gpr .rdx := (k5.1 _ (by nm)).trans D4
+  have D2 : s2.gpr .rdx = s.gpr .rdx := k2.1 _ (by adx_nm)
+  have D3 : s3.gpr .rdx = s.gpr .rdx := (k3.1 _ (by adx_nm)).trans D2
+  have D4 : s4.gpr .rdx = s.gpr .rdx := (k4.1 _ (by adx_nm)).trans D3
+  have D5 : s5.gpr .rdx = s.gpr .rdx := (k5.1 _ (by adx_nm)).trans D4
   have M2 : s2.mem = s.mem := k2.2.1
   have M3 : s3.mem = s.mem := k3.2.1.trans M2
   have M4 : s4.mem = s.mem := k4.2.1.trans M3
   have M5 : s5.mem = s.mem := k5.2.1.trans M4
-  rw [D2, M2, k2.1 r0 (by nm), k2.1 r1 (by nm)] at e3
-  rw [D3, M3, k3.1 r2 (by nm), k2.1 r2 (by nm)] at e4
-  rw [D4, M4, k4.1 r3 (by nm), k3.1 r3 (by nm), k2.1 r3 (by nm)] at e5
+  rw [D2, M2, k2.1 r0 (by adx_nm), k2.1 r1 (by adx_nm)] at e3
+  rw [D3, M3, k3.1 r2 (by adx_nm), k2.1 r2 (by adx_nm)] at e4
+  rw [D4, M4, k4.1 r3 (by adx_nm), k3.1 r3 (by adx_nm), k2.1 r3 (by adx_nm)] at e5
   rw [D5, M5] at e6
   have b1 := word_mul_lt (s.gpr .rdx) _ (fe_lt s.mem base a)
   have b2 : val4 (s.gpr r0) (s.gpr r1) (s.gpr r2) (s.gpr r3) < 2 ^ 256 := by
@@ -186,8 +188,8 @@ theorem maddRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     have := (s.gpr r3).isLt
     omega_arith
   simp only [X86_64.fe, val4, mul_val4] at b1 b2 ⊢
-  rw [k6.1 r0 (by nm), k5.1 r0 (by nm), k4.1 r0 (by nm), k6.1 r1 (by nm), k5.1 r1 (by nm),
-    k6.1 r2 (by nm)]
+  rw [k6.1 r0 (by adx_nm), k5.1 r0 (by adx_nm), k4.1 r0 (by adx_nm), k6.1 r1 (by adx_nm), k5.1 r1 (by adx_nm),
+    k6.1 r2 (by adx_nm)]
   simp only [Bool.toNat_false, Nat.add_zero, Nat.mul_zero] at e3
   have := Bool.toNat_le c6; have := Bool.toNat_le o6
   omega_arith
