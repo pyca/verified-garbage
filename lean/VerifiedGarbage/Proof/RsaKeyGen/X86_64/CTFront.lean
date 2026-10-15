@@ -550,8 +550,7 @@ theorem loadCStage_ok {q : FPub} {s : State} (h : K0 q s) : WP isa (seqs loadC) 
       i = kRandLen → word t.mem q.B (8 * i) = word s.mem q.B (8 * i) := fun {i} hi => by
     have hi32 : i < 32 := by rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     refine hf.word_eq ?_ (by omega_arith)
-    simp only [loadCRanges]
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rng_disj
+    exact loadCRanges_hdr q.w i (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact hi)
   refine ⟨hk, k.2.2.trans hw, hd, word t.mem q.B (8 * sMinv), pB, r, ⟨hm.scr.congr k.2.2, hdi, ⟨hW, rfl, hA⟩⟩,
     fun e he => ?_, hc, hm.psrc.congrK hin k, hm.esrc.congrK hin k, hm.rsrc.congrK hin k, hpl, hrl, hS⟩
   simp only [avs, List.mem_cons, List.not_mem_nil, or_false] at he
