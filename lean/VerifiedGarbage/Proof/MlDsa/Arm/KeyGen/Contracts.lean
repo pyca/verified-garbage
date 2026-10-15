@@ -48,11 +48,18 @@ theorem ip_pre {t : Poly → Poly} {f w : BitVec 32} (g0 : x.gpr .r0 = f) (g1 : 
     (kw : (below x stk).Disjoint (regA w 1024)) (ff : f.toNat + 1024 ≤ 2 ^ 32) (fw : w.toNat + 1024 ≤ 2 ^ 32)
     (hr : Reduced x.mem (State.addr f)) : (inPlaceContract Arm.abi t stk).pre x := by
   sig_pre [inPlaceContract, inPlaceSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1]
-    cpre
+  simp only [g0, g1]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem ip_post {t : Poly → Poly} (h : (inPlaceContract Arm.abi t stk).post x y) :
     PolyIs y.mem (State.addr (x.gpr .r0)) (t (polyAt x.mem (State.addr (x.gpr .r0)))) := by
@@ -79,11 +86,18 @@ theorem mul_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = f) (g2 : x.gpr .r2 = g)
     (fg : g.toNat + 1024 ≤ 2 ^ 32) (rf : Reduced x.mem (State.addr f)) (rg : Reduced x.mem (State.addr g)) :
     (mulContract Arm.abi stk).pre x := by
   sig_pre [mulContract, mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, g2]
-    cpre
+  simp only [g0, g1, g2]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem mul_post (hp : (mulContract Arm.abi stk).post x y) :
     PolyIs y.mem (State.addr (x.gpr .r0))
@@ -99,11 +113,18 @@ theorem mulAdd_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = f) (g2 : x.gpr .r2 = g
     (fg : g.toNat + 1024 ≤ 2 ^ 32) (rh : Reduced x.mem (State.addr h)) (rf : Reduced x.mem (State.addr f))
     (rg : Reduced x.mem (State.addr g)) : (mulAddContract Arm.abi stk).pre x := by
   sig_pre [mulAddContract, mulSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, g2]
-    cpre
+  simp only [g0, g1, g2]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem mulAdd_post (hp : (mulAddContract Arm.abi stk).post x y) :
     PolyIs y.mem (State.addr (x.gpr .r0)) (add (polyAt x.mem (State.addr (x.gpr .r0)))
@@ -134,11 +155,18 @@ theorem add_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = g) (hrd : x.rd = [regA g 
     (ff : f.toNat + 1024 ≤ 2 ^ 32) (fg : g.toNat + 1024 ≤ 2 ^ 32) (rf : Reduced x.mem (State.addr f))
     (rg : Reduced x.mem (State.addr g)) : (addContract Arm.abi stk).pre x := by
   sig_pre [addContract, accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1]
-    cpre
+  simp only [g0, g1]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem add_post (hp : (addContract Arm.abi stk).post x y) :
     PolyIs y.mem (State.addr (x.gpr .r0))
@@ -157,11 +185,18 @@ theorem sub_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = g) (hrd : x.rd = [regA g 
     (ff : f.toNat + 1024 ≤ 2 ^ 32) (fg : g.toNat + 1024 ≤ 2 ^ 32) (rf : Reduced x.mem (State.addr f))
     (rg : Reduced x.mem (State.addr g)) : (subContract Arm.abi stk).pre x := by
   sig_pre [subContract, accSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1]
-    cpre
+  simp only [g0, g1]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem sub_post (hp : (subContract Arm.abi stk).post x y) :
     PolyIs y.mem (State.addr (x.gpr .r0))
@@ -189,11 +224,18 @@ theorem rejNtt_pre (g0 : x.gpr .r0 = sd) (g1 : x.gpr .r1 = a) (g2 : x.gpr .r2 = 
     (k3 : (below x stk).Disjoint (regA w 2048)) (f1 : sd.toNat + 34 ≤ 2 ^ 32) (f2 : a.toNat + 1024 ≤ 2 ^ 32)
     (f3 : w.toNat + 2048 ≤ 2 ^ 32) : (rejNTTContract Arm.abi stk).pre x := by
   sig_pre [rejNTTContract, rejNTTSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, g2]
-    cpre
+  simp only [g0, g1, g2]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem rejNtt_post (hp : (rejNTTContract Arm.abi stk).post x y) :
     ((y.gpr .r0 = 1 → Reduced y.mem (State.addr (x.gpr .r1))) ∧
@@ -217,11 +259,18 @@ theorem rejBounded_pre (g0 : x.gpr .r0 = sd) (g1 : x.gpr .r1 = e) (g2 : x.gpr .r
     (k3 : (below x stk).Disjoint (regA w 2048)) (f1 : sd.toNat + 66 ≤ 2 ^ 32) (f2 : a.toNat + 1024 ≤ 2 ^ 32)
     (f3 : w.toNat + 2048 ≤ 2 ^ 32) (he : e.toNat = 2 ∨ e.toNat = 4) : (rejBoundedContract Arm.abi stk).pre x := by
   sig_pre [rejBoundedContract, rejBoundedSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, g2, g3]
-    cpre
+  simp only [g0, g1, g2, g3]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem rejBounded_post (hp : (rejBoundedContract Arm.abi stk).post x y) :
     ((y.gpr .r0 = 1 → Reduced y.mem (State.addr (x.gpr .r2))) ∧
@@ -253,11 +302,18 @@ theorem p2r_pre (g0 : x.gpr .r0 = t) (g1 : x.gpr .r1 = t1) (g2 : x.gpr .r2 = t0)
     (k3 : (below x stk).Disjoint (regA t0 1024)) (f1 : t.toNat + 1024 ≤ 2 ^ 32) (f2 : t1.toNat + 1024 ≤ 2 ^ 32)
     (f3 : t0.toNat + 1024 ≤ 2 ^ 32) (hr : Reduced x.mem (State.addr t)) : (power2RoundContract Arm.abi stk).pre x := by
   sig_pre [power2RoundContract, power2RoundSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, g2]
-    cpre
+  simp only [g0, g1, g2]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem p2r_post (hp : (power2RoundContract Arm.abi stk).post x y) :
     NatPolyIs y.mem (State.addr (x.gpr .r1))
@@ -286,11 +342,18 @@ theorem sbp_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = b) (g2 : x.gpr .r2 = o) (
     (hl : l.toNat = 32 * bitlen b.toNat) (hc : ∀ i < n, (coeffAt x.mem (State.addr f) i).toNat ≤ b.toNat) :
     (simpleBitPackContract Arm.abi stk).pre x := by
   sig_pre [simpleBitPackContract, simpleBitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, g2, g3]
-    cpre
+  simp only [g0, g1, g2, g3]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem sbp_post (hp : (simpleBitPackContract Arm.abi stk).post x y) :
     bytesAt y.mem (State.addr (x.gpr .r2)) (x.gpr .r3).toNat =
@@ -316,11 +379,18 @@ theorem bp_pre (g0 : x.gpr .r0 = f) (g1 : x.gpr .r1 = a) (g2 : x.gpr .r2 = b) (g
       modPm (coeffAt x.mem (State.addr f) i).toNat q ≤ b.toNat) :
     (bitPackContract Arm.abi stk).pre x := by
   sig_pre [bitPackContract, bitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, g2, g3, ga]
-    cpre
+  simp only [g0, g1, g2, g3, ga]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem bp_post (hp : (bitPackContract Arm.abi stk).post x y) :
     bytesAt y.mem (State.addr (x.gpr .r3)) (stackArg x 0).toNat =
@@ -354,11 +424,18 @@ theorem ball_pre (g0 : x.gpr .r0 = ct) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = 
     (f1 : ct.toNat + len.toNat ≤ 2 ^ 32) (f2 : c.toNat + 1024 ≤ 2 ^ 32) (f3 : w.toNat + 2048 ≤ 2 ^ 32)
     (hp : (len.toNat, tau.toNat) ∈ ballParams) : (sampleInBallContract Arm.abi stk).pre x := by
   sig_pre [sampleInBallContract, sampleInBallSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, g2, g3, ga]
-    cpre
+  simp only [g0, g1, g2, g3, ga]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem ball_post (hp : (sampleInBallContract Arm.abi stk).post x y) :
     ((y.gpr .r0 = 1 → Reduced y.mem (State.addr (x.gpr .r3))) ∧
@@ -391,11 +468,18 @@ theorem useHint_pre (g0 : x.gpr .r0 = h) (g1 : x.gpr .r1 = r) (gg : x.gpr .r2 = 
     (f3 : o.toNat + 1024 ≤ 2 ^ 32) (hg : g2.toNat ∈ gamma2s) (hr : Reduced x.mem (State.addr r)) :
     (useHintContract Arm.abi stk).pre x := by
   sig_pre [useHintContract, useHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, gg, g3]
-    cpre
+  simp only [g0, g1, gg, g3]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem useHint_post (hp : (useHintContract Arm.abi stk).post x y) :
     NatPolyIs y.mem (State.addr (x.gpr .r3)) (Vector.zipWith (fun hj rj => (useHint (x.gpr .r2).toNat hj rj).toNat)
@@ -427,11 +511,18 @@ theorem bu_pre (g0 : x.gpr .r0 = v) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = a) 
     (hab : (a.toNat, b.toNat) ∈ bitPackParams) (hl : len.toNat = 32 * bitlen (a.toNat + b.toNat)) :
     (bitUnpackContract Arm.abi stk).pre x := by
   sig_pre [bitUnpackContract, bitUnpackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, g2, g3, ga]
-    cpre
+  simp only [g0, g1, g2, g3, ga]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem bu_post (hp : (bitUnpackContract Arm.abi stk).post x y) :
     PolyIs y.mem (State.addr (stackArg x 0))
@@ -453,11 +544,18 @@ theorem t1_pre (g0 : x.gpr .r0 = v) (g1 : x.gpr .r1 = f)
     (f1 : v.toNat + 320 ≤ 2 ^ 32) (f2 : f.toNat + 1024 ≤ 2 ^ 32) :
     (unpackT1Contract Arm.abi stk).pre x := by
   sig_pre [unpackT1Contract, unpackT1Sig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1]
-    cpre
+  simp only [g0, g1]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem t1_post (hp : (unpackT1Contract Arm.abi stk).post x y) :
     PolyIs y.mem (State.addr (x.gpr .r1))
@@ -490,11 +588,18 @@ theorem hbu_pre (g0 : x.gpr .r0 = yy) (g1 : x.gpr .r1 = len) (g2 : x.gpr .r2 = o
     (hh : hl.toNat = 256 * (len.toNat - om.toNat)) :
     (hintBitUnpackContract Arm.abi stk).pre x := by
   sig_pre [hintBitUnpackContract, hintBitUnpackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0, g1, g2, g3, ga]
-    cpre
+  simp only [g0, g1, g2, g3, ga]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem hbu_post (hp : (hintBitUnpackContract Arm.abi stk).post x y) :
     match hintBitUnpack (x.gpr .r2).toNat ((x.gpr .r1).toNat - (x.gpr .r2).toNat)
@@ -523,11 +628,18 @@ theorem normLt_pre (g0 : x.gpr .r0 = f) (hrd : x.rd = [regA f 1024]) (hwr : x.wr
     (hsp : stk ≤ x.sp.toNat) (k1 : (below x stk).Disjoint (regA f 1024)) (f1 : f.toNat + 1024 ≤ 2 ^ 32)
     (hr : Reduced x.mem (State.addr f)) : (normLtContract Arm.abi stk).pre x := by
   sig_pre [normLtContract, normLtSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
-  rcases stk with _ | n <;>
-  · simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, true_and,
-      and_assoc]
-    simp only [g0]
-    cpre
+  simp only [g0]
+  try simp only [State.addr] at *
+  and_intros
+  -- Only the reserved stack depends on `stk`: split on it in those goals alone.
+  all_goals first
+    | with_reducible assumption
+    | (rcases stk with _ | n <;> simp only [Sig.conj, List.map_cons, List.map_nil, List.flatten_cons,
+        List.flatten_nil, List.append_nil] <;> and_intros <;> first
+        | with_reducible assumption | (have := State.sp _ |>.isLt; omega) | omega | assumption)
+    | (have := State.sp _ |>.isLt; omega)
+    | omega
+    | assumption
 
 theorem normLt_post (hp : (normLtContract Arm.abi stk).post x y) :
     y.gpr .r0 = if normRq [polyAt x.mem (State.addr (x.gpr .r0))] < (x.gpr .r1).toNat then 1 else 0 := by
