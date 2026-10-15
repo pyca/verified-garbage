@@ -20,6 +20,7 @@ structure RoundImpl where
   mxSafe : (round mont.mm).allInstrs (fun i => !loadsMxcsr i) = true
   spSafe : (round mont.mm).all (fun i => !isa.writesSp i) = true
   depth : (round mont.mm).x86_64Depth ≤ 120
+  arithSafe : ∀ o a b, (mont.mm o a b).allInstrs (fun i => !loadsMxcsr i && !isa.writesSp i) = true
   suffix : String
   features : List String
 
