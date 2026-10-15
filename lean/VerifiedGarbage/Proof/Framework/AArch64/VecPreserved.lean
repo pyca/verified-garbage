@@ -41,7 +41,7 @@ theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
     simp only [VOp.eval] at h
     split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
     exact h.1.symm
-  case dupS | dupE | insE | shift | ext | tblN | xar | xarS =>
+  case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH =>
     exact (Prod.mk.inj (Option.some.inj (Option.ite_none_right_eq_some.mp h).2)).1.symm
   all_goals exact (Prod.mk.inj (Option.some.inj h)).1.symm
 
