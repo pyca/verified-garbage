@@ -223,9 +223,7 @@ theorem e1_ce (D : FD) (t : State) (h : E1 D t) : WP isa (.block domHead) t fun 
         or_false] at hk
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;>
-        rcases hk with h | h | h | h | h | h | h | h | h | h <;> rw [h] <;>
-          simp only [sG, sQ, sDom, sDomLen, sK, sY, sX, sXl, VG.Impl.Ffdh.AArch64.Domain.sOut, sRand, sXe, sMsk,
-            sFn] <;> omega_arith)
+        rcases hk with h | h | h | h | h | h | h | h | h | h <;> rw [h] <;> decide)
     (fun q hq => kept_lt _ (hdr_kept D hb.hs q (hdr_sub D q hq)))
   intro q hq
   rcases List.mem_append.mp hq with hq | hq

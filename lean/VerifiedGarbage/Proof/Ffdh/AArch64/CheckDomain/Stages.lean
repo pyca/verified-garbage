@@ -441,9 +441,7 @@ theorem q9_q10 (p : CdP) (t : State) (h : Q9 p t) : WP isa (seqs pSetup) t fun u
       · have hk := hdr_kept p.D (by simp) q hq'
         simp only [keptSlots, argSlots, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
           or_false] at hk
-        rcases hk with h | h | h | h | h | h | h | h | h | h | h | h <;> rw [h] <;>
-          simp only [sWs, sG, sQ, sDom, sDomLen, sK, sY, sX, sXl, VG.Impl.Ffdh.AArch64.Domain.sOut, sRand, sXe,
-            sMsk, sFn] <;> omega_arith
+        rcases hk with h | h | h | h | h | h | h | h | h | h | h | h <;> rw [h] <;> decide
       · simp only [CdP.ep, List.mem_cons, List.not_mem_nil, or_false] at hq'
         rcases hq' with rfl | rfl <;> simp only [sWs, sEp, sEl, sFn] <;> omega_arith
     · simp only; omega_arith
