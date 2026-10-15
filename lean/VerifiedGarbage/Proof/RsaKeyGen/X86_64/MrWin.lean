@@ -136,7 +136,8 @@ theorem mrWin_eq (mul : Nat → Nat → Nat → Prog isa) : mrWin mul =
               .alu .and .rbp (.reg .r15), .alu .or .rax (.reg .rbp), .store (hdr kFlag) .rax,
               .mov .rax (.mem (hdr kV)), .shift .shl .rax 4, .store (hdr kV) .rax,
               .mov .rax (.mem (hdr kBits)), .alu .sub .rax (.imm 1), .store (hdr kBits) .rax]] :
-              List (Prog isa)))))))) := rfl
+              List (Prog isa)))))))) := by
+  simp only [mrWin, List.append_assoc]
 
 /-- One window. -/
 theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm b y : Nat} {P : Bool}

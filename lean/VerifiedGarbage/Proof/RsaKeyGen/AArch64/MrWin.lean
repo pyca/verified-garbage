@@ -133,7 +133,8 @@ theorem mrWin_eq (mul : Nat → Nat → Nat → Prog isa) : mrWin mul =
       (([.block [ldh .x3 kV, .lsr .x .x3 .x3 60, sth .x3 kG]] : List (Prog isa)) ++
         (mrSel ++ (([mul aY aY aXm] : List (Prog isa)) ++ (eqMask aRm1 ++
           (([.block [sth .x15 kG]] : List (Prog isa)) ++ (eqMask aR1 ++
-            ([.block winTail] : List (Prog isa)))))))) := rfl
+            ([.block winTail] : List (Prog isa)))))))) := by
+  simp only [mrWin, winTail, List.append_assoc]
 
 /-- The flag, `kV` and `kBits`. -/
 theorem winTail_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
