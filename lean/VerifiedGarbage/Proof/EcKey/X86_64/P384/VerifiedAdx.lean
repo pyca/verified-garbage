@@ -6,6 +6,10 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.LitAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -63,6 +67,19 @@ theorem post_of_x {s s' : State} (h : PkPost p384x s s') : pkX86_64.post s s' :=
   rw [show Spec.EcKey.publicKey p384x.C (dk p384x s) = pk s.mem (s.gpr .rsi) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
+/-- `publicKeyP384Adx` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`), and its checks of every
+instruction (`Proof/Weierstrass/X86_64/CodeErase.lean`). -/
+def publicKeyP384AdxErased : Prog isa := Code.erase publicKeyP384Adx
+
+materialize_shared publicKeyP384AdxErased
+
+theorem pk_inlineOk_adx : publicKeyP384Adx.InlineOk = true := by
+  rw [← Code.InlineOk_erase]
+  show publicKeyP384AdxErased.InlineOk = true
+  lit_decide
+
 theorem pk_x86_adx (hL : Weierstrass.Law Spec.P384.curve)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds)
@@ -70,13 +87,19 @@ theorem pk_x86_adx (hL : Weierstrass.Law Spec.P384.curve)
     ∃ t s', Exec isa publicKeyP384Adx.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs) p384x_mulBase
   have hsp : ∀ i ∈ instrs publicKeyP384Adx.inline, Taint.clobbers i .rsp = false := by
-    have h : publicKeyP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
+    have h : publicKeyP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+      rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [Taint.clobbers_erase]]
+      show publicKeyP384AdxErased.allInstrs _ = true
+      lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have F := (Exec.regions he (Code.noCalls_inline pk_inlineOk_adx)).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+  refine ⟨t, s', he, abiPreserved_of_exec (by
+    rw [Code.allInstrs_inline, ← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [loadsMxcsr_erase]]
+    show publicKeyP384AdxErased.allInstrs _ = true
+    lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, post_of_x hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -95,7 +118,8 @@ theorem pk_x86_adx (hL : Weierstrass.Law Spec.P384.curve)
       · exact hrs) (by decide)
 
 theorem pk_ct_adx : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP384Adx :=
-  VG.Taint.constantTime (A := taintSym ["VG_P384_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp])
+  VG.Taint.constantTime_mapBlocks (c' := publicKeyP384AdxErased) (taintSym_eraseInv ["VG_P384_COMB"])
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) rfl
     (fun _ _ _ _ ⟨h0, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -103,14 +127,14 @@ theorem pk_ct_adx : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP384Adx 
       · exact h2
       · exact h3
       · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
-    (by taint_decide)
+    rfl (by taint_decide)
 
 theorem pk_verified_adx (hL : Weierstrass.Law Spec.P384.curve)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP384Adx
       (Spec.EcKey.P384.inst.publicKeyContract (X86_64.abi.withConsts p384.combConsts) 8) :=
-  Verified.of_inline_ct (by lit_decide) (pk_x86_adx hL hT hI) pk_ct_adx implies8
+  Verified.of_inline_ct pk_inlineOk_adx (pk_x86_adx hL hT hI) pk_ct_adx implies8
     (fun _ h => Sig.clear_of_pre_consts h) pk_patch
 
 end VG.Proof.EcKey.X86_64.P384

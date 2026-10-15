@@ -14,6 +14,8 @@ public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -66,17 +68,35 @@ theorem post_of {s s' : State} (h : PkPost brainpoolp256r1 s s') : pkX86_64.post
   rw [show Spec.EcKey.publicKey brainpoolp256r1.C (dk brainpoolp256r1 s) = pk s.mem (s.gpr .rsi) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
+/-- `publicKeyBrainpoolP256r1` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def publicKeyBrainpoolP256r1Erased : Prog isa := Code.erase publicKeyBrainpoolP256r1
+
+materialize_shared publicKeyBrainpoolP256r1Erased
+
+theorem pk_inlineOk : publicKeyBrainpoolP256r1.InlineOk = true := by
+  rw [← Code.InlineOk_erase]
+  show publicKeyBrainpoolP256r1Erased.InlineOk = true
+  lit_decide
+
 theorem pk_x86 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyBrainpoolP256r1.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (brainpoolp256r1_ok hI) hL brainpoolp256r1_tbls (pre_of hs) brainpoolp256r1_mulBase
   have hsp : ∀ i ∈ instrs publicKeyBrainpoolP256r1.inline, Taint.clobbers i .rsp = false := by
-    have h : publicKeyBrainpoolP256r1.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
+    have h : publicKeyBrainpoolP256r1.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+      rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [Taint.clobbers_erase]]
+      show publicKeyBrainpoolP256r1Erased.allInstrs _ = true
+      lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have F := (Exec.regions he (Code.noCalls_inline pk_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+  refine ⟨t, s', he, abiPreserved_of_exec (by
+    rw [Code.allInstrs_inline, ← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [loadsMxcsr_erase]]
+    show publicKeyBrainpoolP256r1Erased.allInstrs _ = true
+    lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -94,12 +114,6 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstra
       · exact hro
       · exact hrs) (by decide)
 
-/-- `publicKeyBrainpoolP256r1` without its displacements, as a literal of shared blocks
-(`materialize_shared`): what its constant-time check analyses
-(`Proof/Framework/X86_64/TaintErase.lean`). -/
-def publicKeyBrainpoolP256r1Erased : Prog isa := Code.erase publicKeyBrainpoolP256r1
-
-materialize_shared publicKeyBrainpoolP256r1Erased
 
 theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyBrainpoolP256r1 := by
   refine VG.Taint.constantTime_mapBlocks (c' := publicKeyBrainpoolP256r1Erased) taintS_eraseInv
@@ -131,7 +145,7 @@ theorem pk_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
 
 theorem pk_verified (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyBrainpoolP256r1 (Spec.EcKey.BrainpoolP256r1.inst.publicKeyContract X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (pk_x86 hL hI) pk_ct implies8
+  Verified.of_inline_ct pk_inlineOk (pk_x86 hL hI) pk_ct implies8
     (fun _ h => Sig.clear_of_pre h) pk_patch
 
 end VG.Proof.EcKey.X86_64.BrainpoolP256r1
