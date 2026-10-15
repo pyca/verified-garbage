@@ -36,19 +36,19 @@ theorem loop_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
     ?_ P.I.tries t
     ⟨hc, by rw [Nat.sub_self]; exact h0, Nat.le_refl _⟩
   rintro n s ⟨hcs, hi, hn⟩
-  have hn1 : 1 ≤ n := by have := hi.lt; omega
+  have hn1 : 1 ≤ n := by have := hi.lt; omega_using [this]
   refine WP.mono (tryOne_ok hL hk hcs hi) fun s' ⟨hc', h⟩ => ?_
   rcases h with ⟨he, hx⟩ | ⟨he, hx⟩
   · exact .inl ⟨he, hc', _, hx⟩
-  · refine .inr ⟨he, n - 1, by omega, hc', ?_, by omega⟩
-    rwa [show P.I.tries - (n - 1) = P.I.tries - n + 1 by omega]
+  · refine .inr ⟨he, n - 1, by omega_using [hn1], hc', ?_, by omega_using [hn]⟩
+    rwa [show P.I.tries - (n - 1) = P.I.tries - n + 1 by omega_using [hn, hn1]]
 
 /-! ## Steps a–g -/
 
 /-- `rlen` is the scalars' `Q` bytes. -/
 theorem rlen_eq (P : RfcHash) : Spec.Ecdsa.Rfc6979.rlen P.R.E.C = P.Q := by
   have := P.R.nBits_len
-  exact rlenR (by show _ ≤ 8 * P.R.E.C.len; omega) (by show 8 * P.R.E.C.len < _; omega)
+  exact rlenR (by show _ ≤ 8 * P.R.E.C.len; omega_using [this]) (by show 8 * P.R.E.C.len < _; omega_using [this])
 
 /-- RFC 6979's `K` and `V` after step g, from the code's. -/
 theorem kv0_eq (P : RfcHash) {x : Nat} {dB hB h : List Byte} (hd : dB.length = P.Q)
@@ -103,7 +103,7 @@ leftmost `Q` bytes it reads. -/
 theorem dgOk_narrow (hL : L.Ok) (hw : P.R.wide = false) {u : State} (hc : Ctx L g m₀ u) : DgOk P L m₀ u.mem := by
   obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
   have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * P.Q := by
-    have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega
+    have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega_using [h₂]
   have hD : P.Q ≤ P.I.hashLen := by rw [P.len]; exact hQD
   unfold DgOk
   simp only [dgArg, hw, Bool.false_eq_true, ite_false, eOf, hBOf]
@@ -120,15 +120,15 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
   cases hw : P.R.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * P.Q := by
-      have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega
+      have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega_using [h₂]
     have hwc : (cfgOf P).wide = false := hw
     simp only [hwc, Bool.false_eq_true, ite_false]
-    refine WP.mono (reduce_ok (P := P) hw hL hc hsi (by rw [← hD]; omega)) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
+    refine WP.mono (reduce_ok (P := P) hw hL hc hsi (by rw [← hD]; omega_using [hQD])) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
     refine WP.mono (initKV_ok hL hc₁) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
       ⟨hc₂, ?_, hk₂ _ (by nums), hv₂ _ (by nums), dgOk_narrow hL hw hc₂⟩
     simp only [hOf, hPart, hw, Bool.false_eq_true, ite_false]
     rw [bytesAt_frame hf₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega)]
+      simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega_using []) (by omega_using [hQ8, h6]) (by omega_using [])) (by omega_using [hQ8, h6])]
     rw [hSpec, bits2octets_eqQ hB (by rw [hBOf, length_bytesAt]; exact hQD), hBOf, ← bytesAt_take m₀ L.dg hQD]
     exact hh₁
   · obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
@@ -141,32 +141,32 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
     refine WP.mono (initKV_ok hL hc₁) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
       ⟨hc₂, ?_, hk₂ _ (by nums), hv₂ _ (by nums), ?_⟩
     · simp only [hOf, hPart, hw, ite_true]
-      rw [hc₂.dgBytes hL (by rw [← hD]), hSpec, bits2octets_short (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega)
-        (by show 8 * P.R.E.C.len < _; omega) (by rw [hBOf, length_bytesAt]; omega) P.R.n_ne,
+      rw [hc₂.dgBytes hL (by rw [← hD]), hSpec, bits2octets_short (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega_using [hl])
+        (by show 8 * P.R.E.C.len < _; omega_using [hl]) (by rw [hBOf, length_bytesAt]; omega_using [hD64, hN]) P.R.n_ne,
         hBOf, length_bytesAt]
     · have he : L.e = 18 := e18 hk.2.2.1 hw
       -- `core`'s digest: the digest's number `e`, shifted left by `sh` bits.
       have hX : Spec.Sha256.bytesAt u₂.mem (L.B + BitVec.ofNat 64 240) P.Q = Spec.Weierstrass.toBytes P.Q
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg P.H.D) * 2 ^ P.R.sh) := by
         rw [bytesAt_frame hf₂ (fun r hr => by
-            simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega) (by omega) (by omega))
-            (by omega), hx₁, hc.dgBytes hL (by rw [← hD])]
+            simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega_using []) (by omega_using [hQ66]) (by omega_using []))
+            (by omega_using [hQ66]), hx₁, hc.dgBytes hL (by rw [← hD])]
       have hlt : Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg P.H.D) * 2 ^ P.R.sh < 2 ^ (8 * P.Q) := by
         have := ofBytes_lt (Spec.Sha256.bytesAt m₀ L.dg P.H.D)
         rw [length_bytesAt] at this
         calc _ < 2 ^ (8 * P.H.D) * 2 ^ P.R.sh := Nat.mul_lt_mul_of_pos_right this (Nat.two_pow_pos _)
-          _ ≤ 2 ^ (8 * P.Q) := by rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by omega) (by omega)
+          _ ≤ 2 ^ (8 * P.Q) := by rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by omega_using []) (by omega_using [hQ66, hD64, hsh])
       have hl₁ : (Spec.Weierstrass.toBytes P.Q
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg P.H.D) * 2 ^ P.R.sh)).length = P.Q := by
         simp [Spec.Weierstrass.toBytes]
       have e₁ : Spec.Ecdsa.hashToInt P.R.E.C (Spec.Sha256.bytesAt u₂.mem (L.B + BitVec.ofNat 64 240) P.Q) =
           Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg P.H.D) := by
-        rw [hX, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega) (by rw [hl₁]),
+        rw [hX, hashToInt_takeR (R := P.Q) (by show _ ≤ 8 * P.R.E.C.len; omega_using [hl]) (by rw [hl₁]),
           List.take_of_length_le (by rw [hl₁]), ofBytes_toBytes _ _ hlt,
           show 8 * P.Q - Spec.Ecdsa.nBits P.R.E.C = P.R.sh from hl.2.2.symm, Nat.shiftRight_eq_div_pow,
           Nat.mul_div_cancel _ (Nat.two_pow_pos _)]
       have e₂ : eOf P L m₀ = Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg P.H.D) :=
-        (hashToInt_short (h := Spec.Sha256.bytesAt m₀ L.dg P.H.D) (by rw [length_bytesAt]; omega) P.R.n_ne).1
+        (hashToInt_short (h := Spec.Sha256.bytesAt m₀ L.dg P.H.D) (by rw [length_bytesAt]; omega_using [hD64, hN]) P.R.n_ne).1
       unfold DgOk
       simp only [dgArg, hw, ite_true]
       rw [e₁, e₂]
@@ -178,18 +178,18 @@ theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOf P L m' 
   cases hw : P.R.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     simp only [Bool.false_eq_true, ite_false]
-    refine bytesAt_frame hf (fun r hr => ?_) (by omega)
+    refine bytesAt_frame hf (fun r hr => ?_) (by omega_using [hQ8, h6])
     simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact hL.stk_SCR (by omega)
-    · exact Offset.disjoint_base _ (by omega) (by omega)
+    · exact hL.stk_SCR (by omega_using [hQ8, h6])
+    · exact Offset.disjoint_base _ (by omega_using []) (by omega_using [hQ8, h6])
   · simp only [ite_true]
     refine congrArg (_ ++ ·) (bytesAt_frame hf (fun r hr => ?_) (by nums))
     have hD : Region.Sub ⟨L.dg, P.H.D⟩ L.DG := Region.sub_prefix (by rw [P.len])
     simp only [KVW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hL.gc.sub_left hD
-    · exact (hL.kg.symm.sub_left hD).sub_right (Region.sub_prefix (by omega))
+    · exact (hL.kg.symm.sub_left hD).sub_right (Region.sub_prefix (by omega_using []))
 
 theorem stageC_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) (hq : QB P L m₀ u) :
     WP isa ((cfgOf P).rekeyFull 0) u fun u' => Ctx L g m₀ u' ∧ QC P L m₀ u' :=
@@ -224,8 +224,8 @@ theorem stageG_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
       have := L.he
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact (hL.stk_OUT (by omega)).symm.sub_left (Region.sub_prefix (by rw [hk.1]))
-      · exact (hL.stk_OUT (by omega)).symm.sub_left (Region.sub_prefix (by rw [hk.1]))) (by nums))⟩
+      · exact (hL.stk_OUT (by omega_using [])).symm.sub_left (Region.sub_prefix (by rw [hk.1]))
+      · exact (hL.stk_OUT (by omega_using [])).symm.sub_left (Region.sub_prefix (by rw [hk.1]))) (by nums))⟩
 
 theorem body_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).body t fun t' => Ctx L g m₀ t' ∧ ∃ i, Exit P L m₀ i t' :=
@@ -247,8 +247,8 @@ theorem blocks_eq (P : RfcHash) : Spec.Ecdsa.Rfc6979.blocks P.R.E.C P.H.D = P.nb
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1
     simp only [RfcHash.nb, hw, Bool.false_eq_true, ite_false]
-    exact Nat.div_eq_of_lt_le (by simp only [RfcHash.Q, RfcHash.w] at *; omega)
-      (by simp only [RfcHash.Q, RfcHash.w] at *; omega)
+    exact Nat.div_eq_of_lt_le (by simp only [RfcHash.Q, RfcHash.w] at *; omega_using [hs, h₂])
+      (by simp only [RfcHash.Q, RfcHash.w] at *; omega_using [hs, hQD, h₂])
   · obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
     have h₂ := (P.R.sizesW hw).2.2
     simp only [RfcHash.nb, hw, ite_true, h₂, hD64]
@@ -269,13 +269,13 @@ theorem result_eq {i : Nat} {t : State} (hx : Exit P L m₀ i t) :
   rw [result_unfold]
   by_cases hv : 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n
   · simp only [hv, and_self, ite_true]
-    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i P.I.tries (by have := hx.lt; omega) hx.fails,
-      show P.I.tries - i = (P.I.tries - 1 - i) + 1 by have := hx.lt; omega]
+    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i P.I.tries (by have := hx.lt; omega_using [this]) hx.fails,
+      show P.I.tries - i = (P.I.tries - 1 - i) + 1 by have := hx.lt; omega_using [this]]
     cases hs : sigI P L m₀ i with
     | some rs => rw [Proof.Ecdsa.Rfc6979.searchB_ok (blocks_eq P) hs]
     | none =>
       have h7 : i + 1 = P.I.tries := hx.last.resolve_left (by simp [hs])
-      rw [Proof.Ecdsa.Rfc6979.searchB_fail (blocks_eq P) hs, show P.I.tries - 1 - i = 0 by omega]
+      rw [Proof.Ecdsa.Rfc6979.searchB_fail (blocks_eq P) hs, show P.I.tries - 1 - i = 0 by omega_using [h7]]
       rfl
   · symm
     simp only [hv, ite_false, sigI, Spec.Ecdsa.signWith]
@@ -300,8 +300,8 @@ theorem go_iff {i : Nat} (hi : i < P.I.tries) (hf : ∀ j < i, sigI P L m₀ j =
   rw [result_unfold]
   by_cases hv : 1 ≤ xOf P L m₀ ∧ xOf P L m₀ < P.R.E.C.n
   · simp only [hv, and_self, ite_true]
-    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i P.I.tries (by omega) hf,
-      show P.I.tries - i = (P.I.tries - 1 - i) + 1 by omega]
+    rw [Proof.Ecdsa.Rfc6979.searchB_shift (blocks_eq P) i P.I.tries (by omega_using [hi]) hf,
+      show P.I.tries - i = (P.I.tries - 1 - i) + 1 by omega_using [hi]]
     cases hs : sigI P L m₀ i with
     | some rs =>
       rw [Proof.Ecdsa.Rfc6979.searchB_ok (blocks_eq P) hs]
@@ -313,14 +313,14 @@ theorem go_iff {i : Nat} (hi : i < P.I.tries) (hf : ∀ j < i, sigI P L m₀ j =
           (d := xOf P L m₀) (e := eOf P L m₀) (n := P.I.tries - 2 - i)
           (K := (stepB P.ok.SH.H P.nb (kvI P L m₀ i).1 (kvI P L m₀ i).2).1)
           (V := (stepB P.ok.SH.H P.nb (kvI P L m₀ i).1 (kvI P L m₀ i).2).2) (blocks_eq P)
-        rw [show P.I.tries - 1 - i = P.I.tries - 2 - i + 1 by omega]
+        rw [show P.I.tries - 1 - i = P.I.tries - 2 - i + 1 by omega_using [h7]]
         simp only [true_and, h7]
         simp only [kvI] at this
         rw [true_iff]
         split <;> omega
-      · rw [show P.I.tries - 1 - i = 0 by omega]
+      · rw [show P.I.tries - 1 - i = 0 by omega_using [h7]]
         simp only [Spec.Ecdsa.Rfc6979.search, h7, and_false, false_iff, Nat.not_lt]
-        exact ite_le_of_not (by omega) (by omega)
+        exact ite_le_of_not (by omega_using []) (by omega_using [])
   · simp only [hv, ite_false, ite_true]
     have hs : sigI P L m₀ i = none := by
       simp only [sigI, Spec.Ecdsa.signWith]
@@ -328,13 +328,13 @@ theorem go_iff {i : Nat} (hi : i < P.I.tries) (hf : ∀ j < i, sigI P L m₀ j =
       · rename_i h; exact absurd ⟨h.1, h.2.1⟩ hv
       · rfl
     simp only [hs, true_and]
-    omega
+    omega_using []
 
 /-! ## The whole function -/
 
 theorem pop_rsp (B : Addr) (e : Nat) :
     B + BitVec.ofNat 64 24 + BitVec.ofNat 64 (8 * (27 + e)) = B + BitVec.ofNat 64 (240 + 8 * e) := by
-  rw [Offset.add_add, show 24 + 8 * (27 + e) = 240 + 8 * e by omega]
+  rw [Offset.add_add, show 24 + 8 * (27 + e) = 240 + 8 * e by omega_using []]
 
 theorem sign_eq (P : RfcHash) :
     (cfgOf P).sign = .frame (.push (pushRs P.e)) (cfgOf P).body (.pop .rcx (pushRs P.e).length) := by
@@ -354,7 +354,7 @@ theorem sign_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e)
   have hc := push_ctx he h
   rw [sign_eq]
   refine WP.frame (rs := pushRs P.e) (by simp [pushRs]) (by simp [pushRs]) (by decide)
-    (by rw [pushRs_length]; have := h.1; omega)
+    (by rw [pushRs_length]; have := h.1; omega_using [this])
     (WP.mono (body_ok hL (coreOk_lay P he s) hc) fun u ⟨hu, i, hx⟩ =>
       ⟨hu.rsp.trans hc.rsp.symm, hu.wr.trans hc.wr.symm, ?_, ?_⟩)
   · have hrsp : (popped .rcx (pushRs P.e).length u).gpr .rsp = s.gpr .rsp := by
@@ -373,7 +373,7 @@ theorem sign_ok {s : State} (h : (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e)
         · exact hL.ro
         · exact hL.rc
         · have := (lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s).he
-          exact Offset.disjoint_base _ (by omega) (by omega)
+          exact Offset.disjoint_base _ (by omega_using []) (by omega_using [this])
   · show match (result P.I s.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s).d
         (lay P.I.hashLen P.I.ecdsa.curve.len P.e he P.R.E.combConsts s).dg).1 with
       | some rs => _ | none => _
