@@ -296,14 +296,14 @@ theorem xorStore_ok (t : State) {R : Nat → Spec.Rc2.State} (hsc : Scattered t.
       runStep_some, runBlock_cons, e₁₅, runStep_some, runBlock_cons, e₁₆, runStep_some, runBlock_nil]
   -- The values stored.
   have V0 : d₁₂.v .v0 = t.v .v0 ^^^ ofVDwords X (M.readW (q + BitVec.ofNat 64 0) 64) := by
-    simp (disch := decide) only [d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq,
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true, d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq,
       setLane_two] <;> rfl
   have V1 : d₁₂.v .v1 = t.v .v1 ^^^ M.read (q + BitVec.ofNat 64 8 + BitVec.ofNat 64 0) 16 := by
-    simp (disch := decide) only [d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq] <;> rfl
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true, d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq] <;> rfl
   have V2 : d₁₂.v .v2 = t.v .v2 ^^^ M.read (q + BitVec.ofNat 64 8 + BitVec.ofNat 64 16) 16 := by
-    simp (disch := decide) only [d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq] <;> rfl
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true, d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq] <;> rfl
   have V3 : d₁₂.v .v3 = t.v .v3 ^^^ M.read (q + BitVec.ofNat 64 8 + BitVec.ofNat 64 32) 16 := by
-    simp (disch := decide) only [d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq] <;> rfl
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true, d₁₂, d₁₁, d₁₀, d₉, d₈, d₇, d₆, d₅, d₄, d₃, d₂, d₁, v_write, v_setV_self, v_setV_of_ne, gpr_setV, gpr_write_self, gpr_write_of_ne, BitVec.setWidth_eq] <;> rfl
   have mem : d₁₆.mem = (((M.write (q + BitVec.ofNat 64 0) 16 (d₁₂.v .v0)).write
       (q + BitVec.ofNat 64 16) 16 (d₁₂.v .v1)).write (q + BitVec.ofNat 64 32) 16 (d₁₂.v .v2)).write
       (q + BitVec.ofNat 64 48) 16 (d₁₂.v .v3) := by
