@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Link
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
+public import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
 import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
 import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
@@ -137,9 +139,9 @@ theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
   rw [cbcBlocksAt_eq, cbcBlocksAt_eq]; exact hdata
 
 theorem cbcDecrypt_ct : ConstantTime isa cbcDecAArch64.pre cbcDecAArch64.pub cbcDecrypt :=
-  VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+  ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun s₁ s₂ h₁ h₂ hp => ⟨cbcTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide)
+      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [decSum])
 
 theorem cbcDecrypt_correct (s : State) (hs : cbcDecAArch64.pre s) :
     ∃ t s', Exec isa cbcDecrypt s t s' ∧ abiPreserved s s' ∧ cbcDecAArch64.post s s' := by
@@ -187,9 +189,9 @@ theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
   rw [cbcBlocksAt_eq, cbcBlocksAt_eq]; exact hdata
 
 theorem cbcEncrypt_ct : ConstantTime isa cbcEncAArch64.pre cbcEncAArch64.pub cbcEncrypt :=
-  VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+  ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun s₁ s₂ h₁ h₂ hp => ⟨cbcTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide)
+      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])
 
 theorem cbcEncrypt_correct (s : State) (hs : cbcEncAArch64.pre s) :
     ∃ t s', Exec isa cbcEncrypt s t s' ∧ abiPreserved s s' ∧ cbcEncAArch64.post s s' := by
