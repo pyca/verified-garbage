@@ -78,7 +78,8 @@ def hpT (ω k : Nat) (h : List (Vector Bool n)) (i j : Nat) : Array Byte × Nat 
 
 theorem hpS_zero (ω k : Nat) (h : List (Vector Bool n)) : hpS ω k h 0 = (Array.replicate (ω + k) 0, 0) := rfl
 
-theorem hpT_zero (ω k : Nat) (h : List (Vector Bool n)) (i : Nat) : hpT ω k h i 0 = hpS ω k h i := rfl
+theorem hpT_zero (ω k : Nat) (h : List (Vector Bool n)) (i : Nat) : hpT ω k h i 0 = hpS ω k h i := by
+  rw [hpT, List.range_zero, List.foldl_nil]
 
 theorem hpS_idx (ω k : Nat) (h : List (Vector Bool n)) (i : Nat) : (hpS ω k h i).2 = onesBefore h i 0 := by
   rw [hpS, hpPolys_idx]; exact Nat.zero_add _
