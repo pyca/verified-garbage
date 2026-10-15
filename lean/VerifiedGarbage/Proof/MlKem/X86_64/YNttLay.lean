@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len ≥ 8` on AVX2 registers
@@ -401,38 +402,22 @@ theorem ystep8 {sP : Addr} {m t : Nat} (hm : m < 8) (zi : Nat → Nat) {z : Nat 
         rw [ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)), show 8 * 1 + i - 8 = i by bdd_omega]
         try simp only [Nat.mul_one]
     · -- the specification: two blocks
-      rw [← hP, layF_get hblk F (by decide) zi (by bdd_omega) hi]
-      have hF : ∀ j, 32 * m ≤ j → j < 256 → (layF blk F 8 zi (2 * m))[j]! = F[j]! := fun j h1 h2 => by
-        rw [layF_get hblk F (by decide) zi (by bdd_omega) h2, ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega))]
+      rw [show 2 * (m + 1) = 2 * m + 2 by omega, layF_two hblk F (by decide) zi (st := 32 * m) (st' := 32 * m + 16)
+        (en := 32 * m + 16 + 16) (by omega) (by omega) (by omega) (by omega) hi, hP]
       by_cases h1 : 32 * m ≤ i ∧ i < 32 * m + 16
-      · rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega)), ite_eq_left_of_eq_true _ _ (eq_true h1),
-          show i / (2 * 8) = 2 * m by bdd_omega]
-        by_cases h2 : i - 32 * m < 8
-        · rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega)), ite_eq_left_of_eq_true _ _ (eq_true h2),
-            hF _ (by bdd_omega) (by bdd_omega), hF _ (by bdd_omega) (by bdd_omega), show 32 * m + (i - 32 * m) = i by bdd_omega,
-            show 32 * m + 8 + (i - 32 * m) = i + 8 by bdd_omega]
-        · rw [ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)), ite_eq_right_of_eq_false _ _ (eq_false h2),
-            hF _ (by bdd_omega) (by bdd_omega), hF _ (by bdd_omega) (by bdd_omega), show 32 * m + (i - 32 * m - 8) = i - 8 by bdd_omega,
-            show 32 * m + 8 + (i - 32 * m - 8) = i by bdd_omega]
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
-        by_cases h1' : 32 * m + 16 ≤ i ∧ i < 32 * m + 16 + 16
-        · rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega)), ite_eq_left_of_eq_true _ _ (eq_true h1'),
-            show i / (2 * 8) = 2 * m + 1 by bdd_omega]
-          by_cases h2 : i - (32 * m + 16) < 8
-          · rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega)), ite_eq_left_of_eq_true _ _ (eq_true h2),
-              hF _ (by bdd_omega) (by bdd_omega), hF _ (by bdd_omega) (by bdd_omega),
-              show 32 * m + 16 + (i - (32 * m + 16)) = i by bdd_omega,
-              show 32 * m + 16 + 8 + (i - (32 * m + 16)) = i + 8 by bdd_omega]
-          · rw [ite_eq_right_of_eq_false _ _ (eq_false (by bdd_omega)), ite_eq_right_of_eq_false _ _ (eq_false h2),
-              hF _ (by bdd_omega) (by bdd_omega), hF _ (by bdd_omega) (by bdd_omega),
-              show 32 * m + 16 + (i - (32 * m + 16) - 8) = i - 8 by bdd_omega,
-              show 32 * m + 16 + 8 + (i - (32 * m + 16) - 8) = i by bdd_omega]
-        · rw [ite_eq_right_of_eq_false _ _ (eq_false h1'), layF_get hblk F (by decide) zi (b := 2 * m) (by bdd_omega) hi]
-          by_cases h3 : i < 32 * m
-          · rw [ite_eq_left_of_eq_true _ _ (eq_true (show i < 2 * 8 * (2 * (m + 1)) by bdd_omega)),
-              ite_eq_left_of_eq_true _ _ (eq_true (show i < 2 * 8 * (2 * m) by bdd_omega))]
-          · rw [ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i < 2 * 8 * (2 * (m + 1)) by bdd_omega)),
-              ite_eq_right_of_eq_false _ _ (eq_false (show ¬ i < 2 * 8 * (2 * m) by bdd_omega))]
+      · rw [ifp h1, ifp h1]
+        unfold blkV
+        split
+        · rw [Nat.add_right_comm (32 * m) (i - 32 * m) 8]
+        · rw [show 32 * m + 8 + (i - 32 * m - 8) = 32 * m + (i - 32 * m) by omega]
+      · rw [ifn h1, ifn h1]
+        by_cases h2 : 32 * m + 16 ≤ i ∧ i < 32 * m + 16 + 16
+        · rw [ifp h2, ifp h2]
+          unfold blkV
+          split
+          · rw [Nat.add_right_comm (32 * m + 16) (i - (32 * m + 16)) 8]
+          · rw [show 32 * m + 16 + 8 + (i - (32 * m + 16) - 8) = 32 * m + 16 + (i - (32 * m + 16)) by omega]
+        · rw [ifn h2, ifn h2]
   · rw [show BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 (2 * 32) by decide, wAddr_add, Nat.mul_succ]
   · have e3 : s3.gpr .r8 = wAddr sP (t + 2 * m) := by rw [o3.gpr, o12.gpr, h8]
     try simp only [g9, h84]
