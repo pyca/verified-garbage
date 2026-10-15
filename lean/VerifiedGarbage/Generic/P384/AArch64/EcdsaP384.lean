@@ -67,14 +67,18 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
       computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
       `s⁻¹` modulo `n` is a call of `vg_p384_inv_mod_n`, by the signature's divsteps; `[u]G` is the \
       signature's comb over the 7-bit windows of `u` (from the static `VG_P384_COMB`, reading the entry of each \
-      digit of the public `u` directly rather than scanning its table), and `[v]Q` `vg_ecdh_p384`'s signed 4-bit windows \
-      (97 digits of `v + 8 Σ_{j<97} 16^j`, four doublings in Jacobian coordinates and a \
-      constant-time selection from a \
-      table of `[1 … 8]Q` each), with the complete formulas of Renes, Costello and Batina for \
-      `a = -3`, which also add the two. The result is the conjunction of the checks (the key, \
+      digit of the public `u` directly rather than scanning its table), and `[v]Q` the \
+      width-5 non-adjacent form of the public `v` (its 385 digits in `{0, ±1, ±3, …, ±15}` \
+      recoded into `scratch`, a table of `[1]Q, [3]Q, …, [15]Q`, and for each digit from the top a \
+      doubling in Jacobian coordinates and, for a digit other than 0, a complete Jacobian addition \
+      of the entry it selects, read directly, with its `y` negated for a negative digit; the \
+      products and squares are calls of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p`), converted \
+      to projective coordinates and added to `[u]G` by the complete formulas of Renes, Costello \
+      and Batina for `a = -3`. The result is the conjunction of the checks (the key, \
       `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without inverting `Z`) as a mask, so the \
-      comb's addresses depend on `u`, from the digest and the signature, and the rest of the \
-      time only on the pointers."])
+      comb's addresses depend on `u`, from the digest and the signature, the non-adjacent \
+      form's branches and addresses on `v`, from the signature, and on the key, and the rest of \
+      the time only on the pointers."])
     consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP384
     contract := Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts)

@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMain
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMain
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Checks
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Checks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Contract
@@ -29,14 +31,16 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 # ECDSA verification over P-384 on AArch64: `Verified`
 
 P-384 is a curve the proof supports (`p384_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
-law, which the registration file supplies: `Proof.P384.law` and `invSound_of_toM`), so `verify_ok` gives
+law, which the registration file supplies: `Proof.P384.law` and `invSound_of_toM`), so `pubNafVerify_ok` gives
 the contract's postcondition; `x19`–`x25` are restored, and no instruction
 writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time relative to the contract's public inputs
-(`verify_public_ct`): the comb reads the entries of the digits of
-`u = e s⁻¹`, from the digest and the signature, directly; around it, by taint
-tracking, the only branches are on loop counters and every other address is
-an argument plus a constant or a counter.
+(`pubNafVerify_public_ct`): the comb reads the entries of the digits of
+`u = e s⁻¹`, from the digest and the signature, directly; the public NAF
+branches on the digits of `v = r s⁻¹` and on the coordinates of the key, and
+reads the entries of those digits; around them, by taint tracking
+(`verify_checks`), the only branches are on loop counters and every other
+address is an argument plus a constant or a counter.
 -/
 
 @[expose] public section
@@ -61,39 +65,31 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArc
     (s : State)
     (hs : verifyAArch64.pre s) :
     ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p384_ok hI) hL hT (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := pubNafVerify_ok (p384_ok hI) (by decide) (by decide) hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
 
-open VG.Proof.Weierstrass.AArch64 in
-/-- The public comb's iterations, and the code before and after it, by taint tracking. -/
-theorem verify_checks : VerifyChecks p384 where
-  comb := {
-    init := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0]) (fun _ _ _ _ h => h) (by taint_decide)
-    head := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x19]) (fun _ _ _ _ h => h) (by taint_decide)
-    tail := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x19, .x16]) (fun _ _ _ _ h => h)
-      (by taint_decide) }
-  before := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3]) (fun _ _ _ _ h => h)
-    (by taint_decide)
-  after := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0]) (fun _ _ _ _ h => h) (by taint_decide)
-
 /-- The contract's public inputs: the pointers, the table, and the key, digest and signature. -/
-theorem verifyPublic_of_spec {s₁ s₂ : State}
+theorem jacPublic_of_spec {s₁ s₂ : State}
     (pub : (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts p384.combConsts)).pub s₁ s₂) :
-    VerifyPublic p384 s₁ s₂ := by
+    JacPublic p384 s₁ s₂ := by
   sig_pub [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
     Spec.P384.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p384_combConsts,
     Abi.withConsts] at pub
   obtain ⟨hsp, hsy, inputs, h0, h1, h2, h3⟩ := pub
-  have eqBytes := (List.map_inj_right (fun (a b : BitVec 8) h => BitVec.eq_of_toNat_eq h)).mp inputs
-  have parts := List.append_inj eqBytes (by simp only [List.length_append, Weierstrass.length_bytesAt])
-  have front := List.append_inj parts.1 (by simp only [Weierstrass.length_bytesAt])
-  refine ⟨⟨hsp, fun r hr => ?_⟩, hsy, publicU_congr front.2 parts.2⟩
-  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
-  · exact h0
-  · exact h1
-  · exact h2
-  · exact h3
+  refine ⟨⟨hsp, fun r hr => ?_⟩, hsy, ?_, ?_, ?_⟩
+  · simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact h0
+    · exact h1
+    · exact h2
+    · exact h3
+  all_goals
+    have eqBytes := (List.map_inj_right (fun (a b : BitVec 8) h => BitVec.eq_of_toNat_eq h)).mp inputs
+    have parts := List.append_inj eqBytes (by simp only [List.length_append, Weierstrass.length_bytesAt])
+    have front := List.append_inj parts.1 (by simp only [Weierstrass.length_bytesAt])
+  · exact front.1
+  · exact front.2
+  · exact parts.2
 
 theorem verify_ct (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
@@ -101,8 +97,8 @@ theorem verify_ct (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch
       (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts p384.combConsts)).pre
       (Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts p384.combConsts)).pub verifyP384 := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
-  exact verify_public_ct (p384_ok hI) hL hT verify_checks _ _ _ _ _ _
-    (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (verifyPublic_of_spec pub) e₁ e₂
+  exact pubNafVerify_public_ct (p384_ok hI) (by decide) (by decide) hL hT verify_checks _ _ _ _ _ _
+    (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (jacPublic_of_spec pub) e₁ e₂
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
