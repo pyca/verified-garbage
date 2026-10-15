@@ -126,7 +126,7 @@ theorem verifyPrefix_ct (v : Impl.Ed448.X86_64.FieldVariant) :
 theorem verifyFinish_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) :
     RelCT isa (fun s u => s.gpr .rdi = base ∧ u.gpr .rdi = base)
       (vfinish v.field v.bodies) (fun _ _ => True) := by
-  cases v <;> apply RelCT.taint (A := taint) (Taint.ofRegs [.rdi]) _ (by taint_decide)
+  cases v <;> apply relCT_sum (Taint.ofRegs [.rdi]) _ (by taint_decide_sum [dblSum, addSum, dblAdxSum, addAdxSum])
   all_goals
     intro s u h
     apply Taint.agree_ofRegs
