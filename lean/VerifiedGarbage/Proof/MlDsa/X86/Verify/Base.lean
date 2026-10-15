@@ -20,6 +20,8 @@ public import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint2
 public import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA verification on x86 (32-bit): the setting
@@ -204,17 +206,13 @@ macro_rules
 bounded indices, decided for each parameter set (`decide_at`): cheaper than
 `lv`, which unfolds it into arithmetic on the parameters for `omega`, unless
 there are many indices to try. -/
-syntax "lvd" : tactic
-macro_rules
-  | `(tactic| lvd) => `(tactic| (
+tactic_template "lvd" : tactic => `(tactic| (
       have hmem := (‹VG.Proof.MlDsa.X86.Verify.VFacts _›).mem; decide_at hmem))
 
 /-- Proves checks of buffers against the layout (`ok`, `okW`, `sep`, `apart`),
 from arithmetic on their offsets closed by `omega`, with the facts of the
 parameter set `hF : VFacts p` and those in the context. -/
-syntax "lv " term:max : tactic
-macro_rules
-  | `(tactic| lv $hF) => `(tactic| first
+tactic_template "lv " hF:term:max : tactic => `(tactic| first
       | lv_core $hF using lv_step
       | lv_core $hF using (first
         | with_reducible apply VG.Proof.MlDsa.X86.Verify.apart_cons'

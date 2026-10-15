@@ -10,6 +10,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA key generation on x86 (32-bit): parameters and layout
@@ -108,9 +110,7 @@ macro_rules
 bounded indices, decided for each parameter set (`decide_at`): cheaper than
 `layp`, which unfolds it into arithmetic on the parameters for `omega`, unless
 there are many indices to try. -/
-syntax "layd" : tactic
-macro_rules
-  | `(tactic| layd) => `(tactic| (
+tactic_template "layd" : tactic => `(tactic| (
       have hmem := (‹VG.Proof.MlDsa.X86.KeyGen.PFacts _›).mem; decide_at hmem))
 
 end VG.Proof.MlDsa.X86.KeyGen

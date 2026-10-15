@@ -14,6 +14,8 @@ meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
 import VerifiedGarbage.Proof.Framework.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA key generation on x86 (32-bit): after the samplers
@@ -64,7 +66,7 @@ structure SafeR (p : Params) (np nr : Nat) (bs : List Buf) : Prop where
 
 /-- Proves a `SafeR`, with the facts of the parameter set `hF`: each check decided for each
 parameter set if it can be (`layd`). -/
-macro "safeR " hF:term:max : tactic => `(tactic| (
+tactic_template "safeR " hF:term:max : tactic => `(tactic| (
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> intros <;> (try refine ⟨?_, ?_⟩) <;> first | layd | layp $hF))
 
 theorem apart_append {Y : Lay} {b : Buf} {bs₁ bs₂ : List Buf} (h₁ : Y.apart b bs₁ = true)
@@ -99,7 +101,7 @@ theorem ykOk {p : Params} {a o l : Nat} (ha : a < 4) (hl : 0 < l) (h : o + l ≤
   simp only [Lay.ok, YK_n, ha, hl, h, decide_true, Bool.and_self]
 
 /-- Closes the arithmetic of a check of one buffer, in each case of `η` if it needs it. -/
-macro "safe1 " hF:term:max : tactic => `(tactic| plain_simp_names (
+tactic_template "safe1 " hF:term:max : tactic => `(tactic| (
                    try simp only [VG.Impl.MlDsa.X86.KeyGen.oACC, VG.Impl.MlDsa.X86.KeyGen.oP, VG.Impl.MlDsa.X86.KeyGen.oT0]
                    first
                      | omega_arith
