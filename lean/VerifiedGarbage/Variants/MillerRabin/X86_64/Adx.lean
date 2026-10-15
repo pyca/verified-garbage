@@ -15,6 +15,7 @@ def variant : RoundImpl where
   mont := Mont.fnAdx
   mxSafe := by decide +kernel
   spSafe := by decide +kernel
+  depth := by decide +kernel
   suffix := "_adx"
   features := ["bmi2", "adx"]
 
