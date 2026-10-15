@@ -32,20 +32,20 @@ theorem fixed_msg_y {H : Hash} (hH : HashOK H) {u : State} {S : Addr}
   rw [getD_app, getD_app]
   simp only [List.length_append, RsaPss.zeros_length, hm]
   by_cases h1 : i < 8
-  · simp (disch := omega) only [updL, clr, ite_eq_left, ite_eq_right, hm, List.length_map, List.length_range]
+  · simp (disch := omega) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right]
     exact (RsaPss.zeros_getD _ _).symm
   by_cases h2 : i < 8 + H.D
-  · simp (disch := omega) only [updL, clr, ite_eq_left, ite_eq_right, hm, List.length_map, List.length_range]
+  · simp (disch := omega) only [updL, ↓ite_eq_left, ↓ite_eq_right]
     rw [show oY + i - (oY + 8) = i - 8 by omega]
   by_cases h3 : i - (8 + H.D) < db - pos - 1
-  · simp (disch := omega) only [updL, clr, ite_eq_left, ite_eq_right, hm, List.length_map, List.length_range]
+  · simp (disch := omega) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right, hm, List.length_map, List.length_range]
     rw [show oY + i - (oY + 8 + H.D) = i - (8 + H.D) by omega]
     simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range h3, Option.map_some, Option.getD_some]
-    simp (disch := omega) only [ite_eq_right]
+    simp (disch := omega) only [↓ite_eq_right]
     rw [hEm _ (by omega) (by omega)]
     congr 1
     omega
-  · simp (disch := omega) only [updL, clr, ite_eq_left, ite_eq_right, hm, List.length_map, List.length_range]
+  · simp (disch := omega) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right, hm, List.length_map, List.length_range]
     rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_none (by rw [List.length_range]; omega)]
     rfl
 
@@ -144,7 +144,7 @@ theorem finish_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e
     congr 2
     refine congrArg (acc ||| ·) (orF_congr fun i hi => ?_)
     rw [← off_add, byte_of_bytesAt d6 hi, O6.em _ (by omega) (by omega)]
-    simp (disch := omega) only [updL, clr, ite_eq_right, hml, List.length_map, List.length_range]
+    simp (disch := omega) only [updL, clr, ↓ite_eq_right]
     rw [hEm _ (by omega) (by omega)]
 
 
