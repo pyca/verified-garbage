@@ -117,7 +117,7 @@ def TwoP (I : KIn) (s₀ s t : State) : Prop :=
     atop I t.mem aU = 0 ∧ atop I t.mem aV = 0 ∧ atop I t.mem aL = 0
 
 theorem TwoP.trans {I : KIn} {s₀ s t u : State} (h₁ : TwoP I s₀ s t) (h₂ : TwoP I s₀ t u) : TwoP I s₀ s u :=
-  ⟨h₂.1, (h₁.2.1.trans h₂.2.1).mono (by simp), h₂.2.2⟩
+  ⟨h₂.1, (h₁.2.1.trans h₂.2.1).mono (by decide), h₂.2.2⟩
 
 /-- The mask of `u` and `v` both even into `x15`. -/
 theorem twoMask_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) :
@@ -181,7 +181,7 @@ theorem twoStep_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) (hU0 : atop I s.m
   have k14 := ((k₁.trans k₂).trans k₃).trans k₄
   simp only [seqs]
   refine WP.mono (dec_ok s₄ .x6) fun t ⟨⟨h6, hm, _⟩, k₅⟩ => ⟨⟨h₄.regs hm k₅,
-    by rw [hm, ← m₁]; exact (((f₂.trans f₃).trans f₄)).mono (by simp),
+    by rw [hm, ← m₁]; exact (((f₂.trans f₃).trans f₄)).mono (by decide),
     by rw [hm]; exact tU₄, by rw [hm]; exact tV₄, by rw [hm]; exact tL₄⟩,
     by rw [h6, k14.gpr .x6 (by decide)], ?_⟩
   rw [hm, vU₄, vU₂, vV₄, vV₃, vL₄, vV₂, vL₃, m₁]

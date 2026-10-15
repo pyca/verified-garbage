@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponentCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PublicExponentCT
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
@@ -31,12 +32,12 @@ def EncodedPre (p : PowerPublic × List Byte) (s : State) : Prop :=
       2 ^ (64 * p.1.bytes.x.wx) % p.1.modulus
 
 /-- Exponentiation and decoding together have a secret-independent trace. -/
-theorem encodedPower_ct (M : Mont) : RelCT isa (Two EncodedPre)
-    (VG.Impl.Dsa.X86_64.PublicPower.encodedPower M.mm VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len)
+theorem encodedPower_ct (M : Mont) (Sq : MontS) : RelCT isa (Two EncodedPre)
+    (VG.Impl.Dsa.X86_64.PublicPower.encodedPower Sq.mm M.mm VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len)
     (fun _ _ => True) := by
   unfold VG.Impl.Dsa.X86_64.PublicPower.encodedPower
   refine RelCT.seq (two_post (Ψ := fun p s => GoodW p.1.bytes.x.ws s)
-    (two_map (fun p : PowerPublic × List Byte => (p.1.bytes, p.2)) ?_ (crtExpLoop_ct M (by taint_decide))) ?_)
+    (two_map (fun p : PowerPublic × List Byte => (p.1.bytes, p.2)) ?_ (crtExpLoop_ct M Sq (by taint_decide))) ?_)
     (two_map (fun p : PowerPublic × List Byte => p.1.bytes.x.ws) (fun _ _ h => h)
       (M.ct (by unfold MmUse; decide)))
   · intro p s ⟨x, ⟨hc, hm, _, hp, hl, hlen, h1, h2, hs⟩, hx, hy⟩
@@ -48,7 +49,7 @@ theorem encodedPower_ct (M : Mont) : RelCT isa (Two EncodedPre)
     · rw [hy]; exact Nat.mod_lt _ (by have := p.1.greater; omega)
     · rw [hy, Nat.mod_mod, Nat.one_mul]
   · intro p s ⟨x, ⟨hc, hm, _, hp, hl, _, h1, h2, hs⟩, hx, hy⟩
-    refine WP.mono (expLoop_ok M (x := x) hc p.1.lower p.1.fits p.1.upper hm.modulus hm.inverse p.1.odd
+    refine WP.mono (expLoop_ok M Sq (x := x) hc p.1.lower p.1.fits p.1.upper hm.modulus hm.inverse p.1.odd
       (by rw [hx]; exact Nat.mod_lt _ (by have := p.1.greater; omega))
       (by rw [hx, Nat.mod_mod])
       (by rw [hy]; exact Nat.mod_lt _ (by have := p.1.greater; omega))
@@ -62,13 +63,13 @@ def PowerCorePre (p : PowerPublic × List Byte) (s : State) : Prop :=
       2 ^ (128 * p.1.bytes.x.wx) % p.1.modulus
 
 /-- The whole power core is constant time for secret bases and fixed public exponents. -/
-theorem powerCore_ct (M : Mont) : RelCT isa (Two PowerCorePre)
-    (VG.Impl.Dsa.X86_64.PublicPower.powerCore M.mm VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len)
+theorem powerCore_ct (M : Mont) (Sq : MontS) : RelCT isa (Two PowerCorePre)
+    (VG.Impl.Dsa.X86_64.PublicPower.powerCore Sq.mm M.mm VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len)
     (fun _ _ => True) := by
   unfold VG.Impl.Dsa.X86_64.PublicPower.powerCore
   refine RelCT.seq (two_post (Ψ := EncodedPre)
     (two_map (fun p : PowerPublic × List Byte => p.1.product) ?_ (encodePower_ct M)) ?_)
-    (encodedPower_ct M)
+    (encodedPower_ct M Sq)
   · intro p s ⟨⟨_, hm, hone, _⟩, hr2⟩
     refine ⟨hm, ?_⟩
     intro j hj

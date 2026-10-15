@@ -31,6 +31,13 @@ def tabRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aT0, 128 * (w + 2)), (slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)),
     (8 * kV, 8), (8 * kBits, 8)]
 
+/-- `tabRanges`'s ranges are past the header or in its header ranges. -/
+theorem tabRanges_shape (w : Nat) : ∀ r ∈ tabRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(208, 8), (240, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+    tabRanges, slot, hdrBytes, aAcc, aTmp, aY, aT0, kT0, sFn, sCnt, kV, kBits, kT2]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
+
 theorem tabRanges_mut (w : Nat) : ∀ r ∈ tabRanges w, KMut r := by unfold tabRanges; w_mut
 
 theorem tabRanges_hdr (w : Nat) {i : Nat} (hi : i = kV ∨ i = kBits) : (8 * i, 8) ∈ tabRanges w := by

@@ -110,8 +110,8 @@ theorem constA_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {x : Nat} (hx : x 
   rw [← hm] at o₄
   have f₄ := KF.arr1 (j := aC) o₄ (Nat.le_refl _) (by omega)
   have kk := (k₂.trans k₃).trans k₄
-  refine ⟨h₁.step f₄ (all_mut_arr (by decide)) kk, (f₁.trans f₄).mono (by simp), ?_,
-    (k₁.trans kk).mono (by simp)⟩
+  refine ⟨h₁.step f₄ (all_mut_arr (by decide)) kk, (f₁.trans f₄).mono (by decide), ?_,
+    (k₁.trans kk).mono (by decide)⟩
   rw [hm, wv_put0 _ z₁ (by omega), BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx]
   exact Nat.mod_eq_of_lt (Nat.lt_trans hx (by decide))
 

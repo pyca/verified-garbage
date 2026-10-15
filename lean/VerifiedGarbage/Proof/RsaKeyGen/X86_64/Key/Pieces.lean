@@ -364,8 +364,8 @@ theorem constA_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (x : BitVe
   rw [← hm] at o₄
   have f₄ := KF.arr1 (j := aC) o₄ (Nat.le_refl _) (by omega_arith)
   have kk := (k₂.trans k₃).trans k₄
-  refine ⟨h₁.step f₄ (all_mut_arr (by decide)) kk (by decide), (f₁.trans f₄).mono (by simp), ?_,
-    (k₁.trans kk).mono (by simp)⟩
+  refine ⟨h₁.step f₄ (all_mut_arr (by decide)) kk (by decide), (f₁.trans f₄).mono (by decide), ?_,
+    (k₁.trans kk).mono (by decide)⟩
   rw [hm]
   have := wv_put (m := s₁.mem) (B := I.B) (d := slot I.W aC) (N := I.W + 2) (k := 0) (x.setWidth 64)
     ((wv_eq_zero_iff _ _ _ _).mp z₁) (by omega_arith) (by omega_arith) (I.W + 2) (Nat.le_refl _)
@@ -404,7 +404,7 @@ theorem ltA_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {a b : Nat} (
     refine WP.mono (WP.keep [.rbp] (Q := fun t => t.gpr .rbp = mask false ∧ t.mem = s₃.mem) (by xrun) rfl)
       fun t ⟨⟨hbp, hm⟩, k₄⟩ => ⟨((k₂.trans k₃).trans k₄).gpr (by decide) |>.trans h12,
         (k₃.trans k₄).gpr (by decide) |>.trans hbx, (k₄.gpr (by decide)).trans h10, hbp,
-        by rw [hm, m₃, m₂, m₁], (((k₁.trans k₂).trans k₃).trans k₄).mono (by simp)⟩
+        by rw [hm, m₃, m₂, m₁], (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)⟩
   refine WP.seq (WP.mono hb ?_)
   · intro s₁ ⟨h12, hbx, h10, hbp, m₁, k₁⟩
     refine WP.mono (cmpLoop_ok (h.ws.scr.congr k₁.2.2) hbx h10 h12 hbp (by have := h.ws.w1; omega_arith)
@@ -413,7 +413,7 @@ theorem ltA_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {a b : Nat} (
     have kk := k₁.trans k₂
     exact ⟨h.step (cs := []) (by rw [m₂, m₁]; exact KF.refl _ _ _) rfl kk (by decide), by rw [m₂, m₁], hbp',
       (k₂.gpr (by decide)).trans hbx, (k₂.gpr (by decide)).trans h10, (k₂.gpr (by decide)).trans h12,
-      kk.mono (by simp)⟩
+      kk.mono (by decide)⟩
 
 theorem isZero_mask {x : BitVec 64} {c : Prop} [Decidable c] (hx : x = 0 ↔ c) :
     0#64 - BitVec.setWidth 64 (BitVec.ofBool (decide (x.toNat < BitVec.toNat (1 : BitVec 64)))) = mask (decide c) := by
@@ -439,7 +439,7 @@ theorem eqMask_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {a b : Nat
     exact isZero_mask hz
   · have kk := k₁.trans k₂
     exact ⟨h.step (cs := []) (by rw [m₂, m₁]; exact KF.refl _ _ _) rfl kk (by decide), by rw [m₂, m₁], hbp,
-      kk.mono (by simp)⟩
+      kk.mono (by decide)⟩
 
 /-- `selC j`: `[j] := rbp ? [j] : [aC]`. -/
 theorem selC_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {j : Nat} (hj : j < 16) (hjC : j ≠ aC)
@@ -463,7 +463,7 @@ theorem selC_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {j : Nat} (h
   have f := KF.arr1 (I := I) (j := j) o (Nat.le_refl _) (by omega_arith)
   have kk := (k₁.trans k₂).trans k₃
   exact ⟨h.step f (all_mut_arr hj) kk (by decide), f, hv, o.word (Or.inr (Nat.le_refl _)) (by omega_arith),
-    kk.mono (by simp)⟩
+    kk.mono (by decide)⟩
 
 /-- `subC o a`: `[o] := [a] - ([aC] & r15)` over `W` words. -/
 theorem subC_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {o a : Nat} (ho : o < 16) (ha : a < 16)
@@ -497,7 +497,7 @@ theorem subC_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {o a : Nat} 
       fun t ⟨⟨hbp, hm⟩, k₅⟩ => ⟨(((k₂.trans k₃).trans k₄).trans k₅).gpr (by decide) |>.trans h12,
         ((k₃.trans k₄).trans k₅).gpr (by decide) |>.trans h8, ((k₄.trans k₅).gpr (by decide)).trans h10,
         (k₅.gpr (by decide)).trans hsi, hbp, by rw [hm, m₄, m₃, m₂, m₁],
-        ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).mono (by simp)⟩
+        ((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).mono (by decide)⟩
   refine WP.seq (WP.mono hb fun s₁ ⟨h12, h8, h10, hsi, hbp, m₁, k₁⟩ => ?_)
   refine WP.mono (subM_ok (h.ws.scr.congr k₁.2.2) hsi h8 h10 ((k₁.gpr (by decide)).trans h15) h12 hbp
     (by have := h.ws.w1; omega_arith) (by have := h.ws.w2; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) pA (by omega_arith))
@@ -506,7 +506,7 @@ theorem subC_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {o a : Nat} 
   have f := KF.arr1 (I := I) (j := o) o' (Nat.le_refl _) (by omega_arith)
   have kk := k₁.trans k₂
   exact ⟨h.step f (all_mut_arr ho) kk (by decide), f, ⟨b, hv⟩, o'.word (Or.inr (Nat.le_refl _)) (by omega_arith),
-    kk.mono (by simp)⟩
+    kk.mono (by decide)⟩
 
 /-- `oddMask j`: `rax := ` the mask of `[j]` odd. -/
 theorem oddMask_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {j : Nat} (hj : j < 16) :
@@ -528,7 +528,7 @@ theorem oddMask_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {j : Nat}
       xrun [State.ea, at0, hbx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
         hs₂.ld (d := slot I.W j) (by omega_arith), mask_low, e0]) rfl) fun t ⟨⟨hm, hax⟩, k₃⟩ =>
     ⟨by rw [hm, m₂, m₁], hax, ((k₂.trans k₃).gpr (by decide)).trans h12, ((k₂.trans k₃).gpr (by decide)).trans h9,
-      ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+      ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-- `setOneA j` on a zero array: `[j] := 1` over `W + 2` words. -/
 theorem setOne_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {j : Nat} (hj : j < 16)

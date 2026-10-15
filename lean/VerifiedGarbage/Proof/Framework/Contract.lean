@@ -85,7 +85,7 @@ elab "realize_eqns " ids:ident* : command => liftTermElabM do
     discard <| getUnfoldEqnFor? n (nonRec := true)
 
 realize_eqns Sig.bufs Sig.lists Sig.descs Curry.apply Curry.const Elem.size ArgWord.ofRaw Sig.contract Sig.words
-  Param.words Param.pubs ArgWord.bits IntTy.bits Sig.retBits stackBelow
+  Param.words Param.pubs ArgWord.bits IntTy.bits Sig.retBits stackBelow Sig.conj
 
 /-- Two regions that do not wrap around the end of the address space, one
 entirely below the other: a check that `decide` evaluates on concrete regions. -/
@@ -202,7 +202,7 @@ macro_rules
       sig_close
       all_goals first
         | with_reducible assumption
-        | with_reducible exact Region.Disjoint.symm ‹_›
+        | sig_disjoint_symm
         | omega
         | simp_all [Region.disjoint_comm, Nat.mul_comm]))
 
@@ -291,10 +291,10 @@ macro_rules
       sig_close
       all_goals first
         | with_reducible assumption
-        | with_reducible exact Region.Disjoint.symm ‹_›
+        | sig_disjoint_symm
         | omega
-        | (simp only [Nat.mul_comm] at *
-           first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›)
+        | (sig_simp_only [Nat.mul_comm] at *
+           first | with_reducible assumption | sig_disjoint_symm)
         | simp only [*, List.mem_cons, List.mem_singleton, true_or, or_true]))
 
 /-- Proves `∀ s s', k'.pre s → k.post s s' → k'.post s s'` (see `sig_implies`), or
@@ -341,7 +341,7 @@ macro_rules
              | exact Region.disjoint_of_sep (by decide)
              | (intro a h₁ h₂
                 set_option linter.unusedSimpArgs false in
-                simp only [Region.Contains, $ws,*] at h₁ h₂
+                sig_simp_only [Region.Contains, $ws,*] at h₁ h₂
                 bv_omega))))
 
 syntax "sig_implies " "[" Lean.Parser.Tactic.simpLemma,* "]" " [" Lean.Parser.Tactic.simpLemma,* "]"

@@ -593,7 +593,7 @@ theorem execBlock_length {l : List Instr} {s s' : State} {t : List Leak} (h : ex
 `rsp`, there are no frames, and each function called calls none and has
 only instructions that do not touch `rsp`. -/
 def _root_.VG.Code.InlineOk : Prog isa → Bool
-  | .block l => l.all fun i => !Taint.clobbers i .rsp
+  | .block l => KList.all l fun i => !Taint.clobbers i .rsp
   | .seq a b => a.InlineOk && b.InlineOk
   | .ite _ t e => t.InlineOk && e.InlineOk
   | .loop b _ => b.InlineOk
@@ -854,7 +854,7 @@ theorem Exec.uninline {c : Prog isa} (hc : c.InlineOk = true) {sp : Addr} {b b' 
   induction c generalizing b b' t hv u with
   | block l =>
     simp only [Code.inline] at h
-    simp only [Code.InlineOk, List.all_eq_true, Bool.not_eq_true'] at hc
+    simp only [Code.InlineOk, KList.all_eq, List.all_eq_true, Bool.not_eq_true'] at hc
     refine ⟨hv, u, t, Exec.F (H := hole sp) rfl (fun i _ s hs => ⟨exec_patch hs i, addrs_patch i⟩)
       (fun k _ => eval_patch k) h hb, ?_, Exec.lifts_self _ rfl h⟩
     rw [Exec.gpr (c := .block l) (fun i hi => hc i hi) h, hsp]

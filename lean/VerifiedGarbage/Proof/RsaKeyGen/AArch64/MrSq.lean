@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrBit
 public import VerifiedGarbage.Proof.RsaKeyGen.MrWindow
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdStep
@@ -45,20 +46,27 @@ theorem ECtx.of_frm {m m' : Mem} {B : Addr} {w c : Nat} {rs : List (Nat × Nat)}
 
 /-- Disjointness of a range from each of a list of literal ranges of
 Miller–Rabin. -/
-macro "w_disj" : tactic => `(tactic| (
+macro "w_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.cons_append,
     List.nil_append, slot, hdrBytes, aN, aAcc, aTmp, aY, aXm, aB, aR1, aRm1, aE, aT0, kG, kFlag, kPlen, kV, kT0,
     sCnt, kBits, kT2, kWords, kT1, kU, sFn, sMinv]
   and_intros <;> omega_arith))
 
 /-- The ranges of a list of literal ranges are `KMut`. -/
-macro "w_mut" : tactic => `(tactic| (
+macro "w_mut" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   and_intros <;> first | exact KMut.ofSlot _ _ _ | exact KMut.hdr (by decide)))
 
 /-- What a squaring changes. -/
 def sqRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)), (8 * kFlag, 8)]
+
+/-- `sqRanges`'s ranges are past the header or in its header ranges. -/
+theorem sqRanges_shape (w : Nat) : ∀ r ∈ sqRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(184, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+    sqRanges, slot, hdrBytes, aAcc, aTmp, aY, sFn, kFlag, kPlen]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
 
 theorem mrSq_eq (mul : Nat → Nat → Nat → Prog isa) : mrSq mul =
     ([mul aY aY aY] : List (Prog isa)) ++ (eqMask aRm1 ++

@@ -77,12 +77,12 @@ theorem signingReady_related {s₁ s₂ : State}
 
 theorem signingSuccess_ct (M : Mont) (Sq : MontS) :
     RelCT isa (Two (fun c : AcceptedSigningCall => SigningShaped c.val))
-      (seqs [SignVerify.workspaces, Checks.signingKey M.mm, Checks.privateKey Sq.mm M.mm,
+      (seqs [SignVerify.workspaces, Checks.signingKey Sq.mm M.mm, Checks.privateKey Sq.mm M.mm,
         Core.sign Sq.mm M.mm, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true,
         SignVerify.writeScalar r false, SignVerify.writeScalar s true, .block SignVerify.result])
       (fun _ _ => True) := by
   refine RelCT.seq signingWorkspaces_ct ?_
-  apply RelCT.seqs_append (a := [Checks.signingKey M.mm, Checks.privateKey Sq.mm M.mm,
+  apply RelCT.seqs_append (a := [Checks.signingKey Sq.mm M.mm, Checks.privateKey Sq.mm M.mm,
     Core.sign Sq.mm M.mm, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true])
     (b := [SignVerify.writeScalar r false, SignVerify.writeScalar s true, .block SignVerify.result])
     (by simp) (by simp)

@@ -150,6 +150,13 @@ theorem candBits_ok {s : State} {B : Addr} {Z w k : Nat} (h : Ws s B Z w)
 def loadCRanges (w : Nat) : List (Nat × Nat) :=
   [(8 * sW, 8), (8 * sArr 0, 64), (8 * sStride, 8), (8 * Public.sMask, 8), (slot w aN, 8 * (w + 2)), (8 * kUsed, 8)]
 
+/-- `loadCRanges`'s ranges are past the header or in its header ranges. -/
+theorem loadCRanges_shape (w : Nat) : ∀ r ∈ loadCRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(48, 8), (64, 64), (224, 8), (176, 8), (216, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+    loadCRanges, slot, hdrBytes, aN, sFn, sW, sArr, sStride, Public.sMask, kUsed]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
+
 /-- `loadC`: the working space for `w` words, the candidate from the first
 `8 w` octets of `rand`, and `used := 8 w`. -/
 theorem loadC_ok {s : State} {B : Addr} {Z w : Nat} {rp : Addr} {bs : List Byte} (hs : Scr s B Z)

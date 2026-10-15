@@ -14,6 +14,8 @@ public import VerifiedGarbage.Spec.P256
 meta import VerifiedGarbage.Spec.P256
 public import VerifiedGarbage.Spec.P384
 meta import VerifiedGarbage.Spec.P384
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -58,11 +60,11 @@ theorem fermat_of_law {CW : Spec.Weierstrass.Curve} (hL : VG.Proof.Weierstrass.L
 
 theorem p192_add_ct : ConstantTime isa (sumArm p192 false).pre (sumArm p192 false).pub (fn (modP p192) false) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem p192_double_ct : ConstantTime isa (sumArm p192 true).pre (sumArm p192 true).pub (fn (modP p192) true) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem p192_add_verified (hF : Fermat p192.p) : Verified Arm.target (pointAdd p192) (p192.addContract Arm.abi) :=
   sum_verified p192 Mont.p192p_ok (by decide) (by decide +kernel) (by decide +kernel) hF false p192_add_ct
@@ -73,11 +75,11 @@ theorem p192_double_verified (hF : Fermat p192.p) :
 
 theorem p224_add_ct : ConstantTime isa (sumArm p224 false).pre (sumArm p224 false).pub (fn (modP p224) false) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem p224_double_ct : ConstantTime isa (sumArm p224 true).pre (sumArm p224 true).pub (fn (modP p224) true) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem p224_add_verified (hF : Fermat p224.p) : Verified Arm.target (pointAdd p224) (p224.addContract Arm.abi) :=
   sum_verified p224 Mont.p224p_ok (by decide) (by decide +kernel) (by decide +kernel) hF false p224_add_ct
@@ -88,11 +90,11 @@ theorem p224_double_verified (hF : Fermat p224.p) :
 
 theorem p256_add_ct : ConstantTime isa (sumArm p256 false).pre (sumArm p256 false).pub (fn (modP p256) false) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem p256_double_ct : ConstantTime isa (sumArm p256 true).pre (sumArm p256 true).pub (fn (modP p256) true) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem p256_add_verified (hF : Fermat p256.p) : Verified Arm.target (pointAdd p256) (p256.addContract Arm.abi) :=
   sum_verified p256 Mont.p256p_ok (by decide) (by decide +kernel) (by decide +kernel) hF false p256_add_ct
@@ -103,11 +105,11 @@ theorem p256_double_verified (hF : Fermat p256.p) :
 
 theorem p384_add_ct : ConstantTime isa (sumArm p384 false).pre (sumArm p384 false).pub (fn (modP p384) false) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem p384_double_ct : ConstantTime isa (sumArm p384 true).pre (sumArm p384 true).pub (fn (modP p384) true) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (pub_agree hp)) (by native_taint_decide)
 
 theorem p384_add_verified (hF : Fermat p384.p) : Verified Arm.target (pointAdd p384) (p384.addContract Arm.abi) :=
   sum_verified p384 Mont.p384p_ok (by decide) (by decide +kernel) (by decide +kernel) hF false p384_add_ct

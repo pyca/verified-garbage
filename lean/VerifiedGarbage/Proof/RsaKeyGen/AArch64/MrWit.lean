@@ -443,6 +443,13 @@ theorem wv_force {m m' : Mem} {p : Addr} {d w : Nat} (hw : 2 ≤ w)
 /-- What `mrWitness` changes. -/
 def witRanges (w : Nat) : List (Nat × Nat) := [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8), (8 * kU, 8)]
 
+/-- `witRanges`'s ranges are past the header or in its header ranges. -/
+theorem witRanges_shape (w : Nat) : ∀ r ∈ witRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(216, 8), (0, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+    witRanges, slot, hdrBytes, aX, sFn, kU, kUsed]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
+
 theorem witRanges_mut (w : Nat) : ∀ r ∈ witRanges w, KMut r := by
   simp only [witRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)

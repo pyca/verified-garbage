@@ -140,6 +140,6 @@ theorem qinvPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {P Q : Nat} {ok 
   have vX : av I t.mem aX₂ = av I s₁₁.mem aX₂ := f₁₂.av (by decide) (by decide) (by decide) hZ
   have f₂₆ : KF I.B I.W [.arr aC] s₁.mem s₆.mem := by rw [hm₆]; exact f₂
   refine ⟨ht, ?_, ok₁₂, by rw [vX]; exact hdv₁₁, by rw [vX]; exact hx₁₁⟩
-  exact ((((((((f₁.trans f₂₆).trans f₇).trans f₈).trans f₉).trans f₁₀).trans f₁₁).trans f₁₂)).mono (by simp)
+  exact ((((((((f₁.trans f₂₆).trans f₇).trans f₈).trans f₉).trans f₁₀).trans f₁₁).trans f₁₂)).mono (by decide)
 
 end VG.Proof.RsaKeyGen.AArch64.Key

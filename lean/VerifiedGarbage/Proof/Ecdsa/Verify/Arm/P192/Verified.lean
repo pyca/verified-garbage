@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P192.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P192.Arm
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P192.Arm
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -65,7 +67,7 @@ theorem verify_arm (hL : Weierstrass.Law Spec.P192.curve) (s : State) (hs : veri
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false }
 
 theorem verify_ct : ConstantTime isa verifyArm.pre verifyArm.pub verifyP192 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
   intro s t _ _ ⟨_, h0, h1, h2, h3⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),

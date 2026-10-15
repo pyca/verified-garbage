@@ -100,7 +100,7 @@ def sign (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := 
   .block signEntry,
   Checks.domainShape,
   .ite .e signFailure (seqs [
-    workspaces, Checks.signingKey mul, Checks.privateKey sq mul,
+    workspaces, Checks.signingKey sq mul, Checks.privateKey sq mul,
     Core.sign sq mul, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true,
     writeScalar r false, writeScalar s true, .block result])]
 
@@ -108,7 +108,7 @@ def verify (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :
   .block verifyEntry,
   Checks.domainShape,
   .ite .e (.block (([.mov32 .rax (.imm 0)] : List Instr) ++ exit)) (seqs [
-    workspaces, Checks.publicKey mul,
+    workspaces, Checks.publicKey sq mul,
     Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
     Core.verify sq mul, Checks.equal (Core.scalar u) Core.signatureR,
     .block result])]

@@ -72,12 +72,12 @@ theorem verifyingReady_related {s₁ s₂ : State}
 
 theorem verifyingSuccess_ct (M : Mont) (Sq : MontS) :
     RelCT isa (Two (fun c : AcceptedVerifyingCall => VerifyingShaped c.val))
-      (seqs [SignVerify.workspaces, Checks.publicKey M.mm,
+      (seqs [SignVerify.workspaces, Checks.publicKey Sq.mm M.mm,
         Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
         Core.verify Sq.mm M.mm, Checks.equal (Core.scalar u) Core.signatureR, .block SignVerify.result])
       (fun _ _ => True) := by
   refine RelCT.seq verifyingWorkspaces_ct ?_
-  apply RelCT.seqs_append (a := [Checks.publicKey M.mm,
+  apply RelCT.seqs_append (a := [Checks.publicKey Sq.mm M.mm,
     Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
     Core.verify Sq.mm M.mm, Checks.equal (Core.scalar u) Core.signatureR])
     (b := [.block SignVerify.result]) (by simp) (by simp)

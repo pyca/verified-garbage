@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedWitness
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -23,16 +24,20 @@ open VG.Proof.MlKem.AArch64 (Keep)
 
 def sharedMidRanges (w : Nat) : List (Nat × Nat) := witnessRanges w ++ Caller.callRanges w
 
+/-- Every range of the kernel's calls is past the header, or one of five header words. -/
+theorem sharedKernel_shape (w : Nat) : ∀ r ∈ Caller.callRanges w,
+    hdrBytes ≤ r.1 ∨ r ∈ ([(8, 8), (184, 8), (208, 8), (232, 8), (240, 8)] : List (Nat × Nat)) := by
+  simp only [Caller.callRanges, mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil,
+    List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, aOne,
+    Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
+  and_intros <;> first | decide | omega_arith
+
 theorem sharedKernel_hdr (w j : Nat) (hj : j ∈ [0, 16, 17, 18, 19, 20, 21, 22, 24, 25, 27]) :
     ∀ r ∈ Caller.callRanges w, 8 * j + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * j := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-  rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals
-    simp only [Caller.callRanges, mutRanges, Spec.MillerRabin.compact, List.map_cons, List.map_nil,
-      List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Caller.pad, slot, hdrBytes, aOne,
-      Spec.Rsa.Mont.arrAt, Spec.Rsa.Mont.hdrBytes]
-    and_intros <;> omega_arith
+  rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    exact VG.Proof.RsaKeyGen.hdr_of_shape _ (sharedKernel_shape w) (by decide) (by decide)
 
 private theorem kernel_r2 (w : Nat) :
     ∀ r ∈ Caller.callRanges w, slot w aR2 + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aR2 := by
@@ -117,6 +122,15 @@ theorem sharedMid_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : 
 /-- The round's scratch areas plus RSA's status and counters. -/
 def sharedRoundRanges (w : Nat) : List (Nat × Nat) :=
   sharedMidRanges w ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)]
+
+/-- `sharedRoundRanges`'s ranges are past the header or in its header ranges. -/
+theorem sharedRoundRanges_shape (w : Nat) : ∀ r ∈ sharedRoundRanges w, hdrBytes ≤ r.1 ∨ r ∈ ([(216, 8), (0, 8),
+    (184, 8), (208, 8), (232, 8), (240, 8), (8, 8), (160, 8), (168, 8), (248, 8)] : List (Nat × Nat)) :=
+  VG.Proof.RsaKeyGen.shape_append (VG.Proof.RsaKeyGen.shape_append
+    (VG.Proof.RsaKeyGen.shape_mono (witnessRanges_shape w) (by decide))
+    (VG.Proof.RsaKeyGen.shape_mono (sharedKernel_shape w) (by decide))) (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, kI, kUni, kStat, kElen, kP, sFn]
+      decide)
 
 theorem sharedRound_ok (M : Mont) (R : Kernel) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 ≤ w) (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c)

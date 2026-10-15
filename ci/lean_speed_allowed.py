@@ -241,7 +241,7 @@ BARE_ASSUMPTION_ALLOWED = {
     "VerifiedGarbage/Proof/Blake2/X86_64/Stream/CT.lean": 3,
     "VerifiedGarbage/Proof/CmacTripleDes/AArch64/CT.lean": 3,
     "VerifiedGarbage/Proof/CmacTripleDes/Arm/CT.lean": 2,
-    "VerifiedGarbage/Proof/CmacTripleDes/X86_64/CT.lean": 3,
+    "VerifiedGarbage/Proof/CmacTripleDes/X86_64/CT.lean": 1,
     "VerifiedGarbage/Proof/Ed25519/AArch64/MulAddVerified.lean": 1,
     "VerifiedGarbage/Proof/Ed25519/AArch64/ScalarVerified.lean": 1,
     "VerifiedGarbage/Proof/Ed25519/Arm/ScalarMulAddVerified.lean": 1,

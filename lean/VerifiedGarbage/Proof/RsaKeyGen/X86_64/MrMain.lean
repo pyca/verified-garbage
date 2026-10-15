@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrRoundAll
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -95,10 +96,7 @@ theorem roundRanges_le (w : Nat) : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ slot w
 /-- The header words a round keeps. -/
 theorem roundRanges_hdr (w : Nat) {k : Nat} (hk : k = kRand ∨ k = kLen ∨ k = kRandLen ∨ k = kChecks ∨ k = kOut ∨
     k = kUsedP) : ∀ r ∈ roundRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  simp only [roundRanges, preRanges, witRanges, tabRanges, expRanges, winRanges, List.cons_append, List.nil_append]
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals (try simp only [kRand, kLen, kRandLen, kOut, kUsedP])
-  all_goals rng_disj
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> hdr_disj
 
 theorem ofNat_sub_ofNat' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by

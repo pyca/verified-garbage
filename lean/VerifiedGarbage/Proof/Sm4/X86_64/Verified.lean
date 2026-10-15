@@ -34,56 +34,18 @@ namespace VG.Proof.Sm4.X86_64
 open VG VG.X86_64 VG.Impl.Sm4.X86_64
 open VG.Proof.Sm4 (specDir ecbX86_64)
 
-def ecbTaint : X86_64.Taint.T :=
-  { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .rsp], flags := false,
-    lens := [0, 8 * slots], bases := [(.rcx, 1, 0)] }
+/-- The initial taint: the registers of the arguments and the stack pointer are
+public. It knows nothing of the writable regions: the code never reads a public
+value back from them, and tracking them would cost the kernel at every store. -/
+def ecbTaint : X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]
 
-theorem ecbTaint_wf (dir : Dir) (s : State) (hs : (ecbX86_64 dir).pre s) : Taint.Wf ecbTaint s := by
-  obtain ⟨_, hwr, _, _, dDS, _, _, _, fitD, fitB⟩ := hs
-  refine ⟨fun _ => ?_, ?_⟩
-  · rw [hwr]
-    refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 0 ≤ 16 * (s.gpr .rdx).toNat; omega)
-        (List.Forall₂.cons (by change 8 * slots ≤ 8 * slots; omega) List.Forall₂.nil)
-    · exact List.Pairwise.cons
-        (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dDS)
-        (List.Pairwise.cons (by simp) List.Pairwise.nil)
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · change 16 * (s.gpr .rdx).toNat ≤ 2 ^ 64
-        have := (s.gpr .rsi).isLt; omega
-      · change 8 * slots ≤ 2 ^ 64; rw [slots_eq]; omega
-  · intro p hp
-    simp only [ecbTaint, List.mem_singleton] at hp
-    subst p
-    unfold Taint.region
-    rw [hwr]
-    change s.gpr .rcx = s.gpr .rcx + (0 : BitVec 64)
-    exact (BitVec.add_zero _).symm
-
-theorem ecbTaint_agree (dir : Dir) (s t : State) (hs : (ecbX86_64 dir).pre s) (ht : (ecbX86_64 dir).pre t)
+theorem ecbTaint_agree (dir : Dir) (s t : State) (_ : (ecbX86_64 dir).pre s) (_ : (ecbX86_64 dir).pre t)
     (hp : (ecbX86_64 dir).pub s t) : X86_64.Taint.Agree ecbTaint s t := by
   obtain ⟨p1, p2, p3, p4, p5⟩ := hp
-  refine ⟨?_, ?_, ecbTaint_wf dir s hs, ecbTaint_wf dir t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
-  · constructor
-    · intro r hr
-      simp only [ecbTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
-      exacts [p1, p2, p3, p4, p5]
-    · intro h
-      change false = true at h
-      contradiction
-  · intro _
-    rw [hs.2.1, ht.2.1, p2, p3, p4]
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro r hr
-    simp only [ecbTaint, RegSet.not_mem_empty] at hr
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  exacts [p1, p2, p3, p4, p5]
 
 theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbX86_64 dir).pre (ecbX86_64 dir).pub (ecb dir) := by
   cases dir

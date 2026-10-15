@@ -38,38 +38,6 @@ theorem KB.z {s₀ s : State} (h : KB P s₀ s) : bytesAt s.mem (kA s₀ 0 + Bit
     rw [bytesAt_drop _ _ (by decide), ptr_add]
   rw [e, h.seed, ← e]
 
-/-- Stores of the registers `rs` at `B + off + 8k`. -/
-theorem saves_ok (B : Addr) (base : Reg) (off : Nat) (rs : List Reg) (hoff : off + 8 * rs.length ≤ 32768)
-    (h8 : off % 8 = 0) :
-    ∀ n ≤ rs.length, ∀ {s : State}, s.gpr base = B →
-      (∀ k < rs.length, InRegions s.wr (B + BitVec.ofNat 64 (off + 8 * k)) 8) →
-      WP isa (.block ((List.range n).map fun k => .str .x (rs.getD k .x0) base (off + 8 * k))) s fun s' =>
-        s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-        (∀ k < n, s'.mem.readW (B + BitVec.ofNat 64 (off + 8 * k)) 64 = s.gpr (rs.getD k .x0)) ∧
-        Frame [⟨B + BitVec.ofNat 64 off, 8 * rs.length⟩] s.mem s'.mem := by
-  intro n
-  induction n with
-  | zero => exact fun _ _ _ _ => wp_nil ⟨rfl, rfl, rfl, rfl, fun _ h => absurd h (Nat.not_lt_zero _),
-      Frame.refl _ _⟩
-  | succ n ih =>
-    intro hn s hb hin
-    rw [List.range_succ, List.map_append, WP.block_append_iff]
-    refine WP.mono (ih (by omega) hb hin) fun s₁ ⟨g₁, r₁, w₁, p₁, z₁, f₁⟩ => ?_
-    refine wp_strx (a := B + BitVec.ofNat 64 (off + 8 * n)) (by constructor <;> omega) (by rw [g₁, hb])
-      (by rw [w₁]; exact hin n (by omega)) fun s₂ h₂ => wp_nil ?_
-    refine ⟨by rw [h₂.gpr, g₁], by rw [h₂.rd, r₁], by rw [h₂.wr, w₁], by rw [h₂.sp, p₁],
-      fun k hk => ?_, ?_⟩
-    · rw [h₂.mem, g₁]
-      by_cases e : k = n
-      · subst e; exact Mem.readW_writeW_self64 _ _ _
-      · rw [Mem.readW_writeW_sep (sep_off _ (by omega) (by omega) (by omega)) (by decide)]
-        exact z₁ k (by omega)
-    · rw [h₂.mem]
-      refine f₁.writeW (List.mem_singleton_self _) _ ?_
-      rw [show B + BitVec.ofNat 64 (off + 8 * n) = B + BitVec.ofNat 64 off + BitVec.ofNat 64 (8 * n) by
-        rw [ptr_add]]
-      exact contains_off (by omega) (by omega)
-
 theorem prologue_eq : P.kgPrologue =
     (List.range 6).map (fun k => .str .x (own.getD k .x0) .x3 (SV P + 8 * k)) ++
       ([mov .x25 .x0, mov .x26 .x1, mov .x27 .x2, mov .x28 .x3, .movz .x .x24 1 0,

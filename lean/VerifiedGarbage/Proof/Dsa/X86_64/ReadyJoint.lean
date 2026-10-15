@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 import VerifiedGarbage.Proof.Dsa.X86_64.CoreJoint
 import all Init.Data.Array.Basic
@@ -20,7 +21,7 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
-theorem readyJoint_ok (M : Mont) {L : ExecutionLayout} {s : State} (h : Ready L s)
+theorem readyJoint_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s : State} (h : Ready L s)
     (hm : 1 < L.modulus) (hodd : L.modulus % 2 = 1)
     (a b : Operand) {ba bb : List Byte} (ha : pointerFits a.pointer) (hb : pointerFits b.pointer)
     (has : OperandBytes s L.base activeBytes a ba) (hbs : OperandBytes s L.base activeBytes b bb)
@@ -31,7 +32,7 @@ theorem readyJoint_ok (M : Mont) {L : ExecutionLayout} {s : State} (h : Ready L 
     (hf : OperandBytes s L.base activeBytes (Core.scalar v) fb)
     (hel : eb.length = L.qLen) (hfl : fb.length = L.qLen)
     (d : Nat) (hd : activeBytes ≤ d) (hend : d + ModulusSide.p.length L ≤ usedBytes) :
-    WP isa (Core.joint M.mm ModulusSide.p.offset a b ⟨.local d, ModulusSide.p.lengthField⟩) s
+    WP isa (Core.joint Sq.mm M.mm ModulusSide.p.offset a b ⟨.local d, ModulusSide.p.lengthField⟩) s
       (CallResult L .p d (Spec.Dsa.powMod (Spec.Dsa.decodeBE ba) (Spec.Dsa.decodeBE eb) L.modulus *
         Spec.Dsa.powMod (Spec.Dsa.decodeBE bb) (Spec.Dsa.decodeBE fb) L.modulus % L.modulus) s) := by
   obtain ⟨hw2, hw48, hlo, ho, hhi, hk1, hk31⟩ := ModulusSide.p.bounds L
@@ -39,7 +40,7 @@ theorem readyJoint_ok (M : Mont) {L : ExecutionLayout} {s : State} (h : Ready L 
     change d < 2 ^ 31
     have : usedBytes < 2 ^ 31 := by decide
     omega
-  refine WP.mono (coreJoint_ok M h.parent (h.child .p) (by decide) hlo hhi ho (by decide)
+  refine WP.mono (coreJoint_ok M Sq h.parent (h.child .p) (by decide) hlo hhi ho (by decide)
     hw2 hw48 hw48 (by decide) hm hodd a b ⟨.local d, ModulusSide.p.lengthField⟩ ha hb hdp
     has hbs ha1 haw hb1 hbw he.source hf.source (hel.trans hfl.symm).symm
     (by rw [hel]; exact L.widths.1) (by rw [hel]; have := L.widths; omega)
