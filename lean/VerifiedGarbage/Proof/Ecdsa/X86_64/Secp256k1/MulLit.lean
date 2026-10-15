@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -31,5 +35,12 @@ def bodyCode : Prog VG.X86_64.isa := secp256k1.mulBody
 
 materialize_code bodyCode
 materialize_code mulCode
+
+/-! The function without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check (`mul_ct`) analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+
+def mulCodeErased : Prog VG.X86_64.isa := VG.X86_64.Code.erase mulCode
+materialize_shared mulCodeErased
 
 end VG.Proof.Ecdsa.X86_64.Secp256k1.Mul
