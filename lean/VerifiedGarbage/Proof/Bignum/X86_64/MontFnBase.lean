@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
 meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 meta import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
@@ -56,6 +56,12 @@ def Saved (s t : State) : Prop :=
 
 theorem Saved.of_xmm {s t t' : State} (h : Saved s t) (hx : t'.xmm = t.xmm) : Saved s t' := by
   unfold Saved at *; rw [hx]; exact h
+
+theorem Saved.of_vec0 {s t t' : State} (h : Saved s t) (hx : VecKeep0 t t') : Saved s t' := by
+  unfold Saved at *
+  rw [hx.1 .xmm8 (by decide), hx.1 .xmm9 (by decide), hx.1 .xmm10 (by decide), hx.1 .xmm11 (by decide),
+    hx.1 .xmm12 (by decide), hx.1 .xmm13 (by decide)]
+  exact h
 
 theorem Saved.of_keep {s s' t : State} {rs : List Reg} (h : Saved s' t) (hk : Keep rs s s')
     (hr : ∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15], r ∉ rs) : Saved s t := by

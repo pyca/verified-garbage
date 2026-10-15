@@ -468,13 +468,13 @@ theorem mulAdx_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
     rw [ho₁.word (by have := s0 aN; omega_arith) (by have := sl aN (by decide); omega_arith)]; exact hinv
   have hB₁ : wv s₁.mem B (slot w b) w < wv s₁.mem B (slot w aN) w := by
     rw [vj b hb, vj aN (by decide)]; exact hB
-  refine WP.seq (WP.mono (WP.vecKeep (by decide) (adxBody_ok hs₁ hdi₁ (hm₁ ▸ headMem_hdr hH o a b) hZ hw hw' ho
+  refine WP.seq (WP.mono (WP.vecKeep0 (by decide) (adxBody_ok hs₁ hdi₁ (hm₁ ▸ headMem_hdr hH o a b) hZ hw hw' ho
     ha hb ho1 ho2 ha1 ha2 hb1 hb2 (hm₁ ▸ headMem_ops s.mem B w o a b) hdx₁ hcx₁ h8₁ hinv₁ hB₁))
-    fun s₂ ⟨⟨hlt, heq, ⟨mb, omb, har⟩, k₂⟩, hx₂, _⟩ => ?_)
+    fun s₂ ⟨⟨hlt, heq, ⟨mb, omb, har⟩, k₂⟩, hx₂⟩ => ?_)
   have hs₂ := hs₁.congr k₂.2.2
   have hdi₂ : s₂.gpr .rdi = B := (k₂.gpr (by decide)).trans hdi₁
-  refine WP.mono (restore_ok hs₂ hdi₂ hZ32 (m₀ := s.mem) (by rw [hx₂, x3]) (by rw [hx₂, x4]) (by rw [hx₂, x5])
-    (by rw [hx₂, x6]) (by rw [hx₂, x7]) (sv.of_xmm hx₂))
+  refine WP.mono (restore_ok hs₂ hdi₂ hZ32 (m₀ := s.mem) (by rw [hx₂.1 .xmm3 (by decide), x3]) (by rw [hx₂.1 .xmm4 (by decide), x4]) (by rw [hx₂.1 .xmm5 (by decide), x5])
+    (by rw [hx₂.1 .xmm6 (by decide), x6]) (by rw [hx₂.1 .xmm7 (by decide), x7]) (sv.of_vec0 hx₂))
     fun t ⟨rs, o₃, in₃, inb₃, k₃⟩ => ?_
   have hvo : wv t.mem B (slot w o) w = wv s₂.mem B (slot w o) w :=
     o₃.wv_eq (fun r hr => by

@@ -80,7 +80,7 @@ theorem productSteps_ok {s : State} {B : Addr} {Z eU eO eN m n : Nat}
 theorem not_mem_loop {r : Reg}
     (hr : r ∉ ([.rdx, .rax, .rbx, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] : List Reg))
     (hd : r ≠ .rdi) :
-    r ∉ ([.rdx, .rax, .rbx, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] : List Reg) ++ [.rdi] := by
+    r ∉ ([.rdx, .rax, .rbx, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] : List Reg) ++ ([.rdi] : List Reg) := by
   simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
   grind
 

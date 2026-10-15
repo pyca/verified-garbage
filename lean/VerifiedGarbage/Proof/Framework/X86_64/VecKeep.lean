@@ -139,4 +139,83 @@ theorem WP.vecKeep {c : Prog isa} (hc : scalCode c = true) {s : State} {Q : Stat
   let ⟨t, s', e, q⟩ := h
   ⟨t, s', e, q, exec_scal e hc⟩
 
+/-! ## Code that writes only `xmm0`
+
+Code may keep a general-purpose register's value in `xmm0` for a while
+(`movq xmm0, r64` and back): it keeps the other vector registers. -/
+
+/-- `scalarI`, and the moves of a general-purpose register to and from `xmm0`. -/
+def scalarI0 : Instr → Bool
+  | .xop (.movq .xmm0 _) => true
+  | .movqR .. => true
+  | i => scalarI i
+
+theorem exec_vec0 {i : Instr} (hi : scalarI0 i = true) {s t : State} (h : exec i s = some t) :
+    (∀ r, r ≠ .xmm0 → t.xmm r = s.xmm r) ∧ t.ymmHi = s.ymmHi := by
+  unfold scalarI0 at hi
+  split at hi
+  · simp only [exec, Option.some.injEq] at h
+    subst h
+    refine ⟨fun r hr => ?_, rfl⟩
+    simp only [XOp.exec, State.setXmm, hr, ite_false]
+  · simp only [exec, Option.some.injEq] at h
+    subst h
+    exact ⟨fun _ _ => rfl, rfl⟩
+  · obtain ⟨x, y⟩ := exec_vec hi h
+    exact ⟨fun r _ => by rw [x], y⟩
+
+/-- Whether every instruction of `c` is in `scalarI0`, with no calls or frames. -/
+def scalCode0 : Prog isa → Bool
+  | .block is => is.all scalarI0
+  | .seq a b => scalCode0 a && scalCode0 b
+  | .ite _ a b => scalCode0 a && scalCode0 b
+  | .loop b _ => scalCode0 b
+  | _ => false
+
+/-- The vector registers but `xmm0` of `t` are those of `s`. -/
+def VecKeep0 (s t : State) : Prop := (∀ r, r ≠ .xmm0 → t.xmm r = s.xmm r) ∧ t.ymmHi = s.ymmHi
+
+theorem VecKeep0.refl (s : State) : VecKeep0 s s := ⟨fun _ _ => rfl, rfl⟩
+
+theorem VecKeep0.trans {s₁ s₂ s₃ : State} (h₁ : VecKeep0 s₁ s₂) (h₂ : VecKeep0 s₂ s₃) : VecKeep0 s₁ s₃ :=
+  ⟨fun r hr => (h₂.1 r hr).trans (h₁.1 r hr), h₂.2.trans h₁.2⟩
+
+theorem execBlock_vec0 : ∀ {is : List Instr}, is.all scalarI0 = true → ∀ {s s' : State} {t : List Leak},
+    execBlock isa is s = some (s', t) → VecKeep0 s s'
+  | [], _, _, _, _, h => by
+    simp only [execBlock, Option.some.injEq, Prod.mk.injEq] at h; rw [h.1]; exact VecKeep0.refl _
+  | i :: is, hs, s, s', t, h => by
+    simp only [List.all_cons, Bool.and_eq_true] at hs
+    simp only [execBlock] at h
+    split at h
+    · cases h
+    · rename_i s₁ he
+      simp only [Option.map_eq_some_iff, Prod.exists] at h
+      obtain ⟨s₂, t₂, h, he'⟩ := h
+      simp only [Prod.mk.injEq] at he'
+      rw [← he'.1]
+      exact VecKeep0.trans (exec_vec0 hs.1 he) (execBlock_vec0 hs.2 h)
+
+theorem exec_scal0 {c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa c s t s')
+    (hc : scalCode0 c = true) : VecKeep0 s s' := by
+  revert hc
+  induction h with
+  | block e => exact fun hc => execBlock_vec0 hc e
+  | seq _ _ ih₁ ih₂ =>
+    intro hc
+    simp only [scalCode0, Bool.and_eq_true] at hc
+    exact (ih₁ hc.1).trans (ih₂ hc.2)
+  | iteT _ _ ih => intro hc; simp only [scalCode0, Bool.and_eq_true] at hc; exact ih hc.1
+  | iteF _ _ ih => intro hc; simp only [scalCode0, Bool.and_eq_true] at hc; exact ih hc.2
+  | loopExit _ _ ih => exact ih
+  | loopNext _ _ _ ih₁ ih₂ => intro hc; exact (ih₁ hc).trans (ih₂ hc)
+  | call => intro hc; simp only [scalCode0, Bool.false_eq_true] at hc
+  | frame => intro hc; simp only [scalCode0, Bool.false_eq_true] at hc
+
+/-- Code that writes no vector register but `xmm0` keeps the others. -/
+theorem WP.vecKeep0 {c : Prog isa} (hc : scalCode0 c = true) {s : State} {Q : State → Prop}
+    (h : WP isa c s Q) : WP isa c s fun t => Q t ∧ VecKeep0 s t :=
+  let ⟨t, s', e, q⟩ := h
+  ⟨t, s', e, q, exec_scal0 e hc⟩
+
 end VG.X86_64
