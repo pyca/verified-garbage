@@ -61,8 +61,9 @@ def row (a b i : Nat) : List Instr :=
       [ld .x9 (b + 8 * j)] ++ mulStep (wordReg (i + j)) .x20 .x3 .x9) ++
     [mov (wordReg (i + 4)) .x20]
 
-/-- Read carry as 0 or 38 in x8, with x10 = 0 and x11 = 38. -/
-def carryValue38 : List Instr := [.adcs .x .x8 .x10 .x10, .mul .x .x8 .x8 .x11]
+/-- Read carry as 0 or 38 in x8, with x10 = 0 and x11 = 38: a select, not a
+product, to keep the carry off the multiplier's latency. -/
+def carryValue38 : List Instr := [.csel .x .x8 .x11 .x10]
 
 /-- Add x8 to x4–x7, folding its last carry using 2^256 = 38 modulo p. -/
 def carry38 : List Instr :=
