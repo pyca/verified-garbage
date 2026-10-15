@@ -125,15 +125,27 @@ theorem keyArgs_of {enc : Bool} (d : Dir) {s : State} (h : (cbcX86 enc).pre s) :
     · exact dAD.sub_left (subA 1 (by decide))
     · exact dAS.sub_left (subA 1 (by decide))
 
+attribute [local irreducible] Spec.Camellia.cipher in
+/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
+theorem encCipher_eq (m : Mem) (p : Addr) (R : Nat) :
+    (dirCoreSpec .encrypt).cipher (R, schedWords m p R) = Spec.Camellia.cipher (Spec.Camellia.subkeysAt m p R) :=
+  rfl
+
+attribute [local irreducible] Spec.Camellia.invCipher in
+/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
+theorem decCipher_eq (m : Mem) (p : Addr) (R : Nat) :
+    (dirCoreSpec .decrypt).cipher (R, schedWords m p R) = Spec.Camellia.invCipher (Spec.Camellia.subkeysAt m p R) :=
+  rfl
+
 theorem cbcEncrypt_wp {s₀ : State} (hp : (cbcX86 true).pre s₀) :
     WP isa cbcEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (cbcX86 true).post s₀ s' :=
   WP.mono (cbcEnc_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl rfl hp) (keyArgs_of .encrypt hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => ⟨h1, by rw [encCipher_eq] at h2; exact h2⟩
 
 theorem cbcDecrypt_wp {s₀ : State} (hp : (cbcX86 false).pre s₀) :
     WP isa cbcDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (cbcX86 false).post s₀ s' :=
   WP.mono (cbcDec_wp (dirCoreSpec .decrypt) (seqPre_of .decrypt rfl rfl hp) (keyArgs_of .decrypt hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => ⟨h1, by rw [decCipher_eq] at h2; exact h2⟩
 
 /-! ## Constant time -/
 

@@ -116,6 +116,14 @@ def cbcFrameSat : State where
 
 /-! ## Decryption -/
 
+attribute [local irreducible] Spec.Seed.invCipher in
+/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
+theorem decCipher_eq : (dirCoreSpec .decrypt).cipher = Spec.Seed.invCipher := rfl
+
+attribute [local irreducible] Spec.Seed.cipher in
+/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
+theorem encCipher_eq : (dirCoreSpec .encrypt).cipher = Spec.Seed.cipher := rfl
+
 theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
     WP isa cbcDecrypt s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcDecAArch64.post s₀ s' := by
@@ -128,7 +136,7 @@ theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
     (by rw [hrd]; simp) (by rw [hwr]; simp) dVS dDS fitD
     ⟨s₀.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩) fun s' ⟨hcs, hdata, _, _, _⟩ => ⟨hcs, ?_⟩
-  rw [dirCore_bw, show 8 * 2 = 16 from rfl] at hdata
+  rw [dirCore_bw, show 8 * 2 = 16 from rfl, decCipher_eq] at hdata
   exact hdata
 
 theorem cbcDecrypt_ct : ConstantTime isa cbcDecAArch64.pre cbcDecAArch64.pub cbcDecrypt :=
@@ -176,7 +184,7 @@ theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
       rcases hr with rfl | rfl
       · exact dKS
       · exact dKD⟩) fun s' ⟨hcs, hdata, _, _, _⟩ => ⟨hcs, ?_⟩
-  rw [dirCore_bw, show 8 * 2 = 16 from rfl] at hdata
+  rw [dirCore_bw, show 8 * 2 = 16 from rfl, encCipher_eq] at hdata
   exact hdata
 
 theorem cbcEncrypt_ct : ConstantTime isa cbcEncAArch64.pre cbcEncAArch64.pub cbcEncrypt :=

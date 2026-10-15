@@ -88,7 +88,9 @@ def cfbDecX86_64 : Contract isa where
     Spec.Aes.bytesAt s'.mem (s.gpr .rsi) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := fbPub
 
-/-- The core's cipher is the contract's (stated once: unifying them unfolds the core's code). -/
+attribute [local irreducible] Spec.Seed.cipher in
+/-- The core's cipher is the contract's (stated once, with the cipher's spec
+irreducible: unifying them unfolds the spec before the core). -/
 theorem encCipher_eq : (dirCoreSpec .encrypt).cipher = Spec.Seed.cipher := rfl
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the

@@ -111,15 +111,23 @@ theorem keyArgs_of {enc : Bool} (d : Direction) {s : State} (h : (cbcX86 enc).pr
   · simp only [List.mem_singleton] at hr; subst hr; rw [scr_eq]
     exact dAS.sub_left (Region.sub_prefix (by decide))
 
+attribute [local irreducible] Spec.Seed.invCipher in
+/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
+theorem decCipher_eq : (dirCoreSpec .decrypt).cipher = Spec.Seed.invCipher := rfl
+
+attribute [local irreducible] Spec.Seed.cipher in
+/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
+theorem encCipher_eq : (dirCoreSpec .encrypt).cipher = Spec.Seed.cipher := rfl
+
 theorem cbcEncrypt_wp {s₀ : State} (hp : (cbcX86 true).pre s₀) :
     WP isa cbcEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (cbcX86 true).post s₀ s' :=
   WP.mono (cbcEnc_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl rfl hp) (keyArgs_of .encrypt hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => ⟨h1, by rw [encCipher_eq] at h2; exact h2⟩
 
 theorem cbcDecrypt_wp {s₀ : State} (hp : (cbcX86 false).pre s₀) :
     WP isa cbcDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (cbcX86 false).post s₀ s' :=
   WP.mono (cbcDec_wp (dirCoreSpec .decrypt) (seqPre_of .decrypt rfl rfl hp) (keyArgs_of .decrypt hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => ⟨h1, by rw [decCipher_eq] at h2; exact h2⟩
 
 /-! ## Constant time -/
 
