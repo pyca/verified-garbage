@@ -8,7 +8,8 @@ use crate::arch::ffdh::{
     vg_ffdh_check_domain, vg_ffdh_check_domain_adx, vg_ffdh_check_private,
     vg_ffdh_check_private_adx, vg_ffdh_check_public, vg_ffdh_check_public_adx, vg_ffdh_exchange,
     vg_ffdh_exchange_adx, vg_ffdh_generate_key, vg_ffdh_generate_key_adx,
-    vg_ffdh_parameter_candidate, vg_ffdh_parameter_candidate_adx,
+    vg_ffdh_generate_parameters, vg_ffdh_generate_parameters_adx,
+    vg_ffdh_parameter_generation_init,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;
@@ -186,23 +187,60 @@ pub(super) fn generate_key(
     }
 }
 
-/// Shape and test one parameter candidate using a public random tape.
-pub(super) fn parameter_candidate(
+/// Persistent native policy and private saved-register workspace.
+/// `Scratch` wipes all sixteen words when the controller is dropped.
+pub(super) struct GenerationState(Scratch);
+
+impl GenerationState {
+    pub(super) fn parameters(bits: usize, generator: u32) -> Result<Self, super::Error> {
+        let mut state = Self(Scratch::new(16));
+        // SAFETY: the independent allocation has sixteen initialized,
+        // writable u64s and lies outside the native callable's stack.
+        let status = unsafe {
+            vg_ffdh_parameter_generation_init(state.0.as_mut_ptr().cast(), bits, generator)
+        };
+        if status == 1 {
+            Ok(state)
+        } else {
+            Err(super::Error::InvalidParameters)
+        }
+    }
+
+    pub(super) fn width(&self) -> usize {
+        self.0[1] as usize
+    }
+
+    pub(super) fn requested(&self) -> usize {
+        self.0[3] as usize
+    }
+
+    #[cfg(test)]
+    pub(super) fn limit_attempts(&mut self, limit: usize) {
+        self.0[0] = self.0[0].min(limit as u64);
+    }
+}
+
+/// Run the complete parameter search until success, exhaustion or an
+/// entropy request. All candidate and witness retry decisions are native.
+pub(super) fn generate_parameters(
     bits: usize,
     generator: u32,
     rand: &[u8],
     p: &mut [u8],
     scratch: &mut Scratch,
-) -> (u32, usize) {
+    state: &mut GenerationState,
+) -> (u32, usize, usize) {
     let mut used = [0u64; 1];
     let f = match Backend::select(detected()) {
-        Backend::Baseline => vg_ffdh_parameter_candidate,
-        Backend::Adx => vg_ffdh_parameter_candidate_adx,
+        Backend::Baseline => vg_ffdh_generate_parameters,
+        Backend::Adx => vg_ffdh_generate_parameters_adx,
     };
-    // SAFETY: generation validates bits in 512..=8192 and generator in
-    // {2,5}, allocates ceil(bits/8) output bytes and 16*len+32 scratch
-    // words. Output, used, tape and scratch are separate allocations,
-    // disjoint from the callee's stack. The tape may have any length.
+    // SAFETY: native initialization validates bits and generator and sets
+    // the width and entropy cap. The caller allocates that output width
+    // and 16*len+32 scratch words, and preserves the native controller's
+    // policy between refills. Output, used, tape, scratch and state are
+    // separate allocations, disjoint from the callee's stack. The host
+    // services the exact native requests, so the tape stays within its cap.
     // Backend selection checks the generated BMI2+ADX feature set.
     let status = unsafe {
         f(
@@ -215,7 +253,8 @@ pub(super) fn parameter_candidate(
             rand.len(),
             scratch.as_mut_ptr(),
             scratch.len(),
+            state.0.as_mut_ptr().cast(),
         )
     };
-    (status, used[0] as usize)
+    (status, used[0] as usize, state.requested())
 }

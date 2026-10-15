@@ -1,12 +1,11 @@
-//! Randomness and bounded retries for probable safe-prime generation.
+//! Entropy adapters for verified generation and the AArch64 fallback.
 #[cfg(target_arch = "aarch64")]
 use super::arithmetic::{Montgomery, bits, canonical, minus_one, value_cmp};
-use super::{Error, MAX_BITS, MIN_BITS, Parameters};
+use super::{Error, Parameters};
 #[cfg(target_arch = "aarch64")]
+use super::{MAX_BITS, MIN_BITS};
 use crate::zeroize::zeroize;
-use alloc::vec;
-#[cfg(target_arch = "aarch64")]
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 
 /// Independent uniform integer in [1,upper-1]. The top-bit mask and byte
 /// width are public. Only acceptance/rejection controls a branch. The
@@ -43,61 +42,87 @@ pub(super) fn parameters<E>(
     generator: u32,
     fill: impl FnMut(&mut [u8]) -> Result<(), E>,
 ) -> Result<Parameters, Error> {
-    parameters_limit(
-        size,
-        generator,
-        size.saturating_mul(size).saturating_mul(64),
-        fill,
-    )
+    #[cfg(target_arch = "x86_64")]
+    {
+        let state = super::x86_64::GenerationState::parameters(size, generator)?;
+        parameters_state(size, generator, state, fill)
+    }
+    #[cfg(target_arch = "aarch64")]
+    {
+        parameters_limit(
+            size,
+            generator,
+            size.saturating_mul(size).saturating_mul(64),
+            fill,
+        )
+    }
+}
+
+/// Service native entropy requests. The callable chooses every retry,
+/// consumption count and refill length; this adapter only preserves the
+/// unconsumed suffix and fills newly allocated bytes.
+#[cfg(target_arch = "x86_64")]
+pub(super) fn native_generation<E>(
+    requested: usize,
+    mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+    mut step: impl FnMut(&[u8]) -> (u32, usize, usize),
+) -> Result<(), Error> {
+    struct Entropy(Vec<u8>);
+    impl Drop for Entropy {
+        fn drop(&mut self) {
+            zeroize(&mut self.0);
+        }
+    }
+    let mut tape = Entropy(vec![0; requested]);
+    fill(&mut tape.0).map_err(|_| Error::Randomness)?;
+    loop {
+        let (status, used, requested) = step(&tape.0);
+        match status {
+            1 => return Ok(()),
+            3 => return Err(Error::TooManyIterations),
+            0 => {
+                let remaining = &tape.0[used..];
+                let mut next = Entropy(vec![0; requested]);
+                next.0[..remaining.len()].copy_from_slice(remaining);
+                fill(&mut next.0[remaining.len()..]).map_err(|_| Error::Randomness)?;
+                // Dropping the old allocation wipes consumed and preserved
+                // secret bytes, including on an entropy-source error.
+                tape = next;
+            }
+            // The verified controllers return only 0, 1 or 3.
+            // NO-COVERAGE-START
+            _ => unreachable!(),
+            // NO-COVERAGE-END
+        }
+    }
 }
 
 #[cfg(target_arch = "x86_64")]
+fn parameters_state<E>(
+    size: usize,
+    generator: u32,
+    mut state: super::x86_64::GenerationState,
+    fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+) -> Result<Parameters, Error> {
+    let len = state.width();
+    let mut p = vec![0; len];
+    let mut scratch = crate::rsa::Scratch::new(16 * len + 32);
+    native_generation(state.requested(), fill, |tape| {
+        super::x86_64::generate_parameters(size, generator, tape, &mut p, &mut scratch, &mut state)
+    })?;
+    Parameters::from_components(&p, &generator.to_be_bytes(), None)
+}
+
+#[cfg(all(test, target_arch = "x86_64"))]
 fn parameters_limit<E>(
     size: usize,
     generator: u32,
     limit: usize,
-    mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
+    fill: impl FnMut(&mut [u8]) -> Result<(), E>,
 ) -> Result<Parameters, Error> {
-    if !(MIN_BITS..=MAX_BITS).contains(&size) || ![2, 5].contains(&generator) {
-        return Err(Error::InvalidParameters);
-    }
-    let len = size.div_ceil(8);
-    let mut p = vec![0; len];
-    let mut scratch = crate::rsa::Scratch::new(16 * len + 32);
-    // Include a first witness so candidates rejected by their first
-    // Miller–Rabin round do not need to replay Montgomery preparation.
-    let mut tape = vec![0; 2 * len];
-    // Bound entropy consumption even when a failed RNG keeps producing
-    // rejected witnesses. The verified routine owns witness selection and
-    // round counts; Rust only extends the same tape and replays it.
-    let max_tape = (1 + (1 << 15)) * len;
-    for _ in 0..limit {
-        tape.truncate(2 * len);
-        fill(&mut tape).map_err(|_| Error::Randomness)?;
-        loop {
-            let (status, _) =
-                super::x86_64::parameter_candidate(size, generator, &tape, &mut p, &mut scratch);
-            match status {
-                1 => return Parameters::from_components(&p, &generator.to_be_bytes(), None),
-                2 => break,
-                // Exhaustion consumes no tape. Preserve its entire prefix
-                // when appending fresh entropy, including rejected draws.
-                0 => {
-                    if tape.len() == max_tape {
-                        return Err(Error::TooManyIterations);
-                    }
-                    let old_len = tape.len();
-                    tape.resize((2 * old_len).min(max_tape), 0);
-                    fill(&mut tape[old_len..]).map_err(|_| Error::Randomness)?;
-                }
-                // The verified contract returns only 0, 1 or 2.
-                // NO-COVERAGE-START
-                _ => unreachable!(),
-                // NO-COVERAGE-END
-            }
-        }
-    }
-    Err(Error::TooManyIterations)
+    let mut state = super::x86_64::GenerationState::parameters(size, generator)?;
+    state.limit_attempts(limit);
+    parameters_state(size, generator, state, fill)
 }
 
 #[cfg(target_arch = "aarch64")]
