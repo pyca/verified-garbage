@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Loop
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
 import all Init.Data.Array.Basic
@@ -75,7 +76,7 @@ theorem lastGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
   rw [y4, p₃ (by decide) 0 (by decide), p₃ (by decide) 1 (by decide), p₃ (by decide) 2 (by decide),
     p₃ (by decide) 3 (by decide)]
   refine (hf X yl hI.y1).trans ?_
-  rw [show 16 * e = 16 * ((e - 1) + 1) by congr 1; omega, ghash_append16]
+  rw [show 16 * e = 16 * ((e - 1) + 1) by congr 1; omega_arith, ghash_append16]
   exact congrArg (fun y => ghashFrom (hk s₀) y ((List.range 16).map X)) hI.y
 
 /-- Group `e - 1` hashed, and the next. -/
@@ -90,18 +91,18 @@ theorem drainStepTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Na
   refine WP.mono (lastGTo_ok hp hf hI) fun s₁ ⟨y₁, y1₁, f₁⟩ => ?_
   refine WP.mono (adv_ok s₁) fun s' ⟨frdx, fr9, fg, fl, fm, frd, fwr⟩ => ?_
   have gk : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r := fun r h1 h2 => by rw [fg r h1 h2, f₁.gpr]
-  refine ⟨(hI.a.zframe f₁ (by decide) (by decide) (by decide)).gpr2 fg fl fm frd fwr, by omega, hc, ?_, ?_,
+  refine ⟨(hI.a.zframe f₁ (by decide) (by decide) (by decide)).gpr2 fg fl fm frd fwr, by omega_arith, hc, ?_, ?_,
     by rw [gk _ (by decide) (by decide)]; exact hI.rax,
     fun r h1 h2 h3 h4 h5 => by rw [gk r h2 h4]; exact hI.gpr r h1 h2 h3 h4 h5,
     fun k hk l hl => by rw [fm, f₁.mem]; exact hI.pw k hk l hl,
     fun l hl => by rw [fl, f₁.zlane _ (by decide) l hl]; exact hI.m1 l hl,
-    by rw [fl, y₁, show e + 1 - 1 = e by omega], fun l h1 h4 => by rw [fl]; exact y1₁ l h1 h4⟩
+    by rw [fl, y₁, show e + 1 - 1 = e by omega_arith], fun l h1 h4 => by rw [fl]; exact y1₁ l h1 h4⟩
   · rw [frdx, f₁.gpr, BitVec.toNat_add, show (256 : BitVec 64).toNat = 256 from rfl,
-      Nat.mod_eq_of_lt (by rw [hI.rdx]; omega), hI.rdx, show e + 1 - 1 = (e - 1) + 1 by omega, Nat.mul_succ,
+      Nat.mod_eq_of_lt (by rw [hI.rdx]; omega_arith), hI.rdx, show e + 1 - 1 = (e - 1) + 1 by omega_arith, Nat.mul_succ,
       Nat.add_assoc]
   · rw [fr9, f₁.gpr, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
-      ofNat_sub_ofNat (by omega) (by omega)]
-    congr 1; omega
+      ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
+    congr 1; omega_arith
 
 theorem EGenTo.einv {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State} (h : EGenTo s₀ P e (16 * e) s) :
     EInvTo s₀ P e s :=
@@ -140,17 +141,17 @@ theorem body48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat �
     { rdx := rfl
       r11 := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
       xs := fun i _ hi => by
-        rw [show a + BitVec.ofNat 64 (16 * i) = oAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega),
-          hI.a.blocks _ (by omega)]
+        rw [show a + BitVec.ofNat 64 (16 * i) = oAddr s₀ (16 * (e - 1) + i) from addr_eq (by omega_arith),
+          hI.a.blocks _ (by omega_arith)]
       pv := hI.pv
       pm := hI.pm
       ina := fun o ho => by
         rw [hI.a.rd, hI.a.wr, BitVec.ofInt_natCast,
-          show a + BitVec.ofNat 64 o = op s₀ + BitVec.ofNat 64 (256 * (e - 1) + o) from addr_eq (by omega)]
-        exact in_rdwr (in_sub hp.o_in (by omega))
+          show a + BitVec.ofNat 64 o = op s₀ + BitVec.ofNat 64 (256 * (e - 1) + o) from addr_eq (by omega_arith)]
+        exact in_rdwr (in_sub hp.o_in (by omega_arith))
       inp := fun o ho => by
         rw [hI.a.rd, hI.a.wr]
-        exact in_rdwr (in_sub_int hp.p_in (by omega))
+        exact in_rdwr (in_sub_int hp.p_in (by omega_arith))
       m0 := hI.a.msk }
   let Q : Nat → Nat → State → Prop := QG48 (dst s₀) (fun _ => 0) a X T yl
   have hgq : ∀ b < 3, ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → Q b j t →
@@ -162,20 +163,20 @@ theorem body48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat �
       t'.wr = t.wr → (∀ r, r ≠ .xmm13 → r ∉ aregs → ∀ l < 4, t'.zlane r l = t.zlane r l) →
       Frame [⟨oAddr s₀ c, 256⟩] t.mem t'.mem → Q b 10 t' :=
     fun _ _ hc hc' _ _ h hg hrd hwr hl hf =>
-      QG48.data hd (by omega) (g := e - 1) (by omega) ha (fun i _ hi => by omega) h hg hrd hwr hl hf
+      QG48.data hd (by omega_arith) (g := e - 1) (by omega_arith) ha (fun i _ hi => by omega_arith) h hg hrd hwr hl hf
   have hQ₀ : Q 0 1 s := ⟨hE, by
     rw [ite_f (by decide)]; exact ⟨fun h => absurd h (by decide), fun _ _ _ => rfl⟩⟩
   -- Group `e + 2`, hashing group `e - 1`.
   refine WP.seq (WP.mono (batchTo_ok hp (gq48 0) gRegs48 gRegs48_ok (Q 0) (hgq 0 (by decide)) (hq 0)
-    (hqx 0 _ (by omega) (by omega)) (c := 16 * (e + 2)) (j := 12) (by omega) hI.a
-    (by show a.toNat + _ = _; omega) hQ₀) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _⟩ => ?_)
+    (hqx 0 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2)) (j := 12) (by omega_arith) hI.a
+    (by show a.toNat + _ = _; omega_arith) hQ₀) fun s₁ ⟨hA₁, hQ₁, hg₁, _, _⟩ => ?_)
   refine WP.seq (WP.mono (batchTo_ok hp (gq48 1) gRegs48 gRegs48_ok (Q 1) (hgq 1 (by decide)) (hq 1)
-    (hqx 1 _ (by omega) (by omega)) (c := 16 * (e + 2) + 16) (j := 16) (by omega) hA₁
-    (by rw [hg₁]; show a.toNat + _ = _; omega) (hQ₁.next (by decide) (Nat.le_refl _)))
+    (hqx 1 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2) + 16) (j := 16) (by omega_arith) hA₁
+    (by rw [hg₁]; show a.toNat + _ = _; omega_arith) (hQ₁.next (by decide) (Nat.le_refl _)))
     fun s₂ ⟨hA₂, hQ₂, hg₂, _, _⟩ => ?_)
   refine WP.seq (WP.mono (batchTo_ok hp (gq48 2) gRegs48 gRegs48_ok (Q 2) (hgq 2 (by decide)) (hq 2)
-    (hqx 2 _ (by omega) (by omega)) (c := 16 * (e + 2) + 16 + 16) (j := 20) (by omega) hA₂
-    (by rw [hg₂, hg₁]; show a.toNat + _ = _; omega) (hQ₂.next (by decide) (Nat.le_refl _)))
+    (hqx 2 _ (by omega_arith) (by omega_arith)) (c := 16 * (e + 2) + 16 + 16) (j := 20) (by omega_arith) hA₂
+    (by rw [hg₂, hg₁]; show a.toNat + _ = _; omega_arith) (hQ₂.next (by decide) (Nat.le_refl _)))
     fun s₃ ⟨hA₃, hQ₃, hg₃, _, _⟩ => ?_)
   refine WP.mono (next48_ok s₃ 96 96 (by decide)) fun s' ⟨frdx, fr9, fcf, fg, fl, fm, frd, fwr⟩ => ?_
   obtain ⟨hE₃, h2⟩ := hQ₃
@@ -183,19 +184,19 @@ theorem body48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat �
   have g₃ : s₃.gpr = s.gpr := by rw [hg₃, hg₂, hg₁]
   have gk : ∀ r, r ≠ .rdx → r ≠ .r9 → s'.gpr r = s.gpr r := fun r h1 h2 => by rw [fg r h1 h2, g₃]
   have hr9 : s₃.gpr .r9 - 48 = BitVec.ofNat 64 (nb s₀ - 16 * (e + 3 - 1)) := by
-    rw [g₃, hI.r9, show (48 : BitVec 64) = BitVec.ofNat 64 48 from rfl, ofNat_sub_ofNat (by omega) (by omega)]
-    congr 1; omega
-  refine ⟨⟨by rw [show 16 * (e + 3 + 2) = 16 * (e + 2) + 16 + 16 + 16 by omega]; exact hA₃.gpr2 fg fl fm frd fwr,
-    by omega, ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
+    rw [g₃, hI.r9, show (48 : BitVec 64) = BitVec.ofNat 64 48 from rfl, ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
+    congr 1; omega_arith
+  refine ⟨⟨by rw [show 16 * (e + 3 + 2) = 16 * (e + 2) + 16 + 16 + 16 by omega_arith]; exact hA₃.gpr2 fg fl fm frd fwr,
+    by omega_arith, ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
     fun r h1 h2 h3 h4 h5 => by rw [gk r h2 h4]; exact hI.gpr r h1 h2 h3 h4 h5,
     fun g hg k hk l hl => by rw [fm]; exact hE₃.pv g hg k hk l hl, fun l hl => by rw [fm]; exact hE₃.pm l hl,
     ?_, fun l h1 h4 => by rw [fl]; exact h2.2 l h1 h4⟩, ?_⟩
   · rw [frdx, g₃, BitVec.toNat_add, show (768 : BitVec 64).toNat = 768 from rfl,
-      Nat.mod_eq_of_lt (by show a.toNat + 768 < 2 ^ 64; omega)]
+      Nat.mod_eq_of_lt (by show a.toNat + 768 < 2 ^ 64; omega_arith)]
     show a.toNat + 768 = _
-    rw [ha, show e + 3 - 1 = (e - 1) + 3 by omega]; omega
-  · rw [fl, h2.1, hT X yl hI.y1, show 16 * (e + 3 - 1) = 16 * (e - 1) + 48 by omega, ghash_append48, ← hI.y]
-  · rw [fcf, hr9, toNat_ofNat_lt (by omega), show e + 3 - 1 = e + 2 by omega]
+    rw [ha, show e + 3 - 1 = (e - 1) + 3 by omega_arith]; omega_arith
+  · rw [fl, h2.1, hT X yl hI.y1, show 16 * (e + 3 - 1) = 16 * (e - 1) + 48 by omega_arith, ghash_append48, ← hI.y]
+  · rw [fcf, hr9, toNat_ofNat_lt (by omega_arith), show e + 3 - 1 = e + 2 by omega_arith]
     rfl
 
 theorem loop48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {T : Nat → Nat → Nat → Block}
@@ -209,10 +210,10 @@ theorem loop48To_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s
     refine WP.mono (body48To_ok hp hT he hI) fun s' ⟨hI', hcf'⟩ => ?_
     by_cases hlt : nb s₀ - 16 * (e + 2) < 96
     · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
-        e + 3, by omega, hI'⟩
+        e + 3, by omega_arith, hI'⟩
     · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-        nb s₀ - 16 * (e + 3), by omega, e + 3, rfl, by omega, hI'⟩
-  exact WP.loop (M := isa) I hstep (nb s₀ - 16 * 1) s ⟨1, rfl, by omega, hI⟩
+        nb s₀ - 16 * (e + 3), by omega_arith, e + 3, rfl, by omega_arith, hI'⟩
+  exact WP.loop (M := isa) I hstep (nb s₀ - 16 * 1) s ⟨1, rfl, by omega_arith, hI⟩
 
 /-! ## The tables of 48 blocks -/
 
@@ -235,7 +236,7 @@ theorem AInvTo.pow {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {c : Nat} {
     fun k hk => ?_, by rw [hrd]; exact h.rd, by rw [hwr]; exact h.wr⟩
   rw [blockAt_frame hf fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact hp.o_p.sub_left (Offset.sub_base _ (by have := h.le; omega))]
+    exact hp.o_p.sub_left (Offset.sub_base _ (by have := h.le; omega_arith))]
   exact h.blocks k hk
 
 /-- `pow48`, from the sixteen powers `P` in the working space. -/
@@ -254,14 +255,14 @@ theorem powSetupTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat
   have pw : ∀ k < 4, ∀ l < 4, pw16 s k l = P k l := fun k hk l hl => by
     show s.mem.readW (s.gpr .r11 + _) 128 = _; rw [hr11]; exact hpw k hk l hl
   refine ⟨hA.pow hp fr g rd wr x, fun g' hg' k hk l hl => ?_, tm, g, x⟩
-  rcases (by omega : g' = 0 ∨ g' = 1 ∨ g' = 2) with rfl | rfl | rfl
+  rcases (by omega_arith : g' = 0 ∨ g' = 1 ∨ g' = 2) with rfl | rfl | rfl
   · rw [show tab 0 + 64 * k + 16 * l = 512 + 64 * k + 16 * l from rfl, t2 k hk l hl, pw k hk l hl,
       pw 0 (by decide) 0 (by decide)]
     simp only [T48, Nat.reduceEqDiff, ↓reduceIte]
   · rw [show tab 1 + 64 * k + 16 * l = 256 + 64 * k + 16 * l from rfl, t1 k hk l hl, pw k hk l hl,
       pw 0 (by decide) 0 (by decide)]
     simp only [T48, Nat.reduceEqDiff, ↓reduceIte]
-  · rw [show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega, t0 k hk l hl, pw k hk l hl]
+  · rw [show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega_arith, t0 k hk l hl, pw k hk l hl]
     simp only [T48, ↓reduceIte]
 
 /-- The tables kept by the output written. -/
@@ -273,8 +274,8 @@ theorem keepTTo {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {T : Nat → N
     (∀ l < 4, m'.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) :=
   have kw : ∀ {o}, o + 16 ≤ 1024 → m'.readW (pp s₀ + BitVec.ofNat 64 o) 128 = m.readW (pp s₀ + BitVec.ofNat 64 o) 128 :=
     fun ho => keepW hp.toD hc hf ho
-  ⟨fun g hg k hk l hl => by rw [kw (by simp only [tab]; omega)]; exact hv g hg k hk l hl,
-    fun l hl => by rw [kw (by omega)]; exact hm l hl⟩
+  ⟨fun g hg k hk l hl => by rw [kw (by simp only [tab]; omega_arith)]; exact hv g hg k hk l hl,
+    fun l hl => by rw [kw (by omega_arith)]; exact hm l hl⟩
 
 /-! ## From 256 blocks on -/
 
@@ -291,13 +292,13 @@ theorem bigRestTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb 
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ ZFrame [] t t' :=
     fun _ _ _ _ _ _ => WP.block_nil ⟨trivial, ZFrame.refl _ _⟩
   refine WP.seq (WP.mono (batchTo_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1) (j := 4) (by omega) hA₁
-    (by have := hI.rdx; rw [hg₁]; omega) trivial) fun s₂ ⟨hA₂, _, hg₂, hl₂, hf₂⟩ => ?_)
-  obtain ⟨hv₂, hm₂⟩ := keepTTo hp (by omega) hf₂ hv₁ hm₁
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1) (j := 4) (by omega_arith) hA₁
+    (by have := hI.rdx; rw [hg₁]; omega_arith) trivial) fun s₂ ⟨hA₂, _, hg₂, hl₂, hf₂⟩ => ?_)
+  obtain ⟨hv₂, hm₂⟩ := keepTTo hp (by omega_arith) hf₂ hv₁ hm₁
   refine WP.seq (WP.mono (batchTo_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
-    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1 + 16) (j := 8) (by omega) hA₂
-    (by have := hI.rdx; rw [hg₂, hg₁]; omega) trivial) fun s₃ ⟨hA₃, _, hg₃, hl₃, hf₃⟩ => ?_)
-  obtain ⟨hv₃, hm₃⟩ := keepTTo hp (by omega) hf₃ hv₂ hm₂
+    (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1 + 16) (j := 8) (by omega_arith) hA₂
+    (by have := hI.rdx; rw [hg₂, hg₁]; omega_arith) trivial) fun s₃ ⟨hA₃, _, hg₃, hl₃, hf₃⟩ => ?_)
+  obtain ⟨hv₃, hm₃⟩ := keepTTo hp (by omega_arith) hf₃ hv₂ hm₂
   have g₃ : s₃.gpr = s.gpr := by rw [hg₃, hg₂, hg₁]
   have l₃ : ∀ l < 4, s₃.zlane .xmm2 l = s.zlane .xmm2 l := fun l hl => by
     rw [hl₃ _ (by decide) (by decide) (by decide) (by simp) l hl, hl₂ _ (by decide) (by decide) (by decide) (by simp) l hl,
@@ -306,26 +307,26 @@ theorem bigRestTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb 
     ⟨hA₃, Nat.le_refl _, by rw [g₃]; exact hI.rdx, by rw [g₃]; exact hI.r9, by rw [g₃]; exact hI.rax,
       fun r h1 h2 h3 h4 h5 => by rw [g₃]; exact hI.gpr r h1 h2 h3 h4 h5, hv₃, hm₃,
       by rw [l₃ 0 (by decide)]; exact hI.y, fun l h1 h4 => by rw [l₃ l h4]; exact hI.y1 l h1 h4⟩
-  refine WP.seq (WP.mono (loop48To_ok hp hm hT hI₃ (by omega)) fun s₄ ⟨e, hex, hI₄⟩ => ?_)
+  refine WP.seq (WP.mono (loop48To_ok hp hm hT hI₃ (by omega_arith)) fun s₄ ⟨e, hex, hI₄⟩ => ?_)
   -- The reduction constant, and two of the three groups left to hash.
   have h1e := hI₄.one
   have hr11₄ : s₄.gpr .r11 = pp s₀ := hI₄.gpr .r11 (by decide) (by decide) (by decide) (by decide) (by decide)
   rw [← List.singleton_append, WP.block_append_iff]
   refine WP.mono (reload_ok hp.toD s₄ hr11₄ hI₄.a.wr hI₄.pm) fun s₅ ⟨p₅, f₅⟩ => ?_
   have hG : EGenTo s₀ P e (16 * (e + 2)) s₅ :=
-    ⟨hI₄.a.zframe f₅ (by decide) (by decide) (by decide), h1e, by omega, by rw [f₅.gpr]; exact hI₄.rdx,
+    ⟨hI₄.a.zframe f₅ (by decide) (by decide) (by decide), h1e, by omega_arith, by rw [f₅.gpr]; exact hI₄.rdx,
       by rw [f₅.gpr]; exact hI₄.r9, by rw [f₅.gpr]; exact hI₄.rax,
       fun r h1 h2 h3 h4 h5 => by rw [f₅.gpr]; exact hI₄.gpr r h1 h2 h3 h4 h5,
       fun k hk l hl => by
         have h := hI₄.pv 2 (by decide) k hk l hl
-        rw [show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega] at h
+        rw [show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega_arith] at h
         rw [f₅.mem, h, hT2],
       p₅, by rw [f₅.zlane _ (by decide) 0 (by decide)]; exact hI₄.y,
       fun l h1 h4 => by rw [f₅.zlane _ (by decide) l h4]; exact hI₄.y1 l h1 h4⟩
   rw [List.append_assoc (lastG ++ adv) lastG adv, WP.block_append_iff]
-  refine WP.mono (drainStepTo_ok hp hf (by omega) hG) fun s₆ hG₆ => ?_
-  refine WP.mono (drainStepTo_ok hp hf (by omega) hG₆) fun s₇ hG₇ => ⟨e + 1 + 1, ?_⟩
-  exact EGenTo.einv (by rw [show 16 * (e + 1 + 1) = 16 * (e + 2) by omega]; exact hG₇)
+  refine WP.mono (drainStepTo_ok hp hf (by omega_arith) hG) fun s₆ hG₆ => ?_
+  refine WP.mono (drainStepTo_ok hp hf (by omega_arith) hG₆) fun s₇ hG₇ => ⟨e + 1 + 1, ?_⟩
+  exact EGenTo.einv (by rw [show 16 * (e + 1 + 1) = 16 * (e + 2) by omega_arith]; exact hG₇)
 
 /-- `bigTo`: from the first group encrypted to all but up to two groups, all
 but the last encrypted group hashed. -/
@@ -352,7 +353,7 @@ theorem loopETo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s�
   have h1e := hI.one
   have hle := hI.a.le
   have fin : ∀ e, nb s₀ - 16 * (e - 1) < 32 → ∀ t, EInvTo s₀ P e t → ∃ e, nb s₀ = 16 * e ∧ EInvTo s₀ P e t :=
-    fun e he t hI => ⟨e, by have := hI.a.le; have := hI.one; omega, hI⟩
+    fun e he t hI => ⟨e, by have := hI.a.le; have := hI.one; omega_arith, hI⟩
   refine WP.ite (decide (nb s₀ - 16 * (e - 1) < 32)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
   · exact WP.block_nil (fin e (by simpa using h) s hI)
   · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ EInvTo s₀ P e s
@@ -365,8 +366,8 @@ theorem loopETo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s�
       · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
           fin (e + 1) (by simpa using hlt) s' hI'⟩
       · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-          nb s₀ - 16 * (e + 1), by have := hI.one; omega, e + 1, rfl, by omega, hI'⟩
-    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega, hI⟩
+          nb s₀ - 16 * (e + 1), by have := hI.one; omega_arith, e + 1, rfl, by omega_arith, hI'⟩
+    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega_arith, hI⟩
 
 /-- The encryption after the setup, for any code `bigC` of 256 blocks on. -/
 theorem encTailGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb s₀ % 16 = 0) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
@@ -379,10 +380,10 @@ theorem encTailGTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hm : nb
   refine WP.seq (WP.mono (firstTo_ok hp hR) fun s₂ hI₂ => ?_)
   refine WP.seq (WP.mono (cmp_ok s₂ 256 256 (by decide)) fun s₃ ⟨hcf, g, l, m, rd, wr⟩ => ?_)
   have hI₃ := hI₂.of_eq g l m rd wr
-  rw [hI₂.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by decide)] at hcf
+  rw [hI₂.r9, toNat_ofNat_lt (by omega_arith), toNat_ofNat_lt (by decide)] at hcf
   refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, EInvTo s₀ P e s') (decide (nb s₀ - 16 * (1 - 1) < 256))
     (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨1, hI₃⟩)
-    (fun h => hbig _ (by simp at h; omega) hI₃)) fun s₄ ⟨e, hI₄⟩ => ?_)
+    (fun h => hbig _ (by simp at h; omega_arith) hI₃)) fun s₄ ⟨e, hI₄⟩ => ?_)
   refine WP.seq (WP.mono (cmpE_ok hI₄) fun s₅ ⟨hI₅, hcf₅⟩ => ?_)
   exact WP.seq (WP.mono (loopETo_ok hp hm hf hI₅ hcf₅) fun s₆ ⟨e, he, hI₆⟩ => finalTo_ok hp hf he hI₆)
 

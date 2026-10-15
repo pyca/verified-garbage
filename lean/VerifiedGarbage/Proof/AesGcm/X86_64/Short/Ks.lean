@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Xor
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fn
@@ -61,7 +62,7 @@ theorem ctrZ_ok (s : State) (J : Block) (h14 : ∀ l < 2, s.lane .xmm14 l = Nat.
   rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨fun l hl => ?_, fun l hl => ?_⟩⟩
   all_goals simp only [VOp.exec]
-  all_goals rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
+  all_goals rcases (by omega_arith : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
   all_goals simp (disch := decide) only [lane0_zlane, lane1_zlane, State.zlane_setV_ne, zlane_vshufi32x4,
     VG.Proof.Gcm.X86_64.StitchZ.State.zlane_setV256, State.zlane_setV128, shuf44_0, shuf44_1, shuf44_2, shuf44_3, reduceCtorEq,
     ↓reduceIte, VBinOp.sse, Nat.one_ne_zero]
@@ -122,7 +123,7 @@ theorem ksStep_ok {nr : Nat} {w : List Byte} {J : Block} {K : Addr} {k : Nat} (t
     fun r h₁ h₂ => by rw [g' r h₁ h₂, g₂], by rw [rd', f₂.rd, f₁.rd], by rw [wr', f₂.wr, f₁.wr], ?_⟩
   · rw [k' _ (by simp) l hl, f₂.zlane _ (by decide) l hl, c₁ l hl]
     simp only [List.length_singleton]
-    rw [show 4 * k + 4 * 1 + l = 4 * (k + 1) + l by omega]
+    rw [show 4 * k + 4 * 1 + l = 4 * (k + 1) + l by omega_arith]
   · rw [m', blockAt_writeW_lane _ _ _ hl, zmm_lane _ _ hl]
     refine (aesWith_eq nr _ _ _ ?_).symm
     rw [e₂ .xmm3 (List.mem_singleton_self _) l hl]
@@ -131,7 +132,7 @@ theorem ksStep_ok {nr : Nat} {w : List Byte} {J : Block} {K : Addr} {k : Nat} (t
     rw [this]
   · rw [m', hm₂]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  · rw [d', show 64 * (k + 1) = 64 * k + 64 by omega, ← ofNat_add_ofNat, BitVec.add_assoc]
+  · rw [d', show 64 * (k + 1) = 64 * k + 64 by omega_arith, ← ofNat_add_ofNat, BitVec.add_assoc]
   · intro r hr l hl
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [k' r (by simp) l hl, f₂.zlane r (by simp [hr.1, hr.2.1]) l hl, f₁.zlane r (by simp [hr.1, hr.2.2]) l hl]
@@ -157,7 +158,7 @@ theorem zlane_of {s t : State} {r : XReg} (hl : ∀ l < 2, t.lane r l = s.lane r
     ∀ l < 4, t.zlane r l = s.zlane r l := fun l _ => by
   simp only [State.zlane]
   split
-  · exact hl l (by omega)
+  · exact hl l (by omega_arith)
   · rw [hh]
 
 /-- `ksSetup`, from `W`, the key context and the state of the short path. -/
@@ -198,8 +199,8 @@ theorem ksSetup_ok {Ctx W SP : Addr} {nr nc : Nat} (s : State) (he : Env Ctx (W 
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   rw [WP.block_append_iff]
   have l0 : ∀ l < 2, s₁.lane .xmm0 l = revMask := fun l hl => by
-    have := m0 l (by omega)
-    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;>
+    have := m0 l (by omega_arith)
+    rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;>
       simpa [State.zlane, State.lane, g₁, xmm₁, ymm₁] using this
   have w16 : InRegions s₁.wr (W + BitVec.ofNat 64 16) 16 := by rw [wr₁]; exact he.perm.wW (by decide)
   refine WP.mono (VG.Proof.AesGcm.X86_64.WP.forall_det (P := fun (_ : Unit) => True)
@@ -212,7 +213,7 @@ theorem ksSetup_ok {Ctx W SP : Addr} {nr nc : Nat} (s : State) (he : Env Ctx (W 
       rw [zlane_of (l₂ r h₁ h₂ h₃ h₄) (hi₂ r h₁ h₂ h₃ h₄) l hl]
       simp only [State.zlane, State.lane, xmm₁, ymm₁, zmm₁]
   rw [m₁, dx₁] at c14
-  rw [si₁, di₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at r10₂
+  rw [si₁, di₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at r10₂
   rw [r8₁] at rdx₂
   rw [WP.block_append_iff]
   refine WP.mono (ctrZ_ok s₂ _ c14 i15) fun s₃ ⟨c14₃, i15₃, f₃⟩ => ?_
@@ -238,7 +239,7 @@ theorem ksSetup_ok {Ctx W SP : Addr} {nr nc : Nat} (s : State) (he : Env Ctx (W 
   · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, reduceCtorEq, ite_false]
     rw [f₃.gpr, rdx₂]
   · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, hnc]
-    rw [show (4#64 : BitVec 64) = BitVec.ofNat 64 4 from rfl, ofNat_add_ofNat, shr2 _ (by omega)]
+    rw [show (4#64 : BitVec 64) = BitVec.ofNat 64 4 from rfl, ofNat_add_ofNat, shr2 _ (by omega_arith)]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, hr.2.2.2.2.2.2.1, ite_false]
     rw [gk r hr.1 hr.2.2.1 hr.2.2.2.2.2.2.2, g₁ r (by simp [hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1,
@@ -261,13 +262,13 @@ theorem keystream_ok {Ctx W SP : Addr} {nr nc : Nat} (s : State) (he : Env Ctx (
       (∀ r, r ∉ [Reg.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10] → t.gpr r = s.gpr r) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ ZKeep [.xmm2, .xmm3, .xmm13, .xmm14, .xmm15] s t ∧
       (∀ l < 4, t.zlane .xmm0 l = revMask) := by
-  have hnr14 : nr ≤ 14 := by omega
+  have hnr14 : nr ≤ 14 := by omega_arith
   refine WP.seq (WP.mono (ksSetup_ok s he hR hnc hnc32 hnr14 m0)
     fun s₁ ⟨c14, i15, m0₁, di₁, si₁, r10₁, dx₁, r9₁, g₁, m₁, rd₁, wr₁, z₁⟩ => ?_)
-  have hnk : 1 ≤ (nc + 4) / 4 ∧ (nc + 4) / 4 ≤ 8 := by omega
+  have hnk : 1 ≤ (nc + 4) / 4 ∧ (nc + 4) / 4 ≤ 8 := by omega_arith
   generalize (nc + 4) / 4 = nk at r9₁ hnk ⊢
   have hwK : ∀ k < nk, InRegions s.wr (W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 (64 * k)) 64 := fun k hk => by
-    rw [BitVec.add_assoc, ofNat_add_ofNat]; exact he.perm.wW (by omega)
+    rw [BitVec.add_assoc, ofNat_add_ofNat]; exact he.perm.wW (by omega_arith)
   generalize hK : W + BitVec.ofNat 64 1024 = K at dx₁ hwK ⊢
   generalize hJ : blockAt s.mem (W + BitVec.ofNat 64 16) = J at c14 ⊢
   generalize hw : bytesAt s.mem Ctx (16 * (nr + 1)) = w
@@ -279,9 +280,9 @@ theorem keystream_ok {Ctx W SP : Addr} {nr nc : Nat} (s : State) (he : Env Ctx (
     ⟨by rw [di, ← hw]; exact (bytesAt_frame f (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         rw [← hK]
-        exact (L.cw'.sub_left (Region.sub_prefix (by omega))).sub_right (Lay.wSub (by decide))) (by omega)).symm,
+        exact (L.cw'.sub_left (Region.sub_prefix (by omega_arith))).sub_right (Lay.wSub (by decide))) (by omega_arith)).symm,
       hnr14, fun j hj => by
-        rw [rd, wr, di, BitVec.ofInt_natCast]; exact he.perm.ctxR (by omega)⟩
+        rw [rd, wr, di, BitVec.ofInt_natCast]; exact he.perm.ctxR (by omega_arith)⟩
   refine WP.loop (M := isa) (body := ksBody) (c := .ne)
     (fun (m : Nat) (t : State) => ∃ k, m = nk - k ∧ k < nk ∧
       (∀ l < 4, t.zlane .xmm14 l = Nat.repeat inc32 (4 * k + l) J) ∧ (∀ l < 4, t.zlane .xmm15 l = four) ∧
@@ -292,27 +293,27 @@ theorem keystream_ok {Ctx W SP : Addr} {nr nc : Nat} (s : State) (he : Env Ctx (
       Frame [⟨K, 512⟩] s.mem t.mem ∧
       (∀ r, r ∉ [Reg.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10] → t.gpr r = s.gpr r) ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ ZKeep [.xmm2, .xmm3, .xmm13, .xmm14, .xmm15] s t) ?_ (nk - 0) s₁
-    ⟨0, rfl, by omega, fun l hl => by rw [c14 l hl]; simp, i15, m0₁, di₁, si₁, r10₁, by rw [dx₁]; simp,
-      r9₁, fun b hb => absurd hb (by omega), by rw [m₁]; exact Frame.refl _ _, g₁, rd₁, wr₁,
+    ⟨0, rfl, by omega_arith, fun l hl => by rw [c14 l hl]; simp, i15, m0₁, di₁, si₁, r10₁, by rw [dx₁]; simp,
+      r9₁, fun b hb => absurd hb (by omega_arith), by rw [m₁]; exact Frame.refl _ _, g₁, rd₁, wr₁,
       z₁.mono (by simp)⟩
   rintro m t ⟨k, rfl, hk, c14t, i15t, m0t, dit, sit, r10t, dxt, r9t, bt, ft, gt, rdt, wrt, zt⟩
   refine WP.mono (ksStep_ok t hnr (keys t ft dit rdt wrt) sit (by rw [r10t, dit]) c14t m0t i15t dxt
     (by rw [wrt]; exact hwK k hk))
     fun t' ⟨c14', bk', f', dx', r9', zf', g', rd', wr', z'⟩ => ?_
   have hr9 : t.gpr .r9 - 1 = BitVec.ofNat 64 (nk - (k + 1)) := by
-    rw [r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_sub (by omega) (by omega)]; congr 1
+    rw [r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, ofNat_sub (by omega_arith) (by omega_arith)]; congr 1
   have f'' : Frame [⟨K, 512⟩] s.mem t'.mem := ft.trans (f'.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-    simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base K (by omega)⟩)
+    simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub_base K (by omega_arith)⟩)
   have bt' : ∀ b < 4 * (k + 1), blockAt t'.mem (K + BitVec.ofNat 64 (16 * b)) = aesWith nr w (Nat.repeat inc32 b J) := by
     intro b hb
     by_cases hb' : b < 4 * k
     · rw [← bt b hb']
       exact blockAt_frame f' (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact Offset.disjoint K (.inl (by omega)) (by omega) (by omega))
-    · have := bk' (b - 4 * k) (by omega)
-      rwa [BitVec.add_assoc, ofNat_add_ofNat, show 64 * k + 16 * (b - 4 * k) = 16 * b by omega,
-        show 4 * k + (b - 4 * k) = b by omega] at this
+        exact Offset.disjoint K (.inl (by omega_arith)) (by omega_arith) (by omega_arith))
+    · have := bk' (b - 4 * k) (by omega_arith)
+      rwa [BitVec.add_assoc, ofNat_add_ofNat, show 64 * k + 16 * (b - 4 * k) = 16 * b by omega_arith,
+        show 4 * k + (b - 4 * k) = b by omega_arith] at this
   have gt' : ∀ r, r ∉ [Reg.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10] → t'.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [g' r hr.2.2.1 hr.2.2.2.2.2.2.1, gt r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1,
@@ -320,14 +321,14 @@ theorem keystream_ok {Ctx W SP : Addr} {nr nc : Nat} (s : State) (he : Env Ctx (
   have zt' : ZKeep [.xmm2, .xmm3, .xmm13, .xmm14, .xmm15] s t' := zt.trans (z'.mono (by simp))
   have m0' : ∀ l < 4, t'.zlane .xmm0 l = revMask := fun l hl => by rw [z' _ (by decide) l hl, m0t l hl]
   have hz : t'.zf = some (decide (nk - k = 1)) := by
-    rw [zf', r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, sub_beq (a := nk - k) (b := 1) (by omega)
-      (by omega)]
+    rw [zf', r9t, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, sub_beq (a := nk - k) (b := 1) (by omega_arith)
+      (by omega_arith)]
   by_cases he' : k + 1 = nk
   · left
-    refine ⟨by simp [eval, hz]; omega, fun b hb => ?_, f'', gt', by rw [rd', rdt], by rw [wr', wrt], zt', m0'⟩
-    rw [bt' b (by omega)]
+    refine ⟨by simp [eval, hz]; omega_arith, fun b hb => ?_, f'', gt', by rw [rd', rdt], by rw [wr', wrt], zt', m0'⟩
+    rw [bt' b (by omega_arith)]
   · right
-    refine ⟨by simp [eval, hz]; omega, nk - (k + 1), by omega, k + 1, rfl, by omega, c14',
+    refine ⟨by simp [eval, hz]; omega_arith, nk - (k + 1), by omega_arith, k + 1, rfl, by omega_arith, c14',
       fun l hl => by rw [z' _ (by decide) l hl, i15t l hl], m0', by rw [g' _ (by decide) (by decide), dit],
       by rw [g' _ (by decide) (by decide), sit], by rw [g' _ (by decide) (by decide), r10t], dx',
       by rw [r9', hr9], bt', f'', gt', by rw [rd', rdt], by rw [wr', wrt], zt'⟩
