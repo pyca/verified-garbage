@@ -161,7 +161,7 @@ theorem WinLay.apart₂ {K : WinCfg} {size : Nat} (hL : WinLay K size) {x y : Na
 def winCode (K : WinCfg) (i : Nat) : Nat :=
   if i < 16 then (winOther K).getD i 0 else (winRo K).getD (i - 16) 0
 
-theorem getD_mem_of_lt {l : List Nat} {i : Nat} (h : i < l.length) : l.getD i 0 ∈ l := by
+theorem winCode_getD_mem {l : List Nat} {i : Nat} (h : i < l.length) : l.getD i 0 ∈ l := by
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h]; exact List.getElem_mem h
 
 /-- Slots of different numbers are different, but for two read only. -/
@@ -173,7 +173,7 @@ theorem WinLay.code_ne {K : WinCfg} {size : Nat} (hL : WinLay K size) {i j : Nat
   · simp only [winCode, hi, hj', ↓reduceIte]
     exact fun h => hij ((hL.nodup.getD_inj (hl ▸ hi) (hl ▸ hj')).mp h)
   · simp only [winCode, hi, hj', ↓reduceIte]
-    exact fun h => hL.ro _ (getD_mem_of_lt (by omega)) (h ▸ getD_mem_of_lt (by omega))
+    exact fun h => hL.ro _ (winCode_getD_mem (by omega)) (h ▸ winCode_getD_mem (by omega))
 
 /-- Slots by distinct numbers of written slots are distinct. -/
 theorem WinLay.codes_nodup {K : WinCfg} {size : Nat} (hL : WinLay K size) {l lw : List Nat}
