@@ -150,8 +150,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
   show WP isa (.seq (.block (modeSetup ++ loadBlock)) (.seq (cipher 4 up) (.block modeStore))) s _
   apply WP.seq
   rw [WP.block_append_iff]
-  refine WP.mono (WP.keep [.ebp, .ebx] (setup_run s hB' bfit (wS 32 (by decide))) (by
-    simp [writesOnly, modeSetup, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+  refine WP.mono (WP.keep [.ebp, .ebx] (setup_run s hB' bfit (wS 32 (by decide))) (by decide))
     fun u₁ ⟨⟨m₁, bp₁⟩, k₁⟩ => ?_
   have wr₁ : u₁.wr = s.wr := k₁.2.2
   have rd₁ : u₁.rd = s.rd := k₁.2.1
@@ -164,8 +163,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
     (w₁ 20 (by decide)) (region_in (w₁ 32 (by decide)))
     (by rw [m₁, Mem.readW_writeW_self32]) e0 e4 (region_in (w₁ 40 (by decide)))
     (by rw [e44]; exact region_in (w₁ 44 (by decide)))
-    (by rw [e44]; exact Offset.sep _ (by decide) (by decide) (by decide))) (by
-      simp [writesOnly, loadBlock, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+    (by rw [e44]; exact Offset.sep _ (by decide) (by decide) (by decide))) (by decide))
     fun u₂ ⟨m₂, k₂⟩ => ?_
   have k₁₂ : Keep [.ebp, .ebx, .eax] s u₂ := (k₁.trans k₂).mono (by decide)
   have esp₂ : u₂.gpr .esp = s.gpr .esp := k₁₂.gpr (by decide)
@@ -207,7 +205,7 @@ theorem crypt_wp (up : Bool) {s : State} {B : BitVec 32} {k : Schedule}
   -- the block out
   refine WP.mono (WP.keep [.eax, .edi] (store_run u₃ ((ck₃.gpr (by decide)).trans CE.bp) bfit
     (region_in (w₃ 16 (by decide))) (region_in (w₃ 20 (by decide))) (w₃ 40 (by decide)) (w₃ 44 (by decide))) (by
-      simp [writesOnly, modeStore, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+      decide))
     fun u₄ ⟨⟨m₄, di₄⟩, k₄⟩ => ?_
   have k₄' : Keep [.ebp, .ebx, .eax, .ecx, .edx, .esi, .edi] s u₄ := (k₃.trans k₄).mono (by decide)
   have esp₄ : u₄.gpr .esp = s.gpr .esp := k₄'.gpr (by decide)

@@ -280,7 +280,7 @@ theorem keyStep {u₀ : State} {K Kk : BitVec 32} {L : Nat} (E : KeyEnv Kk L u�
   have hwv : InRegions v.wr (K.setWidth 64 + BitVec.ofNat 64 (4096 + 4 * w)) 4 := by
     rw [vk.2.2, I.keep.2.2, ← Offset.add_add]; exact inRegions_off hw (by omega)
   refine WP.mono (WP.keep [.eax, .ebx, .edi] (keyTail_run v w (by rw [vk.gpr (by decide), I.ebx]) v5 ea hwv)
-    (by simp [writesOnly, keyTail, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+    (by decide))
     fun t' ⟨⟨tm, tb, td, tz⟩, tk⟩ => ?_
   -- the key's bytes are where they were
   have hkey : bytesAt t.mem (Kk.setWidth 64) L = bytesAt u₀.mem (Kk.setWidth 64) L :=

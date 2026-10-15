@@ -174,7 +174,7 @@ theorem ecb_sat (up : Bool) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
 theorem ecb_implies (up : Bool) :
     (ecbX up).Implies (Spec.Cast5.ecbContract (X86.abi.withConsts ecbConsts) (if up then .encrypt else .decrypt) 4) where
