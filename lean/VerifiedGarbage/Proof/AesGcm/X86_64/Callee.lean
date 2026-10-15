@@ -9,6 +9,8 @@ public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 public import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -74,30 +76,34 @@ theorem nosp_of {c : Prog isa} (h : ((instrs c).all fun i => !Taint.clobbers i .
 namespace KeyImpl
 
 /-- `vg_aes_expand_key_scratch`, in the baseline ISA. -/
-def scalar : KeyImpl where
-  fn := ⟨"vg_aes_expand_key_scratch", Impl.Aes.X86_64.expandKey⟩
-  depth := by lit_decide
-  ok := Proof.Aes.X86_64.expandKey_correct
-  ct := Proof.Aes.X86_64.expandKey_ct
-  nosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
-  mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
-  features := []
+def scalar : KeyImpl := by
+  refine {
+    fn := ⟨"vg_aes_expand_key_scratch", Impl.Aes.X86_64.expandKey⟩
+    depth := ?_
+    ok := Proof.Aes.X86_64.expandKey_correct
+    ct := Proof.Aes.X86_64.expandKey_ct
+    nosp := nosp_of ((Code.allInstrs_eq _ _).symm.trans ?_)
+    mxcsr := ?_
+    spSafe := Code.all_of_allInstrs ?_
+    features := [] }
+  taint_decide_all
 
 /-- `vg_aes_expand_key_scratch_aesni`. -/
-def aesni : KeyImpl where
-  fn := ⟨"vg_aes_expand_key_scratch_aesni", Impl.Aes.X86_64.AesNi.expandKey⟩
-  depth := by lit_decide
-  ok s hs := Proof.Aes.X86_64.AesNi.Key.expandKey_correct s
-    ⟨hs.1, hs.2.1, hs.2.2.2.2.2.1, hs.2.2.2.2.2.2.2⟩
-  ct s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp :=
-    Proof.Aes.X86_64.AesNi.Key.expandKey_ct s₁ s₂ t₁ t₂ s₁' s₂'
-      ⟨h₁.1, h₁.2.1, h₁.2.2.2.2.2.1, h₁.2.2.2.2.2.2.2⟩ ⟨h₂.1, h₂.2.1, h₂.2.2.2.2.2.1, h₂.2.2.2.2.2.2.2⟩
-      ⟨hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1⟩
-  nosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
-  mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
-  features := ["aes"]
+def aesni : KeyImpl := by
+  refine {
+    fn := ⟨"vg_aes_expand_key_scratch_aesni", Impl.Aes.X86_64.AesNi.expandKey⟩
+    depth := ?_
+    ok s hs := Proof.Aes.X86_64.AesNi.Key.expandKey_correct s
+      ⟨hs.1, hs.2.1, hs.2.2.2.2.2.1, hs.2.2.2.2.2.2.2⟩
+    ct s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp :=
+      Proof.Aes.X86_64.AesNi.Key.expandKey_ct s₁ s₂ t₁ t₂ s₁' s₂'
+        ⟨h₁.1, h₁.2.1, h₁.2.2.2.2.2.1, h₁.2.2.2.2.2.2.2⟩ ⟨h₂.1, h₂.2.1, h₂.2.2.2.2.2.1, h₂.2.2.2.2.2.2.2⟩
+        ⟨hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1⟩
+    nosp := nosp_of ((Code.allInstrs_eq _ _).symm.trans ?_)
+    mxcsr := ?_
+    spSafe := Code.all_of_allInstrs ?_
+    features := ["aes"] }
+  taint_decide_all
 
 end KeyImpl
 

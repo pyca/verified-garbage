@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 meta import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -53,28 +55,17 @@ open VG VG.X86_64
 open VG.Proof.AesGcm.X86_64 (Piece PieceTo)
 open VG.Impl.Gcm.X86_64.StitchAvx8 (enc dec encR decR encTo encToR)
 
-theorem enc_piece : Piece enc false true :=
-  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
-    by lit_decide, ⟨_, by taint_decide⟩⟩
+/-- The six loops' checks, in one kernel evaluation (`taint_decide_all`). -/
+theorem pieces : Piece enc false true ∧ Piece dec ∧ Piece encR true true ∧ Piece decR true true ∧
+    PieceTo encTo false true ∧ PieceTo encToR true true := by
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩, ⟨?_, ?_, ?_, ?_, ?_, ⟨?_, ?_⟩⟩⟩
+  taint_decide_all
 
-theorem dec_piece : Piece dec :=
-  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
-    by lit_decide, ⟨_, by taint_decide⟩⟩
-
-theorem encR_piece : Piece encR true true :=
-  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
-    by lit_decide, ⟨_, by taint_decide⟩⟩
-
-theorem decR_piece : Piece decR true true :=
-  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
-    by lit_decide, ⟨_, by taint_decide⟩⟩
-
-theorem encTo_piece : PieceTo encTo false true :=
-  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
-    by lit_decide, ⟨_, by taint_decide⟩⟩
-
-theorem encToR_piece : PieceTo encToR true true :=
-  ⟨by lit_decide, by lit_decide, by lit_decide, by lit_decide,
-    by lit_decide, ⟨_, by taint_decide⟩⟩
+theorem enc_piece : Piece enc false true := pieces.1
+theorem dec_piece : Piece dec := pieces.2.1
+theorem encR_piece : Piece encR true true := pieces.2.2.1
+theorem decR_piece : Piece decR true true := pieces.2.2.2.1
+theorem encTo_piece : PieceTo encTo false true := pieces.2.2.2.2.1
+theorem encToR_piece : PieceTo encToR true true := pieces.2.2.2.2.2
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
