@@ -407,7 +407,7 @@ theorem bodySel_ok {s₀ : State} (hp : APre s₀) {C : Nat} (hC : COk s₀ C) {
   have n_st : ∀ k < sL s₀, ¬ (Avx2.stR (sst s₀)).Contains (sdp s₀ + BitVec.ofNat 64 k) 1 := fun k hk hc =>
     hp.st_d _ hc (Avx2.in_dR (s₀ := V s₀) hk)
   have n_sv : ∀ k < sL s₀, ¬ (saveR (V s₀)).Contains (sdp s₀ + BitVec.ofNat 64 k) 1 := fun k hk hc =>
-    hp.d_b _ (Avx2.in_dR (s₀ := V s₀) hk) (save_sub _ _ hc)
+    hp.d_b _ (Avx2.in_dR (s₀ := V s₀) hk) (save_sub (V s₀) _ hc)
   have keep₅ : ∀ k < sL s₀, (k < 1024 * t ∨ 1024 * t + 1024 ≤ k) →
       s₅.mem (sdp s₀ + BitVec.ofNat 64 k) = s.mem (sdp s₀ + BitVec.ofNat 64 k) := fun k hk ho =>
     FA _ (by
