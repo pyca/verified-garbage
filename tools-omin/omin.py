@@ -9,6 +9,8 @@ env=dict(os.environ); env["PATH"]=os.path.expanduser("~/.elan/bin")+":"+env["PAT
 key=src.replace('/','_').replace('.','_'); setup=f"{lean_dir}/.lake/setup_{key}.json"
 if not os.path.exists(setup):
     open(setup,"w").write(subprocess.run(["lake","setup-file","--log-level=warning",src],cwd=lean_dir,env=env,capture_output=True,text=True).stdout)
+if os.path.realpath(out).startswith(os.path.realpath(lean_dir)+os.sep):
+    sys.exit("omin.py: write the output outside lean/ (scratch .lean files there are picked up by the CI checks)")
 text=open(os.path.join(lean_dir,src)).read()
 lines=text.split("\n")
 # insert header after the last import line

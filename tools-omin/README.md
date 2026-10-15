@@ -33,7 +33,9 @@ python3 ../tools-omin/omin.py VerifiedGarbage/Proof/Foo/Bar.lean /tmp/Bar.lean
 #   replaced 91, kept 5; facts per call: [...]
 ```
 
-Compare heartbeats with the original before copying the result over the
+Keep `<out>` outside `lean/`: `omin.py` also writes `<out>.min.lean` next to it, and
+scratch `.lean` files under `lean/` are picked up by the CI checks (it refuses
+such a path). Compare heartbeats with the original before copying the result over the
 module: in many modules omega is cheap and the gain is about 1%.
 
 `omin.py` still uses this session's scratchpad paths: set `S` (the directory
