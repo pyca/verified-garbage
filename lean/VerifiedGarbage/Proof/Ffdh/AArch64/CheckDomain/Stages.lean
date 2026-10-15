@@ -311,15 +311,7 @@ theorem q5_q6 (p : CdP) (t : State) (h : Q5 p t) :
   rw [hl, hQ] at *
   refine ⟨⟨mq, hb', hc, hv, hWs, fun e he => ?_, hP.2.2.2.2.2.1, hq, hr, ?_⟩, k⟩
   · rcases List.mem_append.mp he with he | he
-    · exact slots_frm hb.hs hP.2.2.2.2.1 f (fun r hr' i hi => by
-        have := kept_lt i hi
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-        simp only [keptSlots, argSlots, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-          or_false] at hi
-        rcases hr' with rfl | rfl <;>
-          rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-            simp only [sWs, sG, sQ, sDom, sDomLen, sK, sY, sX, sXl, VG.Impl.Ffdh.AArch64.Domain.sOut, sRand, sXe,
-              sMsk, sFn] <;> omega_arith) e he
+    · exact slots_frm hb.hs hP.2.2.2.2.1 f (kept_wsR p.D.w) e he
     · simp only [CdP.ep, List.mem_cons, List.not_mem_nil, or_false] at he
       rcases he with rfl | rfl
       · rw [f.word_eq (fun r hr' => by
@@ -449,9 +441,7 @@ theorem q9_q10 (p : CdP) (t : State) (h : Q9 p t) : WP isa (seqs pSetup) t fun u
       · have hk := hdr_kept p.D (by simp) q hq'
         simp only [keptSlots, argSlots, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
           or_false] at hk
-        rcases hk with h | h | h | h | h | h | h | h | h | h | h | h <;> rw [h] <;>
-          simp only [sWs, sG, sQ, sDom, sDomLen, sK, sY, sX, sXl, VG.Impl.Ffdh.AArch64.Domain.sOut, sRand, sXe,
-            sMsk, sFn] <;> omega_arith
+        rcases hk with h | h | h | h | h | h | h | h | h | h | h | h <;> rw [h] <;> decide
       · simp only [CdP.ep, List.mem_cons, List.not_mem_nil, or_false] at hq'
         rcases hq' with rfl | rfl <;> simp only [sWs, sEp, sEl, sFn] <;> omega_arith
     · simp only; omega_arith
