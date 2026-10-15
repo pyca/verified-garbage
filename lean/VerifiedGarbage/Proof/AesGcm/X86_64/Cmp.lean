@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.J0
+import VerifiedGarbage.Proof.AesGcm.X86_64.CopyTag
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -165,55 +166,6 @@ theorem words_eq (m : Mem) (p q : Addr) :
   · intro h
     obtain ⟨h₁, h₂⟩ := List.append_inj h (by rw [Cmac.length_le8, Cmac.length_le8])
     rw [le8_inj h₁, le8_inj h₂, BitVec.xor_self, BitVec.xor_self, BitVec.or_self]; rfl
-
-/-! ## Copying a tag -/
-
-theorem writeW_readW64 (m src : Mem) (a b : Addr) :
-    m.writeW a (src.readW b 64) = writeBytes m a (bytesAt src b 8) := by
-  simp only [Mem.writeW, Mem.readW]
-  rw [show (BitVec.setWidth (8 * (64 / 8)) (BitVec.setWidth 64 (src.read b (64 / 8)))) =
-    src.read b 8 from by simp]
-  rw [write_eq_writeBytes]
-  congr 1
-  simp only [bytesAt]
-  refine List.map_congr_left fun j hj => ?_
-  exact Mem.extractLsb'_read src b (List.mem_range.mp hj)
-
-/-- `copyTag` leaves what `copyLoop` does (`copyLoop_ok`): for 16 bytes, both
-words are loaded before either is stored. -/
-theorem copyTag_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
-    WP isa copyTag s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
-      (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  obtain ⟨s₁, run₁, hz₁, -, hg₁, hm₁, hrd₁, hwr₁⟩ :=
-    cmpImm_ok s .rcx h.rcx (by have := h.lt; omega) (show 16 < 2 ^ 31 by decide)
-  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine WP.ite (decide (n = 16)) (eval_e hz₁) (fun he => ?_) (fun _ => ?_)
-  · have hn : n = 16 := by simpa using he
-    subst hn
-    have hsi : s₁.gpr .rsi = S := by rw [hg₁, h.rsi]
-    have hdi : s₁.gpr .rdi = D := by rw [hg₁, h.rdi]
-    have r₀ := in_off (rs := s₁.rd ++ s₁.wr) (by rw [hrd₁, hwr₁]; exact h.rd) (show 0 + 8 ≤ 16 by decide) (by decide)
-    have r₁ := in_off (rs := s₁.rd ++ s₁.wr) (by rw [hrd₁, hwr₁]; exact h.rd) (show 8 + 8 ≤ 16 by decide) (by decide)
-    have w₀ := in_off (rs := s₁.wr) (by rw [hwr₁]; exact h.wr) (show 0 + 8 ≤ 16 by decide) (by decide)
-    have w₁ := in_off (rs := s₁.wr) (by rw [hwr₁]; exact h.wr) (show 8 + 8 ≤ 16 by decide) (by decide)
-    have e0 : S + BitVec.ofNat 64 0 = S := BitVec.add_zero S
-    have f0 : D + BitVec.ofNat 64 0 = D := BitVec.add_zero D
-    rw [e0] at r₀
-    rw [f0] at w₀
-    refine WP.of_runBlock ⟨_, by xrun [hsi, hdi, r₀, r₁, w₀, w₁, e0, f0], ?_, ?_, ?_, ?_⟩
-    · simp only [mem_setReg, gpr_setReg, ite_true, ite_false, reduceCtorEq, hsi, hdi, e0, f0]
-      have e := writeBytes_append s₁.mem D (bytesAt s₁.mem S 8) (bytesAt s₁.mem (S + BitVec.ofNat 64 8) 8)
-        (by rw [length_bytesAt, length_bytesAt]; decide)
-      rw [length_bytesAt, ← bytesAt_add] at e
-      rw [writeW_readW64, writeW_readW64, ← hm₁]
-      exact e
-    · intro r a b; simp [gpr_setReg, a, b, hg₁]
-    all_goals simp only [hrd₁, hwr₁]
-  · have lp : LoopPre s₁ S D n :=
-      ⟨by rw [hg₁, h.rsi], by rw [hg₁, h.rdi], by rw [hg₁, h.rcx], h.pos, h.lt, by rw [hrd₁, hwr₁]; exact h.rd,
-        by rw [hwr₁]; exact h.wr, h.disj⟩
-    exact WP.mono (copyLoop_ok s₁ lp) fun s' ⟨a, b, c, d⟩ =>
-      ⟨by rw [a, hm₁], fun r h₁ h₂ => by rw [b r h₁ h₂, hg₁], by rw [c, hrd₁], by rw [d, hwr₁]⟩
 
 section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)

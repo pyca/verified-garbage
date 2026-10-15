@@ -85,7 +85,7 @@ theorem run_xdepth : (SealSplit.run (v.withBlk B) T.fn v.splitFin).x86_64Depth �
   have t := T.xd
   have f := splitFin_xdepth v
   simp only [SealSplit.run, SealSplit.«prefix», SealSplit.body, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp,
-    tagOut, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes,
+    tagOut, copyTag, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes,
     List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees, v.ctr.noStack, v.key.noStack,
     v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
