@@ -76,8 +76,8 @@ theorem valid_lo {N k : Nat} (hv : Spec.Rsa.modulusValid N k = true) : N % 2 = 1
 theorem factors_of {N P Q k pl ql : Nat} (hN : N % 2 = 1) (hlo : 256 ^ (k - 1) ≤ N) (hP : P < 256 ^ pl)
     (hQ : Q < 256 ^ ql) (hpl : pl < k) (hql : ql < k) (h : P * Q = N) :
     P % 2 = 1 ∧ 1 < P ∧ Q % 2 = 1 ∧ 1 < Q := by
-  have hp1 : 256 ^ pl ≤ 256 ^ (k - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-  have hq1 : 256 ^ ql ≤ 256 ^ (k - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+  have hp1 : 256 ^ pl ≤ 256 ^ (k - 1) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  have hq1 : 256 ^ ql ≤ 256 ^ (k - 1) := Nat.pow_le_pow_right (by decide) (by omega_arith)
   have hpo := (pq_iff hN).mpr h
   have hqo := (pq_iff (P := Q) (Q := P) hN).mpr (by rw [Nat.mul_comm]; exact h)
   refine ⟨hpo.1, ?_, hqo.1, ?_⟩
@@ -85,18 +85,18 @@ theorem factors_of {N P Q k pl ql : Nat} (hN : N % 2 = 1) (hlo : 256 ^ (k - 1) �
     · exact h1
     · exfalso
       have : P * Q ≤ 1 * Q := Nat.mul_le_mul_right _ h1
-      omega
+      omega_arith
   · rcases Nat.lt_or_ge 1 Q with h1 | h1
     · exact h1
     · exfalso
       have : P * Q ≤ P * 1 := Nat.mul_le_mul_left _ h1
-      omega
+      omega_arith
 
 theorem pow256_le_wk (len : Nat) : 256 ^ len ≤ 2 ^ (64 * ((len + 7) / 8)) := by
-  rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega)
+  rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega_arith)
 
 theorem pow256_le_w {len k : Nat} (h : len < k) : 256 ^ len ≤ 2 ^ (64 * wk k) := by
-  rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega)
+  rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by unfold wk; omega_arith)
 
 /-- `head`: the working space, the mask all ones, and `CvS` from the
 memory on entry to `main`. -/
@@ -112,11 +112,11 @@ theorem cvHeadS_ok {I : CvIn} {s : State} (h : CvPre I s) :
   have k1 := L.k1
   have hi₁ : InScr I.B I.Z s.mem s₁.mem := InScr.of_frm f₁ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega)
+    rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith)
   exact ⟨hw₁, h.args.congr fun i hi => f₁.word_eq (fun r hr => by
       unfold argSlot at hi
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by unfold argSlot at hi; omega),
+      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by unfold argSlot at hi; omega_arith),
     h.n.congrK hi₁ k₁, h.p.congrK hi₁ k₁, h.q.congrK hi₁ k₁, h.d.congrK hi₁ k₁, hi₁, k₁.wr.trans h.wr⟩
 
 /-- `main`, from a valid modulus. -/
@@ -181,20 +181,20 @@ theorem cvMain_ok {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusV
   refine WP.seq (WP.mono (zeroA_ok h₅.ws (j := aX₁) (by decide)) fun s₆ ⟨_, o₆, _, _, _, k₆⟩ => ?_)
   have h₆ := h₅.arr (by decide) (Nat.le_refl _) o₆ k₆ (by decide)
   refine WP.mono (copyA_ok h₆.ws (o := aX₁) (a := aV) (by decide) (by decide) (by decide)) fun s₇ ⟨c₇, o₇, _, _, k₇⟩ => ?_
-  have h₇ := h₆.arr (by decide) (by omega) o₇ k₇ (by decide)
+  have h₇ := h₆.arr (by decide) (by omega_arith) o₇ k₇ (by decide)
   have ot : ∀ {m m' : Mem} {j i Ln : Nat}, Outside I.B (slot (wk I.k) j) Ln m m' → Ln ≤ 8 * (wk I.k + 2) → i ≠ j →
       i < 16 → wv m' I.B (slot (wk I.k) i) (wk I.k) = wv m I.B (slot (wk I.k) i) (wk I.k) :=
-    fun o hL hij hi => outside_arr o hL hij (by omega) hi hZ' hn'
+    fun o hL hij hi => outside_arr o hL hij (by omega_arith) hi hZ' hn'
   have hmw : ∀ {m m' : Mem} {i L' : Nat}, Outside I.B (slot (wk I.k) i) L' m m' → L' ≤ 8 * (wk I.k + 2) →
       mword m' I.B = mword m I.B := fun {_ _ i _} o _ =>
-    o.word (Or.inl (by have := hdr_lt_slot (wk I.k) i (show Public.sMask < 32 by decide); omega))
-      (by omega)
-  have m₇ : mword s₇.mem I.B = mask I.ok := by rw [hmw o₇ (by omega), hmw o₆ (Nat.le_refl _), m₅, m₄]
+    o.word (Or.inl (by have := hdr_lt_slot (wk I.k) i (show Public.sMask < 32 by decide); omega_arith))
+      (by omega_arith)
+  have m₇ : mword s₇.mem I.B = mask I.ok := by rw [hmw o₇ (by omega_arith), hmw o₆ (Nat.le_refl _), m₅, m₄]
   have pr₇ : ∀ i, i = aP ∨ i = aQ ∨ i = aD ∨ i = aX₂ →
       wv s₇.mem I.B (slot (wk I.k) i) (wk I.k) = wv s₄.mem I.B (slot (wk I.k) i) (wk I.k) := fun i hi => by
     have h1 : i ≠ aX₁ := by rcases hi with rfl | rfl | rfl | rfl <;> decide
     have h2 : i < 16 := by rcases hi with rfl | rfl | rfl | rfl <;> decide
-    rw [ot o₇ (by omega) h1 h2, ot o₆ (Nat.le_refl _) h1 h2,
+    rw [ot o₇ (by omega_arith) h1 h2, ot o₆ (Nat.le_refl _) h1 h2,
       p₅ i (by rcases hi with rfl | rfl | rfl | rfl <;> simp)]
   have dP₇ : I.ok = true → wv s₇.mem I.B (slot (wk I.k) aX₁) (wk I.k) = I.D % (I.P - 1) := fun hc => by
     obtain ⟨hpq, -⟩ := hokP hc
@@ -202,10 +202,10 @@ theorem cvMain_ok {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusV
     have e := d₅ hfp.1 hfp.2.1
     rw [c₇, ot o₆ (Nat.le_refl _) (by decide) (by decide)]
     rw [← e]
-    refine wv_low_of_lt (by omega) ?_
+    refine wv_low_of_lt (by omega_arith) ?_
     rw [e]
-    have : I.D % (I.P - 1) < I.P - 1 := Nat.mod_lt _ (by omega)
-    omega
+    have : I.D % (I.P - 1) < I.P - 1 := Nat.mod_lt _ (by omega_arith)
+    omega_arith
   -- `dQ` into `aV`.
   have vQ₇ : wv s₇.mem I.B (slot (wk I.k) aQ) (wk I.k) = I.Q := by rw [pr₇ aQ (by simp), vQ₄]
   have vD₇ : wv s₇.mem I.B (slot (wk I.k) aD) (wk I.k) = I.D := by rw [pr₇ aD (by simp), vD₄]
@@ -217,7 +217,7 @@ theorem cvMain_ok {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusV
   have hw := h₈.ws.w1
   have := L.pl2
   have := L.ql2
-  refine WP.mono (cvStores_ok h₈.ws h₈.args m₈ L.pl1 (by unfold wk; omega) L.ql1 (by unfold wk; omega)
+  refine WP.mono (cvStores_ok h₈.ws h₈.args m₈ L.pl1 (by unfold wk; omega_arith) L.ql1 (by unfold wk; omega_arith)
     ⟨fun i hi => by rw [h₈.wr, ← h.wr]; exact h.oQi.wr i hi, h.oQi.sep⟩
     ⟨fun i hi => by rw [h₈.wr, ← h.wr]; exact h.oDp.wr i hi, h.oDp.sep⟩
     ⟨fun i hi => by rw [h₈.wr, ← h.wr]; exact h.oDq.wr i hi, h.oDq.sep⟩ h.a1 h.a2 h.a3)
@@ -240,7 +240,7 @@ theorem cvMain_ok {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusV
       have := pow256_le_wk I.pl
       simp only [ite_true]
       rw [← vX₈]
-      exact congrArg (Spec.Rsa.i2osp · I.pl) (wv_low_of_lt (by unfold wk; omega) (by omega))
+      exact congrArg (Spec.Rsa.i2osp · I.pl) (wv_low_of_lt (by unfold wk; omega_arith) (by omega_arith))
   · rw [bDp]
     cases hc : I.ok
     · rfl
@@ -248,10 +248,10 @@ theorem cvMain_ok {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusV
       have hfp := hf hpq
       have e := dP₇ hc
       have := pow256_le_wk I.pl
-      have : I.D % (I.P - 1) < I.P - 1 := Nat.mod_lt _ (by omega)
+      have : I.D % (I.P - 1) < I.P - 1 := Nat.mod_lt _ (by omega_arith)
       simp only [ite_true]
       rw [← e, ← vX₁₈]
-      exact congrArg (Spec.Rsa.i2osp · I.pl) (wv_low_of_lt (by unfold wk; omega) (by rw [vX₁₈, e]; omega))
+      exact congrArg (Spec.Rsa.i2osp · I.pl) (wv_low_of_lt (by unfold wk; omega_arith) (by rw [vX₁₈, e]; omega_arith))
   · rw [bDq]
     cases hc : I.ok
     · rfl
@@ -259,9 +259,9 @@ theorem cvMain_ok {I : CvIn} {s : State} (h : CvPre I s) (hv : Spec.Rsa.modulusV
       have hfp := hf hpq
       have e := d₈ hfp.2.2.1 hfp.2.2.2
       have := pow256_le_wk I.ql
-      have : I.D % (I.Q - 1) < I.Q - 1 := Nat.mod_lt _ (by omega)
+      have : I.D % (I.Q - 1) < I.Q - 1 := Nat.mod_lt _ (by omega_arith)
       simp only [ite_true]
       rw [← e]
-      exact congrArg (Spec.Rsa.i2osp · I.ql) (wv_low_of_lt (by unfold wk; omega) (by rw [e]; omega))
+      exact congrArg (Spec.Rsa.i2osp · I.ql) (wv_low_of_lt (by unfold wk; omega_arith) (by rw [e]; omega_arith))
 
 end VG.Proof.Rsa.AArch64

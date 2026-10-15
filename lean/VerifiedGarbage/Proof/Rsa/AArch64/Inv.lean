@@ -599,7 +599,7 @@ theorem invStepCode_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM 
   have k13 := k12.trans k₃
   simp only [seqs]
   refine WP.mono (dec_ok s₃ .x6) fun t ⟨⟨h6t, mt, _⟩, k₄⟩ =>
-    ⟨by rw [h6t, k13.gpr .x6 (by decide)], ?_, (k13.trans k₄).mono (by simp [stepRegs]), fun hx₁ hx₂ => ?_⟩
+    ⟨by rw [h6t, k13.gpr .x6 (by decide)], ?_, (k13.trans k₄).mono (by decide), fun hx₁ hx₂ => ?_⟩
   · intro x hx
     have a := hx (slot w iU, 8 * w) (by simp)
     have b := hx (slot w iV, 8 * w) (by simp)
@@ -701,13 +701,13 @@ theorem inverse_ok {s : State} {B : Addr} {Z w : Nat} {iU iV iX₁ iX₂ iM iT :
     (InvInv s B Z w iU iV iX₁ iX₂ iT (wv s.mem B (slot w iU) w) (wv s.mem B (slot w iM) w))
     (fun j hj t hI _ => ?_)
     ⟨hs.congr k12.wr, (k12.gpr .x0 (by decide)).trans h.x0, (k₂.gpr .x12 (by decide)).trans h12₁,
-      (k₂.gpr .x11 (by decide)).trans h11₁, by rw [m₂, m₁]; exact Frm.refl _ _ _, k12.mono (by simp [stepRegs]),
+      (k₂.gpr .x11 (by decide)).trans h11₁, by rw [m₂, m₁]; exact Frm.refl _ _ _, k12.mono (by decide),
       by rw [m₂, m₁]; exact hU0, fun _ _ => by rw [m₂, m₁, hVM, hX1, hX2]; rfl⟩ h6₂)
     fun t hI => ⟨hI.x0, hI.frm, hI.keep, fun hodd h1 => ?_⟩
   · refine WP.mono (invStepCode_ok hI.scr hI.x0 hI.x12 hI.x11 hw1 hw hZ hU hV hX₁ hX₂ hM hT dUV dUX₁
       dUX₂ dUM dUT dVX₁ dVX₂ dVM dVT dX dX₁M dX₁T dX₂M dX₂T dMT hI.u0) fun t' ⟨h6', f', k', hv'⟩ =>
       ⟨⟨hI.scr.congr k'.wr, (k'.gpr .x0 (by decide)).trans hI.x0, (k'.gpr .x12 (by decide)).trans hI.x12,
-        (k'.gpr .x11 (by decide)).trans hI.x11, hI.frm.trans f', (hI.keep.trans k').mono (by simp [stepRegs]), ?_,
+        (k'.gpr .x11 (by decide)).trans hI.x11, hI.frm.trans f', (hI.keep.trans k').mono (by decide), ?_,
         fun hodd h1 => ?_⟩, h6'⟩
     · rw [f'.word_eq (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

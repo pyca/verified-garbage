@@ -46,8 +46,14 @@ theorem ckc_final {k N E P Q DP DQ QI : Nat} {pq gP gQ gQI : Bool} (hv : Spec.Rs
     have hb : ∀ a b : Nat, (a == b) = decide (a = b) := fun a b => by
       cases h' : decide (a = b) <;> simp_all
     simp only [hb, h, decide_true, Bool.true_and, Bool.and_true, Bool.and_assoc]
-    cases decide (DP < P - 1) <;> cases decide (E * DP % (P - 1) = 1) <;> cases decide (DQ < Q - 1) <;>
-      cases decide (E * DQ % (Q - 1) = 1) <;> cases decide (QI < P) <;> cases decide (Q * QI % P = 1) <;> rfl
+    generalize decide (DP < P - 1) = b0
+    generalize decide (E * DP % (P - 1) = 1) = b1
+    generalize decide (DQ < Q - 1) = b2
+    generalize decide (E * DQ % (Q - 1) = 1) = b3
+    generalize decide (QI < P) = b4
+    generalize decide (Q * QI % P = 1) = b5
+    revert b0 b1 b2 b3 b4 b5
+    decide
   · have : (P * Q == N) = false := by simpa using h
     simp [h, this]
 
