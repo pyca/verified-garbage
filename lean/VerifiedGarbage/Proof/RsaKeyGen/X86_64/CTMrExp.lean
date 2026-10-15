@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 
 /-!
 # A candidate on x86-64: constant time of Miller–Rabin's exponentiation
@@ -40,8 +41,10 @@ def EBase (q : EPub) (s₀ : State) : Prop :=
     MrDims q.p.B q.p.Z q.p.w
 
 theorem mrS_exp (w : Nat) : ∀ j ∈ mrS, ∀ r ∈ expRanges w, 8 * j + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * j := by
-  simp only [mrS, expRanges, winRanges, List.cons_append, List.nil_append]
-  rng_disj
+  have h : ∀ j ∈ mrS, 8 * j + 8 ≤ VG.Impl.Bignum.hdrBytes ∧ ∀ h ∈ ([(248, 8), (176, 8), (208, 8), (224, 8),
+      (216, 8)] : List (Nat × Nat)), 8 * j + 8 ≤ h.1 ∨ h.1 + h.2 ≤ 8 * j := by
+    decide
+  exact fun j hj => VG.Proof.RsaKeyGen.hdr_of_shape (expRanges_shape w) (h j hj).1 (h j hj).2
 
 theorem vs_exp' (p : MrPub) (i u : Nat) :
     ∀ e ∈ p.vs i u, e.1 < 32 ∧ ∀ r ∈ [(8 * kFlag, 8)], 8 * e.1 + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * e.1 := fun e he => by
@@ -49,7 +52,7 @@ theorem vs_exp' (p : MrPub) (i u : Nat) :
     have := List.mem_map_of_mem (f := (·.1)) he
     rwa [show (p.vs i u).map (·.1) = mrS by simp only [MrPub.vs, mrS, List.map_cons, List.map_nil]] at this
   have h2 : ∀ j ∈ mrS, j < 32 ∧ ∀ r ∈ [(8 * kFlag, 8)], 8 * j + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * j := by
-    simp only [mrS]; rng_disj
+    decide
   exact h2 _ h1
 
 theorem vs_exp (p : MrPub) (i u : Nat) :

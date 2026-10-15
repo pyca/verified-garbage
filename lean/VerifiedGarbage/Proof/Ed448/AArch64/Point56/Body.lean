@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.AsFn
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Conv
 public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyRoot
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
+meta import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -61,12 +63,12 @@ theorem scr_of {s s₁ : State} (h : FnPre s) (h3 : s₁.gpr .x3 = s.gpr .x0) (h
 
 theorem dblStores : ∀ i ∈ instrs (Impl.X448.AArch64.Fast.ops (dblOps (slot 3) (slot 4) (slot 5))),
     storesAt dblOk i = true := by
-  rw [← List.all_eq_true, ← Code.allInstrs_eq]; decide +kernel
+  rw [← List.all_eq_true, ← Code.allInstrs_eq]; lit_decide
 
 theorem addStores : ∀ i ∈ instrs (Impl.X448.AArch64.Fast.ops
     (Impl.X448.AArch64.Base.addOps (slot 3) (slot 4) (slot 5) (slot 6) (slot 7) (slot 8))),
     storesAt dblOk i = true := by
-  rw [← List.all_eq_true, ← Code.allInstrs_eq]; decide +kernel
+  rw [← List.all_eq_true, ← Code.allInstrs_eq]; lit_decide
 
 /-- The memory doubling and addition leave, from `m`, the slots 3–5 being `f` of the environment. -/
 abbrev PtMem (base : Addr) (f : Env → Env) (m m' : Mem) : Prop :=
@@ -79,16 +81,16 @@ abbrev PowMem (base : Addr) (m m' : Mem) : Prop :=
   BEnv m' base ∧ EV m' base = rootEnv (EV m base) ∧ Outside2 base 1856 1024 ACC 1152 m m'
 
 /-- No instruction of the functions writes `v8`–`v15`. -/
-theorem addFn_keepsV : Point56.addFn.allInstrs keepsV = true := by decide +kernel
-theorem doubleFn_keepsV : Point56.doubleFn.allInstrs keepsV = true := by decide +kernel
-theorem powFn_keepsV : Point56.powFn.allInstrs keepsV = true := by decide +kernel
+theorem addFn_keepsV : Point56.addFn.allInstrs keepsV = true := by lit_decide
+theorem doubleFn_keepsV : Point56.doubleFn.allInstrs keepsV = true := by lit_decide
+theorem powFn_keepsV : Point56.powFn.allInstrs keepsV = true := by lit_decide
 
 /-- **Doubling** slots 3–5, as a function. -/
 theorem doubleFn_ok {s : State} (h : FnPre s) (hz : Bnd Mb s.mem (s.gpr .x0) (slot 5)) :
     WP isa Point56.doubleFn s fun u => FnPost false fclob s u (PtMem (s.gpr .x0) (dblEnv 3 4 5) s.mem) := by
   unfold Point56.doubleFn FnPost
   refine asFn_ok (rs := fclob) (Q := PtMem (s.gpr .x0) (dblEnv 3 4 5) s.mem) (by decide) (by decide) ?hv fun s₁ h3 h12 _ hm _ hw => ?_
-  case hv => decide +kernel
+  case hv => lit_decide
   obtain ⟨tr, t, he, k, b, sm, b3, b4, b5, e⟩ := dblOps_ok 3 4 5 (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (scr_of h h3 h12 hw) (hm ▸ h.env) (hm ▸ hz)
   obtain ⟨-, hf⟩ := Exec.storeFrame dblStores he
@@ -100,7 +102,7 @@ theorem addFn_ok {s : State} (h : FnPre s) (hz : Bnd Mb s.mem (s.gpr .x0) (slot 
     WP isa Point56.addFn s fun u => FnPost false fclob s u (PtMem (s.gpr .x0) (genEnv 3 4 5 6 7 8) s.mem) := by
   unfold Point56.addFn FnPost
   refine asFn_ok (rs := fclob) (Q := PtMem (s.gpr .x0) (genEnv 3 4 5 6 7 8) s.mem) (by decide) (by decide) ?hv fun s₁ h3 h12 _ hm _ hw => ?_
-  case hv => decide +kernel
+  case hv => lit_decide
   obtain ⟨tr, t, he, k, b, sm, b3, b4, b5, e⟩ := addOps_ok 3 4 5 6 7 8 (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (scr_of h h3 h12 hw) (hm ▸ h.env) (hm ▸ hz)
@@ -114,7 +116,7 @@ theorem powFn_ok {s : State} (h : FnPre s) :
   unfold Point56.powFn FnPost
   refine asFn_ok (rs := Point56.pclob) (Q := PowMem (s.gpr .x0) s.mem) (by decide) (by decide) ?hv
     fun s₁ h3 h12 _ hm _ hw => ?_
-  case hv => decide +kernel
+  case hv => lit_decide
   obtain ⟨tr, t, he, k, b, e, f⟩ := root_spec (s.gpr .x0) s₁ (scr_of h h3 h12 hw) (hm ▸ h.env)
   exact ⟨tr, t, he, k.1, k.2.1, k.2.2, b, hm ▸ e, hm ▸ f⟩
 

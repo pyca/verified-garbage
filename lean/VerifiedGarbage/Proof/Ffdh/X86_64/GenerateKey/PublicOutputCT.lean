@@ -1,0 +1,94 @@
+module
+
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.MaskCT
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.OutputCT
+meta import VerifiedGarbage.Impl.Ffdh.X86_64.GenerateKey
+meta import VerifiedGarbage.Proof.Rsa.X86_64.CTBase
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+
+/-! # FFDH on x86-64: public-key encoding reuses exchange's timing proof -/
+
+@[expose] public section
+
+namespace VG.Proof.Ffdh.X86_64.GenerateKey
+
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Ffdh.X86_64.Domain VG.Impl.Ffdh.X86_64.Domain.GenerateKey
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.MlKem.X86_64
+open VG.Impl.Rsa.X86_64.Crt (sLink ws)
+
+private def BV (p : GkP) (s : State) : Prop := ∃ rb,
+  CheckPrivate.Value p.kp (p.xb rb) s ∧ OutOk s p.B p.Z p.yp p.k
+
+private def EV (p : GkP) (s : State) : Prop := ∃ rb, Exchange.Value (outputP p.kp) (p.xb rb) s
+private def EC (p : GkP) (s : State) : Prop := ∃ rb, Exchange.Checked (outputP p.kp) (p.xb rb) s
+
+private def bridgeRest : List Instr :=
+  [.mov .rdx (.mem (ws .rax sY)), .store (ws .rax VG.Impl.Ffdh.X86_64.Domain.sOut) .rdx,
+    .mov .rdx (.mem (ws .rax sG)), .store (ws .rax sY) .rdx]
+
+private theorem bridge_ptr (p : GkP) (s : State) (h : BV p s) :
+    WP isa (.block [.mov .rax (.mem (hdr sLink))]) s fun t => t.gpr .rax = p.B := by
+  obtain ⟨_, ⟨⟨mi, _, hc, _⟩, _⟩, _⟩ := h
+  have hld := hc.sub.good.scr.ld (hdr_lt_slot p.w 8 (show sLink < 32 by decide))
+  xrun [State.ea, hdr, hc.sub.rdi, hdrOff, hld, hc.sub.link]
+  rfl
+
+private theorem bridge_ct : RelCT isa (Two BV) (.block bridge) (Two EV) := by
+  change RelCT isa (Two BV) (.block ([.mov .rax (.mem (hdr sLink))] ++ bridgeRest)) (Two EV)
+  refine RelCT.block_append (pin_ct [.rdi] [.rax] (fun p _ => p.B)
+    (pins_rdiB (fun p => off p.B (inner p.w)) fun _ _ h => by
+      obtain ⟨_, ⟨⟨_, _, hc, _⟩, _⟩, _⟩ := h; exact hc.sub.rdi)
+    (by taint_decide) ?_ (by taint_decide) ?_)
+  · intro p s h
+    exact WP.mono (bridge_ptr p s h) fun _ hh r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hh
+  · intro p s h
+    obtain ⟨rb, hv, ho⟩ := h
+    have hw : WP isa (.block bridge) s (EV p) :=
+      WP.mono (value_bridge hv ho) fun _ ⟨he, _⟩ => ⟨rb, he⟩
+    change WP isa (.block ([.mov .rax (.mem (hdr sLink))] ++ bridgeRest)) s (EV p) at hw
+    exact WP.seq_iff.mpr (WP.block_append_iff.mp hw)
+
+private theorem ev_good (p : GkP) (s : State) (h : EV p s) : GoodW1 (outputP p.kp).ws s := by
+  obtain ⟨_, ⟨mi, _, hc⟩, _⟩ := h
+  exact ⟨⟨mi, hc.sub.good, Nat.le_refl _⟩, Nat.le_trans (by decide) hc.w2,
+    Nat.lt_trans hc.w28 (by decide)⟩
+
+private theorem ev_checked (p : GkP) (s : State) (h : EV p s) :
+    WP isa (seqs (range aY)) s (EC p) := by
+  obtain ⟨rb, hv⟩ := h
+  exact WP.mono (Exchange.value_checked hv) fun _ ⟨hc, _⟩ => ⟨rb, hc⟩
+
+private theorem public_ct : RelCT isa (Two BV) (seqs publicOutput) fun _ _ => True := by
+  unfold publicOutput
+  refine seqs_cons_ct (by simp [range]) (RelCT.seq bridge_ct ?_)
+  refine RelCT.seqs_append (a := range aY) (by simp [range]) (by simp)
+    (RelCT.seq (R := Two EC)
+      (two_post (two_map (fun p => (outputP p.kp).ws) ev_good
+        (range_ct (by decide) (by decide) (by taint_decide) (by taint_decide) (by taint_decide))) ev_checked) ?_)
+  exact two_map (fun p => outputP p.kp) (fun _ _ h => by obtain ⟨rb, hc⟩ := h; exact ⟨_, hc⟩) Exchange.output_ct
+
+/-- A computed generator power with its full scalar and output buffers. -/
+def ValueIn (p : GkP) (s : State) : Prop := ∃ rb,
+  CheckPrivate.Value p.kp (p.xb rb) s ∧ Buffers p rb s
+
+private theorem value_mask (p : GkP) (s : State) (h : ValueIn p s) :
+    WP isa (seqs publicOutput) s (MaskPre p) := by
+  obtain ⟨rb, hv, hb⟩ := h
+  have hZ : 128 * p.k + 256 ≤ p.Z := hv.1.choose_spec.1.hZ
+  have hk : p.k ≤ 1024 := hv.1.choose_spec.1.k2
+  refine WP.mono (publicOutput_ok hv hb.x hb.oy hb.xy hb.len) fun t ht => ?_
+  obtain ⟨_, hax, hd, _, hs, hx, hn, hK, _, _, k⟩ := ht
+  refine ⟨hs, hd, by omega, by omega, hb.ld, hx, hn, hK,
+    ⟨fun i hi => by rw [k.2.2]; exact hb.ox.wr i hi, hb.ox.sep⟩, decide (p.fl rb), ?_⟩
+  exact hax.trans (bit_eq_bool (p.fl rb))
+
+theorem public_mask_ct : RelCT isa (Two ValueIn) (seqs publicOutput) (Two MaskPre) :=
+  two_post (two_map id (fun _ _ h => by obtain ⟨rb, hv, hb⟩ := h; exact ⟨rb, hv, hb.oy⟩) public_ct) value_mask
+
+end VG.Proof.Ffdh.X86_64.GenerateKey

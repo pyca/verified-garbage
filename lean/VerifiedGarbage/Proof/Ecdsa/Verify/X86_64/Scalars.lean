@@ -127,6 +127,12 @@ theorem mulNS_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base s
       unch_shared_slots (MN'_n c) rfl k.unch (l := [62, o, TMP]) (by simp) (by simp) (by simp),
       fun hi h₁ h₂ => sv_shared_keep (MN'_n c) rfl h7 hn k hi h₁ h₂, lt, e⟩
 
+/-- A range of the slots `l` is one of the slots `l'`, when `l`'s are among `l'`'s. -/
+theorem slW_mem {c : Cfg} {l l' : List Nat} (h : ∀ i ∈ l, i ∈ l') {w : Nat × Nat} (hw : w ∈ slW c l) :
+    w ∈ slW c l' := by
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+  exact List.mem_map_of_mem (h i hi)
+
 /-- The checks of `r` and `s`, `w = s^(n-2)`, `u` and `v`. -/
 theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hF : Front c s₀ base g s) {rest : Prog isa} {Q : State → Prop}
@@ -219,14 +225,12 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
   have UW : Unch base ([(c.sl FLAG, 8)] ++ slW c midW ++ [(bitsAt c.n 3, 64 * c.n + 64)]) s.mem s₁₀.mem := by
     refine (U₂.trans (U₃.trans (U₄.trans (U₅.trans (U₆.trans (U₇.trans (U₈.trans (U₉.trans
       U₁₀)))))))).mono fun w hw => ?_
-    simp only [List.mem_append, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
-      or_false] at hw ⊢
-    rcases hw with hw | hw | hw | hw | hw | hw | hw | hw | hw
+    simp only [pwW, List.mem_append, or_assoc] at hw
+    rcases hw with hw | hw | hw | hw | hw | hw | hw | hw | hw | hw
     all_goals first
-      | exact Or.inl (Or.inl hw)
-      | (rcases hw with hw | hw | hw <;> subst hw <;> simp)
-      | (rcases hw with hw | hw <;> subst hw <;> simp)
-      | (rcases hw with (hw | hw | hw) | hw <;> subst hw <;> simp)
+      | exact List.mem_append_left _ (List.mem_append_right _ (slW_mem (by decide) hw))
+      | exact List.mem_append_left _ (List.mem_append_left _ hw)
+      | exact List.mem_append_right _ hw
   have a : ∀ {i}, i < 45 → i ∉ midW → i ≠ FLAG → sv c base s₁₀ i = sv c base s i := fun hi hl hf =>
     sv_unch UW h7 hn hi (apart_append (apart_append (apart_flag h0 hf) (apart_slW hl)) (apart_pwA hi))
   -- The values.
@@ -249,13 +253,11 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
   have U' : Unch base (slW c midW ++ [(bitsAt c.n 3, 64 * c.n + 64)]) s₂.mem s₁₀.mem := by
     refine (U₃.trans (U₄.trans (U₅.trans (U₆.trans (U₇.trans (U₈.trans (U₉.trans
       U₁₀))))))).mono fun w hw => ?_
-    simp only [List.mem_append, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
-      or_false] at hw ⊢
-    rcases hw with hw | hw | hw | hw | hw | hw | hw | hw
+    simp only [pwW, List.mem_append, or_assoc] at hw
+    rcases hw with hw | hw | hw | hw | hw | hw | hw | hw | hw
     all_goals first
-      | (rcases hw with hw | hw | hw <;> subst hw <;> simp)
-      | (rcases hw with hw | hw <;> subst hw <;> simp)
-      | (rcases hw with (hw | hw | hw) | hw <;> subst hw <;> simp)
+      | exact List.mem_append_left _ (slW_mem (by decide) hw)
+      | exact List.mem_append_right _ hw
   refine ⟨hs₁₀, by rw [wr₁₀, wr₉, wr₈, wr₇, wr₆, wr₅, K₄.wr, wr₃, k₂.wr, k₁.wr, hF.wr],
     by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, rd₅, K₄.rd, rd₃, k₂.rd, k₁.rd, hF.rd], F₁₀,
     by rw [a (i := K) (by decide) (by decide) (by decide), hF.k],

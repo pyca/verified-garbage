@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Power
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep
 
-/-! Affine conversion and canonical point encoding into x4–x7. -/
+/-! Affine conversion (by the inversion by divsteps) and canonical point encoding into x4–x7. -/
 
 @[expose] public section
 
@@ -11,7 +12,7 @@ namespace VG.Impl.Ed25519.AArch64
 open VG.AArch64
 
 def affineOps : List FieldOp := [.mul 0 0 15, .mul 1 1 15]
-def pointAffine : Prog isa := .seq invert (.block (fieldCode affineOps))
+def pointAffine : Prog isa := .seq Divstep.invert (.block (fieldCode affineOps))
 
 def pointSign : List Instr :=
   [.movz .w .x9 1 0, .logic .and .x .x19 .x4 .x9, .lsl .x .x19 .x19 63]

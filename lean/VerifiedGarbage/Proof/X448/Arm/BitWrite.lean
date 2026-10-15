@@ -55,7 +55,13 @@ theorem write1_eq (m : Mem) (p : Addr) (v : BitVec 8) : m.write p 1 v = m.writeW
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
     ((b.setWidth 32 >>> j) &&& (1 : BitVec 32)).setWidth 8 =
-      BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by decide +kernel
+      BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by
+  intro b j _
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat]
+  rw [show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod, Nat.and_one_is_mod]
+  have := b.isLt
+  rw [Nat.mod_eq_of_lt (by omega : b.toNat < 2 ^ 32)]
 
 def bitJ (j : Nat) : List Instr :=
   [.mov .r2 (if j = 0 then .reg .r3 else .shifted .r3 .lsr j),

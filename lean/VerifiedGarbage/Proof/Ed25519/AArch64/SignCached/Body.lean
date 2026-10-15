@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.Ed25519.AArch64.SignCached.Prefix
 import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import VerifiedGarbage.Proof.Ed25519.Signing
@@ -190,7 +191,7 @@ structure NonceReady (L : Lay) (m : Mem) (t : State) : Prop where
   nonce : Spec.Ed25519.bytesAt t.mem (L.E + 96) 32 = nonce L m
   point : Spec.Ed25519.bytesAt t.mem (L.out) 32 = Spec.Ed25519.scalarBase (SignCached.nonce L m)
 
-theorem nonce_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s)
+theorem nonce_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s)
     (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) :
     WP isa (nonceCode b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧ NonceReady L m₀ t := by
   refine WP.seq (WP.mono_syms (hashNonce_ok b hc hL ha) fun u ⟨hu, fu, du⟩ syu => ?_)
@@ -243,7 +244,7 @@ theorem wipe_ok (hc : Ctx L g vec m₀ s) (hL : L.Ok) :
   rintro r hr; rw [List.mem_singleton.mp hr]
   exact (hL.ko.sub_left (Offset.sub_base _ (by decide : 8 * 4 + 8 * 28 ≤ 256))).symm
 
-theorem body_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+theorem body_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     (hk : Spec.Ed25519.bytesAt m₀ (L.pk) 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed) 32))
     (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) :

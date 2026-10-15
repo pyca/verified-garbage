@@ -24,7 +24,7 @@ theorem x25519_ct : ConstantTime isa localContract.pre localContract.pub
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0,.x1,.x2,.x3])
     (fun _ _ _ _ hp => VG.Proof.X25519.AArch64.agree₀ hp) (by taint_decide)
 
-theorem x25519_verified : Verified AArch64.target Impl.X25519.AArch64.Hybrid.x25519
+theorem x25519_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] : Verified AArch64.target Impl.X25519.AArch64.Hybrid.x25519
     (Spec.X25519.x25519Contract AArch64.abi) :=
   Verified.of_correct x25519_ok x25519_ct (by
     sig_implies [Spec.X25519.x25519Contract,Spec.X25519.x25519Sig,AArch64.abi,AArch64.argRegs,

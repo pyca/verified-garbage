@@ -197,7 +197,7 @@ theorem key_sat : (Spec.Cast5.expandKeyContract (X86.abi.withConsts keyConsts) 4
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
 theorem key_implies : keyX.Implies (Spec.Cast5.expandKeyContract (X86.abi.withConsts keyConsts) 4) where
   pre := key_implies_pre

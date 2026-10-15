@@ -46,7 +46,7 @@ def uhL (g : Nat) (h a : BitVec 32) : BitVec 32 :=
 theorem msubL_toNat (g : Nat) (hm : dMod g ≤ 44) {y : BitVec 32} (hy : y.toNat < 2 ^ 31) :
     (msubL g y).toNat = if y.toNat < dMod g then y.toNat else y.toNat - dMod g := by
   have hsub : (y - BitVec.ofNat 32 (dMod g)).toNat = (y.toNat + 2 ^ 32 - dMod g) % 2 ^ 32 := by
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show dMod g < 2 ^ 32 by omega)]; omega
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show dMod g < 2 ^ 32 by omega_using [hm])]; omega_using [hm]
   unfold msubL
   rw [sshiftRight31]
   split
@@ -54,12 +54,12 @@ theorem msubL_toNat (g : Nat) (hm : dMod g ≤ 44) {y : BitVec 32} (hy : y.toNat
     rw [hsub] at h
     rw [show (0 : BitVec 32) &&& BitVec.ofNat 32 (dMod g) = 0 from BitVec.zero_and,
       show ∀ x : BitVec 32, x + 0 = x from fun x => BitVec.add_zero x, hsub,
-      ifn (by omega)]
-    omega
+      ifn (by omega_using [hm, h])]
+    omega_using [hm, h]
   · rename_i h
     rw [hsub] at h
     rw [show (-1 : BitVec 32) = BitVec.allOnes 32 by decide, BitVec.allOnes_and, BitVec.sub_add_cancel,
-      ifp (by omega)]
+      ifp (by omega_using [hy, h])]
 
 /-- The sign of `h | -h` is set exactly when `h` is not 0. -/
 theorem nz_mask (h : BitVec 32) :
@@ -69,17 +69,17 @@ theorem nz_mask (h : BitVec 32) :
   · subst e; rfl
   · have h0 : h.toNat ≠ 0 := fun h' => e (BitVec.eq_of_toNat_eq h')
     have en : (0 - h).toNat = 2 ^ 32 - h.toNat := by
-      rw [BitVec.toNat_sub, show (0 : BitVec 32).toNat = 0 from rfl]; have := h.isLt; omega
+      rw [BitVec.toNat_sub, show (0 : BitVec 32).toNat = 0 from rfl]; have := h.isLt; omega_using [h0]
     have hm : (0 - h ||| h).msb = true := by
       rw [BitVec.msb_or, BitVec.msb_eq_decide, BitVec.msb_eq_decide, en]
       have := h.isLt
       by_cases hb : 2 ^ 31 ≤ h.toNat
       · simp [hb]
-      · simp only [Bool.or_eq_true, decide_eq_true_eq]; omega
+      · simp only [Bool.or_eq_true, decide_eq_true_eq]; omega_using []
     have h2 := BitVec.msb_eq_decide (0 - h ||| h)
     rw [hm] at h2
     have h3 : 2 ^ 31 ≤ (0 - h ||| h).toNat := of_decide_eq_true h2.symm
-    rw [ite_eq_right (fun h' => absurd h' (by omega)), ifp e]
+    rw [ite_eq_right (fun h' => absurd h' (by omega_using [h3])), ifp e]
 
 theorem uhL_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32} (ha : a.toNat < q) :
     (uhL g hv a).toNat = (if hv ≠ 0 then (if hbF g a.toNat * (2 * g) < a.toNat then
@@ -92,16 +92,16 @@ theorem uhL_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32}
   have hfg : hbF g a.toNat * (2 * g) ≤ q - 1 := by rw [← hbM_mul h]; exact Nat.mul_le_mul_right _ hle
   rw [← hM] at hle ⊢
   have hmul : (mul2L g (hbFL g a)).toNat = hbF g a.toNat * (2 * g) := by
-    rw [mul2L_toNat h (by omega), hf]
+    rw [mul2L_toNat h (by omega_using [hf, hle, hm]), hf]
   have hP : (mul2L g (hbFL g a) - a).sshiftRight (min (31 : BitVec 8).toNat 32) =
       if hbF g a.toNat * (2 * g) < a.toNat then -1 else 0 := by
     rw [sshiftRight31]
     have e : (mul2L g (hbFL g a) - a).toNat = (hbF g a.toNat * (2 * g) + 2 ^ 32 - a.toNat) % 2 ^ 32 := by
-      rw [BitVec.toNat_sub, hmul]; omega
+      rw [BitVec.toNat_sub, hmul]; omega_using []
     rw [q_eq] at ha hfg
     by_cases c : hbF g a.toNat * (2 * g) < a.toNat
-    · rw [ifn (by rw [e]; omega), ifp c]
-    · rw [ifp (by rw [e]; omega), ifn c]
+    · rw [ifn (by rw [e]; omega_using [ha, c]), ifp c]
+    · rw [ifp (by rw [e]; omega_using [hfg, c]), ifn c]
   unfold uhL
   rw [hP, nz_mask]
   generalize hx : hbFL g a = F at hf
@@ -109,35 +109,35 @@ theorem uhL_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32}
   by_cases hb : hv ≠ 0 <;> by_cases hp : hbF g a.toNat * (2 * g) < a.toNat
   · rw [ifp hb, ifp hp, ifp hb, ifp hp, show ~~~((-1 : BitVec 32) + -1) &&& -1 = 1 by decide]
     have e1 : (F + 1 + BitVec.ofNat 32 (dMod g)).toNat = hbF g a.toNat + dMod g + 1 := by
-      rw [BitVec.toNat_add, BitVec.toNat_add, hF, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]; omega
-    rw [msubL_toNat g hm.1 (by rw [msubL_toNat g hm.1 (by omega), e1]; split <;> omega), msubL_toNat g hm.1 (by omega),
+      rw [BitVec.toNat_add, BitVec.toNat_add, hF, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]; omega_using [hle, hm]
+    rw [msubL_toNat g hm.1 (by rw [msubL_toNat g hm.1 (by omega_using [hle, hm, e1]), e1]; split <;> omega_arith), msubL_toNat g hm.1 (by omega_using [hle, hm, e1]),
       e1]
     rcases (by unfold dMod; split <;> simp : dMod g = 16 ∨ dMod g = 44) with e | e <;> rw [e] at hle ⊢ <;>
-      (repeat' split) <;> omega
+      (repeat' split) <;> omega_arith
   · rw [ifp hb, ifn hp, ifp hb, ifn hp, show ~~~((0 : BitVec 32) + 0) &&& -1 = -1 by decide]
     have e1 : (F + -1 + BitVec.ofNat 32 (dMod g)).toNat = hbF g a.toNat + dMod g - 1 := by
       rw [BitVec.toNat_add, BitVec.toNat_add, hF, BitVec.toNat_ofNat, show (-1 : BitVec 32).toNat = 2 ^ 32 - 1 from rfl]
-      omega
-    rw [msubL_toNat g hm.1 (by rw [msubL_toNat g hm.1 (by omega), e1]; split <;> omega), msubL_toNat g hm.1 (by omega),
+      omega_using [hle, hm]
+    rw [msubL_toNat g hm.1 (by rw [msubL_toNat g hm.1 (by omega_using [hle, hm, e1]), e1]; split <;> omega_arith), msubL_toNat g hm.1 (by omega_using [hle, hm, e1]),
       e1]
     rcases (by unfold dMod; split <;> simp : dMod g = 16 ∨ dMod g = 44) with e | e <;> rw [e] at hle ⊢ <;>
-      (repeat' split) <;> omega
+      (repeat' split) <;> omega_arith
   all_goals
     rw [ifn hb, ifn hb, show ∀ x : BitVec 32, x &&& 0 = 0 from fun _ => BitVec.and_zero,
       show ∀ x : BitVec 32, x + 0 = x from fun x => BitVec.add_zero x]
     have e1 : (F + BitVec.ofNat 32 (dMod g)).toNat = hbF g a.toNat + dMod g := by
-      rw [BitVec.toNat_add, hF, BitVec.toNat_ofNat]; omega
-    rw [msubL_toNat g hm.1 (by rw [msubL_toNat g hm.1 (by omega), e1]; split <;> omega), msubL_toNat g hm.1 (by omega),
+      rw [BitVec.toNat_add, hF, BitVec.toNat_ofNat]; omega_using [hle, hm]
+    rw [msubL_toNat g hm.1 (by rw [msubL_toNat g hm.1 (by omega_using [hle, hm, e1]), e1]; split <;> omega_arith), msubL_toNat g hm.1 (by omega_using [hle, hm, e1]),
       e1]
     rcases (by unfold dMod; split <;> simp : dMod g = 16 ∨ dMod g = 44) with e | e <;> rw [e] at hle ⊢ <;>
-      (repeat' split) <;> omega
+      (repeat' split) <;> omega_arith
 
 /-! ## The code on a register -/
 
 theorem dword_pandn (a b : BitVec 128) {i : Nat} (hi : i < 4) :
     dword (XBinOp.eval .pandn a b) i = ~~~dword a i &&& dword b i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
-  simp [XBinOp.eval, dword, hj, show 32 * i + j < 128 by omega]
+  simp [XBinOp.eval, dword, hj, show 32 * i + j < 128 by omega_using [hi, hj]]
 
 /-- `uhX` as its parts (`hfX_ok`, `mul2X_ok`), so that the doublewords are not one
 large term with `hbFL` repeated in it. -/
@@ -227,15 +227,15 @@ include hrd hwr hdz hdr hg
 theorem step {i : Nat} (hi : i < 32) {s : State} (hI : Inv s₀ g i s) :
     WP isa (.block (uhBodyY g ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
       Inv s₀ g (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have j0 : 8 * i + 8 ≤ 256 := by omega
+  have j0 : 8 * i + 8 ≤ 256 := by omega_using [hi]
   have hw : pR (s₀.gpr .rcx) ∈ s.wr := by rw [hI.wr, hwr]; simp
   have hrz : pR (s₀.gpr .rdi) ∈ s.rd ++ s.wr := by rw [hI.rd, hrd]; simp
   have hrr : pR (s₀.gpr .rsi) ∈ s.rd ++ s.wr := by rw [hI.rd, hrd]; simp
   have e1 : s.gpr .rsi + BitVec.ofNat 64 0 = coeffAddr (s₀.gpr .rsi) (8 * i) := by
-    rw [add_ofNat_zero, hI.rsi]; congr 2; omega
+    rw [add_ofNat_zero, hI.rsi]; congr 2; omega_using []
   have e2 : s.gpr .rdi + BitVec.ofNat 64 0 = coeffAddr (s₀.gpr .rdi) (8 * i) := by
-    rw [add_ofNat_zero, hI.rdi]; congr 2; omega
-  have e3 : s.gpr .r10 = coeffAddr (s₀.gpr .rcx) (8 * i) := by rw [hI.r10]; congr 2; omega
+    rw [add_ofNat_zero, hI.rdi]; congr 2; omega_using []
+  have e3 : s.gpr .r10 = coeffAddr (s₀.gpr .rcx) (8 * i) := by rw [hI.r10]; congr 2; omega_using []
   rw [uhBodyY, List.append_assoc, List.append_assoc,
     show ∀ a b : Instr, [a, b] = [a] ++ [b] from fun _ _ => rfl, List.append_assoc, WP.block_append_iff]
   refine WP.mono (yld_ok (by rw [e1]; exact f_in32 hrr j0)) fun s1 ⟨L1, o1⟩ => ?_
@@ -260,8 +260,8 @@ theorem step {i : Nat} (hi : i < 32) {s : State} (hI : Inv s₀ g i s) :
     fun l hl e he => by
       rw [State.proj_xmm, State.proj_xmm, L2 l hl, o2.lane _ (by decide) l hl, L1 l hl, o1.mem, o1.gpr, e1, e2,
         dword_readW _ _ he, dword_readW _ _ he, lane_load, lane_load, coeffAddr_add, coeffAddr_add, ← coeffAt_eq,
-        ← coeffAt_eq, coeffAt_frame hI.frame (by simpa using hdz) (by rw [n_eq]; omega),
-        coeffAt_frame hI.frame (by simpa using hdr) (by rw [n_eq]; omega)]
+        ← coeffAt_eq, coeffAt_frame hI.frame (by simpa using hdz) (by rw [n_eq]; omega_using [j0, hl, he]),
+        coeffAt_frame hI.frame (by simpa using hdr) (by rw [n_eq]; omega_using [j0, hl, he])]
   vrund [State.store256_eq, State.setMem_gpr, State.setMem_wr, State.setMem_mem, State.setMem_rd,
     State.setMem_ymm, w0, sx32]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun k hk => ?_⟩, ?_⟩
@@ -280,24 +280,24 @@ theorem step {i : Nat} (hi : i < 32) {s : State} (hI : Inv s₀ g i s) :
     rw [g3, o13.mem, coeffAt_write256 _ _ j0 _ hk]
     split
     · rename_i h
-      rw [ifp (show k < 8 * (i + 1) by omega), State.ymm, extract_ymm _ _ (by omega)]
+      rw [ifp (show k < 8 * (i + 1) by omega_using [h]), State.ymm, extract_ymm _ _ (by omega_using [h])]
       have hc : ∀ l < 2, ∀ e < 4, dword (s3.lane .xmm4 l) e =
           uhL g (coeffAt s₀.mem (s₀.gpr .rdi) (8 * i + 4 * l + e)) (coeffAt s₀.mem (s₀.gpr .rsi) (8 * i + 4 * l + e)) :=
         fun l hl e he => by rw [← State.proj_xmm, B3 l hl e he, hv l hl e he]
       split
       · rename_i h4
         have := hc 0 (by decide) (k - 8 * i) h4
-        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega] at this
+        rw [show 8 * i + 4 * 0 + (k - 8 * i) = k by omega_using [h]] at this
         exact this
       · rename_i h4
-        have := hc 1 (by decide) (k - 8 * i - 4) (by omega)
-        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega] at this
+        have := hc 1 (by decide) (k - 8 * i - 4) (by omega_using [h])
+        rw [show 8 * i + 4 * 1 + (k - 8 * i - 4) = k by omega_using [h4]] at this
         exact this
     · rename_i h
       rw [hI.coeff k hk]
       by_cases h' : k < 8 * i
-      · rw [ifp h', ifp (by omega)]
-      · rw [ifn h', ifn (by omega)]
+      · rw [ifp h', ifp (by omega_using [h'])]
+      · rw [ifn h', ifn (by omega_using [h, h'])]
   · exact ⟨by rw [o13.gpr], by rw [o13.gpr]⟩
 
 /-- The constants and the loop: `UseHint` of each coefficient at `out`. -/
@@ -313,9 +313,9 @@ theorem loop_ok {s : State} (hs0 : s.gpr .rdi = s₀.gpr .rdi) (hs1 : s.gpr .rsi
       by rw [o.keep.gpr (by decide), k1.gpr (by decide), Nat.mul_zero, add_ofNat_zero, hs10],
       by rw [o.keep.2.1, k1.2.1, hsrd], by rw [o.keep.2.2, k1.2.2, hswr],
       fun l hl => by simp only [State.lane]; rw [o.xmm, hy]; exact yc l hl,
-      by rw [o.mem, m1, hsm]; exact Frame.refl _ _, fun k _ => by rw [o.mem, m1, hsm, ifn (by omega)]⟩)
+      by rw [o.mem, m1, hsm]; exact Frame.refl _ _, fun k _ => by rw [o.mem, m1, hsm, ifn (by omega_using [])]⟩)
     fun i hi u hI => step hrd hwr hdz hdr hg hi hI) fun u hI => ⟨hI.frame, fun k hk => by
-      rw [hI.coeff k hk, ifp (by omega)]⟩
+      rw [hI.coeff k hk, ifp (by omega_using [hk])]⟩
 
 end
 

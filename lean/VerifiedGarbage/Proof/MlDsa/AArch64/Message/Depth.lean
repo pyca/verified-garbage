@@ -8,7 +8,6 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Ntt
@@ -45,12 +44,19 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Final
 public import VerifiedGarbage.Proof.MlDsa.Sample.LeWord
 public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
-public import VerifiedGarbage.Proof.MlKem.AArch64.DecapsCmp
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA on AArch64: how deep the frames of signing and verification nest

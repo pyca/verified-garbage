@@ -1,0 +1,47 @@
+module
+
+public import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-!
+# Summaries of the block functions' calls
+
+The constant-time check of each mode analysed the block function at its
+call; here each block function's call is summarized once
+(`taint_summary`), from its arguments public, keeping public the
+callee-saved registers, and the modes' checks use the summaries
+(`taint_decide_sum`).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.TripleDes.AArch64
+
+open VG VG.AArch64
+
+/-- The callee-saved registers the block functions do not write (they save and
+restore `x19`–`x22`, which the analysis cannot follow). -/
+def callee : List Reg := [.x23, .x24, .x25, .x26, .x27, .x28]
+
+taint_summary encSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2])
+  (.call "vg_triple_des_encrypt_block" Impl.TripleDes.AArch64.encryptBlock)
+  keeping (VectorTaint.ofRegs callee)
+
+taint_summary decSum : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2])
+  (.call "vg_triple_des_decrypt_block" Impl.TripleDes.AArch64.decryptBlock)
+  keeping (VectorTaint.ofRegs callee)
+
+/-- Constant time from a check that `taint_decide_sum` proves. -/
+theorem ct_of {Pre : State → Prop} {Pub : State → State → Prop} {c : Prog isa} (τ : VectorTaint.T)
+    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → VectorTaint.taint.Agree τ s₁ s₂)
+    (h : ∃ hc, (VectorTaint.taint.check τ c hc).isSome = true) : ConstantTime isa Pre Pub c := by
+  obtain ⟨_, h⟩ := h
+  exact VG.Taint.constantTime (A := VectorTaint.taint) τ hpub h
+
+end VG.Proof.TripleDes.AArch64

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.Ed25519.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombLoop
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
@@ -60,7 +61,7 @@ theorem scalarBasePrepare_ok {s : State} {base k : Addr} (hs : Scr s base) (hp :
     exact h
   exact ⟨kap, abits, hscalar⟩
 
-theorem scalarBaseEngine_ok {s : State} {base k T : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
+theorem scalarBaseEngine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base k T : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
     (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (htb : TblAt s base T) (hT : s.syms combSym = T) :
     WP isa scalarBaseEngine s fun t => PowersKeep base 56 7368 s t ∧

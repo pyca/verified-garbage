@@ -12,6 +12,7 @@ public import VerifiedGarbage.Proof.RsaKeyGen.Bits
 public import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 meta import VerifiedGarbage.Proof.RsaKeyGen.Bits
 meta import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
@@ -96,9 +97,19 @@ def R0 (q : RPub) (s : State) : Prop :=
 def W1 (q : RPub) (s : State) : Prop :=
   KW q.p.B q.p.wr ∧ HP q.p.B q.p.wr (q.p.vs q.i (q.u + 8 * q.p.w)) s
 
+theorem midRanges_mrh (w : Nat) : ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen, kChecks, kI],
+    ∀ r ∈ preRanges w ++ expRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
+  have h : ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen, kChecks, kI], 8 * k + 8 ≤ VG.Impl.Bignum.hdrBytes ∧
+      ∀ h ∈ ([(200, 8), (240, 8), (208, 8), (224, 8)] ++ [(248, 8), (176, 8), (208, 8), (224, 8), (216, 8)] :
+        List (Nat × Nat)), 8 * k + 8 ≤ h.1 ∨ h.1 + h.2 ≤ 8 * k := by
+    decide
+  exact fun k hk => VG.Proof.RsaKeyGen.hdr_of_shape
+    (VG.Proof.RsaKeyGen.shape_append (preRanges_shape w) (expRanges_shape w)) (h k hk).1 (h k hk).2
+
 theorem witRanges_mrh (w : Nat) :
-    ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen, kChecks, kI], ∀ r ∈ witRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  simp only [witRanges]; rng_disj
+    ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen, kChecks, kI], ∀ r ∈ witRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k :=
+  fun k hk r hr => midRanges_mrh w k hk r
+    (List.mem_append_left _ (by unfold preRanges; exact List.mem_append_left _ (List.mem_append_left _ hr)))
 
 /-- After the witness: what its Montgomery form needs. -/
 def W2 (q : RPub) (s : State) : Prop :=
@@ -138,8 +149,8 @@ def W3 (q : RPub) (s : State) : Prop :=
     wv s.mem q.p.B (slot q.p.w aXm) q.p.w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * q.p.w) % c ∧ c % 2 = 1 ∧ 1 < c
 
 theorem preRanges_mrh (w : Nat) :
-    ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen, kChecks, kI], ∀ r ∈ preRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  simp only [preRanges, witRanges, tabRanges, List.cons_append, List.nil_append]; rng_disj
+    ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen, kChecks, kI], ∀ r ∈ preRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k :=
+  fun k hk r hr => midRanges_mrh w k hk r (List.mem_append_left _ hr)
 
 /-- The table's public header words: the entry pointer and the count. -/
 abbrev RPub.tvs (q : RPub) (j : Nat) : List (Nat × BitVec 64) :=
@@ -248,7 +259,10 @@ def TL (p : RPub × Nat) (s : State) : Prop :=
     MrDims p.1.p.B p.1.p.Z p.1.p.w ∧ TabI p.1.p.B p.1.p.Z p.1.p.w mi c bm b s₀ p.2 s ∧ c % 2 = 1 ∧ 1 < c
 
 theorem mrS_tab (w : Nat) : ∀ j ∈ mrS, ∀ r ∈ tabRanges w, 8 * j + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * j := by
-  simp only [mrS, tabRanges]; rng_disj
+  have h : ∀ j ∈ mrS, 8 * j + 8 ≤ VG.Impl.Bignum.hdrBytes ∧
+      ∀ h ∈ ([(208, 8), (224, 8)] : List (Nat × Nat)), 8 * j + 8 ≤ h.1 ∨ h.1 + h.2 ≤ 8 * j := by
+    decide
+  exact fun j hj => VG.Proof.RsaKeyGen.hdr_of_shape (tabRanges_shape w) (h j hj).1 (h j hj).2
 
 theorem vs_tab (p : MrPub) (i u : Nat) :
     ∀ e ∈ p.vs i u, e.1 < 32 ∧ ∀ r ∈ tabRanges p.w, 8 * e.1 + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * e.1 := fun e he => by
@@ -367,10 +381,6 @@ def Rmid (q : RPub) (s : State) : Prop :=
     ∃ (mi : BitVec 64) (uni : Nat) (u : Bool), Good s q.p.B q.p.Z q.p.w mi ∧
       word s.mem q.p.B (8 * kFlag) = mask q.pass ∧ word s.mem q.p.B (8 * kUni) = BitVec.ofNat 64 uni ∧
       word s.mem q.p.B (8 * kU) = mask u ∧ uni < 2 ^ 61
-
-theorem midRanges_mrh (w : Nat) : ∀ k ∈ [kOut, kLen, kUsedP, kRand, kRandLen, kChecks, kI],
-    ∀ r ∈ preRanges w ++ expRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  simp only [preRanges, witRanges, tabRanges, expRanges, winRanges, List.cons_append, List.nil_append]; rng_disj
 
 /-- The round up to its flag leaks the same in runs that agree on the public
 data. -/

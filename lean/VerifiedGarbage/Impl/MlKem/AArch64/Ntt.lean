@@ -3,26 +3,15 @@ module
 public import VerifiedGarbage.Impl.MlKem.AArch64.Compress
 
 /-!
-# ML-KEM on AArch64: the NTT, its inverse and `MultiplyNTTs`
+# ML-KEM on AArch64: `MultiplyNTTs`, `add` and `sub`
 
-All three compute on four coefficients at a time, in the lanes of vectors
-(see "Vectors").
+These compute on four coefficients at a time, in the 32-bit lanes of
+vectors (see "Vectors"); the NTT and its inverse, on eight in 16-bit lanes,
+are in `Ntt16.lean`.
 
 The tables of `ζ^BitRev7(k)` (`zetas`) and of the `γᵢ` of `MultiplyNTTs`
-(`gammas`) are stored in `scratch` first, as 128 `u32`s (`table`), and read
-in order through a pointer.
+(`gammas`) are stored in `scratch` first, as 128 `u32`s (`table`).
 
-* `ntt(f = x0, scratch = x1)`: the seven layers of Algorithm 9, four
-  butterflies at a time in vectors (see "Vectors"). The six with
-  `len ≥ 4` as three nested loops: `x11 = len / 4` (from 32, halved), `x13`
-  the blocks of the layer (from 1, doubled), `x14` the layers left; for each
-  block, its zeta (the next of the table from `zetas[1]`, through `x12`),
-  and `len / 4` times four butterflies on `x2 = f + 4j` and
-  `x3 = f + 4(j + len)`. Then the layer with `len = 2`, two blocks of four
-  coefficients at a time, their pairs gathered into two vectors.
-* `nttInv(f = x0, scratch = x1)`: the same for Algorithm 10, the layer with
-  `len = 2` first, the zetas from `zetas[127]` down, the inverse
-  butterflies; then every coefficient times 3303.
 * `multiplyNTTs(h = x0, f = x1, g = x2, scratch = x3)`: for each pair,
   `h[2i] = f[2i] g[2i] + (f[2i+1] g[2i+1] mod q) γᵢ` and
   `h[2i+1] = f[2i] g[2i+1] + f[2i+1] g[2i]`, each reduced, four pairs at a
@@ -70,7 +59,7 @@ def table (T : List Nat) (b : Reg) : List Instr :=
 
 /-! ## Vectors
 
-The NTT and its inverse compute on four coefficients at a time, in the
+`multiplyNTTs`, `add` and `sub` compute on four coefficients at a time, in the
 32-bit lanes of AdvSIMD registers, with `q` in the lanes of `v16` and
 `M = ⌊2³¹ / q⌋ = 645083` in those of `v17`. A product `x < 2³¹` of two
 coefficients is reduced with `sqdmulh` by `M`, which gives
@@ -84,99 +73,6 @@ def vconsts : List Instr :=
 
 /-- `d ← d mod q` for lanes less than `2q`, with a temporary `t`. -/
 def vcsub (d t : VReg) : List Instr := [.vop (.sub .s4 t d .v16), .vop (.umin d d t)]
-
-/-- `d ← d · z mod q` for lanes of `d` and `z` less than `q`, with a temporary `t`. -/
-def vmulq (d z t : VReg) : List Instr :=
-  [.vop (.mul d d z), .vop (.sqdmulh t d .v17), .vop (.mls d t .v16)] ++ vcsub d t
-
-/-- The butterflies of Algorithm 9 on the lanes of `v0` (`f[j]`) and `v1`
-(`f[j + len]`) with the zetas in `z`: `v2 ← v0 + z · v1`, `v1 ← v0 - z · v1`.
-`a - t` is `min(a - t, a - t + q)`, as `a - t` wraps around when `a < t`. -/
-def vbfly (z : VReg) : List Instr :=
-  vmulq .v1 z .v2 ++ (.vop (.add .s4 .v2 .v0 .v1) :: vcsub .v2 .v3) ++
-  [.vop (.sub .s4 .v3 .v0 .v1), .vop (.add .s4 .v4 .v3 .v16), .vop (.umin .v1 .v3 .v4)]
-
-/-- The butterflies of Algorithm 10 on the lanes of `v0` (`f[j]`) and `v1`
-(`f[j + len]`) with the zetas in `z`: `v2 ← v0 + v1`, `v1 ← z · (v1 - v0)`. -/
-def vibfly (z : VReg) : List Instr :=
-  (.vop (.add .s4 .v2 .v0 .v1) :: vcsub .v2 .v3) ++
-  [.vop (.sub .s4 .v1 .v1 .v0), .vop (.add .s4 .v3 .v1 .v16), .vop (.umin .v1 .v1 .v3)] ++
-  vmulq .v1 z .v3
-
-/-- Four butterflies `bf` on `[x2]` and `[x3]` with the zetas `v18`, and on to
-the next four. -/
-def vBody (bf : List Instr) : List Instr :=
-  [.ldrq .v0 .x2 0, .ldrq .v1 .x3 0] ++ bf ++
-  [.strq .v2 .x2 0, .strq .v1 .x3 0, .addImm .x .x2 .x2 16, .addImm .x .x3 .x3 16,
-    .subImm .x .x5 .x5 1]
-
-/-- A block of a layer with `len ≥ 4`: its zeta in the lanes of `v18`, then
-`len / 4` times four butterflies; the zeta pointer `x12` moves by `step`. -/
-def vBlockCode (bf : List Instr) (step : List Instr) : Prog isa :=
-  .seq (.block ([.ldr .w .x17 .x12 0] ++ step ++
-    [.vop (.dup .s4 .v18 .x17), .add .x .x3 .x2 .x15, mov .x5 .x11])) <|
-  .seq (.loop (.block (vBody bf)) (.nonzero .x .x5))
-    (.block [mov .x2 .x3, .subImm .x .x16 .x16 1])
-
-/-- The two blocks of the layer with `len = 2` in the 8 coefficients at `[x2]`,
-with the zetas `lo` (of the first) and `hi` (of the second) the two words at
-`[x12]` (swapped by `rev64` if `swap`): `v18 = (lo, lo, hi, hi)`,
-`v0 = (f[0], f[1], f[4], f[5])` and `v1 = (f[2], f[3], f[6], f[7])` (`trn1`,
-`trn2`), the butterflies `bf`, and back. -/
-def vPairBody (bf : List Instr) (swap : Bool) (step : List Instr) : List Instr :=
-  [.ldr .x .x17 .x12 0] ++ step ++ [.vop (.dup .d2 .v19 .x17)] ++
-  (if swap then [.vop (.rev .rev64s .v19 .v19)] else []) ++
-  [.vop (.perm .zip1 .s4 .v18 .v19 .v19), .ldrq .v5 .x2 0, .ldrq .v6 .x2 16,
-    .vop (.perm .trn1 .d2 .v0 .v5 .v6), .vop (.perm .trn2 .d2 .v1 .v5 .v6)] ++ bf ++
-  [.vop (.perm .trn1 .d2 .v5 .v2 .v1), .vop (.perm .trn2 .d2 .v6 .v2 .v1), .strq .v5 .x2 0,
-    .strq .v6 .x2 16, .addImm .x .x2 .x2 32, .subImm .x .x5 .x5 1]
-
-/-! ## `ntt` -/
-
-/-- A layer with `len = 4 · x11 ≥ 4`: its `x13` blocks. -/
-def nttLayerCode : Prog isa :=
-  .seq (.block [mov .x2 .x0, mov .x16 .x13, .lsl .x .x15 .x11 4]) <|
-  .seq (.loop (vBlockCode (vbfly .v18) [.addImm .x .x12 .x12 4]) (.nonzero .x .x16))
-    (.block [.lsr .x .x11 .x11 1, .add .x .x13 .x13 .x13, .subImm .x .x14 .x14 1])
-
-/-- The layer with `len = 2`: 32 pairs of blocks, with the zetas from
-`zetas[64]` (where the other layers leave `x12`) up. -/
-def nttLast : Prog isa :=
-  .seq (.block [mov .x2 .x0, .movz .x .x5 32 0])
-    (.loop (.block (vPairBody (vbfly .v18) false [.addImm .x .x12 .x12 8])) (.nonzero .x .x5))
-
-def ntt : Prog isa :=
-  .seq (.block (table zetaTable .x1 ++ vconsts ++
-    ([.movz .x .x11 32 0, .addImm .x .x12 .x1 4, .movz .x .x13 1 0, .movz .x .x14 6 0] :
-      List Instr))) <|
-  .seq (.loop nttLayerCode (.nonzero .x .x14)) nttLast
-
-/-! ## `nttInv` -/
-
-/-- The layer with `len = 2`: 32 pairs of blocks, with the zetas from
-`zetas[127]` down. -/
-def nttInvFirst : Prog isa :=
-  .seq (.block [mov .x2 .x0, .addImm .x .x12 .x1 504, .movz .x .x5 32 0])
-    (.loop (.block (vPairBody (vibfly .v18) true [.subImm .x .x12 .x12 8])) (.nonzero .x .x5))
-
-/-- A layer with `len = 4 · x11 ≥ 4`: its `x13` blocks. -/
-def nttInvLayerCode : Prog isa :=
-  .seq (.block [mov .x2 .x0, mov .x16 .x13, .lsl .x .x15 .x11 4]) <|
-  .seq (.loop (vBlockCode (vibfly .v18) [.subImm .x .x12 .x12 4]) (.nonzero .x .x16))
-    (.block [.lsl .x .x11 .x11 1, .lsr .x .x13 .x13 1, .subImm .x .x14 .x14 1])
-
-/-- Four coefficients at `[x2]` times `v18`, and on to the next four. -/
-def vScaleBody : List Instr :=
-  [.ldrq .v1 .x2 0] ++ vmulq .v1 .v18 .v3 ++
-  [.strq .v1 .x2 0, .addImm .x .x2 .x2 16, .subImm .x .x5 .x5 1]
-
-def nttInv : Prog isa :=
-  .seq (.block (table zetaTable .x1 ++ vconsts)) <|
-  .seq nttInvFirst <|
-  .seq (.block [.movz .x .x11 1 0, .addImm .x .x12 .x12 4, .movz .x .x13 32 0, .movz .x .x14 6 0]) <|
-  .seq (.loop nttInvLayerCode (.nonzero .x .x14)) <|
-  .seq (.block [.movz .x .x17 3303 0, .vop (.dup .s4 .v18 .x17), mov .x2 .x0, .movz .x .x5 64 0])
-    (.loop (.block vScaleBody) (.nonzero .x .x5))
 
 /-! ## `add` and `sub` -/
 

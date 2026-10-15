@@ -110,9 +110,9 @@ theorem acc3 {a b c x0 x1 : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32)
 /-- Reads the registers, memory and regions of a state after writes, for
 literal registers. -/
 macro "regupd" : tactic => `(tactic| plain_simp_names simp (config := {decide := true}) only [acc, v,
-                   RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags,
-                   RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags,
-                   RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false])
+  RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags,
+  RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags,
+  RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ↓reduceIte])
 
 
 theorem toNat_zero32 : (0 : BitVec 32).toNat = 0 := rfl

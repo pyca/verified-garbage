@@ -14,7 +14,6 @@ import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttInv
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 

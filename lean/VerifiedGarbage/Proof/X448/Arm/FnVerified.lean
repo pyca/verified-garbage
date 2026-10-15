@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -79,19 +81,19 @@ theorem bin_sat (r : Nat → Nat → Nat → Prop) : (Spec.X448.Field16.binContr
 
 theorem gf448_mul_ct : ConstantTime isa mulArm.pre mulArm.pub mulFn :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem gf448_add_ct : ConstantTime isa addArm.pre addArm.pub addFn :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem gf448_sub_ct : ConstantTime isa subArm.pre subArm.pub subFn :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem gf448_mulA24_ct : ConstantTime isa mulA24Arm.pre mulA24Arm.pub mulA24Fn :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub1_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub1_agree hp)) (by native_taint_decide)
 
 theorem gf448_mul_verified : Verified Arm.target mulFn (Spec.X448.Field16.mulContract Arm.abi) :=
   Verified.of_correct mul_arm gf448_mul_ct

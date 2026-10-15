@@ -45,7 +45,7 @@ theorem prod_identity (fa fb : Nat → Nat) :
   generalize 2 ^ 32 = B
   simp only [numB, List.range_succ, List.range_zero, List.nil_append, List.cons_append,
     List.filter_cons, List.filter_nil]
-  simp (config := {decide := true}) only [ite_true, ite_false, List.map_cons, List.map_nil,
+  simp (config := {decide := true}) only [↓reduceIte, List.map_cons, List.map_nil,
     List.sum_cons, List.sum_nil]
   grind
 
@@ -115,7 +115,7 @@ theorem sqr_identity (fa : Nat → Nat) :
   generalize 2 ^ 32 = B
   simp only [numB, List.range_succ, List.range_zero, List.nil_append, List.cons_append,
     List.filter_cons, List.filter_nil]
-  simp (config := {decide := true}) only [ite_true, ite_false, List.map_cons, List.map_nil,
+  simp (config := {decide := true}) only [↓reduceIte, List.map_cons, List.map_nil,
     List.sum_cons, List.sum_nil, List.nil_append, List.cons_append]
   grind
 

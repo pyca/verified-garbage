@@ -25,7 +25,7 @@ theorem addCode_ok (s : State) : WP isa (.block addCode) s fun t =>
   apply WP.of_runBlock
   simp only [regs,addCode,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,Size.bits,
     RegUpd.gpr_addWithCarry,RegUpd.c_addWithCarry,BitVec.setWidth_eq,
-    ite_false,reduceCtorEq,Option.some.injEq,exists_eq_left']
+    ite_false,reduceCtorEq,Option.some.injEq,exists_eq_left',addWords,addCarry,carryOut]
   refine ⟨rfl,rfl,?_,rfl,rfl,rfl,rfl⟩
   reg_keeps
 
