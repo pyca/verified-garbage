@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.NativeTaint
-meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Ecdh.X86.Main
 meta import VerifiedGarbage.Proof.Ecdh.X86.Main
 public import VerifiedGarbage.Proof.Ecdh.X86.BrainpoolP512r1.Contract
@@ -14,6 +12,8 @@ public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -78,11 +78,6 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State) (
   · exact K.saved (.ebp, 12) (by decide)
   · exact K.esp
 
-/-- The hints forget the words known to hold base addresses outside the calls,
-as the signature's do (`Proof/Ecdsa/X86/BrainpoolP512r1/Verified.lean`), but keep the
-public slots, which the checks of the peer's key read back. -/
-def weak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := if τ.stk = [] then { τ with wbases := [] } else τ
-
 /-- The taint analysis starts with the stack arguments public, and the words
 holding `out` and `scratch` known to be the base addresses of the writable
 regions. -/
@@ -134,9 +129,23 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.p
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeBrainpoolP512r1 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by native_taint_decide_weak weak)
+/-- What is public on entry to every call of the multiplication modulo `p`
+(as for P-521, `Proof/Ecdh/X86/P521/Verified.lean`): the stack pointer and
+the four words of its arguments' frame, below the return address. Its calls
+are entered from several taints, each analysing its body again in full; the
+summary analyses it once. -/
+def τMul : VG.X86.Taint.T :=
+  { regs := ⟨215⟩, flags := false, lens := [16, 64, 8192], bases := [(.edi, 2, 0), (.esp, 0, 4)],
+    slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 20,
+    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 20 }
+
+taint_summary mulSum : taint τMul
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.brainpoolp512r1p.k Spec.Weierstrass.Mont.brainpoolp512r1p.m)
+
+theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeBrainpoolP512r1 := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeBrainpoolP512r1 h).isSome = true := by
+    taint_decide_sum [mulSum]
+  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
