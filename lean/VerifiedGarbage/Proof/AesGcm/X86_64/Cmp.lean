@@ -202,10 +202,13 @@ theorem copyTag_ok (s : State) {S D : Addr} {n : Nat} (h : LoopPre s S D n) :
     rw [f0] at w₀
     refine WP.of_runBlock ⟨_, by xrun [hsi, hdi, r₀, r₁, w₀, w₁, e0, f0], ?_, ?_, ?_, ?_⟩
     · simp only [mem_setReg, gpr_setReg, ite_true, ite_false, reduceCtorEq, hsi, hdi, e0, f0]
-      rw [writeW_readW64, writeW_readW64, ← hm₁, writeBytes_append _ _ _ _ (by rw [length_bytesAt, length_bytesAt]; decide),
-        length_bytesAt, ← bytesAt_add]
+      have e := writeBytes_append s₁.mem D (bytesAt s₁.mem S 8) (bytesAt s₁.mem (S + BitVec.ofNat 64 8) 8)
+        (by rw [length_bytesAt, length_bytesAt]; decide)
+      rw [length_bytesAt, ← bytesAt_add] at e
+      rw [writeW_readW64, writeW_readW64, ← hm₁]
+      exact e
     · intro r a b; simp [gpr_setReg, a, b, hg₁]
-    all_goals simp only [hrd₁, hwr₁]; rfl
+    all_goals simp only [hrd₁, hwr₁]
   · have lp : LoopPre s₁ S D n :=
       ⟨by rw [hg₁, h.rsi], by rw [hg₁, h.rdi], by rw [hg₁, h.rcx], h.pos, h.lt, by rw [hrd₁, hwr₁]; exact h.rd,
         by rw [hwr₁]; exact h.wr, h.disj⟩
