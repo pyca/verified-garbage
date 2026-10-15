@@ -67,7 +67,7 @@ theorem reference_ok {s : State} {base : Addr} {size o a b : Nat}
   refine WP.mono (stores_ok [.x14,.x1,.x2,.x3] (hs.of_keeps kk (by decide)) ho ho8 (by decide)) fun t ⟨et,kt,ot⟩ => ?_
   change wordsVal t.mem base o 4=regsVal s5 [.x14,.x1,.x2,.x3] at et
   change VG.Proof.Mont.Outside base o 32 s5.mem t.mem at ot
-  refine ⟨(Keeps.regs kk).trans (kt.mono (by simp)),by simpa only [kk.mem] using ot,?_⟩
+  refine ⟨(Keeps.regs kk).trans (kt.mono (by regions_sub)),by simpa only [kk.mem] using ot,?_⟩
   rw [et,output_value,e5,e4,c4,e3,h3]
   change value (result (input s2) (other s2))=_
   rw [result_value _ _ (by rw [v1]; exact haP) (by rw [v2]; exact hbP),v1,v2]

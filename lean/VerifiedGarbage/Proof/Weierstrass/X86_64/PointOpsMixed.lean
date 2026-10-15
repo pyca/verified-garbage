@@ -171,7 +171,7 @@ theorem mixedAdd_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)
   refine WP.mono (mixedInit_val hC ia) fun b ⟨kb, ib⟩ => ?_
   apply WP.seq
   refine WP.mono (mixedHead_val hC hm ib) fun c ⟨kc, ic, eh, er⟩ => ?_
-  have pre : ProgKeep K.M base (rcbW K.S K.D) s c := ((ka.mono (by simp)).trans kb).trans kc
+  have pre : ProgKeep K.M base (rcbW K.S K.D) s c := ((ka.mono (by regions_sub)).trans kb).trans kc
   let EH := runOps (jacMixedHead K.S K.R K.E) (jacMixedInit K.S K.R E)
   have hro : ∀ x ∈ jacCoords K.R, EH x = E x := fun x hx =>
     jacMixedHead_readonly hC.apart E (by

@@ -41,7 +41,7 @@ theorem JointLoopKeep.of_prog {M : Mod} {base : Addr} {W : List Nat} {s t : Stat
 
 theorem JointLoopKeep.of_keeps {M : Mod} {base : Addr} {W : List Nat} {s t : State}
     (h : Keeps [.rbx] s t) : JointLoopKeep M base W s t :=
-  ⟨(⟨h.1,h.2.2.1,h.2.2.2⟩ : KeepRegs [.rbx] s t).mono (by simp),fun x _ => congrFun h.2.1 x⟩
+  ⟨(⟨h.1,h.2.2.1,h.2.2.2⟩ : KeepRegs [.rbx] s t).mono (by regions_sub),fun x _ => congrFun h.2.1 x⟩
 
 section
 variable {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}

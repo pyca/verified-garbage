@@ -211,7 +211,7 @@ theorem addShrSt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hq, ↓reduceIte]
   refine WP.mono h fun s₁ ⟨e₁, k₁⟩ => ?_
   refine WP.mono (storeReg_ok (hs.of_keeps k₁ (by decide)) .rax he) fun s₂ ⟨m₂, _, _, k₂⟩ =>
-    ⟨by rw [m₂, e₁, k₁.2.1], (Keeps.regs k₁).trans (k₂.mono (by simp))⟩
+    ⟨by rw [m₂, e₁, k₁.2.1], (Keeps.regs k₁).trans (k₂.mono (by regions_sub))⟩
 
 /-- A chunk's update of the low words at `[t]`, `[t + 8]`. -/
 theorem plow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n t : Nat} (hn : 1 ≤ n ∧ n ≤ 63)
@@ -295,9 +295,9 @@ theorem plow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [mu, word_writeW_self, a₉, w8_16]
   · rw [mu, ap _ _ _ _ (by omega) (by omega) (by omega), k₉.2.1, w8_8]
-  · exact ((((((((((Keeps.regs k₁).trans (k₂.mono (by simp))).trans (Keeps.regs k₃)).trans
-      (k₄.mono (by simp))).trans (Keeps.regs k₅)).trans (k₆.mono (by simp))).trans (Keeps.regs k₇)).trans
-      (k₈.mono (by simp))).trans ((Keeps.regs k₉).mono (by simp))).trans (ku.mono (by simp)))
+  · exact ((((((((((Keeps.regs k₁).trans (k₂.mono (by regions_sub))).trans (Keeps.regs k₃)).trans
+      (k₄.mono (by regions_sub))).trans (Keeps.regs k₅)).trans (k₆.mono (by regions_sub))).trans (Keeps.regs k₇)).trans
+      (k₈.mono (by regions_sub))).trans ((Keeps.regs k₉).mono (by regions_sub))).trans (ku.mono (by regions_sub)))
   · rw [mu, k₉.2.1, m₈, k₇.2.1, m₆, k₅.2.1, m₄, k₃.2.1, m₂, k₁.2.1]
     exact (((((ou _ (t + 16) _ (by omega) (by omega)).trans (ou _ (t + 16) _ (by omega) (by omega))).trans
       (ou _ t _ (by omega) (by omega))).trans (ou _ (t + 8) _ (by omega) (by omega))).trans
@@ -386,7 +386,7 @@ theorem pcomp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h | h <;> subst h <;> decide)
   have g' : ∀ r ∈ [Reg.r9, .r11], s₂.gpr r = s₁.gpr r := fun r hr => k₂.gpr r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> subst h <;> decide)
-  refine ⟨?_, ?_, ?_, ?_, (k₁.mono (by simp)).trans (k₂.mono (by simp)), o₁.trans o₂⟩
+  refine ⟨?_, ?_, ?_, ?_, (k₁.mono (by regions_sub)).trans (k₂.mono (by regions_sub)), o₁.trans o₂⟩
   · rw [g' .r9 (by simp), x₁]
   · rw [g' .r11 (by simp), y₁]
   · rw [x₂, g .r8 (by simp), g .r10 (by simp), g .rcx (by simp), g .r12 (by simp)]
