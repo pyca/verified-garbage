@@ -250,6 +250,11 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.decaps fun _ _ =
       (DD K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oMsg) 32 = MM K s₁) ∧ (DD K s₂ b ∧ bytesAt b.mem ((lay s₂ K).A 0 oMsg) 32 = MM K s₂))
     (relct_wp (RelCT.pointwise fun x y hxy => decrypt_ct two hxy.1 hxy.2) fun a b hab =>
       ⟨decrypt_ok hp₁ hab.1, decrypt_ok hp₂ hab.2⟩) ?_
+  -- The frames' disjointness from the outputs, for both runs.
+  have sG : sepAll (dSz K) (0, oMsg, 32) (kRegs ++ [(0, oG, 64)]) = true := by ddecide
+  have sJm : sepAll (dSz K) (0, oMsg, 32) (kRegs ++ [(0, oKbar, 32)]) = true := by ddecide
+  have sJg : sepAll (dSz K) (0, oG, 32) (kRegs ++ [(0, oKbar, 32)]) = true := by ddecide
+  have sJs : sepAll (dSz K) (0, oSigma, 32) (kRegs ++ [(0, oKbar, 32)]) = true := by ddecide
   -- `G(m' ‖ h)`
   refine RelCT.seq (R := fun (a b : State) =>
       (DD K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oMsg) 32 = MM K s₁ ∧ bytesAt a.mem ((lay s₁ K).A 0 oG) 32 = K1 K s₁ ∧
@@ -269,9 +274,9 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.decaps fun _ _ =
           exact pieceD hp h (.inr rfl) (fun _ => rfl) (by ddecide) (by ddecide) (by ddecide) (by ddecide) (by ddecide)))
       fun a b hab =>
         ⟨WP.mono (hashG_ok hp₁ hab.1.1 hab.1.2) fun _ ⟨d, f, k, r⟩ =>
-          ⟨d, (Lay.bytes_keep hL₁ f (by ddecide) (by decide)).trans hab.1.2, k, r⟩,
+          ⟨d, (Lay.bytes_keep hL₁ f sG (by decide)).trans hab.1.2, k, r⟩,
          WP.mono (hashG_ok hp₂ hab.2.1 hab.2.2) fun _ ⟨d, f, k, r⟩ =>
-          ⟨d, (Lay.bytes_keep hL₂ f (by ddecide) (by decide)).trans hab.2.2, k, r⟩⟩) ?_
+          ⟨d, (Lay.bytes_keep hL₂ f sG (by decide)).trans hab.2.2, k, r⟩⟩) ?_
   -- `J(z ‖ c)`
   refine RelCT.seq (R := fun (a b : State) =>
       (DD K s₁ a ∧ bytesAt a.mem ((lay s₁ K).A 0 oMsg) 32 = MM K s₁ ∧ bytesAt a.mem ((lay s₁ K).A 0 oG) 32 = K1 K s₁ ∧
@@ -292,13 +297,13 @@ theorem all_ct : RelCT isa (fun a b => a = s₁ ∧ b = s₂) K.decaps fun _ _ =
               (by ddecide)))
         fun a b hab =>
           ⟨WP.mono (hashJ_ok hp₁ hab.1.1) fun _ ⟨d, f, kb⟩ =>
-            ⟨d, (Lay.bytes_keep hL₁ f (by ddecide) (by decide)).trans hab.1.2.1,
-              (Lay.bytes_keep hL₁ f (by ddecide) (by decide)).trans hab.1.2.2.1,
-              (Lay.bytes_keep hL₁ f (by ddecide) (by decide)).trans hab.1.2.2.2, kb⟩,
+            ⟨d, (Lay.bytes_keep hL₁ f sJm (by decide)).trans hab.1.2.1,
+              (Lay.bytes_keep hL₁ f sJg (by decide)).trans hab.1.2.2.1,
+              (Lay.bytes_keep hL₁ f sJs (by decide)).trans hab.1.2.2.2, kb⟩,
            WP.mono (hashJ_ok hp₂ hab.2.1) fun _ ⟨d, f, kb⟩ =>
-            ⟨d, (Lay.bytes_keep hL₂ f (by ddecide) (by decide)).trans hab.2.2.1,
-              (Lay.bytes_keep hL₂ f (by ddecide) (by decide)).trans hab.2.2.2.1,
-              (Lay.bytes_keep hL₂ f (by ddecide) (by decide)).trans hab.2.2.2.2, kb⟩⟩) ?_
+            ⟨d, (Lay.bytes_keep hL₂ f sJm (by decide)).trans hab.2.2.1,
+              (Lay.bytes_keep hL₂ f sJg (by decide)).trans hab.2.2.2.1,
+              (Lay.bytes_keep hL₂ f sJs (by decide)).trans hab.2.2.2.2, kb⟩⟩) ?_
   refine RelCT.seq (R := fun (a b : State) => DP K s₁ a ∧ DP K s₂ b)
       (relct_wp (relct_noMem rfl) fun a b ⟨⟨d, m, k, r, kb⟩, ⟨d', m', k', r', kb'⟩⟩ =>
         ⟨ptrs_dp hp₁ d m k r kb, ptrs_dp hp₂ d' m' k' r' kb'⟩) ?_
