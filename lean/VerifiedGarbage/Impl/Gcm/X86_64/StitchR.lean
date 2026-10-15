@@ -71,19 +71,44 @@ def ksSel : Prog isa :=
   .seq (.block [.alu .cmp .r10 (.imm 129)])
     (.ite .b (.seq (.block keyEnd) (ks 8)) (.seq (.block keyEnd) (.seq (ks 8) (ks 12))))
 
+/-- Blocks `r10 / 16` and the next, as `StitchZH.remBodyD .rdx` does one, in
+the two lanes: read at `rdx + r10`, their keystream added from
+`r11 + r10 + 768` and stored back, and the blocks as read, byte-reversed and
+with the lanes of `ymm2` added, multiplied by the powers at `rax + r10` and
+added to the products in each lane of `ymm8`–`ymm10`; `ymm2` cleared. -/
+def remPairD : List Instr :=
+  ([.vmovdquLoad .l256 .xmm13 (StitchZTo.atIx .rdx .r10 0), .vmovdquLoad .l256 .xmm12 (StitchZTo.atIx .r11 .r10 768),
+    .vop (.vbin .vpxor .l256 .xmm12 .xmm12 .xmm13), .vmovdquStore .l256 (StitchZTo.atIx .rdx .r10 0) .xmm12,
+    .vmovdquLoad .l256 .xmm12 (StitchZTo.atIx .rax .r10 0),
+    .vop (.vbin .vpshufb .l256 .xmm13 .xmm13 .xmm0), .vop (.vbin .vpxor .l256 .xmm13 .xmm13 .xmm2),
+    .vop (.vbin .vpxor .l256 .xmm2 .xmm2 .xmm2)] : List Instr) ++ Vpclmul.acc .xmm13 .xmm12
+
+/-- The next pair, and whether it is the last. -/
+def remNextPair : List Instr := [.alu .add .r10 (.imm 32), .alu .sub .r9 (.imm 2), .alu .cmp .r9 (.imm 16)]
+
+/-- The upper lanes of the products added into the lower lanes. -/
+def foldLanes : List Instr :=
+  [.vop (.vextracti128 .xmm11 .xmm8 1), .vop (.vbin .vpxor .l128 .xmm8 .xmm8 .xmm11),
+   .vop (.vextracti128 .xmm11 .xmm9 1), .vop (.vbin .vpxor .l128 .xmm9 .xmm9 .xmm11),
+   .vop (.vextracti128 .xmm11 .xmm10 1), .vop (.vbin .vpxor .l128 .xmm10 .xmm10 .xmm11)]
+
 /-- The `r9 - 16` blocks at `rdx` after the last group, which the loop has
 already hashed and decrypted: the counter after them stored and `rax` at
 their powers (`StitchZH.remSetup`), their keystream (`ksSel`), then each
 block hashed as read and decrypted in place with its keystream, read at
-`r11 + r10 + 768` with `r11` lowered by 512 (`StitchZH.remBodyD`), the
-products added in the lower lanes of `xmm8`–`xmm10`, reduced into `Y`, and
+`r11 + r10 + 768` with `r11` lowered by 512: the first alone if `r` is odd
+(`StitchZH.remBodyD`, in the lower lanes), then two at a time (`remPairD`).
+The products of the two lanes are added (`foldLanes`), reduced into `Y`, and
 `Y` stored. -/
 def remD : Prog isa :=
   .seq (.block StitchZH.remSetup)
     (.seq ksSel
-      (.seq (.block (([.alu .sub .r11 (.imm 512), .mov32 .r10 (.imm 0)] : List Instr) ++ StitchAvx.zero))
-        (.seq (.loop (.block (StitchZH.remBodyD .rdx ++ StitchZH.remNext)) .ne)
-          (.block (StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr) ++ storeY)))))
+      (.seq (.block (([.alu .sub .r11 (.imm 512), .mov32 .r10 (.imm 0)] : List Instr) ++ StitchAvx.zero ++
+          ([.alu .test .r9 (.imm 1)] : List Instr)))
+        (.seq (.ite .e (.block [.alu .cmp .r9 (.imm 16)]) (.block (StitchZH.remBodyD .rdx ++ StitchZH.remNext)))
+          (.seq (.ite .e (.block []) (.loop (.block (remPairD ++ remNextPair)) .ne))
+            (.block (foldLanes ++ StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr) ++
+              storeY))))))
 
 /-- `dec`, for any number of blocks from 16 on: the blocks after the last
 group, if any, by `remD`. -/
