@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Gcm.X86_64.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Lit
 public import Mathlib.Algebra.Polynomial.Expand
 meta import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.Algebra.Polynomial.Inductions
@@ -1772,7 +1774,7 @@ theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashX86_64.pre s) :
     ∃ t s', Exec isa Impl.Gcm.X86_64.ghash s t s' ∧ abiPreserved s s' ∧
       Proof.Gcm.ghashX86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashX86_64.pre Proof.Gcm.ghashX86_64.pub
     Impl.Gcm.X86_64.ghash := by
