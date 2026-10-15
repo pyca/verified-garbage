@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
@@ -31,7 +33,7 @@ namespace VG.Proof.Camellia.Arm
 open VG VG.Arm VG.Impl.Camellia.Arm VG.Impl.Modes.Arm VG.Proof.Modes.Arm
 
 theorem ctrTaint : SeqTaint (ecbCore .encrypt) VG.Impl.Modes.Arm.ctr :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem ctr_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Modes.Arm.ctr).Implies
     (Proof.Camellia.ctrScratchContract Arm.abi 9 2816) where

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
 public import VerifiedGarbage.Proof.Camellia.CbcScratch
@@ -54,10 +56,10 @@ def cbcSat : State where
   wr := [⟨0x3000, 0⟩, ⟨0, 72⟩]
 
 theorem encTaint : SeqTaint (ecbCore .encrypt) cbcEnc :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem decTaint : SeqTaint (ecbCore .decrypt) cbcDec :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem enc_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cbcEnc).Implies
     (Proof.Camellia.cbcEncScratchContract Arm.abi 9 2816) where

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
 public import VerifiedGarbage.Proof.Camellia.FbScratch
@@ -59,7 +61,7 @@ def fbFrameSat (len : Nat) : State :=
   { fbSat len with rd := [⟨0x1000, 272⟩, ⟨0x8000, 4⟩], wr := [⟨0x2000, 16⟩, ⟨0x3000, len⟩] }
 
 theorem ofbTaint : SeqTaint (ecbCore .encrypt) VG.Impl.Modes.Arm.ofb :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem ofb_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Modes.Arm.ofb).Implies
     (Proof.Camellia.ofbScratchContract Arm.abi 9 2816) where
@@ -104,7 +106,7 @@ theorem ofb_framed :
     (Proof.Camellia.ofbPre_local _) (Proof.Camellia.ofbPost_local _) (Proof.Camellia.ofbPostOut_local _) ofbFrameSat
 
 theorem cfbEncryptTaint : SeqTaint (ecbCore .encrypt) cfbEnc :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem cfbEncrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbEnc).Implies
     (Proof.Camellia.cfbEncScratchContract Arm.abi 9 2816) where
@@ -149,7 +151,7 @@ theorem cfbEncrypt_framed :
     (Proof.Camellia.cfbPre_local _) (Proof.Camellia.cfbEncryptPost_local _) (Proof.Camellia.cfbEncryptPostOut_local _) cfbEncryptFrameSat
 
 theorem cfbDecryptTaint : SeqTaint (ecbCore .encrypt) cfbDec :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem cfbDecrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDec).Implies
     (Proof.Camellia.cfbDecScratchContract Arm.abi 9 2816) where

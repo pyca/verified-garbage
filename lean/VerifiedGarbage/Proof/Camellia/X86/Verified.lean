@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.X86.Ecb
 meta import VerifiedGarbage.Proof.Camellia.X86.Ecb
 public import VerifiedGarbage.Proof.Camellia.X86.Lit
@@ -116,8 +118,8 @@ taint_summary pairSum : VG.X86.taint pairTaint (.block pairBody)
 
 theorem ecb_taint (dir : Dir) : ∃ h, (VG.X86.taint.check ecbTaint (ecb dir) h).isSome = true := by
   cases dir
-  · taint_decide_sum [pairSum]
-  · taint_decide_sum [pairSum]
+  · native_taint_decide_sum [pairSum]
+  · native_taint_decide_sum [pairSum]
 
 theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbX86 dir).pre (ecbX86 dir).pub (ecb dir) :=
   let ⟨_, h⟩ := ecb_taint dir
