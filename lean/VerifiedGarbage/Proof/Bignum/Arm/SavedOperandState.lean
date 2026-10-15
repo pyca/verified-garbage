@@ -26,6 +26,22 @@ structure SavedOperand (base src : BitVec 32) (len k pointerSlot countSlot : Nat
   source : PublicBytes src k bs s
   sourceSeparate : Region.Disjoint ⟨State.addr src, k⟩ ⟨State.addr base, 8 * len⟩
 
+theorem SavedOperand.after_frame {s t : State} {base src : BitVec 32}
+    {len k ps cs : Nat} {bs : List Byte} {rs : List Reg} {regions : List Region} (h : SavedOperand base src len k ps cs bs s)
+    (frame : Frame regions s.mem t.mem) (rest : Rest rs s t)
+    (stackSep : ∀ r ∈ regions, (⟨State.addr s.sp, 112⟩ : Region).Disjoint r)
+    (sourceSep : ∀ r ∈ regions, (⟨State.addr src, k⟩ : Region).Disjoint r) :
+    SavedOperand base src len k ps cs bs t := by
+  have eq : WorkspaceEq (State.addr s.sp) 112 s.mem t.mem := WorkspaceEq.of_frame (by decide) frame
+    stackSep
+  refine ⟨by rw [rest.sp]; exact h.nowrap,
+    by rw [rest.rd, rest.wr, rest.sp]; exact h.readable,
+    by rw [rest.sp]; exact h.stackSeparate, h.pointerFit, h.countFit, ?_, ?_,
+    h.source.after_frame frame rest
+      sourceSep, h.sourceSeparate⟩
+  · rw [rest.sp, eq.word (d := ps) (bits := 32) h.pointerFit]; exact h.pointer
+  · rw [rest.sp, eq.word (d := cs) (bits := 32) h.countFit]; exact h.count
+
 theorem SavedOperand.after_workspace {s t : State} {base src : BitVec 32}
     {len k ps cs : Nat} {bs : List Byte} {rs : List Reg} (h : SavedOperand base src len k ps cs bs s)
     (frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem) (rest : Rest rs s t) :
