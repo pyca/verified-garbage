@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
 meta import VerifiedGarbage.Impl.Sm4.Arm.Ecb
 public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
