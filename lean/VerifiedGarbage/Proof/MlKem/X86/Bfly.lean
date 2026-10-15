@@ -58,23 +58,23 @@ theorem inRd {s : State} {a : Addr} (h : InRegions s.wr a 4) : InRegions (s.rd +
 theorem bfly_set (G : Poly) {j len : Nat} (hl : 0 < len) (hj : j + len < n) (z : Zq) :
     bfly G j len z = (G.set! (j + len) (G[j]! - z * G[j + len]!)).set! j (G[j]! + z * G[j + len]!) := by
   simp only [bfly]
-  rw [getElem!_set!_ne _ (by omega) (by omega)]
+  rw [getElem!_set!_ne _ (by omega_using [hj]) (by omega_using [hl])]
 
 theorem bflyInv_set (G : Poly) {j len : Nat} (hl : 0 < len) (hj : j + len < n) (z : Zq) :
     bflyInv G j len z = (G.set! j (G[j]! + G[j + len]!)).set! (j + len) (z * (G[j + len]! - G[j]!)) := by
   simp only [bflyInv]
-  rw [getElem!_set!_ne _ (by omega) (by omega)]
+  rw [getElem!_set!_ne _ (by omega_using [hj]) (by omega_using [hl])]
 
 theorem sub_val_eq (a t : Zq) : (a - t).val = (a.val + q - t.val) % q := by
-  rw [val_sub, condSub_eq (by have := a.isLt; have := t.isLt; omega)]
+  rw [val_sub, condSub_eq (by have := a.isLt; have := t.isLt; omega_using [])]
 
 theorem add_val_eq (a t : Zq) : (a + t).val = (a.val + t.val) % q := by
-  rw [val_add, condSub_eq (by have := a.isLt; have := t.isLt; omega)]
+  rw [val_add, condSub_eq (by have := a.isLt; have := t.isLt; omega_using [])]
 
 theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z : Nat}
     (h : BIn s p G j len zA z) : WP isa (.block bflyBody) s (BOut s p (bfly G j len (ofNat z))) := by
-  have hj : j < n := by have := h.hj; rw [n_eq]; omega
-  have hjl : j + len < n := by have := h.hj; rw [n_eq]; omega
+  have hj : j < n := by have := h.hj; rw [n_eq]; omega_using [this]
+  have hjl : j + len < n := by have := h.hj; rw [n_eq]; omega_using [this]
   have hl := h.hl
   have ha := polyIs_coeffAt h.poly hj
   have hb := polyIs_coeffAt h.poly hjl
@@ -85,9 +85,9 @@ theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z
   generalize ea : (G[j]!).val = a at ha la
   generalize eb : (G[j + len]!).val = b at hb lb
   have lz' : z < 3329 := q_eq ▸ h.z_lt
-  have hb' : (BitVec.ofNat 32 b).toNat = b := toNat_ofNat32 (by omega)
-  have hz' : (BitVec.ofNat 32 z).toNat = z := toNat_ofNat32 (by omega)
-  have hbz : b * z < 2 ^ 32 := by rw [q_eq] at lz; have := Nat.mul_lt_mul_of_lt_of_lt lb lz; omega
+  have hb' : (BitVec.ofNat 32 b).toNat = b := toNat_ofNat32 (by omega_using [lb])
+  have hz' : (BitVec.ofNat 32 z).toNat = z := toNat_ofNat32 (by omega_using [lz'])
+  have hbz : b * z < 2 ^ 32 := by rw [q_eq] at lz; have := Nat.mul_lt_mul_of_lt_of_lt lb lz; omega_using [this]
   rw [bflyBody, List.cons_append, List.cons_append, List.cons_append, List.cons_append, List.nil_append]
   refine wp_movm ?_ (wp_movm ?_ (wp_mul (wp_movr (red_spec (r := .ebx) (by decide) (by decide) _ _ _
     (x := b * z) ?_ ?_ fun s₂ o₂ v₂ => ?_))))
@@ -114,7 +114,7 @@ theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z
   have wr₂ : s₂.wr = s.wr := o₂.wr
   have bx₂ : s₂.gpr .ebx = BitVec.ofNat 32 (b * z % q) := eq_ofNat_of_toNat v₂
   have hrw : ∀ V : BitVec 32, (s.mem.writeW (coeffAddr p (j + len)) V).readW (coeffAddr p j) 32 =
-      s.mem.readW (coeffAddr p j) 32 := fun V => coeffAt_writeW_ne _ _ hj hjl (by omega) V
+      s.mem.readW (coeffAddr p j) 32 := fun V => coeffAt_writeW_ne _ _ hj hjl (by omega_using [hl]) V
   have inI := h.in_i
   have inD := h.in_d
   have inI' := inRd h.in_i
@@ -130,14 +130,14 @@ theorem bfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z
   rw [q_eq] at lt
   have e1 : (BitVec.ofNat 32 a + Q - BitVec.ofNat 32 (b * z % q)).toNat = a + q - b * z % q := by
     have hQ : (BitVec.ofNat 32 a + Q).toNat = a + 3329 := by
-      rw [BitVec.toNat_add, toNat_ofNat32 (by omega), show Q.toNat = 3329 from rfl, Nat.mod_eq_of_lt (by omega)]
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hQ, toNat_ofNat32 (by rw [q_eq]; omega)]; rw [q_eq]; omega),
-      hQ, toNat_ofNat32 (by rw [q_eq]; omega), q_eq]
+      rw [BitVec.toNat_add, toNat_ofNat32 (by omega_using [la]), show Q.toNat = 3329 from rfl, Nat.mod_eq_of_lt (by omega_using [la])]
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hQ, toNat_ofNat32 (by rw [q_eq]; omega_using [])]; rw [q_eq]; omega_using []),
+      hQ, toNat_ofNat32 (by rw [q_eq]; omega_using []), q_eq]
   have e2 : (BitVec.ofNat 32 a + BitVec.ofNat 32 (b * z % q)).toNat = a + b * z % q := by
-    rw [BitVec.toNat_add, toNat_ofNat32 (by omega), toNat_ofNat32 (by rw [q_eq]; omega),
-      Nat.mod_eq_of_lt (by rw [q_eq]; omega)]
-  rw [csub_eq (BitVec.ofNat 32 a + Q - BitVec.ofNat 32 (b * z % q)) _ (by rw [e1, q_eq]; omega),
-    csub_eq (BitVec.ofNat 32 a + BitVec.ofNat 32 (b * z % q)) _ (by rw [e2, q_eq]; omega), e1, e2]
+    rw [BitVec.toNat_add, toNat_ofNat32 (by omega_using [la]), toNat_ofNat32 (by rw [q_eq]; omega_using []),
+      Nat.mod_eq_of_lt (by rw [q_eq]; omega_using [la])]
+  rw [csub_eq (BitVec.ofNat 32 a + Q - BitVec.ofNat 32 (b * z % q)) _ (by rw [e1, q_eq]; omega_using [la]),
+    csub_eq (BitVec.ofNat 32 a + BitVec.ofNat 32 (b * z % q)) _ (by rw [e2, q_eq]; omega_using [la]), e1, e2]
   have ht : (ofNat z * G[j + len]!).val = b * z % q := by
     rw [val_mul, ofNat_of_lt h.z_lt, eb, Nat.mul_comm]
   have hv1 : BitVec.ofNat 32 ((a + q - b * z % q) % q) = BitVec.ofNat 32 ((G[j]! - ofNat z * G[j + len]!).val) := by
@@ -165,8 +165,8 @@ theorem ibflyBody_eq : ibflyBody =
 
 theorem ibfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {z : Nat}
     (h : BIn s p G j len zA z) : WP isa (.block ibflyBody) s (BOut s p (bflyInv G j len (ofNat z))) := by
-  have hj : j < n := by have := h.hj; rw [n_eq]; omega
-  have hjl : j + len < n := by have := h.hj; rw [n_eq]; omega
+  have hj : j < n := by have := h.hj; rw [n_eq]; omega_using [this]
+  have hjl : j + len < n := by have := h.hj; rw [n_eq]; omega_using [this]
   have hl := h.hl
   have ha := polyIs_coeffAt h.poly hj
   have hb := polyIs_coeffAt h.poly hjl
@@ -176,14 +176,14 @@ theorem ibfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {
   generalize ea : (G[j]!).val = a at ha la
   generalize eb : (G[j + len]!).val = b at hb lb
   have lz' : z < 3329 := q_eq ▸ h.z_lt
-  have ha' : (BitVec.ofNat 32 a).toNat = a := toNat_ofNat32 (by omega)
-  have hb' : (BitVec.ofNat 32 b).toNat = b := toNat_ofNat32 (by omega)
-  have hz' : (BitVec.ofNat 32 z).toNat = z := toNat_ofNat32 (by omega)
+  have ha' : (BitVec.ofNat 32 a).toNat = a := toNat_ofNat32 (by omega_using [la])
+  have hb' : (BitVec.ofNat 32 b).toNat = b := toNat_ofNat32 (by omega_using [lb])
+  have hz' : (BitVec.ofNat 32 z).toNat = z := toNat_ofNat32 (by omega_using [lz'])
   have hbz : (b + 3329 - a) * z < 2 ^ 32 := by
-    have := Nat.mul_lt_mul_of_lt_of_lt (show b + 3329 - a < 6658 by omega) lz'
-    omega
+    have := Nat.mul_lt_mul_of_lt_of_lt (show b + 3329 - a < 6658 by omega_using [lb]) lz'
+    omega_using [this]
   have hrw : ∀ V : BitVec 32, (s.mem.writeW (coeffAddr p j) V).readW (coeffAddr p (j + len)) 32 =
-      s.mem.readW (coeffAddr p (j + len)) 32 := fun V => coeffAt_writeW_ne _ _ hjl hj (by omega) V
+      s.mem.readW (coeffAddr p (j + len)) 32 := fun V => coeffAt_writeW_ne _ _ hjl hj (by omega_using [hl]) V
   have hrz : ∀ V : BitVec 32, (s.mem.writeW (coeffAddr p j) V).readW zA 32 = s.mem.readW zA 32 :=
     fun V => Mem.readW_writeW_sep h.z_sep (by decide)
   have inI := h.in_i
@@ -204,10 +204,10 @@ theorem ibfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {
     exists_eq_left']
   have hsub : (BitVec.ofNat 32 b + Q - BitVec.ofNat 32 a).toNat = b + 3329 - a := by
     have hQ : (BitVec.ofNat 32 b + Q).toNat = b + 3329 := by
-      rw [BitVec.toNat_add, hb', show Q.toNat = 3329 from rfl, Nat.mod_eq_of_lt (by omega)]
-    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hQ, ha']; omega), hQ, ha']
+      rw [BitVec.toNat_add, hb', show Q.toNat = 3329 from rfl, Nat.mod_eq_of_lt (by omega_using [lb])]
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, hQ, ha']; omega_using [la]), hQ, ha']
   have hsum : (BitVec.ofNat 32 a + BitVec.ofNat 32 b).toNat = a + b := by
-    rw [BitVec.toNat_add, ha', hb', Nat.mod_eq_of_lt (by omega)]
+    rw [BitVec.toNat_add, ha', hb', Nat.mod_eq_of_lt (by omega_using [la, lb])]
   refine red_spec (r := .ebx) (by decide) (by decide) _ _ _ (x := (b + 3329 - a) * z) ?_ ?_
     fun s₂ o₂ v₂ => ?_
   · simp only [ite_true, ite_false, reduceCtorEq]
@@ -215,7 +215,7 @@ theorem ibfly_spec {s : State} {p : Addr} {G : Poly} {j len : Nat} {zA : Addr} {
   · simp only [ite_true, ite_false, reduceCtorEq]
     rw [hsub, hz', toNat_ofNat32 hbz]
   have m₂ := o₂.mem
-  rw [csub_eq _ _ (by rw [hsum, q_eq]; omega), hsum] at m₂
+  rw [csub_eq _ _ (by rw [hsum, q_eq]; omega_using [la, lb]), hsum] at m₂
   have g₂ : ∀ r, r ≠ .eax → r ≠ .edx → r ≠ .ebx → s₂.gpr r = s.gpr r := fun r h1 h2 h3 => by
     rw [o₂.gpr r (by simp [h1, h2, h3])]
     simp only [h1, h2, h3, ite_false]

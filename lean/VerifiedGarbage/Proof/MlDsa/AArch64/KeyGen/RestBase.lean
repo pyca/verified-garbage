@@ -148,21 +148,21 @@ theorem KRChk.x28 {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.
   refine ⟨kc, fun e he => bx ?_ ?_, fun i hi' => bx ?_ ?_, fun j hj => bx ?_ ?_, b26 ?_, b27 ?_, b27 ?_,
     fun r hr' => b27 ?_, fun i hi' => ⟨b26 ?_, b27 ?_⟩⟩
   all_goals try simp only [oP, oT0]
-  · rw [hs]; omega_arith
-  · omega_arith
-  · rw [hs]; omega_arith
-  · omega_arith
-  · rw [hs]; omega_arith
-  · omega_arith
-  · omega_arith
-  · omega_arith
-  · omega_arith
-  · rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> simp only [hlen] at hsk ⊢ <;> omega_arith
-  · omega_arith
-  · omega_arith
+  · rw [hs]; omega_using [he]
+  · omega_using [h2, he]
+  · rw [hs]; omega_using [hi']
+  · omega_using [h2, hi']
+  · rw [hs]; omega_using [hj]
+  · omega_using [h2, hj]
+  · omega_using [hpk]
+  · omega_using [hsk]
+  · omega_using [hsk]
+  · rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> simp only [hlen] at hsk ⊢ <;> omega_using [hnp, hr', hsk]
+  · omega_using [hnr, hpk, hi']
+  · omega_using [hnr, hsk, hi']
 
 /-- A write to `pk` after the rows so far. -/
-theorem KRChk.x26 {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.ℓ + p.k) (hnr : nr ≤ p.k) {o n : Nat}
+theorem KRChk.x26 {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.ℓ + p.k) (_hnr : nr ≤ p.k) {o n : Nat}
     (h1 : 32 + 320 * nr ≤ o) (h2 : o + n ≤ p.pkLen) : KRChk p np nj nr [((.x26, o), n)] := by
   have hk := hF.k; have hl := hF.l
   have hi := inB_of_x26 h2
@@ -180,17 +180,17 @@ theorem KRChk.x26 {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.
   refine ⟨kcChk_one hF (.inl rfl) hi, fun e he => bx ?_, fun i hi' => bx ?_, fun j hj => bx ?_, b26 ?_ ?_,
     b27 ?_, b27 ?_, fun r hr' => b27 ?_, fun i hi' => ⟨b26 ?_ ?_, b27 ?_⟩⟩
   all_goals try simp only [oP, oT0]
-  · rw [hs]; omega_arith
-  · rw [hs]; omega_arith
-  · rw [hs]; omega_arith
-  · omega_arith
-  · omega_arith
-  · omega_arith
-  · omega_arith
-  · rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> simp only [hlen] at hsk ⊢ <;> omega_arith
-  · omega_arith
-  · omega_arith
-  · omega_arith
+  · rw [hs]; omega_using [he]
+  · rw [hs]; omega_using [hi']
+  · rw [hs]; omega_using [hj]
+  · omega_using [hpk]
+  · omega_using [h1]
+  · omega_using [hsk]
+  · omega_using [hsk]
+  · rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> simp only [hlen] at hsk ⊢ <;> omega_using [hnp, hr', hsk]
+  · omega_using [h1, h2, hi']
+  · omega_using [h1, hi']
+  · omega_using [h1, h2, hsk, hpk, hi']
 
 /-- A write to `sk` after `ρ` and `K`, outside the entries packed and the rows so far. -/
 theorem KRChk.x27 {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.ℓ + p.k) (hnr : nr ≤ p.k) {o n : Nat}
@@ -211,19 +211,19 @@ theorem KRChk.x27 {p : Params} (hF : PFacts p) {np nj nr : Nat} (hnp : np ≤ p.
   refine ⟨kcChk_one hF (.inr rfl) hi, fun e he => bx ?_, fun i hi' => bx ?_, fun j hj => bx ?_, b26 ?_,
     b27 ?_ ?_, b27 ?_ ?_, fun r hr' => b27 ?_ ?_, fun i hi' => ⟨b26 ?_, b27 ?_ ?_⟩⟩
   all_goals try simp only [oP]
-  · rw [hs]; omega_arith
-  · rw [hs]; omega_arith
-  · rw [hs]; omega_arith
-  · omega_arith
-  · omega_arith
-  · omega_arith
-  · omega_arith
-  · omega_arith
-  · rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> simp only [oT0, hlen] at hsk ⊢ <;> omega_arith
-  · rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> simp only [hlen] at hp ⊢ <;> omega_arith
-  · omega_arith
-  · simp only [oT0] at hsk hr ⊢; omega_arith
-  · simp only [oT0] at hr ⊢; omega_arith
+  · rw [hs]; omega_using [he]
+  · rw [hs]; omega_using [hi']
+  · rw [hs]; omega_using [hj]
+  · omega_using [hpk]
+  · omega_using [hk, hsk]
+  · omega_using [h0]
+  · omega_using [hk, hsk]
+  · omega_using [h0]
+  · rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> simp only [oT0, hlen] at hsk ⊢ <;> omega_using [hnp, hr', hsk]
+  · rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> simp only [hlen] at hp ⊢ <;> omega_using [hr', hp]
+  · omega_using [hnr, hpk, hi']
+  · simp only [oT0] at hsk hr ⊢; omega_using [hnr, hsk, hi']
+  · simp only [oT0] at hr ⊢; omega_using [hr, hi']
 
 theorem KR.keep {p : Params} (hF : PFacts p) {S' : Nat} {σ : State} (hp : kgPre p S' σ) {A : Nat → Poly}
     {S : Nat → IPoly} {R : BitVec 64} {np nj nr : Nat} {s s' : State} (h : KR p σ A S R np nj nr s)
