@@ -311,15 +311,7 @@ theorem q5_q6 (p : CdP) (t : State) (h : Q5 p t) :
   rw [hl, hQ] at *
   refine ⟨⟨mq, hb', hc, hv, hWs, fun e he => ?_, hP.2.2.2.2.2.1, hq, hr, ?_⟩, k⟩
   · rcases List.mem_append.mp he with he | he
-    · exact slots_frm hb.hs hP.2.2.2.2.1 f (fun r hr' i hi => by
-        have := kept_lt i hi
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-        simp only [keptSlots, argSlots, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-          or_false] at hi
-        rcases hr' with rfl | rfl <;>
-          rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-            simp only [sWs, sG, sQ, sDom, sDomLen, sK, sY, sX, sXl, VG.Impl.Ffdh.AArch64.Domain.sOut, sRand, sXe,
-              sMsk, sFn] <;> omega_arith) e he
+    · exact slots_frm hb.hs hP.2.2.2.2.1 f (kept_wsR p.D.w) e he
     · simp only [CdP.ep, List.mem_cons, List.not_mem_nil, or_false] at he
       rcases he with rfl | rfl
       · rw [f.word_eq (fun r hr' => by

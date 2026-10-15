@@ -145,6 +145,31 @@ theorem hdr_kept (D : FD) (hs : ∀ q ∈ D.hs, q.1 ∈ argSlots) : ∀ q ∈ D.
 
 theorem kept_lt : ∀ i ∈ keptSlots, i < 32 := by decide
 
+/-- A workspace's ranges (`wsMod`) miss the slots the pieces keep. -/
+theorem kept_wsR (w : Nat) :
+    ∀ r ∈ [(8 * sWs, 8), (inner w, slot w 8)], ∀ i ∈ keptSlots, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · decide
+  · intro i hi
+    have := kept_lt i hi
+    have : 256 ≤ inner w := by simp only [inner, slot, hdrBytes]; omega
+    exact Or.inl (by simp only; omega)
+
+/-- The setup's ranges miss the slots the pieces keep. -/
+theorem kept_setupR (w : Nat) : ∀ r ∈ setupR w, ∀ i ∈ keptSlots, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := by
+  intro r hr
+  simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · decide
+  · decide
+  · decide
+  · intro i hi
+    have := kept_lt i hi
+    have : 256 ≤ inner w := by simp only [inner, slot, hdrBytes]; omega
+    exact Or.inl (by simp only; omega)
+
 theorem hdr_in (D : FD) (hs : ∀ q ∈ D.hs, q.1 ∈ argSlots) : ∀ q ∈ D.hdr, q.1 ∈ [sDom, sDomLen, sK] ++ argSlots := by
   intro q hq
   simp only [FD.hdr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -251,15 +276,7 @@ theorem ce_in (D : FD) (t : State) (h : CE D t) (he : isa.eval (.zero .x .x9) t 
   refine ⟨⟨mi, hb.keep (InScr.of_frm f fun r hr => by
       simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp only [sW, sArr, sWs, sFn] <;> omega_arith) k,
-      hc, hX, hWs, slots_frm hb.hs hs f fun r hr i hi => ?_, hv⟩, k⟩
-  have hi32 := kept_lt i hi
-  simp only [keptSlots, argSlots, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-    or_false] at hi
-  simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;>
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [sW, sArr, sWs, sG, sQ, sDom, sDomLen, sK, sY, sX, sXl, VG.Impl.Ffdh.AArch64.Domain.sOut, sRand,
-        sXe, sMsk, sFn] <;> omega_arith
+      hc, hX, hWs, slots_frm hb.hs hs f (kept_setupR D.w), hv⟩, k⟩
 
 theorem In.step {D : FD} {mi : BitVec 64} {t u : State} (h : In D mi t) {rs : List (Nat × Nat)}
     (hf : Frm (off D.B (inner D.w)) rs t.mem u.mem) (hr : ∀ r ∈ rs, StepR D.w r) (hrd : u.rd = t.rd)
