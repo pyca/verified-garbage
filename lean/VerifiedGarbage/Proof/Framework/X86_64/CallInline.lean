@@ -167,14 +167,13 @@ theorem loadMasked512_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) :
     (s.patch H hv u).loadMasked512 a k = s.loadMasked512 a k := by
   simp only [State.loadMasked512, State.patch]
   by_cases hi : ∀ j ∈ State.qOn k, InRegions (s.rd ++ s.wr) (State.qAddr a j) 8
-  · have hq : ∀ j, j < 8 →
+  · -- Not `cases` on the bit and `rfl`: on a clear bit, `rfl` first tries to
+    -- unify the two reads, unfolding them.
+    have hq : ∀ j, j < 8 →
         (if k.getLsbD j then (overlay H hv s.mem).readW (State.qAddr a j) 64 else 0) =
-          (if k.getLsbD j then s.mem.readW (State.qAddr a j) 64 else 0) := fun j hj => by
-      cases hk : k.getLsbD j
-      · rfl
-      · simp only [↓reduceIte]
-        exact overlay_readW (by decide) fun x hx =>
-          hc.miss (fun _ h => h) (hi j (List.mem_filter.mpr ⟨List.mem_range.mpr hj, hk⟩)) hx
+          (if k.getLsbD j then s.mem.readW (State.qAddr a j) 64 else 0) := fun j hj =>
+      ite_congr rfl (fun hk => overlay_readW (by decide) fun _ hx =>
+        hc.miss (fun _ h => h) (hi j (List.mem_filter.mpr ⟨List.mem_range.mpr hj, hk⟩)) hx) fun _ => rfl
     simp only [hq 0 (by decide), hq 1 (by decide), hq 2 (by decide), hq 3 (by decide),
       hq 4 (by decide), hq 5 (by decide), hq 6 (by decide), hq 7 (by decide)]
   · simp only [hi, ↓reduceIte]
