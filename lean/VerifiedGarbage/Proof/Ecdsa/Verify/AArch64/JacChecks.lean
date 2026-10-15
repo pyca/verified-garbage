@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
@@ -64,7 +66,7 @@ open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Weierstrass.AArch64
 open VG.Impl.Weierstrass.AArch64
 
-macro "jac_field_ct" : tactic => `(tactic|
+tactic_template "jac_field_ct" : tactic => `(tactic|
   exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x0])
     (fun _ _ _ _ h => h) (by taint_decide))
 
@@ -91,7 +93,7 @@ theorem jacComb_checks : JacCombChecks p256.combCfg where
 
 theorem jacComb_finish_ct : FieldCT (Jacobian.jacCombFinish p256.combCfg) := by jac_field_ct
 
-macro "jac_reg_ct" rs:term : tactic => `(tactic|
+tactic_template "jac_reg_ct" rs:term : tactic => `(tactic|
   exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs $rs)
     (fun _ _ _ _ h => h) (by taint_decide))
 

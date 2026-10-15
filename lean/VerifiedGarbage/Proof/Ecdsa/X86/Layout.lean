@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
@@ -93,7 +95,7 @@ theorem Cfg.stk_28 {c : Cfg} (hc : c.comb = none) (h6 : c.n ≤ 6) : 28 ≤ c.st
   unfold Cfg.stk; simp only [h, and_self, ↓reduceIte, Nat.le_refl]
 
 /-- Finds `c.n < 10` among the hypotheses, or in `CfgOk c`. -/
-macro "n10" : tactic => `(tactic| first | with_reducible assumption | exact CfgOk.n10 (by with_reducible assumption))
+tactic_template "n10" : tactic => `(tactic| first | with_reducible assumption | exact CfgOk.n10 (by with_reducible assumption))
 
 section
 variable (c : Cfg) (s : State)
