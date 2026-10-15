@@ -177,7 +177,7 @@ theorem call_mid (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e
     ⟨a, hm.aO, hm.a16, Nat.le_trans hm.aE hEL, by rw [cs' _ (by simp [calleeSaved]), hm.rbx],
       by rw [cs' _ (by simp [calleeSaved]), hm.rbp], ?_⟩⟩
   · rw [cs' r (by rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved]), hm.keep r hr]
-  · refine (hm.frame.mono (by simp)).trans (f'.sub fun r hr => ?_)
+  · refine (hm.frame.mono (by regions_sub)).trans (f'.sub fun r hr => ?_)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨sub s₀ 64 512, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
@@ -552,7 +552,7 @@ theorem callIf_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
       refine WP.mono (Stitch.movR_ok .rsi .rcx) fun s₅ ⟨rsi₅, g₅, m₅, rd₅, wr₅, _, _⟩ => ?_
       have gg : ∀ r, r ≠ .rsi → s₅.gpr r = s₃.gpr r := fun r hr => by rw [g₅ r hr, g₄]
       refine ⟨by rw [rsi₅, g₄, hm.rcx], fun r hr => ?_, by rw [rd₅, rd₄, hm.rd], by rw [wr₅, wr₄, hm.wr],
-        by rw [m₅, m₄]; exact hm.frame.mono (by simp), ?_,
+        by rw [m₅, m₄]; exact hm.frame.mono (by regions_sub), ?_,
         ⟨a, hm.aO, hm.a16, Nat.le_trans hm.aE hEL, by rw [gg _ (by decide), hm.rbx],
           by rw [gg _ (by decide), hm.rbp], by rw [m₅, m₄]; exact hm.repr⟩⟩
       · rw [gg r (by rcases hr with rfl | rfl | rfl | rfl <;> decide), hm.keep r hr]
@@ -569,7 +569,7 @@ theorem callIf_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
     have gg : ∀ r, r ≠ .rsi → s₅.gpr r = s₃.gpr r := fun r hr => by rw [g₅ r hr, g₄]
     obtain ⟨a, aO, a16, aL, rbx, rbp, repr⟩ := hd.abs
     refine ⟨by rw [rsi₅, g₄, hd.rcx], fun r hr => ?_, by rw [rd₅, rd₄, hd.rd], by rw [wr₅, wr₄, hd.wr],
-      by rw [m₅, m₄]; exact hd.frame.mono (by simp), by rw [m₅, m₄]; exact hd.data,
+      by rw [m₅, m₄]; exact hd.frame.mono (by regions_sub), by rw [m₅, m₄]; exact hd.data,
       ⟨a, aO, a16, aL, by rw [gg _ (by decide), rbx], by rw [gg _ (by decide), rbp], by rw [m₅, m₄]; exact repr⟩⟩
     rw [gg r (by rcases hr with rfl | rfl | rfl | rfl <;> decide), hd.keep r hr]
 
