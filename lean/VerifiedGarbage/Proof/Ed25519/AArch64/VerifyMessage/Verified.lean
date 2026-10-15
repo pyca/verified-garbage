@@ -135,20 +135,25 @@ theorem hash_ct (backend : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (h
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (hash backend.code backend.suffix)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   have i := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb initValues
-    (by decide) (by simp [initValues,Whole.valid]) (by simp [initValues,known])
-    (by simp [initValues,preserved]) (by taint_decide)
+    (by decide) (by simp only [initValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
+    (by simp only [initValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by simp only [initValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   have r := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb (prefixValues 3 0)
-    (by decide) (by simp [prefixValues,Whole.valid]) (by simp [prefixValues,known])
-    (by simp [prefixValues,preserved]) (by taint_decide)
+    (by decide) (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
+    (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   have a := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb (prefixValues 0 32)
-    (by decide) (by simp [prefixValues,Whole.valid]) (by simp [prefixValues,known])
-    (by simp [prefixValues,preserved]) (by taint_decide)
+    (by decide) (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
+    (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   have m := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb messageValues
-    (by decide) (by simp [messageValues,Whole.valid]) (by simp [messageValues,known])
-    (by simp [messageValues,preserved]) (by taint_decide)
+    (by decide) (by simp only [messageValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
+    (by simp only [messageValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by simp only [messageValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   have f := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb finalizeValues
-    (by decide) (by simp [finalizeValues,Whole.valid]) (by simp [finalizeValues,known])
-    (by simp [finalizeValues,preserved]) (by taint_decide)
+    (by decide) (by simp only [finalizeValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
+    (by simp only [finalizeValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by simp only [finalizeValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   have rc := update_call_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (m₁ := m₁) (m₂ := m₂)
     backend hL ha hb (args := prefixValues 3 0) (prefix_ready hL (input_sig hL).1 (input_sig hL).2)
     (by simp [prefixValues])
@@ -335,8 +340,9 @@ theorem reduce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (d
       (callWith reduceArgs "vg_ed25519_scalar_reduce" Impl.Ed25519.AArch64.scalarReduce)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun t => Spec.Ed25519.bytesAt t.mem (L.E+128) 32=Spec.Ed25519.scalarReduce digest) := by
   have hs := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb reduceValues
-    (by decide) (by simp [reduceValues,Whole.valid]) (by simp [reduceValues,known])
-    (by simp [reduceValues,preserved]) (by taint_decide)
+    (by decide) (by simp only [reduceValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
+    (by simp only [reduceValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by simp only [reduceValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   refine two_wp ((hs.seq (reduce_call_ct hL ha hb)).mono
     (fun _ _ h => ⟨h.1,h.2.1,trivial,trivial,h.2.2.2.2⟩) (fun _ _ _ => trivial)) ?_ ?_
   · intro s hc hd _
