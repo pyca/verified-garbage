@@ -23,6 +23,9 @@ namespace VG.AArch64
 /-- `Elem[x, e, 8]`: byte `e` of `x`. -/
 def vbyte (x : BitVec 128) (e : Nat) : BitVec 8 := x.extractLsb' (8 * e) 8
 
+/-- `Elem[x, e, 16]`: halfword `e` of `x`. -/
+def vhalf (x : BitVec 128) (e : Nat) : BitVec 16 := x.extractLsb' (16 * e) 16
+
 /-- `Elem[x, e, 32]`: word `e` of `x`. -/
 def vword (x : BitVec 128) (e : Nat) : BitVec 32 := x.extractLsb' (32 * e) 32
 
@@ -33,6 +36,10 @@ def vdword (x : BitVec 128) (e : Nat) : BitVec 64 := x.extractLsb' (64 * e) 64
 def ofVBytes (f : Nat → BitVec 8) : BitVec 128 :=
   f 15 ++ f 14 ++ f 13 ++ f 12 ++ f 11 ++ f 10 ++ f 9 ++ f 8 ++
     f 7 ++ f 6 ++ f 5 ++ f 4 ++ f 3 ++ f 2 ++ f 1 ++ f 0
+
+/-- The vector whose halfword `e` is `f e`. -/
+def ofVHalves (f : Nat → BitVec 16) : BitVec 128 :=
+  f 7 ++ f 6 ++ f 5 ++ f 4 ++ f 3 ++ f 2 ++ f 1 ++ f 0
 
 /-- The vector whose words are `w0` (bits 31:0), `w1`, `w2`, `w3` (bits 127:96). -/
 def ofVWords (w0 w1 w2 w3 : BitVec 32) : BitVec 128 := w3 ++ w2 ++ w1 ++ w0
