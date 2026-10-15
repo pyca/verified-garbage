@@ -9,6 +9,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-!
@@ -106,7 +107,7 @@ theorem toEnt_ct {α : Type} (L : α → WsP) (e : α → Nat) {a : Nat} (ha : a
   have hf : Frm (L x).B [(slot (L x).w aT0, 128 * ((L x).w + 2))] s.mem t.mem :=
     Frm.of_outside (ho.mono (o' := slot (L x).w aT0) (n' := 128 * ((L x).w + 2)) hE.1 (by omega)) (by simp)
   exact ⟨hT.of_tab hf (by simp [tabRanges]) k (by decide), he,
-    by rw [hf.word_eq (by w_disj) (by decide)]; exact hV⟩
+    by rw [hf.word_eq (VG.Proof.RsaKeyGen.past_hdrW rfl) (by decide)]; exact hV⟩
 
 /-! ## The table's start -/
 
@@ -166,7 +167,7 @@ theorem tabMul_ok (M : Mont) {L : WsP} {i : Nat} {s : State} (hi : i < 14) (h : 
       (slot L.w aY, 8 * (L.w + 2))] s.mem t.mem := Frm.of_arrays ha (by simp)
   have hT : TB L s := ⟨h4, h128, hEZ, c, bm, b, hc, hodd, hc1, hI.xm⟩
   exact ⟨hT.of_tab hf (by simp [tabRanges]) k (by decide), by omega,
-    by rw [hf.word_eq (by w_disj) (by decide)]; exact hI.v⟩
+    by rw [hf.word_eq ((VG.Proof.RsaKeyGen.mm_shape _ _).hdrW rfl rfl) (by decide)]; exact hI.v⟩
 
 theorem tabMul_ct (M : Mont) : RelCT isa (Two fun (p : WsP × Nat) s => p.2 < 14 ∧ TL p.1 p.2 s) (M.mm aY aY aXm)
     (Two fun (p : WsP × Nat) s => TBE p.1 (p.2 + 2) s) :=

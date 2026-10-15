@@ -106,6 +106,31 @@ theorem SlotShape.leD {w a : Nat} {L H : List (Nat × Nat)} {js : List Nat} (hs 
   hs.le (fun h hh => of_decide_eq_true (List.all_eq_true.mp hH h hh))
     (fun j hj' => of_decide_eq_true (List.all_eq_true.mp hj j hj'))
 
+/-- Header word `k` is apart from each range. -/
+theorem SlotShape.hdrW {w k : Nat} {L H : List (Nat × Nat)} {js : List Nat} (hs : SlotShape w L H js)
+    (hk : decide (8 * k + 8 ≤ hdrBytes) = true)
+    (hH : H.all (fun h => decide (8 * k + 8 ≤ h.1 ∨ h.1 + h.2 ≤ 8 * k)) = true) :
+    ∀ r ∈ L, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := fun r hr =>
+  match hs r hr with
+  | .inl h => of_decide_eq_true (List.all_eq_true.mp hH r h)
+  | .inr ⟨_, _, e⟩ => e ▸ .inl (le_slot (of_decide_eq_true hk))
+
+/-- Header word `k` is apart from one range past the header. -/
+theorem past_hdrW {w j l k : Nat} (hk : decide (8 * k + 8 ≤ hdrBytes) = true) :
+    ∀ r ∈ [(slot w j, l)], 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := fun _ hr =>
+  List.mem_singleton.mp hr ▸ .inl (le_slot (of_decide_eq_true hk))
+
+/-- Array `a` is apart from one array-sized range at array `j`. -/
+theorem apart_one {w a j l : Nat} (hl : l ≤ 8 * (w + 2)) (hj : decide (j ≠ a) = true) :
+    ∀ r ∈ [(slot w j, l)], slot w a + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w a := fun _ hr => by
+  obtain rfl := List.mem_singleton.mp hr
+  rcases Nat.lt_or_gt_of_ne (of_decide_eq_true hj) with h | h
+  exacts [.inr (Nat.le_trans (Nat.add_le_add_left hl _) (slot_hi h)), .inl (slot_lo mul_le_w2 h)]
+
+/-- One array. -/
+theorem arr_shape (w j : Nat) : SlotShape w [(slot w j, 8 * (w + 2))] [] [j] := fun _ hr =>
+  .inr ⟨j, .head _, List.mem_singleton.mp hr⟩
+
 /-- A list of header ranges. -/
 theorem hdr_shape (w : Nat) (L : List (Nat × Nat)) : SlotShape w L L [] := fun _ h => .inl h
 
