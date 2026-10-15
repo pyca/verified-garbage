@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callee
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
 public import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Encrypt
@@ -326,7 +328,7 @@ theorem inArgs (hL : L.Ok) {d : Nat} (h₁ : 1088 ≤ d) (h₂ : d + 8 ≤ 1120)
 end Ctx
 
 /-- The registers a block writes, other than the callee-saved ones. -/
-macro "enc_cs_tac" : tactic => `(tactic| plain_simp_names (
+tactic_template "enc_cs_tac" : tactic => `(tactic| (
                    intro r hr _
                    revert hr
                    simp only [preserved, List.mem_cons, List.not_mem_nil, or_false]
@@ -334,7 +336,7 @@ macro "enc_cs_tac" : tactic => `(tactic| plain_simp_names (
                      simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, reduceCtorEq, ite_false]))
 
 /-- Side conditions of reads and writes at offsets from `Q`. -/
-macro "enc_disch" : tactic => `(tactic| first
+tactic_template "enc_disch" : tactic => `(tactic| first
   | decide
   | (apply Offset.sep <;> omega)
   | omega)

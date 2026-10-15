@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderPCall
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 import all Init.Data.Array.Basic
@@ -148,7 +150,7 @@ structure LadInvP (L : LadderCfg) (wk : Nat) (C : Spec.Weierstrass.Curve) (base 
   cp : CpOk L base s.mem s₀.mem
 
 /-- Apart from each of a few ranges, for numbers of the layout. -/
-macro "apart_ranges" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.mem_append, List.not_mem_nil, or_false, or_imp, forall_and, forall_eq_or_imp, forall_eq, List.mem_singleton]; omega_arith))
+tactic_template "apart_ranges" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_append, List.not_mem_nil, or_false, or_imp, forall_and, forall_eq_or_imp, forall_eq, List.mem_singleton]; omega_arith))
 
 /-- Within the point functions' slots and own working space. -/
 macro "in_pt" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.mem_append, List.not_mem_nil, or_false, or_imp, forall_and, forall_eq_or_imp, forall_eq, List.mem_singleton, exists_eq_left]; omega_arith))

@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -79,7 +81,7 @@ theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (hk : KeepsReg 
 
 /-- `KeepsReg .x30` of a mode's code: its structure, down to `crypt` and
 blocks that do not write `x30`. -/
-macro "keeps_x30" : tactic => `(tactic| repeat (first
+tactic_template "keeps_x30" : tactic => `(tactic| repeat (first
   | with_reducible exact crypt_keeps_x30 _
   | apply KeepsReg.seq
   | apply KeepsReg.ite
