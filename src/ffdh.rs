@@ -5,8 +5,8 @@
 //! length supplied at import, or the public sampling bound for generated keys.
 //! All secret exponentiation runs in the verified fixed-window code. Public
 //! exponents in the remaining Rust parameter checks may directly index a table.
-//! Rust composes these primitives, validates
-//! domains and private keys on x86-64, samples randomness and encodes the result. These Rust
+//! Rust still validates domains on x86-64, samples randomness and packs
+//! inputs and results. These Rust
 //! operations, as elsewhere in the crate, are outside the Lean proof boundary.
 //! Parameter generation uses the shared verified windowed Miller–Rabin round;
 //! Rust currently prepares its workspace and selects independent witnesses.
@@ -285,48 +285,29 @@ impl PrivateKey {
     /// exponentiation schedule, capped at the modulus width. Leading zeros
     /// are retained in that schedule; the scalar value does not set its length.
     pub fn from_components(params: &Parameters, y: &[u8], x: &[u8]) -> Result<Self, Error> {
-        #[cfg(target_arch = "aarch64")]
-        {
-            // Only zeros may precede the modulus' width: the value is then too large.
-            let exponent_len = x.len().min(params.p.len());
-            let (zeros, x) = x.split_at(x.len() - exponent_len);
-            let y = canonical(y);
-            if zeros.iter().any(|&b| b != 0) || !params.domain.check_private(y, x) {
-                return Err(Error::InvalidKey);
-            }
-            Ok(Self {
-                public: PublicKey {
-                    params: params.clone(),
-                    y: y.to_vec(),
-                },
-                x: scalar(x, params.p.len()),
-                exponent_len,
-            })
-        }
-        #[cfg(not(target_arch = "aarch64"))]
-        Self::from_components_rust(params, y, x)
-    }
-
-    #[cfg(not(target_arch = "aarch64"))]
-    fn from_components_rust(params: &Parameters, y: &[u8], x: &[u8]) -> Result<Self, Error> {
-        let key = Self::from_private_component(params, x)?;
-        if !crate::ct::eq(&key.public.y, canonical(y)) {
-            return Err(Error::InvalidKey);
-        }
-        Ok(key)
-    }
-    /// Import x and derive y. x is unsigned big-endian; its encoding length
-    /// is public and determines the exponentiation schedule. Import validation
-    /// may reveal whether x is in range, and is not a constant-time parser.
-    #[cfg(not(target_arch = "aarch64"))]
-    fn from_private_component(params: &Parameters, x: &[u8]) -> Result<Self, Error> {
-        let upper = params.q.clone().unwrap_or_else(|| minus_one(&params.p));
-        if value_cmp(x, &[0]).is_le() || value_cmp(x, &upper).is_ge() {
-            return Err(Error::InvalidKey);
-        }
+        // Only zeros may precede the modulus' width. Retain the public
+        // encoding length, capped at that width, for secret exponentiation.
         let exponent_len = x.len().min(params.p.len());
-        let x = scalar(x, params.p.len());
-        Self::from_padded(params, x, exponent_len)
+        let (zeros, x) = x.split_at(x.len() - exponent_len);
+        let y = canonical(y);
+        if zeros.iter().any(|&b| b != 0) {
+            return Err(Error::InvalidKey);
+        }
+        #[cfg(target_arch = "aarch64")]
+        let ok = params.domain.check_private(y, x);
+        #[cfg(target_arch = "x86_64")]
+        let ok = x86_64::check_private(&params.p, &params.g, params.q.as_deref(), y, x);
+        if !ok {
+            return Err(Error::InvalidKey);
+        }
+        Ok(Self {
+            public: PublicKey {
+                params: params.clone(),
+                y: y.to_vec(),
+            },
+            x: scalar(x, params.p.len()),
+            exponent_len,
+        })
     }
     #[cfg(not(target_arch = "aarch64"))]
     fn from_padded(params: &Parameters, x: Vec<u8>, exponent_len: usize) -> Result<Self, Error> {

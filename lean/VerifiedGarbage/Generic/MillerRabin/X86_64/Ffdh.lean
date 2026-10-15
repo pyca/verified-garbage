@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
 
 /-! # Emit FFDH public-key validation for every shared arithmetic backend -/
 
@@ -32,6 +33,18 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     contract := Spec.Ffdh.exchangeContract X86_64.abi
     verified := by exact Proof.Ffdh.X86_64.Exchange.exchangeCode_verified v
     spSafe := by exact Proof.Ffdh.X86_64.Exchange.exchangeCode_sp v
+    features := v.features },
+  { Spec.Ffdh.checkPrivateApi with
+    name := Spec.Ffdh.checkPrivateApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Ffdh.checkPrivateApi.doc
+      (notes := ["The scalar bound and the public-value equality are checked in verified code. \
+        Powers of a checked generator remain in its q subgroup, so the generated power \
+        needs only its range check. Fixed four-bit windows use the selected Montgomery backend."])
+    code := Proof.Ffdh.X86_64.CheckPrivate.privateCode v
+    contract := Spec.Ffdh.checkPrivateContract X86_64.abi
+    verified := by exact Proof.Ffdh.X86_64.CheckPrivate.privateCode_verified v
+    spSafe := by exact Proof.Ffdh.X86_64.CheckPrivate.privateCode_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.Ffdh

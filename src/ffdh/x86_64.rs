@@ -6,7 +6,8 @@
 
 use super::arithmetic::{Backend, scalar};
 use crate::arch::ffdh::{
-    vg_ffdh_check_public, vg_ffdh_check_public_adx, vg_ffdh_exchange, vg_ffdh_exchange_adx,
+    vg_ffdh_check_private, vg_ffdh_check_private_adx, vg_ffdh_check_public,
+    vg_ffdh_check_public_adx, vg_ffdh_exchange, vg_ffdh_exchange_adx,
 };
 use crate::cpu::detected;
 use crate::rsa::Scratch;
@@ -85,6 +86,37 @@ pub(super) fn exchange(
             x.len(),
             y.as_ptr(),
             y.len(),
+            ws.as_mut_ptr(),
+            ws.len(),
+        ) == 1
+    }
+}
+
+/// Check scalar bounds and consistency with the imported public value.
+pub(super) fn check_private(p: &[u8], g: &[u8], q: Option<&[u8]>, y: &[u8], x: &[u8]) -> bool {
+    let len = p.len();
+    if y.len() > len || x.is_empty() || x.len() > len {
+        return false;
+    }
+    let domain = pack_domain(p, g, q);
+    let y = scalar(y, len);
+    let mut ws = Scratch::new(16 * len + 32);
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_ffdh_check_private,
+        Backend::Adx => vg_ffdh_check_private_adx,
+    };
+    // SAFETY: domain was checked at import; its packed length is 2 or 3
+    // modulus widths, y is one width, and x has 1..=len bytes. Scratch has
+    // 16*len+32 words and is disjoint from all inputs.
+    unsafe {
+        f(
+            domain.as_ptr(),
+            domain.len(),
+            len,
+            y.as_ptr(),
+            y.len(),
+            x.as_ptr(),
+            x.len(),
             ws.as_mut_ptr(),
             ws.len(),
         ) == 1
