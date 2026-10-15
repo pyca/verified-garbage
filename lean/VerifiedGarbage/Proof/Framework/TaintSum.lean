@@ -814,26 +814,31 @@ meta def usedSums (h : Expr) (n : Nat) : Array Nat := Id.run do
   return used
 
 /-- Fails if a summary was meant to apply and did not: if the hint `h` (with
-the summaries `names`) analyses in full a call of a function that one of them
-is of (`missed`, from `Taint.missedCalls`: the call and the summary), or
-uses one of them nowhere. Either only costs time, so nothing else would
-notice: the summary's `pre` does not hold where it was meant to apply, or it
-is stated about another name or code. -/
+the summaries `names`) analyses in full every call of the function that one
+of them is of (`missed`, from `Taint.missedCalls`: each call and summary),
+using the summary nowhere. Its `pre` does not hold at any call, or it is
+stated about another name or code: that only costs time, so nothing else
+would notice. A summary that applies at some calls and not at others (whose
+taint knows more, e.g. another base) is reported, not an error; one whose
+function this code does not call is not reported (callers share one list
+of summaries among several checks). -/
 meta def checkUsed (who : String) (names : Array Name) (h : Expr)
     (missed : List (String × Nat)) : MetaM Unit := do
+  if missed.isEmpty then return
   let name (k : Nat) : MessageData := match names[k]? with
     | some n => m!"`{n}`"
     | none => m!"#{k}"
-  if let some (call, k) := missed.head? then
-    let calls := (missed.map (·.1)).eraseDups
-    throwError "{who}: the summary {name k} does not apply at a call of `{call}`, which is \
-      analysed in full: its `pre` is not below the taint there (every call analysed in full \
-      although a summary of its function is given: {calls})"
-  let used := usedSums h names.size
-  let unused := (List.range names.size).filter (!used.contains ·)
-  unless unused.isEmpty do
-    logInfo m!"{who}: the summaries {unused.map name} apply nowhere: their `pre` is not \
-      below the taint where their code is called, or no code here is theirs"
+  let used := usedSums h (missed.foldl (fun m (_, k) => max m (k + 1)) 0)
+  let calls (k : Nat) := ((missed.filter (·.2 == k)).map (·.1)).eraseDups
+  let ks := (missed.map (·.2)).eraseDups
+  for k in ks do
+    unless used.contains k do
+      throwError "{who}: the summary {name k} applies at no call of {calls k}, which are \
+        analysed in full: its `pre` is not below the taint at any of them, or it is stated \
+        about another name or code"
+  for k in ks do
+    logInfo m!"{who}: the summary {name k} applies at some calls of {calls k} but not at \
+      others, which are analysed in full: their taint is not above its `pre`"
 
 /-- The analysis of `c` from `τ` with the summaries `names` (whose list is
 `S`), in compiled code: what it ends with and its hint (`postHintSumOf`).
