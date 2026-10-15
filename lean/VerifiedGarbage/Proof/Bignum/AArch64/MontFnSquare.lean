@@ -80,7 +80,7 @@ theorem square_correct (s : State) (h : fnContract.pre s)
   obtain ⟨tr, t, he, _, hlt, heq, har, hk⟩ := hp
   refine ⟨tr, t, he, ⟨?_, hk.sp, hk.vcs⟩, ?_, ?_, ?_⟩
   · intro r hr
-    exact hk.gpr r (by cases r <;> simp_all [preserved, mmRegs])
+    exact hk.gpr r (by revert r; decide)
   · rw [ho, numAt_eq, numAt_eq]; exact hlt
   · rw [ho, ha, hb, numAt_eq, numAt_eq, numAt_eq]; exact heq
   · intro i hi hj
@@ -100,7 +100,7 @@ theorem mul_correct (s : State) (h : fnContract.pre s) :
       WP isa c u (fun t => abiPreserved s t ∧ fnContract.post s t) := by
     intro c hc
     refine WP.mono hc fun t ⟨ht, hp⟩ => ⟨?_, v.post hp⟩
-    exact ⟨fun r hr => (ht.1 r hr).trans (k.gpr r (by cases r <;> simp_all [preserved])),
+    exact ⟨fun r hr => (ht.1 r hr).trans (k.gpr r (by revert r; decide)),
       ht.2.1.trans k.sp, fun r hr => (ht.2.2 r hr).trans (k.vcs r hr)⟩
   have eval : isa.eval (.zero .w .x5) u = some (decide (tag (idx s .x2) (idx s .x3) (idx s .x4) = 0)) := by
     simp only [VG.AArch64.eval, State.read, Size.bits, v.flag]

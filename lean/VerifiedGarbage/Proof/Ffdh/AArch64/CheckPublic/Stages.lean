@@ -232,7 +232,7 @@ theorem ce_c1 (p : CpP) (t : State) (h : CE p t) (he : isa.eval (.zero .x .x9) t
     fun u ⟨mi, hc, hX, hWs, f, k⟩ => ⟨mi, hx.keep (InScr.of_frm f fun r hr => by
       simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
       unfold inner slot hdrBytes tabBytes32 at hroom
-      rcases hr with rfl | rfl | rfl | rfl <;> simp only [sW, sArr, sWs, sFn, inner, slot, hdrBytes] <;> omega) k,
+      rcases hr with rfl | rfl | rfl | rfl <;> simp only [sW, sArr, sWs, sFn, inner, slot, hdrBytes] <;> omega_arith) k,
       hc, hX, hWs, fun q hq => ?_, hv⟩
   rw [f.word_eq (fun r hr => by
       simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -240,11 +240,11 @@ theorem ce_c1 (p : CpP) (t : State) (h : CE p t) (he : isa.eval (.zero .x .x9) t
         or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl <;>
         rcases hr with rfl | rfl | rfl | rfl <;>
-          simp only [sW, sArr, sWs, sDom, sDomLen, sK, sY, sQ, sFn, inner, slot, hdrBytes] <;> omega)
+          simp only [sW, sArr, sWs, sDom, sDomLen, sK, sY, sQ, sFn, inner, slot, hdrBytes] <;> omega_arith)
     (by unfold inner slot hdrBytes tabBytes32 at hroom
         simp only [CpP.hdQ, CpP.hd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
           or_false] at hq
-        rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp only [sDom, sDomLen, sK, sY, sQ, sFn] <;> omega)]
+        rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp only [sDom, sDomLen, sK, sY, sQ, sFn] <;> omega_arith)]
   exact hs q hq
 
 theorem hdQ_lt (p : CpP) : ∀ q ∈ p.hdQ, q.1 < 32 := by

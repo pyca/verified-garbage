@@ -31,7 +31,7 @@ theorem correct (s : State) (_ : contract.pre s) :
     exact BitVec.xor_comm _ _
   obtain ⟨tr, t, he, ho, hk⟩ := WP.keep [.rax, .rdx, .rcx] h (by rfl)
   refine ⟨tr, t, he, abiPreserved_of_exec (by decide +kernel) he ?_, ho⟩
-  exact ⟨fun r hr => hk.gpr (by cases r <;> simp_all [calleeSaved]), by rw [ho.2]⟩
+  exact ⟨fun r hr => hk.gpr (by revert r; decide), by rw [ho.2]⟩
 
 theorem ct : ConstantTime isa contract.pre contract.pub Impl.Ffdh.X86_64.choose := by
   refine ConstantTime.of_silent fun s tr t _ h => ?_

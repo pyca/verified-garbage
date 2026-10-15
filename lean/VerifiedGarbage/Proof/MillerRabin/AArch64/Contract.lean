@@ -93,7 +93,7 @@ theorem round_implies : roundContract.Implies
     sig_reduce [roundContract, roundPre, Spec.MillerRabin.Prepared]
     sig_and_intros
     sig_close
-    all_goals dsimp only [Spec.MillerRabin.compact] at *; assumption
+    all_goals dsimp only [Spec.MillerRabin.compact] at *; with_reducible assumption
   post := by sig_implies_post [Spec.MillerRabin.roundContract, Spec.MillerRabin.roundSig,
     roundContract, roundPost, abi, argRegs]
   pub := by
