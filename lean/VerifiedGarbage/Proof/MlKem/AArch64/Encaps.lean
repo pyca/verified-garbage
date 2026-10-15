@@ -83,9 +83,9 @@ def enL (P : KemLay) : Layout where
   slot k := [0, 2, 3, 4].getD k 4
 
 /-- Arithmetic on the offsets and the buffers of `enL`. -/
-macro "enk" : tactic => `(tactic| (
-  simp -failIfUnchanged only [enL, List.getD_cons_zero, List.getD_cons_succ, Layout.sc]
-  first | decide | kom))
+macro "enk" : tactic => `(tactic| plain_simp_names (
+                   simp -failIfUnchanged only [enL, List.getD_cons_zero, List.getD_cons_succ, Layout.sc]
+                   first | decide | kom))
 
 theorem pre_of (hP : P.Wf) {s₀ : State} (h : (encapsAArch64 P).pre s₀) : Pre P (enL P) s₀ := by
   obtain ⟨rd, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, sp16, k0, k1, k2, k3, k4⟩ := h

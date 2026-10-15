@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Sym
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -42,8 +43,8 @@ theorem se128 : BitVec.signExtend 64 (128 : BitVec 32) = 128 := by decide
 theorem se7 : BitVec.signExtend 64 (7 : BitVec 32) = 7 := by decide
 
 /-- Closes what `simp` leaves of a block of integer instructions. -/
-macro "finish_gpr8" : tactic => `(tactic| (
-  all_goals repeat' first | apply And.intro | apply VKeep.mk
-  all_goals first | trivial | rfl | (intros; simp [*])))
+macro "finish_gpr8" : tactic => `(tactic| plain_simp_names (
+                   all_goals repeat' first | apply And.intro | apply VKeep.mk
+                   all_goals first | trivial | rfl | (intros; simp [*])))
 
 end VG.Proof.Poly1305.X86_64.Avx512

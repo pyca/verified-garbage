@@ -243,10 +243,10 @@ def narrowWr (s : State) : List Region :=
   [⟨(arg s 2).setWidth 64, 8 * (arg s 3).toNat⟩, ⟨(arg s 4).setWidth 64, 8 * 118⟩]
 
 local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [VG.Proof.TripleDes.X86.Cbc.cbcX86, VG.Proof.TripleDes.X86.Cbc.wideContract,
-    VG.Proof.TripleDes.X86.Cbc.narrowRd, VG.Proof.TripleDes.X86.Cbc.narrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+  `(tactic| plain_simp_names simp only [VG.Proof.TripleDes.X86.Cbc.cbcX86, VG.Proof.TripleDes.X86.Cbc.wideContract,
+                     VG.Proof.TripleDes.X86.Cbc.narrowRd, VG.Proof.TripleDes.X86.Cbc.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
 
 theorem wide_pre (enc : Bool) (s : State) (h : (wideContract enc).pre s) :
     (cbcX86 enc).pre (s.withRegions (narrowRd s) (narrowWr s)) := by

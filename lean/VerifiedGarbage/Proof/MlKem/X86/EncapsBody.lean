@@ -105,7 +105,7 @@ class EncapsOK (L : KemLay) : Prop where
     (Y L).apart ⟨(Y L).sc, L.eC + 32 * L.p.du * L.p.k, 32 * L.p.dv⟩ [] = true
 
 /-- `sc_taint`, for code with `scratch` at `(Y L).sc`. -/
-macro "ye_taint" : tactic => `(tactic| ((try simp only [show ∀ L, (Y L).sc = 4 from fun _ => rfl]); sc_taint))
+macro "ye_taint" : tactic => `(tactic| plain_simp_names ((try simp only [show ∀ L, (Y L).sc = 4 from fun _ => rfl]); sc_taint))
 
 variable {L : KemLay}
 

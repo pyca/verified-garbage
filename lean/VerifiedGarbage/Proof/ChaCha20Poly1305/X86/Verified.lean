@@ -92,10 +92,10 @@ macro "rdisj" : tactic => `(tactic| first
   | with_reducible assumption)
 
 /-- A region is disjoint from each of a list of regions. -/
-macro "rdisj_all" : tactic => `(tactic| (
-  simp only [macR, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-  repeat' apply And.intro
-  all_goals rdisj))
+macro "rdisj_all" : tactic => `(tactic| plain_simp_names (
+                   simp only [macR, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+                   repeat' apply And.intro
+                   all_goals rdisj))
 
 theorem srcA {s₀ : State} (hp : APre e s₀) : Src s₀ (arg s₀ 2) (arg s₀ 3).toNat :=
   ⟨hp.fit_a, hp.c_a, hp.stk_a, List.mem_append_left _ hp.a_rd⟩

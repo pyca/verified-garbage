@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -77,9 +78,9 @@ theorem consts_ok (s : State) :
   refine ⟨?_, ?_, fun r h₁ h₂ => by simp [h₁, h₂], ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> trivial
 
 /-- Closes what `simp` leaves of a block of integer instructions. -/
-macro "finish_gpr" : tactic => `(tactic| (
-  all_goals repeat' first | apply And.intro | apply VKeep.mk
-  all_goals first | trivial | rfl | (intros; simp [*])))
+macro "finish_gpr" : tactic => `(tactic| plain_simp_names (
+                   all_goals repeat' first | apply And.intro | apply VKeep.mk
+                   all_goals first | trivial | rfl | (intros; simp [*])))
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = off (s.gpr b) d := rfl
 

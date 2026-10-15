@@ -48,7 +48,7 @@ theorem addr0 (s₀ : State) (i : Nat) : Buf.addr s₀ ⟨i, 0, 32⟩ = (arg s�
   simp only [Buf.addr, Buf.ptr, BitVec.add_zero]
 
 /-- A taint check of code with `scratch` at `(Y L).sc`, through `esi`. -/
-macro "yk_taint" : tactic => `(tactic| ((try simp only [show ∀ L, (Y L).sc = 3 from fun _ => rfl]); (try simp only
-  [ptrTo, reduceIte, Nat.reduceEqDiff, List.cons_append, List.nil_append]); taint_rfl))
+macro "yk_taint" : tactic => `(tactic| plain_simp_names ((try simp only [show ∀ L, (Y L).sc = 3 from fun _ => rfl]); (try simp only
+                   [ptrTo, reduceIte, Nat.reduceEqDiff, List.cons_append, List.nil_append]); taint_rfl))
 
 end VG.Proof.MlKem.X86.KeyGen

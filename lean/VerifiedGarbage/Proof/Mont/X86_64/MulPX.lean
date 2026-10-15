@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Mont.X86_64.MulP
 public import VerifiedGarbage.Proof.Mont.X86_64.Adx
@@ -192,10 +193,10 @@ theorem mem_rowRegs_x {t : Reg} (h : t ∈ xRegs) : t ∈ rowRegs :=
 
 /-- Every register of a list of `rax`, `rcx`, `rdx` and `xAcc`s is in
 `rowRegs`. -/
-macro "rows_sub" : tactic => `(tactic| (
-  simp only [List.forall_mem_cons, List.forall_mem_nil, and_true]
-  try and_intros
-  all_goals first | decide | exact mem_rowRegs_x (xAcc_ne _).2.2.2.2))
+macro "rows_sub" : tactic => `(tactic| plain_simp_names (
+                   simp only [List.forall_mem_cons, List.forall_mem_nil, and_true]
+                   try and_intros
+                   all_goals first | decide | exact mem_rowRegs_x (xAcc_ne _).2.2.2.2))
 
 /-- The memory `⟨base, size⟩`, readable (within a readable or writable
 region), while the register `r` (`rdi`, `rsi` or `rbx`) is `c` bytes past its

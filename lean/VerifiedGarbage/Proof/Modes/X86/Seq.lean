@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Modes.X86.Step
 public import VerifiedGarbage.TCB.X86.Target
 import all Init.Data.Array.Basic
@@ -107,7 +108,7 @@ abbrev modeR (c : Core) (B : BitVec 32) : Region := ⟨slotA B c.slots, 40⟩
 
 /-- `omega_arith`, with the mode's slots unfolded. -/
 local macro "slot_omega" : tactic =>
-  `(tactic| ((try simp only [Core.chnSlot, Core.dSlot, Core.nSlot, Core.savedSlot]); omega_arith))
+  `(tactic| plain_simp_names ((try simp only [Core.chnSlot, Core.dSlot, Core.nSlot, Core.savedSlot]); omega_arith))
 
 theorem range4_map {α : Type} (f : Nat → α) : (List.range 4).map f = [f 0, f 1, f 2, f 3] := rfl
 

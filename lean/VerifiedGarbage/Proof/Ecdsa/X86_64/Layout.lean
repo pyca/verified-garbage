@@ -222,7 +222,7 @@ structure SetupPost (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s 
 /-- That a slot is neither the temporary area nor `55` (which for nine words
 trade places), or that one of two slots is not. -/
 macro "sl_ne" : tactic =>
-  `(tactic| first | decide | omega | (simp only [TMP, WK, WB, WT] at *; omega))
+  `(tactic| plain_simp_names first | decide | omega | (simp only [TMP, WK, WB, WT] at *; omega))
 
 /-- That one of two facts `sl_ne` proves holds. -/
 macro "sl_or" : tactic =>

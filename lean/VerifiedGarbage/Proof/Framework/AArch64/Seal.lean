@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
@@ -35,15 +36,15 @@ theorem vf_setV (r : VReg) (x : BitVec 128) : (s.setV r x).vf = s.vf := rfl
 
 /-- Closes a frame fact about a chain of updates (`s'.mem = s.mem`, …), unfolding
 the `let`s that name the states. -/
-macro "upd_frame" : tactic => `(tactic| simp (config := { zetaDelta := true }) only [
-  VG.AArch64.RegUpd.mem_write, VG.AArch64.RegUpd.rd_write, VG.AArch64.RegUpd.wr_write,
-  VG.AArch64.RegUpd.sp_write, VG.AArch64.RegUpd.c_write, VG.AArch64.RegUpd.nf_write,
-  VG.AArch64.RegUpd.zf_write, VG.AArch64.RegUpd.vf_write, VG.AArch64.RegUpd.mem_addWithCarry,
-  VG.AArch64.RegUpd.rd_addWithCarry, VG.AArch64.RegUpd.wr_addWithCarry,
-  VG.AArch64.RegUpd.sp_addWithCarry, VG.AArch64.RegUpd.v_write, VG.AArch64.RegUpd.gpr_setV,
-  VG.AArch64.RegUpd.mem_setV, VG.AArch64.RegUpd.rd_setV, VG.AArch64.RegUpd.wr_setV,
-  VG.AArch64.RegUpd.sp_setV, VG.AArch64.RegUpd.c_setV, VG.AArch64.RegUpd.nf_setV,
-  VG.AArch64.RegUpd.zf_setV, VG.AArch64.RegUpd.vf_setV])
+macro "upd_frame" : tactic => `(tactic| plain_simp_names simp (config := { zetaDelta := true }) only [
+                   VG.AArch64.RegUpd.mem_write, VG.AArch64.RegUpd.rd_write, VG.AArch64.RegUpd.wr_write,
+                   VG.AArch64.RegUpd.sp_write, VG.AArch64.RegUpd.c_write, VG.AArch64.RegUpd.nf_write,
+                   VG.AArch64.RegUpd.zf_write, VG.AArch64.RegUpd.vf_write, VG.AArch64.RegUpd.mem_addWithCarry,
+                   VG.AArch64.RegUpd.rd_addWithCarry, VG.AArch64.RegUpd.wr_addWithCarry,
+                   VG.AArch64.RegUpd.sp_addWithCarry, VG.AArch64.RegUpd.v_write, VG.AArch64.RegUpd.gpr_setV,
+                   VG.AArch64.RegUpd.mem_setV, VG.AArch64.RegUpd.rd_setV, VG.AArch64.RegUpd.wr_setV,
+                   VG.AArch64.RegUpd.sp_setV, VG.AArch64.RegUpd.c_setV, VG.AArch64.RegUpd.nf_setV,
+                   VG.AArch64.RegUpd.zf_setV, VG.AArch64.RegUpd.vf_setV])
 
 end VG.AArch64.RegUpd
 

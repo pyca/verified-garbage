@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X25519.X86_64.Step
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -33,18 +34,18 @@ writes and deciding the `cmov`s from the given facts. -/
 syntax "drun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| drun) => `(tactic| drun [])
-  | `(tactic| drun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
-        execShift, execMul, execCmov, eval, State.setReg32, Option.bind_some,
-        Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
-        RegUpd.zf_setReg, RegUpd.zf_arithFlags, RegUpd.cf_setReg, RegUpd.cf_arithFlags,
-        RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
-        RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setFlags,
-        RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, reduceCtorEq, Nat.le_refl,
-        true_and, and_true, and_self, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte,
-        Option.some.injEq, exists_eq_left', Bool.not_false, Bool.not_true, dz2, ds2, ds1, b10, b00,
-        $ls,*]))
+  | `(tactic| drun [$ls,*]) => `(tactic| plain_simp_names (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
+                         execShift, execMul, execCmov, eval, State.setReg32, Option.bind_some,
+                         Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
+                         RegUpd.zf_setReg, RegUpd.zf_arithFlags, RegUpd.cf_setReg, RegUpd.cf_arithFlags,
+                         RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+                         RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setFlags,
+                         RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, reduceCtorEq, Nat.le_refl,
+                         true_and, and_true, and_self, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte,
+                         Option.some.injEq, exists_eq_left', Bool.not_false, Bool.not_true, dz2, ds2, ds1, b10, b00,
+                         $ls,*]))
 
 end VG.Proof.X25519.X86_64

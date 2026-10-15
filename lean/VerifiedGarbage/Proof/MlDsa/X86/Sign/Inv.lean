@@ -157,12 +157,12 @@ macro "ofs" : tactic => do
 bounded indices, decided for each parameter set (`decide_at`): cheaper than
 `ofs`, which unfolds it into arithmetic on the parameters for `omega`, unless
 there are many indices to try. Each conjunct is decided on its own. -/
-macro "ofsd" : tactic => `(tactic| (
-  try dsimp only [VG.Proof.MlDsa.X86.Sign.Out, VG.Proof.MlDsa.X86.Sign.In, VG.Proof.MlDsa.X86.Sign.OutK,
-    VG.Proof.MlDsa.X86.Sign.OutI, VG.Proof.MlDsa.X86.Sign.OutC]
-  try simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true, true_implies]
-  and_intros
-  all_goals (have hmem := (‹VG.Proof.MlDsa.X86.Sign.PS _›).mem; decide_at hmem)))
+macro "ofsd" : tactic => `(tactic| plain_simp_names (
+                   try dsimp only [VG.Proof.MlDsa.X86.Sign.Out, VG.Proof.MlDsa.X86.Sign.In, VG.Proof.MlDsa.X86.Sign.OutK,
+                     VG.Proof.MlDsa.X86.Sign.OutI, VG.Proof.MlDsa.X86.Sign.OutC]
+                   try simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true, true_implies]
+                   and_intros
+                   all_goals (have hmem := (‹VG.Proof.MlDsa.X86.Sign.PS _›).mem; decide_at hmem)))
 
 /-! ## Slots -/
 

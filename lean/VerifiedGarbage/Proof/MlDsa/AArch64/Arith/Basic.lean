@@ -81,17 +81,17 @@ with extra lemmas (the block's accesses, …). -/
 syntax "arun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| arun) => `(tactic| arun [])
-  | `(tactic| arun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
-        exec_ldr_w, exec_str_w, exec_add, exec_sub, exec_logic, exec_mul, exec_madd, exec_addImm_x,
-        exec_subImm_x, exec_addImm_w, exec_lsr_x, exec_lsl_x, exec_movz_w, exec_movk_w, exec_movz_x,
-        exec_movk_x, State.read, Size.bits, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
-        RegUpd.wr_write, RegUpd.sp_write, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left',
-        ite_true, ite_false, reduceCtorEq, true_and, and_true, List.cons_append, List.nil_append,
-        BitVec.add_zero, BitVec.setWidth_setWidth_of_le, movz_movk,
-        $ls,*]))
+  | `(tactic| arun [$ls,*]) => `(tactic| plain_simp_names (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
+                         exec_ldr_w, exec_str_w, exec_add, exec_sub, exec_logic, exec_mul, exec_madd, exec_addImm_x,
+                         exec_subImm_x, exec_addImm_w, exec_lsr_x, exec_lsl_x, exec_movz_w, exec_movk_w, exec_movz_x,
+                         exec_movk_x, State.read, Size.bits, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
+                         RegUpd.wr_write, RegUpd.sp_write, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left',
+                         ite_true, ite_false, reduceCtorEq, true_and, and_true, List.cons_append, List.nil_append,
+                         BitVec.add_zero, BitVec.setWidth_setWidth_of_le, movz_movk,
+                         $ls,*]))
 
 /-! ## What a block keeps -/
 
@@ -331,22 +331,22 @@ memory of zeros. -/
 syntax "mldsa_implies " "[" Lean.Parser.Tactic.simpLemma,* "]" " [" Lean.Parser.Tactic.simpLemma,* "]"
   " using " term : tactic
 macro_rules
-  | `(tactic| mldsa_implies [$ls,*] [$ws,*] using $w) => `(tactic| exact
-      { pre := by sig_implies_pre [$ls,*]
-        post := by sig_implies_post [$ls,*]
-        pub := by sig_implies_pub [$ls,*]
-        sat := by
-          refine ⟨$w, ?_⟩
-          sig_pre [$ls,*]
-          and_intros
-          all_goals first
-            | rfl
-            | decide
-            | exact Region.disjoint_of_sep (by decide)
-            | exact VG.Proof.MlDsa.Round.reduced_zero _
-            | (intro a h₁ h₂
-               set_option linter.unusedSimpArgs false in
-               simp only [Region.Contains, $ws,*] at h₁ h₂
-               bv_omega) })
+  | `(tactic| mldsa_implies [$ls,*] [$ws,*] using $w) => `(tactic| plain_simp_names exact
+                       { pre := by sig_implies_pre [$ls,*]
+                         post := by sig_implies_post [$ls,*]
+                         pub := by sig_implies_pub [$ls,*]
+                         sat := by
+                           refine ⟨$w, ?_⟩
+                           sig_pre [$ls,*]
+                           and_intros
+                           all_goals first
+                             | rfl
+                             | decide
+                             | exact Region.disjoint_of_sep (by decide)
+                             | exact VG.Proof.MlDsa.Round.reduced_zero _
+                             | (intro a h₁ h₂
+                                set_option linter.unusedSimpArgs false in
+                                simp only [Region.Contains, $ws,*] at h₁ h₂
+                                bv_omega) })
 
 end VG.Proof.MlDsa.AArch64.Arith

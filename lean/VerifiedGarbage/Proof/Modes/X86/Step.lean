@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Modes.X86.Core
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -275,7 +276,7 @@ structure Regs (c : Core) (B D : BitVec 32) (n st j : Nat) (E : BitVec 32) : Pro
 
 /-- `omega_arith`, with the mode's slots unfolded. -/
 local macro "slot_omega" : tactic =>
-  `(tactic| ((try simp only [Core.chnSlot, Core.dSlot, Core.nSlot]); omega_arith))
+  `(tactic| plain_simp_names ((try simp only [Core.chnSlot, Core.dSlot, Core.nSlot]); omega_arith))
 
 theorem regs {s₀ : State} {B D : BitVec 32} {n st j : Nat} (hF : Fixed c s₀ B D n st) (hj : j < n) :
     Regs c B D n st j (s₀.gpr .esp) := by

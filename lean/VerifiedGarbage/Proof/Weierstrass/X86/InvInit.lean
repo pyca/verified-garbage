@@ -24,7 +24,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
   VG.Proof.Mont.X86 VG.Proof.Mont
 
 local macro "apart" : tactic => `(tactic|
-  ((try simp only [InvCfg.sF, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sW, InvCfg.sCount]) <;> omega))
+  plain_simp_names ((try simp only [InvCfg.sF, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sW, InvCfg.sCount]) <;> omega))
 
 theorem init_ok {P : InvCfg} {s : State} {base : Addr} {size p : Nat}
     (hs : Scr s base size) (L : InvLay P size) (hm : val32 s.mem base P.M.mo 8 = p) :

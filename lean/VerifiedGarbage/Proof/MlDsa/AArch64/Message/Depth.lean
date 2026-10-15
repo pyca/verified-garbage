@@ -106,16 +106,16 @@ end
 
 /-- `DLe` of code from its structure, given that of the functions it calls. -/
 macro "dle_tac" : tactic =>
-  `(tactic| repeat' (first
-    | (with_reducible assumption)
-    | (apply DLe.call; assumption)
-    | apply DLe.seq
-    | apply DLe.ite
-    | apply DLe.loop
-    | (apply DLe.seqR; intro)
-    | apply DLe.block
-    | (dsimp only [Impl.MlDsa.AArch64.Sign.rejCallAt,
-        Impl.MlDsa.AArch64.Sign.maskAt, Impl.MlDsa.AArch64.Sign.maskCallAt, Impl.MlDsa.AArch64.Sign.masks]; split)))
+  `(tactic| plain_simp_names repeat' (first
+                     | (with_reducible assumption)
+                     | (apply DLe.call; assumption)
+                     | apply DLe.seq
+                     | apply DLe.ite
+                     | apply DLe.loop
+                     | (apply DLe.seqR; intro)
+                     | apply DLe.block
+                     | (dsimp only [Impl.MlDsa.AArch64.Sign.rejCallAt,
+                         Impl.MlDsa.AArch64.Sign.maskAt, Impl.MlDsa.AArch64.Sign.maskCallAt, Impl.MlDsa.AArch64.Sign.masks]; split)))
 
 end VG.Proof.MlDsa.AArch64.Message
 

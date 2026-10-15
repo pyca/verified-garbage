@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.Layout
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -59,9 +60,9 @@ structure WinLay (K : WinCfg) (size : Nat) : Prop where
   bits_w : ∀ w ∈ winW K, K.bits + 4 * K.J ≤ w.1 ∨ w.1 + w.2 ≤ K.bits
 
 /-- `x ∈ l` for the window method's lists. -/
-macro "win_mem" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_append,
-  List.mem_singleton, true_or, or_true, winSlots, winWs, winRo, winOther, rcbW, rcbR,
-  List.cons_append, List.nil_append]))
+macro "win_mem" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.mem_append,
+                   List.mem_singleton, true_or, or_true, winSlots, winWs, winRo, winOther, rcbW, rcbR,
+                   List.cons_append, List.nil_append]))
 
 theorem winWs_slots (K : WinCfg) : ∀ x ∈ winWs K, x ∈ winSlots K := by
   intro x hx

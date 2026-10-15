@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X25519.X86.Basic
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 import all Init.Data.Array.Basic
@@ -108,7 +109,7 @@ theorem acc3 {a b c x0 x1 : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32)
 
 /-- Reads the registers, memory and regions of a state after writes, for
 literal registers. -/
-macro "regupd" : tactic => `(tactic| simp (config := {decide := true}) only [acc, v,
+macro "regupd" : tactic => `(tactic| plain_simp_names simp (config := {decide := true}) only [acc, v,
   RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags,
   RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags,
   RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ↓reduceIte])

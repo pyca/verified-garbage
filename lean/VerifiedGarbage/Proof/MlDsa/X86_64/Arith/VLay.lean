@@ -35,9 +35,9 @@ macro_rules
   | `(tactic| vrund [$ls,*]) => `(tactic| vrunm [ea_atD, $ls,*])
 
 /-- `GOnly` of a chain of `setReg` and `setFlags`. -/
-macro "gonlyd" : tactic => `(tactic| exact ⟨⟨fun r hr => by
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false], rfl, rfl⟩, rfl, rfl, rfl⟩)
+macro "gonlyd" : tactic => `(tactic| plain_simp_names exact ⟨⟨fun r hr => by
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+                   simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false], rfl, rfl⟩, rfl, rfl, rfl⟩)
 
 theorem gonly_vconsts {rs : List Reg} {s s' : State} (h : GOnly rs s s') (hc : VConsts s) : VConsts s' :=
   ⟨by rw [h.xmm]; exact hc.q, by rw [h.xmm]; exact hc.qinv⟩

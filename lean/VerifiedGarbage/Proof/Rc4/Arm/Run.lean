@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Rc4.Arm
 public import VerifiedGarbage.Proof.Rc4.Scan32
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -115,18 +116,18 @@ theorem encodable_256 : encodable (256#32) = true := by decide
 syntax "arun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| arun) => `(tactic| arun [])
-  | `(tactic| arun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,
-        encodable_of_lt, encodable_256,
-        Op2.eval, imm, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg, c_setReg,
-        gpr_subFlags, mem_subFlags, rd_subFlags, wr_subFlags, sp_subFlags, z_subFlags, c_subFlags,
-        State.load32, store32_eq, State.load8, store8_eq, sp_store, gpr_store, rd_store, wr_store,
-        mem_store, z_store, c_store, ↓ite_carry, ite_true, ite_false, ↓reduceIte, reduceCtorEq,
-        Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, Option.map_some,
-        Option.some.injEq, exists_eq_left', List.cons_append, List.nil_append, and_true, true_and,
-        $ls,*]))
+  | `(tactic| arun [$ls,*]) => `(tactic| plain_simp_names (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+                         encodable_of_lt, encodable_256,
+                         Op2.eval, imm, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg, c_setReg,
+                         gpr_subFlags, mem_subFlags, rd_subFlags, wr_subFlags, sp_subFlags, z_subFlags, c_subFlags,
+                         State.load32, store32_eq, State.load8, store8_eq, sp_store, gpr_store, rd_store, wr_store,
+                         mem_store, z_store, c_store, ↓ite_carry, ite_true, ite_false, ↓reduceIte, reduceCtorEq,
+                         Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, Option.map_some,
+                         Option.some.injEq, exists_eq_left', List.cons_append, List.nil_append, and_true, true_and,
+                         $ls,*]))
 
 /-- Closes a conjunction of reflexive equations. -/
 macro "conj_rfl" : tactic => `(tactic| repeat' (first | exact rfl | refine ⟨?_, ?_⟩))

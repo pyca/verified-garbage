@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 public import VerifiedGarbage.Proof.Mont.X86_64.Chain
 import all Init.Data.Array.Basic
@@ -25,8 +26,8 @@ open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono mulStep_ok)
 
 /-- `sub_regs`, also when `simp` alone closes the goal. -/
-macro "sub_regs'" : tactic => `(tactic| (intro q hq; simp only [List.mem_cons, List.mem_append,
-  List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; first | done | grind))
+macro "sub_regs'" : tactic => `(tactic| plain_simp_names (intro q hq; simp only [List.mem_cons, List.mem_append,
+                   List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; first | done | grind))
 
 /-! ## Loads and stores -/
 

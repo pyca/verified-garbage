@@ -23,7 +23,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
   VG.Proof.Mont.X86 VG.Proof.Mont
 
 local macro "apart" : tactic => `(tactic|
-  ((try simp only [InvCfg.sF, InvCfg.sNF, InvCfg.sNG]) <;> omega))
+  plain_simp_names ((try simp only [InvCfg.sF, InvCfg.sNF, InvCfg.sNG]) <;> omega))
 
 theorem finishPrep_ok {P : InvCfg} {s : State} {base : Addr} {size : Nat}
     (hs : Scr s base size) (ht : P.tbl + 320 ≤ size)

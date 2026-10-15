@@ -58,16 +58,16 @@ theorem Keep.trans {a b c : State} (h : Keep a b) (k : Keep b c) : Keep a c :=
 syntax "crun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| crun) => `(tactic| crun [])
-  | `(tactic| crun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
-        exec, State.read, addr, State.load, gpr_write, mem_write, rd_write, wr_write,
-        BitVec.setWidth_eq, (show ∀ b : Byte, (b.setWidth 32).setWidth 64 = b.setWidth 64 from fun _ => BitVec.setWidth_setWidth (by decide)),
-        BitVec.shiftLeft_zero, BitVec.add_zero, BitVec.ofNat_eq_ofNat,
-        Mem.read, BitVec.zero_width_append, BitVec.cast_eq, Option.bind_some, Option.map_some,
-        Option.some.injEq, exists_eq_left', ite_true, ite_false, reduceCtorEq,
-        Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, true_and, and_true, $ls,*]))
+  | `(tactic| crun [$ls,*]) => `(tactic| plain_simp_names (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
+                         exec, State.read, addr, State.load, gpr_write, mem_write, rd_write, wr_write,
+                         BitVec.setWidth_eq, (show ∀ b : Byte, (b.setWidth 32).setWidth 64 = b.setWidth 64 from fun _ => BitVec.setWidth_setWidth (by decide)),
+                         BitVec.shiftLeft_zero, BitVec.add_zero, BitVec.ofNat_eq_ofNat,
+                         Mem.read, BitVec.zero_width_append, BitVec.cast_eq, Option.bind_some, Option.map_some,
+                         Option.some.injEq, exists_eq_left', ite_true, ite_false, reduceCtorEq,
+                         Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, true_and, and_true, $ls,*]))
 
 def contract : Contract isa where
   pre s := s.rd = [⟨s.gpr .x0, (s.gpr .x1).toNat⟩, ⟨s.gpr .x2, (s.gpr .x3).toNat⟩] ∧ s.wr = []

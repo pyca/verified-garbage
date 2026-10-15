@@ -32,13 +32,13 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64
 open VG.Spec.Aes (bytesAt)
 
 /-- Runs a block of the instructions the AES-GCM code uses. -/
-macro "arun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr,
-    State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
-    sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,
-    mov, ptr, imm, tO, uO, aadO, alenO, dataO, lenO, tlO, vO, rO, scrO, List.cons_append, List.nil_append,
-    List.append_assoc, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff,
-    Nat.reduceAdd, Nat.reduceMul, and_true, true_and, eq_self_iff_true, $ts,*]) <;> try rfl)
+macro "arun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+                   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr,
+                     State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
+                     sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,
+                     mov, ptr, imm, tO, uO, aadO, alenO, dataO, lenO, tlO, vO, rO, scrO, List.cons_append, List.nil_append,
+                     List.append_assoc, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff,
+                     Nat.reduceAdd, Nat.reduceMul, and_true, true_and, eq_self_iff_true, $ts,*]) <;> try rfl)
 
 /-- The part of a region at an offset is covered when the region is. -/
 theorem covers_off {p : Addr} {k d n : Nat} {rs : List Region} (h : Covers [⟨p, k⟩] rs) (hd : d + n ≤ k)
@@ -349,9 +349,9 @@ theorem Regs.mono {rs rs' : List Reg} {s s' : State} (h : Regs rs s s') (hs : �
 theorem Regs.refl (rs : List Reg) (s : State) : Regs rs s s := ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
 
 /-- Proves `Others rs s s'` for a chain of register writes. -/
-macro "others_tac" : tactic => `(tactic| (
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp [gpr_write, hr]))
+macro "others_tac" : tactic => `(tactic| plain_simp_names (
+                   intro r hr
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+                   simp [gpr_write, hr]))
 
 end VG.Proof.AesGcm.AArch64

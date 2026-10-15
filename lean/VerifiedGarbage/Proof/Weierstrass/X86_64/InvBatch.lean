@@ -110,8 +110,8 @@ theorem modOk_out {M : Mod} {size p : Nat} {mem mem' : Mem} {base : Addr} (hM : 
     hM.inv, hM.red⟩
 
 /-- Apart from each range of a list written out. -/
-local macro "apart" : tactic => `(tactic| (simp only [List.mem_cons, List.not_mem_nil, or_false,
-  forall_eq_or_imp, forall_eq] <;> omega))
+local macro "apart" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.not_mem_nil, or_false,
+                   forall_eq_or_imp, forall_eq] <;> omega))
 
 /-- Half a batch's update of `f`, `g`: `[dst] = (u f + v g) / 2^59` (`L` words, signed). -/
 theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Mont.Words
@@ -69,9 +70,9 @@ structure JacWinLay (K : JacWinCfg) (size : Nat) : Prop where
   bits_w : ∀ w ∈ jwW K, K.bits + 5 * K.J ≤ w.1 ∨ w.1 + w.2 ≤ K.bits
 
 /-- `x ∈ l` for the method's lists. -/
-macro "jw_mem" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_append,
-  List.mem_singleton, true_or, or_true, jwSlots, jwWs, jwRo, jwOther, rcbW, rcbR,
-  List.cons_append, List.nil_append]))
+macro "jw_mem" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.mem_append,
+                   List.mem_singleton, true_or, or_true, jwSlots, jwWs, jwRo, jwOther, rcbW, rcbR,
+                   List.cons_append, List.nil_append]))
 
 variable {K : JacWinCfg} {size : Nat}
 

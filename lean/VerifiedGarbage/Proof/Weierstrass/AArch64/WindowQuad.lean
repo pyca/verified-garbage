@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -85,11 +86,11 @@ theorem winJ_sl {K : WinCfg} {o p q : Pt} (ho : ∀ x ∈ [o.x, o.y, o.z], x ∈
   exact Or.inl this
 
 /-- What a program reads is in `V`. -/
-local macro "rcb_sub" : tactic => `(tactic| (
-  intro x hx
-  simp only [rcbR, WinCfg.zeroPt, List.cons_append, List.nil_append, List.mem_cons,
-    List.not_mem_nil, or_false] at hx ⊢
-  rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
+local macro "rcb_sub" : tactic => `(tactic| plain_simp_names (
+                   intro x hx
+                   simp only [rcbR, WinCfg.zeroPt, List.cons_append, List.nil_append, List.mem_cons,
+                     List.not_mem_nil, or_false] at hx ⊢
+                   rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
 
 /-- The count of the doublings: `x19 = j + 2 ^ 33`. -/
 theorem dblSet_ok (s : State) {j : Nat} (hx : s.gpr .x19 = BitVec.ofNat 64 j) :

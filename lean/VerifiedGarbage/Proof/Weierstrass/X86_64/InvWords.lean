@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
 public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 public import VerifiedGarbage.Proof.Weierstrass.Unch
@@ -316,8 +317,8 @@ theorem prods_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     · rw [O₆ a ha, k₅.2.1, O₃ a ha, k₂.2.1, O₁ a ha]
 
 /-- Apart from each range of a list written out. -/
-local macro "apart" : tactic => `(tactic| (simp only [List.mem_cons, List.not_mem_nil, or_false,
-  forall_eq_or_imp, forall_eq] <;> omega))
+local macro "apart" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.not_mem_nil, or_false,
+                   forall_eq_or_imp, forall_eq] <;> omega))
 
 set_option hygiene false in
 /-- `omega` on the layout alone of `lin_ok` and `linR_ok`: first without its disjunctions,

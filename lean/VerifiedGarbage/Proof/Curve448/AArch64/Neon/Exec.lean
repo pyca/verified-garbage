@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
@@ -94,12 +95,12 @@ theorem scr_of {s t : State} {base : Addr} (hs : Scr s base) (hg : t.gpr = s.gpr
 
 /-- Read vector registers through the writes after them (distinctness from the context). -/
 macro "vred" : tactic =>
-  `(tactic| simp (disch := assumption) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne, RegUpd.mem_setV,
-    setMem_mem, setMem_v])
+  `(tactic| plain_simp_names simp (disch := assumption) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne, RegUpd.mem_setV,
+                     setMem_mem, setMem_v])
 
 /-- `Scr` of a state the vector code built from one where it holds. -/
 macro "scr" : tactic =>
-  `(tactic| exact scr_of (by assumption) (by simp only [RegUpd.gpr_setV, setMem_gpr])
-    (by simp only [RegUpd.wr_setV, setMem_wr]))
+  `(tactic| plain_simp_names exact scr_of (by assumption) (by simp only [RegUpd.gpr_setV, setMem_gpr])
+                     (by simp only [RegUpd.wr_setV, setMem_wr]))
 
 end VG.Proof.Curve448.AArch64.Neon

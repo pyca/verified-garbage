@@ -122,16 +122,16 @@ theorem K5Chk.cons_stk {p : Params} (hF : VFacts p) {STK nr : Nat} (hnr : nr ≤
   (K5Chk.stk hF hnr).append (W₁ := [_]) h
 
 /-- Proves a `K5Chk` of writes to `scratch` and the stack, with `hnr : nr ≤ p.k`. -/
-macro "k5chks " hF:term:max hnr:term:max : tactic => `(tactic| (
-  repeat' (first
-    | with_reducible exact VG.Proof.MlDsa.Arm.Verify.K5Chk.nil $hF $hnr
-    | apply VG.Proof.MlDsa.Arm.Verify.K5Chk.cons_stk $hF $hnr
-    | apply VG.Proof.MlDsa.Arm.Verify.K5Chk.cons_c0 $hF $hnr)
-  all_goals (
-    have := ($hF).w1.1; have := ($hF).k; have := ($hF).l
-    try simp only [VG.Impl.MlDsa.Arm.Verify.oP, VG.Impl.MlDsa.Arm.Verify.oB, VG.Impl.MlDsa.Arm.Verify.oSS,
-      VG.Impl.MlDsa.Arm.Verify.oCT]
-    omega_arith)))
+macro "k5chks " hF:term:max hnr:term:max : tactic => `(tactic| plain_simp_names (
+                   repeat' (first
+                     | with_reducible exact VG.Proof.MlDsa.Arm.Verify.K5Chk.nil $hF $hnr
+                     | apply VG.Proof.MlDsa.Arm.Verify.K5Chk.cons_stk $hF $hnr
+                     | apply VG.Proof.MlDsa.Arm.Verify.K5Chk.cons_c0 $hF $hnr)
+                   all_goals (
+                     have := ($hF).w1.1; have := ($hF).k; have := ($hF).l
+                     try simp only [VG.Impl.MlDsa.Arm.Verify.oP, VG.Impl.MlDsa.Arm.Verify.oB, VG.Impl.MlDsa.Arm.Verify.oSS,
+                       VG.Impl.MlDsa.Arm.Verify.oCT]
+                     omega_arith)))
 
 theorem KC5.keep {p : Params} (hF : VFacts p) {STK : Nat} {σ : State} {A' : Nat → Nat → Spec.MlDsa.Poly}
     {cc : Spec.MlDsa.Poly} {h : List (Vector Bool Spec.MlDsa.n)} {R : BitVec 32} {nz : Nat} {nc : Bool} {nr : Nat}
