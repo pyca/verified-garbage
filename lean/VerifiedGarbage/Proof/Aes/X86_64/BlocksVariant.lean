@@ -81,21 +81,21 @@ theorem nosp_of {c : Prog isa}
 `vg_aes_decrypt_blocks`, in the baseline ISA. -/
 def scalar : BlocksImpl where
   enc := .encScalar
-  encDepth := by decide +kernel
+  encDepth := by lit_decide
   encOk := encryptBlocks_correct
   encCt := encryptBlocks_ct
   encNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
-  encMxcsr := by decide +kernel
-  encSpSafe := Code.all_of_allInstrs (by decide +kernel)
-  encNoStack := by decide +kernel
+  encMxcsr := by lit_decide
+  encSpSafe := Code.all_of_allInstrs (by lit_decide)
+  encNoStack := by lit_decide
   dec := .decScalar
-  decDepth := by decide +kernel
+  decDepth := by lit_decide
   decOk := decryptBlocks_correct
   decCt := decryptBlocks_ct
   decNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
-  decMxcsr := by decide +kernel
-  decSpSafe := Code.all_of_allInstrs (by decide +kernel)
-  decNoStack := by decide +kernel
+  decMxcsr := by lit_decide
+  decSpSafe := Code.all_of_allInstrs (by lit_decide)
+  decNoStack := by lit_decide
   suffix := ""
   features := []
   expand := .scalar
@@ -111,21 +111,21 @@ def scalar : BlocksImpl where
 `vg_aes_decrypt_blocks_aesni`, with `vg_aes_expand_key_aesni`. -/
 def aesni : BlocksImpl where
   enc := .encAesni
-  encDepth := by decide +kernel
+  encDepth := by lit_decide
   encOk := AesNi.encryptBlocks_correct
   encCt := AesNi.encryptBlocks_ct
   encNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
-  encMxcsr := by decide +kernel
-  encSpSafe := Code.all_of_allInstrs (by decide +kernel)
-  encNoStack := by decide +kernel
+  encMxcsr := by lit_decide
+  encSpSafe := Code.all_of_allInstrs (by lit_decide)
+  encNoStack := by lit_decide
   dec := .decAesni
-  decDepth := by decide +kernel
+  decDepth := by lit_decide
   decOk := AesNi.decryptBlocks_correct
   decCt := AesNi.decryptBlocks_ct
   decNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
-  decMxcsr := by decide +kernel
-  decSpSafe := Code.all_of_allInstrs (by decide +kernel)
-  decNoStack := by decide +kernel
+  decMxcsr := by lit_decide
+  decSpSafe := Code.all_of_allInstrs (by lit_decide)
+  decNoStack := by lit_decide
   suffix := "_aesni"
   features := ["aes"]
   expand := .aesni
@@ -142,21 +142,21 @@ def aesni : BlocksImpl where
 loops), with `vg_aes_expand_key_aesni`. -/
 def vaes : BlocksImpl where
   enc := .encVaes
-  encDepth := by decide +kernel
+  encDepth := by lit_decide
   encOk := VaesBlocks.encryptBlocks_correct
   encCt := VaesBlocks.encryptBlocks_ct
   encNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
-  encMxcsr := by decide +kernel
-  encSpSafe := Code.all_of_allInstrs (by decide +kernel)
-  encNoStack := by decide +kernel
+  encMxcsr := by lit_decide
+  encSpSafe := Code.all_of_allInstrs (by lit_decide)
+  encNoStack := by lit_decide
   dec := .decVaes
-  decDepth := by decide +kernel
+  decDepth := by lit_decide
   decOk := VaesBlocks.decryptBlocks_correct
   decCt := VaesBlocks.decryptBlocks_ct
   decNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
-  decMxcsr := by decide +kernel
-  decSpSafe := Code.all_of_allInstrs (by decide +kernel)
-  decNoStack := by decide +kernel
+  decMxcsr := by lit_decide
+  decSpSafe := Code.all_of_allInstrs (by lit_decide)
+  decNoStack := by lit_decide
   suffix := "_vaes"
   features := ["aes", "avx", "avx2", "vaes"]
   expand := .aesni

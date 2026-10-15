@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Rounds
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -494,7 +495,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 theorem ctr32_correct (s : State) (hs : AesNi.ctr32X86_64.pre s) :
     ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ AesNi.ctr32X86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem ctr32_ct : ConstantTime isa AesNi.ctr32X86_64.pre AesNi.ctr32X86_64.pub ctr32 := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9]) ?_

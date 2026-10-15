@@ -13,6 +13,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Aes.Contract
 meta import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -898,7 +899,7 @@ theorem expandKey_correct (s : State) (hs : Proof.Aes.expandKeyAArch64.pre s) :
     ∃ t s', Exec isa Impl.Aes.AArch64.expandKey s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.expandKeyAArch64.post s s' := by
   obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ :=
-    WP.gprs (rs := [.x30]) (ek_correct hs) (by decide +kernel) (by decide +kernel)
+    WP.gprs (rs := [.x30]) (ek_correct hs) (by lit_decide) (by lit_decide)
   refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl

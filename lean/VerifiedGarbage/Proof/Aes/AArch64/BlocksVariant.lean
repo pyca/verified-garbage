@@ -70,15 +70,15 @@ namespace BlocksImpl
 `vg_aes_decrypt_blocks`, in the baseline ISA. -/
 def scalar : BlocksImpl where
   enc := .encScalar
-  encNoFrames := by decide +kernel
+  encNoFrames := by lit_decide
   encOk := encryptBlocks_correct
   encCt := encryptBlocks_ct
-  encKeepsV := by decide +kernel
+  encKeepsV := by lit_decide
   dec := .decScalar
-  decNoFrames := by decide +kernel
+  decNoFrames := by lit_decide
   decOk := decryptBlocks_correct
   decCt := decryptBlocks_ct
-  decKeepsV := by decide +kernel
+  decKeepsV := by lit_decide
   suffix := ""
   features := []
   expand := .scalar
@@ -92,15 +92,15 @@ def scalar : BlocksImpl where
 `vg_aes_expand_key_aes`. -/
 def aese : BlocksImpl where
   enc := .encAese
-  encNoFrames := by decide +kernel
+  encNoFrames := by lit_decide
   encOk := Aese.encryptBlocks_correct
   encCt := Aese.encryptBlocks_ct
-  encKeepsV := by decide +kernel
+  encKeepsV := by lit_decide
   dec := .decAese
-  decNoFrames := by decide +kernel
+  decNoFrames := by lit_decide
   decOk := Aese.decryptBlocks_correct
   decCt := Aese.decryptBlocks_ct
-  decKeepsV := by decide +kernel
+  decKeepsV := by lit_decide
   suffix := "_aes"
   features := ["aes"]
   expand := .aese
