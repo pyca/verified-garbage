@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
@@ -79,14 +80,14 @@ private theorem start_ct (base k out T : Addr) :
   exact (hc.wp (fun _ _ h => ⟨start_ok h.1, start_ok h.2⟩)).mono
     (fun _ _ h => h) (fun _ _ h => h.2)
 
-private theorem engine_ready {base k out T : Addr} {s : State} (hs : BasePrepared base k out T s) :
+private theorem engine_ready [VG.Proof.Ed25519.AArch64.Divstep.Sound] {base k out T : Addr} {s : State} (hs : BasePrepared base k out T s) :
     WP isa scalarBaseEngine s (BaseReady base out) := by
   obtain ⟨⟨h1, h2, h3, h4, h5, h6⟩, ho⟩ := hs
   refine WP.mono (scalarBaseEngine_ok h1 h2 h3 h4 h5 h6) fun t ⟨kt, _⟩ => ?_
   exact ⟨kt.scratch h1, ((powersKeep_outside kt).word
     (d := 48) (Or.inl (by decide)) (by decide)).trans ho⟩
 
-private theorem engine_ct (base k out T : Addr) :
+private theorem engine_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (base k out T : Addr) :
     CT (fun x y => BasePrepared base k out T x ∧ BasePrepared base k out T y)
       scalarBaseEngine (fun x y => BaseReady base out x ∧ BaseReady base out y) := by
   have hc := (scalarBaseEngine_ct base k T).mono
@@ -123,7 +124,7 @@ private theorem finish_ct (base out : Addr) :
   · exact h.1.1.trans h.2.1.symm
   · exact h.1.2.trans h.2.2.symm
 
-theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase := by
+theorem scalarBase_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase := by
   intro x y tx ty x' y' hx hy ⟨hsp, ho, hk, hb, hsy⟩ ex ey
   have hc := CT.seq (start_ct (x.gpr .x2) (x.gpr .x1) (x.gpr .x0) (x.syms combSym))
     (CT.seq (engine_ct (x.gpr .x2) (x.gpr .x1) (x.gpr .x0) (x.syms combSym))
@@ -140,7 +141,7 @@ namespace VG.Proof.Ed25519.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 
-theorem scalarBase_ok (s : State) (hs : scalarBaseLocal.pre s) :
+theorem scalarBase_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := scalarBase_correct hs
 
 /-- The shared contract's precondition, from its facts. -/
@@ -203,7 +204,7 @@ theorem scalarBase_implies : scalarBaseLocal.Implies
     exact ⟨hsp, h0, h1, h2, hsy⟩
   sat := ⟨baseSatState, scalarBase_sat⟩
 
-theorem scalarBase_verified :
+theorem scalarBase_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
     Verified AArch64.target scalarBase (Spec.Ed25519.scalarBaseContract (AArch64.abi.withConsts combConsts)) :=
   Verified.of_correct scalarBase_ok scalarBase_ct scalarBase_implies
 

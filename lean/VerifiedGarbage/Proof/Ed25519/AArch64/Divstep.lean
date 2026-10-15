@@ -1,7 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Exec
-public import VerifiedGarbage.Impl.X25519.AArch64.Invert
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
+public import VerifiedGarbage.Impl.Ed25519.AArch64.Divstep
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Pow
 public import VerifiedGarbage.Proof.Mont.AArch64.Ops
@@ -10,39 +13,48 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.InvSound
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 
 /-!
-# X25519 on AArch64: the inversion by divsteps
+# Ed25519 and X25519 on AArch64: the inversion by divsteps
 
-Untrusted: everything here is checked by Lean. `Invert.invert` leaves
+Untrusted: everything here is checked by Lean. `Divstep.invert` leaves
 `[slot 15] ≡ [slot 2]^(p - 2)` (`invert_ok`), from the Montgomery products'
-(`Mont.AArch64.mul_ok`) and the divsteps' (`invSound`) proofs.
+(`Mont.AArch64.mul_ok`) and the divsteps' (`Sound`, proven in `DivstepSound`,
+the one module that imports the algebra it takes).
 -/
 
 @[expose] public section
 
-namespace VG.Proof.X25519.AArch64.Hybrid
+namespace VG.Proof.Ed25519.AArch64.Divstep
 
 open VG VG.AArch64
-open VG.Impl.X25519.AArch64.Invert (TBL BASE ACC R2 ONE M cfg storeConst pre post)
-open VG.Proof.Ed25519.AArch64 (Keeps)
+open VG.Impl.Ed25519.AArch64.Divstep (TBL BASE ACC R2 ONE M cfg storeConst pre post)
+open VG.Proof.Ed25519.AArch64 (Scr workSize workSize_ge workSize_le)
 
-/-- X25519's working space, for the Montgomery arithmetic. -/
-theorem mscr {s : State} {base : Addr} (hs : Scratch s base) : VG.Proof.Mont.AArch64.Scr s base 4096 :=
-  ⟨hs.x0, hs.wr, hs.nowrap, by decide⟩
+variable {large : Bool}
 
-theorem M_mo : M.mo = 4032 := rfl
-theorem M_tmp : M.tmp = 4000 := rfl
+instance : NeZero Spec.X25519.P := ⟨by decide⟩
+
+/-- The inversion by divsteps is sound modulo `p`: `DivstepSound.lean`. -/
+class Sound : Prop where
+  sound : VG.Proof.Weierstrass.AArch64.InvSound Spec.X25519.P
+
+/-- The working space, for the Montgomery arithmetic. -/
+theorem mscr {s : State} {base : Addr} (hs : Scr s base large) :
+    VG.Proof.Mont.AArch64.Scr s base (workSize large) :=
+  ⟨hs.x0, hs.wr, hs.nowrap, by have := workSize_le large; omega⟩
+
+theorem M_mo : M.mo = 640 := rfl
+theorem M_tmp : M.tmp = 672 := rfl
 theorem M_n : M.n = 4 := rfl
 
 /-- `[o] = v` (four words). -/
-theorem storeConst_ok {s : State} {base : Addr} (hs : VG.Proof.Mont.AArch64.Scr s base 4096) {o : Nat} (v : Nat)
-    (ho : o + 32 ≤ 4096) (h8 : o % 8 = 0) (hv : v < 2 ^ 256) :
+theorem storeConst_ok {s : State} {base : Addr} {S : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base S) {o : Nat}
+    (v : Nat) (ho : o + 32 ≤ S) (h8 : o % 8 = 0) (hv : v < 2 ^ 256) :
     WP isa (.block (storeConst o v)) s fun t =>
       VG.Proof.Mont.wordsVal t.mem base o 4 = v ∧ VG.Proof.Mont.Outside base o 32 s.mem t.mem ∧
       VG.Proof.Mont.AArch64.KeepRegs [.x2] s t := by
@@ -52,11 +64,12 @@ theorem storeConst_ok {s : State} {base : Addr} (hs : VG.Proof.Mont.AArch64.Scr 
   refine WP.mono (wp_range_flatMap (M := isa) (N := 4) inv (fun n t hn ⟨tw, tO, tk⟩ => ?_) 4 (by decide) s
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), VG.Proof.Mont.Outside.refl _ _ _ _,
       ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩) fun t ⟨tw, tO, tk⟩ => ⟨?_, tO, tk⟩
-  · have ts : VG.Proof.Mont.AArch64.Scr t base 4096 :=
+  · have ts : VG.Proof.Mont.AArch64.Scr t base S :=
       ⟨(tk.gpr _ (by decide)).trans hs.x0, tk.wr ▸ hs.wr, hs.nowrap, hs.enc⟩
     rw [WP.block_append_iff]
     refine WP.mono (VG.Proof.Mont.AArch64.const64_ok t .x2 _) fun a ⟨a2, ka⟩ => ?_
-    have as : VG.Proof.Mont.AArch64.Scr a base 4096 := ts.of_keeps ka (by decide)
+    have as : VG.Proof.Mont.AArch64.Scr a base S := ts.of_keeps ka (by decide)
+    have _ := hs.enc
     refine WP.mono (VG.Proof.Mont.AArch64.st_ok as (d := o + 8 * n) (by omega) (by omega) .x2) fun b hb => ?_
     subst hb
     refine ⟨fun j hj => ?_, ?_, ?_⟩
@@ -87,22 +100,24 @@ theorem fe_wordsVal (m : Mem) (base : Addr) (o : Nat) :
   omega
 
 /-- The modulus `p` at `M.mo`, as the Montgomery arithmetic needs it. -/
-theorem modOk {m : Mem} {base : Addr} (h : VG.Proof.Mont.wordsVal m base M.mo 4 = Spec.X25519.P) :
-    VG.Proof.Mont.AArch64.ModOkA M 4096 Spec.X25519.P m base :=
-  ⟨by decide, by decide, by decide, by decide, by decide, h, by decide +kernel, by decide +kernel,
+theorem modOk {m : Mem} {base : Addr} {S : Nat} (hS : 704 ≤ S)
+    (h : VG.Proof.Mont.wordsVal m base M.mo 4 = Spec.X25519.P) :
+    VG.Proof.Mont.AArch64.ModOkA M S Spec.X25519.P m base :=
+  ⟨by decide, by decide, by simp only [M_mo, M_n]; omega, by simp only [M_tmp, M_n]; omega, by decide, h,
+    by decide +kernel, by decide +kernel,
     fun f m' hc => by rw [VG.Proof.Weierstrass.AArch64.callOf_small (by decide)] at hc; cases hc⟩
 
 theorem modA : VG.Proof.Mont.AArch64.ModA M := ⟨by decide, by decide⟩
 
 /-- A word away from what a Montgomery operation writes keeps its value. -/
 theorem opkeep_word {s t : State} {base : Addr} {o : Nat} (tk : VG.Proof.Mont.AArch64.OpKeep M base o s t)
-    {d : Nat} (h1 : d + 8 ≤ o ∨ o + 32 ≤ d) (h2 : d + 8 ≤ 4000 ∨ 4032 ≤ d) (hd : d + 8 ≤ 4096) :
+    {d : Nat} (h1 : d + 8 ≤ o ∨ o + 32 ≤ d) (h2 : d + 8 ≤ 672 ∨ 704 ≤ d) (hd : d + 8 ≤ 8192) :
     VG.Proof.Mont.word t.mem base d = VG.Proof.Mont.word s.mem base d :=
   (Mem.readW_congr fun i hi => (tk.mem _ (by rw [VG.Proof.Mont.ofs_off base (by omega)]; simp only [M_n]; omega)
     (by rw [VG.Proof.Mont.ofs_off base (by omega), M_tmp, M_n]; omega)).symm).symm
 
 theorem opkeep_wv {s t : State} {base : Addr} {o : Nat} (tk : VG.Proof.Mont.AArch64.OpKeep M base o s t)
-    {d : Nat} (h1 : d + 32 ≤ o ∨ o + 32 ≤ d) (h2 : d + 32 ≤ 4000 ∨ 4032 ≤ d) (hd : d + 32 ≤ 4096) :
+    {d : Nat} (h1 : d + 32 ≤ o ∨ o + 32 ≤ d) (h2 : d + 32 ≤ 672 ∨ 704 ≤ d) (hd : d + 32 ≤ 8192) :
     VG.Proof.Mont.wordsVal t.mem base d 4 = VG.Proof.Mont.wordsVal s.mem base d 4 := by
   simp only [VG.Proof.Mont.wordsVal]
   rw [opkeep_word tk (d := d) (by omega) (by omega) (by omega),
@@ -111,7 +126,7 @@ theorem opkeep_wv {s t : State} {base : Addr} {o : Nat} (tk : VG.Proof.Mont.AArc
     opkeep_word tk (d := d + 8 + 8 + 8) (by omega) (by omega) (by omega)]
 
 theorem opkeep_outside {s t : State} {base : Addr} {o : Nat} (tk : VG.Proof.Mont.AArch64.OpKeep M base o s t)
-    (ho : 2304 ≤ o) (ho' : o + 32 ≤ 4096) : VG.Proof.Mont.Outside base 2304 1792 s.mem t.mem :=
+    (ho : 192 ≤ o) (ho' : o + 32 ≤ 704) : VG.Proof.Mont.Outside base 192 512 s.mem t.mem :=
   fun x hx => tk.mem x (by simp only [M_n]; omega) (by simp only [M_tmp, M_n]; omega)
 
 /-- `d = n` (`add d, n, #0`). -/
@@ -125,45 +140,53 @@ theorem mov_ok (s : State) (d n : Reg) :
   · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr)
 
 /-- The constants, and `[BASE] = z R mod p`. -/
-theorem pre_ok {s : State} {base : Addr} (hs : Scratch s base) :
+theorem pre_ok {s : State} {base : Addr} (hs : Scr s base large) :
     WP isa (.block pre) s fun t =>
-      VG.Proof.Mont.AArch64.ModOkA M 4096 Spec.X25519.P t.mem base ∧
+      VG.Proof.Mont.AArch64.ModOkA M (workSize large) Spec.X25519.P t.mem base ∧
       VG.Proof.Mont.wordsVal t.mem base ONE 4 = 1 ∧
       t.gpr .x20 = s.gpr .x1 ∧
       VG.Proof.Mont.wordsVal t.mem base BASE 4 < Spec.X25519.P ∧
       VG.Proof.Mont.wordsVal t.mem base BASE 4 * 2 ^ 256 % Spec.X25519.P =
         VG.Proof.Ed25519.AArch64.fe s.mem base 128 * (1444) % Spec.X25519.P ∧
-      VG.Proof.Mont.Outside base 2304 1792 s.mem t.mem ∧
+      VG.Proof.Mont.Outside base 192 512 s.mem t.mem ∧
       VG.Proof.Mont.AArch64.KeepRegs (VG.Proof.Mont.AArch64.clob 4 ++ ([.x2, .x20] : List Reg)) s t := by
   have hm := mscr hs
+  have hge := workSize_ge large
   simp only [pre, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (mov_ok s .x20 .x1) fun a ⟨a20, ak, amem⟩ => ?_
-  have am : VG.Proof.Mont.AArch64.Scr a base 4096 := ⟨(ak.gpr _ (by decide)).trans hm.x0, ak.wr ▸ hm.wr, hm.nowrap, hm.enc⟩
+  have am : VG.Proof.Mont.AArch64.Scr a base (workSize large) :=
+    ⟨(ak.gpr _ (by decide)).trans hm.x0, ak.wr ▸ hm.wr, hm.nowrap, hm.enc⟩
   rw [WP.block_append_iff]
-  refine WP.mono (storeConst_ok am Spec.X25519.P (o := M.mo) (by decide) (by decide) (by decide))
+  refine WP.mono (storeConst_ok am Spec.X25519.P (o := M.mo) (Nat.le_trans (by decide) hge) (by decide) (by decide))
     fun b ⟨bv, bO, bk⟩ => ?_
-  have bs : VG.Proof.Mont.AArch64.Scr b base 4096 := ⟨(bk.gpr _ (by decide)).trans am.x0, bk.wr ▸ am.wr, hm.nowrap, hm.enc⟩
+  have bs : VG.Proof.Mont.AArch64.Scr b base (workSize large) :=
+    ⟨(bk.gpr _ (by decide)).trans am.x0, bk.wr ▸ am.wr, hm.nowrap, hm.enc⟩
   rw [WP.block_append_iff]
-  refine WP.mono (storeConst_ok bs (1444) (o := R2) (by decide) (by decide) (by decide))
+  refine WP.mono (storeConst_ok bs (1444) (o := R2) (Nat.le_trans (by decide) hge) (by decide) (by decide))
     fun c ⟨cv, cO, ck⟩ => ?_
-  have cs : VG.Proof.Mont.AArch64.Scr c base 4096 := ⟨(ck.gpr _ (by decide)).trans bs.x0, ck.wr ▸ bs.wr, hm.nowrap, hm.enc⟩
+  have cs : VG.Proof.Mont.AArch64.Scr c base (workSize large) :=
+    ⟨(ck.gpr _ (by decide)).trans bs.x0, ck.wr ▸ bs.wr, hm.nowrap, hm.enc⟩
   rw [WP.block_append_iff]
-  refine WP.mono (storeConst_ok cs 1 (o := ONE) (by decide) (by decide) (by decide)) fun d ⟨dv, dO, dk⟩ => ?_
-  have ds : VG.Proof.Mont.AArch64.Scr d base 4096 := ⟨(dk.gpr _ (by decide)).trans cs.x0, dk.wr ▸ cs.wr, hm.nowrap, hm.enc⟩
+  refine WP.mono (storeConst_ok cs 1 (o := ONE) (Nat.le_trans (by decide) hge) (by decide)
+    (by decide)) fun d ⟨dv, dO, dk⟩ => ?_
+  have ds : VG.Proof.Mont.AArch64.Scr d base (workSize large) :=
+    ⟨(dk.gpr _ (by decide)).trans cs.x0, dk.wr ▸ cs.wr, hm.nowrap, hm.enc⟩
   have dmo : VG.Proof.Mont.wordsVal d.mem base M.mo 4 = Spec.X25519.P := by
     rw [dO.wordsVal (by decide) (by decide), cO.wordsVal (by decide) (by decide), bv]
   have dr2 : VG.Proof.Mont.wordsVal d.mem base R2 4 = 1444 := by
     rw [dO.wordsVal (by decide) (by decide), cv]
-  refine WP.mono (VG.Proof.Mont.AArch64.mul_ok ds (modOk dmo) modA (o := BASE) (a := 128) (b := R2)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [M_n, dr2]; decide))
+  refine WP.mono (VG.Proof.Mont.AArch64.mul_ok ds (modOk (by omega) dmo) modA (o := BASE) (a := 128) (b := R2)
+    (Nat.le_trans (by decide) hge) (Nat.le_trans (by decide) hge)
+    (Nat.le_trans (by decide) hge) (by decide) (by decide) (by decide)
+    (by rw [M_n, dr2]; decide))
     fun t ⟨tk, tv, te⟩ => ?_
-  have wA : VG.Proof.Mont.Outside base 2304 8 s.mem a.mem := by rw [amem]; exact VG.Proof.Mont.Outside.refl _ _ _ _
+  have wA : VG.Proof.Mont.Outside base 192 8 s.mem a.mem := by rw [amem]; exact VG.Proof.Mont.Outside.refl _ _ _ _
   have d128 : VG.Proof.Mont.wordsVal d.mem base 128 4 = VG.Proof.Mont.wordsVal s.mem base 128 4 := by
     rw [dO.wordsVal (by decide) (by decide), cO.wordsVal (by decide) (by decide),
       bO.wordsVal (by decide) (by decide)]
     exact wA.wordsVal (by decide) (by decide)
-  refine ⟨modOk (by rw [opkeep_wv tk (d := M.mo) (by decide) (by decide) (by decide)]; exact dmo),
+  refine ⟨modOk (by omega) (by rw [opkeep_wv tk (d := M.mo) (by decide) (by decide) (by decide)]; exact dmo),
     by rw [opkeep_wv tk (d := ONE) (by decide) (by decide) (by decide)]; exact dv, ?_, by rw [← M_n]; exact tv,
     ?_, ?_, ⟨fun r hr => ?_, tk.rd.trans (dk.rd.trans (ck.rd.trans (bk.rd.trans ak.rd))),
       tk.wr.trans (dk.wr.trans (ck.wr.trans (bk.wr.trans ak.wr))),
@@ -207,19 +230,16 @@ theorem invert_arith {Z Bv Acc Res : Nat}
   rw [hR, hacc, hB, ← ofNat_pow', Fin.val_ofNat]
   exact (ofNat_eq_ofNat (m := Spec.X25519.P)).mpr (Nat.pow_mod Z (Spec.X25519.P - 2) Spec.X25519.P)
 
-/-- What `Invert.invert` changes in X25519's working space: slot 15, and from
-the inversion's area on. -/
-def IMem (base : Addr) (m m' : Mem) : Prop :=
-  ∀ x, (VG.Proof.Mont.ofs base x < 544 ∨ (576 ≤ VG.Proof.Mont.ofs base x ∧ VG.Proof.Mont.ofs base x < 2304) ∨
-    4096 ≤ VG.Proof.Mont.ofs base x) → m' x = m x
-
-theorem invLay : VG.Proof.Weierstrass.AArch64.InvLay cfg 4096 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, modA, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> decide
+theorem invLay (large : Bool) : VG.Proof.Weierstrass.AArch64.InvLay cfg (workSize large) := by
+  have := workSize_ge large
+  refine ⟨by decide, by decide, Nat.le_trans (by decide) this, Nat.le_trans (by decide) this,
+    Nat.le_trans (by decide) this, by decide, by decide, by decide, modA, by decide, by decide, by decide,
+    by decide, by decide, by decide, by decide, by decide, by decide⟩
 
 theorem invOk : VG.Proof.Weierstrass.AArch64.InvOk cfg Spec.X25519.P :=
   VG.Proof.Weierstrass.AArch64.InvOk.ofMod (by decide +kernel) (by decide)
 
-theorem invW_eq : VG.Proof.Weierstrass.AArch64.invW cfg = [(2624, 32), (2304, 288), (4000, 32)] := rfl
+theorem invW_eq : VG.Proof.Weierstrass.AArch64.invW cfg = [(512, 32), (192, 288), (672, 32)] := rfl
 
 theorem cfg_n : cfg.M.n = 4 := rfl
 theorem cfg_acc : cfg.acc = ACC := rfl
@@ -230,8 +250,8 @@ theorem offset_fifteen : VG.Impl.Ed25519.AArch64.offset 15 = 544 := rfl
 
 /-- A word away from what the divsteps write keeps its value. -/
 theorem unch_word {m m' : Mem} {base : Addr} (hU : VG.Proof.Weierstrass.Unch base (VG.Proof.Weierstrass.AArch64.invW cfg) m m')
-    {d : Nat} (h1 : d + 8 ≤ 2304 ∨ 2592 ≤ d) (h2 : d + 8 ≤ 2624 ∨ 2656 ≤ d) (h3 : d + 8 ≤ 4000 ∨ 4032 ≤ d)
-    (hd : d + 8 ≤ 4096) : VG.Proof.Mont.word m' base d = VG.Proof.Mont.word m base d := by
+    {d : Nat} (h1 : d + 8 ≤ 192 ∨ 480 ≤ d) (h2 : d + 8 ≤ 512 ∨ 544 ≤ d) (h3 : d + 8 ≤ 672 ∨ 704 ≤ d)
+    (hd : d + 8 ≤ 8192) : VG.Proof.Mont.word m' base d = VG.Proof.Mont.word m base d := by
   refine (Mem.readW_congr fun i hi => (hU _ ?_).symm).symm
   intro w hw
   rw [invW_eq] at hw
@@ -240,8 +260,8 @@ theorem unch_word {m m' : Mem} {base : Addr} (hU : VG.Proof.Weierstrass.Unch bas
   rcases hw with rfl | rfl | rfl <;> omega
 
 theorem unch_wv {m m' : Mem} {base : Addr} (hU : VG.Proof.Weierstrass.Unch base (VG.Proof.Weierstrass.AArch64.invW cfg) m m')
-    {d : Nat} (h1 : d + 32 ≤ 2304 ∨ 2592 ≤ d) (h2 : d + 32 ≤ 2624 ∨ 2656 ≤ d) (h3 : d + 32 ≤ 4000 ∨ 4032 ≤ d)
-    (hd : d + 32 ≤ 4096) : VG.Proof.Mont.wordsVal m' base d 4 = VG.Proof.Mont.wordsVal m base d 4 := by
+    {d : Nat} (h1 : d + 32 ≤ 192 ∨ 480 ≤ d) (h2 : d + 32 ≤ 512 ∨ 544 ≤ d) (h3 : d + 32 ≤ 672 ∨ 704 ≤ d)
+    (hd : d + 32 ≤ 8192) : VG.Proof.Mont.wordsVal m' base d 4 = VG.Proof.Mont.wordsVal m base d 4 := by
   simp only [VG.Proof.Mont.wordsVal]
   rw [unch_word hU (d := d) (by omega) (by omega) (by omega) (by omega),
     unch_word hU (d := d + 8) (by omega) (by omega) (by omega) (by omega),
@@ -249,26 +269,29 @@ theorem unch_wv {m m' : Mem} {base : Addr} (hU : VG.Proof.Weierstrass.Unch base 
     unch_word hU (d := d + 8 + 8 + 8) (by omega) (by omega) (by omega) (by omega)]
 
 /-- `[slot 15] = [slot 2]^(p - 2)`. -/
-theorem invert_ok {s : State} {base : Addr} (hs : Scratch s base) :
-    WP isa VG.Impl.X25519.AArch64.Invert.invert s fun t =>
+theorem invert_ok [Sound] {s : State} {base : Addr} (hs : Scr s base large) :
+    WP isa VG.Impl.Ed25519.AArch64.Divstep.invert s fun t =>
       VG.Proof.Ed25519.AArch64.env t.mem base 15 = VG.Proof.X25519.invert (VG.Proof.Ed25519.AArch64.env s.mem base 2) ∧
       VG.Proof.Mont.AArch64.KeepRegs (.x19 :: VG.Proof.Mont.AArch64.clob 4 ++ ([.x2, .x20] : List Reg)) s t ∧
-      t.gpr .x1 = s.gpr .x1 ∧ IMem base s.mem t.mem := by
+      t.gpr .x1 = s.gpr .x1 ∧ VG.Proof.Ed25519.AArch64.Outside base 192 512 s.mem t.mem := by
   have hm := mscr hs
+  have hge := workSize_ge large
   refine WP.seq (WP.mono (pre_ok hs) fun a ⟨aM, a1, ax, ab, abv, aO, ak⟩ => ?_)
-  have as : VG.Proof.Mont.AArch64.Scr a base 4096 := ⟨(ak.gpr _ (by decide)).trans hm.x0, ak.wr ▸ hm.wr, hm.nowrap, hm.enc⟩
-  refine WP.seq (WP.mono (invSound invLay (by decide) (VG.Proof.Weierstrass.unitMod_pow_two (by decide) _) as aM ab invOk)
+  have as : VG.Proof.Mont.AArch64.Scr a base (workSize large) := ⟨(ak.gpr _ (by decide)).trans hm.x0, ak.wr ▸ hm.wr, hm.nowrap, hm.enc⟩
+  refine WP.seq (WP.mono (Sound.sound (invLay large) (by decide) (VG.Proof.Weierstrass.unitMod_pow_two (by decide) _) as aM ab invOk)
     fun b ⟨bk, bU, bv, be⟩ => ?_)
-  have bs : VG.Proof.Mont.AArch64.Scr b base 4096 := ⟨(bk.gpr _ (by decide)).trans as.x0, bk.wr ▸ as.wr, hm.nowrap, hm.enc⟩
+  have bs : VG.Proof.Mont.AArch64.Scr b base (workSize large) := ⟨(bk.gpr _ (by decide)).trans as.x0, bk.wr ▸ as.wr, hm.nowrap, hm.enc⟩
   have bmo : VG.Proof.Mont.wordsVal b.mem base M.mo 4 = Spec.X25519.P := by
     rw [unch_wv bU (by decide) (by decide) (by decide) (by decide)]; exact aM.val
   have b1 : VG.Proof.Mont.wordsVal b.mem base ONE 4 = 1 := by
     rw [unch_wv bU (by decide) (by decide) (by decide) (by decide)]; exact a1
-  rw [VG.Impl.X25519.AArch64.Invert.post, WP.block_append_iff]
-  refine WP.mono (VG.Proof.Mont.AArch64.mul_ok bs (modOk bmo) modA (o := 544) (a := ACC) (b := ONE)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [M_n, b1]; decide))
+  rw [VG.Impl.Ed25519.AArch64.Divstep.post, WP.block_append_iff]
+  refine WP.mono (VG.Proof.Mont.AArch64.mul_ok bs (modOk (by omega) bmo) modA (o := 544) (a := ACC) (b := ONE)
+    (Nat.le_trans (by decide) hge) (Nat.le_trans (by decide) hge)
+    (Nat.le_trans (by decide) hge) (by decide) (by decide) (by decide)
+    (by rw [M_n, b1]; decide))
     fun c ⟨ck, cv, ce⟩ => ?_
-  have cs : VG.Proof.Mont.AArch64.Scr c base 4096 := ⟨(ck.gpr _ (by decide)).trans bs.x0, ck.wr ▸ bs.wr, hm.nowrap, hm.enc⟩
+  have cs : VG.Proof.Mont.AArch64.Scr c base (workSize large) := ⟨(ck.gpr _ (by decide)).trans bs.x0, ck.wr ▸ bs.wr, hm.nowrap, hm.enc⟩
   refine WP.mono (mov_ok c .x1 .x20) fun d ⟨d1, dk, dm⟩ => ?_
   refine ⟨?_, ⟨fun r hr => ?_, dk.rd.trans (ck.rd.trans (bk.rd.trans ak.rd)), dk.wr.trans (ck.wr.trans (bk.wr.trans ak.wr)),
     dk.sp.trans (ck.sp.trans (bk.sp.trans ak.sp))⟩, ?_, fun x hx => ?_⟩
@@ -291,14 +314,14 @@ theorem invert_ok {s : State} {base : Addr} (hs : Scratch s base) :
       ak.gpr r (by simp only [List.mem_append, List.mem_cons, List.mem_nil_iff, or_false, not_or]; exact ⟨hc, h2, h20⟩)]
   · rw [d1, ck.gpr _ (by decide), bk.gpr _ (by decide)]
     exact ax
-  · rw [dm]
-    have hn := hm.nowrap
-    rw [ck.mem x (by simp only [M_n]; omega) (by simp only [M_tmp, M_n]; omega)]
+  · simp only [VG.Proof.Ed25519.AArch64.ofs] at hx
+    rw [dm]
+    rw [ck.mem x (by simp only [M_n, VG.Proof.Mont.ofs]; omega) (by simp only [M_tmp, M_n, VG.Proof.Mont.ofs]; omega)]
     rw [bU x (by
       intro w hw
       rw [invW_eq] at hw
       simp only [List.mem_cons, List.mem_nil_iff, or_false] at hw
-      rcases hw with rfl | rfl | rfl <;> omega)]
-    exact aO x (by omega)
+      rcases hw with rfl | rfl | rfl <;> simp only [VG.Proof.Mont.ofs] <;> omega)]
+    exact aO x (by simp only [VG.Proof.Mont.ofs]; omega)
 
-end VG.Proof.X25519.AArch64.Hybrid
+end VG.Proof.Ed25519.AArch64.Divstep
