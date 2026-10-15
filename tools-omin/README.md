@@ -14,9 +14,15 @@ copy and never edits the module itself.
    one at a time while `omega` still succeeds, and logs the survivors with
    their position.
 4. If a survivor has no usable name (hygienic, or shadowed by a later
-   hypothesis of the same name), that call keeps `omega_arith`.
+   hypothesis of the same name), that call keeps `omega_arith`. A call that
+   runs on several goals (after `<;>`) gets the union of their facts.
 5. It writes the module's text with each `omega_arith` replaced by its
    logged `omega_using [...]`.
+6. It compiles that text and reverts every call that reports an error. An
+   unused-variable error means a hypothesis was only ever used through
+   `omega`; for one of those it reverts every call in that declaration. It
+   repeats until the compile is clean, so the output it writes compiles with
+   zero errors.
 
 The header sets `maxHeartbeats 0`, but only in the scratch copy; the minimized
 file has no such option.
@@ -27,9 +33,8 @@ python3 ../tools-omin/omin.py VerifiedGarbage/Proof/Foo/Bar.lean /tmp/Bar.lean
 #   replaced 91, kept 5; facts per call: [...]
 ```
 
-Then compile `/tmp/Bar.lean` against the module's setup and check that Lean
-reports zero errors. Compare heartbeats with the original before copying the
-result over the module.
+Compare heartbeats with the original before copying the result over the
+module: in many modules omega is cheap and the gain is about 1%.
 
 `omin.py` still uses this session's scratchpad paths: set `S` (the directory
 holding `omin_header.lean`) and `lean_dir` at its top to yours. It reuses or

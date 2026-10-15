@@ -37,7 +37,7 @@ for ln,c in sorted(occ,reverse=True):
 open(out+".min.lean","w").write("\n".join(tl))
 r=subprocess.run(["lake","env","lean","--setup",setup,out+".min.lean"],cwd=lean_dir,env=env,capture_output=True,text=True)
 o=r.stdout+r.stderr
-errs=re.findall(r'^\S+?:(\d+):(\d+): error.*',o,re.M)
+errs=[e for e in re.findall(r'^\S+?:(\d+):(\d+): error(.*)',o,re.M) if 'is not explicitly referenced' not in e[2]]
 if errs: print("ERRORS:",o[:3000]); sys.exit(1)
 res={}
 for m in re.finditer(r'OMIN(-KEEP)?@(\d+):(\d+) (.*)$',o,re.M):
@@ -51,21 +51,45 @@ for m in re.finditer(r'OMIN(-KEEP)?@(\d+):(\d+) (.*)$',o,re.M):
             if x and x not in names: names.append(x)
         res[k]=(None,"["+", ".join(names)+"]")
     else: res[k]=(keep,arg)
-# build output on ORIGINAL text
-ol=text.split("\n"); n_rep=n_keep=0; sizes=[]
-inv={}
+# sites on ORIGINAL text: (line index, col, replacement)
+sites=[]
 for orig in range(lo,min(hi,len(lines))+1):
-    ln=newline(orig)-1
-    for m in re.finditer(r'\bomega_arith\b(?!_)',lines[orig-1]): inv.setdefault(orig-1,[]).append(m.start())
-# map: occurrences in new text (after replacement columns are same start)
-for oi,cols in inv.items():
-    ln=newline(oi+1)-1
-    order=sorted(cols)
-    for c in sorted(cols,reverse=True):
-        r_=res.get((ln,c-2*order.index(c)))
-        if r_ is None: print("no result for",oi+1,c); continue
-        keep,arg=r_
-        if keep: n_keep+=1; continue
-        ol[oi]=ol[oi][:c]+"omega_using "+arg+ol[oi][c+len("omega_arith"):]; n_rep+=1; sizes.append(arg.count(",")+1 if arg!="[]" else 0)
-open(out,"w").write("\n".join(ol))
-print(f"replaced {n_rep}, kept {n_keep}; facts per call: {sizes}")
+    oi=orig-1; ln=newline(orig)-1
+    cols=[m.start() for m in re.finditer(r'\bomega_arith\b(?!_)',lines[oi])]
+    for k,c in enumerate(cols):
+        r_=res.get((ln,c-2*k))
+        if r_ is None or r_[0]: continue
+        sites.append((oi,c,"omega_using "+r_[1]))
+decl_starts=[i for i,l in enumerate(lines) if re.match(r'^(@\[[^\]]*\]\s*)?(private |protected |noncomputable )*(theorem|lemma|def|abbrev|instance|structure)\b',l)]
+def decl_range(li):
+    s=max([d for d in decl_starts if d<=li],default=0); e=min([d for d in decl_starts if d>li],default=len(lines))
+    return s,e
+active=set(range(len(sites)))
+def render():
+    ol=list(lines); pos={}
+    by_line={}
+    for i in active: by_line.setdefault(sites[i][0],[]).append(i)
+    for li,ids in by_line.items():
+        ids.sort(key=lambda i:sites[i][1],reverse=True)
+        for i in ids:
+            _,c,rep=sites[i]; ol[li]=ol[li][:c]+rep+ol[li][c+len("omega_arith"):]
+        # positions after rewrite: recompute columns left-to-right
+        shift=0
+        for i in sorted(ids,key=lambda i:sites[i][1]):
+            pos[(li+1,sites[i][1]+shift)]=i; shift+=len(sites[i][2])-len("omega_arith")
+    return "\n".join(ol),pos
+for it in range(8):
+    txt,pos=render(); open(out,"w").write(txt)
+    r=subprocess.run(["lake","env","lean","--setup",setup,out],cwd=lean_dir,env=env,capture_output=True,text=True)
+    errs=re.findall(r'^\S+?:(\d+):(\d+): error(.*)',r.stdout+r.stderr,re.M)
+    if not errs: break
+    bad=set()
+    for l,c,msg in errs:
+        l,c=int(l),int(c)
+        if (l,c) in pos: bad.add(pos[(l,c)]); continue
+        s,e=decl_range(l-1)
+        bad|={i for i in active if s<=sites[i][0]<e}
+    if not bad & active: print("UNRESOLVED", errs[:3]); sys.exit(1)
+    active-=bad
+sizes=[sites[i][2].count(",")+1 if not sites[i][2].endswith("[]") else 0 for i in sorted(active)]
+print(f"replaced {len(active)} of {sum(len(re.findall(r'\bomega_arith\b(?!_)',lines[i-1])) for i in range(lo,min(hi,len(lines))+1))}; reverted {len(sites)-len(active)}; facts per call: {sizes}")
