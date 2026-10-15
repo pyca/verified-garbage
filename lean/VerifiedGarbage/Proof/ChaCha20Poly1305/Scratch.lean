@@ -154,6 +154,20 @@ theorem sealPost_out : ∀ vs m m₁ m₂ r, vs.length = (sealSig.words pb).leng
   rw [bytesAt_congr_len (p := data) (agree_of hb.2.2.2.1), bytesAt_congr (p := tag) (agree_of hb.2.2.2.2)]
   exact h
 
+/-- `openPost`, as a function of the bytes it reads: rewriting them does not
+rewrite under its `match`. -/
+def openPostB (k n a c t out : List Byte) (r : BitVec 32) : Prop :=
+  match decrypt k n a c t with
+  | some pt => r = 1 ∧ out = pt
+  | none => r = 0
+
+theorem openPost_curry (key nonce aad al data len tag : BitVec 64) (m m' : Mem) (r : BitVec 32) :
+    Curry.apply (openSig.words pb) (openPost pb) [key, nonce, aad, al, data, len, tag] m m' r =
+      openPostB (Spec.Poly1305.bytesAt m key 32) (Spec.Poly1305.bytesAt m nonce 12)
+        (Spec.Poly1305.bytesAt m aad (al.setWidth pb).toNat)
+        (Spec.Poly1305.bytesAt m data (len.setWidth pb).toNat) (Spec.Poly1305.bytesAt m tag 16)
+        (Spec.Poly1305.bytesAt m' data (len.setWidth pb).toNat) r := rfl
+
 theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).length →
     (∀ b ∈ Sig.bufs openSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (openSig.words pb) (openPost pb) vs m₁ m' r →
@@ -176,11 +190,8 @@ theorem openPost_local : ∀ vs m₁ m₂ m' r, vs.length = (openSig.words pb).l
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
   simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr] (openPost pb) _ m₁ m' r at h
-  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr] (openPost pb) _ m₂ m' r
-  dsimp only [Curry.apply, openPost, ArgWord.ofRaw] at h ⊢
+  replace h := Eq.mp (openPost_curry pb key nonce aad al data len tag m₁ m' r) h
+  refine Eq.mpr (openPost_curry pb key nonce aad al data len tag m₂ m' r) ?_
   rw [bytesAt_congr (agree_of hb.1), bytesAt_congr (agree_of hb.2.1),
     bytesAt_congr_len (agree_of hb.2.2.1), bytesAt_congr_len (p := data) (agree_of hb.2.2.2.1),
     bytesAt_congr (p := tag) (agree_of hb.2.2.2.2)]
@@ -204,11 +215,8 @@ theorem openPost_out : ∀ vs m m₁ m₂ r, vs.length = (openSig.words pb).leng
   obtain rfl := List.eq_nil_of_length_eq_zero hlen
   simp only [openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
     forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr] (openPost pb) _ m m₁ r at h
-  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-    ArgWord.int pb, ArgWord.addr] (openPost pb) _ m m₂ r
-  dsimp only [Curry.apply, openPost, ArgWord.ofRaw] at h ⊢
+  replace h := Eq.mp (openPost_curry pb _ _ _ _ data _ _ m m₁ r) h
+  refine Eq.mpr (openPost_curry pb _ _ _ _ data _ _ m m₂ r) ?_
   rw [bytesAt_congr_len (p := data) (agree_of hb.2.2.2.1)]
   exact h
 
