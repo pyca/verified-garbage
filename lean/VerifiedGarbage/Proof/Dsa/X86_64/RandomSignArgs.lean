@@ -70,6 +70,6 @@ theorem random_signOutgoing_words (m : Mem) (B : Addr) :
   rcases hp with rfl | rfl | rfl | rfl | rfl <;>
     simp only [randomSignOutgoing, randomSlotsMem, Random.oQLen, Random.oDigest,
       Random.oDigestLen, Random.oScratch, Random.oScratchLen] <;>
-    simp (disch := omega) only [word_writeW_self, random_word_write_other]
+    simp (disch := decide) only [word_writeW_self, random_word_write_other]
 
 end VG.Proof.Dsa.X86_64

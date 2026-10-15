@@ -147,7 +147,7 @@ theorem jointByte_ok (M : Mont) {t₀ t : State} {P : Addr} {w n xc g y : Nat}
         (by have := ent_le w hj; omega_arith)]; exact h₂.tab.val j hj⟩
   · rw [hYe, h₂.val, pre_succ eb (by omega), pre_succ fb (by omega)]
     simp only [Nat.reducePow, Nat.reduceSub, Nat.pow_zero, Nat.div_one]
-    simp only [v, z, Nat.mul_comm]
+    simp only [v, z]
     ac_rfl
   · rw [hm', word_writeW_self]
   · rw [hm', hdrStore_hdr (i := Crt.sI) _ _ _ (by decide) (by decide) (by decide)]; exact he₂

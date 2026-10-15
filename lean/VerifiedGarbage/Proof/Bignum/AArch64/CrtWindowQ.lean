@@ -258,7 +258,7 @@ theorem qPhase_ok (W : Window) (M : Mont) (S : Selector) {s : State} {B : Addr} 
     exact VG.Proof.Bignum.mont_cancel hR (by rw [hm₄, hv₃ hd])
   · by_cases h : r = .x0
     · subst h; rw [hdi, hg.x0]
-    · exact kall.gpr r (by simp only [mmRegs, List.mem_cons, List.mem_append] at hr ⊢; simp_all)
+    · exact kall.gpr r (by simp only [List.mem_append, List.mem_singleton, hr, h, or_self, not_false_eq_true])
 
 
 end VG.Proof.Bignum.AArch64.WindowFive
