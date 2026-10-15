@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
 import VerifiedGarbage.Proof.GcmSiv.Spec
 import all Init.Data.Array.Basic
@@ -76,11 +77,11 @@ theorem lens_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : 
   have fB : Frame [⟨W + BitVec.ofNat 64 128, 16⟩] t.mem t₁.mem := by
     rw [hm₁]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains W (Nat.le_refl _) (by decide) (by have := L.ww; omega))).writeW (List.mem_singleton_self _) _
+      (Offset.contains W (Nat.le_refl _) (by decide) (by have := L.ww; omega_arith))).writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (show 8 + 8 ≤ 16 by decide) (by decide))
   have dB : ∀ d, d + 16 ≤ 128 → ∀ r ∈ [(⟨W + BitVec.ofNat 64 128, 16⟩ : Region)],
       (⟨W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun d hd r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl hd) (by omega) (by decide)
+    simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl hd) (by omega_arith) (by decide)
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.mono (gh_call v.gh (gargs L E₁ (d := 128) (n := 1) (by decide) (by decide) rdi₁ rsi₁ rdx₁ rcx₁ r8₁))
     fun t₂ Q => ?_
@@ -114,8 +115,8 @@ theorem tagIn_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t)
   refine ⟨_, by srun [tagIn, h15, r₀, r₈, rn, w₀, w₈, hN, n₀, n₈], ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_arithFlags]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
-      (Offset.contains W (Nat.le_refl _) (by decide) (by omega))).writeW (List.mem_singleton_self _) _
-      (Offset.contains W (by decide) (by decide) (by omega))
+      (Offset.contains W (Nat.le_refl _) (by decide) (by omega_arith))).writeW (List.mem_singleton_self _) _
+      (Offset.contains W (by decide) (by decide) (by omega_arith))
   · simp only [mem_setReg, mem_arithFlags]
     rw [show W + BitVec.ofNat 64 104 = W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 by rw [add_ofNat_assoc],
       Proof.Cmac.bytesAt_store2, ← Proof.Gcm.X86_64.blockAt_bswap, BitVec.add_zero, add_ofNat_assoc,
@@ -131,7 +132,7 @@ theorem tagIn_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t)
 theorem Slots.absR {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D : Addr} {al n : Nat} {m m' : Mem}
     (S : Slots W R N A D al n m) (hf : Frame (absR W SP) m m') : Slots W R N A D al n m' := by
   have k (d : Nat) (hd : 200 ≤ d ∧ d + 8 ≤ 248) : m'.readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 :=
-    hf.readW (Region.contains_self _ _) (w_absR L (.inr (.inr ⟨by omega, by omega⟩))) (by decide)
+    hf.readW (Region.contains_self _ _) (w_absR L (.inr (.inr ⟨by omega_arith, by omega_arith⟩))) (by decide)
   exact ⟨by rw [k 200 (by decide)]; exact S.rounds, by rw [k 208 (by decide)]; exact S.nonce,
     by rw [k 216 (by decide)]; exact S.aad, by rw [k 224 (by decide)]; exact S.alen,
     by rw [k 232 (by decide)]; exact S.data, by rw [k 240 (by decide)]; exact S.len⟩
@@ -168,7 +169,7 @@ theorem polyPost_ok {K W SP : Addr} (L : Lay K W SP) {t t₅ : State} {R : Nat} 
     (P.frame.mono fun q hq => List.mem_cons_of_mem _ hq).trans
       (fr₆.mono fun q hq => by simp only [List.mem_singleton] at hq; subst hq; exact List.mem_cons_self ..), fun hpv => ?_⟩
   have hp : ∀ xs ys : List Byte, (Spec.GcmSiv.pad16 xs ++ Spec.GcmSiv.pad16 ys).length % 16 = 0 := fun xs ys => by
-    rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega
+    rw [List.length_append]; have := GcmSiv.pad16_mod xs; have := GcmSiv.pad16_mod ys; omega_arith
   rw [out₆, Proof.AesGcm.X86_64.bytesAt_frame P.frame (buf_absR hN) (by decide), GcmSiv.tagInput_eq,
     Proof.AesGcm.X86_64.length_bytesAt, Proof.AesGcm.X86_64.length_bytesAt, P.out, hG, hY, Spec.GcmSiv.polyval,
     hpv, GcmSiv.elems_append (hp _ _), GcmSiv.elems_append (GcmSiv.pad16_mod _),
@@ -269,17 +270,17 @@ theorem StPost.trans {K W SP : Addr} (L : Lay K W SP) {s : Nat} {xs ys : List Sp
   have hl₁ := h₁.le
   have hl₂ := h₂.le
   refine ⟨h₂.env, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₁.frame.trans (h₂.frame.sub fun r hr => ?_), ?_,
-    by rw [h₂.rdi, List.length_append, Nat.add_assoc], by rw [List.length_append]; omega⟩
+    by rw [h₂.rdi, List.length_append, Nat.add_assoc], by rw [List.length_append]; omega_arith⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Offset.sub W (by omega) (by omega)⟩
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Offset.sub W (by omega_arith) (by omega_arith)⟩
   · rw [List.length_append, blocksAt_add, Proof.AesGcm.X86_64.blocksAt_frame h₂.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact L.w_w (.inr (by omega)) (by omega) (by decide)
-        · exact L.w_w (.inl (by omega)) (by omega) (by omega)) (by omega), h₁.out, add_ofNat_assoc,
-      show 488 + 16 * s + 16 * xs.length = 488 + 16 * (s + xs.length) by omega, h₂.out]
+        · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+        · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by omega_arith), h₁.out, add_ofNat_assoc,
+      show 488 + 16 * s + 16 * xs.length = 488 + 16 * (s + xs.length) by omega_arith, h₂.out]
 
 /-- `stageTail`: the last `r` (1 to 15) bytes at `P`, padded with zeros,
 reversed at block `s` of `W + 488`. -/
@@ -310,29 +311,29 @@ theorem stageTail_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W S
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   have lp : Proof.AesGcm.X86_64.LoopPre t₁ P (W + BitVec.ofNat 64 128) r :=
-    ⟨hsi₁, hdi₁, hcx₁, hr1, by omega, by rw [hrd₁, hwr₁]; exact hP.rd, by rw [hwr₁]; exact E.perm.wC (by omega),
-      hP.w.sub_right (Lay.wSub (by omega))⟩
+    ⟨hsi₁, hdi₁, hcx₁, hr1, by omega_arith, by rw [hrd₁, hwr₁]; exact hP.rd, by rw [hwr₁]; exact E.perm.wC (by omega_arith),
+      hP.w.sub_right (Lay.wSub (by omega_arith))⟩
   refine WP.seq (WP.mono (Proof.AesGcm.X86_64.copyLoop_ok t₁ lp) fun t₂ ⟨hm₂, hg₂, hrd₂, hwr₂⟩ => ?_)
   -- The data is outside the zeroed block.
   have hd₁ : bytesAt t₁.mem P r = bytesAt t.mem P r := by
     rw [hm₁, Proof.Cmac.zero2]
     exact Proof.AesGcm.X86_64.bytesAt_frame
       (((Frame.refl [(⟨W + BitVec.ofNat 64 128, 16⟩ : Region)] _).writeW (List.mem_singleton_self _) _
-        (Offset.contains W (Nat.le_refl _) (by decide) (by omega))).writeW (List.mem_singleton_self _) _
+        (Offset.contains W (Nat.le_refl _) (by decide) (by omega_arith))).writeW (List.mem_singleton_self _) _
         (Offset.contains_base _ (show 8 + 8 ≤ 16 by decide) (by decide)))
       (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact hP.w.sub_right (Lay.wSub (by decide)))
-      (by omega)
+      (by omega_arith)
   have hb₂ : bytesAt t₂.mem (W + BitVec.ofNat 64 128) 16 = bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r) := by
     have hl := Proof.AesGcm.X86_64.length_bytesAt t.mem P r
-    rw [hm₂, hd₁, hm₁, pad_bytes _ _ _ (by omega), hl]
+    rw [hm₂, hd₁, hm₁, pad_bytes _ _ _ (by omega_arith), hl]
   have h15₂ : t₂.gpr .r15 = W := by
     rw [hg₂ _ (by decide) (by decide), hg₁ _ (by decide) (by decide) (by decide) (by decide), h15]
   have hbx₂ : t₂.gpr .rbx = W + BitVec.ofNat 64 (488 + 16 * s) := by rw [hg₂ _ (by decide) (by decide), hbx₁]
   have r₀ := E.perm.wR (show 128 + 8 ≤ 3816 by decide)
   have r₈ := E.perm.wR (show 136 + 8 ≤ 3816 by decide)
-  have v₀ := E.perm.wW (d := 488 + 16 * s) (n := 8) (by omega)
-  have v₈ := E.perm.wW (d := 488 + 16 * s + 8) (n := 8) (by omega)
+  have v₀ := E.perm.wW (d := 488 + 16 * s) (n := 8) (by omega_arith)
+  have v₈ := E.perm.wW (d := 488 + 16 * s + 8) (n := 8) (by omega_arith)
   rw [← add_ofNat_assoc] at v₈
   rw [← hrd₁, ← hwr₁, ← hrd₂, ← hwr₂] at r₀ r₈
   rw [← hwr₁, ← hwr₂] at v₀ v₈
@@ -349,7 +350,7 @@ theorem stageTail_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W S
     refine ⟨_, by srun [h15₂, hbx₂, r₀, r₈, v₀, v₈], ?_, ?_, ?_, ?_, ?_⟩
     · simp only [mem_setReg, mem_arithFlags, add_ofNat_assoc, hbx₂, BitVec.add_zero]
     · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, hbx₂, add_ofNat_assoc]
-      rw [show 488 + 16 * s + 16 = 488 + 16 * (s + 1) by omega]
+      rw [show 488 + 16 * s + 16 = 488 + 16 * (s + 1) by omega_arith]
     · intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl <;> simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
     all_goals rfl
@@ -364,19 +365,19 @@ theorem stageTail_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W S
   have mR : (⟨W + BitVec.ofNat 64 (488 + 16 * s), 1024 - 16 * s⟩ : Region) ∈ stR W s := by simp
   have f₁ : Frame (stR W s) t.mem t₁.mem := by
     rw [hm₁, Proof.Cmac.zero2]
-    exact ((Frame.refl _ _).writeW mB _ (Offset.contains W (Nat.le_refl _) (by decide) (by omega))).writeW mB _
+    exact ((Frame.refl _ _).writeW mB _ (Offset.contains W (Nat.le_refl _) (by decide) (by omega_arith))).writeW mB _
       (Offset.contains_base _ (show 8 + 8 ≤ 16 by decide) (by decide))
   have f₂ : Frame (stR W s) t₁.mem t₂.mem := by
     rw [hm₂]
     exact (Proof.AesGcm.X86_64.writeBytes_frame' _ (Proof.AesGcm.X86_64.length_bytesAt _ _ _)).sub
       fun q hq => by
-        simp only [List.mem_singleton] at hq; subst hq; exact ⟨_, mB, Region.sub_prefix (by omega)⟩
+        simp only [List.mem_singleton] at hq; subst hq; exact ⟨_, mB, Region.sub_prefix (by omega_arith)⟩
   have f₃ : Frame (stR W s) t₂.mem t₃.mem := by
     rw [hm₃]
-    exact ((Frame.refl _ _).writeW mR _ (Offset.contains W (Nat.le_refl _) (by omega) (by omega))).writeW mR _
-      (Offset.contains_base _ (show 8 + 8 ≤ 1024 - 16 * s by omega) (by decide))
+    exact ((Frame.refl _ _).writeW mR _ (Offset.contains W (Nat.le_refl _) (by omega_arith) (by omega_arith))).writeW mR _
+      (Offset.contains_base _ (show 8 + 8 ≤ 1024 - 16 * s by omega_arith) (by decide))
   refine WP.of_runBlock ⟨t₃, run₃, E₃, by rw [hrd₃, hrd₂, hrd₁], by rw [hwr₃, hwr₂, hwr₁], (f₁.trans f₂).trans f₃,
-    ?_, by rw [hdi₃]; rfl, by simp only [List.length_singleton]; omega⟩
+    ?_, by rw [hdi₃]; rfl, by simp only [List.length_singleton]; omega_arith⟩
   simp only [List.length_singleton]
   rw [show Spec.Gcm.blocksAt t₃.mem (W + BitVec.ofNat 64 (488 + 16 * s)) 1 =
       [Spec.Gcm.blockAt t₃.mem (W + BitVec.ofNat 64 (488 + 16 * s))] by simp [Spec.Gcm.blocksAt],
@@ -404,7 +405,7 @@ theorem stage_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t : State} (E :
     · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h12]
     · simp only [zf_setReg, zf_arithFlags, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false,
         reduceCtorEq, hbp, Proof.AesGcm.X86_64.shr4 _ hn]
-      rw [Proof.AesGcm.X86_64.and_self_beq (by omega)]
+      rw [Proof.AesGcm.X86_64.and_self_beq (by omega_arith)]
     · intro r h₁ h₂ h₃; simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, h₁, h₂, h₃, ite_false]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
@@ -422,7 +423,7 @@ theorem stage_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t : State} (E :
     · have h0 : n / 16 = 0 := by simpa using ht
       refine WP.block_nil ⟨?_, by rw [hsi₁, h0, Nat.mul_zero, BitVec.add_zero], hbp₁⟩
       rw [h0]
-      exact StPost.nil E₁ (by omega) hdi₁
+      exact StPost.nil E₁ (by omega_arith) hdi₁
     · have h0 : n / 16 ≠ 0 := by simpa using hf
       obtain ⟨t₂, run₂, h14₂, hg₂, hm₂, hrd₂, hwr₂⟩ : ∃ t₂ : State, runBlock isa [.mov .r14 (.reg .rbx)] t₁ = some t₂ ∧
           t₂.gpr .r14 = BitVec.ofNat 64 (n / 16) ∧ (∀ r, r ≠ .r14 → t₂.gpr r = t₁.gpr r) ∧ t₂.mem = t₁.mem ∧
@@ -435,8 +436,8 @@ theorem stage_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t : State} (E :
       have E₂ : Env K W SP t₂ := E₁.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl <;> exact hg₂ _ (by decide)) hrd₂ hwr₂
-      have hQ₂ : Buf K W SP t₂ Q (16 * (n / 16)) := (hQ₁.take (by omega)).of_eq hrd₂ hwr₂
-      refine WP.mono (revSelAt_ok wide L E₂ (s := s) (c := n / 16) (by omega) (by omega) hQ₂ h14₂
+      have hQ₂ : Buf K W SP t₂ Q (16 * (n / 16)) := (hQ₁.take (by omega_arith)).of_eq hrd₂ hwr₂
+      refine WP.mono (revSelAt_ok wide L E₂ (s := s) (c := n / 16) (by omega_arith) (by omega_arith) hQ₂ h14₂
         (by rw [hg₂ _ (by decide), hsi₁]) (by rw [hg₂ _ (by decide), hdi₁])) fun t₃ P => ?_
       have hl := elemsAt_length t.mem Q (n / 16)
       have fP := P.frame
@@ -444,19 +445,19 @@ theorem stage_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t : State} (E :
       refine ⟨⟨E₂.keep (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl <;> exact P.regs _ (by decide) (by decide) (by decide) (by decide) (by decide))
-          P.rd P.wr, P.rd.trans hrd₂, P.wr.trans hwr₂, fP.sub fun r hr => ?_, ?_, ?_, by rw [hl]; omega⟩,
+          P.rd P.wr, P.rd.trans hrd₂, P.wr.trans hwr₂, fP.sub fun r hr => ?_, ?_, ?_, by rw [hl]; omega_arith⟩,
         P.rsi, by rw [P.regs _ (by decide) (by decide) (by decide) (by decide) (by decide), hg₂ _ (by decide), hbp₁]⟩
       · simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Offset.sub W (Nat.le_refl _) (by omega)⟩
+        exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Offset.sub W (Nat.le_refl _) (by omega_arith)⟩
       · rw [hl, P.out, hm₂, hm₁]
-      · rw [P.rdi, hl, show 488 + 16 * s + 16 * (n / 16) = 488 + 16 * (s + n / 16) by omega]
+      · rw [P.rdi, hl, show 488 + 16 * s + 16 * (n / 16) = 488 + 16 * (s + n / 16) by omega_arith]
   refine WP.seq (WP.mono hmid fun t₂ ⟨P₂, rsi₂, rbp₂⟩ => ?_)
   obtain ⟨t₃, run₃, hzf₃, hg₃, hm₃, hrd₃, hwr₃⟩ : ∃ t₃ : State, runBlock isa [.alu .test .rbp (.reg .rbp)] t₂ = some t₃ ∧
       t₃.zf = some (decide (n % 16 = 0)) ∧ (∀ r, t₃.gpr r = t₂.gpr r) ∧ t₃.mem = t₂.mem ∧ t₃.rd = t₂.rd ∧
       t₃.wr = t₂.wr := by
     refine ⟨_, by srun [], ?_, ?_, ?_, ?_, ?_⟩
     · simp only [zf_arithFlags, rbp₂]
-      rw [Proof.AesGcm.X86_64.and_self_beq (by omega)]
+      rw [Proof.AesGcm.X86_64.and_self_beq (by omega_arith)]
     · intro r; rfl
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨t₃, run₃, ?_⟩)
@@ -472,14 +473,14 @@ theorem stage_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t : State} (E :
   · have h0 : n % 16 ≠ 0 := by simpa using hf
     simp only [h0, ite_false]
     have hP : Buf K W SP t₃ (Q + BitVec.ofNat 64 (16 * (n / 16))) (n % 16) :=
-      (hQ.slice (by omega)).of_eq P₃.rd P₃.wr
-    refine WP.mono (stageTail_ok L P₃.env (by omega) (by omega) hP (by rw [hg₃, rsi₂]) (by rw [hg₃, rbp₂])
-      (by rw [hl]; omega) P₃.rdi) fun t₄ T => ?_
+      (hQ.slice (by omega_arith)).of_eq P₃.rd P₃.wr
+    refine WP.mono (stageTail_ok L P₃.env (by omega_arith) (by omega_arith) hP (by rw [hg₃, rsi₂]) (by rw [hg₃, rbp₂])
+      (by rw [hl]; omega_arith) P₃.rdi) fun t₄ T => ?_
     have e := Proof.AesGcm.X86_64.bytesAt_frame P₃.frame (p := Q + BitVec.ofNat 64 (16 * (n / 16)))
       (n := n % 16) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl <;> exact (hQ.slice (a := 16 * (n / 16)) (k := n % 16) (by omega)).w.sub_right
-          (Lay.wSub (by omega))) (by omega)
+        rcases hr with rfl | rfl <;> exact (hQ.slice (a := 16 * (n / 16)) (k := n % 16) (by omega_arith)).w.sub_right
+          (Lay.wSub (by omega_arith))) (by omega_arith)
     rw [e] at T
     exact P₃.trans L T
 
@@ -499,8 +500,8 @@ theorem lensAt_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n k : Nat} 
   have h15 := E.r15
   have r₁ := E.perm.wR (show 240 + 8 ≤ 3816 by decide)
   have r₂ := E.perm.wR (show 224 + 8 ≤ 3816 by decide)
-  have w₀ := E.perm.wW (d := 488 + 16 * k) (n := 8) (by omega)
-  have w₈ := E.perm.wW (d := 488 + 16 * k + 8) (n := 8) (by omega)
+  have w₀ := E.perm.wW (d := 488 + 16 * k) (n := 8) (by omega_arith)
+  have w₈ := E.perm.wW (d := 488 + 16 * k + 8) (n := 8) (by omega_arith)
   rw [← add_ofNat_assoc] at w₈
   refine ⟨_, by srun [lensAt, ghArgs, h15, hdi, r₁, r₂, w₀, w₈, hal, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_arithFlags, mem_setFlags, add_ofNat_assoc, BitVec.add_zero,
@@ -510,9 +511,9 @@ theorem lensAt_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n k : Nat} 
   · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15]
   · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15]
   · simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15, hdi]
-    rw [BitVec.add_comm W, BitVec.add_sub_cancel, Proof.AesGcm.X86_64.shr4 _ (by omega),
-      show 488 / 16 - 1 = 29 from rfl, Proof.AesGcm.X86_64.ofNat_sub (by omega) (by omega),
-      show (488 + 16 * k) / 16 - 29 = k + 1 by omega]
+    rw [BitVec.add_comm W, BitVec.add_sub_cancel, Proof.AesGcm.X86_64.shr4 _ (by omega_arith),
+      show 488 / 16 - 1 = 29 from rfl, Proof.AesGcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith),
+      show (488 + 16 * k) / 16 - 29 = k + 1 by omega_arith]
   · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
@@ -525,7 +526,7 @@ theorem Frame.stR_absR {W SP : Addr} {s : Nat} {m m' : Mem} (hs : s ≤ 64) (h :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by simp, Offset.sub W (by omega) (by omega)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by simp, Offset.sub W (by omega_arith) (by omega_arith)⟩
 
 theorem StPost.of_eq {K W SP : Addr} {s : Nat} {xs : List Spec.GcmSiv.Elem} {t t₁ t₂ : State}
     (h : StPost K W SP s xs t₁ t₂) (hm : t₁.mem = t.mem) (hrd : t₁.rd = t.rd) (hwr : t₁.wr = t.wr) :
@@ -569,7 +570,7 @@ theorem polyvalOne_ok (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W S
     rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
   have lA := elems_pad16_length t.mem A al
   have lD := elems_pad16_length t.mem D n
-  refine WP.seq (WP.mono (stage_ok wide L E₁ (hA.of_eq hrd₁ hwr₁) h12₁ hbp₁ (by omega) hdi₁) fun t₂ P₂ => ?_)
+  refine WP.seq (WP.mono (stage_ok wide L E₁ (hA.of_eq hrd₁ hwr₁) h12₁ hbp₁ (by omega_arith) hdi₁) fun t₂ P₂ => ?_)
   rw [hm₁] at P₂
   have P₂' := P₂.of_eq hm₁ hrd₁ hwr₁
   have S₂ := S.absR L (Frame.stR_absR (by decide) P₂'.frame)
@@ -594,7 +595,7 @@ theorem polyvalOne_ok (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W S
     rcases hr with rfl | rfl | rfl <;> exact hg₃ _ (by decide) (by decide)) hrd₃ hwr₃
   have hD₃ : Buf K W SP t₃ D n := hD.of_eq (hrd₃.trans P₂'.rd) (hwr₃.trans P₂'.wr)
   refine WP.seq (WP.mono (stage_ok wide L E₃ hD₃ h12₃ hbp₃
-    (s := 0 + (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem A al))).length) (by omega)
+    (s := 0 + (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem A al))).length) (by omega_arith)
     (by rw [hg₃ _ (by decide) (by decide)]; exact P₂'.rdi)) fun t₄ P₄ => ?_)
   have P₄' := P₄.of_eq hm₃ hrd₃ hwr₃
   rw [hm₃, Proof.AesGcm.X86_64.bytesAt_frame (Frame.stR_absR (SP := SP) (by decide) P₂'.frame) (buf_absR hD)
@@ -602,7 +603,7 @@ theorem polyvalOne_ok (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W S
   have P₂₄ := P₂'.trans L P₄'
   obtain ⟨k, hk⟩ : ∃ k, (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem A al)) ++
       Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem D n))).length = k := ⟨_, rfl⟩
-  have hk64 : k < 64 := by rw [← hk, List.length_append]; omega
+  have hk64 : k < 64 := by rw [← hk, List.length_append]; omega_arith
   have out₄ := P₂₄.out
   have rdi₄ := P₂₄.rdi
   rw [hk] at out₄ rdi₄
@@ -612,23 +613,23 @@ theorem polyvalOne_ok (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W S
     lensAt_ok P₂₄.env hk64 (by rw [rdi₄, Nat.zero_add]) S₄.alen S₄.len hA.lt hD.lt
   refine WP.seq (WP.of_runBlock ⟨t₅, run₅, ?_⟩)
   have E₅ : Env K W SP t₅ := P₂₄.env.of_saved hg₅ hrd₅ hwr₅
-  refine WP.seq (WP.mono (gh_call v.gh (gargs L E₅ (d := 488) (n := k + 1) (by decide) (by omega) rdi₅ rsi₅ rdx₅
+  refine WP.seq (WP.mono (gh_call v.gh (gargs L E₅ (d := 488) (n := k + 1) (by decide) (by omega_arith) rdi₅ rsi₅ rdx₅
     rcx₅ r8₅)) fun t₆ Q => ?_)
   have mR : (⟨W + BitVec.ofNat 64 (488 + 16 * 0), 1024 - 16 * 0⟩ : Region) ∈ stR W 0 := by simp
   have fL : Frame [⟨W + BitVec.ofNat 64 (488 + 16 * k), 16⟩] t₄.mem t₅.mem := by
     rw [hm₅]
-    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains W (Nat.le_refl _) (by omega)
-      (by omega))).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (show 8 + 8 ≤ 16 by decide) (by decide))
+    exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains W (Nat.le_refl _) (by omega_arith)
+      (by omega_arith))).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (show 8 + 8 ≤ 16 by decide) (by decide))
   have F₅ : Frame (stR W 0) t.mem t₅.mem := P₂₄.frame.trans (fL.sub fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, mR, Offset.sub W (by omega) (by omega)⟩)
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, mR, Offset.sub W (by omega_arith) (by omega_arith)⟩)
   have fr₆ := Q.frame
   rw [E₅.rsp] at fr₆
   have d₀ : ∀ d, d + 16 ≤ 128 → ∀ r ∈ stR W 0, (⟨W + BitVec.ofNat 64 d, 16⟩ : Region).Disjoint r := fun d hd r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega)) (by omega) (by omega)
+    rcases hr with rfl | rfl <;> exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
   have pre : Spec.Gcm.blocksAt t₅.mem (W + BitVec.ofNat 64 488) k = Spec.Gcm.blocksAt t₄.mem (W + BitVec.ofNat 64 488) k :=
     Proof.AesGcm.X86_64.blocksAt_frame fL (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by omega) (by omega)) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by omega_arith)
   refine polyPost_ok L S hN hG hY ⟨E₅.of_saved Q.saved Q.rd Q.wr, by rw [Q.rd, hrd₅, P₂₄.rd],
     by rw [Q.wr, hwr₅, P₂₄.wr], (Frame.stR_absR (by decide) F₅).trans (fr₆.mono fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -641,7 +642,7 @@ theorem polyvalOne_ok (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W S
 theorem elems_pad16_length_eq (m : Mem) (Q : Addr) (n : Nat) :
     (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt m Q n))).length = (n + 15) / 16 := by
   rw [elems_pad16_bytesAt, List.length_append, elemsAt_length]
-  split <;> simp <;> omega
+  split <;> simp <;> omega_arith
 
 /-- `polyval`'s test: whether the whole blocks number fewer than 62. -/
 theorem polyCond_run {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {N A D : Addr} {al n : Nat}
@@ -659,7 +660,7 @@ theorem polyCond_run {K W SP : Addr} {t : State} (E : Env K W SP t) {R : Nat} {N
   refine ⟨_, by srun [h15, rL, rN, sL, sN], ?_, ?_, ?_, ?_, ?_⟩
   · simp only [cf_arithFlags, gpr_arithFlags, gpr_setFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq,
       Proof.AesGcm.X86_64.shr4 _ ha, Proof.AesGcm.X86_64.shr4 _ hn, ofNat_add_ofNat,
-      toNat_ofNat_of_lt (show al / 16 + n / 16 < 2 ^ 64 by omega)]
+      toNat_ofNat_of_lt (show al / 16 + n / 16 < 2 ^ 64 by omega_arith)]
     rfl
   · intro r h₁ h₂; simp only [gpr_arithFlags, gpr_setFlags, gpr_setReg, h₁, h₂, ite_false]
   all_goals rfl
@@ -684,7 +685,7 @@ theorem polyval_ok (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) 
   refine WP.ite (!decide (al / 16 + n / 16 < 62)) (show t₁.cf.map (!·) = _ by rw [hcf₁]; rfl) (fun h => ?_) (fun h => ?_)
   · exact WP.mono (polyvalLong_ok v wide L E₁ hS₁ (hA.of_eq hrd₁ hwr₁) (hD.of_eq hrd₁ hwr₁) (hN.of_eq hrd₁ hwr₁)
       (by rw [hm₁]; exact hG) (by rw [hm₁]; exact hY)) P
-  · have hsz : al / 16 + n / 16 ≤ 61 := by simp at h; omega
+  · have hsz : al / 16 + n / 16 ≤ 61 := by simp at h; omega_arith
     exact WP.mono (polyvalOne_ok v wide L E₁ hS₁ (hA.of_eq hrd₁ hwr₁) (hD.of_eq hrd₁ hwr₁) (hN.of_eq hrd₁ hwr₁)
       hsz (by rw [hm₁]; exact hG) (by rw [hm₁]; exact hY)) P
 
