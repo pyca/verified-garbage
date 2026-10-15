@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.PcVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicVerified
+public import VerifiedGarbage.Proof.Bignum.Arm.CrtVerified
 
-/-! # RSA public operations on ARMv7 -/
+/-! # RSA operations on ARMv7 -/
 
 @[expose] public section
 
@@ -35,6 +36,19 @@ def artifacts : List Artifact := [
     contract := Spec.Rsa.publicCheckedContract abi 56
     stack := 56
     verified := Proof.Bignum.Arm.public_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Rsa.privateCrtApi with
+    target := target
+    doc := Spec.Rsa.privateCrtApi.doc
+      (notes := ["Baseline ARMv7: fixed-schedule private exponentiation with native 32-bit limbs, \
+        signed CRT coefficient reduction, and wide reconstruction. Secret input and key checks \
+        accumulate a mask; rejected factors are sanitized and rejected outputs are cleared without \
+        secret-dependent branches. Both factors use the public modulus width. Uses the shared \
+        scratch contract and a 56-byte AAPCS stack frame."])
+    code := Impl.Bignum.Arm.CrtFn.code
+    contract := Spec.Rsa.privateCrtContract abi 56
+    stack := 56
+    verified := Proof.Bignum.Arm.crt_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.Rsa.Arm

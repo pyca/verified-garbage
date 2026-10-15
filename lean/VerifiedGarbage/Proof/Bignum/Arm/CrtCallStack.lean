@@ -21,7 +21,7 @@ open VG.Proof.X25519.Arm (Rest)
 
 structure CrtCallStack (g : CrtGeometry) (s : State) : Prop where
   nowrap : s.sp.toNat + 112 ≤ 2 ^ 32
-  readable : InRegions (s.rd ++ s.wr) (State.addr s.sp) 112
+  readable : InRegions (s.rd ++ s.wr) (off (State.addr s.sp) 56) 56
   writable : (⟨State.addr s.sp, 56⟩ : Region) ∈ s.wr
   separate : Region.Disjoint ⟨State.addr s.sp, 112⟩ ⟨State.addr g.base, g.size⟩
   output : s.mem.readW (off (State.addr s.sp) 4) 32 = g.output
@@ -33,8 +33,13 @@ def crtMutable (g : CrtGeometry) (sp : BitVec 32) : List Region :=
   [⟨State.addr g.base, g.size⟩, ⟨State.addr sp, 4⟩, ⟨off (State.addr sp) 8, 4⟩, ⟨off (State.addr sp) 48, 4⟩]
 
 theorem CrtCallStack.read {g : CrtGeometry} {s : State} (h : CrtCallStack g s) {d : Nat}
-    (fit : d + 4 ≤ 112) : InRegions (s.rd ++ s.wr) (off (State.addr s.sp) d) 4 :=
-  CallLay.inRegions_sub h.readable fit (by decide)
+    (fit : d + 4 ≤ 112) (side : d + 4 ≤ 56 ∨ 56 ≤ d := by omega) :
+    InRegions (s.rd ++ s.wr) (off (State.addr s.sp) d) 4 := by
+  rcases side with low | high
+  · exact ⟨_, List.mem_append_right _ h.writable, Offset.contains_base _ low (by omega)⟩
+  · have read := CallLay.inRegions_sub (off := d - 56) h.readable (l := 4) (by omega) (by decide)
+    rw [Offset.add_add, show 56 + (d - 56) = d by omega] at read
+    exact read
 
 theorem CrtCallStack.write {g : CrtGeometry} {s : State} (h : CrtCallStack g s) {d : Nat}
     (fit : d + 4 ≤ 56) : InRegions s.wr (off (State.addr s.sp) d) 4 :=

@@ -24,8 +24,8 @@ theorem savedOperandArgs_ok (s : State) {base src : BitVec 32} {len k ps cs : Na
   have pfit := h.pointerFit
   have cfit := h.countFit
   refine WP.mono (stackPair_ok s .r4 .r6 ps cs (by decide) (by omega) (by omega)
-    (by omega) (by omega) (CallLay.inRegions_sub h.readable pfit (by decide))
-    (CallLay.inRegions_sub h.readable cfit (by decide))) ?_
+    (by omega) (by omega) h.readable.1
+    h.readable.2) ?_
   rintro t ⟨pointer, count, mem, rest⟩
   exact ⟨pointer.trans h.pointer, count.trans h.count, mem, rest⟩
 

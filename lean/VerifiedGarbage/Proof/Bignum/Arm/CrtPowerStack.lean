@@ -16,18 +16,16 @@ open VG.Proof.X25519.Arm (Rest)
 
 structure CrtPowerStack (base xp ep : BitVec 32) (len k eLen slot : Nat) (s : State) : Prop where
   nowrap : s.sp.toNat + 112 ≤ 2 ^ 32
-  readable : InRegions (s.rd ++ s.wr) (State.addr s.sp) 112
+  readable : InRegions (s.rd ++ s.wr) (off (State.addr s.sp) 56) 4 ∧
+    InRegions (s.rd ++ s.wr) (off (State.addr s.sp) 12) 4 ∧
+    InRegions (s.rd ++ s.wr) (off (State.addr s.sp) slot) 4 ∧
+    InRegions (s.rd ++ s.wr) (off (State.addr s.sp) (slot + 4)) 4
   separate : Region.Disjoint ⟨State.addr s.sp, 112⟩ ⟨State.addr base, 8 * len⟩
   slotFit : slot + 8 ≤ 112
   input : s.mem.readW (off (State.addr s.sp) 56) 32 = xp
   inputCount : s.mem.readW (off (State.addr s.sp) 12) 32 = BitVec.ofNat 32 k
   exponent : s.mem.readW (off (State.addr s.sp) slot) 32 = ep
   exponentCount : s.mem.readW (off (State.addr s.sp) (slot + 4)) 32 = BitVec.ofNat 32 eLen
-
-theorem CrtPowerStack.read {s : State} {base xp ep : BitVec 32} {len k eLen slot d : Nat}
-    (h : CrtPowerStack base xp ep len k eLen slot s) (fit : d + 4 ≤ 112) :
-    InRegions (s.rd ++ s.wr) (off (State.addr s.sp) d) 4 :=
-  CallLay.inRegions_sub h.readable fit (by decide)
 
 theorem CrtPowerStack.after_workspace {s t : State} {base xp ep : BitVec 32} {len k eLen slot : Nat} {rs : List Reg}
     (h : CrtPowerStack base xp ep len k eLen slot s)

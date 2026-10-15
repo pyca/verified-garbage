@@ -25,7 +25,7 @@ theorem crt_begin_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
   have mainSub : (⟨State.addr g.base, 8 * workspaceWords g.words⟩ : Region).Sub ⟨State.addr g.base, g.size⟩ :=
     crt_region_sub_workspace buffers.workspace buffers.storageFits (by simp [crtRegions])
   have source : SavedOperand g.base g.modulus (workspaceWords g.words) g.length 8 12 (bs 0) s :=
-    ⟨stack.nowrap, stack.readable, stack.separate.sub_right mainSub, by decide, by decide,
+    ⟨stack.nowrap, ⟨stack.read (by decide), stack.read (by decide)⟩, stack.separate.sub_right mainSub, by decide, by decide,
       modulusPtr, stack.count, buffers.source 0, (buffers.sourceSeparate 0).sub_right mainSub⟩
   have input : CrtPrepareInput g.base g.modulus g.size g.words g.length (bs 0) s :=
     ⟨buffers.workspace, buffers.context, buffers.storageFits, source, stack.separate, buffers.sourceSeparate 0,

@@ -17,7 +17,8 @@ open VG.Proof.X25519.Arm (Rest)
 
 structure SavedOperand (base src : BitVec 32) (len k pointerSlot countSlot : Nat) (bs : List Byte) (s : State) : Prop where
   nowrap : s.sp.toNat + 112 ≤ 2 ^ 32
-  readable : InRegions (s.rd ++ s.wr) (State.addr s.sp) 112
+  readable : InRegions (s.rd ++ s.wr) (off (State.addr s.sp) pointerSlot) 4 ∧
+    InRegions (s.rd ++ s.wr) (off (State.addr s.sp) countSlot) 4
   stackSeparate : Region.Disjoint ⟨State.addr s.sp, 112⟩ ⟨State.addr base, 8 * len⟩
   pointerFit : pointerSlot + 4 ≤ 112
   countFit : countSlot + 4 ≤ 112

@@ -25,12 +25,12 @@ theorem crt_primePowerArgs_ok (s : State) {base xp ep : BitVec 32} {len k eLen s
   change WP isa (.block ([.ldrSp .r4 56, .ldrSp .r6 12] ++ [.ldrSp .r1 slot, .ldrSp .r2 (slot + 4)])) s _
   rw [WP.block_append_iff]
   refine WP.mono (stackPair_ok s .r4 .r6 56 12 (by decide) (by decide) (by decide)
-    (by omega) (by omega) (h.read (by decide)) (h.read (by decide))) ?_
+    (by omega) (by omega) h.readable.1 h.readable.2.1) ?_
   rintro u ⟨input, count, memU, restU⟩
   refine WP.mono (stackPair_ok u .r1 .r2 slot (slot + 4) (by decide) (by omega) (by omega)
     (by rw [restU.sp]; omega) (by rw [restU.sp]; omega)
-    (by rw [restU.rd, restU.wr, restU.sp]; exact h.read (by omega))
-    (by rw [restU.rd, restU.wr, restU.sp]; exact h.read fit)) ?_
+    (by rw [restU.rd, restU.wr, restU.sp]; exact h.readable.2.2.1)
+    (by rw [restU.rd, restU.wr, restU.sp]; exact h.readable.2.2.2)) ?_
   rintro t ⟨exponent, ecount, memT, restT⟩
   rw [memU, restU.sp, h.exponent] at exponent
   rw [memU, restU.sp, h.exponentCount] at ecount
