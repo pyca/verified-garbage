@@ -510,6 +510,7 @@ mod tests {
 
 #[cfg(all(test, target_arch = "aarch64"))]
 pub(crate) mod aarch64_tests {
+    extern crate std;
     pub(crate) fn array<const N: usize>(value: &serde_json::Value) -> [u8; N] {
         let text = value.as_str().unwrap();
         assert_eq!(text.len(), 2 * N);
