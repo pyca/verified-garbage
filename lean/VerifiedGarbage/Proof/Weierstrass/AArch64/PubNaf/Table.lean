@@ -186,7 +186,8 @@ theorem tableAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     rcases List.mem_append.mp hx with hx | hx
     · exact winRo_slots K x hx
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with h | h | h | h | h | h <;> subst h <;> win_in
+      rcases hx with h | h | h | h | h | h <;> subst h <;>
+        simp only [winSlots, winRo, winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
   have hVl : ∀ x ∈ V, wordsVal s.mem base x K.M.n < C.p := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
@@ -223,7 +224,8 @@ theorem tableAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     rcases List.mem_append.mp hx with hx | hx
     · exact winRo_slots K x hx
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with h | h | h | h | h | h <;> subst h <;> win_in
+      rcases hx with h | h | h | h | h | h <;> subst h <;>
+        simp only [winSlots, winRo, winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
   have hV₁l : ∀ x ∈ V₁, wordsVal s₁.mem base x K.M.n < C.p := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
