@@ -20,6 +20,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # BLAKE2b on x86 (32-bit): the instance
@@ -49,10 +51,29 @@ theorem init_ct : ConstantTime isa (initX86 b).pre (initX86 b).pub (Impl.Blake2.
   VG.Taint.constantTime (A := taint) (τInit 64) (fun _ _ h₁ h₂ hp => init_agree ok h₁ h₂ hp)
     (by taint_decide)
 
+/-- What is public at `update`'s calls of the compression function: its
+pushed arguments, the stack and the bases of `state` and `scratch`, and the
+words of `scratch` at `o` that it reads back after the call (`data` and the
+bytes left, or the bytes left and the bytes compressed). -/
+def τCall (o : Nat) : VG.X86.Taint.T :=
+  { regs := ⟨249⟩, flags := false, lens := [28, 192, 576],
+    bases := [(.ebp, 2, 0), (.ebx, 1, 0), (.esp, 0, 0)], slots := ⟨[267390975, 0, 0xFF <<< o]⟩,
+    wbases := [(0, 24, 2), (0, 0, 1)], argLen := 28, argBases := [(4, 1), (24, 2)], stk := [some 28],
+    room := 32 }
+
+/-! The compression function, analysed from each of `update`'s calls. -/
+
+taint_summary compressBufSum : taint (τCall 536)
+  (.call "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
+taint_summary directSum : taint (τCall 540)
+  (.call "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
+
 theorem update_ct : ConstantTime isa (updateX86 b).pre (updateX86 b).pub
-    (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress) :=
-  VG.Taint.constantTime (A := taint) (τUpdate 64) (fun _ _ h₁ h₂ hp => update_agree ok h₁ h₂ hp)
-    (by taint_decide)
+    (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress) := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check (τUpdate 64) (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress"
+      Impl.Blake2.X86.CompressB.compress) h).isSome = true := by
+    taint_decide_sum [compressBufSum, directSum]
+  exact VG.Taint.constantTime (A := taint) (τUpdate 64) (fun _ _ h₁ h₂ hp => update_agree ok h₁ h₂ hp) hc
 
 theorem finalize_ct : ConstantTime isa (finalizeX86 b).pre (finalizeX86 b).pub
     (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress) :=
