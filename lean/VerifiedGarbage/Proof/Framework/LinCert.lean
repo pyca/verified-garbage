@@ -6,6 +6,7 @@ public meta import Lean.Elab.Tactic.Omega
 public meta import Lean.Meta.Tactic.Util
 public meta import Lean.Meta.Tactic.Cases
 public meta import Lean.Meta.Tactic.Assert
+public meta import Lean.Meta.Tactic.Assumption
 
 /-!
 # Linear facts about `Nat`, by a certificate the kernel checks at once
@@ -517,3 +518,27 @@ elab "lin_cert" : tactic => do
   if ok then replaceMainGoal [] else
     s.restore
     evalTactic (← `(tactic| omega))
+
+open Lean Meta in
+/-- Close `g` by a hypothesis, up to reducible unfolding, as `omega` first tries. -/
+def tryAssumption (g : MVarId) : MetaM Bool := do
+  try
+    withReducibleAndInstances g.assumption
+    return true
+  catch _ => return false
+
+open Lean Meta Elab Tactic in
+/-- `omega` tries `lin_cert`'s certificate first (after `assumption`, as
+`omega` does), and otherwise falls through to Lean's `omega`; `omega` with a
+configuration is Lean's. -/
+@[tactic Lean.Parser.Tactic.omega] def omegaLinFirst : Tactic := fun stx => do
+  if stx[1].getArgs.any (fun a => !a.getArgs.isEmpty) then throwUnsupportedSyntax
+  let s ← saveState
+  let g ← getMainGoal
+  let ok ← g.withContext do
+    if ← tryAssumption g then return true
+    let some g' ← g.falseOrByContra | return true
+    VG.LinCert.Meta.closeSplit g' 3
+  if ok then replaceMainGoal [] else
+    s.restore
+    throwUnsupportedSyntax

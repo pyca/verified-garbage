@@ -6,6 +6,8 @@ public meta import Lean.Elab.SyntheticMVars
 public meta import Lean.Meta.Closure
 public meta import Lean.Meta.Tactic.Assert
 public meta import Lean.Meta.Tactic.Clear
+public import VerifiedGarbage.Proof.Framework.LinCert
+public meta import VerifiedGarbage.Proof.Framework.LinCert
 
 /-!
 # `omega` in large contexts
@@ -110,6 +112,9 @@ def omegaFromFacts (facts : Array Expr) (exactTypeOnly := false) : TacticM Unit 
     g.withContext do
       -- Include the negated goal and any hypotheses introduced from it.
       let newFacts := (← getLocalHyps).filter fun h => !oldCtx.contains h.fvarId!
+      -- A linear consequence of the facts, by a certificate (`LinCert.lean`).
+      if ← VG.LinCert.Meta.closeFalseWith g (facts.map (·, false) ++ newFacts.map (·, true)) then
+        return
       let type ← g.getType
       let result ← mkFreshExprSyntheticOpaqueMVar type
       Lean.Elab.Tactic.Omega.omega (facts.toList ++ newFacts.toList) result.mvarId!
