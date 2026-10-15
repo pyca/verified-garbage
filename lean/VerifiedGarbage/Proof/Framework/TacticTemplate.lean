@@ -131,7 +131,9 @@ def textOf (stx : Syntax) (names : Array (String.Pos.Raw × String.Pos.Raw × Na
   let src := (← getFileMap).source
   let some s := stx.getPos? | throwError "tactic_template: the body has no position"
   let some e := stx.getTailPos? | throwError "tactic_template: the body has no position"
-  let mut out := ""
+  -- The body starts at its column, as in the source: a block's later lines (bullets) are
+  -- aligned with it.
+  let mut out := "".pushn ' ' ((← getFileMap).toPosition s).column
   let mut p := s
   for (a, b, c) in names.qsort (fun x y => x.1 < y.1) do
     out := out ++ String.Pos.Raw.extract src p a ++ (`_root_ ++ c).toString
