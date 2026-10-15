@@ -102,6 +102,55 @@ theorem child_frm {s t : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {rs : 
   simp only
   omega_arith
 
+/-- The exponentiation's ranges miss the array `j`. -/
+theorem crtExpRanges_off {w j : Nat} (hj : j < 8) (h1 : aAcc ≠ j) (h2 : aTmp ≠ j) (h3 : aY ≠ j)
+    (h4 : Crt.aT ≠ j) : ∀ r ∈ CrtWindowFive.crtExpRanges w,
+      r.1 + r.2 ≤ slot w j ∨ slot w j + 8 * (w + 2) ≤ r.1 := by
+  simp only [CrtWindowFive.crtExpRanges, crtWinRanges, List.forall_mem_cons]
+  refine ⟨?_, ?_, ?_, ?_, Or.inr (slot_le hj), slot_sep h1, slot_sep h2, slot_sep h3, slot_sep h4,
+    ?_, ?_, ?_, ?_, ?_, List.forall_mem_nil _⟩ <;> refine Or.inl (hdr_lt_slot w j ?_) <;> decide
+
+/-- The exponentiation's ranges miss the modulus and the number 1. -/
+theorem crtExpRanges_off_nOne (w : Nat) : ∀ r ∈ CrtWindowFive.crtExpRanges w,
+    (r.1 + r.2 ≤ slot w aN ∨ slot w aN + 8 * (w + 2) ≤ r.1) ∧
+      (r.1 + r.2 ≤ slot w aOne ∨ slot w aOne + 8 * (w + 2) ≤ r.1) := fun r hr =>
+  ⟨crtExpRanges_off (by decide) (by decide) (by decide) (by decide) (by decide) r hr,
+    crtExpRanges_off (by decide) (by decide) (by decide) (by decide) (by decide) r hr⟩
+
+/-- The exponentiation's ranges miss `aX`. -/
+theorem crtExpRanges_off_x (w : Nat) : ∀ r ∈ CrtWindowFive.crtExpRanges w,
+    slot w aX + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aX := fun r hr =>
+  (crtExpRanges_off (j := aX) (by decide) (by decide) (by decide) (by decide) (by decide) r hr).symm.imp_left
+    fun h => Nat.le_trans (Nat.add_le_add_left (by omega) _) h
+
+theorem powRanges_x (w : Nat) : (slot w aX, 8 * (w + 2)) ∈ powRanges w := .head _
+theorem powRanges_r2 (w : Nat) : (slot w aR2, 8 * (w + 2)) ∈ powRanges w := .tail _ (.head _)
+theorem powRanges_xm (w : Nat) : (slot w aXm, 8 * (w + 2)) ∈ powRanges w := .tail _ (.tail _ (.head _))
+theorem powRanges_acc (w : Nat) : (slot w aAcc, 8 * (w + 2)) ∈ powRanges w :=
+  .tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _))))))))
+theorem powRanges_tmp (w : Nat) : (slot w aTmp, 8 * (w + 2)) ∈ powRanges w :=
+  .tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _)))))))))
+theorem powRanges_y (w : Nat) : (slot w aY, 8 * (w + 2)) ∈ powRanges w :=
+  .tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _))))))))))
+
+/-- The ranges `pow` changes before the exponentiation. -/
+theorem powRanges_pre (w : Nat) : ∀ r ∈ ([(slot w aXm, 8 * (w + 2))] ++ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)),
+    (slot w aY, 8 * (w + 2))] ++ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))] ++
+    [(slot w aX, 8 * (w + 2))] ++ [(slot w aR2, 8 * (w + 2))]), r ∈ powRanges w := by
+  intro r hr
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [powRanges_xm w, powRanges_acc w, powRanges_tmp w, powRanges_y w, powRanges_acc w, powRanges_tmp w,
+    powRanges_xm w, powRanges_x w, powRanges_r2 w]
+
+/-- The ranges a Montgomery multiplication into `aY` changes. -/
+theorem powRanges_mm (w : Nat) : ∀ r ∈ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)),
+    (slot w aY, 8 * (w + 2))], r ∈ powRanges w := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  exacts [powRanges_acc w, powRanges_tmp w, powRanges_y w]
+
 theorem pow_ok (W : Window) (M : Mont) {s : State} {B : Addr} {Z o w : Nat} {mi : BitVec 64} {X : Nat}
     (S : Selector) (hc : ModCtx s B Z o w mi X)
     {bp bl ep el : Nat} (hbp : bp < 32) (hbl : bl < 32) (hep : ep < 32) (hel : el < 32)
@@ -227,13 +276,7 @@ theorem pow_ok (W : Window) (M : Mont) {s : State} {B : Addr} {Z o w : Nat} {mi 
       (slot w aY, 8 * (w + 2))] ++ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))] ++
       [(slot w aX, 8 * (w + 2))] ++ [(slot w aR2, 8 * (w + 2))]) s.mem s₅.mem :=
     (((f₁.append f₂).append f₃).append f₄).append f₅
-  have rF₅ : ∀ r ∈ ([(slot w aXm, 8 * (w + 2))] ++ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)),
-      (slot w aY, 8 * (w + 2))] ++ [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))] ++
-      [(slot w aX, 8 * (w + 2))] ++ [(slot w aR2, 8 * (w + 2))]), r ∈ powRanges w := by
-    intro r hr
-    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    simp only [powRanges, CrtWindowFive.crtExpRanges, crtWinRanges, List.mem_cons]
-    rcases hr with h | h | h | h | h | h | h | h | h <;> subst h <;> simp
+  have rF₅ := powRanges_pre w
   obtain ⟨hb₅, hi₅⟩ := child_frm hc.sub hwide F₅ (fun r hr => (powRanges_ok w r (rF₅ r hr)).2)
   have K₅ := keep_trans (keep_trans (keep_trans (keep_trans k₁ k₂) k₃) k₄) k₅
   refine wp_seqs_cons (by simp) (WP.mono (expLoop_ok W M S (Q := True) (x := Spec.Rsa.os2ip bb) (ep := pe) (eb := eb) hs₅ hwide hw2
@@ -241,20 +284,9 @@ theorem pow_ok (W : Window) (M : Mont) {s : State} {B : Addr} {Z o w : Nat} {mi 
     (by rw [hY₅]; exact hYl₂) (fun _ => by rw [hY₅]; exact hYR) hep hel (by rw [hb₅ _ hep]; exact hpe)
     (by rw [hb₅ _ hel]; exact hle) he1 he2 (hse.congrK hi₅ K₅)) fun s₆ ⟨hs₆, hYl₆, hYv₆, f₆, k₆⟩ => ?_)
   have hYv₆' := hYv₆ trivial
-  have hv₆ := hv₅.of_frmA hGn (by omega_arith) f₆ (fun r hr => by
-    have := CrtWindowFive.crtExpRanges_ok w r hr
-    simp only [CrtWindowFive.crtExpRanges, crtWinRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have s8 := hdr_lt_slot w aN (show 31 < 32 by decide)
-    have s7 := hdr_lt_slot w aOne (show 31 < 32 by decide)
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    (unfold slot hdrBytes; simp only [aN, aOne, aAcc, aTmp, aY, Crt.aT, Crt.sExp, Crt.sExpLen, Crt.sI, Crt.sTab,
-      Crt.sV, Crt.sBit, Crt.sNib, Crt.sEnt, Crt.sJ, sFn, tabBytes32]; omega_arith))
-  have hX₆ : wv s₆.mem (off B o) (slot w aX) w = wv s₅.mem (off B o) (slot w aX) w := by
-    refine f₆.wv_eq (fun r hr => ?_) (by omega_arith)
-    simp only [CrtWindowFive.crtExpRanges, crtWinRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    (unfold slot hdrBytes; simp only [aX, aAcc, aTmp, aY, Crt.aT, Crt.sExp, Crt.sExpLen, Crt.sI, Crt.sTab,
-      Crt.sV, Crt.sBit, Crt.sNib, Crt.sEnt, Crt.sJ, sFn, tabBytes32]; omega_arith)
+  have hv₆ := hv₅.of_frmA hGn (by omega_arith) f₆ (crtExpRanges_off_nOne w)
+  have hX₆ : wv s₆.mem (off B o) (slot w aX) w = wv s₅.mem (off B o) (slot w aX) w :=
+    f₆.wv_eq (crtExpRanges_off_x w) (by omega_arith)
   -- `Y := Y R⁻¹`, out of Montgomery form.
   refine wp_seqs_cons (by simp [copyArr]) (WP.mono (M.mm_ok hs₆.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (o := aY) (a := aY)
     (b := aOne) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hv₆.inv
@@ -287,12 +319,9 @@ theorem pow_ok (W : Window) (M : Mont) {s : State} {B : Addr} {Z o w : Nat} {mi 
     by rw [hY₈, hY₇], ?_, ?_⟩
   · have g₆ : Frm (off B o) (powRanges w) s₅.mem s₆.mem := f₆.mono fun r hr => by
       simp only [powRanges, List.mem_cons]; exact Or.inr (Or.inr (Or.inr hr))
-    have g₇ : Frm (off B o) (powRanges w) s₆.mem s₇.mem := f₇.mono fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      simp only [powRanges, CrtWindowFive.crtExpRanges, crtWinRanges, List.mem_cons]
-      rcases hr with h | h | h <;> subst h <;> simp
+    have g₇ : Frm (off B o) (powRanges w) s₆.mem s₇.mem := f₇.mono (powRanges_mm w)
     have g₈ : Frm (off B o) (powRanges w) s₇.mem t.mem := f₈.mono fun r hr => by
-      rw [List.mem_singleton.mp hr]; simp [powRanges]
+      rw [List.mem_singleton.mp hr]; exact powRanges_r2 w
     exact (((F₅.mono rF₅).trans g₆).trans g₇).trans g₈
   · exact keep_trans (keep_trans (keep_trans K₅ k₆) k₇) k₈
 

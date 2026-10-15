@@ -261,4 +261,14 @@ theorem scan_ct {sp : Nat} {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
     fun t ⟨⟨h1, h2, hm⟩, k⟩ => ⟨by omega, by rw [h1]; simp, by rw [h2]; simp, hne, hl,
       hsrc.congr (by rw [hm]; exact InScr.refl _ _ _) k.rd k.wr, (k.gpr .x0 (by decide)).trans hO.x0⟩
 
+/-- What `scan` changes: two header slots. -/
+theorem scanR_le : ∀ r ∈ [(8 * sEp, 8), (8 * sEl, 8)], 8 * 16 ≤ r.1 ∧ r.1 + r.2 ≤ 256 := by decide
+
+/-- A header slot other than those `scan` writes is outside what it changes. -/
+theorem scanR_word {i : Nat} (h1 : i ≠ sEp) (h2 : i ≠ sEl) :
+    ∀ r ∈ [(8 * sEp, 8), (8 * sEl, 8)], 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := by
+  simp only [List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true]
+  unfold sEp sEl sFn at *
+  exact ⟨by omega, by omega⟩
+
 end VG.Proof.Ffdh.AArch64

@@ -103,19 +103,15 @@ theorem cpQ_ok (W : Window) (M : Mont) (S : Selector) {u : State} {B : Addr} {Z 
   -- The first nonzero octet of q.
   refine wp_seqs_append (by simp [scan]) (by simp) (WP.mono (scan_ok hO (show sQ < 32 by decide) hQ
     (by rw [hql]; exact hK) hne (by omega_arith) hq) fun u₁ ⟨hEp, hEl, _, f₁, k₁⟩ => ?_)
-  have hr₁ : ∀ r ∈ [(8 * sEp, 8), (8 * sEl, 8)], 8 * 16 ≤ r.1 ∧ r.1 + r.2 ≤ 256 := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [sEp, sEl, sFn] <;> omega_arith
+  have hr₁ := scanR_le
   have hc₁ := hc.of_parent f₁ hr₁ k₁.wr
   have hv₁ := hv.of_parent hc f₁ (fun r hr => (hr₁ r hr).2)
   have hO₁ : Outer u₁ B Z ((k + 7) / 8) := Outer.of_mem hc₁ ((k₁.gpr .x0 (by decide)).trans h0) hroom (by omega_arith)
     (by omega_arith)
   have hs₁ : ∀ i < 32, i ≠ sEp → i ≠ sEl → word u₁.mem B (8 * i) = word u.mem B (8 * i) := fun i hi h1 h2 =>
-    f₁.word_eq (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp only <;> unfold sEp sEl sFn at * <;> omega_arith) (by omega_arith)
+    f₁.word_eq (scanR_word h1 h2) (by omega_using [hi])
   have i₁ : InScr B Z u.mem u₁.mem := InScr.of_frm f₁ fun r hr => by
-    have := (hr₁ r hr).2; have := hroom; unfold inner slot hdrBytes at this; omega_arith
+    have h1 := (hr₁ r hr).2; omega_using [h1, hZ]
   -- Into the inner workspace, and `R² mod p`.
   have hWs₁ : word u₁.mem B (8 * sWs) = off B (inner ((k + 7) / 8)) := by
     rw [hs₁ _ (by decide) (by decide) (by decide)]; exact hWs
@@ -217,12 +213,8 @@ theorem cpMain_ok (W : Window) (M : Mont) (S : Selector) {s t : State} (c : CpCt
   have hiZ : inner ((k + 7) / 8) + slot ((k + 7) / 8) 8 ≤ Z := by unfold CrtWindowFive.tabBytes32 at hroom; omega_arith
   have hp₁ : ∀ i < 32, i ≠ sW → i ≠ sWs → (i < sArr 0 ∨ sArr 0 + 8 ≤ i) →
       word u₁.mem B (8 * i) = word t.mem B (8 * i) := fun i hi h1 h2 h3 =>
-    f₁.word_eq (fun r hr => by
-      simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> unfold sW sWs sArr sFn at * <;> omega_arith) (by omega_arith)
-  have i₁ : InScr B Z t.mem u₁.mem := InScr.of_frm f₁ fun r hr => by
-    simp only [setupR, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> unfold sW sWs sArr sFn at * <;> omega_arith
+    f₁.word_eq (setupR_word _ hi h1 h2 h3) (by omega_using [hi])
+  have i₁ : InScr B Z t.mem u₁.mem := InScr.of_frm f₁ (setupR_le _ hiZ)
   have hY₁ : word u₁.mem B (8 * sY) = s.gpr .x3 := by
     rw [hp₁ _ (by decide) (by decide) (by decide) (by decide)]; exact hY
   have hK₁ : word u₁.mem B (8 * sK) = BitVec.ofNat 64 k := by
@@ -256,21 +248,9 @@ theorem cpMain_ok (W : Window) (M : Mont) (S : Selector) {s t : State} (c : CpCt
   have hR := hrange.mp hP
   -- Back to the outer workspace, and whether there is q.
   have r₃ : ∀ r ∈ [(slot ((k + 7) / 8) aTmp, 8 * ((k + 7) / 8)), (8 * sF, 8)], 8 * 17 ≤ r.1 ∧
-      r.1 + r.2 ≤ slot ((k + 7) / 8) 8 := by
-    have := slot_le (w := (k + 7) / 8) (show aTmp < 8 by decide)
-    have := hdr_lt_slot ((k + 7) / 8) aTmp (show 31 < 32 by decide)
-    have := hdr_lt_slot ((k + 7) / 8) 8 (show sF < 32 by decide)
-    simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only <;> unfold sF sFn at * <;> omega_arith
+      r.1 + r.2 ≤ slot ((k + 7) / 8) 8 := fun r hr => ⟨(range_frame _ r hr).1, (range_frame _ r hr).2.1⟩
   have hc₃ := hc₂.of_frm f₃ r₃ k₃.wr (k₃.gpr .x0 (by decide))
-  have hv₃ := hv₂.of_frmA hc₂.good.scr.nowrap (by omega_arith) f₃ (fun r hr => by
-    have := slot_le (w := (k + 7) / 8) (show aTmp < 8 by decide)
-    have := hdr_lt_slot ((k + 7) / 8) aN (show sF < 32 by decide)
-    have := hdr_lt_slot ((k + 7) / 8) aOne (show sF < 32 by decide)
-    have s1 := slot_sep (w := (k + 7) / 8) (show aTmp ≠ aN by decide)
-    have s2 := slot_sep (w := (k + 7) / 8) (show aTmp ≠ aOne by decide)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> simp only <;> omega_arith)
+  have hv₃ := hv₂.of_frmA hc₂.good.scr.nowrap (by omega_arith) f₃ (fun r hr => (range_frame _ r hr).2.2)
   obtain ⟨hb₂, hi₂⟩ := child_frm hc₁ (by unfold inner at hroom ⊢; omega_arith) f₂ (fun r hr => by
     rw [List.mem_singleton.mp hr]; have := slot_le (w := (k + 7) / 8) (show aXm < 8 by decide)
     unfold CrtWindowFive.tabBytes32; simp only; omega_arith)
