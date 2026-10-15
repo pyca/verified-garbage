@@ -59,6 +59,8 @@ for orig in range(lo,min(hi,len(lines))+1):
     oi=orig-1; ln=newline(orig)-1
     cols=[m.start() for m in re.finditer(r'\bomega_arith\b(?!_)',lines[oi])]
     for k,c in enumerate(cols):
+        # A discharger (`simp (disch := omega_arith)`) runs on goals of its own: keep omega_arith there.
+        if re.search(r'disch\s*:=\s*\(?\s*$', lines[oi][:c]): continue
         r_=res.get((ln,c-2*k))
         if r_ is None or r_[0]: continue
         sites.append((oi,c,"omega_using "+r_[1]))

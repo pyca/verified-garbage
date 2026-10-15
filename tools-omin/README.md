@@ -15,7 +15,9 @@ copy and never edits the module itself.
    their position.
 4. If a survivor has no usable name (hygienic, or shadowed by a later
    hypothesis of the same name), that call keeps `omega_arith`. A call that
-   runs on several goals (after `<;>`) gets the union of their facts.
+   runs on several goals (after `<;>`) gets the union of their facts. A
+   discharger (`simp (disch := omega_arith) …`) is left as `omega_arith`: it
+   runs on goals that one list need not cover.
 5. It writes the module's text with each `omega_arith` replaced by its
    logged `omega_using [...]`.
 6. It compiles that text and reverts every call that reports an error. An
