@@ -125,7 +125,7 @@ branches. -/
 theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared) {other : Prog isa}
     (ho : LongRel CtxMode.prepared other) :
     LongRel CtxMode.prepared (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) none other) := by
-  intro s₀ s₀' Ctx W SP Np A D Tp nl al n R t C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok
+  intro s₀ s₀' Ctx W SP Np A D Tp nl al n R t C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok K32
   have hlt := C.data.ok.lt
   unfold Impl.AesGcm.X86_64.FastOpen.sel
   have hw : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n), (s₀.gpr .rcx).toNat = nl →
@@ -139,7 +139,7 @@ theorem openSel_rel (hF : ShortFacts) (v : GcmImpl) (B : BlkFn CtxMode.prepared)
       (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega))
     (hw C hnl hal) (hw C' hnl' hal')
   refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
-    ((ho C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok).mono
+    ((ho C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok K32).mono
       (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
   by_cases hs : IsFast nl al n
   · obtain ⟨h12, h17, -⟩ := hs

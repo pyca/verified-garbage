@@ -669,13 +669,13 @@ def LongRel (M : Gcm.X86_64.Stitch.CtxMode) (lng : Prog isa) : Prop :=
         (bytesAt s₀.mem D n) (bytesAt s₀.mem A al) (bytesAt s₀.mem Tp t)).isSome =
       (Spec.Gcm.openResult (ctxCiph s₀'.mem Ctx R) (ctxH s₀'.mem Ctx) t (bytesAt s₀'.mem Np nl)
         (bytesAt s₀'.mem D n) (bytesAt s₀'.mem A al) (bytesAt s₀'.mem Tp t)).isSome →
-    Spec.Gcm.tagLenOk t = true →
+    Spec.Gcm.tagLenOk t = true → Stk32 Ctx W SP A D Tp M.len al n t →
     RelCT isa (fun s₁ s₂ => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂) lng
       fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂
 
 theorem longRel_openLong (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     LongRel M (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)) :=
-  fun C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok =>
+  fun C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok _ =>
     openOk_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok
 
 /-- `vg_aes_gcm_open` with the short path, the table of powers from `pw`,
@@ -687,7 +687,7 @@ theorem openMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMod
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) pw lng)
       fun _ _ => True :=
   openM_relOf hp hp' hq fun {Ctx W SP _ A D _ nl al n _ t} C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr
-      hTr' oT hres hok => by
+      hTr' oT hres hok K32 => by
     have hlt := C.data.ok.lt
     have hw : ∀ {s₀ : State} {Np : Addr} (C : OneCtx s₀ 5 Ctx W SP Np A D nl al n), (s₀.gpr .rcx).toNat = nl →
         (s₀.gpr .r9).toNat = al → ∀ s, OpenIn s₀ Ctx W SP A D n t s →
@@ -699,7 +699,7 @@ theorem openMW_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMod
         (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega)))
       (hw C hnl hal) (hw C' hnl' hal')
     refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
-      ((hlr C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok).mono
+      ((hlr C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok K32).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
     by_cases hs : IsShort nl al n
     · exact (openShort_rel hF hpc C C' (hpw X) (hpw X') hNp hnl hal hR hNp' hnl' hal' hR' hs hT hT' hTr hTr' oT hres

@@ -538,7 +538,7 @@ theorem openM_relOf {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s₀ s₀'
           (bytesAt s₀.mem D n) (bytesAt s₀.mem A al) (bytesAt s₀.mem Tp t)).isSome =
         (Spec.Gcm.openResult (ctxCiph s₀'.mem Ctx R) (ctxH s₀'.mem Ctx) t (bytesAt s₀'.mem Np nl)
           (bytesAt s₀'.mem D n) (bytesAt s₀'.mem A al) (bytesAt s₀'.mem Tp t)).isSome →
-      Spec.Gcm.tagLenOk t = true →
+      Spec.Gcm.tagLenOk t = true → Stk32 Ctx W SP A D Tp M.len al n t →
       RelCT isa (fun s₁ s₂ => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂) mid
         fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀')
@@ -547,6 +547,12 @@ theorem openM_relOf {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s₀ s₀'
       fun _ _ => True := by
   have X := CtxExt.ofOpen hp.1 hp.2
   have X' := CtxExt.ofOpen hp'.1 hp'.2
+  have K : Stk32 (s₀.gpr .rdi) (stackArg s₀ 4) (s₀.gpr .rsp) (s₀.gpr .r8) (stackArg s₀ 0) (stackArg s₀ 2) M.len
+      (s₀.gpr .r9).toNat (stackArg s₀ 1).toNat (stackArg s₀ 3).toNat := by
+    have h := hp.1
+    simp only [Proof.AesGcm.openPre, Proof.AesGcm.stk32, Proof.AesGcm.arg] at h
+    obtain ⟨-, -, -, -, -, -, -, k₁, k₂, k₃, k₄, k₅, k₆⟩ := h
+    exact ⟨k₁, k₃, k₂, k₄, k₅, k₆⟩
   obtain ⟨C, hTr, d_td, d_tw, t_t⟩ := OneCtx.ofOpen hp.1 M.ge
   obtain ⟨C', hTr', -, -, -⟩ := OneCtx.ofOpen hp'.1 M.ge
   have L := C.lay
@@ -571,7 +577,7 @@ theorem openM_relOf {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s₀ s₀'
   rw [← q₁, ← q₇, ← a₀, ← a₁, ← a₄] at X'
   rw [← a₂, ← a₃] at hTr'
   rw [← q₁, ← q₂, ← q₃, ← q₄, ← q₅, ← q₆, ← a₀, ← a₁, ← a₂, ← a₃] at hres
-  generalize ht : (stackArg s₀ 3).toNat = t at hres hTr hTr' d_td d_tw t_t
+  generalize ht : (stackArg s₀ 3).toNat = t at hres hTr hTr' d_td d_tw t_t K
   have oT : OutWDS (stackArg s₀ 4) (stackArg s₀ 0) (s₀.gpr .rsp) (stackArg s₀ 1).toNat ⟨stackArg s₀ 2, t⟩ :=
     fun r hr => hr.elim d_tw.sub_right fun h => h.elim d_td.sub_right t_t.symm.sub_right
   have hE : ∀ {s : State} (C : OneCtx s 5 (s₀.gpr .rdi) (stackArg s₀ 4) (s₀.gpr .rsp) (s₀.gpr .rdx) (s₀.gpr .r8)
@@ -594,13 +600,13 @@ theorem openM_relOf {M : Gcm.X86_64.Stitch.CtxMode} {mid : Prog isa} {s₀ s₀'
     (W := stackArg s₀ 4) (SP := s₀.gpr .rsp) (k := 40) [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (by simp)
     ⟨_, by taint_decide⟩ (one_pub ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, qa⟩) hw40 ha₄ ha₄' ⟨_, by taint_decide⟩ hE₁ hE₂ ?_)
   exact openBody_relOf L (by rw [← ht]; exact (stackArg s₀ 3).isLt) fun hok =>
-    hrel C C' X X' rfl rfl rfl rfl q₃.symm (by rw [← q₄]) (by rw [← q₆]) (by rw [← q₂]) hT₁ hT₂ hTr hTr' oT hres hok
+    hrel C C' X X' rfl rfl rfl rfl q₃.symm (by rw [← q₄]) (by rw [← q₆]) (by rw [← q₂]) hT₁ hT₂ hTr hTr' oT hres hok K
 
 theorem openM_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₀' : State}
     (hp : (Proof.AesGcm.openX86_64M M).pre s₀) (hp' : (Proof.AesGcm.openX86_64M M).pre s₀')
     (hq : Proof.AesGcm.openX86_64.pub s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («open» (v.withBlk B)) fun _ _ => True :=
-  openM_relOf hp hp' hq fun C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok =>
+  openM_relOf hp hp' hq fun C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok _ =>
     openOk_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok
 
 
