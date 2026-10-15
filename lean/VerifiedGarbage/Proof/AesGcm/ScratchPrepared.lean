@@ -83,48 +83,66 @@ variable (pb : Nat)
 theorem sealPreparedPre_local : ∀ vs m₁ m₂, vs.length = (sealPreparedSig.words pb).length →
     (∀ b ∈ Sig.bufs sealPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (sealPreparedSig.words pb) (sealPreparedPre pb) vs m₁ →
-      Curry.apply (sealPreparedSig.words pb) (sealPreparedPre pb) vs m₂
-  | [ctx, _, _, _, _, _, _, _, _], m₁, m₂, _, hb, h => by
-    simp only [sealPreparedSig, sealPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    have hc := agree_of hb.1
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPreparedPre pb) _ m₁ at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPreparedPre pb) _ m₂
-    dsimp only [Curry.apply, sealPreparedPre, ArgWord.ofRaw] at h ⊢
-    exact ⟨h.1, preparedPowersRepr_congr hc h.2⟩
+      Curry.apply (sealPreparedSig.words pb) (sealPreparedPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 8) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 8
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [sealPreparedSig, sealPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  have hc := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPreparedPre pb) _ m₁ at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr] (sealPreparedPre pb) _ m₂
+  dsimp only [Curry.apply, sealPreparedPre, ArgWord.ofRaw] at h ⊢
+  exact ⟨h.1, preparedPowersRepr_congr hc h.2⟩
 
 theorem openPreparedPre_local : ∀ vs m₁ m₂, vs.length = (openPreparedSig.words pb).length →
     (∀ b ∈ Sig.bufs openPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (openPreparedSig.words pb) (openPreparedPre pb) vs m₁ →
-      Curry.apply (openPreparedSig.words pb) (openPreparedPre pb) vs m₂
-  | [ctx, _, _, _, _, _, _, _, _, _], m₁, m₂, _, hb, h => by
-    simp only [openPreparedSig, openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    have hc := agree_of hb.1
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPreparedPre pb) _
-      m₁ at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
-      ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPreparedPre pb) _
-      m₂
-    dsimp only [Curry.apply, openPreparedPre, ArgWord.ofRaw] at h ⊢
-    exact ⟨h.1, preparedPowersRepr_congr hc h.2⟩
+      Curry.apply (openPreparedSig.words pb) (openPreparedPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 9) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 9
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [openPreparedSig, openPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  have hc := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPreparedPre pb) _
+    m₁ at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr,
+    ArgWord.int pb, ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int pb] (openPreparedPre pb) _
+    m₂
+  dsimp only [Curry.apply, openPreparedPre, ArgWord.ofRaw] at h ⊢
+  exact ⟨h.1, preparedPowersRepr_congr hc h.2⟩
 
 theorem streamCryptPreparedPre_local : ∀ vs m₁ m₂, vs.length = (streamCryptPreparedSig.words pb).length →
     (∀ b ∈ Sig.bufs streamCryptPreparedSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (streamCryptPreparedSig.words pb) (streamCryptPreparedPre pb) vs m₁ →
-      Curry.apply (streamCryptPreparedSig.words pb) (streamCryptPreparedPre pb) vs m₂
-  | [ctx, _, _, _, _, _, _], m₁, m₂, _, hb, h => by
-    simp only [streamCryptPreparedSig, streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
-    have hc := agree_of hb.1
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-      ArgWord.addr, ArgWord.int pb] (streamCryptPreparedPre pb) _ m₁ at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
-      ArgWord.addr, ArgWord.int pb] (streamCryptPreparedPre pb) _ m₂
-    dsimp only [Curry.apply, streamCryptPreparedPre, ArgWord.ofRaw] at h ⊢
-    exact ⟨h.1, preparedPowersRepr_congr hc h.2⟩
+      Curry.apply (streamCryptPreparedSig.words pb) (streamCryptPreparedPre pb) vs m₂ := by
+  intro vs m₁ m₂ hlen hb h
+  obtain ⟨ctx, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 6) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 6
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [streamCryptPreparedSig, streamCryptPrecomputedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+  have hc := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr, ArgWord.int pb] (streamCryptPreparedPre pb) _ m₁ at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr, ArgWord.int 64, ArgWord.int 64,
+    ArgWord.addr, ArgWord.int pb] (streamCryptPreparedPre pb) _ m₂
+  dsimp only [Curry.apply, streamCryptPreparedPre, ArgWord.ofRaw] at h ⊢
+  exact ⟨h.1, preparedPowersRepr_congr hc h.2⟩
 
 end VG.Proof.AesGcm
