@@ -355,21 +355,21 @@ theorem pair_poly (R : Poly) {c : Nat} (hc : c < 32) : ∀ i < 256, (nttLayerN R
       else P'[x]! := fun x hx => by
     rw [nttBlock_get _ (by decide) (by rw [n_eq]; omega) (by rw [n_eq]; exact hx),
       show 128 / 2 + 2 * c = 64 + 2 * c by bdd_omega, show 2 * 2 * (2 * c) = 8 * c by bdd_omega]
-  rcases (by bdd_omega : i < 8 * c ∨ (8 * c ≤ i ∧ i < 8 * c + 2) ∨ (8 * c + 2 ≤ i ∧ i < 8 * c + 4) ∨
-      (8 * c + 4 ≤ i ∧ i < 8 * c + 6) ∨ (8 * c + 6 ≤ i ∧ i < 8 * c + 8) ∨ 8 * c + 8 ≤ i) with
-    h | h | h | h | h | h
+  have Qg' : ∀ x, x < 8 * c + 8 → (nttBlock P' 2 (128 / 2 + 2 * c) (2 * 2 * (2 * c)))[x]! =
+      if 8 * c ≤ x ∧ x < 8 * c + 2 then P'[x]! + zeta (64 + 2 * c) * P'[x + 2]!
+      else if 8 * c + 2 ≤ x ∧ x < 8 * c + 4 then P'[x - 2]! - zeta (64 + 2 * c) * P'[x]!
+      else P'[x]! := fun x hx => Qg x (by omega)
+  generalize nttBlock P' 2 (128 / 2 + 2 * c) (2 * 2 * (2 * c)) = B at Qg Qg' ⊢
+  by_cases hin : 8 * c ≤ i ∧ i < 8 * c + 8
+  · obtain ⟨r, rfl, hr⟩ : ∃ r, i = 8 * c + r ∧ r < 8 := ⟨i - 8 * c, by omega, by omega⟩
+    rcases (by bdd_omega : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3 ∨ r = 4 ∨ r = 5 ∨ r = 6 ∨ r = 7) with
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp (disch := first | decide | simp only [Nat.add_lt_add_iff_left, Nat.reduceLT]) only [Qg', Nat.add_assoc,
+      Nat.reduceAdd, Nat.reduceMul, Nat.reduceSub, Nat.le_add_right, Nat.add_lt_add_iff_left,
+      Nat.add_le_add_iff_left, Nat.add_sub_cancel_left, Nat.add_sub_add_left, Nat.add_sub_assoc, Nat.reduceLT,
+      Nat.reduceLeDiff, and_true, and_false, ite_true, ite_false]
   · rw [Qg i hi]
-    simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
-  · rw [Qg i hi]
-    simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right, Nat.add_sub_of_le]
-  · rw [Qg i hi]
-    simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right, Nat.add_sub_of_le]
-  · rw [Qg i hi, Qg (i + 2) (by bdd_omega)]
-    simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right, Nat.add_sub_of_le]
-  · rw [Qg i hi, Qg (i - 2) (by bdd_omega)]
-    simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right, Nat.add_sub_of_le]
-  · rw [Qg i hi]
-    simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
+    simp (disch := omega) only [ite_eq_left, ite_eq_right]
 
 theorem pair_step {s₀ : State} (hp : Pre s₀) {R : Poly} {c : Nat} (hc : c < 32) {w : State}
     (h : PInv s₀ R c w) :
