@@ -113,7 +113,7 @@ theorem Args.rstk {A : Nat → Addr} {ln : Nat → Nat} {nb : Nat} {sp : Addr} (
   (h.stk b hb).sub_right (R.sub f)
 
 structure Pre (P : KemLay) (s₀ : State) : Prop where
-  rd : s₀.rd = [⟨kA s₀ 0, kL P 0⟩]
+  rd : (⟨kA s₀ 0, kL P 0⟩ : Region) ∈ s₀.rd
   wr : s₀.wr = [⟨kA s₀ 1, kL P 1⟩, ⟨kA s₀ 2, kL P 2⟩, ⟨kA s₀ 3, kL P 3⟩]
   args : Args (kA s₀) (kL P) 4 s₀.sp
   sp16 : 16 ≤ s₀.sp.toNat
@@ -131,7 +131,7 @@ theorem Pre.sv {s₀ : State} (hp : Pre P s₀) : SV P + 48 ≤ kL P 3 := by
 
 theorem pre_of (hP : P.Wf) {s₀ : State} (h : (keyGenAArch64 P).pre s₀) : Pre P s₀ := by
   obtain ⟨rd, wr, d01, d02, d03, d12, d13, d23, sp16, k0, k1, k2, k3⟩ := h
-  refine ⟨rd, wr, ⟨fun b hb c hc hbc => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16, hP⟩
+  refine ⟨by rw [rd]; exact List.mem_singleton_self _, wr, ⟨fun b hb c hc hbc => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16, hP⟩
   · have e : ∀ {x y : Region}, x.Disjoint y → y.Disjoint x := fun h => h.symm
     rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;>
     rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3) with rfl | rfl | rfl | rfl <;>
@@ -256,9 +256,11 @@ theorem cov_w {s₀ s : State} (hp : Pre P s₀) (h : KB P s₀ s) {b o l : Nat}
 
 theorem cov_r {s₀ s : State} (hp : Pre P s₀) (h : KB P s₀ s) {b o l : Nat} (hb : b < 4)
     (f : o + l ≤ kL P b) : Covers [R (kA s₀) b o l] (s.rd ++ s.wr) := by
-  rw [h.rd, h.wr, hp.rd, hp.wr]
+  rw [h.rd, h.wr, hp.wr]
   refine R.cov ?_ f
-  rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl <;> simp
+  rcases (by omega : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
+  · exact List.mem_append_left _ hp.rd
+  all_goals simp
 
 theorem hsetup {s₀ s : State} (hp : Pre P s₀) (h : KB P s₀ s) {rate : Nat} (hr : rate ∈ Spec.Sha3.rates) :
     HSetup .x28 ST WK rate s := by

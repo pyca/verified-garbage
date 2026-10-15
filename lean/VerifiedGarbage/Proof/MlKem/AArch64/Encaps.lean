@@ -89,7 +89,10 @@ macro "enk" : tactic => `(tactic| (
 
 theorem pre_of (hP : P.Wf) {s₀ : State} (h : (encapsAArch64 P).pre s₀) : Pre P (enL P) s₀ := by
   obtain ⟨rd, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, sp16, k0, k1, k2, k3, k4⟩ := h
-  refine ⟨by rw [rd]; rfl, by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
+  refine ⟨by
+    intro b hb
+    have hb' : b = 0 ∨ b = 1 := by change b < 2 at hb; omega
+    rcases hb' with rfl | rfl <;> rw [rd] <;> simp [kA, enL, argReg], by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
     by enk, by enk, rfl, hP⟩
   · have e : ∀ {x y : Region}, x.Disjoint y → y.Disjoint x := fun h => h.symm
     simp only [enL] at hb hc hw

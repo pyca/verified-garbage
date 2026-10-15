@@ -1,0 +1,66 @@
+module
+
+public import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Steps
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # Vector-batch preservation of the scalar rejection invariant -/
+
+@[expose] public section
+
+namespace VG.Proof.MlKem.AArch64.Rej8
+open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
+
+theorem sampleAfter_add (L : List Zq) (B : Nat → Byte) (t k : Nat) :
+    sampleAfter (sampleAfter L B t) (fun i => B (3*t+i)) k=sampleAfter L B (t+k) := by
+  induction k with
+  | zero => simp only [sampleAfter_zero,Nat.add_zero]
+  | succ k ih =>
+    rw [sampleAfter_succ,ih,show t+(k+1)=(t+k)+1 by omega,sampleAfter_succ]
+    congr 1 <;> congr 1 <;> omega
+
+theorem batch_frame (s : State) {aP : Addr} {L : List Zq}
+    (h3 : s.gpr .x3=coeffAddr aP L.length) (hroom : L.length+8≤256) :
+    Frame [polyRegion aP] s.mem (updatedMem s) := by
+  unfold updatedMem
+  apply Frame.write (r := polyRegion aP) (Frame.write (r := polyRegion aP) (Frame.refl _ _) (by simp) _ ?_) (by simp) _ ?_
+  · rw [h3,coeffAddr]
+    exact contains_off (by omega) (by decide)
+  · rw [h3,coeffAddr]
+    change (polyRegion aP).Contains (aP+BitVec.ofNat 64 (4*L.length)+BitVec.ofNat 64 16) 16
+    rw [ptr_add]
+    exact contains_off (by omega) (by decide)
+
+theorem batch_inv {initial : List Zq} {N t : Nat} {B : Nat → Byte}
+    {bP aP : Addr} {s₀ s u : State} (h : Scalar.Inv initial N B bP aP s₀ t s)
+    (hroom : (Scalar.LA initial B t).length+8≤256)
+    (hz : ∀i<8,vhalf (s.v .v21) i=0)
+    (hb : ∀i<12,s.mem (s.gpr .x2+BitVec.ofNat 64 i)=B (3*t+i))
+    (hp : BatchPost s u) : Scalar.Inv initial N B bP aP s₀ (t+4) u := by
+  have he : Scalar.LA initial B t++acceptedValues s=Scalar.LA initial B (t+4) := by
+    rw [batch_steps s _ hroom,sampleAfter_congr _ hb,sampleAfter_add]
+  have hlen : (Scalar.LA initial B (t+4)).length=
+      (Scalar.LA initial B t).length+acceptedCount s := by
+    rw [←he,List.length_append,acceptedValues_length]
+  have hcount : acceptedCount s≤8 := accepted_length _
+  refine ⟨⟨hp.keep.rd.trans h.acc.rd,hp.keep.wr.trans h.acc.wr,hp.keep.sp.trans h.acc.sp,
+    by omega,?_,?_,?_,?_,?_,⟩,(h.keep.trans hp.keep).mono (by decide),?_,?_,?_⟩
+  · rw [hp.output,h.acc.x3,coeffAddr,coeffAddr,ptr_add,hlen,Nat.mul_add]
+  · rw [hp.remain,h.acc.x4,hlen]
+    omega
+  · rw [hp.keep.get .x9,h.acc.x9]
+  · rw [hp.mem,←he]
+    exact batch_prefix s h.acc.x3 hroom hz h.acc.coeffs
+  · rw [hp.mem]
+    exact h.acc.frame.trans (batch_frame s h.acc.x3 hroom)
+  · rw [hp.input,h.x2]
+    change bP+BitVec.ofNat 64 (3*t)+BitVec.ofNat 64 12=_
+    rw [ptr_add]
+    congr 2
+  · rw [hp.chunks,h.x5]
+    omega
+  · rw [hp.keep.get .x10,h.x10]
+
+end VG.Proof.MlKem.AArch64.Rej8

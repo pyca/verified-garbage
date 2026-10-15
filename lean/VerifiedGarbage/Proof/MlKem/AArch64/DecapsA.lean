@@ -72,7 +72,10 @@ macro "dek" : tactic => `(tactic| (
 
 theorem pre_of (hP : P.Wf) {s₀ : State} (h : (decapsAArch64 P).pre s₀) : Pre P (deL P) s₀ := by
   obtain ⟨rd, wr, d02, d03, d12, d13, d23, sp16, k0, k1, k2, k3⟩ := h
-  refine ⟨by rw [rd]; rfl, by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
+  refine ⟨by
+    intro b hb
+    have hb' : b = 0 ∨ b = 1 := by change b < 2 at hb; omega
+    rcases hb' with rfl | rfl <;> rw [rd] <;> simp [kA, deL, argReg], by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
     fun k hk => hk, by dek, rfl, hP⟩
   · have e : ∀ {x y : Region}, x.Disjoint y → y.Disjoint x := fun h => h.symm
     simp only [deL] at hb hc hw

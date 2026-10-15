@@ -114,7 +114,7 @@ theorem length_tableHalves : tableHalves.length = 256 :=
 theorem correct (s₀ : State) (hs : (inPlaceAArch64 Spec.MlKem.ntt).pre s₀) :
     ∃ t s', Exec isa Impl.MlKem.AArch64.Ntt16.ntt s₀ t s' ∧ abiPreserved s₀ s' ∧
       (inPlaceAArch64 Spec.MlKem.ntt).post s₀ s' := by
-  have hp : Pre s₀ := Ntt.pre_of hs
+  have hp : Pre s₀ := pre_of (Ntt.pre_of hs)
   suffices h : WP isa Impl.MlKem.AArch64.Ntt16.ntt s₀ fun s' => s'.sp = s₀.sp ∧
       (inPlaceAArch64 Spec.MlKem.ntt).post s₀ s' by
     obtain ⟨t, s', he, hsp, hpost⟩ := h
@@ -156,11 +156,16 @@ theorem correct (s₀ : State) (hs : (inPlaceAArch64 Spec.MlKem.ntt).pre s₀) :
         by rw [k₄.get .x4, e₃, k₂.get .x0, k₁.get .x0], by rw [e₄]; rfl⟩))
     fun s₅ ⟨⟨k₅, m₅, e2', e6', e4', e5'⟩, hv₅⟩ => ?_
   have j₀ : L2 s₀ s₄.mem 0 s₅ := by
-    refine ⟨h₄.st.keep k₅, ?_, ?_, ?_, by rw [e5'], by rw [m₅]; exact Frame.refl _ _, h₄.tab,
+    refine ⟨h₄.st.keep k₅, ?_, ?_, ?_, by rw [e5'], by rw [m₅]; exact Frame.refl _ _,
+      (fun o ho => by
+        rw [BitVec.add_assoc,←BitVec.ofNat_add]
+        exact in_rd_wr (in_regions hreg (contains_off (by omega) (by decide)))),
+      hp.disj.sub_right (Offset.sub_base _ (by decide)),
+      (fun j hj => by rw [BitVec.add_assoc,←BitVec.ofNat_add]; exact h₄.tab j hj),
       fun r hr c' hc' => h₄.scr r hr c' hc', ?_, by rw [hv₅]; exact h₄.q, by rw [hv₅]; exact h₄.c10,
       by rw [hv₅]; exact h₄.c0⟩
     · rw [e2', h₄.st.x1]
-    · rw [e6', h₄.st.x1]
+    · rw [e6', h₄.st.x1]; exact (BitVec.add_zero _).symm
     · rw [e4', h₄.st.x0]; exact (BitVec.add_zero _).symm
     · rw [m₅]; exact CoeffsUpTo.zero _
   refine WP.mono (count_loop (n := 8) (by decide) (L2 s₀ s₄.mem) (fun b hb w hw => p2_body hp hb hw) j₀)

@@ -22,8 +22,8 @@
 //! this library knows and the CPU has: anything else panics, rather than
 //! quietly testing another configuration. On AArch64, standalone hashing
 //! chooses FEAT_SHA3's Keccak only when this variable names `sha3`, since
-//! it is not faster there. ML-DSA independently selects its faster paired
-//! SHA3 implementation whenever the detected features support it.
+//! it is not faster there. ML-DSA and ML-KEM independently select their paired
+//! SHA3 implementations whenever the detected features support them.
 
 use core::sync::atomic::{AtomicU32, Ordering};
 

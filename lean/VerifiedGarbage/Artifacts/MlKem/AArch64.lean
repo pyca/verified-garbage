@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Sample
 import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Verified
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 
@@ -102,6 +103,26 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.nttInvContract AArch64.abi
     verified := Proof.MlKem.AArch64.Ntt16.ntt_inv_verified
     ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩)
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.MlKem.nttApi with
+    name := Impl.MlKem.AArch64.Ntt16.Readonly.fwdName
+    target := AArch64.target
+    doc := Spec.MlKem.nttApi.doc
+    consts := Impl.MlKem.AArch64.Ntt16.Readonly.fwdConsts
+    code := Impl.MlKem.AArch64.Ntt16.Readonly.fwd
+    contract := Spec.MlKem.nttContract (AArch64.abi.withConsts Impl.MlKem.AArch64.Ntt16.Readonly.fwdConsts)
+    verified := Proof.MlKem.AArch64.Ntt16.Readonly.fwd_verified
+    ofSig := by exact ⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.MlKem.nttInvApi with
+    name := Impl.MlKem.AArch64.Ntt16.Readonly.invName
+    target := AArch64.target
+    doc := Spec.MlKem.nttInvApi.doc
+    consts := Impl.MlKem.AArch64.Ntt16.Readonly.invConstsTable
+    code := Impl.MlKem.AArch64.Ntt16.Readonly.inv
+    contract := Spec.MlKem.nttInvContract (AArch64.abi.withConsts Impl.MlKem.AArch64.Ntt16.Readonly.invConstsTable)
+    verified := Proof.MlKem.AArch64.Ntt16.Readonly.inv_verified
+    ofSig := by exact ⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.MlKem.AArch64

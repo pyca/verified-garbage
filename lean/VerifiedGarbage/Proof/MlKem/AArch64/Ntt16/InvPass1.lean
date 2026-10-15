@@ -53,14 +53,16 @@ theorem invBlockHalves_get (b : Nat) {e : Nat} (he : e < 8) :
 /-! ## A block -/
 
 /-- After `b` blocks of pass 1 of the inverse. -/
-structure LI1 (s₀ : State) (b : Nat) (s : State) : Prop where
+structure LI1 (s₀ : State) (b : Nat) (s : State) (t : Addr := sP s₀+BitVec.ofNat 64 512) : Prop where
   st : St s₀ s
   x2 : s.gpr .x2 = coeffAddr (fP s₀) (32 * b)
   x3 : s.gpr .x3 = sP s₀ + BitVec.ofNat 64 (64 * b)
-  x6 : s.gpr .x6 = sP s₀ + BitVec.ofNat 64 (512 + 64 * b)
+  x6 : s.gpr .x6 = t + BitVec.ofNat 64 (64 * b)
   x5 : (s.gpr .x5).toNat = 8 - b
   frame : Frame [polyRegion (sP s₀)] s₀.mem s.mem
-  tab : ∀ j < 64, s.mem.readW (sP s₀ + BitVec.ofNat 64 (512 + 8 * j)) 64 = hw4 invTableHalves j
+  tableRead : ∀ o, o+16≤512 → InRegions (s₀.rd++s₀.wr) (t+BitVec.ofNat 64 o) 16
+  tableApart : t=sP s₀+BitVec.ofNat 64 512 ∨ (polyRegion (sP s₀)).Disjoint ⟨t,512⟩
+  tab : ∀ j < 64, s.mem.readW (t + BitVec.ofNat 64 (8 * j)) 64 = hw4 invTableHalves j
   scr : ∀ r < b, ∀ i < 4, Rep (s.mem.read (sP s₀ + BitVec.ofNat 64 (64 * r + 16 * i)) 16)
     (fun e => (nttInvL 4 (P₀ s₀))[32 * r + 8 * i + e]!) (2 * 3329)
   q : Cst (s.v .v31) fun _ => 3329
@@ -175,8 +177,8 @@ theorem ilane_zt {s : State} {b k K : Nat} {x y : VReg}
     (invBlockHalves_get b hk).2.1, hK]
   exact ⟨rfl, rfl⟩
 
-theorem ip1_body {s₀ : State} (hp : Pre s₀) {b : Nat} (hb : b < 8) {sb : State} (h : LI1 s₀ b sb) :
-    WP isa (.block invPass1Body) sb fun s' => LI1 s₀ (b + 1) s' ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ b + 1 ≠ 8) := by
+theorem ip1_body {s₀ : State} (hp : Pre s₀) {b : Nat} (hb : b < 8) {sb : State} {t : Addr} (h : LI1 s₀ b sb t) :
+    WP isa (.block invPass1Body) sb fun s' => LI1 s₀ (b + 1) s' t ∧ ((s'.gpr .x5).toNat ≠ 0 ↔ b + 1 ≠ 8) := by
   simp only [invPass1Body, List.cons_append, List.nil_append, List.append_assoc, List.flatMap_cons,
     List.flatMap_nil, List.append_nil]
   have hpoly : PolyIs sb.mem (fP s₀) (P₀ s₀) :=
@@ -187,15 +189,15 @@ theorem ip1_body {s₀ : State} (hp : Pre s₀) {b : Nat} (hb : b < 8) {sb : Sta
   have hb1 : 32 * b + 32 ≤ 256 := by omega
   have st := h.st.vchg c₀
   have a6 : ∀ i < 4, s.gpr .x6 + BitVec.ofNat 64 (16 * i) =
-      sP s₀ + BitVec.ofNat 64 (512 + 64 * b + 16 * i) := fun i _ => by rw [c₀.gpr, h.x6, ptr_add]
-  have i6 : ∀ i < 4, InRegions (s.rd ++ s.wr) (sP s₀ + BitVec.ofNat 64 (512 + 64 * b + 16 * i)) 16 :=
-    fun i _ => inS' hp st (by omega)
-  have tl : ∀ i < 4, ∀ e < 8, vhalf (s.mem.read (sP s₀ + BitVec.ofNat 64 (512 + 64 * b + 16 * i)) 16) e =
+      t + BitVec.ofNat 64 (64 * b + 16 * i) := fun i _ => by rw [c₀.gpr, h.x6, ptr_add]
+  have i6 : ∀ i < 4, InRegions (s.rd ++ s.wr) (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16 :=
+    fun i hi => by rw [st.rd,st.wr]; exact h.tableRead _ (by omega)
+  have tl : ∀ i < 4, ∀ e < 8, vhalf (s.mem.read (t + BitVec.ofNat 64 (64 * b + 16 * i)) 16) e =
       BitVec.ofNat 16 ((invBlockHalves b).getD (8 * i + e) 0) := fun i hi e he => by
-    have ht : ∀ j < 64, s.mem.readW (sP s₀ + BitVec.ofNat 64 (512 + 8 * j)) 64 = hw4 invTableHalves j :=
+    have ht : ∀ j < 64, s.mem.readW (t + BitVec.ofNat 64 (8 * j)) 64 = hw4 invTableHalves j :=
       fun j hj => by rw [c₀.mem]; exact h.tab j hj
-    have := vhalf_table ht (i := 4 * b + i) (by omega) he
-    rw [show 512 + 16 * (4 * b + i) = 512 + 64 * b + 16 * i by omega,
+    have := vhalf_table (off:=0) (by simpa only [Nat.zero_add] using ht) (i := 4 * b + i) (by omega) he
+    rw [show 0 + 16 * (4 * b + i) = 64 * b + 16 * i by omega,
       show 8 * (4 * b + i) + e = 32 * b + (8 * i + e) by omega, invTableHalves_get hb (by omega)] at this
     exact this
   refine ld_step (VChg.refl [] s) (by decide) (a6 0 (by decide)) (i6 0 (by decide)) fun s₁ c₁ v₁ o₁ => ?_
@@ -405,13 +407,18 @@ theorem ip1_body {s₀ : State} (hp : Pre s₀) {b : Nat} (hb : b < 8) {sb : Sta
     rcases hr with rfl | rfl | rfl <;> rw [hv, h₃₁.v, CC.get _ (by decide)]
   refine ⟨⟨(st₃₀.keep h₃₁.keep).keep kw, by rw [e2, gw, h.x2, coeffAddr, coeffAddr, ptr_add]; congr 2,
     by rw [e3, gw, h.x3, ptr_add]; congr 2, by rw [e6, gw, h.x6, ptr_add]; congr 2, x5',
-    by rw [mw]; exact h.frame.trans (by rw [← CC.mem]; exact h₃₁.frame), fun j hj => ?_,
+    by rw [mw]; exact h.frame.trans (by rw [← CC.mem]; exact h₃₁.frame), h.tableRead, h.tableApart, fun j hj => ?_,
     fun r hr i hi => ?_, by rw [vv .v31 (by decide)]; exact h.q, by rw [vv .v30 (by decide)]; exact h.c10,
     by rw [vv .v29 (by decide)]; exact h.c0⟩, by rw [x5']; omega⟩
-  · have := h.tab j hj
-    simp only [Mem.readW] at this ⊢
-    rw [mw, h₃₁.other _ (64 / 8) (by omega) (fun r hr => Or.inr (by omega)), CC.mem]
-    exact this
+  · rcases h.tableApart with ht | hd
+    · have hh := h.tab j hj
+      rw [ht,BitVec.add_assoc,←BitVec.ofNat_add] at hh ⊢
+      simp only [Mem.readW] at hh ⊢
+      rw [mw,h₃₁.other _ (64/8) (by omega) (fun r hr => Or.inr (by omega)),CC.mem]
+      exact hh
+    · rw [mw,h₃₁.frame.readW (r:=⟨t,512⟩) (contains_off (by omega) (by decide))
+        (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hd.symm) (by decide),CC.mem]
+      exact h.tab j hj
   · rw [mw]
     by_cases e : r = b
     · subst e
