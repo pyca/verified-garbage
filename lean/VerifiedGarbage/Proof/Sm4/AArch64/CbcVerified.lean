@@ -152,7 +152,8 @@ theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
   exact hdata
 
 theorem cbcDecrypt_ct : ConstantTime isa cbcDecAArch64.pre cbcDecAArch64.pub cbcDecrypt :=
-  ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+  VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+    (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun s₁ s₂ h₁ h₂ hp => ⟨cbcTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
       simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [cryptSum])
 
@@ -201,7 +202,8 @@ theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
   exact hdata
 
 theorem cbcEncrypt_ct : ConstantTime isa cbcEncAArch64.pre cbcEncAArch64.pub cbcEncrypt :=
-  ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+  VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+    (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun s₁ s₂ h₁ h₂ hp => ⟨cbcTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
       simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [cryptSum])
 

@@ -35,11 +35,4 @@ def τCrypt : VectorTaint.T :=
 taint_summary cryptSum : VectorTaint.taint τCrypt Impl.Sm4.AArch64.crypt16
   keeping (RegSet.ofList [], RegSet.ofList [.v31])
 
-/-- Constant time from a check that `taint_decide_sum` proves. -/
-theorem ct_of {Pre : State → Prop} {Pub : State → State → Prop} {c : Prog isa} (τ : VectorTaint.T)
-    (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → VectorTaint.taint.Agree τ s₁ s₂)
-    (h : ∃ hc, (VectorTaint.taint.check τ c hc).isSome = true) : ConstantTime isa Pre Pub c := by
-  obtain ⟨_, h⟩ := h
-  exact VG.Taint.constantTime (A := VectorTaint.taint) τ hpub h
-
 end VG.Proof.Sm4.AArch64

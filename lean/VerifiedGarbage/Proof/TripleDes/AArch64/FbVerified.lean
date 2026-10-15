@@ -254,7 +254,8 @@ theorem ofb_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' ofb_keeps_x30 (ofb_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
         simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
@@ -265,7 +266,8 @@ theorem cfbEncrypt_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbEncrypt_keeps_x30 (cfbEncrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
         simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
@@ -276,7 +278,8 @@ theorem cfbDecrypt_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbDecrypt_keeps_x30 (cfbDecrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
         simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
@@ -288,7 +291,8 @@ theorem cfb8Encrypt_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfb8Encrypt_keeps_x30 (cfb8Encrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
         simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
     sig_implies [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig,
@@ -301,7 +305,8 @@ theorem cfb8Decrypt_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfb8Decrypt_keeps_x30 (cfb8Decrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
         simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
     sig_implies [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig,

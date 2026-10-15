@@ -377,6 +377,14 @@ theorem constantTime {Pre : M.State → Prop} {Pub : M.State → M.State → Pro
   obtain ⟨τ', hc⟩ := Option.isSome_iff_exists.mp h
   exact (check_sound hc (hpub _ _ h₁ h₂ hp) e₁ e₂).1
 
+/-- `constantTime` from a check that succeeds for some hint, the form
+`taint_decide_sum` proves: for term-mode proofs, which do not name the hint. -/
+theorem constantTime_of_exists {Pre : M.State → Prop} {Pub : M.State → M.State → Prop} {c : Prog M}
+    (τ : A.T) (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → A.Agree τ s₁ s₂)
+    (h : ∃ hc : Hint A.T, (A.check τ c hc).isSome = true) : ConstantTime M Pre Pub c :=
+  let ⟨_, h⟩ := h
+  constantTime τ hpub h
+
 /-- Apply `f` to every taint of a hint. -/
 def Hint.map {T U : Type} (f : T → U) : Hint T → Hint U
   | .block ms chunkSize => .block (ms.map f) chunkSize
