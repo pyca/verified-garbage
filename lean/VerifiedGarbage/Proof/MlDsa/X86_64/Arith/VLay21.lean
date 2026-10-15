@@ -199,18 +199,18 @@ theorem vstep2 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
       rcases (by omega_arith : j < 8 * i ∨ (8 * i ≤ j ∧ j < 8 * i + 2) ∨ (8 * i + 2 ≤ j ∧ j < 8 * i + 4) ∨
           (8 * i + 4 ≤ j ∧ j < 8 * i + 6) ∨ (8 * i + 6 ≤ j ∧ j < 8 * i + 8) ∨ 8 * i + 8 ≤ j) with
         h | h | h | h | h | h
-      · simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, p2 j hj]
-      · simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, p2 j hj]
+      · simp (disch := omega_arith) only [↓ite_eq_right, p2 j hj]
+      · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, p2 j hj]
         rw [show 8 * i + (j - 8 * i) = j by omega_arith, show 8 * i + 2 + (j - 8 * i) = j + 2 by omega_arith]
-      · simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, p2 j hj]
+      · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, p2 j hj]
         rw [show 8 * i + (j - 8 * i - 2) = j - 2 by omega_arith, show 8 * i + 2 + (j - 8 * i - 2) = j by omega_arith]
-      · simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, p2 j hj, p2 (j + 2) (by omega_arith)]
+      · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, p2 j hj, p2 (j + 2) (by omega_arith)]
         rw [show 8 * i + 4 + (j - (8 * i + 4)) = j by omega_arith,
           show 8 * i + 6 + (j - (8 * i + 4)) = j + 2 by omega_arith]
-      · simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, p2 j hj, p2 (j - 2) (by omega_arith)]
+      · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, p2 j hj, p2 (j - 2) (by omega_arith)]
         rw [show 8 * i + 4 + (j - (8 * i + 4) - 2) = j - 2 by omega_arith,
           show 8 * i + 6 + (j - (8 * i + 4) - 2) = j by omega_arith]
-      · simp (disch := omega_arith) only [ite_eq_left, ite_eq_right, p2 j hj]
+      · simp (disch := omega_arith) only [↓ite_eq_right, p2 j hj]
   · -- what the step keeps
     refine ⟨⟨fun r hr => ?_, by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags],
       by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩, frame_write2 (Frame.refl _ _) j0 j1 _ _, ⟨?_, ?_⟩,
@@ -370,30 +370,30 @@ theorem vstep1 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
       · rw [a0 (e / 2) (by omega_arith)]; dsimp only
         rw [show 8 * i + 2 * (e / 2) = 8 * i + e by omega_arith,
           show 4 * i + e / 2 = (8 * i + e) / 2 by omega_arith, ← hG]
-        simp (disch := omega_arith) only [lg, ite_eq_left, ite_eq_right]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_left, ↓ite_eq_right]
       · rw [a3 (e / 2) (by omega_arith)]; dsimp only
         rw [show 8 * i + 2 * (e / 2) = 8 * i + e - 1 by omega_arith, show 8 * i + e - 1 + 1 = 8 * i + e by omega_arith,
           show 4 * i + e / 2 = (8 * i + e) / 2 by omega_arith, ← hG]
-        simp (disch := omega_arith) only [lg, ite_eq_left, ite_eq_right]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_left, ↓ite_eq_right]
     · rw [dword_punpckhdq' _ _ he, eval_movdqa]
       split
       · rw [a0 (2 + e / 2) (by omega_arith)]; dsimp only
         rw [show 8 * i + 2 * (2 + e / 2) = 8 * i + 4 + e by omega_arith,
           show 4 * i + (2 + e / 2) = (8 * i + 4 + e) / 2 by omega_arith, ← hG]
-        simp (disch := omega_arith) only [lg, ite_eq_left, ite_eq_right]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_left, ↓ite_eq_right]
       · rw [a3 (2 + e / 2) (by omega_arith)]; dsimp only
         rw [show 8 * i + 2 * (2 + e / 2) = 8 * i + 4 + e - 1 by omega_arith,
           show 8 * i + 4 + e - 1 + 1 = 8 * i + 4 + e by omega_arith,
           show 4 * i + (2 + e / 2) = (8 * i + 4 + e) / 2 by omega_arith, ← hG]
-        simp (disch := omega_arith) only [lg, ite_eq_left, ite_eq_right]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_left, ↓ite_eq_right]
     · rcases (by omega_arith : (8 * i ≤ j ∧ j < 8 * i + 4) ∨ (8 * i + 4 ≤ j ∧ j < 8 * i + 8) ∨
           j < 8 * i ∨ 8 * i + 8 ≤ j) with h | h | h | h
       · rw [ite_eq_left h, show 8 * i + (j - 8 * i) = j by omega_arith]
       · rw [ite_eq_right (by omega_arith), ite_eq_left h, show 8 * i + 4 + (j - (8 * i + 4)) = j by omega_arith]
       · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), ← hG]
-        simp (disch := omega_arith) only [lg, ite_eq_left]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_left]
       · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), ← hG]
-        simp (disch := omega_arith) only [lg, ite_eq_left, ite_eq_right]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_right]
   · -- what the step keeps
     refine ⟨⟨fun r hr => ?_, by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags],
       by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩, frame_write2 (Frame.refl _ _) j0 j1 _ _, ⟨?_, ?_⟩,

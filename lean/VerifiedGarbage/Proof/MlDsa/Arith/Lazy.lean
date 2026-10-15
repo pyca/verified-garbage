@@ -83,7 +83,7 @@ theorem blockN_bfly_get' (op : Word → Word → Zq → Word × Word) (w : Poly)
     rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [ite_eq_left, ite_eq_right, Nat.add_sub_cancel, ↓reduceIte]
+      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel, ↓reduceIte]
 
 theorem block_ok (op : Word → Word → Zq → Word × Word) :
     BlkOk (fun f len k st t => blockN (bfly op) f len (zetas k) st t) op :=
@@ -107,13 +107,13 @@ theorem layF1_get {blk : Poly → Nat → Nat → Nat → Nat → Poly}
       hblk.get _ 1 _ _ 1 (by decide) (by decide) (by rw [n_eq]; omega) j (by rw [n_eq]; exact hj)]
     by_cases h1 : 2 * 1 * b ≤ j ∧ j < 2 * 1 * b + 1
     · rw [ite_eq_left h1, ih (by omega) hj, ih (by omega) (by omega), show j / 2 = b by omega]
-      simp (disch := omega) only [ite_eq_left, ite_eq_right]
+      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
     · rw [ite_eq_right h1]
       by_cases h2 : 2 * 1 * b + 1 ≤ j ∧ j < 2 * 1 * b + 1 + 1
       · rw [ite_eq_left h2, ih (by omega) (by omega), ih (by omega) hj, show j / 2 = b by omega]
-        simp (disch := omega) only [ite_eq_left, ite_eq_right]
+        simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
       · rw [ite_eq_right h2, ih (by omega) hj]
-        by_cases h3 : j < 2 * b <;> simp (disch := omega) only [ite_eq_left, ite_eq_right]
+        by_cases h3 : j < 2 * b <;> simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
 
 
 /-- Each coefficient after the first `b` blocks of a length-two layer. -/
@@ -130,13 +130,13 @@ theorem layF2_get {blk : Poly → Nat → Nat → Nat → Nat → Poly}
       hblk.get _ 2 _ _ 2 (by decide) (by decide) (by rw [n_eq]; omega) j (by rw [n_eq]; exact hj)]
     by_cases h1 : 2*2*b ≤ j ∧ j < 2*2*b+2
     · rw [ite_eq_left h1,ih (by omega) hj,ih (by omega) (by omega),show j/4 = b by omega]
-      simp (disch := omega) only [ite_eq_left,ite_eq_right]
+      simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
     · rw [ite_eq_right h1]
       by_cases h2 : 2*2*b+2 ≤ j ∧ j < 2*2*b+2+2
       · rw [ite_eq_left h2,ih (by omega) (by omega),ih (by omega) hj,show j/4 = b by omega]
-        simp (disch := omega) only [ite_eq_left,ite_eq_right]
+        simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
       · rw [ite_eq_right h2,ih (by omega) hj]
-        by_cases h3 : j < 4*b <;> simp (disch := omega) only [ite_eq_left,ite_eq_right]
+        by_cases h3 : j < 4*b <;> simp (disch := omega) only [↓ite_eq_left,↓ite_eq_right]
 
 
 end VG.Proof.MlDsa.Arith.Lazy
