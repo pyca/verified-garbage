@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
 meta import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # SHA-256 on x86: the scalar compression function
@@ -25,17 +27,20 @@ open VG.Proof.Pbkdf2.Stream.X86 (Sha256Stream)
 open VG.Proof.Pbkdf2.Md.X86 (sha256M sha224M)
 open VG.Proof.Sha256.X86.Variants (pbkdf2Fns pbkdf2Fns224)
 
-/-- The streaming functions made with the scalar compression function. -/
-def stream : Sha256Stream where
-  suffix := ""
-  upd := Impl.Sha256.X86.Stream.update
-  fin := Impl.Sha256.X86.Stream.finalize
-  updOK := Proof.Sha256.X86.Stream.Update.update_verified
-  finOK := Proof.Sha256.X86.Stream.Finalize.finalize_verified
-  updSp := NoSp.of_all (by lit_decide)
-  finSp := NoSp.of_all (by lit_decide)
-  updSU := by lit_decide
-  finSU := by lit_decide
+/-- The streaming functions made with the scalar compression function. Its checks of the
+code are one kernel evaluation (`taint_decide_all`). -/
+def stream : Sha256Stream := by
+  refine {
+    suffix := "",
+    upd := Impl.Sha256.X86.Stream.update,
+    fin := Impl.Sha256.X86.Stream.finalize,
+    updOK := Proof.Sha256.X86.Stream.Update.update_verified,
+    finOK := Proof.Sha256.X86.Stream.Finalize.finalize_verified,
+    updSp := NoSp.of_all ?_,
+    finSp := NoSp.of_all ?_,
+    updSU := ?_,
+    finSU := ?_ }
+  taint_decide_all
 
 materialize_code sha256HInit := (sha256M stream "vg_sha256_compress" Impl.Sha256.X86.compress).hmacInit
 materialize_code sha256HFinalize := (sha256M stream "vg_sha256_compress" Impl.Sha256.X86.compress).hmacFin
@@ -56,85 +61,90 @@ theorem finalize224_ct : ConstantTime isa
     (fun _ _ h₁ h₂ hp => Proof.MdStream.X86.Finalize.agree₀D Proof.Sha256.X86.Stream.dims224 (by decide) h₁ h₂ hp)
     (by taint_decide)
 
-def variant : Proof.Sha256.X86.Variants.Backend where
-  cmpN := "vg_sha256_compress"
-  cmpC := Impl.Sha256.X86.compress
-  cmp := Proof.Sha256.X86.compress_verified
-  cmpSp := NoSp.of_all (by lit_decide)
-  cmpStack := by lit_decide
-  stream := stream
-  features := []
-  functions := [
-    { api := Spec.Sha256.compressApi
-      code := Impl.Sha256.X86.compress
-      contract := Spec.Sha256.compressContract X86.abi
-      verified := Proof.Sha256.X86.Shared.compress
-      ofSig := ⟨_, _, _, rfl⟩
-      ofApi := rfl
-      spSafe := Code.all_of_allInstrs (by lit_decide) },
-    { api := Spec.Sha256.updateApi
-      code := Impl.StackScratch.X86.withStackScratch 636 5 Impl.Sha256.X86.Stream.update
-      contract := Spec.Sha256.updateContract X86.abi (20 + 636)
-      stack := 20 + 636
-      verified := Proof.Sha256.X86.Shared.update_frame Proof.Sha256.X86.Shared.updateScratch
-        (by lit_decide) (by lit_decide)
-      ofSig := ⟨_, _, _, rfl⟩
-      ofApi := rfl
-      spSafe := Code.all_of_allInstrs (by lit_decide) },
-    { api := Spec.Sha256.finalizeApi
-      code := Impl.StackScratch.X86.withStackScratch 632 4 Impl.Sha256.X86.Stream.finalize
-      contract := Spec.Sha256.finalizeContract X86.abi (20 + 632)
-      stack := 20 + 632
-      verified := Proof.Sha256.X86.Shared.finalize_frame Proof.Sha256.X86.Shared.finalizeScratch
-        (by lit_decide) (by lit_decide)
-      ofSig := ⟨_, _, _, rfl⟩
-      ofApi := rfl
-      spSafe := Code.all_of_allInstrs (by lit_decide) },
-    { api := Spec.Sha256.finalize224Api
-      code := Impl.StackScratch.X86.withStackScratch 632 4 sha224Finalize
-      contract := Spec.Sha256.finalize224Contract X86.abi (20 + 632)
-      stack := 20 + 632
-      verified := Proof.Sha256.X86.Shared.finalize224_frame
-        (Proof.Sha256.X86.Shared.finalize224Scratch (Proof.Sha256.X86.Stream.finalize224_of Proof.Sha256.X86.Stream.callee finalize224_ct))
-        (by lit_decide) (by lit_decide)
-      ofSig := ⟨_, _, _, rfl⟩
-      ofApi := rfl
-      spSafe := Code.all_of_allInstrs (by lit_decide) },
-    { api := Spec.Sha256.updateScratchApi
-      code := Impl.Sha256.X86.Stream.update
-      contract := Spec.Sha256.updateScratchContract X86.abi 20
-      stack := 20
-      verified := Proof.Sha256.X86.Shared.updateScratch
-      ofSig := ⟨_, _, _, rfl⟩
-      ofApi := rfl
-      spSafe := Code.all_of_allInstrs (by lit_decide) },
-    { api := Spec.Sha256.finalizeScratchApi
-      code := Impl.Sha256.X86.Stream.finalize
-      contract := Spec.Sha256.finalizeScratchContract X86.abi 20
-      stack := 20
-      verified := Proof.Sha256.X86.Shared.finalizeScratch
-      ofSig := ⟨_, _, _, rfl⟩
-      ofApi := rfl
-      spSafe := Code.all_of_allInstrs (by lit_decide) }]
-  initSp := Code.all_of_allInstrs (by lit_decide)
-  finSp := Code.all_of_allInstrs (by lit_decide)
-  iterSp := Code.all_of_allInstrs (by lit_decide)
-  pbkdf2Sp := Code.all_of_allInstrs (by lit_decide)
-  initNoSp := NoSp.of_all (by lit_decide)
-  initStack := by lit_decide
-  finalizeNoSp := NoSp.of_all (by lit_decide)
-  finalizeStack := by lit_decide
-  iterNoSp := NoSp.of_all (by lit_decide)
-  iterStack := by lit_decide
-  init224Sp := Code.all_of_allInstrs (by lit_decide)
-  fin224Sp := Code.all_of_allInstrs (by lit_decide)
-  iter224Sp := Code.all_of_allInstrs (by lit_decide)
-  pbkdf2_224Sp := Code.all_of_allInstrs (by lit_decide)
-  init224NoSp := NoSp.of_all (by lit_decide)
-  init224Stack := by lit_decide
-  finalize224NoSp := NoSp.of_all (by lit_decide)
-  finalize224Stack := by lit_decide
-  iter224NoSp := NoSp.of_all (by lit_decide)
-  iter224Stack := by lit_decide
+/-- The backend: its checks of the code (`spSafe`, `NoSp`, the stack) evaluated in one
+kernel evaluation (`taint_decide_all`), which evaluates the compression function they
+all contain once. -/
+def variant : Proof.Sha256.X86.Variants.Backend := by
+  refine {
+    cmpN := "vg_sha256_compress",
+    cmpC := Impl.Sha256.X86.compress,
+    cmp := Proof.Sha256.X86.compress_verified,
+    cmpSp := NoSp.of_all ?_,
+    cmpStack := ?_,
+    stream := stream,
+    features := [],
+    functions := [
+      { api := Spec.Sha256.compressApi
+        code := Impl.Sha256.X86.compress
+        contract := Spec.Sha256.compressContract X86.abi
+        verified := Proof.Sha256.X86.Shared.compress
+        ofSig := ⟨_, _, _, rfl⟩
+        ofApi := rfl
+        spSafe := Code.all_of_allInstrs ?_ },
+      { api := Spec.Sha256.updateApi
+        code := Impl.StackScratch.X86.withStackScratch 636 5 Impl.Sha256.X86.Stream.update
+        contract := Spec.Sha256.updateContract X86.abi (20 + 636)
+        stack := 20 + 636
+        verified := Proof.Sha256.X86.Shared.update_frame Proof.Sha256.X86.Shared.updateScratch
+          ?_ ?_
+        ofSig := ⟨_, _, _, rfl⟩
+        ofApi := rfl
+        spSafe := Code.all_of_allInstrs ?_ },
+      { api := Spec.Sha256.finalizeApi
+        code := Impl.StackScratch.X86.withStackScratch 632 4 Impl.Sha256.X86.Stream.finalize
+        contract := Spec.Sha256.finalizeContract X86.abi (20 + 632)
+        stack := 20 + 632
+        verified := Proof.Sha256.X86.Shared.finalize_frame Proof.Sha256.X86.Shared.finalizeScratch
+          ?_ ?_
+        ofSig := ⟨_, _, _, rfl⟩
+        ofApi := rfl
+        spSafe := Code.all_of_allInstrs ?_ },
+      { api := Spec.Sha256.finalize224Api
+        code := Impl.StackScratch.X86.withStackScratch 632 4 sha224Finalize
+        contract := Spec.Sha256.finalize224Contract X86.abi (20 + 632)
+        stack := 20 + 632
+        verified := Proof.Sha256.X86.Shared.finalize224_frame
+          (Proof.Sha256.X86.Shared.finalize224Scratch (Proof.Sha256.X86.Stream.finalize224_of Proof.Sha256.X86.Stream.callee finalize224_ct))
+          ?_ ?_
+        ofSig := ⟨_, _, _, rfl⟩
+        ofApi := rfl
+        spSafe := Code.all_of_allInstrs ?_ },
+      { api := Spec.Sha256.updateScratchApi
+        code := Impl.Sha256.X86.Stream.update
+        contract := Spec.Sha256.updateScratchContract X86.abi 20
+        stack := 20
+        verified := Proof.Sha256.X86.Shared.updateScratch
+        ofSig := ⟨_, _, _, rfl⟩
+        ofApi := rfl
+        spSafe := Code.all_of_allInstrs ?_ },
+      { api := Spec.Sha256.finalizeScratchApi
+        code := Impl.Sha256.X86.Stream.finalize
+        contract := Spec.Sha256.finalizeScratchContract X86.abi 20
+        stack := 20
+        verified := Proof.Sha256.X86.Shared.finalizeScratch
+        ofSig := ⟨_, _, _, rfl⟩
+        ofApi := rfl
+        spSafe := Code.all_of_allInstrs ?_ }],
+    initSp := Code.all_of_allInstrs ?_,
+    finSp := Code.all_of_allInstrs ?_,
+    iterSp := Code.all_of_allInstrs ?_,
+    pbkdf2Sp := Code.all_of_allInstrs ?_,
+    initNoSp := NoSp.of_all ?_,
+    initStack := ?_,
+    finalizeNoSp := NoSp.of_all ?_,
+    finalizeStack := ?_,
+    iterNoSp := NoSp.of_all ?_,
+    iterStack := ?_,
+    init224Sp := Code.all_of_allInstrs ?_,
+    fin224Sp := Code.all_of_allInstrs ?_,
+    iter224Sp := Code.all_of_allInstrs ?_,
+    pbkdf2_224Sp := Code.all_of_allInstrs ?_,
+    init224NoSp := NoSp.of_all ?_,
+    init224Stack := ?_,
+    finalize224NoSp := NoSp.of_all ?_,
+    finalize224Stack := ?_,
+    iter224NoSp := NoSp.of_all ?_,
+    iter224Stack := ?_ }
+  taint_decide_all
 
 end VG.Variants.Sha256.X86.Scalar
