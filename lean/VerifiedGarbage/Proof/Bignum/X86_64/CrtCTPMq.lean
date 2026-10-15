@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 import all Init.Data.Array.Basic
