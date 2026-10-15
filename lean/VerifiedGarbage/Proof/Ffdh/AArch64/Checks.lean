@@ -297,4 +297,17 @@ theorem range_ok {t : State} {G : Addr} {Zx w : Nat} {mi : BitVec 64} (hg : Good
       o₂ x (hx (8 * sF, 8) (by simp)), hm₁]
   · exact (((k₁.trans k₂).trans k₃).trans k').mono (by decide)
 
+/-- What `range` changes: past the header's first 17 slots, within the arrays,
+and not the modulus or the number 1. -/
+theorem range_frame (w : Nat) : ∀ r ∈ [(slot w aTmp, 8 * w), (8 * sF, 8)],
+    8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot w 8 ∧ (r.1 + r.2 ≤ slot w aN ∨ slot w aN + 8 * (w + 2) ≤ r.1) ∧
+      (r.1 + r.2 ≤ slot w aOne ∨ slot w aOne + 8 * (w + 2) ≤ r.1) := by
+  have h1 := hdr_lt_slot w aTmp (show 31 < 32 by decide)
+  have h2 := slot_le (w := w) (show aTmp < 8 by decide)
+  have h3 := slot_sep (w := w) (show aTmp ≠ aN by decide)
+  have h4 := slot_sep (w := w) (show aTmp ≠ aOne by decide)
+  simp only [List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true]
+  refine ⟨⟨by omega, by omega, by omega, by omega⟩, by decide, hdr_lt_slot w 8 (by decide),
+    Or.inl (hdr_lt_slot w aN (by decide)), Or.inl (hdr_lt_slot w aOne (by decide))⟩
+
 end VG.Proof.Ffdh.AArch64

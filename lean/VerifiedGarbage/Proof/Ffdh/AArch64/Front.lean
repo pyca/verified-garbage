@@ -99,6 +99,21 @@ theorem domHead_ok {s : State} {B : Addr} {Z k : Nat} {dp : Addr} {pb : List Byt
 /-- What `head` and `pSetup` change in the outer workspace. -/
 def setupR (w : Nat) : List (Nat × Nat) := [(8 * sW, 8), (8 * sArr 0, 64), (8 * sWs, 8), (inner w, slot w 8)]
 
+/-- A header slot that `head` and `pSetup` don't write is outside `setupR`. -/
+theorem setupR_word (w : Nat) {i : Nat} (hi : i < 32) (h1 : i ≠ sW) (h2 : i ≠ sWs) (h3 : i < sArr 0 ∨ sArr 0 + 8 ≤ i) :
+    ∀ r ∈ setupR w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := by
+  have h8 := hdr_lt_slot w 8 hi
+  simp only [setupR, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true]
+  unfold sW sWs sArr sFn at *
+  exact ⟨by omega, by omega, by omega, Or.inl h8⟩
+
+/-- `setupR` within a working space with room for the inner workspace. -/
+theorem setupR_le (w : Nat) {Z : Nat} (h : inner w + slot w 8 ≤ Z) : ∀ r ∈ setupR w, r.1 + r.2 ≤ Z := by
+  have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
+  simp only [setupR, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true]
+  unfold sW sWs sArr sFn at *
+  exact ⟨by omega, by omega, by omega, h⟩
+
 theorem wsWords_k {k : Nat} (hk : 16 ≤ k) : wsWords k = (k + 7) / 8 := by unfold wsWords; omega_arith
 
 /-- The workspaces' room in the working space of `16 k + 32` words. -/
