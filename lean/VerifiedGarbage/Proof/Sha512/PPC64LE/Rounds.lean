@@ -1,16 +1,24 @@
-import Mathlib.Data.List.Nodup
-import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Proof.Framework.Mem
-import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.Sha512.Spec
-import VerifiedGarbage.Impl.Sha512.PPC64LE
+module
+
+public import Mathlib.Data.List.Nodup
+public import VerifiedGarbage.Proof.Framework.Block
+public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+public import VerifiedGarbage.Proof.Sha512.Spec
+public import VerifiedGarbage.Impl.Sha512.PPC64LE
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # SHA-512 compression function on PPC64LE: the message schedule and the rounds
 
 Untrusted: everything here is checked by Lean.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.PPC64LE
 

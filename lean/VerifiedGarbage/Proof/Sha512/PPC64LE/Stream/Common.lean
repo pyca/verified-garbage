@@ -1,7 +1,13 @@
-import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
-import VerifiedGarbage.Proof.Sha512.Stream
-import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
-import VerifiedGarbage.Impl.Sha512.PPC64LE.Stream
+module
+
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Compress
+public import VerifiedGarbage.Proof.Sha512.Stream
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
+public import VerifiedGarbage.Impl.Sha512.PPC64LE.Stream
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on PPC64LE: common lemmas
@@ -10,6 +16,8 @@ Untrusted: everything here is checked by Lean. Weakest-precondition rules for
 the instruction forms used, and the inlined compression function
 (`compressAt`).
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.PPC64LE.Stream
 

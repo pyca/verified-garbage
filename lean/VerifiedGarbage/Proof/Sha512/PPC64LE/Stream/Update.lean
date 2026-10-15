@@ -1,4 +1,11 @@
-import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
+module
+
+public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
+meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
 
 /-!
 # Streaming SHA-512 on PPC64LE: `update`
@@ -7,6 +14,8 @@ Untrusted: everything here is checked by Lean. The same structure as the
 AArch64 proof (`VG.Proof.Sha512.AArch64.Stream.Update`); the loop runs while
 data is left, so every iteration consumes at least one byte.
 -/
+
+@[expose] public section
 
 namespace VG.Proof.Sha512.PPC64LE.Stream.Update
 
