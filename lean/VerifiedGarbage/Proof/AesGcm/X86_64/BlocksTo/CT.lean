@@ -330,15 +330,21 @@ theorem tail_rel (B : BlkFn M) {q : Nat} :
 
 end
 
-theorem encrypt_ct {M : CtxMode} (B : BlkFn M) {aligned : Bool} (st : Option (StitchToCode M aligned)) :
-    ConstantTime isa (Proof.AesGcm.encryptBlocksToX86_64M M).pre Proof.AesGcm.blocksToPub
+theorem encrypt_ctG {M : CtxMode} (B : BlkFn M) {aligned : Bool} (st : Option (StitchToCode M aligned))
+    {k : Contract isa} (hpre : ∀ s, k.pre s → BT M s) (hpub : ∀ s s', k.pub s s' → Proof.AesGcm.blocksToPub s s') :
+    ConstantTime isa k.pre k.pub
       (encrypt B.enc (st.map (·.enc)) aligned (encFullTo st)) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
-  have hp := BT.ofM h
-  have hp' := BT.ofM h'
-  have pb := Pub.of hq
+  have hp := hpre _ h
+  have hp' := hpre _ h'
+  have pb := Pub.of (hpub _ _ hq)
   refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (part_rel hp hp' pb st) ?_)
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨q, M₁, M₂⟩ e₁ e₂
   exact tail_rel hp hp' pb B _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
+
+theorem encrypt_ct {M : CtxMode} (B : BlkFn M) {aligned : Bool} (st : Option (StitchToCode M aligned)) :
+    ConstantTime isa (Proof.AesGcm.encryptBlocksToX86_64M M).pre Proof.AesGcm.blocksToPub
+      (encrypt B.enc (st.map (·.enc)) aligned (encFullTo st)) :=
+  encrypt_ctG B st (k := Proof.AesGcm.encryptBlocksToX86_64M M) (fun _ h => BT.ofM h) fun _ _ h => h
 
 end VG.Proof.AesGcm.X86_64.BlocksTo

@@ -23,11 +23,10 @@ namespace VG.Proof.AesGcm.X86_64.BlocksTo
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.BlocksTo
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode StitchToOkM)
 
-theorem encrypt_wp {M : CtxMode} (B : BlkFn M) (aligned full : Bool) (st : Option (Prog isa))
+theorem encrypt_wpB {M : CtxMode} (B : BlkFn M) (aligned full : Bool) (st : Option (Prog isa))
     (hst : ∀ p, st = some p → StitchToOkM M p (if full then 1 else 16)) {s : State}
-    (hpre : Proof.AesGcm.blocksToPreM M s) :
+    (hp : BT M s) :
     WP isa (encrypt B.enc st aligned full) s (Done s) := by
-  have hp := BT.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, h10, hg, hk, hf, hrd, hwr⟩ => ?_)
   cases st with
   | none =>
@@ -42,5 +41,11 @@ theorem encrypt_wp {M : CtxMode} (B : BlkFn M) (aligned full : Bool) (st : Optio
     | true =>
       exact WP.seq (WP.seq (WP.mono (stitchFullTo_ok hp (hst p rfl) h11 h10 hg hk hf hrd hwr) fun st M =>
         WP.mono (restFullTo_ok hp M) fun st' M' => tail_ok hp B M'))
+
+theorem encrypt_wp {M : CtxMode} (B : BlkFn M) (aligned full : Bool) (st : Option (Prog isa))
+    (hst : ∀ p, st = some p → StitchToOkM M p (if full then 1 else 16)) {s : State}
+    (hpre : Proof.AesGcm.blocksToPreM M s) :
+    WP isa (encrypt B.enc st aligned full) s (Done s) :=
+  encrypt_wpB B aligned full st hst (BT.ofM hpre)
 
 end VG.Proof.AesGcm.X86_64.BlocksTo

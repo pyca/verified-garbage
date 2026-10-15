@@ -332,13 +332,14 @@ theorem fullBody_rel (aligned : Bool) (p first second : Prog isa) {ys : State �
 
 end
 
-theorem encrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) :
-    ConstantTime isa (Proof.AesGcm.encryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
+theorem encrypt_ctG (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned))
+    {k : Contract isa} (hpre : ∀ s, k.pre s → BP M s) (hpub : ∀ s s', k.pub s s' → Proof.AesGcm.blocksPub s s') :
+    ConstantTime isa k.pre k.pub
       (encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st)) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
-  have hp := BP.ofM h
-  have hp' := BP.ofM h'
-  have pb := Pub.of hq
+  have hp := hpre _ h
+  have hp' := hpre _ h'
+  have pb := Pub.of (hpub _ _ hq)
   have tl : ∀ q ys ys', RelCT isa (fun s₁ s₂ => Mid s₀ q q ys s₁ ∧ Mid s₀' q q ys' s₂) (tail (ctrCall v.callees.ctr) (ghCall v.callees.gh))
       fun _ _ => True := fun _ _ _ => tail_rel hp hp' pb (fun q hq => ctrCall_rel hp hp' pb v.ctr hq) (fun q hq => ghCall_rel hp hp' pb v.gh hq)
   refine RelCT.seq (entry_rel hp hp' pb) ?_
@@ -364,13 +365,14 @@ theorem encrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
       exact fullBody_rel hp hp' pb aligned enc _ _ (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) (fun _ => rfl) encP.ct
         (tl 0 _ _)
 
-theorem decrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) :
-    ConstantTime isa (Proof.AesGcm.decryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
+theorem decrypt_ctG (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned))
+    {k : Contract isa} (hpre : ∀ s, k.pre s → BP M s) (hpub : ∀ s s', k.pub s s' → Proof.AesGcm.blocksPub s s') :
+    ConstantTime isa k.pre k.pub
       (decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st)) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
-  have hp := BP.ofM h
-  have hp' := BP.ofM h'
-  have pb := Pub.of hq
+  have hp := hpre _ h
+  have hp' := hpre _ h'
+  have pb := Pub.of (hpub _ _ hq)
   have tl : ∀ q ys ys', RelCT isa (fun s₁ s₂ => Mid s₀ q q ys s₁ ∧ Mid s₀' q q ys' s₂) (tail (ghCall v.callees.gh) (ctrCall v.callees.ctr))
       fun _ _ => True := fun _ _ _ => tail_rel hp hp' pb (fun q hq => ghCall_rel hp hp' pb v.gh hq) (fun q hq => ctrCall_rel hp hp' pb v.ctr hq)
   refine RelCT.seq (entry_rel hp hp' pb) ?_
@@ -394,5 +396,15 @@ theorem decrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
     | true =>
       exact fullBody_rel hp hp' pb aligned dec _ _ (ys := fun s q => blocksAt s.mem (D s) q) (fun _ => rfl) decP.ct
         (tl 0 _ _)
+
+theorem encrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) :
+    ConstantTime isa (Proof.AesGcm.encryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
+      (encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st)) :=
+  encrypt_ctG v st (k := Proof.AesGcm.encryptBlocksX86_64M M) (fun _ h => BP.ofM h) fun _ _ h => h
+
+theorem decrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) :
+    ConstantTime isa (Proof.AesGcm.decryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
+      (decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned (decFull st)) :=
+  decrypt_ctG v st (k := Proof.AesGcm.decryptBlocksX86_64M M) (fun _ h => BP.ofM h) fun _ _ h => h
 
 end VG.Proof.AesGcm.X86_64.Blocks

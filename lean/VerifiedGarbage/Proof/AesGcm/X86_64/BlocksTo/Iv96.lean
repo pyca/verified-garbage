@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Iv96
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.R10
 public import VerifiedGarbage.Proof.AesGcm.X86_64.AlignedScratch
 import all Init.Data.Array.Basic
@@ -47,6 +48,7 @@ structure EncCodeI (M : CtxMode) where
     Gcm.X86_64.StitchZ.IdxOk 32 [Gcm.X86_64.Stitch.oR s₂, Gcm.X86_64.Stitch.pR s₂] s₂ ∧
     s₁.mem.readW (s₁.gpr .rsp + BitVec.ofNat 64 32) 32 = s₂.mem.readW (s₂.gpr .rsp + BitVec.ofNat 64 32) 32)
     enc fun _ _ => True
+  S : PieceS enc
 
 section
 variable {M : CtxMode} {s : State} (hp : BT M s)
