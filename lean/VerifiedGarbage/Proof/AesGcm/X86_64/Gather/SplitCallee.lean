@@ -36,7 +36,7 @@ aad_len = r9, src = [rsp + 8], src_len = [rsp + 16], dst = [rsp + 24], len = [rs
 tag = [rsp + 40])` -/
 
 /-- What a call of `vg_aes_gcm_seal_split` needs, for a key context of kind
-`M`: the layout of its shared contract with 2672 bytes of stack. -/
+`M`: the layout of its shared contract with 2680 bytes of stack. -/
 def splitPreK (M : CtxMode) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .rdi, M.len⟩
   let nonce : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
@@ -44,7 +44,7 @@ def splitPreK (M : CtxMode) (s : State) : Prop :=
   let src : Region := ⟨arg s 0, (arg s 1).toNat⟩
   let data : Region := ⟨arg s 2, (arg s 3).toNat⟩
   let tag : Region := ⟨arg s 4, 16⟩
-  let stk : Region := below (s.gpr .rsp) 2672
+  let stk : Region := below (s.gpr .rsp) 2680
   s.rd = [ctx, nonce, aad, src, args s 5] ∧ s.wr = [data, tag] ∧
     ctx.Disjoint data ∧ ctx.Disjoint tag ∧ nonce.Disjoint data ∧ nonce.Disjoint tag ∧
     aad.Disjoint data ∧ aad.Disjoint tag ∧ src.Disjoint data ∧ src.Disjoint tag ∧ data.Disjoint tag ∧
@@ -56,7 +56,7 @@ def splitPreK (M : CtxMode) (s : State) : Prop :=
     (s.gpr .rdi).toNat + M.len ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 64 ∧
     (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 64 ∧ (arg s 4).toNat + 16 ≤ 2 ^ 64 ∧
-    2672 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 48 ≤ 2 ^ 64 ∧ rounds s ∧
+    2680 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 48 ≤ 2 ^ 64 ∧ rounds s ∧
     (arg s 1).toNat ≤ (arg s 3).toNat ∧ M.ok s.mem (s.gpr .rdi)
 
 def splitPubK (s₁ s₂ : State) : Prop :=
@@ -71,7 +71,7 @@ def splitK (M : CtxMode) : Contract isa where
   pub := splitPubK
 
 theorem splitSpec_pre {s : State} (h : splitPreK CtxMode.base s) :
-    (Spec.Gcm.sealSplitContract X86_64.abi 2672).pre s := by
+    (Spec.Gcm.sealSplitContract X86_64.abi 2680).pre s := by
   sig_split h
   clear h
   sig_pre [Spec.Gcm.sealSplitContract, Spec.Gcm.sealSplitSig, Spec.Gcm.sealSplitPre, X86_64.abi, X86_64.argRegs]
@@ -86,7 +86,7 @@ theorem splitSpec_pre {s : State} (h : splitPreK CtxMode.base s) :
     | omega
 
 theorem splitSpecP_pre {s : State} (h : splitPreK CtxMode.powers s) :
-    (Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2672).pre s := by
+    (Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2680).pre s := by
   sig_split h
   have a₀ := h
   clear h
@@ -103,7 +103,7 @@ theorem splitSpecP_pre {s : State} (h : splitPreK CtxMode.powers s) :
     | with_reducible assumption
     | omega
 
-theorem splitSpec_post {M : CtxMode} {s s' : State} (h : (Spec.Gcm.sealSplitContract X86_64.abi 2672).post s s')
+theorem splitSpec_post {M : CtxMode} {s s' : State} (h : (Spec.Gcm.sealSplitContract X86_64.abi 2680).post s s')
     (hR : rounds s) : (Proof.AesGcm.sealSplitX86_64M M).post s s' := by
   sig_post [Spec.Gcm.sealSplitContract, Spec.Gcm.sealSplitSig, Spec.Gcm.sealSplitPre, X86_64.abi, X86_64.argRegs,
     Spec.Gcm.sealSplitPost] at h
@@ -111,7 +111,7 @@ theorem splitSpec_post {M : CtxMode} {s s' : State} (h : (Spec.Gcm.sealSplitCont
     X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
 
-theorem splitSpecP_post {M : CtxMode} {s s' : State} (h : (Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2672).post s s')
+theorem splitSpecP_post {M : CtxMode} {s s' : State} (h : (Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2680).post s s')
     (hR : rounds s) : (Proof.AesGcm.sealSplitX86_64M M).post s s' := by
   sig_post [Spec.Gcm.sealSplitPrecomputedContract, Spec.Gcm.sealSplitPrecomputedSig,
     Spec.Gcm.sealSplitPrecomputedPre, X86_64.abi, X86_64.argRegs, Spec.Gcm.sealSplitPost] at h
@@ -120,7 +120,7 @@ theorem splitSpecP_post {M : CtxMode} {s s' : State} (h : (Spec.Gcm.sealSplitPre
   exact h hR
 
 theorem splitSpec_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
-    (Spec.Gcm.sealSplitContract X86_64.abi 2672).pub s₁ s₂ := by
+    (Spec.Gcm.sealSplitContract X86_64.abi 2680).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂⟩ := h
   sig_pub [Spec.Gcm.sealSplitContract, Spec.Gcm.sealSplitSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.sealSplitContract, Spec.Gcm.sealSplitSig, X86_64.abi, X86_64.argRegs,
@@ -130,7 +130,7 @@ theorem splitSpec_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
   all_goals first | with_reducible assumption | trivial
 
 theorem splitSpecP_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
-    (Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2672).pub s₁ s₂ := by
+    (Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2680).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂⟩ := h
   sig_pub [Spec.Gcm.sealSplitPrecomputedContract, Spec.Gcm.sealSplitPrecomputedSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Spec.Gcm.sealSplitPrecomputedContract, Spec.Gcm.sealSplitPrecomputedSig, X86_64.abi, X86_64.argRegs,
@@ -141,11 +141,11 @@ theorem splitSpecP_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
 
 /-! ## The function called -/
 
-abbrev SplitFn (M : CtxMode) := CallFn (splitK M) 2672
+abbrev SplitFn (M : CtxMode) := CallFn (splitK M) 2680
 
 /-- `vg_aes_gcm_seal_split` from its shared contract. -/
-def SplitFn.ofBase (f : Fn) (hv : Verified X86_64.target f.code (Spec.Gcm.sealSplitContract X86_64.abi 2672))
-    (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2672)
+def SplitFn.ofBase (f : Fn) (hv : Verified X86_64.target f.code (Spec.Gcm.sealSplitContract X86_64.abi 2680))
+    (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2680)
     (mx : f.code.allInstrs (fun i => !loadsMxcsr i) = true) : SplitFn CtxMode.base :=
   CallFn.ofSpec f hv (fun _ h => splitSpec_pre h)
     (fun _ _ h h' => splitSpec_post (M := CtxMode.base) h' h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1)
@@ -153,8 +153,8 @@ def SplitFn.ofBase (f : Fn) (hv : Verified X86_64.target f.code (Spec.Gcm.sealSp
 
 /-- `vg_aes_gcm_seal_split_precomputed` from its shared contract. -/
 def SplitFn.ofPowers (f : Fn)
-    (hv : Verified X86_64.target f.code (Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2672))
-    (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2672)
+    (hv : Verified X86_64.target f.code (Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2680))
+    (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2680)
     (mx : f.code.allInstrs (fun i => !loadsMxcsr i) = true) : SplitFn CtxMode.powers :=
   CallFn.ofSpec f hv (fun _ h => splitSpecP_pre h)
     (fun _ _ h h' => splitSpecP_post (M := CtxMode.powers) h' h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1)

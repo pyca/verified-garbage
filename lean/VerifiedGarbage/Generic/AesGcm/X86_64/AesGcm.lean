@@ -717,7 +717,7 @@ def splitFn (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.ba
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkB) (blkTo v).fn))⟩
     (Split.sealSplit_framed v.impl Short.shortFacts v.impl.blkB (blkTo v))
     (X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkB (blkTo v)))
-    (StreamTo.framed_xdepth (Split.sealSplit_xdepth v.impl v.impl.blkB (blkTo v)))
+    (StreamTo.framed_xdepth (by have := Split.sealSplit_xdepth v.impl v.impl.blkB (blkTo v); omega))
     (StreamTo.framed_mx (Split.sealSplit_mx v.impl v.impl.blkB (blkTo v)))
 
 /-- The instance of `vg_aes_gcm_seal_split_precomputed` of a variant. -/
@@ -727,7 +727,7 @@ def splitFnP (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.p
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkP) (blkToP v).fn))⟩
     (Split.sealSplitP_framed v.impl Short.shortFacts v.impl.blkP (blkToP v))
     (X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkP (blkToP v)))
-    (StreamTo.framed_xdepth (Split.sealSplit_xdepth v.impl v.impl.blkP (blkToP v)))
+    (StreamTo.framed_xdepth (by have := Split.sealSplit_xdepth v.impl v.impl.blkP (blkToP v); omega))
     (StreamTo.framed_mx (Split.sealSplit_mx v.impl v.impl.blkP (blkToP v)))
 
 /-- The short path of `vg_aes_gcm_seal_gather` of a variant: the text copied
@@ -993,7 +993,7 @@ def splitFnR (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.p
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))⟩
     (Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts)
     (X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v)))
-    (StreamTo.framed_xdepth (Split.sealSplitR_xdepth v.impl (blkR v) (blkToR v)))
+    (StreamTo.framed_xdepth (by have := Split.sealSplitR_xdepth v.impl (blkR v) (blkToR v); omega))
     (StreamTo.framed_mx (Split.sealSplitR_mx v.impl (blkR v) (blkToR v)))
 
 /-- The short path of `vg_aes_gcm_seal_gather_prepared` of a variant. -/
@@ -1042,8 +1042,8 @@ def artifactsSplit (v : GcmVariant) : List Artifact :=
     doc := Spec.Gcm.sealSplitApi.doc (notes := [note v.impl, splitNote (blkTo v).fn.name])
     code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
       (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkB) (blkTo v).fn))
-    contract := Spec.Gcm.sealSplitContract X86_64.abi 2672
-    stack := 2672
+    contract := Spec.Gcm.sealSplitContract X86_64.abi 2680
+    stack := 2680
     verified := Split.sealSplit_framed v.impl Short.shortFacts v.impl.blkB (blkTo v)
     spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkB (blkTo v))
     features := v.impl.features }] ++
@@ -1054,8 +1054,8 @@ def artifactsSplit (v : GcmVariant) : List Artifact :=
       doc := Spec.Gcm.sealSplitPrecomputedApi.doc (notes := [note v.impl, splitNote (blkToP v).fn.name])
       code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkP) (blkToP v).fn))
-      contract := Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2672
-      stack := 2672
+      contract := Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2680
+      stack := 2680
       verified := Split.sealSplitP_framed v.impl Short.shortFacts v.impl.blkP (blkToP v)
       spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkP (blkToP v))
       features := v.impl.features }]
@@ -1068,8 +1068,8 @@ def artifactsSplit (v : GcmVariant) : List Artifact :=
         (notes := [note v.impl, splitNote (blkToR v).fn.name] ++ fastNote v.impl)
       code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))
-      contract := Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672
-      stack := 2672
+      contract := Spec.Gcm.sealSplitPreparedContract X86_64.abi 2680
+      stack := 2680
       verified := Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts
       spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v))
       features := v.impl.features }]

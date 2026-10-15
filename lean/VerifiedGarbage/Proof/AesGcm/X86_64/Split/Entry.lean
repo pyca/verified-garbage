@@ -54,10 +54,18 @@ structure SplitCtx (s : State) (Ctx W SP Np A D S T : Addr) (nl al n sl : Nat) :
 theorem SplitCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.splitPre cl s) (hcl : 256 ≤ cl) :
     SplitCtx s (s.gpr .rdi) (stackArg s 5) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (stackArg s 2) (stackArg s 0)
       (stackArg s 4) (s.gpr .rcx).toNat (s.gpr .r9).toNat (stackArg s 3).toNat (stackArg s 1).toNat := by
-  simp only [Proof.AesGcm.splitPre, Proof.AesGcm.stk56, Proof.AesGcm.ret, Proof.AesGcm.args,
+  simp only [Proof.AesGcm.splitPre, Proof.AesGcm.stk64, Proof.AesGcm.ret, Proof.AesGcm.args,
     Proof.AesGcm.arg, Proof.AesGcm.rounds] at hp
   obtain ⟨hrd, hwr, d_cd, d_cw, d_nd, d_nw, d_ad, d_aw, d_sd, d_sw, d_dw, d_da, d_wa, d_td, d_tw, r_d, r_w, r_t,
-    t_c, t_n, t_a, t_s, t_d, t_w, wc, wn, wa, ws, wd, wt, ww, sp56, wsp, sl_le, hR⟩ := hp
+    t_c, t_n, t_a, t_s, t_d, t_w, wc, wn, wa, ws, wd, wt, ww, sp64, wsp, sl_le, hR⟩ := hp
+  have b56 : Region.Sub (below (s.gpr .rsp) 56) (below (s.gpr .rsp) 64) := below_sub (by decide) (by decide)
+  replace t_c := t_c.sub_left b56
+  replace t_n := t_n.sub_left b56
+  replace t_a := t_a.sub_left b56
+  replace t_s := t_s.sub_left b56
+  replace t_d := t_d.sub_left b56
+  replace t_w := t_w.sub_left b56
+  have sp56 : 56 ≤ (s.gpr .rsp).toNat := by omega
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at hrd d_da d_wa
   have pc : Covers [⟨s.gpr .rdi, 256⟩] (s.rd ++ s.wr) := fun a m ⟨r, hr, hc⟩ => by

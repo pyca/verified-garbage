@@ -121,7 +121,7 @@ theorem sealSplitR_correct (hF : ShortFacts) (s : State)
 
 theorem sealSplitPrepared_core (hF : ShortFacts) :
     Verified X86_64.target (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn))
-      (Proof.AesGcm.sealSplitPreparedScratchContract X86_64.abi 56) :=
+      (Proof.AesGcm.sealSplitPreparedScratchContract X86_64.abi 64) :=
   Verified.of_correct (k := Proof.AesGcm.sealSplitX86_64M CtxMode.prepared) (sealSplitR_correct v B T hF)
     (sealSplitM_ct (splitMidR_ok v B T hF) (splitMidR_rel v B T hF)) splitPrepared_implies
 
@@ -129,12 +129,12 @@ theorem sealSplitPrepared_core (hF : ShortFacts) :
 theorem sealSplitPrepared_framed (hF : ShortFacts) :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackArgScratch 2616 5 (SealSplit.«seal» (v.splitMidR (v.withBlk B) T.fn)))
-      (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672) :=
+      (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2680) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealSplitPreparedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealSplitPreparedPre X86_64.abi.ptrBits)
-    (post := Spec.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 56)
+    (post := Spec.Gcm.sealSplitPost X86_64.abi.ptrBits) (wa := true) (stack := 64)
     (bytes := 2616) (sealSplitPrepared_core v B T hF) (by decide) (by decide) (by decide)
-    (sealSplitR_spSafe v B T) (sealSplitR_xdepth v B T) (Proof.AesGcm.sealSplitPreparedPre_local _)
+    (sealSplitR_spSafe v B T) (by have := sealSplitR_xdepth v B T; omega) (Proof.AesGcm.sealSplitPreparedPre_local _)
     (Proof.AesGcm.sealSplitPrecomputedPost_local _) splitFrameSatPrepared_pre
 
 end

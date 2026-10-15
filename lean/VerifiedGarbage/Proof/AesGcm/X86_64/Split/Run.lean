@@ -352,11 +352,12 @@ theorem CtxExt.ofSplit {M : CtxMode} {s : State} (hp : Proof.AesGcm.splitPre M.l
     (hok : M.ok s.mem (s.gpr .rdi)) :
     CtxExt M (s.gpr .rdi) (stackArg s 5 + BitVec.ofNat 64 16) (stackArg s 5) (s.gpr .rsp) (stackArg s 2)
       (stackArg s 3).toNat s ∧ (below (s.gpr .rsp) 56).Disjoint ⟨s.gpr .rdi, M.len⟩ := by
-  simp only [Proof.AesGcm.splitPre, Proof.AesGcm.stk56, Proof.AesGcm.ret, Proof.AesGcm.args,
+  simp only [Proof.AesGcm.splitPre, Proof.AesGcm.stk64, Proof.AesGcm.ret, Proof.AesGcm.args,
     Proof.AesGcm.arg] at hp
   obtain ⟨hrd, -, d_cd, d_cw, -, -, -, -, -, -, -, -, -, -, -, -, -, -, t_c, -, -, -, -, -, wc, -⟩ := hp
   exact ⟨⟨wc, d_cw.sub_right (Lay.wSub (by decide)), d_cw, d_cd, t_c.sub_left (below_sub (by decide) (by decide)),
-    by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)), hok⟩, t_c⟩
+    by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)), hok⟩,
+    t_c.sub_left (below_sub (by decide) (by decide))⟩
 
 /-- `x; (a; (b; (c; (d; e))))` from `x; ((a; (b; c)); (d; e))`. -/
 theorem WP.reassoc_split {x a b c d e : Prog isa} {s : State} {Q : State → Prop}

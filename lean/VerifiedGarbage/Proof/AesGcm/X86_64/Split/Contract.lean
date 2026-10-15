@@ -17,7 +17,8 @@ of kind `M`; the shared contracts of `Spec/Gcm/OutOfPlace.lean` and
 `Spec/Gcm/Prepared.lean` imply it. Its calls take the 56 bytes below the
 stack pointer: the call of `vg_aes_gcm_encrypt_blocks_to`, its three
 arguments on the stack, its return address and the 24 bytes its stack may
-take (`BlkToFn.xd`).
+take (`BlkToFn.xd`); and a word more for the call of the function given the
+block index, a word lower.
 -/
 
 @[expose] public section
@@ -32,6 +33,10 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 /-- The stack `seal_split` uses: three arguments, the return address and
 the stack of a call. -/
 abbrev stk56 (s : State) : Region := below (s.gpr .rsp) 56
+
+/-- The stack `seal_split` may use: `stk56`, a word lower (the frame of the
+block index for the call of the function given it). -/
+abbrev stk64 (s : State) : Region := below (s.gpr .rsp) 64
 
 /-- What `vg_aes_gcm_seal_split` needs, for a key context of `cl` bytes. -/
 def splitPre (cl : Nat) (s : State) : Prop :=
@@ -48,12 +53,12 @@ def splitPre (cl : Nat) (s : State) : Prop :=
     data.Disjoint work ∧ data.Disjoint (args s 6) ∧ work.Disjoint (args s 6) ∧
     tag.Disjoint data ∧ tag.Disjoint work ∧
     (ret s).Disjoint data ∧ (ret s).Disjoint work ∧ (ret s).Disjoint tag ∧
-    (stk56 s).Disjoint ctx ∧ (stk56 s).Disjoint nonce ∧ (stk56 s).Disjoint aad ∧ (stk56 s).Disjoint src ∧
-    (stk56 s).Disjoint data ∧ (stk56 s).Disjoint work ∧
+    (stk64 s).Disjoint ctx ∧ (stk64 s).Disjoint nonce ∧ (stk64 s).Disjoint aad ∧ (stk64 s).Disjoint src ∧
+    (stk64 s).Disjoint data ∧ (stk64 s).Disjoint work ∧
     (s.gpr .rdi).toNat + cl ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 64 ∧
     (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 64 ∧ (arg s 4).toNat + 16 ≤ 2 ^ 64 ∧
-    (arg s 5).toNat + 2560 ≤ 2 ^ 64 ∧ 56 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 56 ≤ 2 ^ 64 ∧
+    (arg s 5).toNat + 2560 ≤ 2 ^ 64 ∧ 64 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 56 ≤ 2 ^ 64 ∧
     (arg s 1).toNat ≤ (arg s 3).toNat ∧ rounds s
 
 /-- `vg_aes_gcm_seal_split`, for a key context of kind `M`. -/

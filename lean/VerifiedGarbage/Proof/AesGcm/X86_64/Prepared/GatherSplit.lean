@@ -29,7 +29,7 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm (arg args ret rounds)
 
 theorem splitSpecR_pre {s : State} (h : splitPreK CtxMode.prepared s) :
-    (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672).pre s := by
+    (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2680).pre s := by
   sig_split h
   have a₀ := h
   clear h
@@ -48,7 +48,7 @@ theorem splitSpecR_pre {s : State} (h : splitPreK CtxMode.prepared s) :
     | omega
 
 theorem splitSpecR_post {M : CtxMode} {s s' : State}
-    (h : (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672).post s s') (hR : rounds s) :
+    (h : (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2680).post s s') (hR : rounds s) :
     (Proof.AesGcm.sealSplitX86_64M M).post s s' := by
   sig_post [Spec.Gcm.sealSplitPreparedContract, Spec.Gcm.sealSplitPreparedSig, Spec.Gcm.sealSplitPrecomputedSig,
     Spec.Gcm.sealSplitPreparedPre, X86_64.abi, X86_64.argRegs, Spec.Gcm.sealSplitPost] at h
@@ -57,7 +57,7 @@ theorem splitSpecR_post {M : CtxMode} {s s' : State}
   exact h hR
 
 theorem splitSpecR_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
-    (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672).pub s₁ s₂ := by
+    (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2680).pub s₁ s₂ := by
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂⟩ := h
   sig_pub [Spec.Gcm.sealSplitPreparedContract, Spec.Gcm.sealSplitPreparedSig, Spec.Gcm.sealSplitPrecomputedSig,
     X86_64.abi, X86_64.argRegs]
@@ -69,8 +69,8 @@ theorem splitSpecR_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
 
 /-- `vg_aes_gcm_seal_split_prepared` from its shared contract. -/
 def SplitFn.ofPrepared (f : Fn)
-    (hv : Verified X86_64.target f.code (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672))
-    (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2672)
+    (hv : Verified X86_64.target f.code (Spec.Gcm.sealSplitPreparedContract X86_64.abi 2680))
+    (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2680)
     (mx : f.code.allInstrs (fun i => !loadsMxcsr i) = true) : SplitFn CtxMode.prepared :=
   CallFn.ofSpec f hv (fun _ h => splitSpecR_pre h)
     (fun _ _ h h' => splitSpecR_post (M := CtxMode.prepared) h' h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1)

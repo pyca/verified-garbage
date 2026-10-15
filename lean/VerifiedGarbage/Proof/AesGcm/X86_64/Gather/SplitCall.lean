@@ -116,19 +116,19 @@ theorem splitPre_of {u : State}
     simp only [Proof.AesGcm.args, stackArgAddr, hrsp]
     rw [sub_add_ofNat _ (by decide)]
   have hret : (Proof.AesGcm.ret u) = ⟨SP s - BitVec.ofNat 64 48, 8⟩ := by simp only [Proof.AesGcm.ret, hrsp]
-  have hstk : below (SP s - BitVec.ofNat 64 48) 2672 = ⟨SP s - BitVec.ofNat 64 2720, 2672⟩ := by
+  have hstk : below (SP s - BitVec.ofNat 64 48) 2680 = ⟨SP s - BitVec.ofNat 64 2728, 2680⟩ := by
     simp only [below]
     rw [← Offset.sub_add_eq, ← BitVec.ofNat_add]
   have tA : Region.Sub ⟨SP s - BitVec.ofNat 64 40, 40⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
   have tR' : Region.Sub ⟨SP s - BitVec.ofNat 64 48, 8⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
-  have tS : Region.Sub ⟨SP s - BitVec.ofNat 64 2720, 2672⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
+  have tS : Region.Sub ⟨SP s - BitVec.ofNat 64 2728, 2680⟩ (tR s) := stk_sub (s := s) (by decide) (by decide)
   have hsp48 : (SP s - BitVec.ofNat 64 48).toNat = (SP s).toNat - 48 := toNat_sub_ofNat (by omega)
   have hsp40 : (SP s - BitVec.ofNat 64 40).toNat = (SP s).toNat - 40 := toNat_sub_ofNat (by omega)
-  have hsp2720 : (SP s - BitVec.ofNat 64 2720).toNat = (SP s).toNat - 2720 := toNat_sub_ofNat (by omega)
+  have hsp2728 : (SP s - BitVec.ofNat 64 2728).toNat = (SP s).toNat - 2728 := toNat_sub_ofNat (by omega)
   have d₁ : (⟨SP s - BitVec.ofNat 64 48, 8⟩ : Region).Disjoint ⟨SP s - BitVec.ofNat 64 40, 40⟩ :=
     Offset.disjoint_of_le (by simp only [hsp48, hsp40]; omega) (by simp only [hsp40]; omega)
-  have d₂ : (⟨SP s - BitVec.ofNat 64 2720, 2672⟩ : Region).Disjoint ⟨SP s - BitVec.ofNat 64 40, 40⟩ :=
-    Offset.disjoint_of_le (by simp only [hsp2720, hsp40]; omega) (by simp only [hsp40]; omega)
+  have d₂ : (⟨SP s - BitVec.ofNat 64 2728, 2680⟩ : Region).Disjoint ⟨SP s - BitVec.ofNat 64 40, 40⟩ :=
+    Offset.disjoint_of_le (by simp only [hsp2728, hsp40]; omega) (by simp only [hsp40]; omega)
   have bF : (tR s).Disjoint (fR s) := (fR_disj fun q hq => (hp.b_ls q hq).symm).symm
   simp only [splitK, splitPreK, Proof.AesGcm.arg, hargs, hret, hrd, hwr, h_di, h_si, h_dx, h_cx, h_8, h_9, a0,
     a1, a2, a3, a4, hflN, hrsp, Proof.AesGcm.rounds, hstk]
