@@ -306,14 +306,7 @@ theorem addr_sub_add {x : BitVec 32} {k i : Nat} (hk : k ≤ x.toNat) (hi : i �
 /-- `x - k` (for `k ≤ x`) widened to 64 bits. -/
 theorem addr_sub {x : BitVec 32} {k : Nat} (hk : k ≤ x.toNat) :
     State.addr (x - BitVec.ofNat 32 k) = State.addr x - BitVec.ofNat 64 k := by
-  apply BitVec.eq_of_toNat_eq
-  have := x.isLt
-  simp only [State.addr, BitVec.toNat_setWidth, BitVec.toNat_sub, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := k) (by omega_nat), Nat.mod_eq_of_lt (a := k) (by omega_nat),
-    Nat.mod_eq_of_lt (a := x.toNat) (by omega_nat),
-    show 2 ^ 32 - k + x.toNat = 2 ^ 32 + (x.toNat - k) by omega_nat, Nat.add_mod_left,
-    show 2 ^ 64 - k + x.toNat = 2 ^ 64 + (x.toNat - k) by omega_nat, Nat.add_mod_left]
-  omega_nat
+  simpa only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] using addr_sub_add hk (Nat.zero_le k)
 
 /-- Bytes at two offsets from a base that do not overlap. -/
 theorem sep_off (b : Addr) {d e n k : Nat} (h : d + n ≤ e ∨ e + k ≤ d) (hd : d + n < 2 ^ 32)
