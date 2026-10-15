@@ -28,7 +28,7 @@ open VG.X86_64
 open VG.Impl.Gcm.X86_64.Pclmul (at_ revMask poly)
 open VG.Impl.Gcm.X86_64.Stitch (storesK pregs setupC storeCtr storeY)
 open VG.Impl.Gcm.X86_64.Vpclmul (preg16)
-open VG.Impl.Gcm.X86_64.StitchZ (first body dbody lastG adv batch body48 dbody48 setupZ tab)
+open VG.Impl.Gcm.X86_64.StitchZ (first body dbody lastG adv batch body48 dbody48 setupZ tab bigMinP)
 
 /-- `ymm9` all ones and `ymm8` `x⁻¹` (`Pclmul.xInv`, the reduction constant
 in `ymm1` with its lowest bit set), in both lanes. -/
@@ -90,7 +90,7 @@ def bigDP : Prog isa :=
 def enc : Prog isa :=
   .seq (.block setupP)
     (.seq first
-      (.seq (.block [.alu .cmp .r9 (.imm 256)])
+      (.seq (.block [.alu .cmp .r9 (.imm bigMinP)])
         (.seq (.ite .b (.block []) bigP)
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (.loop body .ae))
@@ -99,7 +99,7 @@ def enc : Prog isa :=
 /-- `StitchZ.dec` with the powers loaded. -/
 def dec : Prog isa :=
   .seq (.block setupP)
-    (.seq (.block [.alu .cmp .r9 (.imm 256)])
+    (.seq (.block [.alu .cmp .r9 (.imm bigMinP)])
       (.seq (.ite .b (.block []) bigDP)
         (.seq (.block [.alu .cmp .r9 (.imm 16)])
           (.seq (.ite .b (.block []) (.loop dbody .ae))

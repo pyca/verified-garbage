@@ -90,20 +90,20 @@ def bigTo : Prog isa := .seq (.block pow48) bigRestTo
 def bigPTo : Prog isa := .seq (.block powP48) bigRestTo
 
 /-- `n` (a multiple of 16, at least 16) blocks, after the setup `su`, with
-`bigC` from 256 blocks on. -/
-def encWith (su : List Instr) (bigC : Prog isa) : Prog isa :=
+`bigC` from `big` blocks on. -/
+def encWith (su : List Instr) (bigC : Prog isa) (big : BitVec 32) : Prog isa :=
   .seq (.block su)
     (.seq firstTo
-      (.seq (.block [.alu .cmp .r9 (.imm 256)])
+      (.seq (.block [.alu .cmp .r9 (.imm big)])
         (.seq (.ite .b (.block []) bigC)
           (.seq (.block [.alu .cmp .r9 (.imm 32)])
             (.seq (.ite .b (.block []) (.loop bodyTo .ae))
               (.block (storeCtr ++ lastG ++ storeY)))))))
 
 /-- `StitchZ.enc`, out of place. -/
-def enc : Prog isa := encWith setup bigTo
+def enc : Prog isa := encWith setup bigTo 256
 
 /-- `StitchZP.enc`, out of place. -/
-def encP : Prog isa := encWith setupP bigPTo
+def encP : Prog isa := encWith setupP bigPTo StitchZ.bigMinP
 
 end VG.Impl.Gcm.X86_64.StitchZTo

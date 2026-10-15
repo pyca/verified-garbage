@@ -72,11 +72,12 @@ theorem loopDR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
 /-- `decR` after the setup, for any number of blocks from 16 on. -/
 theorem decTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
     (hr : RemOkG (hk s₀) P)
-    {bigC : Prog isa} (hbig : ∀ s, 256 ≤ nb s₀ → DInv s₀ P 0 s → VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s →
+    {bigC : Prog isa} {i : BitVec 32} (t : Nat) (hi : BitVec.signExtend 64 i = BitVec.ofNat 64 t)
+    (ht : t < 2 ^ 64) (hbig : ∀ s, t ≤ nb s₀ → DInv s₀ P 0 s → VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s →
       WP isa bigC s fun s' => ∃ e, DInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s')
     {s : State} (hR : Ready s₀ P s)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
-    WP isa (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) bigC)
+    WP isa (.seq (.block [.alu .cmp .r9 (.imm i)]) (.seq (.ite .b (.block []) bigC)
       (.seq (.block [.alu .cmp .r9 (.imm 16)])
         (.seq (.ite .b (.block []) (.loop dbody .ae))
           (.seq (.block [.alu .test .r9 (.reg .r9)])
@@ -86,13 +87,13 @@ theorem decTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block}
   have hI₁ : DInv s₀ P 0 s :=
     ⟨hR.a, by rw [hR.rdx]; simp, by rw [hR.gpr _ (by decide) (by decide) (by decide)]; simp, hR.rax,
       fun r h1 h2 _ h4 => hR.gpr r h1 h2 h4, hR.pw, hR.m1, by rw [hR.y]; simp [ghashFrom], hR.y1⟩
-  refine WP.seq (WP.mono (WP.hkeep (by decide) (cmp_ok s 256 256 (by decide)))
+  refine WP.seq (WP.mono (WP.hkeep rfl (cmp_ok s i t hi))
     fun s₂ ⟨⟨hcf, g, l, m, rd, wr⟩, hh⟩ => ?_)
   have hI₂ := hI₁.of_eq g l m rd wr
   have hCache₂ := hCache.keep hh (hI₂.a.keys hp)
-  rw [hI₁.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by decide)] at hcf
+  rw [hI₁.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt ht] at hcf
   refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, DInv s₀ P e s' ∧
-      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * 0 < 256))
+      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * 0 < t))
     (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨0, hI₂, hCache₂⟩)
     (fun h => hbig _ (by simp at h; omega) hI₂ hCache₂)) fun s₃ ⟨e, hI₃, hCache₃⟩ => ?_)
   refine WP.seq (WP.mono (WP.hkeep (by decide) (cmp_ok s₃ 16 16 (by decide)))
