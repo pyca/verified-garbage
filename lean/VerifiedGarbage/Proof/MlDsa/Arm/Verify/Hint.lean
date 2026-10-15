@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Call
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Call
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA verification on 32-bit ARM: the primitives, and the hint
@@ -133,7 +135,7 @@ theorem hbu_piece :
 
 omit hP hF hS in
 theorem mov11_piece : VPiece p STK (H1 p STK) (V1 p STK) (.block [.mov .r11 (.reg .r0)]) := by
-  refine ⟨fun σ s _ h => ?_, vrel7 (fun _ _ h => h.vc) (by taint_decide)⟩
+  refine ⟨fun σ s _ h => ?_, vrel7 (fun _ _ h => h.vc) (by native_taint_decide)⟩
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, Op2.eval, Option.map_some, Option.some.injEq,
     exists_eq_left']

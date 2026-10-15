@@ -28,6 +28,8 @@ meta import VerifiedGarbage.Impl.Mont.Mod
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.CT`. -/
 
@@ -177,23 +179,23 @@ theorem base_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ 
     (fun _ _ h => h) fun _ _ h => ⟨⟨h.2.1.1, h.2.2.1, trivial, trivial⟩, h.2.1.2, h.2.2.2⟩
 
 theorem prune_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ s₂) : RelCT isa (Two s₁ s₂ fun _ _ => True) (.block prune) (Two s₁ s₂ fun _ _ => True) := by
-  refine two_wp h₁ h₂ (Whole.block_rel (fun _ _ h => two_esp pub h) (by taint_decide)) ?_
+  refine two_wp h₁ h₂ (Whole.block_rel (fun _ _ h => two_esp pub h) (by native_taint_decide)) ?_
   intro s t h hc _
   exact WP.mono (prune_step h hc (digest := Spec.Sha512.bytesAt t.mem ((esp s).setWidth 64 + 192) 64) rfl)
     fun _ hu => ⟨hu.1, trivial⟩
 
 theorem wipe_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ s₂) : RelCT isa (Two s₁ s₂ fun _ _ => True) (.block wipe) (Two s₁ s₂ fun _ _ => True) := by
-  refine two_wp h₁ h₂ (Whole.block_rel (fun _ _ h => two_esp pub h) (by taint_decide)) ?_
+  refine two_wp h₁ h₂ (Whole.block_rel (fun _ _ h => two_esp pub h) (by native_taint_decide)) ?_
   intro s t h hc _
   exact WP.mono (Whole.Ctx.zeroWords hc (start := 8) (count := 56)
     (by have := h.toBounds.frame; omega) (by decide)) fun _ hu => ⟨hu.1, trivial⟩
 
 theorem body_ct (h₁ : Facts s₁) (h₂ : Facts s₂) (pub : pkLocal.pub s₁ s₂) :
     RelCT isa (TwoS s₁ s₂ fun _ _ => True) body (TwoS s₁ s₂ fun _ _ => True) := by
-  have i := setup_ct h₁ h₂ pub initValues (by decide) (Whole.valid_all (by decide)) (by taint_decide)
-  have u := setup_ct h₁ h₂ pub updateValues (by decide) (Whole.valid_all (by decide)) (by taint_decide)
-  have f := setup_ct h₁ h₂ pub finalizeValues (by decide) (Whole.valid_all (by decide)) (by taint_decide)
-  have b := setup_ct h₁ h₂ pub baseValues (by decide) (Whole.valid_all (by decide)) (by taint_decide)
+  have i := setup_ct h₁ h₂ pub initValues (by decide) (Whole.valid_all (by decide)) (by native_taint_decide)
+  have u := setup_ct h₁ h₂ pub updateValues (by decide) (Whole.valid_all (by decide)) (by native_taint_decide)
+  have f := setup_ct h₁ h₂ pub finalizeValues (by decide) (Whole.valid_all (by decide)) (by native_taint_decide)
+  have b := setup_ct h₁ h₂ pub baseValues (by decide) (Whole.valid_all (by decide)) (by native_taint_decide)
   exact (two_syms ((i.seq (init_ct h₁ h₂ pub)).seq
     ((u.seq (update_ct h₁ h₂ pub)).seq (f.seq (finalize_ct h₁ h₂ pub))))).seq
     ((two_syms (prune_ct h₁ h₂ pub)).seq (((two_syms b).seq (base_ct h₁ h₂ pub)).seq

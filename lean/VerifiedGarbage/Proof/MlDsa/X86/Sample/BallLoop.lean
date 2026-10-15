@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.Common
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): the loop of `vg_mldsa_sample_in_ball`
@@ -169,7 +171,7 @@ theorem sign_piece (k : Nat) :
   refine Piece.ite (fun s₀ => !(G s₀).testBit (t' s₀ k)) (fun _ _ _ h => h.2)
     (fun s₀ s₀' _ _ hq => by rw [hq.eG, hq.et]) ?_ ?_
   · refine Piece.taint [] (fun s₀ s _ ⟨⟨h, _⟩, hb⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-      (by taint_decide)
+      (by native_taint_decide)
     have hs : sg s₀ k = 1 := by
       rw [sg_eq]; simp only [Bool.not_eq_true'] at hb; rw [hb]; rfl
     apply WP.of_runBlock
@@ -179,7 +181,7 @@ theorem sign_piece (k : Nat) :
       by simp [h.edi], by simp [h.eax], h.poly, h.lo, h.hi, by simp [h.ebx], h.lt, h.le⟩, ?_⟩
     rw [hs]; simp; rfl
   · refine Piece.taint [] (fun s₀ s _ ⟨⟨h, _⟩, hb⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-      (by taint_decide)
+      (by native_taint_decide)
     have hs : sg s₀ k = -1 := by
       rw [sg_eq]; simp only [Bool.not_eq_false'] at hb; rw [hb]; rfl
     apply WP.of_runBlock
@@ -271,9 +273,9 @@ theorem set_piece (k : Nat) (hk : k < 264) :
       (fun s₀ s => BI s₀ k (S' s₀ (k + 1)) s) bSet := by
   refine Piece.seq (Piece.taint [.eax, .edi, .ebp, .esp]
     (fun s₀ s hp ⟨⟨⟨h, hlt, hax⟩, _⟩, hb⟩ => move_ok hp h hlt hax (by simp at hb; omega))
-    (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨h, _, hax⟩, _⟩, _⟩ ⟨⟨⟨h', _, hax'⟩, _⟩, _⟩ r hr => ?_) (by taint_decide))
+    (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨h, _, hax⟩, _⟩, _⟩ ⟨⟨⟨h', _, hax'⟩, _⟩, _⟩ r hr => ?_) (by native_taint_decide))
     (Piece.seq (sign_piece k) (Piece.taint [.eax, .edi, .esp] (fun s₀ s hp ⟨h, hdx⟩ => shift_ok hp hk h hdx)
-      (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_) (by taint_decide)))
+      (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_) (by native_taint_decide)))
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · rw [hax, hax', hq.ej]
@@ -294,7 +296,7 @@ theorem try_piece (k : Nat) (hk : k < 264) :
     (Piece.ite (fun s₀ => decide ((S' s₀ k).2 < j' s₀ k)) (fun _ _ _ h => h.2)
       (fun s₀ s₀' _ _ hq => by rw [hq.eS, hq.ej]) ?_ (set_piece k hk))
   · refine Piece.taint [.esi] (fun s₀ s hp ⟨h, hlt⟩ => ?_) (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_)
-      (by taint_decide)
+      (by native_taint_decide)
     · have hs := hp.1.s_fit
       have e0 : (L.sP s₀ + BitVec.ofNat 32 (848 + k) + BitVec.ofNat 32 0).setWidth 64 =
           L.sA s₀ + BitVec.ofNat 64 (840 + (8 + k)) := by
@@ -319,13 +321,13 @@ theorem body_piece (k : Nat) (hk : k < 264) :
     Piece QPre QPub (fun s₀ s => BI s₀ k (S' s₀ k) s)
       (fun s₀ s => BI s₀ (k + 1) (S' s₀ (k + 1)) s ∧ eval .ne s = some (decide (k + 1 < 264))) bBody := by
   refine Piece.seq (B := fun s₀ s => BI s₀ k (S' s₀ k) s ∧ eval .b s = some (decide ((S' s₀ k).2 < 256)))
-    (Piece.taint [] (fun s₀ s _ h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide))
+    (Piece.taint [] (fun s₀ s _ h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide))
     (Piece.seq (B := fun s₀ s => BI s₀ k (S' s₀ (k + 1)) s)
       (Piece.ite (fun s₀ => decide ((S' s₀ k).2 < 256)) (fun _ _ _ h => h.2)
         (fun s₀ s₀' _ _ hq => by rw [hq.eS])
         ((try_piece k hk).mono (fun _ _ _ ⟨⟨h, _⟩, hb⟩ => ⟨h, of_decide_eq_true hb⟩) fun _ _ _ h => h)
         (nil_piece fun s₀ s _ ⟨⟨h, _⟩, hb⟩ => st_full hk (of_decide_eq_false hb) ▸ h))
-      (Piece.taint [] (fun s₀ s _ h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)))
+      (Piece.taint [] (fun s₀ s _ h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)))
   · have hle : (S' s₀ k).2 ≤ 256 := st_le (L.Msg s₀) (τ s₀) k
     have h256 : (256 : BitVec 32).toNat = 256 := rfl
     apply WP.of_runBlock

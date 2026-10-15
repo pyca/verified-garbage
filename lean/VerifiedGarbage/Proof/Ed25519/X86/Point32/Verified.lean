@@ -22,6 +22,8 @@ import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Rc2
 meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # `vg_ed25519_r32_point_add` on x86 (32-bit): its `Verified`
@@ -232,7 +234,7 @@ theorem fn_agree {s₁ s₂ : State} (h₁ : fnPre s₁) (h₂ : fnPre s₂)
     rw [e]
     exact congrArg _ ha
 
-theorem addFn_check : ∃ h, (taint.check fnτ addFn h).isSome = true := ⟨_, by taint_decide⟩
+theorem addFn_check : ∃ h, (taint.check fnτ addFn h).isSome = true := ⟨_, by native_taint_decide⟩
 
 theorem add_agree (s₁ s₂ : State) (h₁ : addX86.pre s₁) (h₂ : addX86.pre s₂) (hp : addX86.pub s₁ s₂) :
     VG.X86.Taint.Agree fnτ s₁ s₂ :=
@@ -243,10 +245,10 @@ theorem addFn_ct : ConstantTime isa addX86.pre addX86.pub addFn :=
   VG.Taint.constantTime (A := taint) fnτ add_agree hc
 
 theorem affFn_ct : ConstantTime isa affX86.pre affX86.pub affFn :=
-  VG.Taint.constantTime (A := taint) fnτ (fun _ _ h₁ h₂ hp => fn_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+  VG.Taint.constantTime (A := taint) fnτ (fun _ _ h₁ h₂ hp => fn_agree h₁ h₂ hp.1 hp.2) (by native_taint_decide)
 
 theorem doubleFn_ct : ConstantTime isa doubleX86.pre doubleX86.pub doubleFn :=
-  VG.Taint.constantTime (A := taint) fnτ (fun _ _ h₁ h₂ hp => fn_agree h₁ h₂ hp.1 hp.2) (by taint_decide)
+  VG.Taint.constantTime (A := taint) fnτ (fun _ _ h₁ h₂ hp => fn_agree h₁ h₂ hp.1 hp.2) (by native_taint_decide)
 
 /-! ## The shared contract -/
 

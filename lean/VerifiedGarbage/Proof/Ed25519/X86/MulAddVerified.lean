@@ -24,6 +24,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! Merged from `Proof.Ed25519.X86.MulAddMain`. -/
 
@@ -229,7 +231,7 @@ theorem scalarMulAdd_wf {s : State} (h : scalarMulAddLocal.pre s) :
   exact scalarTaint_wf hp ho wr ao
 
 theorem scalarMulAdd_ct : ConstantTime isa scalarMulAddLocal.pre scalarMulAddLocal.pub scalarMulAdd := by
-  refine VG.Taint.constantTime (A := taint) (scalarTaint 4 5) ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) (scalarTaint 4 5) ?_ (by native_taint_decide)
   intro s t hs ht hp
   obtain ⟨sp, a0, a1, a2, a3, a4⟩ := hp
   have ps := (scalarMulAdd_pre hs).1

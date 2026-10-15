@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA key generation on 32-bit ARM: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
@@ -160,7 +162,7 @@ theorem epi_piece {p : Params} (hF : PFacts p) {STK : Nat} :
     KPiece p STK (KFin p STK)
       (fun σ s => Arm.target.abiPreserved σ s ∧ (Spec.MlDsa.keyGenContract p Arm.abi STK).post σ s)
       (.block topEnd) :=
-  ⟨fun _ _ _ h => epi_ok hF h, rel_of (ktaint7 (by taint_decide))
+  ⟨fun _ _ _ h => epi_ok hF h, rel_of (ktaint7 (by native_taint_decide))
     fun _ _ _ _ _ _ pub ⟨_, _, _, h₁, _⟩ ⟨_, _, _, h₂, _⟩ => kc_two pub h₁.kc h₂.kc⟩
 
 /-! ## The function -/

@@ -42,6 +42,8 @@ meta import VerifiedGarbage.Proof.Ed25519.Signing
 meta import VerifiedGarbage.Proof.Framework.OffsetBelow
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.CTCommon`. -/
 
@@ -627,7 +629,7 @@ theorem mul_call_ct (hL : L.Ok) :
 theorem saveSecret_ct (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (.block saveSecret)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  refine two_wp (Whole.block_rel (fun _ _ h => two_esp h) (by taint_decide)) ?_ ?_
+  refine two_wp (Whole.block_rel (fun _ _ h => two_esp h) (by native_taint_decide)) ?_ ?_
   · intro t hc _
     exact WP.mono (saveSecret_ok hc hL rfl) fun _ h => ⟨h.1, trivial⟩
   · intro t hc _
@@ -636,7 +638,7 @@ theorem saveSecret_ct (hL : L.Ok) :
 theorem wipe_ct (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (.block wipe)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  refine two_wp (Whole.block_rel (fun _ _ h => two_esp h) (by taint_decide)) ?_ ?_
+  refine two_wp (Whole.block_rel (fun _ _ h => two_esp h) (by native_taint_decide)) ?_ ?_
   · intro t hc _
     exact WP.mono (wipe_ok hc hL) fun _ h => ⟨h.1, trivial⟩
   · intro t hc _
@@ -734,7 +736,7 @@ variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem init_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) init (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
-  (setup_ct hL ha hb [.caller 5 0] (by decide) (by exact Whole.valid_all (by decide)) (by taint_decide)).seq
+  (setup_ct hL ha hb [.caller 5 0] (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide)).seq
     (init_call_ct hL)
 
 theorem update_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
@@ -770,34 +772,34 @@ theorem hashSeed_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) 
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hs := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 0 (.caller 1 0) (.const 32)
     (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa [value, Lay.value] using seed_input hL)
-    (by taint_decide)
-  exact (init_ct hL ha hb).seq (hs.seq (finalize_ct hL ha hb 32 (by decide) false (by taint_decide)))
+    (by native_taint_decide)
+  exact (init_ct hL ha hb).seq (hs.seq (finalize_ct hL ha hb 32 (by decide) false (by native_taint_decide)))
 
 theorem hashNonce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hashNonce
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hs := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 0 (.frame 64) (.const 32)
-    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (prefix_input hL) (by taint_decide)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (prefix_input hL) (by native_taint_decide)
   have hm := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 32 (.caller 3 0) (.caller 4 0)
     (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa only [value, Lay.value, BitVec.add_zero] using message_input hL)
-    (by taint_decide)
+    (by native_taint_decide)
   exact (init_ct hL ha hb).seq (hs.seq (hm.seq
-    (finalize_ct hL ha hb 32 (by decide) true (by taint_decide))))
+    (finalize_ct hL ha hb 32 (by decide) true (by native_taint_decide))))
 
 theorem hashChallenge_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hashChallenge
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hr := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 0 (.caller 0 0) (.const 32)
     (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa [value, Lay.value] using point_input hL)
-    (by taint_decide)
+    (by native_taint_decide)
   have hp := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 32 (.caller 2 0) (.const 32)
     (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa [value, Lay.value] using key_input hL)
-    (by taint_decide)
+    (by native_taint_decide)
   have hm := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 64 (.caller 3 0) (.caller 4 0)
     (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa only [value, Lay.value, BitVec.add_zero] using message_input hL)
-    (by taint_decide)
+    (by native_taint_decide)
   exact (init_ct hL ha hb).seq (hr.seq (hp.seq (hm.seq
-    (finalize_ct hL ha hb 64 (by decide) true (by taint_decide)))))
+    (finalize_ct hL ha hb 64 (by decide) true (by native_taint_decide)))))
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -814,15 +816,15 @@ theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) body
       (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) := by
   have r96 := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.frame 96, .frame 192, .caller 5 0]
-    (by decide) (by exact Whole.valid_all (by decide)) (by taint_decide)).seq
+    (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide)).seq
     (reduce_call_ct hL 96 (by decide) (by decide))
   have r128 := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.frame 128, .frame 192, .caller 5 0]
-    (by decide) (by exact Whole.valid_all (by decide)) (by taint_decide)).seq
+    (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide)).seq
     (reduce_call_ct hL 128 (by decide) (by decide))
   have b := (two_syms (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 0 0, .frame 96, .caller 5 0]
-    (by decide) (by exact Whole.valid_all (by decide)) (by taint_decide))).seq (base_call_ct hL ha hb)
+    (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide))).seq (base_call_ct hL ha hb)
   have m := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 0 32, .frame 96, .frame 128, .frame 32, .caller 5 0]
-    (by decide) (by exact Whole.valid_all (by decide)) (by taint_decide)).seq (mul_call_ct hL)
+    (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide)).seq (mul_call_ct hL)
   exact (two_syms ((hashSeed_ct hL ha hb).seq (saveSecret_ct hL))).seq
     (((two_syms (hashNonce_ct hL ha hb)).seq ((two_syms r96).seq b)).seq
       (two_syms (((hashChallenge_ct hL ha hb).seq (r128.seq m)).seq (wipe_ct hL))))

@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA key generation on 32-bit ARM: the seeds leak nothing
@@ -73,15 +75,15 @@ theorem seeds_two {p : Params} (hF : PFacts p) {STK : Nat} (σ : State) :
   refine RelCT.seq (RelCT.two hP (hashS_tr ktrue (rate := 136) (sfx := 0x1f) (by decide) (by decide) (by decide)
     (by simp) hin hq hP) fun x hs => WP.mono (hashS hs ktrue (rate := 136) (sfx := 0x1f) (by decide) (by decide)
       (by decide) (by decide) (by simp) (hin x hs) (hq x hs)) fun _ h => ⟨_, h.1⟩) ?_
-  refine RelCT.seq (RelCT.two hP (taint7 hP (by taint_decide)) fun x hs =>
+  refine RelCT.seq (RelCT.two hP (taint7 hP (by native_taint_decide)) fun x hs =>
     WP.mono (copyS hs (sb := .r7) (so := oHX) (db := .r7) (dO := oSA) (len := 32) ⟨rfl, by lsep hF⟩
       ⟨rfl, by lsep hF⟩ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by lsep hF))
       fun _ h => ⟨_, h.1⟩) ?_
-  refine RelCT.seq (RelCT.two hP (taint7 hP (by taint_decide)) fun x hs =>
+  refine RelCT.seq (RelCT.two hP (taint7 hP (by native_taint_decide)) fun x hs =>
     WP.mono (copyS hs (sb := .r7) (so := oHX + 32) (db := .r7) (dO := oSB) (len := 64) ⟨rfl, by lsep hF⟩
       ⟨rfl, by lsep hF⟩ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by lsep hF))
       fun _ h => ⟨_, h.1⟩) ?_
-  exact taint7 hP (by taint_decide)
+  exact taint7 hP (by native_taint_decide)
 
 theorem seeds_piece {p : Params} (hF : PFacts p) {STK : Nat} :
     KPiece p STK (fun σ s => KC p STK σ s ∧ s.gpr .r11 = 1) (fun σ s => K1 p STK σ s ∧ s.gpr .r11 = 1) (seeds p) :=

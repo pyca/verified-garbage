@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_sample_in_ball`, constant time but for `c̃`, and `Verified`
@@ -113,14 +115,14 @@ theorem Two.sg_eq {i : Nat} {a b : State} (ha : Sg σ₁ i a) (hb : Sg σ₂ i b
 omit two in
 theorem pieceA_ct {t : Nat} : RelCT isa (fun a b => BAt σ₁ t a ∧ BAt σ₂ t b) (.block jFull)
     fun a b => M1 σ₁ t a ∧ M1 σ₂ t b :=
-  relW (taintRel [] (fun _ _ _ _ h => absurd h List.not_mem_nil) (by taint_decide))
+  relW (taintRel [] (fun _ _ _ _ h => absurd h List.not_mem_nil) (by native_taint_decide))
     fun a b h => ⟨pieceA h.1, pieceA h.2⟩
 
 theorem tryA_ct {t : Nat} (ht : t < 264) :
     RelCT isa (fun a b => (M1 σ₁ t a ∧ M1 σ₂ t b) ∧ isa.eval .eq a = some false)
       (.block [.ldrb .r8 .r0 0, .dp .sub .r11 .r2 (.reg .r8), .mov .r11 (.shifted .r11 .lsr 31),
         .cmp .r11 (.imm 0)]) fun a b => T1 σ₁ t a ∧ T1 σ₂ t b := by
-  refine relW (taintRel [.r0] (fun a b h r hr => ?_) (by taint_decide)) fun a b h => ?_
+  refine relW (taintRel [.r0] (fun a b h r hr => ?_) (by native_taint_decide)) fun a b h => ?_
   · rw [List.mem_singleton] at hr; subst hr
     rw [h.1.1.bat.r0, h.1.2.bat.r0, two.scr]
   · have za : a.z = false := Option.some.inj h.2
@@ -131,7 +133,7 @@ theorem tryA_ct {t : Nat} (ht : t < 264) :
 theorem set_ct {t : Nat} (ht : t < 264) :
     RelCT isa (fun a b => (T1 σ₁ t a ∧ T1 σ₂ t b) ∧ isa.eval .eq a = some true) bSet
       fun a b => M2 σ₁ t a ∧ M2 σ₂ t b := by
-  refine relW (taintRel [.r1, .r2, .r4, .r5, .r8] (fun a b h r hr => ?_) (by taint_decide)) fun a b h => ?_
+  refine relW (taintRel [.r1, .r2, .r4, .r5, .r8] (fun a b h r hr => ?_) (by native_taint_decide)) fun a b h => ?_
   · have l₁ := h.1.1.bat
     have l₂ := h.1.2.bat
     have sg := two.sg_eq (two.St_eq t ▸ l₁.sg) l₂.sg
@@ -152,7 +154,7 @@ theorem set_ct {t : Nat} (ht : t < 264) :
 omit two in
 theorem nil_ct {P : State → State → Prop} {Q₁ Q₂ : State → Prop} (hq : ∀ a b, P a b → Q₁ a ∧ Q₂ b) :
     RelCT isa P (.block []) fun a b => Q₁ a ∧ Q₂ b :=
-  relW (taintRel [] (fun _ _ _ _ h => absurd h List.not_mem_nil) (by taint_decide))
+  relW (taintRel [] (fun _ _ _ _ h => absurd h List.not_mem_nil) (by native_taint_decide))
     fun a b h => ⟨WP.block_nil (hq a b h).1, WP.block_nil (hq a b h).2⟩
 
 omit two in
@@ -182,7 +184,7 @@ theorem body_ct {t : Nat} (ht : t < 264) :
         show some a.z = some b.z; rw [h.1.z, h.2.z, two.St_eq, two.Xb_eq]) (set_ct two ht) ?_)
       exact nil_ct fun a b h => ⟨skip_of ht h.1.1 (Option.some.inj h.2), skip_of ht h.1.2 (by
         rw [h.1.2.z, ← two.St_eq, ← two.Xb_eq, ← h.1.1.z]; exact Option.some.inj h.2)⟩
-  · exact relW (taintRel [] (fun _ _ _ _ h => absurd h List.not_mem_nil) (by taint_decide))
+  · exact relW (taintRel [] (fun _ _ _ _ h => absurd h List.not_mem_nil) (by native_taint_decide))
       fun a b h => ⟨pieceC ht h.1, pieceC ht h.2⟩
 
 theorem loop_ct : RelCT isa (fun a b => BAt σ₁ 0 a ∧ BAt σ₂ 0 b) (.loop bBody .ne) fun a b =>
@@ -222,7 +224,7 @@ theorem pro_ct : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂)
       (F₂ := fun s => s = σ₂.setReg .r12 (stackArg σ₂ 0))
       (fun a b h => ⟨by rw [h.1]; exact ldrSp_ok σ₁ two.p₁.arg, by rw [h.2]; exact ldrSp_ok σ₂ two.p₂.arg⟩)
       |>.mono (fun _ _ h => h) fun _ _ h => h.2) ?_
-  refine taintRel [.r0, .r1, .r2, .r3, .r12] (fun a b h r hr => ?_) (by taint_decide)
+  refine taintRel [.r0, .r1, .r2, .r3, .r12] (fun a b h r hr => ?_) (by native_taint_decide)
   rw [h.1, h.2]
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -238,10 +240,10 @@ theorem all_ct : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) Impl.MlDsa.Arm.S
   refine RelCT.seq (pro_ct two) ?_
   refine RelCT.seq (R := fun a b => J6 136 272 (spOf σ₁) σ₁ a ∧ J6 136 272 (spOf σ₂) σ₂ b)
     ((sponge_ct two.p₁.ok ok₂ two.sp (rate := 136) (outlen := 272) (by decide) (by decide) (by decide) (by decide)
-      (by taint_decide) (by taint_decide) (by taint_decide)).mono (fun a b h => ⟨h.1, hP ▸ h.2⟩)
+      (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)).mono (fun a b h => ⟨h.1, hP ▸ h.2⟩)
       fun a b h => ⟨h.1, hP ▸ h.2⟩) ?_
   refine RelCT.seq (R := fun a b => ZDone σ₁ a ∧ ZDone σ₂ b) (relW (taintRel [.r5] (fun a b h r hr => by
-      rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r5, h.2.env.r5, hP]) (by taint_decide))
+      rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r5, h.2.env.r5, hP]) (by native_taint_decide))
     fun a b h => ⟨zero_ok two.p₁.ok h.1, zero_ok two.p₂.ok h.2⟩) ?_
   have t₁ : tau σ₁ ≤ 256 := by have := two.p₁.tau_le; omega
   have t₂ : tau σ₂ ≤ 256 := by have := two.p₂.tau_le; omega
@@ -250,10 +252,10 @@ theorem all_ct : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) Impl.MlDsa.Arm.S
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · rw [h.1.env.r6, h.2.env.r6, hP]
-        · rw [h.1.r7, h.2.r7, two.r2]) (by taint_decide))
+        · rw [h.1.r7, h.2.r7, two.r2]) (by native_taint_decide))
     fun a b h => ⟨setup_ok two.p₁.ok t₁ h.1, setup_ok two.p₂.ok t₂ h.2⟩) (loop_ct two)) ?_
   exact taintRel [.r6] (fun a b h r hr => by
-    rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r6, h.2.env.r6, hP]) (by taint_decide)
+    rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r6, h.2.env.r6, hP]) (by native_taint_decide)
 
 end
 

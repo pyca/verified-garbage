@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.Common
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_expand_mask_poly`
@@ -52,7 +54,7 @@ def L : Lay := { nA := 4, iA := 2, iS := 3, rate := 136, outlen := 640, mlen := 
 
 theorem hL : L.Ok :=
   ⟨by decide, by decide, by decide, by decide, by decide, fun k hk => by cases hk; decide,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 /-- `γ₁`. -/
 abbrev γ (s₀ : State) : Nat := (arg s₀ 1).toNat
@@ -209,7 +211,7 @@ def Sel (s₀ s : State) : Prop :=
 theorem sel_piece : Piece EPre (PubP L) (Out L) Sel
     (.block [.mov .edi (.mem (argOp 2)), .mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 0x20000)]) := by
   refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_)
-    (by taint_decide)
+    (by native_taint_decide)
   · have a₁ := h.argEa (i := 1)
     have i₁ := h.argIn hp.1 (i := 1) (by decide)
     have v₁ := h.args 1 (by decide)
@@ -232,7 +234,7 @@ theorem init_piece (c : Nat) (b : Bool) (hb : ∀ s₀, decide (γ s₀ = 2 ^ 17
     Piece EPre (PubP L) (fun s₀ s => Sel s₀ s ∧ decide (γ s₀ = 2 ^ 17) = b) (fun s₀ s => GInv c s₀ 0 0 s)
     (.block [.alu .add .esi (.imm (BitVec.ofNat 32 840)), .mov .ecx (.imm 64)]) := by
   refine Piece.taint [] (fun s₀ s hp ⟨⟨h, hdi, _⟩, e⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-    (by taint_decide)
+    (by native_taint_decide)
   apply WP.of_runBlock
   simp only [Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, Option.some.injEq,
@@ -257,10 +259,10 @@ theorem branch_piece : Piece EPre (PubP L) Sel Fin (.ite .e (emLoop 18) (emLoop 
   refine Piece.ite (fun s₀ => decide (γ s₀ = 2 ^ 17)) (fun _ _ _ h => h.2.2)
     (fun s₀ s₀' _ _ hq => by rw [γ, γ, hq.2 1 (by decide)]) ?_ ?_
   · refine (Piece.seq (init_piece 18 true fun s₀ e => by rw [emC, ifT (of_decide_eq_true e)])
-      (loop_piece (Or.inl rfl) ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h) fun s₀ s hp h => ?_
+      (loop_piece (Or.inl rfl) ⟨_, by native_taint_decide⟩)).mono (fun _ _ _ h => h) fun s₀ s hp h => ?_
     exact fin_of hp.2 h.cγ h
   · refine (Piece.seq (init_piece 20 false fun s₀ e => by rw [emC, ifF (of_decide_eq_false e)])
-      (loop_piece (Or.inr rfl) ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h) fun s₀ s hp h => ?_
+      (loop_piece (Or.inr rfl) ⟨_, by native_taint_decide⟩)).mono (fun _ _ _ h => h) fun s₀ s hp h => ?_
     exact fin_of hp.2 h.cγ h
 
 end VG.Proof.MlDsa.X86.Sample.ExpandMask

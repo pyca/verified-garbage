@@ -16,6 +16,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! Merged from `Proof.Ed25519.X86.ScalarMain`. -/
 
@@ -54,7 +56,7 @@ theorem scalarReduce_wf {s : State} (h : scalarReduceLocal.pre s) : VG.X86.Taint
   exact scalarTaint_wf hp ho h.2.1 h.2.2.2.2.1
 
 theorem scalarReduce_ct : ConstantTime isa scalarReduceLocal.pre scalarReduceLocal.pub scalarReduce := by
-  refine VG.Taint.constantTime (A := taint) (scalarTaint 2 3) ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) (scalarTaint 2 3) ?_ (by native_taint_decide)
   intro s t hs ht hp
   obtain ⟨sp, a0, a1, a2⟩ := hp
   have ps := (scalarReduce_pre hs).1

@@ -22,6 +22,8 @@ import VerifiedGarbage.Spec.Rc2
 meta import VerifiedGarbage.Impl.Mont.Mod
 meta import VerifiedGarbage.Proof.Ed25519.X86.InputBits
 meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 @[expose] public section
 
@@ -99,7 +101,7 @@ theorem scalarBaseStart_ok {s : State} (h : BodyPre s) :
 theorem scalarBaseStart_ct : RelCT isa
     (fun s t => BodyPre s ∧ BodyPre t ∧ scalarBaseLocal.pub s t)
     scalarBaseStart (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (scalarTaint 2 3) _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) (scalarTaint 2 3) _ (by native_taint_decide)
   intro s t ⟨hs, ht, hp⟩
   obtain ⟨sp, a0, a1, a2, _⟩ := hp
   obtain ⟨ps, _, os⟩ := scalarBase_pre hs.1
@@ -124,7 +126,7 @@ theorem combAddr_ct : RelCT isa
   have pre := fr.wpDep (F := fun s t => SymAddrPost combSym s t) (fun s t h =>
     ⟨symFrame_ok combSym s h.1.1.sp4, symFrame_ok combSym t h.2.1.1.sp4⟩)
   refine pre.seq ?_
-  apply VG.RelCT.taint (A := taint) (scalarTaint 2 3) _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) (scalarTaint 2 3) _ (by native_taint_decide)
   intro s t ⟨_, a, b, ⟨ha, hb, hp⟩, P, Q⟩
   have hs := ha.1.symAddr P ha.1.sp4
   have ht := hb.1.symAddr Q hb.1.sp4

@@ -16,6 +16,8 @@ import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
 meta import VerifiedGarbage.Proof.Ed25519.Arm.Freeze
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-! Merged from `Proof.Ed25519.Arm.RecoverCTSign`. -/
 
@@ -46,24 +48,24 @@ theorem adjustTail_ct :
       (.seq (.ite .eq (.block []) (fieldCode [.const 5 0, .sub 0 5 0])) recoverSuccess) (fun _ _ => True) := by
   refine RelCT.seq (R := fun (x y : State) => ∀ r ∈ ([.r0] : List Reg), x.gpr r = y.gpr r)
     (RelCT.ite (fun _ _ h => congrArg some h.2) ?_ ?_) ?_
-  · apply ctRegsKeeping [.r0] [.r0] _ (by taint_decide)
+  · apply ctRegsKeeping [.r0] [.r0] _ (by native_taint_decide)
     intro x y h r hr
     rw [List.mem_singleton] at hr
     subst r
     exact h.1.1
-  · apply ctRegsKeeping [.r0] [.r0] _ (by taint_decide)
+  · apply ctRegsKeeping [.r0] [.r0] _ (by native_taint_decide)
     intro x y h r hr
     rw [List.mem_singleton] at hr
     subst r
     exact h.1.1
-  · apply ctRegs [.r0] _ (by taint_decide)
+  · apply ctRegs [.r0] _ (by native_taint_decide)
     exact fun _ _ h => h
 
 theorem recoverAdjustSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
     CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t) recoverAdjustSign (fun _ _ => True) := by
   have ht : CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
       (.block (freeze 0 ++ recoverParity)) (fun _ _ => True) := by
-    apply ctRegs [.r0] _ (by taint_decide)
+    apply ctRegs [.r0] _ (by native_taint_decide)
     exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
   have hw (s : State) (h : SignCTPre base b x s) :
       WP isa (.block (freeze 0 ++ recoverParity)) s fun t =>
@@ -86,7 +88,7 @@ theorem signTestThen_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
       (.seq (.block signTest) (.ite .ne recoverInvalid recoverAdjustSign)) (fun _ _ => True) := by
   have ht : CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
       (.block signTest) (fun _ _ => True) := by
-    apply ctRegs [.r0] _ (by taint_decide)
+    apply ctRegs [.r0] _ (by native_taint_decide)
     exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
   have hw (s : State) (h : SignCTPre base b x s) :
       WP isa (.block signTest) s fun t => SignCTPre base b x t ∧ t.z = !b := by
@@ -102,7 +104,7 @@ theorem recoverSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
     CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t) recoverSign (fun _ _ => True) := by
   have ht : CT (fun s t => SignCTPre base b x s ∧ SignCTPre base b x t)
       (fieldZero 0) (fun _ _ => True) := by
-    apply ctRegs [.r0] _ (by taint_decide)
+    apply ctRegs [.r0] _ (by native_taint_decide)
     exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
   have hw (s : State) (h : SignCTPre base b x s) :
       WP isa (fieldZero 0) s fun t => SignCTPre base b x t ∧ t.z = decide (x = 0) := by
@@ -137,9 +139,9 @@ theorem rootCheck_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) (minus :
         (RootCTState base b y t ∧ t.z = rootCheckValue y minus)) := by
   apply ctBoth
   · cases minus
-    · apply ctRegs [.r0] _ (by taint_decide)
+    · apply ctRegs [.r0] _ (by native_taint_decide)
       exact fun _ _ h => r0_agree h.1.1.1.r0 h.2.1.1.r0
-    · apply ctRegs [.r0] _ (by taint_decide)
+    · apply ctRegs [.r0] _ (by native_taint_decide)
       exact fun _ _ h => r0_agree h.1.1.1.r0 h.2.1.1.r0
   · intro s h
     refine WP.mono (fieldEqual_ok h.1.1 h.1.2.1 11 (if minus then 12 else 6)) fun t ⟨kt, lt, te, tz⟩ => ?_
@@ -156,7 +158,7 @@ theorem rootAdjustSign_ct (base : BitVec 32) (b : Bool) (x : Spec.X25519.Fe) :
       (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18])
       (fun s t => SignCTPre base b (x * Spec.Ed25519.sqrtM1) s ∧ SignCTPre base b (x * Spec.Ed25519.sqrtM1) t) := by
     apply ctBoth
-    · apply ctRegs [.r0] _ (by taint_decide)
+    · apply ctRegs [.r0] _ (by native_taint_decide)
       exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
     · intro s h
       refine WP.mono (fieldCode_ok [.const 18 Spec.Ed25519.sqrtM1, .mulc 0 0 18] h.1 h.2.1)
@@ -196,7 +198,7 @@ theorem recoverPoint_ct (base : BitVec 32) (b : Bool) (y : Spec.X25519.Fe) :
   have hp : CT (fun s t => RecoverCTPre base b y s ∧ RecoverCTPre base b y t)
       recoverCandidate (fun s t => RootCTState base b y s ∧ RootCTState base b y t) := by
     apply ctBoth
-    · apply ctRegs [.r0] _ (by taint_decide)
+    · apply ctRegs [.r0] _ (by native_taint_decide)
       exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
     · intro s h
       refine WP.mono (recoverCandidate_ok h.1 h.2.1) fun t ⟨kt, lt, tx, _, _, tu, _, tv, tn⟩ => ?_

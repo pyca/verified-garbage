@@ -16,6 +16,8 @@ meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Mask
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA key generation on 32-bit ARM: after the samplers
@@ -203,6 +205,6 @@ theorem ktaint4 {p : Params} {STK : Nat} {c : Prog isa} {hc : VG.Taint.Hint VG.A
 theorem copies_piece {p : Params} (hF : PFacts p) {STK : Nat} :
     KPiece p STK (fun σ s => KSamp p STK σ (p.k * p.ℓ) (p.ℓ + p.k) s) (KR0 p STK) copies :=
   ⟨fun _ _ _ h => copies_ok hF h,
-    rel_of (ktaint4 (by taint_decide)) fun _ _ _ _ _ _ pub h₁ h₂ => kc_two pub h₁.k1.kc h₂.k1.kc⟩
+    rel_of (ktaint4 (by native_taint_decide)) fun _ _ _ _ _ _ pub h₁ h₂ => kc_two pub h₁.k1.kc h₂.k1.kc⟩
 
 end VG.Proof.MlDsa.Arm.KeyGen

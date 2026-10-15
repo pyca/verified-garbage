@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_high_bits` and `vg_mldsa_low_bits`
@@ -146,7 +148,7 @@ structure BS1 (s₀ s : State) : Prop where
   zf : s.zf = some (arg s₀ 1 == BitVec.ofNat 32 g32)
 
 theorem init_piece : Piece BitsPre BitsPub (fun s₀ s => s = P0 s₀) BS1 (.block bitsInit) := by
-  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by native_taint_decide)
   · subst e
     have hin : aR s₀ 3 ∈ s₀.rd ++ s₀.wr := by simp [hp.wr]
     obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega) hp.sp hp.sp' hin hp.stk_a
@@ -228,7 +230,7 @@ theorem bits_piece {core : List Instr} {V : Nat → Nat} (hc : Core1 core V)
       (cntLoop (core ++ cntTail)) := by
   refine Piece.seq (B := fun s₀ s => BInv V s₀ 0 s ∧ E s₀) ?_ ?_
   · refine Piece.taint [] (fun s₀ s hp ⟨h, he⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-      (by taint_decide)
+      (by native_taint_decide)
     refine wp_movi fun s₁ u₁ => WP.block_nil_iff.mpr ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => absurd hi (by omega)⟩, he⟩
     · rw [u₁.other _ (by decide), h.esp]
     · rw [u₁.rd, h.rd]
@@ -316,7 +318,7 @@ theorem reduced_zero {m : Mem} (hm : ∀ a : Addr, a.toNat < 0x5000 → m a = 0)
 
 theorem highBits_verified : Verified X86.target highBits (highBitsContract X86.abi 16) := by
   refine Piece.verified (((leaf_piece (fun g hg => hbCore_spec hg) (NoSp.of_all (by decide +kernel))
-    (by taint_decide) (by taint_decide)).pre_mono (fun _ h => BitsPre.of_hb h) fun s s' _ _ h => by
+    (by native_taint_decide) (by native_taint_decide)).pre_mono (fun _ h => BitsPre.of_hb h) fun s s' _ _ h => by
       sig_pub [highBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
       exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq
@@ -343,7 +345,7 @@ theorem highBits_verified : Verified X86.target highBits (highBitsContract X86.a
 
 theorem lowBits_verified : Verified X86.target lowBits (lowBitsContract X86.abi 16) := by
   refine Piece.verified (((leaf_piece (fun g hg => lbCore_spec hg) (NoSp.of_all (by decide +kernel))
-    (by taint_decide) (by taint_decide)).pre_mono (fun _ h => BitsPre.of_lb h) fun s s' _ _ h => by
+    (by native_taint_decide) (by native_taint_decide)).pre_mono (fun _ h => BitsPre.of_lb h) fun s s' _ _ h => by
       sig_pub [lowBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
       exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hinv, hm, -⟩ := hq

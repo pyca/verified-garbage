@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_bit_pack`
@@ -191,7 +193,7 @@ theorem bitPack_ct :
   intro s₁ s₂ t₁ t₂ s₁' s₂' _ _ hpub e₁ e₂
   sig_pub [bitPackContract, bitPackSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hpub
   obtain ⟨hsp, h0, h1, h2, h3, -⟩ := hpub
-  exact (frame4_ct [.r0, .r1, .r2, .r3] (by taint_decide) (P := fun a b => a = s₁ ∧ b = s₂)
+  exact (frame4_ct [.r0, .r1, .r2, .r3] (by native_taint_decide) (P := fun a b => a = s₁ ∧ b = s₂)
     (fun a b h => by rw [h.1, h.2]; exact hsp) (fun a b h r hr => by
       rw [h.1, h.2]
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

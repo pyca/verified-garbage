@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_rej_bounded_poly`, constant time and `Verified`
@@ -62,7 +64,7 @@ theorem rbLoop_ct {η : Nat} (hη : η = 2 ∨ η = 4)
       Base P σ₁ (H (P.msg σ₁) 544) 544 (Lf η (H (P.msg σ₁) 544) 544) a ∧
         Base P σ₂ (H (P.msg σ₂) 544) 544 (Lf η (H (P.msg σ₂) 544) 544) b :=
   RelCT.seq (relW (taintRel [.r6] (fun a b h r hr => by
-      rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r6, h.2.env.r6]) (by taint_decide))
+      rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r6, h.2.env.r6]) (by native_taint_decide))
       fun a b h => ⟨init_ok h.1, init_ok h.2⟩)
     (loop_ct hp₁ hp₂ hη c1 c2 c3 (H_length _ _) (H_length _ _) oks)
 
@@ -73,17 +75,17 @@ theorem sel_ct (hη : P.prm.toNat = 2 ∨ P.prm.toNat = 4)
       (.seq (.block [.cmp .r7 (.imm 2)]) (.ite .eq (rbLoop 2) (rbLoop 4))) fun a b =>
       Base P σ₁ (H (P.msg σ₁) 544) 544 (Lf P.prm.toNat (H (P.msg σ₁) 544) 544) a ∧
         Base P σ₂ (H (P.msg σ₂) 544) 544 (Lf P.prm.toNat (H (P.msg σ₂) 544) 544) b := by
-  refine RelCT.seq (relW (taintRel [] nil_regs (by taint_decide)) fun a b h => ⟨cmp_ok h.1, cmp_ok h.2⟩) ?_
+  refine RelCT.seq (relW (taintRel [] nil_regs (by native_taint_decide)) fun a b h => ⟨cmp_ok h.1, cmp_ok h.2⟩) ?_
   rcases hη with e | e
   · rw [e] at oks ⊢
-    refine RelCT.ite (fun a b h => by rw [eval_eq, eval_eq, h.1.2, h.2.2]) (RelCT.mono (rbLoop_ct hp₁ hp₂ (η := 2) (.inl rfl) oks (by taint_decide) (by taint_decide)
-      (by taint_decide)) (fun a b h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h) (RelCT.of_false fun a b ⟨h, he⟩ => by
+    refine RelCT.ite (fun a b h => by rw [eval_eq, eval_eq, h.1.2, h.2.2]) (RelCT.mono (rbLoop_ct hp₁ hp₂ (η := 2) (.inl rfl) oks (by native_taint_decide) (by native_taint_decide)
+      (by native_taint_decide)) (fun a b h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h) (RelCT.of_false fun a b ⟨h, he⟩ => by
         rw [eval_eq, h.1.2] at he; exact absurd he (by decide))
   · rw [e] at oks ⊢
     refine RelCT.ite (fun a b h => by rw [eval_eq, eval_eq, h.1.2, h.2.2]) (RelCT.of_false fun a b ⟨h, he⟩ => by
         rw [eval_eq, h.1.2] at he; exact absurd he (by decide))
-      (RelCT.mono (rbLoop_ct hp₁ hp₂ (η := 4) (.inr rfl) oks (by taint_decide) (by taint_decide)
-        (by taint_decide)) (fun a b h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h)
+      (RelCT.mono (rbLoop_ct hp₁ hp₂ (η := 4) (.inr rfl) oks (by native_taint_decide) (by native_taint_decide)
+        (by native_taint_decide)) (fun a b h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h)
 
 end
 
@@ -108,16 +110,16 @@ theorem all_ct : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) rejBounded fun _
   have e1 : etaOf σ₂ = etaOf σ₁ := by rw [etaOf, etaOf, h1]
   rw [e1] at hl
   have oks := leak_hbOks hl (B := 544) (by decide)
-  refine RelCT.seq (relW (taintRel [.r0, .r1, .r2, .r3] (fun a b h r hr => ?_) (by taint_decide)) fun a b h =>
+  refine RelCT.seq (relW (taintRel [.r0, .r1, .r2, .r3] (fun a b h r hr => ?_) (by native_taint_decide)) fun a b h =>
     ⟨by rw [h.1]; exact pro_ok hp₁, by rw [h.2]; exact pro_rb hp₂ h0.symm h1.symm h2.symm h3.symm rfl⟩) ?_
   · rw [h.1, h.2]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   refine RelCT.seq (sponge_ct hp₁ hp₂ hsp (rate := 136) (outlen := 544) (by decide) (by decide) (by decide)
-    (by decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine RelCT.seq (sel_ct hp₁ hp₂ hη oks) ?_
   exact taintRel [.r6] (fun a b h r hr => by
-    rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r6, h.2.env.r6]) (by taint_decide)
+    rw [List.mem_singleton] at hr; subst hr; rw [h.1.env.r6, h.2.env.r6]) (by native_taint_decide)
 
 end
 

@@ -28,6 +28,8 @@ import VerifiedGarbage.Spec.Rc2
 meta import VerifiedGarbage.Impl.Mont.Mod
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # Verification's equation: what its traces depend on
@@ -64,9 +66,9 @@ theorem equalFirst_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
 theorem returnFlag_ct (b : Bool) :
     RelCT isa (fun _ _ => True) (.block [.mov .eax (.imm (if b then 1 else 0))]) (fun _ _ => True) := by
   cases b
-  · apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by taint_decide)
+  · apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by native_taint_decide)
     exact fun _ _ _ => regsTaint_agree (by simp)
-  · apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by taint_decide)
+  · apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by native_taint_decide)
     exact fun _ _ _ => regsTaint_agree (by simp)
 
 /-- Two points representing `P` and `Q` in slots 0–3 and 4–7. -/
@@ -96,7 +98,7 @@ theorem equalStep_ct (base : BitVec 32) (P Q : Edwards.EPoint VG.Proof.Ed25519.d
     RelCT isa (fun s t => EqLoopCT base P Q n s ∧ EqLoopCT base P Q n t) equalStep (fun _ _ => True) := by
   have ht : RelCT isa (fun s t => EqLoopCT base P Q n s ∧ EqLoopCT base P Q n t)
       (.block (fieldEqual 8 9)) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
     exact fun _ _ h => edi_agree h.1.1.edi h.2.1.edi
   have hw (s : State) (h : EqLoopCT base P Q n s) :
       WP isa (.block (fieldEqual 8 9)) s fun t => Ctx base t ∧ t.zf = some (decide (eqCond P Q n)) :=
@@ -106,9 +108,9 @@ theorem equalStep_ct (base : BitVec 32) (P Q : Edwards.EPoint VG.Proof.Ed25519.d
   rw [equalStep]
   refine VG.RelCT.seq hp (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
   · exact fun _ _ h => h.2.1.2.trans h.2.2.2.symm
-  · apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+  · apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
     exact fun _ _ h => edi_agree h.1.2.1.1.edi h.1.2.2.1.edi
-  · apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by taint_decide)
+  · apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by native_taint_decide)
     exact fun _ _ _ => regsTaint_agree (by simp)
 
 /-- The comparison branches on whether the points represented are equal. -/
@@ -117,7 +119,7 @@ theorem pointEqualRep_ct (base : BitVec 32) (P Q : Edwards.EPoint VG.Proof.Ed255
       Impl.Ed25519.X86.pointEqual (fun _ _ => True) := by
   have ht : RelCT isa (fun s t => EqRepPre base P Q s ∧ EqRepPre base P Q t)
       (.block (fieldCode pointEqualOps ++ [.mov .esi (.imm 2)])) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
     exact fun _ _ h => edi_agree h.1.1.edi h.2.1.edi
   have hw (s : State) (h : EqRepPre base P Q s) :
       WP isa (.block (fieldCode pointEqualOps ++ [.mov .esi (.imm 2)])) s (EqLoopCT base P Q 2) := by
@@ -168,7 +170,7 @@ theorem bTable_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a r : Spec.
     RelCT isa (fun s t => PointsCTPre s₀ a r s ∧ PointsCTPre t₀ a r t) bTable (fun _ _ => True) :=
   VG.RelCT.taint (A := taintSym [bSym]) callTaint₀
     (fun _ _ hh => ⟨callTaint₀_agree (h.callPre hh.1.1 hh.2.1), fun n hn => by
-      rw [List.mem_singleton.mp hn, hh.1.2.2.2, hh.2.2.2.2]; exact h.sym⟩) (by taint_decide)
+      rw [List.mem_singleton.mp hn, hh.1.2.2.2, hh.2.2.2.2]; exact h.sym⟩) (by native_taint_decide)
 
 /-- The windows, `-R`, and the comparison: the windows' traces depend only on the public
 scalars, and the comparison's on whether the points represented are equal. -/
@@ -193,7 +195,7 @@ theorem verifyEquationPoints_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀
   refine seq_runs (windowMultiply_ct h hA) (fun x hx => ww s₀ x (verify_pre h.left) hx)
     (fun y hy => ww t₀ y (verify_pre h.right) hy) ?_
   refine seq_runs (VG.RelCT.taint (A := taint) (regsTaint [.edi])
-    (fun _ _ hh => agree_one (saved_edi h hh.1.1.saved hh.2.1.saved)) (by taint_decide))
+    (fun _ _ hh => agree_one (saved_edi h hh.1.1.saved hh.2.1.saved)) (by native_taint_decide))
     (fun x hx => nw s₀ x hx) (fun y hy => nw t₀ y hy) ?_
   refine (pointEqualRep_ct (arg s₀ 3) (verificationChallenge s₀ • Aa + verificationScalar s₀ • (-baseAff))
     (-Ra)).mono (fun x y hh => ⟨hh.1, ?_⟩) (fun _ _ h => h)

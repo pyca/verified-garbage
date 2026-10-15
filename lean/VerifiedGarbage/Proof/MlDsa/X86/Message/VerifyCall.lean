@@ -22,6 +22,8 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.TopCall
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86.TopCall
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit), `verify_message`: the call of the verification function on `μ`
@@ -252,7 +254,7 @@ theorem verifyCall_piece (hp : p ∈ params) {n : String} {f : Prog isa} (hf : V
     Piece (VPre p) (VPub p) (fun s₀ s => CtxO (vlay p) s₀ s ∧ bytesAt s.mem (vlay p s₀).MU 64 = vMu p s₀)
       (fun s₀ s => LeafEnd s₀ (vW p s₀) s ∧ VB p s₀ s)
       (.seq (.block (setArgs verifyArgs)) (Impl.MlKem.X86.callRet rs4 n f)) := by
-  refine argsRet_piece hf.ver.1 hf.ver.2.1 hf.nosp (by decide) (by decide) (by taint_decide) (vShape hp).pubL
+  refine argsRet_piece hf.ver.1 hf.ver.2.1 hf.nosp (by decide) (by decide) (by native_taint_decide) (vShape hp).pubL
     (fun _ _ _ h => h.1) (fun _ _ => verifyArgs_ok) (vRd p) (vWr p)
     (fun s₀ s₀' h₀ h₀' hq => ?_) (fun s₀ s h₀ ha => ?_) (fun s₀ s s₁ h₀ ha hs => verify_callPre h₀ ha.1 hs)
     (fun s₀ s₀' s s' s₁ s₁' h₀ h₀' hq ha ha' hs hs' => ?_) (fun s₀ s s₁ s' h₀ ha hs e₁ e₂ e₃ fr post => ?_)

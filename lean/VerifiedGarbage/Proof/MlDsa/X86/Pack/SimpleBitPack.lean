@@ -16,6 +16,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_simple_bit_pack`
@@ -104,15 +106,15 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Fin
     (.seq (.block (ldArgs 0 2 1))
       (sel 15 (packLoop sbpLd 4 2 1) (sel 43 (packLoop sbpLd 6 4 3) (packLoop sbpLd 10 4 5)))) := by
   refine Piece.seq (ldArgs_piece (k := 4) (by decide) (by decide) (by decide) (fun _ h => h.lay)
-    (fun _ _ _ _ hq => hq.1) (by taint_decide)) ?_
-  refine sel_piece (arg · 1) (by decide) (fun _ _ _ _ hq => hq.2.2.1) (by taint_decide)
+    (fun _ _ _ _ hq => hq.1) (by native_taint_decide)) ?_
+  refine sel_piece (arg · 1) (by decide) (fun _ _ _ _ hq => hq.2.2.1) (by native_taint_decide)
     (branch (d := 4) (c := 2) (nb := 1) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by decide) (fun _ _ h => h.2) (by taint_decide) (by taint_decide)) ?_
-  refine sel_piece (arg · 1) (by decide) (fun _ _ _ _ hq => hq.2.2.1) (by taint_decide)
+      (by decide) (fun _ _ h => h.2) (by native_taint_decide) (by native_taint_decide)) ?_
+  refine sel_piece (arg · 1) (by decide) (fun _ _ _ _ hq => hq.2.2.1) (by native_taint_decide)
     (branch (d := 6) (c := 4) (nb := 3) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by decide) (fun _ _ h => h.2) (by taint_decide) (by taint_decide)) ?_
+      (by decide) (fun _ _ h => h.2) (by native_taint_decide) (by native_taint_decide)) ?_
   refine (branch (d := 10) (c := 4) (nb := 5) (v := 1023) ⟨by decide, by decide, rfl, by decide, by decide, rfl, rfl⟩
-      (by decide) (fun s₀ h₀ ⟨⟨_, h15⟩, h43⟩ => ?_) (by taint_decide) (by taint_decide)).mono
+      (by decide) (fun s₀ h₀ ⟨⟨_, h15⟩, h43⟩ => ?_) (by native_taint_decide) (by native_taint_decide)).mono
     (fun _ _ _ ⟨⟨h, _⟩, hx⟩ => ⟨h, hx⟩) fun _ _ _ h => h
   have := h₀.b_mem
   simp only [bN, simpleBitPackBounds, t1Max_eq, List.mem_cons, List.not_mem_nil, or_false] at this h15 h43 ⊢

@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.Common
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_sample_in_ball`
@@ -44,7 +46,7 @@ structure Fin (s₀ s : State) : Prop extends BI s₀ 264 (S' s₀ 264) s where
 
 theorem fin_piece : Piece QPre QPub (fun s₀ s => BI s₀ 264 (S' s₀ 264) s) Fin (.block (retJ .edi)) := by
   refine Piece.taint [] (fun s₀ s _ h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-    (by taint_decide)
+    (by native_taint_decide)
   have hl : (S' s₀ 264).2 ≤ 256 := st_le _ _ _
   refine wp_movr (wp_shr (by decide) (by decide) fun s' o e => WP.block_nil_iff.mpr ?_)
   have g : ∀ r, r ≠ .eax → s'.gpr r = s.gpr r := fun r hr => by
