@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Machine
 public import VerifiedGarbage.Proof.TripleDes.Bitslice.Io
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.TripleDes.Bitslice.TransposeIdx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -52,8 +53,8 @@ def stB (W : Nat → BitVec 64) (j : Nat) : BitVec 64 :=
 theorem stB_stA_idx : ∀ j < 64, ∀ p < 64,
     (8 * (j / 8) + (p &&& 7)) % 8 + 8 * ((((p &&& 56) ||| (j % 8)) >>> 3) &&& 7) = p ∧
     ((((p &&& 56) ||| (j % 8)) &&& 7) ||| (((8 * (j / 8) + (p &&& 7)) / 8) <<< 3)) = j ∧
-    ((p &&& 56) ||| (j % 8)) < 64 := by
-  decide +kernel
+    ((p &&& 56) ||| (j % 8)) < 64 :=
+  VG.Proof.TripleDes.Bitslice.stB_stA_idx
 
 /-- The two stages transpose. -/
 theorem stB_stA (W : Nat → BitVec 64) {j : Nat} (hj : j < 64) : stB (stA W) j = transposeW W j := by
@@ -122,7 +123,15 @@ theorem bodyA_check : check (lanes 64 12) ⟨.x4, 57⟩ bodyA (envIn 57) (postOu
 theorem bodyB_check : check (lanes 64 9) ⟨.x4, 8⟩ bodyB (envIn 8) (postOut 8 gB) = true := by
   decide +kernel
 
-theorem gA_lt : ∀ j < 57, ∀ p < 64, gA j p < 64 * 57 := by decide +kernel
+theorem gA_lt : ∀ j < 57, ∀ p < 64, gA j p < 64 * 57 := by
+  intro j hj p hp
+  unfold gA
+  split
+  · have h1 : (p >>> 3) &&& 7 ≤ 7 := Nat.and_le_right
+    have h2 : ((p &&& 7) ||| ((j / 8) <<< 3)) < 2 ^ 6 :=
+      Nat.or_lt_two_pow (Nat.lt_of_le_of_lt Nat.and_le_right (by decide)) (by rw [Nat.shiftLeft_eq]; omega)
+    omega
+  · omega
 
 theorem gB_lt : ∀ j < 8, ∀ p < 64, gB j p < 64 * 8 := by decide +kernel
 
