@@ -8,6 +8,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # An RSA key from its primes on AArch64: the entry and the head
@@ -135,21 +136,21 @@ theorem keyStart_k {s : State} (c : KCtx s) :
   have epl : (keyIn s).pl = (s.gpr .x5).toNat := rfl
   have eWk : (keyIn s).W = 2 * (s.gpr .x5).toNat / 8 := rfl
   rw [WP.block_append_iff]
-  refine WP.mono (keyEntry_ok rfl (fun i hi => hs.st (by omega)) c.ha c.hsep) fun t₁ he => ?_
+  refine WP.mono (keyEntry_ok rfl (fun i hi => hs.st (by omega_using [hZ, hpl1, hx1, epl, hi])) c.ha c.hsep) fun t₁ he => ?_
   have hs₁ := hs.congr he.keep.wr
   have hnl : word t₁.mem (arg s 8) (8 * Public.sK) = BitVec.ofNat 64 (2 * (s.gpr .x5).toNat) := by
     rw [show Public.sK = kNl from rfl, he.args.nl, ← hx1, ofNat_toNat64]
-  refine WP.mono (kHead_ok hs₁ he.x0 (by omega) (by omega) (by omega) hnl) fun t₂ ⟨hw₂, _, hf₂, k₂⟩ => ?_
-  have ew : wk (2 * (s.gpr .x5).toNat) = (keyIn s).W := by simp only [wk, KIn.W, keyIn]; omega
+  refine WP.mono (kHead_ok hs₁ he.x0 (by omega_using [hpl1, epl]) (by omega_using [hpl2, epl]) (by omega_using [hZ, hx1]) hnl) fun t₂ ⟨hw₂, _, hf₂, k₂⟩ => ?_
+  have ew : wk (2 * (s.gpr .x5).toNat) = (keyIn s).W := by simp only [wk, KIn.W, keyIn]; omega_using [hpl8, epl]
   rw [ew] at hw₂
   have eW : sW = 6 := rfl
   have eA : sArr 0 = 8 := rfl
   have eS : sStride = 28 := rfl
   have eM : Public.sMask = 22 := rfl
-  have hi₁ : InScr (arg s 8) ((arg s 9).toNat * 8) s.mem t₁.mem := InScr.of_outside he.frame (by omega)
+  have hi₁ : InScr (arg s 8) ((arg s 9).toNat * 8) s.mem t₁.mem := InScr.of_outside he.frame (by omega_using [hZ, hpl1, hx1, epl])
   have hi₂ : InScr (arg s 8) ((arg s 9).toNat * 8) t₁.mem t₂.mem := InScr.of_frm hf₂ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl) <;> dsimp only <;> omega)
+    rintro r (rfl | rfl | rfl | rfl) <;> dsimp only <;> omega_using [hZ, hpl1, hx1, epl, eW, eA, eS, eM])
   have hi := hi₁.trans hi₂
   have kk := he.keep.trans k₂
   have hA₁ : KArgs t₁.mem (keyIn s) :=
@@ -160,7 +161,7 @@ theorem keyStart_k {s : State} (c : KCtx s) :
       (he.args.el.trans (ofNat_toNat64 _).symm : word t₁.mem (arg s 8) (8 * kElen) = BitVec.ofNat 64 (arg s 7).toNat)⟩
   exact ⟨hw₂, hA₁.congr fun i hi' => hf₂.word_eq (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by omega),
+      rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega_using [eW, hi', eA, eS, eM]) (by omega_using [hi']),
     c.p.congrK hi kk, c.q.congrK hi kk, c.e.congrK hi kk, hi, kk.wr, kk.mono (by decide)⟩
 
 end VG.Proof.RsaKeyGen.AArch64.Key

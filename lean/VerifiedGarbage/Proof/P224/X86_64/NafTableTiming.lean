@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.P224.X86_64.JacTiming
 meta import VerifiedGarbage.Proof.P224.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
+import VerifiedGarbage.Proof.P224.X86_64.FieldTmpl
+public import VerifiedGarbage.Proof.Framework.TaintMap
+meta import VerifiedGarbage.Proof.Framework.TaintMap
+meta import VerifiedGarbage.Proof.P224.X86_64.FieldTmpl
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -29,24 +33,23 @@ namespace VG.Proof.P224.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Proof.Weierstrass.X86_64
 
 theorem nafTable_checks : NafTableChecks nafJacWin := by
+  have hT : p224T.Ok nafJacWin.M := p224T_ok
   constructor
-  · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
-      (fun _ _ _ _ h => h) (by taint_decide)
-  · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
-      (fun _ _ _ _ h => h) (by taint_decide)
-  · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
-      (fun _ _ _ _ h => h) (by taint_decide)
-  · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
-      (fun _ _ _ _ h => h) (by taint_decide)
-  · constructor <;> exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
-      (fun _ _ _ _ h => h) (by taint_decide)
+  · exact hT.constantTime (Taint.ofRegs [.rdi]) rfl (fun _ _ _ _ h => h) _ (by taint_decide)
+  iterate 3 exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
+  · constructor
+    iterate 6 exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
+    iterate 3 exact hT.constantTime (Taint.ofRegs [.rdi]) rfl (fun _ _ _ _ h => h) _ (by taint_decide)
+    exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
   · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
       (fun _ _ _ _ h => h) (by taint_decide)
   · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rbx])
       (fun _ _ _ _ h => h) (by taint_decide)
   · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rbx])
       (fun _ _ _ _ h => h) (by taint_decide)
-  · decide +kernel
+  · rw [← KeepReg.keeps_erase, ← KeepReg.keepsN_eq]
+    simp only [Jacobian.jacAdd, Code.inline, Code.erase, Code.mapBlocks, hT.fprogB_mapBlocks]
+    lit_decide
   · exact instrs_noClobber (by decide +kernel)
 
 end VG.Proof.P224.X86_64

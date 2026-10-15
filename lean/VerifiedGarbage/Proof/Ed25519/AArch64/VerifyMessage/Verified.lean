@@ -54,12 +54,12 @@ theorem init_call_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
   apply call_ct hL ha hb (Proof.Sha512.AArch64.Stream.init_verified _).1
     (Proof.Sha512.AArch64.Stream.init_verified _).2.1 (Whole.depth_of_noFrames rfl)
   · intro g v m t _ hs _ _
-    have a0 := hs (.x0,.caller 4 0) (by simp [initValues])
+    have a0 := hs (.x0,.caller 4 0) (by decide)
     change t.gpr .x0 = L.scr+0#64 at a0
     exact init_ready (a0.trans (BitVec.add_zero _))
   · intro a b ar aw br bw h
     simp only [Proof.Sha512.initAArch64,State.withRegions_gpr,State.withRegions_sp,State.callEntry_sp]
-    exact ⟨call_gpr_eq h (p := (.x0,.caller 4 0)) (by simp [initValues]) (by decide),two_sp h⟩
+    exact ⟨call_gpr_eq h (p := (.x0,.caller 4 0)) (by decide) (by decide),two_sp h⟩
 
 theorem update_call_ct (backend : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁)
     (hb : Arguments L m₂) {args : List (Reg × Value)}
@@ -86,17 +86,17 @@ theorem finalize_call_ct (backend : Whole.Backend) (hL : L.Ok) (ha : Arguments L
   apply call_ct hL ha hb backend.finalize_verified.1 backend.finalize_verified.2.1
     (Whole.finalize_depth backend)
   · intro g v m t hc hs _ _
-    have a0 := hs (.x0,.caller 4 0) (by simp [finalizeValues])
-    have a2 := hs (.x2,.frame 192) (by simp [finalizeValues])
-    have a3 := hs (.x3,.caller 4 192) (by simp [finalizeValues])
+    have a0 := hs (.x0,.caller 4 0) (by decide)
+    have a2 := hs (.x2,.frame 192) (by decide)
+    have a3 := hs (.x3,.caller 4 192) (by decide)
     change t.gpr .x0=L.scr+0#64 at a0
     exact finalize_ready hL hc.sp (a0.trans (BitVec.add_zero _)) a2 a3
   · intro a b ar aw br bw h
     simp only [Proof.Sha512.finalizeAArch64,State.withRegions_gpr,State.withRegions_sp,State.callEntry_sp]
-    exact ⟨call_gpr_eq h (p := (.x0,.caller 4 0)) (by simp [finalizeValues]) (by decide),
-      call_gpr_eq h (p := (.x1,.caller 2 64)) (by simp [finalizeValues]) (by decide),
-      call_gpr_eq h (p := (.x2,.frame 192)) (by simp [finalizeValues]) (by decide),
-      call_gpr_eq h (p := (.x3,.caller 4 192)) (by simp [finalizeValues]) (by decide),two_sp h⟩
+    exact ⟨call_gpr_eq h (p := (.x0,.caller 4 0)) (by decide) (by decide),
+      call_gpr_eq h (p := (.x1,.caller 2 64)) (by decide) (by decide),
+      call_gpr_eq h (p := (.x2,.frame 192)) (by decide) (by decide),
+      call_gpr_eq h (p := (.x3,.caller 4 192)) (by decide) (by decide),two_sp h⟩
 
 def prefix_ready (hL : L.Ok) {source count : Nat}
     (hd : Region.Disjoint ⟨L.value source,32⟩ L.SCR)
@@ -113,10 +113,10 @@ def prefix_ready (hL : L.Ok) {source count : Nat}
 
 def message_ready (hL : L.Ok) {t : State} (hsp : t.sp = L.E) (hs : OutArgs L messageValues t) :
     Whole.CallReady Proof.Sha512.updateAArch64 L.E L.inputs L.outputs t := by
-  have a0 := hs (.x0,.caller 4 0) (by simp [messageValues])
-  have a2 := hs (.x2,.caller 1 0) (by simp [messageValues])
-  have a3 := hs (.x3,.caller 2 0) (by simp [messageValues])
-  have a4 := hs (.x4,.caller 4 192) (by simp [messageValues])
+  have a0 := hs (.x0,.caller 4 0) (by decide)
+  have a2 := hs (.x2,.caller 1 0) (by decide)
+  have a3 := hs (.x3,.caller 2 0) (by decide)
+  have a4 := hs (.x4,.caller 4 192) (by decide)
   change t.gpr .x0=L.scr+0#64 at a0
   change t.gpr .x2=L.msg+0#64 at a2
   change t.gpr .x3=L.len+0#64 at a3
@@ -135,24 +135,24 @@ theorem hash_ct (backend : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (h
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (hash backend.code backend.suffix)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   have i := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb initValues
-    (by decide) (by simp only [initValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
-    (by simp only [initValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by decide) (by decide)
+    (by decide)
     (by simp only [initValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   have r := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb (prefixValues 3 0)
-    (by decide) (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
-    (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by decide) (by decide)
+    (by decide)
     (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   have a := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb (prefixValues 0 32)
-    (by decide) (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
-    (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by decide) (by decide)
+    (by decide)
     (by simp only [prefixValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   have m := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb messageValues
-    (by decide) (by simp only [messageValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
-    (by simp only [messageValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by decide) (by decide)
+    (by decide)
     (by simp only [messageValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   have f := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb finalizeValues
-    (by decide) (by simp only [finalizeValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
-    (by simp only [finalizeValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by decide) (by decide)
+    (by decide)
     (by simp only [finalizeValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   have rc := update_call_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) (m₁ := m₁) (m₂ := m₂)
     backend hL ha hb (args := prefixValues 3 0) (prefix_ready hL (input_sig hL).1 (input_sig hL).2)
@@ -324,24 +324,24 @@ theorem reduce_call_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m�
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL ha hb scalarReduce_ok scalarReduce_ct (Whole.depth_of_noFrames reduce_noFrames)
   · intro g v m t _ hs _ _
-    have a0 := hs (.x0,.frame 128) (by simp [reduceValues])
-    have a1 := hs (.x1,.frame 192) (by simp [reduceValues])
-    have a2 := hs (.x2,.caller 4 0) (by simp [reduceValues])
+    have a0 := hs (.x0,.frame 128) (by decide)
+    have a1 := hs (.x1,.frame 192) (by decide)
+    have a2 := hs (.x2,.caller 4 0) (by decide)
     change t.gpr .x2=L.scr+0#64 at a2
     exact reduce_ready hL ⟨a0,a1,a2.trans (BitVec.add_zero _)⟩
   · intro a b ar aw br bw h
     simp only [scalarReduceLocal,State.withRegions_gpr,State.withRegions_sp,State.callEntry_sp]
-    exact ⟨two_sp h,call_gpr_eq h (p := (.x0,.frame 128)) (by simp [reduceValues]) (by decide),
-      call_gpr_eq h (p := (.x1,.frame 192)) (by simp [reduceValues]) (by decide),
-      call_gpr_eq h (p := (.x2,.caller 4 0)) (by simp [reduceValues]) (by decide)⟩
+    exact ⟨two_sp h,call_gpr_eq h (p := (.x0,.frame 128)) (by decide) (by decide),
+      call_gpr_eq h (p := (.x1,.frame 192)) (by decide) (by decide),
+      call_gpr_eq h (p := (.x2,.caller 4 0)) (by decide) (by decide)⟩
 
 theorem reduce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) (digest : List Byte) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun t => Spec.Ed25519.bytesAt t.mem (L.E+192) 64=digest)
       (callWith reduceArgs "vg_ed25519_scalar_reduce" Impl.Ed25519.AArch64.scalarReduce)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun t => Spec.Ed25519.bytesAt t.mem (L.E+128) 32=Spec.Ed25519.scalarReduce digest) := by
   have hs := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb reduceValues
-    (by decide) (by simp only [reduceValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, Whole.valid]; decide)
-    (by simp only [reduceValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true, known]; decide)
+    (by decide) (by decide)
+    (by decide)
     (by simp only [reduceValues, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, imp_true_iff, and_true]; decide) (by taint_decide)
   refine two_wp ((hs.seq (reduce_call_ct hL ha hb)).mono
     (fun _ _ h => ⟨h.1,h.2.1,trivial,trivial,h.2.2.2.2⟩) (fun _ _ _ => trivial)) ?_ ?_
@@ -376,7 +376,7 @@ theorem equation_setup_wp {g v m t} (hc : Ctx L g v m t) (hL : L.Ok) (ha : Argum
       Spec.Ed25519.bytesAt u.mem (L.E + 128) 64 = ch := by
   refine WP.mono (args_ok hc hL ha
     (args := [(.x0,.caller 0 0),(.x1,.caller 3 0),(.x2,.frame 128),(.x3,.caller 4 0)])
-    (by simp) (by simp [Whole.valid]) (by simp [known]) (by simp [preserved])) ?_
+    (by simp) (by decide) (by decide) (by decide)) ?_
   intro u ⟨hu,hm,hav⟩
   have a0 := hav (.x0,.caller 0 0) (by simp)
   have a1 := hav (.x1,.caller 3 0) (by simp)

@@ -558,7 +558,7 @@ theorem cbc_sat {post : Spec.Cast5.cbcSig.Post X86.abi.ptrBits} : (cbcK post).pr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem cbcEncrypt_verified :
     Verified X86.target cbcEncrypt (cbcK (Proof.Cast5.cbcEncPost X86.abi.ptrBits)) :=
@@ -622,7 +622,7 @@ theorem cbcFrame_sat (post : Spec.Cast5.cbcSig.Post X86.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 /-- `cbcEncrypt` with its working space on the stack. -/
 theorem cbcEncrypt_framed :
@@ -764,7 +764,7 @@ theorem ofb_sat {post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits} :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem ofb_frameSat (post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Cast5.ofbSig.contract (X86.abi.withConsts ecbConsts) (Spec.Cast5.ofbPre X86.abi.ptrBits) post true
@@ -787,7 +787,7 @@ theorem ofb_frameSat (post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem cfb_pre {post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits} (s : State)
     (h : (fbK Spec.Cast5.cfbSig (Spec.Cast5.cfbPre X86.abi.ptrBits) post).pre s) :
@@ -899,7 +899,7 @@ theorem cfb_sat {post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits} :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem cfb_frameSat (post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Cast5.cfbSig.contract (X86.abi.withConsts ecbConsts) (Spec.Cast5.cfbPre X86.abi.ptrBits) post true
@@ -922,7 +922,7 @@ theorem cfb_frameSat (post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 
 theorem ofb_verified :

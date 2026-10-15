@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.MillerRabin
 public import VerifiedGarbage.Proof.Bignum.Layout
+public import VerifiedGarbage.Proof.Bignum.WorkFrame
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
@@ -82,6 +83,36 @@ theorem keeps_to_frm {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat} {m 
     change (x - B).toNat + 1 ≤ 8 * n at hc
     simp only [ofs] at hd
     omega_arith
+
+theorem keeps_to_work {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat}
+    {extra : List Region} {m m' : Mem}
+    (h : Spec.MillerRabin.Keeps L B n w m m')
+    (hf : Frame ([⟨B, 8 * n⟩] ++ extra) m m') :
+    WorkFrame B (mutRanges L w) extra m m' := by
+  intro x he hx
+  by_cases hd : ofs B x < 8 * n
+  · have haddr : B + BitVec.ofNat 64 (ofs B x) = x := by
+      simp only [ofs]
+      bv_omega
+    rw [← haddr]
+    apply h (ofs B x) hd
+    · intro k hk
+      exact hx (8 * k, 8) (List.mem_append_left _ (List.mem_map_of_mem hk))
+    · intro j hj
+      exact hx (Spec.Rsa.Mont.arrAt w j, 8 * (w + 2))
+        (List.mem_append_right _ (List.mem_append_left _ (List.mem_map_of_mem hj)))
+    · have ht := hx (Spec.Rsa.Mont.arrAt w L.table, 16 * (8 * (w + 2)))
+        (List.mem_append_right _ (List.mem_append_right _ (List.mem_singleton_self _)))
+      simpa only [Spec.Rsa.Mont.arrAt, Nat.add_mul, Nat.add_assoc] using ht
+  · apply hf x
+    intro r hr hc
+    rcases List.mem_append.mp hr with hw | ha
+    · simp only [List.mem_singleton] at hw
+      subst r
+      change (x - B).toNat + 1 ≤ 8 * n at hc
+      simp only [ofs] at hd
+      omega_arith
+    · exact he r ha hc
 
 theorem keeps_write_flag {L : Spec.MillerRabin.Workspace} {B : Addr} {n w : Nat} {m m' : Mem}
     (h : Spec.MillerRabin.Keeps L B n w m m') (hn : 8 * n ≤ 2 ^ 64)

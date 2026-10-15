@@ -129,18 +129,14 @@ theorem and255 (x : BitVec 64) : x &&& (BitVec.ofNat 32 255).signExtend 64 = Bit
     show (255 : Nat) = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
   omega_arith
 
-theorem dbl16 (n : Nat) (hn : n < 2 ^ 64) :
+theorem dbl16 (n : Nat) :
     BitVec.ofNat 64 (n / 256) + BitVec.ofNat 64 (n / 256) + (BitVec.ofNat 64 (n / 256) + BitVec.ofNat 64 (n / 256)) +
       (BitVec.ofNat 64 (n / 256) + BitVec.ofNat 64 (n / 256) + (BitVec.ofNat 64 (n / 256) + BitVec.ofNat 64 (n / 256))) +
       (BitVec.ofNat 64 (n / 256) + BitVec.ofNat 64 (n / 256) + (BitVec.ofNat 64 (n / 256) + BitVec.ofNat 64 (n / 256)) +
       (BitVec.ofNat 64 (n / 256) + BitVec.ofNat 64 (n / 256) + (BitVec.ofNat 64 (n / 256) + BitVec.ofNat 64 (n / 256)))) =
       BitVec.ofNat 64 (16 * (n / 256)) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  have : n / 256 < 2 ^ 60 := by omega_arith
-  rw [Nat.mod_eq_of_lt (a := n / 256) (by omega_arith)]
-  simp only [Nat.mod_eq_of_lt (show n / 256 + n / 256 < 2 ^ 64 by omega_arith)]
-  omega_arith
+  simp only [Proof.AesGcm.X86_64.ofNat_add_ofNat]
+  congr 1; omega_arith
 
 /-- The start of `stitched`: the counter block from the tag, and the
 additional data's address and length. -/
@@ -197,18 +193,20 @@ theorem sArgs_ok {K W SP : Addr} {R : Nat} {t : State} (E : Env K W SP t) {N A D
   have sR := S.rounds
   have sD := S.data
   have sL := S.len
-  refine ⟨_, by srun [sArgs, ptr, h15, rR, rD, rL], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals try (simp only [mem_setReg, mem_arithFlags, mem_setFlags])
-  all_goals try (simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15, sR, sD,
-    Proof.AesGcm.X86_64.imm_eq (show 248 < 2 ^ 31 by decide), Proof.AesGcm.X86_64.imm_eq (show 96 < 2 ^ 31 by decide),
-    Proof.AesGcm.X86_64.imm_eq (show 80 < 2 ^ 31 by decide), Proof.AesGcm.X86_64.imm_eq (show 64 < 2 ^ 31 by decide),
-    Proof.AesGcm.X86_64.imm_eq (show 1768 < 2 ^ 31 by decide)]; done)
+  have i248 := Proof.AesGcm.X86_64.imm_eq (show 248 < 2 ^ 31 by decide)
+  have i96 := Proof.AesGcm.X86_64.imm_eq (show 96 < 2 ^ 31 by decide)
+  have i80 := Proof.AesGcm.X86_64.imm_eq (show 80 < 2 ^ 31 by decide)
+  have i64 := Proof.AesGcm.X86_64.imm_eq (show 64 < 2 ^ 31 by decide)
+  have i1768 := Proof.AesGcm.X86_64.imm_eq (show 1768 < 2 ^ 31 by decide)
+  refine ⟨_, by srun [sArgs, ptr, h15, rR, rD, rL], by simp only [mem_setReg, mem_arithFlags, mem_setFlags],
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, by simp only [rd_setReg, rd_arithFlags, rd_setFlags],
+    by simp only [wr_setReg, wr_arithFlags, wr_setFlags]⟩
+  iterate 7 simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15, sR, sD,
+    i248, i96, i80, i64, i1768]
   · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, sL, shr8 _ hn]
-    exact dbl16 n hn
-  · intro r hr h₁; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    all_goals first | exact absurd rfl h₁ | simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
-  all_goals rfl
+    exact dbl16 n
+  · intro r hr h₁; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
+    simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, h₁, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
 
 /-- The data after its 256-byte groups. -/
 theorem rest_ok {K W SP : Addr} {R : Nat} {t : State} (E : Env K W SP t) {N A D : Addr}
@@ -477,7 +475,8 @@ theorem stitched_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Boo
     rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide) (by decide)) hrd₁ hwr₁
   have f₁ : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] t.mem t₁.mem := by rw [hm₁]; exact Proof.Cmac.frame_store2 _ _ _
   have F₁ : Frame (cryR W SP D n ++ polyR W SP) t.mem t₁.mem := frame_mid f₁ fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_append_right _ (.head _), fun _ h => h⟩
   have dD₁ : ∀ q ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region)], (⟨D, n⟩ : Region).Disjoint q := fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq; exact hD.w.sub_right (Lay.wSub (by decide))
   have hicb : bytesAt t₁.mem (W + BitVec.ofNat 64 96) 16 = Spec.GcmSiv.initialCounter (bytesAt t.mem W 16) := by
@@ -532,10 +531,12 @@ theorem stitched_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Boo
   have F₄ : Frame (cryR W SP D n ++ polyR W SP) t.mem t₄.mem := F₂.trans (frame_mid Fd fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by simp, Offset.sub W (by decide) (by decide)⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 80, 16⟩, by simp, fun _ h => h⟩
-    · exact ⟨⟨D, n⟩, by simp, Region.sub_prefix (by omega_arith)⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 1768, 2048⟩, by simp, Offset.sub W (by decide) (by decide)⟩)
+    · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, List.mem_append_left _ (.head _), Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 80, 16⟩, List.mem_append_right _ (.tail _ (.head _)), fun _ h => h⟩
+    · exact ⟨⟨D, n⟩, List.mem_append_left _ (.tail _ (.tail _ (.tail _ (.tail _ (.head _))))),
+        Region.sub_prefix (by omega_arith)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 1768, 2048⟩, List.mem_append_left _ (.tail _ (.tail _ (.head _))),
+        Offset.sub W (by decide) (by decide)⟩)
   have hxl : (bytesAt t.mem D n).length = n := Proof.Cmac.bytesAt_length _ _ _
   have hx₄ : bytesAt t₄.mem D n = GcmSiv.ctrPart (Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R)
       (Spec.GcmSiv.initialCounter (bytesAt t.mem W 16)) (bytesAt t.mem D n) (16 * (16 * (n / 256))) := by
@@ -640,7 +641,8 @@ theorem stitched_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Boo
   have pt := m₁₀D.trans Rp.data
   refine ⟨P₉.env.of_saved hg₁₀ hrd₁₀ hwr₁₀, by rw [hrd₁₀, rd₉], by rw [hwr₁₀, wr₉],
     F₉.trans (frame_mid fr₁₀ fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩), pt, fun hpv => ?_⟩
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_append_right _ (.head _), fun _ h => h⟩), pt, fun hpv => ?_⟩
   have hpl : (bytesAt t₁₀.mem D n).length = n := Proof.Cmac.bytesAt_length _ _ _
   rw [out₁₀, tagInput_split hpv _ _ _ _ (k := 16 * (n / 256)) (by rw [hpl]; omega_arith),
     Proof.AesGcm.X86_64.bytesAt_frame F₉ (buf_mid hN hND) (by decide), hpl, Proof.Cmac.bytesAt_length]
@@ -722,7 +724,7 @@ theorem openS_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   have E₁ : Env K W SP s₁ := E₀.of_saved hgR rdR wrR
   have fR' : Frame (mutR W SP D n) s₀.mem s₁.mem := fR.sub fun q hq => by
-    simp only [List.mem_singleton] at hq; subst hq; exact ⟨wA W, by simp, Region.sub_prefix (by decide)⟩
+    simp only [List.mem_singleton] at hq; subst hq; exact ⟨wA W, .head _, Region.sub_prefix (by decide)⟩
   have S₁ := slots_mut L Ar.data.w fR' S₀
   have rd₁ : s₁.rd = s.rd := by rw [rdR, rd₀]
   have wr₁ : s₁.wr = s.wr := by rw [wrR, wr₀]
@@ -732,7 +734,7 @@ theorem openS_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
     (f₀.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, fun _ h => h⟩).trans
     (fR.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨W, 16⟩, by simp, fun _ h => h⟩)
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨W, 16⟩, .tail _ (.head _), fun _ h => h⟩)
   have hent : ∀ {P : Addr} {len : Nat}, Buf K W SP s P len → bytesAt s₁.mem P len = bytesAt s.mem P len :=
     fun hP => Proof.AesGcm.X86_64.bytesAt_frame f₀₁ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -821,8 +823,11 @@ theorem openS_wp' (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
     ((((fK.sub (mutW_mut W SP D n)).trans (by rw [← hm₃]; exact Frame.refl _ _)).trans
       (Md.frame.sub (mid_mut W SP D n))).trans
       (((Tg.frame.sub (tagR_mutW W SP (by decide))).sub (mutW_mut W SP D n)).trans
-        (fO.sub fun q hq => ⟨q, by simp only [List.mem_singleton] at hq; subst hq; simp, fun _ h => h⟩))).trans
-      (Mk.frame.sub fun q hq => ⟨q, by simp only [List.mem_singleton] at hq; subst hq; simp, fun _ h => h⟩)
+        (fO.sub fun q hq => ⟨q, by simp only [List.mem_singleton] at hq; subst hq; exact .tail _ (.head _),
+          fun _ h => h⟩))).trans
+      (Mk.frame.sub fun q hq => ⟨q, by
+        simp only [List.mem_singleton] at hq; subst hq; exact .tail _ (.tail _ (.tail _ (.tail _ (.head _)))),
+        fun _ h => h⟩)
   obtain ⟨s₉, run₉, hg₉, hm₉, hsp₉, hax₉⟩ :=
     restore_ok E₈ (by rw [hm₈]; exact saved_mut L Ar.data.w (fR'.trans fall) sv₀)
   refine WP.of_runBlock ⟨s₉, by rw [runBlock_append, run₈]; exact run₉, ⟨fun r hr => ?_, ?_⟩, ?_⟩

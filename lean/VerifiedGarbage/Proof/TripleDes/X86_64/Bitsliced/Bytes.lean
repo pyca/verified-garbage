@@ -6,6 +6,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # Blocks as little-endian words
@@ -23,19 +24,8 @@ open VG VG.X86_64 VG.Spec.TripleDes
 theorem xor56_eq : ∀ p < 64, p ^^^ 56 = 8 * (7 - p / 8) + p % 8 := by decide
 
 theorem getLsbD_bswap64 (x : BitVec 64) {p : Nat} (hp : p < 64) :
-    (bswap64 x).getLsbD p = x.getLsbD (p ^^^ 56) := by
-  rw [xor56_eq p hp]
-  obtain ⟨a, b, hb, rfl⟩ : ∃ a b, b < 8 ∧ p = 8 * a + b :=
-    ⟨p / 8, p % 8, Nat.mod_lt _ (by decide), (Nat.div_add_mod p 8).symm⟩
-  have ha : a < 8 := by omega
-  rw [show (8 * a + b) / 8 = a by omega, show (8 * a + b) % 8 = b by omega]
-  simp only [bswap64, BitVec.getLsbD_append]
-  rcases (show a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 ∨ a = 4 ∨ a = 5 ∨ a = 6 ∨ a = 7 by omega) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 ∨ b = 5 ∨ b = 6 ∨ b = 7 by omega) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [Nat.reduceMul, Nat.reduceSub, Nat.reduceAdd, Nat.reduceLT, ↓reduceIte, Nat.lt_irrefl,
-    BitVec.getLsbD_extractLsb', decide_true, Bool.true_and]
+    (bswap64 x).getLsbD p = x.getLsbD (p ^^^ 56) :=
+  (xor56_eq p hp).symm ▸ VG.byteRev64_getLsbD x hp
 
 theorem xor56_lt {p : Nat} (hp : p < 64) : p ^^^ 56 < 64 := Nat.xor_lt_two_pow (n := 6) hp (by decide)
 

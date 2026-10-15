@@ -14,6 +14,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): the start of `vg_mldsa_ntt` and `vg_mldsa_inv_ntt`
@@ -52,7 +54,7 @@ structure S1 (s₀ : State) (s : State) : Prop where
 
 theorem ld_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) S1 (.block ldScratch) := by
   refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_)
-    (by taint_decide)
+    (by native_taint_decide)
   · subst e
     have fit := hp.sp'
     have a₁ := P0_argAddr s₀ 1
@@ -149,7 +151,7 @@ theorem hW {s₀ : State} (hp : Pre s₀) : ∀ r ∈ W s₀, (frameR s₀).Disj
 
 theorem nil_piece {A : State → State → Prop} : Piece Pre Pub A A (.block []) :=
   Piece.taint [] (fun _ _ _ h => WP.block_nil_iff.mpr h) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-    (by taint_decide)
+    (by native_taint_decide)
 
 /-- Memory with the arguments `0` and `0x400` at `0x5004`. -/
 def satMem : Mem := fun a => if a = 0x5009 then 4 else 0

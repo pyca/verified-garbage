@@ -7,7 +7,7 @@ use alloc::{vec, vec::Vec};
 /// Independent uniform integer in [1,upper-1]. The top-bit mask and byte
 /// width are public. Only acceptance/rejection controls a branch. The
 /// accepted scalar's leading-zero count is never inspected.
-pub(super) fn sample<E>(
+fn sample<E>(
     upper: &[u8],
     fill: &mut impl FnMut(&mut [u8]) -> Result<(), E>,
 ) -> Result<Vec<u8>, Error> {

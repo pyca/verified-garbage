@@ -95,7 +95,7 @@ theorem rot_cat (a b c d : BitVec 8) : (a ++ b ++ c ++ d).rotateRight 8 = d ++ a
   have hi' : i < 32 := hi
   simp only [BitVec.getLsbD_rotateRight, BitVec.getLsbD_append, hi', decide_true, Bool.true_and]
   rcases (by omega_arith : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ 24 ≤ i) with h | h | h | h <;>
-    simp (disch := omega_arith) only [ite_eq_left, ite_eq_right] <;>
+    simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right] <;>
     exact congrArg _ (by omega_arith)
 
 theorem wv_cat (a b c d : BitVec 8) : wv (a ++ b ++ c ++ d) = [d, c, b, a] := by
@@ -208,7 +208,7 @@ theorem vbyte_dup (w : BitVec 32) {k : Nat} (hk : k < 16) :
   simp only [vbyte, ofVWords, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, ht, decide_true,
     Bool.true_and]
   rcases (by omega_arith : k < 4 ∨ (4 ≤ k ∧ k < 8) ∨ (8 ≤ k ∧ k < 12) ∨ 12 ≤ k) with h | h | h | h <;>
-    simp (disch := omega_arith) only [ite_eq_left, ite_eq_right] <;>
+    simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right] <;>
     exact congrArg _ (by omega_arith)
 
 theorem ext32 {a b : BitVec 32} (h : ∀ q < 4, a.extractLsb' (8 * q) 8 = b.extractLsb' (8 * q) 8) :

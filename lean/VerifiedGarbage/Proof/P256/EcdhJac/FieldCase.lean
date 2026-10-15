@@ -41,7 +41,8 @@ structure FieldCase (ops : List FOp) where
     WP isa (arithmetic ops) s fun t =>
       ProgKeep K.M base W s t ∧ Inv K.M base 8192 m Sl V E t ∧ A := by
   exact WP.mono (field_refinement cert hs hb) fun _ ⟨_,⟨hk,hi,ha⟩,he,kt⟩ =>
-    ⟨(Forward.transfer_post he kt hk hi).1,(Forward.transfer_post he kt hk hi).2,ha⟩
+    have h := Forward.transfer_post (M := K.M) he kt hk hi
+    ⟨h.1,h.2,ha⟩
 
 /-- The forwarded code realizes the ordinary field compiler contract. -/
 theorem field_ok {ops : List FOp} (cert : FieldCase ops)

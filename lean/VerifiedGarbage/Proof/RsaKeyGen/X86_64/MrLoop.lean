@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWin
 import VerifiedGarbage.Proof.RsaKeyGen.Bits
 import all Init.Data.Array.Basic
@@ -28,6 +29,27 @@ open VG.Proof.MlKem.X86_64 VG.Proof.RsaKeyGen
 
 /-- What the exponentiation changes. -/
 def expRanges (w : Nat) : List (Nat × Nat) := winRanges w ++ [(8 * kWords, 8)]
+
+/-- `expRanges`'s ranges, in the header and in the arrays. -/
+theorem expRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(248, 8), (176, 8), (208, 8), (224, 8), (216, 8)]
+    [(2, 1), (3, 1), (6, 1), (5, 1)] (expRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false, List.cons_append, List.nil_append,
+    expRanges, winRanges, Public.aAcc, Public.aTmp, Public.aXm, Public.aY, aAcc, aTmp, aXm, aY, kT0, sFn, kG, kV, kWords, kBits, kFlag, kPlen, kT1, kT2] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(5, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+  · exact .inl (by decide)
 
 theorem expRanges_low (w : Nat) : ∀ r ∈ expRanges w, r.1 + r.2 ≤ slot w 8 := by
   intro r hr

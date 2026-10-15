@@ -38,11 +38,11 @@ theorem wipeStores_run (R : Region) (u : State) (hR : R ∈ u.wr) (off : Nat) : 
         some ({ u with mem := m' }, wipeTrace (u.gpr .esp) off words) ∧ Frame [R] u.mem m'
   | 0, _ => ⟨u.mem, rfl, Frame.refl _ _⟩
   | w + 1, hc => by
-    obtain ⟨m', he, hf⟩ := wipeStores_run R u hR off w fun k hk => hc k (by omega)
+    obtain ⟨m', he, hf⟩ := wipeStores_run R u hR off w fun k hk => hc k (by omega_using [hk])
     have hin : InRegions u.wr ((u.gpr .esp + BitVec.ofNat 32 (off + 4 * w)).setWidth 64) 4 :=
-      ⟨R, hR, hc w (by omega)⟩
+      ⟨R, hR, hc w (by omega_using [])⟩
     refine ⟨m'.writeW ((u.gpr .esp + BitVec.ofNat 32 (off + 4 * w)).setWidth 64) (u.gpr .ecx), ?_,
-      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega))⟩
+      hf.writeW (List.mem_singleton_self _) _ (hc w (by omega_using []))⟩
     rw [wipeStores_succ, execBlock_append, he]
     simp only [Option.bind_some, execBlock, isa, exec, State.store32, State.ea, hin, ↓reduceIte,
       Option.map_some, addrs, List.map_cons, List.map_nil, List.append_nil, wipeTrace,
@@ -117,7 +117,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     · exact hnsp i hi
     · exact wipe_noSp _ _ i hi
   have hd' : stackUse (.seq c (.block (wipe (8 + 4 * slots sig) words)) : Prog isa) ≤ stack := by
-    simp only [stackUse]; omega
+    simp only [stackUse]; omega_using [hd]
   -- The buffer, in 64 bits, from the frame's base `E - bytes`.
   have hR : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s →
       (s.gpr .esp - BitVec.ofNat 32 bytes + BitVec.ofNat 32 (8 + 4 * slots sig)).setWidth 64 =
@@ -126,7 +126,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     have hs' := hs
     rw [pre_stack hl] at hs'
     obtain ⟨⟨hst, -⟩, -⟩ := hs'
-    exact ⟨sub_add_setWidth (by omega) (by omega), by omega⟩
+    exact ⟨sub_add_setWidth (by omega_using [hb]) (by omega_using [hst]), by omega_using [hst]⟩
   -- The buffer is below the stack the contract without it reserves, so apart
   -- from its buffers.
   have hdisj : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s →
@@ -140,9 +140,9 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     have hbelow : (⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 (stack + bytes), stack + bytes⟩ :
         Region) ∈ (⟨(s.gpr .esp).setWidth 64, 4⟩ :: stackBelow ((s.gpr .esp).setWidth 64)
           (stack + bytes) : List Region) := by
-      rw [show stack + bytes = (stack + bytes - 1) + 1 by omega]; simp [stackBelow]
+      rw [show stack + bytes = (stack + bytes - 1) + 1 by omega_using [hb]]; simp [stackBelow]
     exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right
-      (below_sub' _ (by omega) (by omega))
+      (below_sub' _ (by omega_using []) (by omega_using [hb]))
   -- Every run is `setArgs`, then the code's run from `narrow`, then the wipe.
   have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃ s₄,
       Exec isa c (narrow sig e n bytes wa s) t s₃ ∧
@@ -168,8 +168,8 @@ theorem Verified.stackScratchWiped {c : Prog isa}
       rw [hwr₃, ← hR64]
       simp [narrow, oldRegions]
     obtain ⟨m', hblk, hfr⟩ := wipe_run _ s₃ (8 + 4 * slots sig) words hmem (fun k hk => by
-      rw [hesp₃, sub_add_setWidth (by omega) (by omega)]
-      exact Offset.contains_below _ (by omega) (by omega) (by omega))
+      rw [hesp₃, sub_add_setWidth (by omega_using [hb, hw, hk]) (by omega_using [h0])]
+      exact Offset.contains_below _ (by omega_using []) (by omega_using [hw, hk]) (by omega_using [h0]))
     have he' := Exec.seq he (Exec.block hblk)
     have ha' : abiPreserved (narrow sig e n bytes wa s) { s₃.setReg .ecx 0 with mem := m' } := by
       refine ⟨fun q hq => ?_, ?_⟩
@@ -177,15 +177,15 @@ theorem Verified.stackScratchWiped {c : Prog isa}
         simp only [State.setReg, hq', ↓reduceIte]
         exact ha.1 q hq
       · show m'.readW _ 32 = _
-        rw [hesp, Taint.sub_setWidth (by omega)]
+        rw [hesp, Taint.sub_setWidth (by omega_using [h0])]
         rw [hfr.readW (r := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 bytes, 4⟩)
           (Region.contains_self _ _) (fun r' hr' => by
             simp only [List.mem_singleton] at hr'; subst hr'
             exact below_disjoint _ bytes (a := bytes) (b := bytes - (8 + 4 * slots sig))
-              (by omega) (by omega) (.inl (by omega)) (by omega) (by omega))
+              (by omega_using []) (by omega_using []) (.inl (by omega_using [hb])) (by omega_using []) (by omega_using [hb]))
           (by decide)]
         have h2 := ha.2
-        rwa [hesp, Taint.sub_setWidth (by omega)] at h2
+        rwa [hesp, Taint.sub_setWidth (by omega_using [h0])] at h2
     obtain ⟨hex, habi, hm, heax, hedx⟩ := withStackScratch_run hb hnsp' hd' hs he' ha'
     refine ⟨t, s₃, _, he, hq, hfr, hesp₃, hex, habi, hm, ?_, ?_⟩
     · rw [heax]; simp [State.setReg]

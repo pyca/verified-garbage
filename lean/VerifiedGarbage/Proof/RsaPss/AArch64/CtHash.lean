@@ -220,7 +220,7 @@ theorem ctHashWith_all (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
   have x19₄ : u4.gpr .x19 = off S oSt := by rw [k4.get .x19]; exact h19₃
   have iv4 : hH.md.stateAt u4.mem (off S oSt) = hH.iv := by
     rw [stateAt_rep hH R1 R4 (by omega_arith) fun i hi => ?_, iv1]
-    simp (disch := omega_arith) only [LenLoop.vLen, updL, v80, ite_eq_right]
+    simp (disch := omega_arith) only [LenLoop.vLen, updL, v80, ↓ite_eq_right]
   -- Every block.
   refine WP.seq (WP.mono (compLoop_ok hH L4 R4 hlg.1 hlg.2 (by omega_arith) hnb hnbm x22₄ x19₄
     hNb4) fun u5 C => ?_)
@@ -253,9 +253,9 @@ theorem ctHashWith_all (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t 
   · have R6 := (show Rep u5.mem S (fun o => u5.mem (off S o)) from fun _ _ => rfl).writeBytes
       (o := oDig) (xs := hH.md.digest (hH.md.stateAt u5.mem (off S oSel))) (by omega_arith)
     rw [m6, R6 o (by omega_arith)]
-    simp (disch := omega_arith) only [updL, ite_eq_right]
+    simp (disch := omega_arith) only [updL, ↓ite_eq_right]
     rw [C.keep o (by omega_arith) (by unfold CompW; omega_arith), ← m1 o (by omega_arith) (by omega_arith)]
-    simp (disch := omega_arith) only [LenLoop.vLen, updL, v80, hH.md.lenBytes_length, ite_eq_right]
+    simp (disch := omega_arith) only [LenLoop.vLen, updL, v80, hH.md.lenBytes_length, ↓ite_eq_right]
   · intro msg hl hY
     subst hl
     rw [m6, bytesAt_writeBytes_take _ _ _ (by omega_arith) (by omega_arith), hsel, hH.hash, MdStream.Md.hash,

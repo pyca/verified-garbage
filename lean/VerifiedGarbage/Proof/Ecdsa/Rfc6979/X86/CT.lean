@@ -8,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -178,8 +180,8 @@ theorem hmacBlks {D B : Nat} (h : (D = 32 ∧ B = 64) ∨ (D = 48 ∧ B = 128) �
       TaintOk [.esp] (Cfg.hmacArgs₂ false B (Cfg.scr false .edx sMsg) (D + 1)) ∧
       TaintOk [.esp] (Cfg.hmacArgs₃ false B (D + 1) fK) := by
   rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
-  exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-    ⟨_, by taint_decide⟩⟩
+  exact ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩,
+    ⟨_, by native_taint_decide⟩⟩
 
 theorem blks (P : RfcHash) : Blks P.Q P.F.H.D P.F.H.B P.R.wide := by
   cases hw : P.R.wide
@@ -196,29 +198,29 @@ theorem blks (P : RfcHash) : Blks P.Q P.F.H.D P.F.H.B P.R.wide := by
       simp only [hQ, h, h'] <;>
       first
       | (exfalso; rw [hQ, h] at hQD; omega)
-      | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-          ⟨_, by taint_decide⟩⟩
+      | exact ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩,
+          ⟨_, by native_taint_decide⟩⟩
   · obtain ⟨-, hQ66, hD64, hB⟩ := P.sizesW hw
     rw [hQ66, hD64, hB]
-    exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    exact ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩,
+      ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩,
+      ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 /-! The blocks that depend on whether two `V`s make a candidate. -/
 
 theorem coreArgs_blk (wide : Bool) : TaintOk [.esp] (Cfg.coreArgs wide) := by
   cases wide
-  · exact ⟨_, by taint_decide⟩
-  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by native_taint_decide⟩
+  · exact ⟨_, by native_taint_decide⟩
 
 theorem wipe_blk (wide : Bool) : TaintOk [.esp] (Cfg.wipe wide) := by
   cases wide
-  · exact ⟨_, by taint_decide⟩
-  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by native_taint_decide⟩
+  · exact ⟨_, by native_taint_decide⟩
 
 theorem msgPtrs_blk (wide full : Bool) : TaintOk [.esp] (Cfg.msgPtrs wide full) := by
   cases wide <;> cases full
-  all_goals exact ⟨_, by taint_decide⟩
+  all_goals exact ⟨_, by native_taint_decide⟩
 
 /-- If two `V`s make a candidate: the digest for `core` and `V = 0x01…`,
 `K = 0x00…` (from `esp`, `digest` and `scratch`), `V` kept, and the
@@ -237,7 +239,7 @@ theorem wideBlks (hw : P.R.wide = true) : WideBlks P := by
   have e₃ : (cfgOf P).F.H.D = 64 := hD64
   have e₄ : (cfgOf P).sh = 7 := hsh
   refine ⟨?_, ?_, ?_⟩ <;> simp only [Cfg.coreDigest, Cfg.keepV, Cfg.candTop, Cfg.conv, e₁, e₂, e₃, e₄] <;>
-    exact ⟨_, by taint_decide⟩
+    exact ⟨_, by native_taint_decide⟩
 
 /-! ## The calls of HMAC's functions -/
 
@@ -426,7 +428,7 @@ theorem cand_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).cand fun _ _ => T
         (Offset.disjoint _ (by omega) (by omega) (by omega))) fun _ h => ⟨h.1, trivial⟩
     refine (two_wp (Ψ := fun _ _ _ _ => True) hmacV_ct fun _ _ _ _ hL hk hc _ =>
       WP.mono (hmacV_ok hL hk.2.2.1 hc) fun _ h => ⟨h.1, trivial⟩).seq ?_
-    refine (two_wp (Ψ := ScrIn) (two_blk [.esp] espOnly ⟨_, by taint_decide⟩) fun _ _ _ _ hL hk hc _ => by
+    refine (two_wp (Ψ := ScrIn) (two_blk [.esp] espOnly ⟨_, by native_taint_decide⟩) fun _ _ _ _ hL hk hc _ => by
       have ha := arg_ok hL hc (d := .edi) (by decide) (i := 3) (by omega)
       rw [hk.2.2.1, hw] at ha
       exact WP.mono ha fun _ h => ⟨h.ctx, h.val⟩).seq ?_
@@ -473,13 +475,13 @@ theorem tryOne_trace {i : Nat} :
     (two_blk [.esp] espOnly (coreArgs_blk _)) fun _ _ _ _ hL hk hc hi => try₂_ok hL hk hc hi).seq ?_
   refine (two_wp (Ψ := fun L _ m₀ u => P₃ P L m₀ i u) core_ct fun _ _ _ _ hL hk hc hi =>
     try₃_ok hL hk hc hi.1 hi.2).seq ?_
-  refine (two_wp (Ψ := fun L _ m₀ u => Mid P L m₀ i u) (two_blk [.esp] espOnly ⟨_, by taint_decide⟩)
+  refine (two_wp (Ψ := fun L _ m₀ u => Mid P L m₀ i u) (two_blk [.esp] espOnly ⟨_, by native_taint_decide⟩)
     fun _ _ _ _ hL hk hc hi => try₄_ok hL hk hc hi).seq ?_
   refine VG.RelCT.ite (fun _ _ ⟨_, _, _, hx, _, _, f₁, f₂⟩ => dec_two hx f₁ f₂) ?_ ?_
   · exact ((two_wp (Ψ := fun _ _ _ _ => True) rekey_ct fun _ _ _ _ hL hk hc _ =>
       WP.mono (rekey_ok hL (hok_of hk) hc) fun _ h => ⟨h.1, trivial⟩).seq
-      (two_blk [.esp] espOnly ⟨_, by taint_decide⟩)).mono (fun _ _ h => h.1) fun _ _ h => h
-  · exact (two_blk [.esp] espOnly ⟨_, by taint_decide⟩).mono (fun _ _ h => h.1) fun _ _ h => h
+      (two_blk [.esp] espOnly ⟨_, by native_taint_decide⟩)).mono (fun _ _ h => h.1) fun _ _ h => h
+  · exact (two_blk [.esp] espOnly ⟨_, by native_taint_decide⟩).mono (fun _ _ h => h.1) fun _ _ h => h
 
 /-- One candidate: both runs end, or both go on. -/
 theorem tryOne_ct {i : Nat} :
@@ -592,8 +594,8 @@ def Entered (P : RfcHash) (a b : State) : Prop :=
 
 theorem start_tk (wide : Bool) : TaintOk [.esp] (Cfg.save ++ Cfg.digestPtr wide) := by
   cases wide
-  · exact ⟨_, by taint_decide⟩
-  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by native_taint_decide⟩
+  · exact ⟨_, by native_taint_decide⟩
 
 theorem start_blk : RelCT isa (Entered P) (.block (Cfg.save ++ Cfg.digestPtr P.R.wide)) fun _ _ => True :=
   let ⟨_, h⟩ := start_tk P.R.wide

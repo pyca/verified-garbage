@@ -51,7 +51,7 @@ theorem cryptS_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
   have f₁ : Frame [⟨W + BitVec.ofNat 64 96, 16⟩] t.mem t₁.mem := by rw [hm₁]; exact Proof.Cmac.frame_store2 _ _ _
   have F₁ : Frame (cryR W SP D n) t.mem t₁.mem := f₁.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
-    exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by simp, Offset.sub W (by decide) (by decide)⟩
+    exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by mem_lit, Offset.sub W (by decide) (by decide)⟩
   have dD₁ : ∀ q ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region)], (⟨D, n⟩ : Region).Disjoint q := fun q hq => by
     simp only [List.mem_singleton] at hq; subst hq; exact hD.w.sub_right (Lay.wSub (by decide))
   have hicb : bytesAt t₁.mem (W + BitVec.ofNat 64 96) 16 = Spec.GcmSiv.initialCounter (bytesAt t.mem W 16) := by
@@ -96,9 +96,9 @@ theorem cryptS_ok (v : GcmImpl) (eb : Proof.Aes.X86_64.BlocksImpl) (wide : Bool)
   have F₄ : Frame (cryR W SP D n) t.mem t₄.mem := F₁.trans (Fd.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by simp, Offset.sub W (by decide) (by decide)⟩
-    · exact ⟨⟨D, n⟩, by simp, Region.sub_prefix (by omega_arith)⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 1768, 2048⟩, by simp, Offset.sub W (by decide) (by decide)⟩)
+    · exact ⟨⟨W + BitVec.ofNat 64 96, 48⟩, by mem_lit, Offset.sub W (by decide) (by decide)⟩
+    · exact ⟨⟨D, n⟩, by mem_lit, Region.sub_prefix (by omega_arith)⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 1768, 2048⟩, by mem_lit, Offset.sub W (by decide) (by decide)⟩)
   have hxl : (bytesAt t.mem D n).length = n := Proof.Cmac.bytesAt_length _ _ _
   have hx₄ : bytesAt t₄.mem D n = GcmSiv.ctrPart (Spec.GcmSiv.ctxCiph t.mem (W + BitVec.ofNat 64 248) R)
       (Spec.GcmSiv.initialCounter (bytesAt t.mem W 16)) (bytesAt t.mem D n) (16 * (16 * (n / 256))) := by
@@ -166,17 +166,18 @@ theorem hArgs_ok {K W SP : Addr} {R : Nat} {t : State} (E : Env K W SP t) {N A D
   have rL := E.perm.wR (show 240 + 8 ≤ 3816 by decide)
   have sD := S.data
   have sL := S.len
-  refine ⟨_, by srun [hArgs, Impl.AesGcmSiv.X86_64Stitch.groups, ptr, h15, rD, rL], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals try (simp only [mem_setReg, mem_arithFlags, mem_setFlags])
-  all_goals try (simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15, sD,
-    Proof.AesGcm.X86_64.imm_eq (show 80 < 2 ^ 31 by decide), Proof.AesGcm.X86_64.imm_eq (show 64 < 2 ^ 31 by decide),
-    Proof.AesGcm.X86_64.imm_eq (show 1512 < 2 ^ 31 by decide)]; done)
+  have i80 := Proof.AesGcm.X86_64.imm_eq (show 80 < 2 ^ 31 by decide)
+  have i64 := Proof.AesGcm.X86_64.imm_eq (show 64 < 2 ^ 31 by decide)
+  have i1512 := Proof.AesGcm.X86_64.imm_eq (show 1512 < 2 ^ 31 by decide)
+  refine ⟨_, by srun [hArgs, Impl.AesGcmSiv.X86_64Stitch.groups, ptr, h15, rD, rL],
+    by simp only [mem_setReg, mem_arithFlags, mem_setFlags], ?_, ?_, ?_, ?_, ?_, ?_,
+    by simp only [rd_setReg, rd_arithFlags, rd_setFlags], by simp only [wr_setReg, wr_arithFlags, wr_setFlags]⟩
+  iterate 4 simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15, sD, i80, i64,
+    i1512]
   · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, sL, shr8 _ hn]
-    exact dbl16 n hn
-  · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    all_goals simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
-  all_goals rfl
+    exact dbl16 n
+  · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
+    simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
 
 theorem hpre_of {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t)
     {D : Addr} {n : Nat} (hD : Buf K W SP t D n) (hDw : Covers [⟨D, n⟩] t.wr) (h256 : 256 ≤ n)
@@ -258,8 +259,8 @@ theorem hashS_ok (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t
       exact h.sub fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact ⟨_, by simp, fun _ h => h⟩
-        · exact ⟨_, by simp, fun _ h => h⟩
+        · exact ⟨_, by mem_lit, fun _ h => h⟩
+        · exact ⟨_, by mem_lit, fun _ h => h⟩
     · have h := Hp.y
       rw [show Stitch.yp t₃ = W + BitVec.ofNat 64 80 from rcx₃,
         show Stitch.hk t₃ = Spec.Gcm.blockAt t₂.mem (W + BitVec.ofNat 64 64) by

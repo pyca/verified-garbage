@@ -60,7 +60,7 @@ theorem expandKeyFrameSat_pre :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl
 
 theorem expandKey_framed :
     Verified Arm.target (Impl.StackScratch.Arm.withRegScratchWiped 64 .r3 12 Impl.Blowfish.Arm.expandKey)

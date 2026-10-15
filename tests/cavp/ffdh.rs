@@ -128,6 +128,15 @@ fn components_generation_and_padding() {
     // modulus-width left padding. This is an algebraic property, not a KAT.
     let params = Parameters::from_components(&p, &[2], None).unwrap();
     let key = PrivateKey::from_components(&params, &[4], &[2]).unwrap();
+    let mut padded_x = vec![0; p.len() + 7];
+    *padded_x.last_mut().unwrap() = 2;
+    let padded_key = PrivateKey::from_components(&params, &[4], &padded_x).unwrap();
+    assert_eq!(padded_key.private_component(), key.private_component());
+    padded_x[0] = 1;
+    assert_eq!(
+        PrivateKey::from_components(&params, &[4], &padded_x).unwrap_err(),
+        Error::InvalidKey
+    );
     let z = key.exchange(key.public_key()).unwrap();
     assert_eq!(z.len(), p.len());
     assert!(z[..z.len() - 1].iter().all(|&b| b == 0));
@@ -148,10 +157,18 @@ fn malformed_components_and_domains() {
     let mut even = p.clone();
     *even.last_mut().unwrap() &= 0xfe;
     assert!(Parameters::from_components(&even, &g, None).is_err());
-    for bad in [vec![], vec![1], p.clone()] {
+    for bad in [vec![], vec![1], p.clone(), vec![0xff; p.len() + 1]] {
         assert!(Parameters::from_components(&p, &bad, None).is_err());
     }
-    for bad in [vec![], vec![1], vec![2], vec![4], vec![9], p.clone()] {
+    for bad in [
+        vec![],
+        vec![1],
+        vec![2],
+        vec![4],
+        vec![9],
+        p.clone(),
+        vec![0xff; p.len() + 1],
+    ] {
         assert!(Parameters::from_components(&p, &g, Some(&bad)).is_err());
     }
     assert!(Parameters::from_components(&p, &[2], Some(&q)).is_err());

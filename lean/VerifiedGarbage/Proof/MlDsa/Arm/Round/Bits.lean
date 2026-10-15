@@ -16,6 +16,8 @@ public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 import Mathlib.Tactic.SplitIfs
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_high_bits` and `vg_mldsa_low_bits`
@@ -223,7 +225,7 @@ theorem ct {k : Contract isa} {c : Prog isa} (hpub : ∀ s₁ s₂, k.pub s₁ s
 
 theorem high_verified :
     Verified Arm.target Impl.MlDsa.Arm.Round.highBits (Spec.MlDsa.highBitsContract Arm.abi) := by
-  refine ⟨fun s hs => ?_, ct (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
+  refine ⟨fun s hs => ?_, ct (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · have hp := pre_high hs
     obtain ⟨t, s', he, hf, hsp, hk⟩ := bits_ok hp (B := hbBody) (F := bhb) fun g hg _ _ _ _ h0 h1 h2 iR oO => hbBody_ok h0 h1 h2 iR oO hg
     refine ⟨t, s', he, ⟨preserved_of hf, hsp⟩, ?_⟩
@@ -250,7 +252,7 @@ theorem high_verified :
 
 theorem low_verified :
     Verified Arm.target Impl.MlDsa.Arm.Round.lowBits (Spec.MlDsa.lowBitsContract Arm.abi) := by
-  refine ⟨fun s hs => ?_, ct (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
+  refine ⟨fun s hs => ?_, ct (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · have hp := pre_low hs
     obtain ⟨t, s', he, hf, hsp, hk⟩ := bits_ok hp (B := lbBody) (F := blb)
       fun g hg _ _ _ _ h0 h1 h2 iR oO => lbBody_ok h0 h1 h2 iR oO hg

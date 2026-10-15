@@ -110,7 +110,7 @@ theorem ecb_step {S D B : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEn
   have sR : (⟨S, 4168⟩ : Region) ∈ u.rd ++ u.wr := by rw [hrdw]; exact List.mem_cons_self
   -- the block in
   obtain ⟨u₁, r₁, l₁, h₁, k₁, g₁, up₁⟩ := loadBlock_run u (wAt D k) I.rsi fun o ho =>
-    ⟨_, List.mem_append_right _ dR, by rw [Offset.add_add]; exact Offset.contains_base D (by omega) (by omega)⟩
+    ⟨_, List.mem_append_right _ dR, by rw [Offset.add_add]; exact Offset.contains_base D (by omega_arith) (by omega_arith)⟩
   apply WP.seq
   refine WP.of_runBlock ⟨u₁, r₁, ?_⟩
   have m₁ : u₁.mem = u.mem := by rw [up₁]
@@ -126,8 +126,8 @@ theorem ecb_step {S D B : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEn
       by rw [k₁ _ (by decide) (by decide), I.xmm _ (by decide), L.ones],
       by rw [k₁ _ (by decide) (by decide), I.xmm _ (by decide), L.sixteen],
       by rw [k₁ _ (by decide) (by decide), I.xmm _ (by decide), L.low]⟩, by decide, by decide, fun i hi => ?_⟩
-    · rw [rdw₁]; exact ⟨_, sR, Offset.contains_base S (by omega) (by omega)⟩
-    · rw [rdw₁]; exact ⟨_, sR, Offset.contains_base S (by omega) (by omega)⟩
+    · rw [rdw₁]; exact ⟨_, sR, Offset.contains_base S (by omega_arith) (by omega_arith)⟩
+    · rw [rdw₁]; exact ⟨_, sR, Offset.contains_base S (by omega_arith) (by omega_arith)⟩
   apply WP.seq
   refine WP.mono (cipher_run CE up) fun u₂ ⟨c₁, c₂, O⟩ => ?_
   have up₂ : Upd u u₂ := Upd.trans O.upd up₁
@@ -135,13 +135,13 @@ theorem ecb_step {S D B : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEn
   have m₂ : u₂.mem = u.mem := by rw [up₂]
   have gu : ∀ g, g ≠ .rax → g ≠ .r8 → g ≠ .r9 → g ≠ .r10 → g ≠ .r11 → u₂.gpr g = u.gpr g :=
     fun g h1 h2 h3 h4 h5 => by rw [O.gpr _ h1 h2 h3 h4 h5, g₁ _ h5]
-  have subK : Region.Sub ⟨wAt D k, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega)
-  have subB : Region.Sub ⟨B, 16⟩ ⟨B, 256⟩ := Region.sub_prefix (by omega)
+  have subK : Region.Sub ⟨wAt D k, 8⟩ ⟨D, 8 * n⟩ := Offset.sub_base D (by omega_arith)
+  have subB : Region.Sub ⟨B, 16⟩ ⟨B, 256⟩ := Region.sub_prefix (by omega_arith)
   have dKB : (⟨wAt D k, 8⟩ : Region).Disjoint ⟨B, 16⟩ := (L.dataBuf.sub_left subK).sub_right subB
   have SE : StoreEnv (wAt D k) B u₂ := by
     refine ⟨by rw [gu _ (by decide) (by decide) (by decide) (by decide) (by decide), I.rsi],
       by rw [gu _ (by decide) (by decide) (by decide) (by decide) (by decide), I.rcx],
-      ⟨_, by rw [wr₂]; exact dR, Offset.contains_base D (by omega) (by omega)⟩,
+      ⟨_, by rw [wr₂]; exact dR, Offset.contains_base D (by omega_arith) (by omega_arith)⟩,
       ⟨_, by rw [wr₂]; exact bR, by simp [Region.Contains]⟩, sep_of_disjoint dKB, sep_of_disjoint dKB.symm⟩
   obtain ⟨u₃, r₃, b₃, f₃, g₃, e₃⟩ := storeBlock_run SE
   obtain ⟨u₄, r₄, a₄, k₄, x₄, up₄⟩ := add_imm_run u₃ .rsi 8
@@ -157,16 +157,16 @@ theorem ecb_step {S D B : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEn
     rw [m₅, blockAt_frame f₃ fun r hr => ?_, m₂]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact Offset.disjoint D (by omega) (by omega) (by omega)
-    · exact (L.dataBuf.sub_left (Offset.sub_base D (by omega))).sub_right subB
-  refine ⟨by omega, ?_, ?_, ?_, ?_,
+    · exact Offset.disjoint D (by omega_arith) (by omega_arith) (by omega_arith)
+    · exact (L.dataBuf.sub_left (Offset.sub_base D (by omega_arith))).sub_right subB
+  refine ⟨by omega_arith, ?_, ?_, ?_, ?_,
     fun g h1 h2 h3 h4 h5 h6 h7 => by rw [hgk _ h1 h2 h3 h4 h5 h6 h7, I.gpr _ h1 h2 h3 h4 h5 h6 h7], fun d hd => ?_, fun b hb => ?_, fun b h1 h2 => ?_, ?_, ?_, ?_⟩
   · rw [k₅ _ (by decide), a₄, g₃ _ (by decide), gu _ (by decide) (by decide) (by decide) (by decide) (by decide),
       I.rsi, wAt, wAt, show BitVec.signExtend 64 (8 : BitVec 32) = BitVec.ofNat 64 8 from rfl, Offset.add_add]
     congr 2
   · rw [a₅, k₄ _ (by decide), g₃ _ (by decide),
       gu _ (by decide) (by decide) (by decide) (by decide) (by decide), I.rdx]
-    apply BitVec.eq_of_toNat_eq; simp; omega
+    apply BitVec.eq_of_toNat_eq; simp; omega_arith
   · rw [hgk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), I.rdi]
   · rw [hgk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), I.rcx]
   · rw [x₅, x₄, show u₃.xmm = u₂.xmm by rw [e₃], O.xmm _ hd, k₁ _ (fun e => hd (by rw [e]; decide))
@@ -175,9 +175,9 @@ theorem ecb_step {S D B : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEn
     · subst hbk
       refine blockAt_eq _ _ _ fun i hi => ?_
       rw [m₅, b₃ i hi, c₁, c₂, l₁, h₁, show u₁.mem = u.mem from m₁, hK,
-        I.rest b (by omega) hk, blockOut_eq]
-    · rw [other b (by omega) hbk]; exact I.done b (by omega)
-  · rw [other b h2 (by omega)]; exact I.rest b (by omega) h2
+        I.rest b (by omega_arith) hk, blockOut_eq]
+    · rw [other b (by omega_arith) hbk]; exact I.done b (by omega_arith)
+  · rw [other b h2 (by omega_arith)]; exact I.rest b (by omega_arith) h2
   · rw [m₅]
     refine I.frame.trans ?_
     rw [← m₂]
@@ -190,7 +190,7 @@ theorem ecb_step {S D B : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEn
   · rw [show u₅.wr = u₂.wr by rw [up₅, up₄, e₃], up₂, I.wr]
   · rw [z₅, k₄ _ (by decide), g₃ _ (by decide), gu _ (by decide) (by decide) (by decide) (by decide) (by decide),
       I.rdx, show BitVec.ofNat 64 (n - k) - BitVec.signExtend 64 (1 : BitVec 32) = BitVec.ofNat 64 (n - (k + 1)) from by
-        apply BitVec.eq_of_toNat_eq; simp; omega]
+        apply BitVec.eq_of_toNat_eq; simp; omega_arith]
 
 /-- What ECB guarantees. -/
 structure EcbPost (up : Bool) (s s' : State) : Prop where
@@ -221,8 +221,8 @@ theorem ecb_correct (up : Bool) {s : State} (h : EcbPre s) : WP isa (ecb up) s (
   refine WP.of_runBlock ⟨s₁, by rw [runBlock_cons, exec_test, runStep_some, runBlock_nil], ?_⟩
   have g₁ : s₁.gpr = s₀.gpr := by simp only [s₁, gpr_arithFlags]
   have I0 : EInv S D B n up s₀ 0 s₁ := by
-    refine ⟨by omega, ?_, ?_, ?_, ?_, fun g _ _ _ _ _ _ _ => by rw [g₁], fun d _ => rfl,
-      fun b hb => by omega, fun b _ _ => rfl, Frame.refl _ _, rfl, rfl⟩
+    refine ⟨by omega_arith, ?_, ?_, ?_, ?_, fun g _ _ _ _ _ _ _ => by rw [g₁], fun d _ => rfl,
+      fun b hb => by omega_arith, fun b _ _ => rfl, Frame.refl _ _, rfl, rfl⟩
     · rw [g₁, g₀ _ (by decide)]; simp [wAt, D]
     · rw [g₁, g₀ _ (by decide)]; simp [n]
     · rw [g₁, g₀ _ (by decide)]
@@ -245,7 +245,7 @@ theorem ecb_correct (up : Bool) {s : State} (h : EcbPre s) : WP isa (ecb up) s (
     have hn : 0 < n := by
       have : s.gpr .rdx ≠ 0 := by simpa using hz
       have : (s.gpr .rdx).toNat ≠ 0 := fun e => this (BitVec.eq_of_toNat_eq e)
-      omega
+      omega_arith
     refine WP.mono (WP.loop (M := isa) (Q := EInv S D B n up s₀ n)
       (fun m u => ∃ k, k < n ∧ m = n - k ∧ EInv S D B n up s₀ k u) ?_ n s₁ ⟨0, hn, rfl, I0⟩) fin
     intro m u ⟨k, hk, hm, I⟩
@@ -257,8 +257,8 @@ theorem ecb_correct (up : Bool) {s : State} (h : EcbPre s) : WP isa (ecb up) s (
       refine ⟨by rw [ev, e, Nat.sub_self]; rfl, e ▸ I'⟩
     · right
       have nz : BitVec.ofNat 64 (n - (k + 1)) ≠ 0 := by
-        intro h'; have := congrArg BitVec.toNat h'; simp at this; omega
+        intro h'; have := congrArg BitVec.toNat h'; simp at this; omega_arith
       exact ⟨by rw [ev, show (BitVec.ofNat 64 (n - (k + 1)) == 0) = false from beq_false_of_ne nz]; rfl,
-        n - (k + 1), by omega, k + 1, by omega, rfl, I'⟩
+        n - (k + 1), by omega_arith, k + 1, by omega_arith, rfl, I'⟩
 
 end VG.Proof.Blowfish.X86_64

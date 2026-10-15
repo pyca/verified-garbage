@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA key generation on x86 (32-bit): after the samplers
@@ -213,20 +215,20 @@ theorem copies_piece {p : Params} (hF : PFacts p) :
   refine Piece.seq (B := fun s₀ s => KSamp p (p.k * p.ℓ) (p.ℓ + p.k) s₀ s ∧
       bytesAt s.mem (Buf.addr s₀ ⟨1, 0, 32⟩) 32 = rhoOf p s₀)
     (copyW_piece (Y := YK p) kS oHX 1 0 8 (by decide) (by decide) (by layd) (h₁ := .block []) (by kernel_rfl)
-      (by taint_decide) (fun _ _ _ h => h.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.keep hp (N := 0) (by omega)
+      (by native_taint_decide) (fun _ _ _ h => h.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.keep hp (N := 0) (by omega)
         ⟨by layd, by layd, fun _ _ => by layd, fun _ _ => by layd⟩ (fr1 fr) h', ?_⟩) ?_
   · show bytesAt s'.mem _ 32 = _
     rw [cp]; exact h.kb.rho
   refine Piece.seq (B := fun s₀ s => KSamp p (p.k * p.ℓ) (p.ℓ + p.k) s₀ s ∧
       bytesAt s.mem (Buf.addr s₀ ⟨1, 0, 32⟩) 32 = rhoOf p s₀ ∧ bytesAt s.mem (Buf.addr s₀ ⟨2, 0, 32⟩) 32 = rhoOf p s₀)
     (copyW_piece (Y := YK p) kS oHX 2 0 8 (by decide) (by decide) (by layd) (h₁ := .block []) (by kernel_rfl)
-      (by taint_decide) (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.1.keep hp (N := 0) (by omega)
+      (by native_taint_decide) (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.1.keep hp (N := 0) (by omega)
         ⟨by layd, by layd, fun _ _ => by layd, fun _ _ => by layd⟩ (fr1 fr) h',
         by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := ⟨1, 0, 32⟩) (by layd) (fr1 fr)]; exact h.2, ?_⟩) ?_
   · show bytesAt s'.mem _ 32 = _
     rw [cp]; exact h.1.kb.rho
   refine copyW_piece (Y := YK p) kS (oHX + 96) 2 32 8 (by decide) (by decide) (by layd) (h₁ := .block [])
-    (by kernel_rfl) (by taint_decide) (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' fr cp => ?_
+    (by kernel_rfl) (by native_taint_decide) (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' fr cp => ?_
   obtain ⟨⟨kb, A, S, hA, hS, hG⟩, e1, e2⟩ := h
   have k : ∀ b : Buf, (YK p).apart b [⟨2, 32, 32⟩] = true →
       bytesAt s'.mem (Buf.addr s₀ b) b.len = bytesAt s.mem (Buf.addr s₀ b) b.len :=

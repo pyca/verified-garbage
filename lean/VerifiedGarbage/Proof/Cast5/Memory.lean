@@ -75,7 +75,7 @@ theorem byteRev32_byte (x : BitVec 32) {j : Nat} (hj : j < 4) :
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
     decide_eq_true hi, Bool.true_and, byteRev32, getLsbD_cat4]
   rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl | rfl <;>
-    simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, Bool.true_and] <;>
+    simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, Bool.true_and] <;>
     exact congrArg _ (by omega)
 
 /-- Storing the byte-reversed halves `x`, `y` writes the block `(x, y)`. -/

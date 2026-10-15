@@ -28,6 +28,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 @[expose] public section
 
@@ -813,7 +815,7 @@ theorem block_correct (s : State) (hs : Proof.ChaCha20.blockArm.pre s) :
 
 theorem block_ct :
     ConstantTime isa Proof.ChaCha20.blockArm.pre Proof.ChaCha20.blockArm.pub Impl.ChaCha20.Arm.block := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1]) ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1]) ?_ (by native_taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

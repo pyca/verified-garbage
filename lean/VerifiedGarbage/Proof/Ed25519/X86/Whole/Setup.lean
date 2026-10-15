@@ -25,6 +25,21 @@ def valid (n : Nat) : Value → Prop
   | .caller i _ => i < n
   | _ => True
 
+/-- `valid`, as a test that `decide` evaluates. -/
+def validB (n : Nat) : Value → Bool
+  | .caller i _ => decide (i < n)
+  | _ => true
+
+/-- A literal value is valid: `valid_of (by decide)`. -/
+theorem valid_of {n : Nat} {v : Value} (h : validB n v = true) : valid n v := by
+  cases v with
+  | caller i d => exact (of_decide_eq_true h : i < n)
+  | _ => trivial
+
+/-- Every value of a literal list is valid: `valid_all (by decide)`. -/
+theorem valid_all {n : Nat} {vs : List Value} (h : vs.all (validB n) = true) : ∀ v ∈ vs, valid n v :=
+  fun v hv => valid_of (List.all_eq_true.mp h v hv)
+
 structure SetupStep (s t : State) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = s.wr

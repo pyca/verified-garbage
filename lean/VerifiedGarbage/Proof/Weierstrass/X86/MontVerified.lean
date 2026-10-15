@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P224
@@ -156,145 +158,145 @@ theorem sub_implies (M : Modulus) (hk : M.k ≤ 9) (hm : 0 < M.m) : (subX86 M).I
   sat := ⟨satState, sub_sat M hk hm⟩
 
 theorem p224p_mul_ct : ConstantTime isa (mulX86 p224p).pre (mulX86 p224p).pub (mulFn p224p.k p224p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p224p_mul_verified : Verified X86.target (mulFn p224p.k p224p.m) (p224p.mulContract X86.abi) :=
   Verified.of_correct (mul_x86 p224p_ok) p224p_mul_ct (mul_implies p224p p224p_ok.k9 p224p_ok.mul.m_pos)
 
 theorem p224p_add_ct : ConstantTime isa (addX86 p224p).pre (addX86 p224p).pub (addFn p224p.k p224p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p224p_add_verified : Verified X86.target (addFn p224p.k p224p.m) (p224p.addContract X86.abi) :=
   Verified.of_correct (add_x86 p224p_ok) p224p_add_ct (add_implies p224p p224p_ok.k9 p224p_ok.mul.m_pos)
 
 theorem p224p_sub_ct : ConstantTime isa (subX86 p224p).pre (subX86 p224p).pub (subFn p224p.k p224p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p224p_sub_verified : Verified X86.target (subFn p224p.k p224p.m) (p224p.subContract X86.abi) :=
   Verified.of_correct (sub_x86 p224p_ok) p224p_sub_ct (sub_implies p224p p224p_ok.k9 p224p_ok.mul.m_pos)
 
 theorem p224n_mul_ct : ConstantTime isa (mulX86 p224n).pre (mulX86 p224n).pub (mulFn p224n.k p224n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p224n_mul_verified : Verified X86.target (mulFn p224n.k p224n.m) (p224n.mulContract X86.abi) :=
   Verified.of_correct (mul_x86 p224n_ok) p224n_mul_ct (mul_implies p224n p224n_ok.k9 p224n_ok.mul.m_pos)
 
 theorem p224n_add_ct : ConstantTime isa (addX86 p224n).pre (addX86 p224n).pub (addFn p224n.k p224n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p224n_add_verified : Verified X86.target (addFn p224n.k p224n.m) (p224n.addContract X86.abi) :=
   Verified.of_correct (add_x86 p224n_ok) p224n_add_ct (add_implies p224n p224n_ok.k9 p224n_ok.mul.m_pos)
 
 theorem p224n_sub_ct : ConstantTime isa (subX86 p224n).pre (subX86 p224n).pub (subFn p224n.k p224n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p224n_sub_verified : Verified X86.target (subFn p224n.k p224n.m) (p224n.subContract X86.abi) :=
   Verified.of_correct (sub_x86 p224n_ok) p224n_sub_ct (sub_implies p224n p224n_ok.k9 p224n_ok.mul.m_pos)
 
 theorem p256p_mul_ct : ConstantTime isa (mulX86 p256p).pre (mulX86 p256p).pub (mulFn p256p.k p256p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p256p_mul_verified : Verified X86.target (mulFn p256p.k p256p.m) (p256p.mulContract X86.abi) :=
   Verified.of_correct (mul_x86 p256p_ok) p256p_mul_ct (mul_implies p256p p256p_ok.k9 p256p_ok.mul.m_pos)
 
 theorem p256p_add_ct : ConstantTime isa (addX86 p256p).pre (addX86 p256p).pub (addFn p256p.k p256p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p256p_add_verified : Verified X86.target (addFn p256p.k p256p.m) (p256p.addContract X86.abi) :=
   Verified.of_correct (add_x86 p256p_ok) p256p_add_ct (add_implies p256p p256p_ok.k9 p256p_ok.mul.m_pos)
 
 theorem p256p_sub_ct : ConstantTime isa (subX86 p256p).pre (subX86 p256p).pub (subFn p256p.k p256p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p256p_sub_verified : Verified X86.target (subFn p256p.k p256p.m) (p256p.subContract X86.abi) :=
   Verified.of_correct (sub_x86 p256p_ok) p256p_sub_ct (sub_implies p256p p256p_ok.k9 p256p_ok.mul.m_pos)
 
 theorem p256n_mul_ct : ConstantTime isa (mulX86 p256n).pre (mulX86 p256n).pub (mulFn p256n.k p256n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p256n_mul_verified : Verified X86.target (mulFn p256n.k p256n.m) (p256n.mulContract X86.abi) :=
   Verified.of_correct (mul_x86 p256n_ok) p256n_mul_ct (mul_implies p256n p256n_ok.k9 p256n_ok.mul.m_pos)
 
 theorem p256n_add_ct : ConstantTime isa (addX86 p256n).pre (addX86 p256n).pub (addFn p256n.k p256n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p256n_add_verified : Verified X86.target (addFn p256n.k p256n.m) (p256n.addContract X86.abi) :=
   Verified.of_correct (add_x86 p256n_ok) p256n_add_ct (add_implies p256n p256n_ok.k9 p256n_ok.mul.m_pos)
 
 theorem p256n_sub_ct : ConstantTime isa (subX86 p256n).pre (subX86 p256n).pub (subFn p256n.k p256n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p256n_sub_verified : Verified X86.target (subFn p256n.k p256n.m) (p256n.subContract X86.abi) :=
   Verified.of_correct (sub_x86 p256n_ok) p256n_sub_ct (sub_implies p256n p256n_ok.k9 p256n_ok.mul.m_pos)
 
 theorem p384p_mul_ct : ConstantTime isa (mulX86 p384p).pre (mulX86 p384p).pub (mulFn p384p.k p384p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p384p_mul_verified : Verified X86.target (mulFn p384p.k p384p.m) (p384p.mulContract X86.abi) :=
   Verified.of_correct (mul_x86 p384p_ok) p384p_mul_ct (mul_implies p384p p384p_ok.k9 p384p_ok.mul.m_pos)
 
 theorem p384p_add_ct : ConstantTime isa (addX86 p384p).pre (addX86 p384p).pub (addFn p384p.k p384p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p384p_add_verified : Verified X86.target (addFn p384p.k p384p.m) (p384p.addContract X86.abi) :=
   Verified.of_correct (add_x86 p384p_ok) p384p_add_ct (add_implies p384p p384p_ok.k9 p384p_ok.mul.m_pos)
 
 theorem p384p_sub_ct : ConstantTime isa (subX86 p384p).pre (subX86 p384p).pub (subFn p384p.k p384p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p384p_sub_verified : Verified X86.target (subFn p384p.k p384p.m) (p384p.subContract X86.abi) :=
   Verified.of_correct (sub_x86 p384p_ok) p384p_sub_ct (sub_implies p384p p384p_ok.k9 p384p_ok.mul.m_pos)
 
 theorem p384n_mul_ct : ConstantTime isa (mulX86 p384n).pre (mulX86 p384n).pub (mulFn p384n.k p384n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p384n_mul_verified : Verified X86.target (mulFn p384n.k p384n.m) (p384n.mulContract X86.abi) :=
   Verified.of_correct (mul_x86 p384n_ok) p384n_mul_ct (mul_implies p384n p384n_ok.k9 p384n_ok.mul.m_pos)
 
 theorem p384n_add_ct : ConstantTime isa (addX86 p384n).pre (addX86 p384n).pub (addFn p384n.k p384n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p384n_add_verified : Verified X86.target (addFn p384n.k p384n.m) (p384n.addContract X86.abi) :=
   Verified.of_correct (add_x86 p384n_ok) p384n_add_ct (add_implies p384n p384n_ok.k9 p384n_ok.mul.m_pos)
 
 theorem p384n_sub_ct : ConstantTime isa (subX86 p384n).pre (subX86 p384n).pub (subFn p384n.k p384n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p384n_sub_verified : Verified X86.target (subFn p384n.k p384n.m) (p384n.subContract X86.abi) :=
   Verified.of_correct (sub_x86 p384n_ok) p384n_sub_ct (sub_implies p384n p384n_ok.k9 p384n_ok.mul.m_pos)
 
 theorem p521p_mul_ct : ConstantTime isa (mulX86 p521p).pre (mulX86 p521p).pub (mulFn p521p.k p521p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p521p_mul_verified : Verified X86.target (mulFn p521p.k p521p.m) (p521p.mulContract X86.abi) :=
   Verified.of_correct (mul_x86 p521p_ok) p521p_mul_ct (mul_implies p521p p521p_ok.k9 p521p_ok.mul.m_pos)
 
 theorem p521p_add_ct : ConstantTime isa (addX86 p521p).pre (addX86 p521p).pub (addFn p521p.k p521p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p521p_add_verified : Verified X86.target (addFn p521p.k p521p.m) (p521p.addContract X86.abi) :=
   Verified.of_correct (add_x86 p521p_ok) p521p_add_ct (add_implies p521p p521p_ok.k9 p521p_ok.mul.m_pos)
 
 theorem p521p_sub_ct : ConstantTime isa (subX86 p521p).pre (subX86 p521p).pub (subFn p521p.k p521p.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p521p_sub_verified : Verified X86.target (subFn p521p.k p521p.m) (p521p.subContract X86.abi) :=
   Verified.of_correct (sub_x86 p521p_ok) p521p_sub_ct (sub_implies p521p p521p_ok.k9 p521p_ok.mul.m_pos)
 
 theorem p521n_mul_ct : ConstantTime isa (mulX86 p521n).pre (mulX86 p521n).pub (mulFn p521n.k p521n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p521n_mul_verified : Verified X86.target (mulFn p521n.k p521n.m) (p521n.mulContract X86.abi) :=
   Verified.of_correct (mul_x86 p521n_ok) p521n_mul_ct (mul_implies p521n p521n_ok.k9 p521n_ok.mul.m_pos)
 
 theorem p521n_add_ct : ConstantTime isa (addX86 p521n).pre (addX86 p521n).pub (addFn p521n.k p521n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p521n_add_verified : Verified X86.target (addFn p521n.k p521n.m) (p521n.addContract X86.abi) :=
   Verified.of_correct (add_x86 p521n_ok) p521n_add_ct (add_implies p521n p521n_ok.k9 p521n_ok.mul.m_pos)
 
 theorem p521n_sub_ct : ConstantTime isa (subX86 p521n).pre (subX86 p521n).pub (subFn p521n.k p521n.m) :=
-  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁.1 h₂.1 hp) (by native_taint_decide)
 
 theorem p521n_sub_verified : Verified X86.target (subFn p521n.k p521n.m) (p521n.subContract X86.abi) :=
   Verified.of_correct (sub_x86 p521n_ok) p521n_sub_ct (sub_implies p521n p521n_ok.k9 p521n_ok.mul.m_pos)

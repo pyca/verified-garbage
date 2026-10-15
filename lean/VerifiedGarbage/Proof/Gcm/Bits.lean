@@ -43,15 +43,8 @@ theorem getLsbD_cat8 (b0 b1 b2 b3 b4 b5 b6 b7 : BitVec 8) (i : Nat) :
   simp only [h56, ite_false, show ¬ i - 48 < 8 by omega]
 
 theorem getLsbD_byteRev64 (a : BitVec 64) (i : Nat) (hi : i < 64) :
-    (byteRev64 a).getLsbD i = a.getLsbD (8 * (7 - i / 8) + i % 8) := by
-  simp only [byteRev64]
-  rw [getLsbD_cat8]
-  simp only [BitVec.getLsbD_extractLsb']
-  rcases (by omega : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ (24 ≤ i ∧ i < 32) ∨
-    (32 ≤ i ∧ i < 40) ∨ (40 ≤ i ∧ i < 48) ∨ (48 ≤ i ∧ i < 56) ∨ 56 ≤ i) with
-    h | h | h | h | h | h | h | h <;>
-  simp (disch := omega) only [ite_eq_left, ite_eq_right] <;>
-  (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+    (byteRev64 a).getLsbD i = a.getLsbD (8 * (7 - i / 8) + i % 8) :=
+  VG.byteRev64_getLsbD a hi
 
 theorem byteRev64_byteRev64 (a : BitVec 64) : byteRev64 (byteRev64 a) = a := by
   apply BitVec.eq_of_getLsbD_eq

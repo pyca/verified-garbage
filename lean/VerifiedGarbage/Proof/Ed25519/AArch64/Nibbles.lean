@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ed25519.AArch64.WindowStep
 public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Ed25519.WindowNibble
@@ -42,8 +43,8 @@ theorem vbyte_read16 (m : Mem) (a : Addr) {e : Nat} (he : e < 16) :
     vbyte (m.read a 16) e = m (a + BitVec.ofNat 64 e) := by
   apply BitVec.eq_of_getLsbD_eq; intro r hr
   simp only [vbyte, BitVec.getLsbD_extractLsb', decide_eq_true hr, Bool.true_and]
-  rw [getLsbD_read m 16 a (8 * e + r) (by omega), show (8 * e + r) / 8 = e by omega,
-    show (8 * e + r) % 8 = r by omega]
+  rw [getLsbD_read m 16 a (8 * e + r) (by omega_arith), show (8 * e + r) / 8 = e by omega_arith,
+    show (8 * e + r) % 8 = r by omega_arith]
 
 theorem b16_lanes_getD (x : BitVec 128) {i : Nat} (hi : i < 16) :
     (VArr.b16.lanes x).getD i 0 = (vbyte x i).setWidth 128 := by
@@ -59,38 +60,38 @@ theorem pairs_length {α : Type} (f g : Nat → α) :
     ∀ k, ((List.range k).flatMap fun p => [f p, g p]).length = 2 * k
   | 0 => rfl
   | k + 1 => by
-    rw [List.range_succ, List.flatMap_append, List.length_append, pairs_length f g k]; simp; omega
+    rw [List.range_succ, List.flatMap_append, List.length_append, pairs_length f g k]; simp; omega_arith
 
 theorem getD_pairs {α : Type} (f g : Nat → α) (d : α) :
     ∀ (k e : Nat), e < 2 * k →
       ((List.range k).flatMap fun p => [f p, g p]).getD e d = if e % 2 = 0 then f (e / 2) else g (e / 2)
-  | 0, _, h => absurd h (by omega)
+  | 0, _, h => absurd h (by omega_arith)
   | k + 1, e, h => by
     rw [List.range_succ, List.flatMap_append, List.getD_eq_getElem?_getD]
     have hl := pairs_length f g k
     by_cases he : e < 2 * k
     · rw [List.getElem?_append_left (by rw [hl]; exact he), ← List.getD_eq_getElem?_getD,
         getD_pairs f g d k e he]
-    · rw [List.getElem?_append_right (by rw [hl]; omega), hl]
+    · rw [List.getElem?_append_right (by rw [hl]; omega_arith), hl]
       simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-      rcases (by omega : e = 2 * k ∨ e = 2 * k + 1) with rfl | rfl
+      rcases (by omega_arith : e = 2 * k ∨ e = 2 * k + 1) with rfl | rfl
       · simp
-      · simp [show (2 * k + 1) % 2 = 1 by omega, show (2 * k + 1) / 2 = k by omega]
+      · simp [show (2 * k + 1) % 2 = 1 by omega_arith, show (2 * k + 1) / 2 = k by omega_arith]
 
 theorem vbyte_zip1 (x y : BitVec 128) {e : Nat} (he : e < 16) :
     vbyte (VPermOp.eval .zip1 .b16 x y) e = if e % 2 = 0 then vbyte x (e / 2) else vbyte y (e / 2) := by
   simp only [VPermOp.eval, VArr.ofLanes]
   rw [vbyte_ofVBytes _ he, b16_lanes_length, show 16 / 2 = 8 from rfl,
-    getD_pairs _ _ _ 8 e (by omega)]
-  split <;> rw [b16_lanes_getD _ (by omega), setWidth_setWidth8]
+    getD_pairs _ _ _ 8 e (by omega_arith)]
+  split <;> rw [b16_lanes_getD _ (by omega_arith), setWidth_setWidth8]
 
 theorem vbyte_zip2 (x y : BitVec 128) {e : Nat} (he : e < 16) :
     vbyte (VPermOp.eval .zip2 .b16 x y) e =
       if e % 2 = 0 then vbyte x (8 + e / 2) else vbyte y (8 + e / 2) := by
   simp only [VPermOp.eval, VArr.ofLanes]
   rw [vbyte_ofVBytes _ he, b16_lanes_length, show 16 / 2 = 8 from rfl,
-    getD_pairs _ _ _ 8 e (by omega)]
-  split <;> rw [b16_lanes_getD _ (by omega), setWidth_setWidth8]
+    getD_pairs _ _ _ 8 e (by omega_arith)]
+  split <;> rw [b16_lanes_getD _ (by omega_arith), setWidth_setWidth8]
 
 /-! ## One block -/
 
@@ -114,15 +115,15 @@ theorem nib_lanes (x : BitVec 128) (v1 : BitVec 128) {e : Nat} (he : e < 32) :
     simp only [hi, vbyte_map2_b16 _ _ _ h]; exact (nib_byte _).2
   unfold nib
   split
-  · rw [vbyte_zip1 _ _ (by omega), Nat.mod_eq_of_lt (by assumption : e < 16)]
+  · rw [vbyte_zip1 _ _ (by omega_arith), Nat.mod_eq_of_lt (by assumption : e < 16)]
     split
-    · rw [hlo _ (by omega), ite_eq_right (by omega)]
-    · rw [hhi _ (by omega), ite_eq_left (by omega)]
-  · rw [vbyte_zip2 _ _ (by omega)]
-    rw [show 8 + e % 16 / 2 = e / 2 by omega]
+    · rw [hlo _ (by omega_arith), ite_eq_right (by omega_arith)]
+    · rw [hhi _ (by omega_arith), ite_eq_left (by omega_arith)]
+  · rw [vbyte_zip2 _ _ (by omega_arith)]
+    rw [show 8 + e % 16 / 2 = e / 2 by omega_arith]
     split
-    · rw [hlo _ (by omega), ite_eq_right (by omega)]
-    · rw [hhi _ (by omega), ite_eq_left (by omega)]
+    · rw [hlo _ (by omega_arith), ite_eq_right (by omega_arith)]
+    · rw [hhi _ (by omega_arith), ite_eq_left (by omega_arith)]
 
 theorem exec_ldrq {s : State} {t : VReg} {n : Reg} {o : Nat} (ho : o % 16 = 0 ∧ o < 65536)
     (h : InRegions (s.rd ++ s.wr) (s.gpr n + BitVec.ofNat 64 o) 16) :
@@ -150,14 +151,14 @@ theorem write16_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 128) (h : 
     Outside base d 16 m (m.write (off base d) 16 v) := by
   intro x hx
   apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
+  rw [Offset.lt_iff x base (by omega_arith)]
   simp only [ofs] at hx
-  omega
+  omega_arith
 
 theorem write16_at (m : Mem) (base : Addr) {d i : Nat} (v : BitVec 128) (hi : i < 16) : m.write (off base d) 16 v (off base (d + i)) = vbyte v i := by
   have e : off base (d + i) - off base d = BitVec.ofNat 64 i := by
     rw [off, off, ← Offset.add_add, Offset.add_sub_cancel_left]
-  simp only [Mem.write, e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), hi,
+  simp only [Mem.write, e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_arith), hi,
     ite_true, vbyte]
 
 /-- One block: the bytes at `P + src` on, as nibbles at `dst` on. -/
@@ -170,16 +171,16 @@ theorem nibBlock_ok {s : State} {base P : Addr} (hs : Scr s base) (hp : s.gpr .x
       Outside base dst 32 s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       t.sp = s.sp ∧ t.v .v7 = s.v .v7 := by
   have hn := hs.nowrap
-  have hw0 : InRegions s.wr (base + BitVec.ofNat 64 dst) 16 := ⟨_, hs.wr, contains_sc (by omega)⟩
-  have hw1 : InRegions s.wr (base + BitVec.ofNat 64 (dst + 16)) 16 := ⟨_, hs.wr, contains_sc (by omega)⟩
+  have hw0 : InRegions s.wr (base + BitVec.ofNat 64 dst) 16 := ⟨_, hs.wr, contains_sc (by omega_arith)⟩
+  have hw1 : InRegions s.wr (base + BitVec.ofNat 64 (dst + 16)) 16 := ⟨_, hs.wr, contains_sc (by omega_arith)⟩
   apply WP.of_runBlock
   rw [nibBlock, runBlock_cons, exec_ldrq ⟨hsa, hsb⟩ (by rw [hp]; exact hr), runStep_some]
   rw [runBlock_cons, exec_ushr4, runStep_some, runBlock_cons, exec_andv, runStep_some,
     runBlock_cons, exec_perm, runStep_some, runBlock_cons, exec_perm, runStep_some, runBlock_cons]
   simp only [RegUpd.v_setV, reduceCtorEq, ite_true, ite_false]
-  rw [exec_strq ⟨hda, by omega⟩ (by simp only [RegUpd.gpr_setV, RegUpd.wr_setV, hs.x0]; exact hw0),
+  rw [exec_strq ⟨hda, by omega_arith⟩ (by simp only [RegUpd.gpr_setV, RegUpd.wr_setV, hs.x0]; exact hw0),
     runStep_some, runBlock_cons,
-    exec_strq ⟨by omega, by omega⟩ (by simp only [RegUpd.gpr_setV, RegUpd.wr_setV, hs.x0]; exact hw1),
+    exec_strq ⟨by omega_arith, by omega_arith⟩ (by simp only [RegUpd.gpr_setV, RegUpd.wr_setV, hs.x0]; exact hw1),
     runStep_some, runBlock_nil]
   refine ⟨_, rfl, ?_⟩
   simp only [RegUpd.v_setV, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV,
@@ -187,17 +188,17 @@ theorem nibBlock_ok {s : State} {base P : Addr} (hs : Scr s base) (hp : s.gpr .x
   refine ⟨fun e he => ?_, ?_, trivial, trivial, trivial, trivial, trivial⟩
   · have hl := nib_lanes (s.mem.read (off P src) 16) (s.v .v1) he
     simp only at hl
-    rw [vbyte_read16 _ _ (by omega), Offset.add_add] at hl
+    rw [vbyte_read16 _ _ (by omega_arith), Offset.add_add] at hl
     by_cases h16 : e < 16
-    · rw [write16_outside _ base _ (by omega) _ (Or.inl (by rw [ofs_off' base (by omega)]; omega)),
+    · rw [write16_outside _ base _ (by omega_arith) _ (Or.inl (by rw [ofs_off' base (by omega_arith)]; omega_arith)),
         write16_at _ base _ h16]
       rw [ite_eq_left h16, Nat.mod_eq_of_lt h16] at hl
       exact hl
-    · rw [show dst + e = dst + 16 + (e - 16) by omega, write16_at _ base _ (by omega)]
-      rw [ite_eq_right h16, show e % 16 = e - 16 by omega] at hl
+    · rw [show dst + e = dst + 16 + (e - 16) by omega_arith, write16_at _ base _ (by omega_arith)]
+      rw [ite_eq_right h16, show e % 16 = e - 16 by omega_arith] at hl
       exact hl
   · intro x hx
-    rw [write16_outside _ base _ (by omega) _ (by omega), write16_outside _ base _ (by omega) _ (by omega)]
+    rw [write16_outside _ base _ (by omega_arith) _ (by omega_arith), write16_outside _ base _ (by omega_arith) _ (by omega_arith)]
 
 theorem nib_congr (b : Byte) {e e' : Nat} (h : e % 2 = e' % 2) : nib b e = nib b e' := by
   simp only [nib, h]
@@ -217,29 +218,29 @@ theorem nibBlocks_ok {s : State} {base P : Addr} (hs : Scr s base) (hp : s.gpr .
   have hn := hs.nowrap
   induction n generalizing s with
   | zero =>
-    exact WP.block_nil ⟨fun e he => by omega, Outside.refl _ _ _ _, rfl, rfl, rfl, rfl, rfl⟩
+    exact WP.block_nil ⟨fun e he => by omega_arith, Outside.refl _ _ _ _, rfl, rfl, rfl, rfl, rfl⟩
   | succ n ih =>
     rw [nibBlocks, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
       List.append_nil, WP.block_append_iff]
-    refine WP.mono (ih hs hp h7 (by omega) (by omega) (fun q hq => hr q (by omega))
-      (fun i hi => by have := hf i (by omega); omega)) fun t ⟨tv, tm, tg, tr, tw, tsp, t7⟩ => ?_
+    refine WP.mono (ih hs hp h7 (by omega_arith) (by omega_arith) (fun q hq => hr q (by omega_arith))
+      (fun i hi => by have := hf i (by omega_arith); omega_arith)) fun t ⟨tv, tm, tg, tr, tw, tsp, t7⟩ => ?_
     have ht : Scr t base := ⟨by rw [tg]; exact hs.x0, by rw [tw]; exact hs.wr, hs.nowrap⟩
-    refine WP.mono (nibBlock_ok (P := P) ht (by rw [tg]; exact hp) (by rw [t7]; exact h7) (by omega) (by omega)
-      (by omega) (by omega) (by rw [tr, tw]; exact hr n (by omega)))
+    refine WP.mono (nibBlock_ok (P := P) ht (by rw [tg]; exact hp) (by rw [t7]; exact h7) (by omega_arith) (by omega_arith)
+      (by omega_arith) (by omega_arith) (by rw [tr, tw]; exact hr n (by omega_arith)))
       fun u ⟨uv, um, ug, ur, uw, usp, u7⟩ => ?_
     refine ⟨fun e he => ?_, fun x hx => ?_, ug.trans tg, ur.trans tr, uw.trans tw, usp.trans tsp,
       u7.trans t7⟩
     · by_cases h : e < 32 * n
-      · rw [um _ (Or.inl (by rw [ofs_off' base (by omega)]; omega))]
+      · rw [um _ (Or.inl (by rw [ofs_off' base (by omega_arith)]; omega_arith))]
         exact tv e h
-      · obtain ⟨e', rfl⟩ : ∃ e', e = 32 * n + e' := ⟨e - 32 * n, by omega⟩
-        have hv := uv e' (by omega)
-        rw [show dst + 32 * n + e' = dst + (32 * n + e') by omega,
-          show src + 16 * n + e' / 2 = src + (32 * n + e') / 2 by omega,
-          tm _ (by have := hf ((32 * n + e') / 2) (by omega); omega)] at hv
+      · obtain ⟨e', rfl⟩ : ∃ e', e = 32 * n + e' := ⟨e - 32 * n, by omega_arith⟩
+        have hv := uv e' (by omega_arith)
+        rw [show dst + 32 * n + e' = dst + (32 * n + e') by omega_arith,
+          show src + 16 * n + e' / 2 = src + (32 * n + e') / 2 by omega_arith,
+          tm _ (by have := hf ((32 * n + e') / 2) (by omega_arith); omega_arith)] at hv
         rw [hv]
-        exact nib_congr _ (by omega)
-    · rw [um x (by omega), tm x (by omega)]
+        exact nib_congr _ (by omega_arith)
+    · rw [um x (by omega_arith), tm x (by omega_arith)]
 
 /-! ## The scalars -/
 
@@ -270,7 +271,7 @@ theorem loadPointerV_ok {s : State} {base : Addr} (hs : Scr s base) (r : Reg) (d
 
 theorem nib_decode (m : Mem) (p : Addr) {n j : Nat} (hj : j < 2 * n) :
     nib (m (off p (j / 2))) j = Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m p n) / 16 ^ j % 16 := by
-  rw [decodeLE_nibble, nibbleOf, input_byte m p n (j / 2) (by omega), nib]
+  rw [decodeLE_nibble, nibbleOf, input_byte m p n (j / 2) (by omega_arith), nib]
 
 /-- `k`'s nibbles, from its pointer in `x2`. -/
 theorem kNibblesAt_ok {s : State} {base kp : Addr} (hs : Scr s base) (hp : s.gpr .x2 = kp)
@@ -286,14 +287,14 @@ theorem kNibblesAt_ok {s : State} {base kp : Addr} (hs : Scr s base) (hp : s.gpr
   have hb : Scr b base := hs.of_keeps kb (by decide)
   refine WP.mono (nibBlocks_ok (P := kp) hb (by rw [kb.gpr _ (by decide), hp]) b7 4 (by decide)
     (by decide) (by decide) (by decide)
-    (fun q hq => by rw [kb.rd, kb.wr, Nat.zero_add]; exact hkr (16 * q) (by omega))
-    (fun i hi => Or.inr (by rw [Nat.zero_add]; have := hkf i (by omega); omega)))
+    (fun q hq => by rw [kb.rd, kb.wr, Nat.zero_add]; exact hkr (16 * q) (by omega_arith))
+    (fun i hi => Or.inr (by rw [Nat.zero_add]; have := hkf i (by omega_arith); omega_arith)))
     fun c ⟨cv, cm, cg, cr, cw, csp, c7⟩ => ?_
   refine ⟨fun j hj => ?_, by rw [← kb.mem]; exact cm, fun r hr => ?_, by rw [cr, kb.rd],
     by rw [cw, kb.wr], by rw [csp, kb.sp], c7.trans b7⟩
-  · have hv := cv j (by omega)
+  · have hv := cv j (by omega_arith)
     rw [Nat.zero_add, kb.mem] at hv
-    rw [hv, nib_decode (n := 64) _ _ (by omega)]
+    rw [hv, nib_decode (n := 64) _ _ (by omega_arith)]
   · rw [cg, kb.gpr r (by simpa using hr)]
 
 /-- `S`'s nibbles, from its pointer, less 32, in `x2`. -/
@@ -307,10 +308,10 @@ theorem sNibblesAt_ok {s : State} {base sp : Addr} (hs : Scr s base) (hp : s.gpr
       Outside base 896 64 s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   have sp32 (d : Nat) : off (off sp 32) d = off sp (32 + d) := Offset.add_add ..
   refine WP.mono (nibBlocks_ok (P := sp) hs hp h7 2 (by decide) (by decide) (by decide) (by decide)
-    (fun q hq => by rw [← sp32]; exact hsr (16 * q) (by omega))
-    (fun i hi => Or.inr (by rw [← sp32]; have := hsf i (by omega); omega)))
+    (fun q hq => by rw [← sp32]; exact hsr (16 * q) (by omega_arith))
+    (fun i hi => Or.inr (by rw [← sp32]; have := hsf i (by omega_arith); omega_arith)))
     fun u ⟨uv, um, ug, ur, uw, usp, _⟩ => ⟨fun j hj => ?_, um, ug, ur, uw, usp⟩
-  rw [uv j (by omega), ← sp32, nib_decode (n := 32) _ _ (by omega)]
+  rw [uv j (by omega_arith), ← sp32, nib_decode (n := 32) _ _ (by omega_arith)]
 
 /-- The scalars' nibbles: `k`'s at byte 768 and `S`'s at byte 896. -/
 theorem nibbles_ok {s : State} {base kp sp : Addr} (hs : Scr s base)
@@ -340,16 +341,16 @@ theorem nibbles_ok {s : State} {base kp sp : Addr} (hs : Scr s base)
   have csg : c.mem.readW (off base 7944) 64 = sp :=
     (cm.word (d := 7944) (Or.inr (by decide)) (by decide)).trans (by rw [ka.mem]; exact hsg)
   have hsf' : ∀ i < 32, c.mem (off (off sp 32) i) = s.mem (off (off sp 32) i) := fun i hi => by
-    rw [cm _ (Or.inr (by have := hsf i hi; omega)), ka.mem]
+    rw [cm _ (Or.inr (by have := hsf i hi; omega_arith)), ka.mem]
   refine WP.mono (sNibblesAt_ok hd (dp.trans csg) (by rw [dv, c7])
     (fun d hd => by rw [kd.rd, kd.wr, cr, cw, ka.rd, ka.wr]; exact hsr d hd) hsf)
     fun u ⟨uv, um, ug, ur, uw, usp⟩ => ?_
   refine ⟨fun j hj => ?_, fun j hj => ?_, fun x hx => ?_, fun r h2 h8 => ?_, ?_, ?_, ?_⟩
-  · rw [um _ (Or.inl (by rw [ofs_off' base (by omega)]; omega)), kd.mem, cv j hj, ka.mem]
+  · rw [um _ (Or.inl (by rw [ofs_off' base (by omega_arith)]; omega_arith)), kd.mem, cv j hj, ka.mem]
   · rw [uv j hj, kd.mem]
     congr 3
     exact List.map_congr_left fun i hi => hsf' i (List.mem_range.mp hi)
-  · rw [um x (by omega), kd.mem, cm x (by omega), ka.mem]
+  · rw [um x (by omega_arith), kd.mem, cm x (by omega_arith), ka.mem]
   · rw [ug, kd.gpr r (by simpa using h2), cg r h8, ka.gpr r (by simpa using h2)]
   · rw [ur, kd.rd, cr, ka.rd]
   · rw [uw, kd.wr, cw, ka.wr]

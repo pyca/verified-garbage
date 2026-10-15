@@ -621,6 +621,37 @@ theorem _root_.VG.Code.noCalls_inline {c : Prog isa} (h : c.InlineOk = true) : c
     exact h.1
   | frame _ _ _ _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
 
+/-- An instruction that neither reads nor writes `rsp` does not write it. -/
+theorem _root_.VG.X86_64.Instr.clobbers_rsp_of_rspFree {i : Instr} (h : i.rspFree = true) :
+    Taint.clobbers i .rsp = false := by
+  cases i <;> simp_all [Instr.rspFree, Taint.clobbers, Taint.dstOf, @eq_comm _ Reg.rsp]
+
+/-- No instruction of inlined code writes `rsp`: what `Code.InlineOk` checks
+of the code outside the calls, and of the calls' instructions (`rspFree`). -/
+theorem _root_.VG.Code.clobbers_rsp_of_inlineOk {c : Prog isa} (h : c.InlineOk = true) :
+    ∀ i ∈ instrs c.inline, Taint.clobbers i .rsp = false := by
+  induction c with
+  | block l =>
+    simp only [Code.InlineOk, KList.all_eq, List.all_eq_true, Bool.not_eq_true'] at h
+    exact h
+  | seq a b iha ihb =>
+    simp only [Code.InlineOk, Bool.and_eq_true] at h
+    simp only [Code.inline, instrs, List.mem_append]
+    rintro i (hi | hi)
+    exacts [iha h.1 i hi, ihb h.2 i hi]
+  | ite _ t e iht ihe =>
+    simp only [Code.InlineOk, Bool.and_eq_true] at h
+    simp only [Code.inline, instrs, List.mem_append]
+    rintro i (hi | hi)
+    exacts [iht h.1 i hi, ihe h.2 i hi]
+  | loop b _ ih =>
+    simp only [Code.InlineOk] at h
+    exact ih h
+  | call _ b _ =>
+    simp only [Code.InlineOk, Bool.and_eq_true, Code.allInstrs_eq, List.all_eq_true] at h
+    exact fun i hi => Instr.clobbers_rsp_of_rspFree (h.2 i hi)
+  | frame _ _ _ _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
+
 /-- Code without calls is its own inlined form. -/
 theorem _root_.VG.Code.inline_of_noCalls {c : Prog isa} (h : c.noCalls = true) : c.inline = c := by
   induction c with

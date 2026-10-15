@@ -22,6 +22,8 @@ import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.MlKem.X86.Top
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86.Top
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message`: correct and constant time
@@ -73,7 +75,7 @@ theorem signRest_piece (hp : p ∈ params) {n : String} {f : Prog isa} (hf : Sig
       (.seq (muHash (.argOff 0 64)) (.seq (.block (setArgs signArgs)) (Impl.MlKem.X86.callRet rs5 n f))) := by
   have hk := skLen_ge hp
   refine Piece.seq ((muHash_piece (lay := slay p) (.argOff 0 64) (fun s₀ => arg s₀ 0 + BitVec.ofNat 32 64)
-    (fun s₀ => bytesAt s₀.mem ((arg s₀ 0 + BitVec.ofNat 32 64).setWidth 64) 64) (by taint_decide) (sShape hp).pubL
+    (fun s₀ => bytesAt s₀.mem ((arg s₀ 0 + BitVec.ofNat 32 64).setWidth 64) 64) (by native_taint_decide) (sShape hp).pubL
     (fun _ _ _ h => h) (fun _ _ => by show 5 ≤ 8; decide) (fun _ _ => rfl) rfl
     (fun s₀ s h₀ hc => hc.ctx.argOffV (by show 0 < 8; decide) 64)
     (fun s₀ s₀' h₀ h₀' hq => by rw [hq.args 0 (by decide)])

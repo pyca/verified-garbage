@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
+import VerifiedGarbage.Proof.Ffdh.WordPred
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -30,20 +31,6 @@ open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 theorem Outer.good {t : State} {B : Addr} {Z w : Nat} (h : Outer t B Z w) :
     Good t B Z w (word t.mem B (8 * sMinv)) ∧ slot w 8 ≤ Z :=
   ⟨⟨h.scr, h.x0, ⟨h.hw, rfl, h.harr⟩⟩, by have := h.room; unfold inner at this; omega_arith⟩
-
-/-- An odd number's low word less one. -/
-theorem wv_dec (m : Mem) (G : Addr) {d n : Nat} (hn : 1 ≤ n) (hodd : wv m G d n % 2 = 1)
-    (hd : d + 8 * n ≤ 2 ^ 64) :
-    wv (m.writeW (off G d) (word m G d - 1)) G d n = wv m G d n - 1 := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = 1 + k := ⟨n - 1, by omega_arith⟩
-  have o := writeW_outside m G (d := d) (word m G d - 1) (by omega_arith)
-  have hw : (word m G d).toNat % 2 = 1 := by
-    rw [← wv_mod64 _ _ _ hn, Nat.mod_mod_of_dvd _ (by decide)]; exact hodd
-  rw [wv_add, wv_add, o.wv (d := d + 8 * 1) (k := k) (Or.inr (by omega_arith)) (by omega_arith)]
-  have e : ∀ mm : Mem, wv mm G d 1 = (word mm G d).toNat := fun mm => by simp [wv]
-  rw [e, e, word_writeW_self, BitVec.toNat_sub, show (1 : BitVec 64).toNat = 1 from rfl]
-  have := (word m G d).isLt
-  omega_arith
 
 /-- `p − 1`'s first step: the outer array `aX` cleared. -/
 theorem Pa.zeroX {D : FD} {mi : BitVec 64} {t : State} (h : Pa D mi t) :

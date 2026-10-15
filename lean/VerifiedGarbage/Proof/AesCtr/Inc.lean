@@ -59,8 +59,8 @@ theorem ofNat_succ (x k : Nat) : ofNat x (k + 1) = ofNat (x / 256) k ++ [BitVec.
   · rw [List.getElem_append_left (by simpa using hi)]
     simp only [List.getElem_map, List.getElem_range, Nat.div_div_eq_div_mul]
     congr 2
-    rw [show k + 1 - 1 - i = (k - 1 - i) + 1 by omega_arith, Nat.pow_succ, Nat.mul_comm]
-  · rw [List.getElem_append_right (by simp; omega_arith)]
+    rw [show k + 1 - 1 - i = (k - 1 - i) + 1 by omega_using [hi], Nat.pow_succ, Nat.mul_comm]
+  · rw [List.getElem_append_right (by simp; omega_using [hi])]
     simp [show i = k by omega_arith]
 
 /-- `ofNat x k` is the `k`-byte representation of `x mod 256ᵏ`. -/
@@ -73,7 +73,7 @@ theorem toNat_ofNat (x k : Nat) : toNat (ofNat x k) = x % 256 ^ k := by
       Nat.zero_add, BitVec.toNat_ofNat]
     have e : x % 256 ^ (k + 1) = x % 256 + 256 * (x / 256 % 256 ^ k) := by rw [Nat.pow_succ', Nat.mod_mul]
     rw [e]
-    omega_arith
+    omega_using []
 
 theorem ofNat_add (x k j : Nat) : ofNat x (k + j) = ofNat (x / 256 ^ j) k ++ ofNat x j := by
   induction j generalizing x with
@@ -131,7 +131,7 @@ theorem bytesAt_writeW_sep (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {d n : 
   simp only [bytesAt, List.getElem_map, List.getElem_range, Mem.writeW]
   apply Mem.write_apply
   rw [Offset.add_add_eq _ rfl, Mem.sub_ofNat_toNat P (by omega_arith)]
-  omega_arith
+  omega_using [hd]
 
 theorem toNat_append_eq {m n : Nat} (x : BitVec m) (y : BitVec n) :
     (x ++ y).toNat = x.toNat * 2 ^ n + y.toNat := by
@@ -160,7 +160,7 @@ theorem rv64_digit (a : BitVec 64) {i : Nat} (hi : i < 8) :
     (rv64 a).toNat / 256 ^ (8 - 1 - i) % 256 = a.toNat / 256 ^ i % 256 := by
   rw [← toNat_byte a i, ← toNat_byte (rv64 a) (8 - 1 - i)]
   refine congrArg BitVec.toNat ?_
-  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp (disch := decide) only [rv64, Nat.reduceMul, Nat.reduceSub, extractLsb'_append_byte_lo,
     extractLsb'_append_byte_hi, BitVec.extractLsb'_eq_self]
@@ -186,7 +186,7 @@ theorem bytesAt_writeW_rv64 (m : Mem) (P : Addr) (v : BitVec 64) :
   simp only [Mem.writeW, Mem.write, e, show i < 64 / 8 by omega_arith, ↓reduceIte]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat, BitVec.setWidth_eq, toNat_byte]
-  have := rv64_digit v (i := 7 - i) (by omega_arith)
+  have := rv64_digit v (i := 7 - i) (by omega_using [])
   rw [show 8 - 1 - (7 - i) = i by omega_arith] at this
   rw [this]
 
@@ -204,8 +204,8 @@ theorem inc_words64 (m : Mem) (P : Addr) (hi lo : BitVec 64)
     bytesAt_rv64 m P, bytesAt_rv64 m (P + BitVec.ofNat 64 8), toNat_ofNat, toNat_ofNat, length_ofNat,
     length_ofNat, Nat.mod_eq_of_lt (BitVec.isLt _), Nat.mod_eq_of_lt (BitVec.isLt _)]
   congr 1
-  · exact ofNat_congr (by rw [hhi]; simp only [Nat.reducePow]; omega_arith)
-  · exact ofNat_congr (by rw [hlo]; simp only [Nat.reducePow]; omega_arith)
+  · exact ofNat_congr (by rw [hhi]; simp only [Nat.reducePow]; omega_using [])
+  · exact ofNat_congr (by rw [hlo]; simp only [Nat.reducePow]; omega_using [])
 
 /-! ## 32-bit words -/
 
@@ -217,7 +217,7 @@ theorem rv32_digit (a : BitVec 32) {i : Nat} (hi : i < 4) :
     (rv32 a).toNat / 256 ^ (4 - 1 - i) % 256 = a.toNat / 256 ^ i % 256 := by
   rw [← toNat_byte a i, ← toNat_byte (rv32 a) (4 - 1 - i)]
   refine congrArg BitVec.toNat ?_
-  rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
+  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;>
   simp (disch := decide) only [rv32, Nat.reduceMul, Nat.reduceSub, extractLsb'_append_byte_lo,
     extractLsb'_append_byte_hi, BitVec.extractLsb'_eq_self]
 
@@ -242,7 +242,7 @@ theorem bytesAt_writeW_rv32 (m : Mem) (P : Addr) (v : BitVec 32) :
   simp only [Mem.writeW, Mem.write, e, show i < 32 / 8 by omega_arith, ↓reduceIte]
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ofNat, BitVec.setWidth_eq, toNat_byte]
-  have := rv32_digit v (i := 3 - i) (by omega_arith)
+  have := rv32_digit v (i := 3 - i) (by omega_using [])
   rw [show 4 - 1 - (3 - i) = i by omega_arith] at this
   rw [this]
 
@@ -251,8 +251,8 @@ theorem bytesAt_writeW_sep' (m : Mem) (P : Addr) {w : Nat} (v : BitVec w) {a b n
     (hd : a + w / 8 ≤ b) (hn : b + n < 2 ^ 64) :
     bytesAt (m.writeW (P + BitVec.ofNat 64 a) v) (P + BitVec.ofNat 64 b) n = bytesAt m (P + BitVec.ofNat 64 b) n := by
   rw [show P + BitVec.ofNat 64 b = (P + BitVec.ofNat 64 a) + BitVec.ofNat 64 (b - a) from
-    (Offset.add_add_eq P (by omega_arith)).symm]
-  exact bytesAt_writeW_sep _ _ _ (by omega_arith) (by omega_arith)
+    (Offset.add_add_eq P (by omega_using [hd])).symm]
+  exact bytesAt_writeW_sep _ _ _ (by omega_using [hd]) (by omega_using [hn])
 
 /-- The carry out of a sum split across two strings. -/
 theorem carry_append (a b : List Byte) (x : Nat) :
@@ -305,11 +305,11 @@ theorem inc_words32 (m : Mem) (P : Addr) (w0 w1 w2 w3 : BitVec 32)
     simp only [toNat_append, toNat_ofNat, length_ofNat, List.length_append, Nat.reducePow, Nat.reduceAdd]
     simp only [Nat.reducePow] at b0 b1 b2 b3
     rw [Nat.mod_eq_of_lt b0, Nat.mod_eq_of_lt b1, Nat.mod_eq_of_lt b2, Nat.mod_eq_of_lt b3]
-    omega_arith
+    omega_using []
   rw [inc, hv, show (16 : Nat) = 4 + (4 + (4 + 4)) from rfl, ofNat_add, ofNat_add, ofNat_add]
   simp only [Nat.reducePow, Nat.reduceAdd] at *
-  exact congr (congrArg HAppend.hAppend (ofNat_congr (by omega_arith)))
-    (congr (congrArg HAppend.hAppend (ofNat_congr (by omega_arith)))
-      (congr (congrArg HAppend.hAppend (ofNat_congr (by omega_arith))) (ofNat_congr (by omega_arith))))
+  exact congr (congrArg HAppend.hAppend (ofNat_congr (by omega_using [h0])))
+    (congr (congrArg HAppend.hAppend (ofNat_congr (by omega_using [h1])))
+      (congr (congrArg HAppend.hAppend (ofNat_congr (by omega_using [h2]))) (ofNat_congr (by omega_using [h3]))))
 
 end VG.Proof.AesCtr

@@ -9,6 +9,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate on AArch64: the precondition, the zeros to `out`, and the ends
@@ -36,7 +37,7 @@ theorem subs_carry (a b : BitVec 64) :
     decide (2 ^ 64 ≤ a.toNat + (~~~b).toNat + true.toNat) = decide (b.toNat ≤ a.toNat) := by
   rw [BitVec.toNat_not, show true.toNat = 1 from rfl]
   have := b.isLt
-  exact decide_eq_decide.mpr (by omega)
+  exact decide_eq_decide.mpr (by omega_using [])
 
 /-- `geFlag`: `x5 := 1` if `x4 ≤ x3`, else 0. -/
 theorem geFlag_ok (s : State) :
@@ -96,7 +97,7 @@ structure KCtx (s : State) : Prop where
 
 theorem stackArgAddr_add (s : State) (i : Nat) :
     stackArgAddr s i = stackArgAddr s 0 + BitVec.ofNat 64 (8 * i) := by
-  simp only [stackArgAddr]; rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega
+  simp only [stackArgAddr]; rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using []
 
 theorem kctx_of {s : State} (h : candPre s) : KCtx s := by
   simp only [candPre] at h
@@ -108,31 +109,31 @@ theorem kctx_of {s : State} (h : candPre s) : KCtx s := by
   have hn := hs.nowrap
   have ha : ∀ j < 3, InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8 := fun j hj =>
     ⟨⟨stackArgAddr s 0, 24⟩, by rw [hrd]; simp,
-      by rw [stackArgAddr_add s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+      by rw [stackArgAddr_add s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
   have hsep : ∀ j < 3, ∀ m', Outside (stackArg s 1) 0 (8 * 32) s.mem m' →
       m'.readW (stackArgAddr s j) 64 = stackArg s j :=
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 24) (by omega) (by omega))
-      rw [stackArgAddr_add s j, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; omega))
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 24) (by omega_using [hj, hb]) (by omega_using []))
+      rw [stackArgAddr_add s j, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; omega_using [hsl, this]))
   have he := src_of_region (s := s) (B := stackArg s 1) (Z := (stackArg s 2).toNat * 8) (by rw [hrd]; simp)
-    (by omega) des
+    (by omega_using []) des
   have hp := src_of_region (s := s) (B := stackArg s 1) (Z := (stackArg s 2).toNat * 8) (by rw [hrd]; simp)
-    (by omega) dps
+    (by omega_using []) dps
   have hr := src_of_region (s := s) (B := stackArg s 1) (Z := (stackArg s 2).toNat * 8) (by rw [hrd]; simp)
-    (by omega) drs
+    (by omega_using []) drs
   have ho : OutUp s (stackArg s 1) ((stackArg s 2).toNat * 8) (s.gpr .x0) (s.gpr .x2) (s.gpr .x1).toNat := by
-    refine ⟨⟨⟨s.gpr .x2, 8⟩, by rw [hwr]; simp, ?_⟩, fun b hb => out_scr dUs (contains_byte _ (by omega) (by omega)),
-      fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega) (by omega)⟩,
-      fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega)), fun j hj b hb he => ?_⟩
-    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
-    · exact dOu _ (contains_byte _ (by omega) (by omega)) (by rw [he]; exact contains_byte _ (by omega) (by omega))
-  exact ⟨hk1, hk2, hk8, hl1, hl8, hpl, by omega, hs, ha, hsep, he, hp, hr, ho,
-    fun i hi j hj hh => dOe _ (contains_byte (s.gpr .x0) (i := j) (by omega) (by omega))
-      (by rw [← hh]; exact contains_byte _ (by omega) (by omega)),
-    fun i hi j hj hh => dOp _ (contains_byte (s.gpr .x0) (i := j) (by omega) (by omega))
-      (by rw [← hh]; exact contains_byte _ (by omega) (by omega)),
-    fun i hi j hj hh => dOr _ (contains_byte (s.gpr .x0) (i := j) (by omega) (by omega))
-      (by rw [← hh]; exact contains_byte _ (by omega) (by omega))⟩
+    refine ⟨⟨⟨s.gpr .x2, 8⟩, by rw [hwr]; simp, ?_⟩, fun b hb => out_scr dUs (contains_byte _ (by omega_using [hb]) (by omega_using [])),
+      fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega_using [hj]) (by omega_using [])⟩,
+      fun j hj => out_scr dOs (contains_byte _ (by omega_using [hj]) (by omega_using [])), fun j hj b hb he => ?_⟩
+    · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []
+    · exact dOu _ (contains_byte _ (by omega_using [hj]) (by omega_using [])) (by rw [he]; exact contains_byte _ (by omega_using [hb]) (by omega_using []))
+  exact ⟨hk1, hk2, hk8, hl1, hl8, hpl, by omega_using [hsl], hs, ha, hsep, he, hp, hr, ho,
+    fun i hi j hj hh => dOe _ (contains_byte (s.gpr .x0) (i := j) (by omega_using [hj]) (by omega_using []))
+      (by rw [← hh]; exact contains_byte _ (by omega_using [hi]) (by omega_using [])),
+    fun i hi j hj hh => dOp _ (contains_byte (s.gpr .x0) (i := j) (by omega_using [hj]) (by omega_using []))
+      (by rw [← hh]; exact contains_byte _ (by omega_using [hi]) (by omega_using [])),
+    fun i hi j hj hh => dOr _ (contains_byte (s.gpr .x0) (i := j) (by omega_using [hj]) (by omega_using []))
+      (by rw [← hh]; exact contains_byte _ (by omega_using [hi]) (by omega_using []))⟩
 
 /-! ## The ends -/
 
@@ -142,11 +143,11 @@ theorem finish_ok {s : State} {B : Addr} {Z : Nat} {up : Addr} {r : Nat} (hs : S
     WP isa (.block (finish r)) s fun t =>
       (t.gpr .x0 = BitVec.ofNat 64 r ∧ t.mem = s.mem.writeW up (s.gpr .x3)) ∧ Keep [.x0, .x2] s t := by
   have hn := hs.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
   refine WP.keep [.x0, .x2] ?_ rfl rfl rfl
   have hup : up + BitVec.ofNat 64 0 = up := off_zero up
   brun [finish, h0, hdr_enc (show kUsedP < 32 by decide), hl kUsedP (by decide), hU, hup, hw]
-  exact BitVec.eq_of_toNat_eq (by simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega)
+  exact BitVec.eq_of_toNat_eq (by simp [BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hr])
 
 /-- What an end leaves: the status `r` returned and `u` at `used`, the
 rest of memory as it was. -/
@@ -173,7 +174,7 @@ theorem finUsed_ok {s : State} {B : Addr} {Z : Nat} {up : Addr} {r u : Nat} (hs 
     (hU : word s.mem B (8 * kUsedP) = up) (hw : InRegions s.wr up 8) :
     WP isa (finUsed r) s fun t => FinPost s t up r u := by
   have hn := hs.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
   unfold finUsed
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = BitVec.ofNat 64 u ∧ t.mem = s.mem)

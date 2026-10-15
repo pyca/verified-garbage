@@ -8,6 +8,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_bit_unpack` and `vg_mldsa_unpack_t1`
@@ -136,23 +138,23 @@ theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Fin
             (sel 131072 (unpackLoop (buFin 131072) 18 4 9) (unpackLoop (buFin 524288) 20 2 5)))))) := by
   have hw : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀ s₀' → arg s₀ 3 = arg s₀' 3 := fun _ _ _ _ hq => hq.2.2.2.2.1
   refine Piece.seq (ldArgs_piece (k := 5) (by decide) (by decide) (by decide) (fun _ h => h.lay)
-    (fun _ _ _ _ hq => hq.1) (by taint_decide)) ?_
-  refine sel_piece (arg · 3) (by decide) hw (by taint_decide)
+    (fun _ _ _ _ hq => hq.1) (by native_taint_decide)) ?_
+  refine sel_piece (arg · 3) (by decide) hw (by native_taint_decide)
     (branch sh3 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 2) (by decide) e fun _ _ => by omega)
-      (by taint_decide) (by taint_decide)) ?_
-  refine sel_piece (arg · 3) (by decide) hw (by taint_decide)
+      (by native_taint_decide) (by native_taint_decide)) ?_
+  refine sel_piece (arg · 3) (by decide) hw (by native_taint_decide)
     (branch sh4 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 4) (by decide) e fun _ _ => by omega)
-      (by taint_decide) (by taint_decide)) ?_
-  refine sel_piece (arg · 3) (by decide) hw (by taint_decide)
+      (by native_taint_decide) (by native_taint_decide)) ?_
+  refine sel_piece (arg · 3) (by decide) hw (by native_taint_decide)
     (branch sh13 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 4095) (by decide) e fun _ _ => by omega)
-      (by taint_decide) (by taint_decide)) ?_
-  refine sel_piece (arg · 3) (by decide) hw (by taint_decide)
+      (by native_taint_decide) (by native_taint_decide)) ?_
+  refine sel_piece (arg · 3) (by decide) hw (by native_taint_decide)
     (branch sh18 (by decide) (fun s₀ h₀ ⟨_, e⟩ => pick h₀ (A := 131071) (by decide) e fun _ _ => by omega)
-      (by taint_decide) (by taint_decide)) ?_
+      (by native_taint_decide) (by native_taint_decide)) ?_
   refine (branch sh20 (B := 524288) (by decide) (fun s₀ h₀ ⟨⟨⟨⟨_, e₂⟩, e₄⟩, e₄₀⟩, e₁₃⟩ =>
       pick h₀ (A := 524287) (by decide) (by have := mem_bitPackParams h₀.ab; simp only [aN, bN] at this; omega)
         fun _ _ => by omega)
-      (by taint_decide) (by taint_decide)).mono (fun _ _ _ ⟨⟨h, _⟩, hx⟩ => ⟨h, hx⟩) fun _ _ _ h => h
+      (by native_taint_decide) (by native_taint_decide)).mono (fun _ _ _ ⟨⟨h, _⟩, hx⟩ => ⟨h, hx⟩) fun _ _ _ h => h
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')
     Impl.MlDsa.X86.Pack.bitUnpack :=
@@ -221,9 +223,9 @@ theorem sh10 : Shape 10 4 5 := ⟨by decide, by decide, rfl, by decide, by decid
 theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) Fin
     (.seq (.block (ldPtrs 0 1)) (unpackLoop t1Fin 10 4 5)) := by
   refine Piece.seq (ldPtrs_piece (k := 2) (by decide) (by decide) (fun _ h => h)
-    (fun _ _ _ _ hq => hq.1) (by taint_decide)) ?_
+    (fun _ _ _ _ hq => hq.1) (by native_taint_decide)) ?_
   refine (unpackLoop_piece t1Fin_ok sh10 vP fP (X := fun _ => True) (fun s₀ hp _ => ?_)
-    (fun _ _ _ _ hq => hq) (by taint_decide) (by taint_decide)).mono (fun _ _ _ h => h)
+    (fun _ _ _ _ hq => hq) (by native_taint_decide) (by native_taint_decide)).mono (fun _ _ _ h => h)
     (fun s₀ s hp ⟨⟨he, hc⟩, _⟩ => ⟨he, polyIs_of_toNat fun i hi => ?_⟩)
   · exact ⟨hp.inR_mem, hp.outR_mem, hp.i_o, hp.i_fit, hp.o_fit⟩
   · rw [hc i hi, inNum, hp.bytes_keep (by decide)]

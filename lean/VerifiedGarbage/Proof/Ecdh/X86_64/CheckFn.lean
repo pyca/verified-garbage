@@ -85,6 +85,31 @@ theorem keeps_of {C : CP} {W : List (Nat × Nat)}
   rw [show w.1 + (i - w.1) = i by omega] at this
   exact this.elim hown hout
 
+/-- Whether the `l` bytes at `a` lie in one range of the own working space
+or of a result's (`Own`, `Out`): what `keeps_of` asks of each written range,
+for the kernel to decide once per range rather than once per byte. -/
+def covers (C : CP) (a l : Nat) : Bool :=
+  [2, 37, 41, 42].any (fun j => Nat.ble (C.slot j) a && Nat.ble (a + l) (C.slot j + 8 * C.k)) ||
+    [34, 35, 38, 43].any (fun j => Nat.ble (C.slot j) a && Nat.ble (a + l) (C.slot j + 8 * C.k)) ||
+    (Nat.ble (Spec.Weierstrass.Mont.ownAt C.k) a && Nat.ble (a + l) 4096) ||
+    (Nat.ble C.flagAt a && Nat.ble (a + l) (C.flagAt + 8))
+
+theorem own_or_out_of_covers {C : CP} {a l : Nat} (h : covers C a l = true) :
+    ∀ j < l, C.Own (a + j) ∨ C.Out (a + j) := by
+  intro j hj
+  simp only [covers, Bool.or_eq_true, List.any_eq_true, Bool.and_eq_true, Nat.ble_eq] at h
+  unfold Spec.Weierstrass.CheckPoint.Curve.Own Spec.Weierstrass.CheckPoint.Curve.Out
+  rcases h with ((⟨i, hi, h1, h2⟩ | ⟨i, hi, h1, h2⟩) | ⟨h1, h2⟩) | ⟨h1, h2⟩
+  · exact .inl (.inl ⟨i, hi, by omega, by omega⟩)
+  · exact .inr (.inl ⟨i, hi, by omega, by omega⟩)
+  · exact .inl (.inr ⟨by omega, by omega⟩)
+  · exact .inr (.inr ⟨by omega, by omega⟩)
+
+/-- `keeps_of`, from each written range lying in one range of `Own` or `Out`. -/
+theorem keeps_of_covers {C : CP} {W : List (Nat × Nat)} (hW : W.all (fun w => covers C w.1 w.2) = true) :
+    ∀ (ws : Addr) (m m' : Mem), ws.toNat + 8192 ≤ 2 ^ 64 → Unch ws W m m' → C.Keeps ws m m' :=
+  keeps_of fun w hw => own_or_out_of_covers (List.all_eq_true.mp hW w hw)
+
 variable {c : Cfg} {C : CP}
 
 theorem slot_lt (hc : BaseCfgOk c) (A : Agree c C) {i : Nat} (hi : i < 45) : C.slot i < 2 ^ 32 := by
@@ -121,6 +146,20 @@ theorem valid_iff (W : Spec.Weierstrass.Curve) (C : CP) (h : W = C.W) (x y : Nat
   subst h
   unfold Spec.Weierstrass.CheckPoint.Curve.Valid
   rw [onCurve_iff']
+
+/-- `correct`'s `hv` and `hmx` from one walk of the body: the instructions
+`invFnX` adds around it load no MXCSR. -/
+theorem hv_hmx {body : Prog isa}
+    (h : body.allInstrs (fun i => !KeepReg.writesVec i && !loadsMxcsr i) = true) :
+    body.allInstrs (fun i => !KeepReg.writesVec i) = true ∧
+      (Cfg.invFnX body).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [Code.allInstrs_eq, List.all_eq_true, Bool.and_eq_true] at h ⊢
+  refine ⟨fun i hi => (h i hi).1, ?_⟩
+  simp only [Cfg.invFnX, instrs, List.mem_append]
+  rintro i (hi | hi | hi)
+  · revert i; decide
+  · exact (h i hi).2
+  · revert i; decide
 
 /-- `vg_<curve>_check_point`: the contract's postcondition and the ABI's
 registers, from its precondition. -/

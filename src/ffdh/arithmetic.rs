@@ -1,15 +1,10 @@
-//! Public modulus setup and fixed-schedule secret exponentiation.
-#[cfg(any(target_arch = "x86_64", test))]
-use crate::arch::ffdh::vg_ffdh_choose;
+//! Public arithmetic for parameter generation.
 use crate::arch::miller_rabin::vg_miller_rabin_round;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::miller_rabin::vg_miller_rabin_round_adx;
 use crate::arch::rsa_mont::vg_rsa_mont_mul;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_mont::{
-    VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_lazy_mont_mul, vg_rsa_lazy_mont_mul_adx,
-    vg_rsa_mont_mul_adx,
-};
+use crate::arch::rsa_mont::{VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_mont_mul_adx};
 use crate::cpu::{Features, detected};
 use crate::rsa::Scratch;
 use alloc::{vec, vec::Vec};
@@ -41,42 +36,16 @@ pub(super) fn minus_one(a: &[u8]) -> Vec<u8> {
     out
 }
 
-/// Public long reduction for q | p-1 checks, with a spare carry byte.
-#[cfg(target_arch = "x86_64")]
-pub(super) fn divides(q: &[u8], n: &[u8]) -> bool {
-    let modulus = scalar(q, q.len() + 1);
-    let mut rem = vec![0u8; modulus.len()];
-    for &byte in n {
-        for bit in (0..8).rev() {
-            let mut carry = (byte >> bit) & 1;
-            for v in rem.iter_mut().rev() {
-                let next = *v >> 7;
-                *v = (*v << 1) | carry;
-                carry = next;
-            }
-            if rem >= modulus {
-                let mut borrow = 0u16;
-                for (v, &m) in rem.iter_mut().rev().zip(modulus.iter().rev()) {
-                    let sub = m as u16 + borrow;
-                    borrow = u16::from((*v as u16) < sub);
-                    *v = (*v as u16).wrapping_sub(sub) as u8;
-                }
-            }
-        }
-    }
-    rem.iter().all(|&b| b == 0)
-}
-
 /// The Montgomery implementations FFDH calls. RSA's private-key routines
 /// have additional feature requirements that do not apply to these functions.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Backend {
+pub(super) enum Backend {
     Baseline,
     #[cfg(target_arch = "x86_64")]
     Adx,
 }
 impl Backend {
-    fn select(_features: Features) -> Self {
+    pub(super) fn select(_features: Features) -> Self {
         #[cfg(target_arch = "x86_64")]
         if _features.contains(VG_RSA_MONT_MUL_ADX_FEATURES) {
             return Self::Adx;
@@ -90,8 +59,6 @@ pub(super) struct Montgomery {
     modulus: Vec<u64>,
     r2: Vec<u64>,
     minv: u64,
-    #[cfg(any(target_arch = "x86_64", test))]
-    len: usize,
     backend: Backend,
 }
 impl Montgomery {
@@ -113,154 +80,15 @@ impl Montgomery {
             modulus,
             r2,
             minv: inv.wrapping_neg(),
-            #[cfg(any(target_arch = "x86_64", test))]
-            len: p.len(),
             backend: Backend::select(detected()),
         }
     }
-    #[cfg(any(target_arch = "x86_64", test))]
-    pub(super) fn power(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
-        let w = self.modulus.len();
-        let window = if exponent.len() >= 39 { 5 } else { 4 };
-        let mut ws = self.workspace(base, (1 << window) * w);
-        let at = |j| 32 + j * (w + 2);
-        let table_at = at(8);
-        // The table and the accumulator hold residues below 2^(64 w), not
-        // necessarily below p: the lazy multiplication takes and returns any
-        // such numbers, and `finish` reduces the result below p.
-        // All window powers, including Montgomery one, in wiped storage.
-        // The verified multiplication preserves this extension of the workspace.
-        for i in 0..w {
-            ws[table_at + i] = ws[at(5) + i];
-            ws[table_at + w + i] = ws[at(4) + i];
-            ws[at(6) + i] = ws[at(4) + i];
-        }
-        for digit in 2..(1 << window) {
-            if digit % 2 == 0 {
-                // Public table indices. Route even powers through squares
-                // of accumulator 5, which both targets' multiplications
-                // compute with their faster squaring.
-                ws.copy_within(
-                    table_at + (digit / 2) * w..table_at + (digit / 2 + 1) * w,
-                    at(5),
-                );
-                self.mul_lazy(&mut ws, 5, 5, 5);
-                ws.copy_within(at(5)..at(5) + w, at(6));
-            } else {
-                self.mul_lazy(&mut ws, 6, 6, 4);
-            }
-            ws.copy_within(at(6)..at(6) + w, table_at + digit * w);
-        }
-        ws.copy_within(table_at..table_at + w, at(5));
-        // Window size and bit positions depend only on the public encoding
-        // length. Every table entry is read in the same order, even for zero.
-        let bits = exponent.len() * 8;
-        for start in (0..bits).step_by(window) {
-            let width = window.min(bits - start);
-            let mut digit = 0u64;
-            for bit in start..start + width {
-                digit = (digit << 1) | u64::from((exponent[bit / 8] >> (7 - bit % 8)) & 1);
-            }
-            if start != 0 {
-                for _ in 0..width {
-                    self.mul_lazy(&mut ws, 5, 5, 5);
-                }
-            }
-            let (arrays, table) = ws.split_at_mut(table_at);
-            let selected = &mut arrays[at(6)..at(6) + w];
-            selected.fill(0);
-            for (candidate, row) in table.chunks_exact(w).enumerate() {
-                // Both values are below 32: the high bit of (x-1)
-                // is set exactly when x is zero.
-                let equal = (digit ^ candidate as u64).wrapping_sub(1) >> 63;
-                // SAFETY: choose has no preconditions. The opaque assembly
-                // call returns a mask; Rust sees an arbitrary u64, so the
-                // following AND/OR operations need no conditional select.
-                let mask = unsafe { vg_ffdh_choose(0, u64::MAX, equal) };
-                for (dst, &src) in selected.iter_mut().zip(row) {
-                    *dst |= src & mask;
-                }
-            }
-            if start == 0 {
-                // The first window replaces Montgomery one directly.
-                ws.copy_within(at(6)..at(6) + w, at(5));
-            } else {
-                self.mul_lazy(&mut ws, 5, 5, 6);
-            }
-        }
-        self.finish(&mut ws)
-    }
-
-    /// Variable-time exponentiation for public exponents only (e.g. subgroup
-    /// orders). Never use this for a private scalar or a secret prime exponent.
-    #[cfg(any(target_arch = "x86_64", test))]
-    pub(super) fn power_public(&self, base: &[u8], exponent: &[u8]) -> Vec<u8> {
-        let mut ws = self.power_public_montgomery(base, exponent);
-        self.finish(&mut ws)
-    }
-
-    #[cfg(any(target_arch = "x86_64", test))]
-    fn power_public_montgomery(&self, base: &[u8], exponent: &[u8]) -> Scratch {
-        let exponent = canonical(exponent);
-        let window = if exponent.len() > 32 {
-            5
-        } else if exponent.len() > 1 {
-            4
-        } else {
-            1
-        };
-        let w = self.modulus.len();
-        let at = |j| 32 + j * (w + 2);
-        let table_at = at(8);
-        let entries = 1 << (window - 1);
-        let mut ws = self.workspace(base, entries * w);
-        ws.copy_within(at(4)..at(4) + w, table_at);
-        if entries > 1 {
-            // Odd powers: base, base^3, ...; one square supplies base^2.
-            ws.copy_within(at(4)..at(4) + w, at(5));
-            self.mul(&mut ws, 5, 5, 5);
-            ws.copy_within(at(4)..at(4) + w, at(6));
-            ws.copy_within(at(5)..at(5) + w, at(4));
-            for entry in 1..entries {
-                self.mul(&mut ws, 6, 6, 4);
-                ws.copy_within(at(6)..at(6) + w, table_at + entry * w);
-            }
-            self.mul(&mut ws, 5, 7, 1);
-        }
-        let bit = |i: usize| (exponent[i / 8] >> (7 - i % 8)) & 1;
-        let bits = exponent.len() * 8;
-        let mut pos = 0;
-        while pos < bits {
-            if bit(pos) == 0 {
-                self.mul(&mut ws, 5, 5, 5);
-                pos += 1;
-                continue;
-            }
-            let mut end = (pos + window).min(bits);
-            while bit(end - 1) == 0 {
-                end -= 1;
-            }
-            let mut digit = 0usize;
-            for i in pos..end {
-                self.mul(&mut ws, 5, 5, 5);
-                digit = (digit << 1) | usize::from(bit(i));
-            }
-            // This address and the skipped multiplies depend only on the public
-            // exponent. Secret exponentiation above still scans the whole table.
-            let entry = table_at + (digit >> 1) * w;
-            ws.copy_within(entry..entry + w, at(6));
-            self.mul(&mut ws, 5, 5, 6);
-            pos = end;
-        }
-        ws
-    }
-
     /// One strong probable-prime witness, using the shared verified RSA round.
     /// `s` is the number of trailing zero bits of the public candidate minus one.
     pub(super) fn strong_probable_prime(&self, base: &[u8], s: usize) -> bool {
         let w = self.modulus.len();
         let at = |j| 32 + j * (w + 2);
-        let mut ws = self.workspace(base, 20 * (w + 2));
+        let mut ws = self.workspace(base);
         #[cfg(target_arch = "x86_64")]
         let (exponent, one, minus_one) = (24, 25, 26);
         #[cfg(target_arch = "aarch64")]
@@ -302,10 +130,9 @@ impl Montgomery {
         unsafe { round(ws.as_mut_ptr(), ws.len()) == 1 }
     }
 
-    fn workspace(&self, base: &[u8], table_words: usize) -> Scratch {
+    fn workspace(&self, base: &[u8]) -> Scratch {
         let w = self.modulus.len();
-        let table_at = 32 + 8 * (w + 2);
-        let mut ws = Scratch::new(table_at + table_words);
+        let mut ws = Scratch::new(32 + 28 * (w + 2));
         ws[6] = w as u64;
         ws[7] = self.minv;
         for j in 0..8 {
@@ -322,33 +149,6 @@ impl Montgomery {
         ws
     }
 
-    #[cfg(any(target_arch = "x86_64", test))]
-    fn finish(&self, ws: &mut [u64]) -> Vec<u8> {
-        let at = |j| 32 + j * (self.modulus.len() + 2);
-        self.mul(ws, 5, 5, 7);
-        let mut out = vec![0; self.len];
-        for (i, b) in out.iter_mut().rev().enumerate() {
-            *b = (ws[at(5) + i / 8] >> (8 * (i % 8))) as u8;
-        }
-        out
-    }
-    /// `mul` without its result reduced below the modulus, nor `b` required
-    /// to be. Elsewhere, where `power` runs only in tests, it is `mul`, and
-    /// every value stays below the modulus.
-    #[cfg(target_arch = "x86_64")]
-    fn mul_lazy(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
-        let f = match self.backend {
-            Backend::Baseline => vg_rsa_lazy_mont_mul,
-            Backend::Adx => vg_rsa_lazy_mont_mul_adx,
-        };
-        // SAFETY: as for `mul`, but the lazy multiplication requires no
-        // operand below the modulus.
-        unsafe { f(ws.as_mut_ptr(), ws.len(), out, a, b) }
-    }
-    #[cfg(all(not(target_arch = "x86_64"), test))]
-    fn mul_lazy(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
-        self.mul(ws, out, a, b);
-    }
     fn mul(&self, ws: &mut [u64], out: u32, a: u32, b: u32) {
         let f = match self.backend {
             Backend::Baseline => vg_rsa_mont_mul,
@@ -418,7 +218,7 @@ mod tests {
     }
 
     #[test]
-    fn strong_witness_matches_public_power_at_limb_boundaries() {
+    fn strong_witness_matches_power_of_two_moduli() {
         // Construct 2^k+1 arithmetically. Its odd exponent is one, and its
         // two-adic valuation exercises the shifted exponent's extra word.
         for k in [63, 64, 65, 127, 255, 511, 8191] {
@@ -427,33 +227,9 @@ mod tests {
             let last = p.len() - 1;
             p[last] |= 1;
             let mont = Montgomery::new(&p);
-            let mut value = mont.power_public(&[2], &[1]);
-            let negative_one = minus_one(&p);
-            let mut passes = canonical(&value) == [1] || value == negative_one;
-            for _ in 1..k {
-                value = mont.power_public(&value, &[2]);
-                passes |= value == negative_one;
-            }
-            assert_eq!(mont.strong_probable_prime(&[2], k), passes);
-        }
-    }
-
-    #[test]
-    fn public_and_secret_exponents_agree() {
-        // Differential checks, including zero/leading-zero exponents, every
-        // window-size boundary, sparse windows, and partial modulus words.
-        for bytes in [1, 8, 17, 32, 65] {
-            let mont = Montgomery::new(&vec![0xff; bytes]);
-            for len in [0, 1, 2, 32, 33, 39] {
-                for byte in [0, 0x55, 0x80, 0xff] {
-                    let exponent = vec![byte; len];
-                    let mut padded = vec![0; 3];
-                    padded.extend_from_slice(&exponent);
-                    let expected = mont.power(&[2], &exponent);
-                    assert_eq!(mont.power_public(&[2], &exponent), expected);
-                    assert_eq!(mont.power_public(&[2], &padded), expected);
-                }
-            }
+            // The order of 2 modulo 2^k+1 is exactly 2k. A repeated
+            // squaring reaches -1 precisely when k is a power of two.
+            assert_eq!(mont.strong_probable_prime(&[2], k), k.is_power_of_two());
         }
     }
 

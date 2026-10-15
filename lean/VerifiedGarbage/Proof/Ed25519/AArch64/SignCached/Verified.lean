@@ -141,8 +141,8 @@ theorem finalize_call_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁)
 theorem init_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) init
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
-  (setup_ct hL ha hb [(.x0, .caller 5 0)] (by decide) (by simp [Whole.valid])
-    (by simp [preserved]) (by taint_decide)).seq (init_call_ct hL ha hb)
+  (setup_ct hL ha hb [(.x0, .caller 5 0)] (by decide) (by decide)
+    (by decide) (by taint_decide)).seq (init_call_ct hL ha hb)
 
 theorem update_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     (count : Nat) (p n : Value) (hc : count < 65536) (hp : Whole.valid p) (hn : Whole.valid n)
@@ -158,11 +158,11 @@ theorem update_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : 
       (.x2, p), (.x3, n), (.x4, .caller 5 192)] → Whole.valid x.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro x (rfl | rfl | rfl | rfl | rfl)
-    · simp [Whole.valid]
+    · decide
     · exact hc
     · exact hp
     · exact hn
-    · simp [Whole.valid]
+    · decide
   exact (setup_ct hL ha hb _ (by simp) hv (by simp [preserved]) ht).seq
     (update_call_ct backend hL ha hb count p n hi)
 
@@ -178,10 +178,10 @@ theorem finalize_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb 
       (.x1, if b then .caller 4 n else .const n), (.x2, .frame 192), (.x3, .caller 5 192)] → Whole.valid p.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro p (rfl | rfl | rfl | rfl)
-    · simp [Whole.valid]
+    · decide
     · exact hv
-    · simp [Whole.valid]
-    · simp [Whole.valid]
+    · decide
+    · decide
   exact (setup_ct hL ha hb _ (by simp) hvall (by simp [preserved]) ht).seq
     (finalize_call_ct backend hL ha hb n b)
 
@@ -202,7 +202,7 @@ theorem hashSeed_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb 
     rw [BitVec.add_zero]
     exact seed_input hL
   exact (init_ct hL ha hb).seq ((update_ct backend hL ha hb 0 (.caller 1 0) (.const 32)
-    (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hi (by taint_decide)).seq
+    (by decide) (by decide) (by decide) hi (by taint_decide)).seq
     (finalize_ct backend hL ha hb 32 (by decide) false (by taint_decide)))
 
 theorem hashNonce_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
@@ -214,9 +214,9 @@ theorem hashNonce_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb
     rw [BitVec.add_zero, BitVec.add_zero]
     exact message_input hL
   exact (init_ct hL ha hb).seq ((update_ct backend hL ha hb 0 (.frame 64) (.const 32)
-    (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hp (by taint_decide)).seq
+    (by decide) (by decide) (by decide) hp (by taint_decide)).seq
     ((update_ct backend hL ha hb 32 (.caller 3 0) (.caller 4 0)
-      (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hm (by taint_decide)).seq
+      (by decide) (by decide) (by decide) hm (by taint_decide)).seq
       (finalize_ct backend hL ha hb 32 (by decide) true (by taint_decide))))
 
 theorem hashChallenge_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
@@ -235,11 +235,11 @@ theorem hashChallenge_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁)
     rw [BitVec.add_zero, BitVec.add_zero]
     exact message_input hL
   exact (init_ct hL ha hb).seq ((update_ct backend hL ha hb 0 (.caller 0 0) (.const 32)
-    (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) ho (by taint_decide)).seq
+    (by decide) (by decide) (by decide) ho (by taint_decide)).seq
     ((update_ct backend hL ha hb 32 (.caller 2 0) (.const 32)
-      (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hk (by taint_decide)).seq
+      (by decide) (by decide) (by decide) hk (by taint_decide)).seq
       ((update_ct backend hL ha hb 64 (.caller 3 0) (.caller 4 0)
-        (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hm (by taint_decide)).seq
+        (by decide) (by decide) (by decide) hm (by taint_decide)).seq
         (finalize_ct backend hL ha hb 64 (by decide) true (by taint_decide)))))
 
 end VG.Proof.Ed25519.AArch64.SignCached
@@ -348,8 +348,8 @@ theorem reduce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro p (rfl | rfl | rfl)
     · exact hv
-    · simp [Whole.valid]
-    · simp [Whole.valid]
+    · decide
+    · decide
   exact (setup_ct hL ha hb _ (by simp) hvall (by simp [preserved]) ht).seq
     (reduce_call_ct hL ha hb d hd)
 
@@ -358,7 +358,7 @@ theorem base_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hL : L.Ok) (ha : Argum
       (callWith baseArgs "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
   (setup_ct hL ha hb [(.x0, .caller 0 0), (.x1, .frame 96), (.x2, .caller 5 0)]
-    (by decide) (by simp [Whole.valid]) (by simp [preserved]) (by taint_decide)).seq
+    (by decide) (by decide) (by decide) (by taint_decide)).seq
     (base_call_ct hL ha hb)
 
 theorem mul_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
@@ -367,7 +367,7 @@ theorem mul_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
   (setup_ct hL ha hb [(.x0, .caller 0 32), (.x1, .frame 96), (.x2, .frame 128),
     (.x3, .frame 32), (.x4, .caller 5 0)]
-    (by decide) (by simp [Whole.valid]) (by simp [preserved]) (by taint_decide)).seq
+    (by decide) (by decide) (by decide) (by taint_decide)).seq
     (mul_call_ct hL ha hb)
 
 theorem body_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :

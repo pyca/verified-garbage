@@ -415,19 +415,7 @@ theorem pPhase_gen (M : Mont) (E : Nat → Nat → List (Prog isa)) (hE : PowOk 
   have hN₂ : NVals s₂ B w minv N := by
     have := hN.of_frm f₁ hlo hz (by omega_using [hwq, hwq'])
     exact ⟨by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.n,
-      by rw [f₂'.word_eq (fun r hr => by
-        have := pxR_bound hlo r hr
-        have := slot_le (w := w) (show Public.aN < 8 by decide)
-        simp only [pRanges, gRanges, xRange, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-          or_false] at hr
-        have s1 := slot_sep (w := w) (show Public.aN ≠ Public.aAcc by decide)
-        have s2 := slot_sep (w := w) (show Public.aN ≠ Public.aTmp by decide)
-        have s3 := slot_sep (w := w) (show Public.aN ≠ Public.aY by decide)
-        have s4 := slot_sep (w := w) (show Public.aN ≠ Public.aX by decide)
-        have := hdr_lt_slot w Public.aN (show 31 < 32 by decide)
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-          simp only [Crt.sD, Public.sCnt, sFn] at * <;> omega_arith)
-        (by have := slot_le (w := w) (show Public.aN < 8 by decide); omega_using [hz, this])]; exact this.inv,
+      by rw [f₂'.px_word hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.inv,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.r2,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.r2lt,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact this.one⟩
@@ -489,15 +477,7 @@ theorem pPhase_gen (M : Mont) (E : Nat → Nat → List (Prog isa)) (hE : PowOk 
   have hXn₅ : wv s₅.mem B (slot w Public.aX) w % N =
       wv s.mem (off B oq) (slot wq Public.aY) wq * 2 ^ (64 * wx * (nChunks w wx + 1)) % N := by
     rw [wv_congr fun i hi => hb₅ _ (by have := slot_le (w := w) (show Public.aX < 8 by decide); omega_arith),
-      f₃.wv_eq (fun r hr => by
-        have := slot_le (w := w) (show Public.aX < 8 by decide)
-        have s1 := slot_sep (w := w) (show Public.aX ≠ Public.aAcc by decide)
-        have s2 := slot_sep (w := w) (show Public.aX ≠ Public.aTmp by decide)
-        have s3 := slot_sep (w := w) (show Public.aX ≠ Public.aY by decide)
-        have := hdr_lt_slot w Public.aX (show 31 < 32 by decide)
-        simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith)
-        (by have := slot_le (w := w) (show Public.aX < 8 by decide); omega_arith), hmq₂,
+      f₃.g_wv hz (by decide) (by decide) (by decide) (by decide), hmq₂,
       hq f₁' _ _ (by have := slot_le (w := wq) (show Public.aY < 8 by decide); omega_arith)]
   have i05 : InScr B Z s.mem s₅.mem := InScr.of_frm f₀₅ fun r hr => by have := pxR_bound hlo r hr; omega_arith
   -- `h`.

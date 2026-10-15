@@ -160,7 +160,7 @@ theorem start_ok (s : State) :
   unfold lookStart
   lrun [idx_and, idx_shr]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl, rfl⟩, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp (disch := decide) only [xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, mem_setXmm, mem_setReg,
+    simp only [ne_eq, not_false_eq_true, xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, mem_setXmm, mem_setReg,
       mem_setFlags, mem_arithFlags, rd_setXmm, rd_setReg, rd_setFlags, rd_arithFlags, wr_setXmm,
       wr_setReg, wr_setFlags, wr_arithFlags, reduceCtorEq, ite_true, ite_false]
   · exact bcast_L _

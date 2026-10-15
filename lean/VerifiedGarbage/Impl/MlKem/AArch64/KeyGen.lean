@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.AArch64.Lay
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_keygen` and `vg_mlkem1024_keygen`
@@ -123,7 +124,7 @@ def kgCbdNttWith (c : Impl.Sha3.AArch64.Callee) (N off : Nat) : Prog isa :=
   .seq (.block [.movz .x .x9 (BitVec.ofNat 16 N) 0, .strb .x9 .x28 (SG + 32)]) <|
   .seq (hashWith c .x28 ST WK 136 0x1f [⟨.x28, SG, 33⟩] [⟨.x28, PB, 128⟩]) <|
   .seq (.seq (.block (ptrTo .x0 .x28 PB ++ ptrTo .x1 .x28 off)) (.call "vg_mlkem_cbd2" cbd2))
-    (.seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 NS)) (.call "vg_mlkem_ntt" ntt))
+    (.seq (.block (ptrTo .x0 .x28 off ++ ptrTo .x1 .x28 NS)) (.call "vg_mlkem_ntt" Ntt16.ntt))
 
 /-- `ŝ[j]`, and its encoding into `dk`. -/
 def kgSWith (c : Impl.Sha3.AArch64.Callee) (j : Nat) : Prog isa :=

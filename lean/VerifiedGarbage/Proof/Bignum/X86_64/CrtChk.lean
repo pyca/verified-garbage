@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtFix
 public import VerifiedGarbage.Proof.Bignum.CrtKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -12,6 +12,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # An RSA key from its primes on AArch64: the key
@@ -58,13 +59,13 @@ theorem storeL_ok {I : KIn} {s₀ t : State} (h : KS I s₀ t) (L : KLens I) (O 
   intro e he
   simp only [storeL, List.mem_cons, List.not_mem_nil, or_false] at he
   rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact st_ok h O (by decide) (by decide) (by decide) h.args.no h.args.nl (by omega) (by omega) (by simp [outsL])
-  · exact st_ok h O (by decide) (by decide) (by decide) h.args.dd h.args.nl (by omega) (by omega) (by simp [outsL])
-  · exact st_ok h O (by decide) (by decide) (by decide) h.args.pp h.args.pl (by omega) (by omega) (by simp [outsL])
-  · exact st_ok h O (by decide) (by decide) (by decide) h.args.qp h.args.pl (by omega) (by omega) (by simp [outsL])
-  · exact st_ok h O (by decide) (by decide) (by decide) h.args.dp h.args.pl (by omega) (by omega) (by simp [outsL])
-  · exact st_ok h O (by decide) (by decide) (by decide) h.args.dq h.args.pl (by omega) (by omega) (by simp [outsL])
-  · exact st_ok h O (by decide) (by decide) (by decide) h.args.qi h.args.pl (by omega) (by omega) (by simp [outsL])
+  · exact st_ok h O (by decide) (by decide) (by decide) h.args.no h.args.nl (by omega_using [hpl]) (by omega_using [hW, h8]) (by simp [outsL])
+  · exact st_ok h O (by decide) (by decide) (by decide) h.args.dd h.args.nl (by omega_using [hpl]) (by omega_using [hW, h8]) (by simp [outsL])
+  · exact st_ok h O (by decide) (by decide) (by decide) h.args.pp h.args.pl (by omega_using [hpl]) (by omega_using [hW, h8]) (by simp [outsL])
+  · exact st_ok h O (by decide) (by decide) (by decide) h.args.qp h.args.pl (by omega_using [hpl]) (by omega_using [hW, h8]) (by simp [outsL])
+  · exact st_ok h O (by decide) (by decide) (by decide) h.args.dp h.args.pl (by omega_using [hpl]) (by omega_using [hW, h8]) (by simp [outsL])
+  · exact st_ok h O (by decide) (by decide) (by decide) h.args.dq h.args.pl (by omega_using [hpl]) (by omega_using [hW, h8]) (by simp [outsL])
+  · exact st_ok h O (by decide) (by decide) (by decide) h.args.qi h.args.pl (by omega_using [hpl]) (by omega_using [hW, h8]) (by simp [outsL])
 
 theorem outputs_eq (I : KIn) : outputs = storesK (storeL I) ++ ([.block retOk] : List (Prog isa)) := rfl
 
@@ -127,8 +128,8 @@ theorem keyPart_k {I : KIn} {s₀ s : State} (h : KFront I s₀ s) (L : KLens I)
     (by rw [f₂.av hokC (by decide) (by decide) hZ, f₁.av hokQ (by decide) (by decide) hZ]; exact h.vQ) hPw hQw)
     fun s₃ ⟨h₃, f₃, n₃⟩ => ?_)
   have hn : I.P * I.Q < 2 ^ (64 * I.W) := by
-    rw [hW, show 64 * (2 * (I.pl / 8)) = 64 * (I.pl / 8) + 64 * (I.pl / 8) by omega, Nat.pow_add]
-    exact Nat.mul_lt_mul_of_lt_of_le hPw (by omega) (Nat.two_pow_pos _)
+    rw [hW, show 64 * (2 * (I.pl / 8)) = 64 * (I.pl / 8) + 64 * (I.pl / 8) by omega_using [], Nat.pow_add]
+    exact Nat.mul_lt_mul_of_lt_of_le hPw (by omega_using [hQw]) (Nat.two_pow_pos _)
   have hokN : [Rc.arr aQt].all Rc.ok = true := by decide
   have vN₃ : av I s₃.mem aQt = I.P * I.Q := av_of_full n₃ hn
   have vP₃ : av I s₃.mem aPa = I.P := by
@@ -160,23 +161,23 @@ theorem keyPart_k {I : KIn} {s₀ s : State} (h : KFront I s₀ s) (L : KLens I)
   have b := fun e he => (bt e he)
   simp only [storeL, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at b
   obtain ⟨bN, bD, bP, bQ, bDp, bDq, bQi⟩ := b
-  have hlen : (I.pl + 7) / 8 = I.pl / 8 := by have := L.pl8; omega
-  have hlen2 : (2 * I.pl + 7) / 8 = I.W := by have := L.pl8; simp only [KIn.W]; omega
-  have hv : I.pl / 8 ≤ I.W := by omega
+  have hlen : (I.pl + 7) / 8 = I.pl / 8 := by have := L.pl8; omega_using [this]
+  have hlen2 : (2 * I.pl + 7) / 8 = I.W := by have := L.pl8; simp only [KIn.W]; omega_using [this]
+  have hv : I.pl / 8 ≤ I.W := by omega_using [hlen2]
   have hdvw : ∀ a, a ≤ I.P → dv a < 2 ^ (64 * (I.pl / 8)) := fun a ha => by
     unfold dv; split
-    · exact Nat.one_lt_two_pow (by have := L.pl1; omega)
-    · omega
+    · exact Nat.one_lt_two_pow (by have := L.pl1; omega_using [this])
+    · omega_using [hPw, ha]
   have hdvwq : ∀ a, a ≤ I.Q → dv a < 2 ^ (64 * (I.pl / 8)) := fun a ha => by
     unfold dv; split
-    · exact Nat.one_lt_two_pow (by have := L.pl1; omega)
-    · omega
-  have hdv0 : ∀ a, 0 < dv a := fun a => by unfold dv; split <;> omega
+    · exact Nat.one_lt_two_pow (by have := L.pl1; omega_using [this])
+    · omega_using [hQw, ha]
+  have hdv0 : ∀ a, 0 < dv a := fun a => by unfold dv; split <;> omega_arith
   have hqm : qMod I.P < 2 ^ (64 * (I.pl / 8)) := by
     unfold qMod; split
     · exact hPw
     · exact Nat.lt_of_lt_of_le (by decide) (Nat.pow_le_pow_right (by decide) (show 2 ≤ 64 * (I.pl / 8) by
-        have := L.pl1; omega))
+        have := L.pl1; omega_using [this]))
   have iv : ∀ {len v : Nat} {o : Addr} {w' : Nat},
       (List.range len).map (fun i => t.mem (o + BitVec.ofNat 64 i)) =
         Spec.Rsa.i2osp (if cv then w' else 0) len → w' = v →
@@ -192,13 +193,13 @@ theorem keyPart_k {I : KIn} {s₀ s : State} (h : KFront I s₀ s) (L : KLens I)
     · rw [hlen]; exact wv_of_av hv (v4 aQa (by decide) (by decide) (by decide) (by decide) |>.trans h.vQ) hQw
     · rw [hlen]
       refine wv_of_av hv (by rw [f₄.av hokO (by decide) (by decide) hZ, f₃.av hokN (by decide) (by decide) hZ, dP₂])
-        (Nat.lt_of_lt_of_le (Nat.mod_lt _ (hdv0 _)) (Nat.le_of_lt (hdvw _ (by omega))))
+        (Nat.lt_of_lt_of_le (Nat.mod_lt _ (hdv0 _)) (Nat.le_of_lt (hdvw _ (by omega_using []))))
     · rw [hlen]
       refine wv_of_av hv (by rw [f₄.av hokO (by decide) (by decide) hZ, f₃.av hokN (by decide) (by decide) hZ, dQ₂])
-        (Nat.lt_of_lt_of_le (Nat.mod_lt _ (hdv0 _)) (Nat.le_of_lt (hdvwq _ (by omega))))
+        (Nat.lt_of_lt_of_le (Nat.mod_lt _ (hdv0 _)) (Nat.le_of_lt (hdvwq _ (by omega_using []))))
     · rw [hlen]
       refine wv_of_av hv (by rw [f₄.av hokO (by decide) (by decide) hZ, f₃.av hokN (by decide) (by decide) hZ,
-        f₂.av hokC (by decide) (by decide) hZ, hx]) (by omega)
+        f₂.av hokC (by decide) (by decide) hZ, hx]) (by omega_using [hx₁, hqm])
   · have hy' : ∀ e ∈ storeL I, ∀ i < e.len, y ≠ e.out + BitVec.ofNat 64 i := fun e he i hi =>
       hny (e.out, e.len) (by rw [← storeL_outs]; exact List.mem_map_of_mem he) i hi
     rw [hmu, xt y hy', h₄.inScr y hy, hk.inScr y hy]

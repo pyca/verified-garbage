@@ -40,6 +40,8 @@ meta import VerifiedGarbage.Impl.Mont.Mod
 meta import VerifiedGarbage.Proof.Ed25519.Group.Decode
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMain`. -/
 
@@ -155,7 +157,7 @@ theorem VerifyCTFacts.edi {s₀ t₀ x y : State} (h : VerifyCTFacts s₀ t₀) 
 
 theorem decodeStart_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
     RelCT isa (VerifySaved s₀ t₀) (.block decodeStart) (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .esp]) _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .esp]) _ (by native_taint_decide)
   intro s t hp
   apply regsTaint_agree
   intro r hr
@@ -198,7 +200,7 @@ theorem decodeLoad_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {k : Nat
     RelCT isa (fun x y => DecAt s₀ k x ∧ DecAt t₀ k y) (.block decodeLoad) (fun _ _ => True) := by
   have hc : RelCT isa (fun x y => DecAt s₀ k x ∧ DecAt t₀ k y)
       (.block [.mov .esi (.mem (Impl.X25519.X86.sc DPTR))]) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
     intro x y hp
     exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h.edi hp.1.saved hp.2.saved)
   have hw (u x : State) (hu : VerifyPre u) (hx : DecAt u k x) :
@@ -231,7 +233,7 @@ theorem decodeNext_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {k : Nat
   have hc : RelCT isa (fun x y => DecodedAt s₀ k x ∧ DecodedAt t₀ k y)
       (.block ([.mov .ecx (.reg .eax), .mov .edx (.mem (Impl.X25519.X86.sc DTAB)),
         .alu .add .edx (.reg .edi)] : List Instr)) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
     intro x y hp
     exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h.edi hp.1.1 hp.2.1)
   have hh := ctWithRuns hc (fun x y hp => ⟨decodeNext1_ok (verify_pre h.left) hp.1,
@@ -243,7 +245,7 @@ theorem decodeNext_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {k : Nat
     hh.mono (fun _ _ h => h) fun (x y : State) ⟨_, _, _, _, hx, hy⟩ =>
       ⟨by rw [hx.1, hy.1, h.args 3 (by decide)], by rw [hx.2, hy.2, h.args 3 (by decide)]⟩
   refine ctBlockAppend h1 ?_
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .edx]) _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .edx]) _ (by native_taint_decide)
   intro x y hp
   apply regsTaint_agree
   intro r hr
@@ -331,7 +333,7 @@ theorem verifyDecode_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
       fun _ _ hh => ⟨⟨hh.1.1, hh.2.1⟩, hh.1.2, hh.2.2⟩
   have ht : RelCT isa (fun x y => (DecAt s₀ 2 x ∧ x.syms = s₀.syms) ∧ (DecAt t₀ 2 y ∧ y.syms = t₀.syms))
       (.block [.mov .eax (.mem (Impl.X25519.X86.sc DOK)), .alu .test .eax (.reg .eax)]) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
     intro x y hp
     exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h.edi hp.1.1.saved hp.2.1.saved)
   refine seq_runs ht (F₁ := fun t => ∃ x, DecAt s₀ 2 x ∧ Saved s₀ (arg s₀ 3) t ∧ t.mem = x.mem ∧
@@ -416,7 +418,7 @@ theorem verifyEntryTaint_agree {s t : State} (h : VerifyCTFacts s t) : VG.X86.Ta
 theorem verifyStart_ct : RelCT isa
     (fun s t => verifyLocal.pre s ∧ verifyLocal.pre t ∧ verifyLocal.pub s t)
     (.block (abiSave 3)) (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) verifyEntryTaint _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) verifyEntryTaint _ (by native_taint_decide)
   exact fun _ _ h => verifyEntryTaint_agree ⟨h.1, h.2.1, h.2.2⟩
 
 end VG.Proof.Ed25519.X86

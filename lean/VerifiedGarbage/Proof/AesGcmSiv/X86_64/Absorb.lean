@@ -416,9 +416,8 @@ theorem chunkPre_ok (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t : State} (
     · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15₄]
     · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15₄]
     · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h14₄]
-    · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+    · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
+      simp only [gpr_arithFlags, gpr_setReg, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
     all_goals rfl
   have E₅ : Env K W SP t₅ := E₃.of_saved (fun r hr => by
       rw [hg₅ r hr]
@@ -472,7 +471,7 @@ theorem chunk_ok (v : GcmImpl) (wide : Bool) {K W SP : Addr} (L : Lay K W SP) {t
   · simp only [mem_arithFlags, mem_setReg]
     refine (Pr.frame.sub fun r hr => ?_).trans (fr₆.mono fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by simp, Region.sub_prefix (by omega_arith)⟩
+      exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by mem_lit, Region.sub_prefix (by omega_arith)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp
   · simp only [mem_arithFlags, mem_setReg]; rw [out₆]
@@ -660,9 +659,8 @@ theorem tailPre_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP 
     · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15₂]
     · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15₂]
     · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
-    · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+    · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
+      simp only [gpr_arithFlags, gpr_setReg, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
     all_goals rfl
   have E₃ : Env K W SP t₃ := E.keep (fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq

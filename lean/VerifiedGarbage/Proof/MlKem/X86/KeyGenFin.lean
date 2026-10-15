@@ -72,19 +72,19 @@ theorem F.keep {n : Nat} {s₀ s s' : State} (hp : TPre (Y L) s₀) {bs : List B
   have ea : accV L s₀ s' = accV L s₀ s := keepW hp hM (by simp only [safe, Bool.and_eq_true] at h₀; exact h₀.1.1) fr
   refine ⟨k, fun hn => ?_, fun j hj hn => ?_, fun hn e₁ => ?_, fun hn e₁ => ?_, fun hn => ?_⟩
   · rcases h₁ with h₁ | h₁
-    · omega
+    · omega_using [hn, h₁]
     · rw [keepBytes hp hM h₁ fr]; exact h.rhoE hn
   · rcases h₂ j hj with h₂ | h₂
     · omega
     · rw [keepBytes hp hM h₂ fr]; exact h.dk j hj hn
   · rcases h₃ with h₃ | h₃
-    · omega
+    · omega_using [hn, h₃]
     · rw [keepBytes hp hM h₃ fr]; exact h.cp hn (ea ▸ e₁)
   · rcases h₄ with h₄ | h₄
-    · omega
+    · omega_using [hn, h₄]
     · rw [keepBytes hp hM h₄ fr]; exact h.hh hn (ea ▸ e₁)
   · rcases h₅ with h₅ | h₅
-    · omega
+    · omega_using [hn, h₅]
     · rw [keepBytes hp hM h₅ fr]; exact h.zk hn
 
 /-- The facts of the layout that writing the keys uses. -/
@@ -125,14 +125,14 @@ theorem dk_full [FinOK L] {s₀ s : State} (hp : TPre (Y L) s₀) (h : F L (L.p.
       KPke.dkPKE L.p (d s₀) ++ KPke.ekPKE L.p (aM L s₀) (d s₀) ++ H (KPke.ekPKE L.p (aM L s₀) (d s₀)) ++ z s₀ := by
   obtain ⟨-, -, o₃, o₄, o₅, o₆, o₇, o₈⟩ := FinOK.ek (L := L)
   rw [bytes_split hp _ (o' := 768 * L.p.k + 64) (l₁ := 768 * L.p.k + 64) (l₂ := 32) (Nat.zero_add _)
-      (by unfold Params.dkLen; omega) o₈ o₆,
+      (by unfold Params.dkLen; omega_using []) o₈ o₆,
     bytes_split hp _ (o' := 768 * L.p.k + 32) (l₁ := 768 * L.p.k + 32) (l₂ := 32) (Nat.zero_add _) rfl
-      (by unfold Params.ekLen at o₇; rw [show 768 * L.p.k + 32 = 384 * L.p.k + (384 * L.p.k + 32) by omega]; exact o₇) o₅,
+      (by unfold Params.ekLen at o₇; rw [show 768 * L.p.k + 32 = 384 * L.p.k + (384 * L.p.k + 32) by omega_using []]; exact o₇) o₅,
     bytes_split hp _ (o' := 384 * L.p.k) (l₁ := 384 * L.p.k) (l₂ := L.p.ekLen) (Nat.zero_add _)
-      (by unfold Params.ekLen; omega) o₃ o₄,
-    bytes_catK hp _ o₃, h.cp (by omega) e, h.hh (by omega) e, h.zk (by omega), KPke.dkPKE]
+      (by unfold Params.ekLen; omega_using []) o₃ o₄,
+    bytes_catK hp _ o₃, h.cp (by omega_using []) e, h.hh (by omega_using []) e, h.zk (by omega_using []), KPke.dkPKE]
   refine congrArg (fun x => x ++ _ ++ _ ++ _) (catK_congr fun j hj => ?_)
-  rw [Nat.zero_add]; exact h.dk j hj (by omega)
+  rw [Nat.zero_add]; exact h.dk j hj (by omega_using [hj])
 
 variable [FinOK L]
 
@@ -140,14 +140,14 @@ variable [FinOK L]
 theorem enc_piece (j : Nat) (hj : j < L.p.k) :
     Piece (TPre (Y L)) (TPub (Y L) (lk L)) (F L (j + 1)) (F L (j + 2)) (kgEnc j) := by
   refine enc12C_piece (Y := Y L) 3 (1024 * j) 2 (384 * j) (FinOK.enc j hj) (by rdecide) (by yk_taint)
-    (fun _ _ _ h => ⟨h.ctx, (h.se j (by omega)).1⟩) fun s₀ s s' hp h h' fr post => ?_
+    (fun _ _ _ h => ⟨h.ctx, (h.se j (by omega_using [hj])).1⟩) fun s₀ s s' hp h h' fr post => ?_
   have k := h.keep hp (by rdecide) ((FinOK.fin (L := L)).2.1 j hj) fr h'
-  refine ⟨k.toB, fun hn => k.rhoE (by omega), fun j' hj' hn => ?_, fun hn => by omega, fun hn => by omega,
-    fun hn => by omega⟩
+  refine ⟨k.toB, fun hn => k.rhoE (by omega_using []), fun j' hj' hn => ?_, fun hn => by omega_using [hj, hn], fun hn => by omega_using [hj, hn],
+    fun hn => by omega_using [hj, hn]⟩
   rcases Nat.lt_succ_iff_lt_or_eq.mp hn with hn | e
   · exact k.dk j' hj' (by omega)
-  · obtain rfl : j' = j := by omega
-    rw [post, (h.se j' (by omega)).2]
+  · obtain rfl : j' = j := by omega_using [e]
+    rw [post, (h.se j' (by omega_using [hj])).2]
 
 /-- After the keys are written: `kgACC` returned. -/
 structure Done (L : KemLay) (s₀ s : State) : Prop extends F L (L.p.k + 4) s₀ s where
@@ -167,7 +167,7 @@ theorem fin_piece [GOK L] :
     FinOK.rho (by yk_taint) (by taint_decide) (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr post => ?_) ?_
   · have k := h.keep hp (M := 0) (by rdecide)
       (by simp only [safeF, Bool.and_eq_true] at f₁; exact f₁.1.1.1.1.1) (Nat.le_refl _) (fr1 fr) h'
-    refine ⟨k, fun _ => ?_, fun _ _ hn => by omega, fun hn => by omega, fun hn => by omega, fun hn => by omega⟩
+    refine ⟨k, fun _ => ?_, fun _ _ hn => by omega_using [hn], fun hn => by omega_using [hn], fun hn => by omega_using [hn], fun hn => by omega_using [hn]⟩
     rw [show Buf.addr s₀ (bEKr L) = Buf.addr s₀ ⟨1, 384 * L.p.k, 4 * 8⟩ from rfl, post]
     exact h.rho
   refine Piece.seqs0 (P := fun i => F L (i + 1)) L.p.k (fun j hj => enc_piece j hj) ?_
@@ -175,25 +175,25 @@ theorem fin_piece [GOK L] :
     c₂ c₃ c₄ c₁ (by yk_taint) (by taint_decide) (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr post => ?_) ?_
   · have k := h.keep hp (by rdecide) f₄ (fr1 fr) h'
     have ea : accV L s₀ s' = accV L s₀ s := keepW hp (N := 0) (by rdecide) f₈ (fr1 fr)
-    refine ⟨k.toB, fun _ => k.rhoE (by omega), fun j hj _ => k.dk j hj (by omega), fun _ e₁ => ?_,
-      fun hn => by omega, fun hn => by omega⟩
+    refine ⟨k.toB, fun _ => k.rhoE (by omega_using []), fun j hj _ => k.dk j hj (by omega_using [hj]), fun _ e₁ => ?_,
+      fun hn => by omega_using [hn], fun hn => by omega_using [hn]⟩
     rw [post]
-    exact ek_full hp h (by omega) (ea ▸ e₁)
+    exact ek_full hp h (by omega_using []) (ea ▸ e₁)
   refine Piece.seq (B := F L (L.p.k + 3)) (hash1_piece (Y := Y L) L.kgST L.kgWK 136 6 ⟨1, 0, L.p.ekLen⟩
     ⟨2, 768 * L.p.k + 32, 32⟩ rate136 FinOK.hh (by rdecide) c₅ (by rdecide) (by taint_rfl) (by yk_taint) (by yk_taint)
     (by yk_taint) (fun _ _ _ h => h.ctx) fun s₀ s s' hp h h' fr out => ?_) ?_
   · have k := h.keep hp (by rdecide) f₅ fr h'
     have ea : accV L s₀ s' = accV L s₀ s := keepW hp (by rdecide) f₉ fr
-    refine ⟨k.toB, fun _ => k.rhoE (by omega), fun j hj _ => k.dk j hj (by omega), fun _ => k.cp (by omega),
-      fun _ e₁ => ?_, fun hn => by omega⟩
-    rw [out, ek_full hp h (by omega) (ea ▸ e₁), show (BitVec.ofNat 32 6).setWidth 8 = sha3Suffix from sha3Suffix32,
+    refine ⟨k.toB, fun _ => k.rhoE (by omega_using []), fun j hj _ => k.dk j hj (by omega_using [hj]), fun _ => k.cp (by omega_using []),
+      fun _ e₁ => ?_, fun hn => by omega_using [hn]⟩
+    rw [out, ek_full hp h (by omega_using []) (ea ▸ e₁), show (BitVec.ofNat 32 6).setWidth 8 = sha3Suffix from sha3Suffix32,
       ← padded, ← H_eq]
   refine Piece.seq (B := F L (L.p.k + 4)) (copyW_piece (Y := Y L) 0 32 2 (768 * L.p.k + 64) 8 (by decide)
     (by decide) FinOK.zk (by yk_taint) (by taint_decide) (fun _ _ _ h => h.ctx)
     fun s₀ s s' hp h h' fr post => ?_) ?_
   · have k := h.keep hp (by rdecide) f₆ (fr1 fr) h'
-    refine ⟨k.toB, fun _ => k.rhoE (by omega), fun j hj _ => k.dk j hj (by omega), fun _ => k.cp (by omega),
-      fun _ => k.hh (by omega), fun _ => ?_⟩
+    refine ⟨k.toB, fun _ => k.rhoE (by omega_using []), fun j hj _ => k.dk j hj (by omega_using [hj]), fun _ => k.cp (by omega_using []),
+      fun _ => k.hh (by omega_using []), fun _ => ?_⟩
     rw [show Buf.addr s₀ (bDKZ L) = Buf.addr s₀ ⟨2, 768 * L.p.k + 64, 4 * 8⟩ from rfl, post]
     exact h.ctx.roBytes hp (b := ⟨0, 32, 32⟩) (by rdecide) rfl
   exact ld32_piece (Y := Y L) L.kgACC FinOK.acc (by yk_taint) (fun _ _ _ h => h.ctx)

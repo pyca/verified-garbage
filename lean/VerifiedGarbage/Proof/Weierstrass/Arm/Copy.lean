@@ -39,18 +39,18 @@ theorem copy_ok {size : Nat} : ∀ (k : Nat) {s : State} {base : Addr} {o a : Na
   | k + 1, s, base, o, a, hs, ho, ha, hsep => by
     have hn := hs.nowrap
     rw [copy, List.cons_append, List.cons_append, List.nil_append]
-    refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read (d := a) (n := 4) (by omega)) fun s₁ u₁ => ?_
+    refine wp_ldr (hs.off_lt (by omega_using [ha])) (hs.ea (by omega_using [ha])) (hs.read (d := a) (n := 4) (by omega_using [ha])) fun s₁ u₁ => ?_
     have hs₁ := hs.of_rest (u₁.rest (ws := [.r4]) (by simp)) (by decide)
-    refine wp_str (hs.off_lt (by omega)) (hs₁.ea (by omega)) (hs₁.write (d := o) (n := 4) (by omega))
+    refine wp_str (hs.off_lt (by omega_using [ho])) (hs₁.ea (by omega_using [ho])) (hs₁.write (d := o) (n := 4) (by omega_using [ho]))
       fun s₂ m₂ => ?_
     have k₂ : Rest [.r4] s s₂ := (u₁.rest (by simp)).trans (m₂.rest _)
     have hs₂ := hs.of_rest k₂ (by decide)
     have O₂ : Outside base o 4 s.mem s₂.mem := by
-      rw [m₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega)
-    refine WP.mono (copy_ok k hs₂ (o := o + 4) (a := a + 4) (by omega) (by omega) (by omega))
-      fun s₃ ⟨e₃, k₃, O₃⟩ => ⟨?_, k₂.trans k₃, (O₂.mono (Nat.le_refl _) (by omega)).trans
-        (O₃.mono (by omega) (by omega))⟩
-    rw [val32, val32, O₃.w32 (by omega) (by omega), e₃, O₂.val32 (by omega) (by omega), m₂.mem,
+      rw [m₂.mem, u₁.mem]; exact writeW32_outside _ _ _ (by omega_using [ho, hn])
+    refine WP.mono (copy_ok k hs₂ (o := o + 4) (a := a + 4) (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hsep]))
+      fun s₃ ⟨e₃, k₃, O₃⟩ => ⟨?_, k₂.trans k₃, (O₂.mono (Nat.le_refl _) (by omega_using [])).trans
+        (O₃.mono (by omega_using []) (by omega_using []))⟩
+    rw [val32, val32, O₃.w32 (by omega_using []) (by omega_using [ho, hn]), e₃, O₂.val32 (by omega_using [hsep]) (by omega_using [ha, hn]), m₂.mem,
       w32_write_self, u₁.gpr]
 
 /-- `[o] = [b]` if the mask `r10` is all ones (`c`), `[a]` if it is zero; `o`
@@ -68,9 +68,9 @@ theorem sel_ok {size : Nat} (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr}
     have hn := hs.nowrap
     rw [sel]
     simp only [List.cons_append, List.nil_append]
-    refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read (d := a) (n := 4) (by omega)) fun s₁ u₁ => ?_
+    refine wp_ldr (hs.off_lt (by omega_using [ha])) (hs.ea (by omega_using [ha])) (hs.read (d := a) (n := 4) (by omega_using [ha])) fun s₁ u₁ => ?_
     have hs₁ := hs.of_rest (u₁.rest (ws := [.r4]) (by simp)) (by decide)
-    refine wp_ldr (hs.off_lt (by omega)) (hs₁.ea (by omega)) (hs₁.read (d := b) (n := 4) (by omega))
+    refine wp_ldr (hs.off_lt (by omega_using [hb])) (hs₁.ea (by omega_using [hb])) (hs₁.read (d := b) (n := 4) (by omega_using [hb]))
       fun s₂ u₂ => ?_
     refine wp_dp (op2_reg _ _) fun s₃ u₃ => ?_
     refine wp_dp (op2_reg _ _) fun s₄ u₄ => ?_
@@ -78,13 +78,13 @@ theorem sel_ok {size : Nat} (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr}
     have k₅ : Rest [.r4, .r5] s s₅ := (u₁.rest (by simp)).trans ((u₂.rest (by simp)).trans
       ((u₃.rest (by simp)).trans ((u₄.rest (by simp)).trans (u₅.rest (by simp)))))
     have hs₅ := hs.of_rest k₅ (by decide)
-    refine wp_str (hs.off_lt (by omega)) (hs₅.ea (by omega)) (hs₅.write (d := o) (n := 4) (by omega))
+    refine wp_str (hs.off_lt (by omega_using [ho])) (hs₅.ea (by omega_using [ho])) (hs₅.write (d := o) (n := 4) (by omega_using [ho]))
       fun s₆ m₆ => ?_
     have k₆ : Rest [.r4, .r5] s s₆ := k₅.trans (m₆.rest _)
     have hs₆ := hs.of_rest k₆ (by decide)
     have mem₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
     have O₆ : Outside base o 4 s.mem s₆.mem := by
-      rw [m₆.mem, mem₅]; exact writeW32_outside _ _ _ (by omega)
+      rw [m₆.mem, mem₅]; exact writeW32_outside _ _ _ (by omega_using [ho, hn])
     have a2 : s₂.gpr .r4 = s.mem.readW (off base a) 32 := by rw [u₂.other _ (by decide), u₁.gpr]
     have d2 : s₂.gpr .r5 = s.mem.readW (off base b) 32 := by rw [u₂.gpr, u₁.mem]
     have c2 : s₂.gpr .r10 = s.gpr .r10 := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
@@ -99,15 +99,15 @@ theorem sel_ok {size : Nat} (c : Bool) : ∀ (k : Nat) {s : State} {base : Addr}
       rw [u₅.gpr, VG.Proof.X25519.Arm.dpVal, d4, u₄.other _ (by decide), u₃.other _ (by decide), a2]
     rw [select_val] at r4₅
     refine WP.mono (sel_ok c k hs₆ (o := o + 4) (a := a + 4) (b := b + 4)
-      (by rw [k₆.gpr _ (by decide), hc]) (by omega) (by omega) (by omega) (by omega) (by omega))
-      fun s₇ ⟨e₇, k₇, O₇⟩ => ⟨?_, k₆.trans k₇, (O₆.mono (Nat.le_refl _) (by omega)).trans
-        (O₇.mono (by omega) (by omega))⟩
+      (by rw [k₆.gpr _ (by decide), hc]) (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]) (by omega_using [hsa]) (by omega_using [hsb]))
+      fun s₇ ⟨e₇, k₇, O₇⟩ => ⟨?_, k₆.trans k₇, (O₆.mono (Nat.le_refl _) (by omega_using [])).trans
+        (O₇.mono (by omega_using []) (by omega_using []))⟩
     have hw : w32 s₆.mem base o =
         (if c then s.mem.readW (off base b) 32 else s.mem.readW (off base a) 32).toNat := by
       rw [m₆.mem, mem₅, w32_write_self, r4₅]
-    have ha' : val32 s₆.mem base (a + 4) k = val32 s.mem base (a + 4) k := O₆.val32 (by omega) (by omega)
-    have hb' : val32 s₆.mem base (b + 4) k = val32 s.mem base (b + 4) k := O₆.val32 (by omega) (by omega)
-    rw [val32, O₇.w32 (by omega) (by omega), e₇, hw, ha', hb']
+    have ha' : val32 s₆.mem base (a + 4) k = val32 s.mem base (a + 4) k := O₆.val32 (by omega_using [hsa]) (by omega_using [ha, hn])
+    have hb' : val32 s₆.mem base (b + 4) k = val32 s.mem base (b + 4) k := O₆.val32 (by omega_using [hsb]) (by omega_using [hb, hn])
+    rw [val32, O₇.w32 (by omega_using []) (by omega_using [ho, hn]), e₇, hw, ha', hb']
     cases c <;> simp only [Bool.false_eq_true, ite_false, ite_true, val32]
 
 /-- `o = b` if the mask `r10` is all ones (`c`), `a` if it is zero, for points
@@ -154,7 +154,7 @@ theorem selPt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (
       O₂.val32 (d := a.z) (by omega_using [yaz]) (by omega_using [iaz, hn]),
       O₁.val32 (d := b.z) (by omega_using [xbz]) (by omega_using [ibz, hn]),
       O₁.val32 (d := a.z) (by omega_using [xaz]) (by omega_using [iaz, hn])]
-  · rw [show 4 * (2 * n) = 8 * n by omega] at O₁ O₂ O₃
+  · rw [show 4 * (2 * n) = 8 * n by omega_using []] at O₁ O₂ O₃
     exact ((Outs.of_outside O₁ (by simp)).trans (Outs.of_outside O₂ (by simp))).trans
       (Outs.of_outside O₃ (by simp))
 

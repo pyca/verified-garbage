@@ -63,16 +63,13 @@ theorem msg_y {V0 : Nat → Byte} {W : Nat → Byte} {mH : List Byte} {e db pos 
   rw [getD_app, getD_app]
   simp only [List.length_append, RsaPss.zeros_length, hm]
   by_cases h1 : i < 8
-  · simp (disch := omega) only [shW, updL, clr, ite_eq_left, ite_eq_right, hm, List.length_map,
-      List.length_range]
+  · simp (disch := omega) only [shW, updL, clr, ↓ite_eq_left, ↓ite_eq_right]
     exact (RsaPss.zeros_getD _ _).symm
   by_cases h2 : i < 8 + H.D
-  · simp (disch := omega) only [shW, updL, clr, ite_eq_left, ite_eq_right, hm, List.length_map,
-      List.length_range]
+  · simp (disch := omega) only [shW, updL, ↓ite_eq_left, ↓ite_eq_right]
     rw [show oY + i - (oY + 8) = i - 8 by omega]
   by_cases h3 : i < 8 + H.D + db
-  · simp (disch := omega) only [shW, updL, clr, ite_eq_left, ite_eq_right, hm, List.length_map,
-      List.length_range]
+  · simp (disch := omega) only [shW, ↓ite_eq_left, ↓ite_eq_right]
     unfold zf
     rw [show oY + i - (oY + 8 + H.D) + (pos + 1) = pos + 1 + (i - (8 + H.D)) by omega]
     by_cases h4 : i - (8 + H.D) < db - pos - 1
@@ -81,7 +78,7 @@ theorem msg_y {V0 : Nat → Byte} {W : Nat → Byte} {mH : List Byte} {e db pos 
     · rw [ite_eq_right (by omega), List.getD_eq_getElem?_getD, List.getElem?_map,
         List.getElem?_eq_none (by rw [List.length_range]; omega)]
       rfl
-  · simp (disch := omega) only [shW, updL, clr, ite_eq_left, ite_eq_right, hm, List.length_map,
+  · simp (disch := omega) only [shW, updL, clr, ↓ite_eq_left, ↓ite_eq_right, hm, List.length_map,
       List.length_range]
     rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_eq_none (by rw [List.length_range]; omega)]
     rfl
@@ -139,12 +136,12 @@ theorem b2_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e db 
   · unfold zf
     by_cases h : m < db
     · rw [ite_eq_left h]
-      simp (disch := omega) only [updL, clr, ite_eq_left, ite_eq_right, hml, List.length_map, List.length_range]
+      simp (disch := omega) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right, hml, List.length_map, List.length_range]
       rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (by omega)]
-      simp (disch := omega) only [Option.map_some, Option.getD_some, ite_eq_right]
+      simp (disch := omega) only [Option.map_some, Option.getD_some, ↓ite_eq_right]
       rw [show oY + 8 + H.D + m - (oY + 8 + H.D) = m by omega, hEm _ (by omega) (by omega)]
     · rw [ite_eq_right h]
-      simp (disch := omega) only [updL, clr, ite_eq_left, ite_eq_right, hml, List.length_map, List.length_range]
+      simp (disch := omega) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right, hml, List.length_map, List.length_range]
   have L4 := L3.congr k4.sp k4.wr (k4.get .x20)
   -- `nbm`.
   refine WP.seq (WP.mono (verifyNb_ok hH L4 (db := db) (by omega)
@@ -193,7 +190,7 @@ theorem b2_ok {u : State} {F S : Addr} (L : Lay u F S) {W : Nat → Byte} {e db 
     congr 2
     refine congrArg (acc ||| ·) (orF_congr fun i hi => ?_)
     rw [← off_add, byte_of_bytesAt d6 hi, O6.em _ (by omega) (by omega)]
-    simp (disch := omega) only [shW, updL, clr, ite_eq_right, hml, List.length_map, List.length_range]
+    simp (disch := omega) only [shW, updL, clr, ↓ite_eq_right]
     rw [hEm _ (by omega) (by omega)]
 
 end

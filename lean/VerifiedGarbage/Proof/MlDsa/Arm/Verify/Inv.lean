@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA verification on 32-bit ARM: what holds throughout, and the prologue
@@ -199,6 +201,6 @@ theorem vpro_piece {p : Params} (hF : VFacts p) {STK : Nat} (hSTK : 8 ≤ STK) :
       obtain ⟨-, e0, e1, e2, e3, -⟩ := pub
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      exacts [e0, e1, e2, e3]) (by taint_decide)⟩
+      exacts [e0, e1, e2, e3]) (by native_taint_decide)⟩
 
 end VG.Proof.MlDsa.Arm.Verify

@@ -8,6 +8,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate on AArch64: constant time, the public data and the stages
@@ -82,9 +83,9 @@ theorem KHdr.frm {m m' : Mem} {q : FPub} (h : KHdr m q) {rs : List (Nat × Nat)}
   have k : ∀ {i : Nat}, 16 ≤ i → i < 28 → i ≠ 26 → word m' q.B (8 * i) = word m q.B (8 * i) := fun h1 h2 h3 =>
     hf.word_eq (fun r hr => by
       rcases hd r hr with h | h | h
-      · exact Or.inl (by omega)
-      · exact Or.inr (by omega)
-      · subst h; dsimp only; omega) (by omega)
+      · exact Or.inl (by omega_arith)
+      · exact Or.inr (by omega_arith)
+      · subst h; dsimp only; omega_using [h3]) (by omega_using [h2])
   exact ⟨(k (by decide) (by decide) (by decide)).trans h.out, (k (by decide) (by decide) (by decide)).trans h.len,
     (k (by decide) (by decide) (by decide)).trans h.usedP, (k (by decide) (by decide) (by decide)).trans h.e,
     (k (by decide) (by decide) (by decide)).trans h.elen, (k (by decide) (by decide) (by decide)).trans h.p,
@@ -121,7 +122,7 @@ theorem KSt.step {q : FPub} {s t : State} {rs : List (Nat × Nat)} {regs : List 
   have hin := InScr.of_frm hf hZ
   refine ⟨k.wr.trans hw, hdm, hws, hh.frm hf hd, ho.congr k.wr, pB, r, ?_, hp.congrK hin k,
     he.congrK hin k, hr.congrK hin k, hpl, hrl, hS⟩
-  rw [hf.wv_eq hN (by omega)]; exact hc
+  rw [hf.wv_eq hN (by omega_using [hn, sN])]; exact hc
 
 /-- Before `montSetup`: the schedule goes on to Miller–Rabin. -/
 def TS (q : FPub) (s : State) : Prop :=
