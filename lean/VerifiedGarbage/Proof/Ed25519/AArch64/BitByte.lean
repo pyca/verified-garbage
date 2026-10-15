@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Bits
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -45,7 +46,8 @@ theorem writeW8_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 8) (hd : d
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
     ((((b.setWidth 64 >>> j) &&& BitVec.ofNat 64 1).setWidth 32).setWidth 8 : BitVec 8) =
-      BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by decide
+      BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := fun b j _ => by
+  rw [BitVec.setWidth_setWidth_of_le _ (by decide)]; exact bitByte 64 (by decide) b j
 
 theorem expandScalarBit_ok {s : State} {base : Addr} (hs : Scr s base)
     (i j : Nat) (hi : i < 64) (hj : j < 8)
