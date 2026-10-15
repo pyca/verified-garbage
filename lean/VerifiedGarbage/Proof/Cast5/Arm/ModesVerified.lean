@@ -138,7 +138,7 @@ theorem cbc_sat (post : Spec.Cast5.cbcSig.Post Arm.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inl rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inl rfl
 
 theorem cbcFrame_sat (post : Spec.Cast5.cbcSig.Post Arm.abi.ptrBits) :
     ∃ s, (Spec.Cast5.cbcSig.contract (Arm.abi.withConsts ecbConsts) (Spec.Cast5.cbcPre Arm.abi.ptrBits) post true
@@ -157,7 +157,7 @@ theorem cbcFrame_sat (post : Spec.Cast5.cbcSig.Post Arm.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inl rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inl rfl
 
 theorem ofb_sat (post : Spec.Cast5.ofbSig.Post Arm.abi.ptrBits) :
     ∃ s, (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.ofbSig 39
@@ -178,7 +178,7 @@ theorem ofb_sat (post : Spec.Cast5.ofbSig.Post Arm.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inl rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inl rfl
 
 theorem ofbFrame_sat (post : Spec.Cast5.ofbSig.Post Arm.abi.ptrBits) :
     ∃ s, (Spec.Cast5.ofbSig.contract (Arm.abi.withConsts ecbConsts) (Spec.Cast5.ofbPre Arm.abi.ptrBits) post true
@@ -197,7 +197,7 @@ theorem ofbFrame_sat (post : Spec.Cast5.ofbSig.Post Arm.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inl rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inl rfl
 
 theorem cfb_sat (post : Spec.Cast5.cfbSig.Post Arm.abi.ptrBits) :
     ∃ s, (Proof.Cast5.modeScratchContract (Arm.abi.withConsts ecbConsts) Spec.Cast5.cfbSig 39
@@ -218,7 +218,7 @@ theorem cfb_sat (post : Spec.Cast5.cfbSig.Post Arm.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inl rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inl rfl
 
 theorem cfbFrame_sat (post : Spec.Cast5.cfbSig.Post Arm.abi.ptrBits) :
     ∃ s, (Spec.Cast5.cfbSig.contract (Arm.abi.withConsts ecbConsts) (Spec.Cast5.cfbPre Arm.abi.ptrBits) post true
@@ -237,7 +237,7 @@ theorem cfbFrame_sat (post : Spec.Cast5.cfbSig.Post Arm.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inl rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inl rfl
 
 theorem cbcEncryptTaint : SeqTaint (ecbCore true) cbcEnc :=
   ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
