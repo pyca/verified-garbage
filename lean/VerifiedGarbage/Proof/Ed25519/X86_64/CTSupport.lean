@@ -1,6 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit

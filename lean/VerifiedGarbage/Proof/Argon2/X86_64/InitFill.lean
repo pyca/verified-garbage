@@ -1,6 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 public import VerifiedGarbage.Impl.Argon2.X86_64.InitFill
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 meta import VerifiedGarbage.Impl.Argon2.X86_64.InitFill
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish

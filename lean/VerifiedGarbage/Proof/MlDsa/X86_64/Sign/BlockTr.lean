@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

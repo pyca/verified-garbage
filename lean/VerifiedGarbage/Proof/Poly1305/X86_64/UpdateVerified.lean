@@ -1,6 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 public import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.UpdateCall
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

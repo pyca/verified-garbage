@@ -1,6 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega

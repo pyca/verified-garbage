@@ -1,6 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 meta import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetup
 import VerifiedGarbage.Proof.Argon2.X86_64.FillSegment
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillSegment

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 public import VerifiedGarbage.Proof.MlKem.X86_64.PrfBatch
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop

@@ -1,6 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Fixed
+meta import VerifiedGarbage.Proof.Framework.X86_64.RelCTTaint
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Fixed
 import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Copy
