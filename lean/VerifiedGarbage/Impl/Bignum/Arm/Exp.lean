@@ -37,4 +37,7 @@ def expByteNext : List Instr :=
    .ldr .r1 .r0 132, .subs .r1 .r1 (.imm 1), .str .r1 .r0 132]
 def expBytes : Prog isa := .loop (.seq expByteHead (.seq expBits (.block expByteNext))) .ne
 
+/-- Encode the input, scan the exponent bytes, then convert back to ordinary form. -/
+def expPhase : Prog isa := .seq expInit (.seq expBytes (montOp 6 6 7))
+
 end VG.Impl.Bignum.Arm

@@ -22,10 +22,13 @@ theorem expInit_ok (s : State) {base : BitVec 32} {len w M x : Nat}
     (r2bound : numAt s.mem (State.addr base) w 4 < M)
     (r2value : numAt s.mem (State.addr base) w 4 % M = 2 ^ (64 * w) * 2 ^ (64 * w) % M) :
     WP isa expInit s fun t => ExpState base len w M x 0 t ∧
+      (∀ d, d + 4 ≤ 256 → t.mem.readW (VG.Proof.Mont.off (State.addr base) d) 32 =
+        s.mem.readW (VG.Proof.Mont.off (State.addr base) d) 32) ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   have op (q : Nat) (hq : q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7) : Operand q := by
     rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
   have fits : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
+  have size : 256 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fits; omega
   have coprime := coprime_pow2 odd (64 * w)
   rw [expInit, WP.seq_iff]
   refine WP.mono (smallConst_ok s (1 : BitVec 32) h (o := 7) (by decide) (by decide) (by decide) (by decide)) ?_
@@ -54,9 +57,13 @@ theorem expInit_ok (s : State) {base : BitVec 32} {len w M x : Nat}
     rw [valueT, Nat.mul_mod, r2value, ← Nat.mul_mod, Nat.mul_assoc]
   have powerT := keeps_array_num keepsT fits (op 6 (by simp)) (by decide)
   have oneT := (keeps_array_num keepsT fits (op 7 (by simp)) (by decide)).trans oneV
-  refine ⟨⟨readyT, modT, coprime, boundT, encoded, ?_, ?_, oneT⟩,
+  refine ⟨⟨readyT, modT, coprime, boundT, encoded, ?_, ?_, oneT⟩, ?_,
     frameU.trans (frameV.trans frameT), restU.trans (restV.trans restT)⟩
   · rw [powerT]; exact boundV
   · rw [powerT, Nat.pow_zero, Nat.one_mul]; exact powerV
+  · intro d hd
+    rw [keeps_header_readW keepsT size (d := d) (bits := 32) hd,
+      keeps_header_readW keepsV size (d := d) (bits := 32) hd,
+      keeps_header_readW keepsU size (d := d) (bits := 32) hd]
 
 end VG.Proof.Bignum.Arm
