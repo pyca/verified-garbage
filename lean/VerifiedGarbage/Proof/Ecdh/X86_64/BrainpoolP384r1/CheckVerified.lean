@@ -48,7 +48,7 @@ abbrev C : CP := Spec.Weierstrass.CheckPoint.brainpoolp384r1
 /-- `vg_brainpoolp384r1_check_point`. -/
 abbrev code : Prog isa := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody cfg)
 
-theorem agree : Agree cfg C := ⟨rfl, rfl, by decide, keeps_of (by decide), by decide⟩
+theorem agree : Agree cfg C := ⟨rfl, rfl, by decide +kernel, keeps_of (by decide +kernel), by decide +kernel⟩
 
 theorem hv : (Impl.Ecdh.X86_64.Cfg.checkBody cfg).allInstrs (fun i => !KeepReg.writesVec i) = true := by
   lit_decide
