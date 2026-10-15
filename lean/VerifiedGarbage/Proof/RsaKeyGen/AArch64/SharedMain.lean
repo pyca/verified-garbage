@@ -8,6 +8,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-! # RSA witness policy with a shared prepared round -/
 
@@ -96,15 +97,15 @@ theorem sharedIter_ok (M : Mont) (R : VG.Proof.MillerRabin.AArch64.Kernel) {B : 
     have hf₂ : Frm B [(8 * kStat, 8)] s.mem s₂.mem := by
       rw [hm₂, hm₁]
       exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kStat) (by simp only [kStat, sFn]; omega_arith)) (by simp)
-    have hc₂ : MrCtx s₂ B Z w c bm := hc.of_frm hf₂ (by kmut) (k₁.trans k₂) (by decide) (by rd_disj) (by rd_disj)
-      (by rd_disj) (by rd_disj) (by rd_disj)
+    have hc₂ : MrCtx s₂ B Z w c bm := hc.of_frm hf₂ (by kmut) (k₁.trans k₂) (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+      (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     refine WP.mono (statCmp_ok hc₂.ws (v := 0) (by decide) (by rw [hm₂, word_writeW_self]))
       fun t ⟨hz, hm, k⟩ => Or.inl ⟨hz.trans rfl, ?_⟩
     have hres0 : res = none := hres.symm.trans (hres'.trans (VG.Proof.RsaKeyGen.ite_f (by omega_arith) _ _))
     have hft : Frm B [(8 * kStat, 8)] s.mem t.mem :=
       hf₂.trans (show Frm B [(8 * kStat, 8)] s₂.mem t.mem by rw [hm]; exact Frm.refl _ _ _)
-    refine ⟨⟨⟨bm, hc.of_frm hft (by kmut) ((k₁.trans k₂).trans k) (by decide) (by rd_disj) (by rd_disj)
-        (by rd_disj) (by rd_disj) (by rd_disj)⟩,
+    refine ⟨⟨⟨bm, hc.of_frm hft (by kmut) ((k₁.trans k₂).trans k) (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+        (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)⟩,
       ?_, ?_, ?_, (((hkeep.trans k₁).trans k₂).trans k).mono (by decide)⟩, fun _ => hb,
       fun b rest h1 => by rw [hres0] at h1; cases h1⟩
     · intro _; rw [hm, hm₂, word_writeW_self]
@@ -223,19 +224,19 @@ theorem sharedInit_ok {B : Addr} {Z w c ch bm : Nat} {rp : Addr} {r : List Byte}
     exact (Frm.of_outside (writeW_outside _ B _ (d := 8 * kI) (by simp only [kI, kElen, sFn]; omega_arith)) (by simp)).trans
       (Frm.of_outside (writeW_outside _ B _ (d := 8 * kUni) (by simp only [kUni, kP, sFn]; omega_arith)) (by simp))
   have sR2 : slot w aR2 + 8 * (w + 2) ≤ Z := by have := slot_lt (w := w) (show aR2 < 16 by decide); omega_arith
-  refine ⟨⟨bm, hc.of_frm hf₁ (by kmut) k₁ (by decide) (by rd_disj) (by rd_disj) (by rd_disj) (by rd_disj)
-      (by rd_disj)⟩, hE.of_frm hf₁ (by rd_disj) (by omega_arith), ?_, ?_, ?_, ?_, ?_, hsrc.congrK (InScr.of_frm hf₁ (by
+  refine ⟨⟨bm, hc.of_frm hf₁ (by kmut) k₁ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+      (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)⟩, hE.of_frm hf₁ (VG.Proof.RsaKeyGen.SlotShapeC.apartW1 rfl rfl) (by omega_arith), ?_, ?_, ?_, ?_, ?_, hsrc.congrK (InScr.of_frm hf₁ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, kI, kElen, kUni, kP, sFn]
         omega_arith)) k₁,
     by rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self],
     by rw [hm₁, word_writeW_self], ?_, hu2, Or.inl (by decide), by omega_arith, by omega_arith, rfl,
     hf₁.mono (by simp [sharedRoundRanges]), k₁.mono (by decide)⟩
-  · rw [hf₁.wv_eq (d := slot w aR2) (k := w) (by rd_disj) (by omega_arith)]; exact hr2
-  · rw [hf₁.word_eq (by rd_disj) (by simp only [kRand, sFn]; omega_arith)]; exact hrp
-  · rw [hf₁.word_eq (by rd_disj) (by simp only [kLen, sK, sFn]; omega_arith)]; exact hlen
-  · rw [hf₁.word_eq (by rd_disj) (by simp only [kRandLen, sFn]; omega_arith)]; exact hrlen
-  · rw [hf₁.word_eq (by rd_disj) (by simp only [kChecks, kE, sFn]; omega_arith)]; exact hchk
-  · rw [hf₁.word_eq (by rd_disj) (by simp only [kUsed, sFn]; omega_arith)]; exact hus
+  · rw [hf₁.wv_eq (d := slot w aR2) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_arith)]; exact hr2
+  · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kRand, sFn]; omega_arith)]; exact hrp
+  · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kLen, sK, sFn]; omega_arith)]; exact hlen
+  · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kRandLen, sFn]; omega_arith)]; exact hrlen
+  · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kChecks, kE, sFn]; omega_arith)]; exact hchk
+  · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega_arith)]; exact hus
 
 /-- `millerRabin`: the witnesses from offset `used`, as `primalityTest`'s
 loop from `(1, 0)`. -/

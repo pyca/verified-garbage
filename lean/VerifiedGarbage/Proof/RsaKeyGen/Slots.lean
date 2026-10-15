@@ -142,4 +142,75 @@ theorem mm_shape (w a : Nat) :
   rcases hr with rfl | rfl | rfl
   exacts [.inr ⟨_, .head _, rfl⟩, .inr ⟨_, .tail _ (.head _), rfl⟩, .inr ⟨_, .tail _ (.tail _ (.head _)), rfl⟩]
 
+/-! ## Shapes found by instance search
+
+`SlotShapeC w L H js` finds a literal list's shape: each range of the form
+`(slot w j, 8 * (w + 2))` is array `j`, any other a header range. The side
+goals then need no shape at the call site: `SlotShapeC.apartW rfl rfl`. -/
+
+/-- `SlotShape w L H js`, for instance search. -/
+class SlotShapeC (w : Nat) (L : List (Nat × Nat)) (H : outParam (List (Nat × Nat)))
+    (js : outParam (List Nat)) : Prop where
+  shape : SlotShape w L H js
+
+instance SlotShapeC.nil {w : Nat} : SlotShapeC w [] [] [] := ⟨fun _ h => nomatch h⟩
+
+instance (priority := high) SlotShapeC.consArr {w j : Nat} {L H : List (Nat × Nat)} {js : List Nat}
+    [h : SlotShapeC w L H js] : SlotShapeC w ((slot w j, 8 * (w + 2)) :: L) H (j :: js) :=
+  ⟨fun r hr => match List.mem_cons.mp hr with
+    | .inl e => .inr ⟨j, .head _, e⟩
+    | .inr hr' => (h.shape r hr').imp_right fun ⟨j', hj, e⟩ => ⟨j', .tail _ hj, e⟩⟩
+
+instance SlotShapeC.consHdr {w : Nat} {r₀ : Nat × Nat} {L H : List (Nat × Nat)} {js : List Nat}
+    [h : SlotShapeC w L H js] : SlotShapeC w (r₀ :: L) (r₀ :: H) js :=
+  ⟨fun r hr => match List.mem_cons.mp hr with
+    | .inl e => .inl (e ▸ .head _)
+    | .inr hr' => (h.shape r hr').imp_left (.tail _)⟩
+
+theorem SlotShapeC.apartW {w a : Nat} {L H : List (Nat × Nat)} {js : List Nat} [h : SlotShapeC w L H js]
+    (hH : H.all (fun h => decide (h.1 + h.2 ≤ hdrBytes)) = true) (hj : js.all (fun j => decide (j ≠ a)) = true) :
+    ∀ r ∈ L, slot w a + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w a :=
+  h.shape.apartW hH hj
+
+theorem SlotShapeC.apartW1 {w a : Nat} {L H : List (Nat × Nat)} {js : List Nat} [h : SlotShapeC w L H js]
+    (hH : H.all (fun h => decide (h.1 + h.2 ≤ hdrBytes)) = true) (hj : js.all (fun j => decide (j ≠ a)) = true) :
+    ∀ r ∈ L, slot w a + 8 * (w + 1) ≤ r.1 ∨ r.1 + r.2 ≤ slot w a :=
+  h.shape.apartW1 hH hj
+
+theorem SlotShapeC.leD {w a : Nat} {L H : List (Nat × Nat)} {js : List Nat} [h : SlotShapeC w L H js]
+    (hH : H.all (fun h => decide (h.1 + h.2 ≤ hdrBytes)) = true) (hj : js.all (fun j => decide (j < a)) = true) :
+    ∀ r ∈ L, r.1 + r.2 ≤ slot w a :=
+  h.shape.leD hH hj
+
+/-- Each range of `L` is past the header or a header range of `H`, for
+instance search: the side goals that do not mention `w`. -/
+class HdrShapeC (L : List (Nat × Nat)) (H : outParam (List (Nat × Nat))) : Prop where
+  shape : ∀ r ∈ L, hdrBytes ≤ r.1 ∨ r ∈ H
+
+instance HdrShapeC.nil : HdrShapeC [] [] := ⟨fun _ h => nomatch h⟩
+
+instance (priority := high) HdrShapeC.consSlot {w j l : Nat} {L H : List (Nat × Nat)} [h : HdrShapeC L H] :
+    HdrShapeC ((slot w j, l) :: L) H :=
+  ⟨fun r hr => match List.mem_cons.mp hr with
+    | .inl e => .inl (e ▸ Nat.le_add_right _ _)
+    | .inr hr' => h.shape r hr'⟩
+
+instance HdrShapeC.consHdr {r₀ : Nat × Nat} {L H : List (Nat × Nat)} [h : HdrShapeC L H] :
+    HdrShapeC (r₀ :: L) (r₀ :: H) :=
+  ⟨fun r hr => match List.mem_cons.mp hr with
+    | .inl e => .inr (e ▸ .head _)
+    | .inr hr' => (h.shape r hr').imp_right (.tail _)⟩
+
+theorem HdrShapeC.geD {c : Nat} {L H : List (Nat × Nat)} [h : HdrShapeC L H]
+    (hc : decide (c ≤ hdrBytes) = true) (hH : H.all (fun h => decide (c ≤ h.1)) = true) : ∀ r ∈ L, c ≤ r.1 :=
+  fun r hr => (h.shape r hr).elim (Nat.le_trans (of_decide_eq_true hc))
+    (fun hh => of_decide_eq_true (List.all_eq_true.mp hH r hh))
+
+theorem HdrShapeC.hdrW {k : Nat} {L H : List (Nat × Nat)} [h : HdrShapeC L H]
+    (hk : decide (8 * k + 8 ≤ hdrBytes) = true)
+    (hH : H.all (fun h => decide (8 * k + 8 ≤ h.1 ∨ h.1 + h.2 ≤ 8 * k)) = true) :
+    ∀ r ∈ L, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k :=
+  fun r hr => (h.shape r hr).elim (fun h' => .inl (Nat.le_trans (of_decide_eq_true hk) h'))
+    (fun hh => of_decide_eq_true (List.all_eq_true.mp hH r hh))
+
 end VG.Proof.RsaKeyGen

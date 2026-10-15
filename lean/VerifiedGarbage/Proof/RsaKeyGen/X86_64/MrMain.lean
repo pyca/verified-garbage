@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.RsaKeyGen.Bits
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # A candidate on x86-64: Miller–Rabin's loop
@@ -151,14 +152,14 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch : Nat
     have hf₂ : Frm B [(8 * kStat, 8)] s.mem s₂.mem := by
       rw [hm₂, hm₁]; exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kStat) (by unfold kStat sFn; omega_arith)) (by simp)
     have hg₂ : Good s₂ B Z w mi := ⟨hg₁.scr.congr k₂.2.2, (k₂.gpr (by decide)).trans hg₁.rdi,
-      Hdr.of_frm hg.hdr hf₂ (by rng_disj)⟩
+      Hdr.of_frm hg.hdr hf₂ (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl)⟩
     refine WP.mono (statCmp_ok hg₂ hZ (v := 0) (by decide) (by rw [hm₂, word_writeW_self]))
       fun t ⟨hz, hm, k⟩ => Or.inl ⟨by simp [eval, hz], ?_⟩
     have hres0 : res = none := hres.symm.trans (hres'.trans (ite_f (by omega_arith) _ _))
     have hft : Frm B [(8 * kStat, 8)] s.mem t.mem :=
       hf₂.trans (show Frm B [(8 * kStat, 8)] s₂.mem t.mem by rw [hm]; exact Frm.refl _ _ _)
     refine ⟨⟨⟨bm, hc.of_frm hd hft (hg₂.scr.congr k.2.2)
-        ((k.gpr (by decide)).trans hg₂.rdi) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj)⟩,
+        ((k.gpr (by decide)).trans hg₂.rdi) (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)⟩,
       ?_, ?_, ?_, (((hkeep.trans k₁).trans k₂).trans k).mono (by decide)⟩, fun _ => h,
       fun b rest h1 => by rw [hres0] at h1; cases h1⟩
     · intro _; rw [hm, hm₂, word_writeW_self]
@@ -277,14 +278,14 @@ theorem mrInit_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : 
     exact (Frm.of_outside (writeW_outside _ B _ (d := 8 * kI) (by unfold kI kElen sFn; omega_arith)) (by simp)).trans
       (Frm.of_outside (writeW_outside _ B _ (d := 8 * kUni) (by unfold kUni kP sFn; omega_arith)) (by simp))
   have hg₁ : Good s₁ B Z w mi := ⟨hg.scr.congr k₁.2.2, (k₁.gpr (by decide)).trans hg.rdi,
-    Hdr.of_frm hg.hdr hf₁ (by rng_disj)⟩
+    Hdr.of_frm hg.hdr hf₁ (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl)⟩
   have hh : ∀ {k}, k = kRand ∨ k = kLen ∨ k = kRandLen ∨ k = kChecks ∨ k = kUsed ∨ k = kOut →
       word s₁.mem B (8 * k) = word s.mem B (8 * k) := fun {k} hk => by
     rw [hm₁]
     rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;>
       rw [hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]
-  refine ⟨⟨bm, hc.of_frm hd hf₁ hg₁.scr hg₁.rdi (by rng_disj) (by rng_disj) (by rng_disj) (by rng_disj)
-      (by rng_disj)⟩, hE.of_frm hf₁ (by rng_disj) (by have := aE_fits hd; have := hd.z; have := hg.scr.nowrap; omega_arith), ?_, by rw [hh (Or.inl rfl)]; exact hrp, by rw [hh (Or.inr (Or.inl rfl))]; exact hlen,
+  refine ⟨⟨bm, hc.of_frm hd hf₁ hg₁.scr hg₁.rdi (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+      (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)⟩, hE.of_frm hf₁ (VG.Proof.RsaKeyGen.SlotShapeC.apartW1 rfl rfl) (by have := aE_fits hd; have := hd.z; have := hg.scr.nowrap; omega_arith), ?_, by rw [hh (Or.inl rfl)]; exact hrp, by rw [hh (Or.inr (Or.inl rfl))]; exact hlen,
     by rw [hh (Or.inr (Or.inr (Or.inl rfl)))]; exact hrlen, by rw [hh (Or.inr (Or.inr (Or.inr (Or.inl rfl))))]; exact hchk,
     hsrc.congrK (InScr.of_frm hf₁ (by
       have := hdr_lt_slot w 8 (show 31 < 32 by decide)
@@ -294,7 +295,7 @@ theorem mrInit_ok {B : Addr} {Z w : Nat} {mi : BitVec 64} {c ch bm : Nat} {rp : 
     by rw [hm₁, word_writeW_self], by rw [hh (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))]; exact hus, hu2,
     Or.inl (by decide), by omega_arith, by omega_arith, rfl,
     hf₁.mono (by simp [roundRanges, preRanges, witRanges, tabRanges, expRanges, winRanges]), k₁.mono (by decide)⟩
-  rw [hf₁.wv_eq (d := slot w aR2) (k := w) (by rng_disj)
+  rw [hf₁.wv_eq (d := slot w aR2) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_arith)]; exact hr2
 
 

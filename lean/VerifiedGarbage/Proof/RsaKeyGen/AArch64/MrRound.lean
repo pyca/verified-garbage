@@ -10,6 +10,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
 
 /-!
@@ -223,18 +224,18 @@ theorem roundPre_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 
     rw [hy₂, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
   have f₂ : Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))]
       s₁.mem s₂.mem := Frm.of_arrays ha₂ (by simp)
-  have hc₂ : MrCtx s₂ B Z w c bm := hc₁.of_frm f₂ (by kmut) k₂ (by decide) (by rd_disj) (by rd_disj) (by rd_disj)
-    (by rd_disj) (by rd_disj)
+  have hc₂ : MrCtx s₂ B Z w c bm := hc₁.of_frm f₂ (by kmut) k₂ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
   -- `[aB] := b R mod c`.
   refine WP.mono (copyA_ok hc₂.ws (o := aB) (a := aXm) (by decide) (by decide) (by decide))
     fun s₃ ⟨hv₃, o₃, _, _, k₃⟩ => ?_
   rw [hXm] at hv₃
   have f₃ : Frm B [(slot w aB, 8 * (w + 2))] s₂.mem s₃.mem :=
     Frm.of_outside (o₃.mono (o' := slot w aB) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp)
-  have hc₃ := hc₂.setB f₃ (by kmut) k₃ (by decide) (by rd_disj) (by rd_disj) (by rd_disj) (by rd_disj) hv₃
+  have hc₃ := hc₂.setB f₃ (by kmut) k₃ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) hv₃
   -- The table, and `y := 1`.
   have hXm₃ : wv s₃.mem B (slot w aXm) w = Spec.Rsa.powMod wt.1 1 c * 2 ^ (64 * w) % c := by
-    rw [f₃.wv_eq (d := slot w aXm) (k := w) (by rd_disj) (by omega_using [hn, sXm]), hXm,
+    rw [f₃.wv_eq (d := slot w aXm) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_using [hn, sXm]), hXm,
       VG.Proof.Bignum.powMod_eq, Nat.pow_one, Nat.mod_mul_mod]
   refine WP.mono (tabBuild_ok M hw128 hEZ hc₃ hodd hc1 hXm₃) fun t ⟨hct, hTt, hYt, ft, k⟩ => ?_
   have f13 : Frm B ([(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2)),
@@ -370,10 +371,10 @@ theorem mrRound_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4 : 4 �
     · exact (wI.trans (Frm.of_outside (writeW_outside _ B _ (d := 8 * kUni) (by simp only [kUni, kP, sFn]; omega_using []))
         (by simp))).trans (Frm.of_outside (writeW_outside _ B _ (d := 8 * kStat) (by simp only [kStat, sFn]; omega_using []))
         (by simp))
-  refine ⟨hc₂.of_frm hft (by kmut) k (by decide) (by rd_disj) (by rd_disj) (by rd_disj) (by rd_disj) (by rd_disj),
+  refine ⟨hc₂.of_frm hft (by kmut) k (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl),
     ?_, ?_, ?_, ?_, ?_, (k₁₂.trans k).mono (by decide)⟩
-  · rw [hft.wv_eq (d := slot w aR2) (k := w) (by rd_disj) (by omega_using [hn, sR2])]; exact hR2₂
-  · rw [hft.word_eq (d := 8 * kUsed) (by rd_disj) (by simp only [kUsed, sFn]; omega_using [])]; exact hUs₂
+  · rw [hft.wv_eq (d := slot w aR2) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_using [hn, sR2])]; exact hR2₂
+  · rw [hft.word_eq (d := 8 * kUsed) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega_using [])]; exact hUs₂
   · rw [hm]; cases f <;> simp only [↓reduceIte, Bool.false_eq_true, word_writeW_self]
   · intro hf
     rw [hm, hf]

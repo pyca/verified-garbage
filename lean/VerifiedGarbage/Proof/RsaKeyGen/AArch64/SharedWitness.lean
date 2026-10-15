@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-! # Witness preparation for a generic shared Miller–Rabin round -/
 
@@ -97,26 +98,26 @@ theorem sharedWitness_ok (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} (hw4
     rw [hy₂, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
   have f₂ : Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aXm, 8 * (w + 2))]
       s₁.mem s₂.mem := Frm.of_arrays ha₂ (by simp)
-  have hc₂ : MrCtx s₂ B Z w c bm := hc₁.of_frm f₂ (by kmut) k₂ (by decide) (by rd_disj) (by rd_disj) (by rd_disj)
-    (by rd_disj) (by rd_disj)
+  have hc₂ : MrCtx s₂ B Z w c bm := hc₁.of_frm f₂ (by kmut) k₂ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
   -- `[aB] := b R mod c`.
   refine WP.mono (copyA_ok hc₂.ws (o := aB) (a := aXm) (by decide) (by decide) (by decide))
     fun s₃ ⟨hv₃, o₃, _, _, k₃⟩ => ?_
   rw [hXm] at hv₃
   have f₃ : Frm B [(slot w aB, 8 * (w + 2))] s₂.mem s₃.mem :=
     Frm.of_outside (o₃.mono (o' := slot w aB) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega_using [])) (by simp)
-  have hc₃ := hc₂.setB f₃ (by kmut) k₃ (by decide) (by rd_disj) (by rd_disj) (by rd_disj) (by rd_disj) hv₃
+  have hc₃ := hc₂.setB f₃ (by kmut) k₃ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) hv₃
   have f13 : Frm B [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)),
       (slot w aXm, 8 * (w + 2)), (slot w aB, 8 * (w + 2))] s₁.mem s₃.mem :=
     (f₂.mono (by simp)).trans (f₃.mono (by simp))
   refine ⟨hc₃, ?_, ?_, ?_, ?_, ?_, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
-  · rw [f₃.wv_eq (d := slot w aXm) (k := w) (by rd_disj) (by omega_using [hn, sXm])]
+  · rw [f₃.wv_eq (d := slot w aXm) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_using [hn, sXm])]
     exact hXm
-  · rw [f13.wv_eq (d := slot w aR2) (k := w) (by rd_disj) (by omega_using [hn, sR2])]
+  · rw [f13.wv_eq (d := slot w aR2) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_using [hn, sR2])]
     exact hR2₁
-  · rw [f13.word_eq (d := 8 * kU) (by rd_disj) (by simp only [kU]; omega_using [])]
+  · rw [f13.word_eq (d := 8 * kU) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kU]; omega_using [])]
     exact hu₁
-  · rw [f13.word_eq (d := 8 * kUsed) (by rd_disj) (by simp only [kUsed, sFn]; omega_using [])]
+  · rw [f13.word_eq (d := 8 * kUsed) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega_using [])]
     exact hus₁
   · exact (hf₁.mono (fun r hr => List.mem_append_left _ hr)).trans
       (f13.mono (fun r hr => List.mem_append_right _ hr))

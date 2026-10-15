@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # A candidate on x86-64: one window of Miller–Rabin's exponentiation
@@ -229,21 +230,21 @@ theorem mrWin_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
   have hf₂ : Frm B [(8 * kG, 8)] s₁.mem s₂.mem := by
     rw [hm₂]; exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kG) (by unfold kG sFn; omega_arith)) (by simp)
   have hg₂ : Good s₂ B Z w mi := ⟨hg₁.scr.congr k₂.2.2, (k₂.gpr (by decide)).trans hg₁.rdi,
-    Hdr.of_frm hg₁.hdr hf₂ (by rng_disj)⟩
+    Hdr.of_frm hg₁.hdr hf₂ (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl)⟩
   -- `T_d` into `aXm`.
   refine wp_seqs_append (by simp [mrSel]) (by simp) ?_
   refine WP.mono (mrSel_ok hg₂ hTZ (by omega_arith) hw' hd16 (by rw [hm₂, word_writeW_self])) fun s₃ ⟨hv₃, ho₃, k₃⟩ => ?_
   have hf₃ : Frm B [(slot w aXm, 8 * (w + 2))] s₂.mem s₃.mem := Frm.of_outside ho₃ (by simp)
   have hg₃ : Good s₃ B Z w mi := ⟨hg₂.scr.congr k₃.2.2, (k₃.gpr (by decide)).trans hg₂.rdi,
-    Hdr.of_frm hg₂.hdr hf₃ (by rng_disj)⟩
+    Hdr.of_frm hg₂.hdr hf₃ (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl)⟩
   have hf13 : Frm B (midRanges w) s₁.mem s₃.mem := (hf₂.mono (by simp [midRanges])).trans (hf₃.mono (by simp [midRanges]))
   have hc₃ : MrCtx s₃ B Z w mi c bm := hc₁.of_win hd (hf13.mono (midRanges_sub w)) hg₃.scr hg₃.rdi
-  have hT₂ : TabOK s₂.mem B w c b := hT₁.of_low hf₂ (by rng_le) (by omega_arith)
+  have hT₂ : TabOK s₂.mem B w c b := hT₁.of_low hf₂ (VG.Proof.RsaKeyGen.SlotShapeC.leD rfl rfl) (by omega_arith)
   have hX₃ : wv s₃.mem B (slot w aXm) w = Spec.Rsa.powMod b d c * 2 ^ (64 * w) % c := by rw [hv₃]; exact hT₂ d hd16
   have hY₃ : wv s₃.mem B (slot w aY) w = s4.1 * 2 ^ (64 * w) % c := by
     have := slot_le (w := w) (show aY < 8 by decide)
-    rw [hf₃.wv_eq (d := slot w aY) (k := w) (by rng_disj) (by omega_arith),
-      hf₂.wv_eq (d := slot w aY) (k := w) (by rng_disj) (by omega_arith)]; exact hY₁
+    rw [hf₃.wv_eq (d := slot w aY) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_arith),
+      hf₂.wv_eq (d := slot w aY) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_arith)]; exact hY₁
   -- `y := y T_d`.
   refine wp_seqs_append (by simp) (by simp [eqMask]) ?_
   refine WP.mono (M.mm_ok hg₃ hZ (by omega_arith) (by omega_arith) (o := aY) (a := aY) (b := aXm) (by decide) (by decide)
