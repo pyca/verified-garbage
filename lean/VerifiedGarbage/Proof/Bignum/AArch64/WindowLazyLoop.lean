@@ -24,7 +24,7 @@ theorem loop_ok {s : State} {B : Addr} {Z n eA eN eT : Nat} {bit : Bool}
     (sA : eT+8*(4*n) ≤ eA ∨ eA+8*(4*n) ≤ eT)
     (sN : eT+8*(4*n) ≤ eN ∨ eN+8*(4*n) ≤ eT) :
     WP isa (countLoop .x14 (VG.Impl.Bignum.AArch64.WindowLazy.words ++
-      [.addImm .x .x16 .x16 32, .addImm .x .x17 .x17 32, .addImm .x .x5 .x5 32])) s fun t =>
+      ([.addImm .x .x16 .x16 32, .addImm .x .x17 .x17 32, .addImm .x .x5 .x5 32] : List Instr))) s fun t =>
       wv t.mem B eT (4*n) + bit.toNat * wv s.mem B eN (4*n) =
         wv s.mem B eA (4*n) + 2 ^ (64*(4*n)) * (!t.c).toNat ∧
       Outside B eT (8*(4*n)) s.mem t.mem ∧
