@@ -58,7 +58,7 @@ theorem random_sign_satisfiable (v : Backend) :
     | (intro a h₁ h₂; simp only [Region.Contains, stackArgAddr, randomSignSatState] at h₁ h₂; bv_omega)
 
 theorem random_sign_verified (v : Backend) :
-    Verified target (RandomSign.code (randomSignerName v) (SignVerify.sign v.mul))
+    Verified target (RandomSign.code (randomSignerName v) (SignVerify.sign v.sq v.mul))
       (Spec.Dsa.randomSignContract abi (v.stack + 256)) :=
   ⟨random_sign_correct v, random_sign_constantTime v, random_sign_satisfiable v⟩
 

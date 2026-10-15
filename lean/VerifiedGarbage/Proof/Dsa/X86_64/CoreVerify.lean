@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleOperands
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReadyJoint
 import all Init.Data.Array.Basic
@@ -36,7 +37,7 @@ def VerifyValues.value (L : ExecutionLayout) (data : VerifyValues) : Nat :=
 
 /-- All verification arithmetic runs for every signature; the entry point
 combines the final equality with its accumulated validity mask. -/
-theorem coreVerify_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
+theorem coreVerify_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
     (hp : 1 < L.modulus) (hq : 255 < L.subgroup)
     (hop : L.modulus % 2 = 1) (hoq : L.subgroup % 2 = 1)
     (hpf : L.modulus ≤ 256 ^ L.pLen) (hqf : L.subgroup ≤ 256 ^ L.qLen)
@@ -50,7 +51,7 @@ theorem coreVerify_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
     (hrl : data.signatureR.length = L.qLen) (hsl : data.signatureS.length = L.qLen)
     (hzl : data.digest.length < 2 ^ 64)
     (hqm : OperandBytes s0 L.base activeBytes (Core.scalar qMinusTwo) (Spec.Dsa.encodeBE L.qLen (L.subgroup - 2))) :
-    WP isa (Core.verify M.mm) s0 fun s8 =>
+    WP isa (Core.verify Sq.mm M.mm) s0 fun s8 =>
       Ready L s8 ∧
       Spec.Rsa.bytesAt s8.mem (off L.base u) L.qLen = Spec.Dsa.encodeBE L.qLen (data.value L) ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s8.mem ∧
@@ -79,12 +80,12 @@ theorem coreVerify_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
   have hv : v + L.qLen ≤ usedBytes := by unfold v usedBytes; omega
   have hqmLen := encodeBE_length L.qLen (L.subgroup - 2)
   unfold Core.verify
-  have step1 := readyPow_ok M h0 .q (by change 1 < L.subgroup; omega) hoq
+  have step1 := readyPow_ok M Sq h0 .q (by change 1 < L.subgroup; omega) hoq
     Core.signatureS (Core.scalar qMinusTwo) (by trivial) (by change qMinusTwo < 2 ^ 31; decide)
     hs.active hqm (by rw [hsl]; omega)
     (by simp only [hsl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hqmLen]; omega) (by rw [hqmLen]; omega) inverse (by decide) hi
-  have step1' : WP isa (Core.pow M.mm qWorkspace Core.signatureS (Core.scalar qMinusTwo) (Core.scalar inverse)) s0
+  have step1' : WP isa (Core.pow Sq.mm M.mm qWorkspace Core.signatureS (Core.scalar qMinusTwo) (Core.scalar inverse)) s0
       (CallResult L .q inverse ki s0) := by
     simpa only [ki, Core.scalar, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value,
       fitq (L.subgroup - 2) (by omega)] using step1

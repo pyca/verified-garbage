@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.Arithmetic
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import all Init.Data.Array.Basic
@@ -49,7 +50,7 @@ theorem scratchSource {s : State} {B : Addr} {capacity active offset : Nat}
 /-- DSA modular exponentiation in Montgomery representation. The exponent
 is a nonempty byte string outside the scratch workspace; leading zeroes
 are permitted. This lemma makes no primality or group-order assumption. -/
-theorem expLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat}
+theorem expLoop_ok (M : Mont) (Sq : MontS) {s : State} {B : Addr} {Z o w wx : Nat}
     {minv : BitVec 64} {m x : Nat}
     (hc : SubCtx s B Z o w wx minv) (hw2 : 2 ≤ wx) (hwx : wx ≤ w) (hw30 : w < 2 ^ 30)
     (hn : wv s.mem (off B o) (slot wx aN) wx = m)
@@ -62,12 +63,12 @@ theorem expLoop_ok (M : Mont) {s : State} {B : Addr} {Z o w wx : Nat}
     {sp sl : Nat} (hsp : sp < 32) (hsl : sl < 32) {ep : Addr} {eb : List Byte}
     (hep : word s.mem B (8 * sp) = ep) (hel : word s.mem B (8 * sl) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
-    WP isa (seqs (Crt.expLoop M.mm Crt.tabSelect sp sl)) s fun t =>
+    WP isa (seqs (Crt.expLoopS Sq.mm M.mm Crt.tabSelect sp sl)) s fun t =>
       SubCtx t B Z o w wx minv ∧ wv t.mem (off B o) (slot wx aY) wx < m ∧
       wv t.mem (off B o) (slot wx aY) wx % m =
         Spec.Dsa.powMod x (Spec.Dsa.decodeBE eb) m * 2 ^ (64 * wx) % m ∧
       Frm (off B o) (crtExpRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.mono (crtExpLoop_ok M CrtSel.sse (Q := True) hc hw2 hwx hw30 hn hinv hodd hxl
+  refine WP.mono (crtExpLoopS_ok M Sq CrtSel.sse (Q := True) hc hw2 hwx hw30 hn hinv hodd hxl
     (fun _ => hxc) hyl (fun _ => hyc) hsp hsl hep hel hL1 hL2 he) fun t ht => ?_
   obtain ⟨hctx, hlt, hval, hframe, hkeep⟩ := ht
   refine ⟨hctx, hlt, ?_, hframe, hkeep⟩

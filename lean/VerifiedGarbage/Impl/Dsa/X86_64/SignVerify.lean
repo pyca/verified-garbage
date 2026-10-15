@@ -96,21 +96,21 @@ def signFailure : Prog isa := seqs [
   .loop (.block [.store8 (at0 .rsi) .rax, .alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)]) .ne,
   .block exit]
 
-def sign (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+def sign (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   .block signEntry,
   Checks.domainShape,
   .ite .e signFailure (seqs [
-    workspaces, Checks.signingKey mul, Checks.privateKey mul,
-    Core.sign mul, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true,
+    workspaces, Checks.signingKey mul, Checks.privateKey sq mul,
+    Core.sign sq mul, Checks.zero (Core.scalar r) true, Checks.zero (Core.scalar s) true,
     writeScalar r false, writeScalar s true, .block result])]
 
-def verify (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+def verify (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   .block verifyEntry,
   Checks.domainShape,
   .ite .e (.block (([.mov32 .rax (.imm 0)] : List Instr) ++ exit)) (seqs [
     workspaces, Checks.publicKey mul,
     Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
-    Core.verify mul, Checks.equal (Core.scalar u) Core.signatureR,
+    Core.verify sq mul, Checks.equal (Core.scalar u) Core.signatureR,
     .block result])]
 
 end VG.Impl.Dsa.X86_64.SignVerify

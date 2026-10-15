@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningVerified
 import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
 public import VerifiedGarbage.Proof.Rsa.X86_64.CallMont
@@ -76,19 +77,19 @@ theorem verifying_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
   sig_post [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four] at hp ⊢
   simpa only [State.patch_gpr] using hp
 
-theorem signing_call_verified (M : Mont) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = SignVerify.sign M.mm)
-    (hmx : (SignVerify.sign M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+theorem signing_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
+    (hc : c.InlineOk = true) (hin : c.inline = SignVerify.sign Sq.mm M.mm)
+    (hmx : (SignVerify.sign Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified target c (Spec.Dsa.signContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ signingCorrect M hmx) (hin ▸ signingConstantTime M)
+  Verified.of_inline_sig hc (hin ▸ signingCorrect M Sq hmx) (hin ▸ signingConstantTime M Sq)
     signing_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
     signing_patch
 
-theorem verifying_call_verified (M : Mont) {c : Prog isa}
-    (hc : c.InlineOk = true) (hin : c.inline = SignVerify.verify M.mm)
-    (hmx : (SignVerify.verify M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+theorem verifying_call_verified (M : Mont) (Sq : MontS) {c : Prog isa}
+    (hc : c.InlineOk = true) (hin : c.inline = SignVerify.verify Sq.mm M.mm)
+    (hmx : (SignVerify.verify Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified target c (Spec.Dsa.verifyContract abi 8) :=
-  Verified.of_inline_sig hc (hin ▸ verifyingCorrect M hmx) (hin ▸ verifyingConstantTime M)
+  Verified.of_inline_sig hc (hin ▸ verifyingCorrect M Sq hmx) (hin ▸ verifyingConstantTime M Sq)
     verifying_implies8 (fun _ h => Sig.clear_of_pre h) (fun _ _ _ _ h => Sig.rsp_of_pub h)
     (fun s b hv u _ _ hp => verifying_patch s b hv u hp)
 

@@ -28,15 +28,16 @@ namespace VG.Proof.Dsa.X86_64
 open VG VG.X86_64 VG.Impl.Dsa.X86_64 VG.Proof.Bignum.X86_64
 
 structure Backend where
+  sq : Prog isa
   mul : Nat → Nat → Nat → Prog isa
   stack : Nat := 0
   suffix : String
   features : List String
-  signVerified : Verified target (SignVerify.sign mul) (Spec.Dsa.signContract abi stack)
-  verifyVerified : Verified target (SignVerify.verify mul) (Spec.Dsa.verifyContract abi stack)
-  signSp : (SignVerify.sign mul).all (fun i => !isa.writesSp i) = true
-  verifySp : (SignVerify.verify mul).all (fun i => !isa.writesSp i) = true
-  signDepth : (SignVerify.sign mul).x86_64Depth ≤ stack
+  signVerified : Verified target (SignVerify.sign sq mul) (Spec.Dsa.signContract abi stack)
+  verifyVerified : Verified target (SignVerify.verify sq mul) (Spec.Dsa.verifyContract abi stack)
+  signSp : (SignVerify.sign sq mul).all (fun i => !isa.writesSp i) = true
+  verifySp : (SignVerify.verify sq mul).all (fun i => !isa.writesSp i) = true
+  signDepth : (SignVerify.sign sq mul).x86_64Depth ≤ stack
   stackBound : stack < 2 ^ 32
 
 end VG.Proof.Dsa.X86_64

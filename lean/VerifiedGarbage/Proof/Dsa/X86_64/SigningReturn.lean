@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningInitialize
 import VerifiedGarbage.Proof.Dsa.X86_64.Failure
 import all Init.Data.Array.Basic
@@ -26,9 +27,9 @@ def SigningPost (p : SigningInput) (original t : State) : Prop :=
   (∀ x, usedBytes ≤ ofs p.base x → (∀ i < 2 * p.qLen, x ≠ original.gpr .rdi + BitVec.ofNat 64 i) →
     t.mem x = original.mem x) ∧ Keep coreRegs original t
 
-theorem signingAccepted_ok (M : Mont) {p : SigningInput} {original s : State} (h : SigningPre p original)
+theorem signingAccepted_ok (M : Mont) (Sq : MontS) {p : SigningInput} {original s : State} (h : SigningPre p original)
     (hi : SigningInitialized p original h.pLength s) (ha : p.accepted = true) :
-    WP isa (signBody M.mm) s (SigningPost p original) := by
+    WP isa (signBody Sq.mm M.mm) s (SigningPost p original) := by
   obtain ⟨pi, qi, hr, ho, hm, hsave, hf, hk⟩ := hi
   let L := (p.layout original h.pLength).withInverses pi qi
   obtain ⟨hsize, hpodd, hqodd⟩ := p.shapeFacts ha
@@ -42,7 +43,7 @@ theorem signingAccepted_ok (M : Mont) {p : SigningInput} {original s : State} (h
     exact Nat.le_of_lt hh
   have hqn := VG.Proof.Dsa.subgroup_scan_width hsize
   have hkey : Spec.Dsa.privateKeyBytes L.pLen L.qLen p.key = p.values.key L p.components.y := rfl
-  refine WP.mono (signBody_spec M hr p.values ho hsize hpodd hqodd hpf hqf p.keyLength hkey hqn rfl hm
+  refine WP.mono (signBody_spec M Sq hr p.values ho hsize hpodd hqodd hpf hqf p.keyLength hkey hqn rfl hm
     (fun i hi => by rw [hk.2.2]; exact h.writable i hi) h.separate)
     fun t ⟨hret, hout, hsaved, hframe, hkeep⟩ => ?_
   exact ⟨hret, hout, fun i hi => (hsaved i hi).trans (hsave i hi),

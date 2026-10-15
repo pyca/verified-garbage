@@ -23,7 +23,7 @@ theorem random_signer_outcome (v : Backend) {s t : State} (h : RandomSignABI v.s
     (hdx : t.gpr .rdx = s.gpr .rcx) (hcx : t.gpr .rcx = s.gpr .r8)
     (h8 : t.gpr .r8 = s.gpr .r9) (h9 : t.gpr .r9 = off (randomBase s) Random.oNonce)
     (hrd : t.rd = s.rd) (hwr : t.wr = ⟨randomBase s, Random.frameBytes⟩ :: s.wr) :
-    WP isa (.call (randomSignerName v) (SignVerify.sign v.mul)) t fun u =>
+    WP isa (.call (randomSignerName v) (SignVerify.sign v.sq v.mul)) t fun u =>
       u.rd = t.rd ∧ u.wr = t.wr ∧ (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧
       Frame (randomCallWr s ++ [below (randomBase s) (v.stack + 8)]) t.mem u.mem ∧
       ((u.gpr .rax).setWidth 32).toNat = Spec.Dsa.signStatus (randomCallResult s t) ∧

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleJointCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleJointCT
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
@@ -32,17 +33,17 @@ theorem verifyInputs_stable (p : SchedulePublic) (a : Operand × Nat) (ha : a �
   rcases ha with rfl | rfl | rfl | rfl | rfl <;>
     simp [stablePointer, Core.generator, Core.publicValue, Core.signatureR, Core.signatureS, Core.digest]
 
-theorem coreVerifySchedule_ct (M : Mont) (inputs : SchedulePublic → List (Operand × Nat))
+theorem coreVerifySchedule_ct (M : Mont) (Sq : MontS) (inputs : SchedulePublic → List (Operand × Nat))
     (stable : ∀ p a, a ∈ inputs p → a.1.length ≠ .mask ∧ stablePointer a.1.pointer)
     (members : ∀ p a, a ∈ verifyInputs p → a ∈ inputs p) :
-    RelCT isa (Two (ScheduleState inputs)) (Core.verify M.mm)
+    RelCT isa (Two (ScheduleState inputs)) (Core.verify Sq.mm M.mm)
       (Two (ScheduleState inputs)) := by
   have qp (p : SchedulePublic) : 1 ≤ p.layout.qLen := p.layout.widths.1
   have pp (p : SchedulePublic) : 1 ≤ p.layout.pLen := by have := p.layout.widths; omega
   have qb (p : SchedulePublic) : p.layout.qLen ≤ 1024 := by have := p.layout.widths; omega
   have hpfit (p : SchedulePublic) : (p.layout.pLen + 7) / 8 ≤ ModulusSide.p.words p.layout := Nat.le_refl _
   have hqfit (p : SchedulePublic) : (p.layout.qLen + 7) / 8 ≤ ModulusSide.q.words p.layout := Nat.le_refl _
-  have h1 := schedulePow_ct M inputs stable .q inverse Core.signatureS (Core.scalar qMinusTwo)
+  have h1 := schedulePow_ct M Sq inputs stable .q inverse Core.signatureS (Core.scalar qMinusTwo)
     (fun p => p.layout.qLen) (fun p => p.layout.qLen)
     (by trivial) (by change qMinusTwo < 2 ^ 31; decide) (by trivial) (by trivial)
     qp hqfit qp qb (by decide) (by decide) (scalar_space (by decide)) (by taint_decide)
@@ -83,9 +84,9 @@ theorem coreVerifySchedule_ct (M : Mont) (inputs : SchedulePublic → List (Oper
     ⟨h.1, h.1.1.availableLocal .p t (by decide) (element_space (by decide) p)⟩) h8).mono
     (fun _ _ h => h) (fun _ _ => two_mono (fun _ _ h => h.1))
 
-theorem coreVerify_ct (M : Mont) : RelCT isa (Two (ScheduleState verifyInputs))
-    (Core.verify M.mm) (fun _ _ => True) :=
-  (coreVerifySchedule_ct M verifyInputs verifyInputs_stable (fun _ _ h => h)).mono
+theorem coreVerify_ct (M : Mont) (Sq : MontS) : RelCT isa (Two (ScheduleState verifyInputs))
+    (Core.verify Sq.mm M.mm) (fun _ _ => True) :=
+  (coreVerifySchedule_ct M Sq verifyInputs verifyInputs_stable (fun _ _ h => h)).mono
     (fun _ _ h => h) (fun _ _ _ => True.intro)
 
 end VG.Proof.Dsa.X86_64

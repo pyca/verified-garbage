@@ -43,10 +43,10 @@ def enter (offset : Nat) : List Instr := [.alu .add .rdi (.imm (BitVec.ofNat 32 
 /-- Return to the outer workspace after writing an arithmetic result. -/
 def finish : List (Prog isa) := [Arithmetic.store aY result resultLen, .block [Crt.leave]]
 
-def pow (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent output : Operand) : Prog isa :=
+def pow (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent output : Operand) : Prog isa :=
   seqs ([.block (operand arg argLen base ++ operand arg2 arg2Len exponent ++
     operand result resultLen output ++ enter ws),
-    Arithmetic.power mul arg argLen arg2 arg2Len] ++ finish)
+    Arithmetic.power sq mul arg argLen arg2 arg2Len] ++ finish)
 
 /-- Only for exponents declared public by the caller's contract. -/
 def publicPow (mul : Nat → Nat → Nat → Prog isa) (ws : Nat) (base exponent output : Operand) : Prog isa :=
@@ -87,10 +87,10 @@ def digest : Operand := ⟨.input .digest, .digestPrefixLen⟩
 
 /-- Compute the signature into r and s. Rejected scalar inputs are still
 processed; the caller combines their range masks with r/s nonzero masks. -/
-def sign (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  pow mul pWorkspace generator nonce (element t),
+def sign (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+  pow sq mul pWorkspace generator nonce (element t),
   reduce mul (element t) (scalar r),
-  pow mul qWorkspace nonce (scalar qMinusTwo) (scalar inverse),
+  pow sq mul qWorkspace nonce (scalar qMinusTwo) (scalar inverse),
   product mul qWorkspace privateScalar (scalar r) (scalar u),
   reduce mul digest (scalar z),
   add (scalar z) (scalar u) (scalar v),
@@ -98,8 +98,8 @@ def sign (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
 
 /-- Compute the verification value into u; the caller compares it with r
 and combines that equality with parameter, key and scalar-range checks. -/
-def verify (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
-  pow mul qWorkspace signatureS (scalar qMinusTwo) (scalar inverse),
+def verify (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+  pow sq mul qWorkspace signatureS (scalar qMinusTwo) (scalar inverse),
   reduce mul digest (scalar z),
   product mul qWorkspace (scalar z) (scalar inverse) (scalar u),
   product mul qWorkspace signatureR (scalar inverse) (scalar v),

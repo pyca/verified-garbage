@@ -20,7 +20,7 @@ theorem random_signer_retry (v : Backend) {s t : State} {attempts : Nat} (h : Ra
     (hrd : t.rd = s.rd) (hwr : t.wr = ⟨randomBase s, Random.frameBytes⟩ :: s.wr)
     (hn : word t.mem (randomBase s) Random.oAttempts = BitVec.ofNat 64 attempts)
     (hpos : 0 < attempts) (hbound : attempts < 2 ^ 64) :
-    WP isa (.seq (.call (randomSignerName v) (SignVerify.sign v.mul)) RandomSign.callFinish) t fun u =>
+    WP isa (.seq (.call (randomSignerName v) (SignVerify.sign v.sq v.mul)) RandomSign.callFinish) t fun u =>
       u.rd = t.rd ∧ u.wr = t.wr ∧ (∀ r ∈ calleeSaved, u.gpr r = t.gpr r) ∧
       (∃ m : Mem,
         Frame (randomCallWr s ++ [below (randomBase s) (v.stack + 8)]) t.mem m ∧

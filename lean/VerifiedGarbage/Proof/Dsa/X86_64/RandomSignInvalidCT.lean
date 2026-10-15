@@ -53,8 +53,8 @@ theorem random_sign_body_invalid_ct (v : Backend) {s t : State}
     (hs : RandomSignABI v.stack s) (ht : RandomSignABI v.stack t) (hp : RandomSignPublicAgree s t)
     (hq : ¬ 1 < Spec.Dsa.decodeBE (randomQBytes s))
     {tsa tsb : List Leak} {u w : State}
-    (ea : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.mul)) (allocState Random.frameBytes s) tsa u)
-    (eb : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.mul)) (allocState Random.frameBytes t) tsb w) : tsa = tsb := by
+    (ea : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.sq v.mul)) (allocState Random.frameBytes s) tsa u)
+    (eb : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.sq v.mul)) (allocState Random.frameBytes t) tsb w) : tsa = tsb := by
   have hqt : ¬ 1 < Spec.Dsa.decodeBE (randomQBytes t) := by rw [← hp.qbytes]; exact hq
   cases ea with
   | seq eae ear => cases ear with

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallHeadCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallReduceCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.CallAddCT
@@ -87,7 +88,7 @@ theorem readyCall_pre {side : ModulusSide} {d : Nat} {a b : Operand}
     hr.publicPointer a.pointer ha, hr.publicPointer b.pointer hb, rfl, hr.length side,
     hr.local_write p.outputEnd, hr.local_out p.outputStart p.outputEnd⟩
 
-theorem readyPow_ct (M : Mont) (side : ModulusSide) (d : Nat) (a b : Operand)
+theorem readyPow_ct (M : Mont) (Sq : MontS) (side : ModulusSide) (d : Nat) (a b : Operand)
     (ha : pointerFits a.pointer) (hb : pointerFits b.pointer)
     (hpa : stablePointer a.pointer) (hpb : stablePointer b.pointer)
     (hd : d < 2 ^ 31)
@@ -95,10 +96,10 @@ theorem readyPow_ct (M : Mont) (side : ModulusSide) (d : Nat) (a b : Operand)
     (hT : (taint.check (Taint.ofRegs [.rdi])
       (.block (callHead a b ⟨.local d, side.lengthField⟩ side.offset)) hc).isSome = true) :
     RelCT isa (Two (ReadyCallPre side d a b))
-      (Core.pow M.mm side.offset a b ⟨.local d, side.lengthField⟩) (fun _ _ => True) :=
+      (Core.pow Sq.mm M.mm side.offset a b ⟨.local d, side.lengthField⟩) (fun _ _ => True) :=
   two_map (fun p : ReadyCallPublic side d => p.call a b)
     (fun _ _ h => ⟨readyCall_pre hpa hpb h, rfl⟩)
-    (corePow_ct M ha hb hd hT)
+    (corePow_ct M Sq ha hb hd hT)
 
 structure ReadyProductPublic (side : ModulusSide) (d : Nat) extends ReadyCallPublic side d where
   secondFits : (exponentLen + 7) / 8 ≤ side.words layout

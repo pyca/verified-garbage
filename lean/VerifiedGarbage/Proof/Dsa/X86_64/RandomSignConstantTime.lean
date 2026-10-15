@@ -13,8 +13,8 @@ theorem random_sign_body_agreement (v : Backend) {s t : State}
     (htrace : (randomSignRemaining (randomInput s) 0 8).trace = (randomSignRemaining (randomInput t) 0 8).trace)
     (hstatus : (randomSignRemaining (randomInput s) 0 8).status = (randomSignRemaining (randomInput t) 0 8).status)
     {tsa tsb : List Leak} {u w : State}
-    (ea : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.mul)) (allocState Random.frameBytes s) tsa u)
-    (eb : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.mul)) (allocState Random.frameBytes t) tsb w) : tsa = tsb := by
+    (ea : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.sq v.mul)) (allocState Random.frameBytes s) tsa u)
+    (eb : Exec isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.sq v.mul)) (allocState Random.frameBytes t) tsb w) : tsa = tsb := by
   by_cases hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)
   · exact random_sign_body_valid_ct v hs ht hp hq htrace hstatus ea eb
   · exact random_sign_body_invalid_ct v hs ht hp hq ea eb
@@ -28,7 +28,7 @@ theorem random_sign_alloc {extra : Nat} {s : State} (h : RandomSignABI extra s) 
 theorem random_sign_constantTime (v : Backend) :
     ConstantTime isa (Spec.Dsa.randomSignContract abi (v.stack + 256)).pre
       (Spec.Dsa.randomSignContract abi (v.stack + 256)).pub
-      (RandomSign.code (randomSignerName v) (SignVerify.sign v.mul)) := by
+      (RandomSign.code (randomSignerName v) (SignVerify.sign v.sq v.mul)) := by
   intro s t tsa tsb u w hs ht hpub ea eb
   have hsa := randomSignABI_of hs
   have hta := randomSignABI_of ht

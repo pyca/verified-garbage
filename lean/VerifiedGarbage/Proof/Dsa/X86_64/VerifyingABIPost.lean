@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPre
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -50,13 +51,13 @@ theorem verifyingSharedPost {s t : State} (h : VerifyingABI s) (hp : VerifyingPo
   rw [hp.1, verifyStatus_u32]
   rfl
 
-theorem verifyingCorrect (M : Mont)
-    (hmx : (SignVerify.verify M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
+theorem verifyingCorrect (M : Mont) (Sq : MontS)
+    (hmx : (SignVerify.verify Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : (Spec.Dsa.verifyContract abi).pre s) :
-    ∃ trace t, Exec isa (SignVerify.verify M.mm) s trace t ∧ abiPreserved s t ∧
+    ∃ trace t, Exec isa (SignVerify.verify Sq.mm M.mm) s trace t ∧ abiPreserved s t ∧
       (Spec.Dsa.verifyContract abi).post s t := by
   have ha := verifyingABI_of h
-  obtain ⟨trace, t, he, hp⟩ := verifyingMain_ok M ha.pre
+  obtain ⟨trace, t, he, hp⟩ := verifyingMain_ok M Sq ha.pre
   exact ⟨trace, t, he, abiPreserved_of_exec hmx he (verifyingGprPreserved ha hp), verifyingSharedPost ha hp⟩
 
 end VG.Proof.Dsa.X86_64

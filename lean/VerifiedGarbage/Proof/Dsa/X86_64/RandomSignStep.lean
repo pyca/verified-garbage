@@ -20,7 +20,7 @@ def RandomSignStepPost {extra : Nat} {s : State} (h : RandomSignABI extra s)
 theorem random_sign_step (v : Backend) {s t : State} {h : RandomSignABI v.stack s}
     {hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {used fuel : Nat}
     (hr : RandomSignRunning h hq used fuel t) (hf : 0 < fuel) (hb : fuel < 2 ^ 64) :
-    WP isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) t (RandomSignStepPost h hq used fuel) := by
+    WP isa (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.sq v.mul)) t (RandomSignStepPost h hq used fuel) := by
   refine WP.mono (random_sign_attempt v hr hf hb) fun u hu => ?_
   cases hd : (randomSignDraw (randomInput s) used).scalar with
   | none =>

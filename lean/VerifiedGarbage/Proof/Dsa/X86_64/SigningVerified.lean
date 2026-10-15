@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPost
 import VerifiedGarbage.Proof.Dsa.X86_64.SigningAgreement
 import all Init.Data.Array.Basic
@@ -41,9 +42,9 @@ theorem signingSatisfiable : ∃ s, (Spec.Dsa.signContract abi).pre s := by
   sig_implies_sat [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five]
     [signingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using signingSatState
 
-theorem signing_verified (M : Mont)
-    (hmx : (SignVerify.sign M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (SignVerify.sign M.mm) (Spec.Dsa.signContract abi) :=
-  ⟨signingCorrect M hmx, signingConstantTime M, signingSatisfiable⟩
+theorem signing_verified (M : Mont) (Sq : MontS)
+    (hmx : (SignVerify.sign Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified target (SignVerify.sign Sq.mm M.mm) (Spec.Dsa.signContract abi) :=
+  ⟨signingCorrect M Sq hmx, signingConstantTime M Sq, signingSatisfiable⟩
 
 end VG.Proof.Dsa.X86_64

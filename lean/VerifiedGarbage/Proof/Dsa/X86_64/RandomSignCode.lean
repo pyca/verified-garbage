@@ -10,24 +10,24 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 open VG.Impl.Dsa.X86_64
 
 theorem random_sign_sp (v : Backend) :
-    (RandomSign.code (randomSignerName v) (SignVerify.sign v.mul)).all (fun i => !isa.writesSp i) = true := by
+    (RandomSign.code (randomSignerName v) (SignVerify.sign v.sq v.mul)).all (fun i => !isa.writesSp i) = true := by
   simp only [RandomSign.code, RandomSign.body, RandomSign.attempt, Code.all, Bool.and_eq_true]
   repeat' constructor
   all_goals first | exact v.signSp | decide
 
 theorem random_sign_depth (v : Backend) :
-    (RandomSign.code (randomSignerName v) (SignVerify.sign v.mul)).x86_64Depth ≤ v.stack + 256 := by
+    (RandomSign.code (randomSignerName v) (SignVerify.sign v.sq v.mul)).x86_64Depth ≤ v.stack + 256 := by
   simp only [RandomSign.code, RandomSign.body, RandomSign.attempt, Code.x86_64Depth,
     show Random.prepare.x86_64Depth = 0 from rfl,
     show Random.sample.x86_64Depth = 0 from rfl,
     show RandomSign.callFinish.x86_64Depth = 0 from rfl,
     show RandomSign.finish.x86_64Depth = 0 from rfl,
     Nat.zero_max, Nat.max_zero]
-  change (SignVerify.sign v.mul).x86_64Depth + 8 + 248 ≤ _
+  change (SignVerify.sign v.sq v.mul).x86_64Depth + 8 + 248 ≤ _
   simpa only [Nat.add_assoc] using Nat.add_le_add_right (Nat.add_le_add_right v.signDepth 8) 248
 
 theorem random_sign_body (v : Backend) {s : State} (h : RandomSignABI v.stack s) :
-    WP isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.mul))
+    WP isa (RandomSign.body (randomSignerName v) (SignVerify.sign v.sq v.mul))
       (allocState Random.frameBytes s)
       (RandomSignBodyPost s (randomSignRemaining (randomInput s) 0 8)) := by
   by_cases hq : 1 < Spec.Dsa.decodeBE (randomQBytes s)
@@ -54,7 +54,7 @@ structure RandomSignCodePost (s : State) (result : Spec.Dsa.RandomSignResult) (t
   nonce : ∀ i < 32, t.mem (off (randomBase s) (200 + i)) = 0
 
 theorem random_sign_code (v : Backend) {s : State} (h : RandomSignABI v.stack s) :
-    WP isa (RandomSign.code (randomSignerName v) (SignVerify.sign v.mul)) s
+    WP isa (RandomSign.code (randomSignerName v) (SignVerify.sign v.sq v.mul)) s
       (RandomSignCodePost s (randomSignRemaining (randomInput s) 0 8)) := by
   apply random_frame_ok h
   refine WP.mono (random_sign_body v h) fun t ht => ⟨ht.sp, ht.wr, ?_⟩

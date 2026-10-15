@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCTState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -27,7 +28,7 @@ def scheduleCallPublic (side : ModulusSide) (d : Nat) (an bn : SchedulePublic �
     (p : SchedulePublic) : ReadyCallPublic side d :=
   ⟨p.layout, an p, bn p, p.greater side, p.odd side, ha1 p, haw p, hb1 p, hb1024 p, hd, hend p⟩
 
-theorem schedulePow_ct (M : Mont) (inputs : SchedulePublic → List (Operand × Nat))
+theorem schedulePow_ct (M : Mont) (Sq : MontS) (inputs : SchedulePublic → List (Operand × Nat))
     (stable : ∀ p a, a ∈ inputs p → a.1.length ≠ .mask ∧ stablePointer a.1.pointer)
     (side : ModulusSide) (d : Nat) (a b : Operand) (an bn : SchedulePublic → Nat)
     (ha : pointerFits a.pointer) (hb : pointerFits b.pointer)
@@ -39,14 +40,14 @@ theorem schedulePow_ct (M : Mont) (inputs : SchedulePublic → List (Operand × 
     (hT : (taint.check (Taint.ofRegs [.rdi])
       (.block (callHead a b ⟨.local d, side.lengthField⟩ side.offset)) hc).isSome = true) :
     RelCT isa (Two (ScheduleBinaryPre inputs a b an bn))
-      (Core.pow M.mm side.offset a b ⟨.local d, side.lengthField⟩)
+      (Core.pow Sq.mm M.mm side.offset a b ⟨.local d, side.lengthField⟩)
       (Two fun p s => ScheduleState inputs p s ∧ LocalReduced p.layout side d s) := by
   refine two_post (two_map (scheduleCallPublic side d an bn ha1 haw hb1 hb1024 hd hend) ?_
-    (readyPow_ct M side d a b ha hb hpa hpb hd31 hT)) ?_
+    (readyPow_ct M Sq side d a b ha hb hpa hpb hd31 hT)) ?_
   · intro p s ⟨hs, ⟨ba, has, hbl⟩, ⟨bb, hbs, hel⟩⟩
     exact ⟨hs.1, ba, bb, has, hbs, hbl, hel⟩
   · intro p s ⟨hs, ⟨ba, has, hbl⟩, ⟨bb, hbs, hel⟩⟩
-    refine WP.mono (readyPow_ok M hs.1 side (p.greater side) (p.odd side) a b ha hb has hbs
+    refine WP.mono (readyPow_ok M Sq hs.1 side (p.greater side) (p.odd side) a b ha hb has hbs
       (hbl ▸ ha1 p) (hbl ▸ haw p) (hel ▸ hb1 p) (hel ▸ hb1024 p) d hd (hend p))
       fun t h => ⟨h.schedule hs hd (hend p) (stable p), ?_⟩
     exact h.reduced (VG.Proof.Dsa.powMod_lt _ _ (by have := p.greater side; omega)) (p.fits side)

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.Modulus
 import VerifiedGarbage.Proof.Dsa.X86_64.CoreCalls
 import VerifiedGarbage.Proof.Dsa.X86_64.CoreReduce
@@ -28,21 +29,21 @@ structure CallResult (L : ExecutionLayout) (side : ModulusSide) (d value : Nat) 
   frame : CallFrame L.base side.offset (side.words L) (off L.base d) (side.length L) s.mem t.mem
   keep : Keep coreRegs s t
 
-theorem readyPow_ok (M : Mont) {L : ExecutionLayout} {s : State} (h : Ready L s)
+theorem readyPow_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s : State} (h : Ready L s)
     (side : ModulusSide) (hm : 1 < side.value L) (hodd : side.value L % 2 = 1)
     (a b : Operand) {ba bb : List Byte} (ha : pointerFits a.pointer) (hb : pointerFits b.pointer)
     (has : OperandBytes s L.base activeBytes a ba) (hbs : OperandBytes s L.base activeBytes b bb)
     (ha1 : 1 ≤ ba.length) (haw : (ba.length + 7) / 8 ≤ side.words L)
     (hb1 : 1 ≤ bb.length) (hb2 : bb.length ≤ 1024)
     (d : Nat) (hd : activeBytes ≤ d) (hend : d + side.length L ≤ usedBytes) :
-    WP isa (Core.pow M.mm side.offset a b ⟨.local d, side.lengthField⟩) s
+    WP isa (Core.pow Sq.mm M.mm side.offset a b ⟨.local d, side.lengthField⟩) s
       (CallResult L side d (Spec.Dsa.powMod (Spec.Dsa.decodeBE ba) (Spec.Dsa.decodeBE bb) (side.value L)) s) := by
   obtain ⟨hw2, hw48, hlo, ho, hhi, hk1, hk31⟩ := side.bounds L
   have hdp : pointerFits (.local d) := by
     change d < 2 ^ 31
     have : usedBytes < 2 ^ 31 := by decide
     omega
-  refine WP.mono (corePow_ok M h.parent (h.child side) (by decide) hlo hhi ho
+  refine WP.mono (corePow_ok M Sq h.parent (h.child side) (by decide) hlo hhi ho
     hw2 hw48 hw48 (by decide) hm hodd a b ⟨.local d, side.lengthField⟩ ha hb hdp
     has hbs ha1 haw hb1 hb2 (h.length side) hk1 hk31 rfl
     (h.local_write hend) (h.local_out hd hend)) ?_

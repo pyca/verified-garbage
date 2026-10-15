@@ -72,9 +72,9 @@ def constants (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (small aOne 1) (.seq (.block setupBases) (.seq (.block setupTest)
     (.ite .e doublingR2 (R2Words.choice mul))))
 
-/-- Exponentiate an encoded base with accumulator R, then decode. -/
-def encodedPower (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog isa :=
-  .seq (seqs (Crt.expLoop mul Crt.tabSelect exp expLen)) (mul aY aY aOne)
+/-- Exponentiate an encoded base with accumulator R, squaring by `sq`, then decode. -/
+def encodedPower (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog isa :=
+  .seq (seqs (Crt.expLoopS sq mul Crt.tabSelect exp expLen)) (mul aY aY aOne)
 
 /-- Convert the loaded base and accumulator to Montgomery representation. -/
 def encodePower (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
@@ -83,14 +83,14 @@ def encodePower (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
 
 /-- Encode the loaded base, run the fixed-window exponentiation and decode
 its result. R² and the number one have already been initialized. -/
-def powerCore (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog isa :=
-  .seq (encodePower mul) (encodedPower mul exp expLen)
+def powerCore (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (exp expLen : Nat) : Prog isa :=
+  .seq (encodePower mul) (encodedPower sq mul exp expLen)
 
 /-- Exponentiation of an ordinary base. The base fits the limb width but
 need not be below m. aY receives the ordinary, reduced result. Exponent
 and base lengths are positive. -/
-def power (mul : Nat → Nat → Nat → Prog isa) (base baseLen exp expLen : Nat) : Prog isa :=
-  .seq (constants mul) (.seq (load aX base baseLen) (powerCore mul exp expLen))
+def power (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) (base baseLen exp expLen : Nat) : Prog isa :=
+  .seq (constants mul) (.seq (load aX base baseLen) (powerCore sq mul exp expLen))
 
 /-- Four Montgomery steps: encode both operands, multiply, and decode. -/
 def productCore (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [

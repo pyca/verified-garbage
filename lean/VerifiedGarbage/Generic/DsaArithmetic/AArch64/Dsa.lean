@@ -24,7 +24,7 @@ def artifacts (v : Backend) : List Artifact := [
       use the selected Montgomery backend. Leading-zero component padding is supported. \
       Signing derives public-key subgroup membership from g^q = 1 and g^x = y. \
       Scratch is initialized before use; every failure zeros the entire output."])
-    code := Impl.Dsa.AArch64.SignVerify.sign v.mul
+    code := Impl.Dsa.AArch64.SignVerify.sign v.sq v.mul
     contract := Spec.Dsa.signContract AArch64.abi v.stack
     stack := v.stack
     verified := v.signVerified
@@ -36,7 +36,7 @@ def artifacts (v : Backend) : List Artifact := [
     doc := Spec.Dsa.verifyApi.doc (notes := ["Fixed-window exponentiation and streaming modular reduction \
       use the selected Montgomery backend. Leading-zero component padding is supported. \
       Signature scalars and the digest do not affect the leakage trace."])
-    code := Impl.Dsa.AArch64.SignVerify.verify v.mul
+    code := Impl.Dsa.AArch64.SignVerify.verify v.sq v.mul
     contract := Spec.Dsa.verifyContract AArch64.abi v.stack
     stack := v.stack
     verified := v.verifyVerified

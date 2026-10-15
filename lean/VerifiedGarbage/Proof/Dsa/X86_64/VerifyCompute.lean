@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.CoreVerify
 public import VerifiedGarbage.Proof.Dsa.X86_64.PublicKey
 import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
@@ -29,11 +30,11 @@ def verifyAccepted (L : ExecutionLayout) (data : VerifyValues) (valid : Bool) : 
   (decide (0 < Spec.Dsa.decodeBE data.signatureR ∧ Spec.Dsa.decodeBE data.signatureR < L.subgroup) &&
     publicAccepted L data.generator data.publicValue valid))
 
-def verifyCompute (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+def verifyCompute (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   Checks.publicKey mul, Checks.range qWorkspace Core.signatureR, Checks.range qWorkspace Core.signatureS,
-  Core.verify mul, Checks.equal (Core.scalar u) Core.signatureR]
+  Core.verify sq mul, Checks.equal (Core.scalar u) Core.signatureR]
 
-theorem verifyCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
+theorem verifyCompute_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
     (hp : 1 < L.modulus) (hq : 255 < L.subgroup)
     (hop : L.modulus % 2 = 1) (hoq : L.subgroup % 2 = 1)
     (hpf : L.modulus ≤ 256 ^ L.pLen) (hqf : L.subgroup ≤ 256 ^ L.qLen)
@@ -48,7 +49,7 @@ theorem verifyCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Rea
     (hqlen : qb.length = L.qLen) (hrl : data.signatureR.length = L.qLen) (hsl : data.signatureS.length = L.qLen)
     (hzl : data.digest.length < 2 ^ 64) (hqval : Spec.Dsa.decodeBE qb = L.subgroup)
     {valid : Bool} (hm : word s0.mem L.base Field.mask.offset = mask valid) :
-    WP isa (verifyCompute M.mm) s0 fun s5 =>
+    WP isa (verifyCompute Sq.mm M.mm) s0 fun s5 =>
       Ready L s5 ∧ word s5.mem L.base Field.mask.offset = mask (verifyAccepted L data valid) ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s5.mem ∧ Keep coreRegs s0 s5 := by
   obtain ⟨hql, hqu, _, _⟩ := L.widths
@@ -79,7 +80,7 @@ theorem verifyCompute_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Rea
   have hs3 := h3.preserve h2.ready (by decide) (by decide) (by trivial) hs2
   have hz3 := h3.preserve h2.ready (by decide) (by decide) (by simp [stablePointer, Core.digest]) hz2
   have hqm3 := h3.preserve h2.ready (Nat.le_refl _) (by decide) (by trivial) hqm2
-  refine WP.seq (WP.mono (coreVerify_ok M h3.ready hp hq hop hoq hpf hqf data hg3 hy3 hr3 hs3 hz3
+  refine WP.seq (WP.mono (coreVerify_ok M Sq h3.ready hp hq hop hoq hpf hqf data hg3 hy3 hr3 hs3 hz3
     hgl hyl hrl hsl hzl hqm3) fun s4 ⟨h4, hu4bytes, hf4, hm4eq, hk4⟩ => ?_)
   have hr4 := h3.ready.preserveExternal h4 hf4 hk4 (by decide) (by simp [stablePointer, Core.signatureR]) hr3
   have hm4 := hm4eq.trans h3.mask

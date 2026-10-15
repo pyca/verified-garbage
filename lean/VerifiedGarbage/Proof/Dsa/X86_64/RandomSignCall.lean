@@ -14,10 +14,10 @@ def randomSignerName (v : Backend) : String := Spec.Dsa.signApi.name ++ v.suffix
 theorem random_signer_call (v : Backend) {s : State} {rd wr : List Region}
     (hp : (Spec.Dsa.signContract abi v.stack).pre (s.callEntry.withRegions rd wr))
     (hr : Covers (rd ++ wr) (s.rd ++ s.wr)) (hw : Covers wr s.wr) :
-    WP isa (.call (randomSignerName v) (SignVerify.sign v.mul)) s fun t =>
+    WP isa (.call (randomSignerName v) (SignVerify.sign v.sq v.mul)) s fun t =>
       t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
-      Frame (wr ++ [below (s.gpr .rsp) ((SignVerify.sign v.mul).x86_64Depth + 8)]) s.mem t.mem ∧
+      Frame (wr ++ [below (s.gpr .rsp) ((SignVerify.sign v.sq v.mul).x86_64Depth + 8)]) s.mem t.mem ∧
       (∃ u : State, u.mem = t.mem ∧ (∀ r, r ≠ .rsp → u.gpr r = t.gpr r) ∧
         (Spec.Dsa.signContract abi v.stack).post (s.callEntry.withRegions rd wr) u) ∧
       t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -19,7 +20,7 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
-theorem privateKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
+theorem privateKey_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
     (hp : 1 < L.modulus) (hop : L.modulus % 2 = 1)
     {gb yb xb nb : List Byte}
     (hg : OperandBytes s0 L.base usedBytes Core.generator gb)
@@ -29,7 +30,7 @@ theorem privateKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
     (hgl : gb.length = L.pLen) (hyl : yb.length = L.pLen)
     (hxl : xb.length = L.qLen) (hnl : nb.length = L.qLen)
     {valid : Bool} (hm : word s0.mem L.base Field.mask.offset = mask valid) :
-    WP isa (Checks.privateKey M.mm) s0 fun s4 =>
+    WP isa (Checks.privateKey Sq.mm M.mm) s0 fun s4 =>
       Ready L s4 ∧
       word s4.mem L.base Field.mask.offset =
         mask (decide (Spec.Dsa.encodeBE L.pLen (Spec.Dsa.powMod (Spec.Dsa.decodeBE gb) (Spec.Dsa.decodeBE xb) L.modulus) = yb) &&
@@ -59,7 +60,7 @@ theorem privateKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
   have hg2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
   have hy2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy1
   have hx2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.privateScalar]) hx1
-  refine WP.seq (WP.mono (readyPow_ok M h2.ready .p hp hop Core.generator Core.privateScalar (by trivial) (by trivial)
+  refine WP.seq (WP.mono (readyPow_ok M Sq h2.ready .p hp hop Core.generator Core.privateScalar (by trivial) (by trivial)
     hg2.active hx2.active (by rw [hgl]; omega)
     (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hxl]; omega) (by rw [hxl]; omega) t (by decide) ht) fun s3 h3 => ?_)

@@ -44,7 +44,7 @@ theorem random_sign_loop_ct (v : Backend) {s t : State}
     {hqs : 1 < Spec.Dsa.decodeBE (randomQBytes s)} {hqt : 1 < Spec.Dsa.decodeBE (randomQBytes t)}
     (hpub : RandomSignPublicAgree s t) (fuel : Nat) :
     RelCT isa (RandomSignLoopAgree hs ht hqs hqt fuel)
-      (.loop (.seq (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.mul)) randomSignStatusTest) .e)
+      (.loop (.seq (RandomSign.attempt (randomSignerName v) (SignVerify.sign v.sq v.mul)) randomSignStatusTest) .e)
       (fun _ _ => True) := by
   refine RelCT.loop (M := isa) (RandomSignLoopAgree hs ht hqs hqt) ?_ fuel
   intro n a b tsa tsb u w ⟨hf, hn, used, ha, hb, htrace⟩ ea eb
