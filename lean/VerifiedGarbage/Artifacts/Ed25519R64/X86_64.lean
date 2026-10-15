@@ -4,6 +4,8 @@ public import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Verified
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
 import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Impl.Mont.Mod
@@ -58,72 +60,56 @@ def affNotes (mul : String) : List String := ["The function keeps `rbp` and `r12
 
 theorem addAffine_verified : Verified X86_64.target (addAffineFn baseline)
     (addAffineContract X86_64.abi true) :=
-  Verified.of_correct (addAffine_correct (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide)
-    (by lit_decide))
+  Verified.of_correct (addAffine_correct addAffineFn_keeps (by lit_decide))
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
       (by taint_decide))
     addAffK_implies
 
 theorem addAffineAdx_verified : Verified X86_64.target (addAffineFn adx)
     (addAffineContract X86_64.abi true) :=
-  Verified.of_correct (addAffine_correct (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide)
-    (by lit_decide))
+  Verified.of_correct (addAffine_correct addAffineFn_keeps (by lit_decide))
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
       (by taint_decide))
     addAffK_implies
 
 theorem doubleExt_verified : Verified X86_64.target (doubleFn baseline true)
     (doubleContract X86_64.abi true) :=
-  Verified.of_correct (double_correct true (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide)
-    (by lit_decide))
+  Verified.of_correct (double_correct true (doubleFn_keeps true) (by lit_decide))
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
       (by taint_decide))
     (doubleK_implies true)
 
 theorem addExt_verified : Verified X86_64.target (addFn baseline true)
     (addCachedContract X86_64.abi true) :=
-  Verified.of_correct (add_correct true (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide)
-    (by lit_decide))
+  Verified.of_correct (add_correct true (addFn_keeps true) (by lit_decide))
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
       (by taint_decide))
     (addK_implies true)
 
 theorem addProj_verified : Verified X86_64.target (addFn baseline false)
     (addCachedContract X86_64.abi false) :=
-  Verified.of_correct (add_correct false (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide)
-    (by lit_decide))
+  Verified.of_correct (add_correct false (addFn_keeps false) (by lit_decide))
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
       (by taint_decide))
     (addK_implies false)
 
 theorem doubleExtAdx_verified : Verified X86_64.target (doubleFn adx true)
     (doubleContract X86_64.abi true) :=
-  Verified.of_correct (double_correct true (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide)
-    (by lit_decide))
+  Verified.of_correct (double_correct true (doubleFn_keeps true) (by lit_decide))
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
       (by taint_decide))
     (doubleK_implies true)
 
 theorem addExtAdx_verified : Verified X86_64.target (addFn adx true)
     (addCachedContract X86_64.abi true) :=
-  Verified.of_correct (add_correct true (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide)
-    (by lit_decide))
+  Verified.of_correct (add_correct true (addFn_keeps true) (by lit_decide))
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
       (by taint_decide))
     (addK_implies true)
 
 theorem addProjAdx_verified : Verified X86_64.target (addFn adx false)
     (addCachedContract X86_64.abi false) :=
-  Verified.of_correct (add_correct false (by intro r hr; simp only [keptRegs, kept, List.map_cons, List.map_nil,
-      List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide)
-    (by lit_decide))
+  Verified.of_correct (add_correct false (addFn_keeps false) (by lit_decide))
     (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsp]) (fun _ _ _ _ hp => fnPub_agree hp)
       (by taint_decide))
     (addK_implies false)
