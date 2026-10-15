@@ -36,8 +36,8 @@ theorem accept_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat}
     ru.trans (k3.rd.trans (k2.rd.trans k1.rd)), wu.trans (k3.wr.trans (k2.wr.trans k1.wr)), ?_⟩,
     ?_, ?_, zu⟩
   · rw [mu]; exact (k1.mem.trans k2.mem).trans k3.mem
-  · rw [mu, e3, e2, e1]; rfl
-  · rw [mu, e3, e2, e1]; rfl
+  · rw [mu, e3, e2, e1]; simp (disch := decide) only [pt, Function.update_self, Function.update_of_ne]
+  · rw [mu, e3, e2, e1]; simp (disch := decide) only [Function.update_of_ne]
 
 private theorem step_rep {p : Spec.Ed448.Point} {k t : Nat} (ht : t < 114)
     (hp : Rep p (accScalar k (t + 1) • baseAff)) :
