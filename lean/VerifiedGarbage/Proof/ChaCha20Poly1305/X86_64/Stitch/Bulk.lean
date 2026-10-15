@@ -188,7 +188,7 @@ theorem chunk_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : 
     · exact hl.win_cd hw (by decide)
   have S₁ : stateAt s₁.mem (stA c) = stateAt s.mem (stA c) := Proof.ChaCha20.X86_64.Xor.stateAt_frame f₁ dst
   have FA : Frame [slotsR (bfA c), dR5 (dp + BitVec.ofNat 64 (512 * t)), stR (stA c), ⟨slot (bfA c), 8⟩]
-      s.mem s₂.mem := (f₁.mono (by regions_sub)).trans (f₂.mono (by regions_sub))
+      s.mem s₂.mem := (f₁.mono (by simp)).trans (f₂.mono (by simp))
   refine ⟨⟨by rw [rd₂, rd₁, h.rd], by rw [wr₂, wr₁, h.wr], by rw [g₂ _ (by decide) (by decide),
     g₁ _ (by decide) (by decide), h.rdi], by rw [g₂ _ (by decide) (by decide), g₁ _ (by decide) (by decide), h.rcx],
     by rw [g₂ _ (by decide) (by decide), rsi₁, Nat.add_sub_cancel],
@@ -230,7 +230,7 @@ theorem chunk_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : 
       · rw [ite_eq_left hlt, ite_eq_left (by omega_arith : k < 512 * (t + 1))]
       · rw [ite_eq_right hlt, ite_eq_right (by omega_arith : ¬ k < 512 * (t + 1))]
   · have F : Frame [slotsR (bfA c), dR5 (dp + BitVec.ofNat 64 (512 * t)), stR (stA c), ⟨slot (bfA c), 8⟩]
-        s.mem s₂.mem := (f₁.mono (by regions_sub)).trans (f₂.mono (by regions_sub))
+        s.mem s₂.mem := (f₁.mono (by simp)).trans (f₂.mono (by simp))
     refine h.consts.frame F ?_
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -241,7 +241,7 @@ theorem chunk_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : 
     · exact ((Offset.disjoint c (Or.inl (by decide)) (by decide) (by decide) :
         (bufR (bfA c)).Disjoint (psR c)).sub_left (hiR_sub _)).sub_right slot_ps
   · have F : Frame [slotsR (bfA c), dR5 (dp + BitVec.ofNat 64 (512 * t)), stR (stA c), ⟨slot (bfA c), 8⟩]
-        s.mem s₂.mem := (f₁.mono (by regions_sub)).trans (f₂.mono (by regions_sub))
+        s.mem s₂.mem := (f₁.mono (by simp)).trans (f₂.mono (by simp))
     have hb : bytesAt s₂.mem dp (512 * t) = bytesAt s.mem dp (512 * t) := by
       refine bytesAt_frame F ?_ (by omega_arith)
       have dsub : Region.Sub ⟨dp, 512 * t⟩ ⟨dp, L⟩ := Region.sub_prefix (by omega_arith)
@@ -306,7 +306,7 @@ theorem firstChunk_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 
       intro r hr'; simp only [List.mem_singleton] at hr'; subst hr'; exact hiR_slots _))
     dsd st_bf dbd) fun s₃ ⟨d₃, f₃, g₃, rd₃, wr₃⟩ => ?_
   have g₃' : s₃.gpr = s.gpr := g₃.trans g₂
-  have F₃ : Frame [slotsR (bfA c), dR5 dp] s.mem s₃.mem := (F₂.mono (by regions_sub)).trans f₃
+  have F₃ : Frame [slotsR (bfA c), dR5 dp] s.mem s₃.mem := (F₂.mono (by simp)).trans f₃
   have dslot : ∀ r ∈ [slotsR (bfA c), dR5 dp], (⟨slot (bfA c), 8⟩ : Region).Disjoint r := by
     intro r hr'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -360,7 +360,7 @@ theorem firstChunk_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 
           · exact n_sls
           · exact n_w), hdata k hk', ite_eq_right (by omega_arith : ¬ k < 512 * 1)]
   · have F : Frame [slotsR (bfA c), dR5 dp, stR (stA c), ⟨slot (bfA c), 8⟩] s.mem s₄.mem :=
-      (F₃.mono (by regions_sub)).trans (f₄.mono (by regions_sub))
+      (F₃.mono (by simp)).trans (f₄.mono (by simp))
     refine hc.frame F ?_
     intro r hr'
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
@@ -379,7 +379,7 @@ theorem firstChunk_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 
          exact hacc.val⟩
   · rw [← hm]
     have FA : Frame [slotsR (bfA c), dR5 dp, stR (stA c), ⟨slot (bfA c), 8⟩] s.mem s₄.mem :=
-      (F₃.mono (by regions_sub)).trans (f₄.mono (by regions_sub))
+      (F₃.mono (by simp)).trans (f₄.mono (by simp))
     refine FA.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -539,7 +539,7 @@ theorem enter_ok {c dp : Addr} {L : Nat} {s : State} (hwr : s.wr = bulkWr c dp L
     fun s₅ ⟨rdi₅, g₅, m₅, rd₅, wr₅, _, _⟩ => ?_
   have F₂ : Frame [bufR (bfA c), stashR c] s.mem s₂.mem := by
     rw [m₂]
-    exact (f₁.mono (by regions_sub)).trans
+    exact (f₁.mono (by simp)).trans
       (Proof.ChaCha20.X86_64.Avx2.storeAll_frame (by simp) _ Proof.ChaCha20.X86_64.Avx2.constPairs_le _)
   have mm : s₅.mem = s₂.mem := by rw [m₅, k₄.2.1, m₃]
   have dsl : ∀ d, 520 ≤ d → d + 8 ≤ 552 → s₅.mem.readW (c + BitVec.ofNat 64 d) 64 = s₁.mem.readW (c + BitVec.ofNat 64 d) 64 := by
