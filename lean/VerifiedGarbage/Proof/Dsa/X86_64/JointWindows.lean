@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointWindow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -29,15 +30,15 @@ structure JointWinInv (t₀ : State) (P : Addr) (w : Nat) (minv : BitVec 64)
   frm : Frm P (crtWinRanges w) t₀.mem t.mem
   keep : Keep mmRegs t₀ t
 
-theorem jointWinStep_ok (M : Mont) {t s : State} {P : Addr} {w n xc g y E F v z j : Nat}
+theorem jointWinStep_ok (M : Mont) (Sq : MontS) {t s : State} {P : Addr} {w n xc g y E F v z j : Nat}
     {minv : BitVec 64} (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * w)) n)
     (hv : v < 256) (hz : z < 256) (hj : j < 4)
     (h : JointWinInv t P w minv n xc g y E F v z j s) :
-    WP isa (Joint.window M.mm) s fun s' => s'.zf = some (decide (j + 1 = 4)) ∧
+    WP isa (Joint.window Sq.mm M.mm) s fun s' => s'.zf = some (decide (j + 1 = 4)) ∧
       JointWinInv t P w minv n xc g y E F v z (j + 1) s' := by
   have hp : 4 ^ j ≤ 64 := by
     rcases (show j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 by omega) with rfl | rfl | rfl | rfl <;> decide
-  refine WP.mono (jointWindow_ok M h.ctx h.tab hw hw' hR h.ylt h.val h.bytes
+  refine WP.mono (jointWindow_ok M Sq h.ctx h.tab hw hw' hR h.ylt h.val h.bytes
     (by have := Nat.mul_le_mul_left (256 * v + z) hp; omega) h.count (by omega) (by omega))
     fun s' ⟨hc, ht, hy, hval, hb, hn, hz', hf, hk⟩ => ⟨?_, hc, ht, hy, ?_, ?_, ?_,
       h.frm.trans hf, (h.keep.trans hk).mono (by decide)⟩
@@ -47,11 +48,11 @@ theorem jointWinStep_ok (M : Mont) {t s : State} {P : Addr} {w n xc g y E F v z 
   · rw [hb, Nat.pow_succ]; congr 1; ac_rfl
   · rw [hn]; congr 1
 
-theorem jointWins_ok (M : Mont) {t : State} {P : Addr} {w n xc g y E F v z : Nat}
+theorem jointWins_ok (M : Mont) (Sq : MontS) {t : State} {P : Addr} {w n xc g y E F v z : Nat}
     {minv : BitVec 64} (hw : 2 ≤ w) (hw' : w < 2 ^ 30) (hR : Nat.Coprime (2 ^ (64 * w)) n)
     (hv : v < 256) (hz : z < 256) (h : JointWinInv t P w minv n xc g y E F v z 0 t) :
-    WP isa (.loop (Joint.window M.mm) .ne) t (JointWinInv t P w minv n xc g y E F v z 4) :=
+    WP isa (.loop (Joint.window Sq.mm M.mm) .ne) t (JointWinInv t P w minv n xc g y E F v z 4) :=
   wp_upto (a := 0) (N := 4) (by decide) (JointWinInv t P w minv n xc g y E F v z)
-    (fun _ _ hj _ hI => jointWinStep_ok M hw hw' hR hv hz hj hI) (fun _ h => h) h
+    (fun _ _ hj _ hI => jointWinStep_ok M Sq hw hw' hR hv hz hj hI) (fun _ h => h) h
 
 end VG.Proof.Dsa.X86_64

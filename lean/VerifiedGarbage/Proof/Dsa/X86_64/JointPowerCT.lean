@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.JointRunCT
 import VerifiedGarbage.Proof.Dsa.X86_64.JointPower
@@ -33,11 +34,11 @@ theorem JointScalars.frame {p : JointPublic} {s t : State} (h : JointScalars p s
     (by omega) (by omega) (show Field.qLen.offset + 8 ≤ p.x.o from p.parentSpace)]
   exact hl
 
-theorem jointPower_ct (M : Mont) : RelCT isa (Two JointPowerPre) (Joint.power M.mm) (fun _ _ => True) := by
+theorem jointPower_ct (M : Mont) (Sq : MontS) : RelCT isa (Two JointPowerPre) (Joint.power Sq.mm M.mm) (fun _ _ => True) := by
   unfold Joint.power
   refine RelCT.seq (two_post (Ψ := JointRunPre)
     (two_map JointPublic.toProductCallPublic (fun _ _ h => h.1) (jointPrepare_ct M)) ?_)
-    (jointRun_ct M)
+    (jointRun_ct M Sq)
   intro p s ⟨⟨hc, hm, gb, yb, hg, hgl, hy, hyl, hgL, hyL, hgs, hys⟩, hs⟩
   refine WP.mono (jointPrepare_ok M hc p.lower p.width48 p.fits p.upper p.greater p.odd hm.modulus hm.inverse
     hg hgl hgs (hgL ▸ p.basePositive) (hgL ▸ p.baseFits)
