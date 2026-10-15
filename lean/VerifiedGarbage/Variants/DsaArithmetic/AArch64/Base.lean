@@ -29,6 +29,8 @@ def variant : Backend where
   signVerified := signing_verified Mont.productEight
   verifyVerified := verifying_verified Mont.productEight
   signSp := by decide +kernel
+  signDepth := by decide +kernel
+  stackBound := by decide
   verifySp := by decide +kernel
 
 end VG.Variants.DsaArithmetic.AArch64.Base
