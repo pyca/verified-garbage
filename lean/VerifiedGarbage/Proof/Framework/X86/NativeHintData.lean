@@ -307,10 +307,26 @@ def hintOps : VG.NativeHintOps isa where
   push := pushStep
   pop := popStep
 
+/-- `X86.Taint.leR` (`Proof/Framework/X86/TaintMono.lean`): the order of the
+x86 frames. -/
+def leR (τ σ : T) : Bool :=
+  τ.regs.subset σ.regs && (!τ.flags || σ.flags) && τ.slots.subset σ.slots &&
+    τ.lens == σ.lens && τ.bases == σ.bases && τ.wbases == σ.wbases && Nat.beq τ.argLen σ.argLen &&
+    τ.argBases == σ.argBases && τ.stk == σ.stk && Nat.beq τ.room σ.room
+
+/-- The x86 frames (`instance : Taint.Frame X86.taint`). -/
+def frameOps : VG.NativeFrameOps isa where
+  toNativeHintOps := hintOps
+  R := leR
+  join m Φ := { m with regs := ⟨Nat.lor m.regs.bits Φ.regs.bits⟩, flags := m.flags || Φ.flags }
+  frameOf τ F := { regs := τ.regs.inter F.regs, flags := τ.flags && F.flags }
+
 end VG.NativeHints.X86
 
 namespace VG.NativeHints.X86.provider
 /-- An untrusted native hint; `Taint.check` still checks every interval. -/
 def hintOfSize := VG.NativeHintOps.hintOfSize VG.NativeHints.X86.hintOps
 def hintWeakOfSize := VG.NativeHintOps.hintWeakOfSize VG.NativeHints.X86.hintOps
+/-- An untrusted native hint with summaries; `Taint.checkSum` still checks it. -/
+def hintReport := VG.NativeFrameOps.hintReport VG.NativeHints.X86.frameOps
 end VG.NativeHints.X86.provider
