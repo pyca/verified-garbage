@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
 public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.Impl.AesOcb.AArch64
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -46,7 +48,7 @@ theorem imm_lit (k : Nat) (h : k < 2 ^ 16) : BitVec.setWidth 64 (BitVec.ofNat 16
   omega
 
 /-- Runs a block of the instructions the AES-OCB code uses. -/
-macro "orun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+tactic_template "orun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
                    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VG.AArch64.addr,
                      State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
                      sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,
