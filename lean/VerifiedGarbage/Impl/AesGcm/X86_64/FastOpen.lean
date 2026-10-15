@@ -56,8 +56,31 @@ def run : Prog isa :=
   (.seq (.ite .e (oneUndo c) (oneCrypt c))
     (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))
 
-/-- `Fast.cond`, then this path, or `other`. -/
-def sel (other : Prog isa) : Prog isa :=
-  .seq Fast.cond (.ite .e other (run c))
+/-- `run`'s part after the additional data, a word lower, calling `f`, the
+decryption function given the block index (`vg_aes_gcm_decrypt_blocks_prepared_iv96`),
+for which the word above `scratch` holds the index: the received tag's
+address is then 8 bytes further from `rsp`. -/
+def bodyI (f : Fn) : Prog isa :=
+  .seq (oneBlocks f)
+  (.seq tagP
+  (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 32))])
+  (.seq recv
+  (.seq (cmp uO)
+  (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
+  (.seq (.ite .e (oneUndo c) (oneCrypt c))
+    (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))
+
+/-- `run` calling `f`, given the block index: the index of the first counter
+block, 2 for a 12-byte nonce, pushed in a frame of one word around the rest
+(`bodyI`), whose call passes it above `scratch`. -/
+def runI (f : Fn) : Prog isa :=
+  .seq Fast.aad
+  (.seq (.block [.mov32 .rax (imm 2)])
+    (.frame (.push [.rax]) (bodyI c f) (.pop .r10 1)))
+
+/-- `Fast.cond`, then this path, or `other`: `runI` if the decryption function
+given the block index `fi` is there, `run` otherwise. -/
+def sel (fi : Option Fn) (other : Prog isa) : Prog isa :=
+  .seq Fast.cond (.ite .e other (match fi with | some f => runI c f | none => run c))
 
 end VG.Impl.AesGcm.X86_64.FastOpen

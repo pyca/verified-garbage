@@ -73,6 +73,7 @@ the length is kept to the end, given the call's frame (`hframe`). -/
 theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s)
     {Out : State → State → Prop}
     (hframe : ∀ s₂, ObIn M Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ →
+      s₂.mem = s.mem.writeW (W + BitVec.ofNat 64 192) (BitVec.ofNat 64 n) → s₂.rd = s.rd → s₂.wr = s.wr →
       WP isa (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1)) s₂ fun s₄ =>
         (∀ r ∈ calleeSaved, s₄.gpr r = s₂.gpr r) ∧ s₄.rd = s₂.rd ∧ s₄.wr = s₂.wr ∧
         Frame (obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s₂.mem s₄.mem ∧ Out s₂ s₄)
@@ -107,7 +108,7 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
       by omega, h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, h.rounds.2, h.t_w.sub_right (Lay.wSub (by decide)),
       h.ext.keep (rd₂.trans rd₁) (wr₂.trans wr₁) (by rw [m₂, m₁]; exact f192) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact h.ext.cw.sub_right (Lay.wSub (by decide)))⟩
-    refine WP.seq (WP.mono (hframe s₂ obi) fun s₄ ⟨cs₄, rd₄, wr₄, fr₄, o₄⟩ => ?_)
+    refine WP.seq (WP.mono (hframe s₂ obi (m₂.trans m₁) (rd₂.trans rd₁) (wr₂.trans wr₁)) fun s₄ ⟨cs₄, rd₄, wr₄, fr₄, o₄⟩ => ?_)
     have he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ := he₂.keep (fun r hr => cs₄ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])) rd₄ wr₄
@@ -168,7 +169,7 @@ theorem ob_after {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W S
 theorem oneBlocksE_ok (B : BlkFn M) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s) :
     WP isa (oneBlocks B.enc) s fun s' => ObPost Ctx W SP D n s s' ∧ OutE Ctx W R D (n / 16) s s' := by
   obtain ⟨-, -, -, eK, eC, eY, eB, eH, -⟩ := w192_eqs L h (BitVec.ofNat 64 n)
-  refine oneBlocks_core L _ h (fun s₂ hi => obFrameE_ok L B hi) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_)
+  refine oneBlocks_core L _ h (fun s₂ hi _ _ _ => obFrameE_ok L B hi) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_)
   · rw [OutE, hz, m₁, eC, eY]; exact ⟨rfl, rfl, rfl⟩
   · obtain ⟨a₁, a₂, a₃⟩ := ob_after L h f
     obtain ⟨o₁, o₂, o₃⟩ := o
@@ -179,7 +180,7 @@ theorem oneBlocksE_ok (B : BlkFn M) {R : Nat} {D : Addr} {n : Nat} {s : State} (
 theorem oneBlocksD_ok (B : BlkFn M) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s) :
     WP isa (oneBlocks B.dec) s fun s' => ObPost Ctx W SP D n s s' ∧ OutD Ctx W R D (n / 16) s s' := by
   obtain ⟨-, -, -, eK, eC, eY, eB, eH, -⟩ := w192_eqs L h (BitVec.ofNat 64 n)
-  refine oneBlocks_core L _ h (fun s₂ hi => obFrameD_ok L B hi) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_)
+  refine oneBlocks_core L _ h (fun s₂ hi _ _ _ => obFrameD_ok L B hi) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_)
   · rw [OutD, hz, m₁, eC, eY]; exact ⟨rfl, rfl, rfl⟩
   · obtain ⟨a₁, a₂, a₃⟩ := ob_after L h f
     obtain ⟨o₁, o₂, o₃⟩ := o

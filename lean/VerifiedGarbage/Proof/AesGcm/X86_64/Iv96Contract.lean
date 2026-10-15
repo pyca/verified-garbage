@@ -44,14 +44,16 @@ theorem readW_lo32 (m : Mem) (a : Addr) : m.readW a 32 = (m.readW a 64).setWidth
   rw [BitVec.extractLsb'_setWidth_of_le (by omega), Mem.extractLsb'_read m a (by omega : i < 8)]
 
 /-- `blocksPreM`, with `index` after `scratch` on the stack, the low word of
-the counter block. -/
+the counter block, and each of the two words readable on its own (a caller
+may push them separately). -/
 def blocksPreMI (M : CtxMode) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .rdi, M.len⟩
   let ctr : Region := ⟨s.gpr .rdx, 16⟩
   let y : Region := ⟨s.gpr .rcx, 16⟩
   let data : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat * 16⟩
   let scr : Region := ⟨arg s 0, 2112⟩
-  s.rd = [ctx, args s 2] ∧ s.wr = [ctr, y, data, scr] ∧
+  ctx ∈ s.rd ∧ InRegions s.rd (s.gpr .rsp + BitVec.ofNat 64 8) 8 ∧
+    InRegions s.rd (s.gpr .rsp + BitVec.ofNat 64 16) 8 ∧ s.wr = [ctr, y, data, scr] ∧
     ctx.Disjoint ctr ∧ ctx.Disjoint y ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧
     ctr.Disjoint y ∧ ctr.Disjoint data ∧ ctr.Disjoint scr ∧ ctr.Disjoint (args s 2) ∧
     y.Disjoint data ∧ y.Disjoint scr ∧ y.Disjoint (args s 2) ∧
@@ -63,6 +65,12 @@ def blocksPreMI (M : CtxMode) (s : State) : Prop :=
     (s.gpr .r8).toNat + (s.gpr .r9).toNat * 16 ≤ 2 ^ 64 ∧ (arg s 0).toNat + 2112 ≤ 2 ^ 64 ∧
     (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64 ∧ rounds s ∧ M.ok s.mem (s.gpr .rdi) ∧
     ctrIndex (blockAt s.mem (s.gpr .rdx)) = (arg s 1).setWidth 32
+
+/-- Each word of the two stack arguments is in their region. -/
+theorem inRegions_args2 (sp : Addr) (ctx : Region) {d : Nat} (hd : d = 8 ∨ d = 16) :
+    InRegions [ctx, ⟨sp + BitVec.ofNat 64 8, 16⟩] (sp + BitVec.ofNat 64 d) 8 :=
+  ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _),
+    Offset.contains (e := 8) (k := 16) _ (by omega) (by omega) (by decide)⟩
 
 /-- `blocksPub`, and `index`. -/
 def blocksPubI (s₁ s₂ : State) : Prop :=
@@ -125,19 +133,19 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Proof.AesGcm (arg args ret stk rounds stackArgAddr_eq idx_readW)
 
 theorem BP.ofMI {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksPreMI M s) : BP M s ∧ IdxArg 16 s := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁,
+  obtain ⟨k₁, r₁, r₂, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁,
     a₂₂, a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃, a₃₄⟩ := h
   have hA : Proof.AesGcm.args s 2 = ⟨SP s + BitVec.ofNat 64 8, 16⟩ := by simp only [Proof.AesGcm.args, stackArgAddr_eq]
-  rw [hA] at a₁ a₁₀ a₁₃ a₁₅ a₁₆
+  rw [hA] at a₁₀ a₁₃ a₁₅ a₁₆
   have hs : Region.Sub (aR s) ⟨SP s + BitVec.ofNat 64 8, 16⟩ := Offset.sub (e := 8) (k := 16) _ (by decide) (by decide)
   have hi : Region.Sub ⟨SP s + BitVec.ofNat 64 16, 4⟩ ⟨SP s + BitVec.ofNat 64 8, 16⟩ :=
     Offset.sub (e := 8) (k := 16) _ (by decide) (by decide)
-  refine ⟨⟨by simp [a₁], ⟨⟨SP s + BitVec.ofNat 64 8, 16⟩, by simp [a₁],
-    Offset.contains (e := 8) (k := 16) _ (by decide) (by decide) (by decide)⟩, a₂,
+  have r₂' : InRegions s.rd (SP s + BitVec.ofNat 64 16) 4 := by
+    obtain ⟨r, hr, hc⟩ := r₂; exact ⟨r, hr, by simp only [Region.Contains, SP] at hc ⊢; omega⟩
+  refine ⟨⟨k₁, r₁, a₂,
     a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀.sub_right hs, a₁₁, a₁₂, a₁₃.sub_right hs, a₁₄, a₁₅.sub_right hs,
     a₁₆.sub_right hs, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃, a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, by simp only [SP]; omega, a₃₂, a₃₃⟩,
-    ⟨?_, ⟨⟨SP s + BitVec.ofNat 64 8, 16⟩, by simp [a₁], Offset.contains (e := 8) (k := 16) _ (by decide) (by decide) (by decide)⟩,
-      (a₁₅.symm.sub_left hi), (a₁₆.symm.sub_left hi)⟩⟩
+    ⟨?_, r₂', (a₁₅.symm.sub_left hi), (a₁₆.symm.sub_left hi)⟩⟩
   rw [show (16 : Nat) = 8 * (1 + 1) from rfl, idx_readW]; exact a₃₄.symm
 
 end VG.Proof.AesGcm.X86_64.Blocks

@@ -220,7 +220,8 @@ theorem openPre_ok {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {aadP tg : Prog
       rcases hr with rfl | rfl
       · exact oA _ (.inl fun _ h => h)
       · exact oA _ (.inr (.inr (below_sub (by decide) (by decide))))) (by decide), hT]
-  refine WP.mono (openFront_ok L B htg (al := al) ⟨Mi.env, hR ▸ Mi.rounds, Mi.dat, Mi.len, hd₃, C.t_c, C.t_w, C.t_d, C.sp24, hS₃.ext⟩
+  have ob : ObPre M Ctx W SP R D n s₃ := ⟨Mi.env, hR ▸ Mi.rounds, Mi.dat, Mi.len, hd₃, C.t_c, C.t_w, C.t_d, C.sp24, hS₃.ext⟩
+  refine WP.mono (openFront_ok L htg (al := al) ob (oneBlocksD_ok L B ob)
     Mi.hH hal₃ htl₃ hb.1 hb.2 Mi.abs Mi.j0 Mi.cb hTa₃ (by rw [Mi.rd, Mi.wr]; exact C.args 2 (by decide))
     (by rw [Mi.rd, Mi.wr]; exact hTr) oT oA) fun s' F => ?_
   have kp : ∀ d, (128 ≤ d ∧ d + 8 ≤ 192) ∨ (224 ≤ d ∧ d + 8 ≤ 240) →

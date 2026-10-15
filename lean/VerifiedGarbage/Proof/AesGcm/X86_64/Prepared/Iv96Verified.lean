@@ -34,12 +34,34 @@ def blocksSatPI : State := { blocksSat with rd := [⟨0x1000, 1024⟩, ⟨0x8008
 theorem decryptBlocksIv96_implies : (Proof.AesGcm.decryptBlocksIv96X86_64M CtxMode.prepared).Implies
     (Spec.Gcm.decryptBlocksPreparedIv96Contract X86_64.abi 8) :=
   { pre := by
-      sig_implies_pre [Spec.Gcm.decryptBlocksPreparedIv96Contract, Spec.Gcm.decryptBlocksPreparedIv96Sig,
+      intro s h
+      sig_pre [Spec.Gcm.decryptBlocksPreparedIv96Contract, Spec.Gcm.decryptBlocksPreparedIv96Sig,
+        Spec.Gcm.decryptBlocksPreparedIv96Pre, Spec.Gcm.cryptBlocksPreparedSig, Spec.Gcm.cryptBlocksPrecomputedSig,
+        Spec.Gcm.cryptBlocksPreparedPre, Proof.AesGcm.decryptBlocksIv96X86_64M, Proof.AesGcm.blocksPreMI,
+        CtxMode.prepared, Proof.AesGcm.blocksPubI, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg,
+        Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg,
+        X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] at h
+      sig_split h
+      sig_reduce [Spec.Gcm.decryptBlocksPreparedIv96Contract, Spec.Gcm.decryptBlocksPreparedIv96Sig,
         Spec.Gcm.decryptBlocksPreparedIv96Pre, Spec.Gcm.cryptBlocksPreparedSig, Spec.Gcm.cryptBlocksPrecomputedSig,
         Spec.Gcm.cryptBlocksPreparedPre, Proof.AesGcm.decryptBlocksIv96X86_64M, Proof.AesGcm.blocksPreMI,
         CtxMode.prepared, Proof.AesGcm.blocksPubI, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg,
         Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg,
         X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
+      sig_simp [Spec.Gcm.decryptBlocksPreparedIv96Contract, Spec.Gcm.decryptBlocksPreparedIv96Sig,
+        Spec.Gcm.decryptBlocksPreparedIv96Pre, Spec.Gcm.cryptBlocksPreparedSig, Spec.Gcm.cryptBlocksPrecomputedSig,
+        Spec.Gcm.cryptBlocksPreparedPre, Proof.AesGcm.decryptBlocksIv96X86_64M, Proof.AesGcm.blocksPreMI,
+        CtxMode.prepared, Proof.AesGcm.blocksPubI, Proof.AesGcm.blocksPub, X86_64.abi, Proof.AesGcm.arg,
+        Proof.AesGcm.args, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg,
+        X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] []
+      sig_and_intros
+      sig_close
+      all_goals try (rw [‹s.rd = _›]; exact Proof.AesGcm.inRegions_args2 _ _ (by decide))
+      all_goals first
+        | with_reducible assumption
+        | with_reducible exact Region.Disjoint.symm ‹_›
+        | omega
+        | simp only [*, List.mem_cons, List.mem_singleton, true_or, or_true]
     post := by
       sig_implies_post [Spec.Gcm.decryptBlocksPreparedIv96Contract, Spec.Gcm.decryptBlocksPreparedIv96Sig,
         Spec.Gcm.decryptBlocksPreparedIv96Pre, Spec.Gcm.cryptBlocksPreparedSig, Spec.Gcm.cryptBlocksPrecomputedSig,

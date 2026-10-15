@@ -174,7 +174,7 @@ theorem oneBlocks_oneS (f : Fn) {R : Nat} {A : Addr} {al : Nat} {D : Addr} {n : 
     {s : State} (h : OneS M Ctx W SP R A al D n T s) :
     WP isa (oneBlocks f) s (OneS M Ctx W SP R A al (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (some n)) := by
   exact WP.mono (oneBlocks_core L f (Out := fun _ _ => True) ⟨h.env, h.rounds, h.dat, h.len, h.dD, t_c, t_w, t_d, sp24, h.ext⟩
-    (fun s₂ hi => WP.mono (hw s₂ hi) fun _ ⟨a, b, c, d⟩ => ⟨a, b, c, d, trivial⟩) (fun _ _ _ => trivial)
+    (fun s₂ hi _ _ _ => WP.mono (hw s₂ hi) fun _ ⟨a, b, c, d⟩ => ⟨a, b, c, d, trivial⟩) (fun _ _ _ => trivial)
     (fun _ _ _ _ _ _ => trivial)) fun s' ⟨P, _⟩ => ObPost.oneS L t_w h P
 
 end

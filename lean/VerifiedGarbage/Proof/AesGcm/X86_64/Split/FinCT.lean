@@ -90,7 +90,7 @@ theorem oneBlocks_aux (B : BlkFn M) {R : Nat} {A : Addr} {al : Nat} {D : Addr} {
       s'.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 N := by
   have hD := h.dD.ok.w
   refine WP.mono (oneBlocks_core L B.enc (Out := fun _ _ => True) ⟨h.env, h.rounds, h.dat, h.len, h.dD, t_c, t_w, t_d, sp24,
-    h.ext⟩ (fun s₂ hi => WP.mono (obFrameE_ok L B hi) fun _ o => ⟨o.1, o.2.1, o.2.2.1, o.2.2.2.1, trivial⟩)
+    h.ext⟩ (fun s₂ hi _ _ _ => WP.mono (obFrameE_ok L B hi) fun _ o => ⟨o.1, o.2.1, o.2.2.1, o.2.2.2.1, trivial⟩)
     (fun _ _ _ => trivial) (fun _ _ _ _ _ _ => trivial)) fun s' ⟨P, _⟩ => ⟨ObPost.oneS L t_w h P, ?_⟩
   have d216 : ∀ r ∈ (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)),
       (⟨W + BitVec.ofNat 64 216, 8⟩ : Region).Disjoint r := by

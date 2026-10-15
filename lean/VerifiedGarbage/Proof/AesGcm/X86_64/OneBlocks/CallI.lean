@@ -50,7 +50,7 @@ structure BlkCallI (M : CtxMode) (s : State) (K C Y D S : Addr) (R q : Nat) : Pr
   a_y : (⟨s.gpr .rsp, 16⟩ : Region).Disjoint ⟨Y, 16⟩
   a_d : (⟨s.gpr .rsp, 16⟩ : Region).Disjoint ⟨D, q * 16⟩
   a_s : (⟨s.gpr .rsp, 16⟩ : Region).Disjoint ⟨S, 2112⟩
-  reads2 : Covers [⟨s.gpr .rsp, 16⟩] (s.rd ++ s.wr)
+  reads2 : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 8⟩] (s.rd ++ s.wr)
   w_sp2 : (s.gpr .rsp - 8).toNat + 24 ≤ 2 ^ 64
 
 namespace BlkCallI
@@ -58,8 +58,10 @@ namespace BlkCallI
 variable {M : CtxMode} {s : State} {K C Y D S : Addr} {R q : Nat} (h : BlkCallI M s K C Y D S R q)
 include h
 
-/-- The regions the callee may read: the key context, `scratch` and the index. -/
-abbrev rd (M : CtxMode) (s : State) (K : Addr) : List Region := [⟨K, M.len⟩, ⟨s.gpr .rsp, 16⟩]
+/-- The regions the callee may read: the key context, `scratch` and the index
+(pushed apart). -/
+abbrev rd (M : CtxMode) (s : State) (K : Addr) : List Region :=
+  [⟨K, M.len⟩, ⟨s.gpr .rsp, 8⟩, ⟨s.gpr .rsp + BitVec.ofNat 64 8, 8⟩]
 
 theorem pre : Proof.AesGcm.blocksPreMI M (s.callEntry.withRegions (rd M s K) (BlkCall.wr C Y D S q)) := by
   have h0 := h.toBlkCall
@@ -103,7 +105,13 @@ theorem pre : Proof.AesGcm.blocksPreMI M (s.callEntry.withRegions (rd M s K) (Bl
   obtain ⟨-, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, -, a₁₁, a₁₂, -, a₁₄, -, -, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃, a₂₄,
     a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃⟩ := hp
   have e8 : State.gpr (s.callEntry) .rsp = s.gpr .rsp - 8 := State.callEntry_rsp s
-  refine ⟨by simp [rd], a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, ?_, a₁₁, a₁₂, ?_, a₁₄, ?_, ?_, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
+  have e8' : s.gpr .rsp - 8 + BitVec.ofNat 64 8 = s.gpr .rsp := BitVec.sub_add_cancel _ _
+  have e16 : s.gpr .rsp - 8 + BitVec.ofNat 64 16 = s.gpr .rsp + BitVec.ofNat 64 8 := by
+    rw [show BitVec.ofNat 64 16 = (8 : Addr) + BitVec.ofNat 64 8 from rfl, ← BitVec.add_assoc,
+      BitVec.sub_add_cancel]
+  refine ⟨by simp [rd], ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), by rw [e8']; exact Region.contains_self _ _⟩,
+    ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)),
+      by rw [e16]; exact Region.contains_self _ _⟩, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, ?_, a₁₁, a₁₂, ?_, a₁₄, ?_, ?_, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
     a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, ?_, a₃₂, a₃₃, ?_⟩
   all_goals first
     | exact h.a_c.symm
@@ -119,7 +127,8 @@ theorem readsI : Covers (rd M s K ++ BlkCall.wr C Y D S q) (s.rd ++ s.wr) := by
   intro a n ⟨r', hr', hc⟩
   rcases List.mem_append.mp hr' with hr' | hr'
   · simp only [rd, List.mem_cons, List.not_mem_nil, or_false] at hr'
-    rcases hr' with rfl | rfl
+    rcases hr' with rfl | rfl | rfl
+    · exact r a n ⟨_, by simp, hc⟩
     · exact r a n ⟨_, by simp, hc⟩
     · exact h.reads2 a n ⟨_, List.mem_singleton_self _, hc⟩
   · exact r a n ⟨r', List.mem_append_right _ hr', hc⟩
