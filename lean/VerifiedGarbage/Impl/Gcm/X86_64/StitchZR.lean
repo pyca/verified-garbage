@@ -91,6 +91,6 @@ def setupP : List Instr := StitchZR.setupGP ++ storesK .r11 pregs 0 ++ setupCTo 
 def bigPTo : Prog isa := .seq (.block StitchZR.powP48) bigRestTo
 
 /-- Out-of-place encryption using the prepared context. -/
-def encP : Prog isa := encWith setupP bigPTo
+def encP : Prog isa := encWith setupP bigPTo 256
 
 end VG.Impl.Gcm.X86_64.StitchZRTo
