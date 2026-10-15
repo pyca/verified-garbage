@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.PPC64LE.Isa
-import VerifiedGarbage.TCB.Print
+module
+
+public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.TCB.Print
 
 /-!
 # Printer for the 64-bit little-endian PowerPC model
@@ -10,6 +12,8 @@ so that they cannot be read as numbers. The rotates and shifts are printed
 as the base instructions (`rlwinm`, `rldicl`, `rldicr`) whose operands the
 model's semantics describes, not as extended mnemonics.
 -/
+
+@[expose] public section
 
 namespace VG.PPC64LE
 

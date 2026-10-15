@@ -1,5 +1,7 @@
-import VerifiedGarbage.TCB.PPC64LE.Print
-import VerifiedGarbage.TCB.Artifact
+module
+
+public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.TCB.Artifact
 
 /-!
 # The 64-bit little-endian PowerPC target (ELFv2)
@@ -24,6 +26,8 @@ field 0, which is volatile, is ever modified: the nonvolatile fields
 instructions; both volatile), and memory below `r1` (never granted to a
 function; the frames' pushes write there, see `push`).
 -/
+
+@[expose] public section
 
 namespace VG.PPC64LE
 

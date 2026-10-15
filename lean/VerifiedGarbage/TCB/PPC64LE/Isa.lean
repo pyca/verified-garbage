@@ -1,4 +1,6 @@
-import VerifiedGarbage.TCB.Code
+module
+
+public import VerifiedGarbage.TCB.Code
 
 /-!
 # 64-bit little-endian PowerPC machine model
@@ -64,6 +66,8 @@ Modelling choices:
   4096, as for the frames of the other models: less than a page, so that
   the allocation does not move `r1` past a guard page below the stack.
 -/
+
+@[expose] public section
 
 namespace VG.PPC64LE
 
