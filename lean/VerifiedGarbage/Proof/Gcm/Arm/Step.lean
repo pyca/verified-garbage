@@ -143,16 +143,16 @@ theorem step_ok (x : Block) (k : Nat) (s : State) (xr : BitVec 32)
   subst hx
   simp only [XR] at hmsb ⊢
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [step, XR, Z, V, M, T, runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, step, XR, Z, V, M, T, runBlock_cons, runStep_some,
     runBlock_nil, exec, Op2.eval, isa, State.setReg, ite_true, ite_false, Option.map_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨trivial, ?_, ?_, trivial⟩
   · simp only [zvOf, mulStep, Z, V]
-    simp (config := {decide := true}) only [ite_true, ite_false]
+    simp only [reduceCtorEq, ↓reduceIte, ite_true, ite_false]
     rw [neg_top, hmsb, Bool.not_not, mask_z4, lsb_mask, update_v4]
   · intro r hr
     simp only [stepKeep, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp (config := {decide := true}) only [ite_false]
+    rcases hr with rfl | rfl | rfl <;> simp only [reduceCtorEq, ↓reduceIte, ite_false]
 
 /-! ## A byte of `x` -/
 

@@ -149,7 +149,7 @@ theorem step_ok (x : Block) (zv : Block × Block) (k : Nat) (s : State)
   simp only [XH, XL, ZH, ZL, VH, VL, RH, ZERO] at hx hr hz ⊢
   apply WP.of_runBlock
   simp only [step, XH, XL, ZH, ZL, VH, VL, M, T, RH, ZERO]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some,
     runBlock_nil, exec, State.read, State.write, BitVec.setWidth_eq, Size.bits,
     ite_true, ite_false, Option.some.injEq, exists_eq_left']
   and_intros
@@ -161,7 +161,7 @@ theorem step_ok (x : Block) (zv : Block × Block) (k : Nat) (s : State)
   · intro r hr
     simp only [stepKeep, RH, CNT, ZERO, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp (config := {decide := true}) only [ite_false]
+    simp only [reduceCtorEq, ↓reduceIte, ite_false]
   all_goals trivial
 
 /-! ## The 128 steps -/
@@ -224,7 +224,7 @@ theorem steps_ok {x h : Block} {sB : State} {j : Nat} (hj : j < 128 / unroll) {s
   rw [e] at hc
   apply WP.of_runBlock
   simp only [CNT] at hc hc₁ ⊢
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some,
     runBlock_nil, exec, State.read, State.write, BitVec.setWidth_eq, Size.bits,
     ite_true, hc₁, hc, Option.some.injEq, exists_eq_left']
   have hlt : 128 / unroll - (j + 1) < 2 ^ 64 := by simp only [unroll]; omega_using []
@@ -456,22 +456,22 @@ theorem load_ok (s : State)
   have d0 := hd 0 (by decide); have d8 := hd 8 (by decide)
   apply WP.of_runBlock
   simp only [load, XH, XL, ZH, ZL, VH, VL, T, RH, CNT, ZERO]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some,
     runBlock_nil, exec, addr, State.load, Size.bytes, h0, h8, y0, y8, d0, d8, State.read, State.write,
     BitVec.setWidth_eq, Size.bits, ite_true, ite_false, Option.bind_some, Option.map_some,
     Option.some.injEq, exists_eq_left']
   refine ⟨⟨?_, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩, trivial⟩
-  · simp (config := {decide := true}) only [ite_true, ite_false]
+  · simp only [reduceCtorEq, ↓reduceIte, ite_true, ite_false]
     rw [BitVec.shiftLeft_zero, ← BitVec.xor_append, read_8, read_8, read_8, read_8, blockAt_rev,
       blockAt_rev]
-  · simp (config := {decide := true}) only [ite_true, ite_false]
+  · simp only [reduceCtorEq, ↓reduceIte, ite_true, ite_false]
     rw [mulSteps_zero, read_8, read_8, blockAt_rev]
     rfl
-  · simp (config := {decide := true}) only [ite_true, ite_false, RH]
-  · simp (config := {decide := true}) only [ite_true, ite_false, ZERO]
+  · simp only [reduceCtorEq, ↓reduceIte, ite_true, ite_false, RH]
+  · simp only [reduceCtorEq, ↓reduceIte, ite_true, ite_false, ZERO]
   · simp only [keepRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;>
-    simp (config := {decide := true}) only [ite_false]
+    simp only [reduceCtorEq, ↓reduceIte, ite_false]
 
 theorem write_8 (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.writeW a v := by
   simp only [Mem.writeW]; exact congrArg (m.write a 8) (BitVec.setWidth_eq _).symm
@@ -500,7 +500,7 @@ theorem store_ok (s : State)
   have y0 := hy 0 (by decide); have y8 := hy 8 (by decide)
   apply WP.of_runBlock
   simp only [store, ZH, ZL]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some,
     runBlock_nil, exec, addr, State.store, Size.bytes, y0, y8, State.read, State.write,
     BitVec.setWidth_eq, Size.bits, ite_true, ite_false, Option.bind_some,
     Option.some.injEq, exists_eq_left']
