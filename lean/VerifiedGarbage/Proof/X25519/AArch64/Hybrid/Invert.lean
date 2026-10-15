@@ -29,7 +29,7 @@ Untrusted: everything here is checked by Lean. `Invert.invert` leaves
 namespace VG.Proof.X25519.AArch64.Hybrid
 
 open VG VG.AArch64
-open VG.Impl.X25519.AArch64.Invert (TBL BASE ACC R2 ONE SX1 M cfg storeConst pre post)
+open VG.Impl.X25519.AArch64.Invert (TBL BASE ACC R2 ONE M cfg storeConst pre post)
 open VG.Proof.Ed25519.AArch64 (Keeps)
 
 /-- X25519's working space, for the Montgomery arithmetic. -/
@@ -114,24 +114,32 @@ theorem opkeep_outside {s t : State} {base : Addr} {o : Nat} (tk : VG.Proof.Mont
     (ho : 2304 ≤ o) (ho' : o + 32 ≤ 4096) : VG.Proof.Mont.Outside base 2304 1792 s.mem t.mem :=
   fun x hx => tk.mem x (by simp only [M_n]; omega) (by simp only [M_tmp, M_n]; omega)
 
+/-- `d = n` (`add d, n, #0`). -/
+theorem mov_ok (s : State) (d n : Reg) :
+    WP isa (.block [.addImm .x d n 0]) s fun t => t.gpr d = s.gpr n ∧
+      VG.Proof.Mont.AArch64.KeepRegs [d] s t ∧ t.mem = s.mem := by
+  refine WP.block_cons_iff.mpr ⟨_, exec_addImm_x (imm := 0) (by decide), WP.block_nil_iff.mpr
+    ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl⟩, rfl⟩⟩
+  · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
+    simp only [State.read, BitVec.setWidth_eq, BitVec.add_zero]
+  · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr)
+
 /-- The constants, and `[BASE] = z R mod p`. -/
 theorem pre_ok {s : State} {base : Addr} (hs : Scratch s base) :
     WP isa (.block pre) s fun t =>
       VG.Proof.Mont.AArch64.ModOkA M 4096 Spec.X25519.P t.mem base ∧
       VG.Proof.Mont.wordsVal t.mem base ONE 4 = 1 ∧
-      VG.Proof.Mont.word t.mem base SX1 = s.gpr .x1 ∧
+      t.gpr .x20 = s.gpr .x1 ∧
       VG.Proof.Mont.wordsVal t.mem base BASE 4 < Spec.X25519.P ∧
       VG.Proof.Mont.wordsVal t.mem base BASE 4 * 2 ^ 256 % Spec.X25519.P =
         VG.Proof.Ed25519.AArch64.fe s.mem base 128 * (1444) % Spec.X25519.P ∧
       VG.Proof.Mont.Outside base 2304 1792 s.mem t.mem ∧
-      VG.Proof.Mont.AArch64.KeepRegs (VG.Proof.Mont.AArch64.clob 4 ++ [.x2]) s t := by
+      VG.Proof.Mont.AArch64.KeepRegs (VG.Proof.Mont.AArch64.clob 4 ++ ([.x2, .x20] : List Reg)) s t := by
   have hm := mscr hs
   simp only [pre, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (VG.Proof.Mont.AArch64.st_ok hm (d := SX1) (by decide) (by decide) .x1) fun a ha => ?_
-  subst ha
-  have am : VG.Proof.Mont.AArch64.Scr { s with mem := s.mem.writeW (VG.Proof.Mont.off base SX1) (s.gpr .x1) }
-      base 4096 := ⟨hm.x0, hm.wr, hm.nowrap, hm.enc⟩
+  refine WP.mono (mov_ok s .x20 .x1) fun a ⟨a20, ak, amem⟩ => ?_
+  have am : VG.Proof.Mont.AArch64.Scr a base 4096 := ⟨(ak.gpr _ (by decide)).trans hm.x0, ak.wr ▸ hm.wr, hm.nowrap, hm.enc⟩
   rw [WP.block_append_iff]
   refine WP.mono (storeConst_ok am Spec.X25519.P (o := M.mo) (by decide) (by decide) (by decide))
     fun b ⟨bv, bO, bk⟩ => ?_
@@ -150,27 +158,27 @@ theorem pre_ok {s : State} {base : Addr} (hs : Scratch s base) :
   refine WP.mono (VG.Proof.Mont.AArch64.mul_ok ds (modOk dmo) modA (o := BASE) (a := 128) (b := R2)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [M_n, dr2]; decide))
     fun t ⟨tk, tv, te⟩ => ?_
-  have wA : VG.Proof.Mont.Outside base SX1 8 s.mem (s.mem.writeW (VG.Proof.Mont.off base SX1) (s.gpr .x1)) :=
-    VG.Proof.Mont.writeW_outside _ base _ (by decide)
+  have wA : VG.Proof.Mont.Outside base 2304 8 s.mem a.mem := by rw [amem]; exact VG.Proof.Mont.Outside.refl _ _ _ _
   have d128 : VG.Proof.Mont.wordsVal d.mem base 128 4 = VG.Proof.Mont.wordsVal s.mem base 128 4 := by
     rw [dO.wordsVal (by decide) (by decide), cO.wordsVal (by decide) (by decide),
       bO.wordsVal (by decide) (by decide)]
     exact wA.wordsVal (by decide) (by decide)
   refine ⟨modOk (by rw [opkeep_wv tk (d := M.mo) (by decide) (by decide) (by decide)]; exact dmo),
     by rw [opkeep_wv tk (d := ONE) (by decide) (by decide) (by decide)]; exact dv, ?_, by rw [← M_n]; exact tv,
-    ?_, ?_, ⟨fun r hr => ?_, tk.rd.trans (dk.rd.trans (ck.rd.trans bk.rd)),
-      tk.wr.trans (dk.wr.trans (ck.wr.trans bk.wr)), tk.sp.trans (dk.sp.trans (ck.sp.trans bk.sp))⟩⟩
-  · rw [opkeep_word tk (d := SX1) (by decide) (by decide) (by decide), dO.word (by decide) (by decide),
-      cO.word (by decide) (by decide), bO.word (by decide) (by decide)]
-    exact VG.Proof.Mont.word_writeW_self _ _ _ _
+    ?_, ?_, ⟨fun r hr => ?_, tk.rd.trans (dk.rd.trans (ck.rd.trans (bk.rd.trans ak.rd))),
+      tk.wr.trans (dk.wr.trans (ck.wr.trans (bk.wr.trans ak.wr))),
+      tk.sp.trans (dk.sp.trans (ck.sp.trans (bk.sp.trans ak.sp)))⟩⟩
+  · rw [tk.gpr _ (by decide), dk.gpr _ (by decide), ck.gpr _ (by decide), bk.gpr _ (by decide)]
+    exact a20
   · rw [fe_wordsVal, ← d128, ← dr2]
     simpa only [M_n] using te
   · exact ((((wA.mono (by decide) (by decide)).trans (bO.mono (by decide) (by decide))).trans
       (cO.mono (by decide) (by decide))).trans (dO.mono (by decide) (by decide))).trans
       (opkeep_outside tk (by decide) (by decide))
-  · simp only [List.mem_append, List.mem_singleton, not_or] at hr
-    rw [tk.gpr r (by simpa only [M_n] using hr.1), dk.gpr r (by simpa using hr.2),
-      ck.gpr r (by simpa using hr.2), bk.gpr r (by simpa using hr.2)]
+  · simp only [List.mem_append, List.mem_cons, List.mem_nil_iff, or_false, not_or] at hr
+    obtain ⟨hc, h2, h20⟩ := hr
+    rw [tk.gpr r (by simpa only [M_n] using hc), dk.gpr r (by simpa using h2),
+      ck.gpr r (by simpa using h2), bk.gpr r (by simpa using h2), ak.gpr r (by simpa using h20)]
 
 open VG.Proof.Weierstrass (toM rinv UnitMod ofNat_mul' ofNat_eq_ofNat ofNat_pow' mul_rinv unitMod_pow_two) in
 /-- The arithmetic of `Invert.invert`: `z` in as `z R`, `z^(p - 2) R` out by a product with `1`. -/
@@ -244,7 +252,7 @@ theorem unch_wv {m m' : Mem} {base : Addr} (hU : VG.Proof.Weierstrass.Unch base 
 theorem invert_ok {s : State} {base : Addr} (hs : Scratch s base) :
     WP isa VG.Impl.X25519.AArch64.Invert.invert s fun t =>
       VG.Proof.Ed25519.AArch64.env t.mem base 15 = VG.Proof.X25519.invert (VG.Proof.Ed25519.AArch64.env s.mem base 2) ∧
-      VG.Proof.Mont.AArch64.KeepRegs (.x19 :: VG.Proof.Mont.AArch64.clob 4 ++ [.x2]) s t ∧
+      VG.Proof.Mont.AArch64.KeepRegs (.x19 :: VG.Proof.Mont.AArch64.clob 4 ++ ([.x2, .x20] : List Reg)) s t ∧
       t.gpr .x1 = s.gpr .x1 ∧ IMem base s.mem t.mem := by
   have hm := mscr hs
   refine WP.seq (WP.mono (pre_ok hs) fun a ⟨aM, a1, ax, ab, abv, aO, ak⟩ => ?_)
@@ -261,11 +269,11 @@ theorem invert_ok {s : State} {base : Addr} (hs : Scratch s base) :
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [M_n, b1]; decide))
     fun c ⟨ck, cv, ce⟩ => ?_
   have cs : VG.Proof.Mont.AArch64.Scr c base 4096 := ⟨(ck.gpr _ (by decide)).trans bs.x0, ck.wr ▸ bs.wr, hm.nowrap, hm.enc⟩
-  refine WP.mono (VG.Proof.Mont.AArch64.ld_ok cs (d := SX1) (by decide) (by decide) .x1) fun d ⟨d1, dk, _⟩ => ?_
+  refine WP.mono (mov_ok c .x1 .x20) fun d ⟨d1, dk, dm⟩ => ?_
   refine ⟨?_, ⟨fun r hr => ?_, dk.rd.trans (ck.rd.trans (bk.rd.trans ak.rd)), dk.wr.trans (ck.wr.trans (bk.wr.trans ak.wr)),
     dk.sp.trans (ck.sp.trans (bk.sp.trans ak.sp))⟩, ?_, fun x hx => ?_⟩
   · simp only [VG.Proof.Ed25519.AArch64.env, VG.Proof.Ed25519.AArch64.F, offset_two, offset_fifteen]
-    rw [dk.mem, fe_wordsVal, fe_wordsVal]
+    rw [dm, fe_wordsVal, fe_wordsVal]
     have be' : VG.Proof.Weierstrass.toM Spec.X25519.P (2 ^ 256) (VG.Proof.Mont.wordsVal b.mem base ACC 4) =
         VG.Proof.Weierstrass.toM Spec.X25519.P (2 ^ 256) (VG.Proof.Mont.wordsVal a.mem base BASE 4) ^
           (Spec.X25519.P - 2) := be
@@ -276,16 +284,14 @@ theorem invert_ok {s : State} {base : Addr} (hs : Scratch s base) :
     exact invert_arith (Z := VG.Proof.Mont.wordsVal s.mem base 128 4) (Bv := VG.Proof.Mont.wordsVal a.mem base BASE 4)
       (Acc := VG.Proof.Mont.wordsVal b.mem base ACC 4) (Res := VG.Proof.Mont.wordsVal c.mem base 544 4) abv be' ce'
   · simp only [List.mem_cons, List.mem_append, not_or] at hr
-    obtain ⟨⟨h19, hc⟩, h2⟩ := hr
-    have h2' : r ≠ .x2 := by simpa using h2
+    obtain ⟨⟨h19, hc⟩, h2, h20, -⟩ := hr
     rw [dk.gpr r (by simp only [List.mem_singleton]; exact fun e => hc (by subst e; decide)),
       ck.gpr r (by simpa only [M_n] using hc),
       bk.gpr r (by simp only [VG.Proof.Weierstrass.AArch64.powClob, List.mem_cons, not_or]; exact ⟨h19, hc⟩),
-      ak.gpr r (by simp only [List.mem_append, List.mem_singleton, not_or]; exact ⟨hc, h2'⟩)]
-  · rw [d1, opkeep_word ck (d := SX1) (by decide) (by decide) (by decide),
-      unch_word bU (by decide) (by decide) (by decide) (by decide)]
+      ak.gpr r (by simp only [List.mem_append, List.mem_cons, List.mem_nil_iff, or_false, not_or]; exact ⟨hc, h2, h20⟩)]
+  · rw [d1, ck.gpr _ (by decide), bk.gpr _ (by decide)]
     exact ax
-  · rw [dk.mem]
+  · rw [dm]
     have hn := hm.nowrap
     rw [ck.mem x (by simp only [M_n]; omega) (by simp only [M_tmp, M_n]; omega)]
     rw [bU x (by

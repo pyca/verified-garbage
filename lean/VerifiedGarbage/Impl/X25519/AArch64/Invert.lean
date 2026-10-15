@@ -16,7 +16,8 @@ That inversion works in Montgomery form (`R = 2²⁵⁶`): `z` goes in as
 `z R mod p` (a Montgomery product with `R² mod p`, which also reduces it
 below `p`), and the result, `z^(p - 2) R`, comes out by a Montgomery product
 with `1`. The modulus, `R² mod p` and `1` are written first; the output
-pointer `x1`, which the products use, is kept in the working space.
+pointer `x1`, which the products use, is kept in `x20` (which the function
+saves and restores).
 -/
 
 @[expose] public section
@@ -36,8 +37,6 @@ def ACC : Nat := BASE + 32
 def R2 : Nat := ACC + 32
 /-- `1`. -/
 def ONE : Nat := R2 + 32
-/-- The output pointer `x1`. -/
-def SX1 : Nat := ONE + 32
 
 /-- `p` for the Montgomery arithmetic: at `moAt 4`, its temporary area below it. -/
 def M : Mod := Weierstrass.AArch64.Mont.mod 4 Spec.X25519.P
@@ -51,11 +50,11 @@ def storeConst (o v : Nat) : List Instr :=
 
 /-- The constants, and `[BASE] = z R mod p`. -/
 def pre : List Instr :=
-  [st .x1 SX1] ++ storeConst M.mo Spec.X25519.P ++ storeConst R2 1444 ++
+  [.addImm .x .x20 .x1 0] ++ storeConst M.mo Spec.X25519.P ++ storeConst R2 1444 ++
   storeConst ONE 1 ++ Mont.AArch64.mul M BASE (offset 2) R2
 
 /-- `[slot 15] = z^(p - 2) mod p`, and `x1` back. -/
-def post : List Instr := Mont.AArch64.mul M (offset 15) ACC ONE ++ [ld .x1 SX1]
+def post : List Instr := Mont.AArch64.mul M (offset 15) ACC ONE ++ [.addImm .x .x1 .x20 0]
 
 /-- `[slot 15] = [slot 2]^(p - 2) mod p`. -/
 def invert : Prog isa := .seq (.block pre) (.seq cfg.inv (.block post))
