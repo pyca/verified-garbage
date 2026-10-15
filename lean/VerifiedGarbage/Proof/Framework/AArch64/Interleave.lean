@@ -82,7 +82,7 @@ def fp (xb : Reg) : Instr → Option Fp
   | .umulh d n m => some (regFp (gbit n ||| gbit m) (gbit d))
   | .adds _ d n m | .subs _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, false, true, 0, 0⟩
   | .adcs _ d n m | .sbcs _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, true, true, 0, 0⟩
-  | .adc _ d n m | .sbc _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, true, false, 0, 0⟩
+  | .adc _ d n m | .sbc _ d n m | .csel _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, true, false, 0, 0⟩
   | .addImm _ d n _ | .subImm _ d n _ | .lsr _ d n _ | .lsl _ d n _ =>
     some (regFp (gbit n) (gbit d))
   | .madd _ d n m a => some (regFp (gbit n ||| gbit m ||| gbit a) (gbit d))
@@ -489,6 +489,20 @@ theorem det_adc {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
 
+theorem det_csel {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.csel sz d n m) = some F) :
+    Det xb (.csel sz d n m) F := by
+  intro s t h s' he
+  have hg := h.gpr
+  have hc : s.c = t.c := by
+    have := h.c (by simp only [fp, Option.some.injEq] at hf; subst hf; rfl)
+    simp only [State.flags, Prod.mk.injEq] at this; exact this.2.2.1
+  simp only [fp, Option.some.injEq] at hf
+  subst hf
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, hc, Option.some.injEq] at he
+  subst he
+  refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
+  rfl
+
 theorem det_sbc {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.sbc sz d n m) = some F) :
     Det xb (.sbc sz d n m) F := by
   intro s t h s' he
@@ -765,6 +779,7 @@ theorem det {i : Instr} {F : Fp} (hf : fp xb i = some F) : Det xb i F := by
   case logic => exact det_logic hf
   case adc => exact det_adc hf
   case sbc => exact det_sbc hf
+  case csel => exact det_csel hf
   case adds => exact det_adds hf
   case subs => exact det_subs hf
   case adcs => exact det_adcs hf
