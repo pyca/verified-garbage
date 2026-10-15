@@ -80,6 +80,21 @@ theorem B_pos : 0 < H.P.B := by rcases hH.sizes.B with h | h <;> omega
 include hH in
 theorem N_le : H.P.N ≤ 64 := hH.sizes.dims.N.2
 
+/-! Bounds the proofs use many times, proved once by `Nat` lemmas rather than
+by `omega` at each use. -/
+
+include hH in
+theorem B4 : H.P.B % 4 = 0 := by rcases hH.sizes.B with h | h <;> rw [h]
+include hH in
+theorem N_lt4096 : H.P.N < 4096 := Nat.lt_of_le_of_lt hH.N_le (by decide)
+include hH in
+theorem N_le64 : H.P.N ≤ 2 ^ 64 := Nat.le_of_lt hH.sizes.N_lt64
+include hH in
+theorem NB_le64 : H.P.N + H.P.B ≤ 2 ^ 64 :=
+  Nat.le_trans (Nat.add_le_add hH.N_le hH.B_le) (by decide)
+include hH in
+theorem D4' : 4 * (H.D / 4) = H.D := Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hH.sizes.D4)
+
 /-- What the proof of `iterate` (`Proof/Pbkdf2/AArch64/Iterate.lean`) needs
 of the hash function. -/
 theorem iterOk : Pbkdf2.AArch64.HashOk H.P H.D H.W hH.SH hH.md hH.iv where
