@@ -5,9 +5,10 @@
 //! length supplied at import, or the public sampling bound for generated keys.
 //! All secret exponentiation runs in the verified fixed-window code. Public
 //! exponents in the remaining Rust parameter checks may directly index a table.
-//! Rust still validates domains on x86-64, samples randomness and packs
-//! inputs and results. These Rust
-//! operations, as elsewhere in the crate, are outside the Lean proof boundary.
+//! Private-key generation samples and validates the scalar in verified code.
+//! Rust obtains random bytes, retries rejected attempts and packs inputs and
+//! results. Domain validation on x86-64 and parameter-generation policy remain
+//! outside the Lean proof boundary.
 //! Parameter generation uses the shared verified windowed Miller–Rabin round;
 //! Rust currently prepares its workspace and selects independent witnesses.
 //! Imported parameters receive structural and algebraic checks; callers must
@@ -156,11 +157,9 @@ impl Parameters {
         self.generate_with(getrandom::fill)
     }
 
-    /// Key generation on AArch64: the verified code draws the scalar from
-    /// `p_len` random bytes and checks it and its public value. As before,
-    /// up to 128 draws for a scalar in range, and up to 128 for a public
-    /// value that is not degenerate.
-    #[cfg(target_arch = "aarch64")]
+    /// Verified code draws and checks the scalar and its public value.
+    /// Retry up to 128 times for an in-range scalar and up to 128 times
+    /// for a public value that is not degenerate.
     fn generate_with<E>(
         &self,
         mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
@@ -177,7 +176,18 @@ impl Parameters {
                     result = Err(Error::Randomness);
                     break 'keys;
                 }
-                match self.domain.generate_key(&rand, &mut x, &mut y) {
+                #[cfg(target_arch = "aarch64")]
+                let status = self.domain.generate_key(&rand, &mut x, &mut y);
+                #[cfg(target_arch = "x86_64")]
+                let status = x86_64::generate_key(
+                    &self.p,
+                    &self.g,
+                    self.q.as_deref(),
+                    &rand,
+                    &mut x,
+                    &mut y,
+                );
+                match status {
                     1 => {
                         result = Ok(PrivateKey {
                             public: PublicKey {
@@ -197,27 +207,6 @@ impl Parameters {
         }
         zeroize(&mut rand);
         result
-    }
-
-    #[cfg(not(target_arch = "aarch64"))]
-    fn generate_with<E>(
-        &self,
-        mut fill: impl FnMut(&mut [u8]) -> Result<(), E>,
-    ) -> Result<PrivateKey, Error> {
-        let upper = self.q.clone().unwrap_or_else(|| minus_one(&self.p));
-        for _ in 0..128 {
-            let mut x = generation::sample(&upper, &mut fill)?;
-            let mut padded = alloc::vec![0; self.p.len()];
-            let offset = padded.len() - x.len();
-            padded[offset..].copy_from_slice(&x);
-            let result = PrivateKey::from_padded(self, padded, upper.len());
-            zeroize(&mut x);
-            match result {
-                Err(Error::InvalidKey) => continue,
-                r => return r,
-            }
-        }
-        Err(Error::TooManyIterations)
     }
 
     #[cfg(target_arch = "aarch64")]
@@ -306,33 +295,6 @@ impl PrivateKey {
                 y: y.to_vec(),
             },
             x: scalar(x, params.p.len()),
-            exponent_len,
-        })
-    }
-    #[cfg(not(target_arch = "aarch64"))]
-    fn from_padded(params: &Parameters, x: Vec<u8>, exponent_len: usize) -> Result<Self, Error> {
-        let mut y = alloc::vec![0; params.p.len()];
-        // The generator is a checked public value of this domain. Its powers
-        // stay in the q subgroup when q is present; the verified operation
-        // rejects degenerate public values and writes zeros on failure.
-        if !x86_64::exchange(
-            &params.p,
-            &params.g,
-            params.q.as_deref(),
-            &x[x.len() - exponent_len..],
-            &params.g,
-            &mut y,
-        ) {
-            let mut x = x;
-            zeroize(&mut x);
-            return Err(Error::InvalidKey);
-        }
-        Ok(Self {
-            public: PublicKey {
-                params: params.clone(),
-                y: canonical(&y).to_vec(),
-            },
-            x,
             exponent_len,
         })
     }
@@ -446,6 +408,41 @@ mod tests {
             .unwrap();
         assert_eq!(attempts, 2);
         assert_eq!(key.private_component()[63], 3);
+    }
+    #[test]
+    fn generated_attempt_masks_failed_outputs() {
+        let params = composite_domain();
+        // In this algebraic fixture g has order 4. Scalars 0 and p are
+        // outside the range; 4 produces 1; 3 produces g^3 = 2^384.
+        for (scalar, status) in [(0, 2), (4, 3), (3, 1), (255, 2)] {
+            let mut rand = vec![0; 64];
+            if scalar == 255 {
+                rand.fill(255);
+            } else {
+                rand[63] = scalar;
+            }
+            let mut x = vec![0xa5; 64];
+            let mut y = vec![0x5a; 64];
+            #[cfg(target_arch = "aarch64")]
+            let actual = params.domain.generate_key(&rand, &mut x, &mut y);
+            #[cfg(target_arch = "x86_64")]
+            let actual = x86_64::generate_key(
+                &params.p,
+                &params.g,
+                params.q.as_deref(),
+                &rand,
+                &mut x,
+                &mut y,
+            );
+            assert_eq!(actual, status);
+            if status == 1 {
+                assert_eq!(x, rand);
+                assert_eq!(y[15], 1);
+                assert!(y[..15].iter().chain(&y[16..]).all(|&b| b == 0));
+            } else {
+                assert!(x.iter().chain(&y).all(|&b| b == 0));
+            }
+        }
     }
     #[test]
     fn selection_is_by_low_bit() {

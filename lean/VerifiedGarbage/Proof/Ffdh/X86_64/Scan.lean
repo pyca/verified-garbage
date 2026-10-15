@@ -103,7 +103,8 @@ theorem scanStep_ok {s₀ : State} {p : Addr} {bs : List Byte} (hl : bs.length <
     by_cases h : j < lead bs <;> simp [c, h] <;> omega
 
 /-- Find the significant public bytes of q and save their pointer and length. -/
-theorem scan_ok {s : State} {B : Addr} {Z w : Nat} (h : Outer s B Z w) {sp : Nat} (hsp : sp < 32)
+theorem scan_raw_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = B) (hZ : 256 ≤ Z) {sp : Nat} (hsp : sp < 32)
     {p : Addr} {bs : List Byte} (hp : word s.mem B (8 * sp) = p)
     (hk : word s.mem B (8 * sK) = BitVec.ofNat 64 bs.length)
     (hne : bs ≠ []) (hl : bs.length < 2 ^ 32) (hsrc : Src s B Z p bs) :
@@ -113,15 +114,14 @@ theorem scan_ok {s : State} {B : Addr} {Z w : Nat} (h : Outer s B Z w) {sp : Nat
       t.gpr .rax = (bs[lead bs]'(lead_lt hne)).setWidth 64 ∧
       Frm B [(8 * sEp, 8), (8 * sEl, 8)] s.mem t.mem ∧
       Keep [.rsi, .rcx, .rax, .rbp, .rdx] s t := by
-  have hn := h.scr.nowrap
+  have hn := hs.nowrap
   have hL := lead_lt hne
-  have hroom := h.room
-  have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
   unfold scan
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.rsi, .rcx] (Q := fun t => t.gpr .rsi = p ∧
       t.gpr .rcx = BitVec.ofNat 64 bs.length ∧ t.mem = s.mem)
-    (by xrun [State.ea, hdr, h.rdi, hdrOff, h.ld hsp, h.ld (show sK < 32 by decide), hp, hk]) rfl)
+    (by xrun [State.ea, hdr, hdi, hdrOff, hs.ld (by omega : 8 * sp + 8 ≤ Z),
+      hs.ld (by unfold sK sFn; omega : 8 * sK + 8 ≤ Z), hp, hk]) rfl)
     fun s₁ ⟨⟨hsi₁, hcx₁, hm₁⟩, k₁⟩ => ?_)
   refine WP.seq (WP.mono (wp_upto (a := 0) (N := lead bs + 1) (by omega)
     (fun j t => ScanAt s₁ p bs.length (min j (lead bs)) t)
@@ -136,12 +136,12 @@ theorem scan_ok {s : State} {B : Addr} {Z w : Nat} (h : Outer s B Z w) {sp : Nat
     fun s₂ h₂ => ?_)
   rw [Nat.min_eq_right (by omega)] at h₂
   obtain ⟨hsi₂, hcx₂, hm₂, k₂⟩ := h₂
-  have hdi₂ : s₂.gpr .rdi = B := ((k₁.trans k₂).gpr (by decide)).trans h.rdi
-  have hs₂ := h.scr.congr (k₂.2.2.trans k₁.2.2)
+  have hdi₂ : s₂.gpr .rdi = B := ((k₁.trans k₂).gpr (by decide)).trans hdi
+  have hs₂ := hs.congr (k₂.2.2.trans k₁.2.2)
   have hld : InRegions (s₂.rd ++ s₂.wr) (off p (lead bs)) 1 := by
     rw [k₂.2.1, k₂.2.2, k₁.2.1, k₁.2.2]; exact hsrc.rd _ hL
-  have hEp := hdr_lt_slot w 8 (show sEp < 32 by decide)
-  have hEl := hdr_lt_slot w 8 (show sEl < 32 by decide)
+  have hEp : 8 * sEp + 8 ≤ Z := by unfold sEp sFn; omega
+  have hEl : 8 * sEl + 8 ≤ Z := by unfold sEl sFn; omega
   let m := (s₂.mem.writeW (off B (8 * sEp)) (off p (lead bs))).writeW
     (off B (8 * sEl)) (BitVec.ofNat 64 (bs.length - lead bs))
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = m ∧ t.gpr .rax = (m (off p (lead bs))).setWidth 64)
@@ -164,5 +164,20 @@ theorem scan_ok {s : State} {B : Addr} {Z w : Nat} (h : Outer s B Z w) {sp : Nat
   · intro x hx
     rw [hm]; dsimp only [m]
     rw [o₂ x (hx (8 * sEl, 8) (by simp)), o₁ x (hx (8 * sEp, 8) (by simp)), hm₂, hm₁]
+
+/-- Scan with the already initialized arithmetic workspace. -/
+theorem scan_ok {s : State} {B : Addr} {Z w : Nat} (h : Outer s B Z w) {sp : Nat} (hsp : sp < 32)
+    {p : Addr} {bs : List Byte} (hp : word s.mem B (8 * sp) = p)
+    (hk : word s.mem B (8 * sK) = BitVec.ofNat 64 bs.length)
+    (hne : bs ≠ []) (hl : bs.length < 2 ^ 32) (hsrc : Src s B Z p bs) :
+    WP isa (seqs (scan sp)) s fun t =>
+      word t.mem B (8 * sEp) = off p (lead bs) ∧
+      word t.mem B (8 * sEl) = BitVec.ofNat 64 (bs.length - lead bs) ∧
+      t.gpr .rax = (bs[lead bs]'(lead_lt hne)).setWidth 64 ∧
+      Frm B [(8 * sEp, 8), (8 * sEl, 8)] s.mem t.mem ∧
+      Keep [.rsi, .rcx, .rax, .rbp, .rdx] s t :=
+  scan_raw_ok (B := B) (Z := Z) (sp := sp) (p := p) (bs := bs) h.scr h.rdi
+    (by have hr := h.room; have hh := hdr_lt_slot w 8 (show 31 < 32 by decide); omega)
+    hsp hp hk hne hl hsrc
 
 end VG.Proof.Ffdh.X86_64

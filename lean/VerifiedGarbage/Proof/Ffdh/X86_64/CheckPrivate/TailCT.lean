@@ -83,6 +83,13 @@ private theorem eq_keep (L : Ws) (s : State) (h : GoodW1 L s) : WP isa (seqs (eq
   exact WP.mono (eqArr_ok hg hZ hw hw' (show aY < 8 by decide) (show aXm < 8 by decide))
     fun t ⟨_, hmem, k⟩ => GoodW1.keep ⟨⟨mi, hg, hZ⟩, hw, hw'⟩ hmem (k.gpr (by decide)) k.2.2
 
+/-- Shared timing proof for powers of the domain's generator. -/
+theorem generator_power_ct (M : Mont) (E : CrtExpL M) (hE : ExpCTL E sX sXl) :
+    RelCT isa (Two C2) (seqs (pow M.mm E.code sG sK sX sXl)) (Two C3) :=
+  two_post (two_map KpP.pw c2_ps0
+    (pow_ct M E (loadArr_ct (by decide) (by taint_decide) (by taint_decide)) hE
+      (by taint_decide) (by taint_decide) (by taint_decide))) (c2_c3 M E)
+
 private theorem tail_eq (M : Mont) (E : CrtExpL M) (R : R2Impl M) :
     VG.Impl.Ffdh.X86_64.Domain.CheckPrivate.tail M.mm E.code (.seq (.block r2Head) R.code) =
       .seq (.block r2Head) R.code :: (pow M.mm E.code sG sK sX sXl ++ (range aY ++
@@ -95,9 +102,7 @@ theorem tail_ct (M : Mont) (E : CrtExpL M) (R : R2Impl M) (hE : ExpCTL E sX sXl)
   rw [tail_eq]
   refine seqs_cons_ct (by simp [pow]) (RelCT.seq (r2_ct M R) ?_)
   refine RelCT.seqs_append (a := pow M.mm E.code sG sK sX sXl) (by simp [pow]) (by simp [range, gt1, ltArr, cmpArr])
-    (RelCT.seq (R := Two C3) (two_post (two_map KpP.pw c2_ps0
-      (pow_ct M E (loadArr_ct (by decide) (by taint_decide) (by taint_decide)) hE
-        (by taint_decide) (by taint_decide) (by taint_decide))) (c2_c3 M E)) ?_)
+    (RelCT.seq (R := Two C3) (generator_power_ct M E hE) ?_)
   refine RelCT.seqs_append (a := range aY) (by simp [range, gt1, ltArr, cmpArr]) (by simp [loadArr])
     (RelCT.seq (R := Two C4) (two_post (two_map KpP.ws c3_good
       (range_ct (by decide) (by decide) (by taint_decide) (by taint_decide) (by taint_decide))) c3_c4) ?_)
