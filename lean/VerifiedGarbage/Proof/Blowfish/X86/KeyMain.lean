@@ -95,8 +95,7 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.X86.
   apply WP.seq
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.eax, .ebp] (save_run s bfit (rA 3 (by decide)) rfl (fun d hd =>
-    ⟨_, bR, Offset.contains_base _ (by omega) (by omega)⟩)) (by
-      simp [writesOnly, save, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+    ⟨_, bR, Offset.contains_base _ (by omega) (by omega)⟩)) (by decide))
     fun u₁ ⟨⟨m₁, b₁⟩, k₁⟩ => ?_
   have F₁ : Frame [kSchR s, kBufR s] s.mem u₁.mem := by
     rw [m₁]
@@ -196,7 +195,7 @@ theorem expandKey_correct {s : State} (h : KeyPre s) : WP isa Impl.Blowfish.X86.
   have hr : ∀ d, d + 4 ≤ 16 → InRegions (u₇.rd ++ u₇.wr) (slot B d) 4 := fun d hd => by
     rw [I₇.rd, I₇.wr]; exact region_in (EE.wB rfl (by omega))
   refine WP.mono (WP.keep [.ebx, .esi, .edi, .ebp] (restore_run u₇ s I₇.ebp bfit hr I₇.saved) (by
-      simp [writesOnly, restore, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+      decide))
     fun t ⟨⟨tb, ts, td, tp, tm⟩, tk⟩ => ⟨⟨fun r hr => ?_, ?_⟩, by rw [tm, I₇.sched, expandKey_eq]⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
