@@ -77,29 +77,21 @@ def addWord (src : MemOp) : List Instr :=
 def blockCarry : MemOp := { base := .rcx, disp := -8 }
 def tileCarry : MemOp := { base := .rcx, disp := -16 }
 
-def productStep (k : Nat) : Prog isa :=
-  .seq (.block [.mov .rdx (.mem (at_ .rcx (8 * k)))])
-    (.seq (.block core) (.block [.store (at_ .rsi (8 * k)) .rbx]))
-
-def productN : Nat → Prog isa
-  | 0 => .block []
-  | n + 1 => .seq (productN n) (productStep n)
-
 /-- The product with the digit `j` words into an iteration: digit and output
 `rdi` bytes past `rcx + 64` and `rsi + 64`. -/
-def productStepX (j : Nat) : Prog isa :=
+def productStep (j : Nat) : Prog isa :=
   .seq (.block [.mov .rdx (.mem (atx .rcx .rdi (64 + 8 * j)))])
     (.seq (.block core) (.block [.store (atx .rsi .rdi (64 + 8 * j)) .rbx]))
 
-def productStepsX : Nat → Prog isa
+def productSteps : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (productStepsX n) (productStepX n)
+  | n + 1 => .seq (productSteps n) (productStep n)
 
-/-- `productN 8`, `unroll` steps per iteration, indexed by `rdi`: the header
+/-- A modulus block times the eight digits, `unroll` steps per iteration, indexed by `rdi`: the header
 base waits in `xmm0`. -/
 def productLoop : Prog isa :=
   .seq (.block [.xop (.movq .xmm0 .rdi), .mov .rdi (.imm (-64))])
-    (.seq (.loop (.seq (productStepsX unroll) (.block [.alu .add .rdi (.imm (BitVec.ofNat 32 (8 * unroll)))])) .ne)
+    (.seq (.loop (.seq (productSteps unroll) (.block [.alu .add .rdi (.imm (BitVec.ofNat 32 (8 * unroll)))])) .ne)
       (.block [.movqR .rdi .xmm0]))
 
 /-- Advance both public block pointers and test the modulus endpoint. -/

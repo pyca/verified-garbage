@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Digit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -20,17 +20,17 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 
-theorem productStepX_ok {s : State} {B : Addr} {Z eU eO eN m j : Nat}
+theorem productStep_ok {s : State} {B : Addr} {Z eU eO eN m j : Nat}
     (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (hi : s.gpr .rdi = idx m)
     (hp : s.gpr .rbp = off B eN) (ho : s.gpr .rsi = off B eO)
     (huZ : eU + 8 * m + 8 * j + 8 ≤ Z) (hoZ : eO + 8 * m + 8 * j + 8 ≤ Z) (hnZ : eN + 64 ≤ Z) :
-    WP isa (AdxRotate8.productStepX j) s fun t =>
+    WP isa (AdxRotate8.productStep j) s fun t =>
       (word t.mem B (eO + 8 * m + 8 * j)).toNat + 2 ^ 64 * cols t =
         cols s + (word s.mem B (eU + 8 * m + 8 * j)).toNat * wv s.mem B eN 8 ∧
       Outside B (eO + 8 * m + 8 * j) 8 s.mem t.mem ∧
       Keep [.rdx, .rax, .rbx, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
   have hsrc := readSrc_word hs (ea_atx hc hi (8 * j)) huZ
-  unfold AdxRotate8.productStepX
+  unfold AdxRotate8.productStep
   refine WP.seq (WP.mono (movMem_ok s (dst := .rdx) hsrc) fun a ⟨ha, _, _, ka⟩ => ?_)
   refine WP.seq (WP.mono (core_mem (hs.congr ka.2.2.2) ((ka.gpr (by decide)).trans hp) hnZ)
     fun b ⟨eb, _, _, kb⟩ => ?_)
@@ -43,12 +43,12 @@ theorem productStepX_ok {s : State} {B : Addr} {Z eU eO eN m j : Nat}
   · rw [wt, cols_keep kt (by simp)]; exact eb
   · rw [kab.2.1] at ot; exact ot
 
-theorem productStepsX_ok {s : State} {B : Addr} {Z eU eO eN m n : Nat}
+theorem productSteps_ok {s : State} {B : Addr} {Z eU eO eN m n : Nat}
     (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (hi : s.gpr .rdi = idx m)
     (hp : s.gpr .rbp = off B eN) (ho : s.gpr .rsi = off B eO)
     (huZ : eU + 8 * m + 8 * n ≤ Z) (hoZ : eO + 8 * m + 8 * n ≤ Z) (hnZ : eN + 64 ≤ Z)
-    (hsepU : eU + 64 ≤ eO) (hsepN : eN + 64 ≤ eO) (hmn : m + n ≤ 8) :
-    WP isa (AdxRotate8.productStepsX n) s fun t =>
+    (hsepU : eU + 64 ≤ eO ∨ eO + 64 ≤ eU) (hsepN : eN + 64 ≤ eO ∨ eO + 64 ≤ eN) (hmn : m + n ≤ 8) :
+    WP isa (AdxRotate8.productSteps n) s fun t =>
       wv t.mem B (eO + 8 * m) n + 2 ^ (64 * n) * cols t =
         cols s + wv s.mem B (eU + 8 * m) n * wv s.mem B eN 8 ∧
       Outside B (eO + 8 * m) (8 * n) s.mem t.mem ∧
@@ -59,11 +59,11 @@ theorem productStepsX_ok {s : State} {B : Addr} {Z eU eO eN m n : Nat}
     exact ⟨by simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_mul, Nat.add_zero, Nat.zero_add],
       Outside.refl _ _ _ _, Keep.refl _ _⟩
   | succ n ih =>
-    unfold AdxRotate8.productStepsX
+    unfold AdxRotate8.productSteps
     refine WP.seq (WP.mono (ih (by omega_arith) (by omega_arith) (by omega_arith)) fun a ⟨va, oa, ka⟩ => ?_)
     have sa := hs.congr ka.2.2
     have hna := sa.nowrap
-    refine WP.mono (productStepX_ok sa ((ka.gpr (by decide)).trans hc) ((ka.gpr (by decide)).trans hi)
+    refine WP.mono (productStep_ok sa ((ka.gpr (by decide)).trans hc) ((ka.gpr (by decide)).trans hi)
       ((ka.gpr (by decide)).trans hp) ((ka.gpr (by decide)).trans ho)
       (by omega_arith) (by omega_arith) hnZ) fun t ⟨vt, ot, kt⟩ => ?_
     have mn : wv a.mem B eN 8 = wv s.mem B eN 8 := oa.wv (by omega_arith) (by omega_arith)
@@ -99,8 +99,8 @@ structure ProdInv (s₀ : State) (B : Addr) (Z eU eO eN : Nat) (j : Nat) (s : St
 
 theorem productLoop_ok {s : State} {B : Addr} {Z eU eO eN : Nat}
     (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (hp : s.gpr .rbp = off B eN)
-    (ho : s.gpr .rsi = off B eO) (hoZ : eO + 8 * 8 ≤ Z) (hnZ : eN + 64 ≤ Z)
-    (hsepU : eU + 8 * 8 ≤ eO) (hsepN : eN + 64 ≤ eO) :
+    (ho : s.gpr .rsi = off B eO) (huZ : eU + 8 * 8 ≤ Z) (hoZ : eO + 8 * 8 ≤ Z) (hnZ : eN + 64 ≤ Z)
+    (hsepU : eU + 8 * 8 ≤ eO ∨ eO + 8 * 8 ≤ eU) (hsepN : eN + 64 ≤ eO ∨ eO + 64 ≤ eN) :
     WP isa AdxRotate8.productLoop s fun t =>
       wv t.mem B eO 8 + 2 ^ (64 * 8) * cols t =
         cols s + wv s.mem B eU 8 * wv s.mem B eN 8 ∧
@@ -133,7 +133,7 @@ theorem productLoop_ok {s : State} {B : Addr} {Z eU eO eN : Nat}
         ((t.xmm .xmm0).extractLsb' 0 64 = s.gpr .rdi → ProdInv s B Z eU eO eN (j + 1) t)) ?_
         (by decide) (by decide))
       fun t ⟨⟨zt, ht⟩, xt⟩ => ⟨zt, ht (by rw [xt]; exact hb.xmm)⟩
-    refine WP.seq (WP.mono (productStepsX_ok (n := 2) (m := 2 * j) hb.scr hb.rcx hb.rdi hb.rbp hb.rsi
+    refine WP.seq (WP.mono (productSteps_ok (n := 2) (m := 2 * j) hb.scr hb.rcx hb.rdi hb.rbp hb.rsi
       (by omega) (by omega) hnZ (by omega) hsepN (by omega)) fun c ⟨vc, oc, kc⟩ => ?_)
     refine WP.mono (idxAdd_ok (u := 2) ((kc.gpr (by decide)).trans hb.rdi) (by omega))
       fun t ⟨it, zt, mt, kt⟩ => ⟨by rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega)), fun hx => ?_⟩

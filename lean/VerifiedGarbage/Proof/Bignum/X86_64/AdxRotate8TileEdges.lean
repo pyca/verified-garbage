@@ -1,6 +1,6 @@
 module
 
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductLoop
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Accumulate
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Frame
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Tail
@@ -14,54 +14,10 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Math
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
 
-/-! ## AdxRotate8Product -/
+/-! ## AdxRotate8MiddleBody -/
 
 @[expose] public section
 
-section
-
-/-! The full register-resident product of two eight-word blocks. -/
-namespace VG.Proof.Bignum.X86_64.AdxRotate8
-open VG VG.X86_64 VG.Impl.Bignum.X86_64
-open VG.Proof.Bignum.X86_64
-open VG.Proof.MlKem.X86_64 (Keep)
-
-theorem productN_ok {s : State} {B : Addr} {Z eU eO eN n : Nat}
-    (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (hp : s.gpr .rbp = off B eN)
-    (ho : s.gpr .rsi = off B eO) (huZ : eU + 8 * n ≤ Z)
-    (hoZ : eO + 8 * n ≤ Z) (hnZ : eN + 64 ≤ Z)
-    (hsepU : eU + 8 * n ≤ eO) (hsepN : eN + 64 ≤ eO) :
-    WP isa (AdxRotate8.productN n) s fun t =>
-      wv t.mem B eO n + 2 ^ (64 * n) * cols t =
-        cols s + wv s.mem B eU n * wv s.mem B eN 8 ∧
-      Outside B eO (8 * n) s.mem t.mem ∧
-      Keep [.rdx, .rax, .rbx, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
-  induction n with
-  | zero =>
-    apply WP.block_nil
-    exact ⟨by simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_mul, Nat.add_zero, Nat.zero_add],
-      Outside.refl _ _ _ _, Keep.refl _ _⟩
-  | succ n ih =>
-    unfold AdxRotate8.productN
-    refine WP.seq (WP.mono (ih (by omega_arith) (by omega_arith) (by omega_arith)) fun a ⟨va, oa, ka⟩ => ?_)
-    have sa := hs.congr ka.2.2
-    have hna := sa.nowrap
-    refine WP.mono (productStep_ok sa ((ka.gpr (by decide)).trans hc)
-      ((ka.gpr (by decide)).trans hp) ((ka.gpr (by decide)).trans ho)
-      (by omega_arith) (by omega_arith) hnZ) fun t ⟨vt, ot, kt⟩ => ?_
-    have mn : wv a.mem B eN 8 = wv s.mem B eN 8 := oa.wv (by omega_arith) (by omega_arith)
-    have mu : word a.mem B (eU + 8 * n) = word s.mem B (eU + 8 * n) := oa.word (by omega_arith) (by omega_arith)
-    have lo : wv t.mem B eO n = wv a.mem B eO n := ot.wv (by omega_arith) (by omega_arith)
-    refine ⟨?_, (oa.mono (o' := eO) (n' := 8 * (n + 1)) (by omega_arith) (by omega_arith)).trans
-      (ot.mono (o' := eO) (n' := 8 * (n + 1)) (by omega_arith) (by omega_arith)), (ka.trans kt).mono (by decide)⟩
-    rw [mn, mu] at vt
-    rw [wv, wv, lo, pow64_succ]
-    grind
-end VG.Proof.Bignum.X86_64.AdxRotate8
-
-end
-
-/-! ## AdxRotate8MiddleBody -/
 section
 
 /-! One input block and eight multiplier rows, with the overflow retained. -/
@@ -84,8 +40,8 @@ theorem middleBody_ok {s : State} {B : Addr} {Z eU eO eN : Nat}
   have hn := hs.nowrap
   unfold AdxRotate8.middleBody
   refine WP.seq (WP.mono (accumulate_ok hs hc ho he (by omega_arith) hoZ) fun a ⟨va, ba, oa, ka⟩ => ?_)
-  refine WP.mono (productN_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hc)
-    ((ka.gpr (by decide)).trans hp) ((ka.gpr (by decide)).trans ho) huZ hoZ hnZ hsepU (by omega_arith))
+  refine WP.mono (productLoop_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hc)
+    ((ka.gpr (by decide)).trans hp) ((ka.gpr (by decide)).trans ho) huZ hoZ hnZ (.inl hsepU) (.inl (by omega_arith)))
     fun t ⟨vt, ot, kt⟩ => ?_
   have wn : wv a.mem B eN 8 = wv s.mem B eN 8 := oa.wv (by omega_arith) (by omega_arith)
   have wu : wv a.mem B eU 8 = wv s.mem B eU 8 := oa.wv (by omega_arith) (by omega_arith)

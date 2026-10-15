@@ -74,16 +74,16 @@ theorem begin_fw (L : TileLayout) (s : State) (h : TileGood L s) :
     by simpa only [Nat.mul_zero, Nat.add_zero] using ho⟩
 
 theorem head_fw (L : TileLayout) (s : State) (h : TileReady L 0 s) :
-    WP isa (AdxRotate8.headN 8) s (TileReady L 0) := by
+    WP isa AdxRotate8.headLoop s (TileReady L 0) := by
   obtain ⟨mi, hm⟩ := h.good.hdr
   have hw := L.hw; have he := L.he; have heZ := L.heZ; have sep := L.sep
   have hp : s.gpr .rbp = off L.B (slot L.w aN) := by simpa only [Nat.mul_zero, Nat.add_zero] using h.rbp
-  refine WP.mono (headN_ok (n := 8) (mi := mi) h.good.scr h.good.rdi h.good.rcx hp
+  refine WP.mono (headLoop_ok (mi := mi) h.good.scr h.good.rdi h.good.rcx hp
     (by omega) (by omega) (by omega) (Nat.le_trans (by decide : 8 * sMinv + 8 ≤ hdrBytes + 16) he) hm.hminv)
-    fun t ⟨_, ot, kt⟩ => ?_
+    fun t ⟨_, ot, rt, kt⟩ => ?_
   exact ⟨⟨h.good.scr.congr kt.2.2, (kt.gpr (by decide)).trans h.good.rdi,
     (kt.gpr (by decide)).trans h.good.rcx, mi, hm.of_outside ot (by omega)⟩,
-    (kt.gpr (by decide)).trans h.rbp, (kt.gpr (by decide)).trans h.rsi⟩
+    (kt.gpr (by decide)).trans h.rbp, by simpa only [Nat.mul_zero, Nat.add_zero] using rt⟩
 
 theorem clear_fw (L : TileLayout) (s : State) (h : TileReady L 0 s) :
     WP isa (.block AdxRotate8.clearCarry) s (TileReady L 0) := by

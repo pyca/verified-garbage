@@ -31,7 +31,7 @@ def nextColumn : List Instr :=
 next eight output words and the carry added to the columns, which the next
 tile continues from, so that no tile stores its columns and reloads them. -/
 def streamTile : Prog isa :=
-  .seq (AdxRotate8.productN 8) (.seq (.block upper)
+  .seq AdxRotate8.productLoop (.seq (.block upper)
     (.seq (.block AdxDualAdd.addInput) (.block [.store (hdr (sFn 14)) .rax, .alu .add .rbp (.imm 64)])))
 
 def rowStep : Prog isa :=

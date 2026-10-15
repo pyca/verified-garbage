@@ -126,4 +126,15 @@ theorem idxAdd_ok {s : State} {r : Reg} {m u : Nat} (hr : s.gpr r = idx m) (hm :
     fun t ⟨⟨h, z, mt⟩, k⟩ => ⟨h, z, mt, k⟩
   xrun [hr, imm8_signExtend (show u ≤ 8 by omega), idx_add, idx_beq hm]
 
+theorem storeAt_ok {s : State} {B : Addr} {Z e d : Nat} {p r : Reg}
+    (hs : Scr s B Z) (hp : s.gpr p = off B e) (he : e + d + 8 ≤ Z) :
+    WP isa (.block [.store (at_ p d) r]) s fun t =>
+      word t.mem B (e + d) = s.gpr r ∧ Outside B (e + d) 8 s.mem t.mem ∧ Keep [] s t := by
+  have hn := hs.nowrap
+  refine WP.mono (WP.keep [] (Q := fun t => t.mem = s.mem.writeW (off B (e + d)) (s.gpr r)) ?_ rfl)
+    fun t ⟨hm, kt⟩ => ?_
+  · xrun [ea_at hp d, hs.st he]
+  · rw [hm]
+    exact ⟨word_writeW_self _ _ _ _, writeW_outside _ _ _ (by omega), kt⟩
+
 end VG.Proof.Bignum.X86_64.AdxRotate8

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
+public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductLoop
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddInput
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
@@ -10,53 +10,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 
-/-! ## AdxRect8Product -/
-
 @[expose] public section
-
-section
-
-/-! Register products with either ordering of the disjoint input and output buffers. -/
-namespace VG.Proof.Bignum.X86_64.AdxRotate8
-open VG VG.X86_64 VG.Impl.Bignum.X86_64
-open VG.Proof.Bignum.X86_64
-open VG.Proof.MlKem.X86_64 (Keep)
-
-theorem productN_disjoint_ok {s : State} {B : Addr} {Z eU eO eN n : Nat}
-    (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (hp : s.gpr .rbp = off B eN)
-    (ho : s.gpr .rsi = off B eO) (huZ : eU + 8 * n ≤ Z)
-    (hoZ : eO + 8 * n ≤ Z) (hnZ : eN + 64 ≤ Z)
-    (hsepU : eU + 8 * n ≤ eO ∨ eO + 8 * n ≤ eU)
-    (hsepN : eN + 64 ≤ eO ∨ eO + 8 * n ≤ eN) :
-    WP isa (AdxRotate8.productN n) s fun t =>
-      wv t.mem B eO n + 2 ^ (64 * n) * cols t =
-        cols s + wv s.mem B eU n * wv s.mem B eN 8 ∧
-      Outside B eO (8 * n) s.mem t.mem ∧
-      Keep [.rdx, .rax, .rbx, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
-  induction n with
-  | zero =>
-    apply WP.block_nil
-    exact ⟨by simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_mul, Nat.add_zero, Nat.zero_add],
-      Outside.refl _ _ _ _, Keep.refl _ _⟩
-  | succ n ih =>
-    unfold AdxRotate8.productN
-    refine WP.seq (WP.mono (ih (by omega) (by omega) (by omega) (by omega)) fun a ⟨va, oa, ka⟩ => ?_)
-    have sa := hs.congr ka.2.2
-    have hna := sa.nowrap
-    refine WP.mono (productStep_ok sa ((ka.gpr (by decide)).trans hc)
-      ((ka.gpr (by decide)).trans hp) ((ka.gpr (by decide)).trans ho)
-      (by omega) (by omega) hnZ) fun t ⟨vt, ot, kt⟩ => ?_
-    have mn : wv a.mem B eN 8 = wv s.mem B eN 8 := oa.wv (by omega) (by omega)
-    have mu : word a.mem B (eU + 8 * n) = word s.mem B (eU + 8 * n) := oa.word (by omega) (by omega)
-    have lo : wv t.mem B eO n = wv a.mem B eO n := ot.wv (by omega) (by omega)
-    refine ⟨?_, (oa.mono (o' := eO) (n' := 8 * (n + 1)) (by omega) (by omega)).trans
-      (ot.mono (o' := eO) (n' := 8 * (n + 1)) (by omega) (by omega)), (ka.trans kt).mono (by decide)⟩
-    rw [mn, mu] at vt
-    rw [wv, wv, lo, pow64_succ]
-    grind
-end VG.Proof.Bignum.X86_64.AdxRotate8
-
-end
 
 /-! ## AdxRect8Tile -/
 section
@@ -129,7 +83,7 @@ theorem streamTile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
       Keep [.rdx,.rax,.rbx,.rsi,.rbp,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
   have nowrap := hs.nowrap
   unfold AdxRect8.streamTile
-  refine WP.seq (WP.mono (productN_disjoint_ok (n := 8) hs ha hb ho (by omega) (by omega) hB
+  refine WP.seq (WP.mono (productLoop_ok hs ha hb ho hA (by omega) hB
     (by omega) (by omega)) fun a ⟨ea,oa,ka⟩ => ?_)
   refine WP.seq (WP.mono (upper_ok (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hd)
     ((ka.gpr (by decide)).trans ho) (by omega)) fun b ⟨db,pb,mb,kb⟩ => ?_)

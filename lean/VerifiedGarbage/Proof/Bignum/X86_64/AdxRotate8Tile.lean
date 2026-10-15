@@ -36,10 +36,10 @@ theorem front_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
   have hNs := slot_le (w := w) (show aN < 8 by decide)
   unfold AdxRotate8.tileFront
   refine WP.seq (WP.mono (tileBegin_ok hs hdi hH hZ hc heZ) fun a ⟨va, hp, ho, ma, ka⟩ => ?_)
-  refine WP.seq (WP.mono (headN_ok (n := 8) (mi := mi) (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hdi)
+  refine WP.seq (WP.mono (headLoop_ok (mi := mi) (hs.congr ka.2.2) ((ka.gpr (by decide)).trans hdi)
     ((ka.gpr (by decide)).trans hc) hp heZ (by omega) (by omega)
     (Nat.le_trans (by decide : 8 * sMinv + 8 ≤ hdrBytes + 16) he)
-    (by rw [ma]; exact hH.hminv)) fun b ⟨vb, ob, kb⟩ => ?_)
+    (by rw [ma]; exact hH.hminv)) fun b ⟨vb, ob, rb, kb⟩ => ?_)
   have kab := ka.trans kb
   have hbH : Hdr b.mem B w mi := (ma ▸ hH).of_outside ob (by omega)
   refine WP.seq (WP.mono (clearCarry_ok (hs.congr kab.2.2) ((kab.gpr (by decide)).trans hc)
@@ -49,7 +49,7 @@ theorem front_ok {s : State} {B : Addr} {Z w e n : Nat} {mi : BitVec 64}
   have hcP : c.gpr .rbp = off B (slot w aN + 8 * 0) := by
     simpa only [Nat.mul_zero, Nat.add_zero] using ((kb.trans kc).gpr (r := .rbp) (by decide)).trans hp
   have hcO : c.gpr .rsi = off B (e + 8 * 0) := by
-    simpa only [Nat.mul_zero, Nat.add_zero] using ((kb.trans kc).gpr (r := .rsi) (by decide)).trans ho
+    simpa only [Nat.mul_zero, Nat.add_zero] using (kc.gpr (r := .rsi) (by decide)).trans rb
   refine WP.mono (nextBlock_ok (hs.congr kabc.2.2) ((kabc.gpr (by decide)).trans hdi)
     hcH hZ (by omega) hcP hcO) fun t ⟨pt, ot, zt, mt, kt⟩ => ?_
   have outb : Outside B e 64 s.mem b.mem := by rw [ma] at ob; exact ob
