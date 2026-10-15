@@ -19,7 +19,7 @@ open VG.Proof.X25519.Arm (Rest)
 
 structure PublicResult (base dst np ep xp : BitVec 32) (len k eLen : Nat)
     (nb eb xb : List Byte) (s : State) : Prop where
-  buffers : PublicBuffers base dst np ep xp len k eLen nb eb xb s
+  buffers : PublicData base dst ep xp len k eLen eb xb s
   stack : PublicStack base dst np ep xp len k eLen s
   ready : ArithmeticReady base len (Spec.Rsa.modulusWords k) s
   value : numAt s.mem (State.addr base) (Spec.Rsa.modulusWords k) 6 =
@@ -38,7 +38,7 @@ theorem publicExponentiate_ok (s : State) {base dst np ep xp : BitVec 32} {len k
   have modulusPos : 0 < Spec.Rsa.os2ip nb := by have := h.ready.modulus; rw [h.modulus] at this; omega
   have bound : Spec.Rsa.os2ip nb < 2 ^ (8 * k) := by
     have hb := VG.Proof.Rsa.lt_of_os2ip nb
-    rw [h.buffers.modulus.length, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at hb
+    rw [h.modulusLength, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at hb
     exact hb
   have valueFit : numAt t.mem (State.addr base) (Spec.Rsa.modulusWords k) 6 < 2 ^ (8 * k) := by
     rw [value, VG.Proof.Bignum.powMod_eq]

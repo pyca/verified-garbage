@@ -34,7 +34,7 @@ theorem PublicAccepted.after_arrays {s t : State} {base dst np ep xp : BitVec 32
     (frame : Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem) (rest : Rest rs s t) :
     PublicAccepted base dst np ep xp len k eLen nb eb xb t :=
   ⟨⟨⟨h.buffers.after_workspace frame rest, h.stack.after_workspace frame rest, ready,
-      (arrays 0 (by decide)).trans h.modulus, h.odd, (arrays 4 (by decide)).trans h.r2⟩,
+      (arrays 0 (by decide)).trans h.modulus, h.modulusLength, h.odd, (arrays 4 (by decide)).trans h.r2⟩,
       (arrays 1 (by decide)).trans h.input⟩, (h.stack.keep_acceptance frame rest).trans h.flag⟩
 
 theorem PublicAccepted.of_mem {s t : State} {base dst np ep xp : BitVec 32} {len k eLen : Nat}

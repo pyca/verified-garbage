@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.PcVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.PublicVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtVerified
+public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified
 
 /-! # RSA operations on ARMv7 -/
 
@@ -36,6 +37,18 @@ def artifacts : List Artifact := [
     contract := Spec.Rsa.publicCheckedContract abi 56
     stack := 56
     verified := Proof.Bignum.Arm.public_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Rsa.publicPrecomputedCheckedApi with
+    target := target
+    doc := Spec.Rsa.publicPrecomputedCheckedApi.doc
+      (notes := ["Baseline ARMv7: imports the shared packed modulus and R² format, validates the \
+        public arithmetic preconditions, and computes only the Montgomery inverse before binary \
+        exponentiation. Input acceptance and output clearing are branchless. Uses a 56-byte AAPCS \
+        stack frame."])
+    code := Impl.Bignum.Arm.PdFn.code
+    contract := Spec.Rsa.publicPrecomputedCheckedContract abi 56
+    stack := 56
+    verified := Proof.Bignum.Arm.pd_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rsa.privateCrtApi with
     target := target
