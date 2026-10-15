@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.X25519.AArch64.Hybrid
 public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Verified

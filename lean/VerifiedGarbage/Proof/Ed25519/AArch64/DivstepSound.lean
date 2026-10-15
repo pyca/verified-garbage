@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith
 import VerifiedGarbage.Proof.Ed25519.Group.Extended
@@ -25,11 +25,11 @@ namespace VG.Proof.Ed25519.AArch64.Divstep
 
 open VG.Proof.Weierstrass.AArch64
 
-instance : NeZero VG.Spec.X25519.P := ⟨by decide⟩
-
 theorem p_prime : Nat.Prime VG.Spec.X25519.P := VG.Proof.Ed25519.prime_field
 
 theorem invSound : InvSound VG.Spec.X25519.P :=
   invSound_of_toM p_prime (VG.Proof.Weierstrass.invToM_of_prime p_prime)
+
+instance sound : Sound := ⟨invSound⟩
 
 end VG.Proof.Ed25519.AArch64.Divstep

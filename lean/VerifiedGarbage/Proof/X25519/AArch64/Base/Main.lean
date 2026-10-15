@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
 public import VerifiedGarbage.Spec.X25519.Contract
@@ -41,7 +42,7 @@ def baseLocal : Contract isa where
   pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧
     s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧ s.syms combSym = t.syms combSym
 
-theorem x25519Base_correct {s : State} (hs : baseLocal.pre s) :
+theorem x25519Base_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hs : baseLocal.pre s) :
     WP isa x25519Base s fun t => abiPreserved s t ∧ baseLocal.post s t := by
   apply WP.withPreservedV (hc := by lit_decide)
   obtain ⟨hr, hw, hd, hn, hct⟩ := hs

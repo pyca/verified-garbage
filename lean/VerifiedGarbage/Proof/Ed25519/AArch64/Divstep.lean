@@ -13,7 +13,6 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Field
 import VerifiedGarbage.Proof.Mont.AArch64.Blocks
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -24,7 +23,8 @@ import all Init.Data.Vector.Basic
 
 Untrusted: everything here is checked by Lean. `Divstep.invert` leaves
 `[slot 15] ≡ [slot 2]^(p - 2)` (`invert_ok`), from the Montgomery products'
-(`Mont.AArch64.mul_ok`) and the divsteps' (`invSound`) proofs.
+(`Mont.AArch64.mul_ok`) and the divsteps' (`Sound`, proven in `DivstepSound`,
+the one module that imports the algebra it takes).
 -/
 
 @[expose] public section
@@ -36,6 +36,12 @@ open VG.Impl.Ed25519.AArch64.Divstep (TBL BASE ACC R2 ONE M cfg storeConst pre p
 open VG.Proof.Ed25519.AArch64 (Scr workSize workSize_ge workSize_le)
 
 variable {large : Bool}
+
+instance : NeZero Spec.X25519.P := ⟨by decide⟩
+
+/-- The inversion by divsteps is sound modulo `p`: `DivstepSound.lean`. -/
+class Sound : Prop where
+  sound : VG.Proof.Weierstrass.AArch64.InvSound Spec.X25519.P
 
 /-- The working space, for the Montgomery arithmetic. -/
 theorem mscr {s : State} {base : Addr} (hs : Scr s base large) :
@@ -263,7 +269,7 @@ theorem unch_wv {m m' : Mem} {base : Addr} (hU : VG.Proof.Weierstrass.Unch base 
     unch_word hU (d := d + 8 + 8 + 8) (by omega) (by omega) (by omega) (by omega)]
 
 /-- `[slot 15] = [slot 2]^(p - 2)`. -/
-theorem invert_ok {s : State} {base : Addr} (hs : Scr s base large) :
+theorem invert_ok [Sound] {s : State} {base : Addr} (hs : Scr s base large) :
     WP isa VG.Impl.Ed25519.AArch64.Divstep.invert s fun t =>
       VG.Proof.Ed25519.AArch64.env t.mem base 15 = VG.Proof.X25519.invert (VG.Proof.Ed25519.AArch64.env s.mem base 2) ∧
       VG.Proof.Mont.AArch64.KeepRegs (.x19 :: VG.Proof.Mont.AArch64.clob 4 ++ ([.x2, .x20] : List Reg)) s t ∧
@@ -272,7 +278,7 @@ theorem invert_ok {s : State} {base : Addr} (hs : Scr s base large) :
   have hge := workSize_ge large
   refine WP.seq (WP.mono (pre_ok hs) fun a ⟨aM, a1, ax, ab, abv, aO, ak⟩ => ?_)
   have as : VG.Proof.Mont.AArch64.Scr a base (workSize large) := ⟨(ak.gpr _ (by decide)).trans hm.x0, ak.wr ▸ hm.wr, hm.nowrap, hm.enc⟩
-  refine WP.seq (WP.mono (invSound (invLay large) (by decide) (VG.Proof.Weierstrass.unitMod_pow_two (by decide) _) as aM ab invOk)
+  refine WP.seq (WP.mono (Sound.sound (invLay large) (by decide) (VG.Proof.Weierstrass.unitMod_pow_two (by decide) _) as aM ab invOk)
     fun b ⟨bk, bU, bv, be⟩ => ?_)
   have bs : VG.Proof.Mont.AArch64.Scr b base (workSize large) := ⟨(bk.gpr _ (by decide)).trans as.x0, bk.wr ▸ as.wr, hm.nowrap, hm.enc⟩
   have bmo : VG.Proof.Mont.wordsVal b.mem base M.mo 4 = Spec.X25519.P := by

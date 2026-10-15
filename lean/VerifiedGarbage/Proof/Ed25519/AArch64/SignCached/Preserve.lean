@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Args
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
@@ -539,7 +540,7 @@ theorem base_pre (hL : L.Ok) (ha : BaseArgs L s) (hsy : s.syms Impl.Ed25519.AArc
     State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), ha.1, ha.2.1, ha.2.2, hT]
   exact ⟨rfl, rfl, field_scr hL (by decide), hL.nc, hC⟩
 
-theorem base_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : BaseArgs L s)
+theorem base_call [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : BaseArgs L s)
     (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) (hm : TblWords L.T s.mem) :
     WP isa (.call "vg_ed25519_scalar_base" scalarBase) s fun t => Ctx L g v m₀ t ∧
       Frame (baseWr L) s.mem t.mem ∧
@@ -566,7 +567,7 @@ theorem base_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : BaseArgs L s)
     State.callEntry_mem, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), ha.1, ha.2.1] using hp
 
-theorem base_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+theorem base_step [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) :
     WP isa (callWith baseArgs "vg_ed25519_scalar_base" scalarBase) s fun t =>
       Ctx L g v m₀ t ∧ Frame (baseWr L) s.mem t.mem ∧

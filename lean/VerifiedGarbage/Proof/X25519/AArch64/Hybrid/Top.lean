@@ -86,7 +86,7 @@ theorem hsetup_ok {base sc pt : Addr} {s : State} (hs : Sc base s)
   · rw [g2 r (fun e => hr (e ▸ by decide))]
     exact ka.gpr r hr
 
-theorem correct {s₀ : State} (hp : localContract.pre s₀) :
+theorem correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s₀ : State} (hp : localContract.pre s₀) :
     WP isa VG.Impl.X25519.AArch64.Hybrid.x25519 s₀ fun t =>
       (∀ r ∈ preserved, t.gpr r = s₀.gpr r) ∧
       (∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s₀.v r).extractLsb' 0 64) ∧ localContract.post s₀ t := by
@@ -133,7 +133,7 @@ theorem correct {s₀ : State} (hp : localContract.pre s₀) :
       (bytesAt s₀.mem (s₀.gpr .x1) 32) (bytesAt s₀.mem (s₀.gpr .x2) 32)
     rw [rt, gm, dx, fi, ex, ez, x25519_eq]
 
-theorem x25519_ok (s : State) (hs : localContract.pre s) :
+theorem x25519_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) (hs : localContract.pre s) :
     ∃ tr t, Exec isa VG.Impl.X25519.AArch64.Hybrid.x25519 s tr t ∧ abiPreserved s t ∧ localContract.post s t := by
   obtain ⟨tr,t,he,hg,hv,hp⟩ := correct hs
   exact ⟨tr,t,he,⟨hg,Exec.sp he,hv⟩,hp⟩

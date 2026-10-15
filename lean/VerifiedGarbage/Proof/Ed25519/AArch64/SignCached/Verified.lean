@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry
@@ -50,7 +51,7 @@ theorem body_depth (v : Whole.Backend) : (body v.code v.suffix).aarch64Depth ≤
     Impl.Sha512.AArch64.Stream.init, hr, hb, hm]
   omega
 
-theorem signCached_ok (v : Whole.Backend) {s : State} (h : signCachedLocal.pre s) :
+theorem signCached_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) {s : State} (h : signCachedLocal.pre s) :
     WP isa (code v.code v.suffix) s fun u => abiPreserved s u ∧ signCachedLocal.post s u := by
   have hw := Whole.wrap_ok (body_depth v) (entry_below h) (entry_writes h)
     (P := fun m m' _ => Spec.Ed25519.bytesAt m' (s.gpr .x0) 64 = Spec.Ed25519.sign
@@ -268,7 +269,7 @@ theorem reduce_call_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m�
       call_gpr_eq (p := (.x1, .frame 192)) h (by simp) (by decide),
       call_gpr_eq (p := (.x2, .caller 5 0)) h (by simp) (by decide)⟩
 
-theorem base_call_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem base_call_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (OutArgs L [(.x0, .caller 0 0), (.x1, .frame 96), (.x2, .caller 5 0)]))
       (.call "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
@@ -352,7 +353,7 @@ theorem reduce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
   exact (setup_ct hL ha hb _ (by simp) hvall (by simp [preserved]) ht).seq
     (reduce_call_ct hL ha hb d hd)
 
-theorem base_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem base_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True)
       (callWith baseArgs "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
@@ -369,7 +370,7 @@ theorem mul_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     (by decide) (by simp [Whole.valid]) (by simp [preserved]) (by taint_decide)).seq
     (mul_call_ct hL ha hb)
 
-theorem body_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem body_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (body backend.code backend.suffix)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
   ((hashSeed_ct backend hL ha hb).seq saveSecret_ct).seq
@@ -390,7 +391,7 @@ theorem lay_eq {s t : State} (hp : signCachedLocal.pub s t) : lay s = lay t := b
   obtain ⟨sp, h0, h1, h2, h3, h4, h5, hsy⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, h3, h4, h5, hsy]
 
-theorem signCached_ct (v : Whole.Backend) :
+theorem signCached_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) :
     ConstantTime isa signCachedLocal.pre signCachedLocal.pub (code v.code v.suffix) := by
   refine Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
@@ -582,7 +583,7 @@ end
 namespace VG.Proof.Ed25519.AArch64.SignCached
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.SignCached
 
-theorem signCached_verified (v : Whole.Backend) :
+theorem signCached_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) :
     Verified AArch64.target (code v.code v.suffix)
       (Spec.Ed25519.signCachedContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts) 352) :=
   Verified.of_implies

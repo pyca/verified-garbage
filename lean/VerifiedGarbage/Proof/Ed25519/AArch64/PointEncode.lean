@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointEncode
-import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
 import all Init.Data.Array.Basic
@@ -22,7 +22,7 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 theorem affine_eval (e : Env) :
     evalOps affineOps e 0 = e 0 * e 15 ∧ evalOps affineOps e 1 = e 1 * e 15 := ⟨rfl, rfl⟩
 
-theorem pointAffine_ok {s : State} {base : Addr} (hs : Scr s base) :
+theorem pointAffine_ok [Divstep.Sound] {s : State} {base : Addr} (hs : Scr s base) :
     WP isa pointAffine s fun t => CounterKeep base s t ∧
       env t.mem base 0 = env s.mem base 0 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2) ∧
       env t.mem base 1 = env s.mem base 1 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2) := by
@@ -115,7 +115,7 @@ theorem encodeSign_ok (s : State) (x y : Nat) (hy : y < 2 ^ 255)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_write, hr, ite_false]
 
-theorem pointEncode_ok {s : State} {base : Addr} (hs : Scr s base) :
+theorem pointEncode_ok [Divstep.Sound] {s : State} {base : Addr} (hs : Scr s base) :
     WP isa pointEncode s fun t => CounterKeep base s t ∧
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) =
         (env s.mem base 1 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2)).val +
