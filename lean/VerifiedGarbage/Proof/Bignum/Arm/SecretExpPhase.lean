@@ -21,6 +21,8 @@ theorem secretExpPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {e
     WP isa secretExpPhase s fun t => ArithmeticReady base len w t ∧
       numAt t.mem (State.addr base) w 6 = Spec.Rsa.powMod x (Spec.Rsa.os2ip eb) M ∧
       numAt t.mem (State.addr base) w 0 = M ∧
+      numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % M ∧
+      numAt t.mem (State.addr base) w 7 = 1 ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [secretExpPhase, WP.seq_iff]
   refine WP.mono (expPhase_init_ready s h) ?_
@@ -34,6 +36,10 @@ theorem secretExpPhase_ok (s : State) {base ep : BitVec 32} {len w M x : Nat} {e
   have fits : Spec.Rsa.Mont.arrAt w 8 ≤ 8 * len := power.ready.width ▸ power.ready.layout.2.2.1
   have modulus := (keeps_array_num keeps fits (q := 0)
     (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans power.modulus
-  exact ⟨final, value, modulus, frameU.trans (frameV.trans frameT), restU.trans (restV.trans restT)⟩
+  have r2 := (keeps_array_num keeps fits (q := 4)
+    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans power.r2
+  have one := (keeps_array_num keeps fits (q := 7)
+    (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans power.one
+  exact ⟨final, value, modulus, r2, one, frameU.trans (frameV.trans frameT), restU.trans (restV.trans restT)⟩
 
 end VG.Proof.Bignum.Arm

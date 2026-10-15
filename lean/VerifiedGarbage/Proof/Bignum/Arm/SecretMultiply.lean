@@ -36,7 +36,8 @@ theorem secretMultiply_ok (s : State) {base : BitVec 32} {len w M x E : Nat}
   have one := same 7 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
   exact ⟨⟨ready, modulus, h.coprime, by rw [input]; exact h.inputBound,
     by rw [input]; exact h.inputValue, by rw [power]; exact h.powerBound,
-    by rw [power]; exact h.powerValue, one.trans h.one⟩,
+    by rw [power]; exact h.powerValue, one.trans h.one,
+    (same 4 (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans h.r2⟩,
     bound, mont_mulx h.coprime h.powerValue h.inputValue value, keeps, frame, rest⟩
 
 end VG.Proof.Bignum.Arm

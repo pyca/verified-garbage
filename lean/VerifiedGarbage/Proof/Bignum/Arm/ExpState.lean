@@ -26,6 +26,7 @@ structure ExpState (base : BitVec 32) (len w M x E : Nat) (s : State) : Prop whe
   powerBound : numAt s.mem (State.addr base) w 6 < M
   powerValue : numAt s.mem (State.addr base) w 6 % M = x ^ E * 2 ^ (64 * w) % M
   one : numAt s.mem (State.addr base) w 7 = 1
+  r2 : numAt s.mem (State.addr base) w 4 = 2 ^ (128 * w) % M
 
 theorem ExpState.after_y {s t : State} {base : BitVec 32} {len w M x E F : Nat}
     (h : ExpState base len w M x E s) (ready : ArithmeticReady base len w t)
@@ -38,14 +39,17 @@ theorem ExpState.after_y {s t : State} {base : BitVec 32} {len w M x E F : Nat}
   have input := keeps_array_num keeps fits (q := 5) (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
   have one := keeps_array_num keeps fits (q := 7) (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)
   exact ⟨ready, modulus, h.coprime, by rw [input]; exact h.inputBound,
-    by rw [input]; exact h.inputValue, bound, value, one.trans h.one⟩
+    by rw [input]; exact h.inputValue, bound, value, one.trans h.one,
+    (keeps_array_num keeps fits (q := 4)
+      (by simp [Spec.Rsa.Mont.Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) (by decide)).trans h.r2⟩
 
 theorem ExpState.of_mem {s t : State} {base : BitVec 32} {len w M x E : Nat} {rs : List Reg}
     (h : ExpState base len w M x E s) (mem : t.mem = s.mem)
     (rest : VG.Proof.X25519.Arm.Rest rs s t) (ptr : t.gpr .r0 = base) : ExpState base len w M x E t := by
-  refine ⟨h.ready.of_mem mem rest ptr, ?_, h.coprime, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  refine ⟨h.ready.of_mem mem rest ptr, ?_, h.coprime, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     first | (rw [mem]; assumption) | (rw [mem]; exact h.modulus) | (rw [mem]; exact h.inputBound) |
-      (rw [mem]; exact h.inputValue) | (rw [mem]; exact h.powerBound) | (rw [mem]; exact h.powerValue) | (rw [mem]; exact h.one)
+      (rw [mem]; exact h.inputValue) | (rw [mem]; exact h.powerBound) | (rw [mem]; exact h.powerValue) |
+      (rw [mem]; exact h.one) | (rw [mem]; exact h.r2)
 
 theorem ExpState.after_header {s t : State} {base : BitVec 32} {len w M x E d : Nat} {value : BitVec 32}
     {rs : List Reg} (h : ExpState base len w M x E s) (hd : 128 ≤ d) (hd' : d + 4 ≤ 256)
@@ -53,12 +57,13 @@ theorem ExpState.after_header {s t : State} {base : BitVec 32} {len w M x E d : 
     (rest : VG.Proof.X25519.Arm.Rest rs s t) (ptr : t.gpr .r0 = base) :
     ExpState base len w M x E t ∧ Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem := by
   obtain ⟨ready, frame, arrays⟩ := h.ready.after_header hd hd' mem rest ptr
-  refine ⟨⟨ready, ?_, h.coprime, ?_, ?_, ?_, ?_, ?_⟩, frame⟩
+  refine ⟨⟨ready, ?_, h.coprime, ?_, ?_, ?_, ?_, ?_, ?_⟩, frame⟩
   · rw [arrays 0 (by decide)]; exact h.modulus
   · rw [arrays 5 (by decide)]; exact h.inputBound
   · rw [arrays 5 (by decide)]; exact h.inputValue
   · rw [arrays 6 (by decide)]; exact h.powerBound
   · rw [arrays 6 (by decide)]; exact h.powerValue
   · rw [arrays 7 (by decide)]; exact h.one
+  · rw [arrays 4 (by decide)]; exact h.r2
 
 end VG.Proof.Bignum.Arm

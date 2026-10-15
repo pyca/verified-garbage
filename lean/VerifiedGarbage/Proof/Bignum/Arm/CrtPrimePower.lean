@@ -23,6 +23,8 @@ theorem crt_primePower_ok (s : State) {base xp ep : BitVec 32} {len w k eLen slo
       ArithmeticReady base len w t ∧
       numAt t.mem (State.addr base) w 6 = Spec.Rsa.powMod (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip eb) M ∧
       numAt t.mem (State.addr base) w 0 = M ∧
+      numAt t.mem (State.addr base) w 4 = 2 ^ (128 * w) % M ∧
+      numAt t.mem (State.addr base) w 7 = 1 ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
   rw [primePower, WP.seq_iff]
   refine WP.mono (crt_primePower_prepare s h countFits) ?_
@@ -31,9 +33,9 @@ theorem crt_primePower_ok (s : State) {base xp ep : BitVec 32} {len w k eLen slo
   refine WP.mono (crt_primePower_ready u prepared) ?_
   rintro v ⟨input, memV, restV⟩
   refine WP.mono (secretPower_ok v input) ?_
-  rintro t ⟨ready, value, modulus, frameT, restT⟩
+  rintro t ⟨ready, value, modulus, r2, one, frameT, restT⟩
   rw [memV] at frameT
-  exact ⟨ready, value, modulus, frameU.trans frameT,
+  exact ⟨ready, value, modulus, r2, one, frameU.trans frameT,
     restU.trans ((restV.mono (by simp [roundClobbers])).trans restT)⟩
 
 end VG.Proof.Bignum.Arm
