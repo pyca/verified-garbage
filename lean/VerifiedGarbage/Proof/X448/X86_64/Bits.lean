@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86_64.Basic
 public import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -118,11 +119,7 @@ theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
       BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by
   intro b j _
   rw [show BitVec.signExtend 64 (1 : BitVec 32) = 1 from by decide]
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat]
-  rw [show (1 : BitVec 64).toNat = 1 from rfl, Nat.and_one_is_mod, Nat.and_one_is_mod]
-  have := b.isLt
-  rw [Nat.mod_eq_of_lt (by omega : b.toNat < 2 ^ 64)]
+  exact bitByte 64 (by decide) b j
 
 /-- Bit `j` of `rax` (a byte) into `BITS[8 rbx + j]`. -/
 def bitJ (j : Nat) : List Instr :=

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86.Iter
 import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -58,10 +59,6 @@ theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
     ((b.setWidth 32 >>> j) &&& (1 : BitVec 32)).setWidth 8 =
       BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by
   intro b j _
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat]
-  rw [show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod, Nat.and_one_is_mod]
-  have := b.isLt
-  rw [Nat.mod_eq_of_lt (by omega : b.toNat < 2 ^ 32)]
+  exact bitByte 32 (by decide) b j
 
 end VG.Proof.X448.X86
