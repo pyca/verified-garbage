@@ -2,6 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
 meta import VerifiedGarbage.Proof.Sha512.PPC64LE.Stream.Common
+public import VerifiedGarbage.Proof.Sha512.Digest
+meta import VerifiedGarbage.Proof.Sha512.Digest
+import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -11,7 +15,11 @@ import all Init.Data.Vector.Basic
 # Streaming SHA-512 on PPC64LE: `finalize`
 
 Untrusted: everything here is checked by Lean. The same structure as the
-AArch64 proof (`VG.Proof.Sha512.AArch64.Stream.Finalize`).
+AArch64 proof (`VG.Proof.Sha512.AArch64.Stream.Finalize`). `finalizeWith o`
+is proven for any output `o` writing the first `D` bytes of the final hash
+value (`correct`): all 64 for SHA-512's `finalize`, and the digests of
+SHA-384, SHA-512/256 and SHA-512/224 (`finalize384`, `finalize512_256`,
+`finalize512_224`).
 -/
 
 @[expose] public section
@@ -34,7 +42,7 @@ abbrev cnt : Nat := (s₀.gpr .r4).toNat
 abbrev out : Addr := s₀.gpr .r5
 abbrev scr : Addr := s₀.gpr .r6
 abbrev stR : Region := ⟨st s₀, 192⟩
-abbrev outR : Region := ⟨out s₀, 64⟩
+abbrev outR (D : Nat) : Region := ⟨out s₀, D⟩
 abbrev scR : Region := ⟨scr s₀, 224⟩
 
 /-- The messages the initial state represents, from the initial hash value
@@ -59,16 +67,19 @@ def Fin0 (mem : Mem) (n : Nat) (m : List Byte) : HashValue :=
 
 end
 
-structure Pre (s₀ : State) : Prop where
+/-- The precondition, with `out` of `D` bytes. -/
+structure Pre (D : Nat) (s₀ : State) : Prop where
   rd : s₀.rd = []
-  wr : s₀.wr = [stR s₀, outR s₀, scR s₀]
-  st_out : (stR s₀).Disjoint (outR s₀)
+  wr : s₀.wr = [stR s₀, outR s₀ D, scR s₀]
+  st_out : (stR s₀).Disjoint (outR s₀ D)
   st_scr : (stR s₀).Disjoint (scR s₀)
-  out_scr : (outR s₀).Disjoint (scR s₀)
+  out_scr : (outR s₀ D).Disjoint (scR s₀)
 
-theorem pre_of {s₀ : State} (h : Proof.Sha512.finalizePPC64LE.pre s₀) : Pre s₀ := by
+theorem pre_of {D : Nat} {s₀ : State} (h : (Proof.Sha512.finalizeDPPC64LE D).pre s₀) : Pre D s₀ := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
   exact ⟨h1, h2, h3, h4, h5⟩
+
+variable {D : Nat}
 
 theorem R₀.length {s₀ : State} {iv : HashValue} {m : List Byte} (h : R₀ s₀ iv m) :
     cnt s₀ % 128 = m.length % 128 := by
@@ -127,7 +138,7 @@ theorem saved_sub {s₀ : State} {p : Reg × Nat} (hp : p ∈ saved) :
   rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> exact sub_offset (by omega) (by omega)
 
 /-- Writing buffer bytes `[n, n + |xs|)` keeps `Common`'s memory facts. -/
-theorem Common.writeBuf {s₀ : State} (hp : Pre s₀) {s : State} (h : Common s₀ s) {n : Nat}
+theorem Common.writeBuf {s₀ : State} (hp : Pre D s₀) {s : State} (h : Common s₀ s) {n : Nat}
     {xs : List Byte} (hn : n + xs.length ≤ 128) :
     Frame [stR s₀] s.mem (writeBytes s.mem (st s₀ + 64 + BitVec.ofNat 64 n) xs) ∧
       Frame [stR s₀, scR s₀] s₀.mem (writeBytes s.mem (st s₀ + 64 + BitVec.ofNat 64 n) xs) ∧
@@ -162,7 +173,7 @@ structure Zero (s₀ : State) (sI : State) (n lim j : Nat) (s : State) : Prop wh
 def zeroBody : List Instr :=
   [.add .r11 .r26 .r30, .stb .r8 .r11 64, .addi .r30 .r30 1, .subi .r10 .r10 1]
 
-theorem zero_step {s₀ : State} (hp : Pre s₀) {sI : State} (hC : Common s₀ sI) {n lim j : Nat}
+theorem zero_step {s₀ : State} (hp : Pre D s₀) {sI : State} (hC : Common s₀ sI) {n lim j : Nat}
     (hlim : lim ≤ 128) (hj : j < lim - n) {s : State} (h : Zero s₀ sI n lim j s) :
     WP isa (.block zeroBody) s fun s' =>
       Zero s₀ sI n lim (j + 1) s' ∧ s'.gpr .r10 = BitVec.ofNat 64 (lim - n - (j + 1)) := by
@@ -193,7 +204,7 @@ theorem zero_step {s₀ : State} (hp : Pre s₀) {sI : State} (hC : Common s₀ 
   · rw [u₄.gpr, u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), h.r10,
       sub_ofNat (by omega), Nat.sub_sub, Nat.sub_sub]
 
-theorem zero_ok {s₀ : State} (hp : Pre s₀) {sI : State} (hC : Common s₀ sI) {n lim : Nat}
+theorem zero_ok {s₀ : State} (hp : Pre D s₀) {sI : State} (hC : Common s₀ sI) {n lim : Nat}
     (hlim : lim ≤ 128) (hn : n ≤ lim) {s : State} (h : Zero s₀ sI n lim 0 s) :
     WP isa (.ite (.zero .d .r10) (.block []) (.loop (.block zeroBody) (.nonzero .d .r10))) s
       (Zero s₀ sI n lim (lim - n)) := by
@@ -219,7 +230,7 @@ theorem zero_ok {s₀ : State} (hp : Pre s₀) {sI : State} (hC : Common s₀ sI
 /-! ## One block -/
 
 /-- The inlined compression of the buffer. -/
-theorem compress_buf {s₀ : State} (hp : Pre s₀) {s : State} (hC : Common s₀ s)
+theorem compress_buf {s₀ : State} (hp : Pre D s₀) {s : State} (hC : Common s₀ s)
     (hx1 : s.gpr .r4 = st s₀ + 64) {Q : State → Prop}
     (hQ : ∀ s', Common s₀ s' → (∀ r ∈ preserved, s'.gpr r = s.gpr r) →
       stateAt s'.mem (st s₀) = compress (stateAt s.mem (st s₀)) (blockAt s.mem (st s₀ + 64)) → Q s') :
@@ -294,7 +305,7 @@ theorem body_eq : finalizeBody =
     (.seq (.block [.addi .r4 .r26 64])
     (.seq compressAt (.block [.li .r30 0, .subi .r31 .r31 1]))))))) := rfl
 
-theorem body_ok {s₀ : State} (hp : Pre s₀) {k n : Nat} {s : State} (h : LInv s₀ k n s) :
+theorem body_ok {s₀ : State} (hp : Pre D s₀) {k n : Nat} {s : State} (h : LInv s₀ k n s) :
     WP isa finalizeBody s fun s' => Step s₀ k s' ∧ ∀ r ∈ nvRegs, s'.gpr r = s.gpr r := by
   have hk := h.k_le; have hn := h.n_le
   have hC := h.toCommon
@@ -478,12 +489,10 @@ def prologue : List Instr :=
     .li .r8 0x80, .add .r11 .r26 .r30, .stb .r8 .r11 64, .addi .r30 .r30 1,
     .addi .r31 .r30 15, .lsr .d .r31 .r31 7]
 
-theorem finalize_eq : finalize = .seq (.block (save .r6 ++ prologue))
-    (.seq (.loop finalizeBody (.zero .d .r31))
-      (.block ((List.range 8).flatMap (fun k =>
-        [.load .d .r8 .r26 (8 * k), .li .r11 (8 * k), .storeRev .d .r8 .r28 .r11]) ++ restore))) := rfl
+theorem finalize_eq (o : List Instr) : finalizeWith o = .seq (.block (save .r6 ++ prologue))
+    (.seq (.loop finalizeBody (.zero .d .r31)) (.block (o ++ restore))) := rfl
 
-theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
+theorem prologue_ok {s₀ : State} (hp : Pre D s₀) :
     WP isa (.block (save .r6 ++ prologue)) s₀ fun s => ∃ k, LInv s₀ k (cnt s₀ % 128 + 1) s := by
   have hr : cnt s₀ % 128 < 128 := Nat.mod_lt _ (by omega)
   refine save_ok (by decide) (fun d hd₁ hd₂ => ⟨scR s₀, by simp [hp.wr], contains_offset (by omega) (by omega)⟩)
@@ -582,10 +591,12 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
     rw [hash_one (by rw [← hm.length]; omega), Fin0, hbytes iv m hm, hstate, hm.1.1,
       ← hm.length, show 112 - (cnt s₀ % 128 + 1) = 111 - cnt s₀ % 128 by omega]
 
-/-! ## Output and epilogue -/
+/-! ## Output and epilogue
 
-/-- Word `k` of the digest. -/
-def outW (k : Nat) : List Instr := [.load .d .r8 .r26 (8 * k), .li .r11 (8 * k), .storeRev .d .r8 .r28 .r11]
+The output writes the first `D` bytes of the final hash value to `out`: its
+first `n` words (`outW`), `D = 8 n`, for SHA-512, SHA-384 and SHA-512/256;
+its first 3 and the high half of the fourth (`outHi 3`), `D = 28`, for
+SHA-512/224. -/
 
 /-- `k` words of the digest are written. -/
 structure Out (s₀ sD : State) (k : Nat) (s : State) : Prop where
@@ -595,6 +606,14 @@ structure Out (s₀ sD : State) (k : Nat) (s : State) : Prop where
   sp : s.sp = sD.sp
   mem : s.mem = writeBytes sD.mem (out s₀) (((stateAt sD.mem (st s₀)).toList.take k).flatMap wordBytes)
 
+/-- The first `D` bytes of the final hash value are written. -/
+structure OutD (s₀ sD : State) (D : Nat) (s : State) : Prop where
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  keep : ∀ r ∈ [Reg.r26, .r27, .r28], s.gpr r = sD.gpr r
+  sp : s.sp = sD.sp
+  mem : s.mem = writeBytes sD.mem (out s₀) (((stateAt sD.mem (st s₀)).toList.flatMap wordBytes).take D)
+
 theorem flat_length (H : HashValue) (k : Nat) (hk : k ≤ 8) :
     ((H.toList.take k).flatMap wordBytes).length = 8 * k := by
   rw [List.length_flatMap]
@@ -602,8 +621,28 @@ theorem flat_length (H : HashValue) (k : Nat) (hk : k ≤ 8) :
   rw [List.map_congr_left this, List.map_const', List.sum_replicate_nat, List.length_take]
   simp; omega
 
-theorem out_frame (s₀ : State) (m : Mem) (xs : List Byte) (hx : xs.length ≤ 64) :
-    Frame [outR s₀] m (writeBytes m (out s₀) xs) :=
+theorem flat_length_all (H : HashValue) : (H.toList.flatMap wordBytes).length = 64 := by
+  have := flat_length H 8 (Nat.le_refl _)
+  rwa [List.take_of_length_le (by simp)] at this
+
+/-- The first `n` words, big-endian, are the first `8 n` bytes. -/
+theorem take_flatMap_wordBytes (l : List Spec.Sha512.Word) (n : Nat) :
+    (l.flatMap wordBytes).take (8 * n) = (l.take n).flatMap wordBytes := by
+  induction l generalizing n with
+  | nil => simp
+  | cons w l ih =>
+    cases n with
+    | zero => simp
+    | succ n =>
+      rw [List.flatMap_cons, List.take_succ_cons, List.flatMap_cons, List.take_append,
+        List.take_of_length_le (by simp [wordBytes] <;> omega), show 8 * (n + 1) - (wordBytes w).length = 8 * n by
+          simp [wordBytes] <;> omega, ih]
+
+theorem Out.outD {s₀ sD s : State} {n : Nat} (h : Out s₀ sD n s) : OutD s₀ sD (8 * n) s :=
+  ⟨h.rd, h.wr, h.keep, h.sp, by rw [h.mem, take_flatMap_wordBytes]⟩
+
+theorem out_frame (s₀ : State) (m : Mem) (xs : List Byte) (hx : xs.length ≤ D) :
+    Frame [outR s₀ D] m (writeBytes m (out s₀) xs) :=
   writeBytes_frame _ _ _ (by
     rw [show out s₀ = out s₀ + BitVec.ofNat 64 0 by simp]
     exact contains_offset (by omega) (by omega))
@@ -612,26 +651,41 @@ theorem writeW_rev64 (m : Mem) (a : Addr) (w : BitVec 64) :
     m.writeW a (rev64 w) = writeBytes m a (wordBytes w) := by
   rw [Mem.writeW, write_eq_writeBytes, ← rev64_wordBytes]; rfl
 
-theorem out_step {s₀ : State} (hp : Pre s₀) {sD : State} (hD : Done s₀ sD) {k : Nat} (hk : k < 8)
-    {s : State} (h : Out s₀ sD k s) {rest : List Instr} {Q : State → Prop}
+theorem rev32_wordBytes (x : BitVec 32) :
+    (List.range 4).map (fun j => (rev32 x).extractLsb' (8 * j) 8) = Spec.Sha256.wordBytes x := by
+  simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
+    List.cons_append, List.cons.injEq, and_true, Spec.Sha256.wordBytes]
+  refine ⟨?_, ?_, ?_, ?_⟩ <;>
+  · apply BitVec.eq_of_getLsbD_eq; intro i hi
+    simp only [rev32, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append]
+    interval_cases i <;> simp
+
+theorem writeW_rev32 (m : Mem) (a : Addr) (w : BitVec 32) :
+    m.writeW a (rev32 w) = writeBytes m a (Spec.Sha256.wordBytes w) := by
+  rw [Mem.writeW, write_eq_writeBytes, ← rev32_wordBytes]; rfl
+
+theorem sw32 (v : BitVec 32) : (v.setWidth 64).setWidth 32 = v := by ext i hi; simp
+
+theorem out_step {s₀ : State} (hp : Pre D s₀) (hD64 : D ≤ 64) {sD : State} (hD : Done s₀ sD) {k : Nat}
+    (hk : 8 * k + 8 ≤ D) {s : State} (h : Out s₀ sD k s) {rest : List Instr} {Q : State → Prop}
     (hnext : ∀ s', Out s₀ sD (k + 1) s' → WP isa (.block rest) s' Q) :
     WP isa (.block (outW k ++ rest)) s Q := by
   have hC := hD.1
   have hx19 : s.gpr .r26 = st s₀ := by rw [h.keep _ (by simp), hC.r26]
   have hx21 : s.gpr .r28 = out s₀ := by rw [h.keep _ (by simp), hC.r28]
-  have hP := flat_length (stateAt sD.mem (st s₀)) k hk.le
+  have hP := flat_length (stateAt sD.mem (st s₀)) k (by omega)
   simp only [outW, List.cons_append, List.nil_append]
   refine wp_ld (a := st s₀ + BitVec.ofNat 64 (8 * k)) (by decide) ⟨by omega, by omega⟩ (by rw [hx19])
     ⟨stR s₀, by simp [h.rd, h.wr, hp.wr], contains_offset (by omega) (by omega)⟩ fun s₁ u₁ => ?_
   refine wp_li (by omega) fun s₂ u₂ => wp_stdbrx (a := out s₀ + BitVec.ofNat 64 (8 * k)) (by decide)
     (by rw [u₂.other .r28 (by decide), u₁.other .r28 (by decide), hx21, u₂.gpr])
-    (by rw [u₂.wr, u₁.wr]; exact ⟨outR s₀, by simp [h.wr, hp.wr], contains_offset (by omega) (by omega)⟩)
+    (by rw [u₂.wr, u₁.wr]; exact ⟨outR s₀ D, by simp [h.wr, hp.wr], contains_offset (by omega) (by omega)⟩)
     fun s₃ g₃ => hnext s₃ ⟨by rw [g₃.rd, u₂.rd, u₁.rd, h.rd], by rw [g₃.wr, u₂.wr, u₁.wr, h.wr],
       fun r hr => ?_, by rw [g₃.sp, u₂.sp, u₁.sp, h.sp], ?_⟩
   · have : r ≠ .r8 ∧ r ≠ .r11 := by revert r hr; decide
     rw [g₃.gpr, u₂.other r this.2, u₁.other r this.1, h.keep r hr]
   · have hread : s.mem.readW (st s₀ + BitVec.ofNat 64 (8 * k)) 64 = (stateAt sD.mem (st s₀))[k] := by
-      rw [h.mem, (out_frame s₀ sD.mem _ (by omega)).readW
+      rw [h.mem, (out_frame (D := D) s₀ sD.mem _ (by omega)).readW
         (r := ⟨st s₀ + BitVec.ofNat 64 (8 * k), 8⟩) (Region.contains_self _ _) ?_ (by decide)]
       · simp [stateAt]
       · intro r' hr'
@@ -643,15 +697,60 @@ theorem out_step {s₀ : State} (hp : Pre s₀) {sD : State} (hD : Done s₀ sD)
       List.getElem?_eq_getElem (by simp; omega), Option.toList_some, List.flatMap_append,
       List.flatMap_singleton, Vector.getElem_toList]
 
-/-- The epilogue's postcondition. -/
-def Post (s₀ s' : State) : Prop :=
-  (∀ p ∈ saved, s'.gpr p.1 = s₀.gpr p.1) ∧ s'.sp = s₀.sp ∧ Proof.Sha512.finalizePPC64LE.post s₀ s'
+/-- The first 28 bytes of the output: the first 3 words, then the high half of
+the fourth (`Proof.Sha512.digest_take28`). -/
+theorem take28 (mem : Mem) (p : Addr) :
+    ((stateAt mem p).toList.flatMap wordBytes).take 28 =
+      ((stateAt mem p).toList.take 3).flatMap wordBytes ++
+        Spec.Sha256.wordBytes (mem.readW (p + BitVec.ofNat 64 28) 32) := by
+  rw [show (stateAt mem p).toList.flatMap wordBytes = Proof.Sha512.md.digest (Proof.Sha512.md.stateAt mem p)
+      from rfl, Proof.Sha512.digest_take28, ← Proof.Sha512.digest_take _ _ (n := 3) (by decide),
+    show Proof.Sha512.md.digest (Proof.Sha512.md.stateAt mem p) = (stateAt mem p).toList.flatMap wordBytes
+      from rfl, take_flatMap_wordBytes]
+  rfl
 
-theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {sD : State} (hD : Done s₀ sD) {s : State}
-    (h : Out s₀ sD 8 s) : WP isa (.block restore) s (Post s₀) := by
+/-- `outHi 3` after 3 words: the first 28 bytes are written. -/
+theorem outHi_ok {s₀ : State} (hp : Pre 28 s₀) {sD : State} (hD : Done s₀ sD) {s : State}
+    (h : Out s₀ sD 3 s) {rest : List Instr} {Q : State → Prop}
+    (hnext : ∀ s', OutD s₀ sD 28 s' → WP isa (.block rest) s' Q) :
+    WP isa (.block (outHi 3 ++ rest)) s Q := by
   have hC := hD.1
-  have hfo := out_frame s₀ sD.mem (((stateAt sD.mem (st s₀)).toList.take 8).flatMap wordBytes)
-    (by rw [flat_length _ _ le_rfl])
+  have hx19 : s.gpr .r26 = st s₀ := by rw [h.keep _ (by simp), hC.r26]
+  have hx21 : s.gpr .r28 = out s₀ := by rw [h.keep _ (by simp), hC.r28]
+  have hP := flat_length (stateAt sD.mem (st s₀)) 3 (by decide)
+  simp only [outHi, List.cons_append, List.nil_append]
+  refine wp_lwz (a := st s₀ + BitVec.ofNat 64 (8 * 3 + 4)) (by decide) (by decide) (by rw [hx19])
+    ⟨stR s₀, by simp [h.rd, h.wr, hp.wr], contains_offset (by omega) (by omega)⟩ fun s₁ u₁ => ?_
+  refine wp_li (by decide) fun s₂ u₂ => wp_stwbrx (a := out s₀ + BitVec.ofNat 64 (8 * 3)) (by decide)
+    (by rw [u₂.other .r28 (by decide), u₁.other .r28 (by decide), hx21, u₂.gpr])
+    (by rw [u₂.wr, u₁.wr]; exact ⟨outR s₀ 28, by simp [h.wr, hp.wr], contains_offset (by omega) (by omega)⟩)
+    fun s₃ g₃ => hnext s₃ ⟨by rw [g₃.rd, u₂.rd, u₁.rd, h.rd], by rw [g₃.wr, u₂.wr, u₁.wr, h.wr],
+      fun r hr => ?_, by rw [g₃.sp, u₂.sp, u₁.sp, h.sp], ?_⟩
+  · have : r ≠ .r8 ∧ r ≠ .r11 := by revert r hr; decide
+    rw [g₃.gpr, u₂.other r this.2, u₁.other r this.1, h.keep r hr]
+  · -- The high half of word 3 is not overwritten by the first 24 bytes.
+    have hread : s.mem.readW (st s₀ + BitVec.ofNat 64 (8 * 3 + 4)) 32 =
+        sD.mem.readW (st s₀ + BitVec.ofNat 64 28) 32 := by
+      rw [h.mem, (out_frame (D := 28) s₀ sD.mem _ (by omega)).readW
+        (r := ⟨st s₀ + BitVec.ofNat 64 (8 * 3 + 4), 4⟩) (Region.contains_self _ _) ?_ (by decide)]
+      intro r' hr'
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
+      subst hr'
+      exact hp.st_out.sub_left (sub_offset (by omega) (by omega))
+    rw [g₃.mem, u₂.mem, u₁.mem, u₂.other _ (by decide), u₁.gpr, sw32, hread, h.mem, writeW_rev32,
+      show 8 * 3 = (((stateAt sD.mem (st s₀)).toList.take 3).flatMap wordBytes).length from hP.symm,
+      writeBytes_append _ _ _ _ (by rw [hP]; simp [Spec.Sha256.wordBytes]), take28]
+
+/-- The epilogue's postcondition. -/
+def Post (D : Nat) (s₀ s' : State) : Prop :=
+  (∀ p ∈ saved, s'.gpr p.1 = s₀.gpr p.1) ∧ s'.sp = s₀.sp ∧ (Proof.Sha512.finalizeDPPC64LE D).post s₀ s'
+
+theorem epilogue_ok {s₀ : State} (hp : Pre D s₀) (hD64 : D ≤ 64) {sD : State} (hD : Done s₀ sD) {s : State}
+    (h : OutD s₀ sD D s) : WP isa (.block restore) s (Post D s₀) := by
+  have hC := hD.1
+  have hl : (((stateAt sD.mem (st s₀)).toList.flatMap wordBytes).take D).length = D := by
+    rw [List.length_take, flat_length_all]; omega
+  have hfo := out_frame s₀ sD.mem (((stateAt sD.mem (st s₀)).toList.flatMap wordBytes).take D) hl.le
   refine restore_ok (scr := scr s₀) (by rw [h.keep _ (by simp), hC.r27])
     (fun d hd₁ hd₂ => ⟨scR s₀, by simp [h.rd, h.wr, hp.wr], contains_offset hd₂ (by omega)⟩) s₀.gpr
     (fun p hp' => ?_) fun s' hs _ hmem _ _ hsp => ⟨hs, by rw [hsp, h.sp, hC.sp], ?_⟩
@@ -662,47 +761,69 @@ theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {sD : State} (hD : Done s₀ 
     subst hr'
     exact hp.out_scr.symm.sub_left (saved_sub hp')
   · intro iv m hr hlt hc
-    have e := bytesAt_writeBytes sD.mem (out s₀) 0 (((stateAt sD.mem (st s₀)).toList.take 8).flatMap wordBytes)
-      (by rw [flat_length _ _ le_rfl]; omega)
-    have e' : bytesAt (writeBytes sD.mem (out s₀) (((stateAt sD.mem (st s₀)).toList.take 8).flatMap wordBytes))
-        (out s₀) 64 = ((stateAt sD.mem (st s₀)).toList.take 8).flatMap wordBytes := by
-      rw [flat_length _ _ le_rfl, show out s₀ + BitVec.ofNat 64 0 = out s₀ by simp,
+    have e := bytesAt_writeBytes sD.mem (out s₀) 0
+      (((stateAt sD.mem (st s₀)).toList.flatMap wordBytes).take D) (by rw [hl]; omega)
+    have e' : bytesAt (writeBytes sD.mem (out s₀) (((stateAt sD.mem (st s₀)).toList.flatMap wordBytes).take D))
+        (out s₀) D = ((stateAt sD.mem (st s₀)).toList.flatMap wordBytes).take D := by
+      rw [hl, Nat.zero_add, show out s₀ + BitVec.ofNat 64 0 = out s₀ by simp,
         show bytesAt sD.mem (out s₀) 0 = [] from rfl, List.nil_append] at e
       exact e
     rw [← h.mem, ← hmem] at e'
-    rw [e', hD.2 iv m ⟨hr, hlt, hc⟩, List.take_of_length_le (by simp)]
+    rw [e', hD.2 iv m ⟨hr, hlt, hc⟩]
 
-theorem out_all {s₀ : State} (hp : Pre s₀) {sD : State} (hD : Done s₀ sD) :
-    ∀ j ≤ 8, ∀ s, Out s₀ sD (8 - j) s →
-      WP isa (.block (((List.range 8).drop (8 - j)).flatMap outW ++ restore)) s (Post s₀) := by
+theorem out_all {s₀ : State} (hp : Pre D s₀) (hD64 : D ≤ 64) {sD : State} (hD : Done s₀ sD) {n : Nat}
+    (hn : 8 * n ≤ D) {rest : List Instr} {Q : State → Prop}
+    (hrest : ∀ s, Out s₀ sD n s → WP isa (.block rest) s Q) :
+    ∀ j ≤ n, ∀ s, Out s₀ sD (n - j) s →
+      WP isa (.block (((List.range n).drop (n - j)).flatMap outW ++ rest)) s Q := by
   intro j
   induction j with
   | zero =>
     intro _ s h
-    rw [show (List.range 8).drop (8 - 0) = [] from rfl, List.flatMap_nil, List.nil_append]
-    exact epilogue_ok hp hD h
+    rw [Nat.sub_zero, List.drop_eq_nil_of_le (by simp), List.flatMap_nil, List.nil_append]
+    exact hrest s (by rwa [Nat.sub_zero] at h)
   | succ j ih =>
     intro hj s h
     rw [List.drop_eq_getElem_cons (by simp; omega), List.flatMap_cons, List.append_assoc,
       List.getElem_range]
-    refine out_step hp hD (by omega) h fun s' h' => ?_
-    rw [show 8 - (j + 1) + 1 = 8 - j by omega]
-    exact ih (by omega) s' (by rwa [show 8 - (j + 1) + 1 = 8 - j by omega] at h')
+    refine out_step hp hD64 hD (by omega) h fun s' h' => ?_
+    rw [show n - (j + 1) + 1 = n - j by omega]
+    exact ih (by omega) s' (by rwa [show n - (j + 1) + 1 = n - j by omega] at h')
 
-/-- No instruction of `finalize` writes the callee-saved registers it does not save. -/
-theorem untouched_ok : ∀ r ∈ untouched, ∀ i ∈ instrs finalize, dstOf i ≠ some r := by
-  have : ((instrs finalize).all fun i => untouched.all fun r => dstOf i != some r) = true := by
-    rw [← Code.allInstrs_eq]; decide +kernel
+/-- The first `n` words, `D = 8 n` bytes. -/
+theorem words_ok {s₀ : State} (hp : Pre D s₀) (hD64 : D ≤ 64) {n : Nat} (hn : 8 * n = D) {sD : State}
+    (hD : Done s₀ sD) : WP isa (.block ((List.range n).flatMap outW ++ restore)) sD (Post D s₀) := by
+  have := out_all hp hD64 hD (n := n) (by omega) (fun s h => epilogue_ok hp hD64 hD (hn ▸ h.outD)) n
+    (Nat.le_refl _) sD ⟨hD.1.rd, hD.1.wr, fun _ _ => rfl, rfl, by simp [writeBytes_nil]⟩
+  rwa [Nat.sub_self, List.drop_zero] at this
+
+/-- The first 3 words and the high half of the fourth, 28 bytes. -/
+theorem out224_ok {s₀ : State} (hp : Pre 28 s₀) {sD : State} (hD : Done s₀ sD) :
+    WP isa (.block (((List.range 3).flatMap outW ++ outHi 3) ++ restore)) sD (Post 28 s₀) := by
+  have := out_all hp (by decide) hD (n := 3) (by decide) (rest := outHi 3 ++ restore)
+    (fun s h => outHi_ok hp hD h fun s' h' => epilogue_ok hp (by decide) hD h') 3 (Nat.le_refl _) sD
+    ⟨hD.1.rd, hD.1.wr, fun _ _ => rfl, rfl, by simp [writeBytes_nil]⟩
+  rwa [Nat.sub_self, List.drop_zero, ← List.append_assoc] at this
+
+/-- No instruction of `finalizeWith o` writes the callee-saved registers it does not save. -/
+theorem untouched_of {o : List Instr}
+    (h : ((instrs (finalizeWith o)).all fun i => untouched.all fun r => dstOf i != some r) = true) :
+    ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeWith o), dstOf i ≠ some r := by
   intro r hr i hi
-  have := List.all_eq_true.mp (List.all_eq_true.mp this i hi) r hr
+  have := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
   simpa using this
 
-/-- `finalize`: the callee-saved registers are kept. -/
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa finalize s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
-      s'.sp = s₀.sp ∧ Proof.Sha512.finalizePPC64LE.post s₀ s' := by
-  refine WP.mono (WP.gprs (Q := fun (s' : State) => Post s₀ s' ∧ ∀ r ∈ nvRegs, s'.gpr r = s₀.gpr r) ?_
-      untouched_ok) fun s' ⟨⟨⟨hsv, hsp, hpost⟩, hnv⟩, hu⟩ => ⟨fun r hr => ?_, hsp, hpost⟩
+/-- `finalizeWith o`, whose output `o` writes the first `D` bytes: the
+callee-saved registers are kept. -/
+theorem correct {o : List Instr} {s₀ : State} (hp : Pre D s₀)
+    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeWith o), dstOf i ≠ some r)
+    (hnvo : ((instrs (.block (o ++ restore) : Prog isa)).all fun i =>
+      nvRegs.all fun r => dstOf i != some r) = true)
+    (hout : ∀ sD, Done s₀ sD → WP isa (.block (o ++ restore)) sD (Post D s₀)) :
+    WP isa (finalizeWith o) s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
+      s'.sp = s₀.sp ∧ (Proof.Sha512.finalizeDPPC64LE D).post s₀ s' := by
+  refine WP.mono (WP.gprs (Q := fun (s' : State) => Post D s₀ s' ∧ ∀ r ∈ nvRegs, s'.gpr r = s₀.gpr r) ?_
+      hu) fun s' ⟨⟨⟨hsv, hsp, hpost⟩, hnv⟩, hu'⟩ => ⟨fun r hr => ?_, hsp, hpost⟩
   · rw [finalize_eq]
     refine WP.seq (WP.mono (WP.gprs (rs := nvRegs) (prologue_ok hp) (by
         intro r hr i hi
@@ -720,23 +841,19 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       rcases h with ⟨he, hD⟩ | ⟨he, rfl, hL'⟩
       · exact .inl ⟨he, hD, hnv''⟩
       · exact .inr ⟨he, 0, by omega, ⟨0, hL'⟩, hnv''⟩
-    · have := out_all hp hD 8 le_rfl sD ⟨hD.1.rd, hD.1.wr, fun _ _ => rfl, rfl, by simp [writeBytes_nil]⟩
-      rw [show 8 - 8 = 0 from rfl, List.drop_zero] at this
-      refine WP.mono (WP.gprs (rs := nvRegs) this (by
+    · refine WP.mono (WP.gprs (rs := nvRegs) (hout sD hD) (by
         intro r hr i hi
-        have : ((instrs (.block ((List.range 8).flatMap outW ++ restore) : Prog isa)).all fun i =>
-            nvRegs.all fun r => dstOf i != some r) = true := by decide
-        simpa using List.all_eq_true.mp (List.all_eq_true.mp this i hi) r hr))
+        simpa using List.all_eq_true.mp (List.all_eq_true.mp hnvo i hi) r hr))
         fun s' ⟨h, hnv'⟩ => ⟨h, fun r hr => (hnv' r hr).trans (hnvD r hr)⟩
   · have key : ∀ r ∈ preserved, r ∈ untouched ∨ r ∈ nvRegs ∨ r ∈ saved.map Prod.fst := by decide
     rcases key r hr with hr' | hr' | hr'
-    · exact hu r hr'
+    · exact hu' r hr'
     · exact hnv r hr'
     · obtain ⟨p, hp', rfl⟩ := List.mem_map.mp hr'
       exact hsv p hp'
 
 /-- The initial taint: only the arguments are public. -/
-theorem agree₀ {s₁ s₂ : State} (hpub : Proof.Sha512.finalizePPC64LE.pub s₁ s₂) :
+theorem agree₀ {s₁ s₂ : State} (hpub : (Proof.Sha512.finalizeDPPC64LE D).pub s₁ s₂) :
     VG.PPC64LE.Taint.Agree (VG.PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6]) s₁ s₂ := by
   obtain ⟨p1, p2, p3, p4, hsp⟩ := hpub
   refine ⟨hsp, fun r hr => ?_⟩
@@ -753,16 +870,65 @@ def sat : State where
   rd := []
   wr := [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 224⟩]
 
-theorem finalize_verified : Verified PPC64LE.target finalize Proof.Sha512.finalizePPC64LE := by
-  refine ⟨fun s hs => ?_, ?_, ?_⟩
+/-- `sat`, with `out` of `D` bytes. -/
+def satD (D : Nat) : State := { sat with wr := [⟨0x1000, 192⟩, ⟨0x2000, D⟩, ⟨0x3000, 224⟩] }
+
+theorem satD_pre (hD64 : D ≤ 64) : (Proof.Sha512.finalizeDPPC64LE D).pre (satD D) := by
+  refine ⟨rfl, rfl, ?_, ?_, ?_⟩ <;>
+  · intro a h₁ h₂
+    simp only [Region.Contains, satD, sat] at h₁ h₂
+    bv_omega
+
+theorem finalize64_verified : Verified PPC64LE.target finalize (Proof.Sha512.finalizeDPPC64LE 64) := by
+  refine ⟨fun s hs => ?_, ?_, ⟨satD 64, satD_pre (by decide)⟩⟩
   · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
+      (untouched_of (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide)
+      fun sD hD => words_ok (pre_of hs) (by decide) (n := 8) rfl hD
     exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
       (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
       (by taint_decide)
-  · refine ⟨sat, rfl, rfl, ?_, ?_, ?_⟩ <;>
-    · intro a h₁ h₂
-      simp only [Region.Contains, sat] at h₁ h₂
-      bv_omega
+
+/-- `finalize`: SHA-512's, all 64 bytes of the final hash value. -/
+theorem finalize_verified : Verified PPC64LE.target finalize Proof.Sha512.finalizePPC64LE :=
+  Verified.of_implies finalize64_verified
+    { pre := fun _ h => h
+      post := fun _ _ _ h iv m hr hl hc => by
+        rw [h iv m hr hl hc]
+        exact List.take_of_length_le (by unfold Spec.Sha512.finalHash; exact (flat_length_all _).le)
+      pub := fun _ _ _ _ h => h
+      sat := ⟨satD 64, satD_pre (by decide)⟩ }
+
+theorem finalize384_verified : Verified PPC64LE.target finalize384 (Proof.Sha512.finalizeDPPC64LE 48) := by
+  refine ⟨fun s hs => ?_, ?_, ⟨satD 48, satD_pre (by decide)⟩⟩
+  · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
+      (untouched_of (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide)
+      fun sD hD => words_ok (pre_of hs) (by decide) (n := 6) rfl hD
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
+      (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
+      (by taint_decide)
+
+theorem finalize512_256_verified :
+    Verified PPC64LE.target finalize512_256 (Proof.Sha512.finalizeDPPC64LE 32) := by
+  refine ⟨fun s hs => ?_, ?_, ⟨satD 32, satD_pre (by decide)⟩⟩
+  · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
+      (untouched_of (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide)
+      fun sD hD => words_ok (pre_of hs) (by decide) (n := 4) rfl hD
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
+      (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
+      (by taint_decide)
+
+theorem finalize512_224_verified :
+    Verified PPC64LE.target finalize512_224 (Proof.Sha512.finalizeDPPC64LE 28) := by
+  refine ⟨fun s hs => ?_, ?_, ⟨satD 28, satD_pre (by decide)⟩⟩
+  · obtain ⟨t, s', he, hk, hsp, h⟩ := correct (pre_of hs)
+      (untouched_of (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide)
+      fun sD hD => out224_ok (pre_of hs) hD
+    exact ⟨t, s', he, ⟨hk, hsp, Exec.lr he (by decide +kernel)
+      (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (fun _ _ _ _ hp => agree₀ hp)
+      (by taint_decide)
 
 end VG.Proof.Sha512.PPC64LE.Stream.Finalize

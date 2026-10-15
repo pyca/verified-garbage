@@ -85,6 +85,32 @@ def artifacts : List Artifact := [
     code := Impl.Sha512.PPC64LE.Stream.finalize
     contract := Spec.Sha512.finalizeScratchContract PPC64LE.abi
     verified := Proof.Sha512.PPC64LE.Shared.finalizeScratch
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Sha512.finalize384Api with
+    target := PPC64LE.target
+    doc := Spec.Sha512.finalize384Api.doc
+    code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize384
+    contract := Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_384 48 Spec.Sha512.sha384 1408
+    stack := 1408
+    verified := Proof.Sha512.PPC64LE.Shared.finalize384
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Sha512.finalize512_256Api with
+    target := PPC64LE.target
+    doc := Spec.Sha512.finalize512_256Api.doc
+    code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_256
+    contract := Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_512_256 32
+      Spec.Sha512.sha512_256 1408
+    stack := 1408
+    verified := Proof.Sha512.PPC64LE.Shared.finalize512_256
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Sha512.finalize512_224Api with
+    target := PPC64LE.target
+    doc := Spec.Sha512.finalize512_224Api.doc
+    code := Impl.StackScratch.PPC64LE.withStackScratch 1408 .r6 Impl.Sha512.PPC64LE.Stream.finalize512_224
+    contract := Spec.Sha512.finalizeDigestContract PPC64LE.abi Spec.Sha512.H0_512_224 28
+      Spec.Sha512.sha512_224 1408
+    stack := 1408
+    verified := Proof.Sha512.PPC64LE.Shared.finalize512_224
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.Sha512.PPC64LE
