@@ -67,7 +67,7 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
     rcases hg with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
     · irun [pstepCode, execCmov, eval, h63, hE, hF, hG, hsw, hz, zf_setFlags', sextm2, RegUpd.zf_setReg,
         RegUpd.zf_arithFlags, RegUpd.cf_setReg, RegUpd.cf_arithFlags, RegUpd.cf_setFlags, decide_true]
-      refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+      refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hr
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, h1, h2, h3, h4, h5, h6, h7,
@@ -79,7 +79,7 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
       rcases hg with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
       · irun [pstepCode, execCmov, eval, h63, hE, hF, hG, hsw, hz, zf_setFlags', sextm2, RegUpd.zf_setReg,
           RegUpd.zf_arithFlags, RegUpd.cf_setReg, RegUpd.cf_arithFlags, RegUpd.cf_setFlags, decide_false]
-        refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+        refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hr
         simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, h1, h2, h3, h4, h5, h6, h7,
@@ -89,7 +89,7 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
       rcases hg with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
       · irun [pstepCode, execCmov, eval, h63, hE, hF, hG, hsw, hz, zf_setFlags', sextm2, RegUpd.zf_setReg,
           RegUpd.zf_arithFlags, RegUpd.cf_setReg, RegUpd.cf_arithFlags, RegUpd.cf_setFlags, decide_false]
-        refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+        refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hr
         simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, h1, h2, h3, h4, h5, h6, h7,
@@ -130,7 +130,7 @@ theorem pstepsCode_ok (s : State) {n : Nat} (hn : n ≤ 15) :
     rw [hg] at e₁
     irun
     refine ⟨e₁, k₁.trans ?_⟩
-    refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+    refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg], by simp only [RegUpd.rd_setReg], by simp only [RegUpd.wr_setReg]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, hr.2.2.2.2.2.2, ↓reduceIte]
 
@@ -144,7 +144,7 @@ theorem psetRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   have h1 : ¬ r = .rax := fun h => hr (by simp [h])
   have h2 : ¬ Reg.rax = r := fun h => h1 h.symm
   irun [psetRow, load_sc hs ht, sext7fff, h1, h2, RegUpd.gpr_setReg_self]
-  refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
+  refine ⟨fun q hq => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_arithFlags]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hq.1, hq.2, ↓reduceIte]
 
@@ -175,7 +175,7 @@ theorem pext_ok (s : State) :
       s'.gpr .r13 = pextLo (s.gpr .r13) ∧ s'.gpr .rbp = pextHi (s.gpr .r13) ∧
       Keeps [.rcx, .rbp, .r8, .r13] s s' := by
   irun [pext, pextLo, pextHi, sext16k]
-  refine ⟨rfl, rfl, rfl, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨rfl, rfl, rfl, rfl, fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2,
     ↓reduceIte]
@@ -193,7 +193,7 @@ theorem ldMul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     WP isa (.block (ldMul d r)) s fun s' => s'.gpr .rax = word s.mem base d * s.gpr r ∧ Keeps [.rax, .rdx] s s' := by
   have h1 : ¬ r = .rax := fun h => hr (by simp [h])
   irun [ldMul, load_sc hs hd, mul_lo, h1]
-  refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
+  refine ⟨fun q hq => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hq.1, hq.2, ↓reduceIte]
 
@@ -206,7 +206,7 @@ theorem addShrSt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   have h : WP isa (.block [.alu .add .rax (.mem (sc d)), .shift .shr .rax n]) s fun s₁ =>
       s₁.gpr .rax = (s.gpr .rax + word s.mem base d) >>> n ∧ Keeps [.rax] s s₁ := by
     irun [load_sc hs hd, hn]
-    refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
+    refine ⟨fun q hq => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hq, ↓reduceIte]
   refine WP.mono h fun s₁ ⟨e₁, k₁⟩ => ?_
@@ -310,7 +310,7 @@ theorem pfirst_ok (s : State) :
       s'.gpr .r9 = s.gpr .r8 ∧ s'.gpr .r10 = s.gpr .rcx ∧ s'.gpr .r11 = s.gpr .r13 ∧ s'.gpr .r12 = s.gpr .rbp ∧
         Keeps [.r9, .r10, .r11, .r12] s s' := by
   irun [pfirst]
-  refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg], by simp only [RegUpd.rd_setReg], by simp only [RegUpd.wr_setReg]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ↓reduceIte]
 
@@ -338,7 +338,7 @@ theorem pcol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {t
   have h0 : WP isa (.block [.mov .rax (.reg .r13), .mul x]) s fun s₁ =>
       s₁.gpr .rax = s.gpr .r13 * s.gpr x ∧ Keeps [.rax, .rdx] s s₁ := by
     irun [mul_lo, a1, a2]
-    refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+    refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr.1, hr.2, ↓reduceIte]
   refine WP.mono h0 fun s₁ ⟨a₁, k₁⟩ => ?_
@@ -351,7 +351,7 @@ theorem pcol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {t
         Keeps [.rax, .rdx, x] s₂ s₃ := by
     irun [mul_lo, a1, a2, a3, a4, d1, d2, d3, d4, e1, e2, c1, c2, b1, b2, b3, b4, hxy.1, hxy.2,
       RegUpd.gpr_setReg_self]
-    refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+    refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2, ↓reduceIte]
   refine WP.mono h1 fun s₃ ⟨x₃, a₃, k₃⟩ => ?_
