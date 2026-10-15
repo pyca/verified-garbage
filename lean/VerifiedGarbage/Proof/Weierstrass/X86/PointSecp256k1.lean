@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Secp256k1.Point
+public import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.Secp256k1
+meta import VerifiedGarbage.Proof.Weierstrass.X86.PointLit.Secp256k1
 meta import VerifiedGarbage.Impl.Secp256k1.Point
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointCurves
