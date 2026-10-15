@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Window.Joint
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+public import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PointSums
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
@@ -142,8 +144,8 @@ theorem round_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K t : Nat
       (round v.field v.bodies KBITS) (fun _ _ => True) := by
   have head : RelCT isa (fun s u => TimingCtx base S K t s ∧ TimingCtx base S K t u)
       (roundHead v) (fun _ _ => True) := by
-    cases v <;> exact RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx])
-      (fun _ _ h => ctx_agree h) (by taint_decide)
+    cases v <;> exact relCT_sum (Taint.ofRegs [.rdi, .rbx])
+      (fun _ _ h => ctx_agree h) (by taint_decide_sum [dblSum, addSum, dblAdxSum, addAdxSum])
   have hw (s : State) (h : TimingCtx base S K t s) :
       WP isa (selectSignedKey KBITS) s (TimingCtx base S K t) := by
     refine WP.mono (selectSignedKey_ok h.scr (by decide) (by decide) ht h.rbx h.bk)
@@ -152,8 +154,8 @@ theorem round_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K t : Nat
   have tail : RelCT isa (fun s u => TimingCtx base S K t s ∧ TimingCtx base S K t u)
       (.seq (Window.add v.field v.bodies) (.block (accept ++ [.alu .test .rbx (.reg .rbx)])))
       (fun _ _ => True) := by
-    cases v <;> exact RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx])
-      (fun _ _ h => ctx_agree h) (by taint_decide)
+    cases v <;> exact relCT_sum (Taint.ofRegs [.rdi, .rbx])
+      (fun _ _ h => ctx_agree h) (by taint_decide_sum [dblSum, addSum, dblAdxSum, addAdxSum])
   have hh := seq_same head (fun s h => roundHead_ok v h ht)
     (seq_same (selectSignedKey_ct base S K t ht) hw tail)
   exact hh.assoc.assoc.assoc
@@ -185,8 +187,8 @@ theorem first_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K t : Nat
     exact h.keep ku (by rw [fu 11 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.d])
   have tail : RelCT isa (fun s u => TimingCtx base S K t s ∧ TimingCtx base S K t u)
       (.seq (Window.add v.field v.bodies) (.block accept)) (fun _ _ => True) := by
-    cases v <;> exact RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rbx])
-      (fun _ _ h => ctx_agree h) (by taint_decide)
+    cases v <;> exact relCT_sum (Taint.ofRegs [.rdi, .rbx])
+      (fun _ _ h => ctx_agree h) (by taint_decide_sum [dblSum, addSum, dblAdxSum, addAdxSum])
   exact (seq_same head (fun _ h => firstHead_ok h ht)
     (seq_same (selectSignedKey_ct base S K t ht) hw tail)).assoc
 
@@ -265,7 +267,7 @@ theorem joint_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) (S K : Nat) 
       (joint v.field v.bodies KBITS) (fun _ _ => True) := by
   have head : RelCT isa (fun s u => JointTimingCtx base S K s ∧ JointTimingCtx base S K u)
       (jointHead v) (fun _ _ => True) := by
-    cases v <;> apply RelCT.taint (A := taint) (Taint.ofRegs [.rdi]) _ (by taint_decide)
+    cases v <;> apply relCT_sum (Taint.ofRegs [.rdi]) _ (by taint_decide_sum [dblSum, addSum, dblAdxSum, addAdxSum])
     all_goals
       intro s u h
       apply Taint.agree_ofRegs
