@@ -27,6 +27,11 @@ def valid : Value → Prop
   | .frame d => d < 4096
   | .caller j d => j < 6 ∧ d < 4096
 
+instance : DecidablePred valid
+  | .const n => inferInstanceAs (Decidable (n < 65536))
+  | .frame d => inferInstanceAs (Decidable (d < 4096))
+  | .caller j d => inferInstanceAs (Decidable (j < 6 ∧ d < 4096))
+
 structure SetupStep (rs : List Reg) (s t : State) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = s.wr
