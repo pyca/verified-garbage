@@ -111,7 +111,7 @@ literal registers. -/
 macro "regupd" : tactic => `(tactic| simp (config := {decide := true}) only [acc, v,
   RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags,
   RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags,
-  RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false])
+  RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ↓reduceIte])
 
 
 theorem toNat_zero32 : (0 : BitVec 32).toNat = 0 := rfl
