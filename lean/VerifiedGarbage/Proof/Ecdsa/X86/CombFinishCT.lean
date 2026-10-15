@@ -4,8 +4,6 @@ public import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCode
 import VerifiedGarbage.Proof.Framework.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

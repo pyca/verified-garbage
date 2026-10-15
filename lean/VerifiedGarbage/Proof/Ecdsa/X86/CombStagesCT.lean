@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
 import VerifiedGarbage.Proof.Framework.NativeTaint
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
-meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
