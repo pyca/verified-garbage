@@ -37,7 +37,7 @@ theorem ld_slot {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 8 �
   rw [L.sp]; exact L.fld hd
 
 theorem updL_nil (V : Nat → Byte) (o : Nat) : updL V o [] = V := by
-  funext x; simp only [updL, List.length_nil]; rw [ite_eq_right (by omega)]
+  funext x; simp only [updL, List.length_nil]; rw [ite_eq_right (by omega_using [])]
 
 /-- `copyLoop` from `n` readable bytes at `q`, apart from our working space,
 to `scratch + o`. -/
@@ -48,13 +48,13 @@ theorem copyIn_ok {s : State} {F S : Addr} (L : Lay s F S) {V : Nat → Byte} (R
     WP isa Impl.RsaPkcs1Sig.AArch64.copyLoop s fun t => Keep [.x15, .x11, .x14, .x12] s t ∧
       Frame [⟨S, oRsa⟩] s.mem t.mem ∧ Rep t.mem S (updL V o (Spec.Rsa.bytesAt s.mem q n)) := by
   have c6 : oRsa = 8192 := rfl
-  refine WP.mono (copy_ok hn (by omega) h14 h11 h12 hr (fun i hi => by rw [off_add]; exact L.st (by omega))
-    (fun j hj i hi h => hd _ (Offset.contains_base q (d := j) (n := 1) (k := n) (by omega) (by omega))
-      (by rw [h, off_add]; exact Offset.contains_base S (by omega) (by omega))))
+  refine WP.mono (copy_ok hn (by omega_using [ho, c6]) h14 h11 h12 hr (fun i hi => by rw [off_add]; exact L.st (by omega_using [ho, hi]))
+    (fun j hj i hi h => hd _ (Offset.contains_base q (d := j) (n := 1) (k := n) (by omega_using [hj]) (by omega_using [ho, c6, hj]))
+      (by rw [h, off_add]; exact Offset.contains_base S (by omega_using [ho, hi]) (by omega_using [ho, c6, hi]))))
     fun t ⟨k, hm⟩ => ⟨k, ?_, ?_⟩
   · rw [hm]
-    exact writeBytes_frame _ _ _ (Offset.contains_base S (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length]; omega) (by omega))
-  · rw [hm]; exact R.writeBytes (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length]; omega)
+    exact writeBytes_frame _ _ _ (Offset.contains_base S (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length]; omega_using [ho]) (by omega_using [ho, c6]))
+  · rw [hm]; exact R.writeBytes (by rw [VG.Proof.RsaPkcs1Sig.bytesAt_length]; omega_using [ho])
 
 /-- `copyLoop` within our working space, from `scratch + a` to `scratch + b`. -/
 theorem copyWithin_ok {s : State} {F S : Addr} (L : Lay s F S) {V : Nat → Byte} (R : Rep s.mem S V)
@@ -63,15 +63,15 @@ theorem copyWithin_ok {s : State} {F S : Addr} (L : Lay s F S) {V : Nat → Byte
     WP isa Impl.RsaPkcs1Sig.AArch64.copyLoop s fun t => Keep [.x15, .x11, .x14, .x12] s t ∧
       Frame [⟨S, oRsa⟩] s.mem t.mem ∧ Rep t.mem S (updL V b ((List.range n).map fun i => V (a + i))) := by
   have c6 : oRsa = 8192 := rfl
-  refine WP.mono (copy_ok hn (by omega) h14 h11 h12 (fun j hj => by rw [off_add]; exact L.ld (by omega))
-    (fun i hi => by rw [off_add]; exact L.st (by omega))
-    (fun j hj i hi h => by rw [off_add, off_add, off_inj S (by omega) (by omega)] at h; omega))
+  refine WP.mono (copy_ok hn (by omega_using [hb, c6]) h14 h11 h12 (fun j hj => by rw [off_add]; exact L.ld (by omega_using [ha, hj]))
+    (fun i hi => by rw [off_add]; exact L.st (by omega_using [hb, hi]))
+    (fun j hj i hi h => by rw [off_add, off_add, off_inj S (by omega_using [ha, c6, hj]) (by omega_using [hb, c6, hi])] at h; omega_using [hab, hj, hi, h]))
     fun t ⟨k, hm⟩ => ⟨k, ?_, ?_⟩
-  · rw [hm, R.bytes (by omega)]
+  · rw [hm, R.bytes (by omega_using [ha])]
     exact writeBytes_frame _ _ _ (Offset.contains_base S
-      (by simp only [List.length_map, List.length_range]; omega) (by omega))
-  · rw [hm, R.bytes (by omega)]
-    exact R.writeBytes (by simp only [List.length_map, List.length_range]; omega)
+      (by simp only [List.length_map, List.length_range]; omega_using [hb]) (by omega_using [hb, c6]))
+  · rw [hm, R.bytes (by omega_using [ha])]
+    exact R.writeBytes (by simp only [List.length_map, List.length_range]; omega_using [hb])
 
 /-- `x25 := dbLen` and `x24 := DB`, from `x9 = emLen - hLen - 2` and `lo`. -/
 theorem dbRegs_ok {t : State} {F S : Addr} (L : Lay t F S) {x lo : Nat} (h9 : t.gpr .x9 = BitVec.ofNat 64 x)
@@ -115,13 +115,13 @@ theorem copyDigest_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte
   have hN := hH.N_le
   unfold copyDigest
   refine WP.seq (WP.mono (wp_ldrSp (by decide) (ld_slot L (by decide)) fun u₁ o₁ e₁ =>
-    wp_addImm (by unfold oY; omega) fun u₂ o₂ e₂ => wp_movz fun u₃ o₃ e₃ =>
+    wp_addImm (by unfold oY; omega_using []) fun u₂ o₂ e₂ => wp_movz fun u₃ o₃ e₃ =>
     wp_nil (Q := fun u => Only [.x11, .x14, .x12] t u ∧ u.gpr .x11 = dig ∧ u.gpr .x14 = off S (oY + 8) ∧
       u.gpr .x12 = BitVec.ofNat 64 H.D)
       ⟨(o₁.trans (o₂.trans o₃)).mono, by rw [o₃.get .x11, o₂.get .x11, e₁, L.sp, hdg],
-        by rw [o₃.get .x14, e₂, o₁.get .x20, L.x20], by rw [e₃, setWidth_ofNat16 (by omega)]⟩)
+        by rw [o₃.get .x14, e₂, o₁.get .x20, L.x20], by rw [e₃, setWidth_ofNat16 (by omega_using [hDN, hN])]⟩)
     fun u ⟨O, h11, h14, h12⟩ => ?_)
-  refine WP.mono (copyIn_ok (L.congr O.sp O.wr (O.get .x20)) (O.mem ▸ R) hD (by unfold oY oRsa; omega) h14 h11 h12
+  refine WP.mono (copyIn_ok (L.congr O.sp O.wr (O.get .x20)) (O.mem ▸ R) hD (by unfold oY oRsa; omega_using [hDN, hN]) h14 h11 h12
     (by rw [O.rd, O.wr]; exact hr) hd) fun v ⟨k, f, r⟩ => ⟨(O.keep.trans k).mono, O.mem ▸ f, ?_⟩
   rw [O.mem] at r; exact r
 
@@ -138,7 +138,7 @@ theorem copySaltY_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte}
   have hN := hH.N_le
   unfold copySaltY
   refine WP.seq (WP.mono (wp_ldrSp (by decide) (ld_slot L (by decide)) fun u₁ o₁ e₁ =>
-    wp_addImm (by unfold oY; omega) fun u₂ o₂ e₂ => wp_ldrSp (by decide)
+    wp_addImm (by unfold oY; omega_using [hDN, hN]) fun u₂ o₂ e₂ => wp_ldrSp (by decide)
       (by rw [o₂.sp, o₂.rd, o₂.wr, o₁.sp, o₁.rd, o₁.wr]; exact ld_slot L (by decide)) fun u₃ o₃ e₃ =>
     wp_nil (Q := fun u => Only [.x11, .x14, .x12] t u ∧ u.gpr .x11 = q ∧ u.gpr .x14 = off S (oY + 8 + H.D) ∧
       u.gpr .x12 = BitVec.ofNat 64 sl)
@@ -151,7 +151,7 @@ theorem copySaltY_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte}
     have h0 : sl = 0 := by
       have : (BitVec.ofNat 64 sl).toNat = 0 := by rw [beq_iff_eq.mp h]; rfl
       rw [BitVec.toNat_ofNat] at this
-      omega
+      omega_using [hsl', this]
     subst h0
     refine wp_nil ⟨O.keep.mono, O.mem ▸ Frame.refl _ _, ?_⟩
     rw [O.mem]
@@ -162,7 +162,7 @@ theorem copySaltY_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte}
       rcases Nat.eq_zero_or_pos sl with e | e
       · subst e; simp at h
       · exact e
-    refine WP.mono (copyIn_ok (L.congr O.sp O.wr (O.get .x20)) (O.mem ▸ R) h0 (by unfold oY oRsa; omega) h14 h11
+    refine WP.mono (copyIn_ok (L.congr O.sp O.wr (O.get .x20)) (O.mem ▸ R) h0 (by unfold oY oRsa; omega_using [hsl', hDN, hN]) h14 h11
       h12 (by rw [O.rd, O.wr]; exact hr) hd) fun v ⟨k, f, r⟩ => ⟨(O.keep.trans k).mono, O.mem ▸ f, ?_⟩
     rw [O.mem] at r; exact r
 
@@ -183,8 +183,8 @@ theorem signLen_ok {t : State} {F S : Addr} (L : Lay t F S) {sl : Nat}
     · rw [show (128 : Nat) = 2 ^ 7 from rfl, Nat.log2_two_pow]; decide
   unfold signLen Impl.RsaPss.AArch64.lastBlk st
   simp only [List.cons_append, List.nil_append]
-  refine wp_ldrSp (by decide) (ld_slot L (by decide)) fun u₁ o₁ e₁ => wp_addImm (by omega) fun u₂ o₂ e₂ => ?_
-  refine wp_addImm (by omega) fun u₃ o₃ e₃ => wp_lsr hlg.2 fun u₄ o₄ e₄ => wp_addImm (by decide) fun u₅ o₅ e₅ => ?_
+  refine wp_ldrSp (by decide) (ld_slot L (by decide)) fun u₁ o₁ e₁ => wp_addImm (by omega_using [hDN, hN]) fun u₂ o₂ e₂ => ?_
+  refine wp_addImm (by omega_using [hL]) fun u₃ o₃ e₃ => wp_lsr hlg.2 fun u₄ o₄ e₄ => wp_addImm (by decide) fun u₅ o₅ e₅ => ?_
   refine wp_addSp (by decide) fun u₆ o₆ e₆ => ?_
   have hsp : u₅.sp = F := by rw [o₅.sp, o₄.sp, o₃.sp, o₂.sp, o₁.sp, L.sp]
   refine wp_strx (by decide) (by rw [e₆, hsp, BitVec.add_zero])
@@ -194,7 +194,7 @@ theorem signLen_ok {t : State} {F S : Addr} (L : Lay t F S) {sl : Nat}
   refine ⟨(o₁.keep.trans (o₂.keep.trans (o₃.keep.trans (o₄.keep.trans (o₅.keep.trans (o₆.keep.trans
     m₇.keep)))))).mono, by rw [m₇.gpr, o₆.get .x22, o₅.get .x22, o₄.get .x22, o₃.get .x22, x22], ?_⟩
   rw [m₇.mem, o₆.mem, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem, o₆.get .x9, e₅, e₄, e₃, x22,
-    BitVec.ofNat_add_ofNat, lsr_val (by omega), hlg.1, BitVec.ofNat_add_ofNat]
+    BitVec.ofNat_add_ofNat, lsr_val (by omega_using [hsl', hDN, hN, hL]), hlg.1, BitVec.ofNat_add_ofNat]
 
 /-- `EM`'s `k` bytes cleared. -/
 theorem clearEm_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V) {k : Nat}
@@ -210,11 +210,11 @@ theorem clearEm_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (
       ⟨(o₁.trans (o₂.trans o₃)).mono, by rw [o₃.get .x14, o₂.get .x14, e₁, L.x20],
         by rw [o₃.get .x13, e₂, o₁.get .x23, h23], by rw [e₃]; rfl⟩) fun u ⟨O, h14, h13, h15⟩ => ?_)
   have Lu := L.congr O.sp O.wr (O.get .x20)
-  refine WP.mono (fill_ok hk (by omega) h14 h13 h15 fun i hi => by rw [off_add]; exact Lu.st (by omega))
+  refine WP.mono (fill_ok hk (by omega_using [hk']) h14 h13 h15 fun i hi => by rw [off_add]; exact Lu.st (by omega_using [hk', c1, c6, hi]))
     fun v ⟨k', hm⟩ => ⟨(O.keep.trans k').mono, ?_, ?_⟩
   · rw [hm, O.mem]
-    exact writeBytes_frame _ _ _ (Offset.contains_base S (by rw [List.length_replicate]; omega) (by omega))
-  · rw [hm, O.mem]; exact R.writeBytes (by rw [List.length_replicate]; omega)
+    exact writeBytes_frame _ _ _ (Offset.contains_base S (by rw [List.length_replicate]; omega_using [hk', c1, c6]) (by omega_using [c1]))
+  · rw [hm, O.mem]; exact R.writeBytes (by rw [List.length_replicate]; omega_using [hk', c1, c6])
 
 theorem Lay.slotSd {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 8 ≤ frameBytes) :
     ∀ r ∈ [(⟨S, oRsa⟩ : Region)], Region.Disjoint (slotR F d) r := by
@@ -224,7 +224,7 @@ theorem Lay.slotSd {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (hd : d + 
 
 theorem wS_frame (m : Mem) (S : Addr) {x : Nat} (hx : x + 1 ≤ oRsa) (b : Byte) :
     Frame [⟨S, oRsa⟩] m (m.writeW (off S x) b) :=
-  (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base S hx (by unfold oRsa at hx; omega))
+  (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base S hx (by unfold oRsa at hx; omega_using [hx]))
 
 theorem off_sub (p : Addr) {a b : Nat} (h : b ≤ a) : off p a - BitVec.ofNat 64 b = off p (a - b) := by
   rw [BitVec.sub_eq_iff_eq_add, off_add, Nat.sub_add_cancel h]
@@ -249,27 +249,27 @@ theorem putSalt_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (
       wp_sub fun u₃ o₃ e₃ => wp_subImm (by decide) fun u₄ o₄ e₄ => wp_movz fun u₅ o₅ e₅ => ?_
     have h12 : u₂.gpr .x12 = BitVec.ofNat 64 sl := by rw [e₂, o₁.mem, o₁.sp, L.sp, hsl]
     have h14 : u₅.gpr .x14 = off S (e + db - sl - 1) := by
-      rw [o₅.get .x14, e₄, e₃, o₂.get .x14, e₁, h24, h25, off_add, h12, off_sub _ (by omega),
-        off_sub _ (by omega)]
+      rw [o₅.get .x14, e₄, e₃, o₂.get .x14, e₁, h24, h25, off_add, h12, off_sub _ (by omega_using [hfit]),
+        off_sub _ (by omega_using [hfit])]
     have O₅ : Only [.x14, .x12, .x9] t u₅ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans o₅)))).mono
-    refine wp_strb (by decide) (by rw [h14, BitVec.add_zero]) (by rw [O₅.wr]; exact L.st (by omega))
+    refine wp_strb (by decide) (by rw [h14, BitVec.add_zero]) (by rw [O₅.wr]; exact L.st (by omega_using [he, c2, c6]))
       fun u₆ m₆ => wp_addImm (by decide) fun u₇ o₇ e₇ => wp_ldrSp (by decide)
         (by rw [o₇.sp, o₇.rd, o₇.wr, m₆.sp, m₆.rd, m₆.wr, O₅.sp, O₅.rd, O₅.wr]; exact ld_slot L (by decide))
         fun u₈ o₈ e₈ => wp_nil ⟨(O₅.keep.trans (m₆.keep.trans (o₇.keep.trans o₈.keep))).mono, ?_, ?_, ?_, ?_⟩
-    · rw [o₈.get .x14, e₇, m₆.gpr, h14, off_add, show e + db - sl - 1 + 1 = e + db - sl by omega]
+    · rw [o₈.get .x14, e₇, m₆.gpr, h14, off_add, show e + db - sl - 1 + 1 = e + db - sl by omega_using [hfit]]
     · rw [o₈.get .x12, o₇.get .x12, m₆.gpr, o₅.get .x12, o₄.get .x12, o₃.get .x12, h12]
     · rw [e₈, o₇.mem, m₆.mem, O₅.mem, o₇.sp, m₆.sp, O₅.sp, L.sp,
-        slot_keep (wS_frame _ S (by omega) _) (L.slotSd (by decide)), hq]
+        slot_keep (wS_frame _ S (by omega_using [he, c2, c6]) _) (L.slotSd (by decide)), hq]
     · rw [o₈.mem, o₇.mem, m₆.mem, O₅.mem, e₅]; rfl
   have Lu : Lay u F S := L.congr K.sp K.wr (K.get .x20)
-  have Ru : Rep u.mem S (upd V (e + db - sl - 1) 1) := by rw [hm]; exact R.wb (by omega) _
-  have Fu : Frame [⟨S, oRsa⟩] t.mem u.mem := by rw [hm]; exact wS_frame _ S (by omega) _
+  have Ru : Rep u.mem S (upd V (e + db - sl - 1) 1) := by rw [hm]; exact R.wb (by omega_using [he, c2, c6]) _
+  have Fu : Frame [⟨S, oRsa⟩] t.mem u.mem := by rw [hm]; exact wS_frame _ S (by omega_using [he, c2, c6]) _
   refine WP.ite _ (eval_zero _ _) (fun h => ?_) (fun h => ?_)
   · rw [h12] at h
     have h0 : sl = 0 := by
       have : (BitVec.ofNat 64 sl).toNat = 0 := by rw [beq_iff_eq.mp h]; rfl
       rw [BitVec.toNat_ofNat] at this
-      omega
+      omega_using [hfit, he, c2, this]
     subst h0
     refine wp_nil ⟨K.mono, Fu, ?_⟩
     simp only [Spec.Rsa.bytesAt, List.range_zero, List.map_nil, updL_nil]
@@ -280,8 +280,8 @@ theorem putSalt_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (
       · subst e'; simp at h
       · exact e'
     have hb : Spec.Rsa.bytesAt u.mem q sl = Spec.Rsa.bytesAt t.mem q sl :=
-      VG.Proof.RsaPkcs1Sig.bytes_apart (R := ⟨q, sl⟩) Fu hd (by show sl ≤ 2 ^ 64; omega)
-    refine WP.mono (copyIn_ok Lu Ru h0 (by omega) h14 h11 h12 (by rw [K.rd, K.wr]; exact hr) hd)
+      VG.Proof.RsaPkcs1Sig.bytes_apart (R := ⟨q, sl⟩) Fu hd (by show sl ≤ 2 ^ 64; omega_using [hfit, he, c2])
+    refine WP.mono (copyIn_ok Lu Ru h0 (by omega_using [hfit, he, c2, c6]) h14 h11 h12 (by rw [K.rd, K.wr]; exact hr) hd)
       fun v ⟨k, f, r⟩ => ⟨(K.trans k).mono, Fu.trans f, ?_⟩
     rw [hb] at r; exact r
 
@@ -307,25 +307,25 @@ theorem putH_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R :
       wp_nil (Q := fun (u : State) => Only [.x14, .x11, .x12] t u ∧ u.gpr .x14 = off S (e + db) ∧
         u.gpr .x11 = off S oDig ∧ u.gpr .x12 = BitVec.ofNat 64 H.D)
         ⟨(o₁.trans (o₂.trans o₃)).mono, by rw [o₃.get .x14, o₂.get .x14, e₁, h24, h25, off_add],
-          by rw [o₃.get .x11, e₂, o₁.get .x21, h21], by rw [e₃, setWidth_ofNat16 (by omega)]⟩)
+          by rw [o₃.get .x11, e₂, o₁.get .x21, h21], by rw [e₃, setWidth_ofNat16 (by omega_arith)]⟩)
       fun u ⟨O, h14, h11, h12⟩ => ?_)
-    exact WP.mono (copyWithin_ok (L.congr O.sp O.wr (O.get .x20)) (O.mem ▸ R) hD (by omega) (by omega)
-      (by omega) h14 h11 h12) fun v ⟨k', f, r⟩ => ⟨(O.keep.trans k').mono, O.mem ▸ f, r⟩
+    exact WP.mono (copyWithin_ok (L.congr O.sp O.wr (O.get .x20)) (O.mem ▸ R) hD (by omega_arith) (by omega_arith)
+      (by omega_arith) h14 h11 h12) fun v ⟨k', f, r⟩ => ⟨(O.keep.trans k').mono, O.mem ▸ f, r⟩
   refine wp_addImm (by decide) fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_subImm (by decide) fun u₃ o₃ e₃ =>
     wp_movz fun u₄ o₄ e₄ => ?_
   have h9 : u₄.gpr .x9 = off S (oEm + k - 1) := by
-    rw [o₄.get .x9, e₃, e₂, o₁.get .x23, K.get .x23, h23, e₁, K.get .x20, L.x20, off_add, off_sub _ (by omega)]
+    rw [o₄.get .x9, e₃, e₂, o₁.get .x23, K.get .x23, h23, e₁, K.get .x20, L.x20, off_add, off_sub _ (by omega_arith)]
   have O₄ : Only [.x9, .x10] v u₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  refine wp_strb (by decide) (by rw [h9, BitVec.add_zero]) (by rw [O₄.wr, K.wr]; exact L.st (by omega))
+  refine wp_strb (by decide) (by rw [h9, BitVec.add_zero]) (by rw [O₄.wr, K.wr]; exact L.st (by omega_arith))
     fun u₅ m₅ => wp_nil ⟨(K.trans (O₄.keep.trans m₅.keep)).mono, ?_, ?_⟩
-  · rw [m₅.mem, O₄.mem]; exact Fv.trans (wS_frame _ S (by omega) _)
-  · rw [m₅.mem, O₄.mem, e₄]; exact Rv.wb (by omega) _
+  · rw [m₅.mem, O₄.mem]; exact Fv.trans (wS_frame _ S (by omega_arith) _)
+  · rw [m₅.mem, O₄.mem, e₄]; exact Rv.wb (by omega_arith) _
 
 theorem trunc_and (x y : Byte) : BitVec.setWidth 8 (BitVec.setWidth 64 x &&& BitVec.setWidth 64 y) = x &&& y := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and]
-  rw [Nat.mod_eq_of_lt (a := x.toNat) (by omega), Nat.mod_eq_of_lt (a := y.toNat) (by omega),
-    Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_left (by omega))]
+  rw [Nat.mod_eq_of_lt (a := x.toNat) (by omega_using []), Nat.mod_eq_of_lt (a := y.toNat) (by omega_using []),
+    Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_left (by omega_using []))]
 
 /-- `DB`'s first byte ANDed with the mask `c` (`sC`). -/
 theorem clearTop_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V)
@@ -334,13 +334,13 @@ theorem clearTop_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} 
     WP isa (.block clearTop) t fun t' => Keep [.x9, .x10] t t' ∧ Frame [⟨S, oRsa⟩] t.mem t'.mem ∧
       Rep t'.mem S (upd V e (V e &&& c)) := by
   unfold clearTop
-  refine wp_ldrb (by decide) (by rw [h24, BitVec.add_zero]) (L.ld (by omega)) fun u₁ o₁ e₁ => ?_
+  refine wp_ldrb (by decide) (by rw [h24, BitVec.add_zero]) (L.ld (by omega_using [he])) fun u₁ o₁ e₁ => ?_
   refine wp_ldrSp (by decide) (by rw [o₁.sp, o₁.rd, o₁.wr]; exact ld_slot L (by decide)) fun u₂ o₂ e₂ =>
     wp_and fun u₃ o₃ e₃ => ?_
   have O₃ : Only [.x9, .x10] t u₃ := (o₁.trans (o₂.trans o₃)).mono
-  refine wp_strb (by decide) (by rw [O₃.get .x24, h24, BitVec.add_zero]) (by rw [O₃.wr]; exact L.st (by omega))
+  refine wp_strb (by decide) (by rw [O₃.get .x24, h24, BitVec.add_zero]) (by rw [O₃.wr]; exact L.st (by omega_using [he]))
     fun u₄ m₄ => wp_nil ⟨(O₃.keep.trans m₄.keep).mono, ?_, ?_⟩
-  · rw [m₄.mem, O₃.mem]; exact wS_frame _ S (by omega) _
+  · rw [m₄.mem, O₃.mem]; exact wS_frame _ S (by omega_using [he]) _
   · have hv : (u₃.gpr .x9).setWidth 8 = V e &&& c := by
       rw [e₃, o₂.get .x9, e₁, e₂, o₁.mem, o₁.sp, L.sp, hc, R e he, trunc_and]
     rw [m₄.mem, O₃.mem, hv]; exact R.wb he _
