@@ -46,6 +46,8 @@ meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # The scalar Keccak backend with its resident absorb
@@ -111,7 +113,7 @@ taint_summary VSums.absorb24_26 : VectorTaint.taint
 
 /-- `sponge_taint_decide VSums`, with the summaries of the absorb above and
 `VectorSlots.VSums`'s others, in the same order. -/
-local macro "sponge_taint_decide_resident" : tactic => `(tactic|
+tactic_template "sha3_scalar_resident_taint_decide" : tactic => `(tactic|
   taint_decide_sum [
     VSums.absorb23, VSums.absorb24, VSums.absorb28, VSums.absorb27, VSums.absorb24_26,
     VectorSlots.VSums.pad28, VectorSlots.VSums.pad27, VectorSlots.VSums.pad26,
@@ -158,7 +160,7 @@ theorem absorb_correct (a : State) (hp : Proof.Sha3.absorbAArch64.pre a) :
 
 theorem absorbTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (Impl.Sha3.AArch64.Stream.absorbWith callee) h).isSome = true :=
-  by sponge_taint_decide_resident
+  by sha3_scalar_resident_taint_decide
 
 theorem padTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x4])
     (Impl.Sha3.AArch64.Stream.padWith callee) h).isSome = true :=

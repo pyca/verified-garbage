@@ -17,6 +17,8 @@ public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 public import VerifiedGarbage.Proof.MdStream.X86.Words
 public import VerifiedGarbage.Proof.Sha1.StateMem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # SHA-1 on x86: the shared contracts
@@ -67,9 +69,14 @@ def updateWide : Contract X86.isa :=
 
 /-- Rewrites the per-target contracts at a narrowed state (`arg` does not
 unfold cheaply). -/
-macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [Proof.Sha1.updateX86, updateWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
+tactic_template "narrow" : tactic =>
+  `(tactic| simp only [Proof.Sha1.updateX86, updateWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
+                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr])
+
+/-- `narrow` at a location. -/
+tactic_template "narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [Proof.Sha1.updateX86, updateWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
+                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $loc)
 
 /-- `update` only reads its arguments. -/
 theorem updateWide_of {code : Prog isa} (hv : Verified X86.target code Proof.Sha1.updateX86)
