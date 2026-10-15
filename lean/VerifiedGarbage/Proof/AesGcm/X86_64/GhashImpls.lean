@@ -1,5 +1,11 @@
 module
 
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
+import VerifiedGarbage.Proof.Gcm.X86_64.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Lit
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash

@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
@@ -827,7 +829,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 theorem ghash_correct (s : State) (hs : ghashX86_64.pre s) :
     ∃ t s', Exec isa ghash s t s' ∧ abiPreserved s s' ∧ ghashX86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub ghash := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) ?_
