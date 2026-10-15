@@ -25,8 +25,8 @@ theorem shift_last_value (a : BitVec 32) :
   simp only [XShiftOp.eval, BitVec.ofNat_eq_ofNat, show min (12#8).toNat 16 * 8 = 96 from rfl,
     BitVec.getLsbD_shiftLeft, getLsbD_ofDwords, BitVec.getLsbD_zero]
   by_cases h : i < 96
-  · simp (disch := omega) only [ite_eq_left, ite_self, decide_eq_true, Bool.not_true, Bool.and_false, Bool.false_and]
-  · simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, decide_eq_false, Bool.not_false, Bool.true_and]
+  · simp (disch := omega) only [↓ite_eq_left, ite_self, decide_eq_true, Bool.not_true, Bool.and_false, Bool.false_and]
+  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, decide_eq_true, decide_eq_false, Bool.not_false, Bool.true_and]
     exact congrArg _ (by omega)
 
 theorem or_last_value (a b c d : BitVec 32) :
@@ -36,9 +36,9 @@ theorem or_last_value (a b c d : BitVec 32) :
   by_cases h0 : i < 32
   · simp only [h0, ite_true, Bool.or_false]
   by_cases h1 : i < 64
-  · simp (disch := omega) only [ite_eq_left, ite_eq_right, Bool.or_false]
+  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Bool.or_false]
   by_cases h2 : i < 96
-  · simp (disch := omega) only [ite_eq_left, ite_eq_right, Bool.or_false]
-  · simp (disch := omega) only [ite_eq_right, Bool.false_or]
+  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Bool.or_false]
+  · simp (disch := omega) only [↓ite_eq_right, Bool.false_or]
 
 end VG.Proof.Sha256.X86.ShaNi
