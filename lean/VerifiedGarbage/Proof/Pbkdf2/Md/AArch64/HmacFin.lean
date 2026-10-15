@@ -160,8 +160,8 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
       exact ⟨_, iR, Offset.contains_base _ (by omega) (by omega)⟩)
     (by
       rw [hk.x20, hk.x19, eN]
-      exact hp.i_o.symm.sep (Offset.contains_base _ (by omega_using [hS]) (by omega))
-        (Offset.contains_base _ (by omega_using [hS]) (by omega)))
+      exact hp.i_o.symm.sep (Offset.contains_base _ (by omega_using [hS]) (Nat.two_pow_pos 64))
+        (Offset.contains_base _ (by omega_using [hS]) (Nat.two_pow_pos 64)))
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
   rw [hk.x20, hk.x19, eN, z, z] at m₁
   have x23 : s₁.gpr .x23 = scr s₀ := by rw [g₁ _ (by decide), hk.x23]
@@ -177,11 +177,11 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
     (by
       rw [x23, x19, eD]
       exact hp.i_s.symm.sep (Offset.contains_base _ (by omega) (by omega_using [hbuf]))
-        (Offset.contains_base _ (by omega_using [hS, hpad]) (by omega_using [hB, hNL])))
+        (Offset.contains_base _ (by omega_using [hS, hpad]) (hH.sizes.N_lt64)))
     fun s₂ g₂ rd₂ wr₂ sp₂ m₂ => ?_
   rw [x23, x19, eD] at m₂
   simp only [List.cons_append, List.nil_append]
-  refine wp_mov fun s₃ u₃ => wp_addImm (by omega_using [hB, hNL]) fun s₄ u₄ => wp_mov fun s₅ u₅ => ?_
+  refine wp_mov fun s₃ u₃ => wp_addImm (hH.N_lt4096) fun s₄ u₄ => wp_mov fun s₅ u₅ => ?_
   have x21₅ : s₅.gpr .x21 = blk H s₀ := by
     rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂ _ (by decide), x19]
   have G₅ : ∀ r, r ≠ .x9 → r ≠ .x20 → r ≠ .x21 → r ≠ .x24 → s₅.gpr r = s₁.gpr r := fun r h1 h2 h3 h4 => by
@@ -207,8 +207,8 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
     refine ((f₁.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_)).trans (f₆.sub fun r hr => ?_) <;>
       simp only [List.mem_singleton] at hr <;> subst hr
     · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_using [hS])⟩
-    · exact ⟨_, List.mem_singleton_self _, in_inR (by omega_using [hpad])⟩
-    · exact ⟨_, List.mem_singleton_self _, in_inR (by omega)⟩
+    · exact ⟨_, List.mem_singleton_self _, in_inR (Nat.add_le_add_left hH.sizes.D_le_B _)⟩
+    · exact ⟨_, List.mem_singleton_self _, in_inR (Nat.le_refl _)⟩
   have Gk : ∀ r, r ≠ .x9 → r ≠ .x12 → r ≠ .x22 → r ≠ .x1 → r ≠ .x20 → r ≠ .x21 → r ≠ .x24 →
       s₇.gpr r = s.gpr r := fun r h1 h2 h3 h4 h5 h6 h7 => by
     rw [G r h1 h2 h3 h4, G₅ r h1 h5 h6 h7, g₁ r h1]
@@ -234,15 +234,15 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
     have hd : ∀ {a n : Nat}, H.P.N ≤ a → a + n ≤ H.P.N + H.P.B →
         ∀ r ∈ [(⟨inn s₀ + BitVec.ofNat 64 a, n⟩ : Region)], Region.Disjoint ⟨inn s₀, H.P.N⟩ r := fun ha hn => by
       simp only [List.mem_singleton]; rintro r rfl; exact Offset.base_disjoint _ ha (by omega_using [hn, hB, hNL])
-    rw [hm, f₆.bytes (R := ⟨inn s₀, H.P.N⟩) (hd (Nat.le_refl _) (by omega)) (by show H.P.N ≤ 2 ^ 64; omega_using [hB, hNL]) hi,
-      f₂.bytes (R := ⟨inn s₀, H.P.N⟩) (hd (Nat.le_refl _) (by omega_using [hpad])) (by show H.P.N ≤ 2 ^ 64; omega_using [hB, hNL]) hi,
+    rw [hm, f₆.bytes (R := ⟨inn s₀, H.P.N⟩) (hd (Nat.le_refl _) (Nat.le_refl _)) (by show H.P.N ≤ 2 ^ 64; omega_using [hB, hNL]) hi,
+      f₂.bytes (R := ⟨inn s₀, H.P.N⟩) (hd (Nat.le_refl _) (Nat.add_le_add_left hH.sizes.D_le_B _)) (by show H.P.N ≤ 2 ^ 64; omega_using [hB, hNL]) hi,
       m₁, writeBytes_at _ _ _ (by rw [bytesAt_length]; exact hi) (by rw [bytesAt_length]; omega_using [hB, hNL]),
       bytesAt_getD' _ _ hi]
   · -- The inner digest.
-    rw [hm, d₆, m₂, bytesAt_writeBytes_self' (bytesAt_length _ _ _) (by omega_using [hB, hpad])]
+    rw [hm, d₆, m₂, bytesAt_writeBytes_self' (bytesAt_length _ _ _) (hH.sizes.D_lt64)]
     exact bytes_keep f₁ (by
       simp only [List.mem_singleton]; rintro r rfl
-      exact (hp.i_s.sub_right tsub).symm.sub_right (Region.sub_prefix (by omega_using [hS]))) (by omega_using [hB, hpad])
+      exact (hp.i_s.sub_right tsub).symm.sub_right (Region.sub_prefix (by omega_using [hS]))) (hH.sizes.D_le64)
 
 /-- What the call of the compression function needs. -/
 theorem callOk {t : State} (hk : KO H s₀ t) (h20 : t.gpr .x20 = scr s₀) (h1 : t.gpr .x1 = blk H s₀) :
@@ -252,9 +252,9 @@ theorem callOk {t : State} (hk : KO H s₀ t) (h20 : t.gpr .x20 = scr s₀) (h1 
   obtain ⟨sR, iR, _⟩ := wr_mem hp
   have z : inn s₀ + BitVec.ofNat 64 0 = inn s₀ := BitVec.add_zero _
   have hv : Region.Sub ⟨inn s₀, H.P.N⟩ (inR (H := H.stream) s₀) := Region.sub_prefix (by omega_using [hS])
-  have hb : Region.Sub ⟨blk H s₀, H.P.B⟩ (inR (H := H.stream) s₀) := in_inR (by omega)
+  have hb : Region.Sub ⟨blk H s₀, H.P.B⟩ (inR (H := H.stream) s₀) := in_inR (Nat.le_refl _)
   have hs : Region.Sub ⟨scr s₀, H.P.so⟩ (scR sc s₀) := Region.sub_prefix (by omega_using [hf])
-  refine ⟨hk.x19, h20, h1, (hp.i_s.sub_left hv).sub_right hs, Offset.disjoint_base _ (Nat.le_refl _) (by omega_using [hB, hNL]),
+  refine ⟨hk.x19, h20, h1, (hp.i_s.sub_left hv).sub_right hs, Offset.disjoint_base _ (Nat.le_refl _) (hH.NB_le64),
     (hp.i_s.sub_left hb).sub_right hs, ?_, ?_⟩
   · rw [hk.rd, hk.wr]
     refine Covers.of_sub fun r hr => ?_
@@ -285,7 +285,7 @@ theorem cmp_ok {t : State} (hk : KO H s₀ t) (h20 : t.gpr .x20 = scr s₀) (h1 
       (hcs _ (by decide) (by decide)) hst
   simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
-  · have := save_inR hp (a := 0) (n := H.P.N) (by omega); rwa [z] at this
+  · have := save_inR hp (a := 0) (n := H.P.N) (Nat.le_trans (Nat.le_of_eq (Nat.zero_add _)) (Nat.le_add_right _ _)); rwa [z] at this
   · exact (Offset.base_disjoint (scr s₀) (k := H.P.so) (e := 8 * H.stream.W) (n := 56)
       (by show H.P.so ≤ 8 * ((H.P.so + 48) / 8); omega_using [])
       (by show 8 * ((H.P.so + 48) / 8) + 56 ≤ 2 ^ 64; omega_using [h8, hf])).symm
@@ -314,7 +314,7 @@ theorem out_ok {s : State} (hk : KO H s₀ s) (h21 : s.gpr .x21 = blk H s₀) :
       WP.mono (restore_ok H.stream kt.x23 (Nat.le_trans hp.hW (by decide)) kt.saved (by rw [kt.wr]; exact sR) hL)
         fun s' ⟨hm, _, _, hsp, hg, ho⟩ => ⟨t, kt, bt, hm, hsp, hg, ho⟩
   have x19_in : InRegions (s.rd ++ s.wr) (s.gpr .x19) H.P.N := by
-    have := Offset.contains_base (inn s₀) (d := 0) (n := H.P.N) (k := H.P.N + H.P.B) (by omega_using []) (by omega)
+    have := Offset.contains_base (inn s₀) (d := 0) (n := H.P.N) (k := H.P.N + H.P.B) (Nat.le_trans (Nat.le_of_eq (Nat.zero_add _)) (Nat.le_add_right _ _)) (Nat.two_pow_pos 64)
     rw [z] at this
     rw [hk.x19, hk.rd, hk.wr]
     exact ⟨_, List.mem_append_right _ iR, this⟩
@@ -323,7 +323,7 @@ theorem out_ok {s : State} (hk : KO H s₀ s) (h21 : s.gpr .x21 = blk H s₀) :
   · simp only [hDN', ↓reduceIte, List.append_assoc]
     rw [WP.block_append_iff]
     refine WP.mono (hH.shape.out s x19_in (by
-        rw [h21, hk.wr]; exact ⟨_, iR, Offset.contains_base _ (by omega_using [hS, hNL]) (by omega_using [hB, hNL])⟩)
+        rw [h21, hk.wr]; exact ⟨_, iR, Offset.contains_base _ (by omega_using [hS, hNL]) (hH.sizes.N_lt64)⟩)
       (by rw [hk.x19, h21]; exact Offset.base_disjoint _ (Nat.le_refl _) (by omega_using [hB, hNL])))
       fun s₁ ⟨g₁, rd₁, wr₁, sp₁, m₁⟩ => ?_
     rw [h21, hk.x19] at m₁
@@ -332,7 +332,7 @@ theorem out_ok {s : State} (hk : KO H s₀ s) (h21 : s.gpr .x21 = blk H s₀) :
     have k₁ : KO H s₀ s₁ := hk.keep rd₁ wr₁ sp₁ (fun r hr => g₁ r (k9 r hr)) f₁
       (by simp only [List.mem_singleton]; rintro r rfl; exact save_inR hp (by omega_using [hNL]))
     have b₁ : bytesAt s₁.mem (blk H s₀) H.D = (hH.md.digest (hH.md.stateAt s.mem (inn s₀))).take H.D := by
-      rw [bytesAt_take _ _ (Nat.le_of_lt hDN'), m₁, bytesAt_writeBytes_self' hdl (by omega_using [hB, hNL])]
+      rw [bytesAt_take _ _ (Nat.le_of_lt hDN'), m₁, bytesAt_writeBytes_self' hdl (hH.sizes.N_lt64)]
     have x21₁ : s₁.gpr .x21 = blk H s₀ := by rw [g₁ _ (by decide), h21]
     simp only [Hash.copy32]
     refine copy32_ok (src := .x21) (dst := .x24) (by decide) (by decide) 0 0 (H.D / 4) ⟨rfl, by omega_using [hB, hpad]⟩
@@ -346,14 +346,14 @@ theorem out_ok {s : State} (hk : KO H s₀ s) (h21 : s.gpr .x21 = blk H s₀) :
       (by
         rw [x21₁, k₁.x24, eD, add_ofNat]
         exact hp.i_p.sep (Offset.contains_base _ (by omega_using [hS, hpad]) (by omega_using [hB, hNL]))
-          (Offset.contains_base _ (by show 0 + H.D ≤ H.D; omega) (by omega)))
+          (Offset.contains_base _ (by show 0 + H.D ≤ H.D; omega) (Nat.two_pow_pos 64)))
       fun s₂ g₂ rd₂ wr₂ sp₂ m₂ => ?_
     rw [x21₁, k₁.x24, eD, z, z] at m₂
     refine fin s₂ (k₁.keep rd₂ wr₂ sp₂ (fun r hr => g₂ r (k9 r hr))
       (m₂ ▸ writeBytes_frame _ _ _ (R := opR (H := H.stream) s₀) (by
         rw [bytesAt_length]; exact Region.contains_self _ _))
       (by simp only [List.mem_singleton]; rintro r rfl; exact hp.p_s.symm.sub_left (save_sub hp))) ?_
-    rw [m₂, bytesAt_writeBytes_self' (bytesAt_length _ _ _) (by omega_using [hB, hpad]), b₁]
+    rw [m₂, bytesAt_writeBytes_self' (bytesAt_length _ _ _) (hH.sizes.D_lt64), b₁]
   · have eDN : H.D = H.P.N := by omega_using [hDN', hDN]
     simp only [hDN', ↓reduceIte, List.cons_append]
     refine wp_mov fun s₁ u₁ => ?_
@@ -369,7 +369,7 @@ theorem out_ok {s : State} (hk : KO H s₀ s) (h21 : s.gpr .x21 = blk H s₀) :
       (m₂ ▸ writeBytes_frame _ _ _ (R := opR (H := H.stream) s₀) (by
         rw [hdl, ← eDN]; exact Region.contains_self _ _))
       (by simp only [List.mem_singleton]; rintro r rfl; exact hp.p_s.symm.sub_left (save_sub hp))) ?_
-    rw [m₂, eDN, bytesAt_writeBytes_self' hdl (by omega_using [hB, hNL]), List.take_of_length_le (by omega_using [hdl])]
+    rw [m₂, eDN, bytesAt_writeBytes_self' hdl (hH.sizes.N_lt64), List.take_of_length_le (by omega_using [hdl])]
 
 /-! ## Correctness -/
 
@@ -419,7 +419,7 @@ theorem correct : WP isa H.hmacFin s₀ fun s' => abiPreserved s₀ s' ∧ (finG
     rw [hH.reloc s₂.mem s₃.mem (outer s₀) (inn s₀) i₃]
     exact Md.stateAt_of_repr hB0 hxl ((hH.repr _ _ _).1 rO₂)
   show bytesAt s'.mem (op s₀) hH.SH.digestBytes = hmacBlockKey hH.SH.H k0 text
-  rw [hH.hD, hm, m₅, e₄, ho, hH.md.blockAt_eq (by omega_using [hpad]) p₃, b₃, hmacBlockKey, ← dig,
+  rw [hH.hD, hm, m₅, e₄, ho, hH.md.blockAt_eq (hH.sizes.D_le_B) p₃, b₃, hmacBlockKey, ← dig,
     ← bytesAt_take _ _ hDN, hH.iterOk.link.hash_block hxl (bytesAt_length _ _ _)]
 
 end
