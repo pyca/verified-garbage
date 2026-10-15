@@ -3,12 +3,10 @@
 //! Public-key validation and exchange call the verified FFDH operations.
 //! Exchange secret exponentiation follows a fixed schedule over the public encoding
 //! length supplied at import, or the public sampling bound for generated keys.
-//! All secret exponentiation runs in the verified fixed-window code. Public
-//! exponents in the remaining Rust parameter checks may directly index a table.
+//! All domain arithmetic and secret exponentiation run in verified code.
 //! Private-key generation samples and validates the scalar in verified code.
 //! Rust obtains random bytes, retries rejected attempts and packs inputs and
-//! results. Domain validation on x86-64 and parameter-generation policy remain
-//! outside the Lean proof boundary.
+//! results. Parameter-generation policy remains outside the Lean proof boundary.
 //! Parameter generation uses the shared verified windowed Miller–Rabin round;
 //! Rust currently prepares its workspace and selects independent witnesses.
 //! Imported parameters receive structural and algebraic checks; callers must
@@ -27,8 +25,6 @@ mod x86_64;
 
 use crate::zeroize::zeroize;
 use alloc::vec::Vec;
-#[cfg(not(target_arch = "aarch64"))]
-use arithmetic::{Montgomery, minus_one, value_cmp};
 use arithmetic::{canonical, scalar};
 use core::fmt;
 
@@ -89,47 +85,19 @@ impl Parameters {
     /// with q, also odd 2<q<p-1, q|(p-1) and g^q mod p=1. Does not
     /// primality-test imported parameters.
     pub fn from_components(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Result<Self, Error> {
+        let (p, g, q) = (canonical(p), canonical(g), q.map(canonical));
         #[cfg(target_arch = "aarch64")]
-        {
-            let (p, g, q) = (canonical(p), canonical(g), q.map(canonical));
-            let domain = aarch64::Domain::new(p, g, q).ok_or(Error::InvalidParameters)?;
-            Ok(Self {
-                p: p.to_vec(),
-                g: g.to_vec(),
-                q: q.map(<[u8]>::to_vec),
-                domain,
-            })
-        }
-        #[cfg(not(target_arch = "aarch64"))]
-        Self::from_components_rust(p, g, q)
-    }
-
-    #[cfg(not(target_arch = "aarch64"))]
-    fn from_components_rust(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Result<Self, Error> {
-        let p = canonical(p);
-        let g = canonical(g);
-        let bits = arithmetic::bits(p);
-        if !(MIN_BITS..=MAX_BITS).contains(&bits) || p[p.len() - 1] & 1 == 0 {
-            return Err(Error::InvalidParameters);
-        }
-        let p1 = minus_one(p);
-        if value_cmp(g, &[1]).is_le() || value_cmp(g, &p1).is_ge() {
-            return Err(Error::InvalidParameters);
-        }
-        let q = q.map(canonical);
-        if let Some(q) = q
-            && (value_cmp(q, &[2]).is_le()
-                || q[q.len() - 1] & 1 == 0
-                || value_cmp(q, &p1).is_ge()
-                || !arithmetic::divides(q, &p1)
-                || value_cmp(&Montgomery::new(p).power_public(g, q), &[1]).is_ne())
-        {
+        let domain = aarch64::Domain::new(p, g, q).ok_or(Error::InvalidParameters)?;
+        #[cfg(target_arch = "x86_64")]
+        if !x86_64::check_domain(p, g, q) {
             return Err(Error::InvalidParameters);
         }
         Ok(Self {
             p: p.to_vec(),
             g: g.to_vec(),
             q: q.map(<[u8]>::to_vec),
+            #[cfg(target_arch = "aarch64")]
+            domain,
         })
     }
 
