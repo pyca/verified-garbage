@@ -46,27 +46,41 @@ theorem stage_ok (s : State) {k a v : Nat} (hk6 : k < 64) (ha : 0 < a) (ha' : a 
   have hm : 0#64 - ((BitVec.ofNat 64 v >>> k) &&& BitVec.signExtend 64 (1 : BitVec 32)) =
       0#64 - (if v.testBit k then 1 else 0) := by rw [bit_bottom hv]
   have c1 : 1 ≤ 64 - a ∧ 64 - a ≤ 63 := ⟨by omega, by omega⟩
-  by_cases hk : k = 0
-  · subst hk
-    refine ⟨_, by orun [stage, hbx, c1, List.flatMap_cons, List.flatMap_nil], ?_, fun r h1 h2 h3 h4 h5 h6 h7 => ?_, ?_, ?_, ?_⟩
-    · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hbx,
-        BitVec.xor_self, bit_bottom0 hv, ror_mask _ ha ha', sel_mask']
-      unfold shlIf
-      split
-      · exact shl3 _ _ _ ha ha'
-      · rfl
-    · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, h1, h2, h3, h4, h5, h6, h7, ite_false]
-    all_goals rfl
-  · have ck : 1 ≤ k ∧ k ≤ 63 := ⟨by omega, by omega⟩
-    refine ⟨_, by orun [stage, hbx, hk, c1, ck, List.flatMap_cons, List.flatMap_nil], ?_, fun r h1 h2 h3 h4 h5 h6 h7 => ?_, ?_, ?_, ?_⟩
-    · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hbx,
-        BitVec.xor_self, hm, ror_mask _ ha ha', sel_mask']
-      unfold shlIf
-      split
-      · exact shl3 _ _ _ ha ha'
-      · rfl
-    · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, h1, h2, h3, h4, h5, h6, h7, ite_false]
-    all_goals rfl
+  -- The mask's source, `rbx >>> k`, the only part that depends on whether `k = 0`; the rest of
+  -- the stage is run once.
+  obtain ⟨s₁, r₁, h9, g₁, m₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa
+      ([mvr .r9 .rbx] ++ (if k = 0 then [] else [.shift .shr .r9 k])) s = some s₁ ∧
+      s₁.gpr .r9 = BitVec.ofNat 64 v >>> k ∧ (∀ r, r ≠ .r9 → s₁.gpr r = s.gpr r) ∧
+      s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+    by_cases hk : k = 0
+    · subst hk
+      refine ⟨_, by orun [hbx], ?_, fun r hr => ?_, ?_, ?_, ?_⟩
+      · simp only [gpr_setReg, ite_true, hbx, BitVec.ushiftRight_zero]
+      · simp only [gpr_setReg, hr, ite_false]
+      all_goals rfl
+    · have ck : 1 ≤ k ∧ k ≤ 63 := ⟨by omega, by omega⟩
+      refine ⟨_, by orun [hbx, hk, ck], ?_, fun r hr => ?_, ?_, ?_, ?_⟩
+      · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, hbx]
+      · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, hr, ite_false]
+      all_goals rfl
+  have hax : s₁.gpr .rax = s.gpr .rax := g₁ _ (by decide)
+  have hdx : s₁.gpr .rdx = s.gpr .rdx := g₁ _ (by decide)
+  have hcx : s₁.gpr .rcx = s.gpr .rcx := g₁ _ (by decide)
+  rw [stage]
+  simp only [List.append_assoc]
+  rw [← List.append_assoc [mvr .r9 .rbx], runBlock_append, r₁, Option.bind_some]
+  refine ⟨_, by orun [c1, List.flatMap_cons, List.flatMap_nil], ?_, fun r h1 h2 h3 h4 h5 h6 h7 => ?_, ?_, ?_, ?_⟩
+  · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, h9, hax, hdx, hcx,
+      BitVec.xor_self, hm, ror_mask _ ha ha', sel_mask']
+    unfold shlIf
+    split
+    · exact shl3 _ _ _ ha ha'
+    · rfl
+  · simp only [gpr_setReg, gpr_setFlags, gpr_arithFlags, h1, h2, h3, h4, h5, h6, h7, ite_false]
+    exact g₁ r h5
+  · simp only [mem_setReg, mem_setFlags, mem_arithFlags]; exact m₁
+  · simp only [rd_setReg, rd_setFlags, rd_arithFlags]; exact rd₁
+  · simp only [wr_setReg, wr_setFlags, wr_arithFlags]; exact wr₁
 
 /-- The top two of three words. -/
 theorem top2 (x y z : BitVec 64) : (x ++ y ++ z).extractLsb' 64 128 = x ++ y := by
