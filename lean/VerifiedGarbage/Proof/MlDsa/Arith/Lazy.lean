@@ -83,7 +83,7 @@ theorem blockN_bfly_get' (op : Word → Word → Zq → Word × Word) (w : Poly)
     rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel, ↓reduceIte]
+      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 theorem block_ok (op : Word → Word → Zq → Word × Word) :
     BlkOk (fun f len k st t => blockN (bfly op) f len (zetas k) st t) op :=

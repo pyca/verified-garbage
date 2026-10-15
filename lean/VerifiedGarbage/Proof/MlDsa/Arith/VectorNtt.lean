@@ -43,7 +43,7 @@ theorem blockN_bfly_get' (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hlen :
     rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel, ↓reduceIte]
+      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 /-- `blockN_bflyInv_get`, for the butterflies of the block up to
 `start + t` only. -/
@@ -62,7 +62,7 @@ theorem blockN_bflyInv_get' (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hle
     rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel, ↓reduceIte]
+      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 theorem nttBlk_ok : BlkOk (fun f len k st t => blockN bfly f len (zetas k) st t)
     (fun x y z => (x + z * y, x - z * y)) :=
