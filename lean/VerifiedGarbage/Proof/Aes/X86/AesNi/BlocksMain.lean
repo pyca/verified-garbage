@@ -162,11 +162,10 @@ theorem keys_stable {nr : Nat} {w : List Byte} {s₀ s s' : State} (hp : BPre s�
   have he : ∀ j ≤ nr, s'.ea (at_ .eax (16 * j)) = s.ea (at_ .eax (16 * j)) := fun j _ => by
     rw [ea_at, ea_at, hg]
   refine ⟨hK.le, fun j hj => by rw [he j hj, hrd, hwr]; exact hK.keys j hj, fun j hj i hi => ?_⟩
-  rw [he j hj, ← hK.bytes j hj i hi, ea_at, heax]
-  congr 1
-  exact hf.readW (r := ⟨addr (bSchP s₀) (16 * j), 16⟩) (Region.contains_self _ _) (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr
-    exact (hp.dSD.sub_left (part_sub_reg hp.fS (by omega))).symm.symm) (by decide)
+  rw [he j hj, ← hK.bytes j hj i hi, ea_at, heax,
+    hf.readW (r := ⟨addr (bSchP s₀) (16 * j), 16⟩) (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (hp.dSD.sub_left (part_sub_reg hp.fS (by omega))).symm.symm) (by decide)]
 
 theorem kpe_stable {s₀ : State} (hp : BPre s₀) : Stable (KPe s₀) s₀ := fun s s' ⟨hK, hc, ha⟩ hg hrd hwr hf => by
   have hnr : bRounds s₀ ≤ 14 := by rcases hp.rounds with h | h | h <;> omega

@@ -515,6 +515,6 @@ theorem rest_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
   · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.gpr]; rfl
   · rw [u₆.gpr, u₅.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.other _ (by decide), hbp, arg_ofNat s₀ 5, sub_ofNat (by omega_arith)]
-    congr 1; unfold restOf leftOf; omega_arith
+    exact congrArg (BitVec.ofNat 32) (by unfold restOf leftOf; omega_arith)
 
 end VG.Proof.CmacAes.Stream.X86

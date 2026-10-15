@@ -9,6 +9,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
 
 /-!
@@ -245,12 +246,12 @@ theorem blocks_correct {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
 theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s) :
     ∃ t s', Exec isa encryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s s' :=
-  blocks_correct encrypt4_cryptOk (by decide +kernel) (by decide +kernel) (by decide +kernel) s hs
+  blocks_correct encrypt4_cryptOk (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa decryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s s' :=
-  blocks_correct decrypt4_cryptOk (by decide +kernel) (by decide +kernel) (by decide +kernel) s hs
+  blocks_correct decrypt4_cryptOk (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre
     (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pub encryptBlocks := by

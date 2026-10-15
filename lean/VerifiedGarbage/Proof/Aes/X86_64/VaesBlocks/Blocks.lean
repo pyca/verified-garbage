@@ -5,6 +5,7 @@ meta import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -435,13 +436,13 @@ theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksX86_64 Spec.Aes
     ∃ t s', Exec isa Impl.Aes.X86_64.VaesBlocks.encryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksX86_64 Spec.Aes.cipher).post s s' := by
   obtain ⟨t, s', he, h⟩ := encrypt_correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa Impl.Aes.X86_64.VaesBlocks.decryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).post s s' := by
   obtain ⟨t, s', he, h⟩ := decrypt_correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pre
     (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pub Impl.Aes.X86_64.VaesBlocks.encryptBlocks := by

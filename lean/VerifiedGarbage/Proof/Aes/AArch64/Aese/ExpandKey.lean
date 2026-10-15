@@ -7,6 +7,7 @@ meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 meta import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
@@ -511,7 +512,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
 theorem expandKey_correct (s : State) (hs : Proof.Aes.expandKeyAArch64.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ Proof.Aes.expandKeyAArch64.post s s' := by
   obtain ⟨t, s', he, h₂, h₁⟩ :=
-    WP.gprs (rs := preserved) (correct (pre_of hs)) (by decide +kernel) (by decide +kernel)
+    WP.gprs (rs := preserved) (correct (pre_of hs)) (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyAArch64.pre

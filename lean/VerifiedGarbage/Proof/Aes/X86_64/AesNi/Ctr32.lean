@@ -9,6 +9,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 meta import VerifiedGarbage.Spec.Gcm.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -620,7 +621,7 @@ def satState : State where
 theorem ctr32_correct (s : State) (hs : ctr32X86_64.pre s) :
     ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ ctr32X86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem ctr32_ct : ConstantTime isa ctr32X86_64.pre ctr32X86_64.pub ctr32 := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9]) ?_
