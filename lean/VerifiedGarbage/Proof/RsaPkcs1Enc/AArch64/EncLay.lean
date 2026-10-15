@@ -327,11 +327,11 @@ end Ctx
 
 /-- The registers a block writes, other than the callee-saved ones. -/
 macro "enc_cs_tac" : tactic => `(tactic| plain_simp_names (
-  intro r hr _
-  revert hr
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false]
-  rintro (h | h | h | h | h | h | h | h | h | h | h) <;> subst h <;>
-    simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, reduceCtorEq, ite_false]))
+                   intro r hr _
+                   revert hr
+                   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false]
+                   rintro (h | h | h | h | h | h | h | h | h | h | h) <;> subst h <;>
+                     simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, reduceCtorEq, ite_false]))
 
 /-- Side conditions of reads and writes at offsets from `Q`. -/
 macro "enc_disch" : tactic => `(tactic| first

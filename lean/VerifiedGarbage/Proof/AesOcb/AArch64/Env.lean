@@ -47,14 +47,14 @@ theorem imm_lit (k : Nat) (h : k < 2 ^ 16) : BitVec.setWidth 64 (BitVec.ofNat 16
 
 /-- Runs a block of the instructions the AES-OCB code uses. -/
 macro "orun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VG.AArch64.addr,
-    State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
-    sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,
-    Impl.AesGcm.AArch64.mov, Impl.AesGcm.AArch64.ptr, Impl.AesGcm.AArch64.imm, ld, st,
-    tagO, ofsO, ckO, sumO, ldO, l0O, lO, tmpO, t2O, ohO, savO, tlO, aadO, alenO, nO, nlO, botO, o0O, bufO, scrO,
-    List.cons_append, List.nil_append, List.append_assoc, reduceCtorEq, ↓reduceIte, Nat.reduceLT,
-    Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod,
-    and_true, true_and, eq_self_iff_true, write8, read8, BitVec.shiftLeft_zero, BitVec.reduceSetWidth, BitVec.add_zero, $ts,*]) <;> try rfl)
+                   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VG.AArch64.addr,
+                     State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
+                     sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,
+                     Impl.AesGcm.AArch64.mov, Impl.AesGcm.AArch64.ptr, Impl.AesGcm.AArch64.imm, ld, st,
+                     tagO, ofsO, ckO, sumO, ldO, l0O, lO, tmpO, t2O, ohO, savO, tlO, aadO, alenO, nO, nlO, botO, o0O, bufO, scrO,
+                     List.cons_append, List.nil_append, List.append_assoc, reduceCtorEq, ↓reduceIte, Nat.reduceLT,
+                     Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod,
+                     and_true, true_and, eq_self_iff_true, write8, read8, BitVec.shiftLeft_zero, BitVec.reduceSetWidth, BitVec.add_zero, $ts,*]) <;> try rfl)
 
 theorem runBlock_append (a b : List Instr) (s : State) :
     runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by

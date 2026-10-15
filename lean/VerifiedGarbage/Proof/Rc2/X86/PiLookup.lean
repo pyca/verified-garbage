@@ -41,23 +41,23 @@ syntax "lrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| lrun) => `(tactic| lrun [])
   | `(tactic| lrun [$ls,*]) => `(tactic| plain_simp_names (
-      apply WP.of_runBlock
-      refine ⟨?_, ?_, ?_⟩
-      rotate_left
-      · set_option linter.unusedSimpArgs false in
-        simp only [runBlock_cons, runStep_some, runBlock_nil, imm, rr,
-        exec, readSrc, ea_memOp, State.load32, State.store32, State.load128, State.store128, execAlu, execShift,
-        XOp.exec, Option.map_some, Option.bind_some,
-        gpr_setReg, mem_setReg, rd_setReg, wr_setReg, xmm_setReg,
-        gpr_setFlags, mem_setFlags, rd_setFlags, wr_setFlags, xmm_setFlags,
-        gpr_arithFlags, mem_arithFlags, rd_arithFlags, wr_arithFlags, xmm_arithFlags,
-        gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne,
-        Option.some.injEq, exists_eq_left',
-        ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceMul, Nat.reduceAdd, Nat.reduceLT,
-        Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff,
-        and_self, eq_self_iff_true, not_false_eq_true, true_and, and_true, List.cons_append,
-        List.nil_append, $ls,*]
-        first | done | rfl))
+                       apply WP.of_runBlock
+                       refine ⟨?_, ?_, ?_⟩
+                       rotate_left
+                       · set_option linter.unusedSimpArgs false in
+                         simp only [runBlock_cons, runStep_some, runBlock_nil, imm, rr,
+                         exec, readSrc, ea_memOp, State.load32, State.store32, State.load128, State.store128, execAlu, execShift,
+                         XOp.exec, Option.map_some, Option.bind_some,
+                         gpr_setReg, mem_setReg, rd_setReg, wr_setReg, xmm_setReg,
+                         gpr_setFlags, mem_setFlags, rd_setFlags, wr_setFlags, xmm_setFlags,
+                         gpr_arithFlags, mem_arithFlags, rd_arithFlags, wr_arithFlags, xmm_arithFlags,
+                         gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne,
+                         Option.some.injEq, exists_eq_left',
+                         ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceMul, Nat.reduceAdd, Nat.reduceLT,
+                         Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff,
+                         and_self, eq_self_iff_true, not_false_eq_true, true_and, and_true, List.cons_append,
+                         List.nil_append, $ls,*]
+                         first | done | rfl))
 
 /-! ## Lanes -/
 

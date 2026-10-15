@@ -46,15 +46,15 @@ theorem ECtx.of_frm {m m' : Mem} {B : Addr} {w c : Nat} {rs : List (Nat × Nat)}
 /-- Disjointness of a range from each of a list of literal ranges of
 Miller–Rabin. -/
 macro "w_disj" : tactic => `(tactic| plain_simp_names (
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.cons_append,
-    List.nil_append, slot, hdrBytes, aN, aAcc, aTmp, aY, aXm, aB, aR1, aRm1, aE, aT0, kG, kFlag, kPlen, kV, kT0,
-    sCnt, kBits, kT2, kWords, kT1, kU, sFn, sMinv]
-  and_intros <;> omega_arith))
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.cons_append,
+                     List.nil_append, slot, hdrBytes, aN, aAcc, aTmp, aY, aXm, aB, aR1, aRm1, aE, aT0, kG, kFlag, kPlen, kV, kT0,
+                     sCnt, kBits, kT2, kWords, kT1, kU, sFn, sMinv]
+                   and_intros <;> omega_arith))
 
 /-- The ranges of a list of literal ranges are `KMut`. -/
 macro "w_mut" : tactic => `(tactic| plain_simp_names (
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-  and_intros <;> first | exact KMut.ofSlot _ _ _ | exact KMut.hdr (by decide)))
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+                   and_intros <;> first | exact KMut.ofSlot _ _ _ | exact KMut.hdr (by decide)))
 
 /-- What a squaring changes. -/
 def sqRanges (w : Nat) : List (Nat × Nat) :=

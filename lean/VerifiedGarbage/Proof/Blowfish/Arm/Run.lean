@@ -147,19 +147,19 @@ syntax "brun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| brun) => `(tactic| brun [])
   | `(tactic| brun [$ls,*]) => `(tactic| plain_simp_names (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,
-        encodable_of_lt, encodable_768, encodable_4096, encodable_4160,
-        Op2.eval, imm, sch, xL, xR, fReg, qReg, acc, mReg, lane, ones, tmp, rowPtr, rows, pPtr,
-        gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg, c_setReg,
-        gpr_subFlags, mem_subFlags, rd_subFlags, wr_subFlags, sp_subFlags, z_subFlags, c_subFlags,
-        State.load32, store32_eq, State.load8, store8_eq, sp_store, gpr_store, rd_store, wr_store,
-        mem_store, z_store, c_store, ↓ite_carry, ite_true, ite_false, ↓reduceIte, reduceCtorEq,
-        Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub,
-        and_self, Option.map_some,
-        Option.some.injEq, exists_eq_left', List.cons_append, List.nil_append, and_true, true_and,
-        $ls,*]))
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+                         encodable_of_lt, encodable_768, encodable_4096, encodable_4160,
+                         Op2.eval, imm, sch, xL, xR, fReg, qReg, acc, mReg, lane, ones, tmp, rowPtr, rows, pPtr,
+                         gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg, c_setReg,
+                         gpr_subFlags, mem_subFlags, rd_subFlags, wr_subFlags, sp_subFlags, z_subFlags, c_subFlags,
+                         State.load32, store32_eq, State.load8, store8_eq, sp_store, gpr_store, rd_store, wr_store,
+                         mem_store, z_store, c_store, ↓ite_carry, ite_true, ite_false, ↓reduceIte, reduceCtorEq,
+                         Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub,
+                         and_self, Option.map_some,
+                         Option.some.injEq, exists_eq_left', List.cons_append, List.nil_append, and_true, true_and,
+                         $ls,*]))
 
 /-! ## Offsets from a pointer -/
 

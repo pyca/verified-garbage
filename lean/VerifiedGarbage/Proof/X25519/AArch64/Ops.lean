@@ -64,8 +64,8 @@ theorem Kp.sub {W W' : List Reg} {s s' : State} (h : Kp W s s') (hs : W ⊆ W') 
 
 /-- Closes `W ⊆ W'` for lists of registers, some of them variables. -/
 macro "sub_regs" : tactic => `(tactic| plain_simp_names (simp only [List.cons_subset, List.append_subset, List.nil_subset,
-  List.mem_cons, List.mem_append, true_or, or_true, and_true, List.not_mem_nil, or_false, and_self,
-  List.cons_append, List.nil_append]))
+                    List.mem_cons, List.mem_append, true_or, or_true, and_true, List.not_mem_nil, or_false, and_self,
+                    List.cons_append, List.nil_append]))
 
 theorem Sc.of_kp {b : Addr} {W : List Reg} {s s' : State} (hs : Sc b s) (h : Kp W s s')
     (hW : Reg.x3 ∉ W) : Sc b s' :=

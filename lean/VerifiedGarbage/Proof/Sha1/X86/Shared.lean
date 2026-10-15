@@ -69,7 +69,7 @@ def updateWide : Contract X86.isa :=
 unfold cheaply). -/
 macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names (simp only [Proof.Sha1.updateX86, updateWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-    State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?))
+                      State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?))
 
 /-- `update` only reads its arguments. -/
 theorem updateWide_of {code : Prog isa} (hv : Verified X86.target code Proof.Sha1.updateX86)

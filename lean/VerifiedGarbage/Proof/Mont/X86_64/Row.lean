@@ -56,7 +56,7 @@ theorem FreshX.head {t : Reg} {ts : List Reg} (h : FreshX (t :: ts)) :
 `decide` for literal registers (most uses, and much cheaper than `grind`),
 else by `grind` on the memberships. -/
 macro "sub_regs" : tactic => `(tactic| plain_simp_names (first | decide | (intro q hq; simp only [List.mem_cons,
-  List.mem_append, List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; grind)))
+                    List.mem_append, List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; grind)))
 
 theorem mulStep_eq (t c ai : Reg) (src : Src) :
     mulStep t c ai src = Impl.X25519.X86_64.mulStep t c ai src := rfl

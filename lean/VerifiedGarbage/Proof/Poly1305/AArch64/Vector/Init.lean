@@ -249,8 +249,8 @@ theorem loadH_ok (s : State) (hm : (s.gpr .x16).toNat = 2 ^ 26 - 1) :
 /-- Reads of every register through the writes so far. -/
 macro "allstep" : tactic =>
   `(tactic| plain_simp_names (simp (disch := first | decide | with_reducible assumption) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne,
-    RegUpd.gpr_setV, RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.v_write, State.read, Size.bits,
-    BitVec.setWidth_eq]))
+                      RegUpd.gpr_setV, RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.v_write, State.read, Size.bits,
+                      BitVec.setWidth_eq]))
 
 /-- The end of `setup`. -/
 def tail : List Instr :=

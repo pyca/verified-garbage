@@ -29,10 +29,10 @@ open VG.Impl.Bignum.Public (aN aAcc aTmp aR2 aY aOne sCnt)
 
 /-- Disjointness of a header word from `montSetup`'s ranges, and their bounds. -/
 macro "kt_disj" : tactic => `(tactic| plain_simp_names (
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, msRanges, msTail,
-    List.cons_append, List.nil_append, slot, hdrBytes, aE, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, kChecks, kE, sFn, sMinv, kRand, kLen, Public.sK,
-    kRandLen, kUsed, kOut, kUsedP, Public.sMask]
-  and_intros <;> omega_arith))
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, msRanges, msTail,
+                     List.cons_append, List.nil_append, slot, hdrBytes, aE, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, kChecks, kE, sFn, sMinv, kRand, kLen, Public.sK,
+                     kRandLen, kUsed, kOut, kUsedP, Public.sMask]
+                   and_intros <;> omega_arith))
 
 /-- The octets of `out`, past the scratch space, survive changes inside it. -/
 theorem outBytes_inScr' {B : Addr} {Z k : Nat} {m m' : Mem} {op : Addr} (hin : InScr B Z m m')

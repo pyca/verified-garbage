@@ -61,8 +61,8 @@ structure WinLay (K : WinCfg) (size : Nat) : Prop where
 
 /-- `x ∈ l` for the window method's lists. -/
 macro "win_mem" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.mem_append,
-  List.mem_singleton, true_or, or_true, winSlots, winWs, winRo, winOther, rcbW, rcbR,
-  List.cons_append, List.nil_append]))
+                   List.mem_singleton, true_or, or_true, winSlots, winWs, winRo, winOther, rcbW, rcbR,
+                   List.cons_append, List.nil_append]))
 
 theorem winWs_slots (K : WinCfg) : ∀ x ∈ winWs K, x ∈ winSlots K := by
   intro x hx

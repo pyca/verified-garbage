@@ -118,16 +118,16 @@ syntax "rrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| rrun) => `(tactic| rrun [])
   | `(tactic| rrun [$ls,*]) => `(tactic| plain_simp_names (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
-        exec, State.read, addr, State.load, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
-        RegUpd.wr_write, RegUpd.v_write, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV,
-        RegUpd.wr_setV, RegUpd.v_setV,
-        VOp.eval, Size.bits, BitVec.setWidth_eq, BitVec.shiftLeft_zero,
-        BitVec.add_zero, BitVec.ofNat_eq_ofNat, BitVec.zero_width_append,
-        BitVec.cast_eq, Option.bind_some, Option.map_some, Option.some.injEq,
-        exists_eq_left', ite_true, ite_false, reduceCtorEq,
-        Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, true_and, and_true, $ls,*]))
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
+                         exec, State.read, addr, State.load, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
+                         RegUpd.wr_write, RegUpd.v_write, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV,
+                         RegUpd.wr_setV, RegUpd.v_setV,
+                         VOp.eval, Size.bits, BitVec.setWidth_eq, BitVec.shiftLeft_zero,
+                         BitVec.add_zero, BitVec.ofNat_eq_ofNat, BitVec.zero_width_append,
+                         BitVec.cast_eq, Option.bind_some, Option.map_some, Option.some.injEq,
+                         exists_eq_left', ite_true, ite_false, reduceCtorEq,
+                         Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, true_and, and_true, $ls,*]))
 
 end VG.Proof.Rc4.AArch64

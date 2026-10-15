@@ -98,10 +98,10 @@ theorem ykOk {p : Params} {a o l : Nat} (ha : a < 4) (hl : 0 < l) (h : o + l ≤
 
 /-- Closes the arithmetic of a check of one buffer, in each case of `η` if it needs it. -/
 macro "safe1 " hF:term:max : tactic => `(tactic| plain_simp_names (
-  try simp only [VG.Impl.MlDsa.X86.KeyGen.oACC, VG.Impl.MlDsa.X86.KeyGen.oP, VG.Impl.MlDsa.X86.KeyGen.oT0]
-  first
-    | omega_arith
-    | rcases ($hF).eta with ⟨_, e⟩ | ⟨_, e⟩ <;> simp only [e] at * <;> omega_arith))
+                   try simp only [VG.Impl.MlDsa.X86.KeyGen.oACC, VG.Impl.MlDsa.X86.KeyGen.oP, VG.Impl.MlDsa.X86.KeyGen.oT0]
+                   first
+                     | omega_arith
+                     | rcases ($hF).eta with ⟨_, e⟩ | ⟨_, e⟩ <;> simp only [e] at * <;> omega_arith))
 
 /-- A buffer of `scratch` apart from the accumulator, `Â` and `s₂`. -/
 theorem SafeR.sc {p : Params} (hF : PFacts p) {np nr : Nat} (hnp : np ≤ p.ℓ + p.k) (hnr : nr ≤ p.k) {o l : Nat}

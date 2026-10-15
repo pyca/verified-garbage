@@ -40,7 +40,7 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass
 open VG.Proof.Ed25519.AArch64 (Keeps read_x)
 
 local macro "nmem" : tactic => `(tactic| plain_simp_names (simp only [nafLive,jacWinSlots,winRo,winOther,rcbR,rcbW,
-  List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true]))
+                    List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true]))
 
 theorem nafEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size e j : Nat}
     {β : Nat → BitVec 8} (hL : JacWinLay K size) (hJ : K.J=52)

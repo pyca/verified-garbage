@@ -113,9 +113,9 @@ theorem le272 {x : Nat} (h : x + 1376 ≤ 2 ^ 32) : x + 272 ≤ 2 ^ 32 := by ome
 unfold cheaply). -/
 macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names (simp only [Proof.Sha512.compressX86, Proof.Sha512.updateX86, Proof.Sha512.finalizeX86,
-    Proof.Sha512.countX86, compressWide, updateWide, finalizeWide, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd,
-    State.withRegions_wr] $(loc)?))
+                      Proof.Sha512.countX86, compressWide, updateWide, finalizeWide, VG.X86.arg_withRegions,
+                      VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd,
+                      State.withRegions_wr] $(loc)?))
 
 theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
     Verified X86.target Impl.Sha512.X86.compress compressWide :=
@@ -279,8 +279,8 @@ def finalizeDigestWide (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byt
 /-- Rewrites `finKD` and `finalizeDigestWide` at a narrowed state. -/
 macro "narrowD" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names (simp only [MdStream.X86.finKD, Proof.Sha512.countX86, finalizeDigestWide, MdStream.X86.count,
-    VG.X86.arg_withRegions, VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem,
-    State.withRegions_rd, State.withRegions_wr] $(loc)?))
+                      VG.X86.arg_withRegions, VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem,
+                      State.withRegions_rd, State.withRegions_wr] $(loc)?))
 
 theorem finalizeDigestWide_verified {code : Prog X86.isa} {o : List Instr} {D : Nat}
     {iv : Spec.Sha512.HashValue} {digest : List Byte → List Byte}

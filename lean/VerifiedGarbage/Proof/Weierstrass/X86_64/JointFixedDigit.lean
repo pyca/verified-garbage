@@ -25,8 +25,8 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
 local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlots,jointLive,jointWork,
-  nafSlots,cachedSlots,jacCoords,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,
-  List.not_mem_nil,or_false] at * <;> grind))
+                   nafSlots,cachedSlots,jacCoords,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,
+                   List.not_mem_nil,or_false] at * <;> grind))
 
 /-- `R = R + E` for the affine point `E` (`Joint.fixedAdd`). -/
 theorem jointFixedAdd_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat}

@@ -67,9 +67,9 @@ theorem run_append {a b : List Instr} {s s₁ s₂ : State}
   rw [runBlock_append, h₁, Option.bind_some, h₂]
 
 macro "keep_tac" : tactic => `(tactic| plain_simp_names (
-  refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
-  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hq, ite_false]))
+                   refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
+                   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hq, ite_false]))
 
 /-- A source that reads `v` from any state agreeing with `s` but on `eax`. -/
 def SrcOk (s : State) (src : Src) (v : BitVec 32) : Prop :=

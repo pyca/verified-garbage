@@ -123,17 +123,17 @@ theorem rowFirst_value (a b0 b1 b2 b3 : Word) :
 /-- Run a straight block of register arithmetic, reading registers through
 the writes (literal registers decide each `if`). -/
 macro "reg_exec" hz:term : tactic => `(tactic| plain_simp_names (
-  apply WP.of_runBlock
-  simp only [rowAcc, rowFirst, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
-    RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-    BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, $hz:term,
-    Option.some.injEq, exists_eq_left']))
+                   apply WP.of_runBlock
+                   simp only [rowAcc, rowFirst, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+                     RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+                     BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, $hz:term,
+                     Option.some.injEq, exists_eq_left']))
 
 /-- The registers but those written are kept. -/
 macro "reg_keeps" : tactic => `(tactic| plain_simp_names (
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr, ite_false]))
+                   intro r hr
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+                   simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr, ite_false]))
 
 theorem rowFirst_ok (s : State) (hz : s.gpr .x10 = 0) :
     WP isa (.block (rowFirst .x3 .x12 .x13 .x14 .x15 .x4 .x5 .x6 .x7 .x21)) s fun t =>

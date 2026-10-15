@@ -71,8 +71,8 @@ structure JacWinLay (K : JacWinCfg) (size : Nat) : Prop where
 
 /-- `x ∈ l` for the method's lists. -/
 macro "jw_mem" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.mem_append,
-  List.mem_singleton, true_or, or_true, jwSlots, jwWs, jwRo, jwOther, rcbW, rcbR,
-  List.cons_append, List.nil_append]))
+                   List.mem_singleton, true_or, or_true, jwSlots, jwWs, jwRo, jwOther, rcbW, rcbR,
+                   List.cons_append, List.nil_append]))
 
 variable {K : JacWinCfg} {size : Nat}
 

@@ -92,13 +92,13 @@ theorem LoopKeep.arithFlags (s : State) (v : BitVec 32) (c o : Bool) : LoopKeep 
 /-- `LoopKeep s t` for `t` made from `s` by writes of `eax`, `ecx`, `edx`, the
 flags and registers other than `xmm0`. -/
 macro "loop_keep" : tactic => `(tactic| plain_simp_names (
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-  · intro r ha hc hd
-    simp only [gpr_setXmm, gpr_setReg, ha, hc, hd, gpr_setFlags, gpr_arithFlags, ite_false]
-  all_goals simp (disch := decide) only [xmm_setXmm_of_ne, xmm_setReg', xmm_setFlags',
-    xmm_arithFlags', mem_setXmm, mem_setReg, mem_setFlags, mem_arithFlags, rd_setXmm, rd_setReg, rd_setFlags,
-    rd_arithFlags, wr_setXmm, wr_setReg, wr_setFlags, wr_arithFlags, syms_setXmm', syms_setReg',
-    syms_setFlags', syms_arithFlags']))
+                   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+                   · intro r ha hc hd
+                     simp only [gpr_setXmm, gpr_setReg, ha, hc, hd, gpr_setFlags, gpr_arithFlags, ite_false]
+                   all_goals simp (disch := decide) only [xmm_setXmm_of_ne, xmm_setReg', xmm_setFlags',
+                     xmm_arithFlags', mem_setXmm, mem_setReg, mem_setFlags, mem_arithFlags, rd_setXmm, rd_setReg, rd_setFlags,
+                     rd_arithFlags, wr_setXmm, wr_setReg, wr_setFlags, wr_arithFlags, syms_setXmm', syms_setReg',
+                     syms_setFlags', syms_arithFlags']))
 
 /-- The state of the scan with entries `0 … j - 1` visited, from `s₀`. -/
 structure ScanAt (s₀ : State) (tab : Nat → Nat → BitVec 32) (idx : Nat → BitVec 32) (j : Nat)

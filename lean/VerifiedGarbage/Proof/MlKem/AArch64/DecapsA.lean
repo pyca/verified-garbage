@@ -67,8 +67,8 @@ def deL (P : KemLay) : Layout where
 
 /-- Arithmetic on the offsets and the buffers of `deL`. -/
 macro "dek" : tactic => `(tactic| plain_simp_names (
-  simp -failIfUnchanged only [deL, List.getD_cons_zero, List.getD_cons_succ, Layout.sc]
-  first | decide | kom))
+                   simp -failIfUnchanged only [deL, List.getD_cons_zero, List.getD_cons_succ, Layout.sc]
+                   first | decide | kom))
 
 theorem pre_of (hP : P.Wf) {s₀ : State} (h : (decapsAArch64 P).pre s₀) : Pre P (deL P) s₀ := by
   obtain ⟨rd, wr, d02, d03, d12, d13, d23, sp16, k0, k1, k2, k3⟩ := h

@@ -318,7 +318,7 @@ theorem prods_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
 
 /-- Apart from each range of a list written out. -/
 local macro "apart" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.not_mem_nil, or_false,
-  forall_eq_or_imp, forall_eq] <;> omega))
+                   forall_eq_or_imp, forall_eq] <;> omega))
 
 set_option hygiene false in
 /-- `omega` on the layout alone of `lin_ok` and `linR_ok`: first without its disjunctions,

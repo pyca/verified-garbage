@@ -67,15 +67,15 @@ syntax "hrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| hrun) => `(tactic| hrun [])
   | `(tactic| hrun [$ls,*]) => `(tactic| plain_simp_names (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-        execAlu, arithFlags_eq, Proof.MlKem.X86.ea_at, State.load32, State.load8, State.store32,
-        State.store8, Reg8.reg, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-        RegUpd.cf_setReg, RegUpd.zf_setReg, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags,
-        RegUpd.wr_setFlags, setFlags_cf, setFlags_zf,
-        Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
-        ite_false, reduceCtorEq, BitVec.sub_self, sub_zero', true_and, and_true, $ls,*]))
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+                         execAlu, arithFlags_eq, Proof.MlKem.X86.ea_at, State.load32, State.load8, State.store32,
+                         State.store8, Reg8.reg, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+                         RegUpd.cf_setReg, RegUpd.zf_setReg, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags,
+                         RegUpd.wr_setFlags, setFlags_cf, setFlags_zf,
+                         Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
+                         ite_false, reduceCtorEq, BitVec.sub_self, sub_zero', true_and, and_true, $ls,*]))
 
 /-- `s'` differs from `s` only in the registers `rs` (flags and memory
 aside), with the same permissions. -/

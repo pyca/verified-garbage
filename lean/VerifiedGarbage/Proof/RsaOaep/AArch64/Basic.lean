@@ -281,12 +281,12 @@ registers' writes kept folded (`RegUpd`), with the facts `hs`. -/
 syntax "oaep_run" " [" Lean.Parser.Tactic.simpLemma,* "]" : tactic
 macro_rules
   | `(tactic| oaep_run [$hs,*]) => `(tactic| plain_simp_names (apply WP.of_runBlock; simp only [List.cons_append, List.nil_append,
-      runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load, State.store, addr, Size.bits,
-      Size.bytes, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, Nat.reduceAdd, and_self,
-      ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
-      RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, RegUpd.v_write,
-      RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.mem_addWithCarry, RegUpd.rd_addWithCarry,
-      RegUpd.wr_addWithCarry, RegUpd.sp_addWithCarry, v_addWithCarry, $hs,*]))
+                       runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load, State.store, addr, Size.bits,
+                       Size.bytes, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, Nat.reduceAdd, and_self,
+                       ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
+                       RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, RegUpd.v_write,
+                       RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.mem_addWithCarry, RegUpd.rd_addWithCarry,
+                       RegUpd.wr_addWithCarry, RegUpd.sp_addWithCarry, v_addWithCarry, $hs,*]))
 
 /-! ## Masks -/
 

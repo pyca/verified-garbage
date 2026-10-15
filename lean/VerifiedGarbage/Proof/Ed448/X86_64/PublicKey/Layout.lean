@@ -295,11 +295,11 @@ theorem ne_cs {r d : Reg} (hr : r ∈ calleeSaved) (hd : d ∉ calleeSaved) : r 
 
 /-- Callee-saved registers, through writes of others. -/
 macro "cs_tac" : tactic => `(tactic| plain_simp_names (
-  intro r hr
-  revert hr
-  simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
-  rintro (h | h | h | h | h | h | h) <;> subst h <;>
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
+                   intro r hr
+                   revert hr
+                   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
+                   rintro (h | h | h | h | h | h | h) <;> subst h <;>
+                     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
 
 namespace Ctx
 

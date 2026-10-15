@@ -138,8 +138,8 @@ theorem exec_subI (s : State) (d : Reg) (v : BitVec 32) :
 /-- Room through the writes of registers other than `sb`. -/
 macro "room" : tactic => `(tactic|
   plain_simp_names (refine Room.congr ‹Room _› ?_ ?_
-   · simp only [gpr_setReg, gpr_arithFlags, gpr_rorF, gpr_setMem, sb, reduceCtorEq, ↓reduceIte]
-   · rfl))
+                    · simp only [gpr_setReg, gpr_arithFlags, gpr_rorF, gpr_setMem, sb, reduceCtorEq, ↓reduceIte]
+                    · rfl))
 
 /-- The key's words. -/
 def kwS (s : State) : Quad := (slotW s (keySlot 0), slotW s (keySlot 1), slotW s (keySlot 2), slotW s (keySlot 3))

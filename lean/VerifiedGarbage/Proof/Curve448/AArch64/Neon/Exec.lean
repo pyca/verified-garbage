@@ -96,11 +96,11 @@ theorem scr_of {s t : State} {base : Addr} (hs : Scr s base) (hg : t.gpr = s.gpr
 /-- Read vector registers through the writes after them (distinctness from the context). -/
 macro "vred" : tactic =>
   `(tactic| plain_simp_names (simp (disch := assumption) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne, RegUpd.mem_setV,
-    setMem_mem, setMem_v]))
+                      setMem_mem, setMem_v]))
 
 /-- `Scr` of a state the vector code built from one where it holds. -/
 macro "scr" : tactic =>
   `(tactic| plain_simp_names (exact scr_of (by assumption) (by simp only [RegUpd.gpr_setV, setMem_gpr])
-    (by simp only [RegUpd.wr_setV, setMem_wr])))
+                      (by simp only [RegUpd.wr_setV, setMem_wr])))
 
 end VG.Proof.Curve448.AArch64.Neon

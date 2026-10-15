@@ -166,11 +166,11 @@ def eidx : Reg → Nat
 
 /-- Decides a fact about the offsets in the buffers. -/
 macro "edecide" : tactic => `(tactic| plain_simp_names (first
-  | decide
-  | ((try simp only [lay_sizes, layM_sizes, eSz, okW, eidx, kRegs, List.all_cons, List.all_nil, List.all_append,
-        List.map_cons, List.map_nil, trip, Bool.and_true])
-     (try have := (‹KemLay.WF _›).scr)
-     kdecide)))
+                    | decide
+                    | ((try simp only [lay_sizes, layM_sizes, eSz, okW, eidx, kRegs, List.all_cons, List.all_nil, List.all_append,
+                          List.map_cons, List.map_nil, trip, Bool.and_true])
+                       (try have := (‹KemLay.WF _›).scr)
+                       kdecide)))
 
 theorem EnEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : EnEnv K s₀ s) {xs : List Reg} {W : List (Nat × Nat × Nat)}
     (hk : KeptX xs ((lay s₀ K).RL W) s s') (hx : ∀ r ∈ [Reg.r4, .r6, .r7, .r8], r ∉ xs) (hW : W.all (okW K) = true) :

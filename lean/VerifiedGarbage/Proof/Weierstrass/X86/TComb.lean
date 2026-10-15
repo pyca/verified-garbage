@@ -56,20 +56,20 @@ structure TCombVals (K : TCombCfg) (C : Curve) (tbl : List (List (Nat × Nat))) 
 
 /-- `x ∈ l` for the comb's lists, through `toComb`. -/
 macro "tcomb_mem" : tactic => `(tactic| plain_simp_names (first
-  | list_mem
-  | (simp only [List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true, combSlots,
-      combWs, combRo, rcbW, rcbR, List.cons_append, List.nil_append, TCombCfg.toComb])))
+                    | list_mem
+                    | (simp only [List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true, combSlots,
+                        combWs, combRo, rcbW, rcbR, List.cons_append, List.nil_append, TCombCfg.toComb])))
 
 /-- `a ≠ b` (or a conjunction of such, or `a ∉ [b, …]`) from `h`, the conjunction of `¬ x = y`
 that a `Nodup` of the slots simplifies to, in either orientation: not `grind`, which takes a tenth
 of a second for each. -/
 macro "nd_ne " h:ident : tactic => `(tactic| plain_simp_names (
-  try simp only [ne_eq, List.mem_cons, List.not_mem_nil, or_false, not_or]
-  repeat' apply And.intro
-  all_goals first
-    | nd_find $h:ident
-    | simp only [ne_eq, $h:ident, not_false_eq_true]
-    | exact Ne.symm (by simp only [ne_eq, $h:ident, not_false_eq_true])))
+                   try simp only [ne_eq, List.mem_cons, List.not_mem_nil, or_false, not_or]
+                   repeat' apply And.intro
+                   all_goals first
+                     | nd_find $h:ident
+                     | simp only [ne_eq, $h:ident, not_false_eq_true]
+                     | exact Ne.symm (by simp only [ne_eq, $h:ident, not_false_eq_true])))
 
 end VG.Proof.Weierstrass.X86
 

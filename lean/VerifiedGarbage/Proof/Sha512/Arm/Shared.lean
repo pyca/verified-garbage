@@ -96,9 +96,9 @@ theorem le272 {x : Nat} (h : x + 1376 ≤ 2 ^ 32) : x + 272 ≤ 2 ^ 32 := by ome
 not unfold cheaply). -/
 macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names (simp only [Proof.Sha512.compressArm, Proof.Sha512.updateArm, Proof.Sha512.finalizeArm,
-    Proof.Sha512.countArm, compressWide, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
-    VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp, State.withRegions_mem,
-    State.withRegions_rd, State.withRegions_wr] $(loc)?))
+                      Proof.Sha512.countArm, compressWide, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
+                      VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp, State.withRegions_mem,
+                      State.withRegions_rd, State.withRegions_wr] $(loc)?))
 
 theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
     Verified Arm.target Impl.Sha512.Arm.compress compressWide :=
@@ -255,8 +255,8 @@ def finalizeDigestWide (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byt
 /-- Rewrites `finKD` and `finalizeDigestWide` at a narrowed state. -/
 macro "narrowD" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names (simp only [MdStream.Arm.finKD, Proof.Sha512.countArm, finalizeDigestWide, MdStream.Arm.count,
-    VG.Arm.stackArg_withRegions, VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp,
-    State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?))
+                      VG.Arm.stackArg_withRegions, VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp,
+                      State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?))
 
 theorem finalizeDigestWide_verified {code : Prog Arm.isa} {o : List Instr} {D : Nat}
     {iv : Spec.Sha512.HashValue} {digest : List Byte → List Byte}

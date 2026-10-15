@@ -145,13 +145,13 @@ open VG.Proof.AesGcm.AArch64 (covers_off in_off in_left covers_left Others Regs)
 
 /-- Runs a block of the instructions the AES-GCM-SIV code uses. -/
 macro "grun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr,
-    State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
-    sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,
-    Impl.AesGcm.AArch64.mov, Impl.AesGcm.AArch64.ptr, Impl.AesGcm.AArch64.imm, tagO, akO, ekO, hO, yO,
-    cbO, ccO, tagPO, bO, skO, revO, ghO, scrO, List.cons_append, List.nil_append,
-    List.append_assoc, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff,
-    Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, and_true, true_and, eq_self_iff_true, $ts,*]) <;> try rfl)
+                   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr,
+                     State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
+                     sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,
+                     Impl.AesGcm.AArch64.mov, Impl.AesGcm.AArch64.ptr, Impl.AesGcm.AArch64.imm, tagO, akO, ekO, hO, yO,
+                     cbO, ccO, tagPO, bO, skO, revO, ghO, scrO, List.cons_append, List.nil_append,
+                     List.append_assoc, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff,
+                     Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, and_true, true_and, eq_self_iff_true, $ts,*]) <;> try rfl)
 
 /-- The public arguments. -/
 structure Prm where

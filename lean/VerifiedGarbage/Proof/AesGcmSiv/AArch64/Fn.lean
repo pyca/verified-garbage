@@ -383,23 +383,23 @@ theorem tagOut_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (hT : TagSlot 
 /-- Proves that a region is disjoint from each of a list of regions: parts
 of `W`, the data, or the key schedule. -/
 macro "disj_tac" L:term : tactic => `(tactic| plain_simp_names (
-  simp only [List.forall_mem_cons, List.mem_nil_iff, false_imp_iff, implies_true, and_true]
-  repeat' apply And.intro
-  all_goals first
-    | (with_reducible refine Lay.w_w $L (.inl ?_) ?_ ?_) <;> decide
-    | (with_reducible refine Lay.w_w $L (.inr ?_) ?_ ?_) <;> decide
-    | (with_reducible refine Lay.d_w' $L ?_) <;> decide
-    | (with_reducible refine (Lay.d_w' $L ?_).symm) <;> decide
-    | (with_reducible refine Lay.k_w' $L ?_) <;> decide
-    | (with_reducible refine Lay.n_w' $L ?_) <;> decide
-    | (with_reducible refine Lay.a_w' $L ?_) <;> decide
-    | with_reducible exact Lay.k_d $L
-    | with_reducible exact Lay.n_d $L
-    | with_reducible exact Lay.a_d $L
-    | (with_reducible refine Lay.t_w' $L ?_) <;> decide
-    | with_reducible exact Lay.t_d $L
-    | with_reducible exact (Lay.t_d $L).symm
-    | with_reducible exact (Lay.d_w $L).symm))
+                   simp only [List.forall_mem_cons, List.mem_nil_iff, false_imp_iff, implies_true, and_true]
+                   repeat' apply And.intro
+                   all_goals first
+                     | (with_reducible refine Lay.w_w $L (.inl ?_) ?_ ?_) <;> decide
+                     | (with_reducible refine Lay.w_w $L (.inr ?_) ?_ ?_) <;> decide
+                     | (with_reducible refine Lay.d_w' $L ?_) <;> decide
+                     | (with_reducible refine (Lay.d_w' $L ?_).symm) <;> decide
+                     | (with_reducible refine Lay.k_w' $L ?_) <;> decide
+                     | (with_reducible refine Lay.n_w' $L ?_) <;> decide
+                     | (with_reducible refine Lay.a_w' $L ?_) <;> decide
+                     | with_reducible exact Lay.k_d $L
+                     | with_reducible exact Lay.n_d $L
+                     | with_reducible exact Lay.a_d $L
+                     | (with_reducible refine Lay.t_w' $L ?_) <;> decide
+                     | with_reducible exact Lay.t_d $L
+                     | with_reducible exact (Lay.t_d $L).symm
+                     | with_reducible exact (Lay.d_w $L).symm))
 
 end VG.Proof.AesGcmSiv.AArch64
 

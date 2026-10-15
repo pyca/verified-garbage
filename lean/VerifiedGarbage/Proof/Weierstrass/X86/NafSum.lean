@@ -24,7 +24,7 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Wei
 open VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass
 
 local macro "jmem" : tactic => `(tactic| plain_simp_names (simp only [nafLive,nafTableLive,jacCoords,nafSlots,nafWrites,
-  winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true]))
+                    winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true]))
 
 /-- Complete Jacobian addition followed by copying the result into R. -/
 theorem nafAdd_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e e' : Nat}

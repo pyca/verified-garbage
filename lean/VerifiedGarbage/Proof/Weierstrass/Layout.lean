@@ -128,13 +128,13 @@ theorem mem_ladRo_ladR {L : LadderCfg} {x : Nat} (h : x ∈ ladRo L) : x ∈ lad
 
 /-- `∀ x ∈ l₁, x ∈ l₂` for lists written out. -/
 macro "sub_list" : tactic => `(tactic| plain_simp_names (show (_ : List Nat) ⊆ _; simp only [List.cons_subset,
-  List.nil_subset, List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true,
-  and_true, and_self, ladR, ladRo, ladSlots, ladWs, rcbW, rcbR, List.cons_append, List.nil_append]))
+                   List.nil_subset, List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true,
+                   and_true, and_self, ladR, ladRo, ladSlots, ladWs, rcbW, rcbR, List.cons_append, List.nil_append]))
 
 /-- `x ∈ l` for a list written out. -/
 macro "mem_list" : tactic => `(tactic| plain_simp_names (simp only [List.mem_cons, List.mem_append,
-  List.mem_singleton, true_or, or_true, ladR, ladRo, ladSlots, ladWs, rcbW, rcbR, List.cons_append,
-  List.nil_append]))
+                   List.mem_singleton, true_or, or_true, ladR, ladRo, ladSlots, ladWs, rcbW, rcbR, List.cons_append,
+                   List.nil_append]))
 
 theorem mem_ladW_D {L : LadderCfg} : ∀ w ∈ (rcbW L.S L.D).map (·, 8 * L.M.n) ++ [(L.M.tmp, 8 * L.M.n)],
     w ∈ ladW L := by

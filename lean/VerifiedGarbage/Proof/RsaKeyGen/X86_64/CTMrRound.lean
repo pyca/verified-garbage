@@ -39,8 +39,8 @@ open VG.Proof.MlKem.X86_64
 
 /-- An entry of `MrPub.vs`. -/
 macro "mem_vs" : tactic => `(tactic| plain_simp_names (first
-  | (simp only [MrPub.vs, List.mem_cons, true_or]; done)
-  | simp only [MrPub.vs, List.mem_cons, true_or, or_true]))
+                    | (simp only [MrPub.vs, List.mem_cons, true_or]; done)
+                    | simp only [MrPub.vs, List.mem_cons, true_or, or_true]))
 
 /-- The header words of `MrH`, from `HP`. -/
 theorem HP.mrh {p : MrPub} {i u : Nat} {ex : List (Nat × BitVec 64)} {s : State}

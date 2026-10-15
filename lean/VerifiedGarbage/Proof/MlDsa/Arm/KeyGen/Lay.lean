@@ -157,16 +157,16 @@ syntax "lsep " term:max (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| lsep $hF) => `(tactic| lsep $hF [])
   | `(tactic| lsep $hF [$ls,*]) => `(tactic| plain_simp_names (
-      have := ($hF).k; have := ($hF).l; have := ($hF).kl; have := ($hF).scr; have := ($hF).lens
-      have := ($hF).eta; have := ($hF).pk; have := ($hF).sk
-      try dsimp only [$ls,*]
-      try dsimp only [sepB, sepAll, inB, tri, ix, aP, sP, tP, t1P, t0P, sc, oP, oSS, oKL, oHX, oSA, oSB, oT0]
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [sepB, sepAll, inB, lay_sizes, List.getD_cons_zero,
-        List.getD_cons_succ, List.length_cons, List.length_nil, List.all_cons, List.all_nil, tri, ix,
-        Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq, Bool.and_true, Bool.true_and,
-        true_and, and_true, true_or, or_true, Nat.zero_add, oP, oSS, oKL, oHX, oSA, oSB, oT0, aP, sP, tP, t1P, t0P,
-        sc, false_or, or_false, decide_eq_true_iff, $ls,*]
-      and_intros <;> omega_arith))
+                       have := ($hF).k; have := ($hF).l; have := ($hF).kl; have := ($hF).scr; have := ($hF).lens
+                       have := ($hF).eta; have := ($hF).pk; have := ($hF).sk
+                       try dsimp only [$ls,*]
+                       try dsimp only [sepB, sepAll, inB, tri, ix, aP, sP, tP, t1P, t0P, sc, oP, oSS, oKL, oHX, oSA, oSB, oT0]
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [sepB, sepAll, inB, lay_sizes, List.getD_cons_zero,
+                         List.getD_cons_succ, List.length_cons, List.length_nil, List.all_cons, List.all_nil, tri, ix,
+                         Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq, Bool.and_true, Bool.true_and,
+                         true_and, and_true, true_or, or_true, Nat.zero_add, oP, oSS, oKL, oHX, oSA, oSB, oT0, aP, sP, tP, t1P, t0P,
+                         sc, false_or, or_false, decide_eq_true_iff, $ls,*]
+                       and_intros <;> omega_arith))
 
 end VG.Proof.MlDsa.Arm.KeyGen

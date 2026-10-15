@@ -199,25 +199,25 @@ syntax "lay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| lay) => `(tactic| lay [])
   | `(tactic| lay [$ls,*]) => `(tactic| plain_simp_names (
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [VG.Proof.MlKem.X86_64.keepB, VG.Proof.MlDsa.X86_64.KeyGen.sepB_same,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_bp, VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_bx,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_12, VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_bx,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_bx,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_12,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_12, VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_bp,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_bp,
-        VG.Proof.MlDsa.X86_64.KeyGen.inB_rbp, VG.Proof.MlDsa.X86_64.KeyGen.inB_rbx,
-        VG.Proof.MlDsa.X86_64.KeyGen.inB_r12, VG.Proof.MlDsa.X86_64.KeyGen.inB_r13,
-        VG.Proof.MlDsa.X86_64.KeyGen.inB_rbxW, VG.Proof.MlDsa.X86_64.KeyGen.inB_r12W,
-        VG.Proof.MlDsa.X86_64.KeyGen.inB_r13W, List.all_cons, List.all_nil,
-        Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, Bool.and_true, Bool.true_and, true_and, and_true, $ls,*]
-      set_option linter.unusedSimpArgs false in
-      try simp only [VG.Proof.MlDsa.X86_64.KeyGen.scrLen, VG.Spec.MlDsa.scratchWords,
-        VG.Impl.MlDsa.X86_64.KeyGen.oP, VG.Impl.MlDsa.X86_64.KeyGen.oSA, VG.Impl.MlDsa.X86_64.KeyGen.oSB,
-        VG.Impl.MlDsa.X86_64.KeyGen.oSA4, VG.Impl.MlDsa.X86_64.KeyGen.oR4,
-        VG.Impl.MlDsa.X86_64.KeyGen.oHX, VG.Impl.MlDsa.X86_64.KeyGen.oKL, VG.Impl.MlKem.X86_64.oSS,
-        VG.Impl.MlKem.X86_64.oSV, VG.Impl.MlDsa.X86_64.KeyGen.oT0, $ls,*]
-      and_intros <;> omega_arith))
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [VG.Proof.MlKem.X86_64.keepB, VG.Proof.MlDsa.X86_64.KeyGen.sepB_same,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_bp, VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_bx,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_12, VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_bx,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_bx,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_12,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_12, VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_bp,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_bp,
+                         VG.Proof.MlDsa.X86_64.KeyGen.inB_rbp, VG.Proof.MlDsa.X86_64.KeyGen.inB_rbx,
+                         VG.Proof.MlDsa.X86_64.KeyGen.inB_r12, VG.Proof.MlDsa.X86_64.KeyGen.inB_r13,
+                         VG.Proof.MlDsa.X86_64.KeyGen.inB_rbxW, VG.Proof.MlDsa.X86_64.KeyGen.inB_r12W,
+                         VG.Proof.MlDsa.X86_64.KeyGen.inB_r13W, List.all_cons, List.all_nil,
+                         Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, Bool.and_true, Bool.true_and, true_and, and_true, $ls,*]
+                       set_option linter.unusedSimpArgs false in
+                       try simp only [VG.Proof.MlDsa.X86_64.KeyGen.scrLen, VG.Spec.MlDsa.scratchWords,
+                         VG.Impl.MlDsa.X86_64.KeyGen.oP, VG.Impl.MlDsa.X86_64.KeyGen.oSA, VG.Impl.MlDsa.X86_64.KeyGen.oSB,
+                         VG.Impl.MlDsa.X86_64.KeyGen.oSA4, VG.Impl.MlDsa.X86_64.KeyGen.oR4,
+                         VG.Impl.MlDsa.X86_64.KeyGen.oHX, VG.Impl.MlDsa.X86_64.KeyGen.oKL, VG.Impl.MlKem.X86_64.oSS,
+                         VG.Impl.MlKem.X86_64.oSV, VG.Impl.MlDsa.X86_64.KeyGen.oT0, $ls,*]
+                       and_intros <;> omega_arith))
 
 end VG.Proof.MlDsa.X86_64.KeyGen

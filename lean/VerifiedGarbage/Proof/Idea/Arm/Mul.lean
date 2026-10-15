@@ -78,9 +78,9 @@ theorem mul_ofNat32 (x y : BitVec 32) : x * y = BitVec.ofNat 32 (x.toNat * y.toN
 abbrev MaskOk (s : State) : Prop := s.gpr .r12 = 65535
 
 macro "keep_tac" : tactic => `(tactic| plain_simp_names (
-  refine ⟨fun q hq => ?_, rfl, rfl, rfl, rfl⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
-  simp only [RegUpd.gpr_setReg, hq, ite_false]))
+                   refine ⟨fun q hq => ?_, rfl, rfl, rfl, rfl⟩
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
+                   simp only [RegUpd.gpr_setReg, hq, ite_false]))
 
 theorem mul_run (d a b : Reg) (hb : b ≠ .r8) (s : State) (hm : MaskOk s) :
     ∃ s', runBlock isa (mulCode d a b) s = some s' ∧

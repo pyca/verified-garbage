@@ -76,9 +76,9 @@ theorem CombLay.apart₂ {K : CombCfg} {size : Nat} (hL : CombLay K size) {x y :
 
 /-- `x ∈ l` for the comb's lists. -/
 macro "comb_mem" : tactic => `(tactic| plain_simp_names (first
-  | list_mem
-  | (simp only [List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true, combSlots,
-      combWs, combRo, rcbW, rcbR, List.cons_append, List.nil_append])))
+                    | list_mem
+                    | (simp only [List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true, combSlots,
+                        combWs, combRo, rcbW, rcbR, List.cons_append, List.nil_append])))
 
 /-- A slot read only is apart from what the comb writes. -/
 theorem combW_ro {K : CombCfg} {size : Nat} (hL : CombLay K size) {x : Nat} (hx : x ∈ combRo K) :

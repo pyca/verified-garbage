@@ -27,7 +27,7 @@ open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono mulStep_ok)
 
 /-- `sub_regs`, also when `simp` alone closes the goal. -/
 macro "sub_regs'" : tactic => `(tactic| plain_simp_names (intro q hq; simp only [List.mem_cons, List.mem_append,
-  List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; first | done | grind))
+                   List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; first | done | grind))
 
 /-! ## Loads and stores -/
 

@@ -31,9 +31,9 @@ open Spec.Weierstrass
 /-- `x ∈ l₂` from `h : x ∈ l₁`, for literal lists with `l₁`'s elements in `l₂`: not by
 `omega` on the disjunctions, which splits cases exponentially. -/
 macro "sub_mem " h:term : tactic => `(tactic| plain_simp_names (
-  refine (show (_ : List _) ⊆ _ from ?_) $h
-  simp only [List.cons_subset, List.nil_subset, List.mem_cons, eq_self_iff_true, true_or,
-    or_true, and_true, and_self]))
+                   refine (show (_ : List _) ⊆ _ from ?_) $h
+                   simp only [List.cons_subset, List.nil_subset, List.mem_cons, eq_self_iff_true, true_or,
+                     or_true, and_true, and_self]))
 
 /-- `R = 16 R` in Jacobian coordinates, in place: from `(X : Y : Z)` standing
 for `[e]P` (or with `Z = 0`) to a triple standing for `[16 e]P`. -/

@@ -128,14 +128,14 @@ theorem SafeC.cons_sc {p : Params} (hF : VFacts p) {nr : Nat} (hnr : nr ≤ p.k)
 
 /-- Proves `SafeC` of a list of buffers of `scratch` below `Â` by `SafeC.cons_sc`, with `hnr : nr ≤ p.k`. -/
 macro "safeCs " hF:term:max hnr:term:max : tactic => `(tactic| plain_simp_names (
-  repeat' (first
-    | with_reducible exact VG.Proof.MlDsa.X86.Verify.SafeC.nil $hF $hnr
-    | apply VG.Proof.MlDsa.X86.Verify.SafeC.cons_sc $hF $hnr)
-  all_goals (
-    have := ($hF).w1; have := ($hF).k; have := ($hF).l; have := ($hF).ct
-    try simp only [VG.Impl.MlDsa.X86.Verify.oP, VG.Impl.MlDsa.X86.Verify.oB, VG.Impl.MlDsa.X86.Verify.oACC,
-      VG.Impl.MlDsa.X86.Verify.oSS, VG.Impl.MlDsa.X86.Verify.oCT]
-    omega_arith)))
+                   repeat' (first
+                     | with_reducible exact VG.Proof.MlDsa.X86.Verify.SafeC.nil $hF $hnr
+                     | apply VG.Proof.MlDsa.X86.Verify.SafeC.cons_sc $hF $hnr)
+                   all_goals (
+                     have := ($hF).w1; have := ($hF).k; have := ($hF).l; have := ($hF).ct
+                     try simp only [VG.Impl.MlDsa.X86.Verify.oP, VG.Impl.MlDsa.X86.Verify.oB, VG.Impl.MlDsa.X86.Verify.oACC,
+                       VG.Impl.MlDsa.X86.Verify.oSS, VG.Impl.MlDsa.X86.Verify.oCT]
+                     omega_arith)))
 
 theorem ci_of_sc {p : Params} {s₀ s : State} (h : SC p s₀ s) : CI p s₀ 0 false 0 s := by
   obtain ⟨hh, ehh, hi⟩ := h.vb.hint

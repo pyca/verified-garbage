@@ -96,7 +96,7 @@ private theorem jointByteTest : ∀ b : BitVec 8,
     (b.setWidth 64 != 0)=decide (nafMagnitude b≠0) := by decide +kernel
 
 local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlots,jointLive,jointWork,
-  jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))
+                   jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))
 
 theorem allocatedJointFixedDigit_ok
     {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v j : Nat}

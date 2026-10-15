@@ -19,7 +19,7 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass
 
 local macro "jmem" : tactic => `(tactic| plain_simp_names (simp only [nafLive,jacWinSlots,jacWinWrites,
-  winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true]))
+                    winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true]))
 
 /-- Complete Jacobian addition followed by copying the result into R. -/
 theorem nafAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size e e' : Nat}

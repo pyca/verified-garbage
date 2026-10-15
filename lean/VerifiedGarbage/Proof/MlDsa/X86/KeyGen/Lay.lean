@@ -71,26 +71,26 @@ syntax "lay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| lay) => `(tactic| lay [])
   | `(tactic| lay [$ls,*]) => `(tactic| plain_simp_names (
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [VG.Proof.MlKem.X86.Top.Lay.apart, VG.Proof.MlKem.X86.Top.Lay.ok,
-        VG.Proof.MlKem.X86.Top.Lay.okW, VG.Proof.MlKem.X86.Top.Lay.sep, VG.Impl.MlDsa.X86.KeyGen.Arg.ok, VG.Impl.MlDsa.X86.KeyGen.sb,
-        VG.Impl.MlDsa.X86.KeyGen.pB, VG.Impl.MlDsa.X86.KeyGen.aB, VG.Impl.MlDsa.X86.KeyGen.sB,
-        VG.Impl.MlDsa.X86.KeyGen.tB, VG.Impl.MlDsa.X86.KeyGen.t1B, VG.Impl.MlDsa.X86.KeyGen.t0B,
-        VG.Impl.MlDsa.X86.KeyGen.ssB, VG.Impl.MlDsa.X86.KeyGen.kS,
-        VG.Proof.MlDsa.X86.KeyGen.YK_n, VG.Proof.MlDsa.X86.KeyGen.YK_sc,
-        VG.Proof.MlDsa.X86.KeyGen.YK_alen0, VG.Proof.MlDsa.X86.KeyGen.YK_alen1,
-        VG.Proof.MlDsa.X86.KeyGen.YK_alen2, VG.Proof.MlDsa.X86.KeyGen.YK_alen3,
-        VG.Proof.MlDsa.X86.KeyGen.YK_awr0, VG.Proof.MlDsa.X86.KeyGen.YK_awr1,
-        VG.Proof.MlDsa.X86.KeyGen.YK_awr2, VG.Proof.MlDsa.X86.KeyGen.YK_awr3,
-        List.all_cons, List.all_nil, List.length_cons, List.length_nil, Bool.and_eq_true, Bool.or_eq_true,
-        decide_eq_true_eq, Bool.and_true, Bool.true_and, Bool.true_or, Bool.or_true, true_and, and_true,
-        true_or, or_true, ↓reduceIte, $ls,*]
-      set_option linter.unusedSimpArgs false in
-      all_goals try simp only [VG.Proof.MlDsa.X86.KeyGen.scrLen, VG.Impl.MlDsa.X86.KeyGen.oP,
-        VG.Impl.MlDsa.X86.KeyGen.oSA, VG.Impl.MlDsa.X86.KeyGen.oSB, VG.Impl.MlDsa.X86.KeyGen.oHX,
-        VG.Impl.MlDsa.X86.KeyGen.oKL, VG.Impl.MlDsa.X86.KeyGen.oACC, VG.Impl.MlDsa.X86.KeyGen.oSS,
-        VG.Impl.MlDsa.X86.KeyGen.oT0, decide_eq_true_eq, $ls,*]
-      all_goals (and_intros <;> omega_arith)))
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [VG.Proof.MlKem.X86.Top.Lay.apart, VG.Proof.MlKem.X86.Top.Lay.ok,
+                         VG.Proof.MlKem.X86.Top.Lay.okW, VG.Proof.MlKem.X86.Top.Lay.sep, VG.Impl.MlDsa.X86.KeyGen.Arg.ok, VG.Impl.MlDsa.X86.KeyGen.sb,
+                         VG.Impl.MlDsa.X86.KeyGen.pB, VG.Impl.MlDsa.X86.KeyGen.aB, VG.Impl.MlDsa.X86.KeyGen.sB,
+                         VG.Impl.MlDsa.X86.KeyGen.tB, VG.Impl.MlDsa.X86.KeyGen.t1B, VG.Impl.MlDsa.X86.KeyGen.t0B,
+                         VG.Impl.MlDsa.X86.KeyGen.ssB, VG.Impl.MlDsa.X86.KeyGen.kS,
+                         VG.Proof.MlDsa.X86.KeyGen.YK_n, VG.Proof.MlDsa.X86.KeyGen.YK_sc,
+                         VG.Proof.MlDsa.X86.KeyGen.YK_alen0, VG.Proof.MlDsa.X86.KeyGen.YK_alen1,
+                         VG.Proof.MlDsa.X86.KeyGen.YK_alen2, VG.Proof.MlDsa.X86.KeyGen.YK_alen3,
+                         VG.Proof.MlDsa.X86.KeyGen.YK_awr0, VG.Proof.MlDsa.X86.KeyGen.YK_awr1,
+                         VG.Proof.MlDsa.X86.KeyGen.YK_awr2, VG.Proof.MlDsa.X86.KeyGen.YK_awr3,
+                         List.all_cons, List.all_nil, List.length_cons, List.length_nil, Bool.and_eq_true, Bool.or_eq_true,
+                         decide_eq_true_eq, Bool.and_true, Bool.true_and, Bool.true_or, Bool.or_true, true_and, and_true,
+                         true_or, or_true, ↓reduceIte, $ls,*]
+                       set_option linter.unusedSimpArgs false in
+                       all_goals try simp only [VG.Proof.MlDsa.X86.KeyGen.scrLen, VG.Impl.MlDsa.X86.KeyGen.oP,
+                         VG.Impl.MlDsa.X86.KeyGen.oSA, VG.Impl.MlDsa.X86.KeyGen.oSB, VG.Impl.MlDsa.X86.KeyGen.oHX,
+                         VG.Impl.MlDsa.X86.KeyGen.oKL, VG.Impl.MlDsa.X86.KeyGen.oACC, VG.Impl.MlDsa.X86.KeyGen.oSS,
+                         VG.Impl.MlDsa.X86.KeyGen.oT0, decide_eq_true_eq, $ls,*]
+                       all_goals (and_intros <;> omega_arith)))
 
 /-- `lay`, with the facts of the parameter set `hF : PFacts p`: for any `η` if the check does not
 depend on it, and otherwise in each case of `η`. -/

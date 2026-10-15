@@ -148,9 +148,9 @@ theorem keep_iff {rs : List Reg} {s s' : State} :
 
 /-- The lemmas that prove `Keep` after a symbolic execution (`run_block`). -/
 macro "keep_simp" : tactic => `(tactic| plain_simp_names (
-  set_option linter.unusedSimpArgs false in
-  simp (config := {decide := true}) only [keep_iff, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
-    implies_true, and_self, and_true, true_and, ite_true, ite_false]))
+                   set_option linter.unusedSimpArgs false in
+                   simp (config := {decide := true}) only [keep_iff, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
+                     implies_true, and_self, and_true, true_and, ite_true, ite_false]))
 
 theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
 

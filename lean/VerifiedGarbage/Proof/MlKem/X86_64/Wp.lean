@@ -123,16 +123,16 @@ syntax "xrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| xrun) => `(tactic| xrun [])
   | `(tactic| xrun [$ls,*]) => `(tactic| plain_simp_names (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-        readSrc32, execAlu, execAlu32, execShift, execShift32, execMul, State.setReg32, arithFlags_eq,
-        ea_at, add_ofNat_zero, State.load64, State.load32, State.load8, State.store64, State.store32,
-        State.store8, setReg_gpr, setReg_mem, setReg_rd, setReg_wr, setReg_cf, setReg_zf,
-        setFlags_gpr, setFlags_mem, setFlags_rd, setFlags_wr, setFlags_cf, setFlags_zf,
-        Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
-        ite_false, reduceCtorEq, BitVec.setWidth_32_64_32, BitVec.sub_self, sx1, sx2, sx3, sx4, sx5, sx8,
-        sx16, sx32, sxQ, true_and, and_true, $ls,*]))
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+                         readSrc32, execAlu, execAlu32, execShift, execShift32, execMul, State.setReg32, arithFlags_eq,
+                         ea_at, add_ofNat_zero, State.load64, State.load32, State.load8, State.store64, State.store32,
+                         State.store8, setReg_gpr, setReg_mem, setReg_rd, setReg_wr, setReg_cf, setReg_zf,
+                         setFlags_gpr, setFlags_mem, setFlags_rd, setFlags_wr, setFlags_cf, setFlags_zf,
+                         Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
+                         ite_false, reduceCtorEq, BitVec.setWidth_32_64_32, BitVec.sub_self, sx1, sx2, sx3, sx4, sx5, sx8,
+                         sx16, sx32, sxQ, true_and, and_true, $ls,*]))
 
 /-! ## What a block keeps -/
 

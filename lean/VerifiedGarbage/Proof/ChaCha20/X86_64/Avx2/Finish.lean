@@ -838,7 +838,7 @@ theorem read4 {m : Mem} {buf : Addr} {d : Nat} {v0 v1 v2 v3 : BitVec 64}
 /-- Read back a stored quadword. -/
 local macro "qread" : tactic => `(tactic|
   plain_simp_names (simp (disch := decide) only [storeAll, constPairs, List.foldl_cons, List.foldl_nil, Nat.reduceAdd,
-    readW64_off, Mem.readW_writeW_self64]))
+                      readW64_off, Mem.readW_writeW_self64]))
 
 theorem consts_mem (m : Mem) (buf : Addr) : Consts (storeAll buf constPairs m) buf := by
   have R16 := read4 (m := storeAll buf constPairs m) (buf := buf) (d := 128)

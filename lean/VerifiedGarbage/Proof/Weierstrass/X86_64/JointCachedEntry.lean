@@ -40,8 +40,8 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps)
 
 local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlots,jointLive,jointWork,
-  nafSlots,cachedSlots,jacCoords,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,
-  List.not_mem_nil,or_false] at * <;> grind))
+                   nafSlots,cachedSlots,jacCoords,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,
+                   List.not_mem_nil,or_false] at * <;> grind))
 
 structure JointLookupLayout (c : Joint.Cfg) (size : Nat) : Prop where
   layout : JointLayout c size

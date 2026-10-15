@@ -50,8 +50,8 @@ theorem KeyOk.keep {z : Spec.Idea.Schedule} {rs : List Reg} {s s' : State} (h : 
     exact h.last j hj
 
 macro "run_simp" : tactic => `(tactic| plain_simp_names (simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
-  execAlu, execShift, readSrc, State.load64, isa, Option.map_some, Option.bind_some,
-  signExtend_one, signExtend_mask]))
+                    execAlu, execShift, readSrc, State.load64, isa, Option.map_some, Option.bind_some,
+                    signExtend_one, signExtend_mask]))
 
 /-- `r := r ⊙ [rdi + d]`. -/
 theorem mulKey_run (r : Reg) (d : Nat) (s : State)

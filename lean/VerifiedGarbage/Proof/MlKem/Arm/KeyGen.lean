@@ -128,11 +128,11 @@ def kidx : Reg → Nat
 
 /-- Decides a fact about the offsets in the buffers. -/
 macro "ldecide" : tactic => `(tactic| plain_simp_names (first
-  | decide
-  | ((try simp only [lay_sizes, kSz, kidx, okW, kRegs, List.all_cons, List.all_nil, List.all_append, List.map_cons,
-        List.map_nil, trip, Bool.and_true])
-     (try have := (‹KemLay.WF _›).scr)
-     kdecide)))
+                    | decide
+                    | ((try simp only [lay_sizes, kSz, kidx, okW, kRegs, List.all_cons, List.all_nil, List.all_append, List.map_cons,
+                          List.map_nil, trip, Bool.and_true])
+                       (try have := (‹KemLay.WF _›).scr)
+                       kdecide)))
 
 theorem KEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : KEnv K s₀ s) {xs : List Reg}
     {W : List (Nat × Nat × Nat)} (hk : KeptX xs ((lay s₀ K).RL W) s s') (hx : ∀ r ∈ [Reg.r4, .r5, .r6, .r7], r ∉ xs)

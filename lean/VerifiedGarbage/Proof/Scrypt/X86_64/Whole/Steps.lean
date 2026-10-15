@@ -135,11 +135,11 @@ end Ctx
 
 /-- The registers the frame's body may write, and that `scrypt_cs_tac` steps through. -/
 macro "scrypt_cs_tac" : tactic => `(tactic| plain_simp_names (
-  intro r hr
-  revert hr
-  simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
-  rintro (h | h | h | h | h | h | h) <;> subst h <;>
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
+                   intro r hr
+                   revert hr
+                   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
+                   rintro (h | h | h | h | h | h | h) <;> subst h <;>
+                     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
 
 
 /-! ## The blocks -/

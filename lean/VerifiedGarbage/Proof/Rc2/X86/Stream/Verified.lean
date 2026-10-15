@@ -949,11 +949,11 @@ def updateWr (s : State) : List Region :=
 
 local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names (simp only [VG.Proof.Rc2.X86.Stream.initContract, VG.Proof.Rc2.X86.Stream.wideInit,
-    VG.Proof.Rc2.X86.Stream.updateContract, VG.Proof.Rc2.X86.Stream.wideUpdate,
-    VG.Proof.Rc2.X86.Stream.initRd, VG.Proof.Rc2.X86.Stream.initWr,
-    VG.Proof.Rc2.X86.Stream.updateRd, VG.Proof.Rc2.X86.Stream.updateWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
+                      VG.Proof.Rc2.X86.Stream.updateContract, VG.Proof.Rc2.X86.Stream.wideUpdate,
+                      VG.Proof.Rc2.X86.Stream.initRd, VG.Proof.Rc2.X86.Stream.initWr,
+                      VG.Proof.Rc2.X86.Stream.updateRd, VG.Proof.Rc2.X86.Stream.updateWr, VG.X86.arg_withRegions,
+                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
 
 theorem wideInit_pre (s : State) (h : wideInit.pre s) : initContract.pre (s.withRegions (initRd s) (initWr s)) := by
   obtain ⟨_, _, h⟩ := h

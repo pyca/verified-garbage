@@ -114,8 +114,8 @@ theorem rowX0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
 /-- `r ∉ [...]` and `a ≠ b` from the distinctness hypotheses in context. -/
 local macro "nm" : tactic =>
   `(tactic| plain_simp_names (simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, ne_eq] <;>
-    (repeat' constructor) <;>
-    first | with_reducible assumption | exact Ne.symm (by with_reducible assumption) | decide))
+                     (repeat' constructor) <;>
+                     first | with_reducible assumption | exact Ne.symm (by with_reducible assumption) | decide))
 
 /-- A row's multiply-adds, for any five registers: `r0–r3 + rdx · [a]` into `r0–r4`. -/
 def maddRow (a : Nat) (r0 r1 r2 r3 r4 : Reg) : List Instr :=

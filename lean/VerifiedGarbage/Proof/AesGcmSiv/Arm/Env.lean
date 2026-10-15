@@ -159,9 +159,9 @@ abbrev Others (rs : List Reg) (s s' : State) : Prop := ∀ r, r ∉ rs → s'.gp
 
 /-- Proves `Others` of a state `srun` computed. -/
 macro "others_tac" : tactic => `(tactic| plain_simp_names (
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp [gpr_setReg, hr]))
+                   intro r hr
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+                   simp [gpr_setReg, hr]))
 
 /-- The public arguments. -/
 structure Prm where

@@ -38,11 +38,11 @@ private theorem listLay {M : Mod} {sz : Nat} {xs : List Nat}
 
 macro "jwin_layout" h:term : tactic => `(tactic|
   plain_simp_names (simp only [Impl.Ecdh.X86.Cfg.jwinCfg,Impl.Ecdsa.X86.Cfg.MP',
-    Impl.Ecdsa.X86.Cfg.rcbSlots,Impl.Ecdsa.X86.Cfg.pt,Impl.Ecdsa.X86.Cfg.sl,
-    slot,($h),JWin.slots,JWin.ro,JWin.work,JWin.temps,JacWinCfg.E,JacWinCfg.z2,JacWinCfg.z3,
-    List.cons_append,List.nil_append,Impl.Ecdh.X86.Cfg.windowBits,
-    Mont.own,Spec.Weierstrass.Mont.ownAt,Spec.Weierstrass.Mont.ownBytes,VG.Impl.Mont.X86.words,
-    List.forall_mem_cons,List.forall_mem_nil,List.forall_mem_append] <;> decide))
+                     Impl.Ecdsa.X86.Cfg.rcbSlots,Impl.Ecdsa.X86.Cfg.pt,Impl.Ecdsa.X86.Cfg.sl,
+                     slot,($h),JWin.slots,JWin.ro,JWin.work,JWin.temps,JacWinCfg.E,JacWinCfg.z2,JacWinCfg.z3,
+                     List.cons_append,List.nil_append,Impl.Ecdh.X86.Cfg.windowBits,
+                     Mont.own,Spec.Weierstrass.Mont.ownAt,Spec.Weierstrass.Mont.ownBytes,VG.Impl.Mont.X86.words,
+                     List.forall_mem_cons,List.forall_mem_nil,List.forall_mem_append] <;> decide))
 
 theorem jwinLay (h4 : c.n=4) :
     JWin.Layout (Impl.Ecdh.X86.Cfg.jwinCfg c) size (Mont.own c.n) := by

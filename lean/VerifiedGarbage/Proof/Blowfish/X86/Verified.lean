@@ -102,9 +102,9 @@ def ecbWr (s : State) : List Region :=
 
 local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names (simp only [VG.Proof.Blowfish.X86.ecbC, VG.Proof.Blowfish.X86.wideEcb,
-    VG.Proof.Blowfish.X86.ecbRd, VG.Proof.Blowfish.X86.ecbWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
+                      VG.Proof.Blowfish.X86.ecbRd, VG.Proof.Blowfish.X86.ecbWr, VG.X86.arg_withRegions,
+                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
 
 theorem wideEcb_pre (up : Bool) (s : State) (h : (wideEcb up).pre s) :
     (ecbC up).pre (s.withRegions (ecbRd s) (ecbWr s)) := by

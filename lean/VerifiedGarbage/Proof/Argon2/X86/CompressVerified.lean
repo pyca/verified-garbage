@@ -255,7 +255,7 @@ def satWide : State :=
 
 macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names (simp only [compressX86, compressWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-    State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?))
+                      State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?))
 
 theorem compressWide_verified : Verified X86.target Impl.Argon2.X86.compress compressWide :=
   Verified.narrowTo compress_verified

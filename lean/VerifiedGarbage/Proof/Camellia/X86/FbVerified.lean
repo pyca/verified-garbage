@@ -257,9 +257,9 @@ def narrowWr (s : State) : List Region :=
 
 local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names (simp only [VG.Proof.Camellia.X86.Fb.fbX86, VG.Proof.Camellia.X86.Fb.wideContract,
-    VG.Proof.Camellia.X86.Fb.narrowRd, VG.Proof.Camellia.X86.Fb.narrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
+                      VG.Proof.Camellia.X86.Fb.narrowRd, VG.Proof.Camellia.X86.Fb.narrowWr, VG.X86.arg_withRegions,
+                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
 
 theorem wide_pre (post : State → State → Prop) (s : State) (h : (wideContract post).pre s) :
     (fbX86 post).pre (s.withRegions (narrowRd s) (narrowWr s)) := by

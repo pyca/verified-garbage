@@ -79,8 +79,8 @@ theorem consts_ok (s : State) :
 
 /-- Closes what `simp` leaves of a block of integer instructions. -/
 macro "finish_gpr" : tactic => `(tactic| plain_simp_names (
-  all_goals repeat' first | apply And.intro | apply VKeep.mk
-  all_goals first | trivial | rfl | (intros; simp [*])))
+                   all_goals repeat' first | apply And.intro | apply VKeep.mk
+                   all_goals first | trivial | rfl | (intros; simp [*])))
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = off (s.gpr b) d := rfl
 

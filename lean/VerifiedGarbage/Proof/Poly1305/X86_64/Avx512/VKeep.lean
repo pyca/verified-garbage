@@ -44,7 +44,7 @@ theorem se7 : BitVec.signExtend 64 (7 : BitVec 32) = 7 := by decide
 
 /-- Closes what `simp` leaves of a block of integer instructions. -/
 macro "finish_gpr8" : tactic => `(tactic| plain_simp_names (
-  all_goals repeat' first | apply And.intro | apply VKeep.mk
-  all_goals first | trivial | rfl | (intros; simp [*])))
+                   all_goals repeat' first | apply And.intro | apply VKeep.mk
+                   all_goals first | trivial | rfl | (intros; simp [*])))
 
 end VG.Proof.Poly1305.X86_64.Avx512

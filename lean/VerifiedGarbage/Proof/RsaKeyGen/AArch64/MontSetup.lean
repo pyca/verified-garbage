@@ -156,9 +156,9 @@ theorem msTail_mut (w : Nat) : ∀ r ∈ msTail w, KMut r :=
 /-- Disjointness of a range from each of a list of literal ranges of the
 working space. -/
 macro "ms_disj" : tactic => `(tactic| plain_simp_names (
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, msTail, r2Ranges, slot,
-    hdrBytes, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, kChecks, kE, sFn, sMinv]
-  and_intros <;> omega_arith))
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, msTail, r2Ranges, slot,
+                     hdrBytes, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, kChecks, kE, sFn, sMinv]
+                   and_intros <;> omega_arith))
 
 /-- `msTail` keeps `-c⁻¹` and `c`. -/
 theorem ms_fix {B : Addr} {Z w : Nat} {m m' : Mem} (f : Frm B (msTail w) m m') (hz : B.toNat + Z ≤ 2 ^ 64)

@@ -19,7 +19,7 @@ open VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass
 open VG.Proof.Ed25519.AArch64 (read_x)
 
 local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlots,jointLive,jointWork,
-  jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))
+                   jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))
 
 theorem jointFixedSum_relCT (certs : Forward.Arithmetic.Cases)
     {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}

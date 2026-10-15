@@ -82,11 +82,11 @@ def applyWr (s : State) : List Region :=
 
 local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| plain_simp_names (simp only [VG.Proof.Rc4.X86.initC, VG.Proof.Rc4.X86.wideInit,
-    VG.Proof.Rc4.X86.applyC, VG.Proof.Rc4.X86.wideApply,
-    VG.Proof.Rc4.X86.initRd, VG.Proof.Rc4.X86.initWr,
-    VG.Proof.Rc4.X86.applyRd, VG.Proof.Rc4.X86.applyWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
+                      VG.Proof.Rc4.X86.applyC, VG.Proof.Rc4.X86.wideApply,
+                      VG.Proof.Rc4.X86.initRd, VG.Proof.Rc4.X86.initWr,
+                      VG.Proof.Rc4.X86.applyRd, VG.Proof.Rc4.X86.applyWr, VG.X86.arg_withRegions,
+                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                      VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?))
 
 theorem wideInit_pre (s : State) (h : wideInit.pre s) :
     initC.pre (s.withRegions (initRd s) (initWr s)) := by

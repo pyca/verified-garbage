@@ -33,17 +33,17 @@ syntax "vrunm" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| vrunm) => `(tactic| vrunm [])
   | `(tactic| vrunm [$ls,*]) => `(tactic| plain_simp_names (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-        readSrc, readSrc32, execAlu, execAlu32, State.setReg32, arithFlags_eq, ea_at, add_ofNat_zero,
-        State.load128, State.store128, State.load64, State.store64, State.load32, State.store32, setReg_gpr, setReg_mem, setReg_rd, setReg_wr, setReg_cf, setReg_zf,
-        setFlags_gpr, setFlags_mem, setFlags_rd, setFlags_wr, setFlags_cf, setFlags_zf, RegUpd.gpr_setXmm,
-        RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm, RegUpd.zf_setXmm, mxcsr_setXmm, xmm_setXmm,
-        RegUpd.xmm_setReg, RegUpd.xmm_setFlags, RegUpd.mxcsr_setReg, RegUpd.mxcsr_setFlags,
-        Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
-        ite_false, reduceCtorEq, BitVec.sub_self, sx1, sx16, true_and, and_true, List.cons_append,
-        List.nil_append, xb, xmov, $ls,*]))
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+                         readSrc, readSrc32, execAlu, execAlu32, State.setReg32, arithFlags_eq, ea_at, add_ofNat_zero,
+                         State.load128, State.store128, State.load64, State.store64, State.load32, State.store32, setReg_gpr, setReg_mem, setReg_rd, setReg_wr, setReg_cf, setReg_zf,
+                         setFlags_gpr, setFlags_mem, setFlags_rd, setFlags_wr, setFlags_cf, setFlags_zf, RegUpd.gpr_setXmm,
+                         RegUpd.mem_setXmm, RegUpd.rd_setXmm, RegUpd.wr_setXmm, RegUpd.zf_setXmm, mxcsr_setXmm, xmm_setXmm,
+                         RegUpd.xmm_setReg, RegUpd.xmm_setFlags, RegUpd.mxcsr_setReg, RegUpd.mxcsr_setFlags,
+                         Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
+                         ite_false, reduceCtorEq, BitVec.sub_self, sx1, sx16, true_and, and_true, List.cons_append,
+                         List.nil_append, xb, xmov, $ls,*]))
 
 /-- The code `bf` of eight butterflies does what `op` does to each pair of
 words of `xmm0` and `xmm1`, with the zetas in `xmm13`, leaving the results
@@ -109,8 +109,8 @@ structure GOnly (rs : List Reg) (s s' : State) : Prop where
 
 /-- `GOnly` of a chain of `setReg` and `setFlags`. -/
 macro "gonly" : tactic => `(tactic| plain_simp_names (exact ⟨⟨fun r hr => by
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false], rfl, rfl⟩, rfl, rfl, rfl⟩))
+                    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+                    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false], rfl, rfl⟩, rfl, rfl, rfl⟩))
 
 theorem GOnly.consts {rs : List Reg} {s s' : State} (h : GOnly rs s s') (hc : VConsts s) : VConsts s' :=
   ⟨by rw [h.xmm]; exact hc.q, by rw [h.xmm]; exact hc.qinv⟩

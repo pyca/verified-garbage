@@ -39,12 +39,12 @@ private theorem listLay {M : Mod} {sz : Nat} {xs : List Nat}
 
 macro "window_layout" h:term : tactic => `(tactic|
   plain_simp_names (simp only [Impl.Ecdsa.Verify.X86.Cfg.windowQ, Impl.Ecdh.X86.Cfg.windowCfg, Impl.Ecdsa.X86.Cfg.MP',
-    Impl.Ecdsa.X86.Cfg.rcbSlots, Impl.Ecdsa.X86.Cfg.pt, Impl.Ecdsa.X86.Cfg.sl,
-    slot, ($h), winSlots, winRo, winOther, winWs, winTblSlots, rcbW,
-    List.map_append, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
-    winW, Impl.Ecdh.X86.Cfg.windowBits, Mont.outW, Mont.own, Spec.Weierstrass.Mont.ownAt,
-    Spec.Weierstrass.Mont.ownBytes, words, List.forall_mem_cons, List.forall_mem_nil, List.forall_mem_append,
-    List.forall_mem_map]; decide))
+                     Impl.Ecdsa.X86.Cfg.rcbSlots, Impl.Ecdsa.X86.Cfg.pt, Impl.Ecdsa.X86.Cfg.sl,
+                     slot, ($h), winSlots, winRo, winOther, winWs, winTblSlots, rcbW,
+                     List.map_append, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
+                     winW, Impl.Ecdh.X86.Cfg.windowBits, Mont.outW, Mont.own, Spec.Weierstrass.Mont.ownAt,
+                     Spec.Weierstrass.Mont.ownBytes, words, List.forall_mem_cons, List.forall_mem_nil, List.forall_mem_append,
+                     List.forall_mem_map]; decide))
 
 /-- The variable-base table is disjoint from all original slots. -/
 theorem windowLay (h4 : c.n = 4) : WinLay (Impl.Ecdsa.Verify.X86.Cfg.windowQ c) size := by

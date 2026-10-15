@@ -204,10 +204,10 @@ theorem winJ_sl {K : WinCfg} {o p q : Pt} (ho : ∀ x ∈ [o.x, o.y, o.z], x ∈
 
 /-- What a program reads is in `V`. -/
 local macro "rcb_sub" : tactic => `(tactic| plain_simp_names (
-  intro x hx
-  simp only [rcbR, WinCfg.zeroPt, List.cons_append, List.nil_append, List.mem_cons,
-    List.not_mem_nil, or_false] at hx ⊢
-  rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
+                   intro x hx
+                   simp only [rcbR, WinCfg.zeroPt, List.cons_append, List.nil_append, List.mem_cons,
+                     List.not_mem_nil, or_false] at hx ⊢
+                   rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
 
 /-- Changing only the public loop counter preserves the field environment. -/
 theorem Inv.rbxKeeps {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
