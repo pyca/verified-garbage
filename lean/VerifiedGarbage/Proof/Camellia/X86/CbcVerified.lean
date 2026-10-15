@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.X86.ModeCore
 meta import VerifiedGarbage.Proof.Camellia.X86.ModeCore
 public import VerifiedGarbage.Proof.Modes.X86.Modes
@@ -208,12 +210,12 @@ rounds, analysed once, as a summary. -/
 taint_summary cbcPairSum : VG.X86.taint cbcPairTaint (.block pairBody)
 
 theorem cbcEncrypt_ct : ConstantTime isa (cbcX86 true).pre (cbcX86 true).pub cbcEncrypt :=
-  let ⟨_, h⟩ := (by taint_decide_sum [cbcPairSum] :
+  let ⟨_, h⟩ := (by native_taint_decide_sum [cbcPairSum] :
     ∃ h, (VG.X86.taint.check cbcTaint cbcEncrypt h).isSome = true)
   VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp) h
 
 theorem cbcDecrypt_ct : ConstantTime isa (cbcX86 false).pre (cbcX86 false).pub cbcDecrypt :=
-  let ⟨_, h⟩ := (by taint_decide_sum [cbcPairSum] :
+  let ⟨_, h⟩ := (by native_taint_decide_sum [cbcPairSum] :
     ∃ h, (VG.X86.taint.check cbcTaint cbcDecrypt h).isSome = true)
   VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp) h
 

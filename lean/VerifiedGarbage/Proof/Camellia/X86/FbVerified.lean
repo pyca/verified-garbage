@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.X86.CbcVerified
 meta import VerifiedGarbage.Proof.Camellia.X86.CbcVerified
 public import VerifiedGarbage.Proof.Camellia.FbScratch
@@ -216,17 +218,17 @@ rounds, analysed once, as a summary. -/
 taint_summary fbPairSum : VG.X86.taint fbPairTaint (.block pairBody)
 
 theorem ofb_ct : ConstantTime isa (fbX86 ofbPost).pre (fbX86 ofbPost).pub ofb :=
-  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] :
+  let ⟨_, h⟩ := (by native_taint_decide_sum [fbPairSum] :
     ∃ h, (VG.X86.taint.check fbTaint ofb h).isSome = true)
   VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfbEncrypt_ct : ConstantTime isa (fbX86 cfbEncPost).pre (fbX86 cfbEncPost).pub cfbEncrypt :=
-  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] :
+  let ⟨_, h⟩ := (by native_taint_decide_sum [fbPairSum] :
     ∃ h, (VG.X86.taint.check fbTaint cfbEncrypt h).isSome = true)
   VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfbDecrypt_ct : ConstantTime isa (fbX86 cfbDecPost).pre (fbX86 cfbDecPost).pub cfbDecrypt :=
-  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] :
+  let ⟨_, h⟩ := (by native_taint_decide_sum [fbPairSum] :
     ∃ h, (VG.X86.taint.check fbTaint cfbDecrypt h).isSome = true)
   VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 

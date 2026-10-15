@@ -11,10 +11,13 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
 import Mathlib.Tactic.Conv
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
-import VerifiedGarbage.Proof.MlKem.AArch64.KgC
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

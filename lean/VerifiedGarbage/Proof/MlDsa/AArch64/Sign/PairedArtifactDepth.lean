@@ -8,11 +8,14 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
-import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

@@ -10,10 +10,16 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
 import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
 meta import Mathlib.Tactic.Conv
-meta import VerifiedGarbage.Proof.MlKem.AArch64.DecapsA
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA verification on AArch64: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
