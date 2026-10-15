@@ -413,7 +413,7 @@ def bigS (vl : Bool) : Prog isa :=
 
 /-- More than `fold` bytes, the keystream of whose first `m` (448) the
 prologue computed: those by `cryptPre`, then the whole chunks after them by
-`bulkP`, or, if there are none, the rest (1 to 64 bytes) by `tailS`, which
+`bulkP`, or, if there are none, the rest (1 to 128 bytes) by `tailS`, which
 absorbs the first 448. -/
 def preS (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (cryptPre x.fold x.pass x.wide)

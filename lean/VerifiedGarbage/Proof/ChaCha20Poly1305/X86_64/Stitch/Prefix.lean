@@ -11,7 +11,7 @@ import all Init.Data.Vector.Basic
 
 When the prologue computes the keystream of the first 448 bytes too
 (`splitM` for `pass` 512), `cryptPre` encrypts them, and the rest is whole
-chunks and 1 to 64 bytes. `Stitch.bulkP` encrypts the chunks after the 448
+chunks and 1 to 448 bytes, or 1 to 128 bytes without a chunk. `Stitch.bulkP` encrypts the chunks after the 448
 bytes, the first of which absorbs those (`chunk true`, `chunkP_ok`): from
 there on the code is `bulk`'s on the data after the 448 bytes (`restLI_ok`,
 on narrower permissions), whose accumulator on entry is the 448 bytes'
@@ -199,7 +199,7 @@ theorem enter_acc {c : Addr} {s s₁ : State} {key msg : List Byte} (hrep : Repr
   · simp only [hval, r11₁, rbx₁, rbp₁, hA]
 
 /-- The bytes `cryptS` absorbs of `L > 448` bytes when the prologue computed
-the keystream of the first 448: all but the 1 to 64 after the last chunk. -/
+the keystream of the first 448: all but the 1 to 448 after the last chunk. -/
 abbrev aP (L : Nat) : Nat := 448 + 512 * ((L - 449) / 512)
 
 /-- After `bulkP`, or `tailS` after the 448 bytes, from `s`: the data after
@@ -236,7 +236,7 @@ theorem pre_after {dp : Addr} {L : Nat} (hL : L < 2 ^ 64) (hnw : dp.toNat + L �
   split <;> omega
 
 theorem bulkP_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 960 ≤ L)
-    (hr : 1 ≤ (L - 448) % 512 ∧ (L - 448) % 512 ≤ 64) {s : State} (hwr : s.wr = bulkWr c dp L) (hrsi : s.gpr .rsi = dp)
+    (hr : 1 ≤ (L - 448) % 512 ∧ (L - 448) % 512 ≤ 448) {s : State} (hwr : s.wr = bulkWr c dp L) (hrsi : s.gpr .rsi = dp)
     (hrdx : s.gpr .rdx = BitVec.ofNat 64 (L - 448)) (hrcx : s.gpr .rcx = bfA c)
     {key msg : List Byte} (hrep : Repr s.mem (psA c) key msg) :
     WP isa (bulkP vl) s (PreDone c dp L s key msg) := by
@@ -335,9 +335,9 @@ theorem bulkP_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 96
       exact List.map_congr_left fun k hk => hpre k (by rw [List.mem_range] at hk; exact hk)
     rw [hb]; exact repr'
 
-/-- No whole chunks after the 448 bytes: `tailS` encrypts the rest (1 to 64
+/-- No whole chunks after the 448 bytes: `tailS` encrypts the rest (1 to 128
 bytes) while it absorbs them. -/
-theorem tailP_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hlo : 449 ≤ L) (hhi : L ≤ 512) {s : State}
+theorem tailP_ok {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hlo : 449 ≤ L) (hhi : L ≤ 576) {s : State}
     (hwr : s.wr = bulkWr c dp L) (hrsi : s.gpr .rsi = dp)
     (hrdx : s.gpr .rdx = BitVec.ofNat 64 (L - 448)) (hrcx : s.gpr .rcx = bfA c)
     {key msg : List Byte} (hrep : Repr s.mem (psA c) key msg) :

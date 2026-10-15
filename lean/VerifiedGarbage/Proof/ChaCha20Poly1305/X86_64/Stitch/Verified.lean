@@ -492,7 +492,7 @@ theorem bpp_agree {s₁ s₂ : State} (h₁ : BPP c dp L sp s₁) (h₂ : BPP c 
   · rw [rsp₁, rsp₂]
 
 /-- No whole chunks after the 448 bytes: `enter`, then `tailS`. -/
-theorem tailP_rel (hlo : 449 ≤ L) (hhi : L ≤ 512) :
+theorem tailP_rel (hlo : 449 ≤ L) (hhi : L ≤ 576) :
     RelCT isa (fun s₁ s₂ => BPP c dp L sp s₁ ∧ BPP c dp L sp s₂) (.seq (.block enter) (tailS false true))
       fun _ _ => True := by
   obtain ⟨_, hE⟩ := enter_taint
@@ -908,7 +908,7 @@ theorem MidS.not_tail (h : MidS fold s₀ s) (hf448 : fold = 448) (hf : fold < L
   intro ht
   simp only [aOf] at aO
   rw [ite_eq_right (by omega)] at aO
-  by_cases hpre : 448 ≤ (L s₀ - 1) % 512
+  by_cases hpre : PreLen 448 (L s₀)
   · rw [ite_eq_left hpre] at aO; omega
   · rw [ite_eq_right hpre, ite_eq_left (by omega)] at aO; omega
 
@@ -979,7 +979,7 @@ theorem bulk_bp {s₀ : State} {σ s : State} (ha : Args s₀ σ s) (hi : Inv s�
 
 /-- What the branch with whole chunks starts from, in one run. -/
 def AtArgs (fold pass : Nat) (s₀ s : State) : Prop :=
-  ∃ σ, AtIteS fold pass s₀ σ ∧ Args s₀ σ s ∧ s.cf = some (decide (L s₀ < 512)) ∧ (L s₀ - 1) % 512 < fold
+  ∃ σ, AtIteS fold pass s₀ σ ∧ Args s₀ σ s ∧ s.cf = some (decide (L s₀ < 512)) ∧ ¬ PreLen fold (L s₀)
 
 /-- After `foldM` in `cryptS`'s branch for more than `fold` bytes, from `σ`
 at the branch: `rdx` is `m`. -/
@@ -1005,13 +1005,13 @@ theorem Args.of_eq {s₀ σ s s' : State} (h : Args s₀ s s') (hg : ∀ r, r �
 
 /-- After `cryptPre` for the 448 bytes. -/
 def PA (s₀ s : State) : Prop :=
-  XArgsM s₀ 448 s ∧ (∃ key msg, Repr s.mem (off (cx s₀) 448) key msg) ∧ 448 ≤ (L s₀ - 1) % 512 ∧ 448 < L s₀
+  XArgsM s₀ 448 s ∧ (∃ key msg, Repr s.mem (off (cx s₀) 448) key msg) ∧ PreLen 448 (L s₀) ∧ 448 < L s₀
 
 /-- After `rsi` is set to the data and `rdx` compared with 512. -/
 def PB (s₀ s : State) : Prop :=
   s.gpr .rsi = dp s₀ ∧ s.gpr .rdx = BitVec.ofNat 64 (L s₀ - 448) ∧ s.gpr .rcx = off (cx s₀) 128 ∧
     s.gpr .rsp = s₀.gpr .rsp ∧ s.wr = s₀.wr ∧ (∃ key msg, Repr s.mem (off (cx s₀) 448) key msg) ∧
-    s.cf = some (decide (L s₀ - 448 < 512)) ∧ 448 ≤ (L s₀ - 1) % 512 ∧ 448 < L s₀
+    s.cf = some (decide (L s₀ - 448 < 512)) ∧ PreLen 448 (L s₀) ∧ 448 < L s₀
 
 theorem foldMP_taint : ∃ h, (taintS.check (τS true) (foldM 448 512) h).isSome = true := by
   taint_decide_sum []
@@ -1048,15 +1048,17 @@ theorem preS_rel :
   have ed : dp s₀' = dp s₀ := by simp only [dp, p5]
   -- `m` is 448.
   have pre : ∀ {σ₀ s}, AtM v.callee.fold 512 σ₀ s → isa.eval .e s = some false →
-      448 ≤ (L σ₀ - 1) % 512 ∧ 448 < L σ₀ := by
+      PreLen 448 (L σ₀) ∧ 448 < L σ₀ := by
     rintro σ₀ s ⟨⟨σ, -, hfL, -⟩, z⟩ hb
     simp only [eval, z, Option.some.injEq] at hb
     have hn : mOf v.callee.fold 512 (L σ₀) ≠ 0 := fun h0 => by simp [h0] at hb
     rw [mOf_big (by omega), hf] at hn
     simp only [splitOf, show (512 : Nat) ≠ 0 by decide, ite_false, ite_true] at hn
     refine ⟨?_, by rw [hf] at hfL; exact hfL⟩
-    split at hn <;> omega
-  by_cases hP : 448 ≤ (L s₀ - 1) % 512 ∧ 448 < L s₀
+    split at hn
+    · assumption
+    · exact absurd rfl hn
+  by_cases hP : PreLen 448 (L s₀) ∧ 448 < L s₀
   swap
   · exact RelCT.of_false fun s₁ s₂ ⟨⟨h₁, _⟩, hb⟩ => hP (pre h₁ hb)
   obtain ⟨_, hC⟩ := cryptPreP_taint
@@ -1118,7 +1120,7 @@ theorem preS_rel :
     · refine RelCT.of_false fun s₁ s₂ ⟨⟨h₁, _⟩, hb⟩ => ?_
       simp only [eval, h₁.2.2.2.2.2.2.1, Option.some.injEq, decide_eq_false_iff_not] at hb
       exact hb hc
-    have hr : 1 ≤ (L s₀ - 448) % 512 ∧ (L s₀ - 448) % 512 ≤ 64 := by omega
+    have hr : 1 ≤ (L s₀ - 448) % 512 ∧ (L s₀ - 448) % 512 ≤ 448 := by omega
     refine (relCT_narrow (c := bulkP v.callee.vl) (fun _ => bulkWr (cx s₀) (dp s₀) (L s₀)) (fun s₁ s₂ ⟨⟨h₁, h₂⟩, _⟩ => ?_)
       (bulkP_rel hl (s₀.gpr .rsp) v.callee.vl (by omega))).mono (fun _ _ h => h) fun _ _ h => h
     have B₁ := h₁.bpp
@@ -1179,7 +1181,7 @@ theorem bigR_rel :
     (F₁ := AtM v.callee.fold 512 s₀) (F₂ := AtM v.callee.fold 512 s₀') fun _ _ h =>
       ⟨tOk h.1, tOk h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
   have hM : ∀ {σ₀ : State}, v.callee.fold < L σ₀ →
-      mOf v.callee.fold 512 (L σ₀) = if (L σ₀ - 1) % 512 < 448 then 0 else 448 := by
+      mOf v.callee.fold 512 (L σ₀) = if PreLen 448 (L σ₀) then 448 else 0 := by
     intro σ₀ h
     rw [mOf_big (by omega), hf]; simp only [splitOf, show (512 : Nat) ≠ 0 by decide, ite_false, ite_true]
   have hm0 : ∀ {σ₀ s}, AtM v.callee.fold 512 σ₀ s →
@@ -1200,7 +1202,10 @@ theorem bigR_rel :
     obtain ⟨⟨σ, hσ, hf', g, m, rd, wr, d⟩, z⟩ := h
     have h0 := (hm0 ⟨⟨σ, hσ, hf', g, m, rd, wr, d⟩, z⟩).mp hb
     rw [hM hf'] at h0
-    have hnp : (L σ₀ - 1) % 512 < v.callee.fold := by rw [hf]; split at h0 <;> omega
+    have hnp : ¬ PreLen v.callee.fold (L σ₀) := by
+      rw [hf]; split at h0
+      · exact absurd h0 (by decide)
+      · assumption
     exact WP.mono (argsCmp_ok hp hi) fun _ ⟨ha, cf⟩ => ⟨σ, hσ, ha.of_eq g m rd wr, cf, hnp⟩
   have args := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => (AtM v.callee.fold 512 s₀ s₁ ∧
       AtM v.callee.fold 512 s₀' s₂) ∧ isa.eval .e s₁ = some true) (τS true)
@@ -1275,8 +1280,11 @@ theorem bigR_rel :
       have := (hm0 ⟨⟨σ, ⟨hσ, hst, key, msg, hrep⟩, hf', g, m, rd, wr, d⟩, z⟩).mpr e
       rw [this] at hb; cases hb
     rw [hM hf'] at h0
-    have hpre : 448 ≤ (L σ₀ - 1) % 512 := by split at h0 <;> omega
-    have h448 : mOf v.callee.fold 512 (L σ₀) = 448 := by rw [hM hf', ite_eq_right (by omega)]
+    have hpre : PreLen 448 (L σ₀) := by
+      split at h0
+      · assumption
+      · exact absurd rfl h0
+    have h448 : mOf v.callee.fold 512 (L σ₀) = 448 := by rw [hM hf', ite_eq_left hpre]
     refine WP.mono (preS_mid v hf hp hi hpre (by rw [hf] at hf'; exact hf') (by rw [m]; exact hst)
       (fun k hk => by rw [m]; exact hσ.ks k (by rw [h448]; exact hk)) (by rw [m]; exact hrep)) fun s' d => ?_
     exact .inr ⟨s, key, msg, hi, by rw [hf]; exact d⟩
