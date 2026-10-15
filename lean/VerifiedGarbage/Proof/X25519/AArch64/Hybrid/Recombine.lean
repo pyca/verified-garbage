@@ -345,16 +345,12 @@ theorem val_limbSum_add (m : Mem) (base : Addr) :
 theorem val_limbSum_sub (m : Mem) (base : Addr) (h : ∀ k < 10, (word m base (LBUF + 16 * k + 8)).toNat ≤ bias k) :
     val (limbSumVal m base true) + val (fun k => (word m base (LBUF + 16 * k + 8)).toNat) =
       val (fun k => (word m base (LBUF + 16 * k)).toNat) + 4 * VG.Spec.X25519.P := by
-  rw [← val_bias]
-  have := h 0 (by decide); have := h 1 (by decide); have := h 2 (by decide); have := h 3 (by decide)
-  have := h 4 (by decide); have := h 5 (by decide); have := h 6 (by decide); have := h 7 (by decide)
-  have := h 8 (by decide); have := h 9 (by decide)
-  simp only [val, S10, limbSumVal, ↓reduceIte]
-  generalize bias 0 = c0 at *; generalize bias 1 = c1 at *; generalize bias 2 = c2 at *
-  generalize bias 3 = c3 at *; generalize bias 4 = c4 at *; generalize bias 5 = c5 at *
-  generalize bias 6 = c6 at *; generalize bias 7 = c7 at *; generalize bias 8 = c8 at *
-  generalize bias 9 = c9 at *
-  simp only [limbOff, List.getD_cons_succ, List.getD_cons_zero]
+  have add : ∀ f g : Nat → Nat, val f + val g = S10 fun k => (f k + g k) * 2 ^ limbOff k := fun f g => by
+    simp only [val, S10, Nat.add_mul]; omega
+  rw [← val_bias, add, add]
+  refine S10_congr fun k hk => congrArg (· * 2 ^ limbOff k) ?_
+  have := h k hk
+  simp only [limbSumVal, ↓reduceIte]
   omega
 
 end VG.Proof.X25519.AArch64.Hybrid

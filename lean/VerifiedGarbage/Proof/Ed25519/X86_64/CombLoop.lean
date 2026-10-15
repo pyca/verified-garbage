@@ -103,6 +103,16 @@ theorem combIndex_ok (s : State) {c : Nat} (hc : c < 52) (hb : s.gpr .rbx = BitV
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2, ite_false]
       exact ka.1 r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact hr)
 
+/-- The five low bits of `x`. -/
+theorem bits5 (x : Nat) :
+    x % 32 = ((((x / 16) % 2 * 2 + (x / 8) % 2) * 2 + (x / 4) % 2) * 2 + (x / 2) % 2) * 2 + x % 2 := by
+  rw [show (32 : Nat) = 2 ^ 5 from rfl, Nat.mod_pow_succ, Nat.mod_pow_succ, Nat.mod_pow_succ,
+    Nat.mod_pow_succ, Nat.mod_pow_succ]
+  simp only [Nat.pow_zero, Nat.mod_one, Nat.div_one, Nat.reducePow]
+  generalize x / 16 % 2 = a; generalize x / 8 % 2 = b; generalize x / 4 % 2 = c
+  generalize x / 2 % 2 = d; generalize x % 2 = e
+  omega
+
 theorem digit_bits (S i : Nat) :
     (S / 32 ^ i) % 32 = (((((S / 2 ^ (5 * i + 4)) % 2 * 2 + (S / 2 ^ (5 * i + 3)) % 2) * 2 +
       (S / 2 ^ (5 * i + 2)) % 2) * 2 + (S / 2 ^ (5 * i + 1)) % 2) * 2 + (S / 2 ^ (5 * i)) % 2) := by
@@ -111,7 +121,7 @@ theorem digit_bits (S i : Nat) :
     rw [h32, Nat.div_div_eq_div_mul, ← pow_add]
   rw [e 4, e 3, e 2, e 1, ← Nat.add_zero (5 * i), e 0]
   simp only [pow_zero, Nat.div_one, Nat.reducePow]
-  omega
+  exact bits5 _
 
 theorem combBit_ea {s : State} {base : Addr} (hs : Scratch s base) {i : Nat}
     (hrcx : s.gpr .rcx = BitVec.ofNat 64 (5 * i)) (t : Nat) :
@@ -228,9 +238,8 @@ theorem combDigit_ok {s : State} {base : Addr} (hs : Scratch s base) {S i : Nat}
   generalize S / 2 ^ (5 * i + 2) % 2 = b2 at *
   generalize S / 2 ^ (5 * i + 3) % 2 = b3 at *
   generalize S / 2 ^ (5 * i + 4) % 2 = b4 at *
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
-  omega
+  simp only [← BitVec.ofNat_add]
+  exact congrArg (BitVec.ofNat 64) (by omega_using [l0, l1, l2, l3, l4])
 
 theorem rbxCmp_ok (s : State) (c k : Nat) (hc : c < 64) (hk : k < 64)
     (hb : s.gpr .rbx = BitVec.ofNat 64 c) :
