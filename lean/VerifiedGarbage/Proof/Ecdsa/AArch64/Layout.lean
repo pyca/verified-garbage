@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Chain

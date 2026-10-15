@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowNegTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntry

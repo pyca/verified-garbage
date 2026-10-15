@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Rc2.X86.Lookup
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd

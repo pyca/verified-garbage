@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X25519.AArch64.Arith
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.Offset

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.Arm.LadderPCall
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
 import all Init.Data.Array.Basic

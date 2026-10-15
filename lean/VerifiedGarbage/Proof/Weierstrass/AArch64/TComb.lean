@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic

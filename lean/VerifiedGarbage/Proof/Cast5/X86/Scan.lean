@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Cast5.X86.Run
 public import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Framework.X86.Sse

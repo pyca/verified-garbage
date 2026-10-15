@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 public import VerifiedGarbage.Impl.Curve448.AArch64.Neon

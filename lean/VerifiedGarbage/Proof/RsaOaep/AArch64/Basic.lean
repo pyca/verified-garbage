@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.RsaOaep.AArch64
 public import VerifiedGarbage.Proof.RsaOaep.Scan
 public import VerifiedGarbage.Proof.RsaOaep.Mask

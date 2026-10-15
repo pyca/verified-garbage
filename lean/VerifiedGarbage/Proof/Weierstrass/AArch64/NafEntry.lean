@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigitRead
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafNeg
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Rc4.Arm
 public import VerifiedGarbage.Proof.Rc4.Scan32
 public import VerifiedGarbage.Proof.Framework.Arm.Exec

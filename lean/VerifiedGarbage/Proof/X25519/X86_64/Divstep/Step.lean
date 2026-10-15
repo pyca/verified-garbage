@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X25519.X86_64.Step
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

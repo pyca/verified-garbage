@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Mont.X86_64.Words
 public import Mathlib.Tactic.Tauto
 import all Init.Data.Array.Basic

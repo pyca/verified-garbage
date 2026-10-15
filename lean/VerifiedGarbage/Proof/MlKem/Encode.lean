@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlKem.Bits
 public import VerifiedGarbage.Proof.MlKem.Compress
 import all Init.Data.Array.Basic

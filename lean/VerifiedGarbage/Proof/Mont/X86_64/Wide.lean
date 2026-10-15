@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 public import VerifiedGarbage.Proof.Mont.X86_64.Chain
 import all Init.Data.Array.Basic

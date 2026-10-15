@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDoubleTiming

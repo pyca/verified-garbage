@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2

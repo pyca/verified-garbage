@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Modes.X86.Step
 public import VerifiedGarbage.TCB.X86.Target
 import all Init.Data.Array.Basic

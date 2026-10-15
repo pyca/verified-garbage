@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvStep
 public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 public import VerifiedGarbage.Proof.Weierstrass.Unch

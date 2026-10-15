@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mul32
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem

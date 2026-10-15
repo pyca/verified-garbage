@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Exec
 public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Radix
 import all Init.Data.Array.Basic

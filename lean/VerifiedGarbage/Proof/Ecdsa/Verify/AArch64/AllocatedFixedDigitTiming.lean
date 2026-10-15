@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixedTiming

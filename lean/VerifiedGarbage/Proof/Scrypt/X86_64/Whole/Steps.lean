@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Layout
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec

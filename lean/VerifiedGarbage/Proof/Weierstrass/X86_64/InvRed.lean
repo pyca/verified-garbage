@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvWords
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import all Init.Data.Array.Basic

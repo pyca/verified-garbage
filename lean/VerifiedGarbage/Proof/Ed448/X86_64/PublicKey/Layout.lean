@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Ed448.X86_64.PublicKey
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi

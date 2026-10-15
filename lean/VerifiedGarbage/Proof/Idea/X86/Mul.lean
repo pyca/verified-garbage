@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Idea.Arith32
 public import VerifiedGarbage.Impl.Idea.X86
 public import VerifiedGarbage.Proof.Framework.X86.Exec

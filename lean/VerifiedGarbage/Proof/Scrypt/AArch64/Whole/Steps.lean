@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Scrypt.AArch64.Scrypt
 public import VerifiedGarbage.Proof.Framework.AArch64.Call

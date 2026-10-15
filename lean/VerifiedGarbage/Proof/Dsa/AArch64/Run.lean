@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Bignum.AArch64.Run
 
 /-! Symbolic execution retaining linked workspace base addresses. -/

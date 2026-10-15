@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lanes
 public import VerifiedGarbage.Proof.Poly1305.Limbs26
 import all Init.Data.Array.Basic

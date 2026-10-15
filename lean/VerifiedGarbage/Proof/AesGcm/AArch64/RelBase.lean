@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 import all Init.Data.Array.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Idea.AArch64.Mul
 public import VerifiedGarbage.Proof.Framework.CallLay
 import all Init.Data.Array.Basic

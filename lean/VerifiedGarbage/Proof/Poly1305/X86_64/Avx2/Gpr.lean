@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Powers
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd

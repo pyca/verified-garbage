@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Bignum.AArch64
 public import VerifiedGarbage.Proof.Bignum.Octets
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp

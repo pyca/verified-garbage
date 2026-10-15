@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Sig
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDoubleTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
