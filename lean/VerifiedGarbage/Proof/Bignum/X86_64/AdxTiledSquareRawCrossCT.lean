@@ -18,8 +18,10 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Row0
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Value
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTri8Row0
 
 /-! ## AdxTri8RowCT -/
 
@@ -175,8 +177,7 @@ theorem rows_ct (n i : Nat) (rs : List Reg) (hr : Regs rs) (hlen : rs.length=n+1
         simp only [List.length_cons] at hlen
         simp only [List.length_append,List.length_cons,List.length_nil]; omega
 
-theorem checks_seven : Checks 7 0 AdxTri8.columns := by
-  refine ⟨⟨_,_,_,by taint_decide,by taint_decide,by taint_decide⟩,?_⟩
+theorem checks_six : Checks 6 1 (AdxTri8.rotate AdxTri8.columns) := by
   refine ⟨⟨_,_,_,by taint_decide,by taint_decide,by taint_decide⟩,?_⟩
   refine ⟨⟨_,_,_,by taint_decide,by taint_decide,by taint_decide⟩,?_⟩
   refine ⟨⟨_,_,_,by taint_decide,by taint_decide,by taint_decide⟩,?_⟩
@@ -206,47 +207,86 @@ theorem setup_ct_fw {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps) 
   refine WP.mono (setup_ok hg.scr hg.rdi L.hZ hv pa hI) fun t ⟨pt,mt,kt⟩ => ?_
   exact ⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,mt ▸ hg.hdr⟩,mt ▸ hI⟩,he ▸ pt⟩
 
-theorem clear_ct_fw (L : CtLayout) (s : State) (h : CoreReady L s) :
-    WP isa (.block AdxTri8.clearColumns) s (Pre 7 AdxTri8.columns L) := by
-  obtain ⟨⟨mi,hg,hI⟩,hp⟩ := h
-  refine WP.mono (clear_ok AdxTri8.columns s) fun t ⟨zt,mt,kt⟩ => ?_
-  exact ⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,mt ▸ hg.hdr⟩,mt ▸ hI⟩,
-    (kt.gpr (by decide)).trans hp,value_zero_lt zt 7⟩
+/-- `CoreReady` with the output base in `rcx`, as `clearEnds` leaves it. -/
+def Ready0 (L : CtLayout) (s : State) : Prop :=
+  CoreReady L s ∧ s.gpr .rcx=off L.B (slot L.w aAcc+16*L.I)
 
-theorem pre_pins (n : Nat) (rs : List Reg) : Pins (Pre n rs) [.rdi] :=
-  fun L s t hs ht => head_pins L s t hs.1 ht.1
-
-/-- The two stores of `clearEnds`, at addresses from `rcx`. -/
+/-- The stores of `clearEnds`, at addresses from `rcx`. -/
 def EndStores : Prog isa :=
-  .seq (.block [.store (AdxRotate8.at_ .rcx 16) .r8]) (.block [.store (AdxRotate8.at_ .rcx 136) .r8])
+  .seq (.block [.mov32 .rax (.imm 0),.store (AdxRotate8.at_ .rcx 16) .rax])
+    (.block [.store (AdxRotate8.at_ .rcx 136) .rax])
 
-theorem clearEnds_fw (L : CtLayout) (s : State) (h : Pre 7 AdxTri8.columns L s) :
-    WP isa AdxTri8.clearEnds s (Stage 7 AdxTri8.columns L) := by
-  obtain ⟨⟨mi,hg,hI⟩,hp,hv⟩ := h
+theorem clearEnds_fw (L : CtLayout) (s : State) (h : CoreReady L s) :
+    WP isa AdxTri8.clearEnds s (Ready0 L) := by
+  obtain ⟨⟨mi,hg,hI⟩,hp⟩ := h
   have hi := L.hi
   have hZ := L.hZ
   refine WP.mono (clearEnds_ok hg.scr hg.rdi hg.hdr L.hZ hI (by have := slot_le (w := L.w) (show aTmp < 8 by decide); unfold slot aAcc aTmp at *; omega)) fun t ⟨_,_,_,ot,ct,kt⟩ => ?_
-  have cols : value t AdxTri8.columns=value s AdxTri8.columns :=
-    value_congr fun r hr => kt.gpr (by
-      simp only [AdxTri8.columns,List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide)
   refine ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ot (by unfold slot; omega)⟩,?_⟩,(kt.gpr (by decide)).trans hp,by rw [cols]; exact hv⟩,ct⟩
+    hg.hdr.of_outside ot (by unfold slot; omega)⟩,?_⟩,(kt.gpr (by decide)).trans hp⟩,ct⟩
   rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
 
 theorem clearEnds_ct
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rcx]) EndStores hint).isSome=true) :
-    RelCT isa (Two (Pre 7 AdxTri8.columns)) AdxTri8.clearEnds (Two (Stage 7 AdxTri8.columns)) := by
+    RelCT isa (Two CoreReady) AdxTri8.clearEnds (Two Ready0) := by
   refine two_post ?_ clearEnds_fw
   unfold AdxTri8.clearEnds
   refine RelCT.seq (two_piece (Ψ := fun L s => s.gpr .rcx=off L.B (slot L.w aAcc+16*L.I))
-    [.rdi] (pre_pins 7 _) (by taint_decide) ?_) (two_taint [.rcx] ?_ hT)
+    [.rdi] (fun L s t hs ht => head_pins L s t hs.1 ht.1) (by taint_decide) ?_) (two_taint [.rcx] ?_ hT)
   · rintro L s ⟨⟨mi,hg,hI⟩,_⟩
     exact WP.mono (headBases_ok hg.scr hg.rdi hg.hdr L.hZ hI) fun _ h => h.1
   · intro L s t hs ht r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     subst r; exact hs.trans ht.symm
+
+theorem row0Core_head (L : CtLayout) (s : State) (h : Ready0 L s) :
+    WP isa (.block (AdxTri8.row0Core [.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15])) s (Based L) := by
+  obtain ⟨⟨⟨mi,hg,hI⟩,hp⟩,hc⟩ := h
+  have he := L.he
+  have hr := columns_regs
+  refine WP.mono (row0Core_ok _ hg.scr hp (by simp only [List.length_cons,List.length_nil]; omega)
+    (by decide) hr.1 (fun r h => let q := hr.2 r h; ⟨q.1,q.2.1,q.2.2.1,q.2.2.2.1⟩)) fun t ⟨_,kt⟩ => ?_
+  have dr : t.gpr .rdi=s.gpr .rdi := kt.gpr (by decide)
+  have cr : t.gpr .rcx=s.gpr .rcx := kt.gpr (by decide)
+  exact ⟨⟨mi,⟨hg.scr.congr kt.2.2.2,dr.trans hg.rdi,kt.2.1 ▸ hg.hdr⟩,kt.2.1 ▸ hI⟩,cr.trans hc⟩
+
+theorem rowStep0_ct
+    {hint htail hmov : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.rcx]) (AdxTri8.storeHead 0 .r8 .r9) htail).isSome=true)
+    (hM : (taint.check (Taint.ofRegs []) (.block [.mov32 .r8 (.imm 0)]) hmov).isSome=true)
+    (hC : (taint.check (Taint.ofRegs [.rbp])
+      (.block (AdxTri8.row0Core [.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15])) hint).isSome=true) :
+    RelCT isa (Two Ready0) (AdxTri8.rowStep0 .r8 .r9 [.r10,.r11,.r12,.r13,.r14,.r15])
+      (fun _ _ => True) := by
+  unfold AdxTri8.rowStep0
+  refine RelCT.seq (two_piece [.rbp] ?_ hC row0Core_head) ?_
+  · intro L s t hs ht r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    subst r; exact hs.1.2.trans ht.1.2.symm
+  refine RelCT.seq (storeHead_ct 0 .r8 .r9 hT) ?_
+  exact RelCT.taint (A := taint) (Taint.ofRegs [])
+    (fun _ _ _ => Taint.agree_ofRegs (by simp)) hM
+
+theorem rowStep0_stage (L : CtLayout) (s : State) (h : Ready0 L s) :
+    WP isa (AdxTri8.rowStep0 .r8 .r9 [.r10,.r11,.r12,.r13,.r14,.r15]) s
+      (Stage 6 (AdxTri8.rotate AdxTri8.columns) L) := by
+  obtain ⟨⟨⟨mi,hg,hI⟩,hp⟩,hc⟩ := h
+  have he := L.he; have hiL := L.hi; have hZ := L.hZ
+  have hr := columns_regs
+  have bound : slot L.w aAcc+16*L.I+(16+8*(2*0+2))+8≤L.Z := by
+    unfold slot aAcc at *; omega
+  refine WP.mono (rowStep0_ok hg.scr hc hp (by simp only [List.length_cons,List.length_nil]; omega)
+    bound hr.1 hr.2) fun t ⟨_,zt,ot,kt⟩ => ?_
+  have dr : t.gpr .rdi=L.B := (kt.gpr (by decide)).trans hg.rdi
+  have pr : t.gpr .rbp=off L.B L.e := (kt.gpr (by decide)).trans hp
+  have ht := hg.hdr.of_outside ot (by unfold slot; omega)
+  have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.I := by
+    rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
+  have cr : t.gpr .rcx=s.gpr .rcx := kt.gpr (by decide)
+  refine ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,dr,ht⟩,it⟩,pr,?_⟩,cr.trans hc⟩
+  have h := value_zero_top (rs := [.r10,.r11,.r12,.r13,.r14,.r15]) zt
+  rwa [show ([Reg.r10,.r11,.r12,.r13,.r14,.r15]++[Reg.r8]).length-1=6 from rfl] at h
 
 theorem block_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -256,9 +296,10 @@ theorem block_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps)
   refine RelCT.seq (two_piece [.rdi] ?_ hS (setup_ct_fw pa)) ?_
   · intro L s t hs ht
     exact head_pins L s t hs.1 ht.1
-  exact RelCT.seq (two_piece [] (by simp [Pins]) (by taint_decide) clear_ct_fw)
-    (RelCT.seq (clearEnds_ct (by taint_decide))
-      (rows_ct 7 0 AdxTri8.columns columns_regs (by decide) (by decide) checks_seven))
+  exact RelCT.seq (clearEnds_ct (by taint_decide))
+    (RelCT.seq (two_post (rowStep0_ct (by taint_decide) (by taint_decide) (by taint_decide)) rowStep0_stage)
+      (rows_ct 6 1 (AdxTri8.rotate AdxTri8.columns) (rotate_regs columns_regs) (by decide) (by decide)
+        checks_six))
 
 end VG.Proof.Bignum.X86_64.AdxTri8
 
