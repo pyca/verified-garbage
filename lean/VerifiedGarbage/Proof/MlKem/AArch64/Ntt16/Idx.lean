@@ -210,4 +210,72 @@ theorem irep_bf {x y z t : VReg} (hxy : x ≠ y := by decide) (hx16 : x ≠ .v16
 
 end
 
+/-! ## Reduction to `[0, q)` -/
+
+theorem vhalf_and (a b : BitVec 128) {e : Nat} : vhalf (a &&& b) e = vhalf a e &&& vhalf b e := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [getLsbD_vhalf _ _ hi, BitVec.getLsbD_and]
+
+/-- A lane less than `q` in absolute value made nonnegative: `r + (r >> 15 & q)`. -/
+theorem nonneg_lane {r : BitVec 16} (h1 : -3329 < r.toInt) (h2 : r.toInt < 3329) :
+    (r + (r.sshiftRight 15 &&& BitVec.ofNat 16 3329)).toInt =
+      if r.toInt < 0 then r.toInt + 3329 else r.toInt := by
+  rw [BitVec.sshiftRight_eq, Int.shiftRight_eq_div_pow]
+  by_cases h : r.toInt < 0
+  · rw [show r.toInt / ((2 ^ 15 : Nat) : Int) = -1 by omega, ite_eq_left h,
+      show BitVec.ofInt 16 (-1) &&& BitVec.ofNat 16 3329 = BitVec.ofNat 16 3329 by decide,
+      BitVec.toInt_add]
+    simp only [Int.bmod_def, show (BitVec.ofNat 16 3329).toInt = 3329 by decide]
+    split <;> omega
+  · rw [show r.toInt / ((2 ^ 15 : Nat) : Int) = 0 by omega, ite_eq_right h,
+      show BitVec.ofInt 16 0 &&& BitVec.ofNat 16 3329 = 0#16 by decide, BitVec.add_zero]
+
+theorem tw_one : tw 1 = 10 := by decide
+
+section
+variable {rest : List Instr} {s : State} {Q : State → Prop}
+
+/-- `normalize x`: the lanes of `x`, less than `2¹⁵` in absolute value, reduced to `[0, q)`. -/
+theorem norm_ok {x : VReg} (h16 : x ≠ .v16 := by decide) (h31 : x ≠ .v31 := by decide) {X : Nat → Zq} {B : Nat}
+    (hx : Rep (s.v x) X B) (hB : B ≤ 32768) (h10 : Cst (s.v .v30) fun _ => 10)
+    (hq : Cst (s.v .v31) fun _ => 3329)
+    (k : ∀ s', VChg [.v16, x, .v16, .v16, x] s s' → (∀ e < 8, (vhalf (s'.v x) e).toNat = (X e).val) →
+      WP isa (.block rest) s' Q) :
+    WP isa (.block (normalize x ++ rest)) s Q := by
+  simp only [normalize, List.cons_append, List.nil_append]
+  have L : ∀ e < 8, ∃ T, sqdmulhHLane true (vhalf (s.v x) e) (BitVec.ofNat 16 10) = some T ∧
+      -3329 < (vhalf (s.v x) e - T * BitVec.ofNat 16 3329).toInt ∧
+      (vhalf (s.v x) e - T * BitVec.ofNat 16 3329).toInt < 3329 ∧
+      ((vhalf (s.v x) e - T * BitVec.ofNat 16 3329).toInt - ((X e).val : Int)) % 3329 = 0 := by
+    intro e he
+    obtain ⟨a1, a2, a3⟩ := hx e he
+    obtain ⟨T, hT, b1, b2, b3⟩ := mm_ok (vhalf (s.v x) e) (z := 1) (by omega) (by decide)
+    rw [tw_one, show (vhalf (s.v x) e) * BitVec.ofNat 16 1 = vhalf (s.v x) e from BitVec.mul_one _]
+      at *
+    refine ⟨T, hT, b1, b2, ?_⟩
+    omega
+  refine wp_vop (eval_mulH fun e he => by
+    obtain ⟨T, hT, -⟩ := L e he
+    simp only [VMulHOp.lane, h10 e he, hT, Option.isSome_some]) fun s₁ h₁ => ?_
+  refine wp_vop (eval_mulH fun _ _ => rfl) fun s₂ h₂ => ?_
+  refine wp_vop rfl fun s₃ h₃ => wp_vop rfl fun s₄ h₄ => wp_vop rfl fun s₅ h₅ => ?_
+  refine k s₅ ((((h₁.chg.trans h₂.chg).trans h₃.chg).trans h₄.chg).trans h₅.chg) fun e he => ?_
+  obtain ⟨T, hT, c1, c2, c3⟩ := L e he
+  have r2 : vhalf (s₂.v x) e = vhalf (s.v x) e - T * BitVec.ofNat 16 3329 := by
+    rw [h₂.v, vhalf_ofVHalves _ he]
+    simp only [VMulHOp.lane, h₁.v, h₁.get x h16, h₁.get .v31, vhalf_ofVHalves _ he, h10 e he, hT,
+      Option.getD_some, hq e he]
+  generalize vhalf (s.v x) e - T * BitVec.ofNat 16 3329 = r at r2 c1 c2 c3
+  have r5 : vhalf (s₅.v x) e = r + (r.sshiftRight 15 &&& BitVec.ofNat 16 3329) := by
+    rw [h₅.v, vhalf_map2 _ _ _ he, h₄.get x h16, h₄.v, vhalf_and, h₃.get x h16,
+      h₃.v, vhalf_map2 _ _ _ he, h₃.get .v31, h₂.get .v31 (Ne.symm h31), h₁.get .v31, hq e he, r2]
+    rfl
+  have hv := val_lt (X e)
+  have nn := nonneg_lane c1 c2
+  rw [r5]
+  rw [BitVec.toInt_eq_toNat_cond] at nn
+  split at nn <;> split at nn <;> omega
+
+end
+
 end VG.Proof.MlKem.AArch64.Ntt16
