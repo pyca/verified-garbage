@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Link
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
+public import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
 import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Modes.AArch64.Cfb8
@@ -252,9 +254,9 @@ theorem ofb_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' ofb_keeps_x30 (ofb_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide)) (by
+        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
       Proof.TripleDes.ofbPost, ofbAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [fbSat] using fbSat)
 
@@ -263,9 +265,9 @@ theorem cfbEncrypt_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbEncrypt_keeps_x30 (cfbEncrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide)) (by
+        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
       Proof.TripleDes.cfbEncPost, cfbEncAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [fbSat] using fbSat)
 
@@ -274,9 +276,9 @@ theorem cfbDecrypt_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbDecrypt_keeps_x30 (cfbDecrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide)) (by
+        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
       Proof.TripleDes.cfbDecPost, cfbDecAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [fbSat] using fbSat)
 
@@ -286,9 +288,9 @@ theorem cfb8Encrypt_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfb8Encrypt_keeps_x30 (cfb8Encrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide)) (by
+        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
     sig_implies [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig,
       Proof.TripleDes.cfb8EncPost, cfb8EncAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [cfb8Sat]
       using cfb8Sat)
@@ -299,9 +301,9 @@ theorem cfb8Decrypt_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfb8Decrypt_keeps_x30 (cfb8Decrypt_wp hs)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
       (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide)) (by
+        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
     sig_implies [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig,
       Proof.TripleDes.cfb8DecPost, cfb8DecAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [cfb8Sat]
       using cfb8Sat)

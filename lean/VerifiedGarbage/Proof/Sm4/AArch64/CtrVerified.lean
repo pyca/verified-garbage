@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 public import VerifiedGarbage.Proof.Sm4.Scratch
@@ -110,7 +112,9 @@ theorem ctrTaint_agree (s₁ s₂ : State) (_ : ctrAArch64.pre s₁) (_ : ctrAAr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr_ct : ConstantTime isa ctrAArch64.pre ctrAArch64.pub ctr :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) ctrTaint_agree (by taint_decide)
+  ct_of (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (fun s₁ s₂ h₁ h₂ hp => ⟨ctrTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
+      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [cryptSum])
 
 theorem ctr_correct (s : State) (hs : ctrAArch64.pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ ctrAArch64.post s s' := by
