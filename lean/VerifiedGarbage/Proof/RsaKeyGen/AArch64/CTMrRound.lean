@@ -11,6 +11,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-!
@@ -90,7 +91,7 @@ theorem preMul_ok (M : Mont) {p : RP} {s : State} (h : P1 p s) : WP isa (M.mm aX
   have hf : Frm p.L.B [(slot p.L.w aAcc, 8 * (p.L.w + 2)), (slot p.L.w aTmp, 8 * (p.L.w + 2)),
       (slot p.L.w aXm, 8 * (p.L.w + 2))] s.mem t.mem := Frm.of_arrays ha (by simp)
   refine ⟨h4, h128, hEZ, c, bm, wv s.mem p.L.B (slot p.L.w aX) p.L.w,
-    hc.of_frm hf (by kmut) k (by decide) (by rd_disj) (by rd_disj) (by rd_disj) (by rd_disj) (by rd_disj), hodd, hc1, ?_⟩
+    hc.of_frm hf (by kmut) k (by decide) ((VG.Proof.RsaKeyGen.mm_shape _ _).hdrW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.mm_shape _ _).apartW rfl rfl), hodd, hc1, ?_⟩
   rw [VG.Proof.Bignum.powMod_eq, Nat.pow_one, Nat.mod_mul_mod, ← Nat.mod_eq_of_lt hlt]
   refine VG.Proof.Bignum.mont_cancel hRc ?_
   rw [hy, Nat.mul_mod, Nat.mod_mod, ← Nat.mul_mod, Nat.mul_assoc]
@@ -113,8 +114,8 @@ theorem copyB_ct : RelCT isa (Two fun (p : RP) t => TB p.L t) (copyA aB aXm) (Tw
   refine WP.mono (copyA_ok hc.ws (o := aB) (a := aXm) (by decide) (by decide) (by decide)) fun t ⟨hv, o, _, _, k⟩ => ?_
   have f : Frm p.L.B [(slot p.L.w aB, 8 * (p.L.w + 2))] s.mem t.mem :=
     Frm.of_outside (o.mono (o' := slot p.L.w aB) (n' := 8 * (p.L.w + 2)) (Nat.le_refl _) (by omega)) (by simp)
-  exact ⟨h4, h128, hEZ, c, _, b, hc.setB f (by kmut) k (by decide) (by rd_disj) (by rd_disj) (by rd_disj) (by rd_disj) rfl,
-    hodd, hc1, by rw [f.wv_eq (d := slot p.L.w aXm) (k := p.L.w) (by rd_disj) (by omega)]; exact hX⟩
+  exact ⟨h4, h128, hEZ, c, _, b, hc.setB f (by kmut) k (by decide) ((VG.Proof.RsaKeyGen.arr_shape _ _).hdrW rfl rfl) ((VG.Proof.RsaKeyGen.arr_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.arr_shape _ _).apartW rfl rfl) ((VG.Proof.RsaKeyGen.arr_shape _ _).apartW rfl rfl) rfl,
+    hodd, hc1, by rw [f.wv_eq (d := slot p.L.w aXm) (k := p.L.w) ((VG.Proof.RsaKeyGen.arr_shape _ _).apartW rfl rfl) (by omega)]; exact hX⟩
 
 /-- The round up to the exponentiation. -/
 theorem roundPre_ct (M : Mont) : RelCT isa (Two R0) (seqs (mrWitness ++
