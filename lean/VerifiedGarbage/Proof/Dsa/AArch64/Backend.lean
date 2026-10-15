@@ -33,6 +33,8 @@ structure Backend where
   signVerified : Verified target (SignVerify.sign mul) (Spec.Dsa.signContract abi stack)
   verifyVerified : Verified target (SignVerify.verify mul) (Spec.Dsa.verifyContract abi stack)
   signSp : (SignVerify.sign mul).all (fun i => !isa.writesSp i) = true
+  signDepth : 16 * (SignVerify.sign mul).aarch64Depth ≤ stack
+  stackBound : stack < 2 ^ 32
   verifySp : (SignVerify.verify mul).all (fun i => !isa.writesSp i) = true
 
 end VG.Proof.Dsa.AArch64

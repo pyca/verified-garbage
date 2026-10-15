@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
+public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignVerified
 import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Dsa.AArch64.EqualCT
@@ -17,6 +18,18 @@ namespace VG.Generic.DsaArithmetic.AArch64.Dsa
 open VG.Proof.Dsa.AArch64
 
 def artifacts (v : Backend) : List Artifact := [
+  { Spec.Dsa.randomSignApi with
+    target := AArch64.target
+    name := Spec.Dsa.randomSignApi.name ++ v.suffix
+    doc := Spec.Dsa.randomSignApi.doc (notes := ["Rejection sampling and signing retries are verified \
+      against the bounded random-tape specification. The selected Montgomery backend is used \
+      for each signing attempt. Every failure zeros the entire output."])
+    code := Impl.Dsa.AArch64.RandomSign.code (randomSignerName v) (Impl.Dsa.AArch64.SignVerify.sign v.mul)
+    contract := Spec.Dsa.randomSignContract AArch64.abi (v.stack + 256)
+    stack := v.stack + 256
+    verified := random_sign_verified v
+    spSafe := random_sign_sp v
+    features := v.features },
   { Spec.Dsa.signApi with
     target := AArch64.target
     name := Spec.Dsa.signApi.name ++ v.suffix

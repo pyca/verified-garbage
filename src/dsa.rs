@@ -21,16 +21,16 @@
 use alloc::{vec, vec::Vec};
 use core::fmt;
 
-#[cfg(any(target_arch = "aarch64", test))]
+#[cfg(test)]
 use crate::arch::dsa::vg_dsa_sign;
 #[cfg(all(target_arch = "x86_64", test))]
 use crate::arch::dsa::vg_dsa_sign_adx;
-use crate::arch::dsa::vg_dsa_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
-    VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES, vg_dsa_sign_random,
-    vg_dsa_sign_random_adx, vg_dsa_verify_adx,
+    VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES, vg_dsa_sign_random_adx,
+    vg_dsa_verify_adx,
 };
+use crate::arch::dsa::{vg_dsa_sign_random, vg_dsa_verify};
 use crate::cpu::{Features, detected};
 use crate::zeroize::{Int, zeroize};
 
@@ -83,19 +83,6 @@ impl fmt::Display for Error {
 }
 
 impl core::error::Error for Error {}
-
-// Examine every byte: an early-exit integer comparison would expose a
-// prefix of the nonce that is subsequently used for signing.
-#[cfg(target_arch = "aarch64")]
-fn nonce_in_range(nonce: &[u8], q: &[u8]) -> bool {
-    let mut borrow = 0u16;
-    let mut nonzero = 0u8;
-    for (&a, &b) in nonce.iter().zip(q).rev() {
-        borrow = (u16::from(a).wrapping_sub(u16::from(b) + borrow)) >> 15;
-        nonzero |= a;
-    }
-    (borrow == 1) & (nonzero != 0)
-}
 
 /// An owned DSA public key. Import checks widths; verification checks the
 /// domain and public value. Domain primality is the caller's responsibility.
@@ -222,42 +209,6 @@ impl PrivateKey {
         })
     }
 
-    #[cfg(target_arch = "aarch64")]
-    fn sign_with_rng(
-        &self,
-        digest: &[u8],
-        mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
-    ) -> Result<Vec<u8>, Error> {
-        let q = &self.public.packed[self.public.p_len..self.public.p_len + self.public.q_len];
-        let first = q
-            .iter()
-            .position(|&b| b != 0)
-            .ok_or(Error::InvalidKeyOrNonce)?;
-        let high_mask = u8::MAX >> q[first].leading_zeros();
-        let mut nonce = Secret(vec![0u8; self.public.q_len]);
-        let mut scratch = Secret(vec![0u64; 16 * self.public.p_len]);
-        let mut output = vec![0u8; 2 * self.public.q_len];
-        for _ in 0..8 {
-            let mut sampled = false;
-            for _ in 0..128 {
-                random(&mut nonce.0[first..])?;
-                nonce.0[first] &= high_mask;
-                if nonce_in_range(&nonce.0, q) {
-                    sampled = true;
-                    break;
-                }
-            }
-            if !sampled {
-                return Err(Error::InvalidKeyOrNonce);
-            }
-            if self.sign_once(digest, &nonce.0, &mut output, &mut scratch.0) {
-                return Ok(output);
-            }
-        }
-        Err(Error::InvalidKeyOrNonce)
-    }
-
-    #[cfg(target_arch = "x86_64")]
     fn sign_with_rng(
         &self,
         digest: &[u8],
@@ -295,6 +246,7 @@ impl PrivateKey {
             }
             let status = match self.public.backend {
                 Backend::Baseline => sign!(vg_dsa_sign_random),
+                #[cfg(target_arch = "x86_64")]
                 Backend::Adx => sign!(vg_dsa_sign_random_adx),
             };
             match status {
@@ -312,7 +264,7 @@ impl PrivateKey {
         }
     }
 
-    #[cfg(any(target_arch = "aarch64", test))]
+    #[cfg(test)]
     fn sign_once(
         &self,
         digest: &[u8],
