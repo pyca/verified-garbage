@@ -10,6 +10,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-KEM on x86 (32-bit): the body of encapsulation
@@ -105,7 +107,7 @@ class EncapsOK (L : KemLay) : Prop where
     (Y L).apart ⟨(Y L).sc, L.eC + 32 * L.p.du * L.p.k, 32 * L.p.dv⟩ [] = true
 
 /-- `sc_taint`, for code with `scratch` at `(Y L).sc`. -/
-macro "ye_taint" : tactic => `(tactic| plain_simp_names ((try simp only [show ∀ L, (Y L).sc = 4 from fun _ => rfl]); sc_taint))
+tactic_template "ye_taint" : tactic => `(tactic| ((try simp only [show ∀ L, (Y L).sc = 4 from fun _ => rfl]); sc_taint))
 
 variable {L : KemLay}
 

@@ -29,6 +29,8 @@ public import VerifiedGarbage.Proof.Sha3.X86.Lit
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-KEM on x86 (32-bit): the code of a parameter set
@@ -73,7 +75,7 @@ open VG.Spec.MlKem
 variable {Y : Lay} {lk : State → List Byte} {A B : State → State → Prop}
 
 /-- `decide`, for a goal that mentions a parameter set that is not given but evaluates without it. -/
-macro "rdecide" : tactic => `(tactic| exact of_decide_eq_true rfl)
+tactic_template "rdecide" : tactic => `(tactic| exact of_decide_eq_true rfl)
 
 /-- `f a`, …, `f (a + n - 1)`, then `c`, each from `P i` to `P (i + 1)`. -/
 theorem _root_.VG.Proof.MlKem.X86.Piece.seqs {Pre : State → Prop} {Pub : State → State → Prop}

@@ -10,6 +10,8 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len ≥ 8`
@@ -108,7 +110,7 @@ structure GOnly (rs : List Reg) (s s' : State) : Prop where
   mxcsr : s'.mxcsr = s.mxcsr
 
 /-- `GOnly` of a chain of `setReg` and `setFlags`. -/
-macro "gonly" : tactic => `(tactic| plain_simp_names exact ⟨⟨fun r hr => by
+tactic_template "gonly" : tactic => `(tactic| exact ⟨⟨fun r hr => by
                    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
                    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false], rfl, rfl⟩, rfl, rfl, rfl⟩)
 

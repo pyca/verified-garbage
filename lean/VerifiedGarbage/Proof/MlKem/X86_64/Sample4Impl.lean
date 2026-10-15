@@ -24,6 +24,8 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
 public import VerifiedGarbage.Proof.Poly1305.Limbs64
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Implementations of `vg_mlkem_sample_ntt4` on x86-64
@@ -169,7 +171,7 @@ elab "closed_in " v:ident : tactic => withMainContext do
 
 /-- `ctlOk` of code that calls the implementation `v`: evaluated by the
 kernel but for the calls of `v`. -/
-macro "s4_ctl " v:ident : tactic =>
+tactic_template "s4_ctl " v:ident : tactic =>
   `(tactic| repeat' (first
     | (closed_in $v; decide +kernel) | with_reducible exact ($v).arith.dm_ctl
     | with_reducible exact ($v).arith.em_ctl | apply ctlOk_seq | apply ctlOk_ite
@@ -178,11 +180,11 @@ macro "s4_ctl " v:ident : tactic =>
     | exact ($v).arith.cbd.ctl | exact ($v).arith.dec12.ctl | rfl))
 
 /-- Code that does not call the implementation `v` never writes the stack pointer: by evaluation. -/
-macro "s4_sp_closed " v:ident : tactic =>
+tactic_template "s4_sp_closed " v:ident : tactic =>
   `(tactic| (closed_in $v; exact Code.all_of_allInstrs (by decide +kernel)))
 
 /-- That code that calls the implementation `v` never writes the stack pointer. -/
-macro "s4_sp " v:ident : tactic =>
+tactic_template "s4_sp " v:ident : tactic =>
   `(tactic| repeat' (first
     | s4_sp_closed $v | with_reducible exact ($v).arith.dm_sp | with_reducible exact ($v).arith.em_sp
     | apply all_seq | apply all_ite
