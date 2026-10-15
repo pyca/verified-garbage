@@ -11,6 +11,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # X25519 on AArch64: the steps of the field operations
@@ -63,7 +65,7 @@ theorem Kp.sub {W W' : List Reg} {s s' : State} (h : Kp W s s') (hs : W ⊆ W') 
   h.mono fun _ hr => hs hr
 
 /-- Closes `W ⊆ W'` for lists of registers, some of them variables. -/
-macro "sub_regs" : tactic => `(tactic| plain_simp_names simp only [List.cons_subset, List.append_subset, List.nil_subset,
+tactic_template "sub_regs" : tactic => `(tactic| simp only [List.cons_subset, List.append_subset, List.nil_subset,
                    List.mem_cons, List.mem_append, true_or, or_true, and_true, List.not_mem_nil, or_false, and_self,
                    List.cons_append, List.nil_append])
 

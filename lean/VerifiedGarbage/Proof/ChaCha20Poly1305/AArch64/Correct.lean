@@ -35,6 +35,8 @@ public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 public import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 @[expose] public section
 
@@ -61,7 +63,7 @@ variable {e : Bool}
 /-- That two of the regions the parts use are disjoint: parts of the context
 at different offsets, the additional data, the data and the tag. (Matching
 only reducibly, so that a lemma that does not apply fails fast.) -/
-macro "rdisj" : tactic => `(tactic| first
+tactic_template "rdisj" : tactic => `(tactic| first
   | with_reducible exact sub_disj _ (by lit_omega) (by lit_omega) (by lit_omega)
   | with_reducible exact (‹APre _ _›).c_d.sub_left (sub_ctx _ (by lit_omega))
   | with_reducible exact (‹APre _ _›).c_d.symm.sub_right (sub_ctx _ (by lit_omega))
@@ -73,7 +75,7 @@ macro "rdisj" : tactic => `(tactic| first
   | with_reducible exact (‹APre _ _›).d_t.symm)
 
 /-- A region is disjoint from each of a list of regions. -/
-macro "rdisj_all" : tactic => `(tactic| plain_simp_names (
+tactic_template "rdisj_all" : tactic => `(tactic| (
                    simp only [macR, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
                    repeat' apply And.intro
                    all_goals rdisj))

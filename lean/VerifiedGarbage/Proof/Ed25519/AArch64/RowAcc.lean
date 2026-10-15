@@ -9,6 +9,8 @@ import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! Rows of a four-by-four word product with the words of one
 operand in registers (`rowFirst`, `rowAcc`), and the instances the field
@@ -122,7 +124,7 @@ theorem rowFirst_value (a b0 b1 b2 b3 : Word) :
 
 /-- Run a straight block of register arithmetic, reading registers through
 the writes (literal registers decide each `if`). -/
-macro "reg_exec" hz:term : tactic => `(tactic| plain_simp_names (
+tactic_template "reg_exec" hz:term : tactic => `(tactic| (
                    apply WP.of_runBlock
                    simp only [rowAcc, rowFirst, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
                      RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
@@ -130,7 +132,7 @@ macro "reg_exec" hz:term : tactic => `(tactic| plain_simp_names (
                      Option.some.injEq, exists_eq_left']))
 
 /-- The registers but those written are kept. -/
-macro "reg_keeps" : tactic => `(tactic| plain_simp_names (
+tactic_template "reg_keeps" : tactic => `(tactic| (
                    intro r hr
                    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
                    simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr, ite_false]))
