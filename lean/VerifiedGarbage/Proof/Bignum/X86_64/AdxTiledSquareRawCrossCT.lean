@@ -231,7 +231,7 @@ theorem clearEnds_fw (L : CtLayout) (s : State) (h : Pre 7 AdxTri8.columns L s) 
       simp only [AdxTri8.columns,List.mem_cons,List.not_mem_nil,or_false] at hr
       rcases hr with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> decide)
   refine ⟨⟨⟨mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,
-    hg.hdr.of_outside ot (by unfold slot; omega)⟩,?_⟩,(kt.gpr (by decide)).trans hp,cols ▸ hv⟩,ct⟩
+    hg.hdr.of_outside ot (by unfold slot; omega)⟩,?_⟩,(kt.gpr (by decide)).trans hp,by rw [cols]; exact hv⟩,ct⟩
   rw [ot.word (by unfold slot hdrBytes sFn; omega) (by decide)]; exact hI
 
 theorem clearEnds_ct

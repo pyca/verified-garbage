@@ -81,7 +81,7 @@ theorem p384Sub_ok (s : State) {ts : List Reg} (hlen : ts.length = 6) (hf : Fres
     generalize decide ((s.gpr t4).toNat < w.toNat + k₄.toNat) = k₅ at e5 ⊢
     have e6 := sbb_borrow (s.gpr t5) w k₅
     generalize decide ((s.gpr t5).toNat < w.toNat + k₅.toNat) = k₆ at e6 ⊢
-    omega_using [e1, e2, e3, e4, e5, e6]
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1,
       hr.2.2.2.2.2, ite_false]
@@ -143,7 +143,7 @@ theorem csubR_ok (s : State) {ts : List Reg} {top : Reg} (hlen : ts.length = 6) 
     cases b₁ <;> cases B <;> cases c₅ <;>
       simp only [Bool.toNat_true, Bool.toNat_false, ite_true, ite_false, Bool.false_eq_true,
         decide_eq_true_eq, decide_eq_false_iff_not, Nat.not_lt] at hB e₁ e₅ ⊢ <;>
-      omega
+      omega_arith
   · exact ((((k₀.mono (by sub_regs)).trans (k₀'.mono (by sub_regs))).trans
       ((k₁.mono (by sub_regs)).trans ((k₂.mono (by sub_regs)).trans (k₃.mono (by sub_regs))))).trans
       (k₄.mono (by sub_regs))).trans (k₅.mono (by sub_regs))

@@ -35,7 +35,7 @@ theorem correct (s : State) (_ : contract.pre s) :
   obtain ⟨tr, t, he, ho, hk⟩ := WP.keep [.x0, .x1, .x2, .x3] h rfl rfl rfl
   refine ⟨tr, t, he, ⟨?_, hk.sp, hk.vcs⟩, ho⟩
   intro r hr
-  exact hk.gpr r (by cases r <;> simp_all [preserved])
+  exact hk.gpr r (by revert r; decide)
 
 theorem ct : ConstantTime isa contract.pre contract.pub Impl.Ffdh.AArch64.choose := by
   refine ConstantTime.of_silent fun s tr t _ h => ?_

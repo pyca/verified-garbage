@@ -118,7 +118,7 @@ theorem fn_correct (s : State) (h : fnContract.pre s) :
   obtain ⟨tr, t, he, hlt, heq, har, hk⟩ := hp
   refine ⟨tr, t, he, ⟨?_, hk.sp, hk.vcs⟩, ?_, ?_, ?_⟩
   · intro r hr
-    exact hk.gpr r (by cases r <;> simp_all [preserved, mmRegs])
+    exact hk.gpr r (by revert r; decide)
   · rw [numAt_eq, numAt_eq]; exact hlt
   · rw [numAt_eq, numAt_eq, numAt_eq, numAt_eq]; exact heq
   · intro i hi hj
