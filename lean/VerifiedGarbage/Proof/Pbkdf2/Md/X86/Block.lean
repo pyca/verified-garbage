@@ -431,6 +431,40 @@ include hz
 
 theorem Sizes.B4 : H.B % 4 = 0 ∧ 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B with h | h <;> rw [h] <;> decide
 
+/-! Facts about the sizes, each proved once for the many places that need it
+(each an `omega` call of its own otherwise). -/
+
+theorem Sizes.NB_lt64 : H.N + H.B < 2 ^ 64 := by
+  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+
+theorem Sizes.D_le64 : H.D ≤ 2 ^ 64 := by
+  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+
+theorem Sizes.D_lt64 : H.D < 2 ^ 64 := by
+  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+
+theorem Sizes.B_pos : 0 < H.B := by
+  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+
+theorem Sizes.N_lt64 : H.N < 2 ^ 64 := by
+  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+
+theorem Sizes.ND_le : H.N + H.D ≤ H.N + H.B := by
+  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+
+theorem Sizes.NDB_le : H.N + H.D + (H.B - H.D) ≤ H.N + H.B := by
+  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+
+theorem Sizes.D4 : 4 * (H.D / 4) = H.D := by
+  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+
+theorem Sizes.B_lt64 : H.B < 2 ^ 64 := by
+  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+
+theorem Sizes.buf_le64 : 8 * H.st.W + 16 ≤ 2 ^ 64 := by
+  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+
+
 theorem Sizes.tail_length : H.tailB.length = H.B - H.D := by
   have hz_DL := hz.DL
   simp only [Hash.tailB, tail, List.length_append, List.length_singleton, List.length_replicate,

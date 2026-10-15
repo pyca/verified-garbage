@@ -211,19 +211,19 @@ theorem hashKey_rel :
   unfold Fns.hashKey Hash.callInit
   have r1 := piece hp hp' hq (fun t₀ s => KK F t₀ s ∧ Long F t₀) (Hk1 F) (fun h => h.1.kr)
     (fun s s' h h' => ag_kk hq h.1 h'.1) hc.hk1
-    (fun _ s h => WP.mono (hk1_ok h.1 (by omega)) fun t ⟨k, d, _⟩ => ⟨⟨k, d⟩, h.2⟩)
+    (fun _ s h => WP.mono (hk1_ok h.1 hz.stWO_lt16) fun t ⟨k, d, _⟩ => ⟨⟨k, d⟩, h.2⟩)
   have r2a := piece hp hp' hq (Hk1 F) (Hk2a F) (fun h => h.1.1.kr)
     (fun s s' h h' => ag_hk hq h.1.1 h'.1.1 h.1.2 h'.1.2) hc.hk2
     (fun _ s h => WP.mono (hk2a_ok h.1.1 h.1.2) fun t ⟨k, d, a⟩ => ⟨⟨k, d, a⟩, h.2⟩)
   have cw : ∀ {t₀ : State}, Pre F t₀ → ∀ {s : State}, KR F t₀ s →
       Covers [⟨State.addr (dO t₀ F.stWO), F.H.S⟩] s.wr := fun {t₀} hp₀ {s} k => by
-    rw [dO_addr hp₀ (by omega)]
+    rw [dO_addr hp₀ hz.stWO_lt]
     refine Covers.of_sub fun r hr => ?_
-    simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp₀ k (by omega)
+    simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp₀ k hz.stWO_S
   have r2 : RelCT isa (fun s s' => Hk2a F s₀ s ∧ Hk2a F s₀' s') (.call F.H.initN F.H.initC)
       fun s s' => Hk2 hF.hH s₀ s ∧ Hk2 hF.hH s₀' s' :=
     rel_wp (init_rel hF.hH (st := dO s₀ F.stWO) fun s s' ⟨⟨⟨k, _, a⟩, _⟩, ⟨⟨k', _, a'⟩, _⟩⟩ =>
-        ⟨a, by rw [a', dO, dO, hq.scrEq], by rw [dO_toNat hp (by omega)]; have := hp.nsc; omega, cw hp k.kr,
+        ⟨a, by rw [a', dO, dO, hq.scrEq], by rw [dO_toNat hp hz.stWO_lt]; have := hp.nsc; omega, cw hp k.kr,
           by have := cw hp' k'.kr; rw [dO, hq.scrEq] at this; exact this⟩)
       (fun s ⟨⟨k, d, a⟩, l⟩ => WP.mono (hk2b_ok hp hz hF.hH k d a) fun t h => ⟨h, l⟩)
       (fun s ⟨⟨k, d, a⟩, l⟩ => WP.mono (hk2b_ok hp' hz hF.hH k d a) fun t h => ⟨h, l⟩)
@@ -245,7 +245,7 @@ theorem hashKey_rel :
         ⟨h, l⟩)
   have r5 := piece hp hp' hq (Hk4 hF.hH) (Hk5 hF.hH) (fun h => h.1.1.kr)
     (fun s s' h h' => ag_hk hq h.1.1 h'.1.1 h.1.2.1 h'.1.2.1) hc.hk5
-    (fun hp₀ s ⟨⟨k, d, r⟩, l⟩ => WP.mono (hk5_ok k d (by omega)) fun t ⟨k', a₀, a₁, a₁₂, c, m⟩ =>
+    (fun hp₀ s ⟨⟨k, d, r⟩, l⟩ => WP.mono (hk5_ok k d hz.hkO_lt16) fun t ⟨k', a₀, a₁, a₁₂, c, m⟩ =>
       ⟨⟨k', a₀, a₁, a₁₂, c, by rw [m]; exact r⟩, l⟩)
   have r6 : RelCT isa (fun s s' => Hk5 hF.hH s₀ s ∧ Hk5 hF.hH s₀' s')
       (.frame (.push [.r1, .r12]) (.call F.H.finN F.H.finC) (.pop .r1 8))
@@ -257,12 +257,12 @@ theorem hashKey_rel :
       (fun s ⟨⟨k, a₀, a₁, a₁₂, c, r⟩, l⟩ => WP.mono (hk6_ok hp hz hF.hH k a₀ a₁ a₁₂ c r) fun t h => ⟨h, l⟩)
       (fun s ⟨⟨k, a₀, a₁, a₁₂, c, r⟩, l⟩ => WP.mono (hk6_ok hp' hz hF.hH k a₀ a₁ a₁₂ c r) fun t h => ⟨h, l⟩)
   have r7 := piece hp hp' hq (Hk6 hF.hH) (Keyed hF) (fun h => h.1.1) (fun s s' h h' => ag_kr hq h.1.1 h'.1.1) hc.hk7
-    (fun {t₀} hp₀ s ⟨⟨k, b⟩, l⟩ => WP.mono (hk7_ok k (by omega) (by omega)) fun t ⟨k', d, c, m⟩ => by
+    (fun {t₀} hp₀ s ⟨⟨k, b⟩, l⟩ => WP.mono (hk7_ok k hz.hkO_lt16 hz.D_lt16) fun t ⟨k', d, c, m⟩ => by
       have hlt : ¬ pwl t₀ < F.H.B + 1 := by omega
       have ekp : kp F t₀ = dO t₀ F.hkO := by simp only [kp, hlt, ↓reduceIte]
       have ekl : kl F t₀ = F.H.D := by simp only [kl, hlt, ↓reduceIte]
       refine ⟨k', by rw [ekp]; exact d, by rw [ekl]; exact c, ?_⟩
-      rw [ekp, ekl, dO_addr hp₀ (by omega), m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega)
+      rw [ekp, ekl, dO_addr hp₀ hz.hkO_lt, m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega)
         (hash_len hF.hH b)])
   exact (r1.seq ((r2a.seq r2).seq (r3.seq (r4.seq (r5.seq (r6.seq r7)))))).mono (fun _ _ h => h) fun _ _ h => h
 

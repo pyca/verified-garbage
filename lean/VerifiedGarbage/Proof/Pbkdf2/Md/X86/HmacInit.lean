@@ -56,7 +56,7 @@ theorem fillW_ok {dst : Reg} {y : BitVec 32} {o : Nat} {b : Byte} (n : Nat) :
     rw [List.range_succ, List.map_append, List.map_singleton, List.append_assoc]
     refine ih _ s Q hc hy (by omega_arith) (fun j hj => hout j (by omega_arith)) fun s₁ g₁ rd₁ wr₁ m₁ => ?_
     simp only [List.cons_append, List.nil_append]
-    refine wp_store (a := addr y (o + 4 * n)) (by rw [ea_at, g₁, hy]) (by rw [wr₁]; exact hout n (by omega_arith))
+    refine wp_store (a := addr y (o + 4 * n)) (by rw [ea_at, g₁, hy]) (by rw [wr₁]; exact hout n (Nat.lt_succ_self _))
       fun s₂ u₂ => ?_
     refine k s₂ (by rw [u₂.gpr, g₁]) (by rw [u₂.rd, rd₁]) (by rw [u₂.wr, wr₁]) ?_
     rw [u₂.mem, m₁, g₁, hc, addr_word fy (by omega_arith : n < n + 1), MdKeys.writeW_rep,
@@ -88,10 +88,10 @@ theorem opadW_ok (H : Hash) {x y : BitVec 32} (n : Nat) :
       fun s₁ g₁ rd₁ wr₁ m₁ => ?_
     simp only [Hash.opadW, List.cons_append, List.nil_append]
     refine wp_movm (a := addr x (H.N + 4 * n)) (by rw [ea_at, g₁ _ (by decide), hx])
-      (by rw [rd₁, wr₁]; exact hin n (by omega_arith)) fun s₂ u₂ => wp_xori fun s₃ u₃ => ?_
+      (by rw [rd₁, wr₁]; exact hin n (Nat.lt_succ_self _)) fun s₂ u₂ => wp_xori fun s₃ u₃ => ?_
     refine wp_store (a := addr y (H.N + 4 * n))
       (by rw [ea_at, u₃.other _ (by decide), u₂.other _ (by decide), g₁ _ (by decide), hy])
-      (by rw [u₃.wr, u₂.wr, wr₁]; exact hout n (by omega_arith)) fun s₄ u₄ => ?_
+      (by rw [u₃.wr, u₂.wr, wr₁]; exact hout n (Nat.lt_succ_self _)) fun s₄ u₄ => ?_
     refine k s₄ (fun r hr => by rw [u₄.gpr, u₃.other r hr, u₂.other r hr, g₁ r hr])
       (by rw [u₄.rd, u₃.rd, u₂.rd, rd₁]) (by rw [u₄.wr, u₃.wr, u₂.wr, wr₁]) ?_
     have hl : ((bytesAt s.mem (x.setWidth 64 + BitVec.ofNat 64 H.N) (4 * n)).map (· ^^^ (0x6a : Byte))).length =
@@ -287,7 +287,7 @@ theorem cmp_sub : Region.Sub (cmpR (H := H) s₀) (scR sc s₀) := by
 
 theorem save_cmp : (saveR H.st (scr s₀)).Disjoint (cmpR (H := H) s₀) := by
   have := bounds hz hp
-  exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)
+  exact Offset.disjoint_base _ (hz.so) (hz.buf_le64)
 
 omit hz hp in
 /-- A part of a state at `p`. -/
@@ -527,10 +527,10 @@ theorem cmpS_ok (hO : MdOk H) {s : State} (hk : KR (H := H) sc s₀ s) {p : BitV
     WP isa H.cmp s Q := by
   obtain ⟨hb, hf, nw, hso, hW, hN0, hN, -, -, hB64, -⟩ := bounds hz hp
   obtain ⟨dS, dK, dV, np, hin⟩ := st_facts hz hp hpR
-  refine cmp_ok hO.comp (by omega_arith) (cmpArgs hz hp hk hpR hbx hax) fun s' ha e => ?_
+  refine cmp_ok hO.comp (hz.B_pos) (cmpArgs hz hp hk hpR hbx hax) fun s' ha e => ?_
   have f := ha.frame
   rw [stk_eq hk] at f
-  have sN : Region.Sub ⟨p.setWidth 64, H.N⟩ ⟨p.setWidth 64, H.N + H.B⟩ := Region.sub_prefix (by omega_arith)
+  have sN : Region.Sub ⟨p.setWidth 64, H.N⟩ ⟨p.setWidth 64, H.N + H.B⟩ := Region.sub_prefix (Nat.le_add_right _ _)
   refine hQ s' (KR.call hz hp hk ha ?_ ?_) (ha.cs .ebx (by decide) |>.trans hbx) (f.mono (by simp)) e
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
@@ -574,7 +574,7 @@ theorem fill_ok {s : State} (hk : KR (H := H) sc s₀ s) (hbx : s.gpr .ebx = inn
   rw [h4] at m₂
   have f₂ : Frame [⟨(inn s₀).setWidth 64 + BitVec.ofNat 64 H.N, H.B⟩] s.mem s₂.mem := by
     rw [m₂, u₁.mem]; exact writeBytes_frame _ _ _ (by simp only [List.length_replicate]; exact Region.contains_self _ _)
-  have sB : Region.Sub ⟨(inn s₀).setWidth 64 + BitVec.ofNat 64 H.N, H.B⟩ (inR (H := H) s₀) := st_sub _ (by omega_arith)
+  have sB : Region.Sub ⟨(inn s₀).setWidth 64 + BitVec.ofNat 64 H.N, H.B⟩ (inR (H := H) s₀) := st_sub _ (Nat.le_refl _)
   have k₂ : KR (H := H) sc s₀ s₂ := hk.keep (by rw [rd₂, u₁.rd]) (by rw [wr₂, u₁.wr])
     (fun r hr => by rw [g₂, u₁.other r (by revert hr; decide +revert)]) f₂
     (by
@@ -631,7 +631,7 @@ theorem keys_ok {s : State} (hk : KR (H := H) sc s₀ s) (hbx : s.gpr .ebx = inn
   refine WP.mono (key_ok (by omega_arith) (by rw [tp]; omega_using [hkl, ni]) kl32 hin hout hsep h0 hzf) fun t ht => ?_
   have hl : ((bytesAt s.mem ((kp s₀).setWidth 64) (kl s₀)).map (· ^^^ ipad)).length = kl s₀ := by
     simp [bytesAt_length]
-  have sB := st_sub (H := H) (inn s₀) (a := H.N) (n := H.B) (by omega_arith)
+  have sB := st_sub (H := H) (inn s₀) (a := H.N) (n := H.B) (Nat.le_refl _)
   have ft : Frame [⟨(inn s₀).setWidth 64 + BitVec.ofNat 64 H.N, H.B⟩] s.mem t.mem := by
     rw [ht.mem, ap]; exact writeBytes_frame _ _ _ (by rw [hl]; exact Memory.contains_base hkl)
   refine ⟨hk.keep ht.rd ht.wr (fun r hr => ht.other r (by revert hr; decide +revert) (by revert hr; decide +revert)
@@ -641,7 +641,7 @@ theorem keys_ok {s : State} (hk : KR (H := H) sc s₀ s) (hbx : s.gpr .ebx = inn
         exact (hp.i_s.symm.sub_left (save_sub hz hp)).sub_right sB)
       (by simp only [List.mem_singleton]; rintro r rfl; exact ⟨_, by simp, sB⟩),
     by rw [ht.other _ (by decide) (by decide) (by decide) (by decide), hbx], ft, ?_⟩
-  rw [ht.mem, ap, MdKeys.bytes_over (by rw [hl]; omega_arith) (by omega_arith) hm, hl, hk.key hp]
+  rw [ht.mem, ap, MdKeys.bytes_over (by rw [hl]; omega_arith) (hz.B_lt64) hm, hl, hk.key hp]
   rfl
 
 
@@ -653,8 +653,8 @@ theorem opad_ok {s : State} (hk : KR (H := H) sc s₀ s) (hbx : s.gpr .ebx = inn
         ((bytesAt s.mem ((inn s₀).setWidth 64 + BitVec.ofNat 64 H.N) H.B).map (· ^^^ 0x6a)) := by
   obtain ⟨-, -, -, -, -, -, hN, -, hB4, hB64, hB, ni, no, -⟩ := bounds hz hp
   have h4 : 4 * (H.B / 4) = H.B := by omega_arith
-  have sBI := st_sub (H := H) (inn s₀) (a := H.N) (n := H.B) (by omega_arith)
-  have sBO := st_sub (H := H) (out s₀) (a := H.N) (n := H.B) (by omega_arith)
+  have sBI := st_sub (H := H) (inn s₀) (a := H.N) (n := H.B) (Nat.le_refl _)
+  have sBO := st_sub (H := H) (out s₀) (a := H.N) (n := H.B) (Nat.le_refl _)
   unfold Hash.fillOpad
   refine opadW_ok H (H.B / 4) _ s _ hbx hk.esi (by omega_arith) (by omega_arith)
     (fun j hj => by rw [hk.wr, hk.rd]; exact InRegions.right' (buf_word hz hp (.inl rfl) hj))
@@ -683,7 +683,7 @@ theorem blocks_ok {s : State} (hk : KR (H := H) sc s₀ s) (hbx : s.gpr .ebx = i
   have := (bounds hz hp).2.2.2.2.2.2.2.2.2.2.1
   refine WP.seq (WP.mono (fill_ok hz hp hk hbx) fun s₄ ⟨k₄, b₄, d₄, x₄, c₄, z₄, m₄⟩ => ?_)
   refine WP.seq (WP.mono (keys_ok hz hp k₄ b₄ d₄ x₄ c₄ z₄ (by
-    rw [m₄, bytesAt_writeBytes_self' (List.length_replicate ..) (by omega_arith)])) fun s₅ ⟨k₅, b₅, _⟩ => ?_)
+    rw [m₄, bytesAt_writeBytes_self' (List.length_replicate ..) (hz.B_lt64)])) fun s₅ ⟨k₅, b₅, _⟩ => ?_)
   exact WP.mono (opad_ok hz hp k₅ b₅) fun _ ⟨k₆, b₆, a₆, _⟩ => ⟨k₆, b₆, a₆⟩
 
 omit hz hp in
@@ -730,8 +730,8 @@ theorem correct :
   have sNI := st_sub (H := H) (inn s₀) (a := 0) (n := H.N) (by omega_using [])
   have sNO := st_sub (H := H) (out s₀) (a := 0) (n := H.N) (by omega_arith)
   rw [BitVec.add_zero] at sNI sNO
-  have sBI := st_sub (H := H) (inn s₀) (a := H.N) (n := H.B) (by omega_arith)
-  have sBO := st_sub (H := H) (out s₀) (a := H.N) (n := H.B) (by omega_arith)
+  have sBI := st_sub (H := H) (inn s₀) (a := H.N) (n := H.B) (Nat.le_refl _)
+  have sBO := st_sub (H := H) (out s₀) (a := H.N) (n := H.B) (Nat.le_refl _)
   have nb : ∀ (x : BitVec 32), Region.Disjoint ⟨x.setWidth 64, H.N⟩ ⟨x.setWidth 64 + BitVec.ofNat 64 H.N, H.B⟩ :=
     fun _ => Offset.base_disjoint _ (Nat.le_refl _) (by omega_using [hB, hN])
   have iv0 : ∀ {m : Mem} {p : Addr}, hO.hH.SH.Repr m p [] → hO.md.stateAt m p = hO.iv := fun h => by
@@ -750,7 +750,7 @@ theorem correct :
   refine WP.seq (WP.seq (WP.mono (fill_ok hz hp k₃ (b₃.trans (b₂.trans b₁)))
     fun s₄ ⟨k₄, b₄, d₄, x₄, c₄, z₄, m₄⟩ => ?_))
   have rep₄ : bytesAt s₄.mem ((inn s₀).setWidth 64 + BitVec.ofNat 64 H.N) H.B = List.replicate H.B 0x36 := by
-    rw [m₄, bytesAt_writeBytes_self' (List.length_replicate ..) (by omega_using [hB])]
+    rw [m₄, bytesAt_writeBytes_self' (List.length_replicate ..) (hz.B_lt64)]
   have f₄ : Frame [⟨(inn s₀).setWidth 64 + BitVec.ofNat 64 H.N, H.B⟩] s₃.mem s₄.mem := by
     rw [m₄]; exact writeBytes_frame _ _ _ (by rw [List.length_replicate]; exact Region.contains_self _ _)
   refine WP.seq (WP.mono (keys_ok hz hp k₄ b₄ d₄ x₄ c₄ z₄ rep₄) fun s₅ ⟨k₅, b₅, f₅, bI₅⟩ => ?_)
@@ -761,7 +761,7 @@ theorem correct :
     rw [m₆]; exact writeBytes_frame _ _ _ (by rw [hl6]; exact Region.contains_self _ _)
   have bO₆ : bytesAt s₆.mem ((out s₀).setWidth 64 + BitVec.ofNat 64 H.N) H.B =
       (bytesAt s₅.mem ((inn s₀).setWidth 64 + BitVec.ofNat 64 H.N) H.B).map (· ^^^ 0x6a) := by
-    rw [m₆, bytesAt_writeBytes_self' hl6 (by omega_using [hB])]
+    rw [m₆, bytesAt_writeBytes_self' hl6 (hz.B_lt64)]
   have bI₆ : bytesAt s₆.mem ((inn s₀).setWidth 64 + BitVec.ofNat 64 H.N) H.B =
       bytesAt s₅.mem ((inn s₀).setWidth 64 + BitVec.ofNat 64 H.N) H.B :=
     Memory.frame_bytesAt f₆ (by
@@ -789,7 +789,7 @@ theorem correct :
   have hKl : (xorPad (blockKey hO.hH.SH.H (bytesAt s₀.mem ((kp s₀).setWidth 64) (kl s₀))) ipad).length = H.B := by
     rw [hK, bytesAt_length]
   -- The inner state.
-  have rI₇ := Md.repr_block (H := hO.md) (iv := hO.iv) (by omega_using [hB64]) hKl (by rw [bI₆, hK]) (by rw [e₇, vI₆])
+  have rI₇ := Md.repr_block (H := hO.md) (iv := hO.iv) (hz.B_pos) hKl (by rw [bI₆, hK]) (by rw [e₇, vI₆])
   have dI₉ : ∀ r ∈ [(⟨(out s₀).setWidth 64, H.N⟩ : Region), cmpR (H := H) s₀, stkR s₀],
       Region.Disjoint ⟨(inn s₀).setWidth 64, H.N + H.B⟩ r := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -811,8 +811,8 @@ theorem correct :
     rw [m₈, keep_st hO f₇ (by have := d₇ (a := 0) (n := H.N) (by omega_using []); rwa [BitVec.add_zero] at this), vO₆]
   have bO₈ : bytesAt s₈.mem ((out s₀).setWidth 64 + BitVec.ofNat 64 H.N) H.B =
       xorPad (blockKey hO.hH.SH.H (bytesAt s₀.mem ((kp s₀).setWidth 64) (kl s₀))) opad := by
-    rw [m₈, Memory.frame_bytesAt f₇ (d₇ (by omega_arith)) (by omega_using [hB]), bO₆, ← hK, MdKeys.xorOpad_ipad]
-  have rO₉ := Md.repr_block (H := hO.md) (iv := hO.iv) (by omega_arith) (by rw [xorPad_length, ← xorPad_length _ ipad, hKl])
+    rw [m₈, Memory.frame_bytesAt f₇ (d₇ (Nat.le_refl _)) (by omega_using [hB]), bO₆, ← hK, MdKeys.xorOpad_ipad]
+  have rO₉ := Md.repr_block (H := hO.md) (iv := hO.iv) (hz.B_pos) (by rw [xorPad_length, ← xorPad_length _ ipad, hKl])
     bO₈ (by rw [e₉, vO₈])
   -- The end.
   have hsc : ⟨(scr s₀).setWidth 64, 8 * sc⟩ ∈ s₉.wr := by rw [k₉.wr, hp.wr]; simp

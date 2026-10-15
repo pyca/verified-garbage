@@ -166,6 +166,64 @@ theorem layout : F.L.buf = 8 * F.W + 16 ∧ F.st0O = 8 * F.W + 16 ∧ F.st1O = 8
 theorem end_le (hz : Sizes F) : F.intO + 4 ≤ F.L8 := by
   have := layout (F := F); have := hz.fits; simp only [Fns.L8]; omega
 
+/-! Bounds of the parts of `scratch`, each proved once for the many places that
+need it (each an `omega` call of its own otherwise). -/
+
+theorem Sizes.st0O_lt (hz : Sizes F) : F.st0O < F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.st1O_lt (hz : Sizes F) : F.st1O < F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.stWO_lt (hz : Sizes F) : F.stWO < F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.uO_lt (hz : Sizes F) : F.uO < F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.tO_lt (hz : Sizes F) : F.tO < F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.hkO_lt (hz : Sizes F) : F.hkO < F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.intO_lt (hz : Sizes F) : F.intO < F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.st0O_S (hz : Sizes F) : F.st0O + F.H.S ≤ F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.st0O_2S (hz : Sizes F) : F.st0O + 2 * F.H.S ≤ F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.st0O_3S (hz : Sizes F) : F.st0O + 3 * F.H.S ≤ F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.st1O_S (hz : Sizes F) : F.st1O + F.H.S ≤ F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.stSO_S (hz : Sizes F) : F.stSO + F.H.S ≤ F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.stWO_S (hz : Sizes F) : F.stWO + F.H.S ≤ F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.uO_D (hz : Sizes F) : F.uO + F.H.D ≤ F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.tO_D (hz : Sizes F) : F.tO + F.H.D ≤ F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.hkO_D (hz : Sizes F) : F.hkO + F.H.D ≤ F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.hkO_F (hz : Sizes F) : F.hkO + F.H.F ≤ F.L8 := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+theorem Sizes.stWO_S_intO (hz : Sizes F) : F.stWO + F.H.S ≤ F.intO := by
+  have := layout (F := F); have := end_le hz; have := hz.D; simp only [Fns.L8] at *; omega
+
+
 theorem L8_le (hz : Sizes F) : F.L8 ≤ 8 * 512 + 8 * 256 := by
   have := hz.W; have := hz.S; simp only [Fns.L8]; omega
 

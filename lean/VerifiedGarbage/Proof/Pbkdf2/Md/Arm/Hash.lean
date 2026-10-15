@@ -55,6 +55,52 @@ structure Sizes (H : Hash) : Prop where
   S : H.st.S = H.N + H.B
   F : H.st.F = H.N
 
+namespace Sizes
+
+variable {H : Hash} (hz : Sizes H)
+include hz
+
+/-! Facts about the sizes, each proved once for the many places that need it
+(each an `omega` call of its own otherwise). -/
+
+theorem B_range : 64 ≤ H.B ∧ H.B ≤ 128 := by
+  rcases hz.B with h | h <;> omega
+
+theorem B_ge : 64 ≤ H.B := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+theorem B4 : H.B % 4 = 0 := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+theorem D_lt64 : H.D < 2 ^ 64 := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+theorem D_le64 : H.D ≤ 2 ^ 64 := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+theorem N_lt64 : H.N < 2 ^ 64 := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+theorem B_lt64 : H.B < 2 ^ 64 := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+theorem NB_le64 : H.N + H.B ≤ 2 ^ 64 := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+theorem BLD_lt64 : H.B - H.L - H.D < 2 ^ 64 := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+theorem buf_le64 : 8 * H.st.W + 36 ≤ 2 ^ 64 := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+theorem bufN_le64 : 8 * H.st.W + 36 + H.N ≤ 2 ^ 64 := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+theorem bufNB_le64 : 8 * H.st.W + 36 + H.N + H.B ≤ 2 ^ 64 := by
+  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+
+end Sizes
+
 /-- What the proofs need of a Merkle–Damgård hash function's code. -/
 structure HashOK (H : Hash) where
   /-- The hash function, as the proofs see it. -/
