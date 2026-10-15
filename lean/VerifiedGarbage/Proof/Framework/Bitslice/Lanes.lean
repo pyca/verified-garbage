@@ -136,6 +136,26 @@ theorem par_zero (w A q n : Nat) : par w A 0 q n = false := by
   | zero => rfl
   | succ n ih => simp [par, ih]
 
+/-- Lanes from `N` on are zero in a value below `2 ^ (w N)`: the parity up to
+`N + d` is the parity up to `N`. -/
+theorem par_high {w A f q N : Nat} (hf : f < 2 ^ (w * N)) (hq : q < w) :
+    ∀ d, par w A f q (N + d) = par w A f q N
+  | 0 => rfl
+  | d + 1 => by
+    rw [← Nat.add_assoc, par, par_high hf hq d,
+      Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hf (Nat.pow_le_pow_right (by decide)
+        (by rw [Nat.mul_add]; omega))), Bool.false_and, Bool.xor_false]
+
+theorem par_congr_assign {w A B f q : Nat} :
+    ∀ {n}, (∀ a < n, A.testBit a = B.testBit a) → par w A f q n = par w B f q n
+  | 0, _ => rfl
+  | n + 1, h => by
+    rw [par, par, par_congr_assign (n := n) fun a ha => h a (by omega), h n (by omega)]
+
+theorem le_sum_of_mem {a : Nat} : ∀ {l : List Nat}, a ∈ l → a ≤ l.sum
+  | _ :: l, .head _ => by simp only [List.sum_cons]; omega
+  | b :: l, .tail _ h => by simp only [List.sum_cons]; have := le_sum_of_mem h; omega
+
 theorem par_and_rep {w A f c q n k : Nat} (hc : c < 2 ^ w) (hq : q < w) (hn : n ≤ 2 ^ k) :
     par w A (f &&& rep w c k) q n = (c.testBit q && par w A f q n) := by
   induction n with
