@@ -63,9 +63,8 @@ theorem lensArgs_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n : Nat}
   · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
   · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15]
   · simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
-  · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+  · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
+    simp only [gpr_arithFlags, gpr_setReg, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
   all_goals rfl
 
 theorem lens_ok (v : GcmImpl) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {al n : Nat}
@@ -124,9 +123,8 @@ theorem tagIn_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t)
       GcmSiv.toBytes_append, show (12 : Nat) = 8 + 4 from rfl, Proof.Cmac.bytesAt_add, ← Proof.Cmac.le8_readW,
       ← Proof.Cmac.le4_readW, GcmSiv.tagOf_words]
     rfl
-  · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
+  · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
+    simp only [gpr_arithFlags, gpr_setReg, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
   all_goals rfl
 
 /-- The slots, after code that writes only what absorbing writes. -/
@@ -515,9 +513,8 @@ theorem lensAt_ok {K W SP : Addr} {t : State} (E : Env K W SP t) {al n k : Nat} 
     rw [BitVec.add_comm W, BitVec.add_sub_cancel, Proof.AesGcm.X86_64.shr4 _ (by omega_arith),
       show 488 / 16 - 1 = 29 from rfl, Proof.AesGcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith),
       show (488 + 16 * k) / 16 - 29 = k + 1 by omega_arith]
-  · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, ite_true, ite_false, reduceCtorEq]
+  · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
+    simp only [gpr_arithFlags, gpr_setReg, gpr_setFlags, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
   all_goals rfl
 
 /-- What staging writes, as what absorbing writes. -/
@@ -526,8 +523,8 @@ theorem Frame.stR_absR {W SP : Addr} {s : Nat} {m m' : Mem} (hs : s ≤ 64) (h :
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by simp, Offset.sub W (by omega_arith) (by omega_arith)⟩
+    · exact ⟨_, by mem_lit, fun _ h => h⟩
+    · exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by mem_lit, Offset.sub W (by omega_arith) (by omega_arith)⟩
 
 theorem StPost.of_eq {K W SP : Addr} {s : Nat} {xs : List Spec.GcmSiv.Elem} {t t₁ t₂ : State}
     (h : StPost K W SP s xs t₁ t₂) (hm : t₁.mem = t.mem) (hrd : t₁.rd = t.rd) (hwr : t₁.wr = t.wr) :

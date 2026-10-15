@@ -281,7 +281,7 @@ theorem ctrGen_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t
   · rw [← m₁]
     exact ((I.frame.sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
-      exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by simp, Offset.sub W (by omega_arith) (by omega_arith)⟩).trans
+      exact ⟨⟨W + BitVec.ofNat 64 488, 1024⟩, by mem_lit, Offset.sub W (by omega_arith) (by omega_arith)⟩).trans
       (fW.mono (by simp)))
   · rw [I.gpr r h₄ h₅, g₁ r h₁ h₄ h₅]
 
@@ -653,11 +653,10 @@ theorem ecbArgs_ok {K W SP : Addr} {R : Nat} {t : State} (E : Env K W SP t) {N A
   have h15 := E.r15
   have rR := S.rounds
   have rR' := E.perm.wR (show 200 + 8 ≤ 3816 by decide)
-  refine ⟨_, by srun [ecbArgs, h15, rR, rR', h14], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals try (simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15, rR, h14]; done)
-  · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
-  all_goals rfl
+  refine ⟨_, by srun [ecbArgs, h15, rR, rR', h14], ?_, ?_, ?_, ?_, ?_, ?_, by simp only [mem_setReg, mem_arithFlags],
+    by simp only [rd_setReg, rd_arithFlags], by simp only [wr_setReg, wr_arithFlags]⟩
+  iterate 5 simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15, rR, h14]
+  · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
+    simp only [gpr_arithFlags, gpr_setReg, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
 
 end VG.Proof.AesGcmSiv.X86_64

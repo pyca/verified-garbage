@@ -39,10 +39,10 @@ theorem derR_mut (W SP D : Addr) (n : Nat) : ∀ r ∈ derR W SP, ∃ r' ∈ mut
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
-  · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
-  · exact ⟨wC W, by simp, Offset.sub W (by decide) (by decide)⟩
-  · exact ⟨_, by simp, fun _ h => h⟩
+  · exact ⟨wA W, by mem_lit, Offset.sub_base W (by decide)⟩
+  · exact ⟨wC W, by mem_lit, Offset.sub W (by decide) (by decide)⟩
+  · exact ⟨wC W, by mem_lit, Offset.sub W (by decide) (by decide)⟩
+  · exact ⟨_, by mem_lit, fun _ h => h⟩
 
 /-- Buffers outside `W` and the stack below `SP` are kept by `derive`. -/
 theorem buf_derR {K W SP : Addr} {s : State} {P : Addr} {len : Nat} (hP : Buf K W SP s P len) {m m' : Mem}
@@ -241,12 +241,11 @@ theorem deriveArgs_ok {K W SP : Addr} {R : Nat} {t : State} (E : Env K W SP t) {
   have h15 := E.r15
   have rR := S.rounds
   have rR' := E.perm.wR (show 200 + 8 ≤ 3816 by decide)
-  refine ⟨_, by srun [deriveArgs, h15, rR, rR', hbp], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  all_goals try (simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15, rR, hbp, E.r13]; done)
-  · intro r hr; simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
-  all_goals rfl
+  refine ⟨_, by srun [deriveArgs, h15, rR, rR', hbp], ?_, ?_, ?_, ?_, ?_, ?_, by simp only [mem_setReg, mem_arithFlags],
+    by simp only [rd_setReg, rd_arithFlags], by simp only [wr_setReg, wr_arithFlags]⟩
+  iterate 5 simp only [gpr_arithFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq, h15, rR, hbp, E.r13]
+  · intro r hr; obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉⟩ := ne_of_calleeSaved hr
+    simp only [gpr_arithFlags, gpr_setReg, n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, ite_false]
 
 /-! ## The halves kept -/
 
@@ -375,8 +374,8 @@ theorem derive_ok (eb : BlocksImpl) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Offset.sub W (by decide) (by omega_arith)⟩
-      · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨_, by simp, fun _ h => h⟩)
+      · exact ⟨_, by mem_lit, fun _ h => h⟩
+      · exact ⟨_, by mem_lit, fun _ h => h⟩)
   have eK : Spec.GcmSiv.ctxCiph t₂.mem K R = Spec.GcmSiv.ctxCiph σ.mem K R := by
     rw [m₂]; exact ciph_derR L hR B.frame
   have enc : ∀ k < R / 2 - 1, bytesAt t₃.mem (W + BitVec.ofNat 64 (488 + 16 * k)) 16 =

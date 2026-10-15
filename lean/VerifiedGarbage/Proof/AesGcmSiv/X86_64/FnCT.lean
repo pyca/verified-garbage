@@ -432,7 +432,7 @@ theorem recv_st {K W SP : Addr} (L : Lay K W SP) {R : Nat} {N A D T : Addr} {al 
     simp only [List.mem_singleton] at hq; subst hq
     simpa using L.w_w (a := 200) (n := 48) (d := 0) (k := 16) (.inr (by decide)) (by decide) (by decide))
     (fR.sub fun q hq => by
-      simp only [List.mem_singleton] at hq; subst hq; exact ⟨wA W, by simp, Region.sub_prefix (by decide)⟩)
+      simp only [List.mem_singleton] at hq; subst hq; exact ⟨wA W, by mem_lit, Region.sub_prefix (by decide)⟩)
     hrd' hwr'⟩
 
 theorem recv_split : recv = ([.mov .rcx (.mem (at_ .rsp 16))] : List Instr) ++ recv.tail := rfl
