@@ -237,7 +237,7 @@ theorem salsaSpec : SalsaSpec Impl.Scrypt.X86.salsa := by
   have b8 : Region.Sub (below E 8) (below E 12) := below_sub (by omega) hlo
   have r4 : Region.Sub ⟨(E - BitVec.ofNat 32 12).setWidth 64, 4⟩ (below E 12) := by
     have := below_inner (sp := E) (a := 4) (b := 12) (k := 8) (by omega) hlo
-    rw [show E - BitVec.ofNat 32 12 = E - BitVec.ofNat 32 8 - BitVec.ofNat 32 4 by bv_omega]
+    rw [show E - BitVec.ofNat 32 12 = E - BitVec.ofNat 32 8 - BitVec.ofNat 32 4 by bv_omega_arith]
     exact this
   have e12 : 4 * [Reg.eax, dR].length + stackUse Impl.Scrypt.X86.salsa + 4 = 12 := by
     rw [salsa_stack]; rfl
@@ -261,23 +261,23 @@ theorem salsaSpec : SalsaSpec Impl.Scrypt.X86.salsa := by
       exact InRegions_append_cons.mpr (.inr ⟨r', List.mem_append_right _ hr', by
         have : (⟨d.setWidth 64, 64⟩ : Region).Contains a n := hcn
         simp only [Region.Contains] at this hc' ⊢
-        bv_omega⟩)
+        bv_omega_arith⟩)
     · obtain ⟨r', hr', hc'⟩ := hins
       exact InRegions_append_cons.mpr (.inr ⟨r', List.mem_append_right _ hr', by
         have : (⟨sc.setWidth 64, 64⟩ : Region).Contains a n := hcn
         simp only [Region.Contains] at this hc' ⊢
-        bv_omega⟩)
+        bv_omega_arith⟩)
   · intro a n ⟨r, hr, hcn⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · obtain ⟨r', hr', hc'⟩ := hind
       refine ⟨r', List.mem_cons_of_mem _ hr', ?_⟩
       simp only [Region.Contains] at hcn hc' ⊢
-      bv_omega
+      bv_omega_arith
     · obtain ⟨r', hr', hc'⟩ := hins
       refine ⟨r', List.mem_cons_of_mem _ hr', ?_⟩
       simp only [Region.Contains] at hcn hc' ⊢
-      bv_omega
+      bv_omega_arith
   · rw [e12] at f'
     have hsE' := callEntry_frame fit hrs
     rw [show 4 * [Reg.eax, dR].length + 4 = 12 from rfl, ← hsE] at hsE'
