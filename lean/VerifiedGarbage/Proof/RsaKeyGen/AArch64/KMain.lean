@@ -11,6 +11,8 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
 public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # A candidate on AArch64: once `rand` has the candidate's octets
@@ -81,14 +83,14 @@ theorem finUsed_end {s sX : State} {B : Addr} {Z : Nat} {op up : Addr} {k st u :
     (KEnd.of_fin ho h).trans_pre (outBytes_inScr hin ho.outZ) (kk.mono (by decide))
 
 /-- Disjointness of a header word from a list of literal ranges. -/
-macro "k_disj" : tactic => `(tactic| first | hdr_disj | (
+tactic_template "k_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, loadCRanges, closeRanges,
     gcdRanges, slot, hdrBytes, aN, aX, aAcc, aTmp, aY, aTab, kT0, kG, sCnt, sW, sArr, sStride, Public.sMask, sFn, kOut,
     kLen, Public.sK, kUsedP, kE, kElen, kP, kPlen, kRand, kRandLen, kUsed]
   and_intros <;> omega_arith))
 
 /-- Bounds of a list of literal ranges. -/
-macro "k_le" : tactic => `(tactic| first | hdr_disj | (
+tactic_template "k_le" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, loadCRanges, closeRanges,
     gcdRanges, slot, hdrBytes, aN, aX, aAcc, aTmp, aY, aTab, kT0, kG, sCnt, sW, sArr, sStride, Public.sMask, sFn,
     kUsed]

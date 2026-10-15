@@ -48,6 +48,8 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
 public import VerifiedGarbage.Proof.RsaKeyGen.Bits
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # A candidate on AArch64: Montgomery arithmetic modulo `c`
@@ -205,7 +207,7 @@ theorem msTail_mut (w : Nat) : ∀ r ∈ msTail w, KMut r :=
 
 /-- Disjointness of a range from each of a list of literal ranges of the
 working space. -/
-macro "ms_disj" : tactic => `(tactic| first | hdr_disj | (
+tactic_template "ms_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, msTail, r2Ranges, slot,
     hdrBytes, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, kChecks, kE, sFn, sMinv]
   and_intros <;> omega_arith))

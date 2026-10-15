@@ -12,6 +12,8 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.RsaKeyGen.Slots
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # A candidate on AArch64: one round of Miller–Rabin
@@ -133,7 +135,7 @@ theorem roundRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(216, 8),
   · exact .inl (by decide)
 
 /-- Disjointness of a range from each of a list of literal ranges of a round. -/
-macro "rd_disj" : tactic => `(tactic| first | hdr_disj | (
+tactic_template "rd_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, roundRanges, preRanges,
     witRanges, expRanges, winRanges, tabRanges, List.cons_append, List.nil_append, slot, hdrBytes, aN, aX, aAcc,
     aTmp, aR2, aY, aXm, aB, aR1, aRm1, aT0, aE, kG, kFlag, kPlen, kV, kT0, sCnt, kBits, kT2, kWords, kT1, kUsed, kU,
@@ -141,7 +143,7 @@ macro "rd_disj" : tactic => `(tactic| first | hdr_disj | (
   and_intros <;> omega_arith))
 
 /-- The ranges of a list of literal ranges are `KMut`. -/
-macro "kmut" : tactic => `(tactic| first | hdr_disj | (
+tactic_template "kmut" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   and_intros <;> first | exact KMut.ofSlot _ _ _ | exact KMut.hdr (by decide)))
 
