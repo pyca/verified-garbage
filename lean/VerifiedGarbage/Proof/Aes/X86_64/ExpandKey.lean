@@ -11,6 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Aes.Contract
 meta import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -925,7 +926,7 @@ theorem expandKey_correct (s : State) (hs : Proof.Aes.expandKeyX86_64.pre s) :
     ∃ t s', Exec isa Impl.Aes.X86_64.expandKey s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.expandKeyX86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := ek_correct hs
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyX86_64.pre Proof.Aes.expandKeyX86_64.pub
     Impl.Aes.X86_64.expandKey := by
