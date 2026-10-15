@@ -291,20 +291,6 @@ theorem shortTail_wp (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D 
 
 /-! ## The whole short case -/
 
-/-- The regions `finish` writes: the output, the tail, `dbl(D)` and the
-lengths, the saved context pointer, the working space of the functions
-called and the stack. -/
-abbrev finRegions (W : Addr) (out : Nat) (sp : Addr) : List Region :=
-  [⟨W + BitVec.ofNat 64 out, 16⟩, ⟨W + BitVec.ofNat 64 32, 32⟩, ⟨W + BitVec.ofNat 64 144, 16⟩,
-    ⟨W + BitVec.ofNat 64 224, 8⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below sp 16]
-
-/-- What `finish` leaves: S2V's end, from `D` and the data, at `W + out`. -/
-structure FinPost (s₀ : State) (C D P W : Addr) (R L out : Nat) (s s' : State) : Prop where
-  regs : Regs s₀ C D P W R L s'
-  frame : Frame (finRegions W out (s₀.gpr .rsp)) s.mem s'.mem
-  out : Spec.Aes.bytesAt s'.mem (W + BitVec.ofNat 64 out) 16 =
-    Spec.Siv.s2vFinish (Spec.Siv.ctxMac s.mem C R) (Spec.Aes.bytesAt s.mem D 16) (Spec.Aes.bytesAt s.mem P L)
-
 theorem macPre_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s) {out : Nat}
     (hout : out = 0 ∨ out = 112) :
     ∃ s', runBlock isa (zero16 .r15 out ++

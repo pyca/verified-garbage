@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.X86_64.FinishLong
+public import VerifiedGarbage.Proof.AesSiv.X86_64.FinishShort
 meta import VerifiedGarbage.Proof.AesSiv.X86_64.FinishLong
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

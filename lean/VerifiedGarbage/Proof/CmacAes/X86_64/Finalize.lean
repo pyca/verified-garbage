@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateLoop
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -136,23 +136,6 @@ theorem SPre.of {s₀ : State} (h : subkeysX86_64.pre s₀) :
   let ⟨a, b, c, d, e, f, g, h, i, j, k, l, m⟩ := h
   ⟨rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k, l, m⟩
 
-theorem bytesAt_32 (m : Mem) (p : Addr) :
-    Spec.Aes.bytesAt m p 32 = Spec.Aes.bytesAt m p 16 ++ Spec.Aes.bytesAt m (p + BitVec.ofNat 64 16) 16 := by
-  simp only [Spec.Aes.bytesAt]
-  rw [show (32 : Nat) = 16 + 16 from rfl, List.range_add, List.map_append, List.map_map]
-  congr 1
-  apply List.map_congr_left
-  intro i _
-  simp only [Function.comp, BitVec.add_assoc]
-  congr 1
-  rw [BitVec.ofNat_add]
-
-theorem k0 (K : Addr) : K + BitVec.ofNat 64 0 = K := BitVec.add_zero K
-
-theorem zeros_8_8 : Spec.Cmac.zeros 8 ++ Spec.Cmac.zeros 8 = Spec.Cmac.zeros 16 := by decide
-
-theorem zero_le8 : Proof.Cmac.le8 (BitVec.setWidth 64 (0 : BitVec 32)) = Spec.Cmac.zeros 8 := by decide
-
 theorem scr_sub' {S : Addr} {d n : Nat} (h : d + n ≤ 2176) :
     Region.Sub ⟨S + BitVec.ofNat 64 d, n⟩ ⟨S, 2176⟩ := Offset.sub_base _ h
 

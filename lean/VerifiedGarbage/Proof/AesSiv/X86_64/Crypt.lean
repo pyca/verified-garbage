@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
-import VerifiedGarbage.Proof.AesSiv.X86_64.Finish
 import VerifiedGarbage.Proof.AesSiv.X86_64.CtrCT
 import VerifiedGarbage.Proof.Cmac.Dbl32
 import all Init.Data.Array.Basic

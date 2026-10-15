@@ -17,15 +17,6 @@ namespace VG.Proof.CmacAes.X86_64
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.CmacAes.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
-theorem beq_zero {x : Nat} (hx : x < 2 ^ 64) : (BitVec.ofNat 64 x == 0) = decide (x = 0) := by
-  rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
-  constructor
-  · intro he
-    have := congrArg BitVec.toNat he
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx] at this
-    simpa using this
-  · intro he; rw [he]; rfl
-
 theorem loop_ok (v : Ctr32Impl) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State}
     (h : LInv s₀ k s) : WP isa (.loop (body v.callee) .ne) s (LInv s₀ (N s₀)) := by
   refine WP.loop (M := isa) (body := body v.callee) (c := .ne) (Q := LInv s₀ (N s₀))

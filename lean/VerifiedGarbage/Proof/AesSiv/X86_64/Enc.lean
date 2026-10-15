@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Open
+public import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
 public import VerifiedGarbage.Spec.Siv.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -8,7 +8,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.AesSiv.X86_64.Call
 import VerifiedGarbage.Proof.AesSiv.X86_64.Common
-import VerifiedGarbage.Proof.AesSiv.X86_64.S2vAd
+import VerifiedGarbage.Proof.AesSiv.X86_64.Ctr
 import VerifiedGarbage.Proof.Cmac.Block
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -673,30 +673,6 @@ theorem EPre.all_sub (h : EPre s₀ C A P W D R N L) :
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)),
       fun _ h => h⟩
 
-/-- `encrypt` but for the copy of the IV: the IV at `W`, the ciphertext at
-`P`, and nothing written but the data, the working space, `D` and the stack. -/
-theorem encryptCore_wp (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) :
-    WP isa (encryptCore v.callee v.ctr.callee v.ctr.suffix) s₀ fun s' => gprPreserved s₀ s' ∧
-      Frame (allRegions W D P L (s₀.gpr .rsp)) s₀.mem s'.mem ∧
-      Spec.Siv.encryptWith (Spec.Siv.ctxMac s₀.mem C R) (Spec.Siv.ctxCiph s₀.mem C R)
-          (Spec.Siv.components 64 s₀.mem A N) (Spec.Aes.bytesAt s₀.mem P L) =
-        (Spec.Aes.bytesAt s'.mem W 16, Spec.Aes.bytesAt s'.mem P L) := by
-  have e := h.env
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases e.rounds with h | h | h <;> omega_arith
-  obtain ⟨dC, dP, -, dR⟩ := h.sdone_dis
-  obtain ⟨sub₁, sub₂⟩ := h.all_sub
-  refine WP.seq (WP.mono (encS2v_wp v h) fun s hs => WP.mono (sealTail_wp v e h.cp h.pw hs.spre hs.saved)
-    fun s' ⟨g', sp', f', out'⟩ => ⟨⟨fun r hr => ?_, ?_⟩, (hs.frame.sub sub₁).trans (f'.sub sub₂), ?_⟩)
-  · by_cases hsp : r = .rsp
-    · subst hsp; exact sp'
-    · exact g' r (saved_all r hr hsp)
-  · have c := Region.contains_self (s₀.gpr .rsp) 8
-    rw [f'.readW c h.ret_end (by decide), hs.frame.readW c dR (by decide)]
-  · rw [ctxMac_frame hs.frame dC hRb, ctxCiph_frame hs.frame dC hRb,
-      bytesAt_frame hs.frame dP (by have := e.lt; omega_arith), hs.acc] at out'
-    rw [Spec.Siv.encryptWith_eq]
-    exact out'
-
 /-- The stack arguments are outside what the code writes. -/
 theorem SivArg.args_dis (hT : SivArg s₀ P W D T L) {d : Nat} (hd : 8 ≤ d)
     (hd' : d + 8 ≤ 24) : ∀ r ∈ allRegions W D P L (s₀.gpr .rsp),
@@ -777,11 +753,6 @@ theorem outPre_of (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L) {
   · rw [sp, ← h.arg]
     exact f.readW (Region.contains_self _ _) (hT.args_dis (d := 16) (by decide) (by decide)) (by decide)
 
-/-- `encryptCore` ends where the copy of the IV can read its stack arguments. -/
-theorem encryptCore_out (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L) :
-    WP isa (encryptCore v.callee v.ctr.callee v.ctr.suffix) s₀ (OutPre s₀ W T) :=
-  WP.mono (WP.rdwr (encryptCore_wp v h)) fun _ ⟨⟨g, f, _⟩, rd, wr⟩ => outPre_of h hT g f rd wr
-
 /-- The first two loads of `sivOut`: the addresses of `siv` and the working space. -/
 theorem sivOutHead_wp {u : State} (hu : OutPre s₀ W T u) :
     WP isa (.block (sivOut.take 2)) u fun u' => u'.gpr .rax = T ∧ u'.gpr .r10 = W :=
@@ -790,34 +761,6 @@ theorem sivOutHead_wp {u : State} (hu : OutPre s₀ W T u) :
       State.load64, State.ea, offset_nat, Option.map_some, gpr_setReg, mem_setReg, rd_setReg, wr_setReg,
       ite_true, ite_false, hu.i8, hu.a8, hu.i16, hu.a16]
     rfl, by simp [gpr_setReg], by simp [gpr_setReg]⟩
-
-theorem encrypt_wp (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L)
-    (hTw : (⟨T, 16⟩ : Region) ∈ s₀.wr) :
-    WP isa (encrypt v.callee v.ctr.callee v.ctr.suffix) s₀ fun s' => gprPreserved s₀ s' ∧
-      Spec.Siv.encryptWith (Spec.Siv.ctxMac s₀.mem C R) (Spec.Siv.ctxCiph s₀.mem C R)
-          (Spec.Siv.components 64 s₀.mem A N) (Spec.Aes.bytesAt s₀.mem P L) =
-        (Spec.Aes.bytesAt s'.mem T 16, Spec.Aes.bytesAt s'.mem P L) := by
-  have e := h.env
-  refine WP.seq (WP.mono (WP.rdwr (encryptCore_wp v h)) fun u ⟨⟨⟨g, ret⟩, f, out⟩, rd, wr⟩ => ?_)
-  have hu := outPre_of h hT ⟨g, ret⟩ f rd wr
-  have iW (d : Nat) (hd : d + 8 ≤ 16) : InRegions (u.rd ++ u.wr) (W + BitVec.ofNat 64 d) 8 :=
-    e.inRW rd wr (by omega_arith)
-  have oT (d : Nat) (hd : d + 8 ≤ 16) : InRegions u.wr (T + BitVec.ofNat 64 d) 8 := by
-    rw [wr]; exact ⟨_, hTw, Offset.contains_base T hd (by have := hT.wT; omega_arith)⟩
-  obtain ⟨u', run, m', g', -, -⟩ := sivOut_ok hu.a8 hu.a16 hu.i8 hu.i16 (iW 0 (by decide)) (iW 8 (by decide))
-    (oT 0 (by decide)) (oT 8 (by decide))
-  refine WP.of_runBlock ⟨u', run, ⟨fun r hr => ?_, ?_⟩, ?_⟩
-  · rw [g' r (by rintro rfl; revert hr; decide) (by rintro rfl; revert hr; decide)
-      (by rintro rfl; revert hr; decide), g r hr]
-  · -- The return address, apart from `T`.
-    have fT : Frame [⟨T, 16⟩] u.mem u'.mem := by rw [m']; exact Proof.CmacAes.X86_64.frame_store2' T _ _
-    rw [fT.readW (Region.contains_self _ _) (one_out hT.ret_t) (by decide), ret]
-  · have fT : Frame [⟨T, 16⟩] u.mem u'.mem := by rw [m']; exact Proof.CmacAes.X86_64.frame_store2' T _ _
-    rw [out, bytesAt_frame fT (one_out hT.t_p.symm) (by have := e.lt; omega_arith)]
-    have sp8 : Mem.Sep (W + BitVec.ofNat 64 8) (64 / 8) T (64 / 8) :=
-      sep_of_disjoint (hT.t_w.sub_right (e.sW (d := 8) (n := 8) (by decide))).symm (by decide) (by decide)
-    rw [m', k0, k0, Mem.readW_writeW_sep sp8 (by decide), Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_readW,
-      Proof.Cmac.le8_readW, ← Proof.Cmac.bytesAt_split]
 
 /-- The copy of the IV from `T` to the working space at `W`. -/
 theorem sivIn_ok {u : State} {T W : Addr} (a8 : u.mem.readW (u.gpr .rsp + BitVec.ofNat 64 8) 64 = T)
@@ -889,33 +832,5 @@ theorem sivIn_wp (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L) {s
   rw [m', k0, k0, Mem.readW_writeW_sep sp8 (by decide), Proof.Cmac.bytesAt_store2, Proof.Cmac.le8_readW,
     Proof.Cmac.le8_readW, ← Proof.Cmac.bytesAt_split]
   exact bytesAt_frame hs.frame (hT.s2v_dis h) (by decide)
-
-theorem decrypt_wp (v : UpdateImpl) (h : EPre s₀ C A P W D R N L) (hT : SivArg s₀ P W D T L) :
-    WP isa (decrypt v.callee v.ctr.callee v.ctr.suffix) s₀ fun s' => gprPreserved s₀ s' ∧
-      match Spec.Siv.decryptWith (Spec.Siv.ctxMac s₀.mem C R) (Spec.Siv.ctxCiph s₀.mem C R)
-          (Spec.Siv.components 64 s₀.mem A N) (Spec.Aes.bytesAt s₀.mem T 16) (Spec.Aes.bytesAt s₀.mem P L) with
-      | some pt => (s'.gpr .rax).setWidth 32 = 1 ∧ Spec.Aes.bytesAt s'.mem P L = pt
-      | none => (s'.gpr .rax).setWidth 32 = 0 ∧ Spec.Aes.bytesAt s'.mem P L = Spec.Siv.zeros L := by
-  have e := h.env
-  have hRb : 16 * (R + 1) ≤ 240 := by rcases e.rounds with h | h | h <;> omega_arith
-  obtain ⟨dC, dP, -, dR⟩ := h.sdone_dis
-  have wC := one_out (e.c_w.sub_right (Region.sub_prefix (len := 16) (by decide)))
-  refine WP.seq (WP.mono (encS2v_wp v h) fun s hs => WP.seq (WP.mono (sivIn_wp h hT hs)
-    fun s₁ ⟨sp₁, sv₁, f₁, v₁⟩ => WP.mono (openTail_wp v e h.cp h.pw sp₁ sv₁)
-    fun s' ⟨g', sp', f', out'⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩))
-  · by_cases hsp : r = .rsp
-    · subst hsp; exact sp'
-    · exact g' r (saved_all r hr hsp)
-  · have c := Region.contains_self (s₀.gpr .rsp) 8
-    rw [f'.readW c h.ret_end (by decide),
-      f₁.readW c (one_out (e.ret_w.sub_right (Region.sub_prefix (by decide)))) (by decide),
-      hs.frame.readW c dR (by decide)]
-  · rw [ctxMac_frame f₁ wC hRb, ctxCiph_frame f₁ wC hRb,
-      bytesAt_frame f₁ (one_out (e.p_w.symm.sub_left (Region.sub_prefix (by decide))).symm) (by have := e.lt; omega_arith),
-      bytesAt_frame f₁ (one_out (e.d_w.sub_right (Region.sub_prefix (by decide)))) (by decide), v₁,
-      ctxMac_frame hs.frame dC hRb, ctxCiph_frame hs.frame dC hRb,
-      bytesAt_frame hs.frame dP (by have := e.lt; omega_arith), hs.acc] at out'
-    rw [Spec.Siv.decryptWith_eq]
-    exact out'
 
 end VG.Proof.AesSiv.X86_64

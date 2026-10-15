@@ -110,23 +110,7 @@ theorem cnt_out {X : Region} (hw : X.Disjoint ⟨W, 2560⟩) : ∀ r ∈ cntRegi
   · exact hw.sub_right (Offset.sub_base W (by decide))
   · exact hw.sub_right (Offset.sub_base W (by decide))
 
-theorem one_out {X Y : Region} (hw : X.Disjoint Y) : ∀ r ∈ [Y], X.Disjoint r := by
-  intro r hr
-  simp only [List.mem_singleton] at hr
-  subst hr
-  exact hw
-
 /-! ## From S2V's end to the restore -/
-
-/-- The registers, and the data pointer and length in their slots. -/
-structure SPre (s₀ : State) (C D P W : Addr) (R L : Nat) (s : State) : Prop where
-  regs : Regs s₀ C D P W R L s
-  d208 : s.mem.readW (W + BitVec.ofNat 64 dataOff) 64 = P
-  d216 : s.mem.readW (W + BitVec.ofNat 64 lenOff) 64 = BitVec.ofNat 64 L
-
-/-- What `encrypt`'s and `decrypt`'s ends write: the data, the working space
-and the stack. -/
-abbrev endRegions (W P : Addr) (L : Nat) (sp : Addr) : List Region := [⟨P, L⟩, ⟨W, 2560⟩, below sp 16]
 
 theorem fin_sub (h : Env s₀ C D P W R L) {out : Nat} (hout : out + 16 ≤ 256) :
     ∀ r ∈ finRegions W out (s₀.gpr .rsp), ∃ r' ∈ endRegions W P L (s₀.gpr .rsp), Region.Sub r r' := by

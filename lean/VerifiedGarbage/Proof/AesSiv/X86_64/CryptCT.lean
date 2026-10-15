@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Open
-meta import VerifiedGarbage.Proof.AesSiv.X86_64.Open
+public import VerifiedGarbage.Proof.AesSiv.X86_64.Seal
+meta import VerifiedGarbage.Proof.AesSiv.X86_64.Seal
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

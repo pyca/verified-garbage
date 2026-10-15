@@ -341,4 +341,40 @@ theorem cargs (h : Env s₀ C D P W R L) {s : State} (hrd : s.rd = s₀.rd) (hwr
 
 end Env
 
+/-! ## What the ends of `encrypt`, `decrypt` and `finish` write -/
+
+section Ends
+
+theorem one_out {X Y : Region} (hw : X.Disjoint Y) : ∀ r ∈ [Y], X.Disjoint r := by
+  intro r hr
+  simp only [List.mem_singleton] at hr
+  subst hr
+  exact hw
+
+/-- The registers, and the data pointer and length in their slots. -/
+structure SPre (s₀ : State) (C D P W : Addr) (R L : Nat) (s : State) : Prop where
+  regs : Regs s₀ C D P W R L s
+  d208 : s.mem.readW (W + BitVec.ofNat 64 Impl.AesSiv.X86_64.dataOff) 64 = P
+  d216 : s.mem.readW (W + BitVec.ofNat 64 Impl.AesSiv.X86_64.lenOff) 64 = BitVec.ofNat 64 L
+
+/-- What `encrypt`'s and `decrypt`'s ends write: the data, the working space
+and the stack. -/
+abbrev endRegions (W P : Addr) (L : Nat) (sp : Addr) : List Region := [⟨P, L⟩, ⟨W, 2560⟩, below sp 16]
+
+/-- The regions `finish` writes: the output, the tail, `dbl(D)` and the
+lengths, the saved context pointer, the working space of the functions
+called and the stack. -/
+abbrev finRegions (W : Addr) (out : Nat) (sp : Addr) : List Region :=
+  [⟨W + BitVec.ofNat 64 out, 16⟩, ⟨W + BitVec.ofNat 64 32, 32⟩, ⟨W + BitVec.ofNat 64 144, 16⟩,
+    ⟨W + BitVec.ofNat 64 224, 8⟩, ⟨W + BitVec.ofNat 64 256, 2176⟩, below sp 16]
+
+/-- What `finish` leaves: S2V's end, from `D` and the data, at `W + out`. -/
+structure FinPost (s₀ : State) (C D P W : Addr) (R L out : Nat) (s s' : State) : Prop where
+  regs : Regs s₀ C D P W R L s'
+  frame : Frame (finRegions W out (s₀.gpr .rsp)) s.mem s'.mem
+  out : Spec.Aes.bytesAt s'.mem (W + BitVec.ofNat 64 out) 16 =
+    Spec.Siv.s2vFinish (Spec.Siv.ctxMac s.mem C R) (Spec.Aes.bytesAt s.mem D 16) (Spec.Aes.bytesAt s.mem P L)
+
+end Ends
+
 end VG.Proof.AesSiv.X86_64
