@@ -81,6 +81,22 @@ theorem nz_mask (h : BitVec 32) :
     have h3 : 2 ^ 31 ≤ (0 - h ||| h).toNat := of_decide_eq_true h2.symm
     rw [ite_eq_right (fun h' => absurd h' (by omega_using [h3])), ifp e]
 
+/-- `msubL`'s value twice, as a remainder, for each `x ≤ d` and the two moduli: one table each. -/
+def msN (d v : Nat) : Nat := if v < d then v else v - d
+
+theorem msN_two {d x : Nat} (hd : d = 16 ∨ d = 44) (hx : x ≤ d) :
+    msN d (msN d (x + d + 1)) = (x + d + 1) % d ∧ msN d (msN d (x + d - 1)) = (x + d - 1) % d ∧
+      msN d (msN d (x + d)) = (x + d) % d := by
+  have t16 : (List.range 17).all (fun x => decide (msN 16 (msN 16 (x + 16 + 1)) = (x + 16 + 1) % 16 ∧
+      msN 16 (msN 16 (x + 16 - 1)) = (x + 16 - 1) % 16 ∧ msN 16 (msN 16 (x + 16)) = (x + 16) % 16)) = true := by
+    decide
+  have t44 : (List.range 45).all (fun x => decide (msN 44 (msN 44 (x + 44 + 1)) = (x + 44 + 1) % 44 ∧
+      msN 44 (msN 44 (x + 44 - 1)) = (x + 44 - 1) % 44 ∧ msN 44 (msN 44 (x + 44)) = (x + 44) % 44)) = true := by
+    decide
+  rcases hd with rfl | rfl
+  · exact of_decide_eq_true (List.all_eq_true.mp t16 x (List.mem_range.mpr (by omega)))
+  · exact of_decide_eq_true (List.all_eq_true.mp t44 x (List.mem_range.mpr (by omega)))
+
 theorem uhL_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32} (ha : a.toNat < q) :
     (uhL g hv a).toNat = (if hv ≠ 0 then (if hbF g a.toNat * (2 * g) < a.toNat then
       hbF g a.toNat + Proof.MlDsa.Round.hbM g + 1 else hbF g a.toNat + Proof.MlDsa.Round.hbM g - 1)
@@ -89,6 +105,7 @@ theorem uhL_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32}
   have hle := hbF_le h ha
   have hm : dMod g ≤ 44 ∧ 16 ≤ dMod g := by unfold dMod; split <;> decide
   have hM := dMod_eq' h
+  have hd16 : dMod g = 16 ∨ dMod g = 44 := by unfold dMod; split <;> simp
   have hfg : hbF g a.toNat * (2 * g) ≤ q - 1 := by rw [← hbM_mul h]; exact Nat.mul_le_mul_right _ hle
   rw [← hM] at hle ⊢
   have hmul : (mul2L g (hbFL g a)).toNat = hbF g a.toNat * (2 * g) := by
@@ -112,16 +129,14 @@ theorem uhL_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32}
       rw [BitVec.toNat_add, BitVec.toNat_add, hF, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]; omega_using [hle, hm]
     rw [msubL_toNat g hm.1 (by rw [msubL_toNat g hm.1 (by omega_using [hle, hm, e1]), e1]; split <;> omega_arith), msubL_toNat g hm.1 (by omega_using [hle, hm, e1]),
       e1]
-    rcases (by unfold dMod; split <;> simp : dMod g = 16 ∨ dMod g = 44) with e | e <;> rw [e] at hle ⊢ <;>
-      (repeat' split) <;> omega_arith
+    exact (msN_two hd16 hle).1
   · rw [ifp hb, ifn hp, ifp hb, ifn hp, show ~~~((0 : BitVec 32) + 0) &&& -1 = -1 by decide]
     have e1 : (F + -1 + BitVec.ofNat 32 (dMod g)).toNat = hbF g a.toNat + dMod g - 1 := by
       rw [BitVec.toNat_add, BitVec.toNat_add, hF, BitVec.toNat_ofNat, show (-1 : BitVec 32).toNat = 2 ^ 32 - 1 from rfl]
       omega_using [hle, hm]
     rw [msubL_toNat g hm.1 (by rw [msubL_toNat g hm.1 (by omega_using [hle, hm, e1]), e1]; split <;> omega_arith), msubL_toNat g hm.1 (by omega_using [hle, hm, e1]),
       e1]
-    rcases (by unfold dMod; split <;> simp : dMod g = 16 ∨ dMod g = 44) with e | e <;> rw [e] at hle ⊢ <;>
-      (repeat' split) <;> omega_arith
+    exact (msN_two hd16 hle).2.1
   all_goals
     rw [ifn hb, ifn hb, show ∀ x : BitVec 32, x &&& 0 = 0 from fun _ => BitVec.and_zero,
       show ∀ x : BitVec 32, x + 0 = x from fun x => BitVec.add_zero x]
@@ -129,8 +144,7 @@ theorem uhL_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32}
       rw [BitVec.toNat_add, hF, BitVec.toNat_ofNat]; omega_using [hle, hm]
     rw [msubL_toNat g hm.1 (by rw [msubL_toNat g hm.1 (by omega_using [hle, hm, e1]), e1]; split <;> omega_arith), msubL_toNat g hm.1 (by omega_using [hle, hm, e1]),
       e1]
-    rcases (by unfold dMod; split <;> simp : dMod g = 16 ∨ dMod g = 44) with e | e <;> rw [e] at hle ⊢ <;>
-      (repeat' split) <;> omega_arith
+    exact (msN_two hd16 hle).2.2
 
 /-! ## The code on a register -/
 
