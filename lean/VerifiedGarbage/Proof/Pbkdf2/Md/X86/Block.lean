@@ -434,35 +434,29 @@ theorem Sizes.B4 : H.B % 4 = 0 ∧ 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B 
 /-! Facts about the sizes, each proved once for the many places that need it
 (each an `omega` call of its own otherwise). -/
 
-theorem Sizes.NB_lt64 : H.N + H.B < 2 ^ 64 := by
-  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+theorem Sizes.NB_lt64 : H.N + H.B < 2 ^ 64 :=
+  Nat.lt_of_le_of_lt (Nat.add_le_add hz.N.2.1 hz.B4.2.2) (by decide)
 
-theorem Sizes.D_le64 : H.D ≤ 2 ^ 64 := by
-  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+theorem Sizes.D_lt64 : H.D < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.le_trans hz.D.2.1 hz.N.2.1) (by decide)
 
-theorem Sizes.D_lt64 : H.D < 2 ^ 64 := by
-  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+theorem Sizes.D_le64 : H.D ≤ 2 ^ 64 := Nat.le_of_lt hz.D_lt64
 
-theorem Sizes.B_pos : 0 < H.B := by
-  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+theorem Sizes.B_pos : 0 < H.B := Nat.lt_of_lt_of_le (by decide) hz.B4.2.1
 
-theorem Sizes.N_lt64 : H.N < 2 ^ 64 := by
-  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+theorem Sizes.N_lt64 : H.N < 2 ^ 64 := Nat.lt_of_le_of_lt hz.N.2.1 (by decide)
 
-theorem Sizes.ND_le : H.N + H.D ≤ H.N + H.B := by
-  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+theorem Sizes.ND_le : H.N + H.D ≤ H.N + H.B :=
+  Nat.add_le_add_left (Nat.le_trans (Nat.le_add_right _ _) (Nat.le_trans (Nat.le_add_right _ 4) hz.DL)) _
 
 theorem Sizes.NDB_le : H.N + H.D + (H.B - H.D) ≤ H.N + H.B := by
-  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+  rw [Nat.add_assoc, Nat.add_sub_cancel' (Nat.le_trans (Nat.le_add_right _ _) (Nat.le_trans (Nat.le_add_right _ 4) hz.DL))]
 
-theorem Sizes.D4 : 4 * (H.D / 4) = H.D := by
-  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+theorem Sizes.D4 : 4 * (H.D / 4) = H.D := Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hz.D.2.2)
 
-theorem Sizes.B_lt64 : H.B < 2 ^ 64 := by
-  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+theorem Sizes.B_lt64 : H.B < 2 ^ 64 := Nat.lt_of_le_of_lt hz.B4.2.2 (by decide)
 
-theorem Sizes.buf_le64 : 8 * H.st.W + 16 ≤ 2 ^ 64 := by
-  have := hz.N; have := hz.D; have := hz.DL; have := hz.W; have := hz.B4; omega
+theorem Sizes.buf_le64 : 8 * H.st.W + 16 ≤ 2 ^ 64 :=
+  Nat.le_trans (Nat.add_le_add_right (Nat.mul_le_mul_left 8 hz.W) 16) (by decide)
 
 
 theorem Sizes.tail_length : H.tailB.length = H.B - H.D := by

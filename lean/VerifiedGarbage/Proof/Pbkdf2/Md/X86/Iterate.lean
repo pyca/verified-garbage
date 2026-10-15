@@ -149,7 +149,7 @@ theorem save_hv {n : Nat} (h : n ≤ H.N + H.B) : (saveR H.st (scr s₀)).Disjoi
 
 theorem save_cmp : (saveR H.st (scr s₀)).Disjoint (cmpR H s₀) := by
   obtain ⟨hb, hf, hw, hso, -⟩ := bounds hp
-  exact Offset.disjoint_base _ (by omega_arith) (hz.buf_le64)
+  exact Offset.disjoint_base _ (by omega_arith) (hp.hz.buf_le64)
 
 theorem stk_arg : (stkR s₀).Disjoint (argR s₀) := stk_args hp.sp48 (by have hp_spf := hp.spf; omega_arith)
 
@@ -419,16 +419,16 @@ theorem lc_ok {o : Nat} (ho : o + H.N ≤ 2 * H.S) {m : Nat} {s : State} (h : KR
     fun h₁ h₂ r hr => blk_disj hp h₁ h₂ r (by simp only [List.mem_singleton] at hr; simp [hr])
   have pad₂ : bytesAt s₂.mem ((hv H s₀).setWidth 64 + BitVec.ofNat 64 H.N + BitVec.ofNat 64 H.D) (H.B - H.D) =
       hO.md.tailPad H.D := by
-    rw [Memory.add_ofNat, Memory.frame_bytesAt f₁ (dB (by omega_arith) (hz.NDB_le)) (by omega_arith), hpad, hO.tail]
+    rw [Memory.add_ofNat, Memory.frame_bytesAt f₁ (dB (by omega_arith) (hp.hz.NDB_le)) (by omega_arith), hpad, hO.tail]
   have u₂ : bytesAt s₂.mem ((hv H s₀).setWidth 64 + BitVec.ofNat 64 H.N) H.D =
       bytesAt s.mem ((hv H s₀).setWidth 64 + BitVec.ofNat 64 H.N) H.D :=
-    Memory.frame_bytesAt f₁ (dB (by omega_arith) (by omega_using [hB64, hDN, hN])) (hz.D_le64)
+    Memory.frame_bytesAt f₁ (dB (by omega_arith) (by omega_using [hB64, hDN, hN])) (hp.hz.D_le64)
   have f₃ : Frame [⟨(hv H s₀).setWidth 64, H.N⟩, cmpR H s₀, stkR s₀] s.mem s₃.mem :=
     (f₁.mono (by simp)).trans f₂
   refine k s₃ k₃ f₃ ?_ ?_ ?_
   · rw [e₃, st₂, Md.blockAt_tailPad (by omega_using [hB64, hDN, hN]) pad₂, u₂]
-  · rw [Memory.frame_bytesAt f₃ (blk_disj hp (by omega_arith) (hz.NDB_le)) (by omega_arith), hpad]
-  · exact Memory.frame_bytesAt f₃ (blk_disj hp (by omega_arith) (by omega_arith)) (hz.D_le64)
+  · rw [Memory.frame_bytesAt f₃ (blk_disj hp (by omega_arith) (hp.hz.NDB_le)) (by omega_arith), hpad]
+  · exact Memory.frame_bytesAt f₃ (blk_disj hp (by omega_arith) (by omega_arith)) (hp.hz.D_le64)
 
 /-! ## The end of a step: the digest, `T ← T ⊕ U` and the count -/
 
@@ -579,8 +579,8 @@ theorem tail_ok {m : Nat} (hm : 1 ≤ m) (hn : m < 2 ^ 32) {s : State} (h : KR H
     exact ((t_blk hp).sub_right (Offset.sub _ (by omega_arith) (by omega_arith))).symm
   refine k s₄ k₄ (by rw [z₄, e₄, ofNat_beq_zero (by omega_using [hn])]) ?_ ?_ ?_ ?_
   · rw [u₄.mem]; exact (f₁.mono (by simp)).trans (m₂ ▸ f₃.mono (by simp))
-  · rw [u₄.mem, Memory.frame_bytesAt f₃ (tB' (by omega_using []) (hz.NDB_le)) (by omega_arith), m₂, p₁]
-  · rw [u₄.mem, Memory.frame_bytesAt f₃ (tB' (Nat.le_refl _) (by omega_using [hB64, hDN, hN])) (hz.D_le64), m₂, b₁]
+  · rw [u₄.mem, Memory.frame_bytesAt f₃ (tB' (by omega_using []) (hp.hz.NDB_le)) (by omega_arith), m₂, p₁]
+  · rw [u₄.mem, Memory.frame_bytesAt f₃ (tB' (Nat.le_refl _) (by omega_using [hB64, hDN, hN])) (hp.hz.D_le64), m₂, b₁]
   · have hT₁ : bytesAt s₁.mem ((tp s₀).setWidth 64) H.D = bytesAt s.mem ((tp s₀).setWidth 64) H.D :=
       Memory.frame_bytesAt f₁ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact t_blk hp) (by omega_arith)
@@ -774,7 +774,7 @@ theorem pro_ok : WP isa (.block H.prologue) s₀ fun s => Inv hO sc s₀ (nn s�
         simp only [List.mem_singleton] at hr; subst hr; exact hp.u_s.sub_right (save_sub hp)) (by omega_arith)
     have hU : bytesAt s₁₁.mem ((hv H s₀).setWidth 64 + BitVec.ofNat 64 H.N) H.D =
         bytesAt s₀.mem ((up s₀).setWidth 64) H.D := by
-      rw [m₁₁, bytesAt_writeBytes_sep _ _ dU (by omega_arith), bytesAt_writeBytes_self' (bytesAt_length _ _ _) (hz.D_lt64),
+      rw [m₁₁, bytesAt_writeBytes_sep _ _ dU (by omega_arith), bytesAt_writeBytes_self' (bytesAt_length _ _ _) (hp.hz.D_lt64),
         hU₂]
     have hT : bytesAt s₁₁.mem ((tp s₀).setWidth 64) H.D = bytesAt s₀.mem ((tp s₀).setWidth 64) H.D :=
       Memory.frame_bytesAt ((f₂'.mono (rs' := [saveR H.st (scr s₀), ⟨(hv H s₀).setWidth 64 + BitVec.ofNat 64 H.N, H.B⟩])

@@ -64,40 +64,34 @@ include hz
 (each an `omega` call of its own otherwise). -/
 
 theorem B_range : 64 ≤ H.B ∧ H.B ≤ 128 := by
-  rcases hz.B with h | h <;> omega
+  rcases hz.B with h | h <;> rw [h] <;> decide
 
-theorem B_ge : 64 ≤ H.B := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+theorem B_ge : 64 ≤ H.B := hz.B_range.1
 
 theorem B4 : H.B % 4 = 0 := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+  rcases hz.B with h | h <;> rw [h] <;> decide
 
-theorem D_lt64 : H.D < 2 ^ 64 := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+theorem D_lt64 : H.D < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.le_trans hz.DN hz.N64) (by decide)
 
-theorem D_le64 : H.D ≤ 2 ^ 64 := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+theorem D_le64 : H.D ≤ 2 ^ 64 := Nat.le_of_lt hz.D_lt64
 
-theorem N_lt64 : H.N < 2 ^ 64 := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+theorem N_lt64 : H.N < 2 ^ 64 := Nat.lt_of_le_of_lt hz.N64 (by decide)
 
-theorem B_lt64 : H.B < 2 ^ 64 := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+theorem B_lt64 : H.B < 2 ^ 64 := Nat.lt_of_le_of_lt hz.B_range.2 (by decide)
 
-theorem NB_le64 : H.N + H.B ≤ 2 ^ 64 := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+theorem NB_le64 : H.N + H.B ≤ 2 ^ 64 := Nat.le_trans (Nat.add_le_add hz.N64 hz.B_range.2) (by decide)
 
-theorem BLD_lt64 : H.B - H.L - H.D < 2 ^ 64 := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+theorem BLD_lt64 : H.B - H.L - H.D < 2 ^ 64 :=
+  Nat.lt_of_le_of_lt (Nat.le_trans (Nat.sub_le _ _) (Nat.sub_le _ _)) hz.B_lt64
 
-theorem buf_le64 : 8 * H.st.W + 36 ≤ 2 ^ 64 := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+theorem buf_le : 8 * H.st.W + 36 ≤ 8 * 64 + 36 := Nat.add_le_add_right (Nat.mul_le_mul_left 8 hz.W) 36
 
-theorem bufN_le64 : 8 * H.st.W + 36 + H.N ≤ 2 ^ 64 := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+theorem buf_le64 : 8 * H.st.W + 36 ≤ 2 ^ 64 := Nat.le_trans hz.buf_le (by decide)
 
-theorem bufNB_le64 : 8 * H.st.W + 36 + H.N + H.B ≤ 2 ^ 64 := by
-  have := hz.pad; have := hz.NL; have := hz.N64; have := hz.W; have := hz.L16; have := hz.B_range; omega
+theorem bufN_le64 : 8 * H.st.W + 36 + H.N ≤ 2 ^ 64 := Nat.le_trans (Nat.add_le_add hz.buf_le hz.N64) (by decide)
+
+theorem bufNB_le64 : 8 * H.st.W + 36 + H.N + H.B ≤ 2 ^ 64 :=
+  Nat.le_trans (Nat.add_le_add (Nat.add_le_add hz.buf_le hz.N64) hz.B_range.2) (by decide)
 
 end Sizes
 
