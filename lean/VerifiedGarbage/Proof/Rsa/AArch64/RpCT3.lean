@@ -65,7 +65,7 @@ theorem MW.step {q : R2Pub} {s t : State} (h : MW q s) {js : List Nat}
   obtain ⟨hw, hmv, hn, hi, h1⟩ := h
   have hZ16 : slot q.L.w 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
   refine ⟨hw.congrG hf (by simp) k hr, by rw [hf.rg_word (by decide) (by simp)]; exact hmv, ?_, ?_, h1⟩
-  · rw [hf.rg_wv hZ16 (by simp) (by decide) hN (by omega)]; exact hn
+  · rw [hf.rg_wv hZ16 (by simp) (by decide) hN (by omega_using [])]; exact hn
   · rw [hf.rg_word0 hZ16 (by simp) (by decide) hN]; exact hi
 
 /-- The public data of `R² mod n`, with `-n⁻¹`, which `n` fixes. -/
@@ -79,8 +79,8 @@ theorem mr_bind (p : RpP) (s₁ s₂ : State) (h₁ : GR1 p s₁) (h₂ : GR1 p 
     have hw1 := hw.w1
     have hw2 := hw.w2
     have hm : (word s.mem I.B (slot (wk I.k) aN)).toNat = Spec.Rsa.os2ip I.nb % 2 ^ 64 := by
-      rw [← wv_mod64 _ _ _ (show 1 ≤ wk I.k by omega), hn]
-    refine ⟨⟨⟨hw.good, hw1, show wk I.k < 2 ^ 30 by omega, hn, hinv, hodd, hlo⟩, hw, rfl⟩, by rw [← hm]; exact hinv, hodd⟩
+      rw [← wv_mod64 _ _ _ (show 1 ≤ wk I.k by omega_using [hw1]), hn]
+    refine ⟨⟨⟨hw.good, hw1, show wk I.k < 2 ^ 30 by omega_using [hw2], hn, hinv, hodd, hlo⟩, hw, rfl⟩, by rw [← hm]; exact hinv, hodd⟩
   obtain ⟨m₁, i₁, o⟩ := e h₁
   obtain ⟨m₂, i₂, -⟩ := e h₂
   have := minv_unique (by rw [Nat.mod_mod_of_dvd _ (by decide)]; exact o) i₁ i₂
@@ -92,12 +92,12 @@ theorem montR2_ct (M : Mont) : RelCT isa (Two GR1) (seqs (VG.Impl.Rsa.AArch64.r2
   (two_post (two_map id (fun _ _ h => h.1) (r2_ct M)) fun q s ⟨⟨hg, hw1, hw30, hn, hinv, hodd, hlo⟩, hw, hmv⟩ => by
     have hZ16 : slot q.L.w 16 ≤ 2 ^ 64 := by have := hw.scr.nowrap; have := hw.hZ; omega
     have hN1 : 1 < q.N := by
-      have : 2 ^ 64 ≤ 2 ^ (64 * (q.L.w - 1)) := Nat.pow_le_pow_right (by decide) (by omega)
-      omega
+      have : 2 ^ 64 ≤ 2 ^ (64 * (q.L.w - 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [hw1])
+      omega_using [hlo, this]
     refine WP.mono (r2_ok M hg.1 hg.2 hw1 hw30 hn hinv hodd hlo) fun t ⟨hg₂, _, _, hf₂, k₂⟩ => ?_
     have hf₂' : Frm q.L.B (rg q.L.w [aAcc, aTmp, aR2] [sCnt]) s.mem t.mem := hf₂
     exact ⟨hw.congrG hf₂' (by decide) k₂ (by decide), hg₂.hdr.hminv,
-      by rw [hf₂'.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega)]; exact hn,
+      by rw [hf₂'.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_using [])]; exact hn,
       by rw [hf₂'.rg_word0 hZ16 (by decide) (by decide) (by decide)]; exact hinv, hN1⟩).mono
     (fun _ _ h => two_bind mr_bind h) fun _ _ h => h
 
@@ -108,7 +108,7 @@ theorem montB_ct : RelCT isa (Two MW) (.block [ldh .x12 sW, movi .x9 1, movi .x1
     have := hw.h256
     refine WP.mono (WP.keep [.x9, .x12, .x13] (Q := fun t => t.gpr .x9 = BitVec.ofNat 64 1 ∧
         t.gpr .x13 = BitVec.ofNat 64 0 ∧ t.gpr .x12 = BitVec.ofNat 64 q.L.w ∧ t.mem = s.mem) (by
-      brun [hw.x0, hdr_enc (show sW < 32 by decide), hw.scr.ld (d := 8 * sW) (by simp only [sW]; omega), hw.hw])
+      brun [hw.x0, hdr_enc (show sW < 32 by decide), hw.scr.ld (d := 8 * sW) (by simp only [sW]; omega_using [this]), hw.hw])
       (by decide) (by decide) (by decide +kernel))
       fun t ⟨⟨h9, h13, h12, m⟩, k⟩ =>
         ⟨h.step (js := []) (by rw [m]; exact Frm.refl _ _ _) (by simp) k (by decide), h12, h13, h9⟩
@@ -142,8 +142,8 @@ theorem montSet_ct : RelCT isa (Two MB) (setWord aOne) (Two MW1) := by
     have hw1 := hw.w1
     have hw2 := hw.w2
     have hH : Hdr s.mem q.L.B q.L.w q.L.minv := ⟨hw.hw, hM.2.1, fun j hj => hw.harr j hj⟩
-    refine WP.mono (setWord_ok hw.scr hw.x0 hH hw.good.2 h12 (by omega) (o := aOne) (by decide) (i := 0)
-      (by omega) h13) fun t ⟨hv, o, k⟩ => ?_
+    refine WP.mono (setWord_ok hw.scr hw.x0 hH hw.good.2 h12 (by omega_using [hw2]) (o := aOne) (by decide) (i := 0)
+      (by omega_using [hw1]) h13) fun t ⟨hv, o, k⟩ => ?_
     rw [h9, BitVec.toNat_ofNat] at hv
     have hf : Frm q.L.B (rg q.L.w [aOne] []) s.mem t.mem := Frm.rg_of_out o (Nat.le_refl _) _ _ (by decide)
     exact ⟨hM.step hf (by decide) k (by decide), by rw [hv]⟩
@@ -155,7 +155,7 @@ theorem montY_ct (M : Mont) : RelCT isa (Two MW1) (M.mm aY aR2 aOne) (Two MW) :=
     have hw := hM.1
     have hg := hw.good
     rw [hM.2.1] at hg
-    exact WP.mono (M.mm_ok hg.1 hg.2 hw.w1 (by have := hw.w2; omega) (o := aY) (a := aR2) (b := aOne) (by decide)
+    exact WP.mono (M.mm_ok hg.1 hg.2 hw.w1 (by have := hw.w2; omega_using [this]) (o := aY) (a := aR2) (b := aOne) (by decide)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hM.2.2.2.1
       (by rw [h1, hM.2.2.1]; exact hM.2.2.2.2)) fun t ⟨_, _, _, ha, k⟩ =>
       hM.step (Frm.rg_of_arrays ha [aAcc, aTmp, aY] [] (by decide)) (by decide) k (by decide)
@@ -169,7 +169,7 @@ theorem montO_ct : RelCT isa (Two MW) (copyA aO aY) (Two fun (q : R2Pub) s => Ws
     (fun q => q.L.w) (fun _ _ h => h.1) (by taint_decide) fun q s h => by
       rw [← e]
       exact WP.mono (copyA_ok h.1 (o := aO) (a := aY) (by decide) (by decide) (by decide)) fun t ⟨_, o, _, _, k⟩ =>
-        h.1.congrG (Frm.rg_of_out o (by omega) [aO] [] (by decide)) (by simp) k (by decide)
+        h.1.congrG (Frm.rg_of_out o (by omega_using []) [aO] [] (by decide)) (by simp) k (by decide)
 
 /-- `n - R mod n`. -/
 theorem montNg_ct : RelCT isa (Two fun (q : R2Pub) s => Ws s q.L.B q.L.Z q.L.w)
@@ -189,11 +189,11 @@ theorem montNg_ct : RelCT isa (Two fun (q : R2Pub) s => Ws s q.L.B q.L.Z q.L.w)
   have hw1 := hw.w1
   have hw2 := hw.w2
   refine WP.seq (WP.mono (subSet_ok hw aN aO aNg) fun t ⟨⟨h16, h17, h13, h14, _, _, hc, _⟩, k⟩ => ?_)
-  exact WP.mono (subLoop_ok (hw.scr.congr k.wr) h16 h17 h13 h14 hc (by omega) (by omega)
-    (by have := hw.sl (j := aN) (by decide); omega) (by have := hw.sl (j := aO) (by decide); omega)
-    (by have := hw.sl (j := aNg) (by decide); omega)
-    (by have := slot_sep (w := q.L.w) (show aNg ≠ aN by decide); omega)
-    (by have := slot_sep (w := q.L.w) (show aNg ≠ aO by decide); omega)) fun _ _ => trivial
+  exact WP.mono (subLoop_ok (hw.scr.congr k.wr) h16 h17 h13 h14 hc (by omega_using [hw1]) (by omega_using [hw2])
+    (by have := hw.sl (j := aN) (by decide); omega_using [this]) (by have := hw.sl (j := aO) (by decide); omega_using [this])
+    (by have := hw.sl (j := aNg) (by decide); omega_using [this])
+    (by have := slot_sep (w := q.L.w) (show aNg ≠ aN by decide); omega_using [this])
+    (by have := slot_sep (w := q.L.w) (show aNg ≠ aO by decide); omega_using [this])) fun _ _ => trivial
 
 /-- `mont` leaks only `n`. -/
 theorem montT_ct (M : Mont) : RelCT isa (Two GR1) (seqs (mont M.mm)) fun _ _ => True := by
@@ -227,18 +227,18 @@ theorem mont_ct (M : Mont) : RelCT isa (Two GR1) (seqs (mont M.mm)) (Two GR2) :=
             ≤ 2 ^ (splitTwos (I.D * I.E - 1)).1 * (splitTwos (I.D * I.E - 1)).2 :=
               Nat.le_mul_of_pos_left _ (Nat.two_pow_pos _)
           _ = I.D * I.E - 1 := hspl.1.symm
-      omega
+      omega_using [hmlt, this]
     have ht1 : 1 ≤ (splitTwos (I.D * I.E - 1)).1 := by
       rcases Nat.eq_zero_or_pos (splitTwos (I.D * I.E - 1)).1 with h0 | h0
       · have := hspl.1; rw [h0, Nat.pow_zero, Nat.one_mul] at this; have := hspl.2; omega
       · exact h0
     have ht2 := VG.Proof.Rsa.splitTwos_lt hm0 hmlt
     refine ⟨S₂, L, O, hv, ⟨S₂.ws, rfl, ?_, ?_, hr2lt, hr2, hone, ho, hng, S₂.args.el, ?_, ?_, hodd, hlo, hel1,
-      by unfold wk; omega, ht1, ht2⟩, hm0, heven⟩
+      by unfold wk; omega_using [hel2], ht1, ht2⟩, hm0, heven⟩
     · rw [hf₂.rg_word0 hZ16 (by decide) (by decide) (by decide), hf₂.rg_word (by decide) (by decide)]; exact hi₁
-    · rw [hf₂.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega)]; exact hn₁
-    · rw [hf₂.rg_wv2 hZ16 (by decide) (by decide) (by decide) (by decide) (by unfold wk; omega)]
-      rw [wv_low_of_lt (v := wk I.k + (I.el + 7) / 8) (w := 2 * (wk I.k + 2)) (by unfold wk; omega)
+    · rw [hf₂.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega_using [])]; exact hn₁
+    · rw [hf₂.rg_wv2 hZ16 (by decide) (by decide) (by decide) (by decide) (by unfold wk; omega_using [hel2])]
+      rw [wv_low_of_lt (v := wk I.k + (I.el + 7) / 8) (w := 2 * (wk I.k + 2)) (by unfold wk; omega_using [hel2])
         (by rw [hr₁]; exact hrlt), hr₁]
     · rw [hf₂.rg_word (by decide) (by decide)]; exact ht₁
 
