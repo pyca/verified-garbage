@@ -19,17 +19,6 @@ open VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.AdxRotate8 (at_)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 
-theorem storeMem_ok {s : State} {B : Addr} {Z e : Nat} {m : MemOp} {r : Reg}
-    (hs : Scr s B Z) (hp : s.ea m = off B e) (he : e + 8 ≤ Z) :
-    WP isa (.block [.store m r]) s fun t =>
-      word t.mem B e = s.gpr r ∧ Outside B e 8 s.mem t.mem ∧ Keep [] s t := by
-  have hn := hs.nowrap
-  refine WP.mono (WP.keep [] (Q := fun t => t.mem = s.mem.writeW (off B e) (s.gpr r)) ?_ rfl)
-    fun t ⟨hm, kt⟩ => ?_
-  · xrun [hp, hs.st he]
-  · rw [hm]
-    exact ⟨word_writeW_self _ _ _ _, writeW_outside _ _ _ (by omega), kt⟩
-
 theorem storeAt_ok {s : State} {B : Addr} {Z e d : Nat} {p r : Reg}
     (hs : Scr s B Z) (hp : s.gpr p = off B e) (he : e + d + 8 ≤ Z) :
     WP isa (.block [.store (at_ p d) r]) s fun t =>

@@ -35,16 +35,30 @@ def loadCols : List Instr :=
 def storeCols : List Instr :=
   [.store (at_ .rsi 0) .r8, .store (at_ .rsi 8) .r9, .store (at_ .rsi 16) .r10, .store (at_ .rsi 24) .r11, .store (at_ .rsi 32) .r12, .store (at_ .rsi 40) .r13, .store (at_ .rsi 48) .r14, .store (at_ .rsi 56) .r15]
 
-/-- Cancel one word and retain its multiplier for the remaining blocks. -/
-def digit (k : Nat) : List Instr :=
-  [.mov .rdx (.reg .r8), .mulx .rax .rdx (.mem (hdr sMinv)), .store (at_ .rcx (8 * k)) .rdx]
+/-- `[b + i + d]`, for a byte index `i`. -/
+def atx (b i : Reg) (d : Nat) : MemOp := { base := b, index := some i, disp := (d : Int) }
 
-def headStep (k : Nat) : Prog isa := .seq (.block (digit k)) (.block core)
+/-- The steps in each iteration of the tile's loops, which count a byte index
+from `-64` up to `0`: unrolled code would not fit some CPUs' decoded-µop caches. -/
+def unroll : Nat := 2
 
-/-- The low eight modulus words determine eight cancellation digits. -/
-def headN : Nat → Prog isa
+/-- Cancel one word and retain its multiplier at `m` for the remaining blocks. -/
+def digit (m : MemOp) : List Instr :=
+  [.mov .rdx (.reg .r8), .mulx .rax .rdx (.mem (hdr sMinv)), .store m .rdx]
+
+/-- The cancellation `j` words into an iteration, its digit `rsi` bytes past `rcx + 64`. -/
+def headStep (j : Nat) : Prog isa := .seq (.block (digit (atx .rcx .rsi (64 + 8 * j)))) (.block core)
+
+def headSteps : Nat → Prog isa
   | 0 => .block []
-  | n + 1 => .seq (headN n) (headStep n)
+  | n + 1 => .seq (headSteps n) (headStep n)
+
+/-- The low eight modulus words determine eight cancellation digits, `unroll`
+per iteration, indexed by `rsi`, which ends as `rcx`. -/
+def headLoop : Prog isa :=
+  .seq (.block [.mov .rsi (.imm (-64))])
+    (.seq (.loop (.seq (headSteps unroll) (.block [.alu .add .rsi (.imm (BitVec.ofNat 32 (8 * unroll)))])) .ne)
+      (.block [.mov .rsi (.reg .rcx)]))
 
 def addChain (src : Nat → Src) : List Instr :=
   [.adcx .r8 (src 0), .adcx .r9 (src 1), .adcx .r10 (src 2), .adcx .r11 (src 3), .adcx .r12 (src 4), .adcx .r13 (src 5), .adcx .r14 (src 6), .adcx .r15 (src 7)]
@@ -71,6 +85,23 @@ def productN : Nat → Prog isa
   | 0 => .block []
   | n + 1 => .seq (productN n) (productStep n)
 
+/-- The product with the digit `j` words into an iteration: digit and output
+`rdi` bytes past `rcx + 64` and `rsi + 64`. -/
+def productStepX (j : Nat) : Prog isa :=
+  .seq (.block [.mov .rdx (.mem (atx .rcx .rdi (64 + 8 * j)))])
+    (.seq (.block core) (.block [.store (atx .rsi .rdi (64 + 8 * j)) .rbx]))
+
+def productStepsX : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (productStepsX n) (productStepX n)
+
+/-- `productN 8`, `unroll` steps per iteration, indexed by `rdi`: the header
+base waits in `xmm0`. -/
+def productLoop : Prog isa :=
+  .seq (.block [.xop (.movq .xmm0 .rdi), .mov .rdi (.imm (-64))])
+    (.seq (.loop (.seq (productStepsX unroll) (.block [.alu .add .rdi (.imm (BitVec.ofNat 32 (8 * unroll)))])) .ne)
+      (.block [.movqR .rdi .xmm0]))
+
 /-- Advance both public block pointers and test the modulus endpoint. -/
 def nextBlock : List Instr :=
   [.alu .add .rbp (.imm 64), .alu .add .rsi (.imm 64),
@@ -82,7 +113,7 @@ def addInputCarry : List Instr := ([.mov .rdx (.mem blockCarry)] : List Instr) +
 def accumulate : Prog isa :=
   .seq (.block addInputCarry) (.block [.store blockCarry .rax])
 
-def middleBody : Prog isa := .seq accumulate (productN 8)
+def middleBody : Prog isa := .seq accumulate productLoop
 
 def middle : Prog isa := .seq middleBody (.block nextBlock)
 
@@ -99,7 +130,7 @@ def tileEnd : List Instr :=
     .alu .cmp .rcx (.mem (hdr (sArr Public.aTmp)))]
 
 def tileFront : Prog isa :=
-  .seq tileBegin (.seq (headN 8) (.seq (.block clearCarry) (.block nextBlock)))
+  .seq tileBegin (.seq headLoop (.seq (.block clearCarry) (.block nextBlock)))
 
 def tileCompute : Prog isa :=
   .seq tileFront (.seq (.ite .ne (.loop middle .ne) (.block [])) tailCore)

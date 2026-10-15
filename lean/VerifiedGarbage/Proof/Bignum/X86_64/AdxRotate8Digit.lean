@@ -28,22 +28,30 @@ theorem cols_keep {s t : State} {rs : List Reg} (hk : Keep rs s t)
     hk.gpr (h _ (by simp)), hk.gpr (h _ (by simp)), hk.gpr (h _ (by simp)),
     hk.gpr (h _ (by simp)), hk.gpr (h _ (by simp))]
 
-theorem digit_ok {s : State} {B : Addr} {Z e k : Nat} {mi : BitVec 64}
-    (hs : Scr s B Z) (hc : s.gpr .rcx = off B e) (he : e + 8 * k + 8 ≤ Z)
+theorem digit_ok {s : State} {B : Addr} {Z e m j : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hc : s.gpr .rcx = off B e) (hi : s.gpr .rsi = idx m)
+    (he : e + 8 * m + 8 * j + 8 ≤ Z)
     (hm : readSrc s (.mem (hdr sMinv)) = some mi) :
-    WP isa (.block (AdxRotate8.digit k)) s fun t =>
+    WP isa (.block (AdxRotate8.digit (AdxRotate8.atx .rcx .rsi (64 + 8 * j)))) s fun t =>
       t.gpr .rdx = digitValue s mi ∧ cols t = cols s ∧
-      t.mem = s.mem.writeW (off B (e + 8 * k)) (digitValue s mi) ∧
-      Keep [.rdx, .rax] s t := by
-  have hm' : s.load64 (s.ea (hdr sMinv)) = some mi := hm
-  refine WP.mono (WP.keep [.rdx, .rax] (Q := fun t =>
-    t.gpr .rdx = digitValue s mi ∧
-      t.mem = s.mem.writeW (off B (e + 8 * k)) (digitValue s mi)) ?_ rfl)
-    fun t ⟨⟨hd, ht⟩, hk⟩ => ⟨hd, cols_keep hk (by decide), ht, hk⟩
+      word t.mem B (e + 8 * m + 8 * j) = digitValue s mi ∧
+      Outside B (e + 8 * m + 8 * j) 8 s.mem t.mem ∧ Keep [.rdx, .rax] s t := by
+  have hm' : s.load64 (s.gpr .rdi + BitVec.ofInt 64 (8 * (sMinv : Int))) = some mi := hm
+  simp only [State.load64] at hm'
   unfold AdxRotate8.digit
-  have hm'' : s.load64 (s.gpr .rdi + BitVec.ofInt 64 (8 * (sMinv : Int))) = some mi := hm'
-  simp only [State.load64] at hm''
-  xrun [execMulx, State.ea, hdr, at_, hc, BitVec.ofInt_natCast, off_off, hm'', hs.st he]
-  exact ⟨rfl, rfl⟩
+  rw [show [Instr.mov .rdx (.reg .r8), .mulx .rax .rdx (.mem (hdr sMinv)),
+      .store (AdxRotate8.atx .rcx .rsi (64 + 8 * j)) .rdx] =
+    [.mov .rdx (.reg .r8), .mulx .rax .rdx (.mem (hdr sMinv))] ++
+      [.store (AdxRotate8.atx .rcx .rsi (64 + 8 * j)) .rdx] from rfl, WP.block_append_iff]
+  refine WP.mono (WP.keep [.rdx, .rax] (Q := fun t => t.gpr .rdx = digitValue s mi ∧ t.mem = s.mem) ?_ rfl)
+    fun a ⟨⟨hd, ma⟩, ka⟩ => ?_
+  · xrun [execMulx, State.ea, hdr, hm']
+    rfl
+  refine WP.mono (storeMem_ok (hs.congr ka.2.2)
+    (ea_atx ((ka.gpr (by decide)).trans hc) ((ka.gpr (by decide)).trans hi) (8 * j)) he)
+    fun t ⟨wt, ot, kt⟩ => ?_
+  have kat := ka.trans kt
+  exact ⟨(kt.gpr (by decide)).trans hd, cols_keep kat (by decide), wt.trans hd, ma ▸ ot,
+    kat.mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64.AdxRotate8

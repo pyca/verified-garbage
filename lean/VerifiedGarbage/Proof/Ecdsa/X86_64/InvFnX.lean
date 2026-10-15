@@ -24,7 +24,7 @@ functions (`PointOps.wrap_gpr`).
 namespace VG.Proof.Ecdsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64
-open VG.Proof.Weierstrass.X86_64.PointOps (Exec.xmm_of)
+open VG.X86_64.KeepReg (Exec.xmm_of)
 
 theorem invFnX_gpr {body : Prog isa} (hv : body.allInstrs (fun i => !KeepReg.writesVec i) = true)
     (hn : body.noCalls = true) {s s' : State} {t : List Leak} (he : Exec isa (Cfg.invFnX body) s t s') :
