@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Iv96
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Iv96Checks
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.BeSetupTo
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
@@ -104,22 +105,6 @@ theorem rel_load32 {P : State → State → Prop} (off : Nat) (rs : List Reg) (h
   · rw [b₁ r hx, b₂ r hx]
     exact hag _ _ hσ r (by simpa [hx] using hr)
 
-/-- The registers public where the prepared loops start: `scratch`'s
-working space and the arguments. -/
-abbrev regsI : List Reg := [.r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]
-
-/-- The taint checks of `StitchZH.decR true` around the load of the block
-index: the setup from the arguments (`rs` public after it), the constants,
-and the rest from `rs` and the index. -/
-structure DecRIChecks (rs : List Reg) : Prop where
-  rsp : .rsp ∈ rs
-  head : ∃ hc, ((taint.check (Taint.ofRegs regsI) Impl.Gcm.X86_64.StitchZH.decRHead hc).map fun τ' =>
-    (RegSet.ofList rs).subset τ'.regs && (!false || τ'.flags)) = some true
-  consts : ∃ hc, ((taint.check (Taint.ofRegs rs) (.block ((Impl.Gcm.X86_64.StitchZH.beSetup 0).take 7)) hc).map
-    fun τ' => (RegSet.ofList rs).subset τ'.regs && (!false || τ'.flags)) = some true
-  load : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov32 .r10 (.mem (at_ .rsp 16))]) hc).isSome = true
-  rest : ∃ hc, (taint.check (Taint.ofRegs (.r10 :: rs)) Impl.Gcm.X86_64.StitchZH.decRBeRest hc).isSome = true
-
 /-- `StitchZH.decR true` in two runs from states with the same arguments and
 block index. -/
 theorem decRI_rel {rs : List Reg} (hc : DecRIChecks rs) :
@@ -166,17 +151,6 @@ theorem decRI_rel {rs : List Reg} (hc : DecRIChecks rs) :
     rw [e]
     exact RelCT.seq a (rel_seq_block_append (RelCT.seq b (rel_seq_block_append (RelCT.seq l c))))
   exact fun t₁ t₂ u₁ u₂ e₁ e₂ => whole _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
-
-/-- The taint checks of `StitchZHTo.encR true` around the load of the block
-index, as `DecRIChecks`. -/
-structure EncRIChecks (rs : List Reg) : Prop where
-  rsp : .rsp ∈ rs
-  head : ∃ hc, ((taint.check (Taint.ofRegs (.r10 :: regsI)) Impl.Gcm.X86_64.StitchZHTo.encRHead hc).map fun τ' =>
-    (RegSet.ofList rs).subset τ'.regs && (!false || τ'.flags)) = some true
-  consts : ∃ hc, ((taint.check (Taint.ofRegs rs) (.block ((Impl.Gcm.X86_64.StitchZH.beSetup 0).take 7)) hc).map
-    fun τ' => (RegSet.ofList rs).subset τ'.regs && (!false || τ'.flags)) = some true
-  load : ∃ hc, (taint.check (Taint.ofRegs [.rsp]) (.block [.mov32 .r10 (.mem (at_ .rsp 32))]) hc).isSome = true
-  rest : ∃ hc, (taint.check (Taint.ofRegs (.r10 :: rs)) Impl.Gcm.X86_64.StitchZHTo.encRBeRest hc).isSome = true
 
 /-- `StitchZHTo.encR true` in two runs from states with the same arguments
 (the output in `r10`) and block index. -/

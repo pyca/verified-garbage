@@ -19,6 +19,14 @@ namespace VG.Variants.AesGcm.X86_64.VaesVpclmulAvx512
 
 open VG VG.X86_64
 
+/-- The taint checks around the load of the block index in `StitchZH.decR true`. -/
+theorem decRIChecks : Proof.AesGcm.X86_64.DecRIChecks [.r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp, .rax] :=
+  ⟨by decide, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+/-- The taint checks around the load of the block index in `StitchZHTo.encR true`. -/
+theorem encRIChecks : Proof.AesGcm.X86_64.EncRIChecks [.r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp, .rax] :=
+  ⟨by decide, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
 /-- The interleaved loops of `Impl.Gcm.X86_64.StitchZ` (their proof is `StitchName.ok`). -/
 def stitch : Proof.AesGcm.X86_64.StitchPart where
   name := .vaesAvx512
@@ -32,6 +40,12 @@ def stitch : Proof.AesGcm.X86_64.StitchPart where
   pieceR := by exact (some
     ⟨(⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.encR true true),
      (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, (by exact ⟨_, by taint_decide⟩)⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.decR true true)⟩)
+  pieceRI := by exact (some ({
+      dec := ⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide⟩
+      decChecks := ⟨_, decRIChecks⟩
+      enc := ⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide⟩
+      encChecks := ⟨_, encRIChecks⟩ } :
+      Proof.AesGcm.X86_64.PieceRI))
   toPart := some
     { name := .vaesAvx512
       piece := by exact (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,

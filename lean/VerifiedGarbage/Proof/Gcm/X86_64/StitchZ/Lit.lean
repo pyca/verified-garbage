@@ -28,10 +28,12 @@ materialize_code Impl.Gcm.X86_64.StitchZH.encR
 materialize_code Impl.Gcm.X86_64.StitchZH.decRHead
 materialize_code Impl.Gcm.X86_64.StitchZH.decRBeRest
 materialize_code Impl.Gcm.X86_64.StitchZH.decRF := Impl.Gcm.X86_64.StitchZH.decR false
+materialize_code Impl.Gcm.X86_64.StitchZH.decRT := Impl.Gcm.X86_64.StitchZH.decR true
 materialize_code Impl.Gcm.X86_64.StitchZTo.enc
 materialize_code Impl.Gcm.X86_64.StitchZTo.encP
 materialize_code Impl.Gcm.X86_64.StitchZHTo.encRHead
 materialize_code Impl.Gcm.X86_64.StitchZHTo.encRBeRest
 materialize_code Impl.Gcm.X86_64.StitchZHTo.encRF := Impl.Gcm.X86_64.StitchZHTo.encR false
+materialize_code Impl.Gcm.X86_64.StitchZHTo.encRT := Impl.Gcm.X86_64.StitchZHTo.encR true
 
 end VG

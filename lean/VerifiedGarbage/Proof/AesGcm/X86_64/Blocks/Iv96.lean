@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fn
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Iv96Checks
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.R10
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 public import VerifiedGarbage.Proof.AesGcm.X86_64.AlignedScratch
@@ -34,27 +35,6 @@ structure IdxArg (off : Nat) (s : State) : Prop where
   rd : InRegions s.rd (SP s + BitVec.ofNat 64 off) 4
   d : Region.Disjoint ⟨SP s + BitVec.ofNat 64 off, 4⟩ (dR s)
   s : Region.Disjoint ⟨SP s + BitVec.ofNat 64 off, 4⟩ (sR s)
-
-end VG.Proof.AesGcm.X86_64.Blocks
-
-namespace VG.Proof.AesGcm.X86_64
-open VG VG.X86_64
-
-/-- What `Piece` states of loops but their constant time: no write of
-`mxcsr` or `rsp`, no calls, no stack. -/
-structure PieceS (code : Prog isa) : Prop where
-  mxcsr : code.allInstrs (fun i => !loadsMxcsr i) = true
-  spSafe : code.all (fun i => !X86_64.isa.writesSp i) = true
-  nosp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true
-  depth : code.depth = 0
-  xdepth : code.x86_64Depth = 0
-
-end VG.Proof.AesGcm.X86_64
-
-namespace VG.Proof.AesGcm.X86_64.Blocks
-open VG VG.X86_64 VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Blocks
-open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
-open VG.Spec.Gcm (Block blockAt blocksAt)
 
 /-- A decryption loop taking all the blocks, given the block index at
 `rsp + 16`. -/

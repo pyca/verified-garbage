@@ -9,6 +9,7 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Iv96Checks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -214,6 +215,10 @@ structure StitchPart where
   pieceP : Option (PieceP name) := none
   /-- Prepared-context loops, with the same CPU features. -/
   pieceR : Option (PieceR name) := none
+  /-- The prepared-context loops on 512-bit registers given the block index
+  (`StitchZH.decR true`, `StitchZHTo.encR true`), with the same CPU features
+  (`none`: the functions given the index call the loops of `pieceR`). -/
+  pieceRI : Option PieceRI := none
   /-- The loops that encrypt out of place for `vg_aes_gcm_encrypt_blocks_to`,
   with the same CPU features (`none`: it copies the blocks to the output and
   encrypts them there). -/
