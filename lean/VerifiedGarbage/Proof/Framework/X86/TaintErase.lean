@@ -244,6 +244,19 @@ theorem check_erase (c : Prog isa) :
   | call n b _ => intro τ h _ _; rfl
   | frame p b q _ => intro τ h _ _; rfl
 
+/-- Constant time from the analysis of `c'`, which is `c` without its
+displacements and immediates (`Code.erase`), from a taint that knows no region
+bases, with a hint whose taints know none either (`hh`, after the analysis,
+whose hint `taint_decide` finds). Copies of code that differ only in what
+`Code.erase` zeroes are then the same code, which `materialize_shared` makes
+one constant (split into its parts with `Code.splitBlock` if it is one
+block). -/
+theorem constantTime_erase {Pre : State → Prop} {Pub : State → State → Prop} {c c' : Prog isa}
+    (τ : T) (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → taint.Agree τ s₁ s₂)
+    (he : Code.erase c = c') {hc : VG.Taint.Hint T} (h : (taint.check τ c' hc).isSome = true)
+    (hn : noBases τ = true) (hh : hintNoBases hc = true) : ConstantTime isa Pre Pub c :=
+  VG.Taint.constantTime (A := taint) τ hpub (hc := hc) (by rw [← check_erase c τ hc hn hh, he]; exact h)
+
 end Taint
 
 end VG.X86
