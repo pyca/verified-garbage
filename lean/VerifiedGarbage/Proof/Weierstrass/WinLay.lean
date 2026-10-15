@@ -279,19 +279,49 @@ theorem WinLay.rcbApart_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) {m : 
       · exact hL.tbl_ne (List.mem_append_left _ (hab _ hxs)) hj rfl
       · exact hL.tbl_ne₂ (i := i) (j := j) (by omega) e.symm
 
+/-- The slots by number: `winOther`'s sixteen, then `winRo`'s six. -/
+def winCode (K : WinCfg) (i : Nat) : Nat :=
+  if i < 16 then (winOther K).getD i 0 else (winRo K).getD (i - 16) 0
+
+theorem getD_mem_of_lt {l : List Nat} {i : Nat} (h : i < l.length) : l.getD i 0 ∈ l := by
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h]; exact List.getElem_mem h
+
+/-- Slots of different numbers are different, but for two read only. -/
+theorem WinLay.code_ne {K : WinCfg} {size : Nat} (hL : WinLay K size) {i j : Nat} (hi : i < 16)
+    (hj : j < 22) (hij : i ≠ j) : winCode K i ≠ winCode K j := by
+  have hl : (winOther K).length = 16 := rfl
+  have hr : (winRo K).length = 6 := rfl
+  by_cases hj' : j < 16
+  · simp only [winCode, hi, hj', ↓reduceIte]
+    exact fun h => hij ((hL.nodup.getD_inj (hl ▸ hi) (hl ▸ hj')).mp h)
+  · simp only [winCode, hi, hj', ↓reduceIte]
+    exact fun h => hL.ro _ (getD_mem_of_lt (by omega)) (h ▸ getD_mem_of_lt (by omega))
+
+/-- A complete addition's slots are apart as it needs, by their numbers:
+those it writes distinct and not read only, those it reads apart from them. -/
+theorem WinLay.rcbApart_codes {K : WinCfg} {size : Nat} (hL : WinLay K size) {S : RcbSlots}
+    {p q o : Pt} {lw lr : List Nat} (hw : rcbW S o = lw.map (winCode K))
+    (hr : rcbR S p q = lr.map (winCode K))
+    (h : lw.Nodup ∧ (∀ i ∈ lw, i < 16) ∧ ∀ i ∈ lr, i ∉ lw ∧ i < 22 := by decide) :
+    RcbApart S p q o := by
+  obtain ⟨hnd, hlw, hlr⟩ := h
+  refine ⟨?_, fun x hx hx' => ?_⟩
+  · rw [hw, List.Nodup, List.pairwise_map]
+    exact hnd.imp_of_mem fun hi hj hij => hL.code_ne (hlw _ hi) (Nat.lt_of_lt_of_le (hlw _ hj)
+      (by decide)) hij
+  · rw [hr] at hx; rw [hw] at hx'
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    obtain ⟨j, hj, e⟩ := List.mem_map.mp hx'
+    exact hL.code_ne (hlw j hj) (hlr i hi).2 (fun h => (hlr i hi).1 (h ▸ hj)) e
+
 /-- The slots `toJ`, `dblJ` and `fromJ` use in the window method's doublings are apart:
 `R` into `E`, `E` into `D`, `D` into `E` and `E` into `R` (`z` the slots of zero). -/
 theorem WinLay.rcbApart_jac {K : WinCfg} {size : Nat} (hL : WinLay K size) :
     RcbApart K.S K.R ⟨K.zero, K.zero, K.zero⟩ K.E ∧ RcbApart K.S K.E K.E K.D ∧
-      RcbApart K.S K.D K.D K.E ∧ RcbApart K.S K.E ⟨K.zero, K.zero, K.zero⟩ K.R := by
-  have hnd := hL.nodup
-  have ha := hL.ro K.S.a (by simp [winRo])
-  have hb := hL.ro K.S.b3 (by simp [winRo])
-  have hz := hL.ro K.zero (by simp [winRo])
-  simp only [winOther, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
-    List.not_mem_nil, or_false, not_or] at hnd ha hb hz
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩ <;>
-    simp only [rcbW, rcbR, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
-      List.nodup_nil, and_true, forall_eq_or_imp, forall_eq] <;> grind
+      RcbApart K.S K.D K.D K.E ∧ RcbApart K.S K.E ⟨K.zero, K.zero, K.zero⟩ K.R :=
+  ⟨hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 3, 4, 5]) (lr := [16, 17, 0, 1, 2, 18, 18, 18]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 13, 14, 15]) (lr := [16, 17, 3, 4, 5, 3, 4, 5]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 3, 4, 5]) (lr := [16, 17, 13, 14, 15, 13, 14, 15]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 0, 1, 2]) (lr := [16, 17, 3, 4, 5, 18, 18, 18]) rfl rfl⟩
 
 end VG.Proof.Weierstrass
