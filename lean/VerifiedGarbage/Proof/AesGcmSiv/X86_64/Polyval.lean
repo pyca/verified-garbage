@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
 import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
