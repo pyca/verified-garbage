@@ -29,6 +29,13 @@ open VG.Proof.MlKem.X86_64
 def roundRanges (w : Nat) : List (Nat × Nat) :=
   preRanges w ++ expRanges w ++ [(8 * kI, 8), (8 * kUni, 8), (8 * kStat, 8)]
 
+/-- `roundRanges`'s ranges are past the header or in its header ranges. -/
+theorem roundRanges_shape (w : Nat) : ∀ r ∈ roundRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(200, 8), (240, 8), (208, 8), (224, 8), (248, 8), (176, 8), (216, 8), (160, 8), (168, 8), (232, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.cons_append,
+    List.nil_append, expRanges, preRanges, roundRanges, tabRanges, winRanges, witRanges, slot, hdrBytes, aX, aAcc, aTmp, aXm, aY, VG.Proof.Bignum.tabBytes, kT0, sFn, kG, kV, kWords, kBits, kFlag, kPlen, kI, kElen, kU, kUni, kP, kStat, kT1, kT2, kUsed]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
+
 theorem mrRound_eq (mul : Nat → Nat → Nat → Prog isa) : mrRound mul =
     (mrWitness ++ [mul aXm aX aR2] ++ tabBuild mul) ++
     (mrExpLoop mul ++ ([.block [.mov32 .rcx (.imm 3), .mov .rax (.mem (hdr kFlag)), .alu .test .rax (.reg .rax)],

@@ -101,7 +101,7 @@ theorem stores_ok {B : Addr} {Z w : Nat} {c : Bool} {Q : State → Prop} :
       (WP.mono (storeK_ws h hj hp hl hpv hlv hm hl1 hlw hwr hsep) fun s₁ ⟨b₁, x₁, h₁, f₁, k₁⟩ => ?_)
     have hpw' := List.pairwise_cons.mp hpw
     refine stores_ok L rest s₁ hr h₁ (by rw [frm_word f₁ h256 (by decide)]; exact hm) (fun e' he' => ?_) hpw'.2
-      (fun t ht ft bt xt kt => k t ht (Frm.trans f₁ ft) ?_ ?_ ((k₁.trans kt).mono (by simp)))
+      (fun t ht ft bt xt kt => k t ht (Frm.trans f₁ ft) ?_ ?_ ((k₁.trans kt).mono (by decide)))
     · obtain ⟨hj', hp', hl', hpv', hlv', hl1', hlw', hwr', hsep'⟩ := ho e' (List.mem_cons_of_mem _ he')
       exact ⟨hj', hp', hl', by rw [frm_word f₁ h256 hp']; exact hpv', by rw [frm_word f₁ h256 hl']; exact hlv',
         hl1', hlw', fun i hi => by rw [k₁.2.2]; exact hwr' i hi, hsep'⟩
@@ -176,7 +176,7 @@ theorem zeros_ok {B : Addr} {Z w : Nat} {Q : State → Prop} :
       have h₁ : Ws s₁ B Z w := h.congr f₁ (fun r hr' => by
         rw [List.mem_singleton.mp hr']; exact Or.inl (by omega)) k₁ (by decide)
       refine zeros_ok L rest s₁ hr h₁ (fun e' he' => ?_) hpw'.2
-        (fun t ht ft zt xt kt => k t ht (Frm.trans f₁ ft) ?_ ?_ ((k₁.trans kt).mono (by simp)))
+        (fun t ht ft zt xt kt => k t ht (Frm.trans f₁ ft) ?_ ?_ ((k₁.trans kt).mono (by decide)))
       · obtain ⟨hj', hp', hl', hpv', hlv', hl1', hlw', hwr', hsep'⟩ := ho e' (List.mem_cons_of_mem _ he')
         exact ⟨hj', hp', hl', by rw [frm_word f₁ h256 hp']; exact hpv', by rw [frm_word f₁ h256 hl']; exact hlv',
           hl1', hlw', fun i hi => by rw [k₁.2.2]; exact hwr' i hi, hsep'⟩

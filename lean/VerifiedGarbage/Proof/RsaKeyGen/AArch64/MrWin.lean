@@ -54,10 +54,24 @@ def winRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)), (slot w aXm, 8 * (w + 2)),
     (8 * kG, 8), (8 * kFlag, 8), (8 * kV, 8), (8 * kBits, 8)]
 
+/-- `winRanges`'s ranges are past the header or in its header ranges. -/
+theorem winRanges_shape (w : Nat) : ∀ r ∈ winRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(8, 8), (184, 8), (208, 8), (240, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+    winRanges, slot, hdrBytes, aAcc, aTmp, aXm, aY, kT0, sFn, sCnt, kG, kV, kBits, kFlag, kPlen, kT2]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
+
 /-- What a window changes before its flag. -/
 def midRanges (w : Nat) : List (Nat × Nat) :=
   [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)), (slot w aXm, 8 * (w + 2)),
     (8 * kG, 8)]
+
+/-- `midRanges`'s ranges are past the header or in its header ranges. -/
+theorem midRanges_shape (w : Nat) : ∀ r ∈ midRanges w,
+    VG.Impl.Bignum.hdrBytes ≤ r.1 ∨ r ∈ ([(8, 8)] : List (Nat × Nat)) := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+    midRanges, slot, hdrBytes, aAcc, aTmp, aXm, aY, kG]
+  and_intros <;> first | decide | exact .inl (by omega_arith)
 
 theorem midRanges_sub (w : Nat) : ∀ r ∈ midRanges w, r ∈ winRanges w := by
   simp only [midRanges, winRanges, List.mem_cons, List.not_mem_nil, or_false]

@@ -155,6 +155,10 @@ def checksW (w : Nat) : Nat :=
   if w < 5 then 27 else if w < 6 then 8 else if w < 7 then 7 else if w < 8 then 6 else
   if w < 22 then 5 else if w < 59 then 4 else 3
 
+theorem checksW_le (w : Nat) : checksW w ≤ 27 := by
+  unfold checksW
+  split <;> (try split) <;> (try split) <;> (try split) <;> (try split) <;> (try split) <;> decide
+
 theorem checksW_eq : ∀ w < 65, 4 ≤ w → checksForSize (64 * w) = checksW w := by decide
 
 end VG.Proof.RsaKeyGen
