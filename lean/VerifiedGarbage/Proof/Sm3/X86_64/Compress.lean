@@ -129,77 +129,12 @@ theorem round_ne5 (t : Nat) :
 /-- The address of `W[j mod 16]`. -/
 abbrev slotAddr (scr : Addr) (j : Nat) : Addr := scr + BitVec.ofInt 64 ↑(4 * (j % 16))
 
-set_option hygiene false in
-/-- The symbolic execution of an iteration (`round_lo`, `round_hi`): for any
-registers `A … H` (which `round_ne0 … round_ne5` say are different where it
-matters), with the register writes kept folded (`VG.X86_64.RegUpd`). -/
-macro "round_tac" : tactic => `(tactic| (
-  obtain ⟨n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11⟩ := round_ne0 t
-  obtain ⟨n12, n13, n14, n15, n16, n17, n18, n19, n20, n21, n22, n23⟩ := round_ne1 t
-  obtain ⟨n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35⟩ := round_ne2 t
-  obtain ⟨n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47⟩ := round_ne3 t
-  obtain ⟨n48, n49, n50, n51, n52, n53, n54, n55, n56, n57, n58, n59⟩ := round_ne4 t
-  obtain ⟨n60, n61, n62, n63, n64, n65, n66, n67, n68, n69, n70, n71⟩ := round_ne5 t
-  obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := var_succ t
-  simp only [Vars, e0, e1, e2, e3, e4, e5, e6, e7] at hv ⊢
-  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
-  simp only [slotAddr] at hin hin₄ hw hw₄
-  apply WP.of_runBlock
-  simp only [Impl.Sm3.X86_64.round, ht, ite_true, ite_false, List.cons_append, List.nil_append]
-  generalize var t 0 = a at *
-  generalize var t 1 = b at *
-  generalize var t 2 = c at *
-  generalize var t 3 = d at *
-  generalize var t 4 = e at *
-  generalize var t 5 = f at *
-  generalize var t 6 = g at *
-  generalize var t 7 = h at *
-  simp only [slot, at_, T0, T1,
-    runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, execShift32, readSrc32, isa,
-    State.ea, State.load32, hrcx, hin, hin₄, hw, hw₄,
-    State.setReg32, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_of_ne, RegUpd.mem_setReg,
-    RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
-    RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags,
-    RegUpd.rd_setFlags, RegUpd.wr_setFlags, and_self, Nat.reduceLeDiff, ite_true, ite_false,
-    Nat.reduceEqDiff, not_false_eq_true, reduceCtorEq,
-    n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15, n16, n17, n18, n19, n20, n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35, n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47, n48, n49, n50, n51, n52, n53, n54, n55, n56, n57, n58, n59, n60, n61, n62, n63, n64, n65, n66, n67, n68, n69, n70, n71,
-    h0, h1, h2, h3, h4, h5, h6, h7, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
-    Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, trivial, trivial, trivial, fun r hr => ?_⟩
-  rotate_right
-  · have n : ¬r = .r13 ∧ ¬r = .r14 ∧ ¬r = b ∧ ¬r = d ∧ ¬r = f ∧ ¬r = h := by
-      simp only [pubRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;>
-        simp only [n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15, n16, n17, n18, n19, n20, n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35, n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47, n48, n49, n50, n51, n52, n53, n54, n55, n56, n57, n58, n59, n60, n61, n62, n63, n64, n65, n66, n67, n68, n69, n70, n71, not_false_eq_true, and_self, reduceCtorEq]
-    simp only [RegUpd.gpr_setReg_of_ne, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, n,
-      not_false_eq_true]
-  all_goals
-    refine congrArg (BitVec.setWidth 64) ?_
-    simp only [roundW_0, roundW_1, roundW_2, roundW_3, roundW_4, roundW_5, roundW_6, roundW_7,
-      Spec.Sm3.ff, Spec.Sm3.gg, ht, ite_true, ite_false, maj_eq, ch_eq, tj, rotl9, rotl12, rotl7,
-      rotl19] <;>
-    first | exact tt1_eq _ _ _ _ _ | exact tt2_eq _ _ _ _))
-
-theorem round_lo (t : Nat) (ht : t < 16) (s : State) (v : HashValue) (w w₄ : Word) (scr : Addr)
-    (hv : Vars t s v) (hrcx : s.gpr .rcx = scr)
-    (hin : InRegions (s.rd ++ s.wr) (slotAddr scr t) 4)
-    (hin₄ : InRegions (s.rd ++ s.wr) (slotAddr scr (t + 4)) 4)
-    (hw : s.mem.readW (slotAddr scr t) 32 = w) (hw₄ : s.mem.readW (slotAddr scr (t + 4)) 32 = w₄) :
-    WP isa (.block (round t)) s fun s' =>
-      Vars (t + 1) s' (roundW v t w w₄) ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
-  round_tac
-
-theorem round_hi (t : Nat) (ht : ¬t < 16) (s : State) (v : HashValue) (w w₄ : Word) (scr : Addr)
-    (hv : Vars t s v) (hrcx : s.gpr .rcx = scr)
-    (hin : InRegions (s.rd ++ s.wr) (slotAddr scr t) 4)
-    (hin₄ : InRegions (s.rd ++ s.wr) (slotAddr scr (t + 4)) 4)
-    (hw : s.mem.readW (slotAddr scr t) 32 = w) (hw₄ : s.mem.readW (slotAddr scr (t + 4)) 32 = w₄) :
-    WP isa (.block (round t)) s fun s' =>
-      Vars (t + 1) s' (roundW v t w w₄) ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
-  round_tac
-
+set_option linter.unusedSimpArgs false in
+/-- The symbolic execution of an iteration, of either shape (`t < 16` or not; one tactic for
+both, written once, not as a macro, whose definition costs a second to elaborate; some simp arguments are
+for one shape only): for any
+registers `A … H` (which `round_ne0 … round_ne5` say are different where it matters), with the
+register writes kept folded (`VG.X86_64.RegUpd`). -/
 theorem round_ok (t : Nat) (s : State) (v : HashValue) (w w₄ : Word) (scr : Addr)
     (hv : Vars t s v) (hrcx : s.gpr .rcx = scr)
     (hin : InRegions (s.rd ++ s.wr) (slotAddr scr t) 4)
@@ -208,9 +143,52 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w w₄ : Word) (scr : Ad
     WP isa (.block (round t)) s fun s' =>
       Vars (t + 1) s' (roundW v t w w₄) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
-  by_cases ht : t < 16
-  · exact round_lo t ht s v w w₄ scr hv hrcx hin hin₄ hw hw₄
-  · exact round_hi t ht s v w w₄ scr hv hrcx hin hin₄ hw hw₄
+  by_cases ht : t < 16 <;> (
+    obtain ⟨n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11⟩ := round_ne0 t
+    obtain ⟨n12, n13, n14, n15, n16, n17, n18, n19, n20, n21, n22, n23⟩ := round_ne1 t
+    obtain ⟨n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35⟩ := round_ne2 t
+    obtain ⟨n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47⟩ := round_ne3 t
+    obtain ⟨n48, n49, n50, n51, n52, n53, n54, n55, n56, n57, n58, n59⟩ := round_ne4 t
+    obtain ⟨n60, n61, n62, n63, n64, n65, n66, n67, n68, n69, n70, n71⟩ := round_ne5 t
+    obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := var_succ t
+    simp only [Vars, e0, e1, e2, e3, e4, e5, e6, e7] at hv ⊢
+    obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
+    simp only [slotAddr] at hin hin₄ hw hw₄
+    apply WP.of_runBlock
+    simp only [Impl.Sm3.X86_64.round, ht, ite_true, ite_false, List.cons_append, List.nil_append]
+    generalize var t 0 = a at *
+    generalize var t 1 = b at *
+    generalize var t 2 = c at *
+    generalize var t 3 = d at *
+    generalize var t 4 = e at *
+    generalize var t 5 = f at *
+    generalize var t 6 = g at *
+    generalize var t 7 = h at *
+    simp only [slot, at_, T0, T1,
+      runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, execShift32, readSrc32, isa,
+      State.ea, State.load32, hrcx, hin, hin₄, hw, hw₄,
+      State.setReg32, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_of_ne, RegUpd.mem_setReg,
+      RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
+      RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags,
+      RegUpd.rd_setFlags, RegUpd.wr_setFlags, and_self, Nat.reduceLeDiff, ite_true, ite_false,
+      Nat.reduceEqDiff, not_false_eq_true, reduceCtorEq,
+      n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15, n16, n17, n18, n19, n20, n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35, n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47, n48, n49, n50, n51, n52, n53, n54, n55, n56, n57, n58, n59, n60, n61, n62, n63, n64, n65, n66, n67, n68, n69, n70, n71,
+      h0, h1, h2, h3, h4, h5, h6, h7, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
+      Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
+    refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, trivial, trivial, trivial, fun r hr => ?_⟩
+    rotate_right
+    · have n : ¬r = .r13 ∧ ¬r = .r14 ∧ ¬r = b ∧ ¬r = d ∧ ¬r = f ∧ ¬r = h := by
+        simp only [pubRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl | rfl <;>
+          simp only [n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15, n16, n17, n18, n19, n20, n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35, n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47, n48, n49, n50, n51, n52, n53, n54, n55, n56, n57, n58, n59, n60, n61, n62, n63, n64, n65, n66, n67, n68, n69, n70, n71, not_false_eq_true, and_self, reduceCtorEq]
+      simp only [RegUpd.gpr_setReg_of_ne, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, n,
+        not_false_eq_true]
+    all_goals
+      refine congrArg (BitVec.setWidth 64) ?_
+      simp only [roundW_0, roundW_1, roundW_2, roundW_3, roundW_4, roundW_5, roundW_6, roundW_7,
+        Spec.Sm3.ff, Spec.Sm3.gg, ht, ite_true, ite_false, maj_eq, ch_eq, tj, rotl9, rotl12, rotl7,
+        rotl19] <;>
+      first | exact tt1_eq _ _ _ _ _ | exact tt2_eq _ _ _ _)
 
 theorem expand_ok (i : Nat) (s : State) (M : Block) (bp scr : Addr)
     (hrsi : s.gpr .rsi = bp) (hrcx : s.gpr .rcx = scr)
