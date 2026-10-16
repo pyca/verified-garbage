@@ -400,9 +400,10 @@ theorem fin_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {o 
     (hf : CalleeOk H code)
     (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain { P with out := o } name code), clobbers i r = false)
     {s t : State} (hp : Pre P D s) (h : Mid P s t)
-    (hr : H.Repr iv t.mem (fb P s) (bytesAt s.mem (dp s) (len s))) (hok : H.lenOk (len s)) :
+    (hr : H.Repr iv t.mem (fb P s) (bytesAt s.mem (dp s) (len s))) :
     WP isa (.seq (.block (finArgs P)) (finalizeMain { P with out := o } name code)) t fun t' =>
-      Mid P s t' ∧ bytesAt t'.mem (out s) D = (H.hash iv (bytesAt s.mem (dp s) (len s))).take D := by
+      Mid P s t' ∧ (H.lenOk (len s) →
+        bytesAt t'.mem (out s) D = (H.hash iv (bytesAt s.mem (dp s) (len s))).take D) := by
   have := hF.lt; have := hF.sl_le; have := sc_le P; have := st_le P
   refine WP.seq (WP.mono (Q := fun (t₁ : State) => Mid P s t₁ ∧ t₁.gpr .x0 = fb P s ∧
       t₁.gpr .x1 = s.gpr .x1 ∧ t₁.gpr .x2 = out s ∧ t₁.gpr .x3 = fb P s + BitVec.ofNat 64 (scO P) ∧
@@ -462,7 +463,7 @@ theorem fin_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {o 
           rcases hr with rfl | rfl | rfl
           · exact (st_sl hF s).symm
           · exact hp.f_o.sub_left (sl_sub hF s)
-          · exact (sc_sl hF s).symm), ?_⟩
+          · exact (sc_sl hF s).symm), fun hok => ?_⟩
     have hlen : (bytesAt s.mem (dp s) (len s)).length = len s := by simp [bytesAt]
     have := hfin iv (bytesAt s.mem (dp s) (len s)) (by simpa [u, g0, gm] using hr) (by rwa [hlen])
       (by simp [g1, hlen])
@@ -537,5 +538,38 @@ theorem finish_ok {P : Params} (hF : Fits P) {D : Nat} (hD : D ≤ 2 ^ 64) {s t 
     refine bytesAt_congr fun i hi => hfr.bytes (R := oR s D)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr
                       exact (hp.f_o.sub_left (st_sub hF s)).symm) hD hi
+
+
+/-! ## The digest -/
+
+theorem frameBytes_ok {P : Params} (hF : Fits P) :
+    0 < frameBytes P ∧ frameBytes P < 4096 ∧ frameBytes P % 16 = 0 :=
+  ⟨by have := hF.sl_le; omega, hF.lt, by simp [frameBytes, Nat.mul_mod_left]⟩
+
+/-- The one-shot digest is correct, given that `init` stores `iv`, writing
+only `x9`, and that the streaming bodies never write `untouched`. -/
+theorem correct {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {o : List Instr} {D : Nat}
+    (hs : ShapeD (P := { P with out := o }) H D) {iv : H.HV} {init : Prog isa} {name : String}
+    {code : Prog isa} (hf : CalleeOk H code)
+    (hi : ∀ s, (initK H iv).pre s → ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ (initK H iv).post s s')
+    (hiw : ∀ r, r ≠ .x9 → ∀ i ∈ instrs init, clobbers i r = false) (hin : init.noCalls = true)
+    (huu : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), clobbers i r = false)
+    (huf : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain { P with out := o } name code), clobbers i r = false)
+    (hv : (digest P { P with out := o } init name code).allInstrs keepsV = true)
+    {s : State} (hp : Pre P D s) :
+    WP isa (digest P { P with out := o } init name code) s fun s' =>
+      abiPreserved s s' ∧ (oneK H iv D).post s s' := by
+  have hD : D ≤ 2 ^ 64 := by have : D ≤ P.N := hs.le; have := hF.so; omega
+  apply WP.withPreservedV (hc := hv)
+  refine WP.alloc (frameBytes_ok hF) hp.sp ?_
+  unfold body
+  refine WP.seq (WP.mono (setup_ok hF rfl) fun t₁ h₁ => ?_)
+  refine WP.seq (WP.mono (init_ok hF hi hiw hin h₁) fun t₂ ⟨m₂, g0, g2, g3, hr₂⟩ => ?_)
+  refine WP.seq (WP.mono (upd_ok hF hd hf huu hp m₂ g0 g2 g3 hr₂) fun t₃ ⟨m₃, hr₃⟩ => ?_)
+  refine WP.seq (WP.mono (fin_ok hF hd hs hf huf hp m₃ hr₃) fun t₄ ⟨m₄, hout⟩ => ?_)
+  refine WP.mono (finish_ok hF hD hp m₄) fun t₅ ⟨_, _, hsp, hg, hb⟩ => ?_
+  refine ⟨⟨fun r hr => hg r hr, by simp only [freed, hsp, fb, BitVec.sub_add_cancel]⟩, fun hok => ?_⟩
+  show bytesAt t₅.mem (out s) D = _
+  rw [hb, hout hok]
 
 end VG.Proof.MdStream.AArch64.OneShot
