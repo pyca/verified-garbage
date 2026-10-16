@@ -11,6 +11,7 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.AArch64.Pair
 
 /-! # X25519 (RFC 7748) on AArch64 -/
 
@@ -26,9 +27,10 @@ def artifacts : List Artifact := [
       Each ladder step computes the products `DA` and `CB` with AdvSIMD, in radix 2^25.5 \
       (`umull`/`umlal` on two lanes), interleaved with the scalar field operations that do not \
       depend on them. The inversion uses the ref10 addition chain (254 squarings and 11 \
-      multiplications)."]
-    code := Impl.X25519.AArch64.Hybrid.x25519
-    verified := Proof.X25519.AArch64.Hybrid.x25519_verified },
+      multiplications). Adjacent loads (and stores) of the 64-bit words at `[xn, #o]` and \
+      `[xn, #o + 8]` are paired into `ldp` (and `stp`)."]
+    code := Impl.AArch64Pair.pairCode Impl.X25519.AArch64.Hybrid.x25519
+    verified := Proof.AArch64Pair.Verified.pairCode Proof.X25519.AArch64.Hybrid.x25519_verified },
   Spec.X25519.x25519BaseApi.artifact AArch64.target {
     notes := ["`X25519(k, 9)` is the u-coordinate \
       `(1 + y) / (1 - y)` of `[k] B` on edwards25519, `B` Ed25519's base point (RFC 7748 §4.1's \
