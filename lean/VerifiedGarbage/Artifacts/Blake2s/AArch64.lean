@@ -24,14 +24,6 @@ def artifacts : List Artifact := [
   Spec.Blake2.finalizeSApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 576 .x3 (Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.s)
     stack := 16 + 576
-    verified := Proof.Blake2.AArch64.Stream.finalizeS_framed },
-  Spec.Blake2.updateSScratchApi.artifact AArch64.target {
-    code := Impl.Blake2.AArch64.Stream.update Spec.Blake2.s
-    stack := 16
-    verified := Proof.Blake2.AArch64.Stream.updateS_verified },
-  Spec.Blake2.finalizeSScratchApi.artifact AArch64.target {
-    code := Impl.Blake2.AArch64.Stream.finalize Spec.Blake2.s
-    stack := 16
-    verified := Proof.Blake2.AArch64.Stream.finalizeS_verified }]
+    verified := Proof.Blake2.AArch64.Stream.finalizeS_framed }]
 
 end VG.Artifacts.Blake2s.AArch64

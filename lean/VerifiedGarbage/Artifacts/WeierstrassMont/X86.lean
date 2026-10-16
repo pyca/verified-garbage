@@ -69,10 +69,6 @@ def artifacts : List Artifact := [
     notes := notes
     code := addFn p256n.k p256n.m
     verified := p256n_add_verified },
-  p256n.subApi.artifact X86.target {
-    notes := notes
-    code := subFn p256n.k p256n.m
-    verified := p256n_sub_verified },
   p384p.mulApi.artifact X86.target {
     notes := notes
     code := mulFn p384p.k p384p.m

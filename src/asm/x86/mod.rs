@@ -317,9 +317,6 @@ pub(crate) mod p224_point;
 pub(crate) mod p256_mont;
 
 #[rustfmt::skip]
-pub(crate) mod p256_point;
-
-#[rustfmt::skip]
 pub(crate) mod p384_mont;
 
 #[rustfmt::skip]

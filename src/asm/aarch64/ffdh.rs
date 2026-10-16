@@ -2,22 +2,6 @@
 //! Verified `ffdh` functions for `aarch64`.
 #![allow(dead_code)]
 
-/// Returns `a` when the low bit of `bit` is zero and `b` otherwise. Writes no memory. Contract: `VG.Spec.Ffdh.chooseContract`. Constant time: none of the argument values may affect timing.
-///
-/// # Safety
-///
-///
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ffdh_choose(a: u64, b: u64, bit: u64) -> u64 {
-    core::arch::naked_asm!(
-        r"movz x3, #1, lsl #0
-tst x2, x3
-csel x0, x0, x1, eq
-ret
-.p2align 6",
-    )
-}
-
 /// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
 ///
 /// Contract: `VG.Spec.Ffdh.checkPublicContract`. Timing may depend on the pointers, the lengths, the domain and y.

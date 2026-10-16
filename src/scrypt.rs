@@ -12,9 +12,10 @@
 //! `vg_scrypt_sha2` with the SHA-256 instructions.
 //!
 //! ROMix (contract `VG.Spec.Scrypt.roMixContract`) calls the verified
-//! `vg_scrypt_blockmix` and `vg_salsa20_8`. This module only checks the
-//! parameters and allocates the memory scrypt works in (and, for [`verify`],
-//! compares the derived key with the expected one).
+//! `vg_scrypt_blockmix`, which calls `vg_salsa20_8` (on x86-64 it computes
+//! Salsa20/8 itself). This module only checks the parameters and allocates
+//! the memory scrypt works in (and, for [`verify`], compares the derived key
+//! with the expected one).
 //!
 //! scryptROMix reads its table `V` at indices derived from the password, so
 //! its memory accesses (and hence its timing, through the caches) depend on

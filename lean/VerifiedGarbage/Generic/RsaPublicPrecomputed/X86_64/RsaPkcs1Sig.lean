@@ -31,8 +31,8 @@ def artifacts (v : PublicImpl) : List Artifact := [
       "` with the cached modulus values into its frame, writes EMSA-PKCS1-v1_5's encoding of the last \
       `out_len` bytes of the result beside it and compares the two, then copies those bytes to `out` and \
       masks them to zeros, and the result to 0, unless the public operation succeeded and the two are \
-      equal: nothing after the call branches on its result. It uses 2144 bytes of stack, as \
-      `vg_rsa_pkcs1_recover` does."]
+      equal: nothing after the call branches on its result. It uses 2144 bytes of stack, including \
+      the call's return address."]
     code := Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed.code v.name v.code
     stack := verStack
     verified := RecPcCT.code_verified v
