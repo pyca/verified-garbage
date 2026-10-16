@@ -181,6 +181,7 @@ theorem masks_ok (s : State) {a : Nat} (ha : a < 9) (hx : s.gpr .x2 = BitVec.ofN
 structure DigitOut (s : State) (S i : Nat) (t : State) : Prop where
   mask : ∀ k, 1 ≤ k → k ≤ 8 → t.gpr (magReg k) = mask (decide (mag (nib S i) = k))
   zero : t.gpr .x22 = zeroBit (mag (nib S i))
+  sign : t.gpr .x1 = Word64.mask (decide (nib S i < 8))
   keeps : Keeps (clob ++ [.x1]) s t
 
 theorem combDigit_ok {s : State} {base : Addr} (hs : Scr s base) {S j i o : Nat} (hj : j < 32)
@@ -197,8 +198,9 @@ theorem combDigit_ok {s : State} {base : Addr} (hs : Scr s base) {S j i o : Nat}
   refine WP.mono (combNibble_ok hsa (S := S) (i := i) hi a8 hoi ho
     (by rw [ka.mem]; exact hb)) fun b ⟨b2, kb⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (combSign_ok b hn b2) fun c ⟨c2, _, kc⟩ => ?_
-  refine WP.mono (masks_ok _ (mag_lt hn) c2) fun t ⟨tm, tz, kt⟩ => ⟨tm, tz, ?_⟩
+  refine WP.mono (combSign_ok b hn b2) fun c ⟨c2, c1, kc⟩ => ?_
+  refine WP.mono (masks_ok _ (mag_lt hn) c2) fun t ⟨tm, tz, kt⟩ =>
+    ⟨tm, tz, (kt.gpr _ (by decide)).trans c1, ?_⟩
   exact (((ka.mono (by decide)).trans (kb.mono (by decide))).trans (kc.mono (by decide))).trans
     (kt.mono (by decide))
 

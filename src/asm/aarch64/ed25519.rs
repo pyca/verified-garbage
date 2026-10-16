@@ -631,6 +631,7 @@ dup v20.2d, x16
 dup v21.2d, x17
 dup v22.2d, x20
 dup v23.2d, x21
+dup v30.2d, x1
 movi v2.2d, #0
 mov v2.d[0], x22
 ldr q24, [x9, #0]
@@ -649,7 +650,29 @@ ldr q0, [x9, #192]
 bit v2.16b, v0.16b, v22.16b
 ldr q1, [x9, #224]
 bit v2.16b, v1.16b, v23.16b
+movi v3.2d, #0
+mov v3.d[0], x22
+ldr q24, [x9, #256]
+bit v3.16b, v24.16b, v16.16b
+ldr q25, [x9, #288]
+bit v3.16b, v25.16b, v17.16b
+ldr q26, [x9, #320]
+bit v3.16b, v26.16b, v18.16b
+ldr q27, [x9, #352]
+bit v3.16b, v27.16b, v19.16b
+ldr q28, [x9, #384]
+bit v3.16b, v28.16b, v20.16b
+ldr q29, [x9, #416]
+bit v3.16b, v29.16b, v21.16b
+ldr q0, [x9, #448]
+bit v3.16b, v0.16b, v22.16b
+ldr q1, [x9, #480]
+bit v3.16b, v1.16b, v23.16b
+mov v4.16b, v2.16b
+bit v2.16b, v3.16b, v30.16b
+bit v3.16b, v4.16b, v30.16b
 str q2, [x0, #192]
+str q3, [x0, #224]
 movi v2.2d, #0
 ldr q24, [x9, #16]
 bit v2.16b, v24.16b, v16.16b
@@ -667,44 +690,28 @@ ldr q0, [x9, #208]
 bit v2.16b, v0.16b, v22.16b
 ldr q1, [x9, #240]
 bit v2.16b, v1.16b, v23.16b
-str q2, [x0, #208]
-movi v2.2d, #0
-mov v2.d[0], x22
-ldr q24, [x9, #256]
-bit v2.16b, v24.16b, v16.16b
-ldr q25, [x9, #288]
-bit v2.16b, v25.16b, v17.16b
-ldr q26, [x9, #320]
-bit v2.16b, v26.16b, v18.16b
-ldr q27, [x9, #352]
-bit v2.16b, v27.16b, v19.16b
-ldr q28, [x9, #384]
-bit v2.16b, v28.16b, v20.16b
-ldr q29, [x9, #416]
-bit v2.16b, v29.16b, v21.16b
-ldr q0, [x9, #448]
-bit v2.16b, v0.16b, v22.16b
-ldr q1, [x9, #480]
-bit v2.16b, v1.16b, v23.16b
-str q2, [x0, #224]
-movi v2.2d, #0
+movi v3.2d, #0
 ldr q24, [x9, #272]
-bit v2.16b, v24.16b, v16.16b
+bit v3.16b, v24.16b, v16.16b
 ldr q25, [x9, #304]
-bit v2.16b, v25.16b, v17.16b
+bit v3.16b, v25.16b, v17.16b
 ldr q26, [x9, #336]
-bit v2.16b, v26.16b, v18.16b
+bit v3.16b, v26.16b, v18.16b
 ldr q27, [x9, #368]
-bit v2.16b, v27.16b, v19.16b
+bit v3.16b, v27.16b, v19.16b
 ldr q28, [x9, #400]
-bit v2.16b, v28.16b, v20.16b
+bit v3.16b, v28.16b, v20.16b
 ldr q29, [x9, #432]
-bit v2.16b, v29.16b, v21.16b
+bit v3.16b, v29.16b, v21.16b
 ldr q0, [x9, #464]
-bit v2.16b, v0.16b, v22.16b
+bit v3.16b, v0.16b, v22.16b
 ldr q1, [x9, #496]
-bit v2.16b, v1.16b, v23.16b
-str q2, [x0, #240]
+bit v3.16b, v1.16b, v23.16b
+mov v4.16b, v2.16b
+bit v2.16b, v3.16b, v30.16b
+bit v3.16b, v4.16b, v30.16b
+str q2, [x0, #208]
+str q3, [x0, #240]
 movi v2.2d, #0
 ldr q24, [x9, #512]
 bit v2.16b, v24.16b, v16.16b
@@ -764,78 +771,19 @@ sbcs x7, x7, x10
 sbcs x8, x10, x10
 and x8, x8, x11
 sub x4, x4, x8
-str x4, [x0, #320]
-str x5, [x0, #328]
-str x6, [x0, #336]
-str x7, [x0, #344]
-lsl x3, x19, #3
-add x3, x0, x3
-ldrb w3, [x3, #775]
-sub x3, x3, #1
-ldr x4, [x0, #192]
-ldr x5, [x0, #200]
-ldr x6, [x0, #208]
-ldr x7, [x0, #216]
-ldr x21, [x0, #224]
-ldr x22, [x0, #232]
-ldr x23, [x0, #240]
-ldr x24, [x0, #248]
-eor x8, x4, x21
-and x8, x8, x3
-eor x4, x4, x8
-eor x21, x21, x8
-eor x8, x5, x22
-and x8, x8, x3
-eor x5, x5, x8
-eor x22, x22, x8
-eor x8, x6, x23
-and x8, x8, x3
-eor x6, x6, x8
-eor x23, x23, x8
-eor x8, x7, x24
-and x8, x8, x3
-eor x7, x7, x8
-eor x24, x24, x8
-str x4, [x0, #192]
-str x5, [x0, #200]
-str x6, [x0, #208]
-str x7, [x0, #216]
-str x21, [x0, #224]
-str x22, [x0, #232]
-str x23, [x0, #240]
-str x24, [x0, #248]
-ldr x4, [x0, #256]
-ldr x5, [x0, #264]
-ldr x6, [x0, #272]
-ldr x7, [x0, #280]
-ldr x21, [x0, #320]
-ldr x22, [x0, #328]
-ldr x23, [x0, #336]
-ldr x24, [x0, #344]
-eor x8, x4, x21
-and x8, x8, x3
-eor x4, x4, x8
-eor x21, x21, x8
-eor x8, x5, x22
-and x8, x8, x3
-eor x5, x5, x8
-eor x22, x22, x8
-eor x8, x6, x23
-and x8, x8, x3
-eor x6, x6, x8
-eor x23, x23, x8
-eor x8, x7, x24
-and x8, x8, x3
-eor x7, x7, x8
-eor x24, x24, x8
+ldr x12, [x0, #256]
+ldr x13, [x0, #264]
+ldr x14, [x0, #272]
+ldr x15, [x0, #280]
+tst x1, x1
+csel x4, x4, x12, ne
+csel x5, x5, x13, ne
+csel x6, x6, x14, ne
+csel x7, x7, x15, ne
 str x4, [x0, #256]
 str x5, [x0, #264]
 str x6, [x0, #272]
 str x7, [x0, #280]
-str x21, [x0, #320]
-str x22, [x0, #328]
-str x23, [x0, #336]
-str x24, [x0, #344]
 mov v31.d[0], x30
 bl {vg_ed25519_r64_add_affine_ext}
 umov x30, v31.d[0]
@@ -909,6 +857,7 @@ dup v20.2d, x16
 dup v21.2d, x17
 dup v22.2d, x20
 dup v23.2d, x21
+dup v30.2d, x1
 movi v2.2d, #0
 mov v2.d[0], x22
 ldr q24, [x9, #0]
@@ -927,7 +876,29 @@ ldr q0, [x9, #192]
 bit v2.16b, v0.16b, v22.16b
 ldr q1, [x9, #224]
 bit v2.16b, v1.16b, v23.16b
+movi v3.2d, #0
+mov v3.d[0], x22
+ldr q24, [x9, #256]
+bit v3.16b, v24.16b, v16.16b
+ldr q25, [x9, #288]
+bit v3.16b, v25.16b, v17.16b
+ldr q26, [x9, #320]
+bit v3.16b, v26.16b, v18.16b
+ldr q27, [x9, #352]
+bit v3.16b, v27.16b, v19.16b
+ldr q28, [x9, #384]
+bit v3.16b, v28.16b, v20.16b
+ldr q29, [x9, #416]
+bit v3.16b, v29.16b, v21.16b
+ldr q0, [x9, #448]
+bit v3.16b, v0.16b, v22.16b
+ldr q1, [x9, #480]
+bit v3.16b, v1.16b, v23.16b
+mov v4.16b, v2.16b
+bit v2.16b, v3.16b, v30.16b
+bit v3.16b, v4.16b, v30.16b
 str q2, [x0, #192]
+str q3, [x0, #224]
 movi v2.2d, #0
 ldr q24, [x9, #16]
 bit v2.16b, v24.16b, v16.16b
@@ -945,44 +916,28 @@ ldr q0, [x9, #208]
 bit v2.16b, v0.16b, v22.16b
 ldr q1, [x9, #240]
 bit v2.16b, v1.16b, v23.16b
-str q2, [x0, #208]
-movi v2.2d, #0
-mov v2.d[0], x22
-ldr q24, [x9, #256]
-bit v2.16b, v24.16b, v16.16b
-ldr q25, [x9, #288]
-bit v2.16b, v25.16b, v17.16b
-ldr q26, [x9, #320]
-bit v2.16b, v26.16b, v18.16b
-ldr q27, [x9, #352]
-bit v2.16b, v27.16b, v19.16b
-ldr q28, [x9, #384]
-bit v2.16b, v28.16b, v20.16b
-ldr q29, [x9, #416]
-bit v2.16b, v29.16b, v21.16b
-ldr q0, [x9, #448]
-bit v2.16b, v0.16b, v22.16b
-ldr q1, [x9, #480]
-bit v2.16b, v1.16b, v23.16b
-str q2, [x0, #224]
-movi v2.2d, #0
+movi v3.2d, #0
 ldr q24, [x9, #272]
-bit v2.16b, v24.16b, v16.16b
+bit v3.16b, v24.16b, v16.16b
 ldr q25, [x9, #304]
-bit v2.16b, v25.16b, v17.16b
+bit v3.16b, v25.16b, v17.16b
 ldr q26, [x9, #336]
-bit v2.16b, v26.16b, v18.16b
+bit v3.16b, v26.16b, v18.16b
 ldr q27, [x9, #368]
-bit v2.16b, v27.16b, v19.16b
+bit v3.16b, v27.16b, v19.16b
 ldr q28, [x9, #400]
-bit v2.16b, v28.16b, v20.16b
+bit v3.16b, v28.16b, v20.16b
 ldr q29, [x9, #432]
-bit v2.16b, v29.16b, v21.16b
+bit v3.16b, v29.16b, v21.16b
 ldr q0, [x9, #464]
-bit v2.16b, v0.16b, v22.16b
+bit v3.16b, v0.16b, v22.16b
 ldr q1, [x9, #496]
-bit v2.16b, v1.16b, v23.16b
-str q2, [x0, #240]
+bit v3.16b, v1.16b, v23.16b
+mov v4.16b, v2.16b
+bit v2.16b, v3.16b, v30.16b
+bit v3.16b, v4.16b, v30.16b
+str q2, [x0, #208]
+str q3, [x0, #240]
 movi v2.2d, #0
 ldr q24, [x9, #512]
 bit v2.16b, v24.16b, v16.16b
@@ -1042,78 +997,19 @@ sbcs x7, x7, x10
 sbcs x8, x10, x10
 and x8, x8, x11
 sub x4, x4, x8
-str x4, [x0, #320]
-str x5, [x0, #328]
-str x6, [x0, #336]
-str x7, [x0, #344]
-lsl x3, x19, #3
-add x3, x0, x3
-ldrb w3, [x3, #771]
-sub x3, x3, #1
-ldr x4, [x0, #192]
-ldr x5, [x0, #200]
-ldr x6, [x0, #208]
-ldr x7, [x0, #216]
-ldr x21, [x0, #224]
-ldr x22, [x0, #232]
-ldr x23, [x0, #240]
-ldr x24, [x0, #248]
-eor x8, x4, x21
-and x8, x8, x3
-eor x4, x4, x8
-eor x21, x21, x8
-eor x8, x5, x22
-and x8, x8, x3
-eor x5, x5, x8
-eor x22, x22, x8
-eor x8, x6, x23
-and x8, x8, x3
-eor x6, x6, x8
-eor x23, x23, x8
-eor x8, x7, x24
-and x8, x8, x3
-eor x7, x7, x8
-eor x24, x24, x8
-str x4, [x0, #192]
-str x5, [x0, #200]
-str x6, [x0, #208]
-str x7, [x0, #216]
-str x21, [x0, #224]
-str x22, [x0, #232]
-str x23, [x0, #240]
-str x24, [x0, #248]
-ldr x4, [x0, #256]
-ldr x5, [x0, #264]
-ldr x6, [x0, #272]
-ldr x7, [x0, #280]
-ldr x21, [x0, #320]
-ldr x22, [x0, #328]
-ldr x23, [x0, #336]
-ldr x24, [x0, #344]
-eor x8, x4, x21
-and x8, x8, x3
-eor x4, x4, x8
-eor x21, x21, x8
-eor x8, x5, x22
-and x8, x8, x3
-eor x5, x5, x8
-eor x22, x22, x8
-eor x8, x6, x23
-and x8, x8, x3
-eor x6, x6, x8
-eor x23, x23, x8
-eor x8, x7, x24
-and x8, x8, x3
-eor x7, x7, x8
-eor x24, x24, x8
+ldr x12, [x0, #256]
+ldr x13, [x0, #264]
+ldr x14, [x0, #272]
+ldr x15, [x0, #280]
+tst x1, x1
+csel x4, x4, x12, ne
+csel x5, x5, x13, ne
+csel x6, x6, x14, ne
+csel x7, x7, x15, ne
 str x4, [x0, #256]
 str x5, [x0, #264]
 str x6, [x0, #272]
 str x7, [x0, #280]
-str x21, [x0, #320]
-str x22, [x0, #328]
-str x23, [x0, #336]
-str x24, [x0, #344]
 mov v31.d[0], x30
 bl {vg_ed25519_r64_add_affine_ext}
 umov x30, v31.d[0]

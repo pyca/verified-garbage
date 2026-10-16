@@ -12,12 +12,13 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # The comb's loops and doublings
 
-`combNeg` negates the selected cached point under the sign's mask; a call of
+`combNeg` negates the selected `2dT` under the sign's mask; a call of
 `vg_ed25519_r64_add_affine_ext` adds it (`affCall_ok`), exactly as the
 specification's `pointAdd`; `double4` doubles four times, by calls of
 `vg_ed25519_r64_double_ext` (`doubleCall_ok`, RFC 8032's doubling,
@@ -92,80 +93,48 @@ theorem env_high {base : Addr} {m m' : Mem} (h : Outside base 64 512 m m') (i : 
 
 /-! ## The negations -/
 
-private theorem index3_fact : ∀ j < 32, BitVec.ofNat 64 j <<< 3 = BitVec.ofNat 64 (8 * j) := by
-  decide +kernel
-
-private theorem bit_mask : ∀ b < 2,
-    ((BitVec.ofNat 8 b).setWidth 32).setWidth 64 - BitVec.ofNat 64 1 = mask (decide (b = 0)) := by
-  decide
-
-theorem nib_neg (S i : Nat) : decide (nib S i < 8) = decide ((S / 2 ^ (4 * i + 3)) % 2 = 0) := by
-  rw [nib_bits]
-  have h0 := Nat.mod_lt (S / 2 ^ (4 * i)) (show 2 > 0 by decide)
-  have h1 := Nat.mod_lt (S / 2 ^ (4 * i + 1)) (show 2 > 0 by decide)
-  have h2 := Nat.mod_lt (S / 2 ^ (4 * i + 2)) (show 2 > 0 by decide)
-  have h3 := Nat.mod_lt (S / 2 ^ (4 * i + 3)) (show 2 > 0 by decide)
-  apply decide_eq_decide.mpr
-  omega
-
-theorem signLoad_ok {s : State} {base : Addr} (hs : Scr s base) {S j i o : Nat} (hj : j < 32)
-    (hi : i < 64) (hoi : 8 * j + o = 768 + 4 * i) (ho : o + 3 < 4096)
-    (hc : s.gpr .x19 = BitVec.ofNat 64 j)
-    (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) :
-    WP isa (.block [.lsl .x .x3 .x19 3, .add .x .x3 .x0 .x3, .ldrb .x3 .x3 (o + 3),
-      .subImm .x .x3 .x3 1]) s fun t =>
-      t.gpr .x3 = mask (decide (nib S i < 8)) ∧ Keeps [.x3] s t := by
-  have _hcap : workSize true = 8192 := rfl
-  have hr : InRegions (s.rd ++ s.wr) (off base (768 + (4 * i + 3))) 1 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by omega) (by omega)⟩
-  have he : base + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 (o + 3) = off base (768 + (4 * i + 3)) := by
-    rw [BitVec.add_assoc, ← BitVec.ofNat_add]
-    exact congrArg (off base) (by omega)
-  have hv := bit_mask _ (Nat.mod_lt (S / 2 ^ (4 * i + 3)) (show 2 > 0 by decide))
-  rw [← hb _ (by omega), ← nib_neg] at hv
+/-- `x4`–`x7` kept where the sign's mask in `x1` is set, else `x12`–`x15`. -/
+theorem negSel_ok (s : State) {sg : Bool} (h1 : s.gpr .x1 = mask sg) :
+    WP isa (.block negSel) s fun t =>
+      t.gpr .x4 = (if sg then s.gpr .x4 else s.gpr .x12) ∧ t.gpr .x5 = (if sg then s.gpr .x5 else s.gpr .x13) ∧
+      t.gpr .x6 = (if sg then s.gpr .x6 else s.gpr .x14) ∧ t.gpr .x7 = (if sg then s.gpr .x7 else s.gpr .x15) ∧
+      Keeps [.x4, .x5, .x6, .x7] s t := by
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, State.load, addr, Size.bits,
-    show (3 : Nat) < 64 from by decide, show (1 : Nat) < 4096 from by decide,
-    show o + 3 < 4096 * 1 by omega, Nat.mod_one, and_self,
-    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, BitVec.setWidth_eq,
-    hc, index3_fact j hj, hs.x0, he, hr, read_byte, hv,
-    ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq,
-    exists_eq_left']
-  refine ⟨True.intro, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  simp only [RegUpd.gpr_write, hr, ite_false]
+  cases sg <;>
+  · simp only [negSel, runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write,
+      BitVec.setWidth_eq, reduceCtorEq, ↓reduceIte, Option.some.injEq, exists_eq_left', CondCode.holds,
+      h1, mask, BitVec.and_self, Bool.false_eq_true, RegUpd.zf_write, decide_true, decide_false,
+      show (BitVec.allOnes 64 = 0) = False by decide, Bool.not_false, Bool.not_true]
+    refine ⟨trivial, trivial, trivial, trivial, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ↓reduceIte]
 
-/-- The negation, on the environment. -/
-theorem neg_env (e : Env) (a b c : Slot) (sw : Bool) (hab : a ≠ b) (hc8 : c ≠ 8) (ha : a ≠ 8)
-    (hb : b ≠ 8) (hac : a ≠ c) (hbc : b ≠ c) (hz : e 21 = 0) :
-    cachedAt (swapEnvs [(a, b), (c, 8)] sw (evalOps [.sub 8 21 c] e)) a b c =
-      if sw then negCached (cachedAt e a b c) else cachedAt e a b c := by
-  cases sw <;> simp [cachedAt, negCached, swapEnvs, swapEnv, evalOps, evalOp,
-    hab, hc8, ha, hb, ha.symm, hb.symm, hac, hac.symm, hbc, hbc.symm, hz]
-
-theorem neg_other (e : Env) (a b c : Slot) (sw : Bool) (i : Slot) (ha : i ≠ a) (hb : i ≠ b)
-    (hc : i ≠ c) (h8 : i ≠ 8) :
-    swapEnvs [(a, b), (c, 8)] sw (evalOps [.sub 8 21 c] e) i = e i := by
-  cases sw <;> simp [swapEnvs, swapEnv, evalOps, evalOp, Function.update_apply, ha, hb, hc, h8]
-
-theorem combNeg_ok {s : State} {base : Addr} (hs : Scr s base) {S j i o : Nat} (a b c : Slot)
-    (hj : j < 32) (hi : i < 64) (hoi : 8 * j + o = 768 + 4 * i) (ho : o + 3 < 4096)
-    (hc : s.gpr .x19 = BitVec.ofNat 64 j)
-    (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
-    (hdis : ∀ ab ∈ [(a, b), (c, (8 : Slot))], ab.1 ≠ ab.2) :
-    WP isa (.block (combNeg a b c o)) s fun t => Keep base s t ∧
-      env t.mem base = swapEnvs [(a, b), (c, 8)] (decide (nib S i < 8))
-        (evalOps [.sub 8 21 c] (env s.mem base)) := by
-  rw [combNeg, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (fieldCode_ok [.sub 8 21 c] hs) fun u ⟨ku, vu⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (signLoad_ok (S := S) (ku.scr hs) hj hi hoi ho ((ku.gpr _ (by decide)).trans hc)
-    (fun q hq => by rw [ku.mem _ (by rw [ofs_off' base (by omega)]; omega)]; exact hb q hq))
-    fun v ⟨v3, kv⟩ => ?_
-  have kuv : Keep base u v := Keep.of_keeps kv (by decide)
-  refine WP.mono (swapFields_ok ((ku.trans kuv).scr hs) [(a, b), (c, 8)] hdis v3)
-    fun t ⟨kt, _, vt⟩ => ⟨(ku.trans kuv).trans kt, ?_⟩
-  rw [vt, kv.mem, vu]
+/-- Slot `c` negated (`0 - [c]`, from slot 21) where the sign's mask in `x1` is set. -/
+theorem combNeg_ok {s : State} {base : Addr} (hs : Scr s base) (c : Slot) {sg : Bool}
+    (h1 : s.gpr .x1 = mask sg) :
+    WP isa (.block (combNeg c)) s fun t => Op base (offset c) s t ∧
+      F t.mem base (offset c) =
+        if sg then F s.mem base (offset 21) - F s.mem base (offset c) else F s.mem base (offset c) := by
+  rw [combNeg, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (subRegs_ok hs (slot_range 21) (slot_range c)) fun u ⟨eu, ku⟩ => ?_
+  have hsu := hs.of_keeps ku (by decide)
+  refine WP.mono (loads_ok hsu (slot_range c) (a := .x12) (b := .x13) (c := .x14) (d := .x15) (by decide))
+    fun v ⟨v12, v13, v14, v15, kv⟩ => ?_
+  have hsv := hsu.of_keeps kv (by decide)
+  refine WP.mono (negSel_ok v (sg := sg) (by rw [kv.gpr _ (by decide), ku.gpr _ (by decide), h1]))
+    fun w ⟨w4, w5, w6, w7, kw⟩ => ?_
+  refine WP.mono (store4_ok (hsv.of_keeps kw (by decide)) (slot_range c)) fun t ht => ?_
+  subst t
+  have kuw : Keeps clob s w := (ku.mono (by decide)).trans ((kv.mono (by decide)).trans (kw.mono (by decide)))
+  refine ⟨Op.of_store (slot_range c) kuw _ _ _ _, ?_⟩
+  simp only [F]
+  rw [fe_st4 _ _ (by simp only [offset]; omega), w4, w5, w6, w7]
+  cases sg
+  · simp only [Bool.false_eq_true, ↓reduceIte]
+    rw [v12, v13, v14, v15, ku.mem]
+  · simp only [↓reduceIte]
+    rw [kv.gpr _ (by decide), kv.gpr _ (by decide), kv.gpr _ (by decide), kv.gpr _ (by decide)]
+    exact eu
 
 /-! ## Four doublings -/
 
@@ -277,10 +246,6 @@ theorem combNext_ok (s : State) {j : Nat} (hj : j < 32) (h : s.gpr .x19 = BitVec
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 
-private theorem dis_neg : ∀ ab ∈ [((4 : Slot), (5 : Slot)), (6, 8)], ab.1 ≠ ab.2 := by
-  intro ab hab; simp only [List.mem_cons, List.not_mem_nil, or_false] at hab
-  rcases hab with rfl | rfl <;> decide
-
 theorem combStep_ok {s₀ s : State} {base T : Addr} {S par : Nat} {v : ℤ} {j : Nat}
     (h : CombInv s₀ base S par v j s) (htb : TblAt s₀ base T) (hT : s.syms combSym = T)
     (hj : j < 32) (hpar : par < 2) :
@@ -305,8 +270,8 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S par : Nat} {v : ℤ} {j 
     (fun x hx => by rw [ha.keeps.mem]; exact h.keep.mem x (Or.inr (by omega)))
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (combSelect_ok hsa hta (by rw [sya]; exact hT) hj a19 (mag_lt hn) hm)
-    fun b ⟨bq, bf, kb⟩ => ?_
+  refine WP.mono (combSelect_ok hsa hta (by rw [sya]; exact hT) hj a19 (mag_lt hn) hm ha.sign)
+    fun b ⟨b4, b5, b6, bf, kb⟩ => ?_
   have hsb : Scr b base := ⟨(kb.1 _ (by decide)).trans hsa.x0, kb.2.2.1 ▸ hsa.wr, hsa.nowrap⟩
   have b19 : b.gpr .x19 = BitVec.ofNat 64 j := (kb.1 _ (by decide)).trans a19
   have kab : CombKeep base a b := ⟨fun r _ _ hc => kb.1 r (fun hm => hc (by
@@ -314,25 +279,28 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S par : Nat} {v : ℤ} {j 
     rcases hm with rfl | rfl | rfl <;> decide)), kb.2.1, kb.2.2.1, kb.2.2.2,
     bf.mono (by simp only [offset]; omega) (by simp only [offset]; omega)⟩
   have ksb := ksa.trans kab
-  have bbits : ∀ q < 256, b.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2) :=
-    fun q hq => by rw [ksb.bit hq]; exact h.bits q hq
   have eb : ∀ i : Slot, (i.val < 4 ∨ 7 ≤ i.val) → env b.mem base i = env s.mem base i := fun i hi => by
     simp only [env, F]
     rw [bf.fe (by simp only [offset]; omega) (by simp only [offset]; omega), ha.keeps.mem]
-  -- Negated for a negative digit.
-  refine WP.mono (combNeg_ok hsb (S := S) (i := 2 * j + par) 4 5 6 hj (by omega) (by omega)
-    (by omega) b19 bbits dis_neg) fun c ⟨kc, vc⟩ => ?_
+  -- `2dT` negated for a negative digit.
+  refine WP.mono (combNeg_ok hsb 6 (sg := decide (nib S (2 * j + par) < 8))
+    ((kb.1 _ (by decide)).trans ha.sign)) fun c ⟨oc, vc⟩ => ?_
+  have kc : Keep base b c := op_keep oc
   obtain ⟨q, hq, hqz, hrq⟩ := combEntry_ok j (nib S (2 * j + par)) hj hn
   have b21 : env b.mem base 21 = 0 := (eb 21 (by decide)).trans h.zero
+  have ec : ∀ i : Slot, i ≠ 6 → env c.mem base i = env b.mem base i := fun i hi => by
+    rw [env_update 6 oc.mem, Function.update_of_ne hi]
   have cq : cachedAt (env c.mem base) 4 5 6 = cache q := by
-    rw [vc, neg_env _ _ _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      b21, bq, ← hq]
-    by_cases hlt : nib S (2 * j + par) < 8 <;> simp only [hlt, decide_true, decide_false, ↓reduceIte,
-      Bool.false_eq_true]
-  have ec : ∀ i : Slot, (i.val < 4 ∨ 9 ≤ i.val) → env c.mem base i = env b.mem base i := fun i hi => by
-    rw [vc, neg_other _ _ _ _ _ i (fun e => by subst e; revert hi; decide)
-      (fun e => by subst e; revert hi; decide) (fun e => by subst e; revert hi; decide)
-      (fun e => by subst e; revert hi; decide)]
+    rw [← hq]
+    have c6 : env c.mem base 6 = if decide (nib S (2 * j + par) < 8) then
+        env b.mem base 21 - env b.mem base 6 else env b.mem base 6 := vc
+    rw [b21, b6] at c6
+    have hT := combCached_T j (mag (nib S (2 * j + par)))
+    by_cases hlt : nib S (2 * j + par) < 8
+    · simp only [hlt, decide_true, ↓reduceIte] at b4 b5 c6 ⊢
+      simp only [cachedAt, negCached, ec 4 (by decide), ec 5 (by decide), b4, b5, c6, hT]
+    · simp only [hlt, decide_false, Bool.false_eq_true, ↓reduceIte] at b4 b5 c6 ⊢
+      rw [cachedAt_eq hT (by rw [ec 4 (by decide), b4]) (by rw [ec 5 (by decide), b5]) c6]
   have hsc := kc.scr hsb
   have c19 : c.gpr .x19 = BitVec.ofNat 64 j := (kc.gpr _ (by decide)).trans b19
   -- Added.
