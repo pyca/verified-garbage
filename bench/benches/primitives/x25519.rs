@@ -92,10 +92,8 @@ pub fn bench(c: &mut Criterion) {
     };
     assert_eq!(s2n(aws_lc_0_45_0_curve25519_x25519_byte_alt, &private, &peer), x25519(&private, &peer));
     assert_eq!(s2n(aws_lc_0_45_0_curve25519_x25519_byte, &private, &peer), x25519(&private, &peer));
-    // THROWAWAY: the head's "verified-garbage" column is s2n _alt, so the
-    // base-vs-head comparison (base: our ladder) is fastest-of-rounds.
     g.bench_function(BenchmarkId::new(VG, 32), |b| {
-        b.iter(|| s2n(aws_lc_0_45_0_curve25519_x25519_byte_alt, black_box(&private), black_box(&peer)))
+        b.iter(|| x25519(black_box(&private), black_box(&peer)))
     });
     g.bench_function(BenchmarkId::new(OPENSSL, 32), |b| {
         b.iter(|| s2n(aws_lc_0_45_0_curve25519_x25519_byte_alt, black_box(&private), black_box(&peer)))
