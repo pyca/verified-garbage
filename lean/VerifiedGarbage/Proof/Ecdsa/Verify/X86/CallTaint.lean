@@ -36,4 +36,18 @@ def τV : VG.X86.Taint.T :=
     slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 1)], argLen := 20,
     argBases := [(16, 1)], stk := [none, some 16], room := 20 }
 
+/-- `τV` where the whole-function checks (`verify_ct`) call the field
+functions from the verifier's own code: their stack below uses 28 bytes. -/
+def τVTop : VG.X86.Taint.T := { τV with room := 28 }
+
+/-- On entry to a field function that a point function
+(`vg_<curve>_point_double`, `vg_<curve>_point_add`) calls, one frame below
+the verifier's: that frame's return address and 4-byte argument are on the
+stack too. -/
+def τVPoint : VG.X86.Taint.T :=
+  { regs := ⟨215⟩, flags := false, lens := [16, 4, 8192],
+    bases := [(.edi, 2, 0), (.esp, 1, 24), (.esp, 0, 4)],
+    slots := ⟨[65535]⟩, wbases := [(0, 0, 2)], argLen := 20, argBases := [(16, 2)],
+    stk := [none, some 16, none, some 4], room := 28 }
+
 end VG.Proof.Ecdsa.Verify.X86

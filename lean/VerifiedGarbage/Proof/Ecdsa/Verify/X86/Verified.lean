@@ -11,6 +11,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.Verified
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -122,11 +124,22 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-/-- Constant time by taint tracking, with the hints computed in compiled code
-(`native_taint_decide`): the interpreter ran the analysis that computes them
-for longer than the kernel checks it. -/
-theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP256 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by native_taint_decide)
+/-! The multiplication modulo `p`, analysed once from what is public on entry
+to its calls (`τVTop` from the verifier's code, `τVPoint` from the point
+functions'), in place of each call. Summaries of the other field functions,
+called less often, cost more than they save. -/
+
+taint_summary mulPSum : taint τVTop
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m)
+taint_summary mulPPointSum : taint τVPoint
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p256p.k Spec.Weierstrass.Mont.p256p.m)
+
+/-- Constant time by taint tracking, with the summaries of the
+multiplication in place of the analysis of each of its calls. -/
+theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP256 := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ verifyP256 h).isSome = true := by
+    native_taint_decide_sum [mulPSum, mulPPointSum]
+  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
