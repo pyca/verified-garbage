@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -22,11 +23,11 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.AArch64.Optimized.HighPack.code 95232
     verified := Proof.MlDsa.AArch64.Optimized.HighPack.pack_verified (.inr rfl) },
   Spec.MlDsa.simpleBitPackApi.artifact AArch64.target {
-    code := Impl.MlDsa.AArch64.Pack.simpleBitPack
-    verified := Proof.MlDsa.AArch64.Pack.simpleBitPack_verified },
+    code := Impl.MlDsa.AArch64.Optimized.KeygenPack.simple
+    verified := Proof.MlDsa.AArch64.Optimized.KeygenPack.simple_verified },
   Spec.MlDsa.bitPackApi.artifact AArch64.target {
-    code := Impl.MlDsa.AArch64.Pack.bitPack
-    verified := Proof.MlDsa.AArch64.Pack.bitPack_verified },
+    code := Impl.MlDsa.AArch64.Optimized.KeygenPack.signed
+    verified := Proof.MlDsa.AArch64.Optimized.KeygenPack.signed_verified },
   Spec.MlDsa.bitUnpackApi.artifact AArch64.target {
     code := Impl.MlDsa.AArch64.Pack.bitUnpack
     verified := Proof.MlDsa.AArch64.Pack.bitUnpack_verified },

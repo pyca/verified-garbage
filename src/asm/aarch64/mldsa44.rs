@@ -4296,56 +4296,56 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #128
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #21504, lsl #0
 add x0, x28, x0
 movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #224
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #22528, lsl #0
 add x0, x28, x0
 movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #320
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #23552, lsl #0
 add x0, x28, x0
 movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #416
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #24576, lsl #0
 add x0, x28, x0
 movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #512
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #25600, lsl #0
 add x0, x28, x0
 movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #608
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #26624, lsl #0
 add x0, x28, x0
 movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #704
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #27648, lsl #0
 add x0, x28, x0
 movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #800
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #20480, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_ntt_positive}
@@ -4370,27 +4370,27 @@ movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #24576, lsl #0
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #29696, lsl #0
 add x1, x28, x1
 movz x2, #30720, lsl #0
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #29696, lsl #0
 add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #32
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #30720, lsl #0
 add x0, x28, x0
 movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #896
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #8192, lsl #0
@@ -4403,27 +4403,27 @@ movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #25600, lsl #0
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #29696, lsl #0
 add x1, x28, x1
 movz x2, #30720, lsl #0
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #29696, lsl #0
 add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #352
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #30720, lsl #0
 add x0, x28, x0
 movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #1312
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #12288, lsl #0
@@ -4436,27 +4436,27 @@ movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #26624, lsl #0
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #29696, lsl #0
 add x1, x28, x1
 movz x2, #30720, lsl #0
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #29696, lsl #0
 add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #672
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #30720, lsl #0
 add x0, x28, x0
 movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #1728
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #16384, lsl #0
@@ -4469,27 +4469,27 @@ movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #27648, lsl #0
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #28672, lsl #0
 add x0, x28, x0
 movz x1, #29696, lsl #0
 add x1, x28, x1
 movz x2, #30720, lsl #0
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #29696, lsl #0
 add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #992
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #30720, lsl #0
 add x0, x28, x0
 movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #2144
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 add x0, x28, #0
 movz x9, #0, lsl #0
 str x9, [x0, #0]
@@ -4552,12 +4552,12 @@ ret
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
         vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_sha3,
         vg_mldsa_rej_bounded_poly4_eta2_sha3 = sym super::mldsa::vg_mldsa_rej_bounded_poly4_eta2_sha3,
-        vg_mldsa_keygen_bit_pack = sym super::mldsa::vg_mldsa_keygen_bit_pack,
+        vg_mldsa_bit_pack = sym super::mldsa::vg_mldsa_bit_pack,
         vg_mldsa_ntt_positive = sym super::mldsa::vg_mldsa_ntt_positive,
         vg_mldsa_dot_inverse4 = sym super::mldsa::vg_mldsa_dot_inverse4,
-        vg_mldsa_keygen_add = sym super::mldsa::vg_mldsa_keygen_add,
-        vg_mldsa_keygen_power2round = sym super::mldsa::vg_mldsa_keygen_power2round,
-        vg_mldsa_keygen_simple_bit_pack = sym super::mldsa::vg_mldsa_keygen_simple_bit_pack,
+        vg_mldsa_add = sym super::mldsa::vg_mldsa_add,
+        vg_mldsa_power2round = sym super::mldsa::vg_mldsa_power2round,
+        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
     )
 }
 
@@ -6230,7 +6230,7 @@ movz x0, #32768, lsl #0
 add x0, x28, x0
 movz x1, #31744, lsl #0
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #32768, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_montgomery_inv_ntt}
@@ -6270,7 +6270,7 @@ movz x0, #32768, lsl #0
 add x0, x28, x0
 movz x1, #31744, lsl #0
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #32768, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_montgomery_inv_ntt}
@@ -6310,7 +6310,7 @@ movz x0, #32768, lsl #0
 add x0, x28, x0
 movz x1, #31744, lsl #0
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #32768, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_montgomery_inv_ntt}
@@ -6350,7 +6350,7 @@ movz x0, #32768, lsl #0
 add x0, x28, x0
 movz x1, #31744, lsl #0
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #32768, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_montgomery_inv_ntt}
@@ -6457,7 +6457,7 @@ ret
         vg_mldsa_montgomery_dot4 = sym super::mldsa::vg_mldsa_montgomery_dot4,
         vg_mldsa_unpack_t1 = sym super::mldsa::vg_mldsa_unpack_t1,
         vg_mldsa_montgomery_product = sym super::mldsa::vg_mldsa_montgomery_product,
-        vg_mldsa_verify_sub = sym super::mldsa::vg_mldsa_verify_sub,
+        vg_mldsa_sub = sym super::mldsa::vg_mldsa_sub,
         vg_mldsa_montgomery_inv_ntt = sym super::mldsa::vg_mldsa_montgomery_inv_ntt,
         vg_mldsa_usehint_pack6 = sym super::mldsa::vg_mldsa_usehint_pack6,
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
