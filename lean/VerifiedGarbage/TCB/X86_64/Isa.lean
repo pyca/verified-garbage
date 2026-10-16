@@ -70,6 +70,21 @@ Modelling choices:
   RIP-relative operand, resolved by the linker) puts in a register. No
   instruction changes `syms`: a static's address is fixed for the run of
   the program.
+* A table of constants an instruction carries (`aluTbl`, its name and its
+  words) is the `static` of that name the emitter writes from it
+  (`TCB/Rust.lean`), so that for the whole run of the program it is mapped
+  readable at `State.syms name` and holds exactly those words, 8 bytes each,
+  little-endian, and does not wrap around the address space; and no memory
+  any code writes overlaps it: no region a contract lets a function write,
+  nor the stack. This is what a Rust `static` without interior mutability
+  is: an immutable object, which the linker places in read-only memory,
+  apart from every other object and from the stack, and which no `&mut`
+  (safe Rust cannot make one to it) nor any other pointer the program may
+  write through can reach. So the model reads the words from the
+  instruction rather than from `State.mem`, whose writes never reach it,
+  and no contract states any of this. Its address, fixed when the program
+  is loaded, does not depend on the data the code works on: an access to it
+  is observed (`addrs`) as its offset in the table.
 * `push` and `pop` (of 64-bit registers other than `rsp`) only occur as the
   push and pop of a frame (see `push`), as a sequence of them. A caller
   passes arguments on the stack by pushing them, the last first, just
@@ -246,6 +261,11 @@ inductive Instr
   /-- `lea r64, [rip + name]` (REX.W + 8D /r, with a RIP-relative memory
   operand): the address of the `static` `name`, `State.syms name`. -/
   | leaSym (dst : Reg) (name : String)
+  /-- `op r64, QWORD PTR [m]` (REX.W + 03 /r, 2B /r, 23 /r, 0B /r, 33 /r,
+  3B /r, 85 /r, 13 /r, 1B /r: the memory forms of `alu`), whose base register
+  holds the address of the `static` `name`, whose words are `words`: the
+  emitter writes that static from this instruction (`TCB/Rust.lean`). -/
+  | aluTbl (op : AluOp) (dst : Reg) (m : MemOp) (name : String) (words : List (BitVec 64))
   /-- `movdqu xmm, XMMWORD PTR [src]` (`F3 0F 6F /r`) -/
   | movdquLoad (dst : XReg) (src : MemOp)
   /-- `movdqu XMMWORD PTR [dst], xmm` (`F3 0F 7F /r`) -/
@@ -530,6 +550,19 @@ def exec : Instr → State → Option State
   -- `X86_64_RELOC_SIGNED`; COFF's `IMAGE_REL_AMD64_REL32`): `DEST := S`. A
   -- static beyond `disp32`'s range (±2 GB) does not link.
   | .leaSym d name, s => some (s.setReg d (s.syms name))
+  -- `aluTbl`: as `alu op d (.mem m)` (SDM Vol. 2, ADD, SUB, AND, OR, XOR,
+  -- CMP, TEST, ADC, SBB, the `r64, r/m64` forms; `execAlu`), its source the
+  -- 8 bytes at `m`, little-endian: when `m`'s base register holds the
+  -- static's address and `m` is `off` bytes past it, a multiple of 8 within
+  -- the table, word `off / 8` of the static `name`; otherwise it faults. The
+  -- static is the immutable object of these words that the emitter writes,
+  -- which no writable memory overlaps (see the module docs), so the bytes
+  -- there are always these.
+  | .aluTbl op d m name ws, s =>
+    let off := (s.ea m - s.gpr m.base).toNat
+    if s.gpr m.base = s.syms name ∧ off % 8 = 0 ∧ off / 8 < ws.length then
+      execAluW op d (ws.getD (off / 8) 0) s
+    else none
   -- SDM Vol. 2, "MOVDQU": `DEST[127:0] := SRC[127:0]`, with memory in
   -- little-endian byte order (SDM Vol. 1 §1.3.1); no alignment is required
   -- and no flags are affected.
@@ -662,6 +695,9 @@ def addrs : Instr → State → List Addr
   | .shiftx .., _ => []
   | .movImm64 .., _ => []
   | .leaSym .., _ => []
+  -- The offset in the table: the static's address does not depend on the
+  -- data (see the module docs).
+  | .aluTbl _ _ m .., s => [s.ea m - s.gpr m.base]
   | .movdquLoad _ m, s => [s.ea m]
   | .movdquStore m _, s => [s.ea m]
   | .movqR .., _ => []
@@ -793,7 +829,7 @@ two, `rax` and `rdx`, and stores and SSE instructions none. -/
 def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
-  | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _
+  | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _

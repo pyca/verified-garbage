@@ -89,6 +89,10 @@ structure Printer (M : ISA) where
   /-- The lines of an instruction that names a `static` (`Line.sym`); `none`
   for the others, whose lines are `instr`'s text. -/
   symLines : M.Instr → Option (List Line) := fun _ => none
+  /-- The tables of constants an instruction reads by carrying them (x86-64's
+  `aluTbl`): each a `static`'s name and its words, which the emitter writes
+  (`TCB/Rust.lean`). -/
+  tables : M.Instr → List (String × List (BitVec 64)) := fun _ => []
   /-- Assembler directives before, and after, the body of a function that
   needs the CPU feature `f` (`Artifact.features`), for an assembler that
   rejects the instructions of a feature the target does not enable: they
@@ -134,6 +138,16 @@ def Printer.lower : Code M.Instr M.Cond → Nat → List Line × Nat
     let (lb, n) := lower body n
     ((P.symLines i).getD ((P.instr i).map .text) ++ lb ++
       (P.symLines j).getD ((P.instr j).map .text), n)
+
+/-- The tables of constants the instructions of `c` carry (`tables`), but
+not those of the functions it calls, which are emitted with them. -/
+def Printer.codeTables : Code M.Instr M.Cond → List (String × List (BitVec 64))
+  | .block is => is.flatMap P.tables
+  | .seq c₁ c₂ => codeTables c₁ ++ codeTables c₂
+  | .ite _ t e => codeTables t ++ codeTables e
+  | .loop body _ => codeTables body
+  | .call .. => []
+  | .frame i body j => P.tables i ++ codeTables body ++ P.tables j
 
 /-- The complete body of a function: the lowered code followed by the return. -/
 def Printer.function (body : Code M.Instr M.Cond) : List Line :=

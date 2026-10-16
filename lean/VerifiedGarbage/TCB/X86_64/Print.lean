@@ -251,6 +251,7 @@ def Instr.asm : Instr → List String
   | .mov d s => [s!"mov {d.name}, {s.str}"]
   | .store m r => [s!"mov {m.str}, {r.name}"]
   | .alu op d s => [s!"{op.name} {d.name}, {s.str}"]
+  | .aluTbl op d m .. => [s!"{op.name} {d.name}, {m.str}"]
   | .mov32 d s => [s!"mov {d.name32}, {s.str32}"]
   | .store32 m r => [s!"mov {m.str32}, {r.name32}"]
   | .alu32 op d s => [s!"{op.name} {d.name32}, {s.str32}"]
@@ -328,6 +329,7 @@ def Src.memOps : Src → List MemOp
 def Instr.memOps : Instr → List MemOp
   | .mov _ s | .alu _ _ s | .mov32 _ s | .alu32 _ _ s | .mulx _ _ s | .adcx _ s | .adox _ s
   | .cmov _ _ s => s.memOps
+  | .aluTbl _ _ m .. => [m]
   | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _
   | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m
   | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
@@ -350,6 +352,9 @@ def printer : Printer isa where
   symLines
     | .leaSym d name => some [.sym s!"lea {d.name}, " .ripRel name]
     | _ => none
+  tables
+    | .aluTbl _ _ _ name ws => [(name, ws)]
+    | _ => []
   /- Every function starts on a 64-byte boundary, a cache line: the unit
   AMD's op cache builds its entries from (Zen 4 Software Optimization Guide,
   57647, §2.9.1), and one of the 16- and 32-byte windows Intel's decoders and
