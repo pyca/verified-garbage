@@ -133,6 +133,13 @@ def memPub (τ : T) (m : MemOp) : Bool :=
     | none => true
     | some i => pub τ i
 
+/-- The index register of `m`, if any, is public: then so is the offset of
+`m` from its base register. -/
+def idxPub (τ : T) (m : MemOp) : Bool :=
+  match m.index with
+    | none => true
+    | some i => pub τ i
+
 /-- The region and offset addressed by `m`, if known. -/
 def addrOf (τ : T) (m : MemOp) : Option (Nat × Nat) :=
   if m.index = none ∧ 0 ≤ m.disp then
@@ -286,6 +293,12 @@ def step (τ : T) : Instr → Option T
   | .leaSym d _ => some { τ with regs := set τ d false, bases := kill τ d, lo := .empty }
   | .movzx8 d m =>
     if memPub τ m then some { τ with regs := set τ d false, bases := kill τ d, lo := .empty } else none
+  -- A word of a table of constants: secret (the analysis does not track
+  -- them), and so are the flags it sets. Its offset in the table is
+  -- observed, so its index must be public.
+  | .aluTbl _ d m .. =>
+    if idxPub τ m then some { τ with regs := set τ d false, flags := false, bases := kill τ d, lo := .empty }
+    else none
   -- The vector registers are secret but for those `movq xmm, r64` wrote
   -- from a public register (`xregs`): what `vpmovmskb` moves from one into a
   -- general-purpose register is secret, and no modelled instruction moves
@@ -354,6 +367,15 @@ theorem Agree.ea (h : Agree τ s₁ s₂) {m : MemOp} (hm : memPub τ m = true) 
   · rw [h.reg hb]
   · rw [h.reg hb, h.reg hi]
 
+theorem Agree.off (h : Agree τ s₁ s₂) {m : MemOp} (hm : idxPub τ m = true) :
+    s₁.ea m - s₁.gpr m.base = s₂.ea m - s₂.gpr m.base := by
+  unfold idxPub at hm
+  unfold State.ea
+  split <;> rename_i heq <;> rw [heq] at hm <;> simp only at hm
+  · rw [BitVec.add_comm (s₁.gpr _), BitVec.add_sub_cancel, BitVec.add_comm (s₂.gpr _), BitVec.add_sub_cancel]
+  · rw [BitVec.add_assoc, BitVec.add_comm (s₁.gpr _), BitVec.add_sub_cancel, BitVec.add_assoc,
+      BitVec.add_comm (s₂.gpr _), BitVec.add_sub_cancel, h.reg hm]
+
 theorem Agree.srcAddrs (h : Agree τ s₁ s₂) {src : Src} (hs : srcOk τ src = true) :
     X86_64.srcAddrs s₁ src = X86_64.srcAddrs s₂ src := by
   cases src <;> simp only [X86_64.srcAddrs]
@@ -417,6 +439,19 @@ theorem execAlu_eq (op : AluOp) (d : Reg) (src : Src) (s : State) :
       (aluOut op (s.gpr d) b s.cf).map fun (r, c, o) =>
         if writes op then (arithFlags s r c o).setReg d r else arithFlags s r c o := by
   cases op <;> simp only [execAlu, Nat.reducePow, writes, ↓reduceIte, aluOut, Option.map_some,
+      Option.map_map, Function.comp_def, Bool.false_eq_true]
+
+/-- `execAluW`, the ALU operation of `aluTbl` given its source's value, is
+`execAlu` once that reads its source: the two definitions agree for every
+operation. -/
+theorem execAlu_eq_execAluW (op : AluOp) (d : Reg) (src : Src) (s : State) :
+    execAlu op d src s = (readSrc s src).bind fun b => execAluW op d b s := by
+  cases op <;> rfl
+
+theorem execAluW_eq (op : AluOp) (d : Reg) (b : BitVec 64) (s : State) :
+    execAluW op d b s = (aluOut op (s.gpr d) b s.cf).map fun (r, c, o) =>
+      if writes op then (arithFlags s r c o).setReg d r else arithFlags s r c o := by
+  cases op <;> simp only [execAluW, Nat.reducePow, writes, ↓reduceIte, aluOut, Option.map_some,
       Option.map_map, Function.comp_def, Bool.false_eq_true]
 
 theorem execAlu32_eq (op : AluOp) (d : Reg) (src : Src) (s : State) :
@@ -786,7 +821,7 @@ def dstOf : Instr → Option Reg
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
-  | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
+  | .vpmovmskb _ d _ | .movqR d _ | .imul d _ | .aluTbl _ d .. => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _ | .vmovdqu32Load ..
   | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
@@ -948,6 +983,15 @@ theorem exec_nonstore_xmm {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : 
   case movzx8 m =>
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case aluTbl op m n ws =>
+    simp only [exec] at h
+    split at h
+    · simp only [execAluW_eq, Option.map_eq_some_iff] at h
+      obtain ⟨_, _, rfl⟩ := h
+      split
+      · exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+      · exact ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
+    · cases h
   case bswap =>
     simp only [exec, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
@@ -1618,6 +1662,16 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [exec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
     exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), ha.rf.2⟩
+  | aluTbl op d m n ws =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    refine ⟨congrArg (fun a => [a]) (ha.off hok), ha.write rfl e₁ e₂ ⟨fun r hr => ?_, fun h => by cases h⟩
+      rfl rfl (fun _ h => h) rfl⟩
+    have hrd : r ≠ d := fun h => by subst h; simp [set] at hr
+    have hr' : r ∈ τ.regs := by simp only [set, Bool.false_eq_true, ↓reduceIte, RegSet.mem_erase] at hr; exact hr.2
+    rw [(exec_nonstore_xmm rfl e₁).2.2.2.2 r hrd, (exec_nonstore_xmm rfl e₂).2.2.2.2 r hrd]
+    exact ha.rf.1 r hr'
   | bswap d =>
     simp only [step, Option.some.injEq] at hs
     subst hs
@@ -1966,6 +2020,9 @@ def stepK (τ : T) : Instr → Option T
   | .leaSym d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
   | .movzx8 d m =>
     bif memPub τ m then some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty } else none
+  | .aluTbl _ d m .. =>
+    bif idxPub τ m then some { τ with regs := setK τ d false, flags := false, bases := killK τ d, lo := .empty }
+    else none
   | .vpmovmskb _ d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
   | .movqR d r => some { τ with regs := setK τ d (xpub τ r), bases := killK τ d, lo := .empty }
   | .movdquLoad _ m => bif memPub τ m then some (noX τ) else none
@@ -2243,6 +2300,10 @@ def stepKDFn : Instr → Step
     match τ with
     | ⟨_, f, l, _, sl, _, x⟩ =>
       bif memPub τ m then some ⟨setK τ d false, f, l, killK τ d, sl, .empty, x⟩ else none⟩
+  | .aluTbl _ d m .. => ⟨fun τ =>
+    match τ with
+    | ⟨_, _, l, _, sl, _, x⟩ =>
+      bif idxPub τ m then some ⟨setK τ d false, false, l, killK τ d, sl, .empty, x⟩ else none⟩
   | .vpmovmskb _ d _ => ⟨fun τ => match τ with
     | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d false, f, l, killK τ d, sl, .empty, x⟩⟩
   | .movqR d r => ⟨fun τ => match τ with

@@ -30,6 +30,11 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | alu32 op d src =>
     simp only [exec, Taint.execAlu32_eq, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨_, _, _, _, rfl⟩ := h; split <;> rfl
+  | aluTbl op d m n ws =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [Taint.execAluW_eq, Option.map_eq_some_iff] at h
+    obtain ⟨_, _, rfl⟩ := h; split <;> rfl
   | shift32 op d n =>
     simp only [exec, execShift32] at h
     split at h <;> [skip; cases h]

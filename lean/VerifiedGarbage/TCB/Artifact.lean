@@ -296,7 +296,10 @@ structure Artifact where
   address (`Abi.sym`; on AArch64 and ARMv7, `adrSym`; on x86-64, `leaSym`), and
   checks that every artifact of the target with a table of that name gives
   the same words (`Rust.checkConsts`). So `contract` is one for the calling convention
-  `target.abi.withConsts consts` (`Abi.withConsts`). -/
+  `target.abi.withConsts consts` (`Abi.withConsts`). A table an instruction
+  carries (x86-64's `aluTbl`, `Printer.tables`) is written and checked the
+  same way without being listed here: the model reads its words from the
+  instruction, not from memory the contract describes. -/
   consts : List (String × List (BitVec 64)) := []
   code : Prog target.isa
   contract : Contract target.isa

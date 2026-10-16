@@ -199,6 +199,18 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     cases op <;> (simp only [Option.some.injEq] at h; subst h; rfl)
   | movImm64 d v => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
   | leaSym d name => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
+  | aluTbl op d m n ws =>
+    have e : ∀ b, execAluW op d b (s.withRegions rd wr) = (execAluW op d b s).map (·.withRegions rd wr) := by
+      intro b; cases op <;> first | rfl | (simp only [execAluW, Option.map_map]; rfl)
+    simp only [exec] at h ⊢
+    split at h <;> [rename_i hc'; cases h]
+    have e₁ : (s.withRegions rd wr).ea m = s.ea m := rfl
+    have e₂ : (s.withRegions rd wr).syms = s.syms := rfl
+    have e₃ : (s.withRegions rd wr).gpr = s.gpr := rfl
+    simp only [e₁, e₂, e₃]
+    split
+    · rw [e, h]; rfl
+    · contradiction
   | vpmovmskb len d r => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
   | movqR d r => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
   | movdquLoad d m =>

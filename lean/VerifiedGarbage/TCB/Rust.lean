@@ -38,7 +38,8 @@ code uses, and both are generated from the same signature, calling
 convention, `writeArgs` and `stack` as the contract (`Artifact.ofSig`), so
 the `doc` must not state them itself (`checkLayout`).
 
-An artifact that reads tables of constants (`Artifact.consts`) names each
+An artifact that reads tables of constants (`Artifact.consts`, and those
+its instructions carry, `Printer.tables`: `tablesOf`) names each
 by the name of a `static` holding it, which `files` writes once per target,
 in the module `consts` (`src/asm/<target>/consts.rs`), after checking that
 every artifact of the target with a table of that name gives the same words
@@ -365,29 +366,40 @@ def tableName (n : String) : Bool :=
 def consistent (cs ds : List (String × List (BitVec 64))) : Bool :=
   cs.all fun (n, ws) => ds.all fun (m, vs) => m != n || vs == ws
 
-/-- The tables of constants of `a` (`Artifact.consts`) have distinct names
-that are Rust constants', and none is named `consts` or the module of an
-artifact; every artifact of the target with a table of one of these names
-gives the same words; its code names only these tables; and its target's code
-can name a `static` (`Abi.sym`), if it has any. -/
+/-- The tables of constants of `a`: those its contract gives it
+(`Artifact.consts`) and those its instructions carry (`Printer.codeTables`,
+x86-64's `aluTbl`). -/
+def tablesOf (a : Artifact) : List (String × List (BitVec 64)) :=
+  a.consts ++ a.target.printer.codeTables a.code
+
+/-- The tables of constants of `a` (`Artifact.consts`) have distinct names,
+and so do those its instructions carry but for repeats of the same table;
+every name is a Rust constant's, none is named `consts` or the module of an
+artifact; every artifact of the target with a table of one of these names,
+given or carried, gives the same words; its code names only these tables;
+and its target's code can name a `static` (`Abi.sym`), if it has any. -/
 def checkConsts (as : List Artifact) (a : Artifact) : Except String Unit := do
-  unless a.consts.isEmpty || a.target.abi.sym.isSome do
+  let ts := tablesOf a
+  unless ts.isEmpty || a.target.abi.sym.isSome do
     throw s!"{a.target.name}: {a.name} reads tables of constants, which its target's code cannot name"
   let names := a.consts.map (·.1)
   unless (dedup names).length == names.length do
     throw s!"{a.target.name}: {a.name} has two tables of constants of the same name"
-  for (n, _) in a.consts do
+  for (n, _) in ts do
     unless tableName n do
       throw s!"{a.target.name}: {a.name}'s table of constants {n} is not named as a Rust constant"
+  unless consistent ts ts do
+    throw s!"{a.target.name}: {a.name} gives a table of constants two lists of words"
   for b in as do
-    unless b.target.name != a.target.name || consistent a.consts b.consts do
+    unless b.target.name != a.target.name || consistent ts (tablesOf b) do
       throw s!"{a.target.name}: {a.name} and {b.name} give a table of constants different words"
   if (as.any fun b => b.target.name == a.target.name && b.module == "consts") then
     throw s!"{a.target.name}: an artifact's module is `consts`, the module of the tables of constants"
   let used := (a.target.printer.function a.code).filterMap fun | .sym _ _ n => some n | _ => none
   for n in used do
-    unless names.contains n do
-      throw s!"{a.target.name}: {a.name} names the table {n}, which it does not have (`Artifact.consts`)"
+    unless (ts.map (·.1)).contains n do
+      throw s!"{a.target.name}: {a.name} names the table {n}, which it does not have \
+        (`Artifact.consts`) or carry"
 
 /-- The macros that write the page of a static's address and its offset in
 the page in the syntax of the object format (`Line.sym`): Mach-O's on
@@ -406,7 +418,7 @@ def symMacros : String :=
 
 /-- The tables of constants of the artifacts `arts`, by name, each once. -/
 def tables (arts : List Artifact) : List (String × List (BitVec 64)) :=
-  let all := arts.flatMap (·.consts)
+  let all := arts.flatMap tablesOf
   ((dedup (all.map (·.1))).mergeSort (· ≤ ·)).filterMap fun n => all.find? (·.1 == n)
 
 /-- The module of a target's tables of constants. -/

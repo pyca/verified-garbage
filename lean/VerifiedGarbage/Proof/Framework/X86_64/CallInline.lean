@@ -296,6 +296,13 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     simp only [exec, execCmov]; cases src <;> simp only [readSrc_patch hc, bind_map_patch] <;>
       first | rfl | (congr 1; funext b; simp only [Option.map_map, Function.comp_def,
         apply_ite (State.patch H hv u), eval_patch]; rfl)
+  | aluTbl op d m n ws =>
+    simp only [exec]
+    rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).syms = s.syms from rfl,
+      show (s.patch H hv u).gpr = s.gpr from rfl]
+    split
+    · cases op <;> first | rfl | (simp only [execAluW, Option.map_map]; rfl)
+    · rfl
   | push | pop | alloc | free => rfl
   | _ => rfl
 
