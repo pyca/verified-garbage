@@ -84,7 +84,7 @@ theorem adxBodyLazy_ct : RelCT isa (Two AdxMid) adxBodyLazy fun _ _ => True := b
 
 /-- `vg_rsa_lazy_mont_mul_adx` after the head. -/
 theorem adxTailLazy_ct : RelCT isa (Two AdxMid) (.seq adxBodyLazy (.block restore)) fun _ _ => True :=
-  RelCT.seq (RelCT.keepRdi (f := CallData.B) adxBodyLazy_ct (by rw [← Code.allInstrs_eq]; decide +kernel)
+  RelCT.seq (RelCT.keepRdi (f := CallData.B) adxBodyLazy_ct (by decide +kernel)
     fun _ _ h => h.1.2.1)
     (two_taint [.rdi] (fun _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; rw [h₁, h₂]) (by taint_decide))

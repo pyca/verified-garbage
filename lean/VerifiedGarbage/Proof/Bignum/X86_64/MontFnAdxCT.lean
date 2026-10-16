@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
 meta import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdx
+public import VerifiedGarbage.Proof.Framework.X86_64.RdiStash
+meta import VerifiedGarbage.Proof.Framework.X86_64.RdiStash
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -162,19 +164,17 @@ theorem adxBody_ct : RelCT isa (Two AdxMid) adxBody fun _ _ => True := by
   exact WP.mono (alignTest_ok hs hdi hH hZ) fun t ⟨hz, hm', k⟩ =>
     ⟨⟨AdxIn.of_keep hm hm' k (k.gpr (by decide)) (by decide), hm' ▸ hv⟩, hz⟩
 
-/-- A relation after code that never writes `rdi`. -/
+/-- A relation after code that gives `rdi` back (`keepsRdi`). -/
 theorem RelCT.keepRdi {α : Type} {Φ : α → State → Prop} {c : Prog isa} {f : α → Addr}
-    (h : RelCT isa (Two Φ) c fun _ _ => True) (hc : (instrs c).all (fun i => !Taint.clobbers i .rdi) = true)
+    (h : RelCT isa (Two Φ) c fun _ _ => True) (hc : keepsRdi c = true)
     (hΦ : ∀ a s, Φ a s → s.gpr .rdi = f a) : RelCT isa (Two Φ) c (Two fun a s => s.gpr .rdi = f a) := by
-  have hc' : ∀ i ∈ instrs c, Taint.clobbers i .rdi = false := fun i hi => by
-    simpa using List.all_eq_true.mp hc i hi
   intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨a, h₁, h₂⟩ e₁ e₂
-  exact ⟨(h _ _ _ _ _ _ ⟨a, h₁, h₂⟩ e₁ e₂).1, a, (Exec.gpr hc' e₁).trans (hΦ a _ h₁),
-    (Exec.gpr hc' e₂).trans (hΦ a _ h₂)⟩
+  exact ⟨(h _ _ _ _ _ _ ⟨a, h₁, h₂⟩ e₁ e₂).1, a, (keepsRdi_exec e₁ hc).trans (hΦ a _ h₁),
+    (keepsRdi_exec e₂ hc).trans (hΦ a _ h₂)⟩
 
 /-- `vg_rsa_mont_mul_adx` after the head. -/
 theorem adxTail_ct : RelCT isa (Two AdxMid) (.seq adxBody (.block restore)) fun _ _ => True :=
-  RelCT.seq (RelCT.keepRdi (f := CallData.B) adxBody_ct (by rw [← Code.allInstrs_eq]; decide +kernel)
+  RelCT.seq (RelCT.keepRdi (f := CallData.B) adxBody_ct (by decide +kernel)
     fun _ _ h => h.1.2.1)
     (two_taint [.rdi] (fun _ _ _ h₁ h₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; subst hr; rw [h₁, h₂]) (by taint_decide))
