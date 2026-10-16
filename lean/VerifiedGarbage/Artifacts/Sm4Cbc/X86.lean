@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm4.X86.CbcLit
 
 /-! # SM4-CBC artifacts on baseline x86 (32-bit) -/
 

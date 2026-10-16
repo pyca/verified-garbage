@@ -1,13 +1,20 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
 import VerifiedGarbage.Proof.Ed448.X86.BaseVerified
-public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 import VerifiedGarbage.Proof.Ed448.Facts
-public import VerifiedGarbage.Proof.Sha3.X86.Lit
-import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Ed448.X86.BaseCT
+import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit)

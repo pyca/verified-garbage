@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Verified
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
-import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

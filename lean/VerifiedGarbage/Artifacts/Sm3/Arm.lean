@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Sm3.Arm.Shared
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SM3 (GB/T 32905-2016) on ARMv7 -/

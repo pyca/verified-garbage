@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 

@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.X448.X86
 public import VerifiedGarbage.Proof.X448.X86.Verified
 import VerifiedGarbage.Proof.X448.X86.Lit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.X25519
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # X448 (RFC 7748) on x86 (32-bit) -/

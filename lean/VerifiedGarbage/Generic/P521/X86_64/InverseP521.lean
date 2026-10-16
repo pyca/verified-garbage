@@ -1,16 +1,11 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseLit
-import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
-import VerifiedGarbage.Spec.EcKey.Generic
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

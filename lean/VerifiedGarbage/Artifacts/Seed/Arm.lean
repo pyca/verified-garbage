@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.Arm.KeyVerified
+public import VerifiedGarbage.Proof.Seed.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SEED artifacts on baseline ARMv7 -/

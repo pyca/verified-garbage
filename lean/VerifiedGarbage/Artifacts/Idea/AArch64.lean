@@ -1,6 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.Invert
+public import VerifiedGarbage.Proof.Idea.AArch64.Ecb
+public import VerifiedGarbage.Proof.Idea.AArch64.Key
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # IDEA artifacts on baseline AArch64 -/

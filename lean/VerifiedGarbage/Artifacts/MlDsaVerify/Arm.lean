@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inst
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Basic
-import VerifiedGarbage.Proof.MlDsa.Arm.Sample.Sponge
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) verification on 32-bit ARM -/

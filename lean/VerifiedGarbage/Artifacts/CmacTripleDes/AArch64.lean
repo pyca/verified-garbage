@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 

@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
-public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
-public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Safety
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Safety
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Safety
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Safety
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Safety
+public import VerifiedGarbage.Spec.Ffdh.Contract
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Backend
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
+import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
+import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
+import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Emit FFDH domain operations for every shared arithmetic backend -/

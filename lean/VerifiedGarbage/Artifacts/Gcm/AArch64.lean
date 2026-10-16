@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
 public import VerifiedGarbage.Proof.Framework.Registration
 

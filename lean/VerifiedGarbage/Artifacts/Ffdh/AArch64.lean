@@ -7,10 +7,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Exchange.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.CheckPrivate.Verified
 public import VerifiedGarbage.Proof.Ffdh.AArch64.GenerateKey.Verified
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Spec.Dsa.SignVerify
+import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

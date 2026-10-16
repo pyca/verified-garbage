@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecPcCT
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # PKCS #1 v1.5 verification and recovery over precomputed RSA public variants -/

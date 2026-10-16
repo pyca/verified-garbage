@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.Verified
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Argon2 H′ for every x86-64 BLAKE2b backend -/

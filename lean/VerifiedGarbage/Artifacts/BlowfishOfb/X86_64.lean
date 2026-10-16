@@ -1,12 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.FbVerified
-public import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Framework.X86_64.Words
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Blowfish-OFB artifacts on baseline x86-64 -/

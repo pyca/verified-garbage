@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
-public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 
 /-!
 # SHA-256 on x86-64: the scalar compression function

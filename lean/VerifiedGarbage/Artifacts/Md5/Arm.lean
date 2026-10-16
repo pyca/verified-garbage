@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Md5.Arm.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 

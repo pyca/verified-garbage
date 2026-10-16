@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.Verified
 public import VerifiedGarbage.Proof.Camellia.X86_64.KeyVerified
+import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

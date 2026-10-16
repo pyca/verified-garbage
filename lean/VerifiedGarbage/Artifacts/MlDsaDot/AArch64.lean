@@ -1,8 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVerified
-public import VerifiedGarbage.TCB.AArch64.Target
-import Mathlib.Tactic.SplitIfs
+import Std.Data.DTreeMap.Internal.Operations
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

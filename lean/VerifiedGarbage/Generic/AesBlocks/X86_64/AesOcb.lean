@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-OCB (RFC 7253) on x86-64

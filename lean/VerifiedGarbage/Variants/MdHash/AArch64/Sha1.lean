@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha1
 public import VerifiedGarbage.Proof.Sha1.AArch64.ScalarBackend
-import VerifiedGarbage.Proof.Sha512.Word64
 
 /-!
 # SHA-1 on AArch64

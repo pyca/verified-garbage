@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.Frame
 public import VerifiedGarbage.Proof.Seed.AArch64.EcbCall
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Seed.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SEED artifacts on baseline AArch64 -/

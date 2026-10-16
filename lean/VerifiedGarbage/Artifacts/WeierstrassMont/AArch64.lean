@@ -1,11 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqrVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery products modulo the curves' `p` and `n` on AArch64 -/

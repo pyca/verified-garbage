@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
-import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+import Mathlib.Tactic.NormNum.Inv
+import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64

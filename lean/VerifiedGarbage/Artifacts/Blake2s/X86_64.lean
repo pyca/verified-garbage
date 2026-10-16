@@ -1,10 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
-public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

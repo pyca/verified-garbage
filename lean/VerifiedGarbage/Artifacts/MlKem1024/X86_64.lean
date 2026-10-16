@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-KEM-1024 (FIPS 203) on x86-64: the polynomial primitives -/

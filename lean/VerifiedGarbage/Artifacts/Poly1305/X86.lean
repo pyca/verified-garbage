@@ -1,13 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.Poly1305.X86
 public import VerifiedGarbage.Proof.Poly1305.X86.Init
-import VerifiedGarbage.Proof.Poly1305.X86.Update
-import VerifiedGarbage.Proof.Poly1305.X86.Finalize
 import VerifiedGarbage.Proof.Poly1305.X86.Lit
 public import VerifiedGarbage.Proof.Poly1305.X86.Frame
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Poly1305 (RFC 8439 §2.5) on x86 -/

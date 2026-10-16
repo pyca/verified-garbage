@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls

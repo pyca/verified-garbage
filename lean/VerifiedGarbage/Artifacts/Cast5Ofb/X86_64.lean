@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.FbVerified
+import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # CAST5-OFB artifacts on baseline x86-64 -/

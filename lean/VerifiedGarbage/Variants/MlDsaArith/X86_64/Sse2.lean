@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Backend
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-DSA's polynomial arithmetic on x86-64: SSE2

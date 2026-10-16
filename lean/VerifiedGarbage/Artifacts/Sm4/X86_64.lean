@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.KeyVerified
+public import VerifiedGarbage.Proof.Sm4.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm4.X86_64.Lit
 
 /-! # SM4 artifacts on baseline x86-64 -/
 

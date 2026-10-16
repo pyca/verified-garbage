@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.TripleDes.X86_64.FbLit
 
 /-! # Triple DES-CFB8 artifacts on baseline x86-64 -/
 

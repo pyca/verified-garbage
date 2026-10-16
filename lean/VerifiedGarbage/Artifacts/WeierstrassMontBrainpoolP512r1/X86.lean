@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.Weierstrass.X86.Mont
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontBrainpoolP512r1
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP512r1
 
 /-! # Montgomery arithmetic modulo brainpoolP512r1's `p` and `n` on x86 (32-bit)
 

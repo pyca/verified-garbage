@@ -1,10 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.BrainpoolP384r1Sha384
-import VerifiedGarbage.Proof.Sha256.X86.Shared
-import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

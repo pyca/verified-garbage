@@ -1,11 +1,9 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha3.X86.Shared
 public import VerifiedGarbage.Proof.Sha3.X86.Frame
-public import VerifiedGarbage.Proof.Sha3.X86.Lit
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 
 /-! # SHA-3 and SHAKE (FIPS 202) on x86 -/
 

@@ -1,11 +1,15 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
-import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/

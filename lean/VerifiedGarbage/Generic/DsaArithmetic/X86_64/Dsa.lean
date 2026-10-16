@@ -1,15 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
-public import VerifiedGarbage.Spec.Dsa.RandomSign
 public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignVerified
-import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingVerified
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
-import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
-import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.RandomSignCode
+import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # DSA signing and verification for every x86-64 arithmetic backend -/

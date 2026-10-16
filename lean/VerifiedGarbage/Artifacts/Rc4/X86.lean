@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Rc4.X86.Frame
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Rc4.X86.Lit
 
 /-! # Raw RC4 on baseline x86 -/
 

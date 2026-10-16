@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Ed25519.X86.MulAddVerified
-public import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
+import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

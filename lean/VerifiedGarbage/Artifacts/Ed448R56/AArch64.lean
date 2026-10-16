@@ -1,8 +1,14 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Verified
 public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Ed448's point addition and doubling and its fixed-base comb, in radix `2^56`, on AArch64 -/

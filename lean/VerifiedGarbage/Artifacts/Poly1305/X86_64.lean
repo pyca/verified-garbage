@@ -1,17 +1,15 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Impl.Poly1305.X86_64
-import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Finalize
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Blocks
-import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+import Mathlib.Tactic.NormNum.Inv
+import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
 
 /-!
 # Poly1305 (RFC 8439 §2.5) on x86-64

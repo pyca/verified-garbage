@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! The merged scalar multiply-add API, implemented with baseline integer instructions. -/

@@ -1,11 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Rc2.X86_64.Block
-import VerifiedGarbage.Proof.Rc2.X86_64.Key
-import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Frame
-import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Verified
+public import VerifiedGarbage.Proof.Rc2.X86_64.Key
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
 
 /-! # RC2 artifacts on baseline x86-64 -/
 

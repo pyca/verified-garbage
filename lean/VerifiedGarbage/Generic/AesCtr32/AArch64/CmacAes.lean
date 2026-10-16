@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.CmacAes.AArch64.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 

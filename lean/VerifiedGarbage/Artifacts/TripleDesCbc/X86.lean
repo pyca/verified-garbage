@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
 
 /-! # Triple DES-CBC artifacts on baseline x86 (32-bit) -/
 

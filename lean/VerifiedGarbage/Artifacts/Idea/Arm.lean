@@ -1,6 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.Arm.Verified
+public import VerifiedGarbage.Proof.Idea.Arm.Key
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # IDEA artifacts on baseline ARMv7 -/

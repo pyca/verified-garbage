@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 

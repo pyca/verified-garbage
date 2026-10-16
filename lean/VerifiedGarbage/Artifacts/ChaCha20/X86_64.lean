@@ -1,21 +1,11 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512VL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
-import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx512
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.Init
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.KeyExp
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # The ChaCha20 block function (RFC 8439) on x86-64 -/

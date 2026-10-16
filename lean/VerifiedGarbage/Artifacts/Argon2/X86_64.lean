@@ -1,10 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Argon2.X86_64.Compress
-import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
+public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Compress
+public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

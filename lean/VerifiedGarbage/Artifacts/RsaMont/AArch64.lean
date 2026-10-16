@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontFnProduct
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedVerified
+public import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
+public import VerifiedGarbage.Spec.RsaKeyGen.Contract
+import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.SharedVerified
 
 /-! # RSA candidates call each shared Miller–Rabin implementation -/
 

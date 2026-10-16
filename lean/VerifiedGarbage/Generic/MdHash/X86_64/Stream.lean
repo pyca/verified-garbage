@@ -1,8 +1,6 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # Streaming Merkle–Damgård hash functions on X86_64

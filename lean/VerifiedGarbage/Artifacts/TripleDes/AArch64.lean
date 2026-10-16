@@ -1,11 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
-import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Verified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Frame
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.StraightV
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

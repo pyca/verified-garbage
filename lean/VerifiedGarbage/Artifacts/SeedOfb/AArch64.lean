@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.FbVerified
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SEED-OFB artifacts on baseline AArch64 -/

@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.CmacTripleDes.X86.Frame
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
+import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

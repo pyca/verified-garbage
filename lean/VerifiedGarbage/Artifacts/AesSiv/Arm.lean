@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.AesSiv.Arm.Frame
+public import VerifiedGarbage.Proof.AesSiv.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

@@ -1,10 +1,7 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnLazyVerified
-import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery multiplication in the RSA working space, as a function, on x86-64 -/

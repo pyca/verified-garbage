@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.CtrVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Camellia-CTR artifacts on baseline ARMv7 -/

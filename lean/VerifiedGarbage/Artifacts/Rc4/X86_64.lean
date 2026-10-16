@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Rc4.X86_64.Verified
-import VerifiedGarbage.Proof.Rc4.X86_64.Lookup
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Rc4.X86_64.Lit
 
 /-! # Raw RC4 on baseline x86-64 -/
 

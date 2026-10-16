@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 

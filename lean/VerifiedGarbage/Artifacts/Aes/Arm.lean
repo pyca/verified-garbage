@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Aes.Arm.Ctr32
-import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Aes.Arm.Blocks
 public import VerifiedGarbage.Proof.Aes.Arm.Frame
+public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # AES on ARMv7 -/

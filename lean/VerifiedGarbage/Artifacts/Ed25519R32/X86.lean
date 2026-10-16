@@ -1,10 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.Ed25519.X86.Point32
 public import VerifiedGarbage.Proof.Ed25519.X86.Point32.Verified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Ed25519's point additions and doubling, in radix `2^32`, on x86 (32-bit) -/

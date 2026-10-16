@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Camellia-CFB128 artifacts on baseline AArch64 -/

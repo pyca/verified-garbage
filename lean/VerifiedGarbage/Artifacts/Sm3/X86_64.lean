@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Sm3.X86_64.Shared
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.MdStream.Spec
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm3.X86_64.Lit
 
 /-! # SM3 (GB/T 32905-2016) on x86-64 -/
 

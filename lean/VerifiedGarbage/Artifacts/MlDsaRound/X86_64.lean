@@ -1,15 +1,12 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Power2Round
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YBits
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YUse
-import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.YNorm
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) on x86-64: rounding and hints -/

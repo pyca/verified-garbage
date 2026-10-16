@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Blowfish.X86.Frame
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Blowfish.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Blowfish on baseline x86 -/

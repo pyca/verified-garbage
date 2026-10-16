@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha1.X86.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 

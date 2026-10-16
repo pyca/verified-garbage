@@ -1,8 +1,13 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyVerified
-import VerifiedGarbage.Impl.Mont.Mod
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/

@@ -1,20 +1,18 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
-import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
-import VerifiedGarbage.Spec.Weierstrass
-import VerifiedGarbage.Proof.Ed25519.Recode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
-import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
-import VerifiedGarbage.Spec.EcKey.Generic
-import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Complete unsigned scalar multiplication by the Ed25519 base point. -/

@@ -1,9 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Verified
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Spec.Rc2
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

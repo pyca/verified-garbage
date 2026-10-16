@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

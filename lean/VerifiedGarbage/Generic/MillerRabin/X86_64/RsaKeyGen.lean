@@ -1,7 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedVerified
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedSafety
+public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedVerified
 
 /-! # Emit RSA candidates for every shared Miller–Rabin backend -/
 

@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Gcm.Arm.Ghash
-import Mathlib.Data.List.Induction
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # GHASH on ARMv7 -/

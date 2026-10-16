@@ -1,10 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Sha3.X86_64.Permute
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Pad
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 public import VerifiedGarbage.Proof.Sha3.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 

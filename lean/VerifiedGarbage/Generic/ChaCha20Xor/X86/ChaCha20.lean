@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.ChaCha20.X86.Stream.ApplyCT
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Sse
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

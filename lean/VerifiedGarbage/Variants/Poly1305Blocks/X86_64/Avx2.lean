@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Variant
+import Mathlib.Tactic.NormNum.Inv
+import Mathlib.Tactic.NormNum.Pow
 
 /-!
 # `vg_poly1305_blocks` on x86-64: with AVX2

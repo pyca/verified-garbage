@@ -2,8 +2,9 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on AArch64

@@ -2,10 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
-import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Fused internal ML-DSA arithmetic with explicit signed output contracts. -/

@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-! ML-KEM four-way sampling with AVX-512VL quadword rotates. -/
 

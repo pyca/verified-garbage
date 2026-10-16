@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.KeyVerified
 public import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Sm4.Arm.EcbAny
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SM4 artifacts on baseline ARMv7 -/

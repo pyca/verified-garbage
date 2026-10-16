@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.CtrVerified
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 
 /-! # SM4-CTR artifacts on baseline x86-64 -/
 

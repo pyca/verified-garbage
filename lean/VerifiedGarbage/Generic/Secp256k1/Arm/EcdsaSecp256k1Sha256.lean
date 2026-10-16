@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1Sha256
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

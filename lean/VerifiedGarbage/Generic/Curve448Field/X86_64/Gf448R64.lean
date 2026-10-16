@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed448.X86_64.PowVariant
-public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-! Shared Curve448 exponentiation follows the callers' field backend. -/
 

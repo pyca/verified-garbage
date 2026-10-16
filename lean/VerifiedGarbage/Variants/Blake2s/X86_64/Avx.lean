@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.Avx.Stream
+public import VerifiedGarbage.Proof.Blake2.X86_64.Avx.Compress
+public import VerifiedGarbage.Proof.Blake2.X86_64.BackendS
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # BLAKE2s on x86-64 with AVX

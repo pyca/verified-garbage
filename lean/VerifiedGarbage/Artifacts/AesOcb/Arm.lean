@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.AesOcb.Arm.Init
 public import VerifiedGarbage.Proof.AesOcb.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration

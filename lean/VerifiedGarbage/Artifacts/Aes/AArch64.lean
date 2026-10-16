@@ -1,13 +1,9 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
-import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
-import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
-import VerifiedGarbage.Proof.Aes.AArch64.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.Frame
+public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # AES on AArch64 -/

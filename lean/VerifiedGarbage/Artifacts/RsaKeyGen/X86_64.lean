@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Verified
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on x86-64 -/

@@ -1,9 +1,6 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Scrypt.X86.Whole.Verified
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

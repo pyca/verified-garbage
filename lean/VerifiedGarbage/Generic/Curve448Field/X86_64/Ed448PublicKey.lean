@@ -1,9 +1,19 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed448.Facts
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Lit
 
 /-!
 # Ed448 public-key derivation on x86-64

@@ -1,17 +1,11 @@
 module
 
-import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
-import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
-public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.Verified
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenFinal
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.EncapsVerified
 public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.DecapsVerified
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! `keygen`, `encaps` and `decaps` of ML-KEM-768 and ML-KEM-1024, for each

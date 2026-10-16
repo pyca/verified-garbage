@@ -1,10 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.ModesVerified
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # CAST5-CFB64 artifacts on baseline ARMv7 -/

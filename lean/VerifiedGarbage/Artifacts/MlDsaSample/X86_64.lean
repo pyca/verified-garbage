@@ -1,17 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBoundedCT
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.BallCT
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej5Verified
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) on x86-64: the sampling primitives -/

@@ -2,8 +2,13 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Ed448.X86_64.FieldVariant
-public import VerifiedGarbage.Proof.X448.X86_64.Adx.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+public import Mathlib.Tactic.ToDual
+public import VerifiedGarbage.Spec.X448.Contract
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Verified
+import VerifiedGarbage.Proof.X448.X86_64.Lit
+import VerifiedGarbage.Proof.X448.X86_64.Verified
 
 /-! X448 and Ed448 share the selected Curve448 exponentiation backend. -/
 

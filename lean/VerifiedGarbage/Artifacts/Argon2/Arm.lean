@@ -1,9 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
-import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.Verified
+public import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
+public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Argon2 (RFC 9106) on ARMv7 -/

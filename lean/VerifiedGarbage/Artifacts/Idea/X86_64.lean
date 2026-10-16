@@ -1,7 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86_64.Invert
+public import VerifiedGarbage.Proof.Idea.X86_64.Key
+public import VerifiedGarbage.Proof.Idea.X86_64.Verified
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+import VerifiedGarbage.Proof.Idea.X86_64.Lit
 
 /-! # IDEA artifacts on baseline x86-64 -/
 

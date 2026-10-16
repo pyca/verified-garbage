@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 @[expose] public section
 

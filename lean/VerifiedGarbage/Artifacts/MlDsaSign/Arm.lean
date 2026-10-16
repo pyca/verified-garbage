@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
-import VerifiedGarbage.Proof.MlKem.Arm.Prf
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) signing on 32-bit ARM -/
