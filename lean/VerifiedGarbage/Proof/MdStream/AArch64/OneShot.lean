@@ -238,11 +238,13 @@ structure Mid (P : Params) (s t : State) : Prop where
   x25 : t.gpr .x25 = s.gpr .x1
   x26 : t.gpr .x26 = s.gpr .x2
   keep : ∀ r ∈ preserved, r ≠ .x25 → r ≠ .x26 → r ≠ .x30 → t.gpr r = s.gpr r
-  frame : Frame [fR P s] s.mem t.mem
+  frame : Frame (fR P s :: s.wr) s.mem t.mem
   slots : Slots P s t.mem
 
 theorem S1.mid {P : Params} {s t : State} (h : S1 P s t) : Mid P s t :=
-  ⟨h.rd, h.wr, h.sp, h.x25, h.x26, fun r hr h25 h26 _ => h.keep r hr h25 h26, h.frame, h.slots⟩
+  ⟨h.rd, h.wr, h.sp, h.x25, h.x26, fun r hr h25 h26 _ => h.keep r hr h25 h26,
+    h.frame.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self ..,
+    h.slots⟩
 
 /-- Regions at offsets within the frame are covered by the regions of a
 state inside it. -/
@@ -260,7 +262,7 @@ registers', and of no register `Mid` keeps, keeps `Mid`. -/
 theorem Mid.of_frame {P : Params} (hF : Fits P) {s t t' : State} (h : Mid P s t)
     (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp)
     (hg : ∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r) {rs : List Region}
-    (hf : Frame rs t.mem t'.mem) (hsub : ∀ r ∈ rs, Region.Sub r (fR P s))
+    (hf : Frame rs t.mem t'.mem) (hsub : ∀ r ∈ rs, ∃ r' ∈ fR P s :: s.wr, Region.Sub r r')
     (hsl : ∀ r ∈ rs, (slR P s).Disjoint r) : Mid P s t' where
   rd := hrd.trans h.rd
   wr := hwr.trans h.wr
@@ -268,7 +270,7 @@ theorem Mid.of_frame {P : Params} (hF : Fits P) {s t t' : State} (h : Mid P s t)
   x25 := (hg _ (by decide) (by decide)).trans h.x25
   x26 := (hg _ (by decide) (by decide)).trans h.x26
   keep r hr h25 h26 h30 := (hg r hr h30).trans (h.keep r hr h25 h26 h30)
-  frame := h.frame.trans (hf.sub fun r hr => ⟨fR P s, List.mem_singleton_self _, hsub r hr⟩)
+  frame := h.frame.trans (hf.sub hsub)
   slots := by
     have hn : (24 : Nat) ≤ 2 ^ 64 := by decide
     have hc : ∀ j ≤ 2, (slR P s).Contains (fb P s + BitVec.ofNat 64 (slO P + 8 * j)) 8 := fun j hj => by
@@ -301,7 +303,7 @@ theorem init_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} {iv : H.HV} {ini
     (Covers.right hcov) hcov (fun t' hrd hwr habi hf hg hpost => ?_) hin
   have hk : ∀ r, r ≠ .x9 → t'.gpr r = t.gpr r := fun r hr => hg r (hiw r hr)
   refine ⟨Mid.of_frame hF h.mid hrd hwr habi.2.1 (fun r hr _ => hk r (mem_preserved_ne_x9 hr)) hf
-      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact st_sub hF s)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., st_sub hF s⟩)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact (st_sl hF s).symm),
     (hk _ (by decide)).trans h.x0, (hk _ (by decide)).trans h.x2, (hk _ (by decide)).trans h.x3, ?_⟩
   simpa [initK, State.withRegions, h.x0] using hpost
@@ -318,7 +320,12 @@ theorem updateMain_noFrames {P : Params} {H : Md P.B P.N P.L} {name : String} {c
 theorem data_eq {P : Params} {D : Nat} {s t : State} (hp : Pre P D s) (h : Mid P s t) :
     bytesAt t.mem (dp s) (len s) = bytesAt s.mem (dp s) (len s) :=
   bytesAt_congr fun i hi => h.frame.bytes (R := dR s)
-    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.f_d.symm)
+    (fun r hr => by
+      rw [hp.wr] at hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hp.f_d.symm
+      · exact hp.d_o)
     (Nat.le_of_lt (s.gpr .x1).isLt) hi
 
 theorem upd_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {iv : H.HV} {D : Nat}
@@ -369,8 +376,8 @@ theorem upd_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {iv
         (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact st_sub hF s
-          · exact sc_sub hF s)
+          · exact ⟨_, List.mem_cons_self .., st_sub hF s⟩
+          · exact ⟨_, List.mem_cons_self .., sc_sub hF s⟩)
         (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
@@ -379,5 +386,156 @@ theorem upd_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {iv
     have := hu' iv [] (by simpa [g0, gm] using hr) (by simp [g1])
     simp only [State.withRegions_mem, State.withRegions_gpr, g0, g2, g3, gm, List.nil_append] at this
     rwa [data_eq hp h] at this
+
+
+/-! ## `finalize` -/
+
+theorem finalizeMain_noFrames {P : Params} {H : Md P.B P.N P.L} {name : String} {code : Prog isa}
+    (hf : CalleeOk H code) : (finalizeMain P name code).noFrames = true := by
+  simp only [finalizeMain, finalizeBody, zero, compressAt, compressWith, Code.noFrames,
+    hf.noFrames, Bool.and_self]
+
+theorem fin_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {o : List Instr} {D : Nat}
+    (hs : ShapeD (P := { P with out := o }) H D) {iv : H.HV} {name : String} {code : Prog isa}
+    (hf : CalleeOk H code)
+    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain { P with out := o } name code), clobbers i r = false)
+    {s t : State} (hp : Pre P D s) (h : Mid P s t)
+    (hr : H.Repr iv t.mem (fb P s) (bytesAt s.mem (dp s) (len s))) (hok : H.lenOk (len s)) :
+    WP isa (.seq (.block (finArgs P)) (finalizeMain { P with out := o } name code)) t fun t' =>
+      Mid P s t' ∧ bytesAt t'.mem (out s) D = (H.hash iv (bytesAt s.mem (dp s) (len s))).take D := by
+  have := hF.lt; have := hF.sl_le; have := sc_le P; have := st_le P
+  refine WP.seq (WP.mono (Q := fun (t₁ : State) => Mid P s t₁ ∧ t₁.gpr .x0 = fb P s ∧
+      t₁.gpr .x1 = s.gpr .x1 ∧ t₁.gpr .x2 = out s ∧ t₁.gpr .x3 = fb P s + BitVec.ofNat 64 (scO P) ∧
+      t₁.mem = t.mem) ?_ fun t₁ ⟨hm, g0, g1, g2, g3, gm⟩ => ?_)
+  · simp only [finArgs]
+    refine wp_addSp (by omega) fun t₁ u₁ => wp_mov fun t₂ u₂ => wp_mov fun t₃ u₃ =>
+      wp_addSp (by omega) fun t₄ u₄ => WP.block_nil ?_
+    have hk : ∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x2 → r ≠ .x3 → t₄.gpr r = t.gpr r := fun r h0 h1 h2 h3 => by
+      rw [u₄.other r h3, u₃.other r h2, u₂.other r h1, u₁.other r h0]
+    have hp' : ∀ r ∈ preserved, r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 := fun r hr => by
+      simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    have sp₄ : t₄.sp = t.sp := by rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp]
+    refine ⟨Mid.of_frame hF h (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]) (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]) sp₄
+        (fun r hr _ => have := hp' r hr; hk r this.1 this.2.1 this.2.2.1 this.2.2.2)
+        (rs := []) (fun x _ => by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]) (fun _ hr => absurd hr List.not_mem_nil)
+        (fun _ hr => absurd hr List.not_mem_nil), ?_, ?_, ?_, ?_, by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]⟩
+    · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h.sp]; simp
+    · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.x25]
+    · rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h.x26]
+    · rw [u₄.gpr, u₃.sp, u₂.sp, u₁.sp, h.sp]
+  · have hwr : t₁.wr = [fR P s, oR s D] := by rw [hm.wr, hp.wr]
+    have hcov : Covers [stR P s, oR s D, scR P s] t₁.wr :=
+      Covers.of_sub fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact ⟨fR P s, by rw [hwr]; simp, 0, fb_zero P s, show 0 + (P.N + P.B) ≤ frameBytes P by omega⟩
+        · exact ⟨oR s D, by rw [hwr]; simp, 0, by simp, by simp⟩
+        · exact ⟨fR P s, by rw [hwr]; simp, scO P, rfl, show scO P + (P.so + 48) ≤ frameBytes P by omega⟩
+    let PF : Params := { P with out := o }
+    let u := t₁.withRegions [] [stR P s, oR s D, scR P s]
+    have est : Finalize.stR PF u = stR P s := by
+      simp only [u, Finalize.stR, Finalize.st, State.withRegions_gpr, g0] <;> rfl
+    have eout : Finalize.outR u D = oR s D := by
+      simp only [u, Finalize.outR, Finalize.out, State.withRegions_gpr, g2]
+    have esc : Finalize.scR PF u = scR P s := by
+      simp only [u, Finalize.scR, Finalize.scr, State.withRegions_gpr, g3] <;> rfl
+    have hpre : Finalize.PreD PF D u :=
+      { rd := rfl
+        wr := by rw [est, eout, esc]; rfl
+        st_out := by rw [est, eout]; exact hp.f_o.sub_left (st_sub hF s)
+        st_scr := by rw [est, esc]; exact st_sc hF s
+        out_scr := by rw [eout, esc]; exact (hp.f_o.sub_left (sc_sub hF s)).symm }
+    refine WP.narrow (Finalize.correctMain (P := PF) ⟨hd.1, hd.2, hd.3, hd.4⟩ hs (hf.withOut o) hu hpre)
+      (Covers.right hcov) hcov (fun t' hrd' hwr' hsp' hf' hpost => ?_) (finalizeMain_noFrames (hf.withOut o))
+    obtain ⟨hg, -, hfin⟩ := hpost
+    have hsub : ∀ r ∈ [stR P s, oR s D, scR P s], ∃ r' ∈ fR P s :: s.wr, Region.Sub r r' := fun r hr => by
+      rw [hp.wr]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., st_sub hF s⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_self .., sc_sub hF s⟩
+    refine ⟨Mid.of_frame hF hm hrd' hwr' hsp' (fun r hr h30 => by simpa using hg r hr h30) hf' hsub
+        (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl
+          · exact (st_sl hF s).symm
+          · exact hp.f_o.sub_left (sl_sub hF s)
+          · exact (sc_sl hF s).symm), ?_⟩
+    have hlen : (bytesAt s.mem (dp s) (len s)).length = len s := by simp [bytesAt]
+    have := hfin iv (bytesAt s.mem (dp s) (len s)) (by simpa [u, g0, gm] using hr) (by rwa [hlen])
+      (by simp [g1, hlen])
+    simpa [u, g2] using this
+
+
+/-! ## Zeroing the state and restoring the registers -/
+
+theorem finish_ok {P : Params} (hF : Fits P) {D : Nat} (hD : D ≤ 2 ^ 64) {s t : State} (hp : Pre P D s)
+    (h : Mid P s t) :
+    WP isa (.block (finish P)) t fun t' =>
+      t'.rd = s.rd ∧ t'.wr = fR P s :: s.wr ∧ t'.sp = fb P s ∧ (∀ r ∈ preserved, t'.gpr r = s.gpr r) ∧
+      bytesAt t'.mem (out s) D = bytesAt t.mem (out s) D := by
+  have := hF.lt; have := hF.sl_le; have := sc_le P; have := st_le P; have h8 := hF.st; have h8' := hF.sl
+  simp only [finish]
+  rw [WP.block_append_iff]
+  let u : State := { t with wr := stR P s :: t.wr }
+  have hsp : u.sp = fb P s := h.sp
+  have hcov : Covers [stR P s] t.wr :=
+    covers_frame s h.wr fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨0, fb_zero P s, show 0 + (P.N + P.B) ≤ frameBytes P by omega⟩
+  have hw : Covers u.wr t.wr := Covers.cons hcov (Covers.refl _)
+  obtain ⟨m', he, hfr⟩ := wipe_run (stR P s) u ((P.N + P.B) / 8) (List.mem_cons_self ..)
+    (by omega) fun k hk => by rw [hsp]; exact Offset.contains_base _ (by omega) (by omega)
+  have hex := Exec.widen (Exec.block he) (rd := t.rd) (wr := t.wr)
+    (Covers.append (Covers.refl _) hw) hw
+  refine ⟨_, _, hex, ?_⟩
+  -- The state after the wipe.
+  let w := ({ ((u.write .x .x16 (u.sp + BitVec.ofNat 64 0)).write .x .x17
+      ((0 : BitVec 16).setWidth 64 <<< (16 * 0))) with mem := m' } : State).withRegions t.rd t.wr
+  have w16 : w.gpr .x16 = fb P s := by simp [w, State.write, hsp]
+  have wg : ∀ r, r ≠ .x16 → r ≠ .x17 → w.gpr r = t.gpr r := fun r h16 h17 => by
+    simp [w, State.write, h16, h17, u]
+  have wsp : w.sp = fb P s := hsp
+  have wmem : w.mem = m' := rfl
+  have wrd : w.rd = t.rd := rfl
+  have wwr : w.wr = t.wr := rfl
+  -- The slots are outside the state.
+  have hsl : Slots P s m' := by
+    have hc : ∀ j ≤ 2, (slR P s).Contains (fb P s + BitVec.ofNat 64 (slO P + 8 * j)) 8 := fun j hj =>
+      Offset.contains _ (by omega) (by omega) (by omega)
+    have hd : ∀ r' ∈ [stR P s], (slR P s).Disjoint r' := fun r' hr' => by
+      simp only [List.mem_singleton] at hr'; subst hr'; exact (st_sl hF s).symm
+    obtain ⟨a, b, c⟩ := h.slots
+    exact ⟨by rw [← a]; exact hfr.readW (by simpa using hc 0 (by omega)) hd (by decide),
+      by rw [← b]; exact hfr.readW (hc 1 (by omega)) hd (by decide),
+      by rw [← c]; exact hfr.readW (hc 2 (by omega)) hd (by decide)⟩
+  have hin : ∀ j ≤ 2, InRegions (w.rd ++ w.wr) (fb P s + BitVec.ofNat 64 (slO P + 8 * j)) 8 := fun j hj =>
+    ⟨fR P s, by rw [wwr, h.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+  show WP isa (.block (OneShot.restore P)) w _
+  simp only [OneShot.restore]
+  refine wp_ldr (a := fb P s + BitVec.ofNat 64 (slO P)) (by omega) (by rw [w16])
+    (by simpa using hin 0 (by omega)) fun w₁ v₁ => ?_
+  refine wp_ldr (a := fb P s + BitVec.ofNat 64 (slO P + 8)) (by omega) (by rw [v₁.other _ (by decide), w16])
+    (by rw [v₁.rd, v₁.wr]; exact hin 1 (by omega)) fun w₂ v₂ => ?_
+  refine wp_ldr (a := fb P s + BitVec.ofNat 64 (slO P + 16)) (by omega)
+    (by rw [v₂.other _ (by decide), v₁.other _ (by decide), w16])
+    (by rw [v₂.rd, v₂.wr, v₁.rd, v₁.wr]; exact hin 2 (by omega)) fun w₃ v₃ => WP.block_nil ?_
+  have m₃ : w₃.mem = m' := by rw [v₃.mem, v₂.mem, v₁.mem, wmem]
+  refine ⟨by rw [v₃.rd, v₂.rd, v₁.rd, wrd, h.rd], by rw [v₃.wr, v₂.wr, v₁.wr, wwr, h.wr],
+    by rw [v₃.sp, v₂.sp, v₁.sp, wsp], fun r hr => ?_, ?_⟩
+  · by_cases h25 : r = .x25
+    · subst h25; rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.gpr, wmem, hsl.1]
+    by_cases h26 : r = .x26
+    · subst h26; rw [v₃.other _ (by decide), v₂.gpr, v₁.mem, wmem, hsl.2.1]
+    by_cases h30 : r = .x30
+    · subst h30; rw [v₃.gpr, v₂.mem, v₁.mem, wmem, hsl.2.2]
+    have h16 : r ≠ .x16 := by rintro rfl; simp [preserved] at hr
+    have h17 : r ≠ .x17 := by rintro rfl; simp [preserved] at hr
+    rw [v₃.other _ h30, v₂.other _ h26, v₁.other _ h25, wg r h16 h17, h.keep r hr h25 h26 h30]
+  · rw [m₃]
+    refine bytesAt_congr fun i hi => hfr.bytes (R := oR s D)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr
+                      exact (hp.f_o.sub_left (st_sub hF s)).symm) hD hi
 
 end VG.Proof.MdStream.AArch64.OneShot

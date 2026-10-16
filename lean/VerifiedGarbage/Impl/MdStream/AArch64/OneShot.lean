@@ -70,11 +70,9 @@ def finish : List Instr := StackScratch.AArch64.wipe ((P.N + P.B) / 8) ++ restor
 def body (PF : Params) (init : Prog isa) (name : String) (code : Prog isa) : Prog isa :=
   .seq (.block (setup P))
   (.seq init
-  (.seq (.block (updArgs P))
-  (.seq (updateMain P name code)
-  (.seq (.block (finArgs P))
-  (.seq (finalizeMain PF name code)
-    (.block (finish P)))))))
+  (.seq (.seq (.block (updArgs P)) (updateMain P name code))
+  (.seq (.seq (.block (finArgs P)) (finalizeMain PF name code))
+    (.block (finish P)))))
 
 /-- The one-shot digest: `init` stores the initial hash value at `x0` (using
 only `x9`), `P` is the streaming parameters and `PF` those of the `finalize`
