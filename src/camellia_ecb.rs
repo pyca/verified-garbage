@@ -26,6 +26,13 @@ pub enum Error {
     IncompleteBlock,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid Camellia key length",
+        IncompleteBlock => "Camellia-ECB input is not a whole number of blocks",
+    }
+}
+
 /// An expanded Camellia key for ECB encryption and decryption.
 ///
 /// Keys of 16 bytes use 18 rounds; keys of 24 or 32 bytes, 24. No padding

@@ -5,7 +5,7 @@
     target_arch = "arm"
 ))]
 
-use verified_garbage::cast5_ofb::{Cast5Ofb, Error};
+use verified_garbage::cast5_ofb::{Cast5Ofb, InvalidKeyLength};
 
 const VECTORS: &str = include_str!("../../vectors/cryptography-cast5-ofb/cast5-ofb.txt");
 
@@ -41,10 +41,7 @@ fn vectors() {
 
 #[test]
 fn errors_and_empty_input() {
-    assert!(matches!(
-        Cast5Ofb::new(&[0; 17]),
-        Err(Error::InvalidKeyLength)
-    ));
+    assert!(matches!(Cast5Ofb::new(&[0; 17]), Err(InvalidKeyLength)));
     let cipher = Cast5Ofb::new(&[7; 16]).unwrap();
     let mut iv = [0x5a; 8];
     cipher.apply_keystream(&mut iv, &mut []);

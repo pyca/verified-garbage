@@ -60,6 +60,14 @@ pub trait HmacHash: HashFunction + sealed::Sealed {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct InvalidMac;
 
+impl core::fmt::Display for InvalidMac {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str("MAC does not match")
+    }
+}
+
+impl core::error::Error for InvalidMac {}
+
 /// An incremental HMAC computation with the hash function `H`.
 #[derive(Clone)]
 pub struct Hmac<H: HmacHash> {

@@ -26,8 +26,7 @@ use crate::arch::camellia_ofb::vg_camellia_ofb;
 use crate::zeroize::zeroize;
 
 /// The key is not 16, 24 or 32 bytes long.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded Camellia key for OFB, whose encryption and decryption are the
 /// same operation.

@@ -37,6 +37,13 @@ pub enum Error {
     IncompleteBlock,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid Blowfish key length",
+        IncompleteBlock => "Blowfish-CBC input is not a whole number of blocks",
+    }
+}
+
 /// An expanded Blowfish key for CBC encryption and decryption, which use the
 /// same schedule.
 ///

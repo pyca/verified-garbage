@@ -27,8 +27,7 @@ use crate::arch::idea_cfb::{vg_idea_cfb64_decrypt, vg_idea_cfb64_encrypt};
 use crate::zeroize::zeroize;
 
 /// The key does not contain 16 bytes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded IDEA key for CFB64 encryption and decryption, both of which
 /// use the encryption subkeys.

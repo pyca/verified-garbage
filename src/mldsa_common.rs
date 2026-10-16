@@ -119,6 +119,15 @@ macro_rules! ml_dsa {
             Randomness,
         }
 
+        $crate::error::impl_error! {
+            Error {
+                LoopBound => concat!($name, " loop reached its bound"),
+                ContextTooLong => concat!($name, " context is longer than 255 bytes"),
+                InvalidSignature => concat!("invalid ", $name, " signature"),
+                Randomness => concat!($name, " random number generator failed"),
+            }
+        }
+
         /// The working space of the assembly functions on `μ`.
         type Scratch = [u64; $scratch];
 
