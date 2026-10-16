@@ -173,6 +173,8 @@ impl Parameters {
             }
             break;
         }
+        // The last candidate scalar, if no attempt succeeded.
+        zeroize(&mut x);
         zeroize(&mut rand);
         result
     }

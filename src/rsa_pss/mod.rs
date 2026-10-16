@@ -301,8 +301,6 @@ fn sign_with(key: &PrivateKey, digest: &[u8], hash: Hash, salt: &[u8]) -> Result
         salt,
         &mut scratch
     ));
-    // The working space holds the private key, the encoding and its powers.
-    zeroize(&mut scratch);
     // `PrivateKey::from_crt` checked the key, so a refusal means the encoding
     // does not fit.
     match r {

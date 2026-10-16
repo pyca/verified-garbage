@@ -1,6 +1,7 @@
-//! The working space of the RSA functions: one exclusively owned, wiped
-//! verification buffer retained per public key, and the cache-line-aligned
-//! working space of each private-key operation.
+//! The working space of the RSA and FFDH functions: one exclusively owned,
+//! wiped verification buffer retained per public key, and the
+//! cache-line-aligned working space of each private-key operation, wiped on
+//! drop.
 
 use crate::zeroize::zeroize;
 use alloc::{boxed::Box, vec, vec::Vec};
@@ -17,7 +18,8 @@ use core::{
 struct Line([u64; 8]);
 
 /// Zeroed working space of a private-key operation, starting at a 64-byte
-/// boundary. The AVX512_IFMA functions (`vg_rsa_private_crt_ifma` and its
+/// boundary and wiped when it is dropped (the functions given it leave
+/// secrets in it). The AVX512_IFMA functions (`vg_rsa_private_crt_ifma` and its
 /// callers) read their numbers as 32-byte vectors at offsets from the start
 /// of the working space that are multiples of 32: a `Vec<u64>`, aligned to
 /// 8 bytes only, splits half of them across cache lines, which made 3072-
@@ -50,6 +52,12 @@ impl DerefMut for Scratch {
     fn deref_mut(&mut self) -> &mut [u64] {
         // SAFETY: as in `deref`, and `&mut self` borrows the lines exclusively.
         unsafe { slice::from_raw_parts_mut(self.lines.as_mut_ptr().cast(), self.words) }
+    }
+}
+
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        zeroize(self);
     }
 }
 
