@@ -201,8 +201,8 @@ end
 by `gh`, is constant time, for a `gh` that hashes as `vg_ghash` and leaks the
 same in two runs, called with memory changed since the entry only in the
 working space and the text. -/
-theorem openWith_ct (v : GcmImpl) (gh : Fn) (hMK : MulKey) {pre : State → Prop}
-    (hpre : ∀ s, pre s → openAArch64.pre s)
+theorem openWith_ct (v : GcmImpl) (gh : Fn) (hMK : MulKey) {pre : State → Prop} {extra : State → List Region}
+    (hpre : ∀ s, pre s → openPreX (extra s) s)
     (hgh : ∀ {σ s : State} {Y Dd S : Addr} {nb : Nat}, pre σ →
       GhCall s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR (stackArg σ 2)) → Region.Sub ⟨S, 256⟩ (workR (stackArg σ 2)) →
@@ -269,7 +269,7 @@ theorem openWith_ct (v : GcmImpl) (gh : Fn) (hMK : MulKey) {pre : State → Prop
 /-- `vg_aes_gcm_open` with the path for TLS records is constant time. -/
 theorem open_fast_ct (v : GcmImpl) (hMK : MulKey) :
     ConstantTime isa openAArch64.pre openAArch64.pub (Impl.AesGcm.AArch64.Fast.«open» v.callees) :=
-  openWith_ct v v.gh.fn hMK (fun _ h => h) (fun _ hc _ _ _ _ _ => gh_call v.gh hc)
+  openWith_ct (extra := fun _ => []) v v.gh.fn hMK (fun _ h => h) (fun _ hc _ _ _ _ _ => gh_call v.gh hc)
     (fun _ _ _ c₁ c₂ _ _ sp _ _ _ _ _ _ => rel_gh v.gh c₁ c₂ sp)
 
 end VG.Proof.AesGcm.AArch64.Fast

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Prepared
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPrepared
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -153,8 +153,16 @@ def sealPreparedNote (v : GcmImpl) (gp : GhashPreparedImpl) : String :=
     blocks of the ciphertext, which reads the powers of `H` from the context. Otherwise it reads only the \
     context's first 256 bytes, as `" ++ Spec.Gcm.sealApi.name ++ v.suffix ++ "` does."
 
-/-- `vg_aes_gcm_seal_prepared`, calling `gp` on the path for TLS records,
-and `vg_aes_gcm_seal_gather_prepared`, calling it. -/
+/-- How `vg_aes_gcm_open_prepared` uses the prepared context. -/
+def openPreparedNote (v : GcmImpl) (gp : GhashPreparedImpl) : String :=
+  "For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as \
+    `" ++ Spec.Gcm.sealPreparedApi.name ++ v.suffix ++ "` does, calling `" ++ gp.fn.name ++ "` once, on the \
+    whole blocks of the ciphertext, and decrypts only if it matches. Otherwise it reads only the context's \
+    first 256 bytes, as `" ++ Spec.Gcm.openApi.name ++ v.suffix ++ "` does."
+
+/-- `vg_aes_gcm_seal_prepared` and `vg_aes_gcm_open_prepared`, calling `gp`
+on the path for TLS records, and `vg_aes_gcm_seal_gather_prepared`, calling
+the former. -/
 def sealPreparedArtifacts (v : GcmImpl) (gp : GhashPreparedImpl) : List Artifact :=
   let F := Proof.AesGcm.AArch64.sealPreparedFn v gp Proof.Gcm.AArch64.Pmull.mulV_keyV
   [Spec.Gcm.sealPreparedApi.artifact AArch64.target {
@@ -171,6 +179,14 @@ def sealPreparedArtifacts (v : GcmImpl) (gp : GhashPreparedImpl) : List Artifact
     code := Impl.AesGcm.AArch64.SealGather.sealGather F.fn
     stack := 2592
     verified := Proof.AesGcm.AArch64.Gather.sealGatherPrepared_verified F
+    features := v.features },
+  Spec.Gcm.openPreparedApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, openPreparedNote v gp]
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
+      (Impl.AesGcm.AArch64.Fast.openWith v.callees gp.fn)
+    stack := 2592
+    verified := Fast.openPrepared_framed v gp Proof.Gcm.AArch64.Pmull.mulV_keyV
     features := v.features }]
 
 /-- The functions with a prepared key context, for the implementations with PMULL. -/

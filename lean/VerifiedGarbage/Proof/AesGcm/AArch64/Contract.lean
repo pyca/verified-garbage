@@ -234,20 +234,23 @@ def sealAArch64 : Contract isa where
 
 /-- What `vg_aes_gcm_open` needs: its common arguments, `tag = [sp]`, `tag_len = [sp + 8]` and
 `work = [sp + 16]`. -/
-def openPre (s : State) : Prop :=
+def openPreX (extra : List Region) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   let tag : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
   let work : Region := ⟨stackArg s 2, 2560⟩
-  s.rd = [ctx, nonce, aad, tag, args s 3] ∧ s.wr = [data, work] ∧
+  s.rd = [ctx, nonce, aad, tag, args s 3] ++ extra ∧ s.wr = [data, work] ∧
     ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧
     data.Disjoint work ∧ data.Disjoint (args s 3) ∧ tag.Disjoint work ∧ work.Disjoint (args s 3) ∧
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
     (stackArg s 2).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 3 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
+
+/-- What `vg_aes_gcm_open` needs (`openPreX` with nothing else readable). -/
+def openPre (s : State) : Prop := openPreX [] s
 
 /-- What `vg_aes_gcm_open` computes, for the arguments of `s`. -/
 def openRes (s : State) : Option (List Byte) :=

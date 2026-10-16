@@ -585,23 +585,23 @@ theorem OpenIn.tagIn {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s s'
     o.sv.frame f (saved_tag16 L), o.sp₀, rd.trans o.rd₀, wr.trans o.wr₀⟩
 
 /-- `openPre`'s common arguments. -/
-theorem openCore {s : State} (hs : openPre s) : oneCore 3 2 s := by
-  simp only [openPre] at hs
+theorem openCore {extra : List Region} {s : State} (hs : openPreX extra s) : oneCore 3 2 s := by
+  simp only [openPreX] at hs
   obtain ⟨hrd, hwr, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, -, dwa, wc, wn, wa, wd, ww, wsp, hR⟩ := hs
   exact ⟨by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hrd]; simp, by rw [hwr]; simp,
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 
 /-- What `openPre` gives. -/
-theorem openLay {s : State} (hs : openPre s) :
+theorem openLay {extra : List Region} {s : State} (hs : openPreX extra s) :
     OneLay s 3 2 ∧ Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] (s.rd ++ s.wr) ∧
       (⟨stackArg s 0, (stackArg s 1).toNat⟩ : Region).Disjoint (workR (stackArg s 2)) := by
   have hs' := hs
-  simp only [openPre] at hs'
+  simp only [openPreX] at hs'
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, dtw, -⟩ := hs'
   exact ⟨oneLay (openCore hs), covers_mem (by rw [hrd, hwr]; simp), dtw⟩
 
 /-- `open`'s first block: the entry, the tag length and the tag. -/
-theorem openEntry_ok {s : State} (hs : openAArch64.pre s) :
+theorem openEntry_ok {extra : List Region} {s : State} (hs : openPreX extra s) :
     WP isa (.block (oneEntry 16 ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr))) s fun s' =>
       OpenIn (s.gpr .x0) (stackArg s 2) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
         (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s' ∧
