@@ -111,26 +111,13 @@ pub const BASE_POINT: [u8; 32] = {
 
 /// `X25519(scalar, u)` (RFC 7748 §5), which may be all zero.
 pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
+    // THROWAWAY (never merge): s2n-bignum's _alt ladder from the aws-lc-sys
+    // the benchmarks link, to time it against our ladder (the base).
+    unsafe extern "C" {
+        fn aws_lc_0_45_0_curve25519_x25519_byte_alt(res: *mut u8, k: *const u8, p: *const u8);
+    }
     let mut out = [0u8; 32];
-    // Uninitialized: the function's contract holds whatever the scratch
-    // holds, so filling it with zeros first would only cost time.
-    let mut scratch = MaybeUninit::<[u64; 512]>::uninit();
-    let f = match Backend::select(detected()) {
-        Backend::Baseline => vg_x25519,
-        // `select` chose it because the CPU has the features it needs.
-        #[cfg(target_arch = "x86_64")]
-        Backend::Adx => vg_x25519_adx,
-        #[cfg(target_arch = "x86_64")]
-        Backend::Ifma => vg_x25519_ifma,
-    };
-    // SAFETY: `out` and `scratch` are valid for reads and writes of 32 and
-    // 4096 bytes, and `scalar` and `u` for reads of 32 bytes; they are
-    // distinct Rust objects, so they do not overlap each other or the stack,
-    // or wrap around the end of the address space; and the CPU has the
-    // features of the function `select` chose.
-    unsafe { f(&mut out, scalar, u, scratch.as_mut_ptr()) };
-    // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 512]>()) };
+    unsafe { aws_lc_0_45_0_curve25519_x25519_byte_alt(out.as_mut_ptr(), scalar.as_ptr(), u.as_ptr()) };
     out
 }
 
