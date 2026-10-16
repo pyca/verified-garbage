@@ -572,4 +572,57 @@ theorem correct {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {o
   show bytesAt t₅.mem (out s) D = _
   rw [hb, hout hok]
 
+
+/-- The one-shot digest writes no vector register if `init` and the
+compression function do not. -/
+theorem digest_keepsV {P : Params} {H : Md P.B P.N P.L} {o : List Instr} {D : Nat}
+    (hs : ShapeD (P := { P with out := o }) H D) {init : Prog isa} {name : String} {code : Prog isa}
+    (hi : init.allInstrs VG.AArch64.keepsV = true) (h : code.allInstrs VG.AArch64.keepsV = true) :
+    (digest P { P with out := o } init name code).allInstrs VG.AArch64.keepsV = true := by
+  have hw := List.all_eq_true.mp (storeWord_keepsV P)
+  have hw' := List.all_eq_true.mp (storeWord_keepsV { P with out := o })
+  rw [Code.allInstrs_eq] at h hi ⊢
+  have hc := List.all_eq_true.mp h
+  have hii := List.all_eq_true.mp hi
+  simp [digest, body, setup, updArgs, finArgs, finish, OneShot.restore, Impl.StackScratch.AArch64.wipe,
+    Impl.StackScratch.AArch64.wipeStores, updateMain, updateStart, updateBody, fill, copy, copyWordBody,
+    copyBody, direct, finalizeMain, finalizeStart, finalizeBody, zero, zeroWordBody, zeroBody,
+    compressAt, compressN, compressWith, save, saved, Impl.MdStream.AArch64.restore, instrs, lg, mov,
+    VG.AArch64.keepsV, vdstOf, h, hs.lenKeepsV, hs.outKeepsV]
+  refine ⟨fun x hx => ?_, fun x hx => ?_, fun x hx => ?_⟩
+  · simpa [VG.AArch64.keepsV, vdstOf] using hii x hx
+  · simpa [VG.AArch64.keepsV, vdstOf] using hw x hx
+  · simpa [VG.AArch64.keepsV, vdstOf] using hw' x hx
+
+/-- The one-shot digest is verified, given that it is constant time (which
+the taint analysis proves of each hash function's code). -/
+theorem verified {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {o : List Instr} {D : Nat}
+    (hs : ShapeD (P := { P with out := o }) H D) {iv : H.HV} {init : Prog isa} {name : String}
+    {code : Prog isa} (hf : CalleeOk H code)
+    (hi : ∀ s, (initK H iv).pre s → ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ (initK H iv).post s s')
+    (hiw : ∀ r, r ≠ .x9 → ∀ i ∈ instrs init, clobbers i r = false) (hin : init.noCalls = true)
+    (hiv : init.allInstrs VG.AArch64.keepsV = true)
+    (huu : ((instrs (updateMain P name code)).all fun i => untouched.all fun r => !clobbers i r) = true)
+    (huf : ((instrs (finalizeMain { P with out := o } name code)).all fun i =>
+      untouched.all fun r => !clobbers i r) = true)
+    (hct : ConstantTime isa (oneK H iv D).pre (oneK H iv D).pub (digest P { P with out := o } init name code))
+    (hsat : ∃ s, Pre P D s) :
+    Verified AArch64.target (digest P { P with out := o } init name code) (oneK H iv D) := by
+  have conv : ∀ {c : Prog isa}, ((instrs c).all fun i => untouched.all fun r => !clobbers i r) = true →
+      ∀ r ∈ untouched, ∀ i ∈ instrs c, clobbers i r = false := fun h r hr i hi => by
+    simpa using List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
+  refine ⟨fun s hp => ?_, hct, hsat⟩
+  obtain ⟨t, s', he, h⟩ := correct hF hd hs hf hi hiw hin (conv huu) (conv huf)
+    (digest_keepsV hs hiv hf.keepsV) hp
+  exact ⟨t, s', he, h⟩
+
+/-- The initial taint agrees on the public arguments. -/
+theorem agree₀ {P : Params} {H : Md P.B P.N P.L} {iv : H.HV} {D : Nat} {s₁ s₂ : State}
+    (hpub : (oneK H iv D).pub s₁ s₂) :
+    VG.AArch64.Taint.Agree (VG.AArch64.Taint.ofRegs [.x0, .x1, .x2]) s₁ s₂ := by
+  obtain ⟨p0, p1, p2, hsp⟩ := hpub
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl <;> assumption
+
 end VG.Proof.MdStream.AArch64.OneShot
