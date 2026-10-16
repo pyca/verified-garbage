@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
 import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12Avx2
@@ -54,8 +55,6 @@ structure CalleeOk (k : Contract isa) (c : Prog isa) : Prop where
 
 /-- The polynomial arithmetic `A` is correct, constant time, and safe to call. -/
 structure ArithOk (A : Arith) : Prop where
-  mul : CalleeOk mulK A.mul
-  ntt : CalleeOk (inPlaceK ntt) A.ntt
   nttInv : CalleeOk (inPlaceK nttInv) A.nttInv
   add : CalleeOk (accK Spec.MlKem.add) A.add
   sub : CalleeOk (accK Spec.MlKem.sub) A.sub
@@ -64,12 +63,9 @@ structure ArithOk (A : Arith) : Prop where
   enc12 : CalleeOk encode12K A.enc12
   dm : ∀ k, k = 3 ∨ k = 4 → CalleeOk (decMulK k) (decryptMul A.bodies k)
   em : ∀ k, k = 3 ∨ k = 4 → CalleeOk (encMulK k) (encryptMul A.bodies k)
+  km : ∀ k, k = 3 ∨ k = 4 → CalleeOk (kgMulK k) (keygenMul A.bodies k)
 
 theorem ArithOk.sse : ArithOk .sse where
-  mul := ⟨mul_correct, mul_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
-  ntt := ⟨ntt_correct, ntt_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
   nttInv := ⟨nttInv_correct, nttInv_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
     Code.all_of_allInstrs (by lit_decide)⟩
   add := ⟨add_correct, add_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
@@ -94,12 +90,14 @@ theorem ArithOk.sse : ArithOk .sse where
         Code.all_of_allInstrs (by lit_decide)⟩
     · exact ⟨encMulSse4_correct, encMulSse4_ct, nosp_of (by lit_decide), by lit_decide, encMulSse4_ctl,
         Code.all_of_allInstrs (by lit_decide)⟩
+  km k hk := by
+    rcases hk with rfl | rfl
+    · exact ⟨kgMulSse3_correct, kgMulSse3_ct, nosp_of (by lit_decide), by lit_decide, kgMulSse3_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
+    · exact ⟨kgMulSse4_correct, kgMulSse4_ct, nosp_of (by lit_decide), by lit_decide, kgMulSse4_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
 
 theorem ArithOk.avx2 : ArithOk .avx2 where
-  mul := ⟨mulY_correct, mulY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
-  ntt := ⟨nttY_correct, nttY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
   nttInv := ⟨nttInvY_correct, nttInvY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
     Code.all_of_allInstrs (by lit_decide)⟩
   add := ⟨addY_correct, addY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
@@ -124,6 +122,12 @@ theorem ArithOk.avx2 : ArithOk .avx2 where
         Code.all_of_allInstrs (by lit_decide)⟩
     · exact ⟨encMulAvx4_correct, encMulAvx4_ct, nosp_of (by lit_decide), by lit_decide, encMulAvx4_ctl,
         Code.all_of_allInstrs (by lit_decide)⟩
+  km k hk := by
+    rcases hk with rfl | rfl
+    · exact ⟨kgMulAvx3_correct, kgMulAvx3_ct, nosp_of (by lit_decide), by lit_decide, kgMulAvx3_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
+    · exact ⟨kgMulAvx4_correct, kgMulAvx4_ct, nosp_of (by lit_decide), by lit_decide, kgMulAvx4_ctl,
+        Code.all_of_allInstrs (by lit_decide)⟩
 
 /-- A call of `vg_mlkem*_decrypt_mul` keeps MXCSR's control bits. -/
 theorem ArithOk.dm_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
@@ -140,5 +144,13 @@ theorem ArithOk.em_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk :
 /-- A call of `vg_mlkem*_encrypt_mul` never writes the stack pointer. -/
 theorem ArithOk.em_sp {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
     (Code.call n (encryptMul A.bodies k) : Prog isa).all (fun i => !isa.writesSp i) = true := (hA.em k hk).sp
+
+/-- A call of `vg_mlkem*_keygen_mul` keeps MXCSR's control bits. -/
+theorem ArithOk.km_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
+    ctlOk (.call n (keygenMul A.bodies k)) = true := (hA.km k hk).ctl
+
+/-- A call of `vg_mlkem*_keygen_mul` never writes the stack pointer. -/
+theorem ArithOk.km_sp {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
+    (Code.call n (keygenMul A.bodies k) : Prog isa).all (fun i => !isa.writesSp i) = true := (hA.km k hk).sp
 
 end VG.Proof.MlKem.X86_64

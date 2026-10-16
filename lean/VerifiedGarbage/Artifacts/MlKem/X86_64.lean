@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
 import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 import Mathlib.Tactic.Conv
@@ -78,17 +79,30 @@ def artifacts : List Artifact := [
     verified := Proof.MlKem.X86_64.decMulAvx3_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.nttApi with
+  { Spec.MlKem.keygenMulApi with
     target := X86_64.target
-    doc := Spec.MlKem.nttApi.doc
-      (notes := ["The function computes on eight coefficients at a time in SSE2 registers. It sets MXCSR \
-        to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent \
-        timing) and loads the caller's MXCSR back before returning."])
-    code := Impl.MlKem.X86_64.ntt
-    contract := Spec.MlKem.nttContract X86_64.abi
-    verified := Proof.MlKem.X86_64.ntt_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩) },
+    doc := Spec.MlKem.keygenMulApi.doc
+      (notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts` and \
+        `vg_mlkem_add` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once around all its \
+        multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the \
+        caller's MXCSR back before returning."])
+    code := Impl.MlKem.X86_64.keygenMul .sse 3
+    contract := Spec.MlKem.keygenMulContract 3 X86_64.abi
+    verified := Proof.MlKem.X86_64.kgMulSse3_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.MlKem.keygenMulApi with
+    name := Spec.MlKem.keygenMulApi.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.keygenMulApi.doc
+      (notes := ["The function computes with the code of `vg_mlkem_ntt_avx2` and \
+        `vg_mlkem_multiply_ntts_avx2` inlined, on AVX2 registers, summing each row's products in 16-bit \
+        words. It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of \
+        MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning."])
+    code := Impl.MlKem.X86_64.keygenMul .avx2 3
+    contract := Spec.MlKem.keygenMulContract 3 X86_64.abi
+    verified := Proof.MlKem.X86_64.kgMulAvx3_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
   { Spec.MlKem.nttInvApi with
     target := X86_64.target
     doc := Spec.MlKem.nttInvApi.doc
@@ -100,19 +114,6 @@ def artifacts : List Artifact := [
     verified := Proof.MlKem.X86_64.nttInv_verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
     ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩) },
-  { Spec.MlKem.nttApi with
-    name := Spec.MlKem.nttApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.nttApi.doc
-      (notes := ["The function computes on sixteen coefficients at a time in AVX2 registers. It sets MXCSR \
-        to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent \
-        timing) and loads the caller's MXCSR back before returning."])
-    code := Impl.MlKem.X86_64.nttAvx2
-    contract := Spec.MlKem.nttContract X86_64.abi
-    verified := Proof.MlKem.X86_64.nttY_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
-    features := ["avx", "avx2"]
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttContract Spec.MlKem.inPlaceContract; rfl⟩) },
   { Spec.MlKem.addApi with
     target := X86_64.target
     doc := Spec.MlKem.addApi.doc
@@ -147,28 +148,6 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.subAvx2
     contract := Spec.MlKem.subContract X86_64.abi
     verified := Proof.MlKem.X86_64.subY_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
-    features := ["avx", "avx2"] },
-  { Spec.MlKem.mulApi with
-    target := X86_64.target
-    doc := Spec.MlKem.mulApi.doc
-      (notes := ["The function computes on eight pairs of coefficients at a time in SSE2 registers. It sets \
-        MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent \
-        timing) and loads the caller's MXCSR back before returning."])
-    code := Impl.MlKem.X86_64.multiplyNTTs
-    contract := Spec.MlKem.mulContract X86_64.abi
-    verified := Proof.MlKem.X86_64.mul_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.mulApi with
-    name := Spec.MlKem.mulApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.mulApi.doc
-      (notes := ["The function computes on sixteen pairs of coefficients at a time in AVX2 registers. It sets \
-        MXCSR to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent \
-        timing) and loads the caller's MXCSR back before returning."])
-    code := Impl.MlKem.X86_64.multiplyNTTsAvx2
-    contract := Spec.MlKem.mulContract X86_64.abi
-    verified := Proof.MlKem.X86_64.mulY_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   { Spec.MlKem.sampleNTTApi with

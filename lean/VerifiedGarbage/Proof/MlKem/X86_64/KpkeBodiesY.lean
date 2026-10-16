@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
+public import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -14,7 +15,7 @@ As `KpkeBodies.lean` and `KpkeAcc.lean`, for `Bodies.avx2`:
 `vg_mlkem_ntt_avx2`'s code storing through `r10` (`nttOBY`), without
 `withMxcsr`, meets the contract of the function (the proof is that of
 `NttAvx2.lean` without `withMxcsr_ok`), and the pieces around the
-accumulator in words (`AccY.lean`, `AccInvY.lean`) meet theirs.
+accumulator in words (`AccY.lean`, `AccInvY.lean`, `FinY.lean`) meet theirs.
 -/
 
 @[expose] public section
@@ -68,6 +69,7 @@ theorem nttOBY_correct (s : State) (hs : nttOK.pre s) :
 
 theorem BodiesOk.avx2 : BodiesOk .avx2 accY tabY :=
   ⟨nttOBY_correct, nttInvAccY_correct, zeroAccY_correct, fun _ _ _ hs => MulAccY.correct hs,
-    fun s hin => tabAccY_wp s hin, ⟨by decide +kernel, by decide +kernel, by decide +kernel, fun _ => (by decide +kernel : mulAccY.noCalls = true)⟩⟩
+    fun s hin => tabAccY_wp s hin, ⟨by decide +kernel, by decide +kernel, by decide +kernel, fun _ => (by decide +kernel : mulAccY.noCalls = true)⟩,
+    finAccY_correct, by decide +kernel, fun _ hs => MulSetY.correct hs, by decide +kernel⟩
 
 end VG.Proof.MlKem.X86_64

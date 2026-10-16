@@ -23,6 +23,17 @@ last step stores through, `r10`) and adds its product with `ŝ[j]` to the
 accumulator (`Bodies.mulAcc`); then `NTT⁻¹` of the accumulator, to `w`.
 The code it inlines uses the first 1024 bytes of `scratch` as their
 working space, and `scratch + 2048` and `scratch + 3328` for the products.
+
+`vg_mlkem*_keygen_mul(t = rdi, s = rsi, a = rdx, e = rcx, scratch = r8)`
+computes `ŝ = NTT(s)`, in place, and `t̂ = Â ∘ ŝ + NTT(e)` the same way, in
+one MXCSR region. It keeps `scratch` in `rbx`, `ŝ` in `r12`, the row of `Â`
+in `r13` and the count in `r14`. A first loop computes `NTT(s[j])` in place
+and `NTT(e[j])` to `t[j]` (`nttK`, with `t[j]` in `rbp` and `e[j]` in
+`r15`); then, for each row `i` (`rowK`, with `t[i]` in `r15`), it sums the
+products `Â[i, j] ×_T ŝ[j]` in the accumulator at `scratch + 1024` (in
+`rbp`), the first stored there (`Bodies.mulSet`) and the others added
+(`Bodies.mulAcc`), and adds the sum to `t[i]` (`Bodies.fin`).
+
 Every address and branch depends only on the pointers.
 -/
 
@@ -51,6 +62,11 @@ structure Bodies where
   with the working space at `rcx` (1024 bytes) and at `rcx + 2048` (1024
   bytes), what `tab` left at `rcx + 3328`, and `rbx` equal to `rcx`. -/
   mulAcc : Nat → Prog isa
+  /-- The polynomial at `rdi` plus the accumulator at `rsi`, to `rdi`. -/
+  fin : Prog isa
+  /-- The accumulator at `rdi` of `f = rsi ×_T g = rdx`, with what `mulAcc`
+  has. -/
+  mulSet : Prog isa
 
 /-- `vg_mlkem_ntt`'s code, storing to `r10`. -/
 def nttOB : Prog isa :=
@@ -82,9 +98,9 @@ def mulAccB (o : Nat) : Prog isa :=
 /-- `vg_mlkem_ntt_avx2`'s code, storing to `r10`. -/
 def nttOBY : Prog isa := .seq (ypro zmTab) (.seq nttLazy (.seq (.block [.mov .rdi (.reg .r10)]) yepi))
 
-def Bodies.sse : Bodies := ⟨nttOB, nttInvB, zeroB, [], mulAccB⟩
+def Bodies.sse : Bodies := ⟨nttOB, nttInvB, zeroB, [], mulAccB, X86_64.add, mulB⟩
 
-def Bodies.avx2 : Bodies := ⟨nttOBY, nttInvAccY, zeroAccY, tabAccY, fun _ => mulAccY⟩
+def Bodies.avx2 : Bodies := ⟨nttOBY, nttInvAccY, zeroAccY, tabAccY, fun _ => mulAccY, finAccY, mulSetY⟩
 
 namespace KpkeMul
 
@@ -153,7 +169,57 @@ def zeroE (B : Bodies) : Nat → Nat → Prog isa
 def startE (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block ([.mov .rcx (.reg .rbx)] ++ B.tab)) (zeroE B 0 (k + 1))
 
+/-! ### `vg_mlkem*_keygen_mul` -/
+
+/-- `NTT(s[j])` in place (at `r12`) and `NTT(e[j])` (at `r15`) to `t[j]` (at
+`rbp`); then the next `j`. -/
+def nttK (B : Bodies) : Prog isa :=
+  .seq (.block [.mov .rdi (.reg .r12), .mov .rsi (.reg .rbx), .mov .r10 (.reg .r12)])
+    (.seq B.nttO (.seq (.block [.mov .rdi (.reg .r15), .mov .rsi (.reg .rbx), .mov .r10 (.reg .rbp)])
+      (.seq B.nttO (.block [.alu .add .r12 (.imm 1024), .alu .add .r15 (.imm 1024), .alu .add .rbp (.imm 1024),
+        .alu .sub .r14 (.imm 1)]))))
+
+/-- Term `j` of row `i`: `Â[i, j] ×_T ŝ[j]`, with row `i` of `Â` at `r13` and
+`ŝ` at `r12`, added to the accumulator at `rbp`. -/
+def prodK (B : Bodies) (j : Nat) : Prog isa :=
+  .seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .r13), .alu .add .rsi (.imm (BitVec.ofNat 32 (1024 * j))),
+      .mov .rdx (.reg .r12), .alu .add .rdx (.imm (BitVec.ofNat 32 (1024 * j))), .mov .rcx (.reg .rbx)])
+    (B.mulAcc 0)
+
+/-- Term `0` of row `i`, stored to the accumulator. -/
+def prodSetK (B : Bodies) : Prog isa :=
+  .seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .r13), .mov .rdx (.reg .r12), .mov .rcx (.reg .rbx)]) B.mulSet
+
+/-- The terms `j, …, j + n - 1` of a row. -/
+def innerK (B : Bodies) : Nat → Nat → Prog isa
+  | _, 0 => .block []
+  | j, n + 1 => .seq (prodK B j) (innerK B (j + 1) n)
+
+/-- Row `i`: the first term stored to the accumulator, the other `k - 1`
+added, and the sum added to `t[i] = NTT(e[i])` (at `r15`); then the next
+`i`. -/
+def rowK (B : Bodies) (k : Nat) : Prog isa :=
+  .seq (prodSetK B) (.seq (innerK B 1 (k - 1))
+    (.seq (.seq (.block [.mov .rdi (.reg .r15), .mov .rsi (.reg .rbp)]) B.fin)
+      (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 (1024 * k))), .alu .add .r15 (.imm 1024),
+        .alu .sub .r14 (.imm 1)])))
+
+/-- Between the loops: `ŝ` at `r12` and `t` at `r15` again, the accumulator
+at `rbp = scratch + 1024`, and the table of the products. -/
+def midK (B : Bodies) (k : Nat) : List Instr :=
+  [.alu .sub .r12 (.imm (BitVec.ofNat 32 (1024 * k))), .mov .r15 (.reg .rbp),
+    .alu .sub .r15 (.imm (BitVec.ofNat 32 (1024 * k))), .mov .rbp (.reg .rbx), .alu .add .rbp (.imm 1024),
+    .mov .rcx (.reg .rbx)] ++ B.tab ++ [.mov32 .r14 (.imm (BitVec.ofNat 32 k))]
+
 end KpkeMul
+
+open KpkeMul in
+/-- `vg_mlkem*_keygen_mul` of rank `k`, with the code of `B`. -/
+def keygenMul (B : Bodies) (k : Nat) : Prog isa :=
+  .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
+      .mov .r15 (.reg .rcx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
+    (.seq (withMxcsr .rbx oMx (.seq (.loop (nttK B) .ne) (.seq (.block (midK B k)) (.loop (rowK B k) .ne))))
+    (.block restore))
 
 open KpkeMul in
 /-- `vg_mlkem*_decrypt_mul` of rank `k`, with the code of `B`. -/
