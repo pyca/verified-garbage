@@ -184,6 +184,16 @@ instructions in an ISA model) go in their own PR before either.
    interface append the suffix alone. Never list the
    implementations in the caller: a new implementation is a new variant
    file, and its callers follow.
+   Registration files (`Artifacts/`, `Generic/`) and variant files
+   (`Variants/`) are reviewed by hand, so they only bind: no theorems, no
+   tactic proofs beyond the defaults, and no definitions but the artifacts,
+   the variant and notes. Build a variant with its proofs under `Proof/`
+   (`Proof/Variants/<Iface>/<Target>/<Name>.lean`, as the variant file's
+   path) and bind it in the variant file
+   (`def variant : … := Proof.Variants.<Iface>.<Target>.<Name>.variant`);
+   put what a generic caller's artifacts are built from (instances of the
+   functions it calls, lemmas about its code) in a module of the
+   algorithm's proofs, as `Proof/AesGcm/X86_64/Instances.lean` does.
    A function whose proof takes a Weierstrass curve's group law (`Law`,
    `Proof/Weierstrass/Law.lean`) is registered generic over it the same
    way: the law is the one variant of the interface `<Curve>` on each target

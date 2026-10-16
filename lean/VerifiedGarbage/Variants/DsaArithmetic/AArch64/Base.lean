@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.AArch64.Backend
-public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
-public import VerifiedGarbage.Proof.Dsa.AArch64.SigningVerified
-public import VerifiedGarbage.Proof.Dsa.AArch64.VerifyingVerified
+public import VerifiedGarbage.Proof.Variants.DsaArithmetic.AArch64.Base
 
 /-! # DSA with the shared AArch64 Montgomery arithmetic backend
 
@@ -16,17 +13,9 @@ scheduled squaring kernel. -/
 @[expose] public section
 
 namespace VG.Variants.DsaArithmetic.AArch64.Base
+
 open VG VG.AArch64 VG.Proof.Dsa.AArch64 VG.Proof.Bignum.AArch64
 
-def variant : Backend where
-  mul := Mont.productEight.mm
-  suffix := ""
-  features := []
-  signVerified := signing_verified Mont.productEight
-  verifyVerified := verifying_verified Mont.productEight
-  signSp := by decide +kernel
-  signDepth := by decide +kernel
-  stackBound := by decide
-  verifySp := by decide +kernel
+def variant : Backend := Proof.Variants.DsaArithmetic.AArch64.Base.variant
 
 end VG.Variants.DsaArithmetic.AArch64.Base

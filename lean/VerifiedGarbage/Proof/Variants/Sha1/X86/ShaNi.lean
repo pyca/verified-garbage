@@ -20,7 +20,7 @@ The variant `VG.Variants.Sha1.X86.ShaNi.variant`
 
 @[expose] public section
 
-namespace VG.Proof.Sha1.X86.Variants.ShaNi
+namespace VG.Proof.Variants.Sha1.X86.ShaNi
 
 open VG VG.X86
 open VG.Proof.Sha1.X86.Stream (params dims)
@@ -145,4 +145,4 @@ def variant : Proof.Sha1.X86.Variants.Backend := by
     iterStack := ?_ }
   taint_decide_all
 
-end VG.Proof.Sha1.X86.Variants.ShaNi
+end VG.Proof.Variants.Sha1.X86.ShaNi

@@ -18,7 +18,7 @@ The variant `VG.Variants.Sha256.X86.ShaNi.variant`
 
 @[expose] public section
 
-namespace VG.Proof.Sha256.X86.Variants.ShaNi
+namespace VG.Proof.Variants.Sha256.X86.ShaNi
 
 open VG VG.X86
 open VG.Proof.Sha256.X86.Stream (params dims)
@@ -187,4 +187,4 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
     iter224Stack := ?_ }
   taint_decide_all
 
-end VG.Proof.Sha256.X86.Variants.ShaNi
+end VG.Proof.Variants.Sha256.X86.ShaNi

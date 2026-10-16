@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.X86_64.Variants.Blake2sAvx
+public import VerifiedGarbage.Proof.Variants.Blake2s.X86_64.Avx
 
 /-!
 # BLAKE2s on x86-64 with AVX
@@ -15,6 +15,6 @@ need it too.
 
 namespace VG.Variants.Blake2s.X86_64.Avx
 
-def variant : Proof.Blake2.X86_64.BackendS := Proof.Blake2.X86_64.Variants.Blake2sAvx.variant
+def variant : Proof.Blake2.X86_64.BackendS := Proof.Variants.Blake2s.X86_64.Avx.variant
 
 end VG.Variants.Blake2s.X86_64.Avx

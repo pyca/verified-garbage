@@ -1,10 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
-public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
-public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
-import Mathlib.Tactic.Finiteness.Attr
+public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64.Base
 
 /-!
 # `vg_rsa_private_crt` on AArch64: the baseline
@@ -20,20 +16,6 @@ namespace VG.Variants.RsaPrivateCrt.AArch64.Base
 
 open VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 
-def variant : Proof.Rsa.AArch64.CrtImpl where
-  name := Spec.Rsa.privateCrtApi.name
-  code := WindowFive.code
-  verified := WindowFive.base_verified
-  noFrames := by decide +kernel
-  pcName := Spec.Rsa.publicPrecomputeApi.name
-  pc := Impl.Rsa.AArch64.Precompute.code Mont.base.mm
-  pcVerified := precompute_verified Mont.base
-  pcNoFrames := by decide +kernel
-  pdName := Spec.Rsa.publicPrecomputedCheckedApi.name
-  pd := Impl.Rsa.AArch64.Folded.checked Mont.productEight.mm
-  pdVerified := Proof.Rsa.AArch64.FoldedPublic.checked_verified Mont.productEight
-  pdNoFrames := by decide +kernel
-  suffix := ""
-  features := []
+def variant : Proof.Rsa.AArch64.CrtImpl := Proof.Variants.RsaPrivateCrt.AArch64.Base.variant
 
 end VG.Variants.RsaPrivateCrt.AArch64.Base
