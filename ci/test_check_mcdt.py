@@ -32,6 +32,25 @@ class InstructionLocations(unittest.TestCase):
              [14, 18, 20], {"2": [0, 2], "3": [1, 1]}),
         )
 
+    def test_multiline_literals(self):
+        # The emitter writes each run of lines as one literal.
+        body = '\n'.join([
+            '    naked_asm!(',
+            '        "2:',
+            'mov eax, 8127',
+            '3:",',
+            '        "pmuludq xmm0, xmm1",',
+            '        "call {vg_f}',
+            'ret",',
+            '        vg_f = sym super::f::vg_f,',
+            '    );',
+        ])
+        self.assertEqual(
+            check_mcdt.code(body, 10),
+            (["mov eax, 8127", "pmuludq xmm0, xmm1", "call {vg_f}", "ret"],
+             [12, 14, 15, 16], {"2": [0], "3": [1]}),
+        )
+
     def test_diagnostics_across_functions_and_files(self):
         # Include documentation, blank lines, and labels before instructions;
         # main() must reset its file offset and code() must include labels.
@@ -40,8 +59,8 @@ class InstructionLocations(unittest.TestCase):
             '',
             'pub(crate) unsafe extern "sysv64" fn vg_first() {',
             '    naked_asm!(',
-            '        "2:",',
-            '        "pmuludq xmm0, xmm1",',
+            '        "2:',
+            'pmuludq xmm0, xmm1",',
             '    );',
             '}',
             '',

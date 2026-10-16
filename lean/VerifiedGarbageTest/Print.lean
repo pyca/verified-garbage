@@ -437,6 +437,16 @@ def callSample : Prog X86_64.isa :=
 #guard Rust.line printer.call (.text "mov rax, QWORD PTR [rdi]") ==
   "        \"mov rax, QWORD PTR [rdi]\",\n"
 
+-- A run of lines that are text alone is one string literal, its lines
+-- separated by newlines (as `naked_asm!` joins its arguments); the page of a
+-- static's address, which a macro writes, is an argument of its own.
+#guard Rust.template "bl" [.text "mov x0, x1", .call "vg_f", .sym "adrp x16, " .page "VG_T",
+    .text "ret", .text ".p2align 6"] ==
+  "        \"mov x0, x1\nbl {vg_f}\",\n" ++
+  "        concat!(\"adrp x16, \", vg_sym_page!(\"{VG_T}\")),\n" ++
+  "        \"ret\n.p2align 6\",\n"
+#guard Rust.template "bl" [] == ""
+
 /-! ## Frames
 
 A frame is its push, its body and its pop, each printed as the target's

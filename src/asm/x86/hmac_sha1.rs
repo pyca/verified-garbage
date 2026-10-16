@@ -19,147 +19,147 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-472]",
-        "mov eax, DWORD PTR [esp+476]",
-        "mov DWORD PTR [esp+4], eax",
-        "mov eax, DWORD PTR [esp+480]",
-        "mov DWORD PTR [esp+8], eax",
-        "mov eax, DWORD PTR [esp+484]",
-        "mov DWORD PTR [esp+12], eax",
-        "mov eax, DWORD PTR [esp+488]",
-        "mov DWORD PTR [esp+16], eax",
-        "mov eax, esp",
-        "add eax, 24",
-        "mov DWORD PTR [esp+20], eax",
-        "mov eax, DWORD PTR [esp+20]",
-        "mov DWORD PTR [eax+160], ebx",
-        "mov DWORD PTR [eax+164], esi",
-        "mov DWORD PTR [eax+168], edi",
-        "mov DWORD PTR [eax+172], ebp",
-        "mov ebp, eax",
-        "mov ebx, DWORD PTR [esp+4]",
-        "mov esi, DWORD PTR [esp+8]",
-        "push ebx",
-        "call {vg_sha1_init}",
-        "pop eax",
-        "push esi",
-        "call {vg_sha1_init}",
-        "pop eax",
-        "mov ecx, 909522486",
-        "mov DWORD PTR [ebx+20], ecx",
-        "mov DWORD PTR [ebx+24], ecx",
-        "mov DWORD PTR [ebx+28], ecx",
-        "mov DWORD PTR [ebx+32], ecx",
-        "mov DWORD PTR [ebx+36], ecx",
-        "mov DWORD PTR [ebx+40], ecx",
-        "mov DWORD PTR [ebx+44], ecx",
-        "mov DWORD PTR [ebx+48], ecx",
-        "mov DWORD PTR [ebx+52], ecx",
-        "mov DWORD PTR [ebx+56], ecx",
-        "mov DWORD PTR [ebx+60], ecx",
-        "mov DWORD PTR [ebx+64], ecx",
-        "mov DWORD PTR [ebx+68], ecx",
-        "mov DWORD PTR [ebx+72], ecx",
-        "mov DWORD PTR [ebx+76], ecx",
-        "mov DWORD PTR [ebx+80], ecx",
-        "mov edi, DWORD PTR [esp+12]",
-        "mov ecx, DWORD PTR [esp+16]",
-        "mov edx, ebx",
-        "add edx, 20",
-        "test ecx, ecx",
-        "je 20f",
-        "22:",
-        "movzx eax, BYTE PTR [edi]",
-        "xor eax, 54",
-        "mov BYTE PTR [edx], al",
-        "add edi, 1",
-        "add edx, 1",
-        "sub ecx, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [ebx+20]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+20], eax",
-        "mov eax, DWORD PTR [ebx+24]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+24], eax",
-        "mov eax, DWORD PTR [ebx+28]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+28], eax",
-        "mov eax, DWORD PTR [ebx+32]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+32], eax",
-        "mov eax, DWORD PTR [ebx+36]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+36], eax",
-        "mov eax, DWORD PTR [ebx+40]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+40], eax",
-        "mov eax, DWORD PTR [ebx+44]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+44], eax",
-        "mov eax, DWORD PTR [ebx+48]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+48], eax",
-        "mov eax, DWORD PTR [ebx+52]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+52], eax",
-        "mov eax, DWORD PTR [ebx+56]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+56], eax",
-        "mov eax, DWORD PTR [ebx+60]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+60], eax",
-        "mov eax, DWORD PTR [ebx+64]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+64], eax",
-        "mov eax, DWORD PTR [ebx+68]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+68], eax",
-        "mov eax, DWORD PTR [ebx+72]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+72], eax",
-        "mov eax, DWORD PTR [ebx+76]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+76], eax",
-        "mov eax, DWORD PTR [ebx+80]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+80], eax",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ebx, esi",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov eax, ebp",
-        "mov ebx, DWORD PTR [eax+160]",
-        "mov esi, DWORD PTR [eax+164]",
-        "mov edi, DWORD PTR [eax+168]",
-        "mov ebp, DWORD PTR [eax+172]",
-        "lea esp, [esp+472]",
-        "ret",
-        ".p2align 6",
+        "lea esp, [esp-472]
+mov eax, DWORD PTR [esp+476]
+mov DWORD PTR [esp+4], eax
+mov eax, DWORD PTR [esp+480]
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esp+484]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esp+488]
+mov DWORD PTR [esp+16], eax
+mov eax, esp
+add eax, 24
+mov DWORD PTR [esp+20], eax
+mov eax, DWORD PTR [esp+20]
+mov DWORD PTR [eax+160], ebx
+mov DWORD PTR [eax+164], esi
+mov DWORD PTR [eax+168], edi
+mov DWORD PTR [eax+172], ebp
+mov ebp, eax
+mov ebx, DWORD PTR [esp+4]
+mov esi, DWORD PTR [esp+8]
+push ebx
+call {vg_sha1_init}
+pop eax
+push esi
+call {vg_sha1_init}
+pop eax
+mov ecx, 909522486
+mov DWORD PTR [ebx+20], ecx
+mov DWORD PTR [ebx+24], ecx
+mov DWORD PTR [ebx+28], ecx
+mov DWORD PTR [ebx+32], ecx
+mov DWORD PTR [ebx+36], ecx
+mov DWORD PTR [ebx+40], ecx
+mov DWORD PTR [ebx+44], ecx
+mov DWORD PTR [ebx+48], ecx
+mov DWORD PTR [ebx+52], ecx
+mov DWORD PTR [ebx+56], ecx
+mov DWORD PTR [ebx+60], ecx
+mov DWORD PTR [ebx+64], ecx
+mov DWORD PTR [ebx+68], ecx
+mov DWORD PTR [ebx+72], ecx
+mov DWORD PTR [ebx+76], ecx
+mov DWORD PTR [ebx+80], ecx
+mov edi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, ebx
+add edx, 20
+test ecx, ecx
+je 20f
+22:
+movzx eax, BYTE PTR [edi]
+xor eax, 54
+mov BYTE PTR [edx], al
+add edi, 1
+add edx, 1
+sub ecx, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [ebx+20]
+xor eax, 1785358954
+mov DWORD PTR [esi+20], eax
+mov eax, DWORD PTR [ebx+24]
+xor eax, 1785358954
+mov DWORD PTR [esi+24], eax
+mov eax, DWORD PTR [ebx+28]
+xor eax, 1785358954
+mov DWORD PTR [esi+28], eax
+mov eax, DWORD PTR [ebx+32]
+xor eax, 1785358954
+mov DWORD PTR [esi+32], eax
+mov eax, DWORD PTR [ebx+36]
+xor eax, 1785358954
+mov DWORD PTR [esi+36], eax
+mov eax, DWORD PTR [ebx+40]
+xor eax, 1785358954
+mov DWORD PTR [esi+40], eax
+mov eax, DWORD PTR [ebx+44]
+xor eax, 1785358954
+mov DWORD PTR [esi+44], eax
+mov eax, DWORD PTR [ebx+48]
+xor eax, 1785358954
+mov DWORD PTR [esi+48], eax
+mov eax, DWORD PTR [ebx+52]
+xor eax, 1785358954
+mov DWORD PTR [esi+52], eax
+mov eax, DWORD PTR [ebx+56]
+xor eax, 1785358954
+mov DWORD PTR [esi+56], eax
+mov eax, DWORD PTR [ebx+60]
+xor eax, 1785358954
+mov DWORD PTR [esi+60], eax
+mov eax, DWORD PTR [ebx+64]
+xor eax, 1785358954
+mov DWORD PTR [esi+64], eax
+mov eax, DWORD PTR [ebx+68]
+xor eax, 1785358954
+mov DWORD PTR [esi+68], eax
+mov eax, DWORD PTR [ebx+72]
+xor eax, 1785358954
+mov DWORD PTR [esi+72], eax
+mov eax, DWORD PTR [ebx+76]
+xor eax, 1785358954
+mov DWORD PTR [esi+76], eax
+mov eax, DWORD PTR [ebx+80]
+xor eax, 1785358954
+mov DWORD PTR [esi+80], eax
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress}
+pop eax
+pop eax
+pop eax
+pop eax
+mov ebx, esi
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress}
+pop eax
+pop eax
+pop eax
+pop eax
+mov eax, ebp
+mov ebx, DWORD PTR [eax+160]
+mov esi, DWORD PTR [eax+164]
+mov edi, DWORD PTR [eax+168]
+mov ebp, DWORD PTR [eax+172]
+lea esp, [esp+472]
+ret
+.p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
@@ -182,122 +182,122 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-476]",
-        "mov eax, DWORD PTR [esp+480]",
-        "mov DWORD PTR [esp+4], eax",
-        "mov eax, DWORD PTR [esp+484]",
-        "mov DWORD PTR [esp+8], eax",
-        "mov eax, DWORD PTR [esp+488]",
-        "mov DWORD PTR [esp+12], eax",
-        "mov eax, DWORD PTR [esp+492]",
-        "mov DWORD PTR [esp+16], eax",
-        "mov eax, DWORD PTR [esp+496]",
-        "mov DWORD PTR [esp+20], eax",
-        "mov eax, esp",
-        "add eax, 28",
-        "mov DWORD PTR [esp+24], eax",
-        "mov eax, DWORD PTR [esp+24]",
-        "mov DWORD PTR [eax+160], ebx",
-        "mov DWORD PTR [eax+164], esi",
-        "mov DWORD PTR [eax+168], edi",
-        "mov DWORD PTR [eax+172], ebp",
-        "mov ebp, eax",
-        "mov ebx, DWORD PTR [esp+4]",
-        "mov esi, DWORD PTR [esp+8]",
-        "mov edi, DWORD PTR [esp+20]",
-        "mov eax, DWORD PTR [esp+12]",
-        "mov ecx, DWORD PTR [esp+16]",
-        "mov edx, ebp",
-        "add edx, 176",
-        "push ebp",
-        "push edx",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_finalize_scratch}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ecx, DWORD PTR [esi]",
-        "mov DWORD PTR [ebx], ecx",
-        "mov ecx, DWORD PTR [esi+4]",
-        "mov DWORD PTR [ebx+4], ecx",
-        "mov ecx, DWORD PTR [esi+8]",
-        "mov DWORD PTR [ebx+8], ecx",
-        "mov ecx, DWORD PTR [esi+12]",
-        "mov DWORD PTR [ebx+12], ecx",
-        "mov ecx, DWORD PTR [esi+16]",
-        "mov DWORD PTR [ebx+16], ecx",
-        "mov ecx, DWORD PTR [ebp+176]",
-        "mov DWORD PTR [ebx+20], ecx",
-        "mov ecx, DWORD PTR [ebp+180]",
-        "mov DWORD PTR [ebx+24], ecx",
-        "mov ecx, DWORD PTR [ebp+184]",
-        "mov DWORD PTR [ebx+28], ecx",
-        "mov ecx, DWORD PTR [ebp+188]",
-        "mov DWORD PTR [ebx+32], ecx",
-        "mov ecx, DWORD PTR [ebp+192]",
-        "mov DWORD PTR [ebx+36], ecx",
-        "mov ecx, 128",
-        "mov DWORD PTR [ebx+40], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+44], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+48], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+52], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+56], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+60], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+64], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+68], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+72], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+76], ecx",
-        "mov ecx, -1610481664",
-        "mov DWORD PTR [ebx+80], ecx",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov eax, edi",
-        "mov ecx, DWORD PTR [ebx]",
-        "bswap ecx",
-        "mov DWORD PTR [eax], ecx",
-        "mov ecx, DWORD PTR [ebx+4]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+4], ecx",
-        "mov ecx, DWORD PTR [ebx+8]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+8], ecx",
-        "mov ecx, DWORD PTR [ebx+12]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+12], ecx",
-        "mov ecx, DWORD PTR [ebx+16]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+16], ecx",
-        "mov eax, ebp",
-        "mov ebx, DWORD PTR [eax+160]",
-        "mov esi, DWORD PTR [eax+164]",
-        "mov edi, DWORD PTR [eax+168]",
-        "mov ebp, DWORD PTR [eax+172]",
-        "lea esp, [esp+476]",
-        "ret",
-        ".p2align 6",
+        "lea esp, [esp-476]
+mov eax, DWORD PTR [esp+480]
+mov DWORD PTR [esp+4], eax
+mov eax, DWORD PTR [esp+484]
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esp+488]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esp+492]
+mov DWORD PTR [esp+16], eax
+mov eax, DWORD PTR [esp+496]
+mov DWORD PTR [esp+20], eax
+mov eax, esp
+add eax, 28
+mov DWORD PTR [esp+24], eax
+mov eax, DWORD PTR [esp+24]
+mov DWORD PTR [eax+160], ebx
+mov DWORD PTR [eax+164], esi
+mov DWORD PTR [eax+168], edi
+mov DWORD PTR [eax+172], ebp
+mov ebp, eax
+mov ebx, DWORD PTR [esp+4]
+mov esi, DWORD PTR [esp+8]
+mov edi, DWORD PTR [esp+20]
+mov eax, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, ebp
+add edx, 176
+push ebp
+push edx
+push ecx
+push eax
+push ebx
+call {vg_sha1_finalize_scratch}
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+mov ecx, DWORD PTR [esi]
+mov DWORD PTR [ebx], ecx
+mov ecx, DWORD PTR [esi+4]
+mov DWORD PTR [ebx+4], ecx
+mov ecx, DWORD PTR [esi+8]
+mov DWORD PTR [ebx+8], ecx
+mov ecx, DWORD PTR [esi+12]
+mov DWORD PTR [ebx+12], ecx
+mov ecx, DWORD PTR [esi+16]
+mov DWORD PTR [ebx+16], ecx
+mov ecx, DWORD PTR [ebp+176]
+mov DWORD PTR [ebx+20], ecx
+mov ecx, DWORD PTR [ebp+180]
+mov DWORD PTR [ebx+24], ecx
+mov ecx, DWORD PTR [ebp+184]
+mov DWORD PTR [ebx+28], ecx
+mov ecx, DWORD PTR [ebp+188]
+mov DWORD PTR [ebx+32], ecx
+mov ecx, DWORD PTR [ebp+192]
+mov DWORD PTR [ebx+36], ecx
+mov ecx, 128
+mov DWORD PTR [ebx+40], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+44], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+48], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+52], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+56], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+60], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+64], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+68], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+72], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+76], ecx
+mov ecx, -1610481664
+mov DWORD PTR [ebx+80], ecx
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress}
+pop eax
+pop eax
+pop eax
+pop eax
+mov eax, edi
+mov ecx, DWORD PTR [ebx]
+bswap ecx
+mov DWORD PTR [eax], ecx
+mov ecx, DWORD PTR [ebx+4]
+bswap ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, DWORD PTR [ebx+8]
+bswap ecx
+mov DWORD PTR [eax+8], ecx
+mov ecx, DWORD PTR [ebx+12]
+bswap ecx
+mov DWORD PTR [eax+12], ecx
+mov ecx, DWORD PTR [ebx+16]
+bswap ecx
+mov DWORD PTR [eax+16], ecx
+mov eax, ebp
+mov ebx, DWORD PTR [eax+160]
+mov esi, DWORD PTR [eax+164]
+mov edi, DWORD PTR [eax+168]
+mov ebp, DWORD PTR [eax+172]
+lea esp, [esp+476]
+ret
+.p2align 6",
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
@@ -322,134 +322,134 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], oute
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_scratch(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]",
-        "mov DWORD PTR [eax+160], ebx",
-        "mov DWORD PTR [eax+164], esi",
-        "mov DWORD PTR [eax+168], edi",
-        "mov DWORD PTR [eax+172], ebp",
-        "mov ebp, eax",
-        "mov ebx, DWORD PTR [esp+4]",
-        "mov esi, DWORD PTR [esp+8]",
-        "push ebx",
-        "call {vg_sha1_init}",
-        "pop eax",
-        "push esi",
-        "call {vg_sha1_init}",
-        "pop eax",
-        "mov ecx, 909522486",
-        "mov DWORD PTR [ebx+20], ecx",
-        "mov DWORD PTR [ebx+24], ecx",
-        "mov DWORD PTR [ebx+28], ecx",
-        "mov DWORD PTR [ebx+32], ecx",
-        "mov DWORD PTR [ebx+36], ecx",
-        "mov DWORD PTR [ebx+40], ecx",
-        "mov DWORD PTR [ebx+44], ecx",
-        "mov DWORD PTR [ebx+48], ecx",
-        "mov DWORD PTR [ebx+52], ecx",
-        "mov DWORD PTR [ebx+56], ecx",
-        "mov DWORD PTR [ebx+60], ecx",
-        "mov DWORD PTR [ebx+64], ecx",
-        "mov DWORD PTR [ebx+68], ecx",
-        "mov DWORD PTR [ebx+72], ecx",
-        "mov DWORD PTR [ebx+76], ecx",
-        "mov DWORD PTR [ebx+80], ecx",
-        "mov edi, DWORD PTR [esp+12]",
-        "mov ecx, DWORD PTR [esp+16]",
-        "mov edx, ebx",
-        "add edx, 20",
-        "test ecx, ecx",
-        "je 20f",
-        "22:",
-        "movzx eax, BYTE PTR [edi]",
-        "xor eax, 54",
-        "mov BYTE PTR [edx], al",
-        "add edi, 1",
-        "add edx, 1",
-        "sub ecx, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [ebx+20]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+20], eax",
-        "mov eax, DWORD PTR [ebx+24]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+24], eax",
-        "mov eax, DWORD PTR [ebx+28]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+28], eax",
-        "mov eax, DWORD PTR [ebx+32]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+32], eax",
-        "mov eax, DWORD PTR [ebx+36]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+36], eax",
-        "mov eax, DWORD PTR [ebx+40]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+40], eax",
-        "mov eax, DWORD PTR [ebx+44]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+44], eax",
-        "mov eax, DWORD PTR [ebx+48]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+48], eax",
-        "mov eax, DWORD PTR [ebx+52]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+52], eax",
-        "mov eax, DWORD PTR [ebx+56]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+56], eax",
-        "mov eax, DWORD PTR [ebx+60]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+60], eax",
-        "mov eax, DWORD PTR [ebx+64]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+64], eax",
-        "mov eax, DWORD PTR [ebx+68]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+68], eax",
-        "mov eax, DWORD PTR [ebx+72]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+72], eax",
-        "mov eax, DWORD PTR [ebx+76]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+76], eax",
-        "mov eax, DWORD PTR [ebx+80]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+80], eax",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ebx, esi",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov eax, ebp",
-        "mov ebx, DWORD PTR [eax+160]",
-        "mov esi, DWORD PTR [eax+164]",
-        "mov edi, DWORD PTR [eax+168]",
-        "mov ebp, DWORD PTR [eax+172]",
-        "ret",
-        ".p2align 6",
+        "mov eax, DWORD PTR [esp+20]
+mov DWORD PTR [eax+160], ebx
+mov DWORD PTR [eax+164], esi
+mov DWORD PTR [eax+168], edi
+mov DWORD PTR [eax+172], ebp
+mov ebp, eax
+mov ebx, DWORD PTR [esp+4]
+mov esi, DWORD PTR [esp+8]
+push ebx
+call {vg_sha1_init}
+pop eax
+push esi
+call {vg_sha1_init}
+pop eax
+mov ecx, 909522486
+mov DWORD PTR [ebx+20], ecx
+mov DWORD PTR [ebx+24], ecx
+mov DWORD PTR [ebx+28], ecx
+mov DWORD PTR [ebx+32], ecx
+mov DWORD PTR [ebx+36], ecx
+mov DWORD PTR [ebx+40], ecx
+mov DWORD PTR [ebx+44], ecx
+mov DWORD PTR [ebx+48], ecx
+mov DWORD PTR [ebx+52], ecx
+mov DWORD PTR [ebx+56], ecx
+mov DWORD PTR [ebx+60], ecx
+mov DWORD PTR [ebx+64], ecx
+mov DWORD PTR [ebx+68], ecx
+mov DWORD PTR [ebx+72], ecx
+mov DWORD PTR [ebx+76], ecx
+mov DWORD PTR [ebx+80], ecx
+mov edi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, ebx
+add edx, 20
+test ecx, ecx
+je 20f
+22:
+movzx eax, BYTE PTR [edi]
+xor eax, 54
+mov BYTE PTR [edx], al
+add edi, 1
+add edx, 1
+sub ecx, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [ebx+20]
+xor eax, 1785358954
+mov DWORD PTR [esi+20], eax
+mov eax, DWORD PTR [ebx+24]
+xor eax, 1785358954
+mov DWORD PTR [esi+24], eax
+mov eax, DWORD PTR [ebx+28]
+xor eax, 1785358954
+mov DWORD PTR [esi+28], eax
+mov eax, DWORD PTR [ebx+32]
+xor eax, 1785358954
+mov DWORD PTR [esi+32], eax
+mov eax, DWORD PTR [ebx+36]
+xor eax, 1785358954
+mov DWORD PTR [esi+36], eax
+mov eax, DWORD PTR [ebx+40]
+xor eax, 1785358954
+mov DWORD PTR [esi+40], eax
+mov eax, DWORD PTR [ebx+44]
+xor eax, 1785358954
+mov DWORD PTR [esi+44], eax
+mov eax, DWORD PTR [ebx+48]
+xor eax, 1785358954
+mov DWORD PTR [esi+48], eax
+mov eax, DWORD PTR [ebx+52]
+xor eax, 1785358954
+mov DWORD PTR [esi+52], eax
+mov eax, DWORD PTR [ebx+56]
+xor eax, 1785358954
+mov DWORD PTR [esi+56], eax
+mov eax, DWORD PTR [ebx+60]
+xor eax, 1785358954
+mov DWORD PTR [esi+60], eax
+mov eax, DWORD PTR [ebx+64]
+xor eax, 1785358954
+mov DWORD PTR [esi+64], eax
+mov eax, DWORD PTR [ebx+68]
+xor eax, 1785358954
+mov DWORD PTR [esi+68], eax
+mov eax, DWORD PTR [ebx+72]
+xor eax, 1785358954
+mov DWORD PTR [esi+72], eax
+mov eax, DWORD PTR [ebx+76]
+xor eax, 1785358954
+mov DWORD PTR [esi+76], eax
+mov eax, DWORD PTR [ebx+80]
+xor eax, 1785358954
+mov DWORD PTR [esi+80], eax
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress}
+pop eax
+pop eax
+pop eax
+pop eax
+mov ebx, esi
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress}
+pop eax
+pop eax
+pop eax
+pop eax
+mov eax, ebp
+mov ebx, DWORD PTR [eax+160]
+mov esi, DWORD PTR [eax+164]
+mov edi, DWORD PTR [eax+168]
+mov ebp, DWORD PTR [eax+172]
+ret
+.p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
@@ -474,107 +474,107 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_scratch(inner: *mut [u8; 84], 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_scratch(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]",
-        "mov DWORD PTR [eax+160], ebx",
-        "mov DWORD PTR [eax+164], esi",
-        "mov DWORD PTR [eax+168], edi",
-        "mov DWORD PTR [eax+172], ebp",
-        "mov ebp, eax",
-        "mov ebx, DWORD PTR [esp+4]",
-        "mov esi, DWORD PTR [esp+8]",
-        "mov edi, DWORD PTR [esp+20]",
-        "mov eax, DWORD PTR [esp+12]",
-        "mov ecx, DWORD PTR [esp+16]",
-        "mov edx, ebp",
-        "add edx, 176",
-        "push ebp",
-        "push edx",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_finalize_scratch}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ecx, DWORD PTR [esi]",
-        "mov DWORD PTR [ebx], ecx",
-        "mov ecx, DWORD PTR [esi+4]",
-        "mov DWORD PTR [ebx+4], ecx",
-        "mov ecx, DWORD PTR [esi+8]",
-        "mov DWORD PTR [ebx+8], ecx",
-        "mov ecx, DWORD PTR [esi+12]",
-        "mov DWORD PTR [ebx+12], ecx",
-        "mov ecx, DWORD PTR [esi+16]",
-        "mov DWORD PTR [ebx+16], ecx",
-        "mov ecx, DWORD PTR [ebp+176]",
-        "mov DWORD PTR [ebx+20], ecx",
-        "mov ecx, DWORD PTR [ebp+180]",
-        "mov DWORD PTR [ebx+24], ecx",
-        "mov ecx, DWORD PTR [ebp+184]",
-        "mov DWORD PTR [ebx+28], ecx",
-        "mov ecx, DWORD PTR [ebp+188]",
-        "mov DWORD PTR [ebx+32], ecx",
-        "mov ecx, DWORD PTR [ebp+192]",
-        "mov DWORD PTR [ebx+36], ecx",
-        "mov ecx, 128",
-        "mov DWORD PTR [ebx+40], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+44], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+48], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+52], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+56], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+60], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+64], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+68], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+72], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+76], ecx",
-        "mov ecx, -1610481664",
-        "mov DWORD PTR [ebx+80], ecx",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov eax, edi",
-        "mov ecx, DWORD PTR [ebx]",
-        "bswap ecx",
-        "mov DWORD PTR [eax], ecx",
-        "mov ecx, DWORD PTR [ebx+4]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+4], ecx",
-        "mov ecx, DWORD PTR [ebx+8]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+8], ecx",
-        "mov ecx, DWORD PTR [ebx+12]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+12], ecx",
-        "mov ecx, DWORD PTR [ebx+16]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+16], ecx",
-        "mov eax, ebp",
-        "mov ebx, DWORD PTR [eax+160]",
-        "mov esi, DWORD PTR [eax+164]",
-        "mov edi, DWORD PTR [eax+168]",
-        "mov ebp, DWORD PTR [eax+172]",
-        "ret",
-        ".p2align 6",
+        "mov eax, DWORD PTR [esp+24]
+mov DWORD PTR [eax+160], ebx
+mov DWORD PTR [eax+164], esi
+mov DWORD PTR [eax+168], edi
+mov DWORD PTR [eax+172], ebp
+mov ebp, eax
+mov ebx, DWORD PTR [esp+4]
+mov esi, DWORD PTR [esp+8]
+mov edi, DWORD PTR [esp+20]
+mov eax, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, ebp
+add edx, 176
+push ebp
+push edx
+push ecx
+push eax
+push ebx
+call {vg_sha1_finalize_scratch}
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+mov ecx, DWORD PTR [esi]
+mov DWORD PTR [ebx], ecx
+mov ecx, DWORD PTR [esi+4]
+mov DWORD PTR [ebx+4], ecx
+mov ecx, DWORD PTR [esi+8]
+mov DWORD PTR [ebx+8], ecx
+mov ecx, DWORD PTR [esi+12]
+mov DWORD PTR [ebx+12], ecx
+mov ecx, DWORD PTR [esi+16]
+mov DWORD PTR [ebx+16], ecx
+mov ecx, DWORD PTR [ebp+176]
+mov DWORD PTR [ebx+20], ecx
+mov ecx, DWORD PTR [ebp+180]
+mov DWORD PTR [ebx+24], ecx
+mov ecx, DWORD PTR [ebp+184]
+mov DWORD PTR [ebx+28], ecx
+mov ecx, DWORD PTR [ebp+188]
+mov DWORD PTR [ebx+32], ecx
+mov ecx, DWORD PTR [ebp+192]
+mov DWORD PTR [ebx+36], ecx
+mov ecx, 128
+mov DWORD PTR [ebx+40], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+44], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+48], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+52], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+56], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+60], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+64], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+68], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+72], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+76], ecx
+mov ecx, -1610481664
+mov DWORD PTR [ebx+80], ecx
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress}
+pop eax
+pop eax
+pop eax
+pop eax
+mov eax, edi
+mov ecx, DWORD PTR [ebx]
+bswap ecx
+mov DWORD PTR [eax], ecx
+mov ecx, DWORD PTR [ebx+4]
+bswap ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, DWORD PTR [ebx+8]
+bswap ecx
+mov DWORD PTR [eax+8], ecx
+mov ecx, DWORD PTR [ebx+12]
+bswap ecx
+mov DWORD PTR [eax+12], ecx
+mov ecx, DWORD PTR [ebx+16]
+bswap ecx
+mov DWORD PTR [eax+16], ecx
+mov eax, ebp
+mov ebx, DWORD PTR [eax+160]
+mov esi, DWORD PTR [eax+164]
+mov edi, DWORD PTR [eax+168]
+mov ebp, DWORD PTR [eax+172]
+ret
+.p2align 6",
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
@@ -601,147 +601,147 @@ pub(crate) const VG_HMAC_SHA1_INIT_SHANI_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-472]",
-        "mov eax, DWORD PTR [esp+476]",
-        "mov DWORD PTR [esp+4], eax",
-        "mov eax, DWORD PTR [esp+480]",
-        "mov DWORD PTR [esp+8], eax",
-        "mov eax, DWORD PTR [esp+484]",
-        "mov DWORD PTR [esp+12], eax",
-        "mov eax, DWORD PTR [esp+488]",
-        "mov DWORD PTR [esp+16], eax",
-        "mov eax, esp",
-        "add eax, 24",
-        "mov DWORD PTR [esp+20], eax",
-        "mov eax, DWORD PTR [esp+20]",
-        "mov DWORD PTR [eax+160], ebx",
-        "mov DWORD PTR [eax+164], esi",
-        "mov DWORD PTR [eax+168], edi",
-        "mov DWORD PTR [eax+172], ebp",
-        "mov ebp, eax",
-        "mov ebx, DWORD PTR [esp+4]",
-        "mov esi, DWORD PTR [esp+8]",
-        "push ebx",
-        "call {vg_sha1_init}",
-        "pop eax",
-        "push esi",
-        "call {vg_sha1_init}",
-        "pop eax",
-        "mov ecx, 909522486",
-        "mov DWORD PTR [ebx+20], ecx",
-        "mov DWORD PTR [ebx+24], ecx",
-        "mov DWORD PTR [ebx+28], ecx",
-        "mov DWORD PTR [ebx+32], ecx",
-        "mov DWORD PTR [ebx+36], ecx",
-        "mov DWORD PTR [ebx+40], ecx",
-        "mov DWORD PTR [ebx+44], ecx",
-        "mov DWORD PTR [ebx+48], ecx",
-        "mov DWORD PTR [ebx+52], ecx",
-        "mov DWORD PTR [ebx+56], ecx",
-        "mov DWORD PTR [ebx+60], ecx",
-        "mov DWORD PTR [ebx+64], ecx",
-        "mov DWORD PTR [ebx+68], ecx",
-        "mov DWORD PTR [ebx+72], ecx",
-        "mov DWORD PTR [ebx+76], ecx",
-        "mov DWORD PTR [ebx+80], ecx",
-        "mov edi, DWORD PTR [esp+12]",
-        "mov ecx, DWORD PTR [esp+16]",
-        "mov edx, ebx",
-        "add edx, 20",
-        "test ecx, ecx",
-        "je 20f",
-        "22:",
-        "movzx eax, BYTE PTR [edi]",
-        "xor eax, 54",
-        "mov BYTE PTR [edx], al",
-        "add edi, 1",
-        "add edx, 1",
-        "sub ecx, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [ebx+20]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+20], eax",
-        "mov eax, DWORD PTR [ebx+24]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+24], eax",
-        "mov eax, DWORD PTR [ebx+28]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+28], eax",
-        "mov eax, DWORD PTR [ebx+32]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+32], eax",
-        "mov eax, DWORD PTR [ebx+36]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+36], eax",
-        "mov eax, DWORD PTR [ebx+40]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+40], eax",
-        "mov eax, DWORD PTR [ebx+44]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+44], eax",
-        "mov eax, DWORD PTR [ebx+48]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+48], eax",
-        "mov eax, DWORD PTR [ebx+52]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+52], eax",
-        "mov eax, DWORD PTR [ebx+56]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+56], eax",
-        "mov eax, DWORD PTR [ebx+60]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+60], eax",
-        "mov eax, DWORD PTR [ebx+64]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+64], eax",
-        "mov eax, DWORD PTR [ebx+68]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+68], eax",
-        "mov eax, DWORD PTR [ebx+72]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+72], eax",
-        "mov eax, DWORD PTR [ebx+76]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+76], eax",
-        "mov eax, DWORD PTR [ebx+80]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+80], eax",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress_shani}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ebx, esi",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress_shani}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov eax, ebp",
-        "mov ebx, DWORD PTR [eax+160]",
-        "mov esi, DWORD PTR [eax+164]",
-        "mov edi, DWORD PTR [eax+168]",
-        "mov ebp, DWORD PTR [eax+172]",
-        "lea esp, [esp+472]",
-        "ret",
-        ".p2align 6",
+        "lea esp, [esp-472]
+mov eax, DWORD PTR [esp+476]
+mov DWORD PTR [esp+4], eax
+mov eax, DWORD PTR [esp+480]
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esp+484]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esp+488]
+mov DWORD PTR [esp+16], eax
+mov eax, esp
+add eax, 24
+mov DWORD PTR [esp+20], eax
+mov eax, DWORD PTR [esp+20]
+mov DWORD PTR [eax+160], ebx
+mov DWORD PTR [eax+164], esi
+mov DWORD PTR [eax+168], edi
+mov DWORD PTR [eax+172], ebp
+mov ebp, eax
+mov ebx, DWORD PTR [esp+4]
+mov esi, DWORD PTR [esp+8]
+push ebx
+call {vg_sha1_init}
+pop eax
+push esi
+call {vg_sha1_init}
+pop eax
+mov ecx, 909522486
+mov DWORD PTR [ebx+20], ecx
+mov DWORD PTR [ebx+24], ecx
+mov DWORD PTR [ebx+28], ecx
+mov DWORD PTR [ebx+32], ecx
+mov DWORD PTR [ebx+36], ecx
+mov DWORD PTR [ebx+40], ecx
+mov DWORD PTR [ebx+44], ecx
+mov DWORD PTR [ebx+48], ecx
+mov DWORD PTR [ebx+52], ecx
+mov DWORD PTR [ebx+56], ecx
+mov DWORD PTR [ebx+60], ecx
+mov DWORD PTR [ebx+64], ecx
+mov DWORD PTR [ebx+68], ecx
+mov DWORD PTR [ebx+72], ecx
+mov DWORD PTR [ebx+76], ecx
+mov DWORD PTR [ebx+80], ecx
+mov edi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, ebx
+add edx, 20
+test ecx, ecx
+je 20f
+22:
+movzx eax, BYTE PTR [edi]
+xor eax, 54
+mov BYTE PTR [edx], al
+add edi, 1
+add edx, 1
+sub ecx, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [ebx+20]
+xor eax, 1785358954
+mov DWORD PTR [esi+20], eax
+mov eax, DWORD PTR [ebx+24]
+xor eax, 1785358954
+mov DWORD PTR [esi+24], eax
+mov eax, DWORD PTR [ebx+28]
+xor eax, 1785358954
+mov DWORD PTR [esi+28], eax
+mov eax, DWORD PTR [ebx+32]
+xor eax, 1785358954
+mov DWORD PTR [esi+32], eax
+mov eax, DWORD PTR [ebx+36]
+xor eax, 1785358954
+mov DWORD PTR [esi+36], eax
+mov eax, DWORD PTR [ebx+40]
+xor eax, 1785358954
+mov DWORD PTR [esi+40], eax
+mov eax, DWORD PTR [ebx+44]
+xor eax, 1785358954
+mov DWORD PTR [esi+44], eax
+mov eax, DWORD PTR [ebx+48]
+xor eax, 1785358954
+mov DWORD PTR [esi+48], eax
+mov eax, DWORD PTR [ebx+52]
+xor eax, 1785358954
+mov DWORD PTR [esi+52], eax
+mov eax, DWORD PTR [ebx+56]
+xor eax, 1785358954
+mov DWORD PTR [esi+56], eax
+mov eax, DWORD PTR [ebx+60]
+xor eax, 1785358954
+mov DWORD PTR [esi+60], eax
+mov eax, DWORD PTR [ebx+64]
+xor eax, 1785358954
+mov DWORD PTR [esi+64], eax
+mov eax, DWORD PTR [ebx+68]
+xor eax, 1785358954
+mov DWORD PTR [esi+68], eax
+mov eax, DWORD PTR [ebx+72]
+xor eax, 1785358954
+mov DWORD PTR [esi+72], eax
+mov eax, DWORD PTR [ebx+76]
+xor eax, 1785358954
+mov DWORD PTR [esi+76], eax
+mov eax, DWORD PTR [ebx+80]
+xor eax, 1785358954
+mov DWORD PTR [esi+80], eax
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress_shani}
+pop eax
+pop eax
+pop eax
+pop eax
+mov ebx, esi
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress_shani}
+pop eax
+pop eax
+pop eax
+pop eax
+mov eax, ebp
+mov ebx, DWORD PTR [eax+160]
+mov esi, DWORD PTR [eax+164]
+mov edi, DWORD PTR [eax+168]
+mov ebp, DWORD PTR [eax+172]
+lea esp, [esp+472]
+ret
+.p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
@@ -768,122 +768,122 @@ pub(crate) const VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_shani(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-476]",
-        "mov eax, DWORD PTR [esp+480]",
-        "mov DWORD PTR [esp+4], eax",
-        "mov eax, DWORD PTR [esp+484]",
-        "mov DWORD PTR [esp+8], eax",
-        "mov eax, DWORD PTR [esp+488]",
-        "mov DWORD PTR [esp+12], eax",
-        "mov eax, DWORD PTR [esp+492]",
-        "mov DWORD PTR [esp+16], eax",
-        "mov eax, DWORD PTR [esp+496]",
-        "mov DWORD PTR [esp+20], eax",
-        "mov eax, esp",
-        "add eax, 28",
-        "mov DWORD PTR [esp+24], eax",
-        "mov eax, DWORD PTR [esp+24]",
-        "mov DWORD PTR [eax+160], ebx",
-        "mov DWORD PTR [eax+164], esi",
-        "mov DWORD PTR [eax+168], edi",
-        "mov DWORD PTR [eax+172], ebp",
-        "mov ebp, eax",
-        "mov ebx, DWORD PTR [esp+4]",
-        "mov esi, DWORD PTR [esp+8]",
-        "mov edi, DWORD PTR [esp+20]",
-        "mov eax, DWORD PTR [esp+12]",
-        "mov ecx, DWORD PTR [esp+16]",
-        "mov edx, ebp",
-        "add edx, 176",
-        "push ebp",
-        "push edx",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_finalize_scratch_shani}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ecx, DWORD PTR [esi]",
-        "mov DWORD PTR [ebx], ecx",
-        "mov ecx, DWORD PTR [esi+4]",
-        "mov DWORD PTR [ebx+4], ecx",
-        "mov ecx, DWORD PTR [esi+8]",
-        "mov DWORD PTR [ebx+8], ecx",
-        "mov ecx, DWORD PTR [esi+12]",
-        "mov DWORD PTR [ebx+12], ecx",
-        "mov ecx, DWORD PTR [esi+16]",
-        "mov DWORD PTR [ebx+16], ecx",
-        "mov ecx, DWORD PTR [ebp+176]",
-        "mov DWORD PTR [ebx+20], ecx",
-        "mov ecx, DWORD PTR [ebp+180]",
-        "mov DWORD PTR [ebx+24], ecx",
-        "mov ecx, DWORD PTR [ebp+184]",
-        "mov DWORD PTR [ebx+28], ecx",
-        "mov ecx, DWORD PTR [ebp+188]",
-        "mov DWORD PTR [ebx+32], ecx",
-        "mov ecx, DWORD PTR [ebp+192]",
-        "mov DWORD PTR [ebx+36], ecx",
-        "mov ecx, 128",
-        "mov DWORD PTR [ebx+40], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+44], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+48], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+52], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+56], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+60], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+64], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+68], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+72], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+76], ecx",
-        "mov ecx, -1610481664",
-        "mov DWORD PTR [ebx+80], ecx",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress_shani}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov eax, edi",
-        "mov ecx, DWORD PTR [ebx]",
-        "bswap ecx",
-        "mov DWORD PTR [eax], ecx",
-        "mov ecx, DWORD PTR [ebx+4]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+4], ecx",
-        "mov ecx, DWORD PTR [ebx+8]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+8], ecx",
-        "mov ecx, DWORD PTR [ebx+12]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+12], ecx",
-        "mov ecx, DWORD PTR [ebx+16]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+16], ecx",
-        "mov eax, ebp",
-        "mov ebx, DWORD PTR [eax+160]",
-        "mov esi, DWORD PTR [eax+164]",
-        "mov edi, DWORD PTR [eax+168]",
-        "mov ebp, DWORD PTR [eax+172]",
-        "lea esp, [esp+476]",
-        "ret",
-        ".p2align 6",
+        "lea esp, [esp-476]
+mov eax, DWORD PTR [esp+480]
+mov DWORD PTR [esp+4], eax
+mov eax, DWORD PTR [esp+484]
+mov DWORD PTR [esp+8], eax
+mov eax, DWORD PTR [esp+488]
+mov DWORD PTR [esp+12], eax
+mov eax, DWORD PTR [esp+492]
+mov DWORD PTR [esp+16], eax
+mov eax, DWORD PTR [esp+496]
+mov DWORD PTR [esp+20], eax
+mov eax, esp
+add eax, 28
+mov DWORD PTR [esp+24], eax
+mov eax, DWORD PTR [esp+24]
+mov DWORD PTR [eax+160], ebx
+mov DWORD PTR [eax+164], esi
+mov DWORD PTR [eax+168], edi
+mov DWORD PTR [eax+172], ebp
+mov ebp, eax
+mov ebx, DWORD PTR [esp+4]
+mov esi, DWORD PTR [esp+8]
+mov edi, DWORD PTR [esp+20]
+mov eax, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, ebp
+add edx, 176
+push ebp
+push edx
+push ecx
+push eax
+push ebx
+call {vg_sha1_finalize_scratch_shani}
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+mov ecx, DWORD PTR [esi]
+mov DWORD PTR [ebx], ecx
+mov ecx, DWORD PTR [esi+4]
+mov DWORD PTR [ebx+4], ecx
+mov ecx, DWORD PTR [esi+8]
+mov DWORD PTR [ebx+8], ecx
+mov ecx, DWORD PTR [esi+12]
+mov DWORD PTR [ebx+12], ecx
+mov ecx, DWORD PTR [esi+16]
+mov DWORD PTR [ebx+16], ecx
+mov ecx, DWORD PTR [ebp+176]
+mov DWORD PTR [ebx+20], ecx
+mov ecx, DWORD PTR [ebp+180]
+mov DWORD PTR [ebx+24], ecx
+mov ecx, DWORD PTR [ebp+184]
+mov DWORD PTR [ebx+28], ecx
+mov ecx, DWORD PTR [ebp+188]
+mov DWORD PTR [ebx+32], ecx
+mov ecx, DWORD PTR [ebp+192]
+mov DWORD PTR [ebx+36], ecx
+mov ecx, 128
+mov DWORD PTR [ebx+40], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+44], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+48], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+52], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+56], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+60], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+64], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+68], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+72], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+76], ecx
+mov ecx, -1610481664
+mov DWORD PTR [ebx+80], ecx
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress_shani}
+pop eax
+pop eax
+pop eax
+pop eax
+mov eax, edi
+mov ecx, DWORD PTR [ebx]
+bswap ecx
+mov DWORD PTR [eax], ecx
+mov ecx, DWORD PTR [ebx+4]
+bswap ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, DWORD PTR [ebx+8]
+bswap ecx
+mov DWORD PTR [eax+8], ecx
+mov ecx, DWORD PTR [ebx+12]
+bswap ecx
+mov DWORD PTR [eax+12], ecx
+mov ecx, DWORD PTR [ebx+16]
+bswap ecx
+mov DWORD PTR [eax+16], ecx
+mov eax, ebp
+mov ebx, DWORD PTR [eax+160]
+mov esi, DWORD PTR [eax+164]
+mov edi, DWORD PTR [eax+168]
+mov ebp, DWORD PTR [eax+172]
+lea esp, [esp+476]
+ret
+.p2align 6",
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
@@ -912,134 +912,134 @@ pub(crate) const VG_HMAC_SHA1_INIT_SCRATCH_SHANI_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_init_scratch_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]",
-        "mov DWORD PTR [eax+160], ebx",
-        "mov DWORD PTR [eax+164], esi",
-        "mov DWORD PTR [eax+168], edi",
-        "mov DWORD PTR [eax+172], ebp",
-        "mov ebp, eax",
-        "mov ebx, DWORD PTR [esp+4]",
-        "mov esi, DWORD PTR [esp+8]",
-        "push ebx",
-        "call {vg_sha1_init}",
-        "pop eax",
-        "push esi",
-        "call {vg_sha1_init}",
-        "pop eax",
-        "mov ecx, 909522486",
-        "mov DWORD PTR [ebx+20], ecx",
-        "mov DWORD PTR [ebx+24], ecx",
-        "mov DWORD PTR [ebx+28], ecx",
-        "mov DWORD PTR [ebx+32], ecx",
-        "mov DWORD PTR [ebx+36], ecx",
-        "mov DWORD PTR [ebx+40], ecx",
-        "mov DWORD PTR [ebx+44], ecx",
-        "mov DWORD PTR [ebx+48], ecx",
-        "mov DWORD PTR [ebx+52], ecx",
-        "mov DWORD PTR [ebx+56], ecx",
-        "mov DWORD PTR [ebx+60], ecx",
-        "mov DWORD PTR [ebx+64], ecx",
-        "mov DWORD PTR [ebx+68], ecx",
-        "mov DWORD PTR [ebx+72], ecx",
-        "mov DWORD PTR [ebx+76], ecx",
-        "mov DWORD PTR [ebx+80], ecx",
-        "mov edi, DWORD PTR [esp+12]",
-        "mov ecx, DWORD PTR [esp+16]",
-        "mov edx, ebx",
-        "add edx, 20",
-        "test ecx, ecx",
-        "je 20f",
-        "22:",
-        "movzx eax, BYTE PTR [edi]",
-        "xor eax, 54",
-        "mov BYTE PTR [edx], al",
-        "add edi, 1",
-        "add edx, 1",
-        "sub ecx, 1",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [ebx+20]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+20], eax",
-        "mov eax, DWORD PTR [ebx+24]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+24], eax",
-        "mov eax, DWORD PTR [ebx+28]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+28], eax",
-        "mov eax, DWORD PTR [ebx+32]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+32], eax",
-        "mov eax, DWORD PTR [ebx+36]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+36], eax",
-        "mov eax, DWORD PTR [ebx+40]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+40], eax",
-        "mov eax, DWORD PTR [ebx+44]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+44], eax",
-        "mov eax, DWORD PTR [ebx+48]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+48], eax",
-        "mov eax, DWORD PTR [ebx+52]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+52], eax",
-        "mov eax, DWORD PTR [ebx+56]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+56], eax",
-        "mov eax, DWORD PTR [ebx+60]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+60], eax",
-        "mov eax, DWORD PTR [ebx+64]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+64], eax",
-        "mov eax, DWORD PTR [ebx+68]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+68], eax",
-        "mov eax, DWORD PTR [ebx+72]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+72], eax",
-        "mov eax, DWORD PTR [ebx+76]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+76], eax",
-        "mov eax, DWORD PTR [ebx+80]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [esi+80], eax",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress_shani}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ebx, esi",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress_shani}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov eax, ebp",
-        "mov ebx, DWORD PTR [eax+160]",
-        "mov esi, DWORD PTR [eax+164]",
-        "mov edi, DWORD PTR [eax+168]",
-        "mov ebp, DWORD PTR [eax+172]",
-        "ret",
-        ".p2align 6",
+        "mov eax, DWORD PTR [esp+20]
+mov DWORD PTR [eax+160], ebx
+mov DWORD PTR [eax+164], esi
+mov DWORD PTR [eax+168], edi
+mov DWORD PTR [eax+172], ebp
+mov ebp, eax
+mov ebx, DWORD PTR [esp+4]
+mov esi, DWORD PTR [esp+8]
+push ebx
+call {vg_sha1_init}
+pop eax
+push esi
+call {vg_sha1_init}
+pop eax
+mov ecx, 909522486
+mov DWORD PTR [ebx+20], ecx
+mov DWORD PTR [ebx+24], ecx
+mov DWORD PTR [ebx+28], ecx
+mov DWORD PTR [ebx+32], ecx
+mov DWORD PTR [ebx+36], ecx
+mov DWORD PTR [ebx+40], ecx
+mov DWORD PTR [ebx+44], ecx
+mov DWORD PTR [ebx+48], ecx
+mov DWORD PTR [ebx+52], ecx
+mov DWORD PTR [ebx+56], ecx
+mov DWORD PTR [ebx+60], ecx
+mov DWORD PTR [ebx+64], ecx
+mov DWORD PTR [ebx+68], ecx
+mov DWORD PTR [ebx+72], ecx
+mov DWORD PTR [ebx+76], ecx
+mov DWORD PTR [ebx+80], ecx
+mov edi, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, ebx
+add edx, 20
+test ecx, ecx
+je 20f
+22:
+movzx eax, BYTE PTR [edi]
+xor eax, 54
+mov BYTE PTR [edx], al
+add edi, 1
+add edx, 1
+sub ecx, 1
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [ebx+20]
+xor eax, 1785358954
+mov DWORD PTR [esi+20], eax
+mov eax, DWORD PTR [ebx+24]
+xor eax, 1785358954
+mov DWORD PTR [esi+24], eax
+mov eax, DWORD PTR [ebx+28]
+xor eax, 1785358954
+mov DWORD PTR [esi+28], eax
+mov eax, DWORD PTR [ebx+32]
+xor eax, 1785358954
+mov DWORD PTR [esi+32], eax
+mov eax, DWORD PTR [ebx+36]
+xor eax, 1785358954
+mov DWORD PTR [esi+36], eax
+mov eax, DWORD PTR [ebx+40]
+xor eax, 1785358954
+mov DWORD PTR [esi+40], eax
+mov eax, DWORD PTR [ebx+44]
+xor eax, 1785358954
+mov DWORD PTR [esi+44], eax
+mov eax, DWORD PTR [ebx+48]
+xor eax, 1785358954
+mov DWORD PTR [esi+48], eax
+mov eax, DWORD PTR [ebx+52]
+xor eax, 1785358954
+mov DWORD PTR [esi+52], eax
+mov eax, DWORD PTR [ebx+56]
+xor eax, 1785358954
+mov DWORD PTR [esi+56], eax
+mov eax, DWORD PTR [ebx+60]
+xor eax, 1785358954
+mov DWORD PTR [esi+60], eax
+mov eax, DWORD PTR [ebx+64]
+xor eax, 1785358954
+mov DWORD PTR [esi+64], eax
+mov eax, DWORD PTR [ebx+68]
+xor eax, 1785358954
+mov DWORD PTR [esi+68], eax
+mov eax, DWORD PTR [ebx+72]
+xor eax, 1785358954
+mov DWORD PTR [esi+72], eax
+mov eax, DWORD PTR [ebx+76]
+xor eax, 1785358954
+mov DWORD PTR [esi+76], eax
+mov eax, DWORD PTR [ebx+80]
+xor eax, 1785358954
+mov DWORD PTR [esi+80], eax
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress_shani}
+pop eax
+pop eax
+pop eax
+pop eax
+mov ebx, esi
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress_shani}
+pop eax
+pop eax
+pop eax
+pop eax
+mov eax, ebp
+mov ebx, DWORD PTR [eax+160]
+mov esi, DWORD PTR [eax+164]
+mov edi, DWORD PTR [eax+168]
+mov ebp, DWORD PTR [eax+172]
+ret
+.p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
@@ -1068,107 +1068,107 @@ pub(crate) const VG_HMAC_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Featu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha1_finalize_scratch_shani(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]",
-        "mov DWORD PTR [eax+160], ebx",
-        "mov DWORD PTR [eax+164], esi",
-        "mov DWORD PTR [eax+168], edi",
-        "mov DWORD PTR [eax+172], ebp",
-        "mov ebp, eax",
-        "mov ebx, DWORD PTR [esp+4]",
-        "mov esi, DWORD PTR [esp+8]",
-        "mov edi, DWORD PTR [esp+20]",
-        "mov eax, DWORD PTR [esp+12]",
-        "mov ecx, DWORD PTR [esp+16]",
-        "mov edx, ebp",
-        "add edx, 176",
-        "push ebp",
-        "push edx",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_finalize_scratch_shani}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov ecx, DWORD PTR [esi]",
-        "mov DWORD PTR [ebx], ecx",
-        "mov ecx, DWORD PTR [esi+4]",
-        "mov DWORD PTR [ebx+4], ecx",
-        "mov ecx, DWORD PTR [esi+8]",
-        "mov DWORD PTR [ebx+8], ecx",
-        "mov ecx, DWORD PTR [esi+12]",
-        "mov DWORD PTR [ebx+12], ecx",
-        "mov ecx, DWORD PTR [esi+16]",
-        "mov DWORD PTR [ebx+16], ecx",
-        "mov ecx, DWORD PTR [ebp+176]",
-        "mov DWORD PTR [ebx+20], ecx",
-        "mov ecx, DWORD PTR [ebp+180]",
-        "mov DWORD PTR [ebx+24], ecx",
-        "mov ecx, DWORD PTR [ebp+184]",
-        "mov DWORD PTR [ebx+28], ecx",
-        "mov ecx, DWORD PTR [ebp+188]",
-        "mov DWORD PTR [ebx+32], ecx",
-        "mov ecx, DWORD PTR [ebp+192]",
-        "mov DWORD PTR [ebx+36], ecx",
-        "mov ecx, 128",
-        "mov DWORD PTR [ebx+40], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+44], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+48], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+52], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+56], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+60], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+64], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+68], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+72], ecx",
-        "mov ecx, 0",
-        "mov DWORD PTR [ebx+76], ecx",
-        "mov ecx, -1610481664",
-        "mov DWORD PTR [ebx+80], ecx",
-        "mov eax, ebx",
-        "add eax, 20",
-        "mov ecx, 1",
-        "push ebp",
-        "push ecx",
-        "push eax",
-        "push ebx",
-        "call {vg_sha1_compress_shani}",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "pop eax",
-        "mov eax, edi",
-        "mov ecx, DWORD PTR [ebx]",
-        "bswap ecx",
-        "mov DWORD PTR [eax], ecx",
-        "mov ecx, DWORD PTR [ebx+4]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+4], ecx",
-        "mov ecx, DWORD PTR [ebx+8]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+8], ecx",
-        "mov ecx, DWORD PTR [ebx+12]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+12], ecx",
-        "mov ecx, DWORD PTR [ebx+16]",
-        "bswap ecx",
-        "mov DWORD PTR [eax+16], ecx",
-        "mov eax, ebp",
-        "mov ebx, DWORD PTR [eax+160]",
-        "mov esi, DWORD PTR [eax+164]",
-        "mov edi, DWORD PTR [eax+168]",
-        "mov ebp, DWORD PTR [eax+172]",
-        "ret",
-        ".p2align 6",
+        "mov eax, DWORD PTR [esp+24]
+mov DWORD PTR [eax+160], ebx
+mov DWORD PTR [eax+164], esi
+mov DWORD PTR [eax+168], edi
+mov DWORD PTR [eax+172], ebp
+mov ebp, eax
+mov ebx, DWORD PTR [esp+4]
+mov esi, DWORD PTR [esp+8]
+mov edi, DWORD PTR [esp+20]
+mov eax, DWORD PTR [esp+12]
+mov ecx, DWORD PTR [esp+16]
+mov edx, ebp
+add edx, 176
+push ebp
+push edx
+push ecx
+push eax
+push ebx
+call {vg_sha1_finalize_scratch_shani}
+pop eax
+pop eax
+pop eax
+pop eax
+pop eax
+mov ecx, DWORD PTR [esi]
+mov DWORD PTR [ebx], ecx
+mov ecx, DWORD PTR [esi+4]
+mov DWORD PTR [ebx+4], ecx
+mov ecx, DWORD PTR [esi+8]
+mov DWORD PTR [ebx+8], ecx
+mov ecx, DWORD PTR [esi+12]
+mov DWORD PTR [ebx+12], ecx
+mov ecx, DWORD PTR [esi+16]
+mov DWORD PTR [ebx+16], ecx
+mov ecx, DWORD PTR [ebp+176]
+mov DWORD PTR [ebx+20], ecx
+mov ecx, DWORD PTR [ebp+180]
+mov DWORD PTR [ebx+24], ecx
+mov ecx, DWORD PTR [ebp+184]
+mov DWORD PTR [ebx+28], ecx
+mov ecx, DWORD PTR [ebp+188]
+mov DWORD PTR [ebx+32], ecx
+mov ecx, DWORD PTR [ebp+192]
+mov DWORD PTR [ebx+36], ecx
+mov ecx, 128
+mov DWORD PTR [ebx+40], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+44], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+48], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+52], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+56], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+60], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+64], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+68], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+72], ecx
+mov ecx, 0
+mov DWORD PTR [ebx+76], ecx
+mov ecx, -1610481664
+mov DWORD PTR [ebx+80], ecx
+mov eax, ebx
+add eax, 20
+mov ecx, 1
+push ebp
+push ecx
+push eax
+push ebx
+call {vg_sha1_compress_shani}
+pop eax
+pop eax
+pop eax
+pop eax
+mov eax, edi
+mov ecx, DWORD PTR [ebx]
+bswap ecx
+mov DWORD PTR [eax], ecx
+mov ecx, DWORD PTR [ebx+4]
+bswap ecx
+mov DWORD PTR [eax+4], ecx
+mov ecx, DWORD PTR [ebx+8]
+bswap ecx
+mov DWORD PTR [eax+8], ecx
+mov ecx, DWORD PTR [ebx+12]
+bswap ecx
+mov DWORD PTR [eax+12], ecx
+mov ecx, DWORD PTR [ebx+16]
+bswap ecx
+mov DWORD PTR [eax+16], ecx
+mov eax, ebp
+mov ebx, DWORD PTR [eax+160]
+mov esi, DWORD PTR [eax+164]
+mov edi, DWORD PTR [eax+168]
+mov ebp, DWORD PTR [eax+172]
+ret
+.p2align 6",
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )

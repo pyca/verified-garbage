@@ -17,128 +17,128 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-456]",
-        "mov r8, rsp",
-        "add r8, 8",
-        "mov QWORD PTR [r8+160], rbx",
-        "mov QWORD PTR [r8+168], rbp",
-        "mov QWORD PTR [r8+176], r12",
-        "mov QWORD PTR [r8+184], r13",
-        "mov QWORD PTR [r8+192], r14",
-        "mov QWORD PTR [r8+200], r15",
-        "mov rbx, rdi",
-        "mov r12, rsi",
-        "mov r15, r8",
-        "mov rbp, rdx",
-        "mov r13, rcx",
-        "mov rdi, rbx",
-        "call {vg_sha1_init}",
-        "mov rdi, r12",
-        "call {vg_sha1_init}",
-        "mov eax, 909522486",
-        "mov DWORD PTR [rbx+20], eax",
-        "mov DWORD PTR [rbx+24], eax",
-        "mov DWORD PTR [rbx+28], eax",
-        "mov DWORD PTR [rbx+32], eax",
-        "mov DWORD PTR [rbx+36], eax",
-        "mov DWORD PTR [rbx+40], eax",
-        "mov DWORD PTR [rbx+44], eax",
-        "mov DWORD PTR [rbx+48], eax",
-        "mov DWORD PTR [rbx+52], eax",
-        "mov DWORD PTR [rbx+56], eax",
-        "mov DWORD PTR [rbx+60], eax",
-        "mov DWORD PTR [rbx+64], eax",
-        "mov DWORD PTR [rbx+68], eax",
-        "mov DWORD PTR [rbx+72], eax",
-        "mov DWORD PTR [rbx+76], eax",
-        "mov DWORD PTR [rbx+80], eax",
-        "mov r14d, 0",
-        "test r13, r13",
-        "je 20f",
-        "22:",
-        "movzx eax, BYTE PTR [rbp+r14*1]",
-        "xor eax, 54",
-        "mov BYTE PTR [rbx+r14*1+20], al",
-        "add r14, 1",
-        "cmp r14, r13",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [rbx+20]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+20], eax",
-        "mov eax, DWORD PTR [rbx+24]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+24], eax",
-        "mov eax, DWORD PTR [rbx+28]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+28], eax",
-        "mov eax, DWORD PTR [rbx+32]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+32], eax",
-        "mov eax, DWORD PTR [rbx+36]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+36], eax",
-        "mov eax, DWORD PTR [rbx+40]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+40], eax",
-        "mov eax, DWORD PTR [rbx+44]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+44], eax",
-        "mov eax, DWORD PTR [rbx+48]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+48], eax",
-        "mov eax, DWORD PTR [rbx+52]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+52], eax",
-        "mov eax, DWORD PTR [rbx+56]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+56], eax",
-        "mov eax, DWORD PTR [rbx+60]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+60], eax",
-        "mov eax, DWORD PTR [rbx+64]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+64], eax",
-        "mov eax, DWORD PTR [rbx+68]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+68], eax",
-        "mov eax, DWORD PTR [rbx+72]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+72], eax",
-        "mov eax, DWORD PTR [rbx+76]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+76], eax",
-        "mov eax, DWORD PTR [rbx+80]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+80], eax",
-        "mov rsi, rbx",
-        "add rsi, 20",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbx, r12",
-        "mov rsi, r12",
-        "add rsi, 20",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbx, QWORD PTR [r15+160]",
-        "mov rbp, QWORD PTR [r15+168]",
-        "mov r12, QWORD PTR [r15+176]",
-        "mov r13, QWORD PTR [r15+184]",
-        "mov r14, QWORD PTR [r15+192]",
-        "mov r15, QWORD PTR [r15+200]",
-        "lea rsp, [rsp+456]",
-        "ret",
-        ".p2align 6",
+        "lea rsp, [rsp-456]
+mov r8, rsp
+add r8, 8
+mov QWORD PTR [r8+160], rbx
+mov QWORD PTR [r8+168], rbp
+mov QWORD PTR [r8+176], r12
+mov QWORD PTR [r8+184], r13
+mov QWORD PTR [r8+192], r14
+mov QWORD PTR [r8+200], r15
+mov rbx, rdi
+mov r12, rsi
+mov r15, r8
+mov rbp, rdx
+mov r13, rcx
+mov rdi, rbx
+call {vg_sha1_init}
+mov rdi, r12
+call {vg_sha1_init}
+mov eax, 909522486
+mov DWORD PTR [rbx+20], eax
+mov DWORD PTR [rbx+24], eax
+mov DWORD PTR [rbx+28], eax
+mov DWORD PTR [rbx+32], eax
+mov DWORD PTR [rbx+36], eax
+mov DWORD PTR [rbx+40], eax
+mov DWORD PTR [rbx+44], eax
+mov DWORD PTR [rbx+48], eax
+mov DWORD PTR [rbx+52], eax
+mov DWORD PTR [rbx+56], eax
+mov DWORD PTR [rbx+60], eax
+mov DWORD PTR [rbx+64], eax
+mov DWORD PTR [rbx+68], eax
+mov DWORD PTR [rbx+72], eax
+mov DWORD PTR [rbx+76], eax
+mov DWORD PTR [rbx+80], eax
+mov r14d, 0
+test r13, r13
+je 20f
+22:
+movzx eax, BYTE PTR [rbp+r14*1]
+xor eax, 54
+mov BYTE PTR [rbx+r14*1+20], al
+add r14, 1
+cmp r14, r13
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [rbx+20]
+xor eax, 1785358954
+mov DWORD PTR [r12+20], eax
+mov eax, DWORD PTR [rbx+24]
+xor eax, 1785358954
+mov DWORD PTR [r12+24], eax
+mov eax, DWORD PTR [rbx+28]
+xor eax, 1785358954
+mov DWORD PTR [r12+28], eax
+mov eax, DWORD PTR [rbx+32]
+xor eax, 1785358954
+mov DWORD PTR [r12+32], eax
+mov eax, DWORD PTR [rbx+36]
+xor eax, 1785358954
+mov DWORD PTR [r12+36], eax
+mov eax, DWORD PTR [rbx+40]
+xor eax, 1785358954
+mov DWORD PTR [r12+40], eax
+mov eax, DWORD PTR [rbx+44]
+xor eax, 1785358954
+mov DWORD PTR [r12+44], eax
+mov eax, DWORD PTR [rbx+48]
+xor eax, 1785358954
+mov DWORD PTR [r12+48], eax
+mov eax, DWORD PTR [rbx+52]
+xor eax, 1785358954
+mov DWORD PTR [r12+52], eax
+mov eax, DWORD PTR [rbx+56]
+xor eax, 1785358954
+mov DWORD PTR [r12+56], eax
+mov eax, DWORD PTR [rbx+60]
+xor eax, 1785358954
+mov DWORD PTR [r12+60], eax
+mov eax, DWORD PTR [rbx+64]
+xor eax, 1785358954
+mov DWORD PTR [r12+64], eax
+mov eax, DWORD PTR [rbx+68]
+xor eax, 1785358954
+mov DWORD PTR [r12+68], eax
+mov eax, DWORD PTR [rbx+72]
+xor eax, 1785358954
+mov DWORD PTR [r12+72], eax
+mov eax, DWORD PTR [rbx+76]
+xor eax, 1785358954
+mov DWORD PTR [r12+76], eax
+mov eax, DWORD PTR [rbx+80]
+xor eax, 1785358954
+mov DWORD PTR [r12+80], eax
+mov rsi, rbx
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, r12
+mov rsi, r12
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, QWORD PTR [r15+160]
+mov rbp, QWORD PTR [r15+168]
+mov r12, QWORD PTR [r15+176]
+mov r13, QWORD PTR [r15+184]
+mov r14, QWORD PTR [r15+192]
+mov r15, QWORD PTR [r15+200]
+lea rsp, [rsp+456]
+ret
+.p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
@@ -159,96 +159,96 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init(inner: *mut [u8; 84], out
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-456]",
-        "mov r8, rsp",
-        "add r8, 8",
-        "mov QWORD PTR [r8+160], rbx",
-        "mov QWORD PTR [r8+168], rbp",
-        "mov QWORD PTR [r8+176], r12",
-        "mov QWORD PTR [r8+184], r13",
-        "mov QWORD PTR [r8+192], r14",
-        "mov QWORD PTR [r8+200], r15",
-        "mov rbx, rdi",
-        "mov r12, rsi",
-        "mov r13, rcx",
-        "mov r15, r8",
-        "mov rsi, rdx",
-        "mov rdx, r15",
-        "add rdx, 208",
-        "mov rcx, r15",
-        "call {vg_sha1_finalize_scratch}",
-        "mov eax, DWORD PTR [r12]",
-        "mov DWORD PTR [rbx], eax",
-        "mov eax, DWORD PTR [r12+4]",
-        "mov DWORD PTR [rbx+4], eax",
-        "mov eax, DWORD PTR [r12+8]",
-        "mov DWORD PTR [rbx+8], eax",
-        "mov eax, DWORD PTR [r12+12]",
-        "mov DWORD PTR [rbx+12], eax",
-        "mov eax, DWORD PTR [r12+16]",
-        "mov DWORD PTR [rbx+16], eax",
-        "mov eax, DWORD PTR [r15+208]",
-        "mov DWORD PTR [rbx+20], eax",
-        "mov eax, DWORD PTR [r15+212]",
-        "mov DWORD PTR [rbx+24], eax",
-        "mov eax, DWORD PTR [r15+216]",
-        "mov DWORD PTR [rbx+28], eax",
-        "mov eax, DWORD PTR [r15+220]",
-        "mov DWORD PTR [rbx+32], eax",
-        "mov eax, DWORD PTR [r15+224]",
-        "mov DWORD PTR [rbx+36], eax",
-        "mov rbp, rbx",
-        "add rbp, 20",
-        "mov eax, 128",
-        "mov DWORD PTR [rbp+20], eax",
-        "mov eax, 0",
-        "mov DWORD PTR [rbp+24], eax",
-        "mov DWORD PTR [rbp+28], eax",
-        "mov DWORD PTR [rbp+32], eax",
-        "mov DWORD PTR [rbp+36], eax",
-        "mov DWORD PTR [rbp+40], eax",
-        "mov DWORD PTR [rbp+44], eax",
-        "mov DWORD PTR [rbp+48], eax",
-        "mov DWORD PTR [rbp+52], eax",
-        "mov r12d, 84",
-        "mov rax, r12",
-        "add rax, rax",
-        "add rax, rax",
-        "add rax, rax",
-        "bswap rax",
-        "mov QWORD PTR [rbx+76], rax",
-        "mov rsi, rbp",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbp, r13",
-        "mov eax, DWORD PTR [rbx]",
-        "bswap eax",
-        "mov DWORD PTR [rbp], eax",
-        "mov eax, DWORD PTR [rbx+4]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+4], eax",
-        "mov eax, DWORD PTR [rbx+8]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+8], eax",
-        "mov eax, DWORD PTR [rbx+12]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+12], eax",
-        "mov eax, DWORD PTR [rbx+16]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+16], eax",
-        "mov rbx, QWORD PTR [r15+160]",
-        "mov rbp, QWORD PTR [r15+168]",
-        "mov r12, QWORD PTR [r15+176]",
-        "mov r13, QWORD PTR [r15+184]",
-        "mov r14, QWORD PTR [r15+192]",
-        "mov r15, QWORD PTR [r15+200]",
-        "lea rsp, [rsp+456]",
-        "ret",
-        ".p2align 6",
+        "lea rsp, [rsp-456]
+mov r8, rsp
+add r8, 8
+mov QWORD PTR [r8+160], rbx
+mov QWORD PTR [r8+168], rbp
+mov QWORD PTR [r8+176], r12
+mov QWORD PTR [r8+184], r13
+mov QWORD PTR [r8+192], r14
+mov QWORD PTR [r8+200], r15
+mov rbx, rdi
+mov r12, rsi
+mov r13, rcx
+mov r15, r8
+mov rsi, rdx
+mov rdx, r15
+add rdx, 208
+mov rcx, r15
+call {vg_sha1_finalize_scratch}
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
+mov eax, DWORD PTR [r12+16]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
+mov eax, DWORD PTR [r15+224]
+mov DWORD PTR [rbx+36], eax
+mov rbp, rbx
+add rbp, 20
+mov eax, 128
+mov DWORD PTR [rbp+20], eax
+mov eax, 0
+mov DWORD PTR [rbp+24], eax
+mov DWORD PTR [rbp+28], eax
+mov DWORD PTR [rbp+32], eax
+mov DWORD PTR [rbp+36], eax
+mov DWORD PTR [rbp+40], eax
+mov DWORD PTR [rbp+44], eax
+mov DWORD PTR [rbp+48], eax
+mov DWORD PTR [rbp+52], eax
+mov r12d, 84
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [rbx+76], rax
+mov rsi, rbp
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rbp, r13
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+mov rbx, QWORD PTR [r15+160]
+mov rbp, QWORD PTR [r15+168]
+mov r12, QWORD PTR [r15+176]
+mov r13, QWORD PTR [r15+184]
+mov r14, QWORD PTR [r15+192]
+mov r15, QWORD PTR [r15+200]
+lea rsp, [rsp+456]
+ret
+.p2align 6",
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
@@ -271,124 +271,124 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84],
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_scratch(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+160], rbx",
-        "mov QWORD PTR [r8+168], rbp",
-        "mov QWORD PTR [r8+176], r12",
-        "mov QWORD PTR [r8+184], r13",
-        "mov QWORD PTR [r8+192], r14",
-        "mov QWORD PTR [r8+200], r15",
-        "mov rbx, rdi",
-        "mov r12, rsi",
-        "mov r15, r8",
-        "mov rbp, rdx",
-        "mov r13, rcx",
-        "mov rdi, rbx",
-        "call {vg_sha1_init}",
-        "mov rdi, r12",
-        "call {vg_sha1_init}",
-        "mov eax, 909522486",
-        "mov DWORD PTR [rbx+20], eax",
-        "mov DWORD PTR [rbx+24], eax",
-        "mov DWORD PTR [rbx+28], eax",
-        "mov DWORD PTR [rbx+32], eax",
-        "mov DWORD PTR [rbx+36], eax",
-        "mov DWORD PTR [rbx+40], eax",
-        "mov DWORD PTR [rbx+44], eax",
-        "mov DWORD PTR [rbx+48], eax",
-        "mov DWORD PTR [rbx+52], eax",
-        "mov DWORD PTR [rbx+56], eax",
-        "mov DWORD PTR [rbx+60], eax",
-        "mov DWORD PTR [rbx+64], eax",
-        "mov DWORD PTR [rbx+68], eax",
-        "mov DWORD PTR [rbx+72], eax",
-        "mov DWORD PTR [rbx+76], eax",
-        "mov DWORD PTR [rbx+80], eax",
-        "mov r14d, 0",
-        "test r13, r13",
-        "je 20f",
-        "22:",
-        "movzx eax, BYTE PTR [rbp+r14*1]",
-        "xor eax, 54",
-        "mov BYTE PTR [rbx+r14*1+20], al",
-        "add r14, 1",
-        "cmp r14, r13",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [rbx+20]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+20], eax",
-        "mov eax, DWORD PTR [rbx+24]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+24], eax",
-        "mov eax, DWORD PTR [rbx+28]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+28], eax",
-        "mov eax, DWORD PTR [rbx+32]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+32], eax",
-        "mov eax, DWORD PTR [rbx+36]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+36], eax",
-        "mov eax, DWORD PTR [rbx+40]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+40], eax",
-        "mov eax, DWORD PTR [rbx+44]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+44], eax",
-        "mov eax, DWORD PTR [rbx+48]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+48], eax",
-        "mov eax, DWORD PTR [rbx+52]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+52], eax",
-        "mov eax, DWORD PTR [rbx+56]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+56], eax",
-        "mov eax, DWORD PTR [rbx+60]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+60], eax",
-        "mov eax, DWORD PTR [rbx+64]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+64], eax",
-        "mov eax, DWORD PTR [rbx+68]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+68], eax",
-        "mov eax, DWORD PTR [rbx+72]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+72], eax",
-        "mov eax, DWORD PTR [rbx+76]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+76], eax",
-        "mov eax, DWORD PTR [rbx+80]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+80], eax",
-        "mov rsi, rbx",
-        "add rsi, 20",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbx, r12",
-        "mov rsi, r12",
-        "add rsi, 20",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbx, QWORD PTR [r15+160]",
-        "mov rbp, QWORD PTR [r15+168]",
-        "mov r12, QWORD PTR [r15+176]",
-        "mov r13, QWORD PTR [r15+184]",
-        "mov r14, QWORD PTR [r15+192]",
-        "mov r15, QWORD PTR [r15+200]",
-        "ret",
-        ".p2align 6",
+        "mov QWORD PTR [r8+160], rbx
+mov QWORD PTR [r8+168], rbp
+mov QWORD PTR [r8+176], r12
+mov QWORD PTR [r8+184], r13
+mov QWORD PTR [r8+192], r14
+mov QWORD PTR [r8+200], r15
+mov rbx, rdi
+mov r12, rsi
+mov r15, r8
+mov rbp, rdx
+mov r13, rcx
+mov rdi, rbx
+call {vg_sha1_init}
+mov rdi, r12
+call {vg_sha1_init}
+mov eax, 909522486
+mov DWORD PTR [rbx+20], eax
+mov DWORD PTR [rbx+24], eax
+mov DWORD PTR [rbx+28], eax
+mov DWORD PTR [rbx+32], eax
+mov DWORD PTR [rbx+36], eax
+mov DWORD PTR [rbx+40], eax
+mov DWORD PTR [rbx+44], eax
+mov DWORD PTR [rbx+48], eax
+mov DWORD PTR [rbx+52], eax
+mov DWORD PTR [rbx+56], eax
+mov DWORD PTR [rbx+60], eax
+mov DWORD PTR [rbx+64], eax
+mov DWORD PTR [rbx+68], eax
+mov DWORD PTR [rbx+72], eax
+mov DWORD PTR [rbx+76], eax
+mov DWORD PTR [rbx+80], eax
+mov r14d, 0
+test r13, r13
+je 20f
+22:
+movzx eax, BYTE PTR [rbp+r14*1]
+xor eax, 54
+mov BYTE PTR [rbx+r14*1+20], al
+add r14, 1
+cmp r14, r13
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [rbx+20]
+xor eax, 1785358954
+mov DWORD PTR [r12+20], eax
+mov eax, DWORD PTR [rbx+24]
+xor eax, 1785358954
+mov DWORD PTR [r12+24], eax
+mov eax, DWORD PTR [rbx+28]
+xor eax, 1785358954
+mov DWORD PTR [r12+28], eax
+mov eax, DWORD PTR [rbx+32]
+xor eax, 1785358954
+mov DWORD PTR [r12+32], eax
+mov eax, DWORD PTR [rbx+36]
+xor eax, 1785358954
+mov DWORD PTR [r12+36], eax
+mov eax, DWORD PTR [rbx+40]
+xor eax, 1785358954
+mov DWORD PTR [r12+40], eax
+mov eax, DWORD PTR [rbx+44]
+xor eax, 1785358954
+mov DWORD PTR [r12+44], eax
+mov eax, DWORD PTR [rbx+48]
+xor eax, 1785358954
+mov DWORD PTR [r12+48], eax
+mov eax, DWORD PTR [rbx+52]
+xor eax, 1785358954
+mov DWORD PTR [r12+52], eax
+mov eax, DWORD PTR [rbx+56]
+xor eax, 1785358954
+mov DWORD PTR [r12+56], eax
+mov eax, DWORD PTR [rbx+60]
+xor eax, 1785358954
+mov DWORD PTR [r12+60], eax
+mov eax, DWORD PTR [rbx+64]
+xor eax, 1785358954
+mov DWORD PTR [r12+64], eax
+mov eax, DWORD PTR [rbx+68]
+xor eax, 1785358954
+mov DWORD PTR [r12+68], eax
+mov eax, DWORD PTR [rbx+72]
+xor eax, 1785358954
+mov DWORD PTR [r12+72], eax
+mov eax, DWORD PTR [rbx+76]
+xor eax, 1785358954
+mov DWORD PTR [r12+76], eax
+mov eax, DWORD PTR [rbx+80]
+xor eax, 1785358954
+mov DWORD PTR [r12+80], eax
+mov rsi, rbx
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, r12
+mov rsi, r12
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, QWORD PTR [r15+160]
+mov rbp, QWORD PTR [r15+168]
+mov r12, QWORD PTR [r15+176]
+mov r13, QWORD PTR [r15+184]
+mov r14, QWORD PTR [r15+192]
+mov r15, QWORD PTR [r15+200]
+ret
+.p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
@@ -411,92 +411,92 @@ pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_scratch(inner: *mut [u8; 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_scratch(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+160], rbx",
-        "mov QWORD PTR [r8+168], rbp",
-        "mov QWORD PTR [r8+176], r12",
-        "mov QWORD PTR [r8+184], r13",
-        "mov QWORD PTR [r8+192], r14",
-        "mov QWORD PTR [r8+200], r15",
-        "mov rbx, rdi",
-        "mov r12, rsi",
-        "mov r13, rcx",
-        "mov r15, r8",
-        "mov rsi, rdx",
-        "mov rdx, r15",
-        "add rdx, 208",
-        "mov rcx, r15",
-        "call {vg_sha1_finalize_scratch}",
-        "mov eax, DWORD PTR [r12]",
-        "mov DWORD PTR [rbx], eax",
-        "mov eax, DWORD PTR [r12+4]",
-        "mov DWORD PTR [rbx+4], eax",
-        "mov eax, DWORD PTR [r12+8]",
-        "mov DWORD PTR [rbx+8], eax",
-        "mov eax, DWORD PTR [r12+12]",
-        "mov DWORD PTR [rbx+12], eax",
-        "mov eax, DWORD PTR [r12+16]",
-        "mov DWORD PTR [rbx+16], eax",
-        "mov eax, DWORD PTR [r15+208]",
-        "mov DWORD PTR [rbx+20], eax",
-        "mov eax, DWORD PTR [r15+212]",
-        "mov DWORD PTR [rbx+24], eax",
-        "mov eax, DWORD PTR [r15+216]",
-        "mov DWORD PTR [rbx+28], eax",
-        "mov eax, DWORD PTR [r15+220]",
-        "mov DWORD PTR [rbx+32], eax",
-        "mov eax, DWORD PTR [r15+224]",
-        "mov DWORD PTR [rbx+36], eax",
-        "mov rbp, rbx",
-        "add rbp, 20",
-        "mov eax, 128",
-        "mov DWORD PTR [rbp+20], eax",
-        "mov eax, 0",
-        "mov DWORD PTR [rbp+24], eax",
-        "mov DWORD PTR [rbp+28], eax",
-        "mov DWORD PTR [rbp+32], eax",
-        "mov DWORD PTR [rbp+36], eax",
-        "mov DWORD PTR [rbp+40], eax",
-        "mov DWORD PTR [rbp+44], eax",
-        "mov DWORD PTR [rbp+48], eax",
-        "mov DWORD PTR [rbp+52], eax",
-        "mov r12d, 84",
-        "mov rax, r12",
-        "add rax, rax",
-        "add rax, rax",
-        "add rax, rax",
-        "bswap rax",
-        "mov QWORD PTR [rbx+76], rax",
-        "mov rsi, rbp",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbp, r13",
-        "mov eax, DWORD PTR [rbx]",
-        "bswap eax",
-        "mov DWORD PTR [rbp], eax",
-        "mov eax, DWORD PTR [rbx+4]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+4], eax",
-        "mov eax, DWORD PTR [rbx+8]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+8], eax",
-        "mov eax, DWORD PTR [rbx+12]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+12], eax",
-        "mov eax, DWORD PTR [rbx+16]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+16], eax",
-        "mov rbx, QWORD PTR [r15+160]",
-        "mov rbp, QWORD PTR [r15+168]",
-        "mov r12, QWORD PTR [r15+176]",
-        "mov r13, QWORD PTR [r15+184]",
-        "mov r14, QWORD PTR [r15+192]",
-        "mov r15, QWORD PTR [r15+200]",
-        "ret",
-        ".p2align 6",
+        "mov QWORD PTR [r8+160], rbx
+mov QWORD PTR [r8+168], rbp
+mov QWORD PTR [r8+176], r12
+mov QWORD PTR [r8+184], r13
+mov QWORD PTR [r8+192], r14
+mov QWORD PTR [r8+200], r15
+mov rbx, rdi
+mov r12, rsi
+mov r13, rcx
+mov r15, r8
+mov rsi, rdx
+mov rdx, r15
+add rdx, 208
+mov rcx, r15
+call {vg_sha1_finalize_scratch}
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
+mov eax, DWORD PTR [r12+16]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
+mov eax, DWORD PTR [r15+224]
+mov DWORD PTR [rbx+36], eax
+mov rbp, rbx
+add rbp, 20
+mov eax, 128
+mov DWORD PTR [rbp+20], eax
+mov eax, 0
+mov DWORD PTR [rbp+24], eax
+mov DWORD PTR [rbp+28], eax
+mov DWORD PTR [rbp+32], eax
+mov DWORD PTR [rbp+36], eax
+mov DWORD PTR [rbp+40], eax
+mov DWORD PTR [rbp+44], eax
+mov DWORD PTR [rbp+48], eax
+mov DWORD PTR [rbp+52], eax
+mov r12d, 84
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [rbx+76], rax
+mov rsi, rbp
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress}
+mov rbx, rdi
+mov r15, rcx
+mov rbp, r13
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+mov rbx, QWORD PTR [r15+160]
+mov rbp, QWORD PTR [r15+168]
+mov r12, QWORD PTR [r15+176]
+mov r13, QWORD PTR [r15+184]
+mov r14, QWORD PTR [r15+192]
+mov r15, QWORD PTR [r15+200]
+ret
+.p2align 6",
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
@@ -521,128 +521,128 @@ pub(crate) const VG_HMAC_SHA1_INIT_SHANI_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-456]",
-        "mov r8, rsp",
-        "add r8, 8",
-        "mov QWORD PTR [r8+160], rbx",
-        "mov QWORD PTR [r8+168], rbp",
-        "mov QWORD PTR [r8+176], r12",
-        "mov QWORD PTR [r8+184], r13",
-        "mov QWORD PTR [r8+192], r14",
-        "mov QWORD PTR [r8+200], r15",
-        "mov rbx, rdi",
-        "mov r12, rsi",
-        "mov r15, r8",
-        "mov rbp, rdx",
-        "mov r13, rcx",
-        "mov rdi, rbx",
-        "call {vg_sha1_init}",
-        "mov rdi, r12",
-        "call {vg_sha1_init}",
-        "mov eax, 909522486",
-        "mov DWORD PTR [rbx+20], eax",
-        "mov DWORD PTR [rbx+24], eax",
-        "mov DWORD PTR [rbx+28], eax",
-        "mov DWORD PTR [rbx+32], eax",
-        "mov DWORD PTR [rbx+36], eax",
-        "mov DWORD PTR [rbx+40], eax",
-        "mov DWORD PTR [rbx+44], eax",
-        "mov DWORD PTR [rbx+48], eax",
-        "mov DWORD PTR [rbx+52], eax",
-        "mov DWORD PTR [rbx+56], eax",
-        "mov DWORD PTR [rbx+60], eax",
-        "mov DWORD PTR [rbx+64], eax",
-        "mov DWORD PTR [rbx+68], eax",
-        "mov DWORD PTR [rbx+72], eax",
-        "mov DWORD PTR [rbx+76], eax",
-        "mov DWORD PTR [rbx+80], eax",
-        "mov r14d, 0",
-        "test r13, r13",
-        "je 20f",
-        "22:",
-        "movzx eax, BYTE PTR [rbp+r14*1]",
-        "xor eax, 54",
-        "mov BYTE PTR [rbx+r14*1+20], al",
-        "add r14, 1",
-        "cmp r14, r13",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [rbx+20]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+20], eax",
-        "mov eax, DWORD PTR [rbx+24]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+24], eax",
-        "mov eax, DWORD PTR [rbx+28]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+28], eax",
-        "mov eax, DWORD PTR [rbx+32]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+32], eax",
-        "mov eax, DWORD PTR [rbx+36]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+36], eax",
-        "mov eax, DWORD PTR [rbx+40]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+40], eax",
-        "mov eax, DWORD PTR [rbx+44]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+44], eax",
-        "mov eax, DWORD PTR [rbx+48]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+48], eax",
-        "mov eax, DWORD PTR [rbx+52]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+52], eax",
-        "mov eax, DWORD PTR [rbx+56]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+56], eax",
-        "mov eax, DWORD PTR [rbx+60]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+60], eax",
-        "mov eax, DWORD PTR [rbx+64]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+64], eax",
-        "mov eax, DWORD PTR [rbx+68]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+68], eax",
-        "mov eax, DWORD PTR [rbx+72]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+72], eax",
-        "mov eax, DWORD PTR [rbx+76]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+76], eax",
-        "mov eax, DWORD PTR [rbx+80]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+80], eax",
-        "mov rsi, rbx",
-        "add rsi, 20",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress_shani}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbx, r12",
-        "mov rsi, r12",
-        "add rsi, 20",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress_shani}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbx, QWORD PTR [r15+160]",
-        "mov rbp, QWORD PTR [r15+168]",
-        "mov r12, QWORD PTR [r15+176]",
-        "mov r13, QWORD PTR [r15+184]",
-        "mov r14, QWORD PTR [r15+192]",
-        "mov r15, QWORD PTR [r15+200]",
-        "lea rsp, [rsp+456]",
-        "ret",
-        ".p2align 6",
+        "lea rsp, [rsp-456]
+mov r8, rsp
+add r8, 8
+mov QWORD PTR [r8+160], rbx
+mov QWORD PTR [r8+168], rbp
+mov QWORD PTR [r8+176], r12
+mov QWORD PTR [r8+184], r13
+mov QWORD PTR [r8+192], r14
+mov QWORD PTR [r8+200], r15
+mov rbx, rdi
+mov r12, rsi
+mov r15, r8
+mov rbp, rdx
+mov r13, rcx
+mov rdi, rbx
+call {vg_sha1_init}
+mov rdi, r12
+call {vg_sha1_init}
+mov eax, 909522486
+mov DWORD PTR [rbx+20], eax
+mov DWORD PTR [rbx+24], eax
+mov DWORD PTR [rbx+28], eax
+mov DWORD PTR [rbx+32], eax
+mov DWORD PTR [rbx+36], eax
+mov DWORD PTR [rbx+40], eax
+mov DWORD PTR [rbx+44], eax
+mov DWORD PTR [rbx+48], eax
+mov DWORD PTR [rbx+52], eax
+mov DWORD PTR [rbx+56], eax
+mov DWORD PTR [rbx+60], eax
+mov DWORD PTR [rbx+64], eax
+mov DWORD PTR [rbx+68], eax
+mov DWORD PTR [rbx+72], eax
+mov DWORD PTR [rbx+76], eax
+mov DWORD PTR [rbx+80], eax
+mov r14d, 0
+test r13, r13
+je 20f
+22:
+movzx eax, BYTE PTR [rbp+r14*1]
+xor eax, 54
+mov BYTE PTR [rbx+r14*1+20], al
+add r14, 1
+cmp r14, r13
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [rbx+20]
+xor eax, 1785358954
+mov DWORD PTR [r12+20], eax
+mov eax, DWORD PTR [rbx+24]
+xor eax, 1785358954
+mov DWORD PTR [r12+24], eax
+mov eax, DWORD PTR [rbx+28]
+xor eax, 1785358954
+mov DWORD PTR [r12+28], eax
+mov eax, DWORD PTR [rbx+32]
+xor eax, 1785358954
+mov DWORD PTR [r12+32], eax
+mov eax, DWORD PTR [rbx+36]
+xor eax, 1785358954
+mov DWORD PTR [r12+36], eax
+mov eax, DWORD PTR [rbx+40]
+xor eax, 1785358954
+mov DWORD PTR [r12+40], eax
+mov eax, DWORD PTR [rbx+44]
+xor eax, 1785358954
+mov DWORD PTR [r12+44], eax
+mov eax, DWORD PTR [rbx+48]
+xor eax, 1785358954
+mov DWORD PTR [r12+48], eax
+mov eax, DWORD PTR [rbx+52]
+xor eax, 1785358954
+mov DWORD PTR [r12+52], eax
+mov eax, DWORD PTR [rbx+56]
+xor eax, 1785358954
+mov DWORD PTR [r12+56], eax
+mov eax, DWORD PTR [rbx+60]
+xor eax, 1785358954
+mov DWORD PTR [r12+60], eax
+mov eax, DWORD PTR [rbx+64]
+xor eax, 1785358954
+mov DWORD PTR [r12+64], eax
+mov eax, DWORD PTR [rbx+68]
+xor eax, 1785358954
+mov DWORD PTR [r12+68], eax
+mov eax, DWORD PTR [rbx+72]
+xor eax, 1785358954
+mov DWORD PTR [r12+72], eax
+mov eax, DWORD PTR [rbx+76]
+xor eax, 1785358954
+mov DWORD PTR [r12+76], eax
+mov eax, DWORD PTR [rbx+80]
+xor eax, 1785358954
+mov DWORD PTR [r12+80], eax
+mov rsi, rbx
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, r12
+mov rsi, r12
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, QWORD PTR [r15+160]
+mov rbp, QWORD PTR [r15+168]
+mov r12, QWORD PTR [r15+176]
+mov r13, QWORD PTR [r15+184]
+mov r14, QWORD PTR [r15+192]
+mov r15, QWORD PTR [r15+200]
+lea rsp, [rsp+456]
+ret
+.p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
@@ -667,96 +667,96 @@ pub(crate) const VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_shani(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-456]",
-        "mov r8, rsp",
-        "add r8, 8",
-        "mov QWORD PTR [r8+160], rbx",
-        "mov QWORD PTR [r8+168], rbp",
-        "mov QWORD PTR [r8+176], r12",
-        "mov QWORD PTR [r8+184], r13",
-        "mov QWORD PTR [r8+192], r14",
-        "mov QWORD PTR [r8+200], r15",
-        "mov rbx, rdi",
-        "mov r12, rsi",
-        "mov r13, rcx",
-        "mov r15, r8",
-        "mov rsi, rdx",
-        "mov rdx, r15",
-        "add rdx, 208",
-        "mov rcx, r15",
-        "call {vg_sha1_finalize_scratch_shani}",
-        "mov eax, DWORD PTR [r12]",
-        "mov DWORD PTR [rbx], eax",
-        "mov eax, DWORD PTR [r12+4]",
-        "mov DWORD PTR [rbx+4], eax",
-        "mov eax, DWORD PTR [r12+8]",
-        "mov DWORD PTR [rbx+8], eax",
-        "mov eax, DWORD PTR [r12+12]",
-        "mov DWORD PTR [rbx+12], eax",
-        "mov eax, DWORD PTR [r12+16]",
-        "mov DWORD PTR [rbx+16], eax",
-        "mov eax, DWORD PTR [r15+208]",
-        "mov DWORD PTR [rbx+20], eax",
-        "mov eax, DWORD PTR [r15+212]",
-        "mov DWORD PTR [rbx+24], eax",
-        "mov eax, DWORD PTR [r15+216]",
-        "mov DWORD PTR [rbx+28], eax",
-        "mov eax, DWORD PTR [r15+220]",
-        "mov DWORD PTR [rbx+32], eax",
-        "mov eax, DWORD PTR [r15+224]",
-        "mov DWORD PTR [rbx+36], eax",
-        "mov rbp, rbx",
-        "add rbp, 20",
-        "mov eax, 128",
-        "mov DWORD PTR [rbp+20], eax",
-        "mov eax, 0",
-        "mov DWORD PTR [rbp+24], eax",
-        "mov DWORD PTR [rbp+28], eax",
-        "mov DWORD PTR [rbp+32], eax",
-        "mov DWORD PTR [rbp+36], eax",
-        "mov DWORD PTR [rbp+40], eax",
-        "mov DWORD PTR [rbp+44], eax",
-        "mov DWORD PTR [rbp+48], eax",
-        "mov DWORD PTR [rbp+52], eax",
-        "mov r12d, 84",
-        "mov rax, r12",
-        "add rax, rax",
-        "add rax, rax",
-        "add rax, rax",
-        "bswap rax",
-        "mov QWORD PTR [rbx+76], rax",
-        "mov rsi, rbp",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress_shani}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbp, r13",
-        "mov eax, DWORD PTR [rbx]",
-        "bswap eax",
-        "mov DWORD PTR [rbp], eax",
-        "mov eax, DWORD PTR [rbx+4]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+4], eax",
-        "mov eax, DWORD PTR [rbx+8]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+8], eax",
-        "mov eax, DWORD PTR [rbx+12]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+12], eax",
-        "mov eax, DWORD PTR [rbx+16]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+16], eax",
-        "mov rbx, QWORD PTR [r15+160]",
-        "mov rbp, QWORD PTR [r15+168]",
-        "mov r12, QWORD PTR [r15+176]",
-        "mov r13, QWORD PTR [r15+184]",
-        "mov r14, QWORD PTR [r15+192]",
-        "mov r15, QWORD PTR [r15+200]",
-        "lea rsp, [rsp+456]",
-        "ret",
-        ".p2align 6",
+        "lea rsp, [rsp-456]
+mov r8, rsp
+add r8, 8
+mov QWORD PTR [r8+160], rbx
+mov QWORD PTR [r8+168], rbp
+mov QWORD PTR [r8+176], r12
+mov QWORD PTR [r8+184], r13
+mov QWORD PTR [r8+192], r14
+mov QWORD PTR [r8+200], r15
+mov rbx, rdi
+mov r12, rsi
+mov r13, rcx
+mov r15, r8
+mov rsi, rdx
+mov rdx, r15
+add rdx, 208
+mov rcx, r15
+call {vg_sha1_finalize_scratch_shani}
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
+mov eax, DWORD PTR [r12+16]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
+mov eax, DWORD PTR [r15+224]
+mov DWORD PTR [rbx+36], eax
+mov rbp, rbx
+add rbp, 20
+mov eax, 128
+mov DWORD PTR [rbp+20], eax
+mov eax, 0
+mov DWORD PTR [rbp+24], eax
+mov DWORD PTR [rbp+28], eax
+mov DWORD PTR [rbp+32], eax
+mov DWORD PTR [rbp+36], eax
+mov DWORD PTR [rbp+40], eax
+mov DWORD PTR [rbp+44], eax
+mov DWORD PTR [rbp+48], eax
+mov DWORD PTR [rbp+52], eax
+mov r12d, 84
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [rbx+76], rax
+mov rsi, rbp
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rbp, r13
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+mov rbx, QWORD PTR [r15+160]
+mov rbp, QWORD PTR [r15+168]
+mov r12, QWORD PTR [r15+176]
+mov r13, QWORD PTR [r15+184]
+mov r14, QWORD PTR [r15+192]
+mov r15, QWORD PTR [r15+200]
+lea rsp, [rsp+456]
+ret
+.p2align 6",
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
@@ -783,124 +783,124 @@ pub(crate) const VG_HMAC_SHA1_INIT_SCRATCH_SHANI_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_scratch_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+160], rbx",
-        "mov QWORD PTR [r8+168], rbp",
-        "mov QWORD PTR [r8+176], r12",
-        "mov QWORD PTR [r8+184], r13",
-        "mov QWORD PTR [r8+192], r14",
-        "mov QWORD PTR [r8+200], r15",
-        "mov rbx, rdi",
-        "mov r12, rsi",
-        "mov r15, r8",
-        "mov rbp, rdx",
-        "mov r13, rcx",
-        "mov rdi, rbx",
-        "call {vg_sha1_init}",
-        "mov rdi, r12",
-        "call {vg_sha1_init}",
-        "mov eax, 909522486",
-        "mov DWORD PTR [rbx+20], eax",
-        "mov DWORD PTR [rbx+24], eax",
-        "mov DWORD PTR [rbx+28], eax",
-        "mov DWORD PTR [rbx+32], eax",
-        "mov DWORD PTR [rbx+36], eax",
-        "mov DWORD PTR [rbx+40], eax",
-        "mov DWORD PTR [rbx+44], eax",
-        "mov DWORD PTR [rbx+48], eax",
-        "mov DWORD PTR [rbx+52], eax",
-        "mov DWORD PTR [rbx+56], eax",
-        "mov DWORD PTR [rbx+60], eax",
-        "mov DWORD PTR [rbx+64], eax",
-        "mov DWORD PTR [rbx+68], eax",
-        "mov DWORD PTR [rbx+72], eax",
-        "mov DWORD PTR [rbx+76], eax",
-        "mov DWORD PTR [rbx+80], eax",
-        "mov r14d, 0",
-        "test r13, r13",
-        "je 20f",
-        "22:",
-        "movzx eax, BYTE PTR [rbp+r14*1]",
-        "xor eax, 54",
-        "mov BYTE PTR [rbx+r14*1+20], al",
-        "add r14, 1",
-        "cmp r14, r13",
-        "jne 22b",
-        "jmp 21f",
-        "20:",
-        "21:",
-        "mov eax, DWORD PTR [rbx+20]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+20], eax",
-        "mov eax, DWORD PTR [rbx+24]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+24], eax",
-        "mov eax, DWORD PTR [rbx+28]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+28], eax",
-        "mov eax, DWORD PTR [rbx+32]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+32], eax",
-        "mov eax, DWORD PTR [rbx+36]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+36], eax",
-        "mov eax, DWORD PTR [rbx+40]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+40], eax",
-        "mov eax, DWORD PTR [rbx+44]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+44], eax",
-        "mov eax, DWORD PTR [rbx+48]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+48], eax",
-        "mov eax, DWORD PTR [rbx+52]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+52], eax",
-        "mov eax, DWORD PTR [rbx+56]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+56], eax",
-        "mov eax, DWORD PTR [rbx+60]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+60], eax",
-        "mov eax, DWORD PTR [rbx+64]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+64], eax",
-        "mov eax, DWORD PTR [rbx+68]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+68], eax",
-        "mov eax, DWORD PTR [rbx+72]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+72], eax",
-        "mov eax, DWORD PTR [rbx+76]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+76], eax",
-        "mov eax, DWORD PTR [rbx+80]",
-        "xor eax, 1785358954",
-        "mov DWORD PTR [r12+80], eax",
-        "mov rsi, rbx",
-        "add rsi, 20",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress_shani}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbx, r12",
-        "mov rsi, r12",
-        "add rsi, 20",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress_shani}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbx, QWORD PTR [r15+160]",
-        "mov rbp, QWORD PTR [r15+168]",
-        "mov r12, QWORD PTR [r15+176]",
-        "mov r13, QWORD PTR [r15+184]",
-        "mov r14, QWORD PTR [r15+192]",
-        "mov r15, QWORD PTR [r15+200]",
-        "ret",
-        ".p2align 6",
+        "mov QWORD PTR [r8+160], rbx
+mov QWORD PTR [r8+168], rbp
+mov QWORD PTR [r8+176], r12
+mov QWORD PTR [r8+184], r13
+mov QWORD PTR [r8+192], r14
+mov QWORD PTR [r8+200], r15
+mov rbx, rdi
+mov r12, rsi
+mov r15, r8
+mov rbp, rdx
+mov r13, rcx
+mov rdi, rbx
+call {vg_sha1_init}
+mov rdi, r12
+call {vg_sha1_init}
+mov eax, 909522486
+mov DWORD PTR [rbx+20], eax
+mov DWORD PTR [rbx+24], eax
+mov DWORD PTR [rbx+28], eax
+mov DWORD PTR [rbx+32], eax
+mov DWORD PTR [rbx+36], eax
+mov DWORD PTR [rbx+40], eax
+mov DWORD PTR [rbx+44], eax
+mov DWORD PTR [rbx+48], eax
+mov DWORD PTR [rbx+52], eax
+mov DWORD PTR [rbx+56], eax
+mov DWORD PTR [rbx+60], eax
+mov DWORD PTR [rbx+64], eax
+mov DWORD PTR [rbx+68], eax
+mov DWORD PTR [rbx+72], eax
+mov DWORD PTR [rbx+76], eax
+mov DWORD PTR [rbx+80], eax
+mov r14d, 0
+test r13, r13
+je 20f
+22:
+movzx eax, BYTE PTR [rbp+r14*1]
+xor eax, 54
+mov BYTE PTR [rbx+r14*1+20], al
+add r14, 1
+cmp r14, r13
+jne 22b
+jmp 21f
+20:
+21:
+mov eax, DWORD PTR [rbx+20]
+xor eax, 1785358954
+mov DWORD PTR [r12+20], eax
+mov eax, DWORD PTR [rbx+24]
+xor eax, 1785358954
+mov DWORD PTR [r12+24], eax
+mov eax, DWORD PTR [rbx+28]
+xor eax, 1785358954
+mov DWORD PTR [r12+28], eax
+mov eax, DWORD PTR [rbx+32]
+xor eax, 1785358954
+mov DWORD PTR [r12+32], eax
+mov eax, DWORD PTR [rbx+36]
+xor eax, 1785358954
+mov DWORD PTR [r12+36], eax
+mov eax, DWORD PTR [rbx+40]
+xor eax, 1785358954
+mov DWORD PTR [r12+40], eax
+mov eax, DWORD PTR [rbx+44]
+xor eax, 1785358954
+mov DWORD PTR [r12+44], eax
+mov eax, DWORD PTR [rbx+48]
+xor eax, 1785358954
+mov DWORD PTR [r12+48], eax
+mov eax, DWORD PTR [rbx+52]
+xor eax, 1785358954
+mov DWORD PTR [r12+52], eax
+mov eax, DWORD PTR [rbx+56]
+xor eax, 1785358954
+mov DWORD PTR [r12+56], eax
+mov eax, DWORD PTR [rbx+60]
+xor eax, 1785358954
+mov DWORD PTR [r12+60], eax
+mov eax, DWORD PTR [rbx+64]
+xor eax, 1785358954
+mov DWORD PTR [r12+64], eax
+mov eax, DWORD PTR [rbx+68]
+xor eax, 1785358954
+mov DWORD PTR [r12+68], eax
+mov eax, DWORD PTR [rbx+72]
+xor eax, 1785358954
+mov DWORD PTR [r12+72], eax
+mov eax, DWORD PTR [rbx+76]
+xor eax, 1785358954
+mov DWORD PTR [r12+76], eax
+mov eax, DWORD PTR [rbx+80]
+xor eax, 1785358954
+mov DWORD PTR [r12+80], eax
+mov rsi, rbx
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, r12
+mov rsi, r12
+add rsi, 20
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rbx, QWORD PTR [r15+160]
+mov rbp, QWORD PTR [r15+168]
+mov r12, QWORD PTR [r15+176]
+mov r13, QWORD PTR [r15+184]
+mov r14, QWORD PTR [r15+192]
+mov r15, QWORD PTR [r15+200]
+ret
+.p2align 6",
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )
@@ -927,92 +927,92 @@ pub(crate) const VG_HMAC_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Featu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_scratch_shani(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+160], rbx",
-        "mov QWORD PTR [r8+168], rbp",
-        "mov QWORD PTR [r8+176], r12",
-        "mov QWORD PTR [r8+184], r13",
-        "mov QWORD PTR [r8+192], r14",
-        "mov QWORD PTR [r8+200], r15",
-        "mov rbx, rdi",
-        "mov r12, rsi",
-        "mov r13, rcx",
-        "mov r15, r8",
-        "mov rsi, rdx",
-        "mov rdx, r15",
-        "add rdx, 208",
-        "mov rcx, r15",
-        "call {vg_sha1_finalize_scratch_shani}",
-        "mov eax, DWORD PTR [r12]",
-        "mov DWORD PTR [rbx], eax",
-        "mov eax, DWORD PTR [r12+4]",
-        "mov DWORD PTR [rbx+4], eax",
-        "mov eax, DWORD PTR [r12+8]",
-        "mov DWORD PTR [rbx+8], eax",
-        "mov eax, DWORD PTR [r12+12]",
-        "mov DWORD PTR [rbx+12], eax",
-        "mov eax, DWORD PTR [r12+16]",
-        "mov DWORD PTR [rbx+16], eax",
-        "mov eax, DWORD PTR [r15+208]",
-        "mov DWORD PTR [rbx+20], eax",
-        "mov eax, DWORD PTR [r15+212]",
-        "mov DWORD PTR [rbx+24], eax",
-        "mov eax, DWORD PTR [r15+216]",
-        "mov DWORD PTR [rbx+28], eax",
-        "mov eax, DWORD PTR [r15+220]",
-        "mov DWORD PTR [rbx+32], eax",
-        "mov eax, DWORD PTR [r15+224]",
-        "mov DWORD PTR [rbx+36], eax",
-        "mov rbp, rbx",
-        "add rbp, 20",
-        "mov eax, 128",
-        "mov DWORD PTR [rbp+20], eax",
-        "mov eax, 0",
-        "mov DWORD PTR [rbp+24], eax",
-        "mov DWORD PTR [rbp+28], eax",
-        "mov DWORD PTR [rbp+32], eax",
-        "mov DWORD PTR [rbp+36], eax",
-        "mov DWORD PTR [rbp+40], eax",
-        "mov DWORD PTR [rbp+44], eax",
-        "mov DWORD PTR [rbp+48], eax",
-        "mov DWORD PTR [rbp+52], eax",
-        "mov r12d, 84",
-        "mov rax, r12",
-        "add rax, rax",
-        "add rax, rax",
-        "add rax, rax",
-        "bswap rax",
-        "mov QWORD PTR [rbx+76], rax",
-        "mov rsi, rbp",
-        "mov rdi, rbx",
-        "mov edx, 1",
-        "mov rcx, r15",
-        "call {vg_sha1_compress_shani}",
-        "mov rbx, rdi",
-        "mov r15, rcx",
-        "mov rbp, r13",
-        "mov eax, DWORD PTR [rbx]",
-        "bswap eax",
-        "mov DWORD PTR [rbp], eax",
-        "mov eax, DWORD PTR [rbx+4]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+4], eax",
-        "mov eax, DWORD PTR [rbx+8]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+8], eax",
-        "mov eax, DWORD PTR [rbx+12]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+12], eax",
-        "mov eax, DWORD PTR [rbx+16]",
-        "bswap eax",
-        "mov DWORD PTR [rbp+16], eax",
-        "mov rbx, QWORD PTR [r15+160]",
-        "mov rbp, QWORD PTR [r15+168]",
-        "mov r12, QWORD PTR [r15+176]",
-        "mov r13, QWORD PTR [r15+184]",
-        "mov r14, QWORD PTR [r15+192]",
-        "mov r15, QWORD PTR [r15+200]",
-        "ret",
-        ".p2align 6",
+        "mov QWORD PTR [r8+160], rbx
+mov QWORD PTR [r8+168], rbp
+mov QWORD PTR [r8+176], r12
+mov QWORD PTR [r8+184], r13
+mov QWORD PTR [r8+192], r14
+mov QWORD PTR [r8+200], r15
+mov rbx, rdi
+mov r12, rsi
+mov r13, rcx
+mov r15, r8
+mov rsi, rdx
+mov rdx, r15
+add rdx, 208
+mov rcx, r15
+call {vg_sha1_finalize_scratch_shani}
+mov eax, DWORD PTR [r12]
+mov DWORD PTR [rbx], eax
+mov eax, DWORD PTR [r12+4]
+mov DWORD PTR [rbx+4], eax
+mov eax, DWORD PTR [r12+8]
+mov DWORD PTR [rbx+8], eax
+mov eax, DWORD PTR [r12+12]
+mov DWORD PTR [rbx+12], eax
+mov eax, DWORD PTR [r12+16]
+mov DWORD PTR [rbx+16], eax
+mov eax, DWORD PTR [r15+208]
+mov DWORD PTR [rbx+20], eax
+mov eax, DWORD PTR [r15+212]
+mov DWORD PTR [rbx+24], eax
+mov eax, DWORD PTR [r15+216]
+mov DWORD PTR [rbx+28], eax
+mov eax, DWORD PTR [r15+220]
+mov DWORD PTR [rbx+32], eax
+mov eax, DWORD PTR [r15+224]
+mov DWORD PTR [rbx+36], eax
+mov rbp, rbx
+add rbp, 20
+mov eax, 128
+mov DWORD PTR [rbp+20], eax
+mov eax, 0
+mov DWORD PTR [rbp+24], eax
+mov DWORD PTR [rbp+28], eax
+mov DWORD PTR [rbp+32], eax
+mov DWORD PTR [rbp+36], eax
+mov DWORD PTR [rbp+40], eax
+mov DWORD PTR [rbp+44], eax
+mov DWORD PTR [rbp+48], eax
+mov DWORD PTR [rbp+52], eax
+mov r12d, 84
+mov rax, r12
+add rax, rax
+add rax, rax
+add rax, rax
+bswap rax
+mov QWORD PTR [rbx+76], rax
+mov rsi, rbp
+mov rdi, rbx
+mov edx, 1
+mov rcx, r15
+call {vg_sha1_compress_shani}
+mov rbx, rdi
+mov r15, rcx
+mov rbp, r13
+mov eax, DWORD PTR [rbx]
+bswap eax
+mov DWORD PTR [rbp], eax
+mov eax, DWORD PTR [rbx+4]
+bswap eax
+mov DWORD PTR [rbp+4], eax
+mov eax, DWORD PTR [rbx+8]
+bswap eax
+mov DWORD PTR [rbp+8], eax
+mov eax, DWORD PTR [rbx+12]
+bswap eax
+mov DWORD PTR [rbp+12], eax
+mov eax, DWORD PTR [rbx+16]
+bswap eax
+mov DWORD PTR [rbp+16], eax
+mov rbx, QWORD PTR [r15+160]
+mov rbp, QWORD PTR [r15+168]
+mov r12, QWORD PTR [r15+176]
+mov r13, QWORD PTR [r15+184]
+mov r14, QWORD PTR [r15+192]
+mov r15, QWORD PTR [r15+200]
+ret
+.p2align 6",
         vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani,
         vg_sha1_compress_shani = sym super::sha1::vg_sha1_compress_shani,
     )

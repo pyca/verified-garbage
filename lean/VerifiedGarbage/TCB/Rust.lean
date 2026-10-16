@@ -12,8 +12,9 @@ is the printed assembly:
 #[unsafe(naked)]
 pub(crate) unsafe extern "<abi>" fn <name><sig> {
     core::arch::naked_asm!(
-        "<line>",
-        …
+        "<line>
+<line>
+…",
     )
 }
 ```
@@ -127,17 +128,44 @@ def docComment (indent doc : String) : String :=
 def dedup (as : List String) : List String :=
   as.foldl (init := []) fun acc a => if acc.contains a then acc else acc ++ [a]
 
-/-- One line of the `naked_asm!` template: a call names its function as the
-operand of the same name. -/
+/-- The text of one line of the `naked_asm!` template, escaped for a string
+literal (`escape`): a call names its function as the operand of the same
+name. `none` for the page of a static's address or its offset in the page,
+which a macro writes in the syntax of the object format (`line`). -/
+def lineText (call : String) : Line → Option String
+  | .text l => some (escape l)
+  | .call n => some (escape call ++ " {" ++ n ++ "}")
+  | .sym s .ripRel n => some (escape s ++ "[rip + {" ++ n ++ "}]")
+  | .sym s .x86PcRel n => some (escape s ++ "{" ++ n ++ "} - 2b")
+  | .sym s .armPcRel n => some (escape s ++ "{" ++ n ++ "} - (2f + 2 * (3f - 2f)))")
+  | .sym _ .page _ | .sym _ .pageOff _ => none
+
+/-- One line of the `naked_asm!` template as an argument of its own. -/
 def line (call : String) : Line → String
-  | .text l => s!"        \"{escape l}\",\n"
-  | .call n => s!"        \"{escape call} " ++ "{" ++ n ++ "}\",\n"
   | .sym s .page n => s!"        concat!(\"{escape s}\", vg_sym_page!(\"" ++ "{" ++ n ++ "}\")),\n"
   | .sym s .pageOff n =>
     s!"        concat!(\"{escape s}\", vg_sym_pageoff!(\"" ++ "{" ++ n ++ "}\")),\n"
-  | .sym s .ripRel n => s!"        \"{escape s}[rip + " ++ "{" ++ n ++ "}]\",\n"
-  | .sym s .x86PcRel n => s!"        \"{escape s}" ++ "{" ++ n ++ "} - 2b\",\n"
-  | .sym s .armPcRel n => s!"        \"{escape s}" ++ "{" ++ n ++ "} - (2f + 2 * (3f - 2f)))\",\n"
+  | l => s!"        \"{(lineText call l).getD ""}\",\n"
+
+/-- The arguments of `naked_asm!` for the template lines `ls`: each run of
+lines that are text alone (`lineText`) as one string literal of those lines
+separated by newlines, the others as arguments of their own (`line`).
+`naked_asm!` joins its arguments with newlines, so the template is the same
+as with one argument per line. A function's template is then a few tokens
+for rustc to parse and expand, not one per line. -/
+def template (call : String) (ls : List Line) : String :=
+  go ls []
+where
+  /-- The arguments for `ls`, after the run of text lines `run` (reversed). -/
+  go : List Line → List String → String
+    | [], run => flush run
+    | l :: ls, run => match lineText call l with
+      | some t => go ls (t :: run)
+      | none => flush run ++ line call l ++ go ls []
+  /-- The run of text lines `run` (reversed) as one string literal. -/
+  flush : List String → String
+    | [] => ""
+    | run => "        \"" ++ "\n".intercalate run.reverse ++ "\",\n"
 
 /-- `fs` as an English list of code spans: "`a`, `b` and `c`". -/
 def codeList : List String → String
@@ -321,7 +349,7 @@ where
   "#[unsafe(naked)]\n" ++
   s!"pub(crate) unsafe extern \"{a.target.rustAbi}\" fn {a.name}{a.sig.rust} " ++ "{\n" ++
   "    core::arch::naked_asm!(\n" ++
-  String.join (body.map (line a.target.printer.call)) ++
+  template a.target.printer.call body ++
   String.join (callees.map fun n => s!"        {n} = sym super::{moduleOf n}::{n},\n") ++
   String.join (syms.map fun n => s!"        {n} = sym super::consts::{n},\n") ++
   "    )\n" ++

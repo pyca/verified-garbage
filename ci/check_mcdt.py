@@ -51,7 +51,9 @@ FN = re.compile(
     r"^pub\(crate\) unsafe extern \"[\w-]+\" fn (vg_\w+)\(.*?\)(?: -> [^{]+?)? \{\n(.*?)^\}",
     re.MULTILINE | re.DOTALL,
 )
-LINE = re.compile(r'^\s*"([^"]*)",$', re.MULTILINE)
+# A string literal of the template: one line of it, or several separated by
+# newlines (`Rust.template`).
+STRING = re.compile(r'"((?:[^"\\]|\\.)*)"', re.DOTALL)
 LABEL = re.compile(r"^(\d+):$")
 MXCSR_VALUE = {"8127", "0x1FBF", "0x1fbf"}
 
@@ -62,18 +64,18 @@ def code(body, first_line):
     instrs, lines, labels = [], [], {}
     offset = 0
     line_number = first_line
-    for m in LINE.finditer(body):
-        line = m.group(1)
-        label = LABEL.match(line)
-        if label:
-            labels.setdefault(label.group(1), []).append(len(instrs))
-        else:
-            instrs.append(line)
-            # Count each newline once, rather than rescanning the growing
-            # prefix for every instruction in large generated functions.
-            line_number += body.count("\n", offset, m.start(1))
-            offset = m.start(1)
-            lines.append(line_number)
+    for m in STRING.finditer(body):
+        # Count each newline once, rather than rescanning the growing prefix
+        # for every literal in large generated functions.
+        line_number += body.count("\n", offset, m.start(1))
+        offset = m.start(1)
+        for i, line in enumerate(m.group(1).split("\n")):
+            label = LABEL.match(line)
+            if label:
+                labels.setdefault(label.group(1), []).append(len(instrs))
+            else:
+                instrs.append(line)
+                lines.append(line_number + i)
     return instrs, lines, labels
 
 
