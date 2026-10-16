@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtEdges
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CtLoop
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Redc
+import VerifiedGarbage.Proof.Framework.X86_64.Align
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -27,7 +28,7 @@ theorem redc_ct : RelCT isa (Two fun L : W8 => GoodW L.ws) AdxRotate8.redc
       exact ⟨⟨mi, ⟨hg.scr.congr kt.2.2, (kt.gpr (by decide)).trans hg.rdi,
         hg.hdr.of_outside ot (by unfold slot; omega)⟩, hZ⟩,
         by simpa only [Nat.mul_zero, Nat.add_zero] using hc⟩
-    refine RelCT.seq outer_ct ?_
+    refine RelCT.align_seq (RelCT.seq outer_ct ?_)
     refine two_map W8.ws ?_ finish_ct
     intro L s ⟨hg, hc⟩
     exact ⟨hg, by rw [hc]; congr 1; have := L.hw; unfold slot aAcc aTmp; omega⟩

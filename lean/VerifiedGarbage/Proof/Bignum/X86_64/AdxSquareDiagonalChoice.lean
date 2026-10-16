@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.Align
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareGroupedWord
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonal
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalStep
@@ -547,7 +548,7 @@ theorem diagonal8_ok {s : State} {B : Addr} {Z A eb w : Nat} (hs : Scr s B Z)
     refine WP.mono (WP.keep [.r15,.rbp,.r14] (Q := fun t =>
       t.gpr .r15 = 0 ∧ t.gpr .rbp = 0 ∧ t.gpr .r14 = 0 ∧ t.mem = s.mem)
       (by xrun) rfl) fun t ⟨h,k⟩ => ⟨h.1,h.2.1,h.2.2.1,h.2.2.2,k⟩
-  refine WP.seq (WP.mono init fun s1 ⟨h15,hbp,h14,hm,k1⟩ => ?_)
+  refine WP.seq (WP.mono (WP.append_align (k := 6) init) fun s1 ⟨h15,hbp,h14,hm,k1⟩ => ?_)
   let Inv := fun j t => DiagInv s1 B Z A eb (8*j) t ∧ (t.gpr .r15).toNat ≤ 2
   have initial : Inv 0 s1 := ⟨
     ⟨hs.congr k1.2.2, Keep.refl _ _, hbp, h14, Outside.refl _ _ _ _, by

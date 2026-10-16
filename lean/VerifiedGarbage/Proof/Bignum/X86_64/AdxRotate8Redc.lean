@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.Align
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Loop
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Edges
 import all Init.Data.Array.Basic
@@ -47,7 +48,7 @@ theorem redc_ok {s : State} {B : Addr} {Z w n : Nat} {mi : BitVec 64}
   have loop : WP isa (.loop AdxRotate8.tile .ne) a (RedcInv a B Z w n mi) :=
     wp_upto (a := 0) (N := n) hn (RedcInv a B Z w · mi)
       (fun _ _ hlt _ h => tileStep_ok hZ hw hlt h) (fun _ h => h) hi
-  refine WP.seq (WP.mono loop fun b hb => ?_)
+  refine WP.align_seq (WP.seq (WP.mono loop fun b hb => ?_))
   have bp : b.gpr .rcx = off B (slot w aTmp) := by
     rw [hb.rcx]; congr 1; omega
   refine WP.mono (finish_ok hb.scr hb.rdi hb.hdr hZ bp) fun t ⟨vt, ot, kt⟩ => ?_

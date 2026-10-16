@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.Align
+meta import VerifiedGarbage.Proof.Framework.X86_64.Align
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8TileEdges
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
@@ -187,9 +189,9 @@ theorem middle_loop_ct : RelCT isa
   · simpa only [← he] using ht
 
 theorem middles_ct : RelCT isa (Two AfterFront)
-    (.ite .ne (.loop AdxRotate8.middle .ne) (.block [])) (Two fun L s => TileBit L (L.n + 1) s) := by
+    (.ite .ne (.seq (.block [.align 6]) (.loop AdxRotate8.middle .ne)) (.block [])) (Two fun L s => TileBit L (L.n + 1) s) := by
   refine two_ite (fun L s t hs ht => by simp only [eval, hs.2, ht.2]) ?_ ?_
-  · refine middle_loop_ct.mono ?_ (fun _ _ h => h)
+  · refine (RelCT.align_seq (k := 6) middle_loop_ct).mono ?_ (fun _ _ h => h)
     rintro s t ⟨L, ⟨hs, he⟩, ⟨ht, _⟩⟩
     have hn : 0 < L.n := by
       simp only [eval, hs.2, Option.map_some, Option.some.injEq, Bool.not_eq_true', decide_eq_false_iff_not] at he

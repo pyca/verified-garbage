@@ -118,7 +118,7 @@ def tileFront : Prog isa :=
   .seq tileBegin (.seq (headN 8) (.seq (.block clearCarry) (.block nextBlock)))
 
 def tileCompute : Prog isa :=
-  .seq tileFront (.seq (.ite .ne (.loop middle .ne) (.block [])) tailCore)
+  .seq tileFront (.seq (.ite .ne (.seq (.block [.align 6]) (.loop middle .ne)) (.block [])) tailCore)
 
 /-- One eight-word cancellation tile. Carries occupy discarded words below
 its digit table, within the existing accumulator arrays. -/
@@ -137,5 +137,5 @@ def finish : List Instr := finishSetup ++
   ([.store (ix .r8 .rbp) .r10, .mov32 .rax (.imm 0), .store (ix .r8 .rbp 8) .rax] : List Instr)
 
 /-- Register-tiled Montgomery reduction for a positive multiple of eight words. -/
-def redc : Prog isa := .seq (.block setup) (.seq (.loop tile .ne) (.block finish))
+def redc : Prog isa := .seq (.block setup) (.seq (.block [.align 6]) (.seq (.loop tile .ne) (.block finish)))
 end VG.Impl.Bignum.X86_64.AdxRotate8
