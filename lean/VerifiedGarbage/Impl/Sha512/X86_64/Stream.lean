@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha512.X86_64
 public import VerifiedGarbage.Impl.Sha512.X86_64.Avx2Rolled
+public import VerifiedGarbage.Impl.Sha512.X86_64.Rolled
 public import VerifiedGarbage.Impl.Sha512.X86_64.ShaNi
 public import VerifiedGarbage.Impl.MdStream.X86_64
 
@@ -46,7 +47,7 @@ structure Callee where
   name : String
   code : Prog isa
 
-def Callee.scalar : Callee := ⟨"vg_sha512_compress", compress⟩
+def Callee.scalar : Callee := ⟨"vg_sha512_compress", Rolled.compress⟩
 def Callee.avx2 : Callee := ⟨"vg_sha512_compress_avx2", Avx2Rolled.compress⟩
 def Callee.shani : Callee := ⟨"vg_sha512_compress_shani", ShaNi.compress⟩
 
