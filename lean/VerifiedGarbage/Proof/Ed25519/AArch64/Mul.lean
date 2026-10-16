@@ -312,7 +312,8 @@ theorem reduceWide_ok (s : State) (hz : s.gpr .x10 = 0) :
     WP isa (.block reduceWide) s fun t =>
       toFe (val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7)) = toFe (wide s) ∧
       t.gpr .x10 = 0 ∧
-      Keeps [.x2, .x8, .x9, .x11, .x16, .x4, .x5, .x6, .x7, .x20] s t := by
+      Keeps [.x2, .x8, .x9, .x11, .x16, .x4, .x5, .x6, .x7, .x20] s t ∧
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) < 2 ^ 255 + 2 ^ 135 := by
   rw [reduceWide, List.append_assoc, WP.block_append_iff]
   refine WP.mono (movz38_ok s) fun s₁ ⟨h38, k1⟩ => ?_
   have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
@@ -333,9 +334,9 @@ theorem reduceWide_ok (s : State) (hz : s.gpr .x10 = 0) :
     have hh := val4_lt (s₁.gpr .x21) (s₁.gpr .x22) (s₁.gpr .x23) (s₁.gpr .x24)
     rw [ha] at e2
     omega_using [e2, hl, hh]
-  refine WP.mono (fold255_ok s₂ hz2 b20 b2 b8) fun s₃ ⟨e3, _, k3⟩ => ?_
+  refine WP.mono (fold255_ok s₂ hz2 b20 b2 b8) fun s₃ ⟨e3, lt3, k3⟩ => ?_
   refine ⟨?_, (k3.gpr _ (by decide)).trans hz2,
-    ((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide))⟩
+    ((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide)), lt3⟩
   rw [ha, k1.gpr .x4 (by decide), k1.gpr .x5 (by decide),
     k1.gpr .x6 (by decide), k1.gpr .x7 (by decide), k1.gpr .x21 (by decide),
     k1.gpr .x22 (by decide), k1.gpr .x23 (by decide), k1.gpr .x24 (by decide)] at e2
@@ -518,23 +519,27 @@ theorem zeroReg_ok (s : State) (r : Reg) :
 theorem fieldFinish_ok {s₀ s : State} {base : Addr} (hs : Scr s base large) {o : Nat}
     (ho : FieldRange o large) (hz : s.gpr .x10 = 0) (k : Keeps clob s₀ s) :
     WP isa (.block (reduceWide ++ store4 o)) s fun t =>
-      Op base o s₀ t ∧ F t.mem base o = toFe (wide s) := by
+      Op base o s₀ t ∧ F t.mem base o = toFe (wide s) ∧ fe t.mem base o < 2 ^ 255 + 2 ^ 135 := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   rw [WP.block_append_iff]
-  refine WP.mono (reduceWide_ok s hz) fun s₁ ⟨e1, _, k1⟩ => ?_
+  refine WP.mono (reduceWide_ok s hz) fun s₁ ⟨e1, _, k1, b1⟩ => ?_
   refine WP.mono (store4_ok (hs.of_keeps k1 (by decide)) ho) fun s₂ heq => ?_
   subst s₂
-  refine ⟨Op.of_store ho (k.trans (k1.mono (by decide))) _ _ _ _, ?_⟩
-  simp only [F]
-  rw [fe_st4 _ _ (by have := ho.2; omega)]
-  exact e1
+  refine ⟨Op.of_store ho (k.trans (k1.mono (by decide))) _ _ _ _, ?_, ?_⟩
+  · simp only [F]
+    rw [fe_st4 _ _ (by have := ho.2; omega)]
+    exact e1
+  · rw [fe_st4 _ _ (by have := ho.2; omega)]
+    exact b1
 
-/-- Multiplication modulo p, allowing the output to alias either input. -/
-theorem mul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+/-- Multiplication modulo p, allowing the output to alias either input; the
+result is stored below `2²⁵⁵ + 2¹³⁵`. -/
+theorem mul_okB {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
     (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
     WP isa (.block (fieldMul o a b)) s fun t =>
-      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base b := by
+      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base b ∧
+        fe t.mem base o < 2 ^ 255 + 2 ^ 135 := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   rw [fieldMul, List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -544,8 +549,15 @@ theorem mul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
   refine WP.mono (mulWide_ok hs₀ ha hb hz) fun s₁ ⟨e1, k1⟩ => ?_
   refine WP.mono (fieldFinish_ok (hs₀.of_keeps k1 (by decide)) ho
     ((k1.gpr _ (by decide)).trans hz) ((k0.mono (by decide)).trans (k1.mono (by decide))))
-    fun t ⟨hop, ht⟩ => ⟨hop, ?_⟩
+    fun t ⟨hop, ht, hb⟩ => ⟨hop, ?_, hb⟩
   rw [ht, e1, k0.mem]
   exact toFe_mul rfl
+
+/-- Multiplication modulo p, allowing the output to alias either input. -/
+theorem mul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
+    WP isa (.block (fieldMul o a b)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base b :=
+  WP.mono (mul_okB hs ho ha hb) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
 
 end VG.Proof.Ed25519.AArch64

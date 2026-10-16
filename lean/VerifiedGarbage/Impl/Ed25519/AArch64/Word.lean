@@ -197,6 +197,25 @@ def fieldSub (o a b : Nat) : List Instr :=
   [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldSubWords a b ++ borrow38 ++
     [.sub .x .x4 .x4 .x8] ++ store4 o
 
+/-- x8 (0 or 38) into x4–x7 with x10 = 0, once: when `fieldAddWords`' operands
+sum below `2²⁵⁷ − 38`, nothing carries out of it. -/
+def carry38Once : List Instr :=
+  [.adds .x .x4 .x4 .x8, .adcs .x .x5 .x5 .x10, .adcs .x .x6 .x6 .x10, .adcs .x .x7 .x7 .x10]
+
+/-- `[o] := [a] + [b]` with one fold of the carry, for operands that sum below
+`2²⁵⁷ − 38` (the stored sum is below `2²⁵⁶`, not necessarily reduced). -/
+def fieldAdd1 (o a b : Nat) : List Instr :=
+  [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldAddWords a b ++ carry38Once ++ store4 o
+
+/-- x8 (0 or 38) out of x4–x7 with x10 = 0, once: when `fieldSubWords`'
+subtrahend is below `2²⁵⁶ − 38`, nothing borrows out of it. -/
+def borrow38Once : List Instr :=
+  [.subs .x .x4 .x4 .x8, .sbcs .x .x5 .x5 .x10, .sbcs .x .x6 .x6 .x10, .sbcs .x .x7 .x7 .x10]
+
+/-- `[o] := [a] − [b]` with one fold of the borrow, for `[b]` below `2²⁵⁶ − 38`. -/
+def fieldSub1 (o a b : Nat) : List Instr :=
+  [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldSubWords a b ++ borrow38Once ++ store4 o
+
 def low63 : BitVec 64 := 0x7fffffffffffffff
 
 /-- Fold the high bit into 19, given x2 = low63, x10 = 0 and x11 = 19. -/

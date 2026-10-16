@@ -57,12 +57,13 @@ theorem hsetup_ok {base sc pt : Addr} {s : State} (hs : Sc base s)
       word t.mem base 768 = 0 ∧ t.gpr .x1 = s.gpr .x0 ∧
       (∀ i < 255, t.mem (off base (bitOffset+i)) = BitVec.ofNat 8 (bit (decodeScalar25519 (bytesAt s.mem sc 32)) i)) ∧
       (∀ i < 6, word t.mem base (8*i) = s.gpr (VG.Impl.X25519.AArch64.saved.getD i .x19)) ∧
-      Kp (clob ++ ([.x0,.x1,.x19] : List Reg)) s t ∧ Consts t.mem base ∧ SavedV base s.v t.mem := by
+      Kp (clob ++ ([.x0,.x1,.x19] : List Reg)) s t ∧ Consts t.mem base ∧ SavedV base s.v t.mem ∧
+      VG.Proof.Ed25519.AArch64.Small t.mem base S14 := by
   have hV : VSAVE = 1152 := rfl
   have hC : CONST = 1104 := rfl
   rw [VG.Impl.X25519.AArch64.Hybrid.setup, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.preservedV (VG.Proof.X25519.AArch64.Word.setup_ok hs hn h1 h2 hsr hpr hdS hdP) (by lit_decide))
-    fun a ⟨⟨ha, ga, wa, oa, ba, sva, ka⟩, va⟩ => ?_
+    fun a ⟨⟨ha, ga, wa, oa, ba, sva, ka, sa⟩, va⟩ => ?_
   refine WP.mono (vsave_ok ha) fun b ⟨svb, ob, gb, vb, rb, wb, spb⟩ => ?_
   have hb : Scratch b base := scratch_of ha gb wb
   refine WP.mono (consts_ok hb) fun c ⟨cc, oc, gc, vc, rc, wc, spc⟩ => ?_
@@ -74,7 +75,7 @@ theorem hsetup_ok {base sc pt : Addr} {s : State} (hs : Sc base s)
     by rw [Outside.word' o (by omega) (by omega)]; exact wa, by rw [g2 _ (by decide)]; exact oa,
     fun i hi => ?_, fun i hi => by rw [Outside.word' o (by omega) (by omega)]; exact sva i hi,
     ⟨fun r hr => ?_, rc.trans (rb.trans ka.rd), wc.trans (wb.trans ka.wr)⟩, cc,
-    fun k hk => ((svb.outside oc (by omega)) k hk).trans (va _ (preservedV_of k hk))⟩
+    fun k hk => ((svb.outside oc (by omega)) k hk).trans (va _ (preservedV_of k hk)), sa.frame o (by decide)⟩
   · rw [o]
     · exact ba i hi
     · rw [ofs_off' base (by simp [bitOffset, VG.Impl.X25519.AArch64.Word.BITS, VG.Impl.X25519.AArch64.BITS,
@@ -97,8 +98,8 @@ theorem correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s₀ : State} (hp : lo
   rw [VG.Impl.X25519.AArch64.Hybrid.x25519]
   refine WP.seq (WP.mono (hsetup_ok hs hp.2 rfl rfl
     (by rw [pre.rd]; simp) (by rw [pre.rd]; simp) pre.scalar_sc pre.point_sc)
-    fun c ⟨hc, gc, wc, oc, bc, svc, kc, cc, svv⟩ => ?_)
-  refine WP.seq (WP.mono (ladder_ok hc cc gc wc bc) fun d ⟨kd, gd, wd⟩ => ?_)
+    fun c ⟨hc, gc, wc, oc, bc, svc, kc, cc, svv, sc⟩ => ?_)
+  refine WP.seq (WP.mono (ladder_ok hc cc gc wc bc sc) fun d ⟨kd, gd, wd⟩ => ?_)
   have hd := kd.scratch hc
   refine WP.seq (WP.mono (VG.Proof.X25519.AArch64.Word.lastSwap_ok hd gd (ladderAfter_swap_le _ _ (by decide)) wd)
     fun e ⟨ke, ex, ez⟩ => ?_)

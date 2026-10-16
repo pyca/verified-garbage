@@ -172,4 +172,75 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
   simp only [VG.Spec.X25519.P]
   omega_using [e1, e2, e3]
 
+
+theorem borrow38Once_ok (s : State) (hz : s.gpr .x10 = 0) :
+    WP isa (.block borrow38Once) s fun t =>
+      ∃ c : Bool, val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) + (s.gpr .x8).toNat =
+        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) + 2 ^ 256 * (1 - c.toNat) ∧
+      Keeps [.x4, .x5, .x6, .x7] s t := by
+  apply WP.of_runBlock
+  simp only [borrow38Once, runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
+    RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq, ite_true, ite_false, reduceCtorEq, hz,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨carryOut (s.gpr .x7) (~~~0)
+    (carryOut (s.gpr .x6) (~~~0) (carryOut (s.gpr .x5) (~~~0)
+      (carryOut (s.gpr .x4) (~~~s.gpr .x8) true))),
+    ?_, ⟨?_, rfl, rfl, rfl, rfl⟩⟩
+  · have h := sub4_value (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) (s.gpr .x8) 0 0 0 true
+    dsimp only [addCarry, carryOut, Size.bits] at h ⊢
+    exact h
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+/-- Subtraction modulo p with one fold of the borrow, for a subtrahend below
+`2²⁵⁶ − 38`. -/
+theorem sub1_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large)
+    (hbb : fe s.mem base b < 2 ^ 256 - 38) :
+    WP isa (.block (fieldSub1 o a b)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a - F s.mem base b := by
+  have _hcap := workSize_le large
+  have _hmin := workSize_ge large
+  rw [fieldSub1, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (fieldInit_ok s) fun s₀ ⟨hz, h38, k0⟩ => ?_
+  have hs₀ := hs.of_keeps k0 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (subWords_ok hs₀ ha hb hz h38) fun s₁ ⟨c, e1, x1, k1⟩ => ?_
+  have hs₁ := hs₀.of_keeps k1 (by decide)
+  rw [WP.block_append_iff]
+  have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
+  refine WP.mono (borrow38Once_ok s₁ hz1) fun s₂ ⟨c', e2, k2⟩ => ?_
+  have hs₂ := hs₁.of_keeps k2 (by decide)
+  refine WP.mono (store4_ok hs₂ ho) fun s₃ heq => ?_
+  subst s₃
+  have k0' : Keeps clob s s₀ := k0.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> decide)
+  have k1' : Keeps clob s₀ s₁ := k1.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+  have k2' : Keeps clob s₁ s₂ := k2.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> decide)
+  refine ⟨Op.of_store ho (k0'.trans (k1'.trans k2')) _ _ _ _, ?_⟩
+  simp only [F]
+  apply toFe_sub
+  rw [fe_st4 _ _ (by have := ho.2; omega)]
+  rw [k0.mem] at e1
+  have hl := val4_lt (s₂.gpr .x4) (s₂.gpr .x5) (s₂.gpr .x6) (s₂.gpr .x7)
+  have hl1 := val4_lt (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6) (s₁.gpr .x7)
+  have hc := Bool.toNat_le c
+  have hc' := Bool.toNat_le c'
+  rw [x1] at e2
+  have : val4 (s₂.gpr .x4) (s₂.gpr .x5) (s₂.gpr .x6) (s₂.gpr .x7) + fe s.mem base b =
+      fe s.mem base a + VG.Spec.X25519.P * (2 * (1 - c.toNat)) := by
+    simp only [VG.Spec.X25519.P]
+    omega
+  rw [this, Nat.add_mul_mod_self_left]
+
 end VG.Proof.Ed25519.AArch64

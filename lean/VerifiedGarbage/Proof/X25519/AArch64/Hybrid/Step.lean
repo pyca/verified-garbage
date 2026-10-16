@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Fields
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Ladder
+import VerifiedGarbage.Proof.Ed25519.AArch64.Swap
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -24,8 +25,8 @@ namespace VG.Proof.X25519.AArch64.Hybrid
 
 open VG VG.AArch64 VG.Spec.X25519 VG.Proof.X25519
 open VG.Impl.Ed25519.AArch64 (Slot offset)
-open VG.Proof.Ed25519.AArch64 (Keep env F Outside ofs clob word off ofs_off' Keeps)
-open VG.Proof.X25519.AArch64.Word (LoopKeep Good core swapped formula_ok swapField_ok bitOffset
+open VG.Proof.Ed25519.AArch64 (Keep env F Outside ofs clob word off ofs_off' Keeps Small)
+open VG.Proof.X25519.AArch64.Word (LoopKeep Good core swapped formula_ok bitOffset
   setCounter_ok)
 
 /-- What the hybrid ladder keeps: `Word.LoopKeep`, with the vector buffers too. -/
@@ -71,27 +72,77 @@ theorem HLoopKeep.bit {base : Addr} {s t : State} (h : HLoopKeep base s t) {i : 
 theorem HMem.swapWord {base : Addr} {m m' : Mem} (h : HMem base m m') : word m' base 768 = word m base 768 :=
   (Mem.readW_congr fun i hi => (h _ (by rw [VG.Proof.Ed25519.AArch64.ofs_off base (by omega)]; omega)).symm).symm
 
+/-- `swapField_ok`, keeping the slots small when `x` and `y` both are or are not. -/
+theorem swapField_okS {s : State} {base : Addr} (hs : Scratch s base)
+    (x y : VG.Impl.Ed25519.AArch64.Slot) (hxy : x ≠ y) {sw : Bool} (hm : s.gpr .x3 = VG.Proof.Ed25519.Word64.mask sw)
+    {S : VG.Impl.Ed25519.AArch64.Slot → Bool} (hS : Small s.mem base S) (hSxy : S x = S y) :
+    WP isa (.block (VG.Impl.Ed25519.AArch64.cswap (offset x) (offset y))) s fun t =>
+      Keep base s t ∧ env t.mem base = swapped (env s.mem base) x y sw ∧ t.gpr .x3 = s.gpr .x3 ∧
+      Small t.mem base S := by
+  have hne : x.val ≠ y.val := fun h => hxy (Fin.ext h)
+  have hsep : offset x + 32 ≤ offset y ∨ offset y + 32 ≤ offset x := by
+    simp only [offset]; omega
+  refine WP.mono (VG.Proof.Ed25519.AArch64.cswap_ok hs
+    (VG.Proof.Ed25519.AArch64.slot_rangeWith (large := false) x)
+    (VG.Proof.Ed25519.AArch64.slot_rangeWith (large := false) y) hsep hm)
+    fun t ⟨hg, hm3, hr, hw, hp, ⟨m, h₁, h₂, hx⟩, tx, ty⟩ => ?_
+  refine ⟨⟨hg, hr, hw, hp, (h₁.mono (by simp [offset]) (by simp only [offset]; omega)).trans
+    (h₂.mono (by simp [offset]) (by simp only [offset]; omega))⟩, ?_, hm3, ?_⟩
+  · have ex : F m base (offset x) = if sw then env s.mem base y else env s.mem base x := by
+      change Proof.X25519.toFe _ = _
+      rw [hx]
+      cases sw <;> rfl
+    have ey : F t.mem base (offset y) = if sw then env s.mem base x else env s.mem base y := by
+      change Proof.X25519.toFe _ = _
+      rw [ty]
+      cases sw <;> rfl
+    rw [VG.Proof.Ed25519.AArch64.env_update y h₂, VG.Proof.Ed25519.AArch64.env_update x h₁, ex, ey]
+    rfl
+  · intro i hi
+    by_cases iy : i = y
+    · subst iy
+      rw [ty]
+      cases sw
+      · exact hS _ hi
+      · exact hS x (hSxy.trans hi)
+    · by_cases ix : i = x
+      · subst ix
+        rw [tx]
+        cases sw
+        · exact hS _ hi
+        · exact hS y (hSxy.symm.trans hi)
+      · have hiy : i.val ≠ y.val := fun h => iy (Fin.ext h)
+        have hix : i.val ≠ x.val := fun h => ix (Fin.ext h)
+        rw [h₂.fe (by simp only [offset]; omega) (by simp only [offset]; omega),
+          h₁.fe (by simp only [offset]; omega) (by simp only [offset]; omega)]
+        exact hS i hi
+
 theorem step_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} {st : Ladder} {i : Nat}
     (hs : Scratch s base) (hc : Consts s.mem base) (hi : i < 255) (hg : Good (env s.mem base) x1 st)
     (hsw : st.swap ≤ 1) (hcnt : s.gpr .x19 = BitVec.ofNat 64 (i+1))
     (hw : word s.mem base 768 = BitVec.ofNat 64 st.swap)
-    (hb : s.mem (off base (bitOffset+i)) = BitVec.ofNat 8 (VG.Proof.X25519.bit k i)) :
+    (hb : s.mem (off base (bitOffset+i)) = BitVec.ofNat 8 (VG.Proof.X25519.bit k i))
+    (hS : Small s.mem base S14) :
     WP isa (.block VG.Impl.X25519.AArch64.Hybrid.step) s fun t =>
       HLoopKeep base s t ∧ Good (env t.mem base) x1 (ladderStep k x1 st i) ∧
-      t.gpr .x19 = BitVec.ofNat 64 i ∧ word t.mem base 768 = BitVec.ofNat 64 (VG.Proof.X25519.bit k i) := by
+      t.gpr .x19 = BitVec.ofNat 64 i ∧ word t.mem base 768 = BitVec.ofNat 64 (VG.Proof.X25519.bit k i) ∧
+      Small t.mem base S14 := by
   simp only [VG.Impl.X25519.AArch64.Hybrid.step, VG.Impl.X25519.AArch64.Word.stepHead,
     VG.Impl.X25519.AArch64.Word.cswap, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (VG.Proof.X25519.AArch64.Word.prefix_ok hs hi hsw (bit_le k i) hcnt hw hb) fun a ⟨ka, ea, ca, ma, wa⟩ => ?_
+  refine WP.mono (VG.Proof.X25519.AArch64.Word.prefix_ok hs hi hsw (bit_le k i) hcnt hw hb) fun a ⟨ka, ea, ca, ma, wa, oa⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (swapField_ok (ka.scratch hs) 1 3 (by decide) ma) fun b ⟨kb, eb, mb⟩ => ?_
+  refine WP.mono (swapField_okS (ka.scratch hs) 1 3 (by decide) ma (hS.frame oa (by decide)) (by decide))
+    fun b ⟨kb, eb, mb, sb⟩ => ?_
   have kab : LoopKeep base s b := ka.trans (LoopKeep.of_field kb)
   rw [WP.block_append_iff]
-  refine WP.mono (swapField_ok (kab.scratch hs) 2 4 (by decide) (mb.trans ma)) fun c ⟨kc, ec, _⟩ => ?_
+  refine WP.mono (swapField_okS (kab.scratch hs) 2 4 (by decide) (mb.trans ma) sb (by decide))
+    fun c ⟨kc, ec, _, sc⟩ => ?_
   have kac : LoopKeep base s c := kab.trans (LoopKeep.of_field kc)
   have hcc : Consts c.mem base := (HLoopKeep.of_loop kac).consts hc
-  refine WP.mono (stepFields_ok (kac.scratch hs) hcc (by rw [ec, eb, ea]; exact hg.2.2.2.2.2)) fun t ⟨kt, _, e1, e2, e3, e4, e0, e18⟩ => ?_
-  refine ⟨(HLoopKeep.of_loop kac).trans (HLoopKeep.of_fkeep kt), ?_, ?_, ?_⟩
+  refine WP.mono (stepFields_ok (kac.scratch hs) hcc (by rw [ec, eb, ea]; exact hg.2.2.2.2.2) sc)
+    fun t ⟨kt, _, e1, e2, e3, e4, e0, e18, smt⟩ => ?_
+  refine ⟨(HLoopKeep.of_loop kac).trans (HLoopKeep.of_fkeep kt), ?_, ?_, ?_, smt⟩
   · have := formula_ok (env s.mem base) k x1 st i hg
     have hcore := VG.Proof.X25519.AArch64.Word.stepOps_eval
       (swapped (swapped (env s.mem base) 1 3 ((st.swap ^^^ VG.Proof.X25519.bit k i) == 1)) 2 4
@@ -111,11 +162,13 @@ theorem step_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} {st : Ladder} {i :
 /-- The loop's invariant. -/
 def LInv (base : Addr) (s₀ : State) (k : Nat) (x1 : Fe) (n : Nat) (s : State) : Prop :=
   HLoopKeep base s₀ s ∧ Good (env s.mem base) x1 (ladderAfter k x1 n) ∧
-  s.gpr .x19 = BitVec.ofNat 64 n ∧ word s.mem base 768 = BitVec.ofNat 64 (ladderAfter k x1 n).swap
+  s.gpr .x19 = BitVec.ofNat 64 n ∧ word s.mem base 768 = BitVec.ofNat 64 (ladderAfter k x1 n).swap ∧
+  Small s.mem base S14
 
 theorem ladder_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} (hs : Scratch s base) (hc : Consts s.mem base)
     (hg : Good (env s.mem base) x1 (init x1)) (hw : word s.mem base 768 = 0)
-    (hb : ∀ i < 255, s.mem (off base (bitOffset+i)) = BitVec.ofNat 8 (VG.Proof.X25519.bit k i)) :
+    (hb : ∀ i < 255, s.mem (off base (bitOffset+i)) = BitVec.ofNat 8 (VG.Proof.X25519.bit k i))
+    (hS : Small s.mem base S14) :
     WP isa VG.Impl.X25519.AArch64.Hybrid.ladder s fun t =>
       HLoopKeep base s t ∧ Good (env t.mem base) x1 (ladderAfter k x1 0) ∧
       word t.mem base 768 = BitVec.ofNat 64 (ladderAfter k x1 0).swap := by
@@ -123,12 +176,12 @@ theorem ladder_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} (hs : Scratch s 
   have kla : HLoopKeep base s a := HLoopKeep.of_loop (LoopKeep.of_keeps ka (by decide))
   refine WP.loop (M := isa) (fun n t => 1 ≤ n ∧ n ≤ 255 ∧ LInv base s k x1 n t)
     ?_ 255 a ⟨by decide, by decide, kla, by simpa [ka.mem, ladderAfter_255] using hg, ac,
-      by rw [ka.mem, ladderAfter_255]; exact hw⟩
-  intro n t ⟨h1, h255, kt, gt, ct, wt⟩
+      by rw [ka.mem, ladderAfter_255]; exact hw, by rw [ka.mem]; exact hS⟩
+  intro n t ⟨h1, h255, kt, gt, ct, wt, st⟩
   obtain ⟨i, rfl⟩ : ∃ i, n = i+1 := ⟨n-1, by omega⟩
   refine WP.mono (step_ok (k := k) (kt.scratch hs) (kt.consts hc) (by omega) gt
-    (ladderAfter_swap_le _ _ (by omega)) ct wt (by rw [kt.bit (by omega)]; exact hb i (by omega)))
-    fun u ⟨ku, gu, cu, wu⟩ => ?_
+    (ladderAfter_swap_le _ _ (by omega)) ct wt (by rw [kt.bit (by omega)]; exact hb i (by omega)) st)
+    fun u ⟨ku, gu, cu, wu, su⟩ => ?_
   have klu : HLoopKeep base s u := kt.trans ku
   rw [← ladderAfter_step k x1 (by omega)] at gu
   have ws : word u.mem base 768 = BitVec.ofNat 64 (ladderAfter k x1 i).swap := by
@@ -138,6 +191,6 @@ theorem ladder_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} (hs : Scratch s 
     simp only [eval, VG.Proof.Ed25519.AArch64.read_x, cu, VG.Proof.Ed25519.AArch64.counter_nonzero (by omega : i < 2^64)]
   by_cases hi : i = 0
   · subst i; exact .inl ⟨by rw [he]; rfl, klu, gu, ws⟩
-  · exact .inr ⟨by rw [he]; simp [hi], i, by omega, by omega, by omega, klu, gu, cu, ws⟩
+  · exact .inr ⟨by rw [he]; simp [hi], i, by omega, by omega, by omega, klu, gu, cu, ws, su⟩
 
 end VG.Proof.X25519.AArch64.Hybrid
