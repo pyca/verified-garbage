@@ -52,50 +52,9 @@ mod p384;
 mod p521;
 mod secp256k1;
 
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "arm",
-    target_arch = "aarch64"
-))]
-pub use crate::ec::BrainpoolP256r1;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm"
-))]
-pub use crate::ec::BrainpoolP384r1;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm"
-))]
-pub use crate::ec::P224;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "arm",
-    target_arch = "aarch64"
-))]
-pub use crate::ec::P521;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm"
-))]
-pub use crate::ec::Secp256k1;
-
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "arm",
-    target_arch = "aarch64"
-))]
-pub use crate::ec::P192;
-pub use crate::ec::{Curve, P256, P384};
+pub use crate::ec::{
+    BrainpoolP256r1, BrainpoolP384r1, Curve, P192, P224, P256, P384, P521, Secp256k1,
+};
 
 use crate::zeroize::zeroize;
 
