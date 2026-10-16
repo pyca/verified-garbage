@@ -67,7 +67,7 @@ structure SafeR (p : Params) (np nr : Nat) (bs : List Buf) : Prop where
 /-- Proves a `SafeR`, with the facts of the parameter set `hF`: each check decided for each
 parameter set if it can be (`layd`). -/
 tactic_template "safeR " hF:term:max : tactic => `(tactic| (
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> intros <;> (try refine ⟨?_, ?_⟩) <;> first | layd | layp $hF))
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> intros <;> (try refine ⟨?_, ?_⟩) <;> first | layd | layp $hF []))
 
 theorem apart_append {Y : Lay} {b : Buf} {bs₁ bs₂ : List Buf} (h₁ : Y.apart b bs₁ = true)
     (h₂ : Y.apart b bs₂ = true) : Y.apart b (bs₁ ++ bs₂) = true := by
