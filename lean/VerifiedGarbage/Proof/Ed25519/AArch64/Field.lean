@@ -79,10 +79,11 @@ theorem sqrWide_ok {s : State} {base : Addr} (hs : Scr s base large) {a : Nat}
   omega_using [e4, hlt]
 
 /-- Squaring modulo p, allowing the output to alias the input. -/
-theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
+theorem sqr_okB {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
     (ho : FieldRange o large) (ha : FieldRange a large) :
     WP isa (.block (fieldSqr o a)) s fun t =>
-      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base a := by
+      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base a ∧
+        fe t.mem base o < 2 ^ 255 + 2 ^ 135 := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   rw [fieldSqr, List.append_assoc, List.append_assoc, WP.block_append_iff]
@@ -92,9 +93,15 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
   refine WP.mono (sqrWide_ok hs₀ ha hz) fun s₁ ⟨e1, k1⟩ => ?_
   refine WP.mono (fieldFinish_ok (hs₀.of_keeps k1 (by decide)) ho
     ((k1.gpr _ (by decide)).trans hz) ((k0.mono (by decide)).trans (k1.mono (by decide))))
-    fun t ⟨hop, ht⟩ => ⟨hop, ?_⟩
+    fun t ⟨hop, ht, hb⟩ => ⟨hop, ?_, hb⟩
   rw [ht, e1, k0.mem]
   exact toFe_mul rfl
+
+theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) :
+    WP isa (.block (fieldSqr o a)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base a :=
+  WP.mono (sqr_okB hs ho ha) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
 
 theorem movReg_ok (s : State) (d n : Reg) :
     WP isa (.block [mov d n]) s fun t => t.gpr d = s.gpr n ∧ Keeps [d] s t := by
@@ -126,11 +133,13 @@ theorem movB_ok (s : State) :
   · exact ((k1.mono (by decide)).trans (k2.mono (by decide))).trans
       ((k3.mono (by decide)).trans (k4.mono (by decide)))
 
-/-- `[o] := [a] · [b]²`, allowing the output to alias either input. -/
-theorem sqrMul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+/-- `[o] := [a] · [b]²`, allowing the output to alias either input; the result is
+stored below `2²⁵⁵ + 2¹³⁵`. -/
+theorem sqrMul_okB {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
     (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
     WP isa (.block (fieldSqrMul o a b)) s fun t =>
-      Op base o s t ∧ F t.mem base o = F s.mem base a * (F s.mem base b * F s.mem base b) := by
+      Op base o s t ∧ F t.mem base o = F s.mem base a * (F s.mem base b * F s.mem base b) ∧
+        fe t.mem base o < 2 ^ 255 + 2 ^ 135 := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   simp only [fieldSqrMul, List.append_assoc]
@@ -141,7 +150,7 @@ theorem sqrMul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat
   refine WP.mono (sqrWide_ok hs₀ hb hz) fun s₁ ⟨e1, k1⟩ => ?_
   have hs₁ := hs₀.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (reduceWide_ok s₁ ((k1.gpr _ (by decide)).trans hz)) fun s₂ ⟨e2, z2, k2⟩ => ?_
+  refine WP.mono (reduceWide_ok s₁ ((k1.gpr _ (by decide)).trans hz)) fun s₂ ⟨e2, z2, k2, _⟩ => ?_
   have hs₂ := hs₁.of_keeps k2 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (movB_ok s₂) fun s₃ ⟨e3, k3⟩ => ?_
@@ -153,11 +162,18 @@ theorem sqrMul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat
     ((k4.gpr _ (by decide)).trans z3)
     ((((k0.mono (by decide)).trans (k1.mono (by decide))).trans (k2.mono (by decide))).trans
       ((k3.mono (by decide)).trans (k4.mono (by decide)))))
-    fun t ⟨hop, ht⟩ => ⟨hop, ?_⟩
+    fun t ⟨hop, ht, hb⟩ => ⟨hop, ?_, hb⟩
   have m3 : s₃.mem = s.mem := by rw [k3.mem, k2.mem, k1.mem, k0.mem]
   rw [ht, e4, m3]
   rw [toFe_mul rfl, e2, e1, k0.mem]
   exact congrArg _ (toFe_mul rfl)
+
+/-- `[o] := [a] · [b]²`, allowing the output to alias either input. -/
+theorem sqrMul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
+    WP isa (.block (fieldSqrMul o a b)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a * (F s.mem base b * F s.mem base b) :=
+  WP.mono (sqrMul_okB hs ho ha hb) fun _ ⟨h, e, _⟩ => ⟨h, e⟩
 
 end VG.Proof.Ed25519.AArch64
 end
@@ -266,6 +282,78 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
     rw [← e1]
     exact (fold256 _ _).symm
   exact hm.trans (toFe_add rfl)
+
+
+theorem carry38Once_ok (s : State) (hz : s.gpr .x10 = 0) :
+    WP isa (.block carry38Once) s fun t =>
+      ∃ c : Bool, val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) + 2 ^ 256 * c.toNat =
+        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) + (s.gpr .x8).toNat ∧
+      Keeps [.x4, .x5, .x6, .x7] s t := by
+  rw [carry38Once]
+  reg_exec hz
+  refine ⟨carryOut (s.gpr .x7) 0 (carryOut (s.gpr .x6) 0
+      (carryOut (s.gpr .x5) 0 (carryOut (s.gpr .x4) (s.gpr .x8) false))), ?_,
+    ⟨?_, by simp only [RegUpd.mem_addWithCarry], by simp only [RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_addWithCarry], by simp only [RegUpd.sp_addWithCarry]⟩⟩
+  · have e0 := addCarry_value (s.gpr .x4) (s.gpr .x8) false
+    have e1 := addCarry_value (s.gpr .x5) 0 (carryOut (s.gpr .x4) (s.gpr .x8) false)
+    have e2 := addCarry_value (s.gpr .x6) 0 (carryOut (s.gpr .x5) 0 (carryOut (s.gpr .x4) (s.gpr .x8) false))
+    have e3 := addCarry_value (s.gpr .x7) 0 (carryOut (s.gpr .x6) 0
+      (carryOut (s.gpr .x5) 0 (carryOut (s.gpr .x4) (s.gpr .x8) false)))
+    dsimp only [addCarry, carryOut, Size.bits] at e0 e1 e2 e3 ⊢
+    have z : (0 : BitVec 64).toNat = 0 := rfl
+    simp only [val4, Bool.toNat_false, Nat.add_zero, z] at e0 e1 e2 e3 ⊢
+    omega
+  · reg_keeps
+
+/-- Addition modulo p with one fold of the carry, for operands that sum below
+`2²⁵⁷ − 38`. -/
+theorem add1_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large)
+    (hab : fe s.mem base a + fe s.mem base b < 2 ^ 257 - 38) :
+    WP isa (.block (fieldAdd1 o a b)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a + F s.mem base b := by
+  have _hcap := workSize_le large
+  have _hmin := workSize_ge large
+  rw [fieldAdd1, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (fieldInit_ok s) fun s₀ ⟨hz, h38, k0⟩ => ?_
+  have hs₀ := hs.of_keeps k0 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (addWords_ok hs₀ ha hb hz h38) fun s₁ ⟨c, e1, x1, k1⟩ => ?_
+  have hs₁ := hs₀.of_keeps k1 (by decide)
+  rw [WP.block_append_iff]
+  have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
+  refine WP.mono (carry38Once_ok s₁ hz1) fun s₂ ⟨c', e2, k2⟩ => ?_
+  have hs₂ := hs₁.of_keeps k2 (by decide)
+  refine WP.mono (store4_ok hs₂ ho) fun s₃ heq => ?_
+  subst s₃
+  have k0' : Keeps clob s s₀ := k0.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> decide)
+  have k1' : Keeps clob s₀ s₁ := k1.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+  have k2' : Keeps clob s₁ s₂ := k2.mono (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> decide)
+  refine ⟨Op.of_store ho (k0'.trans (k1'.trans k2')) _ _ _ _, ?_⟩
+  simp only [F]
+  rw [fe_st4 _ _ (by have := ho.2; omega)]
+  rw [k0.mem] at e1
+  have hl := val4_lt (s₂.gpr .x4) (s₂.gpr .x5) (s₂.gpr .x6) (s₂.gpr .x7)
+  have hl1 := val4_lt (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6) (s₁.gpr .x7)
+  have hc := Bool.toNat_le c
+  have hc' := Bool.toNat_le c'
+  have hsum : fe s.mem base a + fe s.mem base b =
+      val4 (s₂.gpr .x4) (s₂.gpr .x5) (s₂.gpr .x6) (s₂.gpr .x7) + VG.Spec.X25519.P * (2 * c.toNat) := by
+    simp only [VG.Spec.X25519.P]
+    rw [x1] at e2
+    omega
+  apply toFe_add
+  rw [hsum, Nat.add_mul_mod_self_left]
 
 end VG.Proof.Ed25519.AArch64
 end
