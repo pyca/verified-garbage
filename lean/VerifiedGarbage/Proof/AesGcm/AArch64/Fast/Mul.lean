@@ -26,6 +26,11 @@ open VG VG.AArch64 VG.Proof.Gcm.Poly VG.Proof.Gcm.AArch64.Pmull
 open VG.Impl.Gcm.AArch64.Pmull (LO MID HI A T C Y tReg sReg poly)
 open VG.Spec.Gcm (Block blockAt)
 
+theorem ρ_zero : ρ 0 = 0 := by
+  have h : ∀ i, BitVec.extractLsb' i 64 (0 : BitVec 128) = 0 := fun i => by
+    apply BitVec.eq_of_getLsbD_eq; intro j _; simp
+  simp only [ρ, ψ, vdword, h, gp_zero, map_zero, mul_zero, add_zero]
+
 /-- The registers hold the reduction constant, and `H'` for the hash subkey
 `H` (`x · H' = H`) as they are and with their halves swapped. -/
 structure HKey (H : Block) (s : State) : Prop where
