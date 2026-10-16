@@ -306,8 +306,13 @@ def checkLayout (a : Artifact) : Except String Unit := do
 each function it calls. The printer's `funcAlign` comes last, after the
 return (`Printer.function`) and any directives that follow it. -/
 def function (a : Artifact) (moduleOf : String → String) : String :=
+  functionOf a (a.target.printer.function a.code) moduleOf
+where
+  /-- `function a`, given `a`'s printed code `lines`
+  (`a.target.printer.function a.code`). -/
+  functionOf (a : Artifact) (lines : List Line) (moduleOf : String → String) : String :=
   let P := a.target.printer
-  let body := (a.features.flatMap P.enableFeature).map .text ++ P.function a.code ++
+  let body := (a.features.flatMap P.enableFeature).map .text ++ lines ++
     (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text
   let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
   let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
@@ -533,34 +538,49 @@ def prepareAll (as : List Artifact) : List Prepared :=
     Task.spawn fun _ => ((as.drop (j * size)).take size).map Prepared.of
   (parts.map Task.get).flatten
 
-/-- The generated files, given the module of each function each artifact calls. -/
-def render (as : List Artifact) (moduleOf : Artifact → String → String) : List (String × String) :=
+/-- The targets of the artifacts `as`, each once, with its Rust `cfg`
+(`Target.rustCfg`), in first-seen order. -/
+def targetsOf (as : List Artifact) : List (String × String) :=
+  (distinct as (·.target.name)).map fun t =>
+    (t, ((as.find? (·.target.name == t)).map (·.target.rustCfg)).getD "")
+
+/-- The root module, `mod.rs`: the macros its targets' modules use and a
+`mod` declaration of each target of `ts` (its name and Rust `cfg`), in order
+of their names. -/
+def rootFile (ts : List (String × String)) : String :=
+  header ++
+  "//! Formally verified assembly, emitted from Lean. See `lean/README.md`.\n" ++
+  "//!\n" ++
+  "//! Every function in these modules is the direct rendering of an `Artifact`\n" ++
+  "//! whose machine code has been proven correct, memory safe and constant time\n" ++
+  "//! against its contract.\n" ++
+  symMacros ++
+  modDecls ((ts.map (·.1)).mergeSort (· ≤ ·)) fun t => (ts.find? (·.1 == t)).map (·.2)
+
+/-- The generated files of the artifacts of `ps`, given the module of each
+function each artifact calls; each artifact's code as `ps` printed it
+(`Prepared.lines`). -/
+def render (ps : List Prepared) (moduleOf : Artifact → String → String) : List (String × String) :=
+  let as := ps.map (·.art)
   let targets := distinct as (·.target.name)
-  let cfgOf (t : String) : Option String := (as.find? (·.target.name == t)).map (·.target.rustCfg)
-  let root :=
-    header ++
-    "//! Formally verified assembly, emitted from Lean. See `lean/README.md`.\n" ++
-    "//!\n" ++
-    "//! Every function in these modules is the direct rendering of an `Artifact`\n" ++
-    "//! whose machine code has been proven correct, memory safe and constant time\n" ++
-    "//! against its contract.\n" ++
-    symMacros ++
-    modDecls targets cfgOf
+  let root := rootFile (targetsOf as)
   let perTarget (t : String) : List (String × String) :=
-    let arts := as.filter (·.target.name == t)
+    let arts := ps.filter (·.art.target.name == t)
     -- In order of their names, wherever their artifacts come in the list.
-    let modules := (distinct arts (·.module)).mergeSort (· ≤ ·)
-    let ts := tables arts
+    let modules := (distinct (arts.map (·.art)) (·.module)).mergeSort (· ≤ ·)
+    let ts := tables (arts.map (·.art))
     let mods := if ts.isEmpty then modules else (modules ++ ["consts"]).mergeSort (· ≤ ·)
     (s!"{t}/mod.rs", header ++ s!"//! Verified functions for `{t}`.\n" ++
       modDecls mods (fun _ => none)) ::
     (if ts.isEmpty then [] else [(s!"{t}/consts.rs", tablesFile t ts)]) ++
-    modules.map fun m =>
+    -- Each module's file on a task of its own: a part (`Emit.run`) has one target.
+    ((modules.map fun m => Task.spawn fun _ =>
       (s!"{t}/{m}.rs",
         header ++ s!"//! Verified `{m}` functions for `{t}`.\n" ++
         "#![allow(dead_code)]\n" ++
-        String.join ((arts.filter (·.module == m)).map fun a => "\n" ++ function a (moduleOf a)))
-  -- Each target's files on a task of their own (`tasks`).
+        String.join ((arts.filter (·.art.module == m)).map fun p =>
+          "\n" ++ function.functionOf p.art p.lines (moduleOf p.art)))).map Task.get)
+  -- Each target's files on a task of their own.
   ("mod.rs", root) :: ((targets.map fun t => Task.spawn fun _ => perTarget t).map Task.get).flatten
 
 /-- The generated files, as paths relative to `src/asm/` and their contents:
@@ -592,6 +612,6 @@ def files (as : List Artifact) : Except String (List (String × String)) := do
   forMPar ps checkFeatures
   forMPar ps checkEncodable
   forMPar as checkLayout
-  return render as fun a n => ((callee as a n).map (·.module)).getD ""
+  return render ps fun a n => ((callee as a n).map (·.module)).getD ""
 
 end VG.Rust
