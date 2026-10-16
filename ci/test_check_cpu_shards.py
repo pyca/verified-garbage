@@ -148,7 +148,10 @@ class SplitTests(unittest.TestCase):
     def test_icx_shards_each_get_an_rsa_line_before_any_time(self):
         runs = workflow_runs("icx")
         shards = self.shards(3, runs=runs)
-        rsa = [[f for f, t in s if "rsa" in t] for s in shards]
+        # The lines running Wycheproof's RSA tests, which take minutes under
+        # SDE (not `rsa_oaep_pairs`'s round trips).
+        heavy = {"rsa", "rsa_pkcs1", "rsa_pss", "rsa_oaep"}
+        rsa = [[f for f, t in s if heavy & set(t.split())] for s in shards]
         self.assertEqual([len(r) for r in rsa], [1, 1, 1])
 
 
