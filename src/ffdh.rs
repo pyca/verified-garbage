@@ -20,6 +20,8 @@
 
 mod aarch64;
 mod arithmetic;
+#[cfg(target_arch = "x86_64")]
+pub use arithmetic::mb_hack;
 mod generation;
 mod x86_64;
 

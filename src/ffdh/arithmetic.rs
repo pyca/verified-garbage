@@ -270,3 +270,26 @@ mod tests {
         }
     }
 }
+
+/// Measurement only: best TSC ticks per call of the ADX squaring and product,
+/// strict and lazy, over 16 calls.
+#[cfg(target_arch = "x86_64")]
+pub fn mb_hack(p: &[u8], n: usize) -> [u64; 4] {
+    use crate::arch::rsa_mont::{vg_rsa_lazy_mont_mul_adx, vg_rsa_mont_mul_adx};
+    use core::arch::x86_64::_rdtsc;
+    let m = Montgomery::new(p);
+    let mut ws = m.workspace(&p[1..]);
+    let mut best = [u64::MAX; 4];
+    for _ in 0..n {
+        for (k, (lazy, b)) in [(false, 5u32), (true, 5), (false, 4), (true, 4)].into_iter().enumerate() {
+            let t = unsafe { _rdtsc() };
+            for _ in 0..16 {
+                unsafe {
+                    if lazy { vg_rsa_lazy_mont_mul_adx(ws.as_mut_ptr(), ws.len(), 5, 5, b) } else { vg_rsa_mont_mul_adx(ws.as_mut_ptr(), ws.len(), 5, 5, b) }
+                }
+            }
+            best[k] = best[k].min((unsafe { _rdtsc() } - t) / 16);
+        }
+    }
+    best
+}

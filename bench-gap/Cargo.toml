@@ -1,0 +1,12 @@
+[package]
+name = "gap"
+version = "0.1.0"
+edition = "2024"
+[workspace]
+[dependencies]
+verified-garbage = { path = "..", features = ["cpu-features-env"] }
+aws-lc-rs = { version = "1.18", default-features = false, features = ["aws-lc-sys"] }
+aws-lc-sys = { version = "0.45", default-features = false, features = ["all-bindings"] }
+openssl = "0.10"
+[profile.release]
+debug = 1

@@ -650,3 +650,30 @@ mod tests {
         assert_eq!(new(&even, &[3], &[1]), bad);
     }
 }
+
+impl PrivateKey {
+    /// Scratch microbenchmark: best TSC ticks of the checked private operation and of the bare CRT.
+    pub fn mb_crt(&self, input: &[u8], reps: usize) -> [u64; 2] {
+        use crate::asm::x86_64::rsa::{vg_rsa_private_checked_adx, vg_rsa_private_crt_adx};
+        use core::arch::x86_64::_rdtsc;
+        let k = self.n.len();
+        let mut out = vec![0u8; k];
+        let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
+        let mut best = [u64::MAX; 2];
+        for _ in 0..reps {
+            let t = unsafe { _rdtsc() };
+            let r = unsafe { vg_rsa_private_checked_adx(out.as_mut_ptr(), k, self.n.as_ptr(), k, self.e.as_ptr(), self.e.len(), input.as_ptr(), k,
+                self.p.as_ptr(), self.p.len(), self.q.as_ptr(), self.q.len(), self.dp.as_ptr(), self.dp.len(), self.dq.as_ptr(), self.dq.len(),
+                self.qinv.as_ptr(), self.qinv.len(), scratch.as_mut_ptr(), scratch.len()) };
+            best[0] = best[0].min(unsafe { _rdtsc() } - t);
+            std::hint::black_box(r);
+            let t = unsafe { _rdtsc() };
+            let r = unsafe { vg_rsa_private_crt_adx(out.as_mut_ptr(), k, self.n.as_ptr(), k, input.as_ptr(), k,
+                self.p.as_ptr(), self.p.len(), self.q.as_ptr(), self.q.len(), self.dp.as_ptr(), self.dp.len(), self.dq.as_ptr(), self.dq.len(),
+                self.qinv.as_ptr(), self.qinv.len(), scratch.as_mut_ptr(), scratch.len()) };
+            best[1] = best[1].min(unsafe { _rdtsc() } - t);
+            std::hint::black_box(r);
+        }
+        best
+    }
+}
