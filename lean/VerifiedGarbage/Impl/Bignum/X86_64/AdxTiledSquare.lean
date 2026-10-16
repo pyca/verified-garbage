@@ -33,20 +33,34 @@ def row (a : Nat) : Prog isa := .seq (.block rowInit)
 def rows (a : Nat) : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax,.store (hdr (sFn 15)) .rax]) (.loop (row a) .ne)
 
-/-- A row of a square of one row (16 words), which has no carry to hand on:
-its carry through the words above. -/
-def row1 (a : Nat) : Prog isa := .seq (.block rowInit)
-  (.seq (AdxRect8.row a a) (.seq AdxTiledProduct.tail (.block nextRow)))
+/-! ## The cross tile of a 16-word square
 
-def rows1 (a : Nat) : Prog isa :=
-  .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) (.loop (row1 a) .ne)
+A square of 16 words has one cross tile, `a[0..8) * a[8..16)`, at words 8
+to 24 of the raw product, with nothing pending before it: the tile's
+columns take the next eight words in one carry chain from a clear CF, and
+the chain's carry runs through the eight words above. -/
 
-/-- No rows for 8 words, the row without hand-off for 16, the rows with it
+/-- The tile's row and column indices for `AdxRect8.setup`. -/
+def init16 : List Instr :=
+  [.mov32 .rax (.imm 0), .store (hdr (sFn 12)) .rax, .mov32 .rax (.imm 8), .store (hdr (sFn 13)) .rax]
+
+/-- The words above the tile's low words added to its columns and stored,
+the carry into `rbp`; `rsi` to the eight words above them and `rcx` zero,
+for `AdxCarry8.block8`. -/
+def mid16 : List Instr :=
+  ([.alu .add .rsi (.imm 64), .alu32 .xor .rax (.reg .rax)] : List Instr) ++ AdxRotate8.addChainC ++
+    AdxCarry8.close ++ AdxRotate8.storeCols ++ ([.alu .add .rsi (.imm 64), .mov32 .rcx (.imm 0)] : List Instr)
+
+def cross16 (a : Nat) : Prog isa :=
+  .seq (.block init16) (.seq (.block (AdxRect8.setup a a)) (.seq (.block AdxRotate8.loadCols)
+    (.seq (AdxRotate8.productN 8) (.seq (.block mid16) AdxCarry8.block8))))
+
+/-- No rows for 8 words, the one cross tile for 16, the rows with hand-off
 otherwise. -/
 def rowsChoice (a : Nat) : Prog isa :=
   .seq (.block [.mov .rax (.mem (hdr sW)),.alu .cmp .rax (.imm 8)])
     (.ite .e (.block [])
-      (.seq (.block [.mov .rax (.mem (hdr sW)),.alu .cmp .rax (.imm 16)]) (.ite .e (rows1 a) (rows a))))
+      (.seq (.block [.mov .rax (.mem (hdr sW)),.alu .cmp .rax (.imm 16)]) (.ite .e (cross16 a) (rows a))))
 
 def rawCross (a : Nat) : Prog isa := .seq (.block (Adx.setup a))
   (.seq AdxHeader.save (.seq (.seq (AdxTri8.blocks a)
