@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -17,6 +18,11 @@ open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.MillerRabin.X86_64
 
 structure RoundImpl where
   mont : Mont
+  /-- Montgomery multiplication as the round's callers emit it: calls of a
+  function, which inline to `mont.mm` (`Verified.of_inline`), or `mont.mm`. -/
+  mm : Nat → Nat → Nat → Prog isa
+  mmOk : ∀ o a b, (mm o a b).InlineOk = true
+  mmInline : ∀ o a b, (mm o a b).inline = mont.mm o a b
   mxSafe : (round mont.mm).allInstrs (fun i => !loadsMxcsr i) = true
   spSafe : (round mont.mm).all (fun i => !isa.writesSp i) = true
   depth : (round mont.mm).x86_64Depth ≤ 120
