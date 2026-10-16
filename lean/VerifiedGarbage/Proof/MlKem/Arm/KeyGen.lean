@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -129,7 +127,7 @@ def kidx : Reg → Nat
   | .r4 => 2 | .r5 => 3 | .r6 => 4 | _ => 0
 
 /-- Decides a fact about the offsets in the buffers. -/
-tactic_template "ldecide" : tactic => `(tactic| first
+macro "ldecide" : tactic => `(tactic| plain_simp_names first
                    | decide
                    | ((try simp only [lay_sizes, kSz, kidx, okW, kRegs, List.all_cons, List.all_nil, List.all_append, List.map_cons,
                          List.map_nil, trip, Bool.and_true])
