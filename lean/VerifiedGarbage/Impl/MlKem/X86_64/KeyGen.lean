@@ -49,10 +49,10 @@ def se (A : Arith) (N : Nat) : Prog isa := .seq (cbd2At A (sc (L.oPR + 128 * N))
 
 /-- `t̂[i]`, encoded to `ek`. -/
 def row (A : Arith) (i : Nat) : Prog isa :=
-  .seq (dotN A (fun j => L.aS i j) pS L.k) (.seq (addAt A (pS 15) (pS (L.k + i))) (enc12At (pS 15) (.r12, 384 * i)))
+  .seq (dotN A (fun j => L.aS i j) pS L.k) (.seq (addAt A (pS 15) (pS (L.k + i))) (enc12At A (pS 15) (.r12, 384 * i)))
 
 /-- `ŝ[j]`, encoded to `dk`. -/
-def encS (j : Nat) : Prog isa := enc12At (pS j) (.r13, 384 * j)
+def encS (A : Arith) (j : Nat) : Prog isa := enc12At A (pS j) (.r13, 384 * j)
 
 /-- `ρ` to `ek`, `ek` to `dk`, `H(ek)` and `z` to `dk`. -/
 def fin : Prog isa :=
@@ -62,7 +62,7 @@ def fin : Prog isa :=
 
 def rest (c : Callee4) : Prog isa :=
   .seq (c.prfs 0 (2 * L.k) L.oPR L.lPW) (.seq (seqR (se L c.arith) 0 (2 * L.k))
-    (.seq (seqR (row L c.arith) 0 L.k) (.seq (seqR encS 0 L.k) (fin L))))
+    (.seq (seqR (row L c.arith) 0 L.k) (.seq (seqR (encS c.arith) 0 L.k) (fin L))))
 
 end KeyGen
 

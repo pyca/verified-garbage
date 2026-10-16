@@ -68,7 +68,7 @@ theorem rest_ok (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (key
   refine WP.seq (WP.mono (seqR_ok (I := fun k => KRest L (2 * L.k) k 0 σ) L.k 0
     (fun k _ hk s hs => row_ok v.arith W hp (by omega) hs) s₁ (by rwa [Nat.zero_add] at h₁)) fun s₂ h₂ => ?_)
   refine WP.seq (WP.mono (seqR_ok (I := fun k => KRest L (2 * L.k) L.k k σ) L.k 0
-    (fun k _ hk s hs => encS_ok W hp (by omega) hs) s₂ (by rwa [Nat.zero_add] at h₂)) fun s₃ h₃ => ?_)
+    (fun k _ hk s hs => encS_ok v.arith W hp (by omega) hs) s₂ (by rwa [Nat.zero_add] at h₂)) fun s₃ h₃ => ?_)
   exact fin_ok W hp (by rwa [Nat.zero_add] at h₃)
 
 theorem body_ok (v : Sample4Impl) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {s : State}
@@ -151,7 +151,7 @@ theorem rest_tr (v : Sample4Impl) :
     L.k 0 fun k _ hk => relInvC (fun σ s hp hs => row_ok v.arith W hp (by omega) hs) (row_tr W v.arith (by omega))) ?_
   rw [Nat.zero_add]
   refine RelCT.seq (seqR_tr (R := fun k => R L fun σ s => KRest L (2 * L.k) L.k k σ s ∧ allOk L.k (rhoK L σ) (L.k * L.k))
-    L.k 0 fun k _ hk => relInvC (fun σ s hp hs => encS_ok W hp (by omega) hs) (encS_tr W (by omega))) ?_
+    L.k 0 fun k _ hk => relInvC (fun σ s hp hs => encS_ok v.arith W hp (by omega) hs) (encS_tr W v.arith (by omega))) ?_
   rw [Nat.zero_add]
   exact relInvC (fun σ s hp hs => fin_ok W hp hs) (fin_tr W)
 

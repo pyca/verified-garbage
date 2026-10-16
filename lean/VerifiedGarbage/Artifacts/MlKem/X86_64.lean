@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
@@ -202,6 +203,19 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.decode12Avx2
     contract := Spec.MlKem.decode12Contract X86_64.abi
     verified := Proof.MlKem.X86_64.decode12Y_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
+  { Spec.MlKem.encode12Api with
+    name := Spec.MlKem.encode12Api.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.encode12Api.doc
+      (notes := ["The function computes on 32 coefficients at a time in AVX2 registers: it packs them into \
+        words, forms each pair's 24-bit value with shifts and an addition, gathers the bytes with `vpshufb` \
+        and `vpermd`, and stores the 48 bytes as 32 and 16, so that it writes only the 384 bytes of `*out`. \
+        It has no multiplications."])
+    code := Impl.MlKem.X86_64.encode12Avx2
+    contract := Spec.MlKem.encode12Contract X86_64.abi
+    verified := Proof.MlKem.X86_64.encode12Y_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   { Spec.MlKem.cbd2Api with

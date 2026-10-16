@@ -138,16 +138,17 @@ theorem cbd2At_trL {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) (hc : tw
   RelCT.mono (cbd2At_tr hA hq) (fun _ _ e => ⟨TwoH.of e.1 hc, TwoH.of e.2.1 hc, e.eq (twoChk_in hc).1,
     e.eq (twoChk_in hc).2, e.2.2.2⟩) fun _ _ _ => trivial
 
-theorem enc12At_okL {s : State} (L : Lay rbs wbs s) {p q : Ptr} (hq : NA q)
+theorem enc12At_okL {A : Arith} (hA : ArithOk A) {s : State} (L : Lay rbs wbs s) {p q : Ptr} (hq : NA q)
     (hc : twoChk (rbs ++ wbs) wbs p 1024 q 384 = true) (red : Reduced s.mem (pa s p)) :
-    WP isa (enc12At p q) s fun s' => PPost s s' [(q, 384)] ∧
+    WP isa (enc12At A p q) s fun s' => PPost s s' [(q, 384)] ∧
       bytesAt s'.mem (pa s q) 384 = encode12 (polyAt s.mem (pa s p)) :=
-  enc12At_ok hq (TwoH.of L hc) red
+  enc12At_ok hA hq (TwoH.of L hc) red
 
-theorem enc12At_trL {p q : Ptr} (hq : NA q) (hc : twoChk (rbs ++ wbs) wbs p 1024 q 384 = true) :
-    RelCT isa (fun x y => LRel rbs wbs x y ∧ Reduced x.mem (pa x p) ∧ Reduced y.mem (pa y p)) (enc12At p q)
+theorem enc12At_trL {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q)
+    (hc : twoChk (rbs ++ wbs) wbs p 1024 q 384 = true) :
+    RelCT isa (fun x y => LRel rbs wbs x y ∧ Reduced x.mem (pa x p) ∧ Reduced y.mem (pa y p)) (enc12At A p q)
       fun _ _ => True :=
-  RelCT.mono (enc12At_tr hq) (fun _ _ ⟨e, r1, r2⟩ => ⟨⟨TwoH.of e.1 hc, r1⟩, ⟨TwoH.of e.2.1 hc, r2⟩,
+  RelCT.mono (enc12At_tr hA hq) (fun _ _ ⟨e, r1, r2⟩ => ⟨⟨TwoH.of e.1 hc, r1⟩, ⟨TwoH.of e.2.1 hc, r2⟩,
     e.eq (twoChk_in hc).1, e.eq (twoChk_in hc).2, e.2.2.2⟩) fun _ _ _ => trivial
 
 theorem dec12At_okL {A : Arith} (hA : ArithOk A) {s : State} (L : Lay rbs wbs s) {p q : Ptr} (hq : NA q)
