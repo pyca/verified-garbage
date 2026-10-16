@@ -13,7 +13,8 @@ absorbed without a call (`aad`): `J₀` and the first counter block (`j012`,
 `initState`), then the additional data padded with zeros in `T` (`aadPad`)
 and multiplied by `H'` (`aadMul`), the prepared power `H` at `ctx + 272`,
 where `oneAad` would call `vg_ghash`, which computes `H'` from `H` on every
-call. `SealSplit.prefix` and `SealSplit.body` then end it as `run` does.
+call; five bytes (a TLS 1.3 record's header) are put together in a register
+instead (`aadReg`). `SealSplit.prefix` and `SealSplit.body` then end it as `run` does.
 -/
 
 @[expose] public section
@@ -51,12 +52,34 @@ def aadMul : List Instr :=
   Gcm.X86_64.Pclmul.mul .xmm2 .xmm7 .xmm3 ++
   ([.xop (.bin .pshufb .xmm2 .xmm0), .movdquStore (at_ .r14 16) .xmm2] : List Instr)
 
+/-- Five bytes of additional data (a TLS 1.3 record's header) at `rsi`, in
+the low bytes of `xmm7`, the rest zero: the block `aadPad` would leave in `T`,
+without the stores that the load of `T` would wait for. -/
+def aadReg : List Instr :=
+  [.mov32 .rax (.mem (at_ .rsi 0)), .movzx8 .r10 (at_ .rsi 4), .shift .shl .r10 32,
+    .alu .add .rax (.reg .r10), .xop (.movq .xmm7 .rax)]
+
+/-- `aadMul`, with the block in `xmm7` rather than at `T`. -/
+def aadMulR : List Instr :=
+  Gcm.X86_64.Pclmul.const .xmm0 revMask ++ Gcm.X86_64.Pclmul.const .xmm1 poly ++
+  ([.xop (.bin .pshufb .xmm7 .xmm0), .movdquLoad .xmm3 (at_ .r13 272)] : List Instr) ++
+  Gcm.X86_64.Pclmul.mul .xmm2 .xmm7 .xmm3 ++
+  ([.xop (.bin .pshufb .xmm2 .xmm0), .movdquStore (at_ .r14 16) .xmm2] : List Instr)
+
+/-- The additional data, `rcx` bytes (1 to 16), multiplied into the
+accumulator: five bytes from a register (`aadReg`), any other length padded
+in `T` (`aadPad`). -/
+def aadSome : Prog isa :=
+  .seq (.block [.alu .cmp .rcx (imm 5)])
+    (.ite .e (.seq (.block [.mov .rsi (.mem (at_ .r15 aadO))]) (.block (aadReg ++ aadMulR)))
+      (.seq aadPad (.block aadMul)))
+
 /-- `J₀`, the first counter block (with the accumulator zeroed), and the
 additional data absorbed, if any. -/
 def aad : Prog isa :=
   .seq (.block j012) (.seq (.block initState)
     (.seq (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .test .rcx (.reg .rcx)])
-      (.ite .e (.block []) (.seq aadPad (.block aadMul)))))
+      (.ite .e (.block []) aadSome)))
 
 /-- At most 16 bytes left after `prefix` (a TLS record's last bytes and its
 content type): the total length put back, then `seal`'s end without the
