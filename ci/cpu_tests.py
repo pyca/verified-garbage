@@ -254,6 +254,13 @@ GROUPS = {
         "lib": ["rsa_oaep"],
         "tests": ["wycheproof::rsa::rsa_oaep_test", "wycheproof::rsa_oaep"],
     },
+    # Each pair of hash functions once, for the lines that are there only
+    # to choose an implementation of RSAES-OAEP's (on the emulated CPUs, on
+    # which the vectors take minutes).
+    "rsa_oaep_pairs": {
+        "lib": [],
+        "tests": ["wycheproof::rsa_oaep::rsa_oaep_every_pair"],
+    },
     "rsa_pkcs1": {
         "lib": ["rsa_pkcs1_enc", "rsa_pkcs1_sig"],
         "tests": [
