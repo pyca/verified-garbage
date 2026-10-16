@@ -39,10 +39,10 @@ def kem1024 : Kem where
   pCT := 33
   pU := 8
   pZ := 40
-  ceN := "vg_mlkem1024_compress_encode"
-  ce := compressEncode1024
-  ddN := "vg_mlkem1024_decode_decompress"
-  dd := decodeDecompress1024
+  ceN := fun _ => "vg_mlkem1024_compress_encode"
+  ce := fun _ => compressEncode1024
+  ddN := fun _ => "vg_mlkem1024_decode_decompress"
+  dd := fun _ => decodeDecompress1024
 
 abbrev keyGen1024 (c : Callee4) : Prog isa := kemKeyGen kem1024 c
 abbrev encapsH1024 (c : Callee4) : Prog isa := kemEncapsH kem1024 c

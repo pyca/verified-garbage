@@ -50,7 +50,7 @@ theorem ecWf1024 : Encaps.EcWf kem1024 := by kem_wf kemWf1024
 theorem dcWf1024 : Decaps.DcWf kem1024 := by kem_wf kemWf1024
 
 /-- The compressions it calls. -/
-theorem calls1024 : KemCalls kem1024 Spec.MlKem1024.compressWidths Spec.MlKem1024.compressWidths := ⟨ceImpl1024, ddImpl1024, by decide, by decide⟩
+theorem calls1024 : KemCalls kem1024 Spec.MlKem1024.compressWidths Spec.MlKem1024.compressWidths := ⟨fun _ => ceImpl1024, fun _ => ddImpl1024, by decide, by decide⟩
 
 /-- States satisfying the shared contracts' preconditions. -/
 def keyGen1024Sat : State where

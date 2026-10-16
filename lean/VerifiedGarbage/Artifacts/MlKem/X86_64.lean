@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
 import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
@@ -224,6 +225,30 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.decodeDecompressContract X86_64.abi
     verified := Proof.MlKem.X86_64.decodeDecompress_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.MlKem.compressEncodeApi with
+    name := Spec.MlKem.compressEncodeApi.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.compressEncodeApi.doc
+      (notes := ["For the widths 10 and 4, the function compresses eight coefficients at a time in AVX2 \
+        registers, multiplying by sums of shifts, and packs them with `vpsllvd`, `vpsllvq` and `vpshufb`; \
+        the width 1 runs the baseline loop. It writes only the `len` bytes of `*out`."])
+    code := Impl.MlKem.X86_64.compressEncodeAvx2
+    contract := Spec.MlKem.compressEncodeContract X86_64.abi
+    verified := Proof.MlKem.X86_64.compressEncodeY_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
+  { Spec.MlKem.decodeDecompressApi with
+    name := Spec.MlKem.decodeDecompressApi.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.decodeDecompressApi.doc
+      (notes := ["For the widths 10 and 4, the function decompresses eight values at a time in AVX2 \
+        registers, extracted with `vpshufb` and `vpsrlvd` from 16 bytes loaded into both lanes, multiplying \
+        by sums of shifts; the width 1 runs the baseline loop. It reads only the `len` bytes of `*b`."])
+    code := Impl.MlKem.X86_64.decodeDecompressAvx2
+    contract := Spec.MlKem.decodeDecompressContract X86_64.abi
+    verified := Proof.MlKem.X86_64.decodeDecompressY_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
   { Spec.MlKem.checkEkApi with
     target := X86_64.target
     doc := Spec.MlKem.checkEkApi.doc

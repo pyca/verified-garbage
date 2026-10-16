@@ -45,15 +45,16 @@ variable (L : Kem)
 def pro : List Instr := topPro .rcx [(.rbp, .rdi), (.r14, .rsi), (.r12, .rdx)]
 
 /-- `u'[i]`. -/
-def uHat (i : Nat) : Prog isa := L.ddAt (.r14, 32 * L.du * i) L.du (pS i)
+def uHat (A : Arith) (i : Nat) : Prog isa := L.ddAt A.codecs (.r14, 32 * L.du * i) L.du (pS i)
 
 /-- `ŝ[i]`. -/
 def sHat (A : Arith) (i : Nat) : Prog isa := dec12At A (.rbp, 384 * i) (pS (L.k + i))
 
 /-- `m'` to `M`. -/
 def decrypt (A : Arith) : Prog isa :=
-  .seq (seqR (uHat L) 0 L.k) (.seq (seqR (sHat L A) 0 L.k) (.seq (L.decMulAt A (pS 15) (pS L.k) (pS 0) (pS (2 * L.k)))
-    (.seq (L.ddAt (.r14, 32 * L.du * L.k) L.dv (pS 16)) (.seq (subAt A (pS 16) (pS 15)) (ceAt (pS 16) 1 (sc oM))))))
+  .seq (seqR (uHat L A) 0 L.k) (.seq (seqR (sHat L A) 0 L.k) (.seq (L.decMulAt A (pS 15) (pS L.k) (pS 0) (pS (2 * L.k)))
+    (.seq (L.ddAt A.codecs (.r14, 32 * L.du * L.k) L.dv (pS 16)) (.seq (subAt A (pS 16) (pS 15))
+      (ceAt A.codecs (pS 16) 1 (sc oM))))))
 
 /-- `G(m' ‖ h)` and `J(z ‖ c)`. -/
 def hashes : Prog isa :=

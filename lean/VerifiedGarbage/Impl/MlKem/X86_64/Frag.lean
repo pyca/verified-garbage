@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
 public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
+public import VerifiedGarbage.Impl.MlKem.X86_64.CompressAvx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
@@ -113,10 +114,32 @@ def hashAt (ps : List (Ptr × Nat)) (rate suffix : Nat) (out : Ptr) (len : Nat) 
 
 /-! ## The polynomial primitives -/
 
+/-- Which implementations of `vg_mlkem_compress_encode` and
+`vg_mlkem_decode_decompress` a function calls: the baseline ones, or those
+with AVX2. -/
+inductive Codecs | base | avx2
+
+def Codecs.ceN : Codecs → String
+  | .base => "vg_mlkem_compress_encode"
+  | .avx2 => "vg_mlkem_compress_encode_avx2"
+
+def Codecs.ce : Codecs → Prog isa
+  | .base => compressEncode
+  | .avx2 => compressEncodeAvx2
+
+def Codecs.ddN : Codecs → String
+  | .base => "vg_mlkem_decode_decompress"
+  | .avx2 => "vg_mlkem_decode_decompress_avx2"
+
+def Codecs.dd : Codecs → Prog isa
+  | .base => decodeDecompress
+  | .avx2 => decodeDecompressAvx2
+
 /-- The implementations (symbols and code) of the polynomial primitives that
 a top-level function calls: `vg_mlkem_multiply_ntts`, `vg_mlkem_ntt`,
 `vg_mlkem_inv_ntt`, `vg_mlkem_add`, `vg_mlkem_sub`, `vg_mlkem_cbd2` and
-`vg_mlkem_decode12`; the baseline ones (`sse`), or those with AVX2 (`avx2`). -/
+`vg_mlkem_decode12`; the baseline ones (`sse`), or those with AVX2 (`avx2`);
+and the compression and decompression that go with them. -/
 structure Arith where
   mulN : String
   mul : Prog isa
@@ -135,16 +158,17 @@ structure Arith where
   /-- The code `vg_mlkem*_decrypt_mul` inlines, and the suffix of its name. -/
   bodies : Bodies
   sfx : String
+  codecs : Codecs
 
 def Arith.sse : Arith :=
   ⟨"vg_mlkem_multiply_ntts", multiplyNTTs, "vg_mlkem_ntt", X86_64.ntt, "vg_mlkem_inv_ntt", X86_64.nttInv,
     "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem_decode12", decode12,
-    .sse, ""⟩
+    .sse, "", .base⟩
 
 def Arith.avx2 : Arith :=
   ⟨"vg_mlkem_multiply_ntts_avx2", multiplyNTTsAvx2, "vg_mlkem_ntt_avx2", nttAvx2, "vg_mlkem_inv_ntt_avx2",
     nttInvAvx2, "vg_mlkem_add_avx2", addAvx2, "vg_mlkem_sub_avx2", subAvx2, "vg_mlkem_cbd2", cbd2,
-    "vg_mlkem_decode12_avx2", decode12Avx2, .avx2, "_avx2"⟩
+    "vg_mlkem_decode12_avx2", decode12Avx2, .avx2, "_avx2", .avx2⟩
 
 def nttAt (A : Arith) (f : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call A.nttN A.ntt)
@@ -181,9 +205,11 @@ def ddCall (n : String) (c : Prog isa) (b : Ptr) (d : Nat) (f : Ptr) : Prog isa 
       lea .rcx f))
     (.call n c)
 
-abbrev ceAt : Ptr → Nat → Ptr → Prog isa := ceCall "vg_mlkem_compress_encode" compressEncode
+/-- A call of the compression of `cs`. -/
+abbrev ceAt (cs : Codecs) : Ptr → Nat → Ptr → Prog isa := ceCall cs.ceN cs.ce
 
-abbrev ddAt : Ptr → Nat → Ptr → Prog isa := ddCall "vg_mlkem_decode_decompress" decodeDecompress
+/-- A call of the decompression of `cs`. -/
+abbrev ddAt (cs : Codecs) : Ptr → Nat → Ptr → Prog isa := ddCall cs.ddN cs.dd
 
 /-- `SampleNTT` of the seed at `SB` to `a`, and `r15 ← r15 ∧ result`. -/
 def sampleAt (a : Ptr) : Prog isa :=

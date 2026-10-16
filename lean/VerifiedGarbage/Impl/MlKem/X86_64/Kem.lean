@@ -44,11 +44,13 @@ structure Kem where
   `pZ`). -/
   pU : Nat
   pZ : Nat
-  /-- The compression and decompression to `d_u` and `d_v`. -/
-  ceN : String
-  ce : Prog isa
-  ddN : String
-  dd : Prog isa
+  /-- The compression and decompression to `d_u` and `d_v`, for the
+  implementations `cs` of `vg_mlkem_compress_encode` and
+  `vg_mlkem_decode_decompress`. -/
+  ceN : Codecs → String
+  ce : Codecs → Prog isa
+  ddN : Codecs → String
+  dd : Codecs → Prog isa
 
 namespace Kem
 
@@ -74,7 +76,7 @@ def oCT : Nat := oP L.pCT
 abbrev aS (i j : Nat) : Ptr := pS (L.pA + L.k * i + j)
 
 /-- `ByteEncode_d(Compress_d(f))` to `out`, for `d = d_u` or `d_v`. -/
-def ceAt (f : Ptr) (d : Nat) (out : Ptr) : Prog isa := ceCall L.ceN L.ce f d out
+def ceAt (cs : Codecs) (f : Ptr) (d : Nat) (out : Ptr) : Prog isa := ceCall (L.ceN cs) (L.ce cs) f d out
 
 /-- `NTT⁻¹(ŝ^⊺ ∘ NTT(u'))` to `w`, for the `k` polynomials `ŝ` from `s` and
 `u'` from `u`, with the working space `z` (4096 bytes):
@@ -92,7 +94,7 @@ def encMulAt (A : Arith) (u a t y z : Ptr) : Prog isa :=
     (.call (L.p.fn "encrypt_mul" ++ A.sfx) (encryptMul A.bodies L.k))
 
 /-- `Decompress_d(ByteDecode_d(b))` to `f`, for `d = d_u` or `d_v`. -/
-def ddAt (b : Ptr) (d : Nat) (f : Ptr) : Prog isa := ddCall L.ddN L.dd b d f
+def ddAt (cs : Codecs) (b : Ptr) (d : Nat) (f : Ptr) : Prog isa := ddCall (L.ddN cs) (L.dd cs) b d f
 
 /-- Entries `e, …, e + n - 1` of `Â` (entry `e = k i + j`), four at a time
 (with `pW` as the working space) and the last `n mod 4` one at a time. -/
@@ -128,9 +130,9 @@ def kem768 : Kem where
   pCT := 26
   pU := 16
   pZ := 21
-  ceN := "vg_mlkem_compress_encode"
-  ce := compressEncode
-  ddN := "vg_mlkem_decode_decompress"
-  dd := decodeDecompress
+  ceN := Codecs.ceN
+  ce := Codecs.ce
+  ddN := Codecs.ddN
+  dd := Codecs.dd
 
 end VG.Impl.MlKem.X86_64
