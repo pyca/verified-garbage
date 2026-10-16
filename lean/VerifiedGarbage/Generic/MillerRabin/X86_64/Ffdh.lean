@@ -22,6 +22,7 @@ namespace VG.Generic.MillerRabin.X86_64.Ffdh
 def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
   Spec.Ffdh.checkPublicApi.artifact X86_64.target {
     suffix := v.suffix
+    stack := 8
     notes := ["The verified range and optional subgroup checks use fixed four-bit windows \
         with the selected Montgomery backend. Domain bytes and the public key are public \
         under the shared contract."]
@@ -31,6 +32,7 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     features := v.features },
   Spec.Ffdh.exchangeApi.artifact X86_64.target {
     suffix := v.suffix
+    stack := 8
     notes := ["The selected Montgomery backend and fixed four-bit windows process every \
         supplied scalar byte. The result is masked to zero for a degenerate shared value."]
     code := Proof.Ffdh.X86_64.Exchange.exchangeCode v
@@ -39,6 +41,7 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     features := v.features },
   Spec.Ffdh.checkPrivateApi.artifact X86_64.target {
     suffix := v.suffix
+    stack := 8
     notes := ["The scalar bound and the public-value equality are checked in verified code. \
         Powers of a checked generator remain in its q subgroup, so the generated power \
         needs only its range check. Fixed four-bit windows use the selected Montgomery backend."]
@@ -48,6 +51,7 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     features := v.features },
   Spec.Ffdh.generateKeyApi.artifact X86_64.target {
     suffix := v.suffix
+    stack := 8
     notes := ["Scalar masking, scalar-range rejection, generator exponentiation, and \
         degenerate-public-value rejection run in verified code. Fixed four-bit windows \
         use the public bound's significant byte width and the selected Montgomery backend."]
@@ -57,6 +61,7 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     features := v.features },
   Spec.Ffdh.checkDomainApi.artifact X86_64.target {
     suffix := v.suffix
+    stack := 8
     notes := ["The modulus, generator, optional subgroup range, divisibility, and subgroup \
         relation are checked in verified code. Divisibility uses RSA's arbitrary-width \
         Montgomery reduction; fixed four-bit exponentiation uses the selected backend."]
