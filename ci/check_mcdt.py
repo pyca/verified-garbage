@@ -23,7 +23,9 @@ Intel's sequence, exactly:
   contracts.)
 
 A region is only entered through its prologue: no jump from outside it may
-land inside it, and it may not contain a `call` or `ret`. The check is
+land inside it, and it may not contain a `call` or `ret`. So a cold branch
+(`Code.iteCold`) may not start inside a region either: its code lies after
+the function's `ret`, and its jump back would enter the region from outside. The check is
 conservative: it rejects every affected instruction outside a region,
 whether or not its operands are secret.
 """
