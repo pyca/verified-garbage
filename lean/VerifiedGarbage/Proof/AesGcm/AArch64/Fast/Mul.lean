@@ -93,13 +93,11 @@ theorem consts_sp (s : State) :
 /-- `H'` and its halves swapped, from the hash subkey `H` loaded from `x0`. -/
 theorem key_ok {H : Block} {s : State} (hin : InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 0) 16)
     (hH : blockAt s.mem (s.gpr .x0 + BitVec.ofNat 64 0) = H) :
-    WP isa (.block (Impl.Gcm.AArch64.Pmull.loadRev A .x0 0 ++ Impl.Gcm.AArch64.Pmull.consts ++
-        Impl.Gcm.AArch64.Pmull.mul (sReg 1) A (sReg 2) (tReg 2) ++
-        ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] : List Instr))) s fun s' =>
+    WP isa (.block Impl.AesGcm.AArch64.Fast.key) s fun s' =>
       HKey H s' ∧ (∀ r, r ≠ .x5 → r ≠ .x6 → r ≠ .x7 → s'.gpr r = s.gpr r) ∧
       (∀ r, r ∉ [A, C, tReg 2, sReg 2, LO, MID, HI, T, sReg 1, tReg 1] → s'.v r = s.v r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  simp only [List.append_assoc]
+  simp only [Impl.AesGcm.AArch64.Fast.key, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (ldrev_ok A .x0 0 s rfl (by decide) hin) fun s₁ ⟨l₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
@@ -133,8 +131,7 @@ theorem key_ok {H : Block} {s : State} (hin : InRegions (s.rd ++ s.wr) (s.gpr .x
 theorem keep_ok {s : State}
     (w₀ : InRegions s.wr (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16)
     (w₁ : InRegions s.wr (s.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Fast.hO + 16)) 16) :
-    WP isa (.block [.strq (tReg 1) .x19 Impl.AesGcm.AArch64.Fast.hO,
-        .strq (sReg 1) .x19 (Impl.AesGcm.AArch64.Fast.hO + 16), .vop (.movi0 Y)]) s fun s' =>
+    WP isa (.block Impl.AesGcm.AArch64.Fast.keep) s fun s' =>
       s'.mem = (s.mem.write (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16 (s.v (tReg 1))).write
         (s.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Fast.hO + 16)) 16 (s.v (sReg 1)) ∧
       s'.v Y = 0 ∧ (∀ r, r ≠ Y → s'.v r = s.v r) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧

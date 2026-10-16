@@ -36,12 +36,17 @@ def cond : Prog isa :=
       (.seq (.block [.subImm .x .x9 .x11 16]) (.ite (.zero .x .x9) (.block []) (.block [imm .x10 1]))))
   (.seq (.block [.subImm .x .x9 .x24 12]) (.ite (.zero .x .x9) (.block []) (.block [imm .x10 1]))))
 
-/-- `H'` (`v16`) and its halves swapped (`v24`) from `H` at `ctx + 240`, the
-reduction constant (`v1`), both kept at `W + hO`, and `Y = 0`. -/
-def hPrime : List Instr :=
-  ([ptr .x0 .x21 240] : List Instr) ++ loadRev A .x0 0 ++ consts ++ mul (sReg 1) A (sReg 2) (tReg 2) ++
-    ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8), .strq (tReg 1) .x19 hO, .strq (sReg 1) .x19 (hO + 16),
-      .vop (.movi0 Y)] : List Instr)
+/-- `H'` (`v16`) and its halves swapped (`v24`) from `H` at `x0`, and the
+reduction constant (`v1`), as `vg_ghash_aes`'s prologue computes them. -/
+def key : List Instr :=
+  loadRev A .x0 0 ++ consts ++ mul (sReg 1) A (sReg 2) (tReg 2) ++
+    ([.vop (.ext (tReg 1) (sReg 1) (sReg 1) 8)] : List Instr)
+
+/-- `H'` and its halves swapped kept at `W + hO`, and `Y = 0`. -/
+def keep : List Instr := [.strq (tReg 1) .x19 hO, .strq (sReg 1) .x19 (hO + 16), .vop (.movi0 Y)]
+
+/-- `key` from `H` at `ctx + 240`, then `keep`. -/
+def hPrime : List Instr := ([ptr .x0 .x21 240] : List Instr) ++ key ++ keep
 
 /-- `H'`, its halves swapped and the reduction constant again, after the call. -/
 def hReload : List Instr :=
