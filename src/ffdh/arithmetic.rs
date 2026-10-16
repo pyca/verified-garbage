@@ -1,7 +1,13 @@
 //! Public arithmetic for parameter generation.
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ffdh::{
+    VG_FFDH_CHECK_DOMAIN_ADX_FEATURES, VG_FFDH_CHECK_PRIVATE_ADX_FEATURES,
+    VG_FFDH_CHECK_PUBLIC_ADX_FEATURES, VG_FFDH_EXCHANGE_ADX_FEATURES,
+    VG_FFDH_GENERATE_KEY_ADX_FEATURES,
+};
 use crate::arch::miller_rabin::vg_miller_rabin_round;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::miller_rabin::vg_miller_rabin_round_adx;
+use crate::arch::miller_rabin::{VG_MILLER_RABIN_ROUND_ADX_FEATURES, vg_miller_rabin_round_adx};
 use crate::arch::rsa_mont::vg_rsa_mont_mul;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_mont::{VG_RSA_MONT_MUL_ADX_FEATURES, vg_rsa_mont_mul_adx};
@@ -36,8 +42,10 @@ pub(super) fn minus_one(a: &[u8]) -> Vec<u8> {
     out
 }
 
-/// The Montgomery implementations FFDH calls. RSA's private-key routines
-/// have additional feature requirements that do not apply to these functions.
+/// The implementations of the verified functions FFDH calls: the baseline
+/// ISA's, or on x86-64 their `_adx` variants. Each use selects it from the
+/// features of the functions it calls; RSA's private-key routines have
+/// additional feature requirements that do not apply to these functions.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Backend {
     Baseline,
@@ -45,9 +53,38 @@ pub(super) enum Backend {
     Adx,
 }
 impl Backend {
-    pub(super) fn select(_features: Features) -> Self {
+    /// The implementation of the FFDH operations (`vg_ffdh_*`, in
+    /// `Domain`) a CPU with the features `_f` can run.
+    pub(super) fn ffdh(_f: Features) -> Self {
         #[cfg(target_arch = "x86_64")]
-        if _features.contains(VG_RSA_MONT_MUL_ADX_FEATURES) {
+        if _f.contains(
+            const {
+                Features::all(&[
+                    VG_FFDH_CHECK_DOMAIN_ADX_FEATURES,
+                    VG_FFDH_CHECK_PUBLIC_ADX_FEATURES,
+                    VG_FFDH_CHECK_PRIVATE_ADX_FEATURES,
+                    VG_FFDH_GENERATE_KEY_ADX_FEATURES,
+                    VG_FFDH_EXCHANGE_ADX_FEATURES,
+                ])
+            },
+        ) {
+            return Self::Adx;
+        }
+        Self::Baseline
+    }
+
+    /// The implementation of `Montgomery`'s multiplication and
+    /// Miller–Rabin round a CPU with the features `_f` can run.
+    pub(super) fn montgomery(_f: Features) -> Self {
+        #[cfg(target_arch = "x86_64")]
+        if _f.contains(
+            const {
+                Features::all(&[
+                    VG_RSA_MONT_MUL_ADX_FEATURES,
+                    VG_MILLER_RABIN_ROUND_ADX_FEATURES,
+                ])
+            },
+        ) {
             return Self::Adx;
         }
         Self::Baseline
@@ -80,7 +117,7 @@ impl Montgomery {
             modulus,
             r2,
             minv: inv.wrapping_neg(),
-            backend: Backend::select(detected()),
+            backend: Backend::montgomery(detected()),
         }
     }
     /// One strong probable-prime witness, using the shared verified RSA round.
@@ -126,7 +163,8 @@ impl Montgomery {
         // one are their canonical Montgomery residues. The exponent and
         // extra word have the shared prepared-round contract's values.
         // The allocation is disjoint from the stack and wiped on drop.
-        // The ADX backend is selected only when BMI2 and ADX are available.
+        // The ADX backend is selected only with the round's generated
+        // feature set.
         unsafe { round(ws.as_mut_ptr(), ws.len()) == 1 }
     }
 
@@ -160,7 +198,8 @@ impl Montgomery {
         // inverse and w, and indices are among 1,4,5,6,7. Each b is below
         // the modulus: R², one, or a prior Montgomery result. Scratch owns
         // the writable allocation, outside the callee's stack; it is wiped
-        // on drop. ADX is selected only with its generated feature set.
+        // on drop. ADX is selected only with the multiplication's generated
+        // feature set.
         unsafe { f(ws.as_mut_ptr(), ws.len(), out, a, b) }
     }
 }
@@ -236,8 +275,10 @@ mod tests {
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn backend_feature_requirements() {
-        // AVX, AVX2 and IFMA belong to other RSA routines: they neither
-        // enable Montgomery ADX nor gate it when BMI2 and ADX are present.
+        // Both selections need exactly BMI2 and ADX, the generated feature
+        // sets of the functions they call. AVX, AVX2 and IFMA belong to
+        // other RSA routines: they neither enable ADX nor gate it when BMI2
+        // and ADX are present.
         let cases: &[(&[&str], Backend)] = &[
             (&[], Backend::Baseline),
             (&["bmi2"], Backend::Baseline),
@@ -265,8 +306,9 @@ mod tests {
             ),
         ];
         for &(features, expected) in cases {
-            let backend = Backend::select(Features::of(features));
-            assert_eq!(backend, expected, "{features:?}");
+            for select in [Backend::ffdh, Backend::montgomery] {
+                assert_eq!(select(Features::of(features)), expected, "{features:?}");
+            }
         }
     }
 }

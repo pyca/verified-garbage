@@ -18,15 +18,15 @@
     feature = "alloc"
 ))]
 
-mod aarch64;
 mod arithmetic;
+mod domain;
 mod generation;
-mod x86_64;
 
 use crate::zeroize::zeroize;
 use alloc::vec::Vec;
 use arithmetic::{canonical, scalar};
 use core::fmt;
+use domain::Domain;
 
 /// Minimum supported modulus size, including legacy cryptography keys.
 pub const MIN_BITS: usize = 512;
@@ -64,13 +64,22 @@ impl fmt::Display for Error {
 impl core::error::Error for Error {}
 
 /// Imported, checked domain components.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Parameters {
     p: Vec<u8>,
     g: Vec<u8>,
     q: Option<Vec<u8>>,
-    #[cfg(target_arch = "aarch64")]
-    domain: aarch64::Domain,
+    // The components laid out for the verified operations.
+    domain: Domain,
+}
+impl fmt::Debug for Parameters {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Parameters")
+            .field("p", &self.p)
+            .field("g", &self.g)
+            .field("q", &self.q)
+            .finish()
+    }
 }
 impl PartialEq for Parameters {
     fn eq(&self, other: &Self) -> bool {
@@ -86,17 +95,11 @@ impl Parameters {
     /// primality-test imported parameters.
     pub fn from_components(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Result<Self, Error> {
         let (p, g, q) = (canonical(p), canonical(g), q.map(canonical));
-        #[cfg(target_arch = "aarch64")]
-        let domain = aarch64::Domain::new(p, g, q).ok_or(Error::InvalidParameters)?;
-        #[cfg(target_arch = "x86_64")]
-        if !x86_64::check_domain(p, g, q) {
-            return Err(Error::InvalidParameters);
-        }
+        let domain = Domain::new(p, g, q).ok_or(Error::InvalidParameters)?;
         Ok(Self {
             p: p.to_vec(),
             g: g.to_vec(),
             q: q.map(<[u8]>::to_vec),
-            #[cfg(target_arch = "aarch64")]
             domain,
         })
     }
@@ -144,18 +147,7 @@ impl Parameters {
                     result = Err(Error::Randomness);
                     break 'keys;
                 }
-                #[cfg(target_arch = "aarch64")]
-                let status = self.domain.generate_key(&rand, &mut x, &mut y);
-                #[cfg(target_arch = "x86_64")]
-                let status = x86_64::generate_key(
-                    &self.p,
-                    &self.g,
-                    self.q.as_deref(),
-                    &rand,
-                    &mut x,
-                    &mut y,
-                );
-                match status {
+                match self.domain.generate_key(&rand, &mut x, &mut y) {
                     1 => {
                         result = Ok(PrivateKey {
                             public: PublicKey {
@@ -176,16 +168,6 @@ impl Parameters {
         zeroize(&mut rand);
         result
     }
-
-    #[cfg(target_arch = "aarch64")]
-    fn public_valid(&self, y: &[u8]) -> bool {
-        self.domain.check_public(y)
-    }
-
-    #[cfg(not(target_arch = "aarch64"))]
-    fn public_valid(&self, y: &[u8]) -> bool {
-        x86_64::check_public(&self.p, &self.g, self.q.as_deref(), y)
-    }
 }
 
 /// An immutable public key with checked range and optional subgroup membership.
@@ -198,7 +180,7 @@ impl PublicKey {
     /// Import an unsigned big-endian y, accepting leading zeros.
     pub fn from_components(params: &Parameters, y: &[u8]) -> Result<Self, Error> {
         let y = canonical(y);
-        if !params.public_valid(y) {
+        if !params.domain.check_public(y) {
             return Err(Error::InvalidKey);
         }
         Ok(Self {
@@ -250,11 +232,7 @@ impl PrivateKey {
         if zeros.iter().any(|&b| b != 0) {
             return Err(Error::InvalidKey);
         }
-        #[cfg(target_arch = "aarch64")]
-        let ok = params.domain.check_private(y, x);
-        #[cfg(target_arch = "x86_64")]
-        let ok = x86_64::check_private(&params.p, &params.g, params.q.as_deref(), y, x);
-        if !ok {
+        if !params.domain.check_private(y, x) {
             return Err(Error::InvalidKey);
         }
         Ok(Self {
@@ -285,18 +263,7 @@ impl PrivateKey {
         }
         let mut z = alloc::vec![0; params.p.len()];
         let x = &self.x[self.x.len() - self.exponent_len..];
-        #[cfg(target_arch = "aarch64")]
-        let ok = params.domain.exchange(x, &peer.y, &mut z);
-        #[cfg(target_arch = "x86_64")]
-        let ok = x86_64::exchange(
-            &params.p,
-            &params.g,
-            params.q.as_deref(),
-            x,
-            &peer.y,
-            &mut z,
-        );
-        if ok {
+        if params.domain.exchange(x, &peer.y, &mut z) {
             Ok(z)
         } else {
             Err(Error::InvalidSharedSecret)
@@ -325,18 +292,15 @@ mod tests {
         let k = PrivateKey::from_components(&params, &y, &[2]).unwrap();
         assert_eq!(k.exchange(k.public_key()), Err(Error::InvalidSharedSecret));
         let mut x = vec![2];
-        let k = PrivateKey::from_components(&params, &y, &x).unwrap();
+        let mut k = PrivateKey::from_components(&params, &y, &x).unwrap();
         x[0] = 0;
         assert_eq!(k.private_component()[63], 2);
         assert!(k.private_component()[..63].iter().all(|&b| b == 0));
-        let mut k = core::mem::ManuallyDrop::new(k);
-        // Keep the allocation alive while exercising the same wipe as Drop;
-        // then dropping runs the verified wipe once more and frees it.
+        // Exercise the same wipe as Drop while the allocation is alive;
+        // dropping then runs the verified wipe once more and frees it.
         zeroize(&mut k.x);
         assert!(k.x.iter().all(|&b| b == 0));
-        unsafe {
-            core::mem::ManuallyDrop::drop(&mut k);
-        }
+        drop(k);
         assert!(format!("{:?}", params.clone()).contains("Parameters"));
     }
     #[test]
@@ -391,18 +355,7 @@ mod tests {
             }
             let mut x = vec![0xa5; 64];
             let mut y = vec![0x5a; 64];
-            #[cfg(target_arch = "aarch64")]
-            let actual = params.domain.generate_key(&rand, &mut x, &mut y);
-            #[cfg(target_arch = "x86_64")]
-            let actual = x86_64::generate_key(
-                &params.p,
-                &params.g,
-                params.q.as_deref(),
-                &rand,
-                &mut x,
-                &mut y,
-            );
-            assert_eq!(actual, status);
+            assert_eq!(params.domain.generate_key(&rand, &mut x, &mut y), status);
             if status == 1 {
                 assert_eq!(x, rand);
                 assert_eq!(y[15], 1);
