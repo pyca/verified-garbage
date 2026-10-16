@@ -18,8 +18,6 @@ import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 meta import Mathlib.Tactic.Conv
 meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-KEM on x86-64: key generation, its contract, layout, checks and entry
@@ -321,10 +319,11 @@ end KeyGen
 /-- Proves the checks of a parameter set's layout (`KemWf`, `KeyGen.KgWf`, …),
 each field evaluated by the kernel: the taint checks with `taint_decide`, the
 others with `decide +kernel`; `kem_wf w` takes the checks of `KemWf` from `w`. -/
-tactic_template "kem_wf" : tactic =>
-  `(tactic| constructor <;> first | exact ⟨_, by taint_decide⟩ | taint_decide | decide +kernel)
-
-tactic_template "kem_wf" ppSpace w:term : tactic =>
-  `(tactic| constructor <;> first | exact $w | exact ⟨_, by taint_decide⟩ | taint_decide | decide +kernel)
+syntax "kem_wf" (ppSpace term)? : tactic
+macro_rules
+  | `(tactic| kem_wf) =>
+    `(tactic| constructor <;> first | exact ⟨_, by taint_decide⟩ | taint_decide | decide +kernel)
+  | `(tactic| kem_wf $w) =>
+    `(tactic| constructor <;> first | exact $w | exact ⟨_, by taint_decide⟩ | taint_decide | decide +kernel)
 
 end VG.Proof.MlKem.X86_64
