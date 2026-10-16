@@ -94,7 +94,8 @@ def run : Prog isa :=
   (.seq padMul
   (.seq (.block lensTag)
   (.seq (ctrCall c)
-    (.block (tagOut ++ restore))))))))))
+  (.seq (.block tagOut)
+    (.block restore))))))))))
 
 /-- `vg_aes_gcm_seal` with this path: the entry, `cond`, then `run` or `sealRest`. -/
 def «seal» : Prog isa :=

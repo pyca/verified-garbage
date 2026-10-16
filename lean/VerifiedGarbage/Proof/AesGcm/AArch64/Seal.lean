@@ -193,14 +193,30 @@ theorem sealLay {s : State} (hs : sealPre s) :
   obtain ⟨-, hwr, -, -, -, -, -, -, ddt, -, -, dtw, -⟩ := hs'
   exact ⟨oneLay (sealCore hs), covers_of_mem (by rw [hwr]; simp), dtw, ddt⟩
 
-theorem seal_wp (v : GcmImpl) {s : State} (hs : sealAArch64.pre s) :
-    WP isa («seal» v.callees) s fun s' => GprAbi s s' ∧ sealAArch64.post s s' := by
-  obtain ⟨ol, tW, dtw, ddt⟩ := sealLay hs
-  simp only [sealAArch64]
+/-- What the entry of `seal` leaves, from `s`. -/
+structure SealEntry (s s₁ : State) : Prop where
+  env : Env (s.gpr .x0) (stackArg s 1 + BitVec.ofNat 64 16) (stackArg s 1) s.sp s₁
+  x22 : s₁.gpr .x22 = s.gpr .x1
+  x23 : s₁.gpr .x23 = s.gpr .x2
+  x24 : s₁.gpr .x24 = s.gpr .x3
+  x26 : s₁.gpr .x26 = s.gpr .x3
+  x27 : s₁.gpr .x27 = 0
+  x28 : s₁.gpr .x28 = stackArg s 0
+  sA : s₁.mem.readW (stackArg s 1 + BitVec.ofNat 64 216) 64 = s.gpr .x4
+  sL : s₁.mem.readW (stackArg s 1 + BitVec.ofNat 64 224) 64 = s.gpr .x5
+  sD : s₁.mem.readW (stackArg s 1 + BitVec.ofNat 64 232) 64 = s.gpr .x6
+  sN : s₁.mem.readW (stackArg s 1 + BitVec.ofNat 64 240) 64 = s.gpr .x7
+  sT : s₁.mem.readW (stackArg s 1 + BitVec.ofNat 64 248) 64 = stackArg s 0
+  frame : Frame [entryR (stackArg s 1)] s.mem s₁.mem
+  saved : SavedAt s₁.mem (stackArg s 1) s
+  rd : s₁.rd = s.rd
+  wr : s₁.wr = s.wr
+
+/-- The entry of `seal`. -/
+theorem sealEntry_ok {s : State} (hs : sealAArch64.pre s) :
+    WP isa (.block (oneEntry 8 ++ stashArg 0)) s (SealEntry s) := by
+  obtain ⟨ol, -, -, -⟩ := sealLay hs
   obtain ⟨L, perm, hsp, dnW, daW, ddW, dcW, daA, dnd, dad, dcd, wn, wa, wd, hR, nR, aR, dW⟩ := ol
-  have h3 := ofNat_toNat' (s.gpr .x3)
-  have h5 := ofNat_toNat' (s.gpr .x5)
-  have h7 := ofNat_toNat' (s.gpr .x7)
   have hW8 : s.mem.readW (s.sp + BitVec.ofNat 64 8) 64 = stackArg s 1 := rfl
   have hT0 : s.mem.readW (s.sp + BitVec.ofNat 64 0) 64 = stackArg s 0 := rfl
   have hsp8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 := hsp 1 (by decide)
@@ -209,6 +225,21 @@ theorem seal_wp (v : GcmImpl) {s : State} (hs : sealAArch64.pre s) :
     refine daA.sub_left ?_
     show Region.Sub ⟨s.sp + BitVec.ofNat 64 0, 8⟩ ⟨s.sp + BitVec.ofNat 64 (8 * 0), 8 * 2⟩
     exact Region.sub_prefix (by decide)
+  exact WP.mono (entryStash_ok (k := 8) (j := 0) (V := stackArg s 0) (by decide) (by decide) hW8 hsp8 hsp0 hT0
+      darg rfl perm)
+    fun s₁ ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ =>
+      ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩
+
+/-- `seal` after its entry. -/
+theorem sealRest_ok (v : GcmImpl) {s s₁ : State} (hs : sealAArch64.pre s) (h₁ : SealEntry s s₁) :
+    WP isa (sealRest v.callees) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' := by
+  obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, _, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁
+  obtain ⟨ol, tW, dtw, ddt⟩ := sealLay hs
+  simp only [sealAArch64]
+  obtain ⟨L, perm, hsp, dnW, daW, ddW, dcW, daA, dnd, dad, dcd, wn, wa, wd, hR, nR, aR, dW⟩ := ol
+  have h3 := ofNat_toNat' (s.gpr .x3)
+  have h5 := ofNat_toNat' (s.gpr .x5)
+  have h7 := ofNat_toNat' (s.gpr .x7)
   generalize hW : stackArg s 1 = W at *
   generalize hTg : stackArg s 0 = Tg at *
   generalize hCtx : s.gpr .x0 = Ctx at *
@@ -221,12 +252,8 @@ theorem seal_wp (v : GcmImpl) {s : State} (hs : sealAArch64.pre s) :
   generalize hn : (s.gpr .x7).toNat = n at *
   have hRb : R = 10 ∨ R = 12 ∨ R = 14 := by rw [← hRR]; exact hR
   have hnlt : n < 2 ^ 64 := hn ▸ (s.gpr .x7).isLt
-  refine WP.seq (WP.mono (entryStash_ok (k := 8) (j := 0) (V := Tg) (by decide) (by decide) hW8 hsp8 hsp0 hT0 darg
-      hCtx perm)
-    fun s₁ ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, _, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ => ?_)
-  rw [hA] at sl₁
+  unfold sealRest
   rw [← h5] at sl₂
-  rw [hD] at sl₃
   rw [← h7] at sl₄
   have sub16 : Region.Sub ⟨W + BitVec.ofNat 64 16, 80⟩ (workR W) := Lay.wSub (by decide)
   have kc := keep_of_sub (entryR_work W) (dcW.sub_left (Lay.ctxSub (d := 240) (n := 16) (by decide)))
@@ -239,7 +266,7 @@ theorem seal_wp (v : GcmImpl) {s : State} (hs : sealAArch64.pre s) :
     bytesAt_frame f₁ (keep_of_sub (entryR_work W) dnW) (by omega)
   have a₁ : bytesAt s₁.mem A al = bytesAt s.mem A al :=
     bytesAt_frame f₁ (keep_of_sub (entryR_work W) daW) (by omega)
-  refine front_ok L v he₁ (fun _ _ => rfl : Kept s₁.gpr s₁) (x23₁.trans hNp) (by rw [x24₁, ← h3])
+  refine front_ok L v he₁ (fun _ _ => rfl : Kept s₁.gpr s₁) x23₁ (by rw [x24₁, ← h3])
     (by rw [x26₁, ← h3]) x27₁ hnon haad hH₁ sl₁ sl₂ sl₃ sl₄ fun s₂ h₂ => ?_
   rw [iv₁, a₁] at h₂
   have x22₂ : s₂.gpr .x22 = BitVec.ofNat 64 R := by rw [h₂.x22, x22₁, ← hRR, ofNat_toNat']
@@ -321,5 +348,9 @@ theorem seal_wp (v : GcmImpl) {s : State} (hs : sealAArch64.pre s) :
   rw [hdata, out₆, htag, Spec.Gcm.encryptWith, Proof.Gcm.fullTag_eq,
     List.take_of_length_le (by rw [Proof.Cmac.toBytes_length])]
   rfl
+
+theorem seal_wp (v : GcmImpl) {s : State} (hs : sealAArch64.pre s) :
+    WP isa («seal» v.callees) s fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
+  WP.seq (WP.mono (sealEntry_ok hs) fun _ h₁ => sealRest_ok v hs h₁)
 
 end VG.Proof.AesGcm.AArch64

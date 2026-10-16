@@ -31,6 +31,7 @@ open VG.Proof.Gcm.Poly VG.Proof.Gcm.AArch64.Pmull
 open VG.Impl.Gcm.AArch64.Pmull (LO MID HI A T C Y tReg sReg poly)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks zeros padLen ofBytes)
+open VG.Proof.Gcm (blocks_append)
 
 /-- Code that writes no vector register keeps them all. -/
 theorem WP.keepV {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q)
@@ -126,5 +127,24 @@ theorem padMul_ok {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n : Nat} {s : S
     exact fz.trans ((writeBytes_frame' _ hlen).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega)⟩)
+
+/-- GHASH of the padded input, from that of the additional data padded and
+the whole blocks `w` of the text, and its last bytes `t`. -/
+theorem ghash_padded (H : Block) (a w t : List Byte) (hw : w.length % 16 = 0) (ht : t.length < 16) :
+    ghash H (blocks (Proof.Gcm.padded a (w ++ t))) =
+      padStep H (ghash H (blocks (a ++ zeros (padLen a.length) ++ w))) t := by
+  by_cases hc : w ++ t = []
+  · obtain ⟨rfl, rfl⟩ := List.append_eq_nil_iff.mp hc
+    simp only [Proof.Gcm.padded, Proof.Gcm.ghashInput_nil, List.append_nil, padStep, ↓reduceIte, List.nil_append]
+  · have hX : (a ++ zeros (padLen a.length) ++ w).length % 16 = 0 := by
+      simp only [List.length_append, Proof.Gcm.length_zeros]
+      have := Proof.Gcm.length_pad_mod a.length
+      omega
+    have hp : padLen (a ++ zeros (padLen a.length) ++ (w ++ t)).length = padLen t.length := by
+      have h := hX
+      simp only [List.length_append, Proof.Gcm.length_zeros] at h ⊢
+      simp only [padLen] at h ⊢; omega
+    rw [Proof.Gcm.padded, Proof.Gcm.ghashInput_of_ne hc, hp, ← List.append_assoc, List.append_assoc _ t,
+      blocks_append hX, ghash, Proof.Gcm.ghashFrom_append, ← ghash, ghashFrom_pad H _ (by omega)]
 
 end VG.Proof.AesGcm.AArch64.Fast
