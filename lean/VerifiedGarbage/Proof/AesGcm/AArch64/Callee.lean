@@ -44,6 +44,9 @@ structure GhashImpl where
   keepsV : fn.code.allInstrs keepsV = true
   suffix : String
   features : List String
+  /-- Whether its CPUs have PMULL, which `seal`'s path for TLS records
+  (`Impl/AesGcm/AArch64/Fast.lean`) runs inline. -/
+  pmull : Bool := false
 
 /-- An implementation of `vg_aes_expand_key_scratch` on AArch64. -/
 structure KeyImpl where

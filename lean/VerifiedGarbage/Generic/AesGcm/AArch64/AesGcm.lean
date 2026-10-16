@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
 /-!
@@ -41,6 +42,13 @@ def note (v : GcmImpl) : String :=
   "This implementation encrypts with `" ++ v.ctr.callee.name ++ "` (and expands keys with `" ++
     v.key.fn.name ++ "`) and hashes with `" ++ v.gh.fn.name ++ "`."
 
+/-- How `seal` takes the records of TLS, for the implementations with PMULL. -/
+def fastNote (v : GcmImpl) : List String :=
+  if v.gh.pmull then ["For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes \
+    the hash subkey's `H · x⁻¹` once and multiplies the additional data, the last bytes of the ciphertext and \
+    the lengths block into the hash with PMULL in registers, calling `" ++ v.gh.fn.name ++ "` once, on the \
+    whole blocks of the ciphertext."] else []
+
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.initApi with
@@ -56,12 +64,11 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.sealApi with
     name := Spec.Gcm.sealApi.name ++ v.suffix
     target := AArch64.target
-    doc := Spec.Gcm.sealApi.doc (notes := [note v])
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1
-      (Impl.AesGcm.AArch64.«seal» v.callees)
+    doc := Spec.Gcm.sealApi.doc (notes := [note v] ++ fastNote v)
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)
     contract := Spec.Gcm.sealContract AArch64.abi 2576
     stack := 2576
-    verified := seal_framed v
+    verified := sealCode_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { Spec.Gcm.openApi with
@@ -146,9 +153,9 @@ def gatherNote (fn : String) : String :=
 /-- The instance of `vg_aes_gcm_seal` calling the implementations `v`. -/
 def sealFn (v : GcmImpl) : Proof.AesGcm.AArch64.Gather.SealFn where
   fn := ⟨Spec.Gcm.sealApi.name ++ v.suffix,
-    Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (Impl.AesGcm.AArch64.«seal» v.callees)⟩
-  verified := seal_framed v
-  depth := Proof.AesGcm.AArch64.Gather.seal_depth v
+    Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)⟩
+  verified := sealCode_framed v
+  depth := sealCode_depth v
 
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
 def artifactsGather (v : GcmImpl) : List Artifact := [

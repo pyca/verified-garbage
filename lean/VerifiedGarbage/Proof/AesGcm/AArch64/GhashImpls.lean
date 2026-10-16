@@ -34,6 +34,7 @@ def aes : GhashImpl where
   keepsV := by decide +kernel
   suffix := "_aes"
   features := ["aes"]
+  pmull := true
 
 end GhashImpl
 
