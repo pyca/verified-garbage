@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRowsCT
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareChoice
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareCross16CT
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareCross16CT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -48,7 +50,7 @@ theorem rowsChoice_ct {ps : List (Nat × Nat)} {ca a : Nat} (pa : (ca, a) ∈ ps
         ⟨⟨by change 1<L.n; omega,
           ⟨mi,hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,mt ▸ hg.hdr⟩,mt ▸ hv⟩,zt⟩
     refine two_ite (fun L s t hs ht => by simp only [eval,hs.2,ht.2]) ?_ ?_
-    · exact two_map id (fun L s ⟨⟨hg,_⟩,_⟩ => hg) (rows1_ct pa ha ha1 ha2 hS)
+    · exact two_map id (fun L s ⟨⟨hg,z⟩,e⟩ => ⟨hg,by simpa [eval,z] using e⟩) (cross16_ct pa ha ha1 ha2 hS)
     · exact two_map id (fun L s ⟨⟨hg,_⟩,_⟩ => hg) (rows_ct pa ha ha1 ha2 hS)
 
 end VG.Proof.Bignum.X86_64.AdxTiledSquare
