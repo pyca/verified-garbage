@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.X86
 meta import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.X86
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.BrainpoolP384r1
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

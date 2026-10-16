@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
@@ -119,10 +121,7 @@ end
 /-! ## Running a block -/
 
 /-- Steps a block from a state whose accesses the hypotheses `ls` permit. -/
-syntax "xrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| xrun) => `(tactic| xrun [])
-  | `(tactic| xrun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "xrun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
@@ -133,6 +132,8 @@ macro_rules
                          Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
                          ite_false, reduceCtorEq, BitVec.setWidth_32_64_32, BitVec.sub_self, sx1, sx2, sx3, sx4, sx5, sx8,
                          sx16, sx32, sxQ, true_and, and_true, $ls,*]))
+/-- `xrun` with no extra lemmas. -/
+macro "xrun" : tactic => `(tactic| xrun [])
 
 /-! ## What a block keeps -/
 
