@@ -75,12 +75,6 @@ def vibfly : List Instr :=
   (xmov .xmm3 .xmm1 :: xb .psubw .xmm3 .xmm0 :: xb .paddw .xmm0 .xmm1 :: vcsub .xmm0 .xmm2) ++
     vmont .xmm3 .xmm13 .xmm2 ++ vcadd .xmm3 .xmm2
 
-/-- The butterflies of Algorithm 9 without reductions, for the lazy layers:
-`xmm0 ← xmm0 + t` and `xmm3 ← xmm0 - t` for `t = ζ · xmm1` by Montgomery
-multiplication, in `(-q, q)`. -/
-def vbflyL : List Instr :=
-  vmont .xmm1 .xmm13 .xmm2 ++ [xmov .xmm3 .xmm0, xb .paddw .xmm0 .xmm1, xb .psubw .xmm3 .xmm1]
-
 /-- The butterflies of Algorithm 10 without reductions, for the lazy layers:
 `xmm0 ← xmm0 + xmm1` and `xmm3 ← ζ · (xmm1 - xmm0)` by Montgomery
 multiplication, in `(-q, q)`. -/

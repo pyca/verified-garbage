@@ -2,22 +2,24 @@ module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Ntt
 public import VerifiedGarbage.Impl.MlKem.X86_64.Avx
+public import VerifiedGarbage.Impl.MlKem.X86_64.NttRegs
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_ntt_avx2` and `vg_mlkem_inv_ntt_avx2`
 
-`nttAvx2(f = rdi, scratch = rsi)` and `nttInvAvx2(f = rdi, scratch = rsi)`
-are `vg_mlkem_ntt` and `vg_mlkem_inv_ntt` (`Ntt.lean`) on sixteen
-coefficients at a time, eight in each 128-bit lane of AVX2 registers
-(`Avx.lean`), with the same working space: the table of zetas at 0, the
-polynomial as 256 words at 256 (`S`), and MXCSR's at 768 (`withMxcsr`).
+`nttAvx2(f = rdi, scratch = rsi)` is `NTT` in two passes on registers
+(`NttRegs.lean`), with MXCSR's words at 768 (`withMxcsr`).
+
+`nttInvAvx2(f = rdi, scratch = rsi)` is `vg_mlkem_inv_ntt` (`Ntt.lean`) on
+sixteen coefficients at a time, eight in each 128-bit lane of AVX2
+registers (`Avx.lean`), with the same working space: the table of zetas at
+0, the polynomial as 256 words at 256 (`S`), and MXCSR's at 768.
 The prologue packs `f` into `S` sixteen coefficients at a time (`ypack`:
 `vpackssdw` and `vpermq` to put the words back in order), and the epilogue
 unpacks `S` into `f` (`yunpack`).
 
-The table holds `ζ^BitRev7(k) · 2¹⁶ mod q` at `k` for `NTT` (`zmTab`), and
-at `127 - k` for `NTT⁻¹` (`zmTabInv`), so that both take the zetas of their
-blocks in increasing order: a layer whose first block has the zeta at
+The table holds `ζ^BitRev7(127 - k) · 2¹⁶ mod q` at `k` (`zmTabInv`), so
+that the layers take the zetas of their blocks in increasing order: a layer whose first block has the zeta at
 position `t` of the table runs them in order from `r8` at `t`. The layers,
 each a pass over `S` with `rdx` at the words it loads:
 
@@ -33,12 +35,9 @@ each a pass over `S` with `rdx` at the words it loads:
   `16 + 8l` to `16 + 8l + 7`; the zetas of the blocks of each lane are
   gathered into the lanes of `ymm13` with `vpblendd` (`yzeta4`, `yzeta8`).
 
-The butterflies reduce lazily (`vbflyL`, `vibflyL`): a word is only
-congruent to its coefficient modulo `q`. In `NTT` each layer adds at most
-`q` to a word's magnitude, which stays below `8q` after the seven layers,
-and `yredC` reduces every word to its value (`nttLazy`). In `NTT⁻¹` each
-layer doubles the sums, so `yred` brings the words back below `q` after
-the third and sixth layers (`nttInvLazy`).
+The butterflies reduce lazily (`vibflyL`): a word is only congruent to its
+coefficient modulo `q`. Each layer doubles the sums, so `yred` brings the
+words back below `q` after the third and sixth layers (`nttInvLazy`).
 
 `NTT⁻¹` then multiplies every coefficient by `3303` (`yscale`). Both clear
 the upper halves of the vector registers before returning (`vzeroupper`).
@@ -147,9 +146,6 @@ def yscale : Prog isa := ymulc 0x02000200 (vmont .xmm3 .xmm13 .xmm2 ++ vcadd .xm
 2285`: in `(-q, q)`, for the lazy layers. -/
 def yred : Prog isa := ymulc 0x08ED08ED (vmont .xmm3 .xmm13 .xmm2)
 
-/-- Every word of `S` reduced to its value modulo `q`, after the lazy layers. -/
-def yredC : Prog isa := ymulc 0x08ED08ED (vmont .xmm3 .xmm13 .xmm2 ++ vcadd .xmm3 .xmm2)
-
 /-- The 256 `u32`s at `[r9]` to words at `[rdx]`, sixteen at a time. -/
 def ypack : Prog isa :=
   rcxLoop 16 [.vmovdquLoad .l256 .xmm0 (at_ .r9 0), .vmovdquLoad .l256 .xmm1 (at_ .r9 32),
@@ -172,12 +168,6 @@ def ypro (tab : Nat → Nat) : Prog isa :=
 def yepi : Prog isa :=
   .seq (.block ([.mov .r9 (.reg .rdi)] ++ leaR .rdx .rsi oS)) (.seq yunpack (.block [.vop .vzeroupper]))
 
-/-- The seven layers of `NTT` on lazily reduced words (`vbflyL`), each word
-growing by at most `q`, and their reduction. -/
-def nttLazy : Prog isa :=
-  .seq (ylay vbflyL 128 1) (.seq (ylay vbflyL 64 2) (.seq (ylay vbflyL 32 4) (.seq (ylay vbflyL 16 8)
-    (.seq (ylay8 vbflyL 16) (.seq (ylay4 vbflyL 32) (.seq (ylay2 vbflyL 64) yredC))))))
-
 /-- The seven layers of `NTT⁻¹` on lazily reduced words (`vibflyL`), each sum
 doubling, reduced after the third and the sixth, and the multiplication by
 `3303`. -/
@@ -186,7 +176,8 @@ def nttInvLazy : Prog isa :=
     (.seq (ylay vibflyL 16 112) (.seq (ylay vibflyL 32 120) (.seq (ylay vibflyL 64 124) (.seq yred
       (.seq (ylay vibflyL 128 126) yscale))))))))
 
-def nttAvx2 : Prog isa := withMxcsr .rsi oMx <| .seq (ypro zmTab) (.seq nttLazy yepi)
+/-- `NTT` in two passes on registers (`NttRegs.lean`), in place. -/
+def nttAvx2 : Prog isa := withMxcsr .rsi oMx (nttR NttR.passBsRdi)
 
 def nttInvAvx2 : Prog isa := withMxcsr .rsi oMx <| .seq (ypro zmTabInv) (.seq nttInvLazy yepi)
 

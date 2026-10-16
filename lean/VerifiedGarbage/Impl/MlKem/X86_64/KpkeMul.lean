@@ -96,7 +96,7 @@ def mulAccB (o : Nat) : Prog isa :=
       leaR .rsi .rbx 2048)) X86_64.add))
 
 /-- `vg_mlkem_ntt_avx2`'s code, storing to `r10`. -/
-def nttOBY : Prog isa := .seq (ypro zmTab) (.seq nttLazy (.seq (.block [.mov .rdi (.reg .r10)]) yepi))
+def nttOBY : Prog isa := nttR NttR.passBsR10
 
 def Bodies.sse : Bodies := ⟨nttOB, nttInvB, zeroB, [], mulAccB, X86_64.add, mulB⟩
 

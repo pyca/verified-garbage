@@ -9,8 +9,7 @@ import all Init.Data.Vector.Basic
 /-!
 # ML-KEM on x86-64: the butterflies of the lazy layers
 
-`vbflyL` and `vibflyL` do exactly what `fwdW` and `invW` do to the words of
-`xmm0` and `xmm1`, with the zetas of `xmm13` (`VBflyOk` with the words
+`vibflyL` does exactly what `invW` does to the words of `xmm0` and `xmm1`, with the zetas of `xmm13` (`VBflyOk` with the words
 themselves as values).
 -/
 
@@ -23,26 +22,6 @@ open VG.Spec.MlKem
 
 theorem zw_lane {x : BitVec 128} {ζ : Nat → Zq} (h : ZLanes x ζ) {i : Nat} (hi : i < 8) : word x i = zw (ζ i) :=
   BitVec.eq_of_toNat_eq (by rw [h i hi, zw_toNat])
-
-theorem vbflyL_spec : VBflyOk (· = ·) vbflyL fwdW := by
-  intro s hc x y ζ hx hy hz
-  have hx' : ∀ i < 8, word (s.xmm .xmm0) i = x i := hx
-  have hy' : ∀ i < 8, word (s.xmm .xmm1) i = y i := hy
-  rw [vbflyL, WP.block_append_iff]
-  refine WP.mono (vmont_ok (d := .xmm1) (z := .xmm13) (t := .xmm2) (by decide) (by decide) (by decide)
-    (by decide) (by decide) hc) fun s1 ⟨l1, o1⟩ => ?_
-  simp only [xmov, xb]
-  vrun
-  have w0 : s1.xmm .xmm0 = s.xmm .xmm0 := o1.xmm _ (by decide)
-  have t : ∀ i < 8, word (s1.xmm .xmm1) i = W.montW (y i) (zw (ζ i)) := fun i hi => by
-    rw [l1 i hi]; dsimp only; rw [hy' i hi, zw_lane hz hi]
-  refine ⟨fun i hi => ?_, fun i hi => ?_, ?_⟩
-  · show word _ i = _
-    rw [word_paddw _ _ hi, t i hi, w0, hx' i hi]; rfl
-  · show word _ i = _
-    rw [word_psubw _ _ hi, word_movdqa, t i hi, w0, hx' i hi]; rfl
-  · exact (o1.trans (XOnly.setXmm (by simp) (XOnly.setXmm (by simp) (XOnly.setXmm (by simp)
-      (XOnly.refl [.xmm3, .xmm0] s1) _) _) _)).mono (by simp)
 
 theorem vibflyL_spec : VBflyOk (· = ·) vibflyL invW := by
   intro s hc x y ζ hx hy hz

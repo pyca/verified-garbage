@@ -5,6 +5,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
 meta import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
