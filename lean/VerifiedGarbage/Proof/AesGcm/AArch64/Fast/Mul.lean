@@ -129,4 +129,57 @@ theorem key_ok {H : Block} {s : State} (hin : InRegions (s.rd ++ s.wr) (s.gpr .x
       o₁.v r (by simp only [List.mem_singleton]; exact hA)]
   · rw [o₄.sp, o₃.sp, sp₂, o₁.sp]
 
+/-- `H'` and its halves swapped stored at `x19 + hO`, and `Y = 0`. -/
+theorem keep_ok {s : State}
+    (w₀ : InRegions s.wr (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16)
+    (w₁ : InRegions s.wr (s.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Fast.hO + 16)) 16) :
+    WP isa (.block [.strq (tReg 1) .x19 Impl.AesGcm.AArch64.Fast.hO,
+        .strq (sReg 1) .x19 (Impl.AesGcm.AArch64.Fast.hO + 16), .vop (.movi0 Y)]) s fun s' =>
+      s'.mem = (s.mem.write (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16 (s.v (tReg 1))).write
+        (s.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Fast.hO + 16)) 16 (s.v (sReg 1)) ∧
+      s'.v Y = 0 ∧ (∀ r, r ≠ Y → s'.v r = s.v r) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.sp = s.sp := by
+  refine WP.block_cons_iff.mpr ⟨_, exec_strq (by decide) (by decide) w₀, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_strq (t := sReg 1) (n := .x19) (off := Impl.AesGcm.AArch64.Fast.hO + 16)
+    (by decide) (by decide) (by exact w₁), ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_movi0 Y _, WP.block_nil ?_⟩
+  exact ⟨rfl, by simp only [v_setV, ite_true], fun r hr => by simp only [v_setV, hr, ite_false], rfl, rfl,
+    rfl, rfl⟩
+
+/-- `H'`, its halves swapped and the reduction constant, reloaded. -/
+theorem reload_ok {H : Block} {t : BitVec 128} {s : State}
+    (r₀ : InRegions (s.rd ++ s.wr) (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16)
+    (r₁ : InRegions (s.rd ++ s.wr) (s.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Fast.hO + 16)) 16)
+    (h₀ : s.mem.read (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16 = t)
+    (h₁ : s.mem.read (s.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Fast.hO + 16)) 16 = ext8 t t)
+    (ht : x * φ t = φ H) :
+    WP isa (.block Impl.AesGcm.AArch64.Fast.hReload) s fun s' =>
+      HKey H s' ∧ (∀ r, r ≠ .x5 → s'.gpr r = s.gpr r) ∧
+      (∀ r, r ∉ [tReg 1, sReg 1, C] → s'.v r = s.v r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+  apply WP.of_runBlock
+  simp only [Impl.AesGcm.AArch64.Fast.hReload, runBlock_cons, runStep_some, runBlock_nil,
+    exec_ldrq (by decide) (by decide) r₀, exec_ldrq (s := s.setV _ _) (by decide) (by decide) r₁,
+    exec_movz_x (show 16 * 3 < 64 by decide), exec_dup_d2, Option.some.injEq, exists_eq_left',
+    gpr_setV, mem_setV, rd_setV, wr_setV, sp_setV, mem_write, rd_write, wr_write]
+  refine ⟨⟨?_, ?_, ?_⟩, fun r h5 => ?_, fun r hr => ?_, trivial, trivial, trivial, rfl⟩
+  · simp only [v_setV, v_write, ite_true, gpr_write_x, gpr_setV]; decide
+  · simp only [v_setV, v_write, tReg, sReg, h₀, reduceCtorEq, ite_false, ite_true]; exact ht
+  · simp only [v_setV, v_write, tReg, sReg, h₀, h₁, reduceCtorEq, ite_false, ite_true]
+  · simp only [gpr_write_x, gpr_setV, h5, ite_false]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, tReg, sReg] at hr
+    simp only [v_setV, v_write, tReg, sReg, hr.1, hr.2.1, hr.2.2, ite_false]
+
+/-- `Y` stored at `x20 + 16`, as `vg_ghash` keeps it. -/
+theorem storeY_ok {y : Block} {s : State} (hy : ρ (s.v Y) = φ y)
+    (hw : InRegions s.wr (s.gpr .x20 + BitVec.ofNat 64 16) 16) :
+    WP isa (.block Impl.AesGcm.AArch64.Fast.storeY) s fun s' =>
+      s'.mem = s.mem.write (s.gpr .x20 + BitVec.ofNat 64 16) 16 (VRevOp.eval .rev64b (s.v Y)) ∧
+      blockAt s'.mem (s.gpr .x20 + BitVec.ofNat 64 16) = y ∧ VOnly [Y] { s with mem := s'.mem } s' := by
+  refine WP.block_cons_iff.mpr ⟨_, exec_rev64b Y Y s, ?_⟩
+  refine WP.block_cons_iff.mpr ⟨_, exec_strq (s := s.setV Y _) (by decide) (by decide) hw, WP.block_nil ?_⟩
+  refine ⟨by simp only [mem_setV, gpr_setV, v_setV, ite_true], φ_inj ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl, rfl⟩⟩
+  · simp only [mem_setV, gpr_setV, v_setV, ite_true, φ_store, hy]
+  · simp only [List.mem_singleton] at hr; simp only [v_setV, hr, ite_false]
+
 end VG.Proof.AesGcm.AArch64.Fast

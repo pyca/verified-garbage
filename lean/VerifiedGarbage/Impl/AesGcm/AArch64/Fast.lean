@@ -29,11 +29,11 @@ after it, in the working space. -/
 def hO : Nat := 288
 
 /-- `x10 = 0` if the path applies: a 12-byte nonce (`x24`) and at most 16
-bytes of additional data (`x5`). -/
+bytes of additional data (at `W + 224`, in `x11`). -/
 def cond : Prog isa :=
-  .seq (.block [imm .x10 0, .lsr .x .x9 .x5 4])
+  .seq (.block [imm .x10 0, .ldr .x .x11 .x19 alenO, .lsr .x .x9 .x11 4])
   (.seq (.ite (.zero .x .x9) (.block [])
-      (.seq (.block [.subImm .x .x9 .x5 16]) (.ite (.zero .x .x9) (.block []) (.block [imm .x10 1]))))
+      (.seq (.block [.subImm .x .x9 .x11 16]) (.ite (.zero .x .x9) (.block []) (.block [imm .x10 1]))))
   (.seq (.block [.subImm .x .x9 .x24 12]) (.ite (.zero .x .x9) (.block []) (.block [imm .x10 1]))))
 
 /-- `H'` (`v16`) and its halves swapped (`v24`) from `H` at `ctx + 240`, the
