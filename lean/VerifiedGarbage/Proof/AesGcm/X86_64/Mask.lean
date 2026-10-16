@@ -19,6 +19,8 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 public import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Gcm.Ctr
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # The AEADs on x86-64: masking the data (`maskTail`)
@@ -43,7 +45,7 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.Cmac.Stream (bytesAt_append)
 
 /-- Runs a block of the masking loops. -/
-macro "mrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+tactic_template "mrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                    simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
                      execAlu, State.load64, State.store64, State.load8, State.store8, State.load128, State.store128, XOp.exec,
                      State.ea, imm, maskByte, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags, mem_setReg,

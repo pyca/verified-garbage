@@ -27,6 +27,8 @@ public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
 public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! Merged from `Proof.Ed25519.X86_64.PublicKey.Layout`. -/
 
@@ -459,7 +461,7 @@ theorem rsp_ce (t : State) (rd wr : List Region) :
   rw [State.withRegions_gpr, State.callEntry_rsp]
 
 /-- Callee-saved registers, through writes of others. -/
-macro "cs_tac" : tactic => `(tactic| plain_simp_names (
+tactic_template "cs_tac" : tactic => `(tactic| (
                    intro r hr
                    revert hr
                    simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]

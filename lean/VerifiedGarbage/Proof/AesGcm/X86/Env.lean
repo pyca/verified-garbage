@@ -16,6 +16,8 @@ public import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
 public import VerifiedGarbage.Proof.Cmac.Spec
 public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-GCM on x86: where everything is
@@ -333,7 +335,7 @@ theorem zf_setMem (s : State) (m : Mem) : (setMem s m).zf = s.zf := rfl
 
 /-- Runs a block of the instructions the AES-GCM code uses. The facts given
 rewrite the addresses and discharge the permissions. -/
-macro "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+tactic_template "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                    simp (disch := first | decide | omega) only [runBlock_cons, runStep_some,
                      runBlock_nil, exec, readSrc, execAlu, execShift, State.load32, store32_eq, State.load8, store8_eq,
                      State.ea, at_, imm, slot, argOp, stO, tO, uO, ctxO, roundsO, alO, ahO, xlO, xhO, dataO, lenO, aadO, tglO,
@@ -347,12 +349,12 @@ macro "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| pla
                    try rfl)
 
 /-- Reads registers through the writes of a block. -/
-macro "regs" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+tactic_template "regs" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                    simp (disch := decide) only [gpr_setMem, gpr_setReg_self, gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags,
                      $ts,*]))
 
 /-- Reads the memory, flags and permissions through the writes of a block. -/
-macro "mems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+tactic_template "mems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                    simp (disch := first | decide | omega) only [mem_setMem, mem_setReg, mem_arithFlags, mem_setFlags,
                      rd_setMem, rd_setReg, rd_arithFlags, rd_setFlags, wr_setMem, wr_setReg, wr_arithFlags, wr_setFlags,
                      zf_setMem, zf_setReg, zf_arithFlags, cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setReg_self,
