@@ -1,10 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Verified
-
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -125,21 +123,14 @@ def gatherNote (fn : String) : String :=
   "This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and \
     encrypts them there in place with `" ++ fn ++ "`."
 
-/-- The instance of `vg_aes_gcm_seal` calling the implementations `v`. -/
-def sealFn (v : GcmImpl) : Proof.AesGcm.AArch64.Gather.SealFn where
-  fn := ⟨Spec.Gcm.sealApi.name ++ v.suffix,
-    Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)⟩
-  verified := sealCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV
-  depth := sealCode_depth v
-
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
 def artifactsGather (v : GcmImpl) : List Artifact := [
   Spec.Gcm.sealGatherApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [gatherNote (sealFn v).fn.name]
-    code := Impl.AesGcm.AArch64.SealGather.sealGather (sealFn v).fn
+    notes := [gatherNote (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn.name]
+    code := Impl.AesGcm.AArch64.SealGather.sealGather (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
     stack := 2592
-    verified := Proof.AesGcm.AArch64.Gather.sealGather_verified (sealFn v)
+    verified := Proof.AesGcm.AArch64.Gather.sealGather_verified (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV)
     features := v.features }]
 
 /-- How `vg_aes_gcm_init_prepared` computes the powers. -/

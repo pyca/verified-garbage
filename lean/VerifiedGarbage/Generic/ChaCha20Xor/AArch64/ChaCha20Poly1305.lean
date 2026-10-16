@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Verified
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Verified
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
@@ -40,14 +39,6 @@ def gatherNote (fn : String) : String :=
   "This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and \
     encrypts them there in place with `" ++ fn ++ "`."
 
-/-- The instance of `vg_chacha20_poly1305_seal` calling the backend `v`. -/
-def sealFn (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AArch64.Gather.SealFn where
-  name := Spec.ChaCha20Poly1305.sealApi.name ++ v.callee.suffix
-  code := Impl.StackScratch.AArch64.withStackScratchWiped 768 .x7 95
-    (Impl.ChaCha20Poly1305.AArch64.sealCode v.callee v.stitched)
-  verified := Proof.ChaCha20Poly1305.AArch64.seal_framed v
-  depth := Proof.ChaCha20Poly1305.AArch64.Gather.seal_depth v
-
 def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.sealApi.artifact AArch64.target {
     suffix := v.callee.suffix
@@ -68,9 +59,9 @@ def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.sealGatherApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
-    notes := [gatherNote (sealFn v).name]
-    code := Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather (sealFn v).name (sealFn v).code
+    notes := [gatherNote (Proof.ChaCha20Poly1305.AArch64.sealFn v).name]
+    code := Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather (Proof.ChaCha20Poly1305.AArch64.sealFn v).name (Proof.ChaCha20Poly1305.AArch64.sealFn v).code
     stack := 784
-    verified := Proof.ChaCha20Poly1305.AArch64.Gather.sealGather_verified (sealFn v) }]
+    verified := Proof.ChaCha20Poly1305.AArch64.Gather.sealGather_verified (Proof.ChaCha20Poly1305.AArch64.sealFn v) }]
 
 end VG.Generic.ChaCha20Xor.AArch64.ChaCha20Poly1305
