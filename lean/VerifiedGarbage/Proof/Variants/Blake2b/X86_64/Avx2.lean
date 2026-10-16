@@ -14,7 +14,7 @@ The variant `VG.Variants.Blake2b.X86_64.Avx2.variant`
 
 @[expose] public section
 
-namespace VG.Proof.Blake2.X86_64.Variants.Blake2bAvx2
+namespace VG.Proof.Variants.Blake2b.X86_64.Avx2
 
 def variant : Proof.Blake2.X86_64.Backend where
   suffix := "_avx2"
@@ -46,4 +46,4 @@ def variant : Proof.Blake2.X86_64.Backend where
     change (Impl.Blake2.X86_64.Stream.finalize Spec.Blake2.b Proof.Blake2.X86_64.Avx2.avx2).x86_64Depth ≤ 8
     lit_decide
 
-end VG.Proof.Blake2.X86_64.Variants.Blake2bAvx2
+end VG.Proof.Variants.Blake2b.X86_64.Avx2

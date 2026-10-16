@@ -18,7 +18,7 @@ The variant `VG.Variants.Sha1.X86.Scalar.variant`
 
 @[expose] public section
 
-namespace VG.Proof.Sha1.X86.Variants.Scalar
+namespace VG.Proof.Variants.Sha1.X86.Scalar
 
 open VG.X86
 open VG.Proof.Pbkdf2.Stream.X86 (Sha1Stream)
@@ -109,4 +109,4 @@ def variant : Proof.Sha1.X86.Variants.Backend := by
     iterStack := ?_ }
   taint_decide_all
 
-end VG.Proof.Sha1.X86.Variants.Scalar
+end VG.Proof.Variants.Sha1.X86.Scalar

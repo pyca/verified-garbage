@@ -16,7 +16,7 @@ for.
 
 @[expose] public section
 
-namespace VG.Proof.Blake2.X86_64.Variants.Blake2sScalar
+namespace VG.Proof.Variants.Blake2s.X86_64.Scalar
 
 def variant : Proof.Blake2.X86_64.BackendS where
   suffix := ""
@@ -46,4 +46,4 @@ def variant : Proof.Blake2.X86_64.BackendS where
     change (Impl.Blake2.X86_64.Stream.finalize Spec.Blake2.s).x86_64Depth ≤ 8
     lit_decide
 
-end VG.Proof.Blake2.X86_64.Variants.Blake2sScalar
+end VG.Proof.Variants.Blake2s.X86_64.Scalar

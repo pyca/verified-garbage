@@ -18,7 +18,7 @@ The variant `VG.Variants.Sha256.X86.Scalar.variant`
 
 @[expose] public section
 
-namespace VG.Proof.Sha256.X86.Variants.Scalar
+namespace VG.Proof.Variants.Sha256.X86.Scalar
 
 open VG.X86
 open VG.Proof.Pbkdf2.Stream.X86 (Sha256Stream)
@@ -145,4 +145,4 @@ def variant : Proof.Sha256.X86.Variants.Backend := by
     iter224Stack := ?_ }
   taint_decide_all
 
-end VG.Proof.Sha256.X86.Variants.Scalar
+end VG.Proof.Variants.Sha256.X86.Scalar

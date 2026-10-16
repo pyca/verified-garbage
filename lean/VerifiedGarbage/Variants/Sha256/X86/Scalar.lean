@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.X86.Variants.Scalar
+public import VerifiedGarbage.Proof.Variants.Sha256.X86.Scalar
 
 /-!
 # SHA-256 on x86: the scalar compression function
@@ -15,6 +15,6 @@ HMAC's and PBKDF2's functions call (`Generic/Sha256/X86/`), and SHA-224's
 
 namespace VG.Variants.Sha256.X86.Scalar
 
-def variant : Proof.Sha256.X86.Variants.Backend := Proof.Sha256.X86.Variants.Scalar.variant
+def variant : Proof.Sha256.X86.Variants.Backend := Proof.Variants.Sha256.X86.Scalar.variant
 
 end VG.Variants.Sha256.X86.Scalar

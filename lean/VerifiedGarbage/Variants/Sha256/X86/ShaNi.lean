@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sha256.X86.Variants.ShaNi
+public import VerifiedGarbage.Proof.Variants.Sha256.X86.ShaNi
 
 /-!
 # SHA-256 on x86 with the SHA extensions
@@ -15,6 +15,6 @@ which needs the SHA extensions and SSSE3, and the streaming `update` and
 
 namespace VG.Variants.Sha256.X86.ShaNi
 
-def variant : Proof.Sha256.X86.Variants.Backend := Proof.Sha256.X86.Variants.ShaNi.variant
+def variant : Proof.Sha256.X86.Variants.Backend := Proof.Variants.Sha256.X86.ShaNi.variant
 
 end VG.Variants.Sha256.X86.ShaNi
