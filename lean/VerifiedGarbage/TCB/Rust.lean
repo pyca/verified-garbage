@@ -38,7 +38,8 @@ code uses, and both are generated from the same signature, calling
 convention, `writeArgs` and `stack` as the contract (`Artifact.ofSig`), so
 the `doc` must not state them itself (`checkLayout`).
 
-An artifact that reads tables of constants (`Artifact.consts`) names each
+An artifact that reads tables of constants (`Artifact.consts`, and those
+its instructions carry, `Printer.tables`: `tablesOf`) names each
 by the name of a `static` holding it, which `files` writes once per target,
 in the module `consts` (`src/asm/<target>/consts.rs`), after checking that
 every artifact of the target with a table of that name gives the same words
