@@ -8,6 +8,7 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunRdi1
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 

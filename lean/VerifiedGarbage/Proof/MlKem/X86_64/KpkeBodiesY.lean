@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunR101
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
 public import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 import all Init.Data.Array.Basic

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Step
-import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -15,6 +15,13 @@ output at `d`), the terms where pass A starts (`initA`: `q` in `ymm15`, the
 input's coefficients in the low words of their `u32`s, zero in the high
 ones), and the check, by the kernel, that the terms of the output after pass
 B are the reduced words of `NTT` (`outOk`).
+
+The kernel checks the run in parts, each the state after it as a literal
+(`materialize_value`) in a module of its own: pass A (`stA`, `RunA.lean`),
+and for each output register the halves of pass B (`stRdi0`, `stRdi1`, …,
+`RunRdi0.lean`, …), each starting from the literal of the part before. Each
+part costs the kernel a fraction of the whole run's memory, and the parts of
+the two registers build in parallel.
 -/
 
 @[expose] public section
@@ -58,7 +65,49 @@ def check (pb : List Instr) (d : Reg) : Bool :=
     | none => false
   | none => false
 
-theorem check_rdi : check passBsRdi .rdi = true := by lit_decide
-theorem check_r10 : check passBsR10 .r10 = true := by lit_decide
+/-! ## The run in parts -/
+
+theorem St.run_append (rs : List Rg) (σ : St) (a b : List Instr) :
+    σ.run rs (a ++ b) = (σ.run rs a).bind fun σ' => σ'.run rs b := by
+  induction a generalizing σ with
+  | nil => rfl
+  | cons i is ih =>
+    simp only [List.cons_append, St.run]
+    cases σ.step rs i with
+    | none => rfl
+    | some σ' => exact ih σ'
+
+/-- The state after pass A. -/
+def stA : Option St := initA.run rsA passA
+
+/-- The state after half 0 of pass B, from that after pass A. -/
+def stB0 (d : Reg) (p₀ : List Instr) : Option St := stA.bind fun σ => (toB σ).run (rsB d) p₀
+
+def stRdi0 : Option St := stB0 .rdi passBRdi0
+def stRdi1 : Option St := stRdi0.bind fun σ => σ.run (rsB .rdi) passBRdi1
+def stR100 : Option St := stB0 .r10 passBR100
+def stR101 : Option St := stR100.bind fun σ => σ.run (rsB .r10) passBR101
+
+/-- `check` from the state after the halves of pass B. -/
+theorem check_of {p₀ p₁ : List Instr} {d : Reg}
+    (ho : ((stB0 d p₀).bind fun σ => σ.run (rsB d) p₁).any outOk = true) :
+    check (p₀ ++ p₁) d = true := by
+  unfold check
+  rw [stB0, stA] at ho
+  split
+  · rename_i σA hA
+    rw [hA, Option.bind_some] at ho
+    split
+    · rename_i σ' h'
+      rw [St.run_append] at h'
+      rw [h', Option.any_some] at ho
+      exact ho
+    · rename_i h'
+      rw [St.run_append] at h'
+      rw [h', Option.any_none] at ho
+      exact ho
+  · rename_i hA
+    rw [hA, Option.bind_none, Option.bind_none, Option.any_none] at ho
+    exact ho
 
 end VG.Proof.MlKem.X86_64.NttR
