@@ -21,8 +21,10 @@
 
 use crate::arch::cast5_ofb::vg_cast5_ofb;
 use crate::cast5_ecb::Cast5Ecb;
-pub use crate::cast5_ecb::Error;
 use crate::zeroize::zeroize;
+
+/// The key does not contain 5 to 16 bytes.
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded CAST5 key for OFB, whose encryption and decryption are the
 /// same operation.
@@ -32,9 +34,9 @@ pub struct Cast5Ofb {
 
 impl Cast5Ofb {
     /// Expands a key of 5 to 16 bytes.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
-            key: Cast5Ecb::new(key)?,
+            key: Cast5Ecb::new(key).map_err(|_| InvalidKeyLength)?,
         })
     }
 

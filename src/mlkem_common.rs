@@ -23,6 +23,14 @@ pub enum Error {
     Randomness,
 }
 
+crate::error::impl_error! {
+    Error {
+        SampleBound => "ML-KEM sampling loop reached its bound",
+        InvalidKey => "invalid ML-KEM encapsulation key",
+        Randomness => "ML-KEM random number generator failed",
+    }
+}
+
 /// The implementations key generation, encapsulation and decapsulation
 /// follow: each has an instance calling each of them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -29,8 +29,7 @@ use crate::arch::blowfish_cfb::{vg_blowfish_cfb64_decrypt, vg_blowfish_cfb64_enc
 use crate::zeroize::zeroize;
 
 /// The key length is outside 4..=56 bytes (32 to 448 bits).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded Blowfish key for CFB64 encryption and decryption, both of
 /// which use Blowfish encryption.

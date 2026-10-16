@@ -36,6 +36,12 @@ pub enum Error {
     IncompleteBlock,
 }
 
+crate::error::impl_error! {
+    Error {
+        IncompleteBlock => "SM4-CBC input is not a whole number of blocks",
+    }
+}
+
 /// An expanded SM4 key for CBC encryption and decryption.
 ///
 /// No padding is added or removed: each operation takes whole 16-byte

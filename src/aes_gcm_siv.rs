@@ -68,6 +68,15 @@ pub enum Error {
     TagMismatch,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid AES-GCM-SIV key length",
+        InvalidTextLength => "AES-GCM-SIV text is too long",
+        InvalidAadLength => "AES-GCM-SIV additional data is too long",
+        TagMismatch => "AES-GCM-SIV tag does not match",
+    }
+}
+
 /// An AES-GCM-SIV key: the AES key schedule of the key-generating key.
 #[derive(Clone)]
 pub struct AesGcmSiv {

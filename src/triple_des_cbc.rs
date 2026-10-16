@@ -34,6 +34,13 @@ pub enum Error {
     IncompleteBlock,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid Triple DES key length",
+        IncompleteBlock => "Triple DES-CBC input is not a whole number of blocks",
+    }
+}
+
 /// An expanded Triple DES key for CBC encryption and decryption.
 ///
 /// A 24-byte key encodes K1, K2 and K3. A 16-byte key encodes K1 and K2,

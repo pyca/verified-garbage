@@ -27,8 +27,7 @@ use crate::arch::triple_des_cfb::{vg_triple_des_cfb64_decrypt, vg_triple_des_cfb
 use crate::zeroize::zeroize;
 
 /// The key does not contain 16 or 24 bytes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded Triple DES key for CFB64 encryption and decryption.
 ///

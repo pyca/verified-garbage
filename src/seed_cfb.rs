@@ -29,8 +29,7 @@ use crate::arch::seed_cfb::{vg_seed_cfb128_decrypt, vg_seed_cfb128_encrypt};
 use crate::zeroize::zeroize;
 
 /// The key does not contain 16 bytes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded SEED key for CFB128 encryption and decryption.
 pub struct SeedCfb128 {

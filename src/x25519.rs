@@ -95,6 +95,13 @@ pub enum Error {
     Randomness,
 }
 
+crate::error::impl_error! {
+    Error {
+        ZeroSharedSecret => "X25519 shared secret is all zero",
+        Randomness => "X25519 random number generator failed",
+    }
+}
+
 /// The u-coordinate of the base point, 9 (RFC 7748 §4.1), encoded.
 pub const BASE_POINT: [u8; 32] = {
     let mut b = [0; 32];

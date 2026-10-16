@@ -105,6 +105,12 @@ pub enum Error {
     InvalidSignature,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidSignature => "invalid Ed25519 signature",
+    }
+}
+
 /// An encoded Ed25519 public key.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct VerifyingKey {

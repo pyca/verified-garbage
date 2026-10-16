@@ -111,6 +111,13 @@ pub enum Error {
     IncompleteBlock,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid AES key length",
+        IncompleteBlock => "AES-ECB input is not a whole number of blocks",
+    }
+}
+
 /// An expanded AES key for ECB encryption and decryption.
 ///
 /// No padding is added or removed: each operation takes whole 16-byte

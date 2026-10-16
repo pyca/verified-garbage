@@ -37,6 +37,14 @@ pub enum Error {
     OutputTooSmall,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid Blowfish key length",
+        IncompleteBlock => "Blowfish-ECB input is not a whole number of blocks",
+        OutputTooSmall => "Blowfish-ECB output buffer is too small",
+    }
+}
+
 /// A streaming Blowfish-ECB encryption (or, if `DECRYPT`, decryption),
 /// which [`BlowfishEcbEncryptor`] and [`BlowfishEcbDecryptor`] wrap.
 struct Ecb<const DECRYPT: bool> {

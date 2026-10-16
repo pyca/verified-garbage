@@ -34,6 +34,13 @@ pub enum Error {
     IncompleteBlock,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid IDEA key length",
+        IncompleteBlock => "IDEA-CBC input is not a whole number of blocks",
+    }
+}
+
 /// An expanded IDEA key for CBC encryption and decryption: its encryption
 /// and decryption subkeys.
 ///

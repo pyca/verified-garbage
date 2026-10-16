@@ -659,6 +659,19 @@ pub enum Error {
     TooManyPieces,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid AES key length",
+        InvalidNonceLength => "AES-GCM nonce is empty",
+        InvalidTextLength => "AES-GCM text is too long",
+        InvalidAadLength => "AES-GCM additional data is too long",
+        TagMismatch => "AES-GCM tag does not match",
+        AadAfterText => "AES-GCM additional data after the text",
+        InvalidOutputLength => "AES-GCM output is not as long as the plaintext",
+        TooManyPieces => "too many pieces of AES-GCM plaintext",
+    }
+}
+
 /// `len + n`, if it is at most `max`.
 fn add_len(len: u64, n: usize, max: u64) -> Result<u64, ()> {
     match len.checked_add(n as u64) {
