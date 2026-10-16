@@ -131,7 +131,7 @@ theorem streamVerify_ct (v : GcmImpl) :
       τ'.gpr .x27 = BitVec.ofNat 64 (σ₁.gpr .x4).toNat → τ'.gpr .x28 = BitVec.ofNat 64 (σ₁.gpr .x6).toNat →
       τ'.gpr .x12 = σ₁.gpr .x5 → Covers [⟨σ₁.gpr .x5, (σ₁.gpr .x6).toNat⟩] (τ'.rd ++ τ'.wr) →
       WP isa (.ite (.zero .x .x9) (.block [imm .x0 0])
-        (.seq tagIn (.seq (finBody v.callees uO) (.seq cmpSeg (.block verRet))))) τ' fun τ'' =>
+        (.seq tagIn (.seq (finBody v.callees uO) (.seq cmp (.block verRet))))) τ' fun τ'' =>
         Env (σ₁.gpr .x0) (σ₁.gpr .x2) (σ₁.gpr .x7) σ₁.sp τ'' := by
     intro τ' k he hk h9 h22 h26 h27 h28 h12 hr
     refine WP.ite _ (ev h9) (fun _ => ?_) (fun hf => ?_)
@@ -146,7 +146,7 @@ theorem streamVerify_ct (v : GcmImpl) :
       refine WP.seq (WP.mono (finBody_env v L (.inr rfl) he₃ hk₃ (by rw [hk₃ .x22 (by decide), h22]) hRb
         (by rw [hk₃ .x26 (by decide), h26]) (by rw [hk₃ .x27 (by decide), h27]) (σ₁.gpr .x4).isLt)
         fun τ₄ ⟨he₄, hk₄, _⟩ => ?_)
-      refine WP.seq (WP.mono (cmpSeg_ok L he₄ hk₄ (by rw [hk₄ .x28 (by decide), h28])
+      refine WP.seq (WP.mono (cmp_ok L he₄ hk₄ (by rw [hk₄ .x28 (by decide), h28])
         (tagLenOk_le hok)) fun τ₅ ⟨x10₅, he₅, _, _, _⟩ => ?_)
       exact WP.mono (verRet_ok (b := decide (bytesAt τ₄.mem (σ₁.gpr .x7 + BitVec.ofNat 64 112)
         (σ₁.gpr .x6).toNat = bytesAt τ₄.mem (σ₁.gpr .x7) (σ₁.gpr .x6).toNat))
@@ -188,7 +188,7 @@ theorem streamVerify_ct (v : GcmImpl) :
     have c28₂ : τ₄'.gpr .x28 = _ := (hk₄' .x28 (by decide)).trans o28₂
     refine rel_seq (rel_taint [.x19, .x28] (by rw [he₄.sp, he₄'.sp])
         (by agree_tac [he₄.x19, he₄'.x19, c28₁, c28₂]) ⟨_, by taint_decide⟩)
-      (cmpSeg_ok L he₄ hk₄ c28₁ (tagLenOk_le hok)) (cmpSeg_ok L he₄' hk₄' c28₂ (tagLenOk_le hok))
+      (cmp_ok L he₄ hk₄ c28₁ (tagLenOk_le hok)) (cmp_ok L he₄' hk₄' c28₂ (tagLenOk_le hok))
       fun τ₅ τ₅' ⟨_, he₅, _, _, _⟩ ⟨_, he₅', _, _, _⟩ => ?_
     exact rel_taint [] (by rw [he₅.sp, he₅'.sp]) (by agree_tac []) ⟨_, by taint_decide⟩
   · exact rel_taint [.x19] (by rw [f₁.sp, f₂.sp]) (by agree_tac [f₁.x19, f₂.x19]) ⟨_, by taint_decide⟩
