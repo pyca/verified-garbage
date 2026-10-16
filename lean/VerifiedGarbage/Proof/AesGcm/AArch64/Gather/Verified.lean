@@ -28,9 +28,9 @@ namespace VG.Proof.AesGcm.AArch64.Gather
 
 open VG VG.AArch64 VG.Impl.AesGcm.AArch64.SealGather
 
-theorem sealGather_correct (F : SealFn) (s : State) (hs : gatherAArch64.pre s) :
-    ∃ t s', Exec isa (sealGather F.fn) s t s' ∧ abiPreserved s s' ∧ gatherAArch64.post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := sealGather_wp F hs
+theorem sealGather_correct {C : CtxSpec} (F : SealFn C) (s : State) (hs : (gatherAArch64 C).pre s) :
+    ∃ t s', Exec isa (sealGather F.fn) s t s' ∧ abiPreserved s s' ∧ (gatherAArch64 C).post s s' := by
+  obtain ⟨t, s', he, ha, hp⟩ := sealGather_wp F hs.1 hs.2
   exact ⟨t, s', he, ha, hp⟩
 
 theorem stackArgs_three (s : State) : List.map (stackArg s) (List.range 3) =
@@ -56,7 +56,8 @@ theorem pairFacts_ro (l : List (Region × Bool)) (h : ∀ a ∈ l, a.2 = false) 
     rfl
 
 set_option linter.unusedSimpArgs false in
-theorem gatherPre_of_spec {s : State} (h : (Spec.Gcm.sealGatherContract AArch64.abi 2592).pre s) : gatherPre s := by
+theorem gatherPre_of_spec {s : State} (h : (Spec.Gcm.sealGatherContract AArch64.abi 2592).pre s) :
+    gatherPre .plain s := by
   sig_pre [Spec.Gcm.sealGatherContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
     AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq] at h
   rw [Sig.pairFacts, Sig.pairFacts, Sig.pairFacts, pairFacts_ro _ (by simp)] at h
@@ -100,12 +101,12 @@ theorem gatherSat_pre : ∃ s, (Spec.Gcm.sealGatherContract AArch64.abi 2592).pr
     AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq] [gatherSat, stackArg, stackArgAddr, Mem.readW,
     Mem.read] using gatherSat
 
-theorem gather_implies : gatherAArch64.Implies (Spec.Gcm.sealGatherContract AArch64.abi 2592) :=
-  ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
+theorem gather_implies : (gatherAArch64 .plain).Implies (Spec.Gcm.sealGatherContract AArch64.abi 2592) :=
+  ⟨fun _ h => ⟨gatherPre_of_spec h, trivial⟩, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
-theorem sealGather_verified (F : SealFn) :
+theorem sealGather_verified (F : SealFn .plain) :
     Verified AArch64.target (sealGather F.fn) (Spec.Gcm.sealGatherContract AArch64.abi 2592) :=
-  Verified.of_correct (k := gatherAArch64) (sealGather_correct F) (sealGather_ct F) gather_implies
+  Verified.of_correct (k := gatherAArch64 .plain) (sealGather_correct F) (sealGather_ct F) gather_implies
 
 theorem depth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : c.aarch64Depth = 0 := by
   induction c <;> simp_all [Code.noFrames, Code.aarch64Depth]
