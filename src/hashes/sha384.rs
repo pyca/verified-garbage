@@ -28,6 +28,8 @@ use crate::arch::sha512::{
 };
 #[cfg(target_arch = "aarch64")]
 use crate::arch::sha512::{VG_SHA384_FINALIZE_SHA3_FEATURES, VG_SHA512_UPDATE_SHA3_FEATURES};
+#[cfg(target_arch = "aarch64")]
+use crate::arch::sha512::{vg_sha384_digest, vg_sha384_digest_sha3};
 use crate::arch::sha512::{vg_sha384_finalize, vg_sha512_update};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::sha512::{
@@ -55,6 +57,10 @@ super::streaming_hash!(
             #[cfg(target_arch = "x86_64")]
             Avx2 if [VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA384_FINALIZE_AVX2_FEATURES] =>
                 (vg_sha512_update_avx2, vg_sha384_finalize_avx2),
+        },
+        digests: #[cfg(target_arch = "aarch64")] {
+            Scalar => vg_sha384_digest,
+            Sha3 => vg_sha384_digest_sha3,
         },
     }
 );
