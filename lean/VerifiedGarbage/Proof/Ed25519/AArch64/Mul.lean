@@ -229,28 +229,30 @@ theorem movz38_ok (s : State) :
 /-- The first part of `fold255`: 19 times the bits from 255 up into x9, and
 bit 255 of x7 cleared. -/
 theorem fold255Pre_ok (s : State) (h20 : (s.gpr .x20).toNat < 2 ^ 8) :
-    WP isa (.block [.extr .x .x9 .x20 .x7 63, .lsl .x .x7 .x7 1, .lsr .x .x7 .x7 1, .movz .w .x11 19 0,
+    WP isa (.block [.adds .x .x16 .x7 .x7, .adc .x .x9 .x20 .x20, .lsr .x .x7 .x16 1, .movz .w .x11 19 0,
       .mul .x .x9 .x9 .x11]) s fun t =>
       (t.gpr .x9).toNat = 19 * ((s.gpr .x20).toNat * 2 + (s.gpr .x7).toNat / 2 ^ 63) ∧
-      (t.gpr .x7).toNat = (s.gpr .x7).toNat % 2 ^ 63 ∧ Keeps [.x9, .x7, .x11] s t := by
+      (t.gpr .x7).toNat = (s.gpr .x7).toNat % 2 ^ 63 ∧ Keeps [.x9, .x7, .x11, .x16] s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits,
-    show (63 : Nat) < 64 from by decide, show (1 : Nat) < 64 from by decide,
-    show 16 * 0 < Size.w.bits from by decide, ite_true, Option.some.injEq, exists_eq_left',
-    RegUpd.gpr_write, BitVec.setWidth_eq, reduceCtorEq, ite_false]
+    show (1 : Nat) < 64 from by decide, show 16 * 0 < Size.w.bits from by decide, ite_true,
+    Option.some.injEq, exists_eq_left', RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
+    BitVec.setWidth_eq, reduceCtorEq, ite_false]
   have h7 := (s.gpr .x7).isLt
   refine ⟨?_, ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  · have c19 : (BitVec.setWidth 32 (19 : BitVec 16) <<< (16 * 0)).toNat % 2 ^ 64 = 19 := by decide
-    have hor : (s.gpr .x20).toNat * 2 ^ 64 ||| (s.gpr .x7).toNat =
-        (s.gpr .x20).toNat * 2 ^ 64 + (s.gpr .x7).toNat := by
-      rw [← Nat.shiftLeft_eq, Nat.shiftLeft_add_eq_or_of_lt h7]
-    simp only [BitVec.toNat_mul, BitVec.extractLsb'_toNat, BitVec.toNat_append, BitVec.toNat_setWidth,
-      Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, c19, hor]
+  · have c19 : (BitVec.setWidth 64 (BitVec.setWidth 32 (19 : BitVec 16) <<< (16 * 0))).toNat = 19 := by decide
+    have hc : (decide (2 ^ 64 ≤ (s.gpr .x7).toNat + (s.gpr .x7).toNat + false.toNat)).toNat =
+        (s.gpr .x7).toNat / 2 ^ 63 := by
+      by_cases h : 2 ^ 63 ≤ (s.gpr .x7).toNat
+      · rw [decide_eq_true (by simp only [Bool.toNat_false]; omega)]; simp only [Bool.toNat_true]; omega
+      · rw [decide_eq_false (by simp only [Bool.toNat_false]; omega)]; simp only [Bool.toNat_false]; omega
+    simp only [BitVec.toNat_mul, BitVec.toNat_add, BitVec.toNat_ofNat, hc, c19]
     omega
-  · simp only [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
+  · simp only [BitVec.toNat_ushiftRight, BitVec.toNat_add, BitVec.toNat_ofNat, Bool.toNat_false,
+      Nat.shiftRight_eq_div_pow]
     omega
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2]
+    simp [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2]
 
 /-- The carry chain of `fold255`: x9 into x4, x2 into x5 and x8 into x6. -/
 theorem fold255Chain_ok (s : State) (hz : s.gpr .x10 = 0) :
@@ -287,11 +289,11 @@ theorem fold255_ok (s : State) (hz : s.gpr .x10 = 0) (h20 : (s.gpr .x20).toNat <
         val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) + 2 ^ 256 * (s.gpr .x20).toNat +
           2 ^ 64 * (s.gpr .x2).toNat + 2 ^ 128 * (s.gpr .x8).toNat ∧
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) < 2 ^ 255 + 2 ^ 135 ∧
-      Keeps [.x9, .x7, .x11, .x4, .x5, .x6] s t := by
-  rw [Impl.Ed25519.AArch64.fold255, show ([.extr .x .x9 .x20 .x7 63, .lsl .x .x7 .x7 1, .lsr .x .x7 .x7 1, .movz .w .x11 19 0,
+      Keeps [.x9, .x7, .x11, .x16, .x4, .x5, .x6] s t := by
+  rw [Impl.Ed25519.AArch64.fold255, show ([.adds .x .x16 .x7 .x7, .adc .x .x9 .x20 .x20, .lsr .x .x7 .x16 1, .movz .w .x11 19 0,
       .mul .x .x9 .x9 .x11, .adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
       .adcs .x .x7 .x7 .x10] : List Instr) =
-    [.extr .x .x9 .x20 .x7 63, .lsl .x .x7 .x7 1, .lsr .x .x7 .x7 1, .movz .w .x11 19 0,
+    [.adds .x .x16 .x7 .x7, .adc .x .x9 .x20 .x20, .lsr .x .x7 .x16 1, .movz .w .x11 19 0,
       .mul .x .x9 .x9 .x11] ++ [.adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
       .adcs .x .x7 .x7 .x10] from rfl, WP.block_append_iff]
   refine WP.mono (fold255Pre_ok s h20) fun s₁ ⟨e9, e7, k1⟩ => ?_

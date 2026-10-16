@@ -142,9 +142,10 @@ def reduceLo : List Instr :=
 
 /-- Fold the bits of x4–x7, x20 from bit 255 up into the low bits, times 19
 (`2²⁵⁵ = 19` modulo p), in the carry chain that also adds x2 and x8 one and
-two words up; x10 = 0. The result is below `2²⁵⁵ + 2¹³⁵`. -/
+two words up; x10 = 0. Bit 255 goes out of `x7 + x7` into the carry, which
+`x20 + x20` takes in. The result is below `2²⁵⁵ + 2¹³⁵`. -/
 def fold255 : List Instr :=
-  [.extr .x .x9 .x20 .x7 63, .lsl .x .x7 .x7 1, .lsr .x .x7 .x7 1, .movz .w .x11 19 0,
+  [.adds .x .x16 .x7 .x7, .adc .x .x9 .x20 .x20, .lsr .x .x7 .x16 1, .movz .w .x11 19 0,
     .mul .x .x9 .x9 .x11, .adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
     .adcs .x .x7 .x7 .x10]
 
