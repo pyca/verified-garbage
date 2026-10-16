@@ -78,19 +78,28 @@ pub fn bench(c: &mut Criterion) {
     // multiplication alone: their nearest is the same Diffie-Hellman (which
     // also rejects an all-zero secret).
     let mut g = c.benchmark_group("x25519_raw");
+    // THROWAWAY (never merge): the "openssl" column is s2n-bignum's
+    // curve25519_x25519_byte_alt, the "aws-lc-rs" column its
+    // curve25519_x25519_byte, both called directly from aws-lc-sys.
+    unsafe extern "C" {
+        fn aws_lc_0_45_0_curve25519_x25519_byte_alt(res: *mut u8, k: *const u8, p: *const u8);
+        fn aws_lc_0_45_0_curve25519_x25519_byte(res: *mut u8, k: *const u8, p: *const u8);
+    }
+    let s2n = |f: unsafe extern "C" fn(*mut u8, *const u8, *const u8), k: &[u8; 32], p: &[u8; 32]| {
+        let mut r = [0u8; 32];
+        unsafe { f(r.as_mut_ptr(), k.as_ptr(), p.as_ptr()) };
+        r
+    };
+    assert_eq!(s2n(aws_lc_0_45_0_curve25519_x25519_byte_alt, &private, &peer), x25519(&private, &peer));
+    assert_eq!(s2n(aws_lc_0_45_0_curve25519_x25519_byte, &private, &peer), x25519(&private, &peer));
     g.bench_function(BenchmarkId::new(VG, 32), |b| {
         b.iter(|| x25519(black_box(&private), black_box(&peer)))
     });
     g.bench_function(BenchmarkId::new(OPENSSL, 32), |b| {
-        b.iter(|| {
-            let peer = PKey::public_key_from_raw_bytes(black_box(&peer), Id::X25519).unwrap();
-            let mut d = Deriver::new(black_box(&openssl_private)).unwrap();
-            d.set_peer(&peer).unwrap();
-            d.derive_to_vec().unwrap()
-        })
+        b.iter(|| s2n(aws_lc_0_45_0_curve25519_x25519_byte_alt, black_box(&private), black_box(&peer)))
     });
     g.bench_function(BenchmarkId::new(AWS_LC, 32), |b| {
-        b.iter(|| aws_lc_agree(black_box(&aws_lc_private), black_box(&peer)))
+        b.iter(|| s2n(aws_lc_0_45_0_curve25519_x25519_byte, black_box(&private), black_box(&peer)))
     });
     g.finish();
 

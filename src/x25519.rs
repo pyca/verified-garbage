@@ -154,8 +154,7 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
     // callee's stack or wraps around the address space. The selected backend
     // has the required CPU features.
     unsafe { f(&mut out, scalar, scratch.as_mut_ptr()) };
-    // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
+    // THROWAWAY (never merge): no wipe, to time the 8 KiB zeroize.
     out
 }
 
