@@ -47,11 +47,11 @@ namespace NttR
 
 /-! ## The table of zetas -/
 
-/-- The index of the zeta of lane `i` of entry `v` of the table: `0`
-(`2¹⁶ mod q`, for the reduction) and `1` (`len = 128`), then for each half
-`H`, from `2 + 19 H`: `len = 64`, `32` (two), `16` (four), and `8`, `4`, `2`
-(four each, one per pair of registers). -/
-def zetaIdx (v i : Nat) : Nat :=
+/-- The index of the zeta of lane `i` of entry `v` of `NTT`'s part of the
+table: `0` (`2¹⁶ mod q`, for the reduction) and `1` (`len = 128`), then for
+each half `H`, from `2 + 19 H`: `len = 64`, `32` (two), `16` (four), and `8`,
+`4`, `2` (four each, one per pair of registers). -/
+def fwdIdx (v i : Nat) : Nat :=
   if v = 0 then 0 else if v = 1 then 1 else
   let H := (v - 2) / 19
   let e := (v - 2) % 19
@@ -62,13 +62,42 @@ def zetaIdx (v i : Nat) : Nat :=
   else if e < 15 then 32 + 16 * H + 4 * (e - 11) + i / 4
   else 64 + 32 * H + 8 * (e - 15) + i / 2
 
-/-- The number of entries of the table. -/
-def nEntries : Nat := 40
+/-- The distance of the butterflies of entry `42 + 19 H + e` of `NTT⁻¹`. -/
+def invLen (e : Nat) : Nat :=
+  if e < 4 then 2 else if e < 8 then 4 else if e < 12 then 8 else if e < 16 then 16 else if e < 18 then 32 else 64
 
-/-- Word `j` of entry `v`: the zetas of its sixteen lanes `ζ · 2¹⁶ mod q`,
-then `ζ · 2¹⁶ · q⁻¹ mod q mod 2¹⁶`. -/
+/-- The entry of `NTT`'s part whose lanes hold the same blocks as entry
+`42 + 19 H + e` of `NTT⁻¹` (the same register pair, at the same distance). -/
+def invFwdE (e : Nat) : Nat :=
+  if e < 4 then 15 + e else if e < 8 then 7 + e else if e < 12 then e - 1 else if e < 16 then e - 9
+  else if e < 18 then e - 15 else 0
+
+/-- The index of the zeta of lane `i` of entry `v`: `NTT`'s (`fwdIdx`) below
+40; then for `NTT⁻¹`, `40` (`len = 128`), `41` (the scaling, not a zeta), and
+for each half `H`, from `42 + 19 H`: `len = 2`, `4`, `8`, `16` (four entries
+each, one per pair of registers), `32` (two) and `64`. A block whose zeta is
+`ζ^BitRev₇(128 / len + c)` in `NTT` takes `ζ^BitRev₇(256 / len - 1 - c)` in
+`NTT⁻¹`. -/
+def zetaIdx (v i : Nat) : Nat :=
+  if v < 40 then fwdIdx v i
+  else if v < 42 then 1
+  else
+    let H := (v - 42) / 19
+    let e := (v - 42) % 19
+    384 / invLen e - 1 - fwdIdx (2 + 19 * H + invFwdE e) i
+
+/-- The number of entries of the table. -/
+def nEntries : Nat := 80
+
+/-- The constant of lane `i` of entry `v`: `512` (`2¹⁶ · 3303 · 2¹⁶ mod q`,
+`NTT⁻¹`'s scaling by Montgomery multiplication) in entry 41, the zeta
+`ζ · 2¹⁶ mod q` of `zetaIdx` in the others. -/
+def zetaLane (v i : Nat) : Nat := if v = 41 then 512 else zmTab (zetaIdx v i)
+
+/-- Word `j` of entry `v`: the constants of its sixteen lanes, then each
+times `q⁻¹ mod 2¹⁶`. -/
 def zetaWord (v j : Nat) : Nat :=
-  if j < 16 then zmTab (zetaIdx v j) else zmTab (zetaIdx v (j - 16)) * 62209 % 65536
+  if j < 16 then zetaLane v j else zetaLane v (j - 16) * 62209 % 65536
 
 /-- Quadword `w` of the table, four words, the first in the low bits. -/
 def zetaQword (w : Nat) : BitVec 64 :=
@@ -99,6 +128,13 @@ def bfly (a b z z' t u : XReg) : List Instr :=
   [yb .vpmullw t b z', yb .vpmulhw b b z, yb .vpmulhw t t .xmm15, yb .vpsubw b b t,
     yb .vpsubw u a b, yb .vpaddw a a b]
 
+/-- The six instructions of the Gentleman–Sande butterfly of `a` and `b`,
+with the zetas in `z` and `z'`, a temporary `t` and the difference to `u`:
+`a ← a + b`, `u ← ζ (b - a)` (`b` is lost). -/
+def gsfly (a b z z' t u : XReg) : List Instr :=
+  [yb .vpsubw u b a, yb .vpaddw a a b, yb .vpmullw t u z', yb .vpmulhw u u z, yb .vpmulhw t t .xmm15,
+    yb .vpsubw u u t]
+
 /-- The registers of pass B: the physical register of each of its eight
 blocks, those free, and the code so far. -/
 structure Alloc where
@@ -127,14 +163,15 @@ def zetas (A : Alloc) (v : Nat) : XReg × XReg × Alloc :=
 entry `v`, their instructions interleaved: the difference of each pair goes to
 a free register, which becomes block `j`'s; `j`'s old register and the
 temporary are freed. -/
-def bflys (A : Alloc) (v : Nat) (ps : List (Nat × Nat)) : Alloc :=
+def bflys (A : Alloc) (v : Nat) (ps : List (Nat × Nat))
+    (bf : XReg → XReg → XReg → XReg → XReg → XReg → List Instr := bfly) : Alloc :=
   let (z, z', A) := A.zetas v
   let (ts, A) := ps.foldl (fun (acc : List (Nat × Nat × XReg × XReg) × Alloc) (p : Nat × Nat) =>
       let (t, B) := acc.2.take
       let (u, B) := B.take
       (acc.1 ++ [(p.1, p.2, t, u)], B)) ([], A)
   let A := (List.range 6).foldl (fun A k => A.emit (ts.flatMap fun (i, j, t, u) =>
-    [(bfly (A.reg i) (A.reg j) z z' t u).getD k (.vop .vzeroupper)])) A
+    [(bf (A.reg i) (A.reg j) z z' t u).getD k (.vop .vzeroupper)])) A
   let A := ts.foldl (fun A (_, j, t, u) => { (A.give t |>.give (A.reg j)) with regs := A.regs.set j u }) A
   (A.give z).give z'
 
@@ -236,10 +273,117 @@ functions that inline the NTT. -/
 def passBsRdi : List Instr := passBs .rdi
 def passBsR10 : List Instr := passBs .r10
 
+/-! ## `NTT⁻¹` -/
+
+/-- The first entry of the table of half `H` of `NTT⁻¹`. -/
+def ibase (H : Nat) : Nat := 42 + 19 * H
+
+/-- The block in `ymm r` times `2¹⁶ mod q` by Montgomery multiplication (the
+zetas in `c`, `c'`), in `(-q, q)`, with a temporary `t`. -/
+def redM (r c c' t : XReg) : List Instr :=
+  [yb .vpmullw t r c', yb .vpmulhw r r c, yb .vpmulhw t t .xmm15, yb .vpsubw r r t]
+
+/-- Every block reduced (`redM`), with the zetas of entry 0. -/
+def Alloc.redAll (A : Alloc) : Alloc :=
+  let (c, c', A) := A.zetas 0
+  let A := (List.range 8).foldl (fun A i =>
+    let (t, A) := A.take
+    (A.emit (redM (A.reg i) c c' t)).give t) A
+  (A.give c).give c'
+
+/-- How pass B of `NTT⁻¹` reads its input: the 256 words of an accumulator
+(`KpkeAccY.lean`'s order), or 256 `u32`s. -/
+inductive InvIn
+  | acc
+  | u32
+  deriving DecidableEq
+
+/-- The 32 coefficients `32 (4 H + p)` to `32 (4 H + p) + 31` of the input at
+`rdi` into blocks `2 p` and `2 p + 1`, as `vpunpck{l,h}wd` of the two
+registers of an accumulator's iteration, or `vpackssdw` of two pairs of
+`u32` registers, leave them: in each lane `l`, coefficients `4 l + {0, …, 3}`
+and `8 + 4 l + {0, …, 3}` of the first sixteen, and the same of the next
+sixteen. -/
+def Alloc.loadI (A : Alloc) (src : InvIn) (H p : Nat) : Alloc :=
+  let a := A.reg (2 * p)
+  let b := A.reg (2 * p + 1)
+  match src with
+  | .acc =>
+    let o := 256 * H + 64 * p
+    let (t, A) := A.take
+    let A := A.emit [.vmovdquLoad .l256 a (at_ .rdi o), .vmovdquLoad .l256 b (at_ .rdi (o + 32)),
+      yb .vpunpcklwd t a b, yb .vpunpckhwd b a b]
+    { A.give a with regs := A.regs.set (2 * p) t }
+  | .u32 =>
+    let o := 512 * H + 128 * p
+    let (t, A) := A.take
+    let A := A.emit [.vmovdquLoad .l256 a (at_ .rdi o), .vmovdquLoad .l256 t (at_ .rdi (o + 32)),
+      yb .vpackssdw a a t, .vmovdquLoad .l256 b (at_ .rdi (o + 64)), .vmovdquLoad .l256 t (at_ .rdi (o + 96)),
+      yb .vpackssdw b b t]
+    A.give t
+
+/-- Pass B of `NTT⁻¹` on half `H`: its 128 coefficients from `rdi`
+(`loadI`), in the order of `NTT`'s layer `len = 2` after one exchange of
+halves and one of doublewords, the layers `len = 2`, `4` and `8` on each pair
+of registers, each followed by the exchange that undoes its order, the
+reduction, the layers `len = 16` and `32` on whole registers, the reduction,
+the layer `len = 64`, and the blocks stored as words to `S`. -/
+def passIBAlloc (src : InvIn) (H : Nat) : Alloc :=
+  let A : Alloc := ⟨[.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5, .xmm6, .xmm7],
+    [.xmm8, .xmm9, .xmm10, .xmm11, .xmm12, .xmm13, .xmm14], #[]⟩
+  let A := (List.range 4).foldl (fun A p => A.loadI src H p) A
+  let A := (List.range 4).foldl (fun A p => A.exch 8 (2 * p) (2 * p + 1)) A
+  let A := (List.range 4).foldl (fun A p => A.exch 2 (2 * p) (2 * p + 1)) A
+  let b := ibase H
+  -- len = 2, 4, 8
+  let A := [(2, 0), (4, 4), (8, 8)].foldl (fun A (kind, e) =>
+    let A := (List.range 4).foldl (fun A p => A.bflys (b + e + p) [(2 * p, 2 * p + 1)] gsfly) A
+    (List.range 4).foldl (fun A p => A.exch kind (2 * p) (2 * p + 1)) A) A
+  let A := A.redAll
+  -- len = 16, 32, 64
+  let A := (List.range 4).foldl (fun A p => A.bflys (b + 12 + p) [(2 * p, 2 * p + 1)] gsfly) A
+  let A := (A.bflys (b + 16) [(0, 2), (1, 3)] gsfly).bflys (b + 17) [(4, 6), (5, 7)] gsfly
+  let A := A.redAll
+  let A := (A.bflys (b + 18) [(0, 4), (1, 5)] gsfly).bflys (b + 18) [(2, 6), (3, 7)] gsfly
+  A.emit ((List.range 8).map fun i => Instr.vmovdquStore .l256 (at_ .rsi (oS + 256 * H + 32 * i)) (A.reg i))
+
+def passIB (src : InvIn) (H : Nat) : List Instr := (passIBAlloc src H).code.toList
+
+/-- The block in `ymm r` times `c` by Montgomery multiplication (`c'` its
+product with `q⁻¹`), reduced to `[0, q)` (`vcadd`), with a temporary `t`. -/
+def scaleC (r c c' t : XReg) : List Instr :=
+  redM r c c' t ++ [.vop (.vshift .psraw .l256 t r 15), yb .vpand t t .xmm15, yb .vpaddw r r t]
+
+/-- Pass A of `NTT⁻¹`: the blocks `i` and `i + 8` of `S`, the layer
+`len = 128` on them, each scaled by `3303` (Montgomery multiplication by
+`512`) and reduced, and stored as `u32`s to `rdi`. -/
+def passIA : List Instr :=
+  zv .xmm12 .xmm13 40 ++ zv .xmm10 .xmm11 41 ++ [yb .vpxor .xmm9 .xmm9 .xmm9] ++ (List.range 8).flatMap fun i =>
+    [.vmovdquLoad .l256 .xmm4 (at_ .rsi (oS + 32 * i)), .vmovdquLoad .l256 .xmm5 (at_ .rsi (oS + 32 * (i + 8)))] ++
+    gsfly .xmm4 .xmm5 .xmm12 .xmm13 .xmm7 .xmm6 ++
+    scaleC .xmm4 .xmm10 .xmm11 .xmm7 ++ scaleC .xmm6 .xmm10 .xmm11 .xmm7 ++
+    [.vop (.vpermq .xmm4 .xmm4 0xD8), yb .vpunpckhwd .xmm7 .xmm4 .xmm9, yb .vpunpcklwd .xmm4 .xmm4 .xmm9,
+      .vmovdquStore .l256 (at_ .rdi (64 * i)) .xmm4, .vmovdquStore .l256 (at_ .rdi (64 * i + 32)) .xmm7,
+      .vop (.vpermq .xmm6 .xmm6 0xD8), yb .vpunpckhwd .xmm7 .xmm6 .xmm9, yb .vpunpcklwd .xmm6 .xmm6 .xmm9,
+      .vmovdquStore .l256 (at_ .rdi (64 * (i + 8))) .xmm6, .vmovdquStore .l256 (at_ .rdi (64 * (i + 8) + 32)) .xmm7]
+
+/-- Pass B of `NTT⁻¹` on both halves. -/
+def passIBs (src : InvIn) : List Instr := passIB src 0 ++ passIB src 1
+
+/-- Pass B reading an accumulator, for the functions that inline `NTT⁻¹`,
+and `u32`s, for `vg_mlkem_inv_ntt_avx2`. -/
+def passIBsAcc : List Instr := passIBs .acc
+def passIBsU32 : List Instr := passIBs .u32
+
 end NttR
 
 open NttR in
 /-- `NTT` of the `u32`s at `rdi` to the `u32`s at `d` (`passBs`), with `S` at `rsi + oS`. -/
 def nttR (pb : List Instr) : Prog isa := .block (pro ++ passA ++ pb ++ [.vop .vzeroupper])
+
+open NttR in
+/-- `NTT⁻¹` of the input at `rdi` (`pb`: an accumulator or `u32`s) to the
+`u32`s at `rdi`, with `S` at `rsi + oS`. -/
+def nttIR (pb : List Instr) : Prog isa := .block (pro ++ pb ++ passIA ++ [.vop .vzeroupper])
 
 end VG.Impl.MlKem.X86_64

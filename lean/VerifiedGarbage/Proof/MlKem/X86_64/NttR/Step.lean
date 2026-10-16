@@ -81,9 +81,9 @@ theorem wd_vshift (op : XShiftOp) (d a : XReg) (n : BitVec 8) (s : State) (r : X
       if r = d then word (op.eval (s.lane a (e / 8)) n) (e % 8) else wd s r e := by
   simp only [wd, lane_vshift256]; split <;> rfl
 
-theorem bin_ok (hM : Model L O) {σ : St} {s : State} (hr : ∀ r e, e < 16 → Hd L O ((σ.reg r).get e) (wd s r e))
+theorem bin_ok {R : Rules} (hM : Model R L O) {σ : St} {s : State} (hr : ∀ r e, e < 16 → Hd L O ((σ.reg r).get e) (wd s r e))
     {op : VBinOp} {a b : XReg} (hok : binOk op (a == b) = true) {e : Nat} (he : e < 16) :
-    Hd L O (binW op (σ.reg a) (σ.reg b) e) (word (op.sse.eval (s.lane a (e / 8)) (s.lane b (e / 8))) (e % 8)) := by
+    Hd L O (binW R op (σ.reg a) (σ.reg b) e) (word (op.sse.eval (s.lane a (e / 8)) (s.lane b (e / 8))) (e % 8)) := by
   have hi : e % 8 < 8 := Nat.mod_lt _ (by decide)
   have hA := fun {j} (hj : j < 8) => lane_word hr a he hj
   have hB := fun {j} (hj : j < 8) => lane_word hr b he hj
@@ -155,8 +155,8 @@ theorem shift_ok {σ : St} {s : State} (hr : ∀ r e, e < 16 → Hd L O ((σ.reg
     rw [show 8 * (e / 8) + e % 8 = e by omega] at this
     exact mkSra_ok this
 
-theorem vop_ok (hM : Model L O) {rs : List Rg} {σ σ' : St} {s₀ s : State} (h : Rel rs L O σ s₀ s) {o : VOp}
-    (e : σ.vop o = some σ') : Rel rs L O σ' s₀ (o.exec s) := by
+theorem vop_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {σ σ' : St} {s₀ s : State} (h : Rel rs L O σ s₀ s) {o : VOp}
+    (e : σ.vop R o = some σ') : Rel rs L O σ' s₀ (o.exec s) := by
   have hr := h.reg
   unfold St.vop at e
   split at e
@@ -429,8 +429,8 @@ theorem tbl_ok {rs : List Rg} {σ : St} {s₀ s : State} (hc : Ctx rs s₀) (h :
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h4), show e / 4 = 2 by omega]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h4), show e / 4 = 3 by omega]
 
-theorem step_ok (hM : Model L O) {rs : List Rg} {σ σ' : St} {s₀ s : State} (hc : Ctx rs s₀) (h : Rel rs L O σ s₀ s)
-    {i : Instr} (e : σ.step rs i = some σ') : ∃ s', exec i s = some s' ∧ Rel rs L O σ' s₀ s' := by
+theorem step_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {σ σ' : St} {s₀ s : State} (hc : Ctx rs s₀) (h : Rel rs L O σ s₀ s)
+    {i : Instr} (e : σ.step R rs i = some σ') : ∃ s', exec i s = some s' ∧ Rel rs L O σ' s₀ s' := by
   unfold St.step at e
   split at e
   · rename_i o; exact ⟨_, rfl, vop_ok hM h e⟩
@@ -452,8 +452,8 @@ theorem step_ok (hM : Model L O) {rs : List Rg} {σ σ' : St} {s₀ s : State} (
     exact store_ok hc h hf hw.1 hw.2
   · cases e
 
-theorem run_ok (hM : Model L O) {rs : List Rg} {s₀ : State} (hc : Ctx rs s₀) :
-    ∀ (is : List Instr) {σ σ' : St} {s : State}, Rel rs L O σ s₀ s → σ.run rs is = some σ' →
+theorem run_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {s₀ : State} (hc : Ctx rs s₀) :
+    ∀ (is : List Instr) {σ σ' : St} {s : State}, Rel rs L O σ s₀ s → σ.run R rs is = some σ' →
       WP isa (.block is) s (Rel rs L O σ' s₀)
   | [], _, _, _, h, e => by cases e; exact WP.block_nil h
   | i :: is, _, _, _, h, e => by

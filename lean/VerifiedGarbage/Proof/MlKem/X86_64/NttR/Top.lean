@@ -219,7 +219,7 @@ theorem nttR_ok {pb : List Instr} {d : Reg} (hc : check pb d = true) (hd : d = .
   let F := polyAt s.mem (s.gpr .rdi)
   have hW : ∀ p < 256, (W[p]!).toNat = (F[p]!).val := fun p hp => by
     rw [inW_get _ _ hp, (reduced_words hred hp).2, VG.Proof.MlKem.polyAt_val hred (by rw [n_eq]; exact hp)]
-  have hM : Model (Lf W) (Of W) := model W fun p hp => by
+  have hM : Model fwdRules (Lf W) (Of W) := model W fun p hp => by
     rw [hW p hp]; have := (F[p]!).isLt; simp only [q] at this; omega
   have hrep : PolyRep 1 W F := fun p hp => VG.Proof.MlKem.X86_64.Rep.of_can (hW p hp)
   have hrel0 : Rel rsA (Lf W) (Of W) initA s1 s1 := by

@@ -58,39 +58,39 @@ def outOk (σ : St) : Bool :=
 /-- The run of pass A and of pass B `pb` storing to `d`, and whether it
 leaves `NTT` in the output. -/
 def check (pb : List Instr) (d : Reg) : Bool :=
-  match initA.run rsA passA with
+  match initA.run fwdRules rsA passA with
   | some σ =>
-    match (toB σ).run (rsB d) pb with
+    match (toB σ).run fwdRules (rsB d) pb with
     | some σ' => outOk σ'
     | none => false
   | none => false
 
 /-! ## The run in parts -/
 
-theorem St.run_append (rs : List Rg) (σ : St) (a b : List Instr) :
-    σ.run rs (a ++ b) = (σ.run rs a).bind fun σ' => σ'.run rs b := by
+theorem St.run_append (R : Rules) (rs : List Rg) (σ : St) (a b : List Instr) :
+    σ.run R rs (a ++ b) = (σ.run R rs a).bind fun σ' => σ'.run R rs b := by
   induction a generalizing σ with
   | nil => rfl
   | cons i is ih =>
     simp only [List.cons_append, St.run]
-    cases σ.step rs i with
+    cases σ.step R rs i with
     | none => rfl
     | some σ' => exact ih σ'
 
 /-- The state after pass A. -/
-def stA : Option St := initA.run rsA passA
+def stA : Option St := initA.run fwdRules rsA passA
 
 /-- The state after half 0 of pass B, from that after pass A. -/
-def stB0 (d : Reg) (p₀ : List Instr) : Option St := stA.bind fun σ => (toB σ).run (rsB d) p₀
+def stB0 (d : Reg) (p₀ : List Instr) : Option St := stA.bind fun σ => (toB σ).run fwdRules (rsB d) p₀
 
 def stRdi0 : Option St := stB0 .rdi passBRdi0
-def stRdi1 : Option St := stRdi0.bind fun σ => σ.run (rsB .rdi) passBRdi1
+def stRdi1 : Option St := stRdi0.bind fun σ => σ.run fwdRules (rsB .rdi) passBRdi1
 def stR100 : Option St := stB0 .r10 passBR100
-def stR101 : Option St := stR100.bind fun σ => σ.run (rsB .r10) passBR101
+def stR101 : Option St := stR100.bind fun σ => σ.run fwdRules (rsB .r10) passBR101
 
 /-- `check` from the state after the halves of pass B. -/
 theorem check_of {p₀ p₁ : List Instr} {d : Reg}
-    (ho : ((stB0 d p₀).bind fun σ => σ.run (rsB d) p₁).any outOk = true) :
+    (ho : ((stB0 d p₀).bind fun σ => σ.run fwdRules (rsB d) p₁).any outOk = true) :
     check (p₀ ++ p₁) d = true := by
   unfold check
   rw [stB0, stA] at ho
