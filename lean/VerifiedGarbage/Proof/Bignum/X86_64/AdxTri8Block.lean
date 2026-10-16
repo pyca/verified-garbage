@@ -46,15 +46,15 @@ theorem rows_ok (n : Nat) {s : State} {B : Addr} {Z w I i e : Nat} {rs : List Re
     exact ⟨by simp only [wv,rowSum,vz,Nat.zero_add],Outside.refl _ _ _ _,Keep.refl _ _⟩
   | succ n ih =>
     cases rs with
-    | nil => simp only [List.length_nil] at hlen; omega
+    | nil => simp only [List.length_nil] at hlen; omega_using [hlen]
     | cons lo rs =>
       cases rs with
-      | nil => simp only [List.length_cons,List.length_nil] at hlen; omega
+      | nil => simp only [List.length_cons,List.length_nil] at hlen; omega_using [hlen]
       | cons hi tail =>
-        have tl : tail.length=n := by simp only [List.length_cons] at hlen; omega
+        have tl : tail.length=n := by simp only [List.length_cons] at hlen; omega_using [hlen]
         change WP isa (.seq (AdxTri8.rowStep i lo hi tail) (AdxTri8.rows n (i+1) (tail++[lo]))) s _
-        refine WP.seq (WP.mono (rowStep_ok hs hc hp (by rw [hlen]; omega)
-          (by unfold output at hout; omega) hr.1 hr.2 (by rw [hlen]; simpa only [Nat.add_sub_cancel] using hv))
+        refine WP.seq (WP.mono (rowStep_ok hs hc hp (by rw [hlen]; omega_using [he])
+          (by unfold output at hout; omega_using [hout]) hr.1 hr.2 (by rw [hlen]; simpa only [Nat.add_sub_cancel] using hv))
           fun a ⟨va,za,oa,ka⟩ => ?_)
         change Outside B (output w I i) 16 s.mem a.mem at oa
         have sa := hs.congr ka.2.2
@@ -69,20 +69,20 @@ theorem rows_ok (n : Nat) {s : State} {B : Addr} {Z w I i e : Nat} {rs : List Re
         have av : value a (tail++[lo])<2^(64*n) := by
           have h := value_zero_top (rs := tail) za
           simpa only [List.length_append,List.length_cons,List.length_nil,tl,Nat.zero_add,Nat.add_sub_cancel] using h
-        have outNext : output w I (i+1)=output w I i+16 := by unfold output; omega
-        refine WP.mono (ih (i := i+1) sa ca pa (by omega)
-          (by rw [outNext]; omega) (by rw [outNext]; omega) (rotate_regs hr)
+        have outNext : output w I (i+1)=output w I i+16 := by unfold output; omega_using []
+        refine WP.mono (ih (i := i+1) sa ca pa (by omega_using [he])
+          (by rw [outNext]; omega_using [hout]) (by rw [outNext]; omega_using [hsep]) (rotate_regs hr)
           (by simp only [List.length_append,List.length_cons,List.length_nil,tl]) av)
           fun t ⟨vt,ot,kt⟩ => ?_
         have input : rowSum a.mem B e (i+1) n=rowSum s.mem B e (i+1) n :=
-          rowSum_congr fun j hj => oa.word (by omega) (by omega)
+          rowSum_congr fun j hj => oa.word (by omega_using [hsep, hj]) (by omega_using [nowrap, he, hj])
         rw [input] at vt
         have pre : wv t.mem B (output w I i) 2=wv a.mem B (output w I i) 2 :=
-          ot.wv (by rw [outNext]; omega) (by omega)
+          ot.wv (by rw [outNext]; omega_using []) (by omega_using [nowrap, hout])
         have frames : Outside B (output w I i) (16*(n+1)) s.mem t.mem :=
-          (oa.mono (by omega) (by omega)).trans (ot.mono (by rw [outNext]; omega) (by rw [outNext]; omega))
+          (oa.mono (by omega_using []) (by omega_using [])).trans (ot.mono (by rw [outNext]; omega_using []) (by rw [outNext]; omega_using []))
         refine ⟨?_,frames,(ka.trans kt).mono ?_⟩
-        · rw [show 2*(n+1)=2+2*n by omega,wv_add,pre,
+        · rw [show 2*(n+1)=2+2*n by omega_using [],wv_add,pre,
             show output w I i+8*2=output w I (i+1) by rw [outNext],rowSum]
           change wv a.mem B (output w I i) 2+2^128*wv t.mem B (output w I (i+1)) (2*n)=_
           simp only [hlen,Nat.add_sub_cancel] at va
@@ -130,20 +130,20 @@ theorem setup_ok {s : State} {B : Addr} {Z w a I : Nat}
     WP isa (.block (AdxTri8.setup ca)) s fun t =>
       t.gpr .rbp=off B (slot w a+8*I) ∧ t.mem=s.mem ∧ Keep [.rax,.rbp] s t := by
   have ld : ∀ k<32, InRegions (s.rd++s.wr) (off B (8*k)) 8 := fun k hk =>
-    hs.ld (by have := hdr_lt_slot w 8 hk; omega)
+    hs.ld (by have := hdr_lt_slot w 8 hk; omega_using [hZ, this])
   have add : off B (slot w a)+BitVec.ofNat 64 (8*I)=off B (slot w a+8*I) := off_off ..
   refine WP.mono (WP.keep [.rax,.rbp] (Q := fun t => t.gpr .rbp=off B (slot w a+8*I) ∧ t.mem=s.mem) ?_ rfl)
     fun t ⟨⟨p,m⟩,k⟩ => ⟨p,m,k⟩
   unfold AdxTri8.setup
-  xrun [State.ea,hdr,hd,hdrOff,ld (sArr ca) (by have := hv.lt pa; unfold sArr; omega),ld (sFn 12) (by decide),
+  xrun [State.ea,hdr,hd,hdrOff,ld (sArr ca) (by have := hv.lt pa; unfold sArr; omega_using [this]),ld (sFn 12) (by decide),
     show word s.mem B (8*sArr ca) = _ from hv.at pa,hI,AdxRect8.shift3,add]
 
 theorem zero_ends {m : Mem} {B : Addr} {e n : Nat}
     (lo : word m B e=0) (hi : word m B (e+8*(n+1))=0) :
     wv m B e (n+2)=2^64*wv m B (e+8) n := by
-  rw [show n+2=1+(n+1) by omega,wv_add,wv_add]
+  rw [show n+2=1+(n+1) by omega_using [],wv_add,wv_add]
   simp only [wv,lo,Nat.mul_zero,Nat.mul_one,Nat.add_zero,Nat.pow_zero,Nat.one_mul,Nat.zero_add]
-  rw [show e+8+8*n=e+8*(n+1) by omega,hi]
+  rw [show e+8+8*n=e+8*(n+1) by omega_using [],hi]
   simp only [show (0 : BitVec 64).toNat=0 from rfl,Nat.mul_zero,Nat.add_zero,Nat.zero_add]
 
 /-- `clearEnds`: the first and last of the block's sixteen output words are
@@ -167,18 +167,18 @@ theorem clearEnds_ok {s : State} {B : Addr} {Z w I : Nat} {mi : BitVec 64}
   have ma : a.mem=s.mem := kz.2.1.trans ma₀
   have pa : a.gpr .rcx=off B (slot w aAcc+16*I) := (kz.gpr (by decide)).trans pa₀
   refine WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := .rax) (hs.congr ka.2.2) pa
-    (by omega : slot w aAcc+16*I+16+8≤Z)) fun b ⟨vb,ob,kb⟩ => ?_
+    (by omega_using [he] : slot w aAcc+16*I+16+8≤Z)) fun b ⟨vb,ob,kb⟩ => ?_
   refine WP.mono (AdxRotate8.storeAt_ok (p := .rcx) (r := .rax) (hs.congr (ka.trans kb).2.2)
-    ((kb.gpr (by simp)).trans pa) (by omega : slot w aAcc+16*I+136+8≤Z)) fun t ⟨vt,ot,kt⟩ => ?_
+    ((kb.gpr (by simp)).trans pa) (by omega_using [he] : slot w aAcc+16*I+136+8≤Z)) fun t ⟨vt,ot,kt⟩ => ?_
   have r8a : a.gpr .rax=0 := za
   have r8b : b.gpr .rax=0 := (kb.gpr (by simp)).trans r8a
   rw [ma] at ob
-  refine ⟨?_,?_,?_,(ob.mono (by omega) (by omega)).trans (ot.mono (by omega) (by omega)),
+  refine ⟨?_,?_,?_,(ob.mono (by omega_using []) (by omega_using [])).trans (ot.mono (by omega_using []) (by omega_using [])),
     (kt.gpr (by simp)).trans ((kb.gpr (by simp)).trans pa),((ka.trans kb).trans kt).mono (by simp)⟩
-  · rw [show slot w aAcc+16+16*I=slot w aAcc+16*I+16 by omega,ot.word (by omega) (by omega),vb,r8a]
-  · rw [show slot w aAcc+16+16*I+120=slot w aAcc+16*I+136 by omega,vt,r8b]
+  · rw [show slot w aAcc+16+16*I=slot w aAcc+16*I+16 by omega_using [],ot.word (by omega_using []) (by omega_using [he, nowrap]),vb,r8a]
+  · rw [show slot w aAcc+16+16*I+120=slot w aAcc+16*I+136 by omega_using [],vt,r8b]
   · intro d h1 h2
-    rw [ot.word (by omega) (by omega),ob.word (by omega) (by omega)]
+    rw [ot.word (by omega_using [h2]) (by omega_using [he, nowrap, h2]),ob.word (by omega_using [h1]) (by omega_using [he, nowrap, h2])]
 
 theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
@@ -190,8 +190,8 @@ theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
       Outside B (slot w aAcc+16+16*I) 128 s.mem t.mem ∧ Keep mmRegs s t := by
   have nowrap := hs.nowrap
   have ar := AdxRect8.tile_ranges hIndex hIndex ha ha1 ha2
-  have outZ : output w I 0+112≤Z := by unfold output at *; omega
-  have endZ : slot w aAcc+16*I+144≤Z := by omega
+  have outZ : output w I 0+112≤Z := by unfold output at *; omega_using [hZ, ar]
+  have endZ : slot w aAcc+16*I+144≤Z := by omega_using [hZ, ar]
   unfold AdxTri8.block
   refine WP.seq (WP.mono (setup_ok hs hd hZ hv pa hI) fun u ⟨pu,mu,ku⟩ => ?_)
   refine WP.seq (WP.mono (clearEnds_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (mu ▸ hh) hZ
@@ -201,8 +201,8 @@ theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
   have px : x.gpr .rbp=off B (slot w a+8*I) := (kx.gpr (by decide)).trans pu
   have regs := columns_regs
   refine WP.seq (WP.mono (rowStep0_ok (lo := .r8) (hi := .r9) (tail := [.r10,.r11,.r12,.r13,.r14,.r15])
-    (hs.congr kux.2.2) cx px (by simp only [List.length_cons,List.length_nil]; omega)
-    (by unfold output at outZ; omega) regs.1 regs.2) fun y ⟨vy,zy,oy,ky⟩ => ?_)
+    (hs.congr kux.2.2) cx px (by simp only [List.length_cons,List.length_nil]; omega_using [hZ, ar])
+    (by unfold output at outZ; omega_using [endZ]) regs.1 regs.2) fun y ⟨vy,zy,oy,ky⟩ => ?_)
   change Outside B (output w I 0) 16 x.mem y.mem at oy
   have sy := hs.congr (kux.trans ky).2.2
   have cy : y.gpr .rcx=off B (slot w aAcc+16*I) := (ky.gpr (by decide)).trans cx
@@ -211,24 +211,24 @@ theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
   have vlt : value y ([.r10,.r11,.r12,.r13,.r14,.r15]++[.r8])<2^(64*6) := by
     have h := value_zero_top (rs := [.r10,.r11,.r12,.r13,.r14,.r15]) zy
     rwa [show ([Reg.r10,.r11,.r12,.r13,.r14,.r15]++[Reg.r8]).length-1=6 from rfl] at h
-  have outNext : output w I 1=output w I 0+16 := by unfold output; omega
-  refine WP.mono (rows_ok 6 (i := 1) sy cy py (by omega)
-    (by rw [outNext]; unfold output at outZ ⊢; omega) (by unfold output; omega)
+  have outNext : output w I 1=output w I 0+16 := by unfold output; omega_using []
+  refine WP.mono (rows_ok 6 (i := 1) sy cy py (by omega_using [hZ, ar])
+    (by rw [outNext]; unfold output at outZ ⊢; omega_using [endZ]) (by unfold output; omega_using [ar])
     (by rw [rot]; exact rotate_regs regs) (by rw [rot]; rfl) (by rw [rot]; exact vlt))
     fun t ⟨vt,ot,kt⟩ => ?_
   rw [rot] at vt
   have input : rowSum y.mem B (slot w a+8*I) 1 6=rowSum s.mem B (slot w a+8*I) 1 6 :=
     rowSum_congr fun j hj => by
-      rw [oy.word (by unfold output; omega) (by omega),ox.word (by omega) (by omega)]
-  have e0 : word x.mem B (slot w a+8*I+8*0)=word s.mem B (slot w a+8*I+8*0) := ox.word (by omega) (by omega)
+      rw [oy.word (by unfold output; omega_using [ar, hj]) (by omega_using [hZ, nowrap, ar, hj]),ox.word (by omega_using [ar, hj]) (by omega_using [hZ, nowrap, ar, hj])]
+  have e0 : word x.mem B (slot w a+8*I+8*0)=word s.mem B (slot w a+8*I+8*0) := ox.word (by omega_using [ar]) (by omega_using [hZ, nowrap, ar])
   have e1 : wv x.mem B (slot w a+8*I+8*(0+1)) 7=wv s.mem B (slot w a+8*I+8*(0+1)) 7 :=
-    ox.wv (by omega) (by omega)
+    ox.wv (by omega_using [ar]) (by omega_using [hZ, nowrap, ar])
   have vy' : wv y.mem B (output w I 0) 2+2^128*value y ([.r10,.r11,.r12,.r13,.r14,.r15]++[.r8])=
       (word s.mem B (slot w a+8*I+8*0)).toNat*wv s.mem B (slot w a+8*I+8*(0+1)) (6+1) := by
     rw [← e0, ← e1]; exact vy
   rw [input] at vt
   have pre : wv t.mem B (output w I 0) 2=wv y.mem B (output w I 0) 2 :=
-    ot.wv (by rw [outNext]; omega) (by omega)
+    ot.wv (by rw [outNext]; omega_using []) (by omega_using [nowrap, outZ])
   have v14 : wv t.mem B (output w I 0) 14=rowSum s.mem B (slot w a+8*I) 0 7 := by
     rw [show 14=2+2*6 from rfl,wv_add,pre,show output w I 0+8*2=output w I 1 by rw [outNext],vt,
       show rowSum s.mem B (slot w a+8*I) 0 7=(word s.mem B (slot w a+8*I+8*0)).toNat*
@@ -236,14 +236,14 @@ theorem block_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
       show 64*2=128 from rfl]
     omega_using [vy']
   have low : word t.mem B (slot w aAcc+16+16*I)=0 := by
-    rw [ot.word (by unfold output; omega) (by omega),oy.word (by unfold output; omega) (by omega),lx]
+    rw [ot.word (by unfold output; omega_using []) (by omega_using [nowrap, endZ]),oy.word (by unfold output; omega_using []) (by omega_using [nowrap, endZ]),lx]
   have high : word t.mem B (slot w aAcc+16+16*I+8*(14+1))=0 := by
-    rw [ot.word (by unfold output; omega) (by omega),oy.word (by unfold output; omega) (by omega),hx]
-  refine ⟨?_,ox.trans ((oy.mono (by unfold output; omega) (by unfold output; omega)).trans
-    (ot.mono (by unfold output; omega) (by unfold output; omega))),
+    rw [ot.word (by unfold output; omega_using []) (by omega_using [nowrap, endZ]),oy.word (by unfold output; omega_using []) (by omega_using [nowrap, endZ]),hx]
+  refine ⟨?_,ox.trans ((oy.mono (by unfold output; omega_using []) (by unfold output; omega_using [])).trans
+    (ot.mono (by unfold output; omega_using []) (by unfold output; omega_using []))),
     ((kux.trans ky).trans kt).mono (by decide)⟩
   rw [show 16=14+2 from rfl,zero_ends low high,
-    show slot w aAcc+16+16*I+8=output w I 0 by unfold output; omega,v14]
+    show slot w aAcc+16+16*I+8=output w I 0 by unfold output; omega_using [],v14]
   exact rowSum_cross s.mem B _ 7
 
 end VG.Proof.Bignum.X86_64.AdxTri8
