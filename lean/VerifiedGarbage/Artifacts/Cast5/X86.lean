@@ -36,21 +36,18 @@ def artifacts : List Artifact := [
     consts := Impl.Cast5.keyConsts
     code := Impl.Cast5.X86.expandKey
     stack := 4
-    verified := Proof.Cast5.X86.expandKey_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Cast5.X86.expandKey_verified },
   Spec.Cast5.ecbEncryptApi.artifact X86.target {
     notes := [scanNote]
     consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.X86.ecbEncrypt
     stack := 4
-    verified := Proof.Cast5.X86.ecbEncrypt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Cast5.X86.ecbEncrypt_verified },
   Spec.Cast5.ecbDecryptApi.artifact X86.target {
     notes := [scanNote]
     consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.X86.ecbDecrypt
     stack := 4
-    verified := Proof.Cast5.X86.ecbDecrypt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.Cast5.X86.ecbDecrypt_verified }]
 
 end VG.Artifacts.Cast5.X86

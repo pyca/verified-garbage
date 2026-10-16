@@ -19,8 +19,7 @@ def artifacts : List Artifact := [
         before returning."]
     code := Impl.StackScratch.X86.withStackScratchWiped 84 3 10 Impl.Blowfish.X86.expandKey
     stack := 84
-    verified := Proof.Blowfish.X86.expandKey_framed
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Blowfish.X86.expandKey_framed },
   Spec.Blowfish.ecbEncryptApi.artifact X86.target {
     notes := ["One block at a time: each S-box lookup reads the 256 entries of its four byte planes, a \
         word (four entries) of each at a time, keeping the bytes of the entry that is the index under \

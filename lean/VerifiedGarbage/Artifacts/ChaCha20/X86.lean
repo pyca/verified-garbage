@@ -33,8 +33,7 @@ def artifacts : List Artifact := [
     features := ["ssse3"] },
   Spec.ChaCha20.initApi.artifact X86.target {
     code := Impl.ChaCha20.X86.Stream.init
-    verified := Proof.ChaCha20.X86.Stream.init_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.ChaCha20.X86.Stream.init_verified },
   Spec.ChaCha20.setNonceApi.artifact X86.target {
     code := Impl.ChaCha20.X86.Stream.setNonce
     verified := Proof.ChaCha20.X86.Stream.setNonce_verified

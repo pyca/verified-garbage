@@ -40,21 +40,18 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign44Api.name
       (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
     stack := 136
-    verified := Proof.MlDsa.X86.Message.signMessage44_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Message.signMessage44_verified },
   Spec.MlDsa.signMessage65Api.artifact X86.target {
     notes := notes
     code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign65Api.name
       (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
     stack := 136
-    verified := Proof.MlDsa.X86.Message.signMessage65_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Message.signMessage65_verified },
   Spec.MlDsa.signMessage87Api.artifact X86.target {
     notes := notes
     code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign87Api.name
       (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
     stack := 136
-    verified := Proof.MlDsa.X86.Message.signMessage87_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.MlDsa.X86.Message.signMessage87_verified }]
 
 end VG.Artifacts.MlDsaSignMessage.X86

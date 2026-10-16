@@ -19,8 +19,7 @@ def artifacts : List Artifact := [
         stack, zeroed before returning."]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 40 .rcx 4 Impl.Blowfish.X86_64.expandKey
     stack := 40
-    verified := Proof.Blowfish.X86_64.expandKey_framed
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Blowfish.X86_64.expandKey_framed },
   Spec.Blowfish.ecbEncryptApi.artifact X86_64.target {
     notes := ["One block at a time with SSE2: each S-box lookup scans the 256 entries of its four \
         byte planes, 16 at a time, keeping the bytes of the entry that is the index under masks \

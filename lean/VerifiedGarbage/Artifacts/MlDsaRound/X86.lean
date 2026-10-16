@@ -24,32 +24,26 @@ def artifacts : List Artifact := [
   Spec.MlDsa.power2RoundApi.artifact X86.target {
     code := Impl.MlDsa.X86.Round.power2Round
     stack := 16
-    verified := power2Round_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := power2Round_verified },
   Spec.MlDsa.highBitsApi.artifact X86.target {
     code := Impl.MlDsa.X86.Round.highBits
     stack := 16
-    verified := highBits_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := highBits_verified },
   Spec.MlDsa.lowBitsApi.artifact X86.target {
     code := Impl.MlDsa.X86.Round.lowBits
     stack := 16
-    verified := lowBits_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := lowBits_verified },
   Spec.MlDsa.normLtApi.artifact X86.target {
     code := Impl.MlDsa.X86.Round.normLt
     stack := 16
-    verified := normLt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := normLt_verified },
   Spec.MlDsa.makeHintApi.artifact X86.target {
     code := Impl.MlDsa.X86.Round.makeHint
     stack := 16
-    verified := makeHint_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := makeHint_verified },
   Spec.MlDsa.useHintApi.artifact X86.target {
     code := Impl.MlDsa.X86.Round.useHint
     stack := 16
-    verified := useHint_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := useHint_verified }]
 
 end VG.Artifacts.MlDsaRound.X86

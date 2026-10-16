@@ -30,7 +30,6 @@ def artifacts : List Artifact := [
       stack and does not use `scratch`."]
     code := Impl.CmacAes.X86_64.AesNi.update
     verified := Proof.CmacAes.X86_64.AesNi.verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["aes"] }]
 
 end VG.Artifacts.CmacAes.X86_64

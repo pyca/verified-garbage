@@ -65,22 +65,19 @@ def artifacts : List Artifact := [
     notes := ["Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's \
         `aes_ct64` (Thomas Pornin, MIT licence)."]
     code := Impl.Aes.X86_64.encryptBlocks
-    verified := Proof.Aes.X86_64.encryptBlocks_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Aes.X86_64.encryptBlocks_verified },
   Spec.Aes.decryptBlocksApi.artifact X86_64.target {
     notes := ["Constant-time bitsliced AES, four blocks at a time, in the style of BearSSL's \
         `aes_ct64` (Thomas Pornin, MIT licence): the inverse S-box is the forward one between \
         two inverse affine maps."]
     code := Impl.Aes.X86_64.decryptBlocks
-    verified := Proof.Aes.X86_64.decryptBlocks_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Aes.X86_64.decryptBlocks_verified },
   Spec.Aes.encryptBlocksApi.artifact X86_64.target {
     suffix := "_aesni"
     notes := ["Uses AES-NI: eight blocks at a time, then one at a time."]
     code := Impl.Aes.X86_64.AesNi.encryptBlocks
     verified := Proof.Aes.X86_64.AesNi.encryptBlocks_verified
-    features := ["aes"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    features := ["aes"] },
   Spec.Aes.decryptBlocksApi.artifact X86_64.target {
     suffix := "_aesni"
     notes := ["Uses AES-NI: eight blocks at a time, then one at a time, with the Equivalent \
@@ -88,16 +85,14 @@ def artifacts : List Artifact := [
         working space first."]
     code := Impl.Aes.X86_64.AesNi.decryptBlocks
     verified := Proof.Aes.X86_64.AesNi.decryptBlocks_verified
-    features := ["aes"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    features := ["aes"] },
   Spec.Aes.encryptBlocksApi.artifact X86_64.target {
     suffix := "_vaes"
     notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register; the blocks \
         left go eight and then one at a time with AES-NI, as in `vg_aes_encrypt_blocks_aesni`."]
     code := Impl.Aes.X86_64.VaesBlocks.encryptBlocks
     verified := Proof.Aes.X86_64.VaesBlocks.encryptBlocks_verified
-    features := ["aes", "avx", "avx2", "vaes"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    features := ["aes", "avx", "avx2", "vaes"] },
   Spec.Aes.decryptBlocksApi.artifact X86_64.target {
     suffix := "_vaes"
     notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register, with the \
@@ -106,7 +101,6 @@ def artifacts : List Artifact := [
         in `vg_aes_decrypt_blocks_aesni`."]
     code := Impl.Aes.X86_64.VaesBlocks.decryptBlocks
     verified := Proof.Aes.X86_64.VaesBlocks.decryptBlocks_verified
-    features := ["aes", "avx", "avx2", "vaes"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    features := ["aes", "avx", "avx2", "vaes"] }]
 
 end VG.Artifacts.Aes.X86_64

@@ -31,19 +31,16 @@ def artifacts : List Artifact := [
     notes := notes
     code := Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa44
     stack := 96
-    verified := Proof.MlDsa.X86.Sign.sign44_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Sign.sign44_verified },
   Spec.MlDsa.sign65Api.artifact X86.target {
     notes := notes
     code := Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa65
     stack := 96
-    verified := Proof.MlDsa.X86.Sign.sign65_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Sign.sign65_verified },
   Spec.MlDsa.sign87Api.artifact X86.target {
     notes := notes
     code := Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa87
     stack := 96
-    verified := Proof.MlDsa.X86.Sign.sign87_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.MlDsa.X86.Sign.sign87_verified }]
 
 end VG.Artifacts.MlDsaSign.X86

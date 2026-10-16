@@ -27,8 +27,8 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   `Code.all_of_forall`, which evaluates nothing, and on the others (x86,
   x86-64) by `Code.all_of_allInstrs (by lit_decide)`, which evaluates the
   code's literal if the module imports the one that materializes it
-  (`Lit.lean`). Where `lit_decide` exceeds the recursion limit, the
-  registration gives `spSafe := Code.all_of_allInstrs (by decide +kernel)`.
+  (`Lit.lean`), or, where that exceeds the recursion limit (rewriting some
+  code to its literal), by `Code.all_of_allInstrs (by decide +kernel)`.
 -/
 
 public meta section
@@ -74,6 +74,11 @@ elab_rules : tactic
     if always then
       evalTactic (← `(tactic| exact Code.all_of_forall (fun _ => rfl) _))
     else
-      evalTactic (← `(tactic| exact Code.all_of_allInstrs (by lit_decide)))
+      let s ← saveState
+      -- The recursion limit is a runtime exception, which `first` does not catch.
+      tryCatchRuntimeEx (evalTactic (← `(tactic| exact Code.all_of_allInstrs (by lit_decide))))
+        fun _ => do
+          s.restore
+          evalTactic (← `(tactic| exact Code.all_of_allInstrs (by decide +kernel)))
 
 end VG.RegistrationTactics

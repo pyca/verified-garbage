@@ -28,8 +28,7 @@ def artifacts : List Artifact := [
       its caller's callee-saved registers in `scratch`."]
     code := Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4
     stack := 24
-    verified := Proof.MlDsa.X86_64.Rej4.rejNTT4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86_64.Rej4.rejNTT4_verified },
   Spec.MlDsa.rejNTT4Api.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["It runs the four instances of SHAKE128 at once, in the four \
@@ -39,7 +38,6 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2
     stack := 24
     verified := Proof.MlDsa.X86_64.Rej4.Segment.rejNTT4Avx2_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlDsa.rejBoundedApi.artifact X86_64.target {
     notes := ["It squeezes 544 bytes of SHAKE256 output (4 blocks) and \
@@ -59,8 +57,7 @@ def artifacts : List Artifact := [
       saves its caller's callee-saved registers in `scratch`."]
     code := Impl.MlDsa.X86_64.Sample.Mask4.expandMask4
     stack := 24
-    verified := Proof.MlDsa.X86_64.Mask4.expandMask4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86_64.Mask4.expandMask4_verified },
   Spec.MlDsa.expandMask4Api.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["It runs the four instances of SHAKE256 at once, in the \
@@ -70,7 +67,6 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.X86_64.Sample.Mask4.expandMask4Avx2
     stack := 24
     verified := Proof.MlDsa.X86_64.Mask4.expandMask4Avx2_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlDsa.sampleInBallApi.artifact X86_64.target {
     notes := ["It squeezes 272 bytes of SHAKE256 output (2 blocks) and \
