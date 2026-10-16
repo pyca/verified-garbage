@@ -188,13 +188,7 @@ macro_rules! ml_kem {
             /// operating system.
             pub fn encapsulate(&self) -> Result<([u8; 32], [u8; $ct]), Error> {
                 let mut m = [0u8; 32];
-                if getrandom::fill(&mut m).is_err() {
-                    // The operating system's generator does not fail in the
-                    // tests.
-                    // NO-COVERAGE-START
-                    return Err(Error::Randomness);
-                    // NO-COVERAGE-END
-                }
+                getrandom::fill(&mut m).map_err(|_| Error::Randomness)?;
                 let r = self.encapsulate_internal(&m);
                 zeroize(&mut m);
                 r

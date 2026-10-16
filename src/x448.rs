@@ -144,12 +144,7 @@ impl PrivateKey {
     /// A new private key: 56 random bytes from the operating system.
     pub fn generate() -> Result<Self, Error> {
         let mut bytes = [0u8; 56];
-        if getrandom::fill(&mut bytes).is_err() {
-            // The operating system's generator does not fail in the tests.
-            // NO-COVERAGE-START
-            return Err(Error::Randomness);
-            // NO-COVERAGE-END
-        }
+        getrandom::fill(&mut bytes).map_err(|_| Error::Randomness)?;
         Ok(PrivateKey { bytes })
     }
 
