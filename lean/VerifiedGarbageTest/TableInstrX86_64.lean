@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# Tables of constants carried by instructions (`aluTbl`) on x86-64
+# Tables of constants carried by instructions (`aluTbl`, `vmovdquTbl`) on x86-64
 
 A function `() -> u64` that returns 1 plus word 1 of a table of constants:
 `lea rdx, [rip + VG_TEST_ALUTBL]` (`leaSym`), `movabs rax, 1`, then `add rax,
@@ -170,6 +170,43 @@ def other : Artifact := artifactOf "vg_test_alutbl_other" 41
 -- A base register not holding the table's address: faults, even when the
 -- address it forms is in the table.
 #guard (X86_64.exec (.aluTbl .add .rax { base := .rdx, disp := 8 } name (tbl 42))
+  { sat with gpr := fun r => if r = .rdx then 0x0FF8 else 0 }).isNone
+
+/-! ## `vmovdquTbl`: four words of a table into a `ymm` register -/
+
+/-- The table `[8, 9, …, 15]`, whose words differ from their indices. -/
+def vtbl : List (BitVec 64) := (List.range 8).map fun j => BitVec.ofNat 64 (8 + j)
+
+def vld (m : MemOp) : Instr := .vmovdquTbl .xmm3 m name vtbl
+
+def at1000 : State := { sat with gpr := fun r => if r = .rdx then 0x1000 else 0 }
+
+-- Printed as any `vmovdqu` load; needs AVX, as `vmovdquLoad`; carries its table.
+#guard Instr.asm (vld { base := .rdx, disp := 32 }) == ["vmovdqu ymm3, YMMWORD PTR [rdx+32]"]
+#guard (vld { base := .rdx }).requires == ["avx"]
+#guard isa.writesSp (vld { base := .rdx }) == false
+#guard printer.tables (vld { base := .rdx }) == [(name, vtbl)]
+-- The access is observed as the offset, wherever the table is.
+#guard addrs (vld { base := .rdx, disp := 32 }) at1000 == [32]
+#guard addrs (vld { base := .rdx, disp := 32 })
+  { sat with gpr := fun r => if r = .rdx then 0x2000 else 0 } == [32]
+-- Words 4 to 7, the first in bits 63:0: the 32 bytes at the offset,
+-- little-endian, as `vmovdquLoad .l256` reads them from memory.
+#guard ((X86_64.exec (vld { base := .rdx, disp := 32 }) at1000).map fun t => t.ymm .xmm3) ==
+  some ((BitVec.ofNat 64 15 ++ BitVec.ofNat 64 14) ++ (BitVec.ofNat 64 13 ++ BitVec.ofNat 64 12))
+-- Words 1 to 4, through an index register: any multiple of 8 is allowed.
+#guard ((X86_64.exec (vld { base := .rdx, index := some .rcx, scale := 8 })
+  { sat with gpr := fun r => if r = .rdx then 0x1000 else if r = .rcx then 1 else 0 }).map
+    fun t => t.ymm .xmm3) ==
+  some ((BitVec.ofNat 64 12 ++ BitVec.ofNat 64 11) ++ (BitVec.ofNat 64 10 ++ BitVec.ofNat 64 9))
+-- Past the table (the last word past its end), and between its words: faults.
+#guard (X86_64.exec (vld { base := .rdx, disp := 40 }) at1000).isNone
+#guard (X86_64.exec (vld { base := .rdx, disp := 4 }) at1000).isNone
+-- Below the table: the offset wraps around, and faults.
+#guard (X86_64.exec (vld { base := .rdx, disp := -8 })
+  { sat with gpr := fun r => if r = .rdx then 0x1008 else 0 }).isNone
+-- A base register not holding the table's address: faults.
+#guard (X86_64.exec (vld { base := .rdx, disp := 8 })
   { sat with gpr := fun r => if r = .rdx then 0x0FF8 else 0 }).isNone
 
 end VG.Test.TableInstrX86_64

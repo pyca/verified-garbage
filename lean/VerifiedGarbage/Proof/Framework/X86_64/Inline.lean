@@ -211,6 +211,15 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     split
     · rw [e, h]; rfl
     · contradiction
+  | vmovdquTbl d m n ws =>
+    simp only [exec] at h ⊢
+    split at h <;> [rename_i hc'; cases h]
+    cases h
+    have e₁ : (s.withRegions rd wr).ea m = s.ea m := rfl
+    have e₂ : (s.withRegions rd wr).syms = s.syms := rfl
+    have e₃ : (s.withRegions rd wr).gpr = s.gpr := rfl
+    simp only [e₁, e₂, e₃]
+    exact ite_eq_left_of_eq_true _ _ (eq_true hc') |>.trans rfl
   | vpmovmskb len d r => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
   | movqR d r => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
   | movdquLoad d m =>
@@ -372,6 +381,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
   | vmovdquLoad len d m | vbinLoad _ len d _ m =>
     cases len <;> simp only [exec, Option.map_eq_some_iff] at h <;> obtain ⟨_, _, rfl⟩ := h <;>
       exact ⟨rfl, rfl⟩
+  | vmovdquTbl d m n ws => simp only [exec] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | vbroadcasti128 d m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
   | vmovdquStore len m r =>
@@ -433,6 +443,7 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
   | vmovdquLoad len d m | vbinLoad _ len d _ m =>
     cases len <;> simp only [exec, Option.map_eq_some_iff] at h <;> obtain ⟨_, _, rfl⟩ := h <;>
       exact Frame.refl _ _
+  | vmovdquTbl d m n ws => simp only [exec] at h; split at h <;> cases h; exact Frame.refl _ _
   | vbroadcasti128 d m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact Frame.refl _ _
   | vmovdquStore len m r =>
@@ -642,6 +653,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     · rename_i len _ _; cases len
       · simp only [exec, State.store128] at h; split at h <;> cases h; rfl
       · simp only [exec, State.store256] at h; split at h <;> cases h; rfl
+    · simp only [exec] at h; split at h <;> cases h; rfl
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
     · rename_i len _ _ _; cases len <;> simp only [exec, Option.map_eq_some_iff] at h <;>
         obtain ⟨_, _, rfl⟩ := h <;> rfl

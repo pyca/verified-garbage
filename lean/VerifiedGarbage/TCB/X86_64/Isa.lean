@@ -70,8 +70,8 @@ Modelling choices:
   RIP-relative operand, resolved by the linker) puts in a register. No
   instruction changes `syms`: a static's address is fixed for the run of
   the program.
-* A table of constants an instruction carries (`aluTbl`, its name and its
-  words) is the `static` of that name the emitter writes from it
+* A table of constants an instruction carries (`aluTbl` and `vmovdquTbl`,
+  its name and its words) is the `static` of that name the emitter writes from it
   (`TCB/Rust.lean`), so that for the whole run of the program it is mapped
   readable at `State.syms name` and holds exactly those words, 8 bytes each,
   little-endian, and does not wrap around the address space; and no memory
@@ -282,6 +282,11 @@ inductive Instr
   /-- `vmovdqu XMMWORD PTR [dst], xmm` (`VEX.128.F3.0F.WIG 7F /r`) or
   `vmovdqu YMMWORD PTR [dst], ymm` (`VEX.256.F3.0F.WIG 7F /r`) -/
   | vmovdquStore (len : VLen) (dst : MemOp) (src : XReg)
+  /-- `vmovdqu ymm, YMMWORD PTR [m]` (`VEX.256.F3.0F.WIG 6F /r`), whose base
+  register holds the address of the `static` `name`, whose words are
+  `words`: the emitter writes that static from this instruction
+  (`TCB/Rust.lean`), as for `aluTbl`. -/
+  | vmovdquTbl (dst : XReg) (m : MemOp) (name : String) (words : List (BitVec 64))
   /-- `vbroadcasti128 ymm, XMMWORD PTR [src]` (`VEX.256.66.0F38.W0 5A /r`) -/
   | vbroadcasti128 (dst : XReg) (src : MemOp)
   /-- `op xmm1, xmm2, XMMWORD PTR [src2]` or `op ymm1, ymm2, YMMWORD PTR
@@ -486,7 +491,7 @@ def Instr.requires : Instr → List String
   | .vop (.vbin _ .l128 ..) | .vbinLoad _ .l128 .. | .vop (.vshift _ .l128 ..)
   | .vop (.vpshufd .l128 ..)
   | .vop (.vpalignr .l128 ..) | .vop (.vmovdqa ..) | .vop (.vmovq ..) | .vop .vzeroupper
-  | .vmovdquLoad .. | .vmovdquStore .. => ["avx"]
+  | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. => ["avx"]
   | .vop (.vpblendd ..) | .vop (.vvar ..) | .vop (.vpbroadcastd ..) | .vop (.vpbroadcastq ..)
   | .vop (.vpermq ..) | .vop (.vpermd ..) | .vop (.vperm2i128 ..) | .vop (.vinserti128 ..) | .vop (.vextracti128 ..)
   | .vbroadcasti128 .. | .vpmovmskb .l256 .. => ["avx2"]
@@ -582,6 +587,19 @@ def exec : Instr → State → Option State
   | .vmovdquLoad .l256 d m, s =>
     (s.load256 (s.ea m)).map fun v => s.setV .l256 d (v.extractLsb' 0 128) (v.extractLsb' 128 128)
   | .vmovdquStore .l128 m r, s => s.store128 (s.ea m) (s.xmm r)
+  -- `vmovdquTbl`: as `vmovdquLoad .l256 d m`, its source the 32 bytes at
+  -- `m`, little-endian: when `m`'s base register holds the static's address
+  -- and `m` is `off` bytes past it, a multiple of 8 with four words of the
+  -- table from there, words `off / 8` to `off / 8 + 3` of the static `name`
+  -- (bits 63:0 the first); otherwise it faults. As for `aluTbl`, the static
+  -- is the immutable object of these words the emitter writes, so the bytes
+  -- there are always these.
+  | .vmovdquTbl d m name ws, s =>
+    let off := (s.ea m - s.gpr m.base).toNat
+    let w := fun j => ws.getD (off / 8 + j) 0
+    if s.gpr m.base = s.syms name ∧ off % 8 = 0 ∧ off / 8 + 4 ≤ ws.length then
+      some (s.setV .l256 d (w 1 ++ w 0) (w 3 ++ w 2))
+    else none
   | .vmovdquStore .l256 m r, s => s.store256 (s.ea m) (s.ymm r)
   -- SDM Vol. 2, "VBROADCAST": `DEST[127:0] := SRC[127:0]; DEST[255:128] :=
   -- SRC[127:0]`; no alignment is required.
@@ -698,6 +716,7 @@ def addrs : Instr → State → List Addr
   -- The offset in the table: the static's address does not depend on the
   -- data (see the module docs).
   | .aluTbl _ _ m .., s => [s.ea m - s.gpr m.base]
+  | .vmovdquTbl _ m .., s => [s.ea m - s.gpr m.base]
   | .movdquLoad _ m, s => [s.ea m]
   | .movdquStore m _, s => [s.ea m]
   | .movqR .., _ => []
@@ -832,7 +851,7 @@ def Instr.dst : Instr → Option Reg
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
   | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
-  | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
+  | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore ..
   | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none

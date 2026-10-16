@@ -516,6 +516,15 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
       exact hw.pubM hm
     rw [ite_t hm']
     exact ⟨_, rfl, h.upd (set_mono hw d id) id (h.killM d) empty_subset'⟩
+  | vmovdquTbl _ m _ _ =>
+    simp only [step] at hs ⊢
+    split at hs <;> [rename_i hm; cases hs]
+    cases hs
+    have hm' : idxPub σ m = true := by
+      unfold idxPub at hm ⊢; split <;> rename_i heq <;> rw [heq] at hm <;> simp only at hm ⊢
+      exact hw.pubM hm
+    rw [ite_t hm']
+    exact ⟨_, rfl, h.clearX⟩
   | vpmovmskb _ d _ | leaSym d _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
