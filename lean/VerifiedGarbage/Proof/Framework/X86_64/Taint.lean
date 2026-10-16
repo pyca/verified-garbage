@@ -441,6 +441,13 @@ theorem execAlu_eq (op : AluOp) (d : Reg) (src : Src) (s : State) :
   cases op <;> simp only [execAlu, Nat.reducePow, writes, ↓reduceIte, aluOut, Option.map_some,
       Option.map_map, Function.comp_def, Bool.false_eq_true]
 
+/-- `execAluW`, the ALU operation of `aluTbl` given its source's value, is
+`execAlu` once that reads its source: the two definitions agree for every
+operation. -/
+theorem execAlu_eq_execAluW (op : AluOp) (d : Reg) (src : Src) (s : State) :
+    execAlu op d src s = (readSrc s src).bind fun b => execAluW op d b s := by
+  cases op <;> rfl
+
 theorem execAluW_eq (op : AluOp) (d : Reg) (b : BitVec 64) (s : State) :
     execAluW op d b s = (aluOut op (s.gpr d) b s.cf).map fun (r, c, o) =>
       if writes op then (arithFlags s r c o).setReg d r else arithFlags s r c o := by
