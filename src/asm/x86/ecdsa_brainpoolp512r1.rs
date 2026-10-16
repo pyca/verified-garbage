@@ -24,7 +24,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_sign(out: *mut [u8; 128], d: *const [u8; 64], digest: *const [u8; 64], k: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax], ebx
 mov DWORD PTR [eax+4], esi
 mov DWORD PTR [eax+8], edi
@@ -2862,7 +2862,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_brainpoolp512r1_verify(public: *const [u8; 129], digest: *const [u8; 64], sig: *const [u8; 128], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax], ebx
 mov DWORD PTR [eax+4], esi
 mov DWORD PTR [eax+8], edi

@@ -34,7 +34,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha224_mgf1_sha1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 sub sp, sp, #272
 add x9, sp, #0
 str x0, [x9, #152]
@@ -499,7 +499,7 @@ pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA1_DECRYPT_MGF1_SHA2_FEATURES: crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha224_mgf1_sha1_decrypt_mgf1_sha2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x30, [sp, #-16]!
 sub sp, sp, #272
 add x9, sp, #0
@@ -966,7 +966,7 @@ pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA1_DECRYPT_SHA224_SHA2_FEATURES: crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_sha2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x30, [sp, #-16]!
 sub sp, sp, #272
 add x9, sp, #0
@@ -1433,7 +1433,7 @@ pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA1_DECRYPT_SHA224_SHA2_MGF1_SHA2_FEAT
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha224_mgf1_sha1_decrypt_sha224_sha2_mgf1_sha2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x30, [sp, #-16]!
 sub sp, sp, #272
 add x9, sp, #0
@@ -1896,7 +1896,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha224_mgf1_sha1_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 28], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 sub sp, sp, #272
 add x9, sp, #0
 str x0, [x9, #152]
@@ -2262,7 +2262,7 @@ pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_MGF1_SHA2_FEAT
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha224_mgf1_sha1_encrypt_precomputed_mgf1_sha2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 28], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x30, [sp, #-16]!
 sub sp, sp, #272
 add x9, sp, #0
@@ -2630,7 +2630,7 @@ pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA224_SHA2_FE
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha224_mgf1_sha1_encrypt_precomputed_sha224_sha2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 28], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x30, [sp, #-16]!
 sub sp, sp, #272
 add x9, sp, #0
@@ -2998,7 +2998,7 @@ pub(crate) const VG_RSA_OAEP_SHA224_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA224_SHA2_MG
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_oaep_sha224_mgf1_sha1_encrypt_precomputed_sha224_sha2_mgf1_sha2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 28], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x30, [sp, #-16]!
 sub sp, sp, #272
 add x9, sp, #0

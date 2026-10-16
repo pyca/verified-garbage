@@ -22,7 +22,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p192_sign(out: *mut [u8; 48], d: *const [u8; 24], digest: *const [u8; 24], k: *const [u8; 24], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8], rbx
+        r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
 mov QWORD PTR [r8+16], r12
 mov QWORD PTR [r8+24], r13
@@ -2917,7 +2917,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p192_verify(public: *const [u8; 49], digest: *const [u8; 24], sig: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov r8, rcx
+        r"mov r8, rcx
 mov r9, rdi
 mov rcx, rdx
 mov r10, rdx

@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_compress(state: *mut [u32; 4], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 8]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax], ebx
 mov DWORD PTR [eax+4], esi
 mov DWORD PTR [eax+8], edi
@@ -629,7 +629,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, 1732584193
 mov DWORD PTR [eax], ecx
 mov ecx, -271733879
@@ -658,7 +658,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-140]
+        r"lea esp, [esp-140]
 mov eax, DWORD PTR [esp+144]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+148]
@@ -814,7 +814,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-136]
+        r"lea esp, [esp-136]
 mov eax, DWORD PTR [esp+140]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+144]
@@ -944,7 +944,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_update_scratch(state: *mut [u8; 80], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+64], ebx
 mov DWORD PTR [eax+68], esi
 mov DWORD PTR [eax+72], edi
@@ -1087,7 +1087,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_finalize_scratch(state: *mut [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+64], ebx
 mov DWORD PTR [eax+68], esi
 mov DWORD PTR [eax+72], edi

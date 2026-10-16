@@ -24,7 +24,7 @@ pub(crate) const VG_MILLER_RABIN_ROUND_ADX_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_miller_rabin_round_adx(ws: *mut u64, ws_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rsi, QWORD PTR [rdi+128]
+        r"mov rsi, QWORD PTR [rdi+128]
 mov rdx, QWORD PTR [rdi+136]
 mov rcx, QWORD PTR [rdi+144]
 mov r8, QWORD PTR [rdi+184]
@@ -23008,7 +23008,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rsi, QWORD PTR [rdi+128]
+        r"mov rsi, QWORD PTR [rdi+128]
 mov rdx, QWORD PTR [rdi+136]
 mov rcx, QWORD PTR [rdi+144]
 mov r8, QWORD PTR [rdi+184]

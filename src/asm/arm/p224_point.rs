@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p224_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str lr, [r12, #3584]
 mov r0, r12
 movw r1, #3648
@@ -242,7 +242,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p224_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str lr, [r12, #3584]
 mov r0, r12
 movw r1, #3648

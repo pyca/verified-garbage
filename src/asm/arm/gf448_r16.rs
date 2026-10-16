@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf448_r16_mul(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "str r4, [r0, #3968]
+        r"str r4, [r0, #3968]
 str r5, [r0, #3972]
 str r6, [r0, #3976]
 str r7, [r0, #3980]
@@ -1175,7 +1175,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf448_r16_add(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "str r4, [r0, #3968]
+        r"str r4, [r0, #3968]
 str r5, [r0, #3972]
 str r6, [r0, #3976]
 str r7, [r0, #3980]
@@ -1758,7 +1758,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf448_r16_sub(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "str r4, [r0, #3968]
+        r"str r4, [r0, #3968]
 str r5, [r0, #3972]
 str r6, [r0, #3976]
 str r7, [r0, #3980]
@@ -2425,7 +2425,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf448_r16_mul_a24(ws: *mut [u64; 1024], o: u32, a: u32) {
     core::arch::naked_asm!(
-        "str r4, [r0, #3968]
+        r"str r4, [r0, #3968]
 str r5, [r0, #3972]
 str r6, [r0, #3976]
 str r7, [r0, #3980]

@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #3960]
 str r5, [r12, #3964]
 str r6, [r12, #3968]
@@ -1972,7 +1972,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_add_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #3960]
 str r5, [r12, #3964]
 str r6, [r12, #3968]
@@ -2793,7 +2793,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_sub_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #3960]
 str r5, [r12, #3964]
 str r6, [r12, #3968]
@@ -3741,7 +3741,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #3960]
 str r5, [r12, #3964]
 str r6, [r12, #3968]
@@ -5695,7 +5695,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_add_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #3960]
 str r5, [r12, #3964]
 str r6, [r12, #3968]
@@ -6516,7 +6516,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_sub_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #3960]
 str r5, [r12, #3964]
 str r6, [r12, #3968]

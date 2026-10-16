@@ -14,7 +14,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, -1056596264
 mov DWORD PTR [eax], ecx
 mov ecx, 914150663
@@ -48,7 +48,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, 1779033703
 mov DWORD PTR [eax], ecx
 mov ecx, -1150833019
@@ -85,7 +85,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 70]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+96], ebx
 mov DWORD PTR [eax+100], esi
 mov DWORD PTR [eax+104], edi
@@ -3448,7 +3448,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-636]
+        r"lea esp, [esp-636]
 mov eax, DWORD PTR [esp+640]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+644]
@@ -3604,7 +3604,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-632]
+        r"lea esp, [esp-632]
 mov eax, DWORD PTR [esp+636]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+640]
@@ -3749,7 +3749,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-632]
+        r"lea esp, [esp-632]
 mov eax, DWORD PTR [esp+636]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+640]
@@ -3894,7 +3894,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update_scratch(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 76]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi
@@ -4037,7 +4037,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize_scratch(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 76]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi
@@ -4174,7 +4174,7 @@ pub(crate) const VG_SHA256_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_compress_shani(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 70]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+96], ebx
 mov DWORD PTR [eax+100], esi
 mov DWORD PTR [eax+104], edi
@@ -4582,7 +4582,7 @@ pub(crate) const VG_SHA256_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update_shani(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-636]
+        r"lea esp, [esp-636]
 mov eax, DWORD PTR [esp+640]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+644]
@@ -4742,7 +4742,7 @@ pub(crate) const VG_SHA256_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-632]
+        r"lea esp, [esp-632]
 mov eax, DWORD PTR [esp+636]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+640]
@@ -4891,7 +4891,7 @@ pub(crate) const VG_SHA224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_finalize_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-632]
+        r"lea esp, [esp-632]
 mov eax, DWORD PTR [esp+636]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+640]
@@ -5040,7 +5040,7 @@ pub(crate) const VG_SHA256_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update_scratch_shani(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 76]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi
@@ -5187,7 +5187,7 @@ pub(crate) const VG_SHA256_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize_scratch_shani(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 76]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi

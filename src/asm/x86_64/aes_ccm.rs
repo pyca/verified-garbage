@@ -27,7 +27,7 @@ pub(crate) const VG_AES_CCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ccm_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2608]
+        r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+2624]
@@ -431,7 +431,7 @@ pub(crate) const VG_AES_CCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ccm_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2608]
+        r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+2624]
@@ -914,7 +914,7 @@ pub(crate) const VG_AES_CCM_SEAL_AESNI_CBC_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ccm_seal_aesni_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2608]
+        r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+2624]
@@ -1318,7 +1318,7 @@ pub(crate) const VG_AES_CCM_OPEN_AESNI_CBC_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ccm_open_aesni_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2608]
+        r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+2624]
@@ -1797,7 +1797,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2608]
+        r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+2624]
@@ -2197,7 +2197,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2608]
+        r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+2624]
@@ -2680,7 +2680,7 @@ pub(crate) const VG_AES_CCM_SEAL_VAES_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ccm_seal_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2608]
+        r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+2624]
@@ -3084,7 +3084,7 @@ pub(crate) const VG_AES_CCM_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ccm_open_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2608]
+        r"lea rsp, [rsp-2608]
 mov rax, QWORD PTR [rsp+2616]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+2624]

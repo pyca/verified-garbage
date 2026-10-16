@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cfb64_encrypt(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #64
+        r"sub sp, sp, #64
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8
@@ -119,7 +119,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cfb64_decrypt(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #64
+        r"sub sp, sp, #64
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8

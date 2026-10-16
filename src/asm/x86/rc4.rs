@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-84]
+        r"lea esp, [esp-84]
 mov eax, DWORD PTR [esp+88]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+92]
@@ -1034,7 +1034,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-84]
+        r"lea esp, [esp-84]
 mov eax, DWORD PTR [esp+88]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+92]

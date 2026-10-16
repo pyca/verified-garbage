@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_iterate(key: *const [u8; 384], u: *const [u8; 64], n: u32, t: *mut [u8; 64], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        "add w2, w2, #0
+        r"add w2, w2, #0
 str x19, [x4, #640]
 str x20, [x4, #648]
 str x21, [x4, #656]
@@ -310,7 +310,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #3408
+        r"sub sp, sp, #3408
 add x7, sp, #0
 add x10, x4, #0
 add x4, x7, #0
@@ -684,7 +684,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA512_ITERATE_SHA3_FEATURES: crate::cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_iterate_sha3(key: *const [u8; 384], u: *const [u8; 64], n: u32, t: *mut [u8; 64], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 add w2, w2, #0
 str x19, [x4, #640]
 str x20, [x4, #648]
@@ -980,7 +980,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA512_SHA3_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_sha3(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 sub sp, sp, #3408
 add x7, sp, #0
 add x10, x4, #0

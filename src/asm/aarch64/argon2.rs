@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_argon2_compress(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "ldr x8, [x0, #0]
+        r"ldr x8, [x0, #0]
 ldr x9, [x1, #0]
 eor x8, x8, x9
 str x8, [x3, #0]
@@ -6313,7 +6313,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_argon2_hprime(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #840]
+        r"str x19, [x4, #840]
 str x20, [x4, #848]
 str x21, [x4, #856]
 str x22, [x4, #864]
@@ -6493,7 +6493,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "str x19, [sp, #-16]!
+        r"str x19, [sp, #-16]!
 str x20, [sp, #-16]!
 str x21, [sp, #-16]!
 str x22, [sp, #-16]!

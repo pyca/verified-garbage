@@ -23,7 +23,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_sign_random(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #256
+        r"sub sp, sp, #256
 add x15, sp, #40
 str x0, [x15, #0]
 add x15, sp, #48
@@ -346,7 +346,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_sign(out: *mut u8, out_len: usize, key: *const u8, key_len: usize, p_len: usize, nonce: *const u8, q_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x11, [sp, #8]
+        r"ldr x11, [sp, #8]
 movz x12, #0, lsl #0
 str x12, [x11, #296]
 str x0, [x11, #320]
@@ -53346,7 +53346,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_dsa_verify(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x11, [sp, #0]
+        r"ldr x11, [sp, #0]
 movz x12, #0, lsl #0
 str x12, [x11, #320]
 str x12, [x11, #304]

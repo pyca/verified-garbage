@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #512
+        r"sub sp, sp, #512
 add r3, sp, #0
 str r4, [r3, #0]
 str r5, [r3, #4]
@@ -2026,7 +2026,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_encrypt_block(schedule: *const [u8; 384], data: *mut [u8; 8], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "str r4, [r2, #0]
+        r"str r4, [r2, #0]
 str r5, [r2, #4]
 str r6, [r2, #8]
 str r7, [r2, #12]
@@ -8133,7 +8133,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_decrypt_block(schedule: *const [u8; 384], data: *mut [u8; 8], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "str r4, [r2, #0]
+        r"str r4, [r2, #0]
 str r5, [r2, #4]
 str r6, [r2, #8]
 str r7, [r2, #12]
@@ -14238,7 +14238,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1024
+        r"sub sp, sp, #1024
 add r3, sp, #0
 str lr, [r3, #512]
 mov r12, r3
@@ -14534,7 +14534,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1024
+        r"sub sp, sp, #1024
 add r3, sp, #0
 str lr, [r3, #512]
 mov r12, r3

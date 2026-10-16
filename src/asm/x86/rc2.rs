@@ -21,7 +21,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_cbc_init(key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-608]
+        r"lea esp, [esp-608]
 mov eax, DWORD PTR [esp+612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+616]
@@ -266,7 +266,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_cbc_encrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-608]
+        r"lea esp, [esp-608]
 mov eax, DWORD PTR [esp+612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+616]
@@ -553,7 +553,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_cbc_decrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-608]
+        r"lea esp, [esp-608]
 mov eax, DWORD PTR [esp+612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+616]
@@ -840,7 +840,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_cbc_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+264], ebp
 mov DWORD PTR [eax+268], ebx
 mov DWORD PTR [eax+272], esi
@@ -907,7 +907,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_cbc_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+264], ebp
 mov DWORD PTR [eax+268], ebx
 mov DWORD PTR [eax+272], esi
@@ -977,7 +977,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_expand_key(key: *const u8, key_len: usize, effective_bits: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax], ebp
 mov DWORD PTR [eax+4], ebx
 mov DWORD PTR [eax+8], esi
@@ -2285,7 +2285,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+12]
+        r"mov eax, DWORD PTR [esp+12]
 mov DWORD PTR [eax], ebp
 mov DWORD PTR [eax+4], ebx
 mov DWORD PTR [eax+8], esi
@@ -4790,7 +4790,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_decrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+12]
+        r"mov eax, DWORD PTR [esp+12]
 mov DWORD PTR [eax], ebp
 mov DWORD PTR [eax+4], ebx
 mov DWORD PTR [eax+8], esi

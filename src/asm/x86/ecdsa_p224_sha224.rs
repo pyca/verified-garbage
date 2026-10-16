@@ -22,7 +22,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p224_sha224_sign(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-196]
+        r"lea esp, [esp-196]
 mov DWORD PTR [esp+180], ebx
 mov DWORD PTR [esp+184], esi
 mov DWORD PTR [esp+188], edi
@@ -831,7 +831,7 @@ pub(crate) const VG_ECDSA_P224_SHA224_SIGN_SHANI_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p224_sha224_sign_shani(out: *mut [u8; 56], d: *const [u8; 28], digest: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-196]
+        r"lea esp, [esp-196]
 mov DWORD PTR [esp+180], ebx
 mov DWORD PTR [esp+184], esi
 mov DWORD PTR [esp+188], edi

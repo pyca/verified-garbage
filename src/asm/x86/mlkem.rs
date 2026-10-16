@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -67,7 +67,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -115,7 +115,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_encode12(f: *const [u32; 256], out: *mut [u8; 384]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -163,7 +163,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_decode12(b: *const [u8; 384], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -222,7 +222,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -297,7 +297,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -484,7 +484,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -672,7 +672,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -1261,7 +1261,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -1845,7 +1845,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_multiply_ntts(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -2200,7 +2200,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_sample_ntt(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp

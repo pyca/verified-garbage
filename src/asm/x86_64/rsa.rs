@@ -25,7 +25,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_public_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11d, 0
+        r"mov r11d, 0
 mov r10d, 0
 20:
 ror r11, 56
@@ -1504,7 +1504,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8], rbx
+        r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
 mov QWORD PTR [r8+16], r12
 mov QWORD PTR [r8+24], r13
@@ -1986,7 +1986,7 @@ pub(crate) const VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_public_precompute_adx(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8], rbx
+        r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
 mov QWORD PTR [r8+16], r12
 mov QWORD PTR [r8+24], r13
@@ -2521,7 +2521,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_public_precomputed_checked(out: *mut u8, out_len: usize, pre: *const u64, pre_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11d, 0
+        r"mov r11d, 0
 mov r10d, 0
 20:
 ror r11, 56
@@ -3520,7 +3520,7 @@ pub(crate) const VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES: crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_public_precomputed_checked_adx(out: *mut u8, out_len: usize, pre: *const u64, pre_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11d, 0
+        r"mov r11d, 0
 mov r10d, 0
 20:
 ror r11, 56
@@ -12803,7 +12803,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_private_crt(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+88]
+        r"mov r11, QWORD PTR [rsp+88]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -15530,7 +15530,7 @@ pub(crate) const VG_RSA_PRIVATE_CRT_ADX_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_private_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+88]
+        r"mov r11, QWORD PTR [rsp+88]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -18399,7 +18399,7 @@ pub(crate) const VG_RSA_PRIVATE_CRT_IFMA_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_private_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+88]
+        r"mov r11, QWORD PTR [rsp+88]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -34074,7 +34074,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+72]
+        r"mov r11, QWORD PTR [rsp+72]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -35571,7 +35571,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_recover_primes(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+40]
+        r"mov r11, QWORD PTR [rsp+40]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -37369,7 +37369,7 @@ pub(crate) const VG_RSA_RECOVER_PRIMES_ADX_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_recover_primes_adx(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+40]
+        r"mov r11, QWORD PTR [rsp+40]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -39167,7 +39167,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+88]
+        r"mov r11, QWORD PTR [rsp+88]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -40645,7 +40645,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_check_crt_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+72]
+        r"mov r11, QWORD PTR [rsp+72]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -41740,7 +41740,7 @@ pub(crate) const VG_RSA_PRIVATE_CHECKED_ADX_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_private_checked_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3240]
+        r"lea rsp, [rsp-3240]
 mov QWORD PTR [rsp+96], rdi
 mov QWORD PTR [rsp+104], rdx
 mov QWORD PTR [rsp+112], rcx
@@ -41887,7 +41887,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_private_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3240]
+        r"lea rsp, [rsp-3240]
 mov QWORD PTR [rsp+96], rdi
 mov QWORD PTR [rsp+104], rdx
 mov QWORD PTR [rsp+112], rcx
@@ -42038,7 +42038,7 @@ pub(crate) const VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_private_checked_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3240]
+        r"lea rsp, [rsp-3240]
 mov QWORD PTR [rsp+96], rdi
 mov QWORD PTR [rsp+104], rdx
 mov QWORD PTR [rsp+112], rcx

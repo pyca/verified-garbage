@@ -22,7 +22,7 @@ pub(crate) const VG_AES_OCB_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2568]
+        r"lea rsp, [rsp-2568]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx], rbx
@@ -81,7 +81,7 @@ pub(crate) const VG_AES_OCB_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3632]
+        r"lea rsp, [rsp-3632]
 mov rax, QWORD PTR [rsp+3640]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+3648]
@@ -894,7 +894,7 @@ pub(crate) const VG_AES_OCB_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3632]
+        r"lea rsp, [rsp-3632]
 mov rax, QWORD PTR [rsp+3640]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+3648]
@@ -1746,7 +1746,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2568]
+        r"lea rsp, [rsp-2568]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx], rbx
@@ -1801,7 +1801,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3632]
+        r"lea rsp, [rsp-3632]
 mov rax, QWORD PTR [rsp+3640]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+3648]
@@ -2610,7 +2610,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3632]
+        r"lea rsp, [rsp-3632]
 mov rax, QWORD PTR [rsp+3640]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+3648]
@@ -3466,7 +3466,7 @@ pub(crate) const VG_AES_OCB_INIT_VAES_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2568]
+        r"lea rsp, [rsp-2568]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx], rbx
@@ -3525,7 +3525,7 @@ pub(crate) const VG_AES_OCB_SEAL_VAES_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_seal_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3632]
+        r"lea rsp, [rsp-3632]
 mov rax, QWORD PTR [rsp+3640]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+3648]
@@ -4338,7 +4338,7 @@ pub(crate) const VG_AES_OCB_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ocb_open_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3632]
+        r"lea rsp, [rsp-3632]
 mov rax, QWORD PTR [rsp+3640]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+3648]

@@ -24,7 +24,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1720]
+        r"lea rsp, [rsp-1720]
 mov rax, QWORD PTR [rsp+1728]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -25876,7 +25876,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1720]
+        r"lea rsp, [rsp-1720]
 mov rax, QWORD PTR [rsp+1728]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -32984,7 +32984,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX2_FEATURES: crate::cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_split_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1736]
+        r"lea rsp, [rsp-1736]
 mov rax, QWORD PTR [rsp+1744]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+1752]
@@ -58949,7 +58949,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES: crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -59093,7 +59093,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1720]
+        r"lea rsp, [rsp-1720]
 mov rax, QWORD PTR [rsp+1728]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -85335,7 +85335,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1720]
+        r"lea rsp, [rsp-1720]
 mov rax, QWORD PTR [rsp+1728]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -92842,7 +92842,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES: crate::cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_split_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1736]
+        r"lea rsp, [rsp-1736]
 mov rax, QWORD PTR [rsp+1744]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+1752]
@@ -96261,7 +96261,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: crate::cpu::F
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+16]
+        r"mov rax, QWORD PTR [rsp+16]
 cmp rax, 1025
 jb 20f
 push rdi
@@ -96549,7 +96549,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES: crate::cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1720]
+        r"lea rsp, [rsp-1720]
 mov rax, QWORD PTR [rsp+1728]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -119940,7 +119940,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES: crate::cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1720]
+        r"lea rsp, [rsp-1720]
 mov rax, QWORD PTR [rsp+1728]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -126891,7 +126891,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512VL_FEATURES: crate::cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_split_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1736]
+        r"lea rsp, [rsp-1736]
 mov rax, QWORD PTR [rsp+1744]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+1752]
@@ -130311,7 +130311,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES: crate::cpu:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+16]
+        r"mov rax, QWORD PTR [rsp+16]
 cmp rax, 1025
 jb 20f
 push rdi
@@ -130597,7 +130597,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1720]
+        r"lea rsp, [rsp-1720]
 mov rax, QWORD PTR [rsp+1728]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -131054,7 +131054,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1720]
+        r"lea rsp, [rsp-1720]
 mov rax, QWORD PTR [rsp+1728]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -131524,7 +131524,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES: crate::cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_split_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1736]
+        r"lea rsp, [rsp-1736]
 mov rax, QWORD PTR [rsp+1744]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+1752]
@@ -134943,7 +134943,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+16]
+        r"mov rax, QWORD PTR [rsp+16]
 cmp rax, 961
 jb 20f
 push rdi
@@ -135243,7 +135243,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1720]
+        r"lea rsp, [rsp-1720]
 mov rax, QWORD PTR [rsp+1728]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -135654,7 +135654,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1720]
+        r"lea rsp, [rsp-1720]
 mov rax, QWORD PTR [rsp+1728]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -136078,7 +136078,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_split(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, src_len: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1736]
+        r"lea rsp, [rsp-1736]
 mov rax, QWORD PTR [rsp+1744]
 mov QWORD PTR [rsp+8], rax
 mov rax, QWORD PTR [rsp+1752]
@@ -136592,7 +136592,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx

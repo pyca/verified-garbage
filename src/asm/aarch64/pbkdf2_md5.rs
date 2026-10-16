@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5_iterate(key: *const [u8; 160], u: *const [u8; 16], n: u32, t: *mut [u8; 16], scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "add w2, w2, #0
+        r"add w2, w2, #0
 str x19, [x4, #64]
 str x20, [x4, #72]
 str x21, [x4, #80]
@@ -152,7 +152,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1024
+        r"sub sp, sp, #1024
 add x7, sp, #0
 add x10, x4, #0
 add x4, x7, #0

@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_cfb128_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #80
+        r"sub sp, sp, #80
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8
@@ -143,7 +143,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_cfb128_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #80
+        r"sub sp, sp, #80
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8

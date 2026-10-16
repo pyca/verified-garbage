@@ -21,7 +21,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_cfb64_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-332]
+        r"lea esp, [esp-332]
 mov eax, DWORD PTR [esp+336]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+340]
@@ -789,7 +789,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_cfb64_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-332]
+        r"lea esp, [esp-332]
 mov eax, DWORD PTR [esp+336]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+340]

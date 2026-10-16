@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_r32_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+928], ebx
 mov DWORD PTR [eax+932], ebp
 mov DWORD PTR [eax+936], edi
@@ -7256,7 +7256,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_r32_add_affine(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+928], ebx
 mov DWORD PTR [eax+932], ebp
 mov DWORD PTR [eax+936], edi
@@ -12774,7 +12774,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_r32_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+928], ebx
 mov DWORD PTR [eax+932], ebp
 mov DWORD PTR [eax+936], edi

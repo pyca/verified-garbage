@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_block(state: *const [u32; 16], buf: *mut [u32; 64]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rsi+144], rbx
+        r"mov QWORD PTR [rsi+144], rbx
 mov QWORD PTR [rsi+152], rbp
 mov QWORD PTR [rsi+160], r12
 mov QWORD PTR [rsi+168], r13
@@ -1205,7 +1205,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+256], rbx
+        r"mov QWORD PTR [rcx+256], rbx
 mov QWORD PTR [rcx+264], rbp
 mov QWORD PTR [rcx+272], r12
 mov rbx, rdi
@@ -1291,7 +1291,7 @@ pub(crate) const VG_CHACHA20_XOR_AVX2_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_xor_avx2(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "movabs rax, 0
+        r"movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
 mov QWORD PTR [rcx+232], rax
@@ -7161,7 +7161,7 @@ pub(crate) const VG_CHACHA20_XOR_AVX512_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_xor_avx512(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "movabs rax, 0
+        r"movabs rax, 0
 mov QWORD PTR [rcx+256], rax
 movabs rax, 0
 mov QWORD PTR [rcx+264], rax
@@ -11352,7 +11352,7 @@ pub(crate) const VG_CHACHA20_XOR_AVX512VL_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_xor_avx512vl(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "cmp rdx, 513
+        r"cmp rdx, 513
 jb 20f
 movabs rax, 0
 mov QWORD PTR [rcx+256], rax
@@ -19953,7 +19953,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsi]
+        r"mov rax, QWORD PTR [rsi]
 mov rcx, QWORD PTR [rsi+8]
 mov r8, QWORD PTR [rsi+16]
 mov r9, QWORD PTR [rsi+24]
@@ -19998,7 +19998,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsi]
+        r"mov rax, QWORD PTR [rsi]
 mov rcx, QWORD PTR [rsi+8]
 mov edx, DWORD PTR [rsi]
 mov QWORD PTR [rdi+48], rax
@@ -20045,7 +20045,7 @@ pub(crate) const VG_CHACHA20_XOR_SPLIT_AVX512_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_xor_split_avx512(state: *mut [u32; 16], src: *const u8, src_len: usize, dst: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "mov rax, r8
+        r"mov rax, r8
 shr rax, 10
 shl rax, 10
 mov r10, rdx
@@ -22887,7 +22887,7 @@ pub(crate) const VG_CHACHA20_APPLY_AVX2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rdi+128]
+        r"mov rax, QWORD PTR [rdi+128]
 cmp rax, rdx
 jb 20f
 mov QWORD PTR [rdi+576], rbx
@@ -23053,7 +23053,7 @@ pub(crate) const VG_CHACHA20_APPLY_AVX512_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rdi+128]
+        r"mov rax, QWORD PTR [rdi+128]
 cmp rax, rdx
 jb 20f
 mov QWORD PTR [rdi+576], rbx
@@ -23219,7 +23219,7 @@ pub(crate) const VG_CHACHA20_APPLY_AVX512VL_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512vl(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rdi+128]
+        r"mov rax, QWORD PTR [rdi+128]
 cmp rax, rdx
 jb 20f
 mov QWORD PTR [rdi+576], rbx
@@ -23385,7 +23385,7 @@ pub(crate) const VG_CHACHA20_APPLY_IFMA_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_ifma(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rdi+128]
+        r"mov rax, QWORD PTR [rdi+128]
 cmp rax, rdx
 jb 20f
 mov QWORD PTR [rdi+576], rbx
@@ -23547,7 +23547,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rdi+128]
+        r"mov rax, QWORD PTR [rdi+128]
 cmp rax, rdx
 jb 20f
 mov QWORD PTR [rdi+576], rbx

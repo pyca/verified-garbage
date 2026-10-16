@@ -22,7 +22,7 @@ pub(crate) const VG_AES_SIV_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2560
 add x3, sp, #0
 str x19, [x3, #2176]
@@ -77,7 +77,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2560
+        r"sub sp, sp, #2560
 add x3, sp, #0
 str x19, [x3, #2176]
 str x20, [x3, #2184]
@@ -136,7 +136,7 @@ pub(crate) const VG_AES_SIV_ENCRYPT_AES_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2576
 add x7, sp, #0
 str x19, [x7, #160]
@@ -516,7 +516,7 @@ pub(crate) const VG_AES_SIV_DECRYPT_AES_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aes(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2576
 add x7, sp, #0
 str x19, [x7, #160]
@@ -932,7 +932,7 @@ pub(crate) const VG_AES_SIV_ENCRYPT_AES_CBC_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_aes_cbc(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2576
 add x7, sp, #0
 str x19, [x7, #160]
@@ -1312,7 +1312,7 @@ pub(crate) const VG_AES_SIV_DECRYPT_AES_CBC_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aes_cbc(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2576
 add x7, sp, #0
 str x19, [x7, #160]
@@ -1724,7 +1724,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2576
+        r"sub sp, sp, #2576
 add x7, sp, #0
 str x19, [x7, #160]
 str x20, [x7, #168]
@@ -2098,7 +2098,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #2576
+        r"sub sp, sp, #2576
 add x7, sp, #0
 str x19, [x7, #160]
 str x20, [x7, #168]

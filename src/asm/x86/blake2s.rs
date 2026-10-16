@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2s_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+28]
+        r"mov eax, DWORD PTR [esp+28]
 mov DWORD PTR [eax+80], ebx
 mov DWORD PTR [eax+84], esi
 mov DWORD PTR [eax+88], edi
@@ -1089,7 +1089,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2s_init(state: *mut [u8; 96], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [esp+16]
 test ecx, ecx
 je 20f
@@ -1167,7 +1167,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-604]
+        r"lea esp, [esp-604]
 mov eax, DWORD PTR [esp+608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+612]
@@ -1350,7 +1350,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-600]
+        r"lea esp, [esp-600]
 mov eax, DWORD PTR [esp+604]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+608]
@@ -1460,7 +1460,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2s_update_scratch(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+512], ebx
 mov DWORD PTR [eax+516], esi
 mov DWORD PTR [eax+520], edi
@@ -1630,7 +1630,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2s_finalize_scratch(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+512], ebx
 mov DWORD PTR [eax+516], esi
 mov DWORD PTR [eax+520], edi

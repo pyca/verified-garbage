@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "ldr r3, [sp, #12]
+        r"ldr r3, [sp, #12]
 ldr r12, [sp, #0]
 str r12, [r3, #168]
 ldr r12, [sp, #4]
@@ -5290,7 +5290,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
-        "movw r12, #58983
+        r"movw r12, #58983
 movt r12, #27145
 str r12, [r0, #4]
 movw r12, #42811
@@ -5404,7 +5404,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #592
+        r"sub sp, sp, #592
 add r12, sp, #0
 str lr, [r12, #12]
 ldr lr, [sp, #592]
@@ -5577,7 +5577,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #592
+        r"sub sp, sp, #592
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #592]
@@ -5697,7 +5697,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #8]
+        r"ldr r12, [sp, #8]
 str r4, [r12, #512]
 str r5, [r12, #516]
 str r6, [r12, #520]
@@ -5861,7 +5861,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blake2b_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #4]
+        r"ldr r12, [sp, #4]
 str r4, [r12, #512]
 str r5, [r12, #516]
 str r6, [r12, #520]

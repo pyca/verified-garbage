@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #4008]
 str r5, [r12, #4012]
 str r6, [r12, #4016]
@@ -1354,7 +1354,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_add_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #4008]
 str r5, [r12, #4012]
 str r6, [r12, #4016]
@@ -1917,7 +1917,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_sub_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #4008]
 str r5, [r12, #4012]
 str r6, [r12, #4016]
@@ -2565,7 +2565,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #4008]
 str r5, [r12, #4012]
 str r6, [r12, #4016]
@@ -3901,7 +3901,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_add_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #4008]
 str r5, [r12, #4012]
 str r6, [r12, #4016]
@@ -4464,7 +4464,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_sub_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov r12, r0
+        r"mov r12, r0
 str r4, [r12, #4008]
 str r5, [r12, #4012]
 str r6, [r12, #4016]

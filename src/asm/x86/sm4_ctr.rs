@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ctr(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1472]
+        r"lea esp, [esp-1472]
 mov eax, DWORD PTR [esp+1476]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1480]

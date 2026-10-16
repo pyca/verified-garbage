@@ -14,7 +14,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "push {{r4}}
+        r"push {{r4}}
 cmp r1, r3
 beq 20f
 mov r0, #0

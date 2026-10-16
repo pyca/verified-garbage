@@ -27,7 +27,7 @@ pub(crate) const VG_MLDSA65_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa65_keygen_avx2(seed: *const [u8; 32], pk: *mut [u8; 1952], sk: *mut [u8; 4032], scratch: *mut [u64; 12928]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+840], rbx
+        r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
 mov QWORD PTR [rcx+856], r12
 mov QWORD PTR [rcx+864], r13
@@ -1391,7 +1391,7 @@ pub(crate) const VG_MLDSA65_SIGN_AVX2_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa65_sign_avx2(sk: *const [u8; 4032], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+840], rbx
+        r"mov QWORD PTR [r8+840], rbx
 mov QWORD PTR [r8+848], rbp
 mov QWORD PTR [r8+856], r12
 mov QWORD PTR [r8+864], r13
@@ -3262,7 +3262,7 @@ pub(crate) const VG_MLDSA65_SIGN_MESSAGE_AVX2_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa65_sign_message_avx2(sk: *const [u8; 4032], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
     core::arch::naked_asm!(
-        "cmp r8, 256
+        r"cmp r8, 256
 jb 20f
 mov eax, 2
 jmp 21f
@@ -3411,7 +3411,7 @@ pub(crate) const VG_MLDSA65_VERIFY_AVX2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa65_verify_avx2(pk: *const [u8; 1952], mu: *const [u8; 64], sig: *const [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+840], rbx
+        r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
 mov QWORD PTR [rcx+856], r12
 mov QWORD PTR [rcx+864], r13
@@ -4514,7 +4514,7 @@ pub(crate) const VG_MLDSA65_VERIFY_MESSAGE_AVX2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa65_verify_message_avx2(pk: *const [u8; 1952], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
     core::arch::naked_asm!(
-        "cmp r8, 256
+        r"cmp r8, 256
 jb 20f
 mov eax, 2
 jmp 21f
@@ -4715,7 +4715,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa65_keygen(seed: *const [u8; 32], pk: *mut [u8; 1952], sk: *mut [u8; 4032], scratch: *mut [u64; 12928]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+840], rbx
+        r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
 mov QWORD PTR [rcx+856], r12
 mov QWORD PTR [rcx+864], r13
@@ -6075,7 +6075,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa65_sign(sk: *const [u8; 4032], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+840], rbx
+        r"mov QWORD PTR [r8+840], rbx
 mov QWORD PTR [r8+848], rbp
 mov QWORD PTR [r8+856], r12
 mov QWORD PTR [r8+864], r13
@@ -7942,7 +7942,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa65_sign_message(sk: *const [u8; 4032], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
     core::arch::naked_asm!(
-        "cmp r8, 256
+        r"cmp r8, 256
 jb 20f
 mov eax, 2
 jmp 21f
@@ -8087,7 +8087,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa65_verify(pk: *const [u8; 1952], mu: *const [u8; 64], sig: *const [u8; 3309], scratch: *mut [u64; 12928]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+840], rbx
+        r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
 mov QWORD PTR [rcx+856], r12
 mov QWORD PTR [rcx+864], r13
@@ -9186,7 +9186,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa65_verify_message(pk: *const [u8; 1952], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 3309], scratch: *mut [u64; 13056]) -> u32 {
     core::arch::naked_asm!(
-        "cmp r8, 256
+        r"cmp r8, 256
 jb 20f
 mov eax, 2
 jmp 21f

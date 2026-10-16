@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1_iterate(key: *const [u8; 168], u: *const [u8; 20], n: u32, t: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+112], rbx
+        r"mov QWORD PTR [r8+112], rbx
 mov QWORD PTR [r8+120], rbp
 mov QWORD PTR [r8+128], r12
 mov QWORD PTR [r8+136], r13
@@ -175,7 +175,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1144]
+        r"lea rsp, [rsp-1144]
 mov rax, QWORD PTR [rsp+1152]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
@@ -356,7 +356,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA1_ITERATE_SHANI_FEATURES: crate::cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1_iterate_shani(key: *const [u8; 168], u: *const [u8; 20], n: u32, t: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+112], rbx
+        r"mov QWORD PTR [r8+112], rbx
 mov QWORD PTR [r8+120], rbp
 mov QWORD PTR [r8+128], r12
 mov QWORD PTR [r8+136], r13
@@ -517,7 +517,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_sha1_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1144]
+        r"lea rsp, [rsp-1144]
 mov rax, QWORD PTR [rsp+1152]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp

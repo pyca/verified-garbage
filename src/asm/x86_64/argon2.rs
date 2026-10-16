@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_compress(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rdi]
+        r"mov rax, QWORD PTR [rdi]
 xor rax, QWORD PTR [rsi]
 mov QWORD PTR [rcx], rax
 mov QWORD PTR [rcx+1024], rax
@@ -6060,7 +6060,7 @@ pub(crate) const VG_ARGON2_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_compress_avx2(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "stmxcsr DWORD PTR [rcx+2048]
+        r"stmxcsr DWORD PTR [rcx+2048]
 mov r11d, DWORD PTR [rcx+2048]
 and r11d, 65535
 mov eax, 8127
@@ -7580,7 +7580,7 @@ pub(crate) const VG_ARGON2_COMPRESS_AVX512_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_compress_avx512(x: *const [u64; 128], y: *const [u64; 128], out: *mut [u64; 128], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "stmxcsr DWORD PTR [rcx+2048]
+        r"stmxcsr DWORD PTR [rcx+2048]
 mov r11d, DWORD PTR [rcx+2048]
 and r11d, 65535
 mov eax, 8127
@@ -8290,7 +8290,7 @@ pub(crate) const VG_ARGON2_HPRIME_AVX2_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_hprime_avx2(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+840], rbp
+        r"mov QWORD PTR [r8+840], rbp
 mov QWORD PTR [r8+848], r12
 mov QWORD PTR [r8+856], r13
 mov QWORD PTR [r8+864], r14
@@ -8460,7 +8460,7 @@ pub(crate) const VG_ARGON2_HPRIME_AVX512_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_hprime_avx512(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+840], rbp
+        r"mov QWORD PTR [r8+840], rbp
 mov QWORD PTR [r8+848], r12
 mov QWORD PTR [r8+856], r13
 mov QWORD PTR [r8+864], r14
@@ -8626,7 +8626,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_hprime(input: *const u8, input_len: usize, out: *mut u8, out_len: usize, scratch: *mut [u64; 2048]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+840], rbp
+        r"mov QWORD PTR [r8+840], rbp
 mov QWORD PTR [r8+848], r12
 mov QWORD PTR [r8+856], r13
 mov QWORD PTR [r8+864], r14
@@ -8804,7 +8804,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX2_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx2_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push rbx
+        r"push rbx
 push rbp
 push r12
 push r13
@@ -11663,7 +11663,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX2_G_AVX512_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx2_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push rbx
+        r"push rbx
 push rbp
 push r12
 push r13
@@ -14522,7 +14522,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push rbx
+        r"push rbx
 push rbp
 push r12
 push r13
@@ -17381,7 +17381,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX2_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx512_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push rbx
+        r"push rbx
 push rbp
 push r12
 push r13
@@ -20240,7 +20240,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX512_G_AVX512_FEATURES: crate::cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx512_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push rbx
+        r"push rbx
 push rbp
 push r12
 push r13
@@ -23099,7 +23099,7 @@ pub(crate) const VG_ARGON2_BLAKE2B_AVX512_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_blake2b_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push rbx
+        r"push rbx
 push rbp
 push r12
 push r13
@@ -25958,7 +25958,7 @@ pub(crate) const VG_ARGON2_G_AVX2_FEATURES: crate::cpu::Features = crate::cpu::F
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_g_avx2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push rbx
+        r"push rbx
 push rbp
 push r12
 push r13
@@ -28817,7 +28817,7 @@ pub(crate) const VG_ARGON2_G_AVX512_FEATURES: crate::cpu::Features = crate::cpu:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2_g_avx512(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push rbx
+        r"push rbx
 push rbp
 push r12
 push r13
@@ -31672,7 +31672,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_argon2(kind: u32, password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, iterations: u32, memory_cost: u32, lanes: u32, threads: u32, secret: *const u8, secret_len: usize, associated_data: *const u8, ad_len: usize, memory: *mut [u64; 128], blocks: usize, scratch: *mut [u64; 2048], out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push rbx
+        r"push rbx
 push rbp
 push r12
 push r13

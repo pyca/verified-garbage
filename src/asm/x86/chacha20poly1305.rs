@@ -22,7 +22,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-740]
+        r"lea esp, [esp-740]
 mov eax, DWORD PTR [esp+744]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+748]
@@ -459,7 +459,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-740]
+        r"lea esp, [esp-740]
 mov eax, DWORD PTR [esp+744]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+748]
@@ -915,7 +915,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-48]
+        r"lea esp, [esp-48]
 mov DWORD PTR [esp+36], ebx
 mov DWORD PTR [esp+40], esi
 mov DWORD PTR [esp+44], edi
@@ -1008,7 +1008,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-740]
+        r"lea esp, [esp-740]
 mov eax, DWORD PTR [esp+744]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+748]
@@ -1449,7 +1449,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-740]
+        r"lea esp, [esp-740]
 mov eax, DWORD PTR [esp+744]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+748]
@@ -1909,7 +1909,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: crate::cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-48]
+        r"lea esp, [esp-48]
 mov DWORD PTR [esp+36], ebx
 mov DWORD PTR [esp+40], esi
 mov DWORD PTR [esp+44], edi

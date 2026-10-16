@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf25519_r16_mul(ws: *mut [u64; 512], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "str r4, [r0, #1600]
+        r"str r4, [r0, #1600]
 str r5, [r0, #1604]
 str r6, [r0, #1608]
 str r7, [r0, #1612]
@@ -428,7 +428,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf25519_r16_pow250(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str r4, [r0, #1600]
+        r"str r4, [r0, #1600]
 str r5, [r0, #1604]
 str r6, [r0, #1608]
 str r7, [r0, #1612]

@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdh_p384(out: *mut [u8; 48], d: *const [u8; 48], peer: *const [u8; 97], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "add x4, x3, #0
+        r"add x4, x3, #0
 add x6, x2, #0
 add x3, x1, #0
 add x2, x2, #1

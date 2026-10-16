@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5_iterate(key: *const [u8; 160], u: *const [u8; 16], n: u32, t: *mut [u8; 16], scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+64], rbx
+        r"mov QWORD PTR [r8+64], rbx
 mov QWORD PTR [r8+72], rbp
 mov QWORD PTR [r8+80], r12
 mov QWORD PTR [r8+88], r13
@@ -152,7 +152,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1048]
+        r"lea rsp, [rsp-1048]
 mov rax, QWORD PTR [rsp+1056]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp

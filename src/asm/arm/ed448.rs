@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push {{lr}}
+        r"push {{lr}}
 push {{r12}}
 sub sp, sp, #24
 sub sp, sp, #248
@@ -328,7 +328,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_scalar_reduce(out: *mut [u8; 57], wide: *const [u8; 114], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str r4, [r2, #0]
+        r"str r4, [r2, #0]
 str r5, [r2, #4]
 str r6, [r2, #8]
 str r7, [r2, #12]
@@ -1051,7 +1051,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_scalar_mul_add(out: *mut [u8; 57], r: *const [u8; 57], k: *const [u8; 57], s: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #0]
 str r5, [r12, #4]
 str r6, [r12, #8]
@@ -4283,7 +4283,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_scalar_base(out: *mut [u8; 57], scalar: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov r3, r2
+        r"mov r3, r2
 str r4, [r3, #0]
 str r5, [r3, #4]
 str r6, [r3, #8]
@@ -7432,7 +7432,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push {{lr}}
+        r"push {{lr}}
 push {{r12}}
 sub sp, sp, #24
 sub sp, sp, #248
@@ -8078,7 +8078,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "lsr r12, r2, #8
+        r"lsr r12, r2, #8
 cmp r12, #0
 beq 20f
 movw r0, #0
@@ -8302,7 +8302,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_verify_equation(pk: *const [u8; 57], signature: *const [u8; 114], challenge: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r3, #0]
+        r"str r4, [r3, #0]
 str r5, [r3, #4]
 str r6, [r3, #8]
 str r7, [r3, #12]

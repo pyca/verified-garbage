@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p192_sha256_sign(out: *mut [u8; 48], d: *const [u8; 24], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 sub sp, sp, #224
 add x15, sp, #0
 str x0, [x15, #208]
@@ -453,7 +453,7 @@ pub(crate) const VG_ECDSA_P192_SHA256_SIGN_SHA2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p192_sha256_sign_sha2(out: *mut [u8; 48], d: *const [u8; 24], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x30, [sp, #-16]!
 sub sp, sp, #224
 add x15, sp, #0

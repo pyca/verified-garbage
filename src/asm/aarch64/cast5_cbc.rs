@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_cbc_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #112
+        r"sub sp, sp, #112
 add x5, sp, #0
 add x5, x5, #0
 str x19, [x5, #8]
@@ -97,7 +97,7 @@ lsr w14, w4, #24
 mov v0.s[3], w14",
         concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
         concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        "movz x11, #64, lsl #0
+        r"movz x11, #64, lsl #0
 movi v1.2d, #0
 movi v2.2d, #0
 cmeq v3.4s, v3.4s, v3.4s
@@ -177,7 +177,7 @@ lsr w14, w4, #24
 mov v0.s[3], w14",
         concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
         concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        "movz x11, #64, lsl #0
+        r"movz x11, #64, lsl #0
 movi v1.2d, #0
 movi v2.2d, #0
 cmeq v3.4s, v3.4s, v3.4s
@@ -257,7 +257,7 @@ lsr w14, w4, #24
 mov v0.s[3], w14",
         concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
         concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        "movz x11, #64, lsl #0
+        r"movz x11, #64, lsl #0
 movi v1.2d, #0
 movi v2.2d, #0
 cmeq v3.4s, v3.4s, v3.4s
@@ -342,7 +342,7 @@ lsr w14, w4, #24
 mov v0.s[3], w14",
         concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
         concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        "movz x11, #64, lsl #0
+        r"movz x11, #64, lsl #0
 movi v1.2d, #0
 movi v2.2d, #0
 cmeq v3.4s, v3.4s, v3.4s
@@ -455,7 +455,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_cbc_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #112
+        r"sub sp, sp, #112
 add x5, sp, #0
 add x5, x5, #0
 str x19, [x5, #8]
@@ -547,7 +547,7 @@ lsr w14, w4, #24
 mov v0.s[3], w14",
         concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
         concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        "movz x11, #64, lsl #0
+        r"movz x11, #64, lsl #0
 movi v1.2d, #0
 movi v2.2d, #0
 cmeq v3.4s, v3.4s, v3.4s
@@ -629,7 +629,7 @@ lsr w14, w4, #24
 mov v0.s[3], w14",
         concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
         concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        "movz x11, #64, lsl #0
+        r"movz x11, #64, lsl #0
 movi v1.2d, #0
 movi v2.2d, #0
 cmeq v3.4s, v3.4s, v3.4s
@@ -709,7 +709,7 @@ lsr w14, w4, #24
 mov v0.s[3], w14",
         concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
         concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        "movz x11, #64, lsl #0
+        r"movz x11, #64, lsl #0
 movi v1.2d, #0
 movi v2.2d, #0
 cmeq v3.4s, v3.4s, v3.4s
@@ -789,7 +789,7 @@ lsr w14, w4, #24
 mov v0.s[3], w14",
         concat!("adrp x10, ", vg_sym_page!("{VG_CAST5_S1234}")),
         concat!("add x10, x10, ", vg_sym_pageoff!("{VG_CAST5_S1234}")),
-        "movz x11, #64, lsl #0
+        r"movz x11, #64, lsl #0
 movi v1.2d, #0
 movi v2.2d, #0
 cmeq v3.4s, v3.4s, v3.4s

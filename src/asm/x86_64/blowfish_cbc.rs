@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blowfish_cbc_encrypt(schedule: *const [u8; 4168], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-96]
+        r"lea rsp, [rsp-96]
 mov r8, rsp
 add r8, 8
 mov r9, r8
@@ -574,7 +574,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blowfish_cbc_decrypt(schedule: *const [u8; 4168], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-96]
+        r"lea rsp, [rsp-96]
 mov r8, rsp
 add r8, 8
 mov r9, r8

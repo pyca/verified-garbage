@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
     core::arch::naked_asm!(
-        "str r4, [r3, #192]
+        r"str r4, [r3, #192]
 str r5, [r3, #196]
 str r6, [r3, #200]
 str r7, [r3, #204]
@@ -8923,7 +8923,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "movw r12, #40664
+        r"movw r12, #40664
 movt r12, #49413
 str r12, [r0, #0]
 movw r12, #40285
@@ -8986,7 +8986,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "movw r12, #51464
+        r"movw r12, #51464
 movt r12, #62396
 str r12, [r0, #0]
 movw r12, #58983
@@ -9049,7 +9049,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "movw r12, #19874
+        r"movw r12, #19874
 movt r12, #6484
 str r12, [r0, #0]
 movw r12, #14280
@@ -9112,7 +9112,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "movw r12, #63276
+        r"movw r12, #63276
 movt r12, #64555
 str r12, [r0, #0]
 movw r12, #8596
@@ -9177,7 +9177,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1392
+        r"sub sp, sp, #1392
 add r12, sp, #0
 str lr, [r12, #12]
 ldr lr, [sp, #1392]
@@ -9329,7 +9329,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1392
+        r"sub sp, sp, #1392
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #1392]
@@ -9479,7 +9479,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #8]
+        r"ldr r12, [sp, #8]
 str r4, [r12, #224]
 str r5, [r12, #228]
 str r6, [r12, #232]
@@ -9622,7 +9622,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #4]
+        r"ldr r12, [sp, #4]
 str r4, [r12, #224]
 str r5, [r12, #228]
 str r6, [r12, #232]
@@ -9763,7 +9763,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1392
+        r"sub sp, sp, #1392
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #1392]
@@ -9901,7 +9901,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1392
+        r"sub sp, sp, #1392
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #1392]
@@ -10027,7 +10027,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1392
+        r"sub sp, sp, #1392
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #1392]

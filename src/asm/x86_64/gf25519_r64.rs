@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_gf25519_r64_invert(ws: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbx
+        r"movq xmm0, rbx
 movq xmm1, rbp
 movq xmm2, r12
 movq xmm3, r13

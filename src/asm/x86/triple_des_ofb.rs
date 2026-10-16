@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_ofb(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-968]
+        r"lea esp, [esp-968]
 mov eax, DWORD PTR [esp+972]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+976]

@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_secp256k1_mul(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x0, #1760]
+        r"str x19, [x0, #1760]
 movz x19, #32, lsl #0
 movz x5, #1, lsl #0
 20:

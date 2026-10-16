@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1896]
+        r"lea esp, [esp-1896]
 mov eax, DWORD PTR [esp+1900]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1904]
@@ -246,7 +246,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1900]
+        r"lea esp, [esp-1900]
 mov eax, DWORD PTR [esp+1904]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1908]
@@ -473,7 +473,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+272], ebx
 mov DWORD PTR [eax+276], esi
 mov DWORD PTR [eax+280], edi
@@ -689,7 +689,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+272], ebx
 mov DWORD PTR [eax+276], esi
 mov DWORD PTR [eax+280], edi

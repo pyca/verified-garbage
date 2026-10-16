@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5_iterate(key: *const [u8; 160], u: *const [u8; 16], n: u32, t: *mut [u8; 16], scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi
@@ -172,7 +172,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1060]
+        r"lea esp, [esp-1060]
 mov eax, DWORD PTR [esp+1064]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1068]

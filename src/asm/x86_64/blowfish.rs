@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blowfish_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-40]
+        r"lea rsp, [rsp-40]
 mov rcx, rsp
 add rcx, 8
 movabs r11, -7402344464777499482
@@ -2080,7 +2080,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blowfish_ecb_encrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-264]
+        r"lea rsp, [rsp-264]
 mov rcx, rsp
 add rcx, 8
 movabs r11, 281479271743489
@@ -2584,7 +2584,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blowfish_ecb_decrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-264]
+        r"lea rsp, [rsp-264]
 mov rcx, rsp
 add rcx, 8
 movabs r11, 281479271743489

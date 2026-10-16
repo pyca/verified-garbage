@@ -21,7 +21,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_mont_mul(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "movz x7, #5, lsl #0
+        r"movz x7, #5, lsl #0
 eor w5, w2, w7
 eor w6, w3, w7
 orr w5, w5, w6

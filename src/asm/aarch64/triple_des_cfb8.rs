@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_cfb8_encrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1008
+        r"sub sp, sp, #1008
 add x4, sp, #0
 add x5, x4, #0
 str x19, [x5, #904]
@@ -326,7 +326,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_cfb8_decrypt(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1008
+        r"sub sp, sp, #1008
 add x4, sp, #0
 add x5, x4, #0
 str x19, [x5, #904]

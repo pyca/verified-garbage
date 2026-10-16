@@ -23,7 +23,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2592
+        r"sub sp, sp, #2592
 add r12, sp, #0
 str lr, [r12, #28]
 ldr lr, [sp, #2592]
@@ -407,7 +407,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #2592
+        r"sub sp, sp, #2592
 add r12, sp, #0
 str lr, [r12, #28]
 ldr lr, [sp, #2592]

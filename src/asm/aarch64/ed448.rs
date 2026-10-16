@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_scalar_reduce(out: *mut [u8; 57], wide: *const [u8; 114], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x2, #0]
+        r"str x19, [x2, #0]
 str x20, [x2, #8]
 str x21, [x2, #16]
 str x22, [x2, #24]
@@ -149,7 +149,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_scalar_mul_add(out: *mut [u8; 57], r: *const [u8; 57], k: *const [u8; 57], s: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #0]
+        r"str x19, [x4, #0]
 str x20, [x4, #8]
 str x21, [x4, #16]
 str x22, [x4, #24]
@@ -868,7 +868,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_scalar_base(out: *mut [u8; 57], scalar: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "add x3, x2, #0
+        r"add x3, x2, #0
 movz x12, #65535, lsl #0
 movk x12, #4095, lsl #16
 str x19, [x3, #0]
@@ -3018,7 +3018,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_verify_equation(pk: *const [u8; 57], signature: *const [u8; 114], challenge: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "movz x12, #65535, lsl #0
+        r"movz x12, #65535, lsl #0
 movk x12, #4095, lsl #16
 str x19, [x3, #0]
 str x20, [x3, #8]
@@ -9667,7 +9667,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 sub sp, sp, #320
 add x15, sp, #256
 str x0, [x15, #0]
@@ -9901,7 +9901,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 sub sp, sp, #320
 add x15, sp, #256
 str x0, [x15, #0]
@@ -10322,7 +10322,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "lsr x9, x2, #8
+        r"lsr x9, x2, #8
 cbz x9, 20f
 movz x0, #0, lsl #0
 b 21f
@@ -10495,7 +10495,7 @@ pub(crate) const VG_ED448_PUBLIC_KEY_SHA3_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_public_key_sha3(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x30, [sp, #-16]!
 sub sp, sp, #320
 add x15, sp, #256
@@ -10735,7 +10735,7 @@ pub(crate) const VG_ED448_SIGN_CACHED_SHA3_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_sign_cached_sha3(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x30, [sp, #-16]!
 sub sp, sp, #320
 add x15, sp, #256
@@ -11162,7 +11162,7 @@ pub(crate) const VG_ED448_VERIFY_SHA3_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_verify_sha3(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 lsr x9, x2, #8
 cbz x9, 20f
 movz x0, #0, lsl #0

@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #752
+        r"sub sp, sp, #752
 add r2, sp, #0
 str r4, [r2, #704]
 str r5, [r2, #708]
@@ -3134,7 +3134,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #752
+        r"sub sp, sp, #752
 add r3, sp, #0
 str r4, [r3, #704]
 str r5, [r3, #708]
@@ -7926,7 +7926,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #752
+        r"sub sp, sp, #752
 add r3, sp, #0
 str r4, [r3, #704]
 str r5, [r3, #708]

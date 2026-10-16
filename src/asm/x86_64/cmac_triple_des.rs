@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_init(key: *const u8, key_len: usize, out: *mut [u8; 400]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-648]
+        r"lea rsp, [rsp-648]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+48], rbx
@@ -3948,7 +3948,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_update(schedule: *const [u8; 384], state: *mut [u8; 8], data: *const [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-648]
+        r"lea rsp, [rsp-648]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+48], rbx
@@ -4950,7 +4950,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_triple_des_finalize(key: *const [u8; 400], state: *mut [u8; 8], last: *const u8, last_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-648]
+        r"lea rsp, [rsp-648]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+48], rbx

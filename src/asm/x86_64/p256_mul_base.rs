@@ -21,7 +21,7 @@ pub(crate) const VG_P256_MUL_BASE_ADX_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p256_mul_base_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+992], rbx
+        r"mov QWORD PTR [rdi+992], rbx
 mov QWORD PTR [rdi+1000], rbp
 mov QWORD PTR [rdi+1008], r12
 mov QWORD PTR [rdi+1016], r13

@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_ofb(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-208]
+        r"lea esp, [esp-208]
 mov eax, DWORD PTR [esp+212]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+216]

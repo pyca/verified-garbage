@@ -25,7 +25,7 @@ pub(crate) const VG_AES_XTS_ENCRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "test r8, r8
+        r"test r8, r8
 je 20f
 mov r11, rcx
 mov rax, r8
@@ -341,7 +341,7 @@ pub(crate) const VG_AES_XTS_DECRYPT_VAES_VPCLMUL_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "test r8, r8
+        r"test r8, r8
 je 20f
 mov r11, rcx
 mov rax, r8
@@ -706,7 +706,7 @@ pub(crate) const VG_AES_XTS_ENCRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "test r8, r8
+        r"test r8, r8
 je 20f
 mov r11, rcx
 mov rax, r8
@@ -1122,7 +1122,7 @@ pub(crate) const VG_AES_XTS_DECRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "test r8, r8
+        r"test r8, r8
 je 20f
 mov r11, rcx
 mov rax, r8
@@ -1587,7 +1587,7 @@ pub(crate) const VG_AES_XTS_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx
+        r"mov QWORD PTR [r9+2064], rbx
 mov QWORD PTR [r9+2072], rbp
 mov QWORD PTR [r9+2080], r12
 mov QWORD PTR [r9+2088], r13
@@ -1689,7 +1689,7 @@ pub(crate) const VG_AES_XTS_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx
+        r"mov QWORD PTR [r9+2064], rbx
 mov QWORD PTR [r9+2072], rbp
 mov QWORD PTR [r9+2080], r12
 mov QWORD PTR [r9+2088], r13
@@ -1787,7 +1787,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx
+        r"mov QWORD PTR [r9+2064], rbx
 mov QWORD PTR [r9+2072], rbp
 mov QWORD PTR [r9+2080], r12
 mov QWORD PTR [r9+2088], r13
@@ -1885,7 +1885,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx
+        r"mov QWORD PTR [r9+2064], rbx
 mov QWORD PTR [r9+2072], rbp
 mov QWORD PTR [r9+2080], r12
 mov QWORD PTR [r9+2088], r13
@@ -1987,7 +1987,7 @@ pub(crate) const VG_AES_XTS_ENCRYPT_VAES_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_vaes(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx
+        r"mov QWORD PTR [r9+2064], rbx
 mov QWORD PTR [r9+2072], rbp
 mov QWORD PTR [r9+2080], r12
 mov QWORD PTR [r9+2088], r13
@@ -2089,7 +2089,7 @@ pub(crate) const VG_AES_XTS_DECRYPT_VAES_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_vaes(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx
+        r"mov QWORD PTR [r9+2064], rbx
 mov QWORD PTR [r9+2072], rbp
 mov QWORD PTR [r9+2080], r12
 mov QWORD PTR [r9+2088], r13

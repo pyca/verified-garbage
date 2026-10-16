@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_224_iterate(key: *const [u8; 384], u: *const [u8; 28], n: u32, t: *mut [u8; 28], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+272], ebx
 mov DWORD PTR [eax+276], esi
 mov DWORD PTR [eax+280], edi
@@ -377,7 +377,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_224(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-3444]
+        r"lea esp, [esp-3444]
 mov eax, DWORD PTR [esp+3448]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+3452]

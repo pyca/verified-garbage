@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha384_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1872
+        r"sub sp, sp, #1872
 add x4, sp, #0
 str x19, [x4, #688]
 str x20, [x4, #696]
@@ -223,7 +223,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1872
+        r"sub sp, sp, #1872
 add x4, sp, #0
 str x19, [x4, #688]
 str x20, [x4, #696]
@@ -411,7 +411,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha384_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #688]
+        r"str x19, [x4, #688]
 str x20, [x4, #696]
 str x21, [x4, #704]
 str x22, [x4, #712]
@@ -616,7 +616,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #688]
+        r"str x19, [x4, #688]
 str x20, [x4, #696]
 str x21, [x4, #704]
 str x22, [x4, #712]
@@ -803,7 +803,7 @@ pub(crate) const VG_HMAC_SHA384_INIT_SHA3_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha384_init_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 sub sp, sp, #1872
 add x4, sp, #0
 str x19, [x4, #688]
@@ -1015,7 +1015,7 @@ pub(crate) const VG_HMAC_SHA384_FINALIZE_SHA3_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 sub sp, sp, #1872
 add x4, sp, #0
 str x19, [x4, #688]
@@ -1209,7 +1209,7 @@ pub(crate) const VG_HMAC_SHA384_INIT_SCRATCH_SHA3_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha384_init_scratch_sha3(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x19, [x4, #688]
 str x20, [x4, #696]
 str x21, [x4, #704]
@@ -1420,7 +1420,7 @@ pub(crate) const VG_HMAC_SHA384_FINALIZE_SCRATCH_SHA3_FEATURES: crate::cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha384_finalize_scratch_sha3(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 48], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x19, [x4, #688]
 str x20, [x4, #696]
 str x21, [x4, #704]

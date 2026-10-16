@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2708]
+        r"lea esp, [esp-2708]
 mov eax, DWORD PTR [esp+2712]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2716]
@@ -5512,7 +5512,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2712]
+        r"lea esp, [esp-2712]
 mov eax, DWORD PTR [esp+2716]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2720]
@@ -14737,7 +14737,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2712]
+        r"lea esp, [esp-2712]
 mov eax, DWORD PTR [esp+2716]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2720]

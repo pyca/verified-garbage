@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_triple_des_init(key: *const u8, key_len: usize, out: *mut [u8; 400]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #640
+        r"sub sp, sp, #640
 add r3, sp, #0
 str r4, [r3, #52]
 str r5, [r3, #56]
@@ -3584,7 +3584,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 384], state: *mut [u8; 8], data: *const [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #648
+        r"sub sp, sp, #648
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8
@@ -4923,7 +4923,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_triple_des_finalize(key: *const [u8; 400], state: *mut [u8; 8], last: *const u8, last_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #648
+        r"sub sp, sp, #648
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8

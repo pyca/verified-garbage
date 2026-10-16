@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_compress(state: *mut [u32; 4], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 8]) {
     core::arch::naked_asm!(
-        "cbz x2, 20f
+        r"cbz x2, 20f
 22:
 ldr w4, [x0, #0]
 ldr w5, [x0, #4]
@@ -763,7 +763,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
-        "movz w9, #8961, lsl #0
+        r"movz w9, #8961, lsl #0
 movk w9, #26437, lsl #16
 str w9, [x0, #0]
 movz w9, #43913, lsl #0
@@ -793,7 +793,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #112
+        r"sub sp, sp, #112
 add x4, sp, #0
 str x30, [sp, #-16]!
 str x19, [x4, #64]
@@ -963,7 +963,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #112
+        r"sub sp, sp, #112
 add x3, sp, #0
 str x30, [sp, #-16]!
 str x19, [x3, #64]
@@ -1068,7 +1068,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_update_scratch(state: *mut [u8; 80], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 str x19, [x4, #64]
 str x20, [x4, #72]
 str x21, [x4, #80]
@@ -1237,7 +1237,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_finalize_scratch(state: *mut [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 str x19, [x3, #64]
 str x20, [x3, #72]
 str x21, [x3, #80]

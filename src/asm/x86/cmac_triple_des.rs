@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_triple_des_init(key: *const u8, key_len: usize, out: *mut [u8; 400]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-660]
+        r"lea esp, [esp-660]
 mov eax, DWORD PTR [esp+664]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+668]
@@ -3834,7 +3834,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 384], state: *mut [u8; 8], data: *const [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-664]
+        r"lea esp, [esp-664]
 mov eax, DWORD PTR [esp+668]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+672]
@@ -5001,7 +5001,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_triple_des_finalize(key: *const [u8; 400], state: *mut [u8; 8], last: *const u8, last_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-664]
+        r"lea esp, [esp-664]
 mov eax, DWORD PTR [esp+668]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+672]

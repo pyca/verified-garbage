@@ -22,7 +22,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p521_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const [u8; 66], k: *const [u8; 66], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #0]
 str r5, [r12, #4]
 str r6, [r12, #8]
@@ -3419,7 +3419,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p521_verify(public: *const [u8; 133], digest: *const [u8; 66], sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov r12, r3
+        r"mov r12, r3
 str r4, [r12, #0]
 str r5, [r12, #4]
 str r6, [r12, #8]

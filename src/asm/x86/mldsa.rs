@@ -21,7 +21,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -918,7 +918,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -1803,7 +1803,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -1873,7 +1873,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -1946,7 +1946,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -1994,7 +1994,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -2043,7 +2043,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -2156,7 +2156,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -2471,7 +2471,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -2864,7 +2864,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -2940,7 +2940,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -3007,7 +3007,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -3140,7 +3140,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -3194,7 +3194,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -3271,7 +3271,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -3359,7 +3359,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -3413,7 +3413,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -3539,7 +3539,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -3659,7 +3659,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -3797,7 +3797,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -4025,7 +4025,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -4222,7 +4222,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp

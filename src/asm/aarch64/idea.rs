@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
     core::arch::naked_asm!(
-        "ldr x9, [x0, #0]
+        r"ldr x9, [x0, #0]
 ror x9, x9, #8
 movz x10, #255, lsl #0
 movk x10, #255, lsl #16
@@ -458,7 +458,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
     core::arch::naked_asm!(
-        "movz x15, #65535, lsl #0
+        r"movz x15, #65535, lsl #0
 ldr w5, [x0, #96]
 add x6, x5, #0
 movz x7, #15, lsl #0
@@ -1379,7 +1379,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "cbz x2, 20f
+        r"cbz x2, 20f
 movz x15, #65535, lsl #0
 22:
 ldrb w3, [x1, #0]

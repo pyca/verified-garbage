@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, rsi
+        r"mov rax, rsi
 sub rax, 1
 cmp rax, 256
 jae 20f
@@ -629,7 +629,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "movzx ecx, BYTE PTR [rdi+256]
+        r"movzx ecx, BYTE PTR [rdi+256]
 movzx r8d, BYTE PTR [rdi+257]
 test rdx, rdx
 je 20f

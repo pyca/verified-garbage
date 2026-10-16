@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_brainpoolp384r1_sha384_sign(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #216
+        r"sub sp, sp, #216
 add r12, sp, #0
 str r4, [r12, #180]
 str r5, [r12, #184]

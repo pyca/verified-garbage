@@ -29,7 +29,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2856]
+        r"lea esp, [esp-2856]
 mov eax, DWORD PTR [esp+2860]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2864]
@@ -799,7 +799,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2856]
+        r"lea esp, [esp-2856]
 mov eax, DWORD PTR [esp+2860]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2864]
@@ -1597,7 +1597,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2856]
+        r"lea esp, [esp-2856]
 mov eax, DWORD PTR [esp+2860]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2864]
@@ -2367,7 +2367,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2856]
+        r"lea esp, [esp-2856]
 mov eax, DWORD PTR [esp+2860]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2864]
@@ -3165,7 +3165,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2856]
+        r"lea esp, [esp-2856]
 mov eax, DWORD PTR [esp+2860]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2864]
@@ -3935,7 +3935,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2856]
+        r"lea esp, [esp-2856]
 mov eax, DWORD PTR [esp+2860]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2864]
@@ -4729,7 +4729,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2856]
+        r"lea esp, [esp-2856]
 mov eax, DWORD PTR [esp+2860]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2864]
@@ -5495,7 +5495,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2856]
+        r"lea esp, [esp-2856]
 mov eax, DWORD PTR [esp+2860]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2864]

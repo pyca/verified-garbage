@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_init(state: *mut [u8; 192], outlen: usize, key: *const u8, keylen: usize) {
     core::arch::naked_asm!(
-        "movabs rax, -4942790177534073029
+        r"movabs rax, -4942790177534073029
 mov QWORD PTR [rdi+8], rax
 movabs rax, 4354685564936845355
 mov QWORD PTR [rdi+16], rax
@@ -89,7 +89,7 @@ pub(crate) const VG_BLAKE2B_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_compress_avx2(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov r8d, r8d
+        r"mov r8d, r8d
 movabs rax, 144396693218329603
 vmovq xmm14, rax
 movabs rax, 723118075922942987
@@ -987,7 +987,7 @@ pub(crate) const VG_BLAKE2B_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-584]
+        r"lea rsp, [rsp-584]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+512], rbx
@@ -1132,7 +1132,7 @@ pub(crate) const VG_BLAKE2B_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-584]
+        r"lea rsp, [rsp-584]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+512], rbx
@@ -1226,7 +1226,7 @@ pub(crate) const VG_BLAKE2B_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_scratch_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+512], rbx
+        r"mov QWORD PTR [r8+512], rbx
 mov QWORD PTR [r8+520], rbp
 mov QWORD PTR [r8+528], r12
 mov QWORD PTR [r8+536], r13
@@ -1369,7 +1369,7 @@ pub(crate) const VG_BLAKE2B_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_scratch_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+512], rbx
+        r"mov QWORD PTR [rcx+512], rbx
 mov QWORD PTR [rcx+520], rbp
 mov QWORD PTR [rcx+528], r12
 mov QWORD PTR [rcx+536], r13
@@ -1458,7 +1458,7 @@ pub(crate) const VG_BLAKE2B_COMPRESS_AVX512_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_compress_avx512(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov r8d, r8d
+        r"mov r8d, r8d
 movabs rax, 7640891576956012808
 vmovq xmm11, rax
 movabs rax, -4942790177534073029
@@ -2296,7 +2296,7 @@ pub(crate) const VG_BLAKE2B_UPDATE_AVX512_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_avx512(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-584]
+        r"lea rsp, [rsp-584]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+512], rbx
@@ -2441,7 +2441,7 @@ pub(crate) const VG_BLAKE2B_FINALIZE_AVX512_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_avx512(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-584]
+        r"lea rsp, [rsp-584]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+512], rbx
@@ -2535,7 +2535,7 @@ pub(crate) const VG_BLAKE2B_UPDATE_SCRATCH_AVX512_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_scratch_avx512(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+512], rbx
+        r"mov QWORD PTR [r8+512], rbx
 mov QWORD PTR [r8+520], rbp
 mov QWORD PTR [r8+528], r12
 mov QWORD PTR [r8+536], r13
@@ -2678,7 +2678,7 @@ pub(crate) const VG_BLAKE2B_FINALIZE_SCRATCH_AVX512_FEATURES: crate::cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_scratch_avx512(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+512], rbx
+        r"mov QWORD PTR [rcx+512], rbx
 mov QWORD PTR [rcx+520], rbp
 mov QWORD PTR [rcx+528], r12
 mov QWORD PTR [rcx+536], r13
@@ -2763,7 +2763,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, t: u64, last: u32, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+296], rbx
+        r"mov QWORD PTR [r9+296], rbx
 mov QWORD PTR [r9+304], rbp
 mov QWORD PTR [r9+312], r12
 mov QWORD PTR [r9+320], r13
@@ -4446,7 +4446,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-584]
+        r"lea rsp, [rsp-584]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+512], rbx
@@ -4587,7 +4587,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-584]
+        r"lea rsp, [rsp-584]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+512], rbx
@@ -4677,7 +4677,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+512], rbx
+        r"mov QWORD PTR [r8+512], rbx
 mov QWORD PTR [r8+520], rbp
 mov QWORD PTR [r8+528], r12
 mov QWORD PTR [r8+536], r13
@@ -4816,7 +4816,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_blake2b_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+512], rbx
+        r"mov QWORD PTR [rcx+512], rbx
 mov QWORD PTR [rcx+520], rbp
 mov QWORD PTR [rcx+528], r12
 mov QWORD PTR [rcx+536], r13

@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p192_inv_mod_p(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbx
+        r"movq xmm0, rbx
 movq xmm1, rbp
 movq xmm2, r12
 movq xmm3, r13
@@ -2203,7 +2203,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p192_inv_mod_n(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbx
+        r"movq xmm0, rbx
 movq xmm1, rbp
 movq xmm2, r12
 movq xmm3, r13

@@ -13,7 +13,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "mov r2, #0
+        r"mov r2, #0
 lsr r3, r1, #5
 cmp r3, #0
 beq 20f

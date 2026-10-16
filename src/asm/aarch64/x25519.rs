@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_x25519(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "str x19, [x3, #0]
+        r"str x19, [x3, #0]
 str x20, [x3, #8]
 str x21, [x3, #16]
 str x22, [x3, #24]
@@ -4106,7 +4106,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x2, #0]
+        r"str x19, [x2, #0]
 str x20, [x2, #8]
 str x21, [x2, #16]
 str x22, [x2, #24]
@@ -4307,7 +4307,7 @@ sub x20, x20, x21
 sub x21, x21, #1",
         concat!("adrp x9, ", vg_sym_page!("{VG_ED25519_COMB}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_ED25519_COMB}")),
-        "lsl x2, x19, #8
+        r"lsl x2, x19, #8
 add x9, x9, x2
 add x9, x9, x2
 add x9, x9, x2
@@ -4585,7 +4585,7 @@ sub x20, x20, x21
 sub x21, x21, #1",
         concat!("adrp x9, ", vg_sym_page!("{VG_ED25519_COMB}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_ED25519_COMB}")),
-        "lsl x2, x19, #8
+        r"lsl x2, x19, #8
 add x9, x9, x2
 add x9, x9, x2
 add x9, x9, x2

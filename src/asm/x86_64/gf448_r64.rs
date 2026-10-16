@@ -20,7 +20,7 @@ pub(crate) const VG_GF448_R64_POW223_ADX_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_gf448_r64_pow223_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+1472], rbx
+        r"mov QWORD PTR [rdi+1472], rbx
 mov QWORD PTR [rdi+1480], rbp
 mov QWORD PTR [rdi+1488], r12
 mov QWORD PTR [rdi+1496], r13
@@ -9283,7 +9283,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_gf448_r64_pow223(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+1472], rbx
+        r"mov QWORD PTR [rdi+1472], rbx
 mov QWORD PTR [rdi+1480], rbp
 mov QWORD PTR [rdi+1488], r12
 mov QWORD PTR [rdi+1496], r13

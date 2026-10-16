@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_scalar_mul_add(out: *mut [u8; 32], r: *const [u8; 32], k: *const [u8; 32], s: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #0]
 str r5, [r12, #4]
 str r6, [r12, #8]
@@ -3563,7 +3563,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_public_key(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push {{lr}}
+        r"push {{lr}}
 push {{r12}}
 sub sp, sp, #24
 sub sp, sp, #248
@@ -3838,7 +3838,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_scalar_reduce(out: *mut [u8; 32], wide: *const [u8; 64], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str r4, [r2, #0]
+        r"str r4, [r2, #0]
 str r5, [r2, #4]
 str r6, [r2, #8]
 str r7, [r2, #12]
@@ -6701,7 +6701,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_scalar_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str r4, [r2, #0]
+        r"str r4, [r2, #0]
 str r5, [r2, #4]
 str r6, [r2, #8]
 str r7, [r2, #12]
@@ -10740,7 +10740,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_sign_cached(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push {{lr}}
+        r"push {{lr}}
 push {{r12}}
 sub sp, sp, #24
 sub sp, sp, #248
@@ -11183,7 +11183,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_verify_equation(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r3, #0]
+        r"str r4, [r3, #0]
 str r5, [r3, #4]
 str r6, [r3, #8]
 str r7, [r3, #12]
@@ -25507,7 +25507,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push {{lr}}
+        r"push {{lr}}
 push {{r12}}
 sub sp, sp, #24
 sub sp, sp, #248

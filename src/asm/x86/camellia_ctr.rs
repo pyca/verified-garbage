@@ -21,7 +21,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_ctr(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2756]
+        r"lea esp, [esp-2756]
 mov eax, DWORD PTR [esp+2760]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2764]

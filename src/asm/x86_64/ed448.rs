@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_scalar_reduce(out: *mut [u8; 57], wide: *const [u8; 114], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -182,7 +182,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_scalar_mul_add(out: *mut [u8; 57], r: *const [u8; 57], k: *const [u8; 57], s: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8], rbx
+        r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
 mov QWORD PTR [r8+16], r12
 mov QWORD PTR [r8+24], r13
@@ -1015,7 +1015,7 @@ pub(crate) const VG_ED448_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_public_key_adx(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -1156,7 +1156,7 @@ pub(crate) const VG_ED448_SCALAR_BASE_ADX_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_scalar_base_adx(out: *mut [u8; 57], scalar: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -6215,7 +6215,7 @@ pub(crate) const VG_ED448_SIGN_CACHED_ADX_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_sign_cached_adx(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov r10, QWORD PTR [rsp+8]
+        r"mov r10, QWORD PTR [rsp+8]
 mov r11, QWORD PTR [rsp+16]
 mov eax, 0
 push rax
@@ -6649,7 +6649,7 @@ pub(crate) const VG_ED448_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_verify_adx(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "cmp rdx, 256
+        r"cmp rdx, 256
 jb 20f
 mov eax, 0
 jmp 21f
@@ -6859,7 +6859,7 @@ pub(crate) const VG_ED448_VERIFY_EQUATION_ADX_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_verify_equation_adx(pk: *const [u8; 57], signature: *const [u8; 114], challenge: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx], rbx
+        r"mov QWORD PTR [rcx], rbx
 mov QWORD PTR [rcx+8], rbp
 mov QWORD PTR [rcx+16], r12
 mov QWORD PTR [rcx+24], r13
@@ -15577,7 +15577,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -15714,7 +15714,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_scalar_base(out: *mut [u8; 57], scalar: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -21369,7 +21369,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov r10, QWORD PTR [rsp+8]
+        r"mov r10, QWORD PTR [rsp+8]
 mov r11, QWORD PTR [rsp+16]
 mov eax, 0
 push rax
@@ -21799,7 +21799,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "cmp rdx, 256
+        r"cmp rdx, 256
 jb 20f
 mov eax, 0
 jmp 21f
@@ -22005,7 +22005,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_verify_equation(pk: *const [u8; 57], signature: *const [u8; 114], challenge: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx], rbx
+        r"mov QWORD PTR [rcx], rbx
 mov QWORD PTR [rcx+8], rbp
 mov QWORD PTR [rcx+16], r12
 mov QWORD PTR [rcx+24], r13

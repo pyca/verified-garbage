@@ -38,7 +38,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_CRT_ADX_FEATURES: crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -482,7 +482,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -930,7 +930,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_CRT_IFMA_FEATURES: crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -1378,7 +1378,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_MGF1_SHANI_CRT_ADX_FEATURE
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_mgf1_shani_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -1826,7 +1826,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_MGF1_SHANI_FEATURES: crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_mgf1_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -2274,7 +2274,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_MGF1_SHANI_CRT_IFMA_FEATUR
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_mgf1_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -2722,7 +2722,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_AVX2_CRT_ADX_FEATUR
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -3170,7 +3170,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_AVX2_FEATURES: crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -3618,7 +3618,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_AVX2_CRT_IFMA_FEATU
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -4066,7 +4066,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_AVX2_MGF1_SHANI_CRT
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_mgf1_shani_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -4514,7 +4514,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_AVX2_MGF1_SHANI_FEA
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_mgf1_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -4962,7 +4962,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_AVX2_MGF1_SHANI_CRT
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_avx2_mgf1_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -5410,7 +5410,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_SHANI_CRT_ADX_FEATU
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -5858,7 +5858,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_SHANI_FEATURES: cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -6306,7 +6306,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_SHANI_CRT_IFMA_FEAT
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -6754,7 +6754,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_SHANI_MGF1_SHANI_CR
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_mgf1_shani_crt_adx(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -7202,7 +7202,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_SHANI_MGF1_SHANI_FE
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_mgf1_shani(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -7650,7 +7650,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_DECRYPT_SHA384_SHANI_MGF1_SHANI_CR
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_decrypt_sha384_shani_mgf1_shani_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+232], rdx
 mov QWORD PTR [rsp+176], rcx
@@ -8098,7 +8098,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATUR
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -8451,7 +8451,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -8808,7 +8808,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_MGF1_SHANI_RSA
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_mgf1_shani_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -9165,7 +9165,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_MGF1_SHANI_FEA
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_mgf1_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -9522,7 +9522,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA384_AVX2_RS
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_sha384_avx2_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -9879,7 +9879,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA384_AVX2_FE
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_sha384_avx2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -10236,7 +10236,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA384_AVX2_MG
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_sha384_avx2_mgf1_shani_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -10593,7 +10593,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA384_AVX2_MG
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_sha384_avx2_mgf1_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -10950,7 +10950,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA384_SHANI_R
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_sha384_shani_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -11307,7 +11307,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA384_SHANI_F
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_sha384_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -11664,7 +11664,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA384_SHANI_M
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_sha384_shani_mgf1_shani_rsa_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx
@@ -12021,7 +12021,7 @@ pub(crate) const VG_RSA_OAEP_SHA384_MGF1_SHA1_ENCRYPT_PRECOMPUTED_SHA384_SHANI_M
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_sha384_mgf1_sha1_encrypt_precomputed_sha384_shani_mgf1_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const [u8; 48], scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-296]
+        r"lea rsp, [rsp-296]
 mov QWORD PTR [rsp+168], rdi
 mov QWORD PTR [rsp+176], rdx
 mov QWORD PTR [rsp+184], rcx

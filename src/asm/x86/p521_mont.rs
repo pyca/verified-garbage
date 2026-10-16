@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3740], ebx
 mov DWORD PTR [eax+3744], esi
 mov DWORD PTR [eax+3748], edi
@@ -5530,7 +5530,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_add_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3752], ebp
 mov ebp, eax
 mov ecx, DWORD PTR [esp+12]
@@ -5767,7 +5767,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_sub_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3752], ebp
 mov ebp, eax
 mov ecx, DWORD PTR [esp+12]
@@ -5962,7 +5962,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3740], ebx
 mov DWORD PTR [eax+3744], esi
 mov DWORD PTR [eax+3748], edi
@@ -11527,7 +11527,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_add_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3752], ebp
 mov ebp, eax
 mov ecx, DWORD PTR [esp+12]
@@ -11764,7 +11764,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_sub_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3752], ebp
 mov ebp, eax
 mov ecx, DWORD PTR [esp+12]
