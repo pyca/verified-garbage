@@ -80,16 +80,7 @@ end
 
 /-- `arun`: symbolic execution of a block by `simp` (see the module doc),
 with extra lemmas (the block's accesses, …). -/
-tactic_template "arun" : tactic => `(tactic| (
-                       apply WP.of_runBlock
-                       set_option linter.unusedSimpArgs false in
-                       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
-                         exec_ldr_w, exec_str_w, exec_add, exec_sub, exec_logic, exec_mul, exec_madd, exec_addImm_x,
-                         exec_subImm_x, exec_addImm_w, exec_lsr_x, exec_lsl_x, exec_movz_w, exec_movk_w, exec_movz_x,
-                         exec_movk_x, State.read, Size.bits, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
-                         RegUpd.wr_write, RegUpd.sp_write, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left',
-                         ite_true, ite_false, reduceCtorEq, true_and, and_true, List.cons_append, List.nil_append,
-                         BitVec.add_zero, BitVec.setWidth_setWidth_of_le, movz_movk]))
+tactic_template "arun" : tactic => `(tactic| arun [])
 
 /-- `arun` with extra lemmas. -/
 tactic_template "arun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
