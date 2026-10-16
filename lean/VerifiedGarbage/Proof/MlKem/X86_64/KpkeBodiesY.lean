@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
 public import VerifiedGarbage.Proof.MlKem.X86_64.AccInvY
 public import VerifiedGarbage.Proof.MlKem.X86_64.FinY
 import all Init.Data.Array.Basic
@@ -42,27 +43,8 @@ theorem nttOBY_correct (s : State) (hs : nttOK.pre s) :
   have hW : WP isa nttOBY s fun s' => PolyIs s'.mem (s.gpr .r10) (ntt (polyAt s.mem (s.gpr .rdi))) ∧
       Frame [pR (s.gpr .r10), pR (s.gpr .rsi)] s.mem s'.mem := by
     unfold nttOBY
-    refine WP.seq (WP.mono (ypro_ok zmTab zmTab_eq rfl rfl ⟨hs.2.2.2.2.2.2, rfl⟩ hrf hw hs.2.2.1)
-      fun s2 ⟨hS, hT, hc, hf2, k2⟩ => ?_)
-    have hsi2 : s2.gpr .rsi = s.gpr .rsi := k2.gpr (by decide)
-    have hw2 : pR (s.gpr .rsi) ∈ s2.wr := by rw [k2.2.2]; exact hw
-    refine WP.seq (WP.mono (nttLazy_ok hc hsi2 hS hT hw2) fun s3 ⟨hS3, hb3⟩ => ?_)
-    have hI : LIY (s.gpr .rsi) s2 zeta _ s3 :=
-      ⟨hS3, hT.frame hb3.frame, hb3.consts, hb3.keep.mono (by decide), hb3.frame⟩
-    refine WP.seq (WP.mono (movDiR10Y_ok s3) fun s4 ⟨hdi4, hm4, hl4, k4⟩ => ?_)
-    have k34 := hI.keep.trans k4
-    have hS4 := hI.S
-    rw [← hm4] at hS4
-    refine WP.mono (yepi_ok (s := s4) (fun l hl => ⟨by rw [State.proj_xmm, hl4]; exact (hI.c l hl).q,
-        by rw [State.proj_xmm, hl4]; exact (hI.c l hl).qinv⟩)
-      hS4 (by rw [hdi4, hI.keep.gpr (by decide), k2.gpr (by decide)])
-      (by rw [k34.gpr (by decide), hsi2]) (by rw [k34.2.2, k2.2.2]; exact hwt)
-      (by rw [k34.2.2]; exact hw2) hs.2.2.2.1) fun s5 ⟨hP, hf5⟩ => ⟨?_, ?_⟩
-    · exact hP
-    · rw [hm4] at hf5
-      refine (frame_fs hf2 ?_).trans ((frame_fs hI.frame ?_).trans (frame_fs hf5 ?_)) <;>
-        intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
-      exacts [.inr fun _ h => h, .inr (pR_sub_S _), .inl fun _ h => h]
+    exact WP.mono (NttR.nttR_ok NttR.check_r10 (.inr rfl) hw hrf hwt hs.2.2.1 hs.2.2.2.1 hs.2.2.2.2.2.2)
+      fun s' ⟨hP, hf, _⟩ => ⟨hP, hf⟩
   obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rdi, .r8, .r9] hW (by decide +kernel)
   exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he
     (gprPreserved_of hk (by decide) hf (by simpa using ⟨hs.2.2.2.2.1, hs.2.2.2.2.2.1⟩)), hP⟩

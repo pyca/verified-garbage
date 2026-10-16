@@ -11,14 +11,14 @@ import all Init.Data.Vector.Basic
 /-!
 # ML-KEM on x86-64: the lazy layers of `NTT` and `NTT⁻¹` with AVX2
 
-`nttLazy` and `nttInvLazy` take `S` from the coefficients of `F` to those of
-`NTT(F)` and `NTT⁻¹(F)`. Between them, `S` holds words that only represent
-the coefficients (`LIW`: `PolyRep`): each layer is a layer of `fwdW` or
-`invW` on the words (`ylay_ok`, …, with `vbflyL_spec`, `vibflyL_spec`),
-which represents the specification's layer within a bound one `q` larger
-(`NTT`, up to `8q`) or twice as large (`NTT⁻¹`, `8q` after three layers, when
-`yred` brings the words back to `(-q, q)`) (`layF_rep`). The last pass
-(`yredC`, `yscale`) leaves the coefficients' values.
+`nttInvLazy` takes `S` from the coefficients of `F` to those of
+`NTT⁻¹(F)`. Between them, `S` holds words that only represent the
+coefficients (`LIW`: `PolyRep`): each layer is a layer of `invW` on the
+words (`ylay_ok`, …, with `vibflyL_spec`), which represents the
+specification's layer within a bound twice as large (`8q` after three
+layers, when `yred` brings the words back to `(-q, q)`) (`layF_rep`). The
+last pass (`yscale`) leaves the coefficients' values. `fwd_hop` is the bound
+of a layer of `fwdW`, for the NTT on registers (`NttR/Model.lean`).
 -/
 
 @[expose] public section
@@ -30,13 +30,8 @@ open VG.Spec.MlKem
 
 /-! ## The code in each lane -/
 
-theorem lane_vbflyL : laneSseBlock (toY vbflyL) = some vbflyL := by decide +kernel
 theorem lane_vibflyL : laneSseBlock (toY vibflyL) = some vibflyL := by decide +kernel
-theorem lane_vbflyL4 : laneSseBlock (toY (gath4 ++ vbflyL ++ scat4)) = some (gath4 ++ vbflyL ++ scat4) := by
-  decide +kernel
 theorem lane_vibflyL4 : laneSseBlock (toY (gath4 ++ vibflyL ++ scat4)) = some (gath4 ++ vibflyL ++ scat4) := by
-  decide +kernel
-theorem lane_vbflyL2 : laneSseBlock (toY (gath2 ++ vbflyL ++ scat2)) = some (gath2 ++ vbflyL ++ scat2) := by
   decide +kernel
 theorem lane_vibflyL2 : laneSseBlock (toY (gath2 ++ vibflyL ++ scat2)) = some (gath2 ++ vibflyL ++ scat2) := by
   decide +kernel
@@ -92,44 +87,6 @@ theorem inv_hop {k : Nat} (hk : 2 * k * 3329 ≤ 32768) (hk1 : 1 ≤ 2 * k) :
         Rep (2 * k) (invW a b ζ).2 ((fun x y z => (x + y, z * (y - x))) x y ζ).2 :=
   fun _ _ _ _ ζ ha hb => ⟨(invW_rep hk ζ ha hb).1, (invW_rep hk ζ ha hb).2.mono hk1⟩
 
-theorem fwdLayL_ok (len t : Nat) (hlen : len ∈ [16, 32, 64, 128]) (ht : 128 / len = t) {sP : Addr} {k : Nat}
-    (hk : (k + 1) * 3329 ≤ 32768) {F : Poly} :
-    LayW sP zeta (ylay vbflyL len t) k (k + 1) F (nttLayer F len) := by
-  subst ht
-  intro s W hc hsi hS hR hT hw
-  have h8 : 128 / len ≤ 8 := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
-    rcases hlen with rfl | rfl | rfl | rfl <;> decide
-  refine WP.mono (ylay_ok vbflyL_spec lane_vbflyL (wBlk_ok fwdW) hlen (fun c => 128 / len + c)
-    (fun c _ => ⟨by omega, rfl⟩) hc hsi hS hT hw) fun s' ⟨hS', hb⟩ => ⟨_, hS', ?_, hb⟩
-  rw [nttLayer_eq]
-  exact layF_rep (wBlk_ok fwdW) nttBlk_ok (fwd_hop hk)
-    (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen ⊢; omega) _ hR
-
-theorem fwdLay8L_ok {sP : Addr} {k : Nat} (hk : (k + 1) * 3329 ≤ 32768) {F : Poly} :
-    LayW sP zeta (ylay8 vbflyL 16) k (k + 1) F (nttLayer F 8) := by
-  intro s W hc hsi hS hR hT hw
-  refine WP.mono (ylay8_ok vbflyL_spec lane_vbflyL (wBlk_ok fwdW) (fun c => 16 + c) (fun c hc' => ⟨by omega, rfl⟩)
-    hc hsi hS hT hw) fun s' ⟨hS', hb⟩ => ⟨_, hS', ?_, hb⟩
-  rw [nttLayer_eq]
-  exact layF_rep (wBlk_ok fwdW) nttBlk_ok (fwd_hop hk) (by decide) _ hR
-
-theorem fwdLay4L_ok {sP : Addr} {k : Nat} (hk : (k + 1) * 3329 ≤ 32768) {F : Poly} :
-    LayW sP zeta (ylay4 vbflyL 32) k (k + 1) F (nttLayer F 4) := by
-  intro s W hc hsi hS hR hT hw
-  refine WP.mono (ylay4_ok vbflyL_spec (wBlk_ok fwdW) lane_vbflyL4 (fun c => 32 + c) (fun c hc' => ⟨by omega, rfl⟩)
-    hc hsi hS hT hw) fun s' ⟨hS', hb⟩ => ⟨_, hS', ?_, hb⟩
-  rw [nttLayer_eq]
-  exact layF_rep (wBlk_ok fwdW) nttBlk_ok (fwd_hop hk) (by decide) _ hR
-
-theorem fwdLay2L_ok {sP : Addr} {k : Nat} (hk : (k + 1) * 3329 ≤ 32768) {F : Poly} :
-    LayW sP zeta (ylay2 vbflyL 64) k (k + 1) F (nttLayer F 2) := by
-  intro s W hc hsi hS hR hT hw
-  refine WP.mono (ylay2_ok vbflyL_spec (wBlk_ok fwdW) lane_vbflyL2 (fun c => 64 + c) (fun c hc' => ⟨by omega, rfl⟩)
-    hc hsi hS hT hw) fun s' ⟨hS', hb⟩ => ⟨_, hS', ?_, hb⟩
-  rw [nttLayer_eq]
-  exact layF_rep (wBlk_ok fwdW) nttBlk_ok (fwd_hop hk) (by decide) _ hR
-
 /-! ## The lazy layers of `NTT⁻¹` -/
 
 theorem invLayL_ok (len t : Nat) (hlen : len ∈ [16, 32, 64, 128])
@@ -180,14 +137,6 @@ theorem yredL_ok {sP : Addr} {z : Nat → Zq} {k : Nat} {F : Poly} : LayW sP z y
   rw [getElem!_map _ _ hi]
   exact red_rep (hR i hi).2.2
 
-/-- `yredC` leaves the coefficients' values. -/
-theorem yredC_ok {sP : Addr} {k : Nat} {F : Poly} {W : WPoly} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP)
-    (hS : S16R (· = ·) s.mem (spW sP) W) (hR : PolyRep k W F) (hw : pR sP ∈ s.wr) :
-    WP isa yredC s fun s' => S16 s'.mem (spW sP) F ∧ BInvY sP s s' :=
-  WP.mono (ymulc_ok (fun _ h => word_cR h) lane_vmulc vmontc_map hc hsi hS hw) fun _ ⟨hS', hb⟩ => ⟨fun i hi => by
-    rw [hS' i hi, getElem!_map _ _ hi]
-    exact cadd_rep (red_rep (hR i hi).2.2), hb⟩
-
 /-- `yscale` multiplies the coefficients by `3303` and leaves their values. -/
 theorem yscaleL_ok {sP : Addr} {k : Nat} {F : Poly} {W : WPoly} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP)
     (hS : S16R (· = ·) s.mem (spW sP) W) (hR : PolyRep k W F) (hw : pR sP ∈ s.wr) :
@@ -206,24 +155,6 @@ theorem liw_of {sP : Addr} {z : Nat → Zq} {F : Poly} {s : State} (hS : S16 s.m
     fun i hi => by
       rw [getElem!_pos _ i (by rw [n_eq]; exact hi), Vector.getElem_ofFn]
       exact Rep.of_can (hS i hi), hT, ⟨Keep.refl _ _, Frame.refl _ _, hc, rfl⟩⟩
-
-theorem nttLazy_ok {sP : Addr} {F : Poly} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP)
-    (hS : S16 s.mem (spW sP) F) (hT : TZ s.mem sP zeta) (hw : pR sP ∈ s.wr) :
-    WP isa nttLazy s fun s' => S16 s'.mem (spW sP) (ntt F) ∧ BInvY sP s s' := by
-  unfold nttLazy
-  refine LIW.seq hsi hw (fwdLayL_ok 128 1 (by decide) (by decide) (k := 1) (by decide)) ?_ (liw_of hS hT hc)
-  refine fun _ hI => LIW.seq hsi hw (fwdLayL_ok 64 2 (by decide) (by decide) (k := 2) (by decide)) ?_ hI
-  refine fun _ hI => LIW.seq hsi hw (fwdLayL_ok 32 4 (by decide) (by decide) (k := 3) (by decide)) ?_ hI
-  refine fun _ hI => LIW.seq hsi hw (fwdLayL_ok 16 8 (by decide) (by decide) (k := 4) (by decide)) ?_ hI
-  refine fun _ hI => LIW.seq hsi hw (fwdLay8L_ok (k := 5) (by decide)) ?_ hI
-  refine fun _ hI => LIW.seq hsi hw (fwdLay4L_ok (k := 6) (by decide)) ?_ hI
-  refine fun _ hI => LIW.seq hsi hw (fwdLay2L_ok (k := 7) (by decide)) ?_ hI
-  intro s' ⟨W, hS', hR, _, hb⟩
-  refine WP.mono (yredC_ok hb.consts (by rw [hb.keep.gpr (by decide), hsi]) hS' hR (by rw [hb.keep.2.2]; exact hw))
-    fun s'' ⟨hS'', hb'⟩ => ⟨?_, hb.trans hb'⟩
-  rw [ntt_eq_layers]
-  simp only [nttLens, List.foldl_cons, List.foldl_nil]
-  exact hS''
 
 theorem nttInvLazy_ok {sP : Addr} {F : Poly} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP)
     (hS : S16 s.mem (spW sP) F) (hT : TZ s.mem sP zInv) (hw : pR sP ∈ s.wr) :

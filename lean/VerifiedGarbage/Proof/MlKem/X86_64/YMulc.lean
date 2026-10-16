@@ -14,7 +14,7 @@ import all Init.Data.Vector.Basic
 word `cw` of `c` in every word of `ymm13`. If `body` leaves `g w z` in each
 word of `xmm3` from its word `w` and the word `z` of `xmm13` (`MapOk`), the
 words of `S` become `g w cw` (`ymulc_ok`): the reductions of the lazy layers
-(`yred`, `yredC`).
+(`yred`, `yscale`).
 -/
 
 @[expose] public section

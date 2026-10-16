@@ -7,6 +7,8 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Top
+import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 
 /-!
@@ -44,17 +46,15 @@ theorem nttY_correct (s : State) (hs : (inPlaceK ntt).pre s) :
     have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
       polyIs_frame f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub _))
         ⟨hs.2.2.2.2.2, rfl⟩
-    refine WP.seq (WP.mono (ypro_ok zmTab zmTab_eq hdi1 hsi1 hF1 (by rw [k1.2.1, k1.2.2]; exact List.mem_append_right _ hwf)
-      (by rw [k1.2.2]; exact hw) hd) fun s2 ⟨hS, hT, hc, hf2, k2⟩ => ?_)
-    have hsi2 : s2.gpr .rsi = s.gpr .rsi := by rw [k2.gpr (by decide), hsi1]
-    have hw2 : pR (s.gpr .rsi) ∈ s2.wr := by rw [k2.2.2, k1.2.2]; exact hw
-    refine WP.seq (WP.mono (nttLazy_ok hc hsi2 hS hT hw2) fun s3 ⟨hS3, hb3⟩ => ?_)
-    refine WP.mono (yepi_ok hb3.consts hS3 (by rw [hb3.keep.gpr (by decide), k2.gpr (by decide), hdi1])
-      (by rw [hb3.keep.gpr (by decide), hsi2]) (by rw [hb3.keep.2.2, k2.2.2, k1.2.2]; exact hwf)
-      (by rw [hb3.keep.2.2]; exact hw2) hd) fun s4 ⟨hP, hf4⟩ => ⟨hP, ?_⟩
-    · refine (frame_fs f1 ?_).trans ((frame_fs hf2 ?_).trans ((frame_fs hb3.frame ?_).trans (frame_fs hf4 ?_))) <;>
-        intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
-      exacts [.inr (mx_sub _), .inr fun _ h => h, .inr (pR_sub_S _), .inl fun _ h => h]
+    refine WP.mono (NttR.nttR_ok NttR.check_rdi (.inl rfl) (by rw [hsi1, k1.2.2]; exact hw)
+      (by rw [hdi1, k1.2.1, k1.2.2]; exact List.mem_append_right _ hwf) (by rw [hdi1, k1.2.2]; exact hwf)
+      (by rw [hdi1, hsi1]; exact hd) (by rw [hdi1, hsi1]; exact hd) (by rw [hdi1]; exact hF1.1))
+      fun s2 ⟨hP, hf2, _⟩ => ⟨?_, ?_⟩
+    · rw [hdi1, hF1.2] at hP; exact hP
+    · rw [hdi1, hsi1] at hf2
+      refine (frame_fs f1 ?_).trans hf2
+      intro r hr; simp only [List.mem_singleton] at hr; subst hr
+      exact .inr (mx_sub _)
   obtain ⟨t, s', he, ⟨s2, ⟨hP, hf⟩, hf', -⟩, hk⟩ :=
     WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r11] hW (by decide +kernel)
   refine ⟨t, s', he, abiPreserved_of_ctl (by decide +kernel) he (gprPreserved_of hk (by decide)
