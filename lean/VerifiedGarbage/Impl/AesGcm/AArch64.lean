@@ -130,8 +130,25 @@ def copyLoop : Prog isa :=
   .loop (.block [.ldrb .x14 .x12 0, .strb .x14 .x11 0, .addImm .x .x12 .x12 1,
     .addImm .x .x11 .x11 1, .subImm .x .x13 .x13 1]) (.nonzero .x .x13)
 
-/-- Copies the `x13` bytes at `x12` to `x11`. -/
-def copy : Prog isa := .ite (.zero .x .x13) (.block []) copyLoop
+/-- Eight bytes copied from `x12` to `x11`, both advanced, `x13` counted
+down, and `x14 = x13 / 8` for the loop's test. -/
+def copy8 : List Instr :=
+  [.ldr .x .x14 .x12 0, .str .x .x14 .x11 0, .addImm .x .x12 .x12 8, .addImm .x .x11 .x11 8,
+    .subImm .x .x13 .x13 8, .lsr .x .x14 .x13 3]
+
+/-- Four bytes copied, with fewer than eight left. -/
+def copy4 : List Instr :=
+  [.ldr .w .x14 .x12 0, .str .w .x14 .x11 0, .addImm .x .x12 .x12 4, .addImm .x .x11 .x11 4,
+    .subImm .x .x13 .x13 4]
+
+/-- Copies the `x13` bytes at `x12` to `x11`: eight at a time, then four if
+at least four are left, then the last ones (fewer than four) one at a time. -/
+def copy : Prog isa :=
+  .seq (.block [.lsr .x .x14 .x13 3])
+  (.seq (.ite (.zero .x .x14) (.block []) (.loop (.block copy8) (.nonzero .x .x14)))
+  (.seq (.block [.lsr .x .x14 .x13 2])
+  (.seq (.ite (.zero .x .x14) (.block []) (.block copy4))
+    (.ite (.zero .x .x13) (.block []) copyLoop))))
 
 /-- XORs the `x13` (at least 1) bytes at `x11` into those at `x12`. -/
 def xorLoop : Prog isa :=
@@ -139,8 +156,25 @@ def xorLoop : Prog isa :=
     .strb .x14 .x12 0, .addImm .x .x12 .x12 1, .addImm .x .x11 .x11 1,
     .subImm .x .x13 .x13 1]) (.nonzero .x .x13)
 
-/-- XORs the `x13` bytes at `x11` into those at `x12`. -/
-def xor : Prog isa := .ite (.zero .x .x13) (.block []) xorLoop
+/-- Eight bytes at `x11` XORed into those at `x12`, both advanced, `x13`
+counted down, and `x14 = x13 / 8` for the loop's test. -/
+def xor8 : List Instr :=
+  [.ldr .x .x14 .x12 0, .ldr .x .x15 .x11 0, .logic .eor .x .x14 .x14 .x15, .str .x .x14 .x12 0,
+    .addImm .x .x12 .x12 8, .addImm .x .x11 .x11 8, .subImm .x .x13 .x13 8, .lsr .x .x14 .x13 3]
+
+/-- Four bytes XORed, with fewer than eight left. -/
+def xor4 : List Instr :=
+  [.ldr .w .x14 .x12 0, .ldr .w .x15 .x11 0, .logic .eor .w .x14 .x14 .x15, .str .w .x14 .x12 0,
+    .addImm .x .x12 .x12 4, .addImm .x .x11 .x11 4, .subImm .x .x13 .x13 4]
+
+/-- XORs the `x13` bytes at `x11` into those at `x12`: eight at a time, then
+four if at least four are left, then the last ones one at a time. -/
+def xor : Prog isa :=
+  .seq (.block [.lsr .x .x14 .x13 3])
+  (.seq (.ite (.zero .x .x14) (.block []) (.loop (.block xor8) (.nonzero .x .x14)))
+  (.seq (.block [.lsr .x .x14 .x13 2])
+  (.seq (.ite (.zero .x .x14) (.block []) (.block xor4))
+    (.ite (.zero .x .x13) (.block []) xorLoop))))
 
 /-- `x10 := min (16 - x25, x24)`, for `x25 < 16`. -/
 def minK : Prog isa :=

@@ -126,19 +126,6 @@ theorem copyLoop_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x12 = S) (hD
       by rw [x12', x12, BitVec.add_assoc, succ_ofNat], by rw [x11', x11, BitVec.add_assoc, succ_ofNat],
       x13'', hmem, gg, by rw [sp', sp], by rw [rd', rd], by rw [wr', wr]⟩
 
-/-- `copy`: the `n` bytes at `S` to `D`. -/
-theorem copy_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x12 = S) (hD : s.gpr .x11 = D)
-    (hn : s.gpr .x13 = BitVec.ofNat 64 n) (h : LoopPre s S D n) :
-    WP isa copy s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
-      (∀ r, r ∉ loopRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hlt := h.lt
-  refine WP.ite (decide (n = 0)) (eval_zero hn (by omega)) (fun ht => ?_) (fun hf => ?_)
-  · have h0 : n = 0 := by simpa using ht
-    subst h0
-    exact WP.block_nil ⟨by simp [bytesAt, writeBytes_nil], fun _ _ => rfl, rfl, rfl, rfl⟩
-  · have h0 : n ≠ 0 := by simpa using hf
-    exact WP.mono (copyLoop_ok s hS hD hn (by omega) h) fun s' ⟨m, _, _, g, sp, rd, wr⟩ => ⟨m, g, sp, rd, wr⟩
-
 /-! ## `xor` -/
 
 abbrev xorBody : List Instr :=
@@ -234,19 +221,6 @@ theorem xorLoop_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x11 = S) (hD 
     refine ⟨by rw [ev]; simp; omega, n - (i + 1), by omega, i + 1, rfl, by omega,
       by rw [x12', x12, BitVec.add_assoc, succ_ofNat], by rw [x11', x11, BitVec.add_assoc, succ_ofNat],
       x13'', hmem, gg, by rw [sp', sp], by rw [rd', rd], by rw [wr', wr]⟩
-
-/-- `xor`: the `n` bytes at `S` (`x11`) XORed into those at `D` (`x12`). -/
-theorem xor_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x11 = S) (hD : s.gpr .x12 = D)
-    (hn : s.gpr .x13 = BitVec.ofNat 64 n) (h : LoopPre s S D n) :
-    WP isa xor s fun s' => s'.mem = writeBytes s.mem D (xorBytes s.mem D S n) ∧
-      (∀ r, r ∉ loopRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hlt := h.lt
-  refine WP.ite (decide (n = 0)) (eval_zero hn (by omega)) (fun ht => ?_) (fun hf => ?_)
-  · have h0 : n = 0 := by simpa using ht
-    subst h0
-    exact WP.block_nil ⟨by simp [xorBytes, bytesAt, writeBytes_nil], fun _ _ => rfl, rfl, rfl, rfl⟩
-  · have h0 : n ≠ 0 := by simpa using hf
-    exact xorLoop_ok s hS hD hn (by omega) h
 
 /-! ## `minK` -/
 
@@ -392,5 +366,44 @@ theorem bytesAt_drop (m : Mem) (D : Addr) {j n : Nat} (hj : j ≤ n) :
 theorem bytesAt_take (m : Mem) (D : Addr) {k n : Nat} (hk : k ≤ n) :
     (bytesAt m D n).take k = bytesAt m D k := by
   rw [show n = k + (n - k) by omega, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
+
+/-! ## Word steps -/
+
+theorem write_read_bytes (m src : Mem) (a b : Addr) (n : Nat) :
+    m.write a n (src.read b n) = writeBytes m a (bytesAt src b n) := by
+  rw [write_eq_writeBytes]
+  congr 1
+  simp only [bytesAt]
+  exact List.map_congr_left fun j hj => Mem.extractLsb'_read src b (List.mem_range.mp hj)
+
+theorem write_xor_bytes (m src : Mem) (a b c : Addr) (n : Nat) :
+    m.write a n (src.read b n ^^^ src.read c n) =
+      writeBytes m a (List.zipWith (· ^^^ ·) (bytesAt src b n) (bytesAt src c n)) := by
+  rw [write_eq_writeBytes]
+  congr 1
+  simp only [bytesAt, List.zipWith_map, List.zipWith_self]
+  refine List.map_congr_left fun j hj => ?_
+  rw [BitVec.extractLsb'_xor, Mem.extractLsb'_read src b (List.mem_range.mp hj),
+    Mem.extractLsb'_read src c (List.mem_range.mp hj)]
+
+/-- After the first `i` of `n` bytes are done, `f` giving what they become:
+the pointers and the count advanced, and the other registers kept. -/
+structure WordAt (s : State) (P Q : Addr) (n i : Nat) (D : Addr) (out : List Byte) (t : State) : Prop where
+  le : i ≤ n
+  x12 : t.gpr .x12 = P + BitVec.ofNat 64 i
+  x11 : t.gpr .x11 = Q + BitVec.ofNat 64 i
+  x13 : t.gpr .x13 = BitVec.ofNat 64 (n - i)
+  mem : t.mem = writeBytes s.mem D out
+  gpr : ∀ r, r ∉ loopRegs → t.gpr r = s.gpr r
+  sp : t.sp = s.sp
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+
+theorem lsr_count {t : State} {k sh : Nat} (h : t.gpr .x13 = BitVec.ofNat 64 k) (hk : k < 2 ^ 64) (hs : sh < 64) :
+    t.gpr .x13 >>> sh = BitVec.ofNat 64 (k / 2 ^ sh) := by
+  rw [h]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk,
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hk)]
 
 end VG.Proof.AesGcm.AArch64
