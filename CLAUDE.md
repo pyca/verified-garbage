@@ -152,7 +152,11 @@ instructions in an ISA model) go in their own PR before either.
    from the `Api`, so never restate them. Give a variant's name its
    `suffix` (`suffix := "_avx2"`), any notes on the implementation in
    `notes` (`notes := […]`), the stack its calls and frames use in `stack`,
-   and the tables of constants it reads in `consts`. Its contract is found
+   the tables of constants it reads in `consts`, and, where a caller wipes a
+   writable array the function uses as working space, how much of it the
+   function writes in `written` (`written := [("scratch", 1024)]`, proven by
+   `writtenOk`), which the emitter exports as `<NAME>_<PARAM>_WRITTEN` for
+   the caller to wipe only that much. Its contract is found
    from `verified`'s type, and must be the `Api`'s on the target for
    `consts` and `stack` (`ofApi`, by `rfl`): give `contract` only when
    `verified`'s type does not determine it. `of_sig` proves `ofSig`, and

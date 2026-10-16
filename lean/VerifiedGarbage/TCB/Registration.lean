@@ -8,12 +8,13 @@ public import VerifiedGarbage.TCB.Artifact
 **Trusted.** A registration file makes each function's `Artifact` from its
 `Api` with `Api.artifact`, stating only what the implementation chooses: the
 target, the code and its proof, the stack it uses, the constant tables it
-reads, the CPU features it needs, and any notes on it and the suffix of its
+reads, the CPU features it needs, how much of its writable arrays it writes
+(`written`, with its proof), and any notes on it and the suffix of its
 name. Everything else comes from the `Api` (`Spec/`): the Rust module, name,
 signature and documentation, `writeArgs`, and the contract on the target,
 which the proof is of. So of a registration, a reviewer reads `suffix`,
 `notes` and `features` (which the emitter checks against the code); the
-kernel checks the rest.
+kernel checks the rest, `written` included.
 -/
 
 @[expose] public section
@@ -64,6 +65,12 @@ structure Registration (api : Api) (target : Target) where
   spSafe : code.all (fun i => !target.isa.writesSp i) = true := by sp_safe
   /-- `Artifact.features`. -/
   features : List String := []
+  /-- `Artifact.written`. -/
+  written : List (String × Nat) := []
+  /-- `Artifact.writtenOk`. -/
+  writtenOk : ∀ s t s', contract.pre s → Exec target.isa code s t s' →
+      Sig.writtenWithin (target.abi.withConsts consts) api.sig written s s' := by
+    exact fun _ _ _ _ _ => True.intro
 
 /-- The artifact of the implementation `r` of `api` on `target`: its module,
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
@@ -89,5 +96,7 @@ def Api.artifact (api : Api) (target : Target) (r : Registration api target) : A
     cases api.contracts <;> exact (by trivial)
   spSafe := r.spSafe
   features := r.features
+  written := r.written
+  writtenOk := r.writtenOk
 
 end VG
