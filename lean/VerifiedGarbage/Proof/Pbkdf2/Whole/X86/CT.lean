@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 import all Init.Data.Array.Basic
@@ -76,8 +78,8 @@ include hq
 theorem PubEq.a {i : Nat} (hi : i < 8) : arg s₀' i = arg s₀ i := (hq.args i hi).symm
 
 /-- `s₀'`'s public values are `s₀`'s. -/
-macro "pub_simp" hq:term " at " h:ident : tactic => `(tactic|
-  plain_simp_names simp only [dO, A, scr, pw, salt, pwl, sl, ol, cc, out, kp, kl, nbk, dn, PubEq.a $hq (i := 0) (by decide),
+tactic_template "pub_simp" hq:term " at " h:ident : tactic => `(tactic|
+  simp only [dO, A, scr, pw, salt, pwl, sl, ol, cc, out, kp, kl, nbk, dn, PubEq.a $hq (i := 0) (by decide),
                      PubEq.a $hq (i := 1) (by decide), PubEq.a $hq (i := 2) (by decide), PubEq.a $hq (i := 3) (by decide),
                      PubEq.a $hq (i := 4) (by decide), PubEq.a $hq (i := 5) (by decide), PubEq.a $hq (i := 6) (by decide),
                      PubEq.a $hq (i := 7) (by decide)] at $h:ident)
