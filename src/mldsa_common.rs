@@ -314,13 +314,7 @@ macro_rules! ml_dsa {
             /// bytes.
             pub fn sign(&self, msg: &[u8], ctx: &[u8]) -> Result<[u8; $sig], Error> {
                 let mut rnd = [0u8; 32];
-                if getrandom::fill(&mut rnd).is_err() {
-                    // The operating system's generator does not fail in the
-                    // tests.
-                    // NO-COVERAGE-START
-                    return Err(Error::Randomness);
-                    // NO-COVERAGE-END
-                }
+                getrandom::fill(&mut rnd).map_err(|_| Error::Randomness)?;
                 let r = self.sign_with(msg, ctx, &rnd);
                 zeroize(&mut rnd);
                 r
