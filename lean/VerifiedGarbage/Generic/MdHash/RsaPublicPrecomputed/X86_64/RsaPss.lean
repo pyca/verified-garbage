@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCT
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # RSASSA-PSS verification using cached public-key values
@@ -21,15 +22,11 @@ namespace VG.Generic.MdHash.RsaPublicPrecomputed.X86_64.RsaPss
 open VG.Proof.RsaPss.X86_64 (verifyStack safeI_eq allInstrs_and)
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.PublicImpl) : List Artifact := [
-  { Spec.RsaPss.verifyPrecomputedApi v.mgf.G v.mgf.G with
-    name := Emit.qualifiedName (Spec.RsaPss.verifyPrecomputedApi v.mgf.G v.mgf.G).name
-      [(v.mgf.G.rust, v.suffix), ("rsa", c.suffix)]
-    target := X86_64.target
-    doc := (Spec.RsaPss.verifyPrecomputedApi v.mgf.G v.mgf.G).doc
-      (notes := ["This implementation calls `" ++ c.name ++ "` with the cached public-key values, \
-        then checks EMSA-PSS using the same padding and hashing code as the original verifier."])
+  (Spec.RsaPss.verifyPrecomputedApi v.mgf.G v.mgf.G).artifact X86_64.target {
+    suffix := Emit.qualifiedName "" [(v.mgf.G.rust, v.suffix), ("rsa", c.suffix)]
+    notes := ["This implementation calls `" ++ c.name ++ "` with the cached public-key values, \
+        then checks EMSA-PSS using the same padding and hashing code as the original verifier."]
     code := Impl.RsaPss.X86_64.Precomputed.code v.H c.name c.code
-    contract := Spec.RsaPss.verifyPrecomputedContract v.mgf.G v.mgf.G X86_64.abi verifyStack
     stack := verifyStack
     verified := Proof.RsaPss.X86_64.Pc.verified c v.ok v.K v.mgf v.pss
     spSafe := by

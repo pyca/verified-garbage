@@ -17,12 +17,9 @@ Initialization is backend-independent and stays in the registration file.
 namespace VG.Generic.Blake2s.X86_64.Stream
 
 def artifacts (v : Proof.Blake2.X86_64.BackendS) : List Artifact := [
-  { Spec.Blake2.compressSApi with
-    name := v.compressName
-    target := VG.X86_64.target
-    doc := Spec.Blake2.compressSApi.doc
+  Spec.Blake2.compressSApi.artifact VG.X86_64.target {
+    suffix := v.suffix
     code := v.code
-    contract := Spec.Blake2.compressSContract VG.X86_64.abi
     verified := v.verified
     spSafe := v.spSafe
     features := v.features },
