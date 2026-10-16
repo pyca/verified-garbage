@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMul
+import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
@@ -29,7 +31,7 @@ namespace VG.Proof.MlKem.X86_64
 open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
 
-theorem decMul_correct {B : Bodies} (hB : BodiesOk B) {k : Nat} (hk : k ≤ 4) (hk0 : 0 < k)
+theorem decMul_correct {B : Bodies} {R : AccRep} {T : TabRep} (hB : BodiesOk B R T) {k : Nat} (hk : k ≤ 4) (hk0 : 0 < k)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (DecMul.inner B) = true)
     (hctl : ctlOk (decryptMul B k) = true) (s : State) (hs : (decMulK k).pre s) :
     ∃ t s', Exec isa (decryptMul B k) s t s' ∧ abiPreserved s s' ∧ (decMulK k).post s s' := by
@@ -60,7 +62,7 @@ def decMulSat (k : Nat) : State where
 section
 variable (B : Bodies)
 
-theorem decMul3_verified (hB : BodiesOk B)
+theorem decMul3_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (DecMul.inner B) = true)
     (hctl : ctlOk (decryptMul B 3) = true)
     (hct : ConstantTime isa (decMulK 3).pre (decMulK 3).pub (decryptMul B 3)) :
@@ -86,7 +88,7 @@ theorem decMul3_verified (hB : BodiesOk B)
              bv_omega) }
 
 
-theorem decMul4_verified (hB : BodiesOk B)
+theorem decMul4_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (DecMul.inner B) = true)
     (hctl : ctlOk (decryptMul B 4) = true)
     (hct : ConstantTime isa (decMulK 4).pre (decMulK 4).pub (decryptMul B 4)) :

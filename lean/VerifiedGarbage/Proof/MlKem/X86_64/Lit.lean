@@ -29,9 +29,11 @@ materialize_code Impl.MlKem.X86_64.nttOB
 materialize_code Impl.MlKem.X86_64.nttInvB
 materialize_code Impl.MlKem.X86_64.mulB
 materialize_code Impl.MlKem.X86_64.add
+materialize_code Impl.MlKem.X86_64.zeroB
 materialize_code Impl.MlKem.X86_64.nttOBY
-materialize_code Impl.MlKem.X86_64.nttInvBY
-materialize_code Impl.MlKem.X86_64.mulBY
+materialize_code Impl.MlKem.X86_64.nttInvAccY
+materialize_code Impl.MlKem.X86_64.mulAccY
+materialize_code Impl.MlKem.X86_64.zeroAccY
 materialize_code Impl.MlKem.X86_64.addAvx2
 materialize_code Impl.MlKem.X86_64.multiplyNTTs
 materialize_code Impl.MlKem.X86_64.ntt

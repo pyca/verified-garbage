@@ -1,7 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.MlKem.X86_64.NttAvx2
-public import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
+public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
 public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
 
 /-!
@@ -16,11 +15,14 @@ which is most of the cost of a call. It keeps `scratch` in `rbx`, `w` in
 `rbp`, `ŝ[j]` in `r12`, `u'[j]` in `r13` and the count of the `k` terms
 left in `r14`, and saves its caller's values of them (and of `r15`) at
 `scratch + 3072`.
-It zeroes `w`; then for each `j`, it computes `NTT(u'[j])` to
+It sums the products in an accumulator at `w`, in the backend's own form
+(`Bodies`): it sets up the table of the products (`Bodies.tab`) and zeroes
+the accumulator; then for each `j`, it computes `NTT(u'[j])` to
 `scratch + 1024` (`Bodies.nttO`: the NTT's code, but for the pointer its
-last step stores through, `r10`), its product with `ŝ[j]` to
-`scratch + 2048`, and adds that to `w`; then `NTT⁻¹(w)`. The code it
-inlines uses the first 1024 bytes of `scratch` as their working space.
+last step stores through, `r10`) and adds its product with `ŝ[j]` to the
+accumulator (`Bodies.mulAcc`); then `NTT⁻¹` of the accumulator, to `w`.
+The code it inlines uses the first 1024 bytes of `scratch` as their
+working space, and `scratch + 2048` and `scratch + 3328` for the products.
 Every address and branch depends only on the pointers.
 -/
 
@@ -31,19 +33,24 @@ namespace VG.Impl.MlKem.X86_64
 open VG.X86_64
 
 /-- The code of the polynomial arithmetic of one backend, without the MXCSR
-prologue and epilogue of its functions. -/
+prologue and epilogue of its functions, around an accumulator of a sum of
+products in a form of the backend's own: `u32`s with SSE2 (`Bodies.sse`),
+words with AVX2 (`KpkeAccY.lean`). -/
 structure Bodies where
   /-- `NTT` of the polynomial at `rdi` to the one at `r10`, with the working
   space at `rsi`. -/
   nttO : Prog isa
-  /-- `NTT⁻¹` of the polynomial at `rdi`, in place, with the working space
-  at `rsi`. -/
+  /-- `NTT⁻¹` of the accumulator at `rdi`, to the polynomial at `rdi`, with
+  the working space at `rsi`. -/
   inv : Prog isa
-  /-- `h = rdi` becomes `f = rsi ×_T g = rdx`, with the working space at
-  `rcx`. -/
-  mul : Prog isa
-  /-- `f = rdi` becomes `f + g`, `g = rsi`. -/
-  add : Prog isa
+  /-- The accumulator at `rdi` of the zero polynomial. -/
+  zero : Prog isa
+  /-- Whatever `mulAcc` reads from `scratch = rcx + 3328` (256 bytes). -/
+  tab : List Instr
+  /-- The accumulator `o` at `rdi = rbp + 1024 o` plus `f = rsi ×_T g = rdx`,
+  with the working space at `rcx` (1024 bytes) and at `rcx + 2048` (1024
+  bytes), what `tab` left at `rcx + 3328`, and `rbx` equal to `rcx`. -/
+  mulAcc : Nat → Prog isa
 
 /-- `vg_mlkem_ntt`'s code, storing to `r10`. -/
 def nttOB : Prog isa :=
@@ -60,25 +67,27 @@ def nttInvB : Prog isa :=
 /-- `vg_mlkem_multiply_ntts`'s code. -/
 def mulB : Prog isa := .seq (.block [.mov .r10 (.reg .rcx)]) (.seq (.block mulPro) (rcxLoop 16 mulBody))
 
+/-- The polynomial at `rdi`, zeroed, sixteen bytes at a time. -/
+def zeroB : Prog isa :=
+  .seq (.block [xb .pxor .xmm0 .xmm0]) (rcxLoop 64 [.movdquStore (at_ .rdi 0) .xmm0, .alu .add .rdi (.imm 16)])
+
+/-- `rdi += rsi ×_T rdx`, for `rdi = rbp + 1024 o`: the product to `rcx + 2048`,
+with `vg_mlkem_multiply_ntts`'s code, then added to `rdi` (from `rbp` again)
+with `vg_mlkem_add`'s; `rbx` is `rcx` (`scratch`). -/
+def mulAccB (o : Nat) : Prog isa :=
+  .seq (.block (leaR .rdi .rcx 2048))
+    (.seq mulB (.seq (.block ([.mov .rdi (.reg .rbp), .alu .add .rdi (.imm (BitVec.ofNat 32 (1024 * o)))] ++
+      leaR .rsi .rbx 2048)) X86_64.add))
+
 /-- `vg_mlkem_ntt_avx2`'s code, storing to `r10`. -/
 def nttOBY : Prog isa :=
   .seq (ypro zmTab) (.seq (ylay vbfly 128 1) (.seq (ylay vbfly 64 2) (.seq (ylay vbfly 32 4)
     (.seq (ylay vbfly 16 8) (.seq (ylay8 vbfly 16) (.seq (ylay4 vbfly 32) (.seq (ylay2 vbfly 64)
       (.seq (.block [.mov .rdi (.reg .r10)]) yepi))))))))
 
-/-- `vg_mlkem_inv_ntt_avx2`'s code. -/
-def nttInvBY : Prog isa :=
-  .seq (ypro zmTabInv) (.seq (ylay2 vibfly 0) (.seq (ylay4 vibfly 64) (.seq (ylay8 vibfly 96)
-    (.seq (ylay vibfly 16 112) (.seq (ylay vibfly 32 120) (.seq (ylay vibfly 64 124)
-      (.seq (ylay vibfly 128 126) (.seq yscale yepi))))))))
+def Bodies.sse : Bodies := ⟨nttOB, nttInvB, zeroB, [], mulAccB⟩
 
-/-- `vg_mlkem_multiply_ntts_avx2`'s code. -/
-def mulBY : Prog isa :=
-  .seq (.block [.mov .r10 (.reg .rcx)]) (.seq (.block mulProY) (.seq (rcxLoop 8 mulBodyY) (.block [.vop .vzeroupper])))
-
-def Bodies.sse : Bodies := ⟨nttOB, nttInvB, mulB, X86_64.add⟩
-
-def Bodies.avx2 : Bodies := ⟨nttOBY, nttInvBY, mulBY, addAvx2⟩
+def Bodies.avx2 : Bodies := ⟨nttOBY, nttInvAccY, zeroAccY, tabAccY, fun _ => mulAccY⟩
 
 namespace KpkeMul
 
@@ -92,44 +101,40 @@ def save : List Instr := slots.map fun p => .store (at_ .rcx p.2) p.1
 /-- Load them back through `rbx` (`scratch`). -/
 def restore : List Instr := slots.map fun p => .mov p.1 (.mem (at_ .rbx p.2))
 
-/-- The polynomial at `rbp`, zeroed, sixteen bytes at a time. -/
-def zeroW : Prog isa :=
-  .seq (.block [xb .pxor .xmm0 .xmm0, .mov .rdi (.reg .rbp)])
-    (rcxLoop 64 [.movdquStore (at_ .rdi 0) .xmm0, .alu .add .rdi (.imm 16)])
+/-- The table of the products, and the accumulator at `rbp` zeroed. -/
+def start (B : Bodies) : Prog isa :=
+  .seq (.block ([.mov .rcx (.reg .rbx)] ++ B.tab ++ [.mov .rdi (.reg .rbp)])) B.zero
 
-/-- A term of the sum: `NTT(u'[j])` to `scratch + 1024`, its product with
-`ŝ[j]` to `scratch + 2048`, added to `w`; then the next `j`. -/
+/-- A term of the sum: `NTT(u'[j])` to `scratch + 1024`, and its product with
+`ŝ[j]` added to the accumulator; then the next `j`. -/
 def term (B : Bodies) : Prog isa :=
   .seq (.block [.mov .rdi (.reg .r13), .mov .rsi (.reg .rbx), .mov .r10 (.reg .rbx), .alu .add .r10 (.imm 1024)])
-    (.seq B.nttO (.seq (.block [.mov .rdi (.reg .rbx), .alu .add .rdi (.imm 2048), .mov .rsi (.reg .r12),
-      .mov .rdx (.reg .rbx), .alu .add .rdx (.imm 1024), .mov .rcx (.reg .rbx)])
-    (.seq B.mul (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx), .alu .add .rsi (.imm 2048)])
-      (.seq B.add (.block [.alu .add .r12 (.imm 1024), .alu .add .r13 (.imm 1024), .alu .sub .r14 (.imm 1)]))))))
+    (.seq B.nttO (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .r12), .mov .rdx (.reg .rbx),
+      .alu .add .rdx (.imm 1024), .mov .rcx (.reg .rbx)])
+    (.seq (B.mulAcc 0) (.block [.alu .add .r12 (.imm 1024), .alu .add .r13 (.imm 1024), .alu .sub .r14 (.imm 1)]))))
 
 
 /-! ### `vg_mlkem*_encrypt_mul` -/
 
 /-- A term of sum `o`: `f ×_T ŷ[j]`, with `f` at `rsi` (set by `fs`) and
-`ŷ[j]` at `scratch + 1024`, to `scratch + 2048`, added to `u[o]` (at
+`ŷ[j]` at `scratch + 1024`, added to the accumulator of `u[o]` (at
 `rbp + 1024 o`). -/
-def prodAdd (B : Bodies) (fs : List Instr) (o : Nat) : Prog isa :=
-  .seq (.block ([.mov .rdi (.reg .rbx), .alu .add .rdi (.imm 2048)] ++ fs ++
-      [.mov .rdx (.reg .rbx), .alu .add .rdx (.imm 1024), .mov .rcx (.reg .rbx)]))
-    (.seq B.mul (.seq (.block [.mov .rdi (.reg .rbp), .alu .add .rdi (.imm (BitVec.ofNat 32 (1024 * o))),
-      .mov .rsi (.reg .rbx), .alu .add .rsi (.imm 2048)]) B.add))
+def prodAcc (B : Bodies) (fs : List Instr) (o : Nat) : Prog isa :=
+  .seq (.block ([.mov .rdi (.reg .rbp), .alu .add .rdi (.imm (BitVec.ofNat 32 (1024 * o)))] ++ fs ++
+      [.mov .rdx (.reg .rbx), .alu .add .rdx (.imm 1024), .mov .rcx (.reg .rbx)])) (B.mulAcc o)
 
 /-- The terms `j` of the sums `i, …, i + n - 1` of `Â^⊺ ∘ ŷ`: `Â[j, i] ×_T ŷ[j]`, with row `j` of `Â`
 at `r12`. -/
 def innerE (B : Bodies) : Nat → Nat → Prog isa
   | _, 0 => .block []
-  | i, n + 1 => .seq (prodAdd B [.mov .rsi (.reg .r12), .alu .add .rsi (.imm (BitVec.ofNat 32 (1024 * i)))] i)
+  | i, n + 1 => .seq (prodAcc B [.mov .rsi (.reg .r12), .alu .add .rsi (.imm (BitVec.ofNat 32 (1024 * i)))] i)
     (innerE B (i + 1) n)
 
 /-- The terms `j`: `ŷ[j] = NTT(y[j])` to `scratch + 1024`, those of the `k`
 sums of `Â^⊺ ∘ ŷ`, and that of `t̂^⊺ ∘ ŷ` (`t̂[j]` at `r15`); then the next `j`. -/
 def termE (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block [.mov .rdi (.reg .r13), .mov .rsi (.reg .rbx), .mov .r10 (.reg .rbx), .alu .add .r10 (.imm 1024)])
-    (.seq B.nttO (.seq (innerE B 0 k) (.seq (prodAdd B [.mov .rsi (.reg .r15)] k)
+    (.seq B.nttO (.seq (innerE B 0 k) (.seq (prodAcc B [.mov .rsi (.reg .r15)] k)
       (.block [.alu .add .r12 (.imm (BitVec.ofNat 32 (1024 * k))), .alu .add .r13 (.imm 1024),
         .alu .add .r15 (.imm 1024), .alu .sub .r14 (.imm 1)]))))
 
@@ -141,10 +146,15 @@ def invE (B : Bodies) : Prog isa :=
 /-- Save the callee-saved registers through `r8` (`scratch`). -/
 def saveE : List Instr := slots.map fun p => .store (at_ .r8 p.2) p.1
 
-/-- The `k + 1` polynomials of `u` (at `rbp`), zeroed, sixteen bytes at a time. -/
-def zeroU (k : Nat) : Prog isa :=
-  .seq (.block [xb .pxor .xmm0 .xmm0, .mov .rdi (.reg .rbp)])
-    (rcxLoop (64 * (k + 1)) [.movdquStore (at_ .rdi 0) .xmm0, .alu .add .rdi (.imm 16)])
+/-- The accumulators of `u[i], …, u[i + n - 1]` (at `rbp + 1024 i`, …) zeroed. -/
+def zeroE (B : Bodies) : Nat → Nat → Prog isa
+  | _, 0 => .block []
+  | i, n + 1 => .seq (.seq (.block [.mov .rdi (.reg .rbp), .alu .add .rdi (.imm (BitVec.ofNat 32 (1024 * i)))])
+    B.zero) (zeroE B (i + 1) n)
+
+/-- The table of the products, and the `k + 1` accumulators zeroed. -/
+def startE (B : Bodies) (k : Nat) : Prog isa :=
+  .seq (.block ([.mov .rcx (.reg .rbx)] ++ B.tab)) (zeroE B 0 (k + 1))
 
 end KpkeMul
 
@@ -153,7 +163,7 @@ open KpkeMul in
 def decryptMul (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block (save ++ [.mov .rbx (.reg .rcx), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
       .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq zeroW (.seq (.loop (term B) .ne)
+    (.seq (withMxcsr .rbx oMx (.seq (start B) (.seq (.loop (term B) .ne)
       (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx)]) B.inv))))
     (.block restore))
 
@@ -162,7 +172,7 @@ open KpkeMul in
 def encryptMul (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rcx),
       .mov .r15 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (zeroU k) (.seq (.loop (termE B k) .ne)
+    (.seq (withMxcsr .rbx oMx (.seq (startE B k) (.seq (.loop (termE B k) .ne)
       (.seq (.block [.mov32 .r15 (.imm (BitVec.ofNat 32 (k + 1)))]) (.loop (invE B) .ne)))))
     (.block restore))
 
