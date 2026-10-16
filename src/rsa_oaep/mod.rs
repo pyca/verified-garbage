@@ -348,8 +348,6 @@ pub fn decrypt(
             scratch.len(),
         )
     };
-    // The working space holds the private key and the encoded message.
-    zeroize(&mut scratch);
     match r {
         1 => {
             // The message is at most `n_len - 2 hLen - 2` bytes.

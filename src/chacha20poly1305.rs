@@ -138,6 +138,15 @@ pub enum Error {
     TooManyPieces,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidTextLength => "ChaCha20-Poly1305 text is too long",
+        TagMismatch => "ChaCha20-Poly1305 tag does not match",
+        InvalidOutputLength => "ChaCha20-Poly1305 output is not as long as the plaintext",
+        TooManyPieces => "too many pieces of ChaCha20-Poly1305 plaintext",
+    }
+}
+
 /// The AEAD with a key.
 #[derive(Clone)]
 pub struct ChaCha20Poly1305 {

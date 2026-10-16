@@ -29,8 +29,7 @@ def artifacts : List Artifact := [
         around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
         loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.encryptMul .sse 3
-    verified := Proof.MlKem.X86_64.encMulSse3_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlKem.X86_64.encMulSse3_verified },
   Spec.MlKem.encryptMulApi.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
@@ -40,7 +39,6 @@ def artifacts : List Artifact := [
         loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.encryptMul .avx2 3
     verified := Proof.MlKem.X86_64.encMulAvx3_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem.decryptMulApi.artifact X86_64.target {
     notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
@@ -48,8 +46,7 @@ def artifacts : List Artifact := [
         around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
         loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.decryptMul .sse 3
-    verified := Proof.MlKem.X86_64.decMulSse3_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlKem.X86_64.decMulSse3_verified },
   Spec.MlKem.decryptMulApi.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
@@ -59,7 +56,6 @@ def artifacts : List Artifact := [
         loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.decryptMul .avx2 3
     verified := Proof.MlKem.X86_64.decMulAvx3_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem.keygenMulApi.artifact X86_64.target {
     notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts` and \
@@ -67,8 +63,7 @@ def artifacts : List Artifact := [
         multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the \
         caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.keygenMul .sse 3
-    verified := Proof.MlKem.X86_64.kgMulSse3_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlKem.X86_64.kgMulSse3_verified },
   Spec.MlKem.keygenMulApi.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["The function computes with the code of `vg_mlkem_ntt_avx2` and \
@@ -77,7 +72,6 @@ def artifacts : List Artifact := [
         MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.keygenMul .avx2 3
     verified := Proof.MlKem.X86_64.kgMulAvx3_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem.nttInvApi.artifact X86_64.target {
     notes := ["The function computes on eight coefficients at a time in SSE2 registers. It sets MXCSR \
@@ -97,7 +91,6 @@ def artifacts : List Artifact := [
         multiplications."]
     code := Impl.MlKem.X86_64.addAvx2
     verified := Proof.MlKem.X86_64.addY_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem.subApi.artifact X86_64.target {
     suffix := "_avx2"
@@ -105,7 +98,6 @@ def artifacts : List Artifact := [
         multiplications."]
     code := Impl.MlKem.X86_64.subAvx2
     verified := Proof.MlKem.X86_64.subY_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem.sampleNTTApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.sampleNTT
@@ -124,7 +116,6 @@ def artifacts : List Artifact := [
         `*b`). It has no multiplications."]
     code := Impl.MlKem.X86_64.decode12Avx2
     verified := Proof.MlKem.X86_64.decode12Y_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem.encode12Api.artifact X86_64.target {
     suffix := "_avx2"
@@ -134,7 +125,6 @@ def artifacts : List Artifact := [
         It has no multiplications."]
     code := Impl.MlKem.X86_64.encode12Avx2
     verified := Proof.MlKem.X86_64.encode12Y_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem.cbd2Api.artifact X86_64.target {
     code := Impl.MlKem.X86_64.cbd2
@@ -152,7 +142,6 @@ def artifacts : List Artifact := [
         the width 1 runs the baseline loop. It writes only the `len` bytes of `*out`."]
     code := Impl.MlKem.X86_64.compressEncodeAvx2
     verified := Proof.MlKem.X86_64.compressEncodeY_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem.decodeDecompressApi.artifact X86_64.target {
     suffix := "_avx2"
@@ -161,7 +150,6 @@ def artifacts : List Artifact := [
         by sums of shifts; the width 1 runs the baseline loop. It reads only the `len` bytes of `*b`."]
     code := Impl.MlKem.X86_64.decodeDecompressAvx2
     verified := Proof.MlKem.X86_64.decodeDecompressY_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem.checkEkApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.checkEk
@@ -171,8 +159,7 @@ def artifacts : List Artifact := [
         return address."]
     code := Impl.MlKem.X86_64.Sample4.sampleNTT4
     stack := 24
-    verified := Proof.MlKem.X86_64.sample4_scalar_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlKem.X86_64.sample4_scalar_verified },
   Spec.MlKem.sampleNTT4Api.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, \
@@ -184,7 +171,6 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem.sampleNTT4Api.artifact X86_64.target {
     suffix := "_avx512"
@@ -197,7 +183,6 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2", "avx512f", "avx512vl"] }]
 
 end VG.Artifacts.MlKem.X86_64

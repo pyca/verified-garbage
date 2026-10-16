@@ -11,6 +11,5 @@ open VG.X86_64
 def artifacts : List Artifact := [
   Spec.Ct.eqApi.artifact target {
     code := Impl.Ct.X86_64.eq
-    verified := Proof.Ct.X86_64.verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.Ct.X86_64.verified }]
 end VG.Artifacts.Ct.X86_64

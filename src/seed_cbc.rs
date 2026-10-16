@@ -35,6 +35,13 @@ pub enum Error {
     IncompleteBlock,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid SEED key length",
+        IncompleteBlock => "SEED-CBC input is not a whole number of blocks",
+    }
+}
+
 /// An expanded SEED key for CBC encryption and decryption.
 ///
 /// No padding is added or removed: each operation takes whole 16-byte

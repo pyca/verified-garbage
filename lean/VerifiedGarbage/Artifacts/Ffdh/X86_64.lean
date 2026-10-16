@@ -11,6 +11,5 @@ open VG.X86_64
 def artifacts : List Artifact := [
   Spec.Ffdh.chooseApi.artifact target {
     code := Impl.Ffdh.X86_64.choose
-    verified := Proof.Ffdh.X86_64.verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.Ffdh.X86_64.verified }]
 end VG.Artifacts.Ffdh.X86_64

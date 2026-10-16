@@ -208,6 +208,15 @@ pub enum Error {
     DataUnitTooLong,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid AES-XTS key length",
+        EqualKeyHalves => "AES-XTS key halves are equal",
+        DataUnitTooShort => "AES-XTS data unit is shorter than a block",
+        DataUnitTooLong => "AES-XTS data unit is too long",
+    }
+}
+
 /// An XTS-AES key, `Key1 ‖ Key2`, expanded for encryption and decryption.
 ///
 /// Each operation takes a whole data unit, of 16 bytes or more, and its

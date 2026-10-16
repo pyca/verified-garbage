@@ -18,8 +18,7 @@ def artifacts : List Artifact := [
         `r12`–`r15` in `xmm0`–`xmm2` and restores them through the first words of arrays 2 and 3, \
         which hold them on return."]
     code := Impl.Bignum.X86_64.MontFn.mulBase
-    verified := Proof.Bignum.X86_64.MontFn.fn_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Bignum.X86_64.MontFn.fn_verified },
   Spec.Rsa.Mont.mulApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["For `w` a multiple of 8 (below 2^30 + 8), BMI2 and ADX: the product by \
@@ -33,14 +32,12 @@ def artifacts : List Artifact := [
         `rbx`, `rbp` and `r12`–`r15` in `xmm0`–`xmm2`."]
     code := Impl.Bignum.X86_64.MontFn.mulAdx
     verified := Proof.Bignum.X86_64.MontFn.fnAdx_verified
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    features := ["bmi2", "adx"] },
   Spec.Rsa.Mont.mulLazyApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `vg_rsa_mont_mul`'s code. Its subtraction of `m` when it does not \
         borrow leaves a result below `2^(64 w)` for any operands below `2^(64 w)`."]
     code := Impl.Bignum.X86_64.MontFn.mulBase
-    verified := Proof.Bignum.X86_64.MontFn.fnLazy_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Bignum.X86_64.MontFn.fnLazy_verified },
   Spec.Rsa.Mont.mulLazyApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["For `w` a multiple of 8 (below 2^30 + 8), BMI2 and ADX: `vg_rsa_mont_mul_adx`'s tiles \
@@ -51,7 +48,6 @@ def artifacts : List Artifact := [
         `xmm8`–`xmm13`."]
     code := Impl.Bignum.X86_64.MontFn.mulAdxLazy
     verified := Proof.Bignum.X86_64.MontFn.fnAdxLazy_verified
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    features := ["bmi2", "adx"] }]
 
 end VG.Artifacts.RsaMont.X86_64

@@ -138,6 +138,14 @@ pub enum Error {
     TagMismatch,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidKeyLength => "invalid AES key length",
+        InvalidNonceLength => "invalid AES-OCB nonce length",
+        TagMismatch => "AES-OCB tag does not match",
+    }
+}
+
 /// An AES-OCB key: its key context.
 #[derive(Clone)]
 pub struct AesOcb {

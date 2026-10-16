@@ -1,18 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.X86.ScalarBaseOk
 public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
-import VerifiedGarbage.Proof.Ed448.X86.BaseVerified
-import VerifiedGarbage.Proof.Ed448.Facts
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
-import VerifiedGarbage.Proof.Ed448.X86.BaseCT
-import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sha3.X86.Lit
 
@@ -31,10 +21,6 @@ namespace VG.Artifacts.Ed448PublicKey.X86
 
 open VG.X86
 
-theorem base_ok : Proof.Ed448.X86.CalleeOk Proof.Ed448.X86.scalarBaseLocal Impl.Ed448.X86.scalarBase :=
-  ⟨Proof.Ed448.X86.scalarBase_ok Proof.Ed448.baseLadder_ok, Proof.Ed448.X86.scalarBase_ct,
-    NoSp.of_all (by lit_decide), by lit_decide⟩
-
 def artifacts : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact X86.target {
     notes := ["Uses baseline integer instructions. \
@@ -46,6 +32,6 @@ def artifacts : List Artifact := [
       values, are left in `scratch`."]
     code := Impl.Ed448.X86.PublicKey.code Impl.Ed448.X86.scalarBase
     stack := 280
-    verified := Proof.Ed448.X86.PublicKey.publicKey_verified base_ok }]
+    verified := Proof.Ed448.X86.PublicKey.publicKey_verified Proof.Ed448.X86.scalarBase_calleeOk }]
 
 end VG.Artifacts.Ed448PublicKey.X86

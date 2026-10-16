@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 /-!
 # The comb's digits, signs and masks
 
-Step `j` reads the nibble `2j + 1` (or `2j`) of the scalar from its bits,
+Step `i` reads the nibble `i` of the scalar from its bits,
 expanded one per byte at byte 768 of the workspace, by Horner's rule;
 `combSign` turns it into the magnitude `|n - 8|` and the mask of its sign;
 `combMasks` sets the register for `k` to all ones exactly if the magnitude is
@@ -30,16 +30,16 @@ open Word64
 
 /-! ## The bit index -/
 
-private theorem index_fact : ∀ j < 32, BitVec.ofNat 64 j <<< 3 = BitVec.ofNat 64 (8 * j) := by
+private theorem index_fact : ∀ j < 64, BitVec.ofNat 64 j <<< 2 = BitVec.ofNat 64 (4 * j) := by
   decide +kernel
 
-theorem combIndex_ok (s : State) {base : Addr} (hs : Scr s base) {j : Nat} (hj : j < 32)
+theorem combIndex_ok (s : State) {base : Addr} (hs : Scr s base) {j : Nat} (hj : j < 64)
     (hb : s.gpr .x19 = BitVec.ofNat 64 j) :
-    WP isa (.block ([.lsl .x .x8 .x19 3, .add .x .x8 .x0 .x8] : List Instr)) s fun t =>
-      t.gpr .x8 = off base (8 * j) ∧ Keeps [.x8] s t := by
+    WP isa (.block ([.lsl .x .x8 .x19 2, .add .x .x8 .x0 .x8] : List Instr)) s fun t =>
+      t.gpr .x8 = off base (4 * j) ∧ Keeps [.x8] s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
-    show (3 : Nat) < Size.x.bits from by decide, ite_true, RegUpd.gpr_write, BitVec.setWidth_eq,
+    show (2 : Nat) < Size.x.bits from by decide, ite_true, RegUpd.gpr_write, BitVec.setWidth_eq,
     hb, index_fact j hj, hs.x0, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
   refine ⟨True.intro, ⟨fun r hr => ?_, by simp only [RegUpd.mem_write],
       by simp only [RegUpd.rd_write],
@@ -184,18 +184,17 @@ structure DigitOut (s : State) (S i : Nat) (t : State) : Prop where
   sign : t.gpr .x1 = Word64.mask (decide (nib S i < 8))
   keeps : Keeps (clob ++ [.x1]) s t
 
-theorem combDigit_ok {s : State} {base : Addr} (hs : Scr s base) {S j i o : Nat} (hj : j < 32)
-    (hi : i < 64) (hoi : 8 * j + o = 768 + 4 * i) (ho : o + 3 < 4096)
-    (hc : s.gpr .x19 = BitVec.ofNat 64 j)
+theorem combDigit_ok {s : State} {base : Addr} (hs : Scr s base) {S i : Nat} (hi : i < 64)
+    (hc : s.gpr .x19 = BitVec.ofNat 64 i)
     (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) :
-    WP isa (.block (combDigit o)) s (DigitOut s S i) := by
+    WP isa (.block combDigit) s (DigitOut s S i) := by
   have hn : nib S i < 16 := nib_lt _ _
   simp only [combDigit, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (combIndex_ok s hs hj hc) fun a ⟨a8, ka⟩ => ?_
+  refine WP.mono (combIndex_ok s hs hi hc) fun a ⟨a8, ka⟩ => ?_
   have hsa := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (combNibble_ok hsa (S := S) (i := i) hi a8 hoi ho
+  refine WP.mono (combNibble_ok hsa (S := S) (i := i) hi a8 (by omega) (by decide)
     (by rw [ka.mem]; exact hb)) fun b ⟨b2, kb⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (combSign_ok b hn b2) fun c ⟨c2, c1, kc⟩ => ?_

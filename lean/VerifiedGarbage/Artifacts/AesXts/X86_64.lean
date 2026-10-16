@@ -33,7 +33,6 @@ def artifacts : List Artifact := [
     code := Impl.AesXts.X86_64Vaes.encrypt
     stack := 8
     verified := Proof.AesXts.X86_64.Vaes.encrypt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["aes", "avx", "avx2", "vaes", "vpclmulqdq"] },
   Spec.Xts.aesDecryptApi.artifact X86_64.target {
     suffix := "_vaes_vpclmul"
@@ -43,7 +42,6 @@ def artifacts : List Artifact := [
     code := Impl.AesXts.X86_64Vaes.decrypt
     stack := 8
     verified := Proof.AesXts.X86_64.Vaes.decrypt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["aes", "avx", "avx2", "vaes", "vpclmulqdq"] },
   Spec.Xts.aesEncryptApi.artifact X86_64.target {
     suffix := "_aesni_pclmul"
@@ -53,7 +51,6 @@ def artifacts : List Artifact := [
     code := Impl.AesXts.X86_64AesNi.encrypt
     stack := 8
     verified := Proof.AesXts.X86_64.OnePassNi.encrypt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["aes", "avx", "pclmulqdq"] },
   Spec.Xts.aesDecryptApi.artifact X86_64.target {
     suffix := "_aesni_pclmul"
@@ -63,7 +60,6 @@ def artifacts : List Artifact := [
     code := Impl.AesXts.X86_64AesNi.decrypt
     stack := 8
     verified := Proof.AesXts.X86_64.OnePassNi.decrypt_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["aes", "avx", "pclmulqdq"] }]
 
 end VG.Artifacts.AesXts.X86_64

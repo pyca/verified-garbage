@@ -42,10 +42,10 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I) 7 v.F224.pbkdf2
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I
-    verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha224_verified v) (by decide)
+    verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha224_verified v)
       (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2_224Sp) (Proof.Pbkdf2.Whole.X86.sha224_stack v)
       Proof.Pbkdf2.Whole.X86.sha224_pbkFrameSat
-    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe (by decide) v.pbkdf2_224Sp
+    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.pbkdf2_224Sp
     features := v.features }]
 
 end VG.Generic.Sha256.X86.Pbkdf2Sha224

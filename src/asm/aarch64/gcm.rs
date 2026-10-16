@@ -689,6 +689,325 @@ ret
     )
 }
 
+/// The CPU features `vg_ghash_prepared_aes` requires (`Artifact.features`).
+pub(crate) const VG_GHASH_PREPARED_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// `vg_ghash` with `h` at byte 240 of a 1024-byte context from `vg_aes_gcm_init_prepared`: the hash subkey `H` is the block at `h`, followed by the 48 prepared powers, which it may read. Replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (NIST SP 800-38D §6.4). The hash subkey, its powers, `Y` and the data are secret.
+///
+/// Contract: `VG.Spec.Gcm.ghashPreparedContract`. Constant time: only the pointers and `n` may affect timing.
+///
+/// Uses PMULL as `vg_ghash_aes` does, loading `H'` and, on calls with at least eight blocks, `H'²` to `H'⁸` from the context (`H'ᵏ = Hᵏ · x⁻¹` is the prepared power) instead of computing them.
+///
+/// # Safety
+///
+/// * `h` must be valid for reads of 784 bytes.
+/// * `y` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `h` must point at byte 240 of a key context with the prepared format written by `vg_aes_gcm_init_prepared`.
+/// * The contents of `scratch` on return are unspecified.
+/// * `y` and `scratch` must not overlap each other, `h` or `data` (distinct Rust objects never do).
+/// * None of `h`, `y`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ghash_prepared_aes(h: *const [u8; 784], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r".arch_extension aes
+ldr q16, [x0, #32]
+ext v24.16b, v16.16b, v16.16b, #8
+movz x5, #49664, lsl #48
+dup v1.2d, x5
+ldr q0, [x1, #0]
+rev64 v0.16b, v0.16b
+lsr x5, x3, #3
+cbz x5, 20f
+ldr q17, [x0, #16]
+ext v25.16b, v17.16b, v17.16b, #8
+ldr q18, [x0, #64]
+ext v26.16b, v18.16b, v18.16b, #8
+ldr q19, [x0, #48]
+ext v27.16b, v19.16b, v19.16b, #8
+ldr q20, [x0, #96]
+ext v28.16b, v20.16b, v20.16b, #8
+ldr q21, [x0, #80]
+ext v29.16b, v21.16b, v21.16b, #8
+ldr q22, [x0, #128]
+ext v30.16b, v22.16b, v22.16b, #8
+ldr q23, [x0, #112]
+ext v31.16b, v23.16b, v23.16b, #8
+22:
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v30.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v30.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v22.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v22.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #32]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v29.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v29.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v21.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v21.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #48]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v28.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v28.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v20.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v20.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #64]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #80]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #96]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #112]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v31.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v31.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v23.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v23.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #128
+sub x3, x3, #8
+lsr x5, x3, #3
+cbnz x5, 22b
+lsr x6, x3, #2
+cbz x6, 23f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #32]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #48]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #64
+sub x3, x3, #4
+lsr x5, x3, #3
+b 24f
+23:
+24:
+lsr x6, x3, #1
+cbz x6, 25f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #32
+sub x3, x3, #2
+lsr x5, x3, #3
+b 26f
+25:
+26:
+cbz x3, 27f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #16
+sub x3, x3, #1
+lsr x5, x3, #3
+b 28f
+27:
+28:
+b 21f
+20:
+cbz x3, 29f
+211:
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #16
+sub x3, x3, #1
+lsr x5, x3, #3
+cbnz x3, 211b
+b 210f
+29:
+210:
+21:
+rev64 v0.16b, v0.16b
+str q0, [x1, #0]
+ret
+.arch_extension noaes
+.p2align 6",
+    )
+}
+
 /// The CPU features `vg_aes_gcm_init_aes` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 

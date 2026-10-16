@@ -23,8 +23,10 @@
 
 use crate::arch::cast5_cfb::{vg_cast5_cfb64_decrypt, vg_cast5_cfb64_encrypt};
 use crate::cast5_ecb::Cast5Ecb;
-pub use crate::cast5_ecb::Error;
 use crate::zeroize::zeroize;
+
+/// The key does not contain 5 to 16 bytes.
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded CAST5 key for CFB64 encryption and decryption.
 pub struct Cast5Cfb64 {
@@ -40,9 +42,9 @@ type Cfb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], *mut [u8;
 
 impl Cast5Cfb64 {
     /// Expands a key of 5 to 16 bytes for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, Error> {
+    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         Ok(Self {
-            key: Cast5Ecb::new(key)?,
+            key: Cast5Ecb::new(key).map_err(|_| InvalidKeyLength)?,
         })
     }
 

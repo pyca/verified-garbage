@@ -37,9 +37,10 @@ slots. -/
 def finFrame (I : Spec.Hmac.Instance) : Nat := 8 + 20 + 8 * I.scratch
 
 theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa}
-    (h : Verified X86.target c (I.initScratchContract X86.abi 48)) (hs : 8 * I.scratch < 4072)
+    (h : Verified X86.target c (I.initScratchContract X86.abi 48))
     (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse c ≤ 48)
-    (hsat : ∃ s, (I.initContract X86.abi (48 + initFrame I)).pre s) :
+    (hsat : ∃ s, (I.initContract X86.abi (48 + initFrame I)).pre s)
+    (hs : 8 * I.scratch < 4072 := by decide) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch (initFrame I) 4 c)
       (I.initContract X86.abi (48 + initFrame I)) :=
   X86.Verified.stackScratch (sig := Spec.Hmac.initSig I.S) (nm := "scratch") (e := .u64)
@@ -53,10 +54,11 @@ theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     hsp hd (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) hsat
 
 theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
-    (h : Verified X86.target c (I.finalizeScratchContract X86.abi 48)) (hs : 8 * I.scratch < 4068)
-    (hR : Hmac.ReprLocal I.S) (hS : I.S.stateBytes < 2 ^ 64)
+    (h : Verified X86.target c (I.finalizeScratchContract X86.abi 48))
+    (hR : Hmac.ReprLocal I.S)
     (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse c ≤ 48)
-    (hsat : ∃ s, (I.finalizeContract X86.abi (48 + finFrame I)).pre s) :
+    (hsat : ∃ s, (I.finalizeContract X86.abi (48 + finFrame I)).pre s)
+    (hs : 8 * I.scratch < 4068 := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch (finFrame I) 5 c)
       (I.finalizeContract X86.abi (48 + finFrame I)) :=
   X86.Verified.stackScratch (sig := Spec.Hmac.finalizeSig I.S) (nm := "scratch") (e := .u64)
@@ -109,9 +111,9 @@ def finFrameSat (S D : Nat) : State where
 /-- The frame of `withStackScratch` keeps the stack pointer for any `c` that
 does, if it does for an empty body (decided for literal sizes). -/
 theorem withStackScratch_spSafe {bytes n : Nat} {c : Prog isa}
+    (h : c.all (fun i => !isa.writesSp i) = true)
     (hf : (Impl.StackScratch.X86.withStackScratch bytes n (.block [])).all
-      (fun i => !isa.writesSp i) = true)
-    (h : c.all (fun i => !isa.writesSp i) = true) :
+      (fun i => !isa.writesSp i) = true := by decide) :
     (Impl.StackScratch.X86.withStackScratch bytes n c).all (fun i => !isa.writesSp i) = true := by
   simp only [Impl.StackScratch.X86.withStackScratch, Code.all, List.all_nil, Bool.and_true,
     Bool.and_eq_true] at hf ⊢

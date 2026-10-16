@@ -415,8 +415,6 @@ impl PrivateKey {
                 scratch.len(),
             )
         };
-        // The working space holds the private key and powers of the input.
-        crate::zeroize::zeroize(&mut scratch);
         // `PrivateKey::from_crt` checked `e` and the key, so a refusal means
         // the input is not below the modulus.
         match r {

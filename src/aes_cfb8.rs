@@ -109,8 +109,7 @@ fn select(f: Features) -> Backend {
 }
 
 /// The key is not 16, 24 or 32 bytes long.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded AES key for CFB8 encryption and decryption.
 pub struct AesCfb8 {

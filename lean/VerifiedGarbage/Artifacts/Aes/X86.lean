@@ -64,29 +64,25 @@ def artifacts : List Artifact := [
     notes := ["Constant-time bitsliced AES, two blocks at a time, in the style of BearSSL's \
         `aes_ct` (Thomas Pornin, MIT licence)."]
     code := Impl.Aes.X86.encryptBlocks
-    verified := Proof.Aes.X86.encryptBlocks_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Aes.X86.encryptBlocks_verified },
   Spec.Aes.decryptBlocksApi.artifact X86.target {
     notes := ["Constant-time bitsliced AES, two blocks at a time, in the style of BearSSL's \
         `aes_ct` (Thomas Pornin, MIT licence): the inverse S-box is the forward one between \
         two inverse affine maps."]
     code := Impl.Aes.X86.decryptBlocks
-    verified := Proof.Aes.X86.decryptBlocks_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Aes.X86.decryptBlocks_verified },
   Spec.Aes.encryptBlocksApi.artifact X86.target {
     suffix := "_aesni"
     notes := ["Uses AES-NI: six blocks at a time, then one at a time."]
     code := Impl.Aes.X86.AesNi.encryptBlocks
     verified := Proof.Aes.X86.AesNi.encryptBlocks_verified
-    features := ["aes"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    features := ["aes"] },
   Spec.Aes.decryptBlocksApi.artifact X86.target {
     suffix := "_aesni"
     notes := ["Uses AES-NI: the equivalent inverse cipher (FIPS 197 §5.3.5), with the round keys \
         through `AESIMC` in the scratch buffer; six blocks at a time, then one at a time."]
     code := Impl.Aes.X86.AesNi.decryptBlocks
     verified := Proof.Aes.X86.AesNi.decryptBlocks_verified
-    features := ["aes"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    features := ["aes"] }]
 
 end VG.Artifacts.Aes.X86

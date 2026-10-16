@@ -95,6 +95,13 @@ pub enum Error {
     Randomness,
 }
 
+crate::error::impl_error! {
+    Error {
+        ZeroSharedSecret => "X25519 shared secret is all zero",
+        Randomness => "X25519 random number generator failed",
+    }
+}
+
 /// The u-coordinate of the base point, 9 (RFC 7748 §4.1), encoded.
 pub const BASE_POINT: [u8; 32] = {
     let mut b = [0; 32];
@@ -184,12 +191,7 @@ impl PrivateKey {
     /// A new private key: 32 random bytes from the operating system.
     pub fn generate() -> Result<Self, Error> {
         let mut bytes = [0u8; 32];
-        if getrandom::fill(&mut bytes).is_err() {
-            // The operating system's generator does not fail in the tests.
-            // NO-COVERAGE-START
-            return Err(Error::Randomness);
-            // NO-COVERAGE-END
-        }
+        getrandom::fill(&mut bytes).map_err(|_| Error::Randomness)?;
         Ok(PrivateKey { bytes })
     }
 
@@ -264,17 +266,10 @@ mod tests {
         }
     }
 
-    /// The baseline agrees with the implementation chosen for this CPU,
-    /// and the choice follows the features.
+    /// The choice of implementation follows the features (CI tests each
+    /// end to end, `VG_CPU_FEATURES=none` the baseline).
     #[test]
     fn backends() {
-        let k = [0x42; 32];
-        let u = PrivateKey::from_bytes(&[0x24; 32]).public_key();
-        let mut out = [0u8; 32];
-        let mut scratch = [0u64; 512];
-        // SAFETY: as in `x25519`, and the baseline needs no CPU feature.
-        unsafe { vg_x25519(&mut out, &k, &u, &mut scratch) };
-        assert_eq!(out, x25519(&k, &u));
         assert_eq!(Backend::select(Features(0)), Backend::Baseline);
         #[cfg(target_arch = "x86_64")]
         {

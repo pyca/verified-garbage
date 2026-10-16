@@ -54,12 +54,10 @@ def artifacts : List Artifact := [
     features := ["avx", "avx2", "avx512f", "avx512vl"] },
   Spec.ChaCha20.initApi.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.Stream.init
-    verified := Proof.ChaCha20.X86_64.Stream.init_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.ChaCha20.X86_64.Stream.init_verified },
   Spec.ChaCha20.setNonceApi.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.Stream.setNonce
-    verified := Proof.ChaCha20.X86_64.Stream.setNonce_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.ChaCha20.X86_64.Stream.setNonce_verified },
   Spec.ChaCha20.xorSplitApi.artifact X86_64.target {
     suffix := "_avx512"
     notes := ["Uses AVX-512, as `vg_chacha20_xor_avx512` does on `dst`, but each block of 64 \

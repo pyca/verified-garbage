@@ -21,8 +21,7 @@ def artifacts : List Artifact := [
         around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
         loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.encryptMul .sse 4
-    verified := Proof.MlKem.X86_64.encMulSse4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlKem.X86_64.encMulSse4_verified },
   Spec.MlKem1024.encryptMulApi.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
@@ -32,7 +31,6 @@ def artifacts : List Artifact := [
         loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.encryptMul .avx2 4
     verified := Proof.MlKem.X86_64.encMulAvx4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem1024.decryptMulApi.artifact X86_64.target {
     notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
@@ -40,8 +38,7 @@ def artifacts : List Artifact := [
         around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
         loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.decryptMul .sse 4
-    verified := Proof.MlKem.X86_64.decMulSse4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlKem.X86_64.decMulSse4_verified },
   Spec.MlKem1024.decryptMulApi.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
@@ -51,7 +48,6 @@ def artifacts : List Artifact := [
         loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.decryptMul .avx2 4
     verified := Proof.MlKem.X86_64.decMulAvx4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem1024.keygenMulApi.artifact X86_64.target {
     notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts` and \
@@ -59,8 +55,7 @@ def artifacts : List Artifact := [
         multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the \
         caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.keygenMul .sse 4
-    verified := Proof.MlKem.X86_64.kgMulSse4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlKem.X86_64.kgMulSse4_verified },
   Spec.MlKem1024.keygenMulApi.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["The function computes with the code of `vg_mlkem_ntt_avx2` and \
@@ -69,19 +64,15 @@ def artifacts : List Artifact := [
         MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.keygenMul .avx2 4
     verified := Proof.MlKem.X86_64.kgMulAvx4_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
   Spec.MlKem1024.compressEncodeApi.artifact X86_64.target {
     code := Impl.MlKem1024.X86_64.compressEncode1024
-    verified := Proof.MlKem1024.X86_64.compressEncode1024_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlKem1024.X86_64.compressEncode1024_verified },
   Spec.MlKem1024.decodeDecompressApi.artifact X86_64.target {
     code := Impl.MlKem1024.X86_64.decodeDecompress1024
-    verified := Proof.MlKem1024.X86_64.decodeDecompress1024_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlKem1024.X86_64.decodeDecompress1024_verified },
   Spec.MlKem1024.checkEkApi.artifact X86_64.target {
     code := Impl.MlKem1024.X86_64.checkEk1024
-    verified := Proof.MlKem1024.X86_64.checkEk1024_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.MlKem1024.X86_64.checkEk1024_verified }]
 
 end VG.Artifacts.MlKem1024.X86_64

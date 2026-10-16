@@ -147,7 +147,7 @@ but its frames' push and pop. -/
 theorem sealGather_spSafe (v : GcmImpl) :
     (sealGather (sealFn v).name (sealFn v).code).all (fun i => !X86.isa.writesSp i) = true := by
   have hc : (sealFn v).code.all (fun i => !X86.isa.writesSp i) = true :=
-    withStackScratch_spSafe (bytes := 2604) (n := 9) (by decide) (seal_spSafe v)
+    withStackScratch_spSafe (bytes := 2604) (n := 9) (seal_spSafe v)
   have he : (Code.block entry : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
   have hg : gather.all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
   have hr : (Code.block restore : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel

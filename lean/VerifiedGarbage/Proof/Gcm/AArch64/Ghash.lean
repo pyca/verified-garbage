@@ -28,6 +28,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Gcm.Contract
 meta import VerifiedGarbage.Spec.Gcm.Contract
+public import VerifiedGarbage.Spec.Gcm.Prepared
+meta import VerifiedGarbage.Spec.Gcm.Prepared
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 
@@ -306,6 +308,21 @@ def ghashAArch64 : Contract AArch64.isa where
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
+
+/-- `vg_ghash_prepared(h = x0, y = x1, data = x2, n = x3, scratch = x4)`:
+`ghashAArch64`, with `h` the 784 bytes from byte 240 of a key context with
+the prepared powers (`Spec.Gcm.PreparedPowersRepr`). -/
+def ghashPreparedAArch64 : Contract AArch64.isa where
+  pre s :=
+    let h : Region := ⟨s.gpr .x0, 784⟩
+    let y : Region := ⟨s.gpr .x1, 16⟩
+    let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
+    let scratch : Region := ⟨s.gpr .x4, 256⟩
+    s.rd = [h, data] ∧ s.wr = [y, scratch] ∧
+    h.Disjoint y ∧ h.Disjoint scratch ∧ y.Disjoint data ∧ y.Disjoint scratch ∧
+    data.Disjoint scratch ∧ Spec.Gcm.PreparedPowersRepr s.mem (s.gpr .x0 - 240)
+  post := ghashAArch64.post
+  pub := ghashAArch64.pub
 
 end VG.Proof.Gcm
 

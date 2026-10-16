@@ -43,10 +43,10 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha256I) 7 v.F.pbkdf2
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha256I
-    verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha256_verified v) (by decide)
+    verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha256_verified v)
       (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2Sp) (Proof.Pbkdf2.Whole.X86.sha256_stack v)
       Proof.Pbkdf2.Whole.X86.sha256_pbkFrameSat
-    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe (by decide) v.pbkdf2Sp
+    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.pbkdf2Sp
     features := v.features },
   -- Scrypt's code calls `pbkdf2` with its own working space.
   Spec.Hmac.sha256I.pbkdf2ScratchApi.artifact X86.target {

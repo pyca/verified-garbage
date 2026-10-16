@@ -171,8 +171,6 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
             scratch.len(),
         )
     };
-    // The working space holds the private key and powers of the encoding.
-    crate::zeroize::zeroize(&mut scratch);
     // `PrivateKey::from_crt` checked the key and the length of `digest` is
     // checked above, so a refusal means the encoding does not fit.
     match r {

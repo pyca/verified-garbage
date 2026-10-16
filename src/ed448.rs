@@ -100,6 +100,13 @@ pub enum Error {
     ContextTooLong,
 }
 
+crate::error::impl_error! {
+    Error {
+        InvalidSignature => "invalid Ed448 signature",
+        ContextTooLong => "Ed448 context is longer than 255 bytes",
+    }
+}
+
 /// An encoded Ed448 public key.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct VerifyingKey {

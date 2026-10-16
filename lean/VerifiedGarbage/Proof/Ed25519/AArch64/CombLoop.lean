@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
+public import VerifiedGarbage.Proof.Ed25519.CombDigits64
 import VerifiedGarbage.Proof.Ed25519.AArch64.CombStart
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Call
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
-import VerifiedGarbage.Proof.Ed25519.PointDouble
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -16,18 +16,14 @@ import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
-# The comb's loops and doublings
+# The comb's loop
 
 `combNeg` negates the selected `2dT` under the sign's mask; a call of
 `vg_ed25519_r64_add_affine_ext` adds it (`affCall_ok`), exactly as the
-specification's `pointAdd`; `double4` doubles four times, by calls of
-`vg_ed25519_r64_double_ext` (`doubleCall_ok`, RFC 8032's doubling,
-`pointDouble_rep`). After step `j` of the loop of the digits `2i + par`, the
-accumulator (slots 0–3) represents `[v + Σ_{i < j} d_{2i+par} 256^i]B`
-(`digitSum`), from `[v]B`; the odd digits' loop starts at `[G']B`
-(`combStart`), the doublings make that `[16 (G + Σ_i d_{2i+1} 256^i) + G]B`
-(`combStart_16`), and the even digits' loop ends at the scalar's multiple
-(`comb_total`).
+specification's `pointAdd`. After step `i` of the loop, the accumulator
+(slots 0–3) represents `[v + Σ_{i' < i} d_{i'} 16^{i'}]B` (`digitSum64`), from
+`[v]B`; the loop starts at `[17 G]B` (`combStart`) and ends at the scalar's
+multiple (`comb64_total`).
 -/
 
 @[expose] public section
@@ -136,129 +132,47 @@ theorem combNeg_ok {s : State} {base : Addr} (hs : Scr s base) (c : Slot) {sg : 
     rw [kv.gpr _ (by decide), kv.gpr _ (by decide), kv.gpr _ (by decide), kv.gpr _ (by decide)]
     exact eu
 
-/-! ## Four doublings -/
-
-theorem decX1_ok (s : State) (n : Nat) (hc : s.gpr .x1 = BitVec.ofNat 64 (n + 1)) :
-    WP isa (.block [.subImm .x .x1 .x1 1]) s fun t =>
-      t.gpr .x1 = BitVec.ofNat 64 n ∧ Keeps [.x1] s t := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
-    show (1 : Nat) < 4096 from by decide, ite_true, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-  · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq, hc, BitVec.ofNat_add, BitVec.add_sub_cancel]
-  · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr)
-
-theorem double4_counter : ∀ n < 16, (BitVec.ofNat 64 n != 0) = decide (n ≠ 0) := by decide
-
-structure Double4Inv (s₀ : State) (base : Addr) (a : EPoint dZ) (n : Nat) (s : State) : Prop where
-  positive : 0 < n
-  bound : n ≤ 4
-  scratch : Scr s base
-  counter : s.gpr .x1 = BitVec.ofNat 64 n
-  value : Rep (point (env s.mem base) 0 1 2 3) ((2 ^ (4 - n) : Nat) • a)
-  high : Outside base 64 512 s₀.mem s.mem
-  keep : CombKeep base s₀ s
-
-theorem double4_ok {s : State} {base : Addr} (hs : Scr s base) {a : EPoint dZ}
-    (hp : Rep (point (env s.mem base) 0 1 2 3) a) :
-    WP isa double4 s fun t =>
-      Rep (point (env t.mem base) 0 1 2 3) ((16 : Nat) • a) ∧ Outside base 64 512 s.mem t.mem ∧
-        CombKeep base s t := by
-  rw [double4]
-  refine WP.seq (WP.mono (show WP isa (.block [.movz .w .x1 4 0]) s fun t =>
-      t.gpr .x1 = BitVec.ofNat 64 4 ∧ Keeps [.x1] s t by
-    apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
-      show 16 * 0 < Size.w.bits from by decide, ite_true, Option.some.injEq, exists_eq_left']
-    refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-    · rw [RegUpd.gpr_write_self]; rfl
-    · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr)) fun b ⟨bc, kb⟩ => ?_)
-  have hsb : Scr b base := hs.of_keeps kb (by decide)
-  have ksb : CombKeep base s b := CombKeep.of_keeps kb (by decide)
-  have eb : b.mem = s.mem := kb.mem
-  have hl : WP isa (.loop (.seq Point64.doubleCall (.block [.subImm .x .x1 .x1 1])) (.nonzero .x .x1))
-      b fun t => Rep (point (env t.mem base) 0 1 2 3) ((16 : Nat) • a) ∧
-        Outside base 64 512 b.mem t.mem ∧ CombKeep base b t := by
-    apply WP.loop (Double4Inv b base a) (n := 4)
-    · intro n u hi
-      obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := hi.positive; omega : n ≠ 0)
-      have hk : k < 4 := by have := hi.bound; omega
-      refine WP.seq (WP.mono (Point64.doubleCall_ok hi.scratch) fun c ⟨kc, vc, mc⟩ => ?_)
-      have hc := outside_of_unwritten mc (by decide)
-      refine WP.mono (decX1_ok c k ((kc.gpr _ (by decide)).trans hi.counter)) fun t ⟨htc, kt⟩ => ?_
-      have hv : Rep (point (env t.mem base) 0 1 2 3) ((2 ^ (4 - k) : Nat) • a) := by
-        rw [kt.mem, vc, Point64.doubleRfcOps_eval]
-        have := pointDouble_rep hi.value.proj
-        rw [← two_nsmul, smul_smul, ← pow_succ', show 4 - (k + 1) + 1 = 4 - k by omega] at this
-        exact this
-      have hh : Outside base 64 512 b.mem t.mem := by rw [kt.mem]; exact hi.high.trans hc
-      have hkeep : CombKeep base b t :=
-        (hi.keep.trans (CombKeep.of_keep kc)).trans (CombKeep.of_keeps kt (by decide))
-      by_cases hk0 : k = 0
-      · subst hk0
-        exact Or.inl ⟨by simp only [eval, read_x, htc, double4_counter 0 (by decide),
-          show decide ((0 : Nat) ≠ 0) = false from rfl], hv, hh, hkeep⟩
-      · exact Or.inr ⟨by simp only [eval, read_x, htc, double4_counter k (by omega),
-          decide_eq_true hk0], k, by omega, ⟨by omega, by omega, hkeep.scr hsb, htc, hv, hh, hkeep⟩⟩
-    · exact ⟨by decide, le_refl _, hsb, bc, by rw [eb]; simpa using hp, Outside.refl _ _ _ _,
-        CombKeep.refl _ _⟩
-  exact WP.mono hl fun t ⟨tv, th, tk⟩ => ⟨tv, by rw [← eb]; exact th, ksb.trans tk⟩
-
-/-! ## A loop over the digits -/
-
-/-- `Σ_{i < c} d_{2i + par} 256^i`. -/
-def digitSum (S par : Nat) : Nat → ℤ
-  | 0 => 0
-  | c + 1 => digitSum S par c + sdig S (2 * c + par) * 256 ^ c
-
-theorem digitSum_odd (S : Nat) : ∀ c, digitSum S 1 c = oddSumZ S c
-  | 0 => rfl
-  | c + 1 => by rw [digitSum, oddSumZ, digitSum_odd S c]
-
-theorem digitSum_even (S : Nat) : ∀ c, digitSum S 0 c = evenSumZ S c
-  | 0 => rfl
-  | c + 1 => by rw [digitSum, evenSumZ, digitSum_even S c, Nat.add_zero]
+/-! ## The loop over the digits -/
 
 /-- The loop's invariant, after `j` steps from `[v]B`. -/
-structure CombInv (s₀ : State) (base : Addr) (S par : Nat) (v : ℤ) (j : Nat) (s : State) : Prop where
-  bound : j ≤ 32
+structure CombInv (s₀ : State) (base : Addr) (S : Nat) (v : ℤ) (j : Nat) (s : State) : Prop where
+  bound : j ≤ 64
   scratch : Scr s base
   counter : s.gpr .x19 = BitVec.ofNat 64 j
   zero : env s.mem base 21 = 0
   bits : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)
-  acc : Rep (point (env s.mem base) 0 1 2 3) ((v + digitSum S par j) • baseAff)
+  acc : Rep (point (env s.mem base) 0 1 2 3) ((v + digitSum64 S j) • baseAff)
   keep : CombKeep base s₀ s
 
-private theorem next_fact : ∀ j < 32,
+private theorem next_fact : ∀ j < 64,
     BitVec.ofNat 64 j + BitVec.ofNat 64 1 = BitVec.ofNat 64 (j + 1) ∧
-    (BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 32 != 0) = decide (j + 1 ≠ 32) := by decide +kernel
+    (BitVec.ofNat 64 (j + 1) - BitVec.ofNat 64 64 != 0) = decide (j + 1 ≠ 64) := by decide +kernel
 
-theorem combNext_ok (s : State) {j : Nat} (hj : j < 32) (h : s.gpr .x19 = BitVec.ofNat 64 j) :
-    WP isa (.block [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 32]) s fun t =>
-      t.gpr .x19 = BitVec.ofNat 64 (j + 1) ∧ (t.gpr .x8 != 0) = decide (j + 1 ≠ 32) ∧
+theorem combNext_ok (s : State) {j : Nat} (hj : j < 64) (h : s.gpr .x19 = BitVec.ofNat 64 j) :
+    WP isa (.block [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 64]) s fun t =>
+      t.gpr .x19 = BitVec.ofNat 64 (j + 1) ∧ (t.gpr .x8 != 0) = decide (j + 1 ≠ 64) ∧
       Keeps [.x19, .x8] s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec_addImm_x (show 1 < 4096 by decide),
-    exec_subImm_x (show 32 < 4096 by decide), read_x, RegUpd.gpr_write, BitVec.setWidth_eq, h,
+    exec_subImm_x (show 64 < 4096 by decide), read_x, RegUpd.gpr_write, BitVec.setWidth_eq, h,
     (next_fact j hj).1, (next_fact j hj).2, ite_true, ite_false, reduceCtorEq,
     Option.some.injEq, exists_eq_left']
   refine ⟨True.intro, True.intro, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 
-theorem combStep_ok {s₀ s : State} {base T : Addr} {S par : Nat} {v : ℤ} {j : Nat}
-    (h : CombInv s₀ base S par v j s) (htb : TblAt s₀ base T) (hT : s.syms combSym = T)
-    (hj : j < 32) (hpar : par < 2) :
-    WP isa (combStep (768 + 4 * par)) s fun t => (t.gpr .x8 != 0) = decide (j + 1 ≠ 32) ∧
-      CombInv s₀ base S par v (j + 1) t := by
+theorem combStep_ok {s₀ s : State} {base T : Addr} {S : Nat} {v : ℤ} {j : Nat}
+    (h : CombInv s₀ base S v j s) (htb : TblAt s₀ base T) (hT : s.syms combSym = T)
+    (hj : j < 64) :
+    WP isa combStep s fun t => (t.gpr .x8 != 0) = decide (j + 1 ≠ 64) ∧
+      CombInv s₀ base S v (j + 1) t := by
   rw [combStep]
-  have hn := nib_lt S (2 * j + par)
+  have hn := nib_lt S j
   -- The digit's masks.
-  refine WP.seq (WP.mono_syms (combDigit_ok h.scratch (i := 2 * j + par) hj (by omega) (by omega)
-    (by omega) h.counter h.bits) fun a ha sya => ?_)
+  refine WP.seq (WP.mono_syms (combDigit_ok h.scratch (i := j) hj h.counter h.bits) fun a ha sya => ?_)
   have hsa : Scr a base := h.scratch.of_keeps ha.keeps (by decide)
   have a19 : a.gpr .x19 = BitVec.ofNat 64 j := (ha.keeps.gpr _ (by decide)).trans h.counter
-  have hm : Masks (mag (nib S (2 * j + par))) a := ⟨ha.mask, ha.zero⟩
+  have hm : Masks (mag (nib S j)) a := ⟨ha.mask, ha.zero⟩
   have ksa : CombKeep base s a := CombKeep.of_keeps ha.keeps (by
     intro r hr
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -283,20 +197,20 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S par : Nat} {v : ℤ} {j 
     simp only [env, F]
     rw [bf.fe (by simp only [offset]; omega) (by simp only [offset]; omega), ha.keeps.mem]
   -- `2dT` negated for a negative digit.
-  refine WP.mono (combNeg_ok hsb 6 (sg := decide (nib S (2 * j + par) < 8))
+  refine WP.mono (combNeg_ok hsb 6 (sg := decide (nib S j < 8))
     ((kb.1 _ (by decide)).trans ha.sign)) fun c ⟨oc, vc⟩ => ?_
   have kc : Keep base b c := op_keep oc
-  obtain ⟨q, hq, hqz, hrq⟩ := combEntry_ok j (nib S (2 * j + par)) hj hn
+  obtain ⟨q, hq, hqz, hrq⟩ := combEntry64_ok j (nib S j) hj hn
   have b21 : env b.mem base 21 = 0 := (eb 21 (by decide)).trans h.zero
   have ec : ∀ i : Slot, i ≠ 6 → env c.mem base i = env b.mem base i := fun i hi => by
     rw [env_update 6 oc.mem, Function.update_of_ne hi]
   have cq : cachedAt (env c.mem base) 4 5 6 = cache q := by
     rw [← hq]
-    have c6 : env c.mem base 6 = if decide (nib S (2 * j + par) < 8) then
+    have c6 : env c.mem base 6 = if decide (nib S j < 8) then
         env b.mem base 21 - env b.mem base 6 else env b.mem base 6 := vc
     rw [b21, b6] at c6
-    have hT := combCached_T j (mag (nib S (2 * j + par)))
-    by_cases hlt : nib S (2 * j + par) < 8
+    have hT := combCached64_T j (mag (nib S j))
+    by_cases hlt : nib S j < 8
     · simp only [hlt, decide_true, ↓reduceIte] at b4 b5 c6 ⊢
       simp only [cachedAt, negCached, ec 4 (by decide), ec 5 (by decide), b4, b5, c6, hT]
     · simp only [hlt, decide_false, Bool.false_eq_true, ↓reduceIte] at b4 b5 c6 ⊢
@@ -321,16 +235,16 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S par : Nat} {v : ℤ} {j 
   · have h4 : env c.mem base 4 = q.Y - q.X := congrArg Spec.Ed25519.Point.X cq
     have h5 : env c.mem base 5 = q.Y + q.X := congrArg Spec.Ed25519.Point.Y cq
     have h6 : env c.mem base 6 = q.T * 2 * Spec.Ed25519.d := congrArg Spec.Ed25519.Point.Z cq
-    rw [kt.mem, vd, Point64.addAffineOps_eval _ q hqz h4 h5 h6, pc, digitSum, ← add_assoc, add_smul]
+    rw [kt.mem, vd, Point64.addAffineOps_eval _ q hqz h4 h5 h6, pc, digitSum64, ← add_assoc, add_smul]
     exact pointAdd_rep h.acc hrq
 
-/-- The loop of the digits `2i + par`, from `[v]B`. -/
+/-- The loop over the 64 digits, from `[v]B`. -/
 theorem combLoop_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt s base T)
-    (hT : s.syms combSym = T) {S par : Nat} (hpar : par < 2) {v : ℤ}
+    (hT : s.syms combSym = T) {S : Nat} {v : ℤ}
     (hz : env s.mem base 21 = 0)
     (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
     (hv : Rep (point (env s.mem base) 0 1 2 3) (v • baseAff)) :
-    WP isa (combLoop (768 + 4 * par)) s fun t => CombInv s base S par v 32 t := by
+    WP isa combLoop s fun t => CombInv s base S v 64 t := by
   rw [combLoop]
   refine WP.seq (WP.mono_syms (show WP isa (.block [.movz .w .x19 0 0]) s fun t =>
       t.gpr .x19 = BitVec.ofNat 64 0 ∧ Keeps [.x19] s t by
@@ -342,22 +256,22 @@ theorem combLoop_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt s
     · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr))
     fun b ⟨b19, kb⟩ syb => ?_)
   have ksb : CombKeep base s b := CombKeep.of_keeps kb (by decide)
-  have init : CombInv s base S par v 0 b :=
+  have init : CombInv s base S v 0 b :=
     ⟨by decide, hs.of_keeps kb (by decide), b19, by rw [kb.mem]; exact hz,
       fun q hq => by rw [kb.mem]; exact hb q hq,
-      by rw [kb.mem, digitSum, add_zero]; exact hv, ksb⟩
-  apply WP.loop (fun n (t : State) => (CombInv s base S par v (32 - n) t ∧ t.syms combSym = T) ∧
-    0 < n ∧ n ≤ 32) (n := 32)
+      by rw [kb.mem, digitSum64, add_zero]; exact hv, ksb⟩
+  apply WP.loop (fun n (t : State) => (CombInv s base S v (64 - n) t ∧ t.syms combSym = T) ∧
+    0 < n ∧ n ≤ 64) (n := 64)
   · intro n t ⟨⟨ht, hty⟩, hn0, hn⟩
     obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    refine WP.mono_syms (combStep_ok ht htb hty (by omega) hpar) fun u ⟨u8, hu⟩ suy => ?_
+    refine WP.mono_syms (combStep_ok ht htb hty (by omega)) fun u ⟨u8, hu⟩ suy => ?_
     by_cases hk : k = 0
     · subst hk
-      exact Or.inl ⟨by simp only [eval, read_x, u8, show 32 - (0 + 1) + 1 = 32 from rfl, ne_eq,
+      exact Or.inl ⟨by simp only [eval, read_x, u8, show 64 - (0 + 1) + 1 = 64 from rfl, ne_eq,
         not_true_eq_false, decide_false], hu⟩
-    · refine Or.inr ⟨by simp only [eval, read_x, u8, show 32 - (k + 1) + 1 ≠ 32 by omega, ne_eq,
+    · refine Or.inr ⟨by simp only [eval, read_x, u8, show 64 - (k + 1) + 1 ≠ 64 by omega, ne_eq,
         not_false_eq_true, decide_true], k, by omega, ⟨?_, by rw [suy]; exact hty⟩, by omega, by omega⟩
-      rw [show 32 - k = 32 - (k + 1) + 1 by omega]; exact hu
+      rw [show 64 - k = 64 - (k + 1) + 1 by omega]; exact hu
   · exact ⟨⟨init, by rw [syb]; exact hT⟩, by decide, by decide⟩
 
 /-! ## The comb -/
@@ -379,34 +293,12 @@ theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : Tbl
   have hsa := ka.scr hs
   have hta : TblAt a base T := htb.of_far (by rw [ka.rd, ka.wr])
     (fun x hx => ka.mem x (Or.inr (by omega)))
-  have hv : Rep (point (env a.mem base) 0 1 2 3) ((combStartVal : ℤ) • baseAff) := by
+  have hv : Rep (point (env a.mem base) 0 1 2 3) (((17 * combGVal : Nat) : ℤ) • baseAff) := by
     rw [ap, natCast_zsmul]; exact combStart_ok
-  -- The odd digits.
-  refine WP.seq (WP.mono_syms (combLoop_ok (par := 1) hsa hta (by rw [sya]; exact hT) (by decide) az
-    (fun q hq => by rw [ka.bit hq]; exact hb q hq) hv) fun b hb' syb => ?_)
-  -- Four doublings.
-  refine WP.seq (WP.mono_syms (double4_ok hb'.scratch hb'.acc) fun c ⟨cv, ch, kc⟩ syc => ?_)
-  have hsc := kc.scr hb'.scratch
-  have htc : TblAt c base T := hta.of_far (by rw [kc.rd, kc.wr, hb'.keep.rd, hb'.keep.wr])
-    (fun x hx => by rw [kc.mem x (Or.inr (by omega)), hb'.keep.mem x (Or.inr (by omega))])
-  have h16 : (((16 * combStartVal : Nat) : ℤ)) • baseAff = (((17 * combGVal : Nat) : ℤ)) • baseAff := by
-    rw [natCast_zsmul, natCast_zsmul]; exact combStart_16
-  have v16 : ((16 : Nat) • (((combStartVal : ℤ) + digitSum S 1 32) • baseAff)) =
-      ((16 * ((combGVal : ℤ) + oddSumZ S 32) + combGVal) • baseAff) := by
-    calc ((16 : Nat) • (((combStartVal : ℤ) + digitSum S 1 32) • baseAff))
-        = (((16 * combStartVal : Nat) : ℤ) + 16 * oddSumZ S 32) • baseAff := by
-          rw [← natCast_zsmul, smul_smul, digitSum_odd]; congr 1; push_cast; ring
-      _ = (((17 * combGVal : Nat) : ℤ) + 16 * oddSumZ S 32) • baseAff := by rw [add_smul, add_smul, h16]
-      _ = ((16 * ((combGVal : ℤ) + oddSumZ S 32) + combGVal) • baseAff) := by
-          congr 1; push_cast; ring
-  rw [v16] at cv
-  -- The even digits.
-  refine WP.mono (combLoop_ok (par := 0) hsc htc (by rw [syc, syb, sya]; exact hT) (by decide)
-    (by rw [env_high ch 21 (by decide)]; exact hb'.zero)
-    (fun q hq => by rw [kc.bit hq]; exact hb'.bits q hq) cv) fun t ht => ⟨?_, ?_⟩
-  · have hu := ht.acc
-    rw [digitSum_even, add_assoc, comb_total hS, natCast_zsmul] at hu
-    exact hu
-  · exact ((ka.trans hb'.keep).trans kc).trans ht.keep
+  refine WP.mono (combLoop_ok hsa hta (by rw [sya]; exact hT) az
+    (fun q hq => by rw [ka.bit hq]; exact hb q hq) hv) fun t ht => ⟨?_, ka.trans ht.keep⟩
+  have hu := ht.acc
+  rw [comb64_total hS, natCast_zsmul] at hu
+  exact hu
 
 end VG.Proof.Ed25519.AArch64

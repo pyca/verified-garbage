@@ -33,18 +33,18 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha256I) 4
       v.M.hmacInit
     stack := 48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha256I
-    verified := Proof.Pbkdf2.Md.X86.initFramed v.hmacInit (by decide)
+    verified := Proof.Pbkdf2.Md.X86.initFramed v.hmacInit
       (Proof.Pbkdf2.Md.X86.noEsp_of v.initNoSp) v.initStack Proof.Pbkdf2.Md.X86.sha256_initFrameSat
-    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe (by decide) v.initSp
+    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.initSp
     features := v.features },
   Spec.Hmac.sha256I.finalizeApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha256I) 5
       v.M.hmacFin
     stack := 48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha256I
-    verified := Proof.Pbkdf2.Md.X86.finFramed v.hmacFin (by decide) Proof.Hmac.sha256_local
-      (by decide) (Proof.Pbkdf2.Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack Proof.Pbkdf2.Md.X86.sha256_finFrameSat
-    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe (by decide) v.finSp
+    verified := Proof.Pbkdf2.Md.X86.finFramed v.hmacFin Proof.Hmac.sha256_local
+      (Proof.Pbkdf2.Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack Proof.Pbkdf2.Md.X86.sha256_finFrameSat
+    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp
     features := v.features },
   Spec.Hmac.sha256I.initScratchApi.artifact X86.target {
     suffix := v.suffix

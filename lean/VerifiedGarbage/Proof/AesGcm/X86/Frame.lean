@@ -36,9 +36,9 @@ private theorem noEsp_of {c : Prog isa} (h : NoSp c) :
 /-- The frame of `withStackScratch` keeps the stack pointer for any `c` that
 does, if it does for an empty body (decided for literal sizes). -/
 theorem withStackScratch_spSafe {bytes n : Nat} {c : Prog isa}
+    (h : c.all (fun i => !isa.writesSp i) = true)
     (hf : (Impl.StackScratch.X86.withStackScratch bytes n (.block [])).all
-      (fun i => !isa.writesSp i) = true)
-    (h : c.all (fun i => !isa.writesSp i) = true) :
+      (fun i => !isa.writesSp i) = true := by decide) :
     (Impl.StackScratch.X86.withStackScratch bytes n c).all (fun i => !isa.writesSp i) = true := by
   simp only [Impl.StackScratch.X86.withStackScratch, Code.all, List.all_nil, Bool.and_true,
     Bool.and_eq_true] at hf ⊢

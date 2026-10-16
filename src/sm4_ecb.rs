@@ -23,6 +23,12 @@ pub enum Error {
     IncompleteBlock,
 }
 
+crate::error::impl_error! {
+    Error {
+        IncompleteBlock => "SM4-ECB input is not a whole number of blocks",
+    }
+}
+
 /// An expanded SM4 key for ECB encryption and decryption.
 ///
 /// No padding is added or removed.

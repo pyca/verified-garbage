@@ -119,6 +119,15 @@ macro_rules! ml_dsa {
             Randomness,
         }
 
+        $crate::error::impl_error! {
+            Error {
+                LoopBound => concat!($name, " loop reached its bound"),
+                ContextTooLong => concat!($name, " context is longer than 255 bytes"),
+                InvalidSignature => concat!("invalid ", $name, " signature"),
+                Randomness => concat!($name, " random number generator failed"),
+            }
+        }
+
         /// The working space of the assembly functions on `μ`.
         type Scratch = [u64; $scratch];
 
@@ -314,13 +323,7 @@ macro_rules! ml_dsa {
             /// bytes.
             pub fn sign(&self, msg: &[u8], ctx: &[u8]) -> Result<[u8; $sig], Error> {
                 let mut rnd = [0u8; 32];
-                if getrandom::fill(&mut rnd).is_err() {
-                    // The operating system's generator does not fail in the
-                    // tests.
-                    // NO-COVERAGE-START
-                    return Err(Error::Randomness);
-                    // NO-COVERAGE-END
-                }
+                getrandom::fill(&mut rnd).map_err(|_| Error::Randomness)?;
                 let r = self.sign_with(msg, ctx, &rnd);
                 zeroize(&mut rnd);
                 r

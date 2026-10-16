@@ -43,9 +43,9 @@ private theorem ne_of_not_mem {r : Reg} {rs : List Reg} (h : r ∉ rs) {r' : Reg
 /-- The comb's tables at `T`: readable, beyond the working space at `base`, word `i` the
 static's (`combWord i`). -/
 structure TblAt (s : State) (base T : Addr) : Prop where
-  rd : InRegions (s.rd ++ s.wr) T (8 * (32 * 96))
-  far : ∀ i < 8 * (32 * 96), 8192 ≤ ofs base (T + BitVec.ofNat 64 i)
-  val : ∀ i < 32 * 96, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = combWord i
+  rd : InRegions (s.rd ++ s.wr) T (8 * (64 * 96))
+  far : ∀ i < 8 * (64 * 96), 8192 ≤ ofs base (T + BitVec.ofNat 64 i)
+  val : ∀ i < 64 * 96, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = combWord i
 
 theorem tbl_add (T : Addr) (a b : Nat) :
     T + BitVec.ofNat 64 a + BitVec.ofNat 64 b = T + BitVec.ofNat 64 (a + b) := by
@@ -68,13 +68,13 @@ theorem CombHeld.tblAt {s : State} {wr : List Region} {base : Addr} (h : CombHel
     (hsc : (⟨base, 8192⟩ : Region) ∈ wr) : TblAt s base (s.syms combSym) := by
   obtain ⟨held, fit, dj⟩ := h
   rw [combWords_length] at held fit dj hrd
-  have hc : Region.Contains ⟨s.syms combSym, 8 * (32 * 96)⟩ (s.syms combSym) (8 * (32 * 96)) := by
-    have := Offset.contains_base (s.syms combSym) (d := 0) (n := 8 * (32 * 96)) (k := 8 * (32 * 96))
+  have hc : Region.Contains ⟨s.syms combSym, 8 * (64 * 96)⟩ (s.syms combSym) (8 * (64 * 96)) := by
+    have := Offset.contains_base (s.syms combSym) (d := 0) (n := 8 * (64 * 96)) (k := 8 * (64 * 96))
       (by omega) (by omega)
     rwa [BitVec.add_zero] at this
   refine ⟨⟨_, hrd, hc⟩, fun i hi => ?_, fun i hi => ?_⟩
   · refine Nat.le_of_not_lt fun hlt => dj _ hsc _
-      (Offset.contains_base _ (d := i) (n := 1) (k := 8 * (32 * 96)) (by omega) (by omega)) ?_
+      (Offset.contains_base _ (d := i) (n := 1) (k := 8 * (64 * 96)) (by omega) (by omega)) ?_
     simp only [Region.Contains]; simp only [ofs] at hlt; omega
   · rw [← combWords_getD hi, ← held i hi]
 
@@ -548,7 +548,7 @@ def coord : Nat → Spec.Ed25519.Point → Spec.X25519.Fe
   | _, p => p.Z
 
 private theorem entries_getD (j a : Nat) (ha : a < 9) (f : Spec.Ed25519.Point → Spec.X25519.Fe) :
-    (((List.range 9).map (combCached j)).map f).getD a 0 = f (combCached j a) := by
+    (((List.range 9).map (combCached64 j)).map f).getD a 0 = f (combCached64 j a) := by
   simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range ha, Option.map_some,
     Option.getD_some]
 
@@ -557,6 +557,18 @@ theorem combCached_T (j a : Nat) : (combCached j a).T = 2 := by
   split
   · rfl
   · split; rfl
+
+theorem combCached64_zero (j : Nat) : combCached64 j 0 = ⟨1, 1, 0, 2⟩ := by
+  unfold combCached64; split <;> rfl
+
+theorem combCached64_T (j a : Nat) : (combCached64 j a).T = 2 := by
+  unfold combCached64
+  split
+  · exact combCached_T _ _
+  · unfold combCached16
+    split
+    · rfl
+    · split; rfl
 
 theorem cachedAt_eq {e : Env} {a b c : Slot} {q : Spec.Ed25519.Point} (hq : q.T = 2)
     (ha : e a = q.X) (hb : e b = q.Y) (hc : e c = q.Z) : cachedAt e a b c = q := by
@@ -569,7 +581,7 @@ theorem cachedAt_eq {e : Env} {a b c : Slot} {q : Spec.Ed25519.Point} (hq : q.T 
 /-- Word `96 j + 32 c + 4 m + w` of the tables is word `w` of coordinate `c` of entry `m + 1` of
 table `j`. -/
 theorem combWord_eq {j c m w : Nat} (hc : c < 3) (hm : m < 8) (hw : w < 4) :
-    combWord (96 * j + 32 * c + 4 * m + w) = feWord (coord c (combCached j (m + 1))) w := by
+    combWord (96 * j + 32 * c + 4 * m + w) = feWord (coord c (combCached64 j (m + 1))) w := by
   have e1 : (96 * j + 32 * c + 4 * m + w) / 96 = j := by omega
   have e2 : (96 * j + 32 * c + 4 * m + w) % 32 / 4 + 1 = m + 1 := by omega
   have e3 : (96 * j + 32 * c + 4 * m + w) % 4 = w := by omega
@@ -585,7 +597,7 @@ theorem combWord_eq {j c m w : Nat} (hc : c < 3) (hm : m < 8) (hw : w < 4) :
       ite_false]; rfl
 
 /-- `x9` = table `j`'s address, from the static's and `x19 = j`. -/
-theorem tblAddr_ok (s : State) {T : Addr} (hT : s.syms combSym = T) {j : Nat} (hj : j < 32)
+theorem tblAddr_ok (s : State) {T : Addr} (hT : s.syms combSym = T) {j : Nat} (hj : j < 64)
     (hc : s.gpr .x19 = BitVec.ofNat 64 j) :
     WP isa (.block tblAddr) s fun t =>
       t.gpr .x9 = T + BitVec.ofNat 64 (768 * j) ∧ Keeps [.x9, .x2] s t := by
@@ -607,9 +619,9 @@ theorem tblAddr_ok (s : State) {T : Addr} (hT : s.syms combSym = T) {j : Nat} (h
   simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
 
 /-- Table `j`'s candidates for coordinate `c`, from the tables at `T`. -/
-theorem candsFar_of_tbl {s : State} {base T : Addr} (h : TblAt s base T) {j : Nat} (hj : j < 32)
+theorem candsFar_of_tbl {s : State} {base T : Addr} (h : TblAt s base T) {j : Nat} (hj : j < 64)
     (hx9 : s.gpr .x9 = T + BitVec.ofNat 64 (768 * j)) {c : Nat} (hc : c < 3) :
-    CandsFar s base (((List.range 9).map (combCached j)).map (coord c)) c := fun hh hh2 => by
+    CandsFar s base (((List.range 9).map (combCached64 j)).map (coord c)) c := fun hh hh2 => by
   -- Half `hh` of entry `m + 1` is words `96 j + 32 c + 4 m + 2 hh` and the next of the tables.
   have addr : ∀ m < 8, ∀ b < 16, s.gpr .x9 + BitVec.ofNat 64 (256 * c + 32 * m + 16 * hh) +
       BitVec.ofNat 64 b = T + BitVec.ofNat 64 (8 * (96 * j + 32 * c + 4 * m + 2 * hh) + b) :=
@@ -632,12 +644,12 @@ theorem candsFar_of_tbl {s : State} {base T : Addr} (h : TblAt s base T) {j : Na
 /-- **Table `j`'s entry** for the digit, `|d| = a`, from the tables at `T`, its `Y - X` and
 `Y + X` exchanged for a negative digit (`sg`, the sign's mask in `x1`). -/
 theorem combSelect_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt s base T)
-    (hT : s.syms combSym = T) {j : Nat} (hj : j < 32) (hc : s.gpr .x19 = BitVec.ofNat 64 j)
+    (hT : s.syms combSym = T) {j : Nat} (hj : j < 64) (hc : s.gpr .x19 = BitVec.ofNat 64 j)
     {a : Nat} (ha : a < 9) (hm : Masks a s) {sg : Bool} (h1 : s.gpr .x1 = mask sg) :
     WP isa (.block combSelect) s fun t =>
-      env t.mem base 4 = (if sg then (combCached j a).Y else (combCached j a).X) ∧
-      env t.mem base 5 = (if sg then (combCached j a).X else (combCached j a).Y) ∧
-      env t.mem base 6 = (combCached j a).Z ∧
+      env t.mem base 4 = (if sg then (combCached64 j a).Y else (combCached64 j a).X) ∧
+      env t.mem base 5 = (if sg then (combCached64 j a).X else (combCached64 j a).Y) ∧
+      env t.mem base 6 = (combCached64 j a).Z ∧
       Outside base (offset 4) 96 s.mem t.mem ∧ RegsKept s t := by
   rw [combSelect]
   simp only [List.append_assoc]
@@ -659,15 +671,15 @@ theorem combSelect_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt
   have h30 : a3.v .v30 = ofVDwords (mask sg) (mask sg) := by
     rw [a30, ka2.gpr, ka.gpr _ (by decide), h1]
   rw [← List.append_assoc, WP.block_append_iff]
-  refine WP.mono (selectPair_ok hsa3 ha hma3 av3 h30 _ _ (by rw [entries_getD j 0 (by decide)]; rfl)
-    (by rw [entries_getD j 0 (by decide)]; rfl) (candsFar_of_tbl hta hj a9' (by decide))
+  refine WP.mono (selectPair_ok hsa3 ha hma3 av3 h30 _ _ (by rw [entries_getD j 0 (by decide), combCached64_zero]; rfl)
+    (by rw [entries_getD j 0 (by decide), combCached64_zero]; rfl) (candsFar_of_tbl hta hj a9' (by decide))
     (candsFar_of_tbl hta hj a9' (by decide)))
     fun b ⟨b4, b5, bf, bv, kb⟩ => ?_
   have hsb : Scr b base := ⟨kb.gpr ▸ hsa3.x0, kb.wr ▸ hsa3.wr, hs.nowrap⟩
   have htb' : TblAt b base T := hta.of_far (by rw [kb.rd, kb.wr])
     (fun x hx => bf x (Or.inr (by simp only [offset]; omega)))
   refine WP.mono (selectField_ok hsb ha (hma3.of_kept kb.regs) bv false _
-    (by rw [entries_getD j 0 (by decide)]; rfl)
+    (by rw [entries_getD j 0 (by decide), combCached64_zero]; rfl)
     (c := 2) (o := offset 6) (by decide) (by decide) (by decide)
     (candsFar_of_tbl htb' hj (by rw [kb.gpr]; exact a9') (by decide)))
     fun t ⟨t6, tf, _, kt⟩ => ⟨?_, ?_, ?_, ?_, ((kra.trans k23.regs).trans kb.regs).trans kt.regs⟩

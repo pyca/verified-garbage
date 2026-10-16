@@ -25,8 +25,7 @@ use crate::arch::seed_ofb::vg_seed_ofb;
 use crate::zeroize::zeroize;
 
 /// The key does not contain 16 bytes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct InvalidKeyLength;
+pub use crate::error::InvalidKeyLength;
 
 /// An expanded SEED key for OFB, whose encryption and decryption are the
 /// same operation.

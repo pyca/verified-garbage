@@ -1,18 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Ed448.X86.VerifyEquationOk
 public import VerifiedGarbage.Proof.Ed448.X86.Verify.Verified
-import VerifiedGarbage.Proof.Ed448.X86.VerifyVerified
-import VerifiedGarbage.Proof.Ed448.Facts
 public import VerifiedGarbage.Impl.Ed448.X86.VerifyEquation
-import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Data.Nat.Totient
-import Mathlib.Data.Sym.Sym2.Init
-import Mathlib.Tactic.ContinuousFunctionalCalculus
-import Mathlib.Tactic.NormNum.GCD
-import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed448.X86.ScalarLit
-import VerifiedGarbage.Proof.Ed448.X86.VerifyCT
 import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Sha3.X86.Lit
@@ -32,11 +23,6 @@ namespace VG.Artifacts.Ed448Verify.X86
 
 open VG.X86
 
-theorem equation_ok :
-    Proof.Ed448.X86.CalleeOk Proof.Ed448.X86.verifyEquationLocal Impl.Ed448.X86.verifyEquation :=
-  ⟨Proof.Ed448.X86.verifyEquation_ok Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok,
-    Proof.Ed448.X86.verifyEquation_ct Proof.Ed448.recover_ok, NoSp.of_all (by lit_decide), by lit_decide⟩
-
 def artifacts : List Artifact := [
   Spec.Ed448.verifyApi.artifact X86.target {
     notes := ["Uses baseline integer instructions. Returns 0 \
@@ -49,6 +35,6 @@ def artifacts : List Artifact := [
       (the hash and k) is not cleared: verification has no secrets."]
     code := Impl.Ed448.X86.Verify.code Impl.Ed448.X86.verifyEquation
     stack := 280
-    verified := Proof.Ed448.X86.Verify.verify_verified equation_ok }]
+    verified := Proof.Ed448.X86.Verify.verify_verified Proof.Ed448.X86.verifyEquation_calleeOk }]
 
 end VG.Artifacts.Ed448Verify.X86
