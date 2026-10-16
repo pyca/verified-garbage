@@ -1,15 +1,21 @@
-//! The FFDH operations on AArch64, entirely in verified code: the domain,
-//! public-key and key-pair checks, one attempt at key generation and the
-//! exchange (`VG.Spec.Ffdh`'s contracts). Rust lays out the domain, pads
-//! the values to the modulus' width, allocates the working space and
-//! retries key generation with fresh random bytes.
+//! The FFDH operations, entirely in verified code: the domain, public-key
+//! and key-pair checks, one attempt at key generation and the exchange
+//! (`VG.Spec.Ffdh`'s contracts). Rust lays out the domain, pads the values
+//! to the modulus' width, allocates the working space, selects the
+//! implementation for the CPU and retries key generation with fresh random
+//! bytes.
 
-#![cfg(target_arch = "aarch64")]
-
+use super::arithmetic::{Backend, scalar};
 use crate::arch::ffdh::{
     vg_ffdh_check_domain, vg_ffdh_check_private, vg_ffdh_check_public, vg_ffdh_exchange,
     vg_ffdh_generate_key,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ffdh::{
+    vg_ffdh_check_domain_adx, vg_ffdh_check_private_adx, vg_ffdh_check_public_adx,
+    vg_ffdh_exchange_adx, vg_ffdh_generate_key_adx,
+};
+use crate::cpu::detected;
 use crate::rsa::Scratch;
 
 /// The working space every function needs, `16 p_len + 32` words.
@@ -40,11 +46,17 @@ impl Domain {
             bytes[3 * p_len - q.len()..].copy_from_slice(q);
         }
         let mut ws = scratch(p_len);
+        let f = match Backend::ffdh(detected()) {
+            Backend::Baseline => vg_ffdh_check_domain,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => vg_ffdh_check_domain_adx,
+        };
         // SAFETY: `bytes` is `2 p_len` or `3 p_len` bytes for a `p_len` in
         // 64..=1024, and `ws` is `16 p_len + 32` words; they are distinct
-        // Rust objects.
+        // Rust objects. The ADX variant is selected only when the CPU has
+        // its generated feature set.
         let ok = unsafe {
-            vg_ffdh_check_domain(
+            f(
                 bytes.as_ptr(),
                 bytes.len(),
                 p_len,
@@ -55,25 +67,25 @@ impl Domain {
         (ok == 1).then_some(Self { bytes, p_len })
     }
 
-    /// `y` (at most `p_len` bytes) padded to the modulus' width.
-    fn pad(&self, y: &[u8]) -> alloc::vec::Vec<u8> {
-        let mut out = alloc::vec![0; self.p_len];
-        out[self.p_len - y.len()..].copy_from_slice(y);
-        out
-    }
-
     /// Whether `y` (without leading zeros) is a valid public value
     /// (`vg_ffdh_check_public`).
     pub(super) fn check_public(&self, y: &[u8]) -> bool {
         if y.len() > self.p_len {
             return false;
         }
-        let y = self.pad(y);
+        let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
+        let f = match Backend::ffdh(detected()) {
+            Backend::Baseline => vg_ffdh_check_public,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => vg_ffdh_check_public_adx,
+        };
         // SAFETY: `self.bytes` is a domain laid out by `new`, `y` is `p_len`
         // bytes and `ws` `16 p_len + 32` words; all are distinct objects.
+        // The ADX variant is selected only when the CPU has its generated
+        // feature set.
         unsafe {
-            vg_ffdh_check_public(
+            f(
                 self.bytes.as_ptr(),
                 self.bytes.len(),
                 self.p_len,
@@ -91,11 +103,16 @@ impl Domain {
         if y.len() > self.p_len || x.is_empty() || x.len() > self.p_len {
             return false;
         }
-        let y = self.pad(y);
+        let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
+        let f = match Backend::ffdh(detected()) {
+            Backend::Baseline => vg_ffdh_check_private,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => vg_ffdh_check_private_adx,
+        };
         // SAFETY: as in `check_public`, and `x` is 1 to `p_len` bytes.
         unsafe {
-            vg_ffdh_check_private(
+            f(
                 self.bytes.as_ptr(),
                 self.bytes.len(),
                 self.p_len,
@@ -116,10 +133,16 @@ impl Domain {
     pub(super) fn generate_key(&self, rand: &[u8], x: &mut [u8], y: &mut [u8]) -> u32 {
         assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
         let mut ws = scratch(self.p_len);
-        // SAFETY: `x`, `y` and `rand` are `p_len` bytes each, the domain and
-        // `ws` as in `check_public`; all are distinct objects.
+        let f = match Backend::ffdh(detected()) {
+            Backend::Baseline => vg_ffdh_generate_key,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => vg_ffdh_generate_key_adx,
+        };
+        // SAFETY: `x`, `y` and `rand` are `p_len` bytes each, the domain,
+        // `ws` and the variant as in `check_public`; all are distinct
+        // objects.
         unsafe {
-            vg_ffdh_generate_key(
+            f(
                 x.as_mut_ptr(),
                 x.len(),
                 y.as_mut_ptr(),
@@ -140,13 +163,24 @@ impl Domain {
     /// bytes), or `false` and zeros for a degenerate one
     /// (`vg_ffdh_exchange`).
     pub(super) fn exchange(&self, x: &[u8], y: &[u8], out: &mut [u8]) -> bool {
-        assert!(!x.is_empty() && x.len() <= self.p_len && out.len() == self.p_len);
-        let y = self.pad(y);
+        assert!(
+            !x.is_empty()
+                && x.len() <= self.p_len
+                && y.len() <= self.p_len
+                && out.len() == self.p_len
+        );
+        let y = scalar(y, self.p_len);
         let mut ws = scratch(self.p_len);
+        let f = match Backend::ffdh(detected()) {
+            Backend::Baseline => vg_ffdh_exchange,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Adx => vg_ffdh_exchange_adx,
+        };
         // SAFETY: `out` and `y` are `p_len` bytes, `x` 1 to `p_len`, the
-        // domain and `ws` as in `check_public`; all are distinct objects.
+        // domain, `ws` and the variant as in `check_public`; all are
+        // distinct objects.
         unsafe {
-            vg_ffdh_exchange(
+            f(
                 out.as_mut_ptr(),
                 out.len(),
                 self.bytes.as_ptr(),
