@@ -1,0 +1,45 @@
+module
+
+public import VerifiedGarbage.Proof.Bignum.Arm.ArithmeticReady
+public import VerifiedGarbage.Proof.Bignum.Arm.LayoutPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # Writes outside the arithmetic workspace and saved base preserve readiness -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Proof.Mont
+open VG.Spec.Rsa.Mont (arrAt wordAt numAt)
+open VG.Proof.X25519.Arm (Rest)
+
+theorem ArithmeticReady.after_external {s t : State} {base : BitVec 32} {len w : Nat}
+    {regions : List Region} {rs : List Reg}
+    (h : ArithmeticReady base len w s) (frame : Frame regions s.mem t.mem)
+    (workspaceSep : ∀ r ∈ regions, (⟨State.addr base, 8 * len⟩ : Region).Disjoint r)
+    (baseSep : ∀ r ∈ regions, (⟨State.addr s.sp, 4⟩ : Region).Disjoint r)
+    (rest : Rest rs s t) (ptr : t.gpr .r0 = base) :
+    ArithmeticReady base len w t ∧ WorkspaceEq (State.addr base) (8 * len) s.mem t.mem := by
+  have fit : arrAt w 8 ≤ 8 * len := h.width ▸ h.layout.2.2.1
+  have size : 128 ≤ 8 * len := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at fit; omega
+  have fit0 := Nat.le_trans (array_end_le (w := w) (by decide : 0 < 8)) fit
+  have eq := WorkspaceEq.of_frame (by have := h.workspace.nowrap; omega : 8 * len < 2 ^ 64) frame workspaceSep
+  have saved := WorkspaceEq.of_frame (by decide : 4 < 2 ^ 64) frame baseSep
+  refine ⟨⟨h.workspace.congr rest.wr, eq.layout h.layout, (eq.width (by omega)).trans h.width, ptr,
+    ?_, ?_, ?_, ?_, ?_⟩, eq⟩
+  · change ((t.mem.readW (off (State.addr base) (arrAt w 0)) 64).toNat *
+      (t.mem.readW (off (State.addr base) 56) 64).toNat + 1) % 2 ^ 64 = 0
+    rw [eq.word (d := arrAt w 0) (bits := 64) (by omega), eq.word (d := 56) (bits := 64) (by omega)]
+    exact h.inverse
+  · rw [eq.number fit (by decide : 0 < 8)]; exact h.modulus
+  · rw [rest.rd, rest.wr, rest.sp]; exact h.stackRead
+  · rw [rest.sp]; exact h.stackSep
+  · rw [rest.sp]
+    have word := saved.word (d := 0) (bits := 32) (by decide)
+    simp only [off, BitVec.add_zero] at word
+    exact word.trans h.saved
+
+end VG.Proof.Bignum.Arm

@@ -1,0 +1,23 @@
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCompareProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPadModulusCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtCheckProductCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtAcceptanceCT
+import VerifiedGarbage.Proof.Bignum.Arm.CrtPrimeAcceptance
+import VerifiedGarbage.Proof.Bignum.Arm.ExportPadded
+import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.TCB.Audit
+
+#assert_standard_axioms VG.Proof.Bignum.Arm.crt_compareProduct_ok
+#assert_standard_axioms VG.Proof.Bignum.Arm.crt_compareProduct_ct
+#assert_standard_axioms VG.Proof.Bignum.Arm.exportPadded_ok
+#assert_standard_axioms VG.Proof.Bignum.Arm.crt_padModulus_ok
+#assert_standard_axioms VG.Proof.Bignum.Arm.crt_padModulus_ct
+#assert_standard_axioms VG.Proof.Bignum.Arm.crt_checkProduct_ok
+#assert_standard_axioms VG.Proof.Bignum.Arm.crt_checkProduct_ct
+#assert_standard_axioms VG.Proof.Bignum.Arm.crt_installAcceptance_ok
+#assert_standard_axioms VG.Proof.Bignum.Arm.crt_installAcceptance_ct
+#assert_standard_axioms VG.Proof.Bignum.Arm.crt_primeAcceptance_ready
+#assert_no_compiler_overrides VG.Impl.Bignum.Arm.Crt.compareProduct
+#assert_no_compiler_overrides VG.Impl.Bignum.Arm.Crt.padModulus
+#assert_no_compiler_overrides VG.Impl.Bignum.Arm.Crt.checkProduct
+#assert_no_compiler_overrides VG.Impl.Bignum.Arm.Crt.installAcceptance

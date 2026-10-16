@@ -1,0 +1,46 @@
+module
+
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtLayout
+public import VerifiedGarbage.Proof.Bignum.Arm.SetupFrame
+public import VerifiedGarbage.Spec.Rsa.Contract
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # The complete CRT layout fits the existing cross-architecture scratch contract -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Impl.Bignum.Arm.Crt
+open VG.Spec.Rsa.Mont (arrAt)
+
+theorem crt_workspace_end (w : Nat) : arrAt w 8 = stride w := by
+  simp only [arrAt, Spec.Rsa.Mont.hdrBytes, stride, workspaceWords]
+  omega
+
+theorem crt_buffer_sizes (w : Nat) :
+    productWords w = 2 * w + 2 * w + 2 ∧
+    productOffset w + productBytes w = compareOffset w ∧
+    compareOffset w + productBytes w = modulusOffset w ∧
+    modulusOffset w + productBytes w = totalBytes w := by
+  refine ⟨?_, rfl, rfl, rfl⟩
+  simp only [productWords]
+  omega
+
+theorem crt_layout_fits {k : Nat} (hk : Spec.Rsa.lenValid k) :
+    totalBytes (Spec.Rsa.modulusWords k) ≤ 8 * Spec.Rsa.scratchWords k := by
+  simp only [Spec.Rsa.lenValid] at hk
+  simp only [totalBytes, modulusOffset, compareOffset, productOffset, productBytes, productWords,
+    stride, workspaceWords, Spec.Rsa.modulusWords, Spec.Rsa.scratchWords]
+  omega
+
+theorem crt_width_valid {k : Nat} (hk : Spec.Rsa.lenValid k) :
+    2 ≤ Spec.Rsa.modulusWords k ∧ Spec.Rsa.modulusWords k ≤ 128 ∧
+      k ≤ 8 * Spec.Rsa.modulusWords k := by
+  simp only [Spec.Rsa.lenValid] at hk
+  simp only [Spec.Rsa.modulusWords]
+  omega
+
+end VG.Proof.Bignum.Arm
