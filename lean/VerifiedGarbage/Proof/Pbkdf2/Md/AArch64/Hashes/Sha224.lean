@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
+meta import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
 import VerifiedGarbage.Proof.Sha256.Md
 meta import VerifiedGarbage.Proof.Sha256.Md
 import VerifiedGarbage.Proof.Hmac.Generic.Common
@@ -212,6 +214,15 @@ def stream : List StreamFn := [
     contract := Spec.Sha256.finalize224Contract AArch64.abi (16 + 608)
     stack := 16 + 608
     verified := Proof.Sha256.AArch64.Shared.finalize224_of v.finalize224_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha256.digest224Api
+    code := Proof.Sha256.AArch64.oneShotWith Impl.Sha256.AArch64.Stream.params224 Spec.Sha256.H0_224 v.name
+      v.code
+    contract := Spec.Sha256.digestContract AArch64.abi 28 Spec.Sha256.sha224 Proof.Sha256.AArch64.OneShot.stack
+    stack := Proof.Sha256.AArch64.OneShot.stack
+    verified := (v.oneShot_verified (by decide) rfl Proof.Sha256.AArch64.Stream.shape224 v.finalize224Keeps
+      v.oneShot224).of_implies
+        (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.sha224_take)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.

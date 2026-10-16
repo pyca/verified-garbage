@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha256.AArch64.Variant
 meta import VerifiedGarbage.Proof.Sha256.AArch64.Variant
+public import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
+meta import VerifiedGarbage.Proof.Sha256.AArch64.OneShot
 import VerifiedGarbage.Proof.Sha256.Md
 meta import VerifiedGarbage.Proof.Sha256.Md
 import VerifiedGarbage.Proof.Hmac.Generic.Common
@@ -221,6 +223,14 @@ def stream : List StreamFn := [
     contract := Spec.Sha256.finalizeScratchContract AArch64.abi 16
     stack := 16
     verified := Proof.Sha256.AArch64.Shared.finalizeScratch_of v.finalize_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { api := Spec.Sha256.digest256Api
+    code := Proof.Sha256.AArch64.oneShotWith Impl.Sha256.AArch64.Stream.params Spec.Sha256.H0 v.name v.code
+    contract := Spec.Sha256.digestContract AArch64.abi 32 Spec.Sha256.hash Proof.Sha256.AArch64.OneShot.stack
+    stack := Proof.Sha256.AArch64.OneShot.stack
+    verified := (v.oneShot_verified (by decide) rfl Proof.Sha256.AArch64.Stream.shape.toD v.finalizeKeeps
+      v.oneShot256).of_implies
+        (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.hash_take)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
