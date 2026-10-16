@@ -80,10 +80,7 @@ end
 
 /-- `arun`: symbolic execution of a block by `simp` (see the module doc),
 with extra lemmas (the block's accesses, …). -/
-syntax "arun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| arun) => `(tactic| arun [])
-  | `(tactic| arun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "arun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
@@ -94,6 +91,9 @@ macro_rules
                          ite_true, ite_false, reduceCtorEq, true_and, and_true, List.cons_append, List.nil_append,
                          BitVec.add_zero, BitVec.setWidth_setWidth_of_le, movz_movk,
                          $ls,*]))
+
+/-- `arun` with no extra lemmas. -/
+tactic_template "arun" : tactic => `(tactic| arun [])
 
 /-! ## What a block keeps -/
 
