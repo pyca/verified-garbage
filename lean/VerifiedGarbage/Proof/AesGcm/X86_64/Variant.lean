@@ -23,7 +23,7 @@ is (see `TCB/Emit.lean`): the implementations its functions call, with the
 proofs that import the algebra of `Proof/Gcm/Poly.lean` (those of
 `vg_ghash` and of the interleaved loops) named rather than held, so that the
 variants need not import that algebra. The generic file
-(`Generic/AesGcm/X86_64/AesGcm.lean`) resolves the names (`GcmVariant.impl`).
+(`Proof/AesGcm/X86_64/Instances.lean`) resolves the names (`GcmVariant.impl`).
 -/
 
 @[expose] public section
