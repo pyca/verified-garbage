@@ -25755,30 +25755,7 @@ jmp 2133f
 2133:
 mov rdx, rbp
 and rdx, 15
-je 2134f
-mov rsi, rbp
-sub rsi, rdx
-add rsi, rbx
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-2136:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 2136b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx2}
-mov r15, rdi
-sub r15, 448
-jmp 2135f
-2134:
+jne 2134f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -25846,6 +25823,48 @@ movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
 lea rsp, [rsp+1720]
 ret
+2134:
+mov rsi, rbp
+sub rsi, rdx
+add rsi, rbx
+xor r9d, r9d
+cmp rdx, 8
+jb 2136f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 2138f
+2140:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2140b
+jmp 2139f
+2138:
+2139:
+jmp 2137f
+2136:
+2141:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2141b
+mov rax, r9
+xor r9d, r9d
+2137:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx2}
+mov r15, rdi
+sub r15, 448
+jmp 2135b
 .p2align 6",
         vg_chacha20_xor_avx2 = sym super::chacha20::vg_chacha20_xor_avx2,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -32582,30 +32601,7 @@ jmp 222f
 222:
 mov rdx, rbp
 and rdx, 15
-je 223f
-mov rsi, rbp
-sub rsi, rdx
-add rsi, rbx
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-225:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 225b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx2}
-mov r15, rdi
-sub r15, 448
-jmp 224f
-223:
+jne 223f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -32616,17 +32612,17 @@ mov r15, rdi
 sub r15, 448
 224:
 cmp r13, 512
-jb 226f
+jb 231f
 mov rax, r13
 and rax, 511
 sub rax, 65
 cmp rax, 192
-jb 228f
+jb 233f
 mov rax, r13
 and rax, 511
 sub rax, 1
 cmp rax, 64
-jb 230f
+jb 235f
 mov rdi, r15
 add rdi, 64
 mov rsi, rbx
@@ -32634,8 +32630,8 @@ mov rdx, rbp
 mov rcx, r15
 add rcx, 128
 call {vg_chacha20_xor_avx2}
-jmp 231f
-230:
+jmp 236f
+235:
 mov rdx, r13
 and rdx, 511
 mov r10, r14
@@ -32646,18 +32642,18 @@ add rsi, 736
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 232f
-234:
+je 237f
+239:
 vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 234b
-jmp 233f
-232:
-233:
+jne 239b
+jmp 238f
+237:
+238:
 mov rdi, r10
 add rdi, rcx
 add rsi, rcx
@@ -32665,35 +32661,35 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 235f
-237:
+je 240f
+242:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 237b
-jmp 236f
-235:
-236:
-cmp rcx, rdx
-je 238f
+jne 242b
+jmp 241f
 240:
+241:
+cmp rcx, rdx
+je 243f
+245:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 240b
-jmp 239f
-238:
-239:
+jne 245b
+jmp 244f
+243:
+244:
 mov rsi, r15
 add rsi, 128
-231:
-jmp 229f
-228:
+236:
+jmp 234f
+233:
 mov rdx, r13
 and rdx, 511
 mov r10, r14
@@ -32704,18 +32700,18 @@ add rsi, 128
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 241f
-243:
+je 246f
+248:
 vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 243b
-jmp 242f
-241:
-242:
+jne 248b
+jmp 247f
+246:
+247:
 mov rdi, r10
 add rdi, rcx
 add rsi, rcx
@@ -32723,39 +32719,39 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 244f
-246:
+je 249f
+251:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 246b
-jmp 245f
-244:
-245:
-cmp rcx, rdx
-je 247f
+jne 251b
+jmp 250f
 249:
+250:
+cmp rcx, rdx
+je 252f
+254:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 249b
-jmp 248f
-247:
-248:
+jne 254b
+jmp 253f
+252:
+253:
 mov rsi, r15
 add rsi, 128
-229:
+234:
 mov eax, 0
 mov eax, 0
 mov eax, 0
 mov eax, 0
-jmp 227f
-226:
+jmp 232f
+231:
 mov rdi, r15
 add rdi, 64
 mov rsi, rbx
@@ -32763,7 +32759,7 @@ mov rdx, rbp
 mov rcx, r15
 add rcx, 128
 call {vg_chacha20_xor_avx2}
-227:
+232:
 jmp 211f
 210:
 mov rdi, r15
@@ -32771,39 +32767,16 @@ add rdi, 448
 mov rsi, r14
 mov rdx, r13
 shr rdx, 4
-je 250f
+je 255f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 251f
-250:
-251:
+jmp 256f
+255:
+256:
 mov rdx, r13
 and rdx, 15
-je 252f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-254:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 254b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx2}
-mov r15, rdi
-sub r15, 448
-jmp 253f
-252:
+jne 257f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -32812,25 +32785,25 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-253:
+258:
 mov rsi, r15
 add rsi, 736
 mov rdx, r13
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 255f
-257:
+je 265f
+267:
 vmovdqu ymm0, YMMWORD PTR [r14+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r14+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 257b
-jmp 256f
-255:
-256:
+jne 267b
+jmp 266f
+265:
+266:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -32838,30 +32811,30 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 258f
-260:
+je 268f
+270:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 260b
-jmp 259f
-258:
-259:
+jne 270b
+jmp 269f
+268:
+269:
 cmp rcx, rdx
-je 261f
-263:
+je 271f
+273:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 263b
-jmp 262f
-261:
-262:
+jne 273b
+jmp 272f
+271:
+272:
 mov rsi, r15
 add rsi, 128
 211:
@@ -32869,19 +32842,19 @@ mov r15, rsi
 sub r15, 128
 mov edx, 0
 cmp r13, 449
-jb 264f
-jmp 265f
-264:
+jb 274f
+jmp 275f
+274:
 mov rdx, r13
-265:
+275:
 add rdx, 64
 vpxor ymm0, ymm0, ymm0
 mov ecx, 0
-266:
+276:
 vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 add rcx, 32
 cmp rcx, rdx
-jb 266b
+jb 276b
 vzeroupper
 mov rdi, r15
 add rdi, 448
@@ -32950,6 +32923,90 @@ movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
 lea rsp, [rsp+1720]
 ret
+223:
+mov rsi, rbp
+sub rsi, rdx
+add rsi, rbx
+xor r9d, r9d
+cmp rdx, 8
+jb 225f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 227f
+229:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 229b
+jmp 228f
+227:
+228:
+jmp 226f
+225:
+230:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 230b
+mov rax, r9
+xor r9d, r9d
+226:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx2}
+mov r15, rdi
+sub r15, 448
+jmp 224b
+257:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 259f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 261f
+263:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 263b
+jmp 262f
+261:
+262:
+jmp 260f
+259:
+264:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 264b
+mov rax, r9
+xor r9d, r9d
+260:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx2}
+mov r15, rdi
+sub r15, 448
+jmp 258b
 .p2align 6",
         vg_chacha20_xor_avx2 = sym super::chacha20::vg_chacha20_xor_avx2,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -58820,30 +58877,7 @@ jmp 2149f
 2149:
 mov rdx, rbp
 and rdx, 15
-je 2150f
-mov rsi, rbp
-sub rsi, rdx
-add rsi, rbx
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-2152:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 2152b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx2}
-mov r15, rdi
-sub r15, 448
-jmp 2151f
-2150:
+jne 2150f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -58916,6 +58950,48 @@ movdqu XMMWORD PTR [rsp+680], xmm0
 movdqu XMMWORD PTR [rsp+696], xmm0
 lea rsp, [rsp+1736]
 ret
+2150:
+mov rsi, rbp
+sub rsi, rdx
+add rsi, rbx
+xor r9d, r9d
+cmp rdx, 8
+jb 2152f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 2154f
+2156:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2156b
+jmp 2155f
+2154:
+2155:
+jmp 2153f
+2152:
+2157:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2157b
+mov rax, r9
+xor r9d, r9d
+2153:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx2}
+mov r15, rdi
+sub r15, 448
+jmp 2151b
 .p2align 6",
         vg_chacha20_xor_avx2 = sym super::chacha20::vg_chacha20_xor_avx2,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -59438,30 +59514,7 @@ jmp 248f
 248:
 mov rdx, r13
 and rdx, 15
-je 249f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-251:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 251b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx512}
-mov r15, rdi
-sub r15, 448
-jmp 250f
-249:
+jne 249f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -59535,36 +59588,36 @@ mov QWORD PTR [r15+656], rax
 mov rax, QWORD PTR [rsi+4]
 mov QWORD PTR [r15+664], rax
 cmp r13, 449
-jae 252f
+jae 257f
 mov rdx, r13
-jmp 253f
-252:
+jmp 258f
+257:
 cmp r13, 1409
-jb 254f
+jb 259f
 mov rdx, r13
 sub rdx, 1
 and rdx, 511
 add rdx, -448
 sbb rdx, rdx
 and rdx, 448
-jmp 255f
-254:
+jmp 260f
+259:
 mov rdx, r13
 sub rdx, 577
 add rdx, -384
 sbb rdx, rdx
 and rdx, 448
-255:
-253:
+260:
+258:
 mov QWORD PTR [r15+48], rdx
 add rdx, 64
 vpxor ymm0, ymm0, ymm0
 mov ecx, 0
-256:
+261:
 vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 add rcx, 32
 cmp rcx, rdx
-jb 256b
+jb 261b
 vzeroupper
 mov rdi, r15
 add rdi, 608
@@ -59587,16 +59640,16 @@ add rdi, 448
 mov rsi, rbx
 mov rdx, rbp
 shr rdx, 4
-je 257f
+je 262f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 258f
-257:
-258:
+jmp 263f
+262:
+263:
 mov rdx, rbp
 and rdx, 15
-je 259f
+je 264f
 mov rsi, rbp
 sub rsi, rdx
 add rsi, rbx
@@ -59604,12 +59657,12 @@ mov eax, 0
 mov QWORD PTR [r15+576], rax
 mov QWORD PTR [r15+584], rax
 mov ecx, 0
-261:
+266:
 movzx eax, BYTE PTR [rsi+rcx*1]
 mov BYTE PTR [r15+rcx*1+576], al
 add rcx, 1
 cmp rcx, rdx
-jne 261b
+jne 266b
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -59618,57 +59671,57 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 260f
-259:
-260:
+jmp 265f
+264:
+265:
 mov QWORD PTR [r15+592], rbp
 mov QWORD PTR [r15+600], r13
 cmp r13, 449
-jb 262f
+jb 267f
 mov rdx, QWORD PTR [r15+48]
 test rdx, rdx
-je 264f
+je 269f
 cmp r13, 449
-jae 266f
+jae 271f
 mov rdx, r13
-jmp 267f
-266:
+jmp 272f
+271:
 cmp r13, 1409
-jb 268f
+jb 273f
 mov rdx, r13
 sub rdx, 1
 and rdx, 511
 add rdx, -448
 sbb rdx, rdx
 and rdx, 448
-jmp 269f
-268:
+jmp 274f
+273:
 mov rdx, r13
 sub rdx, 577
 add rdx, -384
 sbb rdx, rdx
 and rdx, 448
-269:
-267:
+274:
+272:
 test rdx, rdx
-je 270f
+je 275f
 mov rsi, r15
 add rsi, 736
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 272f
-274:
+je 277f
+279:
 vmovdqu ymm0, YMMWORD PTR [r14+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r14+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 274b
-jmp 273f
-272:
-273:
+jne 279b
+jmp 278f
+277:
+278:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -59676,55 +59729,55 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 275f
-277:
+je 280f
+282:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 277b
-jmp 276f
-275:
-276:
-cmp rcx, rdx
-je 278f
+jne 282b
+jmp 281f
 280:
+281:
+cmp rcx, rdx
+je 283f
+285:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 280b
-jmp 279f
-278:
-279:
-jmp 271f
-270:
-271:
+jne 285b
+jmp 284f
+283:
+284:
+jmp 276f
+275:
+276:
 cmp r13, 449
-jae 281f
+jae 286f
 mov rdx, r13
-jmp 282f
-281:
+jmp 287f
+286:
 cmp r13, 1409
-jb 283f
+jb 288f
 mov rdx, r13
 sub rdx, 1
 and rdx, 511
 add rdx, -448
 sbb rdx, rdx
 and rdx, 448
-jmp 284f
-283:
+jmp 289f
+288:
 mov rdx, r13
 sub rdx, 577
 add rdx, -384
 sbb rdx, rdx
 and rdx, 448
-284:
-282:
+289:
+287:
 mov rax, rdx
 shr rax, 6
 add rax, 1
@@ -59740,7 +59793,7 @@ mov rcx, r15
 add rcx, 128
 mov rsi, r14
 cmp rdx, 512
-jb 285f
+jb 290f
 mov QWORD PTR [rcx+392], r12
 mov QWORD PTR [rcx+400], r13
 mov QWORD PTR [rcx+408], r14
@@ -62462,8 +62515,8 @@ mov rdx, QWORD PTR [rcx+416]
 sub rdx, 512
 mov QWORD PTR [rcx+416], rdx
 cmp rdx, 512
-jb 287f
-289:
+jb 292f
+294:
 vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 vpshufd ymm0, ymm12, 0
 vpshufd ymm1, ymm12, 85
@@ -65293,21 +65346,21 @@ mov rdx, QWORD PTR [rcx+416]
 sub rdx, 512
 mov QWORD PTR [rcx+416], rdx
 cmp rdx, 512
-jae 289b
-jmp 288f
-287:
-288:
+jae 294b
+jmp 293f
+292:
+293:
 mov rdx, QWORD PTR [rcx+416]
 sub rdx, 1
 cmp rdx, 256
-jb 290f
+jb 295f
 mov eax, 0
 mov eax, 0
 mov eax, 0
 mov eax, eax
 mov eax, eax
 cmp rdx, 448
-jb 292f
+jb 297f
 mov rax, r11
 add rax, 5
 mov rdx, rbx
@@ -65341,8 +65394,8 @@ mov r13, QWORD PTR [rcx+400]
 mov r14, QWORD PTR [rcx+408]
 mov r15, rcx
 sub r15, 128
-jmp 293f
-292:
+jmp 298f
+297:
 vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 vpshufd ymm0, ymm12, 0
 vpshufd ymm1, ymm12, 85
@@ -68171,18 +68224,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 294f
-296:
+je 299f
+2101:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 296b
-jmp 295f
-294:
-295:
+jne 2101b
+jmp 2100f
+299:
+2100:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -68190,30 +68243,30 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 297f
-299:
+je 2102f
+2104:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 299b
-jmp 298f
-297:
-298:
-cmp rcx, rdx
-je 2100f
+jne 2104b
+jmp 2103f
 2102:
+2103:
+cmp rcx, rdx
+je 2105f
+2107:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2102b
-jmp 2101f
-2100:
-2101:
+jne 2107b
+jmp 2106f
+2105:
+2106:
 vzeroupper
 mov rcx, r9
 mov edx, 0
@@ -68224,11 +68277,11 @@ mov eax, 0
 mov eax, 0
 mov eax, eax
 mov eax, eax
-293:
-jmp 291f
-290:
+298:
+jmp 296f
+295:
 cmp rdx, 128
-jb 2103f
+jb 2108f
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -70331,18 +70384,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2105f
-2107:
+je 2110f
+2112:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2107b
-jmp 2106f
-2105:
-2106:
+jne 2112b
+jmp 2111f
+2110:
+2111:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -70350,35 +70403,35 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2108f
-2110:
+je 2113f
+2115:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2110b
-jmp 2109f
-2108:
-2109:
-cmp rcx, rdx
-je 2111f
+jne 2115b
+jmp 2114f
 2113:
+2114:
+cmp rcx, rdx
+je 2116f
+2118:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2113b
-jmp 2112f
-2111:
-2112:
+jne 2118b
+jmp 2117f
+2116:
+2117:
 vzeroupper
 mov rcx, r9
 mov edx, 0
-jmp 2104f
-2103:
+jmp 2109f
+2108:
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -72082,18 +72135,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2114f
-2116:
+je 2119f
+2121:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2116b
-jmp 2115f
-2114:
-2115:
+jne 2121b
+jmp 2120f
+2119:
+2120:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -72101,37 +72154,37 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2117f
-2119:
+je 2122f
+2124:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2119b
-jmp 2118f
-2117:
-2118:
-cmp rcx, rdx
-je 2120f
+jne 2124b
+jmp 2123f
 2122:
+2123:
+cmp rcx, rdx
+je 2125f
+2127:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2122b
-jmp 2121f
-2120:
-2121:
+jne 2127b
+jmp 2126f
+2125:
+2126:
 vzeroupper
 mov rcx, r9
 mov edx, 0
-2104:
-291:
-jmp 286f
-285:
+2109:
+296:
+jmp 291f
+290:
 mov QWORD PTR [rcx+392], r12
 mov QWORD PTR [rcx+400], r13
 mov QWORD PTR [rcx+408], r14
@@ -73727,18 +73780,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2123f
-2125:
+je 2128f
+2130:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2125b
-jmp 2124f
-2123:
-2124:
+jne 2130b
+jmp 2129f
+2128:
+2129:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -73746,36 +73799,36 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2126f
-2128:
+je 2131f
+2133:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2128b
-jmp 2127f
-2126:
-2127:
-cmp rcx, rdx
-je 2129f
+jne 2133b
+jmp 2132f
 2131:
+2132:
+cmp rcx, rdx
+je 2134f
+2136:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2131b
-jmp 2130f
-2129:
-2130:
+jne 2136b
+jmp 2135f
+2134:
+2135:
 vzeroupper
 mov rcx, r9
 mov edx, 0
-286:
-jmp 265f
-264:
+291:
+jmp 270f
+269:
 mov eax, 1
 mov DWORD PTR [r15+112], eax
 mov rdi, r15
@@ -73785,7 +73838,7 @@ mov rdx, r13
 mov rcx, r15
 add rcx, 128
 cmp rdx, 512
-jb 2132f
+jb 2137f
 mov QWORD PTR [rcx+392], r12
 mov QWORD PTR [rcx+400], r13
 mov QWORD PTR [rcx+408], r14
@@ -75442,8 +75495,8 @@ mov rdx, QWORD PTR [rcx+416]
 sub rdx, 512
 mov QWORD PTR [rcx+416], rdx
 cmp rdx, 512
-jb 2134f
-2136:
+jb 2139f
+2141:
 vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 vpshufd ymm0, ymm12, 0
 vpshufd ymm1, ymm12, 85
@@ -78273,21 +78326,21 @@ mov rdx, QWORD PTR [rcx+416]
 sub rdx, 512
 mov QWORD PTR [rcx+416], rdx
 cmp rdx, 512
-jae 2136b
-jmp 2135f
-2134:
-2135:
+jae 2141b
+jmp 2140f
+2139:
+2140:
 mov rdx, QWORD PTR [rcx+416]
 sub rdx, 1
 cmp rdx, 256
-jb 2137f
+jb 2142f
 mov eax, 0
 mov eax, 0
 mov eax, 0
 mov eax, eax
 mov eax, eax
 cmp rdx, 448
-jb 2139f
+jb 2144f
 mov rax, r11
 add rax, 5
 mov rdx, rbx
@@ -78321,8 +78374,8 @@ mov r13, QWORD PTR [rcx+400]
 mov r14, QWORD PTR [rcx+408]
 mov r15, rcx
 sub r15, 128
-jmp 2140f
-2139:
+jmp 2145f
+2144:
 vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 vpshufd ymm0, ymm12, 0
 vpshufd ymm1, ymm12, 85
@@ -81151,18 +81204,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2141f
-2143:
+je 2146f
+2148:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2143b
-jmp 2142f
-2141:
-2142:
+jne 2148b
+jmp 2147f
+2146:
+2147:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -81170,30 +81223,30 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2144f
-2146:
+je 2149f
+2151:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2146b
-jmp 2145f
-2144:
-2145:
-cmp rcx, rdx
-je 2147f
+jne 2151b
+jmp 2150f
 2149:
+2150:
+cmp rcx, rdx
+je 2152f
+2154:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2149b
-jmp 2148f
-2147:
-2148:
+jne 2154b
+jmp 2153f
+2152:
+2153:
 vzeroupper
 mov rcx, r9
 mov edx, 0
@@ -81204,11 +81257,11 @@ mov eax, 0
 mov eax, 0
 mov eax, eax
 mov eax, eax
-2140:
-jmp 2138f
-2137:
+2145:
+jmp 2143f
+2142:
 cmp rdx, 128
-jb 2150f
+jb 2155f
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -83311,18 +83364,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2152f
-2154:
+je 2157f
+2159:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2154b
-jmp 2153f
-2152:
-2153:
+jne 2159b
+jmp 2158f
+2157:
+2158:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -83330,35 +83383,35 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2155f
-2157:
+je 2160f
+2162:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2157b
-jmp 2156f
-2155:
-2156:
-cmp rcx, rdx
-je 2158f
+jne 2162b
+jmp 2161f
 2160:
+2161:
+cmp rcx, rdx
+je 2163f
+2165:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2160b
-jmp 2159f
-2158:
-2159:
+jne 2165b
+jmp 2164f
+2163:
+2164:
 vzeroupper
 mov rcx, r9
 mov edx, 0
-jmp 2151f
-2150:
+jmp 2156f
+2155:
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -85062,18 +85115,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2161f
-2163:
+je 2166f
+2168:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2163b
-jmp 2162f
-2161:
-2162:
+jne 2168b
+jmp 2167f
+2166:
+2167:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -85081,68 +85134,68 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2164f
-2166:
+je 2169f
+2171:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2166b
-jmp 2165f
-2164:
-2165:
-cmp rcx, rdx
-je 2167f
+jne 2171b
+jmp 2170f
 2169:
+2170:
+cmp rcx, rdx
+je 2172f
+2174:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2169b
-jmp 2168f
-2167:
-2168:
+jne 2174b
+jmp 2173f
+2172:
+2173:
 vzeroupper
 mov rcx, r9
 mov edx, 0
-2151:
-2138:
-jmp 2133f
-2132:
+2156:
+2143:
+jmp 2138f
+2137:
 mov rbx, r14
 mov rbp, r13
-2133:
-265:
+2138:
+270:
 test rdx, rdx
-je 2170f
+je 2175f
 call {vg_chacha20_xor_avx2}
-jmp 2171f
-2170:
+jmp 2176f
+2175:
 mov rsi, rcx
-2171:
-jmp 263f
-262:
+2176:
+jmp 268f
+267:
 mov rsi, r15
 add rsi, 736
 mov rdx, r13
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2172f
-2174:
+je 2177f
+2179:
 vmovdqu ymm0, YMMWORD PTR [r14+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r14+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2174b
-jmp 2173f
-2172:
-2173:
+jne 2179b
+jmp 2178f
+2177:
+2178:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -85150,91 +85203,68 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2175f
-2177:
+je 2180f
+2182:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2177b
-jmp 2176f
-2175:
-2176:
-cmp rcx, rdx
-je 2178f
+jne 2182b
+jmp 2181f
 2180:
+2181:
+cmp rcx, rdx
+je 2183f
+2185:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2180b
-jmp 2179f
-2178:
-2179:
+jne 2185b
+jmp 2184f
+2183:
+2184:
 mov rsi, r15
 add rsi, 128
 mov rbx, r14
 mov rbp, r13
-263:
+268:
 mov r15, rsi
 sub r15, 128
 cmp r13, 449
-jb 2181f
+jb 2186f
 mov rdx, QWORD PTR [r15+48]
-jmp 2182f
-2181:
+jmp 2187f
+2186:
 mov rdx, r13
-2182:
+2187:
 add rdx, 64
 vpxor ymm0, ymm0, ymm0
 mov ecx, 0
-2183:
+2188:
 vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 add rcx, 32
 cmp rcx, rdx
-jb 2183b
+jb 2188b
 vzeroupper
 mov rdi, r15
 add rdi, 448
 mov rsi, rbx
 mov rdx, rbp
 shr rdx, 4
-je 2184f
+je 2189f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 2185f
-2184:
-2185:
+jmp 2190f
+2189:
+2190:
 mov rdx, rbp
 and rdx, 15
-je 2186f
-mov rsi, rbp
-sub rsi, rdx
-add rsi, rbx
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-2188:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 2188b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx2}
-mov r15, rdi
-sub r15, 448
-jmp 2187f
-2186:
+jne 2191f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -85243,7 +85273,7 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-2187:
+2192:
 mov rdi, r15
 add rdi, 448
 mov esi, 0
@@ -85303,6 +85333,90 @@ movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
 lea rsp, [rsp+1720]
 ret
+249:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 251f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 253f
+255:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 255b
+jmp 254f
+253:
+254:
+jmp 252f
+251:
+256:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 256b
+mov rax, r9
+xor r9d, r9d
+252:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx512}
+mov r15, rdi
+sub r15, 448
+jmp 250b
+2191:
+mov rsi, rbp
+sub rsi, rdx
+add rsi, rbx
+xor r9d, r9d
+cmp rdx, 8
+jb 2193f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 2195f
+2197:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2197b
+jmp 2196f
+2195:
+2196:
+jmp 2194f
+2193:
+2198:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2198b
+mov rax, r9
+xor r9d, r9d
+2194:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx2}
+mov r15, rdi
+sub r15, 448
+jmp 2192b
 .p2align 6",
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -85495,30 +85609,7 @@ jmp 213f
 213:
 mov rdx, r13
 and rdx, 15
-je 214f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-216:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 216b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx512}
-mov r15, rdi
-sub r15, 448
-jmp 215f
-214:
+jne 214f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -85529,43 +85620,43 @@ mov r15, rdi
 sub r15, 448
 215:
 cmp r13, 961
-jb 217f
+jb 222f
 mov edx, 0
 cmp r13, 961
-jb 219f
+jb 224f
 mov rdx, r13
 and rdx, 1023
 add rdx, 63
 and rdx, -64
 cmp rdx, 961
-jb 221f
+jb 226f
 mov edx, 0
-jmp 222f
-221:
-222:
-jmp 220f
-219:
+jmp 227f
+226:
+227:
+jmp 225f
+224:
 mov rdx, r13
-220:
+225:
 test rdx, rdx
-je 223f
+je 228f
 mov rsi, r15
 add rsi, 736
 mov ecx, 0
 mov rax, rdx
 shr rax, 6
-je 225f
-227:
+je 230f
+232:
 vmovdqu32 zmm0, ZMMWORD PTR [r14+rcx*1]
 vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1]
 vpxord zmm0, zmm0, zmm1
 vmovdqu32 ZMMWORD PTR [r14+rcx*1], zmm0
 add rcx, 64
 sub rax, 1
-jne 227b
-jmp 226f
-225:
-226:
+jne 232b
+jmp 231f
+230:
+231:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -85573,50 +85664,50 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 228f
-230:
+je 233f
+235:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 230b
-jmp 229f
-228:
-229:
-cmp rcx, rdx
-je 231f
+jne 235b
+jmp 234f
 233:
+234:
+cmp rcx, rdx
+je 236f
+238:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 233b
-jmp 232f
-231:
-232:
-jmp 224f
-223:
-224:
+jne 238b
+jmp 237f
+236:
+237:
+jmp 229f
+228:
+229:
 mov edx, 0
 cmp r13, 961
-jb 234f
+jb 239f
 mov rdx, r13
 and rdx, 1023
 add rdx, 63
 and rdx, -64
 cmp rdx, 961
-jb 236f
+jb 241f
 mov edx, 0
-jmp 237f
-236:
-237:
-jmp 235f
-234:
+jmp 242f
+241:
+242:
+jmp 240f
+239:
 mov rdx, r13
-235:
+240:
 mov rax, rdx
 shr rax, 6
 add rax, 1
@@ -85631,26 +85722,26 @@ add rdi, 64
 mov rcx, r15
 add rcx, 128
 call {vg_chacha20_xor_avx512}
-jmp 218f
-217:
+jmp 223f
+222:
 mov rsi, r15
 add rsi, 736
 mov rdx, r13
 mov ecx, 0
 mov rax, rdx
 shr rax, 6
-je 238f
-240:
+je 243f
+245:
 vmovdqu32 zmm0, ZMMWORD PTR [r14+rcx*1]
 vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1]
 vpxord zmm0, zmm0, zmm1
 vmovdqu32 ZMMWORD PTR [r14+rcx*1], zmm0
 add rcx, 64
 sub rax, 1
-jne 240b
-jmp 239f
-238:
-239:
+jne 245b
+jmp 244f
+243:
+244:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -85658,60 +85749,60 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 241f
-243:
+je 246f
+248:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 243b
-jmp 242f
-241:
-242:
-cmp rcx, rdx
-je 244f
+jne 248b
+jmp 247f
 246:
+247:
+cmp rcx, rdx
+je 249f
+251:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 246b
-jmp 245f
-244:
-245:
+jne 251b
+jmp 250f
+249:
+250:
 mov rsi, r15
 add rsi, 128
-218:
+223:
 mov r15, rsi
 sub r15, 128
 mov edx, 0
 cmp r13, 961
-jb 247f
+jb 252f
 mov rdx, r13
 and rdx, 1023
 add rdx, 63
 and rdx, -64
 cmp rdx, 961
-jb 249f
+jb 254f
 mov edx, 0
-jmp 250f
-249:
-250:
-jmp 248f
-247:
+jmp 255f
+254:
+255:
+jmp 253f
+252:
 mov rdx, r13
-248:
+253:
 add rdx, 64
 vpxord zmm0, zmm0, zmm0
 mov ecx, 0
-251:
+256:
 vmovdqu32 ZMMWORD PTR [r15+rcx*1+672], zmm0
 add rcx, 64
 cmp rcx, rdx
-jb 251b
+jb 256b
 vzeroupper
 mov rdi, r15
 add rdi, 448
@@ -85787,19 +85878,19 @@ mov rax, QWORD PTR [rsi+4]
 mov QWORD PTR [r15+664], rax
 mov edx, 0
 cmp r13, 449
-jb 252f
-jmp 253f
-252:
+jb 257f
+jmp 258f
+257:
 mov rdx, r13
-253:
+258:
 add rdx, 64
 vpxor ymm0, ymm0, ymm0
 mov ecx, 0
-254:
+259:
 vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 add rcx, 32
 cmp rcx, rdx
-jb 254b
+jb 259b
 vzeroupper
 mov rdi, r15
 add rdi, 608
@@ -85814,10 +85905,10 @@ mov r10d, 64
 cmp r13, 513
 cmovb rax, r10
 cmp rax, 64
-jb 255f
+jb 260f
 call {vg_chacha20_xor_avx2}
-jmp 256f
-255:
+jmp 261f
+260:
 mov rcx, r15
 add rcx, 672
 movabs rax, 0
@@ -86267,7 +86358,7 @@ vmovdqu YMMWORD PTR [r9+96], ymm10
 vzeroupper
 mov rsi, r15
 add rsi, 128
-256:
+261:
 mov r15, rsi
 sub r15, 128
 mov rdi, r15
@@ -86282,16 +86373,16 @@ add rdi, 448
 mov rsi, rbx
 mov rdx, rbp
 shr rdx, 4
-je 257f
+je 262f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 258f
-257:
-258:
+jmp 263f
+262:
+263:
 mov rdx, rbp
 and rdx, 15
-je 259f
+je 264f
 mov rsi, rbp
 sub rsi, rdx
 add rsi, rbx
@@ -86299,12 +86390,12 @@ mov eax, 0
 mov QWORD PTR [r15+576], rax
 mov QWORD PTR [r15+584], rax
 mov ecx, 0
-261:
+266:
 movzx eax, BYTE PTR [rsi+rcx*1]
 mov BYTE PTR [r15+rcx*1+576], al
 add rcx, 1
 cmp rcx, rdx
-jne 261b
+jne 266b
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -86313,13 +86404,13 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 260f
-259:
-260:
+jmp 265f
+264:
+265:
 mov QWORD PTR [r15+592], rbp
 mov QWORD PTR [r15+600], r13
 cmp r13, 449
-jb 262f
+jb 267f
 mov eax, 1
 mov DWORD PTR [r15+112], eax
 mov rdi, r15
@@ -86329,7 +86420,7 @@ mov rdx, r13
 mov rcx, r15
 add rcx, 128
 cmp rdx, 512
-jb 264f
+jb 269f
 mov QWORD PTR [rcx+392], r12
 mov QWORD PTR [rcx+400], r13
 mov QWORD PTR [rcx+408], r14
@@ -86374,7 +86465,7 @@ mov rbx, QWORD PTR [rdi+8]
 mov rbp, QWORD PTR [rdi+16]
 mov rdi, rcx
 sub rdi, 64
-266:
+271:
 vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 vpshufd ymm0, ymm12, 0
 vpshufd ymm1, ymm12, 85
@@ -89204,13 +89295,13 @@ mov rdx, QWORD PTR [rcx+416]
 sub rdx, 512
 mov QWORD PTR [rcx+416], rdx
 cmp rdx, 512
-jae 266b
+jae 271b
 mov edx, 0
 mov rdx, rdx
 mov rdx, QWORD PTR [rcx+416]
 sub rdx, 65
 cmp rdx, 192
-jb 267f
+jb 272f
 mov rax, r11
 add rax, 5
 mov rdx, rbx
@@ -89242,12 +89333,12 @@ mov r13, QWORD PTR [rcx+400]
 mov r14, QWORD PTR [rcx+408]
 mov r15, rcx
 sub r15, 128
-jmp 268f
-267:
+jmp 273f
+272:
 cmp rdx, 64
-jb 269f
+jb 274f
 cmp rdx, 127
-jb 271f
+jb 276f
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -90586,8 +90677,8 @@ vmovdqu YMMWORD PTR [r9+192], ymm10
 vperm2i128 ymm10, ymm6, ymm7, 49
 vmovdqu YMMWORD PTR [r9+224], ymm10
 vzeroupper
-jmp 272f
-271:
+jmp 277f
+276:
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -91774,9 +91865,9 @@ vmovdqu YMMWORD PTR [r9+192], ymm10
 vperm2i128 ymm10, ymm6, ymm7, 49
 vmovdqu YMMWORD PTR [r9+224], ymm10
 vzeroupper
-272:
-jmp 270f
-269:
+277:
+jmp 275f
+274:
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -92412,13 +92503,13 @@ vmovdqu YMMWORD PTR [r9+64], ymm10
 vperm2i128 ymm10, ymm2, ymm3, 49
 vmovdqu YMMWORD PTR [r9+96], ymm10
 vzeroupper
-270:
-268:
-jmp 265f
-264:
+275:
+273:
+jmp 270f
+269:
 mov rbx, r14
 mov rbp, r13
-265:
+270:
 mov eax, 0
 mov eax, 0
 mov eax, 0
@@ -92428,39 +92519,16 @@ add rdi, 448
 mov rsi, rbx
 mov rdx, rbp
 shr rdx, 4
-je 273f
+je 278f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 274f
-273:
-274:
+jmp 279f
+278:
+279:
 mov rdx, rbp
 and rdx, 15
-je 275f
-mov rsi, rbp
-sub rsi, rdx
-add rsi, rbx
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-277:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 277b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx2}
-mov r15, rdi
-sub r15, 448
-jmp 276f
-275:
+jne 280f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -92469,19 +92537,19 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-276:
+281:
 cmp r13, 512
-jb 278f
+jb 288f
 mov rax, r13
 and rax, 511
 sub rax, 65
 cmp rax, 192
-jb 280f
+jb 290f
 mov rax, r13
 and rax, 511
 sub rax, 1
 cmp rax, 64
-jb 282f
+jb 292f
 mov rdi, r15
 add rdi, 64
 mov rsi, rbx
@@ -92489,8 +92557,8 @@ mov rdx, rbp
 mov rcx, r15
 add rcx, 128
 call {vg_chacha20_xor_avx2}
-jmp 283f
-282:
+jmp 293f
+292:
 mov rdx, r13
 and rdx, 511
 mov r10, r14
@@ -92501,18 +92569,18 @@ add rsi, 736
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 284f
-286:
+je 294f
+296:
 vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 286b
-jmp 285f
-284:
-285:
+jne 296b
+jmp 295f
+294:
+295:
 mov rdi, r10
 add rdi, rcx
 add rsi, rcx
@@ -92520,35 +92588,35 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 287f
-289:
+je 297f
+299:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 289b
-jmp 288f
-287:
-288:
+jne 299b
+jmp 298f
+297:
+298:
 cmp rcx, rdx
-je 290f
-292:
+je 2100f
+2102:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 292b
-jmp 291f
-290:
-291:
+jne 2102b
+jmp 2101f
+2100:
+2101:
 mov rsi, r15
 add rsi, 128
-283:
-jmp 281f
-280:
+293:
+jmp 291f
+290:
 mov rdx, r13
 and rdx, 511
 mov r10, r14
@@ -92559,18 +92627,18 @@ add rsi, 128
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 293f
-295:
+je 2103f
+2105:
 vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 295b
-jmp 294f
-293:
-294:
+jne 2105b
+jmp 2104f
+2103:
+2104:
 mov rdi, r10
 add rdi, rcx
 add rsi, rcx
@@ -92578,39 +92646,39 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 296f
-298:
+je 2106f
+2108:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 298b
-jmp 297f
-296:
-297:
+jne 2108b
+jmp 2107f
+2106:
+2107:
 cmp rcx, rdx
-je 299f
-2101:
+je 2109f
+2111:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2101b
-jmp 2100f
-299:
-2100:
+jne 2111b
+jmp 2110f
+2109:
+2110:
 mov rsi, r15
 add rsi, 128
-281:
+291:
 mov eax, 0
 mov eax, 0
 mov eax, 0
 mov eax, 0
-jmp 279f
-278:
+jmp 289f
+288:
 mov rdi, r15
 add rdi, 64
 mov rsi, rbx
@@ -92618,47 +92686,24 @@ mov rdx, rbp
 mov rcx, r15
 add rcx, 128
 call {vg_chacha20_xor_avx2}
-279:
-jmp 263f
-262:
+289:
+jmp 268f
+267:
 mov rdi, r15
 add rdi, 448
 mov rsi, r14
 mov rdx, r13
 shr rdx, 4
-je 2102f
+je 2112f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 2103f
-2102:
-2103:
+jmp 2113f
+2112:
+2113:
 mov rdx, r13
 and rdx, 15
-je 2104f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-2106:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 2106b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx2}
-mov r15, rdi
-sub r15, 448
-jmp 2105f
-2104:
+jne 2114f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -92667,25 +92712,25 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-2105:
+2115:
 mov rsi, r15
 add rsi, 736
 mov rdx, r13
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2107f
-2109:
+je 2122f
+2124:
 vmovdqu ymm0, YMMWORD PTR [r14+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r14+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2109b
-jmp 2108f
-2107:
-2108:
+jne 2124b
+jmp 2123f
+2122:
+2123:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -92693,50 +92738,50 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2110f
-2112:
+je 2125f
+2127:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2112b
-jmp 2111f
-2110:
-2111:
+jne 2127b
+jmp 2126f
+2125:
+2126:
 cmp rcx, rdx
-je 2113f
-2115:
+je 2128f
+2130:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2115b
-jmp 2114f
-2113:
-2114:
+jne 2130b
+jmp 2129f
+2128:
+2129:
 mov rsi, r15
 add rsi, 128
-263:
+268:
 mov r15, rsi
 sub r15, 128
 mov edx, 0
 cmp r13, 449
-jb 2116f
-jmp 2117f
-2116:
+jb 2131f
+jmp 2132f
+2131:
 mov rdx, r13
-2117:
+2132:
 add rdx, 64
 vpxor ymm0, ymm0, ymm0
 mov ecx, 0
-2118:
+2133:
 vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 add rcx, 32
 cmp rcx, rdx
-jb 2118b
+jb 2133b
 vzeroupper
 mov rdi, r15
 add rdi, 448
@@ -92806,6 +92851,132 @@ movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
 lea rsp, [rsp+1720]
 ret
+214:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 216f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 218f
+220:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 220b
+jmp 219f
+218:
+219:
+jmp 217f
+216:
+221:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 221b
+mov rax, r9
+xor r9d, r9d
+217:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx512}
+mov r15, rdi
+sub r15, 448
+jmp 215b
+280:
+mov rsi, rbp
+sub rsi, rdx
+add rsi, rbx
+xor r9d, r9d
+cmp rdx, 8
+jb 282f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 284f
+286:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 286b
+jmp 285f
+284:
+285:
+jmp 283f
+282:
+287:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 287b
+mov rax, r9
+xor r9d, r9d
+283:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx2}
+mov r15, rdi
+sub r15, 448
+jmp 281b
+2114:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 2116f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 2118f
+2120:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2120b
+jmp 2119f
+2118:
+2119:
+jmp 2117f
+2116:
+2121:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2121b
+mov rax, r9
+xor r9d, r9d
+2117:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx2}
+mov r15, rdi
+sub r15, 448
+jmp 2115b
 .p2align 6",
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -96132,30 +96303,7 @@ jmp 2175f
 2175:
 mov rdx, r13
 and rdx, 15
-je 2176f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-2178:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 2178b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx512}
-mov r15, rdi
-sub r15, 448
-jmp 2177f
-2176:
+jne 2176f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -96228,6 +96376,48 @@ movdqu XMMWORD PTR [rsp+680], xmm0
 movdqu XMMWORD PTR [rsp+696], xmm0
 lea rsp, [rsp+1736]
 ret
+2176:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 2178f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 2180f
+2182:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2182b
+jmp 2181f
+2180:
+2181:
+jmp 2179f
+2178:
+2183:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2183b
+mov rax, r9
+xor r9d, r9d
+2179:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx512}
+mov r15, rdi
+sub r15, 448
+jmp 2177b
 .p2align 6",
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -96894,30 +97084,7 @@ jmp 248f
 248:
 mov rdx, r13
 and rdx, 15
-je 249f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-251:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 251b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx512}
-mov r15, rdi
-sub r15, 448
-jmp 250f
-249:
+jne 249f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -96991,36 +97158,36 @@ mov QWORD PTR [r15+656], rax
 mov rax, QWORD PTR [rsi+4]
 mov QWORD PTR [r15+664], rax
 cmp r13, 449
-jae 252f
+jae 257f
 mov rdx, r13
-jmp 253f
-252:
+jmp 258f
+257:
 cmp r13, 1409
-jb 254f
+jb 259f
 mov rdx, r13
 sub rdx, 1
 and rdx, 511
 add rdx, -448
 sbb rdx, rdx
 and rdx, 448
-jmp 255f
-254:
+jmp 260f
+259:
 mov rdx, r13
 sub rdx, 577
 add rdx, -384
 sbb rdx, rdx
 and rdx, 448
-255:
-253:
+260:
+258:
 mov QWORD PTR [r15+48], rdx
 add rdx, 64
 vpxor ymm0, ymm0, ymm0
 mov ecx, 0
-256:
+261:
 vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 add rcx, 32
 cmp rcx, rdx
-jb 256b
+jb 261b
 vzeroupper
 mov rdi, r15
 add rdi, 608
@@ -97043,16 +97210,16 @@ add rdi, 448
 mov rsi, rbx
 mov rdx, rbp
 shr rdx, 4
-je 257f
+je 262f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 258f
-257:
-258:
+jmp 263f
+262:
+263:
 mov rdx, rbp
 and rdx, 15
-je 259f
+je 264f
 mov rsi, rbp
 sub rsi, rdx
 add rsi, rbx
@@ -97060,12 +97227,12 @@ mov eax, 0
 mov QWORD PTR [r15+576], rax
 mov QWORD PTR [r15+584], rax
 mov ecx, 0
-261:
+266:
 movzx eax, BYTE PTR [rsi+rcx*1]
 mov BYTE PTR [r15+rcx*1+576], al
 add rcx, 1
 cmp rcx, rdx
-jne 261b
+jne 266b
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -97074,57 +97241,57 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 260f
-259:
-260:
+jmp 265f
+264:
+265:
 mov QWORD PTR [r15+592], rbp
 mov QWORD PTR [r15+600], r13
 cmp r13, 449
-jb 262f
+jb 267f
 mov rdx, QWORD PTR [r15+48]
 test rdx, rdx
-je 264f
+je 269f
 cmp r13, 449
-jae 266f
+jae 271f
 mov rdx, r13
-jmp 267f
-266:
+jmp 272f
+271:
 cmp r13, 1409
-jb 268f
+jb 273f
 mov rdx, r13
 sub rdx, 1
 and rdx, 511
 add rdx, -448
 sbb rdx, rdx
 and rdx, 448
-jmp 269f
-268:
+jmp 274f
+273:
 mov rdx, r13
 sub rdx, 577
 add rdx, -384
 sbb rdx, rdx
 and rdx, 448
-269:
-267:
+274:
+272:
 test rdx, rdx
-je 270f
+je 275f
 mov rsi, r15
 add rsi, 736
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 272f
-274:
+je 277f
+279:
 vmovdqu ymm0, YMMWORD PTR [r14+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r14+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 274b
-jmp 273f
-272:
-273:
+jne 279b
+jmp 278f
+277:
+278:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -97132,55 +97299,55 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 275f
-277:
+je 280f
+282:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 277b
-jmp 276f
-275:
-276:
-cmp rcx, rdx
-je 278f
+jne 282b
+jmp 281f
 280:
+281:
+cmp rcx, rdx
+je 283f
+285:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 280b
-jmp 279f
-278:
-279:
-jmp 271f
-270:
-271:
+jne 285b
+jmp 284f
+283:
+284:
+jmp 276f
+275:
+276:
 cmp r13, 449
-jae 281f
+jae 286f
 mov rdx, r13
-jmp 282f
-281:
+jmp 287f
+286:
 cmp r13, 1409
-jb 283f
+jb 288f
 mov rdx, r13
 sub rdx, 1
 and rdx, 511
 add rdx, -448
 sbb rdx, rdx
 and rdx, 448
-jmp 284f
-283:
+jmp 289f
+288:
 mov rdx, r13
 sub rdx, 577
 add rdx, -384
 sbb rdx, rdx
 and rdx, 448
-284:
-282:
+289:
+287:
 mov rax, rdx
 shr rax, 6
 add rax, 1
@@ -97196,7 +97363,7 @@ mov rcx, r15
 add rcx, 128
 mov rsi, r14
 cmp rdx, 512
-jb 285f
+jb 290f
 mov QWORD PTR [rcx+392], r12
 mov QWORD PTR [rcx+400], r13
 mov QWORD PTR [rcx+408], r14
@@ -99443,8 +99610,8 @@ mov rdx, QWORD PTR [rcx+416]
 sub rdx, 512
 mov QWORD PTR [rcx+416], rdx
 cmp rdx, 512
-jb 287f
-289:
+jb 292f
+294:
 vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 vpshufd ymm0, ymm12, 0
 vpshufd ymm1, ymm12, 85
@@ -101799,21 +101966,21 @@ mov rdx, QWORD PTR [rcx+416]
 sub rdx, 512
 mov QWORD PTR [rcx+416], rdx
 cmp rdx, 512
-jae 289b
-jmp 288f
-287:
-288:
+jae 294b
+jmp 293f
+292:
+293:
 mov rdx, QWORD PTR [rcx+416]
 sub rdx, 1
 cmp rdx, 256
-jb 290f
+jb 295f
 mov eax, 0
 mov eax, 0
 mov eax, 0
 mov eax, eax
 mov eax, eax
 cmp rdx, 448
-jb 292f
+jb 297f
 mov rax, r11
 add rax, 5
 mov rdx, rbx
@@ -101847,8 +102014,8 @@ mov r13, QWORD PTR [rcx+400]
 mov r14, QWORD PTR [rcx+408]
 mov r15, rcx
 sub r15, 128
-jmp 293f
-292:
+jmp 298f
+297:
 vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 vpshufd ymm0, ymm12, 0
 vpshufd ymm1, ymm12, 85
@@ -104202,18 +104369,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 294f
-296:
+je 299f
+2101:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 296b
-jmp 295f
-294:
-295:
+jne 2101b
+jmp 2100f
+299:
+2100:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -104221,30 +104388,30 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 297f
-299:
+je 2102f
+2104:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 299b
-jmp 298f
-297:
-298:
-cmp rcx, rdx
-je 2100f
+jne 2104b
+jmp 2103f
 2102:
+2103:
+cmp rcx, rdx
+je 2105f
+2107:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2102b
-jmp 2101f
-2100:
-2101:
+jne 2107b
+jmp 2106f
+2105:
+2106:
 vzeroupper
 mov rcx, r9
 mov edx, 0
@@ -104255,11 +104422,11 @@ mov eax, 0
 mov eax, 0
 mov eax, eax
 mov eax, eax
-293:
-jmp 291f
-290:
+298:
+jmp 296f
+295:
 cmp rdx, 128
-jb 2103f
+jb 2108f
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -106362,18 +106529,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2105f
-2107:
+je 2110f
+2112:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2107b
-jmp 2106f
-2105:
-2106:
+jne 2112b
+jmp 2111f
+2110:
+2111:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -106381,35 +106548,35 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2108f
-2110:
+je 2113f
+2115:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2110b
-jmp 2109f
-2108:
-2109:
-cmp rcx, rdx
-je 2111f
+jne 2115b
+jmp 2114f
 2113:
+2114:
+cmp rcx, rdx
+je 2116f
+2118:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2113b
-jmp 2112f
-2111:
-2112:
+jne 2118b
+jmp 2117f
+2116:
+2117:
 vzeroupper
 mov rcx, r9
 mov edx, 0
-jmp 2104f
-2103:
+jmp 2109f
+2108:
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -108113,18 +108280,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2114f
-2116:
+je 2119f
+2121:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2116b
-jmp 2115f
-2114:
-2115:
+jne 2121b
+jmp 2120f
+2119:
+2120:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -108132,37 +108299,37 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2117f
-2119:
+je 2122f
+2124:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2119b
-jmp 2118f
-2117:
-2118:
-cmp rcx, rdx
-je 2120f
+jne 2124b
+jmp 2123f
 2122:
+2123:
+cmp rcx, rdx
+je 2125f
+2127:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2122b
-jmp 2121f
-2120:
-2121:
+jne 2127b
+jmp 2126f
+2125:
+2126:
 vzeroupper
 mov rcx, r9
 mov edx, 0
-2104:
-291:
-jmp 286f
-285:
+2109:
+296:
+jmp 291f
+290:
 mov QWORD PTR [rcx+392], r12
 mov QWORD PTR [rcx+400], r13
 mov QWORD PTR [rcx+408], r14
@@ -109758,18 +109925,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2123f
-2125:
+je 2128f
+2130:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2125b
-jmp 2124f
-2123:
-2124:
+jne 2130b
+jmp 2129f
+2128:
+2129:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -109777,36 +109944,36 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2126f
-2128:
+je 2131f
+2133:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2128b
-jmp 2127f
-2126:
-2127:
-cmp rcx, rdx
-je 2129f
+jne 2133b
+jmp 2132f
 2131:
+2132:
+cmp rcx, rdx
+je 2134f
+2136:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2131b
-jmp 2130f
-2129:
-2130:
+jne 2136b
+jmp 2135f
+2134:
+2135:
 vzeroupper
 mov rcx, r9
 mov edx, 0
-286:
-jmp 265f
-264:
+291:
+jmp 270f
+269:
 mov eax, 1
 mov DWORD PTR [r15+112], eax
 mov rdi, r15
@@ -109816,7 +109983,7 @@ mov rdx, r13
 mov rcx, r15
 add rcx, 128
 cmp rdx, 512
-jb 2132f
+jb 2137f
 mov QWORD PTR [rcx+392], r12
 mov QWORD PTR [rcx+400], r13
 mov QWORD PTR [rcx+408], r14
@@ -110998,8 +111165,8 @@ mov rdx, QWORD PTR [rcx+416]
 sub rdx, 512
 mov QWORD PTR [rcx+416], rdx
 cmp rdx, 512
-jb 2134f
-2136:
+jb 2139f
+2141:
 vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 vpshufd ymm0, ymm12, 0
 vpshufd ymm1, ymm12, 85
@@ -113354,21 +113521,21 @@ mov rdx, QWORD PTR [rcx+416]
 sub rdx, 512
 mov QWORD PTR [rcx+416], rdx
 cmp rdx, 512
-jae 2136b
-jmp 2135f
-2134:
-2135:
+jae 2141b
+jmp 2140f
+2139:
+2140:
 mov rdx, QWORD PTR [rcx+416]
 sub rdx, 1
 cmp rdx, 256
-jb 2137f
+jb 2142f
 mov eax, 0
 mov eax, 0
 mov eax, 0
 mov eax, eax
 mov eax, eax
 cmp rdx, 448
-jb 2139f
+jb 2144f
 mov rax, r11
 add rax, 5
 mov rdx, rbx
@@ -113402,8 +113569,8 @@ mov r13, QWORD PTR [rcx+400]
 mov r14, QWORD PTR [rcx+408]
 mov r15, rcx
 sub r15, 128
-jmp 2140f
-2139:
+jmp 2145f
+2144:
 vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 vpshufd ymm0, ymm12, 0
 vpshufd ymm1, ymm12, 85
@@ -115757,18 +115924,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2141f
-2143:
+je 2146f
+2148:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2143b
-jmp 2142f
-2141:
-2142:
+jne 2148b
+jmp 2147f
+2146:
+2147:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -115776,30 +115943,30 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2144f
-2146:
+je 2149f
+2151:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2146b
-jmp 2145f
-2144:
-2145:
-cmp rcx, rdx
-je 2147f
+jne 2151b
+jmp 2150f
 2149:
+2150:
+cmp rcx, rdx
+je 2152f
+2154:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2149b
-jmp 2148f
-2147:
-2148:
+jne 2154b
+jmp 2153f
+2152:
+2153:
 vzeroupper
 mov rcx, r9
 mov edx, 0
@@ -115810,11 +115977,11 @@ mov eax, 0
 mov eax, 0
 mov eax, eax
 mov eax, eax
-2140:
-jmp 2138f
-2137:
+2145:
+jmp 2143f
+2142:
 cmp rdx, 128
-jb 2150f
+jb 2155f
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -117917,18 +118084,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2152f
-2154:
+je 2157f
+2159:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2154b
-jmp 2153f
-2152:
-2153:
+jne 2159b
+jmp 2158f
+2157:
+2158:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -117936,35 +118103,35 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2155f
-2157:
+je 2160f
+2162:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2157b
-jmp 2156f
-2155:
-2156:
-cmp rcx, rdx
-je 2158f
+jne 2162b
+jmp 2161f
 2160:
+2161:
+cmp rcx, rdx
+je 2163f
+2165:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2160b
-jmp 2159f
-2158:
-2159:
+jne 2165b
+jmp 2164f
+2163:
+2164:
 vzeroupper
 mov rcx, r9
 mov edx, 0
-jmp 2151f
-2150:
+jmp 2156f
+2155:
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -119668,18 +119835,18 @@ test rdx, rdx
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2161f
-2163:
+je 2166f
+2168:
 vmovdqu ymm0, YMMWORD PTR [rbx+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rbx+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2163b
-jmp 2162f
-2161:
-2162:
+jne 2168b
+jmp 2167f
+2166:
+2167:
 mov rdi, rbx
 add rdi, rcx
 add rsi, rcx
@@ -119687,68 +119854,68 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2164f
-2166:
+je 2169f
+2171:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2166b
-jmp 2165f
-2164:
-2165:
-cmp rcx, rdx
-je 2167f
+jne 2171b
+jmp 2170f
 2169:
+2170:
+cmp rcx, rdx
+je 2172f
+2174:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2169b
-jmp 2168f
-2167:
-2168:
+jne 2174b
+jmp 2173f
+2172:
+2173:
 vzeroupper
 mov rcx, r9
 mov edx, 0
-2151:
-2138:
-jmp 2133f
-2132:
+2156:
+2143:
+jmp 2138f
+2137:
 mov rbx, r14
 mov rbp, r13
-2133:
-265:
+2138:
+270:
 test rdx, rdx
-je 2170f
+je 2175f
 call {vg_chacha20_xor_avx512vl}
-jmp 2171f
-2170:
+jmp 2176f
+2175:
 mov rsi, rcx
-2171:
-jmp 263f
-262:
+2176:
+jmp 268f
+267:
 mov rsi, r15
 add rsi, 736
 mov rdx, r13
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2172f
-2174:
+je 2177f
+2179:
 vmovdqu ymm0, YMMWORD PTR [r14+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r14+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2174b
-jmp 2173f
-2172:
-2173:
+jne 2179b
+jmp 2178f
+2177:
+2178:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -119756,91 +119923,68 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2175f
-2177:
+je 2180f
+2182:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2177b
-jmp 2176f
-2175:
-2176:
-cmp rcx, rdx
-je 2178f
+jne 2182b
+jmp 2181f
 2180:
+2181:
+cmp rcx, rdx
+je 2183f
+2185:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2180b
-jmp 2179f
-2178:
-2179:
+jne 2185b
+jmp 2184f
+2183:
+2184:
 mov rsi, r15
 add rsi, 128
 mov rbx, r14
 mov rbp, r13
-263:
+268:
 mov r15, rsi
 sub r15, 128
 cmp r13, 449
-jb 2181f
+jb 2186f
 mov rdx, QWORD PTR [r15+48]
-jmp 2182f
-2181:
+jmp 2187f
+2186:
 mov rdx, r13
-2182:
+2187:
 add rdx, 64
 vpxor ymm0, ymm0, ymm0
 mov ecx, 0
-2183:
+2188:
 vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 add rcx, 32
 cmp rcx, rdx
-jb 2183b
+jb 2188b
 vzeroupper
 mov rdi, r15
 add rdi, 448
 mov rsi, rbx
 mov rdx, rbp
 shr rdx, 4
-je 2184f
+je 2189f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 2185f
-2184:
-2185:
+jmp 2190f
+2189:
+2190:
 mov rdx, rbp
 and rdx, 15
-je 2186f
-mov rsi, rbp
-sub rsi, rdx
-add rsi, rbx
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-2188:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 2188b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx2}
-mov r15, rdi
-sub r15, 448
-jmp 2187f
-2186:
+jne 2191f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -119849,7 +119993,7 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-2187:
+2192:
 mov rdi, r15
 add rdi, 448
 mov esi, 0
@@ -119909,6 +120053,90 @@ movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
 lea rsp, [rsp+1720]
 ret
+249:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 251f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 253f
+255:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 255b
+jmp 254f
+253:
+254:
+jmp 252f
+251:
+256:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 256b
+mov rax, r9
+xor r9d, r9d
+252:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx512}
+mov r15, rdi
+sub r15, 448
+jmp 250b
+2191:
+mov rsi, rbp
+sub rsi, rdx
+add rsi, rbx
+xor r9d, r9d
+cmp rdx, 8
+jb 2193f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 2195f
+2197:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2197b
+jmp 2196f
+2195:
+2196:
+jmp 2194f
+2193:
+2198:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2198b
+mov rax, r9
+xor r9d, r9d
+2194:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx2}
+mov r15, rdi
+sub r15, 448
+jmp 2192b
 .p2align 6",
         vg_chacha20_xor_avx512vl = sym super::chacha20::vg_chacha20_xor_avx512vl,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -120100,30 +120328,7 @@ jmp 213f
 213:
 mov rdx, r13
 and rdx, 15
-je 214f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-216:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 216b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx512}
-mov r15, rdi
-sub r15, 448
-jmp 215f
-214:
+jne 214f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -120134,43 +120339,43 @@ mov r15, rdi
 sub r15, 448
 215:
 cmp r13, 961
-jb 217f
+jb 222f
 mov edx, 0
 cmp r13, 961
-jb 219f
+jb 224f
 mov rdx, r13
 and rdx, 1023
 add rdx, 63
 and rdx, -64
 cmp rdx, 961
-jb 221f
+jb 226f
 mov edx, 0
-jmp 222f
-221:
-222:
-jmp 220f
-219:
+jmp 227f
+226:
+227:
+jmp 225f
+224:
 mov rdx, r13
-220:
+225:
 test rdx, rdx
-je 223f
+je 228f
 mov rsi, r15
 add rsi, 736
 mov ecx, 0
 mov rax, rdx
 shr rax, 6
-je 225f
-227:
+je 230f
+232:
 vmovdqu32 zmm0, ZMMWORD PTR [r14+rcx*1]
 vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1]
 vpxord zmm0, zmm0, zmm1
 vmovdqu32 ZMMWORD PTR [r14+rcx*1], zmm0
 add rcx, 64
 sub rax, 1
-jne 227b
-jmp 226f
-225:
-226:
+jne 232b
+jmp 231f
+230:
+231:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -120178,50 +120383,50 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 228f
-230:
+je 233f
+235:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 230b
-jmp 229f
-228:
-229:
-cmp rcx, rdx
-je 231f
+jne 235b
+jmp 234f
 233:
+234:
+cmp rcx, rdx
+je 236f
+238:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 233b
-jmp 232f
-231:
-232:
-jmp 224f
-223:
-224:
+jne 238b
+jmp 237f
+236:
+237:
+jmp 229f
+228:
+229:
 mov edx, 0
 cmp r13, 961
-jb 234f
+jb 239f
 mov rdx, r13
 and rdx, 1023
 add rdx, 63
 and rdx, -64
 cmp rdx, 961
-jb 236f
+jb 241f
 mov edx, 0
-jmp 237f
-236:
-237:
-jmp 235f
-234:
+jmp 242f
+241:
+242:
+jmp 240f
+239:
 mov rdx, r13
-235:
+240:
 mov rax, rdx
 shr rax, 6
 add rax, 1
@@ -120236,26 +120441,26 @@ add rdi, 64
 mov rcx, r15
 add rcx, 128
 call {vg_chacha20_xor_avx512vl}
-jmp 218f
-217:
+jmp 223f
+222:
 mov rsi, r15
 add rsi, 736
 mov rdx, r13
 mov ecx, 0
 mov rax, rdx
 shr rax, 6
-je 238f
-240:
+je 243f
+245:
 vmovdqu32 zmm0, ZMMWORD PTR [r14+rcx*1]
 vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1]
 vpxord zmm0, zmm0, zmm1
 vmovdqu32 ZMMWORD PTR [r14+rcx*1], zmm0
 add rcx, 64
 sub rax, 1
-jne 240b
-jmp 239f
-238:
-239:
+jne 245b
+jmp 244f
+243:
+244:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -120263,60 +120468,60 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 241f
-243:
+je 246f
+248:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 243b
-jmp 242f
-241:
-242:
-cmp rcx, rdx
-je 244f
+jne 248b
+jmp 247f
 246:
+247:
+cmp rcx, rdx
+je 249f
+251:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 246b
-jmp 245f
-244:
-245:
+jne 251b
+jmp 250f
+249:
+250:
 mov rsi, r15
 add rsi, 128
-218:
+223:
 mov r15, rsi
 sub r15, 128
 mov edx, 0
 cmp r13, 961
-jb 247f
+jb 252f
 mov rdx, r13
 and rdx, 1023
 add rdx, 63
 and rdx, -64
 cmp rdx, 961
-jb 249f
+jb 254f
 mov edx, 0
-jmp 250f
-249:
-250:
-jmp 248f
-247:
+jmp 255f
+254:
+255:
+jmp 253f
+252:
 mov rdx, r13
-248:
+253:
 add rdx, 64
 vpxord zmm0, zmm0, zmm0
 mov ecx, 0
-251:
+256:
 vmovdqu32 ZMMWORD PTR [r15+rcx*1+672], zmm0
 add rcx, 64
 cmp rcx, rdx
-jb 251b
+jb 256b
 vzeroupper
 mov rdi, r15
 add rdi, 448
@@ -120392,19 +120597,19 @@ mov rax, QWORD PTR [rsi+4]
 mov QWORD PTR [r15+664], rax
 mov edx, 0
 cmp r13, 449
-jb 252f
-jmp 253f
-252:
+jb 257f
+jmp 258f
+257:
 mov rdx, r13
-253:
+258:
 add rdx, 64
 vpxor ymm0, ymm0, ymm0
 mov ecx, 0
-254:
+259:
 vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 add rcx, 32
 cmp rcx, rdx
-jb 254b
+jb 259b
 vzeroupper
 mov rdi, r15
 add rdi, 608
@@ -120419,10 +120624,10 @@ mov r10d, 64
 cmp r13, 513
 cmovb rax, r10
 cmp rax, 64
-jb 255f
+jb 260f
 call {vg_chacha20_xor_avx512vl}
-jmp 256f
-255:
+jmp 261f
+260:
 mov rcx, r15
 add rcx, 672
 movabs rax, 0
@@ -120792,7 +120997,7 @@ vmovdqu YMMWORD PTR [r9+96], ymm10
 vzeroupper
 mov rsi, r15
 add rsi, 128
-256:
+261:
 mov r15, rsi
 sub r15, 128
 mov rdi, r15
@@ -120807,16 +121012,16 @@ add rdi, 448
 mov rsi, rbx
 mov rdx, rbp
 shr rdx, 4
-je 257f
+je 262f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 258f
-257:
-258:
+jmp 263f
+262:
+263:
 mov rdx, rbp
 and rdx, 15
-je 259f
+je 264f
 mov rsi, rbp
 sub rsi, rdx
 add rsi, rbx
@@ -120824,12 +121029,12 @@ mov eax, 0
 mov QWORD PTR [r15+576], rax
 mov QWORD PTR [r15+584], rax
 mov ecx, 0
-261:
+266:
 movzx eax, BYTE PTR [rsi+rcx*1]
 mov BYTE PTR [r15+rcx*1+576], al
 add rcx, 1
 cmp rcx, rdx
-jne 261b
+jne 266b
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -120838,13 +121043,13 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 260f
-259:
-260:
+jmp 265f
+264:
+265:
 mov QWORD PTR [r15+592], rbp
 mov QWORD PTR [r15+600], r13
 cmp r13, 449
-jb 262f
+jb 267f
 mov eax, 1
 mov DWORD PTR [r15+112], eax
 mov rdi, r15
@@ -120854,7 +121059,7 @@ mov rdx, r13
 mov rcx, r15
 add rcx, 128
 cmp rdx, 512
-jb 264f
+jb 269f
 mov QWORD PTR [rcx+392], r12
 mov QWORD PTR [rcx+400], r13
 mov QWORD PTR [rcx+408], r14
@@ -120899,7 +121104,7 @@ mov rbx, QWORD PTR [rdi+8]
 mov rbp, QWORD PTR [rdi+16]
 mov rdi, rcx
 sub rdi, 64
-266:
+271:
 vbroadcasti128 ymm12, XMMWORD PTR [rdi]
 vpshufd ymm0, ymm12, 0
 vpshufd ymm1, ymm12, 85
@@ -123254,13 +123459,13 @@ mov rdx, QWORD PTR [rcx+416]
 sub rdx, 512
 mov QWORD PTR [rcx+416], rdx
 cmp rdx, 512
-jae 266b
+jae 271b
 mov edx, 0
 mov rdx, rdx
 mov rdx, QWORD PTR [rcx+416]
 sub rdx, 65
 cmp rdx, 192
-jb 267f
+jb 272f
 mov rax, r11
 add rax, 5
 mov rdx, rbx
@@ -123292,12 +123497,12 @@ mov r13, QWORD PTR [rcx+400]
 mov r14, QWORD PTR [rcx+408]
 mov r15, rcx
 sub r15, 128
-jmp 268f
-267:
+jmp 273f
+272:
 cmp rdx, 64
-jb 269f
+jb 274f
 cmp rdx, 127
-jb 271f
+jb 276f
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -124636,8 +124841,8 @@ vmovdqu YMMWORD PTR [r9+192], ymm10
 vperm2i128 ymm10, ymm6, ymm7, 49
 vmovdqu YMMWORD PTR [r9+224], ymm10
 vzeroupper
-jmp 272f
-271:
+jmp 277f
+276:
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -125824,9 +126029,9 @@ vmovdqu YMMWORD PTR [r9+192], ymm10
 vperm2i128 ymm10, ymm6, ymm7, 49
 vmovdqu YMMWORD PTR [r9+224], ymm10
 vzeroupper
-272:
-jmp 270f
-269:
+277:
+jmp 275f
+274:
 movabs rax, 0
 mov QWORD PTR [rcx+224], rax
 movabs rax, 0
@@ -126462,13 +126667,13 @@ vmovdqu YMMWORD PTR [r9+64], ymm10
 vperm2i128 ymm10, ymm2, ymm3, 49
 vmovdqu YMMWORD PTR [r9+96], ymm10
 vzeroupper
-270:
-268:
-jmp 265f
-264:
+275:
+273:
+jmp 270f
+269:
 mov rbx, r14
 mov rbp, r13
-265:
+270:
 mov eax, 0
 mov eax, 0
 mov eax, 0
@@ -126478,39 +126683,16 @@ add rdi, 448
 mov rsi, rbx
 mov rdx, rbp
 shr rdx, 4
-je 273f
+je 278f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 274f
-273:
-274:
+jmp 279f
+278:
+279:
 mov rdx, rbp
 and rdx, 15
-je 275f
-mov rsi, rbp
-sub rsi, rdx
-add rsi, rbx
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-277:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 277b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx2}
-mov r15, rdi
-sub r15, 448
-jmp 276f
-275:
+jne 280f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -126519,19 +126701,19 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-276:
+281:
 cmp r13, 512
-jb 278f
+jb 288f
 mov rax, r13
 and rax, 511
 sub rax, 65
 cmp rax, 192
-jb 280f
+jb 290f
 mov rax, r13
 and rax, 511
 sub rax, 1
 cmp rax, 64
-jb 282f
+jb 292f
 mov rdi, r15
 add rdi, 64
 mov rsi, rbx
@@ -126539,8 +126721,8 @@ mov rdx, rbp
 mov rcx, r15
 add rcx, 128
 call {vg_chacha20_xor_avx512vl}
-jmp 283f
-282:
+jmp 293f
+292:
 mov rdx, r13
 and rdx, 511
 mov r10, r14
@@ -126551,18 +126733,18 @@ add rsi, 736
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 284f
-286:
+je 294f
+296:
 vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 286b
-jmp 285f
-284:
-285:
+jne 296b
+jmp 295f
+294:
+295:
 mov rdi, r10
 add rdi, rcx
 add rsi, rcx
@@ -126570,35 +126752,35 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 287f
-289:
+je 297f
+299:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 289b
-jmp 288f
-287:
-288:
+jne 299b
+jmp 298f
+297:
+298:
 cmp rcx, rdx
-je 290f
-292:
+je 2100f
+2102:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 292b
-jmp 291f
-290:
-291:
+jne 2102b
+jmp 2101f
+2100:
+2101:
 mov rsi, r15
 add rsi, 128
-283:
-jmp 281f
-280:
+293:
+jmp 291f
+290:
 mov rdx, r13
 and rdx, 511
 mov r10, r14
@@ -126609,18 +126791,18 @@ add rsi, 128
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 293f
-295:
+je 2103f
+2105:
 vmovdqu ymm0, YMMWORD PTR [r10+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r10+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 295b
-jmp 294f
-293:
-294:
+jne 2105b
+jmp 2104f
+2103:
+2104:
 mov rdi, r10
 add rdi, rcx
 add rsi, rcx
@@ -126628,39 +126810,39 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 296f
-298:
+je 2106f
+2108:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 298b
-jmp 297f
-296:
-297:
+jne 2108b
+jmp 2107f
+2106:
+2107:
 cmp rcx, rdx
-je 299f
-2101:
+je 2109f
+2111:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2101b
-jmp 2100f
-299:
-2100:
+jne 2111b
+jmp 2110f
+2109:
+2110:
 mov rsi, r15
 add rsi, 128
-281:
+291:
 mov eax, 0
 mov eax, 0
 mov eax, 0
 mov eax, 0
-jmp 279f
-278:
+jmp 289f
+288:
 mov rdi, r15
 add rdi, 64
 mov rsi, rbx
@@ -126668,47 +126850,24 @@ mov rdx, rbp
 mov rcx, r15
 add rcx, 128
 call {vg_chacha20_xor_avx512vl}
-279:
-jmp 263f
-262:
+289:
+jmp 268f
+267:
 mov rdi, r15
 add rdi, 448
 mov rsi, r14
 mov rdx, r13
 shr rdx, 4
-je 2102f
+je 2112f
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-jmp 2103f
-2102:
-2103:
+jmp 2113f
+2112:
+2113:
 mov rdx, r13
 and rdx, 15
-je 2104f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-2106:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 2106b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx2}
-mov r15, rdi
-sub r15, 448
-jmp 2105f
-2104:
+jne 2114f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -126717,25 +126876,25 @@ mov edx, 1
 call {vg_poly1305_blocks_avx2}
 mov r15, rdi
 sub r15, 448
-2105:
+2115:
 mov rsi, r15
 add rsi, 736
 mov rdx, r13
 mov ecx, 0
 mov rax, rdx
 shr rax, 5
-je 2107f
-2109:
+je 2122f
+2124:
 vmovdqu ymm0, YMMWORD PTR [r14+rcx*1]
 vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1]
 vpxor ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [r14+rcx*1], ymm0
 add rcx, 32
 sub rax, 1
-jne 2109b
-jmp 2108f
-2107:
-2108:
+jne 2124b
+jmp 2123f
+2122:
+2123:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -126743,50 +126902,50 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 2110f
-2112:
+je 2125f
+2127:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 2112b
-jmp 2111f
-2110:
-2111:
+jne 2127b
+jmp 2126f
+2125:
+2126:
 cmp rcx, rdx
-je 2113f
-2115:
+je 2128f
+2130:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 2115b
-jmp 2114f
-2113:
-2114:
+jne 2130b
+jmp 2129f
+2128:
+2129:
 mov rsi, r15
 add rsi, 128
-263:
+268:
 mov r15, rsi
 sub r15, 128
 mov edx, 0
 cmp r13, 449
-jb 2116f
-jmp 2117f
-2116:
+jb 2131f
+jmp 2132f
+2131:
 mov rdx, r13
-2117:
+2132:
 add rdx, 64
 vpxor ymm0, ymm0, ymm0
 mov ecx, 0
-2118:
+2133:
 vmovdqu YMMWORD PTR [r15+rcx*1+672], ymm0
 add rcx, 32
 cmp rcx, rdx
-jb 2118b
+jb 2133b
 vzeroupper
 mov rdi, r15
 add rdi, 448
@@ -126856,6 +127015,132 @@ movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
 lea rsp, [rsp+1720]
 ret
+214:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 216f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 218f
+220:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 220b
+jmp 219f
+218:
+219:
+jmp 217f
+216:
+221:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 221b
+mov rax, r9
+xor r9d, r9d
+217:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx512}
+mov r15, rdi
+sub r15, 448
+jmp 215b
+280:
+mov rsi, rbp
+sub rsi, rdx
+add rsi, rbx
+xor r9d, r9d
+cmp rdx, 8
+jb 282f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 284f
+286:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 286b
+jmp 285f
+284:
+285:
+jmp 283f
+282:
+287:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 287b
+mov rax, r9
+xor r9d, r9d
+283:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx2}
+mov r15, rdi
+sub r15, 448
+jmp 281b
+2114:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 2116f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 2118f
+2120:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2120b
+jmp 2119f
+2118:
+2119:
+jmp 2117f
+2116:
+2121:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2121b
+mov rax, r9
+xor r9d, r9d
+2117:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx2}
+mov r15, rdi
+sub r15, 448
+jmp 2115b
 .p2align 6",
         vg_chacha20_xor_avx512vl = sym super::chacha20::vg_chacha20_xor_avx512vl,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -130181,30 +130466,7 @@ jmp 2175f
 2175:
 mov rdx, r13
 and rdx, 15
-je 2176f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-2178:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 2178b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_avx512}
-mov r15, rdi
-sub r15, 448
-jmp 2177f
-2176:
+jne 2176f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -130277,6 +130539,48 @@ movdqu XMMWORD PTR [rsp+680], xmm0
 movdqu XMMWORD PTR [rsp+696], xmm0
 lea rsp, [rsp+1736]
 ret
+2176:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 2178f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 2180f
+2182:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2182b
+jmp 2181f
+2180:
+2181:
+jmp 2179f
+2178:
+2183:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2183b
+mov rax, r9
+xor r9d, r9d
+2179:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_avx512}
+mov r15, rdi
+sub r15, 448
+jmp 2177b
 .p2align 6",
         vg_chacha20_xor_avx512vl = sym super::chacha20::vg_chacha20_xor_avx512vl,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -130933,30 +131237,7 @@ jmp 246f
 246:
 mov rdx, r13
 and rdx, 15
-je 247f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-249:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 249b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_ifma}
-mov r15, rdi
-sub r15, 448
-jmp 248f
-247:
+jne 247f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -131024,6 +131305,48 @@ movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
 lea rsp, [rsp+1720]
 ret
+247:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 249f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 251f
+253:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 253b
+jmp 252f
+251:
+252:
+jmp 250f
+249:
+254:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 254b
+mov rax, r9
+xor r9d, r9d
+250:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_ifma}
+mov r15, rdi
+sub r15, 448
+jmp 248b
 .p2align 6",
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -131205,30 +131528,7 @@ jmp 211f
 211:
 mov rdx, r13
 and rdx, 15
-je 212f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-214:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 214b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_ifma}
-mov r15, rdi
-sub r15, 448
-jmp 213f
-212:
+jne 212f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -131239,43 +131539,43 @@ mov r15, rdi
 sub r15, 448
 213:
 cmp r13, 961
-jb 215f
+jb 220f
 mov edx, 0
 cmp r13, 961
-jb 217f
+jb 222f
 mov rdx, r13
 and rdx, 1023
 add rdx, 63
 and rdx, -64
 cmp rdx, 961
-jb 219f
+jb 224f
 mov edx, 0
-jmp 220f
-219:
-220:
-jmp 218f
-217:
+jmp 225f
+224:
+225:
+jmp 223f
+222:
 mov rdx, r13
-218:
+223:
 test rdx, rdx
-je 221f
+je 226f
 mov rsi, r15
 add rsi, 736
 mov ecx, 0
 mov rax, rdx
 shr rax, 6
-je 223f
-225:
+je 228f
+230:
 vmovdqu32 zmm0, ZMMWORD PTR [r14+rcx*1]
 vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1]
 vpxord zmm0, zmm0, zmm1
 vmovdqu32 ZMMWORD PTR [r14+rcx*1], zmm0
 add rcx, 64
 sub rax, 1
-jne 225b
-jmp 224f
-223:
-224:
+jne 230b
+jmp 229f
+228:
+229:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -131283,50 +131583,50 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 226f
-228:
+je 231f
+233:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 228b
-jmp 227f
-226:
-227:
-cmp rcx, rdx
-je 229f
+jne 233b
+jmp 232f
 231:
+232:
+cmp rcx, rdx
+je 234f
+236:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 231b
-jmp 230f
-229:
-230:
-jmp 222f
-221:
-222:
+jne 236b
+jmp 235f
+234:
+235:
+jmp 227f
+226:
+227:
 mov edx, 0
 cmp r13, 961
-jb 232f
+jb 237f
 mov rdx, r13
 and rdx, 1023
 add rdx, 63
 and rdx, -64
 cmp rdx, 961
-jb 234f
+jb 239f
 mov edx, 0
-jmp 235f
-234:
-235:
-jmp 233f
-232:
+jmp 240f
+239:
+240:
+jmp 238f
+237:
 mov rdx, r13
-233:
+238:
 mov rax, rdx
 shr rax, 6
 add rax, 1
@@ -131341,26 +131641,26 @@ add rdi, 64
 mov rcx, r15
 add rcx, 128
 call {vg_chacha20_xor_avx512}
-jmp 216f
-215:
+jmp 221f
+220:
 mov rsi, r15
 add rsi, 736
 mov rdx, r13
 mov ecx, 0
 mov rax, rdx
 shr rax, 6
-je 236f
-238:
+je 241f
+243:
 vmovdqu32 zmm0, ZMMWORD PTR [r14+rcx*1]
 vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1]
 vpxord zmm0, zmm0, zmm1
 vmovdqu32 ZMMWORD PTR [r14+rcx*1], zmm0
 add rcx, 64
 sub rax, 1
-jne 238b
-jmp 237f
-236:
-237:
+jne 243b
+jmp 242f
+241:
+242:
 mov rdi, r14
 add rdi, rcx
 add rsi, rcx
@@ -131368,60 +131668,60 @@ sub rdx, rcx
 mov ecx, 0
 mov rax, rdx
 shr rax, 3
-je 239f
-241:
+je 244f
+246:
 mov r8, QWORD PTR [rdi+rcx*1]
 xor r8, QWORD PTR [rsi+rcx*1]
 mov QWORD PTR [rdi+rcx*1], r8
 add rcx, 8
 sub rax, 1
-jne 241b
-jmp 240f
-239:
-240:
-cmp rcx, rdx
-je 242f
+jne 246b
+jmp 245f
 244:
+245:
+cmp rcx, rdx
+je 247f
+249:
 movzx eax, BYTE PTR [rdi+rcx*1]
 movzx r8d, BYTE PTR [rsi+rcx*1]
 xor rax, r8
 mov BYTE PTR [rdi+rcx*1], al
 add rcx, 1
 cmp rcx, rdx
-jne 244b
-jmp 243f
-242:
-243:
+jne 249b
+jmp 248f
+247:
+248:
 mov rsi, r15
 add rsi, 128
-216:
+221:
 mov r15, rsi
 sub r15, 128
 mov edx, 0
 cmp r13, 961
-jb 245f
+jb 250f
 mov rdx, r13
 and rdx, 1023
 add rdx, 63
 and rdx, -64
 cmp rdx, 961
-jb 247f
+jb 252f
 mov edx, 0
-jmp 248f
-247:
-248:
-jmp 246f
-245:
+jmp 253f
+252:
+253:
+jmp 251f
+250:
 mov rdx, r13
-246:
+251:
 add rdx, 64
 vpxord zmm0, zmm0, zmm0
 mov ecx, 0
-249:
+254:
 vmovdqu32 ZMMWORD PTR [r15+rcx*1+672], zmm0
 add rcx, 64
 cmp rcx, rdx
-jb 249b
+jb 254b
 vzeroupper
 mov rdi, r15
 add rdi, 448
@@ -131490,6 +131790,48 @@ movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
 lea rsp, [rsp+1720]
 ret
+212:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 214f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 216f
+218:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 218b
+jmp 217f
+216:
+217:
+jmp 215f
+214:
+219:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 219b
+mov rax, r9
+xor r9d, r9d
+215:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_ifma}
+mov r15, rdi
+sub r15, 448
+jmp 213b
 .p2align 6",
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -134814,30 +135156,7 @@ jmp 2175f
 2175:
 mov rdx, r13
 and rdx, 15
-je 2176f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-2178:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 2178b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks_ifma}
-mov r15, rdi
-sub r15, 448
-jmp 2177f
-2176:
+jne 2176f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -134910,6 +135229,48 @@ movdqu XMMWORD PTR [rsp+680], xmm0
 movdqu XMMWORD PTR [rsp+696], xmm0
 lea rsp, [rsp+1736]
 ret
+2176:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
+jb 2178f
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
+je 2180f
+2182:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2182b
+jmp 2181f
+2180:
+2181:
+jmp 2179f
+2178:
+2183:
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
+jne 2183b
+mov rax, r9
+xor r9d, r9d
+2179:
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
+call {vg_poly1305_blocks_ifma}
+mov r15, rdi
+sub r15, 448
+jmp 2177b
 .p2align 6",
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -135537,30 +135898,7 @@ jmp 238f
 238:
 mov rdx, r13
 and rdx, 15
-je 239f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-241:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 241b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks}
-mov r15, rdi
-sub r15, 448
-jmp 240f
-239:
+jne 239f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -135628,6 +135966,29 @@ movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
 lea rsp, [rsp+1720]
 ret
+239:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+mov eax, 0
+mov QWORD PTR [r15+576], rax
+mov QWORD PTR [r15+584], rax
+mov ecx, 0
+241:
+movzx eax, BYTE PTR [rsi+rcx*1]
+mov BYTE PTR [r15+rcx*1+576], al
+add rcx, 1
+cmp rcx, rdx
+jne 241b
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov edx, 2
+call {vg_poly1305_blocks}
+mov r15, rdi
+sub r15, 448
+jmp 240b
 .p2align 6",
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -135794,30 +136155,7 @@ jmp 29f
 29:
 mov rdx, r13
 and rdx, 15
-je 210f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-212:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 212b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks}
-mov r15, rdi
-sub r15, 448
-jmp 211f
-210:
+jne 210f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -136048,6 +136386,29 @@ movdqu XMMWORD PTR [rsp+664], xmm0
 movdqu XMMWORD PTR [rsp+680], xmm0
 lea rsp, [rsp+1720]
 ret
+210:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+mov eax, 0
+mov QWORD PTR [r15+576], rax
+mov QWORD PTR [r15+584], rax
+mov ecx, 0
+212:
+movzx eax, BYTE PTR [rsi+rcx*1]
+mov BYTE PTR [r15+rcx*1+576], al
+add rcx, 1
+cmp rcx, rdx
+jne 212b
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov edx, 2
+call {vg_poly1305_blocks}
+mov r15, rdi
+sub r15, 448
+jmp 211b
 .p2align 6",
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
@@ -136467,30 +136828,7 @@ jmp 252f
 252:
 mov rdx, r13
 and rdx, 15
-je 253f
-mov rsi, r13
-sub rsi, rdx
-add rsi, r14
-mov eax, 0
-mov QWORD PTR [r15+576], rax
-mov QWORD PTR [r15+584], rax
-mov ecx, 0
-255:
-movzx eax, BYTE PTR [rsi+rcx*1]
-mov BYTE PTR [r15+rcx*1+576], al
-add rcx, 1
-cmp rcx, rdx
-jne 255b
-mov rdi, r15
-add rdi, 448
-mov rsi, r15
-add rsi, 576
-mov edx, 2
-call {vg_poly1305_blocks}
-mov r15, rdi
-sub r15, 448
-jmp 254f
-253:
+jne 253f
 mov rdi, r15
 add rdi, 448
 mov rsi, r15
@@ -136563,6 +136901,29 @@ movdqu XMMWORD PTR [rsp+680], xmm0
 movdqu XMMWORD PTR [rsp+696], xmm0
 lea rsp, [rsp+1736]
 ret
+253:
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+mov eax, 0
+mov QWORD PTR [r15+576], rax
+mov QWORD PTR [r15+584], rax
+mov ecx, 0
+255:
+movzx eax, BYTE PTR [rsi+rcx*1]
+mov BYTE PTR [r15+rcx*1+576], al
+add rcx, 1
+cmp rcx, rdx
+jne 255b
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov edx, 2
+call {vg_poly1305_blocks}
+mov r15, rdi
+sub r15, 448
+jmp 254b
 .p2align 6",
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
         vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
