@@ -356,11 +356,11 @@ theorem lowInputTwo_ok {r q : VReg} {off : Nat}
   refine reduceTwo_ok (by decide) (Ne.symm hr24) (Ne.symm hq24) (Ne.symm hr25) (Ne.symm hq25) hrq hregs
     (by simpa only [huq] using hmod) (by simpa only [huc] using hc) fun v hv hva hvb => ?_
   have hk : VChg [.v27,.v29,.v24,.v25,r,q] s v := (hu.trans hv).mono (by
-    intro d hd; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)
+    paired_regs_sub)
   refine caddTwo_ok (by decide) (Ne.symm hr24) (Ne.symm hq24) (Ne.symm hr25) (Ne.symm hq25) hrq hregs
     (by intro e he; rw [hk.get .v31 (by simp [Ne.symm (rn .v31 (by decide)),Ne.symm (qn .v31 (by decide))])]; exact hmod e he)
     fun w hw hwa hwb => k w ((hk.trans hw).mono (by
-      intro d hd; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)) ?_ ?_
+      paired_regs_sub)) ?_ ?_
   · intro e he; rw [hwa e he,hva e he,ha e he]; rfl
   · intro e he; rw [hwb e he,hvb e he,hb e he]; rfl
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
@@ -406,7 +406,7 @@ theorem lowMlsTwo_ok {r q : VReg} (hr : r∉lowReserved) (hq : q∉lowReserved) 
     (by intro e he; rw [hu.get .v31 (by simp [Ne.symm (rn .v31 (by decide))])]; exact hmod e he)
     (by intro e he; rw [hu.get .v8 (by simp [Ne.symm (rn .v8 (by decide))])]; exact hc e he)
     fun v hv hva hvb => k v ((hu.trans hv).mono (by
-      intro d hd; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)) ?_ ?_
+      paired_regs_sub)) ?_ ?_
   · intro e he; rw [hva e he,ha e he]
   · intro e he; rw [hvb e he,hb e he]
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
@@ -484,7 +484,7 @@ theorem lowTailTwo_ok {r q : VReg} {off : Nat}
   have hzkeep : StepKeep [.v25,q,.v30] w z := StepKeep.ofChg hz (by
     intro d hd hm; exact hp d hd (by simp only [List.mem_cons,List.not_mem_nil,or_false] at *; grind only))
   refine k z (v.v .v24) (v.v r) (((hk.trans hw).trans hzkeep).mono (by
-    intro d hd; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)) ?_ ?_ ?_ ?_
+    paired_regs_sub)) ?_ ?_ ?_ ?_
   · rw [hz.mem,hwm,hv.mem,hum,hk.keep.get .x16]
     rfl
   · simpa only [huv] using hva
@@ -563,7 +563,7 @@ theorem lowPair_ok {g : Nat} (hg : IsG g) {r q : VReg} {off : Nat}
     (by simpa only [uk .v13 (by simp)] using h13)
     (by simpa only [uk .v14 (by simp)] using h14) fun v hv hva hvb => ?_
   have hk : VChg [.v27,.v29,.v24,.v25,r,q,.v26,.v28] s v := (hu.trans hv).mono (by
-    intro d hd; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)
+    paired_regs_sub)
   have vk (d : VReg) (hd : d∈[.v8,.v9,.v10,.v15,.v30,.v31]) : v.v d=s.v d := by
     refine hk.get d ?_
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hd

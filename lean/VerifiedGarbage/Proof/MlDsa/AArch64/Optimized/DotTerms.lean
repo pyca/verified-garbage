@@ -117,7 +117,7 @@ theorem dotTerm_ok {s : State} {off k : Nat}
     exact h19 (by simpa using hn)
   · have hc : VChg [.v16,.v17,.v18,.v19] s t :=
       ((h1.chg.trans h2.chg).trans ht).mono (by
-        intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)
+        simp (config := { contextual := true }) only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc, implies_true])
     have ev e : accWord (decide (k=0)) (dotAccum s off k e)
         (vword (b.v .v16) e) (vword (b.v .v17) e)=dotAccum s off (k+1) e := by
       rw [h2.get .v16,h1.v,h2.v,h1.chg.mem,h1.chg.gpr]
@@ -184,7 +184,7 @@ theorem dotLoad_ok {n : Nat} (hn : 0<n) {d : VReg} (h30 : d≠.v30) (h31 : d≠.
   refine dotReduce_ok h31 (dotAccum s off n) (e18 (by omega)) (e19 (by omega)) ca.qv ca.qiv
     fun t ht ev => ?_
   have h : VChg [.v16,.v17,.v18,.v19,.v20,d] s t := (ha.trans ht).mono (by
-    intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)
+    simp (config := { contextual := true }) only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc, true_or, or_true, implies_true, and_self, forall_eq_or_imp])
   exact next t h (hc.chg h (by simp [Ne.symm h30]) (by simp [Ne.symm h31])) ev
 
 end VG.Proof.MlDsa.AArch64.Optimized
