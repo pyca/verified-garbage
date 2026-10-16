@@ -119,7 +119,7 @@ pub(crate) unsafe extern \"sysv64\" fn vg_test_consts() -> u64 {
 
 #guard Rust.function artifact (fun _ => "") == expected
 
-#guard (Rust.checkConsts [artifact] artifact).isOk
+#guard (Rust.checkConsts [.of artifact] (.of artifact)).isOk
 #guard Instr.asm (.leaSym .rdx "VG_TEST_TABLE") == ["lea rdx, [rip + VG_TEST_TABLE]"]
 #guard (Instr.leaSym .rdx "VG_TEST_TABLE").requires.isEmpty
 #guard addrs (.leaSym .rdx "VG_TEST_TABLE") sat == []

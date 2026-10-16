@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.TCB.Artifact
+-- `ShareCommon.shareCommon'` returns its argument (`Prepared.code_eq`).
+import all Init.ShareCommon
 
 /-!
 # Rendering artifacts as Rust
@@ -102,6 +104,8 @@ each feature for the function's body only.)
 
 namespace VG.Rust
 
+universe u
+
 /-- Escape a string for a Rust string literal that is also an `asm!`
 template: `{`/`}` are template placeholders and must be doubled. -/
 def escape (s : String) : String :=
@@ -180,46 +184,72 @@ def featureCheck (name doc : String) (required declared : List String) :
     | parts => unless parts.getLast!.startsWith "Safety\n" do
         throw s!"{name} needs CPU features but its doc does not end with its `# Safety` section"
 
-/-- The features that the instructions of `c`, and of the functions it
-calls, require (`Code.requires`), each once, in first-seen order: what
-`dedup (c.requires req)` gives, without building the list with repetitions
-(which holds a function's requirements once per call of it, and was most of
-this check's time). -/
-def requiresDedup {I C : Type} (req : I → List String) (c : Code I C) : List String :=
-  go [] c
+/-- The value of `f` on the code of each call of `calls` (`Code.calls`), in
+order, but for a call whose value is that of the first call of the same
+function.
+
+`calls` holds a function once per call of it, through every function that
+calls it, and its code is usually the same value in memory at each of them:
+`withPtrEq` finds that at once, without computing `f` again (which, on the
+code of every call, was most of the time of the checks using this). -/
+def distinctCalls {I C β : Type} [BEq β] [LawfulBEq β] (f : Code I C → β)
+    (calls : List (String × Code I C)) : List β := Id.run do
+  -- The first call of each function so far, with its code and its value.
+  let mut first : List {p : String × Code I C × β // p.2.2 = f p.2.1} := []
+  let mut values : List β := []
+  for (n, body) in calls do
+    match first.find? (·.1.1 == n) with
+    | some ⟨(_, body₀, v₀), h₀⟩ =>
+      unless withPtrEq body body₀ (fun _ => f body == v₀) (fun h => by simp_all) do
+        values := f body :: values
+    | none =>
+      let v := f body
+      first := ⟨(n, body, v), rfl⟩ :: first
+      values := v :: values
+  return values.reverse
+
+/-- The features that the instructions of `c` require, but not those of the
+functions it calls, each once, in first-seen order after those of `acc`. -/
+def ownRequires {I C : Type} (req : I → List String) : List String → Code I C → List String
+  | acc, .block is => is.foldl (fun acc i => add acc (req i)) acc
+  | acc, .seq a b => ownRequires req (ownRequires req acc a) b
+  | acc, .ite _ t e => ownRequires req (ownRequires req acc t) e
+  | acc, .loop b _ => ownRequires req acc b
+  | acc, .call _ _ => acc
+  | acc, .frame i b j => add (ownRequires req (add acc (req i)) b) (req j)
 where
   add (acc fs : List String) : List String :=
     fs.foldl (fun acc f => if acc.contains f then acc else acc ++ [f]) acc
-  go : List String → Code I C → List String
-    | acc, .block is => is.foldl (fun acc i => add acc (req i)) acc
-    | acc, .seq a b => go (go acc a) b
-    | acc, .ite _ t e => go (go acc t) e
-    | acc, .loop b _ => go acc b
-    | acc, .call _ b => go acc b
-    | acc, .frame i b j => add (go (add acc (req i)) b) (req j)
 
-/-- The first `some` of `f` over the instructions of `c`, and of the
-functions it calls, in `Code.requires`'s order: the head of
-`c.requires fun i => (f i).toList`, found without building that list. -/
-def firstSome? {I C : Type} (f : I → Option String) : Code I C → Option String
+/-- The features that the instructions of `c`, and of the functions it
+calls, require (`Code.requires`), each once: those of the instructions of
+`c` outside its calls (`ownRequires`), then those of the code of each call
+(`Code.calls`, which has every call, those in the code of a call too),
+skipping a call whose code requires what the first call of the same
+function's does (`distinctCalls`). These are the features of
+`dedup (c.requires req)`, without building the list with repetitions or
+going through the code of a function once per call of it. -/
+def requiresDedup {I C : Type} (req : I → List String) (c : Code I C) : List String :=
+  (distinctCalls (ownRequires req []) c.calls).foldl ownRequires.add (ownRequires req [] c)
+
+/-- The first `some` of `f` over the instructions of `c`, but not those of
+the functions it calls. -/
+def ownFirstSome? {I C : Type} (f : I → Option String) : Code I C → Option String
   | .block is => is.findSome? f
-  | .seq a b => firstSome? f a <|> firstSome? f b
-  | .ite _ t e => firstSome? f t <|> firstSome? f e
-  | .loop b _ => firstSome? f b
-  | .call _ b => firstSome? f b
-  | .frame i b j => f i <|> firstSome? f b <|> f j
+  | .seq a b => ownFirstSome? f a <|> ownFirstSome? f b
+  | .ite _ t e => ownFirstSome? f t <|> ownFirstSome? f e
+  | .loop b _ => ownFirstSome? f b
+  | .call _ _ => none
+  | .frame i b j => f i <|> ownFirstSome? f b <|> f j
 
-/-- `a` declares exactly the CPU features its code requires (`featureCheck`). -/
-def checkFeatures (a : Artifact) : Except String Unit :=
-  featureCheck s!"{a.target.name}: {a.name}" a.doc (requiresDedup a.target.isa.requires a.code)
-    a.features
-
-/-- The target's printer can encode every instruction of `a`'s code, and of
-the functions it calls, as the model describes it (`Printer.unencodable`). -/
-def checkEncodable (a : Artifact) : Except String Unit :=
-  match firstSome? a.target.printer.unencodable a.code with
-  | none => pure ()
-  | some e => throw s!"{a.target.name}: {a.name}: {e}"
+/-- A `some` of `f` over the instructions of `c`, and of the functions it
+calls, if there is one: the first of those of `c` outside its calls
+(`ownFirstSome?`), or else that of the code of the first call that has one
+(`Code.calls`, which has every call, those in the code of a call too). A
+call whose value is the first call of the same function's is skipped
+(`distinctCalls`): that value is `none`, or the first call's was found. -/
+def firstSome? {I C : Type} (f : I → Option String) (c : Code I C) : Option String :=
+  ownFirstSome? f c <|> (distinctCalls (ownFirstSome? f) c.calls).findSome? id
 
 /-- `doc` with the paragraphs `notes` inserted before its `# Safety` section. -/
 def insertNotes (doc : String) : List String → String
@@ -294,6 +324,12 @@ def function (a : Artifact) (moduleOf : String → String) : String :=
   "    )\n" ++
   "}\n"
 
+/-- The tables of constants of `a`: those its contract gives it
+(`Artifact.consts`) and those its instructions carry (`Printer.codeTables`,
+x86-64's `aluTbl`). -/
+def tablesOf (a : Artifact) : List (String × List (BitVec 64)) :=
+  a.consts ++ a.target.printer.codeTables a.code
+
 /-- The distinct values of `f` over `as`, in first-seen order. -/
 def distinct (as : List Artifact) (f : Artifact → String) : List String :=
   dedup (as.map f)
@@ -330,12 +366,52 @@ def badCall {M : ISA} (P : Printer M) (printed : String → Option (List Line))
         first := (n, body) :: first
   return none
 
-/-- Every call in the code of `a`, and in the code of the functions it calls,
-is of an artifact of the same target whose printed code is that of the
-called code (`badCall`). -/
-def checkCalls (as : List Artifact) (a : Artifact) : Except String Unit :=
+/-- An artifact with what the checks read of it more than once, each computed
+once: its printed code (`Printer.function`, which a call of it is checked
+against in every function that calls it, `checkCalls`), its tables of
+constants (`tablesOf`, which every artifact of the target is checked
+against, `checkConsts`), and its code with equal parts shared
+(`ShareCommon.shareCommon'`, which returns its argument, as the same value
+in memory as equal parts of it): so that the code of each call of a
+function in it is the same value in memory as the first one's, as
+`badCall` and `distinctCalls` find at once, without going through the code
+of each call of a function. -/
+structure Prepared where
+  art : Artifact
+  code : Prog art.target.isa
+  lines : List Line
+  tables : List (String × List (BitVec 64))
+  code_eq : code = art.code
+  lines_eq : lines = art.target.printer.function art.code
+  tables_eq : tables = tablesOf art
+
+def Prepared.of (a : Artifact) : Prepared :=
+  ⟨a, ShareCommon.shareCommon' a.code, _, _, by unfold ShareCommon.shareCommon'; rfl, rfl, rfl⟩
+
+/-- `p`'s artifact declares exactly the CPU features its code requires
+(`featureCheck`). -/
+def checkFeatures (p : Prepared) : Except String Unit :=
+  let a := p.art
+  featureCheck s!"{a.target.name}: {a.name}" a.doc (requiresDedup a.target.isa.requires p.code)
+    a.features
+
+/-- The target's printer can encode every instruction of the code of `p`'s
+artifact, and of the functions it calls, as the model describes it
+(`Printer.unencodable`). -/
+def checkEncodable (p : Prepared) : Except String Unit :=
+  let a := p.art
+  match firstSome? a.target.printer.unencodable p.code with
+  | none => pure ()
+  | some e => throw s!"{a.target.name}: {a.name}: {e}"
+
+/-- Every call in the code of `p`'s artifact, and in the code of the functions
+it calls, is of an artifact of `ps` of the same target whose printed code is
+that of the called code (`badCall`). -/
+def checkCalls (ps : List Prepared) (p : Prepared) : Except String Unit :=
+  let a := p.art
   match badCall a.target.printer
-      (fun n => (callee as a n).map fun b => b.target.printer.function b.code) a.code.calls with
+      (fun n => (ps.find? fun q => q.art.target.name == a.target.name && q.art.name == n).map
+        (·.lines)) p.code.calls with
   | none => pure ()
   | some (n, false) => throw s!"{a.target.name}: {a.name} calls {n}, which is not an artifact"
   | some (n, true) =>
@@ -366,20 +442,16 @@ def tableName (n : String) : Bool :=
 def consistent (cs ds : List (String × List (BitVec 64))) : Bool :=
   cs.all fun (n, ws) => ds.all fun (m, vs) => m != n || vs == ws
 
-/-- The tables of constants of `a`: those its contract gives it
-(`Artifact.consts`) and those its instructions carry (`Printer.codeTables`,
-x86-64's `aluTbl`). -/
-def tablesOf (a : Artifact) : List (String × List (BitVec 64)) :=
-  a.consts ++ a.target.printer.codeTables a.code
-
 /-- The tables of constants of `a` (`Artifact.consts`) have distinct names,
 and so do those its instructions carry but for repeats of the same table;
 every name is a Rust constant's, none is named `consts` or the module of an
 artifact; every artifact of the target with a table of one of these names,
 given or carried, gives the same words; its code names only these tables;
-and its target's code can name a `static` (`Abi.sym`), if it has any. -/
-def checkConsts (as : List Artifact) (a : Artifact) : Except String Unit := do
-  let ts := tablesOf a
+and its target's code can name a `static` (`Abi.sym`), if it has any. Of
+`p`'s artifact, checked against the artifacts of `ps`. -/
+def checkConsts (ps : List Prepared) (p : Prepared) : Except String Unit := do
+  let a := p.art
+  let ts := p.tables
   unless ts.isEmpty || a.target.abi.sym.isSome do
     throw s!"{a.target.name}: {a.name} reads tables of constants, which its target's code cannot name"
   let names := a.consts.map (·.1)
@@ -390,12 +462,12 @@ def checkConsts (as : List Artifact) (a : Artifact) : Except String Unit := do
       throw s!"{a.target.name}: {a.name}'s table of constants {n} is not named as a Rust constant"
   unless consistent ts ts do
     throw s!"{a.target.name}: {a.name} gives a table of constants two lists of words"
-  for b in as do
-    unless b.target.name != a.target.name || consistent ts (tablesOf b) do
-      throw s!"{a.target.name}: {a.name} and {b.name} give a table of constants different words"
-  if (as.any fun b => b.target.name == a.target.name && b.module == "consts") then
+  for q in ps do
+    unless q.art.target.name != a.target.name || consistent ts q.tables do
+      throw s!"{a.target.name}: {a.name} and {q.art.name} give a table of constants different words"
+  if (ps.any fun q => q.art.target.name == a.target.name && q.art.module == "consts") then
     throw s!"{a.target.name}: an artifact's module is `consts`, the module of the tables of constants"
-  let used := (a.target.printer.function a.code).filterMap fun | .sym _ _ n => some n | _ => none
+  let used := p.lines.filterMap fun | .sym _ _ n => some n | _ => none
   for n in used do
     unless (ts.map (·.1)).contains n do
       throw s!"{a.target.name}: {a.name} names the table {n}, which it does not have \
@@ -449,7 +521,7 @@ def tasks : Nat := 4
 /-- `as.forM check` on `tasks` tasks, each checking every `tasks`-th
 artifact: the error of the first artifact of `as` that fails, as `forM`
 gives it, or none. -/
-def forMPar (as : List Artifact) (check : Artifact → Except String Unit) : Except String Unit :=
+def forMPar {α : Type u} (as : List α) (check : α → Except String Unit) : Except String Unit :=
   let indexed := as.zipIdx
   let parts := (List.range tasks).map fun j => Task.spawn fun _ =>
     (indexed.filter (·.2 % tasks == j)).findSome? fun (a, i) =>
@@ -462,6 +534,14 @@ def forMPar (as : List Artifact) (check : Artifact → Except String Unit) : Exc
   match first with
   | some (_, e) => throw e
   | none => pure ()
+
+/-- `as.map Prepared.of`, on `tasks` tasks, each preparing a run of consecutive
+artifacts. -/
+def prepareAll (as : List Artifact) : List Prepared :=
+  let size := (as.length + tasks - 1) / tasks
+  let parts := (List.range tasks).map fun j =>
+    Task.spawn fun _ => ((as.drop (j * size)).take size).map Prepared.of
+  (parts.map Task.get).flatten
 
 /-- The generated files, given the module of each function each artifact calls. -/
 def render (as : List Artifact) (moduleOf : Artifact → String → String) : List (String × String) :=
@@ -504,14 +584,16 @@ code has an instruction its target's printer cannot encode
 (`checkEncodable`) or its doc has no `# Safety` section at its end for what
 `fullDoc` adds to it (`checkLayout`). Each check of every artifact runs on
 `tasks` tasks (`forMPar`), one check after the other, so the error is the
-one checking them in order would give. -/
+one checking them in order would give; what they read of an artifact more
+than once is computed once, on `tasks` tasks (`Prepared`, `prepareAll`). -/
 def files (as : List Artifact) : Except String (List (String × String)) := do
   forMPar as checkApi
   checkUnique as
-  forMPar as (checkCalls as)
-  forMPar as (checkConsts as)
-  forMPar as checkFeatures
-  forMPar as checkEncodable
+  let ps := prepareAll as
+  forMPar ps (checkCalls ps)
+  forMPar ps (checkConsts ps)
+  forMPar ps checkFeatures
+  forMPar ps checkEncodable
   forMPar as checkLayout
   return render as fun a n => ((callee as a n).map (·.module)).getD ""
 
