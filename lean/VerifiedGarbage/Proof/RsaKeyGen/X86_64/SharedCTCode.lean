@@ -52,7 +52,7 @@ private theorem SharedC3.k0 {p : SharedCPub} {t : State} (h : SharedC3 p t)
   exact ⟨(show C3 p.toCPub t from ⟨s, t₁, hs.toCRel, he, hf⟩).k0 (by omega_arith),
     hs.env.kept (he.keep.trans hf.keep) (by decide)⟩
 
-private theorem sharedCode_ct (M : Mont) (R : Kernel) : RelCT isa (Two SharedCRel) (VG.Impl.RsaKeyGen.X86_64.Candidate.codeWith M.mm R.run) fun _ _ => True := by
+private theorem sharedCode_ct (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) : RelCT isa (Two SharedCRel) (VG.Impl.RsaKeyGen.X86_64.Candidate.codeWith mm R.run) fun _ _ => True := by
   unfold VG.Impl.RsaKeyGen.X86_64.Candidate.codeWith
   simp only [seqs]
   refine RelCT.seq (R := Two SharedC2) ?_ (RelCT.assoc (RelCT.seq (R := Two SharedC3) ?_ ?_))
@@ -105,7 +105,7 @@ private theorem sharedCode_ct (M : Mont) (R : Kernel) : RelCT isa (Two SharedCRe
     subst he'
     show word t.mem p.f.B (8 * kUsedP) = p.f.up
     rw [← hs.B, hf.word c (i := kUsedP) (by decide), he.usedP, hs.up]
-  · exact (sharedKMain_ct M R).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
+  · exact (sharedKMain_ct M hmc R).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ =>
       ⟨p.fp, h₁.1.k0 (by have := h₁.2; simpa [eval, h₁.1.cf] using this),
         h₂.1.k0 (by have := h₂.2; simpa [eval, h₂.1.cf] using this)⟩) h) fun _ _ h => h
 
@@ -130,9 +130,9 @@ private theorem shared_crel_of {s t : State} (hs : sharedCandPre s) (ht : shared
   rw [← hc.B, ← hc.Z, ← hc.rsp]
   exact ht.2
 
-theorem sharedCode_constantTime (M : Mont) (R : Kernel) :
-    ConstantTime isa sharedCandPre candPub (codeWith M.mm R.run) :=
-  RelCT.constantTime ((sharedCode_ct M R).mono (fun s _t ⟨hs, ht, hp⟩ =>
+theorem sharedCode_constantTime (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) :
+    ConstantTime isa sharedCandPre candPub (codeWith mm R.run) :=
+  RelCT.constantTime ((sharedCode_ct M hmc R).mono (fun s _t ⟨hs, ht, hp⟩ =>
     ⟨sharedCpubOf s hs.1, shared_crel_self hs, shared_crel_of hs ht hp⟩) (fun _ _ h => h))
 
 end VG.Proof.RsaKeyGen.X86_64
