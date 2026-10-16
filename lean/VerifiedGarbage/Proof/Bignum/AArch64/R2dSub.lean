@@ -118,6 +118,77 @@ theorem subPass_ok {s : State} {B : Addr} {Z w eA eX : Nat} (hs : Scr s B Z)
     (fun j hj t hI _ => subPStep_ok hA hX sX hj hI) h0 h14) fun t hI => ?_
   exact ⟨!t.c, hI.val, hI.out, (k₁.trans hI.keep).mono (by decide)⟩
 
+/-! ## `R - m` -/
+
+/-- After `j` words of `neg`'s loop: `x_j + m_j = 2^(64 j) b` for the borrow `b`. -/
+structure NegInv (m₀ : Mem) (s₀ : State) (B : Addr) (Z eX eM : Nat) (j : Nat) (t : State) : Prop where
+  scr : Scr t B Z
+  keep : Keep [.x3, .x4, .x14, .x16, .x17] s₀ t
+  x16 : t.gpr .x16 = off B (eX + 8 * j)
+  x17 : t.gpr .x17 = off B (eM + 8 * j)
+  out : Outside B eX (8 * j) m₀ t.mem
+  val : wv t.mem B eX j + wv m₀ B eM j = 2 ^ (64 * j) * (!t.c).toNat
+
+theorem negStep_ok {m₀ : Mem} {s₀ : State} {B : Addr} {Z w eX eM : Nat} (h7 : s₀.gpr .x7 = 0)
+    (hX : eX + 8 * w ≤ Z) (hM : eM + 8 * w ≤ Z) (sM : eX + 8 * w ≤ eM ∨ eM + 8 * w ≤ eX) {j : Nat} (hj : j < w)
+    {t : State} (hI : NegInv m₀ s₀ B Z eX eM j t) :
+    WP isa (.block ([ld .x4 .x17, .sbcs .x .x3 .x7 .x4, st .x3 .x16, next .x16, next .x17] ++
+        ([.subImm .x .x14 .x14 1] : List Instr))) t fun t' =>
+      NegInv m₀ s₀ B Z eX eM (j + 1) t' ∧ t'.gpr .x14 = t.gpr .x14 - BitVec.ofNat 64 1 := by
+  have hn := hI.scr.nowrap
+  have t7 : t.gpr .x7 = 0 := (hI.keep.gpr .x7 (by decide)).trans h7
+  rw [WP.block_append_iff]
+  refine WP.mono (WP.keep [.x3, .x4, .x16, .x17] (Q := fun t₁ =>
+      t₁.mem = t.mem.writeW (off B (eX + 8 * j)) (0 + ~~~word t.mem B (eM + 8 * j) + BitVec.ofNat 64 t.c.toNat) ∧
+      t₁.c = decide (2 ^ 64 ≤ (0 : BitVec 64).toNat + (~~~word t.mem B (eM + 8 * j)).toNat + t.c.toNat) ∧
+      t₁.gpr .x16 = off B (eX + 8 * j + 8) ∧ t₁.gpr .x17 = off B (eM + 8 * j + 8))
+    (by brun [hI.x16, hI.x17, t7, hI.scr.ld (show eM + 8 * j + 8 ≤ Z by omega),
+      hI.scr.st (show eX + 8 * j + 8 ≤ Z by omega)])
+    (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨hm, hc, h16, h17⟩, k₁⟩ => ?_
+  refine WP.mono (dec_ok t₁ .x14) fun t' ⟨⟨h14, hm', hc'⟩, k'⟩ => ⟨?_, by rw [h14, k₁.gpr .x14 (by decide)]⟩
+  have hy : word t.mem B (eM + 8 * j) = word m₀ B (eM + 8 * j) :=
+    hI.out.word (d := eM + 8 * j) (by omega) (by omega)
+  refine ⟨hI.scr.congr (k'.wr.trans k₁.wr), (hI.keep.trans (k₁.trans k')).mono (by decide),
+    by rw [k'.gpr .x16 (by decide), h16, Nat.mul_succ, Nat.add_assoc],
+    by rw [k'.gpr .x17 (by decide), h17, Nat.mul_succ, Nat.add_assoc], ?_, ?_⟩
+  · rw [hm', hm]
+    exact fun x hx' => (writeW_outside t.mem B _ (by omega) x (by omega)).trans (hI.out x (by omega))
+  · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega), hc', hc]
+    have hs := sbcs_toNat 0 (word t.mem B (eM + 8 * j)) t.c
+    rw [hy] at hs ⊢
+    have hval := hI.val
+    rw [wv, pow64_succ]
+    simp only [show (BitVec.toNat (0 : BitVec 64)) = 0 from rfl, Nat.zero_add] at hs ⊢
+    generalize (0 + ~~~word m₀ B (eM + 8 * j) + BitVec.ofNat 64 t.c.toNat).toNat = r at hs ⊢
+    generalize 2 ^ (64 * j) = P at hval ⊢
+    have e : wv t.mem B eX j + P * r + (wv m₀ B eM j + P * (word m₀ B (eM + 8 * j)).toNat) =
+        (wv t.mem B eX j + wv m₀ B eM j) + P * (r + (word m₀ B (eM + 8 * j)).toNat) := by
+      rw [Nat.mul_add]; omega
+    rw [e, hval, ← Nat.mul_add, Nat.mul_assoc]
+    exact congrArg (P * ·) (by omega)
+
+/-- `neg`: `x := R - m` over `w` words (`x` at `x11`, `m` at `x9`):
+`x + m = 2^(64 w) b` for the borrow `b`. -/
+theorem neg_ok {s : State} {B : Addr} {Z w eX eM : Nat} (hs : Scr s B Z)
+    (h11 : s.gpr .x11 = off B eX) (h9 : s.gpr .x9 = off B eM) (h12 : s.gpr .x12 = BitVec.ofNat 64 w)
+    (h7 : s.gpr .x7 = 0) (hw : 1 ≤ w) (hw' : w < 2 ^ 31)
+    (hX : eX + 8 * w ≤ Z) (hM : eM + 8 * w ≤ Z) (sM : eX + 8 * w ≤ eM ∨ eM + 8 * w ≤ eX) :
+    WP isa neg s fun t => ∃ b : Bool,
+      wv t.mem B eX w + wv s.mem B eM w = 2 ^ (64 * w) * b.toNat ∧
+      Outside B eX (8 * w) s.mem t.mem ∧ Keep [.x3, .x4, .x14, .x16, .x17] s t := by
+  have hn := hs.nowrap
+  unfold neg
+  refine WP.seq (WP.mono (WP.keep [.x3, .x14, .x16, .x17] (Q := fun t =>
+    t.gpr .x16 = off B eX ∧ t.gpr .x17 = off B eM ∧ t.gpr .x14 = BitVec.ofNat 64 w ∧ t.c = true ∧ t.mem = s.mem)
+    (by brun [h11, h9, h12, h7]) (by decide) (by decide) (by decide +kernel))
+    fun s₁ ⟨⟨h16, h17, h14, hc₁, hm₁⟩, k₁⟩ => ?_)
+  have h0 : NegInv s.mem s₁ B Z eX eM 0 s₁ :=
+    ⟨hs.congr k₁.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl, by rw [hm₁]; exact Outside.refl _ _ _ _,
+      by rw [hc₁]; rfl⟩
+  refine WP.mono (wp_countdown (N := w) (by omega) (by omega) (NegInv s.mem s₁ B Z eX eM)
+    (fun j hj t hI _ => negStep_ok ((k₁.gpr .x7 (by decide)).trans h7) hX hM sM hj hI) h0 h14) fun t hI => ?_
+  exact ⟨!t.c, hI.val, hI.out, (k₁.trans hI.keep).mono (by decide)⟩
+
 /-! ## Adding `m` back -/
 
 /-- `adcs`, as numbers. -/
