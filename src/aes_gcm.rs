@@ -406,6 +406,10 @@ struct Prepared {
 
 /// The types of the `_prepared` instances, in the target's C calling
 /// convention (`"sysv64"` on x86-64, `"C"` on AArch64).
+#[cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 macro_rules! prepared_types {
     ($abi:literal) => {
         type InitPrepared = unsafe extern $abi fn(*const u8, usize, *mut [u64; 128]);
