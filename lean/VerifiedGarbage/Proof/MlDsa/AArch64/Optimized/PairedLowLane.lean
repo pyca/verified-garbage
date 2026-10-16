@@ -10,10 +10,19 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! ## `PairedLowVec` -/
 
 @[expose] public section
+
+/-- `∀ r ∈ l, r ∈ l'` for lists of registers written out: by one simp, else by `grind`. -/
+tactic_template "paired_regs_sub" : tactic => `(tactic| first
+  | (simp (config := { contextual := true }) only [List.mem_append, List.mem_cons, List.not_mem_nil,
+      or_false, or_assoc, true_or, or_true, and_true, implies_true, and_self, forall_eq_or_imp, forall_eq,
+      eq_self_iff_true]; done)
+  | (intro r hr; simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at *; grind only))
 
 section
 
@@ -274,11 +283,11 @@ theorem lowInput_ok {raw a t other : VReg} {off : Nat}
     exact hc e he
   refine reduceRegs_ok hat (hregs t (by simp)).2 hq' hc' fun w hw hval => ?_
   have hk' : VChg [other,a,t] s w := (hk.trans hw).mono (by
-    intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)
+    paired_regs_sub)
   refine lowCadd_ok hat (hregs t (by simp)).2
     (by intro e he; rw [hk'.get .v31 (by intro hm; exact (hregs .v31 hm).2 rfl)]; exact hq e he)
     fun y hy hcorr => k y ((hk'.trans hy).mono (by
-      intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)) ?_
+      paired_regs_sub)) ?_
   intro e he
   rw [hcorr e he,hval e he,hv.v,VG.AArch64.vword_map2 _ _ _ he,hu.v,hu.get raw (Ne.symm hor)]
   rfl
@@ -313,7 +322,7 @@ theorem lowMls_ok {a t h : VReg} (hat : a≠t) (haq : a≠.v31) (hac : a≠.v8) 
     (by intro e he; rw [hu.get .v31 (Ne.symm haq)]; exact hq e he)
     (by intro e he; rw [hu.get .v8 (Ne.symm hac)]; exact hc e he)
     fun v hv hw => k v ((hu.chg.trans hv).mono (by
-      intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)) ?_
+      paired_regs_sub)) ?_
   intro e he
   rw [hw e he,hu.v,vword_mapWords3 _ _ _ _ he]
 
@@ -383,7 +392,7 @@ theorem lowDecompose_ok {g : Nat} (hg : IsG g) {a t h : VReg}
     (by intro e he; rw [keep .v31 ⟨Ne.symm hh.2.2.2.2.2,Ne.symm ht.2.2.2.2.2⟩]; exact hq e he)
     (by intro e he; rw [keep .v8 ⟨Ne.symm hh.1,Ne.symm ht.1⟩]; exact hc e he)
     fun v hv hvw => k v ((hu.trans hv).mono (by
-      intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)) ?_ ?_
+      paired_regs_sub)) ?_ ?_
   · intro e he
     rw [hv.get h (by simp [Ne.symm hah,hht])]
     exact hw e he
@@ -482,7 +491,7 @@ theorem lowTail_ok {a t h : VReg} {off : Nat}
     (by intro r hr hm; exact hpres r hr (by simp only [List.mem_cons,List.not_mem_nil,or_false] at *; grind only))
     ho (by rw [hu.keep.wr,hu.keep.get .x16]; exact hl)
     fun v hv hmem hf => k v (u.v a) ((hu.trans hv).mono (by
-      intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)) ?_ hw ?_
+      paired_regs_sub)) ?_ hw ?_
   · rw [hmem,hm,hu.keep.get .x16]
   · intro e he
     rw [hf e he,hu.vec .v30 h30,hu.vec .v9 (hconst .v9 (by simp)),hu.vec .v10 h10]
@@ -546,7 +555,7 @@ theorem r0Lane_ok {g : Nat} (hg : IsG g) {raw a t h other : VReg} {off : Nat}
     (by simpa only [uk .v14 (by simp)] using h14)
     fun v hv hhigh => ?_
   have hkeep : VChg [other,a,t,h] s v := (hu.trans hv).mono (by
-    intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)
+    paired_regs_sub)
   have vk (r : VReg) (hr : r∈[.v8,.v9,.v10,.v11,.v12,.v13,.v14,.v15,.v30,.v31]) : v.v r=s.v r :=
     hkeep.get r (havoid r hr)
   have va (e : Nat) (he : e<4) : vword (v.v a) e=lowInputWord s raw off e := by
@@ -569,7 +578,7 @@ theorem r0Lane_ok {g : Nat} (hg : IsG g) {raw a t h other : VReg} {off : Nat}
     (by simpa only [vk .v8 (by simp)] using hc)
     fun w low hwkeep hm hlw hf => k w (v.v h) low
       (((StepKeep.ofChg hkeep hp).trans hwkeep).mono (by
-        intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)) ?_ vh ?_ ?_
+        paired_regs_sub)) ?_ vh ?_ ?_
   · rw [hm,hkeep.mem,frame.get .x15,frame.get .x16]
   · intro e he; rw [hlw e he,va e he,vh e he,vk .v15 (by simp)]
   · intro e he; rw [hf e he,vk .v30 (by simp),vk .v9 (by simp),vk .v10 (by simp)]
