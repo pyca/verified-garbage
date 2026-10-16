@@ -78,8 +78,8 @@ theorem correct (s₀ : VG.AArch64.State) (hp : Pre s₀) :
         rw [h₅.1.mem]
         simpa only [p₃.x0] using h₄.2.2
 
-theorem permute_preserved : ∀ r ∈ preserved, ∀ i ∈ instrs permute, dstOf i ≠ some r := by
-  have h : ((instrs permute).all fun i => preserved.all fun r => dstOf i != some r) = true := by
+theorem permute_preserved : ∀ r ∈ preserved, ∀ i ∈ instrs permute, clobbers i r = false := by
+  have h : ((instrs permute).all fun i => preserved.all fun r => !clobbers i r) = true := by
     rw [← Code.allInstrs_eq]
     lit_decide
   intro r hr i hi

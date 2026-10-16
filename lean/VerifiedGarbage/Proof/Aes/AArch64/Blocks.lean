@@ -221,7 +221,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
 
 theorem blocks_correct {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
     (hcr : CryptOk crypt4 f)
-    (hx30 : (blocks crypt4).allInstrs (fun i => [Reg.x30].all fun r => dstOf i != some r) = true)
+    (hx30 : (blocks crypt4).allInstrs (fun i => [Reg.x30].all fun r => !clobbers i r) = true)
     (hnc : (blocks crypt4).noCalls = true)
     (hv : (blocks crypt4).allInstrs keepsV = true)
     (s : State) (hs : (Proof.Aes.blocksAArch64 f).pre s) :

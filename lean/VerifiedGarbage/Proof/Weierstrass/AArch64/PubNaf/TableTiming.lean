@@ -125,7 +125,7 @@ structure TableChecks (K : WinCfg) : Prop where
   bump : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0, .x19, .x20]))
     (.block [.addImm .x .x20 .x20 (stride K), decCounter])
   keep : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (.seq (Jacobian.jacAdd K K.R K.E K.D)
-    (.block (copyPt K.M.n K.R K.D)) : Prog isa), dstOf i ≠ some r
+    (.block (copyPt K.M.n K.R K.D)) : Prog isa), clobbers i r = false
 
 /-- The slots the construction reads after `m` entries. -/
 def tblLive (K : WinCfg) (m : Nat) : List Nat :=
@@ -168,12 +168,12 @@ theorem tblLive_succ (K : WinCfg) {m : Nat} :
 
 /-- Storing an entry writes only `x4`. -/
 theorem store_dst (K : WinCfg) {r : Reg} (hr : r = .x19 ∨ r = .x20) :
-    ∀ i ∈ instrs (.block (store K) : Prog isa), dstOf i ≠ some r := by
+    ∀ i ∈ instrs (.block (store K) : Prog isa), clobbers i r = false := by
   intro i hi
   simp only [store, instrs, List.mem_flatMap, List.mem_range] at hi
   obtain ⟨j, _, hj⟩ := hi
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-  rcases hj with rfl | rfl <;> rcases hr with rfl | rfl <;> simp [dstOf, ld]
+  rcases hj with rfl | rfl <;> rcases hr with rfl | rfl <;> simp [clobbers, dstOf, ld]
 
 /-- Moving to the next entry and counting it. -/
 theorem bump_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) (a : State) {j : Nat} (hj : 1 ≤ j)

@@ -38,7 +38,7 @@ open VG.Proof.MlKem.AArch64 (Only)
 pointer, which it keeps. -/
 def XOnly (i : Instr) : Prop :=
   (∀ s₁ s₂ : State, s₁.gpr .x28 = s₂.gpr .x28 → s₁.sp = s₂.sp → isa.addrs i s₁ = isa.addrs i s₂) ∧
-    dstOf i ≠ some .x28
+    clobbers i .x28 = false
 
 theorem execBlock_x28_tr : ∀ {is : List Instr}, (∀ i ∈ is, XOnly i) →
     ∀ {s₁ s₂ s₁' s₂' : State} {t₁ t₂ : List Leak}, s₁.gpr .x28 = s₂.gpr .x28 → s₁.sp = s₂.sp →
@@ -72,7 +72,7 @@ theorem arg_xOnly (d : Reg) (hd : d ≠ .x28) (a : Arg) : ∀ i ∈ a.mov d, XOn
   intro i hi
   cases a <;> simp only [Arg.mov, List.mem_cons, List.not_mem_nil, or_false] at hi <;>
     rcases hi with rfl | rfl <;>
-    exact ⟨fun s₁ s₂ h _ => by simp [addrs, h], by simpa [dstOf] using hd⟩
+    exact ⟨fun s₁ s₂ h _ => by simp [addrs, h], by simpa [clobbers, dstOf] using hd⟩
 
 theorem setArgs_xOnly {as : List (Reg × Arg)} (h : argsOk as = true) : ∀ i ∈ setArgs as, XOnly i := by
   induction as with

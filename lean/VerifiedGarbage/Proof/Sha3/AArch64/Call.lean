@@ -160,7 +160,7 @@ theorem restores_ok {s₁ : State} {scr : Addr} (h20 : s₁.gpr .x20 = scr)
 
 /-- Registers that no instruction writes keep their values, as a postcondition. -/
 theorem WP.gprs {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) {rs : List Reg}
-    (hc : ∀ r ∈ rs, ∀ i ∈ instrs c, dstOf i ≠ some r)
+    (hc : ∀ r ∈ rs, ∀ i ∈ instrs c, clobbers i r = false)
     (hn : c.noCalls = true ∨ ∀ r ∈ rs, r ∉ linkRegs :=
       by first | exact .inr (by decide) | exact .inl (by decide +kernel)) :
     WP isa c s fun s' => Q s' ∧ ∀ r ∈ rs, s'.gpr r = s.gpr r := by

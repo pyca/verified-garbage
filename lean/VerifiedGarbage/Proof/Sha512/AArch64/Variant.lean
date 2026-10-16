@@ -37,7 +37,7 @@ structure DigestOk (o : List Instr) (D : Nat) (suffix : String) (code : Prog isa
     (finKD (P := { Stream.params with out := o }) md D).pub
     (finalizeDigestWith { Stream.params with out := o } suffix code)
   keeps : ((instrs (finalizeMain { Stream.params with out := o } (compressName suffix) code)).all fun i =>
-    untouched.all fun r => dstOf i != some r) = true
+    untouched.all fun r => !clobbers i r) = true
   depth : (finalizeMain { Stream.params with out := o } (compressName suffix) code).aarch64Depth = 0
 
 structure Compress where
@@ -53,9 +53,9 @@ structure Compress where
   finalizeCT : ConstantTime isa (finK (P := Stream.params) md).pre
     (finK (P := Stream.params) md).pub (finalizeWith suffix code)
   updateKeeps : ((instrs (updateMain Stream.params (compressName suffix) code)).all fun i =>
-    untouched.all fun r => dstOf i != some r) = true
+    untouched.all fun r => !clobbers i r) = true
   finalizeKeeps : ((instrs (finalizeMain Stream.params (compressName suffix) code)).all fun i =>
-    untouched.all fun r => dstOf i != some r) = true
+    untouched.all fun r => !clobbers i r) = true
   updateDepth : (updateMain Stream.params (compressName suffix) code).aarch64Depth = 0
   finalizeDepth : (finalizeMain Stream.params (compressName suffix) code).aarch64Depth = 0
   /-- SHA-384's, SHA-512/256's and SHA-512/224's `finalize`. -/

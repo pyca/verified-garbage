@@ -23,7 +23,7 @@ theorem multiplyPair_ok (s : State) (lo hi a b : Reg)
       (t.gpr lo = s.gpr a * s.gpr b ∧
         t.gpr hi = BitVec.ofNat 64 ((s.gpr a).toNat * (s.gpr b).toNat / 2 ^ 64) ∧
         t.mem = s.mem) ∧ Keep [lo, hi] s t := by
-  refine WP.keep [lo, hi] ?_ (by simp [writesOnly, Code.allInstrs, dstOf]) rfl rfl
+  refine WP.keep [lo, hi] ?_ (by simp [writesOnly, Code.allInstrs, dsts, dstOf, Option.toList]) rfl rfl
   brun [hd, ha, hb]
 
 theorem productWord_value {s t : State} {lo hi a b : Reg}

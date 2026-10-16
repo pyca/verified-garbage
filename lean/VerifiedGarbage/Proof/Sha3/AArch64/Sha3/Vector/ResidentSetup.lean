@@ -28,7 +28,7 @@ structure Setup (b s : State) : Prop where
   saved : Saved b s.mem
   lanes : Lanes s (stateAt b.mem (st b))
 
-theorem save_gpr : ∀ r, ∀ i ∈ save, dstOf i ≠ some r := by intro r; cases r <;> decide +kernel
+theorem save_gpr : ∀ r, ∀ i ∈ save, clobbers i r = false := by intro r; cases r <;> decide +kernel
 
 theorem bulk_save (b : State) (hp : BulkPre b) :
     WP isa (.block save) b fun s =>

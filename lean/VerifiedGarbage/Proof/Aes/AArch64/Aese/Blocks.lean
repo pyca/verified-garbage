@@ -524,7 +524,7 @@ theorem bcorrect (B : BlockFn) {setup : List Instr} {s₀ : State} (hp : BPre s�
 theorem blocks_correct (B : BlockFn) {setup : List Instr}
     (hs : ∀ s₀, BPre s₀ → WP isa (.block setup) s₀ fun s =>
       BInv B s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (bnb s₀ / 8))
-    (hg : (blocks setup B.f).allInstrs (fun i => preserved.all fun r => dstOf i != some r) = true)
+    (hg : (blocks setup B.f).allInstrs (fun i => preserved.all fun r => !clobbers i r) = true)
     (hnc : (blocks setup B.f).noCalls = true) (hv : (blocks setup B.f).allInstrs keepsV = true)
     (s : State) (hp : (Proof.Aes.blocksAArch64 B.F).pre s) :
     ∃ t s', Exec isa (blocks setup B.f) s t s' ∧ abiPreserved s s' ∧

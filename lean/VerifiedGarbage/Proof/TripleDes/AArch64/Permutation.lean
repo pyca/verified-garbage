@@ -60,7 +60,7 @@ theorem fixedPermutation_ok {m n : Nat} (positions : Vector Nat m)
     ∃ s', runBlock isa is s = some s' ∧
       s'.gpr dst = (Spec.TripleDes.permute positions ((s.gpr src).setWidth n)).zeroExtend 64 ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ s'.mem = s.mem ∧
-      (∀ r, (is.all fun op => dstOf op != some r) = true → s'.gpr r = s.gpr r) := by
+      (∀ r, (is.all fun op => !clobbers op r) = true → s'.gpr r = s.gpr r) := by
   let W : Nat → BitVec 64 := fun _ => s.gpr src
   obtain ⟨s', hs', out, rd, wr, sp, keep, frame⟩ :=
     linear_ok hchk (permutationCfg_ok s) W (fun r i h => by

@@ -63,8 +63,8 @@ theorem crypt_eq (d : Direction) :
 
 /-- No instruction of the block function writes `r`. -/
 theorem dirBlock_keeps {r : Reg} (hr : r = .x25 ∨ r = .x26) (d : Direction) :
-    ∀ i ∈ instrs (dirBlock d), dstOf i ≠ some r := by
-  have h : ((instrs (dirBlock d)).all fun i => decide (dstOf i ≠ some .x25) && decide (dstOf i ≠ some .x26)) =
+    ∀ i ∈ instrs (dirBlock d), clobbers i r = false := by
+  have h : ((instrs (dirBlock d)).all fun i => decide (clobbers i .x25 = false) && decide (clobbers i .x26 = false)) =
       true := by
     cases d
     · change ((instrs encryptBlock).all _) = true

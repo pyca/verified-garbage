@@ -53,9 +53,9 @@ theorem add_checks {p q o : VG.Impl.Weierstrass.Pt} (hp : p = Kq.R ∧ q = Kq.E 
     infinity := by reg_ct [.x0] }
 
 theorem table_keep : ∀ r ∈ [Reg.x19, .x20], ∀ i ∈ instrs (.seq (Jacobian.jacAdd Kq Kq.R Kq.E Kq.D)
-    (.block (copyPt Kq.M.n Kq.R Kq.D)) : Prog isa), dstOf i ≠ some r := by
+    (.block (copyPt Kq.M.n Kq.R Kq.D)) : Prog isa), clobbers i r = false := by
   have h : (instrs (.seq (Jacobian.jacAdd Kq Kq.R Kq.E Kq.D) (.block (copyPt Kq.M.n Kq.R Kq.D)) : Prog isa)).all
-      (fun i => decide (dstOf i ≠ some .x19 ∧ dstOf i ≠ some .x20)) = true := by
+      (fun i => decide (clobbers i .x19 = false ∧ clobbers i .x20 = false)) = true := by
     rw [← Code.allInstrs_eq]; decide +kernel
   intro r hr i hi
   have hh := of_decide_eq_true (List.all_eq_true.mp h i hi)

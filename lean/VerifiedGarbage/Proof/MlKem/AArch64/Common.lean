@@ -64,7 +64,7 @@ tactic_template "mlkem_implies " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" " [" 
 
 /-- No instruction of `c` (without calls) writes a callee-saved register. -/
 theorem preserved_of {c : Prog isa} (h : c.allInstrs (keeps (RegSet.ofList preserved)) = true) :
-    ∀ r ∈ preserved, ∀ i ∈ instrs c, dstOf i ≠ some r := by
+    ∀ r ∈ preserved, ∀ i ∈ instrs c, clobbers i r = false := by
   intro r hr i hi
   have := List.all_eq_true.mp (List.all_eq_true.mp (instrs_keeps h) i hi) r hr
   simpa using this

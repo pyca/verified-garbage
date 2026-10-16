@@ -141,7 +141,7 @@ structure MainO (s₀ s : State) : Prop where
 /-- The address of `tag`, loaded from the context into `r`. -/
 theorem tagPtr_ok {r : Reg} {s₀ s : State} (hp : APre e s₀) (hx21 : s.gpr .x21 = cx s₀)
     (hsv : Saved s₀ s.mem) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
-    (hk : ([Instr.ldr .x r .x21 624].all fun i => preserved.all fun r' => dstOf i != some r') = true) :
+    (hk : ([Instr.ldr .x r .x21 624].all fun i => preserved.all fun r' => !clobbers i r') = true) :
     WP isa (.block [.ldr .x r .x21 624]) s fun s' => s'.gpr r = tp s₀ ∧ Kept [] s s' := by
   have hs : s.mem.readW (off (cx s₀) 624) 64 = tp s₀ := hsv (.x6, 624) (by decide)
   have h : WP isa (.block [.ldr .x r .x21 624]) s fun s' =>
@@ -164,7 +164,7 @@ theorem ftptrs_ok (s : State) :
         by rw [u₃.other _ (by decide), u₂.gpr]; rfl,
         by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)],
         by rw [u₃.rd, u₂.rd, u₁.rd], by rw [u₃.wr, u₂.wr, u₁.wr], by rw [u₃.mem, u₂.mem, u₁.mem]⟩
-  exact WP.mono (WP.kept h (by simp [dstOf, preserved]))
+  exact WP.mono (WP.kept h (by simp [clobbers, dstOf, preserved]))
     fun s' ⟨⟨h0, h1, h2, hrd, hwr, hm⟩, hg, hsp⟩ =>
       ⟨h0, h1, h2, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 

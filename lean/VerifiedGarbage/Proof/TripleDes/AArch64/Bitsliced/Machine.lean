@@ -100,7 +100,7 @@ theorem varsRun {is : List Instr} (regs : List VReg) {post : Env Nat → Bool}
     ∃ e' s', post e' = true ∧ runBlock isa is s = some s' ∧
       Post (fun q => VarRel (varVals s regs q) (varN regs)) stateCfg e' s s'
         (fun r => (is.all fun i => vdstOf i != some r) = false)
-        (fun r => (is.all fun i => dstOf i != some r) = false) := by
+        (fun r => (is.all fun i => !clobbers i r) = false) := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ hchk
   obtain ⟨s', hs', p⟩ := run (fun q _ => vars_sound _ _) h (varEnv_rel regs) he
   exact ⟨e', s', hpost, hs', p⟩

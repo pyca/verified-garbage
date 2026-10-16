@@ -159,7 +159,7 @@ theorem short_ok (d : Spec.Rc2.Direction) {σ : State} {c dp op b : Addr} {p len
 
 /-! ## Complete blocks -/
 
-theorem prep_keeps : prep.allInstrs (fun i => preserved.all fun r => dstOf i != some r) = true := by
+theorem prep_keeps : prep.allInstrs (fun i => preserved.all fun r => !clobbers i r) = true := by
   decide +kernel
 
 /-- `update` with complete blocks, without its frame. -/

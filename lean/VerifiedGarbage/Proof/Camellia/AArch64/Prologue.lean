@@ -120,13 +120,12 @@ theorem setSlots_ok {s : State} {b : Addr} (hw : (⟨b, 8 * slots⟩ : Region) �
     refine ⟨fun r a h => ?_, fun k a _ h => ?_, fun _ _ _ h => ?_, fun _ _ h => ?_⟩ <;>
       simp [linEnvG] at h
   obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
-  have hall : ∀ r, r ≠ t0 → ((setSlots layerMasks).all fun i => dstOf i != some r) = true := by
+  have hall : ∀ r, r ≠ t0 → ((setSlots layerMasks).all fun i => !clobbers i r) = true := by
     intro r hr
-    have : ((setSlots layerMasks).all fun i => dstOf i == some t0 || dstOf i == none) = true := by
+    have : ((setSlots layerMasks).all fun i => (dsts i).all (· == t0)) = true := by
       decide +kernel
-    simp only [List.all_eq_true, Bool.or_eq_true, beq_iff_eq] at this ⊢
-    intro i hi
-    rcases this i hi with h | h <;> simp [h, Ne.symm hr]
+    refine List.all_eq_true.mpr fun i hi => ?_
+    simpa using clobbers_eq_false_of_all (List.all_eq_true.mp this i hi) (by simpa using hr)
   refine ⟨s', hs', fun kv hkv => ?_, fun r hr => p.other r (by simp [hall r hr]), p.rd, p.wr, ?_⟩
   · have h := List.all_eq_true.mp hpost kv hkv
     simp only [beq_iff_eq] at h

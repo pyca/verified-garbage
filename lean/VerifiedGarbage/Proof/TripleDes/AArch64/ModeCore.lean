@@ -105,8 +105,8 @@ theorem prepare_wp (d : Direction) {s : State} {B : Addr} {rs : List Region} {k 
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_singleton_self _, sched_sub B⟩
 
 /-- No instruction of the block function writes `x2`. -/
-theorem block_keeps_x2 (d : Direction) : ∀ i ∈ instrs (dirBlock d), dstOf i ≠ some .x2 := by
-  have h : ((instrs (dirBlock d)).all fun i => decide (dstOf i ≠ some .x2)) = true := by
+theorem block_keeps_x2 (d : Direction) : ∀ i ∈ instrs (dirBlock d), clobbers i .x2 = false := by
+  have h : ((instrs (dirBlock d)).all fun i => decide (clobbers i .x2 = false)) = true := by
     cases d
     · change ((instrs encryptBlock).all _) = true
       rw [← Code.allInstrs_eq]; lit_decide

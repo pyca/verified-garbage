@@ -23,7 +23,7 @@ def savedAcrossCall : List Reg := [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x2
 def kept : List Reg := [.x0, .x1, .x2, .x23, .x24]
 
 theorem block_keeps (d : Spec.Rc2.Direction) :
-    ((instrs (.block (blockCode d) : Prog isa)).all fun i => kept.all fun r => decide (dstOf i ≠ some r)) = true := by
+    ((instrs (.block (blockCode d) : Prog isa)).all fun i => kept.all fun r => decide (clobbers i r = false)) = true := by
   cases d
   · change ((instrs encryptBlock).all _) = true
     rw [← Code.allInstrs_eq]; lit_decide
@@ -31,7 +31,7 @@ theorem block_keeps (d : Spec.Rc2.Direction) :
     rw [← Code.allInstrs_eq]; lit_decide
 
 theorem block_keeps_reg (d : Spec.Rc2.Direction) {r : Reg} (hr : r ∈ kept) :
-    ∀ i ∈ instrs (.block (blockCode d) : Prog isa), dstOf i ≠ some r := by
+    ∀ i ∈ instrs (.block (blockCode d) : Prog isa), clobbers i r = false := by
   intro i hi
   have h := List.all_eq_true.mp (List.all_eq_true.mp (block_keeps d) i hi) r hr
   simpa using h

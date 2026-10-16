@@ -105,11 +105,10 @@ theorem keyStore_ok {s : State} {r : Region} {off : Nat} (hr : r ∈ s.wr)
     exact h
   · funext r
     exact p.other r (by
-      have : (keyStore.all fun i => dstOf i != some r) = true :=
+      have : (keyStore.all fun i => !clobbers i r) = true :=
         List.all_eq_true.mpr fun i hi => by
-          rw [show dstOf i = none from (List.all_eq_true.mp (show keyStore.all (fun i => dstOf i == none) = true by
-            decide +kernel) i hi |> beq_iff_eq.mp)]
-          rfl
+          simpa using clobbers_eq_false_of_isEmpty (r := r) (List.all_eq_true.mp
+            (show keyStore.all (fun i => (dsts i).isEmpty) = true by decide +kernel) i hi)
       simp [this])
 
 /-! ## Stepping back -/

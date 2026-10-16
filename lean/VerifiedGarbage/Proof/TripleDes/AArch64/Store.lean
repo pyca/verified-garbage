@@ -49,7 +49,7 @@ theorem storeTail_ok (s : State) :
   · intro r hr; simp only [gpr_write, hr, ite_false]
 
 theorem final_preserves : loadKept.all (fun r =>
-    (instrs finalPermutation.lit).all (fun op => dstOf op != some r)) = true := by
+    (instrs finalPermutation.lit).all (fun op => !clobbers op r)) = true := by
   decide +kernel
 
 theorem blockStore_ok (s : State) (l r : BitVec 32)

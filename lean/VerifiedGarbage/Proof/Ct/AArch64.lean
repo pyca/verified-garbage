@@ -39,18 +39,14 @@ def Keep (s t : State) : Prop :=
 
 theorem keep {c : Prog isa} {s : State} {Q : State → Prop}
     (h : WP isa c s Q)
-    (hc : c.allInstrs (fun i => match dstOf i with
-      | none => true | some r => [.x4, .x5, .x6, .x7, .x8, .x9].contains r) = true)
+    (hc : c.allInstrs (fun i => (dsts i).all [.x4, .x5, .x6, .x7, .x8, .x9].contains) = true)
     (hn : c.noCalls = true := by decide +kernel) :
     WP isa c s fun t => Q t ∧ Keep s t := by
   obtain ⟨tr, t, he, hq⟩ := h
   refine ⟨tr, t, he, hq, fun r hr => Exec.gpr (fun i hi => ?_) he (.inl hn),
     (Exec.rdwr he).1, (Exec.rdwr he).2.1⟩
   rw [Code.allInstrs_eq, List.all_eq_true] at hc
-  have hh := hc i hi
-  intro hd
-  rw [hd] at hh
-  exact hr (List.contains_iff_mem.mp hh)
+  exact clobbers_eq_false_of_all (hc i hi) (by simpa using hr)
 
 theorem Keep.trans {a b c : State} (h : Keep a b) (k : Keep b c) : Keep a c :=
   ⟨fun r hr => (k.1 r hr).trans (h.1 r hr), k.2.1.trans h.2.1, k.2.2.trans h.2.2⟩

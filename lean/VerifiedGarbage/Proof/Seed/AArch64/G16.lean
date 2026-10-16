@@ -71,7 +71,7 @@ theorem outWordC_rel {k : Nat} {W : Nat → BitVec 64} {g : Nat → List Nat} {c
   rw [h.2 p hp, par_mk hp (Nat.le_refl _) _ (fun q hq => hg q hq), xorA_assign W (hg p hp)]
   simp [hp]
 
-theorem g16_keeps : layerKeep.all (fun r => g16.all fun i => dstOf i != some r) = true := by
+theorem g16_keeps : layerKeep.all (fun r => g16.all fun i => !clobbers i r) = true := by
   decide +kernel
 
 theorem runBlock_append (a b : List Instr) (s : State) :
@@ -85,8 +85,8 @@ theorem runBlock_append (a b : List Instr) (s : State) :
     | some s' => exact ih s'
 
 theorem dst_append (a b : List Instr) (r : Reg) :
-    ((a ++ b).all fun i => dstOf i != some r) =
-      ((a.all fun i => dstOf i != some r) && (b.all fun i => dstOf i != some r)) := List.all_append
+    ((a ++ b).all fun i => !clobbers i r) =
+      ((a.all fun i => !clobbers i r) && (b.all fun i => !clobbers i r)) := List.all_append
 
 /-- `g16`: `G` of every word. -/
 theorem g16_ok {s : State} (hok : Ok gCfg s) :

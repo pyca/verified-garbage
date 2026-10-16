@@ -1594,10 +1594,10 @@ theorem storeHm_acc (m : Mem) (st : Addr) (w0 w1 w2 : BitVec 64) :
     Mem.readW_writeW_self64]
 
 /-- No instruction of `c` writes a callee-saved register. -/
-def Untouched (c : Prog isa) : Prop := ∀ r ∈ preserved, ∀ i ∈ instrs c, dstOf i ≠ some r
+def Untouched (c : Prog isa) : Prop := ∀ r ∈ preserved, ∀ i ∈ instrs c, clobbers i r = false
 
 theorem Untouched.of_all {c : Prog isa}
-    (h : ((instrs c).all fun i => preserved.all fun r => dstOf i != some r) = true) : Untouched c := by
+    (h : ((instrs c).all fun i => preserved.all fun r => !clobbers i r) = true) : Untouched c := by
   intro r hr i hi
   have := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
   simpa using this

@@ -271,7 +271,7 @@ theorem both_ok {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
         ∀ p < 64, (slotW s' j).getLsbD p = xorBits (bothW s) (g p)) ∧
       (∀ j ∈ keep, j < keySlot → slotW s' j = slotW s j) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      (∀ r, (is.all fun i => dstOf i != some r) = true → s'.gpr r = s.gpr r) ∧
+      (∀ r, (is.all fun i => !clobbers i r) = true → s'.gpr r = s.gpr r) ∧
       Frame [⟨s₀.gpr sb, 8 * keySlot⟩] s.mem s'.mem := by
   unfold bothEnv at hchk
   obtain ⟨s', h', ho, hso, hkp, rd', wr', -, o', f', hb', -⟩ := linG_ok hchk (hc.ok hp hk hm34) (bothW s)
@@ -323,7 +323,7 @@ theorem loadHalf_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : 
     hkp _ (List.mem_append_right _ (by
       simp only [bothIns, List.map_map, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩))
       (by simp only [d1Slot, keySlot]; omega)
-  have hall : (layerKeep.all fun r => (loadHalf d).all fun i => dstOf i != some r) =
+  have hall : (layerKeep.all fun r => (loadHalf d).all fun i => !clobbers i r) =
       true := by rcases hd with rfl | rfl <;> decide +kernel
   have hkeep : ∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp hall r (not_layerWrites r hr))
@@ -360,7 +360,7 @@ theorem storeHalf_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp :
       · exact ⟨j - 8, by simp only [d1Slot] at hjd; omega, by simp [d1Slot, d2Slot]; omega⟩
       · exact ⟨j, by simp only [d1Slot, d2Slot] at hjd; omega, by simp [d1Slot, d2Slot]⟩))
       (by simp only [d1Slot, keySlot]; omega)
-  have hall : (layerKeep.all fun r => (storeHalf d).all fun i => dstOf i != some r) =
+  have hall : (layerKeep.all fun r => (storeHalf d).all fun i => !clobbers i r) =
       true := by rcases hd with rfl | rfl <;> decide +kernel
   have hkeep : ∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp hall r (not_layerWrites r hr))

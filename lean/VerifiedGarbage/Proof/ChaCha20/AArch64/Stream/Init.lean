@@ -59,7 +59,7 @@ open VG VG.AArch64 VG.Impl.ChaCha20.AArch64.Stream
 open VG.Spec.ChaCha20 (keyAt restAt keystreamOf bytesAt leftAt wordLE)
 
 /-- No instruction of `c` writes a callee-saved register. -/
-def Untouched (c : Prog isa) : Prop := ∀ r ∈ preserved, ∀ i ∈ instrs c, dstOf i ≠ some r
+def Untouched (c : Prog isa) : Prop := ∀ r ∈ preserved, ∀ i ∈ instrs c, clobbers i r = false
 
 /-- What `set_nonce` needs of the state it runs from. -/
 structure NPre (s : State) (st np : Addr) : Prop where
@@ -195,7 +195,7 @@ theorem nonceMem_frame (m : Mem) (st np : Addr) : Frame [⟨st, 768⟩] m (nonce
 
 theorem setNonce_untouched : Untouched setNonce :=
   fun r hr i hi => by
-    have : ((instrs setNonce).all fun i => preserved.all fun r => dstOf i != some r) = true := by
+    have : ((instrs setNonce).all fun i => preserved.all fun r => !clobbers i r) = true := by
       rw [← Code.allInstrs_eq]; decide +kernel
     simpa using List.all_eq_true.mp (List.all_eq_true.mp this i hi) r hr
 

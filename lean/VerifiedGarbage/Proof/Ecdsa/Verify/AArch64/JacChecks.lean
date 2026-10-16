@@ -99,7 +99,7 @@ tactic_template "jac_reg_ct" rs:term : tactic => `(tactic|
 
 theorem jacTree_copy_preserves : ∀ r∈[Reg.x19,Reg.x20],
     ∀ i∈instrs (.block (VG.Impl.Weierstrass.AArch64.copyPt (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).M.n
-      (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).R (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).D) : Prog isa),dstOf i≠some r := by
+      (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).R (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).D) : Prog isa),clobbers i r = false := by
   decide
 
 theorem jacWindow_infinity_ct : FieldCT (.block (Jacobian.infinity
