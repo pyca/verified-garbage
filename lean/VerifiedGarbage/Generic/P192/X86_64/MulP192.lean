@@ -38,7 +38,6 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P192.curve) : List Ar
   [C.mulApi.artifact X86_64.target {
       notes := [note]
       code := p192.mulFn
-      verified := mul_verified h.law h.inv
-      spSafe := Code.all_of_allInstrs (show mulCode.allInstrs _ = true by lit_decide) }]
+      verified := mul_verified h.law h.inv }]
 
 end VG.Generic.P192.X86_64.MulP192

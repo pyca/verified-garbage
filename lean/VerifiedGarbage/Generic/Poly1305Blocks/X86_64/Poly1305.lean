@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # Streaming Poly1305 (RFC 8439 §2.5) on x86-64
@@ -38,7 +39,7 @@ def artifacts (v : BlocksImpl) : List Artifact := [
       (Impl.Poly1305.X86_64.update v.name v.code)
     stack := 160
     verified := Proof.Poly1305.X86_64.update_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.Poly1305.X86_64.update_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (Proof.Poly1305.X86_64.update_spSafe v)
     features := v.features }]
 
 end VG.Generic.Poly1305Blocks.X86_64.Poly1305

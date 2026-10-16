@@ -36,12 +36,10 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.BrainpoolP384r1.curve
   [C.invPApi.artifact X86_64.target {
       notes := [note "p"]
       code := cfg.invFn cfg.pPowI
-      verified := p_verified h.inv
-      spSafe := Code.all_of_allInstrs (show invP.allInstrs _ = true by lit_decide) },
+      verified := p_verified h.inv },
     C.invNApi.artifact X86_64.target {
       notes := [note "n"]
       code := cfg.invFn cfg.nPowI
-      verified := n_verified h.inv
-      spSafe := Code.all_of_allInstrs (show invN.allInstrs _ = true by lit_decide) }]
+      verified := n_verified h.inv }]
 
 end VG.Generic.BrainpoolP384r1.X86_64.InverseBrainpoolP384r1

@@ -55,7 +55,6 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List
       consts := p384.combConsts
       code := (cfg adx).mulBaseFn
       verified := mb_verified h.law (Proof.P384.combOk7 h.law) h.inv adx
-      spSafe := by cases adx <;> exact Code.all_of_allInstrs (by lit_decide)
       features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
 
 end VG.Generic.P384.X86_64.MulBaseP384

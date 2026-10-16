@@ -21,7 +21,6 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
       Saves `rbx`, `rbp` and `r12`–`r15` at bytes 1472–1519 of `ws`, runs the shared \
       addition chain on slot 12, and restores those registers. Squaring runs use public loop counters."]
     code := v.powFn
-    verified := Proof.Ed448.X86_64.FieldVariant.pow_verified v
-    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
+    verified := Proof.Ed448.X86_64.FieldVariant.pow_verified v }]
 
 end VG.Generic.Curve448Field.X86_64.Gf448R64

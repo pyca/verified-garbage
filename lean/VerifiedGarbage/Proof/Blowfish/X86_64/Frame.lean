@@ -61,7 +61,8 @@ theorem expandKey_framed :
 working space as an argument and no stack, in its frame. -/
 theorem ecb_framed {c : Prog isa} {d : Spec.Blowfish.Direction}
     (h : Verified X86_64.target c (Proof.Blowfish.ecbScratchContract X86_64.abi d 0))
-    (hsp : c.all (fun i => !isa.writesSp i) = true) (hd : c.x86_64Depth ≤ 0) :
+    (hsp : c.all (fun i => !isa.writesSp i) = true := by exact Code.all_of_allInstrs (by lit_decide))
+    (hd : c.x86_64Depth ≤ 0 := by lit_decide) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 c)
       (Spec.Blowfish.ecbContract X86_64.abi d 264) :=
   X86_64.Verified.stackScratchWiped (sig := Spec.Blowfish.ecbSig) (nm := "scratch") (e := .u64)

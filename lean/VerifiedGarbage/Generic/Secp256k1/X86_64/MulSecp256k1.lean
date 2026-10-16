@@ -38,7 +38,6 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.Secp256k1.curve) : Li
   [C.mulApi.artifact X86_64.target {
       notes := [note]
       code := secp256k1.mulFn
-      verified := mul_verified h.law h.inv
-      spSafe := Code.all_of_allInstrs (show mulCode.allInstrs _ = true by lit_decide) }]
+      verified := mul_verified h.law h.inv }]
 
 end VG.Generic.Secp256k1.X86_64.MulSecp256k1

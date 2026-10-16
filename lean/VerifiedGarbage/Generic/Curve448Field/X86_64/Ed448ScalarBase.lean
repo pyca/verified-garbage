@@ -38,7 +38,6 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
       first 48 bytes of scratch; the output address occupies the next 8."]
     code := Impl.Ed448.X86_64.scalarBaseFor v
     stack := 8
-    verified := Proof.Ed448.X86_64.scalarBaseFor_verified v Proof.Ed448.baseLadder_ok
-    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
+    verified := Proof.Ed448.X86_64.scalarBaseFor_verified v Proof.Ed448.baseLadder_ok }]
 
 end VG.Generic.Curve448Field.X86_64.Ed448ScalarBase

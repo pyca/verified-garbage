@@ -22,7 +22,7 @@ def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact := [
     notes := ["Four-bit windows using RSA's verified Montgomery arithmetic. \
         The round result is returned without branching on it."]
     code := v.code
-    verified := by exact v.verified
+    verified := v.verified
     features := v.features }]
 
 end VG.Generic.MillerRabin.AArch64.Round

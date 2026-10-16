@@ -48,7 +48,6 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
     code := Impl.Ed448.X86_64.verifyEquationFor v
     stack := 8
     verified := Proof.Ed448.X86_64.verifyEquationFor_verified v Proof.Ed448.recover_ok
-      Proof.Ed448.verifyEq_ok
-    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
+      Proof.Ed448.verifyEq_ok }]
 
 end VG.Generic.Curve448Field.X86_64.Ed448VerifyEquation

@@ -17,10 +17,10 @@ namespace VG.Artifacts.MlDsaPack.AArch64
 def artifacts : List Artifact := [
   (Spec.MlDsa.highPackApi 261888).artifact AArch64.target {
     code := Impl.MlDsa.AArch64.Optimized.HighPack.code 261888
-    verified := Proof.MlDsa.AArch64.Optimized.HighPack.pack_verified (by decide) },
+    verified := Proof.MlDsa.AArch64.Optimized.HighPack.pack_verified (.inl rfl) },
   (Spec.MlDsa.highPackApi 95232).artifact AArch64.target {
     code := Impl.MlDsa.AArch64.Optimized.HighPack.code 95232
-    verified := Proof.MlDsa.AArch64.Optimized.HighPack.pack_verified (by decide) },
+    verified := Proof.MlDsa.AArch64.Optimized.HighPack.pack_verified (.inr rfl) },
   Spec.MlDsa.simpleBitPackApi.artifact AArch64.target {
     code := Impl.MlDsa.AArch64.Pack.simpleBitPack
     verified := Proof.MlDsa.AArch64.Pack.simpleBitPack_verified },

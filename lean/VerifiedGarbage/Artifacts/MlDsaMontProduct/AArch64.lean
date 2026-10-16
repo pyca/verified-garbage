@@ -10,7 +10,6 @@ namespace VG.Artifacts.MlDsaMontProduct.AArch64
 def artifacts : List Artifact := [
   Spec.MlDsa.montProductApi.artifact AArch64.target {
     code := Impl.MlDsa.AArch64.Optimized.MontProduct.code
-    verified := Proof.MlDsa.AArch64.Optimized.MontProduct.verified
-    spSafe := Code.all_of_forall (fun _=>rfl) _ }]
+    verified := Proof.MlDsa.AArch64.Optimized.MontProduct.verified }]
 
 end VG.Artifacts.MlDsaMontProduct.AArch64

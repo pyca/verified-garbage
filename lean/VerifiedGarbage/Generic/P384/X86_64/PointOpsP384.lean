@@ -41,24 +41,18 @@ def addWhat (cached : Bool) : String :=
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List Artifact :=
   let hFe : Proof.Weierstrass.Point.Fermat C.p := Proof.Weierstrass.Point.fermat_of_law h.law
-  let one (adx : Bool) (a : Artifact) : Artifact :=
-    if adx then { a with name := a.name ++ "_adx", features := ["bmi2", "adx"] } else a
   [false, true].flatMap fun adx => [
-    one adx (C.addCachedApi.artifact X86_64.target {
+    C.addCachedApi.artifact X86_64.target {
+      suffix := if adx then "_adx" else ""
       notes := [common adx, addWhat true]
       code := addCachedFn adx
       verified := addCached_verified hFe adx
-      spSafe := by
-        cases adx
-        · exact Code.all_of_allInstrs (by rw [addCachedLit.lit_eq]; decide +kernel)
-        · exact Code.all_of_allInstrs (by rw [addCachedAdxLit.lit_eq]; decide +kernel) }),
-    one adx (C.addAffineApi.artifact X86_64.target {
+      features := if adx then ["bmi2", "adx"] else [] },
+    C.addAffineApi.artifact X86_64.target {
+      suffix := if adx then "_adx" else ""
       notes := [common adx, addWhat false]
       code := addAffineFn adx
       verified := addAffine_verified hFe adx
-      spSafe := by
-        cases adx
-        · exact Code.all_of_allInstrs (by rw [addAffineLit.lit_eq]; decide +kernel)
-        · exact Code.all_of_allInstrs (by rw [addAffineAdxLit.lit_eq]; decide +kernel) })]
+      features := if adx then ["bmi2", "adx"] else [] }]
 
 end VG.Generic.P384.X86_64.PointOpsP384

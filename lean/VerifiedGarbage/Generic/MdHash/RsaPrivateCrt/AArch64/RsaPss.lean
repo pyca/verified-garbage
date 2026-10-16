@@ -2,8 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignVerified
-public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyVerified
+public import VerifiedGarbage.Proof.RsaPss.AArch64.Instances
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -35,9 +34,7 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (c : Proof.Rsa.AArch64.CrtImp
       or an address."]
     code := Impl.RsaPss.AArch64.sign v.H (privOf c).name (privOf c).code
     stack := stk (privOf c).stack
-    verified := Proof.RsaPss.AArch64.Sgn.code_verified v.ok v.mgf.hash v.mgf.len
-      (Proof.RsaPss.AArch64.Vfy.mgf_valid v.mgf) v.pss (privOf c) (show 16 ≤ Proof.Rsa.AArch64.stackBytes by decide)
-      (Proof.RsaPss.AArch64.Sgn.sign_sat v.mgf.mem)
+    verified := Proof.RsaPss.AArch64.sign_verified v c
     features := v.features ++ c.features.filter (!v.features.contains ·) }]
 
 end VG.Generic.MdHash.RsaPrivateCrt.AArch64.RsaPss

@@ -39,7 +39,6 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       notes := [note adx "p"]
       code := (cfg adx).invFn (cfg adx).pPowI
       verified := p_verified h.inv adx
-      spSafe := Code.all_of_allInstrs (show invP.allInstrs _ = true by lit_decide)
       features := if adx then ["bmi2", "adx"] else [] }) ++
   ([false].map fun adx =>
     C.invNApi.artifact X86_64.target {
@@ -47,7 +46,6 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       notes := [note adx "n"]
       code := (cfg adx).invFn (cfg adx).nPowI
       verified := n_verified h.inv adx
-      spSafe := Code.all_of_allInstrs (show invN.allInstrs _ = true by lit_decide)
       features := if adx then ["bmi2", "adx"] else [] })
 
 end VG.Generic.P224.X86_64.InverseP224

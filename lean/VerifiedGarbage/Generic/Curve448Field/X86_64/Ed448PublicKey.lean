@@ -40,7 +40,6 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
     code := Impl.Ed448.X86_64.publicKeyFor v
     stack := 104
     verified := Proof.Ed448.X86_64.PublicKey.publicKey_verified (v := v)
-      Proof.Ed448.baseLadder_ok
-    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
+      Proof.Ed448.baseLadder_ok }]
 
 end VG.Generic.Curve448Field.X86_64.Ed448PublicKey

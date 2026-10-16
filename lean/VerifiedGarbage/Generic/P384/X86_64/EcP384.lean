@@ -37,7 +37,7 @@ ADX and selecting the comb's entries with AVX2 (`adx`, `_adx`) or not: its
 def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.EcKey.P384.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.EcKey.P384.publicKeyApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
     notes := ["The function is `vg_ecdsa_p384_sign" ++
@@ -60,8 +60,8 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List Artifact := [
   publicKey false Impl.EcKey.X86_64.publicKeyP384
-    (Proof.EcKey.X86_64.P384.pk_verified h.law (Proof.P384.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+    (Proof.EcKey.X86_64.P384.pk_verified h.law (Proof.P384.combOk7 h.law) h.inv),
   publicKey true Impl.EcKey.X86_64.publicKeyP384Adx
-    (Proof.EcKey.X86_64.P384.pk_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide))]
+    (Proof.EcKey.X86_64.P384.pk_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv)]
 
 end VG.Generic.P384.X86_64.EcP384

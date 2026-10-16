@@ -38,7 +38,6 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
     stack := 464
     verified := Proof.Ed448.X86_64.SignCached.signCached_verified
       (Proof.Ed448.X86_64.scalarBaseFor_ok v Proof.Ed448.baseLadder_ok)
-      (Proof.Ed448.X86_64.scalarBaseFor_ct v)
-    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
+      (Proof.Ed448.X86_64.scalarBaseFor_ct v) }]
 
 end VG.Generic.Curve448Field.X86_64.Ed448SignCached

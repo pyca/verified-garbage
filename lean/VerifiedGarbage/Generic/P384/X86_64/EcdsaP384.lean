@@ -39,7 +39,7 @@ proven (`hv`), with no instruction writing `rsp` (`hsp`). -/
 def sign (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdsa.P384.signApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
     notes := ["The function saves its caller's callee-saved \
@@ -79,7 +79,7 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
 def verify (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdsa.P384.verifyApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
     notes := ["The function saves its caller's callee-saved \
@@ -113,14 +113,12 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List Artifact := [
   sign false Impl.Ecdsa.X86_64.signP384
-    (Proof.Ecdsa.X86_64.P384.sign_verified h.law (Proof.P384.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+    (Proof.Ecdsa.X86_64.P384.sign_verified h.law (Proof.P384.combOk7 h.law) h.inv),
   verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP384
-    (Proof.Ecdsa.Verify.X86_64.P384.jointVerify_verified h.law (Proof.P384.combOk7 h.law) h.inv)
-    (Code.all_of_allInstrs (by lit_decide)),
+    (Proof.Ecdsa.Verify.X86_64.P384.jointVerify_verified h.law (Proof.P384.combOk7 h.law) h.inv),
   sign true Impl.Ecdsa.X86_64.signP384Adx
-    (Proof.Ecdsa.X86_64.P384.sign_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+    (Proof.Ecdsa.X86_64.P384.sign_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv),
   verify true Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx
-    (Proof.Ecdsa.Verify.X86_64.P384.jointVerify_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv)
-    (Code.all_of_allInstrs (by lit_decide))]
+    (Proof.Ecdsa.Verify.X86_64.P384.jointVerify_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv)]
 
 end VG.Generic.P384.X86_64.EcdsaP384
