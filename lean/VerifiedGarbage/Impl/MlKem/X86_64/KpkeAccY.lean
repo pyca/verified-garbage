@@ -33,16 +33,15 @@ that order: `ymm1` at byte `64 i` and `ymm2` at `64 i + 32`
   coefficients at a time: `vpunpcklwd` and `vpunpckhwd` of the
   accumulator's two registers put coefficients `4l + {0, …, 3}` and
   `8 + 4l + {0, …, 3}` (and those sixteen higher) in lane `l` (as in
-  `yfromAcc`), and `vpunpcklwd` and `vpunpckhwd` of each with zero extend
+  `nttInvAccY`), and `vpunpcklwd` and `vpunpckhwd` of each with zero extend
   them to eight `u32`s in order, which `vg_mlkem_add_avx2`'s arithmetic adds
   to those of `f`.
-* `nttInvAccY(acc = rdi, scratch = rsi)`: `vg_mlkem_inv_ntt_avx2` on the
-  accumulator, to the `u32`s at `rdi`, with the prologue putting the
-  accumulator's words in order into `S` (`yfromAcc`) rather than packing
-  them: `vpunpcklwd` and `vpunpckhwd` of the two registers of an iteration
-  put coefficients `4l + {0, …, 3}` and `8 + 4l + {0, …, 3}` (and those
-  sixteen higher) in lane `l`, and `vpermq` with `0xD8` puts the quadwords
-  in order.
+* `nttInvAccY(acc = rdi, scratch = rsi)`: `NTT⁻¹` on registers
+  (`NttRegs.lean`) reading the accumulator, to the `u32`s at `rdi`: pass B
+  loads each iteration's two registers and interleaves their words
+  (`vpunpck{l,h}wd`), which puts coefficients `4l + {0, …, 3}` and
+  `8 + 4l + {0, …, 3}` (and those sixteen higher) in lane `l`, the order
+  `vpackssdw` leaves `u32`s in.
 
 Every address and branch depends only on the pointers.
 -/
@@ -94,18 +93,7 @@ def mulAccY : Prog isa := .seq (.block mulAccProY) (rcxLoop 8 mulAccBodyY)
 
 def mulSetY : Prog isa := .seq (.block mulAccProY) (rcxLoop 8 mulSetBodyY)
 
-/-- The accumulator at `[r9]` in order to the words at `[rdx]`, 32 at a time. -/
-def yfromAcc : Prog isa :=
-  rcxLoop 8 [.vmovdquLoad .l256 .xmm0 (at_ .r9 0), .vmovdquLoad .l256 .xmm1 (at_ .r9 32),
-    yb .vpunpckhwd .xmm2 .xmm0 .xmm1, yb .vpunpcklwd .xmm0 .xmm0 .xmm1, .vop (.vpermq .xmm0 .xmm0 0xD8),
-    .vop (.vpermq .xmm2 .xmm2 0xD8), .vmovdquStore .l256 (at_ .rdx 0) .xmm0,
-    .vmovdquStore .l256 (at_ .rdx 32) .xmm2, .alu .add .r9 (.imm 64), .alu .add .rdx (.imm 64)]
-
-/-- `ypro`, but for the accumulator at `rdi`. -/
-def yproAcc (tab : Nat → Nat) : Prog isa :=
-  .seq (.block (wordTab tab 128 .rsi 0 ++ yconsts ++ [.mov .r9 (.reg .rdi)] ++ leaR .rdx .rsi oS)) yfromAcc
-
-def nttInvAccY : Prog isa := .seq (yproAcc zmTabInv) (.seq nttInvLazy yepi)
+def nttInvAccY : Prog isa := nttIR NttR.passIBsAcc
 
 /-- Eight coefficients of the sum, from the words of `w` (`op` with `ymm14`,
 zero) and the `u32`s at `[rdi + off]`, to `[rdi + off]`: the arithmetic of

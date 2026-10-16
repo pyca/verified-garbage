@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Model
+import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

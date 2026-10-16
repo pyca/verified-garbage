@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttR.Sound
 public import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
+public import VerifiedGarbage.Proof.MlKem.X86_64.YNtt
 import VerifiedGarbage.Proof.MlKem.X86_64.VPack
 import VerifiedGarbage.Proof.MlKem.X86_64.Ntt
 import all Init.Data.Array.Basic
