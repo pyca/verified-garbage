@@ -147,16 +147,25 @@ def sealPreparedNote (v : GcmImpl) (gp : GhashPreparedImpl) : String :=
     blocks of the ciphertext, which reads the powers of `H` from the context. Otherwise it reads only the \
     context's first 256 bytes, as `" ++ Spec.Gcm.sealApi.name ++ v.suffix ++ "` does."
 
-/-- `vg_aes_gcm_seal_prepared`, calling `gp` on the path for TLS records. -/
-def sealPreparedArtifact (v : GcmImpl) (gp : GhashPreparedImpl) : Artifact :=
-  Spec.Gcm.sealPreparedApi.artifact AArch64.target {
+/-- `vg_aes_gcm_seal_prepared`, calling `gp` on the path for TLS records,
+and `vg_aes_gcm_seal_gather_prepared`, calling it. -/
+def sealPreparedArtifacts (v : GcmImpl) (gp : GhashPreparedImpl) : List Artifact :=
+  let F := Proof.AesGcm.AArch64.sealPreparedFn v gp Proof.Gcm.AArch64.Pmull.mulV_keyV
+  [Spec.Gcm.sealPreparedApi.artifact AArch64.target {
     suffix := v.suffix
     notes := [note v, sealPreparedNote v gp]
     code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1
       (Impl.AesGcm.AArch64.Fast.sealWith v.callees gp.fn)
     stack := 2576
     verified := Fast.sealPrepared_framed v gp Proof.Gcm.AArch64.Pmull.mulV_keyV
-    features := v.features }
+    features := v.features },
+  Spec.Gcm.sealGatherPreparedApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [gatherNote F.fn.name]
+    code := Impl.AesGcm.AArch64.SealGather.sealGather F.fn
+    stack := 2592
+    verified := Proof.AesGcm.AArch64.Gather.sealGatherPrepared_verified F
+    features := v.features }]
 
 /-- The functions with a prepared key context, for the implementations with PMULL. -/
 def artifactsPrepared (v : GcmImpl) : List Artifact :=
@@ -168,7 +177,7 @@ def artifactsPrepared (v : GcmImpl) : List Artifact :=
         (Impl.AesGcm.AArch64.Prepared.init v.callees)
       stack := 2560
       verified := initPrepared_framed v Proof.Gcm.AArch64.Pmull.prepPow
-      features := v.features }] ++ (v.gh.prepared.map (sealPreparedArtifact v)).toList
+      features := v.features }] ++ ((v.gh.prepared.map (sealPreparedArtifacts v)).getD [])
   else []
 
 /-- The artifacts of a variant, from the implementations it names. -/
