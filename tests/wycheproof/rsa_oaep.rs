@@ -173,10 +173,7 @@ fn rsa_oaep_every_pair() {
         let msg: Vec<u8> = (0..k - 2 * h.digest_len() - 2).map(|i| i as u8).collect();
         let ct = encrypt(&public, &msg, h, g, b"label").unwrap();
         assert_eq!(decrypt(&key, &ct, h, g, b"label"), Ok(msg), "{h:?} {g:?}");
-        assert_eq!(
-            decrypt(&key, &ct, h, g, b"other"),
-            Err(Error::Decryption),
-            "{h:?} {g:?}"
-        );
+        let other = decrypt(&key, &ct, h, g, b"other");
+        assert_eq!(other, Err(Error::Decryption), "{h:?} {g:?}");
     }
 }
