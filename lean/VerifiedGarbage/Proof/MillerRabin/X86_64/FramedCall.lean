@@ -36,7 +36,8 @@ theorem framed_call_ok (M : Mont) {code : Prog isa} {s : State} {B : Addr}
       (.pop .r11 13)) s fun t =>
       t.gpr .rax = BitVec.ofNat 64 (Spec.MillerRabin.round c b).toNat ∧
       (∀ r ∈ calleeSaved, t.gpr r = s.gpr r) ∧
-      Spec.MillerRabin.Keeps Spec.MillerRabin.extended B n w s.mem t.mem := by
+      Spec.MillerRabin.Keeps Spec.MillerRabin.extended B n w s.mem t.mem ∧
+      Frame [⟨s.gpr .rsp - 120#64, 120⟩, ⟨B, 8 * n⟩] s.mem t.mem := by
   apply round_frames hs
   have hd' : Region.Disjoint ⟨B, 8 * n⟩ ⟨(entered s).gpr .rsp, 112⟩ := by
     rw [entered_rsp]
@@ -48,7 +49,7 @@ theorem framed_call_ok (M : Mont) {code : Prog isa} {s : State} {B : Addr}
     (by have := hc.good.scr.nowrap; omega_arith) hb) ?_
   rintro t ⟨hr, hbx, h12, h13, h14, h15, hk, hf, hp⟩
   have hsp : t.gpr .rsp = (entered s).gpr .rsp := hk.gpr (by decide)
-  refine ⟨hsp, hk.2.2, ?_, ?_, ?_⟩
+  refine ⟨hsp, hk.2.2, ?_, ?_, ?_, ?_⟩
   · rw [exited_gpr _ (by decide) (by decide) (by decide)]
     exact hr
   · apply exited_registers hs ?_ hf hsp hbx h12 h13 h14 h15
@@ -72,5 +73,22 @@ theorem framed_call_ok (M : Mont) {code : Prog isa} {s : State} {B : Addr}
     · change 8 * n ≤ 2 ^ 64
       have := hc.good.scr.nowrap
       omega_arith
+  · -- The frames' 112 bytes and the calls' return address below them.
+    rw [exited_mem]
+    have hh : hole ((entered s).gpr .rsp) = ⟨s.gpr .rsp - 120#64, 8⟩ := by
+      rw [hole, entered_rsp]
+      congr 1
+      bv_omega
+    refine ((entered_frame s hs).sub ?_).trans (hf.sub ?_)
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      subst hr
+      exact ⟨_, List.mem_cons_self .., Offset.sub_below _ (by decide : 112 ≤ 120) (by decide : 120 - 112 + 112 ≤ 120)⟩
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [hh]
+        exact ⟨_, List.mem_cons_self .., Offset.sub_below _ (by decide : 120 ≤ 120) (by decide : 120 - 120 + 8 ≤ 120)⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
 
 end VG.Proof.MillerRabin.X86_64
