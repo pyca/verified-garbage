@@ -129,10 +129,29 @@ def sqrDiag : List Instr :=
 def sqrWide (a : Nat) : List Instr :=
   loads a .x12 .x13 .x14 .x15 ++ sqrCross ++ sqrDouble ++ sqrDiag
 
+/-- 38 times the high half x21–x24 of a product, with x11 = 38 and x10 = 0:
+the low halves added to x4–x7 in one carry chain (its carry into x20), the
+high halves of the last two products added to x7 and x20, and those of the
+first two left in x2 and x8, for `fold255` to add. -/
+def reduceLo : List Instr :=
+  [.mul .x .x2 .x11 .x21, .adds .x .x4 .x4 .x2, .mul .x .x8 .x11 .x22, .adcs .x .x5 .x5 .x8,
+    .mul .x .x9 .x11 .x23, .adcs .x .x6 .x6 .x9, .mul .x .x16 .x11 .x24, .adcs .x .x7 .x7 .x16,
+    .adcs .x .x20 .x10 .x10,
+    .umulh .x2 .x11 .x21, .umulh .x8 .x11 .x22, .umulh .x9 .x11 .x23, .umulh .x16 .x11 .x24,
+    .adds .x .x7 .x7 .x9, .adcs .x .x20 .x20 .x16]
+
+/-- Fold the bits of x4–x7, x20 from bit 255 up into the low bits, times 19
+(`2²⁵⁵ = 19` modulo p), in the carry chain that also adds x2 and x8 one and
+two words up; x10 = 0. The result is below `2²⁵⁵ + 2¹³⁵`. -/
+def fold255 : List Instr :=
+  [.extr .x .x9 .x20 .x7 63, .lsl .x .x7 .x7 1, .lsr .x .x7 .x7 1, .movz .w .x11 19 0,
+    .mul .x .x9 .x9 .x11, .adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
+    .adcs .x .x7 .x7 .x10]
+
 /-- Reduce the eight words x4–x7, x21–x24 modulo p into x4–x7, with x10 = 0:
-add 38 times the high half to the low half, then fold the carry word. -/
+add 38 times the high half to the low half, then fold the bits from 255 up. -/
 def reduceWide : List Instr :=
-  [.movz .w .x11 38 0] ++ rowAcc .x11 .x21 .x22 .x23 .x24 .x4 .x5 .x6 .x7 .x20 ++ fold
+  [.movz .w .x11 38 0] ++ reduceLo ++ fold255
 
 def fieldMul (o a b : Nat) : List Instr :=
   [.movz .w .x10 0 0] ++ mulWide a b ++ reduceWide ++ store4 o

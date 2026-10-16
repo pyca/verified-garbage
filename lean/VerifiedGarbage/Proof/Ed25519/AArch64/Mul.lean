@@ -226,6 +226,85 @@ theorem movz38_ok (s : State) :
   · rw [RegUpd.gpr_write_self]; rfl
   · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hq)
 
+/-- The first part of `fold255`: 19 times the bits from 255 up into x9, and
+bit 255 of x7 cleared. -/
+theorem fold255Pre_ok (s : State) (h20 : (s.gpr .x20).toNat < 2 ^ 8) :
+    WP isa (.block [.extr .x .x9 .x20 .x7 63, .lsl .x .x7 .x7 1, .lsr .x .x7 .x7 1, .movz .w .x11 19 0,
+      .mul .x .x9 .x9 .x11]) s fun t =>
+      (t.gpr .x9).toNat = 19 * ((s.gpr .x20).toNat * 2 + (s.gpr .x7).toNat / 2 ^ 63) ∧
+      (t.gpr .x7).toNat = (s.gpr .x7).toNat % 2 ^ 63 ∧ Keeps [.x9, .x7, .x11] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Size.bits,
+    show (63 : Nat) < 64 from by decide, show (1 : Nat) < 64 from by decide,
+    show 16 * 0 < Size.w.bits from by decide, ite_true, Option.some.injEq, exists_eq_left',
+    RegUpd.gpr_write, BitVec.setWidth_eq, reduceCtorEq, ite_false]
+  have h7 := (s.gpr .x7).isLt
+  refine ⟨?_, ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  · have c19 : (BitVec.setWidth 32 (19 : BitVec 16) <<< (16 * 0)).toNat % 2 ^ 64 = 19 := by decide
+    have hor : (s.gpr .x20).toNat * 2 ^ 64 ||| (s.gpr .x7).toNat =
+        (s.gpr .x20).toNat * 2 ^ 64 + (s.gpr .x7).toNat := by
+      rw [← Nat.shiftLeft_eq, Nat.shiftLeft_add_eq_or_of_lt h7]
+    simp only [BitVec.toNat_mul, BitVec.extractLsb'_toNat, BitVec.toNat_append, BitVec.toNat_setWidth,
+      Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, c19, hor]
+    omega
+  · simp only [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
+    omega
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp [RegUpd.gpr_write, hr.1, hr.2.1, hr.2.2]
+
+/-- The carry chain of `fold255`: x9 into x4, x2 into x5 and x8 into x6. -/
+theorem fold255Chain_ok (s : State) (hz : s.gpr .x10 = 0) :
+    WP isa (.block [.adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
+      .adcs .x .x7 .x7 .x10]) s fun t =>
+      ∃ c : Bool, val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) + 2 ^ 256 * c.toNat =
+        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) + (s.gpr .x9).toNat +
+          2 ^ 64 * (s.gpr .x2).toNat + 2 ^ 128 * (s.gpr .x8).toNat ∧
+      Keeps [.x4, .x5, .x6, .x7] s t := by
+  reg_exec hz
+  refine ⟨carryOut (s.gpr .x7) 0 (carryOut (s.gpr .x6) (s.gpr .x8)
+      (carryOut (s.gpr .x5) (s.gpr .x2) (carryOut (s.gpr .x4) (s.gpr .x9) false))), ?_,
+    ⟨?_, by simp only [RegUpd.mem_addWithCarry], by simp only [RegUpd.rd_addWithCarry],
+      by simp only [RegUpd.wr_addWithCarry], by simp only [RegUpd.sp_addWithCarry]⟩⟩
+  · have e0 := addCarry_value (s.gpr .x4) (s.gpr .x9) false
+    have e1 := addCarry_value (s.gpr .x5) (s.gpr .x2) (carryOut (s.gpr .x4) (s.gpr .x9) false)
+    have e2 := addCarry_value (s.gpr .x6) (s.gpr .x8)
+      (carryOut (s.gpr .x5) (s.gpr .x2) (carryOut (s.gpr .x4) (s.gpr .x9) false))
+    have e3 := addCarry_value (s.gpr .x7) 0 (carryOut (s.gpr .x6) (s.gpr .x8)
+      (carryOut (s.gpr .x5) (s.gpr .x2) (carryOut (s.gpr .x4) (s.gpr .x9) false)))
+    dsimp only [addCarry, carryOut, Size.bits] at e0 e1 e2 e3 ⊢
+    have z : (0 : BitVec 64).toNat = 0 := rfl
+    simp only [val4, Bool.toNat_false, Nat.add_zero, z] at e0 e1 e2 e3 ⊢
+    omega
+  · reg_keeps
+
+/-- `fold255`: the bits from 255 up folded into the low bits, times 19; the
+result is congruent modulo p and below `2²⁵⁵ + 2¹³⁵`. -/
+theorem fold255_ok (s : State) (hz : s.gpr .x10 = 0) (h20 : (s.gpr .x20).toNat < 2 ^ 8)
+    (h2 : (s.gpr .x2).toNat < 2 ^ 6) (h8 : (s.gpr .x8).toNat < 2 ^ 6) :
+    WP isa (.block Impl.Ed25519.AArch64.fold255) s fun t =>
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) +
+          VG.Spec.X25519.P * ((s.gpr .x20).toNat * 2 + (s.gpr .x7).toNat / 2 ^ 63) =
+        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) + 2 ^ 256 * (s.gpr .x20).toNat +
+          2 ^ 64 * (s.gpr .x2).toNat + 2 ^ 128 * (s.gpr .x8).toNat ∧
+      val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) < 2 ^ 255 + 2 ^ 135 ∧
+      Keeps [.x9, .x7, .x11, .x4, .x5, .x6] s t := by
+  rw [Impl.Ed25519.AArch64.fold255, show ([.extr .x .x9 .x20 .x7 63, .lsl .x .x7 .x7 1, .lsr .x .x7 .x7 1, .movz .w .x11 19 0,
+      .mul .x .x9 .x9 .x11, .adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
+      .adcs .x .x7 .x7 .x10] : List Instr) =
+    [.extr .x .x9 .x20 .x7 63, .lsl .x .x7 .x7 1, .lsr .x .x7 .x7 1, .movz .w .x11 19 0,
+      .mul .x .x9 .x9 .x11] ++ [.adds .x .x4 .x4 .x9, .adcs .x .x5 .x5 .x2, .adcs .x .x6 .x6 .x8,
+      .adcs .x .x7 .x7 .x10] from rfl, WP.block_append_iff]
+  refine WP.mono (fold255Pre_ok s h20) fun s₁ ⟨e9, e7, k1⟩ => ?_
+  refine WP.mono (fold255Chain_ok s₁ ((k1.gpr _ (by decide)).trans hz)) fun t ⟨c, ec, k2⟩ => ?_
+  rw [k1.gpr .x4 (by decide), k1.gpr .x5 (by decide), k1.gpr .x6 (by decide), k1.gpr .x2 (by decide),
+    k1.gpr .x8 (by decide), e9] at ec
+  have hl := (s.gpr .x4).isLt; have hm := (s.gpr .x5).isLt; have hn := (s.gpr .x6).isLt
+  have h7 := (s.gpr .x7).isLt
+  have hc := Bool.toNat_le c
+  simp only [val4, VG.Spec.X25519.P] at ec ⊢
+  rw [e7] at ec
+  refine ⟨by omega, by omega, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
+
 /-- `reduceWide`: the eight words of a product, reduced modulo p into x4–x7. -/
 theorem reduceWide_ok (s : State) (hz : s.gpr .x10 = 0) :
     WP isa (.block reduceWide) s fun t =>
@@ -235,24 +314,36 @@ theorem reduceWide_ok (s : State) (hz : s.gpr .x10 = 0) :
   rw [reduceWide, List.append_assoc, WP.block_append_iff]
   refine WP.mono (movz38_ok s) fun s₁ ⟨h38, k1⟩ => ?_
   have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
+  have ha : (s₁.gpr .x11).toNat = 38 := by rw [h38]; rfl
   rw [WP.block_append_iff]
-  refine WP.mono (rowAccReduce_ok s₁ hz1) fun s₂ ⟨e2, k2⟩ => ?_
+  refine WP.mono (reduceLo_ok s₁ hz1 (by omega)) fun s₂ ⟨e2, x2, x8, k2⟩ => ?_
   have hz2 : s₂.gpr .x10 = 0 := (k2.gpr _ (by decide)).trans hz1
-  have h382 : s₂.gpr .x11 = 38 := (k2.gpr _ (by decide)).trans h38
-  have hc : (s₂.gpr .x20).toNat < 2 ^ 52 := by
+  have b2 : (s₂.gpr .x2).toNat < 2 ^ 6 := by
+    rw [x2, mulHi, BitVec.toNat_ofNat, ha]
+    have := (s₁.gpr .x21).isLt
+    exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.div_lt_of_lt_mul (by omega))
+  have b8 : (s₂.gpr .x8).toNat < 2 ^ 6 := by
+    rw [x8, mulHi, BitVec.toNat_ofNat, ha]
+    have := (s₁.gpr .x22).isLt
+    exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.div_lt_of_lt_mul (by omega))
+  have b20 : (s₂.gpr .x20).toNat < 2 ^ 8 := by
     have hl := val4_lt (s₁.gpr .x4) (s₁.gpr .x5) (s₁.gpr .x6) (s₁.gpr .x7)
     have hh := val4_lt (s₁.gpr .x21) (s₁.gpr .x22) (s₁.gpr .x23) (s₁.gpr .x24)
-    rw [h38, show (38 : Word).toNat = 38 from rfl] at e2
+    rw [ha] at e2
     omega_using [e2, hl, hh]
-  refine WP.mono (fold_ok s₂ hz2 h382 hc) fun s₃ ⟨e3, k3⟩ => ?_
+  refine WP.mono (fold255_ok s₂ hz2 b20 b2 b8) fun s₃ ⟨e3, _, k3⟩ => ?_
   refine ⟨?_, (k3.gpr _ (by decide)).trans hz2,
     ((k1.mono (by decide)).trans (k2.mono (by decide))).trans (k3.mono (by decide))⟩
-  rw [e3]
-  rw [h38, show (38 : Word).toNat = 38 from rfl, k1.gpr .x4 (by decide), k1.gpr .x5 (by decide),
+  rw [ha, k1.gpr .x4 (by decide), k1.gpr .x5 (by decide),
     k1.gpr .x6 (by decide), k1.gpr .x7 (by decide), k1.gpr .x21 (by decide),
     k1.gpr .x22 (by decide), k1.gpr .x23 (by decide), k1.gpr .x24 (by decide)] at e2
   apply toFe_congr
-  rw [← fold256, e2, fold256]
+  have : val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) +
+        38 * val4 (s.gpr .x21) (s.gpr .x22) (s.gpr .x23) (s.gpr .x24) =
+      val4 (s₃.gpr .x4) (s₃.gpr .x5) (s₃.gpr .x6) (s₃.gpr .x7) +
+        VG.Spec.X25519.P * ((s₂.gpr .x20).toNat * 2 + (s₂.gpr .x7).toNat / 2 ^ 63) := by
+    rw [e3, ← e2]
+  rw [wide, fold256, this, Nat.add_mul_mod_self_left]
 
 end VG.Proof.Ed25519.AArch64
 end
