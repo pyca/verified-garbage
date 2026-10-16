@@ -143,12 +143,19 @@ def copy4 : List Instr :=
 
 /-- Copies the `x13` bytes at `x12` to `x11`: eight at a time, then four if
 at least four are left, then the last ones (fewer than four) one at a time. -/
-def copy : Prog isa :=
+def copyW : Prog isa :=
   .seq (.block [.lsr .x .x14 .x13 3])
   (.seq (.ite (.zero .x .x14) (.block []) (.loop (.block copy8) (.nonzero .x .x14)))
   (.seq (.block [.lsr .x .x14 .x13 2])
   (.seq (.ite (.zero .x .x14) (.block []) (.block copy4))
     (.ite (.zero .x .x13) (.block []) copyLoop))))
+
+/-- Copies the `x13` bytes at `x12` to `x11`: none, fewer than four one at a
+time, or `copyW` (so that the short pieces streaming leaves cost no more
+than one test each). -/
+def copy : Prog isa :=
+  .ite (.zero .x .x13) (.block [])
+    (.seq (.block [.lsr .x .x14 .x13 2]) (.ite (.zero .x .x14) copyLoop copyW))
 
 /-- XORs the `x13` (at least 1) bytes at `x11` into those at `x12`. -/
 def xorLoop : Prog isa :=
@@ -169,12 +176,18 @@ def xor4 : List Instr :=
 
 /-- XORs the `x13` bytes at `x11` into those at `x12`: eight at a time, then
 four if at least four are left, then the last ones one at a time. -/
-def xor : Prog isa :=
+def xorW : Prog isa :=
   .seq (.block [.lsr .x .x14 .x13 3])
   (.seq (.ite (.zero .x .x14) (.block []) (.loop (.block xor8) (.nonzero .x .x14)))
   (.seq (.block [.lsr .x .x14 .x13 2])
   (.seq (.ite (.zero .x .x14) (.block []) (.block xor4))
     (.ite (.zero .x .x13) (.block []) xorLoop))))
+
+/-- XORs the `x13` bytes at `x11` into those at `x12`: none, fewer than four
+one at a time, or `xorW`. -/
+def xor : Prog isa :=
+  .ite (.zero .x .x13) (.block [])
+    (.seq (.block [.lsr .x .x14 .x13 2]) (.ite (.zero .x .x14) xorLoop xorW))
 
 /-- `x10 := min (16 - x25, x24)`, for `x25 < 16`. -/
 def minK : Prog isa :=

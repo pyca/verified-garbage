@@ -524,16 +524,13 @@ theorem word_tail {s : State} {S D : Addr} {n i : Nat} (h : LoopPre s S D n) {t 
     ⟨?_, fun r hr => by rw [g r hr, C.gpr r hr], by rw [sp, C.sp], by rw [rd, C.rd], by rw [wr, C.wr]⟩
   rw [m, C.mem, copy_more h (show i + (n - i) ≤ n by omega), Nat.add_sub_cancel' (Nat.le_of_lt hi)]
 
-/-- `copy`: the `n` bytes at `S` to `D`. -/
-theorem copy_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x12 = S) (hD : s.gpr .x11 = D)
-    (hn : s.gpr .x13 = BitVec.ofNat 64 n) (h : LoopPre s S D n) :
-    WP isa copy s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
+/-- `copyW`: the `n` bytes at `S` to `D`, a word at a time. -/
+theorem copyW_ok {s t : State} {S D : Addr} {n : Nat} (h : LoopPre s S D n)
+    (W₀ : WordAt s S D n 0 D (bytesAt s.mem S 0) t) :
+    WP isa copyW t fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
       (∀ r, r ∉ loopRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hlt := h.lt
-  have W₀ : WordAt s S D n 0 D (bytesAt s.mem S 0) s :=
-    ⟨Nat.zero_le _, by rw [hS]; simp, by rw [hD]; simp, by rw [hn, Nat.sub_zero],
-      by simp [bytesAt, writeBytes_nil], fun _ _ => rfl, rfl, rfl, rfl⟩
-  unfold copy
+  unfold copyW
   -- Eight at a time.
   obtain ⟨s₁, run₁, W₁, x14₁⟩ := lsr14_ok (sh := 3) W₀ (by omega) (by decide)
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
@@ -567,6 +564,26 @@ theorem copy_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x12 = S) (hD : s
     subst e
     exact WP.block_nil ⟨V.mem, V.gpr, V.sp, V.rd, V.wr⟩
   · exact word_tail h V (by have := of_decide_eq_false hz; omega)
+
+/-- `copy`: none, fewer than four one at a time, or `copyW`. -/
+theorem copy_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x12 = S) (hD : s.gpr .x11 = D)
+    (hn : s.gpr .x13 = BitVec.ofNat 64 n) (h : LoopPre s S D n) :
+    WP isa copy s fun s' => s'.mem = writeBytes s.mem D (bytesAt s.mem S n) ∧
+      (∀ r, r ∉ loopRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hlt := h.lt
+  have W₀ : WordAt s S D n 0 D (bytesAt s.mem S 0) s :=
+    ⟨Nat.zero_le _, by rw [hS]; simp, by rw [hD]; simp, by rw [hn, Nat.sub_zero],
+      by simp [bytesAt, writeBytes_nil], fun _ _ => rfl, rfl, rfl, rfl⟩
+  unfold copy
+  refine WP.ite (decide (n - 0 = 0)) (eval_zero W₀.x13 (by omega)) (fun hz => ?_) (fun hz => ?_)
+  · have e : n = 0 := by have := of_decide_eq_true hz; omega
+    subst e
+    exact WP.block_nil ⟨W₀.mem, fun _ _ => rfl, rfl, rfl, rfl⟩
+  · obtain ⟨s₁, run₁, W₁, x14₁⟩ := lsr14_ok (sh := 2) W₀ (by omega) (by decide)
+    refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+    refine WP.ite (decide ((n - 0) / 2 ^ 2 = 0)) (eval_zero x14₁ (by omega)) (fun _ => ?_) (fun _ => ?_)
+    · exact word_tail h W₁ (by have := of_decide_eq_false hz; omega)
+    · exact copyW_ok h W₁
 
 /-- What the first `i + k` bytes XORed leave, from the first `i`. -/
 theorem xor_more {s : State} {S D : Addr} {n i k : Nat} (h : LoopPre s S D n) (hik : i + k ≤ n) :
@@ -673,16 +690,13 @@ theorem xor_tail {s : State} {S D : Addr} {n i : Nat} (h : LoopPre s S D n) {t :
   rw [Nat.add_sub_cancel' (Nat.le_of_lt hi)] at this
   exact this
 
-/-- `xor`: the `n` bytes at `S` (`x11`) XORed into those at `D` (`x12`). -/
-theorem xor_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x11 = S) (hD : s.gpr .x12 = D)
-    (hn : s.gpr .x13 = BitVec.ofNat 64 n) (h : LoopPre s S D n) :
-    WP isa xor s fun s' => s'.mem = writeBytes s.mem D (xorBytes s.mem D S n) ∧
+/-- `xorW`: the `n` bytes at `S` (`x11`) XORed into those at `D` (`x12`), a word at a time. -/
+theorem xorW_ok {s t : State} {S D : Addr} {n : Nat} (h : LoopPre s S D n)
+    (W₀ : WordAt s D S n 0 D (xorBytes s.mem D S 0) t) :
+    WP isa xorW t fun s' => s'.mem = writeBytes s.mem D (xorBytes s.mem D S n) ∧
       (∀ r, r ∉ loopRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hlt := h.lt
-  have W₀ : WordAt s D S n 0 D (xorBytes s.mem D S 0) s :=
-    ⟨Nat.zero_le _, by rw [hD]; simp, by rw [hS]; simp, by rw [hn, Nat.sub_zero],
-      by simp [xorBytes, bytesAt, writeBytes_nil], fun _ _ => rfl, rfl, rfl, rfl⟩
-  unfold Impl.AesGcm.AArch64.xor
+  unfold xorW
   obtain ⟨s₁, run₁, W₁, x14₁⟩ := lsr14_ok (sh := 3) W₀ (by omega) (by decide)
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   refine WP.seq (WP.mono (Q := fun t => ∃ i, n - i < 8 ∧ WordAt s D S n i D (xorBytes s.mem D S i) t)
@@ -713,5 +727,25 @@ theorem xor_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x11 = S) (hD : s.
     subst e
     exact WP.block_nil ⟨V.mem, V.gpr, V.sp, V.rd, V.wr⟩
   · exact xor_tail h V (by have := of_decide_eq_false hz; omega)
+
+/-- `xor`: none, fewer than four one at a time, or `xorW`. -/
+theorem xor_ok (s : State) {S D : Addr} {n : Nat} (hS : s.gpr .x11 = S) (hD : s.gpr .x12 = D)
+    (hn : s.gpr .x13 = BitVec.ofNat 64 n) (h : LoopPre s S D n) :
+    WP isa xor s fun s' => s'.mem = writeBytes s.mem D (xorBytes s.mem D S n) ∧
+      (∀ r, r ∉ loopRegs → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hlt := h.lt
+  have W₀ : WordAt s D S n 0 D (xorBytes s.mem D S 0) s :=
+    ⟨Nat.zero_le _, by rw [hD]; simp, by rw [hS]; simp, by rw [hn, Nat.sub_zero],
+      by simp [xorBytes, bytesAt, writeBytes_nil], fun _ _ => rfl, rfl, rfl, rfl⟩
+  unfold Impl.AesGcm.AArch64.xor
+  refine WP.ite (decide (n - 0 = 0)) (eval_zero W₀.x13 (by omega)) (fun hz => ?_) (fun hz => ?_)
+  · have e : n = 0 := by have := of_decide_eq_true hz; omega
+    subst e
+    exact WP.block_nil ⟨W₀.mem, fun _ _ => rfl, rfl, rfl, rfl⟩
+  · obtain ⟨s₁, run₁, W₁, x14₁⟩ := lsr14_ok (sh := 2) W₀ (by omega) (by decide)
+    refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+    refine WP.ite (decide ((n - 0) / 2 ^ 2 = 0)) (eval_zero x14₁ (by omega)) (fun _ => ?_) (fun _ => ?_)
+    · exact xor_tail h W₁ (by have := of_decide_eq_false hz; omega)
+    · exact xorW_ok h W₁
 
 end VG.Proof.AesGcm.AArch64
