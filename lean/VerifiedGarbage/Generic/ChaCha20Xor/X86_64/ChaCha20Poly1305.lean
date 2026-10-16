@@ -81,7 +81,7 @@ def splitNote (v : Proof.ChaCha20.X86_64.XorImpl) : String :=
   | .avx512 | .ifma => "This implementation copies to `dst` the bytes of `src` that the first keystream it \
       computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has \
       past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, \
-      in the code of `vg_chacha20_xor_split_avx512`."
+      with `vg_chacha20_xor_avx512`'s code, inline, loading those blocks from `src`."
   | _ => "This implementation copies `src` to `dst` and encrypts it there in place, as \
       `vg_chacha20_poly1305_seal` does."
 

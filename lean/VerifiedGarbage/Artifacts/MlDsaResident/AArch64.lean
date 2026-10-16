@@ -28,12 +28,6 @@ def artifacts : List Artifact := [
     suffix := "_sha3"
     features := ["sha3"]
     code := Impl.MlDsa.AArch64.Optimized.ResidentMask.raw
-    verified := Proof.MlDsa.AArch64.Optimized.ResidentMask.pair_verified },
-  Spec.MlDsa.expandMaskPairApi.artifact AArch64.target {
-    suffix := "_n2"
-    features := ["sha3"]
-    code := Impl.MlDsa.AArch64.Optimized.ResidentMask.rawWith
-      (Impl.Sha3.AArch64.Sha3.Vector.roundsLoop Impl.MlDsa.AArch64.Optimized.KeccakMix.core .x15)
-    verified := Proof.MlDsa.AArch64.Optimized.ResidentMask.pair_n2_verified }]
+    verified := Proof.MlDsa.AArch64.Optimized.ResidentMask.pair_verified }]
 
 end VG.Artifacts.MlDsaResident.AArch64

@@ -367,18 +367,4 @@ mod tests {
             }
         }
     }
-    #[test]
-    fn selection_is_by_low_bit() {
-        for a in [0, 1, u64::MAX, 0x123456789abcdef0] {
-            for b in [0, 1, u64::MAX, 0xfedcba9876543210] {
-                for bit in [0, 1, 2, 3, u64::MAX] {
-                    // SAFETY: no preconditions.
-                    assert_eq!(
-                        unsafe { crate::arch::ffdh::vg_ffdh_choose(a, b, bit) },
-                        if bit & 1 == 0 { a } else { b }
-                    );
-                }
-            }
-        }
-    }
 }

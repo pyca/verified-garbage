@@ -16,9 +16,6 @@ namespace VG.Artifacts.Ffdh.AArch64
 open VG.AArch64
 
 def artifacts : List Artifact := [
-  Spec.Ffdh.chooseApi.artifact target {
-    code := Impl.Ffdh.AArch64.choose
-    verified := Proof.Ffdh.AArch64.verified },
   Spec.Ffdh.checkPublicApi.artifact target {
     notes := ["Baseline AArch64: p is checked as `vg_rsa_public_precompute` checks a modulus, in a \
         working space of `w = ⌈p_len / 8⌉` words with an inner one for p (its 32-entry window table \

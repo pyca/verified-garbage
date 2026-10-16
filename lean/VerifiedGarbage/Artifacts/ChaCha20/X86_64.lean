@@ -57,18 +57,6 @@ def artifacts : List Artifact := [
     verified := Proof.ChaCha20.X86_64.Stream.init_verified },
   Spec.ChaCha20.setNonceApi.artifact X86_64.target {
     code := Impl.ChaCha20.X86_64.Stream.setNonce
-    verified := Proof.ChaCha20.X86_64.Stream.setNonce_verified },
-  Spec.ChaCha20.xorSplitApi.artifact X86_64.target {
-    suffix := "_avx512"
-    notes := ["Uses AVX-512, as `vg_chacha20_xor_avx512` does on `dst`, but each block of 64 \
-        bytes of the input within the first `src_len` bytes, rounded down to a multiple of 64, is \
-        loaded from `src`, by a comparison of lengths; the bytes of `src` after them (or, when \
-        fewer than 513 bytes follow the whole 1024-byte passes, those from the last pass on) are \
-        first copied to `dst`. Fewer than 513 bytes left after the whole 1024-byte passes are \
-        XORed in place by a call of `vg_chacha20_xor_avx512`."]
-    code := Impl.ChaCha20.X86_64.Avx512.xorSplit
-    stack := 24
-    verified := Proof.ChaCha20.X86_64.Avx512Split.xorSplit_verified
-    features := ["avx", "avx512f"] }]
+    verified := Proof.ChaCha20.X86_64.Stream.setNonce_verified }]
 
 end VG.Artifacts.ChaCha20.X86_64

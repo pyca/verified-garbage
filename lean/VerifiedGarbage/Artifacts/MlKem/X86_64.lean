@@ -73,12 +73,6 @@ def artifacts : List Artifact := [
     code := Impl.MlKem.X86_64.keygenMul .avx2 3
     verified := Proof.MlKem.X86_64.kgMulAvx3_verified
     features := ["avx", "avx2"] },
-  Spec.MlKem.nttInvApi.artifact X86_64.target {
-    notes := ["The function computes on eight coefficients at a time in SSE2 registers. It sets MXCSR \
-        to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent \
-        timing) and loads the caller's MXCSR back before returning."]
-    code := Impl.MlKem.X86_64.nttInv
-    verified := Proof.MlKem.X86_64.nttInv_verified },
   Spec.MlKem.addApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.add
     verified := Proof.MlKem.X86_64.add_verified },

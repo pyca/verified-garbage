@@ -15,10 +15,6 @@ import VerifiedGarbage.Proof.Scrypt.X86_64.Lit
 namespace VG.Artifacts.Scrypt.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Scrypt.salsaApi.artifact X86_64.target {
-    notes := ["The scalar rounds interleave four independent quarter-round chains."]
-    code := Impl.Scrypt.X86_64.salsa
-    verified := Proof.Scrypt.X86_64.salsa_verified },
   Spec.Scrypt.blockMixApi.artifact X86_64.target {
     notes := ["The fused scalar BlockMix loop retains Salsa20/8 state between input blocks."]
     code := Impl.Scrypt.X86_64.blockMixFused

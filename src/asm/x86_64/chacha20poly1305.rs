@@ -92825,7 +92825,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512_FEATURES: crate::cpu::Fe
 ///
 /// This implementation encrypts with `vg_chacha20_xor_avx512` and authenticates with `vg_poly1305_blocks_avx512`.
 ///
-/// This implementation copies to `dst` the bytes of `src` that the first keystream it computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, in the code of `vg_chacha20_xor_split_avx512`.
+/// This implementation copies to `dst` the bytes of `src` that the first keystream it computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, with `vg_chacha20_xor_avx512`'s code, inline, loading those blocks from `src`.
 ///
 /// # Safety
 ///
@@ -126874,7 +126874,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_AVX512VL_FEATURES: crate::cpu::
 ///
 /// This implementation encrypts with `vg_chacha20_xor_avx512vl` and authenticates with `vg_poly1305_blocks_avx512`.
 ///
-/// This implementation copies to `dst` the bytes of `src` that the first keystream it computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, in the code of `vg_chacha20_xor_split_avx512`.
+/// This implementation copies to `dst` the bytes of `src` that the first keystream it computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, with `vg_chacha20_xor_avx512`'s code, inline, loading those blocks from `src`.
 ///
 /// # Safety
 ///
@@ -131507,7 +131507,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SPLIT_IFMA_FEATURES: crate::cpu::Feat
 ///
 /// This implementation encrypts with `vg_chacha20_xor_avx512` and authenticates with `vg_poly1305_blocks_ifma`.
 ///
-/// This implementation copies to `dst` the bytes of `src` that the first keystream it computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, in the code of `vg_chacha20_xor_split_avx512`.
+/// This implementation copies to `dst` the bytes of `src` that the first keystream it computes covers (all of them for at most 960 bytes of data, else at most 960, as many as the data has past its last multiple of 1024 bytes, rounded up to 64), and reads the rest of `src` as it encrypts, with `vg_chacha20_xor_avx512`'s code, inline, loading those blocks from `src`.
 ///
 /// # Safety
 ///

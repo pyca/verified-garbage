@@ -2,26 +2,6 @@
 //! Verified `ffdh` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// Returns `a` when the low bit of `bit` is zero and `b` otherwise. Writes no memory. Contract: `VG.Spec.Ffdh.chooseContract`. Constant time: none of the argument values may affect timing.
-///
-/// # Safety
-///
-///
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_ffdh_choose(a: u64, b: u64, bit: u64) -> u64 {
-    core::arch::naked_asm!(
-        r"mov rax, rdi
-xor rax, rsi
-and rdx, 1
-mov rcx, 0
-sub rcx, rdx
-and rax, rcx
-xor rax, rdi
-ret
-.p2align 6",
-    )
-}
-
 /// The CPU features `vg_ffdh_check_public_adx` requires (`Artifact.features`).
 pub(crate) const VG_FFDH_CHECK_PUBLIC_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
 
