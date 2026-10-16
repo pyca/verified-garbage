@@ -90,11 +90,11 @@ structure ProdInv (s₀ : State) (B : Addr) (Z eU eO eN : Nat) (j : Nat) (s : St
   rcx : s.gpr .rcx = off B eU
   rbp : s.gpr .rbp = off B eN
   rsi : s.gpr .rsi = off B eO
-  rdi : s.gpr .rdi = idx (2 * j)
+  rdi : s.gpr .rdi = idx (4 * j)
   xmm : (s.xmm .xmm0).extractLsb' 0 64 = s₀.gpr .rdi
-  val : wv s.mem B eO (2 * j) + 2 ^ (64 * (2 * j)) * cols s =
-    cols s₀ + wv s₀.mem B eU (2 * j) * wv s₀.mem B eN 8
-  out : Outside B eO (8 * (2 * j)) s₀.mem s.mem
+  val : wv s.mem B eO (4 * j) + 2 ^ (64 * (4 * j)) * cols s =
+    cols s₀ + wv s₀.mem B eU (4 * j) * wv s₀.mem B eN 8
+  out : Outside B eO (8 * (4 * j)) s₀.mem s.mem
   keep : Keep [.rdx, .rax, .rbx, .rdi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s₀ s
 
 theorem productLoop_ok {s : State} {B : Addr} {Z eU eO eN : Nat}
@@ -107,7 +107,7 @@ theorem productLoop_ok {s : State} {B : Addr} {Z eU eO eN : Nat}
       Outside B eO (8 * 8) s.mem t.mem ∧
       Keep [.rdx, .rax, .rbx, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
   unfold AdxRotate8.productLoop
-  rw [show AdxRotate8.unroll = 2 from rfl]
+  rw [show AdxRotate8.unroll = 4 from rfl]
   rw [show [Instr.xop (.movq .xmm0 .rdi), .mov .rdi (.imm (-64))] =
     [.xop (.movq .xmm0 .rdi)] ++ [.mov .rdi (.imm (-64))] from rfl]
   refine WP.seq (WP.block_append (WP.mono (WP.keep [] (Q := fun t =>
@@ -124,39 +124,39 @@ theorem productLoop_ok {s : State} {B : Addr} {Z eU eO eN : Nat}
     by simp only [Nat.mul_zero, wv, Nat.pow_zero, Nat.one_mul, Nat.zero_mul, Nat.add_zero, Nat.zero_add,
       cols_keep kaa (by decide)],
     by rw [ma', ma]; exact Outside.refl _ _ _ _, kaa.mono (by decide)⟩
-  refine WP.seq (WP.mono (wp_upto (a := 0) (N := 4) (by decide) (ProdInv s B Z eU eO eN) ?body
+  refine WP.seq (WP.mono (wp_upto (a := 0) (N := 2) (by decide) (ProdInv s B Z eU eO eN) ?body
     (fun _ h => h) h0) fun b hb => ?_)
   case body =>
     intro j _ hj b hb
     have hna := hb.scr.nowrap
-    refine WP.mono (VG.X86_64.KeepReg.WP.keepXmm (Q := fun t => t.zf = some (decide (j + 1 = 4)) ∧
+    refine WP.mono (VG.X86_64.KeepReg.WP.keepXmm (Q := fun t => t.zf = some (decide (j + 1 = 2)) ∧
         ((t.xmm .xmm0).extractLsb' 0 64 = s.gpr .rdi → ProdInv s B Z eU eO eN (j + 1) t)) ?_
         (by decide) (by decide))
       fun t ⟨⟨zt, ht⟩, xt⟩ => ⟨zt, ht (by rw [xt]; exact hb.xmm)⟩
-    refine WP.seq (WP.mono (productSteps_ok (n := 2) (m := 2 * j) hb.scr hb.rcx hb.rdi hb.rbp hb.rsi
+    refine WP.seq (WP.mono (productSteps_ok (n := 4) (m := 4 * j) hb.scr hb.rcx hb.rdi hb.rbp hb.rsi
       (by omega) (by omega) hnZ (by omega) hsepN (by omega)) fun c ⟨vc, oc, kc⟩ => ?_)
-    refine WP.mono (idxAdd_ok (u := 2) ((kc.gpr (by decide)).trans hb.rdi) (by omega))
+    refine WP.mono (idxAdd_ok (u := 4) ((kc.gpr (by decide)).trans hb.rdi) (by omega))
       fun t ⟨it, zt, mt, kt⟩ => ⟨by rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega)), fun hx => ?_⟩
     have kct := kc.trans kt
     refine ⟨hb.scr.congr kct.2.2, (kct.gpr (by decide)).trans hb.rcx, (kct.gpr (by decide)).trans hb.rbp,
       (kct.gpr (by decide)).trans hb.rsi, by rw [it]; congr 1, hx, ?_, ?_, (hb.keep.trans kct).mono (by decide)⟩
     · have vb := hb.val
-      have wu : wv b.mem B (eU + 8 * (2 * j)) 2 = wv s.mem B (eU + 8 * (2 * j)) 2 :=
+      have wu : wv b.mem B (eU + 8 * (4 * j)) 4 = wv s.mem B (eU + 8 * (4 * j)) 4 :=
         hb.out.wv (by omega) (by omega)
       have wn : wv b.mem B eN 8 = wv s.mem B eN 8 := hb.out.wv (by omega) (by omega)
       rw [wu, wn] at vc
-      rw [cols_keep kt (by decide), mt, show 2 * (j + 1) = 2 * j + 2 by omega, wv_add, wv_add (m := s.mem),
-        show wv c.mem B eO (2 * j) = wv b.mem B eO (2 * j) from oc.wv (by omega) (by omega),
-        show 64 * (2 * j + 2) = 64 * (2 * j) + 64 * 2 by omega, Nat.pow_add]
+      rw [cols_keep kt (by decide), mt, show 4 * (j + 1) = 4 * j + 4 by omega, wv_add, wv_add (m := s.mem),
+        show wv c.mem B eO (4 * j) = wv b.mem B eO (4 * j) from oc.wv (by omega) (by omega),
+        show 64 * (4 * j + 4) = 64 * (4 * j) + 64 * 4 by omega, Nat.pow_add]
       grind
     · rw [mt]
-      exact (hb.out.mono (o' := eO) (n' := 8 * (2 * (j + 1))) (by omega) (by omega)).trans
-        (oc.mono (o' := eO) (n' := 8 * (2 * (j + 1))) (by omega) (by omega))
+      exact (hb.out.mono (o' := eO) (n' := 8 * (4 * (j + 1))) (by omega) (by omega)).trans
+        (oc.mono (o' := eO) (n' := 8 * (4 * (j + 1))) (by omega) (by omega))
   refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = s.gpr .rdi ∧ t.mem = b.mem) ?_ rfl)
     fun t ⟨⟨ht, mt⟩, kt⟩ => ?_
   · xrun [hb.xmm]
   have v := hb.val
-  rw [show 2 * 4 = 8 from rfl] at v
+  rw [show 4 * 2 = 8 from rfl] at v
   refine ⟨by rw [cols_keep kt (by decide), mt]; exact v, by rw [mt]; exact hb.out, ?_⟩
   refine ⟨fun r hr => ?_, (hb.keep.trans kt).2⟩
   by_cases hd : r = .rdi

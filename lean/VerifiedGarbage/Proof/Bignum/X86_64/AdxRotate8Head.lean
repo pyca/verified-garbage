@@ -130,10 +130,10 @@ structure HeadInv (s₀ : State) (B : Addr) (Z e eN : Nat) (mi : BitVec 64) (j :
   rdi : s.gpr .rdi = B
   rcx : s.gpr .rcx = off B e
   rbp : s.gpr .rbp = off B eN
-  rsi : s.gpr .rsi = idx (2 * j)
+  rsi : s.gpr .rsi = idx (4 * j)
   val : ((word s₀.mem B eN).toNat * mi.toNat + 1) % 2 ^ 64 = 0 →
-    2 ^ (64 * (2 * j)) * cols s = cols s₀ + wv s.mem B e (2 * j) * wv s₀.mem B eN 8
-  out : Outside B e (8 * (2 * j)) s₀.mem s.mem
+    2 ^ (64 * (4 * j)) * cols s = cols s₀ + wv s.mem B e (4 * j) * wv s₀.mem B eN 8
+  out : Outside B e (8 * (4 * j)) s₀.mem s.mem
   keep : Keep [.rdx, .rax, .rbx, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s₀ s
 
 theorem headLoop_ok {s : State} {B : Addr} {Z e eN : Nat} {mi : BitVec 64}
@@ -147,20 +147,20 @@ theorem headLoop_ok {s : State} {B : Addr} {Z e eN : Nat} {mi : BitVec 64}
       Outside B e (8 * 8) s.mem t.mem ∧ t.gpr .rsi = off B e ∧
       Keep [.rdx, .rax, .rbx, .rsi, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
   unfold AdxRotate8.headLoop
-  rw [show AdxRotate8.unroll = 2 from rfl]
+  rw [show AdxRotate8.unroll = 4 from rfl]
   refine WP.seq (WP.mono (idxInit_ok s .rsi) fun a ⟨ia, ma, ka⟩ => ?_)
   have h0 : HeadInv s B Z e eN mi 0 a := ⟨hs.congr ka.2.2, (ka.gpr (by decide)).trans hdi,
     (ka.gpr (by decide)).trans hc, (ka.gpr (by decide)).trans hp, by simpa only [Nat.mul_zero] using ia,
     fun _ => by simp only [Nat.mul_zero, wv, Nat.pow_zero, Nat.one_mul, Nat.zero_mul, Nat.add_zero,
       cols_keep ka (by decide)],
     by rw [ma]; exact Outside.refl _ _ _ _, ka.mono (by decide)⟩
-  refine WP.seq (WP.mono (wp_upto (a := 0) (N := 4) (by decide) (HeadInv s B Z e eN mi) ?body
+  refine WP.seq (WP.mono (wp_upto (a := 0) (N := 2) (by decide) (HeadInv s B Z e eN mi) ?body
     (fun _ h => h) h0) fun b hb => ?_)
   case body =>
     intro j _ hj b hb
     have hna := hb.scr.nowrap
     have mib : word b.mem B (8 * sMinv) = mi := (hb.out.word (by omega) (by omega)).trans hmi
-    refine WP.seq (WP.mono (headSteps_ok (n := 2) hb.scr hb.rdi hb.rcx hb.rsi hb.rbp
+    refine WP.seq (WP.mono (headSteps_ok (n := 4) hb.scr hb.rdi hb.rcx hb.rsi hb.rbp
       (by omega) hN hsep hh mib) fun c ⟨vc, oc, kc⟩ => ?_)
     refine WP.mono (idxAdd_ok ((kc.gpr (by decide)).trans hb.rsi) (by omega)) fun t ⟨it, zt, mt, kt⟩ => ?_
     have kct := kc.trans kt
@@ -173,20 +173,20 @@ theorem headLoop_ok {s : State} {B : Addr} {Z e eN : Nat} {mi : BitVec 64}
       have vb := hb.val hinv
       have vc' := vc (by rw [wn]; exact hinv)
       rw [show wv b.mem B eN 8 = wv s.mem B eN 8 from hb.out.wv (by omega) (by omega)] at vc'
-      rw [cols_keep kt (by decide), mt, show 2 * (j + 1) = 2 * j + 2 by omega, wv_add,
-        show wv c.mem B e (2 * j) = wv b.mem B e (2 * j) from oc.wv (by omega) (by omega),
-        show 64 * (2 * j + 2) = 64 * (2 * j) + 64 * 2 by omega, Nat.pow_add,
-        show e + 8 * (2 * j) = e + 8 * (2 * j) from rfl]
+      rw [cols_keep kt (by decide), mt, show 4 * (j + 1) = 4 * j + 4 by omega, wv_add,
+        show wv c.mem B e (4 * j) = wv b.mem B e (4 * j) from oc.wv (by omega) (by omega),
+        show 64 * (4 * j + 4) = 64 * (4 * j) + 64 * 4 by omega, Nat.pow_add,
+        show e + 8 * (4 * j) = e + 8 * (4 * j) from rfl]
       grind
     · rw [mt]
-      exact (hb.out.mono (o' := e) (n' := 8 * (2 * (j + 1))) (by omega) (by omega)).trans
-        (oc.mono (o' := e) (n' := 8 * (2 * (j + 1))) (by omega) (by omega))
+      exact (hb.out.mono (o' := e) (n' := 8 * (4 * (j + 1))) (by omega) (by omega)).trans
+        (oc.mono (o' := e) (n' := 8 * (4 * (j + 1))) (by omega) (by omega))
   refine WP.mono (WP.keep [.rsi] (Q := fun t => t.gpr .rsi = b.gpr .rcx ∧ t.mem = b.mem) ?_ rfl)
     fun t ⟨⟨ht, mt⟩, kt⟩ => ?_
   · xrun []
   refine ⟨fun hinv => ?_, by rw [mt]; exact hb.out.mono (by omega) (by omega), ht.trans hb.rcx, (hb.keep.trans kt).mono (by decide)⟩
   have v := hb.val hinv
-  rw [show 2 * 4 = 8 from rfl] at v
+  rw [show 4 * 2 = 8 from rfl] at v
   rw [cols_keep kt (by decide), mt]
   exact v
 end VG.Proof.Bignum.X86_64.AdxRotate8

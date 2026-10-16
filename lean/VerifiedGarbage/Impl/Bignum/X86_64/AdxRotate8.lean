@@ -40,7 +40,7 @@ def atx (b i : Reg) (d : Nat) : MemOp := { base := b, index := some i, disp := (
 
 /-- The steps in each iteration of the tile's loops, which count a byte index
 from `-64` up to `0`: unrolled code would not fit some CPUs' decoded-µop caches. -/
-def unroll : Nat := 2
+def unroll : Nat := 4
 
 /-- Cancel one word and retain its multiplier at `m` for the remaining blocks. -/
 def digit (m : MemOp) : List Instr :=
