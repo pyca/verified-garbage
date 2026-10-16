@@ -5156,7 +5156,96 @@ str x4, [x0, #160]
 str x5, [x0, #168]
 str x6, [x0, #176]
 str x7, [x0, #184]
-movz w19, #0, lsl #0
+ldrb w2, [x0, #771]
+sub x1, x2, #1
+movz x4, #60534, lsl #0
+movk x4, #53922, lsl #16
+movk x4, #56770, lsl #32
+movk x4, #11343, lsl #48
+movz x5, #26177, lsl #0
+movk x5, #53155, lsl #16
+movk x5, #38665, lsl #32
+movk x5, #43305, lsl #48
+movz x6, #10350, lsl #0
+movk x6, #42731, lsl #16
+movk x6, #831, lsl #32
+movk x6, #56923, lsl #48
+movz x7, #55776, lsl #0
+movk x7, #51424, lsl #16
+movk x7, #57395, lsl #32
+movk x7, #1722, lsl #48
+ldr x12, [x0, #64]
+ldr x13, [x0, #72]
+ldr x14, [x0, #80]
+ldr x15, [x0, #88]
+tst x1, x1
+csel x4, x4, x12, ne
+csel x5, x5, x13, ne
+csel x6, x6, x14, ne
+csel x7, x7, x15, ne
+str x4, [x0, #64]
+str x5, [x0, #72]
+str x6, [x0, #80]
+str x7, [x0, #88]
+movz x4, #40353, lsl #0
+movk x4, #16634, lsl #16
+movk x4, #28957, lsl #32
+movk x4, #37013, lsl #48
+movz x5, #57866, lsl #0
+movk x5, #26512, lsl #16
+movk x5, #1863, lsl #32
+movk x5, #44137, lsl #48
+movz x6, #3309, lsl #0
+movk x6, #56451, lsl #16
+movk x6, #11588, lsl #32
+movk x6, #42988, lsl #48
+movz x7, #32823, lsl #0
+movk x7, #59365, lsl #16
+movk x7, #19103, lsl #32
+movk x7, #9272, lsl #48
+ldr x12, [x0, #96]
+ldr x13, [x0, #104]
+ldr x14, [x0, #112]
+ldr x15, [x0, #120]
+tst x1, x1
+csel x4, x4, x12, ne
+csel x5, x5, x13, ne
+csel x6, x6, x14, ne
+csel x7, x7, x15, ne
+str x4, [x0, #96]
+str x5, [x0, #104]
+str x6, [x0, #112]
+str x7, [x0, #120]
+movz x4, #42938, lsl #0
+movk x4, #55071, lsl #16
+movk x4, #37756, lsl #32
+movk x4, #21366, lsl #48
+movz x5, #6273, lsl #0
+movk x5, #49204, lsl #16
+movk x5, #65420, lsl #32
+movk x5, #15643, lsl #48
+movz x6, #36774, lsl #0
+movk x6, #17198, lsl #16
+movk x6, #62726, lsl #32
+movk x6, #8567, lsl #48
+movz x7, #12681, lsl #0
+movk x7, #25759, lsl #16
+movk x7, #61128, lsl #32
+movk x7, #7039, lsl #48
+ldr x12, [x0, #160]
+ldr x13, [x0, #168]
+ldr x14, [x0, #176]
+ldr x15, [x0, #184]
+tst x1, x1
+csel x4, x4, x12, ne
+csel x5, x5, x13, ne
+csel x6, x6, x14, ne
+csel x7, x7, x15, ne
+str x4, [x0, #160]
+str x5, [x0, #168]
+str x6, [x0, #176]
+str x7, [x0, #184]
+movz w19, #1, lsl #0
 21:
 lsl x8, x19, #2
 add x8, x0, x8
