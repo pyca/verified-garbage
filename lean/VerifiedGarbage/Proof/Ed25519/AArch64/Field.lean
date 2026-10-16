@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mul
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
 import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
 public import VerifiedGarbage.Spec.Ed25519
@@ -94,6 +95,69 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base large) {o a : Nat}
     fun t ⟨hop, ht⟩ => ⟨hop, ?_⟩
   rw [ht, e1, k0.mem]
   exact toFe_mul rfl
+
+theorem movReg_ok (s : State) (d n : Reg) :
+    WP isa (.block [mov d n]) s fun t => t.gpr d = s.gpr n ∧ Keeps [d] s t := by
+  refine WP.block_cons_iff.mpr ⟨_, exec_addImm_x (imm := 0) (by decide), WP.block_nil_iff.mpr
+    ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩⟩
+  · rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
+    simp only [State.read, BitVec.setWidth_eq, BitVec.add_zero]
+  · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr)
+
+/-- `movB`: x4–x7 into x12–x15. -/
+theorem movB_ok (s : State) :
+    WP isa (.block movB) s fun t =>
+      val4 (t.gpr .x12) (t.gpr .x13) (t.gpr .x14) (t.gpr .x15) =
+        val4 (s.gpr .x4) (s.gpr .x5) (s.gpr .x6) (s.gpr .x7) ∧
+      Keeps [.x12, .x13, .x14, .x15] s t := by
+  rw [show movB = ([mov .x12 .x4] : List Instr) ++ (([mov .x13 .x5] : List Instr) ++
+    (([mov .x14 .x6] : List Instr) ++ ([mov .x15 .x7] : List Instr))) from rfl,
+    WP.block_append_iff]
+  refine WP.mono (movReg_ok s .x12 .x4) fun s₁ ⟨e1, k1⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (movReg_ok s₁ .x13 .x5) fun s₂ ⟨e2, k2⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (movReg_ok s₂ .x14 .x6) fun s₃ ⟨e3, k3⟩ => ?_
+  refine WP.mono (movReg_ok s₃ .x15 .x7) fun t ⟨e4, k4⟩ => ⟨?_, ?_⟩
+  · rw [e4, k4.gpr .x12 (by decide), k4.gpr .x13 (by decide), k4.gpr .x14 (by decide),
+      k3.gpr .x12 (by decide), k3.gpr .x13 (by decide), e3, k2.gpr .x12 (by decide), e2, e1,
+      k3.gpr .x7 (by decide), k2.gpr .x7 (by decide), k1.gpr .x7 (by decide),
+      k2.gpr .x6 (by decide), k1.gpr .x6 (by decide), k1.gpr .x5 (by decide)]
+  · exact ((k1.mono (by decide)).trans (k2.mono (by decide))).trans
+      ((k3.mono (by decide)).trans (k4.mono (by decide)))
+
+/-- `[o] := [a] · [b]²`, allowing the output to alias either input. -/
+theorem sqrMul_ok {s : State} {base : Addr} (hs : Scr s base large) {o a b : Nat}
+    (ho : FieldRange o large) (ha : FieldRange a large) (hb : FieldRange b large) :
+    WP isa (.block (fieldSqrMul o a b)) s fun t =>
+      Op base o s t ∧ F t.mem base o = F s.mem base a * (F s.mem base b * F s.mem base b) := by
+  have _hcap := workSize_le large
+  have _hmin := workSize_ge large
+  simp only [fieldSqrMul, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (zeroReg_ok s .x10) fun s₀ ⟨hz, k0⟩ => ?_
+  have hs₀ := hs.of_keeps k0 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (sqrWide_ok hs₀ hb hz) fun s₁ ⟨e1, k1⟩ => ?_
+  have hs₁ := hs₀.of_keeps k1 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (reduceWide_ok s₁ ((k1.gpr _ (by decide)).trans hz)) fun s₂ ⟨e2, z2, k2⟩ => ?_
+  have hs₂ := hs₁.of_keeps k2 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (movB_ok s₂) fun s₃ ⟨e3, k3⟩ => ?_
+  have hs₃ := hs₂.of_keeps k3 (by decide)
+  have z3 : s₃.gpr .x10 = 0 := (k3.gpr _ (by decide)).trans z2
+  rw [WP.block_append_iff]
+  refine WP.mono (mulRows_ok hs₃ ha z3 e3) fun s₄ ⟨e4, k4⟩ => ?_
+  refine WP.mono (fieldFinish_ok (hs₃.of_keeps k4 (by decide)) ho
+    ((k4.gpr _ (by decide)).trans z3)
+    ((((k0.mono (by decide)).trans (k1.mono (by decide))).trans (k2.mono (by decide))).trans
+      ((k3.mono (by decide)).trans (k4.mono (by decide)))))
+    fun t ⟨hop, ht⟩ => ⟨hop, ?_⟩
+  have m3 : s₃.mem = s.mem := by rw [k3.mem, k2.mem, k1.mem, k0.mem]
+  rw [ht, e4, m3]
+  rw [toFe_mul rfl, e2, e1, k0.mem]
+  exact congrArg _ (toFe_mul rfl)
 
 end VG.Proof.Ed25519.AArch64
 end
@@ -413,6 +477,17 @@ theorem copyField_ok {s : State} {base : Addr} (hs : Scr s base large) (o a : Sl
   have _hmin := workSize_ge large
   refine WP.mono (copyField_op hs o a) fun t ⟨hk, hv⟩ => ?_
   exact ⟨op_keep hk, by rw [env_update o hk.mem, hv]; rfl⟩
+
+/-- `[o] := [a] · [b]²` on slots. -/
+theorem sqrMulField_ok {s : State} {base : Addr} (hs : Scr s base large) (o a b : Slot) :
+    WP isa (.block (fieldSqrMul (offset o) (offset a) (offset b))) s fun t =>
+      Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o
+        (env s.mem base a * (env s.mem base b * env s.mem base b)) := by
+  have _hcap := workSize_le large
+  have _hmin := workSize_ge large
+  refine WP.mono (sqrMul_ok hs (slot_rangeWith (large := large) o) (slot_rangeWith (large := large) a)
+    (slot_rangeWith (large := large) b)) fun t ⟨h, e⟩ => ?_
+  exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
 
 /-- Coordinates in four consecutive slots. -/
 def point (e : Env) (x y z t : Slot) : Spec.Ed25519.Point := ⟨e x, e y, e z, e t⟩

@@ -26,7 +26,7 @@ open VG.Impl.Ed25519.AArch64 (Slot offset FieldOp fieldCode)
 open VG.Proof.Ed25519.AArch64 (Keep env evalOps evalOp F fieldCode_ok Outside ofs clob)
 open VG.Proof.X25519.AArch64.Word (core mulA24_ok)
 open VG.Proof.Ed25519.AArch64 (word)
-open VG.Impl.X25519.AArch64.Hybrid (LBUF vectorA scalarA stepFields recombine)
+open VG.Impl.X25519.AArch64.Hybrid (LBUF vectorA scalarA stepFields recombine tail)
 open VG.Impl.X25519.AArch64.Neon (FBUF)
 
 /-- Memory changed at most in the slots and the vector buffers. -/
@@ -182,6 +182,18 @@ theorem scalarA_ok {s : State} {base : Addr} (hs : Scratch s base) :
   refine ⟨ka.trans (kb.trans kt), ?_⟩
   rw [et, eb, ea]
 
+/-- `tail`: the last three field operations of the four-word step. -/
+theorem tail_ok {s : State} {base : Addr} (hs : Scratch s base) :
+    WP isa (.block tail) s fun t =>
+      Keep base s t ∧ env t.mem base = evalOps [.sqr 3 3, .sqr 4 4, .mul 4 0 4] (env s.mem base) := by
+  rw [tail, WP.block_append_iff]
+  refine WP.mono (fieldCode_ok _ hs) fun a ⟨ka, ea⟩ => ?_
+  refine WP.mono (VG.Proof.Ed25519.AArch64.sqrMulField_ok (ka.scr hs) 4 0 4) fun t ⟨kt, et⟩ => ?_
+  refine ⟨ka.trans kt, ?_⟩
+  rw [et, ea]
+  simp only [evalOps, List.foldl, evalOp, Function.update_idem, Function.update_self,
+    Function.update_of_ne (show (0 : Slot) ≠ 4 by decide)]
+
 /-- An iteration's field operations: the four-word step's results in slots 1–4. -/
 theorem stepFields_ok {s : State} {base : Addr} (hs : Scratch s base) (hc : Consts s.mem base)
     (h18 : env s.mem base 18 = 121665) :
@@ -207,7 +219,7 @@ theorem stepFields_ok {s : State} {base : Addr} (hs : Scratch s base) (hc : Cons
   refine WP.mono hw fun c ⟨b, kb, eb, kc, ec, lc⟩ => ?_
   have hc3 : Scratch c base := kc.scratch (kb.scr ha)
   refine WP.mono (recombs_ok hc3 lc) fun d ⟨kd, ed⟩ => ?_
-  refine WP.mono (fieldCode_ok _ (kd.scr hc3)) fun t ⟨kt, et⟩ => ?_
+  refine WP.mono (tail_ok (kd.scr hc3)) fun t ⟨kt, et⟩ => ?_
   have kall : FKeep base s t :=
     ((((FKeep.of_keep ka).trans (FKeep.of_keep kb)).trans kc).trans (FKeep.of_keep kd)).trans (FKeep.of_keep kt)
   refine ⟨kall, kall.mem.consts hc, ?_⟩

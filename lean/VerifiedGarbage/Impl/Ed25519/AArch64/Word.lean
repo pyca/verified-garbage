@@ -89,13 +89,16 @@ def rowFirst (a b0 b1 b2 b3 t0 t1 t2 t3 t4 : Reg) : List Instr :=
     .umulh .x2 a b0, .umulh .x8 a b1, .umulh .x9 a b2, .umulh .x16 a b3,
     .adds .x t1 t1 .x2, .adcs .x t2 t2 .x8, .adcs .x t3 t3 .x9, .adcs .x t4 .x16 .x10]
 
-/-- The eight-word product of the field elements at `a` and `b`, with x10 = 0. -/
-def mulWide (a b : Nat) : List Instr :=
-  loads b .x12 .x13 .x14 .x15 ++
-    [ld .x3 a] ++ rowFirst .x3 .x12 .x13 .x14 .x15 .x4 .x5 .x6 .x7 .x21 ++
+/-- The eight-word product of the field element at `a` and the words x12–x15,
+with x10 = 0. -/
+def mulRows (a : Nat) : List Instr :=
+  [ld .x3 a] ++ rowFirst .x3 .x12 .x13 .x14 .x15 .x4 .x5 .x6 .x7 .x21 ++
     [ld .x3 (a + 8)] ++ rowAcc .x3 .x12 .x13 .x14 .x15 .x5 .x6 .x7 .x21 .x22 ++
     [ld .x3 (a + 16)] ++ rowAcc .x3 .x12 .x13 .x14 .x15 .x6 .x7 .x21 .x22 .x23 ++
     [ld .x3 (a + 24)] ++ rowAcc .x3 .x12 .x13 .x14 .x15 .x7 .x21 .x22 .x23 .x24
+
+/-- The eight-word product of the field elements at `a` and `b`, with x10 = 0. -/
+def mulWide (a b : Nat) : List Instr := loads b .x12 .x13 .x14 .x15 ++ mulRows a
 
 /-- The products `aᵢ aⱼ` (`i < j`) of the words x12–x15, at their word
 `i + j` of x4–x7, x21–x24 less one: into x5–x7, x21–x23, with x10 = 0. -/
@@ -136,6 +139,15 @@ def fieldMul (o a b : Nat) : List Instr :=
 
 def fieldSqr (o a : Nat) : List Instr :=
   [.movz .w .x10 0 0] ++ sqrWide a ++ reduceWide ++ store4 o
+
+/-- x4–x7 into x12–x15. -/
+def movB : List Instr := [mov .x12 .x4, mov .x13 .x5, mov .x14 .x6, mov .x15 .x7]
+
+/-- `[o] := [a] · [b]²`: the square of `[b]` goes from the registers it is reduced
+into straight to the product's operand registers, without a store and a load
+between them. -/
+def fieldSqrMul (o a b : Nat) : List Instr :=
+  [.movz .w .x10 0 0] ++ sqrWide b ++ reduceWide ++ movB ++ mulRows a ++ reduceWide ++ store4 o
 
 def fieldAddWords (a b : Nat) : List Instr :=
   [ld .x4 a, ld .x9 b, .adds .x .x4 .x4 .x9,

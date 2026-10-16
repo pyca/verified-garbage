@@ -80,10 +80,14 @@ def scalarA : List Instr :=
 /-- `DA` and `CB` in AdvSIMD. -/
 def vectorA : List Instr := Neon.prod2 LBUF (offset 8) (offset 5) (offset 7) (offset 6)
 
+/-- `X₃ = (DA + CB)²` and `Z₃ = X₁ (DA - CB)²`, the latter's square going straight
+from its reduction to the product. -/
+def tail : List Instr := fieldCode [.sqr 3 3] ++ fieldSqrMul (offset 4) (offset 0) (offset 4)
+
 /-- The field operations of an iteration. -/
 def stepFields : List Instr :=
   fieldCode [.add 5 1 2, .sub 6 1 2, .add 7 3 4, .sub 8 3 4] ++ weave scalarA vectorA ++
-  recombine false (offset 3) ++ recombine true (offset 4) ++ fieldCode [.sqr 3 3, .sqr 4 4, .mul 4 0 4]
+  recombine false (offset 3) ++ recombine true (offset 4) ++ tail
 
 def step : List Instr := Word.stepHead ++ stepFields
 

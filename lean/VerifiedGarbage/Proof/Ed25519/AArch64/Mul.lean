@@ -330,57 +330,54 @@ theorem fe_mul_expand4 (A0 A1 A2 A3 B : Nat) :
       A0 * B + 2 ^ 64 * (A1 * B) + 2 ^ 128 * (A2 * B) + 2 ^ 192 * (A3 * B) := by
   simp only [Nat.add_mul, Nat.mul_assoc]
 
-theorem mulWide_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat}
-    (ha : FieldRange a large) (hb : FieldRange b large) (hz : s.gpr .x10 = 0) :
-    WP isa (.block (mulWide a b)) s fun t =>
-      wide t = fe s.mem base a * fe s.mem base b ∧
-      Keeps (.x12 :: .x13 :: .x14 :: .x15 :: mulRowClob) s t := by
+/-- The rows of a product by the words x12–x15, whose value is `B`. -/
+theorem mulRows_ok {s : State} {base : Addr} (hs : Scr s base large) {a B : Nat}
+    (ha : FieldRange a large) (hz : s.gpr .x10 = 0)
+    (hB : val4 (s.gpr .x12) (s.gpr .x13) (s.gpr .x14) (s.gpr .x15) = B) :
+    WP isa (.block (mulRows a)) s fun t =>
+      wide t = fe s.mem base a * B ∧ Keeps mulRowClob s t := by
   have _hcap := workSize_le large
   have _hmin := workSize_ge large
   obtain ⟨haa, ha'⟩ := ha
-  simp only [mulWide, List.append_assoc]
+  simp only [mulRows, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (loads_ok hs ⟨hb.1, hb.2⟩ (by decide)) fun s₁ ⟨b0, b1, b2, b3, k1⟩ => ?_
-  have hs₁ := hs.of_keeps k1 (by decide)
-  have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
+  refine WP.mono (ld_ok hs (by omega) (by omega) .x3) fun s₂ ⟨a0, k2⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok hs₁ (by omega) (by omega) .x3) fun s₂ ⟨a0, k2⟩ => ?_
+  refine WP.mono (rowFirst_ok s₂ ((k2.gpr _ (by decide)).trans hz)) fun s₃ ⟨e0, k3⟩ => ?_
+  have K3 : Keeps mulRowClob s s₃ := (k2.mono (by decide)).trans (k3.mono (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (rowFirst_ok s₂ ((k2.gpr _ (by decide)).trans hz1)) fun s₃ ⟨e0, k3⟩ => ?_
-  have K3 : Keeps mulRowClob s₁ s₃ := (k2.mono (by decide)).trans (k3.mono (by decide))
-  rw [WP.block_append_iff]
-  refine WP.mono (ld_ok (hs₁.of_keeps K3 (by decide)) (by omega) (by omega) .x3)
+  refine WP.mono (ld_ok (hs.of_keeps K3 (by decide)) (by omega) (by omega) .x3)
     fun s₄ ⟨a1, k4⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (rowAcc1_ok s₄ ((K3.trans (k4.mono (by decide))).gpr _ (by decide) |>.trans hz1))
+  refine WP.mono (rowAcc1_ok s₄ ((K3.trans (k4.mono (by decide))).gpr _ (by decide) |>.trans hz))
     fun s₅ ⟨e1, k5⟩ => ?_
-  have K5 : Keeps mulRowClob s₁ s₅ := (K3.trans (k4.mono (by decide))).trans (k5.mono (by decide))
+  have K5 : Keeps mulRowClob s s₅ := (K3.trans (k4.mono (by decide))).trans (k5.mono (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok (hs₁.of_keeps K5 (by decide)) (by omega) (by omega) .x3)
+  refine WP.mono (ld_ok (hs.of_keeps K5 (by decide)) (by omega) (by omega) .x3)
     fun s₆ ⟨a2, k6⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (rowAcc2_ok s₆ ((K5.trans (k6.mono (by decide))).gpr _ (by decide) |>.trans hz1))
+  refine WP.mono (rowAcc2_ok s₆ ((K5.trans (k6.mono (by decide))).gpr _ (by decide) |>.trans hz))
     fun s₇ ⟨e2, k7⟩ => ?_
-  have K7 : Keeps mulRowClob s₁ s₇ := (K5.trans (k6.mono (by decide))).trans (k7.mono (by decide))
+  have K7 : Keeps mulRowClob s s₇ := (K5.trans (k6.mono (by decide))).trans (k7.mono (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (ld_ok (hs₁.of_keeps K7 (by decide)) (by omega) (by omega) .x3)
+  refine WP.mono (ld_ok (hs.of_keeps K7 (by decide)) (by omega) (by omega) .x3)
     fun s₈ ⟨a3, k8⟩ => ?_
-  refine WP.mono (rowAcc3_ok s₈ ((K7.trans (k8.mono (by decide))).gpr _ (by decide) |>.trans hz1))
+  refine WP.mono (rowAcc3_ok s₈ ((K7.trans (k8.mono (by decide))).gpr _ (by decide) |>.trans hz))
     fun s₉ ⟨e3, k9⟩ => ?_
-  have K9 : Keeps mulRowClob s₁ s₉ := (K7.trans (k8.mono (by decide))).trans (k9.mono (by decide))
-  refine ⟨?_, (k1.mono (by decide)).trans (K9.mono (by decide))⟩
-  -- The words of `a` and `b` at each row, and where each word of the result was last written.
-  have B : ∀ (t : State), Keeps mulRowClob s₁ t →
-      val4 (t.gpr .x12) (t.gpr .x13) (t.gpr .x14) (t.gpr .x15) = fe s.mem base b := by
+  have K9 : Keeps mulRowClob s s₉ := (K7.trans (k8.mono (by decide))).trans (k9.mono (by decide))
+  refine ⟨?_, K9⟩
+  -- The words of `b` at each row, and where each word of the result was last written.
+  have Bk : ∀ (t : State), Keeps mulRowClob s t →
+      val4 (t.gpr .x12) (t.gpr .x13) (t.gpr .x14) (t.gpr .x15) = B := by
     intro t k
     rw [k.gpr .x12 (by decide), k.gpr .x13 (by decide), k.gpr .x14 (by decide),
-      k.gpr .x15 (by decide), b0, b1, b2, b3]
-  rw [B s₂ (k2.mono (by decide)), a0, k1.mem] at e0
-  rw [B s₄ (K3.trans (k4.mono (by decide))), a1, K3.mem, k1.mem, k4.gpr .x5 (by decide),
+      k.gpr .x15 (by decide), hB]
+  rw [Bk s₂ (k2.mono (by decide)), a0] at e0
+  rw [Bk s₄ (K3.trans (k4.mono (by decide))), a1, K3.mem, k4.gpr .x5 (by decide),
     k4.gpr .x6 (by decide), k4.gpr .x7 (by decide), k4.gpr .x21 (by decide)] at e1
-  rw [B s₆ (K5.trans (k6.mono (by decide))), a2, K5.mem, k1.mem, k6.gpr .x6 (by decide),
+  rw [Bk s₆ (K5.trans (k6.mono (by decide))), a2, K5.mem, k6.gpr .x6 (by decide),
     k6.gpr .x7 (by decide), k6.gpr .x21 (by decide), k6.gpr .x22 (by decide)] at e2
-  rw [B s₈ (K7.trans (k8.mono (by decide))), a3, K7.mem, k1.mem, k8.gpr .x7 (by decide),
+  rw [Bk s₈ (K7.trans (k8.mono (by decide))), a3, K7.mem, k8.gpr .x7 (by decide),
     k8.gpr .x21 (by decide), k8.gpr .x22 (by decide), k8.gpr .x23 (by decide)] at e3
   have K39 : Keeps [.x2, .x3, .x5, .x6, .x7, .x8, .x9, .x16, .x21, .x22, .x23, .x24] s₃ s₉ :=
     (((((k4.mono (by decide)).trans (k5.mono (by decide))).trans (k6.mono (by decide))).trans
@@ -390,17 +387,30 @@ theorem mulWide_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat}
       (k9.mono (by decide))
   have K79 : Keeps [.x2, .x3, .x7, .x8, .x9, .x16, .x21, .x22, .x23, .x24] s₇ s₉ :=
     (k8.mono (by decide)).trans (k9.mono (by decide))
-  have hf : fe s.mem base a * fe s.mem base b =
-      (word s.mem base a).toNat * fe s.mem base b +
-        2 ^ 64 * ((word s.mem base (a + 8)).toNat * fe s.mem base b) +
-        2 ^ 128 * ((word s.mem base (a + 16)).toNat * fe s.mem base b) +
-        2 ^ 192 * ((word s.mem base (a + 24)).toNat * fe s.mem base b) :=
+  have hf : fe s.mem base a * B =
+      (word s.mem base a).toNat * B +
+        2 ^ 64 * ((word s.mem base (a + 8)).toNat * B) +
+        2 ^ 128 * ((word s.mem base (a + 16)).toNat * B) +
+        2 ^ 192 * ((word s.mem base (a + 24)).toNat * B) :=
     fe_mul_expand4 _ _ _ _ _
   dsimp only [wide]
   rw [hf, K39.gpr .x4 (by decide), K59.gpr .x5 (by decide), K79.gpr .x6 (by decide)]
-  generalize fe s.mem base b = FB at e0 e1 e2 e3 ⊢
   simp only [val4] at e0 e1 e2 e3 ⊢
   omega_using [e0, e1, e2, e3]
+
+theorem mulWide_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat}
+    (ha : FieldRange a large) (hb : FieldRange b large) (hz : s.gpr .x10 = 0) :
+    WP isa (.block (mulWide a b)) s fun t =>
+      wide t = fe s.mem base a * fe s.mem base b ∧
+      Keeps (.x12 :: .x13 :: .x14 :: .x15 :: mulRowClob) s t := by
+  rw [mulWide, WP.block_append_iff]
+  refine WP.mono (loads_ok hs ⟨hb.1, hb.2⟩ (by decide)) fun s₁ ⟨b0, b1, b2, b3, k1⟩ => ?_
+  have hs₁ := hs.of_keeps k1 (by decide)
+  have hz1 : s₁.gpr .x10 = 0 := (k1.gpr _ (by decide)).trans hz
+  have hB : val4 (s₁.gpr .x12) (s₁.gpr .x13) (s₁.gpr .x14) (s₁.gpr .x15) = fe s.mem base b := by
+    rw [b0, b1, b2, b3]
+  refine WP.mono (mulRows_ok hs₁ ha hz1 hB) fun t ⟨e, k⟩ => ⟨?_, (k1.mono (by decide)).trans (k.mono (by decide))⟩
+  rw [e, k1.mem]
 
 theorem zeroReg_ok (s : State) (r : Reg) :
     WP isa (.block [.movz .w r 0 0]) s fun t => t.gpr r = 0 ∧ Keeps [r] s t := by
