@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #656
+        r"sub sp, sp, #656
 add r12, sp, #0
 str lr, [r12, #16]
 ldr lr, [sp, #656]
@@ -399,7 +399,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #656
+        r"sub sp, sp, #656
 add r12, sp, #0
 str lr, [r12, #16]
 ldr lr, [sp, #656]
@@ -807,7 +807,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #32
+        r"sub sp, sp, #32
 add r12, sp, #0
 str lr, [r12, #12]
 str r0, [r12, #16]

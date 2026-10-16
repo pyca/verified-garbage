@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_salsa20_8(b: *mut [u8; 64], scratch: *mut [u32; 16]) {
     core::arch::naked_asm!(
-        "ldr r2, [r0, #0]
+        r"ldr r2, [r0, #0]
 str r2, [r1, #0]
 ldr r2, [r0, #4]
 str r2, [r1, #4]
@@ -902,7 +902,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt_blockmix(b: *const [u8; 128], r: usize, y: *mut [u8; 128], ry: usize, scratch: *mut [u32; 32]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #64]
 str r5, [r12, #68]
 str r6, [r12, #72]
@@ -1089,7 +1089,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #128]
 str r5, [r12, #132]
 str r7, [r12, #136]
@@ -1206,7 +1206,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #20]
+        r"ldr r12, [sp, #20]
 str lr, [r12, #0]
 ldr lr, [sp, #0]
 add r12, r12, lr, lsl #7

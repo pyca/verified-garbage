@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2560
+        r"sub sp, sp, #2560
 add r3, sp, #0
 str r4, [r3, #2176]
 str r5, [r3, #2180]
@@ -72,7 +72,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2608
+        r"sub sp, sp, #2608
 add r12, sp, #0
 str lr, [r12, #16]
 ldr lr, [sp, #2608]
@@ -484,7 +484,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #2608
+        r"sub sp, sp, #2608
 add r12, sp, #0
 str lr, [r12, #16]
 ldr lr, [sp, #2608]

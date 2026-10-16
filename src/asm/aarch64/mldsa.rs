@@ -19,7 +19,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_inv_ntt(f: *mut [u32; 256], 
     core::arch::naked_asm!(
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_INV_FOLDED}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_INV_FOLDED}")),
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 dup v31.4s, w9
 add x3, x1, #0
@@ -396,7 +396,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_ntt_positive(f: *mut [u32; 256]) {
     core::arch::naked_asm!(
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_NTT_EXPANDED}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_NTT_EXPANDED}")),
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
@@ -741,10 +741,10 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_ntt_positive_from(out: *mut [u32; 256], f: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "add x11, x1, #0",
+        r"add x11, x1, #0",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_NTT_EXPANDED}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_NTT_EXPANDED}")),
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
@@ -1095,7 +1095,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "movz w9, #65024, lsl #0
+        r"movz w9, #65024, lsl #0
 movk w9, #63, lsl #16
 str w9, [x1, #0]
 movz w9, #25847, lsl #0
@@ -2176,7 +2176,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "movz w9, #57857, lsl #0
+        r"movz w9, #57857, lsl #0
 movk w9, #63, lsl #16
 str w9, [x1, #0]
 movz w9, #31498, lsl #0
@@ -3257,7 +3257,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz x10, #8191, lsl #0
 movk x10, #65408, lsl #16
@@ -3307,7 +3307,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz x10, #8191, lsl #0
 movk x10, #65408, lsl #16
@@ -3357,7 +3357,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz x10, #256, lsl #0
 20:
@@ -3392,7 +3392,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz x10, #256, lsl #0
 20:
@@ -3426,7 +3426,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta2(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "str x19, [x2, #7968]
+        r"str x19, [x2, #7968]
 str x20, [x2, #7976]
 str x21, [x2, #7984]
 str x22, [x2, #7992]
@@ -4589,7 +4589,7 @@ pub(crate) const VG_MLDSA_REJ_BOUNDED_POLY4_ETA2_SHA3_FEATURES: crate::cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta2_sha3(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x19, [x2, #7968]
 str x20, [x2, #7976]
 str x21, [x2, #7984]
@@ -5750,7 +5750,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta4(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "str x19, [x2, #7968]
+        r"str x19, [x2, #7968]
 str x20, [x2, #7976]
 str x21, [x2, #7984]
 str x22, [x2, #7992]
@@ -6877,7 +6877,7 @@ pub(crate) const VG_MLDSA_REJ_BOUNDED_POLY4_ETA4_SHA3_FEATURES: crate::cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly4_eta4_sha3(seeds: *const [u8; 264], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x19, [x2, #7968]
 str x20, [x2, #7976]
 str x21, [x2, #7984]
@@ -8003,11 +8003,11 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_dot_inverse4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "add x13, x1, #0
+        r"add x13, x1, #0
 add x14, x2, #0",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_INV_FOLDED}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_INV_FOLDED}")),
-        "movz w10, #57343, lsl #0
+        r"movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
 dup v30.4s, w10
 movz w9, #57345, lsl #0
@@ -8559,11 +8559,11 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_dot_inverse5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "add x13, x1, #0
+        r"add x13, x1, #0
 add x14, x2, #0",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_INV_FOLDED}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_INV_FOLDED}")),
-        "movz w10, #57343, lsl #0
+        r"movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
 dup v30.4s, w10
 movz w9, #57345, lsl #0
@@ -9147,11 +9147,11 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_dot_inverse7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "add x13, x1, #0
+        r"add x13, x1, #0
 add x14, x2, #0",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_INV_FOLDED}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_INV_FOLDED}")),
-        "movz w10, #57343, lsl #0
+        r"movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
 dup v30.4s, w10
 movz w9, #57345, lsl #0
@@ -9800,11 +9800,11 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_multiply_inverse_raw(out: *mut [u32; 256], a: *const [u32; 256], b: *const [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "add x13, x1, #0
+        r"add x13, x1, #0
 add x14, x2, #0",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_INV_FOLDED}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_INV_FOLDED}")),
-        "movz w10, #57343, lsl #0
+        r"movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
 dup v30.4s, w10
 movz w9, #57345, lsl #0
@@ -10216,7 +10216,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_canonicalize_signed(f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 dup v16.4s, w9
 movz x10, #16, lsl #0
@@ -10264,7 +10264,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_keygen_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
@@ -10302,7 +10302,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_keygen_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "sub x9, x3, #128
+        r"sub x9, x3, #128
 cbz x9, 20f
 sub x9, x3, #192
 cbz x9, 22f
@@ -10532,7 +10532,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_keygen_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "sub x9, x4, #96
+        r"sub x9, x4, #96
 cbz x9, 20f
 sub x9, x4, #128
 cbz x9, 22f
@@ -11114,7 +11114,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_keygen_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 dup v16.4s, w9
 movz w9, #4095, lsl #0
@@ -11185,7 +11185,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
@@ -11240,7 +11240,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
@@ -11299,7 +11299,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
@@ -11366,7 +11366,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_product(out: *mut [u32; 256], a: *const [u32; 256], b: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
@@ -11408,7 +11408,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_high_pack4(r: *const [u32; 256], out: *mut [u8; 128]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 dup v16.4s, w9
 movz w9, #127, lsl #0
@@ -11531,7 +11531,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_high_pack6(r: *const [u32; 256], out: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 dup v16.4s, w9
 movz w9, #127, lsl #0
@@ -11666,7 +11666,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "sub x9, x3, #128
+        r"sub x9, x3, #128
 cbz x9, 20f
 sub x9, x3, #192
 cbz x9, 22f
@@ -11763,7 +11763,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "add x2, x3, #0
+        r"add x2, x3, #0
 movz x13, #57345, lsl #0
 movk x13, #127, lsl #16
 movk x13, #0, lsl #32
@@ -12063,7 +12063,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "movz x13, #57345, lsl #0
+        r"movz x13, #57345, lsl #0
 movk x13, #127, lsl #16
 movk x13, #0, lsl #32
 movk x13, #0, lsl #48
@@ -12412,7 +12412,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "add x4, x1, #0
+        r"add x4, x1, #0
 movz x15, #1023, lsl #0
 movk x15, #0, lsl #16
 movk x15, #0, lsl #32
@@ -12474,7 +12474,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "lsr x12, x1, #8
+        r"lsr x12, x1, #8
 sub x2, x4, x12
 movz x15, #0, lsl #0
 add x9, x3, #0
@@ -12525,7 +12525,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
     core::arch::naked_asm!(
-        "lsr x12, x4, #8
+        r"lsr x12, x4, #8
 sub x2, x1, x12
 movz x15, #0, lsl #0
 add x9, x0, #0
@@ -12621,7 +12621,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_fused_pair_z(challenge: *const [u32; 256], secret: *const [u32; 512], y: *mut [u32; 512], unused: u64, work: *mut [u64; 272], unused_gamma: u32, bound: u32) -> u32 {
     core::arch::naked_asm!(
-        "add x13, x0, #0
+        r"add x13, x0, #0
 add x14, x1, #0
 add x15, x2, #0
 add x16, x3, #0
@@ -12638,7 +12638,7 @@ str q14, [x0, #2144]
 str q15, [x0, #2160]",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_INV_PAIR}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_INV_PAIR}")),
-        "movz w10, #57343, lsl #0
+        r"movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
 dup v30.4s, w10
 movz w9, #57345, lsl #0
@@ -13509,7 +13509,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_fused_pair_r0(challenge: *const [u32; 256], secret: *const [u32; 512], w: *mut [u32; 512], low: *mut [u32; 512], work: *mut [u64; 272], gamma2: u32, bound: u32) -> u32 {
     core::arch::naked_asm!(
-        "add x13, x0, #0
+        r"add x13, x0, #0
 add x14, x1, #0
 add x15, x2, #0
 add x16, x3, #0
@@ -13526,7 +13526,7 @@ str q14, [x0, #2144]
 str q15, [x0, #2160]",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_INV_PAIR}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_INV_PAIR}")),
-        "add w17, w17, #0
+        r"add w17, w17, #0
 movz w7, #65280, lsl #0
 movk w7, #3, lsl #16
 sub x7, x17, x7
@@ -15763,7 +15763,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_fused_pair_h(challenge: *const [u32; 256], secret: *const [u32; 512], low: *mut [u32; 512], high: *const [u32; 512], work: *mut [u64; 272], gamma2: u32, bound: u32) -> u64 {
     core::arch::naked_asm!(
-        "add x13, x0, #0
+        r"add x13, x0, #0
 add x14, x1, #0
 add x15, x2, #0
 add x16, x3, #0
@@ -15780,7 +15780,7 @@ str q14, [x0, #2144]
 str q15, [x0, #2160]",
         concat!("adrp x1, ", vg_sym_page!("{VG_MLDSA_INV_PAIR}")),
         concat!("add x1, x1, ", vg_sym_pageoff!("{VG_MLDSA_INV_PAIR}")),
-        "movz w10, #57343, lsl #0
+        r"movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
 dup v30.4s, w10
 movz w9, #57345, lsl #0
@@ -16858,7 +16858,7 @@ pub(crate) const VG_MLDSA_COMMIT_TAIL65_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_commit_tail65(mu: *const [u8; 64], w1: *const [u8; 768], commitment: *mut [u8; 48], scratch: *mut [u64; 256], seed: *const [u8; 64], nonce: u64, mask: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str q8, [x3, #0]
 str q9, [x3, #16]
 str q10, [x3, #32]
@@ -19101,7 +19101,7 @@ pub(crate) const VG_MLDSA_COMMIT_TAIL87_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_commit_tail87(mu: *const [u8; 64], w1: *const [u8; 1024], commitment: *mut [u8; 64], scratch: *mut [u64; 256], seed: *const [u8; 64], nonce: u64, mask: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str q8, [x3, #0]
 str q9, [x3, #16]
 str q10, [x3, #32]
@@ -21336,7 +21336,7 @@ pub(crate) const VG_MLDSA_REJ_NTT_POLY2_SHA3_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly2_sha3(seeds: *const [u8; 68], a: *mut [u32; 512], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x19, [x2, #7968]
 str x20, [x2, #7976]
 str x21, [x2, #7984]
@@ -22883,7 +22883,7 @@ pub(crate) const VG_MLDSA_EXPAND_MASK_PAIR_SHA3_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_pair_sha3(seeds: *const [u8; 132], gamma1: u32, a: *mut [u32; 256], b: *mut [u32; 256], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x19, [x4, #7968]
 str x20, [x4, #7976]
 str x21, [x4, #7984]
@@ -23756,7 +23756,7 @@ pub(crate) const VG_MLDSA_EXPAND_MASK_PAIR_N2_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_pair_n2(seeds: *const [u8; 132], gamma1: u32, a: *mut [u32; 256], b: *mut [u32; 256], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x19, [x4, #7968]
 str x20, [x4, #7976]
 str x21, [x4, #7984]
@@ -24634,7 +24634,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_signed_add_norm(y: *mut [u32; 256], cs: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 dup v16.4s, w9
 movz w9, #0, lsl #0
@@ -24724,7 +24724,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_signed_sub_low_norm(w: *mut [u32; 256], cs: *const [u32; 256], low: *mut [u32; 256], gamma2: u32, bound: u32) -> u32 {
     core::arch::naked_asm!(
-        "add w3, w3, #0
+        r"add w3, w3, #0
 movz w5, #65280, lsl #0
 movk w5, #3, lsl #16
 sub x5, x3, x5
@@ -25075,7 +25075,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_signed_hint_norm(low: *mut [u32; 256], ct0: *const [u32; 256], high: *const [u32; 256], gamma2: u32) -> u64 {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 dup v16.4s, w9
 movz w9, #0, lsl #0
@@ -25224,7 +25224,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz x10, #256, lsl #0
 20:
@@ -25263,7 +25263,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "add w1, w1, #0
+        r"add w1, w1, #0
 movz w3, #65280, lsl #0
 movk w3, #3, lsl #16
 sub x3, x1, x3
@@ -25327,7 +25327,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "add w1, w1, #0
+        r"add w1, w1, #0
 movz w3, #65280, lsl #0
 movk w3, #3, lsl #16
 sub x3, x1, x3
@@ -25404,7 +25404,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
-        "add w1, w1, #0
+        r"add w1, w1, #0
 movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz x10, #0, lsl #0
@@ -25443,7 +25443,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
     core::arch::naked_asm!(
-        "add w2, w2, #0
+        r"add w2, w2, #0
 movz w4, #65280, lsl #0
 movk w4, #3, lsl #16
 sub x4, x2, x4
@@ -25551,7 +25551,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "add w2, w2, #0
+        r"add w2, w2, #0
 movz w4, #65280, lsl #0
 movk w4, #3, lsl #16
 sub x4, x2, x4
@@ -25652,7 +25652,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_usehint_pack4(out: *mut [u8; 128], hints: *const [u32; 256], w: *const [u32; 256], gamma2: u32) {
     core::arch::naked_asm!(
-        "add x4, x1, #0
+        r"add x4, x1, #0
 add x5, x2, #0
 add x1, x0, #0
 add w3, w3, #0
@@ -26001,7 +26001,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_usehint_pack6(out: *mut [u8; 192], hints: *const [u32; 256], w: *const [u32; 256], gamma2: u32) {
     core::arch::naked_asm!(
-        "add x4, x1, #0
+        r"add x4, x1, #0
 add x5, x2, #0
 add x1, x0, #0
 add w3, w3, #0
@@ -26351,7 +26351,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_verify_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "movz w9, #57345, lsl #0
+        r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
 movz w10, #57343, lsl #0
 movk w10, #64639, lsl #16
@@ -26392,7 +26392,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "str x19, [x2, #7968]
+        r"str x19, [x2, #7968]
 str x20, [x2, #7976]
 str x21, [x2, #7984]
 str x22, [x2, #7992]
@@ -26965,7 +26965,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "str x25, [x2, #2016]
+        r"str x25, [x2, #2016]
 str x26, [x2, #2024]
 str x27, [x2, #2032]
 str x30, [x2, #2040]
@@ -27087,7 +27087,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "str x25, [x3, #2016]
+        r"str x25, [x3, #2016]
 str x26, [x3, #2024]
 str x27, [x3, #2032]
 str x30, [x3, #2040]
@@ -27279,7 +27279,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "str x25, [x3, #2016]
+        r"str x25, [x3, #2016]
 str x26, [x3, #2024]
 str x27, [x3, #2032]
 str x30, [x3, #2040]
@@ -27446,7 +27446,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "str x25, [x4, #2016]
+        r"str x25, [x4, #2016]
 str x26, [x4, #2024]
 str x27, [x4, #2032]
 str x30, [x4, #2040]
@@ -27578,7 +27578,7 @@ pub(crate) const VG_MLDSA_REJ_NTT_POLY4_SHA3_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly4_sha3(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x19, [x2, #7968]
 str x20, [x2, #7976]
 str x21, [x2, #7984]
@@ -29593,7 +29593,7 @@ pub(crate) const VG_MLDSA_REJ_NTT_POLY_SHA3_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly_sha3(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x25, [x2, #2016]
 str x26, [x2, #2024]
 str x27, [x2, #2032]
@@ -29721,7 +29721,7 @@ pub(crate) const VG_MLDSA_REJ_BOUNDED_POLY_SHA3_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly_sha3(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x25, [x3, #2016]
 str x26, [x3, #2024]
 str x27, [x3, #2032]
@@ -29919,7 +29919,7 @@ pub(crate) const VG_MLDSA_EXPAND_MASK_POLY_SHA3_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly_sha3(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x25, [x3, #2016]
 str x26, [x3, #2024]
 str x27, [x3, #2032]
@@ -30092,7 +30092,7 @@ pub(crate) const VG_MLDSA_SAMPLE_IN_BALL_SHA3_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball_sha3(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x25, [x4, #2016]
 str x26, [x4, #2024]
 str x27, [x4, #2032]

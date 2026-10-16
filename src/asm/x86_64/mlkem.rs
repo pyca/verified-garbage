@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "stmxcsr DWORD PTR [rsi+768]
+        r"stmxcsr DWORD PTR [rsi+768]
 mov r11d, DWORD PTR [rsi+768]
 and r11d, 65535
 mov eax, 8127
@@ -455,7 +455,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov eax, 3329
+        r"mov eax, 3329
 movq xmm15, rax
 pshufd xmm15, xmm15, 0
 mov ecx, 64
@@ -493,7 +493,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov eax, 3329
+        r"mov eax, 3329
 movq xmm15, rax
 pshufd xmm15, xmm15, 0
 mov ecx, 64
@@ -536,7 +536,7 @@ pub(crate) const VG_MLKEM_ADD_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_add_avx2(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov eax, 3329
+        r"mov eax, 3329
 vmovq xmm15, rax
 vpbroadcastd ymm15, xmm15
 mov ecx, 32
@@ -580,7 +580,7 @@ pub(crate) const VG_MLKEM_SUB_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_sub_avx2(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov eax, 3329
+        r"mov eax, 3329
 vmovq xmm15, rax
 vpbroadcastd ymm15, xmm15
 mov ecx, 32
@@ -617,7 +617,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_sample_ntt(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx+1680], rbx
+        r"mov QWORD PTR [rdx+1680], rbx
 mov QWORD PTR [rdx+1688], rbp
 mov QWORD PTR [rdx+1696], rdi
 mov rbx, rdx
@@ -821,7 +821,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_encode12(f: *const [u32; 256], out: *mut [u8; 384]) {
     core::arch::naked_asm!(
-        "mov ecx, 128
+        r"mov ecx, 128
 20:
 mov eax, DWORD PTR [rdi]
 mov edx, DWORD PTR [rdi+4]
@@ -854,7 +854,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_decode12(b: *const [u8; 384], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov ecx, 128
+        r"mov ecx, 128
 20:
 movzx eax, BYTE PTR [rdi]
 movzx edx, BYTE PTR [rdi+1]
@@ -904,7 +904,7 @@ pub(crate) const VG_MLKEM_DECODE12_AVX2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_decode12_avx2(b: *const [u8; 384], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "movabs rax, -9187341034361716480
+        r"movabs rax, -9187341034361716480
 vmovq xmm8, rax
 movabs rax, -9187337722941930493
 vmovq xmm0, rax
@@ -986,7 +986,7 @@ pub(crate) const VG_MLKEM_ENCODE12_AVX2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_encode12_avx2(f: *const [u32; 256], out: *mut [u8; 384]) {
     core::arch::naked_asm!(
-        "movabs rax, 650776764766880000
+        r"movabs rax, 650776764766880000
 vmovq xmm8, rax
 movabs rax, -9187201952355906550
 vmovq xmm0, rax
@@ -1069,7 +1069,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov eax, 3329
+        r"mov eax, 3329
 movq xmm15, rax
 pshufd xmm15, xmm15, 0
 mov eax, 16711935
@@ -1227,7 +1227,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 mov r8, rdx
 cmp esi, 1
 je 20f
@@ -1394,7 +1394,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 mov rsi, rcx
 cmp edx, 1
 je 20f
@@ -1575,7 +1575,7 @@ pub(crate) const VG_MLKEM_COMPRESS_ENCODE_AVX2_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_compress_encode_avx2(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 mov r8, rdx
 cmp esi, 1
 je 20f
@@ -1899,7 +1899,7 @@ pub(crate) const VG_MLKEM_DECODE_DECOMPRESS_AVX2_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_decode_decompress_avx2(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 mov rsi, rcx
 cmp edx, 1
 je 20f
@@ -2190,7 +2190,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_sample_ntt4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx+4384], rbx
+        r"mov QWORD PTR [rdx+4384], rbx
 mov QWORD PTR [rdx+4392], rbp
 mov QWORD PTR [rdx+4400], r12
 mov QWORD PTR [rdx+4408], r13
@@ -2264,7 +2264,7 @@ pub(crate) const VG_MLKEM_SAMPLE_NTT4_AVX2_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_sample_ntt4_avx2(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx+4384], rbx
+        r"mov QWORD PTR [rdx+4384], rbx
 mov QWORD PTR [rdx+4392], rbp
 mov QWORD PTR [rdx+4400], r12
 mov QWORD PTR [rdx+4408], r13
@@ -4292,7 +4292,7 @@ pub(crate) const VG_MLKEM_SAMPLE_NTT4_AVX512_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem_sample_ntt4_avx512(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx+4384], rbx
+        r"mov QWORD PTR [rdx+4384], rbx
 mov QWORD PTR [rdx+4392], rbp
 mov QWORD PTR [rdx+4400], r12
 mov QWORD PTR [rdx+4408], r13

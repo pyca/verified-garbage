@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256_iterate(key: *const [u8; 192], u: *const [u8; 32], n: u32, t: *mut [u8; 32], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        "add w2, w2, #0
+        r"add w2, w2, #0
 str x19, [x4, #112]
 str x20, [x4, #120]
 str x21, [x4, #128]
@@ -221,7 +221,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1600
+        r"sub sp, sp, #1600
 add x7, sp, #0
 add x10, x4, #0
 add x4, x7, #0
@@ -478,7 +478,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256_scratch(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 200]) {
     core::arch::naked_asm!(
-        "add x10, x4, #0
+        r"add x10, x4, #0
 add x4, x7, #0
 str x19, [x4, #832]
 str x20, [x4, #840]
@@ -737,7 +737,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA256_ITERATE_SHA2_FEATURES: crate::cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256_iterate_sha2(key: *const [u8; 192], u: *const [u8; 32], n: u32, t: *mut [u8; 32], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 add w2, w2, #0
 str x19, [x4, #112]
 str x20, [x4, #120]
@@ -944,7 +944,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA256_SHA2_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 sub sp, sp, #1600
 add x7, sp, #0
 add x10, x4, #0
@@ -1207,7 +1207,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA256_SCRATCH_SHA2_FEATURES: crate::cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256_scratch_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize, scratch: *mut [u64; 200]) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 add x10, x4, #0
 add x4, x7, #0
 str x19, [x4, #832]

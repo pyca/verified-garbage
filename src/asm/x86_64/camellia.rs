@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_camellia_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 272]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3216]
+        r"lea rsp, [rsp-3216]
 mov rcx, rsp
 add rcx, 8
 mov r9, rcx
@@ -3071,7 +3071,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_camellia_ecb_encrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3216]
+        r"lea rsp, [rsp-3216]
 mov r8, rsp
 add r8, 8
 mov r9, r8
@@ -6342,7 +6342,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_camellia_ecb_decrypt(schedule: *const [u8; 272], rounds: usize, data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3216]
+        r"lea rsp, [rsp-3216]
 mov r8, rsp
 add r8, 8
 mov r9, r8

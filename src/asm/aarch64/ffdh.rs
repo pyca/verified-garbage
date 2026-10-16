@@ -10,7 +10,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_choose(a: u64, b: u64, bit: u64) -> u64 {
     core::arch::naked_asm!(
-        "movz x3, #1, lsl #0
+        r"movz x3, #1, lsl #0
 tst x2, x3
 csel x0, x0, x1, eq
 ret
@@ -40,7 +40,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_check_public(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "str x0, [x5, #128]
+        r"str x0, [x5, #128]
 str x1, [x5, #136]
 str x2, [x5, #144]
 str x3, [x5, #152]
@@ -1582,7 +1582,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_check_domain(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "str x0, [x3, #128]
+        r"str x0, [x3, #128]
 str x1, [x3, #136]
 str x2, [x3, #144]
 add x0, x3, #0
@@ -3816,7 +3816,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_exchange(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x8, [sp, #8]
+        r"ldr x8, [sp, #8]
 str x0, [x8, #176]
 str x2, [x8, #128]
 str x3, [x8, #136]
@@ -5310,7 +5310,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_check_private(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "str x0, [x7, #128]
+        r"str x0, [x7, #128]
 str x1, [x7, #136]
 str x2, [x7, #144]
 str x3, [x7, #152]
@@ -8173,7 +8173,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ffdh_generate_key(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x8, [sp, #8]
+        r"ldr x8, [sp, #8]
 str x0, [x8, #160]
 str x2, [x8, #152]
 str x4, [x8, #128]

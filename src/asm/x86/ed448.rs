@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push eax
+        r"push eax
 push eax
 push eax
 push eax
@@ -407,7 +407,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_scalar_reduce(out: *mut [u8; 57], wide: *const [u8; 114], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+12]
+        r"mov eax, DWORD PTR [esp+12]
 mov DWORD PTR [eax], ebx
 mov DWORD PTR [eax+4], esi
 mov DWORD PTR [eax+8], edi
@@ -1156,7 +1156,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_scalar_mul_add(out: *mut [u8; 57], r: *const [u8; 57], k: *const [u8; 57], s: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax], ebx
 mov DWORD PTR [eax+4], esi
 mov DWORD PTR [eax+8], edi
@@ -4516,7 +4516,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_scalar_base(out: *mut [u8; 57], scalar: *const [u8; 57], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+12]
+        r"mov eax, DWORD PTR [esp+12]
 mov DWORD PTR [eax], ebx
 mov DWORD PTR [eax+4], esi
 mov DWORD PTR [eax+8], edi
@@ -7800,7 +7800,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: *const [u8; 57], pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push eax
+        r"push eax
 push eax
 push eax
 push eax
@@ -8583,7 +8583,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+12]
+        r"mov eax, DWORD PTR [esp+12]
 shr eax, 8
 cmp eax, 0
 je 20f
@@ -8957,7 +8957,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_verify_equation(pk: *const [u8; 57], signature: *const [u8; 114], challenge: *const [u8; 57], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax], ebx
 mov DWORD PTR [eax+4], esi
 mov DWORD PTR [eax+8], edi

@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm3_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+64], rbx
+        r"mov QWORD PTR [rcx+64], rbx
 mov QWORD PTR [rcx+72], rbp
 mov QWORD PTR [rcx+80], r12
 mov QWORD PTR [rcx+88], r13
@@ -3006,7 +3006,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm3_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        "mov eax, 1937774191
+        r"mov eax, 1937774191
 mov DWORD PTR [rdi], eax
 mov eax, 1226093241
 mov DWORD PTR [rdi+4], eax
@@ -3040,7 +3040,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm3_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-168]
+        r"lea rsp, [rsp-168]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+112], rbx
@@ -3202,7 +3202,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm3_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-168]
+        r"lea rsp, [rsp-168]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+112], rbx

@@ -33,7 +33,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pss_sha256_mgf1_sha256_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #336
+        r"sub sp, sp, #336
 add x16, sp, #0
 str x19, [x16, #96]
 str x20, [x16, #104]
@@ -591,7 +591,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_SHA256_SHA2_FEATURES: crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_sha2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 sub sp, sp, #336
 add x16, sp, #0
 str x19, [x16, #96]
@@ -1146,7 +1146,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pss_sha256_mgf1_sha256_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 32], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #336
+        r"sub sp, sp, #336
 add x16, sp, #0
 str x19, [x16, #96]
 str x20, [x16, #104]
@@ -1895,7 +1895,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_SHA256_SHA2_FE
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pss_sha256_mgf1_sha256_verify_precomputed_sha256_sha2(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 32], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 sub sp, sp, #336
 add x16, sp, #0
 str x19, [x16, #96]

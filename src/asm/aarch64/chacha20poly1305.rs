@@ -22,7 +22,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #768
+        r"sub sp, sp, #768
 add x7, sp, #0
 sub x9, x5, #1
 lsr x9, x9, #8
@@ -5536,7 +5536,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #768
+        r"sub sp, sp, #768
 add x7, sp, #0
 sub x9, x5, #1
 lsr x9, x9, #8
@@ -9905,7 +9905,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #16
+        r"sub sp, sp, #16
 add x16, sp, #0
 str x30, [x16, #8]
 ldr x10, [sp, #16]
@@ -9979,7 +9979,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #768
+        r"sub sp, sp, #768
 add x7, sp, #0
 sub x9, x5, #1
 lsr x9, x9, #8
@@ -12780,7 +12780,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #768
+        r"sub sp, sp, #768
 add x7, sp, #0
 sub x9, x5, #1
 lsr x9, x9, #8
@@ -15603,7 +15603,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #16
+        r"sub sp, sp, #16
 add x16, sp, #0
 str x30, [x16, #8]
 ldr x10, [sp, #16]
@@ -15683,7 +15683,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        ".arch_extension sve2
+        r".arch_extension sve2
 sub sp, sp, #768
 add x7, sp, #0
 sub x9, x5, #1
@@ -20435,7 +20435,7 @@ pub(crate) const VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sve2
+        r".arch_extension sve2
 sub sp, sp, #768
 add x7, sp, #0
 sub x9, x5, #1
@@ -24186,7 +24186,7 @@ pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES: crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        ".arch_extension sve2
+        r".arch_extension sve2
 sub sp, sp, #16
 add x16, sp, #0
 str x30, [x16, #8]

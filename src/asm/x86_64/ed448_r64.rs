@@ -20,7 +20,7 @@ pub(crate) const VG_ED448_R64_POINT_DOUBLE_ADX_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_r64_point_double_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -2060,7 +2060,7 @@ pub(crate) const VG_ED448_R64_POINT_ADD_AFFINE_ADX_FEATURES: crate::cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_r64_point_add_affine_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -5144,7 +5144,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_r64_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -7693,7 +7693,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed448_r64_point_add_affine(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14

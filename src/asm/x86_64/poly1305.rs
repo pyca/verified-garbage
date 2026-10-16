@@ -15,7 +15,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsi]
+        r"mov rax, QWORD PTR [rsi]
 mov rcx, QWORD PTR [rsi+8]
 mov rdx, QWORD PTR [rsi+16]
 mov r8, QWORD PTR [rsi+24]
@@ -45,7 +45,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+72], rbx
+        r"mov QWORD PTR [rdi+72], rbx
 mov QWORD PTR [rdi+80], rbp
 mov QWORD PTR [rdi+88], r12
 mov QWORD PTR [rdi+96], r13
@@ -164,7 +164,7 @@ pub(crate) const VG_POLY1305_BLOCKS_AVX2_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_blocks_avx2(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "cmp rdx, 32
+        r"cmp rdx, 32
 jb 20f
 mov r8d, 67108863
 mov r9d, 16777216
@@ -858,7 +858,7 @@ pub(crate) const VG_POLY1305_BLOCKS_AVX512_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_blocks_avx512(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "cmp rdx, 40
+        r"cmp rdx, 40
 jb 20f
 mov r8d, 67108863
 mov r9d, 16777216
@@ -1629,7 +1629,7 @@ pub(crate) const VG_POLY1305_BLOCKS_IFMA_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_blocks_ifma(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "cmp rdx, 28
+        r"cmp rdx, 28
 jb 20f
 stmxcsr DWORD PTR [rdi+120]
 mov eax, DWORD PTR [rdi+120]
@@ -2347,7 +2347,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-136]
+        r"lea rsp, [rsp-136]
 mov rcx, rsp
 add rcx, 8
 mov rcx, rdx
@@ -2475,7 +2475,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_finalize_scratch(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
-        "mov rcx, rdx
+        r"mov rcx, rdx
 mov rdx, rsi
 and rdx, 15
 mov QWORD PTR [rdi+72], rbx
@@ -2602,7 +2602,7 @@ pub(crate) const VG_POLY1305_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx2(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-136]
+        r"lea rsp, [rsp-136]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8], rbx
@@ -2788,7 +2788,7 @@ pub(crate) const VG_POLY1305_UPDATE_AVX512_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx512(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-136]
+        r"lea rsp, [rsp-136]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8], rbx
@@ -2974,7 +2974,7 @@ pub(crate) const VG_POLY1305_UPDATE_IFMA_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_ifma(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-136]
+        r"lea rsp, [rsp-136]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8], rbx
@@ -3156,7 +3156,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-136]
+        r"lea rsp, [rsp-136]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8], rbx

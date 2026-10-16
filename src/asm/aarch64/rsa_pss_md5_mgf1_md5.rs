@@ -33,7 +33,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pss_md5_mgf1_md5_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 16], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #336
+        r"sub sp, sp, #336
 add x16, sp, #0
 str x19, [x16, #96]
 str x20, [x16, #104]
@@ -552,7 +552,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_pss_md5_mgf1_md5_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 16], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #336
+        r"sub sp, sp, #336
 add x16, sp, #0
 str x19, [x16, #96]
 str x20, [x16, #104]

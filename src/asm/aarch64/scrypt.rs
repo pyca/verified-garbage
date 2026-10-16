@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_salsa20_8(b: *mut [u8; 64], scratch: *mut [u32; 16]) {
     core::arch::naked_asm!(
-        "ldr w2, [x0, #0]
+        r"ldr w2, [x0, #0]
 ldr w3, [x0, #4]
 ldr w4, [x0, #8]
 ldr w5, [x0, #12]
@@ -485,7 +485,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt_blockmix(b: *const [u8; 128], r: usize, y: *mut [u8; 128], ry: usize, scratch: *mut [u32; 32]) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 str x19, [x4, #64]
 str x20, [x4, #72]
 str x21, [x4, #80]
@@ -608,7 +608,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize) {
     core::arch::naked_asm!(
-        "str x19, [x4, #128]
+        r"str x19, [x4, #128]
 str x20, [x4, #136]
 str x22, [x4, #144]
 str x23, [x4, #152]
@@ -714,7 +714,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 sub sp, sp, #64
 add x15, sp, #0
 str x0, [x15, #8]
@@ -794,7 +794,7 @@ pub(crate) const VG_SCRYPT_SHA2_FEATURES: crate::cpu::Features = crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt_sha2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x30, [sp, #-16]!
 sub sp, sp, #64
 add x15, sp, #0

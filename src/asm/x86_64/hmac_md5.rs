@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+112], rbx
@@ -159,7 +159,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+112], rbx
@@ -260,7 +260,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_init_scratch(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize, scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+112], rbx
+        r"mov QWORD PTR [r8+112], rbx
 mov QWORD PTR [r8+120], rbp
 mov QWORD PTR [r8+128], r12
 mov QWORD PTR [r8+136], r13
@@ -400,7 +400,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_md5_finalize_scratch(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+112], rbx
+        r"mov QWORD PTR [r8+112], rbx
 mov QWORD PTR [r8+120], rbp
 mov QWORD PTR [r8+128], r12
 mov QWORD PTR [r8+136], r13

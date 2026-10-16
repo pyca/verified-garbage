@@ -10,7 +10,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_choose(a: u64, b: u64, bit: u64) -> u64 {
     core::arch::naked_asm!(
-        "mov rax, rdi
+        r"mov rax, rdi
 xor rax, rsi
 and rdx, 1
 mov rcx, 0
@@ -48,7 +48,7 @@ pub(crate) const VG_FFDH_CHECK_PUBLIC_ADX_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public_adx(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9], rbx
+        r"mov QWORD PTR [r9], rbx
 mov QWORD PTR [r9+8], rbp
 mov QWORD PTR [r9+16], r12
 mov QWORD PTR [r9+24], r13
@@ -42534,7 +42534,7 @@ pub(crate) const VG_FFDH_EXCHANGE_ADX_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange_adx(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+32]
+        r"mov rax, QWORD PTR [rsp+32]
 mov r10, QWORD PTR [rsp+8]
 mov r11, QWORD PTR [rsp+16]
 mov QWORD PTR [rax], rbx
@@ -84964,7 +84964,7 @@ pub(crate) const VG_FFDH_CHECK_PRIVATE_ADX_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private_adx(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+16]
+        r"mov rax, QWORD PTR [rsp+16]
 mov r10, QWORD PTR [rsp+8]
 mov QWORD PTR [rax], rbx
 mov QWORD PTR [rax+8], rbp
@@ -127569,7 +127569,7 @@ pub(crate) const VG_FFDH_GENERATE_KEY_ADX_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key_adx(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+32]
+        r"mov rax, QWORD PTR [rsp+32]
 mov r10, QWORD PTR [rsp+8]
 mov r11, QWORD PTR [rsp+16]
 mov QWORD PTR [rax], rbx
@@ -170274,7 +170274,7 @@ pub(crate) const VG_FFDH_CHECK_DOMAIN_ADX_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain_adx(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx], rbx
+        r"mov QWORD PTR [rcx], rbx
 mov QWORD PTR [rcx+8], rbp
 mov QWORD PTR [rcx+16], r12
 mov QWORD PTR [rcx+24], r13
@@ -218175,7 +218175,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9], rbx
+        r"mov QWORD PTR [r9], rbx
 mov QWORD PTR [r9+8], rbp
 mov QWORD PTR [r9+16], r12
 mov QWORD PTR [r9+24], r13
@@ -221081,7 +221081,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+32]
+        r"mov rax, QWORD PTR [rsp+32]
 mov r10, QWORD PTR [rsp+8]
 mov r11, QWORD PTR [rsp+16]
 mov QWORD PTR [rax], rbx
@@ -223931,7 +223931,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+16]
+        r"mov rax, QWORD PTR [rsp+16]
 mov r10, QWORD PTR [rsp+8]
 mov QWORD PTR [rax], rbx
 mov QWORD PTR [rax+8], rbp
@@ -226956,7 +226956,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_key(x: *mut u8, x_len: usize, y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+32]
+        r"mov rax, QWORD PTR [rsp+32]
 mov r10, QWORD PTR [rsp+8]
 mov r11, QWORD PTR [rsp+16]
 mov QWORD PTR [rax], rbx
@@ -230081,7 +230081,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx], rbx
+        r"mov QWORD PTR [rcx], rbx
 mov QWORD PTR [rcx+8], rbp
 mov QWORD PTR [rcx+16], r12
 mov QWORD PTR [rcx+24], r13

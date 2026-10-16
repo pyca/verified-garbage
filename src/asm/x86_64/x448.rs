@@ -24,7 +24,7 @@ pub(crate) const VG_X448_ADX_FEATURES: crate::cpu::Features = crate::cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_x448_adx(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx], rbx
+        r"mov QWORD PTR [rcx], rbx
 mov QWORD PTR [rcx+8], rbp
 mov QWORD PTR [rcx+16], r12
 mov QWORD PTR [rcx+24], r13
@@ -4938,7 +4938,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_x448(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx], rbx
+        r"mov QWORD PTR [rcx], rbx
 mov QWORD PTR [rcx+8], rbp
 mov QWORD PTR [rcx+16], r12
 mov QWORD PTR [rcx+24], r13

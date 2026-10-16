@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_x448(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str r4, [r3, #0]
+        r"str r4, [r3, #0]
 str r5, [r3, #4]
 str r6, [r3, #8]
 str r7, [r3, #12]

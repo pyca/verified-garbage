@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_r16_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str r4, [r0, #1600]
+        r"str r4, [r0, #1600]
 str r5, [r0, #1604]
 str r6, [r0, #1608]
 str r7, [r0, #1612]
@@ -5515,7 +5515,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_r16_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str r4, [r0, #1600]
+        r"str r4, [r0, #1600]
 str r5, [r0, #1604]
 str r6, [r0, #1608]
 str r7, [r0, #1612]

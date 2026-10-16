@@ -24,7 +24,7 @@ pub(crate) const VG_AES_SIV_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2580]
+        r"lea esp, [esp-2580]
 mov eax, DWORD PTR [esp+2584]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2588]
@@ -122,7 +122,7 @@ pub(crate) const VG_AES_SIV_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2612]
+        r"lea esp, [esp-2612]
 mov eax, DWORD PTR [esp+2616]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2620]
@@ -712,7 +712,7 @@ pub(crate) const VG_AES_SIV_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt_aesni(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2612]
+        r"lea esp, [esp-2612]
 mov eax, DWORD PTR [esp+2616]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2620]
@@ -1330,7 +1330,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_init(key: *const u8, key_len: usize, ctx: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2580]
+        r"lea esp, [esp-2580]
 mov eax, DWORD PTR [esp+2584]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2588]
@@ -1424,7 +1424,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2612]
+        r"lea esp, [esp-2612]
 mov eax, DWORD PTR [esp+2616]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2620]
@@ -2010,7 +2010,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2612]
+        r"lea esp, [esp-2612]
 mov eax, DWORD PTR [esp+2616]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2620]

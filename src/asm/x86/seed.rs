@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-840]
+        r"lea esp, [esp-840]
 mov eax, DWORD PTR [esp+844]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+848]
@@ -1544,7 +1544,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-844]
+        r"lea esp, [esp-844]
 mov eax, DWORD PTR [esp+848]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+852]
@@ -7628,7 +7628,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-844]
+        r"lea esp, [esp-844]
 mov eax, DWORD PTR [esp+848]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+852]

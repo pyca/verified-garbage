@@ -22,7 +22,7 @@ pub(crate) const VG_KECCAK_F1600_SHA3_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_f1600_sha3(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str q8, [x1, #0]
 str q9, [x1, #16]
 str q10, [x1, #32]
@@ -1768,7 +1768,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "dup v0.2d, x19
+        r"dup v0.2d, x19
 dup v1.2d, x20
 dup v2.2d, x21
 dup v3.2d, x22
@@ -5032,7 +5032,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_f1600_x2(states: *mut [u64; 50], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
-        "str q8, [x1, #0]
+        r"str q8, [x1, #0]
 str q9, [x1, #16]
 str q10, [x1, #32]
 str q11, [x1, #48]
@@ -10786,7 +10786,7 @@ pub(crate) const VG_KECCAK_F1600_X2_SHA3_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_f1600_x2_sha3(states: *mut [u64; 50], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str q8, [x1, #0]
 str q9, [x1, #16]
 str q10, [x1, #32]
@@ -12530,7 +12530,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        "cbz x2, 20f
+        r"cbz x2, 20f
 b 21f
 20:
 add x6, x1, #0
@@ -16065,7 +16065,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
-        "sub sp, sp, #640
+        r"sub sp, sp, #640
 add x4, sp, #0
 str x30, [sp, #-16]!
 add x9, x0, x2
@@ -16103,7 +16103,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 add x9, x0, x2
 ldrb w10, [x9, #0]
 eor x10, x10, x3
@@ -16137,7 +16137,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
-        "sub sp, sp, #640
+        r"sub sp, sp, #640
 add x5, sp, #0
 str x30, [sp, #-16]!
 str x19, [x5, #512]
@@ -16219,7 +16219,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 str x19, [x5, #512]
 str x20, [x5, #520]
 str x21, [x5, #528]
@@ -16302,7 +16302,7 @@ pub(crate) const VG_KECCAK_ABSORB_SCRATCH_SHA3_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 cbz x2, 20f
 b 21f
 20:
@@ -18310,7 +18310,7 @@ pub(crate) const VG_KECCAK_PAD_SHA3_FEATURES: crate::cpu::Features = crate::cpu:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad_sha3(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 sub sp, sp, #640
 add x4, sp, #0
 str x30, [sp, #-16]!
@@ -18354,7 +18354,7 @@ pub(crate) const VG_KECCAK_PAD_SCRATCH_SHA3_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x30, [sp, #-16]!
 add x9, x0, x2
 ldrb w10, [x9, #0]
@@ -18394,7 +18394,7 @@ pub(crate) const VG_KECCAK_SQUEEZE_SHA3_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze_sha3(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 sub sp, sp, #640
 add x5, sp, #0
 str x30, [sp, #-16]!
@@ -18482,7 +18482,7 @@ pub(crate) const VG_KECCAK_SQUEEZE_SCRATCH_SHA3_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze_scratch_sha3(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x30, [sp, #-16]!
 str x19, [x5, #512]
 str x20, [x5, #520]

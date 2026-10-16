@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_brainpoolp384r1_sha384_sign(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -550,7 +550,7 @@ pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_AVX2_FEATURES: crate::cpu:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_brainpoolp384r1_sha384_sign_avx2(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -1080,7 +1080,7 @@ pub(crate) const VG_ECDSA_BRAINPOOLP384R1_SHA384_SIGN_SHANI_FEATURES: crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_brainpoolp384r1_sha384_sign_shani(out: *mut [u8; 96], d: *const [u8; 48], digest: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx

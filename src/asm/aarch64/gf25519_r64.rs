@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf25519_r64_pow250(ws: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov v16.d[0], x19
+        r"mov v16.d[0], x19
 mov v16.d[1], x20
 mov v17.d[0], x21
 mov v17.d[1], x22

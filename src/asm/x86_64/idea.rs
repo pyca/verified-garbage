@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
     core::arch::naked_asm!(
-        "mov rdx, QWORD PTR [rdi]
+        r"mov rdx, QWORD PTR [rdi]
 ror rdx, 8
 movabs rcx, 71777214294589695
 and rdx, rcx
@@ -360,7 +360,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
     core::arch::naked_asm!(
-        "mov r8, QWORD PTR [rdi+96]
+        r"mov r8, QWORD PTR [rdi+96]
 mov r9, r8
 mov ecx, 15
 20:
@@ -1419,7 +1419,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-24]
+        r"lea rsp, [rsp-24]
 mov rcx, rsp
 add rcx, 8
 test rdx, rdx

@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "cmp r1, #5
+        r"cmp r1, #5
 mov r3, #32
 beq 20f
 22:
@@ -235,7 +235,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "cmp r2, #5
+        r"cmp r2, #5
 beq 20f
 22:
 ldrb r2, [r0, #0]
@@ -451,7 +451,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32 {
     core::arch::naked_asm!(
-        "mov r1, #512
+        r"mov r1, #512
 mov r2, #0
 20:
 ldrb r3, [r0, #1]
@@ -500,7 +500,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r3, #840]
+        r"str r4, [r3, #840]
 str r5, [r3, #844]
 str r6, [r3, #848]
 str r7, [r3, #852]
@@ -914,7 +914,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #840]
 str r5, [r12, #844]
 str r6, [r12, #848]
@@ -1455,7 +1455,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r3, #840]
+        r"str r4, [r3, #840]
 str r5, [r3, #844]
 str r6, [r3, #848]
 str r7, [r3, #852]

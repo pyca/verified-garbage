@@ -23,7 +23,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_keygen(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        "str x24, [x3, #840]
+        r"str x24, [x3, #840]
 str x25, [x3, #848]
 str x26, [x3, #856]
 str x27, [x3, #864]
@@ -2890,7 +2890,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_sign(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        "str x23, [x4, #840]
+        r"str x23, [x4, #840]
 str x24, [x4, #848]
 str x25, [x4, #856]
 str x26, [x4, #864]
@@ -5881,7 +5881,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_sign_message(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
-        "lsr x9, x4, #8
+        r"lsr x9, x4, #8
 cbnz x9, 20f
 movz x9, #13312, lsl #0
 movk x9, #2, lsl #16
@@ -6012,7 +6012,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        "str x24, [x3, #840]
+        r"str x24, [x3, #840]
 str x25, [x3, #848]
 str x26, [x3, #856]
 str x27, [x3, #864]
@@ -8816,7 +8816,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_verify_message(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
-        "lsr x9, x4, #8
+        r"lsr x9, x4, #8
 cbnz x9, 20f
 movz x9, #13312, lsl #0
 movk x9, #2, lsl #16
@@ -8993,7 +8993,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_verify_message_cached(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
-        "lsr x9, x4, #8
+        r"lsr x9, x4, #8
 cbnz x9, 20f
 movz x9, #13312, lsl #0
 movk x9, #2, lsl #16
@@ -9127,7 +9127,7 @@ pub(crate) const VG_MLDSA87_KEYGEN_SHA3_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_keygen_sha3(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x24, [x3, #840]
 str x25, [x3, #848]
 str x26, [x3, #856]
@@ -11063,7 +11063,7 @@ pub(crate) const VG_MLDSA87_SIGN_SHA3_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_sign_sha3(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x23, [x4, #840]
 str x24, [x4, #848]
 str x25, [x4, #856]
@@ -13157,7 +13157,7 @@ pub(crate) const VG_MLDSA87_SIGN_MESSAGE_SHA3_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_sign_message_sha3(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 lsr x9, x4, #8
 cbnz x9, 20f
 movz x9, #13312, lsl #0
@@ -13294,7 +13294,7 @@ pub(crate) const VG_MLDSA87_VERIFY_SHA3_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_verify_sha3(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x24, [x3, #840]
 str x25, [x3, #848]
 str x26, [x3, #856]
@@ -15501,7 +15501,7 @@ pub(crate) const VG_MLDSA87_VERIFY_MESSAGE_SHA3_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_verify_message_sha3(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 lsr x9, x4, #8
 cbnz x9, 20f
 movz x9, #13312, lsl #0
@@ -15684,7 +15684,7 @@ pub(crate) const VG_MLDSA87_VERIFY_MESSAGE_CACHED_SHA3_FEATURES: crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_verify_message_cached_sha3(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 lsr x9, x4, #8
 cbnz x9, 20f
 movz x9, #13312, lsl #0

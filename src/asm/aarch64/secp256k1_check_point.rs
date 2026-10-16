@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_secp256k1_check_point(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movz x7, #0, lsl #0
+        r"movz x7, #0, lsl #0
 ldr x1, [x0, #1120]
 ldr x2, [x0, #64]
 subs x16, x1, x2

@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-520]
+        r"lea rsp, [rsp-520]
 mov rcx, rsp
 add rcx, 8
 mov r9, rcx
@@ -1554,7 +1554,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key_scratch(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov r9, rcx
+        r"mov r9, rcx
 mov QWORD PTR [r9+384], rbx
 mov QWORD PTR [r9+392], rbp
 mov QWORD PTR [r9+400], r12
@@ -3020,7 +3020,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+384], rbx
+        r"mov QWORD PTR [r9+384], rbx
 mov QWORD PTR [r9+392], rbp
 mov QWORD PTR [r9+400], r12
 mov QWORD PTR [r9+408], r13
@@ -4749,7 +4749,7 @@ pub(crate) const VG_AES_EXPAND_KEY_AESNI_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-520]
+        r"lea rsp, [rsp-520]
 mov rcx, rsp
 add rcx, 8
 pcmpeqd xmm5, xmm5
@@ -5292,7 +5292,7 @@ pub(crate) const VG_AES_EXPAND_KEY_SCRATCH_AESNI_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_expand_key_scratch_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "pcmpeqd xmm5, xmm5
+        r"pcmpeqd xmm5, xmm5
 psrld xmm5, 31
 movdqa xmm6, xmm5
 paddd xmm6, xmm6
@@ -5766,7 +5766,7 @@ pub(crate) const VG_AES_CTR32_AESNI_FEATURES: crate::cpu::Features = crate::cpu:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ctr32_aesni(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "movabs rax, 579005069656919567
+        r"movabs rax, 579005069656919567
 movq xmm10, rax
 movabs rax, 283686952306183
 movq xmm12, rax
@@ -6069,7 +6069,7 @@ pub(crate) const VG_AES_CTR32_VAES_FEATURES: crate::cpu::Features = crate::cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ctr32_vaes(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "cmp r8, 16
+        r"cmp r8, 16
 jb 20f
 movabs rax, 579005069656919567
 vmovq xmm10, rax
@@ -6844,7 +6844,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov r9, r8
+        r"mov r9, r8
 mov r8, rcx
 mov QWORD PTR [r9+384], rbx
 mov QWORD PTR [r9+392], rbp
@@ -8531,7 +8531,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov r9, r8
+        r"mov r9, r8
 mov r8, rcx
 mov QWORD PTR [r9+384], rbx
 mov QWORD PTR [r9+392], rbp
@@ -10413,7 +10413,7 @@ pub(crate) const VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov r10, rsi
+        r"mov r10, rsi
 add r10, r10
 add r10, r10
 add r10, r10
@@ -10668,7 +10668,7 @@ pub(crate) const VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "movdqu xmm8, XMMWORD PTR [rdi+16]
+        r"movdqu xmm8, XMMWORD PTR [rdi+16]
 aesimc xmm8, xmm8
 movdqu XMMWORD PTR [r8+16], xmm8
 movdqu xmm8, XMMWORD PTR [rdi+32]
@@ -10972,7 +10972,7 @@ pub(crate) const VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_encrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov r10, rsi
+        r"mov r10, rsi
 add r10, r10
 add r10, r10
 add r10, r10
@@ -11399,7 +11399,7 @@ pub(crate) const VG_AES_DECRYPT_BLOCKS_VAES_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_decrypt_blocks_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "movdqu xmm8, XMMWORD PTR [rdi+16]
+        r"movdqu xmm8, XMMWORD PTR [rdi+16]
 aesimc xmm8, xmm8
 movdqu XMMWORD PTR [r8+16], xmm8
 movdqu xmm8, XMMWORD PTR [rdi+32]

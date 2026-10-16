@@ -13,7 +13,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "mov rax, 0
+        r"mov rax, 0
 mov rdx, rsi
 shr rdx, 5
 cmp rdx, 0
@@ -76,7 +76,7 @@ pub(crate) const VG_ZEROIZE_AVX_FEATURES: crate::cpu::Features = crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_zeroize_avx(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "vpxor xmm0, xmm0, xmm0
+        r"vpxor xmm0, xmm0, xmm0
 mov rax, 0
 mov rdx, rsi
 shr rdx, 6

@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-532]
+        r"lea esp, [esp-532]
 mov eax, DWORD PTR [esp+536]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+540]
@@ -1342,7 +1342,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+256], ebx
 mov DWORD PTR [eax+260], esi
 mov DWORD PTR [eax+264], edi
@@ -2525,7 +2525,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+256], ebx
 mov DWORD PTR [eax+260], esi
 mov DWORD PTR [eax+264], edi
@@ -4124,7 +4124,7 @@ pub(crate) const VG_AES_CTR32_AESNI_FEATURES: crate::cpu::Features = crate::cpu:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ctr32_aesni(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax], ebx
 mov DWORD PTR [eax+4], esi
 mov DWORD PTR [eax+8], edi
@@ -4433,7 +4433,7 @@ pub(crate) const VG_AES_EXPAND_KEY_AESNI_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-532]
+        r"lea esp, [esp-532]
 mov eax, DWORD PTR [esp+536]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+540]
@@ -5008,7 +5008,7 @@ pub(crate) const VG_AES_EXPAND_KEY_SCRATCH_AESNI_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch_aesni(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [esp+8]
 mov edx, DWORD PTR [esp+12]
 cmp ecx, 24
@@ -5438,7 +5438,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+256], ebx
 mov DWORD PTR [eax+260], esi
 mov DWORD PTR [eax+264], edi
@@ -7019,7 +7019,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+256], ebx
 mov DWORD PTR [eax+260], esi
 mov DWORD PTR [eax+264], edi
@@ -8873,7 +8873,7 @@ pub(crate) const VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov edx, DWORD PTR [esp+20]
+        r"mov edx, DWORD PTR [esp+20]
 mov DWORD PTR [edx], esi
 mov DWORD PTR [edx+4], edi
 mov eax, DWORD PTR [esp+4]
@@ -9115,7 +9115,7 @@ pub(crate) const VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks_aesni(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov edx, DWORD PTR [esp+20]
+        r"mov edx, DWORD PTR [esp+20]
 mov DWORD PTR [edx], esi
 mov DWORD PTR [edx+4], edi
 mov eax, DWORD PTR [esp+4]

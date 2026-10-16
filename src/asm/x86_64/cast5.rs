@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cast5_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov eax, 0
+        r"mov eax, 0
 mov QWORD PTR [rcx+16], rax
 mov QWORD PTR [rcx+24], rax
 mov rax, rcx
@@ -2157,7 +2157,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cast5_ecb_encrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+16], rbx
+        r"mov QWORD PTR [r8+16], rbx
 mov QWORD PTR [r8+24], rbp
 mov QWORD PTR [r8+32], r12
 mov QWORD PTR [r8+40], r13
@@ -2651,7 +2651,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cast5_ecb_decrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+16], rbx
+        r"mov QWORD PTR [r8+16], rbx
 mov QWORD PTR [r8+24], rbp
 mov QWORD PTR [r8+32], r12
 mov QWORD PTR [r8+40], r13

@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #512
+        r"sub sp, sp, #512
 add x3, sp, #0
 add x5, x3, #0
 str x19, [x5, #384]
@@ -1323,7 +1323,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "add x5, x3, #0
+        r"add x5, x3, #0
 str x19, [x5, #384]
 str x20, [x5, #392]
 str x21, [x5, #400]
@@ -2558,7 +2558,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "str x19, [x5, #384]
+        r"str x19, [x5, #384]
 str x20, [x5, #392]
 str x21, [x5, #400]
 str x22, [x5, #408]
@@ -4025,7 +4025,7 @@ pub(crate) const VG_AES_EXPAND_KEY_AES_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key_aes(key: *const u8, key_len: usize, schedule: *mut [u8; 240]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #512
 add x3, sp, #0
 movi v0.2d, #0
@@ -4615,7 +4615,7 @@ pub(crate) const VG_AES_EXPAND_KEY_SCRATCH_AES_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch_aes(key: *const u8, key_len: usize, schedule: *mut [u8; 240], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 movi v0.2d, #0
 sub x9, x1, #24
 sub x10, x1, #32
@@ -5136,7 +5136,7 @@ pub(crate) const VG_AES_CTR32_AES_FEATURES: crate::cpu::Features = crate::cpu::F
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ctr32_aes(schedule: *const [u8; 240], rounds: usize, counter: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 ldr q16, [x0, #0]
 ldr q17, [x0, #16]
 ldr q18, [x0, #32]
@@ -5536,7 +5536,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "add x5, x4, #0
+        r"add x5, x4, #0
 add x4, x3, #0
 add x3, x2, #0
 str x19, [x5, #384]
@@ -6963,7 +6963,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "add x5, x4, #0
+        r"add x5, x4, #0
 add x4, x3, #0
 add x3, x2, #0
 str x19, [x5, #384]
@@ -8536,7 +8536,7 @@ pub(crate) const VG_AES_ENCRYPT_BLOCKS_AES_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks_aes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 ldr q16, [x0, #0]
 ldr q17, [x0, #16]
 ldr q18, [x0, #32]
@@ -8889,7 +8889,7 @@ pub(crate) const VG_AES_DECRYPT_BLOCKS_AES_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks_aes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 ldr q16, [x0, #0]
 ldr q17, [x0, #16]
 ldr q18, [x0, #32]

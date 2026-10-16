@@ -24,7 +24,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p256_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], k: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "call 2f
+        r"call 2f
 2:
 mov eax, DWORD PTR [esp]
 .byte 0x81, 192
@@ -8229,7 +8229,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p256_verify(public: *const [u8; 65], digest: *const [u8; 32], sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "call 2f
+        r"call 2f
 2:
 mov eax, DWORD PTR [esp]
 .byte 0x81, 192

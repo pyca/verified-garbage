@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+128], rbx
+        r"mov QWORD PTR [rcx+128], rbx
 mov QWORD PTR [rcx+136], rbp
 mov QWORD PTR [rcx+144], r12
 mov QWORD PTR [rcx+152], r13
@@ -1430,7 +1430,7 @@ pub(crate) const VG_SHA512_COMPRESS_AVX2_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_compress_avx2(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+1280], rbx
+        r"mov QWORD PTR [rcx+1280], rbx
 mov QWORD PTR [rcx+1288], rbp
 mov QWORD PTR [rcx+1296], r12
 mov QWORD PTR [rcx+1304], r13
@@ -2995,7 +2995,7 @@ pub(crate) const VG_SHA512_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_compress_shani(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
     core::arch::naked_asm!(
-        "movabs rax, 283686952306183
+        r"movabs rax, 283686952306183
 vmovq xmm8, rax
 movabs rax, 579005069656919567
 vmovq xmm11, rax
@@ -3431,7 +3431,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha384_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "movabs rax, -3766243637369397544
+        r"movabs rax, -3766243637369397544
 mov QWORD PTR [rdi], rax
 movabs rax, 7105036623409894663
 mov QWORD PTR [rdi+8], rax
@@ -3463,7 +3463,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "movabs rax, 7640891576956012808
+        r"movabs rax, 7640891576956012808
 mov QWORD PTR [rdi], rax
 movabs rax, -4942790177534073029
 mov QWORD PTR [rdi+8], rax
@@ -3495,7 +3495,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_224_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "movabs rax, -8341449602262348382
+        r"movabs rax, -8341449602262348382
 mov QWORD PTR [rdi], rax
 movabs rax, 8350123849800275158
 mov QWORD PTR [rdi+8], rax
@@ -3527,7 +3527,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_256_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "movabs rax, 2463787394917988140
+        r"movabs rax, 2463787394917988140
 mov QWORD PTR [rdi], rax
 movabs rax, -6965556091613846334
 mov QWORD PTR [rdi+8], rax
@@ -3563,7 +3563,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -3732,7 +3732,7 @@ pub(crate) const VG_SHA384_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha384_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -3901,7 +3901,7 @@ pub(crate) const VG_SHA384_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha384_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -4064,7 +4064,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+1328], rbx
@@ -4227,7 +4227,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -4398,7 +4398,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+1328], rbx
+        r"mov QWORD PTR [r8+1328], rbx
 mov QWORD PTR [r8+1336], rbp
 mov QWORD PTR [r8+1344], r12
 mov QWORD PTR [r8+1352], r13
@@ -4559,7 +4559,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+1328], rbx
+        r"mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
 mov QWORD PTR [rcx+1352], r13
@@ -4728,7 +4728,7 @@ pub(crate) const VG_SHA512_UPDATE_AVX2_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_update_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+1328], rbx
@@ -4895,7 +4895,7 @@ pub(crate) const VG_SHA512_FINALIZE_AVX2_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -5070,7 +5070,7 @@ pub(crate) const VG_SHA512_UPDATE_SCRATCH_AVX2_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_update_scratch_avx2(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+1328], rbx
+        r"mov QWORD PTR [r8+1328], rbx
 mov QWORD PTR [r8+1336], rbp
 mov QWORD PTR [r8+1344], r12
 mov QWORD PTR [r8+1352], r13
@@ -5235,7 +5235,7 @@ pub(crate) const VG_SHA512_FINALIZE_SCRATCH_AVX2_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_scratch_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+1328], rbx
+        r"mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
 mov QWORD PTR [rcx+1352], r13
@@ -5404,7 +5404,7 @@ pub(crate) const VG_SHA512_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_update_shani(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+1328], rbx
@@ -5571,7 +5571,7 @@ pub(crate) const VG_SHA512_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -5746,7 +5746,7 @@ pub(crate) const VG_SHA512_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_update_scratch_shani(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+1328], rbx
+        r"mov QWORD PTR [r8+1328], rbx
 mov QWORD PTR [r8+1336], rbp
 mov QWORD PTR [r8+1344], r12
 mov QWORD PTR [r8+1352], r13
@@ -5911,7 +5911,7 @@ pub(crate) const VG_SHA512_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_finalize_scratch_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+1328], rbx
+        r"mov QWORD PTR [rcx+1328], rbx
 mov QWORD PTR [rcx+1336], rbp
 mov QWORD PTR [rcx+1344], r12
 mov QWORD PTR [rcx+1352], r13
@@ -6078,7 +6078,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -6241,7 +6241,7 @@ pub(crate) const VG_SHA512_224_FINALIZE_AVX2_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_224_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -6404,7 +6404,7 @@ pub(crate) const VG_SHA512_224_FINALIZE_SHANI_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_224_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -6563,7 +6563,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -6726,7 +6726,7 @@ pub(crate) const VG_SHA512_256_FINALIZE_AVX2_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_256_finalize_avx2(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx
@@ -6889,7 +6889,7 @@ pub(crate) const VG_SHA512_256_FINALIZE_SHANI_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha512_256_finalize_shani(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1384]
+        r"lea rsp, [rsp-1384]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+1328], rbx

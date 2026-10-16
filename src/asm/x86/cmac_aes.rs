@@ -24,7 +24,7 @@ pub(crate) const VG_CMAC_AES_SUBKEYS_AESNI_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_subkeys_aesni(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+2064], ebx
 mov DWORD PTR [eax+2068], esi
 mov DWORD PTR [eax+2072], edi
@@ -163,7 +163,7 @@ pub(crate) const VG_CMAC_AES_UPDATE_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_update_aesni(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+2064], ebx
 mov DWORD PTR [eax+2068], esi
 mov DWORD PTR [eax+2072], edi
@@ -261,7 +261,7 @@ pub(crate) const VG_CMAC_AES_FINALIZE_AESNI_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize_aesni(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+2064], ebx
 mov DWORD PTR [eax+2068], esi
 mov DWORD PTR [eax+2072], edi
@@ -404,7 +404,7 @@ pub(crate) const VG_CMAC_AES_INIT_AESNI_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2324]
+        r"lea esp, [esp-2324]
 mov eax, DWORD PTR [esp+2328]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2332]
@@ -487,7 +487,7 @@ pub(crate) const VG_CMAC_AES_ABSORB_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2336]
+        r"lea esp, [esp-2336]
 mov eax, DWORD PTR [esp+2340]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2344]
@@ -660,7 +660,7 @@ pub(crate) const VG_CMAC_AES_FINISH_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2332]
+        r"lea esp, [esp-2332]
 mov eax, DWORD PTR [esp+2336]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2340]
@@ -754,7 +754,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+2064], ebx
 mov DWORD PTR [eax+2068], esi
 mov DWORD PTR [eax+2072], edi
@@ -889,7 +889,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+2064], ebx
 mov DWORD PTR [eax+2068], esi
 mov DWORD PTR [eax+2072], edi
@@ -983,7 +983,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+2064], ebx
 mov DWORD PTR [eax+2068], esi
 mov DWORD PTR [eax+2072], edi
@@ -1122,7 +1122,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2324]
+        r"lea esp, [esp-2324]
 mov eax, DWORD PTR [esp+2328]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2332]
@@ -1201,7 +1201,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2336]
+        r"lea esp, [esp-2336]
 mov eax, DWORD PTR [esp+2340]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2344]
@@ -1370,7 +1370,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2332]
+        r"lea esp, [esp-2332]
 mov eax, DWORD PTR [esp+2336]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2340]

@@ -14,7 +14,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, 1732584193
 mov DWORD PTR [eax], ecx
 mov ecx, -271733879
@@ -45,7 +45,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_compress(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+64], ebx
 mov DWORD PTR [eax+68], esi
 mov DWORD PTR [eax+72], edi
@@ -1437,7 +1437,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-188]
+        r"lea esp, [esp-188]
 mov eax, DWORD PTR [esp+192]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+196]
@@ -1593,7 +1593,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-184]
+        r"lea esp, [esp-184]
 mov eax, DWORD PTR [esp+188]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+192]
@@ -1732,7 +1732,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_update_scratch(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi
@@ -1875,7 +1875,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_finalize_scratch(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi
@@ -2003,7 +2003,7 @@ pub(crate) const VG_SHA1_COMPRESS_SHANI_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_compress_shani(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        "mov edx, DWORD PTR [esp+4]
+        r"mov edx, DWORD PTR [esp+4]
 movdqu xmm0, XMMWORD PTR [edx]
 pshufd xmm0, xmm0, 27
 movdqu xmm1, XMMWORD PTR [edx+4]
@@ -2206,7 +2206,7 @@ pub(crate) const VG_SHA1_UPDATE_SHANI_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_update_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-188]
+        r"lea esp, [esp-188]
 mov eax, DWORD PTR [esp+192]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+196]
@@ -2366,7 +2366,7 @@ pub(crate) const VG_SHA1_FINALIZE_SHANI_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_finalize_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-184]
+        r"lea esp, [esp-184]
 mov eax, DWORD PTR [esp+188]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+192]
@@ -2509,7 +2509,7 @@ pub(crate) const VG_SHA1_UPDATE_SCRATCH_SHANI_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_update_scratch_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi
@@ -2656,7 +2656,7 @@ pub(crate) const VG_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_finalize_scratch_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi

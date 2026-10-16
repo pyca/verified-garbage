@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_scalar_mul_add(out: *mut [u8; 32], r: *const [u8; 32], k: *const [u8; 32], s: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8], rbx
+        r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
 mov QWORD PTR [r8+16], r12
 mov QWORD PTR [r8+24], r13
@@ -295,7 +295,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_scalar_reduce(out: *mut [u8; 32], wide: *const [u8; 64], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -416,7 +416,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_scalar_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -1642,7 +1642,7 @@ pub(crate) const VG_ED25519_SCALAR_BASE_ADX_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_scalar_base_adx(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -2464,7 +2464,7 @@ pub(crate) const VG_ED25519_SCALAR_BASE_IFMA_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_scalar_base_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -5683,7 +5683,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_equation(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, rdx
+        r"mov rax, rdx
 mov rdx, rcx
 mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -25647,7 +25647,7 @@ pub(crate) const VG_ED25519_VERIFY_EQUATION_ADX_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_equation_adx(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, rdx
+        r"mov rax, rdx
 mov rdx, rcx
 mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -40277,7 +40277,7 @@ pub(crate) const VG_ED25519_VERIFY_EQUATION_IFMA_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_equation_ifma(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, rdx
+        r"mov rax, rdx
 mov rdx, rcx
 mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
@@ -55045,7 +55045,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -55125,7 +55125,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -55242,7 +55242,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -55480,7 +55480,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_adx(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -55564,7 +55564,7 @@ pub(crate) const VG_ED25519_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -55685,7 +55685,7 @@ pub(crate) const VG_ED25519_SIGN_CACHED_ADX_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_adx(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -55923,7 +55923,7 @@ pub(crate) const VG_ED25519_VERIFY_IFMA_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -56041,7 +56041,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_IFMA_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_ifma(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -56128,7 +56128,7 @@ pub(crate) const VG_ED25519_SIGN_CACHED_IFMA_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_ifma(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -56366,7 +56366,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_AVX2_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_avx2(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -56450,7 +56450,7 @@ pub(crate) const VG_ED25519_VERIFY_AVX2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -56571,7 +56571,7 @@ pub(crate) const VG_ED25519_SIGN_CACHED_AVX2_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_avx2(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -56809,7 +56809,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_AVX2_ADX_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_avx2_adx(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -56893,7 +56893,7 @@ pub(crate) const VG_ED25519_VERIFY_AVX2_ADX_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -57014,7 +57014,7 @@ pub(crate) const VG_ED25519_SIGN_CACHED_AVX2_ADX_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_avx2_adx(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -57252,7 +57252,7 @@ pub(crate) const VG_ED25519_VERIFY_AVX2_IFMA_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_avx2_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -57370,7 +57370,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_AVX2_IFMA_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_avx2_ifma(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -57457,7 +57457,7 @@ pub(crate) const VG_ED25519_SIGN_CACHED_AVX2_IFMA_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_avx2_ifma(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -57695,7 +57695,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_SHANI_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_shani(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -57779,7 +57779,7 @@ pub(crate) const VG_ED25519_VERIFY_SHANI_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -57900,7 +57900,7 @@ pub(crate) const VG_ED25519_SIGN_CACHED_SHANI_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_shani(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -58138,7 +58138,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_SHANI_ADX_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_shani_adx(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -58222,7 +58222,7 @@ pub(crate) const VG_ED25519_VERIFY_SHANI_ADX_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani_adx(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -58343,7 +58343,7 @@ pub(crate) const VG_ED25519_SIGN_CACHED_SHANI_ADX_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_shani_adx(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -58581,7 +58581,7 @@ pub(crate) const VG_ED25519_VERIFY_SHANI_IFMA_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_verify_shani_ifma(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -58699,7 +58699,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_SHANI_IFMA_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_public_key_shani_ifma(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rax
@@ -58786,7 +58786,7 @@ pub(crate) const VG_ED25519_SIGN_CACHED_SHANI_IFMA_FEATURES: crate::cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_sign_cached_shani_ifma(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx

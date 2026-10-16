@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "cbz x2, 20f
+        r"cbz x2, 20f
 22:
 ldr w4, [x0, #0]
 ldr w5, [x0, #4]
@@ -2761,7 +2761,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        "movz w9, #5743, lsl #0
+        r"movz w9, #5743, lsl #0
 movk w9, #29568, lsl #16
 str w9, [x0, #0]
 movz w9, #45753, lsl #0
@@ -2803,7 +2803,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #112
+        r"sub sp, sp, #112
 add x4, sp, #0
 str x30, [sp, #-16]!
 str x19, [x4, #64]
@@ -2973,7 +2973,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #112
+        r"sub sp, sp, #112
 add x3, sp, #0
 str x30, [sp, #-16]!
 str x19, [x3, #64]

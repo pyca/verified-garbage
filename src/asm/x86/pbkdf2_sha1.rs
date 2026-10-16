@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_iterate(key: *const [u8; 168], u: *const [u8; 20], n: u32, t: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+160], ebx
 mov DWORD PTR [eax+164], esi
 mov DWORD PTR [eax+168], edi
@@ -193,7 +193,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1156]
+        r"lea esp, [esp-1156]
 mov eax, DWORD PTR [esp+1160]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1164]
@@ -474,7 +474,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA1_ITERATE_SHANI_FEATURES: crate::cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_iterate_shani(key: *const [u8; 168], u: *const [u8; 20], n: u32, t: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+160], ebx
 mov DWORD PTR [eax+164], esi
 mov DWORD PTR [eax+168], edi
@@ -651,7 +651,7 @@ pub(crate) const VG_PBKDF2_HMAC_SHA1_SHANI_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1156]
+        r"lea esp, [esp-1156]
 mov eax, DWORD PTR [esp+1160]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1164]

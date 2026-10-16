@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p384_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "add w1, w1, #0
+        r"add w1, w1, #0
 add w2, w2, #0
 add w3, w3, #0
 mov v16.d[0], x21
@@ -354,7 +354,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p384_sqr_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "add w1, w1, #0
+        r"add w1, w1, #0
 add w2, w2, #0
 add w3, w3, #0
 mov v16.d[0], x21
@@ -634,7 +634,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p384_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "add w1, w1, #0
+        r"add w1, w1, #0
 add w2, w2, #0
 add w3, w3, #0
 mov v16.d[0], x26

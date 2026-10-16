@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-532]
+        r"lea esp, [esp-532]
 mov eax, DWORD PTR [esp+536]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+540]
@@ -2053,7 +2053,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_encrypt_block(schedule: *const [u8; 384], data: *mut [u8; 8], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+12]
+        r"mov eax, DWORD PTR [esp+12]
 mov DWORD PTR [eax], ebp
 mov DWORD PTR [eax+4], ebx
 mov DWORD PTR [eax+8], esi
@@ -8262,7 +8262,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_decrypt_block(schedule: *const [u8; 384], data: *mut [u8; 8], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+12]
+        r"mov eax, DWORD PTR [esp+12]
 mov DWORD PTR [eax], ebp
 mov DWORD PTR [eax+4], ebx
 mov DWORD PTR [eax+8], esi
@@ -14471,7 +14471,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1044]
+        r"lea esp, [esp-1044]
 mov eax, DWORD PTR [esp+1048]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1052]
@@ -14792,7 +14792,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1044]
+        r"lea esp, [esp-1044]
 mov eax, DWORD PTR [esp+1048]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1052]

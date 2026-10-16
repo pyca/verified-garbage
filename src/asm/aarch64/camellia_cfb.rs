@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_cfb128_encrypt(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #3248
+        r"sub sp, sp, #3248
 add x5, sp, #0
 add x5, x5, #0
 str x19, [x5, #3152]
@@ -2678,7 +2678,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_cfb128_decrypt(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #3248
+        r"sub sp, sp, #3248
 add x5, sp, #0
 add x5, x5, #0
 str x19, [x5, #3152]

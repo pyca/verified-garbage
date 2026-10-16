@@ -22,7 +22,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p521_sha512_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-340]
+        r"lea esp, [esp-340]
 mov DWORD PTR [esp+180], ebx
 mov DWORD PTR [esp+184], esi
 mov DWORD PTR [esp+188], edi

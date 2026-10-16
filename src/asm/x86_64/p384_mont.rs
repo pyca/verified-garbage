@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_mul_mod_p(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 mov edx, edx
 mov ecx, ecx
 movq xmm0, rbx
@@ -869,7 +869,7 @@ pub(crate) const VG_P384_MUL_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_mul_mod_p_adx(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 mov edx, edx
 mov ecx, ecx
 movq xmm0, rbx
@@ -1442,7 +1442,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_mul_mod_n(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 mov edx, edx
 mov ecx, ecx
 movq xmm0, rbx
@@ -2136,7 +2136,7 @@ pub(crate) const VG_P384_MUL_MOD_N_ADX_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_mul_mod_n_adx(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 mov edx, edx
 mov ecx, ecx
 movq xmm0, rbx

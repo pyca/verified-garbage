@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-456]
+        r"lea rsp, [rsp-456]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+160], rbx
@@ -159,7 +159,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-456]
+        r"lea rsp, [rsp-456]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+160], rbx
@@ -271,7 +271,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_scratch(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+160], rbx
+        r"mov QWORD PTR [r8+160], rbx
 mov QWORD PTR [r8+168], rbp
 mov QWORD PTR [r8+176], r12
 mov QWORD PTR [r8+184], r13
@@ -411,7 +411,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_scratch(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+160], rbx
+        r"mov QWORD PTR [r8+160], rbx
 mov QWORD PTR [r8+168], rbp
 mov QWORD PTR [r8+176], r12
 mov QWORD PTR [r8+184], r13
@@ -521,7 +521,7 @@ pub(crate) const VG_HMAC_SHA1_INIT_SHANI_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-456]
+        r"lea rsp, [rsp-456]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+160], rbx
@@ -667,7 +667,7 @@ pub(crate) const VG_HMAC_SHA1_FINALIZE_SHANI_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_shani(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-456]
+        r"lea rsp, [rsp-456]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+160], rbx
@@ -783,7 +783,7 @@ pub(crate) const VG_HMAC_SHA1_INIT_SCRATCH_SHANI_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_init_scratch_shani(inner: *mut [u8; 84], outer: *mut [u8; 84], key: *const u8, key_len: usize, scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+160], rbx
+        r"mov QWORD PTR [r8+160], rbx
 mov QWORD PTR [r8+168], rbp
 mov QWORD PTR [r8+176], r12
 mov QWORD PTR [r8+184], r13
@@ -927,7 +927,7 @@ pub(crate) const VG_HMAC_SHA1_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Featu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_hmac_sha1_finalize_scratch_shani(inner: *mut [u8; 84], outer: *const [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+160], rbx
+        r"mov QWORD PTR [r8+160], rbx
 mov QWORD PTR [r8+168], rbp
 mov QWORD PTR [r8+176], r12
 mov QWORD PTR [r8+184], r13

@@ -24,7 +24,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p192_sign(out: *mut [u8; 48], d: *const [u8; 24], digest: *const [u8; 24], k: *const [u8; 24], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax], ebx
 mov DWORD PTR [eax+4], esi
 mov DWORD PTR [eax+8], edi
@@ -1132,7 +1132,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p192_verify(public: *const [u8; 49], digest: *const [u8; 24], sig: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax], ebx
 mov DWORD PTR [eax+4], esi
 mov DWORD PTR [eax+8], edi

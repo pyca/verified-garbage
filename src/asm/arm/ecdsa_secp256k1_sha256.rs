@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_secp256k1_sha256_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #216
+        r"sub sp, sp, #216
 add r12, sp, #0
 str r4, [r12, #180]
 str r5, [r12, #184]

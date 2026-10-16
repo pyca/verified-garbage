@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_brainpoolp384r1_inv_mod_p(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+1504], rbx
+        r"mov QWORD PTR [rdi+1504], rbx
 mov QWORD PTR [rdi+1512], rbp
 mov QWORD PTR [rdi+1520], r12
 mov QWORD PTR [rdi+1528], r13
@@ -3290,7 +3290,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_brainpoolp384r1_inv_mod_n(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+1504], rbx
+        r"mov QWORD PTR [rdi+1504], rbx
 mov QWORD PTR [rdi+1512], rbp
 mov QWORD PTR [rdi+1520], r12
 mov QWORD PTR [rdi+1528], r13

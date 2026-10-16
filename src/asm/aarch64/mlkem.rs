@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "movz x9, #3329, lsl #0
+        r"movz x9, #3329, lsl #0
 dup v16.4s, w9
 movz x10, #64, lsl #0
 20:
@@ -51,7 +51,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "movz x9, #3329, lsl #0
+        r"movz x9, #3329, lsl #0
 dup v16.4s, w9
 movz x10, #64, lsl #0
 20:
@@ -84,7 +84,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_encode12(f: *const [u32; 256], out: *mut [u8; 384]) {
     core::arch::naked_asm!(
-        "movz x9, #256, lsl #0
+        r"movz x9, #256, lsl #0
 movk x9, #1026, lsl #16
 movk x9, #1541, lsl #32
 movk x9, #2312, lsl #48
@@ -129,7 +129,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_decode12(b: *const [u8; 384], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "movz x9, #256, lsl #0
+        r"movz x9, #256, lsl #0
 movk x9, #65282, lsl #16
 movk x9, #1027, lsl #32
 movk x9, #65285, lsl #48
@@ -182,7 +182,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "movz x9, #3329, lsl #0
+        r"movz x9, #3329, lsl #0
 dup v16.4s, w9
 movz x9, #3327, lsl #0
 dup v17.4s, w9
@@ -279,7 +279,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "movz x6, #65472, lsl #0
+        r"movz x6, #65472, lsl #0
 movk x6, #3, lsl #16
 movk x6, #0, lsl #32
 movk x6, #0, lsl #48
@@ -478,7 +478,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "movz x5, #3329, lsl #0
+        r"movz x5, #3329, lsl #0
 movk x5, #0, lsl #16
 movk x5, #0, lsl #32
 movk x5, #0, lsl #48
@@ -674,7 +674,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_multiply_ntts(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "movz x9, #17, lsl #0
+        r"movz x9, #17, lsl #0
 str w9, [x3, #0]
 movz x9, #3312, lsl #0
 str w9, [x3, #4]
@@ -993,7 +993,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "movz x9, #1062, lsl #0
+        r"movz x9, #1062, lsl #0
 movk x9, #296, lsl #16
 movk x9, #2447, lsl #32
 movk x9, #0, lsl #48
@@ -1606,7 +1606,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "movz x9, #1746, lsl #0
+        r"movz x9, #1746, lsl #0
 movk x9, #821, lsl #16
 movk x9, #1974, lsl #32
 movk x9, #0, lsl #48
@@ -2281,7 +2281,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_sample_ntt(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "str x25, [x2, #1680]
+        r"str x25, [x2, #1680]
 str x26, [x2, #1688]
 str x30, [x2, #1696]
 str x24, [x2, #1704]
@@ -2536,7 +2536,7 @@ pub(crate) const VG_MLKEM_SAMPLE_NTT_SHA3_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_sample_ntt_sha3(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x25, [x2, #1680]
 str x26, [x2, #1688]
 str x30, [x2, #1696]

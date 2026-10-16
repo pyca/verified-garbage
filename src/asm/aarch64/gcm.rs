@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "cbz x3, 20f
+        r"cbz x3, 20f
 22:
 ldr x5, [x1, #0]
 rev x5, x5
@@ -233,7 +233,7 @@ pub(crate) const VG_GHASH_AES_FEATURES: crate::cpu::Features = crate::cpu::Featu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ghash_aes(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 ldr q6, [x0, #0]
 rev64 v6.16b, v6.16b
 movz x5, #49664, lsl #48
@@ -709,7 +709,7 @@ pub(crate) const VG_AES_GCM_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2560
 add x3, sp, #0
 str x20, [x3, #136]
@@ -786,7 +786,7 @@ pub(crate) const VG_AES_GCM_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2576
 add x16, sp, #0
 ldr x17, [sp, #2576]
@@ -1241,7 +1241,7 @@ pub(crate) const VG_AES_GCM_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
@@ -1765,7 +1765,7 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AES_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2560
 add x4, sp, #0
 str x20, [x4, #136]
@@ -1905,7 +1905,7 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AES_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2560
 add x5, sp, #0
 str x20, [x5, #136]
@@ -2037,7 +2037,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2560
 add x7, sp, #0
 str x20, [x7, #136]
@@ -2301,7 +2301,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2560
 add x7, sp, #0
 str x20, [x7, #136]
@@ -2564,7 +2564,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AES_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2560
 add x6, sp, #0
 str x20, [x6, #136]
@@ -2690,7 +2690,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AES_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2560
 add x7, sp, #0
 str x20, [x7, #136]
@@ -2925,7 +2925,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AES_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #16
 add x16, sp, #0
 str x30, [x16, #8]
@@ -2995,7 +2995,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2560
+        r"sub sp, sp, #2560
 add x3, sp, #0
 str x20, [x3, #136]
 str x21, [x3, #144]
@@ -3066,7 +3066,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2576
+        r"sub sp, sp, #2576
 add x16, sp, #0
 ldr x17, [sp, #2576]
 str x17, [x16, #0]
@@ -3515,7 +3515,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #2592
+        r"sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
 str x17, [x16, #0]
@@ -4033,7 +4033,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2560
+        r"sub sp, sp, #2560
 add x4, sp, #0
 str x20, [x4, #136]
 str x21, [x4, #144]
@@ -4167,7 +4167,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2560
+        r"sub sp, sp, #2560
 add x5, sp, #0
 str x20, [x5, #136]
 str x21, [x5, #144]
@@ -4293,7 +4293,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2560
+        r"sub sp, sp, #2560
 add x7, sp, #0
 str x20, [x7, #136]
 str x21, [x7, #144]
@@ -4551,7 +4551,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2560
+        r"sub sp, sp, #2560
 add x7, sp, #0
 str x20, [x7, #136]
 str x21, [x7, #144]
@@ -4808,7 +4808,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2560
+        r"sub sp, sp, #2560
 add x6, sp, #0
 str x20, [x6, #136]
 str x21, [x6, #144]
@@ -4928,7 +4928,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #2560
+        r"sub sp, sp, #2560
 add x7, sp, #0
 str x20, [x7, #136]
 str x21, [x7, #144]
@@ -5157,7 +5157,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #16
+        r"sub sp, sp, #16
 add x16, sp, #0
 str x30, [x16, #8]
 ldr x17, [sp, #32]

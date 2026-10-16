@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_cbc_init(key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #576
+        r"sub sp, sp, #576
 add x6, sp, #0
 sub x8, x1, #1
 lsr x8, x8, #7
@@ -148,7 +148,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_cbc_encrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #576
+        r"sub sp, sp, #576
 add x6, sp, #0
 cbz x5, 20f
 str x30, [sp, #-16]!
@@ -312,7 +312,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_cbc_decrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #576
+        r"sub sp, sp, #576
 add x6, sp, #0
 cbz x5, 20f
 str x30, [sp, #-16]!
@@ -476,7 +476,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_cbc_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "str x23, [x4, #264]
+        r"str x23, [x4, #264]
 str x24, [x4, #272]
 str x30, [x4, #280]
 add x23, x1, #0
@@ -525,7 +525,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_cbc_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "str x23, [x4, #264]
+        r"str x23, [x4, #264]
 str x24, [x4, #272]
 str x30, [x4, #280]
 add x23, x1, #0
@@ -2068,7 +2068,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_expand_key(key: *const u8, key_len: usize, effective_bits: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "str x23, [x4, #0]
+        r"str x23, [x4, #0]
 str x24, [x4, #8]
 str x19, [x4, #16]
 str x20, [x4, #24]
@@ -2740,7 +2740,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "str x19, [x2, #0]
+        r"str x19, [x2, #0]
 str x20, [x2, #8]
 str x21, [x2, #16]
 str x22, [x2, #24]
@@ -3900,7 +3900,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rc2_decrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "str x19, [x2, #0]
+        r"str x19, [x2, #0]
 str x20, [x2, #8]
 str x21, [x2, #16]
 str x22, [x2, #24]

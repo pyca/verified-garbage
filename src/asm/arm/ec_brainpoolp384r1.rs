@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ec_brainpoolp384r1_public_key(out: *mut [u8; 97], d: *const [u8; 48], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov r12, r2
+        r"mov r12, r2
 str r4, [r12, #0]
 str r5, [r12, #4]
 str r6, [r12, #8]

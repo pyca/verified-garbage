@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_r64_double_ext(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -1450,7 +1450,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_r64_add_cached_ext(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -2977,7 +2977,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_r64_add_cached_proj(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -4335,7 +4335,7 @@ pub(crate) const VG_ED25519_R64_DOUBLE_EXT_ADX_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_r64_double_ext_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -5091,7 +5091,7 @@ pub(crate) const VG_ED25519_R64_ADD_CACHED_EXT_ADX_FEATURES: crate::cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_r64_add_cached_ext_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -5910,7 +5910,7 @@ pub(crate) const VG_ED25519_R64_ADD_CACHED_PROJ_ADX_FEATURES: crate::cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_r64_add_cached_proj_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -6641,7 +6641,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_r64_add_affine_ext(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -8020,7 +8020,7 @@ pub(crate) const VG_ED25519_R64_ADD_AFFINE_EXT_ADX_FEATURES: crate::cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ed25519_r64_add_affine_ext_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14

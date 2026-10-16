@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_r64_double_ext(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov v16.d[0], x20
+        r"mov v16.d[0], x20
 mov v16.d[1], x21
 mov v17.d[0], x22
 mov v17.d[1], x23
@@ -905,7 +905,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_r64_add_affine_ext(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov v16.d[0], x20
+        r"mov v16.d[0], x20
 mov v16.d[1], x21
 mov v17.d[0], x22
 mov v17.d[1], x23

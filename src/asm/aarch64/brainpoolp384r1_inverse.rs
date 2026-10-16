@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_inv_mod_p(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x0, #3832]
+        r"str x19, [x0, #3832]
 movz x11, #1, lsl #0
 movz x12, #0, lsl #0
 movz x1, #1, lsl #0
@@ -1774,7 +1774,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_inv_mod_n(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x0, #3832]
+        r"str x19, [x0, #3832]
 movz x11, #1, lsl #0
 movz x12, #0, lsl #0
 movz x1, #1, lsl #0

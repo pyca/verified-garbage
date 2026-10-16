@@ -14,7 +14,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ct_eq(a: *const u8, a_len: usize, b: *const u8, b_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "movz x4, #0, lsl #0
+        r"movz x4, #0, lsl #0
 sub x9, x1, x3
 cbz x9, 20f
 movz w0, #0, lsl #0

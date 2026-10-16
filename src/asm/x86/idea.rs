@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_expand_key(key: *const [u8; 16], schedule: *mut [u8; 104]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [esp+8]
 mov edx, DWORD PTR [eax]
 ror edx, 8
@@ -433,7 +433,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_invert_key(schedule: *const [u8; 104], inverse: *mut [u8; 104]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-32]
+        r"lea esp, [esp-32]
 mov eax, DWORD PTR [esp+36]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+40]
@@ -1545,7 +1545,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_ecb(schedule: *const [u8; 104], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-152]
+        r"lea esp, [esp-152]
 mov eax, DWORD PTR [esp+156]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+160]

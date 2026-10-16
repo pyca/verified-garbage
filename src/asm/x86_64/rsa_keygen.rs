@@ -30,7 +30,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_keygen_key(n: *mut u8, n_len: usize, d: *mut u8, d_len: usize, p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, e: *const u8, e_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+88]
+        r"mov r11, QWORD PTR [rsp+88]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -5089,7 +5089,7 @@ pub(crate) const VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_keygen_candidate_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], e: *const u8, e_len: usize, p: *const u8, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+32]
+        r"mov r11, QWORD PTR [rsp+32]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -26471,7 +26471,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_keygen_candidate(out: *mut u8, out_len: usize, used: *mut [u64; 1], e: *const u8, e_len: usize, p: *const u8, p_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+32]
+        r"mov r11, QWORD PTR [rsp+32]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12

@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_block(state: *const [u32; 16], buf: *mut [u32; 64]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+8]
+        r"mov eax, DWORD PTR [esp+8]
 mov ecx, DWORD PTR [esp+4]
 mov DWORD PTR [eax+64], ebx
 mov DWORD PTR [eax+68], esi
@@ -1732,7 +1732,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+256], ebx
 mov DWORD PTR [eax+260], esi
 mov DWORD PTR [eax+264], edi
@@ -4360,7 +4360,7 @@ pub(crate) const VG_CHACHA20_XOR_SSSE3_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_xor_ssse3(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+256], ebx
 mov DWORD PTR [eax+260], esi
 mov DWORD PTR [eax+264], edi
@@ -6834,7 +6834,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [esp+8]
 movdqu xmm1, XMMWORD PTR [ecx]
 movdqu xmm2, XMMWORD PTR [ecx+16]
@@ -6887,7 +6887,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov edx, DWORD PTR [esp+8]
 movdqu xmm0, XMMWORD PTR [edx]
 mov ecx, 0
@@ -6939,7 +6939,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [eax+128]
 mov edx, DWORD PTR [eax+132]
 sub ecx, DWORD PTR [esp+12]
@@ -7086,7 +7086,7 @@ pub(crate) const VG_CHACHA20_APPLY_SSSE3_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_apply_ssse3(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [eax+128]
 mov edx, DWORD PTR [eax+132]
 sub ecx, DWORD PTR [esp+12]

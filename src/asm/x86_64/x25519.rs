@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_x25519(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov r8, QWORD PTR [rdx]
+        r"mov r8, QWORD PTR [rdx]
 mov r9, QWORD PTR [rdx+8]
 mov r10, QWORD PTR [rdx+16]
 mov r11, QWORD PTR [rdx+24]
@@ -2123,7 +2123,7 @@ pub(crate) const VG_X25519_ADX_FEATURES: crate::cpu::Features = crate::cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_x25519_adx(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov r8, QWORD PTR [rdx]
+        r"mov r8, QWORD PTR [rdx]
 mov r9, QWORD PTR [rdx+8]
 mov r10, QWORD PTR [rdx+16]
 mov r11, QWORD PTR [rdx+24]
@@ -3406,7 +3406,7 @@ pub(crate) const VG_X25519_IFMA_FEATURES: crate::cpu::Features = crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_x25519_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov r8, QWORD PTR [rdx]
+        r"mov r8, QWORD PTR [rdx]
 mov r9, QWORD PTR [rdx+8]
 mov r10, QWORD PTR [rdx+16]
 mov r11, QWORD PTR [rdx+24]
@@ -4584,7 +4584,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -5817,7 +5817,7 @@ pub(crate) const VG_X25519_BASE_ADX_FEATURES: crate::cpu::Features = crate::cpu:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_x25519_base_adx(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -6646,7 +6646,7 @@ pub(crate) const VG_X25519_BASE_IFMA_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_x25519_base_ifma(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13

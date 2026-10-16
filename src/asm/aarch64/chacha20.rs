@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_block(state: *const [u32; 16], buf: *mut [u32; 64]) {
     core::arch::naked_asm!(
-        "ldr w2, [x0, #0]
+        r"ldr w2, [x0, #0]
 ldr w3, [x0, #4]
 ldr w4, [x0, #8]
 ldr w5, [x0, #12]
@@ -1061,7 +1061,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        "ldr x9, [x1, #0]
+        r"ldr x9, [x1, #0]
 ldr x10, [x1, #8]
 ldr x11, [x1, #16]
 ldr x12, [x1, #24]
@@ -1107,7 +1107,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        "ldr x9, [x1, #0]
+        r"ldr x9, [x1, #0]
 ldr x10, [x1, #8]
 ldr w11, [x1, #0]
 str x9, [x0, #48]
@@ -1149,7 +1149,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_xor_neon(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "lsr x5, x2, #6
+        r"lsr x5, x2, #6
 sub x5, x5, #8
 lsr x5, x5, #63
 cbnz x5, 20f
@@ -3364,7 +3364,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_apply_neon(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x9, [x0, #128]
+        r"ldr x9, [x0, #128]
 subs x13, x9, x2
 movz x11, #0, lsl #0
 adcs x11, x11, x11
@@ -3497,7 +3497,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "str x19, [x3, #256]
+        r"str x19, [x3, #256]
 str x20, [x3, #264]
 str x30, [x3, #272]
 add x19, x1, #0
@@ -3555,7 +3555,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x9, [x0, #128]
+        r"ldr x9, [x0, #128]
 subs x13, x9, x2
 movz x11, #0, lsl #0
 adcs x11, x11, x11
@@ -3692,7 +3692,7 @@ pub(crate) const VG_CHACHA20_XOR_SVE2_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_xor_sve2(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        ".arch_extension sve2
+        r".arch_extension sve2
 lsr x5, x2, #6
 sub x5, x5, #8
 lsr x5, x5, #63
@@ -5769,7 +5769,7 @@ pub(crate) const VG_CHACHA20_APPLY_SVE2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_apply_sve2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sve2
+        r".arch_extension sve2
 ldr x9, [x0, #128]
 subs x13, x9, x2
 movz x11, #0, lsl #0

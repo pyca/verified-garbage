@@ -25,7 +25,7 @@ pub(crate) const VG_CMAC_AES_UPDATE_AESNI_CBC_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_update_aesni_cbc(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "test r8, r8
+        r"test r8, r8
 je 20f
 movdqu xmm1, XMMWORD PTR [rdi]
 movdqu xmm0, XMMWORD PTR [rdx]
@@ -146,7 +146,7 @@ pub(crate) const VG_CMAC_AES_SUBKEYS_AESNI_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_subkeys_aesni(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+2064], rbx
+        r"mov QWORD PTR [rcx+2064], rbx
 mov QWORD PTR [rcx+2072], rbp
 mov rbx, rdx
 mov rbp, rcx
@@ -230,7 +230,7 @@ pub(crate) const VG_CMAC_AES_UPDATE_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_update_aesni(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx
+        r"mov QWORD PTR [r9+2064], rbx
 mov QWORD PTR [r9+2072], rbp
 mov QWORD PTR [r9+2080], r12
 mov QWORD PTR [r9+2088], r13
@@ -304,7 +304,7 @@ pub(crate) const VG_CMAC_AES_FINALIZE_AESNI_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finalize_aesni(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "cmp r8, 16
+        r"cmp r8, 16
 je 20f
 mov eax, 0
 mov QWORD PTR [r9+2048], rax
@@ -380,7 +380,7 @@ pub(crate) const VG_CMAC_AES_INIT_AESNI_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init_aesni(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]
+        r"lea rsp, [rsp-2312]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+2176], rbx
@@ -436,7 +436,7 @@ pub(crate) const VG_CMAC_AES_FINISH_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finish_aesni(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]
+        r"lea rsp, [rsp-2312]
 mov r8, rsp
 add r8, 8
 mov rax, QWORD PTR [rdi+272]
@@ -482,7 +482,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+2064], rbx
+        r"mov QWORD PTR [rcx+2064], rbx
 mov QWORD PTR [rcx+2072], rbp
 mov rbx, rdx
 mov rbp, rcx
@@ -562,7 +562,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx
+        r"mov QWORD PTR [r9+2064], rbx
 mov QWORD PTR [r9+2072], rbp
 mov QWORD PTR [r9+2080], r12
 mov QWORD PTR [r9+2088], r13
@@ -632,7 +632,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "cmp r8, 16
+        r"cmp r8, 16
 je 20f
 mov eax, 0
 mov QWORD PTR [r9+2048], rax
@@ -704,7 +704,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]
+        r"lea rsp, [rsp-2312]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+2176], rbx
@@ -756,7 +756,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]
+        r"lea rsp, [rsp-2312]
 mov r8, rsp
 add r8, 8
 mov rax, QWORD PTR [rdi+272]
@@ -806,7 +806,7 @@ pub(crate) const VG_CMAC_AES_SUBKEYS_VAES_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_subkeys_vaes(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+2064], rbx
+        r"mov QWORD PTR [rcx+2064], rbx
 mov QWORD PTR [rcx+2072], rbp
 mov rbx, rdx
 mov rbp, rcx
@@ -890,7 +890,7 @@ pub(crate) const VG_CMAC_AES_UPDATE_VAES_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_update_vaes(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+2064], rbx
+        r"mov QWORD PTR [r9+2064], rbx
 mov QWORD PTR [r9+2072], rbp
 mov QWORD PTR [r9+2080], r12
 mov QWORD PTR [r9+2088], r13
@@ -964,7 +964,7 @@ pub(crate) const VG_CMAC_AES_FINALIZE_VAES_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finalize_vaes(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "cmp r8, 16
+        r"cmp r8, 16
 je 20f
 mov eax, 0
 mov QWORD PTR [r9+2048], rax
@@ -1040,7 +1040,7 @@ pub(crate) const VG_CMAC_AES_INIT_VAES_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_init_vaes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]
+        r"lea rsp, [rsp-2312]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+2176], rbx
@@ -1096,7 +1096,7 @@ pub(crate) const VG_CMAC_AES_FINISH_VAES_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_finish_vaes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]
+        r"lea rsp, [rsp-2312]
 mov r8, rsp
 add r8, 8
 mov rax, QWORD PTR [rdi+272]
@@ -1144,7 +1144,7 @@ pub(crate) const VG_CMAC_AES_ABSORB_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]
+        r"lea rsp, [rsp-2312]
 mov r9, rsp
 add r9, 8
 mov QWORD PTR [r9+2176], rbx
@@ -1277,7 +1277,7 @@ pub(crate) const VG_CMAC_AES_ABSORB_AESNI_CBC_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb_aesni_cbc(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]
+        r"lea rsp, [rsp-2312]
 mov r9, rsp
 add r9, 8
 mov QWORD PTR [r9+2176], rbx
@@ -1406,7 +1406,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]
+        r"lea rsp, [rsp-2312]
 mov r9, rsp
 add r9, 8
 mov QWORD PTR [r9+2176], rbx
@@ -1539,7 +1539,7 @@ pub(crate) const VG_CMAC_AES_ABSORB_VAES_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_absorb_vaes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-2312]
+        r"lea rsp, [rsp-2312]
 mov r9, rsp
 add r9, 8
 mov QWORD PTR [r9+2176], rbx

@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #3168
+        r"sub sp, sp, #3168
 add x2, sp, #0
 add x5, x2, #0
 str x19, [x5, #3072]
@@ -4388,7 +4388,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize, decrypt: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #3168
+        r"sub sp, sp, #3168
 add x4, sp, #0
 add x5, x4, #0
 str x19, [x5, #3072]
@@ -9163,7 +9163,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 movz x3, #0, lsl #0
 bl {vg_sm4_ecb}
 ldr x30, [sp], #16
@@ -9188,7 +9188,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 movz x3, #1, lsl #0
 bl {vg_sm4_ecb}
 ldr x30, [sp], #16
