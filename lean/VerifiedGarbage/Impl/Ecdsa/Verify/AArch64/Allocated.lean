@@ -50,7 +50,7 @@ def points : Prog isa :=
 def inverseUpdate : List Instr := VerifyAllocatedCode.inverseUpdate
 
 def inverseBatch : Prog isa :=
-  .seq (.block p256.invN.batchStart) (.seq (wsteps 59) (.block inverseUpdate))
+  .seq (.block p256.invN.batchStart) (.seq (.block pwords) (.block inverseUpdate))
 
 def inverseNine : InvCfg :=
   let c := 2^45 * (2^256)^3 % p256.C.n
