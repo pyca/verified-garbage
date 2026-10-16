@@ -280,4 +280,104 @@ theorem Mid.of_frame {P : Params} (hF : Fits P) {s t t' : State} (h : Mid P s t)
     · rw [← b]; exact hf.readW (hc 1 (by omega)) hsl (by decide)
     · rw [← c]; exact hf.readW (hc 2 (by omega)) hsl (by decide)
 
+
+/-! ## `init` -/
+
+theorem mem_preserved_ne_x9 {r : Reg} (hr : r ∈ preserved) : r ≠ .x9 := by
+  rintro rfl; simp [preserved] at hr
+
+theorem init_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} {iv : H.HV} {init : Prog isa}
+    (hi : ∀ s, (initK H iv).pre s → ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧
+      (initK H iv).post s s')
+    (hiw : ∀ r, r ≠ .x9 → ∀ i ∈ instrs init, clobbers i r = false) (hin : init.noCalls = true)
+    {s t : State} (h : S1 P s t) :
+    WP isa init t fun t' => Mid P s t' ∧ t'.gpr .x0 = fb P s ∧ t'.gpr .x2 = dp s ∧
+      t'.gpr .x3 = s.gpr .x1 ∧ H.Repr iv t'.mem (fb P s) [] := by
+  have := hF.lt; have := hF.sl_le; have := sc_le P; have := st_le P
+  have hcov : Covers [stR P s] t.wr :=
+    covers_frame s h.wr fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨0, fb_zero P s, show 0 + (P.N + P.B) ≤ frameBytes P by omega⟩
+  refine WP.inline hi (rd := []) (wr := [stR P s]) ⟨rfl, by simp [State.withRegions, h.x0]⟩
+    (Covers.right hcov) hcov (fun t' hrd hwr habi hf hg hpost => ?_) hin
+  have hk : ∀ r, r ≠ .x9 → t'.gpr r = t.gpr r := fun r hr => hg r (hiw r hr)
+  refine ⟨Mid.of_frame hF h.mid hrd hwr habi.2.1 (fun r hr _ => hk r (mem_preserved_ne_x9 hr)) hf
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact st_sub hF s)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact (st_sl hF s).symm),
+    (hk _ (by decide)).trans h.x0, (hk _ (by decide)).trans h.x2, (hk _ (by decide)).trans h.x3, ?_⟩
+  simpa [initK, State.withRegions, h.x0] using hpost
+
+
+/-! ## `update` -/
+
+theorem updateMain_noFrames {P : Params} {H : Md P.B P.N P.L} {name : String} {code : Prog isa}
+    (hf : CalleeOk H code) : (updateMain P name code).noFrames = true := by
+  simp only [updateMain, updateBody, fill, copy, direct, compressN, compressWith, Code.noFrames,
+    hf.noFrames, Bool.and_self]
+
+/-- The message's bytes are those on entry: the frame is disjoint from it. -/
+theorem data_eq {P : Params} {D : Nat} {s t : State} (hp : Pre P D s) (h : Mid P s t) :
+    bytesAt t.mem (dp s) (len s) = bytesAt s.mem (dp s) (len s) :=
+  bytesAt_congr fun i hi => h.frame.bytes (R := dR s)
+    (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.f_d.symm)
+    (Nat.le_of_lt (s.gpr .x1).isLt) hi
+
+theorem upd_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {iv : H.HV} {D : Nat}
+    {name : String} {code : Prog isa} (hf : CalleeOk H code)
+    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), clobbers i r = false)
+    {s t : State} (hp : Pre P D s) (h : Mid P s t) (h0 : t.gpr .x0 = fb P s) (h2 : t.gpr .x2 = dp s)
+    (h3 : t.gpr .x3 = s.gpr .x1) (hr : H.Repr iv t.mem (fb P s) []) :
+    WP isa (.seq (.block (updArgs P)) (updateMain P name code)) t fun t' =>
+      Mid P s t' ∧ H.Repr iv t'.mem (fb P s) (bytesAt s.mem (dp s) (len s)) := by
+  have := hF.lt; have := hF.sl_le; have := sc_le P; have := st_le P
+  refine WP.seq (WP.mono (Q := fun (t₁ : State) => Mid P s t₁ ∧ t₁.gpr .x0 = fb P s ∧ t₁.gpr .x1 = 0 ∧
+      t₁.gpr .x2 = dp s ∧ t₁.gpr .x3 = s.gpr .x1 ∧ t₁.gpr .x4 = fb P s + BitVec.ofNat 64 (scO P) ∧
+      t₁.mem = t.mem) ?_ fun t₁ ⟨hm, g0, g1, g2, g3, g4, gm⟩ => ?_)
+  · simp only [updArgs]
+    refine wp_movz fun t₁ u₁ => wp_addSp (by omega) fun t₂ u₂ => WP.block_nil ?_
+    have hk : ∀ r, r ≠ .x1 → r ≠ .x4 → t₂.gpr r = t.gpr r := fun r h1 h4 => by
+      rw [u₂.other r h4, u₁.other r h1]
+    refine ⟨Mid.of_frame hF h (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr]) (by rw [u₂.sp, u₁.sp])
+        (fun r hr _ => hk r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr))
+        (rs := []) (fun x _ => by rw [u₂.mem, u₁.mem]) (fun _ hr => absurd hr List.not_mem_nil)
+        (fun _ hr => absurd hr List.not_mem_nil), (hk _ (by decide) (by decide)).trans h0,
+      by rw [u₂.other _ (by decide), u₁.gpr]; rfl, (hk _ (by decide) (by decide)).trans h2,
+      (hk _ (by decide) (by decide)).trans h3, by rw [u₂.gpr, u₁.sp, h.sp], by rw [u₂.mem, u₁.mem]⟩
+  · have hcov : Covers [stR P s, scR P s] t₁.wr :=
+      covers_frame s hm.wr fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact ⟨0, fb_zero P s, show 0 + (P.N + P.B) ≤ frameBytes P by omega⟩
+        · exact ⟨scO P, rfl, show scO P + (P.so + 48) ≤ frameBytes P by omega⟩
+    have hrd : Covers [dR s] t₁.rd := by rw [hm.rd, hp.rd]; exact Covers.refl _
+    have edR : Update.dR (t₁.withRegions [dR s] [stR P s, scR P s]) = dR s := by
+      simp only [Update.dR, Update.dp, Update.len, State.withRegions_gpr, g2, g3]
+    have est : Update.stR P (t₁.withRegions [dR s] [stR P s, scR P s]) = stR P s := by
+      simp only [Update.stR, Update.st, State.withRegions_gpr, g0]
+    have esc : Update.scR P (t₁.withRegions [dR s] [stR P s, scR P s]) = scR P s := by
+      simp only [Update.scR, Update.scr, State.withRegions_gpr, g4]
+    have hpre : Update.Pre P (t₁.withRegions [dR s] [stR P s, scR P s]) :=
+      { rd := by rw [edR]; rfl
+        wr := by rw [est, esc]; rfl
+        st_scr := by rw [est, esc]; exact st_sc hF s
+        d_st := by rw [edR, est]; exact hp.f_d.symm.sub_right (st_sub hF s)
+        d_scr := by rw [edR, esc]; exact hp.f_d.symm.sub_right (sc_sub hF s) }
+    refine WP.narrow (Update.correctMain hd hf hu hpre) (Covers.append (hrd.trans (Covers.refl _)) hcov
+        |>.trans (Covers.refl _)) hcov (fun t' hrd' hwr' hsp' hf' hpost => ?_)
+      (updateMain_noFrames hf)
+    obtain ⟨hg, -, hu'⟩ := hpost
+    refine ⟨Mid.of_frame hF hm hrd' hwr' hsp' (fun r hr h30 => by simpa using hg r hr h30) hf'
+        (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact st_sub hF s
+          · exact sc_sub hF s)
+        (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact (st_sl hF s).symm
+          · exact (sc_sl hF s).symm), ?_⟩
+    have := hu' iv [] (by simpa [g0, gm] using hr) (by simp [g1])
+    simp only [State.withRegions_mem, State.withRegions_gpr, g0, g2, g3, gm, List.nil_append] at this
+    rwa [data_eq hp h] at this
+
 end VG.Proof.MdStream.AArch64.OneShot
