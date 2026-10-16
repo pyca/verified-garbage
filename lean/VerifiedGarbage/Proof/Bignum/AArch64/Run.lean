@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Bignum.AArch64
 public import VerifiedGarbage.Proof.Bignum.Octets
@@ -215,10 +217,7 @@ end
 
 /-- `brun`: symbolic execution of a block by `simp` (see the module doc),
 with extra lemmas (the block's accesses, …). -/
-syntax "brun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| brun) => `(tactic| brun [])
-  | `(tactic| brun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "brun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
@@ -232,6 +231,9 @@ macro_rules
                          wr_mem, c_mem, BitVec.setWidth_eq, off_add, off_zero, Nat.add_zero, Option.some.injEq,
                          exists_eq_left', ite_true, ite_false, reduceCtorEq, true_and, and_true, List.cons_append,
                          List.nil_append, $ls,*]))
+
+/-- `brun []`. -/
+tactic_template "brun" : tactic => `(tactic| brun [])
 
 /-! ## What a block keeps -/
 
