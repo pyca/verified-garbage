@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCtx
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
 import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCT
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # RSAES-OAEP decryption on x86-64
@@ -34,18 +35,14 @@ open VG.Proof.RsaPkcs1Enc.X86_64 (privOf)
 
 def artifacts (v v2 : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
   if emitted v v2 then [
-    { Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G with
-      name := Emit.qualifiedName (Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G).name
-        (parts v v2 ++ [("crt", c.suffix)])
-      target := X86_64.target
-      doc := (Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G).doc
-        (notes := ["This implementation calls `" ++ (privOf c).name ++ "`, hashes the label with `" ++
+    (Spec.RsaOaep.decryptApi v.mgf.G v2.mgf.G).artifact X86_64.target {
+      suffix := Emit.qualifiedName "" (parts v v2 ++ [("crt", c.suffix)])
+      notes := ["This implementation calls `" ++ (privOf c).name ++ "`, hashes the label with `" ++
           v.H.stream.updN ++ "` and unmasks the seed and `DB` with MGF1 calling `" ++ v2.H.stream.updN ++
           "`. The checks of `Y`, `lHash'` and the separator, the scan for it and the shift of the \
           message to the start of `out` are masks computed without branches, reading every byte of \
-          `EM` whatever the outcome."])
+          `EM` whatever the outcome."]
       code := Impl.RsaOaep.X86_64.decrypt v.H.stream v2.H.stream (privOf c).name (privOf c).code
-      contract := Spec.RsaOaep.decryptContract v.mgf.G v2.mgf.G X86_64.abi decStack
       stack := decStack
       verified := dec_verified v.ok v.K v2.ok v2.K v.mgf v2.mgf (privOf c)
       spSafe := dec_spSafe v.ok v.K v2.ok v2.K (privOf c)

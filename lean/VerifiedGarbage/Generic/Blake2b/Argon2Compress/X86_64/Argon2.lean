@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Argon2.X86_64.DeriveVerified
 public import VerifiedGarbage.TCB.Emit
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Argon2 on x86-64, for every BLAKE2b backend and every implementation of G
@@ -24,17 +25,13 @@ namespace VG.Generic.Blake2b.Argon2Compress.X86_64.Argon2
 def artifacts (v : Proof.Blake2.X86_64.Backend) (c : Proof.Argon2.X86_64.CompressImpl) :
     List Artifact :=
   have : Proof.Argon2.X86_64.CompressImpl := c
-  [{ Spec.Argon2.deriveApi with
-    name := Emit.qualifiedName Spec.Argon2.deriveApi.name
-      [("blake2b", v.suffix), ("g", c.suffix)]
-    target := VG.X86_64.target
-    doc := Spec.Argon2.deriveApi.doc
-      (notes := ["Serial lane evaluation honors every positive worker limit. All hashing uses \
+  [Spec.Argon2.deriveApi.artifact VG.X86_64.target {
+    suffix := Emit.qualifiedName "" [("blake2b", v.suffix), ("g", c.suffix)]
+    notes := ["Serial lane evaluation honors every positive worker limit. All hashing uses \
         the selected BLAKE2b streaming backend, including H₀ and every H′ call, and every \
-        compression calls `" ++ Spec.Argon2.compressApi.name ++ c.suffix ++ "`."])
+        compression calls `" ++ Spec.Argon2.compressApi.name ++ c.suffix ++ "`."]
     code := Impl.Argon2.X86_64.Derive.code (Spec.Argon2.hPrimeApi.name ++ v.suffix)
       (Proof.Argon2.X86_64.HPrime.hash v)
-    contract := Spec.Argon2.deriveContract VG.X86_64.abi 344
     stack := 344
     verified := Proof.Argon2.X86_64.Derive.verified v _
     spSafe := Proof.Argon2.X86_64.Derive.code_spSafe v _

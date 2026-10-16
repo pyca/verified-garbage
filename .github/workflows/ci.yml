@@ -589,7 +589,10 @@ jobs:
             # functions, which a runner with VPCLMULQDQ never chooses; and RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
             # RSASSA-PSS with the hash functions' SHA extensions and RSA's
             # baseline code; and `vg_zeroize_avx`, and `vg_zeroize` without
-            # AVX.
+            # AVX. And RSAES-OAEP with SHA-1's and SHA-256's SHA extensions
+            # and with SHA-512's baseline code and RSA's ADX code, or with
+            # SHA-512's AVX2 code and RSA's baseline or ADX code (whatever
+            # the runner's AVX512_IFMA).
             runs: |
               - | ffdh dsa sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 ed448 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize cpu
               aes,ssse3 | aes_gcm cmac aes_ccm aes_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts zeroize cpu
@@ -600,6 +603,9 @@ jobs:
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,ssse3,vaes | aes_xts cpu
               sha,ssse3 | rsa_pkcs1 rsa_pss rsa_oaep cpu
+              avx,avx2,bmi2,adx,sha,ssse3 | rsa_oaep cpu
+              avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
+              adx,avx,avx2,bmi1,bmi2,sha,ssse3 | rsa_oaep cpu
           # x86 feature dispatch, natively in a 32-bit userspace, with the
           # runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3
           # instances) and every test with the baseline implementations; and
@@ -659,11 +665,15 @@ jobs:
           # Arrow Lake: the SHA512 extension, which no runner has (and
           # RSASSA-PSS and RSAES-OAEP with SHA-384's and SHA-512's code using
           # it, and P-256's and P-384's signatures with SHA-384 and P-521's
-          # with SHA-512 using it, with and without ADX).
+          # with SHA-512 using it, with and without ADX; and RSAES-OAEP with
+          # it and MGF1 over SHA-1 with SHA-1's baseline code and RSA's ADX
+          # code, or with SHA-1's SHA extensions and RSA's baseline code).
           - chip: arl
             runs: |
               - | sha384 sha512 ed25519 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx2,sha512 | ed25519 rsa_oaep p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,sha512,bmi2,adx | rsa_oaep_pairs cpu
+              avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
           # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma
           # and (with AVX512F) vg_x25519_base_ifma, Ed25519's IFMA variants,
           # vg_rsa_private_checked_ifma and vg_poly1305_blocks_ifma (with the
@@ -676,7 +686,8 @@ jobs:
           # registers alone, which a chip with AVX512BW never chooses; and
           # RSAES-PKCS1-v1_5 decryption and RSASSA-PSS signing with
           # vg_rsa_private_checked_ifma and each hash function's
-          # implementations.
+          # implementations (and RSAES-OAEP decryption with SHA-1's SHA
+          # extensions and SHA-512's baseline code).
           # Three shards: its RSA lines each run Wycheproof's RSA tests
           # under SDE, which take minutes on a runner without AVX-512, and
           # three times as long sharing a runner's cores.
@@ -686,6 +697,7 @@ jobs:
               - | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac chacha20 poly1305 cpu
               avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1 rsa_pss rsa_oaep cpu
+              avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl,sha,ssse3 | rsa_oaep_pairs cpu
               aes,avx,avx2,ssse3,vaes | aes_gcm cpu
               avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes | aes_gcm cpu
@@ -699,10 +711,12 @@ jobs:
             runs: *icx-runs
           # Diamond Rapids: the SHA512 extension and AVX512_IFMA, for
           # Ed25519's verification with both (vg_ed25519_verify_shani_ifma)
-          # and RSASSA-PSS signing with both.
+          # and RSASSA-PSS signing and RSAES-OAEP decryption with both (with
+          # MGF1 over SHA-1 with its SHA extensions or its baseline code).
           - chip: dmr
             runs: |
-              - | ed25519 rsa_pss message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | ed25519 rsa_pss rsa_oaep_pairs message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,sha512,avx512f,bmi2,adx,avx512ifma,avx512vl | rsa_oaep_pairs cpu
           # The runner has SVE2, so the unrestricted run tests the `_sve2`
           # instances; `neon` and `none` test ChaCha20's NEON and scalar ones,
           # `sha3` and `none` the SHA-3 prototype and its scalar fallback (and
@@ -712,7 +726,7 @@ jobs:
           # with the scalar SHA-256 (the unrestricted runs of the plain tests
           # take its `_sha256_sha2` instance), and the unrestricted run and
           # `none` AES-GCM-SIV's and AES-OCB's `_aes` and scalar instances.
-          # RSAES-OAEP: the plain runs take SHA-1's and SHA-256's `_sha2`
+          # RSAES-OAEP: `sha2` takes SHA-1's and SHA-256's `_sha2`
           # instances with SHA-512's scalar ones, `none` the scalar ones,
           # `sha3` SHA-512's `_sha3` ones with SHA-1's scalar MGF1, and
           # `sha2,sha3` both extensions together.
@@ -723,6 +737,7 @@ jobs:
               - | aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               neon | chacha20
               sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
+              sha2 | rsa_oaep
               sha2,sha3 | rsa_oaep
               none | dsa aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts rsa_pkcs1 rsa_oaep
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.shard && format(', {0}', matrix.shard) || '' }})

@@ -258,7 +258,7 @@ macro_rules! with_functions {
 
 /// The words of working space the functions need for an `n_len`-byte
 /// modulus (`VG.Spec.RsaPss.scratchWords`).
-fn scratch_words(n_len: usize) -> usize {
+pub(crate) fn scratch_words(n_len: usize) -> usize {
     crate::rsa::scratch_words(n_len) + 1024
 }
 

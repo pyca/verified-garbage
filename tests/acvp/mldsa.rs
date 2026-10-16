@@ -7,10 +7,15 @@
 //! by verifying its signatures, and against Wycheproof's seed vectors
 //! (`tests/wycheproof/mldsa*.rs`).
 
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
+
 /// Defines the tests of the parameter set named `$name` (`"ML-DSA-44"`), of
 /// the module `$module` and its key types.
-// Used by the parameter sets' files, on the architectures they support.
-#[allow(unused_macros)]
 macro_rules! mldsa_tests {
     ($name:literal, $module:ident, $SigningKey:ident, $VerifyingKey:ident) => {
         use serde::Deserialize;
@@ -169,6 +174,4 @@ macro_rules! mldsa_tests {
     };
 }
 
-// Used by the parameter sets' files, on the architectures they support.
-#[allow(unused_imports)]
 pub(crate) use mldsa_tests;

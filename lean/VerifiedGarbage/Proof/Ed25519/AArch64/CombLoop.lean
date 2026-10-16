@@ -238,30 +238,12 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S : Nat} {v : ℤ} {j : Na
     rw [kt.mem, vd, Point64.addAffineOps_eval _ q hqz h4 h5 h6, pc, digitSum64, ← add_assoc, add_smul]
     exact pointAdd_rep h.acc hrq
 
-/-- The loop over the 64 digits, from `[v]B`. -/
-theorem combLoop_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt s base T)
-    (hT : s.syms combSym = T) {S : Nat} {v : ℤ}
-    (hz : env s.mem base 21 = 0)
-    (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
-    (hv : Rep (point (env s.mem base) 0 1 2 3) (v • baseAff)) :
-    WP isa combLoop s fun t => CombInv s base S v 64 t := by
-  rw [combLoop]
-  refine WP.seq (WP.mono_syms (show WP isa (.block [.movz .w .x19 0 0]) s fun t =>
-      t.gpr .x19 = BitVec.ofNat 64 0 ∧ Keeps [.x19] s t by
-    apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
-      show 16 * 0 < Size.w.bits from by decide, ite_true, Option.some.injEq, exists_eq_left']
-    refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
-    · rw [RegUpd.gpr_write_self]; rfl
-    · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr))
-    fun b ⟨b19, kb⟩ syb => ?_)
-  have ksb : CombKeep base s b := CombKeep.of_keeps kb (by decide)
-  have init : CombInv s base S v 0 b :=
-    ⟨by decide, hs.of_keeps kb (by decide), b19, by rw [kb.mem]; exact hz,
-      fun q hq => by rw [kb.mem]; exact hb q hq,
-      by rw [kb.mem, digitSum64, add_zero]; exact hv, ksb⟩
-  apply WP.loop (fun n (t : State) => (CombInv s base S v (64 - n) t ∧ t.syms combSym = T) ∧
-    0 < n ∧ n ≤ 64) (n := 64)
+/-- The loop's steps from digit `j₀ < 64` on, from the invariant at `j₀`. -/
+theorem combSteps_ok {s₀ b : State} {base T : Addr} (htb : TblAt s₀ base T) {S : Nat} {v : ℤ}
+    {j₀ : Nat} (hj₀ : j₀ < 64) (init : CombInv s₀ base S v j₀ b) (hT : b.syms combSym = T) :
+    WP isa (.loop combStep (.nonzero .x .x8)) b fun t => CombInv s₀ base S v 64 t := by
+  apply WP.loop (fun n (t : State) => (CombInv s₀ base S v (64 - n) t ∧ t.syms combSym = T) ∧
+    0 < n ∧ n ≤ 64) (n := 64 - j₀)
   · intro n t ⟨⟨ht, hty⟩, hn0, hn⟩
     obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
     refine WP.mono_syms (combStep_ok ht htb hty (by omega)) fun u ⟨u8, hu⟩ suy => ?_
@@ -272,7 +254,46 @@ theorem combLoop_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt s
     · refine Or.inr ⟨by simp only [eval, read_x, u8, show 64 - (k + 1) + 1 ≠ 64 by omega, ne_eq,
         not_false_eq_true, decide_true], k, by omega, ⟨?_, by rw [suy]; exact hty⟩, by omega, by omega⟩
       rw [show 64 - k = 64 - (k + 1) + 1 by omega]; exact hu
-  · exact ⟨⟨init, by rw [syb]; exact hT⟩, by decide, by decide⟩
+  · exact ⟨⟨by rw [show 64 - (64 - j₀) = j₀ by omega]; exact init, hT⟩, by omega, by omega⟩
+
+/-- The counter `x19` set to `j < 2^16`. -/
+theorem counterInit_ok (s : State) (j : Nat) (hj : j < 2 ^ 16) :
+    WP isa (.block [.movz .w .x19 j 0]) s fun t =>
+      t.gpr .x19 = BitVec.ofNat 64 j ∧ Keeps [.x19] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
+    show 16 * 0 < Size.w.bits from by decide, ite_true, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩⟩
+  · rw [RegUpd.gpr_write_self]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Size.bits]
+    simp only [Nat.mul_zero, Nat.shiftLeft_zero, BitVec.natCast_eq_ofNat, BitVec.toNat_ofNat]
+    omega
+  · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr)
+
+/-- The loop from digit `j₀ < 64`, from `[v + Σ_{i < j₀} d_i 16^i]B`. -/
+theorem combLoopFrom_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt s base T)
+    (hT : s.syms combSym = T) {S : Nat} {v : ℤ} {j₀ : Nat} (hj₀ : j₀ < 64)
+    (hz : env s.mem base 21 = 0)
+    (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
+    (hv : Rep (point (env s.mem base) 0 1 2 3) ((v + digitSum64 S j₀) • baseAff)) :
+    WP isa (combLoopFrom j₀) s fun t => CombInv s base S v 64 t := by
+  rw [combLoopFrom]
+  refine WP.seq (WP.mono_syms (counterInit_ok s j₀ (by omega)) fun b ⟨b19, kb⟩ syb => ?_)
+  have ksb : CombKeep base s b := CombKeep.of_keeps kb (by decide)
+  exact combSteps_ok htb hj₀
+    ⟨by omega, hs.of_keeps kb (by decide), b19, by rw [kb.mem]; exact hz,
+      fun q hq => by rw [kb.mem]; exact hb q hq, by rw [kb.mem]; exact hv, ksb⟩
+    (by rw [syb]; exact hT)
+
+/-- The loop over the 64 digits, from `[v]B`. -/
+theorem combLoop_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt s base T)
+    (hT : s.syms combSym = T) {S : Nat} {v : ℤ}
+    (hz : env s.mem base 21 = 0)
+    (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
+    (hv : Rep (point (env s.mem base) 0 1 2 3) (v • baseAff)) :
+    WP isa combLoop s fun t => CombInv s base S v 64 t :=
+  combLoopFrom_ok hs htb hT (by decide) hz hb (by rw [digitSum64, add_zero]; exact hv)
 
 /-! ## The comb -/
 

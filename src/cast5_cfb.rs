@@ -9,8 +9,9 @@
 //! `iv`, which they replace with the last ciphertext block, in constant time:
 //! their timing depends on none of the key, the chaining value and the data.
 //! Both are the modes' generic CFB over CAST5's table-scanning block code,
-//! one block at a time: on x86 and x86-64 over the block code itself, on ARMv7 calling
-//! the verified `vg_cast5_ecb_encrypt` for each block. This module holds the subkeys and handles a partial
+//! one block at a time: on x86, x86-64 and AArch64 over the block code
+//! itself, on ARMv7 calling the verified `vg_cast5_ecb_encrypt` for each
+//! block. This module holds the subkeys and handles a partial
 //! last segment: CFB encryption of a zero block is `CIPH_K` of the block to
 //! continue from, whose first bytes it XORs into the rest of the input.
 
