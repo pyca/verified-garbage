@@ -48,13 +48,17 @@ and that the code names only its own tables (`checkConsts`):
 
 ```rust
 #[repr(C, align(64))]
-pub(crate) struct Table<const N: usize>(pub(crate) [u64; N]);
+pub(crate) struct Table<const N: usize>(pub(crate) [u8; N]);
 
-pub(crate) static <NAME>: Table<<n>> = Table([<word>, …]);
+pub(crate) static <NAME>: Table<<8 n>> = Table(*b"\
+    <the 8 bytes of word 0, least significant first, as \xHH>\
+    …
+");
 ```
 
-`Table` holds the words at its start (`repr(C)`, one field), so the
-static's address is that of word 0. It aligns each table to 64 bytes, a
+`Table` holds the bytes of the words at its start (`repr(C)`, one field),
+each word little-endian as the contract's memory holds it
+(`Abi.constsHeld`), so the static's address is that of word 0. It aligns each table to 64 bytes, a
 cache line on every target, so that where a table's entries fall in cache
 lines depends only on the table, not on the size of whatever the linker puts
 before it (a change to one table would otherwise move the others, and their
@@ -540,16 +544,30 @@ def tables (arts : List Artifact) : List (String × List (BitVec 64)) :=
   let all := arts.flatMap tablesOf
   ((dedup (all.map (·.1))).mergeSort (· ≤ ·)).filterMap fun n => all.find? (·.1 == n)
 
-/-- The module of a target's tables of constants. -/
+/-- The byte `b < 256` as an escape of a Rust byte string literal, `\xHH`. -/
+def byteEscape (b : Nat) : String :=
+  let hex (d : Nat) : Char := Nat.digitChar d
+  "\\x" ++ (String.singleton (hex (b / 16))) ++ (String.singleton (hex (b % 16)))
+
+/-- The word `w` as the escapes of its 8 bytes, least significant first. -/
+def wordBytes (w : BitVec 64) : String :=
+  String.join ((List.range 8).map fun i => byteEscape (w.toNat / 2 ^ (8 * i) % 256))
+
+/-- The module of a target's tables of constants: each table's words, as the
+memory holds them (`Abi.constsHeld`: little-endian), in a byte string
+literal, one word per line (each line of the literal ends with `\`, which
+continues it on the next line without the newline and the indentation).
+rustc evaluates a byte string literal at once, faster than an array of a
+word per element. -/
 def tablesFile (t : String) (ts : List (String × List (BitVec 64))) : String :=
   header ++ s!"//! The tables of constants of the verified functions for `{t}` (`Artifact.consts`).\n" ++
   "#![allow(dead_code)]\n" ++
   "\n/// A table of constants, aligned to a cache line.\n" ++
-  "#[repr(C, align(64))]\npub(crate) struct Table<const N: usize>(pub(crate) [u64; N]);\n" ++
+  "#[repr(C, align(64))]\npub(crate) struct Table<const N: usize>(pub(crate) [u8; N]);\n" ++
   String.join (ts.map fun (n, ws) =>
     s!"\n/// The table of constants `{n}` (`Artifact.consts`).\n" ++
-    s!"pub(crate) static {n}: Table<{ws.length}> = Table([\n" ++
-    String.join (ws.map fun w => s!"    {w.toNat},\n") ++ "]);\n")
+    s!"pub(crate) static {n}: Table<{8 * ws.length}> = Table(*b\"\\\n" ++
+    String.join (ws.map fun w => "    " ++ wordBytes w ++ "\\\n") ++ "\");\n")
 
 /-- `mod` declarations for generated child modules (never reformatted by rustfmt). -/
 def modDecls (ms : List String) (cfg : String → Option String) : String :=
