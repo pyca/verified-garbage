@@ -446,10 +446,9 @@ def finPrep : List Instr := [.ldr .x .x26 .x19 alenO, .ldr .x .x27 .x19 lenO]
 /-- The stack argument at `[sp + k]` kept at `W + 248` and in `x28`. -/
 def stashArg (k : Nat) : List Instr := [.ldrSp .x10 k, .str .x .x10 .x19 tlO, mov .x28 .x10]
 
-/-- `vg_aes_gcm_seal`, with `tag = [sp]` (kept at `W + 248`) and `work = [sp + 8]`. -/
-def «seal» : Prog isa :=
-  .seq (.block (oneEntry 8 ++ stashArg 0))
-  (.seq (j0 c)
+/-- `vg_aes_gcm_seal` after its entry. -/
+def sealRest : Prog isa :=
+  .seq (j0 c)
   (.seq (oneAad c)
   (.seq (.block encPrep)
   (.seq (encBody c)
@@ -457,7 +456,10 @@ def «seal» : Prog isa :=
   (.seq (.block [.ldr .x .x28 .x19 tlO])
   (.seq (finBody c 0)
   (.seq (.block tagOut)
-    (.block restore)))))))))
+    (.block restore))))))))
+
+/-- `vg_aes_gcm_seal`, with `tag = [sp]` (kept at `W + 248`) and `work = [sp + 8]`. -/
+def «seal» : Prog isa := .seq (.block (oneEntry 8 ++ stashArg 0)) (sealRest c)
 
 /-- The text decrypted, from the first counter block. -/
 def oneCrypt : Prog isa :=
