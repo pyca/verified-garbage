@@ -4,6 +4,13 @@
 //! multiply field elements and scalars with `mulx`, `adcx` and `adox`, and
 //! the signatures' and public keys' comb selects its entries with AVX2.
 
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
+
 use crate::arch::ec_p256::vg_ec_p256_public_key;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ec_p256::{VG_EC_P256_PUBLIC_KEY_ADX_FEATURES, vg_ec_p256_public_key_adx};

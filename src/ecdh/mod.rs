@@ -2,10 +2,9 @@
 //! Rev. 3, §5.7.1.2.
 //!
 //! A [`PrivateKey<C>`] holds a private key on the curve `C` (so far [`P256`],
-//! [`P384`], and on x86-64, x86, 32-bit ARM and AArch64, `P521`, `P224`, `P192`,
-//! `BrainpoolP256r1`, `BrainpoolP384r1` and `Secp256k1`; brainpoolP512r1 is
-//! supported on x86-64 and AArch64). Each exchange is one call of
-//! verified code (`vg_ecdh_<curve>`, contract
+//! [`P384`], [`P521`], [`P224`], [`P192`], [`BrainpoolP256r1`],
+//! [`BrainpoolP384r1`], [`BrainpoolP512r1`] and [`Secp256k1`]). Each exchange
+//! is one call of verified code (`vg_ecdh_<curve>`, contract
 //! `VG.Spec.Ecdh.Instance.exchangeContract`): it validates the peer's public
 //! key as SP 800-56A §5.6.2.3.3 requires (the uncompressed form of SEC 1
 //! §2.3.3, both coordinates below `p`, on the curve), checks the private key,
@@ -29,57 +28,10 @@ mod p384;
 mod p521;
 mod secp256k1;
 
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "arm",
-    target_arch = "aarch64"
-))]
-pub use crate::ec::BrainpoolP256r1;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm"
-))]
-pub use crate::ec::BrainpoolP384r1;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "aarch64",
-    target_arch = "arm",
-    target_arch = "x86"
-))]
-pub use crate::ec::BrainpoolP512r1;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "arm",
-    target_arch = "aarch64"
-))]
-pub use crate::ec::P224;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "arm",
-    target_arch = "aarch64"
-))]
-pub use crate::ec::P521;
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "aarch64",
-    target_arch = "arm"
-))]
-pub use crate::ec::Secp256k1;
-
-#[cfg(any(
-    target_arch = "x86_64",
-    target_arch = "x86",
-    target_arch = "arm",
-    target_arch = "aarch64"
-))]
-pub use crate::ec::P192;
-pub use crate::ec::{Curve, P256, P384};
+pub use crate::ec::{
+    BrainpoolP256r1, BrainpoolP384r1, BrainpoolP512r1, Curve, P192, P224, P256, P384, P521,
+    Secp256k1,
+};
 
 use crate::zeroize::zeroize;
 

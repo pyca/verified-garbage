@@ -264,7 +264,7 @@ impl AesXts {
         let (key1, key2) = key.split_at(key.len() / 2);
         // Without branching on the key's bytes, only on whether they are all
         // equal.
-        if key1.iter().zip(key2).fold(0, |d, (a, b)| d | (a ^ b)) == 0 {
+        if crate::ct::eq(key1, key2) {
             return Err(Error::EqualKeyHalves);
         }
         let imp = select(detected());
