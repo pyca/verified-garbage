@@ -484,7 +484,10 @@ pub fn bench(c: &mut Criterion) {
 /// record's 5 bytes of additional data; sealed out of place from two pieces
 /// (the payload and its content type byte), and opened in place. aws-lc-rs
 /// seals in place (the payload and the content type already in the record
-/// buffer), and OpenSSL streams the pieces through one context.
+/// buffer), and OpenSSL streams the pieces through one context. A
+/// connection's records are also measured from its key's setup on
+/// (`aes-*-gcm-tls-connection`), so that the cost of a key used for a few
+/// records, and the point where the powers are computed, are counted too.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -633,6 +636,72 @@ fn tls_records(c: &mut Criterion) {
             });
             g.finish();
         }
+
+        // A new connection: its key set up, then `CONNECTION_RECORDS`
+        // records of 255 bytes and their content type sealed with it, which
+        // crosses the point where this library computes the key's powers of
+        // the hash subkey (8 such records on AArch64).
+        const CONNECTION_RECORDS: usize = 16;
+        let data = [0u8; 255];
+        let mut out = [0u8; 256];
+        let mut record = [0u8; 256];
+        let mut ossl_out = [0u8; 256 + 16];
+        let mut t = [0u8; 16];
+        let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-connection"));
+        g.throughput(Throughput::Bytes((CONNECTION_RECORDS * 256) as u64));
+        g.bench_function(BenchmarkId::new(VG, CONNECTION_RECORDS), |b| {
+            b.iter(|| {
+                let k = AesGcm::new(black_box(key)).unwrap();
+                for _ in 0..CONNECTION_RECORDS {
+                    black_box(
+                        k.encrypt(
+                            black_box(&nonce),
+                            black_box(&aad),
+                            &[black_box(&data[..]), black_box(&ty[..])],
+                            black_box(&mut out),
+                        )
+                        .unwrap(),
+                    );
+                }
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, CONNECTION_RECORDS), |b| {
+            b.iter(|| {
+                let mut ossl = CipherCtx::new().unwrap();
+                ossl.encrypt_init(Some(ossl_alg), Some(black_box(key)), None)
+                    .unwrap();
+                for _ in 0..CONNECTION_RECORDS {
+                    ossl.encrypt_init(None, None, Some(black_box(&nonce)))
+                        .unwrap();
+                    ossl.cipher_update(black_box(&aad), None).unwrap();
+                    let n = ossl
+                        .cipher_update(black_box(&data), Some(&mut ossl_out))
+                        .unwrap();
+                    let n = n + ossl
+                        .cipher_update(black_box(&ty), Some(&mut ossl_out[n..]))
+                        .unwrap();
+                    ossl.cipher_final(&mut ossl_out[n..]).unwrap();
+                    ossl.tag(&mut t).unwrap();
+                    black_box(t);
+                }
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, CONNECTION_RECORDS), |b| {
+            b.iter(|| {
+                let k = LessSafeKey::new(UnboundKey::new(alg, black_box(key)).unwrap());
+                for _ in 0..CONNECTION_RECORDS {
+                    let _tag = black_box(
+                        k.seal_in_place_separate_tag(
+                            Nonce::assume_unique_for_key(*black_box(&nonce)),
+                            Aad::from(black_box(&aad)),
+                            black_box(&mut record),
+                        )
+                        .unwrap(),
+                    );
+                }
+            })
+        });
+        g.finish();
     }
 }
 
