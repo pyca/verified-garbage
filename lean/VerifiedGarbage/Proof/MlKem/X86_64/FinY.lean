@@ -167,23 +167,14 @@ theorem lane_unpk2 : laneSseBlock [yb .vpunpcklwd .xmm10 .xmm8 .xmm9, yb .vpunpc
       xb .punpckhwd .xmm11 .xmm9] := by
   decide +kernel
 
-/-- Word `4(q mod 2) + e` of lane `l` of `L` (`q < 2`) or `H`, from the two
-loads of iteration `i`: the accumulator's word of coefficient
-`8(4i + q) + 4l + e`. -/
-theorem wv_of {m : Mem} {aP : Addr} {F : Poly} (hF : Acc16 m aP F) {i : Nat} (hi : i < 8) {A B : BitVec 128}
-    {l : Nat} (hl : l < 2)
-    (hA : A = m.readW (wAddr aP (32 * i) + BitVec.ofNat 64 0 + BitVec.ofNat 64 (16 * l)) 128)
-    (hB : B = m.readW (wAddr aP (32 * i) + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128)
+/-- Word `4(q mod 2) + e` of `L` (`q < 2`) or `H`, the `vpunpck{l,h}wd` of
+lanes `A` and `B` holding the words of the accumulator's coefficients of
+iteration `i` (`accIdx`): coefficient `8(4i + q) + 4l + e`. -/
+theorem wv_of_w {F : Poly} {i : Nat} {A B : BitVec 128} {l : Nat} (hl : l < 2)
+    (hw : ∀ h < 2, ∀ k < 8, (word (if h = 0 then A else B) k).toNat = (F[accIdx (32 * i + 16 * h + 8 * l + k)]!).val)
     {q : Nat} (hq : q < 4) {e : Nat} (he : e < 4) :
     (word (if q < 2 then XBinOp.eval .punpcklwd A B else XBinOp.eval .punpckhwd A B) (4 * (q % 2) + e)).toNat =
       (F[8 * (4 * i + q) + 4 * l + e]!).val := by
-  have hw : ∀ h < 2, ∀ k < 8, (word (if h = 0 then A else B) k).toNat = (F[accIdx (32 * i + 16 * h + 8 * l + k)]!).val :=
-    fun h hh k hk => by
-      rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl
-      · rw [ifp rfl, hA, show (BitVec.ofNat 64 0 : BitVec 64) = BitVec.ofNat 64 (32 * 0) from rfl,
-          acc_word _ _ _ _ _ hk]; exact hF _ (by omega)
-      · rw [ifn (by decide), hB, show (BitVec.ofNat 64 32 : BitVec 64) = BitVec.ofNat 64 (32 * 1) from rfl,
-          acc_word _ _ _ _ _ hk]; exact hF _ (by omega)
   have hs := srcF_ok q hq l hl e he
   have hidx : 32 * i + 16 * (e % 2) + 8 * l + (2 * q + e / 2) = 32 * i + srcF q l e := by unfold srcF; omega
   have hacc : accIdx (32 * i + srcF q l e) = 8 * (4 * i + q) + 4 * l + e := by
@@ -205,6 +196,23 @@ theorem wv_of {m : Mem} {aP : Addr} {F : Poly} (hF : Acc16 m aP F) {i : Nat} (hi
       · rw [ifp (by omega), ifp h]; exact congrArg _ (by omega)
       · rw [ifn (by omega), ifn (by omega)]; exact congrArg _ (by omega)
     rw [h1, hw _ (by omega) _ (by omega), hidx, hacc]
+
+/-- Word `4(q mod 2) + e` of lane `l` of `L` (`q < 2`) or `H`, from the two
+loads of iteration `i`: the accumulator's word of coefficient
+`8(4i + q) + 4l + e`. -/
+theorem wv_of {m : Mem} {aP : Addr} {F : Poly} (hF : Acc16 m aP F) {i : Nat} (hi : i < 8) {A B : BitVec 128}
+    {l : Nat} (hl : l < 2)
+    (hA : A = m.readW (wAddr aP (32 * i) + BitVec.ofNat 64 0 + BitVec.ofNat 64 (16 * l)) 128)
+    (hB : B = m.readW (wAddr aP (32 * i) + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128)
+    {q : Nat} (hq : q < 4) {e : Nat} (he : e < 4) :
+    (word (if q < 2 then XBinOp.eval .punpcklwd A B else XBinOp.eval .punpckhwd A B) (4 * (q % 2) + e)).toNat =
+      (F[8 * (4 * i + q) + 4 * l + e]!).val :=
+  wv_of_w hl (fun h hh k hk => by
+    rcases (by omega : h = 0 ∨ h = 1) with rfl | rfl
+    · rw [ifp rfl, hA, show (BitVec.ofNat 64 0 : BitVec 64) = BitVec.ofNat 64 (32 * 0) from rfl,
+        acc_word _ _ _ _ _ hk]; exact hF _ (by omega)
+    · rw [ifn (by decide), hB, show (BitVec.ofNat 64 32 : BitVec 64) = BitVec.ofNat 64 (32 * 1) from rfl,
+        acc_word _ _ _ _ _ hk]; exact hF _ (by omega)) hq he
 
 theorem rdi_q (p : Addr) (i q off : Nat) (h : off = 32 * q) :
     coeffAddr p (32 * i) + BitVec.ofNat 64 off = coeffAddr p (8 * (4 * i + q)) := by

@@ -123,16 +123,22 @@ def vbaseL : List Instr :=
     (xmov .xmm2 .xmm0 :: vmont .xmm2 .xmm6 .xmm3) ++ (xb .paddw .xmm1 .xmm2 :: xmov .xmm2 .xmm0 ::
       vmont .xmm2 .xmm10 .xmm3) ++ vmont .xmm4 .xmm6 .xmm3 ++ [xb .paddw .xmm2 .xmm4]
 
-/-- Product `j` of a block: the 32 coefficients of `f = rsi + 1024 j` and
-`g = rdx + 1024 j`, through `vbaseL`, stored to (`j = 0`) or added to the
-sums in `ymm11` and `ymm12`. -/
+/-- `yload4` from `p + o`. -/
+def yload4o (p : Reg) (o : Nat) (a b c d : XReg) : List Instr :=
+  [.vmovdquLoad .l256 a (at_ p o), .vmovdquLoad .l256 b (at_ p (o + 32)), .vmovdquLoad .l256 c (at_ p (o + 64)),
+    .vmovdquLoad .l256 d (at_ p (o + 96))]
+
+/-- Product `j` of a block, in `ymm1` and `ymm2` (`vbaseL`): of the 32
+coefficients of `f = rsi + 1024 j` and of `g = rdx + 1024 j`. -/
+def rowMulY (j : Nat) : List Instr :=
+  yload4o .rsi (1024 * j) .xmm0 .xmm1 .xmm2 .xmm3 ++ toY (deintS .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 .xmm5) ++
+    yload4o .rdx (1024 * j) .xmm6 .xmm7 .xmm8 .xmm9 ++ toY (deintS .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm5) ++
+    toY vbaseL
+
+/-- Product `j` of a block, stored to (`j = 0`) or added to the sums in
+`ymm11` and `ymm12`. -/
 def rowProdY (j : Nat) : List Instr :=
-  [.vmovdquLoad .l256 .xmm0 (at_ .rsi (1024 * j)), .vmovdquLoad .l256 .xmm1 (at_ .rsi (1024 * j + 32)),
-    .vmovdquLoad .l256 .xmm2 (at_ .rsi (1024 * j + 64)), .vmovdquLoad .l256 .xmm3 (at_ .rsi (1024 * j + 96))] ++
-    toY (deintS .xmm0 .xmm1 .xmm2 .xmm3 .xmm4 .xmm5) ++
-  [.vmovdquLoad .l256 .xmm6 (at_ .rdx (1024 * j)), .vmovdquLoad .l256 .xmm7 (at_ .rdx (1024 * j + 32)),
-    .vmovdquLoad .l256 .xmm8 (at_ .rdx (1024 * j + 64)), .vmovdquLoad .l256 .xmm9 (at_ .rdx (1024 * j + 96))] ++
-    toY (deintS .xmm6 .xmm7 .xmm8 .xmm9 .xmm10 .xmm5) ++ toY vbaseL ++
+  rowMulY j ++
     (if j = 0 then [.vop (.vmovdqa .l256 .xmm11 .xmm1), .vop (.vmovdqa .l256 .xmm12 .xmm2)]
      else [yb .vpaddw .xmm11 .xmm11 .xmm1, yb .vpaddw .xmm12 .xmm12 .xmm2])
 
