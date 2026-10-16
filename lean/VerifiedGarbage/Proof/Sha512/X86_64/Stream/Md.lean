@@ -18,8 +18,10 @@ import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 meta import VerifiedGarbage.Impl.Sha512.X86_64.Stream
-import VerifiedGarbage.Proof.Sha512.X86_64.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -117,9 +119,9 @@ theorem taints : Taints params :=
     ⟨_, by taint_decide⟩, by decide, by decide⟩
 
 theorem scalar_ok : CalleeOk (P := params) md Callee.scalar.code :=
-  .of_verified compressWide_verified.1 compressWide_verified.2.1
-    (by change (instrs Impl.Sha512.X86_64.compress).all _ = true; rw [← Code.allInstrs_eq]; lit_decide)
-    (by change Impl.Sha512.X86_64.compress.depth = 0; lit_decide)
+  .of_verified Rolled.compress_verified.1 Rolled.compress_verified.2.1
+    (by change (instrs Impl.Sha512.X86_64.Rolled.compress).all _ = true; rw [← Code.allInstrs_eq]; lit_decide)
+    (by change Impl.Sha512.X86_64.Rolled.compress.depth = 0; lit_decide)
 
 theorem avx2_ok : CalleeOk (P := params) md Callee.avx2.code :=
   .of_verified Avx2.Rolled.compress_verified.1 Avx2.Rolled.compress_verified.2.1

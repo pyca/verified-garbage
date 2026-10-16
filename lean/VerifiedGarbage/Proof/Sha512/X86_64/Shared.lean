@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Verified
+import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Verified
 
 /-!
 # Sha512 on X86_64: the shared contracts
@@ -53,8 +54,8 @@ theorem compressImplies :
     [Proof.Sha512.X86_64.wideSat, Proof.Sha512.X86_64.satState] using Proof.Sha512.X86_64.wideSat
 
 theorem compress :
-    Verified X86_64.target Impl.Sha512.X86_64.compress (Spec.Sha512.compressContract X86_64.abi) :=
-  Proof.Sha512.X86_64.compressWide_verified.of_implies compressImplies
+    Verified X86_64.target Impl.Sha512.X86_64.Rolled.compress (Spec.Sha512.compressContract X86_64.abi) :=
+  Proof.Sha512.X86_64.Rolled.compress_verified.of_implies compressImplies
 
 theorem compress_avx2 :
     Verified X86_64.target Impl.Sha512.X86_64.Avx2Rolled.compress (Spec.Sha512.compressContract X86_64.abi) :=

@@ -542,14 +542,12 @@ theorem vars0 (s : State) (v : HashValue) : Vars 0 s v ↔
     s.gpr .r9 = v[4] ∧ s.gpr .r10 = v[5] ∧ s.gpr .r11 = v[6] ∧ s.gpr .r12 = v[7] := Iff.rfl
 
 set_option simprocs false in
-theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hrdi : s.gpr .rdi = st s₀)
-    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
+/-- `load` from any hash value at `p` that the regions cover. -/
+theorem load_ok_of {p : Addr} {s : State} (hrdi : s.gpr .rdi = p)
+    (hin : ∀ k : Nat, k < 8 → InRegions (s.rd ++ s.wr) (p + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 8) :
     WP isa (.block load) s fun s₁ =>
-      Vars 0 s₁ (stateAt s.mem (st s₀)) ∧ (∀ r ∈ pubRegs, s₁.gpr r = s.gpr r) ∧
+      Vars 0 s₁ (stateAt s.mem p) ∧ (∀ r ∈ pubRegs, s₁.gpr r = s.gpr r) ∧
       s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mem = s.mem := by
-  have hin : ∀ k : Nat, k < 8 →
-      InRegions (s.rd ++ s.wr) (st s₀ + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 8 := by
-    rw [hrd, hwr]; exact fun k hk => hp.in_state hk
   apply WP.of_runBlock
   rw [load_eq]
   have h0 := hin 0 (by decide); have h1 := hin 1 (by decide); have h2 := hin 2 (by decide)
@@ -564,6 +562,13 @@ theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hrdi : s.gpr .rdi = 
     stateAt_get _ _ (show 4 < 8 by decide), stateAt_get _ _ (show 5 < 8 by decide),
     stateAt_get _ _ (show 6 < 8 by decide), stateAt_get _ _ (show 7 < 8 by decide)]
   simp (config := {decide := true}) [pubRegs]
+
+theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hrdi : s.gpr .rdi = st s₀)
+    (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
+    WP isa (.block load) s fun s₁ =>
+      Vars 0 s₁ (stateAt s.mem (st s₀)) ∧ (∀ r ∈ pubRegs, s₁.gpr r = s.gpr r) ∧
+      s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mem = s.mem :=
+  load_ok_of hrdi (by rw [hrd, hwr]; exact fun k hk => hp.in_state hk)
 
 /-- Eight 64-bit words written to consecutive addresses. -/
 def writeState (m : Mem) (p : Addr) (v : HashValue) : Mem :=
@@ -594,22 +599,19 @@ theorem frame_writeState {s₀ : State} {m m' : Mem} (h : Frame [stR s₀] m m')
   simp
 
 set_option simprocs false in
-theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (hv : Vars 0 s V)
-    (hrdi : s.gpr .rdi = st s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+/-- `update ++ advance` on any hash value at `p` that the regions cover. -/
+theorem update_ok_of {p : Addr} {s : State} (V H : HashValue) (hv : Vars 0 s V)
+    (hrdi : s.gpr .rdi = p)
+    (hin : ∀ k : Nat, k < 8 → InRegions (s.rd ++ s.wr) (p + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 8)
+    (hout : ∀ k : Nat, k < 8 → InRegions s.wr (p + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 8)
     (hH : ∀ k : Nat, (hk : k < 8) →
-      s.mem.readW (st s₀ + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 64 = H[k]) :
+      s.mem.readW (p + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 64 = H[k]) :
     WP isa (.block (update ++ advance)) s fun s' =>
-      s'.mem = writeState s.mem (st s₀) (Vector.zipWith (· + ·) V H) ∧
+      s'.mem = writeState s.mem p (Vector.zipWith (· + ·) V H) ∧
       s'.gpr .rsi = s.gpr .rsi + 128 ∧ s'.gpr .rdx = s.gpr .rdx - 1 ∧
       s'.zf = some (s.gpr .rdx - 1 == 0) ∧
       s'.gpr .rdi = s.gpr .rdi ∧ s'.gpr .rcx = s.gpr .rcx ∧ s'.gpr .rsp = s.gpr .rsp ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hin : ∀ k : Nat, k < 8 →
-      InRegions (s.rd ++ s.wr) (st s₀ + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 8 := by
-    rw [hrd, hwr]; exact fun k hk => hp.in_state hk
-  have hout : ∀ k : Nat, k < 8 →
-      InRegions s.wr (st s₀ + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 8 := by
-    rw [hwr]; exact fun k hk => hp.out_state hk
   have i0 := hin 0 (by decide); have i1 := hin 1 (by decide); have i2 := hin 2 (by decide)
   have i3 := hin 3 (by decide); have i4 := hin 4 (by decide); have i5 := hin 5 (by decide)
   have i6 := hin 6 (by decide); have i7 := hin 7 (by decide)
@@ -633,6 +635,19 @@ theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (
   have e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
   refine ⟨?_, by rw [e128], by rw [e1], by rw [e1], trivial⟩
   simp only [writeState, Vector.getElem_zipWith]
+
+theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (hv : Vars 0 s V)
+    (hrdi : s.gpr .rdi = st s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+    (hH : ∀ k : Nat, (hk : k < 8) →
+      s.mem.readW (st s₀ + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 64 = H[k]) :
+    WP isa (.block (update ++ advance)) s fun s' =>
+      s'.mem = writeState s.mem (st s₀) (Vector.zipWith (· + ·) V H) ∧
+      s'.gpr .rsi = s.gpr .rsi + 128 ∧ s'.gpr .rdx = s.gpr .rdx - 1 ∧
+      s'.zf = some (s.gpr .rdx - 1 == 0) ∧
+      s'.gpr .rdi = s.gpr .rdi ∧ s'.gpr .rcx = s.gpr .rcx ∧ s'.gpr .rsp = s.gpr .rsp ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr :=
+  update_ok_of V H hv hrdi (by rw [hrd, hwr]; exact fun k hk => hp.in_state hk)
+    (by rw [hwr]; exact fun k hk => hp.out_state hk) hH
 
 theorem saved_frame {s₀ : State} (hp : Pre s₀) {m m' : Mem} (h : Saved s₀ m)
     (hf : Frame [winRegion (scr s₀)] m m' ∨ Frame [stR s₀] m m') : Saved s₀ m' := by

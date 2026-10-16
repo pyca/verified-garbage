@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
-public import VerifiedGarbage.Proof.Sha512.X86_64.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
@@ -24,7 +24,9 @@ def artifacts : List Artifact := [
   { Spec.Sha512.compressApi with
     target := X86_64.target
     doc := Spec.Sha512.compressApi.doc
-    code := Impl.Sha512.X86_64.compress
+      (notes := ["This implementation runs rounds 16–79 sixteen to an iteration of a loop, adding the \
+        round constants from a table."])
+    code := Impl.Sha512.X86_64.Rolled.compress
     contract := Spec.Sha512.compressContract X86_64.abi
     verified := Proof.Sha512.X86_64.Shared.compress
     spSafe := Code.all_of_allInstrs (by lit_decide) },
