@@ -38,7 +38,7 @@ namespace VG.Proof.X25519.AArch64.Base
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Impl.X25519.AArch64.Base
 open VG.Proof.Ed25519.AArch64
 
-/-- The engine: Ed25519's preparation and comb (`scalarBasePrepare_ct`, `combMultiply_ct`), with
+/-- The engine: Ed25519's preparation and comb (`scalarBasePrepare_ct`, `combMultiplyClamped_ct`), with
 the clamping and the encoding of `u` between and after them. -/
 theorem engine_ct (base k T : Addr) :
     CT (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y) engine (fun _ _ => True) := by
@@ -52,7 +52,7 @@ theorem engine_ct (base k T : Addr) :
       subst hr; exact h.1.1.x0.trans h.2.1.x0.symm) (by taint_decide)
   rw [engine]
   refine CT.seq (scalarBasePrepare_ct base k T) (CT.seq ((hc.wp fun x y h => ⟨hw x h.1, hw y h.2⟩).mono
-    (fun _ _ h => h) fun _ _ h => h.2) (CT.seq (combMultiply_ct base T) ?_))
+    (fun _ _ h => h) fun _ _ h => h.2) (CT.seq (combMultiplyClamped_ct base T) ?_))
   exact CT.taint (Taint.ofRegs [.x0]) (fun _ _ h => agree_ofRegs h) (by taint_decide)
 
 private def BaseStart (base k out T : Addr) (s : State) : Prop :=

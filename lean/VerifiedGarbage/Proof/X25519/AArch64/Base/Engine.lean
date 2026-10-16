@@ -14,13 +14,14 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
 import VerifiedGarbage.Impl.Mont.Mod
 import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Ed25519.AArch64.CombClamped
 
 /-!
 # X25519 of the base point on AArch64: the engine
 
 The expanded bits of the scalar, clamped (`clampBits_ok`), are those of
 `decodeScalar25519` (`clamped_bit`); the comb computes `[k] B` from them
-(`combMultiply_ok`), and `uEncode` its u-coordinate `(Z + Y) / (Z - Y)`, which
+(`combMultiplyClamped_ok`, which absorbs digit 0 into its start), and `uEncode` its u-coordinate `(Z + Y) / (Z - Y)`, which
 `Proof/X25519/Edwards/Ladder.lean` shows is `X25519(k, 9)` (`engine_ok`).
 -/
 
@@ -139,7 +140,10 @@ theorem engine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base k T
     · exact bbits q (by simpa using hq)
   have htc : TblAt c base T := htb.of_far (by rw [kbc.rd, kbc.wr, kab.rd, kab.wr])
     (fun x hx => (powersKeep_outside (kab.trans kbc)) x (Or.inr (by omega)))
-  refine WP.seq (WP.mono (combMultiply_ok hsc htc (by rw [syc, syb]; exact hT) hS cb)
+  have hc : ∀ q < 3, (decodeScalar25519 kb / 2 ^ q) % 2 = 0 := fun q hq => by
+    rw [clamped_bit hk (by omega)]
+    simp only [hq, true_or, ↓reduceIte]
+  refine WP.seq (WP.mono (combMultiplyClamped_ok hsc htc (by rw [syc, syb]; exact hT) hS hc cb)
     fun d ⟨dp, kd⟩ => ?_)
   refine WP.mono (uEncode_ok (kd.scr hsc)) fun t ⟨kt, tv⟩ => ?_
   refine ⟨((kab.trans kbc).trans kd.powers).trans
