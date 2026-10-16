@@ -1,0 +1,14 @@
+#!/bin/sh
+# Cargo's runner for the 32-bit Arm targets in the armv7-cross image
+# (ci/runner.Dockerfile): runs a test binary natively when the CPU runs
+# 32-bit code, and under QEMU's user-mode emulation when it doesn't.
+#
+# AArch32 at EL0 is optional in Armv8 and gone from newer cores: some of
+# GitHub's ARM64 runners are Neoverse V3 (CPU part 0xd84), which has none, so
+# the kernel refuses to exec any 32-bit program ("Exec format error"). The
+# ARMv7 loader (from libc6:armhf) is the cheapest 32-bit program to try.
+if /lib/ld-linux-armhf.so.3 --version > /dev/null 2>&1; then
+    exec "$@"
+fi
+echo "arm32-run: this CPU has no AArch32; running $1 under qemu-arm" >&2
+exec qemu-arm "$@"
