@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on ARMv7
@@ -34,29 +35,20 @@ def desNote : String :=
   over constants."
 
 def artifacts : List Artifact := [
-  { Spec.Cmac.tdesInitApi with
-    target := Arm.target
-    doc := Spec.Cmac.tdesInitApi.doc (notes := [desNote])
+  Spec.Cmac.tdesInitApi.artifact Arm.target {
+    notes := [desNote]
     code := Impl.StackScratch.Arm.withRegScratch 640 .r3 Impl.CmacTripleDes.Arm.init
-    contract := Spec.Cmac.tdesInitContract Arm.abi 640
     stack := 640
-    verified := init_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Cmac.tdesUpdateApi with
-    target := Arm.target
-    doc := Spec.Cmac.tdesUpdateApi.doc (notes := [desNote])
+    verified := init_framed },
+  Spec.Cmac.tdesUpdateApi.artifact Arm.target {
+    notes := [desNote]
     code := Impl.StackScratch.Arm.withStackScratch 648 0 Impl.CmacTripleDes.Arm.update
-    contract := Spec.Cmac.tdesUpdateContract Arm.abi 648
     stack := 648
-    verified := update_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Cmac.tdesFinalizeApi with
-    target := Arm.target
-    doc := Spec.Cmac.tdesFinalizeApi.doc (notes := [desNote])
+    verified := update_framed },
+  Spec.Cmac.tdesFinalizeApi.artifact Arm.target {
+    notes := [desNote]
     code := Impl.StackScratch.Arm.withStackScratch 648 0 Impl.CmacTripleDes.Arm.finalize
-    contract := Spec.Cmac.tdesFinalizeContract Arm.abi 648
     stack := 648
-    verified := finalize_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := finalize_framed }]
 
 end VG.Artifacts.CmacTripleDes.Arm

@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 import VerifiedGarbage.Proof.Ed448.Facts
 public import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Proof.MdStream.Spec
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Ed448 verification on x86 (32-bit)
@@ -29,20 +30,17 @@ theorem equation_ok :
     Proof.Ed448.X86.verifyEquation_ct Proof.Ed448.recover_ok, NoSp.of_all (by lit_decide), by lit_decide⟩
 
 def artifacts : List Artifact := [
-  { Spec.Ed448.verifyApi with
-    target := X86.target
-    doc := Spec.Ed448.verifyApi.doc (notes := ["Uses baseline integer instructions. Returns 0 \
+  Spec.Ed448.verifyApi.artifact X86.target {
+    notes := ["Uses baseline integer instructions. Returns 0 \
       at once for a context of 256 bytes or more. Otherwise writes the first ten bytes of \
       dom4(0, C) into a stack frame, hashes them, the context, R, the public key and the \
       message with `vg_keccak_absorb_scratch`, `vg_keccak_pad_scratch` and \
       `vg_keccak_squeeze_scratch` (SHAKE256, with the Keccak state and the sponge functions' \
       working space in `scratch`) into the frame, reduces the hash modulo L there with \
       `vg_ed448_scalar_reduce`, and returns `vg_ed448_verify_equation`'s result. The frame \
-      (the hash and k) is not cleared: verification has no secrets."])
+      (the hash and k) is not cleared: verification has no secrets."]
     code := Impl.Ed448.X86.Verify.code Impl.Ed448.X86.verifyEquation
-    contract := Spec.Ed448.verifyContract X86.abi 280
     stack := 280
-    verified := Proof.Ed448.X86.Verify.verify_verified equation_ok
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Ed448.X86.Verify.verify_verified equation_ok }]
 
 end VG.Artifacts.Ed448Verify.X86

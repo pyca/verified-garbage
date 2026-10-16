@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.Point16Verified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Ed25519's point addition and doubling, in radix `2^16`, on ARMv7 -/
 
@@ -21,21 +22,15 @@ def notes : List String := ["Uses baseline integer instructions. The function sa
   registers."]
 
 def artifacts : List Artifact := [
-  { addApi with
-    target := Arm.target
-    doc := addApi.doc (notes := notes)
+  addApi.artifact Arm.target {
+    notes := notes
     code := addFn
-    contract := addContract Arm.abi
     verified := addFn_verified
-    stack := 0
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { doubleApi with
-    target := Arm.target
-    doc := doubleApi.doc (notes := notes)
+    stack := 0 },
+  doubleApi.artifact Arm.target {
+    notes := notes
     code := doubleFn
-    contract := doubleContract Arm.abi
     verified := doubleFn_verified
-    stack := 0
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    stack := 0 }]
 
 end VG.Artifacts.Ed25519R16.Arm

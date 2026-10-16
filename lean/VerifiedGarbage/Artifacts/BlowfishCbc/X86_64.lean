@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.TaintSum
 import VerifiedGarbage.Proof.Framework.X86_64.Words
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Blowfish-CBC artifacts on baseline x86-64 -/
 
@@ -21,21 +22,15 @@ def note : String :=
   the data; the schedule is read where it is. The mode is the generic CBC of `Impl/Modes/X86_64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Blowfish.cbcEncryptApi with
-    target := X86_64.target
-    doc := Spec.Blowfish.cbcEncryptApi.doc (notes := [note])
+  Spec.Blowfish.cbcEncryptApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cbcEncrypt
-    contract := Spec.Blowfish.cbcEncryptContract X86_64.abi 96
     stack := 96
-    verified := Proof.Blowfish.X86_64.cbcEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Blowfish.cbcDecryptApi with
-    target := X86_64.target
-    doc := Spec.Blowfish.cbcDecryptApi.doc (notes := [note])
+    verified := Proof.Blowfish.X86_64.cbcEncrypt_framed },
+  Spec.Blowfish.cbcDecryptApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 96 .r8 11 Impl.Blowfish.X86_64.cbcDecrypt
-    contract := Spec.Blowfish.cbcDecryptContract X86_64.abi 96
     stack := 96
-    verified := Proof.Blowfish.X86_64.cbcDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Blowfish.X86_64.cbcDecrypt_framed }]
 
 end VG.Artifacts.BlowfishCbc.X86_64

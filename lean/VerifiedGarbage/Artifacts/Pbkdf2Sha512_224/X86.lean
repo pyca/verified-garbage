@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Sha512_224
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # PBKDF2-HMAC-SHA-512/224 (RFC 8018) on x86: the iteration and the whole derivation
@@ -30,25 +31,15 @@ namespace VG.Artifacts.Pbkdf2Sha512_224.X86
 open VG.Proof.Pbkdf2.Stream.X86
 
 def artifacts : List Artifact := [
-  { Spec.Hmac.sha512_224I.iterateApi with
-    target := X86.target
-    doc := Spec.Hmac.sha512_224I.iterateApi.doc
+  Spec.Hmac.sha512_224I.iterateApi.artifact X86.target {
     code := Proof.Pbkdf2.Md.X86.sha512_224M.iterate
-    contract := Spec.Hmac.sha512_224I.iterateContract X86.abi 48
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 48
-    verified := Proof.Pbkdf2.Md.X86.Instances.sha512_224_iterate
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Hmac.sha512_224I.pbkdf2Api with
-    target := X86.target
-    doc := Spec.Hmac.sha512_224I.pbkdf2Api.doc
+    verified := Proof.Pbkdf2.Md.X86.Instances.sha512_224_iterate },
+  Spec.Hmac.sha512_224I.pbkdf2Api.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512_224I) 7
       Proof.Pbkdf2.Whole.X86.sha512_224F.pbkdf2
-    contract := Spec.Hmac.sha512_224I.pbkdf2Contract X86.abi (76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512_224I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha512_224I
     verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.sha512_224 (by decide) (by lit_decide)
-      (by lit_decide) Proof.Pbkdf2.Whole.X86.sha512_224_pbkFrameSat
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+      (by lit_decide) Proof.Pbkdf2.Whole.X86.sha512_224_pbkFrameSat }]
 
 end VG.Artifacts.Pbkdf2Sha512_224.X86

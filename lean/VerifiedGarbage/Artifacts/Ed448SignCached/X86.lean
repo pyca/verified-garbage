@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Ed448.X86.BaseVerified
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 import VerifiedGarbage.Proof.Ed448.Facts
 import VerifiedGarbage.Proof.Sha3.X86.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Ed448 signing with a cached public key on x86 (32-bit)
@@ -27,9 +28,8 @@ theorem base_ok : Proof.Ed448.X86.CalleeOk Proof.Ed448.X86.scalarBaseLocal Impl.
     NoSp.of_all (by lit_decide), by lit_decide⟩
 
 def artifacts : List Artifact := [
-  { Spec.Ed448.signCachedApi with
-    target := X86.target
-    doc := Spec.Ed448.signCachedApi.doc (notes := ["Uses baseline integer instructions. Hashes with \
+  Spec.Ed448.signCachedApi.artifact X86.target {
+    notes := ["Uses baseline integer instructions. Hashes with \
       `vg_keccak_absorb_scratch`, `vg_keccak_pad_scratch` and `vg_keccak_squeeze_scratch` (SHAKE256, \
       into its stack frame, with the Keccak state and the sponge functions' working space in \
       `scratch`): the private key, whose first half, pruned in place, is the secret scalar s; \
@@ -38,11 +38,9 @@ def artifacts : List Artifact := [
       `vg_ed448_scalar_base` into the first half of `out`; then dom4(0, C), R, the public key \
       and the message, reduced into the frame (k); and S = (r + k s) mod L with \
       `vg_ed448_scalar_mul_add` over r. Clears the frame, the hash, s and k with it, before \
-      returning; the callees' working values are left in `scratch`."])
+      returning; the callees' working values are left in `scratch`."]
     code := Impl.Ed448.X86.SignCached.code Impl.Ed448.X86.scalarBase
-    contract := Spec.Ed448.signCachedContract X86.abi 280
     stack := 280
-    verified := Proof.Ed448.X86.SignCached.signCached_verified base_ok
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Ed448.X86.SignCached.signCached_verified base_ok }]
 
 end VG.Artifacts.Ed448SignCached.X86

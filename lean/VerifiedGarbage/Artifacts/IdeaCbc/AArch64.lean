@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # IDEA-CBC artifacts on baseline AArch64 -/
 
@@ -16,21 +17,15 @@ def note : String :=
   The mode is the generic CBC of `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Idea.cbcEncryptApi with
-    target := AArch64.target
-    doc := Spec.Idea.cbcEncryptApi.doc (notes := [note])
+  Spec.Idea.cbcEncryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cbcEncrypt
-    contract := Spec.Idea.cbcEncryptContract AArch64.abi 208
     stack := 208
-    verified := Proof.Idea.AArch64.cbcEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Idea.cbcDecryptApi with
-    target := AArch64.target
-    doc := Spec.Idea.cbcDecryptApi.doc (notes := [note])
+    verified := Proof.Idea.AArch64.cbcEncrypt_framed },
+  Spec.Idea.cbcDecryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cbcDecrypt
-    contract := Spec.Idea.cbcDecryptContract AArch64.abi 208
     stack := 208
-    verified := Proof.Idea.AArch64.cbcDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Idea.AArch64.cbcDecrypt_framed }]
 
 end VG.Artifacts.IdeaCbc.AArch64

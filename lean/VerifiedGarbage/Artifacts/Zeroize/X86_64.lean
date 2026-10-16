@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Zeroize.X86_64Avx
+public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section
 
@@ -8,20 +9,15 @@ namespace VG.Artifacts.Zeroize.X86_64
 open VG.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.Zeroize.zeroizeApi with
-    target := target
-    doc := Spec.Zeroize.zeroizeApi.doc
+  Spec.Zeroize.zeroizeApi.artifact target {
     code := Impl.Zeroize.X86_64.zeroize
-    contract := Spec.Zeroize.zeroizeContract abi
     verified := Proof.Zeroize.X86_64.verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.Zeroize.zeroizeApi with
-    name := Spec.Zeroize.zeroizeApi.name ++ "_avx"
-    target := target
-    doc := Spec.Zeroize.zeroizeApi.doc (notes := ["It stores 64 bytes at a time from `ymm0`, and clears the \
-      upper halves of the vector registers (`vzeroupper`) before returning."])
+  Spec.Zeroize.zeroizeApi.artifact target {
+    suffix := "_avx"
+    notes := ["It stores 64 bytes at a time from `ymm0`, and clears the \
+      upper halves of the vector registers (`vzeroupper`) before returning."]
     code := Impl.Zeroize.X86_64.zeroizeAvx
-    contract := Spec.Zeroize.zeroizeContract abi
     verified := Proof.Zeroize.X86_64.verifiedAvx
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx"] }]

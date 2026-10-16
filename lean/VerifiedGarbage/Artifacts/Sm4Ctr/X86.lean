@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.CtrVerified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SM4-CTR artifacts on baseline x86 (32-bit) -/
 
@@ -16,13 +17,10 @@ def note : String :=
   round keys is built once per call. One block per batch of eight is used."
 
 def artifacts : List Artifact := [
-  { Spec.Sm4.ctrApi with
-    target := X86.target
-    doc := Spec.Sm4.ctrApi.doc (notes := [note])
+  Spec.Sm4.ctrApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 1472 4 362 Impl.Sm4.X86.ctr
-    contract := Spec.Sm4.ctrContract X86.abi 1472
     stack := 1472
-    verified := Proof.Sm4.X86.Ctr.ctr_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Sm4.X86.Ctr.ctr_framed }]
 
 end VG.Artifacts.Sm4Ctr.X86

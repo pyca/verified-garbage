@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintBase
 import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttLoop
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.Setup
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) verification on x86 (32-bit)
@@ -30,27 +31,21 @@ def notes : List String :=
     with the recomputed value without branching on the bytes."]
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.verify44Api with
-    target := X86.target
-    doc := Spec.MlDsa.verify44Api.doc (notes := notes)
+  Spec.MlDsa.verify44Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Verify.verify44
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa44 X86.abi 96
     stack := 96
     verified := Proof.MlDsa.X86.Verify.verify44_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.verify65Api with
-    target := X86.target
-    doc := Spec.MlDsa.verify65Api.doc (notes := notes)
+  Spec.MlDsa.verify65Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Verify.verify65
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa65 X86.abi 96
     stack := 96
     verified := Proof.MlDsa.X86.Verify.verify65_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.verify87Api with
-    target := X86.target
-    doc := Spec.MlDsa.verify87Api.doc (notes := notes)
+  Spec.MlDsa.verify87Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Verify.verify87
-    contract := Spec.MlDsa.verifyContract Spec.MlDsa.mlDsa87 X86.abi 96
     stack := 96
     verified := Proof.MlDsa.X86.Verify.verify87_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]

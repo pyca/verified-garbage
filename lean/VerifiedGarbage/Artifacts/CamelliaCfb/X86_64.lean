@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Camellia-CFB128 artifacts on baseline x86-64 -/
 
@@ -17,21 +18,15 @@ def note : String :=
   over Camellia's ECB core."
 
 def artifacts : List Artifact := [
-  { Spec.Camellia.cfbEncryptApi with
-    target := X86_64.target
-    doc := Spec.Camellia.cfbEncryptApi.doc (notes := [note])
+  Spec.Camellia.cfbEncryptApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r9 401 Impl.Camellia.X86_64.cfbEncrypt
-    contract := Spec.Camellia.cfbEncryptContract X86_64.abi 3216
     stack := 3216
-    verified := Proof.Camellia.X86_64.cfbEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Camellia.cfbDecryptApi with
-    target := X86_64.target
-    doc := Spec.Camellia.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Camellia.X86_64.cfbEncrypt_framed },
+  Spec.Camellia.cfbDecryptApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r9 401 Impl.Camellia.X86_64.cfbDecrypt
-    contract := Spec.Camellia.cfbDecryptContract X86_64.abi 3216
     stack := 3216
-    verified := Proof.Camellia.X86_64.cfbDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Camellia.X86_64.cfbDecrypt_framed }]
 
 end VG.Artifacts.CamelliaCfb.X86_64

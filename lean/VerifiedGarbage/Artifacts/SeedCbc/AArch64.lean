@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Seed.AArch64.CbcVerified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SEED-CBC artifacts on baseline AArch64 -/
 
@@ -18,21 +19,15 @@ def note : String :=
   generic CBC of `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  { Spec.Seed.cbcEncryptApi with
-    target := AArch64.target
-    doc := Spec.Seed.cbcEncryptApi.doc (notes := [note])
+  Spec.Seed.cbcEncryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cbcEncrypt
-    contract := Spec.Seed.cbcEncryptContract AArch64.abi 1456
     stack := 1456
-    verified := Proof.Seed.AArch64.cbcEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Seed.cbcDecryptApi with
-    target := AArch64.target
-    doc := Spec.Seed.cbcDecryptApi.doc (notes := [note])
+    verified := Proof.Seed.AArch64.cbcEncrypt_framed },
+  Spec.Seed.cbcDecryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cbcDecrypt
-    contract := Spec.Seed.cbcDecryptContract AArch64.abi 1456
     stack := 1456
-    verified := Proof.Seed.AArch64.cbcDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Seed.AArch64.cbcDecrypt_framed }]
 
 end VG.Artifacts.SeedCbc.AArch64

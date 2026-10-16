@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Camellia-OFB artifacts on baseline x86-64 -/
 
@@ -17,13 +18,10 @@ def note : String :=
   over Camellia's ECB core."
 
 def artifacts : List Artifact := [
-  { Spec.Camellia.ofbApi with
-    target := X86_64.target
-    doc := Spec.Camellia.ofbApi.doc (notes := [note])
+  Spec.Camellia.ofbApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 3216 .r9 401 Impl.Camellia.X86_64.ofb
-    contract := Spec.Camellia.ofbContract X86_64.abi 3216
     stack := 3216
-    verified := Proof.Camellia.X86_64.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Camellia.X86_64.ofb_framed }]
 
 end VG.Artifacts.CamelliaOfb.X86_64

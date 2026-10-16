@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # HMAC-SHA-384 (RFC 2104) on ARMv7
@@ -29,43 +30,23 @@ same code with it as an argument, are what PBKDF2's code calls.
 namespace VG.Artifacts.HmacSha384.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Hmac.sha384I.initApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha384I.initApi.doc
+  Spec.Hmac.sha384I.initApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I) 0 Proof.Pbkdf2.Md.Arm.sha384Md.hmacInit
-    contract := Spec.Hmac.sha384I.initContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I
     verified := Proof.Pbkdf2.Md.Arm.initFramed Proof.Pbkdf2.Md.Arm.Instances.sha384_init (by decide)
-      Proof.Pbkdf2.Md.Arm.sha384_initFrameSat
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha384I.finalizeApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha384I.finalizeApi.doc
+      Proof.Pbkdf2.Md.Arm.sha384_initFrameSat },
+  Spec.Hmac.sha384I.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I) 1 Proof.Pbkdf2.Md.Arm.sha384Md.hmacFin
-    contract := Spec.Hmac.sha384I.finalizeContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha384I
     verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha384_finalize (by decide)
-      Proof.Hmac.sha384_local (by decide) Proof.Pbkdf2.Md.Arm.sha384_finFrameSat
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha384I.initScratchApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha384I.initScratchApi.doc
+      Proof.Hmac.sha384_local (by decide) Proof.Pbkdf2.Md.Arm.sha384_finFrameSat },
+  Spec.Hmac.sha384I.initScratchApi.artifact Arm.target {
     code := Proof.Pbkdf2.Md.Arm.sha384Md.hmacInit
-    contract := Spec.Hmac.sha384I.initScratchContract Arm.abi 16
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
     stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha384_init
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha384I.finalizeScratchApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha384I.finalizeScratchApi.doc
+    verified := Proof.Pbkdf2.Md.Arm.Instances.sha384_init },
+  Spec.Hmac.sha384I.finalizeScratchApi.artifact Arm.target {
     code := Proof.Pbkdf2.Md.Arm.sha384Md.hmacFin
-    contract := Spec.Hmac.sha384I.finalizeScratchContract Arm.abi 16
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
     stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha384_finalize
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Pbkdf2.Md.Arm.Instances.sha384_finalize }]
 
 end VG.Artifacts.HmacSha384.Arm
