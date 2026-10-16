@@ -163,9 +163,12 @@ def combStep : Prog isa :=
   .seq (.block (combSelect ++ combNeg 6)) <|
   .seq Point64.affCall (.block [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 64])
 
+/-- The steps from digit `j < 64` on. -/
+def combLoopFrom (j : Nat) : Prog isa :=
+  .seq (.block [.movz .w .x19 j 0]) (.loop combStep (.nonzero .x .x8))
+
 /-- The 64 steps, one per digit. -/
-def combLoop : Prog isa :=
-  .seq (.block [.movz .w .x19 0 0]) (.loop combStep (.nonzero .x .x8))
+def combLoop : Prog isa := combLoopFrom 0
 
 /-- `(x, y)` of `[17 G]B`. -/
 def combStartAff : Spec.X25519.Fe × Spec.X25519.Fe :=
@@ -182,5 +185,38 @@ def combInit : List Instr := fieldCode ([.const 21 0] ++ constPointOps combStart
 /-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward. -/
 def combMultiply : Prog isa :=
   .seq (.block combInit) combLoop
+
+/-! ## Scalars whose bits 0–2 are clear
+
+Digit 0 of such a scalar (X25519's, clamped) is `8 b₃ - 8`: `0` or `-8`. The
+accumulator starts at `[17 G + d₀]B`, chosen between `[17 G]B` and `[17 G - 8]B`
+by bit 3, so the loop starts at digit 1: 63 additions. -/
+
+/-- `(x, y)` of `[17 G - 8]B`. -/
+def combStart8Aff : Spec.X25519.Fe × Spec.X25519.Fe :=
+  (3044058032842295632513412460065901946882459531655010849277392742361220705398,
+    16382721024907912631339391052593996351625787231433860873492133196042675592609)
+
+/-- `[17 G - 8]B`, with `Z = 1`. -/
+def combStart8 : Spec.Ed25519.Point :=
+  ⟨combStart8Aff.1, combStart8Aff.2, 1, combStart8Aff.1 * combStart8Aff.2⟩
+
+/-- Slot `c` replaced by `v` where the mask in `x1` is set: `v` into `x4`–`x7`, `[c]` into
+`x12`–`x15`, and the choice by `csel` stored back. -/
+def constSel (c : Slot) (v : Spec.X25519.Fe) : List Instr :=
+  constWords v ++ loads (offset c) .x12 .x13 .x14 .x15 ++ negSel ++ store4 (offset c)
+
+/-- `x1` = the mask of bit 3 (at `x0 + 771`) being clear. -/
+def clampMask : List Instr := [.ldrb .x2 .x0 771, .subImm .x .x1 .x2 1]
+
+/-- The accumulator at `[17 G]B` for bit 3 set, else `[17 G - 8]B` (their `Z` is `1`), and
+zero in slot 21. -/
+def combInitClamped : List Instr :=
+  combInit ++ clampMask ++ constSel 0 combStart8.X ++ constSel 1 combStart8.Y ++
+    constSel 3 combStart8.T
+
+/-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward, bits 0–2 clear. -/
+def combMultiplyClamped : Prog isa :=
+  .seq (.block combInitClamped) (combLoopFrom 1)
 
 end VG.Impl.Ed25519.AArch64

@@ -43,6 +43,19 @@ theorem combMultiply_ct (base T : Addr) :
     subst hn
     exact h.1.2.trans h.2.2.symm
 
+/-- The comb of a scalar whose bits 0–2 are clear (`combMultiplyClamped`), as `combMultiply_ct`. -/
+theorem combMultiplyClamped_ct (base T : Addr) :
+    CT (fun x y => (Scr x base ∧ x.syms combSym = T) ∧ (Scr y base ∧ y.syms combSym = T))
+      combMultiplyClamped (fun x y => ∀ r ∈ [Reg.x0], x.gpr r = y.gpr r) := by
+  apply CT.taintSRegs (L := [combSym]) (τ := Taint.ofRegs [.x0]) _ [.x0] (by taint_decide)
+  intro x y h
+  refine ⟨agree_ofRegs fun r hr => ?_, fun n hn => ?_⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; exact h.1.1.x0.trans h.2.1.x0.symm
+  · simp only [List.mem_singleton] at hn
+    subst hn
+    exact h.1.2.trans h.2.2.symm
+
 /-- The preparation: a public trace, and the comb's start in each run. -/
 theorem scalarBasePrepare_ct (base k T : Addr) :
     CT (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y) scalarBasePrepare
