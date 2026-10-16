@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # RSASSA-PSS signing on AArch64
@@ -25,22 +26,18 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (privOf)
 open VG.Proof.RsaPss.AArch64.Sgn (stk)
 
 def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (c : Proof.Rsa.AArch64.CrtImpl) : List Artifact := [
-  { Spec.RsaPss.signApi v.mgf.G v.mgf.G with
-    name := Emit.qualifiedName (Spec.RsaPss.signApi v.mgf.G v.mgf.G).name
-      [(v.mgf.G.rust, v.suffix), ("crt", c.suffix)]
-    target := AArch64.target
-    doc := (Spec.RsaPss.signApi v.mgf.G v.mgf.G).doc (notes := ["This implementation builds EMSA-PSS's \
+  (Spec.RsaPss.signApi v.mgf.G v.mgf.G).artifact AArch64.target {
+    suffix := Emit.qualifiedName "" [(v.mgf.G.rust, v.suffix), ("crt", c.suffix)]
+    notes := ["This implementation builds EMSA-PSS's \
       encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is \
       masked with MGF1, and the encoding is signed with `" ++ (privOf c).name ++ "`, which checks \
       the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch \
-      or an address."])
+      or an address."]
     code := Impl.RsaPss.AArch64.sign v.H (privOf c).name (privOf c).code
-    contract := Spec.RsaPss.signContract v.mgf.G v.mgf.G AArch64.abi (stk (privOf c).stack)
     stack := stk (privOf c).stack
     verified := Proof.RsaPss.AArch64.Sgn.code_verified v.ok v.mgf.hash v.mgf.len
       (Proof.RsaPss.AArch64.Vfy.mgf_valid v.mgf) v.pss (privOf c) (show 16 ≤ Proof.Rsa.AArch64.stackBytes by decide)
       (Proof.RsaPss.AArch64.Sgn.sign_sat v.mgf.mem)
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features ++ c.features.filter (!v.features.contains ·) }]
 
 end VG.Generic.MdHash.RsaPrivateCrt.AArch64.RsaPss

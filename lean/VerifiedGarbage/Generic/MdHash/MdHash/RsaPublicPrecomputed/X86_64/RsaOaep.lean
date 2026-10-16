@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86-64
@@ -36,17 +37,13 @@ open VG.Proof.RsaOaep.X86_64.Inst (emitted parts features)
 
 def artifacts (v v2 : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.PublicImpl) : List Artifact :=
   if emitted v v2 then [
-    { Spec.RsaOaep.encryptPrecomputedApi v.mgf.G v2.mgf.G with
-      name := Emit.qualifiedName (Spec.RsaOaep.encryptPrecomputedApi v.mgf.G v2.mgf.G).name
-        (parts v v2 ++ [("rsa", c.suffix)])
-      target := X86_64.target
-      doc := (Spec.RsaOaep.encryptPrecomputedApi v.mgf.G v2.mgf.G).doc
-        (notes := ["This implementation hashes the label with `" ++ v.H.stream.updN ++ "`, masks `DB` \
+    (Spec.RsaOaep.encryptPrecomputedApi v.mgf.G v2.mgf.G).artifact X86_64.target {
+      suffix := Emit.qualifiedName "" (parts v v2 ++ [("rsa", c.suffix)])
+      notes := ["This implementation hashes the label with `" ++ v.H.stream.updN ++ "`, masks `DB` \
           and the seed with MGF1 calling `" ++ v2.H.stream.updN ++ "`, and calls `" ++ c.name ++
           "` with the cached modulus values. The message's length is public; its bytes, the label's \
-          and the seed's are only copied, hashed and masked."])
+          and the seed's are only copied, hashed and masked."]
       code := Impl.RsaOaep.X86_64.Precomputed.encrypt v.H.stream v2.H.stream c.name c.code
-      contract := Spec.RsaOaep.encryptPrecomputedContract v.mgf.G v2.mgf.G X86_64.abi encStack
       stack := encStack
       verified := Proof.RsaOaep.X86_64.Pc.code_verified v.ok v.K v2.ok v2.K v.mgf v2.mgf c
         (Proof.RsaOaep.X86_64.Pc.sat v.mgf.G v2.mgf.G v.mgf.mem)

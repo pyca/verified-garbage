@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # RSASSA-PSS signing on x86-64
@@ -35,17 +36,14 @@ open VG.Proof.RsaPkcs1Enc.X86_64 (privOf)
 open VG.Proof.RsaPss.X86_64 (signStack sign_verified sign_spAll)
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact := [
-  { Spec.RsaPss.signApi v.mgf.G v.mgf.G with
-    name := Emit.qualifiedName (Spec.RsaPss.signApi v.mgf.G v.mgf.G).name
-      [(v.mgf.G.rust, v.suffix), ("crt", c.suffix)]
-    target := X86_64.target
-    doc := (Spec.RsaPss.signApi v.mgf.G v.mgf.G).doc (notes := ["This implementation builds EMSA-PSS's \
+  (Spec.RsaPss.signApi v.mgf.G v.mgf.G).artifact X86_64.target {
+    suffix := Emit.qualifiedName "" [(v.mgf.G.rust, v.suffix), ("crt", c.suffix)]
+    notes := ["This implementation builds EMSA-PSS's \
       encoding in its working space: `M'` is hashed over the blocks its length needs, `DB` is \
       masked with MGF1, and the encoding is signed with `" ++ (privOf c).name ++ "`, which checks \
       the signature against `e`. Only the lengths, `salt_len` and the public key decide a branch \
-      or an address."])
+      or an address."]
     code := Impl.RsaPss.X86_64.sign v.H (privOf c).name (privOf c).code
-    contract := Spec.RsaPss.signContract v.mgf.G v.mgf.G X86_64.abi signStack
     stack := signStack
     verified := sign_verified (hct := (privOf c).ct)
       (hdC := (privOf c).depth) (hH := v.ok) (K := v.K) (lk := v.mgf) (hc := v.pss)

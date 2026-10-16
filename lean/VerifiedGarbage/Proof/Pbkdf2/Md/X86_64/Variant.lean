@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 public import VerifiedGarbage.Proof.Sha512.X86_64.Variant
 public import VerifiedGarbage.Proof.Sha256.X86_64.Variant
-public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Pbkdf2.Scratch
@@ -60,9 +60,19 @@ structure StreamFn where
   ofSig : ∃ pre post leak,
       contract = api.sig.contract X86_64.target.abi pre post api.writeArgs stack leak := by
     exact ⟨_, _, _, rfl⟩
-  ofApi : api.contracts.elim True fun f => contract = f X86_64.target.abi stack := by
-    first | exact True.intro | exact rfl
+  ofApi : contract = api.contract X86_64.target.abi stack := by exact rfl
   spSafe : code.all (fun i => !X86_64.target.isa.writesSp i) = true
+
+/-- `f` as a registration of its `Api` (`Api.artifact`). -/
+def StreamFn.reg (f : StreamFn) : Registration f.api X86_64.target where
+  consts := []
+  code := f.code
+  contract := f.contract
+  stack := f.stack
+  verified := f.verified
+  ofApi := f.ofApi
+  ofSig := f.ofSig
+  spSafe := f.spSafe
 
 /-- The bytes of the frame in which HMAC's `init` and `finalize` (of
 instance `I`) keep their working space, for their `_scratch` forms. -/
