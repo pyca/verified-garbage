@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # AES-SIV (RFC 5297) key setup on x86-64
@@ -39,7 +40,7 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
       (Impl.AesSiv.X86_64.init v.expand v.callee v.suffix)
     stack := 2584
     verified := init_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (init_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (init_spSafe v)
     features := v.features }]
 
 end VG.Generic.AesCtr32.X86_64.AesSiv

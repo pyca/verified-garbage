@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # HMAC (RFC 2104) over a Merkle–Damgård hash function on x86-64
@@ -29,14 +30,14 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame v.I) .r8 v.H.hmacInit
     stack := 16 + Proof.Pbkdf2.Md.X86_64.hmacFrame v.I
     verified := v.hmacInitF
-    spSafe := X86_64.withStackScratch_spSafe (by decide) v.hmacInitSp
+    spSafe := X86_64.withStackScratch_spSafe_of v.hmacInitSp
     features := v.features },
   v.I.finalizeApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame v.I) .r8 v.H.hmacFin
     stack := 16 + Proof.Pbkdf2.Md.X86_64.hmacFrame v.I
     verified := v.hmacFinF
-    spSafe := X86_64.withStackScratch_spSafe (by decide) v.hmacFinSp
+    spSafe := X86_64.withStackScratch_spSafe_of v.hmacFinSp
     features := v.features },
   v.I.initScratchApi.artifact X86_64.target {
     suffix := v.suffix

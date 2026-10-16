@@ -12,8 +12,7 @@ def artifact (sha3 : Bool) (η : Nat) (hη : η=2∨η=4) : Artifact :=
    suffix := if sha3 then "_sha3" else ""
    features := if sha3 then ["sha3"] else []
    code := Impl.MlDsa.AArch64.Optimized.BoundedFour.sampler sha3 true η
-   verified := Proof.MlDsa.AArch64.Optimized.BoundedFour.sampler_verified sha3 hη
-   spSafe := Code.all_of_forall (fun _=>rfl) _ }
+   verified := Proof.MlDsa.AArch64.Optimized.BoundedFour.sampler_verified sha3 hη }
 
 def artifacts : List Artifact :=
  [artifact false 2 (Or.inl rfl),artifact true 2 (Or.inl rfl),

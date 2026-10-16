@@ -25,8 +25,7 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
     features := v.features
     notes := notes v "Runs RFC 8032's doubling formulas, seven products"
     code := v.doubleFn
-    verified := Proof.Ed448.X86_64.FieldVariant.double_verified v
-    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) },
+    verified := Proof.Ed448.X86_64.FieldVariant.double_verified v },
   addAffineApi.artifact X86_64.target {
     suffix := v.suffix
     features := v.features
@@ -34,7 +33,6 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
       `A = Z₁` for `Z₁ Z₂`, as `Z₂ = 1`: nine full products and multiplication by \
       `d = -39081` using negation and X448's small-constant multiplier"
     code := v.addFn
-    verified := Proof.Ed448.X86_64.FieldVariant.add_verified v
-    spSafe := Code.all_of_allInstrs (by cases v <;> lit_decide) }]
+    verified := Proof.Ed448.X86_64.FieldVariant.add_verified v }]
 
 end VG.Generic.Curve448Field.X86_64.Ed448R64

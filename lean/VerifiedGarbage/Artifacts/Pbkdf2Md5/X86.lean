@@ -39,7 +39,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I) 7
       Proof.Pbkdf2.Whole.X86.md5F.pbkdf2
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.md5I
-    verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.md5 (by lit_decide)
-      (by lit_decide) Proof.Pbkdf2.Whole.X86.md5_pbkFrameSat }]
+    verified := Proof.Pbkdf2.Whole.X86.pbkFramed Proof.Pbkdf2.Whole.X86.md5
+      Proof.Pbkdf2.Whole.X86.md5_pbkFrameSat }]
 
 end VG.Artifacts.Pbkdf2Md5.X86

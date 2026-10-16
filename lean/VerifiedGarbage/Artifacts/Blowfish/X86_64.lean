@@ -27,8 +27,7 @@ def artifacts : List Artifact := [
         goes through 16 bytes of working space on the stack, zeroed before returning."]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 Impl.Blowfish.X86_64.encrypt
     stack := 264
-    verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.encrypt_verified
-      (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) },
+    verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.encrypt_verified },
   Spec.Blowfish.ecbDecryptApi.artifact X86_64.target {
     notes := ["One block at a time with SSE2: each S-box lookup scans the 256 entries of its four \
         byte planes, 16 at a time, keeping the bytes of the entry that is the index under masks \
@@ -36,7 +35,6 @@ def artifacts : List Artifact := [
         goes through 16 bytes of working space on the stack, zeroed before returning."]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 Impl.Blowfish.X86_64.decrypt
     stack := 264
-    verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.decrypt_verified
-      (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) }]
+    verified := Proof.Blowfish.X86_64.ecb_framed Proof.Blowfish.X86_64.decrypt_verified }]
 
 end VG.Artifacts.Blowfish.X86_64

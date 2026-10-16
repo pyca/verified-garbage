@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -158,7 +159,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init v.callees)
     stack := 2576
     verified := init_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (init_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (init_spSafe v)
     features := (v.ctr.features ++ v.key.features).dedup },
   Spec.Gcm.sealApi.artifact X86_64.target {
     suffix := v.suffix
@@ -183,7 +184,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
       (Impl.AesGcm.X86_64.streamInit v.callees)
     stack := 2576
     verified := streamInit_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (streamInit_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (streamInit_spSafe v)
     features := v.gh.features },
   Spec.Gcm.streamAadApi.artifact X86_64.target {
     suffix := v.suffix
@@ -192,7 +193,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
       (Impl.AesGcm.X86_64.streamAad v.callees)
     stack := 2576
     verified := streamAad_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (streamAad_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (streamAad_spSafe v)
     features := v.gh.features },
   Spec.Gcm.streamEncryptApi.artifact X86_64.target {
     suffix := v.suffix
@@ -247,7 +248,7 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.initPrecomputed v.callees)
     stack := 2576
     verified := initP_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (initP_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (initP_spSafe v)
     features := (v.ctr.features ++ v.key.features ++ v.gh.features).dedup },
   Spec.Gcm.encryptBlocksPrecomputedApi.artifact X86_64.target {
     suffix := v.suffix
@@ -415,7 +416,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.Prepared.init v.impl.callees)
     stack := 2576
     verified := initPrepared_framed v.impl
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (initPrepared_spSafe v.impl)
+    spSafe := X86_64.withStackScratch_spSafe_of (initPrepared_spSafe v.impl)
     features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx", "avx2"]).dedup },
   Spec.Gcm.encryptBlocksPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix

@@ -41,10 +41,7 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Proof.MlDsa.AArch64.Sign.CachedSelected.code v Spec.MlDsa.mlDsa65
     stack := 16
-    verified := Proof.MlDsa.AArch64.Sign.CachedSelected.verified v (.inl rfl)
-    spSafe := by
-      unfold Proof.MlDsa.AArch64.Sign.CachedSelected.code
-      split <;> exact Code.all_of_forall (fun _ => rfl) _ },
+    verified := Proof.MlDsa.AArch64.Sign.CachedSelected.verified v (.inl rfl) },
   Spec.MlDsa.sign87Api.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
@@ -52,9 +49,6 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     consts := Proof.MlDsa.AArch64.Sign.pairedSignRootConsts
     code := Proof.MlDsa.AArch64.Sign.CachedSelected.code v Spec.MlDsa.mlDsa87
     stack := 16
-    verified := Proof.MlDsa.AArch64.Sign.CachedSelected.verified v (.inr rfl)
-    spSafe := by
-      unfold Proof.MlDsa.AArch64.Sign.CachedSelected.code
-      split <;> exact Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.MlDsa.AArch64.Sign.CachedSelected.verified v (.inr rfl) }]
 
 end VG.Generic.Keccak.AArch64.MlDsaSign

@@ -7,12 +7,15 @@ public import VerifiedGarbage.Proof.Framework.Registration
 
 namespace VG.Artifacts.MlDsaMontDot.AArch64
 
-def one (n : Nat) (h : n=4∨n=5∨n=7) : Artifact :=
-  (Spec.MlDsa.montDotApi n).artifact AArch64.target {
-    code := Impl.MlDsa.AArch64.Optimized.MontDot.dot n
-    verified := Proof.MlDsa.AArch64.Optimized.MontDot.verified h
-    spSafe := Code.all_of_forall (fun _=>rfl) _ }
-
-def artifacts : List Artifact := [one 4 (by omega),one 5 (by omega),one 7 (by omega)]
+def artifacts : List Artifact := [
+  (Spec.MlDsa.montDotApi 4).artifact AArch64.target {
+    code := Impl.MlDsa.AArch64.Optimized.MontDot.dot 4
+    verified := Proof.MlDsa.AArch64.Optimized.MontDot.verified (.inl rfl) },
+  (Spec.MlDsa.montDotApi 5).artifact AArch64.target {
+    code := Impl.MlDsa.AArch64.Optimized.MontDot.dot 5
+    verified := Proof.MlDsa.AArch64.Optimized.MontDot.verified (.inr (.inl rfl)) },
+  (Spec.MlDsa.montDotApi 7).artifact AArch64.target {
+    code := Impl.MlDsa.AArch64.Optimized.MontDot.dot 7
+    verified := Proof.MlDsa.AArch64.Optimized.MontDot.verified (.inr (.inr rfl)) }]
 
 end VG.Artifacts.MlDsaMontDot.AArch64

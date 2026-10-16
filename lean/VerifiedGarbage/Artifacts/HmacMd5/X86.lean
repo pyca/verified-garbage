@@ -33,14 +33,14 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.md5I) 4
       Proof.Pbkdf2.Md.X86.md5M.hmacInit
     stack := 48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.md5I
-    verified := Proof.Pbkdf2.Md.X86.initFramed Proof.Pbkdf2.Md.X86.Instances.md5_init (by lit_decide)
-      (by lit_decide) Proof.Pbkdf2.Md.X86.md5_initFrameSat },
+    verified := Proof.Pbkdf2.Md.X86.initFramed Proof.Pbkdf2.Md.X86.Instances.md5_init
+      Proof.Pbkdf2.Md.X86.md5_initFrameSat },
   Spec.Hmac.md5I.finalizeApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.md5I) 5
       Proof.Pbkdf2.Md.X86.md5M.hmacFin
     stack := 48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.md5I
     verified := Proof.Pbkdf2.Md.X86.finFramed Proof.Pbkdf2.Md.X86.Instances.md5_finalize Proof.Hmac.md5_local
-      (by lit_decide) (by lit_decide) Proof.Pbkdf2.Md.X86.md5_finFrameSat },
+      Proof.Pbkdf2.Md.X86.md5_finFrameSat },
   Spec.Hmac.md5I.initScratchApi.artifact X86.target {
     code := Proof.Pbkdf2.Md.X86.md5M.hmacInit
     stack := 48

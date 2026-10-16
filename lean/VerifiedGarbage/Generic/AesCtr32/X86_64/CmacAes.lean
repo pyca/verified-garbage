@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # AES-CMAC (NIST SP 800-38B) on x86-64
@@ -73,7 +74,7 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
       (Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix)
     stack := 2328
     verified := Proof.CmacAes.Stream.X86_64.init_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.CmacAes.Stream.X86_64.init_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.init_spSafe v)
     features := v.features },
   Spec.Cmac.aesFinishApi.artifact X86_64.target {
     suffix := v.suffix
@@ -82,7 +83,7 @@ def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
       (Impl.CmacAes.Stream.X86_64.finish v.callee v.suffix)
     stack := 2328
     verified := Proof.CmacAes.Stream.X86_64.finish_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.CmacAes.Stream.X86_64.finish_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finish_spSafe v)
     features := v.features }]
 
 end VG.Generic.AesCtr32.X86_64.CmacAes

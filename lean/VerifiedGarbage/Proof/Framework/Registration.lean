@@ -29,6 +29,8 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   code's literal if the module imports the one that materializes it
   (`Lit.lean`), or, where that exceeds the recursion limit (rewriting some
   code to its literal), by `Code.all_of_allInstrs (by decide +kernel)`.
+  Code that depends on a variable of an enumeration (`adx : Bool`, a
+  variant's `FieldVariant`) is proven for each of its values, by cases.
 -/
 
 public meta section
@@ -61,6 +63,18 @@ elab_rules : tactic
     setGoals [← g.replaceTargetDefEq (ty.replace fun e => if e == c then some c' else none)]
     evalTactic (← `(tactic| exact ⟨_, _, _, rfl⟩))
 
+/-- A free variable of `e` whose type is an enumeration (`Bool`, an
+`inductive` of constructors without fields). -/
+def enumFVar? (e : Expr) : MetaM (Option FVarId) := do
+  for fv in (collectFVars {} e).fvarIds do
+    let ty ← whnf (← fv.getType)
+    let .const n _ := ty | continue
+    let some (.inductInfo i) := (← getEnv).find? n | continue
+    if i.isRec || i.numIndices > 0 then continue
+    if ← i.ctors.allM fun c => return (← getConstInfoCtor c).numFields == 0 then
+      return some fv
+  return none
+
 elab_rules : tactic
   | `(tactic| sp_safe) => do
     let ty ← instantiateMVars (← getMainTarget)
@@ -73,6 +87,11 @@ elab_rules : tactic
       return (← whnf (mkApp p i)).isConstOf ``Bool.true
     if always then
       evalTactic (← `(tactic| exact Code.all_of_forall (fun _ => rfl) _))
+    else if let some fv ← enumFVar? lhs then
+      let gs ← (← getMainGoal).cases fv
+      for g in gs do
+        setGoals [g.mvarId]
+        evalTactic (← `(tactic| sp_safe))
     else
       let s ← saveState
       -- The recursion limit is a runtime exception, which `first` does not catch.

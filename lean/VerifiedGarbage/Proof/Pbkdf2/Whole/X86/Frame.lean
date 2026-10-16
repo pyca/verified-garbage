@@ -37,8 +37,9 @@ def pbkFrame (I : Spec.Hmac.Instance) : Nat := 8 + 28 + 8 * I.pbkdf2Scratch
 
 theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (h : Verified X86.target c (I.pbkdf2ScratchContract X86.abi 76))
-    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse c ≤ 76)
     (hsat : ∃ s, (I.pbkdf2Contract X86.abi (76 + pbkFrame I)).pre s)
+    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
+    (hd : stackUse c ≤ 76 := by lit_decide)
     (hs : 8 * I.pbkdf2Scratch < 4060 := by decide) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch (pbkFrame I) 7 c)
       (I.pbkdf2Contract X86.abi (76 + pbkFrame I)) :=

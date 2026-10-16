@@ -1,24 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-public import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
-import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
-public import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
-import VerifiedGarbage.Proof.Rsa.X86_64.Calls
-public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
-import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
-import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
+public import VerifiedGarbage.Proof.Rsa.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on x86-64 -/
@@ -44,9 +27,7 @@ def artifacts : List Artifact := [
         `vg_rsa_mont_mul`."]
     code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.base.mm
     stack := 8
-    verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnBase (Proof.Bignum.X86_64.R2Impl.words _)
-      (by decide +kernel) rfl
-      (by decide +kernel) },
+    verified := Proof.Rsa.X86_64.Instances.precompute_verified },
   Spec.Rsa.publicPrecomputeApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["`vg_rsa_public_precompute`'s code, with Montgomery multiplication by calls of \
@@ -57,9 +38,7 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.adx.mm
       (Impl.Bignum.X86_64.R2Adx.choice Proof.Rsa.X86_64.CallMont.adx.mm)
     stack := 8
-    verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnAdx (Proof.Bignum.X86_64.R2Impl.adx _)
-      (by decide +kernel) rfl
-      (by decide +kernel)
+    verified := Proof.Rsa.X86_64.Instances.precomputeAdx_verified
     features := ["bmi2", "adx"] },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it; then Montgomery \
@@ -95,13 +74,7 @@ def artifacts : List Artifact := [
       (Impl.Rsa.X86_64.Crt.expLoopS Proof.Rsa.X86_64.CallMont.lazyBase Proof.Rsa.X86_64.CallMont.base.mm
         Impl.Rsa.X86_64.Crt.tabSelect)
     stack := 8
-    verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
-      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnBase
-        (Proof.Bignum.X86_64.CrtExpL.w4S Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)
-        (by decide +kernel))
-      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnBase
-        (Proof.Bignum.X86_64.CrtExpL.w4S Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)
-        (Proof.Bignum.X86_64.CrtExpL.w4S_ct Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)) },
+    verified := Proof.Rsa.X86_64.Instances.crt_verified },
   Spec.Rsa.privateCrtApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["`vg_rsa_private_crt`'s code, with Montgomery multiplication by calls of \
@@ -112,13 +85,7 @@ def artifacts : List Artifact := [
       (Impl.Rsa.X86_64.Crt.expLoop5S Proof.Rsa.X86_64.CallMont.lazyAdx Proof.Rsa.X86_64.CallMont.adx.mm
         Impl.Rsa.X86_64.Crt.tabSelectV)
     stack := 8
-    verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
-      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx
-        (Proof.Bignum.X86_64.CrtExpL.w5S Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx)
-        (by decide +kernel))
-      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx
-        (Proof.Bignum.X86_64.CrtExpL.w5S Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx)
-        (Proof.Bignum.X86_64.CrtExpL.w5S_ct Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx))
+    verified := Proof.Rsa.X86_64.Instances.crtAdx_verified
     features := ["avx", "avx2", "bmi2", "adx"] },
   Spec.Rsa.privateCrtApi.artifact X86_64.target {
     suffix := "_ifma"
@@ -132,10 +99,7 @@ def artifacts : List Artifact := [
         it."]
     code := Impl.Rsa.X86_64.CrtIfma.code Proof.Rsa.X86_64.CallMont.adx.mm
     stack := 8
-    verified := Proof.Rsa.X86_64.crt_call_verified (by lit_decide)
-      (Proof.Bignum.X86_64.Ifma.code_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) (by decide +kernel)
-        (by decide +kernel) (by decide +kernel))
-      (Proof.Bignum.X86_64.Ifma.code_constantTime Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel))
+    verified := Proof.Rsa.X86_64.Instances.crtIfma_verified
     features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"] },
   Spec.Rsa.crtValuesApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; then the \
@@ -145,7 +109,7 @@ def artifacts : List Artifact := [
         numbers, and `qInv` by `128 w` steps of the binary extended Euclidean algorithm modulo `p`, \
         each step's swaps and subtractions under masks."]
     code := Impl.Rsa.X86_64.Keys.CrtValues.code
-    verified := Proof.Rsa.X86_64.cv_verified (by decide +kernel) },
+    verified := Proof.Rsa.X86_64.Instances.crtValues_verified },
   Spec.Rsa.recoverPrimesApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and \
         the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words \
@@ -157,16 +121,14 @@ def artifacts : List Artifact := [
         `64 w` steps of bit-serial division."]
     code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Rsa.X86_64.CallMont.base.mm
     stack := 8
-    verified := Proof.Rsa.X86_64.rp_call_verified Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel) rfl
-      (by decide +kernel) },
+    verified := Proof.Rsa.X86_64.Instances.recover_verified },
   Spec.Rsa.recoverPrimesApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["`vg_rsa_recover_primes`'s code, with Montgomery multiplication by calls of \
         `vg_rsa_mont_mul_adx`."]
     code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Rsa.X86_64.CallMont.adx.mm
     stack := 8
-    verified := Proof.Rsa.X86_64.rp_call_verified Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) rfl
-      (by decide +kernel)
+    verified := Proof.Rsa.X86_64.Instances.recoverAdx_verified
     features := ["bmi2", "adx"] },
   Spec.Rsa.checkKeyApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it and `n` as \
@@ -177,7 +139,7 @@ def artifacts : List Artifact := [
         the divisor per bit of the product, `64 (w + 2)` or `64 (2 w + 2)` bits for `w`-word \
         numbers, its subtraction selected under a mask."]
     code := Impl.Rsa.X86_64.CheckKey.code
-    verified := Proof.Rsa.X86_64.Key.key_verified (by decide +kernel) },
+    verified := Proof.Rsa.X86_64.Instances.checkKey_verified },
   Spec.Rsa.checkCrtKeyApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `vg_rsa_check_key`'s code without the checks of `d`. `e` and `n` \
         are checked first, which are the only branches on the key; then every check of the private key is \
@@ -187,6 +149,6 @@ def artifacts : List Artifact := [
         `q qInv`), which are below the divisor when the comparison before it holds: `64 c` doublings \
         modulo the divisor rather than one per bit of the product."]
     code := Impl.Rsa.X86_64.CheckCrtKey.code
-    verified := Proof.Rsa.X86_64.Key.ck_verified (by decide +kernel) }]
+    verified := Proof.Rsa.X86_64.Instances.checkCrtKey_verified }]
 
 end VG.Artifacts.Rsa.X86_64

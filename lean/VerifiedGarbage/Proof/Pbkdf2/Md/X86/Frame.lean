@@ -38,8 +38,9 @@ def finFrame (I : Spec.Hmac.Instance) : Nat := 8 + 20 + 8 * I.scratch
 
 theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (h : Verified X86.target c (I.initScratchContract X86.abi 48))
-    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse c ≤ 48)
     (hsat : ∃ s, (I.initContract X86.abi (48 + initFrame I)).pre s)
+    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
+    (hd : stackUse c ≤ 48 := by lit_decide)
     (hs : 8 * I.scratch < 4072 := by decide) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch (initFrame I) 4 c)
       (I.initContract X86.abi (48 + initFrame I)) :=
@@ -56,8 +57,9 @@ theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa}
 theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (h : Verified X86.target c (I.finalizeScratchContract X86.abi 48))
     (hR : Hmac.ReprLocal I.S)
-    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse c ≤ 48)
     (hsat : ∃ s, (I.finalizeContract X86.abi (48 + finFrame I)).pre s)
+    (hsp : c.allInstrs (fun i => !Taint.clobbers i .esp) = true := by lit_decide)
+    (hd : stackUse c ≤ 48 := by lit_decide)
     (hs : 8 * I.scratch < 4068 := by decide) (hS : I.S.stateBytes < 2 ^ 64 := by decide) :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch (finFrame I) 5 c)
       (I.finalizeContract X86.abi (48 + finFrame I)) :=

@@ -158,9 +158,10 @@ instructions in an ISA model) go in their own PR before either.
    `verified`'s type does not determine it. `of_sig` proves `ofSig`, and
    `sp_safe` proves `spSafe`: by `Code.all_of_forall` on ARMv7 and AArch64,
    which evaluates nothing, and by `Code.all_of_allInstrs (by lit_decide)`
-   on x86 and x86-64 (see "Code the kernel evaluates" below); where
-   `lit_decide` exceeds the recursion limit, give
-   `spSafe := Code.all_of_allInstrs (by decide +kernel)`. Never set
+   on x86 and x86-64 (see "Code the kernel evaluates" below), falling back
+   to `decide +kernel` where `lit_decide` exceeds the recursion limit, and
+   for code that depends on a `Bool` or an enumeration (`adx`, a field
+   variant), by cases on it. Never set
    `contracts` outside `Spec/` (the emitter refuses an artifact without
    them). If its code uses instructions outside
    the target's baseline ISA, list the CPU features they require in
@@ -186,8 +187,13 @@ instructions in an ISA model) go in their own PR before either.
    file, and its callers follow.
    Registration files (`Artifacts/`, `Generic/`) and variant files
    (`Variants/`) are reviewed by hand, so they only bind: no theorems, no
-   tactic proofs beyond the defaults, and no definitions but the artifacts,
-   the variant and notes. Build a variant with its proofs under `Proof/`
+   tactic proofs beyond the defaults (not even a `(by decide)` argument),
+   and no definitions but the artifacts, the variant and notes. A lemma
+   whose side conditions a registration would decide takes them as
+   `autoParam`s (`(hd : stackUse c ≤ 48 := by lit_decide)`), or the
+   algorithm's proofs state the instance as a theorem
+   (`Proof/Rsa/X86_64/Instances.lean`); `ci/check_registrations.py` checks
+   it. Build a variant with its proofs under `Proof/`
    (`Proof/Variants/<Iface>/<Target>/<Name>.lean`, as the variant file's
    path) and bind it in the variant file
    (`def variant : … := Proof.Variants.<Iface>.<Target>.<Name>.variant`);
@@ -704,6 +710,7 @@ architectures in the Benchmarks run's summary): then pass those `arches`.
 (cd lean && lake build --log-level=warning && lake env lean --run Emit.lean --check)
 python3 ci/check_lean_imports.py
 python3 ci/check_lean_modules.py
+python3 ci/check_registrations.py
 python3 ci/check_lean_speed.py
 python3 ci/check_vectors.py
 python3 ci/check_arch_gates.py

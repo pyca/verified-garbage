@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedSafety
 public import VerifiedGarbage.Spec.RsaKeyGen.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedVerified
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.SharedVerified
 
 /-! # Emit RSA candidates for every shared Miller–Rabin backend -/
 
@@ -20,8 +20,8 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
         witness results allowed by the RSA candidate contract."]
     code := Proof.RsaKeyGen.X86_64.sharedCandidateCode v
     stack := 128
-    verified := by exact Proof.RsaKeyGen.X86_64.sharedCandidate_verified v
-    spSafe := by exact Proof.RsaKeyGen.X86_64.sharedCandidate_sp v
+    verified := Proof.RsaKeyGen.X86_64.sharedCandidate_verified v
+    spSafe := Proof.RsaKeyGen.X86_64.sharedCandidate_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.RsaKeyGen

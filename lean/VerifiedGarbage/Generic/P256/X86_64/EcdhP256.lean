@@ -34,7 +34,7 @@ namespace VG.Generic.P256.X86_64.EcdhP256
 def exchange (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.Ecdh.P256.exchangeApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
     notes := ["The function is `vg_ecdsa_p256_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
@@ -66,8 +66,8 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) : List Artifact := [
   exchange false Impl.Ecdh.X86_64.exchangeP256
-    (Proof.Ecdh.X86_64.ecdh_verified h.law h.inv h.prime) (Code.all_of_allInstrs (by lit_decide)),
+    (Proof.Ecdh.X86_64.ecdh_verified h.law h.inv h.prime),
   exchange true Impl.Ecdh.X86_64.exchangeP256Adx
-    (Proof.Ecdh.X86_64.ecdh_verified_adx h.law h.inv h.prime) (Code.all_of_allInstrs (by lit_decide))]
+    (Proof.Ecdh.X86_64.ecdh_verified_adx h.law h.inv h.prime)]
 
 end VG.Generic.P256.X86_64.EcdhP256

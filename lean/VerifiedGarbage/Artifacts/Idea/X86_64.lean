@@ -31,7 +31,6 @@ def artifacts : List Artifact := [
     notes := ["Baseline x86-64, a block at a time in general-purpose registers: each multiplication modulo 2^16 + 1 is a `mul` and a reduction without branches."]
     code := Impl.StackScratch.X86_64.withStackScratch 24 .rcx Impl.Idea.X86_64.ecb
     stack := 24
-    verified := Proof.Idea.X86_64.ecb_framed
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (Code.all_of_allInstrs (by lit_decide)) }]
+    verified := Proof.Idea.X86_64.ecb_framed }]
 
 end VG.Artifacts.Idea.X86_64

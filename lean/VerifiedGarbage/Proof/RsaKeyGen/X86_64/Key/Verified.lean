@@ -473,7 +473,8 @@ theorem keyCode_correct (hmx : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun 
 
 /-- `vg_rsa_keygen_key`, given that its code never loads MXCSR (which the
 registration file evaluates). -/
-theorem key_verified (hmx : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun i => !loadsMxcsr i) = true) :
+theorem key_verified
+    (hmx : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun i => !loadsMxcsr i) = true := by decide +kernel) :
     Verified target VG.Impl.RsaKeyGen.X86_64.Key.code (Spec.RsaKeyGen.keyContract abi) :=
   Verified.of_correct (keyCode_correct hmx) keyCode_constantTime key_implies
 

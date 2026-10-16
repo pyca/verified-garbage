@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # AES-OCB (RFC 7253) on x86-64
@@ -42,7 +43,7 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init (callees v))
     stack := 2576
     verified := init_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (init_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (init_spSafe v)
     features := v.features },
   Spec.Ocb.sealApi.artifact X86_64.target {
     suffix := v.suffix

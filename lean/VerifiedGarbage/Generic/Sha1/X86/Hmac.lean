@@ -33,8 +33,8 @@ def artifacts (v : Proof.Sha1.X86.Variants.Backend) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha1I) 4
       v.M.hmacInit
     stack := 48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha1I
-    verified := Proof.Pbkdf2.Md.X86.initFramed v.hmacInit
-      (Proof.Pbkdf2.Md.X86.noEsp_of v.initNoSp) v.initStack Proof.Pbkdf2.Md.X86.sha1_initFrameSat
+    verified := Proof.Pbkdf2.Md.X86.initFramed v.hmacInit Proof.Pbkdf2.Md.X86.sha1_initFrameSat
+      (Proof.Pbkdf2.Md.X86.noEsp_of v.initNoSp) v.initStack
     spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.initSp
     features := v.features },
   Spec.Hmac.sha1I.finalizeApi.artifact X86.target {
@@ -42,8 +42,8 @@ def artifacts (v : Proof.Sha1.X86.Variants.Backend) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha1I) 5
       v.M.hmacFin
     stack := 48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha1I
-    verified := Proof.Pbkdf2.Md.X86.finFramed v.hmacFin Proof.Hmac.sha1_local
-      (Proof.Pbkdf2.Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack Proof.Pbkdf2.Md.X86.sha1_finFrameSat
+    verified := Proof.Pbkdf2.Md.X86.finFramed v.hmacFin Proof.Hmac.sha1_local Proof.Pbkdf2.Md.X86.sha1_finFrameSat
+      (Proof.Pbkdf2.Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack
     spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp
     features := v.features },
   Spec.Hmac.sha1I.initScratchApi.artifact X86.target {

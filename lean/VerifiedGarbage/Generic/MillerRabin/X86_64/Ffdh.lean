@@ -6,11 +6,11 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Safety
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Safety
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Safety
 public import VerifiedGarbage.Spec.Ffdh.Contract
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Backend
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
-import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
-import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
-import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckDomain.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Emit FFDH domain operations for every shared arithmetic backend -/
@@ -26,16 +26,16 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
         with the selected Montgomery backend. Domain bytes and the public key are public \
         under the shared contract."]
     code := Proof.Ffdh.X86_64.CheckPublic.publicCode v
-    verified := by exact Proof.Ffdh.X86_64.CheckPublic.publicCode_verified v
-    spSafe := by exact Proof.Ffdh.X86_64.CheckPublic.publicCode_sp v
+    verified := Proof.Ffdh.X86_64.CheckPublic.publicCode_verified v
+    spSafe := Proof.Ffdh.X86_64.CheckPublic.publicCode_sp v
     features := v.features },
   Spec.Ffdh.exchangeApi.artifact X86_64.target {
     suffix := v.suffix
     notes := ["The selected Montgomery backend and fixed four-bit windows process every \
         supplied scalar byte. The result is masked to zero for a degenerate shared value."]
     code := Proof.Ffdh.X86_64.Exchange.exchangeCode v
-    verified := by exact Proof.Ffdh.X86_64.Exchange.exchangeCode_verified v
-    spSafe := by exact Proof.Ffdh.X86_64.Exchange.exchangeCode_sp v
+    verified := Proof.Ffdh.X86_64.Exchange.exchangeCode_verified v
+    spSafe := Proof.Ffdh.X86_64.Exchange.exchangeCode_sp v
     features := v.features },
   Spec.Ffdh.checkPrivateApi.artifact X86_64.target {
     suffix := v.suffix
@@ -43,8 +43,8 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
         Powers of a checked generator remain in its q subgroup, so the generated power \
         needs only its range check. Fixed four-bit windows use the selected Montgomery backend."]
     code := Proof.Ffdh.X86_64.CheckPrivate.privateCode v
-    verified := by exact Proof.Ffdh.X86_64.CheckPrivate.privateCode_verified v
-    spSafe := by exact Proof.Ffdh.X86_64.CheckPrivate.privateCode_sp v
+    verified := Proof.Ffdh.X86_64.CheckPrivate.privateCode_verified v
+    spSafe := Proof.Ffdh.X86_64.CheckPrivate.privateCode_sp v
     features := v.features },
   Spec.Ffdh.generateKeyApi.artifact X86_64.target {
     suffix := v.suffix
@@ -52,8 +52,8 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
         degenerate-public-value rejection run in verified code. Fixed four-bit windows \
         use the public bound's significant byte width and the selected Montgomery backend."]
     code := Proof.Ffdh.X86_64.GenerateKey.generateCode v
-    verified := by exact Proof.Ffdh.X86_64.GenerateKey.generateCode_verified v
-    spSafe := by exact Proof.Ffdh.X86_64.GenerateKey.generateCode_sp v
+    verified := Proof.Ffdh.X86_64.GenerateKey.generateCode_verified v
+    spSafe := Proof.Ffdh.X86_64.GenerateKey.generateCode_sp v
     features := v.features },
   Spec.Ffdh.checkDomainApi.artifact X86_64.target {
     suffix := v.suffix
@@ -61,8 +61,8 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
         relation are checked in verified code. Divisibility uses RSA's arbitrary-width \
         Montgomery reduction; fixed four-bit exponentiation uses the selected backend."]
     code := Proof.Ffdh.X86_64.CheckDomain.domainCode v
-    verified := by exact Proof.Ffdh.X86_64.CheckDomain.domainCode_verified v
-    spSafe := by exact Proof.Ffdh.X86_64.CheckDomain.domainCode_sp v
+    verified := Proof.Ffdh.X86_64.CheckDomain.domainCode_verified v
+    spSafe := Proof.Ffdh.X86_64.CheckDomain.domainCode_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.Ffdh

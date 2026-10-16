@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 
 /-!
 # Streaming AES-CMAC's `absorb` on x86-64
@@ -31,7 +32,7 @@ def artifacts (v : Proof.CmacAes.X86_64.UpdateImpl) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratch 2312 .r9 (Impl.CmacAes.Stream.X86_64.absorb v.callee)
     stack := 2328
     verified := Proof.CmacAes.Stream.X86_64.absorb_framed v
-    spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.CmacAes.Stream.X86_64.absorb_spSafe v)
+    spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.absorb_spSafe v)
     features := v.features }]
 
 end VG.Generic.CmacAesUpdate.X86_64.Absorb

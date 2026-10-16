@@ -37,7 +37,7 @@ namespace VG.Generic.P256.X86_64.EcP256
 def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
   Spec.EcKey.P256.publicKeyApi.artifact X86_64.target {
     suffix := (if adx then "_adx" else "")
     notes := ["The function is `vg_ecdsa_p256_sign" ++ (if adx then "_adx" else "") ++ "`'s \
@@ -56,8 +56,8 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) : List Artifact := [
   publicKey false Impl.EcKey.X86_64.publicKeyP256
-    (Proof.EcKey.X86_64.pk_verified h.law (Proof.P256.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+    (Proof.EcKey.X86_64.pk_verified h.law (Proof.P256.combOk7 h.law) h.inv),
   publicKey true Impl.EcKey.X86_64.publicKeyP256Adx
-    (Proof.EcKey.X86_64.pk_verified_adx h.law (Proof.P256.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide))]
+    (Proof.EcKey.X86_64.pk_verified_adx h.law (Proof.P256.combOk7 h.law) h.inv)]
 
 end VG.Generic.P256.X86_64.EcP256

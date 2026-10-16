@@ -37,7 +37,6 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       notes := [note adx]
       code := code adx
       verified := verified h.inv adx
-      spSafe := by cases adx <;> exact Code.all_of_allInstrs (by lit_decide)
       features := if adx then ["bmi2", "adx"] else [] }
 
 end VG.Generic.P224.X86_64.CheckPointP224

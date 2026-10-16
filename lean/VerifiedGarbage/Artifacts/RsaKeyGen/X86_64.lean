@@ -22,6 +22,6 @@ def artifacts : List Artifact := [
         stored under the final one. The code branches only on `e` and on whether `d` is too \
         small (the status 2)."]
     code := Impl.RsaKeyGen.X86_64.Key.code
-    verified := Proof.RsaKeyGen.X86_64.Key.key_verified (by decide +kernel) }]
+    verified := Proof.RsaKeyGen.X86_64.Key.key_verified }]
 
 end VG.Artifacts.RsaKeyGen.X86_64
