@@ -36,35 +36,35 @@ theorem fastSeal_keepsV (v : GcmImpl) : (Impl.AesGcm.AArch64.Fast.«seal» v.cal
     ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
     Code.allInstrs, v.ctr.keepsV, v.gh.keepsV]; decide +kernel
 
-theorem fastSeal_correct (v : GcmImpl) (s : State) (hs : sealAArch64.pre s) :
+theorem fastSeal_correct (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) (s : State) (hs : sealAArch64.pre s) :
     ∃ t s', Exec isa (Impl.AesGcm.AArch64.Fast.«seal» v.callees) s t s' ∧ abiPreserved s s' ∧
       sealAArch64.post s s' :=
-  WP.withPreservedV (Fast.seal_wp v hs) (fastSeal_keepsV v)
+  WP.withPreservedV (Fast.seal_wp v hMK hs) (fastSeal_keepsV v)
 
-theorem fastSeal_verified (v : GcmImpl) :
+theorem fastSeal_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (Impl.AesGcm.AArch64.Fast.«seal» v.callees)
       (Proof.AesGcm.sealScratchContract AArch64.abi) :=
-  Verified.of_correct (fastSeal_correct v) (Fast.seal_ct v) (by
+  Verified.of_correct (fastSeal_correct v hMK) (Fast.seal_ct v hMK) (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
       Spec.Gcm.sealPost, sealAArch64, sealPre, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 
-theorem sealCode_verified (v : GcmImpl) :
+theorem sealCode_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target (sealCode v) (Proof.AesGcm.sealScratchContract AArch64.abi) := by
   unfold sealCode
   split
-  · exact fastSeal_verified v
+  · exact fastSeal_verified v hMK
   · exact seal_verified v
 
-theorem sealCode_framed (v : GcmImpl) :
+theorem sealCode_framed (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
     Verified AArch64.target
       (Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v))
       (Spec.Gcm.sealContract AArch64.abi 2576) :=
   AArch64.Verified.stackArgScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPre AArch64.abi.ptrBits)
     (post := Spec.Gcm.sealPost AArch64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 2576)
-    (sealCode_verified v) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (sealCode_verified v hMK) (by decide) (by decide) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
 
 open VG.Proof.AesGcm.AArch64.Gather in
 /-- The frames of `sealCode v`, in its frame of 2576 bytes, use at most those. -/

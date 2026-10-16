@@ -94,7 +94,7 @@ theorem SealEntry.of_regs {s s₁ s₂ : State} (h : SealEntry s s₁) (r : Regs
     by rw [r.mem]; exact h.frame, by rw [r.mem]; exact h.saved, by rw [r.rd, h.rd], by rw [r.wr, h.wr]⟩
 
 /-- `vg_aes_gcm_seal` with the path for TLS records. -/
-theorem seal_wp (v : GcmImpl) {s : State} (hs : sealAArch64.pre s) :
+theorem seal_wp (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) {s : State} (hs : sealAArch64.pre s) :
     WP isa (Impl.AesGcm.AArch64.Fast.«seal» v.callees) s fun s' => GprAbi s s' ∧ sealAArch64.post s s' := by
   refine WP.seq (WP.mono (fastEntry_ok hs) fun s₁ ⟨h₁, hx⟩ => ?_)
   refine WP.seq (WP.mono (cond_ok (al := (s.gpr .x5).toNat) (nl := (s.gpr .x3).toNat)
@@ -105,7 +105,7 @@ theorem seal_wp (v : GcmImpl) {s : State} (hs : sealAArch64.pre s) :
     rw [r₂.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide), hx r hr]
   by_cases hc : (s.gpr .x5).toNat ≤ 16 ∧ (s.gpr .x3).toNat = 12
   · refine WP.ite true (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun _ => ?_) (fun h => by cases h)
-    exact run_ok v hs h₂ hx₂ hc.2 hc.1
+    exact run_ok v hMK hs h₂ hx₂ hc.2 hc.1
   · refine WP.ite false (by rw [eval_zero x10₂ (by split <;> decide)]; simp [hc]) (fun h => by cases h) (fun _ => ?_)
     exact sealRest_ok v hs h₂
 

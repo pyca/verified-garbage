@@ -31,7 +31,7 @@ namespace VG.Proof.AesGcm.AArch64.Fast
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Taint VG.Impl.AesGcm.AArch64
 open VG.Proof.AesGcm.AArch64
-open VG.Proof.Gcm.Poly VG.Proof.Gcm.AArch64.Pmull
+open VG.Proof.Gcm.AArch64.Pmull
 open VG.Impl.Gcm.AArch64.Pmull (LO MID HI A T C Y tReg sReg poly)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
@@ -109,14 +109,14 @@ theorem Mid.absorb {H : Block} {R n : Nat} {D Tg : Addr} {s s' : State} {x : Lis
   · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
 
 /-- `front` and the moves after it: `Mid`, and the arguments of `cryptAl`. -/
-theorem ctA_ok {k : Reg → BitVec 64} {H : Block} {Np A D Tg : Addr} {al n R : Nat} {s₁ : State}
+theorem ctA_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D Tg : Addr} {al n R : Nat} {s₁ : State}
     (hJ : J0In Ctx (W + BitVec.ofNat 64 16) W SP k H Np 12 s₁) (haad : DataOk (W + BitVec.ofNat 64 16) W s₁ A al)
     (hal : al ≤ 16) (h4 : s₁.gpr .x4 = A) (h5 : s₁.gpr .x5 = BitVec.ofNat 64 al) (h6 : s₁.gpr .x6 = D)
     (h7 : s₁.gpr .x7 = BitVec.ofNat 64 n) (hdat : DataW Ctx (W + BitVec.ofNat 64 16) W s₁ D n)
     (h22 : s₁.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : s₁.gpr .x28 = Tg) :
     WP isa (.seq Impl.AesGcm.AArch64.Fast.front (.block [mov .x27 .x23, mov .x24 .x26, imm .x25 0])) s₁
       fun s₃ => Mid Ctx W SP H R n D Tg s₃ ∧ CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₃.gpr R 0 D n s₃ := by
-  refine WP.seq (WP.mono (front_ok L hJ haad hal h4 h5 h6 h7) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (front_ok L hMK hJ haad hal h4 h5 h6 h7) fun s₂ h₂ => ?_)
   obtain ⟨s₃, run₃, x27₃, x24₃, x25₃, r₃⟩ : ∃ s₃, runBlock isa [mov .x27 .x23, mov .x24 .x26, imm .x25 0] s₂ =
       some s₃ ∧ s₃.gpr .x27 = D ∧ s₃.gpr .x24 = BitVec.ofNat 64 n ∧
       s₃.gpr .x25 = BitVec.ofNat 64 (0 % 16) ∧ Regs [.x27, .x24, .x25] s₂ s₃ := by
@@ -154,7 +154,7 @@ theorem ctC_ok {H : Block} {R n : Nat} {D Tg : Addr} {s₄ : State} (h : Mid Ctx
 /-- From the call on the whole blocks to the call of the tag: `H'` and `Y`
 reloaded, the last bytes and the lengths absorbed, and the arguments of the
 call. -/
-theorem ctE_ok {H : Block} {R n : Nat} {D Tg : Addr} {s₄ s₇ : State} {x : List Byte} {j : Nat}
+theorem ctE_ok (hMK : MulKey) {H : Block} {R n : Nat} {D Tg : Addr} {s₄ s₇ : State} {x : List Byte} {j : Nat}
     (h : Mid Ctx W SP H R n D Tg s₇) (hm : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr 16 H x D n 0 s₄.mem j s₇)
     (hlt : n - j < 16) :
     WP isa (.seq (.block (Impl.AesGcm.AArch64.Fast.hReload ++ Impl.Gcm.AArch64.Pmull.loadRev Y .x20 16 ++
@@ -170,7 +170,7 @@ theorem ctE_ok {H : Block} {R n : Nat} {D Tg : Addr} {s₄ s₇ : State} {x : Li
   have he₈ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ := he₇.keep (fun r hr => g₈ r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide)) sp₈ rd₈ wr₈
-  refine WP.mono (ldrev_ok Y .x20 16 s₈ (by decide) (by decide) (by rw [he₈.x20]; exact he₈.perm.stR (by decide)))
+  refine WP.mono (loadRev_ok Y .x20 16 s₈ (by decide) (by decide) (by rw [he₈.x20]; exact he₈.perm.stR (by decide)))
     fun s₉ ⟨l₉, o₉⟩ => ?_
   have he₉ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₉ := he₈.keep (fun r _ => by rw [o₉.gpr]) o₉.sp o₉.rd o₉.wr
   obtain ⟨s₁₀, run₁₀, x13₁₀, x12₁₀, r₁₀, v₁₀⟩ : ∃ s₁₀, runBlock isa [mov .x13 .x24, mov .x12 .x23] s₉ = some s₁₀ ∧
@@ -186,8 +186,8 @@ theorem ctE_ok {H : Block} {R n : Nat} {D Tg : Addr} {s₄ s₇ : State} {x : Li
     hk₈.of_v (by rw [v₁₀, o₉.v C (by decide)]) (by rw [v₁₀, o₉.v _ (by decide)]) (by rw [v₁₀, o₉.v _ (by decide)])
   have hdj : DataOk (W + BitVec.ofNat 64 16) W s₁₀ (D + BitVec.ofNat 64 j) (n - j) :=
     (h.data.ok.drop hjn).of_eq (by rw [r₁₀.rd, o₉.rd, rd₈]) (by rw [r₁₀.wr, o₉.wr, wr₈])
-  refine WP.seq (WP.mono (WP.with_rdwr (padMul_ok (y := blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16)) he₁₀ hk₁₀
-    (by rw [v₁₀]; exact l₉) x12₁₀ x13₁₀ (by omega) hdj.rd
+  refine WP.seq (WP.mono (WP.with_rdwr (padMul_ok hMK (y := blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16)) he₁₀ hk₁₀
+    (by rw [v₁₀, l₉, rev64b_read]) x12₁₀ x13₁₀ (by omega) hdj.rd
     (hdj.w.sub_right (Lay.wSub (by decide))))) fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
   unfold Impl.AesGcm.AArch64.Fast.lensTag
   simp only [List.append_assoc]
@@ -207,7 +207,7 @@ theorem ctE_ok {H : Block} {R n : Nat} {D Tg : Addr} {s₄ s₇ : State} {x : Li
     rcases hr with rfl | rfl | rfl <;> decide)) sp₁₂ rd₁₂ wr₁₂
   have hk₁₂ : HKey H s₁₂ := hk₁₁.of_v (by rw [v₁₂]) (by rw [v₁₂]) (by rw [v₁₂])
   rw [WP.block_append_iff]
-  refine WP.mono (mulT_ok (y := padStep H (blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16))
+  refine WP.mono (mulT_ok hMK (y := padStep H (blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16))
       (bytesAt s₁₀.mem (D + BitVec.ofNat 64 j) (n - j))) hk₁₂ (by rw [v₁₂]; exact y₁₁)
       (by rw [he₁₂.x19]; exact he₁₂.perm.wR (by decide)))
     fun s₁₃ ⟨y₁₃, _, o₁₃⟩ => ?_
@@ -225,7 +225,7 @@ theorem ctE_ok {H : Block} {R n : Nat} {D Tg : Addr} {s₄ s₇ : State} {x : Li
     fun s' h' => ⟨_, _, _, _, h', x28₁₄⟩
 
 /-- `run` in two runs, from the same public pointers and lengths. -/
-theorem run_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {H₁ H₂ : Block} {Np A D Tg : Addr} {al n R : Nat}
+theorem run_rel (v : GcmImpl) (hMK : MulKey) {k₁ k₂ : Reg → BitVec 64} {H₁ H₂ : Block} {Np A D Tg : Addr} {al n R : Nat}
     {σ₁ σ₂ : State}
     (hJ₁ : J0In Ctx (W + BitVec.ofNat 64 16) W SP k₁ H₁ Np 12 σ₁)
     (hJ₂ : J0In Ctx (W + BitVec.ofNat 64 16) W SP k₂ H₂ Np 12 σ₂)
@@ -244,7 +244,7 @@ theorem run_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {H₁ H₂ : Block
       (by rw [hJ₁.env.sp, hJ₂.env.sp])
       (by agree_tac [x4₁, x4₂, x5₁, x5₂, x6₁, x6₂, x7₁, x7₂, hJ₁.env.x19, hJ₂.env.x19, hJ₁.env.x20, hJ₂.env.x20,
         hJ₁.env.x21, hJ₂.env.x21, hJ₁.x23, hJ₂.x23]) ⟨_, by taint_decide⟩)
-    (ctA_ok L hJ₁ ha₁ hal x4₁ x5₁ x6₁ x7₁ hd₁ h22₁ hR h28₁) (ctA_ok L hJ₂ ha₂ hal x4₂ x5₂ x6₂ x7₂ hd₂ h22₂ hR h28₂)
+    (ctA_ok L hMK hJ₁ ha₁ hal x4₁ x5₁ x6₁ x7₁ hd₁ h22₁ hR h28₁) (ctA_ok L hMK hJ₂ ha₂ hal x4₂ x5₂ x6₂ x7₂ hd₂ h22₂ hR h28₂)
     fun s₃ t₃ ⟨m₁, c₁⟩ ⟨m₂, c₂⟩ => ?_)
   refine rel_seq (cryptAl_rel L v c₁ c₂ (by decide)) (WP.with_rdwr (cryptAl_ok L v (icb := 0) c₁ (by decide)))
     (WP.with_rdwr (cryptAl_ok L v (icb := 0) c₂ (by decide))) fun s₄ t₄ ⟨o₁, rd₁, wr₁⟩ ⟨o₂, rd₂, wr₂⟩ => ?_
@@ -262,7 +262,7 @@ theorem run_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {H₁ H₂ : Block
   refine RelCT.seq_assoc3 (rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24, .x26] (by rw [N₁.env.sp, N₂.env.sp])
       (by agree_tac [N₁.env.x19, N₂.env.x19, N₁.env.x20, N₂.env.x20, N₁.env.x21, N₂.env.x21, b₁.x23, b₂.x23,
         b₁.x24, b₂.x24, N₁.x26, N₂.x26]) ⟨_, by taint_decide⟩)
-    (ctE_ok L N₁ b₁ l₁) (ctE_ok L N₂ b₂ l₂) fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
+    (ctE_ok L hMK N₁ b₁ l₁) (ctE_ok L hMK N₂ b₂ l₂) fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
   refine rel_seq (rel_ctr v.ctr T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
     (tagCall_ok L v (.inl rfl) T₁) (tagCall_ok L v (.inl rfl) T₂) fun s₁₇ t₁₇ O₁ O₂ => ?_
   exact rel_taint [.x19, .x28] (by rw [O₁.env.sp, O₂.env.sp])
@@ -281,7 +281,7 @@ theorem SealEntered.of_regs {σ σ₀ τ τ' : State} (h : SealEntered σ σ₀ 
     by rw [r.mem, sT], by rw [r.mem]; exact f, by rw [r.mem]; exact sv, by rw [r.rd, rd], by rw [r.wr, wr]⟩
 
 /-- `vg_aes_gcm_seal` with the path for TLS records is constant time. -/
-theorem seal_ct (v : GcmImpl) :
+theorem seal_ct (v : GcmImpl) (hMK : MulKey) :
     ConstantTime isa sealAArch64.pre sealAArch64.pub (Impl.AesGcm.AArch64.Fast.«seal» v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   have hq₀ := hq
@@ -337,7 +337,7 @@ theorem seal_ct (v : GcmImpl) :
       DataW (σ₁.gpr .x0) (stackArg σ₁ 1 + BitVec.ofNat 64 16) (stackArg σ₁ 1) u (σ₁.gpr .x6) (σ₁.gpr .x7).toNat :=
     fun f wr => ⟨⟨covers_left (by rw [wr]; exact f.dataW), hn, ol.dw, ol.data.sub_right sub16, ol.data⟩,
       by rw [wr]; exact f.dataW, ol.cd⟩
-  exact run_rel L v (Tg := stackArg σ₁ 0) (R := (σ₁.gpr .x1).toNat)
+  exact run_rel L v hMK (Tg := stackArg σ₁ 0) (R := (σ₁.gpr .x1).toNat)
     ⟨i₁.env, i₁.kept, i₁.x23, i₁.x24, i₁.x26, i₁.x27, i₁.non, rfl⟩
     ⟨i₂.env, i₂.kept, i₂.x23, i₂.x24, i₂.x26, i₂.x27, i₂.non, rfl⟩ i₁.aad i₂.aad hc.1
     ⟨g₁ .x4 (by simp), by rw [g₁ .x5 (by simp), ofNat_toNat'], g₁ .x6 (by simp), by rw [g₁ .x7 (by simp), ofNat_toNat']⟩

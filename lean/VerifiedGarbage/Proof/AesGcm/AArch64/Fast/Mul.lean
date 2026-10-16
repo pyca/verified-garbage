@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 public import VerifiedGarbage.Impl.AesGcm.AArch64.Fast
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -12,30 +12,34 @@ import all Init.Data.Vector.Basic
 
 Untrusted: everything here is checked by Lean. `seal`'s path for TLS records
 (`Impl/AesGcm/AArch64/Fast.lean`) keeps `H'` in registers as
-`vg_ghash_aes` does (`HKey`, with `vg_ghash_aes`'s proof's
-representation: `Proof/Gcm/AArch64/Pmull/Ghash.lean`), computed once
+`vg_ghash_aes` does (`HKey`, `keyV`: `Proof/Gcm/AArch64/Pmull/Groups.lean`), computed once
 (`key_ok`) or reloaded from the working space (`reload_ok`), and multiplies
-the block at `T` into the accumulator `Y` in `v0` (`mulT_ok`).
+the block at `T` into the accumulator `Y` in `v0` (`mulT_ok`), which holds
+`y` with its halves swapped (`ext8 y y`), as loaded. That `mul` by the key
+multiplies by `H` is the one fact of algebra these proofs need: they take
+it as a hypothesis (`MulKey`), proven in `Pmull/Ghash.lean`
+(`mulV_keyV`), so that they do not import the algebra.
 -/
 
 @[expose] public section
 
 namespace VG.Proof.AesGcm.AArch64.Fast
 
-open VG VG.AArch64 VG.Proof.Gcm.Poly VG.Proof.Gcm.AArch64.Pmull
+open VG VG.AArch64 VG.Proof.Gcm.AArch64.Pmull
 open VG.Impl.Gcm.AArch64.Pmull (LO MID HI A T C Y tReg sReg poly)
 open VG.Spec.Gcm (Block blockAt)
 
-theorem ρ_zero : ρ 0 = 0 := by
-  have h : ∀ i, BitVec.extractLsb' i 64 (0 : BitVec 128) = 0 := fun i => by
-    apply BitVec.eq_of_getLsbD_eq; intro j _; simp
-  simp only [ρ, ψ, vdword, h, gp_zero, map_zero, mul_zero, add_zero]
+theorem ext8_zero : ext8 0 0 = 0 := by
+  rw [ext8_eq]; decide
+
+theorem ext8_xor (a b : BitVec 128) : ext8 (a ^^^ b) (a ^^^ b) = ext8 a a ^^^ ext8 b b := by
+  rw [ext8_eq, ext8_eq, ext8_eq, vdword_xor, vdword_xor, BitVec.xor_append]
 
 /-- The registers hold the reduction constant, and `H'` for the hash subkey
-`H` (`x · H' = H`) as they are and with their halves swapped. -/
+`H` (`keyV H`) as it is and with its halves swapped. -/
 structure HKey (H : Block) (s : State) : Prop where
   c : s.v C = ofVDwords poly poly
-  t : x * φ (s.v (tReg 1)) = φ H
+  t : s.v (tReg 1) = keyV H
   sw : s.v (sReg 1) = ext8 (s.v (tReg 1)) (s.v (tReg 1))
 
 /-- `HKey` depends only on its three registers. -/
@@ -53,25 +57,24 @@ theorem t1_nmem : tReg 1 ∉ [A, LO, MID, HI, T, Y] := by decide
 theorem s1_nmem : sReg 1 ∉ [A, LO, MID, HI, T, Y] := by decide
 
 /-- `mulT`: `Y ← mul(Y ⊕ T, H')`, the block at `T` (`x19 + 96`) absorbed. -/
-theorem mulT_ok {H y : Block} {s : State} (hk : HKey H s) (hy : ρ (s.v Y) = φ y)
+theorem mulT_ok (hM : MulKey) {H y : Block} {s : State} (hk : HKey H s) (hy : s.v Y = ext8 y y)
     (hT : InRegions (s.rd ++ s.wr) (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.tO) 16) :
     WP isa (.block Impl.AesGcm.AArch64.Fast.mulT) s fun s' =>
-      ρ (s'.v Y) = φ (Spec.Gcm.mul (y ^^^ blockAt s.mem (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.tO)) H) ∧
+      s'.v Y = ext8 (Spec.Gcm.mul (y ^^^ blockAt s.mem (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.tO)) H)
+        (Spec.Gcm.mul (y ^^^ blockAt s.mem (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.tO)) H) ∧
         HKey H s' ∧ VOnly [A, LO, MID, HI, T, Y] s s' := by
   simp only [Impl.AesGcm.AArch64.Fast.mulT, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (ldrev_ok A .x19 _ s (by decide) (by decide) hT) fun s₁ ⟨l₁, o₁⟩ => ?_
+  refine WP.mono (loadRev_ok A .x19 _ s (by decide) (by decide) hT) fun s₁ ⟨l₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (eor_ok A A Y s₁) fun s₂ ⟨e₂, o₂⟩ => ?_
   have o₁₂ := o₁.trans o₂
   have hk₂ : HKey H s₂ := hk.of_vonly o₁₂ (by decide) (by decide) (by decide)
-  refine WP.mono (mul_ok Y A (sReg 1) (tReg 1) s₂ free_A (sReg_free _) (tReg_free _) hk₂.sw hk₂.c)
+  refine WP.mono (mulV_ok Y A (sReg 1) (tReg 1) s₂ free_A (sReg_free _) (tReg_free _) hk₂.sw hk₂.c)
     fun s₃ ⟨m₃, o₃⟩ => ⟨?_, hk₂.of_vonly o₃ (by decide) (by decide) (by decide),
       (o₁₂.trans o₃).weaken⟩
   have hY₁ : s₁.v Y = s.v Y := o₁.v Y (by decide)
-  rw [m₃, e₂, ρ_xor, l₁, hY₁, hy, φ_mul, φ_xor]
-  have ht := hk₂.t
-  linear_combination (φ (blockAt s.mem (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.tO)) + φ y) * ht
+  rw [m₃, e₂, l₁, hY₁, hy, rev64b_read, ← ext8_xor, hk₂.t, hM, BitVec.xor_comm]
 
 /-- A block runs one way: what two proofs of it give holds together. -/
 theorem WP.block_and {is : List Instr} {s : State} {P Q : State → Prop} (hp : WP isa (.block is) s P)
@@ -104,12 +107,12 @@ theorem key_ok {H : Block} {s : State} (hin : InRegions (s.rd ++ s.wr) (s.gpr .x
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   simp only [Impl.AesGcm.AArch64.Fast.key, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (ldrev_ok A .x0 0 s rfl (by decide) hin) fun s₁ ⟨l₁, o₁⟩ => ?_
+  refine WP.mono (loadRev_ok A .x0 0 s rfl (by decide) hin) fun s₁ ⟨l₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (WP.block_and (consts_ok s₁) (consts_sp s₁))
     fun s₂ ⟨⟨c₂, t₂, w₂, kv₂, kg₂, m₂, rd₂, wr₂⟩, sp₂⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (mul_ok (sReg 1) A (sReg 2) (tReg 2) s₂ free_A (sReg_free _) (tReg_free _)
+  refine WP.mono (mulV_ok (sReg 1) A (sReg 2) (tReg 2) s₂ free_A (sReg_free _) (tReg_free _)
     (by rw [w₂, t₂]) c₂) fun s₃ ⟨m₃, o₃⟩ => ?_
   refine WP.mono (swap_ok (tReg 1) (sReg 1) s₃) fun s₄ ⟨w₄, o₄⟩ => ?_
   have hA₂ : s₂.v A = s₁.v A := kv₂ A (by decide) (ne_tReg 2) (ne_sReg 2)
@@ -121,8 +124,8 @@ theorem key_ok {H : Block} {s : State} (hin : InRegions (s.rd ++ s.wr) (s.gpr .x
   refine ⟨⟨by rw [hC, c₂], ?_, by rw [s1₄, w₄, ext8_ext8]⟩, fun r h5 h6 h7 => ?_, fun r hr => ?_,
     by rw [o₄.mem, o₃.mem, m₂, o₁.mem], by rw [o₄.rd, o₃.rd, rd₂, o₁.rd],
     by rw [o₄.wr, o₃.wr, wr₂, o₁.wr], ?_⟩
-  · rw [w₄, φ_ext8_self, m₃, hA₂, l₁, t₂, hH]
-    linear_combination φ H * x2_φ_xInv2
+  · rw [w₄, m₃, hA₂, l₁, t₂, rev64b_read, hH]
+    rfl
   · rw [o₄.gpr, o₃.gpr, kg₂ r h5 h6 h7, o₁.gpr]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨hA, hC', ht2, hs2, hlo, hmid, hhi, hT, hs1, ht1⟩ := hr
@@ -154,7 +157,7 @@ theorem reload_ok {H : Block} {t : BitVec 128} {s : State}
     (r₁ : InRegions (s.rd ++ s.wr) (s.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Fast.hO + 16)) 16)
     (h₀ : s.mem.read (s.gpr .x19 + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16 = t)
     (h₁ : s.mem.read (s.gpr .x19 + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Fast.hO + 16)) 16 = ext8 t t)
-    (ht : x * φ t = φ H) :
+    (ht : t = keyV H) :
     WP isa (.block Impl.AesGcm.AArch64.Fast.hReload) s fun s' =>
       HKey H s' ∧ (∀ r, r ≠ .x5 → s'.gpr r = s.gpr r) ∧
       (∀ r, r ∉ [tReg 1, sReg 1, C] → s'.v r = s.v r) ∧
@@ -173,15 +176,15 @@ theorem reload_ok {H : Block} {t : BitVec 128} {s : State}
     simp only [v_setV, v_write, tReg, sReg, hr.1, hr.2.1, hr.2.2, ite_false]
 
 /-- `Y` stored at `x20 + 16`, as `vg_ghash` keeps it. -/
-theorem storeY_ok {y : Block} {s : State} (hy : ρ (s.v Y) = φ y)
+theorem storeY_ok {y : Block} {s : State} (hy : s.v Y = ext8 y y)
     (hw : InRegions s.wr (s.gpr .x20 + BitVec.ofNat 64 16) 16) :
     WP isa (.block Impl.AesGcm.AArch64.Fast.storeY) s fun s' =>
       s'.mem = s.mem.write (s.gpr .x20 + BitVec.ofNat 64 16) 16 (VRevOp.eval .rev64b (s.v Y)) ∧
       blockAt s'.mem (s.gpr .x20 + BitVec.ofNat 64 16) = y ∧ VOnly [Y] { s with mem := s'.mem } s' := by
   refine WP.block_cons_iff.mpr ⟨_, exec_rev64b Y Y s, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_strq (s := s.setV Y _) (by decide) (by decide) hw, WP.block_nil ?_⟩
-  refine ⟨by simp only [mem_setV, gpr_setV, v_setV, ite_true], φ_inj ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl, rfl⟩⟩
-  · simp only [mem_setV, gpr_setV, v_setV, ite_true, φ_store, hy]
+  refine ⟨by simp only [mem_setV, gpr_setV, v_setV, ite_true], ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl, rfl⟩⟩
+  · simp only [mem_setV, gpr_setV, v_setV, ite_true, blockAt_store, hy, ext8_ext8]
   · simp only [List.mem_singleton] at hr; simp only [v_setV, hr, ite_false]
 
 end VG.Proof.AesGcm.AArch64.Fast

@@ -27,7 +27,7 @@ namespace VG.Proof.AesGcm.AArch64.Fast
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64 VG.WriteBytes
 open VG.Proof.AesGcm.AArch64
-open VG.Proof.Gcm.Poly VG.Proof.Gcm.AArch64.Pmull
+open VG.Proof.Gcm.AArch64.Pmull
 open VG.Impl.Gcm.AArch64.Pmull (LO MID HI A T C Y tReg sReg poly)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks zeros padLen ofBytes)
@@ -60,11 +60,11 @@ theorem ghashFrom_pad (H y : Block) {b : List Byte} (hb : b.length ≤ 16) :
     rfl
 
 /-- `padMul`: the `n` bytes at `P`, padded in `T`, multiplied into `Y`. -/
-theorem padMul_ok {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n : Nat} {s : State} (he : Env Ctx St W SP s) (hk : HKey H s)
-    (hy : ρ (s.v Y) = φ y) (h12 : s.gpr .x12 = P) (h13 : s.gpr .x13 = BitVec.ofNat 64 n) (hn : n ≤ 16)
+theorem padMul_ok (hM : MulKey) {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n : Nat} {s : State} (he : Env Ctx St W SP s) (hk : HKey H s)
+    (hy : s.v Y = ext8 y y) (h12 : s.gpr .x12 = P) (h13 : s.gpr .x13 = BitVec.ofNat 64 n) (hn : n ≤ 16)
     (hP : Covers [⟨P, n⟩] (s.rd ++ s.wr)) (hPW : (⟨P, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 96, 16⟩) :
     WP isa Impl.AesGcm.AArch64.Fast.padMul s fun s' =>
-      ρ (s'.v Y) = φ (padStep H y (bytesAt s.mem P n)) ∧ HKey H s' ∧ Env Ctx St W SP s' ∧
+      s'.v Y = ext8 (padStep H y (bytesAt s.mem P n)) (padStep H y (bytesAt s.mem P n)) ∧ HKey H s' ∧ Env Ctx St W SP s' ∧
       Others [.x9, .x11, .x12, .x13, .x14, .x15] s s' ∧ Frame [⟨W + BitVec.ofNat 64 96, 16⟩] s.mem s'.mem ∧
       (∀ r, r ∉ [A, LO, MID, HI, T, Y] → s'.v r = s.v r) := by
   unfold Impl.AesGcm.AArch64.Fast.padMul
@@ -117,7 +117,7 @@ theorem padMul_ok {Ctx St W SP : Addr} {H y : Block} {P : Addr} {n : Nat} {s : S
     rcases hr with rfl | rfl | rfl <;> decide)) (by rw [sp₂, sp₁]) (by rw [rd₂, rd₁]) (by rw [wr₂, wr₁])
   have vv : s₂.v = s.v := by rw [v₂, v₁]
   have hk₂ : HKey H s₂ := hk.of_v (by rw [vv]) (by rw [vv]) (by rw [vv])
-  refine WP.mono (mulT_ok (y := y) hk₂ (by rw [vv]; exact hy) (by rw [he₂.x19]; exact he₂.perm.wR (by decide)))
+  refine WP.mono (mulT_ok hM (y := y) hk₂ (by rw [vv]; exact hy) (by rw [he₂.x19]; exact he₂.perm.wR (by decide)))
     fun s₃ ⟨y₃, hk₃, o₃⟩ => ⟨?_, hk₃, he₂.keep (fun r _ => by rw [o₃.gpr]) o₃.sp o₃.rd o₃.wr,
       fun r hr => by rw [o₃.gpr, gg r hr], ?_, fun r hr => by rw [o₃.v r hr, vv]⟩
   · have hne : bytesAt s.mem P n ≠ [] := fun e => h0 (by simpa [length_bytesAt] using congrArg List.length e)

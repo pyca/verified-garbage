@@ -25,14 +25,14 @@ namespace VG.Proof.AesGcm.AArch64.Fast
 
 open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64 VG.WriteBytes
 open VG.Proof.AesGcm.AArch64
-open VG.Proof.Gcm.Poly VG.Proof.Gcm.AArch64.Pmull
+open VG.Proof.Gcm.AArch64.Pmull
 open VG.Impl.Gcm.AArch64.Pmull (LO MID HI A T C Y tReg sReg poly)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks zeros padLen ofBytes inc32)
 
 /-- `H'` for `H`, and its halves swapped, kept at `W + hO`. -/
 def KeyAt (H : Block) (m : Mem) (W : Addr) : Prop :=
-  x * φ (m.read (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16) = φ H ∧
+  m.read (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16 = keyV H ∧
     m.read (W + BitVec.ofNat 64 (Impl.AesGcm.AArch64.Fast.hO + 16)) 16 =
       ext8 (m.read (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16)
         (m.read (W + BitVec.ofNat 64 Impl.AesGcm.AArch64.Fast.hO) 16)
@@ -123,7 +123,7 @@ theorem initState_others {s : State} (he : Env Ctx St W SP s) :
 
 /-- `front`, from the 12-byte nonce at `Np`, the `al` (at most 16) bytes of
 additional data at `A` (`x4`, `x5`), and the data (`x6`, `x7`). -/
-theorem front_ok {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {al n : Nat} {s₀ : State}
+theorem front_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {al n : Nat} {s₀ : State}
     (hJ : J0In Ctx St W SP k H Np 12 s₀) (haad : DataOk St W s₀ A al) (hal : al ≤ 16)
     (h4 : s₀.gpr .x4 = A) (h5 : s₀.gpr .x5 = BitVec.ofNat 64 al) (h6 : s₀.gpr .x6 = D)
     (h7 : s₀.gpr .x7 = BitVec.ofNat 64 n) :
@@ -217,7 +217,7 @@ theorem front_ok {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {al n : Nat
   refine WP.of_runBlock ⟨s₆, run₆, ?_⟩
   have he₆ := he₅.of_regs r₆
   have hk₆ : HKey H s₆ := hk₅.of_v (by rw [v₆]) (by rw [v₆]) (by rw [v₆])
-  have hy₆ : ρ (s₆.v Y) = φ 0 := by rw [v₆, y₅, ρ_zero, Proof.Gcm.Poly.φ_zero]
+  have hy₆ : s₆.v Y = ext8 0 0 := by rw [v₆, y₅, ext8_zero]
   -- The memory up to `s₆`, and the additional data in it.
   have F₆ : Frame (frontFrame' St W) s₀.mem s₆.mem := by
     rw [r₆.mem]
@@ -233,7 +233,7 @@ theorem front_ok {k : Reg → BitVec 64} {H : Block} {Np A D : Addr} {al n : Nat
     · exact haad.w.sub_right (Lay.wSub (by decide))
     · exact haad.w.sub_right (Lay.wSub (by decide))
   have hA₆ : bytesAt s₆.mem A al = bytesAt s₀.mem A al := bytesAt_frame F₆ dA (by have := haad.lt; omega)
-  refine WP.seq (WP.mono (WP.with_rdwr (padMul_ok he₆ hk₆ hy₆ x12₆ x13₆ hal
+  refine WP.seq (WP.mono (WP.with_rdwr (padMul_ok hMK he₆ hk₆ hy₆ x12₆ x13₆ hal
       (by rw [r₆.rd, r₆.wr, rd₅, wr₅, rd₄, wr₄, r₃.rd, r₃.wr, rd₂, wr₂, r₁'.rd, r₁'.wr, rd₁, wr₁]; exact haad.rd)
       (haad.w.sub_right (Lay.wSub (by decide)))))
     fun s₇ ⟨⟨y₇, hk₇, he₇, og₇, f₇, v₇⟩, rd₇, wr₇⟩ => ?_)

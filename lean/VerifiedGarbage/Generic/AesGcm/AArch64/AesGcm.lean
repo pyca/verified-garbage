@@ -68,7 +68,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)
     contract := Spec.Gcm.sealContract AArch64.abi 2576
     stack := 2576
-    verified := sealCode_framed v
+    verified := sealCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { Spec.Gcm.openApi with
@@ -154,7 +154,7 @@ def gatherNote (fn : String) : String :=
 def sealFn (v : GcmImpl) : Proof.AesGcm.AArch64.Gather.SealFn where
   fn := ⟨Spec.Gcm.sealApi.name ++ v.suffix,
     Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)⟩
-  verified := sealCode_framed v
+  verified := sealCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV
   depth := sealCode_depth v
 
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
