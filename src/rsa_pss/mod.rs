@@ -330,7 +330,7 @@ pub fn verify(
         SaltLength::Len(l) => (l, 0),
         SaltLength::Any => (0, 1),
     };
-    let mut scratch = key.verify_scratch.take(scratch_words(k));
+    let mut scratch = key.verify_scratch.take(scratch_words(k), false);
     let r = with_functions!(hash, |fns| call_verify(
         fns.1,
         key,
@@ -340,7 +340,7 @@ pub fn verify(
         any,
         &mut scratch
     ));
-    // ScratchLease wipes the encoding before returning its buffer to the key.
+    // The encoding is public: ScratchLease returns the buffer to the key unwiped.
     r == 1
 }
 

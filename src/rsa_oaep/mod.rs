@@ -239,7 +239,7 @@ fn encrypt_with<const L: usize>(
     let mut seed = [0u8; L];
     os_random(&mut seed)?;
     let mut out = vec![0u8; k];
-    let mut scratch = key.verify_scratch.take(scratch_words(k));
+    let mut scratch = key.verify_scratch.take(scratch_words(k), true);
     let pre = key.pre(&mut scratch);
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes, `seed` for `L` bytes, the hash function's length), and none
