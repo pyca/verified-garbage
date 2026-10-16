@@ -12,8 +12,9 @@ publish = false
 
 [features]
 default = ["std"]
-# The ticketer rotates its keys behind rustls' std-only `TicketRotator`.
-std = []
+# The ticketer rotates its keys behind rustls' std-only `TicketRotator`;
+# verified-garbage's `std` detects the CPU's features at run time on AArch64.
+std = ["verified-garbage/std"]
 # Lets `VG_CPU_FEATURES` restrict the CPU features verified-garbage uses
 # (its `src/cpu.rs`), to benchmark another CPU class's code paths.
 cpu-features-env = ["verified-garbage/cpu-features-env"]
