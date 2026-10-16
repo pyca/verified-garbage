@@ -277,7 +277,7 @@ padded last block and the lengths block in one call. -/
 def macPadLengths (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
   .seq (wholeBlocks b p n)
   (.seq (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)])
-    (.ite .e (absorbLengths b) (.seq (.block (tailPtr p n)) (padTail b 2))))
+    (Code.iteCold .ne (.seq (.block (tailPtr p n)) (padTail b 2)) (absorbLengths b)))
 
 /-- The arguments of the second call of `vg_chacha20_xor`: the ChaCha20
 state with the counter set to 1, and the data. -/

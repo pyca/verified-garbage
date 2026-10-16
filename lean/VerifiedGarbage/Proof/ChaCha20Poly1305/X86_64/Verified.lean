@@ -74,7 +74,7 @@ theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ⊢
   rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
     (simp only [«seal», prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
-       macPad, macPadLengths, wholeBlocks, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+       macPad, macPadLengths, Code.iteCold, wholeBlocks, padTail, absorbLengths, Bool.and_true, Bool.true_and]
      subst hP; lit_decide)
 
 theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
@@ -84,7 +84,7 @@ theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ⊢
   rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
     (simp only [«open», prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
-       macPad, macPadLengths, wholeBlocks, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+       macPad, macPadLengths, Code.iteCold, wholeBlocks, padTail, absorbLengths, Bool.and_true, Bool.true_and]
      subst hP; lit_decide)
 
 theorem seal_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sealX86_64.pre s) :
@@ -175,14 +175,14 @@ theorem blocks_xdepth (b : Impl.Poly1305.X86_64.Blocks) : b.code.x86_64Depth ≤
 theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
+  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
     Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
   omega
 
 theorem open_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («open» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [«open», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
+  simp only [«open», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
     Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
   omega
 
