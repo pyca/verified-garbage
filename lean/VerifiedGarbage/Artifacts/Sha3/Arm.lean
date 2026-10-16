@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Sha3.Arm.Shared
 public import VerifiedGarbage.Proof.Sha3.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration

@@ -1,14 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCT
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSAES-PKCS1-v1_5 encryption (RFC 8017 §7.2.1) on x86-64 -/

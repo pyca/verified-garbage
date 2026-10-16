@@ -1,10 +1,9 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.X86.Pack.SimpleBitPack
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

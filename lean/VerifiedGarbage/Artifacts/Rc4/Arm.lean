@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Rc4.Arm.Frame
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Raw RC4 on ARMv7 -/

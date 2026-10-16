@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Blake2.AArch64.Compress
 public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Verified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # BLAKE2b (RFC 7693) on AArch64 -/

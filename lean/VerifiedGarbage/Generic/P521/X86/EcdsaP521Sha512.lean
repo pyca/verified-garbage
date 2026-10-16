@@ -1,12 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P521Sha512
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Sha256.X86.Shared
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

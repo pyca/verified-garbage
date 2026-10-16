@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareHelper
 public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
@@ -10,10 +9,8 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
-import VerifiedGarbage.Proof.Bignum.AArch64.FoldedPhaseCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMont
+import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on AArch64 -/

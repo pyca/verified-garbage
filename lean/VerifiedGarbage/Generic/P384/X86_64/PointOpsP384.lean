@@ -1,19 +1,9 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-public import VerifiedGarbage.Proof.Weierstrass.PointFacts
 public import VerifiedGarbage.Proof.P384.X86_64.PointOpsContract
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.Weierstrass.CombLay
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.P384.X86_64.PointOpsLit
 
 /-!
 # P-384's Jacobian point operations on x86-64

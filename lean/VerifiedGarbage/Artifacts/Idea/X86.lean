@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86.Verified
+public import VerifiedGarbage.Proof.Idea.X86.Key
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Idea.X86.Lit
 
 /-! # IDEA artifacts on baseline x86 (32-bit) -/
 

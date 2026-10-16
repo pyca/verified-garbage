@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintVerified
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

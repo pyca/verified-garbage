@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesCtr.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 

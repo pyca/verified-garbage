@@ -4,14 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.PrivImpl
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
-import Mathlib.Data.Int.ModEq
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
-import VerifiedGarbage.Proof.Bignum.AArch64.FoldedPhaseCT
-import VerifiedGarbage.Spec.Rsa.MontSquare
+import Mathlib.Tactic.Finiteness.Attr
 
 /-!
 # `vg_rsa_private_crt` on AArch64: the baseline

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Callee
-import VerifiedGarbage.Spec.TripleDes
+public import VerifiedGarbage.Proof.Aes.X86.VariantProof
 
 /-!
 # The functions AES-GCM calls on x86: AesNiPclmul

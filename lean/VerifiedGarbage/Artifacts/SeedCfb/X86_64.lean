@@ -1,10 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.FbVerified
-public import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
 
 /-! # SEED-CFB128 artifacts on baseline x86-64 -/
 

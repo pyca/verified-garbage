@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ct
-import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # The functions AES-GCM calls on x86-64: AesNiPclmulAvx

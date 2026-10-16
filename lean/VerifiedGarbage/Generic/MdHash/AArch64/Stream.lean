@@ -1,9 +1,6 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # Streaming Merkle–Damgård hash functions on AArch64

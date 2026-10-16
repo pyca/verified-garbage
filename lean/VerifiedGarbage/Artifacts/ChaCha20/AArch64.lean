@@ -1,11 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
-public import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.Init
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # The ChaCha20 block function (RFC 8439) on AArch64 -/

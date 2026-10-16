@@ -1,9 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.ApplyCT
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

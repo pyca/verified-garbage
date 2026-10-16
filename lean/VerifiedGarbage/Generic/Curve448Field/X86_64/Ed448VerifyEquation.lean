@@ -1,8 +1,16 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

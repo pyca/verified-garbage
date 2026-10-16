@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.CtrVerified
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Camellia-CTR artifacts on baseline AArch64 -/

@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 
 /-! SHA-1's compression and streaming functions on x86, registered for every x86 SHA-1

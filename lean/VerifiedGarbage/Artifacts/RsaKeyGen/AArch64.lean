@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Verified
+public import Aesop.BuiltinRules
+import Mathlib.Tactic.Finiteness.Attr
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on AArch64 -/

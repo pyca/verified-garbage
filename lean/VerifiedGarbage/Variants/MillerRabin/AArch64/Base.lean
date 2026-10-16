@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Backend
 public import VerifiedGarbage.Proof.Bignum.AArch64.Mont
+import Mathlib.Tactic.Finiteness.Attr
 
 /-! # The baseline shared round -/
 

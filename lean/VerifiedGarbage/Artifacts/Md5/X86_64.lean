@@ -1,13 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Md5.X86_64.Shared
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.MdStream.Spec
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Md5.X86_64.Lit
 
 /-! # MD5 (RFC 1321) on x86-64 -/
 

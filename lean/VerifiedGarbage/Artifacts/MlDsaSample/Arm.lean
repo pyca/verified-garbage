@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejBounded
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.ExpandMask

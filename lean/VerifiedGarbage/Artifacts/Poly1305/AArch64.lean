@@ -1,15 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Impl.Poly1305.AArch64.Radix64
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Init
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Update
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
-import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Finish
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
+import Mathlib.Tactic.NormNum.Inv
+import Mathlib.Tactic.NormNum.Pow
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Poly1305 (RFC 8439 §2.5) on AArch64 -/

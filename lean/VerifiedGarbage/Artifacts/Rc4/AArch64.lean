@@ -2,9 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedInit
 public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.AArch64.Call
-import VerifiedGarbage.Proof.Rc4.AArch64.KsaGroup
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Raw RC4 on baseline AArch64 -/

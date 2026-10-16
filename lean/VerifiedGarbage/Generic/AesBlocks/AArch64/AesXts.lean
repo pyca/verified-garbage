@@ -1,8 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesXts.AArch64.Verified
-import VerifiedGarbage.Proof.AesOcb.AArch64.Env
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintUnpack
-import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.HintPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.SimpleBitPack
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) on x86-64: the encodings -/

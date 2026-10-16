@@ -1,7 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86.FbVerified
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Idea.X86.ModesLit
 
 /-! # IDEA-OFB artifacts on baseline x86 (32-bit) -/
 

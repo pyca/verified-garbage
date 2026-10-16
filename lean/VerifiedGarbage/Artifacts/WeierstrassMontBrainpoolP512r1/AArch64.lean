@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontBrainpoolP512r1
 public import VerifiedGarbage.Proof.Framework.Registration
 

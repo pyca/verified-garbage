@@ -1,11 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.X448.Arm
 public import VerifiedGarbage.Proof.X448.Arm.Verified
-import VerifiedGarbage.Proof.X448.Arm.Lit
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Arm.Call
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # X448 (RFC 7748) on ARMv7 -/

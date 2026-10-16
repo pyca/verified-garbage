@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
 public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Argon2's G on baseline x86-64

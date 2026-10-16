@@ -1,14 +1,10 @@
 module
 
-import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
-import VerifiedGarbage.Proof.Rc2.X86.Block
 public import VerifiedGarbage.Proof.Rc2.X86.Key
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Verified
-public import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
 public import VerifiedGarbage.Proof.Rc2.X86.Stream.Frame
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
 
 /-! # RC2 artifacts on baseline x86 -/
 

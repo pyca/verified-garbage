@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.CmacAes.X86_64.AesNi
 public import VerifiedGarbage.Proof.Framework.Registration
 

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.Arm.FbVerified
-import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SEED-OFB artifacts on baseline ARMv7 -/

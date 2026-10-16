@@ -1,12 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP512r1
-import Batteries.Logic
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.RegSet
-import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery arithmetic modulo brainpoolP512r1's `p` and `n` on ARMv7

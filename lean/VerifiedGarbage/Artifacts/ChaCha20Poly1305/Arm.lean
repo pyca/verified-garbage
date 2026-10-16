@@ -1,9 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.Arm
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Verified
-import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Gather.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 

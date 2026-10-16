@@ -1,12 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.MlKem1024.Arm.CompressEncode
-import VerifiedGarbage.Proof.MlKem1024.Arm.Decompress
 public import VerifiedGarbage.Proof.MlKem1024.Arm.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.Arm.KeyGenCT
 public import VerifiedGarbage.Proof.MlKem1024.Arm.EncapsCT
 public import VerifiedGarbage.Proof.MlKem1024.Arm.DecapsCT
+public import VerifiedGarbage.Proof.MlKem1024.Arm.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.Arm.Decompress
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-KEM-1024 (FIPS 203) on 32-bit ARM -/

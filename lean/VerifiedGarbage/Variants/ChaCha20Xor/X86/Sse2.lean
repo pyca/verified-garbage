@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86.Variant
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.X86.Sse
 
 /-!
 # `vg_chacha20_xor` on x86: with SSE2

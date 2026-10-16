@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
 public import VerifiedGarbage.Proof.Blake2.X86_64.Compress
 public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-! # BLAKE2b on baseline x86-64 -/
 

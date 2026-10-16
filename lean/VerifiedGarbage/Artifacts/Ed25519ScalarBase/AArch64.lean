@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! Complete unsigned scalar multiplication by the Ed25519 base point. -/

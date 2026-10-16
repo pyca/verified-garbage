@@ -1,7 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.P256.Curve
-import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.Positivity.Finset
 
 /-!
 # P-256's group law, on 32-bit ARM

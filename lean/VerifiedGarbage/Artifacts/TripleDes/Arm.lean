@@ -1,9 +1,8 @@
 module
 
-import VerifiedGarbage.Proof.TripleDes.Arm.VerifiedBlock
-import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.Arm.Ecb.Verified
 public import VerifiedGarbage.Proof.TripleDes.Arm.Frame
+public import VerifiedGarbage.Proof.TripleDes.Arm.VerifiedBlock
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

@@ -1,27 +1,20 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
-import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12Avx2
-import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
-import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
-import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
-import VerifiedGarbage.Proof.MlKem.X86_64.Mul
-import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
-import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
-public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
-import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Scalar
+public import VerifiedGarbage.Proof.MlKem.X86_64.S4Verified
+public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 
 /-! # ML-KEM (FIPS 203) on x86-64: the polynomial primitives -/
 

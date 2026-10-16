@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Instances
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration

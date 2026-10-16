@@ -1,8 +1,8 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Md5.X86.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Md5.X86.Lit
 
 /-! # MD5 (RFC 1321) on x86 -/
 

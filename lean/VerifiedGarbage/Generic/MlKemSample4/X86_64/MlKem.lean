@@ -1,10 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.MlKem.X86_64.Top768
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
-import Mathlib.Tactic.Conv
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

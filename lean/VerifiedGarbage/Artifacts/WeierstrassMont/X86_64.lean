@@ -1,17 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6Verified
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnNVerified
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6Verified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
-import VerifiedGarbage.Impl.Weierstrass.Slots
-import VerifiedGarbage.Spec.Ecdsa.Generic
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery products modulo P-384's and P-521's `p` and `n` on x86-64 -/

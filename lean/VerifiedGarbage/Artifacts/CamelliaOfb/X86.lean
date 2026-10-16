@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86.FbVerified
-import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.X86.FbLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Camellia-OFB artifacts on baseline x86 (32-bit) -/

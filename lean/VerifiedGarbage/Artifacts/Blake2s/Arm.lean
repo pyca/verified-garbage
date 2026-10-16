@@ -1,8 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Blake2.Arm.Blake2s
-import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Blake2.Arm.CompressS.Compress
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # BLAKE2s (RFC 7693) on ARMv7 -/

@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.Arm.FbVerified
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
-import VerifiedGarbage.Impl.Aes.Arm.Alloc
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # IDEA-OFB artifacts on baseline ARMv7 -/

@@ -1,12 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
-public import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
-import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
-import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.ApplyCT
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # The ChaCha20 block function (RFC 8439) on ARMv7 -/

@@ -1,13 +1,17 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.X25519.X86.Fn
 public import VerifiedGarbage.Proof.X25519.X86.Verified
 import VerifiedGarbage.Proof.X25519.X86.Lit
 public import VerifiedGarbage.Proof.X25519.X86.Base.Verified
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Spec.Rc2
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.X25519.X86.Base.Lit
 
 /-! # X25519 (RFC 7748) on x86 -/
 

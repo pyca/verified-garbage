@@ -1,13 +1,12 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlKem1024.X86.CompressEncode
-import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.X86.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.X86.KeyGen
 public import VerifiedGarbage.Proof.MlKem1024.X86.Encaps
 public import VerifiedGarbage.Proof.MlKem1024.X86.Decaps
 import VerifiedGarbage.Proof.Sha3.X86.Lit
+public import VerifiedGarbage.Proof.MlKem1024.X86.DecodeDecompress
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

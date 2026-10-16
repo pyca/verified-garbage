@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.X86_64.KeyVerified
+import VerifiedGarbage.Proof.Cast5.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! CAST5 key expansion and ECB on baseline x86-64. -/

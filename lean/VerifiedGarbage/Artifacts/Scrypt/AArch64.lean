@@ -1,14 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Impl.Scrypt.AArch64.Salsa
-import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
-public import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
 public import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
 public import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
-import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
-import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

@@ -1,14 +1,16 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Impl.X25519.X86_64
 public import VerifiedGarbage.Proof.X25519.X86_64.Invert
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
-public import VerifiedGarbage.Proof.X25519.X86_64.Lit
-import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Impl.Mont.Mod
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.X25519.X86_64.Lit
 
 /-! # Curve25519's inversion, in radix `2^64`, on x86-64 -/
 

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

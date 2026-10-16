@@ -3,10 +3,13 @@ module
 public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Sha512.Word64
-import VerifiedGarbage.Impl.Mont.Mod
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

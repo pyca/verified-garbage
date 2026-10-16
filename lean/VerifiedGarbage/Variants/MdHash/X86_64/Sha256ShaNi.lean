@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # SHA-256 on x86-64 with the SHA extensions

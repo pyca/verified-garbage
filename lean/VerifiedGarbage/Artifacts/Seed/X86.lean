@@ -1,7 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86.KeyVerified
+public import VerifiedGarbage.Proof.Seed.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Seed.X86.Lit
 
 /-! # SEED artifacts on baseline x86 (32-bit) -/
 

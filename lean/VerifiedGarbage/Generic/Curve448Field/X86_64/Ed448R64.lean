@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Ed448.X86_64.Point64.Lit
 
 /-! # Ed448's point doubling and affine addition, in radix `2^64`, on x86-64 -/
 

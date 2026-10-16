@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Compress
 public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Lit
+import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # Argon2's G on x86-64 with AVX-512

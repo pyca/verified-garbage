@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.CbcVerified
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Camellia-CBC artifacts on baseline x86-64 -/

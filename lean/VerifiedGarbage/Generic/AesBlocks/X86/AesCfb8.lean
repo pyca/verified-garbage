@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesCfb8.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 

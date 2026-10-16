@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

@@ -1,17 +1,18 @@
 module
 
-import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
-import Mathlib.Data.BitVec
-import VerifiedGarbage.Proof.Divstep.Bound
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
-import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Sym.Sym2.Init
+import Mathlib.Tactic.ContinuousFunctionalCalculus
+import Mathlib.Tactic.NormNum.GCD
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.Positivity.Finset
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

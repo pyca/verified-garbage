@@ -1,11 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 public import VerifiedGarbage.Proof.Sha3.AArch64.Frame
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
 
 @[expose] public section
 

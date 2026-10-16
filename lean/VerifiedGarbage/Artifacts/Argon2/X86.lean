@@ -1,9 +1,10 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.Verified
+import VerifiedGarbage.Proof.Argon2.X86.CompressLit
+import VerifiedGarbage.Proof.Blake2.X86.LitB
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Argon2 (RFC 9106) on x86 -/

@@ -1,11 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Sm3.AArch64.Shared
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MdStream.Spec
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SM3 (GB/T 32905-2016) on AArch64 -/

@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.RecoverCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
-import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSASSA-PKCS1-v1_5 (RFC 8017 §8.2) on x86-64: verification and recovery

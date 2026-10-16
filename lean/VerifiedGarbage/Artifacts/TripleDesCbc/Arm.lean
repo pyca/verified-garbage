@@ -1,11 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.CbcVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Contract
-import VerifiedGarbage.Proof.Framework.Arm.Linear
-import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Triple DES-CBC artifacts on baseline ARMv7 -/

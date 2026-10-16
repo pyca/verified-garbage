@@ -1,8 +1,6 @@
 module
 
-import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha256.X86.Shared
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SHA-256 (FIPS 180-4) on x86 -/

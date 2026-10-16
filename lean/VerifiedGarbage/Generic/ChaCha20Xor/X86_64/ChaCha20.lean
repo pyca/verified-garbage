@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.ApplyCT
 public import VerifiedGarbage.Proof.Framework.Registration
 

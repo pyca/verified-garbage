@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.KeyVerified
 public import VerifiedGarbage.Proof.Sm4.AArch64.EcbCall
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Sm4.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SM4 artifacts on baseline AArch64 -/

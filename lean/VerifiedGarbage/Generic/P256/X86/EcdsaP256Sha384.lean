@@ -1,14 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Sha384
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Nat.Find
-import VerifiedGarbage.Proof.Sha256.X86.Shared
-import VerifiedGarbage.Proof.X25519.X86.Column
-import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

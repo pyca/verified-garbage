@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.Arm.CbcVerified
-import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SEED-CBC artifacts on baseline ARMv7 -/

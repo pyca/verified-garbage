@@ -1,13 +1,7 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
-import VerifiedGarbage.Impl.Scrypt.Arm.BlockMix
-import VerifiedGarbage.Impl.Scrypt.Arm.RoMix
-import VerifiedGarbage.Proof.Scrypt.Arm.BlockMixVerified
-import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
-import VerifiedGarbage.Proof.Scrypt.Arm.Lit
 public import VerifiedGarbage.Proof.Scrypt.Arm.Whole.Verified
+public import VerifiedGarbage.Proof.Scrypt.Arm.RoMixCT
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!

@@ -1,9 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.CtrVerified
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Aes.SboxSpec
-import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SM4-CTR artifacts on baseline ARMv7 -/

@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Md5
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # MD5 on x86-64

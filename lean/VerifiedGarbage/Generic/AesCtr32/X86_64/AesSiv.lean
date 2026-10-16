@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-!
 # AES-SIV (RFC 5297) key setup on x86-64

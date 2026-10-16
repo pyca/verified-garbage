@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Gcm.X86.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86.Pclmul.Ghash
 public import VerifiedGarbage.Proof.Framework.Registration

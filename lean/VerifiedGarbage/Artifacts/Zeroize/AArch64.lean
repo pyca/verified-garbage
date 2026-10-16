@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

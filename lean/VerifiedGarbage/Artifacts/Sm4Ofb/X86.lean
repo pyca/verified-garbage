@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.Sm4.X86.FbLit
 
 /-! # SM4-OFB artifacts on baseline x86 (32-bit) -/
 

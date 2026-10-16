@@ -1,19 +1,11 @@
 module
 
-public import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Arm.Encode12
-import VerifiedGarbage.Proof.MlKem.Arm.Decode12
-import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
 public import VerifiedGarbage.Proof.MlKem.Arm.CheckEk
-import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
-import VerifiedGarbage.Proof.MlKem.Arm.Decompress
-import VerifiedGarbage.Proof.MlKem.Arm.Mul
-import VerifiedGarbage.Proof.MlKem.Arm.NttInv
-import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 public import VerifiedGarbage.Proof.MlKem.Arm.KeyGenCT
 public import VerifiedGarbage.Proof.MlKem.Arm.EncapsCT
 public import VerifiedGarbage.Proof.MlKem.Arm.DecapsCT
+public import VerifiedGarbage.Proof.MlKem.Arm.NttInv
+public import VerifiedGarbage.Proof.MlKem.Arm.SampleCT
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-KEM (FIPS 203) on 32-bit ARM -/

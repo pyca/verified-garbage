@@ -1,9 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.CbcVerified
-public import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
-import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Registration
+import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
 
 /-! # Triple DES-CBC artifacts on baseline x86-64 -/
 

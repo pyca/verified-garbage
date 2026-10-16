@@ -1,11 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.Arm.Frame
-import Mathlib.Tactic.SplitIfs
-import VerifiedGarbage.Proof.Blowfish.Arm.Run
-import VerifiedGarbage.Proof.Framework.TaintSum
-import VerifiedGarbage.Proof.Framework.Arm.Spill
-import VerifiedGarbage.Spec.Rc4
 public import VerifiedGarbage.Proof.Framework.Registration
 
 @[expose] public section

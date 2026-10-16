@@ -1,21 +1,15 @@
 module
 
-import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
-import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
-import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
-import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
-import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
-import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
-import VerifiedGarbage.Proof.MlKem.AArch64.Mul
 public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Inv
-import VerifiedGarbage.Proof.MlKem.AArch64.Sample
-import VerifiedGarbage.Proof.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
-import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
-import Mathlib.Tactic.Conv
-import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
+public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
+public import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
+public import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
+public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-KEM on AArch64 -/
