@@ -18,6 +18,8 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Bits
 meta import VerifiedGarbage.Proof.RsaKeyGen.MrMont
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrSel
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # A candidate on x86-64: constant time of a round of Miller–Rabin
@@ -40,7 +42,7 @@ open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
 /-- An entry of `MrPub.vs`. -/
-macro "mem_vs" : tactic => `(tactic| plain_simp_names first
+tactic_template "mem_vs" : tactic => `(tactic| plain_simp_names first
                    | (simp only [MrPub.vs, List.mem_cons, true_or]; done)
                    | simp only [MrPub.vs, List.mem_cons, true_or, or_true])
 

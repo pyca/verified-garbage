@@ -15,6 +15,8 @@ public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.Poly1305.Limbs64
 public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # A candidate on x86-64: all of `montSetup`
@@ -34,14 +36,14 @@ open VG.Proof.MlKem.X86_64
 
 /-- Disjointness of a range from each of a list of literal ranges of the
 scratch space (header words and arrays). -/
-macro "rng_disj" : tactic => `(tactic| first | hdr_disj | (
+tactic_template "rng_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, slot, hdrBytes, aN, aX, aAcc,
     aTmp, aR2, aXm, aY, aOne, aB, aR1, aRm1, aTab, aT0, aE, VG.Proof.Bignum.tabBytes, kT0, kChecks, kE, sFn, sMinv, sW, sArr, kG, kV, kWords, kBits,
     kFlag, kPlen, kI, kElen, kU, kUni, kP, kStat, kT1, kT2, kUsed, kRand, kLen, kRandLen, kOut, kUsedP]
   and_intros <;> omega_arith))
 
 /-- Bounds of a list of literal ranges of the scratch space. -/
-macro "rng_le" : tactic => `(tactic| (
+tactic_template "rng_le" : tactic => `(tactic| (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, slot, hdrBytes, aN, aX, aAcc,
     aTmp, aR2, aXm, aY, aOne, aB, aR1, aRm1, aTab, aT0, aE, VG.Proof.Bignum.tabBytes, kT0, kChecks, kE, sFn, sMinv, sW, sArr, kG, kV, kWords, kBits,
     kFlag, kPlen, kI, kElen, kU, kUni, kP, kStat, kT1, kT2, kUsed]

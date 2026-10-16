@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.Sm4.X86.CryptSum
 meta import VerifiedGarbage.Proof.Sm4.X86.CryptSum
 public import VerifiedGarbage.Proof.Sm4.X86.Ecb
@@ -135,16 +137,22 @@ def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 128⟩, ⟨
 def narrowWr (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩, ⟨(arg s 3).setWidth 64, 4 * Impl.Sm4.X86.slots⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [VG.Proof.Sm4.ecbX86, VG.Proof.Sm4.X86.wideContract,
+tactic_template "sm4_ecb_narrow" : tactic =>
+  `(tactic| simp only [VG.Proof.Sm4.ecbX86, VG.Proof.Sm4.X86.wideContract,
                      VG.Proof.Sm4.X86.narrowRd, VG.Proof.Sm4.X86.narrowWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+
+tactic_template "sm4_ecb_narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [VG.Proof.Sm4.ecbX86, VG.Proof.Sm4.X86.wideContract,
+                     VG.Proof.Sm4.X86.narrowRd, VG.Proof.Sm4.X86.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem wide_pre (dir : Dir) (s : State) (h : (wideContract dir).pre s) :
     (ecbX86 dir).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  sm4_ecb_narrow
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -210,10 +218,10 @@ theorem ecb_verified (dir : Dir) :
     simp only [narrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    sm4_ecb_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    sm4_ecb_narrow
     exact h
 
 /-- A state satisfying the ECB functions' precondition: the schedule at

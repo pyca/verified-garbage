@@ -28,6 +28,8 @@ meta import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Sha256.Stream
 meta import VerifiedGarbage.Proof.Sha256.X86.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 @[expose] public section
 
@@ -253,9 +255,9 @@ def compressWide : Contract X86.isa :=
 def satWide : State :=
   { satState with rd := [⟨0x1000, 1024⟩, ⟨0x1400, 1024⟩], wr := [⟨0x2000, 1024⟩, ⟨0x3000, 4096⟩, ⟨0x5004, 16⟩] }
 
-macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
+tactic_template "narrow" loc:Lean.Parser.Tactic.location : tactic =>
   `(tactic| plain_simp_names simp only [compressX86, compressWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
+                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $loc)
 
 theorem compressWide_verified : Verified X86.target Impl.Argon2.X86.compress compressWide :=
   Verified.narrowTo compress_verified
@@ -263,7 +265,7 @@ theorem compressWide_verified : Verified X86.target Impl.Argon2.X86.compress com
     (fun s => [⟨(arg s 2).setWidth 64, 1024⟩, ⟨(arg s 3).setWidth 64, 4096⟩])
     (fun _ h => by
       obtain ⟨_, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆⟩ := h
-      narrow
+      narrow at ⊢
       exact ⟨trivial, trivial, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅,
         by omega⟩)
     (fun _ h => by
@@ -288,7 +290,7 @@ theorem compressWide_verified : Verified X86.target Impl.Argon2.X86.compress com
       · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩)
     (fun _ _ _ h => by narrow at h ⊢; exact h)
-    (fun _ _ _ _ h => by narrow; exact h)
+    (fun _ _ _ _ h => by narrow at ⊢; exact h)
     ⟨satWide, by
       have a0 : arg satWide 0 = 0x1000 := by decide
       have a1 : arg satWide 1 = 0x1400 := by decide

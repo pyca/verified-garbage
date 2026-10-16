@@ -15,6 +15,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86-64: reduction modulo `q`, and the contracts
@@ -64,10 +66,8 @@ theorem ea_atD (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = s.gpr b + BitV
 
 /-- `xrun` (`Proof/MlKem/X86_64/Wp.lean`) for this code's memory operands
 and immediates. -/
-syntax "xrund" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| xrund) => `(tactic| xrund [])
-  | `(tactic| xrund [$ls,*]) => `(tactic| xrun [ea_atD, sxQD, $ls,*])
+tactic_template "xrund" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
+  `(tactic| xrun [ea_atD, sxQD, $ls,*])
 
 /-! ## `csubQ` -/
 
@@ -218,25 +218,23 @@ theorem reduced_zero (p : Addr) : Reduced (fun _ => 0) p := fun _ _ => by
 
 /-- `sig_implies`, whose satisfiability witness may need `Reduced` of the
 memory of zeros. -/
-syntax "mldsa_implies " "[" Lean.Parser.Tactic.simpLemma,* "]" " [" Lean.Parser.Tactic.simpLemma,* "]"
-  " using " term : tactic
-macro_rules
-  | `(tactic| mldsa_implies [$ls,*] [$ws,*] using $w) => `(tactic| plain_simp_names exact
-                       { pre := by sig_implies_pre [$ls,*]
-                         post := by sig_implies_post [$ls,*]
-                         pub := by sig_implies_pub [$ls,*]
-                         sat := by
-                           refine ⟨$w, ?_⟩
-                           sig_pre [$ls,*]
-                           and_intros
-                           all_goals first
-                             | rfl
-                             | decide
-                             | exact Region.disjoint_of_sep (by decide)
-                             | exact reduced_zero _
-                             | (intro a h₁ h₂
-                                set_option linter.unusedSimpArgs false in
-                                simp only [Region.Contains, $ws,*] at h₁ h₂
-                                bv_omega) })
+tactic_template "mldsa_implies " "[" ls:Lean.Parser.Tactic.simpLemma,* "]"
+    " [" ws:Lean.Parser.Tactic.simpLemma,* "]" " using " w:term : tactic => `(tactic| exact
+  { pre := by sig_implies_pre [$ls,*]
+    post := by sig_implies_post [$ls,*]
+    pub := by sig_implies_pub [$ls,*]
+    sat := by
+      refine ⟨$w, ?_⟩
+      sig_pre [$ls,*]
+      and_intros
+      all_goals first
+        | rfl
+        | decide
+        | exact Region.disjoint_of_sep (by decide)
+        | exact reduced_zero _
+        | (intro a h₁ h₂
+           set_option linter.unusedSimpArgs false in
+           simp only [Region.Contains, $ws,*] at h₁ h₂
+           bv_omega) })
 
 end VG.Proof.MlDsa.X86_64.Arith

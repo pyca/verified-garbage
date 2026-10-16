@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Rc2.X86.Stream.InitCorrect
 meta import VerifiedGarbage.Proof.Rc2.X86.Stream.InitCorrect
 public import VerifiedGarbage.Proof.Rc2.X86.Key
@@ -711,9 +713,7 @@ def updateSat : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩, ⟨0x4000, 576⟩, ⟨0x6004, 28⟩]
 
-syntax "wide_pre " "[" Lean.Parser.Tactic.simpLemma,* "]" : tactic
-macro_rules
-  | `(tactic| wide_pre [$ls,*]) => `(tactic| (
+tactic_template "wide_pre " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
     intro s h
     sig_pre [$ls,*] at h
     sig_split h
@@ -947,23 +947,24 @@ def updateRd (s : State) : List Region := [⟨(arg s 2).setWidth 64, (arg s 3).t
 def updateWr (s : State) : List Region :=
   [⟨(arg s 0).setWidth 64, 144⟩, ⟨(arg s 4).setWidth 64, (arg s 5).toNat⟩, ⟨(arg s 6).setWidth 64, 576⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [VG.Proof.Rc2.X86.Stream.initContract, VG.Proof.Rc2.X86.Stream.wideInit,
+tactic_template "rc2_stream_narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [VG.Proof.Rc2.X86.Stream.initContract, VG.Proof.Rc2.X86.Stream.wideInit,
                      VG.Proof.Rc2.X86.Stream.updateContract, VG.Proof.Rc2.X86.Stream.wideUpdate,
                      VG.Proof.Rc2.X86.Stream.initRd, VG.Proof.Rc2.X86.Stream.initWr,
                      VG.Proof.Rc2.X86.Stream.updateRd, VG.Proof.Rc2.X86.Stream.updateWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
+tactic_template "rc2_stream_narrow" : tactic => `(tactic| rc2_stream_narrow at ⊢)
 
 theorem wideInit_pre (s : State) (h : wideInit.pre s) : initContract.pre (s.withRegions (initRd s) (initWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  rc2_stream_narrow
   exact ⟨trivial, trivial, h⟩
 
 theorem wideUpdate_pre (d : Spec.Rc2.Direction) (s : State) (h : (wideUpdate d).pre s) :
     (updateContract d).pre (s.withRegions (updateRd s) (updateWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  rc2_stream_narrow
   exact ⟨trivial, trivial, h⟩
 
 theorem init_verified : Verified target Impl.Rc2.X86.Stream.init (Proof.Rc2.cbcInitScratchContract abi 24) := by
@@ -991,10 +992,10 @@ theorem init_verified : Verified target Impl.Rc2.X86.Stream.init (Proof.Rc2.cbcI
     simp only [initWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp only [h, true_or, or_true]
   · intro s s' _ h
-    narrow at h ⊢
+    rc2_stream_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    rc2_stream_narrow
     exact h
 
 theorem update_verified (d : Spec.Rc2.Direction) :
@@ -1024,10 +1025,10 @@ theorem update_verified (d : Spec.Rc2.Direction) :
     simp only [updateWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h | h <;> simp only [h, true_or, or_true]
   · intro s s' _ h
-    narrow at h ⊢
+    rc2_stream_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    rc2_stream_narrow
     exact h
 
 theorem encryptUpdate_verified :

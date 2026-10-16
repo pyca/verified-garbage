@@ -259,11 +259,9 @@ theorem r0Pair_blocks (g p j : Nat) :
     VG.Impl.MlDsa.AArch64.Optimized.Paired.r0Lane lowPairBlocks
     lowLoadTwo reduceTwo caddTwo lowHfTwo lowWrapTwo storeTwo mlsTwo normTwo
     reduceRegs lowCadd lowHf lowWrap normRegs
-  by_cases hg : g==261888
-  · simp only [hg,ite_true]
-    rfl
-  · simp only [hg]
-    rfl
+  by_cases hg : g==261888 <;>
+    simp only [hg, ite_true, Bool.false_eq_true, ite_false, List.zip_cons_cons, List.zip_nil_left,
+      List.flatMap_cons, List.flatMap_nil, List.cons_append, List.nil_append, List.append_nil]
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 
 end

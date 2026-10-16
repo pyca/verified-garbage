@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.Idea.Arith32
 public import VerifiedGarbage.Impl.Idea.X86
 public import VerifiedGarbage.Proof.Framework.X86.Exec
@@ -66,7 +67,7 @@ theorem run_append {a b : List Instr} {s s₁ s₂ : State}
     runBlock isa (a ++ b) s = some s₂ := by
   rw [runBlock_append, h₁, Option.bind_some, h₂]
 
-macro "keep_tac" : tactic => `(tactic| plain_simp_names (
+tactic_template "keep_tac" : tactic => `(tactic| (
                    refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
                    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
                    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hq, ite_false]))

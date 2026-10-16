@@ -326,12 +326,7 @@ jobs:
               # runner has Docker 29.4.3 or later.
               options: --platform linux/386 --security-opt seccomp=unconfined
           - os: ubuntu-26.04-arm
-          # ARMv7: a 32-bit userspace, run natively on the ARM64 host, in the
-          # same Dockerfile's image for it.
-          - os: ubuntu-26.04-arm
-            container:
-              image: ghcr.io/pyca/verified-garbage-runner:armv7l
-              options: --platform linux/arm/v7
+          # ARMv7 runs in `rust-armv7`, below, with these steps.
           - os: macos-latest
           - os: windows-latest
         rust: [stable]
@@ -354,7 +349,7 @@ jobs:
     container:
       image: ${{ matrix.platform.container.image || '' }}
       options: ${{ matrix.platform.container.options || '' }}
-    env:
+    env: &rust-env
       # Selects the toolchain without `rustup default`, which refuses 32-bit
       # toolchains on a 64-bit kernel.
       RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
@@ -362,7 +357,11 @@ jobs:
       # Both relative to the crate root, where the test binaries run.
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
       WYCHEPROOF_ROOT: wycheproof
-    steps:
+    steps: &rust-steps
+      # That the job's container started: see `rust-armv7-retry`.
+      - id: started
+        shell: bash
+        run: echo started=true >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -447,11 +446,54 @@ jobs:
       - if: ${{ env.TESTS == 'true' }}
         uses: ./.github/actions/upload-artifact
         with:
-          name: coverage-data-${{ strategy.job-index }}
+          name: coverage-data-${{ github.job }}-${{ strategy.job-index }}
           path: "*.lcov"
           if-no-files-found: error
 
-  # The ARM code in Thumb (T32): the `rust` job's ARMv7 target assembles it
+  # ARMv7: a 32-bit userspace, run natively on the ARM64 host, in the image
+  # ci/runner.Dockerfile builds for it, with the `rust` job's steps.
+  #
+  # A HACK, until we have a better long-term solution: GitHub's ARM64 hosts
+  # increasingly can't run ARMv7 code at all. Some ubuntu-*-arm runners (seen
+  # in centralus) are Neoverse V3 (CPU part 0xd84), which has no AArch32, so
+  # the container's 32-bit entrypoint dies at once and the job fails before
+  # its first step ("Error response from daemon: container … is not running").
+  # No runner label avoids those hosts, and a job can't move to another host,
+  # so each ARMv7 job (this and `rust-thumb`) has a retry job, which runs on a
+  # new runner only when its container never started (its first step never
+  # ran): it may draw such a host again, and a real failure is never retried.
+  # As those hosts become common this stops working: the long-term fix is to
+  # run these jobs where AArch32 is guaranteed (a runner we choose) or fall
+  # back to emulation (QEMU) on hosts without it.
+  rust-armv7:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [stable]
+    name: Rust (ARMv7, ${{ matrix.rust }})
+    runs-on: ubuntu-26.04-arm
+    container: &armv7-container
+      image: ghcr.io/pyca/verified-garbage-runner:armv7l
+      options: --platform linux/arm/v7
+    outputs:
+      started: ${{ steps.started.outputs.started }}
+    env: *rust-env
+    steps: *rust-steps
+
+  rust-armv7-retry:
+    needs: rust-armv7
+    if: ${{ !cancelled() && needs.rust-armv7.result == 'failure' && needs.rust-armv7.outputs.started != 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [stable]
+    name: Rust (ARMv7, ${{ matrix.rust }}, retry)
+    runs-on: ubuntu-26.04-arm
+    container: *armv7-container
+    env: *rust-env
+    steps: *rust-steps
+
+  # The ARM code in Thumb (T32): the `rust-armv7` job assembles it
   # as A32, while thumbv7neon-*, Android, Windows and M-profile targets
   # assemble the same text as T32 (see "Modelling choices" in
   # lean/VerifiedGarbage/TCB/Arm/Isa.lean). Run natively, like ARMv7, on the
@@ -466,16 +508,20 @@ jobs:
         rust: [stable]
     name: Rust (Thumb, ${{ matrix.rust }})
     runs-on: ubuntu-26.04-arm
-    container:
-      image: ghcr.io/pyca/verified-garbage-runner:armv7l
-      options: --platform linux/arm/v7
-    env:
+    # Retried by `rust-thumb-retry` when it never started: see `rust-armv7`.
+    container: *armv7-container
+    outputs:
+      started: ${{ steps.started.outputs.started }}
+    env: &thumb-env
       RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
       # For every cargo command, with the container's native linker.
       CARGO_BUILD_TARGET: thumbv7neon-unknown-linux-gnueabihf
       RUSTFLAGS: -D warnings
       WYCHEPROOF_ROOT: wycheproof
-    steps:
+    steps: &thumb-steps
+      # That the job's container started: see `rust-thumb-retry`.
+      - id: started
+        run: echo started=true >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -505,6 +551,20 @@ jobs:
           find "target/$CARGO_BUILD_TARGET/debug/deps" -maxdepth 1 -type f -executable -exec readelf -sW {} + |
             awk '$4 == "FUNC" && $8 ~ /vg_/ { n++; if ($2 ~ /[02468aceACE]$/) { print "not Thumb: " $8; bad++ } }
                  END { print n " verified function symbols"; exit (n == 0 || bad > 0) }'
+
+  # See `rust-armv7`.
+  rust-thumb-retry:
+    needs: rust-thumb
+    if: ${{ !cancelled() && needs.rust-thumb.result == 'failure' && needs.rust-thumb.outputs.started != 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [stable]
+    name: Rust (Thumb, ${{ matrix.rust }}, retry)
+    runs-on: ubuntu-26.04-arm
+    container: *armv7-container
+    env: *thumb-env
+    steps: *thumb-steps
 
   # The latest CPU time of each line of `rust-cpu-features`' runs on `main`,
   # per class of host, which its shards deal out their lines by
@@ -938,8 +998,13 @@ jobs:
   # cannot read).
   coverage:
     name: Rust coverage
-    needs: [rust, rust-cpu-features]
-    if: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+    needs: [rust, rust-armv7, rust-armv7-retry, rust-cpu-features]
+    # ARMv7's coverage is from `rust-armv7`, or its retry when that never
+    # started.
+    if: >-
+      ${{ !cancelled() && (github.event_name != 'push' || github.ref != 'refs/heads/main')
+          && needs.rust.result == 'success' && needs.rust-cpu-features.result == 'success'
+          && (needs.rust-armv7.result == 'success' || needs.rust-armv7-retry.result == 'success') }}
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -991,7 +1056,7 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-shard, lean-imports, rust, rust-thumb, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, rust, rust-armv7, rust-armv7-retry, rust-thumb, rust-thumb-retry, rust-cpu-features, coverage]
     runs-on: ubuntu-26.04
     # To list the run's artifacts.
     permissions:
@@ -1003,9 +1068,13 @@ jobs:
       - name: Check every job succeeded
         id: check
         env:
+          # ARMv7's and Thumb's jobs count as their retries when they never
+          # started (see `rust-armv7`).
           RESULTS: >-
             ${{ needs.lean.result }} ${{ needs.lean-imports.result }}
-            ${{ needs.rust.result }} ${{ needs.rust-thumb.result }} ${{ needs.rust-cpu-features.result }}
+            ${{ needs.rust.result }} ${{ needs.rust-cpu-features.result }}
+            ${{ needs.rust-armv7.result == 'success' && 'success' || needs.rust-armv7-retry.result }}
+            ${{ needs.rust-thumb.result == 'success' && 'success' || needs.rust-thumb-retry.result }}
           # Skipped on a push to main, which runs no tests (`TESTS`).
           COVERAGE: ${{ needs.coverage.result }}
           # Skipped when `lean` built the proofs itself.

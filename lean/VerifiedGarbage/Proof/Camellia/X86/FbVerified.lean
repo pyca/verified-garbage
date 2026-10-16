@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.X86.CbcVerified
 meta import VerifiedGarbage.Proof.Camellia.X86.CbcVerified
@@ -257,16 +259,19 @@ def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 272⟩, ⟨
 def narrowWr (s : State) : List Region :=
   [⟨(arg s 3).setWidth 64, 16 * (arg s 4).toNat⟩, ⟨(arg s 2).setWidth 64, 16⟩, ⟨(arg s 5).setWidth 64, 8 * 341⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [VG.Proof.Camellia.X86.Fb.fbX86, VG.Proof.Camellia.X86.Fb.wideContract,
+tactic_template "narrow_camellia_x86_fbverified" : tactic => `(tactic| simp only [VG.Proof.Camellia.X86.Fb.fbX86, VG.Proof.Camellia.X86.Fb.wideContract,
                      VG.Proof.Camellia.X86.Fb.narrowRd, VG.Proof.Camellia.X86.Fb.narrowWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+tactic_template "narrow_camellia_x86_fbverified" loc:Lean.Parser.Tactic.location : tactic => `(tactic| simp only [VG.Proof.Camellia.X86.Fb.fbX86, VG.Proof.Camellia.X86.Fb.wideContract,
+                     VG.Proof.Camellia.X86.Fb.narrowRd, VG.Proof.Camellia.X86.Fb.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem wide_pre (post : State → State → Prop) (s : State) (h : (wideContract post).pre s) :
     (fbX86 post).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  narrow_camellia_x86_fbverified
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 18, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -394,7 +399,7 @@ theorem fb_verified {post : State → State → Prop} {c : Prog isa}
   · intro s s' _ h
     exact hR _ _ _ _ _ _ h
   · intro s₁ s₂ _ _ h
-    narrow
+    narrow_camellia_x86_fbverified
     exact h
 
 theorem ofb_verified : Verified X86.target ofb (Proof.Camellia.ofbScratchContract X86.abi 341) :=

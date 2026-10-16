@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
@@ -372,7 +374,7 @@ theorem readW_writeW_W {m : Mem} {W : Addr} {d e w w' : Nat} (v : BitVec w') (h 
   Mem.readW_writeW_sep (Offset.sep W h hd he) hw
 
 /-- Runs a block of the instructions the AES-GCM-SIV code uses. -/
-macro "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+tactic_template "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                    simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
                      readSrc32, execAlu, execAlu32, execShift, State.load64, State.store64, State.load32, State.store32,
                      State.load8, State.store8, State.ea, State.setReg32, offset_nat, at_, imm, ptr, tagO, akO, ekO, hO, yO, cmO,
@@ -394,7 +396,7 @@ set_option hygiene false in
 /-- A list literal's element is in it: the membership of a witness
 `∃ r' ∈ rs, Region.Sub r r'`. Cheaper than `simp`, which also tries to decide
 the equalities of the other regions. -/
-macro "mem_lit" : tactic => `(tactic| simp only [List.mem_append, List.mem_cons, true_or, or_true])
+tactic_template "mem_lit" : tactic => `(tactic| simp only [List.mem_append, List.mem_cons, true_or, or_true])
 
 theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by

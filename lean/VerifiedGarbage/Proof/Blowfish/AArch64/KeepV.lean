@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Block
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -70,7 +72,7 @@ theorem vKeep_of_vSafeBut {k c : Prog isa} (h : VSafeBut k c)
 
 /-- `VSafeBut k c`, for `c` built of blocks, sequences, branches, loops and
 `k` (the definitions around them unfolded as needed). -/
-macro "vsafe_but" : tactic => `(tactic| repeat' (first
+tactic_template "vsafe_but" : tactic => `(tactic| repeat' (first
   | with_reducible exact VSafeBut.core
   | exact VSafeBut.block (by decide)
   | apply VSafeBut.seq

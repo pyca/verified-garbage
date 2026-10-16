@@ -126,8 +126,9 @@ import sys
 import tomllib
 
 # The architectures benchmarked, and where each one runs natively (as in
-# ci.yml's `rust` job: the 32-bit ones in a 32-bit userspace container, built
-# by ci/runner.Dockerfile, on the 64-bit host of the same family).
+# ci.yml's `rust` and `rust-armv7` jobs: the 32-bit ones in a 32-bit
+# userspace container, built by ci/runner.Dockerfile, on the 64-bit host of
+# the same family).
 PLATFORMS = {
     "x86_64": {"os": "ubuntu-26.04"},
     "aarch64": {"os": "ubuntu-26.04-arm"},

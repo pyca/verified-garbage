@@ -30,6 +30,8 @@ public import VerifiedGarbage.Proof.Sha3.X86.Lit
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
 public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86 (32-bit): calls of the polynomial primitives
@@ -58,7 +60,7 @@ variable {Y : Lay} {lk : State → List Byte} {A B : State → State → Prop}
 
 /-- Closes the facts of a callee's precondition about its stack and regions,
 from those in the context. -/
-macro "ent_pre" : tactic => `(tactic| (and_intros <;>
+tactic_template "ent_pre" : tactic => `(tactic| (and_intros <;>
   first | exact True.intro | with_reducible assumption | omega | rfl))
 
 theorem sw_app (a b : BitVec 32) : BitVec.setWidth 32 (a ++ b) = b := BitVec.setWidth_append_eq_right

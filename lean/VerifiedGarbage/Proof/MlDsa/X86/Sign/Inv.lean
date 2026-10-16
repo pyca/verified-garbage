@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.DecideAt
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -139,11 +141,9 @@ theorem PS.w1pos {p : Params} (ps : PS p) : 0 < p.k * w1Len p :=
   Nat.mul_pos (by have := ps.hk; omega) (by rcases ps.hw1Len with h | h <;> omega)
 
 /-- The facts of `PS p` that the offsets need, in the context. -/
-macro "ofs" : tactic => do
-  let ps := Lean.mkIdent `ps
-  `(tactic| (
-  have _ := ($ps).hk; have _ := ($ps).hl; have _ := ($ps).hscr; have _ := ($ps).hsigLen; have _ := ($ps).hskLen
-  have _ := ($ps).hcLen; have _ := ($ps).hzLen; have _ := ($ps).hw1; have _ := ($ps).hω; have _ := PS.w1pos $ps
+tactic_template "ofs" : tactic => `(tactic| (
+  have _ := (ps).hk; have _ := (ps).hl; have _ := (ps).hscr; have _ := (ps).hsigLen; have _ := (ps).hskLen
+  have _ := (ps).hcLen; have _ := (ps).hzLen; have _ := (ps).hw1; have _ := (ps).hω; have _ := PS.w1pos ps
   try simp only [nS, aBase, s1B, s2B, t0B, yB, yhB, wB] at *
   set_option linter.unusedSimpArgs false in
   simp only [Lay.apart, Lay.okW_iff, Lay.ok_iff, Lay.sep_iff, List.all_cons, List.all_nil, Bool.and_true,
@@ -157,12 +157,13 @@ macro "ofs" : tactic => do
 bounded indices, decided for each parameter set (`decide_at`): cheaper than
 `ofs`, which unfolds it into arithmetic on the parameters for `omega`, unless
 there are many indices to try. Each conjunct is decided on its own. -/
-macro "ofsd" : tactic => `(tactic| plain_simp_names (
-                   try dsimp only [VG.Proof.MlDsa.X86.Sign.Out, VG.Proof.MlDsa.X86.Sign.In, VG.Proof.MlDsa.X86.Sign.OutK,
-                     VG.Proof.MlDsa.X86.Sign.OutI, VG.Proof.MlDsa.X86.Sign.OutC]
-                   try simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true, true_implies]
-                   and_intros
-                   all_goals (have hmem := (‹VG.Proof.MlDsa.X86.Sign.PS _›).mem; decide_at hmem)))
+tactic_template "ofsd" : tactic => `(tactic| (
+  try dsimp only [VG.Proof.MlDsa.X86.Sign.Out, VG.Proof.MlDsa.X86.Sign.In, VG.Proof.MlDsa.X86.Sign.OutK,
+    VG.Proof.MlDsa.X86.Sign.OutI, VG.Proof.MlDsa.X86.Sign.OutC]
+  try simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true, true_implies]
+  have hmem := (‹VG.Proof.MlDsa.X86.Sign.PS _›).mem
+  and_intros
+  all_goals decide_at hmem))
 
 /-! ## Slots -/
 

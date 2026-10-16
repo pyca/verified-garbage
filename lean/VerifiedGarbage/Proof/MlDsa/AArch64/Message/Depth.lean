@@ -57,6 +57,8 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on AArch64: how deep the frames of signing and verification nest
@@ -105,8 +107,8 @@ theorem DLe.of_fd {c : Prog isa} (h : 16 * c.aarch64Depth â‰¤ 16) : DLe 1 c := â
 end
 
 /-- `DLe` of code from its structure, given that of the functions it calls. -/
-macro "dle_tac" : tactic =>
-  `(tactic| plain_simp_names repeat' (first
+tactic_template "dle_tac" : tactic =>
+  `(tactic| repeat' (first
                      | (with_reducible assumption)
                      | (apply DLe.call; assumption)
                      | apply DLe.seq

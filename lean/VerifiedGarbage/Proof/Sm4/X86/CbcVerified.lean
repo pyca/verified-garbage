@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.Sm4.X86.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.X86.ModeCore
 public import VerifiedGarbage.Proof.Sm4.X86.CryptSum
@@ -201,16 +203,22 @@ def cbcNarrowRd (s : State) : List Region :=
 def cbcNarrowWr (s : State) : List Region :=
   [⟨(arg s 2).setWidth 64, 16 * (arg s 3).toNat⟩, ⟨(arg s 4).setWidth 64, 8 * 181⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| plain_simp_names simp only [VG.Proof.Sm4.cbcX86, VG.Proof.Sm4.X86.cbcWideContract,
+tactic_template "sm4_cbc_narrow" : tactic =>
+  `(tactic| simp only [VG.Proof.Sm4.cbcX86, VG.Proof.Sm4.X86.cbcWideContract,
                      VG.Proof.Sm4.X86.cbcNarrowRd, VG.Proof.Sm4.X86.cbcNarrowWr, VG.X86.arg_withRegions,
                      VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+
+tactic_template "sm4_cbc_narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [VG.Proof.Sm4.cbcX86, VG.Proof.Sm4.X86.cbcWideContract,
+                     VG.Proof.Sm4.X86.cbcNarrowRd, VG.Proof.Sm4.X86.cbcNarrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem cbcWide_pre (enc : Bool) (s : State) (h : (cbcWideContract enc).pre s) :
     (cbcX86 enc).pre (s.withRegions (cbcNarrowRd s) (cbcNarrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  sm4_cbc_narrow
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -308,10 +316,10 @@ theorem cbcEncrypt_verified : Verified X86.target cbcEncrypt (Proof.Sm4.cbcEncSc
     simp only [cbcNarrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    sm4_cbc_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    sm4_cbc_narrow
     exact h
 
 /-- cbcEncrypt with its working space on the stack. -/
@@ -349,10 +357,10 @@ theorem cbcDecrypt_verified : Verified X86.target cbcDecrypt (Proof.Sm4.cbcDecSc
     simp only [cbcNarrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    sm4_cbc_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    sm4_cbc_narrow
     exact h
 
 /-- cbcDecrypt with its working space on the stack. -/

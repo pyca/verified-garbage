@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.Cast5.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -151,10 +153,7 @@ end
 
 /-- `crun`: symbolic execution of a block by `simp` (see the module doc),
 with extra lemmas (the block's accesses, …). -/
-syntax "crun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| crun) => `(tactic| crun [])
-  | `(tactic| crun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "crun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp only [runBlock_cons, runStep_some, runBlock_nil,
@@ -166,6 +165,8 @@ macro_rules
                          ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul,
                          Nat.reduceAdd, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff, and_self, eq_self_iff_true,
                          true_and, and_true, List.cons_append, List.nil_append, $ls,*]))
+/-- `crun` with no extra lemmas. -/
+tactic_template "crun" : tactic => `(tactic| crun [])
 
 /-! ## Branches -/
 
@@ -179,7 +180,7 @@ theorem wp_ite_ne {th el : Prog isa} {s : State} {Q : State → Prop} (ht : s.z 
 /-! ## What a block keeps -/
 
 /-- `∀ r ∉ rs, (s with registers written).gpr r = s.gpr r`. -/
-macro "keep_regs" : tactic => `(tactic| plain_simp_names (
+tactic_template "keep_regs" : tactic => `(tactic| (
                    intro r hr
                    simp only [gpr_setReg, gpr_sub, gpr_mem]
                    repeat' split
