@@ -28,9 +28,9 @@ theorem kMainWith_eq (mul : Nat → Nat → Nat → Prog isa) (body : Prog isa) 
   unfold kMainWith; rw [List.append_assoc]
 
 /-- `kMain`. -/
-theorem sharedKMain_ok (M : Mont) (R : Kernel) {s : State} {B sp : Addr} {Z w : Nat} {op up eP pP rP : Addr} {eB pB r : List Byte}
+theorem sharedKMain_ok (M : Mont) {mm : Nat → Nat → Nat → Prog isa} (hmc : MmCalls M mm) (R : Kernel) {s : State} {B sp : Addr} {Z w : Nat} {op up eP pP rP : Addr} {eB pB r : List Byte}
     (henv : SharedEnv B Z sp s) (hZ28 : slot w 28 ≤ Z) (h : MainCtx s B Z (8 * w) op up eP pP rP eB pB r) :
-    WP isa (kMainWith M.mm R.run) s fun t => SharedCandEnd s t B sp Z op up (8 * w) r
+    WP isa (kMainWith mm R.run) s fun t => SharedCandEnd s t B sp Z op up (8 * w) r
       (VG.Proof.RsaKeyGen.afterDraw (64 * w) (Spec.Rsa.os2ip eB) (Spec.RsaKeyGen.otherPrime pB)
         (Spec.RsaKeyGen.candidate (64 * w) (Spec.Rsa.os2ip (r.take (8 * w)))) (r.drop (8 * w))) := by
   have hs := h.scr
@@ -158,7 +158,7 @@ theorem sharedKMain_ok (M : Mont) (R : Kernel) {s : State} {B sp : Addr} {Z w : 
     rw [st₄.1 i this, hh₁ hi]
   have hXZ := h.zx
   rw [hw8] at hXZ
-  refine WP.mono (sharedKTail_ok M R (henv.kept k14 (by decide)) hZ28 hg₄ hZ hXZ (by omega_arith) (by omega_arith) hc₄ hsh (h.ou.congr k14.2.2)
+  refine WP.mono (sharedKTail_ok M hmc R (henv.kept k14 (by decide)) hZ28 hg₄ hZ hXZ (by omega_arith) (by omega_arith) hc₄ hsh (h.ou.congr k14.2.2)
     (by rw [hk₄ (by simp)]; exact h.out) (by rw [hk₄ (by simp)]; exact h.len) (by rw [hk₄ (by simp)]; exact h.usedP)
     (by rw [hk₄ (by simp)]; exact h.rand) (by rw [hk₄ (by simp)]; exact h.rlen)
     (by rw [st₄.1 kUsed (by decide), hus₁]) (h.rsrc.congrK (hin₁.trans st₄.2) k14) h.rl h.rk) fun t ht => ?_

@@ -20,8 +20,9 @@ open VG VG.X86_64 VG.Proof.MillerRabin.X86_64
 
 theorem sharedCandidate_verified (v : RoundImpl) : Verified target (sharedCandidateCode v)
     (Spec.RsaKeyGen.candidateContract abi 128) := by
+  have hmc : MmCalls v.mont v.mm := ⟨v.mmOk, v.mmInline⟩
   exact Verified.of_correct
-    (sharedCode_correct v.mont (Kernel.called v) (sharedCandidate_mx v))
-    (sharedCode_constantTime v.mont (Kernel.called v)) sharedCand_implies
+    (sharedCode_correct v.mont hmc (Kernel.called v) (sharedCandidate_mx v))
+    (sharedCode_constantTime v.mont hmc (Kernel.called v)) sharedCand_implies
 
 end VG.Proof.RsaKeyGen.X86_64
