@@ -18,10 +18,14 @@ autotests = false
 default = ["alloc"]
 # APIs that allocate (scrypt's memory-hard table), through the `alloc` crate.
 alloc = []
+# Links `std`, so that the CPU features are detected at run time on every
+# target: on AArch64, by asking the operating system (see `src/cpu.rs`);
+# without it, AArch64 uses only the features the code was compiled for.
+std = []
 # Lets the `VG_CPU_FEATURES` environment variable restrict the CPU features
 # the library uses (see `src/cpu.rs`), to test and benchmark every
 # implementation on one machine. Reading the environment needs `std`.
-cpu-features-env = []
+cpu-features-env = ["std"]
 
 [dependencies]
 # The randomness of ML-KEM encapsulation, from the operating system.

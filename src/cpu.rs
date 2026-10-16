@@ -5,9 +5,9 @@
 //! [`Features`] constant of them, `<NAME>_FEATURES`, next to the function
 //! (and lists them in its `# Safety` section): the function may only be
 //! called on a CPU that has all of them. They are detected once: with `cpuid` on x86 and x86-64; on AArch64,
-//! by asking the operating system with the `cpu-features-env` feature (which
-//! links `std`), and otherwise from the target features the code was
-//! compiled for. Each object that can use such a function chooses its
+//! by asking the operating system with the `std` feature (which links
+//! `std`, and which `cpu-features-env` enables), and otherwise from the
+//! target features the code was compiled for. Each object that can use such a function chooses its
 //! implementation when it is created, from the features detected. A feature
 //! detection does not know ([`NAMES`]) cannot be checked for:
 //! [`Features::of`] panics on it, so a generated constant naming one fails
@@ -307,8 +307,8 @@ fn runtime() -> u32 {
 }
 
 /// Whether the CPU has FEAT_AES and FEAT_PMULL, asked of the operating
-/// system through `std`, which the `cpu-features-env` feature links.
-#[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+/// system through `std`, which the `std` feature links.
+#[cfg(all(target_arch = "aarch64", feature = "std"))]
 fn aarch64_aes() -> bool {
     std::arch::is_aarch64_feature_detected!("aes")
 }
@@ -316,44 +316,44 @@ fn aarch64_aes() -> bool {
 /// Whether the compiler was told every CPU running this code has FEAT_AES
 /// and FEAT_PMULL (as `aarch64-apple-darwin` and `-C target-feature=+aes`
 /// do): without `std`, this `no_std` crate cannot ask the operating system.
-#[cfg(all(target_arch = "aarch64", not(feature = "cpu-features-env")))]
+#[cfg(all(target_arch = "aarch64", not(feature = "std")))]
 fn aarch64_aes() -> bool {
     cfg!(target_feature = "aes")
 }
 
 /// Whether both SHA-1 and SHA-256 instructions are available.
-#[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+#[cfg(all(target_arch = "aarch64", feature = "std"))]
 fn aarch64_sha2() -> bool {
     std::arch::is_aarch64_feature_detected!("sha2")
 }
 
 /// Without `std`, use only features guaranteed by the compilation target.
-#[cfg(all(target_arch = "aarch64", not(feature = "cpu-features-env")))]
+#[cfg(all(target_arch = "aarch64", not(feature = "std")))]
 fn aarch64_sha2() -> bool {
     cfg!(target_feature = "sha2")
 }
 
 /// Whether both SHA-512 and SHA-3 instructions are available.
-#[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+#[cfg(all(target_arch = "aarch64", feature = "std"))]
 fn aarch64_sha3() -> bool {
     std::arch::is_aarch64_feature_detected!("sha3")
 }
 
 /// Without `std`, use only features guaranteed by the compilation target.
-#[cfg(all(target_arch = "aarch64", not(feature = "cpu-features-env")))]
+#[cfg(all(target_arch = "aarch64", not(feature = "std")))]
 fn aarch64_sha3() -> bool {
     cfg!(target_feature = "sha3")
 }
 
 /// Whether the CPU has FEAT_SVE2, asked of the operating system (which also
 /// says whether it has enabled SVE for this process).
-#[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+#[cfg(all(target_arch = "aarch64", feature = "std"))]
 fn aarch64_sve2() -> bool {
     std::arch::is_aarch64_feature_detected!("sve2")
 }
 
 /// Without `std`, use only features guaranteed by the compilation target.
-#[cfg(all(target_arch = "aarch64", not(feature = "cpu-features-env")))]
+#[cfg(all(target_arch = "aarch64", not(feature = "std")))]
 fn aarch64_sve2() -> bool {
     cfg!(target_feature = "sve2")
 }
