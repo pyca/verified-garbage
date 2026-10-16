@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.AesOcb.Arm.Body
 public import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
 public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -162,7 +164,7 @@ end
 
 /-- Proves that a block of `W` misses a frame of parts of `W` and the stack
 below `sp`. -/
-macro "wdisj" L:term : tactic => `(tactic| plain_simp_names (
+tactic_template "wdisj" L:term : tactic => `(tactic| plain_simp_names (
                    simp only [nonceR, hashR, bodyR, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
                    and_intros
                    all_goals first
@@ -172,7 +174,7 @@ macro "wdisj" L:term : tactic => `(tactic| plain_simp_names (
 
 /-- Proves that the data misses a frame of parts of `W` and the stack below
 `sp`. -/
-macro "ddisj" L:term : tactic => `(tactic| plain_simp_names (
+tactic_template "ddisj" L:term : tactic => `(tactic| plain_simp_names (
                    simp only [nonceR, hashR, bodyR, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
                    and_intros
                    all_goals first

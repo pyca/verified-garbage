@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyRoot
 public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarWord
 public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarIO
 public import VerifiedGarbage.Proof.X448.X86_64.Main
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -33,10 +35,7 @@ open VG.Proof.X448.X86_64 (Scr word off Outside ofs writeW_outside word_writeW_s
 open VG.Impl.X448.X86_64 (W w sc at_)
 
 /-- Runs a block symbolically, keeping the register writes folded. -/
-syntax "erun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| erun) => `(tactic| erun [])
-  | `(tactic| erun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "erun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,

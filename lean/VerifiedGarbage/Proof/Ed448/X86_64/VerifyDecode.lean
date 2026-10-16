@@ -223,7 +223,7 @@ theorem andRax_ok (s : State) :
     WP isa (.block ([.alu .and .rdx (.reg .rax)] : List Instr)) s fun t =>
       t.gpr .rdx = s.gpr .rdx &&& s.gpr .rax ∧ t.mem = s.mem ∧
       (∀ r, r ≠ .rdx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  erun
+  erun []
   exact fun r hr => by simp only [hr, ite_false]
 
 theorem movNeg_ok {s : State} {base : Addr} (hs : Scr s base) :

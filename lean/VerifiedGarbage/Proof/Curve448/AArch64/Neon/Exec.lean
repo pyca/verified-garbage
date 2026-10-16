@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
 public import VerifiedGarbage.Proof.X448.AArch64.Mem
 public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -94,12 +96,12 @@ theorem scr_of {s t : State} {base : Addr} (hs : Scr s base) (hg : t.gpr = s.gpr
     Scr t base := ⟨by rw [hg]; exact hs.x3, by rw [hg]; exact hs.mask, hw ▸ hs.wr, hs.nowrap⟩
 
 /-- Read vector registers through the writes after them (distinctness from the context). -/
-macro "vred" : tactic =>
+tactic_template "vred" : tactic =>
   `(tactic| plain_simp_names simp (disch := assumption) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne, RegUpd.mem_setV,
                      setMem_mem, setMem_v])
 
 /-- `Scr` of a state the vector code built from one where it holds. -/
-macro "scr" : tactic =>
+tactic_template "scr" : tactic =>
   `(tactic| plain_simp_names exact scr_of (by assumption) (by simp only [RegUpd.gpr_setV, setMem_gpr])
                      (by simp only [RegUpd.wr_setV, setMem_wr]))
 
