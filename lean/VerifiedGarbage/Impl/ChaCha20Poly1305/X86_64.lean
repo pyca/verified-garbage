@@ -235,18 +235,47 @@ def prologue (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (prologueA x.fold x.pass x.wide) (.seq (.call x.name x.code) prologueB)
 
 /-- `[rsi + rcx]` and `[r15 + rcx + 576]`. -/
-def tailByte : MemOp := { base := .rsi, index := some .rcx }
+def copyByte : MemOp := { base := .rsi, index := some .rcx }
 def padByte : MemOp := { base := .r15, index := some .rcx, disp := 576 }
 
 /-- The last `rdx` bytes (1 to 15) at `rsi`, padded with zeros, absorbed,
-with the `k - 1` blocks after the padded block in `ctx` (the lengths block,
-for `k = 2`). -/
-def padTail (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
+with the `k - 1` blocks after the padded block in `ctx`, copied byte by byte.
+The call's loads of the padded block wait for the byte stores to retire, but
+this has fewer instructions than `padTail`: it pads the associated data,
+whose absorption the keystream computed after it overlaps on long messages. -/
+def padCopy (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0), .store (at_ .r15 576) .rax, .store (at_ .r15 584) .rax,
     .mov32 .rcx (.imm 0)])
-  (.seq (.loop (.block [.movzx8 .rax tailByte, .store8 padByte .rax, .alu .add .rcx (.imm 1),
+  (.seq (.loop (.block [.movzx8 .rax copyByte, .store8 padByte .rax, .alu .add .rcx (.imm 1),
     .alu .cmp .rcx (.reg .rdx)]) .ne)
   (.seq (.block (ptr .rdi .r15 448 ++ ptr .rsi .r15 576 ++ ([.mov32 .rdx (.imm (BitVec.ofNat 32 k))] : List Instr)))
+  (.seq (.call b.name b.code)
+    (.block (anchor .rdi 448)))))
+
+/-- `[rsi + rdx - 1]`. -/
+def tailByte : MemOp := { base := .rsi, index := some .rdx, disp := -1 }
+
+/-- One byte shifted into `r9` (the bytes after it, as a little-endian number):
+`r9` shifted left by a byte, and byte `rdx - 1` at `rsi` added; `rdx`
+decremented, setting `ZF` once it reaches 0. -/
+def tailIn : List Instr :=
+  [.shift .shl .r9 8, .movzx8 .rcx tailByte, .alu .or .r9 (.reg .rcx), .alu .sub .rdx (.imm 1)]
+
+/-- The last `rdx` bytes (1 to 15) at `rsi`, padded with zeros, absorbed,
+with the `k - 1` blocks after the padded block in `ctx` (the lengths block,
+for `k = 2`). The padded block is built in `r9:rax` and stored as two
+quadwords, which the call's loads of it can forward from (they could not from
+`padCopy`'s byte stores): with 8 bytes or more, `rax` is the first 8, in one
+load, and `r9` the rest; with fewer, `rax` is all of them, shifted into `r9`
+from the last (`tailIn`) and moved. -/
+def padTail (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
+  .seq (.block [.alu32 .xor .r9 (.reg .r9), .alu .cmp .rdx (.imm 8)])
+  (.seq (.ite .b
+    (.seq (.loop (.block tailIn) .ne) (.block [.mov .rax (.reg .r9), .alu32 .xor .r9 (.reg .r9)]))
+    (.seq (.block [.mov .rax (.mem (at_ .rsi 0)), .alu .add .rsi (.imm 8), .alu .sub .rdx (.imm 8)])
+      (.ite .e (.block []) (.loop (.block tailIn) .ne))))
+  (.seq (.block (ptr .rdi .r15 448 ++ ptr .rsi .r15 576 ++
+    ([.store (at_ .rsi 0) .rax, .store (at_ .rsi 8) .r9, .mov32 .rdx (.imm (BitVec.ofNat 32 k))] : List Instr)))
   (.seq (.call b.name b.code)
     (.block (anchor .rdi 448)))))
 
@@ -259,11 +288,25 @@ def wholeBlocks (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
 /-- `rsi` at the last `rdx` bytes of the `n` bytes at `p`. -/
 def tailPtr (p n : Reg) : List Instr := [.mov .rsi (.reg n), .alu .sub .rsi (.reg .rdx), .alu .add .rsi (.reg p)]
 
+/-- Whether the data's last bytes are padded by `padCopy` rather than
+`padTail`: with the baseline `vg_poly1305_blocks`, whose loads of the padded
+block wait for its other work anyway, `padTail`'s longer loop was measured
+slower (on Emerald Rapids); with the others, faster. -/
+def dataCopy : Poly1305.X86_64.Blocks → Bool
+  | .scalar => true
+  | .avx2 => false
+  | .avx512 => false
+  | .ifma => false
+
+/-- `padCopy` or `padTail`. -/
+def padRest (copy : Bool) (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
+  cond copy (padCopy b k) (padTail b k)
+
 /-- The `n` bytes at `p`, padded with zeros to a multiple of 16, absorbed. -/
 def macPad (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
   .seq (wholeBlocks b p n)
   (.seq (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)])
-    (.ite .e (.block []) (.seq (.block (tailPtr p n)) (padTail b 1))))
+    (.ite .e (.block []) (.seq (.block (tailPtr p n)) (padRest true b 1))))
 
 /-- The lengths block absorbed. -/
 def absorbLengths (b : Poly1305.X86_64.Blocks) : Prog isa :=
@@ -277,7 +320,7 @@ padded last block and the lengths block in one call. -/
 def macPadLengths (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
   .seq (wholeBlocks b p n)
   (.seq (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)])
-    (.ite .e (absorbLengths b) (.seq (.block (tailPtr p n)) (padTail b 2))))
+    (Code.iteCold .ne (.seq (.block (tailPtr p n)) (padRest (dataCopy b) b 2)) (absorbLengths b)))
 
 /-- The arguments of the second call of `vg_chacha20_xor`: the ChaCha20
 state with the counter set to 1, and the data. -/
