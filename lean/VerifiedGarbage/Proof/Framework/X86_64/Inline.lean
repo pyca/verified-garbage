@@ -326,7 +326,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load32_widen hc hv, Option.bind_some]
     split at h <;> [cases h; cases h]
     rename_i hr; simp only [hr, ite_true]; rfl
-  | lfence => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
+  | lfence | align _ => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
   | mul r => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
   | imul d r => simp only [exec, Option.some.injEq] at h ⊢; subst h; rfl
   | mulx hi lo src =>
@@ -410,7 +410,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
   | ldmxcsr m =>
     simp only [exec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
     split at h <;> cases h; exact ⟨rfl, rfl⟩
-  | lfence => simp only [exec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
+  | lfence | align _ => simp only [exec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
   | mul r => simp only [exec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
   | imul d r => simp only [exec, Option.some.injEq] at h; subst h; exact ⟨rfl, rfl⟩
   | mulx hi lo src =>
@@ -477,7 +477,7 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
   | ldmxcsr m =>
     simp only [exec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
     split at h <;> cases h; exact Frame.refl _ _
-  | lfence => simp only [exec, Option.some.injEq] at h; subst h; exact Frame.refl _ _
+  | lfence | align _ => simp only [exec, Option.some.injEq] at h; subst h; exact Frame.refl _ _
   | mul r => simp only [exec, Option.some.injEq] at h; subst h; exact Frame.refl _ _
   | imul d r => simp only [exec, Option.some.injEq] at h; subst h; exact Frame.refl _ _
   | mulx hi lo src =>
@@ -677,6 +677,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     · simp only [exec, State.store32] at h; split at h <;> cases h; rfl
     · simp only [exec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
       split at h <;> cases h; rfl
+    · simp only [exec, Option.some.injEq] at h; subst h; rfl
     · simp only [exec, Option.some.injEq] at h; subst h; rfl
     · rename_i q
       simp only [Taint.clobbers, Bool.or_eq_false_iff, beq_eq_false_iff_ne, ne_eq] at hi

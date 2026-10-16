@@ -350,6 +350,11 @@ inductive Instr
   | ldmxcsr (src : MemOp)
   /-- `lfence` (`NP 0F AE E8`) -/
   | lfence
+  /-- Padding to the next multiple of `2 ^ k` bytes with NOPs (`NP 0F 1F
+  /0`, `NOP r/m`), printed as `.p2align k` for `k` 4, 5 or 6 only: it has no
+  effect, accesses no memory and requires no feature (SDM Vol. 2, "NOP"; see
+  `Print.lean`). -/
+  | align (k : Nat)
   /-- `mul r64` (REX.W + F7 /4): the unsigned product `RDX:RAX := RAX * r64`. -/
   | mul (src : Reg)
   /-- `imul r64, r64` (`REX.W 0F AF /r`): the low 64 bits of the product
@@ -683,6 +688,8 @@ def exec : Instr → State → Option State
   | .ldmxcsr m, s => (s.load32 (s.ea m)).bind fun v =>
     if v.extractLsb' 16 16 = 0 then some { s with mxcsr := v } else none
   | .lfence, s => some s
+  -- SDM Vol. 2, "NOP": no effect but on RIP, which the model does not have.
+  | .align _, s => some s
   | .mul r, s => some (execMul r s)
   | .imul d r, s => some (execImul d r s)
   | .mulx hi lo src, s => execMulx hi lo src s
@@ -745,6 +752,7 @@ def addrs : Instr → State → List Addr
   | .stmxcsr m, s => [s.ea m]
   | .ldmxcsr m, s => [s.ea m]
   | .lfence, _ => []
+  | .align _, _ => []
   | .mul _, _ => []
   | .imul .., _ => []
   | .mulx _ _ src, s => srcAddrs s src
@@ -854,7 +862,8 @@ def Instr.dst : Instr → Option Reg
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore ..
-  | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none
+  | .stmxcsr _ | .ldmxcsr _ | .lfence | .align _ | .mul _ | .mulx .. | .push _ | .alloc _
+  | .free _ => none
 
 abbrev isa : ISA where
   State := State

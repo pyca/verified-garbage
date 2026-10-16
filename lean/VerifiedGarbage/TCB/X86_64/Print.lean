@@ -8,6 +8,24 @@ public import VerifiedGarbage.TCB.Print
 
 **Trusted.** Emits Intel syntax without register prefixes, which is the
 default dialect of Rust's `asm!`/`naked_asm!` on x86-64.
+
+`align k` (`Isa.lean`) prints as `.p2align k`, which the assembler fills, in
+a code section, with as few NOPs as cover the padding: `NOP r/m` (`NP 0F 1F
+/0`, two to nine bytes, SDM Vol. 2, "NOP", table "Recommended Multi-Byte
+Sequence of NOP Instruction"), and, as LLVM does, the same with redundant
+`66` and `2E` prefixes up to fifteen bytes. Unlike the padding after a
+function's `ret` (`funcAlign`), this padding is executed when the code before
+it falls through, so `align` is a NOP in the model: SDM Vol. 2, "NOP": it
+"does not impact machine context, except for the EIP register", and "the
+multi-byte NOP instruction does not alter the content of a register and will
+not issue a memory operation". The multi-byte form is "available on
+processors with model encoding CPUID.01H.EAX[Bytes 11:8] = 0110B or 1111B",
+which is every x86-64 processor (Intel's families 6 and 15; AMD's family
+field is 1111B from the first x86-64 processors on, extended by its extended
+family field), so `align` requires no feature. The printer refuses any `k`
+but 4, 5 and 6 (16-, 32- and 64-byte boundaries): padding to more than a
+function's own 64-byte alignment (`funcAlign`) would not align anything
+relative to it.
 -/
 
 @[expose] public section
@@ -299,6 +317,7 @@ def Instr.asm : Instr → List String
   | .stmxcsr m => [s!"stmxcsr {m.str32}"]
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
+  | .align k => [s!".p2align {k}"]
   | .mul r => [s!"mul {r.name}"]
   | .imul d r => [s!"imul {d.name}, {r.name}"]
   | .mulx hi lo s => [s!"mulx {hi.name}, {lo.name}, {s.str}"]
@@ -339,7 +358,7 @@ def Instr.memOps : Instr → List MemOp
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
   | .shift .. | .shiftCl .. | .shiftx .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _
   | .vpmovmskb .. | .zop _ | .eop _
-  | .lfence | .mul _ | .imul ..
+  | .lfence | .align _ | .mul _ | .imul ..
   | .push _ | .pop .. | .alloc _ | .free _ => []
 
 def printer : Printer isa where
@@ -364,8 +383,11 @@ def printer : Printer isa where
   relative to them is fixed by the function alone: a change to other code
   cannot move them, and with them its performance. -/
   funcAlign := [".p2align 6"]
-  unencodable i := match i.memOps.filter (!·.dispOk) with
-    | [] => none
-    | m :: _ => some s!"the displacement of the memory operand {m.addr} does not fit in 32 bits"
+  unencodable
+    | .align k =>
+      if k ∈ [4, 5, 6] then none else some s!"`.p2align {k}`: only 4, 5 and 6 are allowed"
+    | i => match i.memOps.filter (!·.dispOk) with
+      | [] => none
+      | m :: _ => some s!"the displacement of the memory operand {m.addr} does not fit in 32 bits"
 
 end VG.X86_64

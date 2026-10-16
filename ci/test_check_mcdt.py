@@ -117,5 +117,23 @@ class ColdBranch(unittest.TestCase):
         self.assertIn("f:11: `jmp 21b` jumps into the MCDT region at line 5 from outside it", errors)
 
 
+class Alignment(unittest.TestCase):
+    PROLOGUE = ColdBranch.PROLOGUE
+    EPILOGUE = ColdBranch.EPILOGUE
+
+    def check(self, instrs):
+        return check_mcdt.check_function("f", instrs, list(range(len(instrs))), {})
+
+    def test_alignment_outside_a_region(self):
+        instrs = [".p2align 5"] + self.PROLOGUE + ["pmuludq xmm0, xmm1"] + self.EPILOGUE
+        self.assertEqual(self.check(instrs), ([], 1))
+
+    def test_alignment_inside_a_region(self):
+        instrs = self.PROLOGUE + [".p2align 5", "pmuludq xmm0, xmm1"] + self.EPILOGUE
+        self.assertEqual(
+            self.check(instrs), (["f:5: `.p2align 5` is inside an MCDT region"], 1)
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

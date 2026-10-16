@@ -207,7 +207,7 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
     · exact storeStepKD_nil h hs
   | stmxcsr m => exact storeStepKD_nil h hs
   | ldmxcsr m => obtain ⟨-, rfl⟩ := some_cond hs; exact h
-  | lfence => cases hs; exact h
+  | lfence | align _ => cases hs; exact h
   | mul r => cases hs; simp only [mulStepKD_eq, mulStep, kill, h, List.filter_nil]
   | mulx hi lo s =>
     obtain ⟨-, rfl⟩ := some_cond hs

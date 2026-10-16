@@ -330,7 +330,7 @@ def step (τ : T) : Instr → Option T
   -- register or the flags, and it is stored as a secret.
   | .stmxcsr m => storeStep τ m 4 false
   | .ldmxcsr m => if memPub τ m then some τ else none
-  | .lfence => some τ
+  | .lfence | .align _ => some τ
   | .mul r => some (mulStep τ r)
   | .mulx hi lo src => if srcOk τ src then some (mulxStep τ hi lo src) else none
   | .adcx d src | .adox d src => adxStep τ d src
@@ -829,7 +829,7 @@ def dstOf : Instr → Option Reg
   | .vmovdquLoad .. | .vmovdquStore .. | .vmovdquTbl .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .stmxcsr _ | .ldmxcsr _
-  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .lfence
+  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .lfence | .align _
   | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ => none
 
 /-- An SSE instruction on registers changes only the SSE registers. -/
@@ -1508,7 +1508,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
     exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.withMxcsr _ _⟩
-  | lfence =>
+  | lfence | align _ =>
     simp only [step, Option.some.injEq] at hs
     subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂
@@ -2057,7 +2057,7 @@ def stepK (τ : T) : Instr → Option T
   | .kStore m k _ => bif pub τ k then storeStepK τ m 64 false else none
   | .stmxcsr m => storeStepK τ m 4 false
   | .ldmxcsr m => bif memPub τ m then some τ else none
-  | .lfence => some τ
+  | .lfence | .align _ => some τ
   | .mul r => some (mulStep τ r)
   | .mulx hi lo src => bif srcOkK τ src then some (mulxStepK τ hi lo src) else none
   | .adcx d src | .adox d src => adxStepK τ d src
@@ -2342,7 +2342,7 @@ def stepKDFn : Instr → Step
   | .kStore m k _ => ⟨fun τ => bif pub τ k then storeStepKD τ m 64 false else none⟩
   | .stmxcsr m => ⟨fun τ => storeStepKD τ m 4 false⟩
   | .ldmxcsr m => ⟨fun τ => bif memPub τ m then some τ else none⟩
-  | .lfence => ⟨fun τ => some τ⟩
+  | .lfence | .align _ => ⟨fun τ => some τ⟩
   | .mul r => ⟨fun τ => some (mulStepKD τ r)⟩
   | .mulx hi lo src => ⟨fun τ => bif srcOkK τ src then some (mulxStepK τ hi lo src) else none⟩
   | .adcx d src | .adox d src => ⟨fun τ => adxStepK τ d src⟩

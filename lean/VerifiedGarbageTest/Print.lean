@@ -233,6 +233,18 @@ def sample8 : Prog isa := .block ([
     (.ite .e (.seq (.block []) (.block [.mov .rax (.imm 1)])) (.block [.mov .rax (.imm 2)]) : Prog isa)) ==
   ["je 20f", "mov rax, 2", "jmp 21f", "20:", "mov rax, 1", "21:", "ret"]
 
+-- Alignment padding before a loop's head: `.p2align k`, ahead of the label,
+-- and refused for any `k` but 4, 5 and 6.
+#guard text (printer.function
+    (.seq (.block [.align 5]) (.loop (.block [.alu .sub .rcx (.imm 1)]) .ne))) ==
+  [".p2align 5", "20:", "sub rcx, 1", "jne 20b", "ret"]
+#guard Instr.asm (.align 4) == [".p2align 4"]
+#guard Instr.asm (.align 6) == [".p2align 6"]
+#guard [4, 5, 6].all fun k => printer.unencodable (.align k) == none
+#guard printer.unencodable (.align 3) == some "`.p2align 3`: only 4, 5 and 6 are allowed"
+#guard printer.unencodable (.align 7) == some "`.p2align 7`: only 4, 5 and 6 are allowed"
+#guard (printer.unencodable (.align 0)).isSome
+
 /-- The 64-bit shifts and `movabs`, including an immediate ≥ 2⁶³. -/
 def sample64 : Prog isa := .block [
   .shift .ror .rax 28,

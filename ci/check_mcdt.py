@@ -23,7 +23,9 @@ Intel's sequence, exactly:
   contracts.)
 
 A region is only entered through its prologue: no jump from outside it may
-land inside it, and it may not contain a `call` or `ret`. So a cold branch
+land inside it, and it may not contain a `call` or `ret`, or alignment
+padding (`.p2align`), which keeps each region exactly Intel's sequence and
+the code the proofs describe instruction for instruction. So a cold branch
 (`Code.iteCold`) may not start inside a region either: its code lies after
 the function's `ret`, and its jump back would enter the region from outside. The check is
 conservative: it rejects every affected instruction outside a region,
@@ -185,6 +187,8 @@ def check_function(name, instrs, lines, labels):
 
     for k, instr in enumerate(instrs):
         r = region_of(k)
+        if mnemonic(instr) == ".p2align" and r is not None:
+            errors.append(f"{at(k)}: `{instr}` is inside an MCDT region")
         if mnemonic(instr) in AFFECTED and r is None:
             errors.append(
                 f"{at(k)}: `{instr}` is outside Intel's MXCSR prologue and "
