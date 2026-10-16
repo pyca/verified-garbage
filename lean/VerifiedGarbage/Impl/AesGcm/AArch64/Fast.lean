@@ -29,11 +29,11 @@ after it, in the working space. -/
 def hO : Nat := 288
 
 /-- `x10 = 0` if the path applies: a 12-byte nonce (`x24`) and at most 16
-bytes of additional data (at `W + 224`, in `x11`). -/
+bytes of additional data (`x5`). -/
 def cond : Prog isa :=
-  .seq (.block [imm .x10 0, .ldr .x .x11 .x19 alenO, .lsr .x .x9 .x11 4])
+  .seq (.block [imm .x10 0, .lsr .x .x9 .x5 4])
   (.seq (.ite (.zero .x .x9) (.block [])
-      (.seq (.block [.subImm .x .x9 .x11 16]) (.ite (.zero .x .x9) (.block []) (.block [imm .x10 1]))))
+      (.seq (.block [.subImm .x .x9 .x5 16]) (.ite (.zero .x .x9) (.block []) (.block [imm .x10 1]))))
   (.seq (.block [.subImm .x .x9 .x24 12]) (.ite (.zero .x .x9) (.block []) (.block [imm .x10 1]))))
 
 /-- `H'` (`v16`) and its halves swapped (`v24`) from `H` at `x0`, and the
@@ -68,27 +68,30 @@ def padMul : Prog isa :=
 def storeY : List Instr := [.vop (.rev .rev64b Y Y), .strq Y .x20 16]
 
 /-- `J₀` of the 12-byte nonce, the first counter block, `H'`, and the
-additional data absorbed. -/
+additional data (`x4`, `x5`) absorbed; the data and its length (`x6`, `x7`)
+kept in `x23` and `x26`. -/
 def front : Prog isa :=
-  .seq (.block (j012 ++ initState ++ hPrime ++ [.ldr .x .x13 .x19 alenO, .ldr .x .x12 .x19 aadO]))
+  .seq (.block (j012 ++ ([mov .x25 .x5, mov .x27 .x4, mov .x23 .x6, mov .x26 .x7] : List Instr) ++
+      initState ++ hPrime ++ ([mov .x13 .x25, mov .x12 .x27] : List Instr)))
     (.seq padMul (.block storeY))
 
-/-- The lengths block `[8 alen]₆₄ ‖ [8 len]₆₄` in `T`, absorbed, the
-accumulator stored, and the arguments for the tag at `W`. -/
+/-- The lengths block `[8 alen]₆₄ ‖ [8 len]₆₄` in `T` (the length of the text
+in `x26`), absorbed, the accumulator stored, and the arguments for the tag at
+`W`. -/
 def lensTag : List Instr :=
-  ([.ldr .x .x26 .x19 alenO, .ldr .x .x27 .x19 lenO, .lsl .x .x9 .x26 3, .rev .x9 .x9,
-    .str .x .x9 .x19 tO, .lsl .x .x9 .x27 3, .rev .x9 .x9, .str .x .x9 .x19 (tO + 8)] : List Instr) ++
-  mulT ++ storeY ++ ([.ldr .x .x28 .x19 tlO] : List Instr) ++ tagSeg 0
+  ([.ldr .x .x10 .x19 alenO, .lsl .x .x9 .x10 3, .rev .x9 .x9, .str .x .x9 .x19 tO, .lsl .x .x9 .x26 3,
+    .rev .x9 .x9, .str .x .x9 .x19 (tO + 8)] : List Instr) ++ mulT ++ storeY ++ tagSeg 0
 
 variable (c : Callees)
 
-/-- After the entry: `front`, the text encrypted, its whole blocks hashed by
-`vg_ghash`, its last bytes and the lengths absorbed, and the tag. -/
+/-- After the entry: `front`, the text (at `x27`, of `x26` bytes) encrypted,
+its whole blocks hashed by `vg_ghash`, its last bytes and the lengths
+absorbed, and the tag, to `x28`. -/
 def run : Prog isa :=
   .seq (front)
-  (.seq (.block [.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO, imm .x25 0])
+  (.seq (.block [mov .x27 .x23, mov .x24 .x26, imm .x25 0])
   (.seq (cryptAl c)
-  (.seq (.block ([.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO] ++ absSeg2 16))
+  (.seq (.block ([mov .x23 .x27, mov .x24 .x26] ++ absSeg2 16))
   (.seq (ghCall c)
   (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
   (.seq padMul
