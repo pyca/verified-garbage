@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks that the generated x86 code only runs the instructions affected by
 MXCSR-configuration-dependent timing (MCDT) under Intel's mitigation, from
-the generated code in `src/asm/x86_64/` and `src/asm/x86/`.
+the generated code in `asm/src/x86_64/` and `asm/src/x86/`.
 
 On some Intel processors, a few vector multiplies (Intel's list, "MCDT Data
 Operand Independent Timing Instructions": `pmuludq`, `pmullw`, `pmulhw`,
@@ -35,7 +35,7 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-ASM = ROOT / "src" / "asm"
+ASM = ROOT / "asm" / "src"
 TARGETS = ("x86", "x86_64")
 
 # Intel, "MCDT Data Operand Independent Timing Instructions", Table 1.
@@ -48,7 +48,7 @@ AFFECTED = {
 }  # fmt: skip
 
 FN = re.compile(
-    r"^pub\(crate\) unsafe extern \"[\w-]+\" fn (vg_\w+)\(.*?\)(?: -> [^{]+?)? \{\n(.*?)^\}",
+    r"^pub unsafe extern \"[\w-]+\" fn (vg_\w+)\(.*?\)(?: -> [^{]+?)? \{\n(.*?)^\}",
     re.MULTILINE | re.DOTALL,
 )
 # A string literal of the template: one line of it, or several separated by
@@ -215,7 +215,7 @@ def check_function(name, instrs, lines, labels):
 
 def main():
     errors = []
-    regions = 0
+    regions = functions = 0
     for target_name in TARGETS:
         for path in sorted((ASM / target_name).glob("*.rs")):
             text = path.read_text()
@@ -223,6 +223,7 @@ def main():
             first_line = 1
             for m in FN.finditer(text):
                 name, body = m.groups()
+                functions += 1
                 first_line += text.count("\n", offset, m.start(2))
                 offset = m.start(2)
                 instrs, lines, labels = code(body, first_line)
@@ -230,6 +231,8 @@ def main():
                 errs, n = check_function(where, instrs, lines, labels)
                 errors += errs
                 regions += n
+    if not functions:
+        errors.append(f"no generated functions under {ASM.relative_to(ROOT)}")
     for e in errors:
         print(e, file=sys.stderr)
     if errors:

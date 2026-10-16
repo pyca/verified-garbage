@@ -103,7 +103,7 @@ def artifact : Artifact := artifactOf "vg_test_alutbl" 42
 /-- The rendering: the table read through a register, as any memory operand. -/
 def expected : String := "/// Returns 1 plus word 1 of its table.
 #[unsafe(naked)]
-pub(crate) unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
+pub unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
     core::arch::naked_asm!(
         r\"lea rdx, [rip + {VG_TEST_ALUTBL}]
 movabs rax, 1
@@ -123,14 +123,13 @@ ret
 #guard Rust.tables [artifact] == [(name, tbl 42)]
 #guard Rust.tablesFile "x86_64" (Rust.tables [artifact]) ==
   Rust.header ++ "//! The tables of constants of the verified functions for `x86_64` (`Artifact.consts`).
-#![allow(dead_code)]
 
 /// A table of constants, aligned to a cache line.
 #[repr(C, align(64))]
-pub(crate) struct Table<const N: usize>(pub(crate) [u64; N]);
+pub struct Table<const N: usize>(pub [u64; N]);
 
 /// The table of constants `VG_TEST_ALUTBL` (`Artifact.consts`).
-pub(crate) static VG_TEST_ALUTBL: Table<2> = Table([
+pub static VG_TEST_ALUTBL: Table<2> = Table([
     7,
     42,
 ]);

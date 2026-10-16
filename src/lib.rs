@@ -3,8 +3,9 @@
 //!
 //! The cryptographic primitives are assembly that has been formally verified
 //! in Lean (see `lean/README.md` for what is proven and what has to be
-//! trusted). They live in naked functions in the generated `asm` module, and
-//! the public APIs compose them.
+//! trusted). They live in naked functions in the generated crate
+//! `verified-garbage-asm` (`asm/`), which the generated `asm` module
+//! re-exports, and the public APIs compose them.
 
 #![no_std]
 #![deny(missing_docs)]

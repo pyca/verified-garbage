@@ -128,7 +128,12 @@ dependencies = [
  "getrandom",
  "serde",
  "serde_json",
+ "verified-garbage-asm",
 ]
+
+[[package]]
+name = "verified-garbage-asm"
+version = "0.0.0"
 
 [[package]]
 name = "zmij"

@@ -2143,8 +2143,9 @@ The tables are generated from the code by `ci/algorithms_table.py`.
   Gracemont) on only if the operating system has set the DOITM bit, which
   user code cannot, and does not list the `VSHA512*` instructions that
   SHA-512 uses on CPUs with the SHA512 extension.
-* The proven assembly is emitted into [`src/asm/`](src/asm/) (one directory
-  per architecture) as Rust naked functions (`naked_asm!`); there is no build
+* The proven assembly is emitted into [`asm/src/`](asm/src/) (one directory
+  per architecture) as Rust naked functions (`naked_asm!`), in a crate of
+  their own that [`src/asm/`](src/asm/) re-exports; there is no build
   script and no separate assembler step.
 * The public APIs are Rust that composes these verified primitives (see
   [what is not verified](#what-is-not-verified)).
@@ -2241,7 +2242,7 @@ WYCHEPROOF_ROOT=$PWD/wycheproof cargo test   # without it, the Wycheproof tests 
 cd lean
 lake exe cache get                   # prebuilt Mathlib
 lake build --log-level=warning       # check all proofs (without each module's recorded profile)
-lake env lean --run Emit.lean        # regenerate src/asm/ after changing lean/VerifiedGarbage/Artifacts/
+lake env lean --run Emit.lean        # regenerate asm/src/ and src/asm/ after changing lean/VerifiedGarbage/Artifacts/
 ```
 
 To benchmark against OpenSSL (through rust-openssl; needs its headers) and

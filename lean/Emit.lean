@@ -6,8 +6,9 @@ import VerifiedGarbage.TCB.Emit
 Renders every artifact (those of `VerifiedGarbage/Artifacts.lean`, of
 each registration file under `VerifiedGarbage/Artifacts/`, and of each
 generic file under `VerifiedGarbage/Generic/` for each variant under
-`VerifiedGarbage/Variants/`, see `VerifiedGarbage/TCB/Emit.lean`) into Rust, under `src/asm/` of the crate
-(by default `../src/asm`, relative to `lean/`). Run it from `lean/` after
+`VerifiedGarbage/Variants/`, see `VerifiedGarbage/TCB/Emit.lean`) into Rust: the naked
+functions under `asm/src/`, the crate `verified-garbage-asm`, and the modules re-exporting
+them under `src/asm/` (by default under `..`, relative to `lean/`). Run it from `lean/` after
 `lake build` (which checks every proof):
 
 * `lake env lean --run Emit.lean [DIR]` writes the files (and deletes stale

@@ -102,6 +102,8 @@ class Selection(unittest.TestCase):
             stack.enter_context(mock.patch.object(planner, 'read', self.read))
             stack.enter_context(mock.patch.object(planner, 'rust_files', lambda root='.': sorted(
                 p for p in self.files if p.startswith('src/'))))
+            stack.enter_context(mock.patch.object(planner, 'asm_files', lambda root='.': sorted(
+                p for p in self.files if p.startswith('asm/src/'))))
             # As `read`: a file not changed at the base is there too.
             stack.enter_context(mock.patch.object(planner, 'bench_rust_files', lambda revision=None, root='.': sorted(
                 p for p in {*self.files, *(self.base_files if revision else ())}
@@ -157,6 +159,22 @@ class Selection(unittest.TestCase):
                     self.files['src/asm/x86_64/x448.rs'] = asm(['bmi2'])
                 rows = self.rows(['src/asm/x86_64/consts.rs'])
                 self.assertEqual({r['arch'] for r in rows}, {'x86_64'})
+                self.assertTrue(all(r['modules'] == '' for r in rows))
+
+    def test_generated_crate_selects_its_modules(self):
+        # The naked functions, in the generated crate: as the module
+        # re-exporting them.
+        self.files['asm/src/x86_64/x448.rs'] = 'pub unsafe extern "sysv64" fn vg_x448() {}\n'
+        self.assertEqual(self.modules(self.rows(['asm/src/x86_64/x448.rs'])), {'x86_64': 'x448'})
+        # Its tables of constants: the modules of that architecture using them.
+        self.files['asm/src/x86_64/consts.rs'] = 'pub static VG_T: [u64; 1] = [1];\n'
+        self.files['asm/src/x86_64/x448.rs'] += 'T = sym super::consts::VG_T,\n'
+        self.assertEqual(self.modules(self.rows(['asm/src/x86_64/consts.rs'], ())), {'x86_64': 'x448'})
+        # Its root module and manifest: every benchmark.
+        for path in ['asm/src/lib.rs', 'asm/Cargo.toml']:
+            with self.subTest(path=path):
+                rows = self.rows([path])
+                self.assertEqual(len(rows), self.full_matrix())
                 self.assertTrue(all(r['modules'] == '' for r in rows))
 
     def test_planner_changes_need_no_benchmarks(self):

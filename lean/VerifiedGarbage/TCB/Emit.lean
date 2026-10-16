@@ -255,8 +255,8 @@ def parts (mods : List String) (gens : List (List String × List String))
 def usage : String := "usage: lake env lean --run Emit.lean [--check] [DIR]"
 
 /-- `[--check] [--part FILE] [DIR]`: whether to check rather than write, the
-file a part writes its targets to, and the directory (by default
-`../src/asm`). -/
+file a part writes its targets to, and the directory of the repository (by
+default `..`), under which the files go (`Rust.files`). -/
 def parseArgs (args : List String) : Option (Bool × Option String × FilePath) :=
   let (check, rest) := match args with
     | "--check" :: rest => (true, rest)
@@ -265,7 +265,7 @@ def parseArgs (args : List String) : Option (Bool × Option String × FilePath) 
     | "--part" :: f :: rest => (some f, rest)
     | rest => (none, rest)
   match rest with
-  | [] => some (check, part, "../src/asm")
+  | [] => some (check, part, "..")
   | [d] => some (check, part, d)
   | _ => none
 
@@ -306,16 +306,25 @@ def sync (dir : FilePath) (check : Bool) (files : List (String × String))
           IO.println s!"removed stale {path}"
   return ok
 
+/-- The directories of the generated files (`Rust.files`), relative to the
+repository: the naked functions' crate's and the library's modules
+re-exporting them. -/
+def outDirs : List String := [Rust.asmDir, Rust.libDir]
+
+/-- The directories of the generated files of the target `t`. -/
+def targetDirs (t : String) : List String := outDirs.map (· ++ "/" ++ t)
+
 /-- Writes the files generated from `as` under the directory in `args` (by
-default `../src/asm`), deleting any other `.rs` file there; or, if `args`
-starts with `--check`, writes nothing and fails if the files on disk differ
-from what would be generated.
+default `..`, the repository), deleting any other `.rs` file under the
+directories of the generated files there (`outDirs`); or, if `args` starts
+with `--check`, writes nothing and fails if the files on disk differ from
+what would be generated.
 
 With `--part FILE`, `as` are the artifacts of a part (`parts`): only the
-files of their targets, `<target>/…`, are written or checked, and the
-other `.rs` files under their directories; then `FILE` gets their targets,
-for `finish`, which checks the root module and the rest of the
-directory. -/
+files of their targets, under `targetDirs`, are written or checked, and the
+other `.rs` files under those directories; then `FILE` gets their targets,
+for `finish`, which checks the root modules and the rest of the
+directories. -/
 def run (as : List Artifact) (args : List String) : IO UInt32 := do
   let some (check, part, dir) := parseArgs args | do IO.eprintln usage; return 2
   let files ← match Rust.files as with
@@ -323,10 +332,10 @@ def run (as : List Artifact) (args : List String) : IO UInt32 := do
     | .error e => do IO.eprintln e; return 1
   let targets := Rust.targetsOf as
   let ok ← match part with
-    | none => sync dir check files [""] []
+    | none => sync dir check files outDirs []
     | some _ =>
-      let ts := targets.map (·.1)
-      sync dir check (files.filter fun (n, _) => ts.any (n.startsWith <| · ++ "/")) ts []
+      let ds := targets.flatMap fun (t, _) => targetDirs t
+      sync dir check (files.filter fun (n, _) => ds.any (n.startsWith <| · ++ "/")) ds []
   if !ok then
     IO.eprintln "run `lake build && lake env lean --run Emit.lean` in lean/ and commit the result"
     return 1
@@ -341,8 +350,8 @@ def inTwoParts (targets : List (List (String × String))) : Option String :=
 
 /-- After `run` succeeded on every part, given the targets each wrote: no
 target is in two parts (so each part generated all of its targets' files,
-from all of their artifacts), the root module `mod.rs` is that of all the
-targets (`Rust.rootFile`), and no other `.rs` file is outside their
+from all of their artifacts), the root modules are those of all the targets
+(`Rust.rootFiles`), and no other `.rs` file is under `outDirs` outside their
 directories. Writes or checks, as `run`. -/
 def finish (targets : List (List (String × String))) (args : List String) : IO UInt32 := do
   let some (check, _, dir) := parseArgs args | do IO.eprintln usage; return 2
@@ -350,7 +359,7 @@ def finish (targets : List (List (String × String))) (args : List String) : IO 
     IO.eprintln s!"the artifacts of the target {t} are in two parts"
     return 1
   let all := targets.flatten
-  unless ← sync dir check [("mod.rs", Rust.rootFile all)] [""] (all.map (·.1)) do
+  unless ← sync dir check (Rust.rootFiles all) outDirs (all.flatMap fun (t, _) => targetDirs t) do
     IO.eprintln "run `lake build && lake env lean --run Emit.lean` in lean/ and commit the result"
     return 1
   return 0

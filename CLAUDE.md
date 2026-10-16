@@ -20,7 +20,8 @@ Lake rebuilds your changes and anything not yet cached.
 
 * **All assembly comes from Lean.** Never write `asm!`, `naked_asm!`,
   `global_asm!`, naked functions, `extern` blocks or a `build.rs` by hand, and
-  never edit `src/asm/` by hand. Add an entry to a registration file,
+  never edit `asm/src/` (the generated crate of naked functions) or
+  `src/asm/` by hand. Add an entry to a registration file,
   `lean/VerifiedGarbage/Artifacts/<Alg>/<Target>.lean`, and run
   `lake env lean --run Emit.lean` in `lean/`.
 * **No unverified shortcuts in proofs.** No `sorry`, `admit`, `native_decide`,
@@ -119,7 +120,8 @@ instructions in an ISA model) go in their own PR before either.
    its Rust signature (`Sig`) and its `Contract` on every target, built with
    `Sig.contract` from a postcondition and any precondition the signature does
    not imply, and its `Api`: its Rust module (the file under
-   `src/asm/<target>/`) and name, its signature, its contract on every target
+   `asm/src/<target>/`, re-exported by `src/asm/<target>/`) and name, its
+   signature, its contract on every target
    (`contracts := some fun A stack => fooContract A stack`, or
    `fun A _ => fooContract A` for a contract without `stack`), its
    contract's `writeArgs`, and its documentation: what it does, and the `# Safety` items but for what
@@ -179,7 +181,7 @@ instructions in an ISA model) go in their own PR before either.
    Mathlib algebra of its proof), and the registration file is
    `Generic/<Curve>/<Target>/<Alg>.lean` (`Generic/<Iface>/<Curve>/<Target>/`
    when it is generic over an implementation too). The law has no suffix.
-5. Regenerate `src/asm/`, build the public Rust API on top of the primitive,
+5. Regenerate `asm/src/` and `src/asm/`, build the public Rust API on top of the primitive,
    and test it against the Wycheproof vectors in `tests/wycheproof/` (set
    `WYCHEPROOF_ROOT` to a checkout of C2SP/wycheproof). Benchmark the new
    API in `bench/benches/primitives/<alg>.rs`, next to the same operation in
@@ -630,7 +632,7 @@ lake build --log-level=warning +VerifiedGarbage.Proof.Md5.X86_64.Compress
 To check the artifact and regenerate its code, run `EmitOne.lean` on its
 registration file: it builds only that file and what it imports, runs the
 emitter's audits on its artifacts, and writes (or, with `--check`, compares)
-only its files under `src/asm/`, in seconds once the proofs are built:
+only its files under `asm/src/` and `src/asm/`, in seconds once the proofs are built:
 
 ```sh
 lake env lean --run EmitOne.lean Md5.X86_64

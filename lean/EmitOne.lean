@@ -10,7 +10,7 @@ than building every module of the library as `Emit.lean` needs. Run it from
 
 * `lake env lean --run EmitOne.lean Rc2.AArch64 [More.Target …]` builds
   `VerifiedGarbage/Artifacts/Rc2/AArch64.lean`, and writes its files under
-  `../src/asm`.
+  `../asm/src` and `../src/asm`.
 * `lake env lean --run EmitOne.lean --check Rc2.AArch64 …` writes nothing and
   fails if those files on disk differ from what would be generated.
 
@@ -23,7 +23,7 @@ It runs the same trusted printer (`VG.Emit.run`) and the same audits
 (`#assert_standard_axioms`, `#assert_no_compiler_overrides`,
 `#assert_spec_origin`) as `Emit.lean`, on these artifacts only, into
 `.lake/emit/one`, and then copies (or compares) each file it generated but the
-`mod.rs` files. It refuses a file that does not exist yet (a new module also
+`mod.rs` and `lib.rs` files. It refuses a file that does not exist yet (a new module also
 changes `mod.rs`) or that has functions it did not generate (another
 registration file emits into it): `Emit.lean` handles those. It is a
 convenience while iterating, not a replacement: `Emit.lean --check`, which CI
@@ -39,12 +39,15 @@ def nativeTCB : FilePath :=
 
 def usage : String := "usage: lake env lean --run EmitOne.lean [--check] <Alg>.<Target> …"
 
-/-- The names of the functions a generated file defines. -/
+/-- The names of the functions a generated file defines, or re-exports (one
+per line of its `use`). -/
 def fnNames (text : String) : List String :=
   (text.splitOn "\n").filterMap fun line =>
     match line.splitOn "extern \"C\" fn " with
     | [_, rest] => some ((rest.splitOn "(").headD "")
-    | _ => none
+    | _ =>
+      if line.startsWith "    vg_" && line.endsWith "," then some (line.trimAscii.dropEnd 1).toString
+      else none
 
 /-- Runs a process, inheriting its output; its exit code. -/
 def runProc (cmd : String) (args : Array String) : IO UInt32 := do
@@ -92,11 +95,12 @@ def main (args : List String) : IO UInt32 := do
   let code ← runProc (← IO.appPath).toString
     #[s!"--load-dynlib={nativeTCB}", "--run", driver.toString, out.toString]
   unless code == 0 do return code
-  -- Copy or compare each generated file but `mod.rs`.
-  let dest : FilePath := ".." / "src" / "asm"
+  -- Copy or compare each generated file but the `mod.rs` and `lib.rs` files.
+  let dest : FilePath := ".."
   let mut ok := true
   for path in ← out.walkDir do
-    unless path.extension == some "rs" && path.fileName != some "mod.rs" do continue
+    unless path.extension == some "rs" && path.fileName != some "mod.rs" &&
+        path.fileName != some "lib.rs" do continue
     let rel := (path.toString.dropPrefix (out.toString ++ "/")).toString
     let target := dest / rel
     let text ← IO.FS.readFile path

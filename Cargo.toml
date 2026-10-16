@@ -30,6 +30,8 @@ cpu-features-env = ["std"]
 [dependencies]
 # The randomness of ML-KEM encapsulation, from the operating system.
 getrandom = "0.4"
+# The naked functions, generated from Lean (`asm/`, `lean/VerifiedGarbage/TCB/Rust.lean`).
+verified-garbage-asm = { path = "asm" }
 
 [[test]]
 name = "tests"
@@ -43,3 +45,13 @@ serde_json = "1"
 # this crate) in test builds.
 [profile.dev.package."*"]
 opt-level = 3
+
+# The naked functions' code is the same at every optimization level, but an
+# optimized build runs LLVM's ThinLTO, which parses all of the assembly again
+# several times over (once its symbol table, once its summary, ...), serially
+# as rustc puts the naked functions in one codegen unit: this takes seconds.
+[profile.dev.package.verified-garbage-asm]
+opt-level = 0
+
+[profile.release.package.verified-garbage-asm]
+opt-level = 0

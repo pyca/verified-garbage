@@ -57,7 +57,7 @@ class InstructionLocations(unittest.TestCase):
         text = '\n'.join([
             '// generated code',
             '',
-            'pub(crate) unsafe extern "sysv64" fn vg_first() {',
+            'pub unsafe extern "sysv64" fn vg_first() {',
             '    naked_asm!(',
             '        "2:',
             'pmuludq xmm0, xmm1",',
@@ -65,7 +65,7 @@ class InstructionLocations(unittest.TestCase):
             '}',
             '',
             '/// second function',
-            'pub(crate) unsafe extern "sysv64" fn vg_second() {',
+            'pub unsafe extern "sysv64" fn vg_second() {',
             '',
             '    naked_asm!(',
             '        "pmullw xmm0, xmm1",',
@@ -75,12 +75,12 @@ class InstructionLocations(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             for arch in check_mcdt.TARGETS:
-                path = root / "src" / "asm" / arch / "test.rs"
+                path = root / "asm" / "src" / arch / "test.rs"
                 path.parent.mkdir(parents=True)
                 path.write_text(text)
             stderr = io.StringIO()
             with patch.object(check_mcdt, "ROOT", root), patch.object(
-                check_mcdt, "ASM", root / "src" / "asm"
+                check_mcdt, "ASM", root / "asm" / "src"
             ), contextlib.redirect_stderr(stderr):
                 self.assertEqual(check_mcdt.main(), 1)
         expected = []
@@ -90,7 +90,7 @@ class InstructionLocations(unittest.TestCase):
                 ("vg_second", 14, "pmullw xmm0, xmm1"),
             ]:
                 expected.append(
-                    f"src/asm/{arch}/test.rs ({name}):{line}: `{instr}` is outside "
+                    f"asm/src/{arch}/test.rs ({name}):{line}: `{instr}` is outside "
                     "Intel's MXCSR prologue and epilogue "
                     "(MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean)"
                 )

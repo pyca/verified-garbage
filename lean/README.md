@@ -2,8 +2,9 @@
 
 The cryptographic primitives (e.g. a block function or a field
 multiplication) are assembly written in Lean as structured programs over a
-Lean model of each ISA, proven correct in Lean, and printed into `src/asm/`
-as Rust naked functions. The crate's public APIs are Rust that composes those
+Lean model of each ISA, proven correct in Lean, and printed into `asm/src/`
+as Rust naked functions (the crate `verified-garbage-asm`, which `src/asm/`
+re-exports). The crate's public APIs are Rust that composes those
 primitives: this directory verifies the primitives, not the Rust around them.
 
 ## Layout
@@ -29,7 +30,7 @@ VerifiedGarbage/
     Emit.lean       what is emitted (`Artifacts.lean`, every registration file
                     under `Artifacts/`, and every generic function under `Generic/`
                     for every variant of its interface under `Variants/`), and
-                    writing or checking `src/asm/`
+                    writing or checking `asm/src/` and `src/asm/`
     X86_64/         ISA model, printer, System V ABI target
   Spec/         Algorithm specifications and contracts (trusted, must be reviewed)
   Impl/         Implementations: `Prog`s over an ISA model (untrusted)
@@ -49,7 +50,7 @@ VerifiedGarbage/
                   interface's non-baseline variant: `vg_argon2_blake2b_avx2_g_avx512`)
   Artifacts.lean  An empty list, which the emitter still reads; add nothing to it
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
-Emit.lean       Renders every artifact into `../src/asm/` (see `TCB/Emit.lean`)
+Emit.lean       Renders every artifact into `../asm/src/` and `../src/asm/` (see `TCB/Emit.lean`)
 EmitOne.lean    The same, for the registration files named, while iterating
 ```
 
@@ -92,7 +93,8 @@ never import proofs.
    it runs (`implemented_by`, `extern`, `export`) or anywhere in the project
    (`csimp`, `initialize`), and any `VG.Spec` definition declared outside
    `Spec/`.
-5. **Emit** — `Emit.lean` renders the registry into `src/asm/<target>/<module>.rs`,
+5. **Emit** — `Emit.lean` renders the registry into `asm/src/<target>/<module>.rs`
+   (re-exported, with the constants of their CPU features, by `src/asm/<target>/<module>.rs`),
    adding to each function's `# Safety` section what its contract requires of
    the memory each buffer is valid for (`Sig.validDoc`) and of where its
    buffers are, which depends on the target's calling convention and the
@@ -144,7 +146,7 @@ only proven against a spec and TCB that were reviewed and merged beforehand.
 ```sh
 lake exe cache get                  # download prebuilt Mathlib
 lake build --log-level=warning      # check every proof, run the axiom audit and golden tests
-lake env lean --run Emit.lean       # regenerate ../src/asm
+lake env lean --run Emit.lean       # regenerate ../asm/src and ../src/asm
 lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Checks that every implementation of a verified function reaches every
-function built on it, from the generated code in `src/asm/`.
+function built on it, from the generated code in `asm/src/`.
 
 A primitive can have several implementations with the same contract, e.g.
 `vg_sha256_compress` and `vg_sha256_compress_shani`: a *variant* of a
@@ -25,8 +25,8 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   variants adding a part ending in `_<s>` must call `f_<s>`.
 * **Every variant is used.** Each variant is called by another generated
   function or used by the Rust code of the crate (`src/`, outside
-  `src/asm/`): the generated modules allow dead code, so a variant the Rust
-  dispatch forgot would otherwise go unnoticed.
+  `src/asm/`, whose generated modules re-export every function), so that a
+  variant the Rust dispatch forgot does not go unnoticed.
 
 See "An optimized implementation reaches everything built on it" in
 CLAUDE.md.
@@ -37,10 +37,12 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-ASM = ROOT / "src" / "asm"
+ASM = ROOT / "asm" / "src"
+# The library's modules re-exporting the generated functions.
+REEXPORTS = ROOT / "src" / "asm"
 
 FN = re.compile(
-    r"^pub\(crate\) unsafe extern \"[\w-]+\" fn (vg_\w+)\((.*?)\)(?: -> ([^{]+?))? \{\n(.*?)^\}",
+    r"^pub unsafe extern \"[\w-]+\" fn (vg_\w+)\((.*?)\)(?: -> ([^{]+?))? \{\n(.*?)^\}",
     re.MULTILINE | re.DOTALL,
 )
 SYM = re.compile(r"\w+ = sym (?:\w+::)*(vg_\w+)")
@@ -151,9 +153,12 @@ def main():
     rust = "".join(
         COMMENT.sub("", p.read_text())
         for p in sorted((ROOT / "src").rglob("*.rs"))
-        if ASM not in p.parents
+        if REEXPORTS not in p.parents
     )
-    errors = check(functions(), rust)
+    targets = functions()
+    errors = check(targets, rust)
+    if not any(targets.values()):
+        errors.append(f"no generated functions under {ASM.relative_to(ROOT)}")
     for e in errors:
         print(e, file=sys.stderr)
     if errors:

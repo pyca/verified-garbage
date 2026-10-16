@@ -6,9 +6,10 @@
 
 Prints a JSON list of platforms (see `PLATFORMS`) for the Benchmarks
 workflow's matrix: an architecture is benchmarked when its own assembly
-(`src/asm/<arch>/`) changed, or anything shared by every architecture (the
-rest of `src/`, the benchmarks, the dependencies, the comparison). Changes
-to other files (e.g. Lean that leaves `src/asm/` as it was) need none.
+(`asm/src/<arch>/`, re-exported by `src/asm/<arch>/`) changed, or anything
+shared by every architecture (the rest of `src/` and `asm/`, the
+benchmarks, the dependencies, the comparison). Changes to other files (e.g.
+Lean that leaves `asm/src/` and `src/asm/` as they were) need none.
 
 A Rust file outside `src/asm/<arch>/` counts as changed on an architecture
 only if what that architecture compiles of it changed: without comments,
@@ -22,10 +23,10 @@ and a file this cannot follow counts as changed everywhere.
 Each platform's `modules` narrows its benchmarks to the modules whose own
 files changed:
 
-  * `src/asm/<arch>/<module>.rs`: `<module>`, on that architecture, or
-    for a module no benchmark lists (e.g. `consts`, the tables of
-    constants), the modules of `src/asm/<arch>/` that use it (`super::`),
-    if no other Rust code does;
+  * `asm/src/<arch>/<module>.rs` or `src/asm/<arch>/<module>.rs`:
+    `<module>`, on that architecture, or for a module no benchmark lists
+    (e.g. `consts`, the tables of constants), the modules of
+    `asm/src/<arch>/` that use it (`super::`), if no other Rust code does;
   * `src/<module>.rs` or `src/hashes/<module>.rs`: `<module>`, and
     `src/hashes/mod.rs` (`streaming_hash!`, `HashFunction`): every hash
     module in `src/hashes/` (benchmarks of code built on a hash, such as
@@ -62,7 +63,7 @@ A change to a manifest (`Cargo.toml`, `bench/Cargo.toml`) only inside its
 where a changed table's `cfg` can hold, and nothing elsewhere.
 
 The benchmarks run those that use any of them, and all of them for a module
-none uses (e.g. `lib`, or the generated `src/asm/<arch>/mod.rs`). Any
+none uses (e.g. `lib`, or the generated `asm/src/<arch>/mod.rs`). Any
 other shared change (e.g. executable code in benchmarks' `main.rs`, or a benchmark whose
 `USES` cannot be read) leaves `modules` empty, which runs every benchmark.
 
@@ -220,14 +221,15 @@ BENCHMARKS_PER_JOB = 40
 # Changes to this script choose benchmarks but are not measured by any:
 # `ci/test_check_benchmarks.py` tests it.
 SHARED = re.compile(
-    r"src/|bench/|Cargo\.(toml|lock)$|ci/bench_compare\.py$"
+    r"src/|asm/|bench/|Cargo\.(toml|lock)$|ci/bench_compare\.py$"
     r"|\.github/workflows/bench\.yml$"
 )
 
 
-# The file of one module: its assembly on one architecture, or its Rust API
-# on every one.
-ASM = re.compile(r"src/asm/([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
+# The file of one module: its assembly on one architecture (the generated
+# crate's, or the library's module re-exporting it), or its Rust API on
+# every one.
+ASM = re.compile(r"(?:asm/src|src/asm)/([a-z0-9_]+)/([a-z0-9_]+)\.rs$")
 API = re.compile(r"src/(?:hashes/)?([a-z0-9_]+)\.rs$")
 HASHES = "src/hashes/mod.rs"
 # A module declared in `src/lib.rs`: its attributes, and `pub` if it has it.
@@ -688,6 +690,11 @@ def rust_files(root="."):
     return sorted(p.relative_to(root).as_posix() for p in pathlib.Path(root, "src").glob("**/*.rs"))
 
 
+def asm_files(root="."):
+    """The generated crate's files, `asm/src/`."""
+    return sorted(p.relative_to(root).as_posix() for p in pathlib.Path(root, "asm", "src").glob("**/*.rs"))
+
+
 def hashes(root="."):
     """The hash modules: the files of `src/hashes/` but its `mod.rs`."""
     return {m[1] for path in rust_files(root)
@@ -797,15 +804,15 @@ def users(family, known, root=".", seen=frozenset()):
 
 
 def asm_users(arch, module, root="."):
-    """The other modules of `src/asm/<arch>/` that use the generated module
+    """The other modules of `asm/src/<arch>/` that use the generated module
     `module` (e.g. `consts`, the tables of constants), or None if Rust code
     outside them does (through `crate::arch` or `crate::asm`) or none does."""
     names = set()
     sibling = re.compile(rf"\bsuper::{module}\b")
     outside = re.compile(rf"\b(?:arch|asm::{arch})::{module}\b")
-    for path in rust_files(root):
+    for path in rust_files(root) + asm_files(root):
         text = read(path, None, root) or ""
-        if not path.startswith(f"src/asm/{arch}/"):
+        if not path.startswith((f"src/asm/{arch}/", f"asm/src/{arch}/")):
             if outside.search(text):
                 return None
         elif (m := ASM.match(path)) and m[2] not in ("mod", module) and sibling.search(text):

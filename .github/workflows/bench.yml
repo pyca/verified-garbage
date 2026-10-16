@@ -22,6 +22,7 @@ on:
   pull_request:
     paths:
       - "src/**"
+      - "asm/**"
       - "bench/**"
       - "Cargo.toml"
       - "Cargo.lock"

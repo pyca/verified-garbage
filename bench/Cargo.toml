@@ -48,3 +48,8 @@ aws-lc-sys = { version = "0.45", default-features = false, features = ["all-bind
 [[bench]]
 name = "primitives"
 harness = false
+
+# As in the library's manifest: the naked functions' code is the same at
+# every optimization level, and optimizing only makes LLVM parse it again.
+[profile.release.package.verified-garbage-asm]
+opt-level = 0
