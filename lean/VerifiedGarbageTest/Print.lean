@@ -201,6 +201,28 @@ def sample8 : Prog isa := .block ([
 #guard (printer.unencodable (.adox .rax (.mem { base := .rsi, disp := -4294967304 }))).isSome
 #guard printer.unencodable (.alu .add .rax (.imm 0x7fffffff)) == none
 
+-- A cold branch (`Code.iteCold`): `je` to its code after the `ret`, which
+-- jumps back to the code after the `ite`; the else branch falls through, with
+-- no jump, so the code around the `ite` is as long as without `t`.
+#guard text (printer.function
+    (.seq (Code.iteCold .e (.block [.mov .rax (.imm 1)]) (.block [.mov .rax (.imm 2)]))
+      (.block [.mov .rcx (.imm 3)]) : Prog isa)) ==
+  ["je 20f", "mov rax, 2", "21:", "mov rcx, 3", "ret", "20:", "mov rax, 1", "jmp 21b"]
+
+-- In a loop, and nested: each cold branch's code follows the return, in the
+-- order of the branches, the inner one's after the outer one's jump back.
+#guard text (printer.function
+    (.loop (Code.iteCold .ne
+      (Code.iteCold .b (.block [.mov .rax (.imm 1)]) (.block [.mov .rax (.imm 2)]))
+      (.block [.mov .rax (.imm 3)])) .ae : Prog isa)) ==
+  ["20:", "jne 21f", "mov rax, 3", "22:", "jae 20b", "ret",
+    "21:", "jb 23f", "mov rax, 2", "24:", "jmp 22b", "23:", "mov rax, 1", "jmp 24b"]
+
+-- An `ite` whose `then` branch merely starts with one empty block is not cold.
+#guard text (printer.function
+    (.ite .e (.seq (.block []) (.block [.mov .rax (.imm 1)])) (.block [.mov .rax (.imm 2)]) : Prog isa)) ==
+  ["je 20f", "mov rax, 2", "jmp 21f", "20:", "mov rax, 1", "21:", "ret"]
+
 /-- The 64-bit shifts and `movabs`, including an immediate ≥ 2⁶³. -/
 def sample64 : Prog isa := .block [
   .shift .ror .rax 28,
