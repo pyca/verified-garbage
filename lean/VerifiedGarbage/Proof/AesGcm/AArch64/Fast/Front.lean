@@ -75,6 +75,13 @@ section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W)
 include L
 
+theorem slots_frontFrame' : ∀ r ∈ frontFrame' St W, (⟨W + BitVec.ofNat 64 216, 40⟩ : Region).Disjoint r := by
+  intro r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · exact slots_j0Frame L r hr
+  · simp only [List.mem_singleton] at hr; subst hr
+    exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
+
 /-- `front`, from the 12-byte nonce at `Np` and the `al` (at most 16) bytes of
 additional data at `A`, with their addresses and lengths in their slots. -/
 theorem front_ok {k : Reg → BitVec 64} {H : Block} {Np A : Addr} {al : Nat} {s₀ : State}
