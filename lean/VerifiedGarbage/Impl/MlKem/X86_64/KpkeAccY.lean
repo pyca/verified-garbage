@@ -83,9 +83,6 @@ def yfromAcc : Prog isa :=
 def yproAcc (tab : Nat → Nat) : Prog isa :=
   .seq (.block (wordTab tab 128 .rsi 0 ++ yconsts ++ [.mov .r9 (.reg .rdi)] ++ leaR .rdx .rsi oS)) yfromAcc
 
-def nttInvAccY : Prog isa :=
-  .seq (yproAcc zmTabInv) (.seq (ylay2 vibfly 0) (.seq (ylay4 vibfly 64) (.seq (ylay8 vibfly 96)
-    (.seq (ylay vibfly 16 112) (.seq (ylay vibfly 32 120) (.seq (ylay vibfly 64 124)
-      (.seq (ylay vibfly 128 126) (.seq yscale yepi))))))))
+def nttInvAccY : Prog isa := .seq (yproAcc zmTabInv) (.seq nttInvLazy yepi)
 
 end VG.Impl.MlKem.X86_64

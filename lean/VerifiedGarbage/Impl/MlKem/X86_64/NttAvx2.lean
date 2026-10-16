@@ -33,6 +33,13 @@ each a pass over `S` with `rdx` at the words it loads:
   `16 + 8l` to `16 + 8l + 7`; the zetas of the blocks of each lane are
   gathered into the lanes of `ymm13` with `vpblendd` (`yzeta4`, `yzeta8`).
 
+The butterflies reduce lazily (`vbflyL`, `vibflyL`): a word is only
+congruent to its coefficient modulo `q`. In `NTT` each layer adds at most
+`q` to a word's magnitude, which stays below `8q` after the seven layers,
+and `yredC` reduces every word to its value (`nttLazy`). In `NTT⁻¹` each
+layer doubles the sums, so `yred` brings the words back below `q` after
+the third and sixth layers (`nttInvLazy`).
+
 `NTT⁻¹` then multiplies every coefficient by `3303` (`yscale`). Both clear
 the upper halves of the vector registers before returning (`vzeroupper`).
 Every address and branch depends only on the pointers.
@@ -127,11 +134,21 @@ def ylay4 (bf : List Instr) (t : Nat) : Prog isa := ylay42 bf gath4 scat4 yzeta4
 
 def ylay2 (bf : List Instr) (t : Nat) : Prog isa := ylay42 bf gath2 scat2 yzeta8 16 t
 
-/-- Every word of `S` times `3303`, reduced. -/
-def yscale : Prog isa :=
-  .seq (.block (leaR .rdx .rsi oS ++ yconst .xmm13 0x02000200))
-    (rcxLoop 16 ([.vmovdquLoad .l256 .xmm3 (at_ .rdx 0)] ++ toY (vmont .xmm3 .xmm13 .xmm2 ++ vcadd .xmm3 .xmm2) ++
+/-- `body` on every word of `S` in `ymm3`, with `c` in every doubleword of `ymm13`. -/
+def ymulc (c : BitVec 32) (body : List Instr) : Prog isa :=
+  .seq (.block (leaR .rdx .rsi oS ++ yconst .xmm13 c))
+    (rcxLoop 16 ([.vmovdquLoad .l256 .xmm3 (at_ .rdx 0)] ++ toY body ++
       [.vmovdquStore .l256 (at_ .rdx 0) .xmm3, .alu .add .rdx (.imm 32)]))
+
+/-- Every word of `S` times `3303`, reduced. -/
+def yscale : Prog isa := ymulc 0x02000200 (vmont .xmm3 .xmm13 .xmm2 ++ vcadd .xmm3 .xmm2)
+
+/-- Every word of `S` times `1` by Montgomery multiplication with `2¹⁶ mod q =
+2285`: in `(-q, q)`, for the lazy layers. -/
+def yred : Prog isa := ymulc 0x08ED08ED (vmont .xmm3 .xmm13 .xmm2)
+
+/-- Every word of `S` reduced to its value modulo `q`, after the lazy layers. -/
+def yredC : Prog isa := ymulc 0x08ED08ED (vmont .xmm3 .xmm13 .xmm2 ++ vcadd .xmm3 .xmm2)
 
 /-- The 256 `u32`s at `[r9]` to words at `[rdx]`, sixteen at a time. -/
 def ypack : Prog isa :=
@@ -155,13 +172,22 @@ def ypro (tab : Nat → Nat) : Prog isa :=
 def yepi : Prog isa :=
   .seq (.block ([.mov .r9 (.reg .rdi)] ++ leaR .rdx .rsi oS)) (.seq yunpack (.block [.vop .vzeroupper]))
 
-def nttAvx2 : Prog isa := withMxcsr .rsi oMx <|
-  .seq (ypro zmTab) (.seq (ylay vbfly 128 1) (.seq (ylay vbfly 64 2) (.seq (ylay vbfly 32 4)
-    (.seq (ylay vbfly 16 8) (.seq (ylay8 vbfly 16) (.seq (ylay4 vbfly 32) (.seq (ylay2 vbfly 64) yepi)))))))
+/-- The seven layers of `NTT` on lazily reduced words (`vbflyL`), each word
+growing by at most `q`, and their reduction. -/
+def nttLazy : Prog isa :=
+  .seq (ylay vbflyL 128 1) (.seq (ylay vbflyL 64 2) (.seq (ylay vbflyL 32 4) (.seq (ylay vbflyL 16 8)
+    (.seq (ylay8 vbflyL 16) (.seq (ylay4 vbflyL 32) (.seq (ylay2 vbflyL 64) yredC))))))
 
-def nttInvAvx2 : Prog isa := withMxcsr .rsi oMx <|
-  .seq (ypro zmTabInv) (.seq (ylay2 vibfly 0) (.seq (ylay4 vibfly 64) (.seq (ylay8 vibfly 96)
-    (.seq (ylay vibfly 16 112) (.seq (ylay vibfly 32 120) (.seq (ylay vibfly 64 124)
-      (.seq (ylay vibfly 128 126) (.seq yscale yepi))))))))
+/-- The seven layers of `NTT⁻¹` on lazily reduced words (`vibflyL`), each sum
+doubling, reduced after the third and the sixth, and the multiplication by
+`3303`. -/
+def nttInvLazy : Prog isa :=
+  .seq (ylay2 vibflyL 0) (.seq (ylay4 vibflyL 64) (.seq (ylay8 vibflyL 96) (.seq yred
+    (.seq (ylay vibflyL 16 112) (.seq (ylay vibflyL 32 120) (.seq (ylay vibflyL 64 124) (.seq yred
+      (.seq (ylay vibflyL 128 126) yscale))))))))
+
+def nttAvx2 : Prog isa := withMxcsr .rsi oMx <| .seq (ypro zmTab) (.seq nttLazy yepi)
+
+def nttInvAvx2 : Prog isa := withMxcsr .rsi oMx <| .seq (ypro zmTabInv) (.seq nttInvLazy yepi)
 
 end VG.Impl.MlKem.X86_64

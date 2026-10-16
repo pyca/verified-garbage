@@ -35,6 +35,17 @@ open W (qW qinvW)
 /-- The words of `x` are the values of the coefficients `f 0, …, f 7`. -/
 def Lanes (x : BitVec 128) (f : Nat → Zq) : Prop := ∀ i < 8, (word x i).toNat = (f i).val
 
+/-- The words of `x` are related by `R` to `f 0, …, f 7`: `Lanes` is
+`LanesR canW`, and lazy reduction keeps other values in words. -/
+def LanesR {α : Type} (R : BitVec 16 → α → Prop) (x : BitVec 128) (f : Nat → α) : Prop :=
+  ∀ i < 8, R (word x i) (f i)
+
+/-- Transports a relation along an equality of its second argument. -/
+theorem rel_of_eq {α β : Type} {R : α → β → Prop} {a : α} {u v : β} (h : R a u) (e : u = v) : R a v := e ▸ h
+
+/-- The word holds the canonical value of the coefficient. -/
+def canW (w : BitVec 16) (v : Zq) : Prop := w.toNat = v.val
+
 /-- The words of `x` are the zetas `ζ i · 2¹⁶ mod q` (Montgomery form). -/
 def ZLanes (x : BitVec 128) (ζ : Nat → Zq) : Prop :=
   ∀ i < 8, (word x i).toNat = (ζ i).val * 65536 % 3329
