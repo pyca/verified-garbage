@@ -44,7 +44,7 @@ open VG VG.AArch64 VG.Impl.AesGcm.AArch64
 /-! ## v8–v15 -/
 
 theorem init_keepsV (v : GcmImpl) : (init v.callees).allInstrs keepsV = true := by
-  simp only [init, ctrCall, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
+  simp only [init, initWith, ctrCall, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem streamInit_keepsV (v : GcmImpl) : (streamInit v.callees).allInstrs keepsV = true := by
   simp only [streamInit, j0, j0hash, ghCall, absorb, absSeg1, absTail, minK, copy, Impl.AesGcm.AArch64.xor, padSeg, flush, lens,

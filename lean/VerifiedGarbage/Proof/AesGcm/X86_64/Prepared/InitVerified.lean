@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitCT
+public import VerifiedGarbage.Proof.AesGcm.ScratchPrepared
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -11,16 +12,6 @@ import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
 /-! # Prepared key setup satisfies the shared contract -/
 
 @[expose] public section
-
-namespace VG.Proof.AesGcm
-open VG.Spec.Gcm
-
-def initPreparedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  initPrecomputedScratchSig.contract A
-    (pre := fun key keyLen ctx _scratch => initPre A.ptrBits key keyLen ctx)
-    (post := fun key keyLen ctx _scratch => initPreparedPost A.ptrBits key keyLen ctx)
-    (writeArgs := true) (stack := stack)
-end VG.Proof.AesGcm
 
 namespace VG.Proof.AesGcm.X86_64
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64
