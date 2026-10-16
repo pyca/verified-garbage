@@ -119,7 +119,7 @@ pub(crate) unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
 
 -- The emitter writes the static from the instruction's words, byte for byte,
 -- and the code may name it without `Artifact.consts`.
-#guard (Rust.checkConsts [artifact] artifact).isOk
+#guard (Rust.checkConsts [.of artifact] (.of artifact)).isOk
 #guard Rust.tables [artifact] == [(name, tbl 42)]
 #guard Rust.tablesFile "x86_64" (Rust.tables [artifact]) ==
   Rust.header ++ "//! The tables of constants of the verified functions for `x86_64` (`Artifact.consts`).
@@ -140,10 +140,10 @@ pub(crate) static VG_TEST_ALUTBL: Table<2> = Table([
 -- words: refused.
 def same : Artifact := artifactOf "vg_test_alutbl_same" 42
 def other : Artifact := artifactOf "vg_test_alutbl_other" 41
-#guard (Rust.checkConsts [artifact, same] artifact).isOk
+#guard (Rust.checkConsts [.of artifact, .of same] (.of artifact)).isOk
 #guard Rust.tables [artifact, same] == [(name, tbl 42)]
-#guard !(Rust.checkConsts [artifact, other] artifact).isOk
-#guard !(Rust.checkConsts [artifact, other] other).isOk
+#guard !(Rust.checkConsts [.of artifact, .of other] (.of artifact)).isOk
+#guard !(Rust.checkConsts [.of artifact, .of other] (.of other)).isOk
 
 -- The semantics: the word at the table's offset, else a fault.
 #guard Instr.asm (add 42) == ["add rax, QWORD PTR [rdx+8]"]
