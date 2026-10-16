@@ -53,9 +53,9 @@ theorem sealSplitBody_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1
   have hx : v.callee.code.x86_64Depth ≤ 16 := v.xdepth
   have hb := blocks_xdepth b
   have hs := xorSplit_xdepth
-  simp only [sealSplitBody, bigCallee, prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks,
+  simp only [sealSplitBody, bigCallee, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, wholeBlocks,
     padTail, cryptSplit, cryptBigSplit, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth,
-    xorBuf_xdepth, splitM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hx ⊢
+    xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hx ⊢
   omega
 
 /-! ## The frame -/

@@ -164,6 +164,8 @@ theorem splitM_xdepth (fold pass : Nat) : (splitM fold pass).x86_64Depth = 0 := 
   unfold splitM; split
   · rfl
   · split <;> rfl
+theorem foldM_xdepth (fold pass : Nat) : (foldM fold pass).x86_64Depth = 0 := by
+  unfold foldM; split <;> simp only [Code.x86_64Depth, splitM_xdepth, Nat.max_self]
 theorem init_xdepth : Impl.Poly1305.X86_64.init.x86_64Depth = 0 := by lit_decide
 theorem finalize_xdepth : Impl.Poly1305.X86_64.finalize.x86_64Depth = 0 := by lit_decide
 
@@ -173,15 +175,15 @@ theorem blocks_xdepth (b : Impl.Poly1305.X86_64.Blocks) : b.code.x86_64Depth ≤
 theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [«seal», prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, splitM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
+  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
+    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
   omega
 
 theorem open_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («open» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [«open», prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, splitM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
+  simp only [«open», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
+    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
   omega
 
 /-- A state satisfying `seal`'s precondition, without the working space. -/
