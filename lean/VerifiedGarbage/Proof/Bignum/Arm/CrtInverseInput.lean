@@ -1,0 +1,28 @@
+module
+
+public import VerifiedGarbage.Impl.Bignum.Arm.CrtCoefficient
+public import VerifiedGarbage.Proof.Bignum.Arm.SavedOperand
+public import VerifiedGarbage.Proof.Bignum.Arm.MontMixedProduct
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # The secret CRT inverse is read from the original private-key bytes -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
+open VG.Spec.Rsa.Mont (numAt)
+
+structure CrtInverseInput (base src : BitVec 32) (len w k M : Nat) (bs : List Byte) (s : State) : Prop where
+  ready : ArithmeticReady base len w s
+  modulus : numAt s.mem (State.addr base) w 0 = M
+  odd : M % 2 = 1
+  r2 : numAt s.mem (State.addr base) w 4 = 2 ^ (128 * w) % M
+  source : SavedOperand base src len k 96 100 bs s
+  positive : 0 < k
+  fits : k ≤ 8 * w
+
+end VG.Proof.Bignum.Arm

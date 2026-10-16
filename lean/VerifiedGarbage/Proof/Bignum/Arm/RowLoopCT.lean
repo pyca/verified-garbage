@@ -1,0 +1,30 @@
+module
+
+public import VerifiedGarbage.Impl.Bignum.Arm.Row
+meta import VerifiedGarbage.Impl.Bignum.Arm.Row
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-! # ARMv7 Montgomery row-loop leakage: pointers and the word count are public -/
+
+@[expose] public section
+
+namespace VG.Proof.Bignum.Arm
+open VG VG.Arm VG.Impl.Bignum.Arm
+
+theorem row_ct : ConstantTime isa (fun _ => True)
+    (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.gpr .r12 = t.gpr .r12 ∧ s.gpr .lr = t.gpr .lr) row := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r12, .lr]) ?_ (by taint_decide)
+  intro s t _ _ ⟨h0, h12, hcount⟩
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact h0
+  · exact h12
+  · exact hcount
+
+end VG.Proof.Bignum.Arm
