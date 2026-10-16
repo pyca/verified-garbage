@@ -7,6 +7,7 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
+public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
@@ -40,6 +41,20 @@ structure DigestOk (o : List Instr) (D : Nat) (suffix : String) (code : Prog isa
     untouched.all fun r => !clobbers i r) = true
   depth : (finalizeMain { Stream.params with out := o } (compressName suffix) code).aarch64Depth = 0
 
+/-- The one-shot digest with the digest code `o`, from the initial hash value
+`iv`, calling the compression function `code` with the suffix `suffix`. -/
+def oneShotWith (o : List Instr) (iv : Spec.Sha512.HashValue) (suffix : String) (code : Prog isa) :
+    Prog isa :=
+  Impl.MdStream.AArch64.OneShot.digest Stream.params { Stream.params with out := o }
+    (Impl.Sha512.AArch64.Stream.init iv) (compressName suffix) code
+
+/-- The one-shot digest is constant time. -/
+abbrev OneShotCT (o : List Instr) (D : Nat) (iv : Spec.Sha512.HashValue) (suffix : String)
+    (code : Prog isa) : Prop :=
+  ConstantTime isa (MdStream.AArch64.OneShot.oneK (P := Stream.params) md iv D).pre
+    (MdStream.AArch64.OneShot.oneK (P := Stream.params) md iv D).pub
+    (oneShotWith o iv suffix code)
+
 structure Compress where
   code : Prog isa
   verified : Verified AArch64.target code Proof.Sha512.compressAArch64
@@ -62,6 +77,12 @@ structure Compress where
   digest384 : DigestOk (out64 6) 48 suffix code
   digest512_256 : DigestOk (out64 4) 32 suffix code
   digest512_224 : DigestOk (out64 3 ++ Impl.Sha512.AArch64.Stream.outHi 3) 28 suffix code
+  /-- The one-shot digests of SHA-512, SHA-384, SHA-512/256 and SHA-512/224. -/
+  oneShot512 : OneShotCT (out64 8) 64 Spec.Sha512.H0_512 suffix code
+  oneShot384 : OneShotCT (out64 6) 48 Spec.Sha512.H0_384 suffix code
+  oneShot512_256 : OneShotCT (out64 4) 32 Spec.Sha512.H0_512_256 suffix code
+  oneShot512_224 : OneShotCT (out64 3 ++ Impl.Sha512.AArch64.Stream.outHi 3) 28 Spec.Sha512.H0_512_224
+    suffix code
 
 namespace Compress
 
