@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-KEM on x86-64: coefficients in the words of SSE registers
@@ -75,15 +77,14 @@ theorem xmm_setXmm (s : State) (d : XReg) (v : BitVec 128) (r : XReg) :
 theorem mxcsr_setXmm (s : State) (d : XReg) (v : BitVec 128) : (s.setXmm d v).mxcsr = s.mxcsr := rfl
 
 /-- Runs a block of SSE instructions. -/
-syntax "vrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| vrun) => `(tactic| vrun [])
-  | `(tactic| vrun [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "vrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
                          Option.some.injEq, exists_eq_left', RegUpd.gpr_setXmm, RegUpd.mem_setXmm, RegUpd.rd_setXmm,
                          RegUpd.wr_setXmm, mxcsr_setXmm, xmm_setXmm, ite_true, ite_false, reduceCtorEq, $ls,*]))
+
+tactic_template "vrun" : tactic => `(tactic| vrun [])
 
 /-! ## Montgomery products and conditional additions, word by word -/
 
@@ -114,9 +115,7 @@ theorem XOnly.setXmm {rs : List XReg} {s s' : State} {d : XReg} (hd : d ∈ rs) 
       rw [xmm_setXmm, ifn (fun (e : r = d) => hr (e ▸ hd))]; exact h.xmm r hr }
 
 /-- `XOnly` of a chain of `setXmm` of the registers `rs`. -/
-syntax "xonly" : tactic
-macro_rules
-  | `(tactic| xonly) => `(tactic| (repeat (refine XOnly.setXmm (by simp) ?_ _)) <;> exact XOnly.refl _ _)
+tactic_template "xonly" : tactic => `(tactic| (repeat (refine XOnly.setXmm (by simp) ?_ _)) <;> exact XOnly.refl _ _)
 
 theorem VConsts.setXmm {s : State} (hc : VConsts s) {d : XReg} (h14 : XReg.xmm14 ≠ d)
     (h15 : XReg.xmm15 ≠ d) (v : BitVec 128) : VConsts (s.setXmm d v) :=

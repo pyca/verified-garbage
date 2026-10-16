@@ -41,14 +41,33 @@ def izsOf (b : Nat) : List Nat :=
     Impl.MlKem.AArch64.Ntt16.zeta (63 - 4 * b - 1), Impl.MlKem.AArch64.Ntt16.zeta (63 - 4 * b - 2),
     Impl.MlKem.AArch64.Ntt16.zeta (63 - 4 * b - 3)]
 
+/-- `invBlockHalves`, for any zetas `z` and twist `t`: the kernel cannot
+unfold a variable, so the lanes below are read off the list's shape alone. -/
+def invBlockHalvesG (z t : Nat → Nat) (b : Nat) : List Nat :=
+  let zs := [z (15 - b), z (31 - 2 * b), z (30 - 2 * b), 0] ++
+    (List.range 4).map fun j => z (63 - 4 * b - j)
+  let z7 := (List.range 8).map fun j => z (127 - 8 * b - j)
+  zs ++ zs.map t ++ z7 ++ z7.map t
+
+/-- `izsOf`, for any zetas `z`. -/
+def izsOfG (z : Nat → Nat) (b : Nat) : List Nat :=
+  [z (15 - b), z (31 - 2 * b), z (30 - 2 * b), 0, z (63 - 4 * b - 0), z (63 - 4 * b - 1), z (63 - 4 * b - 2),
+    z (63 - 4 * b - 3)]
+
+theorem invBlockHalvesG_get (z t : Nat → Nat) (b : Nat) {e : Nat} (he : e < 8) :
+    (invBlockHalvesG z t b).getD e 0 = (izsOfG z b).getD e 0 ∧
+    (invBlockHalvesG z t b).getD (8 + e) 0 = t ((izsOfG z b).getD e 0) ∧
+    (invBlockHalvesG z t b).getD (16 + e) 0 = z (127 - 8 * b - e) ∧
+    (invBlockHalvesG z t b).getD (24 + e) 0 = t (z (127 - 8 * b - e)) := by
+  match e, he with
+  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ => exact ⟨rfl, rfl, rfl, rfl⟩
+
 theorem invBlockHalves_get (b : Nat) {e : Nat} (he : e < 8) :
     (invBlockHalves b).getD e 0 = (izsOf b).getD e 0 ∧
     (invBlockHalves b).getD (8 + e) 0 = tw ((izsOf b).getD e 0) ∧
     (invBlockHalves b).getD (16 + e) 0 = Impl.MlKem.AArch64.Ntt16.zeta (127 - 8 * b - e) ∧
-    (invBlockHalves b).getD (24 + e) 0 = tw (Impl.MlKem.AArch64.Ntt16.zeta (127 - 8 * b - e)) := by
-  match e, he with
-  | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>
-    simp [invBlockHalves, izsOf, List.range_succ]
+    (invBlockHalves b).getD (24 + e) 0 = tw (Impl.MlKem.AArch64.Ntt16.zeta (127 - 8 * b - e)) :=
+  invBlockHalvesG_get Impl.MlKem.AArch64.Ntt16.zeta tw b he
 
 /-! ## A block -/
 

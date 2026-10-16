@@ -10,6 +10,8 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-KEM on x86-64: the layers of the NTT and its inverse with `len ≥ 8`
@@ -29,10 +31,7 @@ open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
 
 /-- Runs a block of general-purpose and SSE instructions. -/
-syntax "vrunm" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| vrunm) => `(tactic| vrunm [])
-  | `(tactic| vrunm [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "vrunm" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
@@ -44,6 +43,8 @@ macro_rules
                          Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
                          ite_false, reduceCtorEq, BitVec.sub_self, sx1, sx16, true_and, and_true, List.cons_append,
                          List.nil_append, xb, xmov, $ls,*]))
+
+tactic_template "vrunm" : tactic => `(tactic| vrunm [])
 
 /-- The code `bf` of eight butterflies does what `op` does to each pair of
 words of `xmm0` and `xmm1`, with the zetas in `xmm13`, leaving the results
@@ -108,7 +109,7 @@ structure GOnly (rs : List Reg) (s s' : State) : Prop where
   mxcsr : s'.mxcsr = s.mxcsr
 
 /-- `GOnly` of a chain of `setReg` and `setFlags`. -/
-macro "gonly" : tactic => `(tactic| plain_simp_names exact ⟨⟨fun r hr => by
+tactic_template "gonly" : tactic => `(tactic| exact ⟨⟨fun r hr => by
                    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
                    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false], rfl, rfl⟩, rfl, rfl, rfl⟩)
 
