@@ -552,7 +552,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.clearX⟩
-  | lfence =>
+  | lfence | align _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h⟩
