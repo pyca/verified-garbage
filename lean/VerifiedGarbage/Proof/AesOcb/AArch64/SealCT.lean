@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.NonceCT
+import VerifiedGarbage.Proof.AesOcb.AArch64.NonceCT
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.NonceCT
-public import VerifiedGarbage.Proof.AesOcb.AArch64.HashCT
+import VerifiedGarbage.Proof.AesOcb.AArch64.HashCT
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.HashCT
 public import VerifiedGarbage.Proof.AesOcb.AArch64.BodyCT
 meta import VerifiedGarbage.Proof.AesOcb.AArch64.BodyCT
@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ocb.Bytes
+meta import VerifiedGarbage.Proof.Ocb.Bytes
 
 /-!
 # AES-OCB on AArch64: `vg_aes_ocb_seal` is constant time

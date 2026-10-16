@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
 public import VerifiedGarbage.Spec.Secp256k1
+public import VerifiedGarbage.Spec.Weierstrass.Mul
 
 /-! # secp256k1 on AArch64, using complete general addition -/
 
@@ -17,23 +18,8 @@ def secp256k1 : Cfg := ⟨4, Spec.Secp256k1.curve, [], (0, 0), "", true,
 
 namespace Secp256k1
 
-/-- Slot 12 is free during point multiplication. The general formulas need
-`3b`, while the shared setup retains `b` for peer validation. -/
-def slots : RcbSlots := { secp256k1.rcbSlots with b3 := secp256k1.sl EXPP }
-
-def ladderCfg : LadderCfg where
-  M := secp256k1.MP'
-  S := slots
-  G := secp256k1.pt GX GY ONEP
-  R := secp256k1.pt RX RY RZ
-  D := secp256k1.pt DX DY DZ
-  T := secp256k1.pt TX TY TZ
-  bits := bitsAt secp256k1.n 0
-  nbits := 256
-
-def gMul : Prog isa :=
-  .seq (.block (setConst 4 (secp256k1.sl EXPP) (secp256k1.mont (3 * secp256k1.C.b))))
-    (ladder ladderCfg)
+/-- `R = [k]G`, for the `k` in `K`'s slot, by a call of `vg_secp256k1_mul`. -/
+def gMul : Prog isa := secp256k1.mulAt Spec.Weierstrass.Mul.secp256k1.mulApi.name GX GY
 
 end Secp256k1
 

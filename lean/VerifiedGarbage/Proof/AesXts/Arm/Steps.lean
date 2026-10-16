@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.Alpha
-public import VerifiedGarbage.Proof.AesXts.Spec
-public import VerifiedGarbage.Proof.AesCbc.Arm.Body
+import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.AesCbc.Arm.Body
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Impl.AesXts.Arm

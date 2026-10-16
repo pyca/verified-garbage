@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdh.Arm
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
+import VerifiedGarbage.Proof.Ecdsa.Arm.Finish
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Scalar
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
+import VerifiedGarbage.Proof.Weierstrass.Arm.Copy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.Arm.BytesLen
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # ECDH on 32-bit ARM: reading and checking the peer's key
@@ -81,7 +84,7 @@ theorem checkZero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr 
 /-- `-(((b ^ 4) - 1) >>> 31)` is the mask of `b = 4`, for a byte `b`. -/
 theorem lead_mask (b : BitVec 8) :
     (0 : BitVec 32) - ((b.setWidth 32 ^^^ 4) - 1) >>> 31 = mask32 (b = 4) := by
-  revert b; decide
+  revert b; decide +kernel
 
 /-- `checkLead q`: the flag `&=` the mask of the byte `q` points to being `04`. -/
 theorem checkLead_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {q : Reg}

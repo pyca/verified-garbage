@@ -2,16 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Top
 public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
-public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
-public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
-public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
-public import VerifiedGarbage.Proof.MlDsa.Arm.Round.UseHint
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sample.BallCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
+import VerifiedGarbage.Proof.MlDsa.Arm.Round.UseHint
+import VerifiedGarbage.Proof.MlDsa.Arm.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.MlDsa.Arm.Pack.Unpack
+import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

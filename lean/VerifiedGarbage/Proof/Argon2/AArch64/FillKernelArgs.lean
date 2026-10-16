@@ -1,22 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMap
-public import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMap
+import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillKernel
-public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
+import VerifiedGarbage.Proof.Argon2.AArch64.Memory
 public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
-public import VerifiedGarbage.Proof.Argon2.FillPositions
-public import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
+import VerifiedGarbage.Proof.Argon2.FillPositions
+import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillColumn
-public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 public import VerifiedGarbage.Proof.Argon2.Dimensions
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillPointers
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Merged from `Proof.Argon2.AArch64.FillPointersNat`. -/
 

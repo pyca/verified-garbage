@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Output
 public import VerifiedGarbage.Proof.Argon2.Initial
-public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
+import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.CallsCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 

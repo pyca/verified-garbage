@@ -53,7 +53,10 @@ Lake rebuilds your changes and anything not yet cached.
   next to OpenSSL's equivalent, and aws-lc-rs's if it has one. The
   Benchmarks check compares each pull request that changes an
   architecture's code with its base, and fails on a slowdown; an
-  optimization's speedup is shown in its run summary.
+  optimization's speedup is shown in its run summary. A pull request never
+  runs every benchmark of an architecture: a change that needs that (e.g.
+  to `Cargo.lock` or the benchmarks' shared code) is measured by a manual
+  run.
 * **An optimized implementation reaches everything built on it.** An
   implementation of a function for CPU features (or any other faster
   version) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
@@ -324,7 +327,15 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   not `interval_cases j <;> interval_cases k <;> simp`. For a nested `if`
   on the same index on both sides, split the index into ranges once with
   `omega` and resolve each `if` with
-  `simp (disch := omega) only [ite_eq_left, ite_eq_right]`, not `split_ifs`.
+  `simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]`, not `split_ifs`.
+* **Nested `if`s under a discharger:** give `simp` the lemmas that resolve
+  an `if` (`ite_eq_left`, `ite_eq_right`, a family's `ifp`/`ifn`) as
+  pre-rewrites, `↓ite_eq_left`. Otherwise `simp` simplifies both branches of
+  an `if` before the `if` itself, so its discharger (`omega`) runs, and
+  usually fails twice, on the conditions of branches the outer `if` then
+  discards; a failing `omega` is its slowest case (6–46% of a module's
+  heartbeats in #2374). Lemmas that only rewrote inside those branches then
+  show up as unused simp arguments: remove them.
 * **Instruction lists under `++`:** in a theorem statement, ascribe each
   instruction-list literal next to `++`: `.block (absorb 1 ++
   ([.alu .add .esi (.imm 16)] : List Instr))`, not `absorb 1 ++ [.alu …]`.
@@ -661,7 +672,9 @@ with `base_commit` (empty to run the branch alone, next to OpenSSL and
 aws-lc-rs), `arches`, `cpu_features` (space-separated configurations, `-`
 for none; empty for those choosing among the modules' implementations) and
 `modules`; the results are in each job's summary. Leaving all three empty
-runs every benchmark in about thirty jobs: never do that for one change.
+runs every benchmark in about thirty jobs: never do that for one change,
+except one that needs every benchmark (which pull requests skip, naming the
+architectures in the Benchmarks run's summary): then pass those `arches`.
 
 ## Checks to run before pushing
 

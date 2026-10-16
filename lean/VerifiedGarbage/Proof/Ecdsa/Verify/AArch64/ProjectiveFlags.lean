@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 
 /-! ## `FinalState` -/
 
@@ -115,8 +117,8 @@ theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 10) {base : A
   exact this
 
 theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.final c =
-    .seq (.block (Impl.Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
+    .seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC))
+    (.seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE))
     (.seq (c.mulNP (c.sl XN) (c.sl X) (c.sl R2N))
     (.seq (.block (Impl.Mont.AArch64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')))
       (.block (c.checkNonzero (c.sl RZ) ++ (Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++
@@ -151,16 +153,16 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   rw [final_eq]
   -- `XM = X · ACC`.
   have hM₁ := modP_of hc F₁.mp
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs₁ hM₁ (MP'_A c) (o := XM) (a := RX) (b := ACC) (by decide)
-    (by decide) (by decide) lt₁) fun s₂ ⟨k₂, _, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (slMulP_ok hc hs₁ hM₁ (o := XM) (a := RX) (b := ACC) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) lt₁) fun s₂ ⟨k₂, _, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have M₂ := hM₁.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₂ i = sv c base s₁ i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₂ hi h₁ h₂
   -- `X = XM · 1`.
   have one₂ : sv c base s₂ ONE = 1 := (v₂ (by decide) (by decide) (by decide)).trans F₁.one
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs₂ M₂ (MP'_A c) (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
+  refine WP.seq (WP.mono (slMulP_ok hc hs₂ M₂ (o := X) (a := XM) (b := ONE) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
   have v₃ : ∀ {i}, i < 45 → i ≠ X → i ≠ TMP → sv c base s₃ i = sv c base s₂ i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₃ hi h₁ h₂

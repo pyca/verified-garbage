@@ -1,9 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Sha256
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-256 with HMAC-SHA-256 on x86, for every x86 SHA-256 backend

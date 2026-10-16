@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on x86-64: the inversion by a call

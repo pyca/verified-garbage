@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTD
 meta import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.CTD
-public import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
+import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 meta import VerifiedGarbage.Proof.Rsa.X86_64.CvCTMain
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # An RSA key from its primes on x86-64: constant time, the tail

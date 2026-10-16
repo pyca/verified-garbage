@@ -2,13 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarIO
 public import VerifiedGarbage.Proof.X448.X86.Inv
-public import VerifiedGarbage.Proof.X448.X86.Freeze
-public import VerifiedGarbage.Proof.Ed448.Ref
+import VerifiedGarbage.Proof.X448.X86.Freeze
+import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Impl.Ed448.X86.ScalarBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X448.X86.FnLit
+import VerifiedGarbage.Proof.X448.X86.Output
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): the encoding

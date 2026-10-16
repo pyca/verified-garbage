@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.InitCT
-public import VerifiedGarbage.Proof.AesGcm.Arm.CTStream
-public import VerifiedGarbage.Proof.AesGcm.Arm.CTCryptFn
-public import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
+import VerifiedGarbage.Proof.AesGcm.Arm.CTStream
+import VerifiedGarbage.Proof.AesGcm.Arm.CTCryptFn
+import VerifiedGarbage.Proof.AesGcm.Arm.CTOpen
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.AesGcm.Scratch
@@ -11,6 +11,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
+import VerifiedGarbage.Proof.AesGcm.Arm.StreamInit
+import VerifiedGarbage.Proof.AesGcm.Arm.StreamVerify
 
 /-!
 # AES-GCM on ARMv7: `Verified`

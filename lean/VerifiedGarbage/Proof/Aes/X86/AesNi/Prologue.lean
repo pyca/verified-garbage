@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Setup
-public import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
-public import VerifiedGarbage.Proof.Aes.X86.Ctr32
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Data
+import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Aes.X86.AesNi.Counters
 
 @[expose] public section
 

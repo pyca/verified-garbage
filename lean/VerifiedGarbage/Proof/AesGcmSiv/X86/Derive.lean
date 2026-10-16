@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Callee
 public import VerifiedGarbage.Proof.GcmSiv.Ctr
-public import VerifiedGarbage.Proof.Cmac.Block32
-public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
-public import VerifiedGarbage.Proof.AesGcm.X86.Flush
+import VerifiedGarbage.Proof.Cmac.Block32
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86.Flush
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

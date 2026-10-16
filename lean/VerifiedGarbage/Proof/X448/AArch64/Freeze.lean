@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.FreezePrep
-public import VerifiedGarbage.Proof.X448.AArch64.Select
+import VerifiedGarbage.Proof.X448.AArch64.FreezePrep
+import VerifiedGarbage.Proof.X448.AArch64.Select
 public import VerifiedGarbage.Proof.X448.AArch64.Env
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.X448.AArch64.Carry
 
 /-!
 # X448 on AArch64: canonical reduction

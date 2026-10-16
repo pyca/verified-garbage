@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # RSA with the CRT on x86-64: constant time, `m_q G mod n`
@@ -92,7 +96,7 @@ theorem mq_ct (M : Mont) : RelCT isa (Two (Mq0 M)) (seqs (mqSteps M.mm)) fun _ _
 theorem mq_chain (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mq : BitVec 64} {N oq wq : Nat}
     (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N)
     (hq : word s.mem B (8 * sWsQ) = off B oq) (hws : WsAt s.mem B oq wq mq) (hlo : slot w 8 ≤ oq)
-    (hhi : oq + slot wq 8 + tabBytes wq ≤ Z) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) : Mq0 M ⟨B, Z, w, oq, wq⟩ s := by
+    (hhi : oq + slot wq 8 + wsTab wq ≤ Z) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) : Mq0 M ⟨B, Z, w, oq, wq⟩ s := by
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)

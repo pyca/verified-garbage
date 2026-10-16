@@ -1,10 +1,18 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningReadyCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Constant time of the complete signing entry point -/
 
@@ -32,14 +40,14 @@ theorem SigningShaped.failure {reference : SigningCall} {s : State} (h : Signing
   rw [ha.layout] at hscr hr hf
   exact ⟨usedBytes, hscr, by decide, hr, hf .out, (hf .qLen).trans reference.layout.qLength⟩
 
-theorem signingMain_ct (M : Mont) : RelCT isa (Two SigningStart) (SignVerify.sign M.mm) (fun _ _ => True) := by
+theorem signingMain_ct (M : Mont) (Sq : MontS) : RelCT isa (Two SigningStart) (SignVerify.sign Sq.mm M.mm) (fun _ _ => True) := by
   apply RelCT.assoc
   refine RelCT.seq signingShape_ct (RelCT.ite ?_ ?_ ?_)
   · rintro s₁ s₂ ⟨reference, h₁, h₂⟩
     exact h₁.branch.trans h₂.branch.symm
   · exact ((two_map SigningCall.failure (fun _ _ h => h.failure) signFailure_ct).mono
       (fun _ _ h => h.1) (fun _ _ h => h))
-  · refine (signingSuccess_ct M).mono ?_ (fun _ _ h => h)
+  · refine (signingSuccess_ct M Sq).mono ?_ (fun _ _ h => h)
     rintro s₁ s₂ ⟨⟨reference, h₁, h₂⟩, hb⟩
     have ha : reference.input.accepted = true := by
       change eval .e s₁ = some false at hb

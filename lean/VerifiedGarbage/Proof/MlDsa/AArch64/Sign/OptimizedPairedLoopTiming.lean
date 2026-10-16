@@ -1,31 +1,43 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEndTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEndTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopEndTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedHintEnd
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseKCT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksPrefix
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedHints
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedChecksCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopCorrect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedZTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! ## From `OptimizedPairedLoopEndTiming.lean` -/
 

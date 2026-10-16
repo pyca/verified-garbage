@@ -1,11 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyChecks
-public import VerifiedGarbage.Proof.Ed448.VerifyFormulas
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
-public import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
-public import VerifiedGarbage.Proof.Ed448.Recover
-public import VerifiedGarbage.Proof.Ed448.DecodeBytes
+import VerifiedGarbage.Proof.Ed448.VerifyFormulas
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseField
+import VerifiedGarbage.Impl.Ed448.X86_64.VerifyEquation
+import VerifiedGarbage.Proof.Ed448.Recover
+import VerifiedGarbage.Proof.Ed448.DecodeBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -223,7 +223,7 @@ theorem andRax_ok (s : State) :
     WP isa (.block ([.alu .and .rdx (.reg .rax)] : List Instr)) s fun t =>
       t.gpr .rdx = s.gpr .rdx &&& s.gpr .rax ∧ t.mem = s.mem ∧
       (∀ r, r ≠ .rdx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  erun
+  erun []
   exact fun r hr => by simp only [hr, ite_false]
 
 theorem movNeg_ok {s : State} {base : Addr} (hs : Scr s base) :

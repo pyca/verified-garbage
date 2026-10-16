@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on AArch64: correctness
@@ -29,18 +30,18 @@ theorem encrypt_eq {nB eB M PS : List Byte} (hm : M.length + 11 ≤ nB.length)
       if PS.all (· != 0) then Spec.Rsa.publicOpChecked nB eB (Spec.RsaPkcs1Enc.encode M PS) else none := by
   simp only [Spec.RsaPkcs1Enc.encrypt, hm, hps, true_and]
 
-theorem setup_inv {P : Nat} {s : State} {t : State}
-    (hc : Ctx (lay P s) s.gpr s.v s.mem t) (hs : Setup (lay P s) s.gpr t) :
-    PsInv (lay P s) s.gpr s.v s.mem 0 t :=
+theorem setup_inv {P : Nat} {s : State} {X : List Region} {al : Nat} {t : State}
+    (hc : Ctx (lay P s X al) s.gpr s.v s.mem t) (hs : Setup (lay P s X al) s.gpr t) :
+    PsInv (lay P s X al) s.gpr s.v s.mem 0 t :=
   ⟨hc, ⟨hs.x0, hs.x1, hs.x2, hs.x3, hs.x4, hs.x5, hs.x6, hs.x7⟩, by rw [hs.x11, BitVec.add_zero],
     by rw [hs.x12, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq], by rw [hs.x13, Nat.add_zero],
     by rw [hs.x14]; rfl, hs.x15, hs.b0, hs.b1, fun i hi => absurd hi (Nat.not_lt_zero _)⟩
 
-theorem regsOf (P : Nat) (s : State) : RegsOf (lay P s) s.gpr := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+theorem regsOf (P : Nat) (s : State) {X : List Region} {al : Nat} : RegsOf (lay P s X al) s.gpr := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 /-- `maskArgs`, from the state after the call. -/
 theorem maskArgs_inv {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
-    (h : Called L g vv m₀ t) :
+    (h : CalledF L g vv m₀ t) :
     WP isa (.block maskArgs) t (MaskInv L g vv m₀ t.mem (t.gpr .x0 &&& ~~~zmask (Spec.Rsa.bytesAt m₀ L.ps L.pl.toNat))
       (zmask (Spec.Rsa.bytesAt m₀ L.ps L.pl.toNat)) 0) := by
   have hc := h.ctx
@@ -55,7 +56,8 @@ theorem maskArgs_inv {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128
     fun i hi => absurd hi (Nat.not_lt_zero _), fun i _ _ => by rw [hw.mem]⟩
 
 /-- The postcondition, from the bytes the mask left. -/
-theorem result_ok {P : Nat} {s : State} (h : (encK P).pre s) {y : Mem} {r : BitVec 64} {t : State}
+theorem result_ok {P : Nat} {s : State} (hml : (s.gpr .x7).toNat + 11 ≤ (s.gpr .x3).toNat)
+    (hpl : (stackArg s 1).toNat = (s.gpr .x3).toNat - (s.gpr .x7).toNat - 3) {y : Mem} {r : BitVec 64} {t : State}
     (hy : Spec.Rsa.written y (s.gpr .x0) (s.gpr .x3).toNat (r.setWidth 32)
       (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .x4) (s.gpr .x5).toNat)
@@ -65,8 +67,6 @@ theorem result_ok {P : Nat} {s : State} (h : (encK P).pre s) {y : Mem} {r : BitV
     (hout : ∀ i < (s.gpr .x3).toNat, t.mem (s.gpr .x0 + BitVec.ofNat 64 i) =
       mb (y (s.gpr .x0 + BitVec.ofNat 64 i)) (zmask (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat))) :
     (encK P).post s t := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
-    hml, hpl, -⟩ := h
   simp only [encK]
   rw [encrypt_eq (by rw [bytesAt_length, bytesAt_length]; exact hml)
     (by rw [bytesAt_length, bytesAt_length, bytesAt_length]; exact hpl)]
@@ -134,7 +134,7 @@ theorem enc_ok (v : PubImpl) {s : State} (h : (encK (v.S + 1)).pre s) :
     refine WP.seq (WP.mono (msgCopy_ok hL h₂) fun t₃ h₃ => ?_)
     refine WP.seq (WP.mono (callArgs_inv hL (regsOf _ s) h₃) fun t₄ h₄ => ?_)
     refine WP.seq (WP.mono (pub_call v hL rfl h₄) fun t₅ h₅ => ?_)
-    refine WP.seq (WP.mono (maskArgs_inv h₅) fun t₆ h₆ => ?_)
+    refine WP.seq (WP.mono (maskArgs_inv h₅.toCalledF) fun t₆ h₆ => ?_)
     refine WP.mono (maskLoop_ok hL h₆) fun u hu => ?_
     have hc := hu.ctx
     have hsp' : (freed frameBytes u).sp = (lay (v.S + 1) s).Q + BitVec.ofNat 64 1072 := by rw [freed_sp, hc.sp]; rfl
@@ -149,7 +149,7 @@ theorem enc_ok (v : PubImpl) {s : State} (h : (encK (v.S + 1)).pre s) :
       rw [add_add]; exact lay_Q _ s
     · rw [popped_v, freed_v]
       exact hc.vs r hr
-    · refine result_ok h (y := t₅.mem) (r := t₅.gpr .x0) h₅.out ?_ fun i hi => ?_
+    · refine result_ok hL.mlk hL.plk (y := t₅.mem) (r := t₅.gpr .x0) h₅.out ?_ fun i hi => ?_
       · rw [popped_gpr_ne _ (by decide), freed_gpr]
         exact hu.x0
       · rw [popped_mem, freed_mem]

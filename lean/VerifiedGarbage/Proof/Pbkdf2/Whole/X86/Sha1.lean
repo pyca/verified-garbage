@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 meta import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface

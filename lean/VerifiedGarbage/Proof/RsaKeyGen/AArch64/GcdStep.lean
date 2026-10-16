@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
 public import VerifiedGarbage.Proof.RsaKeyGen.Gcd
-public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
+import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate on AArch64: a step of the binary gcd, and a bit of `(c − 1) mod e`
@@ -53,13 +55,13 @@ theorem odd_mask' (u : BitVec 64) : 0 - (u &&& 1) = mask (decide (u.toNat % 2 = 
   · simp only [h, decide_true, mask_true]
     rw [BitVec.toNat_sub, this, h]; rfl
   · simp only [h, decide_false, mask_false]
-    rw [BitVec.toNat_sub, this, show u.toNat % 2 = 0 by omega]; rfl
+    rw [BitVec.toNat_sub, this, show u.toNat % 2 = 0 by omega_using [h]]; rfl
 
 /-- `u + ~v + 1 = u − v`. -/
 theorem add_not_one (u v : BitVec 64) : u + ~~~v + BitVec.ofNat 64 true.toNat = u - v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_not, BitVec.toNat_ofNat, Bool.toNat_true]
-  have := u.isLt; have := v.isLt; omega
+  have := u.isLt; have := v.isLt; omega_using []
 
 /-- The borrow of `u − v` as a mask: all ones iff `u < v`. -/
 theorem lt_sel (u v : BitVec 64) :
@@ -68,8 +70,8 @@ theorem lt_sel (u v : BitVec 64) :
   rw [BitVec.toNat_not, show true.toNat = 1 from rfl]
   have := v.isLt
   by_cases h : u.toNat < v.toNat
-  · rw [decide_eq_false (by omega), decide_eq_true h]; rfl
-  · rw [decide_eq_true (by omega), decide_eq_false h]; rfl
+  · rw [decide_eq_false (by omega_using [h]), decide_eq_true h]; rfl
+  · rw [decide_eq_true (by omega_using [h]), decide_eq_false h]; rfl
 
 /-- One step of the binary gcd with masks, on words. -/
 theorem gstep_bv (u v : BitVec 64) :
@@ -88,7 +90,7 @@ theorem gstep_bv (u v : BitVec 64) :
   all_goals first
     | trivial
     | (simp only [BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero])
-    | (simp only [BitVec.toNat_neg, BitVec.toNat_sub]; congr 1; try omega)
+    | (simp only [BitVec.toNat_neg, BitVec.toNat_sub]; congr 1; try omega_using [hl])
 
 /-- `bgcdStep`: `gcdStep` on `x3` and `x13`, with `x7 = 0` and `x8` all ones. -/
 theorem bgcdStep_ok (s : State) (h7 : s.gpr .x7 = 0) (h8 : s.gpr .x8 = mask true) :
@@ -122,7 +124,7 @@ theorem gcdLoop_ok {s : State} (h7 : s.gpr .x7 = 0) (h8 : s.gpr .x8 = mask true)
     · exact ((k.trans k₁).trans k').mono (by decide)
     · rw [h9', k₁.gpr .x9 (by decide)]
   · refine ⟨?_, hm, k⟩
-    rw [h13, gcdIter_eq 128 _ _ hv (Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le hu (Nat.le_of_lt hvl) (by omega))
+    rw [h13, gcdIter_eq 128 _ _ hv (Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le hu (Nat.le_of_lt hvl) (by omega_using []))
       (by rw [← Nat.pow_add]))]
 
 theorem zz_add (x : BitVec 64) : (0 : BitVec 64) + 0 + x = x := by simp
@@ -146,23 +148,23 @@ theorem modbit_bv (r e : BitVec 64) (b : Bool) (hre : r.toNat < e.toNat) :
   have hrl := r.isLt
   have hbl : b.toNat ≤ 1 := by cases b <;> decide
   have hr' : r'.toNat = (r.toNat + r.toNat + b.toNat) % 2 ^ 64 := by
-    simp only [r', BitVec.toNat_add, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]; omega
+    simp only [r', BitVec.toNat_add, BitVec.toNat_ofNat]; rw [Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega_using [hbl])]; omega_using [hbl]
   have hne : (~~~e).toNat = 2 ^ 64 - 1 - e.toNat := by rw [BitVec.toNat_not]
   have hsub : e.toNat ≤ 2 * r.toNat + b.toNat → (2 * r.toNat + b.toNat) % e.toNat = 2 * r.toNat + b.toNat - e.toNat :=
-    fun h => by rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega)]
+    fun h => by rw [Nat.mod_eq_sub_mod h, Nat.mod_eq_of_lt (by omega_using [hre, hbl])]
   rw [zero_sub_mask, ite_mask, mask_or2]
   generalize hg : (decide (2 ^ 64 ≤ r'.toNat + (~~~e).toNat + true.toNat) ||
     decide (2 ^ 64 ≤ r.toNat + r.toNat + b.toNat)) = g
   rw [hne, show true.toNat = 1 from rfl] at hg
   cases g
-  · rw [mask_false, and_z, xor_z, hr', Nat.mod_eq_of_lt (by simp at hg; omega), Nat.mod_eq_of_lt]
-    · omega
-    · simp at hg; rw [hr'] at hg; omega
+  · rw [mask_false, and_z, xor_z, hr', Nat.mod_eq_of_lt (by simp at hg; omega_using [hg]), Nat.mod_eq_of_lt]
+    · omega_using []
+    · simp at hg; rw [hr'] at hg; omega_using [hg]
   · rw [mask_true, BitVec.and_allOnes, xor_cancel_l, BitVec.toNat_sub, hr']
     simp only [Bool.or_eq_true, decide_eq_true_eq] at hg
     rw [hr'] at hg
-    rw [hsub (by omega)]
-    omega
+    rw [hsub (by omega_using [hg])]
+    omega_using [hre, hbl, hg]
 
 /-- `modBit`: `r := (2 r + bit) mod e` for `r = x3 < e = x13` and the top bit
 of `x2`, shifted out (`x7 = 0`, `x8` all ones). -/

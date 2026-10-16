@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Ecb
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Ecb
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! # The AVX-512 bitsliced ECB functions are correct
 

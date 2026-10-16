@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hash
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Hash
-public import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
+import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
 meta import VerifiedGarbage.Proof.MlKem.Arm.CmpSel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA verification on 32-bit ARM: `c̃′ = c̃`
@@ -168,7 +170,7 @@ theorem cmp_ok {p : Params} (hF : VFacts p) {STK : Nat} {σ s : State} (h : KF p
 
 theorem cmp_taint {n : Nat} (hn : n = 32 ∨ n = 48 ∨ n = 64) : ∃ hc, (VG.Arm.taint.check
     (Taint.ofRegs [.r4, .r5, .r6, .r7]) (cmpAnd (sc oCT) (.r6, 0) n) hc).isSome = true := by
-  rcases hn with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  rcases hn with rfl | rfl | rfl <;> exact ⟨_, by native_taint_decide⟩
 
 theorem cmp_piece {p : Params} (hF : VFacts p) {STK : Nat} :
     VPiece p STK (KF p STK) (KE p STK) (cmpAnd (sc oCT) (.r6, 0) p.ctildeLen) :=

@@ -7,14 +7,17 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
 public import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
-public import VerifiedGarbage.Proof.MlKem.AArch64.NttInv
+import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Inv
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 public import VerifiedGarbage.Proof.MlKem.AArch64.Sample
-public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM-768 on AArch64: calling the primitives
@@ -76,15 +79,15 @@ theorem ntt_call {s : State} {f w : Addr} (h0 : s.gpr .x0 = f) (h1 : s.gpr .x1 =
     (hd : Region.Disjoint ⟨f, 1024⟩ ⟨w, 1024⟩) (hr : Reduced s.mem f)
     (hw : Covers [⟨f, 1024⟩, ⟨w, 1024⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨f, 1024⟩, ⟨w, 1024⟩] s s' → PolyIs s'.mem f (ntt (polyAt s.mem f)) → Q s') :
-    WP isa (.call "vg_mlkem_ntt" Impl.MlKem.AArch64.ntt) s Q :=
-  inPlace_call Ntt.correct (by decide +kernel) h0 h1 hd hr hw hQ
+    WP isa (.call "vg_mlkem_ntt" Impl.MlKem.AArch64.Ntt16.ntt) s Q :=
+  inPlace_call Ntt16.correct (by lit_decide) h0 h1 hd hr hw hQ
 
 theorem nttInv_call {s : State} {f w : Addr} (h0 : s.gpr .x0 = f) (h1 : s.gpr .x1 = w)
     (hd : Region.Disjoint ⟨f, 1024⟩ ⟨w, 1024⟩) (hr : Reduced s.mem f)
     (hw : Covers [⟨f, 1024⟩, ⟨w, 1024⟩] s.wr) {Q : State → Prop}
     (hQ : ∀ s', Kept [⟨f, 1024⟩, ⟨w, 1024⟩] s s' → PolyIs s'.mem f (nttInv (polyAt s.mem f)) → Q s') :
-    WP isa (.call "vg_mlkem_inv_ntt" Impl.MlKem.AArch64.nttInv) s Q :=
-  inPlace_call Ntt.correctInv (by decide +kernel) h0 h1 hd hr hw hQ
+    WP isa (.call "vg_mlkem_inv_ntt" Impl.MlKem.AArch64.Ntt16.nttInv) s Q :=
+  inPlace_call Ntt16.correctInv (by lit_decide) h0 h1 hd hr hw hQ
 
 /-- `vg_mlkem_add(f, g)` or `vg_mlkem_sub(f, g)`. -/
 theorem acc_call {op : Poly → Poly → Poly} {c : Prog isa} {name : String}

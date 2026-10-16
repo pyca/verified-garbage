@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Spec.MlDsa.PairedResponse
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedProductField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckSlot
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
 
 @[expose] public section
 

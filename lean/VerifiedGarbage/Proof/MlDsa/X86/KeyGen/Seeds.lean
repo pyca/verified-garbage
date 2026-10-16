@@ -6,6 +6,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the seeds
@@ -51,7 +57,7 @@ theorem seeds_piece (hF : PFacts p) :
     KP p (Ctx (YK p)) (fun s₀ s => KB p s₀ s ∧ accV s₀ s = 1) (seeds p) := by
   have hk := hF.k; have hl := hF.l
   unfold seeds
-  refine Piece.seq (B := A1 p) (st32_piece (Y := YK p) oACC 1 (by layd) (by taint_decide) (fun _ _ _ h => h)
+  refine Piece.seq (B := A1 p) (st32_piece (Y := YK p) oACC 1 (by layd) (by native_taint_decide) (fun _ _ _ h => h)
     fun s₀ s s' hp _ h' m' => ⟨h', by rw [accV, m']; exact Mem.readW_writeW_self32 _ _ _⟩) ?_
   refine Piece.seq (B := fun s₀ s => A1 p s₀ s ∧ bytesAt s.mem (Buf.addr s₀ (sb oKL 1)) 1 = [BitVec.ofNat 8 p.k])
     (st8_piece (Y := YK p) oKL p.k (by layd) (ht := .block []) (by kernel_rfl) (fun _ _ _ h => h.1)
@@ -67,7 +73,7 @@ theorem seeds_piece (hF : PFacts p) :
       st8_bytes]
   refine Piece.seq (B := fun s₀ s => A1 p s₀ s ∧ bytesAt s.mem (Buf.addr s₀ (sb oHX 128)) 128 = hxOf p s₀)
     (hash2_piece (Y := YK p) 0 200 136 0x1f ⟨0, 0, 32⟩ (sb oKL 2) (sb oHX 128) Proof.MlKem.rate136 (by layd)
-      (by rw [YK_stk]; omega) (by decide) (by decide) (by decide) (by taint_decide)
+      (by rw [YK_stk]; omega) (by decide) (by decide) (by decide) (by native_taint_decide)
       (h₁ := .block []) (by kernel_rfl) (h₂ := .block []) (by kernel_rfl) (h₃ := .block []) (by kernel_rfl)
       (h₄ := .block []) (by kernel_rfl) (fun _ _ _ h => h.1.1) fun s₀ s s' hp h h' fr out => ⟨⟨h',
         by rw [acc_keep hp (N := 40) (by omega) (by layd) fr]; exact h.1.2⟩, ?_⟩) ?_
@@ -75,7 +81,7 @@ theorem seeds_piece (hF : PFacts p) :
   refine Piece.seq (B := fun s₀ s => A1 p s₀ s ∧ bytesAt s.mem (Buf.addr s₀ (sb oHX 128)) 128 = hxOf p s₀ ∧
       bytesAt s.mem (Buf.addr s₀ (sb oSA 32)) 32 = rhoOf p s₀)
     (copyW_piece (Y := YK p) kS oHX kS oSA 8 (by decide) (by decide) (by layd) (h₁ := .block []) (by kernel_rfl)
-      (by taint_decide) (fun _ _ _ h => h.1.1) fun s₀ s s' hp h h' fr cp => ⟨⟨h',
+      (by native_taint_decide) (fun _ _ _ h => h.1.1) fun s₀ s s' hp h h' fr cp => ⟨⟨h',
         by rw [acc_keep hp (N := 0) (by omega) (by layd) (fr1 fr)]; exact h.1.2⟩,
         by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oHX 128) (by layd) (fr1 fr)]; exact h.2, ?_⟩) ?_
   · show bytesAt s'.mem (Buf.addr s₀ (sb oSA 32)) 32 = _
@@ -88,7 +94,7 @@ theorem seeds_piece (hF : PFacts p) :
       bytesAt s.mem (Buf.addr s₀ (sb oSA 32)) 32 = rhoOf p s₀ ∧
       bytesAt s.mem (Buf.addr s₀ (sb oSB 64)) 64 = rho'Of p s₀)
     (copyW_piece (Y := YK p) kS (oHX + 32) kS oSB 16 (by decide) (by decide) (by layd) (h₁ := .block [])
-      (by kernel_rfl) (by taint_decide) (fun _ _ _ h => h.1.1) fun s₀ s s' hp h h' fr cp => ⟨⟨h',
+      (by kernel_rfl) (by native_taint_decide) (fun _ _ _ h => h.1.1) fun s₀ s s' hp h h' fr cp => ⟨⟨h',
         by rw [acc_keep hp (N := 0) (by omega) (by layd) (fr1 fr)]; exact h.1.2⟩,
         by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oHX 128) (by layd) (fr1 fr)]; exact h.2.1,
         by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSA 32) (by layd) (fr1 fr)]; exact h.2.2, ?_⟩) ?_
@@ -98,7 +104,7 @@ theorem seeds_piece (hF : PFacts p) :
     rw [seeds_eq]
     show _ = ((hxOf p s₀).drop 32).take 64
     rw [← h.2.1, bytes_sub hp _ (k := 32) (c := 64) (L := 128) (by decide) (by layd) (by layd)]
-  refine st8_piece (Y := YK p) (oSB + 65) 0 (by layd) (by taint_decide) (fun _ _ _ h => h.1.1)
+  refine st8_piece (Y := YK p) (oSB + 65) 0 (by layd) (by native_taint_decide) (fun _ _ _ h => h.1.1)
     fun s₀ s s' hp h h' m' => ⟨⟨h', ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oHX 128) (by layd) (m' ▸ frW8)]; exact h.2.1
   · rw [keepBytes hp (N := 0) (stkN (by omega)) (b := sb oSA 32) (by layd) (m' ▸ frW8)]; exact h.2.2.1

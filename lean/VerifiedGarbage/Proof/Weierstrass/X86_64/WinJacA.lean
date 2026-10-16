@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacNorm
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntryA
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
-public import VerifiedGarbage.Proof.Weierstrass.JacMadd
+import VerifiedGarbage.Proof.Weierstrass.JacMadd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
 
 /-!
 # 5-bit windows with an affine table on x86-64
@@ -15,7 +20,7 @@ import all Init.Data.Vector.Basic
 representing `[k]P`, as `JacWinCfg.window` does (`winJac_ok`): the table by
 `jbuild_ok`, made affine by `normA_ok` (every entry's `Z` one, `JTblOne`),
 then the first digit by `jfirst_ok` and the iterations by `jstepA_ok`, which
-adds the selected entry by the mixed addition (`madd_ok`, `jstepA_pt`): right
+selects the entry's `X` and `Y` (`jentryA_ok`) and adds it by the mixed addition (`madd_ok`, `jstepA_pt`): right
 unless `R = T` (excluded for `k < n` by `Window5.loop_noexc`, as the Jacobian
 addition's exceptions) or `R = O` (where `T` is kept, as before).
 -/
@@ -147,7 +152,7 @@ theorem JTblOne.loopW (hL : JacWinLay K size) {base : Addr} {s s' : State} (h : 
 theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C)
     (hO : PrimeOrder C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl) {P : Point C}
     (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n)
-    (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1)
+    (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1)
     {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {j : Nat}
     (hj1 : 1 ≤ j) (hjJ : j ≤ K.J) {s : State} (hI : JInvA K C base size P s₀ k j s) :
     WP isa (K.stepA dbl).inline s fun s' => JInvA K C base size P s₀ k (j - 1) s' ∧
@@ -167,7 +172,7 @@ theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   refine WP.seq (WP.mono (dbls_ok hL hC hD hQ (j := j - 1) (by omega_arith) b₁ R₁) fun s₂ ⟨R₂, b₂, U₂⟩ => ?_)
   have O₂ : JTblOne K base s₂ := (show JTblOne K base s₁ from fun m h1 h16 => by
     rw [m₁]; exact hO1 m h1 h16).loopW hL U₂ hn
-  refine WP.seq (WP.mono (jentry_ok hL hF (j := j - 1) (by omega_arith) R₂.fr R₂.tbl b₂) fun s₃ h₃ =>
+  refine WP.seq (WP.mono (jentryA_ok hL hF hpn hone_lt (j := j - 1) (by omega_arith) R₂.fr R₂.tbl O₂ b₂) fun s₃ h₃ =>
     WP.seq (WP.mono h₃ fun s₄ E₄ => ?_))
   -- `R` is not written by the entry.
   have hRe : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₄.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := by
@@ -189,11 +194,9 @@ theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   have U₄ : Unch base (jwLoopW K) s₂.mem s₄.mem := E₄.unch.mono (jent_loopW K)
   -- `T`'s `Z` is one.
   have tz1 : 1 ≤ magH 16 (Window5.nib (k + JacWinCfg.offset K.J) (j - 1)) →
-      tmv C K.M.n base s₄ K.E.z = 1 := fun h => by
-    have hm : magH 16 (Window5.nib (k + JacWinCfg.offset K.J) (j - 1)) ≤ 16 :=
-      magH_le (by have := Window5.nib_lt (k + JacWinCfg.offset K.J) (j - 1); omega_arith)
+      tmv C K.M.n base s₄ K.E.z = 1 := fun _ => by
     show toM _ _ _ = 1
-    rw [← tz, E₄.zent h, O₂ _ h hm, hone]
+    rw [← tz, E₄.one, hone]
   -- `D = R + T`.
   have V₄ : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y],
       x ∈ jwSlots K ∧ wordsVal s₄.mem base x K.M.n < C.p := by
@@ -285,8 +288,7 @@ theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
       rw [hQe hk, Window5.mul_mul hC hP, show j - 1 + 1 = j by omega_arith]) R₂.rep
     (Z2 := tmv C K.M.n base s₄ K.E.z) (X2 := tmv C K.M.n base s₄ K.E.x) (Y2 := tmv C K.M.n base s₄ K.E.y)
     (fun h => by
-      have J := ent h
-      have j1 := J.jac
+      have j1 := ent h
       rw [tx, ty, tz] at j1
       exact ⟨j1, tz1 h⟩)
   obtain ⟨Q', hQ', hQe', hR⟩ := hR
@@ -385,7 +387,7 @@ theorem winJacA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   refine WP.seq (WP.mono (jfirst_ok hL hC hP hF hkJ (JFrame.refl hs hM) T₂) fun s₂ ⟨I₂, U₂⟩ => ?_)
   refine WP.seq (WP.mono (countLoop_ok (Q := fun t => JInvA K C base size P s k 0 t)
     (Inv := fun j t => JInvA K C base size P s k j t) (n := K.J - 1)
-    (fun j t h1 h2 hi => jstepA_ok hL hp hC hM3 hO hD hP hP0 hn17 hn64 hone hF h1 (by omega_arith) hi)
+    (fun j t h1 h2 hi => jstepA_ok hL hp hC hM3 hO hD hP hP0 hn17 hn64 hpn hone_lt hone hF h1 (by omega_arith) hi)
     (fun _ h => h) (by omega_arith) ⟨I₂, O₂.loopW hL U₂ hn⟩) fun s₃ ⟨I₃, _⟩ => ?_)
   obtain ⟨Q, -, hQe, R₃⟩ := I₃.st
   rw [Window5.winE_zero'] at hQe

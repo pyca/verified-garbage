@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.Common
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Spec.Aes.Contract
 import all Init.Data.Array.Basic

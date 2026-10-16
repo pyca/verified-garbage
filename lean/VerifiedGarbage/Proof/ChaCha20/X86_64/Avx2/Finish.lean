@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Avx2
@@ -12,6 +13,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 @[expose] public section
 
@@ -753,6 +755,73 @@ theorem storeAll_frame {buf : Addr} {rs : List Region} (hr : bufR buf ∈ rs) (p
     exact ((Frame.refl _ _).writeW hr _ (bufR_contains buf (hps p (List.mem_cons_self ..)))).trans
       (ih (fun q hq => hps q (List.mem_cons_of_mem _ hq)) _)
 
+/-- The quadword at offset `d` after the stores `ps`: the last one stored at
+`d`, else `v`. -/
+def lastAt (ps : List (Nat × BitVec 64)) (d : Nat) (v : BitVec 64) : BitVec 64 :=
+  ps.foldl (fun v p => if p.1 = d then p.2 else v) v
+
+/-- A quadword read back after the stores `ps`, none of which overlaps it
+partly: by evaluating `lastAt`, rather than reading through each store. -/
+theorem storeAll_readW {buf : Addr} {d : Nat} (hd : d < 2 ^ 32) :
+    ∀ (ps : List (Nat × BitVec 64)) (m : Mem),
+      (∀ p ∈ ps, p.1 < 2 ^ 32 ∧ (p.1 = d ∨ d + 8 ≤ p.1 ∨ p.1 + 8 ≤ d)) →
+      (storeAll buf ps m).readW (buf + BitVec.ofNat 64 d) 64 =
+        lastAt ps d (m.readW (buf + BitVec.ofNat 64 d) 64)
+  | [], _, _ => rfl
+  | p :: ps, m, h => by
+    rw [storeAll, List.foldl_cons, ← storeAll,
+      storeAll_readW hd ps _ (fun q hq => h q (List.mem_cons_of_mem _ hq))]
+    refine congrArg (lastAt ps d) (show _ = if p.1 = d then p.2 else _ from ?_)
+    obtain ⟨h₁, h₂⟩ := h p (List.mem_cons_self ..)
+    by_cases e : p.1 = d
+    · rw [ite_eq_left e, e, Mem.readW_writeW_self64]
+    · rw [ite_eq_right e]
+      exact readW64_off m buf p.2 hd h₁ (by omega_using [e, h₂])
+
+/-- `lastAt`, as an option: `none` if nothing is stored at `d`. -/
+def lastAt? (ps : List (Nat × BitVec 64)) (d : Nat) : Option (BitVec 64) :=
+  ps.foldl (fun o p => if p.1 = d then some p.2 else o) none
+
+theorem lastAt_eq_getD (ps : List (Nat × BitVec 64)) (d : Nat) (v : BitVec 64) :
+    lastAt ps d v = (lastAt? ps d).getD v := by
+  suffices ∀ o : Option (BitVec 64), lastAt ps d (o.getD v) =
+      (ps.foldl (fun o p => if p.1 = d then some p.2 else o) o).getD v from this none
+  induction ps with
+  | nil => intro o; rfl
+  | cons p ps ih =>
+    intro o
+    rw [List.foldl_cons, ← ih]
+    refine congrArg (lastAt ps d) ?_
+    by_cases e : p.1 = d
+    · rw [ite_eq_left e]; exact ite_eq_left e
+    · rw [ite_eq_right e]; exact ite_eq_right e
+
+/-- Whether doubleword `i` of `buf`, after the stores `ps` and then `qs`, is
+`v`: each store at the quadword holding it or apart from it. -/
+def readsTo (ps qs : List (Nat × BitVec 64)) (i : Nat) (v : BitVec 32) : Bool :=
+  decide (8 * (i / 2) < 2 ^ 32) &&
+  (ps ++ qs).all (fun p => decide (p.1 < 2 ^ 32 ∧ (p.1 = 8 * (i / 2) ∨ 8 * (i / 2) + 8 ≤ p.1 ∨
+    p.1 + 8 ≤ 8 * (i / 2)))) &&
+  ((lastAt? qs (8 * (i / 2))).or (lastAt? ps (8 * (i / 2)))).map
+    (BitVec.extractLsb' (8 * (4 * (i % 2))) (8 * 4)) == some v
+
+/-- A doubleword read back after two lists of stores, by evaluating
+`readsTo`, which `decide` can check for every doubleword at once. -/
+theorem storeAll_readW32 {buf : Addr} {ps qs : List (Nat × BitVec 64)} {i : Nat} {v : BitVec 32}
+    (h : readsTo ps qs i v = true) (m : Mem) :
+    (storeAll buf qs (storeAll buf ps m)).readW (buf + BitVec.ofNat 64 (4 * i)) 32 = v := by
+  simp only [readsTo, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true, List.mem_append,
+    beq_iff_eq] at h
+  obtain ⟨⟨hd, hall⟩, hv⟩ := h
+  have E := readW_extract (storeAll buf qs (storeAll buf ps m)) (buf + BitVec.ofNat 64 (8 * (i / 2)))
+    (w := 64) (k := 4 * (i % 2)) (n := 4) (by omega_using [])
+  rw [add_ofNat, show 8 * (i / 2) + 4 * (i % 2) = 4 * i by omega_using []] at E
+  rw [← E, storeAll_readW hd qs _ (fun p hp => hall p (Or.inr hp)),
+    storeAll_readW hd ps _ (fun p hp => hall p (Or.inl hp)), lastAt_eq_getD, lastAt_eq_getD]
+  revert hv
+  cases lastAt? qs (8 * (i / 2)) <;> cases lastAt? ps (8 * (i / 2)) <;>
+    simp only [Option.or, Option.map, Option.getD, Option.some.injEq, reduceCtorEq, imp_self, false_implies]
+
 /-! ## The constants -/
 
 /-- A 256-bit read of four stored quadwords. -/
@@ -768,8 +837,8 @@ theorem read4 {m : Mem} {buf : Addr} {d : Nat} {v0 v1 v2 v3 : BitVec 64}
 
 /-- Read back a stored quadword. -/
 local macro "qread" : tactic => `(tactic|
-  simp (disch := decide) only [storeAll, constPairs, List.foldl_cons, List.foldl_nil, Nat.reduceAdd,
-    readW64_off, Mem.readW_writeW_self64])
+  plain_simp_names simp (disch := decide) only [storeAll, constPairs, List.foldl_cons, List.foldl_nil, Nat.reduceAdd,
+                     readW64_off, Mem.readW_writeW_self64])
 
 theorem consts_mem (m : Mem) (buf : Addr) : Consts (storeAll buf constPairs m) buf := by
   have R16 := read4 (m := storeAll buf constPairs m) (buf := buf) (d := 128)
@@ -809,39 +878,36 @@ open VG.Proof.ChaCha20
 
 /-! ## Adding a row of the input state -/
 
-theorem addRow_eq (row : Nat) (x0 x1 x2 x3 : XReg) : addRow row [x0, x1, x2, x3] =
-    [.vbroadcasti128 .xmm14 (at_ .rdi (16 * row)),
-     .vop (.vpshufd .l256 .xmm15 .xmm14 0x00), .vop (.vbin .vpaddd .l256 x0 x0 .xmm15),
-     .vop (.vpshufd .l256 .xmm15 .xmm14 0x55), .vop (.vbin .vpaddd .l256 x1 x1 .xmm15),
-     .vop (.vpshufd .l256 .xmm15 .xmm14 0xaa), .vop (.vbin .vpaddd .l256 x2 x2 .xmm15),
-     .vop (.vpshufd .l256 .xmm15 .xmm14 0xff), .vop (.vbin .vpaddd .l256 x3 x3 .xmm15)] := rfl
+theorem addT_eq (row : Nat) (x0 x1 x2 x3 : XReg) : addT row [x0, x1, x2, x3] =
+    [.vbroadcasti128 .xmm14 (at_ .rdi (16 * row)), .vop (.vbin .vpaddd .l256 x0 x0 .xmm14),
+     .vop (.vbin .vpaddd .l256 x1 x1 .xmm14), .vop (.vbin .vpaddd .l256 x2 x2 .xmm14),
+     .vop (.vbin .vpaddd .l256 x3 x3 .xmm14)] := rfl
 
-theorem addRow_ok {row : Nat} {x0 x1 x2 x3 : XReg} (e01 : x0 ≠ x1) (e02 : x0 ≠ x2) (e03 : x0 ≠ x3)
+/-- Row `row` of the input state, broadcast to both lanes, added to each lane
+of `x0 … x3`. -/
+theorem addT_ok {row : Nat} {x0 x1 x2 x3 : XReg} (e01 : x0 ≠ x1) (e02 : x0 ≠ x2) (e03 : x0 ≠ x3)
     (e12 : x1 ≠ x2) (e13 : x1 ≠ x3) (e23 : x2 ≠ x3) (h0 : x0 ≠ .xmm14) (h1 : x1 ≠ .xmm14)
-    (h2 : x2 ≠ .xmm14) (h3 : x3 ≠ .xmm14) (k0 : x0 ≠ .xmm15) (k1 : x1 ≠ .xmm15) (k2 : x2 ≠ .xmm15)
-    (k3 : x3 ≠ .xmm15) {s : State}
+    (h2 : x2 ≠ .xmm14) (h3 : x3 ≠ .xmm14) {s : State}
     (hin : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 (16 * row)) 16) :
-    WP isa (.block (addRow row [x0, x1, x2, x3])) s fun s' =>
+    WP isa (.block (addT row [x0, x1, x2, x3])) s fun s' =>
       (∀ l q, q < 4 →
-        vw s' x0 l q = vw s x0 l q + dword (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (16 * row)) 128) 0 ∧
-        vw s' x1 l q = vw s x1 l q + dword (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (16 * row)) 128) 1 ∧
-        vw s' x2 l q = vw s x2 l q + dword (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (16 * row)) 128) 2 ∧
-        vw s' x3 l q = vw s x3 l q + dword (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (16 * row)) 128) 3) ∧
-      (∀ r l, r ≠ x0 → r ≠ x1 → r ≠ x2 → r ≠ x3 → r ≠ .xmm14 → r ≠ .xmm15 → s'.lane r l = s.lane r l) ∧
+        vw s' x0 l q = vw s x0 l q + dword (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (16 * row)) 128) q ∧
+        vw s' x1 l q = vw s x1 l q + dword (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (16 * row)) 128) q ∧
+        vw s' x2 l q = vw s x2 l q + dword (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (16 * row)) 128) q ∧
+        vw s' x3 l q = vw s x3 l q + dword (s.mem.readW (s.gpr .rdi + BitVec.ofNat 64 (16 * row)) 128) q) ∧
+      (∀ r l, r ≠ x0 → r ≠ x1 → r ≠ x2 → r ≠ x3 → r ≠ .xmm14 → s'.lane r l = s.lane r l) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  rw [addRow_eq]
+  rw [addT_eq]
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, State.load128, hin,
     ite_true, Option.map_some, Option.some.injEq, exists_eq_left', VOp.exec_gpr, VOp.exec_mem,
     VOp.exec_rd, VOp.exec_wr, State.setV_gpr, State.setV_mem, State.setV_rd, State.setV_wr]
-  refine ⟨fun l q hq => ?_, fun r l n0 n1 n2 n3 n14 n15 => ?_, trivial, trivial, trivial, trivial⟩
-  · simp only [vw, lane_vpshufd256, lane_vbin256, State.lane_setV256, VBinOp.sse, e01, e02, e03,
+  refine ⟨fun l q hq => ?_, fun r l n0 n1 n2 n3 n14 => ?_, trivial, trivial, trivial, trivial⟩
+  · simp only [vw, lane_vbin256, State.lane_setV256, VBinOp.sse, e01, e02, e03,
       e12, e13, e23, e01.symm, e02.symm, e03.symm, e12.symm, e13.symm, e23.symm, h0, h1, h2, h3,
-      k0, k1, k2, k3, h0.symm, h1.symm, h2.symm, k0.symm, k1.symm, k2.symm,
-      reduceCtorEq, ite_true, ite_false, ite_self, dword_paddd _ _ hq, shuf_00 _ hq,
-      shuf_55 _ hq, shuf_aa _ hq, shuf_ff _ hq, and_self]
-  · simp only [lane_vpshufd256, lane_vbin256, State.lane_setV256, n0, n1, n2, n3, n14, n15,
-      ite_false]
+      h0.symm, h1.symm, h2.symm, ite_true, ite_false, ite_self, dword_paddd _ _ hq,
+      true_and]
+  · simp only [lane_vbin256, State.lane_setV256, n0, n1, n2, n3, n14, ite_false]
 
 /-! ## Transposing -/
 
@@ -904,7 +970,7 @@ theorem byte_write16 (m : Mem) (a : Addr) (v : BitVec 128) {off k : Nat} (ho : o
     rw [Offset.sub_toNat' a (by lit_omega) (by lit_omega)]
     split <;> omega
 
-theorem xor16_ok {x : XReg} (hx : x ≠ .xmm12) {off : Nat} (ho : off + 16 ≤ 512) {a : Addr}
+theorem xor16_ok {x : XReg} (_hx : x ≠ .xmm12) {off : Nat} (ho : off + 16 ≤ 512) {a : Addr}
     {s : State} (hrsi : s.gpr .rsi = a) (hw : DWin s.wr a) :
     WP isa (.block (xor16 x off)) s fun s' =>
       (∀ k < 512, s'.mem (a + BitVec.ofNat 64 k) = if off ≤ k ∧ k < off + 16 then
@@ -919,18 +985,19 @@ theorem xor16_ok {x : XReg} (hx : x ≠ .xmm12) {off : Nat} (ho : off + 16 ≤ 5
   apply WP.of_runBlock
   simp only [xor16, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, hrsi, State.load128,
     State.store128_eq, i1, o1, ite_true, Option.map_some, Option.some.injEq,
-    exists_eq_left', VOp.exec_gpr, VOp.exec_mem, VOp.exec_rd, VOp.exec_wr, State.setV_gpr,
+    exists_eq_left', State.setV_gpr,
     State.setV_mem, State.setV_rd, State.setV_wr, State.setMem_gpr, State.setMem_mem,
-    State.setMem_rd, State.setMem_wr, State.xmm_lane, lane_vbin128, State.lane_setV128, hx,
-    ite_false, VBinOp.sse, XBinOp.eval]
+    State.setMem_rd, State.setMem_wr, State.xmm_lane, State.lane_setV128,
+    VBinOp.sse, XBinOp.eval]
   refine ⟨fun k hk => ?_, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ c,
     fun r l hr => ?_, trivial, trivial, trivial⟩
   · rw [byte_write16 _ _ _ ho hk]
     by_cases h : off ≤ k ∧ k < off + 16
     · simp only [h.1, h.2, and_self, ite_true, byte]
-      rw [BitVec.extractLsb'_xor, byte_readW _ _ (by lit_omega), add_ofNat, Nat.add_sub_cancel' h.1]
+      rw [BitVec.xor_comm, BitVec.extractLsb'_xor, byte_readW _ _ (by lit_omega), add_ofNat,
+        Nat.add_sub_cancel' h.1]
     · simp only [h, ite_false]
-  · simp only [State.setMem_lane, lane_vbin128, State.lane_setV128, hr, ite_false]
+  · simp only [State.setMem_lane, State.lane_setV128, hr, ite_false]
 
 /-! ## XORing a row of the eight blocks -/
 
@@ -1040,44 +1107,46 @@ def RowIn (row : Nat) (x0 x1 x2 x3 : XReg) (B : Nat → CState) (s : State) : Pr
     vw s x0 l q = (B (4 * l + q))[4 * row]'(by lit_omega) ∧ vw s x1 l q = (B (4 * l + q))[4 * row + 1]'(by lit_omega) ∧
     vw s x2 l q = (B (4 * l + q))[4 * row + 2]'(by lit_omega) ∧ vw s x3 l q = (B (4 * l + q))[4 * row + 3]'(by lit_omega)
 
-theorem rowOut_ok {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg} (e01 : x0 ≠ x1) (e02 : x0 ≠ x2)
-    (e03 : x0 ≠ x3) (e12 : x1 ≠ x2) (e13 : x1 ≠ x3) (e23 : x2 ≠ x3)
-    (h0 : x0 ≠ .xmm12 ∧ x0 ≠ .xmm13 ∧ x0 ≠ .xmm14 ∧ x0 ≠ .xmm15)
-    (h1 : x1 ≠ .xmm12 ∧ x1 ≠ .xmm13 ∧ x1 ≠ .xmm14 ∧ x1 ≠ .xmm15)
-    (h2 : x2 ≠ .xmm12 ∧ x2 ≠ .xmm13 ∧ x2 ≠ .xmm14 ∧ x2 ≠ .xmm15)
-    (h3 : x3 ≠ .xmm12 ∧ x3 ≠ .xmm13 ∧ x3 ≠ .xmm14 ∧ x3 ≠ .xmm15) {B : Nat → CState} {a : Addr}
-    {s : State} (hB : RowIn row x0 x1 x2 x3 B s) (hrsi : s.gpr .rsi = a) (hw : DWin s.wr a) :
-    WP isa (.block (transpose x0 x1 x2 x3 ++ xorRow row [x0, x1, x2, x3])) s fun s' =>
+/-- Row `row` of the blocks `B`, transposed: lane `l` of the `k`th of `x0 … x3`
+holds that row of block `4 l + k`. -/
+def RowT (row : Nat) (x0 x1 x2 x3 : XReg) (B : Nat → CState) (s : State) : Prop :=
+  ∀ l, l < 2 → (hrow : row < 4) →
+    s.lane x0 l = ofDwords ((B (4 * l + 0))[4 * row]'(by lit_omega)) ((B (4 * l + 0))[4 * row + 1]'(by lit_omega))
+      ((B (4 * l + 0))[4 * row + 2]'(by lit_omega)) ((B (4 * l + 0))[4 * row + 3]'(by lit_omega)) ∧
+    s.lane x1 l = ofDwords ((B (4 * l + 1))[4 * row]'(by lit_omega)) ((B (4 * l + 1))[4 * row + 1]'(by lit_omega))
+      ((B (4 * l + 1))[4 * row + 2]'(by lit_omega)) ((B (4 * l + 1))[4 * row + 3]'(by lit_omega)) ∧
+    s.lane x2 l = ofDwords ((B (4 * l + 2))[4 * row]'(by lit_omega)) ((B (4 * l + 2))[4 * row + 1]'(by lit_omega))
+      ((B (4 * l + 2))[4 * row + 2]'(by lit_omega)) ((B (4 * l + 2))[4 * row + 3]'(by lit_omega)) ∧
+    s.lane x3 l = ofDwords ((B (4 * l + 3))[4 * row]'(by lit_omega)) ((B (4 * l + 3))[4 * row + 1]'(by lit_omega))
+      ((B (4 * l + 3))[4 * row + 2]'(by lit_omega)) ((B (4 * l + 3))[4 * row + 3]'(by lit_omega))
+
+theorem rowOutT_ok {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg}
+    (h0 : x0 ≠ .xmm12 ∧ x0 ≠ .xmm13) (h1 : x1 ≠ .xmm12 ∧ x1 ≠ .xmm13)
+    (h2 : x2 ≠ .xmm12 ∧ x2 ≠ .xmm13) (h3 : x3 ≠ .xmm12 ∧ x3 ≠ .xmm13) {B : Nat → CState} {a : Addr}
+    {s : State} (hB : RowT row x0 x1 x2 x3 B s) (hrsi : s.gpr .rsi = a) (hw : DWin s.wr a) :
+    WP isa (.block (xorRow row [x0, x1, x2, x3])) s fun s' =>
       (∀ k < 512, s'.mem (a + BitVec.ofNat 64 k) =
         if k % 64 / 16 = row then
           s.mem (a + BitVec.ofNat 64 k) ^^^ (serialize (B (k / 64))).getD (k % 64) 0
         else s.mem (a + BitVec.ofNat 64 k)) ∧
       Frame [dR5 a] s.mem s'.mem ∧
-      (∀ r l, r ≠ x0 → r ≠ x1 → r ≠ x2 → r ≠ x3 → r ≠ .xmm12 → r ≠ .xmm13 → r ≠ .xmm14 →
-        r ≠ .xmm15 → s'.lane r l = s.lane r l) ∧
+      (∀ r l, r ≠ .xmm12 → r ≠ .xmm13 → s'.lane r l = s.lane r l) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine WP.block_append (WP.mono (transpose_ok e01 e02 e03 e12 e13 e23 h0 h1 h2 h3)
-    fun s₁ ⟨lt, lo, g₁, m₁, r₁, w₁⟩ => ?_)
-  refine WP.mono (xorRow_ok hrow (a := a) ⟨h0.1, h0.2.1⟩ ⟨h1.1, h1.2.1⟩ ⟨h2.1, h2.2.1⟩ ⟨h3.1, h3.2.1⟩
-    (by rw [g₁]; exact hrsi) (by rw [w₁]; exact hw)) fun s₂ ⟨m₂, f₂, l₂, g₂, r₂, w₂⟩ => ?_
-  rw [m₁] at m₂ f₂
-  refine ⟨fun k hk => ?_, f₂, fun r l n0 n1 n2 n3 n12 n13 n14 n15 => ?_, g₂.trans g₁, r₂.trans r₁,
-    w₂.trans w₁⟩
-  · rw [m₂ k hk]
-    by_cases hr : k % 64 / 16 = row
-    · rw [ite_eq_left hr, ite_eq_left hr, serialize_row _ hrow hr]
-      obtain ⟨l, q, hl, hq, e⟩ : ∃ l q, l < 2 ∧ q < 4 ∧ k / 64 = 4 * l + q :=
-        ⟨k / 64 / 4, k / 64 % 4, by omega, by omega, by omega⟩
-      rw [e, show (4 * l + q) / 4 = l by omega, show (4 * l + q) % 4 = q by omega]
-      obtain ⟨b0, b1, b2, b3⟩ := hB l q hl hq hrow
-      rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
-      · rw [List.getD_cons_zero, (lt l).1, b0, b1, b2, b3]
-      · rw [List.getD_cons_succ, List.getD_cons_zero, (lt l).2.1, b0, b1, b2, b3]
-      · rw [List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_zero, (lt l).2.2.1, b0, b1, b2, b3]
-      · rw [List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_zero,
-          (lt l).2.2.2, b0, b1, b2, b3]
-    · rw [ite_eq_right hr, ite_eq_right hr]
-  · rw [l₂ r l n12 n13, lo r l n0 n1 n2 n3 n12 n13 n14 n15]
+  refine WP.mono (xorRow_ok hrow h0 h1 h2 h3 hrsi hw) fun s₂ ⟨m₂, f₂, l₂, g₂, r₂, w₂⟩ =>
+    ⟨fun k hk => ?_, f₂, l₂, g₂, r₂, w₂⟩
+  rw [m₂ k hk]
+  by_cases hr : k % 64 / 16 = row
+  · rw [ite_eq_left hr, ite_eq_left hr, serialize_row _ hrow hr]
+    obtain ⟨l, q, hl, hq, e⟩ : ∃ l q, l < 2 ∧ q < 4 ∧ k / 64 = 4 * l + q :=
+      ⟨k / 64 / 4, k / 64 % 4, by omega, by omega, by omega⟩
+    rw [e, show (4 * l + q) / 4 = l by omega, show (4 * l + q) % 4 = q by omega]
+    obtain ⟨b0, b1, b2, b3⟩ := hB l hl hrow
+    rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
+    · rw [List.getD_cons_zero, b0]
+    · rw [List.getD_cons_succ, List.getD_cons_zero, b1]
+    · rw [List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_zero, b2]
+    · rw [List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_zero, b3]
+  · rw [ite_eq_right hr, ite_eq_right hr]
 
 /-! ## The third row, through the slots -/
 
@@ -1177,26 +1246,72 @@ abbrev plus (vs : Nat → CState) (S : CState) (j : Nat) : CState := Vector.zipW
 theorem ctr_ne12 (S : CState) (j : Nat) {k : Nat} (hk : k < 16) (h : k ≠ 12) : (ctr S j)[k] = S[k] := by
   rw [ctr_get _ _ _ hk, ite_eq_right h]
 
-theorem addRow_in {row : Nat} (h3 : row ≠ 3) {x0 x1 x2 x3 : XReg} (e01 : x0 ≠ x1)
-    (e02 : x0 ≠ x2) (e03 : x0 ≠ x3) (e12 : x1 ≠ x2) (e13 : x1 ≠ x3) (e23 : x2 ≠ x3)
-    (h0 : x0 ≠ .xmm14) (h1 : x1 ≠ .xmm14) (h2 : x2 ≠ .xmm14) (h3' : x3 ≠ .xmm14) (k0 : x0 ≠ .xmm15)
-    (k1 : x1 ≠ .xmm15) (k2 : x2 ≠ .xmm15) (k3 : x3 ≠ .xmm15) {vs : Nat → CState} {S : CState}
-    {s : State} (hin : RowIn row x0 x1 x2 x3 vs s) (hS : RowS row S s.mem (s.gpr .rdi))
+theorem eq_ofDwords {x : BitVec 128} {a0 a1 a2 a3 : Word} (h0 : dword x 0 = a0) (h1 : dword x 1 = a1)
+    (h2 : dword x 2 = a2) (h3 : dword x 3 = a3) : x = ofDwords a0 a1 a2 a3 := by
+  rw [← h0, ← h1, ← h2, ← h3, ofDwords_dword]
+
+/-- A row of the eight states, one word per register (`RowIn`), transposed and
+the input state's row `S` added: row `row` of the blocks `B`, if each of
+their words in that row is the register's word plus `S`'s. -/
+theorem tAdd_ok {row : Nat} {x0 x1 x2 x3 : XReg} (e01 : x0 ≠ x1) (e02 : x0 ≠ x2) (e03 : x0 ≠ x3)
+    (e12 : x1 ≠ x2) (e13 : x1 ≠ x3) (e23 : x2 ≠ x3)
+    (h0 : x0 ≠ .xmm12 ∧ x0 ≠ .xmm13 ∧ x0 ≠ .xmm14 ∧ x0 ≠ .xmm15)
+    (h1 : x1 ≠ .xmm12 ∧ x1 ≠ .xmm13 ∧ x1 ≠ .xmm14 ∧ x1 ≠ .xmm15)
+    (h2 : x2 ≠ .xmm12 ∧ x2 ≠ .xmm13 ∧ x2 ≠ .xmm14 ∧ x2 ≠ .xmm15)
+    (h3 : x3 ≠ .xmm12 ∧ x3 ≠ .xmm13 ∧ x3 ≠ .xmm14 ∧ x3 ≠ .xmm15) {B : Nat → CState} {S : CState}
+    {s : State}
+    (hw : ∀ l q, l < 2 → q < 4 → (hrow : row < 4) →
+      vw s x0 l q + S[4 * row]'(by lit_omega) = (B (4 * l + q))[4 * row]'(by lit_omega) ∧
+      vw s x1 l q + S[4 * row + 1]'(by lit_omega) = (B (4 * l + q))[4 * row + 1]'(by lit_omega) ∧
+      vw s x2 l q + S[4 * row + 2]'(by lit_omega) = (B (4 * l + q))[4 * row + 2]'(by lit_omega) ∧
+      vw s x3 l q + S[4 * row + 3]'(by lit_omega) = (B (4 * l + q))[4 * row + 3]'(by lit_omega))
+    (hS : RowS row S s.mem (s.gpr .rdi))
     (hrd : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 (16 * row)) 16) :
-    WP isa (.block (addRow row [x0, x1, x2, x3])) s fun s' =>
-      RowIn row x0 x1 x2 x3 (plus vs S) s' ∧
-      (∀ r l, r ≠ x0 → r ≠ x1 → r ≠ x2 → r ≠ x3 → r ≠ .xmm14 → r ≠ .xmm15 → s'.lane r l = s.lane r l) ∧
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
-  WP.mono (addRow_ok e01 e02 e03 e12 e13 e23 h0 h1 h2 h3' k0 k1 k2 k3 hrd)
-    fun _ ⟨ha, hl, hg, hm, hr, hw⟩ => ⟨fun l q hl' hq hrow' => by
-      obtain ⟨a0, a1, a2, a3⟩ := ha l q hq
-      obtain ⟨b0, b1, b2, b3⟩ := hin l q hl' hq hrow'
-      obtain ⟨c0, c1, c2, c3⟩ := hS hrow'
-      rw [a0, a1, a2, a3, b0, b1, b2, b3, c0, c1, c2, c3]
-      simp only [plus, Vector.getElem_zipWith]
-      rw [ctr_ne12 _ _ _ (by lit_omega), ctr_ne12 _ _ _ (by lit_omega), ctr_ne12 _ _ _ (by lit_omega),
-        ctr_ne12 _ _ _ (by lit_omega)]
-      exact ⟨rfl, rfl, rfl, rfl⟩, hl, hg, hm, hr, hw⟩
+    WP isa (.block (transpose x0 x1 x2 x3 ++ addT row [x0, x1, x2, x3])) s fun s' =>
+      RowT row x0 x1 x2 x3 B s' ∧
+      (∀ r l, r ≠ x0 → r ≠ x1 → r ≠ x2 → r ≠ x3 → r ≠ .xmm12 → r ≠ .xmm13 → r ≠ .xmm14 →
+        r ≠ .xmm15 → s'.lane r l = s.lane r l) ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine WP.block_append (WP.mono (transpose_ok e01 e02 e03 e12 e13 e23 h0 h1 h2 h3)
+    fun s₁ ⟨lt, lo, g₁, m₁, r₁, w₁⟩ => ?_)
+  refine WP.mono (addT_ok e01 e02 e03 e12 e13 e23 h0.2.2.1 h1.2.2.1 h2.2.2.1 h3.2.2.1
+    (by rw [g₁, r₁, w₁]; exact hrd)) fun s₂ ⟨ad, lo₂, g₂, m₂, r₂, w₂⟩ =>
+      ⟨fun l hl hrow => ?_, fun r l n0 n1 n2 n3 n12 n13 n14 n15 => ?_, g₂.trans g₁, m₂.trans m₁,
+        r₂.trans r₁, w₂.trans w₁⟩
+  · rw [g₁, m₁] at ad
+    obtain ⟨c0, c1, c2, c3⟩ := hS hrow
+    obtain ⟨t0, t1, t2, t3⟩ := lt l
+    obtain ⟨a00, a01, a02, a03⟩ := ad l 0 (by decide)
+    obtain ⟨a10, a11, a12, a13⟩ := ad l 1 (by decide)
+    obtain ⟨a20, a21, a22, a23⟩ := ad l 2 (by decide)
+    obtain ⟨a30, a31, a32, a33⟩ := ad l 3 (by decide)
+    simp only [vw, t0, t1, t2, t3, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2,
+      dword_ofDwords_3, c0, c1, c2, c3] at a00 a01 a02 a03 a10 a11 a12 a13 a20 a21 a22 a23 a30 a31 a32 a33
+    obtain ⟨w00, w01, w02, w03⟩ := hw l 0 hl (by decide) hrow
+    obtain ⟨w10, w11, w12, w13⟩ := hw l 1 hl (by decide) hrow
+    obtain ⟨w20, w21, w22, w23⟩ := hw l 2 hl (by decide) hrow
+    obtain ⟨w30, w31, w32, w33⟩ := hw l 3 hl (by decide) hrow
+    exact ⟨eq_ofDwords (a00.trans w00) (a10.trans w01) (a20.trans w02) (a30.trans w03),
+      eq_ofDwords (a01.trans w10) (a11.trans w11) (a21.trans w12) (a31.trans w13),
+      eq_ofDwords (a02.trans w20) (a12.trans w21) (a22.trans w22) (a32.trans w23),
+      eq_ofDwords (a03.trans w30) (a13.trans w31) (a23.trans w32) (a33.trans w33)⟩
+  · rw [lo₂ r l n0 n1 n2 n3 n14, lo r l n0 n1 n2 n3 n12 n13 n14 n15]
+
+/-- `hw` of `tAdd_ok` for a row but the fourth, of the rounds' result `vs`
+plus the input state. -/
+theorem hw_row {row : Nat} (h3 : row ≠ 3) {x0 x1 x2 x3 : XReg} {vs : Nat → CState} {S : CState}
+    {s : State} (hin : RowIn row x0 x1 x2 x3 vs s) :
+    ∀ l q, l < 2 → q < 4 → (hrow : row < 4) →
+      vw s x0 l q + S[4 * row]'(by lit_omega) = (plus vs S (4 * l + q))[4 * row]'(by lit_omega) ∧
+      vw s x1 l q + S[4 * row + 1]'(by lit_omega) = (plus vs S (4 * l + q))[4 * row + 1]'(by lit_omega) ∧
+      vw s x2 l q + S[4 * row + 2]'(by lit_omega) = (plus vs S (4 * l + q))[4 * row + 2]'(by lit_omega) ∧
+      vw s x3 l q + S[4 * row + 3]'(by lit_omega) = (plus vs S (4 * l + q))[4 * row + 3]'(by lit_omega) := by
+  intro l q hl hq hrow
+  obtain ⟨b0, b1, b2, b3⟩ := hin l q hl hq hrow
+  simp only [plus, Vector.getElem_zipWith]
+  rw [b0, b1, b2, b3, ctr_ne12 _ _ _ (by lit_omega), ctr_ne12 _ _ _ (by lit_omega),
+    ctr_ne12 _ _ _ (by lit_omega), ctr_ne12 _ _ _ (by lit_omega)]
+  exact ⟨rfl, rfl, rfl, rfl⟩
 
 def incAdd : List Instr :=
   [.vmovdquLoad .l256 .xmm15 (at_ .rcx incOff), v .vpaddd .xmm8 .xmm8 .xmm15]
@@ -1219,35 +1334,31 @@ theorem incAdd_ok {buf : Addr} {s : State} (hrcx : s.gpr .rcx = buf) (hb : bufR 
     rw [add_ofNat]; exact congrArg _ (hc l q hl hq)
   · simp only [lane_vbin256, State.lane_setV256, n8, n15, ite_false]
 
-theorem addRow3_in {buf : Addr} {vs : Nat → CState} {S : CState} {s : State}
-    (hin : RowIn 3 .xmm8 .xmm9 .xmm10 .xmm11 vs s) (hS : RowS 3 S s.mem (s.gpr .rdi))
-    (hrd : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 (16 * 3)) 16)
-    (hrcx : s.gpr .rcx = buf) (hb : bufR buf ∈ s.wr)
+/-- The counter increments added to word 12: row 3 as `tAdd_ok` needs it, of
+the rounds' result `vs` plus the input state. -/
+theorem hw3_ok {buf : Addr} {vs : Nat → CState} {S : CState} {s : State}
+    (hin : RowIn 3 .xmm8 .xmm9 .xmm10 .xmm11 vs s) (hrcx : s.gpr .rcx = buf) (hb : bufR buf ∈ s.wr)
     (hc : ∀ l q, l < 2 → q < 4 →
       s.mem.readW (buf + BitVec.ofNat 64 (192 + (16 * l + 4 * q))) 32 = BitVec.ofNat 32 (4 * l + q)) :
-    WP isa (.block (addRow 3 ([.xmm8, .xmm9, .xmm10, .xmm11] : List XReg) ++ incAdd)) s fun s' =>
-      RowIn 3 .xmm8 .xmm9 .xmm10 .xmm11 (plus vs S) s' ∧
-      (∀ r l, r ≠ .xmm8 → r ≠ .xmm9 → r ≠ .xmm10 → r ≠ .xmm11 → r ≠ .xmm14 → r ≠ .xmm15 →
-        s'.lane r l = s.lane r l) ∧
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine WP.block_append (WP.mono (addRow_ok (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) hrd) fun s₁ ⟨ha, hl, hg, hm, hr, hw⟩ => ?_)
-  refine WP.mono (incAdd_ok (by rw [hg, hrcx]) (by rw [hw]; exact hb) (by rw [hm]; exact hc))
-    fun s₂ ⟨ia, il, ig, im, ir, iw⟩ => ⟨fun l q hl' hq _ => ?_, fun r l n8 n9 n10 n11 n14 n15 => ?_,
-      ig.trans hg, im.trans hm, ir.trans hr, iw.trans hw⟩
-  · obtain ⟨a0, a1, a2, a3⟩ := ha l q hq
-    obtain ⟨b0, b1, b2, b3⟩ := hin l q hl' hq (by decide)
-    obtain ⟨c0, c1, c2, c3⟩ := hS (by decide)
-    have jl : ∀ r, r ≠ .xmm8 → r ≠ .xmm15 → vw s₂ r l q = vw s₁ r l q := fun r h8 h15 => by
+    WP isa (.block incAdd) s fun s' =>
+      (∀ l q, l < 2 → q < 4 → (hrow : 3 < 4) →
+        vw s' .xmm8 l q + S[4 * 3]'(by lit_omega) = (plus vs S (4 * l + q))[4 * 3]'(by lit_omega) ∧
+        vw s' .xmm9 l q + S[4 * 3 + 1]'(by lit_omega) = (plus vs S (4 * l + q))[4 * 3 + 1]'(by lit_omega) ∧
+        vw s' .xmm10 l q + S[4 * 3 + 2]'(by lit_omega) = (plus vs S (4 * l + q))[4 * 3 + 2]'(by lit_omega) ∧
+        vw s' .xmm11 l q + S[4 * 3 + 3]'(by lit_omega) = (plus vs S (4 * l + q))[4 * 3 + 3]'(by lit_omega)) ∧
+      (∀ r l, r ≠ .xmm8 → r ≠ .xmm15 → s'.lane r l = s.lane r l) ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr :=
+  WP.mono (incAdd_ok hrcx hb hc) fun s' ⟨ia, il, ig, im, ir, iw⟩ => ⟨fun l q hl hq hrow => by
+    obtain ⟨b0, b1, b2, b3⟩ := hin l q hl hq hrow
+    have jl : ∀ r, r ≠ .xmm8 → r ≠ .xmm15 → vw s' r l q = vw s r l q := fun r h8 h15 => by
       simp only [vw]; rw [il r l h8 h15]
-    rw [ia l q hl' hq, jl .xmm9 (by decide) (by decide), jl .xmm10 (by decide) (by decide),
-      jl .xmm11 (by decide) (by decide), a0, a1, a2, a3, b0, b1, b2, b3, c0, c1, c2, c3]
+    rw [ia l q hl hq, jl .xmm9 (by decide) (by decide), jl .xmm10 (by decide) (by decide),
+      jl .xmm11 (by decide) (by decide), b0, b1, b2, b3]
     simp only [plus, Vector.getElem_zipWith]
     rw [ctr_get _ _ _ (by decide), ite_eq_left (by decide), ctr_ne12 _ _ _ (by decide),
-      ctr_ne12 _ _ _ (by decide), ctr_ne12 _ _ _ (by decide), BitVec.add_assoc]
-    exact ⟨rfl, rfl, rfl, rfl⟩
-  · rw [il r l n8 n15, hl r l n8 n9 n10 n11 n14 n15]
+      ctr_ne12 _ _ _ (by decide), ctr_ne12 _ _ _ (by decide), BitVec.add_assoc,
+      BitVec.add_comm (BitVec.ofNat 32 (4 * l + q))]
+    exact ⟨rfl, rfl, rfl, rfl⟩, il, ig, im, ir, iw⟩
 
 /-! ## What survives the steps -/
 
@@ -1332,29 +1443,28 @@ theorem incs_frame_incR {rs : List Region} {m m' : Mem} {buf : Addr} (h : Incs b
   exact h l q hl hq
 
 /-- What `finishWith out` needs of `out`, for row `row` in `x0 … x3`: from
-the row of the blocks `B` in those registers, the code transposing it and
-`out` has the effect `E row B` on memory, writes only `R`, keeps the
-other vector registers but `ymm12 … ymm15`, and keeps the general-purpose
-registers `g` and the writable regions `w`. -/
+the row of the blocks `B` in those registers, transposed (`RowT`), `out` has
+the effect `E row B` on memory, writes only `R`, keeps the other vector
+registers but `ymm12 … ymm15`, and keeps the general-purpose registers `g`
+and the writable regions `w`. -/
 def OutOk (out : Nat → List XReg → List Instr) (E : Nat → (Nat → CState) → Mem → Mem → Prop)
     (R : List Region) (g : Reg → BitVec 64) (w : List Region) (row : Nat) (x0 x1 x2 x3 : XReg) : Prop :=
-  ∀ (B : Nat → CState) (t : State), RowIn row x0 x1 x2 x3 B t → t.gpr = g → t.wr = w →
-    WP isa (.block (transpose x0 x1 x2 x3 ++ out row [x0, x1, x2, x3])) t fun t' =>
+  ∀ (B : Nat → CState) (t : State), RowT row x0 x1 x2 x3 B t → t.gpr = g → t.wr = w →
+    WP isa (.block (out row [x0, x1, x2, x3])) t fun t' =>
       E row B t.mem t'.mem ∧ Frame R t.mem t'.mem ∧
       (∀ r l, r ≠ x0 → r ≠ x1 → r ≠ x2 → r ≠ x3 → r ≠ .xmm12 → r ≠ .xmm13 → r ≠ .xmm14 →
         r ≠ .xmm15 → t'.lane r l = t.lane r l) ∧
       t'.gpr = t.gpr ∧ t'.rd = t.rd ∧ t'.wr = t.wr
 
 theorem finishWith_eq (out : Nat → List XReg → List Instr) : finishWith out =
-    store89 ++ (addRow 0 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg) ++
-    ((transpose .xmm0 .xmm1 .xmm2 .xmm3 ++ out 0 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg)) ++
-    (addRow 1 ([.xmm4, .xmm5, .xmm6, .xmm7] : List XReg) ++
-    ((transpose .xmm4 .xmm5 .xmm6 .xmm7 ++ out 1 ([.xmm4, .xmm5, .xmm6, .xmm7] : List XReg)) ++
-    ((addRow 3 ([.xmm8, .xmm9, .xmm10, .xmm11] : List XReg) ++ incAdd) ++
-    ((transpose .xmm8 .xmm9 .xmm10 .xmm11 ++
-      out 3 ([.xmm8, .xmm9, .xmm10, .xmm11] : List XReg)) ++
-    (load4 ++ (addRow 2 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg) ++
-    (transpose .xmm0 .xmm1 .xmm2 .xmm3 ++
+    store89 ++ ((transpose .xmm0 .xmm1 .xmm2 .xmm3 ++ addT 0 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg)) ++
+    (out 0 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg) ++
+    ((transpose .xmm4 .xmm5 .xmm6 .xmm7 ++ addT 1 ([.xmm4, .xmm5, .xmm6, .xmm7] : List XReg)) ++
+    (out 1 ([.xmm4, .xmm5, .xmm6, .xmm7] : List XReg) ++
+    (incAdd ++
+    ((transpose .xmm8 .xmm9 .xmm10 .xmm11 ++ addT 3 ([.xmm8, .xmm9, .xmm10, .xmm11] : List XReg)) ++
+    (out 3 ([.xmm8, .xmm9, .xmm10, .xmm11] : List XReg) ++
+    (load4 ++ ((transpose .xmm0 .xmm1 .xmm2 .xmm3 ++ addT 2 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg)) ++
       out 2 ([.xmm0, .xmm1, .xmm2, .xmm3] : List XReg)))))))))) := by
   simp only [finishWith, store89, load4, incAdd, List.append_assoc, List.cons_append, List.nil_append]
 
@@ -1398,19 +1508,22 @@ theorem finishWith_ok {out : Nat → List XReg → List Instr} {E : Nat → (Nat
   refine WP.block_append (WP.mono (store89_ok hh hrcx hwb) fun s₁ ⟨sl₁, l₁, f₁, g₁, rd₁, wr₁⟩ => ?_)
   have G₁ := f₁.mono sub₁
   -- Row 0.
-  refine WP.block_append (WP.mono (addRow_in (row := 0) (S := stateAt s.mem st) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (r0.lanes (l₁ _) (l₁ _) (l₁ _) (l₁ _)) (by rw [g₁, hrdi]; exact rowS_frame G₁ sdd 0)
+  refine WP.block_append (WP.mono (tAdd_ok (row := 0) (S := stateAt s.mem st) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (hw_row (by decide) (r0.lanes (l₁ _) (l₁ _) (l₁ _) (l₁ _)))
+    (by rw [g₁, hrdi]; exact rowS_frame G₁ sdd 0)
     (rdst s₁ g₁ rd₁ wr₁ 0 (by decide))) fun s₂ ⟨a₂, l₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
   refine WP.block_append (WP.mono (o0 _ s₂ a₂ (by rw [g₂, g₁]) (by rw [wr₂, wr₁]))
     fun s₃ ⟨d₃, f₃, l₃, g₃, rd₃, wr₃⟩ => ?_)
   rw [m₂] at f₃ d₃
   have G₃ := G₁.trans (f₃.mono sub₂)
   -- Row 1.
-  refine WP.block_append (WP.mono (addRow_in (row := 1) (S := stateAt s.mem st) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (r1.lanes (fun l => by simp (disch := decide) only [l₃, l₂, l₁])
+  refine WP.block_append (WP.mono (tAdd_ok (row := 1) (S := stateAt s.mem st) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (hw_row (by decide) (r1.lanes (fun l => by simp (disch := decide) only [l₃, l₂, l₁])
       (fun l => by simp (disch := decide) only [l₃, l₂, l₁])
       (fun l => by simp (disch := decide) only [l₃, l₂, l₁])
-      (fun l => by simp (disch := decide) only [l₃, l₂, l₁]))
+      (fun l => by simp (disch := decide) only [l₃, l₂, l₁])))
     (by rw [g₃, g₂, g₁, hrdi]; exact rowS_frame G₃ sdd 1)
     (rdst s₃ (by rw [g₃, g₂, g₁]) (by rw [rd₃, rd₂, rd₁]) (by rw [wr₃, wr₂, wr₁]) 1 (by decide)))
     fun s₄ ⟨a₄, l₄, g₄, m₄, rd₄, wr₄⟩ => ?_)
@@ -1419,38 +1532,44 @@ theorem finishWith_ok {out : Nat → List XReg → List Instr} {E : Nat → (Nat
   rw [m₄] at f₅ d₅
   have G₅ := G₃.trans (f₅.mono sub₂)
   -- Row 3, with the counters.
-  refine WP.block_append (WP.mono (addRow3_in (buf := buf) (S := stateAt s.mem st)
+  refine WP.block_append (WP.mono (hw3_ok (buf := buf) (S := stateAt s.mem st)
     (r3.lanes (fun l => by simp (disch := decide) only [l₅, l₄, l₃, l₂, l₁])
       (fun l => by simp (disch := decide) only [l₅, l₄, l₃, l₂, l₁])
       (fun l => by simp (disch := decide) only [l₅, l₄, l₃, l₂, l₁])
       (fun l => by simp (disch := decide) only [l₅, l₄, l₃, l₂, l₁]))
-    (by rw [g₅, g₄, g₃, g₂, g₁, hrdi]; exact rowS_frame G₅ sdd 3)
-    (rdst s₅ (by rw [g₅, g₄, g₃, g₂, g₁]) (by rw [rd₅, rd₄, rd₃, rd₂, rd₁])
-      (by rw [wr₅, wr₄, wr₃, wr₂, wr₁]) 3 (by decide))
     (by rw [g₅, g₄, g₃, g₂, g₁, hrcx]) (by rw [wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwb)
-    (incs_frame_incR hinc G₅ idd)) fun s₆ ⟨a₆, l₆, g₆, m₆, rd₆, wr₆⟩ => ?_)
-  refine WP.block_append (WP.mono (o3 _ s₆ a₆ (by rw [g₆, g₅, g₄, g₃, g₂, g₁])
-    (by rw [wr₆, wr₅, wr₄, wr₃, wr₂, wr₁])) fun s₇ ⟨d₇, f₇, l₇, g₇, rd₇, wr₇⟩ => ?_)
-  rw [m₆] at f₇ d₇
+    (incs_frame_incR hinc G₅ idd)) fun s₆ ⟨w₆, l₆, g₆, m₆, rd₆, wr₆⟩ => ?_)
+  refine WP.block_append (WP.mono (tAdd_ok (row := 3) (S := stateAt s.mem st) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) w₆
+    (by rw [g₆, g₅, g₄, g₃, g₂, g₁, hrdi, m₆]; exact rowS_frame G₅ sdd 3)
+    (rdst s₆ (by rw [g₆, g₅, g₄, g₃, g₂, g₁]) (by rw [rd₆, rd₅, rd₄, rd₃, rd₂, rd₁])
+      (by rw [wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]) 3 (by decide))) fun s₆' ⟨a₆, l₆', g₆', m₆', rd₆', wr₆'⟩ => ?_)
+  refine WP.block_append (WP.mono (o3 _ s₆' a₆ (by rw [g₆', g₆, g₅, g₄, g₃, g₂, g₁])
+    (by rw [wr₆', wr₆, wr₅, wr₄, wr₃, wr₂, wr₁])) fun s₇ ⟨d₇, f₇, l₇, g₇, rd₇, wr₇⟩ => ?_)
+  rw [m₆', m₆] at f₇ d₇
   have G₇ := G₅.trans (f₇.mono sub₂)
   have H₇ : Frame R s₁.mem s₇.mem := (f₃.trans f₅).trans f₇
   -- Row 2, from the slots.
   refine WP.block_append (WP.mono (load4_ok (slots_frame sl₁ H₇ ssd)
-    (by rw [g₇, g₆, g₅, g₄, g₃, g₂, g₁, hrcx]) (by rw [wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwb))
+    (by rw [g₇, g₆', g₆, g₅, g₄, g₃, g₂, g₁, hrcx])
+    (by rw [wr₇, wr₆', wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]; exact hwb))
     fun s₈ ⟨a₈, l₈, g₈, m₈, rd₈, wr₈⟩ => ?_)
-  refine WP.block_append (WP.mono (addRow_in (row := 2) (S := stateAt s.mem st) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) a₈
-    (by rw [g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁, hrdi, m₈]; exact rowS_frame G₇ sdd 2)
-    (rdst s₈ (by rw [g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁]) (by rw [rd₈, rd₇, rd₆, rd₅, rd₄, rd₃, rd₂, rd₁])
-      (by rw [wr₈, wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]) 2 (by decide)))
+  refine WP.block_append (WP.mono (tAdd_ok (row := 2) (S := stateAt s.mem st) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (hw_row (by decide) a₈)
+    (by rw [g₈, g₇, g₆', g₆, g₅, g₄, g₃, g₂, g₁, hrdi, m₈]; exact rowS_frame G₇ sdd 2)
+    (rdst s₈ (by rw [g₈, g₇, g₆', g₆, g₅, g₄, g₃, g₂, g₁])
+      (by rw [rd₈, rd₇, rd₆', rd₆, rd₅, rd₄, rd₃, rd₂, rd₁])
+      (by rw [wr₈, wr₇, wr₆', wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]) 2 (by decide)))
     fun s₉ ⟨a₉, l₉, g₉, m₉, rd₉, wr₉⟩ => ?_)
-  refine WP.mono (o2 _ s₉ a₉ (by rw [g₉, g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁])
-    (by rw [wr₉, wr₈, wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]))
+  refine WP.mono (o2 _ s₉ a₉ (by rw [g₉, g₈, g₇, g₆', g₆, g₅, g₄, g₃, g₂, g₁])
+    (by rw [wr₉, wr₈, wr₇, wr₆', wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]))
     fun s₁₀ ⟨d₁₀, f₁₀, _, g₁₀, rd₁₀, wr₁₀⟩ => ?_
   rw [m₉, m₈] at f₁₀ d₁₀
   exact ⟨s₁.mem, s₃.mem, s₅.mem, s₇.mem, f₁, d₃, d₅, d₇, d₁₀, G₇.trans (f₁₀.mono sub₂),
-    by rw [g₁₀, g₉, g₈, g₇, g₆, g₅, g₄, g₃, g₂, g₁],
-    by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, rd₅, rd₄, rd₃, rd₂, rd₁],
-    by rw [wr₁₀, wr₉, wr₈, wr₇, wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]⟩
+    by rw [g₁₀, g₉, g₈, g₇, g₆', g₆, g₅, g₄, g₃, g₂, g₁],
+    by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆', rd₆, rd₅, rd₄, rd₃, rd₂, rd₁],
+    by rw [wr₁₀, wr₉, wr₈, wr₇, wr₆', wr₆, wr₅, wr₄, wr₃, wr₂, wr₁]⟩
 
 /-- `xorRow`'s effect: row `row` of the blocks `B` XORed into the 512 bytes at `a`. -/
 def XorEff (a : Addr) (row : Nat) (B : Nat → CState) (m m' : Mem) : Prop :=
@@ -1459,14 +1578,15 @@ def XorEff (a : Addr) (row : Nat) (B : Nat → CState) (m m' : Mem) : Prop :=
     else m (a + BitVec.ofNat 64 k)
 
 theorem xorRow_out {a : Addr} {g : Reg → BitVec 64} {w : List Region} (hrsi : g .rsi = a) (hw : DWin w a)
-    {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg} (e01 : x0 ≠ x1) (e02 : x0 ≠ x2)
-    (e03 : x0 ≠ x3) (e12 : x1 ≠ x2) (e13 : x1 ≠ x3) (e23 : x2 ≠ x3)
+    {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg}
     (h0 : x0 ≠ .xmm12 ∧ x0 ≠ .xmm13 ∧ x0 ≠ .xmm14 ∧ x0 ≠ .xmm15)
     (h1 : x1 ≠ .xmm12 ∧ x1 ≠ .xmm13 ∧ x1 ≠ .xmm14 ∧ x1 ≠ .xmm15)
     (h2 : x2 ≠ .xmm12 ∧ x2 ≠ .xmm13 ∧ x2 ≠ .xmm14 ∧ x2 ≠ .xmm15)
     (h3 : x3 ≠ .xmm12 ∧ x3 ≠ .xmm13 ∧ x3 ≠ .xmm14 ∧ x3 ≠ .xmm15) :
     OutOk xorRow (XorEff a) [dR5 a] g w row x0 x1 x2 x3 := fun _ t hB hg hwt =>
-  rowOut_ok hrow e01 e02 e03 e12 e13 e23 h0 h1 h2 h3 hB (by rw [hg]; exact hrsi) (by rw [hwt]; exact hw)
+  WP.mono (rowOutT_ok hrow ⟨h0.1, h0.2.1⟩ ⟨h1.1, h1.2.1⟩ ⟨h2.1, h2.2.1⟩ ⟨h3.1, h3.2.1⟩ hB
+    (by rw [hg]; exact hrsi) (by rw [hwt]; exact hw)) fun _ ⟨m, f, l, g', r, w'⟩ =>
+      ⟨m, f, fun r' l' _ _ _ _ n12 n13 _ _ => l r' l' n12 n13, g', r, w'⟩
 
 theorem finish_ok {st buf a : Addr} {vs : Nat → CState} {s : State} (hh : Holds buf false vs s)
     (hrdi : s.gpr .rdi = st) (hrcx : s.gpr .rcx = buf) (hrsi : s.gpr .rsi = a)
@@ -1483,14 +1603,10 @@ theorem finish_ok {st buf a : Addr} {vs : Nat → CState} {s : State} (hh : Hold
     subst hr
     exact ⟨dsd, dbd.sub_left (slotsR_sub buf), dbd.sub_left (Offset.sub_base buf (by lit_omega))⟩
   refine WP.mono (finishWith_ok (out := xorRow) hh hrdi hrcx hwst hwb hinc dsb hR
-    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide))
-    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide))
-    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide))
-    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide)))
+    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide))
+    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide))
+    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide))
+    (xorRow_out hrsi hwd (by decide) (by decide) (by decide) (by decide) (by decide)))
     fun s' ⟨m₀, m₁, m₂, m₃, f₀, d₀, d₁, d₃, d₂, F, g, rd, wr⟩ => ⟨fun k hk => ?_, F, g, rd, wr⟩
   have e₀ : m₀ (a + BitVec.ofNat 64 k) = s.mem (a + BitVec.ofNat 64 k) :=
     f₀.bytes (R := dR5 a) (fun r hr => by

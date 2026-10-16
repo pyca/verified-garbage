@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.OmegaLit
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 
 /-!
 # RSASSA-PSS on AArch64: selecting the hash value of the last block

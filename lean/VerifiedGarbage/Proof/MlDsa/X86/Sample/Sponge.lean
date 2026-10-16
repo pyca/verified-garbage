@@ -6,6 +6,22 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.MlKem.KPke
+meta import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): the SHAKE output of the sampling functions
@@ -166,7 +182,7 @@ structure ZInv (L : Lay) (s₀ : State) (k : Nat) (s : State) : Prop extends Ctx
 
 theorem zinit_piece : Piece (Pre L) (PubP L) (Ctx L) (ZInv L · 0) (.block (zeroInit 0)) := by
   refine Piece.taint [] (fun s₀ s hp h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-    (by taint_decide)
+    (by native_taint_decide)
   apply WP.of_runBlock
   simp only [zeroInit, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     Option.map_some, Option.bind_some, State.setReg, arithFlags, State.setFlags, Option.some.injEq,
@@ -205,7 +221,7 @@ theorem zloop_piece (hL : L.Ok) : Piece (Pre L) (PubP L) (ZInv L · 0) (ZInv L �
     (fun k _ s₀ s₀' s s' _ _ hq h h' r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
-      rw [h.ebx, h'.ebx, hq.sP hL]) (by taint_decide)
+      rw [h.ebx, h'.ebx, hq.sP hL]) (by native_taint_decide)
 
 /-- `Ctx`, with the Keccak state zero. -/
 structure Z (L : Lay) (s₀ s : State) : Prop extends Ctx L s₀ s where

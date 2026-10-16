@@ -1,18 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86.Step
+public import VerifiedGarbage.Proof.X25519.X86.Field32.Call
+public import VerifiedGarbage.Impl.X25519.X86.Fn
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # X25519 on x86 (32-bit): the inversion
 
-The inversion is a sequence of blocks of operations and runs of squarings
-(`sqn`, a loop counted by `esi`); each leaves the slots with the values of an
-evaluation of it (`runI`), which for the inversion's steps is `invert` of `Z2`
-in `T1`.
+`z2` copied to byte 128, a call of `vg_gf25519_r32_pow250`
+(`pow250Call_ok'`), then five squarings and a product (`Field32`'s `sqnC` and
+`mulC`) leave `invert z2` in `E1` (`invert_ok`). The copy overwrites the
+scalar's bits and the call the 8 bytes of stack below `esp`: from then on,
+what holds is `After`.
 -/
 
 @[expose] public section
@@ -20,148 +25,98 @@ in `T1`.
 namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
+open VG.Proof.X25519 (pw pw_mul sqn_pw pow_pw)
+open VG.Proof.X25519.X86.Field32 (Cs CSpec cenv opMul opSqn sqnC mulC pow250Call_ok')
 
-/-- `n` squarings in place. -/
-theorem sqn_ok {x : BitVec 32} {k : Nat} {s₀ s : State} (hb : Base x k s₀ s) {o n : Nat}
-    (ho : isSlot 288 o = true) (hn : 1 ≤ n) (hn' : n < 2 ^ 32) :
-    WP isa (Impl.X25519.X86.sqn o n) s fun s' => Base x k s₀ s' ∧
-      ∀ q, isSlot 288 q = true → F s'.mem x q = Function.update (F s.mem x) o
-        (Proof.X25519.sqn (F s.mem x o) n) q := by
-  have hv : opValid 288 (.mul o o o) = true := by
-    simp only [opValid, opOut, opIns, ho, List.all_cons, List.all_nil, Bool.and_self]
-  refine WP.seq (Wp.wp_movi fun s₁ u₁ => WP.block_nil ?_)
-  have b₁ : Base x k s₀ s₁ := hb.of_frame (o := 288) (n := 640) (u₁.other _ (by decide))
-    (u₁.other _ (by decide)) u₁.rd u₁.wr (by rw [u₁.mem]; exact Frame.refl _ _) (by decide) (by decide)
-    (.inr (Nat.le_refl _)) (by decide)
-  refine WP.loop (M := isa) (fun c s' => 1 ≤ c ∧ c ≤ n ∧ Base x k s₀ s' ∧ s'.gpr .esi = BitVec.ofNat 32 c ∧
-      ∀ q, isSlot 288 q = true → F s'.mem x q = Function.update (F s.mem x) o
-        (Proof.X25519.sqn (F s.mem x o) (n - c)) q) (fun c s' hc => ?_) n s₁
-    ⟨hn, Nat.le_refl _, b₁, u₁.gpr, fun q hq => by
-      rw [Nat.sub_self, u₁.mem]
-      by_cases e : q = o
-      · subst e; rw [Function.update_self]; rfl
-      · rw [Function.update_of_ne e]⟩
-  obtain ⟨c1, cn, b, esi, hv'⟩ := hc
-  refine WP.block_append (WP.mono (op_ok b.ctx (.mul o o o) hv) fun s₂ ⟨k₂, f₂, e₂⟩ => ?_)
-  refine Wp.wp_subi fun s₃ u₃ _ z₃ => WP.block_nil ?_
-  have b₃ : Base x k s₀ s₃ := (b.ops k₂ f₂).of_frame (o := 288) (n := 640) (u₃.other _ (by decide))
-    (u₃.other _ (by decide)) u₃.rd u₃.wr (by rw [u₃.mem]; exact Frame.refl _ _) (by decide) (by decide)
-    (.inr (Nat.le_refl _)) (by decide)
-  have esi₃ : s₃.gpr .esi = BitVec.ofNat 32 (c - 1) := by
-    rw [u₃.gpr, k₂.esi, esi]; exact Wp.ofNat_pred c1
-  have val₃ : ∀ q, isSlot 288 q = true → F s₃.mem x q = Function.update (F s.mem x) o
-      (Proof.X25519.sqn (F s.mem x o) (n - (c - 1))) q := fun q hq => by
-    rw [u₃.mem, e₂ q hq]
-    simp only [opOut, opVal]
-    by_cases e : q = o
-    · subst e
-      rw [Function.update_self, Function.update_self, hv' q hq, Function.update_self,
-        show n - (c - 1) = n - c + 1 by omega_using [c1, cn]]
-      rfl
-    · rw [Function.update_of_ne e, Function.update_of_ne e, hv' q hq, Function.update_of_ne e]
-  have ev : isa.eval .ne s₃ = some (!decide (c - 1 = 0)) := by
-    show s₃.zf.map (!·) = _
-    rw [z₃, k₂.esi, esi, Wp.ofNat_pred c1, Wp.ofNat_beq_zero (by omega_using [cn, hn'])]; rfl
-  by_cases e : c = 1
-  · subst e
-    refine .inl ⟨by rw [ev]; rfl, b₃, fun q hq => ?_⟩
-    rw [val₃ q hq]; rfl
-  · exact .inr ⟨by rw [ev]; simp only [show c - 1 ≠ 0 by omega_using [c1, e], decide_false]; rfl, c - 1,
-      by omega_using [c1], by omega_using [c1, e], by omega_using [cn], b₃, esi₃, val₃⟩
+/-- What holds after the inversion: `Base` without the scalar's bits, with
+the 8 bytes of stack below `esp` on entry (`callStk s₀`) changed too. -/
+structure After (x : BitVec 32) (s₀ s : State) : Prop where
+  ctx : Ctx 4096 x s
+  esp : s.gpr .esp = s₀.gpr .esp
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  frame : Frame [scR 4096 x, callStk s₀] s₀.mem s.mem
+  saved : Spill.Saved s.mem (addr x) s₀.gpr savedSlots
 
-/-- A step of the inversion: a block of operations, or a run of squarings. -/
-inductive IStep
-  | ops (l : List Op)
-  | sqn (o n : Nat)
+theorem Base.after {x : BitVec 32} {k : Nat} {s₀ s : State} (h : Base x k s₀ s) : After x s₀ s :=
+  ⟨h.ctx, h.esp, h.rd, h.wr, h.frame.mono fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact List.mem_cons_self .., h.saved⟩
 
-def IStep.prog : IStep → Prog isa
-  | .ops l => .block (Impl.X25519.X86.ops l)
-  | .sqn o n => Impl.X25519.X86.sqn o n
+/-- A change of the working space past the saved registers keeps `After`. -/
+theorem After.of_frame {x : BitVec 32} {s₀ s s' : State} (h : After x s₀ s)
+    (hedi : s'.gpr .edi = s.gpr .edi) (hesp : s'.gpr .esp = s.gpr .esp) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) {o n : Nat} (hf : Frame [sub x o n] s.mem s'.mem) (ho : o + n ≤ 4096)
+    (hlo : 16 ≤ o) (hon : o < 4096) : After x s₀ s' := by
+  have hfit := h.ctx.fit
+  refine ⟨h.ctx.keep hedi hwr hesp, hesp.trans h.esp, hrd.trans h.rd, hwr.trans h.wr, ?_,
+    h.saved.of_readW fun p hp => ?_⟩
+  · exact h.frame.trans (hf.sub fun _ hr => ⟨_, List.mem_cons_self .., by
+      rw [List.mem_singleton.mp hr, scR_eq]
+      exact sub_sub hfit (Nat.zero_le _) (by omega_using [ho]) hon⟩)
+  · have := savedSlots_bound p hp
+    exact wd_frame1 hf hfit ho (by omega_using [this]) (.inl (by omega_using [this, hlo]))
 
-/-- Steps in sequence. -/
-def progOf : List IStep → Prog isa
-  | [] => .block []
-  | [st] => st.prog
-  | st :: l => .seq st.prog (progOf l)
+/-- The operations keep `After`. -/
+theorem After.ops {x : BitVec 32} {s₀ s s' : State} (h : After x s₀ s) (hk : Keep s s')
+    (hf : Frame [sub x 288 640] s.mem s'.mem) : After x s₀ s' :=
+  h.of_frame hk.edi hk.esp hk.rd hk.wr hf (by decide) (by decide) (by decide)
 
-def IStep.valid : IStep → Bool
-  | .ops l => l.all (opValid 288)
-  | .sqn o n => isSlot 288 o && 1 ≤ n && n < 2 ^ 32
+/-- The chain's tail for the inversion: five squarings, and `z^11`. -/
+theorem invert_tail (z : Fe) :
+    VG.Proof.X25519.sqn (pw z (2 ^ 250 - 1)) 5 * pw z 11 = VG.Proof.X25519.invert z := by
+  rw [VG.Proof.X25519.invert_eq, pow_pw, sqn_pw, pw_mul]
+  exact congrArg (pw z) (by decide)
 
-/-- The values of the slots after a step. -/
-def IStep.run (V : Nat → Fe) : IStep → Nat → Fe
-  | .ops l => X86.run l V
-  | .sqn o n => Function.update V o (Proof.X25519.sqn (V o) n)
+theorem tail_spec (x : BitVec 32) :
+    CSpec x (.seq (Field32.sqn Field32.E1 Field32.E1 5) (.block (mul Field32.E1 Field32.E1 Field32.E0)))
+      (fun e => opMul 1 1 0 (opSqn 1 1 5 e)) :=
+  (sqnC x 1 1 5 (by decide) (by decide)).seq (mulC x 1 1 0)
 
-def runI : List IStep → (Nat → Fe) → Nat → Fe
-  | [], V => V
-  | st :: l, V => runI l (st.run V)
-
-theorem IStep.run_congr {V V' : Nat → Fe} (st : IStep) (hv : st.valid = true)
-    (h : ∀ q, isSlot 288 q = true → V q = V' q) : ∀ q, isSlot 288 q = true → st.run V q = st.run V' q := by
-  cases st with
-  | ops l =>
-    simp only [IStep.valid, List.all_eq_true] at hv
-    exact X86.run_congr l hv h
-  | sqn o n =>
-    simp only [IStep.valid, Bool.and_eq_true, decide_eq_true_eq] at hv
-    intro q hq
-    by_cases e : q = o
-    · subst e; simp only [IStep.run, Function.update_self, h q hq]
-    · simp only [IStep.run, Function.update_of_ne e, h q hq]
-
-theorem runI_congr (l : List IStep) (hv : ∀ st ∈ l, st.valid = true) :
-    ∀ {V V' : Nat → Fe}, (∀ q, isSlot 288 q = true → V q = V' q) → ∀ q, isSlot 288 q = true → runI l V q = runI l V' q := by
-  induction l with
-  | nil => exact fun h q hq => h q hq
-  | cons st l ih =>
-    intro V V' h q hq
-    exact ih (fun o ho => hv o (List.mem_cons_of_mem _ ho))
-      (IStep.run_congr st (hv st List.mem_cons_self) h) q hq
-
-theorem IStep.ok {x : BitVec 32} {k : Nat} {s₀ s : State} (hb : Base x k s₀ s) (st : IStep)
-    (hv : st.valid = true) :
-    WP isa st.prog s fun s' => Base x k s₀ s' ∧ ∀ q, isSlot 288 q = true → F s'.mem x q = st.run (F s.mem x) q := by
-  cases st with
-  | ops l =>
-    simp only [IStep.valid, List.all_eq_true] at hv
-    exact WP.mono (ops_ok l hb.ctx hv) fun s' ⟨k', f', e'⟩ => ⟨hb.ops k' f', e'⟩
-  | sqn o n =>
-    simp only [IStep.valid, Bool.and_eq_true, decide_eq_true_eq] at hv
-    exact sqn_ok hb hv.1.1 hv.1.2 hv.2
-
-theorem progOf_ok {x : BitVec 32} {k : Nat} {s₀ : State} :
-    ∀ (l : List IStep) {s : State}, Base x k s₀ s → (∀ st ∈ l, st.valid = true) →
-    WP isa (progOf l) s fun s' => Base x k s₀ s' ∧ ∀ q, isSlot 288 q = true → F s'.mem x q = runI l (F s.mem x) q
-  | [], _, hb, _ => WP.block_nil ⟨hb, fun _ _ => rfl⟩
-  | [st], _, hb, hv => WP.mono (IStep.ok hb st (hv st List.mem_cons_self)) fun _ ⟨b, e⟩ => ⟨b, e⟩
-  | st :: st' :: l, s, hb, hv => by
-    refine WP.seq (WP.mono (IStep.ok hb st (hv st List.mem_cons_self)) fun s₁ ⟨b₁, e₁⟩ => ?_)
-    refine WP.mono (progOf_ok (st' :: l) b₁ fun o ho => hv o (List.mem_cons_of_mem _ ho))
-      fun s₂ ⟨b₂, e₂⟩ => ⟨b₂, fun q hq => ?_⟩
-    rw [e₂ q hq]
-    exact runI_congr (st' :: l) (fun o ho => hv o (List.mem_cons_of_mem _ ho)) e₁ q hq
-
-/-- The inversion's steps. -/
-def invSteps : List IStep :=
-  [.ops [.mul T0 Z2 Z2, .copy T1 T0], .sqn T1 2,
-    .ops [.mul T1 Z2 T1, .mul T0 T0 T1, .mul T2 T0 T0, .mul T1 T1 T2, .copy T2 T1], .sqn T2 5,
-    .ops [.mul T1 T2 T1, .copy T2 T1], .sqn T2 10,
-    .ops [.mul T2 T2 T1, .copy T3 T2], .sqn T3 20,
-    .ops [.mul T2 T3 T2], .sqn T2 10,
-    .ops [.mul T1 T2 T1, .copy T2 T1], .sqn T2 50,
-    .ops [.mul T2 T2 T1, .copy T3 T2], .sqn T3 100,
-    .ops [.mul T2 T3 T2], .sqn T2 50,
-    .ops [.mul T1 T2 T1], .sqn T1 5,
-    .ops [.mul T1 T1 T0]]
-
-theorem invert_eq : Impl.X25519.X86.invert = progOf invSteps := rfl
-
-theorem invSteps_valid : ∀ st ∈ invSteps, st.valid = true := by decide
-
-theorem runI_invert (V : Nat → Fe) : runI invSteps V T1 = VG.Proof.X25519.invert (V Z2) := by
-  simp only [runI, invSteps, IStep.run, X86.run, opOut, opVal, Function.update_apply, T0, T1, T2, T3, Z2]
-  simp only [↓reduceIte, Nat.reduceEqDiff]
-  rfl
+/-- The inversion, from `Base` with the stack below `esp` apart from the working space. -/
+theorem invert_ok {x : BitVec 32} {k : Nat} {s₀ s : State} (h : Base x k s₀ s)
+    (hE : 8 ≤ (s₀.gpr .esp).toNat) (hd : (scR 4096 x).Disjoint (callStk s₀)) :
+    WP isa Impl.X25519.X86.invert s fun s' => After x s₀ s' ∧
+      F s'.mem x Field32.E1 = VG.Proof.X25519.invert (F s.mem x Z2) ∧ F s'.mem x X2 = F s.mem x X2 := by
+  have hfit := h.ctx.fit
+  -- `z2` to byte 128.
+  refine WP.seq (WP.mono (copy_ok h.ctx (o := Spec.X25519.Field32.aAt) (a := Z2) (by decide) (by decide)
+    (by decide)) fun s₁ ⟨k₁, f₁, e₁⟩ => ?_)
+  have a₁ := h.after.of_frame k₁.edi k₁.esp k₁.rd k₁.wr f₁ (by decide) (by decide) (by decide)
+  have z₁ : F s₁.mem x Spec.X25519.Field32.aAt = F s.mem x Z2 := congrArg toFe e₁
+  have x₁ : F s₁.mem x X2 = F s.mem x X2 := congrArg toFe (fe_frame1 f₁ hfit (by decide) (by decide) (by decide))
+  -- The call.
+  have cs₁ : callStk s₁ = callStk s₀ := by rw [callStk, callStk, a₁.esp]
+  refine WP.seq (WP.mono (pow250Call_ok' a₁.ctx (by rw [a₁.esp]; exact hE) (cs₁ ▸ hd))
+    fun s₂ ⟨k₂, f₂, p₁, p₀⟩ => ?_)
+  rw [cs₁] at f₂
+  have w₂ : ∀ d, d + 4 ≤ 512 → wd s₂.mem x d = wd s₁.mem x d := fun d hd' =>
+    wd_frame f₂ fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact sub_disj (by omega_using [hfit, hd']) (by omega_using [hfit]) (.inl hd')
+      · exact hd.sub_left (by
+          rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by omega_using [hd']) (by omega_using [hd']))
+  have a₂ : After x s₀ s₂ := by
+    refine ⟨k₂.ctx a₁.ctx, k₂.esp.trans a₁.esp, k₂.rd.trans a₁.rd, k₂.wr.trans a₁.wr,
+      a₁.frame.trans (f₂.sub fun r hr => ?_), a₁.saved.of_readW fun p hp => ?_⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., by
+          rw [scR_eq]; exact sub_sub hfit (Nat.zero_le _) (by decide) (by decide)⟩
+      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (Nat.le_refl _)⟩
+    · have := savedSlots_bound p hp
+      exact w₂ _ (by omega_using [this])
+  have x₂ : F s₂.mem x X2 = F s₁.mem x X2 :=
+    congrArg toFe (fe_frame fun j hj => w₂ _ (by simp only [X2]; omega_using [hj]))
+  -- Five squarings and `z^11`.
+  refine WP.mono (tail_spec x s₂ a₂.ctx) fun s₃ ⟨k₃, e₃⟩ => ?_
+  refine ⟨a₂.of_frame k₃.edi k₃.esp k₃.rd k₃.wr k₃.frame (by decide) (by decide) (by decide), ?_, ?_⟩
+  · change cenv s₃.mem x 1 = _
+    rw [e₃]
+    simp only [opMul, opSqn, Function.update_self, Function.update_of_ne (show (0 : Cs) ≠ 1 by decide)]
+    change VG.Proof.X25519.sqn (F s₂.mem x Field32.E1) 5 * F s₂.mem x Field32.E0 = _
+    rw [p₁, p₀, z₁, invert_tail]
+  · rw [← x₁, ← x₂]
+    exact congrArg toFe (fe_frame1 k₃.frame hfit (by decide) (by decide) (by decide))
 
 end VG.Proof.X25519.X86

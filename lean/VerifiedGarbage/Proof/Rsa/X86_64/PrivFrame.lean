@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the frame
@@ -110,7 +113,7 @@ structure PreF (s : State) : Prop where
   hdpl : (stackArg s 7).toNat = (stackArg s 3).toNat
   hqil : (stackArg s 11).toNat = (stackArg s 3).toNat
   hdql : (stackArg s 9).toNat = (stackArg s 5).toNat
-  hsl : 16 * (s.gpr .rcx).toNat ≤ (stackArg s 13).toNat
+  hsl : 16 * (s.gpr .rcx).toNat + 32 ≤ (stackArg s 13).toNat
 
 theorem preF_of {s : State} (h : chkContract.pre s) : PreF s := by
   simp only [chkContract] at h

@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # X25519 on x86 (32-bit): the contract the proof is written against
@@ -31,11 +32,13 @@ def x25519X86 : Contract X86.isa where
     let scratch : Region := ⟨(arg s 3).setWidth 64, 4096⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩
     s.rd = [scalar, point, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
       scalar.Disjoint scratch ∧ point.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
       ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧
       (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 3).toNat + 4096 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
+      (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧ stk.Disjoint out ∧ stk.Disjoint scratch ∧ stk.Disjoint args ∧
+      8 ≤ (s.gpr .esp).toNat
   post s s' := Spec.X25519.bytesAt s'.mem ((arg s 0).setWidth 64) 32 =
     Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
       (Spec.X25519.bytesAt s.mem ((arg s 2).setWidth 64) 32)
@@ -56,6 +59,7 @@ abbrev scalarR : Region := ⟨(arg s₀ 1).setWidth 64, 32⟩
 abbrev pointR : Region := ⟨(arg s₀ 2).setWidth 64, 32⟩
 abbrev argsR : Region := ⟨argAddr s₀ 0, 16⟩
 abbrev retR : Region := ⟨(s₀.gpr .esp).setWidth 64, 4⟩
+abbrev stkR : Region := ⟨(s₀.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩
 end
 
 /-- The precondition, by name. -/
@@ -74,10 +78,14 @@ structure Pre (s₀ : State) : Prop where
   point_fit : (arg s₀ 2).toNat + 32 ≤ 2 ^ 32
   sc_fit : (arg s₀ 3).toNat + 4096 ≤ 2 ^ 32
   sp_fit : (s₀.gpr .esp).toNat + 20 ≤ 2 ^ 32
+  stk_out : (stkR s₀).Disjoint (outR s₀)
+  stk_sc : (stkR s₀).Disjoint (scR 4096 (arg s₀ 3))
+  stk_args : (stkR s₀).Disjoint (argsR s₀)
+  sp_room : 8 ≤ (s₀.gpr .esp).toNat
 
 theorem Pre.of (s₀ : State) (h : Proof.X25519.x25519X86.pre s₀) : Pre s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18⟩
 
 theorem argAddr_eq (s : State) (i : Nat) : argAddr s i = addr (s.gpr .esp) (4 + 4 * i) := rfl
 

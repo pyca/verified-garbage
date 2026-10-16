@@ -20,6 +20,20 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+public import VerifiedGarbage.Proof.AesSiv.Words
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Modes.AArch64.Xor
+meta import VerifiedGarbage.Proof.AesSiv.Ctr32
+meta import VerifiedGarbage.Proof.AesSiv.Words
+meta import VerifiedGarbage.Proof.Cmac.Stream
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Proof.Modes.AArch64.Xor
 
 /-!
 # Camellia-CTR on AArch64 meets its contracts

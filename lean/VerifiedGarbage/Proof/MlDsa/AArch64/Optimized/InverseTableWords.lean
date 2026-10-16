@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTableConstants
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

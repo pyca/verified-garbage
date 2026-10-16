@@ -4,11 +4,14 @@ public import VerifiedGarbage.Proof.Cast5.X86_64.Scan
 public import VerifiedGarbage.Proof.Cast5.Rotate
 public import VerifiedGarbage.Proof.Cast5.Round
 public import VerifiedGarbage.Proof.Cast5.Table
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # CAST5 on x86-64: a round

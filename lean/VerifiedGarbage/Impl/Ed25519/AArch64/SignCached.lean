@@ -5,9 +5,9 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.SignCached.Prefix
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Entry
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Wipe
-public import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
+import VerifiedGarbage.Impl.Ed25519.AArch64.Scalar
 public import VerifiedGarbage.Impl.Ed25519.AArch64.MulAdd
-public import VerifiedGarbage.Spec.Ed25519.CachedSign
+import VerifiedGarbage.Spec.Ed25519.CachedSign
 
 /-! Complete cached-key signing. SHA-512 is generic over its compression
 implementation. The local frame holds scalar32, prefix64, nonce96,

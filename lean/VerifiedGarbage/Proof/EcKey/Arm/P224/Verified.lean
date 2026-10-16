@@ -4,12 +4,14 @@ public import VerifiedGarbage.Proof.EcKey.Arm.Main
 meta import VerifiedGarbage.Proof.EcKey.Arm.Main
 public import VerifiedGarbage.Proof.EcKey.Arm.P224.Contract
 meta import VerifiedGarbage.Proof.EcKey.Arm.P224.Contract
-public import VerifiedGarbage.Proof.EcKey.Arm.P224.Lit
+import VerifiedGarbage.Proof.EcKey.Arm.P224.Lit
 meta import VerifiedGarbage.Proof.EcKey.Arm.P224.Lit
-public import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
+import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P224.Verified
 public import VerifiedGarbage.Impl.EcKey.P224.Arm
 meta import VerifiedGarbage.Impl.EcKey.P224.Arm
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -69,7 +71,7 @@ theorem pk_arm (hL : Weierstrass.Law Spec.P224.curve) (s : State) (hs : pkArm.pr
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
 theorem pk_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyP224 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
   intro s t _ _ ⟨_, h0, h1, h2⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),

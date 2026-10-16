@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Rounds
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Sym
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

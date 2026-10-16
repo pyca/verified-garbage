@@ -1,8 +1,10 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.InverseVerified
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
 # P-192's inversions modulo `p` and `n` on AArch64

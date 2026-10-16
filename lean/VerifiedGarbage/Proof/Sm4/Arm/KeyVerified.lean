@@ -2,14 +2,26 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
 meta import VerifiedGarbage.Proof.Sm4.Arm.KeyEk
-public import VerifiedGarbage.Proof.Sm4.Arm.Verified
-meta import VerifiedGarbage.Proof.Sm4.Arm.Verified
+import VerifiedGarbage.Proof.Sm4.Arm.Ecb
+meta import VerifiedGarbage.Proof.Sm4.Arm.Ecb
+public import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Proof.Sm4.Scratch
+public import VerifiedGarbage.Proof.Framework.Arm.Inline
+meta import VerifiedGarbage.Proof.Framework.Arm.Inline
+public import VerifiedGarbage.Proof.Framework.Arm.Taint
+meta import VerifiedGarbage.Proof.Framework.Arm.Taint
+public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+meta import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+public import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4.Arm.Lit
 meta import VerifiedGarbage.Proof.Sm4.Arm.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # SM4 key expansion on ARMv7 meets its contracts
@@ -19,7 +31,7 @@ time, by the taint analysis: the pointers are public, and so is the
 schedule's pointer the code keeps in a slot of the scratch buffer (stored
 through `sb`, the buffer's base, after each extraction). `expandKey_framed`
 runs it with its working space on the stack, zeroed on return, as
-`ecb_framed` does.
+`ecbAny_framed` does.
 -/
 
 @[expose] public section

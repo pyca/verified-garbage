@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.CarryRegs
+import VerifiedGarbage.Proof.X448.Wide.CarryRegs
 public import VerifiedGarbage.Proof.X448.AArch64.Step
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! Untrusted: split a wide digit into two normalized interface limbs. -/
 

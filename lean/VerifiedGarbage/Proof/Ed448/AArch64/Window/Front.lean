@@ -11,6 +11,15 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
+import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
+public import VerifiedGarbage.Proof.Ed448.Recover
+public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
+public import VerifiedGarbage.Proof.X448.AArch64.Ladder
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
 
 /-!
 # Ed448 verification on AArch64: the entry and the decodings
@@ -105,7 +114,7 @@ structure FrontOut (s : State) (base : Addr) (t : State) : Prop where
   wr : t.wr = s.wr
   mem : Outside base 0 8192 s.mem t.mem
 
-theorem wsave_eq : ventry ++ wsave = (ventry ++ ((List.range 57).flatMap fun i => [.ldrb .x4 .x2 i, .strb .x4 .x3 (KB + i)]) ++
+theorem wsave_eq : wsave = (((List.range 57).flatMap fun i => [.ldrb .x4 .x2 i, .strb .x4 .x3 (KB + i)]) ++
     Impl.X448.AArch64.Fast.save) ++ Impl.X448.AArch64.Fast.vsave := by
   simp only [wsave, List.append_assoc]
 
@@ -124,14 +133,17 @@ structure EntryOut (s : State) (base : Addr) (t : State) : Prop where
   pB : VG.Proof.Ed448.pt (E t.mem base) 8 9 10 = Spec.Ed448.basePoint
   d : E t.mem base 11 = Spec.Ed448.d
 
-/-- The entry, the challenge's copy and the save of `x21`–`x28`. -/
-theorem prefix_ok {s : State} {base : Addr} (hb3 : s.gpr .x3 = base) (hw : (⟨base, 8192⟩ : Region) ∈ s.wr)
-    (hn : base.toNat + 8192 ≤ 2 ^ 64) (rch : ∀ i < 57, InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 i) 1)
+/-- After the entry (`ventry_ok`), the challenge's copy and the save of `x21`–`x28`. -/
+theorem prefix_ok {s s1 : State} {base : Addr}
+    (V : Scr s1 base ∧ BoundedEnv s1.mem base ∧ Saved base s.gpr s1.mem ∧ LrSaved base s.gpr s1.mem ∧
+      s1.gpr .x20 = 0 ∧ Keeps [.x12, .x20, .x4] s s1 ∧ Outside base 0 8192 s.mem s1.mem ∧
+      E s1.mem base 0 = 0 ∧ VG.Proof.Ed448.pt (E s1.mem base) 8 9 10 = Spec.Ed448.basePoint ∧
+      E s1.mem base 11 = Spec.Ed448.d)
+    (rch : ∀ i < 57, InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 i) 1)
     (fch : ∀ i < 57, 8192 ≤ ofs base (s.gpr .x2 + BitVec.ofNat 64 i)) :
-    WP isa (.block (ventry ++ ((List.range 57).flatMap fun i => [.ldrb .x4 .x2 i, .strb .x4 .x3 (KB + i)]) ++
-      Impl.X448.AArch64.Fast.save)) s (EntryOut s base) := by
-  rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (ventry_ok hb3 hw hn) fun s1 ⟨hs1, b1, sv1, lr1, x20₁, k1, o1, z1, pB1, d1⟩ => ?_
+    WP isa (.block (((List.range 57).flatMap fun i => [.ldrb .x4 .x2 i, .strb .x4 .x3 (KB + i)]) ++
+      Impl.X448.AArch64.Fast.save)) s1 (EntryOut s base) := by
+  obtain ⟨hs1, b1, sv1, lr1, x20₁, k1, o1, z1, pB1, d1⟩ := V
   rw [WP.block_append_iff]
   refine WP.mono (copyK_ok hs1 (k1.1 _ (by decide)) (fun i hi => by rw [k1.2.1, k1.2.2]; exact rch i hi) fch)
     fun s2 ⟨kb2, o2, k2⟩ => ?_
@@ -168,9 +180,10 @@ theorem V_preserved : ∀ k < 8, VG.Impl.Curve448.AArch64.Neon.V (8 + k) ∈ pre
 theorem entry_ok {s : State} {base : Addr} (hb3 : s.gpr .x3 = base) (hw : (⟨base, 8192⟩ : Region) ∈ s.wr)
     (hn : base.toNat + 8192 ≤ 2 ^ 64) (rch : ∀ i < 57, InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 i) 1)
     (fch : ∀ i < 57, 8192 ≤ ofs base (s.gpr .x2 + BitVec.ofNat 64 i)) :
-    WP isa (.block (ventry ++ wsave)) s fun t => EntryOut s base t ∧ SavedV base s.v t.mem := by
+    WP isa (.seq ventry (.block wsave)) s fun t => EntryOut s base t ∧ SavedV base s.v t.mem := by
+  refine WP.seq (WP.mono (WP.preservedV (ventry_ok hb3 hw hn) (by lit_decide)) fun s1 ⟨V1, v1⟩ => ?_)
   rw [wsave_eq]
-  refine WP.block_append_iff.mpr (WP.mono (WP.preservedV (prefix_ok hb3 hw hn rch fch) (by lit_decide))
+  refine WP.block_append_iff.mpr (WP.mono (WP.preservedV (prefix_ok V1 rch fch) (by lit_decide))
     fun s3 ⟨E3, v3⟩ => WP.mono (vsave_ok E3.scr) fun s4 ⟨svv, o4, g4, rd4, wr4⟩ => ?_)
   have hV : VSAVE = 4736 := rfl
   have k4 : Keeps [] s3 s4 := ⟨fun r _ => congrFun g4 r, rd4, wr4⟩
@@ -179,7 +192,7 @@ theorem entry_ok {s : State} {base : Addr} (hb3 : s.gpr .x3 = base) (hw : (⟨ba
     by rw [congrFun g4]; exact E3.x20,
     E3.kb.of_frame fun i hi => o4 _ (Or.inl (by rw [kb_ofs base hi]; simp only [KB]; omega)),
     E3.regs.trans (k4.mono (by decide)), E3.mem.trans (o4.mono (by decide) (by decide)), ?_, ?_, ?_⟩,
-    fun k hk => by rw [svv k hk, v3 _ (V_preserved k hk)]⟩
+    fun k hk => by rw [svv k hk, v3 _ (V_preserved k hk), v1 _ (V_preserved k hk)]⟩
   · rw [o4.limbs (Or.inl (by have := i.isLt; simp only [slot]; omega)) (by have := i.isLt; simp only [slot]; omega)
       (by omega)]
     exact E3.bnd i j hj

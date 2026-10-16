@@ -4,15 +4,15 @@ public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Callers.Sums
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.Sign
-public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
+import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Verify.Verify
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejNtt
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.RejBounded
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
+import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.Ball
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sample.ExpandMask

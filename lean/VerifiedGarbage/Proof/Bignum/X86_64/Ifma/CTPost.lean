@@ -12,6 +12,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.Amm52
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+meta import VerifiedGarbage.Proof.Bignum.Amm52
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
 
 /-!
 # RSA with AVX512_IFMA on x86-64: constant time, after the exponentiations
@@ -99,8 +105,8 @@ def PostPre (p : PostPub) (s : State) : Prop :=
   ∃ (minv mx mq : BitVec 64) (X : Nat) (qib : List Byte) (c : Bool),
     Good s p.B p.Z p.w minv ∧ p.w < 2 ^ 28 ∧ p.w = 2 * p.wx ∧
     word s.mem p.B (8 * sWsQ) = off p.B p.oq ∧ WsAt s.mem p.B p.oq p.wx mq ∧
-    p.oq + slot p.wx 8 + tabBytes p.wx ≤ p.Z ∧ slot p.w 8 ≤ p.op ∧
-    p.op + slot p.wx 8 + tabBytes p.wx ≤ p.oq ∧ 2 ≤ p.wx ∧
+    p.oq + slot p.wx 8 + wsTab p.wx ≤ p.Z ∧ slot p.w 8 ≤ p.op ∧
+    p.op + slot p.wx 8 + wsTab p.wx ≤ p.oq ∧ 2 ≤ p.wx ∧
     word s.mem p.B (8 * sWsP) = off p.B p.op ∧ WsAt s.mem p.B p.op p.wx mx ∧ XVals s p.B p.op p.wx mx X ∧
     1 < X ∧ wv s.mem (off p.B p.op) (slot p.wx Public.aY) p.wx < X ∧
     word s.mem (off p.B p.op) (8 * sMaskX) = mask c ∧ word s.mem p.B (8 * sQinv) = p.qp ∧
@@ -136,7 +142,7 @@ theorem post_chain (M : Mont) {p : PostPub} {s : State} (h : PostPre p s) : Q0 M
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, hs.ld (d := 8 * sWsP) (by unfold sWsP sFn; omega), hsp]) rfl)
     fun s₁ ⟨⟨hdi₁, hm₁⟩, k₁⟩ => ?_⟩
   have hc₁ : SubCtx s₁ B Z op w wx mx :=
-    SubCtx.mk' (hs.congr k₁.2.2) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by omega)
+    SubCtx.mk' (hs.congr k₁.2.2) (by rw [hm₁]; exact hg.hdr) (by rw [hm₁]; exact hws) hdi₁ hlo (by have := tabBytes_le_wsTab wx; omega)
   have hX₁ : XVals s₁ B op wx mx X := ⟨by rw [hm₁]; exact hX.n, by rw [hm₁]; exact hX.inv, by rw [hm₁]; exact hX.one⟩
   refine ⟨⟨mx, X, hc₁, hX₁, hwx2, hwx, show w < 2 ^ 30 by omega, hX1, by decide⟩, ?_⟩
   -- `redc` of `R_n²`.
@@ -145,7 +151,7 @@ theorem post_chain (M : Mont) {p : PostPub} {s : State} (h : PostPre p s) : Q0 M
   have fx₂ : Frm B [xRange op wx] s.mem s₂.mem := by
     rw [← hm₁]; exact r₂.to_x (redcRanges_ok wx) hoL (List.mem_singleton_self _)
   have hb₂ : ∀ d, d + 8 ≤ op → word s₂.mem B d = word s.mem B d := fun d hd => fx₂.x_below hd ho64
-  have hab₂ : ∀ d, op + slot wx 8 + tabBytes wx ≤ d → d + 8 ≤ 2 ^ 64 → word s₂.mem B d = word s.mem B d :=
+  have hab₂ : ∀ d, op + slot wx 8 + wsTab wx ≤ d → d + 8 ≤ 2 ^ 64 → word s₂.mem B d = word s.mem B d :=
     fun d hd hd' => fx₂.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega) hd'
   have hs₂ := hc₂.scr
   have hsP := hc₂.good.scr
@@ -234,7 +240,7 @@ theorem post_chain (M : Mont) {p : PostPub} {s : State} (h : PostPre p s) : Q0 M
     have hmx : 8 * sMaskX + 8 ≤ 8 * 31 + 8 := by unfold sMaskX sFn; omega
     rw [ho₈.word (.inl (by omega)) (by omega), ha₇.hslot (by decide), ho₆.word (.inl (by omega)) (by omega),
       r₂.word_eq hrm (by omega), hm₁]; exact hmask
-  exact h2_chain M hc₈ hX₈ hX1 hw28 hwx2 hwx (by rw [hY₈]; exact hyl) (by rw [hv₈]; exact hlt₇) hM₈
+  exact h2_chain M hc₈ (show op + slot wx 8 + wsTab wx ≤ Z by omega) hX₈ hX1 hw28 hwx2 hwx (by rw [hY₈]; exact hyl) (by rw [hv₈]; exact hlt₇) hM₈
     (by rw [hb₈ _ (by unfold sQinv sFn; omega)]; exact hqp) (by rw [hb₈ _ (by unfold sPlen sFn; omega)]; exact hql)
     (hqs.congrK i08 (((((k₁.trans k₂).trans k25).trans k₆).trans k₇).trans k₈)) hq1 hq2 hqw hqi
 

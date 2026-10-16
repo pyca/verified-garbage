@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragS
+import VerifiedGarbage.Proof.MlKem.X86_64.FragS
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
+import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragHash
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-KEM on x86-64: four entries of the matrix at once

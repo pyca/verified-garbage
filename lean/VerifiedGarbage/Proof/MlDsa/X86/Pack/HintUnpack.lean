@@ -8,6 +8,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_unpack`, the setup
@@ -263,7 +267,7 @@ structure ZI (s₀ : State) (t : Nat) (s : State) : Prop extends Base s₀ s whe
   len : s.mem.readW (argAddr s₀ 1) 32 = arg s₀ 1
 
 theorem zinit_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) (ZI · 0) (.block hbuZeroInit) := by
-  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by native_taint_decide)
   · subst e
     have b₀ : Base s₀ (P0 s₀) := ⟨rfl, rfl, rfl, Frame.refl _ _⟩
     have a3 : addr ((P0 s₀).gpr .esp) 32 = argAddr s₀ 3 := argEa rfl 3
@@ -308,7 +312,7 @@ theorem zloop_piece : Piece Pre Pub (ZI · 0) (fun s₀ s => ZI s₀ (hL s₀) s
     (fun t s₀ s₀' s s' _ _ hq h h' r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
-      rw [h.ecx, h'.ecx, hq.a3]) (by taint_decide)
+      rw [h.ecx, h'.ecx, hq.a3]) (by native_taint_decide)
 
 /-! ## The state of the loops -/
 
@@ -340,7 +344,7 @@ structure OM (s₀ : State) (i : Nat) (o : Option (Array (Vector Bool n) × Nat)
 
 theorem setup_piece : Piece Pre Pub (fun s₀ s => ZI s₀ (hL s₀) s) (fun s₀ s => OM s₀ 0 (PS s₀ 0) s)
     (.block hbuSetup) := by
-  refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · have a0 : addr (s.gpr .esp) 20 = argAddr s₀ 0 := argEa h.esp 0
     have a1 : addr (s.gpr .esp) 24 = argAddr s₀ 1 := argEa h.esp 1
     have a2 : addr (s.gpr .esp) 28 = argAddr s₀ 2 := argEa h.esp 2

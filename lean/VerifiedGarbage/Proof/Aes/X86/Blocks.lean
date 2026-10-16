@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.X86.Ecb
-public import VerifiedGarbage.Proof.Aes.X86.Ctr32
+import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Aes.X86.BlocksContract
 import all Init.Data.Array.Basic

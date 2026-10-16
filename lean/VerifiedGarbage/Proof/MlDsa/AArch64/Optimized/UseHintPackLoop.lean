@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackLoad
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.UseHintPackFields
-public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! ## From `UseHintPackFour.lean` -/
 

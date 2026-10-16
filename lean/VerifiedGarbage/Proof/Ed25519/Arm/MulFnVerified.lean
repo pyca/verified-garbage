@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # `vg_gf25519_r16_mul` on ARMv7, verified
@@ -119,7 +123,7 @@ theorem armPub_agree {s₁ s₂ : State} (h : armPub s₁ s₂) :
 
 theorem mul_ct : ConstantTime isa mulArm.pre mulArm.pub mulFn :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 /-- A state satisfying the precondition: `ws` at `0x1000`, the elements at offset 0, all zero. -/
 def satF : State where

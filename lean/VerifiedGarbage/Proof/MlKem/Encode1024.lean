@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Proof.MlKem.Compress1024
+import VerifiedGarbage.Proof.MlKem.Compress1024
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.Block
+import VerifiedGarbage.Proof.CmacTripleDes.Block
 public import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

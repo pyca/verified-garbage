@@ -54,11 +54,11 @@ def VReg.q (r : VReg) : String := s!"q{r.index}"
 def VReg.s (r : VReg) : String := s!"s{r.index}"
 
 def VArr.name : VArr → String
-  | .s4 => "4s" | .d2 => "2d" | .b16 => "16b"
+  | .s4 => "4s" | .d2 => "2d" | .b16 => "16b" | .h8 => "8h"
 
 /-- The element size of an arrangement, in an element operand (`v<n>.<t>[i]`). -/
 def VArr.elem : VArr → String
-  | .s4 => "s" | .d2 => "d" | .b16 => "b"
+  | .s4 => "s" | .d2 => "d" | .b16 => "b" | .h8 => "h"
 
 def VLogicOp.name : VLogicOp → String
   | .and => "and" | .orr => "orr" | .eor => "eor" | .bic => "bic" | .orn => "orn"
@@ -77,6 +77,9 @@ def VPermOp.name : VPermOp → String
   | .zip1 => "zip1" | .zip2 => "zip2" | .trn1 => "trn1" | .trn2 => "trn2" | .uzp1 => "uzp1"
   | .uzp2 => "uzp2"
 
+def VMulHOp.name : VMulHOp → String
+  | .mul => "mul" | .mla => "mla" | .mls => "mls" | .sqdmulh => "sqdmulh" | .sqrdmulh => "sqrdmulh"
+
 def Sha1Op.name : Sha1Op → String
   | .c => "sha1c" | .p => "sha1p" | .m => "sha1m"
 
@@ -89,6 +92,8 @@ def VOp.asm : VOp → String
   | .ins .d2 d i n => s!"mov v{d.index}.d[{i}], {n.name .x}"
   | .dup .b16 d n => s!"dup {d.b}, {n.name .w}"
   | .ins .b16 d i n => s!"mov v{d.index}.b[{i}], {n.name .w}"
+  | .dup .h8 d n => s!"dup {d.arr "8h"}, {n.name .w}"
+  | .ins .h8 d i n => s!"mov v{d.index}.h[{i}], {n.name .w}"
   | .dupS d n i => s!"dup {d.s}, v{n.index}.s[{i}]"
   | .dupE a d n i => s!"dup {d.arr a.name}, v{n.index}.{a.elem}[{i}]"
   | .insE a d i n j => s!"mov v{d.index}.{a.elem}[{i}], v{n.index}.{a.elem}[{j}]"
@@ -116,6 +121,7 @@ def VOp.asm : VOp → String
   | .mls d n m => s!"mls {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
   | .sqdmulh d n m => s!"sqdmulh {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
   | .umin d n m => s!"umin {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
+  | .mulH op d n m => s!"{op.name} {d.arr "8h"}, {n.arr "8h"}, {m.arr "8h"}"
   | .pmull false d n m => s!"pmull {d.arr "1q"}, {n.arr "1d"}, {m.arr "1d"}"
   | .pmull true d n m => s!"pmull2 {d.arr "1q"}, {n.arr "2d"}, {m.arr "2d"}"
   | .aese d n => s!"aese {d.b}, {n.b}"
@@ -172,6 +178,8 @@ def Instr.asm : Instr → List String
   | .madd sz d n m a => [s!"madd {d.name sz}, {n.name sz}, {m.name sz}, {a.name sz}"]
   | .mul sz d n m => [s!"mul {d.name sz}, {n.name sz}, {m.name sz}"]
   | .umulh d n m => [s!"umulh {d.name .x}, {n.name .x}, {m.name .x}"]
+  | .umaddl d n m a => [s!"umaddl {d.name .x}, {n.name .w}, {m.name .w}, {a.name .x}"]
+  | .umull d n m => [s!"umull {d.name .x}, {n.name .w}, {m.name .w}"]
   | .rev32 d n => [s!"rev {d.name .w}, {n.name .w}"]
   | .rev d n => [s!"rev {d.name .x}, {n.name .x}"]
   | .movz sz d imm hw => [s!"movz {d.name sz}, #{imm.toNat}, lsl #{16 * hw}"]

@@ -3,13 +3,14 @@ module
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
-public import VerifiedGarbage.Proof.MdStream.AArch64.Common
-public import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.MdStream.AArch64.Common
+import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # Streaming SHA-512 on AArch64: `init`

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.X86.Variant
 meta import VerifiedGarbage.Proof.Aes.X86.Variant
-public import VerifiedGarbage.Proof.Aes.X86.Ctr32
+import VerifiedGarbage.Proof.Aes.X86.Ctr32
 meta import VerifiedGarbage.Proof.Aes.X86.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86.ExpandKey
 meta import VerifiedGarbage.Proof.Aes.X86.ExpandKey

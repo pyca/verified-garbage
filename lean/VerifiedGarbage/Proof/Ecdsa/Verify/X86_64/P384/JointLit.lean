@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifyLit
-public import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
+import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
 meta import VerifiedGarbage.Proof.P384.X86_64.JointPartsLit
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
+import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -27,6 +27,10 @@ parallel), reading those of the cache and the doubling (`JointPartsLit`).
 
 namespace VG
 
+-- The public key's check and the inversion modulo `n`, which the
+-- constant-time check of the verifier's prefix (`JointChecks`) reads too.
+materialize_code Proof.Ecdsa.Verify.X86_64.P384.jointCheck := Impl.Ecdh.X86_64.Cfg.check Impl.P384.X86_64.p384v
+materialize_code Proof.Ecdsa.Verify.X86_64.P384.jointNPow := Impl.Ecdsa.X86_64.Cfg.nPow Impl.P384.X86_64.p384v
 materialize_code Impl.Ecdsa.Verify.X86_64.jointVerifyP384
 
 end VG

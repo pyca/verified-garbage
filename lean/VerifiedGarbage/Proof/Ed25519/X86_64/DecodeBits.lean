@@ -3,11 +3,12 @@ module
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointDecode
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverParity
 public import VerifiedGarbage.Proof.Ed25519.Bytes
-public import VerifiedGarbage.Proof.X25519.X86_64.Setup
+import VerifiedGarbage.Proof.X25519.X86_64.Setup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
 
 /-! Load the encoded y-coordinate and its separate sign bit. -/
 

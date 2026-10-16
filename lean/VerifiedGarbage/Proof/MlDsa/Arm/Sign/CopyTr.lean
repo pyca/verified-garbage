@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Blocks
-public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
 meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA signing on ARMv7: copies leak only their addresses
@@ -39,7 +41,7 @@ theorem copy_tr {dst src : Ptr} {n : Nat} (b1 : src.1 ∈ bases) (b2 : dst.1 ∈
     (postDep (block_nomem_tr (copySetup_nomem dst src n))
       (fun x y _ => ⟨copySetup_ok b1 b2 x, copySetup_ok b1 b2 y⟩)
       fun x y x' y' hp ⟨a0, a1, a2, _⟩ ⟨c0, c1, c2, _⟩ => ?_)
-    (VG.Proof.MlKem.Arm.taint_prog [.r0, .r1, .r2] (fun _ _ h => h) (by taint_decide))
+    (VG.Proof.MlKem.Arm.taint_prog [.r0, .r1, .r2] (fun _ _ h => h) (by native_taint_decide))
   obtain ⟨e1, e2⟩ := hP x y hp
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

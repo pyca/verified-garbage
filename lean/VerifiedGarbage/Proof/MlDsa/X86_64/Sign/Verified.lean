@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lit
 
 /-!
 # ML-DSA signing on x86-64: verified
@@ -90,11 +94,17 @@ theorem sign_same {m mc : Prog isa → Bool} (hm : Comp m mc) {B : Backend} (h1 
   same_tac hm
 
 theorem sign0_ctlC {p : Params} (h3 : Ok3 p) : ctlC (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty) p) = true := by
-  rcases h3 with rfl | rfl | rfl <;> decide +kernel
+  rcases h3 with rfl | rfl | rfl
+  · exact (by lit_decide : ctlC sign44 = true)
+  · exact (by lit_decide : ctlC sign65 = true)
+  · exact (by lit_decide : ctlC sign87 = true)
 
 theorem sign0_sp {p : Params} (h3 : Ok3 p) :
     (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty) p).allInstrs (fun i => !isa.writesSp i) = true := by
-  rcases h3 with rfl | rfl | rfl <;> decide +kernel
+  rcases h3 with rfl | rfl | rfl
+  · exact (by lit_decide : sign44.allInstrs (fun i => !isa.writesSp i) = true)
+  · exact (by lit_decide : sign65.allInstrs (fun i => !isa.writesSp i) = true)
+  · exact (by lit_decide : sign87.allInstrs (fun i => !isa.writesSp i) = true)
 
 variable (v : ArithImpl) {p : Params} (h3 : Ok3 p)
 include h3

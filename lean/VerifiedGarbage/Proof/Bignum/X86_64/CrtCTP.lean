@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # RSA with the CRT on x86-64: constant time, `p`'s phase
@@ -43,25 +45,25 @@ def PO4 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
   s.gpr .rdi = off p.ph.B p.ph.o ∧ WP isa (.block [leave]) s (H0 M p.h)
 
 /-- Before the exponentiation. -/
-def PO3 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
-  PwPre sWsP sDp sPlen p.pw s ∧ WP isa (seqs (powSteps M.mm sWsP sDp sPlen)) s (PO4 M p)
+def PO3 (M : Mont) (E : CrtExpL M) (p : PPhasePub) (s : State) : Prop :=
+  PwPre sWsP sDp sPlen p.pw s ∧ WP isa (seqs (powSteps M.mm E.code sWsP sDp sPlen)) s (PO4 M p)
 
 /-- Before `c G mod N`. -/
-def PO2 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
-  GoodW p.nw s ∧ WP isa (M.mm Public.aY Public.aXm Public.aY) s (PO3 M p)
+def PO2 (M : Mont) (E : CrtExpL M) (p : PPhasePub) (s : State) : Prop :=
+  GoodW p.nw s ∧ WP isa (M.mm Public.aY Public.aXm Public.aY) s (PO3 M E p)
 
 /-- Before `m_q G mod N`. -/
-def PO1 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
-  Mq0 M p.mq s ∧ WP isa (seqs (mqSteps M.mm)) s (PO2 M p)
+def PO1 (M : Mont) (E : CrtExpL M) (p : PPhasePub) (s : State) : Prop :=
+  Mq0 M p.mq s ∧ WP isa (seqs (mqSteps M.mm)) s (PO2 M E p)
 
 /-- Before `pPhase`. -/
-def PO0 (M : Mont) (p : PPhasePub) (s : State) : Prop :=
-  UPre sWsP p.u s ∧ WP isa (seqs (unitSteps M.mm sWsP)) s (PO1 M p)
+def PO0 (M : Mont) (E : CrtExpL M) (p : PPhasePub) (s : State) : Prop :=
+  UPre sWsP p.u s ∧ WP isa (seqs (unitSteps M.mm sWsP)) s (PO1 M E p)
 
 /-- From before the exponentiation: `PO3`, as `pPhase_ok` runs the rest. -/
-theorem o3_of (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64}
+theorem o3_of (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64}
     {N X C o wx oq wq : Nat} {ep qp : Addr} {eb qib : List Byte} {c : Bool}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z)
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hslv : word s.mem B (8 * sWsP) = off B o) (hws : WsAt s.mem B o wx mx)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hcg : wv s.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
@@ -72,7 +74,7 @@ theorem o3_of (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64
     (hmask : word s.mem (off B o) (8 * sMaskX) = mask c)
     (hqp : word s.mem B (8 * sQinv) = qp) (hql : qib.length = eb.length) (hqs : Src s B Z qp qib)
     (hqw : (qib.length + 7) / 8 ≤ wx) (hqi : c = true → Spec.Rsa.os2ip qib < X) :
-    PO3 M ⟨⟨B, Z, w, minv, N, o, wx, ep, eb.length⟩, oq, wq, qp⟩ s := by
+    PO3 M E ⟨⟨B, Z, w, minv, N, o, wx, ep, eb.length⟩, oq, wq, qp⟩ s := by
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
@@ -81,7 +83,7 @@ theorem o3_of (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64
   -- `c^dP R_p mod p`.
   refine ⟨⟨minv, mx, N, X, C, eb, hg, hw28, hlo, hhi, hwx2, hwx, by decide, hslv, hws, hX, hX1, hXodd, hcg, hpl,
       hpy, by decide, by decide, hep, hel, rfl, hL1, hL2, he⟩,
-    WP.mono (powPhase_ok M hg hw28 hlo hhi hwx2 hwx (sl := sWsP) (by decide) hslv hws hX hX1 hXodd hcg hpl hpy
+    WP.mono (powPhase_ok M E hg hw28 hlo hhi hwx2 hwx (sl := sWsP) (by decide) hslv hws hX hX1 hXodd hcg hpl hpy
       (sd := sDp) (slen := sPlen) (by decide) (by decide) hep hel hL1 hL2 he)
       fun s₄ ⟨hc₄, hX₄, hlt₄, _, hM₄, fx₄, k₄⟩ => ?_⟩
   -- Back to the modulus'.
@@ -113,7 +115,7 @@ theorem o3_of (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64
   exact this
 
 /-- `pPhase_ok`'s hypotheses give `PO0`. -/
-theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s := by
+theorem o0_of (M : Mont) (E : CrtExpL M) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M E p s := by
   obtain ⟨⟨B, Z, w, minv, N, o, wx, ep, len⟩, oq, wq, qp⟩ := p
   dsimp only [PPre] at h
   obtain ⟨mx, mq, X, C, eb, qib, c, h⟩ := h
@@ -128,7 +130,7 @@ theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s 
   have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
   have hQ8 : 256 ≤ slot wq 8 := by unfold slot hdrBytes; omega
   have hz : B.toNat + slot w 8 ≤ 2 ^ 64 := by omega
-  have hhi' : o + slot wx 8 + tabBytes wx ≤ Z := by omega
+  have hhi' : o + slot wx 8 + wsTab wx ≤ Z := by omega
   have hsub : ∀ {rs : List (Nat × Nat)}, (∀ r ∈ rs, r ∈ pRanges w ++ [xRange o wx]) → ∀ {m m' : Mem},
       Frm B rs m m' → Frm B (pRanges w ++ [xRange o wx]) m m' := fun h _ _ f => f.mono h
   have sgx : ∀ r ∈ gRanges w ++ [xRange o wx], r ∈ pRanges w ++ [xRange o wx] := fun r hr =>
@@ -158,19 +160,7 @@ theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s 
   have f₀₂ := f₁'.trans f₂'
   have hN₂ : NVals s₂ B w minv N := by
     exact ⟨by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.n,
-      by rw [f₂'.word_eq (fun r hr => by
-        have := pxR_bound hlo r hr
-        have := slot_le (w := w) (show Public.aN < 8 by decide)
-        simp only [pRanges, gRanges, xRange, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-          or_false] at hr
-        have s1 := slot_sep (w := w) (show Public.aN ≠ Public.aAcc by decide)
-        have s2 := slot_sep (w := w) (show Public.aN ≠ Public.aTmp by decide)
-        have s3 := slot_sep (w := w) (show Public.aN ≠ Public.aY by decide)
-        have s4 := slot_sep (w := w) (show Public.aN ≠ Public.aX by decide)
-        have := hdr_lt_slot w Public.aN (show 31 < 32 by decide)
-        rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-          simp only [Crt.sD, Public.sCnt, sFn] at * <;> omega)
-        (by have := slot_le (w := w) (show Public.aN < 8 by decide); omega)]; exact hN₁.inv,
+      by rw [f₂'.px_word hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.inv,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.r2,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.r2lt,
       by rw [f₂'.px_wv hlo hz (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hN₁.one⟩
@@ -209,17 +199,17 @@ theorem o0_of (M : Mont) {p : PPhasePub} {s : State} (h : PPre p s) : PO0 M p s 
   have k03 := (k₁.trans k₂).trans k₃
   have hM₃ : word s₃.mem (off B o) (8 * sMaskX) = mask c := by
     rw [hpw f₃ sg' _ (by decide), hpw f₂ (fun r h => h) _ (by decide), hM₁]; exact hmask
-  exact o3_of M hg₃ hw28 hlo hhi' hwx2 hwx (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv)
+  exact o3_of M E hg₃ hw28 hlo hhi' hwx2 hwx (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hslv)
     hws₃ hX₃ hX1 hXodd hcg (by rw [hpY₃]; exact hpl₁) (fun hd => by rw [hpY₃]; exact hpy₁ hd)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hep)
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i03 k03) hM₃
     (by rw [f₀₃.px_hdr hlo (by decide) (by decide) (by decide)]; exact hqp) hql (hqs.congrK i03 k03) hqw hqi
 
 /-- `p`'s phase is constant time, given its pieces' claims. -/
-theorem pPhase_ct (M : Mont) (hU : UnitCT M sWsP) (hP : PowCT M sWsP sDp sPlen) (hRX : RedcCT M Public.aX)
-    (hL : LoadCT aChunk sQinv sPlen) : PPhaseCT M := by
+theorem pPhase_ct (M : Mont) (E : CrtExpL M) (hU : UnitCT M sWsP) (hP : PowCT M E sWsP sDp sPlen) (hRX : RedcCT M Public.aX)
+    (hL : LoadCT aChunk sQinv sPlen) : PPhaseCT M E := by
   unfold PPhaseCT
-  refine two_map id (fun _ _ h => o0_of M h) ?_
+  refine two_map id (fun _ _ h => o0_of M E h) ?_
   rw [pPhase_eq]
   refine ct_steps (by simp [unitSteps]) (by simp [mqSteps]) PPhasePub.u (fun _ _ h => h.1) (fun _ _ h => h.2)
     hU ?_

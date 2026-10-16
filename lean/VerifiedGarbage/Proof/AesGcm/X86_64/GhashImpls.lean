@@ -1,13 +1,20 @@
 module
 
+import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Lit
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
+import VerifiedGarbage.Proof.Gcm.X86_64.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Lit
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM on x86-64: the implementations of `vg_ghash`

@@ -1,10 +1,10 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Layout
-public import VerifiedGarbage.Proof.Ed448.PruneBytes
-public import VerifiedGarbage.Proof.Ed448.Scalar
-public import VerifiedGarbage.Proof.X448.Arm.BitWrite
-public import VerifiedGarbage.Proof.X25519.Arm.Instr
+import VerifiedGarbage.Proof.Ed448.PruneBytes
+import VerifiedGarbage.Proof.Ed448.Scalar
+import VerifiedGarbage.Proof.X448.Arm.BitWrite
+import VerifiedGarbage.Proof.X25519.Arm.Instr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Idea.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 public import VerifiedGarbage.Proof.Idea.CbcScratch
 meta import VerifiedGarbage.Proof.Idea.CbcScratch
-public import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
+import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Idea.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
@@ -20,6 +20,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # IDEA-CBC on x86-64 meets its contracts
@@ -101,55 +103,18 @@ theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
     change Spec.Idea.cbcBlocksAt _ _ _ = Spec.Cbc.decrypt _ _ (Spec.Idea.cbcBlocksAt _ _ _)
     rw [cbcBlocksAt_eq, cbcBlocksAt_eq]; exact hdata
 
-def cbcTaint : X86_64.Taint.T :=
-  { regs := .ofList [.rdi, .rsi, .rdx, .rcx, .r8, .rsp], flags := false,
-    lens := [0, 8 * 22], bases := [(.r8, 1, 0)] }
+/-- The initial taint: the registers of the arguments and the stack pointer are
+public. It knows nothing of the writable regions: the code never reads a public
+value back from them, and tracking them would cost the kernel at every store. -/
+def cbcTaint : X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]
 
-theorem cbcTaint_wf (s : State) (hs : cbcDecX86_64.pre s) : Taint.Wf cbcTaint s := by
-  obtain ⟨_, hwr, _, _, _, _, dDS, _, _, _, _, fitD, fitB⟩ := hs
-  refine ⟨fun _ => ?_, ?_⟩
-  · rw [hwr]
-    refine ⟨?_, ?_, ?_⟩
-    · exact List.Forall₂.cons (by change 0 ≤ 8 * (s.gpr .rcx).toNat; omega)
-        (List.Forall₂.cons (by change 8 * 22 ≤ 8 * 22; omega) List.Forall₂.nil)
-    · exact List.Pairwise.cons (fun r hr => by obtain rfl := List.mem_singleton.mp hr; exact dDS)
-        (List.Pairwise.cons (by simp) List.Pairwise.nil)
-    · intro r hr
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · change 8 * (s.gpr .rcx).toNat ≤ 2 ^ 64
-        have := (s.gpr .rdx).isLt; omega
-      · change 8 * 22 ≤ 2 ^ 64; omega
-  · intro p hp
-    simp only [cbcTaint, List.mem_singleton] at hp
-    subst p
-    unfold Taint.region
-    rw [hwr]
-    change s.gpr .r8 = s.gpr .r8 + (0 : BitVec 64)
-    exact (BitVec.add_zero _).symm
-
-theorem cbcTaint_agree (s t : State) (hs : cbcDecX86_64.pre s) (ht : cbcDecX86_64.pre t)
+theorem cbcTaint_agree (s t : State) (_ : cbcDecX86_64.pre s) (_ : cbcDecX86_64.pre t)
     (hp : cbcDecX86_64.pub s t) : X86_64.Taint.Agree cbcTaint s t := by
   obtain ⟨p1, p2, p3, p4, p5, p6⟩ := hp
-  refine ⟨?_, ?_, cbcTaint_wf s hs, cbcTaint_wf t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
-  · constructor
-    · intro r hr
-      simp only [cbcTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-      exacts [p1, p2, p3, p4, p5, p6]
-    · intro h
-      change false = true at h
-      contradiction
-  · intro _
-    rw [hs.2.1, ht.2.1, p3, p4, p5]
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro slot hslot
-    change slot ∈ ([] : List (Nat × Nat × Nat)) at hslot
-    exact False.elim (List.not_mem_nil hslot)
-  · intro r hr
-    simp only [cbcTaint, RegSet.not_mem_empty] at hr
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [p1, p2, p3, p4, p5, p6]
 
 theorem cbcDecrypt_ct : ConstantTime isa cbcDecX86_64.pre cbcDecX86_64.pub cbcDecrypt :=
   VG.Taint.constantTime (A := taint) cbcTaint cbcTaint_agree (by taint_decide)

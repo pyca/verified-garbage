@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Callee
+import VerifiedGarbage.Proof.AesOcb.AArch64.Callee
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+import VerifiedGarbage.Proof.AesOcb.AArch64.Words
 
 /-!
 # AES-OCB on AArch64: the entry (`entry`)

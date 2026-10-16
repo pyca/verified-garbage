@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseD
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimC
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimC
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimD
 
 /-!
 # ML-DSA signing on x86 (32-bit): the commitment of an iteration

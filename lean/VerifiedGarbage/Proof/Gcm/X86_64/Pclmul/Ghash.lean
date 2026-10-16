@@ -1,14 +1,16 @@
 module
 
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
+meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Lit
 public import VerifiedGarbage.Proof.Gcm.Poly
 meta import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
 public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
+import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 meta import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 public import Mathlib.Tactic.LinearCombination
 meta import Mathlib.Tactic.LinearCombination
@@ -18,15 +20,15 @@ public import Mathlib.Tactic.SplitIfs
 meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Gcm.X86_64.Rev
+import VerifiedGarbage.Proof.Gcm.X86_64.Rev
 meta import VerifiedGarbage.Proof.Gcm.X86_64.Rev
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
-public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 meta import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -904,7 +906,7 @@ theorem ghash_correct (s : State) (hs : ghashX86_64.pre s) :
     ∃ t s', Exec isa Impl.Gcm.X86_64.Pclmul.ghash s t s' ∧ abiPreserved s s' ∧ ghashX86_64.post s s'
       := by
   obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem ghash_ct : ConstantTime isa ghashX86_64.pre ghashX86_64.pub Impl.Gcm.X86_64.Pclmul.ghash :=
     by

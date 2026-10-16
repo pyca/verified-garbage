@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-public import VerifiedGarbage.Proof.Ed448.X86_64.CombLoop
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
+import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+import VerifiedGarbage.Proof.Ed448.X86_64.CombLoop
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseBits
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseEncode
 public import VerifiedGarbage.Proof.X448.X86_64.Main
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal

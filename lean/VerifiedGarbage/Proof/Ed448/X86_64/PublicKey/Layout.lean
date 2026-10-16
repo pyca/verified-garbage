@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Impl.Ed448.X86_64.PublicKey
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -7,6 +8,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -293,12 +296,12 @@ theorem ne_cs {r d : Reg} (hr : r ∈ calleeSaved) (hd : d ∉ calleeSaved) : r 
   fun e => hd (e ▸ hr)
 
 /-- Callee-saved registers, through writes of others. -/
-macro "cs_tac" : tactic => `(tactic| (
-  intro r hr
-  revert hr
-  simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
-  rintro (h | h | h | h | h | h | h) <;> subst h <;>
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
+tactic_template "cs_tac" : tactic => `(tactic| plain_simp_names (
+                   intro r hr
+                   revert hr
+                   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
+                   rintro (h | h | h | h | h | h | h) <;> subst h <;>
+                     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
 
 namespace Ctx
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.Proof.Ocb.Spec
 import all Init.Data.Array.Basic

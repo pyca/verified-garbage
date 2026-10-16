@@ -2,18 +2,23 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Layout
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Hash
 public import VerifiedGarbage.Impl.Ed25519.X86.PublicKey
-public import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
+import VerifiedGarbage.Proof.Ed25519.X86.PublicKey.Prune
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
-public import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Spec.Rc2
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.Setup`. -/
 
@@ -242,7 +247,7 @@ theorem setup_repr {s t u : State} (h : Facts s)
 theorem init_step {s t : State} (h : Facts s) (hc : Ctx s t) :
     WP isa (callWith initArgs Spec.Sha512.init512Api.name (Impl.Sha512.X86.Stream.init Spec.Sha512.H0_512)) t
       fun u => Ctx s u ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 u.mem ((arg s 2).setWidth 64) [] := by
-  refine WP.seq (WP.mono (setup_ok h hc (vs := [.caller 2 0]) (by decide) (by simp [Whole.valid]))
+  refine WP.seq (WP.mono (setup_ok h hc (vs := [.caller 2 0]) (by decide) (Whole.valid_all (by decide)))
     fun u ⟨hu, _, hs⟩ => ?_)
   have a0 := hs 0 (by decide)
   change Whole.slots (esp s) u 0 = arg s 2 + 0#32 at a0
@@ -268,7 +273,7 @@ theorem update_step {s t : State} (h : Facts s) (hc : Ctx s t)
         (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) := by
   refine WP.seq (WP.mono (setup_ok h hc
     (vs := [.caller 2 0, .const 0, .const 0, .caller 1 0, .const 32, .caller 2 192])
-    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ => ?_)
+    (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ => ?_)
   have a0 := hs 0 (by decide)
   have a1 := hs 1 (by decide)
   have a2 := hs 2 (by decide)
@@ -322,7 +327,7 @@ theorem finalize_step {s t : State} (h : Facts s) (hc : Ctx s t)
         Spec.Sha512.sha512 (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) := by
   refine WP.seq (WP.mono (setup_ok h hc
     (vs := [.caller 2 0, .const 32, .const 0, .frame 192, .caller 2 192])
-    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ => ?_)
+    (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ => ?_)
   have a0 := hs 0 (by decide)
   have a1 := hs 1 (by decide)
   have a2 := hs 2 (by decide)
@@ -418,7 +423,7 @@ theorem base_step {s t : State} (h : Facts s) (hc : Ctx s t) (hy : t.syms = s.sy
       fun u => Ctx s u ∧ Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 =
         Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul n Spec.Ed25519.basePoint) := by
   refine WP.seq (WP.mono_syms (setup_ok h hc (vs := [.caller 0 0, .frame 32, .caller 2 0])
-    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ yu => ?_)
+    (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ yu => ?_)
   have a0 := hs 0 (by decide)
   have a1 := hs 1 (by decide)
   have a2 := hs 2 (by decide)

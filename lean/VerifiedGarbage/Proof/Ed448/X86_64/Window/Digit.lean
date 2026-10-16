@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLoop
-public import VerifiedGarbage.Proof.Ed448.Window
+import VerifiedGarbage.Proof.Ed448.Window
 public import VerifiedGarbage.Impl.Ed448.X86_64.WindowRegister
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Mask
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Load each verification digit once for a register-resident scan. -/
 

@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Blowfish.X86
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Rc4.Dword
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Blowfish on x86 (32-bit): running blocks
@@ -25,12 +28,11 @@ open VG.Proof.MlDsa.X86.Pack (Keep WP.keep writesOnly addr_of_fit)
 theorem eaAt (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = addr (s.gpr b) d := rfl
 
 /-- Steps a block of the Blowfish code, from a state whose accesses the hypotheses permit. -/
-syntax "brun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| brun) => `(tactic| brun [])
-  | `(tactic| brun [$ls,*]) => `(tactic| (
+tactic_template "brun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
       try unfold imm at *
       xrun [eaAt, xlOff, xrOff, fOff, ppOff, ptrOff, cntOff, List.cons_append, List.nil_append, $ls,*]))
+/-- `brun` with no extra lemmas. -/
+macro "brun" : tactic => `(tactic| brun [])
 
 /-- `WP.keep` for `Keep` into a larger list. -/
 theorem Keep.trans_sub {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : Keep rs s₁ s₂)

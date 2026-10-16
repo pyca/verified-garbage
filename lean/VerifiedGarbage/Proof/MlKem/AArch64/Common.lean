@@ -6,10 +6,15 @@ public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.MlKem.Poly
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-KEM on AArch64: what the proofs share
@@ -37,27 +42,25 @@ theorem reduced_zero (p : Addr) : Reduced (fun _ => 0) p := fun i _ => by
 /-- `k.Implies k'` for `k'` built with `Sig.contract`, as `sig_implies`
 proves it, where the satisfying state `w` may have preconditions on
 polynomials of zeros (`reduced_zero`). -/
-syntax "mlkem_implies " "[" Lean.Parser.Tactic.simpLemma,* "]" " [" Lean.Parser.Tactic.simpLemma,* "]"
-  " using " term : tactic
-macro_rules
-  | `(tactic| mlkem_implies [$ls,*] [$ws,*] using $w) => `(tactic| exact
-      { pre := by sig_implies_pre [$ls,*]
-        post := by sig_implies_post [$ls,*]
-        pub := by sig_implies_pub [$ls,*]
-        sat := by
-          refine ⟨$w, ?_⟩
-          sig_pre [$ls,*]
-          and_intros
-          all_goals first
-            | rfl
-            | decide
-            | exact Region.disjoint_of_sep (by decide)
-            | exact reduced_zero _ _ ‹_›
-            | exact reduced_zero _
-            | (intro a h₁ h₂
-               set_option linter.unusedSimpArgs false in
-               simp only [Region.Contains, $ws,*] at h₁ h₂
-               bv_omega) })
+tactic_template "mlkem_implies " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" " [" ws:Lean.Parser.Tactic.simpLemma,* "]"
+  " using " w:term : tactic => `(tactic| exact
+                       { pre := by sig_implies_pre [$ls,*]
+                         post := by sig_implies_post [$ls,*]
+                         pub := by sig_implies_pub [$ls,*]
+                         sat := by
+                           refine ⟨$w, ?_⟩
+                           sig_pre [$ls,*]
+                           and_intros
+                           all_goals first
+                             | rfl
+                             | decide
+                             | exact Region.disjoint_of_sep (by decide)
+                             | exact reduced_zero _ _ ‹_›
+                             | exact reduced_zero _
+                             | (intro a h₁ h₂
+                                set_option linter.unusedSimpArgs false in
+                                simp only [Region.Contains, $ws,*] at h₁ h₂
+                                bv_omega) })
 
 /-- No instruction of `c` (without calls) writes a callee-saved register. -/
 theorem preserved_of {c : Prog isa} (h : c.allInstrs (keeps (RegSet.ofList preserved)) = true) :

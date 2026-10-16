@@ -86,7 +86,7 @@ theorem encryptBlocksP_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.p
           | exact Region.disjoint_of_sep (by decide)⟩ }
 
 theorem decryptBlocksP_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.powers)) :
-    Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)))
+    Verified X86_64.target (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) false (decFull st))
       (Spec.Gcm.decryptBlocksPrecomputedContract X86_64.abi 8) :=
   Verified.of_correct (decryptBlocksM_correct v st) (Blocks.decrypt_ct v st)
     { pre := by

@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Compare
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: correctness

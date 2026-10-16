@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseArithmetic
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentUnpackWord
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Util.CompileInductive
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.MlKem.AArch64.Compress
+import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 

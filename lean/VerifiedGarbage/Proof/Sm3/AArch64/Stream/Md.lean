@@ -12,12 +12,14 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm3.AArch64.Compress
 meta import VerifiedGarbage.Proof.Sm3.AArch64.Compress
-public import VerifiedGarbage.Impl.Sm3.AArch64.Stream
+import VerifiedGarbage.Impl.Sm3.AArch64.Stream
 meta import VerifiedGarbage.Impl.Sm3.AArch64.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming SM3 on AArch64: `update` and `finalize`

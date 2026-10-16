@@ -6,10 +6,12 @@ public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
-public import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ed448.AArch64.FieldSums
+meta import VerifiedGarbage.Proof.Ed448.AArch64.FieldSums
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -43,11 +45,11 @@ once each (`Proof/X448/AArch64/Base/Erase.lean`). -/
 theorem scalarBase_check :
     ∃ h, ((taintS [combSym]).check (Taint.ofRegs [.x0, .x1, .x2]) scalarBase h).isSome = true := by
   apply exists_isSome_of_eraseT
-  refine Split.exists_isSome (c' := ?c') ?s ⟨?h, ?g⟩
+  refine Split.exists_isSome (c' := ?c') ?s ?g
   case s =>
     simp only [scalarBase, encode, Code.eraseT, Impl.X448.AArch64.Fast.invert, ops_eraseT, sqn_eraseT]
     exact .refl _
-  case g => taint_decide
+  case g => taint_decide_sum [VG.Proof.Ed448.AArch64.CombBase.combSum, VG.Proof.Ed448.AArch64.addSum, VG.Proof.Ed448.AArch64.powSum]
 
 theorem scalarBase_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase :=
   let ⟨_, hc⟩ := scalarBase_check

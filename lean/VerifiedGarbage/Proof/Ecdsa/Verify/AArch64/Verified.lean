@@ -1,22 +1,27 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafMain
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafMain
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Lit
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedLit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPoints
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacContract
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
 
 /-! ## `JacAbi` -/
 

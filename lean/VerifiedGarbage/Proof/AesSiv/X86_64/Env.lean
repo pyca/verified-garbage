@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86_64.Common
+import VerifiedGarbage.Proof.AesSiv.X86_64.Common
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.AesSiv.X86_64
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+public import VerifiedGarbage.Spec.Siv
 
 /-!
 # AES-SIV on x86-64: the regions of `s2v_ad`, `seal` and `open`

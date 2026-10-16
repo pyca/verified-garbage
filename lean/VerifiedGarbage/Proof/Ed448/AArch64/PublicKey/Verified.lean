@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
 meta import VerifiedGarbage.Proof.Ed448.AArch64.PublicKey.Main
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -12,6 +12,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+meta import VerifiedGarbage.Spec.X25519
 
 /-!
 # Ed448 public-key derivation on AArch64: `Verified`

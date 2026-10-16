@@ -20,6 +20,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Bswap
 
 @[expose] public section
 
@@ -29,14 +33,14 @@ open VG VG.Arm RegUpd VG.Impl.Zeroize.Arm
 syntax "zrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| zrun) => `(tactic| zrun [])
-  | `(tactic| zrun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
-        Op2.eval, isa, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg,
-        State.load32, State.store32, State.load8, State.store8,
-        subFlags, addFlags, ite_true, ite_false, Option.map_some, Option.some.injEq,
-        exists_eq_left', true_and, and_true, reduceCtorEq, $ls,*]))
+  | `(tactic| zrun [$ls,*]) => `(tactic| plain_simp_names (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+                         Op2.eval, isa, gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg,
+                         State.load32, State.store32, State.load8, State.store8,
+                         subFlags, addFlags, ite_true, ite_false, Option.map_some, Option.some.injEq,
+                         exists_eq_left', true_and, and_true, reduceCtorEq, $ls,*]))
 
 def contract : Contract isa where
   pre s := s.rd = [] ∧ s.wr = [⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩] ∧

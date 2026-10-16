@@ -4,16 +4,26 @@ public import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-public import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
-public import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
 
@@ -32,35 +42,35 @@ theorem edi_agree {base : BitVec 32} {s t : State} (hs : s.gpr .edi = base) (ht 
 theorem recoverCandidate_ct (base : BitVec 32) :
     RelCT isa (CallCTPre base) recoverCandidate (fun _ _ => True) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ recoverCandidate h).isSome = true := by
-    taint_decide_sum [VG.Proof.X25519.X86.pow250Sum]
+    native_taint_decide_sum [VG.Proof.X25519.X86.pow250Sum]
   exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) hc
 
 theorem parityBlock_ct (base : BitVec 32) :
     RelCT isa (fun s t => s.gpr .edi = base ∧ t.gpr .edi = base)
       (.block (Impl.X25519.X86.freeze 64 ++ recoverParity)) (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
   exact fun _ _ h => edi_agree h.1 h.2
 
 theorem zeroBlock_ct (base : BitVec 32) :
     RelCT isa (fun s t => s.gpr .edi = base ∧ t.gpr .edi = base)
       (.block (fieldZero 0)) (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
   exact fun _ _ h => edi_agree h.1 h.2
 
 theorem negateBlock_ct (base : BitVec 32) :
     RelCT isa (fun s t => s.gpr .edi = base ∧ t.gpr .edi = base)
       (.block (fieldCode [.const 5 0, .sub 0 5 0])) (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
   exact fun _ _ h => edi_agree h.1 h.2
 
 theorem successBlock_ct (base : BitVec 32) :
     RelCT isa (fun s t => s.gpr .edi = base ∧ t.gpr .edi = base)
       (.block recoverSuccess) (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by native_taint_decide)
   exact fun _ _ h => edi_agree h.1 h.2
 
 theorem recoverInvalid_ct : RelCT isa (fun _ _ => True) recoverInvalid (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by taint_decide)
+  apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by native_taint_decide)
   exact fun _ _ _ => regsTaint_agree (by simp)
 
 end VG.Proof.Ed25519.X86

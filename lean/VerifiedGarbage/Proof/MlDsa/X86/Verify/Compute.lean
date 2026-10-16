@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA verification on x86 (32-bit): what holds while computing `w′₁`
@@ -91,7 +93,7 @@ theorem w_rows {p : Params} {r nr : Nat} (hr : r < nr) (hnr : nr ≤ p.k) :
   ⟨mul_row hr, w_row (Nat.lt_of_lt_of_le hr hnr)⟩
 
 /-- Proves `SafeC` for buffers checked by `lv`, with `hnr : nr ≤ p.k`. -/
-macro "safeC " hF:term:max hnr:term:max : tactic => `(tactic| exact
+tactic_template "safeC " hF:term:max hnr:term:max : tactic => `(tactic| exact
   ⟨by lv $hF, fun r hr s hs => by lv $hF, by lv $hF, fun r hr => by
     have := VG.Proof.MlDsa.X86.Verify.w_rows hr $hnr
     lv $hF⟩)
@@ -127,15 +129,15 @@ theorem SafeC.cons_sc {p : Params} (hF : VFacts p) {nr : Nat} (hnr : nr ≤ p.k)
   exact (SafeC.sc hF hnr h0 h1 (by omega) h3 h4).append (bs₁ := [_]) h
 
 /-- Proves `SafeC` of a list of buffers of `scratch` below `Â` by `SafeC.cons_sc`, with `hnr : nr ≤ p.k`. -/
-macro "safeCs " hF:term:max hnr:term:max : tactic => `(tactic| (
-  repeat' (first
-    | with_reducible exact VG.Proof.MlDsa.X86.Verify.SafeC.nil $hF $hnr
-    | apply VG.Proof.MlDsa.X86.Verify.SafeC.cons_sc $hF $hnr)
-  all_goals (
-    have := ($hF).w1; have := ($hF).k; have := ($hF).l; have := ($hF).ct
-    try simp only [VG.Impl.MlDsa.X86.Verify.oP, VG.Impl.MlDsa.X86.Verify.oB, VG.Impl.MlDsa.X86.Verify.oACC,
-      VG.Impl.MlDsa.X86.Verify.oSS, VG.Impl.MlDsa.X86.Verify.oCT]
-    omega_arith)))
+tactic_template "safeCs " hF:term:max hnr:term:max : tactic => `(tactic| (
+                   repeat' (first
+                     | with_reducible exact VG.Proof.MlDsa.X86.Verify.SafeC.nil $hF $hnr
+                     | apply VG.Proof.MlDsa.X86.Verify.SafeC.cons_sc $hF $hnr)
+                   all_goals (
+                     have := ($hF).w1; have := ($hF).k; have := ($hF).l; have := ($hF).ct
+                     try simp only [VG.Impl.MlDsa.X86.Verify.oP, VG.Impl.MlDsa.X86.Verify.oB, VG.Impl.MlDsa.X86.Verify.oACC,
+                       VG.Impl.MlDsa.X86.Verify.oSS, VG.Impl.MlDsa.X86.Verify.oCT]
+                     omega_arith)))
 
 theorem ci_of_sc {p : Params} {s₀ s : State} (h : SC p s₀ s) : CI p s₀ 0 false 0 s := by
   obtain ⟨hh, ehh, hi⟩ := h.vb.hint

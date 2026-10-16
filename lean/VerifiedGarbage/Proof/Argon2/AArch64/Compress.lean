@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.AArch64.Finish
+import VerifiedGarbage.Proof.Argon2.AArch64.Finish
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Finish
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.Argon2.Permutation
+import VerifiedGarbage.Proof.Argon2.Permutation
 meta import VerifiedGarbage.Proof.Argon2.Permutation
 public import VerifiedGarbage.Proof.Argon2.AArch64.Words
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Words
@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Argon2.Contract
 meta import VerifiedGarbage.Spec.Argon2.Contract
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -22,6 +22,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

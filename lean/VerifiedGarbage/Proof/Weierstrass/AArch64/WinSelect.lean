@@ -6,6 +6,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Logic.Function.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # The window method on AArch64: the constant-time selection
@@ -31,11 +36,11 @@ theorem wordsVal_of_words (m m' : Mem) (base : Addr) : ∀ (o o' n : Nat),
     wordsVal m' base o n = wordsVal m base o' n
   | _, _, 0, _ => rfl
   | o, o', n + 1, h => by
-    have h0 := h 0 (by omega)
+    have h0 := h 0 (by omega_using [])
     simp only [Nat.mul_zero, Nat.add_zero] at h0
     rw [wordsVal, wordsVal, h0, wordsVal_of_words m m' base (o + 8) (o' + 8) n fun j hj => by
-      rw [show o + 8 + 8 * j = o + 8 * (j + 1) by omega, show o' + 8 + 8 * j = o' + 8 * (j + 1) by omega]
-      exact h (j + 1) (by omega)]
+      rw [show o + 8 + 8 * j = o + 8 * (j + 1) by omega_using [], show o' + 8 + 8 * j = o' + 8 * (j + 1) by omega_using []]
+      exact h (j + 1) (by omega_using [hj])]
 
 /-- `x4 |= [d] & mask m`. -/
 theorem loadCand_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d m : Nat}
@@ -70,19 +75,19 @@ theorem loadCands_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   refine WP.mono (wp_range_flatMap (M := isa) (N := 8)
     (fun k t => t.gpr .x4 = X₀ ||| (if 1 ≤ a ∧ a ≤ k then word s.mem base (d (a - 1)) else 0) ∧
       Keeps [.x2, .x4, .x9] s t) (fun k t hk ⟨t4, kt⟩ => ?_) 8 (Nat.le_refl _) s
-    ⟨by rw [h4]; simp [show ¬(1 ≤ a ∧ a = 0) by omega], ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩)
+    ⟨by rw [h4]; simp [show ¬(1 ≤ a ∧ a = 0) by omega_using []], ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩)
     fun t ⟨t4, kt⟩ => ⟨by rw [t4]; congr 1; by_cases h : 1 ≤ a <;> simp [h, ha], kt⟩
   have ht := hs.of_keeps kt (by decide)
-  refine WP.mono (loadCand_ok ht (d := d k) (m := k + 1) (hd k hk).1 (hd k hk).2 (by omega))
+  refine WP.mono (loadCand_ok ht (d := d k) (m := k + 1) (hd k hk).1 (hd k hk).2 (by omega_using [hk]))
     fun u ⟨u4, ku⟩ => ⟨?_, kt.trans ku⟩
-  rw [u4, t4, (hM.keep kt) (k + 1) (by omega), bmask_and, BitVec.or_assoc, kt.mem]
+  rw [u4, t4, (hM.keep kt) (k + 1) (by omega_using [hk]), bmask_and, BitVec.or_assoc, kt.mem]
   congr 1
   by_cases h1 : a = k + 1
   · subst h1
-    simp [show ¬(k + 1 ≤ k) by omega]
+    simp [show ¬(k + 1 ≤ k) by omega_using []]
   · by_cases h2 : 1 ≤ a ∧ a ≤ k
-    · simp [h1, h2, show 1 ≤ a ∧ a ≤ k + 1 by omega]
-    · simp [h1, h2, show ¬(1 ≤ a ∧ a ≤ k + 1) by omega]
+    · simp [h1, h2, show 1 ≤ a ∧ a ≤ k + 1 by omega_using [h2]]
+    · simp [h1, h2, show ¬(1 ≤ a ∧ a ≤ k + 1) by omega_using [h1, h2]]
 
 /-- The table's slot of coordinate `c` of `[i + 1]P`. -/
 def tblSlot (K : WinCfg) (c i : Nat) : Nat := K.tbl + 24 * K.M.n * i + 8 * K.M.n * c
@@ -132,15 +137,15 @@ theorem winSelectWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base
   have hs₂ := (hs.of_keeps k₁ (by decide)).of_keeps k₂ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (loadCands_ok hs₂ ha hM₂ x₂ (fun i => tblSlot K c i + 8 * w) fun i hi =>
-      ⟨(hd i hi).1, by have := (hd i hi).2; omega⟩) fun s₃ ⟨x₃, k₃⟩ => ?_
+      ⟨(hd i hi).1, by have := (hd i hi).2; omega_using [this]⟩) fun s₃ ⟨x₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
-  refine WP.mono (st_out hs₃ (o := o + 8 * w) ho (by omega) .x4) fun t ⟨m, kt, _⟩ => ⟨?_, ?_⟩
+  refine WP.mono (st_out hs₃ (o := o + 8 * w) ho (by omega_using [ho8]) .x4) fun t ⟨m, kt, _⟩ => ⟨?_, ?_⟩
   · rw [m, x₃, k₃.mem, k₂.mem, k₁.mem]
     congr 1
     unfold selW
     by_cases h : a = 0
     · subst h; simp
-    · simp [h, show 1 ≤ a by omega]
+    · simp [h, show 1 ≤ a by omega_using [h]]
   · exact (((Keeps.regs k₁).mono (by decide)).trans ((Keeps.regs (k₂.trans k₃)))).trans
       (kt.mono (by decide))
 
@@ -160,24 +165,24 @@ theorem winSelectWords_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s bas
   | k + 1, hk, hkn, hd => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (winSelectWords_ok hs K ha hM ho8 k (by omega) (by omega) hd) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    refine WP.mono (winSelectWords_ok hs K ha hM ho8 k (by omega_using [hk]) (by omega_using [hkn]) hd) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
-    refine WP.mono (winSelectWord_ok hs₁ K ha (hM.keepRegs k₁) (c := c) (w := k) (by omega) ho8
-      fun i hi => ⟨by have := (hd i hi).1; omega, (hd i hi).2.1⟩) fun s₂ ⟨m₂, k₂⟩ => ?_
+    refine WP.mono (winSelectWord_ok hs₁ K ha (hM.keepRegs k₁) (c := c) (w := k) (by omega_using [hk]) ho8
+      fun i hi => ⟨by have := (hd i hi).1; omega_using [hkn, this], (hd i hi).2.1⟩) fun s₂ ⟨m₂, k₂⟩ => ?_
     have O₂ : Outside base (o + 8 * k) 8 s₁.mem s₂.mem := by
-      rw [m₂]; exact writeW_outside _ _ _ (by omega)
+      rw [m₂]; exact writeW_outside _ _ _ (by omega_using [hk, hn])
     refine ⟨fun j hj => ?_, k₁.trans k₂,
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₂.mono (by omega_using []) (by omega_using []))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂.word (by omega) (by omega), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [O₂.word (by omega_using [h]) (by omega_using [hk, hn, h]), e₁ j h]
+    · obtain rfl : j = k := by omega_using [hj, h]
       rw [m₂, word_writeW_self]
       unfold selW
       split
       · rfl
-      · have hi : a - 1 < 8 := by omega
+      · have hi : a - 1 < 8 := by omega_using [ha]
         have := hd (a - 1) hi
-        exact O₁.word (by omega) (by rcases this.2.2 with h | h <;> omega)
+        exact O₁.word (by omega_using [hkn, this]) (by rcases this.2.2 with h | h <;> omega_using [hn, hkn, this])
 
 /-- Coordinate `c` of the magnitude's entry, as a number: `z` for `0`. -/
 theorem selectCoord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (K : WinCfg)
@@ -193,7 +198,7 @@ theorem selectCoord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base s
     ⟨?_, k, O⟩
   by_cases h0 : a = 0
   · simp only [h0, ↓reduceIte]
-    refine wordsVal_of_shifts _ _ _ _ _ (by split <;> omega) fun j hj => ?_
+    refine wordsVal_of_shifts _ _ _ _ _ (by split <;> omega_using [h1]) fun j hj => ?_
     rw [e j hj]
     by_cases hc : c = 1 <;> simp [selW, zW, h0, hc, wordOf]
   · simp only [h0, ↓reduceIte]

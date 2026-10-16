@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Validate
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
 
 /-!
 # ECDH on AArch64: `[d]P` by windows, and `Z^(p-2)`
@@ -57,7 +59,7 @@ theorem winWs_eq (c : Cfg) : winWs (winQ c) = (otherI ++ tblI).map c.sl := by
   rw [winWs, winTblSlots_eq, List.map_append]; rfl
 
 /-- The indices of the window method's slots. -/
-theorem winIdx_lt : ∀ i ∈ roI ++ otherI ++ tblI, i < 112 ∧ i ≠ MP ∧ i ≠ TMP ∧ i ≠ 54 ∧ i ≠ 82 := by
+theorem winIdx_lt : ∀ i ∈ roI ++ otherI ++ tblI, i < 112 ∧ i ≠ MP ∧ i ≠ TMP ∧ i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 := by
   decide
 
 /-- Every slot below `112` is in the working space. -/
@@ -72,7 +74,7 @@ theorem sl_le' (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 112) : c.sl i + 8 *
   omega_arith
 
 theorem lay_map' (hc : CfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
-    (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 112 ∧ i ≠ MP ∧ i ≠ TMP ∧ i ≠ 54 ∧ i ≠ 82) :
+    (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 112 ∧ i ≠ MP ∧ i ≠ TMP ∧ i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82) :
     Lay M size (· ∈ l.map c.sl) := by
   refine ⟨fun x hx => ?_, fun x y hx hy hxy => ?_, fun x hx => ?_, fun x hx => ?_⟩
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
@@ -113,7 +115,7 @@ theorem winLayQ (hc : CfgOk c) : WinLay (winQ c) size := by
     rw [hb, hJ]
     have key : ∀ i ∈ otherI ++ tblI ++ [TMP], i = TMP ∨ (i < WB ∧ i ≠ TMP) ∨ WT ≤ i := by decide
     rcases key i hi with h | ⟨h, hT⟩ | h
-    · subst h; exact tmp_wb c h7
+    · subst h; exact hc.window_tmp
     · exact Or.inr (sl_lt c h hT)
     · refine Or.inl ?_
       have := Nat.mul_le_mul_left (8 * c.n) h
@@ -185,7 +187,7 @@ theorem apart_winX4 (hn4 : c.n ≤ 4) {i : Nat} (hi : i < 45) :
 /-- The flag word survives the window method and the power. -/
 theorem flag_unch_win (hc : BaseCfgOk c) {base : Addr} {l₁ : List Nat} {m m' : Mem}
     (hu : Unch base (winX c ++ (slW c l₁ ++ chainWc c)) m m') (h7 : c.n < 10) (h0 : 0 < c.n)
-    (hn : base.toNat + size ≤ 2 ^ 64) (hl₁ : FLAG ∉ l₁) (hlA : ∀ j ∈ l₁, j ≠ 54 ∧ j ≠ 82 := by decide) :
+    (hn : base.toNat + size ≤ 2 ^ 64) (hl₁ : FLAG ∉ l₁) (hlA : ∀ j ∈ l₁, j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 := by decide) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega_arith)

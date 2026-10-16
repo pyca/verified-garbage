@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 public import VerifiedGarbage.Proof.Seed.Arm.Ecb
 meta import VerifiedGarbage.Proof.Seed.Arm.Ecb
 public import VerifiedGarbage.Proof.Seed.Scratch
@@ -66,8 +68,8 @@ theorem ecbTaint_agree (dir : Spec.Seed.Direction) (s₁ s₂ : State) (h₁ : (
 
 theorem ecb_ct (dir : Spec.Seed.Direction) : ConstantTime isa (ecbArm dir).pre (ecbArm dir).pub (ecb dir) := by
   cases dir
-  · exact VG.Taint.constantTime (A := VG.Arm.taint) ecbTaint (ecbTaint_agree .encrypt) (by taint_decide)
-  · exact VG.Taint.constantTime (A := VG.Arm.taint) ecbTaint (ecbTaint_agree .decrypt) (by taint_decide)
+  · exact VG.Taint.constantTime (A := VG.Arm.taint) ecbTaint (ecbTaint_agree .encrypt) (by native_taint_decide)
+  · exact VG.Taint.constantTime (A := VG.Arm.taint) ecbTaint (ecbTaint_agree .decrypt) (by native_taint_decide)
 
 theorem ecb_correct (dir : Spec.Seed.Direction) (s : State) (hs : (ecbArm dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbArm dir).post s s' := by

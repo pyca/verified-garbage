@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
-public import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
+import VerifiedGarbage.Proof.Bignum.X86_64.MontMul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Multiword arithmetic on x86-64: a row of the BMI2/ADX multiplication
@@ -326,11 +327,11 @@ theorem row_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s
   have k3 := hI.keep
   have o₃ : Outside B (e - 16) (8 * (w + 4)) s.mem s₃.mem :=
     (o₂.mono (o' := e - 16) (n' := 8 * (w + 4)) (Nat.le_refl _) (by omega_using [])).trans
-      (hI.out.mono (o' := e - 16) (n' := 8 * (w + 4)) (by omega_using []) (by rw [hw4']; omega_arith))
+      (hI.out.mono (o' := e - 16) (n' := 8 * (w + 4)) (by omega_using []) (by rw [hw4']; omega_using []))
   have wTw : word s₃.mem B (e + 8 * w) = word s.mem B (e + 8 * w) :=
-    (hI.out.word (by rw [hw4']; omega_arith) (by omega_arith)).trans (o₂.word (by omega_arith) (by omega_arith))
+    (hI.out.word (by rw [hw4']; omega_using []) (by omega_using [hZ, he, hi, hn, hTs, hAT])).trans (o₂.word (by omega_using [hw1]) (by omega_using [hZ, he, hi, hn, hTs, hAT]))
   have wT1 : word s₃.mem B (e + 8 * w + 8) = word s.mem B (e + 8 * w + 8) :=
-    (hI.out.word (by rw [hw4']; omega_arith) (by omega_arith)).trans (o₂.word (by omega_arith) (by omega_arith))
+    (hI.out.word (by rw [hw4']; omega_using []) (by omega_using [hZ, he, hi, hn, hTs, hAT])).trans (o₂.word (by omega_using [hw1]) (by omega_using [hZ, he, hi, hn, hTs, hAT]))
   -- The bound: the sum fits in `w + 2` words.
   have hN := wv_lt s.mem B (slot w aN) w
   have hXl := X.isLt
@@ -344,35 +345,35 @@ theorem row_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s
   have hs₃ := hI.scr
   have k123 := k12.trans k3
   refine WP.seq (WP.mono (rowTail_ok (w := w) hs₃ ((k123.gpr (by decide)).trans h8) (by rw [hI.r14, hw4'])
-    (by omega_arith)) fun s₄ ⟨lo, hi', hm₄, hlh, h8₄, k₄⟩ => ?_)
+    (by omega_using [hZ, he, hi, hTs, hAT])) fun s₄ ⟨lo, hi', hm₄, hlh, h8₄, k₄⟩ => ?_)
   rw [wTw, wT1] at hlh
   have o₄ : Outside B (e + 8 * w) 16 s₃.mem s₄.mem := by
     rw [hm₄]
-    exact ((writeW_outside s₃.mem B lo (d := e + 8 * w) (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
-      ((writeW_outside _ B hi' (d := e + 8 * w + 8) (by omega_arith)).mono (by omega_arith) (by omega_arith))
+    exact ((writeW_outside s₃.mem B lo (d := e + 8 * w) (by omega_using [hZ, he, hi, hn, hTs, hAT])).mono (by omega_using []) (by omega_using [])).trans
+      ((writeW_outside _ B hi' (d := e + 8 * w + 8) (by omega_using [hZ, he, hi, hn, hTs, hAT])).mono (by omega_using []) (by omega_using []))
   have o₄' : Outside B (e - 16) (8 * (w + 4)) s.mem s₄.mem :=
-    o₃.trans (o₄.mono (o' := e - 16) (n' := 8 * (w + 4)) (by omega_arith) (by omega_arith))
+    o₃.trans (o₄.mono (o' := e - 16) (n' := 8 * (w + 4)) (by omega_using []) (by omega_using []))
   -- The test.
   have hs₄ := hs₃.congr k₄.2.2
-  refine WP.mono (rowEnd_ok hs₄ ((k123.trans k₄).gpr (by decide) |>.trans hdi) (hH.of_outside o₄' (by omega_arith)) hZ
-    h8₄ (by omega_arith)) fun t ⟨hz, hmt, h8t, k₅⟩ => ?_
+  refine WP.mono (rowEnd_ok hs₄ ((k123.trans k₄).gpr (by decide) |>.trans hdi) (hH.of_outside o₄' (by omega_using [he, hg0])) hZ
+    h8₄ (by omega_using [hZ, he, hi, hTs, hAT])) fun t ⟨hz, hmt, h8t, k₅⟩ => ?_
   have ot : Outside B (e - 16) (8 * (w + 4)) s.mem t.mem := hmt ▸ o₄'
-  refine ⟨fun hinv htop hT hB => ⟨U.toNat, hUl, ?_⟩, ot, h8t, by rw [hz]; exact congrArg some (decide_eq_decide.mpr (by omega_arith)),
+  refine ⟨fun hinv htop hT hB => ⟨U.toNat, hUl, ?_⟩, ot, h8t, by rw [hz]; exact congrArg some (decide_eq_decide.mpr (by omega_using [he, hAT])),
     (((k123.trans k₄).trans k₅)).mono (by decide)⟩
   have hsum := VG.Proof.Bignum.round_sum_lt hT hXl hB hUl
   have hfit : (word s.mem B (e + 8 * w)).toNat + 2 ^ 64 * (word s.mem B (e + 8 * w + 8)).toNat +
       (s₃.gpr .rcx).toNat + (s₃.gpr .rbp).toNat < 2 ^ 128 := by
     refine Nat.lt_of_mul_lt_mul_left (a := 2 ^ (64 * w)) ?_
     have : 2 ^ 65 * wv s.mem B (slot w aN) w ≤ 2 ^ (64 * w) * 2 ^ 128 := by
-      rw [Nat.mul_comm (2 ^ (64 * w))]; exact Nat.mul_le_mul (by decide) (by omega_arith)
-    omega_arith
+      rw [Nat.mul_comm (2 ^ (64 * w))]; exact Nat.mul_le_mul (by decide) (by omega_using [hN])
+    omega_using [hR, hsum, this]
   replace hlh := hlh hfit
   have hV : wv s₄.mem B e (w + 2) = wv s.mem B e (w + 2) + X.toNat * wv s.mem B (slot w b) w +
       U.toNat * wv s.mem B (slot w aN) w := by
     rw [wv_top2, hm₄, word_writeW_self,
-      (writeW_outside _ B hi' (d := e + 8 * w + 8) (by omega_arith)).word (Or.inl (Nat.le_refl _)) (by omega_arith),
-      word_writeW_self, (writeW_outside _ B hi' (d := e + 8 * w + 8) (by omega_arith)).wv (Or.inl (by omega_arith)) (by omega_arith),
-      (writeW_outside _ B lo (d := e + 8 * w) (by omega_arith)).wv (Or.inl (Nat.le_refl _)) (by omega_arith), hlh, ← hR]
+      (writeW_outside _ B hi' (d := e + 8 * w + 8) (by omega_using [hZ, he, hi, hn, hTs, hAT])).word (Or.inl (Nat.le_refl _)) (by omega_using [hZ, he, hi, hn, hTs, hAT]),
+      word_writeW_self, (writeW_outside _ B hi' (d := e + 8 * w + 8) (by omega_using [hZ, he, hi, hn, hTs, hAT])).wv (Or.inl (by omega_using [])) (by omega_using [hZ, he, hi, hn, hTs, hAT]),
+      (writeW_outside _ B lo (d := e + 8 * w) (by omega_using [hZ, he, hi, hn, hTs, hAT])).wv (Or.inl (Nat.le_refl _)) (by omega_using [hZ, he, hi, hn, hTs, hAT]), hlh, ← hR]
     grind
   rw [← hmt] at hV
   -- The low word is zero, and the word above the window too.
@@ -381,7 +382,7 @@ theorem row_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s
     have dT := wv_low s.mem B e (w + 1)
     have dB := wv_low s.mem B (slot w b) (w - 1)
     have dN := wv_low s.mem B (slot w aN) (w - 1)
-    rw [show w - 1 + 1 = w by omega_arith] at dB dN
+    rw [show w - 1 + 1 = w by omega_using [hw1]] at dB dN
     rw [dT, dB, dN]
     have := rowU_low X (word s.mem B (slot w b)) (word s.mem B e) (word s.mem B (slot w aN)) minv hinv
     rw [hU] at this
@@ -393,12 +394,12 @@ theorem row_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s
         (word s.mem B e).toNat + X.toNat * (word s.mem B (slot w b)).toNat +
           U.toNat * (word s.mem B (slot w aN)).toNat + 2 ^ 64 * (A' + X.toNat * B' + U.toNat * N') by grind,
       Nat.add_mul_mod_self_left, this]
-  have htop' : word t.mem B (e + 8 * (w + 2)) = 0 := (ot.word (by omega_arith) (by omega_arith)).trans htop
+  have htop' : word t.mem B (e + 8 * (w + 2)) = 0 := (ot.word (by omega_using [he]) (by omega_using [hZ, he, hi, hn, hTs, hAT])).trans htop
   have d3 := wv_low t.mem B e (w + 2)
   rw [wv, htop'] at d3
   have := (word t.mem B e).isLt
   rw [← hV]
   rw [show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero] at d3
-  omega_arith
+  omega_using [hlow, d3]
 
 end VG.Proof.Bignum.X86_64

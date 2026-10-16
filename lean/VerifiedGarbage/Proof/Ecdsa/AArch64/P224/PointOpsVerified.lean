@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
 meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Weierstrass.PointOps
 meta import VerifiedGarbage.Spec.Weierstrass.PointOps
@@ -14,6 +14,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Lit
 
 /-!
 # `vg_p224_proj_add` on AArch64: `Verified`

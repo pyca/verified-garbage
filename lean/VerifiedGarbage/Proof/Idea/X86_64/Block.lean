@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86_64.Round
-public import VerifiedGarbage.Proof.Idea.Memory
+import VerifiedGarbage.Proof.Idea.Memory
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

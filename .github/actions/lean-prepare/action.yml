@@ -43,15 +43,65 @@ runs:
           # Not `-e` (bash steps run with it): a failure must still write
           # the status, or `lean-setup` would wait for it.
           set +e -o pipefail
+          log() { echo "[lean-setup $(date -u +%T)] $*"; }
+          # Runs a download up to three times; the command bounds each
+          # attempt with `timeout` (which stops its whole process group),
+          # or a stalled connection would hang until `lean-setup` gives up.
+          retry() {
+            local what=$1 attempt status
+            shift
+            for attempt in 1 2 3; do
+              log "$what (attempt $attempt)"
+              "$@"
+              status=$?
+              [ "$status" = 0 ] && { log "$what: done"; return 0; }
+              [ "$status" = 124 ] && log "$what: timed out" || log "$what: failed ($status)"
+            done
+            return 1
+          }
+          # Before downloading a toolchain, elan fetches the index of Lean's
+          # releases (https://release.lean-lang.org, about 4 MB) with no
+          # timeout at all (`fetch_url` in elan's `elan-utils`), and prints
+          # nothing while it does. That server sometimes stalls partway through
+          # the transfer, and elan then waits forever. The index normally
+          # takes under a second, after which elan prints
+          # `info: downloading https://…`: an attempt that has not printed it
+          # within 10 s is stuck, so stop it and try again. The download
+          # itself elan aborts on a stall (30 s below 10 B/s); the 180 s
+          # bounds the whole attempt.
+          install_toolchain() {
+            local out="$RUNNER_TEMP/elan-install.log" done="$RUNNER_TEMP/elan-install.status" pid
+            rm -f "$done"
+            # Shown as it is written, and kept to look for the download.
+            { timeout 180 "$HOME/.elan/bin/elan" -v toolchain install "$1" 2>&1 | tee "$out"
+              echo $? > "$done"; } &
+            pid=$!
+            for _ in $(seq 10); do
+              sleep 1
+              [ -f "$done" ] || grep -q 'downloading https://' "$out" 2>/dev/null && break
+            done
+            if [ ! -f "$done" ] && ! grep -q 'downloading https://' "$out" 2>/dev/null; then
+              log "elan has not started downloading after 10 s: stuck fetching the index of releases"
+              pkill -P "$pid"
+              wait "$pid"
+              return 124
+            fi
+            wait "$pid"
+            return "$(cat "$done")"
+          }
           {
-            curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
-              | sh -s -- -y --default-toolchain none &&
+            retry "Installing elan" timeout 15 sh -c '
+              curl -sSfL --connect-timeout 20 https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+                | sh -s -- -y --default-toolchain none' &&
+            retry "Installing $(cat lean-toolchain)" install_toolchain "$(cat lean-toolchain)" &&
+            log "Listing the imports" &&
             # Every module the Lean files import from outside this project
             # and Lean itself, as Lean's own parser reads their headers.
-            git ls-files '*.lean' | xargs "$HOME/.elan/bin/lean" --deps-json \
+            git ls-files '*.lean' | timeout 300 xargs "$HOME/.elan/bin/lean" --deps-json \
               | jq -r '.imports[].result.imports[].module
                        | select(test("^(VerifiedGarbage[A-Za-z]*|Init|Std|Lean)(\\.|$)") | not)' \
-              | sort -u > "$RUNNER_TEMP/lean-mods"
+              | sort -u > "$RUNNER_TEMP/lean-mods" &&
+            log "Listing the imports: done"
           } > "$RUNNER_TEMP/lean-setup.log" 2>&1
           echo $? > "$RUNNER_TEMP/lean-setup.status.tmp"
           mv "$RUNNER_TEMP/lean-setup.status.tmp" "$RUNNER_TEMP/lean-setup.status"

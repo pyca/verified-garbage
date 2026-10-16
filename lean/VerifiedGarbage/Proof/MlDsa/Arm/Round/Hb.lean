@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
-public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on 32-bit ARM: the values of `Decompose`

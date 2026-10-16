@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # A candidate on x86-64: the stages before Montgomery setup
@@ -90,6 +92,7 @@ theorem avs_le {q : FPub} : ∀ e ∈ avs q, e.1 ≤ 25 := by
 /-- The public bounds. -/
 structure FDims (q : FPub) : Prop where
   z : slot q.w aTab + 2048 ≤ q.Z
+  zx : slot q.w aRm1 + 8 * (q.w + 2) ≤ q.Z
   w4 : 4 ≤ q.w
   w64 : q.w ≤ 64
   rl : q.rl < 2 ^ 64
@@ -99,8 +102,7 @@ structure FDims (q : FPub) : Prop where
   pl : q.pl = 0 ∨ q.pl = 8 * q.w
 
 theorem FDims.td {q : FPub} (h : FDims q) : TDims q.tp :=
-  ⟨by have := h.z; unfold slot aTab at *; dsimp only; omega_arith, by have := h.z; unfold slot aTab aRm1 at *; dsimp only; omega_arith,
-    h.w4, h.w64⟩
+  ⟨by have := h.z; unfold slot aTab at *; dsimp only; omega_arith, h.zx, h.w4, h.w64⟩
 
 /-- Between the stages: `Good`, the header words, the candidate in `aN`, the
 buffers, and the schedule. -/
@@ -191,8 +193,8 @@ theorem closeStage_ok {q : FPub} {s : State} (h : KSt q s) :
   have ha' := avsW_of ha
   refine WP.mono (closeCheck_ok hg hZ hw4 hd.w64 ha'.p ha'.len (by rw [hpl]; exact ha'.plen)
     (by rw [hpl]; exact hd.pl) hp) fun t ⟨hzf, hgt, hf, k⟩ => ⟨?_, ?_⟩
-  · refine h.step ⟨mi, hgt⟩ hf (by simp only [closeRanges]; rng_le) (fun r hr => ?_) (by simp only [closeRanges]; rng_disj) k
-    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; simp only [closeRanges]; rng_le
+  · refine h.step ⟨mi, hgt⟩ hf (closeRanges_fr q.w).1 (fun r hr => ?_) (closeRanges_fr q.w).2.2.1 k
+    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := (closeRanges_fr q.w).2.2.2 r hr
     omega_arith
   · rw [hzf, hc, hsch]
 
@@ -211,8 +213,8 @@ theorem trialStage_ok {q : FPub} {s : State} (h : KSt q s) (hcl : q.sch.close = 
       (Spec.RsaKeyGen.candidate (64 * q.w) (Spec.Rsa.os2ip (r.take (8 * q.w)))) := by
     rw [← hS, sched_comp hcl', show 8 * (8 * q.w) = 64 * q.w by omega_arith]
   refine WP.mono (trial_ok hg hZ hz (by omega_arith) hd.w64) fun t ⟨hzf, hgt, hf, k⟩ => ⟨?_, ?_⟩
-  · refine h.step ⟨mi, hgt⟩ hf (by rng_le) (fun r hr => ?_) (by rng_disj) k
-    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; rng_le
+  · refine h.step ⟨mi, hgt⟩ hf (trialRanges_fr q.w).1 (fun r hr => ?_) (trialRanges_fr q.w).2.2 k
+    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := (trialRanges_fr q.w).2.1 r hr
     omega_arith
   · rw [hzf, hc, trialAny_eq (cand_gt hw4 _), hsch]
 
@@ -238,8 +240,8 @@ theorem gcdStage_ok {q : FPub} {s : State} (h : KSt q s) (hcl : q.sch.close = fa
   have := hd.w64
   refine WP.mono (gcdCheck_ok hg hZ (by omega_arith) (by omega_arith) (by rw [hc]; exact hodd) (by rw [hc]; omega_arith)
     ha'.e ha'.elen hd.el1 hd.el8 he) fun t ⟨hzf, hgt, hf, k⟩ => ⟨?_, ?_⟩
-  · refine h.step ⟨mi, hgt⟩ hf (by rng_le) (fun r hr => ?_) (by rng_disj) k
-    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := by revert r hr; rng_le
+  · refine h.step ⟨mi, hgt⟩ hf (gcdRanges_fr q.w).1 (fun r hr => ?_) (gcdRanges_fr q.w).2.2.1 k
+    have : r.1 + r.2 ≤ slot q.w aTab + 2048 := (gcdRanges_fr q.w).2.2.2 r hr
     omega_arith
   · rw [hzf, hc, hsch, decide_gcd]
 
@@ -469,7 +471,7 @@ theorem finUsed3_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KS
 data and the schedule. -/
 theorem afterLoad_ct (M : Mont) : RelCT isa (Two KSt) (seqs (closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
     ([.ite .ne (finUsed 3) (seqs (gcdCheck ++
-      ([.ite .ne (finUsed 3) (seqs (montSetup M.mm ++ millerRabin M.mm ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) fun _ _ => True := by
+      ([.ite .ne (finUsed 3) (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) fun _ _ => True := by
   refine RelCT.seqs_app (by simp [closeCheck]) (by simp) (RelCT.seq (R := Two fun q s => KSt q s ∧
     s.zf = some (!q.sch.close)) (two_post closeCheck_ct fun _ _ h => closeStage_ok h) ?_)
   simp only [seqs]
@@ -548,8 +550,7 @@ theorem loadCStage_ok {q : FPub} {s : State} (h : K0 q s) : WP isa (seqs loadC) 
       i = kRandLen → word t.mem q.B (8 * i) = word s.mem q.B (8 * i) := fun {i} hi => by
     have hi32 : i < 32 := by rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     refine hf.word_eq ?_ (by omega_arith)
-    simp only [loadCRanges]
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rng_disj
+    exact loadCRanges_hdr q.w i (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact hi)
   refine ⟨hk, k.2.2.trans hw, hd, word t.mem q.B (8 * sMinv), pB, r, ⟨hm.scr.congr k.2.2, hdi, ⟨hW, rfl, hA⟩⟩,
     fun e he => ?_, hc, hm.psrc.congrK hin k, hm.esrc.congrK hin k, hm.rsrc.congrK hin k, hpl, hrl, hS⟩
   simp only [avs, List.mem_cons, List.not_mem_nil, or_false] at he

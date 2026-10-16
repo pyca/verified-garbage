@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Impl.P256.EcdhJac.Base
+import VerifiedGarbage.Impl.P256.EcdhJac.Base
 public import VerifiedGarbage.Impl.P256.EcdhTable
 public import VerifiedGarbage.Impl.P256.EcdhInverse
 public import VerifiedGarbage.Impl.P256.EcdhDouble
+public import VerifiedGarbage.Impl.P256.VerifyAllocated
 
 @[expose] public section
 

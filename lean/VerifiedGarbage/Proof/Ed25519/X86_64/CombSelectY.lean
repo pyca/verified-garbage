@@ -70,6 +70,9 @@ theorem vzeroupper_ok (s : State) :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Option.some.injEq, exists_eq_left']
   exact ⟨rfl, rfl, rfl, rfl, rfl⟩
 
+private theorem setMem_syms (s : State) (m : Mem) : (s.setMem m).syms = s.syms := by
+  cases s; rfl
+
 /-- `combSelectY`: as `combSelect_ok`. -/
 theorem combSelectY_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombTbl s T)
     {j a : Nat} (hj : j < 26) (ha : a ≤ 16) (hd : s.gpr .rdx = BitVec.ofNat 64 j)
@@ -136,9 +139,9 @@ theorem combSelectY_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : C
   · intro r h1 h2 h3
     rw [gt r h1 h2, g₅, e₄, State.setMem_gpr, e₃, State.setMem_gpr, e₂, State.setMem_gpr,
       k₁.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h1, h2, h3⟩)]
-  · rw [rt, r₅, e₄, e₃, e₂]; exact k₁.rd
-  · rw [wt, w₅, e₄, e₃, e₂]; exact k₁.wr
-  · rw [yt, y₅, e₄, e₃, e₂]; exact k₁.syms
+  · rw [rt, r₅, e₄, State.setMem_rd, e₃, State.setMem_rd, e₂, State.setMem_rd, k₁.rd]
+  · rw [wt, w₅, e₄, State.setMem_wr, e₃, State.setMem_wr, e₂, State.setMem_wr, k₁.wr]
+  · rw [yt, y₅, e₄, setMem_syms, e₃, setMem_syms, e₂, setMem_syms, k₁.syms]
 
 theorem combSelectY_sel : SelOk combSelectY := by
   intro _ _ _ hs ht _ _ hj ha hd h8; exact combSelectY_ok hs ht hj ha hd h8

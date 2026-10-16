@@ -2,10 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.Env
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.Gcm.Be64
 
 /-!
 # AES-OCB on x86: running straight-line blocks
@@ -41,32 +45,32 @@ theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
 
 /-- Runs a block of the instructions the AES-OCB code uses. The facts
 given rewrite the addresses and discharge the permissions. -/
-macro "grun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | omega) only [runBlock_cons, runStep_some,
-    runBlock_nil, exec, readSrc, execAlu, execShift, State.load32, store32_eq, State.load8, store8_eq,
-    State.ea, at_, imm, slot, argOp, tagO, ofsO, ckO, sumO, ldO, l0O, lO, tmpO, t2O, ohO, ctxO, rndO, nO, nlO,
-    aadO, alenO, dataO, lenO, tgO, tlO, botO, kO, o0O, stO, hlO, fpO, cntO, restO, nbO, okO, bufO, scrO, List.cons_append, List.nil_append, List.append_assoc,
-    Option.bind_some, Option.map_some, readW_writeW_off, readW_writeB_off, gpr_setReg_self, gpr_setReg_of_ne,
-    gpr_arithFlags, gpr_setFlags, mem_setReg, mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags,
-    wr_setReg, wr_arithFlags, wr_setFlags, cf_setReg, cf_arithFlags, zf_setReg, zf_arithFlags, gpr_setMem,
-    mem_setMem, rd_setMem, wr_setMem, cf_setMem, zf_setMem, ite_true, ite_false, reduceCtorEq, Nat.reduceAdd,
-    ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceMul, and_self,
-    and_true, true_and, eq_self_iff_true, Reg8.reg, $ts,*]) <;>
-  try rfl)
+tactic_template "grun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+                   simp (disch := first | decide | omega) only [runBlock_cons, runStep_some,
+                     runBlock_nil, exec, readSrc, execAlu, execShift, State.load32, store32_eq, State.load8, store8_eq,
+                     State.ea, at_, imm, slot, argOp, tagO, ofsO, ckO, sumO, ldO, l0O, lO, tmpO, t2O, ohO, ctxO, rndO, nO, nlO,
+                     aadO, alenO, dataO, lenO, tgO, tlO, botO, kO, o0O, stO, hlO, fpO, cntO, restO, nbO, okO, bufO, scrO, List.cons_append, List.nil_append, List.append_assoc,
+                     Option.bind_some, Option.map_some, readW_writeW_off, readW_writeB_off, gpr_setReg_self, gpr_setReg_of_ne,
+                     gpr_arithFlags, gpr_setFlags, mem_setReg, mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags,
+                     wr_setReg, wr_arithFlags, wr_setFlags, cf_setReg, cf_arithFlags, zf_setReg, zf_arithFlags, gpr_setMem,
+                     mem_setMem, rd_setMem, wr_setMem, cf_setMem, zf_setMem, ite_true, ite_false, reduceCtorEq, Nat.reduceAdd,
+                     ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceMul, and_self,
+                     and_true, true_and, eq_self_iff_true, Reg8.reg, $ts,*]) <;>
+                   try rfl)
 
 /-- Reads registers through the writes of a block. -/
-macro "gregs" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | with_reducible assumption) only [gpr_setMem, gpr_setReg_self, gpr_setReg_of_ne,
-    gpr_arithFlags, gpr_setFlags, $ts,*]))
+tactic_template "gregs" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+                   simp (disch := first | decide | with_reducible assumption) only [gpr_setMem, gpr_setReg_self, gpr_setReg_of_ne,
+                     gpr_arithFlags, gpr_setFlags, $ts,*]))
 
 /-- Reads the memory, flags and permissions through the writes of a block. -/
-macro "gmems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | omega) only [mem_setMem, mem_setReg, mem_arithFlags, mem_setFlags,
-    rd_setMem, rd_setReg, rd_arithFlags, rd_setFlags, wr_setMem, wr_setReg, wr_arithFlags, wr_setFlags,
-    zf_setMem, zf_setReg, zf_arithFlags, cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setReg_self,
-    gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, Mem.readW_writeW_self32, readW_writeW_off, readW_writeB_off,
-    tagO, ofsO, ckO, sumO, ldO, l0O, lO, tmpO, t2O, ohO, ctxO, rndO, nO, nlO,
-    aadO, alenO, dataO, lenO, tgO, tlO, botO, kO, o0O, stO, hlO, fpO, cntO, restO, nbO, okO, bufO, scrO, Nat.reduceAdd, Reg8.reg, eq_self_iff_true, and_self, $ts,*]))
+tactic_template "gmems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+                   simp (disch := first | decide | omega) only [mem_setMem, mem_setReg, mem_arithFlags, mem_setFlags,
+                     rd_setMem, rd_setReg, rd_arithFlags, rd_setFlags, wr_setMem, wr_setReg, wr_arithFlags, wr_setFlags,
+                     zf_setMem, zf_setReg, zf_arithFlags, cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setReg_self,
+                     gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, Mem.readW_writeW_self32, readW_writeW_off, readW_writeB_off,
+                     tagO, ofsO, ckO, sumO, ldO, l0O, lO, tmpO, t2O, ohO, ctxO, rndO, nO, nlO,
+                     aadO, alenO, dataO, lenO, tgO, tlO, botO, kO, o0O, stO, hlO, fpO, cntO, restO, nbO, okO, bufO, scrO, Nat.reduceAdd, Reg8.reg, eq_self_iff_true, and_self, $ts,*]))
 
 theorem eval_e {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .e s = some b := h
 

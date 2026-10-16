@@ -108,6 +108,17 @@ class SplitTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "not one of"):
             cpu_shards.times("icx", "fast", "")
 
+    def test_times_carry(self):
+        # bash prints 120.9996 s as `120.:00`, the carry left in the tenths.
+        self.assertEqual(cpu_shards.seconds("120.:00"), 121.0)
+        self.assertEqual(cpu_shards.seconds("59.774"), 59.774)
+        self.assertEqual(cpu_shards.seconds("3"), 3)
+        a = cpu_shards.times("icx", "avx512f", "-\t120.:00 0.199\n")
+        self.assertEqual(a, {"icx": {"avx512f": {"-": 121.2}}})
+        for bad in ("1.2.3", "x", "1.", "-1", "1.;"):
+            with self.assertRaisesRegex(SystemExit, "not a time"):
+                cpu_shards.seconds(bad)
+
     def split_with(self, by_host):
         return [cpu_shards.pick("icx", f"{i}/3", {"icx": by_host}, RUNS) for i in (1, 2, 3)]
 

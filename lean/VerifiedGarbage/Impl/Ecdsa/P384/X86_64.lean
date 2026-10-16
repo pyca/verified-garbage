@@ -24,6 +24,7 @@ def p384 : Cfg where
   hot := true
   mulBase := some Spec.Weierstrass.MulBase.p384
   inverse := some Spec.Weierstrass.Inverse.p384
+  checkPoint := some Spec.Weierstrass.CheckPoint.p384
 
 /-- `vg_ecdsa_p384_sign`. -/
 def signP384 : Prog isa := p384.sign

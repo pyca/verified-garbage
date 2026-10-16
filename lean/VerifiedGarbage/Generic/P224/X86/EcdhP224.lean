@@ -4,7 +4,8 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.P224.X86
 public import VerifiedGarbage.Proof.Ecdh.X86.P224.Verified
-public import VerifiedGarbage.Proof.Ecdh.X86.P224.Lit
+import VerifiedGarbage.Proof.Ecdh.X86.P224.Lit
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDH over P-224 (SP 800-56A) on x86 (32-bit)

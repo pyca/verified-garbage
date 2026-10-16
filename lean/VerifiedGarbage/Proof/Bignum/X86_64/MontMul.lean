@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Multiword arithmetic on x86-64: Montgomery multiplication
@@ -55,10 +56,20 @@ theorem bases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
 def mmRegs : List Reg :=
   [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15]
 
+/-- A modulus whose `-m⁻¹ mod 2⁶⁴` exists (it is odd) is positive. -/
+theorem wv_pos_of_inv {m : Mem} {B : Addr} {e w : Nat} {minv : BitVec 64} (hw : 1 ≤ w)
+    (hinv : ((word m B e).toNat * minv.toNat + 1) % 2 ^ 64 = 0) : 0 < wv m B e w := by
+  rcases Nat.eq_zero_or_pos (wv m B e w) with h | h
+  · have := wv_mod64 m B e hw
+    rw [h] at this
+    rw [← this] at hinv
+    simp at hinv
+  · exact h
+
 /-- What follows `bases` in `montMul`: from the bases, `w` and `-m⁻¹` in
-registers (`bases_ok`), `[o] = [a] [b] R⁻¹ mod m` for `m = [mo]`, if `[b] < m`
-and `-m⁻¹` is right. -/
-theorem mmTail_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
+registers (`bases_ok`), `[o] ≡ [a] [b] R⁻¹ (mod m)` for `m = [mo]`, below `R`,
+and below `m` if `[b] < m`, if `-m⁻¹` is right. -/
+theorem mmTailLazy_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
     (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     {mo acc tmp o a b : Nat} (hmo : mo < 8) (hacc : acc < 8) (htmp : tmp < 8) (ho : o < 8) (ha : a < 8)
     (hb : b < 8) (d1 : acc ≠ mo) (d2 : acc ≠ tmp) (d3 : acc ≠ o) (d4 : acc ≠ a) (d5 : acc ≠ b)
@@ -66,10 +77,10 @@ theorem mmTail_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
     (hbx : s.gpr .rbx = off B (slot w o)) (h11 : s.gpr .r11 = off B (slot w a)) (h9 : s.gpr .r9 = off B (slot w b))
     (h10 : s.gpr .r10 = off B (slot w mo)) (h8 : s.gpr .r8 = off B (slot w acc))
     (h12 : s.gpr .r12 = BitVec.ofNat 64 w) (h15 : s.gpr .r15 = minv) (hsi₁ : s.gpr .rsi = off B (slot w tmp))
-    (hinv : ((word s.mem B (slot w mo)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
-    (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w mo) w) :
+    (hinv : ((word s.mem B (slot w mo)).toNat * minv.toNat + 1) % 2 ^ 64 = 0) :
     WP isa (.seq zeroAccLoop (.seq rounds (.seq subMod selectAcc))) s fun t =>
-      wv t.mem B (slot w o) w < wv s.mem B (slot w mo) w ∧
+      wv t.mem B (slot w o) w < 2 ^ (64 * w) ∧
+      (wv s.mem B (slot w b) w < wv s.mem B (slot w mo) w → wv t.mem B (slot w o) w < wv s.mem B (slot w mo) w) ∧
       wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w mo) w =
         wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w mo) w ∧
       Arrays B w [acc, tmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
@@ -77,7 +88,7 @@ theorem mmTail_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
   have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
-  have hN0 : 0 < wv s.mem B (slot w mo) w := by omega
+  have hN0 : 0 < wv s.mem B (slot w mo) w := wv_pos_of_inv (by omega) hinv
   have hs₁ := hs
   have k₁ : Keep [] s s := Keep.refl _ _
   -- The accumulator := 0.
@@ -96,10 +107,11 @@ theorem mmTail_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
     (by have := sl a ha; omega) (by have := sp (Ne.symm d5); omega) (by have := sp (Ne.symm d1); omega)
     (by have := sp (Ne.symm d4); omega)
     (by rw [fw₂, (k₂.gpr (by decide) : s₂.gpr .r15 = s.gpr .r15), h15]; exact hinv) hz₂
-    (by rw [fr₂ hb (Ne.symm d5), fr₂ hmo (Ne.symm d1)]; exact hB)) fun s₃ hR => ?_)
+    (by rw [fr₂ hmo (Ne.symm d1)]; exact hN0)) fun s₃ hR => ?_)
   have hTlt := hR.lt
   have hTc := hR.cong
-  rw [fr₂ hmo (Ne.symm d1)] at hTlt hTc
+  rw [fr₂ hmo (Ne.symm d1), fr₂ hb (Ne.symm d5)] at hTlt
+  rw [fr₂ hmo (Ne.symm d1)] at hTc
   rw [fr₂ ha (Ne.symm d4), fr₂ hb (Ne.symm d5)] at hTc
   have k123 := k12.trans hR.keep
   have hs₃ := hR.scr
@@ -126,19 +138,27 @@ theorem mmTail_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
   have hD' : wv s₅.mem B (slot w tmp) w + wv s.mem B (slot w mo) w = wv s₃.mem B (slot w acc) w +
       2 ^ (64 * w) * c.toNat := by
     rw [← fr₃ hmo (Ne.symm d1)]; exact hD
-  have hres : wv t.mem B (slot w o) w = wv s₃.mem B (slot w acc) (w + 2) % wv s.mem B (slot w mo) w := by
-    rw [hv, hacc₅, hlt, wv_top2]
-    have := VG.Proof.Bignum.csub_result (Tl := wv s₃.mem B (slot w acc) w)
+  have hsel : wv t.mem B (slot w o) w = if (word s₃.mem B (slot w acc + 8 * w)).toNat < c.toNat then
+      wv s₃.mem B (slot w acc) w else wv s₅.mem B (slot w tmp) w := by
+    rw [hv, hacc₅, hlt]
+    by_cases h : (word s₃.mem B (slot w acc + 8 * w)).toNat < c.toNat <;> simp [h]
+  have hBR := wv_lt s.mem B (slot w b) w
+  have hNR := wv_lt s.mem B (slot w mo) w
+  rw [wv_top2] at hTlt hTc
+  obtain ⟨hlz, hlm⟩ := VG.Proof.Bignum.csub_lazy (Tl := wv s₃.mem B (slot w acc) w)
       (Tw := (word s₃.mem B (slot w acc + 8 * w)).toNat)
       (Tw1 := (word s₃.mem B (slot w acc + 8 * w + 8)).toNat) (D := wv s₅.mem B (slot w tmp) w)
       (m := wv s.mem B (slot w mo) w) (R := 2 ^ (64 * w)) (c := c.toNat)
-      (by have := wv_lt s.mem B (slot w mo) w; omega) (wv_lt _ _ _ _) (Bool.toNat_le c) (wv_lt _ _ _ _)
-      (by rw [← wv_top2]; exact hTlt) hD'
-    rw [← this]
-    by_cases h : (word s₃.mem B (slot w acc + 8 * w)).toNat < c.toNat <;> simp [h]
-  refine ⟨?_, ?_, ?_, (k5.trans k₆).mono (by decide)⟩
-  · rw [hres]; exact Nat.mod_lt _ hN0
-  · rw [hres, Nat.mod_mul_mod, Nat.mul_comm, hTc]
+      hNR (wv_lt _ _ _ _) (Bool.toNat_le c) (wv_lt _ _ _ _) (by omega) hD'
+  refine ⟨?_, fun hB => ?_, ?_, ?_, (k5.trans k₆).mono (by decide)⟩
+  · rw [hsel]; exact hlz
+  · rw [hsel, VG.Proof.Bignum.csub_result (Tl := wv s₃.mem B (slot w acc) w)
+      (Tw := (word s₃.mem B (slot w acc + 8 * w)).toNat)
+      (Tw1 := (word s₃.mem B (slot w acc + 8 * w + 8)).toNat) (D := wv s₅.mem B (slot w tmp) w)
+      (m := wv s.mem B (slot w mo) w) (R := 2 ^ (64 * w)) (c := c.toNat)
+      hNR (wv_lt _ _ _ _) (Bool.toNat_le c) (wv_lt _ _ _ _) (by omega) hD']
+    exact Nat.mod_lt _ hN0
+  · rw [hsel, Nat.mul_mod, hlm, ← Nat.mul_mod, Nat.mul_comm]; exact hTc
   · have a3 : Arrays B w [acc, tmp, o] s.mem s₃.mem :=
       Arrays.of_outside (j := acc) (by simp) (ho₂.trans hR.out) (Nat.le_refl _) (Nat.le_refl _)
     have a5 : Arrays B w [acc, tmp, o] s₃.mem s₅.mem :=
@@ -146,6 +166,25 @@ theorem mmTail_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
     have a6 : Arrays B w [acc, tmp, o] s₅.mem t.mem :=
       Arrays.of_outside (j := o) (by simp) hot (Nat.le_refl _) (by omega)
     exact (a3.trans a5).trans a6
+
+/-- `mmTailLazy_ok` for `[b] < m`: `[o] = [a] [b] R⁻¹ mod m`. -/
+theorem mmTail_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
+    (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
+    {mo acc tmp o a b : Nat} (hmo : mo < 8) (hacc : acc < 8) (htmp : tmp < 8) (ho : o < 8) (ha : a < 8)
+    (hb : b < 8) (d1 : acc ≠ mo) (d2 : acc ≠ tmp) (d3 : acc ≠ o) (d4 : acc ≠ a) (d5 : acc ≠ b)
+    (d6 : tmp ≠ mo) (d7 : tmp ≠ o)
+    (hbx : s.gpr .rbx = off B (slot w o)) (h11 : s.gpr .r11 = off B (slot w a)) (h9 : s.gpr .r9 = off B (slot w b))
+    (h10 : s.gpr .r10 = off B (slot w mo)) (h8 : s.gpr .r8 = off B (slot w acc))
+    (h12 : s.gpr .r12 = BitVec.ofNat 64 w) (h15 : s.gpr .r15 = minv) (hsi₁ : s.gpr .rsi = off B (slot w tmp))
+    (hinv : ((word s.mem B (slot w mo)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w mo) w) :
+    WP isa (.seq zeroAccLoop (.seq rounds (.seq subMod selectAcc))) s fun t =>
+      wv t.mem B (slot w o) w < wv s.mem B (slot w mo) w ∧
+      wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w mo) w =
+        wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w mo) w ∧
+      Arrays B w [acc, tmp, o] s.mem t.mem ∧ Keep mmRegs s t :=
+  WP.mono (mmTailLazy_ok hs hZ hw hw' hmo hacc htmp ho ha hb d1 d2 d3 d4 d5 d6 d7 hbx h11 h9 h10 h8 h12 h15 hsi₁
+    hinv) fun _ ⟨_, h1, h2, h3, h4⟩ => ⟨h1 hB, h2, h3, h4⟩
 
 /-- Montgomery multiplication: `[o] = [a] [b] R⁻¹ mod m` for `m = [mo]`, if
 `[b] < m` and `-m⁻¹` is right. -/

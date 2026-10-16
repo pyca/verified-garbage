@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTSmall
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTTail
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTTail
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTFront
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

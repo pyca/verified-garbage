@@ -93,12 +93,12 @@ theorem vstep2 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
       PolyIs s'.mem fP (layF blk F 2 zi (2 * (i + 1))) ∧ s'.gpr .rdx = coeffAddr fP (8 * (i + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInv fP s s' := by
-  have j0 : 8 * i + 4 ≤ 256 := by omega
-  have j1 : 8 * i + 4 + 4 ≤ 256 := by omega
+  have j0 : 8 * i + 4 ≤ 256 := by omega_arith
+  have j1 : 8 * i + 4 + 4 ≤ 256 := by omega_arith
   have a1 : coeffAddr fP (8 * i) + BitVec.ofNat 64 16 = coeffAddr fP (8 * i + 4) := coeffAddr_add _ _ 4
   have r0 := f_in (List.mem_append_right s.rd hwf) j0
   have r1 := f_in (List.mem_append_right s.rd hwf) j1
-  have hk' : ∀ j < 4, kz + sel o j < 256 := fun j _ => by have := sel_lt o j; omega
+  have hk' : ∀ j < 4, kz + sel o j < 256 := fun j _ => by have := sel_lt o j; omega_arith
   generalize hG : layF blk F 2 zi (2 * i) = G at hS
   have lx := dlanes_load hS j0
   have ly := dlanes_load hS j1
@@ -130,15 +130,15 @@ theorem vstep2 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
     · intro e he
       rw [dword_punpcklqdq _ _ he, x0, x1']
       split
-      · rw [lx e he]; dsimp only; rw [show 8 * i + e + 2 * (e / 2) = 8 * i + e by omega]
-      · rw [ly (e - 2) (by omega)]; dsimp only
-        rw [show 8 * i + e + 2 * (e / 2) = 8 * i + 4 + (e - 2) by omega]
+      · rw [lx e he]; dsimp only; rw [show 8 * i + e + 2 * (e / 2) = 8 * i + e by omega_arith]
+      · rw [ly (e - 2) (by omega_arith)]; dsimp only
+        rw [show 8 * i + e + 2 * (e / 2) = 8 * i + 4 + (e - 2) by omega_arith]
     · intro e he
       rw [dword_punpckhqdq _ _ he, x0, x1']
       split
-      · rw [lx (2 + e) (by omega)]; dsimp only
-        rw [show 8 * i + 2 + e + 2 * (e / 2) = 8 * i + (2 + e) by omega]
-      · rw [ly e he]; dsimp only; rw [show 8 * i + 2 + e + 2 * (e / 2) = 8 * i + 4 + e by omega]
+      · rw [lx (2 + e) (by omega_arith)]; dsimp only
+        rw [show 8 * i + 2 + e + 2 * (e / 2) = 8 * i + (2 + e) by omega_arith]
+      · rw [ly e he]; dsimp only; rw [show 8 * i + 2 + e + 2 * (e / 2) = 8 * i + 4 + e by omega_arith]
     · intro e he
       rw [z1 e he]; dsimp only; rw [hsel e he]
     · exact zo1
@@ -164,7 +164,7 @@ theorem vstep2 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
   refine ⟨?_, by rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add, Nat.mul_succ], r81,
     by rw [rc1], by rw [rc1], ?_⟩
   · -- the coefficients stored
-    refine polyIs_write2 hS j0 j1 (by omega)
+    refine polyIs_write2 hS j0 j1 (by omega_arith)
       (a := fun e => if e < 2 then (op G[8 * i + e]! G[8 * i + 2 + e]! (zetas (zi (2 * i)))).1
         else (op G[8 * i + (e - 2)]! G[8 * i + 2 + (e - 2)]! (zetas (zi (2 * i)))).2)
       (b := fun e => if e < 2 then (op G[8 * i + 4 + e]! G[8 * i + 6 + e]! (zetas (zi (2 * i + 1)))).1
@@ -173,44 +173,44 @@ theorem vstep2 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
     · rw [dword_punpcklqdq _ _ he]
       split
       · rw [a0 e he]; dsimp only
-        rw [ite_eq_left (by omega), show 8 * i + e + 2 * (e / 2) = 8 * i + e by omega,
-          show 8 * i + 2 + e + 2 * (e / 2) = 8 * i + 2 + e by omega, show 2 * i + e / 2 = 2 * i by omega]
-      · rw [a3 (e - 2) (by omega)]; dsimp only
-        rw [ite_eq_right (by omega), show 8 * i + (e - 2) + 2 * ((e - 2) / 2) = 8 * i + (e - 2) by omega,
-          show 8 * i + 2 + (e - 2) + 2 * ((e - 2) / 2) = 8 * i + 2 + (e - 2) by omega,
-          show 2 * i + (e - 2) / 2 = 2 * i by omega]
+        rw [ite_eq_left (by omega_arith), show 8 * i + e + 2 * (e / 2) = 8 * i + e by omega_arith,
+          show 8 * i + 2 + e + 2 * (e / 2) = 8 * i + 2 + e by omega_arith, show 2 * i + e / 2 = 2 * i by omega_arith]
+      · rw [a3 (e - 2) (by omega_arith)]; dsimp only
+        rw [ite_eq_right (by omega_arith), show 8 * i + (e - 2) + 2 * ((e - 2) / 2) = 8 * i + (e - 2) by omega_arith,
+          show 8 * i + 2 + (e - 2) + 2 * ((e - 2) / 2) = 8 * i + 2 + (e - 2) by omega_arith,
+          show 2 * i + (e - 2) / 2 = 2 * i by omega_arith]
     · rw [dword_punpckhqdq _ _ he, eval_movdqa]
       split
-      · rw [a0 (2 + e) (by omega)]; dsimp only
-        rw [ite_eq_left (by omega), show 8 * i + (2 + e) + 2 * ((2 + e) / 2) = 8 * i + 4 + e by omega,
-          show 8 * i + 2 + (2 + e) + 2 * ((2 + e) / 2) = 8 * i + 6 + e by omega,
-          show 2 * i + (2 + e) / 2 = 2 * i + 1 by omega]
+      · rw [a0 (2 + e) (by omega_arith)]; dsimp only
+        rw [ite_eq_left (by omega_arith), show 8 * i + (2 + e) + 2 * ((2 + e) / 2) = 8 * i + 4 + e by omega_arith,
+          show 8 * i + 2 + (2 + e) + 2 * ((2 + e) / 2) = 8 * i + 6 + e by omega_arith,
+          show 2 * i + (2 + e) / 2 = 2 * i + 1 by omega_arith]
       · rw [a3 e he]; dsimp only
-        rw [ite_eq_right (by omega), show 8 * i + e + 2 * (e / 2) = 8 * i + 4 + (e - 2) by omega,
-          show 8 * i + 2 + e + 2 * (e / 2) = 8 * i + 6 + (e - 2) by omega,
-          show 2 * i + e / 2 = 2 * i + 1 by omega]
+        rw [ite_eq_right (by omega_arith), show 8 * i + e + 2 * (e / 2) = 8 * i + 4 + (e - 2) by omega_arith,
+          show 8 * i + 2 + e + 2 * (e / 2) = 8 * i + 6 + (e - 2) by omega_arith,
+          show 2 * i + e / 2 = 2 * i + 1 by omega_arith]
     · -- the specification: two blocks
-      rw [← hG, show 2 * (i + 1) = 2 * i + 1 + 1 by omega, layF, foldl_range_succ, foldl_range_succ, ← layF,
-        hG, show 2 * 2 * (2 * i) = 8 * i by omega, show 2 * 2 * (2 * i + 1) = 8 * i + 4 by omega]
+      rw [← hG, show 2 * (i + 1) = 2 * i + 1 + 1 by omega_arith, layF, foldl_range_succ, foldl_range_succ, ← layF,
+        hG, show 2 * 2 * (2 * i) = 8 * i by omega_arith, show 2 * 2 * (2 * i + 1) = 8 * i + 4 by omega_arith]
       have hn : ∀ j, j < 256 → j < n := fun j h => by rw [n_eq]; exact h
-      rw [hblk.get _ _ _ _ _ (by decide) (by decide) (by rw [n_eq]; omega) _ (hn j hj)]
+      rw [hblk.get _ _ _ _ _ (by decide) (by decide) (by rw [n_eq]; omega_arith) _ (hn j hj)]
       have p2 := fun j (h : j < 256) => hblk.get G 2 (zi (2 * i)) (8 * i) 2 (by decide) (by decide)
-        (by rw [n_eq]; omega) j (hn j h)
-      rcases (by omega : j < 8 * i ∨ (8 * i ≤ j ∧ j < 8 * i + 2) ∨ (8 * i + 2 ≤ j ∧ j < 8 * i + 4) ∨
+        (by rw [n_eq]; omega_arith) j (hn j h)
+      rcases (by omega_arith : j < 8 * i ∨ (8 * i ≤ j ∧ j < 8 * i + 2) ∨ (8 * i + 2 ≤ j ∧ j < 8 * i + 4) ∨
           (8 * i + 4 ≤ j ∧ j < 8 * i + 6) ∨ (8 * i + 6 ≤ j ∧ j < 8 * i + 8) ∨ 8 * i + 8 ≤ j) with
         h | h | h | h | h | h
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj]
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj]
-        rw [show 8 * i + (j - 8 * i) = j by omega, show 8 * i + 2 + (j - 8 * i) = j + 2 by omega]
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj]
-        rw [show 8 * i + (j - 8 * i - 2) = j - 2 by omega, show 8 * i + 2 + (j - 8 * i - 2) = j by omega]
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj, p2 (j + 2) (by omega)]
-        rw [show 8 * i + 4 + (j - (8 * i + 4)) = j by omega,
-          show 8 * i + 6 + (j - (8 * i + 4)) = j + 2 by omega]
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj, p2 (j - 2) (by omega)]
-        rw [show 8 * i + 4 + (j - (8 * i + 4) - 2) = j - 2 by omega,
-          show 8 * i + 6 + (j - (8 * i + 4) - 2) = j by omega]
-      · simp (disch := omega) only [ite_eq_left, ite_eq_right, p2 j hj]
+      · simp (disch := omega_arith) only [↓ite_eq_right, p2 j hj]
+      · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, p2 j hj]
+        rw [show 8 * i + (j - 8 * i) = j by omega_arith, show 8 * i + 2 + (j - 8 * i) = j + 2 by omega_arith]
+      · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, p2 j hj]
+        rw [show 8 * i + (j - 8 * i - 2) = j - 2 by omega_arith, show 8 * i + 2 + (j - 8 * i - 2) = j by omega_arith]
+      · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, p2 j hj, p2 (j + 2) (by omega_arith)]
+        rw [show 8 * i + 4 + (j - (8 * i + 4)) = j by omega_arith,
+          show 8 * i + 6 + (j - (8 * i + 4)) = j + 2 by omega_arith]
+      · simp (disch := omega_arith) only [↓ite_eq_left, ↓ite_eq_right, p2 j hj, p2 (j - 2) (by omega_arith)]
+        rw [show 8 * i + 4 + (j - (8 * i + 4) - 2) = j - 2 by omega_arith,
+          show 8 * i + 6 + (j - (8 * i + 4) - 2) = j by omega_arith]
+      · simp (disch := omega_arith) only [↓ite_eq_right, p2 j hj]
   · -- what the step keeps
     refine ⟨⟨fun r hr => ?_, by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags],
       by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩, frame_write2 (Frame.refl _ _) j0 j1 _ _, ⟨?_, ?_⟩,
@@ -230,7 +230,7 @@ theorem vpre21 {fP sP : Addr} (k : Nat) (hk : k + 4 ≤ 256) {s : State} (hdi : 
     WP isa (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ leaR .r8 .rsi (4 * k))) s fun w =>
       w.gpr .rdx = fP ∧ w.gpr .r8 = coeffAddr sP k ∧ GOnly [.rdx, .r8] s w := by
   simp only [leaR]
-  vrund [sx_ofNat (show 4 * k < 2 ^ 31 by omega), hsi, hdi]
+  vrund [sx_ofNat (show 4 * k < 2 ^ 31 by omega_arith), hsi, hdi]
   gonlyd
 
 theorem vlay2_ok {fP sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz : Nat → Nat) (hkz0 : kz 0 = k)
@@ -240,7 +240,7 @@ theorem vlay2_ok {fP sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz
     (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr)
     (hd : (pR sP).Disjoint (pR fP)) :
     WP isa (vlay2 bf k o dz) s fun s' => PolyIs s'.mem fP (layF blk F 2 zi 64) ∧ BInv fP s s' := by
-  have hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega
+  have hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega_arith
   refine WP.seq (WP.mono (vpre21 k hk0 hdi hsi) fun w ⟨hdx, h8, og⟩ => ?_)
   refine WP.mono (wp_rcxLoop (N := 32) (by decide) (by decide)
     (fun i u => PolyIs u.mem fP (layF blk F 2 zi (2 * i)) ∧ u.gpr .rdx = coeffAddr fP (8 * i) ∧
@@ -288,12 +288,12 @@ theorem vstep1 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
       PolyIs s'.mem fP (layF blk F 1 zi (4 * (i + 1))) ∧ s'.gpr .rdx = coeffAddr fP (8 * (i + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInv fP s s' := by
-  have j0 : 8 * i + 4 ≤ 256 := by omega
-  have j1 : 8 * i + 4 + 4 ≤ 256 := by omega
+  have j0 : 8 * i + 4 ≤ 256 := by omega_arith
+  have j1 : 8 * i + 4 + 4 ≤ 256 := by omega_arith
   have a1 : coeffAddr fP (8 * i) + BitVec.ofNat 64 16 = coeffAddr fP (8 * i + 4) := coeffAddr_add _ _ 4
   have r0 := f_in (List.mem_append_right s.rd hwf) j0
   have r1 := f_in (List.mem_append_right s.rd hwf) j1
-  have hk' : ∀ j < 4, kz + sel o j < 256 := fun j _ => by have := sel_lt o j; omega
+  have hk' : ∀ j < 4, kz + sel o j < 256 := fun j _ => by have := sel_lt o j; omega_arith
   generalize hG : layF blk F 1 zi (4 * i) = G at hS
   have lx := dlanes_load hS j0
   have ly := dlanes_load hS j1
@@ -325,16 +325,16 @@ theorem vstep1 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
     · intro e he
       rw [dword_punpcklqdq _ _ he, x0, x2]
       split
-      · rw [dword_d8 _ he, ite_eq_left (by omega), lx _ (by omega)]
-      · rw [dword_d8 _ (by omega), ite_eq_left (by omega), ly _ (by omega)]; dsimp only
-        rw [show 8 * i + 4 + 2 * (e - 2) = 8 * i + 2 * e by omega]
+      · rw [dword_d8 _ he, ite_eq_left (by omega_arith), lx _ (by omega_arith)]
+      · rw [dword_d8 _ (by omega_arith), ite_eq_left (by omega_arith), ly _ (by omega_arith)]; dsimp only
+        rw [show 8 * i + 4 + 2 * (e - 2) = 8 * i + 2 * e by omega_arith]
     · intro e he
       rw [dword_punpckhqdq _ _ he, x0, x2]
       split
-      · rw [dword_d8 _ (by omega), ite_eq_right (by omega), lx _ (by omega)]; dsimp only
-        rw [show 8 * i + (2 * (2 + e - 2) + 1) = 8 * i + 2 * e + 1 by omega]
-      · rw [dword_d8 _ he, ite_eq_right (by omega), ly _ (by omega)]; dsimp only
-        rw [show 8 * i + 4 + (2 * (e - 2) + 1) = 8 * i + 2 * e + 1 by omega]
+      · rw [dword_d8 _ (by omega_arith), ite_eq_right (by omega_arith), lx _ (by omega_arith)]; dsimp only
+        rw [show 8 * i + (2 * (2 + e - 2) + 1) = 8 * i + 2 * e + 1 by omega_arith]
+      · rw [dword_d8 _ he, ite_eq_right (by omega_arith), ly _ (by omega_arith)]; dsimp only
+        rw [show 8 * i + 4 + (2 * (e - 2) + 1) = 8 * i + 2 * e + 1 by omega_arith]
     · intro e he
       rw [z1 e he]; dsimp only; rw [hsel e he]
     · exact zo1
@@ -361,39 +361,39 @@ theorem vstep1 {fP sP : Addr} {i kz : Nat} (hi : i < 32) (o : BitVec 8) (dz : Bi
   refine ⟨?_, by rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add, Nat.mul_succ], r81,
     by rw [rc1], by rw [rc1], ?_⟩
   · -- the coefficients stored
-    refine polyIs_write2 hS j0 j1 (by omega)
+    refine polyIs_write2 hS j0 j1 (by omega_arith)
       (a := fun e => (layF blk F 1 zi (4 * (i + 1)))[8 * i + e]!)
       (b := fun e => (layF blk F 1 zi (4 * (i + 1)))[8 * i + 4 + e]!)
       (fun e he => ?_) (fun e he => ?_) (fun j hj => ?_)
     · rw [dword_punpckldq' _ _ he]
       split
-      · rw [a0 (e / 2) (by omega)]; dsimp only
-        rw [show 8 * i + 2 * (e / 2) = 8 * i + e by omega,
-          show 4 * i + e / 2 = (8 * i + e) / 2 by omega, ← hG]
-        simp (disch := omega) only [lg, ite_eq_left, ite_eq_right]
-      · rw [a3 (e / 2) (by omega)]; dsimp only
-        rw [show 8 * i + 2 * (e / 2) = 8 * i + e - 1 by omega, show 8 * i + e - 1 + 1 = 8 * i + e by omega,
-          show 4 * i + e / 2 = (8 * i + e) / 2 by omega, ← hG]
-        simp (disch := omega) only [lg, ite_eq_left, ite_eq_right]
+      · rw [a0 (e / 2) (by omega_arith)]; dsimp only
+        rw [show 8 * i + 2 * (e / 2) = 8 * i + e by omega_arith,
+          show 4 * i + e / 2 = (8 * i + e) / 2 by omega_arith, ← hG]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_left, ↓ite_eq_right]
+      · rw [a3 (e / 2) (by omega_arith)]; dsimp only
+        rw [show 8 * i + 2 * (e / 2) = 8 * i + e - 1 by omega_arith, show 8 * i + e - 1 + 1 = 8 * i + e by omega_arith,
+          show 4 * i + e / 2 = (8 * i + e) / 2 by omega_arith, ← hG]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_left, ↓ite_eq_right]
     · rw [dword_punpckhdq' _ _ he, eval_movdqa]
       split
-      · rw [a0 (2 + e / 2) (by omega)]; dsimp only
-        rw [show 8 * i + 2 * (2 + e / 2) = 8 * i + 4 + e by omega,
-          show 4 * i + (2 + e / 2) = (8 * i + 4 + e) / 2 by omega, ← hG]
-        simp (disch := omega) only [lg, ite_eq_left, ite_eq_right]
-      · rw [a3 (2 + e / 2) (by omega)]; dsimp only
-        rw [show 8 * i + 2 * (2 + e / 2) = 8 * i + 4 + e - 1 by omega,
-          show 8 * i + 4 + e - 1 + 1 = 8 * i + 4 + e by omega,
-          show 4 * i + (2 + e / 2) = (8 * i + 4 + e) / 2 by omega, ← hG]
-        simp (disch := omega) only [lg, ite_eq_left, ite_eq_right]
-    · rcases (by omega : (8 * i ≤ j ∧ j < 8 * i + 4) ∨ (8 * i + 4 ≤ j ∧ j < 8 * i + 8) ∨
+      · rw [a0 (2 + e / 2) (by omega_arith)]; dsimp only
+        rw [show 8 * i + 2 * (2 + e / 2) = 8 * i + 4 + e by omega_arith,
+          show 4 * i + (2 + e / 2) = (8 * i + 4 + e) / 2 by omega_arith, ← hG]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_left, ↓ite_eq_right]
+      · rw [a3 (2 + e / 2) (by omega_arith)]; dsimp only
+        rw [show 8 * i + 2 * (2 + e / 2) = 8 * i + 4 + e - 1 by omega_arith,
+          show 8 * i + 4 + e - 1 + 1 = 8 * i + 4 + e by omega_arith,
+          show 4 * i + (2 + e / 2) = (8 * i + 4 + e) / 2 by omega_arith, ← hG]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_left, ↓ite_eq_right]
+    · rcases (by omega_arith : (8 * i ≤ j ∧ j < 8 * i + 4) ∨ (8 * i + 4 ≤ j ∧ j < 8 * i + 8) ∨
           j < 8 * i ∨ 8 * i + 8 ≤ j) with h | h | h | h
-      · rw [ite_eq_left h, show 8 * i + (j - 8 * i) = j by omega]
-      · rw [ite_eq_right (by omega), ite_eq_left h, show 8 * i + 4 + (j - (8 * i + 4)) = j by omega]
-      · rw [ite_eq_right (by omega), ite_eq_right (by omega), ← hG]
-        simp (disch := omega) only [lg, ite_eq_left]
-      · rw [ite_eq_right (by omega), ite_eq_right (by omega), ← hG]
-        simp (disch := omega) only [lg, ite_eq_left, ite_eq_right]
+      · rw [ite_eq_left h, show 8 * i + (j - 8 * i) = j by omega_arith]
+      · rw [ite_eq_right (by omega_arith), ite_eq_left h, show 8 * i + 4 + (j - (8 * i + 4)) = j by omega_arith]
+      · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), ← hG]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_left]
+      · rw [ite_eq_right (by omega_arith), ite_eq_right (by omega_arith), ← hG]
+        simp (disch := omega_arith) only [lg, ↓ite_eq_right]
   · -- what the step keeps
     refine ⟨⟨fun r hr => ?_, by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags],
       by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩, frame_write2 (Frame.refl _ _) j0 j1 _ _, ⟨?_, ?_⟩,
@@ -413,7 +413,7 @@ theorem vlay1_ok {fP sP : Addr} (k : Nat) (o : BitVec 8) (dz : BitVec 32) (zi kz
     (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr)
     (hd : (pR sP).Disjoint (pR fP)) :
     WP isa (vlay1 bf k o dz) s fun s' => PolyIs s'.mem fP (layF blk F 1 zi 128) ∧ BInv fP s s' := by
-  have hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega
+  have hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega_arith
   refine WP.seq (WP.mono (vpre21 k hk0 hdi hsi) fun w ⟨hdx, h8, og⟩ => ?_)
   refine WP.mono (wp_rcxLoop (N := 32) (by decide) (by decide)
     (fun i u => PolyIs u.mem fP (layF blk F 1 zi (4 * i)) ∧ u.gpr .rdx = coeffAddr fP (8 * i) ∧

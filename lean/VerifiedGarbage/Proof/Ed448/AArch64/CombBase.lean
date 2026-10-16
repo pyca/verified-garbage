@@ -34,6 +34,8 @@ public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
+meta import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -229,7 +231,7 @@ def loopOk (d : Nat) : Bool :=
 theorem loopStores :
     ∀ i ∈ instrs (.seq init (.loop Impl.X448.AArch64.Base.stepR (.nonzero .x .x9)) : Prog isa),
       storesAt loopOk i = true := by
-  rw [← List.all_eq_true, ← Code.allInstrs_eq]; decide +kernel
+  rw [← List.all_eq_true, ← Code.allInstrs_eq]; lit_decide
 
 /-- The bytes the function saves registers at are in no store of the steps. -/
 theorem save_unstored (base : Addr) {i : Nat}
@@ -735,11 +737,7 @@ theorem comb_arm (s : State) (hs : combL.pre s) :
 theorem comb_check :
     ∃ h, ((taintS [combSym]).check (Taint.ofRegs [.x0, .x1]) combBaseFn h).isSome = true := by
   apply exists_isSome_of_eraseT
-  refine Split.exists_isSome (c' := ?c') ?s ⟨?h, ?g⟩
-  case s =>
-    simp only [combBaseFn, Code.eraseT]
-    exact .seq (.refl _) (.seq (.refl _) (.seq (.loop _ VG.AArch64.stepR_split) (.refl _)))
-  case g => taint_decide
+  exact VG.Taint.exists_check_of_sumOk combSum (by decide)
 
 theorem comb_ct : ConstantTime isa combL.pre combL.pub combBaseFn :=
   let ⟨_, hc⟩ := comb_check

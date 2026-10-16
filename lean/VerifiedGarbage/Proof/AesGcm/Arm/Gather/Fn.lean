@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Loop
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Callee
-public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.AesGcm.CtxFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Contract
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, ARMv7: the function

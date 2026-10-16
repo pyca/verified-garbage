@@ -8,6 +8,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.X86.VerifyMessage.Layout`. -/
 
@@ -25,6 +26,8 @@ structure Lay where
   sig : BitVec 32
   scr : BitVec 32
   E : BitVec 32
+  /-- The address of the static of `-[1]B … -[15]B`, which the equation reads. -/
+  tbl : BitVec 32
 
 namespace Lay
 variable (L : Lay)
@@ -36,7 +39,8 @@ abbrev ARGS : Region := ⟨L.E.setWidth 64 + 260, 20⟩
 abbrev RET : Region := ⟨L.E.setWidth 64 + 256, 4⟩
 abbrev FR : Region := Whole.FR L.E
 abbrev STK : Region := Whole.STK L.E
-def inputs : List Region := [L.PK, L.MSG, L.SIG, L.ARGS]
+abbrev TBL : Region := ⟨L.tbl.setWidth 64, 1920⟩
+def inputs : List Region := [L.PK, L.MSG, L.SIG, L.ARGS, L.TBL]
 def outputs : List Region := [L.SCR]
 def value (j : Nat) : BitVec 32 :=
   match j with | 0 => L.pk | 1 => L.msg | 2 => L.len | 3 => L.sig | _ => L.scr
@@ -53,6 +57,7 @@ structure Ok : Prop where
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 32
   ns : L.sig.toNat + 64 ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
+  nt : L.tbl.toNat + 1920 ≤ 2 ^ 32
 end Lay
 
 abbrev Ctx (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (t : State) :=

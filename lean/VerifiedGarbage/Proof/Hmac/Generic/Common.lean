@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Hmac.Common
 public import VerifiedGarbage.Spec.Pbkdf2
-public import VerifiedGarbage.Spec.Sha1
-public import VerifiedGarbage.Spec.Md5
-public import VerifiedGarbage.Spec.Sha512
+import VerifiedGarbage.Spec.Sha1
+import VerifiedGarbage.Spec.Md5
+import VerifiedGarbage.Spec.Sha512
 public import VerifiedGarbage.Proof.Framework.OmegaLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

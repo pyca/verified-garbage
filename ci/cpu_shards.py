@@ -114,6 +114,19 @@ def pick(cpu, shard, times, runs):
     return split(lines, host_times(lines, times.get(cpu_key(cpu), {})), n)[i - 1]
 
 
+def seconds(t):
+    """A time as bash's `TIMEFORMAT` `%U` or `%S` prints it, in seconds.
+
+    bash rounds the microseconds to milliseconds and prints the fraction
+    digit by digit without carrying into the seconds, so 120.9996 s prints as
+    `120.:00`, a tenths digit of 10 (`'0' + 10`): read each fraction digit
+    as `ord(c) - ord('0')`."""
+    whole, dot, fraction = t.partition(".")
+    if not whole.isdigit() or any(not "0" <= c <= ":" for c in fraction) or (dot and not fraction):
+        raise SystemExit(f"CPU time {t!r}: not a time `TIMEFORMAT` prints")
+    return int(whole) + sum((ord(c) - ord("0")) / 10 ** (i + 1) for i, c in enumerate(fraction))
+
+
 def times(cpu, host, text):
     """`<features>\t<user> <sys>` lines as {cpu: {host: {features: seconds}}}."""
     if host not in HOSTS:
@@ -123,7 +136,7 @@ def times(cpu, host, text):
         if not raw.strip():
             continue
         features, _, cpu_time = raw.partition("\t")
-        out[" ".join(features.split())] = round(sum(float(t) for t in cpu_time.split()), 2)
+        out[" ".join(features.split())] = round(sum(seconds(t) for t in cpu_time.split()), 2)
     return {cpu_key(cpu): {host: out}}
 
 

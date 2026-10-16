@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.TCB.Artifact
 
 @[expose] public section
 
@@ -26,7 +29,7 @@ theorem blockPrefix_get (w : Poly) {len : Nat} {z : Zq} {start t : Nat} (hlen : 
     rcases (by omega : i < start ∨ (start ≤ i ∧ i < start + t) ∨ i = start + t ∨
         (start + t < i ∧ i < start + len) ∨ (start + len ≤ i ∧ i < start + t + len) ∨
         i = start + t + len ∨ start + t + len < i) with h | h | rfl | h | h | rfl | h <;>
-      simp (disch := omega) only [ite_eq_left, ite_eq_right, Nat.add_sub_cancel, ↓reduceIte]
+      simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right, Nat.add_sub_cancel]
 
 
 def loc (u i e : Nat) : Nat := 32*i+4*u+e
@@ -56,13 +59,13 @@ theorem regBlock_get (w : Poly) {base gap u t : Nat} (hgap : 0<gap)
       rw [ite_eq_left (by unfold loc; omega),
         show loc u (base+t) e+32*gap=loc u (base+t+gap) e by unfold loc; omega,
         ih (by omega) hi, ih (by omega) (by omega)]
-      simp (disch := omega) only [ite_eq_left,ite_eq_right]
+      simp (disch := omega) only [↓ite_eq_left,ite_eq_right]
     · by_cases hd : i=base+t+gap
       · subst i
         rw [ite_eq_right (by unfold loc; omega),ite_eq_left (by unfold loc; omega),
           show loc u (base+t+gap) e-32*gap=loc u (base+t) e by unfold loc; omega,
           ih (by omega) hi,ih (by omega) (by omega)]
-        simp (disch := omega) only [ite_eq_left,ite_eq_right]
+        simp (disch := omega) only [↓ite_eq_left,ite_eq_right]
         rw [Nat.add_sub_cancel]
       · rw [ite_eq_right (by unfold loc; omega),ite_eq_right (by unfold loc; omega),ih (by omega) hi]
         have h1 : (base≤i ∧ i<base+t) ↔ (base≤i ∧ i<base+(t+1)) := by omega

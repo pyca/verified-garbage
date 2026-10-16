@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.NatPairs
+import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 @[expose] public section
 
@@ -33,6 +37,7 @@ theorem subWords_value (a b c d e x y z w v : Word) :
       five a b c d e+2135987035920910082395021706169552114602704522356652769947041607822219725780640550022962086936576*(subWords a b c d e x y z w v).2.toNat := by
   have h := subFive_value a b c d e x y z w v
   simp only [pow320] at h
+  simp only [w5value, subWords]
   exact h
 
 def subQ (a b c d e : Word) : W5 × Bool :=

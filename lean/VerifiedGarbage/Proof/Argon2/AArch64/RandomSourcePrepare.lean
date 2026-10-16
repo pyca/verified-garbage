@@ -2,19 +2,25 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.AArch64.RandomSource
 public import VerifiedGarbage.Proof.Argon2.Matrix
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
+import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
 public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheSelect
-public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
+import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernel
 public import VerifiedGarbage.Impl.Argon2.AArch64.AddressMode
-public import VerifiedGarbage.Proof.Argon2.AArch64.Memory
-public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-public import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+import VerifiedGarbage.Proof.Argon2.AArch64.Memory
+import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
+import VerifiedGarbage.Impl.MdStream.AArch64
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.MdStream.Spec
 
 @[expose] public section
 

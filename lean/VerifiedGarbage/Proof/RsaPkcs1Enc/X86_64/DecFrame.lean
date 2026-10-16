@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: the frame
@@ -117,7 +118,7 @@ structure DPre (s : State) : Prop where
   hdpl : (stackArg s 10).toNat = (stackArg s 6).toNat
   hqil : (stackArg s 14).toNat = (stackArg s 6).toNat
   hdql : (stackArg s 12).toNat = (stackArg s 8).toNat
-  hsl : 16 * (s.gpr .r8).toNat ≤ (stackArg s 16).toNat
+  hsl : 16 * (s.gpr .r8).toNat + 32 ≤ (stackArg s 16).toNat
 
 theorem dPre_of {s : State} (h : decK.pre s) : DPre s := by
   simp only [decK] at h

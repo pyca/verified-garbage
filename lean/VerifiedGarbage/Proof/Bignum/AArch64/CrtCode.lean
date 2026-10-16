@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Int.ModEq
 
 /-!
 # RSA with the CRT on AArch64: correctness
@@ -46,7 +47,7 @@ structure CrtCtx (s : State) : Prop where
   hpl2 : (s.gpr .x7).toNat < (s.gpr .x3).toNat
   hql1 : 1 ≤ (stackArg s 1).toNat
   hql2 : (stackArg s 1).toNat < (s.gpr .x3).toNat
-  hZ : 128 * (s.gpr .x3).toNat ≤ (stackArg s 9).toNat * 8
+  hZ : 128 * (s.gpr .x3).toNat + 256 ≤ (stackArg s 9).toNat * 8
   hs : Scr s (stackArg s 8) ((stackArg s 9).toNat * 8)
   ha : ∀ j < 10, InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8
   hsep : ∀ j < 10, ∀ m', Outside (stackArg s 8) 0 (8 * 32) s.mem m' →
@@ -146,10 +147,10 @@ theorem crtPre_of {s t₁ t : State} (c : CrtCtx s) (h : CrtHeadPost s t₁) (hm
   have hql2 := c.hql2
   have h0 : t.gpr .x0 = stackArg s 8 := (k.gpr .x0 (by decide)).trans h.x0
   have hz : offQ (((s.gpr .x3).toNat + 7) / 8) (s.gpr .x7).toNat + slot (wsWords (stackArg s 1).toNat) 8 +
-      tabBytes (wsWords (stackArg s 1).toNat) ≤ (stackArg s 9).toNat * 8 := by
-    unfold offQ slot wsWords hdrBytes tabBytes; omega
+      wsTab (wsWords (stackArg s 1).toNat) ≤ (stackArg s 9).toNat * 8 :=
+    crt_room hk1 hpl2 hql2 hZ
   exact
-    { scr := h.scr.congr k.wr, x0 := h0, z := hz, zk := hZ, k1 := hk1, k2 := hk2, hO := (by rw [hm]; exact h.hO),
+    { scr := h.scr.congr k.wr, x0 := h0, z := hz, zk := (by omega), k1 := hk1, k2 := hk2, hO := (by rw [hm]; exact h.hO),
       hN := (by rw [hm]; exact h.hN), hK := (by rw [hm]; exact h.hK), hIn := (by rw [hm]; exact h.hIn),
       hP := (by rw [hm]; exact h.hP), hPl := (by rw [hm]; exact h.hPl), hQ := (by rw [hm]; exact h.hQ),
       hQl := (by rw [hm]; exact h.hQl), hDp := (by rw [hm]; exact h.hDp), hDq := (by rw [hm]; exact h.hDq),

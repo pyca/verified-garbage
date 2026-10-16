@@ -20,6 +20,8 @@ deriving instance Lean.ToExpr for VLen
 deriving instance Lean.ToExpr for Src
 deriving instance Lean.ToExpr for AluOp
 deriving instance Lean.ToExpr for ShiftOp
+deriving instance Lean.ToExpr for VarShiftOp
+deriving instance Lean.ToExpr for ShiftxOp
 deriving instance Lean.ToExpr for XBinOp
 deriving instance Lean.ToExpr for XShiftOp
 deriving instance Lean.ToExpr for XOp

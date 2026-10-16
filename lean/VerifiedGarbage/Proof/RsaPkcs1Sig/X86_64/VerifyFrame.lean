@@ -9,6 +9,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: the frame
@@ -67,7 +68,7 @@ structure PreV (s : State) : Prop where
   k2 : (s.gpr .rsi).toNat ≤ 1024
   L1 : 1 ≤ (s.gpr .rcx).toNat
   L2 : (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat
-  hsl : 16 * (s.gpr .rsi).toNat ≤ (stackArg s 4).toNat
+  hsl : 16 * (s.gpr .rsi).toNat + 32 ≤ (stackArg s 4).toNat
 
 theorem preV_of {s : State} (h : verContract.pre s) : PreV s := by
   simp only [verContract] at h

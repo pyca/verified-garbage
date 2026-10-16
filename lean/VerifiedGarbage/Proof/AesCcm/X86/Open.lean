@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesCcm.X86.Seal
+import VerifiedGarbage.Proof.AesCcm.X86.Seal
 public import VerifiedGarbage.Proof.AesCcm.X86.Mask
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesCcm.Words32
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 
 /-!
 # AES-CCM on x86: `vg_aes_ccm_open`

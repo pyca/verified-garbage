@@ -10,6 +10,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.Weierstrass.CombLay
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 @[expose] public section
 

@@ -6,12 +6,18 @@ public import VerifiedGarbage.Proof.Framework.Arm.RelCT
 meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+import VerifiedGarbage.Proof.Weierstrass.Layout
+meta import VerifiedGarbage.Proof.Weierstrass.Layout
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: constant time, up to the number of candidates
@@ -183,24 +189,39 @@ structure Blks (k Q D B : Nat) (wide : Bool) : Prop where
   msg₀f : TaintOk (Cfg.msg k Q D 0 true wide)
   msg₁f : TaintOk (Cfg.msg k Q D 1 true wide)
 
+/-- The blocks of `Blks` that depend only on `D` and `B`: checked once for each
+pair of sizes, rather than again for each size of the scalars. -/
+theorem hmacBlks {D B : Nat} (h : (D = 32 ∧ B = 64) ∨ (D = 48 ∧ B = 128) ∨ (D = 64 ∧ B = 128) ∨
+    (D = 28 ∧ B = 64)) :
+    TaintOk (Cfg.hmacArgs₁ D) ∧ TaintOk (Cfg.hmacArgs₂ B [.dp .add .r1 .r8 (.imm (BitVec.ofNat 32 fV))] D) ∧
+      TaintOk (Cfg.hmacArgs₃ B D fV) ∧ TaintOk (Cfg.hmacArgs₂ B (scrAt .r1 sMsg) (D + 1)) ∧
+      TaintOk (Cfg.hmacArgs₃ B (D + 1) fK) := by
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+  exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+    ⟨_, by taint_decide⟩⟩
+
 theorem blks (P : RfcHash) : Blks P.k P.Q P.F.H.D P.F.H.B P.R.wide := by
-  have hk : P.k = 2 * P.R.E.n := rfl
+  obtain ⟨i, vu, vf, ku, kf⟩ := hmacBlks P.hDB
+  suffices h : TaintOk (Cfg.hmacArgs₂ P.F.H.B (scrAt .r1 sMsg) (P.F.H.D + 2 * P.Q + 1)) ∧
+      TaintOk (Cfg.hmacArgs₃ P.F.H.B (P.F.H.D + 2 * P.Q + 1) fK) ∧
+      TaintOk (Cfg.msg P.k P.Q P.F.H.D 0 false false) ∧
+      TaintOk (Cfg.msg P.k P.Q P.F.H.D 0 true P.R.wide) ∧
+      TaintOk (Cfg.msg P.k P.Q P.F.H.D 1 true P.R.wide) from
+    ⟨i, vu, vf, ku, kf, h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩
+  have hk (hw : P.R.wide = false) : P.k = P.Q / 4 := by have := (P.sizesA hw).1; omega
   cases hw : P.R.wide
-  · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
-    have hQ : P.Q = 8 * P.R.E.n := hQ8
-    rw [hQ, hk]
-    rcases (P.R.sizesA hw).1 with hn | hn | hn <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
-      rw [hn, h, h'] <;>
+  · have hQD := (P.sizesA hw).2.2
+    rcases P.lengthsA hw with hQ | hQ | hQ | hQ <;>
+      rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+      simp only [hk hw, hQ, h, h'] <;>
       first
-      | (exfalso; rw [hQ, hn, h] at hQD; omega)
+      | (exfalso; rw [hQ, h] at hQD; omega)
       | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-          ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-          ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+          ⟨_, by taint_decide⟩⟩
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
-    rw [hQ66, hD64, hB, hk, show P.R.E.n = 9 from hw9]
+    simp only [RfcHash.k, show P.R.E.n = 9 from hw9, show P.R.E.C.len = 66 from hQ66, hD64, hB]
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+      ⟨_, by taint_decide⟩⟩
 
 /-! The blocks that depend on whether two `V`s make a candidate. -/
 
@@ -225,7 +246,8 @@ theorem wideBlks (hw : P.R.wide = true) : WideBlks P := by
   obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
   have hsh := sh7 hw
   have e₁ : (cfgOf P).len = 66 := hQ66
-  have e₂ : (cfgOf P).w = 18 := by show 2 * P.R.E.n = 18; simp only [RfcHash.w] at hw9; omega
+  have e₂ : (cfgOf P).w = 18 := by
+    simp only [cfgOf, show P.R.E.C.len = 66 from hQ66, show P.R.E.n = 9 from hw9]; decide
   have e₃ : (cfgOf P).F.H.D = 64 := hD64
   have e₄ : (cfgOf P).sh = 7 := hsh
   refine ⟨?_, ?_, ?_⟩ <;> simp only [Cfg.coreDigest, Cfg.keepV, Cfg.candTop, Cfg.conv, e₁, e₂, e₃, e₄] <;>
@@ -349,7 +371,7 @@ theorem rekey_gen_ct {Φ : Pred P} {b : Nat} (hb : b < 2) {full wd : Bool} (hwd 
       (by anums) (by rw [hk.1])
       (fun hf hwf => by
         have := P.sizesA (by rw [hwd, hf] at hwf; exact hwf)
-        simp only [RfcHash.k, RfcHash.w] at this ⊢; exact ⟨by omega, by omega⟩)
+        simp only [RfcHash.k] at this ⊢; exact ⟨by omega, by omega⟩)
       (fun hf hwt => by
         have hW : P.R.wide = true := by rw [hwd, hf] at hwt; exact hwt
         have := P.sizesW hW; exact ⟨by omega, by omega, by rw [P.len]⟩))
@@ -455,7 +477,7 @@ theorem tryOne_ct {i : Nat} :
   -- A run that goes on has a later candidate to stop at, so the other cannot have stopped.
   have mixed : ∀ (m m' : Mem) (u u' : State), exitAt P e.1 m = exitAt P e.1 m' → Exit P e.1 m i u →
       LoopInv P e.1 m' (i + 1) u' → False := fun _ m' _ _ hx' hE hI => by
-    have hgo : sigI P e.1 m' i = none ∧ i + 1 < 8 := ⟨hI.fails i (by omega), hI.lt⟩
+    have hgo : sigI P e.1 m' i = none ∧ i + 1 < P.I.tries := ⟨hI.fails i (by omega), hI.lt⟩
     rw [go_iff (by omega) (fun j hj => hI.fails j (by omega)), ← hx', ← go_iff hE.lt hE.fails] at hgo
     rcases hE.last with h | h
     · exact h hgo.1
@@ -468,25 +490,37 @@ theorem tryOne_ct {i : Nat} :
 
 /-! ## The loop -/
 
-theorem next_n {n : Nat} (h : 8 - n + 1 < 8) : 8 - (8 - n + 1) < n ∧ 8 - (8 - (8 - n + 1)) = 8 - n + 1 :=
+theorem next_n {T n : Nat} (h : T - n + 1 < T) : T - (T - n + 1) < n ∧ T - (T - (T - n + 1)) = T - n + 1 :=
   ⟨by omega, by omega⟩
 
 theorem loop_ct :
     RelCT isa (Two P fun L _ m₀ t => LoopInv P L m₀ 0 t) (.loop (cfgOf P).tryOne .ne)
+      (Two P fun L _ m₀ t => ∃ i, Exit P L m₀ i t) := by
+  have h : RelCT isa (Two P fun L _ m₀ t => LoopInv P L m₀ (P.I.tries - P.I.tries) t) (.loop (cfgOf P).tryOne .ne)
       (Two P fun L _ m₀ t => ∃ i, Exit P L m₀ i t) :=
-  VG.RelCT.loop (M := isa) (fun n => Two P fun L _ m₀ t => LoopInv P L m₀ (8 - n) t)
-    (fun n => tryOne_ct.mono (fun _ _ h => h) fun _ _ ⟨he, hf, ht⟩ =>
-      ⟨he, fun h => (hf h).mono fun _ _ _ _ hx => ⟨_, hx⟩, fun h => by
-        obtain ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ := ht h
-        have hn := next_n f₁.lt
-        refine ⟨8 - (8 - n + 1), hn.1, e, hL, hq, hx, c₁, c₂, ?_, ?_⟩ <;> rwa [hn.2]⟩) 8
+    VG.RelCT.loop (M := isa) (fun n => Two P fun L _ m₀ t => LoopInv P L m₀ (P.I.tries - n) t)
+      (fun n => tryOne_ct.mono (fun _ _ h => h) fun _ _ ⟨he, hf, ht⟩ =>
+        ⟨he, fun h => (hf h).mono fun _ _ _ _ hx => ⟨_, hx⟩, fun h => by
+          obtain ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ := ht h
+          have hn := next_n f₁.lt
+          refine ⟨P.I.tries - (P.I.tries - n + 1), hn.1, e, hL, hq, hx, c₁, c₂, ?_, ?_⟩ <;> rwa [hn.2]⟩)
+      P.I.tries
+  rwa [Nat.sub_self] at h
 
 /-! ## The frame's body -/
 
 theorem reduce_eq : (cfgOf P).reduce ++ Cfg.initKV = (cfgC P.R.E).reduce ++ Cfg.initKV := rfl
-theorem initCnt_eq : (cfgOf P).initCnt = [.movw .r9 (BitVec.ofNat 16 8)] := rfl
+theorem initCnt_blk₀ : TaintOk [.movw .r9 (BitVec.ofNat 16 8)] := ⟨_, by taint_decide⟩
 
-theorem initCnt_blk : TaintOk [.movw .r9 (BitVec.ofNat 16 8)] := ⟨_, by taint_decide⟩
+/-- The count's initial `movw`, for any count: the analysis does not read its
+immediate (`Taint.check_eraseOff`), so it is that of one count's. -/
+theorem initCnt_blk (c : Cfg) : TaintOk c.initCnt := by
+  obtain ⟨h, hs⟩ := initCnt_blk₀
+  have hb : Taint.NoBase (τr ptrRegs) := ⟨rfl, rfl⟩
+  have e := Taint.check_eraseOff (.block c.initCnt) h hb
+  have e₀ := Taint.check_eraseOff (.block [.movw .r9 (BitVec.ofNat 16 8)]) h hb
+  have he : Code.eraseOff (.block c.initCnt) = Code.eraseOff (.block [.movw .r9 (BitVec.ofNat 16 8)]) := rfl
+  exact ⟨h, e ▸ he ▸ e₀ ▸ hs⟩
 
 /-- The body after the prologue, `h`, `V` and `K`. -/
 theorem rest_ct :
@@ -497,7 +531,7 @@ theorem rest_ct :
     stageC_ok (P := P) hL hk hc h).seq ?_
   refine (two_wp (Ψ := fun L _ m₀ t => QD P L m₀ t) (rekeyFull_ct 1 (by omega)) fun _ _ _ _ hL hk hc h =>
     stageD_ok (P := P) hL hk hc h).seq ?_
-  refine (two_wp (Ψ := fun L _ m₀ t => LoopInv P L m₀ 0 t) (by rw [initCnt_eq]; exact two_blk initCnt_blk)
+  refine (two_wp (Ψ := fun L _ m₀ t => LoopInv P L m₀ 0 t) (two_blk (initCnt_blk _))
     fun _ _ _ _ _ _ hc h => stageE_ok (P := P) hc h).seq ?_
   exact loop_ct.seq (two_blk (wipe_blk _))
 
@@ -568,7 +602,7 @@ theorem start_ct : RelCT isa (Entered P) (.block Cfg.prologue) (Two P fun _ _ _ 
   rw [hl] at y₂
   exact ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok p₁,
     coreOk_lay P s₁,
-    congrArg (fun x => if x = 0 then 7 else x - 1) hr, y₁, y₂, trivial, trivial⟩
+    congrArg (fun x => if x = 0 then P.I.tries - 1 else x - 1) hr, y₁, y₂, trivial, trivial⟩
 
 /-- Runs whose public data agree have the same layout, and stop at the same candidate. -/
 theorem sign_ct : ConstantTime isa (rfcArm P.I (240 + 4 * P.e)).pre (rfcArm P.I (240 + 4 * P.e)).pub

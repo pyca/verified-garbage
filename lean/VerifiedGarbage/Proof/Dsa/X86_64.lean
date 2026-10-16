@@ -4,8 +4,8 @@ public import VerifiedGarbage.Spec.Dsa.Contract
 public import VerifiedGarbage.Impl.Dsa.X86_64
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.PowLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

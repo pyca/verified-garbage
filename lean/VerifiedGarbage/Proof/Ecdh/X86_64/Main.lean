@@ -1,12 +1,17 @@
 module
 
+import VerifiedGarbage.Proof.Ecdh.X86_64.Check
 public import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
 public import VerifiedGarbage.Proof.Ecdh.Exchange
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 
 /-!
 # ECDH on x86-64: the result, and the whole function
@@ -89,9 +94,9 @@ theorem ecFinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s bas
   · have hra : Reg.rax ∉ Cfg.saved.map Prod.fst := by decide
     rw [r₄ _ hra, e₃, hrcx₂, mask_bit]
 
-theorem middle_eq (c : Cfg) : Impl.Ecdh.X86_64.Cfg.middle c =
-    .seq (.block (Impl.Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
-    (.seq (.block (Impl.Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
+theorem middle_eq (c : Cfg) : (Impl.Ecdh.X86_64.Cfg.middle c).inline =
+    .seq ((opProg c.MP' (.mul (c.sl XM) (c.sl RX) (c.sl ACC))).inline)
+    (.seq ((opProg c.MP' (.mul (c.sl X) (c.sl XM) (c.sl ONE))).inline)
     (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.finish c))) := rfl
 
 /-- Whether the result is a shared secret: the peer's key (`V`), `d` in
@@ -105,7 +110,7 @@ theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
     {V : Prop} [Decidable V] (hflag : word s.mem base (c.sl FLAG) = mask V) {out : Addr}
     (hrsi : s.gpr .rsi = out) (hw : (⟨out, c.C.len⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, c.C.len⟩ ⟨base, size⟩) (hfit : out.toNat + c.C.len ≤ 2 ^ 64) :
-    WP isa (Impl.Ecdh.X86_64.Cfg.middle c) s fun s' => ∃ xv, xv < c.C.p ∧
+    WP isa (Impl.Ecdh.X86_64.Cfg.middle c).inline s fun s' => ∃ xv, xv < c.C.p ∧
       Fin.ofNat c.C.p xv =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) ∧
       Spec.Ecdsa.bytesAt s'.mem out c.C.len =
@@ -122,14 +127,14 @@ theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have hM := modP_of hc F.mp
   have hone : sv c base s ONE = 1 := F.one
   -- `XM = X · ACC`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs hM (o := XM) (a := RX) (b := ACC) (by decide)
+  refine WP.seq (WP.mono (slMulP_ok h7 hs hM (o := XM) (a := RX) (b := ACC) (by decide)
     (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have kP₁ := hM.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have v₁ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₁ i = sv c base s i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₁ hi h₁ h₂
   -- `X = XM · 1`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
+  refine WP.seq (WP.mono (slMulP_ok h7 hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
     (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega_arith))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
@@ -183,7 +188,7 @@ the window method or the ladder (`mulQ_ok`).
 
 After `args`, the signature's setup and tables (`stage₁`, whose `SetupPre`
 the arguments meet as they are) read `d` and the peer's `x`; then `peer_ok`,
-`validate_ok`, `mq` and the power, and `middle_ok`; `exchange_eq` connects
+`check_ok`, `mq` and the power, and `middle_ok`; `exchange_eq` connects
 what they compute to the specification.
 -/
 
@@ -287,7 +292,7 @@ theorem exchangeWith_eq' (c : Cfg) (mq : Prog isa) : Impl.Ecdh.X86_64.Cfg.exchan
     .seq (.block Impl.Ecdh.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
-    (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.validate c)
+    (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.check c)
     (.seq mq (.seq c.pPow (Impl.Ecdh.X86_64.Cfg.middle c)))))) := rfl
 
 /-- The exchange inlined: only `mq` and the inversion call functions. -/
@@ -295,13 +300,11 @@ theorem exchangeWith_inline (c : Cfg) (mq : Prog isa) : (Impl.Ecdh.X86_64.Cfg.ex
     .seq (.block Impl.Ecdh.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
-    (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.validate c)
-    (.seq mq.inline (.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c)))))) := by
+    (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.check c).inline
+    (.seq mq.inline (.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c).inline))))) := by
   rw [exchangeWith_eq']
-  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.validate c).inline
+  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.check c).inline
     (Code.seq _ (Code.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c).inline))))) = _
-  rw [show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _,
-    show (Impl.Ecdh.X86_64.Cfg.middle c).inline = _ from blocks_inline _]
   rfl
 
 /-- `vg_ecdh_<curve>`, with a scalar multiplication `mq` computing `[d]P`
@@ -343,7 +346,7 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
   have hq₂ : s₂.gpr .r9 = s₀.gpr .rdx := by rw [S₂.gpr _ (by decide), r9₁]
   have hrw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [S₂.rd, S₂.wr, hrd₁]
   -- The peer's key.
-  refine WP.seq (WP.mono (peer_ok hc S₂.scr hq₂ (by rw [hrw₂, hp.rd]; simp) hp.peer_sc S₂.fixed.mp)
+  refine WP.seq (WP.mono (peer_ok hc S₂.scr hq₂ (by rw [hrw₂, hp.rd]; simp) hp.peer_sc)
     fun s₃ ⟨hs₃, k₃, U₃, r2₃, bp₃, y₃, f₃⟩ => ?_)
   have F₃ := S₂.fixed.unch h7 hn ((fixedOk_slW (l := [R2P, BP, QY]) (by decide)).append fixedOk_flag) U₃
   have e₃ : ∀ {i}, i < 45 → i ∉ [R2P, BP, QY] → i ≠ FLAG →
@@ -357,11 +360,16 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
     have := keep_of_disjoint' W₂ hp.peer_sc (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   -- What the code checks of the peer's key so far.
-  have hf₃ : word s₃.mem (s₀.gpr .rcx) (c.sl FLAG) = mask (((s₀.mem (s₀.gpr .rdx) = 4 ∧
-      sv c (s₀.gpr .rcx) s₃ E < c.C.p) ∧ sv c (s₀.gpr .rcx) s₃ QY < c.C.p)) := by
-    rw [f₃, S₂.flag, BitVec.allOnes_and, mask_and, mask_and, x₃, hq0]
-  refine WP.seq (WP.mono (validate_ok hc hs₃ F₃ r2₃ bp₃ hf₃)
-    fun s₄ ⟨hs₄, g₄, rd₄, wr₄, U₄, f₄, px_lt, py_lt, px, py⟩ => ?_)
+  have hf₃ : word s₃.mem (s₀.gpr .rcx) (c.sl FLAG) = mask (s₀.mem (s₀.gpr .rdx) = 4) := by
+    rw [f₃, S₂.flag, BitVec.allOnes_and, hq0]
+  refine WP.seq (WP.mono (check_ok hc hs₃ F₃.mp F₃.ap r2₃ bp₃ hf₃) fun s₄ C₄ => ?_)
+  obtain ⟨px_lt, py_lt, px, py⟩ := C₄.point hc F₃
+  have hs₄ := C₄.scr
+  have g₄ := C₄.gpr
+  have rd₄ := C₄.rd
+  have wr₄ := C₄.wr
+  have U₄ := C₄.unch
+  have f₄ := C₄.flag
   have F₄ := F₃.unch h7 hn ((fixedOk_slW (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
     fixedOk_flag) U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ≠ FLAG →
@@ -400,7 +408,7 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
   have hF := sl_le c h7 (i := FLAG) (by decide)
   rw [← L.unch.word hW.flag (by omega_arith)] at hflag₅
   have hrsi₅ : s₅.gpr .rsi = s₀.gpr .rdi := by
-    rw [L.rsi, g₄ _ (rsi_not_clob _), k₃.gpr _ (by decide), S₂.rsi, rdi₁]
+    rw [L.rsi, g₄ _ (rsi_not_checkClob _), k₃.gpr _ (by decide), S₂.rsi, rdi₁]
   have hw₅ : (⟨s₀.gpr .rdi, c.C.len⟩ : Region) ∈ s₅.wr := by
     rw [L.wr, wr₄, k₃.wr, S₂.wr, k₁.2.2.2, hp.wr]; simp
   refine WP.mono (middle_ok hc hs₅ F₅ L.acc_lt hflag₅ hrsi₅ hw₅ hp.out_sc hp.out_fit)
@@ -461,7 +469,7 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
 /-- `vg_ecdh_<curve>`, by the window method or the ladder (`mulQ_ok`), given
 that a curve calling `vg_<curve>_mul` has four words and that function no calls. -/
 theorem exchange_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀)
-    (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true := by exact fun h => absurd h (by decide)) :
+    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8) ∧ c.mulFn.noCalls = true := by exact fun h => absurd h (by decide)) :
     WP isa (Impl.Ecdh.X86_64.Cfg.exchange c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' :=
   exchangeWith_ok hc hC (mulQ_ok hc hC hm) (mulQ_w hc) hp

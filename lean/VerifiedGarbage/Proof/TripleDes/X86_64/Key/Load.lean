@@ -1,14 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Permutation
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BlockIO
-public import VerifiedGarbage.Proof.TripleDes.Word
+import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Permutation
+import VerifiedGarbage.Proof.TripleDes.X86_64.BlockIO
+import VerifiedGarbage.Proof.TripleDes.Word
 public import VerifiedGarbage.Impl.TripleDes.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Rc2.X86_64.Lookup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bytes
 
 @[expose] public section
 

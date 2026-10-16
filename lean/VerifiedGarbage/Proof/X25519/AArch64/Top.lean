@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-public import VerifiedGarbage.Proof.X25519.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.X25519.AArch64.Lit
 public import VerifiedGarbage.Proof.X25519.AArch64.Main
 public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.TCB.AArch64.Target

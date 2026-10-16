@@ -1,19 +1,27 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P256.Comb7
-public import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointVerified
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointCachedDigitTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on x86-64
@@ -40,7 +48,9 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     target := X86_64.target
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
-      " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". `[k]G` is a fixed-base comb of 7-bit signed digits: the 37 windows `k_j` of \
+      " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". `[k]G` is " ++
+      (if adx then "a call of `vg_p256_mul_base_adx`, which expands `k` into a table of its bits \
+      and runs " else "") ++ "a fixed-base comb of 7-bit signed digits: the 37 windows `k_j` of \
       `k`'s bits as Booth's digits `d_j = k_j + c_j - 128 c_(j+1)` from `-64` to `64` (`c_j` the \
       bit below window `j`, `c_0 = 0`), `[k]G = Σ [d_j 2^(7j)]G`, from 37 tables of `[m 2^(7j)]G` \
       (`m = 1 … 64`, affine, in Montgomery form) in the static `VG_P256_COMB` (148 KB), with no \

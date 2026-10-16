@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2
-public import VerifiedGarbage.Proof.Bignum.WordStep
+import VerifiedGarbage.Proof.Bignum.WordStep
 public import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 /-!
 # `R² mod m` by word steps on x86-64: the estimate of the quotient
@@ -475,8 +477,7 @@ theorem quotMG_ok {t : State} {u a d : Nat} {pv : Addr} (hdx : t.gpr .rdx = BitV
   refine WP.mono (mgFix2_ok h314 h3cx h3si (Nat.mod_lt _ (by decide)) hd' (by omega_using [hd0]))
     fun t' ⟨hcx', hm', k'⟩ => ⟨?_, by rw [hm', hm₃, hm₂, hm₁], ((k₁.trans k₂).trans (k₃.trans k')).mono (by decide)⟩
   rw [hcx']
-  congr 1
-  exact mg_quot hd' hd hu ha hV.symm rfl rfl rfl rfl rfl
+  exact congrArg (BitVec.ofNat 64) (mg_quot hd' hd hu ha hV.symm rfl rfl rfl rfl rfl)
 
 /-- The estimate of the quotient of `x 2^64` by `m`:
 `q̂ = min(⌊(u₂ 2^64 + u₁) / d⌋, 2^64 - 1)` into `rcx`, for `x` at `rbx` and `m`

@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.InverseLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P256.InverseLit
 public import VerifiedGarbage.Proof.Framework.Pratt
 meta import VerifiedGarbage.Proof.Framework.Pratt
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Weierstrass.Inverse
 meta import VerifiedGarbage.Spec.Weierstrass.Inverse
@@ -18,6 +18,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # `vg_p256_inv_mod_p` and `_n` on x86-64: `Verified`

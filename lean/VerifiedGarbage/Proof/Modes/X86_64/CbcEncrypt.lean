@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncLoop
-public import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+import VerifiedGarbage.Proof.Modes.X86_64.Ctr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # CBC encryption on x86-64, for any core: the whole function

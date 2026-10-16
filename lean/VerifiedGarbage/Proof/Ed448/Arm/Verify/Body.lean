@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Ed448.Arm.Verify.Hash
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLocal
-public import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
+import VerifiedGarbage.Proof.Ed448.Arm.VerifyLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

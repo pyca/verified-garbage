@@ -6,6 +6,15 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Sha256.X86.Shared
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 
 /-! # The shared RFC 6979 contract with the x86 P-256 comb table -/
 
@@ -21,7 +30,8 @@ def rfcCombSat (D : Nat) : State := { combSatState with
   wr := [⟨0x1000, 64⟩, ⟨0x4000, 8192⟩, ⟨0x20004, 16⟩] }
 
 theorem rfcCombSat_spec (I : Spec.Ecdsa.Rfc6979.Instance)
-    (hI : I.ecdsa = Spec.Ecdsa.P256.inst) (hD : I.hashLen ≤ 64) :
+    (hI : I.ecdsa = Spec.Ecdsa.P256.inst) (hD : I.hashLen ≤ 64)
+    (hS : I.scratchWords = 1024) :
     (I.signContract (X86.abi.withConsts p256Comb.combConsts) 272).pre (rfcCombSat I.hashLen) := by
   have a0 : arg (rfcCombSat I.hashLen) 0 = 0x1000 := (combSat_arg 0 (by decide)).trans (by decide)
   have a1 : arg (rfcCombSat I.hashLen) 1 = 0x2000 := (combSat_arg 1 (by decide)).trans (by decide)
@@ -35,11 +45,11 @@ theorem rfcCombSat_spec (I : Spec.Ecdsa.Rfc6979.Instance)
       p256W.getD i 0 := combSatMem_held
   generalize e : rfcCombSat I.hashLen = s
   sig_pre [Spec.Ecdsa.Rfc6979.Instance.signContract, Spec.Ecdsa.Rfc6979.Instance.signSig,
-    hI, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+    hI, hS, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
     X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
-  simp only [hI, Spec.Ecdsa.P256.inst, Spec.P256.curve, esp, sy, aa]
+  simp only [hI, hS, Spec.Ecdsa.P256.inst, Spec.P256.curve, esp, sy, aa]
   refine ⟨by decide, by decide, ?_, held, ?_, ?_, ?_, ?_, ?_⟩
   · rw [p256W_length]; rfl
   · rw [p256W_length]; decide
@@ -62,15 +72,16 @@ theorem rfcCombSat_spec (I : Spec.Ecdsa.Rfc6979.Instance)
 /-- The existing shared contract supplies every table and stack permission
 used by deterministic P-256 signing, for either hash. -/
 theorem comb_implies (I : Spec.Ecdsa.Rfc6979.Instance)
-    (hI : I.ecdsa = Spec.Ecdsa.P256.inst) (hD : I.hashLen ≤ 64) :
+    (hI : I.ecdsa = Spec.Ecdsa.P256.inst) (hD : I.hashLen ≤ 64)
+    (hS : I.scratchWords = 1024) :
     (rfcWide I 272 p256Comb.combConsts).Implies
       (I.signContract (X86.abi.withConsts p256Comb.combConsts) 272) where
   pre s h := by
     sig_pre [Spec.Ecdsa.Rfc6979.Instance.signContract, Spec.Ecdsa.Rfc6979.Instance.signSig,
-      hI, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+      hI, hS, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
-    simp only [hI, Spec.Ecdsa.P256.inst, Spec.P256.curve] at h
+    simp only [hI, hS, Spec.Ecdsa.P256.inst, Spec.P256.curve] at h
     obtain ⟨lo, sp, hd, held, fit, dw, rt, st, ht, wr,
       od, og, oc, oa, dc, da, gc, ga, ca, ro, rd, rg, rc, ra,
       ko, kd, kg, kc, ka, no, nd, ng, nc⟩ := h
@@ -96,11 +107,11 @@ theorem comb_implies (I : Spec.Ecdsa.Rfc6979.Instance)
         · exact st
   post := by
     sig_implies_post [Spec.Ecdsa.Rfc6979.Instance.signContract, Spec.Ecdsa.Rfc6979.Instance.signSig,
-      hI, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+      hI, hS, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts, Abi.withConsts, rfcWide, rfcX86]
   pub s t _ _ h := by
     sig_pub [Spec.Ecdsa.Rfc6979.Instance.signContract, Spec.Ecdsa.Rfc6979.Instance.signSig,
-      hI, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
+      hI, hS, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts, Abi.withConsts] at h
     obtain ⟨he, hs, hl, a0, a1, a2, a3⟩ := h
     refine ⟨he, a0, a1, a2, a3, (List.cons.inj hl).1, ?_⟩
@@ -109,6 +120,6 @@ theorem comb_implies (I : Spec.Ecdsa.Rfc6979.Instance)
     subst c
     have hs' := congrArg (BitVec.setWidth 32) hs
     simpa only [BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64), BitVec.setWidth_eq] using hs'
-  sat := ⟨_, rfcCombSat_spec I hI hD⟩
+  sat := ⟨_, rfcCombSat_spec I hI hD hS⟩
 
 end VG.Proof.Ecdsa.Rfc6979.X86

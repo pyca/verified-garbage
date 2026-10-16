@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.ResidentBackend
+import Mathlib.Tactic.IntervalCases
 
 @[expose] public section
 

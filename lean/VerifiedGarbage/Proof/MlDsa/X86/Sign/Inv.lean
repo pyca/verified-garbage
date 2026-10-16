@@ -1,11 +1,38 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.DecideAt
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
+public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Local
+public import VerifiedGarbage.Proof.MlKem.X86.AddSub
+public import VerifiedGarbage.Proof.MlKem.X86.CallRet
+public import VerifiedGarbage.Proof.MlKem.X86.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86.Decode12
+public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86.Mul
+public import VerifiedGarbage.Proof.MlKem.X86.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86.Sample
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim3
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.Arith
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 
 /-!
 # ML-DSA signing on x86 (32-bit): what the pieces keep
@@ -114,11 +141,9 @@ theorem PS.w1pos {p : Params} (ps : PS p) : 0 < p.k * w1Len p :=
   Nat.mul_pos (by have := ps.hk; omega) (by rcases ps.hw1Len with h | h <;> omega)
 
 /-- The facts of `PS p` that the offsets need, in the context. -/
-macro "ofs" : tactic => do
-  let ps := Lean.mkIdent `ps
-  `(tactic| (
-  have _ := ($ps).hk; have _ := ($ps).hl; have _ := ($ps).hscr; have _ := ($ps).hsigLen; have _ := ($ps).hskLen
-  have _ := ($ps).hcLen; have _ := ($ps).hzLen; have _ := ($ps).hw1; have _ := ($ps).hω; have _ := PS.w1pos $ps
+tactic_template "ofs" : tactic => `(tactic| (
+  have _ := (ps).hk; have _ := (ps).hl; have _ := (ps).hscr; have _ := (ps).hsigLen; have _ := (ps).hskLen
+  have _ := (ps).hcLen; have _ := (ps).hzLen; have _ := (ps).hw1; have _ := (ps).hω; have _ := PS.w1pos ps
   try simp only [nS, aBase, s1B, s2B, t0B, yB, yhB, wB] at *
   set_option linter.unusedSimpArgs false in
   simp only [Lay.apart, Lay.okW_iff, Lay.ok_iff, Lay.sep_iff, List.all_cons, List.all_nil, Bool.and_true,
@@ -132,12 +157,13 @@ macro "ofs" : tactic => do
 bounded indices, decided for each parameter set (`decide_at`): cheaper than
 `ofs`, which unfolds it into arithmetic on the parameters for `omega`, unless
 there are many indices to try. Each conjunct is decided on its own. -/
-macro "ofsd" : tactic => `(tactic| (
+tactic_template "ofsd" : tactic => `(tactic| (
   try dsimp only [VG.Proof.MlDsa.X86.Sign.Out, VG.Proof.MlDsa.X86.Sign.In, VG.Proof.MlDsa.X86.Sign.OutK,
     VG.Proof.MlDsa.X86.Sign.OutI, VG.Proof.MlDsa.X86.Sign.OutC]
   try simp only [List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true, true_implies]
+  have hmem := (‹VG.Proof.MlDsa.X86.Sign.PS _›).mem
   and_intros
-  all_goals (have hmem := (‹VG.Proof.MlDsa.X86.Sign.PS _›).mem; decide_at hmem)))
+  all_goals decide_at hmem))
 
 /-! ## Slots -/
 

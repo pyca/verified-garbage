@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha1.X86_64.Compress
-public import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
-public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
+import VerifiedGarbage.Proof.Sha1.X86_64.Compress
+import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress
+import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Init
 public import VerifiedGarbage.Proof.Sha1.X86_64.Stream.Md
 public import VerifiedGarbage.Spec.Sha1.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch

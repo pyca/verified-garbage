@@ -1,21 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Hint
 meta import VerifiedGarbage.Impl.MlDsa.X86_64.Pack.Hint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.Unpack
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
+import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Pack.MemTaint
 public import VerifiedGarbage.Proof.MlDsa.Pack.Hint
 meta import VerifiedGarbage.Proof.MlDsa.Pack.Hint
-public import VerifiedGarbage.Proof.MlKem.X86_64.Rel
+import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_hint_bit_pack`
@@ -64,7 +68,7 @@ theorem ea_idx (s : State) (b i : Reg) : s.ea (atIdx b i) = s.gpr b + s.gpr i :=
 
 theorem mem_hintParams {ω k : Nat} (h : (ω, k) ∈ hintParams) : 4 ≤ k ∧ k ≤ 8 ∧ ω ≤ 80 := by
   simp only [hintParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at h
-  omega
+  omega_using [h]
 
 /-- Coefficient `j` of polynomial `i` of the hint at `p`. -/
 theorem hintAt_get {m : Mem} {p : Addr} {k i j : Nat} (hi : i < k) (hj : j < n) :
@@ -90,7 +94,7 @@ theorem hp_facts : 4 ≤ hk s₀ ∧ hk s₀ ≤ 8 ∧ hω s₀ ≤ 80 ∧ hω s
   have := hp.2.2.2.2.2.2.1
   have := hp.2.2.2.2.2.2.2.1
   simp only [hk, hω, hLen] at *
-  omega
+  omega_arith
 
 /-! ## Zeroing `y` -/
 
@@ -121,7 +125,7 @@ theorem hbpZero_ok :
   have e1 : hLen s₀ = (s₀.gpr .r8).toNat := rfl
   simp only [hk, hω, hLen] at hk4 hsum
   refine WP.seq (WP.mono (hbpZeroPro_ok s₀) fun s₁ ⟨⟨dx₁, ax₁, r9₁, r10₁, m₁⟩, k₁⟩ => ?_)
-  refine wp_countdown (cnt := .r10) (N := hLen s₀) (by omega) (by omega)
+  refine wp_countdown (cnt := .r10) (N := hLen s₀) (by omega_using [e1]) (by omega_using [hk4, e1])
     (fun t s => s.gpr .r9 = s₀.gpr .rcx + BitVec.ofNat 64 t ∧ s.gpr .rax = 0 ∧
       Frame [⟨s₀.gpr .rcx, hLen s₀⟩] s₀.mem s.mem ∧ (∀ u < t, s.mem (s₀.gpr .rcx + BitVec.ofNat 64 u) = 0) ∧
       s.gpr .rdx = BitVec.ofNat 64 (hω s₀) ∧ Keep [.rdx, .rax, .r9, .r10] s₀ s)
@@ -129,19 +133,19 @@ theorem hbpZero_ok :
     ⟨by rw [r9₁]; simp, ax₁, by rw [m₁]; exact Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _), dx₁,
       k₁.mono (by decide)⟩ (by rw [r10₁]; simp)
   · refine WP.mono (zeroStep_ok s (by
-      rw [hk.2.2, hwr, h9]; exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩))
+      rw [hk.2.2, hwr, h9]; exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_using [e1, ht]) (by omega_using [e1, ht])⟩))
       fun s' ⟨⟨hm, h9', h10, hz'⟩, k'⟩ => ⟨⟨?_, ?_, ?_, fun u hu => ?_, ?_, (hk.trans k').mono (by decide)⟩, h10, hz'⟩
     · rw [h9', h9, BitVec.add_assoc, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat]
     · rw [k'.gpr (by decide), hax]
     · rw [hm, h9]
-      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+      exact hf.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [ht]) (by omega_using [e1, ht]))
     · rw [hm, h9, VG.WriteBytes.writeW8_apply]
       split
       · rw [hax]; rfl
       · rename_i hne
         refine hz u (by
           by_contra hu'
-          exact hne (by rw [show u = t by omega]))
+          exact hne (by rw [show u = t by omega_using [hu, hu']]))
     · rw [k'.gpr (by decide), hdx]
   · exact bytesAt_eq (by simp) fun i hi => by rw [hz i hi]; simp
 
@@ -212,7 +216,7 @@ theorem cmp256 {j : Nat} (hj : j < 256) : (BitVec.setWidth 32 (BitVec.ofNat 64 (
   rw [VG.Proof.MlKem.X86_64.sub_beq_zero32]
   simp only [decide_eq_decide]
   constructor
-  · intro h; have := congrArg BitVec.toNat h; simp at this; omega
+  · intro h; have := congrArg BitVec.toNat h; simp at this; omega_using [hj, this]
   · intro h; rw [h]; rfl
 
 include hp in
@@ -224,10 +228,10 @@ theorem coef_ok {i j : Nat} (hi : i < hk s₀) (hj : j < 256) {s : State} (hI : 
   have e1 : hLen s₀ = (s₀.gpr .r8).toNat := rfl
   have e2 : hk s₀ = (s₀.gpr .r8).toNat - dArg s₀ .rdx := rfl
   have e3 : hω s₀ = dArg s₀ .rdx := rfl
-  have hpos : 256 * i + j < 256 * hk s₀ := by omega
+  have hpos : 256 * i + j < 256 * hk s₀ := by omega_using [hi, hj]
   -- The word, on entry.
   have hR : (⟨s₀.gpr .rdi, (s₀.gpr .rsi).toNat * 4⟩ : Region).Contains (coeffAddr (s₀.gpr .rdi) (256 * i + j)) 4 :=
-    Offset.contains_base _ (by omega) (by omega)
+    Offset.contains_base _ (by omega_using [hrsi, hpos]) (by omega_using [hk8, hpos])
   have hw : s.mem.readW (s.gpr .rdi) 32 = coeffAt s₀.mem (s₀.gpr .rdi) (256 * i + j) := by
     rw [hI.rdi]
     exact hI.frame.readW hR (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hsep) (by decide)
@@ -248,14 +252,14 @@ theorem coef_ok {i j : Nat} (hi : i < hk s₀) (hj : j < 256) {s : State} (hI : 
       have : onesBefore (hH s₀) i j < hintOnes (hH s₀) :=
         hpIdx_lt (hintAt_length s₀.mem (s₀.gpr .rdi) _) hi hj (by rw [hbit]; exact h1)
       have hones' : hintOnes (hH s₀) ≤ hω s₀ := hones
-      rw [hidx]; omega
+      rw [hidx]; omega_using [e1, e2, e3, hpos, this, hones']
     refine WP.mono (hbpSet_ok s₁ (by
       rw [k₁.2.2, hI.wr, hwr, k₁.gpr (by decide), k₁.gpr (by decide), hI.rcx, hI.rax]
-      exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩)) fun s₂ ⟨⟨m₂, ax₂⟩, k₂⟩ => ?_
+      exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_using [e1, hlt]) (by omega_using [e1, hlt])⟩)) fun s₂ ⟨⟨m₂, ax₂⟩, k₂⟩ => ?_
     refine WP.mono (hbpNext_ok s₂) fun s₃ ⟨⟨di₃, r11₃, z₃, m₃⟩, k₃⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
     · rw [di₃, k₂.gpr (by decide), k₁.gpr (by decide), hI.rdi, BitVec.add_assoc,
         show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, BitVec.ofNat_add_ofNat,
-        show 4 * (256 * i + j) + 4 = 4 * (256 * i + (j + 1)) by omega]
+        show 4 * (256 * i + j) + 4 = 4 * (256 * i + (j + 1)) by omega_using []]
     · rw [r11₃, k₂.gpr (by decide), k₁.gpr (by decide), hI.r11, ofNat_succ64]
     · rw [k₃.gpr (by decide), ax₂, k₁.gpr (by decide), hI.rax, hT, hpStep, hbit]
       simp only [h1, ↓reduceIte, ofNat_succ64]
@@ -263,9 +267,9 @@ theorem coef_ok {i j : Nat} (hi : i < hk s₀) (hj : j < 256) {s : State} (hI : 
     · rw [k₃.2.1, k₂.2.1, k₁.2.1, hI.rd]
     · rw [k₃.2.2, k₂.2.2, k₁.2.2, hI.wr]
     · rw [m₃, m₂, m₁, k₁.gpr (by decide), k₁.gpr (by decide), hI.rcx, hI.rax]
-      exact hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
-    · rw [m₃, m₂, m₁, k₁.gpr (by decide), k₁.gpr (by decide), hI.rcx, hI.rax, bytesAt_writeW8 _ _ hlt (by omega),
-        hI.y, hT, hpStep, hbit, k₁.gpr (by decide), hI.r11, b8_eq64, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+      exact hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hlt]) (by omega_using [e1, hlt]))
+    · rw [m₃, m₂, m₁, k₁.gpr (by decide), k₁.gpr (by decide), hI.rcx, hI.rax, bytesAt_writeW8 _ _ hlt (by omega_using [e1]),
+        hI.y, hT, hpStep, hbit, k₁.gpr (by decide), hI.r11, b8_eq64, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hrsi, hpos])]
       simp only [h1, ↓reduceIte, Array.set!_eq_setIfInBounds, Array.toList_setIfInBounds]
     · rw [z₃, k₂.gpr (by decide), k₁.gpr (by decide), hI.r11, ofNat_succ64, cmp256 hj]
     · exact ((k₁.trans k₂).trans k₃).mono (by decide)
@@ -273,7 +277,7 @@ theorem coef_ok {i j : Nat} (hi : i < hk s₀) (hj : j < 256) {s : State} (hI : 
     refine WP.block_nil (WP.mono (hbpNext_ok s₁) fun s₃ ⟨⟨di₃, r11₃, z₃, m₃⟩, k₃⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩)
     · rw [di₃, k₁.gpr (by decide), hI.rdi, BitVec.add_assoc,
         show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, BitVec.ofNat_add_ofNat,
-        show 4 * (256 * i + j) + 4 = 4 * (256 * i + (j + 1)) by omega]
+        show 4 * (256 * i + j) + 4 = 4 * (256 * i + (j + 1)) by omega_using []]
     · rw [r11₃, k₁.gpr (by decide), hI.r11, ofNat_succ64]
     · rw [k₃.gpr (by decide), k₁.gpr (by decide), hI.rax, hT, hpStep, hbit]
       simp only [h0, Bool.false_eq_true, ↓reduceIte]
@@ -298,7 +302,7 @@ theorem inner_ok {i : Nat} (hi : i < hk s₀) {s : State} (hI : CInv s₀ i 0 s)
   by_cases e : j + 1 = 256
   · refine .inl ⟨by rw [hc, e]; rfl, ?_, (hk'.trans hk'').mono (by decide)⟩
     rw [← e]; exact hI''
-  · refine .inr ⟨by rw [hc, decide_eq_false e]; rfl, 256 - (j + 1), by omega, j + 1, by omega, rfl, hI'',
+  · refine .inr ⟨by rw [hc, decide_eq_false e]; rfl, 256 - (j + 1), by omega_using [hj, hm], j + 1, by omega_using [hj, e], rfl, hI'',
       (hk'.trans hk'').mono (by decide)⟩
 
 /-- Before polynomial `i`. -/
@@ -335,12 +339,12 @@ theorem poly_ok {i : Nat} (hi : i < hk s₀) {s : State} (hP : HPInv s₀ i s) :
     have := hpT_idx s₀ i 256
     have h1 : onesBefore (hH s₀) i 256 ≤ hintOnes (hH s₀) := onesBefore_n_le (hintAt_length _ _ _) hi
     have hones' : hintOnes (hH s₀) ≤ hω s₀ := hp.2.2.2.2.2.2.2.2
-    rw [this]; omega
+    rw [this]; omega_using [hω80, h1, hones']
   refine WP.mono (zeroStep_ok s₂ (by
       rw [hI.wr, hwr, r9₂]
-      exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by omega)⟩))
+      exact ⟨_, List.mem_singleton_self _, Offset.contains_base _ (by omega_using [hi, hsum, e1]) (by omega_using [hi, hsum, e1])⟩))
     fun s₃ ⟨⟨m₃, r9₃, r10₃, z₃⟩, k₃⟩ => ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
-  · rw [k₃.gpr (by decide), hI.rdi, show 4 * (256 * i + 256) = 4 * (256 * (i + 1)) by omega]
+  · rw [k₃.gpr (by decide), hI.rdi, show 4 * (256 * i + 256) = 4 * (256 * (i + 1)) by omega_using []]
   · rw [k₃.gpr (by decide), hI.rax, hpS_succ]
   · rw [k₃.gpr (by decide), hI.rcx]
   · rw [r9₃, r9₂, BitVec.add_assoc, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add_ofNat,
@@ -348,9 +352,9 @@ theorem poly_ok {i : Nat} (hi : i < hk s₀) {s : State} (hP : HPInv s₀ i s) :
   · rw [k₃.2.1, hI.rd]
   · rw [k₃.2.2, hI.wr]
   · rw [m₃, r9₂]
-    exact hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
-  · rw [m₃, r9₂, bytesAt_writeW8 _ _ (by omega) (by omega), hI.y, hI.rax, hpS_succ, b8_eq64, BitVec.toNat_ofNat,
-      Nat.mod_eq_of_lt (show (hpT s₀ i 256).2 < 2 ^ 64 by omega), Array.set!_eq_setIfInBounds,
+    exact hI.frame.writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_using [hi, hsum]) (by omega_using [hi, hsum, e1]))
+  · rw [m₃, r9₂, bytesAt_writeW8 _ _ (by omega_using [hi, hsum]) (by omega_using [e1]), hI.y, hI.rax, hpS_succ, b8_eq64, BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (show (hpT s₀ i 256).2 < 2 ^ 64 by omega_using [hidx]), Array.set!_eq_setIfInBounds,
       Array.toList_setIfInBounds]
   · rw [r10₃, k₂.gpr (by decide), k₁.gpr (by decide)]
   · rw [z₃, k₂.gpr (by decide), k₁.gpr (by decide)]
@@ -375,7 +379,7 @@ theorem hbp_wp :
   refine WP.seq (WP.mono (hbpZero_ok hp) fun s₁ ⟨hy₁, hf₁, ax₁, dx₁, k₁⟩ => ?_)
   unfold hbpMain
   refine WP.seq (WP.mono (hbpSetup_ok s₁) fun s₂ ⟨⟨r9₂, r10₂, m₂⟩, k₂⟩ => ?_)
-  refine wp_countdown (cnt := .r10) (N := hk s₀) (by omega) (by omega) (fun i s => HPInv s₀ i s)
+  refine wp_countdown (cnt := .r10) (N := hk s₀) (by omega_using [e2]) (by omega_using [hk4]) (fun i s => HPInv s₀ i s)
     (fun i hi s hP _ => WP.mono (poly_ok hp hi hP) fun s' ⟨h, h10, hz, _⟩ => ⟨h, h10, hz⟩)
     (fun s hP => ⟨hP.y.trans (hintBitPack_eq _ _ _).symm, hP.frame⟩) ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ ?_
   · rw [k₂.gpr (by decide), k₁.gpr (by decide)]; simp
@@ -391,7 +395,7 @@ theorem hbp_wp :
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
     have := (s₀.gpr .r8).isLt
-    omega
+    omega_using [hsum, e1]
 
 end
 
@@ -411,7 +415,7 @@ theorem bytes_of_words {m₁ m₂ : Mem} {p : Addr} {N : Nat}
   simp only [Region.Contains] at ha
   have hw : ∀ i < N, coeffAt m₁ p i = coeffAt m₂ p i := fun i hi =>
     BitVec.eq_of_toNat_eq (List.map_inj_left.mp h i (List.mem_range.mpr hi))
-  have hi : (a - p).toNat / 4 < N := by omega
+  have hi : (a - p).toNat / 4 < N := by omega_using [ha]
   have ht : (a - p).toNat % 4 < 4 := Nat.mod_lt _ (by decide)
   have ea : a = coeffAddr p ((a - p).toNat / 4) + BitVec.ofNat 64 ((a - p).toNat % 4) := by
     rw [coeffAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat, Nat.div_add_mod, BitVec.ofNat_toNat,
@@ -463,7 +467,7 @@ theorem hintBitPack_ct :
         exact hx.2.2.1 a hc hc')]
       exact bytes_of_words (by rw [← di, ← si] at hleak; exact hleak) hc
     · -- `y`: zeros.
-      have hlt : (a - x.gpr .rcx).toNat < (x.gpr .r8).toNat := by simp only [Region.Contains] at hc; omega
+      have hlt : (a - x.gpr .rcx).toNat < (x.gpr .r8).toNat := by simp only [Region.Contains] at hc; omega_using [hc]
       have eL : hLen x = (x.gpr .r8).toNat := rfl
       have eLy : hLen y = (x.gpr .r8).toNat := by show (y.gpr .r8).toNat = _; rw [r8]
       have ea : a = x.gpr .rcx + BitVec.ofNat 64 (a - x.gpr .rcx).toNat := by

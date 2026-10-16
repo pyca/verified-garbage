@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_ntt`
@@ -57,8 +61,8 @@ theorem nttLayer_eq (f : Poly) (len : Nat) : nttLayer f len = layerN bfly f len 
   rfl
 
 example : True := by
-  have := lay 128 1 (by decide) (by decide) (by decide) F (by taint_decide) (by taint_decide)
-    (by taint_decide) (by taint_decide)
+  have := lay 128 1 (by decide) (by decide) (by decide) F (by native_taint_decide) (by native_taint_decide)
+    (by native_taint_decide) (by native_taint_decide)
   trivial
 
 theorem fold_eq (f : Poly) : nttLens.foldl nttLayer f =
@@ -68,36 +72,36 @@ theorem fold_eq (f : Poly) : nttLens.foldl nttLayer f =
 theorem layers_piece : Piece Pre Pub (fun s₀ s => LB s₀ montZetaTable (F s₀) 1 s)
     (fun s₀ s => LB s₀ montZetaTable (nttLens.foldl nttLayer (F s₀)) 256 s)
     (layers (layerCode bflyBody zUp) [128, 64, 32, 16, 8, 4, 2, 1]) := by
-  refine Piece.seq (lay 128 1 (by decide) (by decide) (by decide) F (by taint_decide) (by taint_decide)
-    (by taint_decide) (by taint_decide)) ?_
+  refine Piece.seq (lay 128 1 (by decide) (by decide) (by decide) F (by native_taint_decide) (by native_taint_decide)
+    (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 64 2 (by decide) (by decide) (by decide) (fun s₀ => nttLayer (F s₀) 128)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 32 4 (by decide) (by decide) (by decide)
     (fun s₀ => nttLayer (nttLayer (F s₀) 128) 64)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 16 8 (by decide) (by decide) (by decide)
     (fun s₀ => nttLayer (nttLayer (nttLayer (F s₀) 128) 64) 32)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 8 16 (by decide) (by decide) (by decide)
     (fun s₀ => nttLayer (nttLayer (nttLayer (nttLayer (F s₀) 128) 64) 32) 16)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 4 32 (by decide) (by decide) (by decide)
     (fun s₀ => nttLayer (nttLayer (nttLayer (nttLayer (nttLayer (F s₀) 128) 64) 32) 16) 8)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 2 64 (by decide) (by decide) (by decide)
     (fun s₀ => nttLayer (nttLayer (nttLayer (nttLayer (nttLayer (nttLayer (F s₀) 128) 64) 32) 16) 8) 4)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine Piece.seq (lay 1 128 (by decide) (by decide) (by decide)
     (fun s₀ => nttLayer (nttLayer (nttLayer (nttLayer (nttLayer (nttLayer (nttLayer (F s₀) 128) 64) 32) 16)
       8) 4) 2)
-    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   exact nil_piece.mono (fun _ _ _ h => h) fun s₀ _ _ h => by rw [fold_eq]; exact h
 
 theorem body_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀)
     (fun s₀ s => LB s₀ montZetaTable (nttLens.foldl nttLayer (F s₀)) 256 s)
     (.seq (.block ldScratch) (.seq (.block (nttSetup montZetaTable 1))
       (layers (layerCode bflyBody zUp) [128, 64, 32, 16, 8, 4, 2, 1]))) :=
-  Piece.seq ld_piece (Piece.seq (setup_piece montZetaTable 1 (by taint_decide)) layers_piece)
+  Piece.seq ld_piece (Piece.seq (setup_piece montZetaTable 1 (by native_taint_decide)) layers_piece)
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀)
     (fun s₀ s' => LeafPost (fun s => LB s₀ montZetaTable (nttLens.foldl nttLayer (F s₀)) 256 s) s₀ s')

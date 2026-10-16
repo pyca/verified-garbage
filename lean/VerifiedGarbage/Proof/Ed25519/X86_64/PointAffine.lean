@@ -8,6 +8,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
 
 /-! Normalization calls X25519's verified inversion, `vg_gf25519_r64_invert`: the proofs
 are of the code with it inlined. -/

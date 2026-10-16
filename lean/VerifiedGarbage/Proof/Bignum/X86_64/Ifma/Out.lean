@@ -6,11 +6,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the multiplication's result
 
-After the loop, `ammCore` stores the `R`
+After the loop and the steps of the last, partial block, `ammCore` stores the `R`
 accumulators of each prime at `r11` (and `r11 + D`), then carries the `4 R`
 limbs of each in order (`carryOut`), the two chains interleaved
 (`ammCore_ok`).
@@ -87,15 +88,15 @@ theorem stores_gen {B : Addr} {b : Reg} :
 
 /-- The accumulators' stores of `ammCore`. -/
 def accStores (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : List (Nat × VReg) :=
-  (List.range 2).flatMap fun p => (List.range l.R).map fun k => (l.D * p + 32 * k, acc l p k 0)
+  (List.range 2).flatMap fun p => (List.range l.R).map fun k => (l.D * p + 32 * k, acc l p k (l.S % l.R))
 
 theorem accStores_code :
     ((List.range 2).flatMap fun p => (List.range l.R).map fun k =>
-      (Instr.evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k 0))) = storeCode .r11 (accStores l) := by
+      (Instr.evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R)))) = storeCode .r11 (accStores l) := by
   simp only [storeCode, accStores, List.map_flatMap, List.map_map, Function.comp_def]
 
 theorem mem_accStores {x : Nat × VReg} (hx : x ∈ accStores l) :
-    ∃ p < 2, ∃ k < l.R, x = (l.D * p + 32 * k, acc l p k 0) := by
+    ∃ p < 2, ∃ k < l.R, x = (l.D * p + 32 * k, acc l p k (l.S % l.R)) := by
   simp only [accStores, List.mem_flatMap, List.mem_range, List.mem_map] at hx
   obtain ⟨p, hp, k, hk, rfl⟩ := hx
   exact ⟨p, hp, k, hk, rfl⟩
@@ -116,7 +117,7 @@ theorem accStores_lt (hl : LayOk l) : ∀ x ∈ accStores l, x.1 + 32 ≤ l.D + 
 theorem read_stores (hl : LayOk l) (m : Mem) (B : Addr) (s : State) {p k t : Nat} (hp : p < 2) (hk : k < l.R)
     (ht : t < 4) :
     word (wrList m B ((accStores l).map fun x => (x.1, s.vy x.2))) B (l.D * p + 32 * k + 8 * t) =
-      qv s (vreg (regOf l p k 0)) t := by
+      qv s (vreg (regOf l p k (l.S % l.R))) t := by
   have hD := hl.D_bounds
   simp only [Lay.NB] at hD
   have hp' : l.D * p ≤ l.D := by rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl <;> simp
@@ -373,9 +374,9 @@ theorem ammCore_ok (hl : LayOk l) {s : State} {B : Addr} {a m : Nat → Nat → 
     (hs : Scr s B (l.D + l.NB)) :
     WP isa (ammCore l) s fun s' =>
       (∀ p < 2, ∀ q < l.L, word s'.mem B (l.D * p + l.off q) =
-        BitVec.ofNat 64 (carried (lm l a m k bl p l.L) q)) ∧
-      s'.gpr .rdx = BitVec.ofNat 64 (carryIn (lm l a m k bl 0 l.L) l.L) ∧
-      s'.gpr .rsi = BitVec.ofNat 64 (carryIn (lm l a m k bl 1 l.L) l.L) ∧
+        BitVec.ofNat 64 (carried (lm l a m k bl p l.S) q)) ∧
+      s'.gpr .rdx = BitVec.ofNat 64 (carryIn (lm l a m k bl 0 l.S) l.L) ∧
+      s'.gpr .rsi = BitVec.ofNat 64 (carryIn (lm l a m k bl 1 l.S) l.L) ∧
       Out2 l B 0 l.NB s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
@@ -386,7 +387,8 @@ theorem ammCore_ok (hl : LayOk l) {s : State} {B : Addr} {a m : Nat → Nat → 
   refine ⟨s.setReg .r10 (s.gpr .rbx), rfl, ?_⟩
   rw [List.cons_append, WP.block_cons_iff]
   refine ⟨_, rfl, ?_⟩
-  refine WP.mono (zeros_ok hl (s := (s.setReg .r10 (s.gpr .rbx)).setReg32 .rcx 4)) fun s₁ ⟨hz, k₁⟩ => ?_
+  refine WP.mono (zeros_ok hl (s := (s.setReg .r10 (s.gpr .rbx)).setReg32 .rcx (BitVec.ofNat 32 (l.S / l.R))))
+    fun s₁ ⟨hz, k₁⟩ => ?_
   have g₁ : ∀ r, r ≠ .rax → r ≠ .rcx → s₁.gpr r = (s.setReg .r10 (s.gpr .rbx)).gpr r := fun r a c => by
     rw [k₁.gpr r a]; exact RegUpd.gpr_setReg_of_ne _ _ c
   have i₁ : InBlk l (s.setReg .r10 (s.gpr .rbx)) s₁ a m k bl 0 0 :=
@@ -395,29 +397,35 @@ theorem ammCore_ok (hl : LayOk l) {s : State} {B : Addr} {a m : Nat → Nat → 
      fun t ht => hz _ (by simp only [zN]; omega) t ht, g₁ _ (by decide) (by decide),
      by rw [g₁ _ (by decide) (by decide), Nat.mul_zero, BitVec.add_zero], g₁ _ (by decide) (by decide),
      k₁.mem, k₁.rd, k₁.wr⟩
-  refine WP.seq (WP.mono (loop_ok hl e 4 s₁ (by decide) (by decide) i₁ (by rw [k₁.gpr _ (by decide)]; rfl))
-    fun s₂ ⟨i₂, g₂, x₂⟩ => ?_)
+  have hst := hl.steps
+  refine WP.seq (WP.mono (loop_ok hl e (l.S / l.R) s₁ hst.1 (Nat.le_refl _) (by rw [Nat.sub_self]; exact i₁)
+      (by rw [k₁.gpr _ (by decide)]; rcases hl with rfl | rfl | rfl <;> rfl))
+    fun s₂ₐ ⟨i₂ₐ, g₂ₐ, x₂ₐ⟩ => ?_)
+  rw [accStores_code, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (steps_chain hl e (l.S % l.R) (by omega) (by omega) s₂ₐ i₂ₐ) fun s₂ ⟨i₂, g₂', x₂'⟩ => ?_
+  have g₂ : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → s₂.gpr r = s₁.gpr r := fun r a c n =>
+    (g₂' r a).trans (g₂ₐ r a c n)
+  have x₂ : s₂.mxcsr = s₁.mxcsr := x₂'.trans x₂ₐ
   have hB₂ : s₂.gpr .r11 = B := by
     rw [g₂ _ (by decide) (by decide) (by decide), g₁ _ (by decide) (by decide)]
     exact (RegUpd.gpr_setReg_of_ne _ _ (by decide)).trans hB
   have wr₂ : s₂.wr = s.wr := by rw [i₂.wr]; rfl
-  rw [accStores_code, List.append_assoc, WP.block_append_iff]
+  rw [WP.block_append_iff]
   refine WP.mono (stores_gen (accStores l) s₂ hB₂ fun x hx =>
     wr₂ ▸ (let ⟨_, h, c⟩ := hs.region (accStores_lt hl x hx) (by decide); ⟨_, h, c⟩)) fun s₃ h₃ => ?_
   subst h₃
   rw [List.singleton_append, WP.block_cons_iff]
   refine ⟨_, rfl, ?_⟩
   have m₂ : s₂.mem = s.mem := i₂.mem
-  refine WP.mono (carryOut_ok hl (B := B) (L := fun p => lm l a m k bl p l.L)
-    (fun p _ q hq => lm_lt hR10 (Nat.le_refl _) hq)
+  refine WP.mono (carryOut_ok hl (B := B) (L := fun p => lm l a m k bl p l.S)
+    (fun p _ q hq => lm_lt hR10 hst.2.2.2.1 hq)
     (fun d hd => by rw [RegUpd.wr_setReg, wr₂]; exact hs.st hd)
     (by rw [RegUpd.gpr_setReg_of_ne _ _ (by decide)]; exact hB₂)
     (RegUpd.gpr_setReg_self _ _ _) fun p hp q hq => ?_) fun s' ⟨h, g, rd, wr, x⟩ => ?_
   · have h1 := Nat.mod_lt q (show 0 < l.R by omega)
     have h2 : q / l.R < 4 := Nat.div_lt_of_lt_mul (by simp only [Lay.L] at hq; rw [Nat.mul_comm]; exact hq)
     have := read_stores hl s₂.mem B s₂ hp (k := q % l.R) (t := q / l.R) h1 h2
-    rw [i₂.lanes p hp _ h1 _ h2, Nat.mod_add_div,
-      show l.R * 4 + 0 = l.L by simp only [Lay.L]; omega] at this
+    rw [i₂.lanes p hp _ h1 _ h2, Nat.mod_add_div, hst.2.2.2.2.1] at this
     rw [RegUpd.mem_setReg, show l.D * p + l.off q = l.D * p + 32 * (q % l.R) + 8 * (q / l.R) by
       unfold Lay.off; omega]
     exact this

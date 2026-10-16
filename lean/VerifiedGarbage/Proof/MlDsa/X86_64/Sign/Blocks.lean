@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Top
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
+import VerifiedGarbage.Proof.MlKem.X86_64.FragBase
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 
 /-!
 # ML-DSA signing on x86-64: the blocks between the calls

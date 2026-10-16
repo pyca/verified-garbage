@@ -3,12 +3,15 @@ module
 public import VerifiedGarbage.Proof.Blowfish.X86_64.Ecb
 public import VerifiedGarbage.Proof.Blowfish.X86_64.ConstantTime
 public import VerifiedGarbage.Proof.Blowfish.Scratch
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Spec.Rc2
 
 /-! # The ECB functions meet their contracts, with the working space as an argument -/
 

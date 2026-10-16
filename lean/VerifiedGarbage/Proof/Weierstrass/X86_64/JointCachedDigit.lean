@@ -7,6 +7,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Double4
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDoubleForward
 
 /-! A public peer digit either leaves the accumulator alone or adds its cached odd multiple. -/
 
@@ -16,9 +24,9 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
-local macro "jslots" : tactic => `(tactic| (simp only [jointSlots,jointLive,jointWork,
-  nafSlots,cachedSlots,jacCoords,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,
-  List.not_mem_nil,or_false] at * <;> grind))
+local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlots,jointLive,jointWork,
+                   nafSlots,cachedSlots,jacCoords,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,
+                   List.not_mem_nil,or_false] at * <;> grind))
 
 /-- If the digits' additions are calls (`Joint.Cfg.pts`), the functions'
 bodies call nothing, and the registers their wrappers keep are among those

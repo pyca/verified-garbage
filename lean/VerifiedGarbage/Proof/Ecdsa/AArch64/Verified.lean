@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Lit
-public import VerifiedGarbage.Proof.P256.Point
+import VerifiedGarbage.Proof.P256.Point
 meta import VerifiedGarbage.Proof.P256.Point
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
@@ -20,6 +20,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
+import VerifiedGarbage.Impl.P256.VerifyDouble
+meta import VerifiedGarbage.Impl.P256.VerifyDouble
 
 /-!
 # ECDSA over P-256 on AArch64: `Verified`
@@ -47,6 +53,7 @@ theorem p256_nBits : 64 * p256.n ≤ Spec.Ecdsa.nBits p256.C := by
   omega
 
 theorem p256_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p256 where
+  window_tmp := by decide +kernel
   n0 := by decide
   n10 := by decide
   onG := Proof.P256.onCurve_G
@@ -78,6 +85,7 @@ theorem p256_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p256 where
   inv_at := .inl rfl
   inv_fn := fun h => absurd rfl h
   padd := fun h => absurd rfl h
+  check_fn := fun _ => ⟨by lit_decide, by lit_decide, by lit_decide⟩
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, held, fit, hdw⟩ := h

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
@@ -10,6 +10,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
+meta import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
 
 @[expose] public section
 

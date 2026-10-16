@@ -1,10 +1,15 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntryTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 
 @[expose] public section
 
@@ -13,8 +18,8 @@ open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass
 open VG.Proof.Ed25519.AArch64 (read_x)
 
-local macro "jslots" : tactic => `(tactic| (simp only [jointSlots,jointLive,jointWork,
-  jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))
+local macro "jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlots,jointLive,jointWork,
+                   jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))
 
 theorem jointFixedSum_relCT (certs : Forward.Arithmetic.Cases)
     {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}

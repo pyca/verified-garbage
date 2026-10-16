@@ -12,6 +12,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # SEED's core for the modes on x86-64
@@ -229,7 +230,7 @@ theorem crypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule}
       ([.alu .add .rdi (.imm (BitVec.ofNat 32 (8 * schedSlot + keyStart d)))] : List Instr))))))) s = some s₇
     rw [runBlock_app, e₁, Option.bind_some, runBlock_app, e₂, Option.bind_some, runBlock_app, e₃, Option.bind_some,
       runBlock_app, e₄, Option.bind_some, runBlock_app, e₅, Option.bind_some, runBlock_app, e₆, Option.bind_some, e₇]
-  refine WP.seq (WP.mono (WP.vecKeep (by cases d <;> decide +kernel) (batch_ok d hpre)) fun s₈ ⟨q, qx, _⟩ => ?_)
+  refine WP.seq (WP.mono (WP.vecKeep (by cases d <;> lit_decide) (batch_ok d hpre)) fun s₈ ⟨q, qx, _⟩ => ?_)
   obtain ⟨qdone, _, _, _, qregs, qmasks, qrd, qwr, qframe⟩ := q
   rw [hrdx, rsi₇] at qdone qframe
   have r9₈ : s₈.gpr .r9 = B := by rw [qregs .r9 (by simp), r9₇]

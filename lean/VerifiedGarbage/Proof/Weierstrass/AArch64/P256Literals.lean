@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 meta import VerifiedGarbage.Impl.Ecdh.P256.AArch64
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
+import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -21,6 +21,8 @@ open VG VG.Impl.Ecdsa.AArch64
 
 materialize_code pPow := Cfg.pPow p256
 materialize_code nPow := Cfg.nPow p256
+materialize_code checkBody := Impl.Ecdh.AArch64.Cfg.checkBody p256
+materialize_code checkFn := Impl.Ecdh.AArch64.Cfg.checkFn p256
 materialize_code validate := Impl.Ecdh.AArch64.Cfg.validate p256
 materialize_code comb := Impl.Weierstrass.AArch64.TCombCfg.comb p256.combCfg
 

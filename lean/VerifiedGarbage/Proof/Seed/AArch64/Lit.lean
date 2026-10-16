@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
+import VerifiedGarbage.Impl.Seed.AArch64.Ecb
 meta import VerifiedGarbage.Impl.Seed.AArch64.Ecb
 public import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey
 meta import VerifiedGarbage.Impl.Seed.AArch64.ExpandKey

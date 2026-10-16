@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.LaneRestore
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # The ABI of the curve functions on AArch64
@@ -46,11 +47,13 @@ abbrev KeepsUntouched (c : Prog isa) : Prop :=
   topAll (fun i => (dstOf i).all fun r => !untouched.contains r) c = true
 
 /-- Whether every function `c` calls keeps the registers of `untouched`:
-straight-line code that restores them (`restores`), or code none of whose
-instructions writes them. -/
+code none of whose instructions writes them (checked first, in one pass over
+the code), straight-line code that restores them (`restores`), or code that
+keeps each of them. -/
 abbrev CallsKeep (c : Prog isa) : Prop :=
-  (c.calls.all fun nb => ((straight nb.2).any fun is => untouched.all fun r => restores r is) ||
-    untouched.all fun r => nb.2.allInstrs (keepsReg r)) = true
+  (c.calls.all fun nb => nb.2.allInstrs (fun i => (dstOf i).all fun r => !untouched.contains r) ||
+    (((straight nb.2).any fun is => untouched.all fun r => restores r is) ||
+      untouched.all fun r => nb.2.allInstrs (keepsReg r))) = true
 
 theorem keepsReg_of_untouched {i : Instr} {r : Reg} (hr : r ∈ untouched)
     (h : ((dstOf i).all fun r => !untouched.contains r) = true) : keepsReg r i = true := by
@@ -124,6 +127,10 @@ theorem untouched_keep {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec 
     exact this _ _ (fun i hi => keepsReg_of_untouched h hi) c hu
   · refine List.all_eq_true.mpr fun nb hnb => ?_
     rcases Bool.or_eq_true_iff.mp (List.all_eq_true.mp hn nb hnb) with h' | h'
+    · refine Bool.or_eq_true_iff.mpr (.inr ?_)
+      rw [Code.allInstrs_eq] at h' ⊢
+      exact List.all_eq_true.mpr fun i hi => keepsReg_of_untouched h (List.all_eq_true.mp h' i hi)
+    rcases Bool.or_eq_true_iff.mp h' with h' | h'
     · obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp h'
       exact Bool.or_eq_true_iff.mpr (.inl ((Option.any_eq_true _ _).mpr ⟨is, his, List.all_eq_true.mp hres r h⟩))
     · exact Bool.or_eq_true_iff.mpr (.inr (List.all_eq_true.mp h' r h))

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MdStream.Arm.Update
 meta import VerifiedGarbage.Proof.MdStream.Arm.Update
 public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
 meta import VerifiedGarbage.Proof.MdStream.Arm.Finalize
-public import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.MdStream.Arm.Words
 meta import VerifiedGarbage.Proof.MdStream.Arm.Words
 public import VerifiedGarbage.Proof.Sha256.Md
 meta import VerifiedGarbage.Proof.Sha256.Md
@@ -12,16 +12,18 @@ public import VerifiedGarbage.Proof.Sha256.Arm.Contract
 meta import VerifiedGarbage.Proof.Sha256.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha256.Arm.Compress
+import VerifiedGarbage.Proof.Sha256.Arm.Compress
 meta import VerifiedGarbage.Proof.Sha256.Arm.Compress
 public import VerifiedGarbage.Impl.Sha256.Arm.Stream
 meta import VerifiedGarbage.Impl.Sha256.Arm.Stream
-public import VerifiedGarbage.Proof.Sha256.Arm.Lit
+import VerifiedGarbage.Proof.Sha256.Arm.Lit
 meta import VerifiedGarbage.Proof.Sha256.Arm.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming SHA-256 on ARMv7: `update` and `finalize`

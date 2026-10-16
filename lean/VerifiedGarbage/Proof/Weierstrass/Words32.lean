@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # Short Weierstrass curves: numbers as 32-bit words and bytes
@@ -72,10 +75,8 @@ theorem val32_eq_ofBytes (m m' : Mem) (base p : Addr) : ∀ (o k : Nat),
 
 /-- The bit `i < 32` of a byte-reversed word. -/
 theorem getLsbD_byteRev32 (w : BitVec 32) {i : Nat} (hi : i < 32) :
-    (byteRev32 w).getLsbD i = w.getLsbD (8 * (3 - i / 8) + i % 8) := by
-  have hj : i % 8 < 8 := Nat.mod_lt _ (by decide)
-  simp only [byteRev32, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  split_ifs <;> (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+    (byteRev32 w).getLsbD i = w.getLsbD (8 * (3 - i / 8) + i % 8) :=
+  VG.byteRev32_getLsbD w hi
 
 /-- The `4 n` bytes at `q`, the word `j` of each is the byte reversal of the
 masked word `j` of a number, are the number big-endian, or zeros. -/

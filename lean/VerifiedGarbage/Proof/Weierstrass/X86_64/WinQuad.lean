@@ -8,6 +8,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # The window method on x86-64: the loop's frame and 
@@ -200,11 +203,11 @@ theorem winJ_sl {K : WinCfg} {o p q : Pt} (ho : ∀ x ∈ [o.x, o.y, o.z], x ∈
     · exact hq _ (by simp)
 
 /-- What a program reads is in `V`. -/
-local macro "rcb_sub" : tactic => `(tactic| (
-  intro x hx
-  simp only [rcbR, WinCfg.zeroPt, List.cons_append, List.nil_append, List.mem_cons,
-    List.not_mem_nil, or_false] at hx ⊢
-  rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
+local macro "rcb_sub" : tactic => `(tactic| plain_simp_names (
+                   intro x hx
+                   simp only [rcbR, WinCfg.zeroPt, List.cons_append, List.nil_append, List.mem_cons,
+                     List.not_mem_nil, or_false] at hx ⊢
+                   rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
 
 /-- Changing only the public loop counter preserves the field environment. -/
 theorem Inv.rbxKeeps {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}

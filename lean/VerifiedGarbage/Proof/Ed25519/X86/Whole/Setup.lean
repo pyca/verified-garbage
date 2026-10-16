@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Setup
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
-public import VerifiedGarbage.Proof.Framework.X86.Wp
+import VerifiedGarbage.Proof.Framework.X86.Wp
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
 
 @[expose] public section
 
@@ -22,6 +24,21 @@ def value (E : BitVec 32) (m : Mem) : Value → BitVec 32
 def valid (n : Nat) : Value → Prop
   | .caller i _ => i < n
   | _ => True
+
+/-- `valid`, as a test that `decide` evaluates. -/
+def validB (n : Nat) : Value → Bool
+  | .caller i _ => decide (i < n)
+  | _ => true
+
+/-- A literal value is valid: `valid_of (by decide)`. -/
+theorem valid_of {n : Nat} {v : Value} (h : validB n v = true) : valid n v := by
+  cases v with
+  | caller i d => exact (of_decide_eq_true h : i < n)
+  | _ => trivial
+
+/-- Every value of a literal list is valid: `valid_all (by decide)`. -/
+theorem valid_all {n : Nat} {vs : List Value} (h : vs.all (validB n) = true) : ∀ v ∈ vs, valid n v :=
+  fun v hv => valid_of (List.all_eq_true.mp h v hv)
 
 structure SetupStep (s t : State) : Prop where
   rd : t.rd = s.rd

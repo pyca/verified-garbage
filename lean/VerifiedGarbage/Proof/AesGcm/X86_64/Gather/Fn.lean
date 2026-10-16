@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCall
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: correctness
@@ -325,29 +326,30 @@ theorem stream_wp (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) {st : State}
     WP.seq (WP.mono (w_aad hp A h₄) fun _ h₅ => WP.seq (WP.mono (text_ok hp A T h₅) fun _ h₆ =>
       WP.seq (WP.mono (w_finArgs hp h₆) fun _ h₇ => w_fin hp F h₇)))))
 
-/-- After the test of the length. -/
-def E3 (s : State) (t : Nat) (st : State) : Prop :=
-  E2 s st ∧ st.gpr .r11 = W s ∧ st.cf = some (decide (L s < t))
-
-theorem w_shortTest {t : Nat} (ht : t < 2 ^ 31) {st : State} (h : E2 s st) :
-    WP isa (.block (shortTest t)) st (E3 s t) := by
-  obtain ⟨B, di, si, dx, cx⟩ := h
-  refine WP.mono (shortTest_ok hp ht B) fun st' ⟨r11, cf, g, m, rd, wr⟩ => ?_
-  have cs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r := fun r hr => g r
-    (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
-  exact ⟨⟨B.regs m cs rd wr, by rw [g _ (by decide) (by decide), di], by rw [g _ (by decide) (by decide), si],
-    by rw [g _ (by decide) (by decide), dx], by rw [g _ (by decide) (by decide), cx]⟩, r11, cf⟩
-
-/-- `vg_aes_gcm_seal_gather`, calling `S` for a text shorter than `t` bytes,
-and otherwise `I`, `A`, `T` and `F`. -/
-theorem sealGather_wp (S : SealFn M) {t : Nat} (ht : t < 2 ^ 31) (I : InitFn) (A : AadFn) (T : ToFn M)
-    (F : FinFn) : WP isa (sealGather S.fn t I.fn A.fn T.fn F.fn) s (Done s) := by
-  unfold sealGather
+/-- `vg_aes_gcm_seal_gather`: `fast` for a text shorter than `q` bytes (as
+`quick` sets `CF`), and otherwise `short` when
+`test` sets `CF` (to `go`), and otherwise `I`, `A`, `T` and `F`. -/
+theorem sealGatherG_wp {q : Nat} {quick fast test short : Prog isa} {go : Bool}
+    (hquick : ∀ st, E2 s st → WP isa quick st fun st' =>
+      E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some (decide (L s < q)))
+    (hfast : L s < q → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa fast st (Done s))
+    (htest : ∀ st, E2 s st → WP isa test st fun st' => E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some go)
+    (hshort : go = true → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa short st (Done s))
+    (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) :
+    WP isa (sealGather quick fast test short I.fn A.fn T.fn F.fn) s (Done s) := by
+  unfold sealGather gatherRest
   refine WP.seq (WP.mono (entry1_ok hp) fun _ h₁ => WP.seq (WP.mono (w_entry2 hp h₁) fun _ h₂ =>
-    WP.seq (WP.mono (w_shortTest hp ht h₂) fun st ⟨E, r11, cf⟩ => ?_)))
-  refine WP.ite (decide (L s < t)) (by simp only [eval, cf]) (fun e => ?_) (fun _ => stream_wp hp I A T F E)
-  have hL : L s < t := by simpa using e
-  exact copySeal_wp hp S (by omega) E.1 r11 E.2.2.1 E.2.2.2.1
+    WP.seq (WP.mono (hquick _ h₂) fun σ ⟨E₀, r₀, c₀⟩ => ?_)))
+  refine WP.ite (decide (L s < q)) (by simp only [eval, c₀]) (fun e => hfast (by simpa using e) σ E₀ r₀)
+    (fun _ => WP.seq (WP.mono (htest _ E₀) fun st ⟨E, r11, cf⟩ => ?_))
+  exact WP.ite go (by simp only [eval, cf]) (fun e => hshort e st E r11) (fun _ => stream_wp hp I A T F E)
+
+/-- The short path of `copySeal S` below `t` bytes. -/
+theorem sealShort_wp (S : SealFn M) {t : Nat} (ht : t < 2 ^ 31) :
+    decide (L s < t) = true → ∀ st, E2 s st → st.gpr .r11 = W s → WP isa (copySeal S.fn) st (Done s) :=
+  fun e st E r11 => by
+    have : L s < t := by simpa using e
+    exact copySeal_wp hp S (by omega) E.1 r11 E.2.2.1 E.2.2.2.1
 
 end
 

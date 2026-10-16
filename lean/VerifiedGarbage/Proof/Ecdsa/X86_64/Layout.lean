@@ -12,6 +12,20 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
+public import VerifiedGarbage.Proof.Mont.X86_64.CsubR
+public import VerifiedGarbage.Proof.Mont.X86_64.MulF
+public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
+public import VerifiedGarbage.Proof.Mont.X86_64.Sub384
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.Blocks
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 
 /-!
 # ECDSA on x86-64: the curve, the arguments and the working space
@@ -208,7 +222,7 @@ structure SetupPost (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s 
 /-- That a slot is neither the temporary area nor `55` (which for nine words
 trade places), or that one of two slots is not. -/
 macro "sl_ne" : tactic =>
-  `(tactic| first | decide | omega | (simp only [TMP, WK, WB, WT] at *; omega))
+  `(tactic| plain_simp_names first | decide | omega | (simp only [TMP, WK, WB, WT] at *; omega))
 
 /-- That one of two facts `sl_ne` proves holds. -/
 macro "sl_or" : tactic =>
@@ -276,11 +290,24 @@ theorem ix_cases (c : Cfg) (i : Nat) :
           · exact .inr (.inr (ix_of_ne c (.inl ⟨ht, h5, h8⟩)))
     · exact .inr (.inr (ix_of_ne c (.inr fun h => h.elim h9 h6)))
 
+/-- Swapping `a` and `b` twice. -/
+private theorem swap_swap {a b : Nat} (hab : a ≠ b) (i : Nat) :
+    (if (if i = a then b else if i = b then a else i) = a then b
+      else if (if i = a then b else if i = b then a else i) = b then a
+      else (if i = a then b else if i = b then a else i)) = i := by
+  by_cases ha : i = a
+  · subst ha; simp [Ne.symm hab]
+  · by_cases hb : i = b
+    · subst hb; simp
+    · simp [ha, hb]
+
 theorem ix_ix (c : Cfg) (i : Nat) : ix c (ix c i) = i := by
-  have hT : TMP = 2 := rfl
   unfold ix
-  repeat' split
-  all_goals omega
+  by_cases h9 : c.n = 9
+  · simp only [h9, ↓reduceIte]; exact swap_swap (by decide) i
+  · by_cases h6 : c.n = 6
+    · simp only [h6, ↓reduceIte]; exact swap_swap (by decide) i
+    · simp only [h9, h6, ↓reduceIte]
 
 theorem ix_inj (c : Cfg) {i j : Nat} (h : ix c i = ix c j) : i = j := by
   have := congrArg (ix c) h
@@ -324,6 +351,19 @@ theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = 
 
 /-- Every slot and table is in the working space. -/
 theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
+  rw [sl_eq']
+  have hix : ix c i < 84 := by
+    have hT : TMP = 2 := rfl
+    unfold ix
+    repeat' split
+    all_goals omega
+  have := Nat.mul_le_mul_left (8 * c.n) hix
+  rw [Nat.mul_succ] at this
+  have : 8 * c.n * 84 ≤ 8 * 9 * 84 := Nat.mul_le_mul_right _ (by omega)
+  show _ ≤ 8192
+  omega
+
+theorem sl_le84 (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 84) : c.sl i + 8 * c.n ≤ size := by
   rw [sl_eq']
   have hix : ix c i < 84 := by
     have hT : TMP = 2 := rfl

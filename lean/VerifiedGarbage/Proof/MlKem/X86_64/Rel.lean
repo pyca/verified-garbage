@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Semantics
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

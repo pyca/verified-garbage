@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Spec.Rc2
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Rc2.Word
+import VerifiedGarbage.Proof.Rc2.Word
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # RC2's little-endian block representation -/
 

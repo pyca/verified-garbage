@@ -44,4 +44,11 @@ theorem gq48_keeps (b j : Nat) : (Impl.Gcm.X86_64.StitchZ.gq48 b j).all Instr.ke
       rfl
     · split <;> rfl
 
+theorem gD_keeps (k j : Nat) : (gD k j).all Instr.keepsH = true := by
+  unfold gD
+  split
+  · unfold ldGD
+    cases (j == k) <;> by_cases h : j - 1 = 0 <;> simp only [h, ↓reduceIte, Bool.false_eq_true] <;> rfl
+  · split <;> rfl
+
 end VG.Proof.Gcm.X86_64.StitchZH

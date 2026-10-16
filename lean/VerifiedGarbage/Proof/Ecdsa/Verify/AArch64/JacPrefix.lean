@@ -1,15 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTiming
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! ## `Timing` -/
 
@@ -118,7 +120,7 @@ theorem verifyPrefix_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) :
 theorem verify_cut {c : Cfg} {s s' : State} {t : List Leak}
     (he : Exec isa (Impl.Ecdsa.Verify.AArch64.Cfg.verify c) s t s') :
     ∃ a b tp tc ts, Exec isa (verifyPrefix c) s tp a ∧
-      Exec isa (c.combCfg.comb (c.C.len == 32)) a tc b ∧ Exec isa (verifySuffix c) b ts s' ∧
+      Exec isa (c.combCfg.comb true) a tc b ∧ Exec isa (verifySuffix c) b ts s' ∧
       t = tp ++ tc ++ ts := by
   cases he with
   | seq e0 h => cases h with
@@ -155,12 +157,11 @@ structure VerifyChecks (c : Cfg) : Prop where
 influence the selected addresses. -/
 theorem verify_public_ct (hc : CfgOk c) (hC : Law c.C)
     (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
-    (hLookup : (c.C.len == 32) = true) (checks : VerifyChecks c) :
+    (checks : VerifyChecks c) :
     ConstantTime isa (VPre c) (VerifyPublic c) (Impl.Ecdsa.Verify.AArch64.Cfg.verify c) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ ⟨pub, sym, scalar⟩ e₁ e₂
   obtain ⟨a₁, b₁, tp₁, tc₁, ts₁, ep₁, ec₁, es₁, et₁⟩ := verify_cut e₁
   obtain ⟨a₂, b₂, tp₂, tc₂, ts₂, ep₂, ec₂, es₂, et₂⟩ := verify_cut e₂
-  rw [hLookup] at ec₁ ec₂
   have ht := checks.before _ _ _ _ _ _ trivial trivial pub ep₁ ep₂
   obtain ⟨_, _, wp₁, ready₁⟩ := verifyPrefix_ok hc pre₁
   obtain ⟨_, _, wp₂, ready₂⟩ := verifyPrefix_ok hc pre₂

@@ -1,8 +1,9 @@
 module
 
 public import Mathlib.Tactic.Ring
+public import Mathlib.Data.Nat.ModEq
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Load
-public import VerifiedGarbage.Proof.Poly1305.Horner
+import VerifiedGarbage.Proof.Poly1305.Horner
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

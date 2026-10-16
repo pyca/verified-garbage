@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Bits
-public import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
+import VerifiedGarbage.Impl.Ed25519.X86_64.PointMul
 public import VerifiedGarbage.Impl.Ed25519.X86_64.PointEncode
 
 /-! Base-point multiplication for the complete unsigned 256-bit input scalar: the

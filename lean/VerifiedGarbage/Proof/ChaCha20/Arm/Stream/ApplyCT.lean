@@ -6,6 +6,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.RelCT
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # Streaming ChaCha20 on ARMv7: `apply`, constant time
@@ -177,7 +187,7 @@ theorem check_rel :
     RelCT isa (fun x y => x = a ∧ y = b) (.block check) fun x y => Q0 a x ∧ Q0 b y :=
   RelCT.post (taintRegs [.r0] (fun x y ⟨hx, hy⟩ r hr => by
       subst hx hy
-      simp only [List.mem_singleton] at hr; subst hr; exact h.hst) (by taint_decide))
+      simp only [List.mem_singleton] at hr; subst hr; exact h.hst) (by native_taint_decide))
     fun x y ⟨hx, hy⟩ => ⟨by subst hx; exact check_ok h.pa, by subst hy; exact check_ok h.pb⟩
 
 theorem part1_rel (hle : L a ≤ N a) :
@@ -192,12 +202,12 @@ theorem part1_rel (hle : L a ≤ N a) :
         · rw [hx.keep _ (by decide) (by decide), hy.keep _ (by decide) (by decide)]; exact h.hst
         · rw [hx.keep _ (by decide) (by decide), hy.keep _ (by decide) (by decide)]; exact h.hdp
         · rw [hx.keep _ (by decide) (by decide), hy.keep _ (by decide) (by decide)]; exact h.hr2)
-        (by taint_decide))
+        (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨start_ok h.pa hle hx, start_ok h.pb hle' hy⟩) ?_
   refine RelCT.seq (R := fun x y => R1 a (H a) x ∧ R1 b (H b) y)
     (RelCT.post (RelCT.ite (fun x y ⟨⟨_, zx⟩, ⟨_, zy⟩⟩ => z_eq zx zy (by rw [h.eqO, h.eqL]))
-        (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by taint_decide))
-        (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)))
+        (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by native_taint_decide))
+        (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by native_taint_decide)))
       fun x y ⟨⟨hx, zx⟩, ⟨hy, zy⟩⟩ => ⟨sel_ok hx zx, sel_ok hy zy⟩) ?_
   refine RelCT.post (c := rest1) (taintRegs [.r4, .r5, .r6, .r2, .r12] (fun x y ⟨hx, hy⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -206,7 +216,7 @@ theorem part1_rel (hle : L a ≤ N a) :
       · rw [hx.r5, hy.r5, h.hdp]
       · rw [hx.r6, hy.r6, h.eqL]
       · rw [hx.r2, hy.r2, h.eqH]
-      · rw [hx.r12, hy.r12, h.eqO]) (by taint_decide))
+      · rw [hx.r12, hy.r12, h.eqO]) (by native_taint_decide))
     fun x y ⟨hx, hy⟩ => ⟨rest1_ok h.pa hx, rest1_ok h.pb hy⟩
 
 theorem xor_rel :
@@ -233,16 +243,16 @@ theorem part2_rel :
     RelCT isa (fun x y => Q1 a x ∧ Q1 b y) part2 fun x y => Q2 a x ∧ Q2 b y := by
   refine RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨part2_ok h.pa hx, part2_ok h.pb hy⟩
   refine RelCT.ite (fun x y ⟨hx, hy⟩ => z_eq hx.z hy.z (by rw [h.eqNB]))
-    (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)) ?_
+    (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by native_taint_decide)) ?_
   refine RelCT.seq (R := fun x y => (Args a x ∧ 0 < NB a) ∧ Args b y) ?_
-    (RelCT.seq (xor_rel h) (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)))
+    (RelCT.seq (xor_rel h) (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by native_taint_decide)))
   refine RelCT.mono (P := fun x y => (Q1 a x ∧ Q1 b y) ∧ 0 < NB a)
     (RelCT.post (taintRegs [.r4, .r2, .r5] (fun x y ⟨⟨hx, hy⟩, _⟩ r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · rw [hx.r4, hy.r4, h.hst]
         · rw [hx.r2, hy.r2, h.eqNB]
-        · rw [hx.r5, hy.r5, h.hdp, h.eqH]) (by taint_decide))
+        · rw [hx.r5, hy.r5, h.hdp, h.eqH]) (by native_taint_decide))
       fun x y ⟨⟨hx, hy⟩, hnb⟩ => ⟨WP.mono (args_ok h.pa hx) fun _ h' => ⟨h'.1, hnb⟩,
         WP.mono (args_ok h.pb hy) fun _ h' => h'.1⟩)
     (fun x y ⟨⟨hx, hy⟩, he⟩ => ⟨⟨hx, hy⟩, by
@@ -255,13 +265,13 @@ theorem part3_rel : RelCT isa (fun x y => Q2 a x ∧ Q2 b y) part3 fun x y => Q3
   refine RelCT.post ?_ fun x y ⟨hx, hy⟩ => ⟨part3_ok h.pa hx, part3_ok h.pb hy⟩
   rw [part3_eq]
   refine RelCT.seq (R := fun (x y : State) => (Q2 a x ∧ x.z = decide (T a = 0)) ∧ (Q2 b y ∧ y.z = decide (T b = 0)))
-    (RelCT.post (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by taint_decide))
+    (RelCT.post (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by native_taint_decide))
       fun x y ⟨hx, hy⟩ => ⟨cmp6_ok hx, cmp6_ok hy⟩) ?_
   refine RelCT.ite (fun x y ⟨⟨_, zx⟩, ⟨_, zy⟩⟩ => z_eq zx zy (by rw [h.eqT]))
-    (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)) ?_
+    (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by native_taint_decide)) ?_
   refine RelCT.seq (R := fun x y => TArgs a x ∧ TArgs b y)
     (RelCT.post (taintRegs [.r4] (fun x y ⟨⟨⟨hx, _⟩, ⟨hy, _⟩⟩, _⟩ r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [hx.r4, hy.r4, h.hst]) (by taint_decide))
+        simp only [List.mem_singleton] at hr; subst hr; rw [hx.r4, hy.r4, h.hst]) (by native_taint_decide))
       fun x y ⟨⟨⟨hx, _⟩, ⟨hy, _⟩⟩, _⟩ => ⟨tailArgs_ok h.pa hx, tailArgs_ok h.pb hy⟩) ?_
   refine RelCT.seq (R := fun x y => TAfter a x ∧ TAfter b y) ?_
     (taintRegs [.r4, .r5, .r6] (fun x y ⟨hx, hy⟩ r hr => by
@@ -269,7 +279,7 @@ theorem part3_rel : RelCT isa (fun x y => Q2 a x ∧ Q2 b y) part3 fun x y => Q3
       rcases hr with rfl | rfl | rfl
       · rw [hx.r4, hy.r4, h.hst]
       · rw [hx.r5, hy.r5, h.hdp, h.eqH, h.eqNB]
-      · rw [hx.r6, hy.r6, h.eqT]) (by taint_decide))
+      · rw [hx.r6, hy.r6, h.eqT]) (by native_taint_decide))
   have est : ST b = ST a := h.hst.symm
   have est' : st b = st a := h.eqst.symm
   refine RelCT.post (RelCT.call Proof.ChaCha20.Arm.block_correct Proof.ChaCha20.Arm.block_ct
@@ -288,7 +298,7 @@ theorem part3_rel : RelCT isa (fun x y => Q2 a x ∧ Q2 b y) part3 fun x y => Q3
 theorem apply_rel : RelCT isa (fun x y => x = a ∧ y = b) apply fun _ _ => True := by
   rw [apply_eq]
   refine RelCT.seq (check_rel h) (RelCT.ite (fun x y ⟨hx, hy⟩ => z_eq hx.z hy.z (by rw [h.hleft, h.eqL]))
-    (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by taint_decide)) ?_)
+    (taintRegs [] (fun _ _ _ r hr => by simp at hr) (by native_taint_decide)) ?_)
   by_cases hlt : N a < L a
   · refine RelCT.of_false fun x y hp => ?_
     have he := hp.2
@@ -299,7 +309,7 @@ theorem apply_rel : RelCT isa (fun x y => x = a ∧ y = b) apply fun _ _ => True
   refine RelCT.seq (RelCT.mono (part1_rel h hle) (fun _ _ hp => hp.1) fun _ _ hq => hq)
     (RelCT.seq (part2_rel h) (RelCT.seq (part3_rel h) ?_))
   exact taintRegs [.r4] (fun x y ⟨hx, hy⟩ r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; rw [hx.r4, hy.r4, h.hst]) (by taint_decide)
+    simp only [List.mem_singleton] at hr; subst hr; rw [hx.r4, hy.r4, h.hst]) (by native_taint_decide)
 
 end
 

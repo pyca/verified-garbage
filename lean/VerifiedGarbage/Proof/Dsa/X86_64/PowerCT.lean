@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.Power
@@ -12,6 +13,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Constant-time components of DSA exponentiation -/
 
@@ -35,8 +38,9 @@ theorem encodePower_ct (M : Mont) :
 
 /-- The shared secret-exponent loop with DSA's parent-header argument slots.
 The byte values are secret; the pointer, length and workspace layout are public. -/
-theorem exponent_ct (M : Mont) : ExpCT M VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len :=
-  crtExpLoop_ct M (by taint_decide)
+theorem exponent_ct (M : Mont) (Sq : MontS) :
+    ExpCTS M Sq CrtSel.sse VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len :=
+  crtExpLoopS_ct M Sq CrtSel.sse CrtSel.sse_ct (by taint_decide)
 
 /-- The caller fixes addresses, widths and modulus; exponent and base values
 remain existential in the relational preconditions. -/
@@ -72,12 +76,12 @@ def EncodedPre (p : PowerPublic) (s : State) : Prop :=
       2 ^ (64 * p.bytes.x.wx) % p.modulus
 
 /-- Exponentiation and decoding together have a secret-independent trace. -/
-theorem encodedPower_ct (M : Mont) : RelCT isa (Two EncodedPre)
-    (Arithmetic.encodedPower M.mm VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len)
+theorem encodedPower_ct (M : Mont) (Sq : MontS) : RelCT isa (Two EncodedPre)
+    (Arithmetic.encodedPower Sq.mm M.mm VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len)
     (fun _ _ => True) := by
   unfold Arithmetic.encodedPower
   refine RelCT.seq (two_post (Ψ := fun p s => GoodW p.bytes.x.ws s)
-    (two_map (fun p : PowerPublic => p.bytes) ?_ (exponent_ct M)) ?_)
+    (two_map (fun p : PowerPublic => p.bytes) ?_ (exponent_ct M Sq)) ?_)
     (two_map (fun p : PowerPublic => p.bytes.x.ws) (fun _ _ h => h)
       (M.ct (by unfold MmUse; decide)))
   · intro p s ⟨x, eb, ⟨hc, hm, _, hp, hl, hlen, h1, h2, hs⟩, hx, hy⟩
@@ -89,7 +93,7 @@ theorem encodedPower_ct (M : Mont) : RelCT isa (Two EncodedPre)
     · rw [hy]; exact Nat.mod_lt _ (by have := p.greater; omega)
     · rw [hy, Nat.mod_mod, Nat.one_mul]
   · intro p s ⟨x, eb, ⟨hc, hm, _, hp, hl, _, h1, h2, hs⟩, hx, hy⟩
-    refine WP.mono (expLoop_ok M (x := x) hc p.lower p.fits p.upper hm.modulus hm.inverse p.odd
+    refine WP.mono (expLoop_ok M Sq (x := x) hc p.lower p.fits p.upper hm.modulus hm.inverse p.odd
       (by rw [hx]; exact Nat.mod_lt _ (by have := p.greater; omega))
       (by rw [hx, Nat.mod_mod])
       (by rw [hy]; exact Nat.mod_lt _ (by have := p.greater; omega))
@@ -103,13 +107,13 @@ def PowerCorePre (p : PowerPublic) (s : State) : Prop :=
       2 ^ (128 * p.bytes.x.wx) % p.modulus
 
 /-- The whole power core is constant time for secret bases and exponents. -/
-theorem powerCore_ct (M : Mont) : RelCT isa (Two PowerCorePre)
-    (Arithmetic.powerCore M.mm VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len)
+theorem powerCore_ct (M : Mont) (Sq : MontS) : RelCT isa (Two PowerCorePre)
+    (Arithmetic.powerCore Sq.mm M.mm VG.Impl.Dsa.Layout.arg2 VG.Impl.Dsa.Layout.arg2Len)
     (fun _ _ => True) := by
   unfold Arithmetic.powerCore
   refine RelCT.seq (two_post (Ψ := EncodedPre)
     (two_map (fun p : PowerPublic => p.product) ?_ (encodePower_ct M)) ?_)
-    (encodedPower_ct M)
+    (encodedPower_ct M Sq)
   · intro p s ⟨eb, ⟨_, hm, hone, _⟩, hr2⟩
     refine ⟨hm, ?_⟩
     intro j hj

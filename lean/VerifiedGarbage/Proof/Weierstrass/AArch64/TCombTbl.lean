@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelect
-public import VerifiedGarbage.Proof.Weierstrass.TCombWords
-public import VerifiedGarbage.Proof.Weierstrass.TCombLay
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.Weierstrass.TCombLay
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # The comb from tables in memory on AArch64: the tables

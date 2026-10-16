@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesCcm.Ctr
+import VerifiedGarbage.Proof.AesCcm.Words32
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 
 /-!
 # AES-CCM on x86: `B₀`, the CBC-MAC and the tag (`b0 y`, `mac y`, `tag y`)

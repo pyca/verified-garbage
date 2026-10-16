@@ -1,14 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
-public import VerifiedGarbage.Proof.Mont.X86_64.Ops
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
+
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnB
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFn6
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN6
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Weierstrass.Slots
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Products modulo P-521's and P-384's `p` by calls, on x86-64
@@ -136,19 +145,19 @@ theorem mulCall6_ok {f : String} {body : Prog isa} (hbody : body = mulFn6 false 
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
   obtain ⟨hn6, hm⟩ := Mod.ok_sparse hM.red hsp
   have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn6] at this; simp only [fnTmp6] at this; omega
-  simp only [lowArgs, show ¬ (6 = 9) by decide, ↓reduceIte, Bool.and_eq_true, Bool.or_eq_true,
+  simp only [lowArgs, show ¬ (6 = 9) by decide, show ¬ (6 = 8) by decide, ↓reduceIte, Bool.and_eq_true, Bool.or_eq_true,
     decide_eq_true_eq] at hlow
   obtain ⟨⟨ho, ha⟩, hb⟩ := hlow
   rw [hn6] at hB hoZ haZ hbZ ⊢
-  have h31 : ∀ x, (x + 48 ≤ fnTmp6 ∨ 4096 ≤ x ∧ x < 2 ^ 31) → x < 2 ^ 32 := fun x h => by
+  have h31 : ∀ x, (x + 96 ≤ fnTmp6 ∨ 4096 ≤ x ∧ x < 2 ^ 31) → x < 2 ^ 32 := fun x h => by
     simp only [fnTmp6] at h; omega
   simp only [mulCall, Code.inline]
   refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (h31 o ho) (h31 a ha) (h31 b hb))
     fun s₁ ⟨r12₁, o₁, a₁, b₁, k₁⟩ => ?_)
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
-  have arg : ∀ x, (x + 48 ≤ fnTmp6 ∨ 4096 ≤ x ∧ x < 2 ^ 31) → x + 48 ≤ Z → Arg6 Z x := fun x h hz =>
-    ⟨h.imp id And.left, hz⟩
+  have arg : ∀ x, (x + 96 ≤ fnTmp6 ∨ 4096 ≤ x ∧ x < 2 ^ 31) → x + 48 ≤ Z → Arg6 Z x := fun x h hz =>
+    ⟨h.imp (fun h => by simp only [fnTmp6] at h ⊢; omega) And.left, hz⟩
   refine WP.seq (WP.mono (fn6_ok hbody hs₁ hZ hm (by rw [o₁]; exact arg o ho hoZ) (by rw [a₁]; exact arg a ha haZ)
     (by rw [b₁]; exact arg b hb hbZ) (by rw [b₁, hm₁]; exact hB)) fun s₂ ⟨lt₂, e₂, k₂, m₂⟩ => ?_)
   refine WP.mono (movReg_ok s₂ .rsi .r12) fun s₃ ⟨v₃, k₃⟩ => ?_
@@ -170,13 +179,16 @@ theorem mulCall6_ok {f : String} {body : Prog isa} (hbody : body = mulFn6 false 
 /-- A product modulo P-521's `n` (`Mod.fnN`) by a call of `mulFnN`, inlined: as
 the inline product, for the functions' temporary area. -/
 theorem mulCallN_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) {M : Mod} {m : Nat}
-    (hM : ModOkW M Z m s.mem base) (hf : M.fnN = true) (ht : M.tmp = fnTmp)
+    (hM : ModOkW M Z m s.mem base) (hf : M.fnN = true) (hn9 : M.n = 9) (ht : M.tmp = fnTmp)
     {o a b : Nat} (hlow : lowArgs 9 o a b = true) (hB : wordsVal s.mem base b M.n < m) :
     WP isa (mulCall f mulFnN o a b).inline s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
-  obtain ⟨hn9, hm⟩ := Mod.ok_fnN hM.red hf
+  have hm : m = n521 := by
+    rcases Mod.ok_fnN hM.red hf with ⟨_, hm⟩ | ⟨h6, _⟩
+    · exact hm
+    · omega
   have hm' : m = n521 := hm
   have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn9] at this; simp only [fnTmp] at this; omega
   simp only [lowArgs, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at hlow
@@ -204,5 +216,102 @@ theorem mulCallN_ok {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s
   · rw [hn9] at hx ht'
     rw [ht] at ht'
     rw [hm₃, m₂ x hx (by simp only [fnTmp] at ht' ⊢; omega), hm₁]
+
+theorem mulCall8_ok (order : Bool) {f : String} {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) {M : Mod} {m : Nat}
+    (hM : ModOkW M Z m s.mem base) (hf : M.fnMod = some (Wide8.modulus order)) (hn8 : M.n = 8) (ht : M.tmp = Wide8.tmp)
+    {o a b : Nat} (hlow : lowArgs 8 o a b = true) (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (mulCall f (Wide8.fn order) o a b).inline s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
+        wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+  have hm' : m = Wide8.modulus order := (Mod.ok_fnMod hM.red hf).symm
+  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn8] at this; simp only [Wide8.tmp] at this; omega
+  simp only [lowArgs, show ¬ (8 = 9) by decide, ↓reduceIte, Bool.and_eq_true, decide_eq_true_eq] at hlow
+  obtain ⟨⟨ho, ha⟩, hb⟩ := hlow
+  rw [hn8] at hB ⊢
+  simp only [mulCall, Code.inline]
+  refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (by omega) (by omega) (by omega))
+    fun s₁ ⟨r12₁, o₁, a₁, b₁, k₁⟩ => ?_)
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  have hm₁ : s₁.mem = s.mem := k₁.2.1
+  refine WP.seq (WP.mono (Wide8.fn_ok order hs₁ hZ (by rw [o₁]; exact ho) (by rw [a₁]; exact ha) (by rw [b₁]; exact hb)
+    (by rw [b₁, hm₁, ← hm']; exact hB)) fun s₂ ⟨lt₂, e₂, k₂, m₂⟩ => ?_)
+  refine WP.mono (movReg_ok s₂ .rsi .r12) fun s₃ ⟨v₃, k₃⟩ => ?_
+  rw [o₁] at lt₂ e₂ m₂
+  rw [a₁, b₁, hm₁] at e₂
+  have hm₃ : s₃.mem = s₂.mem := k₃.2.1
+  refine ⟨⟨fun r hr => ?_, by rw [k₃.2.2.1, k₂.rd, k₁.2.2.1], by rw [k₃.2.2.2, k₂.wr, k₁.2.2.2],
+    fun x hx ht' => ?_⟩, by rw [hm₃, hm']; exact lt₂, by rw [hm₃, Nat.pow_mul 2 64 8, hm']; exact e₂⟩
+  · rw [hn8] at hr
+    rcases not_clob9 r (show r ∉ clob 9 from hr) with rfl | rfl | rfl | rfl
+    · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
+    · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
+    · rw [v₃, k₂.gpr _ (by decide), r12₁]
+    · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
+  · rw [hn8] at hx ht'
+    rw [ht] at ht'
+    rw [hm₃, m₂ x hx (by simp only [Wide8.tmp] at ht' ⊢; omega), hm₁]
+
+theorem fnN6_ok {body : Prog isa} (hbody : body = mulFnN6 false ∨ body = mulFnN6 true) {s : State} {base : Addr}
+    {Z : Nat} (hs : Scr s base Z) (hZ : 4096 ≤ Z) (ho : ArgN6 Z (argOf s .rsi))
+    (ha : ArgN6 Z (argOf s .rdx)) (hb : ArgN6 Z (argOf s .rcx)) (hB : wordsVal s.mem base (argOf s .rcx) 6 < n384) :
+    WP isa body s fun s' =>
+      wordsVal s'.mem base (argOf s .rsi) 6 < n384 ∧
+      wordsVal s'.mem base (argOf s .rsi) 6 * (2 ^ 64) ^ 6 % n384 =
+        wordsVal s.mem base (argOf s .rdx) 6 * wordsVal s.mem base (argOf s .rcx) 6 % n384 ∧
+      KeepRegs fnClob s s' ∧
+      ∀ x, (ofs base x < argOf s .rsi ∨ argOf s .rsi + 48 ≤ ofs base x) →
+        (ofs base x < fnTmp6 ∨ 4096 ≤ ofs base x) → s'.mem x = s.mem x := by
+  rcases hbody with rfl | rfl
+  · exact mulFnN6_ok false hs hZ ho ha hb hB
+  · exact mulFnN6_ok true hs hZ ho ha hb hB
+
+/-- A product modulo P-384's `n` (`Mod.fnN`) by a call of `mulFnN6 adx`, inlined:
+as the inline product, for offsets apart from `n` and the functions'
+temporary area. -/
+theorem mulCallN6_ok {f : String} {body : Prog isa} (hbody : body = mulFnN6 false ∨ body = mulFnN6 true) {s : State} {base : Addr} {Z : Nat} (hs : Scr s base Z) {M : Mod} {m : Nat}
+    (hM : ModOkW M Z m s.mem base) (hf : M.fnN = true) (hn6 : M.n = 6) (ht : M.tmp = fnTmp6)
+    {o a b : Nat} (hlow : lowArgs 6 o a b = true)
+    (hoZ : o + 8 * M.n ≤ Z) (haZ : a + 8 * M.n ≤ Z) (hbZ : b + 8 * M.n ≤ Z)
+    (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (mulCall f body o a b).inline s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
+        wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+  have hm : m = n384 := by
+    rcases Mod.ok_fnN hM.red hf with ⟨h9, _⟩ | ⟨_, hm⟩
+    · omega
+    · exact hm
+  have hZ : 4096 ≤ Z := by have := hM.tmp; rw [ht, hn6] at this; simp only [fnTmp6] at this; omega
+  simp only [lowArgs, show ¬ (6 = 9) by decide, show ¬ (6 = 8) by decide, ↓reduceIte, Bool.and_eq_true, Bool.or_eq_true,
+    decide_eq_true_eq] at hlow
+  obtain ⟨⟨ho, ha⟩, hb⟩ := hlow
+  rw [hn6] at hB hoZ haZ hbZ ⊢
+  have h31 : ∀ x, (x + 96 ≤ fnTmp6 ∨ 4096 ≤ x ∧ x < 2 ^ 31) → x < 2 ^ 32 := fun x h => by
+    simp only [fnTmp6] at h; omega
+  simp only [mulCall, Code.inline]
+  refine WP.seq (WP.mono (callArgs_ok s (o := o) (a := a) (b := b) (h31 o ho) (h31 a ha) (h31 b hb))
+    fun s₁ ⟨r12₁, o₁, a₁, b₁, k₁⟩ => ?_)
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  have hm₁ : s₁.mem = s.mem := k₁.2.1
+  have arg : ∀ x, (x + 96 ≤ fnTmp6 ∨ 4096 ≤ x ∧ x < 2 ^ 31) → x + 48 ≤ Z → ArgN6 Z x := fun x h hz =>
+    ⟨h.imp id And.left, hz⟩
+  refine WP.seq (WP.mono (fnN6_ok hbody hs₁ hZ (by rw [o₁]; exact arg o ho hoZ) (by rw [a₁]; exact arg a ha haZ)
+    (by rw [b₁]; exact arg b hb hbZ) (by rw [b₁, hm₁, ← hm]; exact hB)) fun s₂ ⟨lt₂, e₂, k₂, m₂⟩ => ?_)
+  refine WP.mono (movReg_ok s₂ .rsi .r12) fun s₃ ⟨v₃, k₃⟩ => ?_
+  rw [o₁] at lt₂ e₂ m₂
+  rw [a₁, b₁, hm₁] at e₂
+  have hm₃ : s₃.mem = s₂.mem := k₃.2.1
+  refine ⟨⟨fun r hr => ?_, by rw [k₃.2.2.1, k₂.rd, k₁.2.2.1], by rw [k₃.2.2.2, k₂.wr, k₁.2.2.2],
+    fun x hx ht' => ?_⟩, by rw [hm₃, hm]; exact lt₂, by rw [hm₃, Nat.pow_mul 2 64 6, hm]; exact e₂⟩
+  · rw [hn6] at hr
+    rcases not_clob6 r hr with rfl | rfl | rfl | rfl
+    · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
+    · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
+    · rw [v₃, k₂.gpr _ (by decide), r12₁]
+    · rw [k₃.1 _ (by decide), k₂.gpr _ (by decide), k₁.1 _ (by decide)]
+  · rw [hn6] at hx ht'
+    rw [ht] at ht'
+    rw [hm₃, m₂ x hx (by simp only [fnTmp6] at ht' ⊢; omega), hm₁]
 
 end VG.Proof.Weierstrass.X86_64.Mont

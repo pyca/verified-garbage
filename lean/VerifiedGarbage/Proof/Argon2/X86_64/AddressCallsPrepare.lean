@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsStage
-public import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
+import VerifiedGarbage.Proof.Argon2.X86_64.ClearBlock
 public import VerifiedGarbage.Proof.Argon2.AddressInput
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressHeaderWords
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline

@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 
 /-!
 # `vg_rsa_check_key` on AArch64: `main`
@@ -39,9 +43,17 @@ theorem ck_final {k N E D P Q DP DQ QI : Nat} {dn pq gP gQ gQI : Bool} (hv : Spe
     have hb : ∀ a b : Nat, (a == b) = decide (a = b) := fun a b => by
       cases h' : decide (a = b) <;> simp_all
     simp only [hb, h, hPn, hQn, decide_true, Bool.true_and, Bool.and_true, Bool.and_assoc]
-    cases decide (D < N) <;> cases decide (DP < P - 1) <;> cases decide (D * E % (P - 1) = 1) <;>
-      cases decide (E * DP % (P - 1) = 1) <;> cases decide (DQ < Q - 1) <;> cases decide (D * E % (Q - 1) = 1) <;>
-      cases decide (E * DQ % (Q - 1) = 1) <;> cases decide (QI < P) <;> cases decide (Q * QI % P = 1) <;> rfl
+    generalize decide (D < N) = b0
+    generalize decide (DP < P - 1) = b1
+    generalize decide (D * E % (P - 1) = 1) = b2
+    generalize decide (E * DP % (P - 1) = 1) = b3
+    generalize decide (DQ < Q - 1) = b4
+    generalize decide (D * E % (Q - 1) = 1) = b5
+    generalize decide (E * DQ % (Q - 1) = 1) = b6
+    generalize decide (QI < P) = b7
+    generalize decide (Q * QI % P = 1) = b8
+    revert b0 b1 b2 b3 b4 b5 b6 b7 b8
+    decide
   · have : (P * Q == N) = false := by simpa using h
     simp [h, this]
 
@@ -63,7 +75,7 @@ structure CkPre (I : CkIn) (s : State) : Prop where
 
 /-- `head`: the layout, the mask all ones, and `CkS` from the memory on
 entry to `main`. -/
-theorem ckHeadS_ok {I : CkIn} {s : State} (h : CkPre I s) :
+theorem ckHeadS_ok {I : CkIn} {s : State} (h : CkPre I s) (hc : I.cap = I.k) :
     WP isa (.block VG.Impl.Rsa.AArch64.CheckKey.head) s fun t => CkS I s.mem t ∧ mword t.mem I.B = mask true := by
   have L := h.L
   have hZ := L.z
@@ -76,7 +88,7 @@ theorem ckHeadS_ok {I : CkIn} {s : State} (h : CkPre I s) :
   have hi₁ : InScr I.B I.Z s.mem s₁.mem := InScr.of_frm f₁ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega)
-  exact ⟨hw₁, h.args.congr fun i hi => f₁.word_eq (fun r hr => by
+  exact ⟨L.fit, hc ▸ hw₁, h.args.congr fun i hi => f₁.word_eq (fun r hr => by
       unfold ckSlot at hi
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> omega) (by unfold ckSlot at hi; omega),
@@ -95,7 +107,7 @@ theorem ckMain_eq : VG.Impl.Rsa.AArch64.CheckKey.main = seqs (([.block VG.Impl.R
 /-- `main`, from a valid modulus and exponent: the mask of `keyValid`
 returned. -/
 theorem ckMain_ok {I : CkIn} {s : State} (h : CkPre I s) (hv : Spec.Rsa.modulusValid I.N I.k = true)
-    (he : Spec.Rsa.exponentValid I.E = true) :
+    (he : Spec.Rsa.exponentValid I.E = true) (hc : I.cap = I.k) :
     WP isa VG.Impl.Rsa.AArch64.CheckKey.main s fun t =>
       t.gpr .x0 = BitVec.ofNat 64 (Spec.Rsa.keyValid I.k I.N I.E I.D I.P I.Q I.DP I.DQ I.QI).toNat := by
   have L := h.L
@@ -109,7 +121,7 @@ theorem ckMain_ok {I : CkIn} {s : State} (h : CkPre I s) (hv : Spec.Rsa.modulusV
   have hPn : I.P < I.N := Nat.lt_of_lt_of_le hPl ((Nat.pow_le_pow_right (by decide) (by have := L.pl2; omega)).trans hlo)
   have hQn : I.Q < I.N := Nat.lt_of_lt_of_le hQl ((Nat.pow_le_pow_right (by decide) (by have := L.ql2; omega)).trans hlo)
   rw [ckMain_eq]
-  refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (ckHeadS_ok h) fun s₁ ⟨h₁, m₁⟩ => ?_)
+  refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (ckHeadS_ok h hc) fun s₁ ⟨h₁, m₁⟩ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp [loadA]) (WP.mono (ckLoad_ok h₁ (j := 0) (by decide) (by decide)
     (by decide) h₁.args.n h₁.args.k h₁.n L.nl (by omega) (Nat.le_refl _)) fun s₂ ⟨h₂, m₂, v₂, o₂⟩ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp) (WP.mono (ckLoad_ok h₂ (j := aE) (by decide) (by decide)
@@ -121,10 +133,10 @@ theorem ckMain_ok {I : CkIn} {s : State} (h : CkPre I s) (hv : Spec.Rsa.modulusV
   refine wp_seqs_append (by simp [loadA]) (by simp [loadA]) (WP.mono (phDN_ok k₄ L) fun s₅ k₅ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp [modChecks]) (WP.mono (phPQ_ok k₅ L) fun s₆ k₆ => ?_)
   refine wp_seqs_append (by simp [modChecks]) (by simp [modChecks]) (WP.mono (phMod_ok k₆ L hE64
-    (by decide) (by decide) (by decide) L.pl1 L.pl2 L.pbl L.dpbl
+    (by decide) (by decide) (by decide) L.pl1 L.pl2 L.pcap L.pbl L.dpbl
     (fun t ht => ⟨ht.args.p, ht.args.pl, ht.p, ht.args.dp, ht.dp⟩)) fun s₇ ⟨gP, k₇, hgP⟩ => ?_)
   refine wp_seqs_append (by simp [modChecks]) (by simp [loadA]) (WP.mono (phMod_ok k₇ L hE64
-    (by decide) (by decide) (by decide) L.ql1 L.ql2 L.qbl L.dqbl
+    (by decide) (by decide) (by decide) L.ql1 L.ql2 L.qcap L.qbl L.dqbl
     (fun t ht => ⟨ht.args.q, ht.args.ql, ht.q, ht.args.dq, ht.dq⟩)) fun s₈ ⟨gQ, k₈, hgQ⟩ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp) (WP.mono (phQI_ok k₈ L) fun s₉ ⟨gQI, k₉, hgQI⟩ => ?_)
   obtain ⟨h₉, m₉, -⟩ := k₉

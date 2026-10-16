@@ -1,15 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedDepth
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedVerifyVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.RootedCachedVerifyVerified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Verified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Verified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CachedVerifyVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

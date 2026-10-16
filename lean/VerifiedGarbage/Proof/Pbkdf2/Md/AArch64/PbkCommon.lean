@@ -7,6 +7,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: `pbkdf2`'s parts
@@ -98,8 +100,8 @@ structure PSizes (H : Hash) : Prop where
 theorem _root_.VG.Proof.Pbkdf2.Md.AArch64.HashOK.psizes (hH : HashOK H) : PSizes H := ⟨hH.sizes, hH.W⟩
 
 theorem PSizes.N (hz : PSizes H) : 0 < H.P.N ∧ H.P.N ≤ 64 := hz.z.dims.N
-theorem PSizes.B_le (hz : PSizes H) : H.P.B ≤ 128 := by rcases hz.z.B with h | h <;> omega
-theorem PSizes.B_ge (hz : PSizes H) : 64 ≤ H.P.B := by rcases hz.z.B with h | h <;> omega
+theorem PSizes.B_le (hz : PSizes H) : H.P.B ≤ 128 := by rcases hz.z.B with h | h <;> omega_using [h]
+theorem PSizes.B_ge (hz : PSizes H) : 64 ≤ H.P.B := by rcases hz.z.B with h | h <;> omega_using [h]
 
 /-! ## The parts of `scratch` -/
 
@@ -111,7 +113,7 @@ theorem layout : H.sv = 8 * H.W ∧ H.outO = 8 * H.W + 56 ∧ H.cO = 8 * H.W + 6
     H.intO = 8 * H.W + 80 + 4 * H.S + 2 * H.D + H.P.N ∧ H.S = H.P.N + H.P.B := by
   refine ⟨rfl, rfl, rfl, rfl, rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl⟩ <;>
     simp only [Hash.sv, Hash.st0O, Hash.st1O, Hash.stSO, Hash.stWO, Hash.uO, Hash.tO,
-      Hash.hkO, Hash.intO] <;> omega
+      Hash.hkO, Hash.intO] <;> omega_using []
 
 section
 variable {s₀ : State} (hp : Pre (H := H) s₀) (hz : PSizes H)
@@ -133,21 +135,21 @@ theorem part_sub {o n : Nat} (h : o + n ≤ (H.W + H.S) * 8) : Region.Sub (sR s�
 include hz in
 theorem part_disj {a m b n : Nat} (h : a + m ≤ b ∨ b + n ≤ a) (ha : a + m ≤ (H.W + H.S) * 8)
     (hb : b + n ≤ (H.W + H.S) * 8) : Region.Disjoint (sR s₀ a m) (sR s₀ b n) := by
-  have := L_lt hz; exact Offset.disjoint _ h (by omega) (by omega)
+  have := L_lt hz; exact Offset.disjoint _ h (by omega_using [ha, this]) (by omega_using [hb, this])
 
 include hz in
 theorem low_disj {b n : Nat} (hb : 8 * H.W ≤ b) (hbn : b + n ≤ (H.W + H.S) * 8) :
     Region.Disjoint (sR s₀ b n) (lowR (H := H) s₀) := by
-  have := L_lt hz; exact Offset.disjoint_base _ hb (by omega)
+  have := L_lt hz; exact Offset.disjoint_base _ hb (by omega_using [hbn, this])
 
 theorem low_sub : Region.Sub (lowR (H := H) s₀) (scR (H := H) s₀) :=
-  Region.sub_prefix (by show 8 * H.W ≤ (H.W + H.S) * 8; omega)
+  Region.sub_prefix (by show 8 * H.W ≤ (H.W + H.S) * 8; omega_using [])
 
 include hp hz in
 theorem in_sc {s : State} (hwr : s.wr = s₀.wr) {o n : Nat} (h : o + n ≤ (H.W + H.S) * 8) :
     InRegions s.wr (A s₀ o) n := by
   have := L_lt hz
-  exact ⟨scR (H := H) s₀, by rw [hwr, hp.wr]; simp, Offset.contains_base _ h (by omega)⟩
+  exact ⟨scR (H := H) s₀, by rw [hwr, hp.wr]; simp, Offset.contains_base _ h (by omega_using [h, this])⟩
 
 include hp in
 theorem sc_mem : scR (H := H) s₀ ∈ s₀.wr := by rw [hp.wr]; simp
@@ -183,7 +185,7 @@ theorem hdr_sub {s₀ : State} {o : Nat} (h₁ : H.sv ≤ o) (h₂ : o + 8 ≤ H
     Region.Sub ⟨A s₀ o, 8⟩ (hdrR (H := H) s₀) := Offset.sub _ h₁ h₂
 
 theorem save_hdr {s₀ : State} : Region.Sub (saveR H.hh (scr s₀)) (hdrR (H := H) s₀) :=
-  Offset.sub _ (Nat.le_refl _) (by show 8 * H.W + 56 ≤ 8 * H.W + 80; omega)
+  Offset.sub _ (Nat.le_refl _) (by show 8 * H.W + 56 ≤ 8 * H.W + 80; omega_using [])
 
 section
 variable {s₀ : State} (hp : Pre (H := H) s₀) (hz : PSizes H)
@@ -234,7 +236,7 @@ theorem KR.write {s s' : State} (h : KR (H := H) s₀ s) (hrd : s'.rd = s.rd) (h
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact part_disj hz (Or.inl (by simpa [Hash.st0O] using ho)) (by
-        have := (end_le hz).1; simp only [Hash.st0O] at ho; omega) hon)
+        have := (end_le hz).1; simp only [Hash.st0O] at ho; omega_using [ho, hon]) hon)
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, part_sub hon⟩)
 
 omit hz in
@@ -257,12 +259,12 @@ theorem KR.call {s s' : State} (h : KR (H := H) s₀ s) (hrd : s'.rd = s.rd) (hw
   · rcases List.mem_append.mp hr with hr | hr
     · rcases hw r hr with ⟨k, rfl, hk⟩ | ⟨o, k, rfl, h₁, h₂⟩
       · exact (low_disj hz (Nat.le_refl _) (by omega)).sub_right (Region.sub_prefix hk)
-      · exact part_disj hz (Or.inl (by rw [hst]; exact h₁)) (by rw [hst]; omega) h₂
+      · exact part_disj hz (Or.inl (by rw [hst]; exact h₁)) (by rw [hst]; omega_using [h₁, h₂]) h₂
     · simp only [List.mem_singleton] at hr; subst hr
       exact (stk_sc hp h (part_sub (by rw [hst]; omega))).symm
   · rcases List.mem_append.mp hr with hr | hr
     · rcases hw r hr with ⟨k, rfl, hk⟩ | ⟨o, k, rfl, h₁, h₂⟩
-      · exact ⟨scR (H := H) s₀, by simp, Region.sub_prefix (by show k ≤ (H.W + H.S) * 8; omega)⟩
+      · exact ⟨scR (H := H) s₀, by simp, Region.sub_prefix (by show k ≤ (H.W + H.S) * 8; omega_using [hk])⟩
       · exact ⟨_, by simp, part_sub h₂⟩
     · simp only [List.mem_singleton] at hr; subst hr
       rw [h.sp]
@@ -283,7 +285,7 @@ theorem KR.pwBytes {s : State} (h : KR (H := H) s₀ s) :
     rcases hr with rfl | rfl | rfl
     · exact hp.pw_o
     · exact hp.pw_s
-    · exact hp.stk_pw.symm) (by have := hp.pwnw; omega)
+    · exact hp.stk_pw.symm) (by have := hp.pwnw; omega_using [this])
 
 omit hz in
 theorem KR.saltBytes {s : State} (h : KR (H := H) s₀ s) :
@@ -293,7 +295,7 @@ theorem KR.saltBytes {s : State} (h : KR (H := H) s₀ s) :
     rcases hr with rfl | rfl | rfl
     · exact hp.sa_o
     · exact hp.sa_s
-    · exact hp.stk_sa.symm) (by have := hp.sanw; omega)
+    · exact hp.stk_sa.symm) (by have := hp.sanw; omega_using [this])
 
 omit hz in
 theorem in_wr {s : State} (h : KR (H := H) s₀ s) : scR (H := H) s₀ ∈ s.wr := by rw [h.wr]; exact sc_mem hp
@@ -314,7 +316,7 @@ theorem cov_low {s : State} (h : KR (H := H) s₀ s) {n : Nat} (hn : n ≤ (H.W 
 theorem in_rw {s : State} (h : KR (H := H) s₀ s) {o n : Nat} (hon : o + n ≤ (H.W + H.S) * 8) :
     InRegions (s.rd ++ s.wr) (A s₀ o) n :=
   VG.Proof.Hmac.Generic.Common.InRegions.right' ⟨_, in_wr hp h, Offset.contains_base _ hon
-    (by have := L_lt hz; omega)⟩
+    (by have := L_lt hz; omega_using [hon, this])⟩
 
 end
 
@@ -324,7 +326,7 @@ Each proved once, by `omega` on `layout`, for the step proofs: an `omega`
 over a step's context, which holds many facts about states and sizes, costs
 far more. -/
 
-theorem PSizes.B4 (hz : PSizes H) : H.P.B % 4 = 0 := by rcases hz.z.B with h | h <;> omega
+theorem PSizes.B4 (hz : PSizes H) : H.P.B % 4 = 0 := by rcases hz.z.B with h | h <;> omega_using [h]
 theorem PSizes.o_B_4_lt_4096 (hz : PSizes H) : H.P.B + 4 < 4096 := by
   have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_B_lt_4096 (hz : PSizes H) : H.P.B < 4096 := by
@@ -342,33 +344,33 @@ theorem PSizes.o_D_lt_p64 (hz : PSizes H) : H.D < 2 ^ 64 := by
 theorem PSizes.o_W8_56_le_L (hz : PSizes H) : 8 * H.W + 56 ≤ (H.W + H.S) * 8 := by
   have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_W8_56_le_outO (hz : PSizes H) : 8 * H.W + 56 ≤ H.outO := by
-  simp only [Hash.outO, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.outO, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_W8_le_L (hz : PSizes H) : 8 * H.W ≤ (H.W + H.S) * 8 := by
-  have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
+  have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega_using []
 theorem PSizes.o_W8_le_hkO (hz : PSizes H) : 8 * H.W ≤ H.hkO := by
-  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_W8_le_intO (hz : PSizes H) : 8 * H.W ≤ H.intO := by
-  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_W8_le_st0O (hz : PSizes H) : 8 * H.W ≤ H.st0O := by
-  simp only [Hash.st0O, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.st0O, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_W8_le_st1O (hz : PSizes H) : 8 * H.W ≤ H.st1O := by
-  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_W8_le_stSO (hz : PSizes H) : 8 * H.W ≤ H.stSO := by
-  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_W8_le_stWO (hz : PSizes H) : 8 * H.W ≤ H.stWO := by
-  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_W8_le_sv (hz : PSizes H) : 8 * H.W ≤ H.sv := by
-  simp only [Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_W8_le_tO (hz : PSizes H) : 8 * H.W ≤ H.tO := by
-  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_W8_le_uO (hz : PSizes H) : 8 * H.W ≤ H.uO := by
-  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_cO_64d8_le_outO_24 (hz : PSizes H) : H.cO + 64 / 8 ≤ H.outO + 24 := by
-  simp only [Hash.cO, Hash.outO, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.cO, Hash.outO, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_cO_8_le_L (hz : PSizes H) : H.cO + 8 ≤ (H.W + H.S) * 8 := by
   simp only [Hash.cO, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_cO_8_le_olO (hz : PSizes H) : H.cO + 8 ≤ H.olO := by
-  simp only [Hash.cO, Hash.olO, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.cO, Hash.olO, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_hkO_D_le_L (hz : PSizes H) : H.hkO + H.D ≤ (H.W + H.S) * 8 := by
   simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_hkO_hsF_le_L (hz : PSizes H) : H.hkO + H.stream.F ≤ (H.W + H.S) * 8 := by
@@ -380,7 +382,7 @@ theorem PSizes.o_intO_4_le_L (hz : PSizes H) : H.intO + 4 ≤ (H.W + H.S) * 8 :=
 theorem PSizes.o_intO_lt_4096 (hz : PSizes H) : H.intO < 4096 := by
   simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_olO_64d8_le_outO_24 (hz : PSizes H) : H.olO + 64 / 8 ≤ H.outO + 24 := by
-  simp only [Hash.outO, Hash.olO, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.outO, Hash.olO, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_olO_8_le_L (hz : PSizes H) : H.olO + 8 ≤ (H.W + H.S) * 8 := by
   simp only [Hash.olO, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_outO_24_le_L (hz : PSizes H) : H.outO + 24 ≤ (H.W + H.S) * 8 := by
@@ -388,39 +390,39 @@ theorem PSizes.o_outO_24_le_L (hz : PSizes H) : H.outO + 24 ≤ (H.W + H.S) * 8 
 theorem PSizes.o_outO_24_lt_p64 (hz : PSizes H) : H.outO + 24 < 2 ^ 64 := by
   simp only [Hash.outO, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_outO_64d8_le_outO_24 (hz : PSizes H) : H.outO + 64 / 8 ≤ H.outO + 24 := by
-  simp only [Hash.outO, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.outO, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_outO_8_le_L (hz : PSizes H) : H.outO + 8 ≤ (H.W + H.S) * 8 := by
   simp only [Hash.outO, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_outO_8_le_cO (hz : PSizes H) : H.outO + 8 ≤ H.cO := by
-  simp only [Hash.cO, Hash.outO, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.cO, Hash.outO, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_outO_8_le_olO (hz : PSizes H) : H.outO + 8 ≤ H.olO := by
-  simp only [Hash.outO, Hash.olO, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.outO, Hash.olO, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_outO_le_cO (hz : PSizes H) : H.outO ≤ H.cO := by
-  simp only [Hash.cO, Hash.outO, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.cO, Hash.outO, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_outO_le_olO (hz : PSizes H) : H.outO ≤ H.olO := by
-  simp only [Hash.outO, Hash.olO, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.outO, Hash.olO, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_2mS_le_L (hz : PSizes H) : H.st0O + 2 * H.S ≤ (H.W + H.S) * 8 := by
   simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_st0O_2mS_le_tO (hz : PSizes H) : H.st0O + 2 * H.S ≤ H.tO := by
-  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_3mS_le_L (hz : PSizes H) : H.st0O + 3 * H.S ≤ (H.W + H.S) * 8 := by
   simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_st0O_S_le_L (hz : PSizes H) : H.st0O + H.S ≤ (H.W + H.S) * 8 := by
   simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_st0O_S_le_hkO (hz : PSizes H) : H.st0O + H.S ≤ H.hkO := by
-  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_S_le_st0O_3mS (hz : PSizes H) : H.st0O + H.S ≤ H.st0O + 3 * H.S := by
-  simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_S_le_st1O (hz : PSizes H) : H.st0O + H.S ≤ H.st1O := by
-  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_S_le_stSO (hz : PSizes H) : H.st0O + H.S ≤ H.stSO := by
-  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_le_st0O (hz : PSizes H) : H.st0O ≤ H.st0O := by
-  simp only [Hash.st0O, Hash.sv]; have := hz.z.DN; omega
+  simp only [Hash.st0O, Hash.sv]; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_le_st1O (hz : PSizes H) : H.st0O ≤ H.st1O := by
-  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_le_stSO (hz : PSizes H) : H.st0O ≤ H.stSO := by
-  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_lt_4096 (hz : PSizes H) : H.st0O < 4096 := by
   simp only [Hash.st0O, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_st0O_lt_p64 (hz : PSizes H) : H.st0O < 2 ^ 64 := by
@@ -428,23 +430,23 @@ theorem PSizes.o_st0O_lt_p64 (hz : PSizes H) : H.st0O < 2 ^ 64 := by
 theorem PSizes.o_st1O_S_le_L (hz : PSizes H) : H.st1O + H.S ≤ (H.W + H.S) * 8 := by
   simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_st1O_S_le_hkO (hz : PSizes H) : H.st1O + H.S ≤ H.hkO := by
-  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st1O_S_le_st0O_3mS (hz : PSizes H) : H.st1O + H.S ≤ H.st0O + 3 * H.S := by
-  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st1O_S_le_stSO (hz : PSizes H) : H.st1O + H.S ≤ H.stSO := by
-  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st1O_S_le_stWO (hz : PSizes H) : H.st1O + H.S ≤ H.stWO := by
-  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st1O_S_le_uO (hz : PSizes H) : H.st1O + H.S ≤ H.uO := by
-  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st1O_lt_4096 (hz : PSizes H) : H.st1O < 4096 := by
   simp only [Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_stSO_S_le_L (hz : PSizes H) : H.stSO + H.S ≤ (H.W + H.S) * 8 := by
   simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_stSO_S_le_st0O_3mS (hz : PSizes H) : H.stSO + H.S ≤ H.st0O + 3 * H.S := by
-  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_stSO_S_le_stWO (hz : PSizes H) : H.stSO + H.S ≤ H.stWO := by
-  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_stSO_hsS_le_L (hz : PSizes H) : H.stSO + H.stream.S ≤ (H.W + H.S) * 8 := by
   simp only [Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; have : H.stream.S = H.P.N + H.P.B := rfl; omega
 theorem PSizes.o_stSO_lt_4096 (hz : PSizes H) : H.stSO < 4096 := by
@@ -452,9 +454,9 @@ theorem PSizes.o_stSO_lt_4096 (hz : PSizes H) : H.stSO < 4096 := by
 theorem PSizes.o_stWO_S_le_L (hz : PSizes H) : H.stWO + H.S ≤ (H.W + H.S) * 8 := by
   simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_stWO_S_le_intO (hz : PSizes H) : H.stWO + H.S ≤ H.intO := by
-  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_stWO_S_le_uO (hz : PSizes H) : H.stWO + H.S ≤ H.uO := by
-  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_stWO_hsS_le_L (hz : PSizes H) : H.stWO + H.stream.S ≤ (H.W + H.S) * 8 := by
   simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; have : H.stream.S = H.P.N + H.P.B := rfl; omega
 theorem PSizes.o_stWO_hsS_le_hkO (hz : PSizes H) : H.stWO + H.stream.S ≤ H.hkO := by
@@ -462,9 +464,9 @@ theorem PSizes.o_stWO_hsS_le_hkO (hz : PSizes H) : H.stWO + H.stream.S ≤ H.hkO
 theorem PSizes.o_stWO_hsS_le_intO (hz : PSizes H) : H.stWO + H.stream.S ≤ H.intO := by
   simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have : H.stream.S = H.P.N + H.P.B := rfl; omega
 theorem PSizes.o_stWO_le_intO (hz : PSizes H) : H.stWO ≤ H.intO := by
-  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_stWO_le_tO (hz : PSizes H) : H.stWO ≤ H.tO := by
-  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_stWO_lt_4096 (hz : PSizes H) : H.stWO < 4096 := by
   simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_sv_80_le_L (hz : PSizes H) : H.sv + 80 ≤ (H.W + H.S) * 8 := by
@@ -476,19 +478,19 @@ theorem PSizes.o_tO_lt_4096 (hz : PSizes H) : H.tO < 4096 := by
 theorem PSizes.o_uO_D_le_L (hz : PSizes H) : H.uO + H.D ≤ (H.W + H.S) * 8 := by
   simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_uO_D_le_tO (hz : PSizes H) : H.uO + H.D ≤ H.tO := by
-  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_uO_lt_4096 (hz : PSizes H) : H.uO < 4096 := by
   simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_outO_mod_8_eq_0 (_hz : PSizes H) : H.outO % 8 = 0 := by
-  simp only [Hash.outO, Hash.sv]; omega
+  simp only [Hash.outO, Hash.sv]; omega_using []
 theorem PSizes.o_outO_lt_4096m8 (hz : PSizes H) : H.outO < 4096 * 8 := by
   simp only [Hash.outO, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_olO_mod_8_eq_0 (_hz : PSizes H) : H.olO % 8 = 0 := by
-  simp only [Hash.olO, Hash.sv]; omega
+  simp only [Hash.olO, Hash.sv]; omega_using []
 theorem PSizes.o_olO_lt_4096m8 (hz : PSizes H) : H.olO < 4096 * 8 := by
   simp only [Hash.olO, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_B_mod_4_eq_0 (hz : PSizes H) : H.P.B % 4 = 0 := by
-  have := hz.B4; omega
+  have := hz.B4; omega_using [this]
 theorem PSizes.o_4mSd4_eq_S (hz : PSizes H) : 4 * (H.S / 4) = H.S := by
   have : H.S = H.P.N + H.P.B := rfl; have := hz.B4; have := hz.z.N4; omega
 theorem PSizes.o_stSO_mod_4_eq_0 (hz : PSizes H) : H.stSO % 4 = 0 := by
@@ -504,11 +506,11 @@ theorem PSizes.o_intO_mod_4_eq_0 (hz : PSizes H) : H.intO % 4 = 0 := by
 theorem PSizes.o_intO_lt_4096m4 (hz : PSizes H) : H.intO < 4096 * 4 := by
   simp only [Hash.intO, Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_stWO_le_uO (hz : PSizes H) : H.stWO ≤ H.uO := by
-  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_4mDd4_eq_D (hz : PSizes H) : 4 * (H.D / 4) = H.D := by
-  have := hz.z.D4; omega
+  have := hz.z.D4; omega_using [this]
 theorem PSizes.o_uO_mod_4_eq_0 (hz : PSizes H) : H.uO % 4 = 0 := by
-  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.B4; have := hz.z.N4; omega
+  simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.B4; have := hz.z.N4; omega_using []
 theorem PSizes.o_uO_4mDd4_le_4096m4 (hz : PSizes H) : H.uO + 4 * (H.D / 4) ≤ 4096 * 4 := by
   simp only [Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; have := hz.B4; have := hz.z.D4; have := hz.z.N4; omega
 theorem PSizes.o_tO_mod_4_eq_0 (hz : PSizes H) : H.tO % 4 = 0 := by
@@ -516,30 +518,30 @@ theorem PSizes.o_tO_mod_4_eq_0 (hz : PSizes H) : H.tO % 4 = 0 := by
 theorem PSizes.o_tO_4mDd4_le_4096m4 (hz : PSizes H) : H.tO + 4 * (H.D / 4) ≤ 4096 * 4 := by
   simp only [Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; have := hz.B4; have := hz.z.D4; have := hz.z.N4; omega
 theorem PSizes.o_cO_mod_8_eq_0 (_hz : PSizes H) : H.cO % 8 = 0 := by
-  simp only [Hash.cO, Hash.sv]; omega
+  simp only [Hash.cO, Hash.sv]; omega_using []
 theorem PSizes.o_cO_lt_4096m8 (hz : PSizes H) : H.cO < 4096 * 8 := by
   simp only [Hash.cO, Hash.sv]; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_st0O_S_eq_st1O (_hz : PSizes H) : H.st0O + H.S = H.st1O := rfl
 theorem PSizes.o_W_le_1024 (hz : PSizes H) : H.W ≤ 1024 := by
   have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_st0O_le_stWO (hz : PSizes H) : H.st0O ≤ H.stWO := by
-  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_le_hkO (hz : PSizes H) : H.st0O ≤ H.hkO := by
-  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.hkO, Hash.tO, Hash.uO, Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_D_le_hsF (hz : PSizes H) : H.D ≤ H.stream.F := by
   have := hz.z.DN; have : H.stream.F = H.P.N := rfl; omega
 theorem PSizes.o_D_le_B (hz : PSizes H) : H.D ≤ H.P.B := by
   have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_st0O_mod_4_eq_0 (_hz : PSizes H) : H.st0O % 4 = 0 := by
-  simp only [Hash.st0O, Hash.sv]; omega
+  simp only [Hash.st0O, Hash.sv]; omega_using []
 theorem PSizes.o_st0O_4mSd4_le_4096m4 (hz : PSizes H) : H.st0O + 4 * (H.S / 4) ≤ 4096 * 4 := by
   simp only [Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; have := hz.B4; have := hz.z.N4; omega
 theorem PSizes.o_B_lt_p16 (hz : PSizes H) : H.P.B < 2 ^ 16 := by
   have := hz.z.DN; have := hz.N.2; have := hz.B_le; have := hz.W; omega
 theorem PSizes.o_sv_80_le_stWO (hz : PSizes H) : H.sv + 80 ≤ H.stWO := by
-  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_st0O_3mS_le_stWO (hz : PSizes H) : H.st0O + 3 * H.S ≤ H.stWO := by
-  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega
+  simp only [Hash.stWO, Hash.stSO, Hash.st1O, Hash.st0O, Hash.sv]; have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; omega_using []
 theorem PSizes.o_B_5_le_L (hz : PSizes H) : H.P.B + 5 ≤ (H.W + H.S) * 8 := by
   have : H.S = H.P.N + H.P.B := rfl; have := hz.z.DN; have := hz.N.1; have := hz.B_ge; have := hz.z.D0; omega
 theorem PSizes.o_0_lt_S (hz : PSizes H) : 0 < H.S := by

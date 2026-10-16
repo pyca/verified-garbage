@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTCode
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTCode
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTFront
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTTail
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Implies
 public import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic

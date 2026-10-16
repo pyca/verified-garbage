@@ -3,12 +3,15 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
 public import Mathlib.Tactic.Set
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.OffsetBelow
 public import VerifiedGarbage.Proof.Framework.OmegaLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # Calls of a streaming hash function on x86 (32-bit): byte loops, registers, stack

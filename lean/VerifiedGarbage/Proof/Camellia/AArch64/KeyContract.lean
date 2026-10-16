@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.Camellia.Contract
 meta import VerifiedGarbage.Spec.Camellia.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Camellia.AArch64.Lit
+import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 meta import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -6,7 +6,12 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 
 /-! # ML-DSA (FIPS 204) on AArch64: the sampling primitives -/
 

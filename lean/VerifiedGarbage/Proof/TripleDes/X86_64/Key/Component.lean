@@ -1,11 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Loop
-public import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.TripleDes.Schedule
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Impl.Aes.X86_64.Alloc
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Straight
+import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Load
 
 @[expose] public section
 

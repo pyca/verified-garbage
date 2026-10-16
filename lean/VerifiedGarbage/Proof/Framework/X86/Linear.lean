@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86.Straight
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # x86 (32-bit): linear layers of bitsliced code, by evaluation
@@ -31,10 +32,9 @@ def linEnv (ins : List (Nat × Nat)) : Env (Nat × Nat) :=
 /-- External word `j` is input word `xb + j`. -/
 def linExt (xb j : Nat) : Option (Nat × Nat) := some (inWordW 32 (xb + j))
 
-/-- Each output slot `j` (of the `n` slots) holds `outWordW 32 g`, with atoms below `2 ^ k`. -/
+/-- Each output slot `j` (of the `n` slots) holds `outWordW 32 g`, below `2 ^ (32 2 ^ k)` (`outOkW`). -/
 def linPost (n k : Nat) (outs : List (Nat × (Nat → List Nat))) (e : Env (Nat × Nat)) : Bool :=
-  outs.all fun o => decide (o.1 < n) && e.slot o.1 == some (outWordW 32 o.2) &&
-    (List.range 32).all fun p => (o.2 p).all (· < 2 ^ k)
+  outs.all fun o => decide (o.1 < n) && outOkW 32 k (e.slot o.1) o.2
 
 /-- A linear block that the evaluator accepts, on the machine. -/
 theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Nat × Nat)}
@@ -66,10 +66,10 @@ theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Nat × N
   obtain ⟨s', hs', p⟩ := run lanes_sound hok hrel he
   refine ⟨s', hs', fun j g hjg q hq => ?_, p.rd, p.wr, fun r hr => p.other r (by simp [hr]), p.frame⟩
   have h := List.all_eq_true.mp hpost (j, g) hjg
-  simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, List.all_eq_true, List.mem_range]
-    at h
-  have := p.rel.slot j _ h.1.1 h.1.2
+  simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+  obtain ⟨h1, h2⟩ := outOkW_spec h.2
+  have := p.rel.slot j _ h.1 h1
   rw [p.base] at this
-  exact outWordW_rel (fun p hp a ha => h.2 p hp a ha) this q hq
+  exact outWordW_rel_of_lt h2 this q hq
 
 end VG.X86.Straight

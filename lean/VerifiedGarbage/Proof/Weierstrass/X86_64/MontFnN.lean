@@ -2,13 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Reloc
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-public import VerifiedGarbage.Proof.Mont.X86_64.MulF
-public import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Mont.X86_64.MulF
+import VerifiedGarbage.Proof.Weierstrass.Unch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # P-521's product modulo `n` as a function, on x86-64
@@ -43,10 +48,7 @@ theorem mulF_reloc (o a b : Nat) :
     (mulF fnModN mO mA mB).map
         (Instr.mapMem (unptr [(.rbx, a), (.rbp, b), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mB, .rbp), (mO, .rsi)])) =
       mulF fnModN o a b := by
-  simp only [mulF, show List.range (2 * fnModN.n) =
-      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17] from rfl,
-    List.flatMap_cons, List.flatMap_nil, List.append_nil, List.map_append]
-  repeat (first | rfl | refine congrArg₂ (· ++ ·) ?_ ?_)
+  kernel_rfl
 
 theorem mulN_keeps :
     (reloc [(mA, .rbx), (mB, .rbp), (mO, .rsi)] (mulF fnModN mO mA mB)).all

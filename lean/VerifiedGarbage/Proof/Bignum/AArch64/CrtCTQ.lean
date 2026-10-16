@@ -2,12 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtQ
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
+import VerifiedGarbage.Proof.Bignum.CrtMath
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSetup
+meta import VerifiedGarbage.Proof.Bignum.CrtMath
 
 /-!
 # RSA with the CRT on AArch64: constant time of `q`'s phase
@@ -51,7 +59,7 @@ theorem gPre {sl : Nat} {p : UPub} {s : State} (h : UPre sl p s) : GPre sl (gp p
 /-- After `gPow`. -/
 def U1 (sl : Nat) (p : UPub) (t : State) : Prop :=
   ∃ (mx : BitVec 64) (X : Nat), Good t p.B p.Z p.w p.minv ∧ p.w < 2 ^ 28 ∧ slot p.w 8 ≤ p.o ∧
-    p.o + slot p.wx 8 + tabBytes p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧ sl < 32 ∧ word t.mem p.B (8 * sl) = off p.B p.o ∧
+    p.o + slot p.wx 8 + wsTab p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧ sl < 32 ∧ word t.mem p.B (8 * sl) = off p.B p.o ∧
     WsAt t.mem p.B p.o p.wx mx ∧ XVals t p.B p.o p.wx mx X ∧ 1 < X
 
 theorem gPow_u1 (M : Mont) {sl : Nat} {p : UPub} {s : State} (h : UPre sl p s) :
@@ -80,7 +88,7 @@ theorem blk_rpre {sl : Nat} {p : UPub} {s : State} (h : U1 sl p s) :
   refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = off p.B p.o ∧ t.mem = s.mem)
     (by brun [hg.x0, hdr_enc hsl, hs.ld (d := 8 * sl) (by omega), hslv]) rfl rfl rfl)
     fun t ⟨⟨hdi, hm⟩, k⟩ => ⟨mx, X, SubCtx.mk' (hs.congr k.wr) (by rw [hm]; exact hg.hdr)
-      (by rw [hm]; exact hws) hdi hlo hhi, ⟨by rw [hm]; exact hX.n, by rw [hm]; exact hX.inv,
+      (by rw [hm]; exact hws) hdi hlo (hi_of_wsTab hhi), ⟨by rw [hm]; exact hX.n, by rw [hm]; exact hX.inv,
       by rw [hm]; exact hX.one⟩, hwx2, hwx, (by omega : p.w < 2 ^ 30), hX1, by decide⟩
 
 /-- A prime's workspace, its base in `x0`, and its size. -/
@@ -133,7 +141,7 @@ namespace CrtCTQ
 /-- After entering the prime's workspace. -/
 def P1 (sd slen : Nat) (p : BPub) (t : State) : Prop :=
   ∃ (mx : BitVec 64) (X : Nat) (eb : List Byte), SubCtx t p.x.B p.x.Z p.x.o p.x.w p.x.wx mx ∧
-    XVals t p.x.B p.x.o p.x.wx mx X ∧ 2 ≤ p.x.wx ∧ p.x.wx ≤ p.x.w ∧ p.x.w < 2 ^ 28 ∧ 1 < X ∧ X % 2 = 1 ∧
+    p.x.o + slot p.x.wx 8 + wsTab p.x.wx ≤ p.x.Z ∧ XVals t p.x.B p.x.o p.x.wx mx X ∧ 2 ≤ p.x.wx ∧ p.x.wx ≤ p.x.w ∧ p.x.w < 2 ^ 28 ∧ 1 < X ∧ X % 2 = 1 ∧
     wv t.mem (off p.x.B p.x.o) (slot p.x.wx Public.aY) p.x.wx < X ∧ sd < 32 ∧ slen < 32 ∧
     word t.mem p.x.B (8 * sd) = p.ptr ∧ word t.mem p.x.B (8 * slen) = BitVec.ofNat 64 eb.length ∧
     eb.length = p.len ∧ 1 ≤ eb.length ∧ eb.length ≤ 1024 ∧ Src t p.x.B p.x.Z p.ptr eb
@@ -148,14 +156,14 @@ theorem blk_p1 {sl sd slen : Nat} {p : BPub} {s : State} (h : PwPre sl sd slen p
   refine WP.mono (WP.keep [.x0] (Q := fun t => t.gpr .x0 = off p.x.B p.x.o ∧ t.mem = s.mem)
     (by brun [hg.x0, hdr_enc hsl, hs.ld (d := 8 * sl) (by omega), hslv]) rfl rfl rfl)
     fun t ⟨⟨hdi, hm⟩, k⟩ => ⟨mx, X, eb, SubCtx.mk' (hs.congr k.wr) (by rw [hm]; exact hg.hdr)
-      (by rw [hm]; exact hws) hdi hlo hhi, ⟨by rw [hm]; exact hX.n, by rw [hm]; exact hX.inv,
+      (by rw [hm]; exact hws) hdi hlo (hi_of_wsTab hhi), hhi, ⟨by rw [hm]; exact hX.n, by rw [hm]; exact hX.inv,
       by rw [hm]; exact hX.one⟩, hwx2, hwx, hw28, hX1, hXodd, by rw [hm]; exact hyl, hsd, hsln,
       by rw [hm]; exact hep, by rw [hm]; exact hel, hlen, hL1, hL2,
       he.congrK (by rw [hm]; exact InScr.refl _ _ _) k⟩
 
 theorem redc_ePre (M : Mont) {sd slen : Nat} {p : BPub} {s : State} (h : P1 sd slen p s) :
     WP isa (seqs (redc M.mm Public.aY)) s (EPre sd slen p) := by
-  obtain ⟨mx, X, eb, hc, hX, hwx2, hwx, hw28, hX1, hXodd, hyl, hsd, hsln, hep, hel, hlen, hL1, hL2, he⟩ := h
+  obtain ⟨mx, X, eb, hc, hT, hX, hwx2, hwx, hw28, hX1, hXodd, hyl, hsd, hsln, hep, hel, hlen, hL1, hL2, he⟩ := h
   have hn := hc.scr.nowrap
   have hlo := hc.lo
   have hhi := hc.hi
@@ -199,7 +207,7 @@ theorem pow_ct (M : Mont) {sl sd slen : Nat} (hR : RedcCT M Public.aY) (hE : Exp
     (pins_x0B (fun p : BPub => p.x.B) fun _ _ ⟨_, _, _, _, _, _, hg, _⟩ => hg.x0) hT
     fun _ _ h => blk_p1 h) ?_)
   exact RelCT.seqs_append (by simp [redc]) (by simp [expLoop]) (RelCT.seq (two_post (Ψ := EPre sd slen)
-    (two_map BPub.x (fun _ _ ⟨mx, X, _, hc, hX, hwx2, hwx, hw28, hX1, _⟩ =>
+    (two_map BPub.x (fun _ _ ⟨mx, X, _, hc, _, hX, hwx2, hwx, hw28, hX1, _⟩ =>
       ⟨mx, X, hc, hX, hwx2, hwx, by omega, hX1, by decide⟩) hR) fun _ _ h => redc_ePre M h) hE)
 
 namespace CrtCTQ
@@ -218,7 +226,7 @@ theorem uPre {p : PhasePub} {s : State} (h : QPre p s) : UPre sWsQ (up p) s := b
 /-- After the start of `q`'s phase. -/
 def Q1 (p : PhasePub) (t : State) : Prop :=
   ∃ (mx : BitVec 64) (X : Nat) (eb : List Byte), Good t p.B p.Z p.w p.minv ∧ 8 ≤ p.w ∧ p.w < 2 ^ 28 ∧
-    slot p.w 8 ≤ p.o ∧ p.o + slot p.wx 8 + tabBytes p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧
+    slot p.w 8 ≤ p.o ∧ p.o + slot p.wx 8 + wsTab p.wx ≤ p.Z ∧ 2 ≤ p.wx ∧ p.wx ≤ p.w ∧
     word t.mem p.B (8 * sWsQ) = off p.B p.o ∧ WsAt t.mem p.B p.o p.wx mx ∧ NVals t p.B p.w p.minv p.N ∧
     wv t.mem p.B (slot p.w Public.aY) p.w < p.N ∧ XVals t p.B p.o p.wx mx X ∧ 1 < X ∧ X % 2 = 1 ∧
     wv t.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < X ∧ word t.mem p.B (8 * sDq) = p.ep ∧

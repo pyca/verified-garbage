@@ -17,6 +17,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+public import VerifiedGarbage.Proof.MdStream.Prefix
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
+public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! Merged from `Proof.Ed25519.X86_64.PublicKey.Layout`. -/
 
@@ -449,12 +461,12 @@ theorem rsp_ce (t : State) (rd wr : List Region) :
   rw [State.withRegions_gpr, State.callEntry_rsp]
 
 /-- Callee-saved registers, through writes of others. -/
-macro "cs_tac" : tactic => `(tactic| (
-  intro r hr
-  revert hr
-  simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
-  rintro (h | h | h | h | h | h | h) <;> subst h <;>
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
+tactic_template "cs_tac" : tactic => `(tactic| (
+                   intro r hr
+                   revert hr
+                   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
+                   rintro (h | h | h | h | h | h | h) <;> subst h <;>
+                     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
 
 theorem ne_cs {r d : Reg} (hr : r ∈ calleeSaved) (hd : d ∉ calleeSaved) : r ≠ d :=
   fun e => hd (e ▸ hr)

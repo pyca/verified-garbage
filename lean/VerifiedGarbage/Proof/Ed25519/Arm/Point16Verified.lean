@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # `vg_ed25519_r16_point_add` and `vg_ed25519_r16_point_double` on ARMv7, verified
@@ -165,11 +169,11 @@ theorem fPub_agree {s₁ s₂ : State} (h : fPub s₁ s₂) : ∀ r ∈ [Reg.r0]
 
 theorem add_ct : ConstantTime isa addF.pre addF.pub addFn :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (fPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (fPub_agree hp)) (by native_taint_decide)
 
 theorem double_ct : ConstantTime isa doubleF.pre doubleF.pub doubleFn :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (fPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (fPub_agree hp)) (by native_taint_decide)
 
 /-! ## The shared contracts -/
 

@@ -61,6 +61,7 @@ def params : Params where
   so := 1328
   len := ([.mov .rax (.reg .r12), .shift .shr .rax 61, .bswap .rax, .store (at_ .rbx 176) .rax] : List Instr) ++
     len64 184 true
+  lenV := MdStream.X86_64.lenV128
   out := out64 8
 
 def update (f : Callee) : Prog isa := MdStream.X86_64.update params f.name f.code

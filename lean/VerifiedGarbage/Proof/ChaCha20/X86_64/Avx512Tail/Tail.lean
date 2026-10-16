@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Out
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512Tail.Out
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Xor
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -680,12 +680,8 @@ theorem Done.fin {s₀ : State} (hp : APre s₀) {s : State} (h : Done s₀ s) :
 
 theorem smallT_ok {s₀ : State} (hp : APre s₀) {p : Nat} (hpos : 0 < eL s₀ - p) (hle : eL s₀ - p ≤ 256)
     {s : State} (h : TInv s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
-    WP isa small s (Fin s₀) := by
-  refine WP.seq (WP.mono (cmp65_ok h hr9) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
-  refine WP.ite (decide (eL s₀ - p < 65)) (by simp [eval, c₁]) (fun hs => ?_) (fun hs => ?_)
-  · exact scalarT_ok hp h₁.sinv
-  · simp only [decide_eq_false_iff_not] at hs
-    exact WP.mono (lastT_ok hp hpos hle h₁ r₁) fun _ d => d.fin hp
+    WP isa small s (Fin s₀) :=
+  WP.mono (lastT_ok hp hpos hle h hr9) fun _ d => d.fin hp
 
 theorem tail_eq : tail =
     .seq (.block [.mov .r9 (.reg .rcx), .alu .cmp .rdx (.imm 512)])

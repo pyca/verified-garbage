@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # RSA with the CRT on x86-64: `R_X mod X`
@@ -55,7 +57,7 @@ theorem XVals.of_outside {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} 
 modulus' `Y`, reduced into the prime's `Y`: `R_X mod X` if `X` divides `N`. -/
 theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X : Nat}
     {sl o wx : Nat} (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o)
-    (hhi : o + slot wx 8 + tabBytes wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hsl1 : sl ≠ Crt.sD)
+    (hhi : o + slot wx 8 + wsTab wx ≤ Z) (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hsl1 : sl ≠ Crt.sD)
     (hsl2 : sl ≠ Public.sCnt) (hslv : word s.mem B (8 * sl) = off B o) (hws : WsAt s.mem B o wx mx)
     (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N) (hX : XVals s B o wx mx X) (hX1 : 1 < X)
     (hXodd : X % 2 = 1) :
@@ -112,7 +114,7 @@ theorem unitPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
   have k02 := k₁.trans k₂
   have hws₂ : WsAt s₂.mem B o wx mx := hws.of_words fun i hi => by rw [hm₂]; exact hxw₁ i (by omega)
   have hc₂ : SubCtx s₂ B Z o w wx mx :=
-    SubCtx.mk' (hs.congr k02.2.2) (by rw [hm₂]; exact hg₁.hdr) hws₂ hdi₂ hlo hhi
+    SubCtx.mk' (hs.congr k02.2.2) (by rw [hm₂]; exact hg₁.hdr) hws₂ hdi₂ hlo (by have := tabBytes_le_wsTab wx; omega)
   have hX₂ : XVals s₂ B o wx mx X := hX.of_below (by rw [hm₂]; exact f₁) (fun r hr => (hgr r hr).trans hlo) hoL
   -- `A R^K ≡ G (mod X)`.
   refine wp_seqs_append (by simp [redc]) (by simp [copyArr]) ?_

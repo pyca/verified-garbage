@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Bytes
+meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
 
 /-!
 # AES on whole blocks on ARMv7: the whole functions
@@ -152,7 +154,7 @@ theorem blocksKeyBody_ok {s₀ : State} {b sc : BitVec 32} {R N : Nat} {w : List
       hlr]
     bv_omega
   have hev : Arm.eval .ne s₈ = some (!(BitVec.ofNat 32 j == 0)) := by
-    have e0 : ∀ x : BitVec 32, x - (0 : BitVec 32) = x := fun x => by bv_omega
+    have e0 : ∀ x : BitVec 32, x - (0 : BitVec 32) = x := fun x => by grind
     simp only [Arm.eval, z₈, e0, u₇.gpr]
     rw [show s₆.gpr .lr = BitVec.ofNat 32 (16 * N + j) by
       rw [← hlr₈, f₈.gpr, u₇.other _ (by decide)], and15 (by omega) hN]
@@ -292,7 +294,7 @@ theorem correct {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State �
     refine hp.dDS (State.addr (bP s₀)) ?_ (by
       show (State.addr (bP s₀) - State.addr (bP s₀)).toNat + 1 ≤ 2048; simp)
     show (State.addr (bP s₀) - State.addr (dP s₀)).toNat + 1 ≤ 16 * nB s₀
-    have e : State.addr (bP s₀) - 0 = State.addr (bP s₀) := by bv_omega
+    have e : State.addr (bP s₀) - 0 = State.addr (bP s₀) := by grind
     rw [hz, e, VG.Proof.MdStream.Arm.addr_toNat]
     have := (bP s₀).isLt
     simp only [nB]
@@ -368,7 +370,7 @@ theorem correct {crypt2 : Prog isa} {f : Nat → List Byte → Spec.Aes.State �
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.dDS
   refine WP.seq (WP.mono (Q := EDone f s₀.mem s₁₃ b (dP s₀) n R w) ?_ fun s₁₄ gd => ?_)
-  · have e0 : ∀ x : BitVec 32, x - (0 : BitVec 32) = x := fun x => by bv_omega
+  · have e0 : ∀ x : BitVec 32, x - (0 : BitVec 32) = x := fun x => by grind
     refine WP.ite (s₀.gpr .r3 == 0) (by simp only [Arm.eval, z₁₃, n₁₂, e0]) (fun h0 => ?_)
       (fun h0 => ?_)
     · have hn0 : n = 0 := by

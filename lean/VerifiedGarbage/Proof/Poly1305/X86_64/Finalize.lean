@@ -14,6 +14,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Poly1305.Limbs64
+meta import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 /-!
 # Poly1305 on x86-64: `finalize`

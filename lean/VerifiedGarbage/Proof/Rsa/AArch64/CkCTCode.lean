@@ -168,7 +168,7 @@ theorem ckCode_ct : RelCT isa (Two CKRel) CheckKey.code fun _ _ => True := by
   refine two_ite (fun p s₁ s₂ ⟨_, _, _, _, _, _, z₁, _⟩ ⟨_, _, _, _, _, _, z₂, _⟩ => by
     rw [eval_zero, eval_zero, z₁, z₂]) (ckFail_ct.mono (fun _ _ h => h) fun _ _ h => h) ?_
   exact ckMain_ct.mono (fun _ _ h => two_mono (fun p t ⟨⟨s, t₁, hs, h, hm, k, _⟩, _⟩ =>
-    ⟨ckIn s, hs.2, ckPre_of (ckCtx_of hs.1) h hm k⟩) h) fun _ _ h => h
+    ⟨ckIn s, hs.2, ckPre_of (ckCtx_of hs.1) h hm k, rfl⟩) h) fun _ _ h => h
 
 /-- `vg_rsa_check_key` is constant time but for `n` and `e`. -/
 theorem ckCode_constantTime : ConstantTime isa ckA.pre ckA.pub CheckKey.code := by
@@ -183,7 +183,7 @@ theorem ckCode_constantTime : ConstantTime isa ckA.pre ckA.pub CheckKey.code := 
   have w₁ := h₁.2.2.1
   have w₂ := h₂.2.2.1
   simp only [CkIn.pub, ckIn, CkP.mk.injEq]
-  refine ⟨a 8 (by decide), by rw [a 9 (by decide)], by rw [r .x1 (by decide)], by rw [r .x3 (by decide)],
+  refine ⟨a 8 (by decide), by rw [a 9 (by decide)], by rw [r .x1 (by decide)], by rw [r .x1 (by decide)], by rw [r .x3 (by decide)],
     by rw [r .x5 (by decide)], by rw [r .x7 (by decide)], by rw [a 1 (by decide)], r .x0 (by decide),
     r .x2 (by decide), r .x4 (by decide), r .x6 (by decide), a 0 (by decide), a 2 (by decide), a 4 (by decide),
     a 6 (by decide), hn.symm, he.symm, ?_⟩

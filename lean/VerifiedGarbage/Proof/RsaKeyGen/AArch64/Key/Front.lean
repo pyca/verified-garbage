@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Pieces
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Rsa.AArch64.CkPieces
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # An RSA key from its primes on AArch64: the primes
@@ -56,7 +60,7 @@ theorem loads_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) (L : KLens I) :
         show _ = BitVec.ofNat 64 (Spec.Rsa.os2ip I.eb); rw [← hx3, BitVec.ofNat_toNat, BitVec.setWidth_eq]
       brun [h₃.ws.x0, hdr_enc (show kEv < 32 by decide), hst, hx3']) rfl rfl rfl) fun t ⟨hm, k₄⟩ => ?_
   obtain ⟨ht, f₄, hw⟩ := h₃.hdrW (i := kEv) (by unfold kEv sFn; omega) hm k₄
-  refine ⟨ht, ((f₁.trans f₂).trans (by rw [← m₃]; exact f₄)).mono (by simp), ?_, ?_, hw⟩
+  refine ⟨ht, ((f₁.trans f₂).trans (by rw [← m₃]; exact f₄)).mono (by decide), ?_, ?_, hw⟩
   · rw [f₄.av (by decide) (j := aPa) (by decide) (by decide) hZ, m₃,
       f₂.av (by decide) (j := aPa) (by decide) (by decide) hZ]; exact v₁
   · rw [f₄.av (by decide) (j := aQa) (by decide) (by decide) hZ, m₃]; exact v₂
@@ -202,7 +206,7 @@ theorem front_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) (L : KLens I) :
     fun t ⟨ht, f₄, vQm₄, tQm₄⟩ => ?_
   have hok3 : [Rc.arr aPm, Rc.arr aC].all Rc.ok = true := by decide
   have hok4 : [Rc.arr aQm, Rc.arr aC].all Rc.ok = true := by decide
-  refine ⟨⟨ht, ?_, ?_, ?_, ?_, ?_⟩, (((f₁.trans f₂).trans f₃).trans f₄).mono (by simp), ?_, tQm₄⟩
+  refine ⟨⟨ht, ?_, ?_, ?_, ?_, ?_⟩, (((f₁.trans f₂).trans f₃).trans f₄).mono (by decide), ?_, tQm₄⟩
   · rw [f₄.av hok4 (by decide) (by decide) hZ, f₃.av hok3 (by decide) (by decide) hZ, vP₂]
   · rw [f₄.av hok4 (by decide) (by decide) hZ, f₃.av hok3 (by decide) (by decide) hZ, vQ₂]
   · rw [f₄.av hok4 (by decide) (by decide) hZ, vPm₃, vP₂]

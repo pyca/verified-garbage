@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86_64.OpenCT
-public import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
+import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.AesCcm.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+import VerifiedGarbage.Proof.AesCcm.X86_64.Open
 
 /-!
 # AES-CCM on x86-64: `Verified`

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.Derive.FillState
 public import VerifiedGarbage.Proof.Argon2.Arm.CompressVerified
-public import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
+import VerifiedGarbage.Proof.Argon2.Arm.CompressLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

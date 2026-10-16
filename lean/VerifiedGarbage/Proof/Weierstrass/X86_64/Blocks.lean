@@ -6,6 +6,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Short Weierstrass curves on x86-64: code as a sequence of blocks
@@ -43,10 +48,12 @@ theorem blocks_inline (ls : List (List Instr)) : (blocks ls).inline = blocks ls 
 theorem bits_inline (src dst nbytes : Nat) : (bits src dst nbytes).inline = bits src dst nbytes := rfl
 
 /-- Products of other than six or nine words are never calls. -/
-theorem callOf_of_ne {M : Mod} (h : M.n ≠ 9) (h6 : M.n ≠ 6) : Mont.callOf M = none := by
+theorem callOf_of_ne {M : Mod} (h : M.n ≠ 9) (h6 : M.n ≠ 6) (h8 : M.n ≠ 8 := by omega) : Mont.callOf M = none := by
   unfold Mont.callOf
-  rw [ite_eq_right_iff.mpr fun h' => absurd h'.1 h, ite_eq_right_iff.mpr fun h' => absurd h'.1 h6]
-  exact ite_eq_right_iff.mpr fun h' => absurd h'.1 h
+  rw [ite_eq_right_iff.mpr fun h' => absurd h'.1 h, ite_eq_right_iff.mpr fun h' => absurd h'.1 h6,
+    ite_eq_right_iff.mpr fun h' => absurd h'.1 h]
+  rw [ite_eq_right_iff.mpr fun h' => absurd h'.1 h6]
+  exact ite_eq_right_iff.mpr fun h' => absurd h'.1 h8
 
 theorem opProg_of_none {M : Mod} (h : Mont.callOf M = none) (op : FOp) : opProg M op = .block (opCode M op) := by
   cases op <;> simp [opProg, opCall?, h]

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.KeyVerified
 public import VerifiedGarbage.Proof.Blowfish.AArch64.Frame
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

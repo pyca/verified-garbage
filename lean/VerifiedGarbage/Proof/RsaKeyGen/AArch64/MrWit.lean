@@ -1,14 +1,18 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrCtx
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 public import VerifiedGarbage.Proof.RsaKeyGen.CandMath
-public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
-public import VerifiedGarbage.Proof.Bignum.AArch64.Csub
+import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.RsaKeyGen.Bits
 
 /-!
 # A candidate on AArch64: Miller–Rabin's witness
@@ -440,6 +444,18 @@ theorem wv_force {m m' : Mem} {p : Addr} {d w : Nat} (hw : 2 ≤ w)
 /-- What `mrWitness` changes. -/
 def witRanges (w : Nat) : List (Nat × Nat) := [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8), (8 * kU, 8)]
 
+/-- `witRanges`'s ranges, in the header and in the arrays. -/
+theorem witRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(216, 8), (0, 8)]
+    [(1, 1)] (witRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    witRanges, Public.aX, aX, sFn, kU, kUsed] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact .inr ⟨(1, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inl (by decide)
+
 theorem witRanges_mut (w : Nat) : ∀ r ∈ witRanges w, KMut r := by
   simp only [witRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
@@ -475,7 +491,7 @@ theorem mrWitness_eq : mrWitness =
 `8 w` octets `x` of `rand` in `aX`, the mask of its uniformity in `kU`, and
 `kUsed` advanced. -/
 theorem mrWitness_ok {s : State} {B : Addr} {Z w c bm : Nat} (hc : MrCtx s B Z w c bm) (hw4 : 4 ≤ w)
-    (_hw64 : w ≤ 64) (hodd : c % 2 = 1) (hb : Spec.RsaKeyGen.bitLength (c - 1) = 64 * w)
+    (_hw128 : w ≤ 128) (hodd : c % 2 = 1) (hb : Spec.RsaKeyGen.bitLength (c - 1) = 64 * w)
     {rp : Addr} {u : Nat} {bs : List Byte} (hR : word s.mem B (8 * kRand) = rp)
     (hU : word s.mem B (8 * kUsed) = BitVec.ofNat 64 u) (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hsrc : Src s B Z (rp + BitVec.ofNat 64 u) bs) (hbl : bs.length = 8 * w) :

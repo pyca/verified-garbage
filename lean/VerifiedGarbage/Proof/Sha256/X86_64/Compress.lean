@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Proof.Sha256.Spec
 meta import VerifiedGarbage.Proof.Sha256.Spec
 public import VerifiedGarbage.Impl.Sha256.X86_64
 meta import VerifiedGarbage.Impl.Sha256.X86_64
-public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -24,12 +24,14 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.Sha256.X86_64.Contract
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Contract
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-256 compression function on x86-64: the message schedule and the rounds

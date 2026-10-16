@@ -1,17 +1,25 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Camellia.Arm.ModeCore
 public import VerifiedGarbage.Proof.Camellia.CbcScratch
 meta import VerifiedGarbage.Proof.Camellia.CbcScratch
 public import VerifiedGarbage.Proof.Modes.Arm.Cbc
 meta import VerifiedGarbage.Proof.Modes.Arm.Cbc
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Aes.SboxSpec
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # Camellia-CBC on ARMv7 meets its contracts
@@ -48,10 +56,10 @@ def cbcSat : State where
   wr := [⟨0x3000, 0⟩, ⟨0, 72⟩]
 
 theorem encTaint : SeqTaint (ecbCore .encrypt) cbcEnc :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem decTaint : SeqTaint (ecbCore .decrypt) cbcDec :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem enc_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cbcEnc).Implies
     (Proof.Camellia.cbcEncScratchContract Arm.abi 9 2816) where

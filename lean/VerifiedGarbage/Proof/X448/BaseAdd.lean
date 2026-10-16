@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Group.Projective
-public import VerifiedGarbage.Proof.X448.Edwards.Ladder
+import VerifiedGarbage.Proof.X448.Edwards.Ladder
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

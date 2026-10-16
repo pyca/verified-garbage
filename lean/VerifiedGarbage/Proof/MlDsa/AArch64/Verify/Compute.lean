@@ -5,6 +5,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Call4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Mask4
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA verification on AArch64: `w′₁`, row by row
@@ -165,16 +173,16 @@ theorem SCChk.cons_x28 {p : Params} (hF : VFacts p) {r : Nat} (hr : r ≤ p.k) {
   exact (SCChk.x28 hF hr h1 h2 (by omega) h4 h5).append (ws₁ := [_]) h
 
 /-- Proves an `SCChk` of writes to `scratch` by `SCChk.cons_x28`, with `hr : r ≤ p.k`. -/
-macro "scchks " hF:term:max hr:term:max : tactic => `(tactic| (
-  repeat' (first
-    | with_reducible exact VG.Proof.MlDsa.AArch64.Verify.SCChk.nil $hF $hr
-    | apply VG.Proof.MlDsa.AArch64.Verify.SCChk.cons_x28 $hF $hr)
-  all_goals (
-    have := ($hF).w1; have := ($hF).k; have := ($hF).l; have := ($hF).kl; have := ($hF).ct.2
-    try rw [VG.Proof.MlDsa.AArch64.KeyGen.scr_eq]
-    try simp only [VG.Impl.MlDsa.AArch64.KeyGen.oP, VG.Impl.MlDsa.AArch64.KeyGen.SV,
-      VG.Impl.MlDsa.AArch64.KeyGen.oSS, VG.Impl.MlDsa.AArch64.Verify.oCT]
-    omega_arith)))
+macro "scchks " hF:term:max hr:term:max : tactic => `(tactic| plain_simp_names (
+                   repeat' (first
+                     | with_reducible exact VG.Proof.MlDsa.AArch64.Verify.SCChk.nil $hF $hr
+                     | apply VG.Proof.MlDsa.AArch64.Verify.SCChk.cons_x28 $hF $hr)
+                   all_goals (
+                     have := ($hF).w1; have := ($hF).k; have := ($hF).l; have := ($hF).kl; have := ($hF).ct.2
+                     try rw [VG.Proof.MlDsa.AArch64.KeyGen.scr_eq]
+                     try simp only [VG.Impl.MlDsa.AArch64.KeyGen.oP, VG.Impl.MlDsa.AArch64.KeyGen.SV,
+                       VG.Impl.MlDsa.AArch64.KeyGen.oSS, VG.Impl.MlDsa.AArch64.Verify.oCT]
+                     omega_arith)))
 
 /-! ## From the samplers -/
 

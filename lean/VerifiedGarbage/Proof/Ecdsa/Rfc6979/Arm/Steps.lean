@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Hmac
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the steps on `K` and `V`
@@ -114,7 +116,7 @@ theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {
     (by anums) hq
     (fun hf hwf => by
       have := P.sizesA (by rw [hwd, hf] at hwf; exact hwf)
-      simp only [RfcHash.k, RfcHash.w] at this ⊢; exact ⟨by omega, by omega⟩)
+      simp only [RfcHash.k] at this ⊢; exact ⟨by omega, by omega⟩)
     (fun hf hwt => by
       have hW : P.R.wide = true := by rw [hwd, hf] at hwt; exact hwt
       have := P.sizesW hW; exact ⟨by omega, by omega, hdn hW⟩)

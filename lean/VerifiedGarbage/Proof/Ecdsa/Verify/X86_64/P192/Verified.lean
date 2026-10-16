@@ -6,18 +6,29 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P192.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDSA verification over p192 on x86-64: `Verified`
@@ -46,14 +57,10 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p192 s := by
 theorem verify_x86 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyP192.inline s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p192_ok hI) hL p192_tbls (pre_of hs) p192_mulBase.2
-  have hsp : ∀ i ∈ instrs verifyP192.inline, Taint.clobbers i .rsp = false := by
-    have h : verifyP192.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
+  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := verifyP192) (by lit_decide)
   have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, hrs, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl

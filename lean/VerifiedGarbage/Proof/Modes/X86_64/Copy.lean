@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Modes.Ctr
 
 /-!
 # Loops over blocks on x86-64

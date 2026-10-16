@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
-public import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
+import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # The window method on x86 (32-bit)

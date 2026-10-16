@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyChecks
-public import VerifiedGarbage.Proof.Ed448.X86.VerifySign
+import VerifiedGarbage.Proof.Ed448.X86.VerifySign
 public import VerifiedGarbage.Proof.X448.X86.Restore
-public import VerifiedGarbage.Proof.X448.X86.Counters
+import VerifiedGarbage.Proof.X448.X86.Counters
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the comparison and the result

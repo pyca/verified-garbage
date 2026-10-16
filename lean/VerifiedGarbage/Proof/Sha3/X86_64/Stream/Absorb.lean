@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
 meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract

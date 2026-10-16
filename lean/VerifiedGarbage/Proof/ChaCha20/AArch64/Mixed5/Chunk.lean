@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 @[expose] public section
 
@@ -136,7 +138,7 @@ structure Chunked (s₀ s : State) : Prop where
       intro r hr; simp only [List.mem_singleton] at hr; subst r
       exact ⟨dr s₀,by simp,Offset.sub_base _ (by decide : 256 + 64 ≤ 320)⟩))
 
- theorem chunk_ok (s : State) (hp : CP s) : WP isa chunk s (Chunked s) := by
+theorem chunk_ok {sve : Bool} (s : State) (hp : CP s) : WP isa (chunk sve) s (Chunked s) := by
   apply WP.seq
   refine (prepare_ok s hp).mono fun a h => ?_
   apply WP.seq

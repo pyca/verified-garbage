@@ -14,6 +14,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-KEM on x86-64: compression (`vg_mlkem_compress_encode`, `vg_mlkem1024_compress_encode`)

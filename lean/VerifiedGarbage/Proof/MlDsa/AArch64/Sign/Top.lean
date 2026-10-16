@@ -1,11 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
 public import VerifiedGarbage.Proof.MlDsa.Sign.Setup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Base
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA signing on AArch64: the function's contract, layout, entry and exit

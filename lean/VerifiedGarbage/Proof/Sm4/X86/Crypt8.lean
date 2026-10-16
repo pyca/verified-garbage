@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.Core
-public import VerifiedGarbage.Proof.Sm4.Layout
+import VerifiedGarbage.Proof.Sm4.Layout
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # The transposes, and eight blocks of bitsliced SM4 on x86 (32-bit)

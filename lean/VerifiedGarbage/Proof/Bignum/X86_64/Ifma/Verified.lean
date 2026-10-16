@@ -4,32 +4,34 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
-public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCode
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTGPow
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupLoad
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # `vg_rsa_private_crt_ifma` on x86-64, any size: verified against the shared contract
@@ -57,7 +59,7 @@ variable (M : Mont)
 
 /-- `vg_rsa_private_crt_ifma` leaks the same in runs that agree on the public
 data, given that `main`'s parts do. -/
-theorem code_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
+theorem code_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M)) (hP : PPhaseCT M (CrtExpL.w4 M))
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
@@ -139,7 +141,7 @@ theorem code_ct (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT 
       ⟨p.m, toM p t₁ h₁, toM p t₂ h₂⟩) h) fun _ _ h => h
 
 /-- `vg_rsa_private_crt_ifma` is constant time but for `n`. -/
-theorem code_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M) (hP : PPhaseCT M)
+theorem code_constantTime_of (hS : SetupCT) (hC : ChecksCT) (hQ : QPhaseCT M (CrtExpL.w4 M)) (hP : PPhaseCT M (CrtExpL.w4 M))
     (hF : RelCT isa (Two (Stage R5)) (seqs finish) fun _ _ => True) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
@@ -160,10 +162,10 @@ theorem code_constantTime (M : Mont)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     ConstantTime isa crtContract.pre crtContract.pub (CrtIfma.code M.mm) :=
   code_constantTime_of M setup_ct checks_ct
-    (qPhase_ct M (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
-      (pow_ct M (redc_ct_Y M) (expLoop_ct_Q M) (by taint_decide)))
-    (pPhase_ct M (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
-      (pow_ct M (redc_ct_Y M) (expLoop_ct_P M) (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
+    (qPhase_ct M (CrtExpL.w4 M) (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
+      (pow_ct M (CrtExpL.w4 M) (redc_ct_Y M) (CrtExpL.w4_ct M).2 (by taint_decide)))
+    (pPhase_ct M (CrtExpL.w4 M) (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
+      (pow_ct M (CrtExpL.w4 M) (redc_ct_Y M) (CrtExpL.w4_ct M).1 (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
     crtFinish_ct (redc_ct_R2 M) (redc_ct_Xm M) loadArr_ct_pI hpost
 
 /-- `vg_rsa_private_crt_ifma` with Montgomery multiplication `M`, given that
@@ -173,7 +175,7 @@ theorem verified (M : Mont)
     (hfront : (seqs (nSetup M.mm ++ primesSetup ++ checks)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hcrt : (seqs (qPhase M.mm ++ pPhase M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
+    (hcrt : (seqs (qPhase M.mm (CrtExpL.w4 M).code ++ pPhase M.mm (CrtExpL.w4 M).code)).allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified target (CrtIfma.code M.mm) (Spec.Rsa.privateCrtContract abi) :=
   Verified.of_correct (code_correct M hfront hpre hpost hcrt) (code_constantTime M hpost) crt_implies
 

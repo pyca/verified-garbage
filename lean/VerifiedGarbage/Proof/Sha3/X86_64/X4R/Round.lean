@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # Keccak-f[1600] four times at once, in registers: one round
@@ -36,19 +38,19 @@ def Regs4 (s : State) (A : Nat → KState) : Prop := ∀ i < 25, ∀ k < 4, qy s
 theorem vreg_inj : ∀ i < 31, ∀ j < 31, vreg i = vreg j → i = j := by decide
 
 theorem lreg_ne {i j : Nat} (hi : i < 25) (hj : j < 25) (h : i ≠ j) : lreg i ≠ lreg j :=
-  fun e => h (vreg_inj i (by omega) j (by omega) e)
+  fun e => h (vreg_inj i (by omega_using [hi]) j (by omega_using [hj]) e)
 
 theorem creg_ne {x x' : Nat} (hx : x < 5) (hx' : x' < 5) (h : x ≠ x') : creg x ≠ creg x' :=
-  fun e => h (by have := vreg_inj (25 + x) (by omega) (25 + x') (by omega) e; omega)
+  fun e => h (by have := vreg_inj (25 + x) (by omega_using [hx]) (25 + x') (by omega_using [hx']) e; omega_using [this])
 
 theorem lreg_creg {i x : Nat} (hi : i < 25) (hx : x < 5) : lreg i ≠ creg x :=
-  fun e => by have := vreg_inj i (by omega) (25 + x) (by omega) e; omega
+  fun e => by have := vreg_inj i (by omega_using [hi]) (25 + x) (by omega_using [hx]) e; omega_using [hi, this]
 
 theorem lreg_T {i : Nat} (hi : i < 25) : lreg i ≠ T :=
-  fun e => by have := vreg_inj i (by omega) 30 (by omega) e; omega
+  fun e => by have := vreg_inj i (by omega_using [hi]) 30 (by omega_using []) e; omega_using [hi, this]
 
 theorem creg_T {x : Nat} (hx : x < 5) : creg x ≠ T :=
-  fun e => by have := vreg_inj (25 + x) (by omega) 30 (by omega) e; omega
+  fun e => by have := vreg_inj (25 + x) (by omega_using [hx]) 30 (by omega_using []) e; omega_using [hx, this]
 
 /-! ## Vector code -/
 
@@ -88,9 +90,9 @@ theorem column_ok (x : Nat) (hx : x < 5) (s : State) (A : Nat → KState) (hA : 
       u₁.other r hr k hk], fun k hk => ?_⟩
   have o : ∀ i < 25, ∀ t : State, ∀ t' : State, ∀ v, YUpd t t' (creg x) v → qy t' (lreg i) k = qy t (lreg i) k :=
     fun i hi t t' v u => u.other _ (lreg_creg hi hx) k hk
-  rw [u₃.val k hk, u₂.val k hk, u₁.val k hk, o _ (by omega) _ _ _ u₂, o _ (by omega) _ _ _ u₁,
-    o _ (by omega) _ _ _ u₁, o _ (by omega) _ _ _ u₁, hA x (by omega) k hk, hA (x + 5) (by omega) k hk, hA (x + 10) (by omega) k hk,
-    hA (x + 15) (by omega) k hk, hA (x + 20) (by omega) k hk]
+  rw [u₃.val k hk, u₂.val k hk, u₁.val k hk, o _ (by omega_using [hx]) _ _ _ u₂, o _ (by omega_using [hx]) _ _ _ u₁,
+    o _ (by omega_using [hx]) _ _ _ u₁, o _ (by omega_using [hx]) _ _ _ u₁, hA x (by omega_using [hx]) k hk, hA (x + 5) (by omega_using [hx]) k hk, hA (x + 10) (by omega_using [hx]) k hk,
+    hA (x + 15) (by omega_using [hx]) k hk, hA (x + 20) (by omega_using [hx]) k hk]
   rfl
 
 /-- After the first `n` columns. -/
@@ -100,12 +102,12 @@ def ColInv (s₀ : State) (A : Nat → KState) (n : Nat) (s : State) : Prop :=
 theorem columns_ok (s₀ : State) (A : Nat → KState) (hA : Regs4 s₀ A) :
     WP isa (.block ((List.range 5).flatMap column)) s₀ (ColInv s₀ A 5) := by
   refine wp_range_flatMap (M := isa) (ColInv s₀ A) (fun x s hx ⟨hw, hr, hc⟩ => ?_) 5 (Nat.le_refl _) s₀
-    ⟨Same.refl _, hA, fun _ h => absurd h (by omega)⟩
+    ⟨Same.refl _, hA, fun _ h => absurd h (by omega_using [])⟩
   refine WP.mono (column_ok x hx s A hr) fun s' ⟨h, ho, hv⟩ => ⟨hw.trans h, fun i hi k hk => ?_, fun x' hx' k hk => ?_⟩
   · rw [ho _ (lreg_creg hi hx) k hk, hr i hi k hk]
   · by_cases e : x' = x
     · subst e; exact hv k hk
-    · rw [ho _ (creg_ne (by omega) hx e) k hk, hc x' (by omega) k hk]
+    · rw [ho _ (creg_ne (by omega_using [hx, hx']) hx e) k hk, hc x' (by omega_using [hx', e]) k hk]
 
 /-! ## θ: `D` -/
 
@@ -127,36 +129,36 @@ theorem dcol_ok (x : Nat) (hx : x < 5) (s : State) (A : Nat → KState)
     WP isa (.block (dcol x)) s fun s' =>
       Same s s' ∧ (∀ x' < 5, ∀ k < 4, qy s' (creg x') k = qy s (creg x') k) ∧
       ∀ i < 25, ∀ k < 4, qy s' (lreg i) k = if i % 5 = x then Th (A k) i else qy s (lreg i) k := by
-  have h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega)
-  have h4 : (x + 4) % 5 < 5 := Nat.mod_lt _ (by omega)
+  have h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega_using [])
+  have h4 : (x + 4) % 5 < 5 := Nat.mod_lt _ (by omega_using [])
   unfold dcol
   refine wp_eror (by decide) fun s₁ u₁ => ?_
   refine WP.mono (wp_range_map (DyInv s₁ A x) (fun y t hy ⟨hw, hcs, hT, hls⟩ => ?_) s₁
     ⟨Same.refl _, fun _ _ _ _ => rfl, fun k hk => by rw [u₁.val k hk, hc _ h1 k hk],
       fun i _ k _ => by simp only [Nat.not_lt_zero, and_false, ite_false]⟩) fun s' ⟨hw, hcs, _, hls⟩ => ?_
-  · have hi : x + 5 * y < 25 := by omega
+  · have hi : x + 5 * y < 25 := by omega_using [hx, hy]
     refine wp_tern96 fun t' u => wp_nil ⟨hw.trans u.same, fun x' hx' k hk => by
         rw [u.other _ (lreg_creg hi hx').symm k hk, hcs x' hx' k hk],
       fun k hk => by rw [u.other _ (lreg_T hi).symm k hk, hT k hk], fun i hi' k hk => ?_⟩
     by_cases e : i = x + 5 * y
     · subst e
-      have e1 : (x + 5 * y) % 5 = x := by omega
-      have e2 : ¬((x + 5 * y) % 5 = x ∧ (x + 5 * y) / 5 < y) := by omega
-      have e3 : (x + 5 * y) % 5 = x ∧ (x + 5 * y) / 5 < y + 1 := by omega
+      have e1 : (x + 5 * y) % 5 = x := by omega_using [hx]
+      have e2 : ¬((x + 5 * y) % 5 = x ∧ (x + 5 * y) / 5 < y) := by omega_using []
+      have e3 : (x + 5 * y) % 5 = x ∧ (x + 5 * y) / 5 < y + 1 := by omega_using [e1]
       rw [u.val k hk, hls _ hi k hk, hT k hk, hcs _ h4 k hk, u₁.other _ (creg_T h4) k hk, hc _ h4 k hk,
         ite_f e2, ite_t e3, u₁.other _ (lreg_T hi) k hk, hl _ hi k hk e1, Th, e1, D, xor_D]
     · rw [u.other _ (lreg_ne hi' hi e) k hk, hls i hi' k hk]
       congr 1
       apply propext; constructor
-      · intro ⟨a, b⟩; exact ⟨a, by omega⟩
-      · intro ⟨a, b⟩; exact ⟨a, by omega⟩
+      · intro ⟨a, b⟩; exact ⟨a, by omega_using [b]⟩
+      · intro ⟨a, b⟩; exact ⟨a, by omega_using [e, a, b]⟩
   · refine ⟨u₁.same.trans hw, fun x' hx' k hk => by rw [hcs x' hx' k hk, u₁.other _ (creg_T hx') k hk],
       fun i hi k hk => ?_⟩
     rw [hls i hi k hk, u₁.other _ (lreg_T hi) k hk]
     congr 1
     apply propext; constructor
     · intro ⟨a, _⟩; exact a
-    · intro a; exact ⟨a, by omega⟩
+    · intro a; exact ⟨a, by omega_using [hi]⟩
 
 /-- After the first `n` columns' `D`. -/
 def DInv (s₀ : State) (A : Nat → KState) (n : Nat) (s : State) : Prop :=
@@ -169,16 +171,16 @@ theorem dcols_ok (s₀ : State) (A : Nat → KState) (hA : Regs4 s₀ A)
   refine wp_range_flatMap (M := isa) (DInv s₀ A) (fun x s hx ⟨hw, hcs, hl⟩ => ?_) 5 (Nat.le_refl _) s₀
     ⟨Same.refl _, hc, fun i hi k hk => by simp only [Nat.not_lt_zero, ite_false]; exact hA i hi k hk⟩
   refine WP.mono (dcol_ok x hx s A hcs fun i hi k hk e => by
-      rw [hl i hi k hk, ite_f (show ¬ i % 5 < x by omega)])
+      rw [hl i hi k hk, ite_f (show ¬ i % 5 < x by omega_using [e])])
     fun s' ⟨h, hc', hl'⟩ => ⟨hw.trans h, fun x' hx' k hk => by rw [hc' x' hx' k hk, hcs x' hx' k hk],
       fun i hi k hk => ?_⟩
   rw [hl' i hi k hk]
   by_cases e : i % 5 = x
-  · rw [ite_t e, ite_t (show i % 5 < x + 1 by omega)]
+  · rw [ite_t e, ite_t (show i % 5 < x + 1 by omega_using [e])]
   · rw [ite_f e, hl i hi k hk]
     by_cases e' : i % 5 < x
-    · rw [ite_t e', ite_t (show i % 5 < x + 1 by omega)]
-    · rw [ite_f e', ite_f (show ¬ i % 5 < x + 1 by omega)]
+    · rw [ite_t e', ite_t (show i % 5 < x + 1 by omega_using [e'])]
+    · rw [ite_f e', ite_f (show ¬ i % 5 < x + 1 by omega_using [e, e'])]
 
 /-! ## ρ and π -/
 
@@ -196,7 +198,7 @@ theorem piSrc_lt : ∀ p < 25, piSrc (p % 5) (p / 5) < 25 := by decide
 theorem piSrc_zero : piSrc (0 % 5) (0 / 5) = 0 := rfl
 theorem rhoOff_zero : rhoOff 0 = 0 := rfl
 theorem piSrc_mod (x y : Nat) : piSrc x y % 5 = (x + 3 * y) % 5 := by
-  simp only [piSrc]; omega
+  simp only [piSrc]; omega_using []
 
 /-- Lane `p` after ρ and π: `B` at it. -/
 def Bp (A : KState) (p : Nat) : Lane := B A (p % 5) (p / 5)
@@ -222,34 +224,34 @@ theorem rhoPi_ok (s₀ : State) (A : Nat → KState) (hT : ∀ i < 25, ∀ k < 4
   refine wp_ecopy fun s₁ u₁ => ?_
   rw [List.append_eq, WP.block_append_iff]
   refine WP.mono (wp_range_map (ChInv s₀ A) (fun j t hj ⟨hw, hcs, hTt, hls⟩ => ?_) s₁
-    ⟨u₁.same, fun x hx k hk => u₁.other _ (creg_T hx) k hk, fun k hk => by rw [u₁.val k hk]; exact hT 1 (by omega) k hk,
+    ⟨u₁.same, fun x hx k hk => u₁.other _ (creg_T hx) k hk, fun k hk => by rw [u₁.val k hk]; exact hT 1 (by omega_using []) k hk,
       fun i hi k hk => by
         rw [u₁.other _ (lreg_T hi) k hk, hT i hi k hk,
-          ite_f (show ¬ ∃ j < 0, piChain.getD j 0 = i from fun ⟨_, h, _⟩ => absurd h (by omega))]⟩)
+          ite_f (show ¬ ∃ j < 0, piChain.getD j 0 = i from fun ⟨_, h, _⟩ => absurd h (by omega_using []))]⟩)
     fun s₂ ⟨hw, hcs, hTt, hls⟩ => ?_
-  · have ⟨hc₀, _⟩ := chain_lt j (by omega)
-    have ⟨hc₁, _⟩ := chain_lt (j + 1) (by omega)
-    have ⟨r₀, r₁⟩ := chain_rho (j + 1) (by omega)
-    refine wp_eror (by unfold rhoR; omega) fun t' u => wp_nil ⟨hw.trans u.same,
+  · have ⟨hc₀, _⟩ := chain_lt j (by omega_using [hj])
+    have ⟨hc₁, _⟩ := chain_lt (j + 1) (by omega_using [hj])
+    have ⟨r₀, r₁⟩ := chain_rho (j + 1) (by omega_using [hj])
+    refine wp_eror (by unfold rhoR; omega_using [r₀]) fun t' u => wp_nil ⟨hw.trans u.same,
       fun x hx k hk => by rw [u.other _ (lreg_creg hc₀ hx).symm k hk, hcs x hx k hk],
       fun k hk => by rw [u.other _ (lreg_T hc₀).symm k hk, hTt k hk], fun i hi k hk => ?_⟩
     by_cases e : i = piChain.getD j 0
     · subst e
       have nf : ¬ ∃ j' < j, piChain.getD j' 0 = piChain.getD (j + 1) 0 := by
         rintro ⟨j', hj', e'⟩
-        have := chain_inj j' (by omega) (j + 1) (by omega) e'
-        omega
-      have tt : ∃ j' < j + 1, piChain.getD j' 0 = piChain.getD j 0 := ⟨j, by omega, rfl⟩
+        have := chain_inj j' (by omega_using [hj, hj']) (j + 1) (by omega_using [hj]) e'
+        omega_using [hj', this]
+      have tt : ∃ j' < j + 1, piChain.getD j' 0 = piChain.getD j 0 := ⟨j, by omega_using [], rfl⟩
       rw [u.val k hk, hls _ hc₁ k hk, ite_f nf, ite_t tt, Bp_eq, chain_src j hj, rhoR]
       exact rotl_ror _ r₀ r₁
     · rw [u.other _ (lreg_ne hi hc₀ e) k hk, hls i hi k hk]
       congr 1
       apply propext; constructor
-      · rintro ⟨j', hj', e'⟩; exact ⟨j', by omega, e'⟩
+      · rintro ⟨j', hj', e'⟩; exact ⟨j', by omega_using [hj'], e'⟩
       · rintro ⟨j', hj', e'⟩
         refine ⟨j', ?_, e'⟩
         by_contra h
-        exact e (by rw [← e', show j' = j by omega])
+        exact e (by rw [← e', show j' = j by omega_using [hj', h]])
   · have c23 : piChain.getD 23 0 = 10 := rfl
     have c0 : piChain.getD 0 0 = 1 := rfl
     refine wp_eror (show rhoR 1 < 64 by decide) fun s₃ u => wp_nil ⟨hw.trans u.same,
@@ -262,12 +264,12 @@ theorem rhoPi_ok (s₀ : State) (A : Nat → KState) (hT : ∀ i < 25, ∀ k < 4
     · rw [u.other _ (lreg_ne hp (by decide) e) k hk, hls p hp k hk]
       by_cases e0 : p = 0
       · subst e0
-        have nf : ¬ ∃ j' < 23, piChain.getD j' 0 = 0 := fun ⟨j', hj', e'⟩ => (chain_lt j' (by omega)).2 e'
+        have nf : ¬ ∃ j' < 23, piChain.getD j' 0 = 0 := fun ⟨j', hj', e'⟩ => (chain_lt j' (by omega_using [hj'])).2 e'
         rw [ite_f nf, Bp_eq, piSrc_zero, rhoOff_zero, rotl, ite_t rfl]
       · obtain ⟨j', hj', e'⟩ := chain_all p hp e0
         have tt : ∃ j'' < 23, piChain.getD j'' 0 = p := ⟨j', by
           by_contra h
-          exact e (by rw [← e', show j' = 23 by omega]; rfl), e'⟩
+          exact e (by rw [← e', show j' = 23 by omega_using [hj', h]]; rfl), e'⟩
         rw [ite_t tt]
 /-! ## χ -/
 
@@ -317,7 +319,7 @@ theorem chi5_ok (s : State) (a₀ a₁ a₂ a₃ a₄ t₀ t₁ : VReg) (b : Nat
     have z4 : qy s₂ a₄ k = b 4 k := by rw [u₂.other _ r4 k hk, u₁.other _ q4 k hk, h4 k hk]
     have zt0 : qy s₂ t₀ k = b 0 k := by rw [u₂.other _ m0 k hk, u₁.val k hk, h0 k hk]
     have zt1 : qy s₂ t₁ k = b 1 k := by rw [u₂.val k hk, u₁.other _ q1 k hk, h1 k hk]
-    rcases (by omega : x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4) with rfl | rfl | rfl | rfl | rfl <;>
+    rcases (by omega_using [hx] : x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4) with rfl | rfl | rfl | rfl | rfl <;>
       simp only [List.getD_cons_zero, List.getD_cons_succ, Nat.reduceAdd, Nat.reduceMod]
     · rw [u₇.other _ n04 k hk, u₆.other _ n03 k hk, u₅.other _ n02 k hk, u₄.other _ n01 k hk, u₃.val k hk, z0, z1, z2]
     · rw [u₇.other _ n14 k hk, u₆.other _ n13 k hk, u₅.other _ n12 k hk, u₄.val k hk, u₃.other _ n02.symm k hk,
@@ -340,55 +342,55 @@ theorem chi_ok (y : Nat) (hy : y < 5) (s : State) (A : Nat → KState)
     WP isa (.block (chi y)) s fun s' =>
       Same s s' ∧ (∀ i < 25, i / 5 ≠ y → ∀ k < 4, qy s' (lreg i) k = qy s (lreg i) k) ∧
       ∀ x < 5, ∀ k < 4, qy s' (lreg (5 * y + x)) k = Xp (A k) (5 * y + x) := by
-  have l : ∀ x < 5, 5 * y + x < 25 := fun x hx => by omega
+  have l : ∀ x < 5, 5 * y + x < 25 := fun x hx => by omega_using [hy, hx]
   have ne : ∀ x < 5, ∀ x' < 5, x ≠ x' → lreg (5 * y + x) ≠ lreg (5 * y + x') :=
-    fun x hx x' hx' h => lreg_ne (l x hx) (l x' hx') (by omega)
+    fun x hx x' hx' h => lreg_ne (l x hx) (l x' hx') (by omega_using [h])
   have lc : ∀ x < 5, ∀ c < 5, lreg (5 * y + x) ≠ creg c := fun x hx c hc => lreg_creg (l x hx) hc
   refine WP.mono (chi5_ok s (lreg (5 * y + 0)) (lreg (5 * y + 1)) (lreg (5 * y + 2)) (lreg (5 * y + 3))
     (lreg (5 * y + 4)) (creg 0) (creg 1) (fun x k => Bp (A k) (5 * y + x))
-    (ne 0 (by omega) 1 (by omega) (by omega)) (ne 0 (by omega) 2 (by omega) (by omega))
-    (ne 0 (by omega) 3 (by omega) (by omega)) (ne 0 (by omega) 4 (by omega) (by omega))
-    (ne 1 (by omega) 2 (by omega) (by omega)) (ne 1 (by omega) 3 (by omega) (by omega))
-    (ne 1 (by omega) 4 (by omega) (by omega)) (ne 2 (by omega) 3 (by omega) (by omega))
-    (ne 2 (by omega) 4 (by omega) (by omega)) (ne 3 (by omega) 4 (by omega) (by omega))
-    (creg_ne (by omega) (by omega) (by omega))
+    (ne 0 (by omega_using []) 1 (by omega_using []) (by omega_using [])) (ne 0 (by omega_using []) 2 (by omega_using []) (by omega_using []))
+    (ne 0 (by omega_using []) 3 (by omega_using []) (by omega_using [])) (ne 0 (by omega_using []) 4 (by omega_using []) (by omega_using []))
+    (ne 1 (by omega_using []) 2 (by omega_using []) (by omega_using [])) (ne 1 (by omega_using []) 3 (by omega_using []) (by omega_using []))
+    (ne 1 (by omega_using []) 4 (by omega_using []) (by omega_using [])) (ne 2 (by omega_using []) 3 (by omega_using []) (by omega_using []))
+    (ne 2 (by omega_using []) 4 (by omega_using []) (by omega_using [])) (ne 3 (by omega_using []) 4 (by omega_using []) (by omega_using []))
+    (creg_ne (by omega_using []) (by omega_using []) (by omega_using []))
     (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-        exact ⟨lc 0 (by omega) 0 (by omega), lc 1 (by omega) 0 (by omega), lc 2 (by omega) 0 (by omega),
-          lc 3 (by omega) 0 (by omega), lc 4 (by omega) 0 (by omega)⟩)
+        exact ⟨lc 0 (by omega_using []) 0 (by omega_using []), lc 1 (by omega_using []) 0 (by omega_using []), lc 2 (by omega_using []) 0 (by omega_using []),
+          lc 3 (by omega_using []) 0 (by omega_using []), lc 4 (by omega_using []) 0 (by omega_using [])⟩)
     (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-        exact ⟨lc 0 (by omega) 1 (by omega), lc 1 (by omega) 1 (by omega), lc 2 (by omega) 1 (by omega),
-          lc 3 (by omega) 1 (by omega), lc 4 (by omega) 1 (by omega)⟩)
-    (hb 0 (by omega)) (hb 1 (by omega)) (hb 2 (by omega)) (hb 3 (by omega)) (hb 4 (by omega)))
+        exact ⟨lc 0 (by omega_using []) 1 (by omega_using []), lc 1 (by omega_using []) 1 (by omega_using []), lc 2 (by omega_using []) 1 (by omega_using []),
+          lc 3 (by omega_using []) 1 (by omega_using []), lc 4 (by omega_using []) 1 (by omega_using [])⟩)
+    (hb 0 (by omega_using [])) (hb 1 (by omega_using [])) (hb 2 (by omega_using [])) (hb 3 (by omega_using [])) (hb 4 (by omega_using [])))
     fun s' ⟨hs, ho, hv⟩ => ⟨hs, fun i hi hiy k hk => ho _ ?_ k hk, fun x hx k hk => ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-    exact ⟨lreg_ne hi (l 0 (by omega)) (by omega), lreg_ne hi (l 1 (by omega)) (by omega),
-      lreg_ne hi (l 2 (by omega)) (by omega), lreg_ne hi (l 3 (by omega)) (by omega),
-      lreg_ne hi (l 4 (by omega)) (by omega), lreg_creg hi (by omega), lreg_creg hi (by omega)⟩
+    exact ⟨lreg_ne hi (l 0 (by omega_using [])) (by omega_using [hiy]), lreg_ne hi (l 1 (by omega_using [])) (by omega_using [hiy]),
+      lreg_ne hi (l 2 (by omega_using [])) (by omega_using [hiy]), lreg_ne hi (l 3 (by omega_using [])) (by omega_using [hiy]),
+      lreg_ne hi (l 4 (by omega_using [])) (by omega_using [hiy]), lreg_creg hi (by omega_using []), lreg_creg hi (by omega_using [])⟩
   · have e := hv x hx k hk
     have g : [lreg (5 * y + 0), lreg (5 * y + 1), lreg (5 * y + 2), lreg (5 * y + 3), lreg (5 * y + 4)].getD x
         (lreg (5 * y + 0)) = lreg (5 * y + x) := by
-      rcases (by omega : x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
+      rcases (by omega_using [hx] : x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4) with rfl | rfl | rfl | rfl | rfl <;> rfl
     rw [g] at e
-    rw [e, Xp, show (5 * y + x) % 5 = x by omega, show (5 * y + x) / 5 = y by omega, ← chi_val]
+    rw [e, Xp, show (5 * y + x) % 5 = x by omega_using [hx], show (5 * y + x) / 5 = y by omega_using [hx], ← chi_val]
     simp only [Bp]
-    rw [show (5 * y + (x + 1) % 5) % 5 = (x + 1) % 5 by omega, show (5 * y + (x + 1) % 5) / 5 = y by omega,
-      show (5 * y + (x + 2) % 5) % 5 = (x + 2) % 5 by omega, show (5 * y + (x + 2) % 5) / 5 = y by omega,
-      show (5 * y + x) % 5 = x by omega, show (5 * y + x) / 5 = y by omega]
+    rw [show (5 * y + (x + 1) % 5) % 5 = (x + 1) % 5 by omega_using [], show (5 * y + (x + 1) % 5) / 5 = y by omega_using [],
+      show (5 * y + (x + 2) % 5) % 5 = (x + 2) % 5 by omega_using [], show (5 * y + (x + 2) % 5) / 5 = y by omega_using [],
+      show (5 * y + x) % 5 = x by omega_using [hx], show (5 * y + x) / 5 = y by omega_using [hx]]
 
 theorem chis_ok (s₀ : State) (A : Nat → KState) (hb : ∀ p < 25, ∀ k < 4, qy s₀ (lreg p) k = Bp (A k) p) :
     WP isa (.block ((List.range 5).flatMap chi)) s₀ (ChiInv s₀ A 5) := by
   refine wp_range_flatMap (M := isa) (ChiInv s₀ A) (fun y s hy ⟨hw, hl⟩ => ?_) 5 (Nat.le_refl _) s₀
-    ⟨Same.refl _, fun i hi k hk => by rw [ite_f (show ¬ i / 5 < 0 by omega)]; exact hb i hi k hk⟩
+    ⟨Same.refl _, fun i hi k hk => by rw [ite_f (show ¬ i / 5 < 0 by omega_using [])]; exact hb i hi k hk⟩
   refine WP.mono (chi_ok y hy s A fun x hx k hk => by
-      rw [hl _ (by omega) k hk, ite_f (show ¬ (5 * y + x) / 5 < y by omega)])
+      rw [hl _ (by omega_using [hy, hx]) k hk, ite_f (show ¬ (5 * y + x) / 5 < y by omega_using [])])
     fun s' ⟨h, ho, hv⟩ => ⟨hw.trans h, fun i hi k hk => ?_⟩
   by_cases e : i / 5 = y
-  · rw [ite_t (show i / 5 < y + 1 by omega), show i = 5 * y + i % 5 by omega]
-    exact hv _ (Nat.mod_lt _ (by omega)) k hk
+  · rw [ite_t (show i / 5 < y + 1 by omega_using [e]), show i = 5 * y + i % 5 by omega_using [e]]
+    exact hv _ (Nat.mod_lt _ (by omega_using [])) k hk
   · rw [ho i hi e k hk, hl i hi k hk]
     by_cases e' : i / 5 < y
-    · rw [ite_t e', ite_t (show i / 5 < y + 1 by omega)]
-    · rw [ite_f e', ite_f (show ¬ i / 5 < y + 1 by omega)]
+    · rw [ite_t e', ite_t (show i / 5 < y + 1 by omega_using [e'])]
+    · rw [ite_f e', ite_f (show ¬ i / 5 < y + 1 by omega_using [e, e'])]
 
 /-! ## ι, and the next round constant -/
 

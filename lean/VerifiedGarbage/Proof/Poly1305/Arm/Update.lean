@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-public import VerifiedGarbage.Spec.Poly1305.Contract
+import VerifiedGarbage.Spec.Poly1305.Contract
 meta import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
@@ -18,6 +18,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 
 /-!
 # Poly1305 on 32-bit ARM: `update`

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Ed448.X86_64.PowVariant
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 
 /-! Shared Curve448 exponentiation follows the callers' field backend. -/
 

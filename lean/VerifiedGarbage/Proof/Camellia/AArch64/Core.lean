@@ -3,14 +3,16 @@ module
 public import VerifiedGarbage.Proof.Camellia.AArch64.Round
 public import VerifiedGarbage.Proof.Camellia.AArch64.Moves
 public import VerifiedGarbage.Proof.Camellia.AArch64.Fl
-public import VerifiedGarbage.Proof.Camellia.Layout
+import VerifiedGarbage.Proof.Camellia.Layout
 public import VerifiedGarbage.Proof.Camellia.Words
-public import VerifiedGarbage.Proof.Camellia.Common
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Framework.Block
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Eight blocks of bitsliced Camellia on AArch64

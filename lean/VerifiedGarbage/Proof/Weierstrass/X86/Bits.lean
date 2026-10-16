@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Short Weierstrass curves on x86 (32-bit): tables of bits, and masks of bits
@@ -72,12 +76,12 @@ theorem bits_eq (src dst nbytes : Nat) :
   rfl
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
-    ((((b.setWidth 32 >>> j) &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD j then 1 else 0 := by
-  decide +kernel
+    ((((b.setWidth 32 >>> j) &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD j then 1 else 0 :=
+  fun b j _ => bitByte_getLsbD 32 (by decide) b j
 
 theorem bit_byte0 : ∀ b : BitVec 8,
-    (((b.setWidth 32 &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD 0 then 1 else 0 := by
-  decide +kernel
+    (((b.setWidth 32 &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD 0 then 1 else 0 := fun b => by
+  rw [← BitVec.ushiftRight_zero (b.setWidth 32)]; exact bitByte_getLsbD 32 (by decide) b 0
 
 /-- Byte `j` of the eight at `ebx + dst`: bit `j` of the byte in `eax`. -/
 theorem bitJ_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {i : Nat}

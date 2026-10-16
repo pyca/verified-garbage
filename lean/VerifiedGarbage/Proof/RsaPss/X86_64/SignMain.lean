@@ -6,6 +6,19 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+public import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
+public import VerifiedGarbage.Proof.RsaPss.Params
+public import VerifiedGarbage.Proof.RsaPss.X86_64.BufferXor
+public import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
+public import VerifiedGarbage.Proof.RsaPss.X86_64.SignEnc
+public import VerifiedGarbage.Proof.Sha256.X86_64.Lit
+public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 
 /-!
 # RSASSA-PSS on x86-64: the encoding
@@ -45,9 +58,9 @@ theorem chain {u v v' : State} {F : Addr} (hw : v.wr = u.wr) (hsp : v.gpr .rsp =
   fun a ha => (hk a (hw ▸ ha.1) (hsp ▸ ha.2)).trans (hS a ha)
 
 /-- Safety of a piece of code, by unfolding it. -/
-macro "safe_by " "[" ds:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp only [$ds,*, Code.allInstrs, rec_all, List.all_append, byteLoop, step, Bool.and_true, Bool.true_and]
-  rfl))
+macro "safe_by " "[" ds:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+                   simp only [$ds,*, Code.allInstrs, rec_all, List.all_append, byteLoop, step, Bool.and_true, Bool.true_and]
+                   rfl))
 
 /-- The bytes `n` at `p`, as a function. -/
 def bytesF (m : Mem) (p : Addr) : Nat → Byte := fun i => m (p + BitVec.ofNat 64 i)
@@ -154,27 +167,27 @@ theorem em_bytes {G : Spec.Mgf1.Hash} {V5 V9 sf : Nat → Byte} {k lo db sl D : 
   by_cases hz : i = lo
   · rw [hz] at hco hi ⊢
     rw [ifp rfl, h9 _ (by omega_using [hlo, c1, c5]) hco, hHB, mixV, hV8 _ (by omega_using []) (by omega_using [hi])]
-    simp (disch := omega_arith) only [ifp, ifn, Nat.sub_self, ite_true]
+    simp (disch := omega_arith) only [↓ifp, ↓ifn, Nat.sub_self]
     by_cases hdz : db - sl - 1 = 0
-    · simp (disch := omega_arith) only [ifp, ifn]
-    · simp (disch := omega_using [hh, _hsl, hk, hlo, hdb, hfit, hD, hDk, hP', hK', c1, c3, c5, c6, c7, hi, hz, hdz]) only [ifp, ifn]
+    · simp (disch := omega_arith) only [↓ifp, ↓ifn]
+    · simp (disch := omega_using [hh, _hsl, hk, hlo, hdb, hfit, hD, hDk, hP', hK', c1, c3, c5, c6, c7, hi, hz, hdz]) only [↓ifp, ↓ifn]
   · rw [ifn (show ¬ oEm + i = oEm + lo by omega_using [hz]), h9 _ (by omega_using [hk, c1, c5, hi]) hco, hHB, mixV,
       hV8 _ (by omega_using []) (by omega_using [hi])]
     rw [hh]
     by_cases hl : i < lo
-    · simp (disch := omega_arith) only [ifp, ifn]
+    · simp (disch := omega_arith) only [↓ifp, ↓ifn]
     by_cases hj : i - lo < db
     · rw [show oEm + i - (oEm + lo) = i - lo by omega_using []]
       by_cases hs : db - sl ≤ i - lo
       · rw [show oEm + i - ((P + 1)) = i - lo - (db - sl) by omega_using [hfit, hP']]
-        simp (disch := omega_arith) only [ifp, ifn]
+        simp (disch := omega_arith) only [↓ifp, ↓ifn]
       · by_cases ho : i - lo = db - sl - 1
-        · simp (disch := omega_arith) only [ifp, ifn]
-        · simp (disch := omega_arith) only [ifp, ifn]
+        · simp (disch := omega_arith) only [↓ifp, ↓ifn]
+        · simp (disch := omega_arith) only [↓ifp, ↓ifn]
     · by_cases hH : i - lo < db + D
-      · rw [show oEm + i - (oEm + lo + db) = i - lo - db by omega_arith]
-        simp (disch := omega_arith) only [ifp, ifn]
-      · simp (disch := omega_arith) only [ifp, ifn]
+      · rw [show oEm + i - (oEm + lo + db) = i - lo - db by omega_using []]
+        simp (disch := omega_arith) only [↓ifp, ↓ifn]
+      · simp (disch := omega_arith) only [↓ifp, ↓ifn]
 
 include K in
 theorem signEnc_ok (lk : MgfLink H hH) {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}

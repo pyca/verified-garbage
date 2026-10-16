@@ -1,13 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsAdd
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedAdd
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacMixedForward
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Point operations as functions on x86-64: what the mixed addition computes
@@ -164,7 +171,7 @@ theorem mixedAdd_val (hC : MixedLay K size Sl) (hm : UnitMod m (2 ^ (64 * K.M.n)
   refine WP.mono (mixedInit_val hC ia) fun b ⟨kb, ib⟩ => ?_
   apply WP.seq
   refine WP.mono (mixedHead_val hC hm ib) fun c ⟨kc, ic, eh, er⟩ => ?_
-  have pre : ProgKeep K.M base (rcbW K.S K.D) s c := ((ka.mono (by simp)).trans kb).trans kc
+  have pre : ProgKeep K.M base (rcbW K.S K.D) s c := ((ka.mono (by regions_sub)).trans kb).trans kc
   let EH := runOps (jacMixedHead K.S K.R K.E) (jacMixedInit K.S K.R E)
   have hro : ∀ x ∈ jacCoords K.R, EH x = E x := fun x hx =>
     jacMixedHead_readonly hC.apart E (by

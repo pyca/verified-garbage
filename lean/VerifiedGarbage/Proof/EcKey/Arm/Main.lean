@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.EcKey.Arm.Finish
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
+import VerifiedGarbage.Proof.Ecdsa.Arm.Middle
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Main
 public import VerifiedGarbage.Proof.EcKey.PublicKey
 import all Init.Data.Array.Basic

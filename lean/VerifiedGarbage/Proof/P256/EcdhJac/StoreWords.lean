@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 /-! Stores for the Jacobian window's table construction. -/
 
@@ -57,7 +61,7 @@ theorem tableStoreWords_ok {s : State} {base : Addr} {size dst n : Nat} {src : N
       rw [mt]; exact writeW_outside _ _ _ (by omega)
     have old : word s₁.mem base (src k) = word s.mem base (src k) :=
       O₁.word (by have := hap k (by omega); omega) (by have := hsrc k (by omega); omega)
-    refine ⟨fun i hi => ?_,k₁.trans ((Keeps.regs k₂).trans (kt.mono (by simp))),?_⟩
+    refine ⟨fun i hi => ?_,k₁.trans ((Keeps.regs k₂).trans (kt.mono (by regions_sub))),?_⟩
     · rcases Nat.lt_or_ge i k with h | h
       · rw [O₂.word (by omega) (by omega),k₂.mem,e₁ i h]
       · obtain rfl : i = k := by omega

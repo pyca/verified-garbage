@@ -2,9 +2,11 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Ed448.X86.PublicKey.Verified
-public import VerifiedGarbage.Proof.Ed448.X86.BaseVerified
+import VerifiedGarbage.Proof.Ed448.X86.BaseVerified
 public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
-public import VerifiedGarbage.Proof.Ed448.Facts
+import VerifiedGarbage.Proof.Ed448.Facts
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit)

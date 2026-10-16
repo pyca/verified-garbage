@@ -7,11 +7,13 @@ public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
+public import VerifiedGarbage.Impl.Gcm.X86_64.StitchR
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM on x86-64: the variants
@@ -71,9 +73,9 @@ def decP : StitchName → Prog isa
 
 /-- Encryption using a prepared context, if supported by the variant. -/
 def encR : StitchName → Prog isa
+  | .vaes => Impl.Gcm.X86_64.StitchR.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.encR
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encR
-  | n => n.enc
 
 /-- Whether the encryption loop named `n` for a prepared context takes all
 the blocks, from 16 on (`Blocks.stitchPart`'s `full`), and not only the
@@ -98,9 +100,16 @@ def full : StitchName → Bool
 
 /-- Decryption using a prepared context. -/
 def decR : StitchName → Prog isa
-  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.dec
+  | .vaes => Impl.Gcm.X86_64.StitchR.decR
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.decR
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.decR
-  | n => n.dec
+
+/-- Whether the decryption loop named `n` for a prepared context takes all
+the blocks, from 16 on (`Blocks.stitchPart`'s `full`). -/
+def fullDR : StitchName → Bool
+  | .vaes => true
+  | .vaesAvx512 => true
+  | .aesniAvx => true
 
 /-- Whether `seal` and `open` calling the loops named `n` take the short path
 for short inputs (`GcmImpl.short`): the loops on 512-bit registers, whose
@@ -120,7 +129,7 @@ structure PieceP (n : StitchName) : Type where
 /-- Static and constant-time facts for prepared-context loops. -/
 structure PieceR (n : StitchName) : Type where
   enc : Piece n.encR true n.fullR
-  dec : Piece n.decR true
+  dec : Piece n.decR true n.fullDR
 
 /-- Interleaved loops that encrypt out of place, for
 `vg_aes_gcm_encrypt_blocks_to`, by name. `StitchToName.ok`, in the generic
@@ -149,7 +158,7 @@ def encP : StitchToName → Prog isa
 
 /-- Out-of-place encryption using a prepared context. -/
 def encR : StitchToName → Prog isa
-  | .vaes => Impl.Gcm.X86_64.StitchTo.enc
+  | .vaes => Impl.Gcm.X86_64.StitchR.encTo
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZHTo.encR
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.encToR
 

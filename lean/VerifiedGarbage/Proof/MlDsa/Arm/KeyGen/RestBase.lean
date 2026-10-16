@@ -8,6 +8,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Mask
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+public import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+meta import VerifiedGarbage.Proof.MlDsa.Arm.KeyGen.Mask
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
+meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA key generation on 32-bit ARM: after the samplers
@@ -63,9 +75,7 @@ structure KRChk (p : Params) (STK : Nat) (np nj nr : Nat) (W : List (Nat × Nat 
     sepAll [scrLen p, STK, 32, p.pkLen, p.skLen] (4, oT0 p + 416 * i, 416) W = true
 
 /-- Proves a `KRChk`, in each case of `η`. -/
-syntax "krchk " term:max : tactic
-macro_rules
-  | `(tactic| krchk $hF) => `(tactic| (
+tactic_template "krchk " hF:term:max : tactic => `(tactic| (
       refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> intros <;> (try refine ⟨?_, ?_⟩) <;>
       first
         | lsep $hF [kcChk, ($hF).pk, ($hF).sk]
@@ -195,6 +205,6 @@ theorem ktaint4 {p : Params} {STK : Nat} {c : Prog isa} {hc : VG.Taint.Hint VG.A
 theorem copies_piece {p : Params} (hF : PFacts p) {STK : Nat} :
     KPiece p STK (fun σ s => KSamp p STK σ (p.k * p.ℓ) (p.ℓ + p.k) s) (KR0 p STK) copies :=
   ⟨fun _ _ _ h => copies_ok hF h,
-    rel_of (ktaint4 (by taint_decide)) fun _ _ _ _ _ _ pub h₁ h₂ => kc_two pub h₁.k1.kc h₂.k1.kc⟩
+    rel_of (ktaint4 (by native_taint_decide)) fun _ _ _ _ _ _ pub h₁ h₂ => kc_two pub h₁.k1.kc h₂.k1.kc⟩
 
 end VG.Proof.MlDsa.Arm.KeyGen

@@ -4,12 +4,13 @@ public import VerifiedGarbage.Proof.Divstep.BatchBasic
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.NormNum
 public import Mathlib.Tactic.Ring
-public import VerifiedGarbage.Proof.Divstep.Word32Bits
+import VerifiedGarbage.Proof.Divstep.Word32Bits
 public import Mathlib.Data.BitVec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Divstep.Word32Def
 
 /-!
 # Divsteps on 32-bit words

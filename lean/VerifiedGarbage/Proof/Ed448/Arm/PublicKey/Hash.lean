@@ -1,15 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Layout
-public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
 public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
-public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Proof.Sha512.Arm.Word64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # Ed448 public-key derivation on ARMv7: `SHAKE256(seed, 114)`

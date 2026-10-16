@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Block
-public import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
+import VerifiedGarbage.Proof.CmacTripleDes.KeySchedule
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.KeysLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

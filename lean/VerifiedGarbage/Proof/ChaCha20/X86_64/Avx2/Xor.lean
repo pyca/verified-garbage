@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Finish
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
@@ -9,6 +9,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.RoundsVL
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+public import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # ChaCha20 keystream XOR on x86-64 with AVX2
@@ -211,15 +214,16 @@ theorem plus_block (S : CState) (j : Nat) :
 
 /-! ## A chunk -/
 
-theorem body_eq : body = .seq (.block setup) (.seq (rounds 10) (.block (finish ++ next))) := rfl
+theorem body_eq (vl : Bool) :
+    body vl = .seq (.block setup) (.seq (roundsFor vl) (.block (finish ++ next))) := rfl
 
 theorem calleeSaved_ne {r : Reg} (hr : r ∈ calleeSaved) : r ≠ .rax ∧ r ≠ .rsi ∧ r ≠ .rdx := by
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
-theorem body_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 512 ≤ eL s₀ - 512 * t) {s : State}
+theorem body_ok (vl : Bool) {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 512 ≤ eL s₀ - 512 * t) {s : State}
     (h : LInv s₀ t s) :
-    WP isa body s fun s' =>
+    WP isa (body vl) s fun s' =>
       LInv s₀ (t + 1) s' ∧ s'.cf = some (decide (eL s₀ - 512 * (t + 1) < 512)) := by
   have hL := eL_lt s₀
   have hw : 512 * t + 512 ≤ eL s₀ := by omega
@@ -232,13 +236,14 @@ theorem body_ok {s₀ : State} (hp : APre s₀) {t : Nat} (hge : 512 ≤ eL s₀
   have dss : (stR (est s₀)).Disjoint (slotsR (ebp s₀)) := hp.st_b.sub_right (slotsR_sub _)
   have hsl : ∀ r ∈ [slotsR (ebp s₀)], (hiR (ebp s₀)).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hiR_slots _
-  rw [body_eq]
+  rw [body_eq vl]
   refine WP.seq (WP.mono (setup_ok h.rdi h.rcx hst hb h.consts)
     fun s₁ ⟨hh, h15, g₁, rd₁, wr₁, y₁, y₂, m₁⟩ => ?_)
   have c₁ : Consts s₁.mem (ebp s₀) := by rw [m₁]; exact h.consts.w2 (by decide) y₁ y₂
   have F₁ : Frame [slotsR (ebp s₀)] s.mem s₁.mem := by
     rw [m₁]; exact W2_frame _ (by decide) y₁ y₂ (Frame.refl _ _)
-  refine WP.seq (WP.mono (rounds_ok hh h15 (by rw [g₁]; exact h.rcx) (by rw [wr₁]; exact hb) c₁.m8 10)
+  refine WP.seq (WP.mono (roundsFor_ok vl hh h15 (by rw [g₁]; exact h.rcx) (by rw [wr₁]; exact hb) c₁.m8
+    ⟨c₁.lo16, c₁.hi16⟩)
     fun s₂ hr => ?_)
   have F₂ := F₁.trans hr.frame
   have g₂ : s₂.gpr = s.gpr := hr.gpr.trans g₁
@@ -344,24 +349,12 @@ theorem tconsts_eq : Impl.ChaCha20.X86_64.Avx2Tail.consts = pairsCode tPairs := 
 
 theorem tPairs_le : ∀ p ∈ tPairs, p.1 + 8 ≤ 320 := by decide
 
-/-- Read back a stored quadword, under both stores. -/
-local macro "tread" : tactic => `(tactic|
-  simp (disch := decide) only [storeAll, constPairs, tPairs, List.foldl_cons, List.foldl_nil,
-    Nat.reduceAdd, readW64_off, Mem.readW_writeW_self64])
-
 theorem tincs_mem (m : Mem) (buf : Addr) :
     Avx2Tail.Incs (storeAll buf constPairs (storeAll buf tPairs m)) buf := by
+  have H : ∀ k < 2, ∀ j < 8, readsTo tPairs constPairs (56 + 8 * k + j)
+      (if j % 4 = 0 then BitVec.ofNat 32 (2 * k + j / 4) else 0) = true := by decide +kernel
   intro k hk j hj
-  have E := readW_extract (storeAll buf constPairs (storeAll buf tPairs m))
-    (buf + BitVec.ofNat 64 (8 * ((56 + 8 * k + j) / 2))) (w := 64)
-    (k := 4 * ((56 + 8 * k + j) % 2)) (n := 4) (by omega)
-  rw [add_ofNat, show 8 * ((56 + 8 * k + j) / 2) + 4 * ((56 + 8 * k + j) % 2) =
-    4 * (56 + 8 * k + j) by omega] at E
-  rw [← E]
-  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;>
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    (simp only [Nat.reduceDiv, Nat.reduceMod, Nat.reduceMul, Nat.reduceAdd]; tread; decide)
+  exact storeAll_readW32 (H k hk j hj) m
 
 theorem prologue_ok {s₀ : State} (hp : APre s₀) :
     WP isa (.block (Impl.ChaCha20.X86_64.Avx2Tail.consts ++ consts ++

@@ -56,7 +56,7 @@ def scratchWords (nLen : Nat) : Nat := Rsa.scratchWords nLen + 1024
 
 /-- The `# Safety` items on the working space. -/
 def scratchSafety : List String :=
-  ["`scratch_len` must be at least `16 * n_len + 1024`.",
+  ["`scratch_len` must be at least `16 * n_len + 1056`.",
     "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
       must destroy them after use."]
 

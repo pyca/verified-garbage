@@ -1,15 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.OpenCT
+import VerifiedGarbage.Proof.AesOcb.AArch64.OpenCT
 public import VerifiedGarbage.Proof.AesOcb.AArch64.InitCT
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ocb.Contract
+import VerifiedGarbage.Spec.Ocb.Contract
 public import VerifiedGarbage.Proof.AesOcb.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesOcb.AArch64.Init
+import VerifiedGarbage.Proof.AesOcb.AArch64.Open
 
 /-!
 # AES-OCB on AArch64: `Verified`

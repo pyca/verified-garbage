@@ -8,6 +8,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+import VerifiedGarbage.Spec.Weierstrass
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
+meta import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Ed25519.Recode
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+meta import VerifiedGarbage.Proof.Ed25519.Recode
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # Ed25519's fixed-base multiplication with BMI2 and ADX: `Verified`

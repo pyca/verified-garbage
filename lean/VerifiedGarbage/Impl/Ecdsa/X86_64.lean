@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Spec.Weierstrass.MulBase
 public import VerifiedGarbage.Spec.Weierstrass.Mul
 public import VerifiedGarbage.Spec.Weierstrass.Inverse
+public import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-!
 # ECDSA signing on x86-64
@@ -174,6 +175,11 @@ structure Cfg where
   and `k^(n-2)` (`invFn`), which every function calls (`pPow`, `nPow`);
   else they run them inline. -/
   inverse : Option Spec.Weierstrass.Inverse.Curve := none
+  /-- The curve whose function `vg_<curve>_check_point`
+  (`Spec/Weierstrass/CheckPoint.lean`) checks the public point and selects
+  the point ECDH and verification multiply (`Ecdh.X86_64.Cfg.check`); else
+  they run it inline. -/
+  checkPoint : Option Spec.Weierstrass.CheckPoint.Curve := none
   /-- The bits the window method's scalars have: `8 len`, but for a curve
   whose `n` has fewer bits than its `len` bytes (P-521's `n < 2⁵²¹`, in 66
   bytes), as many as `n` has. ECDH reduces its `d` below `2^nbits` before
@@ -219,7 +225,21 @@ def MP' : Mod :=
 def MH : Mod := { c.MP' with inl := c.hot }
 def MN' : Mod :=
   { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n), adx := c.adx,
-    fnN := c.n == 9 }
+    fnN := fnNOk c.n c.C.n }
+
+
+/-- Shared products use the high temporary slot after the order inversion has
+consumed its exponent table: for eight words, slot 62 overlaps that table.
+Scalar multiplication and inversion retain their original scratch layout. -/
+def sharedMod (M : Mod) (m : Nat) : Mod :=
+  { M with tmp := if c.n = 8 then c.sl 62 else M.tmp, fnMod := some m }
+
+def MPS : Mod := c.sharedMod c.MP' c.C.p
+def MNS : Mod := c.sharedMod c.MN' c.C.n
+
+/-- Field products after inversion: share eight-word multiplication. -/
+def mulPS (o a b : Nat) : Prog isa :=
+  if c.n = 8 then opProg c.MPS (.mul o a b) else .block (Mont.X86_64.mul c.MPS o a b)
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
@@ -435,10 +455,16 @@ def checkRange (a : Nat) : List Instr :=
 /-- `[a] ≠ 0`: the flag `&=` its mask. -/
 def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
 
+/-- A product modulo `p` of the signature's and the public key's finish: a call of
+`vg_<curve>_mul_mod_p` where `opProg` makes one, but inline for P-521, whose
+signature and public key measured slower with the calls. -/
+def mulPF (o a b : Nat) : Prog isa :=
+  if c.n = 9 then .block (Mont.X86_64.mul c.MP' o a b) else opProg c.MP' (.mul o a b)
+
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  progs [.block (Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)),
-    .block (Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)),
+  progs [c.mulPF (c.sl XM) (c.sl RX) (c.sl ACC),
+    c.mulPF (c.sl X) (c.sl XM) (c.sl ONE),
     .block (Mont.X86_64.add c.MN' (c.sl RR) (c.sl X) (c.sl ZERO)),
     opProg c.MN' (.mul (c.sl KM) (c.sl K) (c.sl R2N)),
     .block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))]
@@ -453,13 +479,13 @@ def finish : List Instr :=
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=
-  progs [opProg c.MN' (.mul (c.sl RM) (c.sl RR) (c.sl R2N)),
-    opProg c.MN' (.mul (c.sl DM) (c.sl D) (c.sl R2N)),
-    opProg c.MN' (.mul (c.sl EM) (c.sl E) (c.sl R2N)),
-    opProg c.MN' (.mul (c.sl TT) (c.sl RM) (c.sl DM)),
+  progs [opProg c.MNS (.mul (c.sl RM) (c.sl RR) (c.sl R2N)),
+    opProg c.MNS (.mul (c.sl DM) (c.sl D) (c.sl R2N)),
+    opProg c.MNS (.mul (c.sl EM) (c.sl E) (c.sl R2N)),
+    opProg c.MNS (.mul (c.sl TT) (c.sl RM) (c.sl DM)),
     .block (Mont.X86_64.add c.MN' (c.sl TT) (c.sl TT) (c.sl EM)),
-    opProg c.MN' (.mul (c.sl SM) (c.sl ACC) (c.sl TT)),
-    opProg c.MN' (.mul (c.sl SS) (c.sl SM) (c.sl ONE)),
+    opProg c.MNS (.mul (c.sl SM) (c.sl ACC) (c.sl TT)),
+    opProg c.MNS (.mul (c.sl SS) (c.sl SM) (c.sl ONE)),
     .block (c.checkNonzero (c.sl SS) ++ c.finish)]
 
 /-- `vg_<curve>_mul_base`'s body: the table of `k`'s bits, then `[k]G` into
@@ -467,8 +493,14 @@ def scalar : Prog isa :=
 def mulBaseBody : Prog isa := .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) c.gMulK
 
 /-- Where `vg_<curve>_mul_base` keeps the callee-saved registers, which it
-changes: `ACC`'s slot, part of its own working space. -/
-def mulBaseSaved : List (Reg × Nat) := saved.map fun (r, d) => (r, c.sl ACC + d)
+changes: `ACC`'s slot, part of its own working space, and for fewer than six
+words, which it cannot hold, the rest in `TT`'s, also its own. -/
+def mulBaseSaved : List (Reg × Nat) :=
+  saved.map fun (r, d) => (r, if d < 8 * c.n then c.sl ACC + d else c.sl TT + (d - 8 * c.n))
+
+/-- The slots `vg_<curve>_mul_base` writes besides `gMulK`'s: where it keeps
+the callee-saved registers (`mulBaseSaved`). -/
+def mulBaseSlots : List Nat := if c.n < 6 then [ACC, TT] else [ACC]
 
 /-- `vg_<curve>_mul_base` (`_adx` with BMI2 and ADX): its body, between
 saving the callee-saved registers in `ACC`'s slot and restoring them. -/

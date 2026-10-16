@@ -1,12 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Impl.P256.EcdhSelect
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombSelectV
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 @[expose] public section
 
@@ -238,7 +242,7 @@ theorem setup_ok (s : State) : WP isa (.block setup) s fun t=>
   · rw [hk.v _ (by decide : VReg.v30∉vectorAcc)]
     rfl
   · exact (hku.mono (fun _ h=>h) (by decide)).trans
-      (hk.mono (by simp) (by decide))
+      (hk.mono (by regions_sub) (by decide))
 
 theorem cachePtr_ok (s : State) :
     WP isa (.block [.movz .x .x17 5400 0,.add .x .x17 .x0 .x17]) s fun t=>
@@ -282,7 +286,7 @@ theorem stores_ok {s : State} {base : Addr} (hs : Scr s base 8192) :
       have he : (j-12)/2+6=j/2 := by omega
       have hr : (j-12)%2=j%2 := by omega
       simpa only [output,ite_eq_right h,he,hr,k₂.v _ List.not_mem_nil,v₁] using hw
-  · exact ((k₁.mono (by simp)).trans (VG.Proof.Mont.AArch64.Keeps.regs k₂.keeps)).trans (k₃.mono (by simp))
+  · exact ((k₁.mono (by regions_sub)).trans (VG.Proof.Mont.AArch64.Keeps.regs k₂.keeps)).trans (k₃.mono (by regions_sub))
   · have om : Unch base [(704,96)] s.mem s₂.mem := by
       rw [k₂.mem]; exact o₁.unch
     exact om.trans o₃.unch
@@ -320,9 +324,9 @@ theorem neon_ok {s : State} {base : Addr} {a : Nat} (hs : Scr s base 8192)
       unfold picked
       rw [k₁.mem,hs₁.x0,vdword_read16 _ _ (by omega : j%2<2),BitVec.add_assoc,BitVec.ofNat_add_ofNat]
       rw [show 2816+160*(a-1)+16*(j/2)+8*(j%2)=2816+160*(a-1)+8*j by omega]
-  · exact (((VG.Proof.Mont.AArch64.Keeps.regs k₁.keeps).mono (by simp)).trans
-      ((VG.Proof.Mont.AArch64.Keeps.regs k₂.keeps).mono (by simp))).trans
-      (kt.mono (by simp))
+  · exact (((VG.Proof.Mont.AArch64.Keeps.regs k₁.keeps).mono (by regions_sub)).trans
+      ((VG.Proof.Mont.AArch64.Keeps.regs k₂.keeps).mono (by regions_sub))).trans
+      (kt.mono (by regions_sub))
   · simpa only [k₂.mem,k₁.mem] using ot
 
 end VG.Proof.P256.EcdhJac.Select

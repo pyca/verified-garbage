@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Verified
 

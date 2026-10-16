@@ -7,6 +7,22 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
+public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.CallPack
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA key generation on AArch64: parameters and buffers
@@ -165,22 +181,22 @@ theorem sepB_kg {p : Params} {r r' : Reg} (h : r ≠ r') (hr : r ∈ [Reg.x25, .
 syntax "lay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| lay) => `(tactic| lay [])
-  | `(tactic| lay [$ls,*]) => `(tactic| (
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [VG.Proof.MlDsa.AArch64.keepB,
-        VG.Proof.MlDsa.AArch64.sepB_same, VG.Proof.MlDsa.AArch64.KeyGen.sepB_kg,
-        VG.Proof.MlDsa.AArch64.KeyGen.inB_x25, VG.Proof.MlDsa.AArch64.KeyGen.inB_x26,
-        VG.Proof.MlDsa.AArch64.KeyGen.inB_x27, VG.Proof.MlDsa.AArch64.KeyGen.inB_x28,
-        VG.Proof.MlDsa.AArch64.KeyGen.inB_x26W, VG.Proof.MlDsa.AArch64.KeyGen.inB_x27W,
-        VG.Proof.MlDsa.AArch64.KeyGen.inB_x28W, List.all_cons, List.all_nil, List.cons_append, List.nil_append,
-        List.all_append, Bool.and_self,
-        Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, Bool.and_true, Bool.true_and, true_and, and_true,
-        ↓reduceIte, Bool.false_eq_true, $ls,*]
-      set_option linter.unusedSimpArgs false in
-      try simp only [VG.Impl.MlDsa.AArch64.KeyGen.oR4, VG.Impl.MlDsa.AArch64.KeyGen.oSA4, VG.Impl.MlDsa.AArch64.KeyGen.oP, VG.Impl.MlDsa.AArch64.KeyGen.oSA,
-        VG.Impl.MlDsa.AArch64.KeyGen.oSB, VG.Impl.MlDsa.AArch64.KeyGen.oHX, VG.Impl.MlDsa.AArch64.KeyGen.oKL,
-        VG.Impl.MlDsa.AArch64.KeyGen.oSS, VG.Impl.MlDsa.AArch64.KeyGen.SV, VG.Impl.MlDsa.AArch64.KeyGen.oT0, $ls,*]
-      and_intros <;> omega_arith))
+  | `(tactic| lay [$ls,*]) => `(tactic| plain_simp_names (
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [VG.Proof.MlDsa.AArch64.keepB,
+                         VG.Proof.MlDsa.AArch64.sepB_same, VG.Proof.MlDsa.AArch64.KeyGen.sepB_kg,
+                         VG.Proof.MlDsa.AArch64.KeyGen.inB_x25, VG.Proof.MlDsa.AArch64.KeyGen.inB_x26,
+                         VG.Proof.MlDsa.AArch64.KeyGen.inB_x27, VG.Proof.MlDsa.AArch64.KeyGen.inB_x28,
+                         VG.Proof.MlDsa.AArch64.KeyGen.inB_x26W, VG.Proof.MlDsa.AArch64.KeyGen.inB_x27W,
+                         VG.Proof.MlDsa.AArch64.KeyGen.inB_x28W, List.all_cons, List.all_nil, List.cons_append, List.nil_append,
+                         List.all_append, Bool.and_self,
+                         Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, Bool.and_true, Bool.true_and, true_and, and_true,
+                         ↓reduceIte, Bool.false_eq_true, $ls,*]
+                       set_option linter.unusedSimpArgs false in
+                       try simp only [VG.Impl.MlDsa.AArch64.KeyGen.oR4, VG.Impl.MlDsa.AArch64.KeyGen.oSA4, VG.Impl.MlDsa.AArch64.KeyGen.oP, VG.Impl.MlDsa.AArch64.KeyGen.oSA,
+                         VG.Impl.MlDsa.AArch64.KeyGen.oSB, VG.Impl.MlDsa.AArch64.KeyGen.oHX, VG.Impl.MlDsa.AArch64.KeyGen.oKL,
+                         VG.Impl.MlDsa.AArch64.KeyGen.oSS, VG.Impl.MlDsa.AArch64.KeyGen.SV, VG.Impl.MlDsa.AArch64.KeyGen.oT0, $ls,*]
+                       and_intros <;> omega_arith))
 
 /-- A check about the layout that mentions no variable but the parameter set and
 bounded indices, decided for each parameter set (`decide_at`): cheaper than

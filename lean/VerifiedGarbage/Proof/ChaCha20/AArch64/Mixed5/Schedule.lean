@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed5
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xar
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! Interleaving independent integer and vector operations preserves both streams. -/
 
@@ -69,17 +72,17 @@ theorem scalar_op (op : Op) (hv : Valid op) {v : CState} {s : State} (h : C v s)
     · intro r hr
       simp [keep r hr d]
 
-theorem ops_ok (ops : List Op) (hp : ∀ op ∈ ops, Valid op)
+theorem ops_ok {sve : Bool} (ops : List Op) (hp : ∀ op ∈ ops, Valid op)
     {vs : Nat → CState} {v : CState} {s : State}
     (hn : N vs s) (ht : s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table) (hc : C v s) :
-    WP isa (scheduled ops) s fun u =>
+    WP isa (scheduled sve ops) s fun u =>
       N (fun j => ops.foldl step (vs j)) u ∧ RI (ops.foldl step v) s u ∧ u.sp = s.sp ∧
       u.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table := by
   induction ops generalizing vs v s with
   | nil => exact WP.block_nil ⟨hn,⟨hc,rfl,rfl,rfl,fun _ _ => rfl⟩,rfl,ht⟩
   | cons op ops ih =>
     apply WP.seq
-    refine (VG.Proof.ChaCha20.AArch64.Neon4.op_ok op hn ht).mono fun a ⟨ha,hsa⟩ => ?_
+    refine (VG.Proof.ChaCha20.AArch64.Neon4.op_ok_for sve op hn ht).mono fun a ⟨ha,hsa⟩ => ?_
     have hca : C v a := by simpa only [C, VG.Proof.ChaCha20.AArch64.Holds,hsa.gpr] using hc
     apply WP.seq
     refine (scalar_op op (hp _ (List.mem_cons_self ..)) hca).mono fun b ⟨hb,hav,hsp⟩ => ?_

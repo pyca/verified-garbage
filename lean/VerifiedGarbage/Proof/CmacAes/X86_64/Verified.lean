@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Cmac.Contract
 meta import VerifiedGarbage.Spec.Cmac.Contract
-public import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
+import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.FinalizeCorrect
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.Subkeys
-public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
+import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 meta import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateCorrect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

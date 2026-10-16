@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Lit
 
 /-!
 # ML-DSA on x86-64, `sign_message`: the signing functions on `μ` it calls
@@ -50,11 +54,17 @@ theorem ok3_of {p : Params} (hp : p ∈ params) : Ok3 p := by
 
 theorem sign0_noSp {p : Params} (h3 : Ok3 p) :
     noSpB (Impl.MlDsa.X86_64.Sign.sign (primsWith .empty) p) = true := by
-  rcases h3 with rfl | rfl | rfl <;> decide +kernel
+  rcases h3 with rfl | rfl | rfl
+  · exact (by lit_decide : noSpB Sign.sign44 = true)
+  · exact (by lit_decide : noSpB Sign.sign65 = true)
+  · exact (by lit_decide : noSpB Sign.sign87 = true)
 
 theorem sign0_depth {p : Params} (h3 : Ok3 p) :
     decide ((Impl.MlDsa.X86_64.Sign.sign (primsWith .empty) p).depth ≤ 4) = true := by
-  rcases h3 with rfl | rfl | rfl <;> decide +kernel
+  rcases h3 with rfl | rfl | rfl
+  · exact (by lit_decide : decide (Sign.sign44.depth ≤ 4) = true)
+  · exact (by lit_decide : decide (Sign.sign65.depth ≤ 4) = true)
+  · exact (by lit_decide : decide (Sign.sign87.depth ≤ 4) = true)
 
 /-- `vg_mldsa*_sign`, with the polynomial arithmetic of `v`. -/
 theorem signFn (v : ArithImpl) {p : Params} (hp : p ∈ params) :

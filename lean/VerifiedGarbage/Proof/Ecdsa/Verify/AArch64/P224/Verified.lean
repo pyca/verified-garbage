@@ -2,16 +2,28 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Contract
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Lit
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 
 /-!
 # ECDSA verification over P-224 on AArch64: `Verified`
@@ -20,10 +32,11 @@ P-224 is a curve the proof supports (`p224_ok`, given the inversions' soundness 
 law, which the registration file supplies: `Proof.P224.law` and `invSound_of_toM`), so `verify_ok` gives
 the contract's postcondition; `x19`–`x25` are restored, and no instruction
 writes the other callee-saved registers, `sp` or a SIMD register
-(`abiPreserved_of`). Constant time by taint tracking: the only branches are on
-loop counters, and every address is an argument plus a constant or a counter,
-so only the pointers affect timing (the contract would let the key, the hash
-and the signature affect it too).
+(`abiPreserved_of`). Constant time relative to the contract's public inputs
+(`verify_public_ct`): the comb reads the entries of the digits of
+`u = e s⁻¹`, from the digest and the signature, directly; around it, by taint
+tracking, the only branches are on loop counters and every other address is
+an argument plus a constant or a counter.
 -/
 
 @[expose] public section
@@ -51,21 +64,52 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArc
   obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p224_ok hI) hL hT (pre_of hs)
   exact ⟨t, s', he, abiPreserved_of he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
 
-theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub verifyP224 :=
-  VG.Taint.constantTime (A := taintS [p224.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-    (fun _ _ _ _ ⟨h0, h1, h2, h3, hsp, hsy⟩ => ⟨⟨hsp, fun r hr => by
-      simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact h0
-      · exact h1
-      · exact h2
-      · exact h3⟩, fun n hn => by
-      simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+open VG.Proof.Weierstrass.AArch64 in
+/-- The public comb's iterations, and the code before and after it, by taint tracking. -/
+theorem verify_checks : VerifyChecks p224 where
+  comb := {
+    init := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0]) (fun _ _ _ _ h => h) (by taint_decide)
+    head := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x19]) (fun _ _ _ _ h => h) (by taint_decide)
+    tail := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x19, .x16]) (fun _ _ _ _ h => h)
+      (by taint_decide) }
+  before := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3]) (fun _ _ _ _ h => h)
+    (by taint_decide)
+  after := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0]) (fun _ _ _ _ h => h) (by taint_decide)
+
+/-- The contract's public inputs: the pointers, the table, and the key, digest and signature. -/
+theorem verifyPublic_of_spec {s₁ s₂ : State}
+    (pub : (Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts p224.combConsts)).pub s₁ s₂) :
+    VerifyPublic p224 s₁ s₂ := by
+  sig_pub [Spec.Ecdsa.P224.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    Spec.P224.curve, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs, p224_combConsts,
+    Abi.withConsts] at pub
+  obtain ⟨hsp, hsy, inputs, h0, h1, h2, h3⟩ := pub
+  have eqBytes := (List.map_inj_right (fun (a b : BitVec 8) h => BitVec.eq_of_toNat_eq h)).mp inputs
+  have parts := List.append_inj eqBytes (by simp only [List.length_append, Weierstrass.length_bytesAt])
+  have front := List.append_inj parts.1 (by simp only [Weierstrass.length_bytesAt])
+  refine ⟨⟨hsp, fun r hr => ?_⟩, hsy, publicU_congr front.2 parts.2⟩
+  simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl
+  · exact h0
+  · exact h1
+  · exact h2
+  · exact h3
+
+theorem verify_ct (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
+    (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
+    ConstantTime isa
+      (Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts p224.combConsts)).pre
+      (Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts p224.combConsts)).pub verifyP224 := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
+  exact verify_public_ct (p224_ok hI) hL hT verify_checks _ _ _ _ _ _
+    (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (verifyPublic_of_spec pub) e₁ e₂
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSounds)
     (hT : Weierstrass.CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
     Verified AArch64.target verifyP224
-      (Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts p224.combConsts)) :=
-  Verified.of_correct (verify_a64 hL hI hT) verify_ct implies
+      (Spec.Ecdsa.P224.inst.verifyContract (AArch64.abi.withConsts p224.combConsts)) := by
+  refine ⟨fun s hs => ?_, verify_ct hL hI hT, implies.sat⟩
+  obtain ⟨t, s', he, ha, hp⟩ := verify_a64 hL hI hT s (implies.pre _ hs)
+  exact ⟨t, s', he, ha, implies.post s s' hs hp⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64.P224

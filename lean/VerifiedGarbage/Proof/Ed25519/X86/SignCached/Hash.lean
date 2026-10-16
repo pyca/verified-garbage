@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Proof.Sha512.Stream
 
 @[expose] public section
 
@@ -87,7 +89,7 @@ theorem OutArgs.slot {vs : List Value} {t : State} (h : OutArgs L vs t) (hL : L.
 theorem init_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
     WP isa Impl.Ed25519.X86.SignCached.init s fun t => Ctx L g m₀ t ∧
       Frame (hashWrites L) s.mem t.mem ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (L.scr.setWidth 64) [] := by
-  refine WP.seq (WP.mono (args_ok hc hL ha (vs := [.caller 5 0]) (by decide) (by simp [Whole.valid]))
+  refine WP.seq (WP.mono (args_ok hc hL ha (vs := [.caller 5 0]) (by decide) (Whole.valid_all (by decide)))
     fun u ⟨hu, hf, hs⟩ => ?_)
   have a0 : Whole.slots L.E u 0 = L.scr := by
     have hh := hs.slot hL (j := 0) (by decide) (by decide)

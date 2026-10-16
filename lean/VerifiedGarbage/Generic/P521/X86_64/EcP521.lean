@@ -1,14 +1,22 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.P521.Comb7
-public import VerifiedGarbage.Impl.EcKey.P521.X86_64
-public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
+import VerifiedGarbage.Impl.EcKey.P521.X86_64
+import VerifiedGarbage.Proof.EcKey.X86_64.P521.Verified
 public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Lit
 public import VerifiedGarbage.Proof.EcKey.X86_64.P521.VerifiedAdx
 public import VerifiedGarbage.Proof.EcKey.X86_64.P521.LitAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # P-521 public keys (FIPS 186-5 §A.2) on x86-64

@@ -170,6 +170,8 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | rorx d _ _ => cases hs; exact k d
   | andn32 d _ _ => cases hs; exact k d
   | andn d _ _ => cases hs; exact k d
+  | shiftCl _ d => cases hs; exact k d
+  | shiftx _ d _ _ => cases hs; exact k d
   | imul d _ => cases hs; exact k d
   | movImm64 d _ => cases hs; exact k d
   | leaSym d _ => cases hs; exact k d
@@ -195,6 +197,12 @@ theorem stepKD_nil (h : τ.bases = []) {i : Instr} {τ' : T} (hs : stepKD τ i =
   | evLoad _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evMadd52Load _ _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
   | evStore m _ => exact storeStepKD_nil h hs
+  | kLoad _ _ m => obtain ⟨-, rfl⟩ := some_cond hs; exact nx
+  | kStore m k _ =>
+    simp only [stepKD, stepKDFn] at hs
+    cases hk : pub τ k <;> rw [hk] at hs
+    · cases hs
+    · exact storeStepKD_nil h hs
   | stmxcsr m => exact storeStepKD_nil h hs
   | ldmxcsr m => obtain ⟨-, rfl⟩ := some_cond hs; exact h
   | lfence => cases hs; exact h

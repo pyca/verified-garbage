@@ -1,7 +1,12 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 @[expose] public section
 

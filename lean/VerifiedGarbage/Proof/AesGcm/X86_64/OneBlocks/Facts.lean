@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OneShot
 
 /-!
 # AES-GCM on x86-64: after `oneBlocks`
@@ -114,7 +115,8 @@ theorem st_obFrame {D : Addr} {n d k : Nat} (h : (d + k ≤ 16) ∨ (32 ≤ d �
 /-- What `seal` and `open` know after `oneBlocks`, from what it did to the
 whole blocks (`ho`, `hc`) and the accumulator (`hy`, over `Z`). -/
 theorem ob_facts {R : Nat} {D : Addr} {n : Nat} {s s₃ : State} {M : Gcm.X86_64.Stitch.CtxMode} (h : ObPre M Ctx W SP R D n s)
-    (P : ObPost Ctx W SP D n s s₃) {H icb : Block} {x Z : List Byte}
+    (fr : Frame (⟨W + BitVec.ofNat 64 192, 24⟩ :: obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s.mem s₃.mem)
+    {H icb : Block} {x Z : List Byte}
     (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hcb : blockAt s.mem (cbA W) = icb)
     (habs : Absorbed s.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H x) (hx : x.length % 16 = 0)
     (ho : blocksAt s₃.mem D (n / 16) = ctr32 (ciphOf s.mem Ctx R) (blockAt s.mem (cbA W)) (blocksAt s.mem D (n / 16)))
@@ -128,7 +130,6 @@ theorem ob_facts {R : Nat} {D : Addr} {n : Nat} {s s₃ : State} {M : Gcm.X86_64
     Absorbed s₃.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H (x ++ Z) ∧
     bytesAt s₃.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) =
       bytesAt s.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) := by
-  have fr := P.frame
   have hD := h.data.ok.w
   have hR := h.rounds.2
   have hlt := h.data.ok.lt

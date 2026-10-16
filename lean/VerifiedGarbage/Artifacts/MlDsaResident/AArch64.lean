@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CommitTailVerified
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

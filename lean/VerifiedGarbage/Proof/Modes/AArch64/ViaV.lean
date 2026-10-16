@@ -1,18 +1,21 @@
 module
 
 public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # A register kept in a vector register around a core's code, on AArch64
 
 `c.viaV r v` (`Impl/Modes/AArch64/Fb.lean`) copies `r` to the vector
 register `v` before the core's `prepare` and `crypt` and back after. If no
-instruction of the core writes `v` (`vSafe`, checked by evaluation), each
+instruction of the core writes `v` (`vSafe`, checked by evaluation, the
+code of the functions it calls included), each
 keeps `r` (`keepsReg_viaV`), whatever it does to `r` in between; and
 `BlockSpec.viaV` is the core's `BlockSpec` for the wrapped core, if `r` is
 none of the registers the core keeps for the modes and its key being ready
@@ -33,28 +36,29 @@ def vSafe (v : VReg) : Prog isa → Bool
   | .seq a b => vSafe v a && vSafe v b
   | .ite _ a b => vSafe v a && vSafe v b
   | .loop b _ => vSafe v b
+  | .call _ b => vSafe v b
   | _ => false
 
-theorem keepsV_of_vSafe {v : VReg} {c : Prog isa} (hc : vSafe v c = true) :
-    ∀ s t s', Exec isa c s t s' → s'.v v = s.v v := by
-  intro s t s' h
-  revert hc
-  induction h with
-  | block e =>
-    intro hc
-    simp only [vSafe] at hc
-    refine execBlock_keep (fun s : State => s.v v) (ok := fun i => (vdstOf i != some v) = true)
-      (fun hi he => exec_vec (by simpa using hi) he) (List.all_eq_true.mp hc) e
-  | seq _ _ ih₁ ih₂ =>
-    intro hc
+theorem vSafe_instrs {v : VReg} : ∀ {c : Prog isa}, vSafe v c = true → ∀ i ∈ instrs c, vdstOf i ≠ some v
+  | .block is, hc, i, hi => by
+    simp only [vSafe, List.all_eq_true] at hc; simpa using hc i hi
+  | .seq a b, hc, i, hi => by
     simp only [vSafe, Bool.and_eq_true] at hc
-    exact (ih₂ hc.2).trans (ih₁ hc.1)
-  | iteT _ _ ih => intro hc; simp only [vSafe, Bool.and_eq_true] at hc; exact ih hc.1
-  | iteF _ _ ih => intro hc; simp only [vSafe, Bool.and_eq_true] at hc; exact ih hc.2
-  | loopExit _ _ ih => exact ih
-  | loopNext _ _ _ ih₁ ih₂ => intro hc; exact (ih₂ hc).trans (ih₁ hc)
-  | call => intro hc; simp only [vSafe, Bool.false_eq_true] at hc
-  | frame => intro hc; simp only [vSafe, Bool.false_eq_true] at hc
+    rcases List.mem_append.mp hi with hi | hi
+    · exact vSafe_instrs hc.1 i hi
+    · exact vSafe_instrs hc.2 i hi
+  | .ite _ a b, hc, i, hi => by
+    simp only [vSafe, Bool.and_eq_true] at hc
+    rcases List.mem_append.mp hi with hi | hi
+    · exact vSafe_instrs hc.1 i hi
+    · exact vSafe_instrs hc.2 i hi
+  | .loop b _, hc, i, hi => vSafe_instrs (c := b) hc i hi
+  | .call _ b, hc, i, hi => vSafe_instrs (c := b) hc i hi
+  | .frame _ _ _, hc, _, _ => by simp only [vSafe, Bool.false_eq_true] at hc
+
+theorem keepsV_of_vSafe {v : VReg} {c : Prog isa} (hc : vSafe v c = true) :
+    ∀ s t s', Exec isa c s t s' → s'.v v = s.v v :=
+  fun _ _ _ h => Exec.vec (vSafe_instrs hc) h
 
 /-- `dup v.2d, r`. -/
 theorem dup_ok (s : State) (v : VReg) (r : Reg) :

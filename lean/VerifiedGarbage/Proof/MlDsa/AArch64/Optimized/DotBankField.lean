@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotField
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBankField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductBankField
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 
 @[expose] public section
 

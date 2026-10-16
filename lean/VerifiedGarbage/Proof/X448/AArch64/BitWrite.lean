@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Iter
-public import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # X448 on AArch64: expanding scalar bytes
@@ -53,7 +55,9 @@ theorem write1_eq (m : Mem) (p : Addr) (v : BitVec 8) : m.write p 1 v = m.writeW
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
     (((b.setWidth 64 >>> j) &&& (1 : BitVec 64)).setWidth 32).setWidth 8 =
-      BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by decide +kernel
+      BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by
+  intro b j _
+  rw [BitVec.setWidth_setWidth_of_le _ (by decide)]; exact bitByte 64 (by decide) b j
 
 def bitJ (j : Nat) : List Instr :=
   [.lsr .x .x5 .x4 j, .logic .and .x .x5 .x5 .x8, .strb .x5 .x11 (BITS + j)]

@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.PowerEnv
 public import VerifiedGarbage.Proof.Ed25519.RootPower
-public import VerifiedGarbage.Proof.X25519.X86.Field32.Call
+import VerifiedGarbage.Proof.X25519.X86.Field32.Call
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Rc2
 
 /-! The shared addition chain, a call of `vg_gf25519_r32_pow250`
 (`power250_ok`), computes the inversion and square-root powers with a few
@@ -49,7 +51,7 @@ theorem invert_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
       env t.mem base 15 = VG.Proof.X25519.invert (env s.mem base 2) ∧
       ∀ i : Slot, i.val < 14 → env t.mem base i = env s.mem base i := by
   refine WP.seq (WP.mono (power250_ok hs) fun t ⟨kt, h15, h14, hlow⟩ => ?_)
-  have h : ISpec base _ _ := (sqnI base 15 15 ⟨by decide, by decide⟩ 5 (by decide) (by decide)).seq
+  have h : ISpec base _ _ := (sqnI base 15 ⟨by decide, by decide⟩ 5 (by decide) (by decide)).seq
     (mulI base 15 15 14 ⟨by decide, by decide⟩)
   refine WP.mono (h t (kt.ctx hs)) fun u ⟨ku, eu⟩ => ⟨kt.trans ku, ?_, fun i hi => ?_⟩
   · rw [eu]
@@ -65,7 +67,7 @@ theorem rootPower_ok {s : State} {base : BitVec 32} (hs : Ctx base s) :
       env t.mem base 15 = VG.Proof.Ed25519.rootPower (env s.mem base 2) ∧
       ∀ i : Slot, i.val < 14 → env t.mem base i = env s.mem base i := by
   refine WP.seq (WP.mono (power250_ok hs) fun t ⟨kt, h15, _, hlow⟩ => ?_)
-  have h : ISpec base _ _ := (sqnI base 15 15 ⟨by decide, by decide⟩ 2 (by decide) (by decide)).seq
+  have h : ISpec base _ _ := (sqnI base 15 ⟨by decide, by decide⟩ 2 (by decide) (by decide)).seq
     (mulI base 15 15 2 ⟨by decide, by decide⟩)
   refine WP.mono (h t (kt.ctx hs)) fun u ⟨ku, eu⟩ => ⟨kt.trans ku, ?_, fun i hi => ?_⟩
   · rw [eu]

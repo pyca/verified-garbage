@@ -1,21 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Group
-public import VerifiedGarbage.Proof.Sm4.Common
+import VerifiedGarbage.Proof.Sm4.Common
 public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Spec.Sm4.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # SM4 ECB on ARMv7: the whole function
 
-`ecb_wp`: with the working space as an argument (`ecbArm`), `ecb dir`
-saves the callee-saved registers, keeps the data pointer and the count in
-their slots, builds the table of round keys in the order `dir` uses them,
-transforms the blocks a group at a time (`dataGroup_wp`) and restores the
-registers.
+`ecbWith_wp`: with the working space at `sr`, `ecbWith sr kt` saves the
+callee-saved registers, runs `kt`, which builds the table of round keys in
+the order `dir` uses them (`keys_wp`, `keysAny_wp`), transforms the blocks
+a group at a time (`dataGroup_wp`) and restores the registers.
 -/
 
 @[expose] public section
@@ -29,31 +30,13 @@ def specDirArm : Dir → Spec.Sm4.Direction
   | .encrypt => .encrypt
   | .decrypt => .decrypt
 
-/-- ECB on ARMv7 with its working space at `r3`. -/
-def ecbArm (dir : Dir) : Contract Arm.isa where
-  pre s :=
-    let sched : Region := ⟨State.addr (s.gpr .r0), 128⟩
-    let data : Region := ⟨State.addr (s.gpr .r1), 16 * (s.gpr .r2).toNat⟩
-    let scratch : Region := ⟨State.addr (s.gpr .r3), 4 * slots⟩
-    s.rd = [sched] ∧ s.wr = [data, scratch] ∧ sched.Disjoint data ∧ sched.Disjoint scratch ∧
-      data.Disjoint scratch ∧
-      (s.gpr .r0).toNat + 128 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 16 * (s.gpr .r2).toNat ≤ 2 ^ 32 ∧
-      (s.gpr .r3).toNat + 4 * slots ≤ 2 ^ 32
-  post s s' :=
-    Spec.Sm4.blocksAt s'.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat =
-      Spec.Sm4.ecb (Spec.Sm4.scheduleAt s.mem (State.addr (s.gpr .r0))) (specDirArm dir)
-        (Spec.Sm4.blocksAt s.mem (State.addr (s.gpr .r1)) (s.gpr .r2).toNat)
-  pub s₁ s₂ :=
-    s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
-      s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.sp = s₂.sp
-
 end VG.Proof.Sm4
 
 namespace VG.Proof.Sm4.Arm
 
 open VG VG.Arm VG.Arm.Straight VG.Impl.Sm4.Arm
 open VG.Impl.Aes.Arm (q sb t0 t1 kp movR ldS stS)
-open VG.Proof.Sm4 (DInv blocksAt_of_dinv ecb_eq blockFn specDirArm ecbArm crypt_eq quads ofBlock outBlock)
+open VG.Proof.Sm4 (DInv blocksAt_of_dinv ecb_eq blockFn specDirArm crypt_eq quads ofBlock outBlock)
 
 theorem dataLoop_wp {s₀ : State} {b D : BitVec 32} {n : Nat} {E : Nat → Spec.Sm4.Word} (hp : GPre s₀ b D n)
     {s : State} (hi : GInv s₀ b D n E 0 s) :
@@ -76,39 +59,50 @@ theorem outF_spec (dir : Dir) (m : Mem) (sch : Spec.Sm4.Schedule) (D : Addr) (j 
 
 /-- The prologue: the registers saved, the scratch buffer in `sb`, the
 schedule's pointer in `r12`. -/
-theorem prologue_ok {s₀ : State} {b : BitVec 32} (hb : s₀.gpr .r3 = b) (hw : ScrIn s₀.wr b) :
-    ∃ s, runBlock isa (saveRegs .r3 ++ [movR sb .r3, movR .r12 .r0]) s₀ = some s ∧
+theorem prologue_ok {sr : Reg} {s₀ : State} {b : BitVec 32} (hb : s₀.gpr sr = b) (hw : ScrIn s₀.wr b) :
+    ∃ s, runBlock isa (saveRegs sr ++ [movR sb sr, movR .r12 .r0]) s₀ = some s ∧
       s.gpr sb = b ∧ s.gpr .r12 = s₀.gpr .r0 ∧ (∀ r, r ≠ sb → r ≠ .r12 → s.gpr r = s₀.gpr r) ∧
       Saved s₀ b s.mem ∧ Frame [⟨State.addr b, 4 * slots⟩] s₀.mem s.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧
       s.sp = s₀.sp := by
   obtain ⟨s₁, e₁, sv₁, g₁, rd₁, wr₁, sp₁, f₁, -⟩ := save_ok hw hb
-  obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂, sp₂⟩ := movR_ok s₁ sb .r3
+  obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂, sp₂⟩ := movR_ok s₁ sb sr
   obtain ⟨s₃, e₃, r₃, o₃, m₃, rd₃, wr₃, sp₃⟩ := movR_ok s₂ .r12 .r0
   refine ⟨s₃, ?_, by rw [o₃ _ (by decide), r₂, g₁, hb], by rw [r₃, o₂ _ (by decide), g₁],
     fun r h1 h2 => by rw [o₃ r h2, o₂ r h1, g₁], by rw [m₃, m₂]; exact sv₁, by rw [m₃, m₂]; exact f₁,
     by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], by rw [sp₃, sp₂, sp₁]⟩
   rw [runBlock_app, e₁, Option.bind_some,
-    show ([movR sb .r3, movR .r12 .r0] : List Instr) = [movR sb .r3] ++ [movR .r12 .r0] from rfl,
+    show ([movR sb sr, movR .r12 .r0] : List Instr) = [movR sb sr] ++ [movR .r12 .r0] from rfl,
     runBlock_app, e₂, Option.bind_some, e₃]
 
-theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbArm dir).pre s₀) :
-    WP isa (ecb dir) s₀ fun s' => (∀ i < 9, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ (ecbArm dir).post s₀ s' := by
-  obtain ⟨hrd, hwr, dSD, dSS, dDS, fitK, fitD, fitB⟩ := hp
-  let b := s₀.gpr .r3
+/-- `ecbWith sr kt`, from the arguments' regions with the working space at
+`sr`, for table code `kt` that builds the table of `dir`. -/
+theorem ecbWith_wp (sr : Reg) (kt : Prog isa) (dir : Dir) {s₀ : State}
+    (hrK : (⟨State.addr (s₀.gpr .r0), 128⟩ : Region) ∈ s₀.rd)
+    (hwS : ScrIn s₀.wr (s₀.gpr sr))
+    (hwD : (⟨State.addr (s₀.gpr .r1), 16 * (s₀.gpr .r2).toNat⟩ : Region) ∈ s₀.wr)
+    (dSS : Region.Disjoint ⟨State.addr (s₀.gpr .r0), 128⟩ ⟨State.addr (s₀.gpr sr), 4 * slots⟩)
+    (dDS : Region.Disjoint ⟨State.addr (s₀.gpr .r1), 16 * (s₀.gpr .r2).toNat⟩ ⟨State.addr (s₀.gpr sr), 4 * slots⟩)
+    (fitK : (s₀.gpr .r0).toNat + 128 ≤ 2 ^ 32) (fitD : (s₀.gpr .r1).toNat + 16 * (s₀.gpr .r2).toNat ≤ 2 ^ 32)
+    (hk : ∀ s₁, SchedPre s₁ (s₀.gpr sr) (s₀.gpr .r0) → s₁.gpr .r12 = s₀.gpr .r0 →
+      (∀ r, r ≠ sb → r ≠ .r12 → s₁.gpr r = s₀.gpr r) →
+      WP isa kt s₁ (KeysPost s₁ (s₀.gpr sr) (s₀.gpr .r0) dir)) :
+    WP isa (ecbWith sr kt) s₀ fun s' => (∀ i < 9, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧
+      Spec.Sm4.blocksAt s'.mem (State.addr (s₀.gpr .r1)) (s₀.gpr .r2).toNat =
+        Spec.Sm4.ecb (Spec.Sm4.scheduleAt s₀.mem (State.addr (s₀.gpr .r0))) (specDirArm dir)
+          (Spec.Sm4.blocksAt s₀.mem (State.addr (s₀.gpr .r1)) (s₀.gpr .r2).toNat) := by
+  let b := s₀.gpr sr
   let D := s₀.gpr .r1
   let n := (s₀.gpr .r2).toNat
   let sched := s₀.gpr .r0
-  have hwS : ScrIn s₀.wr b := ⟨by rw [hwr]; simp [b], fitB⟩
-  have hwD : (⟨State.addr D, 16 * n⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp [D, n]
-  have hrK : (⟨State.addr sched, 128⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp [sched]
-  unfold ecb
+  have fitB : b.toNat + 4 * 364 ≤ 2 ^ 32 := by have := hwS.fit; rw [slots_eq] at this; exact this
+  unfold ecbWith
   -- The prologue.
   obtain ⟨s₁, e₁, b₁, r12₁, g₁, sv₁, f₁, rd₁, wr₁, sp₁⟩ := prologue_ok (b := b) rfl hwS
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
   have hk₁ : SchedPre s₁ b sched :=
-    ⟨b₁, by rw [wr₁]; exact hwS.mem, fitB, List.mem_append_left _ (by rw [rd₁]; exact hrK), fitK, dSS⟩
+    ⟨b₁, by rw [wr₁]; exact hwS.mem, hwS.fit, List.mem_append_left _ (by rw [rd₁]; exact hrK), fitK, dSS⟩
   -- The table.
-  refine WP.seq (WP.mono (keys_wp dir hk₁ r12₁) fun s₂ k₂ => ?_)
+  refine WP.seq (WP.mono (hk s₁ hk₁ r12₁ g₁) fun s₂ k₂ => ?_)
   let E : Nat → Spec.Sm4.Word := dirKeys dir (Spec.Sm4.scheduleAt s₀.mem (State.addr sched))
   have hsch : Spec.Sm4.scheduleAt s₁.mem (State.addr sched) = Spec.Sm4.scheduleAt s₀.mem (State.addr sched) :=
     hk₁.sched_eq (Nat.le_refl _) f₁
@@ -167,7 +161,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbArm dir).pre s₀) :
   · have hn0 : n = 0 := by simpa using h0
     exact WP.block_nil ⟨base₄, mem₄ ▸ sc₂, fun i hi => by omega, mem₄ ▸ fr₂, rd₄, wr₄, sp₄⟩
   · have hn0 : n ≠ 0 := by simpa using h0
-    refine dataLoop_wp ⟨hwS, hwD, dDS, fitD⟩ ⟨base₄, by show s₂.gpr .r1 = _; rw [r1₂]; simp,
+    refine dataLoop_wp ⟨hwS, hwD, dDS, fitD⟩ ⟨base₄, by show s₂.gpr .r1 = _; rw [r1₂]; simp [D],
       by show s₂.gpr .r2 = _; rw [r2₂, Nat.mul_zero, Nat.sub_zero], by omega,
       mem₄ ▸ sc₂, fun i hi => ?_, mem₄ ▸ fr₂, rd₄, wr₄, sp₄⟩
     rw [mem₄, data₂ i hi, ite_eq_right (by omega)]
@@ -183,5 +177,42 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbArm dir).pre s₀) :
   simp only [Spec.Sm4.blocksAt, List.map_map]
   refine List.map_congr_left fun j _ => ?_
   exact outF_spec dir s₀.mem _ _ j
+
+/-! ## Either direction -/
+
+/-- The direction `vg_sm4_ecb`'s `decrypt` selects. -/
+def dirOf (decrypt : BitVec 32) : Dir := if decrypt = 0 then .encrypt else .decrypt
+
+theorem dirOf_eq (decrypt : BitVec 32) :
+    specDirArm (dirOf decrypt) = Spec.Sm4.directionOf (decrypt.setWidth 64).toNat := by
+  unfold dirOf Spec.Sm4.directionOf
+  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := decrypt.isLt; omega)]
+  by_cases h : decrypt = 0
+  · subst h; rfl
+  · have h' : decrypt.toNat ≠ 0 := fun h' => h (BitVec.eq_of_toNat_eq h')
+    simp only [h, h', ite_false]; rfl
+
+/-- `keysAny`: the table of the direction `r3` selects, from a state whose
+`r3` is `decrypt`. -/
+theorem keysAny_wp {s : State} {b sched decrypt : BitVec 32} (hs : SchedPre s b sched)
+    (hr : s.gpr .r12 = sched) (h3 : s.gpr .r3 = decrypt) :
+    WP isa keysAny s (KeysPost s b sched (dirOf decrypt)) := by
+  let s' := subFlags s (s.gpr .r3) 0
+  have e' : runBlock isa [.cmp .r3 (.imm 0)] s = some s' := by
+    rw [runBlock_cons, show exec (.cmp .r3 (.imm 0)) s = some s' by simp [exec, Op2.eval, s']; decide,
+      runStep_some, runBlock_nil]
+  have hz : s'.z = decide (decrypt = 0) := by
+    show (s.gpr .r3 - 0 == 0) = _
+    rw [h3, Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]; simp
+  have hs' : SchedPre s' b sched := ⟨hs.base, hs.scr, hs.fit, hs.sch, hs.schFit, hs.sep⟩
+  unfold keysAny
+  refine WP.seq (WP.of_runBlock ⟨s', e', ?_⟩)
+  refine WP.ite (decide (decrypt = 0)) ((eval_eq s').trans (by rw [hz])) (fun h => ?_) (fun h => ?_)
+  · have hd : dirOf decrypt = .encrypt := by simp only [dirOf, of_decide_eq_true h, ite_true]
+    rw [hd]
+    exact WP.mono (keys_wp .encrypt hs' hr) fun s₂ k => ⟨k.pre, k.key, k.frame, k.regs, k.rd, k.wr, k.sp⟩
+  · have hd : dirOf decrypt = .decrypt := by simp only [dirOf, of_decide_eq_false h, ite_false]
+    rw [hd]
+    exact WP.mono (keys_wp .decrypt hs' hr) fun s₂ k => ⟨k.pre, k.key, k.frame, k.regs, k.rd, k.wr, k.sp⟩
 
 end VG.Proof.Sm4.Arm

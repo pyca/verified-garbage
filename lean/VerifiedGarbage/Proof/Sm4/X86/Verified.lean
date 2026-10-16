@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
+public import VerifiedGarbage.Proof.Sm4.X86.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.X86.CryptSum
 public import VerifiedGarbage.Proof.Sm4.X86.Ecb
 meta import VerifiedGarbage.Proof.Sm4.X86.Ecb
 public import VerifiedGarbage.Proof.Sm4.X86.Lit
@@ -18,6 +22,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # SM4 ECB on x86 (32-bit) meets its contracts
@@ -101,11 +109,9 @@ theorem ecbTaint_agree (dir : Dir) {s₁ s₂ : State} (h₁ : (ecbX86 dir).pre 
     exact congrArg _ (ha _ (by omega))
 
 theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbX86 dir).pre (ecbX86 dir).pub (ecb dir) := by
-  cases dir
-  · exact VG.Taint.constantTime (A := VG.X86.taint) ecbTaint
-      (fun _ _ h₁ h₂ hp => ecbTaint_agree .encrypt h₁ h₂ hp) (by taint_decide)
-  · exact VG.Taint.constantTime (A := VG.X86.taint) ecbTaint
-      (fun _ _ h₁ h₂ hp => ecbTaint_agree .decrypt h₁ h₂ hp) (by taint_decide)
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check ecbTaint (ecb dir) h).isSome = true := by
+    cases dir <;> taint_decide_sum [cryptSumEcb]
+  exact VG.Taint.constantTime (A := VG.X86.taint) ecbTaint (fun _ _ h₁ h₂ hp => ecbTaint_agree dir h₁ h₂ hp) h
 
 theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbX86 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86 dir).post s s' :=
@@ -131,16 +137,22 @@ def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 128⟩, ⟨
 def narrowWr (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩, ⟨(arg s 3).setWidth 64, 4 * Impl.Sm4.X86.slots⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
+tactic_template "sm4_ecb_narrow" : tactic =>
   `(tactic| simp only [VG.Proof.Sm4.ecbX86, VG.Proof.Sm4.X86.wideContract,
-    VG.Proof.Sm4.X86.narrowRd, VG.Proof.Sm4.X86.narrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.Proof.Sm4.X86.narrowRd, VG.Proof.Sm4.X86.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+
+tactic_template "sm4_ecb_narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [VG.Proof.Sm4.ecbX86, VG.Proof.Sm4.X86.wideContract,
+                     VG.Proof.Sm4.X86.narrowRd, VG.Proof.Sm4.X86.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem wide_pre (dir : Dir) (s : State) (h : (wideContract dir).pre s) :
     (ecbX86 dir).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  sm4_ecb_narrow
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -206,10 +218,10 @@ theorem ecb_verified (dir : Dir) :
     simp only [narrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    sm4_ecb_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    sm4_ecb_narrow
     exact h
 
 /-- A state satisfying the ECB functions' precondition: the schedule at

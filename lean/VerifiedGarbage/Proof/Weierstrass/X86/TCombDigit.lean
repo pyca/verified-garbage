@@ -8,6 +8,15 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Rc2.PairMem
+public import VerifiedGarbage.Proof.Rc2.Select
+public import VerifiedGarbage.Proof.Rc2.Word
+public import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
 
 /-!
 # The comb from tables in memory on x86 (32-bit): digits
@@ -46,17 +55,17 @@ theorem CKeeps.trans {rs : List Reg} {s t u : State} (h : CKeeps rs s t) (k : CK
 syntax "crun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| crun) => `(tactic| crun [])
-  | `(tactic| crun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-        execShift, execMul, State.load8, State.ea, winByte, Option.bind_some,
-        Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
-        RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.cf_arithFlags,
-        RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setFlags,
-        RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, reduceCtorEq, Nat.le_refl,
-        true_and, and_true, and_self, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte, Option.some.injEq,
-        exists_eq_left', $ls,*]))
+  | `(tactic| crun [$ls,*]) => `(tactic| plain_simp_names (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+                         execShift, execMul, State.load8, State.ea, winByte, Option.bind_some,
+                         Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
+                         RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.cf_arithFlags,
+                         RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setFlags,
+                         RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, reduceCtorEq, Nat.le_refl,
+                         true_and, and_true, and_self, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte, Option.some.injEq,
+                         exists_eq_left', $ls,*]))
 
 /-- All ones if `b`, else zero. -/
 abbrev bmask (b : Bool) : BitVec 32 := if b then BitVec.allOnes 32 else 0

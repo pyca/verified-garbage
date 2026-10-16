@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
-public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate on AArch64: trial division by one prime

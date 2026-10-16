@@ -4,10 +4,18 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombStagesCT
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA verification over P-256 on x86 (32-bit): the tail's constant time
@@ -29,7 +37,7 @@ def vBitsCode : Prog isa := Impl.Weierstrass.X86.bits (p256Comb.sl U) (bitsAt p2
 materialize_code vBitsCode
 
 theorem vBits_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp, .edi] 4)) vBitsCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+  RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 def vSaveCode : Prog isa := .block (Impl.Ecdsa.Verify.X86.Cfg.save p256Comb)
 def vSumCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.sum p256Comb
 materialize_code vSaveCode
@@ -37,8 +45,8 @@ materialize_code vSumCode
 
 theorem vSave_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vSaveCode
     (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+  RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 theorem vSum_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vSumCode
     (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+  RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 end VG.Proof.Ecdsa.Verify.X86

@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Copy
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Hmac
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Words
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Row
 
 /-!
 # Deterministic ECDSA on x86-64: the blocks between the calls
@@ -116,7 +117,7 @@ abbrev cnt {dn : Nat} (L : Lay dn) (m : Mem) : BitVec 64 := m.readW (L.B + BitVe
 
 theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧
-      Frame [⟨L.B + BitVec.ofNat 64 200, 8⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 64 8 := by
+      Frame [⟨L.B + BitVec.ofNat 64 200, 8⟩] t.mem t'.mem ∧ cnt L t'.mem = BitVec.ofNat 64 P.I.tries := by
   have w := hc.inFrW (d := 200) (n := 8) (by omega) (by omega)
   refine Ctx.of_keep hL hc ?_ (by rfl) fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)
@@ -126,7 +127,8 @@ theorem initCnt_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     RegUpd.wr_setReg, RegUpd.rd_setReg, RegUpd.mem_setReg, hc.rsp, Offset.add_add, Nat.reduceAdd, w, ite_true,
     Option.some.injEq, exists_eq_left']
   refine ⟨by triv, by triv, (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _), ?_⟩
-  simp only [cnt, Mem.readW_writeW_self64]; rfl
+  simp only [cnt, Mem.readW_writeW_self64]
+  exact BitVec.setWidth_ofNat_of_le_of_lt (by omega) P.tries_lt
 
 /-! ## `core`'s arguments -/
 

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.P256.EcdhJac.FieldCase
 meta import VerifiedGarbage.Proof.P256.EcdhJac.FieldCase
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Kernel
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
@@ -10,6 +10,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 @[expose] public section
 

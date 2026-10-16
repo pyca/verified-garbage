@@ -5,6 +5,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesSiv.X86_64.Bits
+import VerifiedGarbage.Proof.AesSiv.X86_64.Call
+import VerifiedGarbage.Proof.AesSiv.X86_64.Common
+import VerifiedGarbage.Proof.Cmac.Block
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Copy
 
 /-!
 # AES-SIV on x86-64: finishing S2V with a string of a block or more
@@ -118,9 +123,9 @@ theorem kBranch_wp {s : State} (h14 : s.gpr .r14 = BitVec.ofNat 64 L) (hL16 : 16
       simp only [imm, runBlock_cons, runStep_some, exec, readSrc, execAlu, execShift,
         Option.bind_some, Option.map_some]
       rfl, ?_⟩
-    simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setReg,
+    simp (config := {decide := true}) only [↓reduceIte, Nat.reduceSub, Nat.reducePow, gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setReg,
       mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags, wr_setReg, wr_arithFlags, wr_setFlags,
-      ite_true, ite_false, h14, kOf_bv (by omega_arith) hL]
+      h14, kOf_bv (by omega_arith) hL]
     refine ⟨dbl4 _ (by rw [kOf_ge h17]; omega_arith), fun r h₁ h₂ => by simp [h₁, h₂], trivial⟩
 
 theorem t1_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L s) {a : Nat}
@@ -134,12 +139,12 @@ theorem t1_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L
       s'.mem = s.mem.writeW (W + BitVec.ofNat 64 144) (BitVec.ofNat 64 a) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have w := h.inW hr.wr (d := dbOff) (n := 8) (by decide)
   refine ⟨_, by
-    simp (config := {decide := true}) only [imm, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, imm, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc,
       execAlu, State.store64, State.ea, offset_nat, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags,
-      ite_true, ite_false, hr.r15, w]
+      hr.r15, w]
     rfl, ?_⟩
-  simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
-    rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ite_true, ite_false, hr.r13, hr.r14, hrax,
+  simp (config := {decide := true}) only [↓reduceIte, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
+    rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, hr.r13, hr.r14, hrax,
     tailOff, sx_ofNat (show 32 < 2 ^ 31 by decide), Offset.ofNat_sub_ofNat ha]
   refine ⟨trivial, trivial, trivial, trivial, fun r h₁ h₂ h₃ h₄ => by simp [h₁, h₂, h₃, h₄], rfl, trivial⟩
 
@@ -153,8 +158,8 @@ theorem t2a_ok {s : State} {a : Nat} (ha : a ≤ L)
   refine ⟨_, by
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.bind_some, Option.map_some]
     rfl, ?_⟩
-  simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
-    rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ite_true, ite_false, h11, h13, h14, h15,
+  simp (config := {decide := true}) only [↓reduceIte, Nat.reducePow, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
+    rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, h11, h13, h14, h15,
     Offset.ofNat_sub_ofNat ha, BitVec.add_sub_cancel]
   refine ⟨trivial, BitVec.add_comm _ _, fun r h₁ h₂ => by simp [h₁, h₂], trivial⟩
 
@@ -312,6 +317,8 @@ theorem m1_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L
       exact Offset.disjoint W (d := dbOff) (n := 8) (e := out) (k := 16) (by simp only [dbOff]; omega_arith)
         (by simp only [dbOff]; omega_arith) (by omega_arith)) (by decide), ha]
   have r := h.inRW hr₁.rd hr₁.wr (d := dbOff) (n := 8) (by decide)
+  have e₂ := sx_ofNat (show out < 2 ^ 31 by omega_arith)
+  have e₅ := shr4 (show 16 * kOf L < 2 ^ 64 by omega_arith)
   obtain ⟨s₂, run₂, hr₂, rdi, rsi, rdx, rcx, r8, r9, m₂⟩ : ∃ s₂, runBlock isa
       [.mov .r8 (.mem (at_ .r15 dbOff)), .shift .shr .r8 4, .mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp),
        .mov .rdx (.reg .r15), .alu .add .rdx (imm out), .mov .rcx (.reg .r13), .mov .r9 (.reg .r15),
@@ -319,17 +326,16 @@ theorem m1_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L
       s₂.gpr .rsi = BitVec.ofNat 64 R ∧ s₂.gpr .rdx = W + BitVec.ofNat 64 out ∧ s₂.gpr .rcx = P ∧
       s₂.gpr .r8 = BitVec.ofNat 64 (kOf L) ∧ s₂.gpr .r9 = W + BitVec.ofNat 64 256 ∧ s₂.mem = s₁.mem := by
     refine ⟨_, by
-      simp (config := {decide := true}) only [imm, csOff, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
+      simp (config := {decide := true}) only [↓reduceIte, Nat.reduceSub, Nat.reducePow, imm, csOff, runBlock_cons, runStep_some, runBlock_nil, at_, exec,
         readSrc, execAlu, execShift, State.load64, State.ea, offset_nat, Option.bind_some, Option.map_some,
-        gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, hr₁.r15, r]
+        gpr_setReg, gpr_arithFlags, gpr_setFlags, hr₁.r15, r]
       rfl, ?_⟩
     refine ⟨hr₁.keep (fun r hr' => ?_) rfl rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr'
       rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_setFlags]
-    all_goals simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setReg,
-      mem_arithFlags, mem_setFlags, ite_true, ite_false, hr₁.rbx, hr₁.rbp, hr₁.r13, ha₁,
-      sx_ofNat (show out < 2 ^ 31 by omega_arith), sx_ofNat (show 256 < 2 ^ 31 by decide),
-      shr4 (show 16 * kOf L < 2 ^ 64 by omega_arith), Nat.mul_div_cancel_left _ (show 0 < 16 by decide)]
+    all_goals simp only [reduceCtorEq, ↓reduceIte, gpr_setReg, gpr_arithFlags, mem_setReg,
+      mem_arithFlags, mem_setFlags, hr₁.rbx, hr₁.rbp, hr₁.r13, ha₁,
+      e₂, sx_ofNat (show 256 < 2 ^ 31 by decide), e₅, Nat.mul_div_cancel_left _ (show 0 < 16 by decide)]
   refine ⟨s₂, by rw [runBlock_append, run₁, Option.bind_some, run₂], hr₂,
     h.uargs hr₂.rd hr₂.wr hr₂.rsp (by omega_arith) (h.srcData₀ (by omega_arith) (by omega_arith)) (by omega_arith) rdi rsi rdx rcx r8 r9,
     by rw [m₂, m₁]⟩
@@ -378,6 +384,7 @@ theorem m3_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L
       s'.mem = s.mem.writeW (W + BitVec.ofNat 64 (dbOff + 8)) (BitVec.ofNat 64 (jOf L)) := by
   have hj := jOf_le L
   have w := h.inW hr.wr (d := dbOff + 8) (n := 8) (by decide)
+  have e₂ := sx_ofNat (show out < 2 ^ 31 by omega_arith)
   obtain ⟨s', run, hr', rdi, rsi, rdx, rcx, r8, r9, m⟩ : ∃ s', runBlock isa [.mov .rdi (.reg .rbx),
       .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15), .alu .add .rdx (imm out), .mov .rcx (.reg .r15),
       .alu .add .rcx (imm tailOff), .mov .r9 (.reg .r15), .alu .add .r9 (imm csOff),
@@ -387,16 +394,15 @@ theorem m3_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L
       s'.gpr .r9 = W + BitVec.ofNat 64 256 ∧
       s'.mem = s.mem.writeW (W + BitVec.ofNat 64 (dbOff + 8)) (BitVec.ofNat 64 (jOf L)) := by
     refine ⟨_, by
-      simp (config := {decide := true}) only [imm, tailOff, csOff, runBlock_cons, runStep_some, runBlock_nil, at_,
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, imm, tailOff, csOff, runBlock_cons, runStep_some, runBlock_nil, at_,
         exec, readSrc, execAlu, State.store64, State.ea, offset_nat, Option.bind_some, Option.map_some, gpr_setReg,
-        gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ite_true,
-        ite_false, hr.r15, w]
+        gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, hr.r15, w]
       rfl, ?_⟩
     refine ⟨hr.keep (fun r hr' => ?_) rfl rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr'
-      rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]
-    all_goals simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags,
-      ite_true, ite_false, hr.rbx, hr.rbp, h8, sx_ofNat (show out < 2 ^ 31 by omega_arith),
+      rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte]
+    all_goals simp only [reduceCtorEq, ↓reduceIte, gpr_setReg, gpr_arithFlags,
+      hr.rbx, hr.rbp, h8, e₂,
       sx_ofNat (show 32 < 2 ^ 31 by decide), sx_ofNat (show 256 < 2 ^ 31 by decide)]
   exact ⟨s', run, hr', h.uargs hr'.rd hr'.wr hr'.rsp (by omega_arith)
     (h.srcWork (o := out) (t := 32) (n := 16 * jOf L) (by omega_arith) (by omega_arith) (by omega_arith)) (by omega_arith)
@@ -422,6 +428,10 @@ theorem m4_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L
   have hlt := h.lt
   have r₁ := h.inRW hr.rd hr.wr (d := dbOff + 8) (n := 8) (by decide)
   have r₂ := h.inRW hr.rd hr.wr (d := dbOff) (n := 8) (by decide)
+  have e₁ := dbl4 (jOf L) (by omega_arith)
+  have e₂ := sx_ofNat (show out < 2 ^ 31 by omega_arith)
+  have e₃ := Offset.ofNat_sub_ofNat (w := 64) (show 16 * kOf L ≤ L by omega_arith)
+  have e₄ := Offset.ofNat_sub_ofNat (w := 64) (show 16 * jOf L ≤ L - 16 * kOf L by omega_arith)
   obtain ⟨s', run, hr', rdi, rsi, rdx, rcx, r8, r9, m⟩ : ∃ s', runBlock isa
       [.mov .rax (.mem (at_ .r15 (dbOff + 8))), .alu .add .rax (.reg .rax),
         .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
@@ -434,19 +444,16 @@ theorem m4_ok (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P W R L
       s'.gpr .r8 = BitVec.ofNat 64 (L - 16 * kOf L - 16 * jOf L) ∧ s'.gpr .r9 = W + BitVec.ofNat 64 256 ∧
       s'.mem = s.mem := by
     refine ⟨_, by
-      simp (config := {decide := true}) only [imm, tailOff, csOff, runBlock_cons, runStep_some, runBlock_nil, at_,
+      simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, imm, tailOff, csOff, runBlock_cons, runStep_some, runBlock_nil, at_,
         exec, readSrc, execAlu, State.load64, State.ea, offset_nat, Option.bind_some, Option.map_some, gpr_setReg,
-        gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ite_true,
-        ite_false, hr.r15, r₁, r₂]
+        gpr_arithFlags, mem_setReg, mem_arithFlags, rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, hr.r15, r₁, r₂]
       rfl, ?_⟩
     refine ⟨hr.keep (fun r hr' => ?_) rfl rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr'
-      rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]
-    all_goals simp (config := {decide := true}) only [gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
-      ite_true, ite_false, hr.rbx, hr.rbp, hr.r14, ha, hj, dbl4 (jOf L) (by omega_arith),
-      sx_ofNat (show out < 2 ^ 31 by omega_arith), sx_ofNat (show 32 < 2 ^ 31 by decide),
-      sx_ofNat (show 256 < 2 ^ 31 by decide), Offset.add_add, Offset.ofNat_sub_ofNat (show 16 * kOf L ≤ L by omega_arith),
-      Offset.ofNat_sub_ofNat (show 16 * jOf L ≤ L - 16 * kOf L by omega_arith)]
+      rcases hr' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ↓reduceIte]
+    all_goals simp only [reduceCtorEq, ↓reduceIte, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
+      hr.rbx, hr.rbp, hr.r14, ha, hj, e₁, e₂, sx_ofNat (show 32 < 2 ^ 31 by decide),
+      sx_ofNat (show 256 < 2 ^ 31 by decide), Offset.add_add, e₃, e₄]
   exact ⟨s', run, hr', h.fargs hr'.rd hr'.wr hr'.rsp (by omega_arith)
     (h.srcWork (o := out) (t := 32 + 16 * jOf L) (n := L - 16 * kOf L - 16 * jOf L) (by omega_arith) (by omega_arith)
       (by omega_arith)) (by omega_arith) rdi rsi rdx rcx r8 r9, m⟩

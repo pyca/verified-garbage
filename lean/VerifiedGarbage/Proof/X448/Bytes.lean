@@ -76,15 +76,15 @@ theorem scalar_bit {kb : List Byte} (h : kb.length = 56) {t : Nat} (ht : t < 448
     VG.Proof.X25519.getD_set _ _ _ (by simp [h]), VG.Proof.X25519.getD_set _ _ _ (by simp [h]), VG.Proof.X25519.getD_set _ _ _ (by simp [h])]
   rcases Nat.lt_or_ge t 8 with h8 | h8
   · rw [show t / 8 = 0 by omega, show t % 8 = t by omega]
-    simp (disch := omega) only [ite_true, ite_eq_left, ite_eq_right]
+    simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
     rw [BitVec.toNat_and, show (252 : BitVec 8).toNat = 252 from rfl,
       bit_and_252 _ (kb.getD 0 0).isLt _ h8]
   · by_cases h55 : t / 8 = 55
     · rw [h55]
-      simp (disch := omega) only [ite_true, ite_eq_right]
+      simp (disch := omega) only [ite_true, ↓ite_eq_right]
       rw [BitVec.toNat_or, show (128 : BitVec 8).toNat = 128 from rfl, bit_or_128 _ (kb.getD 55 0).isLt _ (by omega)]
       split_ifs <;> omega
-    · simp (disch := omega) only [ite_eq_left, ite_eq_right]
+    · simp (disch := omega) only [↓ite_eq_right]
 
 
 end VG.Proof.X448

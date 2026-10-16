@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowDoubleTiming
@@ -9,14 +10,32 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
+public import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256DR
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256ED
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.P256RD
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStore
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
+public import VerifiedGarbage.Proof.Weierstrass.Window
 
 @[expose] public section
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass
-local macro "jmem" : tactic => `(tactic| simp only [jacCoords,nafLive,jacWinSlots,jacWinWrites,
-  winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true])
+local macro "jmem" : tactic => `(tactic| plain_simp_names simp only [jacCoords,nafLive,jacWinSlots,jacWinWrites,
+                   winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true])
 
 theorem nafAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     (hL : JacWinLay K size) (hJ : K.J=52) (hAl : Aligned K.M (·∈jacWinSlots K))

@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSqueeze
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentStream
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

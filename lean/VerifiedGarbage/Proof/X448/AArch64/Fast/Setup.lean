@@ -8,6 +8,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
+public import VerifiedGarbage.Proof.X448.AArch64.Counters
+public import VerifiedGarbage.Proof.X448.AArch64.Freeze
+public import VerifiedGarbage.Proof.X448.AArch64.FreezePrep
+public import VerifiedGarbage.Proof.X448.AArch64.Output
+public import VerifiedGarbage.Proof.X448.AArch64.Select
+public import VerifiedGarbage.Proof.X448.Encoding
 
 /-!
 # X448 on AArch64: setup, saving `x21`–`x28` and `v8`–`v15`

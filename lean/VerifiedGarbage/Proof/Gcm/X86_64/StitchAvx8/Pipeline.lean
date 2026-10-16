@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Buffers
-public import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ops
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.AesHash
 import all Init.Data.Array.Basic
@@ -199,83 +199,6 @@ end VG.Proof.Gcm.X86_64.StitchAvx8
 
 end
 
-/-! ## Prepared -/
-section
-
-/-! # Reusing each GHASH input slot after its product has been consumed -/
-
-namespace VG.Proof.Gcm.X86_64.StitchAvx8
-
-open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Stitch
-open VG.Spec.Gcm (Block)
-
-def hashAddr (s₀ : State) (i : Nat) : Addr := pp s₀ + BitVec.ofNat 64 (512 + 16 * i)
-def hashR (s₀ : State) : Region := ⟨pp s₀ + 512, 128⟩
-
-/-- GHASH consumes slots 1,…,7,0, replacing consumed slots with `Y`. -/
-def Prepared (s₀ : State) (X Y : Nat → Block) (n : Nat) (m : Mem) : Prop :=
-  ∀ i < 8, m.readW (hashAddr s₀ i) 128 = if (i + 7) % 8 < n then Y i else X i
-
-theorem slot_position (n : Nat) (hn : n < 8) : (((n + 1) % 8) + 7) % 8 = n := by omega
-
-theorem Prepared.current {s₀ : State} {X Y : Nat → Block} {n : Nat} {m : Mem}
-    (h : Prepared s₀ X Y n m) (hn : n < 8) :
-    m.readW (hashAddr s₀ ((n + 1) % 8)) 128 = X ((n + 1) % 8) := by
-  have hi := h ((n + 1) % 8) (Nat.mod_lt _ (by decide))
-  rw [slot_position n hn, ite_eq_right (Nat.lt_irrefl n)] at hi
-  exact hi
-
-theorem Prepared.next {s₀ : State} {X Y : Nat → Block} {n : Nat} {m m' : Mem}
-    (h : Prepared s₀ X Y n m) (hn : n < 8)
-    (hv : m'.readW (hashAddr s₀ ((n + 1) % 8)) 128 = Y ((n + 1) % 8))
-    (hf : Frame [⟨hashAddr s₀ ((n + 1) % 8), 16⟩] m m') :
-    Prepared s₀ X Y (n + 1) m' := by
-  intro i hi
-  by_cases he : i = (n + 1) % 8
-  · subst i
-    rw [slot_position n hn, ite_eq_left (by omega : n < n + 1)]
-    exact hv
-  · have hp : (i + 7) % 8 ≠ n := by omega
-    have hv' : m'.readW (hashAddr s₀ i) 128 = m.readW (hashAddr s₀ i) 128 := by
-      apply hf.readW (r := ⟨hashAddr s₀ i, 16⟩)
-      · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
-      · intro r hr
-        simp only [List.mem_singleton] at hr
-        subst r
-        exact Offset.disjoint (pp s₀) (by omega) (by omega) (by omega)
-      · decide
-    have hc : (if (i + 7) % 8 < n + 1 then Y i else X i) =
-        (if (i + 7) % 8 < n then Y i else X i) := by split_ifs <;> first | rfl | omega
-    exact hv'.trans ((h i hi).trans hc.symm)
-
-theorem Prepared.frame {s₀ : State} {X Y : Nat → Block} {n : Nat} {m m' : Mem}
-    {rs : List Region} (h : Prepared s₀ X Y n m) (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, (hashR s₀).Disjoint r) : Prepared s₀ X Y n m' := by
-  intro i hi
-  refine (hf.readW (r := ⟨hashAddr s₀ i, 16⟩) ?_ ?_ (by decide)).trans (h i hi)
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
-  · intro r hr
-    exact (hd r hr).sub_left (Offset.sub (pp s₀) (d := 512 + 16 * i) (e := 512)
-      (n := 16) (k := 128) (by omega) (by omega))
-
-theorem Prepared.done {s₀ : State} {X Y : Nat → Block} {m : Mem}
-    (h : Prepared s₀ X Y 8 m) : ∀ i < 8, m.readW (hashAddr s₀ i) 128 = Y i := by
-  intro i hi
-  have hv := h i hi
-  rw [ite_eq_left (Nat.mod_lt _ (by decide))] at hv
-  exact hv
-
-theorem Prepared.same_next {s₀ : State} {X Y : Nat → Block} {n : Nat} {m : Mem}
-    (h : Prepared s₀ X Y n m) (he : ∀ i < 8, Y i = X i) : Prepared s₀ X Y (n + 1) m := by
-  intro i hi
-  have hv := h i hi
-  simpa only [he i hi, ite_self] using hv
-
-end VG.Proof.Gcm.X86_64.StitchAvx8
-
-end
-
 /-! ## Work -/
 section
 
@@ -286,15 +209,32 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Proof.Gcm.X86_64.Pclmul (Prod prod)
-open VG.Spec.Gcm (Block)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (gh8 prepare)
+open VG.Spec.Gcm (Block blockAt)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (gh8)
 open VG.Proof.Aes.X86_64.AesNi (ea_at ofInt_natCast)
 
-theorem hashStep_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block}
+/-- What `gh8` reads from the data at `rdx + d`, byte-reversed with the
+mask, is the block in GHASH order. -/
+theorem dataIn_eq {s₀ s : State} {P : Nat → Block} (hE : Env s₀ P s) (d k : Nat) :
+    dataIn s d k = blockAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (d + 16 * (k % 8))) := by
+  rw [dataIn, ea_at, ea_at, ofInt_natCast, ofInt_natCast, hE.r11,
+    VG.Proof.Gcm.X86_64.blockAt_eq]
+  exact congrArg _ hE.mask
+
+/-- The eight blocks from `a` that a batch hashes: readable, apart from the
+working space, and `X` in GHASH order in `m`. -/
+structure HashSrc (s₀ : State) (a : Addr) (m : Mem) (X : Nat → Block) : Prop where
+  rd : ∀ k < 8, InRegions (s₀.rd ++ s₀.wr) (a + BitVec.ofNat 64 (16 * k)) 16
+  sep : ∀ k < 8, Region.Disjoint ⟨a + BitVec.ofNat 64 (16 * k), 16⟩ (pR s₀)
+  val : ∀ k < 8, blockAt m (a + BitVec.ofNat 64 (16 * k)) = X k
+
+theorem hashStep_ok {s₀ s : State} {P X : Nat → Block} {y : Block}
     (hp : SPre s₀) (hE : Env s₀ P s) (n : Nat) (hn : n < 8)
-    (hB : Prepared s₀ X Y n s.mem) (hy : s.lane .xmm2 0 = y)
+    (hR : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (16 * ((n + 1) % 8))) 16)
+    (hX : blockAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * ((n + 1) % 8))) = X ((n + 1) % 8))
+    (hy : s.lane .xmm2 0 = y)
     (ha : n ≠ 0 → prod (s.proj 0) = accN X P y n) :
-    WP isa (.block (gh8 ((n + 1) % 8))) s fun t =>
+    WP isa (.block (gh8 0 ((n + 1) % 8))) s fun t =>
       Env s₀ P t ∧ prod (t.proj 0) = accN X P y (n + 1) ∧
       t.lane .xmm2 0 = y ∧ YFrame ghRegs s t := by
   have hk : (n + 1) % 8 < 8 := Nat.mod_lt _ (by decide)
@@ -302,96 +242,21 @@ theorem hashStep_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block}
     simp only [power, ea_at, ofInt_natCast, hE.r11, Nat.mod_mod]
     rw [show 16 * (8 + (n + 1) % 8) = 128 + 16 * ((n + 1) % 8) by omega]
     exact hE.powers _ hk
-  have hin : input s ((n + 1) % 8) = hashInput X y ((n + 1) % 8) := by
-    simp only [input, hashInput, ea_at, ofInt_natCast, hE.r11, Nat.mod_mod, hy]
-    exact congrArg (fun v => v ^^^ (if (n + 1) % 8 = 0 then y else 0)) (hB.current hn)
-  refine WP.mono (gh8_ok s ((n + 1) % 8) (by
+  have hin : input s 0 ((n + 1) % 8) = hashInput X y ((n + 1) % 8) := by
+    rw [input, dataIn_eq hE, Nat.mod_mod, Nat.zero_add, hX, hy]
+    rfl
+  refine WP.mono (gh8_ok s 0 ((n + 1) % 8) (by
     simp only [ea_at, ofInt_natCast, hE.rd, hE.wr, hE.r11, Nat.mod_mod]
     exact in_rdwr (in_sub hp.p_in (by omega))) (by
-    simp only [ea_at, ofInt_natCast, hE.rd, hE.wr, hE.r11, Nat.mod_mod]
-    exact in_rdwr (in_sub hp.p_in (by omega)))) fun t ⟨hv, hf⟩ => ?_
+    simpa only [ea_at, ofInt_natCast, Nat.mod_mod, Nat.zero_add] using hR) (by
+    simp only [ea_at, ofInt_natCast, hE.rd, hE.wr, hE.r11]
+    exact in_rdwr (in_sub hp.p_in (off := 768) (by decide)))) fun t ⟨hv, hf⟩ => ?_
   refine ⟨hE.yframe hf, ?_, (hf.lane .xmm2 (by decide) 0 (by decide)).trans hy, hf⟩
   rw [hv, hin, hpow, Nat.mod_mod, accN_succ]
   by_cases hz : n = 0
   · subst n
     simp only [Nat.zero_add, Nat.reduceMod, ite_true, accN, List.range_zero, List.foldl_nil]
   · rw [ite_eq_right (by omega : (n + 1) % 8 ≠ 1), ha hz]
-
-/-- Replace the just-consumed hash slot with the next batch's block. -/
-theorem prepareNext_ok {s₀ s : State} {P X Y : Nat → Block}
-    (hp : SPre s₀) (hE : Env s₀ P s) (n : Nat) (hn : n < 8)
-    (hB : Prepared s₀ X Y n s.mem)
-    (hR : InRegions (s.rd ++ s.wr)
-      (s.gpr .rdx + BitVec.ofNat 64 (16 * (8 + (n + 1) % 8))) 16)
-    (hS : Region.Disjoint
-      ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (8 + (n + 1) % 8)), 16⟩ (pR s₀))
-    (hX : Spec.Gcm.blockAt s.mem
-      (s.gpr .rdx + BitVec.ofNat 64 (16 * (8 + (n + 1) % 8))) = Y ((n + 1) % 8)) :
-    WP isa (.block (prepare (8 + (n + 1) % 8))) s fun t =>
-      Env s₀ P t ∧ Prepared s₀ X Y (n + 1) t.mem ∧ BufferFrame s t ∧
-      Frame [hashR s₀] s.mem t.mem := by
-  have hk : (n + 1) % 8 < 8 := Nat.mod_lt _ (by decide)
-  have hmod : (8 + (n + 1) % 8) % 8 = (n + 1) % 8 := by omega
-  refine WP.mono (prepare_ok s (8 + (n + 1) % 8)
-    (by simpa only [BitVec.add_zero] using in_sub hR (off := 0) (n := 8) (by decide)) (by
-      simpa only [Offset.add_add] using in_sub hR (off := 8) (n := 8) (by decide))
-    (by rw [hE.wr, hE.r11, hmod]; exact in_sub hp.p_in (by omega))
-    (by rw [hE.wr, hE.r11, hmod]; exact in_sub hp.p_in (by omega)) (by
-      rw [hE.r11, hmod]
-      exact (hS.sub_left (Region.sub_prefix (by decide))).sub_right
-        (Offset.sub_base (pp s₀) (by omega)) |>.sep
-        (Region.contains_self _ _) (Region.contains_self _ _))) fun t ⟨hm, hf⟩ => ?_
-  rw [hE.r11, hmod] at hm
-  have hF : Frame [⟨hashAddr s₀ ((n + 1) % 8), 16⟩] s.mem t.mem := by
-    rw [hm]
-    exact prepareMem_frame _ _ _
-  have hW : Frame [workR s₀] s.mem t.mem := hF.sub fun r hr => by
-    simp only [List.mem_singleton] at hr
-    subst r
-    exact ⟨workR s₀, List.mem_singleton_self _,
-      Offset.sub (pp s₀) (d := 512 + 16 * ((n + 1) % 8)) (e := 512) (n := 16) (k := 256)
-        (by omega) (by omega)⟩
-  refine ⟨hE.buffer hf hW, hB.next hn ?_ hF, hf, hF.sub fun r hr => ?_⟩
-  · rw [hm]
-    exact (prepareMem_read _ _ _).trans hX
-  · simp only [List.mem_singleton] at hr
-    subst r
-    exact ⟨hashR s₀, List.mem_singleton_self _,
-      Offset.sub (pp s₀) (d := 512 + 16 * ((n + 1) % 8)) (e := 512) (n := 16) (k := 128)
-        (by omega) (by omega)⟩
-
-theorem hashPrepared_ok {s₀ s : State} {P X Y : Nat → Block} {y : Block}
-    (hp : SPre s₀) (hE : Env s₀ P s) (n : Nat) (hn : n < 8)
-    (hB : Prepared s₀ X Y n s.mem) (hy : s.lane .xmm2 0 = y)
-    (ha : n ≠ 0 → prod (s.proj 0) = accN X P y n) (more : Bool)
-    (hR : more = true → InRegions (s.rd ++ s.wr)
-      (s.gpr .rdx + BitVec.ofNat 64 (16 * (8 + (n + 1) % 8))) 16)
-    (hS : more = true → Region.Disjoint
-      ⟨s.gpr .rdx + BitVec.ofNat 64 (16 * (8 + (n + 1) % 8)), 16⟩ (pR s₀))
-    (hX : more = true → Spec.Gcm.blockAt s.mem
-      (s.gpr .rdx + BitVec.ofNat 64 (16 * (8 + (n + 1) % 8))) = Y ((n + 1) % 8))
-    (hNo : more = false → ∀ i < 8, Y i = X i) :
-    WP isa (.block (gh8 ((n + 1) % 8) ++ (if more then prepare (8 + (n + 1) % 8) else []))) s fun t =>
-      Env s₀ P t ∧ Prepared s₀ X Y (n + 1) t.mem ∧
-      prod (t.proj 0) = accN X P y (n + 1) ∧ t.lane .xmm2 0 = y ∧
-      FlowFrame ghRegs s t ∧ Frame [hashR s₀] s.mem t.mem := by
-  rw [WP.block_append_iff]
-  refine WP.mono (hashStep_ok hp hE n hn hB hy ha) fun t ⟨hEt, hat, hyt, hf⟩ => ?_
-  have hBt : Prepared s₀ X Y n t.mem := by rw [hf.mem]; exact hB
-  cases more with
-  | false =>
-    exact WP.block_nil ⟨hEt, hBt.same_next (hNo rfl), hat, hyt, .of_yframe hf,
-      hf.mem ▸ Frame.refl _ _⟩
-  | true =>
-    refine WP.mono (prepareNext_ok hp hEt n hn hBt (by
-      simpa only [hf.rd, hf.wr, hf.gpr] using hR rfl) (by
-      simpa only [hf.gpr] using hS rfl) (by
-      simpa only [hf.gpr, hf.mem] using hX rfl)) fun u ⟨hEu, hBu, hu, hm⟩ => ?_
-    refine ⟨hEu, hBu, ?_, (hu.lane .xmm2 0).trans hyt,
-      (FlowFrame.of_yframe hf).trans (.of_buffer _ hu), ?_⟩
-    · simpa only [prod, State.proj_xmm, hu.lane] using hat
-    · rw [hf.mem] at hm
-      exact hm
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
 
@@ -413,25 +278,23 @@ namespace VG.Proof.Gcm.X86_64.StitchAvx8
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Stitch
 open VG.Proof.Gcm.X86_64.Pclmul (Prod prod reduceB)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (aregs prepCounter gh8 prepare reduceFinal)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (aregs prepCounter gh8 reduceFinal)
 open VG.Spec.Gcm (Block)
 
-structure StageInv (s₀ start : State) (P X Y : Nat → Block) (y : Block)
+structure StageInv (s₀ start : State) (P X : Nat → Block) (y : Block)
     (c nc nh : Nat) (finished : Bool) (s : State) : Prop where
   env : Env s₀ P s
   templates : Templates s₀ c nc s.mem
-  prepared : Prepared s₀ X Y nh s.mem
   hash : s.lane .xmm2 0 = if finished then reduceB (accN X P y 8) else y
   product : finished = false → nh ≠ 0 → prod (s.proj 0) = accN X P y nh
   regs : ∀ r, r ≠ .rax → s.gpr r = start.gpr r
   frame : Frame [workR s₀] start.mem s.mem
 
-theorem StageInv.yframe {s₀ start s t : State} {P X Y : Nat → Block} {y : Block}
-    {c nc nh : Nat} {finished : Bool} (h : StageInv s₀ start P X Y y c nc nh finished s)
-    (hf : YFrame (.xmm1 :: aregs) s t) : StageInv s₀ start P X Y y c nc nh finished t := by
-  refine ⟨h.env.yframe hf, ?_, ?_, ?_, ?_, ?_, ?_⟩
+theorem StageInv.yframe {s₀ start s t : State} {P X : Nat → Block} {y : Block}
+    {c nc nh : Nat} {finished : Bool} (h : StageInv s₀ start P X y c nc nh finished s)
+    (hf : YFrame (.xmm1 :: aregs) s t) : StageInv s₀ start P X y c nc nh finished t := by
+  refine ⟨h.env.yframe hf, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hf.mem]; exact h.templates
-  · rw [hf.mem]; exact h.prepared
   · rw [hf.lane .xmm2 (by decide) 0 (by decide)]; exact h.hash
   · intro hfin hn
     have hp := h.product hfin hn
@@ -444,29 +307,18 @@ theorem StageInv.yframe {s₀ start s t : State} {P X Y : Nat → Block} {y : Bl
 theorem counter_sub_work (s₀ : State) : Region.Sub (counterR s₀) (workR s₀) :=
   Offset.sub (pp s₀) (d := 640) (e := 512) (n := 128) (k := 256) (by decide) (by decide)
 
-theorem hash_sub_work (s₀ : State) : Region.Sub (hashR s₀) (workR s₀) :=
-  Offset.sub (pp s₀) (d := 512) (e := 512) (n := 128) (k := 256) (by decide) (by decide)
-
-theorem hash_counter_disjoint (s₀ : State) : (hashR s₀).Disjoint (counterR s₀) :=
-  Offset.disjoint (pp s₀) (d := 512) (e := 640) (n := 128) (k := 128)
-    (by decide) (by decide) (by decide)
-
 theorem work_sub_p (s₀ : State) : Region.Sub (workR s₀) (pR s₀) :=
   Offset.sub_base (pp s₀) (d := 512) (n := 256) (k := 1024) (by decide)
 
-theorem StageInv.counters {s₀ start s : State} {P X Y : Nat → Block} {y : Block}
+theorem StageInv.counters {s₀ start s : State} {P X : Nat → Block} {y : Block}
     {c nc nh : Nat} {finished : Bool} (hp : SPre s₀)
-    (h : StageInv s₀ start P X Y y c nc nh finished s) (k : Nat) (hk : nc + k ≤ 8)
+    (h : StageInv s₀ start P X y c nc nh finished s) (k : Nat) (hk : nc + k ≤ 8)
     (hv : (start.gpr .r8).setWidth 32 = (cb s₀).extractLsb' 0 32 + BitVec.ofNat 32 (c + 8)) :
     WP isa (.block ((List.range k).flatMap fun i => prepCounter (nc + i))) s fun t =>
-      StageInv s₀ start P X Y y c (nc + k) nh finished t ∧ FlowFrame ghRegs s t := by
+      StageInv s₀ start P X y c (nc + k) nh finished t ∧ FlowFrame ghRegs s t := by
   refine WP.mono (prepTemplates_ok hp c nc k hk s h.env h.templates (by
     rw [h.regs .r8 (by decide)]; exact hv)) fun t ⟨hEt, hTt, hf, hm⟩ => ?_
-  refine ⟨⟨hEt, hTt, h.prepared.frame hm ?_, ?_, ?_, ?_, ?_⟩, .of_buffer _ hf⟩
-  · intro r hr
-    simp only [List.mem_singleton] at hr
-    subst r
-    exact hash_counter_disjoint s₀
+  refine ⟨⟨hEt, hTt, ?_, ?_, ?_, ?_⟩, .of_buffer _ hf⟩
   · rw [hf.lane]; exact h.hash
   · intro hfin hn
     have ha := h.product hfin hn
@@ -477,53 +329,37 @@ theorem StageInv.counters {s₀ start s : State} {P X Y : Nat → Block} {y : Bl
     subst r
     exact ⟨workR s₀, List.mem_singleton_self _, counter_sub_work s₀⟩
 
-theorem StageInv.hashStep {s₀ start s : State} {P X Y : Nat → Block} {y : Block}
-    {c nc nh : Nat} (hp : SPre s₀) (h : StageInv s₀ start P X Y y c nc nh false s)
-    (hn : nh < 8) (more : Bool)
-    (hr : more = true → ∀ k < 16, InRegions (s₀.rd ++ s₀.wr)
-      (start.gpr .rdx + BitVec.ofNat 64 (16 * k)) 16)
-    (hs : more = true → ∀ k < 16, Region.Disjoint
-      ⟨start.gpr .rdx + BitVec.ofNat 64 (16 * k), 16⟩ (pR s₀))
-    (hx : more = true → ∀ k < 16, Spec.Gcm.blockAt start.mem
-      (start.gpr .rdx + BitVec.ofNat 64 (16 * k)) = X k)
-    (hY : ∀ i < 8, Y i = if more then X (8 + i) else X i) :
-    WP isa (.block (gh8 ((nh + 1) % 8) ++ (if more then prepare (8 + (nh + 1) % 8) else []))) s fun t =>
-      StageInv s₀ start P X Y y c nc (nh + 1) false t ∧ FlowFrame ghRegs s t := by
+theorem StageInv.hashStep {s₀ start s : State} {P X : Nat → Block} {y : Block}
+    {c nc nh : Nat} (hp : SPre s₀) (h : StageInv s₀ start P X y c nc nh false s)
+    (hn : nh < 8) (hx : HashSrc s₀ (start.gpr .rdx) start.mem X) :
+    WP isa (.block (gh8 0 ((nh + 1) % 8))) s fun t =>
+      StageInv s₀ start P X y c nc (nh + 1) false t ∧ FlowFrame ghRegs s t := by
   have hk : (nh + 1) % 8 < 8 := Nat.mod_lt _ (by decide)
-  refine WP.mono (hashPrepared_ok hp h.env nh hn h.prepared h.hash (h.product rfl) more
-    (fun hm => by rw [h.env.rd, h.env.wr, h.regs .rdx (by decide)]; exact hr hm _ (by omega))
-    (fun hm => by rw [h.regs .rdx (by decide)]; exact hs hm _ (by omega))
-    (fun hm => ?_) (fun hm i hi => by rw [hY i hi, hm]; rfl))
-    fun t ⟨hEt, hBt, hat, hyt, hf, hF⟩ => ?_
-  · rw [h.regs .rdx (by decide), hY _ hk, hm]
-    exact (VG.Proof.Aes.X86_64.AesNi.blockAt_frame h.frame (fun r hr' => by
-      simp only [List.mem_singleton] at hr'
-      subst r
-      exact (hs hm _ (by omega)).sub_right (work_sub_p s₀))).trans (hx hm _ (by omega))
-  · refine ⟨⟨hEt, h.templates.frame hF ?_, hBt, hyt, fun _ _ => hat,
-      fun r hr' => (hf.gpr r hr').trans (h.regs r hr'), ?_⟩, hf⟩
-    · intro r hr'
-      simp only [List.mem_singleton] at hr'
-      subst r
-      exact (hash_counter_disjoint s₀).symm
-    · refine h.frame.trans (hF.sub fun r hr' => ?_)
-      simp only [List.mem_singleton] at hr'
-      subst r
-      exact ⟨workR s₀, List.mem_singleton_self _, hash_sub_work s₀⟩
+  refine WP.mono (hashStep_ok hp h.env nh hn
+    (by rw [h.env.rd, h.env.wr, h.regs .rdx (by decide)]; exact hx.rd _ hk)
+    (by
+      rw [h.regs .rdx (by decide)]
+      exact (VG.Proof.Aes.X86_64.AesNi.blockAt_frame h.frame (fun r hr' => by
+        simp only [List.mem_singleton] at hr'
+        subst r
+        exact (hx.sep _ hk).sub_right (work_sub_p s₀))).trans (hx.val _ hk))
+    h.hash (h.product rfl))
+    fun t ⟨hEt, hat, hyt, hf⟩ => ?_
+  refine ⟨⟨hEt, hf.mem ▸ h.templates, hyt, fun _ _ => hat,
+    fun r hr' => (congrFun hf.gpr r).trans (h.regs r hr'), hf.mem ▸ h.frame⟩, .of_yframe hf⟩
 
-theorem StageInv.finishHash {s₀ start s : State} {P X Y : Nat → Block} {y : Block}
-    {c nc : Nat} (hp : SPre s₀) (h : StageInv s₀ start P X Y y c nc 8 false s) :
+theorem StageInv.finishHash {s₀ start s : State} {P X : Nat → Block} {y : Block}
+    {c nc : Nat} (hp : SPre s₀) (h : StageInv s₀ start P X y c nc 8 false s) :
     WP isa (.block reduceFinal) s fun t =>
-      StageInv s₀ start P X Y y c nc 8 true t ∧ FlowFrame (.xmm1 :: .xmm2 :: ghRegs) s t := by
+      StageInv s₀ start P X y c nc 8 true t ∧ FlowFrame (.xmm1 :: .xmm2 :: ghRegs) s t := by
   refine WP.mono (reduceFinal_ok s (by
     simp only [VG.Proof.Aes.X86_64.AesNi.ea_at, BitVec.ofInt_natCast, h.env.rd, h.env.wr, h.env.r11]
     exact in_rdwr (in_sub hp.p_in (off := 784) (by decide))) (by
     simp only [VG.Proof.Aes.X86_64.AesNi.ea_at, BitVec.ofInt_natCast, h.env.r11]
     exact h.env.poly)) fun t ⟨hv, hf⟩ => ?_
-  refine ⟨⟨h.env.yframe hf, ?_, ?_, ?_, fun he => Bool.noConfusion he, ?_, ?_⟩,
+  refine ⟨⟨h.env.yframe hf, ?_, ?_, fun he => Bool.noConfusion he, ?_, ?_⟩,
     (FlowFrame.of_yframe hf).mono (by decide)⟩
   · rw [hf.mem]; exact h.templates
-  · rw [hf.mem]; exact h.prepared
   · rw [hv, h.product rfl (by decide)]; rfl
   · intro r hr; rw [hf.gpr]; exact h.regs r hr
   · rw [hf.mem]; exact h.frame

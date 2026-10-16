@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: the precondition
@@ -68,7 +69,7 @@ structure PreV (K : Nat) (s : State) : Prop where
   k2 : (s.gpr .x1).toNat ≤ 1024
   e1 : 1 ≤ (s.gpr .x3).toNat
   e2 : (s.gpr .x3).toNat ≤ (s.gpr .x1).toNat
-  hs : 16 * (s.gpr .x1).toNat ≤ (stackArg s 2).toNat
+  hs : 16 * (s.gpr .x1).toNat + 32 ≤ (stackArg s 2).toNat
 
 theorem preV_of {K : Nat} {s : State}
     (h : (Spec.RsaPkcs1Sig.verifyContract abi (stk K)).pre s) : PreV K s := by

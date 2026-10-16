@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 @[expose] public section
 
@@ -47,6 +51,30 @@ def fnContract : Contract isa where
     s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
       (s₁.gpr .rdx).setWidth 32 = (s₂.gpr .rdx).setWidth 32 ∧ (s₁.gpr .rcx).setWidth 32 = (s₂.gpr .rcx).setWidth 32 ∧
       (s₁.gpr .r8).setWidth 32 = (s₂.gpr .r8).setWidth 32 ∧ wOf s₁.mem (s₁.gpr .rdi) = wOf s₂.mem (s₂.gpr .rdi)
+
+/-- `vg_rsa_lazy_mont_mul(ws = rdi, ws_len = rsi, o = edx, a = ecx, b = r8d)`:
+`fnContract` without `[b] < m` and `[o] < m`. -/
+def fnLazyContract : Contract isa where
+  pre s :=
+    let ws := s.gpr .rdi
+    let n := (s.gpr .rsi).toNat
+    let w := wOf s.mem ws
+    s.rd = [] ∧ s.wr = [⟨ws, n * 8⟩] ∧ (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨ws, n * 8⟩ ∧
+      ws.toNat + n * 8 ≤ 2 ^ 64 ∧ Layout s.mem ws n ∧ Operand (idx s .rdx) ∧ Operand (idx s .rcx) ∧
+      Operand (idx s .r8) ∧
+      ((s.mem.readW (ws + BitVec.ofNat 64 (arrAt w aM)) 64).toNat * (wordAt s.mem ws minvWord).toNat + 1) %
+        2 ^ 64 = 0
+  post s s' :=
+    let ws := s.gpr .rdi
+    let w := wOf s.mem ws
+    let M := numAt s.mem ws w aM
+    numAt s'.mem ws w (idx s .rdx) * 2 ^ (64 * w) % M = numAt s.mem ws w (idx s .rcx) * numAt s.mem ws w (idx s .r8) % M ∧
+      Keeps ws (s.gpr .rsi).toNat w (idx s .rdx) s.mem s'.mem
+  pub := fnContract.pub
+
+theorem fnLazy_pre {s : State} (h : fnContract.pre s) : fnLazyContract.pre s :=
+  let ⟨a, b, c, d, e, f, g, i, j, _⟩ := h
+  ⟨a, b, c, d, e, f, g, i, j⟩
 
 /-- The words of a working space of `w = 2` at `0x1000`: the header, then the
 modulus 1 in array 0 and zeros. -/
@@ -94,8 +122,8 @@ theorem numAt_eq (m : Mem) (B : Addr) (w j : Nat) : numAt m B w j = wv m B (slot
 theorem idx_eq (s : State) (r : Reg) : (s.gpr r).setWidth 32 = BitVec.ofNat 32 (idx s r) := by
   apply BitVec.eq_of_toNat_eq; simp [idx]
 
-/-- What `fnContract.pre` gives the proofs: the working space, its header and the arguments. -/
-theorem fn_good {s : State} (h : fnContract.pre s) :
+/-- What `fnLazyContract.pre` gives the proofs: the working space, its header and the arguments. -/
+theorem fn_good {s : State} (h : fnLazyContract.pre s) :
     Scr s (s.gpr .rdi) ((s.gpr .rsi).toNat * 8) ∧
     Hdr s.mem (s.gpr .rdi) (wOf s.mem (s.gpr .rdi)) (wordAt s.mem (s.gpr .rdi) minvWord) ∧
     slot (wOf s.mem (s.gpr .rdi)) 8 ≤ (s.gpr .rsi).toNat * 8 ∧ 2 ≤ wOf s.mem (s.gpr .rdi) ∧
@@ -107,7 +135,7 @@ theorem fn_good {s : State} (h : fnContract.pre s) :
 
 theorem fn_correct (s : State) (h : fnContract.pre s) :
     ∃ t s', Exec isa mulBase s t s' ∧ abiPreserved s s' ∧ fnContract.post s s' := by
-  obtain ⟨hs, hH, hZ, hw, hw'⟩ := fn_good h
+  obtain ⟨hs, hH, hZ, hw, hw'⟩ := fn_good (fnLazy_pre h)
   obtain ⟨-, hwr, hret, hnw, -, ⟨ho, ho2, ho3⟩, ⟨ha, ha2, ha3⟩, ⟨hb, hb2, hb3⟩, hinv, hB⟩ := h
   suffices hwp : WP isa mulBase s fun s' => gprPreserved s s' ∧ fnContract.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
@@ -151,7 +179,7 @@ structure FnData where
   b : Nat
 
 def FnPhi (d : FnData) (s : State) : Prop :=
-  fnContract.pre s ∧ s.gpr .rdi = d.B ∧ (s.gpr .rsi).toNat * 8 = d.Z ∧ wOf s.mem d.B = d.w ∧
+  fnLazyContract.pre s ∧ s.gpr .rdi = d.B ∧ (s.gpr .rsi).toNat * 8 = d.Z ∧ wOf s.mem d.B = d.w ∧
     idx s .rdx = d.o ∧ idx s .rcx = d.a ∧ idx s .r8 = d.b
 
 def FnBases (d : FnData) (t : State) : Prop := BasesL aN aAcc aTmp d.o d.a d.b ⟨d.B, d.Z, d.w⟩ t
@@ -226,8 +254,8 @@ theorem fn_rel : RelCT isa (Two FnPhi) mulBase fun _ _ => True := by
 theorem fn_ct : ConstantTime isa fnContract.pre fnContract.pub mulBase :=
   RelCT.constantTime (fn_rel.mono (fun s₁ s₂ ⟨h₁, h₂, hsp, hdi, hsi, hdx, hcx, h8, hw⟩ =>
     ⟨⟨s₁.gpr .rdi, (s₁.gpr .rsi).toNat * 8, wOf s₁.mem (s₁.gpr .rdi), idx s₁ .rdx, idx s₁ .rcx, idx s₁ .r8⟩,
-      ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl⟩,
-      ⟨h₂, hdi.symm, by rw [hsi], (congrArg (wOf s₂.mem) hdi).trans hw.symm, by simp only [idx, hdx], by simp only [idx, hcx],
+      ⟨fnLazy_pre h₁, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+      ⟨fnLazy_pre h₂, hdi.symm, by rw [hsi], (congrArg (wOf s₂.mem) hdi).trans hw.symm, by simp only [idx, hdx], by simp only [idx, hcx],
         by simp only [idx, h8]⟩⟩) fun _ _ h => h)
 
 /-- `vg_rsa_mont_mul` on x86-64. -/

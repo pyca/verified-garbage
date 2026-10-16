@@ -5,6 +5,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Linear
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # The modes one block at a time on ARMv7: the loop and the whole function
@@ -30,13 +36,14 @@ section
 variable {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} (hp : UPre c S M s₀)
 include hp
 
-theorem loop_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h : LInv c S M s₀ k s) :
+theorem loop_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h : LInv c S M s₀ k s)
+    (hsy : s.syms = s₀.syms) :
     WP isa (.loop (c.body M) .ne) s (LInv c S M s₀ (N c s₀)) := by
   refine WP.loop (M := isa) (body := c.body M) (c := .ne) (Q := LInv c S M s₀ (N c s₀))
-    (fun (n : Nat) (t : State) => ∃ j, n = N c s₀ - j ∧ j < N c s₀ ∧ LInv c S M s₀ j t) ?_ (N c s₀ - k) s
-    ⟨k, rfl, hk, h⟩
-  rintro n s ⟨k, rfl, hk, h⟩
-  refine WP.mono (body_ok hp hM hk h) fun s' ⟨h', hz⟩ => ?_
+    (fun (n : Nat) (t : State) => ∃ j, n = N c s₀ - j ∧ j < N c s₀ ∧ LInv c S M s₀ j t ∧ t.syms = s₀.syms) ?_
+    (N c s₀ - k) s ⟨k, rfl, hk, h, hsy⟩
+  rintro n s ⟨k, rfl, hk, h, hsy⟩
+  refine VG.Arm.WP.mono_syms (body_ok hp hM hk h hsy) fun s' ⟨h', hz⟩ hsy' => ?_
   have ev : isa.eval .ne s' = some !decide (N c s₀ - (k + 1) = 0) := by
     show VG.Arm.eval .ne s' = _; rw [eval_ne, hz]
   by_cases hz' : N c s₀ - (k + 1) = 0
@@ -44,9 +51,10 @@ theorem loop_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h :
     refine ⟨by rw [ev]; simp [hz'], ?_⟩
     rwa [show N c s₀ = k + 1 by omega]
   · right
-    refine ⟨by rw [ev]; simp [hz'], N c s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
+    refine ⟨by rw [ev]; simp [hz'], N c s₀ - (k + 1), by omega, k + 1, rfl, by omega, h', hsy'.trans hsy⟩
 
-theorem mid_wp (hM : ModeOk c M) {s₁ : State} (h : LInv c S M s₀ 0 s₁) (hz : s₁.z = decide (N c s₀ = 0)) :
+theorem mid_wp (hM : ModeOk c M) {s₁ : State} (h : LInv c S M s₀ 0 s₁) (hz : s₁.z = decide (N c s₀ = 0))
+    (hsy : s₁.syms = s₀.syms) :
     WP isa (.ite .eq (.block []) (.loop (c.body M) .ne)) s₁ (LInv c S M s₀ (N c s₀)) := by
   have ev : isa.eval .eq s₁ = some (decide (N c s₀ = 0)) := by
     show VG.Arm.eval .eq s₁ = _; rw [eval_eq, hz]
@@ -54,7 +62,7 @@ theorem mid_wp (hM : ModeOk c M) {s₁ : State} (h : LInv c S M s₀ 0 s₁) (hz
   · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_ok hp hM (by omega) h
+    exact loop_ok hp hM (by omega) h hsy
 
 /-! ## The epilogue -/
 
@@ -172,8 +180,8 @@ theorem seq_wp {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk c M) {s₀ : 
     (h0 : (seqArm c S M).pre s₀) :
     WP isa (c.seq M) s₀ fun s' => abiPreserved s₀ s' ∧ (seqArm c S M).post s₀ s' := by
   have hp := UPre.of h0
-  exact WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨h₁, hz⟩ =>
-    WP.seq (WP.mono (mid_wp hp hM h₁ hz) fun _ h₂ => by
+  exact WP.seq (VG.Arm.WP.mono_syms (prologue_wp hp) fun s₁ ⟨h₁, hz⟩ hsy =>
+    WP.seq (WP.mono (mid_wp hp hM h₁ hz hsy) fun _ h₂ => by
       rw [WP.block_append_iff]
       exact WP.mono (finish_wp hp h₂) fun _ h₃ => epilogue_wp hp h₃))
 

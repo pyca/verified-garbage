@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # An RSA key from its primes on AArch64: the precondition, as the code uses it
@@ -98,46 +102,46 @@ theorem keyCtx_of {s : State} (h : keyPre s) : KCtx s := by
   have hwr' : ∀ (o : Addr) (l : Nat), (⟨o, l⟩ : Region) ∈ s.wr → l ≤ 2 ^ 64 → ∀ i < l,
       InRegions s.wr (o + BitVec.ofNat 64 i) 1 := fun o l hm hl i hi => ⟨_, hm, contains_byte o hi hl⟩
   refine ⟨⟨hpl1, hpl2, hpl8, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, hel1, hel8⟩, hx1, hs,
-    by omega,
-    fun j hj => ⟨_, hargs, by rw [kStk_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
+    by omega_using [hsl],
+    fun j hj => ⟨_, hargs, by rw [kStk_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 80) (by omega) (by omega))
-      rw [← kStk_add s j b] at this; omega)),
-    src_of_region (by rw [hwr]; simp) (by omega) dps,
-    src_of_region (by rw [hwr]; simp [hx7]) (by omega) dqs,
-    src_of_region (by rw [hrd]; simp) (by omega) des,
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 80) (by omega_using [hj, hb]) (by omega_using []))
+      rw [← kStk_add s j b] at this; omega_using [hsl, this])),
+    src_of_region (by rw [hwr]; simp) (by omega_using []) dps,
+    src_of_region (by rw [hwr]; simp [hx7]) (by omega_using []) dqs,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) des,
     ⟨fun o ho => ?_, fun o ho => ?_, ?_⟩⟩
   · simp only [outsL, keyIn, List.mem_cons, List.not_mem_nil, or_false] at ho
     rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only
-    · exact hwr' _ _ (by rw [hwr, hx1]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr, hx3, hx1]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr, hx7]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr, hdpl]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr, hdql]; simp) (by omega)
-    · exact hwr' _ _ (by rw [hwr, hqil]; simp) (by omega)
+    · exact hwr' _ _ (by rw [hwr, hx1]; simp) (by omega_using [wn])
+    · exact hwr' _ _ (by rw [hwr, hx3, hx1]; simp) (by omega_using [wn])
+    · exact hwr' _ _ (by rw [hwr]; simp) (by omega_using [])
+    · exact hwr' _ _ (by rw [hwr, hx7]; simp) (by omega_using [])
+    · exact hwr' _ _ (by rw [hwr, hdpl]; simp) (by omega_using [])
+    · exact hwr' _ _ (by rw [hwr, hdql]; simp) (by omega_using [])
+    · exact hwr' _ _ (by rw [hwr, hqil]; simp) (by omega_using [])
   · simp only [outsL, keyIn, List.mem_cons, List.not_mem_nil, or_false] at ho
     rcases ho with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> intro i hi
-    · exact out_scr dns (contains_byte _ hi (by omega))
-    · exact out_scr dds (contains_byte _ hi (by omega))
-    · exact out_scr dps (contains_byte _ hi (by omega))
-    · exact out_scr dqs (contains_byte _ hi (by omega))
-    · exact out_scr dps' (contains_byte _ hi (by omega))
-    · exact out_scr dqs' (contains_byte _ hi (by omega))
-    · exact out_scr dqis (contains_byte _ hi (by omega))
+    · exact out_scr dns (contains_byte _ hi (by omega_using [wn]))
+    · exact out_scr dds (contains_byte _ hi (by omega_using [wn]))
+    · exact out_scr dps (contains_byte _ hi (by omega_using []))
+    · exact out_scr dqs (contains_byte _ hi (by omega_using []))
+    · exact out_scr dps' (contains_byte _ hi (by omega_using []))
+    · exact out_scr dqs' (contains_byte _ hi (by omega_using []))
+    · exact out_scr dqis (contains_byte _ hi (by omega_using []))
   · simp only [outsL, keyIn, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, List.Pairwise.nil, and_true, IsEmpty.forall_iff, implies_true]
-    exact ⟨⟨kApart_of dnd (by omega) (by omega), kApart_of dnp (by omega) (by omega),
-        kApart_of dnq (by omega) (by omega), kApart_of dndp (by omega) (by omega),
-        kApart_of dndq (by omega) (by omega), kApart_of dnqi (by omega) (by omega)⟩,
-      ⟨kApart_of ddp (by omega) (by omega), kApart_of ddq (by omega) (by omega),
-        kApart_of dddp (by omega) (by omega), kApart_of dddq (by omega) (by omega),
-        kApart_of ddqi (by omega) (by omega)⟩,
-      ⟨kApart_of dpq (by omega) (by omega), kApart_of dpdp (by omega) (by omega),
-        kApart_of dpdq (by omega) (by omega), kApart_of dpqi (by omega) (by omega)⟩,
-      ⟨kApart_of dqdp (by omega) (by omega), kApart_of dqdq (by omega) (by omega),
-        kApart_of dqqi (by omega) (by omega)⟩,
-      ⟨kApart_of dpdq' (by omega) (by omega), kApart_of dpqi' (by omega) (by omega)⟩,
-      kApart_of dqqi' (by omega) (by omega)⟩
+    exact ⟨⟨kApart_of dnd (by omega_using [wn]) (by omega_using [wn]), kApart_of dnp (by omega_using [wn]) (by omega_using []),
+        kApart_of dnq (by omega_using [wn]) (by omega_using []), kApart_of dndp (by omega_using [wn]) (by omega_using []),
+        kApart_of dndq (by omega_using [wn]) (by omega_using []), kApart_of dnqi (by omega_using [wn]) (by omega_using [])⟩,
+      ⟨kApart_of ddp (by omega_using [wn]) (by omega_using []), kApart_of ddq (by omega_using [wn]) (by omega_using []),
+        kApart_of dddp (by omega_using [wn]) (by omega_using []), kApart_of dddq (by omega_using [wn]) (by omega_using []),
+        kApart_of ddqi (by omega_using [wn]) (by omega_using [])⟩,
+      ⟨kApart_of dpq (by omega_using []) (by omega_using []), kApart_of dpdp (by omega_using []) (by omega_using []),
+        kApart_of dpdq (by omega_using []) (by omega_using []), kApart_of dpqi (by omega_using []) (by omega_using [])⟩,
+      ⟨kApart_of dqdp (by omega_using []) (by omega_using []), kApart_of dqdq (by omega_using []) (by omega_using []),
+        kApart_of dqqi (by omega_using []) (by omega_using [])⟩,
+      ⟨kApart_of dpdq' (by omega_using []) (by omega_using []), kApart_of dpqi' (by omega_using []) (by omega_using [])⟩,
+      kApart_of dqqi' (by omega_using []) (by omega_using [])⟩
 
 end VG.Proof.RsaKeyGen.AArch64.Key

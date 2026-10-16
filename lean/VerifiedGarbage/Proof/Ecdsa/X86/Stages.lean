@@ -1,12 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
-public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+import VerifiedGarbage.Proof.Ecdsa.X86.Fixed
+import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 public import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA on x86 (32-bit): the setup and the tables of bits

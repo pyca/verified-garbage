@@ -5,6 +5,9 @@ public import VerifiedGarbage.Proof.P256.PrimeOrder
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvMain
 public import VerifiedGarbage.Proof.Weierstrass.InvArith
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.Booth
 
 /-!
 # P-256's group law, inversions and prime order, on x86-64

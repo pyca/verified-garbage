@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.Top
-public import VerifiedGarbage.Proof.MlKem.X86.CallRet
+import VerifiedGarbage.Proof.MlKem.X86.CallRet
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # ML-KEM on x86 (32-bit): calls in the top-level functions

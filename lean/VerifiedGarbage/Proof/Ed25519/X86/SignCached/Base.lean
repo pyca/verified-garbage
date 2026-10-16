@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
-public import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.Rc2
 
 @[expose] public section
 
@@ -108,7 +111,7 @@ theorem base_step (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hy 
       Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 32 =
         Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.mem ((fp L 96).setWidth 64) 32) := by
   refine WP.seq (WP.mono_syms (args_ok hc hL ha (vs := [.caller 0 0, .frame 96, .caller 5 0])
-    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ yu => ?_)
+    (by decide) (Whole.valid_all (by decide))) fun u ⟨hu, hf, hs⟩ yu => ?_)
   have a0 := hs.slot hL (j := 0) (by decide) (by decide)
   have a1 := hs.slot hL (j := 1) (by decide) (by decide)
   have a2 := hs.slot hL (j := 2) (by decide) (by decide)

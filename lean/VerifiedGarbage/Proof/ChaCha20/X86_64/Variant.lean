@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Verified
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512VL
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
@@ -179,6 +180,65 @@ def ifma : XorImpl where
   features := ["avx", "avx512f"]
   poly := .ifma
   fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inr rfl⟩)
+
+theorem avx512vl_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx512vl.code := by
+  have : ((instrs Impl.ChaCha20.X86_64.Callee.avx512vl.code).all fun i => !Taint.clobbers i .rsp) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
+  exact fun i hi => by simpa using List.all_eq_true.mp this i hi
+
+/-- `vg_chacha20_xor_avx512vl`: the AVX-512 implementation with fewer than 513
+bytes in `ymm` registers, for CPUs with AVX-512 but not IFMA, whose clock a
+512-bit instruction lowers: its callers that also call `vg_poly1305_blocks`
+call `vg_poly1305_blocks_avx512`. -/
+def avx512vl : XorImpl where
+  callee := .avx512vl
+  fold_le := by decide
+  stack := 16
+  stack_le := by decide
+  depth_le := by lit_decide
+  xdepth := by lit_decide
+  ok := Avx512VL.xor_rsi
+  ct := Avx512VL.xor_ct
+  nosp := avx512vl_nosp
+  mxcsr := by lit_decide
+  spSafe := Code.all_of_allInstrs (by lit_decide)
+  suffix := "_avx512vl"
+  features := ["avx", "avx2", "avx512f", "avx512vl"]
+  poly := .avx512
+  fold_poly := Or.inr (Or.inr ⟨rfl, rfl, rfl, .inl rfl⟩)
+
+/-- `v` called as the AVX2 instances call `vg_chacha20_xor_avx2`, with
+`vg_poly1305_blocks_avx2`. -/
+def asAvx2 (v : XorImpl) : XorImpl where
+  callee := { v.callee with fold := 448, pass := 0, wide := 5 }
+  fold_le := show 448 ≤ 960 by decide
+  stack := v.stack
+  stack_le := v.stack_le
+  depth_le := v.depth_le
+  xdepth := v.xdepth
+  ok := v.ok
+  ct := v.ct
+  nosp := v.nosp
+  mxcsr := v.mxcsr
+  spSafe := v.spSafe
+  suffix := v.suffix
+  features := v.features
+  poly := .avx2
+  fold_poly := Or.inr (Or.inl ⟨rfl, rfl, rfl, rfl⟩)
+
+/-- The implementation `v`'s ChaCha20-Poly1305 calls from its AVX2 code for
+short data (`Callee.small`). -/
+def small (v : XorImpl) : XorImpl := if v.callee.vl then v.asAvx2 else .avx2
+
+theorem small_poly (v : XorImpl) : v.small.poly = .avx2 := by
+  by_cases h : v.callee.vl = true
+  · simp only [small, h, ite_true]; rfl
+  · simp only [small, h, ite_false, Bool.false_eq_true]; rfl
+
+theorem small_callee (v : XorImpl) : v.small.callee = v.callee.small := by
+  by_cases h : v.callee.vl = true
+  · simp only [small, Impl.ChaCha20.X86_64.Callee.small, h, ite_true, asAvx2]
+  · simp only [small, Impl.ChaCha20.X86_64.Callee.small, h, ite_false, Bool.false_eq_true]; rfl
 
 end XorImpl
 

@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Squeeze
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, sampling

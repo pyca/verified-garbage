@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.ChaCha20.StreamBytes
 meta import VerifiedGarbage.Proof.ChaCha20.StreamBytes
 public import VerifiedGarbage.Proof.ChaCha20.Arm.Block
 meta import VerifiedGarbage.Proof.ChaCha20.Arm.Block
-public import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.MdStream.Arm.Common
 meta import VerifiedGarbage.Proof.MdStream.Arm.Common
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
 meta import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
@@ -14,6 +14,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming ChaCha20 on ARMv7: `init` and `set_nonce`

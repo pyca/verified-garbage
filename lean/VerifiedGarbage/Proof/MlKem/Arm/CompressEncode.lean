@@ -4,14 +4,17 @@ public import VerifiedGarbage.Proof.MlKem.Arm.Add
 meta import VerifiedGarbage.Proof.MlKem.Arm.Add
 public import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.Encode
-public import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.Compress
 meta import VerifiedGarbage.Proof.MlKem.Compress
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_compress_encode`
@@ -52,8 +55,8 @@ theorem cmpV_toNat {d : Nat} (hd : d ∈ compressWidths) {M : BitVec 32} (hM : M
   have hx := val_lt x
   have ha := compress_arg_lt hd x
   have hp : (BitVec.ofNat 32 x.val * M).toNat = x.val * compressMul d := by
-    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, hM, Nat.mod_eq_of_lt (a := x.val) (by omega)]
-    exact Nat.mod_eq_of_lt (by unfold compressAdd at ha; omega)
+    rw [BitVec.toNat_mul, BitVec.toNat_ofNat, hM, Nat.mod_eq_of_lt (a := x.val) (by omega_arith)]
+    exact Nat.mod_eq_of_lt (by unfold compressAdd at ha; omega_arith)
   unfold compressAdd at ha ⊢
   unfold cmpV
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
@@ -61,7 +64,7 @@ theorem cmpV_toNat {d : Nat} (hd : d ∈ compressWidths) {M : BitVec 32} (hM : M
   have e1 : (0x40000 : BitVec 32).toNat = 262144 := rfl
   have e2 : (0x40 : BitVec 32).toNat = 64 := rfl
   rw [BitVec.toNat_sub, BitVec.toNat_add, hp, e1, e2]
-  omega
+  omega_arith
 
 /-! ## The loop bodies -/
 
@@ -96,8 +99,8 @@ theorem bit_ok {j : Nat} (hj : j < 8) (h0 : s.gpr .r0 = x) (h2 : s.gpr .r2 = y)
       s'.mem = s.mem.writeW (State.addr (y + BitVec.ofNat 32 0)) (addB (s.mem (State.addr (y + BitVec.ofNat 32 0)))
         ((cmpV m1 (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * j))) 32) <<< 31) >>> (31 - j))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ ∀ r ∈ preserved, s'.gpr r = s.gpr r := by
-  have hsh : 1 ≤ 31 - j ∧ 31 - j ≤ 31 := by omega
-  have ho : 4 * j < 4096 := by omega
+  have hsh : 1 ≤ 31 - j ∧ 31 - j ≤ 31 := by omega_arith
+  have ho : 4 * j < 4096 := by omega_arith
   run_block [ce1Bit, compressAt, cmpV, m1, addB, h0, h2, i0, ib, ob, hsh, ho, preserved,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_self, and_true]
 
@@ -159,18 +162,18 @@ theorem body10_ok (h0 : s.gpr .r0 = x) (h2 : s.gpr .r2 = y) (h3 : s.gpr .r3 = c)
         (State.addr (y + BitVec.ofNat 32 (3 + 1)))
           ((c10 (s.mem.readW (State.addr (x + BitVec.ofNat 32 (4 * 3))) 32) >>> (8 - 2 * 3)).setWidth 8) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ ∀ r ∈ preserved, s'.gpr r = s.gpr r := by
-  have i0 := ic 0 (by omega)
-  have i1 := ic 1 (by omega)
-  have i2 := ic 2 (by omega)
-  have i3 := ic 3 (by omega)
-  have b1 := ib 1 (by omega)
-  have b2 := ib 2 (by omega)
-  have b3 := ib 3 (by omega)
-  have o0 := o 0 (by omega)
-  have o1 := o 1 (by omega)
-  have o2 := o 2 (by omega)
-  have o3 := o 3 (by omega)
-  have o4 := o 4 (by omega)
+  have i0 := ic 0 (by omega_arith)
+  have i1 := ic 1 (by omega_arith)
+  have i2 := ic 2 (by omega_arith)
+  have i3 := ic 3 (by omega_arith)
+  have b1 := ib 1 (by omega_arith)
+  have b2 := ib 2 (by omega_arith)
+  have b3 := ib 3 (by omega_arith)
+  have o0 := o 0 (by omega_arith)
+  have o1 := o 1 (by omega_arith)
+  have o2 := o 2 (by omega_arith)
+  have o3 := o 3 (by omega_arith)
+  have o4 := o 4 (by omega_arith)
   run_block [ce10Body, ce10Coeff, ce10Mid, compressAt, c10, cmpV, m10, addB, writeW8_apply, h0, h2, h3,
     i0, i1, i2, i3, b1, b2, b3, o0, o1, o2, o3, o4, hsep, preserved, List.forall_mem_cons,
     List.not_mem_nil, false_imp_iff, implies_true, and_self, and_true]
@@ -183,7 +186,7 @@ theorem addB_toNat (p : Byte) (v : BitVec 32) : (addB p v).toNat = (p.toNat + v.
   have := p.isLt
   unfold addB
   rw [BitVec.toNat_setWidth, BitVec.toNat_add, setWidth32_toNat]
-  omega
+  omega_arith
 
 theorem byte_eq {b : Byte} {n : Nat} (h : b.toNat = n % 256) : b = BitVec.ofNat 8 n :=
   BitVec.eq_of_toNat_eq (by rw [h, BitVec.toNat_ofNat])
@@ -192,7 +195,7 @@ theorem bitAt_toNat (w : BitVec 32) {j : Nat} (hj : j < 8) :
     ((w <<< 31) >>> (31 - j)).toNat = w.toNat % 2 * 2 ^ j := by
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow,
     show 2 ^ 32 = 2 * 2 ^ 31 from rfl, Nat.mul_mod_mul_right,
-    show 2 ^ 31 = 2 ^ j * 2 ^ (31 - j) by rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega)], ← Nat.mul_assoc,
+    show 2 ^ 31 = 2 ^ j * 2 ^ (31 - j) by rw [← Nat.pow_add, Nat.add_sub_cancel' (by omega_arith)], ← Nat.mul_assoc,
     Nat.mul_div_cancel _ (Nat.two_pow_pos _)]
 
 theorem nib0_toNat (w : BitVec 32) : ((w <<< 28) >>> 28).toNat = w.toNat % 16 := by bv_omega
@@ -260,13 +263,13 @@ theorem coeff_at {T K i k : Nat} (hT : T = 4 * K) (hk : K * i + k < 256) :
     InRegions (s.rd ++ s.wr) (coeffAddr (F s₀) (K * i + k)) 4 ∧
     s.mem.readW (coeffAddr (F s₀) (K * i + k)) 32 = BitVec.ofNat 32 ((fp s₀)[K * i + k]!).val := by
   have fF := hp.fitF
-  have c := coeff_contains (F s₀) (i := K * i + k) (by rw [n_eq]; omega)
-  refine ⟨addr_coeff fF (by subst hT; rw [Nat.mul_assoc, ← Nat.mul_add]) (by omega), ?_, ?_⟩
+  have c := coeff_contains (F s₀) (i := K * i + k) (by rw [n_eq]; omega_arith)
+  refine ⟨addr_coeff fF (by subst hT; rw [Nat.mul_assoc, ← Nat.mul_add]) (by omega_arith), ?_, ?_⟩
   · rw [hrd, hwr, hp.rd, hp.wr]; exact inRegions_of (by simp) c
   · show coeffAt s.mem (F s₀) (K * i + k) = _
     rw [frame_coeff hf (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.disj)
-      (by rw [n_eq]; omega)]
-    exact ofNat_val_eq (polyAt_val hp.red (by rw [n_eq]; omega)).symm
+      (by rw [n_eq]; omega_arith)]
+    exact ofNat_val_eq (polyAt_val hp.red (by rw [n_eq]; omega_arith)).symm
 
 omit hf in
 /-- Byte `S i + k` of the output: its address, and that it can be read and written. -/
@@ -276,7 +279,7 @@ theorem byte_at {S i k : Nat} (hk : S * i + k < len s₀) :
     InRegions (s.rd ++ s.wr) (O s₀ + BitVec.ofNat 64 (S * i + k)) 1 ∧
     (outR s₀).Contains (O s₀ + BitVec.ofNat 64 (S * i + k)) 1 := by
   have fO := hp.fitO
-  have c : (outR s₀).Contains (O s₀ + BitVec.ofNat 64 (S * i + k)) 1 := contains_off (by omega) (by omega)
+  have c : (outR s₀).Contains (O s₀ + BitVec.ofNat 64 (S * i + k)) 1 := contains_off (by omega_arith) (by omega_arith)
   exact ⟨addr_byte fO rfl hk, by rw [hwr, hp.wr]; exact inRegions_of (by simp) c,
     by rw [hrd, hwr, hp.rd, hp.wr]; exact inRegions_of (by simp) c, c⟩
 
@@ -291,7 +294,7 @@ theorem sep_at {s₀ : State} (hp : Pre s₀) {S T K i o k : Nat} (hT : T = 4 * 
   have fO := hp.fitO
   have fF := hp.fitF
   rw [addr_byte fO rfl ho, addr_coeff fF (by subst hT; rw [Nat.mul_assoc, ← Nat.mul_add]) hk]
-  exact readW_writeW_disj hp.disj v (contains_off (by omega) (by omega)) (coeff_contains _ (by rw [n_eq]; omega))
+  exact readW_writeW_disj hp.disj v (contains_off (by omega_arith) (by omega_arith)) (coeff_contains _ (by rw [n_eq]; omega_arith))
 
 /-- The whole loop, from its steps. -/
 theorem loop_of {s₀ : State} {S T N : Nat} {body : List Instr} (hN : 0 < N) (hSN : S * N = len s₀)
@@ -314,9 +317,9 @@ theorem step4 {s₀ : State} (hp : Pre s₀) (hd : dd s₀ = 4) {i : Nat} (hi : 
     (h : Inv 1 8 128 s₀ i s) :
     WP isa (.block ce4Body) s fun s' => Inv 1 8 128 s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = 128) := by
   have hl : len s₀ = 128 := by rw [hp.len, hd]
-  obtain ⟨e0, i0, v0⟩ := coeff_at hp h.rd h.wr h.frame (T := 8) (K := 2) (i := i) (k := 0) rfl (by omega)
-  obtain ⟨e1, i1, v1⟩ := coeff_at hp h.rd h.wr h.frame (T := 8) (K := 2) (i := i) (k := 1) rfl (by omega)
-  obtain ⟨eo, oo, io, co⟩ := byte_at hp h.rd h.wr (S := 1) (i := i) (k := 0) (by omega)
+  obtain ⟨e0, i0, v0⟩ := coeff_at hp h.rd h.wr h.frame (T := 8) (K := 2) (i := i) (k := 0) rfl (by omega_arith)
+  obtain ⟨e1, i1, v1⟩ := coeff_at hp h.rd h.wr h.frame (T := 8) (K := 2) (i := i) (k := 1) rfl (by omega_arith)
+  obtain ⟨eo, oo, io, co⟩ := byte_at hp h.rd h.wr (S := 1) (i := i) (k := 0) (by omega_arith)
   rw [Nat.add_zero] at e0 i0 v0 eo oo io co
   have c0 := compress_w (d := 4) (by decide) m4_toNat (fp s₀)[2 * i]!
   have c1 := compress_w (d := 4) (by decide) m4_toNat (fp s₀)[2 * i + 1]!
@@ -325,7 +328,7 @@ theorem step4 {s₀ : State} (hp : Pre s₀) (hd : dd s₀ = 4) {i : Nat} (hi : 
   simp only [Nat.reducePow] at c0 c1 l0 l1
   refine WP.mono (body4_ok h.r0 h.r2 h.r3 (by rw [e0]; exact i0) (by rw [e1]; exact i1)
     (by rw [eo]; exact io) (by rw [eo]; exact oo)
-    (fun m v => sep_at hp (S := 1) (T := 8) (K := 2) (i := i) (o := 0) (k := 1) rfl (by omega) (by omega) m v))
+    (fun m v => sep_at hp (S := 1) (T := 8) (K := 2) (i := i) (o := 0) (k := 1) rfl (by omega_arith) (by omega_arith) m v))
     fun s' ⟨r0, r2, r3, z, m, rd, wr, sp, pres⟩ => ?_
   rw [e0, e1, v0, v1, eo, writeW8_writeW8] at m
   refine ⟨⟨?_, ?_, ?_, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp,
@@ -335,11 +338,11 @@ theorem step4 {s₀ : State} (hp : Pre s₀) (hd : dd s₀ = 4) {i : Nat} (hi : 
   · rw [r3]; exact count_sub (k := 1) hi
   · rw [m]; exact h.frame.writeW (List.mem_singleton_self _) _ co
   · rw [m]
-    refine byte_one (a := 1 * i) (by omega) (by omega) h.bytes ?_
+    refine byte_one (a := 1 * i) (by omega_arith) (by omega_arith) h.bytes ?_
     rw [Nat.one_mul, CE, hd, compressEncode4 _ hi]
     refine byte_eq ?_
     rw [addB_toNat, setWidth8, BitVec.toNat_ofNat, nib0_toNat, nib1_toNat, ← c0, ← c1]
-    omega
+    omega_arith
   · rw [z]; exact count_z (k := 1) hi (by decide) (by decide)
 
 theorem step10 {s₀ : State} (hp : Pre s₀) (hd : dd s₀ = 10) {i : Nat} (hi : i < 64) {s : State}
@@ -347,24 +350,24 @@ theorem step10 {s₀ : State} (hp : Pre s₀) (hd : dd s₀ = 10) {i : Nat} (hi 
     WP isa (.block ce10Body) s fun s' => Inv 5 16 64 s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = 64) := by
   have hl : len s₀ = 320 := by rw [hp.len, hd]
   have cat : ∀ k < 4, _ := fun k (hk : k < 4) =>
-    coeff_at hp h.rd h.wr h.frame (T := 16) (K := 4) (i := i) (k := k) rfl (by omega)
-  have bat : ∀ k < 5, _ := fun k (hk : k < 5) => byte_at hp h.rd h.wr (S := 5) (i := i) (k := k) (by omega)
+    coeff_at hp h.rd h.wr h.frame (T := 16) (K := 4) (i := i) (k := k) rfl (by omega_arith)
+  have bat : ∀ k < 5, _ := fun k (hk : k < 5) => byte_at hp h.rd h.wr (S := 5) (i := i) (k := k) (by omega_arith)
   -- The compressed coefficients.
   let cc : Nat → BitVec 32 := fun k => BitVec.ofNat 32 (compress 10 (fp s₀)[4 * i + k]!)
   have ccl : ∀ k, compress 10 (fp s₀)[4 * i + k]! < 1024 := fun k => compress_lt 10 _
   have cct : ∀ k, (cc k).toNat = compress 10 (fp s₀)[4 * i + k]! := fun k => by
     show (BitVec.ofNat 32 _).toNat = _
-    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := ccl k; omega)]
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := ccl k; omega_arith)]
   have hc : ∀ k < 4, c10 (s.mem.readW (State.addr (pf s₀ + BitVec.ofNat 32 (16 * i) +
       BitVec.ofNat 32 (4 * k))) 32) = cc k := fun k hk => by
     rw [(cat k hk).1, (cat k hk).2.2, c10_toNat, ← compress_w (d := 10) (by decide) m10_toNat]
   refine WP.mono (body10_ok h.r0 h.r2 h.r3 (fun k hk => by rw [(cat k hk).1]; exact (cat k hk).2.1)
     (fun k hk => by rw [(bat k hk).1]; exact (bat k hk).2.2.1)
     (fun k hk => by rw [(bat k hk).1]; exact (bat k hk).2.1)
-    (fun m o v k ho hk => sep_at hp (S := 5) (T := 16) (K := 4) (i := i) rfl (by omega) (by omega) m v))
+    (fun m o v k ho hk => sep_at hp (S := 5) (T := 16) (K := 4) (i := i) rfl (by omega_arith) (by omega_arith) m v))
     fun s' ⟨r0, r2, r3, z, m, rd, wr, sp, pres⟩ => ?_
-  rw [hc 0 (by omega), hc 1 (by omega), hc 2 (by omega), hc 3 (by omega), (bat 0 (by omega)).1,
-    (bat 1 (by omega)).1, (bat 2 (by omega)).1, (bat 3 (by omega)).1, (bat 4 (by omega)).1,
+  rw [hc 0 (by omega_arith), hc 1 (by omega_arith), hc 2 (by omega_arith), hc 3 (by omega_arith), (bat 0 (by omega_arith)).1,
+    (bat 1 (by omega_arith)).1, (bat 2 (by omega_arith)).1, (bat 3 (by omega_arith)).1, (bat 4 (by omega_arith)).1,
     writeW8_writeW8, writeW8_writeW8, writeW8_writeW8] at m
   refine ⟨⟨?_, ?_, ?_, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp,
     fun r hr => (pres r hr).trans (h.pres r hr), ?_, ?_⟩, ?_⟩
@@ -372,42 +375,42 @@ theorem step10 {s₀ : State} (hp : Pre s₀) (hd : dd s₀ = 10) {i : Nat} (hi 
   · rw [r2]; exact ptr_succ _ 5 i
   · rw [r3]; exact count_sub (k := 1) hi
   · rw [m]
-    exact ((((h.frame.writeW (List.mem_singleton_self _) _ (bat 0 (by omega)).2.2.2).writeW
-      (List.mem_singleton_self _) _ (bat 1 (by omega)).2.2.2).writeW
-      (List.mem_singleton_self _) _ (bat 2 (by omega)).2.2.2).writeW
-      (List.mem_singleton_self _) _ (bat 3 (by omega)).2.2.2).writeW
-      (List.mem_singleton_self _) _ (bat 4 (by omega)).2.2.2
+    exact ((((h.frame.writeW (List.mem_singleton_self _) _ (bat 0 (by omega_arith)).2.2.2).writeW
+      (List.mem_singleton_self _) _ (bat 1 (by omega_arith)).2.2.2).writeW
+      (List.mem_singleton_self _) _ (bat 2 (by omega_arith)).2.2.2).writeW
+      (List.mem_singleton_self _) _ (bat 3 (by omega_arith)).2.2.2).writeW
+      (List.mem_singleton_self _) _ (bat 4 (by omega_arith)).2.2.2
   · rw [m]
     have t0 := cct 0; have t1 := cct 1; have t2 := cct 2; have t3 := cct 3
     have l0 := ccl 0; have l1 := ccl 1; have l2 := ccl 2; have l3 := ccl 3
     rw [Nat.add_zero] at t0 l0
     have e0 : (cc 0).setWidth 8 = (CE s₀)[5 * i]! := by
-      rw [CE, hd, compressEncode10_0 _ hi, setWidth8, t0]; exact ofNat8_eq (by omega)
+      rw [CE, hd, compressEncode10_0 _ hi, setWidth8, t0]; exact ofNat8_eq (by omega_arith)
     have e1 : addB ((cc 0 >>> 8).setWidth 8) (cc 1 <<< (2 * 1)) = (CE s₀)[5 * i + 1]! := by
       rw [CE, hd, compressEncode10_1 _ hi]
       refine byte_eq ?_
       rw [addB_toNat, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, t0, t1,
         Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.add_zero]
-      omega
+      omega_arith
     have e2 : addB ((cc 1 >>> (8 - 2 * 1)).setWidth 8) (cc 2 <<< (2 * 2)) = (CE s₀)[5 * i + 2]! := by
       rw [CE, hd, compressEncode10_2 _ hi]
       refine byte_eq ?_
       rw [addB_toNat, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, t1, t2,
         Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-      omega
+      omega_arith
     have e3 : addB ((cc 2 >>> (8 - 2 * 2)).setWidth 8) (cc 3 <<< (2 * 3)) = (CE s₀)[5 * i + 3]! := by
       rw [CE, hd, compressEncode10_3 _ hi]
       refine byte_eq ?_
       rw [addB_toNat, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, t2, t3,
         Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-      omega
+      omega_arith
     have e4 : (cc 3 >>> (8 - 2 * 3)).setWidth 8 = (CE s₀)[5 * i + 4]! := by
       rw [CE, hd, compressEncode10_4 _ hi]
       refine byte_eq ?_
       rw [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, t3, Nat.shiftRight_eq_div_pow]
-    exact byte_one (a := 5 * i + 4) (by omega) (by omega) (byte_one (a := 5 * i + 3) (by omega) (by omega)
-      (byte_one (a := 5 * i + 2) (by omega) (by omega) (byte_one (a := 5 * i + 1) (by omega) (by omega)
-      (byte_one (a := 5 * i + 0) (by omega) (by omega) h.bytes e0) e1) e2) e3) e4
+    exact byte_one (a := 5 * i + 4) (by omega_arith) (by omega_arith) (byte_one (a := 5 * i + 3) (by omega_arith) (by omega_arith)
+      (byte_one (a := 5 * i + 2) (by omega_arith) (by omega_arith) (byte_one (a := 5 * i + 1) (by omega_arith) (by omega_arith)
+      (byte_one (a := 5 * i + 0) (by omega_arith) (by omega_arith) h.bytes e0) e1) e2) e3) e4
   · rw [z]; exact count_z (k := 1) hi (by decide) (by decide)
 
 /-- The bits of output byte `i` of `ByteEncode₁(Compress₁)` from its first `a` coefficients. -/
@@ -421,10 +424,10 @@ theorem acc1N_lt (s₀ : State) (i : Nat) : ∀ a, acc1N s₀ i a < 2 ^ a
     have := acc1N_lt s₀ i a
     have h := compress_lt 1 (fp s₀)[8 * i + a]!
     have : compress 1 (fp s₀)[8 * i + a]! * 2 ^ a ≤ 2 ^ a := by
-      have : compress 1 (fp s₀)[8 * i + a]! ≤ 1 := by simp only [Nat.pow_one] at h; omega
+      have : compress 1 (fp s₀)[8 * i + a]! ≤ 1 := by simp only [Nat.pow_one] at h; omega_arith
       simpa using Nat.mul_le_mul_right (2 ^ a) this
     rw [acc1N, Nat.pow_succ]
-    omega
+    omega_arith
 
 theorem acc1N_eight (s₀ : State) (i : Nat) :
     acc1N s₀ i 8 = compress 1 (fp s₀)[8 * i]! + 2 * compress 1 (fp s₀)[8 * i + 1]! +
@@ -433,7 +436,7 @@ theorem acc1N_eight (s₀ : State) (i : Nat) :
       64 * compress 1 (fp s₀)[8 * i + 6]! + 128 * compress 1 (fp s₀)[8 * i + 7]! := by
   rw [acc1N, acc1N, acc1N, acc1N, acc1N, acc1N, acc1N, acc1N, acc1N]
   simp only [Nat.add_zero, Nat.reducePow]
-  omega
+  omega_arith
 
 /-- Within an iteration of the loop for `d = 1`, after the first `a` bits
 of the byte. -/
@@ -453,18 +456,18 @@ structure Mid (s₀ : State) (i a : Nat) (s : State) : Prop where
 theorem bit_step {s₀ : State} (hp : Pre s₀) (hd : dd s₀ = 1) {i : Nat} (hi : i < 32) {a : Nat}
     (ha : a < 8) {s : State} (h : Mid s₀ i a s) : WP isa (.block (ce1Bit a)) s (Mid s₀ i (a + 1)) := by
   have hl : len s₀ = 32 := by rw [hp.len, hd]
-  obtain ⟨e, ic, v⟩ := coeff_at hp h.rd h.wr h.frame (T := 32) (K := 8) (i := i) (k := a) rfl (by omega)
-  obtain ⟨eo, oo, io, co⟩ := byte_at hp h.rd h.wr (S := 1) (i := i) (k := 0) (by omega)
+  obtain ⟨e, ic, v⟩ := coeff_at hp h.rd h.wr h.frame (T := 32) (K := 8) (i := i) (k := a) rfl (by omega_arith)
+  obtain ⟨eo, oo, io, co⟩ := byte_at hp h.rd h.wr (S := 1) (i := i) (k := 0) (by omega_arith)
   rw [Nat.add_zero] at eo oo io co
   have c := compress_w (d := 1) (by decide) m1_toNat (fp s₀)[8 * i + a]!
   have lc := compress_lt 1 (fp s₀)[8 * i + a]!
   have lt := acc1N_lt s₀ i a
-  have ha' : 2 ^ a ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega : a ≤ 7)
+  have ha' : 2 ^ a ≤ 128 := Nat.pow_le_pow_right (by decide) (by omega_arith : a ≤ 7)
   have hc1 : compress 1 (fp s₀)[8 * i + a]! * 2 ^ a ≤ 2 ^ a := by
-    have : compress 1 (fp s₀)[8 * i + a]! ≤ 1 := by simp only [Nat.pow_one] at lc; omega
+    have : compress 1 (fp s₀)[8 * i + a]! ≤ 1 := by simp only [Nat.pow_one] at lc; omega_arith
     simpa using Nat.mul_le_mul_right (2 ^ a) this
   have rb : s.mem (O s₀ + BitVec.ofNat 64 (1 * i)) = BitVec.ofNat 8 (acc1N s₀ i a) := by
-    rw [h.bytes _ (by omega), ite_eq_left (by omega), ite_eq_right (by omega)]
+    rw [h.bytes _ (by omega_arith), ite_eq_left (by omega_arith), ite_eq_right (by omega_arith)]
   refine WP.mono (bit_ok ha h.r0 h.r2 (by rw [e]; exact ic) (by rw [eo]; exact io) (by rw [eo]; exact oo))
     fun s' ⟨r0, r2, r3, m, rd, wr, sp, pres⟩ => ⟨r0, r2, r3.trans h.r3, rd.trans h.rd, wr.trans h.wr,
       sp.trans h.sp, fun r hr => (pres r hr).trans (h.pres r hr), ?_, ?_⟩
@@ -475,25 +478,25 @@ theorem bit_step {s₀ : State} (hp : Pre s₀) (hd : dd s₀ = 1) {i : Nat} (hi
       rw [rb]
       refine byte_eq ?_
       rw [addB_toNat, bitAt_toNat _ ha, ← c, BitVec.toNat_ofNat, acc1N]
-      omega
+      omega_arith
     intro k hk
-    rw [m, e, v, eo, nv, byte_writeW8 _ _ (by omega) (by omega), h.bytes k hk]
-    rcases (by omega : k < 1 * i ∨ k = 1 * i ∨ 1 * i < k) with h' | rfl | h' <;> resolve_ifs
+    rw [m, e, v, eo, nv, byte_writeW8 _ _ (by omega_arith) (by omega_arith), h.bytes k hk]
+    rcases (by omega_arith : k < 1 * i ∨ k = 1 * i ∨ 1 * i < k) with h' | rfl | h' <;> resolve_ifs
 
 theorem step1 {s₀ : State} (hp : Pre s₀) (hd : dd s₀ = 1) {i : Nat} (hi : i < 32) {s : State}
     (h : Inv 1 32 32 s₀ i s) :
     WP isa (.block ce1Body) s fun s' => Inv 1 32 32 s₀ (i + 1) s' ∧ s'.z = decide (i + 1 = 32) := by
   have hl : len s₀ = 32 := by rw [hp.len, hd]
   rw [ce1Body_eq, WP.block_append_iff, WP.block_append_iff]
-  obtain ⟨eo, oo, io, co⟩ := byte_at hp h.rd h.wr (S := 1) (i := i) (k := 0) (by omega)
+  obtain ⟨eo, oo, io, co⟩ := byte_at hp h.rd h.wr (S := 1) (i := i) (k := 0) (by omega_arith)
   rw [Nat.add_zero] at eo oo io co
   refine WP.mono (head1_ok (by rw [h.r2, eo]; exact oo)) fun s₁ ⟨g0, g2, g3, m, rd, wr, sp, pres⟩ => ?_
   have h0 : Mid s₀ i 0 s₁ := by
     refine ⟨g0.trans h.r0, g2.trans h.r2, g3.trans h.r3, rd.trans h.rd, wr.trans h.wr, sp.trans h.sp,
       fun r hr => (pres r hr).trans (h.pres r hr), ?_, fun k hk => ?_⟩
     · rw [m, h.r2, eo]; exact h.frame.writeW (List.mem_singleton_self _) _ co
-    · rw [m, h.r2, eo, byte_writeW8 _ _ (by omega) (by omega), h.bytes k hk]
-      rcases (by omega : k < 1 * i ∨ k = 1 * i ∨ 1 * i < k) with h' | rfl | h'
+    · rw [m, h.r2, eo, byte_writeW8 _ _ (by omega_arith) (by omega_arith), h.bytes k hk]
+      rcases (by omega_arith : k < 1 * i ∨ k = 1 * i ∨ 1 * i < k) with h' | rfl | h'
       · resolve_ifs
       · resolve_ifs; rfl
       · resolve_ifs
@@ -509,7 +512,7 @@ theorem step1 {s₀ : State} (hp : Pre s₀) (hd : dd s₀ = 1) {i : Nat} (hi : 
     rw [m', h₂.bytes k hk]
     have ev : BitVec.ofNat 8 (acc1N s₀ i 8) = (CE s₀)[1 * i]! := by
       rw [Nat.one_mul, CE, hd, compressEncode1 _ hi, acc1N_eight]
-    rcases (by omega : k < 1 * i ∨ k = 1 * i ∨ 1 * i < k) with h' | rfl | h'
+    rcases (by omega_arith : k < 1 * i ∨ k = 1 * i ∨ 1 * i < k) with h' | rfl | h'
     · resolve_ifs
     · resolve_ifs; exact ev
     · resolve_ifs
@@ -545,7 +548,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       refine WP.seq (WP.of_runBlock ⟨_, runBlock_cons.trans (by rfl), ?_⟩)
       exact loop_of (N := 128) (by decide) (by rw [hp.len, e4]) hlen
         (fun i hi s h => step4 hp e4 hi h) rfl rfl (by rfl) (gp _ _ fun _ _ => rfl) rfl rfl rfl rfl
-    · have e10 : dd s₀ = 10 := by have := of_decide_eq_false e; omega
+    · have e10 : dd s₀ = 10 := by have := of_decide_eq_false e; omega_arith
       refine WP.seq (WP.of_runBlock ⟨_, runBlock_cons.trans (by rfl), ?_⟩)
       exact loop_of (N := 64) (by decide) (by rw [hp.len, e10]) hlen
         (fun i hi s h => step10 hp e10 hi h) rfl rfl (by rfl) (gp _ _ fun _ _ => rfl) rfl rfl rfl rfl

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.GcmSiv.Words
-public import VerifiedGarbage.Proof.GcmSiv.Ctr
+import VerifiedGarbage.Proof.GcmSiv.Ctr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

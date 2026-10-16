@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.X448.AArch64.Init
-public import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # Ed448 verification on AArch64: the challenge copied

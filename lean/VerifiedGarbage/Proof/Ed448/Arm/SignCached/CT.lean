@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Body
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.CT
-public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
+import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 
 /-!
 # Ed448 signing with a cached public key on ARMv7: constant time

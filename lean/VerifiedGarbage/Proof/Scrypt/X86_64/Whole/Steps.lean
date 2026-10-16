@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Scrypt.X86_64.Whole.Layout
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -7,6 +9,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Scrypt.X86_64.Scrypt
+import Mathlib.Tactic.Conv
 
 /-!
 # scrypt on x86-64: the blocks between the calls
@@ -131,12 +135,12 @@ theorem store (hL : L.Ok) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
 end Ctx
 
 /-- The registers the frame's body may write, and that `scrypt_cs_tac` steps through. -/
-macro "scrypt_cs_tac" : tactic => `(tactic| (
-  intro r hr
-  revert hr
-  simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
-  rintro (h | h | h | h | h | h | h) <;> subst h <;>
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
+tactic_template "scrypt_cs_tac" : tactic => `(tactic| (
+                   intro r hr
+                   revert hr
+                   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false]
+                   rintro (h | h | h | h | h | h | h) <;> subst h <;>
+                     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false]))
 
 
 /-! ## The blocks -/

@@ -224,9 +224,11 @@ def encMain : Prog isa :=
   seqs [encEm H, .block (dbArgs H), mgfXor lay G, .block (seedArgs H), mgfXor lay G, .block pubArgs,
     .call pubN pubC]
 
-def encBody : Prog isa :=
-  seqs [.block (encPrologue ++ chkK H),
-    .ite .b encFail (seqs [.block (chkMsg H), .ite .b encFail (encMain H G pubN pubC)])]
+/-- The prologue and the checks, then `main`. -/
+def encBodyWith (main : Prog isa) : Prog isa :=
+  seqs [.block (encPrologue ++ chkK H), .ite .b encFail (seqs [.block (chkMsg H), .ite .b encFail main])]
+
+def encBody : Prog isa := encBodyWith H (encMain H G pubN pubC)
 
 /-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`. -/
 def encrypt : Prog isa := .frame (.alloc frameBytes) (encBody H G pubN pubC) (.free frameBytes)

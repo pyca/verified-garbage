@@ -1,13 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigit
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
 public import VerifiedGarbage.Proof.Weierstrass.Joint
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! The carry digit followed by `64 n` shared doubles computes the two-scalar sum. -/
 
@@ -35,7 +41,7 @@ theorem JointLoopKeep.of_prog {M : Mod} {base : Addr} {W : List Nat} {s t : Stat
 
 theorem JointLoopKeep.of_keeps {M : Mod} {base : Addr} {W : List Nat} {s t : State}
     (h : Keeps [.rbx] s t) : JointLoopKeep M base W s t :=
-  ⟨(⟨h.1,h.2.2.1,h.2.2.2⟩ : KeepRegs [.rbx] s t).mono (by simp),fun x _ => congrFun h.2.1 x⟩
+  ⟨(⟨h.1,h.2.2.1,h.2.2.2⟩ : KeepRegs [.rbx] s t).mono (by regions_sub),fun x _ => congrFun h.2.1 x⟩
 
 section
 variable {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}

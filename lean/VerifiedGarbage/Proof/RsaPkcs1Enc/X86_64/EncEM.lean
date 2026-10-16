@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the encoded message
@@ -136,8 +137,9 @@ theorem msgLoop_ok {s t₀ : State} (hp : EPre s) {o : Nat} (ho' : oEM + 3 ≤ o
   have hdi' : u.gpr .rdi = off (fb s) o := (hI.keep.gpr (by decide)).trans hdi
   have hsi' : u.gpr .rsi = stackArg s 0 := (hI.keep.gpr (by decide)).trans hsi
   have hcx'' : u.gpr .rcx = BitVec.ofNat 64 (stackArg s 1).toNat := (hI.keep.gpr (by decide)).trans hcx'
-  have hin : InRegions (u.rd ++ u.wr) (off (stackArg s 0) j) 1 :=
-    ⟨⟨stackArg s 0, (stackArg s 1).toNat⟩, List.mem_append_left _ (by rw [hI.keep.2.1, hrd, hp.hrd]; simp),
+  have hin : InRegions (u.rd ++ u.wr) (off (stackArg s 0) j) 1 := by
+    rw [hI.keep.2.1, hrd]
+    exact hp.hrd.left _ _ ⟨⟨stackArg s 0, (stackArg s 1).toNat⟩, by simp,
       Offset.contains_base _ (by omega) (by have := hp.wM; omega)⟩
   have hst : InRegions u.wr (off (fb s) (o + j)) 1 :=
     (hs.congr (hI.keep.2.2)).st8 (by unfold frameBytes oEM at *; omega)

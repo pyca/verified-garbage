@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenG
-public import VerifiedGarbage.Proof.MlKem.X86.Cbd
-public import VerifiedGarbage.Proof.MlKem.X86.Ntt
+import VerifiedGarbage.Proof.MlKem.X86.Cbd
+import VerifiedGarbage.Proof.MlKem.X86.Ntt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on x86 (32-bit): `ŝ` and `ê` in key generation

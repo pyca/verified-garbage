@@ -1,13 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentHash
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.HighPackCall
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

@@ -6,16 +6,34 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Contract
 public import VerifiedGarbage.Proof.EcKey.X86_64.P521.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P521.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
-public import VerifiedGarbage.Proof.P521.X86_64.TaintSums
+import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # P-521 public keys on x86-64: `Verified`
@@ -64,22 +82,31 @@ theorem post_of {s s' : State} (h : PkPost p521 s s') : pkX86_64.post s s' := by
   rw [show Spec.EcKey.publicKey p521.C (dk p521 s) = pk s.mem (s.gpr .rsi) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
+/-- `publicKeyP521` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its checks of every instruction evaluate
+(`Proof/Weierstrass/X86_64/CodeErase.lean`). -/
+def publicKeyP521Erased : Prog isa := Code.erase publicKeyP521
+
+materialize_shared publicKeyP521Erased
+
 /-- `InlineOk`, checked once for every theorem that needs it. -/
-theorem pk_inlineOk : publicKeyP521.InlineOk = true := by lit_decide
+theorem pk_inlineOk : publicKeyP521.InlineOk = true := by
+  rw [← Code.InlineOk_erase]
+  show publicKeyP521Erased.InlineOk = true
+  lit_decide
 
 theorem pk_x86 (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP521.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (c := p521) (p521_ok hI).toBaseCfgOk hL (p521_tbls hT) (pre_of hs)
-  have hsp : ∀ i ∈ instrs publicKeyP521.inline, Taint.clobbers i .rsp = false := by
-    have h : publicKeyP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
+  have hsp := Code.clobbers_rsp_of_inlineOk pk_inlineOk
   have F := (Exec.regions he (Code.noCalls_inline pk_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+  refine ⟨t, s', he, abiPreserved_of_exec (by
+    rw [Code.allInstrs_inline, ← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [loadsMxcsr_erase]]
+    show publicKeyP521Erased.allInstrs _ = true
+    lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl

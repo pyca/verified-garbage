@@ -5,6 +5,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Rc2.Stream
 
 /-! # Streaming RC2-CBC on ARMv7: the copies before CBC
 
@@ -22,7 +28,7 @@ open VG.Proof.MdStream.Arm (Upd Mupd op2_imm op2_reg op2_lsr wp_mov wp_add wp_su
 
 theorem toNat_add32 {a : BitVec 32} {k : Nat} (h : a.toNat + k < 2 ^ 32) :
     (a + BitVec.ofNat 32 k).toNat = a.toNat + k := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega), Nat.mod_eq_of_lt h]
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := k) (by omega_using [h]), Nat.mod_eq_of_lt h]
 
 /-- The state before the call of the CBC function, from the entry state `s`. -/
 structure Mid (s t : State) : Prop where
@@ -77,15 +83,15 @@ theorem long_ok' (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
   generalize hP : (s.gpr .r1).toNat = P at *
   generalize hNN : (s.gpr .r3).toNat = N at *
   generalize hOL : (stackArg s 1).toNat = OL at *
-  have h8 : 8 ≤ OL := by omega
-  have hPO : P ≤ OL := by omega
-  have hON : OL - P ≤ N := by omega
-  have hR : N - (OL - P) = (P + N) % 8 := by omega
+  have h8 : 8 ≤ OL := by omega_using [hnz, hN]
+  have hPO : P ≤ OL := by omega_using [hp, h8]
+  have hON : OL - P ≤ N := by omega_using [hN]
+  have hR : N - (OL - P) = (P + N) % 8 := by omega_using [hN, hPO]
   have hRlt : (P + N) % 8 < 8 := Nat.mod_lt _ (by decide)
   have rdwr {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegions (s.rd ++ s.wr) a n := by
     obtain ⟨r, hr, hc⟩ := h; exact ⟨r, List.mem_append_right _ hr, hc⟩
   have scrW (i n : Nat) (h : i + n ≤ 576) : InRegions s.wr (State.addr S + BitVec.ofNat 64 i) n := by
-    rw [hwr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega)⟩
+    rw [hwr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega_using [h])⟩
   have ctxIn : (⟨State.addr C, 144⟩ : Region) ∈ s.rd ++ s.wr := by rw [hwr]; simp
   have outIn : (⟨State.addr O, OL⟩ : Region) ∈ s.wr := by rw [hwr]; simp
   have dataIn : (⟨State.addr Dt, N⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
@@ -104,7 +110,7 @@ theorem long_ok' (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
   refine WP.seq (wp_ldrSp (a := stackArgAddr s 2) (by decide) (by rw [ht.sp]; rfl)
     (by rw [ht.rd, ht.wr]; exact argR 2 (by decide)) fun u₁ v₁ => ?_)
   have r12₁ : u₁.gpr .r12 = S := by rw [v₁.gpr, ht.mem]; exact hS
-  refine wp_str (a := State.addr S + BitVec.ofNat 64 512) (by decide) (by rw [r12₁]; exact addr_add (by omega))
+  refine wp_str (a := State.addr S + BitVec.ofNat 64 512) (by decide) (by rw [r12₁]; exact addr_add (by omega_using [fitS]))
     (by rw [v₁.wr, ht.wr]; exact scrW 512 4 (by decide)) fun u₂ v₂ => ?_
   have m₂ : u₂.mem = s.mem.writeW (State.addr S + BitVec.ofNat 64 512) LR := by
     rw [v₂.mem, v₁.mem, ht.mem, v₁.other _ (by decide), ht.reg _ (by decide), hLR]
@@ -124,19 +130,19 @@ theorem long_ok' (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
   refine WP.seq (WP.mono (copy_ok (s := u₃) (src := .r0) (dst := .lr) (cnt := .r1) (so := 136) (dd := 0)
     (L := P) (A := State.addr C + BitVec.ofNat 64 136) (B := State.addr O)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by rw [g₃ _ (by decide) (by decide), r1v]) (by omega)
-    (by rw [g₃ _ (by decide) (by decide), hC]; omega) (by rw [lr₃]; omega)
+    (by rw [g₃ _ (by decide) (by decide), r1v]) (by omega_using [hOLlt, hPO])
+    (by rw [g₃ _ (by decide) (by decide), hC]; omega_using [fitC, hp]) (by rw [lr₃]; omega_using [fitO, hPO])
     (by rw [g₃ _ (by decide) (by decide), hC]) (by rw [lr₃]; exact add0 _)
-    (fun _ => by rw [rd₃, wr₃]; exact cov1 ctxIn (by omega))
-    (fun _ => by rw [wr₃, ← add0 (State.addr O)]; exact cov1 outIn (by omega))
-    (fun _ => (ctxOut.sub_left (Offset.sub_base _ (by omega))).sub_right (Region.sub_prefix hPO))) ?_)
+    (fun _ => by rw [rd₃, wr₃]; exact cov1 ctxIn (by omega_using [hp]))
+    (fun _ => by rw [wr₃, ← add0 (State.addr O)]; exact cov1 outIn (by omega_using [hPO]))
+    (fun _ => (ctxOut.sub_left (Offset.sub_base _ (by omega_using [hp]))).sub_right (Region.sub_prefix hPO))) ?_)
   intro u₄ c₄
   have f₄ : Frame [⟨State.addr O, P⟩] u₃.mem u₄.mem := by
     rw [c₄.mem]; exact writeBytes_frame' _ _ _ (Proof.Rc2.bytesAt_length _ _ _)
   have o₄ : Spec.Rc2.bytesAt u₄.mem (State.addr O) P =
       Spec.Rc2.bytesAt s.mem (State.addr C + BitVec.ofNat 64 136) P := by
-    rw [c₄.mem, bytesAt_writeBytes_self _ _ (Proof.Rc2.bytesAt_length _ _ _) (by omega), m₂,
-      bytesAt_writeW _ (by omega) ((ctxScr.sub_left (Offset.sub_base _ (by omega))).sub_right
+    rw [c₄.mem, bytesAt_writeBytes_self _ _ (Proof.Rc2.bytesAt_length _ _ _) (by omega_using [fitO, hPO]), m₂,
+      bytesAt_writeW _ (by omega_using [fitO, hPO]) ((ctxScr.sub_left (Offset.sub_base _ (by omega_using [hp]))).sub_right
         (Offset.sub_base _ (by decide)))]
   have F₄ : Frame [⟨State.addr O, OL⟩, ⟨State.addr C + BitVec.ofNat 64 136, 8⟩,
       ⟨State.addr S + BitVec.ofNat 64 512, 4⟩] s.mem u₄.mem :=
@@ -182,17 +188,17 @@ theorem long_ok' (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
   have r0₆ : w₆.gpr .r0 = C := by
     rw [y₆.other _ (by decide), y₅.other _ (by decide), y₄.other _ (by decide), r0₃]
   have r1₆ : w₆.gpr .r1 = BitVec.ofNat 32 (OL - P) := by rw [y₆.other _ (by decide), r1₅]
-  have eOP : State.addr (O + BitVec.ofNat 32 P) = State.addr O + BitVec.ofNat 64 P := addr_add (by omega)
+  have eOP : State.addr (O + BitVec.ofNat 32 P) = State.addr O + BitVec.ofNat 64 P := addr_add (by omega_using [hp, fitO, hR])
   -- The first `out_len - p` bytes of data to `out + p`.
   refine WP.seq (WP.mono (copy_ok (s := w₆) (src := .r2) (dst := .lr) (cnt := .r1) (so := 0) (dd := 0)
     (L := OL - P) (A := State.addr Dt) (B := State.addr O + BitVec.ofNat 64 P)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    r1₆ (by omega)
-    (by rw [g₆ _ (by decide) (by decide) (by decide) (by decide) (by decide), hDt]; omega)
-    (by rw [lr₆, toNat_add32 (by omega)]; omega)
+    r1₆ (by omega_using [hOLlt])
+    (by rw [g₆ _ (by decide) (by decide) (by decide) (by decide) (by decide), hDt]; omega_using [fitD, hON])
+    (by rw [lr₆, toNat_add32 (by omega_using [hp, fitO, hR])]; omega_using [fitO, hPO])
     (by rw [g₆ _ (by decide) (by decide) (by decide) (by decide) (by decide), hDt]; exact add0 _)
     (by rw [lr₆, eOP]; exact add0 _)
-    (fun _ => by rw [rd₆, wr₆, ← add0 (State.addr Dt)]; exact cov1 dataIn (by omega))
+    (fun _ => by rw [rd₆, wr₆, ← add0 (State.addr Dt)]; exact cov1 dataIn (by omega_using [hON]))
     (fun _ => by rw [wr₆]; exact cov1 outIn (by omega))
     (fun _ => (dataOut.sub_left (Region.sub_prefix hON)).sub_right (Offset.sub_base _ (by omega)))) ?_)
   intro u₅ c₅
@@ -202,8 +208,8 @@ theorem long_ok' (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
     rw [c5m]; exact writeBytes_frame' _ _ _ (Proof.Rc2.bytesAt_length _ _ _)
   have o₅ : Spec.Rc2.bytesAt u₅.mem (State.addr O + BitVec.ofNat 64 P) (OL - P) =
       Spec.Rc2.bytesAt s.mem (State.addr Dt) (OL - P) := by
-    rw [c5m, bytesAt_writeBytes_self _ _ (Proof.Rc2.bytesAt_length _ _ _) (by omega),
-      Proof.Rc2.bytesAt_frame F₄ _ _ (by omega) (fun r hr => by
+    rw [c5m, bytesAt_writeBytes_self _ _ (Proof.Rc2.bytesAt_length _ _ _) (by omega_using [fitO]),
+      Proof.Rc2.bytesAt_frame F₄ _ _ (by omega_using [fitO]) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact dataOut.sub_left (Region.sub_prefix hON)
@@ -213,7 +219,7 @@ theorem long_ok' (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
       ⟨State.addr S + BitVec.ofNat 64 512, 4⟩] s.mem u₅.mem :=
     F₄.trans (f₅.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by omega)⟩)
+      exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by omega_using [hPO])⟩)
   -- The rest to `ctx + 136`.
   rw [show toPending = [.mov .lr (.reg .r0)] from rfl]
   refine WP.seq (wp_mov (op2_reg _ _) fun u₆ v₆ => WP.block_nil ?_)
@@ -226,32 +232,32 @@ theorem long_ok' (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
   -- The data after the first `out_len - p` bytes, at an address that wraps only if nothing is left.
   have eA (hR0 : 0 < (P + N) % 8) :
       State.addr (Dt + BitVec.ofNat 32 (OL - P)) = State.addr Dt + BitVec.ofNat 64 (OL - P) :=
-    addr_add (by omega)
+    addr_add (by omega_using [fitD, hR, hR0])
   have bA (m : Mem) : Spec.Rc2.bytesAt m (State.addr (Dt + BitVec.ofNat 32 (OL - P))) ((P + N) % 8) =
       Spec.Rc2.bytesAt m (State.addr Dt + BitVec.ofNat 64 (OL - P)) ((P + N) % 8) := by
     rcases Nat.eq_zero_or_pos ((P + N) % 8) with h0 | h0
     · rw [h0]; rfl
     · rw [eA h0]
   have dSub : Region.Sub ⟨State.addr Dt + BitVec.ofNat 64 (OL - P), (P + N) % 8⟩ ⟨State.addr Dt, N⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_using [hON, hR])
   have pSub : Region.Sub ⟨State.addr C + BitVec.ofNat 64 136, (P + N) % 8⟩ ⟨State.addr C, 144⟩ :=
-    Offset.sub_base _ (by omega)
+    Offset.sub_base _ (by omega_using [])
   refine WP.seq (WP.mono (copy_ok (s := u₆) (src := .r2) (dst := .lr) (cnt := .r3) (so := 0) (dd := 136)
     (L := (P + N) % 8) (A := State.addr (Dt + BitVec.ofNat 32 (OL - P))) (B := State.addr C + BitVec.ofNat 64 136)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    r3₆' (by omega)
+    r3₆' (by omega_using [])
     (by
       rw [r2₆]
       rcases Nat.eq_zero_or_pos ((P + N) % 8) with h0 | h0
-      · rw [h0]; have := (Dt + BitVec.ofNat 32 (OL - P)).isLt; omega
-      · rw [toNat_add32 (by omega)]; omega)
-    (by rw [lr₆']; omega) (by rw [r2₆]; exact add0 _) (by rw [lr₆'])
+      · rw [h0]; have := (Dt + BitVec.ofNat 32 (OL - P)).isLt; omega_using []
+      · rw [toNat_add32 (by omega_using [fitD, hR, h0])]; omega_using [fitD, hR, h0])
+    (by rw [lr₆']; omega_using [fitC]) (by rw [r2₆]; exact add0 _) (by rw [lr₆'])
     (fun h0 => by
       rw [v₆.rd, v₆.wr, c₅.rd, c₅.wr, rd₆, wr₆, eA h0]
       exact Covers.of_sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨_, dataIn, OL - P, rfl, by simp only; omega⟩)
-    (fun _ => by rw [v₆.wr, c₅.wr, wr₆]; exact cov1 ctxInW (by omega))
+        exact ⟨_, dataIn, OL - P, rfl, by simp only; omega_using [hR, h0]⟩)
+    (fun _ => by rw [v₆.wr, c₅.wr, wr₆]; exact cov1 ctxInW (by omega_using []))
     (fun h0 => by rw [eA h0]; exact (ctxData.symm.sub_left dSub).sub_right pSub)) ?_)
   intro u₇ c₇
   have c7m : u₇.mem = writeBytes u₅.mem (State.addr C + BitVec.ofNat 64 136)
@@ -263,11 +269,11 @@ theorem long_ok' (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
       ⟨State.addr S + BitVec.ofNat 64 512, 4⟩] s.mem u₇.mem :=
     F₅.trans (f₇.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.sub_prefix (by omega)⟩)
+      exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.sub_prefix (by omega_using [])⟩)
   have p₇ : Spec.Rc2.bytesAt u₇.mem (State.addr C + BitVec.ofNat 64 136) ((P + N) % 8) =
       Spec.Rc2.bytesAt s.mem (State.addr Dt + BitVec.ofNat 64 (OL - P)) ((P + N) % 8) := by
-    rw [c7m, bytesAt_writeBytes_self _ _ (Proof.Rc2.bytesAt_length _ _ _) (by omega), bA,
-      Proof.Rc2.bytesAt_frame F₅ _ _ (by omega) (fun r hr => by
+    rw [c7m, bytesAt_writeBytes_self _ _ (Proof.Rc2.bytesAt_length _ _ _) (by omega_using []), bA,
+      Proof.Rc2.bytesAt_frame F₅ _ _ (by omega_using []) (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
         · exact dataOut.sub_left dSub
@@ -323,25 +329,25 @@ theorem long_ok' (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
         exact (ctxScr.symm.sub_left a4).sub_right pSub) (by decide),
       f₅.readW (r := ⟨State.addr S + BitVec.ofNat 64 512, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact (outScr.symm.sub_left a4).sub_right (Offset.sub_base _ (by omega))) (by decide),
+        exact (outScr.symm.sub_left a4).sub_right (Offset.sub_base _ (by omega_using [hPO]))) (by decide),
       f₄.readW (r := ⟨State.addr S + BitVec.ofNat 64 512, 4⟩) (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact (outScr.symm.sub_left a4).sub_right (Region.sub_prefix hPO)) (by decide),
       m₂, Mem.readW_writeW_self32]
   · -- `out`: the pending bytes, then the data.
-    rw [memx, hO, hOL, hC, hP, hDt, show OL = P + (OL - P) by omega, Proof.Rc2.bytesAt_add,
+    rw [memx, hO, hOL, hC, hP, hDt, show OL = P + (OL - P) by omega_using [hPO], Proof.Rc2.bytesAt_add,
       Nat.add_sub_cancel_left]
     have outSub : ∀ r ∈ [(⟨State.addr C + BitVec.ofNat 64 136, (P + N) % 8⟩ : Region)],
         (Region.mk (State.addr O) OL).Disjoint r := by
       intro r hr; simp only [List.mem_singleton] at hr; subst hr
       exact ctxOut.symm.sub_right pSub
     refine congrArg₂ (· ++ ·) ?_ ?_
-    · rw [Proof.Rc2.bytesAt_frame f₇ _ _ (by omega) (fun r hr => (outSub r hr).sub_left (Region.sub_prefix hPO)),
-        Proof.Rc2.bytesAt_frame f₅ _ _ (by omega) (fun r hr => by
+    · rw [Proof.Rc2.bytesAt_frame f₇ _ _ (by omega_using [fitO, hPO]) (fun r hr => (outSub r hr).sub_left (Region.sub_prefix hPO)),
+        Proof.Rc2.bytesAt_frame f₅ _ _ (by omega_using [fitO, hPO]) (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Offset.base_disjoint _ (by omega) (by omega)), o₄]
-    · rw [Proof.Rc2.bytesAt_frame f₇ _ _ (by omega)
-          (fun r hr => (outSub r hr).sub_left (Offset.sub_base _ (by omega))), o₅]
+          exact Offset.base_disjoint _ (by omega_using []) (by omega_using [fitO, hPO])), o₄]
+    · rw [Proof.Rc2.bytesAt_frame f₇ _ _ (by omega_using [fitO])
+          (fun r hr => (outSub r hr).sub_left (Offset.sub_base _ (by omega_using [hPO]))), o₅]
   · rw [memx, hC, hP, hNN, hDt, hOL]; exact p₇
 
 theorem long_ok (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).pre s)

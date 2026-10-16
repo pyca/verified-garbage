@@ -8,6 +8,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Lit
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Reduce
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the setup
@@ -28,9 +31,9 @@ open VG.Proof.Poly1305.AArch64.Radix64 (hval Keeps absorbRegs mul_ok)
 
 /-- Reads of the general-purpose registers through the writes of the steps so far. -/
 macro "gstep" : tactic =>
-  `(tactic| simp (disch := decide) only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.v_write,
-    RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, State.read, Size.bits,
-    BitVec.setWidth_eq])
+  `(tactic| plain_simp_names simp (disch := decide) only [RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.v_write,
+                     RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, State.read, Size.bits,
+                     BitVec.setWidth_eq])
 
 /-- The limbs of `w0 + 2⁶⁴ w1 + 2¹²⁸ w2`, as `limbs` computes them. -/
 def lim (w0 w1 w2 : Nat) : Nat → Nat

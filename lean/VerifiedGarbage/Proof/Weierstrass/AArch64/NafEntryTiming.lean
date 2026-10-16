@@ -1,11 +1,15 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafLoadTiming
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 
 @[expose] public section
 
@@ -13,8 +17,8 @@ namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass
 
-local macro "jmem" : tactic => `(tactic| simp only [nafLive,jacWinSlots,jacWinWrites,
-  winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true])
+local macro "jmem" : tactic => `(tactic| plain_simp_names simp only [nafLive,jacWinSlots,jacWinWrites,
+                   winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true])
 
 structure NafEntryChecks (K : WinCfg) : Prop where
   lookup : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0,.x2]))

@@ -4,10 +4,12 @@ public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Folds
 public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.Ring
 public import Mathlib.Tactic.LinearCombination
+import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # The coefficients' carries
@@ -50,10 +52,10 @@ theorem cin_le {r : Nat → Nat} {b : Nat} (hr : ∀ k < 8, r (b + k) < 2 ^ 64 -
   | zero => simp [cin]
   | succ k ih =>
     simp only [cin]
-    have := ih (by omega)
-    have := hr k (by omega)
+    have := ih (by omega_arith)
+    have := hr k (by omega_arith)
     rw [Nat.div_lt_iff_lt_mul (by decide)]
-    omega
+    omega_arith
 
 /-- One step of a chain: carry out of `v_{b+k}` (through `v_t`) into `v_{b+k+1}`. -/
 def chainStep (b k t : Nat) : List Instr :=
@@ -67,11 +69,11 @@ theorem chainStep_ok {s : State} {b k t : Nat} (hk : b + k + 1 < 16) (ht : 28 �
       LaneIs u (b + k) (fun e => x e % 2 ^ 28) ∧ LaneIs u (b + k + 1) (fun e => y e + x e / 2 ^ 28) ∧
       u.mem = s.mem ∧ u.gpr = s.gpr ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
       (∀ r : VReg, r ≠ V t → r ≠ V (b + k) → r ≠ V (b + k + 1) → u.v r = s.v r) := by
-  have n1 : V t ≠ V (b + k) := V_ne _ (by omega) _ (by omega) (by omega)
-  have n2 : V t ≠ V (b + k + 1) := V_ne _ (by omega) _ (by omega) (by omega)
-  have n3 : V (b + k) ≠ V (b + k + 1) := V_ne _ (by omega) _ (by omega) (by omega)
-  have n4 : V 30 ≠ V t := V_ne _ (by omega) _ (by omega) (by omega)
-  have n5 : V 30 ≠ V (b + k) := V_ne _ (by omega) _ (by omega) (by omega)
+  have n1 : V t ≠ V (b + k) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n2 : V t ≠ V (b + k + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n3 : V (b + k) ≠ V (b + k + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n4 : V 30 ≠ V t := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  have n5 : V 30 ≠ V (b + k) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   have n1' := n1.symm
   have n2' := n2.symm
   have n3' := n3.symm
@@ -111,13 +113,13 @@ theorem chainLoop_ok {s : State} (r : Nat → Nat → Nat) (hr : ∀ k < 16, Lan
       (∀ e < 2, (vdword (t.v (V 30)) e).toNat = 2 ^ 28 - 1) ∧
       (∀ v : VReg, (∀ n < 16, v ≠ V n) → v ≠ V 28 → v ≠ V 29 → t.v v = s.v v) := by
   have ci : ∀ e < 2, ∀ b ∈ [0, 8], ∀ k ≤ 8, cin (r e) b k < 2 ^ 36 := fun e he b hb' k hk =>
-    cin_le (fun k hk => hb e he _ (by simp at hb'; omega)) k hk
+    cin_le (fun k hk => hb e he _ (by simp at hb'; omega_arith)) k hk
   let inv := fun n (t : State) =>
     (∀ k < 8, LaneIs t k (fun e => chainAt (r e) 0 n k)) ∧ (∀ k < 8, LaneIs t (8 + k) (fun e => chainAt (r e) 8 n k)) ∧
     t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ e < 2, (vdword (t.v (V 30)) e).toNat = 2 ^ 28 - 1) ∧
     (∀ v : VReg, (∀ n < 16, v ≠ V n) → v ≠ V 28 → v ≠ V 29 → t.v v = s.v v)
-  have i0 : inv 0 s := ⟨fun k hk e he => by dsimp only; rw [chainAt_zero, Nat.zero_add]; exact hr k (by omega) e he,
-    fun k hk e he => by dsimp only; rw [chainAt_zero]; exact hr (8 + k) (by omega) e he,
+  have i0 : inv 0 s := ⟨fun k hk e he => by dsimp only; rw [chainAt_zero, Nat.zero_add]; exact hr k (by omega_arith) e he,
+    fun k hk e he => by dsimp only; rw [chainAt_zero]; exact hr (8 + k) (by omega_arith) e he,
     rfl, rfl, rfl, rfl, hM, fun _ _ _ _ => rfl⟩
   refine WP.mono (wp_range_flatMap (M := isa) (N := 7) inv (fun n t hn ⟨t0, t8, tm, tg, tr, tw, tM, tv⟩ => ?_) 7
     (by decide) s i0) fun t ht => ht
@@ -125,57 +127,57 @@ theorem chainLoop_ok {s : State} (r : Nat → Nat → Nat) (hr : ∀ k < 16, Lan
     have cn : ∀ e < 2, ∀ b ∈ [0, 8], chainAt (r e) b n n = cval (r e) b n := fun e _ b _ => by
       simp [chainAt]
     have cn1 : ∀ e < 2, ∀ b ∈ [0, 8], chainAt (r e) b n (n + 1) = r e (b + (n + 1)) := fun e _ b _ => by
-      simp [chainAt, show ¬ (n + 1 < n) by omega]
+      simp [chainAt, show ¬ (n + 1 < n) by omega_arith]
     have bnd : ∀ e < 2, ∀ b ∈ [0, 8], r e (b + (n + 1)) + cval (r e) b n / 2 ^ 28 < 2 ^ 64 := fun e he b hb' => by
-      have h1 := ci e he b hb' (n + 1) (by omega)
-      have h2 := hb e he (b + (n + 1)) (by simp at hb'; omega)
+      have h1 := ci e he b hb' (n + 1) (by omega_arith)
+      have h2 := hb e he (b + (n + 1)) (by simp at hb'; omega_arith)
       simp only [cin] at h1
       simp only [cval]
-      omega
-    refine WP.mono (chainStep_ok (b := 0) (k := n) (t := 28) (by omega) (by omega) tM
-      (fun e he => by rw [Nat.zero_add, t0 n (by omega) e he]; dsimp only; rw [cn e he 0 (by simp)])
-      (fun e he => by rw [Nat.zero_add, t0 (n + 1) (by omega) e he]; dsimp only; rw [cn1 e he 0 (by simp)])
+      omega_arith
+    refine WP.mono (chainStep_ok (b := 0) (k := n) (t := 28) (by omega_arith) (by omega_arith) tM
+      (fun e he => by rw [Nat.zero_add, t0 n (by omega_arith) e he]; dsimp only; rw [cn e he 0 (by simp)])
+      (fun e he => by rw [Nat.zero_add, t0 (n + 1) (by omega_arith) e he]; dsimp only; rw [cn1 e he 0 (by simp)])
       (fun e he => bnd e he 0 (by simp))) fun u ⟨ua, ub, um, ug, ur, uw, uv⟩ => ?_
     simp only [Nat.zero_add] at ua ub uv
     have u8 : ∀ k < 8, u.v (V (8 + k)) = t.v (V (8 + k)) := fun k hk =>
-      uv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-        (V_ne _ (by omega) _ (by omega) (by omega))
+      uv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+        (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
     have uM : ∀ e < 2, (vdword (u.v (V 30)) e).toNat = 2 ^ 28 - 1 := fun e he => by
-      rw [uv _ (by decide) (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))]
+      rw [uv _ (by decide) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]
       exact tM e he
-    refine WP.mono (chainStep_ok (b := 8) (k := n) (t := 29) (by omega) (by omega) uM
-      (fun e he => by rw [u8 n (by omega), t8 n (by omega) e he]; dsimp only; rw [cn e he 8 (by simp)])
+    refine WP.mono (chainStep_ok (b := 8) (k := n) (t := 29) (by omega_arith) (by omega_arith) uM
+      (fun e he => by rw [u8 n (by omega_arith), t8 n (by omega_arith) e he]; dsimp only; rw [cn e he 8 (by simp)])
       (fun e he => by
-        rw [show 8 + n + 1 = 8 + (n + 1) by omega, u8 (n + 1) (by omega), t8 (n + 1) (by omega) e he]
+        rw [show 8 + n + 1 = 8 + (n + 1) by omega_arith, u8 (n + 1) (by omega_arith), t8 (n + 1) (by omega_arith) e he]
         dsimp only; rw [cn1 e he 8 (by simp)])
       (fun e he => bnd e he 8 (by simp))) fun w ⟨wa, wb, wm, wg, wr, ww, wv⟩ => ?_
     have w0 : ∀ k < 8, w.v (V k) = u.v (V k) := fun k hk =>
-      wv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-        (V_ne _ (by omega) _ (by omega) (by omega))
+      wv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+        (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
     refine ⟨fun k hk e he => ?_, fun k hk e he => ?_, wm.trans (um.trans tm), wg.trans (ug.trans tg),
       wr.trans (ur.trans tr), ww.trans (uw.trans tw), fun e he => ?_, fun v h1 h2 h3 => ?_⟩
     · rw [w0 k hk]
-      rcases (show k < n ∨ k = n ∨ k = n + 1 ∨ n + 1 < k by omega) with h | rfl | rfl | h
-      · rw [uv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-          (V_ne _ (by omega) _ (by omega) (by omega)), t0 k hk e he]
-        simp [chainAt, h, show k < n + 1 by omega]
+      rcases (show k < n ∨ k = n ∨ k = n + 1 ∨ n + 1 < k by omega_arith) with h | rfl | rfl | h
+      · rw [uv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+          (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), t0 k hk e he]
+        simp [chainAt, h, show k < n + 1 by omega_arith]
       · rw [ua e he]; simp [chainAt]
       · rw [ub e he]; simp [chainAt, cval, cin]
-      · rw [uv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-          (V_ne _ (by omega) _ (by omega) (by omega)), t0 k hk e he]
-        simp [chainAt, show ¬ k < n by omega, show k ≠ n by omega, show ¬ k < n + 1 by omega, show k ≠ n + 1 by omega]
-    · rcases (show k < n ∨ k = n ∨ k = n + 1 ∨ n + 1 < k by omega) with h | rfl | rfl | h
-      · rw [wv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-          (V_ne _ (by omega) _ (by omega) (by omega)), u8 k hk, t8 k hk e he]
-        simp [chainAt, h, show k < n + 1 by omega]
+      · rw [uv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+          (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), t0 k hk e he]
+        simp [chainAt, show ¬ k < n by omega_arith, show k ≠ n by omega_arith, show ¬ k < n + 1 by omega_arith, show k ≠ n + 1 by omega_arith]
+    · rcases (show k < n ∨ k = n ∨ k = n + 1 ∨ n + 1 < k by omega_arith) with h | rfl | rfl | h
+      · rw [wv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+          (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), u8 k hk, t8 k hk e he]
+        simp [chainAt, h, show k < n + 1 by omega_arith]
       · rw [wa e he]; simp [chainAt]
-      · rw [show 8 + (n + 1) = 8 + n + 1 by omega, wb e he]; simp [chainAt, cval, cin]
-      · rw [wv _ (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))
-          (V_ne _ (by omega) _ (by omega) (by omega)), u8 k hk, t8 k hk e he]
-        simp [chainAt, show ¬ k < n by omega, show k ≠ n by omega, show ¬ k < n + 1 by omega, show k ≠ n + 1 by omega]
-    · rw [wv _ (by decide) (V_ne _ (by omega) _ (by omega) (by omega)) (V_ne _ (by omega) _ (by omega) (by omega))]
+      · rw [show 8 + (n + 1) = 8 + n + 1 by omega_arith, wb e he]; simp [chainAt, cval, cin]
+      · rw [wv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
+          (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)), u8 k hk, t8 k hk e he]
+        simp [chainAt, show ¬ k < n by omega_arith, show k ≠ n by omega_arith, show ¬ k < n + 1 by omega_arith, show k ≠ n + 1 by omega_arith]
+    · rw [wv _ (by decide) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]
       exact uM e he
-    · rw [wv _ h3 (h1 _ (by omega)) (h1 _ (by omega)), uv _ h2 (h1 _ (by omega)) (h1 _ (by omega)), tv v h1 h2 h3]
+    · rw [wv _ h3 (h1 _ (by omega_arith)) (h1 _ (by omega_arith)), uv _ h2 (h1 _ (by omega_arith)) (h1 _ (by omega_arith)), tv v h1 h2 h3]
 
 /-- The last carries: `C7` into coefficient 8, `C15` into 0 and 8. -/
 theorem wrap_ok {t : State} (r : Nat → Nat → Nat) (hb : ∀ e < 2, ∀ k < 16, r e k < 2 ^ 64 - 2 ^ 40)
@@ -185,11 +187,11 @@ theorem wrap_ok {t : State} (r : Nat → Nat → Nat) (hb : ∀ e < 2, ∀ k < 1
       (∀ k < 16, LaneIs u k (fun e => limbs28 (r e) k)) ∧ u.mem = t.mem ∧ u.gpr = t.gpr ∧ u.rd = t.rd ∧
       u.wr = t.wr ∧ (∀ v : VReg, (∀ n < 16, v ≠ V n) → v ≠ V 28 → v ≠ V 29 → u.v v = t.v v) := by
   have ci : ∀ e < 2, ∀ b ∈ [0, 8], ∀ k ≤ 8, cin (r e) b k < 2 ^ 36 := fun e he b hb' k hk =>
-    cin_le (fun k hk => hb e he _ (by simp at hb'; omega)) k hk
+    cin_le (fun k hk => hb e he _ (by simp at hb'; omega_arith)) k hk
   have c7 : ∀ e < 2, cval (r e) 0 7 / 2 ^ 28 < 2 ^ 36 := fun e he => by
-    have := ci e he 0 (by simp) 8 (by omega); simp only [cin] at this; exact this
+    have := ci e he 0 (by simp) 8 (by omega_arith); simp only [cin] at this; exact this
   have c15 : ∀ e < 2, cval (r e) 8 7 / 2 ^ 28 < 2 ^ 36 := fun e he => by
-    have := ci e he 8 (by simp) 8 (by omega); simp only [cin] at this; exact this
+    have := ci e he 8 (by simp) 8 (by omega_arith); simp only [cin] at this; exact this
   have n0_7 : V 0 ≠ V 7 := by decide
   have n0_8 : V 0 ≠ V 8 := by decide
   have n0_15 : V 0 ≠ V 15 := by decide
@@ -233,13 +235,13 @@ theorem wrap_ok {t : State} (r : Nat → Nat → Nat) (hb : ∀ e < 2, ∀ k < 1
   have n30_28 : V 30 ≠ V 28 := by decide
   have n30_29 : V 30 ≠ V 29 := by decide
   have l7 : ∀ e < 2, (vdword (t.v (V 7)) e).toNat = cval (r e) 0 7 := fun e he => by
-    rw [t0 7 (by omega) e he]; simp [chainAt]
+    rw [t0 7 (by omega_arith) e he]; simp [chainAt]
   have l15 : ∀ e < 2, (vdword (t.v (V 15)) e).toNat = cval (r e) 8 7 := fun e he => by
-    rw [t8 7 (by omega) e he]; simp [chainAt]
+    rw [t8 7 (by omega_arith) e he]; simp [chainAt]
   have l0 : ∀ e < 2, (vdword (t.v (V 0)) e).toNat = cval (r e) 0 0 % 2 ^ 28 := fun e he => by
-    rw [t0 0 (by omega) e he]; simp [chainAt]
+    rw [t0 0 (by omega_arith) e he]; simp [chainAt]
   have l8 : ∀ e < 2, (vdword (t.v (V 8)) e).toNat = cval (r e) 8 0 % 2 ^ 28 := fun e he => by
-    rw [t8 0 (by omega) e he]; simp [chainAt]
+    rw [t8 0 (by omega_arith) e he]; simp [chainAt]
   simp only [wrap]
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
@@ -255,13 +257,13 @@ theorem wrap_ok {t : State} (r : Nat → Nat → Nat) (hb : ∀ e < 2, ∀ k < 1
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, WP.block_nil_iff.mpr ?_⟩
   refine ⟨fun k hk e he => ?_, by simp only [RegUpd.mem_setV], by simp only [RegUpd.gpr_setV],
     by simp only [RegUpd.rd_setV], by simp only [RegUpd.wr_setV], fun v h1 h2 h3 => ?_⟩
-  · rcases (show k = 0 ∨ k = 7 ∨ k = 8 ∨ k = 15 ∨ (0 < k ∧ k < 7) ∨ (8 < k ∧ k < 15) by omega)
+  · rcases (show k = 0 ∨ k = 7 ∨ k = 8 ∨ k = 15 ∨ (0 < k ∧ k < 7) ∨ (8 < k ∧ k < 15) by omega_arith)
       with rfl | rfl | rfl | rfl | ⟨k1, k2⟩ | ⟨k1, k2⟩
     · vred
       rw [lane_map2 _ _ _ he, BitVec.toNat_add, l0 e he, ushr28 _ _ _ he, l15 e he]
       simp only [limbs28, show (0 : Nat) < 8 by decide, ite_true]
       have := c15 e he
-      exact Nat.mod_eq_of_lt (by omega)
+      exact Nat.mod_eq_of_lt (by omega_arith)
     · vred
       rw [lane_and _ _ tM he, l7 e he]
       simp [limbs28]
@@ -269,27 +271,27 @@ theorem wrap_ok {t : State} (r : Nat → Nat → Nat) (hb : ∀ e < 2, ∀ k < 1
       rw [lane_map2 _ _ _ he, BitVec.toNat_add, lane_map2 _ _ _ he,
         BitVec.toNat_add, l8 e he, ushr28 _ _ _ he, l7 e he, ushr28 _ _ _ he, l15 e he]
       have := c7 e he; have := c15 e he
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [Nat.mod_eq_of_lt (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]
       simp only [limbs28, show ¬ (8 : Nat) < 8 by decide, ite_false, ite_true, Nat.sub_self, C7, C15]
-      omega
+      omega_arith
     · vred
       rw [lane_and _ _ tM he, l15 e he]
       simp [limbs28]
     · have hv : ∀ n ∈ [0, 7, 8, 15, 28, 29], V k ≠ V n := fun n hn =>
-        V_ne _ (by omega) _ (by simp at hn; omega) (by simp at hn; omega)
+        V_ne _ (by omega_arith) _ (by simp at hn; omega_arith) (by simp at hn; omega_arith)
       rw [RegUpd.v_setV_of_ne _ _ (hv 0 (by simp)), RegUpd.v_setV_of_ne _ _ (hv 8 (by simp)),
         RegUpd.v_setV_of_ne _ _ (hv 8 (by simp)), RegUpd.v_setV_of_ne _ _ (hv 15 (by simp)),
         RegUpd.v_setV_of_ne _ _ (hv 29 (by simp)), RegUpd.v_setV_of_ne _ _ (hv 7 (by simp)),
-        RegUpd.v_setV_of_ne _ _ (hv 28 (by simp)), t0 k (by omega) e he]
-      simp [chainAt, limbs28, show k < 7 by omega, show k < 8 by omega, show k ≠ 0 by omega]
+        RegUpd.v_setV_of_ne _ _ (hv 28 (by simp)), t0 k (by omega_arith) e he]
+      simp [chainAt, limbs28, show k < 7 by omega_arith, show k < 8 by omega_arith, show k ≠ 0 by omega_arith]
     · have hv : ∀ n ∈ [0, 7, 8, 15, 28, 29], V k ≠ V n := fun n hn =>
-        V_ne _ (by omega) _ (by simp at hn; omega) (by simp at hn; omega)
+        V_ne _ (by omega_arith) _ (by simp at hn; omega_arith) (by simp at hn; omega_arith)
       rw [RegUpd.v_setV_of_ne _ _ (hv 0 (by simp)), RegUpd.v_setV_of_ne _ _ (hv 8 (by simp)),
         RegUpd.v_setV_of_ne _ _ (hv 8 (by simp)), RegUpd.v_setV_of_ne _ _ (hv 15 (by simp)),
         RegUpd.v_setV_of_ne _ _ (hv 29 (by simp)), RegUpd.v_setV_of_ne _ _ (hv 7 (by simp)),
-        RegUpd.v_setV_of_ne _ _ (hv 28 (by simp)), show k = 8 + (k - 8) by omega, t8 (k - 8) (by omega) e he]
-      simp [chainAt, limbs28, show k - 8 < 7 by omega, show ¬ (8 + (k - 8) < 8) by omega]
-      intro h; omega
+        RegUpd.v_setV_of_ne _ _ (hv 28 (by simp)), show k = 8 + (k - 8) by omega_arith, t8 (k - 8) (by omega_arith) e he]
+      simp [chainAt, limbs28, show k - 8 < 7 by omega_arith, show ¬ (8 + (k - 8) < 8) by omega_arith]
+      intro h; omega_arith
   · rw [RegUpd.v_setV_of_ne _ _ (h1 0 (by decide)), RegUpd.v_setV_of_ne _ _ (h1 8 (by decide)),
       RegUpd.v_setV_of_ne _ _ (h1 8 (by decide)), RegUpd.v_setV_of_ne _ _ (h1 15 (by decide)),
       RegUpd.v_setV_of_ne _ _ h3, RegUpd.v_setV_of_ne _ _ (h1 7 (by decide)), RegUpd.v_setV_of_ne _ _ h2]
@@ -320,7 +322,7 @@ theorem chain_val (r : Nat → Nat) (b : Nat) (n : Nat) :
   | succ n ih =>
     simp only [psum, cin]
     have e' : cval r b n % 2 ^ 28 + (cval r b n / 2 ^ 28) * 2 ^ 28 = r (b + n) + cin r b n := by
-      simp only [cval]; omega
+      simp only [cval]; omega_arith
     have e : ((cval r b n % 2 ^ 28 : Nat) : Int) + ((cval r b n / 2 ^ 28 : Nat) : Int) * 2 ^ 28 =
         (r (b + n) : Int) + cin r b n := by exact_mod_cast e'
     rw [← ih]

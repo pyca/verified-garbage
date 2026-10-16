@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.Arm.LNtz
 public import VerifiedGarbage.Proof.Ocb.Nonce
-public import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.Ocb.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

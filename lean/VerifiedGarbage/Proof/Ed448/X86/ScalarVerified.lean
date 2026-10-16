@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
+import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarMain
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarMulAddMain
@@ -18,6 +18,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X448.X86.Ops
+meta import VerifiedGarbage.Proof.X448.X86.Ops
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): `Verified`

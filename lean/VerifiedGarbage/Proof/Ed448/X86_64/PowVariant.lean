@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 meta import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
-public import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
+import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 meta import VerifiedGarbage.Proof.X448.X86_64.Pow223Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
+meta import VerifiedGarbage.Proof.X448.X86_64.Adx.Lit
 
 /-! The shared Curve448 exponentiation routine for each field backend. -/
 

@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Sha512.X86_64.Compress
-public import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
-public import VerifiedGarbage.Proof.Sha512.X86_64.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

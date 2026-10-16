@@ -4,13 +4,14 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mul
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Field
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
+import VerifiedGarbage.Proof.Ed25519.AArch64.Sub
 public import VerifiedGarbage.Spec.Ed25519
 public import Mathlib.Logic.Function.Basic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.AArch64.Sqr`. -/
 
@@ -149,7 +150,7 @@ theorem addWords_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat
     dsimp only [fe, word, Mem.readW, addCarry, carryOut, Size.bits] at h ⊢
     exact h
   · dsimp only [word, Mem.readW, carryOut, Size.bits]
-    exact carry38_value _
+    exact carry38_sel _
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, hr.1, hr.2.1,

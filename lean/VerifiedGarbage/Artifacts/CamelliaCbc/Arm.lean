@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.Arm.CbcVerified
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-! # Camellia-CBC artifacts on baseline ARMv7 -/
 

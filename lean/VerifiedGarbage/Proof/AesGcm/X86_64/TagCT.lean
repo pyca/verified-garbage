@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
-public import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 
 /-!
 # AES-GCM on x86-64: `flush`, `lens` and `tag` in two runs

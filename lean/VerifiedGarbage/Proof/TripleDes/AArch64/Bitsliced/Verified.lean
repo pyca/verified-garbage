@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Loop
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Loop
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.ConstantTime
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Ecb.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
@@ -9,6 +9,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 
 /-! # The AdvSIMD bitsliced ECB functions meet their contracts -/
 

@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! # Prepared tables and the cached-key loop setup -/
 
@@ -48,7 +49,7 @@ theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat �
     (hP : ∀ k < 4, ∀ l < 4, P k l = hInvF (Spec.Gcm.hpow (hk s₀) (16 - 4 * k - l)))
     (hFin : ∀ T : Nat → Nat → Nat → Block,
       (∀ g < 3, ∀ k < 4, ∀ l < 4, T g k l = hInvF (Spec.Gcm.hpow (hk s₀) (48 - 16 * g - 4 * k - l))) →
-        FinOk48 (hk s₀) T) (h256 : 256 ≤ nb s₀) {s : State}
+        FinOk48 (hk s₀) T) (h96 : 96 ≤ nb s₀) {s : State}
     (hI : EInvTo s₀ P 1 s)
     (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) : WP isa bigPTo s fun s' => ∃ e, EInvTo s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s' := by
   have hP' := hp.toPrepared
@@ -73,7 +74,7 @@ theorem bigPTo_ok {s₀ : State} (hp : SPreTo CtxMode.prepared s₀) {P : Nat �
     · subst h2; simp only [T, ↓reduceIte]; rw [hP k hk l hl]
     · simp only [T, h2, ↓reduceIte]; exact t g (by omega) k hk l hl
   have hA₁ := (hI.a.pow hp fr g₁ rd₁ wr₁ fun r h7 h8 h9 h10 _ h12 l hl => z₁ r h7 h8 h9 h10 h12 l hl)
-  exact (bigRestTo_ok hp hf hT (fun k l => by simp only [T, ↓reduceIte]) h256 hI
+  exact (bigRestTo_ok hp hf hT (fun k l => by simp only [T, ↓reduceIte]) h96 hI
     hA₁ hv pm g₁
     (fun l hl => z₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
     (hCache.keep hh₁ (hA₁.keys hp)))

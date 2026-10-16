@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-! Retain separate functional postconditions for two secret inputs. -/
 
@@ -21,14 +23,14 @@ open VG VG.X86_64
 
 set_option hygiene false in
 /-- `taint_decide` for the code emitted with `fld`, for each field arithmetic it may be. -/
-macro "fld_taint_decide" : tactic =>
+tactic_template "fld_taint_decide" : tactic =>
   `(tactic| first
     | (rcases (EdArith.known (fld := fld)) with h | h <;> (rw [h]; exact ⟨_, by taint_decide⟩))
     | exact ⟨_, by taint_decide⟩)
 
 set_option hygiene false in
 /-- `lit_decide` for the code emitted with `fld`, for each field arithmetic it may be. -/
-macro "fld_lit_decide" : tactic =>
+tactic_template "fld_lit_decide" : tactic =>
   `(tactic| first
     | (rcases (EdArith.known (fld := fld)) with h | h <;> (rw [h]; lit_decide))
     | lit_decide)

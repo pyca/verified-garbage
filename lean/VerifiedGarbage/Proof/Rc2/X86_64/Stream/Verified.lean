@@ -1,21 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
+import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
 meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Lit
-public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
+import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
 meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Steps
 public import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
 meta import VerifiedGarbage.Proof.Rc2.X86_64.Stream.Long
-public import VerifiedGarbage.Proof.Rc2.Scratch
+import VerifiedGarbage.Proof.Rc2.Scratch
 meta import VerifiedGarbage.Proof.Rc2.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Rc2.X86_64.Key
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Rc2.X86_64.Key
+meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Rc2.CbcMemory
+import VerifiedGarbage.Proof.Rc2.Stream
+meta import VerifiedGarbage.Proof.Rc2.CbcMemory
+meta import VerifiedGarbage.Proof.Rc2.Stream
 
 @[expose] public section
 
@@ -73,8 +81,8 @@ theorem call_pre (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
   generalize hO : s.gpr .r8 = O at *
   generalize hB : stackArg s 0 = B at *
   generalize hSP : s.gpr .rsp = SP at *
-  have h8 : 8 ≤ N := by omega
-  have hNN8 : 8 * (N / 8) = N := by omega
+  have h8 : 8 ≤ N := by omega_using [hnz, hN]
+  have hNN8 : 8 * (N / 8) = N := by omega_using [hN]
   have e128 : C + 128 = C + BitVec.ofNat 64 128 := rfl
   have stackSub : Region.Sub (below (SP - 8) 8) (below SP 16) := below_callee _ _
   have retSub : Region.Sub ⟨SP - 8, 8⟩ (below SP 16) := Offset.sub_below SP (by decide) (by decide)
@@ -86,7 +94,7 @@ theorem call_pre (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
       State.callEntry_rsp, State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp),
       State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp),
       State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp),
-      rdi₁, rsi₁, rdx₁, rcx₁, r8₁, rsp₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show N / 8 < 2 ^ 64 by omega),
+      rdi₁, rsi₁, rdx₁, rcx₁, r8₁, rsp₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show N / 8 < 2 ^ 64 by omega_using [fitOut]),
       hNN8, e128]
     refine ⟨trivial, trivial, Offset.base_disjoint _ (by decide) (by decide), ctxOut.sub_left keySub,
       (ctxBuf.sub_left keySub).sub_right bufSub, ctxOut.sub_left ivSub, (ctxBuf.sub_left ivSub).sub_right bufSub,
@@ -101,7 +109,7 @@ theorem call_pre (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨⟨C, 144⟩, by simp, 0, by simp, by simp⟩
     · exact ⟨⟨C, 144⟩, by simp, 128, rfl, by simp⟩
-    · exact ⟨⟨O, N⟩, by simp, 0, by simp, by simp only [hNN8]; omega⟩
+    · exact ⟨⟨O, N⟩, by simp, 0, by simp, by simp only [hNN8]; omega_using []⟩
     · exact ⟨⟨B, 576⟩, by simp, 0, by simp, by simp⟩
   · rw [wr₁, hwr]
     apply Covers.of_sub
@@ -109,7 +117,7 @@ theorem call_pre (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).p
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨⟨C, 144⟩, by simp, 128, rfl, by simp⟩
-    · exact ⟨⟨O, N⟩, by simp, 0, by simp, by simp only [hNN8]; omega⟩
+    · exact ⟨⟨O, N⟩, by simp, 0, by simp, by simp only [hNN8]; omega_using []⟩
     · exact ⟨⟨B, 576⟩, by simp, 0, by simp, by simp⟩
 
 /-- The call of the CBC function, and the update's postcondition. -/
@@ -136,8 +144,8 @@ theorem call_ok (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).pr
   generalize hNN : (s.gpr .r9).toNat = N at *
   generalize hB : stackArg s 0 = B at *
   generalize hSP : s.gpr .rsp = SP at *
-  have h8 : 8 ≤ N := by omega
-  have hNN8 : 8 * (N / 8) = N := by omega
+  have h8 : 8 ≤ N := by omega_using [hnz, hN]
+  have hNN8 : 8 * (N / 8) = N := by omega_using [hN]
   have e128 : C + 128 = C + BitVec.ofNat 64 128 := rfl
   have e136 : C + 136 = C + BitVec.ofNat 64 136 := rfl
   have stackSub : Region.Sub (below (SP - 8) 8) (below SP 16) := below_callee _ _
@@ -158,7 +166,7 @@ theorem call_ok (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).pr
   simp only [Cbc.contract, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
-    rdi₁, rsi₁, rdx₁, rcx₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show N / 8 < 2 ^ 64 by omega), mem₂] at post₂
+    rdi₁, rsi₁, rdx₁, rcx₁, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show N / 8 < 2 ^ 64 by omega_using [fitOut]), mem₂] at post₂
   rw [scheduleAt_frame stackFrame C (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ((stCtx.sub_left stack8).sub_right keySub).symm),
@@ -196,12 +204,12 @@ theorem call_ok (d : Spec.Rc2.Direction) (s : State) (hs : (updateContract d).pr
     rw [Nat.mul_div_cancel _ (by decide : 0 < 8)] at post₂
     have keyMid := scheduleAt_frame frame₁ C (midSep _ (ctxOut.sub_left keySub)
       (Offset.base_disjoint _ (by decide) (by decide)))
-    refine update_post_long hp (by omega) out₁ keyMid ?_ ?_ ?_ post₂.1 post₂.2
+    refine update_post_long hp (by omega_using [hN, h8]) out₁ keyMid ?_ ?_ ?_ post₂.1 post₂.2
     · rw [e128]
       exact blockAt_frame frame₁ _ (midSep _ (ctxOut.sub_left ivSub) (Offset.disjoint _ (by decide) (by decide) (by decide)))
-    · rw [e136, Proof.Rc2.bytesAt_frame frame' _ _ (by omega) (callSep _
-          (Offset.disjoint _ (by omega) (by omega) (by decide)) (ctxOut.sub_left (Offset.sub_base _ (by omega)))
-          (ctxBuf.sub_left (Offset.sub_base _ (by omega))) (stCtx.symm.sub_left (Offset.sub_base _ (by omega)))),
+    · rw [e136, Proof.Rc2.bytesAt_frame frame' _ _ (by omega_using []) (callSep _
+          (Offset.disjoint _ (by omega_using []) (by omega_using []) (by decide)) (ctxOut.sub_left (Offset.sub_base _ (by omega_using [])))
+          (ctxBuf.sub_left (Offset.sub_base _ (by omega_using []))) (stCtx.symm.sub_left (Offset.sub_base _ (by omega_using [])))),
         ← e136, pend₁]
     · exact scheduleAt_frame frame' C (callSep _ (Offset.base_disjoint _ (by decide) (by decide))
         (ctxOut.sub_left keySub) (ctxBuf.sub_left keySub) (stCtx.symm.sub_left keySub))
@@ -244,17 +252,17 @@ def code (keyLen effectiveBits ivLen : Nat) : Nat :=
   else if ¬(1 ≤ effectiveBits ∧ effectiveBits ≤ 1024) then 2 else if ivLen ≠ 8 then 3 else 0
 
 theorem code_le (a b c : Nat) : code a b c ≤ 3 := by
-  unfold code; split <;> (try split) <;> (try split) <;> omega
+  unfold code; split <;> (try split) <;> (try split) <;> omega_using []
 
 theorem sub_one_lt (x : BitVec 64) {n : Nat} (hn : n < 2 ^ 64) :
     (x - 1).toNat < n ↔ 1 ≤ x.toNat ∧ x.toNat ≤ n := by
   have := x.isLt
   rw [BitVec.toNat_sub, show (1 : BitVec 64).toNat = 1 from rfl]
-  omega
+  omega_using [hn]
 
 /-- `mov32 rax, c`, then `r10 = r - 1` compared with `n`: CF is set iff `r` is
 in `1..=n`. -/
-theorem checkRange_ok (s : State) (r : Reg) (hr : r ≠ .rax) (c n : Nat) (hc : c < 2 ^ 32) (hn : n < 2 ^ 63)
+theorem checkRange_ok (s : State) (r : Reg) (hr : r ≠ .rax) (c n : Nat) (hc : c < 2 ^ 32) (_hn : n < 2 ^ 63)
     (hs : (BitVec.signExtend 64 (BitVec.ofNat 32 n)).toNat = n) :
     ∃ s', runBlock isa [.mov32 .rax (.imm (BitVec.ofNat 32 c)), rr .r10 r, .alu .sub .r10 (.imm 1),
         .alu .cmp .r10 (.imm (BitVec.ofNat 32 n))] s = some s' ∧
@@ -269,9 +277,9 @@ theorem checkRange_ok (s : State) (r : Reg) (hr : r ≠ .rax) (c n : Nat) (hc : 
       gpr_setReg_self]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc,
-      Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega)]
+      Nat.mod_eq_of_lt (show c < 2 ^ 64 by omega_using [hc])]
   · simp only [cf_arithFlags, gpr_setReg_self, gpr_setReg_of_ne _ _ hr, hs,
-      show BitVec.signExtend 64 (1 : BitVec 32) = 1 by decide, sub_one_lt _ (show n < 2 ^ 64 by omega)]
+      show BitVec.signExtend 64 (1 : BitVec 32) = 1 by decide, sub_one_lt _ (show n < 2 ^ 64 by omega_using [hs])]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
     simp only [gpr_arithFlags, gpr_setReg_of_ne _ _ hr'.2, gpr_setReg_of_ne _ _ hr'.1]
 
@@ -312,7 +320,7 @@ theorem checks_ok (s : State) :
   · obtain ⟨s₁, run₁, rax₁, cf₁, keep₁⟩ := checkRange_ok s .rsi (by decide) 1 128 (by decide) (by decide) (by decide)
     refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
     refine WP.ite _ (by simp only [eval, cf₁]; rfl) (fun h => WP.block_nil ⟨keep₁, ?_⟩) (fun h => ?_)
-    · rw [rax₁, code, ite_eq_left_of_eq_true _ _ (eq_true (by simp at h ⊢; omega))]
+    · rw [rax₁, code, ite_eq_left_of_eq_true _ _ (eq_true (by simp at h ⊢; omega_using [h]))]
     obtain ⟨s₂, run₂, rax₂, cf₂, keep₂⟩ := checkRange_ok s₁ .rdx (by decide) 2 1024 (by decide) (by decide) (by decide)
     have hk : 1 ≤ (s.gpr .rsi).toNat ∧ (s.gpr .rsi).toNat ≤ 128 := by simpa using h
     rw [keep₁.reg _ (by decide)] at cf₂
@@ -331,7 +339,7 @@ theorem checks_ok (s : State) :
     refine WP.of_runBlock ⟨s₄, run₄, keep_trans (keep_trans (keep_trans keep₁ keep₂) keep₃) keep₄, ?_⟩
     rw [rax₄, code, ite_eq_right_of_eq_false _ _ (eq_false (fun h => h hk)), ite_eq_right_of_eq_false _ _ (eq_false (fun h => h he)), ite_eq_right_of_eq_false _ _ (eq_false (by simp at h ⊢; omega))]
   · rintro t ⟨keep, rax⟩
-    obtain ⟨t', run, zf, keep'⟩ := test_ok t .rax rax (by have := code_le (s.gpr .rsi).toNat (s.gpr .rdx).toNat (s.gpr .r8).toNat; omega)
+    obtain ⟨t', run, zf, keep'⟩ := test_ok t .rax rax (by have := code_le (s.gpr .rsi).toNat (s.gpr .rdx).toNat (s.gpr .r8).toNat; omega_using [this])
     refine WP.of_runBlock ⟨t', run, ⟨fun r hr => (keep'.reg r (by simp)).trans (keep.reg r hr),
       keep'.mem.trans keep.mem, keep'.rd.trans keep.rd, keep'.wr.trans keep.wr⟩, zf, ?_⟩
     rw [keep'.reg _ (by simp), rax]
@@ -402,7 +410,7 @@ theorem initArgs_pre (σ : State) (hs : initContract.pre σ) (hv : Valid σ) (t 
   obtain ⟨t', run, mem', rcx', r8', g', rd', wr'⟩ := initArgs_ok t
     (by rw [ht.rd, ht.wr, ht.reg _ (by decide)]
         exact rdwr (by rw [hrd]; exact ⟨⟨σ.gpr .rcx, (σ.gpr .r8).toNat⟩, by simp,
-          Offset.contains_base _ (by have := hv.2.2; omega) (by decide)⟩))
+          Offset.contains_base _ (by have := hv.2.2; omega_using [this]) (by decide)⟩))
     (by rw [ht.wr, ht.reg _ (by decide), hwr]
         exact ⟨⟨σ.gpr .r9, 144⟩, by simp, Offset.contains_base _ (by decide) (by decide)⟩)
     (by rw [ht.rd, ht.wr, ht.reg _ (by decide), ← argsAddr]
@@ -494,9 +502,9 @@ theorem keyCall_ok (σ : State) (hs : initContract.pre σ) (hv : Valid σ) (t : 
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
     ht.rdi, ht.rsi, ht.rdx, ht.rcx, mem₂] at post₂
-  rw [Proof.Rc2.bytesAt_frame stackFrame _ _ (by omega) (fun r hr => by
+  rw [Proof.Rc2.bytesAt_frame stackFrame _ _ (by omega_using []) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact stKey.symm),
-    ht.mem, Proof.Rc2.bytesAt_frame (frame_store64 _ _ _) _ _ (by omega) (fun r hr => by
+    ht.mem, Proof.Rc2.bytesAt_frame (frame_store64 _ _ _) _ _ (by omega_using []) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact keyCtx.sub_right pendSub)] at post₂
   obtain ⟨s'', run, rax'', keep''⟩ := zero_ok s'
   refine WP.of_runBlock ⟨s'', run, ⟨fun r hr => ?_, ?_⟩, fun direction => ?_⟩
@@ -538,7 +546,7 @@ theorem init_body_correct (σ : State) (hs : initContract.pre σ) : WP isa init 
   · have hc : code (σ.gpr .rsi).toNat (σ.gpr .rdx).toNat (σ.gpr .r8).toNat ≠ 0 := by simpa using h
     have hr : ((t.gpr .rax).setWidth 32).toNat = code (σ.gpr .rsi).toNat (σ.gpr .rdx).toNat (σ.gpr .r8).toNat := by
       have := code_le (σ.gpr .rsi).toNat (σ.gpr .rdx).toNat (σ.gpr .r8).toNat
-      rw [rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+      rw [rax, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this]), Nat.mod_eq_of_lt (by omega_using [this])]
     refine ⟨⟨fun r hr' => keep.reg r (by revert hr'; revert r; decide), by rw [keep.mem]⟩, ?_⟩
     refine init_post_error (hr.trans (code_ne hc)) (fun hv => hc ?_)
     simp only [code, hv.1, hv.2.1, hv.2.2, not_true_eq_false, and_self, ↓reduceIte, ne_eq]

@@ -1,11 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeArithmetic
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-! Store the new table multiple and advance the public loop counters. -/
 

@@ -240,11 +240,13 @@ def encMain : Prog isa :=
   seqs [encEm H, .block (dbArgs H), mgfXor lay G, .block (seedArgs H), mgfXor lay G, .block pubArgs,
     .call pubN pubC]
 
-/-- The inner frame's body. -/
-def encBody : Prog isa :=
+/-- The prologue and the checks, then `main`. -/
+def encBodyWith (main : Prog isa) : Prog isa :=
   seqs [.block (encPrologue ++ chkK H),
-    .ite (.nonzero .x .x11) encFail (seqs [.block (chkMsg H), .ite (.nonzero .x .x11) encFail
-      (encMain H G pubN pubC)])]
+    .ite (.nonzero .x .x11) encFail (seqs [.block (chkMsg H), .ite (.nonzero .x .x11) encFail main])]
+
+/-- The inner frame's body. -/
+def encBody : Prog isa := encBodyWith H (encMain H G pubN pubC)
 
 /-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt`. -/
 def encrypt : Prog isa :=
@@ -316,11 +318,12 @@ def clearBuf : Prog isa :=
 def copyT : Prog isa :=
   .seq (.block (tArgs H ++ [mov .x13 .x12, mov .x10 .x11] ++ scr .x12 oBuf ++ [mov .x11 .x10])) copyLoop
 
-/-- One byte of a pass of the shift, at `x11`, replaced by the one `d` bytes
-after it (at `x12`) under the mask `x15`; `x13` bytes left. -/
+/-- Eight bytes of a shift pass, selected under `x15`; `x13` words left.
+The source may be unaligned and overlap this word, so both loads precede
+the store. Earlier stores cannot overwrite the forward source. -/
 def passBody : List Instr :=
-  [.ldrb .x10 .x11 0, .ldrb .x16 .x12 0, .logic .eor .x .x16 .x16 .x10, .logic .and .x .x16 .x16 .x15,
-    .logic .eor .x .x10 .x10 .x16, .strb .x10 .x11 0, .addImm .x .x11 .x11 1, .addImm .x .x12 .x12 1,
+  [.ldr .x .x10 .x11 0, .ldr .x .x16 .x12 0, .logic .eor .x .x16 .x16 .x10, .logic .and .x .x16 .x16 .x15,
+    .logic .eor .x .x10 .x10 .x16, .str .x .x10 .x11 0, .addImm .x .x11 .x11 8, .addImm .x .x12 .x12 8,
     .subImm .x .x13 .x13 1]
 
 /-- A pass of the shift, with the buffer at `x17`, the distance `d` in
@@ -329,7 +332,7 @@ def passBody : List Instr :=
 one pass less in `x8`. -/
 def pass : Prog isa :=
   .seq (.block [mov .x11 .x17, .add .x .x12 .x17 .x14, .movz .x .x15 1 0, .logic .and .x .x15 .x9 .x15,
-      .movz .x .x16 0 0, .sub .x .x15 .x16 .x15, .movz .x .x13 1024 0])
+      .movz .x .x16 0 0, .sub .x .x15 .x16 .x15, .movz .x .x13 128 0])
     (.seq (.loop (.block passBody) (.nonzero .x .x13))
       (.block [.lsr .x .x9 .x9 1, .add .x .x14 .x14 .x14, .subImm .x .x8 .x8 1]))
 

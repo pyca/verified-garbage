@@ -1,38 +1,38 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
+import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
 meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetup
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillSegment
+import VerifiedGarbage.Proof.Argon2.AArch64.FillSegment
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillSegment
 public import VerifiedGarbage.Proof.Argon2.SegmentIndices
 meta import VerifiedGarbage.Proof.Argon2.SegmentIndices
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillSegmentBody
+import VerifiedGarbage.Proof.Argon2.AArch64.FillSegmentBody
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillSegmentBody
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillBlock
+import VerifiedGarbage.Proof.Argon2.AArch64.FillBlock
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillBlock
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
+import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressOperation
+import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressOperation
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressOperation
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelPrepare
+import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelPrepare
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelPrepare
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillPointersLit
+import VerifiedGarbage.Proof.Argon2.AArch64.FillPointersLit
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillPointersLit
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Impl.Argon2.AArch64.FillWrite
+import VerifiedGarbage.Impl.Argon2.AArch64.FillWrite
 meta import VerifiedGarbage.Impl.Argon2.AArch64.FillWrite
-public import VerifiedGarbage.Proof.Argon2.AArch64.RandomSourcePrepare
+import VerifiedGarbage.Proof.Argon2.AArch64.RandomSourcePrepare
 meta import VerifiedGarbage.Proof.Argon2.AArch64.RandomSourcePrepare
-public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheSelect
+import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheSelect
 meta import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheSelect
-public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
+import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
 meta import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
-public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsPrepare
+import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsPrepare
 meta import VerifiedGarbage.Proof.Argon2.AArch64.AddressCallsPrepare
-public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCalls
+import VerifiedGarbage.Proof.Argon2.AArch64.AddressCalls
 meta import VerifiedGarbage.Proof.Argon2.AArch64.AddressCalls
 public import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlockLit
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ClearBlockLit
@@ -40,29 +40,29 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderLit
 meta import VerifiedGarbage.Proof.Argon2.AArch64.AddressHeaderLit
 public import VerifiedGarbage.Impl.Argon2.AArch64.AddressMode
 meta import VerifiedGarbage.Impl.Argon2.AArch64.AddressMode
-public import VerifiedGarbage.Proof.Argon2.AArch64.DependentWord
+import VerifiedGarbage.Proof.Argon2.AArch64.DependentWord
 meta import VerifiedGarbage.Proof.Argon2.AArch64.DependentWord
 public import VerifiedGarbage.Impl.Argon2.AArch64.DependentWord
 meta import VerifiedGarbage.Impl.Argon2.AArch64.DependentWord
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
+import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressCall
-public import VerifiedGarbage.Proof.Argon2.AArch64.RandomSource
+import VerifiedGarbage.Proof.Argon2.AArch64.RandomSource
 meta import VerifiedGarbage.Proof.Argon2.AArch64.RandomSource
-public import VerifiedGarbage.Proof.Argon2.AArch64.Relative
+import VerifiedGarbage.Proof.Argon2.AArch64.Relative
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Relative
-public import VerifiedGarbage.Proof.Argon2.AArch64.Wrap
+import VerifiedGarbage.Proof.Argon2.AArch64.Wrap
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Wrap
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapLane
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapLane
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapLane
-public import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
+import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
 meta import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceMapState
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
-public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
+import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
 meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceCount
-public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceStart
+import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceStart
 meta import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceStart
 public import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
 meta import VerifiedGarbage.Proof.Argon2.AArch64.SegmentSetupPrepare
@@ -70,6 +70,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
+import VerifiedGarbage.Impl.MdStream.AArch64
+import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Impl.Argon2.AArch64.HPrime
+meta import VerifiedGarbage.Impl.MdStream.AArch64
+meta import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! Merged from `Proof.Argon2.AArch64.SegmentSetupTrace`. -/
 

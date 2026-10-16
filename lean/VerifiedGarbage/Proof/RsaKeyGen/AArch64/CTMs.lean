@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTR2c
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTR2c
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MontSetup
@@ -10,6 +11,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # A candidate on AArch64: constant time of `montSetup`
@@ -135,13 +141,13 @@ theorem MSb.frm {L : WsP} {s t : State} (h : MSb L s) {rs : List (Nat × Nat)} (
   exact ⟨h.1.frm hf hm k hr dN dI, by rw [hf.wv_eq dO (by omega)]; exact h.2⟩
 
 /-- Disjointness from each of a list of literal ranges of the working space. -/
-macro "msb_disj" : tactic => `(tactic| (
+tactic_template "msb_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, r2Ranges, slot,
     hdrBytes, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, sFn, sMinv]
   and_intros <;> omega))
 
 /-- Ranges of literal arrays and header slots are `KMut`. -/
-macro "msb_mut" : tactic => `(tactic| (
+tactic_template "msb_mut" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, r2Ranges]
   and_intros <;> first | exact KMut.ofSlot _ _ _ | exact KMut.hdr (by decide)))
 
@@ -181,7 +187,7 @@ theorem msOne_ok {L : WsP} {s : State} (h : MSa L s) : WP isa (setWord aOne) s (
     (by omega) h13) fun t ⟨hv, o, k⟩ => ?_
   rw [h9] at hv
   have f : Frm L.B [(slot L.w aOne, 8 * (L.w + 2))] s.mem t.mem := Frm.of_outside o (List.mem_singleton_self _)
-  exact ⟨hc.frm f (by msb_mut) k (by decide) (by msb_disj) (by msb_disj), hv⟩
+  exact ⟨hc.frm f (by msb_mut) k (by decide) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl), hv⟩
 
 theorem msb_r2pre {L : WsP} {s : State} (h : MSb L s) : Up R2Pre L s := by
   obtain ⟨⟨hw, h4, h64, N, hn, hsh, hinv⟩, -⟩ := h
@@ -208,7 +214,7 @@ theorem msY_ok (M : Mont) {L : WsP} {s : State} (h : MSb L s) : WP isa (M.mm aY 
     fun t ⟨_, _, _, ha, k⟩ => ?_
   exact MSb.frm (s := s) ⟨⟨hw, h4, h64, N, hn, hsh, hinv⟩, hone⟩ (Frm.of_arrays ha (rs := [(slot L.w aAcc,
     8 * (L.w + 2)), (slot L.w aTmp, 8 * (L.w + 2)), (slot L.w aY, 8 * (L.w + 2))]) (by simp)) (by msb_mut) k
-    (by decide) (by msb_disj) (by msb_disj) (by msb_disj)
+    (by decide) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
 
 theorem msR1_ok {L : WsP} {s : State} (h : MSb L s) : WP isa (copyA aR1 aY) s (MSb L) := by
   have hw := h.1.1

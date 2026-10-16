@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # Deterministic ECDSA over P-256 with HMAC-SHA-384 on x86-64
@@ -129,7 +135,8 @@ def pack (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve)
   ecdsa := by cases adx <;> rfl
   hash := rfl
   len := rfl
-  tries := rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
   hDB := .inr (.inl ⟨rfl, rfl⟩)
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl

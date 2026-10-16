@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! Fixed-count squaring and compositional field exponentiation. -/
 
@@ -75,13 +76,13 @@ theorem opMul_update (o : Slot) (e : Env) (v : Spec.X25519.Fe) :
 
 theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx x s₀) (o : Slot)
     (v : Spec.X25519.Fe) (n : Nat) (hn : n < 2 ^ 32) :
-    ∀ m s, 1 ≤ m → m < n → IKeep x s₀ s → s.gpr .esi = BitVec.ofNat 32 m →
+    ∀ m s, 1 ≤ m → m ≤ n → IKeep x s₀ s → s.gpr .esi = BitVec.ofNat 32 m →
       env s.mem x = Function.update (env s₀.mem x) o (sqn v (n - m)) →
       WP isa (.loop (.block (mul (offset o) (offset o) (offset o) ++
         ([.alu .sub .esi (.imm 1)] : List Instr))) .ne) s fun t =>
         IKeep x s₀ t ∧ env t.mem x = Function.update (env s₀.mem x) o (sqn v n) := by
   intro m s h1 h2 hk hb he
-  refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m < n ∧ IKeep x s₀ s ∧
+  refine WP.loop (M := isa) (Inv := fun m (s : State) => 1 ≤ m ∧ m ≤ n ∧ IKeep x s₀ s ∧
     s.gpr .esi = BitVec.ofNat 32 m ∧
     env s.mem x = Function.update (env s₀.mem x) o (sqn v (n - m))) ?_ m s ⟨h1, h2, hk, hb, he⟩
   intro m s ⟨h1, h2, hk, hb, he⟩
@@ -106,17 +107,16 @@ theorem sqLoop_ok {x : BitVec 32} {s₀ : State} (hc₀ : Ctx x s₀) (o : Slot)
   · exact .inr ⟨by rw [ev]; simp only [show m - 1 ≠ 0 by omega, decide_false]; rfl,
       m - 1, by omega, by omega, by omega, ku, bu, eu⟩
 
-theorem sqnI (x : BitVec 32) (o a : Slot) (_ho : ISlot o) (n : Nat) (hn : 2 ≤ n)
+/-- `n` squarings of a slot in place. -/
+theorem sqnI (x : BitVec 32) (o : Slot) (_ho : ISlot o) (n : Nat) (hn : 1 ≤ n)
     (hn' : n < 2 ^ 32) :
-    ISpec x (Impl.Ed25519.X86.sqn (offset o) (offset a) n) (opSqn o a n) := by
+    ISpec x (Impl.X25519.X86.Field32.sqn (offset o) (offset o) n) (opSqn o o n) := by
   intro s hc
   refine WP.seq ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (fieldOp_ok hc (.mul o a a)) fun t ⟨ht, et⟩ => ?_
+  simp only [↓reduceIte, List.nil_append]
   refine Wp.wp_movi fun u hu => WP.block_nil ?_
-  refine sqLoop_ok hc o (env s.mem x a) n hn' (n - 1) u (by omega) (by omega)
-    ((IKeep.of_field ht).trans (IKeep.of_counter hu)) hu.gpr ?_
-  rw [hu.mem, et, show n - (n - 1) = 1 by omega]
-  rfl
+  refine sqLoop_ok hc o (env s.mem x o) n hn' n u hn (Nat.le_refl _) (IKeep.of_counter hu) hu.gpr ?_
+  rw [hu.mem, Nat.sub_self]
+  exact (Function.update_eq_self o _).symm
 
 end VG.Proof.Ed25519.X86

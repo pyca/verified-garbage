@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.VerifiedBlock
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Verified
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
+import VerifiedGarbage.Proof.TripleDes.X86_64.Key.Verified
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Frame
-public import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
+import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
 public import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Verified
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.StraightX
+import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
 
 @[expose] public section
 

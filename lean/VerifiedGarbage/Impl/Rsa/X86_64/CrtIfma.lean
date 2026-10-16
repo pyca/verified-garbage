@@ -20,8 +20,9 @@ temporary: `2 R + 6` of the thirty-two, named through `VReg` and the
 * A number below `2^(208 R)` is `4 R` limbs below `2⁵²`, limb `j` in
   quadword `j / R` of the 32-byte vector `j % R` (`32 R` bytes): the stride
   layout.
-* `amm`: two almost-Montgomery multiplications at once, `a b 2^(-208 R)`
-  modulo `p` and modulo `q`: for each limb `b_i`
+* `amm`: two almost-Montgomery multiplications at once, `a b 2^(-52 S)`
+  modulo `p` and modulo `q`, in `S ≤ 4 R` steps (30 of the 32 limbs for
+  3072-bit keys, whose primes need no more): for each limb `b_i`
   of the second operand, the low halves of `a b_i` into the accumulator and
   the high halves of those that stay in their lane, `u = acc₀ k₀ mod 2⁵²`,
   the low halves of `u m`, the carry of limb 0 into limb 1 (`vpsrlq` and
@@ -29,9 +30,9 @@ temporary: `2 R + 6` of the thirty-two, named through `VReg` and the
   limb (a change of the registers' roles and `valignq` of the register of
   limb 0 with the zero register, which moves its lanes down one and the
   zero in), and the high halves of `u m` and of the rest of `a b_i`.
-* The bases and 1 in Montgomery form (`R_I = 2^(208 R)`) from those of
+* The bases and 1 in Montgomery form (`R_I = 2^(52 S)`) from those of
   `vg_rsa_private_crt` (`R_X = 2^(64 W)`) by a multiplication by
-  `2^(416 R - 64 W) mod X` (`R_X` doubled `416 R - 128 W` times); a table
+  `2^(104 S - 64 W) mod X` (`R_X` doubled `104 S - 128 W` times); a table
   of the 16 powers; four squares and a multiplication by the masked
   selection of an entry per window of 4 bits, with the exponents padded with
   zero bytes at the top to `8 W` bytes; then a multiplication by 1, which
@@ -48,10 +49,12 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa
 /-- The offset of the modulus in a prime's region. -/
 def oM : Nat := 0
 
-/-- The sizes: `R` registers per number, primes of `W` words. -/
+/-- The sizes: `R` registers per number, primes of `W` words, `S` steps
+of a multiplication (`S ≤ 4 R`): the Montgomery radix is `2^(52 S)`. -/
 structure Lay where
   R : Nat
   W : Nat
+  S : Nat
   deriving DecidableEq, Repr
 
 namespace Lay
@@ -66,7 +69,7 @@ def NB : Nat := 32 * l.R
 def E : Nat := 8 * l.W
 
 /-! In a prime's region: the modulus, `k₀` in each quadword, `Y`, the base
-`X`, the selected entry, the table, the padded exponent, `2^(416 R - 64 W)
+`X`, the selected entry, the table, the padded exponent, `2^(104 S - 64 W)
 mod X`, the bytes of the exponent being read, the last multiplier. -/
 def oK0 : Nat := l.NB
 def oY : Nat := l.NB + 32
@@ -85,8 +88,8 @@ def oMx : Nat := 2 * l.D
 /-- The size of the area. -/
 def areaBytes : Nat := 2 * l.D + 8
 
-/-- The doublings of `R_X mod X` that make `2^(416 R - 64 W) mod X`. -/
-def dbls : Nat := 416 * l.R - 128 * l.W
+/-- The doublings of `R_X mod X` that make `2^(104 S - 64 W) mod X`. -/
+def dbls : Nat := 104 * l.S - 128 * l.W
 
 /-- The quadword of limb `j` in the stride layout. -/
 def off (j : Nat) : Nat := 32 * (j % l.R) + 8 * (j / l.R)
@@ -94,11 +97,12 @@ def off (j : Nat) : Nat := 32 * (j % l.R) + 8 * (j / l.R)
 end Lay
 
 /-- 2048-bit keys: primes of 16 words, numbers of 20 limbs. -/
-def lay2048 : Lay := ⟨5, 16⟩
-/-- 3072-bit keys: primes of 24 words, numbers of 32 limbs. -/
-def lay3072 : Lay := ⟨8, 24⟩
+def lay2048 : Lay := ⟨5, 16, 20⟩
+/-- 3072-bit keys: primes of 24 words, numbers of 32 limbs, of which 30
+hold the primes' 1536 bits and a multiplication's 30 steps. -/
+def lay3072 : Lay := ⟨8, 24, 30⟩
 /-- 4096-bit keys: primes of 32 words, numbers of 40 limbs. -/
-def lay4096 : Lay := ⟨10, 32⟩
+def lay4096 : Lay := ⟨10, 32, 40⟩
 
 /-- In the prime workspaces: the base of the IFMA area, and a counter. -/
 def sIfma : Nat := sFn 13
@@ -175,16 +179,18 @@ def carryOut : List Instr :=
      .alu .add .rsi (.mem (at_ .r11 (l.D + l.off j))), .mov .rcx (.reg .rsi), .alu .and .rcx (.reg .r12),
      .store (at_ .r11 (l.D + l.off j)) .rcx, .shift .shr .rsi 52]
 
-/-- `[r11] := [r8] [r9] 2^(-208 R)` modulo each prime, almost (`rbx` the area). -/
+/-- `[r11] := [r8] [r9] 2^(-52 S)` modulo each prime, almost (`rbx` the
+area): `S / R` blocks, then the first `S % R` steps of another, which leave
+role `k` in the register of `k + S % R`. -/
 def ammCore : Prog isa :=
-  .seq (.block (([.mov .r10 (.reg .rbx), .mov32 .rcx (.imm 4)] : List Instr) ++
+  .seq (.block (([.mov .r10 (.reg .rbx), .mov32 .rcx (.imm (BitVec.ofNat 32 (l.S / l.R)))] : List Instr) ++
       (List.range (2 * l.R + 5)).map fun r => .eop (.bin .vpxorq (vreg r) (vreg r) (vreg r))))
     (.seq (.loop (.block (ammBlock l)) .ne)
-      (.block (((List.range 2).flatMap fun p => (List.range l.R).map fun k =>
-          .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k 0)) ++
+      (.block ((List.range (l.S % l.R)).flatMap (ammStep l) ++ ((List.range 2).flatMap fun p => (List.range l.R).map fun k =>
+          .evStore (at_ .r11 (l.D * p + 32 * k)) (acc l p k (l.S % l.R))) ++
         ([.movImm64 .r12 mask52] : List Instr) ++ carryOut l)))
 
-/-- `[o] := [a] [b] 2^(-208 R)`, the offsets in `p`'s region. -/
+/-- `[o] := [a] [b] 2^(-52 S)`, the offsets in `p`'s region. -/
 def amm (o a b : Nat) : Prog isa :=
   .seq (.block [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 a)), .mov .r9 (.reg .rbx),
       .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx), .alu .add .r11 (.imm (BitVec.ofNat 32 o))])
@@ -226,7 +232,7 @@ def to64 : List Instr :=
 
 /-! ## Before the vector code, in a prime's workspace (`rdi`) -/
 
-/-- `aT := 2^dbls [aY] mod X` (`[aY] = R_X mod X`, so `aT = 2^(416 R - 64 W) mod X`). -/
+/-- `aT := 2^dbls [aY] mod X` (`[aY] = R_X mod X`, so `aT = 2^(104 S - 64 W) mod X`). -/
 def k1 : List (Prog isa) :=
   copyArr aT aY ++ [.block [.mov32 .rcx (.imm (BitVec.ofNat 32 l.dbls))], doubles aN aAcc aTmp aT sCtr]
 
@@ -282,7 +288,7 @@ def eCopy (slotPtr slotLen : Nat) : List (Prog isa) :=
     .loop (.block [.movzx8 .rax (at0 .rsi), .store8 (at0 .r11) .rax, .alu .add .rsi (.imm 1),
       .alu .add .r11 (.imm 1), .alu .sub .rcx (.imm 1)]) .ne]
 
-/-- A prime's region (`p` 0 or 1): the modulus, `2^(416 R - 64 W) mod X`,
+/-- A prime's region (`p` 0 or 1): the modulus, `2^(104 S - 64 W) mod X`,
 `x R_X` as `X`, `R_X` as `Y`, the last multiplier, `k₀`, the padded
 exponent. -/
 def region (p slotPtr slotLen : Nat) : List (Prog isa) :=
@@ -326,7 +332,7 @@ def tabSetup : List Instr :=
 
 /-- Entry `i` of `convTab` (`r13 = oTab + NB i`), one multiplication: below
 2, `Y` or `X` into Montgomery form; after `X`, the table's first entries
-`T_0 = Y` and `T_1 = X`; from 2, `T_i = T_(i-1) X 2^(-208 R)`. Then `r13`
+`T_0 = Y` and `T_1 = X`; from 2, `T_i = T_(i-1) X 2^(-52 S)`. Then `r13`
 to the next entry, `ZF` after the last. -/
 def convTabBody : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + 2 * l.NB)))])
@@ -337,8 +343,8 @@ def convTabBody : Prog isa :=
             (.block [.alu .add .r13 (.imm (BitVec.ofNat 32 l.NB)),
               .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.oTab + 16 * l.NB)))])))))
 
-/-- `Y` and `X` into Montgomery form (times `[oK1] 2^(-208 R)`), and the
-table `T_0 = Y`, `T_1 = X`, `T_i = T_(i-1) X 2^(-208 R)`, in one loop. -/
+/-- `Y` and `X` into Montgomery form (times `[oK1] 2^(-52 S)`), and the
+table `T_0 = Y`, `T_1 = X`, `T_i = T_(i-1) X 2^(-52 S)`, in one loop. -/
 def convTab : List (Prog isa) :=
   [.block [.mov32 .r13 (.imm (BitVec.ofNat 32 l.oTab))], .loop (convTabBody l) .ne]
 
@@ -348,7 +354,7 @@ def winSetup (b : Nat) : List Instr :=
    .alu .add .r9 (.imm (BitVec.ofNat 32 b)), .mov .r11 (.reg .rbx),
    .alu .add .r11 (.imm (BitVec.ofNat 32 l.oY))]
 
-/-- A window: `Y := Y¹⁶ T_v 2^(-208 R)` for each prime, `v` the top 4 bits
+/-- A window: `Y := Y¹⁶ T_v 2^(-52 S)` for each prime, `v` the top 4 bits
 of its byte at `oV`, which moves up 4 bits. `S := T_v` first, then one loop
 of five multiplications (`r15` counting them down): four squarings of `Y`,
 then `Y S`. After the last byte (`r13 = E`), instead `S := Fin` and the one
@@ -364,7 +370,7 @@ def window : List (Prog isa) :=
         (.seq (ammCore l) (.block [.alu .sub .r15 (.imm 1)])))) .ne]
 
 /-- The exponentiations, a byte of each exponent (`r13`) at a time, and
-after the last, `Y := Y Fin 2^(-208 R)` (`window`). -/
+after the last, `Y := Y Fin 2^(-52 S)` (`window`). -/
 def expLoop : List (Prog isa) :=
   convTab l ++ [.block [.mov32 .r13 (.imm 0)],
     .loop (seqs ([.block ((List.range 2).flatMap fun p =>
@@ -461,7 +467,8 @@ otherwise: `pre` and `post` do not depend on the layout, so only the vector
 code is chosen by it. -/
 def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs (nSetup mul ++ primesSetup ++ checks ++
-    [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny] ++ post mul)) (seqs (qPhase mul ++ pPhase mul)))] ++
+    [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny] ++ post mul))
+      (seqs (qPhase mul (Crt.expLoop mul tabSelect) ++ pPhase mul (Crt.expLoop mul tabSelect))))] ++
     finish)
 
 /-- `vg_rsa_private_crt_ifma`. -/

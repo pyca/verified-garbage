@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Seed.X86.Ecb
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Seed.KeyRot
 public import VerifiedGarbage.Impl.Seed.X86.ExpandKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Seed.KeySchedule
+public import VerifiedGarbage.Proof.Aes.X86.Sbox
 
 /-!
 # A round of the key schedule on x86 (32-bit)
@@ -134,7 +138,7 @@ theorem exec_subI (s : State) (d : Reg) (v : BitVec 32) :
       (subOverflow (s.gpr d) v (s.gpr d - v))).setReg d (s.gpr d - v)) := rfl
 
 /-- Room through the writes of registers other than `sb`. -/
-macro "room" : tactic => `(tactic|
+tactic_template "room" : tactic => `(tactic|
   (refine Room.congr ‹Room _› ?_ ?_
    · simp only [gpr_setReg, gpr_arithFlags, gpr_rorF, gpr_setMem, sb, reduceCtorEq, ↓reduceIte]
    · rfl))

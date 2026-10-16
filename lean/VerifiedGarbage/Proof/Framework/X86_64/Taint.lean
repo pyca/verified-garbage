@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
 public import VerifiedGarbage.Proof.Framework.KernelList
 public import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
 public import VerifiedGarbage.TCB.X86_64.Target
 
 /-!
@@ -263,6 +264,14 @@ def step (τ : T) : Instr → Option T
   | .shift32 _ d _ | .shift _ d _ =>
     some { τ with flags := τ.flags && pub τ d, bases := kill τ d, lo := .empty }
   | .bswap32 d | .bswap d => some { τ with bases := kill τ d, lo := .empty }
+  -- `shl`/`shr`/`sar d, cl`: the result is a function of `d` and the count;
+  -- the flags too, or unchanged if the count is 0.
+  | .shiftCl _ d =>
+    let p := pub τ d && pub τ .rcx
+    some { τ with regs := set τ d p, flags := τ.flags && p, bases := kill τ d, lo := .empty }
+  -- `shlx`/`shrx d, r, c` change no flag.
+  | .shiftx _ d r c =>
+    some { τ with regs := set τ d (pub τ r && pub τ c), bases := kill τ d, lo := .empty }
   -- `rorx` changes no flag; `andn` sets them from its result.
   | .rorx32 d r _ | .rorx d r _ => some { τ with regs := set τ d (pub τ r), bases := kill τ d, lo := .empty }
   | .andn32 d a b | .andn d a b =>
@@ -297,6 +306,10 @@ def step (τ : T) : Instr → Option T
   | .eop _ => some (noX τ)
   | .evLoad _ m | .evMadd52Load _ _ _ m => if memPub τ m then some (noX τ) else none
   | .evStore m _ => storeStep τ m 32 false
+  -- A masked move accesses the quadwords its mask enables, which must be
+  -- public as its address is.
+  | .kLoad k _ m => if memPub τ m && pub τ k then some (noX τ) else none
+  | .kStore m k _ => if pub τ k then storeStep τ m 64 false else none
   -- MXCSR is not tracked either: nothing moves it into a general-purpose
   -- register or the flags, and it is stored as a secret.
   | .stmxcsr m => storeStep τ m 4 false
@@ -772,12 +785,12 @@ write two). -/
 def dstOf : Instr → Option Reg
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
-  | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .vpmovmskb _ d _
-  | .movqR d _ | .imul d _ => some d
+  | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _
+  | .vpmovmskb _ d _ | .movqR d _ | .imul d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _ | .vmovdqu32Load ..
   | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
-  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .lfence
+  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .kLoad .. | .kStore .. | .lfence
   | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ => none
 
 /-- An SSE instruction on registers changes only the SSE registers. -/
@@ -944,6 +957,12 @@ theorem exec_nonstore_xmm {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : 
     · cases op <;> simp only [Option.some.injEq] at h <;> subst h <;>
         exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
     · cases h
+  case shiftCl op =>
+    simp only [exec, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case shiftx op r c =>
+    simp only [exec, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
   case movImm64 v =>
     simp only [exec, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, rfl, fun r h => setReg_ne h⟩
@@ -1397,6 +1416,24 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       split at e₁ <;> [cases e₁; cases e₁]
       split at e₂ <;> [cases e₂; cases e₂]
       exact ⟨congrArg (fun a => [a]) (ha.ea hok), ha.store (n := 32) hok (by decide) fun hp => by cases hp⟩
+  | kLoad k d m =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [Bool.and_eq_true] at hok
+    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
+    exact ⟨by simp only [addrs, ha.ea hok.1, ha.rf.1 k hok.2], ha.withVec _ _ _ _ _ _⟩
+  | kStore m k r =>
+    simp only [step, storeStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hk
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    obtain ⟨V₁, rfl⟩ := State.storeMasked512_eq e₁
+    obtain ⟨V₂, rfl⟩ := State.storeMasked512_eq e₂
+    exact ⟨by simp only [addrs, ha.ea hok, ha.rf.1 k hk],
+      ha.store (n := 64) hok (by decide) fun hp => by cases hp⟩
   | stmxcsr m =>
     simp only [step, storeStep] at hs
     split at hs <;> [skip; cases hs]
@@ -1539,6 +1576,29 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
       simp only [Bool.and_eq_true] at hp; rw [ha.reg hp.1, ha.reg hp.2]
     refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [hv hp], fun hp => ?_⟩
     simp only [State.setReg, hv hp, arithFlags, State.setFlags, and_self]
+  | shiftCl op d =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
+    simp only [exec, execShiftCl, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    have hv : (pub τ d && pub τ .rcx) = true → s₁.gpr d = s₂.gpr d ∧ s₁.gpr .rcx = s₂.gpr .rcx :=
+      fun hp => by simp only [Bool.and_eq_true] at hp; exact ⟨ha.reg hp.1, ha.reg hp.2⟩
+    refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => by rw [(hv hp).1, (hv hp).2], fun hp => ?_⟩
+    simp only [Bool.and_eq_true] at hp
+    obtain ⟨hd, hc⟩ := hv (by simp only [hp.2, Bool.and_self])
+    obtain ⟨hcf, hzf, hsf, hof⟩ := ha.rf.2 hp.1
+    simp only [setReg_cf, setReg_zf, setReg_sf, setReg_of, State.setFlags, hd, hc, hcf, hzf, hsf, hof,
+      and_self]
+  | shiftx op d r c =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
+    simp only [exec, execShiftx, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    refine ⟨regs_set (fun r hr => ha.rf.1 r hr) fun hp => ?_, fun hf => by
+      simpa only [setReg_cf, setReg_zf, setReg_sf, setReg_of] using ha.rf.2 hf⟩
+    simp only [Bool.and_eq_true] at hp; rw [ha.reg hp.1, ha.reg hp.2]
   | imul d r =>
     simp only [step, Option.some.injEq] at hs
     subst hs
@@ -1889,6 +1949,11 @@ def stepK (τ : T) : Instr → Option T
   | .shift32 _ d _ | .shift _ d _ =>
     some { τ with flags := τ.flags && pub τ d, bases := killK τ d, lo := .empty }
   | .bswap32 d | .bswap d => some { τ with bases := killK τ d, lo := .empty }
+  | .shiftCl _ d =>
+    let p := pub τ d && pub τ .rcx
+    some { τ with regs := setK τ d p, flags := τ.flags && p, bases := killK τ d, lo := .empty }
+  | .shiftx _ d r c =>
+    some { τ with regs := setK τ d (pub τ r && pub τ c), bases := killK τ d, lo := .empty }
   | .rorx32 d r _ | .rorx d r _ =>
     some { τ with regs := setK τ d (pub τ r), bases := killK τ d, lo := .empty }
   | .andn32 d a b | .andn d a b =>
@@ -1917,6 +1982,8 @@ def stepK (τ : T) : Instr → Option T
   | .eop _ => some (noX τ)
   | .evLoad _ m | .evMadd52Load _ _ _ m => bif memPub τ m then some (noX τ) else none
   | .evStore m _ => storeStepK τ m 32 false
+  | .kLoad k _ m => bif memPub τ m && pub τ k then some (noX τ) else none
+  | .kStore m k _ => bif pub τ k then storeStepK τ m 64 false else none
   | .stmxcsr m => storeStepK τ m 4 false
   | .ldmxcsr m => bif memPub τ m then some τ else none
   | .lfence => some τ
@@ -2147,6 +2214,14 @@ def stepKDFn : Instr → Step
     | ⟨rg, f, l, _, sl, _, x⟩ => some ⟨rg, f && pub τ d, l, killK τ d, sl, .empty, x⟩⟩
   | .bswap32 d | .bswap d => ⟨fun τ => match τ with
     | ⟨rg, f, l, _, sl, _, x⟩ => some ⟨rg, f, l, killK τ d, sl, .empty, x⟩⟩
+  | .shiftCl _ d => ⟨fun τ =>
+    match τ with
+    | ⟨_, f, l, _, sl, _, x⟩ =>
+      let p := pub τ d && pub τ .rcx
+      some ⟨setK τ d p, f && p, l, killK τ d, sl, .empty, x⟩⟩
+  | .shiftx _ d r c => ⟨fun τ =>
+    match τ with
+    | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d (pub τ r && pub τ c), f, l, killK τ d, sl, .empty, x⟩⟩
   | .rorx32 d r _ | .rorx d r _ => ⟨fun τ =>
     match τ with
     | ⟨_, f, l, _, sl, _, x⟩ => some ⟨setK τ d (pub τ r), f, l, killK τ d, sl, .empty, x⟩⟩
@@ -2187,6 +2262,8 @@ def stepKDFn : Instr → Step
   | .eop _ => ⟨fun τ => some (noX τ)⟩
   | .evLoad _ m | .evMadd52Load _ _ _ m => ⟨fun τ => bif memPub τ m then some (noX τ) else none⟩
   | .evStore m _ => ⟨fun τ => storeStepKD τ m 32 false⟩
+  | .kLoad k _ m => ⟨fun τ => bif memPub τ m && pub τ k then some (noX τ) else none⟩
+  | .kStore m k _ => ⟨fun τ => bif pub τ k then storeStepKD τ m 64 false else none⟩
   | .stmxcsr m => ⟨fun τ => storeStepKD τ m 4 false⟩
   | .ldmxcsr m => ⟨fun τ => bif memPub τ m then some τ else none⟩
   | .lfence => ⟨fun τ => some τ⟩
@@ -2267,6 +2344,11 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case vmovdquStore l m _ => cases l <;> [exact st m 16 _; exact st m 32 _]
   case vmovdqu32Store m _ => exact st m 64 _
   case evStore m _ => exact st m 32 _
+  case kStore m k _ =>
+    simp only [stepKD, stepKDFn, step]
+    cases pub τ k
+    · exact .inl ⟨rfl, rfl⟩
+    · exact st m 64 _
   case stmxcsr m => exact st m 4 _
   case xop op => cases op <;> exact other rfl
   case mul r => exact other (by rw [stepKD, stepKDFn, stepK, mulStepKD_eq])

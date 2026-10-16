@@ -8,6 +8,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
 # Deterministic ECDSA over secp256k1 with HMAC-SHA-256 on AArch64
@@ -54,7 +59,8 @@ def pack (hL : Weierstrass.Law Spec.Secp256k1.curve) (hI : Weierstrass.AArch64.I
   ecdsa := rfl
   hash := rfl
   len := rfl
-  tries := rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
   hDB := .inl ⟨rfl, rfl⟩
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl

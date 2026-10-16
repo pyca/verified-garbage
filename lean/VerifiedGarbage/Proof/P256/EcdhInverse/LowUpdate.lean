@@ -5,6 +5,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+import Mathlib.Data.BitVec
+import Mathlib.Tactic.Linarith
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Mont.AArch64.Row
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+import VerifiedGarbage.Proof.Divstep.WordDef
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
 
 @[expose] public section
 

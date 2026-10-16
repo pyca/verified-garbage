@@ -46,18 +46,30 @@ def orBad : List Instr := [.logic .orr .x .x20 .x20 .x5]
 /-- `x5 = 1` if `x5 = 0`, else `0`: the no-borrow flag of `0 - x5`. -/
 def isZero : List Instr := [.movz .x .x6 0 0, .subs .x .x7 .x6 .x5, .adc .x .x5 .x6 .x6]
 
+/-- The element copied into `X2` fully reduced there, as sixteen 28-bit limbs. -/
+def reduceX2 : List Instr := Curve448.AArch64.toLegacy X2 ++ Impl.X448.AArch64.freeze
+
 /-- Slot `a` fully reduced into `X2`, as sixteen 28-bit limbs. -/
-def canon (a : Nat) : List Instr :=
-  Curve448.AArch64.copy X2 (slot a) ++ Curve448.AArch64.toLegacy X2 ++ Impl.X448.AArch64.freeze
+def canon (a : Nat) : List Instr := Curve448.AArch64.copy X2 (slot a) ++ reduceX2
 
 /-- `x5` = the OR of the sixteen words of `X2` XORed with those of `CAN`. -/
 def diffCan : List Instr :=
   [.movz .x .x5 0 0] ++ (List.range 16).flatMap fun i =>
     [ld .x4 (X2 + 8 * i), ld .x6 (CAN + 8 * i), .logic .eor .x .x4 .x4 .x6, .logic .orr .x .x5 .x5 .x4]
 
-/-- `x20 |= 0` exactly when slots `a` and `b` hold the same field element. -/
-def eqSlots (a b : Nat) : List Instr :=
-  canon a ++ Impl.X448.AArch64.copy CAN X2 ++ canon b ++ diffCan ++ orBad
+/-- A pass of `eqSlots`, counted down by `x8` (from 2): slot `a` into `X2` on the first; the
+first's result into `CAN` and slot `b` into `X2` on the second; then `X2` fully reduced. -/
+def eqPass (a b : Nat) : Prog isa :=
+  .seq (.block [.subImm .x .x8 .x8 1]) <|
+  .seq (.ite (.nonzero .x .x8) (.block (Curve448.AArch64.copy X2 (slot a)))
+    (.block (Impl.X448.AArch64.copy CAN X2 ++ Curve448.AArch64.copy X2 (slot b)))) <|
+  .block reduceX2
+
+/-- `x20 |= 0` exactly when slots `a` and `b` hold the same field element: each fully reduced
+by two passes of one copy of `reduceX2` (`eqPass`), the first's result kept in `CAN`. -/
+def eqSlots (a b : Nat) : Prog isa :=
+  .seq (.block [.movz .x .x8 2 0]) <| .seq (.loop (eqPass a b) (.nonzero .x .x8)) <|
+  .block (diffCan ++ orBad)
 
 /-- `x4` = the seven bytes at `rp + o`, little-endian, from the highest. -/
 def bytes7 (rp : Reg) (o : Nat) : List Instr :=
@@ -125,9 +137,9 @@ bound), the sign bit is kept at `SIGN`, and `-x` is `0 - x`, from zero written i
 once compared). -/
 def decode (rp : Reg) (xo yo : Nat) : Prog isa :=
   .seq (.block (decodeY rp yo ++ [st .x17 SIGN] ++ Impl.X448.AArch64.Base.constSlot (slot 10) 1)) <|
-  .seq (X448.AArch64.Fast.ops (decodeUVOps yo xo)) <| .seq Point56.powCall <|
-  .seq (X448.AArch64.Fast.ops (decodeXOps xo)) <|
-  .seq (.block (eqSlots 12 13 ++ Impl.X448.AArch64.Base.constSlot (slot 13) 0)) <|
+  .seq (X448.AArch64.Fast.opsK (decodeUVOps yo xo)) <| .seq Point56.powCall <|
+  .seq (X448.AArch64.Fast.opsK (decodeXOps xo)) <|
+  .seq (eqSlots 12 13) <| .seq (.block (Impl.X448.AArch64.Base.constSlot (slot 13) 0)) <|
   .seq (X448.AArch64.Fast.ops [.sub (slot 12) (slot 13) (slot xo)]) <|
   .block ([ld .x17 SIGN] ++ zeroSign xo ++ negMask ++ negSwap xo)
 
@@ -151,24 +163,36 @@ def bitsAt (src : Reg) (so d1 d2 : Nat) : Prog isa :=
 copy. -/
 def LRS : Nat := 3008
 
-/-- `x12 = 2^28 - 1`, `x19`, `x20` and the return address saved, `x20 = 0`, and every slot
-zeroed; then `B` and the constants 1 and `d`. -/
-def ventry : List Instr :=
+/-- `x12 = 2^28 - 1`, `x19`, `x20` and the return address saved, `x20 = 0`, and `x4` pointing at
+slot 0. -/
+def vhead : List Instr :=
   [.movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1, st .x19 0, st .x20 8, st .x30 LRS, .movz .x .x20 0 0,
-    .movz .x .x4 0 0] ++
-  (List.range 352).map (fun i => st .x4 (slot 0 + 8 * i)) ++
-  Impl.X448.AArch64.Base.constSlot (slot 8) Spec.Ed448.basePoint.X ++
-  Impl.X448.AArch64.Base.constSlot (slot 9) Spec.Ed448.basePoint.Y ++
-  Impl.X448.AArch64.Base.constSlot (slot 10) 1 ++ Impl.X448.AArch64.Base.constSlot (slot 11) Spec.Ed448.d
+    .addImm .x .x4 .x3 (slot 0)]
+
+/-- A pass of `ventry`'s loop: the eight words at `x4` zeroed (from `x20`), `x4` moved past them,
+and `x12 = 0` once it reaches the end of the slots. -/
+def zeroPass : List Instr :=
+  (List.range 8).map (fun i => .str .x .x20 .x4 (8 * i)) ++
+    [.addImm .x .x4 .x4 64, .sub .x .x12 .x4 .x3, .subImm .x .x12 .x12 (slot 22)]
+
+/-- `vhead`, every slot zeroed (44 passes of `zeroPass`) and `x12 = 2^28 - 1` again; then `B` and
+the constants 1 and `d`. -/
+def ventry : Prog isa :=
+  .seq (.block vhead) <| .seq (.loop (.block zeroPass) (.nonzero .x .x12)) <|
+  .block ([.movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1] ++
+    Impl.X448.AArch64.Base.constSlot (slot 8) Spec.Ed448.basePoint.X ++
+    Impl.X448.AArch64.Base.constSlot (slot 9) Spec.Ed448.basePoint.Y ++
+    Impl.X448.AArch64.Base.constSlot (slot 10) 1 ++ Impl.X448.AArch64.Base.constSlot (slot 11) Spec.Ed448.d)
 
 /-- After `A` is decoded into slots 8–9: `-A` into slots 6–7 (`x`, below the products' bound as a
-product by 1 in slot 10, subtracted from zero in slot 13), `R`'s pointer into `x0`, and the working
-space's into `x1`, which ends the loop of `decodes`. -/
+product by 1 in slot 10 (a call of `vg_gf448_r56_mul`), subtracted from zero in slot 13), `R`'s
+pointer into `x0`, and the working space's into `x1`, which ends the loop of `decodes`; then
+`x19 := x0 - x3`, which is the value `x19` had (`R`'s offset) but public again after the call. -/
 def negA : Prog isa :=
-  .seq (X448.AArch64.Fast.ops [.mul (slot 6) (slot 8) (slot 10), .copy (slot 7) (slot 9)]) <|
+  .seq (X448.AArch64.Fast.opsK [.mul (slot 6) (slot 8) (slot 10), .copy (slot 7) (slot 9)]) <|
   .seq (.block (Impl.X448.AArch64.Base.constSlot (slot 13) 0)) <|
   .seq (X448.AArch64.Fast.ops [.sub (slot 12) (slot 13) (slot 6), .copy (slot 6) (slot 12)])
-    (.block [.addImm .x .x0 .x1 0, .addImm .x .x1 .x3 0])
+    (.block [.addImm .x .x0 .x1 0, .addImm .x .x1 .x3 0, .sub .x .x19 .x0 .x3])
 
 /-- `A` (from `x0`) and `R` (from `x1`) decoded by one copy of `decode`, into slots 8–9. Each pass
 ends with `x19 := x1 - x3`, public after `decode` (which keeps `x19` only through a vector lane): `R`'s

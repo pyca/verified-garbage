@@ -8,6 +8,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Arm.CallF
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the curve
@@ -72,7 +75,7 @@ functions it calls, for scalars of `E`. -/
 def cfgC (E : Impl.Ecdsa.Arm.Cfg) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
   F := ⟨⟨0, 0, 0, 0, 0, "", .block [], "", .block [], "", .block []⟩, 0, "", .block [], "", .block [], "",
     .block []⟩
-  w := 2 * E.n
+  w := 2 * E.n - (if E.C.len = 28 then 1 else 0)
   n := E.C.n
   tries := 8
   coreN := ""
@@ -89,10 +92,11 @@ structure RfcCurve where
   that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.Arm.Cfg.wide`). -/
   wide : Bool
   /-- Scalars of 3, 4 or 6 64-bit words, `8 n` bytes, and `n` of exactly `64 n`
-  bits, with `2^(64 n) < 2 n`; or, if `wide`, of 9 words and 66 bytes, and
+  bits, with `2^(64 n) < 2 n`; or P-224, 28 bytes in 4 words;
+  or, if `wide`, of 9 words and 66 bytes, and
   `n` of 521 bits. -/
   sizes : if wide then E.n = 9 ∧ E.C.len = 66 ∧ nBits E.C = 521
-    else (E.n = 3 ∨ E.n = 4 ∨ E.n = 6) ∧ E.C.len = 8 * E.n ∧ nBits E.C = 64 * E.n ∧ 2 ^ (64 * E.n) < 2 * E.C.n
+    else (E.n = 3 ∨ E.n = 4 ∨ E.n = 6) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ E.C.len = 28) ∧ nBits E.C = 8 * E.C.len ∧ 2 ^ (8 * E.C.len) < 2 * E.C.n
   n_lt : E.C.n < 2 ^ (64 * E.n)
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
@@ -115,8 +119,8 @@ namespace RfcCurve
 variable (R : RfcCurve)
 
 theorem sizesA (h : R.wide = false) :
-    (R.E.n = 3 ∨ R.E.n = 4 ∨ R.E.n = 6) ∧ R.E.C.len = 8 * R.E.n ∧ nBits R.E.C = 64 * R.E.n ∧
-      2 ^ (64 * R.E.n) < 2 * R.E.C.n := by
+    (R.E.n = 3 ∨ R.E.n = 4 ∨ R.E.n = 6) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ R.E.C.len = 28) ∧ nBits R.E.C = 8 * R.E.C.len ∧
+      2 ^ (8 * R.E.C.len) < 2 * R.E.C.n := by
   have := R.sizes; rw [h] at this; exact this
 
 theorem sizesW (h : R.wide = true) : R.E.n = 9 ∧ R.E.C.len = 66 ∧ nBits R.E.C = 521 := by

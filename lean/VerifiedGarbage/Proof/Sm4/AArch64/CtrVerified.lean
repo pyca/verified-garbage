@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
 public import VerifiedGarbage.Proof.Sm4.Scratch
@@ -20,6 +22,20 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+public import VerifiedGarbage.Proof.AesSiv.Words
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Modes.AArch64.Xor
+public import VerifiedGarbage.Proof.Sm4.AArch64.Imm
+meta import VerifiedGarbage.Proof.AesSiv.Ctr32
+meta import VerifiedGarbage.Proof.AesSiv.Words
+meta import VerifiedGarbage.Proof.Cmac.Stream
+meta import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Proof.Modes.AArch64.Xor
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Imm
 
 /-!
 # SM4-CTR on AArch64 meets its contracts
@@ -96,7 +112,10 @@ theorem ctrTaint_agree (s₁ s₂ : State) (_ : ctrAArch64.pre s₁) (_ : ctrAAr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr_ct : ConstantTime isa ctrAArch64.pre ctrAArch64.pub ctr :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) ctrTaint_agree (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+    (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (fun s₁ s₂ h₁ h₂ hp => ⟨ctrTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
+      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [cryptSum])
 
 theorem ctr_correct (s : State) (hs : ctrAArch64.pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ ctrAArch64.post s s' := by

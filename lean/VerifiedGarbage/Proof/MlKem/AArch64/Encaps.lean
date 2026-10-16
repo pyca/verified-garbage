@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem768_encaps` and `vg_mlkem1024_encaps`
@@ -78,14 +84,24 @@ def enL (P : KemLay) : Layout where
   len b := [P.ekLen, 32, 32, P.ctLen, P.scl].getD b 0
   slot k := [0, 2, 3, 4].getD k 4
 
-/-- Arithmetic on the offsets and the buffers of `enL`. -/
-macro "enk" : tactic => `(tactic| (
+/-- The offsets of the buffers `a_ok` places in `scratch`, proved once. -/
+theorem offs (hP : P.Wf) : MB + 32 ≤ SV P ∧ RB + 32 ≤ SV P ∧ HB + 32 ≤ SV P ∧ SB + 32 ≤ SV P ∧
+    WK + 640 ≤ SV P ∧ KEM.ST + 200 ≤ SV P ∧ SV P + 48 ≤ P.scl ∧ 384 * P.k + 32 ≤ P.ekLen ∧
+    P.ekLen < 65536 := by
+  have := hP; refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> lom
+
+/-- Arithmetic on the offsets and the buffers of `enL`: decided, or from `offs`,
+or by `kom`. -/
+tactic_template "enk" : tactic => `(tactic| (
   simp -failIfUnchanged only [enL, List.getD_cons_zero, List.getD_cons_succ, Layout.sc]
-  first | decide | kom))
+  first | decide | omega_using [offs (‹Pre _ _ _›).wf] | kom))
 
 theorem pre_of (hP : P.Wf) {s₀ : State} (h : (encapsAArch64 P).pre s₀) : Pre P (enL P) s₀ := by
   obtain ⟨rd, wr, d02, d03, d04, d12, d13, d14, d23, d24, d34, sp16, k0, k1, k2, k3, k4⟩ := h
-  refine ⟨by rw [rd]; rfl, by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
+  refine ⟨by
+    intro b hb
+    have hb' : b = 0 ∨ b = 1 := by change b < 2 at hb; omega
+    rcases hb' with rfl | rfl <;> rw [rd] <;> simp [kA, enL, argReg], by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
     by enk, by enk, rfl, hP⟩
   · have e : ∀ {x y : Region}, x.Disjoint y → y.Disjoint x := fun h => h.symm
     simp only [enL] at hb hc hw

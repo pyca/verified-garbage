@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Camellia.Scratch
 meta import VerifiedGarbage.Proof.Camellia.Scratch
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
+meta import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -86,10 +88,14 @@ theorem ecbTaint_agree (dir : Dir) (s t : State) (hs : (ecbX86_64 dir).pre s) (h
   · intro r hr
     simp only [ecbTaint, RegSet.not_mem_empty] at hr
 
-theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbX86_64 dir).pre (ecbX86_64 dir).pub (ecb dir) := by
+theorem ecb_taint (dir : Dir) : ∃ h, (taintS.check ecbTaint (ecb dir) h).isSome = true := by
   cases dir
-  · exact VG.Taint.constantTime (A := taint) ecbTaint (ecbTaint_agree .encrypt) (by taint_decide)
-  · exact VG.Taint.constantTime (A := taint) ecbTaint (ecbTaint_agree .decrypt) (by taint_decide)
+  · taint_decide_sum [pairSum]
+  · taint_decide_sum [pairSum]
+
+theorem ecb_ct (dir : Dir) : ConstantTime isa (ecbX86_64 dir).pre (ecbX86_64 dir).pub (ecb dir) :=
+  let ⟨_, h⟩ := ecb_taint dir
+  VG.Taint.constantTime (A := taintS) ecbTaint (ecbTaint_agree dir) h
 
 theorem ecb_correct (dir : Dir) (s : State) (hs : (ecbX86_64 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86_64 dir).post s s' := by

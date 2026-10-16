@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.Arm.Ladder
-public import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.X25519.Invert
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # X25519 on 32-bit ARM: the inversion
@@ -34,7 +36,7 @@ theorem pbitsB_ok : pbitsB 255 = true := by decide +kernel
 theorem pbits : ∀ t < 255, (P - 2) >>> t % 2 = if t = 4 ∨ t = 2 then 0 else 1 := by
   have : ∀ n, pbitsB n = true → ∀ t < n, (P - 2) >>> t % 2 = if t = 4 ∨ t = 2 then 0 else 1 := by
     intro n; induction n with
-    | zero => intro _ t ht; omega
+    | zero => intro _ t ht; omega_using [ht]
     | succ n ih =>
       intro h t ht
       simp only [pbitsB, Bool.and_eq_true, beq_iff_eq] at h
@@ -52,7 +54,7 @@ theorem iteF {c : Prop} [Decidable c] {α : Type} {a b : α} (h : ¬c) : (if c t
   simp [h]
 
 theorem shr_step (x t : Nat) : x >>> t = 2 * (x >>> (t + 1)) + x >>> t % 2 := by
-  rw [Nat.shiftRight_succ]; omega
+  rw [Nat.shiftRight_succ]; omega_using []
 
 /-! ## Stores of a register -/
 
@@ -70,16 +72,16 @@ theorem stores_ok {r : Reg} {o n : Nat} (ho : o + 4 * n ≤ 4096) {s : State} (h
       Frame [⟨State.addr b + BitVec.ofNat 64 o, 4 * m⟩] s.mem s'.mem ∧ s'.gpr = s.gpr ∧ Rest [] s s')
     (fun m s' hm ⟨h1, h2, h3, h4⟩ => ?_) n (Nat.le_refl _) s
     ⟨fun _ h => absurd h (Nat.not_lt_zero _), Frame.refl _ _, rfl, Rest.refl _ _⟩) fun s' h => h
-  refine str0_ok (hc.of_rest h4 (by decide)) (d := o + 4 * m) (by omega) fun s2 u2 =>
+  refine str0_ok (hc.of_rest h4 (by decide)) (d := o + 4 * m) (by omega_using [ho, hm]) fun s2 u2 =>
     WP.block_nil ⟨fun j hj => ?_, ?_, by rw [u2.gpr, h3], h4.trans (u2.rest _)⟩
   · rw [u2.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]; exact h1 j hj
+    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega_using [ho, hm])]; exact h1 j hj
     · rw [wd_write_self, h3]
   · rw [u2.mem]
     exact (h2.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩).writeW
-      (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega_using [])⟩).writeW
+      (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [ho, hm]))
 
 /-! ## The inversion -/
 
@@ -115,7 +117,7 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
     {s : State} (h : InvInv b sI c v n s) :
     WP isa invStep s fun s' => InvInv b sI c v (n - 1) s' ∧ s'.z = decide (n - 1 = 0) := by
   obtain ⟨hcur⟩ := h
-  have hb := pbits (n - 1) (by omega)
+  have hb := pbits (n - 1) (by omega_using [hn'])
   have he := shr_step (P - 2) (n - 1)
   rw [Nat.sub_add_cancel hn] at he
   unfold invStep
@@ -128,7 +130,7 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
     rw [hcur.r10]
     apply BitVec.eq_of_toNat_eq
     have t1 : (1 : BitVec 32).toNat = 1 := rfl
-    rw [toNat_sub_le (by rw [toNat_imm (by omega), t1]; omega), toNat_imm (by omega), toNat_imm (by omega), t1]
+    rw [toNat_sub_le (by rw [toNat_imm (by omega_using [hn']), t1]; omega_using [hn]), toNat_imm (by omega_using [hn']), toNat_imm (by omega_using [hn']), t1]
   refine WP.seq (WP.mono (opMul (o := R) (x := R) (y := R) (by decide) (by decide) (by decide) (by decide) h1)
     fun s2 h2 => ?_)
   -- After the square.
@@ -142,7 +144,7 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
   refine WP.seq (wp_cmp (op2_imm (by decide)) fun s3 u3 hz3 => WP.block_nil ?_)
   have h3 := h2'.next (Fupd.rest u3 _) (by rw [u3.mem]; exact Frame.refl _ _) (by rw [u3.mem]; exact h2'.slots)
   have hz3' : s3.z = decide (n - 1 = 4) := by
-    rw [hz3, h2'.r10]; exact sub_beq (by omega) (by decide)
+    rw [hz3, h2'.r10]; exact sub_beq (by omega_using [hn']) (by decide)
   refine WP.seq (WP.mono (Q := Cur b sI (BitVec.ofNat 32 (n - 1)) c IQ (invV v (n - 1))) ?_ fun s4 h4 =>
     wp_cmp (op2_imm (by decide)) fun s5 u5 hz5 => WP.block_nil ⟨⟨h4.next (Fupd.rest u5 _)
       (by rw [u5.mem]; exact Frame.refl _ _) (by rw [u5.mem]; exact h4.slots)⟩, ?_⟩)
@@ -156,7 +158,7 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
       refine WP.seq (wp_cmp (op2_imm (by decide)) fun s4 u4 hz4 => WP.block_nil ?_)
       have h4' := h3.next (Fupd.rest u4 _) (by rw [u4.mem]; exact Frame.refl _ _) (by rw [u4.mem]; exact h3.slots)
       have hz4' : s4.z = decide (n - 1 = 2) := by
-        rw [hz4, h3.r10]; exact sub_beq (by omega) (by decide)
+        rw [hz4, h3.r10]; exact sub_beq (by omega_using [hn']) (by decide)
       refine WP.ite s4.z (eval_eq _) (fun ht => WP.block_nil (h4'.congr (fun q hq => hq) fun q _ => ?_))
         (fun hf => ?_)
       · have h2 : n - 1 = 2 := by rw [hz4'] at ht; simpa using ht
@@ -172,7 +174,7 @@ theorem invStep_ok {sI : State} {c : BitVec 32} {v : Nat → Fe} {n : Nat} (hn :
             iteF (show ¬ (n - 1 = 4 ∨ n - 1 = 2) by omega), ← VG.Proof.X25519.pw_mul,
             VG.Proof.X25519.pw_one]
         · rw [upd_of_ne _ _ hq, upd_of_ne _ _ hq, invV, upd_of_ne _ _ hq]
-  · rw [hz5, h4.r10]; exact sub_beq (by omega) (by decide)
+  · rw [hz5, h4.r10]; exact sub_beq (by omega_using [hn']) (by decide)
 
 theorem invert_ok {c : BitVec 32} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem (State.addr b) [Z2, X2] v) (h11 : s.gpr .r11 = c) :
@@ -199,9 +201,9 @@ theorem invert_ok {c : BitVec 32} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     · rw [Nat.mul_zero, Nat.add_zero, wd_frame h4f fun r hr => by
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by decide)) (by decide) (by decide),
         u3.mem, wd_write_self, u2.other _ (by decide), u1.gpr]; rfl
-    · have := h4w (k - 1) (by omega)
-      rw [show R + 4 + 4 * (k - 1) = R + 4 * k by omega, u3.gpr, u2.gpr] at this
-      rw [this]; simp only [show k ≠ 0 by omega, ite_false]; rfl
+    · have := h4w (k - 1) (by omega_using [hk])
+      rw [show R + 4 + 4 * (k - 1) = R + 4 * k by omega_using [hk0], u3.gpr, u2.gpr] at this
+      rw [this]; simp only [show k ≠ 0 by omega_using [hk0], ite_false]; rfl
   have hf5 : Frame [⟨State.addr b + BitVec.ofNat 64 R, 64⟩] s.mem s5.mem := by
     rw [u5.mem, ← hm2]
     refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) (s2.gpr .r1)
@@ -221,14 +223,14 @@ theorem invert_ok {c : BitVec 32} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     simp only [IQ, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl
     · have e := limb_frame (o := Z2) hf5 fun r hr k hk => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hZ2, hR, hk])) (by omega_using [hZ2, hk]) (by omega_using [hR])
       refine ⟨fun k hk => by rw [e k hk]; exact (hS Z2 (by decide)).1 k hk, ?_⟩
       rw [FS, V, val16_congr e, invV, upd_of_ne _ _ (by decide)]; exact (hS Z2 (by decide)).2
     · refine ⟨fun k hk => by rw [hlimb k hk]; split <;> decide, ?_⟩
       rw [FS, V, val16_congr hlimb, invV, upd_self, p255, VG.Proof.X25519.pw_zero]
       rfl
     · have e := limb_frame (o := X2) hf5 fun r hr k hk => by
-        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inl (by omega_using [hX2, hR, hk])) (by omega_using [hX2, hk]) (by omega_using [hR])
       refine ⟨fun k hk => by rw [e k hk]; exact (hS X2 (by decide)).1 k hk, ?_⟩
       rw [FS, V, val16_congr e, invV, upd_of_ne _ _ (by decide)]; exact (hS X2 (by decide)).2
   have h255 : InvInv b s5 c v 255 s5 :=
@@ -241,7 +243,7 @@ theorem invert_ok {c : BitVec 32} {v : Nat → Fe} {s : State} (hc : Ctx b s)
   refine WP.mono (invStep_ok h1 h2 hl) fun s'' ⟨hl', hz⟩ => ?_
   by_cases hm : m - 1 = 0
   · exact .inl ⟨by rw [eval_ne, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
-  · exact .inr ⟨by rw [eval_ne, hz]; simp [hm], m - 1, by omega, by omega, by omega, hl'⟩
+  · exact .inr ⟨by rw [eval_ne, hz]; simp [hm], m - 1, by omega_using [hm], by omega_using [hm], by omega_using [h2], hl'⟩
 
 end
 

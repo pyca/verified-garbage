@@ -1,11 +1,15 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 meta import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Loop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+meta import VerifiedGarbage.Proof.Sha256.X86.Lit
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: constant time
@@ -74,11 +78,11 @@ include hq
 theorem PubEq.a {i : Nat} (hi : i < 8) : arg s₀' i = arg s₀ i := (hq.args i hi).symm
 
 /-- `s₀'`'s public values are `s₀`'s. -/
-macro "pub_simp" hq:term " at " h:ident : tactic => `(tactic|
+tactic_template "pub_simp" hq:term " at " h:ident : tactic => `(tactic|
   simp only [dO, A, scr, pw, salt, pwl, sl, ol, cc, out, kp, kl, nbk, dn, PubEq.a $hq (i := 0) (by decide),
-    PubEq.a $hq (i := 1) (by decide), PubEq.a $hq (i := 2) (by decide), PubEq.a $hq (i := 3) (by decide),
-    PubEq.a $hq (i := 4) (by decide), PubEq.a $hq (i := 5) (by decide), PubEq.a $hq (i := 6) (by decide),
-    PubEq.a $hq (i := 7) (by decide)] at $h:ident)
+                     PubEq.a $hq (i := 1) (by decide), PubEq.a $hq (i := 2) (by decide), PubEq.a $hq (i := 3) (by decide),
+                     PubEq.a $hq (i := 4) (by decide), PubEq.a $hq (i := 5) (by decide), PubEq.a $hq (i := 6) (by decide),
+                     PubEq.a $hq (i := 7) (by decide)] at $h:ident)
 
 theorem PubEq.E' : E s₀' = E s₀ := hq.esp.symm
 theorem PubEq.scrEq : scr s₀' = scr s₀ := hq.a (by decide)
@@ -202,7 +206,7 @@ theorem hashKey_rel :
       have ekp : kp F t₀ = dO t₀ F.hkO := by simp only [kp, hlt, ↓reduceIte]
       have ekl : kl F t₀ = F.H.D := by simp only [kl, hlt, ↓reduceIte]
       refine ⟨k', by rw [ekp]; exact d, by rw [ekl]; exact c, ?_⟩
-      rw [ekp, ekl, dO_addr hp₀ (by omega), m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega)
+      rw [ekp, ekl, dO_addr hp₀ (hz.hkO_lt), m, b, blockKey_hash hz hF.hH (by rw [bytesAt_length]; omega)
         (hash_len hF.hH b)])
   exact r1.seq (r2.seq (r3.seq (r4.seq (r5.seq (r6.seq r7)))))
 

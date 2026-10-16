@@ -1,14 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSecondCall
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.BallLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSecondCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallLoop
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallInitial
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-! ## From `BallMath.lean` -/
 

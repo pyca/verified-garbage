@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
-public import VerifiedGarbage.Impl.P256.VerifyAllocated
+import VerifiedGarbage.Impl.P256.VerifyAllocated
 public import VerifiedGarbage.Impl.P256.EcdhSelect
 
 /-! Secret-scalar width-five Jacobian/co-Z ECDH.

@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Arm.MulLoop
+import VerifiedGarbage.Proof.X448.Arm.MulLoop
 public import VerifiedGarbage.Proof.X448.Arm.Reduce
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # X448 on ARMv7: field multiplication

@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2aSub
-public import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.WordStep
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
 
 /-!
 # `R² mod m` by word steps with ADX: Knuth's test with the second words
@@ -36,7 +40,7 @@ def d3 (q u2 u1 u0 d d1 : Nat) : Nat :=
 theorem d3_le (q u2 u1 u0 d d1 : Nat) : d3 q u2 u1 u0 d d1 ≤ q := by
   unfold d3
   by_cases hc : u2 * 2 ^ 64 + u1 - q * d < 2 ^ 64 ∧ (u2 * 2 ^ 64 + u1 - q * d) * 2 ^ 64 + u0 < q * d1
-  · simp only [hc, and_self, ↓reduceIte]; omega
+  · simp only [hc, and_self, ↓reduceIte]; omega_using []
   · simp only [hc, ↓reduceIte]; exact Nat.le_refl _
 
 /-- The test keeps `q̂ d ≤ u₂ 2^64 + u₁`. -/
@@ -59,7 +63,7 @@ theorem d3_ge {q qh u2 u1 u0 d d1 yl ml B y m : Nat} (hyl : yl < B)
     generalize hD : d * K + d1 = D at hm
     have h1 : q * D * B < (T + 1) * B := by
       have : q * D * B ≤ q * m := by rw [hm, Nat.mul_assoc, Nat.mul_add]; exact Nat.le_add_right _ _
-      rw [Nat.add_mul, Nat.one_mul]; omega
+      rw [Nat.add_mul, Nat.one_mul]; omega_using [hyl, hq, hy, this]
     have h2 : q * D ≤ T := Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_right h1)
     have h3 : T < qh * D := by
       rw [← hT, ← hD, Nat.mul_add, ← Nat.mul_assoc, Nat.mul_comm qh d]
@@ -67,12 +71,12 @@ theorem d3_ge {q qh u2 u1 u0 d d1 yl ml B y m : Nat} (hyl : yl < B)
         rw [Nat.sub_mul, Nat.mul_comm qh d]
       have : d * qh * K ≤ (u2 * K + u1) * K := by
         rw [Nat.mul_comm d qh]; exact Nat.mul_le_mul_right _ hd
-      omega
+      omega_using [hc, e]
     have : q < qh := by
       by_contra hc'
-      have := Nat.mul_le_mul_right D (show qh ≤ q by omega)
-      omega
-    omega
+      have := Nat.mul_le_mul_right D (show qh ≤ q by omega_using [hc'])
+      omega_using [h2, h3, this]
+    omega_using [this]
   · simp only [hc, ↓reduceIte]; exact hqh
 
 /-- `WordStep.wordStep_val` for any estimate `q ≤ q̂ ≤ q + 2` of the quotient
@@ -87,7 +91,7 @@ theorem wordStep_valG {w X M qh T1 T2 T3 b c1 c2 : Nat} (hM0 : 0 < M) (hMw : M <
     (h3 : T3 + 2 ^ (64 * (w + 1)) * c2 = T2 + if 2 ^ (64 * (w + 1)) / 2 ≤ T2 then M else 0) :
     T3 = X * 2 ^ 64 % M := by
   have hWB : 2 ^ (64 * (w + 1)) = 2 ^ (64 * w) * 2 ^ 64 := by
-    rw [show 64 * (w + 1) = 64 * w + 64 by omega, Nat.pow_add]
+    rw [show 64 * (w + 1) = 64 * w + 64 by omega_using [], Nat.pow_add]
   generalize hW : 2 ^ (64 * (w + 1)) = W at *
   generalize 2 ^ (64 * w) = B at *
   have hMW : 4 * M < W / 2 := by rw [hWB]; omega_using [hMw]
@@ -116,7 +120,7 @@ theorem d3_bounds {X M U2 U1 U0 D D1 Xl Ml B0 : Nat}
       d3 (d3 (min ((U2 * 2 ^ 64 + U1) / D) (2 ^ 64 - 1)) U2 U1 U0 D D1) U2 U1 U0 D D1 < 2 ^ 64 := by
   generalize hK : 2 ^ 64 = K at *
   have hK0 : 0 < K := by rw [← hK]; exact Nat.two_pow_pos 64
-  have hM0 : 0 < M := by omega
+  have hM0 : 0 < M := by omega_using [hXM]
   -- `y = x K` over `B' = K B₀` and over `B = K K B₀`.
   have hy1 : X * K = ((U2 * K + U1) * K + U0) * (K * B0) + Xl * K := by rw [hX]; grind
   have hyl1 : Xl * K < K * B0 := by rw [Nat.mul_comm Xl]; exact Nat.mul_lt_mul_of_pos_left hXl hK0
@@ -124,25 +128,25 @@ theorem d3_bounds {X M U2 U1 U0 D D1 Xl Ml B0 : Nat}
   have hy2 : X * K = (U2 * K + U1) * (K * K * B0) + (U0 * B0 + Xl) * K := by rw [hX]; grind
   have hyl2 : (U0 * B0 + Xl) * K < K * K * B0 := by
     have : U0 * B0 + Xl < K * B0 := by
-      have := Nat.mul_le_mul_right B0 (show U0 + 1 ≤ K by omega)
-      rw [Nat.add_mul, Nat.one_mul] at this; omega
+      have := Nat.mul_le_mul_right B0 (show U0 + 1 ≤ K by omega_using [hU0])
+      rw [Nat.add_mul, Nat.one_mul] at this; omega_using [hXl, this]
     rw [Nat.mul_comm _ (K), Nat.mul_assoc]; exact Nat.mul_lt_mul_of_pos_left this hK0
   have hm2 : M = D * (K * K * B0) + (D1 * (K * B0) + Ml) := by rw [hM]; grind
   have hml2 : D1 * (K * B0) + Ml < K * K * B0 := by
     have : D1 * (K * B0) + K * B0 ≤ K * K * B0 := by
-      have := Nat.mul_le_mul_right (K * B0) (show D1 + 1 ≤ K by omega)
+      have := Nat.mul_le_mul_right (K * B0) (show D1 + 1 ≤ K by omega_using [hD1])
       rwa [Nat.add_mul, Nat.one_mul, ← Nat.mul_assoc (K) (K) B0] at this
-    omega
+    omega_using [hMl, this]
   -- `q < K`.
   have hq : X * K / M < K := by
     rw [Nat.div_lt_iff_lt_mul hM0, Nat.mul_comm (K) M]; exact Nat.mul_lt_mul_of_pos_right hXM hK0
   have hq2 := hq
   rw [hy2, hm2] at hq2
-  have hge := qhat_ge (N := U2 * K + U1) (d := D) hyl2 (by omega) (by rw [hK]; exact hq2)
+  have hge := qhat_ge (N := U2 * K + U1) (d := D) hyl2 (by omega_using [hd]) (by rw [hK]; exact hq2)
   have hle := qhat_le (N := U2 * K + U1) (yl := (U0 * B0 + Xl) * K) hml2 hd (by rw [hK]; exact hq2)
   rw [← hy2, ← hm2, hK] at hge hle
   generalize hqh : min ((U2 * K + U1) / D) (K - 1) = qh at hge hle ⊢
-  have hqK : qh < K := by omega
+  have hqK : qh < K := by omega_using [hK0, hqh]
   have hd0 : qh * D ≤ U2 * K + U1 := by
     rw [← hqh]
     exact Nat.le_trans (Nat.mul_le_mul_right D (Nat.min_le_left _ _)) (Nat.div_mul_le_self _ _)
@@ -157,10 +161,10 @@ theorem d3_bounds {X M U2 U1 U0 D D1 Xl Ml B0 : Nat}
 theorem wv_top3 (m : Mem) (B : Addr) (e w : Nat) (hw : 3 ≤ w) :
     wv m B e w = (((word m B (e + 8 * (w - 1))).toNat * 2 ^ 64 + (word m B (e + 8 * (w - 2))).toNat) * 2 ^ 64 +
       (word m B (e + 8 * (w - 3))).toNat) * 2 ^ (64 * (w - 3)) + wv m B e (w - 3) := by
-  obtain ⟨n, rfl⟩ : ∃ n, w = n + 3 := ⟨w - 3, by omega⟩
-  rw [show n + 3 = n + 1 + 1 + 1 from rfl, wv_succ, wv_succ, wv_succ, show n + 1 + 1 + 1 - 1 = n + 1 + 1 by omega,
-    show n + 1 + 1 + 1 - 2 = n + 1 by omega, show n + 1 + 1 + 1 - 3 = n by omega,
-    show 64 * (n + 1 + 1) = 64 * n + 64 + 64 by omega, show 64 * (n + 1) = 64 * n + 64 by omega]
+  obtain ⟨n, rfl⟩ : ∃ n, w = n + 3 := ⟨w - 3, by omega_using [hw]⟩
+  rw [show n + 3 = n + 1 + 1 + 1 from rfl, wv_succ, wv_succ, wv_succ, show n + 1 + 1 + 1 - 1 = n + 1 + 1 by omega_using [],
+    show n + 1 + 1 + 1 - 2 = n + 1 by omega_using [], show n + 1 + 1 + 1 - 3 = n by omega_using [],
+    show 64 * (n + 1 + 1) = 64 * n + 64 + 64 by omega_using [], show 64 * (n + 1) = 64 * n + 64 by omega_using []]
   simp only [Nat.pow_add]
   generalize 2 ^ (64 * n) = P
   generalize 2 ^ 64 = K
@@ -170,30 +174,30 @@ theorem wv_top3 (m : Mem) (B : Addr) (e w : Nat) (hw : 3 ≤ w) :
 theorem wv_top2 (m : Mem) (B : Addr) (e w : Nat) (hw : 3 ≤ w) :
     wv m B e w = ((word m B (e + 8 * (w - 1))).toNat * 2 ^ 64 + (word m B (e + 8 * (w - 2))).toNat) * 2 ^ 64 *
       2 ^ (64 * (w - 3)) + wv m B e (w - 2) := by
-  obtain ⟨n, rfl⟩ : ∃ n, w = n + 3 := ⟨w - 3, by omega⟩
-  rw [show n + 3 = n + 1 + 1 + 1 from rfl, wv_succ, wv_succ, show n + 1 + 1 + 1 - 1 = n + 1 + 1 by omega,
-    show n + 1 + 1 + 1 - 2 = n + 1 by omega, show n + 1 + 1 + 1 - 3 = n by omega,
-    show 64 * (n + 1 + 1) = 64 * n + 64 + 64 by omega, show 64 * (n + 1) = 64 * n + 64 by omega]
+  obtain ⟨n, rfl⟩ : ∃ n, w = n + 3 := ⟨w - 3, by omega_using [hw]⟩
+  rw [show n + 3 = n + 1 + 1 + 1 from rfl, wv_succ, wv_succ, show n + 1 + 1 + 1 - 1 = n + 1 + 1 by omega_using [],
+    show n + 1 + 1 + 1 - 2 = n + 1 by omega_using [], show n + 1 + 1 + 1 - 3 = n by omega_using [],
+    show 64 * (n + 1 + 1) = 64 * n + 64 + 64 by omega_using [], show 64 * (n + 1) = 64 * n + 64 by omega_using []]
   simp only [Nat.pow_add]
   generalize 2 ^ (64 * n) = P
   generalize 2 ^ 64 = K
   grind
 
 theorem pow_w2 (w : Nat) (hw : 3 ≤ w) : 2 ^ (64 * (w - 2)) = 2 ^ 64 * 2 ^ (64 * (w - 3)) := by
-  rw [← Nat.pow_add]; congr 1; omega
+  rw [← Nat.pow_add]; congr 1; omega_using [hw]
 
 /-- `b + 8 i - 24` for `i = j ≥ 3`. -/
 theorem addrm24 {b i p : Addr} {e j : Nat} (hb : b = off p e) (hi : i = BitVec.ofNat 64 j) (hj : 3 ≤ j) :
     b + i * BitVec.ofNat 64 8 + BitVec.ofInt 64 (-24) = off p (e + 8 * (j - 3)) := by
   have h8 : BitVec.ofNat 64 (8 * j) + BitVec.ofInt 64 (-24) = BitVec.ofNat 64 (8 * (j - 3)) := by
     rw [show (-24 : Int) = - ((24 : Nat) : Int) by rfl, BitVec.ofInt_neg, BitVec.ofInt_natCast,
-      ← BitVec.sub_eq_add_neg, show 8 * j = 8 * (j - 3) + 24 by omega, BitVec.ofNat_add,
+      ← BitVec.sub_eq_add_neg, show 8 * j = 8 * (j - 3) + 24 by omega_using [hj], BitVec.ofNat_add,
       BitVec.add_sub_cancel]
   subst hb hi
   rw [ofNat_mul8, off, BitVec.add_assoc, BitVec.add_assoc, h8, ← BitVec.ofNat_add]
 
 /-- The words of `refine`: `q̂ + (-1 if r̂ < 2^64 and its test holds)` is `d3`. -/
-theorem refine_arith {qh : Nat} {U2 U1 U0 D D1 lo hi lo2 hi2 : BitVec 64} (hq : qh < 2 ^ 64)
+theorem refine_arith {qh : Nat} {U2 U1 U0 D D1 lo hi lo2 hi2 : BitVec 64} (_hq : qh < 2 ^ 64)
     (e2 : lo.toNat + 2 ^ 64 * hi.toNat = qh * D.toNat) (e4 : lo2.toNat + 2 ^ 64 * hi2.toNat = qh * D1.toNat)
     (hle : qh * D.toNat ≤ U2.toNat * 2 ^ 64 + U1.toNat) :
     BitVec.ofNat 64 qh + (if (U2 - hi - (BitVec.ofBool (decide (U1.toNat < lo.toNat))).setWidth 64 == 0) = true then
@@ -206,34 +210,34 @@ theorem refine_arith {qh : Nat} {U2 U1 U0 D D1 lo hi lo2 hi2 : BitVec 64} (hq : 
   have hq0 : qh = 0 → qh * D1.toNat = 0 := fun h => by rw [h, Nat.zero_mul]
   generalize qh * D1.toNat = P1 at e4 hq0
   have h9 : (U1 - lo).toNat = (U1.toNat + 2 ^ 64 - lo.toNat) % 2 ^ 64 := by
-    rw [BitVec.toNat_sub]; omega
+    rw [BitVec.toNat_sub]; omega_using []
   have h11 : (U2 - hi - (BitVec.ofBool (decide (U1.toNat < lo.toNat))).setWidth 64).toNat =
       (U2.toNat * 2 ^ 64 + U1.toNat - P) / 2 ^ 64 := by
     rw [BitVec.toNat_sub, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofBool]
-    by_cases h : U1.toNat < lo.toNat <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    by_cases h : U1.toNat < lo.toNat <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_using [e2, hle, h]
   apply BitVec.eq_of_toNat_eq
   by_cases hr : U2.toNat * 2 ^ 64 + U1.toNat - P < 2 ^ 64
   · have hz : (U2 - hi - (BitVec.ofBool (decide (U1.toNat < lo.toNat))).setWidth 64 == 0) = true := by
       rw [beq_iff_eq]; apply BitVec.eq_of_toNat_eq; rw [h11]; exact Nat.div_eq_of_lt hr
     have hc : decide ((U1 - lo).toNat < hi2.toNat + (decide (U0.toNat < lo2.toNat)).toNat) =
         decide ((U2.toNat * 2 ^ 64 + U1.toNat - P) * 2 ^ 64 + U0.toNat < P1) := by
-      have hr9 : (U1 - lo).toNat = U2.toNat * 2 ^ 64 + U1.toNat - P := by rw [h9]; omega
+      have hr9 : (U1 - lo).toNat = U2.toNat * 2 ^ 64 + U1.toNat - P := by rw [h9]; omega_using [e2, hle, hr]
       rw [hr9]
       generalize U2.toNat * 2 ^ 64 + U1.toNat - P = r at hr ⊢
       by_cases h : U0.toNat < lo2.toNat <;> simp only [h, decide_true, decide_false, Bool.toNat_true,
-        Bool.toNat_false] <;> apply decide_eq_decide.mpr <;> omega
+        Bool.toNat_false] <;> apply decide_eq_decide.mpr <;> omega_using [e4, h]
     simp only [hz, ↓reduceIte, hc, hr, true_and]
     by_cases h : (U2.toNat * 2 ^ 64 + U1.toNat - P) * 2 ^ 64 + U0.toNat < P1
-    · have : qh ≠ 0 := fun h0 => by have := hq0 h0; omega
+    · have : qh ≠ 0 := fun h0 => by have := hq0 h0; omega_using [h, this]
       simp only [h, decide_true, ↓reduceIte]
       rw [show 0#64 - (BitVec.ofBool true).setWidth 64 = BitVec.ofNat 64 (2 ^ 64 - 1) from rfl, BitVec.toNat_add,
         BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega
+      omega_using [this]
     · simp only [h, decide_false, ↓reduceIte]
       rw [show 0#64 - (BitVec.ofBool false).setWidth 64 = 0#64 from rfl, BitVec.add_zero]
   · have hz : (U2 - hi - (BitVec.ofBool (decide (U1.toNat < lo.toNat))).setWidth 64 == 0) = false := by
       rw [beq_eq_false_iff_ne]; intro h; have := congrArg BitVec.toNat h; rw [h11] at this; change _ = 0 at this
-      omega
+      omega_using [hr, this]
     simp only [hz, Bool.false_eq_true, ↓reduceIte, hr, false_and]
     rw [BitVec.add_zero]
 
@@ -261,7 +265,7 @@ theorem refine_ok {t : State} {B : Addr} {Z w ex em qh : Nat} (hs : Scr t B Z)
   generalize hd : word t.mem B (em + 8 * (w - 1)) = D at hle ⊢
   generalize hd1 : word t.mem B (em + 8 * (w - 2)) = D1
   have ea1 : t.ea (ix .r10 .r12 (-8)) = off B (em + 8 * (w - 1)) := by
-    simp only [State.ea, ix, h10, h12]; exact addrm8 rfl rfl (by omega)
+    simp only [State.ea, ix, h10, h12]; exact addrm8 rfl rfl (by omega_using [hw])
   rw [show refine = ([.mov .rdx (.reg .rcx)] : List Instr) ++ (([.mulx .rax .r13 (.mem (ix .r10 .r12 (-8)))] : List Instr) ++
     (([.mov .r9 (.mem (ix .rbx .r12 (-16))), .mov .r11 (.mem (ix .rbx .r12 (-8))), .alu .sub .r9 (.reg .r13),
       .alu .sbb .r11 (.reg .rax)] : List Instr) ++ (([.mulx .rax .r13 (.mem (ix .r10 .r12 (-16)))] : List Instr) ++
@@ -276,8 +280,8 @@ theorem refine_ok {t : State} {B : Addr} {Z w ex em qh : Nat} (hs : Scr t B Z)
   rw [WP.block_append_iff]
   have ea₁ : t₁.ea (ix .r10 .r12 (-8)) = off B (em + 8 * (w - 1)) := by
     simp only [State.ea, ix, r₁ .r10 (by decide), r₁ .r12 (by decide)]
-    exact addrm8 h10 h12 (by omega)
-  refine WP.mono (mulx_ok t₁ (readSrc_word hs₁ ea₁ (by omega)) (fun _ h => nomatch h) (by decide))
+    exact addrm8 h10 h12 (by omega_using [hw])
+  refine WP.mono (mulx_ok t₁ (readSrc_word hs₁ ea₁ (by omega_using [hw, hM])) (fun _ h => nomatch h) (by decide))
     fun t₂ ⟨e₂, _, _, k₂⟩ => ?_
   rw [h1dx, hm₁, hd, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hq] at e₂
   have r₂ : ∀ r, r ≠ .rax → r ≠ .r13 → r ≠ .rdx → t₂.gpr r = t.gpr r := fun r h1 h2 h3 =>
@@ -287,9 +291,9 @@ theorem refine_ok {t : State} {B : Addr} {Z w ex em qh : Nat} (hs : Scr t B Z)
       t₃.gpr .r11 = U2 - t₂.gpr .rax - (BitVec.ofBool (decide (U1.toNat < (t₂.gpr .r13).toNat))).setWidth 64 ∧
       t₃.mem = t.mem ∧ t₃.rd = t.rd ∧ t₃.wr = t.wr) (by
     xrun [State.ea, ix, r₂ .rbx (by decide) (by decide) (by decide), r₂ .r12 (by decide) (by decide) (by decide),
-      hbx, h12, addrm8 (p := B) (e := ex) (j := w) rfl rfl (by omega),
-      addrm16 (p := B) (e := ex) (j := w) rfl rfl (by omega), k₂.2.1, k₂.2.2.1, k₂.2.2.2, hm₁, hrd₁, hwr₁,
-      hs.ld (show ex + 8 * (w - 1) + 8 ≤ Z by omega), hs.ld (show ex + 8 * (w - 2) + 8 ≤ Z by omega), hu1, hu2])
+      hbx, h12, addrm8 (p := B) (e := ex) (j := w) rfl rfl (by omega_using [hw]),
+      addrm16 (p := B) (e := ex) (j := w) rfl rfl (by omega_using [hw]), k₂.2.1, k₂.2.2.1, k₂.2.2.2, hm₁, hrd₁, hwr₁,
+      hs.ld (show ex + 8 * (w - 1) + 8 ≤ Z by omega_using [hw, hX]), hs.ld (show ex + 8 * (w - 2) + 8 ≤ Z by omega_using [hw, hX]), hu1, hu2])
     rfl) fun t₃ ⟨⟨h9, h11, hm₃, hrd₃, hwr₃⟩, k₃⟩ => ?_
   have hs₃ : Scr t₃ B Z := hs.congr hwr₃
   have r₃ : ∀ r, r ≠ .rax → r ≠ .r13 → r ≠ .rdx → r ≠ .r9 → r ≠ .r11 → t₃.gpr r = t.gpr r := fun r h1 h2 h3 h4 h5 =>
@@ -297,9 +301,9 @@ theorem refine_ok {t : State} {B : Addr} {Z w ex em qh : Nat} (hs : Scr t B Z)
   have ea₃ : t₃.ea (ix .r10 .r12 (-16)) = off B (em + 8 * (w - 2)) := by
     simp only [State.ea, ix, r₃ .r10 (by decide) (by decide) (by decide) (by decide) (by decide),
       r₃ .r12 (by decide) (by decide) (by decide) (by decide) (by decide)]
-    exact addrm16 h10 h12 (by omega)
+    exact addrm16 h10 h12 (by omega_using [hw])
   rw [WP.block_append_iff]
-  refine WP.mono (mulx_ok t₃ (readSrc_word hs₃ ea₃ (by omega)) (fun _ h => nomatch h) (by decide))
+  refine WP.mono (mulx_ok t₃ (readSrc_word hs₃ ea₃ (by omega_using [hw, hM])) (fun _ h => nomatch h) (by decide))
     fun t₄ ⟨e₄, _, _, k₄⟩ => ?_
   have h4dx : t₄.gpr .rdx = BitVec.ofNat 64 qh := by
     rw [k₄.gpr (by decide), k₃.gpr (by decide), k₂.gpr (by decide), h1dx]
@@ -316,8 +320,8 @@ theorem refine_ok {t : State} {B : Addr} {Z w ex em qh : Nat} (hs : Scr t B Z)
       t₅.zf = some (t₃.gpr .r11 == 0) ∧ t₅.mem = t.mem) (by
     xrun [State.ea, ix, r₄ .rbx (by decide) (by decide) (by decide) (by decide) (by decide),
       r₄ .r12 (by decide) (by decide) (by decide) (by decide) (by decide), hbx, h12, h9₄, h11₄, h9,
-      addrm24 (p := B) (e := ex) (j := w) rfl rfl (by omega), k₄.2.1, k₄.2.2.1, k₄.2.2.2, hm₃, hrd₃, hwr₃,
-      hs.ld (show ex + 8 * (w - 3) + 8 ≤ Z by omega), hu0, BitVec.and_self]
+      addrm24 (p := B) (e := ex) (j := w) rfl rfl (by omega_using [hw]), k₄.2.1, k₄.2.2.1, k₄.2.2.2, hm₃, hrd₃, hwr₃,
+      hs.ld (show ex + 8 * (w - 3) + 8 ≤ Z by omega_using [hw, hX]), hu0, BitVec.and_self]
 ) rfl)
     fun t₅ ⟨⟨h515, h513, h5z, hm₅⟩, k₅⟩ => ?_
   rw [WP.block_append_iff]

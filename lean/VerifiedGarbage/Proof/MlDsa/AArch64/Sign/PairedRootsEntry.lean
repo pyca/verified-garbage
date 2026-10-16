@@ -1,14 +1,23 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRoots
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Verified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttVerified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowMemory
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

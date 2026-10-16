@@ -7,6 +7,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 
 /-!
 # RSAES-OAEP decryption on x86-64: the frame and the prologue
@@ -50,7 +58,7 @@ theorem fb_toNatD {s : State} (hp : DPre s) : (fb s).toNat + frameBytes = (s.gpr
   have := hp.sp1; unfold decStack privStack at this
   simp only [fb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold frameBytes at *; omega
 
-theorem DPre.hsl {s : State} (hp : DPre s) : 16 * (s.gpr .r8).toNat + 1024 ≤ (stackArg s 16).toNat := by
+theorem DPre.hsl {s : State} (hp : DPre s) : 16 * (s.gpr .r8).toNat + 32 + 1024 ≤ (stackArg s 16).toNat := by
   have := hp.hsw; unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at this; omega
 
 theorem DPre.geo {s : State} (hp : DPre s) : Geo (fb s) (stackArg s 15) := by

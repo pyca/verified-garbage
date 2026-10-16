@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Camellia.Layout
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # The head and tail of eight blocks of bitsliced Camellia on AArch64

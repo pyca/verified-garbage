@@ -5,6 +5,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Linear
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # The modes one block at a time on ARMv7: one block
@@ -31,8 +37,8 @@ open VG.Proof.MdStream.Arm (Upd wp_mov wp_add wp_subs op2_imm op2_reg ofNat_beq_
 at a time, do not treat the data byte as a block), and which calls the
 cipher on a whole block at an encodable offset. -/
 structure ModeOk (c : Core) (M : Mode) : Prop where
-  pre : M.pre.all (opOk M.byte) = true
-  post : M.post.all (opOk M.byte) = true
+  pre : M.pre.all (opOk c.bs M.byte) = true
+  post : M.post.all (opOk c.bs M.byte) = true
   tgt : M.byte = true → M.tgt ≠ .d
   tgt_enc : encodable (BitVec.ofNat 32 (c.base M.tgt).2) = true
 
@@ -221,6 +227,21 @@ theorem scrArg_wp {c : Core} (S : CoreSpec c) {s : State} {Sb : BitVec 32} {Q : 
   · exact wp_add (op2_imm (S.cs_enc ‹_›)) fun s' u => WP.block_nil
       (hQ s' u.other (fun _ => by rw [u.gpr, h8]) u.rd u.wr u.sp u.mem)
 
+/-- The constant argument to `r3`, if the core takes one. -/
+theorem arg3_wp {c : Core} (S : CoreSpec c) {s : State} {Q : State → Prop}
+    (hQ : ∀ s', (∀ x, x ≠ .r3 → s'.gpr x = s.gpr x) → (c.arg3 = none → s'.gpr .r3 = s.gpr .r3) →
+      (∀ k, c.arg3 = some k → s'.gpr .r3 = BitVec.ofNat 32 k) →
+      s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp → s'.mem = s.mem → Q s') :
+    WP isa (.block c.arg3Code) s Q := by
+  unfold Core.arg3Code
+  split
+  · rename_i k hk
+    exact wp_mov (op2_imm (S.arg3_enc k hk)) fun s' u => WP.block_nil
+      (hQ s' u.other (fun h => by rw [hk] at h; cases h)
+        (fun k' h => by rw [hk] at h; cases h; exact u.gpr) u.rd u.wr u.sp u.mem)
+  · rename_i hk
+    exact WP.block_nil (hQ s (fun _ _ => rfl) (fun _ => rfl) (fun k h => by rw [hk] at h; cases h) rfl rfl rfl rfl)
+
 /-! ## The call's block -/
 
 /-- The address of block `x` in 32 bits, with the data block at `D` and the
@@ -289,6 +310,7 @@ structure PreA (s₀ : State) (k : Nat) (b : Blks) (s s₂ : State) : Prop where
   r1 : c.rounds = true → s₂.gpr .r1 = Rp s₀
   rD : s₂.gpr c.dReg = bt c (Dk s₀ c M k) (Sc c s₀) M.tgt
   rN : s₂.gpr c.nReg = 1
+  a3 : ∀ k, c.arg3 = some k → s₂.gpr .r3 = BitVec.ofNat 32 k
   rd : s₂.rd = s.rd
   wr : s₂.wr = s.wr
   sp : s₂.sp = s.sp
@@ -318,36 +340,46 @@ theorem pre_wp (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h : 
   · have hD : c.dReg = .r1 := by unfold Core.dReg; rw [hr]; rfl
     have hN : c.nReg = .r2 := by unfold Core.nReg; rw [hr]; rfl
     simp only [Bool.false_eq_true, ↓reduceIte, List.nil_append, hD, hN]
-    refine wp_add (op2_imm enc) fun s₃ u₃ => wp_mov (op2_imm (by decide)) fun s₄ u₄ => scrArg_wp S
-      (by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), h₁.regs _ (by decide)
-        (by decide), h.r8]) fun s₅ g₅ c₅ rd₅ wr₅ sp₅ m₅ =>
-      ⟨fun x a b d _ e f i => ?_, ?_, fun h => absurd h (by simp [hr]), ?_, ?_, ?_, ?_, ?_, ?_, ?_, c₅⟩
-    · rw [g₅ _ i, u₄.other _ d, u₃.other _ b, u₂.other _ a, h₁.regs _ e f]
-    · rw [g₅ _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, h4]
-    · rw [hD, g₅ _ (by decide), u₄.other _ (by decide), u₃.gpr, bt₂]
-    · rw [hN, g₅ _ (by decide), u₄.gpr]
-    · rw [rd₅, u₄.rd, u₃.rd, u₂.rd, h₁.rd]
-    · rw [wr₅, u₄.wr, u₃.wr, u₂.wr, h₁.wr]
-    · rw [sp₅, u₄.sp, u₃.sp, u₂.sp, h₁.sp]
-    · rw [m₅, u₄.mem, u₃.mem, u₂.mem]; exact h₁.frame
-    · rw [m₅, u₄.mem, u₃.mem, u₂.mem]; exact h₁.blks
+    refine wp_add (op2_imm enc) fun s₃ u₃ => wp_mov (op2_imm (by decide)) fun s₄ u₄ =>
+      WP.block_append_iff.2 (arg3_wp S fun s₄' g₄ _ a₄ rd₄ wr₄ sp₄ m₄ => scrArg_wp S
+      (by rw [g₄ _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
+        h₁.regs _ (by decide) (by decide), h.r8]) fun s₅ g₅ c₅ rd₅ wr₅ sp₅ m₅ =>
+      ⟨fun x a b d e f g i => ?_, ?_, fun h => absurd h (by simp [hr]), ?_, ?_, fun k hk => ?_, ?_, ?_, ?_, ?_,
+        ?_, c₅⟩)
+    · rw [g₅ _ i, g₄ _ e, u₄.other _ d, u₃.other _ b, u₂.other _ a, h₁.regs _ f g]
+    · rw [g₅ _ (by decide), g₄ _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, h4]
+    · rw [hD, g₅ _ (by decide), g₄ _ (by decide), u₄.other _ (by decide), u₃.gpr, bt₂]
+    · rw [hN, g₅ _ (by decide), g₄ _ (by decide), u₄.gpr]
+    · rw [g₅ _ (by decide), a₄ k hk]
+    · rw [rd₅, rd₄, u₄.rd, u₃.rd, u₂.rd, h₁.rd]
+    · rw [wr₅, wr₄, u₄.wr, u₃.wr, u₂.wr, h₁.wr]
+    · rw [sp₅, sp₄, u₄.sp, u₃.sp, u₂.sp, h₁.sp]
+    · rw [m₅, m₄, u₄.mem, u₃.mem, u₂.mem]; exact h₁.frame
+    · rw [m₅, m₄, u₄.mem, u₃.mem, u₂.mem]; exact h₁.blks
   · have hD : c.dReg = .r2 := by unfold Core.dReg; rw [hr]; rfl
     have hN : c.nReg = .r3 := by unfold Core.nReg; rw [hr]; rfl
+    have hn3 : c.arg3 = none := by
+      cases h3 : c.arg3
+      · rfl
+      · have := S.arg3_rounds (by rw [h3]; rfl); rw [hr] at this; cases this
     simp only [↓reduceIte, List.cons_append, List.nil_append, hD, hN]
     refine wp_mov (op2_reg _ _) fun s₃ u₃ => wp_add (op2_imm enc) fun s₄ u₄ => wp_mov (op2_imm (by decide))
-      fun s₅ u₅ => scrArg_wp S (by rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
+      fun s₅ u₅ => WP.block_append_iff.2 (arg3_wp S fun s₅' g₅' n₅ _ rd₅' wr₅' sp₅' m₅' => scrArg_wp S
+      (by rw [g₅' _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide),
         u₂.other _ (by decide), h₁.regs _ (by decide) (by decide), h.r8]) fun s₆ g₆ c₆ rd₆ wr₆ sp₆ m₆ =>
-      ⟨fun x a b d e f g i => ?_, ?_, fun _ => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, c₆⟩
-    · rw [g₆ _ i, u₅.other _ e, u₄.other _ d, u₃.other _ b, u₂.other _ a, h₁.regs _ f g]
-    · rw [g₆ _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, h4]
-    · rw [g₆ _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, h11 hr]
-    · rw [hD, g₆ _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ hne.2, bt₂]
-    · rw [hN, g₆ _ (by decide), u₅.gpr]
-    · rw [rd₆, u₅.rd, u₄.rd, u₃.rd, u₂.rd, h₁.rd]
-    · rw [wr₆, u₅.wr, u₄.wr, u₃.wr, u₂.wr, h₁.wr]
-    · rw [sp₆, u₅.sp, u₄.sp, u₃.sp, u₂.sp, h₁.sp]
-    · rw [m₆, u₅.mem, u₄.mem, u₃.mem, u₂.mem]; exact h₁.frame
-    · rw [m₆, u₅.mem, u₄.mem, u₃.mem, u₂.mem]; exact h₁.blks
+      ⟨fun x a b d e f g i => ?_, ?_, fun _ => ?_, ?_, ?_, fun k hk => ?_, ?_, ?_, ?_, ?_, ?_, c₆⟩)
+    · rw [g₆ _ i, g₅' _ e, u₅.other _ e, u₄.other _ d, u₃.other _ b, u₂.other _ a, h₁.regs _ f g]
+    · rw [g₆ _ (by decide), g₅' _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+        u₃.other _ (by decide), u₂.gpr, h4]
+    · rw [g₆ _ (by decide), g₅' _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, h11 hr]
+    · rw [hD, g₆ _ (by decide), g₅' _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ hne.2, bt₂]
+    · rw [hN, g₆ _ (by decide), n₅ hn3, u₅.gpr]
+    · rw [hn3] at hk; cases hk
+    · rw [rd₆, rd₅', u₅.rd, u₄.rd, u₃.rd, u₂.rd, h₁.rd]
+    · rw [wr₆, wr₅', u₅.wr, u₄.wr, u₃.wr, u₂.wr, h₁.wr]
+    · rw [sp₆, sp₅', u₅.sp, u₄.sp, u₃.sp, u₂.sp, h₁.sp]
+    · rw [m₆, m₅', u₅.mem, u₄.mem, u₃.mem, u₂.mem]; exact h₁.frame
+    · rw [m₆, m₅', u₅.mem, u₄.mem, u₃.mem, u₂.mem]; exact h₁.blks
 
 
 /-- A region apart from the data and the scratch buffer is apart from the
@@ -364,14 +396,16 @@ theorem UPre.disj_blks {k : Nat} (hk : k < N c s₀) {R : Region} (hd : R.Disjoi
 
 /-- The call's arguments make its precondition. -/
 theorem PreA.callPre (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} {s s₂ : State}
-    (h : LInv c S M s₀ k s) (a : PreA (c := c) (M := M) s₀ k b s s₂) :
+    (h : LInv c S M s₀ k s) (a : PreA (c := c) (M := M) s₀ k b s s₂) (hsy : s₂.syms = s₀.syms) :
     CallPre c S s₂ (Kp s₀) (Rp s₀) (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt) (Cs c s₀) := by
   have hL := hp.lay hk
   have sp : s₂.sp = s₀.sp := by rw [a.sp, h.sp]
   have ts := hM.tgt_sz
-  refine ⟨a.r0, a.r1, hp.rok, a.rD, a.rN, by rw [sp]; exact hp.stk, hp.fK, ts ▸ hL.bt_fit _, ?_, ?_, ?_, ?_, ?_,
+  have et : tabRegs S.consts s₂ = tabRegs S.consts s₀ := by simp only [tabRegs, hsy]
+  have tw := hp.tabs.2
+  refine ⟨a.r0, a.r1, hp.rok, a.rD, a.rN, a.a3, by rw [sp]; exact hp.stk, hp.fK, ts ▸ hL.bt_fit _, ?_, ?_, ?_, ?_, ?_,
     a.r12, hp.cs_fit, hp.key_scr.sub_right hp.cs_sub_scr, ?_, by rw [sp]; exact hp.b_scr.sub_right hp.cs_sub_scr,
-    fun hs => ?_⟩
+    fun hs => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hL.bt_addr, ← ts]; exact hp.disj_blks hk hp.key_data hp.key_scr _
   · rw [sp]; exact hp.b_key
   · rw [sp, hL.bt_addr, ← ts]; exact hp.disj_blks hk hp.b_data hp.b_scr _
@@ -383,6 +417,22 @@ theorem PreA.callPre (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} 
       simp only [List.mem_singleton] at hr; subst hr
       have := hp.fS; unfold Core.scratchBytes at this
       exact ⟨_, hp.scr_in, c.csOff, hp.cs_addr hs, by show c.csOff + c.stackScratch ≤ c.scratchBytes; rfl⟩
+  · rw [et, a.rd, h.rd]; exact fun t ht => (tw t ht).1
+  · have e2 : (fun n => State.addr (s₂.syms n)) = fun n => State.addr (s₀.syms n) := by rw [hsy]
+    rw [e2]
+    refine held_frame (hp.frame_entry hk h.frame a.frame) (fun t ht r hr => ?_) (fun t ht => ?_) hp.tabs.1
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact (tw t ht).2.2.1 _ hp.data_in
+      · exact (tw t ht).2.2.1 _ hp.scr_in
+      · exact (tw t ht).2.2.2
+    · have := (tw t ht).2.1; omega
+  · rw [et]; exact fun t ht => (tw t ht).2.1
+  · rw [et]; intro t ht
+    rw [hL.bt_addr, ← ts]
+    exact hp.disj_blks hk ((tw t ht).2.2.1 _ hp.data_in) ((tw t ht).2.2.1 _ hp.scr_in) _
+  · rw [et]; exact fun t ht => ((tw t ht).2.2.1 _ hp.scr_in).sub_right hp.cs_sub_scr
+  · rw [et, sp]; exact fun t ht => (tw t ht).2.2.2
 
 /-- The blocks after the call. -/
 theorem call_blks (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {b : Blks} {s s₂ s₃ : State}
@@ -426,12 +476,13 @@ theorem UPre.step_sub {k : Nat} (hk : k < N c s₀) :
   · exact ⟨_, .head _, hp.blk_sub_data hk⟩
   · exact ⟨_, .tail _ (.head _), Region.sub_prefix (by omega)⟩
 
-theorem body_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h : LInv c S M s₀ k s) :
+theorem body_ok (hM : ModeOk c M) {k : Nat} (hk : k < N c s₀) {s : State} (h : LInv c S M s₀ k s)
+    (hsy : s.syms = s₀.syms) :
     WP isa (c.body M) s fun s' => LInv c S M s₀ (k + 1) s' ∧ s'.z = decide (N c s₀ - (k + 1) = 0) := by
   have hL := hp.lay hk
   have hfit : c.bs ≤ 2 ^ 64 := by have := hp.fS; unfold Core.scratchBytes Core.csOff at this; omega
-  refine WP.seq (WP.mono (pre_wp hp hM hk h) fun s₂ a => ?_)
-  refine WP.seq (WP.mono (call_wp S (a.callPre hp hM hk h)) fun s₃ cp => ?_)
+  refine WP.seq (VG.Arm.WP.mono_syms (pre_wp hp hM hk h) fun s₂ a sy₂ => ?_)
+  refine WP.seq (WP.mono (call_wp S (a.callPre hp hM hk h (sy₂.trans hsy))) fun s₃ cp => ?_)
   have hb₂ := call_blks hp hM hk h a cp
   have g₃ : ∀ r ∈ preserved, r ≠ .lr → r ≠ .r9 → r ≠ .r10 → s₃.gpr r = s.gpr r := fun r hr hl h9 h10 => by
     rw [cp.saved r hr hl, a.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)

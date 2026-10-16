@@ -1,11 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
+public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleJointCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleJointCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleReduceCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
 
 /-! # Constant time of the complete DSA verification arithmetic schedule -/
 
@@ -26,17 +33,17 @@ theorem verifyInputs_stable (p : SchedulePublic) (a : Operand × Nat) (ha : a �
   rcases ha with rfl | rfl | rfl | rfl | rfl <;>
     simp [stablePointer, Core.generator, Core.publicValue, Core.signatureR, Core.signatureS, Core.digest]
 
-theorem coreVerifySchedule_ct (M : Mont) (inputs : SchedulePublic → List (Operand × Nat))
+theorem coreVerifySchedule_ct (M : Mont) (Sq : MontS) (inputs : SchedulePublic → List (Operand × Nat))
     (stable : ∀ p a, a ∈ inputs p → a.1.length ≠ .mask ∧ stablePointer a.1.pointer)
     (members : ∀ p a, a ∈ verifyInputs p → a ∈ inputs p) :
-    RelCT isa (Two (ScheduleState inputs)) (Core.verify M.mm)
+    RelCT isa (Two (ScheduleState inputs)) (Core.verify Sq.mm M.mm)
       (Two (ScheduleState inputs)) := by
   have qp (p : SchedulePublic) : 1 ≤ p.layout.qLen := p.layout.widths.1
   have pp (p : SchedulePublic) : 1 ≤ p.layout.pLen := by have := p.layout.widths; omega
   have qb (p : SchedulePublic) : p.layout.qLen ≤ 1024 := by have := p.layout.widths; omega
   have hpfit (p : SchedulePublic) : (p.layout.pLen + 7) / 8 ≤ ModulusSide.p.words p.layout := Nat.le_refl _
   have hqfit (p : SchedulePublic) : (p.layout.qLen + 7) / 8 ≤ ModulusSide.q.words p.layout := Nat.le_refl _
-  have h1 := schedulePow_ct M inputs stable .q inverse Core.signatureS (Core.scalar qMinusTwo)
+  have h1 := schedulePow_ct M Sq inputs stable .q inverse Core.signatureS (Core.scalar qMinusTwo)
     (fun p => p.layout.qLen) (fun p => p.layout.qLen)
     (by trivial) (by change qMinusTwo < 2 ^ 31; decide) (by trivial) (by trivial)
     qp hqfit qp qb (by decide) (by decide) (scalar_space (by decide)) (by taint_decide)
@@ -51,17 +58,9 @@ theorem coreVerifySchedule_ct (M : Mont) (inputs : SchedulePublic → List (Oper
     (fun p => p.layout.qLen) (fun p => p.layout.qLen)
     (by trivial) (by change inverse < 2 ^ 31; decide) (by simp [stablePointer, Core.signatureR]) (by trivial)
     qp hqfit qp hqfit (by decide) (by decide) (scalar_space (by decide)) (by taint_decide)
-  have h5 := schedulePow_ct M inputs stable .p t Core.generator (Core.scalar u)
-    (fun p => p.layout.pLen) (fun p => p.layout.qLen)
-    (by trivial) (by change u < 2 ^ 31; decide) (by simp [stablePointer, Core.generator]) (by trivial)
-    pp hpfit qp qb (by decide) (by decide) (element_space (by decide)) (by taint_decide)
-  have h6 := schedulePow_ct M inputs stable .p t2 Core.publicValue (Core.scalar v)
-    (fun p => p.layout.pLen) (fun p => p.layout.qLen)
-    (by trivial) (by change v < 2 ^ 31; decide) (by simp [stablePointer, Core.publicValue]) (by trivial)
-    pp hpfit qp qb (by decide) (by decide) (element_space (by decide)) (by taint_decide)
-  have h7 := scheduleProduct_ct M inputs stable .p t (Core.element t) (Core.element t2)
+  have h5 := scheduleJoint_ct M Sq inputs stable t Core.generator Core.publicValue
     (fun p => p.layout.pLen) (fun p => p.layout.pLen)
-    (by change t < 2 ^ 31; decide) (by change t2 < 2 ^ 31; decide) (by trivial) (by trivial)
+    (by trivial) (by trivial) (by simp [stablePointer, Core.generator]) (by simp [stablePointer, Core.publicValue])
     pp hpfit pp hpfit (by decide) (by decide) (element_space (by decide)) (by taint_decide)
   have h8 := scheduleReduce_ct M inputs stable u (Core.element t) (fun p => p.layout.pLen)
     (by change t < 2 ^ 31; decide) (by trivial) (by intro p; have := p.layout.widths; omega)
@@ -80,20 +79,14 @@ theorem coreVerifySchedule_ct (M : Mont) (inputs : SchedulePublic → List (Oper
       h.1.1.availableLocal .q inverse (by decide) (scalar_space (by decide) p)⟩) h4) ?_
   refine RelCT.seq (two_map (fun p => p) (fun p st h =>
     ⟨h.1, (h.1.2.1 (Core.generator, p.layout.pLen) (members p _ (by simp [verifyInputs]))).active,
-      h.1.1.availableLocal .q u (by decide) (scalar_space (by decide) p)⟩) h5) ?_
-  refine RelCT.seq (two_map (fun p => p) (fun p st h =>
-    ⟨h.1, (h.1.2.1 (Core.publicValue, p.layout.pLen) (members p _ (by simp [verifyInputs]))).active,
-      h.1.1.availableLocal .q v (by decide) (scalar_space (by decide) p)⟩) h6) ?_
-  refine RelCT.seq (two_map (fun p => p) (fun p st h =>
-    ⟨h.1, h.1.1.availableLocal .p t (by decide) (element_space (by decide) p),
-      h.1.1.availableLocal .p t2 (by decide) (element_space (by decide) p)⟩) h7) ?_
+      (h.1.2.1 (Core.publicValue, p.layout.pLen) (members p _ (by simp [verifyInputs]))).active⟩) h5) ?_
   exact (two_map (fun p => p) (fun p st h =>
     ⟨h.1, h.1.1.availableLocal .p t (by decide) (element_space (by decide) p)⟩) h8).mono
     (fun _ _ h => h) (fun _ _ => two_mono (fun _ _ h => h.1))
 
-theorem coreVerify_ct (M : Mont) : RelCT isa (Two (ScheduleState verifyInputs))
-    (Core.verify M.mm) (fun _ _ => True) :=
-  (coreVerifySchedule_ct M verifyInputs verifyInputs_stable (fun _ _ h => h)).mono
+theorem coreVerify_ct (M : Mont) (Sq : MontS) : RelCT isa (Two (ScheduleState verifyInputs))
+    (Core.verify Sq.mm M.mm) (fun _ _ => True) :=
+  (coreVerifySchedule_ct M Sq verifyInputs verifyInputs_stable (fun _ _ h => h)).mono
     (fun _ _ h => h) (fun _ _ _ => True.intro)
 
 end VG.Proof.Dsa.X86_64

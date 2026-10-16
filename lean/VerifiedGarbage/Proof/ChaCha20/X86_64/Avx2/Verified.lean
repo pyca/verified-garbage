@@ -51,16 +51,17 @@ theorem cmp385_ok {s₀ : State} {t : Nat} {s : State} (h : LInv s₀ t s) :
   rw [h.rdx, toNat_ofNat_lt (by omega)]
   rfl
 
-theorem xor_eq : Impl.ChaCha20.X86_64.Avx2.xor =
+theorem xor_eq (vl : Bool) : Impl.ChaCha20.X86_64.Avx2.xorWith vl =
     .seq (.block (Impl.ChaCha20.X86_64.Avx2Tail.consts ++ consts ++
       ([.alu .cmp .rdx (.imm 512)] : List Instr)))
-    (.seq (.ite .b (.block []) (.loop body .ae))
-    (.seq (.block [.alu .cmp .rdx (.imm 385)]) (.ite .b Impl.ChaCha20.X86_64.Avx2Tail.tail last8))) := rfl
+    (.seq (.ite .b (.block []) (.loop (body vl) .ae))
+    (.seq (.block [.alu .cmp .rdx (.imm 385)]) (.ite .b (Impl.ChaCha20.X86_64.Avx2Tail.tail vl) (last8 vl)))) :=
+  rfl
 
-theorem correct {s₀ : State} (hp : APre s₀) :
-    WP isa Impl.ChaCha20.X86_64.Avx2.xor s₀ fun s' =>
+theorem correct (vl : Bool) {s₀ : State} (hp : APre s₀) :
+    WP isa (Impl.ChaCha20.X86_64.Avx2.xorWith vl) s₀ fun s' =>
       (gprPreserved s₀ s' ∧ xorAvx2X86_64.post s₀ s') ∧ s'.gpr .rsi = s₀.gpr .rcx := by
-  rw [xor_eq]
+  rw [xor_eq vl]
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨h₁, hc⟩ => ?_)
   refine WP.seq (WP.mono (Q := fun s => ∃ t, eL s₀ - 512 * t < 512 ∧ LInv s₀ t s) ?_
     fun s₂ ⟨t, ht, h₂⟩ => ?_)
@@ -70,11 +71,11 @@ theorem correct {s₀ : State} (hp : APre s₀) :
     · simp only [decide_eq_false_iff_not] at h
       let Inv : Nat → State → Prop := fun n s =>
         ∃ t, n = eL s₀ - 512 * t ∧ 512 ≤ eL s₀ - 512 * t ∧ LInv s₀ t s
-      have hstep : ∀ n s, Inv n s → WP isa body s (fun s' =>
+      have hstep : ∀ n s, Inv n s → WP isa (body vl) s (fun s' =>
           (eval .ae s' = some false ∧ ∃ t, eL s₀ - 512 * t < 512 ∧ LInv s₀ t s') ∨
           (eval .ae s' = some true ∧ ∃ n' < n, Inv n' s')) := by
         rintro n s ⟨t, rfl, ht, hI⟩
-        refine WP.mono (body_ok hp ht hI) fun s' ⟨h', hc'⟩ => ?_
+        refine WP.mono (body_ok vl hp ht hI) fun s' ⟨h', hc'⟩ => ?_
         by_cases hl : eL s₀ - 512 * (t + 1) < 512
         · exact .inl ⟨by simp [eval, hc', hl], t + 1, hl, h'⟩
         · exact .inr ⟨by simp [eval, hc', hl], eL s₀ - 512 * (t + 1), by omega, t + 1, rfl, by omega, h'⟩
@@ -82,22 +83,40 @@ theorem correct {s₀ : State} (hp : APre s₀) :
   · refine WP.seq (WP.mono (cmp385_ok h₂) fun s₃ ⟨h₃, c₃⟩ => ?_)
     refine WP.ite (decide (eL s₀ - 512 * t < 385)) (by simp [eval, c₃]) (fun hs => ?_) (fun hs => ?_)
     · simp only [decide_eq_true_eq] at hs
-      exact Avx2Tail.tail_ok hp hs (tinv_of h₃)
+      exact Avx2Tail.tail_ok vl hp hs (tinv_of h₃)
     · simp only [decide_eq_false_iff_not] at hs
-      exact last8_ok hp (by omega) ht h₃
+      exact last8_ok vl hp (by omega) ht h₃
+
+theorem xorWith_rsi (vl : Bool)
+    (hc : (Impl.ChaCha20.X86_64.Avx2.xorWith vl).allInstrs (fun i => !loadsMxcsr i) = true)
+    (s : State) (hs : xorAvx2X86_64.pre s) :
+    ∃ t s', Exec isa (Impl.ChaCha20.X86_64.Avx2.xorWith vl) s t s' ∧ abiPreserved s s' ∧
+      (xorAvx2X86_64.post s s' ∧ s'.gpr .rsi = s.gpr .rcx) := by
+  obtain ⟨t, s', he, ⟨h, hpost⟩, hr⟩ := correct vl (APre.of s hs)
+  exact ⟨t, s', he, abiPreserved_of_exec hc he h, hpost, hr⟩
 
 /-- `vg_chacha20_xor_avx2` returns with `rsi` pointing at `buf`, as
 `vg_chacha20_xor` does, for a caller that recomputes pointers from it. -/
 theorem xor_rsi (s : State) (hs : xorAvx2X86_64.pre s) :
     ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xor s t s' ∧ abiPreserved s s' ∧
-      (xorAvx2X86_64.post s s' ∧ s'.gpr .rsi = s.gpr .rcx) := by
-  obtain ⟨t, s', he, ⟨h, hpost⟩, hr⟩ := correct (APre.of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h, hpost, hr⟩
+      (xorAvx2X86_64.post s s' ∧ s'.gpr .rsi = s.gpr .rcx) :=
+  xorWith_rsi false (by lit_decide) s hs
 
 theorem xor_correct (s : State) (hs : xorAvx2X86_64.pre s) :
     ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xor s t s' ∧ abiPreserved s s' ∧
       xorAvx2X86_64.post s s' :=
   (xor_rsi s hs).imp fun _ ⟨s', he, ha, h, _⟩ => ⟨s', he, ha, h⟩
+
+/-- The kernel with `vprold` returns as `xor_rsi` says. -/
+theorem xorVL_rsi (s : State) (hs : xorAvx2X86_64.pre s) :
+    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xorVL s t s' ∧ abiPreserved s s' ∧
+      (xorAvx2X86_64.post s s' ∧ s'.gpr .rsi = s.gpr .rcx) :=
+  xorWith_rsi true (by lit_decide) s hs
+
+theorem xorVL_correct (s : State) (hs : xorAvx2X86_64.pre s) :
+    ∃ t s', Exec isa Impl.ChaCha20.X86_64.Avx2.xorVL s t s' ∧ abiPreserved s s' ∧
+      xorAvx2X86_64.post s s' :=
+  (xorVL_rsi s hs).imp fun _ ⟨s', he, ha, h, _⟩ => ⟨s', he, ha, h⟩
 
 theorem xor_ct : ConstantTime isa xorAvx2X86_64.pre xorAvx2X86_64.pub
     Impl.ChaCha20.X86_64.Avx2.xor :=
@@ -107,6 +126,19 @@ theorem xor_verified :
     Verified X86_64.target Impl.ChaCha20.X86_64.Avx2.xor
       (Spec.ChaCha20.xorContract X86_64.abi 16) :=
   Verified.of_correct xor_correct xor_ct
+    (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
+      xorAvx2X86_64, Proof.ChaCha20.xorX86_64]
+      [sat] using sat)
+
+
+theorem xorVL_ct : ConstantTime isa xorAvx2X86_64.pre xorAvx2X86_64.pub
+    Impl.ChaCha20.X86_64.Avx2.xorVL :=
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) (by taint_decide)
+
+theorem xorVL_verified :
+    Verified X86_64.target Impl.ChaCha20.X86_64.Avx2.xorVL
+      (Spec.ChaCha20.xorContract X86_64.abi 16) :=
+  Verified.of_correct xorVL_correct xorVL_ct
     (by sig_implies [Spec.ChaCha20.xorContract, Spec.ChaCha20.xorSig, X86_64.abi, X86_64.argRegs,
       xorAvx2X86_64, Proof.ChaCha20.xorX86_64]
       [sat] using sat)

@@ -2,16 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Save
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Lit
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Xor
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
 meta import VerifiedGarbage.Proof.ChaCha20.AArch64.Small.Xor
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

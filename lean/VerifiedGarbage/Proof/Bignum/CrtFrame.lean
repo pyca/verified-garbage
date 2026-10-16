@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Multiword arithmetic: workspaces within a working space
@@ -105,9 +106,19 @@ theorem Frm.widen {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm 
     have := hx r' hr''
     omega
 
-/-- The size of the window's table after a prime's arrays: 16 entries of
+/-- The size of a window's table of `n` entries (16 unless given) of
 `8 (w_X + 2)` bytes. -/
-def tabBytes (wx : Nat) : Nat := 16 * (8 * (wx + 2))
+def tabBytes (wx : Nat) (n : Nat := 16) : Nat := n * (8 * (wx + 2))
+
+/-- What RSA reserves after a prime's arrays: room for a table of 32
+entries, for windows of up to 5 bits. -/
+abbrev wsTab (wx : Nat) : Nat := tabBytes wx 32
+
+theorem tabBytes_le_wsTab (wx : Nat) : tabBytes wx ≤ wsTab wx := by unfold wsTab tabBytes; omega
+
+/-- A table of 16 entries fits where RSA's room for one does. -/
+theorem hi_of_wsTab {a wx Z : Nat} (h : a + wsTab wx ≤ Z) : a + tabBytes wx ≤ Z := by
+  have := tabBytes_le_wsTab wx; omega
 
 /-- The words of a prime's workspace for a length of `len` bytes. -/
 def wsWords (len : Nat) : Nat := max 2 ((len + 7) / 8)
@@ -117,7 +128,23 @@ theorem wsWords_le {len w : Nat} (h : len < 8 * w) (hw : 2 ≤ w) : wsWords len 
 
 /-- The workspaces' layout: `p`'s after the modulus', `q`'s after `p`'s. -/
 def offP (w : Nat) : Nat := slot w 8
-def offQ (w pl : Nat) : Nat := slot w 8 + slot (wsWords pl) 8 + tabBytes (wsWords pl)
+def offQ (w pl : Nat) : Nat := slot w 8 + slot (wsWords pl) 8 + wsTab (wsWords pl)
+
+/-- The three workspaces fit in `16 k + 32` words for a modulus of `k ≥ 64`
+bytes and primes shorter than it. -/
+theorem crt_room {k pl ql Z : Nat} (hk : 64 ≤ k) (hp : pl < k) (hq : ql < k) (hZ : 128 * k + 256 ≤ Z) :
+    offQ ((k + 7) / 8) pl + slot (wsWords ql) 8 + wsTab (wsWords ql) ≤ Z := by
+  have hW : 8 * ((k + 7) / 8) ≤ k + 7 := Nat.mul_div_le _ _
+  have hP : 8 * wsWords pl ≤ k + 6 := by
+    have := Nat.mul_div_le (pl + 7) 8; unfold wsWords; omega
+  have hQ : 8 * wsWords ql ≤ k + 6 := by
+    have := Nat.mul_div_le (ql + 7) 8; unfold wsWords; omega
+  unfold offQ wsTab tabBytes slot hdrBytes
+  generalize (k + 7) / 8 = W at *
+  generalize wsWords pl = P at *
+  generalize wsWords ql = Q at *
+  calc _ = 2176 + 64 * W + 320 * P + 320 * Q := by omega
+    _ ≤ Z := by omega
 
 /-- A prime's workspace at `off B o`: its header and its link to `B`. -/
 structure WsAt (m : Mem) (B : Addr) (o wx : Nat) (minv : BitVec 64) : Prop where
@@ -150,7 +177,7 @@ theorem Frm.of_load {B : Addr} {o wx j : Nat} {m m' : Mem} {rs : List (Nat × Na
 
 /-- What code in a prime's workspace may change, at `B`: all but its link,
 `w_X`, `-X⁻¹` and its arrays' bases. -/
-def xRange (o wx : Nat) : Nat × Nat := (o + 8 * 17, slot wx 8 + tabBytes wx - 8 * 17)
+def xRange (o wx : Nat) : Nat × Nat := (o + 8 * 17, slot wx 8 + wsTab wx - 8 * 17)
 
 theorem Frm.to_x {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
     (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8) (ho : o + slot wx 8 ≤ 2 ^ 64)
@@ -165,6 +192,18 @@ theorem Frm.to_x {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (
 /-- `Frm.to_x` for changes that reach the table. -/
 theorem Frm.to_xT {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
     (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + tabBytes wx) (ho : o + (slot wx 8 + tabBytes wx) ≤ 2 ^ 64)
+    {rs' : List (Nat × Nat)} (hx : xRange o wx ∈ rs') : Frm B rs' m m' := by
+  have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have := tabBytes_le_wsTab wx
+  refine (h.rebase (by omega) fun r hr' => by have := hr r hr'; omega).widen fun r hr' => ⟨_, hx, ?_⟩
+  obtain ⟨r₀, hr₀, rfl⟩ := List.mem_map.mp hr'
+  have := hr r₀ hr₀
+  simp only [xRange]
+  omega
+
+/-- `Frm.to_x` for changes that reach the whole room for a table. -/
+theorem Frm.to_xW {B : Addr} {o wx : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm (off B o) rs m m')
+    (hr : ∀ r ∈ rs, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 + wsTab wx) (ho : o + (slot wx 8 + wsTab wx) ≤ 2 ^ 64)
     {rs' : List (Nat × Nat)} (hx : xRange o wx ∈ rs') : Frm B rs' m m' := by
   have h256 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
   refine (h.rebase (by omega) fun r hr' => by have := hr r hr'; omega).widen fun r hr' => ⟨_, hx, ?_⟩

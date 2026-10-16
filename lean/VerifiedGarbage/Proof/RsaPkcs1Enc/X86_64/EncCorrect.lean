@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncTail
-public import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.Block
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: correctness
@@ -134,7 +135,7 @@ theorem enc_correct (v : PubImpl) (s : State) (h : encK.pre s) :
   have hpc₂ : PreCall s t₂ := ⟨(k₂.gpr (by decide)).trans hpc.rsp, k₂.2.1.trans hpc.rd, k₂.2.2.trans hpc.wr,
     hm₂ ▸ hpc.out, hm₂ ▸ hpc.slots, hm₂ ▸ hpc.sZ, hm₂ ▸ hpc.em⟩
   refine WP.seq (WP.mono (pub_call v hp hpc₂ hdi hsi hdx hcx h8 h9) fun t₃ ⟨hpost, hcs₃, hmx₃⟩ => ?_)
-  refine WP.mono_mx (by decide +kernel) (tail_ok hp hpost) fun t₄ ht hmx₄ => ?_
+  refine WP.mono_mx (by decide +kernel) (tail_ok hp hpost.toAfterCall) fun t₄ ht hmx₄ => ?_
   refine ⟨ht.rsp, by rw [ht.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp ht.mem, ?_⟩, ?_⟩
   · by_cases hr' : r = .rsp
     · subst hr'

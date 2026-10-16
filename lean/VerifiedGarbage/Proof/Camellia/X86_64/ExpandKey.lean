@@ -1,11 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.KeySetup
-public import VerifiedGarbage.Proof.Camellia.Scratch
+import VerifiedGarbage.Proof.Camellia.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Camellia.X86_64.KeyContract
+public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Camellia.X86_64.Group
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # The Camellia key schedule on x86-64: the whole function

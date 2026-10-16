@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: a window of the exponentiations
@@ -35,9 +36,9 @@ variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 structure ExpSt (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (M k x : Nat → Nat) (Q : Prop) (E : Nat → Nat) : Prop where
   ar : Ar l m B M k
   tab : ∀ j < 16, ∀ p < 2, Good l m B M (l.oTab + l.NB * j) p ∧
-    (Q → val52 l m B (l.D * p + (l.oTab + l.NB * j)) % M p = x p ^ j * 2 ^ (52 * l.L) % M p)
+    (Q → val52 l m B (l.D * p + (l.oTab + l.NB * j)) % M p = x p ^ j * 2 ^ (52 * l.S) % M p)
   y : ∀ p < 2, Good l m B M l.oY p
-  yv : Q → ∀ p < 2, val52 l m B (l.D * p + l.oY) % M p = x p ^ E p * 2 ^ (52 * l.L) % M p
+  yv : Q → ∀ p < 2, val52 l m B (l.D * p + l.oY) % M p = x p ^ E p * 2 ^ (52 * l.S) % M p
 
 /-- `m'` agrees with `m` but on `Y`, `S` and `V` of each region. -/
 def OutW (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (B : Addr) (m m' : Mem) : Prop :=
@@ -65,7 +66,7 @@ theorem ExpSt.tab_of (hl : LayOk l) {m m' : Mem} {B : Addr} {M k x : Nat → Nat
     (h : ExpSt l m B M k x Q E) {o n : Nat} (hf : Out2 l B o n m m')
     (ho : o + n ≤ l.oTab ∨ l.oTab + 16 * l.NB ≤ o) (hoD : o + n ≤ l.D) :
     ∀ j < 16, ∀ p < 2, Good l m' B M (l.oTab + l.NB * j) p ∧
-      (Q → val52 l m' B (l.D * p + (l.oTab + l.NB * j)) % M p = x p ^ j * 2 ^ (52 * l.L) % M p) :=
+      (Q → val52 l m' B (l.D * p + (l.oTab + l.NB * j)) % M p = x p ^ j * 2 ^ (52 * l.S) % M p) :=
   fun j hj p hp => by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hNj : l.NB * j + l.NB ≤ 16 * l.NB := by
@@ -80,7 +81,7 @@ theorem ExpSt.tab_of (hl : LayOk l) {m m' : Mem} {B : Addr} {M k x : Nat → Nat
 
 /-- `Y := Y² / R`: `x^E R` becomes `x^(2E) R`. -/
 theorem sq_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat → Nat}
-    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (h : ExpSt l s.mem B M k x Q E) :
     WP isa (amm l l.oY l.oY l.oY) s fun s' => ExpSt l s'.mem B M k x Q (fun p => 2 * E p) ∧
       Out2 l B l.oY l.NB s.mem s'.mem ∧
@@ -96,9 +97,9 @@ theorem sq_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : P
 
 /-- `Y := Y S / R`: `x^E R` and `S ≡ x^v R` give `x^(E+v) R`. -/
 theorem mulS_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E v : Nat → Nat}
-    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (h : ExpSt l s.mem B M k x Q E) (gs : ∀ p < 2, Good l s.mem B M l.oS p)
-    (vs : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oS) % M p = x p ^ v p * 2 ^ (52 * l.L) % M p) :
+    (vs : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oS) % M p = x p ^ v p * 2 ^ (52 * l.S) % M p) :
     WP isa (amm l l.oY l.oY l.oS) s fun s' => ExpSt l s'.mem B M k x Q (fun p => E p + v p) ∧
       Out2 l B l.oY l.NB s.mem s'.mem ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
@@ -149,7 +150,7 @@ theorem sel2_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q :
     WP isa (VG.Impl.Bignum.X86_64.seqs (select l 0 ++ select l 1))
       s fun s' => ExpSt l s'.mem B M k x Q E ∧
         (∀ p < 2, Good l s'.mem B M l.oS p ∧
-          (Q → val52 l s'.mem B (l.D * p + l.oS) % M p = x p ^ nib l s.mem B p * 2 ^ (52 * l.L) % M p)) ∧
+          (Q → val52 l s'.mem B (l.D * p + l.oS) % M p = x p ^ nib l s.mem B p * 2 ^ (52 * l.S) % M p)) ∧
         (∀ p < 2, word s'.mem B (l.D * p + l.oV) = word s.mem B (l.D * p + l.oV)) ∧
         Out2 l B l.oS l.NB s.mem s'.mem ∧
         (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .r8 → s'.gpr r = s.gpr r) ∧
@@ -218,7 +219,7 @@ structure MulInv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s₀ : State) (B : Addr) 
   r15 : t.gpr .r15 = BitVec.ofNat 64 n
   st : ExpSt l t.mem B M k x Q (fun p => E p * 2 ^ (5 - n))
   gs : ∀ p < 2, Good l t.mem B M l.oS p ∧
-    (Q → val52 l t.mem B (l.D * p + l.oS) % M p = x p ^ v p * 2 ^ (52 * l.L) % M p)
+    (Q → val52 l t.mem B (l.D * p + l.oS) % M p = x p ^ v p * 2 ^ (52 * l.S) % M p)
   frame : Out2 l B l.oY l.NB s₀.mem t.mem
   gpr : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
     r ≠ .r15 → t.gpr r = s₀.gpr r
@@ -235,7 +236,7 @@ def mulBody (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prog isa :=
 /-- The five multiplications: four squarings, then `Y S`. `Y ≡ x^E R` and
 `S ≡ x^v R` give `Y ≡ x^(16 E + v) R`. -/
 theorem mulLoop_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E v : Nat → Nat}
-    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (h : MulInv l s B M k x Q E v 5 s) :
     WP isa (.loop (mulBody l) .ne) s fun s' =>
       ExpSt l s'.mem B M k x Q (fun p => E p * 16 + v p) ∧ Out2 l B l.oY l.NB s.mem s'.mem ∧
@@ -347,7 +348,7 @@ theorem r13Cmp_ok (hl : LayOk l) {s : State} {i : Nat} (hi : i ≤ l.E) (h13 : s
 /-- A window's usual setup and multiplications: `Y ≡ x^E R` becomes
 `x^(16 E + v) R` for the top 4 bits `v` of `V`, which is rotated up by 4 bits. -/
 theorem winNorm_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat → Nat}
-    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (h : ExpSt l s.mem B M k x Q E) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (normCode l)) s fun t => WP isa (.loop (mulBody l) .ne) t fun s' =>
       ExpSt l s'.mem B M k x Q (fun p => E p * 16 + nib l s.mem B p) ∧
@@ -421,7 +422,7 @@ theorem winNorm_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {
 4 bits `v` of `V`, which is rotated up by 4 bits. -/
 theorem window_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : Nat → Nat} {i : Nat}
     (hi : i < l.E) (h13 : s.gpr .r13 = BitVec.ofNat 64 i)
-    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (hB : s.gpr .rbx = B) (hs : Scr s B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (h : ExpSt l s.mem B M k x Q E) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (window l)) s fun s' =>
       ExpSt l s'.mem B M k x Q (fun p => E p * 16 + nib l s.mem B p) ∧
@@ -469,7 +470,7 @@ theorem finWin_ok (hl : LayOk l) {s : State} {B : Addr} {M k : Nat → Nat}
     (ar : Ar l s.mem B M k) (gy : ∀ p < 2, Good l s.mem B M l.oY p) (gf : ∀ p < 2, Good l s.mem B M l.oFin p) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (window l)) s fun s' =>
       (∀ p < 2, Good l s'.mem B M l.oY p ∧
-        val52 l s'.mem B (l.D * p + l.oY) * 2 ^ (52 * l.L) % M p =
+        val52 l s'.mem B (l.D * p + l.oY) * 2 ^ (52 * l.S) % M p =
           val52 l s.mem B (l.D * p + l.oY) * val52 l s.mem B (l.D * p + l.oFin) % M p) ∧
       OutW l B s.mem s'.mem ∧ s'.gpr .r14 = BitVec.ofNat 64 1 ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →

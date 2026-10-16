@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

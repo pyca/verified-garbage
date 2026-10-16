@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sm3.X86.Shared
+import Mathlib.Tactic.SplitIfs
 
 /-! # SM3 (GB/T 32905-2016) on x86 -/
 

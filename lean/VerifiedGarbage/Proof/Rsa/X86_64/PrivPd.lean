@@ -6,6 +6,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the call of `vg_rsa_public_precomputed_checked`

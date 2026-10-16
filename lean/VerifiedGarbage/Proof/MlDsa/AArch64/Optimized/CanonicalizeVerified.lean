@@ -1,16 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.CanonicalizeLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseInit
 public import VerifiedGarbage.Spec.MlDsa.Canonicalize
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! ## From `CanonicalizeCorrect.lean` -/
 

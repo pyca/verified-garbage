@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.Words
 public import VerifiedGarbage.Proof.AesCcm.Bytes
-public import VerifiedGarbage.Proof.Cmac.Mem32
-public import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Mem32
+import VerifiedGarbage.Proof.Cmac.Frame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

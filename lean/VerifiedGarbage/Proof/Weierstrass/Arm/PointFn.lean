@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM: correctness
@@ -33,35 +37,28 @@ theorem lay_nums {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) :
     Spec.Weierstrass.Point.b3At k + Spec.Weierstrass.Point.elemBytes k = Spec.Weierstrass.Point.ownAt k ∧ Spec.Weierstrass.Point.aAt k + Spec.Weierstrass.Point.elemBytes k = Spec.Weierstrass.Point.b3At k ∧
     Spec.Weierstrass.Point.qAt k + 3 * Spec.Weierstrass.Point.elemBytes k = Spec.Weierstrass.Point.aAt k ∧ Spec.Weierstrass.Point.pAt k + 3 * Spec.Weierstrass.Point.elemBytes k = Spec.Weierstrass.Point.qAt k ∧
     Spec.Weierstrass.Point.oAt k + 3 * Spec.Weierstrass.Point.elemBytes k = Spec.Weierstrass.Point.pAt k ∧ 1000 ≤ Spec.Weierstrass.Point.oAt k := by
-  unfold Spec.Weierstrass.Point.oAt Spec.Weierstrass.Point.pAt Spec.Weierstrass.Point.qAt Spec.Weierstrass.Point.aAt Spec.Weierstrass.Point.b3At Spec.Weierstrass.Point.ownAt Spec.Weierstrass.Point.elemBytes own Spec.Weierstrass.Mont.ownAt
-    Spec.Weierstrass.Mont.ownBytes
-  omega_arith
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  all_goals decide +kernel
 
 /-- The slots the function reads first lie below its own working space. -/
 theorem enc_rIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
     ∀ x ∈ rIds, enc k dbl x + 8 * k ≤ Spec.Weierstrass.Point.ownAt k := by
-  have := lay_nums hk3 hk6
-  intro x hx
-  simp only [rIds, List.mem_cons, List.not_mem_nil, or_false] at hx
-  cases dbl <;> rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero, Bool.false_eq_true] <;> omega_arith
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  all_goals cases dbl <;> decide +kernel
 
 /-- The slots `enc` gives are laid out as the program needs, and those it
 writes lie apart from the saved `lr` and within `O` or the own working
 space. -/
 theorem enc_lay {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) : LayR k 17 wIds (enc k dbl) := by
   obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
-  all_goals cases dbl <;> exact ⟨by decide, by decide⟩
+  all_goals cases dbl <;> exact ⟨by decide +kernel, by decide +kernel⟩
 
 theorem enc_wIds {k : Nat} (hk3 : 3 ≤ k) (hk6 : k ≤ 6) (dbl : Bool) :
     ∀ w ∈ wIds, (enc k dbl w + 8 * k ≤ Spec.Weierstrass.Point.ownAt k ∨ Spec.Weierstrass.Point.ownAt k + 4 ≤ enc k dbl w) ∧
       ((Spec.Weierstrass.Point.oAt k ≤ enc k dbl w ∧ enc k dbl w + 8 * k ≤ Spec.Weierstrass.Point.pAt k) ∨
         (Spec.Weierstrass.Point.ownAt k ≤ enc k dbl w ∧ enc k dbl w + 8 * k ≤ 4096)) := by
-  have := lay_nums hk3 hk6
-  intro w hw
-  simp only [wIds, List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [enc, Impl.Weierstrass.Arm.Point.tmpAt, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one, Nat.add_zero] <;> omega_arith
+  obtain rfl | rfl | rfl | rfl : k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 := by omega
+  all_goals cases dbl <;> decide +kernel
 
 /-- The precondition of the function, on the state: the working space at
 `r0`, its `8192` bytes writable, and the numbers it reads below `m`. -/

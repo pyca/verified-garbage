@@ -6,12 +6,22 @@ public import VerifiedGarbage.Proof.Ecdh.AArch64.Contract
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Contract
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Lit
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Impl.P256.VerifyDouble
+meta import VerifiedGarbage.Impl.P256.VerifyDouble
 
 /-!
 # ECDH over P-256 on AArch64: `Verified`

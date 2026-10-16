@@ -7,6 +7,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Blocks
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-!
 Relational timing for arithmetic on public points. The two executions carry

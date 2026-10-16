@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.CbcVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # SM4-CBC artifacts on baseline x86-64 -/
 
@@ -17,7 +18,7 @@ def artifacts : List Artifact := [
     contract := Spec.Sm4.cbcEncryptContract X86_64.abi 3144
     stack := 3144
     verified := Proof.Sm4.X86_64.cbcEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Sm4.cbcDecryptApi with
     target := X86_64.target
     doc := Spec.Sm4.cbcDecryptApi.doc
@@ -26,6 +27,6 @@ def artifacts : List Artifact := [
     contract := Spec.Sm4.cbcDecryptContract X86_64.abi 3144
     stack := 3144
     verified := Proof.Sm4.X86_64.cbcDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Sm4Cbc.X86_64

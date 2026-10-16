@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
 meta import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
@@ -14,7 +14,7 @@ public import Mathlib.Tactic.DefEqTransformations
 meta import Mathlib.Tactic.DefEqTransformations
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
@@ -24,6 +24,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Scrypt.BlockMix
+meta import VerifiedGarbage.Proof.Scrypt.BlockMix
+import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Scrypt.Memory
 
 /-!
 # scryptBlockMix on x86-64: correctness

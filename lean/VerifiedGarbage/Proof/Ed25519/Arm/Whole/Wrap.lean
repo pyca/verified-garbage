@@ -7,6 +7,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.OffsetBelow
 
 /-! Merged from `Proof.Ed25519.Arm.Whole.WrapSaved`. -/
 

@@ -14,6 +14,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Poly1305.Limbs64
 
 @[expose] public section
 
@@ -382,7 +384,7 @@ theorem gLoop_ok {s : State} {B : Addr} {wx p v : Nat} (hs : Scr s B (slot wx 8 
     simp only [hlo, ↓reduceIte]
   unfold gval
   rw [hT, gacc_congr fun j' hj' => ?_]
-  have := ent_le wx (j := 8 * p + j') (by omega)
+  have := ent_le wx (n := 16) (j := 8 * p + j') (by omega)
   have := slot_mono wx (show 8 ≤ 8 + (8 * p + j') by omega)
   rw [show 8 + 8 * p + j' = 8 + (8 * p + j') by omega, hI.out.word (by omega) (by omega)]
   congr 1

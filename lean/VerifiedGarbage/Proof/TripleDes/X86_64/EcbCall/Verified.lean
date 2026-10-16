@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Lit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.EcbCall.Lit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Verified
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Verified
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
 public import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.SpSafe
@@ -16,6 +16,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx512
+import VerifiedGarbage.Proof.Framework.X86_64.Straight
+import VerifiedGarbage.Proof.Framework.X86_64.StraightX
+import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
+meta import VerifiedGarbage.Proof.Framework.X86_64.Straight
+meta import VerifiedGarbage.Proof.Framework.X86_64.StraightX
+meta import VerifiedGarbage.Proof.Framework.X86_64.StraightZ
 
 /-!
 # Triple DES ECB on x86-64, calling the core, verified

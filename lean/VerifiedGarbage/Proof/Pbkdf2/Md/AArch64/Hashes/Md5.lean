@@ -4,11 +4,11 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 public import VerifiedGarbage.Proof.Md5.AArch64.Shared
 meta import VerifiedGarbage.Proof.Md5.AArch64.Shared
-public import VerifiedGarbage.Proof.Md5.Md
+import VerifiedGarbage.Proof.Md5.Md
 meta import VerifiedGarbage.Proof.Md5.Md
-public import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -16,6 +16,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
+import VerifiedGarbage.Proof.Sha512.Word64
+meta import VerifiedGarbage.Proof.Md5.AArch64.Stream.Md
+meta import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # MD5 on AArch64, as a Merkle–Damgård hash function

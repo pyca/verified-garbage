@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

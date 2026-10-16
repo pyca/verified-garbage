@@ -1,11 +1,23 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.EcKey.X86.CombMain
 meta import VerifiedGarbage.Proof.EcKey.X86.CombMain
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P256
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! # Constant-time public-key stages around the comb -/
 
@@ -24,10 +36,10 @@ materialize_code pkPrepCode
 materialize_code pkTailCode
 
 theorem pkPrep_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp] 3)) pkPrepCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+  RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
 theorem pkTail_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 3 true)) pkTailCode (fun _ _ => True) :=
-  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+  RelCT.taint (A := taint) _ (fun _ _ h => h) (by native_taint_decide)
 
 /-- Writes within scratch leave all cdecl argument words unchanged. -/
 theorem pkKeep_arg {c : Cfg} {s₀ s : State} {extra : List Region}

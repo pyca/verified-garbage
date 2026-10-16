@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
@@ -8,6 +9,20 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
+public import VerifiedGarbage.Proof.Weierstrass.TCombLay
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Words
+public import VerifiedGarbage.Proof.Mont.AArch64.RowInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Loop
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+public import VerifiedGarbage.Proof.Weierstrass.Pow
+public import VerifiedGarbage.Proof.Weierstrass.TCombWords
 
 /-!
 # The fixed-base comb from tables in memory on AArch64
@@ -56,10 +71,10 @@ structure TCombVals (K : TCombCfg) (C : Curve) (tbl : List (List (Nat × Nat))) 
     (mul (K.H * geomW K.w K.J) (G C))
 
 /-- `x ∈ l` for the comb's lists, through `toComb`. -/
-macro "tcomb_mem" : tactic => `(tactic| first
-  | list_mem
-  | (simp only [List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true, combSlots,
-      combWs, combRo, rcbW, rcbR, List.cons_append, List.nil_append, TCombCfg.toComb]))
+macro "tcomb_mem" : tactic => `(tactic| plain_simp_names first
+                   | list_mem
+                   | (simp only [List.mem_cons, List.mem_append, List.mem_singleton, true_or, or_true, combSlots,
+                       combWs, combRo, rcbW, rcbR, List.cons_append, List.nil_append, TCombCfg.toComb]))
 
 /-- The selection's registers are neither `x0` nor `x19`. -/
 theorem sel_regs {n : Nat} (hn : n ≤ 9) {r : Reg} (hr : r = .x0 ∨ r = .x19) :

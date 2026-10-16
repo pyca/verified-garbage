@@ -84,9 +84,13 @@ def dependentWord : Prog isa :=
 def scratchAt (d : Nat) : List Instr :=
   [.mov .edx (fr (argOff scratchArg)), .alu .add .edx (.imm (BitVec.ofNat 32 d))]
 
-/-- Zero `scratch[d, d + 1024)`. -/
-def clearAt (d : Nat) : List Instr :=
-  scratchAt d +++ .mov .eax (.imm 0) :: (List.range 256).map fun k => .store (at_ .edx (4 * k)) .eax
+/-- Zero `n` words from `r` on, one per iteration (`clearWordAt`), through
+`eax` and `ecx`. -/
+def zeroWords (r : Reg) (n : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (.imm 0), .mov .ecx (.imm (BitVec.ofNat 32 n))]) (.loop (.block (clearWordAt r)) .ne)
+
+/-- Zero `scratch[d, d + 1024)`, through `edx`. -/
+def clearAt (d : Nat) : Prog isa := .seq (.block (scratchAt d)) (zeroWords .edx 256)
 
 /-- The words of the address-generation input block (its other words are
 zero): pass, lane, slice, blocks, passes, type and counter (§3.4.1.2). -/
@@ -114,10 +118,12 @@ def stage (x y out : Nat) : Prog isa :=
       .alu .add .ecx (.imm (BitVec.ofNat 32 out))])
     compressCall
 
+/-- The input block at `scratch + 5120`, and a zero block at `scratch + 7168`. -/
+def addressInput : Prog isa := .seq (clearAt 5120) (.seq (clearAt 7168) (.block addressHeader))
+
 /-- The address block: G(0, G(0, input)). -/
 def addressCalls : Prog isa :=
-  .seq (.block (clearAt 5120 +++ clearAt 7168 +++ addressHeader))
-    (.seq (stage 7168 5120 4096) (stage 7168 4096 6144))
+  .seq addressInput (.seq (stage 7168 5120 4096) (stage 7168 4096 6144))
 
 /-- `eax :=` the counter of the address block for the index; ZF if it is the
 cached one. -/
@@ -208,13 +214,20 @@ def writeWord (xorOld : Bool) (k : Nat) : List Instr :=
     ((if xorOld then [.alu .xor .eax (.mem (at_ .edi (4 * k)))] else []) +++
       [.store (at_ .edi (4 * k)) .eax])
 
-def writeBlock (xorOld : Bool) : List Instr := (List.range 256).flatMap (writeWord xorOld)
+/-- 64 words, and on to the next 64. -/
+def writeChunk (xorOld : Bool) : List Instr :=
+  (List.range 64).flatMap (writeWord xorOld) ++
+    [.alu .add .esi (.imm 256), .alu .add .edi (.imm 256), .alu .sub .ecx (.imm 1)]
+
+/-- The 256 words, 64 per iteration, counted by `ecx`. -/
+def writeBlock (xorOld : Bool) : Prog isa :=
+  .seq (.block [.mov .ecx (.imm 4)]) (.loop (.block (writeChunk xorOld)) .ne)
 
 /-- The new block to the current one: copied in the first pass, XORed later. -/
 def fillWrite : Prog isa :=
   .seq (.block [.mov .esi (fr (argOff scratchArg)), .alu .add .esi (.imm 4096), .mov .edi (fr curOff),
       .mov .eax (fr passOff), .alu .cmp .eax (.imm 0)])
-    (.ite .e (.block (writeBlock false)) (.block (writeBlock true)))
+    (.ite .e (writeBlock false) (writeBlock true))
 
 def fillBlock : Prog isa := .seq randomSource (.seq reference (.seq fillCompress fillWrite))
 

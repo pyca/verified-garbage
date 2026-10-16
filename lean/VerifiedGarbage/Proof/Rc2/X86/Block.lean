@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rc2.X86.Lit
 meta import VerifiedGarbage.Proof.Rc2.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
 meta import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
@@ -16,6 +16,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 @[expose] public section
 

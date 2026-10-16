@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VLay42
 public import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-KEM on x86-64: polynomials between `u32`s and words

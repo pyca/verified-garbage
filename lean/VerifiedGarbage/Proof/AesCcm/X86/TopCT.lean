@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.Top
 meta import VerifiedGarbage.Proof.AesCcm.X86.Top
-public import VerifiedGarbage.Proof.AesCcm.X86.Seal
+import VerifiedGarbage.Proof.AesCcm.X86.Seal
 meta import VerifiedGarbage.Proof.AesCcm.X86.Seal
 public import VerifiedGarbage.Proof.AesCcm.X86.MacCT
 meta import VerifiedGarbage.Proof.AesCcm.X86.MacCT
@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+meta import VerifiedGarbage.Proof.AesCcm.BytesAt
 
 /-!
 # AES-CCM on x86: the start, and what the pieces after it keep, for

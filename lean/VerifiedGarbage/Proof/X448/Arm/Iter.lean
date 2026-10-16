@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.BitStep
-public import VerifiedGarbage.Proof.X448.Arm.Counters
+import VerifiedGarbage.Proof.X448.Arm.Counters
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.Call
+public import VerifiedGarbage.Proof.X448.Ladder
 
 /-!
 # X448 on ARMv7: the Montgomery ladder

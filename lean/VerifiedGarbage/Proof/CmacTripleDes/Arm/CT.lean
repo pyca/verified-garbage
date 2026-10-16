@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
 meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Lit
 public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
 meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Init
-public import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
+import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
 meta import VerifiedGarbage.Proof.CmacTripleDes.Arm.Finalize
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint

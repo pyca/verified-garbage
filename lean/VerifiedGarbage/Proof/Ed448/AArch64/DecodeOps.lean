@@ -3,10 +3,12 @@ module
 public import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
 public import VerifiedGarbage.Proof.Ed448.VerifyFormulas
 public import VerifiedGarbage.Impl.Ed448.AArch64.VerifyEquation
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
 
 /-!
 # Ed448 verification's equation on AArch64: decoding's field operations
@@ -26,9 +28,10 @@ open VG.Impl.X448.AArch64 (slot)
 open VG.Proof.X448.AArch64 (Scr)
 open VG.Proof.X448.AArch64.Weak (Index Env)
 open VG.Proof.X448.AArch64.Fast (BEnv Bnd FKeep Same mulOp subOp)
+open VG.Proof.Ed448.AArch64.Point56 (mulOpK subOpK)
 open VG.Proof.Curve448.AArch64.Fast (Mb)
 open VG.Proof.X448.AArch64.Base (mulS subS)
-open VG.Impl.X448.AArch64.Fast (ops)
+open VG.Impl.X448.AArch64.Fast (ops opsK)
 
 local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
@@ -70,32 +73,32 @@ theorem uvEnv_eval (xo yo : Fin 22) (h : (xo = 6 ∧ yo = 7) ∨ (xo = 8 ∧ yo 
 bound) in 10. -/
 theorem uvOps_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base)
     (h10 : Bnd Mb s.mem base (slot (10 : Index).val)) (xo yo : Index) (hxy : (xo = 6 ∧ yo = 7) ∨ (xo = 8 ∧ yo = 9)) :
-    WP isa (ops (decodeUVOps yo.val xo.val)) s fun t =>
+    WP isa (opsK (decodeUVOps yo.val xo.val)) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ EV t.mem base = uvEnv yo xo (EV s.mem base) := by
   have hx3 : xo ≠ 3 := by rcases hxy with ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> decide
   have hx5 : xo ≠ 5 := by rcases hxy with ⟨rfl, _⟩ | ⟨rfl, _⟩ <;> decide
   rw [decodeUVOps_eq]
-  refine mulOp hs hb 12 yo yo (Or.inl rfl) fun t1 k1 b1 m1 s1 e1 => ?_
+  refine mulOpK hs hb 12 yo yo (Or.inl rfl) fun t1 k1 b1 m1 s1 e1 => ?_
   have hs1 := k1.scr hs
-  refine subOp (o := 13) (a := 12) (b := 10) hs1 b1 m1 (s1.bnd (by decide) h10) (by decide) (by decide)
+  refine subOpK (o := 13) (a := 12) (b := 10) hs1 b1 m1 (s1.bnd (by decide) h10) (by decide) (by decide)
     fun t2 k2 b2 s2 e2 => ?_
   have hs2 := k2.scr hs1
-  refine mulOp hs2 b2 4 11 12 (Or.inr (by decide)) fun t3 k3 b3 m3 s3 e3 => ?_
+  refine mulOpK hs2 b2 4 11 12 (Or.inr (by decide)) fun t3 k3 b3 m3 s3 e3 => ?_
   have hs3 := k3.scr hs2
-  refine subOp (o := 3) (a := 4) (b := 10) hs3 b3 m3 (s3.bnd (by decide) (s2.bnd (by decide) (s1.bnd (by decide) h10)))
+  refine subOpK (o := 3) (a := 4) (b := 10) hs3 b3 m3 (s3.bnd (by decide) (s2.bnd (by decide) (s1.bnd (by decide) h10)))
     (by decide) (by decide) fun t4 k4 b4 s4 e4 => ?_
   have hs4 := k4.scr hs3
-  refine mulOp hs4 b4 4 13 3 (Or.inr (by decide)) fun t5 k5 b5 _ s5 e5 => ?_
+  refine mulOpK hs4 b4 4 13 3 (Or.inr (by decide)) fun t5 k5 b5 _ s5 e5 => ?_
   have hs5 := k5.scr hs4
-  refine mulOp hs5 b5 4 4 4 (Or.inl rfl) fun t6 k6 b6 _ s6 e6 => ?_
+  refine mulOpK hs5 b5 4 4 4 (Or.inl rfl) fun t6 k6 b6 _ s6 e6 => ?_
   have hs6 := k6.scr hs5
-  refine mulOp hs6 b6 5 13 13 (Or.inl rfl) fun t7 k7 b7 _ s7 e7 => ?_
+  refine mulOpK hs6 b6 5 13 13 (Or.inl rfl) fun t7 k7 b7 _ s7 e7 => ?_
   have hs7 := k7.scr hs6
-  refine mulOp hs7 b7 5 5 13 (Or.inr (by decide)) fun t8 k8 b8 _ s8 e8 => ?_
+  refine mulOpK hs7 b7 5 5 13 (Or.inr (by decide)) fun t8 k8 b8 _ s8 e8 => ?_
   have hs8 := k8.scr hs7
-  refine mulOp hs8 b8 xo 5 3 (Or.inr hx3) fun t9 k9 b9 _ s9 e9 => ?_
+  refine mulOpK hs8 b8 xo 5 3 (Or.inr hx3) fun t9 k9 b9 _ s9 e9 => ?_
   have hs9 := k9.scr hs8
-  refine mulOp hs9 b9 12 xo 4 (Or.inr (by decide)) fun t10 k10 b10 _ s10 e10 => ?_
+  refine mulOpK hs9 b9 12 xo 4 (Or.inr (by decide)) fun t10 k10 b10 _ s10 e10 => ?_
   refine WP.block_nil ⟨k1.trans (k2.trans (k3.trans (k4.trans (k5.trans (k6.trans (k7.trans (k8.trans
     (k9.trans k10)))))))), b10, ?_⟩
   exact e10.trans <| congrArg (mulS 12 xo 4) <| e9.trans <| congrArg (mulS xo 5 3) <| e8.trans <|
@@ -124,17 +127,17 @@ theorem xEnv_eval (xo : Fin 22) (h : xo = 6 ∨ xo = 8) (e : Env) :
 /-- **`x` and `v x²`**, with `x` and `x² v` below the products' bound. -/
 theorem xOps_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) (xo : Index)
     (hxo : xo = 6 ∨ xo = 8) :
-    WP isa (ops (decodeXOps xo.val)) s fun t =>
+    WP isa (opsK (decodeXOps xo.val)) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Bnd Mb t.mem base (slot xo.val) ∧ Same base [xo, 12] s.mem t.mem ∧
       EV t.mem base = xEnv xo (EV s.mem base) := by
   have hx21 : xo ≠ 21 := by rcases hxo with rfl | rfl <;> decide
   have hx12 : xo ∉ ([12] : List Index) := by rcases hxo with rfl | rfl <;> decide
   rw [decodeXOps_eq]
-  refine mulOp hs hb xo xo 21 (Or.inr hx21) fun t1 k1 b1 m1 s1 e1 => ?_
+  refine mulOpK hs hb xo xo 21 (Or.inr hx21) fun t1 k1 b1 m1 s1 e1 => ?_
   have hs1 := k1.scr hs
-  refine mulOp hs1 b1 12 xo xo (Or.inl rfl) fun t2 k2 b2 _ s2 e2 => ?_
+  refine mulOpK hs1 b1 12 xo xo (Or.inl rfl) fun t2 k2 b2 _ s2 e2 => ?_
   have hs2 := k2.scr hs1
-  refine mulOp hs2 b2 12 12 3 (Or.inr (by decide)) fun t3 k3 b3 _ s3 e3 => ?_
+  refine mulOpK hs2 b2 12 12 3 (Or.inr (by decide)) fun t3 k3 b3 _ s3 e3 => ?_
   refine WP.block_nil ⟨k1.trans (k2.trans k3), b3, s3.bnd hx12 (s2.bnd hx12 m1), ?_, ?_⟩
   · intro i hi j hj
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hi

@@ -1,11 +1,17 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X25519.X86.Basic
 public import VerifiedGarbage.Proof.Framework.X86.Wp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # X25519 on x86 (32-bit): columns
@@ -105,10 +111,10 @@ theorem acc3 {a b c x0 x1 : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32)
 
 /-- Reads the registers, memory and regions of a state after writes, for
 literal registers. -/
-macro "regupd" : tactic => `(tactic| simp (config := {decide := true}) only [acc, v,
+tactic_template "regupd" : tactic => `(tactic| simp only [acc, v, reduceCtorEq, eq_self_iff_true,
   RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags,
   RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags,
-  RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false])
+  RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, ↓reduceIte])
 
 
 theorem toNat_zero32 : (0 : BitVec 32).toNat = 0 := rfl

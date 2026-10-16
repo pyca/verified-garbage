@@ -2,13 +2,15 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.P192.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-public import VerifiedGarbage.Proof.P192.Point
-public import VerifiedGarbage.Proof.P192.OrderPrime
+import VerifiedGarbage.Proof.P192.Point
+import VerifiedGarbage.Proof.P192.OrderPrime
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P192Literals
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! # p192 parameters for the AArch64 arithmetic -/
 
@@ -63,5 +65,6 @@ theorem p192_ok (hI : Weierstrass.AArch64.InvSounds) : BaseCfgOk p192 where
   inv_at := .inr (by decide +kernel)
   inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
   padd := fun h => absurd rfl h
+  check_fn := fun _ => ⟨by lit_decide, by lit_decide, by lit_decide⟩
 
 end VG.Proof.Ecdsa.AArch64.P192

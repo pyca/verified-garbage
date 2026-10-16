@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdvance
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourStore
 
 /-! ## From `BoundedFourSelectMachine.lean` -/
 

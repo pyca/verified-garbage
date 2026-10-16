@@ -10,8 +10,9 @@
 //! output blocks `Oⱼ = CIPH_K(Tⱼ)` from the counter block at `ctr`, which it
 //! replaces with the counter block to continue from, in constant time: its
 //! timing depends on none of the key, the counter block and the data. It
-//! encrypts sixteen counter blocks at a time, bitsliced in general-purpose
-//! registers, with no table lookups. This module holds the key schedule and
+//! uses bitsliced SM4 in general-purpose registers, with no table lookups:
+//! sixteen counter blocks at a time on 64-bit targets, and one on 32-bit
+//! targets. This module holds the key schedule and
 //! handles a partial last block (§6.5, `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the
 //! last bytes padded to a block XORs them with the first bytes of the next
 //! output block.
@@ -19,7 +20,12 @@
 //! The caller chooses the initial counter block, and must never use a
 //! counter block twice with the same key (Appendix B.2).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 
 use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_ctr::vg_sm4_ctr;

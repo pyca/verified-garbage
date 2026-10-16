@@ -1,14 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFrontCT
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMidCT
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFinalCT
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPointTail
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMidCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombFinalCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPointTail
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 @[expose] public section
 

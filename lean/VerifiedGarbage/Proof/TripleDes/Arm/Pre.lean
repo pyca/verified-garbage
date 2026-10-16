@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.Arm.Block
-public import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.TripleDes.Arm.ConstantTime
-public import VerifiedGarbage.Proof.TripleDes.Arm.WordStore
+import VerifiedGarbage.Proof.TripleDes.Arm.WordStore
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

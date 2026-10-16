@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.KeyLines
-public import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Cast5.Memory
 public import VerifiedGarbage.Proof.Framework.Mem
-public import VerifiedGarbage.Proof.Cast5.Table
+import VerifiedGarbage.Proof.Cast5.Table
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

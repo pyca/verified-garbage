@@ -6,14 +6,16 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 public import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
 meta import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
-public import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
+import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
 meta import VerifiedGarbage.Proof.MlKem.AArch64.MemTaint
-public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_hint_bit_pack`

@@ -6,12 +6,14 @@ public import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTLit
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-public import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
+import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 meta import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # Constant time of the point arithmetic blocks
@@ -32,7 +34,7 @@ open VG VG.X86 VG.Impl.Ed25519.X86
 
 theorem pointEncode_ct {x : BitVec 32} : RelCT isa (CallCTPre x) pointEncode (fun _ _ => True) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ pointEncode h).isSome = true := by
-    taint_decide_sum [VG.Proof.X25519.X86.pow250Sum]
+    native_taint_decide_sum [VG.Proof.X25519.X86.pow250Sum]
   exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) hc
 
 def PowersCTPre (x : BitVec 32) (s t : State) : Prop :=
@@ -50,7 +52,7 @@ taint_summary doubleSum : taint doubleTaint (.block doubleBody)
 theorem powersBody16_ct (x : BitVec 32) : RelCT isa (PowersCTPre x)
     (powersBody 1024 16 true) (fun _ _ => True) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check (pointTaint 24) (powersBody 1024 16 true) h).isSome = true := by
-    taint_decide_sum [doubleSum]
+    native_taint_decide_sum [doubleSum]
   apply VG.RelCT.taint (A := taint) (pointTaint 24) _ hc
   intro s t h
   exact pointTaint_agree h.1 h.2.1 h.2.2.1 (by decide) h.2.2.2
@@ -58,14 +60,16 @@ theorem powersBody16_ct (x : BitVec 32) : RelCT isa (PowersCTPre x)
 theorem powersBody32_ct (x : BitVec 32) : RelCT isa (PowersCTPre x)
     (powersBody 1024 32 true) (fun _ _ => True) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check (pointTaint 24) (powersBody 1024 32 true) h).isSome = true := by
-    taint_decide_sum [doubleSum]
+    native_taint_decide_sum [doubleSum]
   apply VG.RelCT.taint (A := taint) (pointTaint 24) _ hc
   intro s t h
   exact pointTaint_agree h.1 h.2.1 h.2.2.1 (by decide) h.2.2.2
 
 theorem powersBodyLocal_ct (x : BitVec 32) : RelCT isa (PowersCTPre x)
     (powersBody 5120 16 false) (fun _ _ => True) := by
-  apply VG.RelCT.taint (A := taint) (pointTaint 24) _ (by taint_decide)
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check (pointTaint 24) (powersBody 5120 16 false) h).isSome = true := by
+    native_taint_decide_sum []
+  apply VG.RelCT.taint (A := taint) (pointTaint 24) _ hc
   intro s t h
   exact pointTaint_agree h.1 h.2.1 h.2.2.1 (by decide) h.2.2.2
 
@@ -73,7 +77,7 @@ theorem accumulate16_ct_regs (x : BitVec 32) : RelCT isa
     (fun s t => PointCTCtx x s ∧ PointCTCtx x t ∧ s.wr = t.wr ∧ wd s.mem x 28 = wd t.mem x 28)
     accumulate16 (fun s t => s.gpr .edi = t.gpr .edi) := by
   have h : RelCT isa (fun s t => PointCTCtx x s ∧ PointCTCtx x t ∧ s.wr = t.wr ∧ wd s.mem x 28 = wd t.mem x 28) accumulate16 (fun s t => ∀ r ∈ ([.edi] : List Reg), s.gpr r = t.gpr r) := by
-    apply ctTaintRegs (τ := pointTaint 28) _ [.edi] (by taint_decide)
+    apply ctTaintRegs (τ := pointTaint 28) _ [.edi] (by native_taint_decide)
     intro s t h
     exact pointTaint_agree h.1 h.2.1 h.2.2.1 (by decide) h.2.2.2
   exact h.mono (fun _ _ h => h) (fun _ _ h => h .edi (List.mem_singleton_self _))

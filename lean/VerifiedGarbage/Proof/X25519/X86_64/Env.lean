@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Small
-public import VerifiedGarbage.Proof.X25519.X86_64.Sqr
+import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 public import Mathlib.Logic.Function.Basic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

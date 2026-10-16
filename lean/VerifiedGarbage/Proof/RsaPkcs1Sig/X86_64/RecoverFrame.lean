@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: the frame
@@ -31,8 +32,8 @@ open VG.Proof.RsaPkcs1Sig.X86_64.Ver (fb kb stkR scrR fb_eq fb_sub8 toNat_off fr
 structure PreR (s : State) : Prop where
   sp1 : verStack ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 48 ≤ 2 ^ 64
-  hrd : s.rd = [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
-    ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArgAddr s 0, 40⟩]
+  hrd : Covers [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
+    ⟨stackArg s 1, (stackArg s 2).toNat⟩, ⟨stackArgAddr s 0, 40⟩] s.rd
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩]
   dOn : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   dOe : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
@@ -63,13 +64,13 @@ structure PreR (s : State) : Prop where
   L1 : 1 ≤ (s.gpr .r9).toNat
   L2 : (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat
   hash : ∃ h, Spec.RsaPkcs1Sig.Hash.ofId ((stackArg s 0).setWidth 32).toNat = some h ∧ (s.gpr .rsi).toNat = h.len
-  hsl : 16 * (s.gpr .rcx).toNat ≤ (stackArg s 4).toNat
+  hsl : 16 * (s.gpr .rcx).toNat + 32 ≤ (stackArg s 4).toNat
 
 theorem preR_of {s : State} (h : recContract.pre s) : PreR s := by
   simp only [recContract] at h
   obtain ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOg, dOs, dOa, dns, des, dgs, dsa, dRo, -, -, -, dRs, -, dKo, dKn, dKe,
     dKg, dKs, dKa, wO, wN, wE, wG, wS, ⟨k1, k2⟩, L1, L2, hash, hsl⟩ := h
-  exact ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOg, dOs, dOa, dns, des, dgs, dsa, dRo, dRs, dKo, dKn, dKe, dKg, dKs, dKa,
+  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, hwr, dOn, dOe, dOg, dOs, dOa, dns, des, dgs, dsa, dRo, dRs, dKo, dKn, dKe, dKg, dKs, dKa,
     wO, wN, wE, wG, wS, k1, k2, L1, L2, hash, hsl⟩
 
 /-- `out_len` is the length of the hash function's values: from 16 to 64. -/
@@ -148,7 +149,9 @@ theorem Env.arg {s t : State} (h : Env s t) (hp : PreR s) {j : Nat} (hj : j < 5)
 /-- The stack arguments are readable. -/
 theorem arg_in {s t : State} (hp : PreR s) (hrd : t.rd = s.rd) {j : Nat} (hj : j < 5) :
     InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 :=
-  ⟨⟨stackArgAddr s 0, 40⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp),
-    by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+  by
+    rw [hrd]
+    exact hp.hrd.left _ _ ⟨⟨stackArgAddr s 0, 40⟩, by simp,
+      by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Rec

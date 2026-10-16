@@ -8,6 +8,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.X448.AArch64.Fast.Bounds
 
 /-!
 # X448 of the base point on AArch64: the addition of an affine entry
@@ -98,7 +101,7 @@ theorem ops1_ok (z1 : Index) (hs : Scr s base) (hb : BEnv s.mem base) :
 
 /-- The first part: `b = Z²`, then `c = X x` and `e = Y y` in AdvSIMD. -/
 theorem part1_ok (x1 y1 z1 x2 y2 : Index) (hs : Scr s base) (hb : BEnv s.mem base)
-    (hind : Indeps (codeOf [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)]) (mul2 (slot (11 : Index).val) (slot x1.val) (slot x2.val) (slot (12 : Index).val)
+    (hind : Indeps .x3 (codeOf [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)]) (mul2 (slot (11 : Index).val) (slot x1.val) (slot x2.val) (slot (12 : Index).val)
         (slot y1.val) (slot y2.val))) :
     WP isa (.block (weave (codeOf [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)])
         (mul2 (slot (11 : Index).val) (slot x1.val) (slot x2.val) (slot (12 : Index).val) (slot y1.val)
@@ -144,7 +147,7 @@ theorem ops2_ok (hs : Scr s base) (hb : BEnv s.mem base) (h10 : Bnd Mb s.mem bas
 /-- The second part: `ops2`, then `X y` and `Y x` in AdvSIMD. -/
 theorem part2_ok (x1 y1 x2 y2 : Index) (hs : Scr s base) (hb : BEnv s.mem base)
     (h10 : Bnd Mb s.mem base (slot (10 : Index).val)) (h19 : Bnd Mb s.mem base (slot (19 : Index).val))
-    (hind : Indeps (codeOf [.mul (slot (13 : Index).val) (slot (11 : Index).val) (slot (12 : Index).val),
+    (hind : Indeps .x3 (codeOf [.mul (slot (13 : Index).val) (slot (11 : Index).val) (slot (12 : Index).val),
         .small (slot (14 : Index).val) (slot (10 : Index).val) (slot (13 : Index).val),
         .sub (slot (15 : Index).val) (slot (19 : Index).val) (slot (13 : Index).val),
         .small (slot (10 : Index).val) (slot (10 : Index).val) (slot (15 : Index).val)]) (mul2 (slot (16 : Index).val) (slot x1.val) (slot y2.val) (slot (17 : Index).val)
@@ -200,7 +203,7 @@ theorem ops4_ok (hs : Scr s base) (hb : BEnv s.mem base) :
 
 /-- The fourth part: `f·g`, then `Z f` and `Z g` in AdvSIMD. -/
 theorem part4_ok (z1 : Index) (hs : Scr s base) (hb : BEnv s.mem base)
-    (hind : Indeps (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)]) (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val)
+    (hind : Indeps .x3 (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)]) (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val)
         (slot (12 : Index).val) (slot z1.val) (slot (10 : Index).val))) :
     WP isa (.block (weave (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)])
         (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val) (slot (12 : Index).val)
@@ -229,7 +232,7 @@ theorem ops5_ok (z1 : Index) (hs : Scr s base) (hb : BEnv s.mem base)
 /-- The fifth part: `Z := f·g`, then `X := (Z f) k` and `Y := (Z g)(e - c)` in AdvSIMD. -/
 theorem part5_ok (x1 y1 z1 : Index) (hxy : x1 ≠ y1) (hzx : z1 ≠ x1) (hzy : z1 ≠ y1)
     (hs : Scr s base) (hb : BEnv s.mem base) (h18 : Bnd Mb s.mem base (slot (18 : Index).val))
-    (hind : Indeps (codeOf [.copy (slot z1.val) (slot (18 : Index).val)]) (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
+    (hind : Indeps .x3 (codeOf [.copy (slot z1.val) (slot (18 : Index).val)]) (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
         (slot (12 : Index).val) (slot (17 : Index).val))) :
     WP isa (.block (weave (codeOf [.copy (slot z1.val) (slot (18 : Index).val)])
         (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
@@ -250,16 +253,16 @@ to `(X : Y : Z)` (slots `x1`, `y1`, `z1`), given zero's bound in slot 19 and the
 independence of each part's two streams (`hind₁`–`hind₅`). -/
 theorem addAffine_ok (x1 y1 z1 x2 y2 : Index) (hxy : x1 ≠ y1) (hzx : z1 ≠ x1) (hzy : z1 ≠ y1)
     (hs : Scr s base) (hb : BEnv s.mem base) (h19 : Bnd Mb s.mem base (slot (19 : Index).val))
-    (hind₁ : Indeps (codeOf [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)]) (mul2 (slot (11 : Index).val) (slot x1.val) (slot x2.val) (slot (12 : Index).val)
+    (hind₁ : Indeps .x3 (codeOf [.mul (slot (10 : Index).val) (slot z1.val) (slot z1.val)]) (mul2 (slot (11 : Index).val) (slot x1.val) (slot x2.val) (slot (12 : Index).val)
         (slot y1.val) (slot y2.val)))
-    (hind₂ : Indeps (codeOf [.mul (slot (13 : Index).val) (slot (11 : Index).val) (slot (12 : Index).val),
+    (hind₂ : Indeps .x3 (codeOf [.mul (slot (13 : Index).val) (slot (11 : Index).val) (slot (12 : Index).val),
         .small (slot (14 : Index).val) (slot (10 : Index).val) (slot (13 : Index).val),
         .sub (slot (15 : Index).val) (slot (19 : Index).val) (slot (13 : Index).val),
         .small (slot (10 : Index).val) (slot (10 : Index).val) (slot (15 : Index).val)]) (mul2 (slot (16 : Index).val) (slot x1.val) (slot y2.val) (slot (17 : Index).val)
         (slot y1.val) (slot x2.val)))
-    (hind₄ : Indeps (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)]) (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val)
+    (hind₄ : Indeps .x3 (codeOf [.mul (slot (18 : Index).val) (slot (14 : Index).val) (slot (10 : Index).val)]) (mul2 (slot (11 : Index).val) (slot z1.val) (slot (14 : Index).val)
         (slot (12 : Index).val) (slot z1.val) (slot (10 : Index).val)))
-    (hind₅ : Indeps (codeOf [.copy (slot z1.val) (slot (18 : Index).val)]) (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
+    (hind₅ : Indeps .x3 (codeOf [.copy (slot z1.val) (slot (18 : Index).val)]) (mul2 (slot x1.val) (slot (11 : Index).val) (slot (13 : Index).val) (slot y1.val)
         (slot (12 : Index).val) (slot (17 : Index).val))) :
     WP isa (.block (Impl.X448.AArch64.Base.addAffine (slot x1.val) (slot y1.val) (slot z1.val) (slot x2.val)
         (slot y2.val))) s fun t =>

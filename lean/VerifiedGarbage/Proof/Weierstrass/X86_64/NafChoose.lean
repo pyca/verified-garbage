@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! Selecting a signed width-five digit from the public scalar's low word. -/
 
@@ -103,7 +104,7 @@ theorem nafAdjust_ok (s : State) (k j : Nat)
       simp only [Naf5.residual_succ,Naf5.next,he,ite_true]
       omega
     apply WP.block_nil
-    refine ⟨?_,?_,ku.mono (by simp)⟩
+    refine ⟨?_,?_,ku.mono (by regions_sub)⟩
     · rw [hu,h0]
       simpa only [nafRaw,h0,ite_true] using hd
     · rw [eu .r8 (by decide),eu .r9 (by decide),eu .r10 (by decide),eu .r11 (by decide),eu .r12 (by decide),hv,hn]
@@ -119,6 +120,6 @@ theorem nafAdjust_ok (s : State) (k j : Nat)
       exact hv
     refine WP.mono (subtractDigit_ok v k j hvx' hvv hb) fun t ⟨ht,kt⟩ => ⟨?_,ht,?_⟩
     · rw [kt.1 .rcx (by decide),hvx']
-    · exact ((ku.trans kv).mono (by simp)).trans (kt.mono (by simp))
+    · exact ((ku.trans kv).mono (by regions_sub)).trans (kt.mono (by regions_sub))
 
 end VG.Proof.Weierstrass.X86_64

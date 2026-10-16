@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.AesOcb.Arm.Callee
 public import VerifiedGarbage.Proof.CmacAes.Arm.Words
 public import VerifiedGarbage.Proof.Cmac.Dbl32
-public import VerifiedGarbage.Proof.Cmac.Dbl
-public import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.Cmac.Dbl
+import VerifiedGarbage.Proof.Ocb.Spec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

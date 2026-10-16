@@ -1,13 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdsa.P256.X86
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
-public import VerifiedGarbage.Proof.Ecdsa.X86.Lit
-public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86
+import VerifiedGarbage.Proof.Ecdsa.X86.Lit
+import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombVerified
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on x86 (32-bit)

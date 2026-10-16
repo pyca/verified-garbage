@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlKem.X86_64.Vec
+public import VerifiedGarbage.Spec.MlKem
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_multiply_ntts`

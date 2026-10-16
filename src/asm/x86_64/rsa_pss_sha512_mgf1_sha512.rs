@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_rsa_pss_sha512_mgf1_sha512_sign_crt_adx` requires (`Artifact.features`).
-pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
+pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "bmi2", "adx"]);
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with SHA-512 and MGF1 with SHA-512, of a SHA-512 digest, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the 64-byte digest `*digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - 66`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
@@ -29,11 +29,11 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_ADX_FEATURES: crate::cpu
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// * The CPU must support the `avx`, `avx2`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 64], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -610,7 +610,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_sign_crt_adx(
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -1193,7 +1193,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_CRT_IFMA_FEATURES: crate::cp
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -1777,7 +1777,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_CRT_ADX_FEATURES
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -2361,7 +2361,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_FEATURES: crate:
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -2945,7 +2945,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_AVX2_CRT_IFMA_FEATURE
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -3529,7 +3529,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_CRT_ADX_FEATURE
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -4113,7 +4113,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_FEATURES: crate
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -4697,7 +4697,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_SIGN_SHA512_SHANI_CRT_IFMA_FEATUR
 /// * `e_len` must be in 1..=`n_len`.
 /// * `p_len` and `q_len` must be in 1..`n_len`.
 /// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
@@ -5278,7 +5278,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_RSA_ADX_FEATUR
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -6300,7 +6300,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precom
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -7324,7 +7324,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_RS
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -8349,7 +8349,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_FE
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -9374,7 +9374,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_R
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
@@ -10399,7 +10399,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_F
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 1024`.
+/// * `scratch_len` must be at least `16 * n_len + 1056`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).

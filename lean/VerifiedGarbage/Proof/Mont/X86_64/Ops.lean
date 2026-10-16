@@ -1,16 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Mont.X86_64.MulF
-public import VerifiedGarbage.Proof.Mont.X86_64.SqrP
+import VerifiedGarbage.Proof.Mont.X86_64.MulF
+import VerifiedGarbage.Proof.Mont.X86_64.SqrP
 public import VerifiedGarbage.Proof.Mont.X86_64.MulPX
-public import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
-public import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-public import VerifiedGarbage.Proof.Mont.X86_64.Sub256
-public import VerifiedGarbage.Proof.Mont.X86_64.Sub384
+import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
+import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
+import VerifiedGarbage.Proof.Mont.X86_64.Sub256
+import VerifiedGarbage.Proof.Mont.X86_64.Sub384
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.WideMul
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # Montgomery arithmetic on x86-64: the operations

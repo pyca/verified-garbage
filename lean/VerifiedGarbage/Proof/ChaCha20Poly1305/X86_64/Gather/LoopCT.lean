@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Loop
-public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
-public import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

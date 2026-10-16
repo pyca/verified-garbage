@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Modes.Cfb8
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Modes.AArch64.Xor
 
 /-!
 # CFB8 on AArch64, for any core: the data loop
@@ -209,9 +213,7 @@ theorem cfb8Block_wp (cs : BlockSpec c) (enc : Bool) {ivR : Reg} (hivR : ivR ∉
   have left₅ : s₅.gpr c.leftReg = BitVec.ofNat 64 (n - (j + 1)) := by
     rw [l₅, left₄, VG.Offset.ofNat_sub_ofNat (by omega), show n - j - 1 = n - (j + 1) by omega]
   have hz₅ : isa.eval (.nonzero .x c.leftReg) s₅ = some !(decide (j + 1 = n)) := by
-    rw [eval_nonzero, left₅, ofNat_beq_zero (by omega)]
-    congr 2
-    exact decide_eq_decide.mpr (by omega)
+    rw [eval_nonzero, left₅, ofNat_beq_zero (by omega), decide_eq_decide.mpr (show n - (j + 1) = 0 ↔ j + 1 = n by omega)]
   have data₅ : s₅.gpr c.dataReg = D + BitVec.ofNat 64 (j + 1) := by
     rw [o₅ _ hdl, a₅a, g₄ _ d7, g₃ _ d6 d7, data₂, addr_add]
   have mem₅ : s₅.mem = s₄.mem := by rw [m₅, m₅a]

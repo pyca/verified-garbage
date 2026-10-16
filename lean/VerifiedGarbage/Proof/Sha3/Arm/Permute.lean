@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Sha3.Lanes
 meta import VerifiedGarbage.Proof.Sha3.Lanes
@@ -18,9 +18,9 @@ public import VerifiedGarbage.Spec.Sha3.Contract
 meta import VerifiedGarbage.Spec.Sha3.Contract
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.Stream
 meta import VerifiedGarbage.Proof.Sha3.Stream
-public import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.Sha3.Arith
 public import VerifiedGarbage.Proof.Framework.Arm.Call
 meta import VerifiedGarbage.Proof.Framework.Arm.Call
@@ -1224,7 +1224,7 @@ prologue stores at `[200, 392)` of the scratch space: public, but no
 address or branch depends on them, and the kernel checks the analysis much
 faster without them (`taint_decide_weak`). -/
 def dropRC (τ : VG.Arm.Taint.T) : VG.Arm.Taint.T :=
-  { τ with slots := τ.slots.filter fun sl => !(200 ≤ sl.2.1 && sl.2.1 < 392) }
+  { τ with slots := VG.Arm.Taint.cutSlots 1 200 192 τ.slots }
 
 /-- The initial taint: the pointers are public, and point at the writable regions. -/
 def τ₀ : VG.Arm.Taint.T :=

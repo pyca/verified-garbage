@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.X448.X86.RowPass
 
 /-!
 # X448 on x86 (32-bit): one multiplication row

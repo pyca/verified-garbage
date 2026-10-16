@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! Signed-digit subtraction shares the same x86-64 implementation at both widths, for scalars of
 four words (five registers), six words (seven registers) and nine words (ten registers). -/
@@ -21,7 +22,7 @@ theorem fastMagnitude_bound (w k j : Nat) : FastNaf.magnitude w k j≤63 := by
   · simpa only [FastNaf.magnitude,h,ite_true] using FastNaf7.magnitude_le k j
   · have hb := Naf5.magnitude_le k j
     simp only [FastNaf.magnitude,h,ite_false]
-    omega
+    omega_arith
 
 theorem fastDigit_eq (w k j : Nat) : FastNaf.digit w k j=
     if FastNaf.negative w k j then -(FastNaf.magnitude w k j:Int) else (FastNaf.magnitude w k j:Int) := by
@@ -37,11 +38,11 @@ theorem fastWord_toNat (w k j : Nat) :
   cases hn : FastNaf.negative w k j
   · simp only [Bool.false_eq_true,ite_false]
     change ((FastNaf.magnitude w k j:Int)%18446744073709551616).toNat=_
-    omega
+    omega_arith
   · have hp := FastNaf.negative_magnitude_pos w k j hn
     simp only [ite_true]
     change ((-(FastNaf.magnitude w k j:Int))%18446744073709551616).toNat=_
-    omega
+    omega_arith
 
 theorem fastSign_toNat (w k j : Nat) :
     (0#64-(BitVec.ofInt 64 (FastNaf.digit w k j)>>>63)).toNat =
@@ -50,9 +51,9 @@ theorem fastSign_toNat (w k j : Nat) :
   have hp := FastNaf.negative_magnitude_pos w k j
   simp only [BitVec.toNat_sub,BitVec.toNat_zero,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow,fastWord_toNat]
   cases hn : FastNaf.negative w k j
-  · simp only [Bool.false_eq_true,ite_false]; omega
+  · simp only [Bool.false_eq_true,ite_false]; omega_arith
   · have hp := hp hn
-    simp only [ite_true]; omega
+    simp only [ite_true]; omega_arith
 
 /-- The step's arithmetic at any width `M`: the registers' value after subtracting the digit's
 `M`-bit two's complement. -/
@@ -62,13 +63,13 @@ theorem sub_next_of {M o r m r' : Nat} {neg : Bool}
   cases neg
   · simp only [Bool.false_eq_true,ite_false] at hs hr
     by_cases h : o+m<M
-    · rw [Nat.mod_eq_of_lt h] at hs; omega
-    · rw [Nat.mod_eq_sub_mod (by omega),Nat.mod_eq_of_lt (by omega)] at hs; omega
+    · rw [Nat.mod_eq_of_lt h] at hs; omega_arith
+    · rw [Nat.mod_eq_sub_mod (by omega_arith),Nat.mod_eq_of_lt (by omega_arith)] at hs; omega_arith
   · have hp := hpos rfl
     simp only [ite_true] at hs hr
     by_cases h : m≤o
-    · rw [show o+(M-m)=(o-m)+M by omega,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega)] at hs; omega
-    · rw [Nat.mod_eq_of_lt (by omega)] at hs; omega
+    · rw [show o+(M-m)=(o-m)+M by omega_arith,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega_arith)] at hs; omega_arith
+    · rw [Nat.mod_eq_of_lt (by omega_arith)] at hs; omega_arith
 
 theorem fastSub5_next (a b c d e : BitVec 64) (w k j : Nat)
     (hv : nafVal5 a b c d e=FastNaf.residual w k j) (hb : FastNaf.residual w k j≤2^256) :
@@ -87,11 +88,11 @@ theorem fastSub5_next (a b c d e : BitVec 64) (w k j : Nat)
       if FastNaf.negative w k j then 2^320-FastNaf.magnitude w k j else FastNaf.magnitude w k j := by
     simp only [nafVal5,fastWord_toNat,fastSign_toNat]
     cases hn : FastNaf.negative w k j <;> simp only [Bool.false_eq_true,ite_false,ite_true]
-    · omega
-    · have := fastMagnitude_bound w k j; omega
+    · omega_arith
+    · have := fastMagnitude_bound w k j; omega_arith
   rw [he] at hs
   exact sub_next_of hs (nafVal5_lt _ _ _ _ _) (fastMagnitude_bound w k j)
-    (FastNaf.negative_magnitude_pos w k j) (by omega) (FastNaf.recurrence w k j)
+    (FastNaf.negative_magnitude_pos w k j) (by omega_arith) (FastNaf.recurrence w k j)
 
 
 theorem fastSubtract_ok (s : State) (w k j : Nat)
@@ -129,11 +130,11 @@ theorem fastSub7_next (a b c d e f g : BitVec 64) (w k j : Nat)
       if FastNaf.negative w k j then 2^256*2^192-FastNaf.magnitude w k j else FastNaf.magnitude w k j := by
     simp only [nafVal7,fastWord_toNat,fastSign_toNat]
     cases hn : FastNaf.negative w k j <;> simp only [Bool.false_eq_true,ite_false,ite_true]
-    · omega
-    · have := fastMagnitude_bound w k j; omega
+    · omega_arith
+    · have := fastMagnitude_bound w k j; omega_arith
   rw [he] at hs
   exact sub_next_of hs (nafVal7_lt _ _ _ _ _ _ _) (fastMagnitude_bound w k j)
-    (FastNaf.negative_magnitude_pos w k j) (by omega) (FastNaf.recurrence w k j)
+    (FastNaf.negative_magnitude_pos w k j) (by omega_arith) (FastNaf.recurrence w k j)
 
 theorem subtractDigitN_four : Naf.subtractDigitN 4=Naf.subtractDigit := rfl
 
@@ -182,11 +183,11 @@ theorem fastSub10_next (a b c d e f g h i l : BitVec 64) (w k j : Nat)
       if FastNaf.negative w k j then 2^256*2^256*2^128-FastNaf.magnitude w k j else FastNaf.magnitude w k j := by
     simp only [nafVal10_unfold,fastWord_toNat,fastSign_toNat]
     cases hn : FastNaf.negative w k j <;> simp only [Bool.false_eq_true,ite_false,ite_true]
-    · omega
-    · have := fastMagnitude_bound w k j; omega
+    · omega_arith
+    · have := fastMagnitude_bound w k j; omega_arith
   rw [he] at hs
   exact sub_next_of hs (nafVal10_lt _ _ _ _ _ _ _ _ _ _) (fastMagnitude_bound w k j)
-    (FastNaf.negative_magnitude_pos w k j) (by omega) (FastNaf.recurrence w k j)
+    (FastNaf.negative_magnitude_pos w k j) (by omega_arith) (FastNaf.recurrence w k j)
 
 theorem subtractDigitN_nine : Naf.subtractDigitN 9=
     [.mov .rax (.reg .rcx),.shift .shr .rax 63,.mov32 .rdx (.imm 0),.alu .sub .rdx (.reg .rax),

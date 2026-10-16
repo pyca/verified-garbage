@@ -1,6 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.Arm.FbVerified
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-! # IDEA-OFB artifacts on baseline ARMv7 -/
 

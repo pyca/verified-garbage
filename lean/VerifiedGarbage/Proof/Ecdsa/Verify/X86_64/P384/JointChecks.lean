@@ -4,20 +4,44 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointContract
-public import VerifiedGarbage.Proof.P384.X86_64.JointTiming
+import VerifiedGarbage.Proof.P384.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.P384.X86_64.JointTiming
-public import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
+import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
 meta import VerifiedGarbage.Proof.P384.X86_64.NafTableTiming
 public import VerifiedGarbage.Proof.P384.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.P384.X86_64.JointLayout
-public import VerifiedGarbage.Proof.P384.X86_64.JointFrame
+import VerifiedGarbage.Proof.P384.X86_64.JointFrame
 meta import VerifiedGarbage.Proof.P384.X86_64.JointFrame
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointLitAdx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-! Concrete timing checks and the doubler of P-384's baseline and ADX joint verification. -/
 
@@ -45,22 +69,50 @@ theorem joint_adx_doubler (hc : CfgOk p384vx) (hC : Weierstrass.Law p384vx.C) :
   jacDouble_doubler joint_adx_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
     jointDouble_adx_ct joint_adx_cached_checks.copy
 
+/-- `jointPrefix p384v` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def jointPrefixErased : Prog isa := Code.erase (jointPrefix p384v)
+
+materialize_shared jointPrefixErased
+
 theorem joint_before_ct : ConstantTime isa (fun _ => True)
     (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p384v) :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
-    (fun _ _ _ _ h => h) (by taint_decide)
+  VG.Taint.constantTime_mapBlocks (c' := jointPrefixErased) taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
+    rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
+
+/-- `(Cfg.jointTail p384v).inline` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def jointTailErased : Prog isa := Code.erase (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p384v).inline
+
+materialize_shared jointTailErased
+
+theorem joint_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p384v).inline :=
+  VG.Taint.constantTime_mapBlocks (c' := jointTailErased) taint_eraseInv (Taint.ofRegs [.rdi])
+    rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
+
+/-- `jointPrefix p384vx` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def jointPrefixAdxErased : Prog isa := Code.erase (jointPrefix p384vx)
+
+materialize_shared jointPrefixAdxErased
 
 theorem joint_adx_before_ct : ConstantTime isa (fun _ => True)
     (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p384vx) :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
-    (fun _ _ _ _ h => h) (by taint_decide)
+  VG.Taint.constantTime_mapBlocks (c' := jointPrefixAdxErased) taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
+    rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
 
-theorem joint_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p384v).inline :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
-    (fun _ _ _ _ h => h) (by taint_decide)
+/-- `(Cfg.jointTail p384vx).inline` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+def jointTailAdxErased : Prog isa := Code.erase (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p384vx).inline
+
+materialize_shared jointTailAdxErased
 
 theorem joint_adx_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p384vx).inline :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
-    (fun _ _ _ _ h => h) (by taint_decide)
+  VG.Taint.constantTime_mapBlocks (c' := jointTailAdxErased) taint_eraseInv (Taint.ofRegs [.rdi])
+    rfl (fun _ _ _ _ h => h) rfl (by taint_decide)
 
 end VG.Proof.Ecdsa.Verify.X86_64.P384

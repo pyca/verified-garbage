@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Spec.GcmSiv.Contract
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
@@ -11,6 +13,22 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Block
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Gcm.Ctr
 
 /-!
 # AES-GCM-SIV on x86-64: the contracts, where everything is and running blocks
@@ -356,17 +374,29 @@ theorem readW_writeW_W {m : Mem} {W : Addr} {d e w w' : Nat} (v : BitVec w') (h 
   Mem.readW_writeW_sep (Offset.sep W h hd he) hw
 
 /-- Runs a block of the instructions the AES-GCM-SIV code uses. -/
-macro "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-    readSrc32, execAlu, execAlu32, execShift, State.load64, State.store64, State.load32, State.store32,
-    State.load8, State.store8, State.ea, State.setReg32, offset_nat, at_, imm, ptr, tagO, akO, ekO, hO, yO, cmO,
-    ccO, bO, okO, roundsO, nonceO, aadO, alenO, dataO, lenO, skO, revO, ghO, scrO, List.cons_append,
-    List.nil_append, List.append_assoc, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags,
-    gpr_setFlags, mem_setReg, mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags,
-    wr_setReg, wr_arithFlags, wr_setFlags, cf_setReg, cf_arithFlags, zf_setReg, zf_arithFlags,
-    ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff,
-    Nat.reduceAdd, Nat.reduceMod, Nat.reducePow, setWidth_imm, and_self, and_true, true_and, BitVec.add_zero,
-    readW_writeW_W, $ts,*]) <;> try rfl)
+tactic_template "srun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                   simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+                     readSrc32, execAlu, execAlu32, execShift, State.load64, State.store64, State.load32, State.store32,
+                     State.load8, State.store8, State.ea, State.setReg32, offset_nat, at_, imm, ptr, tagO, akO, ekO, hO, yO, cmO,
+                     ccO, bO, okO, roundsO, nonceO, aadO, alenO, dataO, lenO, skO, revO, ghO, scrO, List.cons_append,
+                     List.nil_append, List.append_assoc, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags,
+                     gpr_setFlags, mem_setReg, mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags,
+                     wr_setReg, wr_arithFlags, wr_setFlags, cf_setReg, cf_arithFlags, zf_setReg, zf_arithFlags,
+                     ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff,
+                     Nat.reduceAdd, Nat.reduceMod, Nat.reducePow, setWidth_imm, and_self, and_true, true_and, BitVec.add_zero,
+                     readW_writeW_W, $ts,*]) <;> try rfl)
+
+/-- A callee-saved register is none of the registers the code uses for its
+arguments and scratch, so reads of it skip their writes. -/
+theorem ne_of_calleeSaved {r : Reg} (h : r ∈ calleeSaved) :
+    r ≠ .rax ∧ r ≠ .rcx ∧ r ≠ .rdx ∧ r ≠ .rsi ∧ r ≠ .rdi ∧ r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r10 ∧ r ≠ .r11 := by
+  revert r; decide
+
+set_option hygiene false in
+/-- A list literal's element is in it: the membership of a witness
+`∃ r' ∈ rs, Region.Sub r r'`. Cheaper than `simp`, which also tries to decide
+the equalities of the other regions. -/
+tactic_template "mem_lit" : tactic => `(tactic| simp only [List.mem_append, List.mem_cons, true_or, or_true])
 
 theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by

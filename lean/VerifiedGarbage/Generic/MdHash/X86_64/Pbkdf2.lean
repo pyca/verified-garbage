@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # PBKDF2-HMAC (RFC 8018) over a Merkle–Damgård hash function on x86-64

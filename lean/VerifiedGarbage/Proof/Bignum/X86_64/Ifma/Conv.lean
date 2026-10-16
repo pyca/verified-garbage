@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: moving numbers between the layouts
@@ -28,8 +29,8 @@ open VG.Proof.Bignum.X86_64.AmmSym (shl_eq' drop_hi div_split or_shr_shl mod52_o
 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
-theorem conv_bounds (hl : LayOk l) : 1 ≤ l.W ∧ 64 * l.W ≤ 52 * l.L ∧ l.L ≤ 40 ∧ 64 * l.W + 2 ≤ 52 * l.L ∧
-    128 * l.W ≤ 416 * l.R := by
+theorem conv_bounds (hl : LayOk l) : 1 ≤ l.W ∧ 64 * l.W ≤ 52 * l.L ∧ l.L ≤ 40 ∧ 64 * l.W + 2 ≤ 52 * l.S ∧
+    128 * l.W ≤ 104 * l.S ∧ l.S ≤ l.L := by
   rcases hl with rfl | rfl | rfl <;> decide
 
 theorem and_mask' (x : BitVec 64) : x &&& mask52 = BitVec.ofNat 64 (x.toNat % 2 ^ 52) := AmmSym.and_mask' x

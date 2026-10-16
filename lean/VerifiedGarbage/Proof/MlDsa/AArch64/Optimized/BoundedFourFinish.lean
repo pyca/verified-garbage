@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdaptive
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEpi
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEpi
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-! ## From `BoundedFourMasked.lean` -/
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Argon2.Arm.HPrime
+import VerifiedGarbage.Impl.Argon2.Arm.HPrime
 
 /-!
 # Argon2 derivation on ARMv7: the frame

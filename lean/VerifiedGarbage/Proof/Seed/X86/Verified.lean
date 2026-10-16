@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Seed.X86.Ecb
 meta import VerifiedGarbage.Proof.Seed.X86.Ecb
 public import VerifiedGarbage.Proof.Seed.X86.Lit
@@ -8,6 +12,8 @@ public import VerifiedGarbage.Proof.Seed.Scratch
 meta import VerifiedGarbage.Proof.Seed.Scratch
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -18,6 +24,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Aes.X86.Sbox
+meta import VerifiedGarbage.Proof.Aes.X86.Sbox
 
 /-!
 # SEED ECB on x86 (32-bit) meets its contracts
@@ -100,12 +108,26 @@ theorem ecbTaint_agree (dir : Spec.Seed.Direction) {s₁ s₂ : State} (h₁ : (
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
-theorem ecb_ct (dir : Spec.Seed.Direction) : ConstantTime isa (ecbX86 dir).pre (ecbX86 dir).pub (ecb dir) := by
+/-- What is public at the loop of rounds: the stack pointer, the round keys'
+and the scratch buffer's pointers, the flags, and the data pointer and the
+blocks left in their slots. -/
+def roundsTaint : VG.X86.Taint.T :=
+  { regs := .ofList [.esp, .esi, .edi], flags := true, lens := [0, 4 * Impl.Seed.X86.slots],
+    bases := [(.edi, 1, 0)], slots := [(1, 4 * Impl.Seed.X86.ptrSlot, 8)], argLen := 20,
+    argBases := [(8, 0), (16, 1)] }
+
+/-! The loop of rounds, which both directions run, analysed once, as a summary. -/
+
+taint_summary roundsSum : VG.X86.taint roundsTaint (.block Impl.Seed.X86.roundPair)
+
+theorem ecb_taint (dir : Spec.Seed.Direction) : ∃ h, (VG.X86.taint.check ecbTaint (ecb dir) h).isSome = true := by
   cases dir
-  · exact VG.Taint.constantTime (A := VG.X86.taint) ecbTaint
-      (fun _ _ h₁ h₂ hp => ecbTaint_agree .encrypt h₁ h₂ hp) (by taint_decide)
-  · exact VG.Taint.constantTime (A := VG.X86.taint) ecbTaint
-      (fun _ _ h₁ h₂ hp => ecbTaint_agree .decrypt h₁ h₂ hp) (by taint_decide)
+  · native_taint_decide_sum [roundsSum]
+  · native_taint_decide_sum [roundsSum]
+
+theorem ecb_ct (dir : Spec.Seed.Direction) : ConstantTime isa (ecbX86 dir).pre (ecbX86 dir).pub (ecb dir) :=
+  let ⟨_, h⟩ := ecb_taint dir
+  VG.Taint.constantTime (A := VG.X86.taint) ecbTaint (fun _ _ h₁ h₂ hp => ecbTaint_agree dir h₁ h₂ hp) h
 
 theorem ecb_correct (dir : Spec.Seed.Direction) (s : State) (hs : (ecbX86 dir).pre s) :
     ∃ t s', Exec isa (ecb dir) s t s' ∧ abiPreserved s s' ∧ (ecbX86 dir).post s s' :=
@@ -131,16 +153,19 @@ def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 128⟩, ⟨
 def narrowWr (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 16 * (arg s 2).toNat⟩, ⟨(arg s 3).setWidth 64, 4 * Impl.Seed.X86.slots⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [VG.Proof.Seed.ecbX86, VG.Proof.Seed.X86.wideContract,
-    VG.Proof.Seed.X86.narrowRd, VG.Proof.Seed.X86.narrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+tactic_template "narrow_seed_x86_verified" : tactic => `(tactic| simp only [VG.Proof.Seed.ecbX86, VG.Proof.Seed.X86.wideContract,
+                     VG.Proof.Seed.X86.narrowRd, VG.Proof.Seed.X86.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+tactic_template "narrow_seed_x86_verified" loc:Lean.Parser.Tactic.location : tactic => `(tactic| simp only [VG.Proof.Seed.ecbX86, VG.Proof.Seed.X86.wideContract,
+                     VG.Proof.Seed.X86.narrowRd, VG.Proof.Seed.X86.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem wide_pre (dir : Spec.Seed.Direction) (s : State) (h : (wideContract dir).pre s) :
     (ecbX86 dir).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  narrow_seed_x86_verified
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -206,10 +231,10 @@ theorem ecb_verified (dir : Spec.Seed.Direction) :
     simp only [narrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    narrow_seed_x86_verified at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    narrow_seed_x86_verified
     exact h
 
 /-- A state satisfying the ECB functions' precondition: the schedule at

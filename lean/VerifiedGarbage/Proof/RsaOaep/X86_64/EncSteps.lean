@@ -6,6 +6,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCall
 
 /-!
 # RSAES-OAEP encryption on x86-64: the points between the pieces
@@ -124,7 +129,7 @@ theorem ew_copySeed {Hm : Stream} (hl : Hs.len = Hm.D) (hD : 0 < Hm.D) (hD64 : H
   have hc : ∀ i < Hm.D, (⟨stackArg s 4, Hs.len⟩ : Region).Contains (stackArg s 4 + BitVec.ofNat 64 i) 1 :=
     fun i hi => Offset.contains_base (stackArg s 4) (d := i) (n := 1) (k := Hs.len) (by omega) (by omega)
   exact WP.mono (wp_good (copySeed_good _) (copySeed_ok (H := Hm) h.L R w31 hD hD64
-    (fun i hi => ⟨_, List.mem_append_left _ (by rw [h.he.rd, hp.hrd]; simp), hc i hi⟩)
+    (fun i hi => hp.rd_in h.he.rd (by simp [rdL]) (hc i hi))
     (fun i hi j hj => ne_of_disjoint hp.d_sd_scr (hc i hi) (Offset.contains_base _
       (by unfold oEm at *; omega) (by unfold oEm at *; omega)))))
     fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ =>
@@ -137,7 +142,7 @@ theorem EW.lab {t : State} (h : EW s t) {W : Nat → BitVec 64} (hW : ArgsW s W)
   have hsl := hp.hsl
   have sS : Region.Sub ⟨stackArg s 5, oRsa⟩ (scrR s) := Region.sub_prefix (by unfold oRsa; omega)
   exact ⟨w27, by rw [w28, BitVec.ofNat_toNat, BitVec.setWidth_eq], (stackArg s 1).isLt,
-    Covers.left (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr, h.he.rd, hp.hrd]; simp),
+    Covers.left (by rw [h.he.rd]; exact (Covers.of_mem fun r hr => by rw [List.mem_singleton.mp hr]; simp [rdL]).trans hp.hrd),
     hp.d_lb_scr.sub_right sS, hp.d_stk_lb.sub_left (ret_sub s)⟩
 
 theorem ew_hashLabel {Hm : Hash} (hH : HashOK Hm) (KH : Callees Hm) (mH : MgfLink Hm hH) {t : State}
@@ -166,7 +171,7 @@ theorem ew_putMsg {D : Nat} (hk : 2 * D + 2 + (stackArg s 3).toNat ≤ (s.gpr .r
       (stackArg s 2 + BitVec.ofNat 64 i) 1 := fun i hi => Offset.contains_base _ (by omega) (by omega)
   exact WP.mono (wp_good putMsg_good (putMsg_ok h.L R (k := (s.gpr .rcx).toNat) (mLen := (stackArg s 3).toNat)
     (by rw [w23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (by rw [w30, BitVec.ofNat_toNat, BitVec.setWidth_eq]) w29
-    (by omega) hk2 (fun i hi => ⟨_, List.mem_append_left _ (by rw [h.he.rd, hp.hrd]; simp), hmA i hi⟩)
+    (by omega) hk2 (fun i hi => hp.rd_in h.he.rd (by simp [rdL]) (hmA i hi))
     (fun i hi j hj => ne_of_disjoint hp.d_ms_scr (hmA i hi) (Offset.contains_base _ (by omega) (by omega)))))
     fun t1 ⟨⟨L1, k1, R1⟩, sp1, mx1, f1⟩ =>
       ⟨h.he.step k1.2.1 k1.2.2 sp1 (keep_cs3 k1 (by decide)) mx1 f1, L1, _, W, R1, hW⟩

@@ -3,10 +3,12 @@ module
 public import VerifiedGarbage.Impl.Sm4.X86.ExpandKey
 public import VerifiedGarbage.Proof.Sm4.Bitsliced32
 public import VerifiedGarbage.Proof.Framework.X86.Linear
+public import VerifiedGarbage.Proof.Sm4.X86.LayersLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # The linear layers of bitsliced SM4 on x86 (32-bit), by evaluation
@@ -95,37 +97,65 @@ def linG (l : Lin) (a j p : Nat) : List Nat :=
 def linOuts (l : Lin) (a : Nat) : List (Nat × (Nat → List Nat)) :=
   (List.range 8).map (fun j => (stateSlot a j, linG l a j)) ++ stateKeep 8 a
 
+/-- `linG` written out, without `List.map`, whose evaluation by the kernel
+costs most of a check that evaluates `linG` at every bit of every output
+(`linOuts_eq_flat`). -/
+def linGFlat : Lin → Nat → Nat → Nat → List Nat
+  | .enc, a, j, p =>
+    if 2 ≤ j then
+      [32 * (8 + 8 * a + j) + p, 32 * j + W32.rotP p 0, 32 * j + W32.rotP p 3, 32 * (j - 2) + W32.rotP p 0,
+        32 * (j - 2) + W32.rotP p 1, 32 * (j - 2) + W32.rotP p 2]
+    else
+      [32 * (8 + 8 * a + j) + p, 32 * j + W32.rotP p 0, 32 * j + W32.rotP p 3, 32 * (j + 6) + W32.rotP p 1,
+        32 * (j + 6) + W32.rotP p 2, 32 * (j + 6) + W32.rotP p 3]
+  | .key, a, j, p =>
+    [32 * (8 + 8 * a + j) + p, 32 * j + W32.rotP p 0,
+      if 5 ≤ j then 32 * (j - 5) + W32.rotP p 1 else 32 * (j + 3) + W32.rotP p 2,
+      if j = 7 then 32 * 0 + W32.rotP p 2 else 32 * (j + 1) + W32.rotP p 3]
+
+theorem linG_eq_flat : linG = linGFlat := by
+  funext l a j p
+  cases l <;> simp only [linG, linGFlat, Lin.terms, Proof.Sm4.linTerms, Proof.Sm4.keyTerms]
+  · split <;> simp
+  · by_cases h5 : 5 ≤ j <;> by_cases h7 : j = 7 <;> simp [h5, h7]
+
+def linOutsFlat (l : Lin) (a : Nat) : List (Nat × (Nat → List Nat)) :=
+  (List.range 8).map (fun j => (stateSlot a j, linGFlat l a j)) ++ stateKeep 8 a
+
+theorem linOuts_eq_flat : linOuts = linOutsFlat := by
+  funext l a; simp only [linOuts, linOutsFlat, linG_eq_flat]
+
 theorem linE0_check :
     check (lanes 32 11) linCfg (linExt 40) (lin .enc 0) (linEnv linIns) (linPost tableSlot 11 (linOuts .enc 0)) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linE1_check :
     check (lanes 32 11) linCfg (linExt 40) (lin .enc 1) (linEnv linIns) (linPost tableSlot 11 (linOuts .enc 1)) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linE2_check :
     check (lanes 32 11) linCfg (linExt 40) (lin .enc 2) (linEnv linIns) (linPost tableSlot 11 (linOuts .enc 2)) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linE3_check :
     check (lanes 32 11) linCfg (linExt 40) (lin .enc 3) (linEnv linIns) (linPost tableSlot 11 (linOuts .enc 3)) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linK0_check :
     check (lanes 32 11) linCfg (linExt 40) (lin .key 0) (linEnv linIns) (linPost tableSlot 11 (linOuts .key 0)) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linK1_check :
     check (lanes 32 11) linCfg (linExt 40) (lin .key 1) (linEnv linIns) (linPost tableSlot 11 (linOuts .key 1)) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linK2_check :
     check (lanes 32 11) linCfg (linExt 40) (lin .key 2) (linEnv linIns) (linPost tableSlot 11 (linOuts .key 2)) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linK3_check :
     check (lanes 32 11) linCfg (linExt 40) (lin .key 3) (linEnv linIns) (linPost tableSlot 11 (linOuts .key 3)) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 /-! ## The transposes -/
 
@@ -144,7 +174,7 @@ def toBsOuts : List (Nat × (Nat → List Nat)) :=
 
 theorem toBs_check :
     check (lanes 32 10) bsCfg (linExt 0) toBs (linEnv tailIns) (linPost tableSlot 10 toBsOuts) = true := by
-  decide +kernel
+  lit_decide
 
 /-- Bit `8 i + j` of the tail buffer's word `t = 4 b + w`, byte `i` (from the
 most significant) of word `w` of block `b`: plane `j` of the state's word
@@ -156,7 +186,7 @@ def fromBsOuts : List (Nat × (Nat → List Nat)) :=
 
 theorem fromBs_check :
     check (lanes 32 10) bsCfg (linExt 0) fromBs (linEnv (stateIns 0)) (linPost tableSlot 10 fromBsOuts) = true := by
-  decide +kernel
+  lit_decide
 
 /-! ## The round keys' planes -/
 

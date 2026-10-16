@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.State
-public import VerifiedGarbage.Proof.Divstep.Batch
+import VerifiedGarbage.Proof.Divstep.Batch
 public import VerifiedGarbage.Proof.Divstep.Word
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

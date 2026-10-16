@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.P521.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P521Sha512
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-521 with HMAC-SHA-512 on AArch64

@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.CTCode
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Implies
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Implies
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # A candidate for an RSA prime on x86-64: verified against the shared contract

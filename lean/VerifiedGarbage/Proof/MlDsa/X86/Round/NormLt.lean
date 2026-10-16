@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_norm_lt`
@@ -170,7 +174,7 @@ theorem nl_piece : Piece NPre NPub (fun s₀ s => s = s₀)
     ((Piece.seq (B := NS1) ?_ (Piece.seq (B := fun s₀ s => NInv s₀ 256 s)
       (Piece.seq (B := fun s₀ s => NInv s₀ 0 s) ?_ ?_) ?_)).mono
       (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨by rw [h.1.mem]; exact Frame.refl _ _, h.1.esp, h.1.rd, h.1.wr⟩, h⟩)
-  · refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by taint_decide)
+  · refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_) (by native_taint_decide)
     · subst e
       have hin : aR s₀ 2 ∈ s₀.rd ++ s₀.wr := by simp [hp.rd]
       obtain ⟨a₀, i₀, v₀⟩ := arg_P0 (i := 0) (by omega) hp.sp hp.sp' hin hp.stk_a
@@ -185,7 +189,7 @@ theorem nl_piece : Piece NPre NPub (fun s₀ s => s = s₀)
       subst hr
       rw [e, e', P0_esp, P0_esp, hq.1]
   · refine Piece.taint [] (fun s₀ s hp h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-      (by taint_decide)
+      (by native_taint_decide)
     refine wp_movi fun s₁ u₁ => WP.block_nil_iff.mpr ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [u₁.other _ (by decide), h.esp]
     · rw [u₁.rd, h.rd]
@@ -202,9 +206,9 @@ theorem nl_piece : Piece NPre NPub (fun s₀ s => s = s₀)
         rcases hr with rfl | rfl | rfl
         · rw [h.esp, h'.esp, P0_esp, P0_esp, hq.1]
         · rw [h.esi, h'.esi, hq.2.1]
-        · rw [h.ecx, h'.ecx]) (by taint_decide)
+        · rw [h.ecx, h'.ecx]) (by native_taint_decide)
   · refine Piece.taint [] (fun s₀ s hp h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-      (by taint_decide)
+      (by native_taint_decide)
     refine wp_mov fun s₁ u₁ => wp_andi fun s₂ u₂ => WP.block_nil_iff.mpr ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
     · rw [u₂.other _ (by decide), u₁.other _ (by decide), h.esp]
     · rw [u₂.rd, u₁.rd, h.rd]

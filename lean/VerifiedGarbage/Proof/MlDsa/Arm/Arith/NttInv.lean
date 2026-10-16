@@ -6,6 +6,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_inv_ntt`
@@ -190,7 +196,7 @@ theorem correct {s : State} (hp : PreE s) :
   · rw [← eP, ← eF, VG.Proof.MlDsa.Arith.nttInv_eq_layers]; exact hP
 
 theorem verified : Verified Arm.target Impl.MlDsa.Arm.Arith.nttInv (Spec.MlDsa.nttInvContract Arm.abi 28) := by
-  refine ⟨fun s hs => ?_, ct_of_saving nttSaved _ [.r0, .r1] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
+  refine ⟨fun s hs => ?_, ct_of_saving nttSaved _ [.r0, .r1] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, h⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
     sig_post [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, Arm.abi,

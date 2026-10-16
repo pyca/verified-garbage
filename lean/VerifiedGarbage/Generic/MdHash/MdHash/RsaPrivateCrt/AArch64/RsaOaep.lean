@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Inst
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # RSAES-OAEP decryption on AArch64

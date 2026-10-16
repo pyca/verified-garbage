@@ -4,9 +4,11 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
-public import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
+import VerifiedGarbage.Proof.MlKem1024.AArch64.KeyGen
+import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
+import VerifiedGarbage.Proof.MlKem1024.AArch64.Decaps
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-! # ML-KEM-1024 on AArch64 -/
 

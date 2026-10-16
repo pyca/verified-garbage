@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate on AArch64: correctness
@@ -39,7 +41,7 @@ theorem candEnd_post {s t₃ t : State}
       Spec.Rsa.wordsAt t.mem (s.gpr .x2) 1 = [BitVec.ofNat 64 u] := by
     intro st u outv hst hk
     refine ⟨abiPreserved_of_keep ((kk.trans hk.keep).mono (by decide)), ?_, ?_, ?_⟩
-    · rw [hk.x0, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega
+    · rw [hk.x0, BitVec.toNat_setWidth, BitVec.toNat_ofNat]; omega_using [hst]
     · show outBytes t.mem _ _ = _
       have := hk.out
       cases outv
@@ -89,7 +91,7 @@ theorem entry_ok {s : State} (c : KCtx s) : WP isa (.block kEntry) s (EntryPost 
   have hn := hs.nowrap
   have hZ := c.hZ
   have hk1 := c.k1
-  exact WP.mono (kEntry_ok rfl (fun i hi => hs.st (by omega)) c.ha c.hsep) fun _ ⟨a, b, d, e⟩ => ⟨a, b, d, e⟩
+  exact WP.mono (kEntry_ok rfl (fun i hi => hs.st (by omega_using [hZ, hk1, hi])) c.ha c.hsep) fun _ ⟨a, b, d, e⟩ => ⟨a, b, d, e⟩
 
 /-- After the zeros to `out`. -/
 structure Zeroed (s t₁ t : State) : Prop where
@@ -104,8 +106,8 @@ theorem zeros_ok {s t₁ : State} (c : KCtx s) (he : EntryPost s t₁) :
   have hZ := c.hZ
   have hk1 := c.k1
   have hk2 := c.k2
-  exact WP.mono (zeroOut_ok (len := (s.gpr .x1).toNat) (hs.congr he.keep.wr) he.x0 (by omega) (sPtr := kOut)
-    (sLen := kLen) (by decide) (by decide) he.args.out (by rw [he.args.len, ofNat_toNat64]) (by omega) (by omega)
+  exact WP.mono (zeroOut_ok (len := (s.gpr .x1).toNat) (hs.congr he.keep.wr) he.x0 (by omega_using [hZ, hk1]) (sPtr := kOut)
+    (sLen := kLen) (by decide) (by decide) he.args.out (by rw [he.args.len, ofNat_toNat64]) (by omega_using [hk1]) (by omega_using [hk2])
     ⟨fun j hj => by rw [he.keep.wr]; exact c.ou.outw j hj, c.ou.outZ⟩) fun _ ⟨a, b, d⟩ => ⟨a, b, d⟩
 
 /-- The header words survive the zeros to `out`. -/
@@ -115,7 +117,7 @@ theorem Zeroed.word {s t₁ t : State} (c : KCtx s) (h : Zeroed s t₁ t) {i : N
   have hZ := c.hZ
   have hk1 := c.k1
   exact Mem.readW_congr fun b hb => h.frame _ fun j hj he' => by
-    have := c.ou.outZ j hj; rw [← he', ofs_off _ (by omega)] at this; omega
+    have := c.ou.outZ j hj; rw [← he', ofs_off _ (by omega_using [hi, hb])] at this; omega_using [hi, hZ, hk1, hb, this]
 
 /-- After the length check, from the state `s` on entry. -/
 structure Front (s t : State) : Prop where
@@ -136,7 +138,7 @@ theorem lenCheck_ok {s t₁ t₂ : State} (c : KCtx s) (he : EntryPost s t₁) (
   have hk1 := c.k1
   have hs₂ := (hs.congr he.keep.wr).congr hz.keep.wr
   have h0₂ : t₂.gpr .x0 = stackArg s 1 := (hz.keep.gpr .x0 (by decide)).trans he.x0
-  have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (stackArg s 1) (8 * i)) 8 := fun i hi => hs₂.ld (by omega)
+  have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (stackArg s 1) (8 * i)) 8 := fun i hi => hs₂.ld (by omega_using [hZ, hk1, hi])
   refine WP.block_append_iff.mpr (WP.mono (WP.keep [.x3, .x4] (Q := fun t => t.gpr .x3 = stackArg s 0 ∧
       t.gpr .x4 = s.gpr .x1 ∧ t.mem = t₂.mem) (by
     brun [h0₂, hdr_enc (show kRandLen < 32 by decide), hdr_enc (show kLen < 32 by decide), hl₂ kRandLen (by decide),
@@ -148,7 +150,7 @@ theorem lenCheck_ok {s t₁ t₂ : State} (c : KCtx s) (he : EntryPost s t₁) (
   have hm4 : t₄.mem = t₂.mem := hm₄.trans hm₃
   exact ⟨((k₃.trans k₄).gpr .x0 (by decide)).trans h0₂, h5₄, fun i hi => by rw [hm4]; exact hz.zero i hi,
     he.args.congr fun i hi => by rw [hm4]; exact hz.word c hi,
-    fun x hx hx' => by rw [hm4, hz.frame x hx', he.out x (Or.inr (by omega))],
+    fun x hx hx' => by rw [hm4, hz.frame x hx', he.out x (Or.inr (by omega_using [hx]))],
     (((he.keep.trans hz.keep).trans k₃).trans k₄).mono (by decide)⟩
 
 /-- A buffer apart from `out` keeps its octets through the front. -/
@@ -158,7 +160,7 @@ theorem Front.src {s t : State} (c : KCtx s) (h : Front s t) {p : Addr} {bs : Li
     Src t (stackArg s 1) ((stackArg s 2).toNat * 8) p bs := by
   have hZ := c.hZ
   have hk1 := c.k1
-  exact Src.congr' hp (fun i hi => h.hi _ (by have := hp.out i hi; omega) (hd i hi)) h.keep.rd h.keep.wr
+  exact Src.congr' hp (fun i hi => h.hi _ (by have := hp.out i hi; omega_using [hZ, hk1, this]) (hd i hi)) h.keep.rd h.keep.wr
 
 /-- What `kMain` needs, after the front with enough octets. -/
 theorem mainCtx_of {s t : State} {w : Nat} (c : KCtx s) (h : Front s t) (hw : (s.gpr .x1).toNat = 8 * w)
@@ -171,7 +173,7 @@ theorem mainCtx_of {s t : State} {w : Nat} (c : KCtx s) (h : Front s t) (hw : (s
   have hk1 := c.k1
   have hk2 := c.k2
   exact
-    { scr := c.hs.congr h.keep.wr, x0 := h.x0, z := by omega, w4 := by omega, w64 := by omega,
+    { scr := c.hs.congr h.keep.wr, x0 := h.x0, z := by omega_using [hw, hZ], w4 := by omega_using [hw, hk1], w64 := by omega_using [hw, hk2],
       out := h.args.out, len := by rw [h.args.len, ← hw, ofNat_toNat64], usedP := h.args.usedP,
       e := h.args.e, elen := by rw [h.args.elen, bytesAt_length, ofNat_toNat64], p := h.args.p,
       plen := by rw [h.args.plen, bytesAt_length, ofNat_toNat64], rand := h.args.rand,
@@ -193,8 +195,8 @@ theorem candRes_main {s : State} {w : Nat} (hw : (s.gpr .x1).toNat = 8 * w) (hw4
         (Spec.Rsa.os2ip ((Spec.Rsa.bytesAt s.mem (s.gpr .x7) (stackArg s 0).toNat).take (8 * w))))
       ((Spec.Rsa.bytesAt s.mem (s.gpr .x7) (stackArg s 0).toNat).drop (8 * w)) := by
   unfold candRes Spec.RsaKeyGen.candidateOp
-  rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega),
-    VG.Proof.RsaKeyGen.ite_t (by rw [bytesAt_length]; omega), show 8 * (8 * w) = 64 * w by omega]
+  rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hw4]),
+    VG.Proof.RsaKeyGen.ite_t (by rw [bytesAt_length]; omega_using [hw, hlt]), show 8 * (8 * w) = 64 * w by omega_using []]
   simp only [VG.Proof.RsaKeyGen.seg, List.drop_zero]
 
 /-- With too few octets: status 0. -/
@@ -203,14 +205,14 @@ theorem front_none {s t : State} (c : KCtx s) (h : Front s t) (hlt : (stackArg s
   have hZ := c.hZ
   have hk1 := c.k1
   have ho := c.ou.congr h.keep.wr
-  refine WP.mono (finNone_ok (up := s.gpr .x2) (c.hs.congr h.keep.wr) h.x0 (by omega) h.args.usedP ho.upw)
+  refine WP.mono (finNone_ok (up := s.gpr .x2) (c.hs.congr h.keep.wr) h.x0 (by omega_using [hZ, hk1]) h.args.usedP ho.upw)
     fun t' ht => candEnd_post h.zero h.keep ?_
   have hnone : candRes s = none := by
     unfold candRes Spec.RsaKeyGen.candidateOp
     have hk8 := c.k8
-    obtain ⟨w, hw⟩ : ∃ w, (s.gpr .x1).toNat = 8 * w := ⟨(s.gpr .x1).toNat / 8, by omega⟩
-    rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega),
-      VG.Proof.RsaKeyGen.ite_f (by rw [bytesAt_length]; omega)]
+    obtain ⟨w, hw⟩ : ∃ w, (s.gpr .x1).toNat = 8 * w := ⟨(s.gpr .x1).toNat / 8, by omega_using [hk8]⟩
+    rw [hw, VG.Proof.RsaKeyGen.candidateStep_eq _ _ _ _ (by omega_using [hk1, hw]),
+      VG.Proof.RsaKeyGen.ite_f (by rw [bytesAt_length]; omega_using [hlt, hw])]
   rw [hnone]; exact KEnd.of_fin ho ht
 
 /-- `vg_rsa_keygen_candidate` ends as the specification says. -/
@@ -222,7 +224,7 @@ theorem code_correct (M : Mont) (s : State) (h : candContract.pre s) :
     exact ⟨t, s', he, hg, hp⟩
   have hk1 := c.k1
   have hk8 := c.k8
-  obtain ⟨w, hw⟩ : ∃ w, (s.gpr .x1).toNat = 8 * w := ⟨(s.gpr .x1).toNat / 8, by omega⟩
+  obtain ⟨w, hw⟩ : ∃ w, (s.gpr .x1).toNat = 8 * w := ⟨(s.gpr .x1).toNat / 8, by omega_using [hk8]⟩
   unfold code
   simp only [seqs]
   refine WP.seq (WP.mono (entry_ok c) fun t₁ he => ?_)
@@ -235,7 +237,7 @@ theorem code_correct (M : Mont) (s : State) (h : candContract.pre s) :
     exact front_none c hf hlt
   · simp only [Bool.not_eq_false', decide_eq_true_eq] at hlt
     refine WP.mono (kMain_ok M (mainCtx_of c hf hw hlt)) fun t ht => candEnd_post hf.zero hf.keep ?_
-    rw [candRes_main hw (by omega) hlt, hw]
+    rw [candRes_main hw (by omega_using [hk1, hw]) hlt, hw]
     exact ht
 
 end VG.Proof.RsaKeyGen.AArch64

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
 meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 public import VerifiedGarbage.Proof.Sha256.Md
 meta import VerifiedGarbage.Proof.Sha256.Md
@@ -16,6 +16,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # Streaming SHA-256 on x86-64: `update` and `finalize`
@@ -42,6 +46,7 @@ abbrev params := Impl.Sha256.X86_64.Stream.params
 theorem dims : Dims params := ⟨.inl rfl, by decide, by decide, by decide⟩
 
 theorem shape : Shape (P := params) md where
+  lenV s := (lenV64_ok true s).mono fun _ ⟨g, rd, wr, m, x0, x7⟩ => ⟨g, rd, wr, m, x0, x7⟩
   len s hout := by
     rw [show params.len = len64 88 true ++ [] from rfl]
     exact len64_ok hout fun s' g rd wr m => WP.block_nil ⟨g, rd, wr, m⟩

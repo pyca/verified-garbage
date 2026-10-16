@@ -6,24 +6,28 @@ public import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 meta import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
 public import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 meta import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
-public import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
 meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
-public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
 meta import VerifiedGarbage.Impl.Sha512.X86_64.Stream
-public import VerifiedGarbage.Proof.Sha512.X86_64.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
 
 /-!
 # Streaming SHA-512 on x86-64: `update` and `finalize`
@@ -100,6 +104,8 @@ theorem digest_eq (mem : Mem) (p : Addr) :
     Spec.Sha512.wordBytes]
 
 theorem shape : Shape (P := params) md where
+  lenV s := (lenV128_ok s).mono fun _ ⟨g, rd, wr, m, x0, x7⟩ => ⟨g, rd, wr, m, x0, by
+    rw [x7, lenOf_split]; rfl⟩
   len s hout := len_ok s hout
   out s hin hout hd := by
     refine (out64_ok (n := 8) (by decide) hin hout hd).mono fun s' ⟨g, rd, wr, m⟩ => ⟨g, rd, wr, ?_⟩

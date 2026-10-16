@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
+import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain

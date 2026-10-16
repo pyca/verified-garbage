@@ -118,18 +118,123 @@ impl Curve for P521 {
 }
 
 /// The curve secp256k1 (SEC 2 version 2.0, §2.4.1).
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Secp256k1 {}
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 impl sealed::Sealed for Secp256k1 {}
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 impl Curve for Secp256k1 {
     type PrivateKey = [u8; 32];
     type PublicKey = [u8; 65];
     type Signature = [u8; 64];
+}
+
+/// The curve brainpoolP256r1 (RFC 5639 §3.4).
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BrainpoolP256r1 {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
+impl sealed::Sealed for BrainpoolP256r1 {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
+impl Curve for BrainpoolP256r1 {
+    type PrivateKey = [u8; 32];
+    type PublicKey = [u8; 65];
+    type Signature = [u8; 64];
+}
+
+/// The curve brainpoolP384r1 (RFC 5639 §3.6).
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BrainpoolP384r1 {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
+impl sealed::Sealed for BrainpoolP384r1 {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
+impl Curve for BrainpoolP384r1 {
+    type PrivateKey = [u8; 48];
+    type PublicKey = [u8; 97];
+    type Signature = [u8; 96];
+}
+
+/// The curve brainpoolP512r1 (RFC 5639 §3.7).
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BrainpoolP512r1 {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+impl sealed::Sealed for BrainpoolP512r1 {}
+
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+impl Curve for BrainpoolP512r1 {
+    type PrivateKey = [u8; 64];
+    type PublicKey = [u8; 129];
+    type Signature = [u8; 128];
 }
 
 /// The curve P-192 (NIST SP 800-186, §3.2.1.1).

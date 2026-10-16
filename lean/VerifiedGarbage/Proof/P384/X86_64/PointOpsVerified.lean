@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.P384.X86_64.PointOpsLay
 public import VerifiedGarbage.Proof.P384.X86_64.PointOpsLit
-public import VerifiedGarbage.Proof.P384.X86_64.JointTiming
+import VerifiedGarbage.Proof.P384.X86_64.JointTiming
 public import VerifiedGarbage.Proof.P384.X86_64.JacTiming
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -10,6 +10,15 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Weierstrass.PointFacts
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsCT
 
 /-!
 # P-384's point functions on x86-64: their `Verified`

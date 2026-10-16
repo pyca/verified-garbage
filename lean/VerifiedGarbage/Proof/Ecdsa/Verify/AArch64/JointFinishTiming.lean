@@ -1,39 +1,43 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedDigitTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCachedDigitTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCachedDigitTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCachedDigitTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointPairedTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointPairedTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointPairedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPairedTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticRR
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointCacheTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFinish
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Inplace
 
 /-! ## `JointChecks` -/
 

@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: what the proofs of `encaps` and `decaps` share
@@ -71,7 +73,7 @@ theorem KArgs.stkR {A : Nat → Addr} {ln : Nat → Nat} {nb nrd : Nat} {sp : Ad
   (h.stk b hb).sub_right (R.sub f)
 
 structure Pre (P : KemLay) (L : Layout) (s₀ : State) : Prop where
-  rd : s₀.rd = (List.range L.nrd).map fun b => ⟨kA s₀ b, L.len b⟩
+  rd : ∀ b < L.nrd, (⟨kA s₀ b, L.len b⟩ : Region) ∈ s₀.rd
   wr : s₀.wr = (List.range' L.nrd (L.nb - L.nrd)).map fun b => ⟨kA s₀ b, L.len b⟩
   args : KArgs (kA s₀) L.len L.nb L.nrd s₀.sp
   sp16 : 16 ≤ s₀.sp.toNat
@@ -213,9 +215,9 @@ theorem cov_w {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {b o l : 
 /-- Regions a callee may read. -/
 theorem cov_r {s₀ s : State} (hp : Pre P L s₀) (h : KB P L s₀ s) {b o l : Nat} (hb : b < L.nb)
     (f : o + l ≤ L.len b) : Covers [R (kA s₀) b o l] (s.rd ++ s.wr) := by
-  rw [h.rd, h.wr, hp.rd, hp.wr]
+  rw [h.rd, h.wr, hp.wr]
   by_cases hr : b < L.nrd
-  · exact R.cov (List.mem_append_left _ (List.mem_map.mpr ⟨b, List.mem_range.mpr hr, rfl⟩)) f
+  · exact R.cov (List.mem_append_left _ (hp.rd b hr)) f
   · exact R.cov (List.mem_append_right _
       (List.mem_map.mpr ⟨b, List.mem_range'_1.mpr ⟨by omega, by omega⟩, rfl⟩)) f
 

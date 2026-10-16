@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Camellia.X86_64.Layers
 public import VerifiedGarbage.Proof.Camellia.Bitsliced
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -127,12 +127,12 @@ def kidx : Reg → Nat
   | .r4 => 2 | .r5 => 3 | .r6 => 4 | _ => 0
 
 /-- Decides a fact about the offsets in the buffers. -/
-macro "ldecide" : tactic => `(tactic| first
-  | decide
-  | ((try simp only [lay_sizes, kSz, kidx, okW, kRegs, List.all_cons, List.all_nil, List.all_append, List.map_cons,
-        List.map_nil, trip, Bool.and_true])
-     (try have := (‹KemLay.WF _›).scr)
-     kdecide))
+macro "ldecide" : tactic => `(tactic| plain_simp_names first
+                   | decide
+                   | ((try simp only [lay_sizes, kSz, kidx, okW, kRegs, List.all_cons, List.all_nil, List.all_append, List.map_cons,
+                         List.map_nil, trip, Bool.and_true])
+                      (try have := (‹KemLay.WF _›).scr)
+                      kdecide))
 
 theorem KEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : KEnv K s₀ s) {xs : List Reg}
     {W : List (Nat × Nat × Nat)} (hk : KeptX xs ((lay s₀ K).RL W) s s') (hx : ∀ r ∈ [Reg.r4, .r5, .r6, .r7], r ∉ xs)
@@ -145,14 +145,15 @@ theorem KEnv.keep {K : KemLay} {s₀ s s' : State} (hp : Pre K s₀) (h : KEnv K
     List.all_eq_true.mpr fun w hw => by
       have := List.all_eq_true.mp hW w hw; simp only [okW, Bool.and_eq_true] at this; exact this.2
   have hd := Lay.disjAll hL h1
-  have hc : (Lay.R (lay s₀ K) 0 840 36).Contains ((lay s₀ K).A 0 872) 4 := by
-    simp only [Region.Contains]; bv_omega
+  have hc : (Lay.R (lay s₀ K) 0 840 36).Contains ((lay s₀ K).A 0 872) 4 :=
+    Offset.contains _ (by decide) (by decide) (by decide)
   refine ⟨hk.ctx (by simp at hx; exact hx.2.2.2) h.ctx, ?_, ?_, ?_, hk.rd.trans h.rd, hk.wr.trans h.wr,
     hk.sp.trans h.sp, fun i hi => ?_, ?_, ?_⟩
   · rw [hk.cs .r4 (by decide) (by decide) (hx .r4 (by simp)), h.r4]
   · rw [hk.cs .r5 (by decide) (by decide) (hx .r5 (by simp)), h.r5]
   · rw [hk.cs .r6 (by decide) (by decide) (hx .r6 (by simp)), h.r6]
-  · rw [hk.frame.readW (r := Lay.R (lay s₀ K) 0 840 36) (by simp only [Region.Contains]; bv_omega) hd (by decide)]
+  · rw [hk.frame.readW (r := Lay.R (lay s₀ K) 0 840 36)
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.contains _ (by omega) (by omega) (by omega)) hd (by decide)]
     exact h.sav i hi
   · rw [hk.frame.readW hc hd (by decide)]; exact h.savlr
   · rw [Lay.bytes_keep hL hk.frame h2 (by decide)]; exact h.seed
@@ -191,10 +192,12 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
   have eS : (lay s₀ K).A 0 840 = State.addr (s₀.gpr .r3) + BitVec.ofNat 64 840 := rfl
   have ne1 : ∀ i < 8, ∀ (m : Mem) (v : BitVec 32), (m.writeW ((lay s₀ K).A 0 872) v).readW
       ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
-    fun i hi m v => Mem.readW_writeW_sep (fun x h1 h2 => by bv_omega) (by decide)
+    fun i hi m v => Mem.readW_writeW_sep
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
   have ne2 : ∀ i < 9, ∀ (m : Mem) (v : Byte), (m.writeW ((lay s₀ K).A 0 1152) v).readW
       ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 = m.readW ((lay s₀ K).A 0 840 + BitVec.ofNat 64 (4 * i)) 32 :=
-    fun i hi m v => Mem.readW_writeW_sep (fun x h1 h2 => by bv_omega) (by decide)
+    fun i hi m v => Mem.readW_writeW_sep
+      (by rw [Offset.add_ofNat_add_ofNat]; exact Offset.sep _ (by omega) (by omega) (by omega)) (by decide)
   refine ⟨⟨⟨hL, hK.scr, rfl, by simp [lay], ?_, by show 8 ≤ s₁.sp.toNat; rw [h₁.sp]; exact hp.sp8, ?_, ?_⟩, ?_, ?_, ?_,
     h₁.rd, h₁.wr, h₁.sp, fun i hi => ?_, ?_, ?_⟩, ?_⟩
   · simp [h₁.gpr]; rfl
@@ -221,8 +224,8 @@ theorem setup_ok {K : KemLay} {s₀ : State} (hp : Pre K s₀) :
       · rw [List.mem_singleton] at hr; subst hr
         show Region.Sub (Lay.R (lay s₀ K) 0 840 32) _
         exact Lay.R_sub_R hL (by simp [lay]) (by decide) (by decide) (by simp [lay]; omega)
-      · simp only [Region.Contains]; bv_omega
-      · simp only [Region.Contains]; bv_omega
+      · exact Offset.contains _ (by decide) (by decide) (by decide)
+      · exact Offset.contains _ (by decide) (by decide) (by decide)
     exact Lay.bytes_keep hL fr (by ldecide) (by decide)
   · show ((s₁.mem.writeW _ _).writeW _ _) _ = _
     rw [e1152, writeW8_apply, ite_eq_left rfl, setWidth8_ofNat (by have := hK.k4; omega)]

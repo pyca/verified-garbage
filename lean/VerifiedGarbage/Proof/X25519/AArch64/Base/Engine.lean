@@ -1,14 +1,19 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.X25519.AArch64.Base
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.BitByte
 public import VerifiedGarbage.Proof.Ed25519.Bytes
-public import VerifiedGarbage.Proof.X25519.Edwards.Base
+import VerifiedGarbage.Proof.X25519.Edwards.Base
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.PointEncode
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # X25519 of the base point on AArch64: the engine
@@ -91,7 +96,7 @@ theorem uOps_eval (e : Env) :
     evalOps uOps e 0 = e 2 + e 1 ∧ evalOps uOps e 2 = e 2 - e 1 := by
   simp [uOps, evalOps, evalOp, Function.update]
 
-theorem uEncode_ok {s : State} {base : Addr} (hs : Scr s base) :
+theorem uEncode_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base : Addr} (hs : Scr s base) :
     WP isa uEncode s fun t => CounterKeep base s t ∧
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) =
         ((env s.mem base 2 + env s.mem base 1) *
@@ -106,7 +111,7 @@ theorem uEncode_ok {s : State} {base : Addr} (hs : Scr s base) :
 
 /-! ## The engine -/
 
-theorem engine_ok {s : State} {base k T : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
+theorem engine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base k T : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
     (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (htb : TblAt s base T) (hT : s.syms combSym = T) :
     WP isa engine s fun t => PowersKeep base 56 7368 s t ∧ ∃ w : Fe,

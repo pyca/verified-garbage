@@ -6,6 +6,20 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+public import VerifiedGarbage.Impl.Ed448.Wnaf
+public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLit
+public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
+public import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+public import VerifiedGarbage.Proof.X448.X86_64.Adx.Sqr
+public import VerifiedGarbage.Proof.X448.X86_64.Iter
 
 /-!
 # Ed448 verification on x86-64: correctness

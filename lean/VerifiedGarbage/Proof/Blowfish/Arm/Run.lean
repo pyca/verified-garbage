@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.Blowfish.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -8,6 +11,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # Blowfish on ARMv7: running blocks
@@ -140,23 +145,22 @@ theorem encodable_4096 : encodable (BitVec.ofNat 32 4096) = true := by decide
 theorem encodable_4160 : encodable (BitVec.ofNat 32 4160) = true := by decide
 
 /-- Runs a block of the Blowfish code. -/
-syntax "brun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| brun) => `(tactic| brun [])
-  | `(tactic| brun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,
-        encodable_of_lt, encodable_768, encodable_4096, encodable_4160,
-        Op2.eval, imm, sch, xL, xR, fReg, qReg, acc, mReg, lane, ones, tmp, rowPtr, rows, pPtr,
-        gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg, c_setReg,
-        gpr_subFlags, mem_subFlags, rd_subFlags, wr_subFlags, sp_subFlags, z_subFlags, c_subFlags,
-        State.load32, store32_eq, State.load8, store8_eq, sp_store, gpr_store, rd_store, wr_store,
-        mem_store, z_store, c_store, ↓ite_carry, ite_true, ite_false, ↓reduceIte, reduceCtorEq,
-        Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub,
-        and_self, Option.map_some,
-        Option.some.injEq, exists_eq_left', List.cons_append, List.nil_append, and_true, true_and,
-        $ls,*]))
+tactic_template "brun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil, exec,
+                         encodable_of_lt, encodable_768, encodable_4096, encodable_4160,
+                         Op2.eval, imm, sch, xL, xR, fReg, qReg, acc, mReg, lane, ones, tmp, rowPtr, rows, pPtr,
+                         gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg, c_setReg,
+                         gpr_subFlags, mem_subFlags, rd_subFlags, wr_subFlags, sp_subFlags, z_subFlags, c_subFlags,
+                         State.load32, store32_eq, State.load8, store8_eq, sp_store, gpr_store, rd_store, wr_store,
+                         mem_store, z_store, c_store, ↓ite_carry, ite_true, ite_false, ↓reduceIte, reduceCtorEq,
+                         Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub,
+                         and_self, Option.map_some,
+                         Option.some.injEq, exists_eq_left', List.cons_append, List.nil_append, and_true, true_and,
+                         $ls,*]))
+/-- `brun` with no extra lemmas. -/
+macro "brun" : tactic => `(tactic| brun [])
 
 /-! ## Offsets from a pointer -/
 

@@ -16,6 +16,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.Tactic.NormNum.Prime
+import VerifiedGarbage.Proof.Edwards.Group
+meta import Mathlib.FieldTheory.Finite.Basic
+meta import Mathlib.Tactic.NormNum.Prime
+meta import VerifiedGarbage.Proof.Edwards.Group
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed448.Group.Projective
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Ed448.Group.Projective
 
 /-!
 # Ed448 base-point multiplication on x86-64: `Verified`
@@ -70,8 +80,6 @@ theorem scalarBase_agree {s₁ s₂ : State} (h₁ : scalarBaseLocal.pre s₁)
   · rw [h₁.2.1, h₂.2.1, p1, p3]
   · intro sl h; simp [scalarBaseτ] at h
   · intro sl h; simp [scalarBaseτ] at h
-
-theorem scalarBase_inlineOk : scalarBase.InlineOk = true := by lit_decide
 
 theorem scalarBase_okI (hL : Proof.Ed448.BaseLadderOk) (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase.inline s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by

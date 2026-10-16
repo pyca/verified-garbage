@@ -9,6 +9,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # Deterministic ECDSA over P-521 with HMAC-SHA-512 on AArch64
@@ -115,7 +118,8 @@ def pack (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSou
   ecdsa := rfl
   hash := rfl
   len := rfl
-  tries := rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
   hDB := .inr (.inr (.inl ⟨rfl, rfl⟩))
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl

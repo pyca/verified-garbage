@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.J0
+import VerifiedGarbage.Proof.AesGcm.AArch64.J0
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Tag
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

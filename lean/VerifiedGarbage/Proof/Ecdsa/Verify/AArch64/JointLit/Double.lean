@@ -7,6 +7,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! The forwarded point doubling of P-256 verification (`VerifyDouble.double`) as a
 literal, checked once for the joint and allocated verifications, which call it

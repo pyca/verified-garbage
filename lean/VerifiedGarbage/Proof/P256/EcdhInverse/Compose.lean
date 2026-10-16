@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Divstep.NegInput
-public import VerifiedGarbage.Proof.Divstep.Packed
+import VerifiedGarbage.Proof.Divstep.Packed
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Divstep.WordDef
 
 @[expose] public section
 

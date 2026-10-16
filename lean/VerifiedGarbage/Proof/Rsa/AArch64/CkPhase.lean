@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkSteps
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
+import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 
 /-!
 # `vg_rsa_check_key` on AArch64: the phases of `main`
@@ -69,8 +72,8 @@ theorem phPQ_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c 
     (by decide) (by decide) h₁.args.q h₁.args.ql h₁.q L.qbl L.ql1 (Nat.le_of_lt L.ql2)) fun s₂ ⟨h₂, m₂, v₂, o₂⟩ => ?_)
   have x₂ : I.av s₂.mem aX = I.P := by rw [o₂ aX (by decide) (by decide), v₁]
   refine wp_seqs_append (by simp [mulXR]) (by simp [eqA]) (WP.mono (ckMulXR_ok h₂ L
-    (by rw [x₂]; exact lt_w (by rw [L.pbl]; exact Nat.le_of_lt L.pl2))
-    (by rw [v₂]; exact lt_w (by rw [L.qbl]; exact Nat.le_of_lt L.ql2))) fun s₃ ⟨h₃, m₃, v₃, o₃⟩ => ?_)
+    (by rw [x₂]; exact lt_w (by rw [L.pbl]; exact L.pcap))
+    (by rw [v₂]; exact lt_w (by rw [L.qbl]; exact L.qcap))) fun s₃ ⟨h₃, m₃, v₃, o₃⟩ => ?_)
   refine WP.mono (ckEq_ok h₃ (a := aA) (b := 0) (by decide) (by decide) (m₃.trans (m₂.trans (m₁.trans hm))))
     fun t ⟨ht, mt, ot⟩ => ?_
   have k0 : ∀ i < 16, i ≠ aX → i ≠ aR → i ≠ aA → I.av t.mem i = I.av s.mem i := fun i hi h1 h2 h3 => by
@@ -100,15 +103,15 @@ theorem modChecks_eq (sX sXlen sDX : Nat) : modChecks sX sXlen sDX =
 
 /-- The low word of `[aE]` is `e`, below `2^64`. -/
 theorem e_word {I : CkIn} {m : Mem} (hE : I.av m aE = I.E) (hE64 : I.E < 2 ^ 64) :
-    (word m I.B (slot (wW I.k) aE)).toNat = I.E := by
-  rw [← wv_mod64 m I.B (slot (wW I.k) aE) (n := wW I.k) (by simp only [wW]; omega), show wv m I.B (slot (wW I.k) aE) (wW I.k) = I.E
+    (word m I.B (slot (wW I.cap) aE)).toNat = I.E := by
+  rw [← wv_mod64 m I.B (slot (wW I.cap) aE) (n := wW I.cap) (by simp only [wW]; omega), show wv m I.B (slot (wW I.cap) aE) (wW I.cap) = I.E
     from hE, Nat.mod_eq_of_lt hE64]
 
 /-- The checks modulo `X - 1`, for the prime `X` (the bytes `xb`) and its
 exponent `dX` (the bytes `dxb`). -/
 theorem phMod_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c s) (L : CkLens I) (hE64 : I.E < 2 ^ 64)
     {sX sXlen sDX xl : Nat} {pX pDX : Addr} {xb dxb : List Byte} (hsX : sX < 32) (hsL : sXlen < 32)
-    (hsD : sDX < 32) (hxl1 : 1 ≤ xl) (hxl2 : xl < I.k) (hxb : xb.length = xl) (hdxb : dxb.length = xl)
+    (hsD : sDX < 32) (hxl1 : 1 ≤ xl) (hxl2 : xl < I.k) (hxc : xl ≤ I.cap) (hxb : xb.length = xl) (hdxb : dxb.length = xl)
     (hA : ∀ t, CkS I m₀ t → word t.mem I.B (8 * sX) = pX ∧ word t.mem I.B (8 * sXlen) = BitVec.ofNat 64 xl ∧
       Src t I.B I.Z pX xb ∧ word t.mem I.B (8 * sDX) = pDX ∧ Src t I.B I.Z pDX dxb) :
     WP isa (seqs (modChecks sX sXlen sDX)) s fun t => ∃ g : Bool, KS I m₀ (g && c) t ∧
@@ -140,7 +143,7 @@ theorem phMod_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
     rw [o₅ aE (by decide) (by decide), o₄ aE (by decide), o₃ aE (by decide) (by decide), o₂ aE (by decide) (by decide),
       o₁ aE (by decide) (by decide), hE]
   refine wp_seqs_append (by simp [mulE]) (by simp [modOne]) (WP.mono (ckMulE_ok h₅ L
-    (by rw [v₅]; exact lt_w (by rw [L.dbl]; exact L.dl2))) fun s₆ ⟨h₆, m₆, v₆, o₆⟩ => ?_)
+    (by rw [v₅]; exact lt_w (by rw [L.dbl]; exact L.dcap))) fun s₆ ⟨h₆, m₆, v₆, o₆⟩ => ?_)
   rw [v₅, e_word E₅ hE64] at v₆
   have O₆ : I.av s₆.mem aOne = 1 := by
     rw [o₆ aOne (by decide) (by decide), o₅ aOne (by decide) (by decide), o₄ aOne (by decide),
@@ -158,7 +161,7 @@ theorem phMod_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c
     rw [o₈ aE (by decide) (by decide), o₇ aE (by decide) (by decide) (by decide) (by decide), o₆ aE (by decide)
       (by decide), E₅]
   refine wp_seqs_append (by simp [mulE]) (by simp [modOne]) (WP.mono (ckMulE_ok h₈ L
-    (by rw [v₈]; exact lt_w (by rw [hdxb]; exact Nat.le_of_lt hxl2))) fun s₉ ⟨h₉, m₉, v₉, o₉⟩ => ?_)
+    (by rw [v₈]; exact lt_w (by rw [hdxb]; exact hxc))) fun s₉ ⟨h₉, m₉, v₉, o₉⟩ => ?_)
   rw [v₈, e_word E₈ hE64] at v₉
   have O₉ : I.av s₉.mem aOne = 1 := by
     rw [o₉ aOne (by decide) (by decide), o₈ aOne (by decide) (by decide),
@@ -207,8 +210,8 @@ theorem phQI_ok {I : CkIn} {m₀ : Mem} {s : State} {c : Bool} (h : KS I m₀ c 
     (by decide) h₃.args.q h₃.args.ql h₃.q L.qbl L.ql1 (Nat.le_of_lt L.ql2)) fun s₄ ⟨h₄, m₄, v₄, o₄⟩ => ?_)
   have X₄ : I.av s₄.mem aX = I.QI := by rw [o₄ aX (by decide) (by decide), o₃ aX (by decide), v₂]
   refine wp_seqs_append (by simp [mulXR]) (by simp [modOne]) (WP.mono (ckMulXR_ok h₄ L
-    (by rw [X₄]; exact lt_w (by rw [L.qibl]; exact Nat.le_of_lt L.pl2))
-    (by rw [v₄]; exact lt_w (by rw [L.qbl]; exact Nat.le_of_lt L.ql2))) fun s₅ ⟨h₅, m₅, v₅, o₅⟩ => ?_)
+    (by rw [X₄]; exact lt_w (by rw [L.qibl]; exact L.pcap))
+    (by rw [v₄]; exact lt_w (by rw [L.qbl]; exact L.qcap))) fun s₅ ⟨h₅, m₅, v₅, o₅⟩ => ?_)
   rw [X₄, v₄] at v₅
   have O₅ : I.av s₅.mem aOne = 1 := by
     rw [o₅ aOne (by decide) (by decide), o₄ aOne (by decide) (by decide), o₃ aOne (by decide),

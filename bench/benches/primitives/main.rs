@@ -50,12 +50,17 @@ mod chacha20poly1305;
 mod cmac_aes;
 mod cmac_triple_des;
 mod dsa;
+mod ecdh_brainpoolp256r1;
+mod ecdh_brainpoolp384r1;
+mod ecdh_brainpoolp512r1;
 mod ecdh_p192;
 mod ecdh_p224;
 mod ecdh_p256;
 mod ecdh_p384;
 mod ecdh_p521;
 mod ecdh_secp256k1;
+mod ecdsa_brainpoolp256r1;
+mod ecdsa_brainpoolp384r1;
 mod ecdsa_p192;
 mod ecdsa_p224;
 mod ecdsa_p256;
@@ -390,11 +395,19 @@ pub(crate) fn pbkdf2_group(
     g.finish();
 }
 
-/// Each algorithm's `bench`, with the library modules whose code it runs
-/// (its `USES`, which `ci/bench_arches.py` reads).
-type Bench = (&'static [&'static str], fn(&mut Criterion));
+/// Each algorithm's `bench`, with its name (its file's) and the library
+/// modules whose code it runs (its `USES`, which `ci/bench_arches.py` reads).
+type Bench = (&'static str, &'static [&'static str], fn(&mut Criterion));
 
-const BENCHES: &[Bench] = &[
+/// `BENCHES`, from each benchmark's `USES` and `bench`, one per line (as
+/// `ci/bench_arches.py` reads them), named by its module.
+macro_rules! benches {
+    ($(($name:ident::USES, $bench:ident::bench),)*) => {
+        const BENCHES: &[Bench] = &[$((stringify!($name), $name::USES, $bench::bench)),*];
+    };
+}
+
+benches! {
     (aes_cbc::USES, aes_cbc::bench),
     (aes_ccm::USES, aes_ccm::bench),
     (aes_cfb::USES, aes_cfb::bench),
@@ -495,6 +508,8 @@ const BENCHES: &[Bench] = &[
     (ecdsa_p192::USES, ecdsa_p192::bench),
     (ecdsa_p224::USES, ecdsa_p224::bench),
     (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),
+    (ecdsa_brainpoolp256r1::USES, ecdsa_brainpoolp256r1::bench),
+    (ecdsa_brainpoolp384r1::USES, ecdsa_brainpoolp384r1::bench),
     (dsa::USES, dsa::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdsa_p384::USES, ecdsa_p384::bench),
@@ -502,26 +517,48 @@ const BENCHES: &[Bench] = &[
     (ecdh_p192::USES, ecdh_p192::bench),
     (ecdh_p224::USES, ecdh_p224::bench),
     (ecdh_secp256k1::USES, ecdh_secp256k1::bench),
+    (ecdh_brainpoolp256r1::USES, ecdh_brainpoolp256r1::bench),
+    (ecdh_brainpoolp384r1::USES, ecdh_brainpoolp384r1::bench),
+    (ecdh_brainpoolp512r1::USES, ecdh_brainpoolp512r1::bench),
     (ecdh_p256::USES, ecdh_p256::bench),
     (ecdh_p384::USES, ecdh_p384::bench),
     (ecdh_p521::USES, ecdh_p521::bench),
-];
+}
 
 /// Runs the benchmarks that use any of the modules in `$VG_BENCH_MODULES`
 /// (space-separated), or every benchmark if it is unset or empty. The CI
 /// selector requests all benchmarks for shared or unknown dependencies. An
 /// unknown explicit module is an error, rather than silently running everything.
+///
+/// `$VG_BENCHES` (space-separated names of `BENCHES`) narrows them to those
+/// benchmarks, so that `ci/bench_compare.py` can run one at a time, base and
+/// head alternately, setting up (generating keys, …) only that one. With
+/// `$VG_BENCH_NAMES` set, each benchmark's name is printed before it, as
+/// `<name>: bench`, so that `--list` tells which one has each group.
 fn all(c: &mut Criterion) {
     let modules = std::env::var("VG_BENCH_MODULES").unwrap_or_default();
     let modules: Vec<&str> = modules.split_whitespace().collect();
-    let used = |m: &&str| BENCHES.iter().any(|(uses, _)| uses.contains(m));
+    let used = |m: &&str| BENCHES.iter().any(|(_, uses, _)| uses.contains(m));
     assert!(
         modules.iter().all(used),
         "VG_BENCH_MODULES names a module absent from the benchmark registry"
     );
-    let every = modules.is_empty();
-    for (uses, bench) in BENCHES {
-        if every || uses.iter().any(|u| modules.contains(u)) {
+    let names = std::env::var("VG_BENCHES").unwrap_or_default();
+    let names: Vec<&str> = names.split_whitespace().collect();
+    assert!(
+        names
+            .iter()
+            .all(|n| BENCHES.iter().any(|(name, _, _)| name == n)),
+        "VG_BENCHES names a benchmark absent from the registry"
+    );
+    let announce = std::env::var_os("VG_BENCH_NAMES").is_some();
+    for (name, uses, bench) in BENCHES {
+        if (modules.is_empty() || uses.iter().any(|u| modules.contains(u)))
+            && (names.is_empty() || names.contains(name))
+        {
+            if announce {
+                println!("{name}: bench");
+            }
             bench(c);
         }
     }

@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.X86.ModeCore
 meta import VerifiedGarbage.Proof.Camellia.X86.ModeCore
 public import VerifiedGarbage.Proof.Modes.X86.Modes
@@ -10,6 +14,8 @@ public import VerifiedGarbage.Proof.Camellia.X86.CbcLit
 meta import VerifiedGarbage.Proof.Camellia.X86.CbcLit
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
+public import VerifiedGarbage.Proof.Framework.X86.TaintMono
+meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -18,6 +24,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # Camellia-CBC on x86 (32-bit) meets its contracts
@@ -123,15 +131,27 @@ theorem keyArgs_of {enc : Bool} (d : Dir) {s : State} (h : (cbcX86 enc).pre s) :
     · exact dAD.sub_left (subA 1 (by decide))
     · exact dAS.sub_left (subA 1 (by decide))
 
+attribute [local irreducible] Spec.Camellia.cipher in
+/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
+theorem encCipher_eq (m : Mem) (p : Addr) (R : Nat) :
+    (dirCoreSpec .encrypt).cipher (R, schedWords m p R) = Spec.Camellia.cipher (Spec.Camellia.subkeysAt m p R) :=
+  rfl
+
+attribute [local irreducible] Spec.Camellia.invCipher in
+/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
+theorem decCipher_eq (m : Mem) (p : Addr) (R : Nat) :
+    (dirCoreSpec .decrypt).cipher (R, schedWords m p R) = Spec.Camellia.invCipher (Spec.Camellia.subkeysAt m p R) :=
+  rfl
+
 theorem cbcEncrypt_wp {s₀ : State} (hp : (cbcX86 true).pre s₀) :
     WP isa cbcEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (cbcX86 true).post s₀ s' :=
   WP.mono (cbcEnc_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl rfl hp) (keyArgs_of .encrypt hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => ⟨h1, by rw [encCipher_eq] at h2; exact h2⟩
 
 theorem cbcDecrypt_wp {s₀ : State} (hp : (cbcX86 false).pre s₀) :
     WP isa cbcDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (cbcX86 false).post s₀ s' :=
   WP.mono (cbcDec_wp (dirCoreSpec .decrypt) (seqPre_of .decrypt rfl rfl hp) (keyArgs_of .decrypt hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => ⟨h1, by rw [decCipher_eq] at h2; exact h2⟩
 
 /-! ## Constant time -/
 
@@ -178,13 +198,28 @@ theorem cbcTaint_agree {enc : Bool} {s₁ s₂ : State} (h₁ : (cbcX86 enc).pre
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
+/-- What is public at the core's loop of pairs of rounds: `eax`, the stack
+pointer, the round keys' and the scratch buffer's pointers, the flags, the
+group's end, and the data pointer and the blocks left in their slots. -/
+def cbcPairTaint : VG.X86.Taint.T :=
+  { regs := .ofList [.eax, .esp, .esi, .edi], flags := true, lens := [0, 4 * (dirCore .encrypt).total],
+    bases := [(.edi, 1, 0)], slots := [(1, 4 * grpSlot, 4), (1, 4 * (dirCore .encrypt).dSlot, 8)],
+    argLen := 28, argBases := [(16, 0), (24, 1)] }
+
+/-! The loop of pairs of rounds, which both directions run for 18 and 24
+rounds, analysed once, as a summary. -/
+
+taint_summary cbcPairSum : VG.X86.taint cbcPairTaint (.block pairBody)
+
 theorem cbcEncrypt_ct : ConstantTime isa (cbcX86 true).pre (cbcX86 true).pub cbcEncrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by native_taint_decide_sum [cbcPairSum] :
+    ∃ h, (VG.X86.taint.check cbcTaint cbcEncrypt h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp) h
 
 theorem cbcDecrypt_ct : ConstantTime isa (cbcX86 false).pre (cbcX86 false).pub cbcDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by native_taint_decide_sum [cbcPairSum] :
+    ∃ h, (VG.X86.taint.check cbcTaint cbcDecrypt h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/
 
@@ -212,16 +247,19 @@ def cbcNarrowRd (s : State) : List Region :=
 def cbcNarrowWr (s : State) : List Region :=
   [⟨(arg s 3).setWidth 64, 16 * (arg s 4).toNat⟩, ⟨(arg s 5).setWidth 64, 8 * 341⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [VG.Proof.Camellia.cbcX86, VG.Proof.Camellia.X86.cbcWideContract,
-    VG.Proof.Camellia.X86.cbcNarrowRd, VG.Proof.Camellia.X86.cbcNarrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+tactic_template "narrow_camellia_x86_cbcverified" : tactic => `(tactic| simp only [VG.Proof.Camellia.cbcX86, VG.Proof.Camellia.X86.cbcWideContract,
+                     VG.Proof.Camellia.X86.cbcNarrowRd, VG.Proof.Camellia.X86.cbcNarrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+tactic_template "narrow_camellia_x86_cbcverified" loc:Lean.Parser.Tactic.location : tactic => `(tactic| simp only [VG.Proof.Camellia.cbcX86, VG.Proof.Camellia.X86.cbcWideContract,
+                     VG.Proof.Camellia.X86.cbcNarrowRd, VG.Proof.Camellia.X86.cbcNarrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem cbcWide_pre (enc : Bool) (s : State) (h : (cbcWideContract enc).pre s) :
     (cbcX86 enc).pre (s.withRegions (cbcNarrowRd s) (cbcNarrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  narrow_camellia_x86_cbcverified
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 18, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -320,10 +358,10 @@ theorem cbcEncrypt_verified : Verified X86.target cbcEncrypt (Proof.Camellia.cbc
     simp only [cbcNarrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    narrow_camellia_x86_cbcverified at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    narrow_camellia_x86_cbcverified
     exact h
 
 /-- cbcEncrypt with its working space on the stack. -/
@@ -361,10 +399,10 @@ theorem cbcDecrypt_verified : Verified X86.target cbcDecrypt (Proof.Camellia.cbc
     simp only [cbcNarrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    narrow_camellia_x86_cbcverified at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    narrow_camellia_x86_cbcverified
     exact h
 
 /-- cbcDecrypt with its working space on the stack. -/

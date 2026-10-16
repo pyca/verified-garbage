@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Whole
-public import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
+import VerifiedGarbage.Proof.AesOcb.X86_64.RestTag
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

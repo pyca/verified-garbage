@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
 
 /-! Execution and frame of one diagonal-square pair. -/
 

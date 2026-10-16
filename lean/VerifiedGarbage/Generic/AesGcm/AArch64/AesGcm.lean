@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
+import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
 /-!
 # AES-GCM (NIST SP 800-38D) on AArch64

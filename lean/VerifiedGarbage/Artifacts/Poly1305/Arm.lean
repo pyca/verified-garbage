@@ -3,10 +3,11 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.Poly1305.Arm
 public import VerifiedGarbage.Proof.Poly1305.Arm.Init
-public import VerifiedGarbage.Proof.Poly1305.Arm.Update
-public import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
-public import VerifiedGarbage.Proof.Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.Poly1305.Arm.Update
+import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
+import VerifiedGarbage.Proof.Poly1305.Arm.Lit
 public import VerifiedGarbage.Proof.Poly1305.Arm.Frame
+import Mathlib.Tactic.SplitIfs
 
 /-! # Poly1305 (RFC 8439 §2.5) on 32-bit ARM -/
 

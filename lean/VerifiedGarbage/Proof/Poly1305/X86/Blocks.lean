@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Poly1305
+import VerifiedGarbage.Spec.Poly1305
 meta import VerifiedGarbage.Spec.Poly1305
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
@@ -8,11 +8,11 @@ public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Exec
 meta import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Impl.Poly1305.X86
 meta import VerifiedGarbage.Impl.Poly1305.X86
-public import VerifiedGarbage.Proof.Poly1305.X86.Lit
+import VerifiedGarbage.Proof.Poly1305.X86.Lit
 meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
 public import Mathlib.Tactic.Set
 meta import Mathlib.Tactic.Set
@@ -20,7 +20,7 @@ public import VerifiedGarbage.Proof.Poly1305.Spec
 meta import VerifiedGarbage.Proof.Poly1305.Spec
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
@@ -32,6 +32,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # Poly1305 on x86: carries and digits, for `omega` on small linear problems

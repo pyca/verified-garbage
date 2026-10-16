@@ -8,9 +8,9 @@ public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
-public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
+import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.Lit
@@ -22,6 +22,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import Mathlib.Logic.Function.Basic
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Spill
+meta import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarMain`. -/
 
@@ -195,7 +203,7 @@ theorem scalarTaint_wf {s : State} (h : scalarReduceLocal.pre s) : VG.Arm.Taint.
     simp [VG.Arm.Taint.region, hp.wr]
 
 theorem scalarReduce_ct : ConstantTime isa scalarReduceLocal.pre scalarReduceLocal.pub scalarReduce := by
-  refine VG.Taint.constantTime (A := taint) scalarTaint ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) scalarTaint ?_ (by native_taint_decide)
   intro s t hs ht ⟨_, h0, h1, h2⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, scalarTaint_wf hs, scalarTaint_wf ht,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,

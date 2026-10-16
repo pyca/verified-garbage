@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # ECDSA on AArch64: what every phase keeps
@@ -46,7 +47,7 @@ structure Fixed (c : Cfg) (base : Addr) (g : Reg → BitVec 64) (m : Mem) : Prop
 
 /-- What a phase writes misses the constants and the saved registers. -/
 def FixedOk (c : Cfg) (W : List (Nat × Nat)) : Prop :=
-  ∀ w ∈ W, (w.1 = c.sl TMP ∧ w.2 = 8 * c.n) ∨ c.sl 12 ≤ w.1
+  ∀ w ∈ W, (w.1 = slot c.n TMP ∧ w.2 = 8 * c.n) ∨ c.sl 12 ≤ w.1
 
 /-- The ranges of numbered slots. -/
 abbrev slW (c : Cfg) (l : List Nat) : List (Nat × Nat) := l.map fun i => (c.sl i, 8 * c.n)
@@ -58,7 +59,12 @@ theorem fixedOk_slW {l : List Nat} (hl : ∀ i ∈ l, i = TMP ∨ 12 ≤ i) : Fi
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   rcases hl i hi with h | h
-  · exact Or.inl ⟨by rw [h], rfl⟩
+  · subst i
+    by_cases ht : c.n = 6 ∨ c.n = 8 ∨ c.n = 9
+    · apply Or.inr
+      rw [sl_eq c 12, sl_tmp c ht]
+      rcases ht with h | h | h <;> rw [h] <;> decide
+    · exact Or.inl ⟨by rw [sl_aff c ht]; rfl, rfl⟩
   · refine Or.inr ?_
     rcases Nat.eq_or_lt_of_le h with h | h
     · rw [h]
@@ -87,7 +93,7 @@ theorem fixed_apart {W : List (Nat × Nat)} (hW : FixedOk c W) {i : Nat} (hi : i
     ∀ w ∈ W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rcases hW w hw with ⟨h1, h2⟩ | h
-  · rw [h1, h2]; exact sl_apart c hit
+  · rw [h1, h2]; exact sl_apart_raw_tmp c hit
   · exact Or.inl (Nat.le_trans (sl_lt c hi) h)
 
 theorem Fixed.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fixed c base g m)
@@ -104,13 +110,13 @@ theorem Fixed.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fixed
   have := setupSaved_lt p hp
   refine (hu.word (d := p.2) (fun w hw => Or.inl ?_) (by omega)).trans (h.saved p hp)
   rcases hW w hw with ⟨h1, -⟩ | h
-  · rw [h1]; have := sl_ge64 c TMP; omega
+  · rw [h1]; simp only [slot]; omega
   · simp (disch := decide) only [sl_eq] at h; omega
 
 /-- A slot apart from the ranges of other numbered slots. -/
 theorem apart_slW {l : List Nat} {i : Nat} (hi : i ∉ l)
-    (hiA : i ≠ 54 ∧ i ≠ 82 := by first | decide | exact ⟨by omega, by omega⟩)
-    (hl : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 82 := by decide) :
+    (hiA : i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82 := by first | decide | exact ⟨by omega, by omega⟩)
+    (hl : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 := by decide) :
     ∀ w ∈ slW c l, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hw
@@ -215,7 +221,8 @@ theorem fixedOk_chainWc (hc : BaseCfgOk c) : FixedOk c (chainWc c) := by
   · exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (show 12 < ACC by decide)))
   · exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_invTbl hc (show 12 < 45 by decide) (by decide)))
   · rcases hc.inv_at with h | h
-    · exact Or.inl ⟨invTmp_none h, rfl⟩
+    · have H : FixedOk c (slW c [TMP]) := fixedOk_slW (by simp)
+      simpa only [slW, List.map_cons, List.map_nil, invTmp_none h] using H _ (List.mem_cons_self ..)
     · rcases h.2.2.2 with h' | h'
       · exact Or.inl ⟨h'.1, rfl⟩
       · have := sl_invTbl hc (show 12 < 45 by decide) (by decide)
@@ -235,7 +242,7 @@ theorem apart_chainWc (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hl : i ∉ [AC
 /-- The flag survives a power and changes of other slots. -/
 theorem flag_unch_cw (hc : BaseCfgOk c) {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (chainWc c ++ slW c l) m m')
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l)
-    (hlA : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 82 := by decide) :
+    (hlA : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 := by decide) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega)
@@ -283,7 +290,9 @@ theorem modOkA_inv {M : Mod} (hc : BaseCfgOk c) {m : Nat} {base : Addr} {mem : M
     rcases hc.inv_at with h | h
     · exact hM.call f m' (hT (invTmp_none h))
     · rcases h.2.2.2 with h' | h'
-      · exact hM.call f m' (hT h'.1)
+      · have hn10 := hc.n10
+        have ht : slot c.n TMP ≠ Mont.moAt c.n := by simp only [slot, TMP, Mont.moAt]; omega
+        simp only [Mont.callOf, hn, h'.1, ht, ite_false, reduceCtorEq] at e
       · simp only [Mont.callOf, hn, h'.2.2.2, ite_false, reduceCtorEq] at e
 
 /-- `ACC = RZ^(p - 2)` (in Montgomery form), by divsteps, inline. -/

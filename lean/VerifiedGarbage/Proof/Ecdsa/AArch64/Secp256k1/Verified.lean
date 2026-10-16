@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
@@ -10,12 +10,18 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Lit
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! # secp256k1 signing on AArch64: correctness and constant time -/
 

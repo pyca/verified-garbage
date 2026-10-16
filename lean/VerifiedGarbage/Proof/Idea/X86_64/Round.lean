@@ -1,10 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.Idea.X86_64.Mul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # IDEA on x86-64: a round
@@ -47,9 +50,9 @@ theorem KeyOk.keep {z : Spec.Idea.Schedule} {rs : List Reg} {s s' : State} (h : 
   · rw [he, hk.mem]
     exact h.last j hj
 
-macro "run_simp" : tactic => `(tactic| simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
-  execAlu, execShift, readSrc, State.load64, isa, Option.map_some, Option.bind_some,
-  signExtend_one, signExtend_mask])
+tactic_template "run_simp" : tactic => `(tactic| simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
+                   execAlu, execShift, readSrc, State.load64, isa, Option.map_some, Option.bind_some,
+                   signExtend_one, signExtend_mask])
 
 /-- `r := r ⊙ [rdi + d]`. -/
 theorem mulKey_run (r : Reg) (d : Nat) (s : State)

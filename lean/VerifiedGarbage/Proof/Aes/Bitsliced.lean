@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Aes
-public import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.Framework.Bitslice.Table
 public import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

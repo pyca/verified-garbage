@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowDigits
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.CallInline
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Step
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Spec
 
 /-!
 # Verification's windows: a doubling and the digits at each position

@@ -1,10 +1,14 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Omega
+
 public import VerifiedGarbage.Proof.Sm4.AArch64.Prologue
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sm4.Common
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A group of blocks of SM4 ECB on AArch64
@@ -192,10 +196,10 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
   rw [slots_eq] at hfit
   let v := n - 16 * k
   let c := min v 16
-  have hv : v < 2 ^ 64 := by omega
-  have hc0 : 0 < c := by omega
-  have hc16 : c ≤ 16 := by omega
-  have hkc : 256 * k + 16 * c ≤ 16 * n := by omega
+  have hv : v < 2 ^ 64 := by omega_arith
+  have hc0 : 0 < c := by omega_arith
+  have hc16 : c ≤ 16 := by omega_arith
+  have hkc : 256 * k + 16 * c ≤ 16 * n := by omega_arith
   let A := D + BitVec.ofNat 64 (256 * k)
   let T := b + BitVec.ofNat 64 (8 * tailSlot)
   have hwS : (⟨b, 8 * slots⟩ : Region) ∈ s.wr := by rw [hi.wr]; exact hp.scr
@@ -204,15 +208,15 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
     intro t ht
     refine ⟨_, hwS, ?_⟩
     rw [addr_add]
-    exact VG.Offset.contains_base b (by rw [slots_eq, tailSlot_eq]; omega) (by rw [tailSlot_eq]; omega)
+    exact VG.Offset.contains_base b (by rw [slots_eq, tailSlot_eq]; omega_arith) (by rw [tailSlot_eq]; omega_arith)
   have inA : ∀ t, t < 2 * c → InRegions s.wr (A + BitVec.ofNat 64 (8 * t)) 8 := by
     intro t ht
     refine ⟨_, hwD, ?_⟩
     rw [addr_add]
-    exact VG.Offset.contains_base D (by omega) (by omega)
+    exact VG.Offset.contains_base D (by omega_arith) (by omega_arith)
   have sepAT : Region.Disjoint ⟨A, 16 * c⟩ ⟨T, 16 * c⟩ :=
-    (hp.sep.sub_left (VG.Offset.sub_base D (by omega))).sub_right
-      (VG.Offset.sub_base b (by rw [slots_eq, tailSlot_eq]; omega))
+    (hp.sep.sub_left (VG.Offset.sub_base D (by omega_arith))).sub_right
+      (VG.Offset.sub_base b (by rw [slots_eq, tailSlot_eq]; omega_arith))
   unfold Impl.Sm4.AArch64.group copyIn
   -- The group's blocks to the tail buffer.
   refine WP.seq (WP.seq (WP.mono (groupCount_wp hi.x2 hv) fun s₁ ⟨c₁, o₁, m₁, rd₁, wr₁⟩ => ?_))
@@ -231,7 +235,7 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
     (by rw [o₂ _ (by decide), r₂b, o₂a _ (by decide), o₁ _ (by decide) (by decide), hi.base])
     (by rw [r₂, o₂b _ (by decide), o₂a _ (by decide), c₁])
     (fun t ht => by rw [rd₂', wr₂']; exact inRd (inA t ht))
-    (fun t ht => by rw [wr₂']; exact inT t (by omega)) sepAT) fun s₃ ⟨cp₃, f₃, g₃, rd₃, wr₃⟩ => ?_
+    (fun t ht => by rw [wr₂']; exact inT t (by omega_arith)) sepAT) fun s₃ ⟨cp₃, f₃, g₃, rd₃, wr₃⟩ => ?_
   have f₃' : Frame [⟨T, 16 * c⟩] s.mem s₃.mem := by rw [← mem₂]; exact f₃
   have wr₃' : s₃.wr = s.wr := by rw [wr₃, wr₂']
   have rd₃' : s₃.rd = s.rd := by rw [rd₃, rd₂']
@@ -243,7 +247,7 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
     simp only [List.mem_singleton] at hr; subst hr
     simp only [scrRegions, List.mem_cons, List.not_mem_nil, or_false] at ht
     rcases ht with rfl | rfl | rfl <;> refine VG.Offset.disjoint b ?_ ?_ ?_ <;>
-      (try simp only [tailSlot_eq, tableSlot_eq, savedSlot_eq]) <;> omega
+      (try simp only [tailSlot_eq, tableSlot_eq, savedSlot_eq]) <;> omega_arith
   -- The sixteen blocks.
   have hkey : KeyCtx s₃ E :=
     { scr := by rw [base₃, wr₃']; exact hwS
@@ -259,8 +263,8 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
     simp only [scrRegions, List.tail_cons, List.mem_cons, List.not_mem_nil, or_false] at ht hr
     subst hr
     rcases ht with rfl | rfl
-    · exact VG.Offset.disjoint_base b (by rw [tableSlot_eq]) (by rw [tableSlot_eq]; omega)
-    · exact VG.Offset.disjoint_base b (by rw [tableSlot_eq, savedSlot_eq]; omega) (by rw [savedSlot_eq]; omega)
+    · exact VG.Offset.disjoint_base b (by rw [tableSlot_eq]) (by rw [tableSlot_eq]; omega_arith)
+    · exact VG.Offset.disjoint_base b (by rw [tableSlot_eq, savedSlot_eq]; omega_arith) (by rw [savedSlot_eq]; omega_arith)
   have k₅ : ∀ r, r ∉ layerWrites → r ≠ kp → s₅.gpr r = s₃.gpr r := fun r h1 h2 => c₅.keep r h1 h2
   have x1₅ : s₅.gpr .x1 = A := by
     rw [k₅ _ (by decide) (by decide), g₃' _ (by decide) (by decide) (by decide) (by decide) (by decide), hi.x1]
@@ -289,7 +293,7 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
     (by rw [o₈ _ (by decide), o₈b _ (by decide), r₈a, o₇ _ (by decide) (by decide), base₅])
     (by rw [o₈ _ (by decide), r₈b, o₈a _ (by decide), o₇ _ (by decide) (by decide), x1₅])
     (by rw [r₈, o₈b _ (by decide), o₈a _ (by decide), c₇])
-    (fun t ht => by rw [rd₈', wr₈']; exact inRd (inT t (by omega)))
+    (fun t ht => by rw [rd₈', wr₈']; exact inRd (inT t (by omega_arith)))
     (fun t ht => by rw [wr₈']; exact inA t ht) sepAT.symm) fun s₉ ⟨cp₉, f₉, g₉, rd₉, wr₉⟩ => ?_
   have g₉' : ∀ r, r ≠ .x14 → r ≠ .x15 → r ≠ .x17 → r ≠ .x16 → r ≠ t0 → s₉.gpr r = s₅.gpr r :=
     fun r h1 h2 h3 h4 h5 => by rw [g₉ r h1 h2 h3 h5, g₈ r h1 h2 h3 h4 h5]
@@ -313,60 +317,60 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
     have hsub : Region.Sub t ⟨b, 8 * slots⟩ := by
       simp only [scrRegions, List.mem_cons, List.not_mem_nil, or_false] at ht
       rcases ht with rfl | rfl | rfl <;> refine subS ?_ <;> (try simp only [tableSlot_eq, savedSlot_eq]) <;>
-        rw [slots_eq] <;> omega
-    exact ((hp.sep.sub_left (VG.Offset.sub_base D (by omega))).sub_right hsub).symm
+        rw [slots_eq] <;> omega_arith
+    exact ((hp.sep.sub_left (VG.Offset.sub_base D (by omega_arith))).sub_right hsub).symm
   have fr₉ : Frame [⟨b, 8 * slots⟩, ⟨D, 16 * n⟩] s.mem s₉.mem := by
     refine (((mem₂ ▸ f₃).sub fun r hr => ⟨⟨b, 8 * slots⟩, List.mem_cons_self, ?_⟩).trans
       ((f₅.sub fun r hr => ⟨⟨b, 8 * slots⟩, List.mem_cons_self, ?_⟩).trans
       ((mem₈ ▸ f₉).sub fun r hr => ⟨⟨D, 16 * n⟩, List.mem_cons_of_mem _ List.mem_cons_self, ?_⟩)))
-    · simp only [List.mem_singleton] at hr; subst hr; exact subS (by rw [slots_eq, tailSlot_eq]; omega)
+    · simp only [List.mem_singleton] at hr; subst hr; exact subS (by rw [slots_eq, tailSlot_eq]; omega_arith)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega)
-    · simp only [List.mem_singleton] at hr; subst hr; exact VG.Offset.sub_base D (by omega)
+      exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega_arith)
+    · simp only [List.mem_singleton] at hr; subst hr; exact VG.Offset.sub_base D (by omega_arith)
   -- The blocks the sixteen-block code read are the group's, as on entry.
   have hblk : ∀ j < c, tailBlock s₃ j = Spec.Sm4.blockAt s₀.mem (D + BitVec.ofNat 64 (16 * (16 * k + j))) := by
     intro j hj
     apply Vector.ext; intro u hu
     simp only [tailBlock, Spec.Sm4.blockAt, Vector.getElem_ofFn]
     rw [base₃, addr_add, addr_add]
-    have ht : 16 * j + u < 16 * c := by omega
+    have ht : 16 * j + u < 16 * c := by omega_arith
     have := cp₃ (16 * j + u) ht
     rw [addr_add] at this
-    rw [show 8 * tailSlot + 16 * j + u = 8 * tailSlot + (16 * j + u) by omega, this, mem₂, addr_add,
-      hi.data _ (by omega), ite_eq_right (by omega),
-      show 256 * k + (16 * j + u) = 16 * (16 * k + j) + u by omega]
+    rw [show 8 * tailSlot + 16 * j + u = 8 * tailSlot + (16 * j + u) by omega_arith, this, mem₂, addr_add,
+      hi.data _ (by omega_arith), ite_eq_right (by omega_arith),
+      show 256 * k + (16 * j + u) = 16 * (16 * k + j) + u by omega_arith]
   have hdata : DInv s₀.mem s₉.mem D n (16 * k + c) (outF s₀.mem D E) := by
     intro i hin
     by_cases hin1 : 256 * k ≤ i ∧ i < 256 * k + 16 * c
     · have e1 : D + BitVec.ofNat 64 i = A + BitVec.ofNat 64 (i - 256 * k) := by
-        rw [addr_add, show 256 * k + (i - 256 * k) = i by omega]
-      rw [e1, cp₉ _ (by omega), mem₈, ite_eq_left (show i < 16 * (16 * k + c) by omega),
-        show i / 16 = 16 * k + (i - 256 * k) / 16 by omega, show i % 16 = (i - 256 * k) % 16 by omega]
-      have hj : (i - 256 * k) / 16 < c := by omega
+        rw [addr_add, show 256 * k + (i - 256 * k) = i by omega_arith]
+      rw [e1, cp₉ _ (by omega_arith), mem₈, ite_eq_left (show i < 16 * (16 * k + c) by omega_arith),
+        show i / 16 = 16 * k + (i - 256 * k) / 16 by omega_arith, show i % 16 = (i - 256 * k) % 16 by omega_arith]
+      have hj : (i - 256 * k) / 16 < c := by omega_arith
       have eT : T + BitVec.ofNat 64 (i - 256 * k) = s₅.gpr sb + BitVec.ofNat 64 (8 * tailSlot + 16 * ((i - 256 * k) / 16)) +
           BitVec.ofNat 64 ((i - 256 * k) % 16) := by
         rw [base₅, addr_add, addr_add, show 8 * tailSlot + 16 * ((i - 256 * k) / 16) + (i - 256 * k) % 16 =
-          8 * tailSlot + (i - 256 * k) by omega]
+          8 * tailSlot + (i - 256 * k) by omega_arith]
       rw [eT, ← blockAt_getD s₅.mem _ (Nat.mod_lt _ (by decide))]
       show (tailBlock s₅ _).getD _ 0 = _
-      rw [b₅ _ (by omega), hblk _ hj]
+      rw [b₅ _ (by omega_arith), hblk _ hj]
       rfl
     · have hout : ∀ r ∈ [(⟨A, 16 * c⟩ : Region)], ¬ r.Contains (D + BitVec.ofNat 64 i) 1 := fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact not_contains_off D (by omega) (by omega) (by omega) (by omega)
+        exact not_contains_off D (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
       have hdS : ∀ {rs : List Region}, (∀ r ∈ rs, Region.Sub r ⟨b, 8 * slots⟩) →
           ∀ r ∈ rs, Region.Disjoint ⟨D, 16 * n⟩ r := fun h r hr => hp.sep.sub_right (h r hr)
       rw [f₉ _ hout, mem₈,
         f₅.bytes (R := ⟨D, 16 * n⟩) (hdS fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega)) (by simp only; omega) hin,
+          exact Region.sub_prefix (by rw [slots_eq, tableSlot_eq]; omega_arith)) (by simp only; omega_arith) hin,
         f₃'.bytes (R := ⟨D, 16 * n⟩) (hdS fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact subS (by rw [slots_eq, tailSlot_eq]; omega))
-          (by simp only; omega) hin,
+          simp only [List.mem_singleton] at hr; subst hr; exact subS (by rw [slots_eq, tailSlot_eq]; omega_arith))
+          (by simp only; omega_arith) hin,
         hi.data i hin]
       by_cases h2 : i < 256 * k
-      · rw [ite_eq_left (show i < 16 * (16 * k) by omega), ite_eq_left (show i < 16 * (16 * k + c) by omega)]
-      · rw [ite_eq_right (show ¬ i < 16 * (16 * k) by omega), ite_eq_right (show ¬ i < 16 * (16 * k + c) by omega)]
+      · rw [ite_eq_left (show i < 16 * (16 * k) by omega_arith), ite_eq_left (show i < 16 * (16 * k + c) by omega_arith)]
+      · rw [ite_eq_right (show ¬ i < 16 * (16 * k) by omega_arith), ite_eq_right (show ¬ i < 16 * (16 * k + c) by omega_arith)]
   have fr : Frame [⟨b, 8 * slots⟩, ⟨D, 16 * n⟩] s₀.mem s₉.mem := hi.frame.trans fr₉
   -- On to the next group.
   obtain ⟨s₁₀, e₁₀, r₁₀, o₁₀, m₁₀, rd₁₀, wr₁₀⟩ := subR_ok s₉ .x2 .x2 .x16
@@ -377,24 +381,24 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n : Nat} {E : Nat → Spec.Sm4
       Option.bind_some, e₁₁], ?_⟩
   have hm : s₁₁.mem = s₉.mem := by rw [m₁₁, m₁₀]
   have x2₁₁ : s₁₁.gpr .x2 = BitVec.ofNat 64 (v - c) := by
-    rw [o₁₁ _ (by decide), r₁₀, x2₉, x16₉, VG.Offset.ofNat_sub_ofNat (by omega)]
+    rw [o₁₁ _ (by decide), r₁₀, x2₉, x16₉, VG.Offset.ofNat_sub_ofNat (by omega_arith)]
   have base₁₁ : s₁₁.gpr sb = b := by rw [o₁₁ _ (by decide), o₁₀ _ (by decide), base₉]
   have rd₁₁' : s₁₁.rd = s₀.rd := by rw [rd₁₁, rd₁₀, rd₉']
   have wr₁₁' : s₁₁.wr = s₀.wr := by rw [wr₁₁, wr₁₀, wr₉']
   by_cases hlt : v ≤ 16
-  · have hn : 16 * k + c = n := by omega
-    refine .inl ⟨by rw [x2₁₁, show v - c = 0 by omega]; rfl, base₁₁, hm ▸ sc₉,
+  · have hn : 16 * k + c = n := by omega_arith
+    refine .inl ⟨by rw [x2₁₁, show v - c = 0 by omega_arith]; rfl, base₁₁, hm ▸ sc₉,
       fun i hi' => by rw [hm, hdata i hi', hn], hm ▸ fr, rd₁₁', wr₁₁'⟩
-  · have hc : c = 16 := by omega
-    refine .inr ⟨fun h => ?_, base₁₁, ?_, ?_, by omega, ?_, hm ▸ sc₉, ?_, hm ▸ fr, rd₁₁', wr₁₁'⟩
-    · have hne : v - c ≠ 0 := by omega
+  · have hc : c = 16 := by omega_arith
+    refine .inr ⟨fun h => ?_, base₁₁, ?_, ?_, by omega_arith, ?_, hm ▸ sc₉, ?_, hm ▸ fr, rd₁₁', wr₁₁'⟩
+    · have hne : v - c ≠ 0 := by omega_arith
       rw [x2₁₁] at h
       apply hne
       have := congrArg BitVec.toNat h
-      rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-    · rw [r₁₁, o₁₀ _ (by decide), x1₉, addr_add, show 256 * k + 256 = 256 * (k + 1) by omega]
-    · rw [x2₁₁, show v - c = n - 16 * (k + 1) by omega]
+      rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this
+    · rw [r₁₁, o₁₀ _ (by decide), x1₉, addr_add, show 256 * k + 256 = 256 * (k + 1) by omega_arith]
+    · rw [x2₁₁, show v - c = n - 16 * (k + 1) by omega_arith]
     · rw [o₁₁ _ (by decide), o₁₀ _ (by decide), x3₉]
-    · rw [hm, show 16 * (k + 1) = 16 * k + c by omega]; exact hdata
+    · rw [hm, show 16 * (k + 1) = 16 * k + c by omega_arith]; exact hdata
 
 end VG.Proof.Sm4.AArch64

@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 public import VerifiedGarbage.Proof.MlKem.X86_64.KCall
-public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
-public import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+import VerifiedGarbage.Proof.MlKem.KPke
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt`, correctness

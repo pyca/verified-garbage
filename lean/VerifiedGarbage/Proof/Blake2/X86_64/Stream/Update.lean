@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Streaming BLAKE2 on x86-64: `update`
@@ -38,7 +39,7 @@ As the Merkle–Damgård hash functions do, after the compression function's
 512 bytes of scratch space. -/
 
 /-- The Merkle–Damgård streaming parameters with the same saved registers. -/
-def mdP : Impl.MdStream.X86_64.Params := ⟨1, 64, 1, 512, [], []⟩
+def mdP : Impl.MdStream.X86_64.Params := ⟨1, 64, 1, 512, [], [], []⟩
 
 theorem mdP_dims : MdStream.X86_64.Dims mdP := ⟨.inl rfl, by decide, by decide, by decide⟩
 

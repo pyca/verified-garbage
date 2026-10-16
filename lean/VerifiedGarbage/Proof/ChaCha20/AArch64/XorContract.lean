@@ -1,24 +1,25 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.ChaCha20.Spec
-public import VerifiedGarbage.Impl.ChaCha20.AArch64
+import VerifiedGarbage.Impl.ChaCha20.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.ChaCha20.Contract
-public import VerifiedGarbage.Proof.ChaCha20.Keystream
+import VerifiedGarbage.Spec.ChaCha20.Contract
+import VerifiedGarbage.Proof.ChaCha20.Keystream
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
-public import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
+import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
 public import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ChaCha20 keystream XOR on AArch64

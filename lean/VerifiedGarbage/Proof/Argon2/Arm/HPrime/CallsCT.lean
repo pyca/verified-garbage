@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
 meta import VerifiedGarbage.Proof.Argon2.Arm.HPrime.Hash
-public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Argon2 H′ on ARMv7: the calls, in two runs

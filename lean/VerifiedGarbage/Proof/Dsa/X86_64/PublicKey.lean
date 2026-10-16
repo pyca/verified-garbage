@@ -1,11 +1,19 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.CheckOperands
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicCalls
 public import VerifiedGarbage.Proof.Dsa.Zero
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.RsaPss
 
 /-! # Algebraic domain and public-key validation for DSA -/
 
@@ -23,7 +31,7 @@ def publicAccepted (L : ExecutionLayout) (gb yb : List Byte) (valid : Bool) : Bo
   (decide (1 < Spec.Dsa.decodeBE yb ∧ Spec.Dsa.decodeBE yb < L.modulus) &&
   (decide (1 < Spec.Dsa.decodeBE gb ∧ Spec.Dsa.decodeBE gb < L.modulus) && valid))))
 
-theorem publicKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
+theorem publicKey_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
     (hp : 1 < L.modulus) (hq : 255 < L.subgroup)
     (hop : L.modulus % 2 = 1) (hoq : L.subgroup % 2 = 1)
     (hpf : L.modulus ≤ 256 ^ L.pLen) (hqf : L.subgroup ≤ 256 ^ L.qLen)
@@ -34,7 +42,7 @@ theorem publicKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L
     (hgl : gb.length = L.pLen) (hyl : yb.length = L.pLen) (hqlen : qb.length = L.qLen)
     (hqval : Spec.Dsa.decodeBE qb = L.subgroup)
     {valid : Bool} (hm : word s0.mem L.base Field.mask.offset = mask valid) :
-    WP isa (Checks.publicKey M.mm) s0 fun s10 =>
+    WP isa (Checks.publicKey Sq.mm M.mm) s0 fun s10 =>
       Ready L s10 ∧ word s10.mem L.base Field.mask.offset = mask (publicAccepted L gb yb valid) ∧
       OperandBytes s10 L.base activeBytes (Core.scalar qMinusTwo) (Spec.Dsa.encodeBE L.qLen (L.subgroup - 2)) ∧
       Outside L.base 128 (usedBytes - 128) s0.mem s10.mem ∧ Keep coreRegs s0 s10 := by
@@ -46,7 +54,7 @@ theorem publicKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L
   have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega
   have hu : u + L.qLen ≤ usedBytes := by unfold u usedBytes; omega
   have hqm : qMinusTwo + L.qLen ≤ usedBytes := by unfold qMinusTwo usedBytes; omega
-  unfold Checks.publicKey
+  unfold Checks.publicKey Checks.publicPrefix
   refine WP.seq (WP.mono (readyRange_ok h0 .p Core.generator (by trivial) hg.active
     (by rw [hgl]; omega) (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     true hm) fun s1 h1 => ?_)
@@ -93,11 +101,11 @@ theorem publicKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L
   have hy6 := h6.external (by decide) hqm hy5
   have hq6 := h6.external (by decide) hqm hq5
   have hm6 := (h6.fields (by decide) hqm .mask).trans hm5
-  have step7 := readyPow_ok M h6.ready .p hp hop Core.generator ⟨.input .q, .qLen⟩ (by trivial) (by trivial)
+  have step7 := readyPublicPow_ok M Sq h6.ready .p hp hop Core.generator ⟨.input .q, .qLen⟩ (by trivial) (by trivial)
     hg6.active hq6.active (by rw [hgl]; omega)
     (by simp only [hgl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hqlen]; omega) (by rw [hqlen]; omega) t (by decide) ht
-  have step7' : WP isa (Core.pow M.mm pWorkspace Core.generator ⟨.input .q, .qLen⟩ (Core.element t)) s6
+  have step7' : WP isa (Core.publicPow Sq.mm M.mm pWorkspace Core.generator ⟨.input .q, .qLen⟩ (Core.element t)) s6
       (CallResult L .p t (Spec.Dsa.powMod (Spec.Dsa.decodeBE gb) L.subgroup L.modulus) s6) := by
     simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value, hqval] using step7
   refine WP.seq (WP.mono step7' fun s7 h7 => ?_)
@@ -115,11 +123,11 @@ theorem publicKey_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L
   have hy8 := h8.preserve h7.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy7
   have hq8 := h8.preserve h7.ready (by decide) (by decide) (by change Field.q ≠ .mask; decide) hq7
   have hqm8 := h8.preserve h7.ready (Nat.le_refl _) (by decide) (by trivial) hqm7
-  have step9 := readyPow_ok M h8.ready .p hp hop Core.publicValue ⟨.input .q, .qLen⟩ (by trivial) (by trivial)
+  have step9 := readyPublicPow_ok M Sq h8.ready .p hp hop Core.publicValue ⟨.input .q, .qLen⟩ (by trivial) (by trivial)
     hy8.active hq8.active (by rw [hyl]; omega)
     (by simp only [hyl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
     (by rw [hqlen]; omega) (by rw [hqlen]; omega) t (by decide) ht
-  have step9' : WP isa (Core.pow M.mm pWorkspace Core.publicValue ⟨.input .q, .qLen⟩ (Core.element t)) s8
+  have step9' : WP isa (Core.publicPow Sq.mm M.mm pWorkspace Core.publicValue ⟨.input .q, .qLen⟩ (Core.element t)) s8
       (CallResult L .p t (Spec.Dsa.powMod (Spec.Dsa.decodeBE yb) L.subgroup L.modulus) s8) := by
     simpa only [Core.element, ModulusSide.offset, ModulusSide.lengthField, ModulusSide.value, hqval] using step9
   refine WP.seq (WP.mono step9' fun s9 h9 => ?_)

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.IO
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.IO
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rc2.Contract
@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # CBC's function-level contract -/
 

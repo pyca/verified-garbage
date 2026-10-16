@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Contract
 public import VerifiedGarbage.Proof.EcKey.X86_64.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86_64.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
@@ -14,12 +14,26 @@ public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # P-256 public keys on x86-64: `Verified`
@@ -57,7 +71,7 @@ theorem pre_of {s : State} (h : pkX86_64.pre s) : PkPre p256 s := by
 /-- The postcondition, for any configuration of P-256 (either multiplication). -/
 theorem post_of {c : Cfg} (hC : c.C = Spec.P256.curve) {s s' : State} (h : PkPost c s s') :
     pkX86_64.post s s' := by
-  obtain ⟨n, C, comb, windows, fastN, adx, avx2, pubVerify, hot, mulBase, mul, inverse, nbits⟩ := c
+  obtain ⟨n, C, comb, windows, fastN, adx, avx2, pubVerify, hot, mulBase, mul, inverse, checkPoint, nbits⟩ := c
   subst hC
   unfold PkPost at h
   show match pk s.mem (s.gpr .rsi) with
@@ -67,7 +81,7 @@ theorem post_of {c : Cfg} (hC : c.C = Spec.P256.curve) {s s' : State} (h : PkPos
         Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 65 = List.replicate 65 0
   revert h
   generalize hq : pk s.mem (s.gpr .rsi) = q
-  rw [show Spec.EcKey.publicKey Spec.P256.curve (dk ⟨n, Spec.P256.curve, comb, windows, fastN, adx, avx2, pubVerify, hot, mulBase, mul, inverse, nbits⟩ s) =
+  rw [show Spec.EcKey.publicKey Spec.P256.curve (dk ⟨n, Spec.P256.curve, comb, windows, fastN, adx, avx2, pubVerify, hot, mulBase, mul, inverse, checkPoint, nbits⟩ s) =
     pk s.mem (s.gpr .rsi) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
@@ -107,20 +121,33 @@ theorem pk_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass.L
       · exact hro
       · exact hrs) (by decide)
 
+/-- `publicKeyP256` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`), and its checks of every
+instruction (`Proof/Weierstrass/X86_64/CodeErase.lean`). -/
+def publicKeyP256Erased : Prog isa := Code.erase publicKeyP256
+
+materialize_shared publicKeyP256Erased
+
+theorem pk_inlineOk : publicKeyP256.InlineOk = true := by
+  rw [← Code.InlineOk_erase]
+  show publicKeyP256Erased.InlineOk = true
+  lit_decide
+
 theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP256.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' :=
-  pk_x86_of (p256_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by lit_decide)
-    (by lit_decide) (by lit_decide) s hs
+  pk_x86_of (p256_ok hI) hL (p256_tbls hL hT) ⟨fun h => absurd h (by decide), fun h => absurd h (by decide)⟩ (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by
+      rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [Taint.clobbers_erase]]
+      show publicKeyP256Erased.allInstrs _ = true
+      lit_decide)
+    pk_inlineOk (by
+      rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [loadsMxcsr_erase]]
+      show publicKeyP256Erased.allInstrs _ = true
+      lit_decide) s hs
 
-/-- `publicKeyP256` without its displacements, as a literal of shared blocks
-(`materialize_shared`): what its constant-time check analyses
-(`Proof/Framework/X86_64/TaintErase.lean`). -/
-def publicKeyP256Erased : Prog isa := Code.erase publicKeyP256
-
-materialize_shared publicKeyP256Erased
 
 theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP256 :=
   VG.Taint.constantTime_mapBlocks (c' := publicKeyP256Erased) (taintSym_eraseInv ["VG_P256_COMB"])
@@ -163,7 +190,7 @@ theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP256
       (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts p256.combConsts) 8) :=
-  Verified.of_inline_ct (by lit_decide) (pk_x86 hL hT hI) pk_ct implies8
+  Verified.of_inline_ct pk_inlineOk (pk_x86 hL hT hI) pk_ct implies8
     (fun _ h => Sig.clear_of_pre_consts h) pk_patch
 
 end VG.Proof.EcKey.X86_64

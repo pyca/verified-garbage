@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # Windows in Jacobian coordinates on x86-64: the last iteration and the loop
@@ -140,7 +143,7 @@ theorem toProjR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     rw [← toM_eq_zero_iff hp (I₁.lt _ (hDV _ (by simp))), eD _ (by simp), vz]
     constructor
     · intro h; by_contra hn0; exact cube_ne_zero hC hn0 h
-    · intro h; rw [h]; grind
+    · intro h; rw [h]; simp only [Fin.mul_zero]
   refine ⟨S₄, by rw [k₄.gpr _ (by decide), k₃.1 _ (by decide), k₂.gpr _ (by decide),
     k₁.gpr _ (rbx_not_clob _)], fun x hx => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -154,7 +157,7 @@ theorem toProjR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     show Rep C (toM _ _ _) (toM _ _ _) (toM _ _ _) _
     rw [vRx, vRy, vRz, toM_ite, hone, eD _ (by simp), eD _ (by simp), eD _ (by simp), vx, vy, vz]
     simp only [hZ]
-    rw [z0, show ∀ y : Fe C, y + 0 = y from fun y => by grind]
+    rw [z0, show ∀ y : Fe C, y + 0 = y from Fin.add_zero]
     exact h
 
 /-- The last iteration, `rbx = 1` to `0`: adds digit `0` by the complete

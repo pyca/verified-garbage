@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Blake2.X86_64.BackendS
+public import VerifiedGarbage.Proof.Blake2.X86_64.Compress
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.CT
 
 /-! # BLAKE2s on baseline x86-64 -/
 

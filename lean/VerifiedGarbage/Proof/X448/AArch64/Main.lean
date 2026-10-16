@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Finish
-public import VerifiedGarbage.Proof.X448.AArch64.Ladder
-public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
+import VerifiedGarbage.Proof.X448.AArch64.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Ladder
+import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
 public import VerifiedGarbage.Proof.X448.AArch64.Inv
 public import VerifiedGarbage.Spec.X448.Contract
 public import VerifiedGarbage.TCB.AArch64.Target
@@ -10,6 +10,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.X448.AArch64.BitBody
+import VerifiedGarbage.Proof.X448.AArch64.Bits
 
 /-!
 # X448 on AArch64: the whole function

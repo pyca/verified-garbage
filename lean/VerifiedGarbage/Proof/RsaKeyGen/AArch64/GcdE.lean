@@ -1,11 +1,14 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.ModE
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 
 /-!
 # A candidate on AArch64: `gcd(c − 1, e)`
@@ -153,6 +156,17 @@ theorem modPrep_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {E : Nat}
 
 /-- What `gcdE` and `gcdCheck` change. -/
 def gcdRanges (w : Nat) : List (Nat × Nat) := [(slot w aX, 8 * (w + 2)), (8 * kG, 8)]
+
+/-- `gcdRanges`'s ranges, in the header and in the arrays. -/
+theorem gcdRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(8, 8)]
+    [(1, 1)] (gcdRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    gcdRanges, Public.aX, aX, kG] at hr
+  rcases hr with rfl | rfl
+  · exact .inr ⟨(1, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
 
 theorem gcdRanges_mut (w : Nat) : ∀ r ∈ gcdRanges w, KMut r := by
   simp only [gcdRanges, List.mem_cons, List.not_mem_nil, or_false]

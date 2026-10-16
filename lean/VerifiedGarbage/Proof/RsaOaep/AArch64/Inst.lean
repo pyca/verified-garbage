@@ -3,11 +3,14 @@ module
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncVerified
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Callees
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # RSAES-OAEP on AArch64: the instances emitted
@@ -58,59 +61,62 @@ end Inst
 
 /-! ## States meeting the contracts -/
 
-theorem stackArgs_five (s : State) :
-    List.map (stackArg s) (List.range 5) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
-      stackArg s 4] := rfl
+theorem stackArgs_seven (s : State) :
+    List.map (stackArg s) (List.range 7) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
+      stackArg s 4, stackArg s 5, stackArg s 6] := rfl
 
 /-- A state meeting encryption's contract for `H`: a 512-bit modulus, a
 one-byte `e`, an empty label and message, `H`'s seed, a working space of
-2048 words, and the stack arguments at `0x10000`. -/
+2080 words, 16 words of `pre` at `0x5000`, and the stack arguments at
+`0x10000`. -/
 def encSatState (H : Spec.Mgf1.Hash) : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x2000 | .x3 => 64 | .x4 => 0x3000 | .x5 => 1 | .x6 => 0x4000
     | _ => 0
   sp := 0x10000
-  mem a := bif Nat.beq a.toNat 0x10001 then 0x41 else bif Nat.beq a.toNat 0x10011 then 0x42
-    else bif Nat.beq a.toNat 0x1001A then 0x02 else bif Nat.beq a.toNat 0x10021 then 0x08 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0x4100, 0⟩, ⟨0x4200, H.len⟩, ⟨0x10000, 40⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x20000, 16384⟩]
+  mem a := bif Nat.beq a.toNat 0x10020 then 0x20
+    else bif Nat.beq a.toNat 0x10001 then 0x41 else bif Nat.beq a.toNat 0x10011 then 0x42
+    else bif Nat.beq a.toNat 0x1001A then 0x02 else bif Nat.beq a.toNat 0x10021 then 0x08
+    else bif Nat.beq a.toNat 0x10029 then 0x50 else bif Nat.beq a.toNat 0x10030 then 16 else 0
+  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0x4100, 0⟩, ⟨0x4200, H.len⟩, ⟨0x5000, 128⟩, ⟨0x10000, 56⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x20000, 16640⟩]
 
-theorem enc_sat {H : Spec.Mgf1.Hash} (G : Spec.Mgf1.Hash) (hH : H ∈ mdHashes) :
-    ∃ s, (Spec.RsaOaep.encryptContract H G AArch64.abi (Enc.encStack RsaPkcs1Enc.AArch64.pubImpl)).pre s := by
+theorem enc_sat {H : Spec.Mgf1.Hash} (G : Spec.Mgf1.Hash) (hH : H ∈ mdHashes) (v : Proof.Rsa.AArch64.PublicImpl) :
+    ∃ s, (Spec.RsaOaep.encryptPrecomputedContract H G AArch64.abi (Enc.encStack (RsaPkcs1Sig.AArch64.pdOf v))).pre s := by
   simp only [mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hH
   rcases hH with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · sig_implies_sat [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-      Enc.encStack, Enc.encP, RsaPkcs1Enc.AArch64.pubImpl, stackArgs_five, List.append_eq, Spec.Rsa.lenValid,
-      Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords] [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
-      using encSatState Spec.Mgf1.md5
-  · sig_implies_sat [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-      Enc.encStack, Enc.encP, RsaPkcs1Enc.AArch64.pubImpl, stackArgs_five, List.append_eq, Spec.Rsa.lenValid,
-      Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords] [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
-      using encSatState Spec.Mgf1.sha1
-  · sig_implies_sat [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-      Enc.encStack, Enc.encP, RsaPkcs1Enc.AArch64.pubImpl, stackArgs_five, List.append_eq, Spec.Rsa.lenValid,
-      Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords] [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
-      using encSatState Spec.Mgf1.sha224
-  · sig_implies_sat [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-      Enc.encStack, Enc.encP, RsaPkcs1Enc.AArch64.pubImpl, stackArgs_five, List.append_eq, Spec.Rsa.lenValid,
-      Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords] [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
-      using encSatState Spec.Mgf1.sha256
-  · sig_implies_sat [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-      Enc.encStack, Enc.encP, RsaPkcs1Enc.AArch64.pubImpl, stackArgs_five, List.append_eq, Spec.Rsa.lenValid,
-      Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords] [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
-      using encSatState Spec.Mgf1.sha384
-  · sig_implies_sat [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-      Enc.encStack, Enc.encP, RsaPkcs1Enc.AArch64.pubImpl, stackArgs_five, List.append_eq, Spec.Rsa.lenValid,
-      Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords] [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
-      using encSatState Spec.Mgf1.sha512
-  · sig_implies_sat [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-      Enc.encStack, Enc.encP, RsaPkcs1Enc.AArch64.pubImpl, stackArgs_five, List.append_eq, Spec.Rsa.lenValid,
-      Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords] [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
-      using encSatState Spec.Mgf1.sha512_224
-  · sig_implies_sat [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
-      Enc.encStack, Enc.encP, RsaPkcs1Enc.AArch64.pubImpl, stackArgs_five, List.append_eq, Spec.Rsa.lenValid,
-      Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords] [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]
-      using encSatState Spec.Mgf1.sha512_256
+  · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+      AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
+      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.md5
+  · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+      AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
+      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha1
+  · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+      AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
+      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha224
+  · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+      AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
+      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha256
+  · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+      AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
+      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha384
+  · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+      AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
+      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha512
+  · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+      AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
+      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha512_224
+  · sig_implies_sat [Spec.RsaOaep.encryptPrecomputedContract, Spec.RsaOaep.encryptPrecomputedSig, AArch64.abi,
+      AArch64.argRegs, Enc.encStack, Enc.encP, RsaPkcs1Sig.AArch64.pdOf, stackArgs_seven, List.append_eq,
+      Spec.Rsa.lenValid, Spec.RsaPss.scratchWords, Spec.Rsa.scratchWords, Spec.Rsa.precomputedWords]
+      [encSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatState Spec.Mgf1.sha512_256
 
 /-- A state meeting decryption's contract: a 512-bit modulus, one-byte `e`,
 primes, exponents and `qInv`, an empty label, a working space of 2048 words,
@@ -120,7 +126,8 @@ def decSatState : State where
     | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x1800 | .x3 => 0x2000 | .x4 => 64 | .x5 => 0x3000 | .x6 => 1
     | .x7 => 0x4200 | _ => 0
   sp := 0x10000
-  mem a := bif Nat.beq a.toNat 0x10000 then 1 else bif Nat.beq a.toNat 0x10009 then 0x43
+  mem a := bif Nat.beq a.toNat 0x10070 then 0x20
+    else bif Nat.beq a.toNat 0x10000 then 1 else bif Nat.beq a.toNat 0x10009 then 0x43
     else bif Nat.beq a.toNat 0x10010 then 1 else bif Nat.beq a.toNat 0x10019 then 0x44
     else bif Nat.beq a.toNat 0x10020 then 1 else bif Nat.beq a.toNat 0x10029 then 0x45
     else bif Nat.beq a.toNat 0x10030 then 1 else bif Nat.beq a.toNat 0x10039 then 0x46
@@ -129,7 +136,7 @@ def decSatState : State where
     else bif Nat.beq a.toNat 0x1006A then 0x02 else bif Nat.beq a.toNat 0x10071 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩, ⟨0x4600, 1⟩,
     ⟨0x4700, 0⟩, ⟨0x4100, 64⟩, ⟨0x10000, 120⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 16384⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 16640⟩]
 
 theorem dec_sat (H G : Spec.Mgf1.Hash) (c : Proof.Rsa.AArch64.CrtImpl) :
     ∃ s, (Spec.RsaOaep.decryptContract H G AArch64.abi (Dec.decStack (RsaPkcs1Enc.AArch64.privOf c))).pre s := by

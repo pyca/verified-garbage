@@ -16,10 +16,28 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+public import VerifiedGarbage.Proof.AesSiv.Words
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+public import VerifiedGarbage.Proof.Modes.X86_64.Xor
+meta import VerifiedGarbage.Proof.AesSiv.Ctr32
+meta import VerifiedGarbage.Proof.AesSiv.Words
+meta import VerifiedGarbage.Proof.Cmac.Stream
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+meta import VerifiedGarbage.Proof.Modes.X86_64.Xor
 
 /-!
 # Camellia-OFB and Camellia-CFB128 on x86-64 meet their contracts
@@ -221,12 +239,27 @@ def fbFrameSat : State where
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
 
+/-- What is public at the core's loop of pairs of rounds (as `pairTaint`,
+with the IV's region first, and the IV's address in `xmm15`). -/
+def fbPairTaint : X86_64.Taint.T :=
+  { regs := .ofList [.rdx, .rsp, .rsi, .rdi, .r8, .r9], flags := true, lens := [16, 0, 8 * slots],
+    bases := [(.r9, 2, 0), (.rdx, 2, 8 * tailSlot)],
+    slots := [(2, 8 * endSlot, 8), (2, 8 * countSlot, 8), (2, 8 * dataSlot, 8)], xregs := .ofList [.xmm15] }
+
+/-! The loop of pairs of rounds, which the three modes run, analysed once, as a summary. -/
+
+taint_summary fbPairSum : taintS fbPairTaint (.block pairBody)
+
+theorem ofb_ct : ConstantTime isa ofbX86_64.pre ofbX86_64.pub ofb :=
+  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] : ∃ h, (taintS.check fbTaint ofb h).isSome = true)
+  VG.Taint.constantTime (A := taintS) fbTaint fbTaint_agree h
+
 theorem ofb_verified :
     Verified X86_64.target ofb (Proof.Camellia.ofbScratchContract X86_64.abi slots) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := ofb_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := ofb) (by lit_decide) he hg, hpost⟩)
-    (VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)) (by
+    ofb_ct (by
     sig_implies [Proof.Camellia.ofbScratchContract, Proof.Camellia.ofbScratchSig,
       Spec.Camellia.ofbSig, Spec.Camellia.ofbPre, Spec.Camellia.ofbPost, ofbX86_64, fbPre, fbPub, X86_64.abi,
       X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
@@ -235,12 +268,16 @@ theorem ofbFrameSat_pre : ∃ s, (Spec.Camellia.ofbContract X86_64.abi 3216).pre
   implies_sat [Spec.Camellia.ofbContract, Spec.Camellia.ofbSig, Spec.Camellia.ofbPre,
     Spec.Camellia.ofbPost, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
 
+theorem cfbEncrypt_ct : ConstantTime isa cfbEncX86_64.pre cfbEncX86_64.pub cfbEncrypt :=
+  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] : ∃ h, (taintS.check fbTaint cfbEncrypt h).isSome = true)
+  VG.Taint.constantTime (A := taintS) fbTaint fbTaint_agree h
+
 theorem cfbEncrypt_verified :
     Verified X86_64.target cfbEncrypt (Proof.Camellia.cfbEncScratchContract X86_64.abi slots) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cfbEncrypt_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cfbEncrypt) (by lit_decide) he hg, hpost⟩)
-    (VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)) (by
+    cfbEncrypt_ct (by
     sig_implies [Proof.Camellia.cfbEncScratchContract, Proof.Camellia.cfbScratchSig,
       Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Spec.Camellia.cfbEncryptPost, cfbEncX86_64, fbPre, fbPub, X86_64.abi,
       X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)
@@ -249,12 +286,16 @@ theorem cfbEncryptFrameSat_pre : ∃ s, (Spec.Camellia.cfbEncryptContract X86_64
   implies_sat [Spec.Camellia.cfbEncryptContract, Spec.Camellia.cfbSig, Spec.Camellia.cfbPre,
     Spec.Camellia.cfbEncryptPost, X86_64.abi, X86_64.argRegs] [fbFrameSat] using fbFrameSat
 
+theorem cfbDecrypt_ct : ConstantTime isa cfbDecX86_64.pre cfbDecX86_64.pub cfbDecrypt :=
+  let ⟨_, h⟩ := (by taint_decide_sum [fbPairSum] : ∃ h, (taintS.check fbTaint cfbDecrypt h).isSome = true)
+  VG.Taint.constantTime (A := taintS) fbTaint fbTaint_agree h
+
 theorem cfbDecrypt_verified :
     Verified X86_64.target cfbDecrypt (Proof.Camellia.cfbDecScratchContract X86_64.abi slots) :=
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, hg, hpost⟩ := cfbDecrypt_wp hs
       exact ⟨t, s', he, abiPreserved_of_exec (c := cfbDecrypt) (by lit_decide) he hg, hpost⟩)
-    (VG.Taint.constantTime (A := taint) fbTaint fbTaint_agree (by taint_decide)) (by
+    cfbDecrypt_ct (by
     sig_implies [Proof.Camellia.cfbDecScratchContract, Proof.Camellia.cfbScratchSig,
       Spec.Camellia.cfbSig, Spec.Camellia.cfbPre, Spec.Camellia.cfbDecryptPost, cfbDecX86_64, fbPre, fbPub, X86_64.abi,
       X86_64.argRegs, slots, tailSlot, endSlot, keySlot] [fbSat] using fbSat)

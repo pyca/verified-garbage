@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtArith
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 
 /-!
 # `vg_rsa_crt_values` on AArch64: what the pieces keep, and the masks
@@ -100,7 +104,7 @@ theorem eqA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {a b : Nat} (
     (by have := h.w1; omega) (by have := h.w2; omega) (by omega) (by omega)) fun t ⟨hv, mt, _, k₃⟩ => ?_
   rw [(k₂.gpr .x9 (by decide)).trans h9, m₂, m₁] at hv
   refine ⟨by rw [hv]; simp, by rw [mt, m₂, m₁], (k₃.gpr .x12 (by decide)).trans ((k₂.gpr .x12 (by decide)).trans h12),
-    (k₃.gpr .x11 (by decide)).trans ((k₂.gpr .x11 (by decide)).trans h11), (k12.trans k₃).mono (by simp)⟩
+    (k₃.gpr .x11 (by decide)).trans ((k₂.gpr .x11 (by decide)).trans h11), (k12.trans k₃).mono (by decide)⟩
 
 /-- `subs x3, x9, #1`'s carry: no borrow iff `x9 ≠ 0`. -/
 theorem lt_one_flag (x : BitVec 64) :
@@ -152,7 +156,7 @@ theorem andOdd_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} 
       hs₂.ld (d := 8 * Public.sMask) (by have := h.h256; unfold Public.sMask sFn; omega),
       hs₂.st (d := 8 * Public.sMask) (by have := h.h256; unfold Public.sMask sFn; omega), m₂, m₁, hm,
       mask_low', e0, mask_and'])
-    rfl rfl rfl) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+    rfl rfl rfl) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-- `setOneA j`: word 0 of `[j]` := 1. -/
 theorem setOneA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (hj : j < 16) :
@@ -167,7 +171,7 @@ theorem setOneA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat}
   have hs₂ := h.scr.congr (k₁.trans k₂).wr
   refine WP.mono (WP.keep [.x3] (Q := fun t => t.mem = s.mem.writeW (off B (slot w j)) (1 : BitVec 64)) (by
     brun [h16, hs₂.st (d := slot w j) (by omega), m₂, m₁]
-    rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+    rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-- `decA j`: word 0 of `[j]` minus one. -/
 theorem decA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (hj : j < 16) :
@@ -183,6 +187,6 @@ theorem decA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (h
   refine WP.mono (WP.keep [.x3] (Q := fun t =>
       t.mem = s.mem.writeW (off B (slot w j)) (word s.mem B (slot w j) - 1)) (by
     brun [h16, hs₂.ld (d := slot w j) (by omega), hs₂.st (d := slot w j) (by omega), m₂, m₁]
-    rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by simp)⟩
+    rfl) (by decide) (by decide) (by decide +kernel)) fun t ⟨mt, k₃⟩ => ⟨mt, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 end VG.Proof.Rsa.AArch64

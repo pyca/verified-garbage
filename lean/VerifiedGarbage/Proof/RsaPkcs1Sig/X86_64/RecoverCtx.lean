@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: the contract on the registers
@@ -78,10 +80,11 @@ def recSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x10011 then 0x40 else if a = 0x10018 then 1
+  mem a := if a = 0x10028 then 0x20
+    else if a = 0x10011 then 0x40 else if a = 0x10018 then 1
     else if a = 0x10022 then 0x02 else if a = 0x10029 then 0x04 else 0
   rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x4000, 1⟩, ⟨0x10008, 40⟩]
-  wr := [⟨0x5000, 16⟩, ⟨0x20000, 8192⟩]
+  wr := [⟨0x5000, 16⟩, ⟨0x20000, 8448⟩]
 
 theorem leak_eq3 {a b c a' b' c' : List Byte} (ha : a.length = a'.length) (hb : b.length = b'.length)
     (h : (a ++ b ++ c).map (·.toNat) = (a' ++ b' ++ c').map (·.toNat)) : a = a' ∧ b = b' ∧ c = c' := by

@@ -4,12 +4,14 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyCTLit
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
-public import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.RecoverPoint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
 

@@ -12,7 +12,7 @@ public import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
 meta import VerifiedGarbage.Impl.ChaCha20.Arm.Xor
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
+import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.Arm.Lit
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
@@ -20,6 +20,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ChaCha20 keystream XOR on ARMv7
@@ -776,7 +780,7 @@ theorem xor_correct (s : State) (hs : Proof.ChaCha20.xorArm.pre s) :
 theorem xor_ct : ConstantTime isa Proof.ChaCha20.xorArm.pre Proof.ChaCha20.xorArm.pub
     Impl.ChaCha20.Arm.Xor.xor :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by taint_decide)
+    (by native_taint_decide)
 
 theorem xor_verified :
     Verified Arm.target Impl.ChaCha20.Arm.Xor.xor (Spec.ChaCha20.xorContract Arm.abi) :=

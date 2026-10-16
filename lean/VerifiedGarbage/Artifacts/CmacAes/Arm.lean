@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.CmacAes.Arm.Verified
+import VerifiedGarbage.Proof.CmacAes.Arm.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.Arm.Frame
 
 /-!

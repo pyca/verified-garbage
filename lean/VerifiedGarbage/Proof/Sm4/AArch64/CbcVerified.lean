@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
+public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 public import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.AArch64.CbcDecrypt
 public import VerifiedGarbage.Proof.Modes.AArch64.CbcEncrypt
@@ -22,6 +24,24 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+public import VerifiedGarbage.Proof.AesSiv.Words
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+public import VerifiedGarbage.Proof.Modes.AArch64.Xor
+public import VerifiedGarbage.Proof.Sm4.AArch64.Imm
+meta import VerifiedGarbage.Proof.AesSiv.Ctr32
+meta import VerifiedGarbage.Proof.AesSiv.Words
+meta import VerifiedGarbage.Proof.Cmac.Stream
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+meta import VerifiedGarbage.Proof.Modes.AArch64.Xor
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Imm
 
 /-!
 # SM4-CBC on AArch64 meets its contracts
@@ -132,7 +152,10 @@ theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecAArch64.pre s₀) :
   exact hdata
 
 theorem cbcDecrypt_ct : ConstantTime isa cbcDecAArch64.pre cbcDecAArch64.pub cbcDecrypt :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) cbcTaint_agree (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+    (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (fun s₁ s₂ h₁ h₂ hp => ⟨cbcTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
+      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [cryptSum])
 
 theorem cbcDecrypt_correct (s : State) (hs : cbcDecAArch64.pre s) :
     ∃ t s', Exec isa cbcDecrypt s t s' ∧ abiPreserved s s' ∧ cbcDecAArch64.post s s' := by
@@ -179,7 +202,10 @@ theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncAArch64.pre s₀) :
   exact hdata
 
 theorem cbcEncrypt_ct : ConstantTime isa cbcEncAArch64.pre cbcEncAArch64.pub cbcEncrypt :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) cbcTaint_agree (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+    (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    (fun s₁ s₂ h₁ h₂ hp => ⟨cbcTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
+      simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [cryptSum])
 
 theorem cbcEncrypt_correct (s : State) (hs : cbcEncAArch64.pre s) :
     ∃ t s', Exec isa cbcEncrypt s t s' ∧ abiPreserved s s' ∧ cbcEncAArch64.post s s' := by

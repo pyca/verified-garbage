@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
 meta import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Scrypt.Contract
+import VerifiedGarbage.Spec.Scrypt.Contract
 meta import VerifiedGarbage.Spec.Scrypt.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
@@ -16,6 +16,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Scrypt.Memory
+meta import VerifiedGarbage.Proof.Scrypt.Memory
 
 /-!
 # scryptBlockMix on AArch64: correctness of the loop

@@ -6,6 +6,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Impl.MdStream.AArch64
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Zeroing the Argon2 matrix, independently of its initial contents -/
 

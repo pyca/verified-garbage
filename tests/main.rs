@@ -35,6 +35,8 @@ mod rfc5528;
 mod rfc6229;
 #[path = "rfc6979/main.rs"]
 mod rfc6979;
+#[path = "rfc7027/main.rs"]
+mod rfc7027;
 #[path = "rfc7253/main.rs"]
 mod rfc7253;
 #[path = "rfc7693/main.rs"]

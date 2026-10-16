@@ -22,10 +22,12 @@
 //! list of slices, such as a record's header and payload, or a single one)
 //! into one output buffer. Usually this is one call of `vg_aes_gcm_seal_gather`
 //! (`VG.Spec.Gcm.sealGatherContract`), which reads each piece where it is.
-//! With a prepared key, a 96-bit nonce, at most 16 bytes of AAD, and a long
-//! slice followed by at most one byte, Rust instead composes the verified
-//! CTR, GHASH and interleaved block primitives directly. This composition,
-//! like the incremental API's Rust bookkeeping, is outside the Lean proof.
+//! With a prepared key, a 96-bit nonce, at most 16 bytes of AAD and a long
+//! plaintext, it is instead one call of `vg_aes_gcm_seal_split_prepared`
+//! (`VG.Spec.Gcm.sealSplitPreparedContract`) for one piece, or for a piece
+//! and a second one ending at most 16 bytes after the first's whole blocks
+//! (a TLS record and its content type), copied to the end of the output
+//! first.
 //!
 //! # Tags
 //!
@@ -64,18 +66,21 @@
 //! `aes` feature stands for together) run the `_aes` ones (with
 //! `vg_aes_ctr32_aes` and `vg_ghash_aes`).
 //!
-//! On x86-64, the `_vaes_vpclmul_avx512` and `_aesni_pclmul_avx` instances
-//! also have `_prepared` ones (`VG.Spec.Gcm.PreparedPowersRepr`), whose
-//! interleaved loops read encoded pairs of powers `H¹ … H⁴⁸` from a larger
-//! key context, which `vg_aes_gcm_init_prepared` writes, instead of
-//! computing them on every call (`H¹ … H⁸` on 128-bit registers). The
+//! On x86-64, the `_vaes_vpclmul_avx512`, `_vaes_vpclmul` and
+//! `_aesni_pclmul_avx` instances also have `_prepared` ones
+//! (`VG.Spec.Gcm.PreparedPowersRepr`), whose interleaved loops read encoded
+//! pairs of powers `H¹ … H⁴⁸` from a larger key context, which
+//! `vg_aes_gcm_init_prepared` writes, instead of computing them on every
+//! call (`H¹ … H¹⁶` for `_vaes_vpclmul`, `H¹ … H⁸` on 128-bit registers). The
 //! `_vaes_vpclmul_avx512` loops also load the AES round keys into
 //! `zmm16`–`zmm31` once per block call and reuse them across batches.
 //! `vg_aes_gcm_init_prepared` needs AVX2 too, so the `_aesni_pclmul_avx`
 //! ones are used only where the CPU has it. A key computes the
 //! prepared context once, after it has encrypted or decrypted
 //! `POWERS_AFTER` messages (or streaming updates) long enough to gain from
-//! it, so that one used for a few messages never pays for it.
+//! it, so that one used for a few messages never pays for it. Once it has,
+//! shorter messages sealed use it too on the `_vaes_vpclmul_avx512` backend,
+//! whose short path copies its powers from it; they never count towards it.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -89,14 +94,18 @@ use crate::arch::gcm::vg_aes_gcm_seal_gather;
 use crate::arch::gcm::{
     VG_AES_GCM_INIT_PREPARED_AESNI_PCLMUL_AVX_FEATURES,
     VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
-    vg_aes_gcm_init_prepared_aesni_pclmul_avx, vg_aes_gcm_init_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_open_prepared_aesni_pclmul_avx, vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
-    vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
+    VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_FEATURES, vg_aes_gcm_init_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_init_prepared_vaes_vpclmul, vg_aes_gcm_init_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_open_prepared_aesni_pclmul_avx, vg_aes_gcm_open_prepared_vaes_vpclmul,
+    vg_aes_gcm_open_prepared_vaes_vpclmul_avx512, vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_seal_gather_prepared_vaes_vpclmul,
     vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512, vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
-    vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_seal_prepared_vaes_vpclmul, vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
     vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
+    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
     vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
 };
 #[cfg(target_arch = "aarch64")]
@@ -359,6 +368,10 @@ struct Prepared {
     seal_gather: SealGatherPrepared,
     stream_encrypt: StreamPrepared,
     stream_decrypt: StreamPrepared,
+    /// Whether `seal` and `seal_gather` have a short path that copies its
+    /// powers from the key context, so that messages shorter than
+    /// `POWERS_MIN_LEN` sealed gain from it too once it is ready.
+    short: bool,
 }
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -413,6 +426,19 @@ static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
     seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
+    short: true,
+};
+
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
+    features: VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_FEATURES,
+    init: vg_aes_gcm_init_prepared_vaes_vpclmul,
+    seal: vg_aes_gcm_seal_prepared_vaes_vpclmul,
+    open: vg_aes_gcm_open_prepared_vaes_vpclmul,
+    seal_gather: vg_aes_gcm_seal_gather_prepared_vaes_vpclmul,
+    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
+    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
+    short: false,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -424,6 +450,7 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
     seal_gather: vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx,
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
+    short: false,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -434,6 +461,7 @@ impl Backend {
     fn prepared(self) -> Option<&'static Prepared> {
         let p = match self {
             Backend::VaesVpclmulAvx512 => &PREPARED_VAES_VPCLMUL_AVX512,
+            Backend::VaesVpclmul => &PREPARED_VAES_VPCLMUL,
             Backend::AesNiPclmulAvx => &PREPARED_AESNI_PCLMUL_AVX,
             Backend::Scalar
             | Backend::AesNi
@@ -442,8 +470,7 @@ impl Backend {
             | Backend::Vaes
             | Backend::Vpclmul
             | Backend::VaesPclmul
-            | Backend::AesNiVpclmul
-            | Backend::VaesVpclmul => return None,
+            | Backend::AesNiVpclmul => return None,
         };
         detected().contains(p.features).then_some(p)
     }
@@ -462,6 +489,11 @@ const POWERS_MIN_LEN: usize = 256;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 32;
 
+/// `Powers::calls` once the powers are published, for a backend whose
+/// short path reads them.
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+const SHORT_READY: u32 = u32::MAX;
+
 /// The key context `vg_aes_gcm_init_prepared` writes for a key (that of
 /// `vg_aes_gcm_init`, then 24 encoded pairs of powers of the hash subkey:
 /// `VG.Spec.Gcm.PreparedPowersRepr`), which the `_prepared` instances read,
@@ -473,7 +505,12 @@ struct Powers {
     fns: Option<&'static Prepared>,
     /// The calls that could have read the powers, before they were ready
     /// (counted without a read-modify-write: one lost to a race only
-    /// delays the powers).
+    /// delays the powers); once they are published, `SHORT_READY` if the
+    /// backend has a short path that reads them (`Prepared::short`), so that
+    /// messages shorter than `POWERS_MIN_LEN` take the `_prepared` instances
+    /// too. That test comes after the length's, so longer messages pay
+    /// nothing for it, and such messages never count (`Powers::get` finds
+    /// the powers ready).
     calls: AtomicU32,
     /// Null, or the key context, from `Box::into_raw`: written before it is
     /// published here (with release ordering), never written again while it
@@ -526,7 +563,10 @@ impl Powers {
     }
 
     /// Publishes `ctx`, unless another thread has published a key context
-    /// first: the one published.
+    /// first: the one published. Kept out of `get`, whose ready path it
+    /// would otherwise cost a register move.
+    #[cold]
+    #[inline(never)]
     fn publish(&self, ctx: Box<[u64; 128]>) -> &[u64; 128] {
         let p = Box::into_raw(ctx);
         let q = match self.ctx.compare_exchange(
@@ -542,6 +582,9 @@ impl Powers {
                 q
             }
         };
+        if self.fns.is_some_and(|f| f.short) {
+            self.calls.store(SHORT_READY, Ordering::Relaxed);
+        }
         // SAFETY: as in `get`.
         unsafe { &*q }
     }
@@ -724,7 +767,8 @@ impl AesGcm {
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if data.len() >= POWERS_MIN_LEN
+        if (data.len() >= POWERS_MIN_LEN
+            || self.powers.calls.load(Ordering::Relaxed) == SHORT_READY)
             && let Some(tag) = self.seal_prepared(nonce, aad, data)
         {
             return Ok(tag);
@@ -806,6 +850,10 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        // Not `SHORT_READY` here, though `open`'s short path reads the powers
+        // too: with that test, LLVM allocates registers on the long path
+        // differently, which costs every long message more than short ones
+        // gain.
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         if data.len() >= POWERS_MIN_LEN
             && let Some(r) = self.open_prepared(nonce, aad, data, tag)
@@ -843,46 +891,36 @@ impl AesGcm {
         }
     }
 
-    /// Encrypts a long first slice and at most one trailing byte without
-    /// constructing a streaming state. A prepared key, a 96-bit nonce and
-    /// at most one AAD block let the verified CTR, GHASH and interleaved
-    /// block primitives handle the record directly. The ordinary gather
-    /// implementation handles every other shape.
+    /// `encrypt` of one long piece, or of a long piece and one that ends at
+    /// most 16 bytes after its whole blocks, with the key context with the
+    /// powers if it is ready: one call of `vg_aes_gcm_seal_split_prepared`,
+    /// after the second piece is copied to the end of `out`. For a 96-bit nonce and at most 16 bytes of
+    /// additional data (a TLS record), it absorbs the additional data with
+    /// the prepared `H` and takes no other call before the interleaved loop.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-    fn seal_two_slices_prepared(
+    #[inline(always)]
+    fn seal_split_prepared(
         &self,
         nonce: &[u8],
         aad: &[u8],
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Option<Block> {
-        use crate::arch::aes::{vg_aes_ctr32, vg_aes_ctr32_aesni, vg_aes_ctr32_vaes};
-        use crate::arch::gcm::{
-            vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512, vg_ghash, vg_ghash_pclmul,
-            vg_ghash_vpclmul,
-        };
-        if nonce.len() != 12
-            || aad.len() > 16
-            || plaintext.len() != 2
-            || plaintext[1].len() > 1
-            || plaintext[0].len() < 256
-        {
+        use crate::arch::gcm::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512;
+        // `seal_split` reads `src`'s whole blocks where they are, and ends
+        // without another call when at most 16 bytes are left after them:
+        // with a second piece, only for those shapes (a TLS record's
+        // payload and content type); the gathering takes the others.
+        if nonce.len() != 12 || aad.len() > 16 {
             return None;
         }
-        // Follow the same exhaustive backend mapping as the generic
-        // assembly callers. New AES/GHASH combinations must be handled here.
-        let ctr = instance!(self.backend, vg_aes_ctr32,
-            x86_64: [vg_aes_ctr32_aesni, vg_aes_ctr32, vg_aes_ctr32_aesni],
-            vaes: [vg_aes_ctr32_vaes, vg_aes_ctr32, vg_aes_ctr32_vaes,
-                vg_aes_ctr32_aesni, vg_aes_ctr32_vaes, vg_aes_ctr32_vaes],
-            avx: [vg_aes_ctr32_aesni], aarch64: [vg_aes_ctr32_aes]);
-        let gh = instance!(self.backend, vg_ghash,
-            x86_64: [vg_ghash, vg_ghash_pclmul, vg_ghash_pclmul],
-            vaes: [vg_ghash, vg_ghash_vpclmul, vg_ghash_pclmul,
-                vg_ghash_vpclmul, vg_ghash_vpclmul, vg_ghash_vpclmul],
-            avx: [vg_ghash_pclmul], aarch64: [vg_ghash_aes]);
-        let blocks = match self.backend {
-            Backend::VaesVpclmulAvx512 => vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
+        let (src, rest): (&[u8], &[u8]) = match plaintext {
+            [a] if a.len() >= POWERS_MIN_LEN => (a, &[]),
+            [a, b] if a.len() >= POWERS_MIN_LEN && a.len() % 16 + b.len() <= 16 => (a, b),
+            _ => return None,
+        };
+        let split = match self.backend {
+            Backend::VaesVpclmulAvx512 => vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512,
             Backend::Scalar
             | Backend::AesNi
             | Backend::Pclmul
@@ -898,77 +936,32 @@ impl AesGcm {
         if ctx.is_null() {
             return None;
         }
-        let mut scratch = MaybeUninit::<[u64; 264]>::uninit();
-        let work = scratch.as_mut_ptr();
-        let mut counter = [0u8; 16];
-        counter[..12].copy_from_slice(nonce);
-        counter[15] = 1;
-        let mut tag = [0u8; 16];
-        let mut y = [0u8; 16];
-        let mut padded_aad = [0u8; 16];
-        padded_aad[..aad.len()].copy_from_slice(aad);
-        let head = plaintext[0].len() & !15;
-        let count = head / 16;
-        let mut finish = [[0u8; 16]; 2];
-        let rem = plaintext[0].len() - head;
-        let tail = rem + plaintext[1].len();
-        finish[0][..rem].copy_from_slice(&plaintext[0][head..]);
-        finish[0][rem..tail].copy_from_slice(plaintext[1]);
-        finish[1][..8].copy_from_slice(&((aad.len() as u64) * 8).to_be_bytes());
-        finish[1][8..].copy_from_slice(&((out.len() as u64) * 8).to_be_bytes());
-        // SAFETY: the exhaustive dispatch above selects the key's CPU
-        // features. The acquired context was initialized for this key and
-        // lives as long as `self`; its first 256 bytes contain the ordinary
-        // schedule and H. The caller checked nonce, AAD, text and output
-        // lengths. The nonce forms J0 = nonce || 1; CTR first computes
-        // E(K, J0), leaving inc32(J0) for the text. `head` is a whole-block
-        // prefix; `rem + suffix.len() <= 16`. Each call gets separate
-        // readable inputs and writable buffers of its specified size,
-        // including 2112 scratch bytes. The final ciphertext is zero-padded
-        // before GHASH, followed by the big-endian bit lengths (§7.1).
+        out[src.len()..].copy_from_slice(rest);
+        let mut tag: Block = [0; 16];
+        // SAFETY: `ctx` is a published key context (see `Powers::ctx`),
+        // which `vg_aes_gcm_init_prepared` wrote for this key, valid for
+        // reads of 1024 bytes as long as `self` lives, and the CPU has the
+        // features of `self.backend`, whose `_prepared` instance this is.
+        // `encrypt` checked that `out` is as long as the pieces in all, so
+        // `src.len() <= out.len()`, and `out` holds the second piece after
+        // `src.len()` bytes. The nonce, the additional data, `src`, `out`
+        // and `tag` are valid for their lengths, and `out` and `tag`, which
+        // the function writes, are distinct Rust objects from the others.
         unsafe {
-            ctr(
-                ctx.cast(),
-                self.rounds,
-                &mut counter,
-                &mut tag,
-                1,
-                work.cast(),
-            );
-            let h = ctx.cast::<u8>().add(240).cast::<[u8; 16]>();
-            if !aad.is_empty() {
-                gh(h, &mut y, &padded_aad, 1, work.cast());
-            }
-            blocks(
+            split(
                 ctx,
                 self.rounds,
-                &mut counter,
-                &mut y,
-                plaintext[0].as_ptr().cast(),
-                count,
-                out.as_mut_ptr().cast(),
-                count,
-                work,
-            );
-            if tail != 0 {
-                ctr(
-                    ctx.cast(),
-                    self.rounds,
-                    &mut counter,
-                    &mut finish[0],
-                    1,
-                    work.cast(),
-                );
-                out[head..].copy_from_slice(&finish[0][..tail]);
-                finish[0][tail..].fill(0);
-                gh(h, &mut y, finish.as_ptr(), 2, work.cast());
-            } else {
-                gh(h, &mut y, &finish[1], 1, work.cast());
-            }
-        }
-        for i in 0..16 {
-            tag[i] ^= y[i];
-        }
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                src.as_ptr(),
+                src.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                &mut tag,
+            )
+        };
         Some(tag)
     }
 
@@ -1002,7 +995,7 @@ impl AesGcm {
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if let Some(tag) = self.seal_two_slices_prepared(nonce, aad, plaintext, out) {
+        if let Some(tag) = self.seal_split_prepared(nonce, aad, plaintext, out) {
             return Ok(tag);
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
@@ -1014,7 +1007,7 @@ impl AesGcm {
         }
         let src: *const [usize; 2] = descs.as_ptr().cast();
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if out.len() >= POWERS_MIN_LEN
+        if (out.len() >= POWERS_MIN_LEN || self.powers.calls.load(Ordering::Relaxed) == SHORT_READY)
             && let Some(tag) = self.seal_gather_prepared(nonce, aad, src, plaintext.len(), out)
         {
             return Ok(tag);
@@ -1779,6 +1772,12 @@ mod tests {
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES,
                     ][..],
                 ),
                 (
@@ -2072,12 +2071,17 @@ mod tests {
     }
 
     /// Prepared contexts agree with fresh contexts around both interleaved
-    /// loop widths, including partial blocks and multi-slice input.
+    /// loop widths, including partial blocks and input in one to three
+    /// pieces.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     #[test]
     fn prepared_boundaries() {
         use super::POWERS_AFTER;
-        for b in [Backend::VaesVpclmulAvx512, Backend::AesNiPclmulAvx] {
+        for b in [
+            Backend::VaesVpclmulAvx512,
+            Backend::VaesVpclmul,
+            Backend::AesNiPclmulAvx,
+        ] {
             if !detected().contains(b.features()) || b.prepared().is_none() {
                 continue;
             }
@@ -2088,8 +2092,8 @@ mod tests {
                     warm.encrypt_in_place(&[0; 12], &[], &mut [0; 256]).unwrap();
                 }
                 for len in [
-                    255, 256, 257, 511, 512, 513, 767, 768, 769, 1024, 1536, 3071, 3072, 3073,
-                    4097, 10000,
+                    17, 100, 255, 256, 257, 288, 481, 511, 512, 513, 767, 768, 769, 1024, 1535,
+                    1536, 2303, 2304, 2305, 3071, 3072, 3073, 4097, 10000,
                 ] {
                     let plain: alloc::vec::Vec<u8> = (0..len).map(|i| (i * 29 + 7) as u8).collect();
                     for nonce_len in [12, 13] {
@@ -2105,9 +2109,33 @@ mod tests {
                             warm.decrypt_in_place(nonce, aad, &mut actual, &tag)
                                 .unwrap();
                             assert_eq!(actual, plain);
-                            let pieces = [&plain[..len - 1], &plain[len - 1..]];
-                            let tag = warm.encrypt(nonce, aad, &pieces, &mut actual).unwrap();
-                            assert_eq!((&actual, tag), (&want, want_tag));
+                            // A wrong tag leaves the ciphertext as it was.
+                            let mut bad_tag = tag;
+                            bad_tag[15] ^= 1;
+                            actual.clone_from(&want);
+                            assert!(
+                                warm.decrypt_in_place(nonce, aad, &mut actual, &bad_tag)
+                                    .is_err()
+                            );
+                            assert_eq!(actual, want);
+                            // One piece (`seal_split_prepared` from 256
+                            // bytes on); a second of 1 byte (the same), 16
+                            // bytes (the same when the first ends on a
+                            // block), or 17; and three.
+                            let (a, b) = plain.split_at(len - 17);
+                            let (b, c) = b.split_at(1);
+                            let ways: [&[&[u8]]; 5] = [
+                                &[&plain],
+                                &[&plain[..len - 1], &plain[len - 1..]],
+                                &[&plain[..len - 16], &plain[len - 16..]],
+                                &[a, &plain[len - 17..]],
+                                &[a, b, c],
+                            ];
+                            for pieces in ways {
+                                actual.fill(0);
+                                let tag = warm.encrypt(nonce, aad, pieces, &mut actual).unwrap();
+                                assert_eq!((&actual, tag), (&want, want_tag));
+                            }
                         }
                     }
                 }
@@ -2134,7 +2162,11 @@ mod tests {
             let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap();
             let base = k.with_backend(Backend::Scalar);
             assert!(base.powers.get(base.rounds, &base.ctx).is_none());
-            for b in [Backend::VaesVpclmulAvx512, Backend::AesNiPclmulAvx] {
+            for b in [
+                Backend::VaesVpclmulAvx512,
+                Backend::VaesVpclmul,
+                Backend::AesNiPclmulAvx,
+            ] {
                 // Without the backend's features (or those of its key setup with
                 // the powers), only what needs none of them.
                 if !detected().contains(b.features()) || b.prepared().is_none() {

@@ -5,6 +5,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.RsaPss.VerifyCases
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPss.AArch64.FixedSaltSelect
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyLogic
 
 /-!
 # RSASSA-PSS verification on AArch64: after the checks
@@ -142,8 +147,8 @@ theorem check_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     (hG : Proof.Mgf1.Valid G) {K : Nat} {s t : State} (hp : PreV H.D K s) (hK : 16 ≤ K) {lo : Nat} {cb : Byte}
     {z : Nat} (ha : AfterCall H.D K s lo cb t) (hlo : lo ≤ 1) (hfit : H.D + 2 ≤ (s.gpr .x1).toNat - lo)
     (hc : cb = (0xFF : Byte) >>> z) (hs : anyV s = 0 → (s.gpr .x7).toNat < (s.gpr .x1).toNat - lo - H.D - 1) :
-    WP isa (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck, clearY, copyDigest H, copyDb H,
-      shift H, .block (verifyNb H), ctHash H, cmpH H]) t fun u => Mid s u ∧ (Cons s →
+    WP isa (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck,
+      Impl.RsaPss.AArch64.FixedSalt.select H]) t fun u => Mid s u ∧ (Cons s →
       ∀ b : Bool, (b = true ↔ (lo = 1 → (pubX s).getD 0 0 = 0) ∧
         EncOk G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) H.D) ((pubX s).drop lo) ((s.gpr .x1).toNat - lo) z (sLenV s)) →
         u.gpr .x0 = if b then 1#64 else 0#64) := by
@@ -157,9 +162,9 @@ theorem check_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   refine (b1_ok hH hGh hGl hG L (V := fun o => t.mem (off (scr s) o)) (fun _ _ => rfl) (k := k) (lo := lo)
     (db := k - lo - H.D - 1) (c := cb) (any := anyV s) (sv := s.gpr .x7) hkd (by omega) (by omega) hlo ha.x19
     ha.x21 h23 ha.x24 h25 ha.lo ha.c ha.fr.any hS
-    (rest := seqs [clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H])
+    (rest := Impl.RsaPss.AArch64.FixedSalt.select H)
     fun u B => ?_ : WP isa (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck,
-      seqs [clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H]]) t _)
+      Impl.RsaPss.AArch64.FixedSalt.select H]) t _)
   have gu : ∀ r ∈ [Reg.x19, .x20, .x21, .x23, .x24, .x25], u.gpr r = t.gpr r := B.cs
   have hdg : u.mem.readW (off (fb s) sDig) 64 = s.gpr .x4 := by
     rw [slot_keep B.fr (fun r hr => ?_)]
@@ -171,13 +176,40 @@ theorem check_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     rw [B.rd, B.wr, ha.rd, ha.wr]
     exact Covers.left (Covers.trans (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx]; simp) hp.hrd) _ _
       ⟨dgR H.D s, List.mem_singleton_self _, Offset.contains_base _ (by omega) (by have := hp.wdg; omega)⟩
-  refine WP.mono (b2_ok hH (L.congr B.sp B.wr (gu .x20 (by decide)))
+  have hslot : ∀ d, d + 8 ≤ frameBytes →
+      (d + 8 ≤ sNb ∨ sNb + 8 ≤ d) → (d + 8 ≤ sDone ∨ sDone + 8 ≤ d) →
+      (d + 8 ≤ sPos ∨ sPos + 8 ≤ d) →
+      u.mem.readW (off (fb s) d) 64 = t.mem.readW (off (fb s) d) 64 := by
+    intro d hd hn hf hpos
+    apply slot_keep B.fr
+    intro r hr
+    rcases List.mem_append.mp hr with h | h
+    · exact L.slotW hd hn hf r h
+    · rw [List.mem_singleton.mp h]
+      exact Offset.disjoint _ hpos (by unfold frameBytes at hd; omega) (by decide)
+  refine WP.mono (VG.Proof.RsaPss.AArch64.FixedSalt.select_ok hH (L.congr B.sp B.wr (gu .x20 (by decide)))
     (W := wct (fun o => t.mem (off (scr s) o)) (mkB G H.D (fun o => t.mem (off (scr s) o)) (oEm + lo)
       (k - lo - H.D - 1)) (oEm + lo) (k - lo - H.D - 1) cb) (e := oEm + lo) (db := k - lo - H.D - 1)
     B.em (by omega) (by unfold oEm oY; omega)
     (nz_lt (by omega)) (by omega) (by rw [gu .x19 (by decide), ha.x19]) (by rw [gu .x21 (by decide), ha.x21])
     (by rw [gu .x24 (by decide), ha.x24]) (by rw [gu .x25 (by decide), h25]) B.acc B.pos hdg hrd
-    (hp.dgs.sub_right (rsa_sub hp))) fun u' ⟨sp', rd', wr', cs', v', fr', x0'⟩ => ⟨?_, fun hcons b hb => ?_⟩
+    (hp.dgs.sub_right (rsa_sub hp))
+    (by rw [hslot sAny (by decide) (by decide) (by decide) (by decide)]; exact ha.fr.any)
+    (sl := (s.gpr .x7).toNat)
+    (by rw [hslot sSaltLen (by decide) (by decide) (by decide) (by decide), hS, BitVec.ofNat_toNat, BitVec.setWidth_eq])
+    hs
+    (by
+      intro hany hacc
+      have heq := (VG.Proof.RsaPss.AArch64.acc1V_eq_zero _ _ _ _ _).mp hacc
+      exact (VG.Proof.RsaPss.AArch64.eq_ofNat_iff (by omega) _).mp (heq.2.2.2 hany))
+    (by
+      have hb := VG.Proof.RsaPss.AArch64.acc_lt (fun o => t.mem (off (scr s) o)) k lo cb
+        (fun i => wct (fun o => t.mem (off (scr s) o))
+          (mkB G H.D (fun o => t.mem (off (scr s) o)) (oEm + lo) (k - lo - H.D - 1))
+          (oEm + lo) (k - lo - H.D - 1) cb (oEm + lo + i))
+        (k - lo - H.D - 1) (anyV s) (s.gpr .x7) (fun _ => 0) 0 (by omega)
+        (fun h => by have := hs h; omega) (fun _ => by decide)
+      simpa [VG.Proof.RsaPss.AArch64.orF] using hb)) fun u' ⟨sp', rd', wr', cs', v', fr', x0'⟩ => ⟨?_, fun hcons b hb => ?_⟩
   · exact ⟨by rw [sp', B.sp, ha.sp], by rw [rd', B.rd, ha.rd], by rw [wr', B.wr, ha.wr],
       fun r hr => by rw [v' r hr, B.v r hr, ha.v r hr],
       fr_mgf hp (fr_mgf hp ha.fr B.fr) (fr'.mono fun r hr => List.mem_append_left _ hr)⟩

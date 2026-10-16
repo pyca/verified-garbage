@@ -10,6 +10,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_rej_bounded_poly`
@@ -49,7 +59,7 @@ def L : Lay := { nA := 4, iA := 2, iS := 3, rate := 136, outlen := 544, mlen := 
 
 theorem hL : L.Ok :=
   ⟨by decide, by decide, by decide, by decide, by decide, fun k hk => by cases hk; decide,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 /-- `η`. -/
 abbrev η (s₀ : State) : Nat := (arg s₀ 1).toNat
@@ -339,9 +349,9 @@ theorem body_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (ht : t < 544)
       s.gpr .eax = BitVec.ofNat 32 (zb s₀ t).toNat ∧ eval .b s = some (decide ((LA s₀ t).length < 256))) ∧
       η s₀ = e) ?_ (Piece.seq (B := fun s₀ s => Loop s₀ t (LA s₀ (t + 1)) s ∧ η s₀ = e) ?_
         (Piece.taint [] (fun s₀ s _ ⟨h, hη⟩ => (end_ok ht h).mono fun s' ⟨h', hc⟩ => ⟨⟨h', hη⟩, hc⟩)
-          (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)))
+          (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)))
   · refine Piece.taint [.esi] (fun s₀ s hp ⟨h, hη⟩ => (load_ok hp ht h).mono fun s' h' => ⟨h', hη⟩)
-      (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_) (by taint_decide)
+      (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_) (by native_taint_decide)
     simp only [List.mem_singleton] at hr
     subst hr
     rw [h.esi, h'.esi, hq.1.sP hL]
@@ -357,7 +367,7 @@ theorem body_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (ht : t < 544)
         s.gpr .eax = BitVec.ofNat 32 (hi s₀ t) ∧ eval .b s = some (decide ((L1 s₀ t).length < 256))) ∧
         η s₀ = e) ∧ (LA s₀ t).length < 256)
       (Piece.taint [] (fun s₀ s _ ⟨⟨⟨h, hax⟩, hη⟩, hx⟩ => (hi_ok h hax).mono fun s' h' => ⟨⟨h', hη⟩, hx⟩)
-        (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)) ?_
+        (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)) ?_
     refine Piece.ite (fun s₀ => decide ((L1 s₀ t).length < 256)) (fun _ _ _ h => h.1.1.2.2.2)
       (fun s₀ s₀' _ _ hq => by rw [L1_len hq ht]) ?_ ?_
     · refine (try_piece he t (fun s₀ => L1 s₀ t) (fun s₀ => hi s₀ t) (fun s₀ => hi s₀ t)
@@ -390,7 +400,7 @@ def Sel (s₀ s : State) : Prop :=
 theorem sel_piece : Piece BPre BPub (Out L) Sel
     (.block [.mov .edi (.mem (argOp 2)), .mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 2)]) := by
   refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_)
-    (by taint_decide)
+    (by native_taint_decide)
   · have a₁ := h.argEa (i := 1)
     have i₁ := h.argIn hp.1 (i := 1) (by decide)
     have v₁ := h.args 1 (by decide)
@@ -413,7 +423,7 @@ theorem init_piece (e : Nat) (b : Bool) (hb : ∀ s₀, BPre s₀ → decide (η
     Piece BPre BPub (fun s₀ s => Sel s₀ s ∧ decide (η s₀ = 2) = b) (fun s₀ s => Loop s₀ 0 (LA s₀ 0) s ∧ η s₀ = e)
     (.block [.alu .add .esi (.imm (BitVec.ofNat 32 840)), .mov .ecx (.imm 0), .mov .ebp (.imm 544)]) := by
   refine Piece.taint [] (fun s₀ s hp ⟨⟨h, hdi, _⟩, e⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-    (by taint_decide)
+    (by native_taint_decide)
   apply WP.of_runBlock
   simp only [Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.map_some, Option.some.injEq,
@@ -428,10 +438,10 @@ theorem branch_piece : Piece BPre BPub Sel (fun s₀ s => Loop s₀ 544 (LA s₀
   refine Piece.ite (fun s₀ => decide (η s₀ = 2)) (fun _ _ _ h => h.2.2)
     (fun s₀ s₀' _ _ hq => by rw [hq.eη]) ?_ ?_
   · exact (Piece.seq (init_piece 2 true fun s₀ _ e => of_decide_eq_true e)
-      (loop_piece (Or.inl rfl) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h)
+      (loop_piece (Or.inl rfl) ⟨_, by native_taint_decide⟩ ⟨_, by native_taint_decide⟩)).mono (fun _ _ _ h => h)
       fun _ _ _ h => h.1
   · exact (Piece.seq (init_piece 4 false fun s₀ hp e => hp.2.resolve_left (of_decide_eq_false e))
-      (loop_piece (Or.inr rfl) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h)
+      (loop_piece (Or.inr rfl) ⟨_, by native_taint_decide⟩ ⟨_, by native_taint_decide⟩)).mono (fun _ _ _ h => h)
       fun _ _ _ h => h.1
 
 /-- The end: 1 in `eax` if there are 256 coefficients, 0 if fewer. -/
@@ -440,7 +450,7 @@ structure Fin (s₀ s : State) : Prop extends Loop s₀ 544 (LA s₀ 544) s wher
 
 theorem fin_piece : Piece BPre BPub (fun s₀ s => Loop s₀ 544 (LA s₀ 544) s) Fin (.block (retJ .ecx)) := by
   refine Piece.taint [] (fun s₀ s _ h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-    (by taint_decide)
+    (by native_taint_decide)
   have hl := h.len
   refine wp_movr (wp_shr (by decide) (by decide) fun s' o e => WP.block_nil_iff.mpr ?_)
   have g : ∀ r, r ≠ .eax → s'.gpr r = s.gpr r := fun r hr => by

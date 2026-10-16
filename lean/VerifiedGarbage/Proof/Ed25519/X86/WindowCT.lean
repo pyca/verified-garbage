@@ -4,18 +4,28 @@ public import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
 meta import VerifiedGarbage.Proof.Ed25519.X86.WindowLoop
 public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
-public import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
+import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
-public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
+import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # Verification's windows: what their traces depend on
@@ -148,8 +158,8 @@ theorem digitNibble_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {P₁ P
   · intro x y hh
     change x.zf.map Bool.not = y.zf.map Bool.not
     rw [hh.1, hh.2]
-  · exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
-  · exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
+  · exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by native_taint_decide)
+  · exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by native_taint_decide)
 
 /-! ## Adding a digit's entry -/
 
@@ -177,14 +187,14 @@ theorem addDigit_ct (o : Nat) (ho : o = 1024 ∨ o = 3072) {v : Nat} (hv : v < 1
   have test : RelCT isa (fun x y => CallCTPre B x y ∧ (x.gpr .eax = BitVec.ofNat 32 v ∧ x.gpr .edi = B) ∧
       (y.gpr .eax = BitVec.ofNat 32 v ∧ y.gpr .edi = B)) (.block [.alu .test .eax (.reg .eax)])
       (fun _ _ => True) :=
-    VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
+    VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by native_taint_decide)
   have body : RelCT isa (fun x y => CallCTPre B x y ∧ x.gpr .eax = y.gpr .eax)
       (.seq (.block (entryAddr o ++ pointFromTableQ)) Point32.addCall) (fun _ _ => True) := by
     obtain ⟨_, hc⟩ : ∃ h, (taint.check (callTaintR [.eax])
         (.seq (.block (entryAddr o ++ pointFromTableQ)) Point32.addCall) h).isSome = true := by
       rcases ho with rfl | rfl
-      · taint_decide_sum [addSum]
-      · taint_decide_sum [addSum]
+      · native_taint_decide_sum [addSum]
+      · native_taint_decide_sum [addSum]
     exact VG.RelCT.taint (A := taint) (callTaintR [.eax])
       (fun _ _ hh => callTaintR_agree hh.1 fun r hr => by
         rw [List.mem_singleton.mp hr]; exact hh.2) hc
@@ -211,7 +221,7 @@ theorem doubleWindow_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : 
     RelCT isa (fun x y => WinAt s₀ Aa R i x ∧ WinAt t₀ Aa R i y) doubleWindow (fun _ _ => True) :=
   VG.RelCT.taint (A := taint) (regsTaint [.edi, .esi])
     (fun _ _ hh => agree_two ⟨saved_edi h hh.1.1.saved hh.2.1.saved, hh.1.2.1.trans hh.2.2.1.symm⟩)
-    (by taint_decide)
+    (by native_taint_decide)
 
 theorem doubleWindow_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 128)
     (hx : WinAt s₀ Aa R i x) : WP isa doubleWindow x (WinAt s₀ Aa R i) := by
@@ -244,8 +254,8 @@ theorem digitK_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint
     RelCT isa (fun x y => WinAt s₀ Aa R n x ∧ WinAt t₀ Aa R n y) (digitNibble 12 0) (fun _ _ => True) :=
   digitNibble_ct (a := 2) h (by decide) (by omega) (fun _ hx => ⟨hx.1.saved, hx.2.1⟩)
     (fun _ hy => ⟨hy.1.saved, hy.2.1⟩)
-    (VG.RelCT.taint (A := taint) (regsTaint [.esp, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
-    (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
+    (VG.RelCT.taint (A := taint) (regsTaint [.esp, .esi]) (fun _ _ hh => agree_two hh) (by native_taint_decide))
+    (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by native_taint_decide))
     (fun _ hx => WP.mono (nibbleByte_ok (a := 2) hx.1.pre.scratch hx.1.saved (by decide) hx.1.pre.challenge
       (by omega) (by decide) hx.2.1) fun _ h => h.2.2)
     (fun _ hy => WP.mono (nibbleByte_ok (a := 2) hy.1.pre.scratch hy.1.saved (by decide) hy.1.pre.challenge
@@ -257,8 +267,8 @@ theorem digitS_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint
     RelCT isa (fun x y => P₁ x ∧ P₂ y) (digitNibble 8 32) (fun _ _ => True) :=
   digitNibble_ct (a := 1) h (by decide) (by omega) (fun _ hx => ⟨(h₁ _ hx).1.saved, (h₁ _ hx).2.1⟩)
     (fun _ hy => ⟨(h₂ _ hy).1.saved, (h₂ _ hy).2.1⟩)
-    (VG.RelCT.taint (A := taint) (regsTaint [.esp, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
-    (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
+    (VG.RelCT.taint (A := taint) (regsTaint [.esp, .esi]) (fun _ _ hh => agree_two hh) (by native_taint_decide))
+    (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by native_taint_decide))
     (fun _ hx => WP.mono (nibbleByte_ok (a := 1) (h₁ _ hx).1.pre.scratch (h₁ _ hx).1.saved (by decide)
       (h₁ _ hx).1.pre.scalar (by omega) (by decide) (h₁ _ hx).2.1) fun _ h => h.2.2)
     (fun _ hy => WP.mono (nibbleByte_ok (a := 1) (h₂ _ hy).1.pre.scratch (h₂ _ hy).1.saved (by decide)
@@ -294,7 +304,7 @@ theorem addS_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint d
     RelCT isa (fun x y => WinAt s₀ Aa R n x ∧ WinAt t₀ Aa R n y) addS (fun _ _ => True) := by
   rw [addS]
   refine VG.RelCT.seq (((VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none)
-    (by taint_decide)).wp fun x y hh => ⟨cmp64_at hn hh.1, cmp64_at hn hh.2⟩).mono (fun _ _ h => h)
+    (by native_taint_decide)).wp fun x y hh => ⟨cmp64_at hn hh.1, cmp64_at hn hh.2⟩).mono (fun _ _ h => h)
     (fun _ _ h => h.2)) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
   · intro x y hh
     change x.cf = y.cf
@@ -330,14 +340,14 @@ theorem nibbleStep_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EP
     RelCT isa (fun x y => NLoopAt s₀ Aa R (n + 1) x ∧ NLoopAt t₀ Aa R (n + 1) y) nibbleStep
       (fun _ _ => True) := by
   rw [nibbleStep]
-  refine seq_runs (VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide))
+  refine seq_runs (VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by native_taint_decide))
     (fun _ hx => esiDec_at hx) (fun _ hy => esiDec_at hy) ?_
   refine seq_runs (doubleWindow_ct h) (fun _ hx => doubleWindow_at hn hx)
     (fun _ hy => doubleWindow_at hn hy) ?_
   refine seq_runs (addK_ct h hn) (fun _ hx => addK_at hn hx) (fun _ hy => addK_at hn hy) ?_
   refine seq_runs (F₁ := fun _ => True) (F₂ := fun _ => True) (addS_ct h hn) (fun _ hx => addS_at hn hx)
     (fun _ hy => addS_at hn hy) ?_
-  exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
+  exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by native_taint_decide)
 
 theorem loopN_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
     {R : Spec.Ed25519.Point} {c : Nat} (hc0 : 0 < c) (hc : c ≤ 128) :
@@ -396,11 +406,11 @@ theorem skipBody_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoi
       .alu .test .eax (.reg .eax)])) _
     refine ctBlockAppend (((VG.RelCT.taint (A := taint) (regsTaint [.esi, .esp])
       (fun x y hh => agree_two ⟨hh.1.2.2.2.1.trans hh.2.2.2.2.1.symm,
-        saved_esp h hh.1.1.saved hh.2.1.saved⟩) (by taint_decide)).wp
+        saved_esp h hh.1.1.saved hh.2.1.saved⟩) (by native_taint_decide)).wp
       fun x y hh => ⟨pre s₀ x (verify_pre h.left) hh.1, pre t₀ y (verify_pre h.right) hh.2⟩).mono
         (fun _ _ h => h) fun x y hh => ⟨hh.2.1.1.trans ((h.args 2 (by decide)).trans hh.2.2.1.symm),
           hh.2.1.2.trans hh.2.2.2.symm⟩)
-      (VG.RelCT.taint (A := taint) (regsTaint [.eax, .edx]) (fun _ _ hh => agree_two hh) (by taint_decide))
+      (VG.RelCT.taint (A := taint) (regsTaint [.eax, .edx]) (fun _ _ hh => agree_two hh) (by native_taint_decide))
   have lw (u x : State) (hx : SkipAt u Aa R m x) : WP isa (.block skipLoad) x fun t =>
       t.zf = some (decide ((kByte u (32 + m - 1)).toNat = 0)) ∧
         t.gpr .edx = BitVec.ofNat 32 (32 + m - 1) :=
@@ -411,9 +421,9 @@ theorem skipBody_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoi
   · intro x y hh
     change x.zf.map Bool.not = y.zf.map Bool.not
     rw [hh.1.1, hh.2.1, h.kByte]
-  · exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
+  · exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by native_taint_decide)
   · exact VG.RelCT.taint (A := taint) (regsTaint [.edx]) (fun _ _ hh => agree_one (hh.1.1.2.trans hh.1.2.2.symm))
-      (by taint_decide)
+      (by native_taint_decide)
 
 theorem skipZero_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
     {R : Spec.Ed25519.Point} :
@@ -441,9 +451,11 @@ theorem skipZero_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoi
 
 /-! ## The whole multiplication -/
 
-/-- Before the equation's points: the saved state, `A` at byte 7680 and `R` at byte 7808. -/
+/-- Before the windows: the saved state, `A` at byte 7680, `R` at byte 7808, and the table of
+`-[1]B … -[15]B` at byte 3072. -/
 def EquationCTPre (s₀ : State) (a r : Spec.Ed25519.Point) (s : State) : Prop :=
-  Saved s₀ (arg s₀ 3) s ∧ tablePoint s.mem (arg s₀ 3) 7680 = a ∧ tablePoint s.mem (arg s₀ 3) 7808 = r
+  Saved s₀ (arg s₀ 3) s ∧ tablePoint s.mem (arg s₀ 3) 7680 = a ∧ tablePoint s.mem (arg s₀ 3) 7808 = r ∧
+    ∀ j < 15, Rep (tablePoint s.mem (arg s₀ 3) (3072 + 128 * j)) ((j + 1) • (-baseAff))
 
 theorem windowMultiply_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {a r : Spec.Ed25519.Point}
     {Aa : EPoint dZ} (hA : Rep a Aa) :
@@ -452,11 +464,11 @@ theorem windowMultiply_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {a r
   have prep : RelCT isa (fun x y => EquationCTPre s₀ a r x ∧ EquationCTPre t₀ a r y) windowPrep
       (fun _ _ => True) :=
     have ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ windowPrep h).isSome = true := by
-      taint_decide_sum [addSum]
+      native_taint_decide_sum [addSum]
     VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ hh => callTaint₀_agree (h.callPre hh.1.1 hh.2.1)) hc
   have pw (u x : State) (hu : VerifyPre u) (hx : EquationCTPre u a r x) :
       WP isa windowPrep x (SkipAt u Aa r 32) :=
-    WP.mono (windowPrep_ok hu hx.1 hA hx.2.1 hx.2.2) fun _ ⟨w, e, rp⟩ =>
+    WP.mono (windowPrep_ok hu hx.1 hA hx.2.1 hx.2.2.1 hx.2.2.2) fun _ ⟨w, e, rp⟩ =>
       ⟨w, by decide, by decide, e, Nat.div_eq_of_lt (decodeLE_lt64 _ _), rp⟩
   rw [windowMultiply]
   refine seq_runs prep (fun x hx => pw s₀ x (verify_pre h.left) hx)
@@ -465,7 +477,7 @@ theorem windowMultiply_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {a r
   refine VG.RelCT.exists_ (M := isa)
     (P := fun c x y => 32 ≤ c ∧ c ≤ 64 ∧ LoopAt s₀ Aa r c x ∧ LoopAt t₀ Aa r c y) fun c => ?_
   by_cases hc : 32 ≤ c ∧ c ≤ 64
-  · exact (seq_runs (VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide))
+  · exact (seq_runs (VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by native_taint_decide))
       (fun _ hx => nibbles_at hx) (fun _ hy => nibbles_at hy)
       (loopN_ct h (c := 2 * c) (by omega) (by omega))).mono (fun _ _ hh => hh.2.2) (fun _ _ h => h)
   · exact VG.RelCT.of_false fun _ _ hh => hc ⟨hh.1, hh.2.1⟩

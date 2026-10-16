@@ -8,6 +8,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Sha256.X86.Shared
+import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 
 /-!
 # Deterministic ECDSA over P-256 with HMAC-SHA-384 on x86 (32-bit)
@@ -28,7 +33,7 @@ theorem implies :
     (rfcWide Spec.Ecdsa.Rfc6979.P256Sha384.inst 272 Impl.Ecdsa.X86.p256Comb.combConsts).Implies
       (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract
         (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272) :=
-  comb_implies _ rfl (by decide)
+  comb_implies _ rfl (by decide) rfl
 
 /-- SHA-384, for P-256's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : RfcHash where
@@ -42,7 +47,8 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
   macLen x := by
     show ((Spec.Sha512.finalHash Spec.Sha512.H0_384 x).take 48).length = 48
     rw [List.length_take, Proof.Hmac.Generic.Common.finalHash_length]; rfl
-  tries := rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
   hDB := .inr (.inl ⟨rfl, rfl⟩)
   hS := Nat.le_of_ble_eq_true rfl
   hWi := Nat.le_of_ble_eq_true rfl

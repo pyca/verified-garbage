@@ -2,60 +2,64 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.InitialBodyState
 meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialBodyState
-public import VerifiedGarbage.Proof.Argon2.References
+import VerifiedGarbage.Proof.Argon2.References
 meta import VerifiedGarbage.Proof.Argon2.References
-public import VerifiedGarbage.Proof.Argon2.X86_64.InitialBody
+import VerifiedGarbage.Proof.Argon2.X86_64.InitialBody
 meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialBody
-public import VerifiedGarbage.Proof.Argon2.X86_64.InitFill
+import VerifiedGarbage.Proof.Argon2.X86_64.InitFill
 meta import VerifiedGarbage.Proof.Argon2.X86_64.InitFill
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish
+import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillFinish
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillIterations
+import VerifiedGarbage.Proof.Argon2.X86_64.FillIterations
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillIterations
 public import VerifiedGarbage.Proof.Argon2.IterationsIndices
 meta import VerifiedGarbage.Proof.Argon2.IterationsIndices
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillIterationsBody
+import VerifiedGarbage.Proof.Argon2.X86_64.FillIterationsBody
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillIterationsBody
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillIteration
+import VerifiedGarbage.Proof.Argon2.X86_64.FillIteration
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillIteration
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillSlices
+import VerifiedGarbage.Proof.Argon2.X86_64.FillSlices
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillSlices
-public import VerifiedGarbage.Proof.Argon2.SlicesIndices
+import VerifiedGarbage.Proof.Argon2.SlicesIndices
 meta import VerifiedGarbage.Proof.Argon2.SlicesIndices
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillSlicesBody
+import VerifiedGarbage.Proof.Argon2.X86_64.FillSlicesBody
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillSlicesBody
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillSlice
+import VerifiedGarbage.Proof.Argon2.X86_64.FillSlice
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillSlice
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillLanes
+import VerifiedGarbage.Proof.Argon2.X86_64.FillLanes
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillLanes
 public import VerifiedGarbage.Proof.Argon2.LanesIndices
 meta import VerifiedGarbage.Proof.Argon2.LanesIndices
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillLanesBody
+import VerifiedGarbage.Proof.Argon2.X86_64.FillLanesBody
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FillLanesBody
 public import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupCT
 meta import VerifiedGarbage.Proof.Argon2.X86_64.SegmentSetupCT
-public import VerifiedGarbage.Proof.Argon2.X86_64.FinishReady
+import VerifiedGarbage.Proof.Argon2.X86_64.FinishReady
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FinishReady
 public import VerifiedGarbage.Impl.Argon2.X86_64.Finish
 meta import VerifiedGarbage.Impl.Argon2.X86_64.Finish
-public import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
+import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FinalOutputReady
-public import VerifiedGarbage.Proof.Argon2.X86_64.FinalCall
+import VerifiedGarbage.Proof.Argon2.X86_64.FinalCall
 meta import VerifiedGarbage.Proof.Argon2.X86_64.FinalCall
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
-public import VerifiedGarbage.Proof.Argon2.X86_64.Initial
+import VerifiedGarbage.Proof.Argon2.X86_64.Initial
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Initial
-public import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.FixedCT
+import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.FixedCT
 meta import VerifiedGarbage.Proof.Argon2.X86_64.HPrime.FixedCT
-public import VerifiedGarbage.Proof.Argon2.X86_64.InitialLit
+import VerifiedGarbage.Proof.Argon2.X86_64.InitialLit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.InitialLit
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Merged from `Proof.Argon2.X86_64.InitialCTState`. -/
 

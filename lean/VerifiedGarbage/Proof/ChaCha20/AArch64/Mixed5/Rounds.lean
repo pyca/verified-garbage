@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Schedule
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed5.Schedule
 public import VerifiedGarbage.Impl.ChaCha20.AArch64.Mixed5
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Neon4.Rounds
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Block
@@ -9,6 +9,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 @[expose] public section
 
@@ -36,10 +38,10 @@ theorem scalar_round_vectors {v : CState} {s : State} (h : VG.Proof.ChaCha20.AAr
   cases hdst : vdstOf i <;> simp only [hdst, Bool.false_eq_true] at h'
   simp
 
-theorem parallelRound_ok {vs : Nat → CState} {v : CState} {s : State}
+theorem parallelRound_ok {sve : Bool} {vs : Nat → CState} {v : CState} {s : State}
     (hn : VG.Proof.ChaCha20.AArch64.Neon4.Holds vs s) (ht : s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table)
     (hc : VG.Proof.ChaCha20.AArch64.Holds v s) :
-    WP isa parallelRound s fun u =>
+    WP isa (parallelRound sve) s fun u =>
       VG.Proof.ChaCha20.AArch64.Neon4.Holds (fun j => innerBlock (vs j)) u ∧ VG.Proof.ChaCha20.AArch64.Holds (innerBlock v) u ∧
       VG.Proof.ChaCha20.AArch64.RI (innerBlock v) s u ∧ u.sp = s.sp ∧
       u.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table := by
@@ -47,10 +49,10 @@ theorem parallelRound_ok {vs : Nat → CState} {v : CState} {s : State}
   simp only [roundOps, VG.Proof.ChaCha20.AArch64.Neon4.innerBlock_eq] at hu hr
   exact ⟨hu,hr.holds,hr,hsp,hut⟩
 
-theorem rounds_ok {vs : Nat → CState} {v : CState} {s : State}
+theorem rounds_ok {sve : Bool} {vs : Nat → CState} {v : CState} {s : State}
     (hn : VG.Proof.ChaCha20.AArch64.Neon4.Holds vs s) (ht : s.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table)
     (hc : VG.Proof.ChaCha20.AArch64.Holds v s) :
-    ∀ n, WP isa (rounds n) s fun u =>
+    ∀ n, WP isa (rounds sve n) s fun u =>
       VG.Proof.ChaCha20.AArch64.Neon4.Holds (fun j => Nat.repeat innerBlock n (vs j)) u ∧
       VG.Proof.ChaCha20.AArch64.RI (Nat.repeat innerBlock n v) s u ∧ u.sp = s.sp ∧
       u.v .v30 = VG.Impl.ChaCha20.AArch64.Neon4.rol8Table

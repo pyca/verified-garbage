@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Product accumulation, for any list of steps
@@ -27,7 +28,7 @@ open VG VG.AArch64 VG.Proof.Ed25519.Word64
 open VG.Impl.Curve448.AArch64.Fast
 open VG.Impl.X448.AArch64 (ld)
 open VG.Proof.X448.Wide (pair)
-open VG.Proof.X448.AArch64 (Keeps Scr word off load_sc addr_word read8_eq)
+open VG.Proof.X448.AArch64 (Keeps Scr word off load_sc addr_word read8_eq write8_eq)
 open VG.Proof.Ed25519.AArch64 (mulHi read_x)
 
 /-- The value of an accumulator. -/
@@ -96,6 +97,68 @@ theorem ld_ok {s : State} {base : Addr} (hs : Scr s base) (r : Reg) {d : Nat}
   · rw [RegUpd.gpr_write_self]
     exact BitVec.setWidth_eq _
   · exact RegUpd.gpr_write_of_ne _ _ _ (fun e => hq (by simp [e]))
+
+/-- `r` plus `d + e` addresses byte `o + e` of the working space at `base`, for every `e`. -/
+def Ptr (s : State) (base : Addr) (r : Reg) (d o : Nat) : Prop :=
+  ∀ e, s.gpr r + BitVec.ofNat 64 (d + e) = off base (o + e)
+
+/-- An operand's pointer: `r` plus `d` addresses the operand at offset `o` of the working space,
+with displacements that a load or store takes for each of its eight words. -/
+structure PtrOk (s : State) (base : Addr) (r : Reg) (d o : Nat) : Prop where
+  ptr : Ptr s base r d o
+  al : d % 8 = 0
+  lt : d + 64 ≤ 32768
+  fit : o + 64 ≤ 8192
+
+theorem PtrOk.keep {s t : State} {base : Addr} {r : Reg} {d o : Nat} (h : PtrOk s base r d o)
+    (ht : t.gpr r = s.gpr r) : PtrOk t base r d o :=
+  ⟨fun e => by rw [ht]; exact h.ptr e, h.al, h.lt, h.fit⟩
+
+theorem PtrOk.of_keeps {s t : State} {base : Addr} {r : Reg} {d o : Nat} (h : PtrOk s base r d o)
+    {rs : List Reg} (hk : Keeps rs s t) (hr : r ∉ rs) : PtrOk t base r d o :=
+  h.keep (hk.1 r hr)
+
+/-- The working space's own pointer, `x3`, addresses an aligned operand at its offset. -/
+theorem PtrOk.x3 {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (h8 : o % 8 = 0)
+    (ho : o + 64 ≤ 8192) : PtrOk s base .x3 o o :=
+  ⟨fun e => by rw [hs.x3], h8, by omega, ho⟩
+
+/-- A load from `rb` plus `D`, the address of byte `x` of the working space. -/
+theorem ldAt_ok {s : State} {base : Addr} (hs : Scr s base) (r rb : Reg) {D x : Nat}
+    (hD : s.gpr rb + BitVec.ofNat 64 D = off base x) (h8 : D % 8 = 0) (hlt : D < 32768)
+    (hx : x + 8 ≤ 8192) :
+    WP isa (.block [.ldr .x r rb D]) s fun t =>
+      t.gpr r = word s.mem base x ∧ t.mem = s.mem ∧ Keeps [r] s t := by
+  have l := hs.read (d := x) (n := 8) hx
+  have ae : D % 8 = 0 ∧ D < 32768 := ⟨h8, hlt⟩
+  refine WP.of_runBlock ⟨_, by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes,
+      State.load, ae, and_self, hD, l, ite_true, Option.map_some, Option.bind_some]; rfl, ?_⟩
+  refine ⟨?_, rfl, fun q hq => ?_, rfl, rfl⟩
+  · rw [RegUpd.gpr_write_self]
+    exact BitVec.setWidth_eq _
+  · exact RegUpd.gpr_write_of_ne _ _ _ (fun e => hq (by simp [e]))
+
+/-- A store to `rb` plus `D`, the address of byte `x` of the working space. -/
+theorem stAt_ok {s : State} {base : Addr} (hs : Scr s base) (r rb : Reg) {D x : Nat}
+    (hD : s.gpr rb + BitVec.ofNat 64 D = off base x) (h8 : D % 8 = 0) (hlt : D < 32768)
+    (hx : x + 8 ≤ 8192) :
+    WP isa (.block [.str .x r rb D]) s fun t =>
+      t.mem = s.mem.writeW (off base x) (s.gpr r) ∧ Keeps [] s t := by
+  have w := hs.write (d := x) (n := 8) hx
+  have oe : D % 8 = 0 ∧ D < 32768 := ⟨h8, hlt⟩
+  refine WP.of_runBlock ⟨_, by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, Size.bytes, read_x,
+      State.store, oe, and_self, hD, w, ite_true, Option.bind_some]; rfl, ?_⟩
+  exact ⟨by simp only [BitVec.setWidth_eq, write8_eq], fun _ _ => rfl, rfl, rfl⟩
+
+/-- A load of word `k` of an operand through its pointer. -/
+theorem ldPtr_ok {s : State} {base : Addr} (hs : Scr s base) (r : Reg) {rb : Reg} {d o : Nat}
+    (hp : PtrOk s base rb d o) {k : Nat} (hk : k < 8) :
+    WP isa (.block [.ldr .x r rb (d + 8 * k)]) s fun t =>
+      t.gpr r = word s.mem base (o + 8 * k) ∧ t.mem = s.mem ∧ Keeps [r] s t :=
+  ldAt_ok hs r rb (hp.ptr (8 * k)) (by have := hp.al; omega) (by have := hp.lt; omega)
+    (by have := hp.fit; omega)
 
 theorem mul2_ok (s : State) {d₁ d₂ x y : Reg} (h₁ : d₁ ≠ x) (h₂ : d₁ ≠ y) (h₃ : d₁ ≠ d₂) :
     WP isa (.block [.mul .x d₁ x y, .umulh d₂ x y]) s fun t =>
@@ -213,11 +276,11 @@ theorem upd_self (e : Env) (a : Acc) (v : Int) : upd e a v a = v := by simp [upd
 theorem upd_ne (e : Env) {a c : Acc} (v : Int) (h : c ≠ a) : upd e a v c = e c := by simp [upd, h]
 
 section
-variable {R : Regs} {accs : List Acc} {base : Addr} {b : Nat}
+variable {R : Regs} {accs : List Acc} {base : Addr} {rb : Reg} {db b : Nat}
 
-theorem load_ok (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) {s : State} (hs : Scr s base) (r : Reg)
+theorem load_ok {s : State} (hs : Scr s base) (hp : PtrOk s base rb db b) (r : Reg)
     {x : Src} (hx : srcOk (writes R accs) x = true) :
-    WP isa (.block (x.load b r)) s fun t =>
+    WP isa (.block (x.load rb db r)) s fun t =>
       (t.gpr (x.reg? r)).toNat = srcVal s base b x ∧ t.mem = s.mem ∧ Keeps [r] s t := by
   cases x with
   | reg q => exact WP.block_nil ⟨rfl, rfl, Keeps.refl _ _⟩
@@ -227,21 +290,23 @@ theorem load_ok (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) {s : State} (hs : Scr s
       ⟨by simp only [Src.reg?, h1, srcVal], h2, h3⟩
   | arg k =>
     simp only [srcOk, decide_eq_true_eq] at hx
-    exact WP.mono (ld_ok hs r (d := b + 8 * k) (by omega) (by omega))
+    exact WP.mono (ldPtr_ok hs r hp hx)
       fun t ⟨h1, h2, h3⟩ => ⟨by simp only [Src.reg?, h1, srcVal], h2, h3⟩
 
-theorem loads_ok (hG : Good R accs) (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) {s : State}
-    (hs : Scr s base) {x y : Src} (hx : srcOk (writes R accs) x = true)
+theorem loads_ok (hG : Good R accs) (hrb : rb ∉ writes R accs) {s : State}
+    (hs : Scr s base) (hp : PtrOk s base rb db b) {x y : Src} (hx : srcOk (writes R accs) x = true)
     (hy : srcOk (writes R accs) y = true) :
-    WP isa (.block (x.load b R.p0 ++ y.load b R.p1)) s fun t =>
+    WP isa (.block (x.load rb db R.p0 ++ y.load rb db R.p1)) s fun t =>
       (t.gpr (x.reg? R.p0)).toNat = srcVal s base b x ∧
       (t.gpr (y.reg? R.p1)).toNat = srcVal s base b y ∧ t.mem = s.mem ∧
       Keeps [R.p0, R.p1] s t := by
   rw [WP.block_append_iff]
-  refine WP.mono (load_ok hb8 hb hs R.p0 hx) fun t ⟨tx, tm, tk⟩ => ?_
+  refine WP.mono (load_ok hs hp R.p0 hx) fun t ⟨tx, tm, tk⟩ => ?_
   have ts : Scr t base := hG.scr hs tk (by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; exact hr ▸ p0_mem)
-  refine WP.mono (load_ok hb8 hb ts R.p1 hy) fun u ⟨uy, um, uk⟩ => ?_
+  have tp : PtrOk t base rb db b := hp.of_keeps tk (fun e => hrb (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at e; exact e ▸ p0_mem))
+  refine WP.mono (load_ok ts tp R.p1 hy) fun u ⟨uy, um, uk⟩ => ?_
   have xne : x.reg? R.p0 ∉ [R.p1] := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rcases reg?_cases (r := R.p0) hx with h | h
@@ -304,11 +369,11 @@ theorem other_acc (hG : Good R accs) {a c : Acc} (ha : a ∈ accs) (hc : c ∈ a
   obtain ⟨d1, d2⟩ := hG.disj hc ha h
   exact ⟨fun e => (hrs _ e).elim hlo d1, fun e => (hrs _ e).elim hhi d2⟩
 
-theorem mop_ok (hG : Good R accs) (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) {s : State}
-    (hs : Scr s base) (op : MOp) (hop : opOk (writes R accs) accs op = true) {v : Src → Nat}
-    (hv : ∀ x, srcOk (writes R accs) x = true → srcVal s base b x = v x)
+theorem mop_ok (hG : Good R accs) (hrb : rb ∉ writes R accs) {s : State}
+    (hs : Scr s base) (hp : PtrOk s base rb db b) (op : MOp) (hop : opOk (writes R accs) accs op = true)
+    {v : Src → Nat} (hv : ∀ x, srcOk (writes R accs) x = true → srcVal s base b x = v x)
     {e : Env} (he : AccsEq accs s e) :
-    WP isa (.block (op.code R b)) s fun t =>
+    WP isa (.block (op.code R rb db)) s fun t =>
       AccsEq accs t (opSem v e op) ∧ t.mem = s.mem ∧ Keeps (writes R accs) s t := by
   have sub : ∀ r ∈ accRegs accs, r ∈ writes R accs := fun r h => accRegs_sub h
   cases op with
@@ -318,7 +383,7 @@ theorem mop_ok (hG : Good R accs) (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) {s : 
     obtain ⟨hlh, hlo, hhi⟩ := hG.acc ha
     simp only [MOp.code, List.append_assoc]
     rw [← List.append_assoc, WP.block_append_iff]
-    refine WP.mono (loads_ok hG hb8 hb hs hx hy) fun t ⟨tx, ty, tm, tk⟩ => ?_
+    refine WP.mono (loads_ok hG hrb hs hp hx hy) fun t ⟨tx, ty, tm, tk⟩ => ?_
     have nx : a.lo ≠ x.reg? R.p0 := by
       rcases reg?_cases (r := R.p0) hx with h | h
       · rw [h]; exact fun e => hlo (by simp [e])
@@ -356,7 +421,7 @@ theorem mop_ok (hG : Good R accs) (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) {s : 
     obtain ⟨⟨hx, hy⟩, hts⟩ := hop
     simp only [MOp.code, List.append_assoc]
     rw [← List.append_assoc, WP.block_append_iff]
-    refine WP.mono (loads_ok hG hb8 hb hs hx hy) fun t ⟨tx, ty, tm, tk⟩ => ?_
+    refine WP.mono (loads_ok hG hrb hs hp hx hy) fun t ⟨tx, ty, tm, tk⟩ => ?_
     have ts' : Scr t base := hG.scr hs tk (by simp [p0_mem, p1_mem])
     have nx : R.t ≠ x.reg? R.p0 := by
       rcases reg?_cases (r := R.p0) hx with h | h
@@ -416,18 +481,19 @@ theorem mop_ok (hG : Good R accs) (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) {s : 
       · exact lo_mem hd
       · exact hi_mem hd
 
-theorem mops_ok (hG : Good R accs) (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) (ops : List MOp)
+theorem mops_ok (hG : Good R accs) (hrb : rb ∉ writes R accs) (ops : List MOp)
     (hops : ops.all (opOk (writes R accs) accs) = true) {s : State} (hs : Scr s base)
+    (hp : PtrOk s base rb db b)
     {v : Src → Nat} (hv : ∀ x, srcOk (writes R accs) x = true → srcVal s base b x = v x)
     {e : Env} (he : AccsEq accs s e) :
-    WP isa (.block (ops.flatMap (MOp.code R b))) s fun t =>
+    WP isa (.block (ops.flatMap (MOp.code R rb db))) s fun t =>
       AccsEq accs t (sem v e ops) ∧ t.mem = s.mem ∧ Keeps (writes R accs) s t := by
   induction ops generalizing s e with
   | nil => exact WP.block_nil ⟨he, rfl, Keeps.refl _ _⟩
   | cons op ops ih =>
     simp only [List.all_cons, Bool.and_eq_true] at hops
     rw [List.flatMap_cons, WP.block_append_iff]
-    refine WP.mono (mop_ok hG hb8 hb hs op hops.1 hv he) fun t ⟨tv, tm, tk⟩ => ?_
+    refine WP.mono (mop_ok hG hrb hs hp op hops.1 hv he) fun t ⟨tv, tm, tk⟩ => ?_
     have hv' : ∀ x, srcOk (writes R accs) x = true → srcVal t base b x = v x := by
       intro x hx
       rw [← hv x hx]
@@ -435,7 +501,8 @@ theorem mops_ok (hG : Good R accs) (hb8 : b % 8 = 0) (hb : b + 64 ≤ 8192) (ops
       | reg q => simp only [srcVal, tk.1 q (reg_not_mem hx)]
       | mem d => simp only [srcVal, tm]
       | arg k => simp only [srcVal, tm]
-    refine WP.mono (ih hops.2 (hG.scr hs tk (fun _ h => h)) hv' tv) fun u ⟨uv, um, uk⟩ =>
+    refine WP.mono (ih hops.2 (hG.scr hs tk (fun _ h => h)) (hp.of_keeps tk hrb) hv' tv)
+      fun u ⟨uv, um, uk⟩ =>
       ⟨uv, um.trans tm, tk.trans uk⟩
 
 end

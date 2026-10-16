@@ -4,26 +4,37 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitErase
 public import VerifiedGarbage.Proof.P384.Point
 meta import VerifiedGarbage.Proof.P384.Point
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-public import VerifiedGarbage.Proof.P384.Prime
+import VerifiedGarbage.Proof.P384.Prime
 meta import VerifiedGarbage.Proof.P384.Prime
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
 
 /-!
 # ECDSA over P-384 on x86-64: `Verified`
@@ -112,7 +123,7 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p384 s := by
 
 /-- `[k]G` is a call of `vg_p384_mul_base`, which calls no other function. -/
 theorem p384_mulBase : MulBaseOk p384 :=
-  ⟨fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
+  ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
 
 theorem sign_x86 (hL : Law Spec.P384.curve)
     (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
@@ -120,14 +131,13 @@ theorem sign_x86 (hL : Law Spec.P384.curve)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs) p384_mulBase
-  have hsp : ∀ i ∈ instrs signP384.inline, Taint.clobbers i .rsp = false := by
-    have h : signP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have hok : signP384.InlineOk = true := by lit_decide
+  have hsp := Code.clobbers_rsp_of_inlineOk hok
+  have hmx : signP384.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
+    rw [Code.allInstrs_inline]; lit_decide
+  have F := (Exec.regions he (Code.noCalls_inline hok)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesXts.Alpha
-public import VerifiedGarbage.Proof.AesXts.Spec
+import VerifiedGarbage.Proof.AesXts.Spec
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Body
 public import VerifiedGarbage.Impl.AesXts.AArch64
 import all Init.Data.Array.Basic

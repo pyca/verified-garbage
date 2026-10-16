@@ -6,12 +6,13 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # RSAES-OAEP encryption on AArch64: where everything is
 
 As for decryption (`DecLay.lean`, `DecEntry.lean`): the function's buffers
-and its stack, from the inner frame's base `Q` (`ELay`), what the shared
+(with `pre`, `X`) and its stack, from the inner frame's base `Q` (`ELay`), what the shared
 contract says of them (`ELay.Ok`, `lay_ok`), `Ctx` between the frames'
 pushes and pops, the pieces' `Lay`, `LabAt` and `Apart` from it, and the
 prologue (`prologue_ok`).
@@ -25,8 +26,9 @@ open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Proof.RsaPkcs1Enc.AArch64.Enc (q_add add_add read8 write8 toNat_sub_k preserved_ne)
 open VG.Proof.RsaOaep.AArch64.Dec (moveMem MoveOk moveMem_frame moveMem_read moveMem_moved moves_ok sub_trans)
 
-/-- The arguments, the inner frame's base `Q` and the bytes `P` below it the
-calls use. -/
+/-- The arguments, the inner frame's base `Q`, the bytes `P` below it the
+calls use, the buffers `X` read beyond those (`pre`) and the bytes `al` of
+stack arguments. -/
 structure ELay where
   out : Addr
   ol : BitVec 64
@@ -44,6 +46,8 @@ structure ELay where
   D : Nat
   Q : Addr
   P : Nat
+  X : List Region
+  al : Nat
 
 namespace ELay
 
@@ -58,7 +62,7 @@ abbrev SD : Region := ⟨L.sd, L.D⟩
 abbrev SCR : Region := ⟨L.scr, L.sl.toNat * 8⟩
 abbrev FR : Region := ⟨L.Q, frameBytes⟩
 abbrev LR : Region := ⟨L.Q + BitVec.ofNat 64 272, 16⟩
-abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 288, 40⟩
+abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 288, L.al⟩
 abbrev LOW : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
 abbrev STK : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P + 288⟩
 
@@ -86,6 +90,13 @@ structure Ok : Prop where
   el1 : 1 ≤ L.el.toNat
   elk : L.el.toNat ≤ L.k.toNat
   slk : Spec.RsaPss.scratchWords L.k.toNat ≤ L.sl.toNat
+  al40 : 40 ≤ L.al
+  al64 : L.al ≤ 64
+  nQa : L.Q.toNat + 288 + L.al ≤ 2 ^ 64
+  xO : ∀ R ∈ L.X, R.Disjoint L.OUT
+  xS : ∀ R ∈ L.X, R.Disjoint L.SCR
+  xK : ∀ R ∈ L.X, L.STK.Disjoint R
+  xw : ∀ R ∈ L.X, R.base.toNat + R.len ≤ 2 ^ 64
 
 end ELay
 
@@ -132,7 +143,8 @@ theorem stk_buf {d n : Nat} (hd : d + n ≤ 288) {R : Region} (hR : InW L R) :
 
 theorem args_buf {d n : Nat} (h₁ : 288 ≤ d) (h₂ : d + n ≤ 328) {R : Region} (hR : InW L R) :
     Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, n⟩ R := by
-  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS := Offset.sub _ h₁ (by omega)
+  have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, n⟩ L.ARGS :=
+    Offset.sub _ h₁ (by have := h.al40; omega)
   rcases hR with hR | hR
   · exact (h.oA.symm.sub_left hs).sub_right hR
   · exact (h.sA.symm.sub_left hs).sub_right hR
@@ -166,7 +178,7 @@ def ourArg (L : ELay) : Nat → BitVec 64
 
 structure Ctx (L : ELay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (t : State) :
     Prop where
-  rd : t.rd = [L.N, L.E, L.LAB, L.MSG, L.SD, L.ARGS]
+  rd : t.rd = [L.N, L.E, L.LAB, L.MSG, L.SD] ++ L.X ++ [L.ARGS]
   wr : t.wr = [L.FR, L.LR, L.OUT, L.SCR]
   sp : t.sp = L.Q
   cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r

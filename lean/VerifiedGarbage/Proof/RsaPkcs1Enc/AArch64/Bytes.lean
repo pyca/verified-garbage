@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.TCB.AArch64.Isa
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

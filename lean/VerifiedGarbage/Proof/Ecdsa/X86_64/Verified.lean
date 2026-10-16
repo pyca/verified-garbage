@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Main
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Contract
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
-public import VerifiedGarbage.Proof.P256.Point
+import VerifiedGarbage.Proof.P256.Point
 meta import VerifiedGarbage.Proof.P256.Point
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
@@ -30,6 +30,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDSA over P-256 on x86-64: `Verified`

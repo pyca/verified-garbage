@@ -5,6 +5,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
 
 @[expose] public section
 
@@ -15,6 +20,8 @@ theorem booth_sign_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
     (hs : signAArch64.pre s) :
     ∃ t s', Exec isa Impl.P256.Booth.sign s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signWith_ok (p256_ok hI) hL Impl.P256.Booth.comb hcomb (pre_of hs)
+  -- Named `sign`, so that `lit_decide` reads its literal.
+  have he : Exec isa Impl.P256.Booth.sign s t s' := he
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
 
 theorem booth_sign_verified_of_comb (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)
@@ -34,6 +41,8 @@ theorem booth_pk_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AA
     (hs : pkAArch64.pre s) :
     ∃ t s', Exec isa Impl.P256.Booth.publicKey s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKeyWith_ok (p256_ok hI) hL Impl.P256.Booth.comb hcomb (pre_of hs)
+  -- Named `publicKey`, so that `lit_decide` reads its literal.
+  have he : Exec isa Impl.P256.Booth.publicKey s t s' := he
   exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, post_of hpost⟩
 
 theorem booth_pk_verified_of_comb (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSounds)

@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
+import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
-public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
+import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.EcdhJac.First
 public import VerifiedGarbage.Proof.P256.EcdhJac.Masks
 public import VerifiedGarbage.Proof.P256.EcdhJac.Finish
@@ -11,6 +11,17 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
+import VerifiedGarbage.Proof.Weierstrass.WinJacPoint
 
 /-! ## `HotField` -/
 

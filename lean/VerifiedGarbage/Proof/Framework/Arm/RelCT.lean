@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Call
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Calls of code that makes calls, and constant time by relating two runs (ARMv7)

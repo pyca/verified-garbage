@@ -2,14 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # Inversion by divsteps on AArch64: a batch

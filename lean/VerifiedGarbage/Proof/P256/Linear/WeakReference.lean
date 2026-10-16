@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 
@@ -56,7 +58,7 @@ theorem reference_ok {s : State} {base : Addr} {size o a b : Nat}
   refine WP.mono (stores_ok [.x5,.x6,.x7,.x8] (hs.of_keeps kk (by decide)) ho ho8 (by decide)) fun t ⟨et,kt,ot⟩ => ?_
   change wordsVal t.mem base o 4=regsVal s4 [.x5,.x6,.x7,.x8] at et
   change VG.Proof.Mont.Outside base o 32 s4.mem t.mem at ot
-  refine ⟨(Keeps.regs kk).trans (kt.mono (by simp)),?_,?_⟩
+  refine ⟨(Keeps.regs kk).trans (kt.mono (by regions_sub)),?_,?_⟩
   · simpa only [kk.mem] using ot
   · rw [et,regs_value,e4,e3,c3]
     have he := weakWords_mod (regs s2) (s2.gpr .x9,s2.gpr .x10,s2.gpr .x11,s2.gpr .x12)

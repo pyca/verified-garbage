@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 public import VerifiedGarbage.Proof.Seed.Arm.Key
 meta import VerifiedGarbage.Proof.Seed.Arm.Key
 public import VerifiedGarbage.Proof.Seed.Arm.Verified
@@ -55,7 +57,7 @@ theorem expandKeyTaint_agree (s₁ s₂ : State) (h₁ : expandKeyArm.pre s₁) 
   · rw [h₁.2.1, h₂.2.1, p1, p2]
 
 theorem expandKey_ct : ConstantTime isa expandKeyArm.pre expandKeyArm.pub expandKey :=
-  VG.Taint.constantTime (A := VG.Arm.taint) expandKeyTaint expandKeyTaint_agree (by taint_decide)
+  VG.Taint.constantTime (A := VG.Arm.taint) expandKeyTaint expandKeyTaint_agree (by native_taint_decide)
 
 theorem expandKey_correct (s : State) (hs : expandKeyArm.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyArm.post s s' := by

@@ -1,7 +1,10 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! Complete unsigned scalar multiplication by the Ed25519 base point. -/
 

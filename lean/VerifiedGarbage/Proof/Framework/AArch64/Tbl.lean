@@ -1,10 +1,11 @@
 module
 
 public import VerifiedGarbage.Impl.Tbl.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AArch64: table lookups with `tbl`

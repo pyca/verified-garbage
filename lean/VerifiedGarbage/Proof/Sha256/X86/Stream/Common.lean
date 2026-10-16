@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
-public import VerifiedGarbage.Proof.Sha256.X86.Compress
-public import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.X86.Compress
+import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Impl.Sha256.X86.Stream
 public import Mathlib.Tactic.Conv
 public import Mathlib.Tactic.Set
-public import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Proof.Sha256.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): common lemmas

@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+import VerifiedGarbage.Proof.X448.X86.Ops
+meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+meta import VerifiedGarbage.Proof.X448.X86.Ops
 
 /-!
 # Ed448 signing with a cached key on x86 (32-bit): constant time, and `Verified`

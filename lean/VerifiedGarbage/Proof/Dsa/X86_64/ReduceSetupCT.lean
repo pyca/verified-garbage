@@ -2,12 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByteCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ReduceByteCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
+import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 
 /-! # Constant time of streaming-reduction setup -/
 
@@ -34,9 +40,9 @@ theorem reduceSetup_ct (M : Mont) : RelCT isa (Two ReduceSetupPre)
   refine RelCT.seq (two_post (Ψ := fun p s => ReduceContext p s ∧
     wv s.mem (off p.bytes.x.B p.bytes.x.o) (slot p.bytes.x.wx aOne) p.bytes.x.wx = 1)
     (two_map (fun p : ReducePublic => p.toPowerPublic.product)
-      (fun p s h => ⟨h.1.2, h.2, p.greater⟩) constants_ct) ?_) ?_
+      (fun p s h => ⟨h.1.2, h.2, p.greater, p.odd⟩) (constants_ct M)) ?_) ?_
   · intro p s ⟨⟨hc, hm⟩, hw⟩
-    exact WP.mono (prepare_ok hc p.lower hw p.greater hm.modulus hm.inverse)
+    exact WP.mono (prepare_ok M hc p.lower hw p.greater p.odd hm.modulus hm.inverse)
       fun t ⟨hct, hmt, hone, _⟩ => ⟨⟨hct, hmt⟩, hone⟩
   refine RelCT.seq (two_post (Ψ := ReduceDoublePre)
     (two_map (fun p : ReducePublic => p.bytes.x.ws)

@@ -7,6 +7,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Dsa.X86_64.ScanField
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Public state carried through DSA domain-shape validation -/
 

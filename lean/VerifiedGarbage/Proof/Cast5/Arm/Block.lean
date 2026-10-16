@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.Round
-public import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Cast5.Memory
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -22,6 +22,7 @@ keeps `r12`: this is the block function a mode reuses.
 namespace VG.Proof.Cast5.Arm
 
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Cast5.Arm
+open VG.Impl.Cast5 (s1234Sym)
 open VG.Proof.Cast5 (encFold decFold encFold_succ decFold_succ encryptBlock_eq decryptBlock_eq f_eq roundI)
 
 /-- `fT` of the type of round `i` is the spec's `f`. -/
@@ -37,12 +38,13 @@ theorem rev_eq (x : BitVec 32) : rev x = byteRev32 x := rfl
 def cipher (up : Bool) (k : Spec.Cast5.Schedule) (n : Nat) : Spec.Cast5.Block → Spec.Cast5.Block :=
   if up then Spec.Cast5.encryptBlock k n else Spec.Cast5.decryptBlock k n
 
-/-- The slots of the count and type of rounds. -/
-abbrev ctRegion (c : BitVec 32) : Region := ⟨State.addr c + BitVec.ofNat 64 16, 8⟩
+/-- The slots of the count and type of rounds, and the scan's. -/
+abbrev ctRegion (c : BitVec 32) : Region := ⟨State.addr c + BitVec.ofNat 64 16, 16⟩
 
 /-- What the block function needs: the working space at `c` in `r12`, the
 block at `p` (in the data slot), the schedule at `kb` (in its slot) and the
-number of rounds `n` (in its slot). -/
+number of rounds `n` (in its slot); and the table `VG_CAST5_S1234`, readable
+and apart from the working space. -/
 structure BPre (s : State) (c p kb : BitVec 32) (n : Nat) : Prop where
   r12 : s.gpr .r12 = c
   cfit : c.toNat + 256 ≤ 2 ^ 32
@@ -58,6 +60,10 @@ structure BPre (s : State) (c p kb : BitVec 32) (n : Nat) : Prop where
   sched : s.mem.readW (State.addr c + BitVec.ofNat 64 8) 32 = kb
   rounds : s.mem.readW (State.addr c + BitVec.ofNat 64 12) 32 = BitVec.ofNat 32 n
   nv : n = 12 ∨ n = 16
+  tfit : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32
+  trd : (⟨State.addr (s.syms s1234Sym), 4096⟩ : Region) ∈ s.rd ++ s.wr
+  held : Held s.mem (State.addr (s.syms s1234Sym)) Impl.Cast5.s1234
+  dTS : Region.Disjoint ⟨State.addr (s.syms s1234Sym), 4096⟩ ⟨State.addr c, 256⟩
 
 section
 variable {s : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p kb n)
@@ -105,15 +111,16 @@ structure RInv (s : State) (c : BitVec 32) (lr : Spec.Cast5.Word × Spec.Cast5.W
   rd : u.rd = s.rd
   wr : u.wr = s.wr
   sp : u.sp = s.sp
+  syms : u.syms = s.syms
 
 theorem RInv_iff {s : State} {c : BitVec 32} {lr : Spec.Cast5.Word × Spec.Cast5.Word} {kp : BitVec 32}
     {t left : Nat} {u : State} : RInv s c lr kp t left u ↔
       (u.gpr .r2 = lr.1 ∧ u.gpr .r3 = lr.2 ∧ u.gpr .lr = kp ∧ u.gpr .r12 = c ∧ Frame [ctRegion c] s.mem u.mem ∧
         u.mem.readW (State.addr c + BitVec.ofNat 64 16) 32 = BitVec.ofNat 32 left ∧
         u.mem.readW (State.addr c + BitVec.ofNat 64 20) 32 = BitVec.ofNat 32 t ∧
-        u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp) :=
-  ⟨fun h => ⟨h.r2, h.r3, h.lr, h.r12, h.fr, h.cnt, h.typ, h.rd, h.wr, h.sp⟩,
-   fun ⟨a, b, c, d, e, f, g, i, j, k⟩ => ⟨a, b, c, d, e, f, g, i, j, k⟩⟩
+        u.rd = s.rd ∧ u.wr = s.wr ∧ u.sp = s.sp ∧ u.syms = s.syms) :=
+  ⟨fun h => ⟨h.r2, h.r3, h.lr, h.r12, h.fr, h.cnt, h.typ, h.rd, h.wr, h.sp, h.syms⟩,
+   fun ⟨a, b, c, d, e, f, g, i, j, k, l⟩ => ⟨a, b, c, d, e, f, g, i, j, k, l⟩⟩
 
 /-- The subkeys of round `i` (`1 … 16`) at `kp`, read through a frame. -/
 theorem key_at {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p kb n)
@@ -162,14 +169,28 @@ theorem round_step {s u : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p 
       valT := by rw [es 20 (by decide)]; exact hu.typ
       inC := by rw [es 16 (by decide), hu.wr]; exact h.inS (by decide)
       valC := by rw [es 16 (by decide)]; exact hu.cnt
-      sep := by rw [es 16 (by decide), es 20 (by decide)]; exact Offset.sep _ (by decide) (by decide) (by decide) }
-  refine WP.mono (round_ok u up pre) fun v ⟨v2, v3, vlr, vm, vz, vk⟩ => ⟨⟨v2, ?_, ?_, ?_, ?_, ?_, ?_,
-    vk.rd.trans hu.rd, vk.wr.trans hu.wr, vk.sp.trans hu.sp⟩, vz⟩
+      sep := by rw [es 16 (by decide), es 20 (by decide)]; exact Offset.sep _ (by decide) (by decide) (by decide)
+      cfit := by rw [hu.r12]; have := h.cfit; omega
+      inS24 := by rw [hu.r12, hu.wr]; exact h.inS (by decide)
+      inS28 := by rw [hu.r12, hu.wr]; exact h.inS (by decide)
+      tfit := by rw [hu.syms]; exact h.tfit
+      trd := by rw [hu.syms, hu.rd, hu.wr]; exact h.trd
+      held := by
+        rw [hu.syms]
+        refine held_frame hu.fr (fun r hr => ?_) (by rw [Impl.Cast5.s1234, table_length]; decide) h.held
+        simp only [List.mem_singleton] at hr; subst hr
+        rw [Impl.Cast5.s1234, table_length]
+        exact h.dTS.sub_right (Offset.sub_base _ (by decide))
+      dTS := by rw [hu.syms, hu.r12]; exact h.dTS.sub_right (Offset.sub_base _ (by decide)) }
+  refine VG.Arm.WP.mono_syms (round_ok u up pre) fun v ⟨v2, v3, vlr, vm, vz, vk⟩ vsy => ⟨⟨v2, ?_, ?_, ?_, ?_, ?_, ?_,
+    vk.rd.trans hu.rd, vk.wr.trans hu.wr, vk.sp.trans hu.sp, vsy.trans hu.syms⟩, vz⟩
   · rw [v3, fT_eq ht hti]; rfl
   · rw [vlr, hu.lr]
   · rw [vk.gpr _ (by decide), hu.r12]
-  · rw [vm, es 16 (by decide), es 20 (by decide)]
-    exact (hu.fr.writeW List.mem_cons_self _ (Offset.contains _ (by decide) (by decide) (by decide))).writeW
+  · rw [vm, es 16 (by decide), es 20 (by decide), scanMem, hu.r12, spillEcb]
+    exact (((hu.fr.writeW List.mem_cons_self _ (Offset.contains _ (by decide) (by decide) (by decide))).writeW
+      List.mem_cons_self _ (Offset.contains _ (by decide) (by decide) (by decide))).writeW
+      List.mem_cons_self _ (Offset.contains _ (by decide) (by decide) (by decide))).writeW
       List.mem_cons_self _ (Offset.contains _ (by decide) (by decide) (by decide))
   · rw [vm, es 16 (by decide), es 20 (by decide), Mem.readW_writeW_self32]
     apply BitVec.eq_of_toNat_eq
@@ -268,7 +289,7 @@ theorem startEnc_ok {s : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p k
   have inP' := fun {off w : Nat} (hw : off + w ≤ 8) => h.inP' (off := off) (w := w) hw
   unfold startEnc
   crun [dataOff, schedOff, roundsOff, cntOff, typeOff, h.r12, aS, aP, inS, inS', inP', h.data, h.sched,
-    h.rounds, rev_eq, RInv_iff]
+    h.rounds, rev_eq, RInv_iff, syms_setReg, syms_mem]
   exact ⟨by rw [← decode_start s p], by rw [← decode_start s p], by bv_omega, start_frame _ _, start_cnt _ _ _ _,
     start_typ _ _ _ _⟩
 
@@ -282,7 +303,7 @@ theorem startDec_ok {s : State} {c p kb : BitVec 32} {n : Nat} (h : BPre s c p k
   have inP' := fun {off w : Nat} (hw : off + w ≤ 8) => h.inP' (off := off) (w := w) hw
   unfold startDec
   crun [dataOff, schedOff, roundsOff, cntOff, typeOff, h.r12, aS, aP, inS, inS', inP', h.data, h.sched,
-    h.rounds, rev_eq, RInv_iff]
+    h.rounds, rev_eq, RInv_iff, syms_setReg, syms_mem]
   refine ⟨by rw [← decode_start s p], by rw [← decode_start s p], ?_, start_frame _ _, start_cnt _ _ _ _, ?_⟩
   · rcases h.nv with rfl | rfl <;> bv_omega
   · rw [start_typ]

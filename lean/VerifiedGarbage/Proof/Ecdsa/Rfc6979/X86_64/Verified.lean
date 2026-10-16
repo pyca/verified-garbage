@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CT
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -35,7 +35,14 @@ theorem cfgOf_w : (cfgOf P).w = P.w := rfl
 theorem cfgOf_sh : (cfgOf P).sh = P.R.sh := rfl
 theorem cfgOf_wide : (cfgOf P).wide = P.R.wide := rfl
 theorem reduce_eq : (cfgOf P).reduce = (cfgC P.R.E).reduce := rfl
-theorem initCnt_eq : (cfgOf P).initCnt = (cfgC { n := 4, C := Spec.P256.curve }).initCnt := rfl
+/-- A property of every instruction holds of the count's initial store if it
+holds of its two instructions, whatever the count. -/
+theorem initCnt_all (p : Instr → Bool) (h₁ : ∀ x, p (.mov32 .rax (.imm x)) = true)
+    (h₂ : p (.store (stk fCnt) .rax) = true) :
+    List.rec (motive := fun _ => Bool) true (fun i _ ih => p i && ih) (cfgOf P).initCnt = true := by
+  show (p _ && (p _ && true)) = true
+  rw [h₁, h₂]; rfl
+
 theorem coreC_eq : (cfgOf P).coreC = P.R.coreC := rfl
 
 /-- No instruction loads MXCSR: not those of the functions it calls, by what
@@ -45,12 +52,13 @@ theorem sign_mx : (cfgOf P).sign.allInstrs (fun i => !loadsMxcsr i) = true := by
   have hI : P.H.hmacInit.allInstrs (fun i => !loadsMxcsr i) = true := core_hmacInit P.K.cMx P.K.iMx P.C.hinitMx
   have hU : P.H.updC.allInstrs (fun i => !loadsMxcsr i) = true := core_updC P.K.cMx P.C.updMx
   have hF : P.H.hmacFin.allInstrs (fun i => !loadsMxcsr i) = true := core_hmacFin P.K.cMx P.C.hfinMx
+  have hC := initCnt_all P (fun i => !loadsMxcsr i) (fun _ => rfl) rfl
   cases hw : P.R.wide
   · have hR := P.R.reduceMx hw
     obtain ⟨-, -, hQD⟩ := P.sizesA hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
-      Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq,
+      hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
       Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx] at hR ⊢
     simp only [hR, Bool.true_and]
     rcases P.sizesQ hw with hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
@@ -60,7 +68,7 @@ theorem sign_mx : (cfgOf P).sign.allInstrs (fun i => !loadsMxcsr i) = true := by
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
-      Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq,
+      hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
       ite_true, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx, hQ66, hw9, sh7 hw]
     simp only [hD64, hB]
     decide +kernel
@@ -70,13 +78,15 @@ theorem sign_spSafe : (cfgOf P).sign.all (fun i => !isa.writesSp i) = true := by
   have hI : P.H.hmacInit.allInstrs (fun i => !isa.writesSp i) = true := core_hmacInit P.K.cSp P.K.iSp P.C.hinitSp
   have hU : P.H.updC.allInstrs (fun i => !isa.writesSp i) = true := core_updC P.K.cSp P.updSp
   have hF : P.H.hmacFin.allInstrs (fun i => !isa.writesSp i) = true := core_hmacFin P.K.cSp P.C.hfinSp
+  have hC := initCnt_all P (fun i => !isa.writesSp i) (fun _ => rfl) rfl
+  dsimp only at hC
   refine Code.all_of_allInstrs ?_
   cases hw : P.R.wide
   · have hR := P.R.reduceSp hw
     obtain ⟨-, -, hQD⟩ := P.sizesA hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
-      Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq,
+      hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
       Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp] at hR ⊢
     simp only [hR, Bool.true_and]
     rcases P.sizesQ hw with hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
@@ -86,7 +96,7 @@ theorem sign_spSafe : (cfgOf P).sign.all (fun i => !isa.writesSp i) = true := by
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
-      Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq,
+      hC, Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, cfgOf_H, coreC_eq,
       ite_true, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp, hQ66, hw9, sh7 hw]
     simp only [hD64, hB]
     decide +kernel

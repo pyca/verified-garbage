@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+import VerifiedGarbage.Proof.X448.X86.Ops
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit)

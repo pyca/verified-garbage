@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Md5.X86_64.Compress
 meta import VerifiedGarbage.Proof.Md5.X86_64.Compress
-public import VerifiedGarbage.Proof.Md5.Stream
+import VerifiedGarbage.Proof.Md5.Stream
 meta import VerifiedGarbage.Proof.Md5.Stream
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Exec
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # Streaming MD5 on x86-64: `init`

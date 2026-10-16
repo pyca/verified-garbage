@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Glue
@@ -10,6 +10,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 
 /-!
 # ML-DSA signing on x86-64: SHAKE256 through the sponge functions

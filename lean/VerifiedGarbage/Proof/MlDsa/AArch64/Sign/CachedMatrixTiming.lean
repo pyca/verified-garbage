@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixBatch
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixBatch
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedSignTiming
@@ -14,6 +14,20 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! ## From `CachedMatrixCallTiming.lean` -/
 

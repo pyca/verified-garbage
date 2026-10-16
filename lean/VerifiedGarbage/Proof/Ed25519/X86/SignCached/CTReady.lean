@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
+import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashUpdate
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
@@ -10,6 +10,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.MdStream.Spec
+import VerifiedGarbage.Spec.Rc2
 
 @[expose] public section
 

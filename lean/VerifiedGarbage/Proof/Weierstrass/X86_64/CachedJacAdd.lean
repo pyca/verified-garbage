@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDoubleForward
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacDoubleForward
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Complete public addition with cached Z powers, including all exceptional cases. -/
 
@@ -53,7 +61,7 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     have hp := (hJP.z_zero_iff hC).mp hz
     rw [hp]
     exact WP.mono (copyPointJ_ok hL hA hSl ia hV hJQ)
-      (fun t ht => ht.prefix (ka.mono (by simp)))
+      (fun t ht => ht.prefix (ka.mono (by regions_sub)))
   · intro a ia ka hpz
     apply fieldBranch_ok hL hm ia (hV q.z (by simp [rcbR]))
     · intro b ib kb hz
@@ -66,13 +74,13 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
       have hadd : Spec.Weierstrass.add P Q = P := by rw [hq]; cases P <;> rfl
       rw [hadd]
       exact WP.mono (copyPointJ_ok hL (rcbApart_swap hA) hs ib hv hJP)
-        (fun t ht => (ht.prefix (kb.mono (by simp))).prefix (ka.mono (by simp)))
+        (fun t ht => (ht.prefix (kb.mono (by regions_sub))).prefix (ka.mono (by regions_sub)))
     · intro b ib kb hqz
       apply WP.seq
       refine WP.mono (CachedJac.head_ok hL hm hA h2a h3a hSlC ib hVC h2 h3) fun c ⟨kc,ic,eh,er⟩ => ?_
       let EH := runOps (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) E
       have hkeep := (ka.mono (W' := rcbW K.S o) (by simp)).trans
-        ((kb.mono (by simp)).trans kc)
+        ((kb.mono (by regions_sub)).trans kc)
       have hpkeep : ∀ x ∈ rcbR K.S p q, EH x = E x := fun x hx => CachedJac.head_readonly hA E hx
       have jp : InvJ C (EH p.x) (EH p.y) (EH p.z) P := by
         rw [hpkeep _ (by simp [rcbR]),hpkeep _ (by simp [rcbR]),hpkeep _ (by simp [rcbR])]
@@ -99,7 +107,7 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
           rw [←hpq]
           refine WP.mono (jacDoubleForward_ok hL hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
           exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
-            (hkeep.trans ((kd.mono (by simp)).trans (ke.mono (by simp))))
+            (hkeep.trans ((kd.mono (by regions_sub)).trans (ke.mono (by regions_sub))))
         · intro e ie ke hrz
           have hy : E q.y*E p.z*(E p.z*E p.z)-E p.y*E q.z*(E q.z*E q.z)≠0 := fun he => hrz (er.trans he)
           have hadd := hJP.opposite hC hP hQ hJQ hpz hqz hx hy
@@ -109,13 +117,13 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
               simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
               rcases hx with rfl | rfl | rfl <;> simp [rcbW])) ie hOne) fun t ht => ?_
           exact (JacPost.sub ht oldV).prefix
-            (hkeep.trans ((kd.mono (by simp)).trans (ke.mono (by simp))))
+            (hkeep.trans ((kd.mono (by regions_sub)).trans (ke.mono (by regions_sub))))
       · intro d id kd hz
         have hh : E q.x*(E p.z*E p.z)-E p.x*(E q.z*E q.z)≠0 := fun he => hz (eh.trans he)
         refine WP.mono (CachedJac.tail_ok hL hm hA h2a h3a hSlC id hVC h2 h3) fun t ⟨kt,it,ht⟩ => ?_
         have jt := hJP.add_ne hC ha hP hQ hJQ hpz hqz hh
         dsimp only at jt
         rw [←ht] at jt
-        exact JacPost.prefix ⟨_,kt,it,jt⟩ (hkeep.trans (kd.mono (by simp)))
+        exact JacPost.prefix ⟨_,kt,it,jt⟩ (hkeep.trans (kd.mono (by regions_sub)))
 
 end VG.Proof.Weierstrass.X86_64

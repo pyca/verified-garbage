@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MdStream.Arm.Update
 meta import VerifiedGarbage.Proof.MdStream.Arm.Update
 public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
 meta import VerifiedGarbage.Proof.MdStream.Arm.Finalize
-public import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.MdStream.Arm.Words
 meta import VerifiedGarbage.Proof.MdStream.Arm.Words
 public import VerifiedGarbage.Proof.Md5.Md
 meta import VerifiedGarbage.Proof.Md5.Md

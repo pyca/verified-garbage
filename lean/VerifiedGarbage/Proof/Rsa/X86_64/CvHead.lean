@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.Setup
 
 /-!
 # `vg_rsa_crt_values` on x86-64: the arguments and the head
@@ -114,7 +117,7 @@ theorem cvHead_ok {s : State} {B : Addr} {Z k : Nat} (hs : Scr s B Z) (hdi : s.g
     fun i hi h1 h2 => by rw [hm, o2.word (by omega) (by omega), o1.word (by omega) (by omega)]
   have kk := ((k₁.trans k₂).trans k₃)
   refine ⟨⟨hs₂.congr k₃.2.2, (k₃.gpr (by decide)).trans hdi₂, ?_, ?_, fun j hj => ?_, hZ16, by unfold wk; omega,
-    by unfold wk; omega⟩, by rw [hm, word_writeW_self], ?_, kk.mono (by simp)⟩
+    by unfold wk; omega⟩, by rw [hm, word_writeW_self], ?_, kk.mono (by decide)⟩
   · rw [hw sW (by decide) (by decide) (by decide), ho₂.word (by omega) (by omega), hm₁, word_writeW_self]
   · rw [hm, o2.word (by omega) (by omega), word_writeW_self]
   · rw [hw (sArr j) (by unfold sArr; omega) (by unfold sArr sStride sFn; omega)

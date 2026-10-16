@@ -1,11 +1,14 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleAddCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleAddCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # Constant time of the complete DSA signing arithmetic schedule -/
 
@@ -25,24 +28,24 @@ theorem signInputs_stable (p : SchedulePublic) (a : Operand × Nat) (ha : a ∈ 
   simp only [signInputs, List.mem_cons, List.not_mem_nil, or_false] at ha
   rcases ha with rfl | rfl | rfl | rfl <;> simp [stablePointer, Core.generator, Core.nonce, Core.privateScalar, Core.digest]
 
-theorem coreSignSchedule_ct (M : Mont) (inputs : SchedulePublic → List (Operand × Nat))
+theorem coreSignSchedule_ct (M : Mont) (Sq : MontS) (inputs : SchedulePublic → List (Operand × Nat))
     (stable : ∀ p a, a ∈ inputs p → a.1.length ≠ .mask ∧ stablePointer a.1.pointer)
     (members : ∀ p a, a ∈ signInputs p → a ∈ inputs p) :
-    RelCT isa (Two (ScheduleState inputs)) (Core.sign M.mm)
+    RelCT isa (Two (ScheduleState inputs)) (Core.sign Sq.mm M.mm)
       (Two (ScheduleState inputs)) := by
   have qp (p : SchedulePublic) : 1 ≤ p.layout.qLen := p.layout.widths.1
   have pp (p : SchedulePublic) : 1 ≤ p.layout.pLen := by have := p.layout.widths; omega
   have qb (p : SchedulePublic) : p.layout.qLen ≤ 1024 := by have := p.layout.widths; omega
   have hpfit (p : SchedulePublic) : (p.layout.pLen + 7) / 8 ≤ ModulusSide.p.words p.layout := Nat.le_refl _
   have hqfit (p : SchedulePublic) : (p.layout.qLen + 7) / 8 ≤ ModulusSide.q.words p.layout := Nat.le_refl _
-  have h1 := schedulePow_ct M inputs stable .p t Core.generator Core.nonce
+  have h1 := schedulePow_ct M Sq inputs stable .p t Core.generator Core.nonce
     (fun p => p.layout.pLen) (fun p => p.layout.qLen) (by simp [pointerFits, Core.generator]) (by simp [pointerFits, Core.nonce]) (by simp [stablePointer, Core.generator]) (by simp [stablePointer, Core.nonce])
     pp hpfit qp qb (by decide) (by decide) (element_space (by decide)) (by taint_decide)
   have h2 := scheduleReduce_ct M inputs stable r (Core.element t) (fun p => p.layout.pLen)
     (by change t < 2 ^ 31; decide) (by simp [stablePointer, Core.element])
     (by intro p; have := p.layout.widths; omega)
     (by decide) (by decide) (scalar_space (by decide)) (by taint_decide)
-  have h3 := schedulePow_ct M inputs stable .q inverse Core.nonce (Core.scalar qMinusTwo)
+  have h3 := schedulePow_ct M Sq inputs stable .q inverse Core.nonce (Core.scalar qMinusTwo)
     (fun p => p.layout.qLen) (fun p => p.layout.qLen) (by simp [pointerFits, Core.nonce]) (by change qMinusTwo < 2 ^ 31; decide)
     (by simp [stablePointer, Core.nonce]) (by simp [stablePointer, Core.scalar]) qp hqfit qp qb (by decide) (by decide) (scalar_space (by decide)) (by taint_decide)
   have h4 := scheduleProduct_ct M inputs stable .q u Core.privateScalar (Core.scalar r)
@@ -79,9 +82,9 @@ theorem coreSignSchedule_ct (M : Mont) (inputs : SchedulePublic → List (Operan
       h.1.1.availableLocal .q v (by decide) (scalar_space (by decide) p)⟩) h7).mono
     (fun _ _ h => h) (fun _ _ => two_mono (fun _ _ h => h.1))
 
-theorem coreSign_ct (M : Mont) : RelCT isa (Two (ScheduleState signInputs))
-    (Core.sign M.mm) (fun _ _ => True) :=
-  (coreSignSchedule_ct M signInputs signInputs_stable (fun _ _ h => h)).mono
+theorem coreSign_ct (M : Mont) (Sq : MontS) : RelCT isa (Two (ScheduleState signInputs))
+    (Core.sign Sq.mm M.mm) (fun _ _ => True) :=
+  (coreSignSchedule_ct M Sq signInputs signInputs_stable (fun _ _ h => h)).mono
     (fun _ _ h => h) (fun _ _ _ => True.intro)
 
 end VG.Proof.Dsa.X86_64

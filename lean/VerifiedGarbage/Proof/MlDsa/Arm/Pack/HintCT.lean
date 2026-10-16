@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Constant time of code that leaks memory both runs agree on (ARMv7)
@@ -184,6 +185,7 @@ theorem mstep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha
   | cmp => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | movw => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | movt => exact base (fun _ _ _ => by simp) hs e₁ e₂
+  | adrSym => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | rev => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | mul => exact base (fun _ _ _ => by simp) hs e₁ e₂
   | addSp => exact base (fun _ _ _ => by simp) hs e₁ e₂

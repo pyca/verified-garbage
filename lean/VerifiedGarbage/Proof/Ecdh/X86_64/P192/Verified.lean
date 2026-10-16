@@ -6,18 +6,28 @@ public import VerifiedGarbage.Proof.Ecdh.X86_64.P192.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P192.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P192.Lit
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P192.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDH over p192 on x86-64: `Verified`
@@ -55,15 +65,13 @@ theorem post_of {s s' : State} (h : EPost p192 s s') : ecdhX86_64.post s s' := b
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * p192.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
+theorem ecdh_inlineOk : exchangeP192.InlineOk = true := by lit_decide
+
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP192.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p192_ok hI) hL (pre_of hs) p192_mulBase.2
-  have hsp : ∀ i ∈ instrs exchangeP192.inline, Taint.clobbers i .rsp = false := by
-    have h : exchangeP192.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk
+  have F := (Exec.regions he (Code.noCalls_inline ecdh_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
@@ -121,7 +129,7 @@ theorem ecdh_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
 
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target exchangeP192 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P192.inst X86_64.abi 8) :=
-  Verified.of_inline_ct (by lit_decide) (ecdh_x86 hL hI) ecdh_ct implies8
+  Verified.of_inline_ct ecdh_inlineOk (ecdh_x86 hL hI) ecdh_ct implies8
     (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64.P192

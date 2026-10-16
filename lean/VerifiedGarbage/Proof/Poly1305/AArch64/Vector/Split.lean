@@ -1,11 +1,18 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Lanes
 public import VerifiedGarbage.Proof.Poly1305.Limbs26
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Semantics
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Curve448.AArch64.Neon.Lanes
+public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: two blocks into limbs
@@ -52,7 +59,7 @@ abbrev bAddr (s : State) (off e : Nat) : Addr := s.gpr .x2 + BitVec.ofNat 64 (of
 
 /-- Reads of the vector registers through the writes of the steps so far. -/
 macro "vstep" : tactic =>
-  `(tactic| simp (disch := decide) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne])
+  `(tactic| plain_simp_names simp (disch := decide) only [RegUpd.v_setV_self, RegUpd.v_setV_of_ne])
 
 theorem iV_ne : ∀ i < 5, ∀ j < 5, i ≠ j → iV i ≠ iV j := by decide
 

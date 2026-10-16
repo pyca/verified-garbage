@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksContract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Run
-public import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

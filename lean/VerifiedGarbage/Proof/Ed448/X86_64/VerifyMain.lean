@@ -1,18 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
+import VerifiedGarbage.Proof.Ed448.X86_64.FieldVariant
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyDecode
 public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Joint
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPadding
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
-public import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPadding
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseConst
+import VerifiedGarbage.Proof.Ed448.X86_64.BaseMain
 public import VerifiedGarbage.TCB.X86_64.Target
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.VerifyEq
 
 /-!
 # Ed448 verification's equation on x86-64: the whole function
@@ -73,7 +74,7 @@ theorem result_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (show WP isa (.block ([.mov .rax (.reg .rdx)] : List Instr)) s2 fun t =>
       t.gpr .rax = s2.gpr .rdx ∧ (∀ r, r ≠ .rax → t.gpr r = s2.gpr r) ∧ t.mem = s2.mem ∧
         t.rd = s2.rd ∧ t.wr = s2.wr by
-    erun
+    erun []
     exact fun r hr => by simp only [hr, ite_false]) fun t ⟨at', gt, mt, rdt, wrt⟩ => ?_
   refine ⟨by rw [at', d2, d1], fun r h1 h2 => by rw [gt r h1, g2 r h2, g1 r h2], by rw [mt, m2, m1],
     by rw [rdt, rd2, rd1], by rw [wrt, wr2, wr1]⟩
@@ -85,14 +86,14 @@ theorem movR957_ok (s : State) :
     WP isa (.block ([.mov .rsi (.reg .r9), .alu .add .rsi (.imm 57)] : List Instr)) s fun t =>
       t.gpr .rsi = s.gpr .r9 + BitVec.ofNat 64 57 ∧ (∀ r, r ≠ .rsi → t.gpr r = s.gpr r) ∧
         t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  erun
+  erun []
   exact ⟨rfl, fun r hr => by simp only [hr, ite_false]⟩
 
 /-- `rax = 0`. -/
 theorem movRax0_ok (s : State) :
     WP isa (.block ([.mov32 .rax (.imm 0)] : List Instr)) s fun t =>
       t.gpr .rax = 0 ∧ (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  erun
+  erun []
   exact fun r hr => by simp only [hr, ite_false]
 
 /-- The moves of the entry. -/
@@ -102,7 +103,7 @@ theorem movArgs_ok (s : State) :
       t.gpr .r8 = s.gpr .rdi ∧ t.gpr .r9 = s.gpr .rsi ∧ t.gpr .rdi = s.gpr .rcx ∧
       t.gpr .rsi = s.gpr .rdx ∧ (∀ r, r ∉ [Reg.r8, .r9, .rdi, .rsi] → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  erun
+  erun []
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
@@ -337,7 +338,8 @@ theorem vR_ok {s : State} {base : Addr} (hs : Scr s base) :
     show VG.Proof.X448.toFe (fe s4.mem base RY) = VG.Proof.X448.toFe (fe s.mem base RY)
     rw [(((k1.mem.trans k2.mem).trans k3.mem).trans k4.mem).fe (Or.inr (by decide)) (by decide)]
   refine ⟨((((k1.trans k2).trans k3).trans k4).trans k5).trans kt, ?_, ?_, fun i hi => ?_⟩
-  · rw [et, e5, e4, e3, e2, e1]; rfl
+  · rw [et, e5, e4, e3, e2, e1]
+    simp (disch := decide) only [pt, Function.update_self, Function.update_of_ne]
   · rw [et, e5, e4, fx, fy]; rfl
   · have ne : ∀ j : Index, j.val < 6 → i ≠ j := fun j hj h => by subst h; omega
     rw [et, e5, e4, e3, e2, e1, Function.update_of_ne (ne 2 (by decide)), Function.update_of_ne (ne 1 (by decide)),
@@ -829,7 +831,7 @@ theorem verifyEquation_correct (hR : RecoverOk) (_hE : VerifyEqOk) {rt : Prog is
   have hKb : K < 2 ^ 456 := by
     rw [← hK]; exact decodeLE_below (bytesAt57_len _ _)
   refine WP.mono (Wnaf.joint_ok hf hP hs4' (by decide) (by decide) bs4 bk4 hSb hKb d4
-    (congrArg Spec.Ed448.Point.Z q4) p4) fun s6 ⟨hs6, g6, rd6, wr6, M6, rep6⟩ => ?_
+    (congrArg Spec.Ed448.Point.Z q4 :) p4) fun s6 ⟨hs6, g6, rd6, wr6, M6, rep6⟩ => ?_
   have O7 : Outside base 0 8192 s.mem s6.mem :=
     (O4.trans (o4.mono (by decide) (by decide))).trans (M6.wide.mono (by decide) (by decide))
   have sv7 : Saved base s.gpr s6.mem :=

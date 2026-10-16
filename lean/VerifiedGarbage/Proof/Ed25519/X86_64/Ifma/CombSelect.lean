@@ -182,13 +182,13 @@ theorem vselLoad_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc
   apply WP.of_runBlock
   simp only [v, runBlock_cons, runStep_some, runBlock_nil, exec, ea_combTblAt, hx, State.load256, hr,
     ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨fun k hk => ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr k hk => ?_, rfl⟩⟩ <;>
-    rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl
-  all_goals first
-    | simp only [qw_vbin, VBinOp.sse, XBinOp.eval, qword_or, qword_and, qw_lane, qw_load _ _ _ _ hk, y, xr,
-        reduceCtorEq, ↓reduceIte, Nat.reduceAdd]; done
-    | (simp only [not_or, xr, Nat.reduceAdd] at hr
-       simp only [qw_vbin, qw_load _ _ _ _ hk, y, hr.1, hr.2, ite_false])
+  refine ⟨fun k hk => ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr k hk => ?_, rfl⟩⟩
+  · rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;>
+      simp only [qw_vbin, VBinOp.sse, XBinOp.eval, qword_or, qword_and, qw_lane, qw_load _ _ _ _ hk, y, xr,
+        reduceCtorEq, ↓reduceIte, Nat.reduceAdd]
+  · rcases (by omega : c = 0 ∨ c = 1 ∨ c = 2) with rfl | rfl | rfl <;>
+    · simp only [not_or, xr, Nat.reduceAdd] at hr
+      simp only [qw_vbin, qw_load _ _ _ _ hk, y, hr.1, hr.2, ite_false]
 
 /-- The pieces `c < n` of entry `m` of the table at `rdx = X` kept under the mask `ymm15` in
 their accumulators. -/

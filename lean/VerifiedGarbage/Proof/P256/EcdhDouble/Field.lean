@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Raw
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
-public import VerifiedGarbage.Proof.Weierstrass.JacInplace
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
+import VerifiedGarbage.Proof.Weierstrass.JacInplace
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.Booth
 
 @[expose] public section
 

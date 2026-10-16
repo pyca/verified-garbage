@@ -14,6 +14,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_add` and `vg_mldsa_sub`
@@ -261,7 +265,7 @@ theorem AccPre.arg_P0 {s₀ : State} (hp : AccPre s₀) {i : Nat} (hi : i < 2) :
 theorem init_piece (F : Nat → Nat → Nat) :
     Piece AccPre AccPub (fun s₀ s => s = P0 s₀) (MapInv F · 0) (.block mapInit) := by
   refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_)
-    (by taint_decide)
+    (by native_taint_decide)
   · subst e
     obtain ⟨a₀, i₀, v₀⟩ := hp.arg_P0 (i := 0) (by omega)
     obtain ⟨a₁, i₁, v₁⟩ := hp.arg_P0 (i := 1) (by omega)
@@ -336,7 +340,7 @@ theorem accSat_red (p : Nat) (hp : p + 1024 ≤ 0x5000) : Reduced accSatMem (Bit
     rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)]) p hp
 
 theorem add_verified : Verified X86.target add (addContract X86.abi 16) := by
-  refine Piece.verified (((map_piece addOp_spec (NoSp.of_all (by decide +kernel)) (by taint_decide)).pre_mono
+  refine Piece.verified (((map_piece addOp_spec (NoSp.of_all (by decide +kernel)) (by native_taint_decide)).pre_mono
     (fun _ h => AccPre.of_add h) fun s s' _ _ h => by
       sig_pub [addContract, accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
       exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
@@ -359,7 +363,7 @@ theorem add_verified : Verified X86.target add (addContract X86.abi 16) := by
         | decide +kernel
 
 theorem sub_verified : Verified X86.target sub (subContract X86.abi 16) := by
-  refine Piece.verified (((map_piece subOp_spec (NoSp.of_all (by decide +kernel)) (by taint_decide)).pre_mono
+  refine Piece.verified (((map_piece subOp_spec (NoSp.of_all (by decide +kernel)) (by native_taint_decide)).pre_mono
     (fun _ h => AccPre.of_sub h) fun s s' _ _ h => by
       sig_pub [subContract, accSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
       exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_

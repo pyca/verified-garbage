@@ -6,10 +6,10 @@ public import VerifiedGarbage.Spec.Weierstrass.Mont
 # The check of a public point, in a curve's working space, as a function
 
 **Trusted** (as every file in `Spec/`). The contract of one function for
-each curve of `curves` (P-192, P-224, P-256, secp256k1, P-384 and P-521),
-on the working space where the code of the curve's ECDH and ECDSA
-verification keeps the public point it checks, so that both can call one
-copy of the check instead of repeating it:
+each curve of `curves` (P-192, P-224, P-256, secp256k1, P-384, P-521,
+brainpoolP256r1, brainpoolP384r1 and brainpoolP512r1), on the working space where the code of the curve's ECDH
+and ECDSA verification keeps the public point it checks, so that both can
+call one copy of the check instead of repeating it:
 
 * `vg_<curve>_check_point(ws)`: for the numbers `x` (slot 33) and `y`
   (slot 36) of the public point, ANDs into the flag (the 64-bit word at
@@ -216,8 +216,15 @@ def p256 : Curve := { W := Spec.P256.curve, curve := "p256", k := 4, desc := "P-
 def secp256k1 : Curve := { W := Spec.Secp256k1.curve, curve := "secp256k1", k := 4, desc := "secp256k1" }
 def p384 : Curve := { W := Spec.P384.curve, curve := "p384", k := 6, desc := "P-384" }
 def p521 : Curve := { W := Spec.P521.curve, curve := "p521", k := 9, desc := "P-521" }
+def brainpoolp256r1 : Curve :=
+  { W := Spec.BrainpoolP256r1.curve, curve := "brainpoolp256r1", k := 4, desc := "brainpoolP256r1" }
+def brainpoolp384r1 : Curve :=
+  { W := Spec.BrainpoolP384r1.curve, curve := "brainpoolp384r1", k := 6, desc := "brainpoolP384r1" }
+def brainpoolp512r1 : Curve :=
+  { W := Spec.BrainpoolP512r1.curve, curve := "brainpoolp512r1", k := 8, desc := "brainpoolP512r1" }
 
 /-- Every curve. -/
-def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521]
+def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521, brainpoolp256r1,
+  brainpoolp384r1, brainpoolp512r1]
 
 end VG.Spec.Weierstrass.CheckPoint

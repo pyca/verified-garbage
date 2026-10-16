@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
+import VerifiedGarbage.Proof.Ed448.X86_64.Wnaf.Timing
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyPrefix
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -72,8 +72,6 @@ theorem verifyEquation_agree {s₁ s₂ : State} (h₁ : verifyEquationLocal.pre
   · intro sl h; simp [verifyEquationτ] at h
   · intro sl h; simp [verifyEquationτ] at h
 
-theorem verifyEquation_inlineOk : verifyEquation.InlineOk = true := by lit_decide
-
 theorem verifyEquation_okI (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyEqOk) (s : State)
     (hs : verifyEquationLocal.pre s) :
     ∃ t s', Exec isa verifyEquation.inline s t s' ∧ abiPreserved s s' ∧ verifyEquationLocal.post s s' := by
@@ -126,7 +124,7 @@ theorem verifyPrefix_ct (v : Impl.Ed448.X86_64.FieldVariant) :
 theorem verifyFinish_ct (v : Impl.Ed448.X86_64.FieldVariant) (base : Addr) :
     RelCT isa (fun s u => s.gpr .rdi = base ∧ u.gpr .rdi = base)
       (vfinish v.field v.bodies) (fun _ _ => True) := by
-  cases v <;> apply RelCT.taint (A := taint) (Taint.ofRegs [.rdi]) _ (by taint_decide)
+  cases v <;> apply relCT_sum (Taint.ofRegs [.rdi]) _ (by taint_decide_sum [dblSum, addSum, dblAdxSum, addAdxSum])
   all_goals
     intro s u h
     apply Taint.agree_ofRegs

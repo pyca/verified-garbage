@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
@@ -8,6 +9,47 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCancelTile
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcCtSquare
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcFinish
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcRestore
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcStore
+public import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcTile
+public import VerifiedGarbage.Proof.Bignum.AArch64.CarrySelect
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
+public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinish
+public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSel
+public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSelTile
+public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSub
+public import VerifiedGarbage.Proof.Bignum.AArch64.FastFinishSubTile
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightRowMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightSetup
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCorrect
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareCross
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCT
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCarry
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightCorrect
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightPolynomial
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRowMath
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightRows
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightSetup
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquarePrefix
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRaw
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareRedc
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareTiledRow
+public import VerifiedGarbage.Proof.Bignum.AArch64.DiagonalChainStep
+public import VerifiedGarbage.Proof.Bignum.CrtMath
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Entry
+public import VerifiedGarbage.Proof.RsaKeyGen.Bits
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareEightInternal
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # A candidate on AArch64: Montgomery arithmetic modulo `c`
@@ -103,8 +145,57 @@ def msTail (w : Nat) : List (Nat × Nat) :=
     (slot w aR2, 8 * (w + 2)), (8 * sCnt, 8), (slot w aY, 8 * (w + 2)), (slot w aR1, 8 * (w + 2)),
     (slot w aRm1, 8 * (w + 2)), (8 * kChecks, 8)]
 
+/-- `msTail`'s ranges, in the header and in the arrays. -/
+theorem msTail_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(208, 8), (152, 8)]
+    [(7, 1), (2, 1), (3, 1), (4, 1), (6, 1), (9, 1), (10, 1)] (msTail w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    msTail, Public.sCnt, Public.aAcc, Public.aTmp, Public.aR2, Public.aY, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, kChecks, kE, sFn, sCnt] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inr ⟨(7, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(4, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(9, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(10, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+
 /-- What `montSetup` changes. -/
 def msRanges (w : Nat) : List (Nat × Nat) := (8 * sMinv, 8) :: msTail w
+
+/-- `msRanges`'s ranges, in the header and in the arrays. -/
+theorem msRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(56, 8), (208, 8), (152, 8)]
+    [(7, 1), (2, 1), (3, 1), (4, 1), (6, 1), (9, 1), (10, 1)] (msRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    msTail, msRanges, Public.sCnt, Public.aAcc, Public.aTmp, Public.aR2, Public.aY, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, kChecks, kE, sFn, sMinv, sCnt] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact .inl (by decide)
+  · exact .inr ⟨(7, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(2, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(3, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(4, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inr ⟨(6, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(9, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inr ⟨(10, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
 
 theorem msRanges_mut (w : Nat) : ∀ r ∈ msRanges w, KMut r := by
   simp only [msRanges, msTail, List.mem_cons, List.not_mem_nil, or_false]
@@ -116,7 +207,7 @@ theorem msTail_mut (w : Nat) : ∀ r ∈ msTail w, KMut r :=
 
 /-- Disjointness of a range from each of a list of literal ranges of the
 working space. -/
-macro "ms_disj" : tactic => `(tactic| (
+tactic_template "ms_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, msTail, r2Ranges, slot,
     hdrBytes, aN, aAcc, aTmp, aR2, aY, aOne, aR1, aRm1, sCnt, kChecks, kE, sFn, sMinv]
   and_intros <;> omega_arith))

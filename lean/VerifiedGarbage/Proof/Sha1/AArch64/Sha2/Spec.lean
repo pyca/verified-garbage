@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 public import VerifiedGarbage.Proof.Sha1.Spec
 public import VerifiedGarbage.Impl.Sha1.AArch64.Sha2
 import all Init.Data.Array.Basic

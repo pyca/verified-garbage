@@ -4,27 +4,27 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.P256.X86_64.JointLoop
 meta import VerifiedGarbage.Proof.P256.X86_64.JointLoop
-public import VerifiedGarbage.Proof.P256.X86_64.JointTiming
+import VerifiedGarbage.Proof.P256.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.JointTiming
 public import VerifiedGarbage.Proof.P256.X86_64.JointWindowTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.JointWindowTiming
-public import VerifiedGarbage.Proof.P256.X86_64.JointPrep
+import VerifiedGarbage.Proof.P256.X86_64.JointPrep
 meta import VerifiedGarbage.Proof.P256.X86_64.JointPrep
-public import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
+import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
 meta import VerifiedGarbage.Proof.P256.X86_64.JointInitLayout
-public import VerifiedGarbage.Proof.P256.X86_64.JointFrame
+import VerifiedGarbage.Proof.P256.X86_64.JointFrame
 meta import VerifiedGarbage.Proof.P256.X86_64.JointFrame
-public import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublicTiming
+import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublicTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublicTiming
-public import VerifiedGarbage.Proof.P256.X86_64.NafTableTiming
+import VerifiedGarbage.Proof.P256.X86_64.NafTableTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.NafTableTiming
-public import VerifiedGarbage.Proof.P256.X86_64.FastNafTiming
+import VerifiedGarbage.Proof.P256.X86_64.FastNafTiming
 meta import VerifiedGarbage.Proof.P256.X86_64.FastNafTiming
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
@@ -34,6 +34,22 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.P256.X86_64.NafCacheTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
+meta import VerifiedGarbage.Proof.P256.X86_64.NafCacheTiming
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Literals
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P256Templates
 
 /-! Concrete timing checks for baseline and ADX public joint verification. -/
 

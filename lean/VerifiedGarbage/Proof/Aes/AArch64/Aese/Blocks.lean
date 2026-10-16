@@ -5,6 +5,7 @@ meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Ctr32
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
 meta import VerifiedGarbage.Proof.Aes.AArch64.Aese.Dec
 public import VerifiedGarbage.Proof.Aes.AArch64.Blocks
+public import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.AArch64.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -534,14 +535,14 @@ theorem blocks_correct (B : BlockFn) {setup : List Instr}
 theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s) :
     ∃ t s', Exec isa encryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s s' :=
-  blocks_correct encFn (fun _ hp => encSetup_ok hp) (by decide +kernel) (by decide +kernel)
-    (by decide +kernel) s hs
+  blocks_correct encFn (fun _ hp => encSetup_ok hp) (by lit_decide) (by lit_decide)
+    (by lit_decide) s hs
 
 theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa decryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s s' :=
-  blocks_correct decFn (fun _ hp => decSetup_ok hp) (by decide +kernel) (by decide +kernel)
-    (by decide +kernel) s hs
+  blocks_correct decFn (fun _ hp => decSetup_ok hp) (by lit_decide) (by lit_decide)
+    (by lit_decide) s hs
 
 theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre
     (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pub encryptBlocks := by

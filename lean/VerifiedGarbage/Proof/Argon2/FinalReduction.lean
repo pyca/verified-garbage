@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.Matrix
+import VerifiedGarbage.Proof.Argon2.Matrix
 public import VerifiedGarbage.Proof.Argon2.Dimensions
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -4,11 +4,20 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.PrimCall
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 public import Lean.Meta.Tactic.Delta
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import Lean.Meta.Tactic.Delta
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 
 /-!
 # ML-KEM on AArch64: the parameter sets of the top-level functions
@@ -80,11 +89,13 @@ elab "lom_unfold" : tactic => withMainContext do
 
 /-- Arithmetic on the offsets of a well-formed parameter set (`‹KemLay.Wf _›`
 in the context) and the facts `hs`. -/
-syntax "lom" ("[" term,* "]")? : tactic
+tactic_template "lom" : tactic => `(tactic| (
+  (try have := (‹KemLay.Wf _›).facts); clear_non_arith; lom_unfold; omega))
+
+/-- `lom` with the facts `hs` too. -/
+syntax "lom" "[" term,* "]" : tactic
 
 macro_rules
-  | `(tactic| lom) => `(tactic| (
-      (try have := (‹KemLay.Wf _›).facts); clear_non_arith; lom_unfold; omega))
   | `(tactic| lom []) => `(tactic| lom)
   | `(tactic| lom [$h:term, $hs:term,*]) => `(tactic| (have := $h; lom [$hs,*]))
   | `(tactic| lom [$h:term]) => `(tactic| (have := $h; lom))

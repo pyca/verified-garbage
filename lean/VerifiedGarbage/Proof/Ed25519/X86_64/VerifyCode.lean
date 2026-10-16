@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCall
 public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
@@ -27,14 +27,16 @@ namespace VG.Proof.Ed25519.X86_64.VerifyCode
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
 theorem baseline_mx : ctlOk (verifyEquation Impl.X25519.X86_64.baseline
-    (windows Impl.X25519.X86_64.baseline)) = true := by lit_decide
+    (windows Impl.X25519.X86_64.baseline)) = true := by
+  lit_decide
 
 theorem baseline_spSafe : (verifyEquation Impl.X25519.X86_64.baseline
     (windows Impl.X25519.X86_64.baseline)).all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (by lit_decide)
 
 theorem adx_mx : ctlOk (verifyEquation Impl.X25519.X86_64.adx
-    (windows Impl.X25519.X86_64.adx)) = true := by lit_decide
+    (windows Impl.X25519.X86_64.adx)) = true := by
+  lit_decide
 
 theorem adx_spSafe : (verifyEquation Impl.X25519.X86_64.adx
     (windows Impl.X25519.X86_64.adx)).all (fun i => !isa.writesSp i) = true :=
@@ -50,13 +52,35 @@ theorem ifma_spSafe : (verifyEquation Impl.X25519.X86_64.adx
   Code.all_of_allInstrs (by lit_decide)
 
 theorem baseline_inlineOk : (verifyEquation Impl.X25519.X86_64.baseline
-    (windows Impl.X25519.X86_64.baseline)).InlineOk = true := by lit_decide
+    (windows Impl.X25519.X86_64.baseline)).InlineOk = true := by
+  lit_decide
 
 theorem adx_inlineOk : (verifyEquation Impl.X25519.X86_64.adx
-    (windows Impl.X25519.X86_64.adx)).InlineOk = true := by lit_decide
+    (windows Impl.X25519.X86_64.adx)).InlineOk = true := by
+  lit_decide
 
 theorem ifma_inlineOk : (verifyEquation Impl.X25519.X86_64.adx Ifma.windows).InlineOk = true := by
   lit_decide
+
+/-- No instruction of code that inlines writes `rsp`, from `Code.InlineOk` rather than a
+second walk of the code. -/
+theorem noSp_of_inlineOk {c : Prog isa} (h : c.InlineOk = true) :
+    c.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+  rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true]
+  intro i hi
+  rw [Code.clobbers_rsp_of_inlineOk h i hi, Bool.not_false]
+
+theorem baseline_noSp : (verifyEquation Impl.X25519.X86_64.baseline
+    (windows Impl.X25519.X86_64.baseline)).allInstrs (fun i => !Taint.clobbers i .rsp) = true :=
+  noSp_of_inlineOk baseline_inlineOk
+
+theorem adx_noSp : (verifyEquation Impl.X25519.X86_64.adx
+    (windows Impl.X25519.X86_64.adx)).allInstrs (fun i => !Taint.clobbers i .rsp) = true :=
+  noSp_of_inlineOk adx_inlineOk
+
+theorem ifma_noSp : (verifyEquation Impl.X25519.X86_64.adx Ifma.windows).allInstrs
+    (fun i => !Taint.clobbers i .rsp) = true :=
+  noSp_of_inlineOk ifma_inlineOk
 
 theorem ifma_windows_inline : Ifma.windows.inline = Ifma.windows :=
   Code.inline_of_noCalls (by lit_decide)

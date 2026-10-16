@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Buffer
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
-public import VerifiedGarbage.Spec.Poly1305.Contract
+import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill

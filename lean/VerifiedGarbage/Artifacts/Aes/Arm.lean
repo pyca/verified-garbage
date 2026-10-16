@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Aes.Arm.Ctr32
-public import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
+import VerifiedGarbage.Proof.Aes.Arm.Ctr32
+import VerifiedGarbage.Proof.Aes.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Aes.Arm.Blocks
 public import VerifiedGarbage.Proof.Aes.Arm.Frame
 

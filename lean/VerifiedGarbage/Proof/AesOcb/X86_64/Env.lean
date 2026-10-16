@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86_64.Contract
-public import VerifiedGarbage.Proof.AesCcm.X86_64.Env
-public import VerifiedGarbage.Proof.Ocb.Spec
+import VerifiedGarbage.Proof.AesCcm.X86_64.Env
+import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.Impl.AesOcb.X86_64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
 public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-public import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
-public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
+import VerifiedGarbage.Proof.Sha256.AArch64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # SHA-256 on AArch64: calling the compression function

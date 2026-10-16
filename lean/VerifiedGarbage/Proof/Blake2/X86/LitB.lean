@@ -8,6 +8,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.Taint
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
 # BLAKE2b on x86 (32-bit): the streaming functions as literals

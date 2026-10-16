@@ -4,7 +4,9 @@ name: Benchmarks
 # architecture whose code it changes (see ci/bench_arches.py), and fails if a
 # benchmark slowed down by more than ci/bench_compare.py's threshold. The
 # results are in the run's summary. Not part of `all-green`: it only runs for
-# some pull requests.
+# some pull requests. A pull request never runs every benchmark of an
+# architecture (e.g. for a change to Cargo.lock or to the benchmarks' shared
+# code): the run's summary names those architectures, to run by hand.
 #
 # It can also be run by hand (Actions > Benchmarks > Run workflow), comparing
 # the chosen branch with any earlier commit on every architecture, e.g. to
@@ -32,7 +34,7 @@ on:
         description: The commit to compare against (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
         required: false
       arches:
-        description: Space-separated architectures to run (x86_64 aarch64 x86 arm; empty for all)
+        description: Space-separated architectures to run (x86_64 aarch64 x86 arm, or aarch64-apple, which only a run by hand measures; empty for all but aarch64-apple)
         required: false
       cpu_features:
         description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for those that choose among the modules' implementations; `python3 ci/bench_arches.py --choices` lists them)
@@ -54,7 +56,7 @@ env:
 jobs:
   arches:
     name: Choose architectures
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.arches.outputs.matrix }}
@@ -81,7 +83,12 @@ jobs:
             # base branch, whose later changes would then count as the pull
             # request's (selecting every benchmark) and be measured as such.
             base=$(git rev-parse HEAD^1)
-            matrix=$(git diff --name-only "$base" HEAD | python3 ci/bench_arches.py --base "$base")
+            matrix=$(git diff --name-only "$base" HEAD | python3 ci/bench_arches.py --base "$base" 2> skipped.txt) \
+              || { cat skipped.txt >&2; exit 1; }
+            if [ -s skipped.txt ]; then
+              echo "::notice title=Benchmarks not run::$(cat skipped.txt)"
+              { echo "## Benchmarks not run"; echo; cat skipped.txt; } >> "$GITHUB_STEP_SUMMARY"
+            fi
           fi
           echo "$matrix"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
@@ -101,8 +108,9 @@ jobs:
     # the timeout. One round with a shorter warm-up and measurement, and no
     # OpenSSL or aws-lc-rs reference on pull requests (bench_compare.py), take
     # about half, until running P-521's groups from fresh copies took some
-    # x86-64 configurations past it again: BENCHMARKS_PER_JOB
-    # (ci/bench_arches.py) splits a run of every benchmark into shards.
+    # x86-64 configurations past it again, and AES-GCM's from copies did once
+    # more: BENCHMARKS_PER_JOB (ci/bench_arches.py) splits a run of every
+    # benchmark into shards.
     timeout-minutes: 30
     # With an empty image the job runs directly on the runner.
     container:
@@ -129,7 +137,11 @@ jobs:
       - name: Record CPU and OpenSSL capabilities
         run: |
           openssl version -a
-          python3 -c 'from pathlib import Path; print(Path("/proc/cpuinfo").read_text().split("\n\n", 1)[0])'
+          if [ -r /proc/cpuinfo ]; then
+            python3 -c 'from pathlib import Path; print(Path("/proc/cpuinfo").read_text().split("\n\n", 1)[0])'
+          else
+            sysctl -n machdep.cpu.brand_string hw.optional.arm
+          fi
       - name: Install Rust
         # ci.yml's `rust` job lints the benchmarks, once per architecture.
         run: rustup toolchain install stable --profile minimal
@@ -147,7 +159,13 @@ jobs:
         env:
           MODULES: ${{ matrix.modules }}
           SHARD: ${{ matrix.shard }}
+          # Interleaved runs of each side (ci/bench_arches.py's platforms say
+          # how many; one but on a shared VM).
+          ROUNDS: ${{ matrix.rounds || 1 }}
           # OpenSSL's and aws-lc-rs's times are a reference for manual runs; a
           # pull request needs only its comparison with the base.
           OPENSSL: ${{ github.event_name == 'workflow_dispatch' && '--openssl' || '' }}
-        run: python3 head/ci/bench_compare.py base head --modules "$MODULES" --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL
+        run: |
+          # The `openssl` crate needs Homebrew's OpenSSL on macOS.
+          if [ "$RUNNER_OS" = macOS ]; then export OPENSSL_DIR="$(brew --prefix openssl@3)"; fi
+          python3 head/ci/bench_compare.py base head --rounds "$ROUNDS" --modules "$MODULES" --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL

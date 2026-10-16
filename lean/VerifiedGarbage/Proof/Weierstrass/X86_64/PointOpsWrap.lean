@@ -6,9 +6,9 @@ public import VerifiedGarbage.Proof.X25519.X86_64.Step
 meta import VerifiedGarbage.Proof.X25519.X86_64.Step
 public import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 meta import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-public import VerifiedGarbage.Proof.Framework.X86_64.Syms
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 meta import VerifiedGarbage.Proof.Framework.X86_64.Syms
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
@@ -16,6 +16,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Impl.Ecdsa.X86_64
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Point operations as functions on x86-64: the registers they keep
@@ -39,12 +51,15 @@ open VG.Impl.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass.X86_64
 abbrev keptRegs : List Reg := kept.map Prod.fst
 
 private theorem setXmm_gpr (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).gpr = s.gpr := rfl
+private theorem setXmm_mem (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).mem = s.mem := rfl
+private theorem setXmm_rd (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).rd = s.rd := rfl
+private theorem setXmm_wr (s : State) (r : XReg) (v : BitVec 128) : (s.setXmm r v).wr = s.wr := rfl
 
 theorem saves_ok (s : State) : WP isa (.block saves) s fun t => Keeps [] s t := by
   apply WP.of_runBlock
   simp only [saves, kept, List.map_cons, List.map_nil, runBlock_cons, runStep_some, runBlock_nil, exec,
-    XOp.exec, Option.some.injEq, exists_eq_left', setXmm_gpr]
-  exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+    XOp.exec, Option.some.injEq, exists_eq_left', Keeps, setXmm_gpr, setXmm_mem, setXmm_rd, setXmm_wr,
+    implies_true, and_self]
 
 theorem restores_ok (s : State) : WP isa (.block restores) s fun t => Keeps keptRegs s t := by
   apply WP.of_runBlock

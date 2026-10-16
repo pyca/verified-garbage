@@ -2,12 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ShapeCTState
-public import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
+import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
 meta import VerifiedGarbage.Proof.Dsa.X86_64.CTBlocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.Layout
+import VerifiedGarbage.Proof.Dsa.X86_64.LastByte
+import VerifiedGarbage.Proof.MdStream.Spec
+meta import VerifiedGarbage.Proof.Dsa.Layout
+meta import VerifiedGarbage.Proof.Dsa.X86_64.LastByte
+meta import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Timing of the final-byte reads in public domain checks -/
 

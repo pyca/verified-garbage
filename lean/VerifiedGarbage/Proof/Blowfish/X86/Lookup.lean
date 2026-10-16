@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Blowfish on x86 (32-bit): an S-box lookup
@@ -267,12 +268,10 @@ theorem lookup_run {sch : Nat} {S : BitVec 32} {s : State} (E : LookEnv sch S s)
   unfold lookupEnd
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.ecx, .edx, .edi] (condRot_run v .edi (c := 1) (a := 8) (by decide) (by decide)
-    (by decide) (by decide) (by decide)) (by
-      simp [writesOnly, condRot, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+    (by decide) (by decide) (by decide)) (by decide))
     fun w ⟨⟨w5, wm⟩, wk⟩ => ?_
   refine WP.mono (WP.keep [.ecx, .edx, .edi] (condRot_run w .edi (c := 2) (a := 16) (by decide) (by decide)
-    (by decide) (by decide) (by decide)) (by
-      simp [writesOnly, condRot, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+    (by decide) (by decide) (by decide)) (by decide))
     fun y ⟨⟨y5, ym⟩, yk⟩ => ?_
   have hL4 : idx.toNat % 4 < 4 := Nat.mod_lt _ (by decide)
   obtain ⟨b1, b2⟩ := bitClr_lane _ (sub256_mod idx)

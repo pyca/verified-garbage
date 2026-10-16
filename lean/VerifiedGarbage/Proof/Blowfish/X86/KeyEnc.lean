@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.KeyP
 public import VerifiedGarbage.Proof.Blowfish.KeySched
-public import VerifiedGarbage.Proof.Rc4.Scan32
+import VerifiedGarbage.Proof.Rc4.Scan32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Blowfish.KeyTable
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Blowfish on x86 (32-bit): key expansion's 521 encryptions
@@ -212,7 +214,7 @@ theorem encP_step {key : List Byte} {K B : BitVec 32} {s₀ : State} (E : EncEnv
     (by rw [cipher_past cf (by decide) (by decide)]; exact I.ptr)
     (by rw [cipher_past cf (by decide) (by decide)]; exact I.cnt) e0 e4 (E.wK w₁ (by omega))
     (by rw [Offset.add_add]; exact E.wK w₁ (by omega)) (E.sepKB (by decide) (by omega))) (by
-      simp [writesOnly, storeP, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+      decide))
     fun u₂ ⟨⟨sm, sz⟩, sk⟩ => ?_
   rw [Offset.add_add] at sm
   obtain ⟨M32, M36, MF⟩ := slots_facts ((u₁.mem.writeW (K.setWidth 64 + BitVec.ofNat 64 a)
@@ -279,7 +281,7 @@ theorem encryptP_run {key : List Byte} {K B : BitVec 32} {s₀ : State} (E : Enc
   refine WP.mono (WP.keep [.ebx, .ecx] (Q := fun t => t.mem = (u.mem.writeW (slot B 32)
       (K + BitVec.ofNat 32 4096)).writeW (slot B 36) (BitVec.ofNat 32 9))
     (by brun [I.ebp, addr_slot (show B.toNat + 40 ≤ 2 ^ 32 by omega), w32, w36, rA, vA, pOff]) (by
-      simp [writesOnly, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+      decide))
     fun u₁ ⟨m₁, k₁⟩ => ?_
   obtain ⟨J, j32, j36⟩ := I.slots E m₁ k₁ (by decide) (by decide)
   refine WP.mono (WP.loop (M := isa) (Q := PInv key K B s₀ 9)
@@ -481,9 +483,7 @@ theorem encS_step {key : List Byte} {K B : BitVec 32} {s₀ : State} (E : EncEnv
     (by rw [cipher_past cf (by decide) (by decide)]; exact I.cnt)
     (by rw [ck.2.1, ck.2.2, J.rd, J.wr, e1]; exact E.rdA) (fun c hc => addr_ofs (by omega))
     (fun c hc => E.wK w₁ (by omega)) (by omega) (E.sep.symm.sub_left (Offset.sub_base _ (by decide)))
-    (by rw [e1]; exact E.sepKA.symm)) (by
-      simp [writesOnly, storeEntry, Code.allInstrs, Taint.clobbers, Taint.dst,
-        VG.Proof.MlDsa.X86.Pack.allRegs]))
+    (by rw [e1]; exact E.sepKA.symm)) (by decide))
     fun u₂ ⟨⟨hm, hbx, hdx, hz⟩, hk⟩ => ?_
   rw [e1, E.arg F1, sAnd_z K _ (by omega)] at hz
   -- past the other planes after an S-box's last entry
@@ -504,8 +504,7 @@ theorem encS_step {key : List Byte} {K B : BitVec 32} {s₀ : State} (E : EncEnv
   rw [← hm, ← gm] at F8
   refine WP.mono (WP.keep [.edx] (storeSTail_run u₃ (C := BitVec.ofNat 32 (521 - j))
     ((k₃.gpr (by decide)).trans J.ebp) (by omega) (E.wB w₃ (by decide)) (E.wB w₃ (by decide))
-    (by rw [gk.gpr (by decide), hdx])) (by
-      simp [writesOnly, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+    (by rw [gk.gpr (by decide), hdx])) (by decide))
     fun u₄ ⟨⟨tm, tz⟩, tk⟩ => ?_
   obtain ⟨M32, M36, MF⟩ := slots_facts u₃.mem B (u₃.gpr .ebx) (BitVec.ofNat 32 (521 - j) - BitVec.ofNat 32 1)
   rw [← tm] at M32 M36 MF
@@ -544,7 +543,7 @@ theorem encryptS_run {key : List Byte} {K B : BitVec 32} {s₀ : State} (E : Enc
   refine WP.mono (WP.keep [.ebx, .ecx] (Q := fun t => t.mem = (u.mem.writeW (slot B 32) K).writeW (slot B 36)
       (BitVec.ofNat 32 512))
     (by brun [I.ebp, addr_slot (show B.toNat + 40 ≤ 2 ^ 32 by omega), w32, w36, rA, vA]) (by
-      simp [writesOnly, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+      decide))
     fun u₁ ⟨m₁, k₁⟩ => ?_
   obtain ⟨J, j32, j36⟩ := I.slots E m₁ k₁ (by decide) (by decide)
   refine WP.loop (M := isa) (Q := EncInv key K B s₀ 521)

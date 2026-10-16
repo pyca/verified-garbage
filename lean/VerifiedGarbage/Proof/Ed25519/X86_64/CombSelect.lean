@@ -14,6 +14,15 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
+public import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
+public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
+public import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
+public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+public import VerifiedGarbage.Proof.Mont.Read
+public import VerifiedGarbage.Proof.X25519.X86_64.Bits
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # The comb's constant-time selection, from the tables in the static
@@ -152,20 +161,30 @@ structure CombTbl (s : State) (T : Addr) : Prop where
 /-! ## Masks and pieces -/
 
 /-- Runs a block by symbolic execution, reading registers through the writes. -/
-syntax "erun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| erun) => `(tactic| erun [])
-  | `(tactic| erun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
-        execShift, execMul, State.setReg32, State.load8, State.ea, Option.bind_some,
-        Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
-        RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.cf_arithFlags,
-        RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setFlags,
-        RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, reduceCtorEq, Nat.le_refl,
-        true_and, and_true, and_self, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte,
-        Option.some.injEq, exists_eq_left', $ls,*]))
+tactic_template "erun" : tactic => `(tactic| (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
+                         execShift, execMul, State.setReg32, State.load8, State.ea, Option.bind_some,
+                         Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
+                         RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.cf_arithFlags,
+                         RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setFlags,
+                         RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, reduceCtorEq, Nat.le_refl,
+                         true_and, and_true, and_self, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte,
+                         Option.some.injEq, exists_eq_left']))
+
+/-- `erun` with extra lemmas. -/
+tactic_template "erun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
+                         execShift, execMul, State.setReg32, State.load8, State.ea, Option.bind_some,
+                         Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
+                         RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.cf_arithFlags,
+                         RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setFlags,
+                         RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, reduceCtorEq, Nat.le_refl,
+                         true_and, and_true, and_self, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte,
+                         Option.some.injEq, exists_eq_left', $ls,*]))
 
 /-- All ones if `b`, else zero. -/
 abbrev cmask (b : Bool) : BitVec 64 := if b then BitVec.allOnes 64 else 0

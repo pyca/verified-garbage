@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.X86.ExpandKey
 meta import VerifiedGarbage.Proof.Camellia.X86.ExpandKey
 public import VerifiedGarbage.Proof.Camellia.X86.Verified
@@ -8,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # The Camellia key schedule on x86 (32-bit) meets its contracts
@@ -90,7 +94,7 @@ theorem expandKeyTaint_agree {s₁ s₂ : State} (h₁ : expandKeyX86.pre s₁) 
 
 theorem expandKey_ct : ConstantTime isa expandKeyX86.pre expandKeyX86.pub expandKey :=
   VG.Taint.constantTime (A := VG.X86.taint) expandKeyTaint
-    (fun _ _ h₁ h₂ hp => expandKeyTaint_agree h₁ h₂ hp) (by taint_decide)
+    (fun _ _ h₁ h₂ hp => expandKeyTaint_agree h₁ h₂ hp) (by native_taint_decide)
 
 theorem expandKey_correct (s : State) (hs : expandKeyX86.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyX86.post s s' :=

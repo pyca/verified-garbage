@@ -1,7 +1,11 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.AArch64.ProductEightMont
 public import VerifiedGarbage.Proof.Rsa.AArch64.PublicImpl
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.FoldedPhaseCT
 
 /-! # Precomputed RSA public operation on AArch64: Base -/
 
@@ -13,7 +17,7 @@ open VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64
 
 def variant : PublicImpl where
   name := Spec.Rsa.publicPrecomputedCheckedApi.name ++ ""
-  code := Impl.Rsa.AArch64.Folded.checked Mont.base.mm
+  code := Impl.Rsa.AArch64.Folded.checked Mont.productEight.mm
   ok := FoldedPublic.checked_correct _
   ct := FoldedPublic.checked_constantTime _
   keepsV := by decide +kernel

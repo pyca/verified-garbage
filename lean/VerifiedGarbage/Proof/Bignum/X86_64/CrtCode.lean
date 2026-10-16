@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # RSA with the CRT on x86-64: correctness
@@ -41,7 +42,7 @@ structure CrtCtx (s : State) : Prop where
   hpl2 : (stackArg s 1).toNat < (s.gpr .rcx).toNat
   hql1 : 1 ≤ (stackArg s 3).toNat
   hql2 : (stackArg s 3).toNat < (s.gpr .rcx).toNat
-  hZ : 128 * (s.gpr .rcx).toNat ≤ (stackArg s 11).toNat * 8
+  hZ : 128 * (s.gpr .rcx).toNat + 256 ≤ (stackArg s 11).toNat * 8
   hs : Scr s (stackArg s 10) ((stackArg s 11).toNat * 8)
   ha : ∀ j < 11, InRegions (s.rd ++ s.wr) (stackArgAddr s j) 8
   hsep : ∀ j < 11, ∀ m', Outside (stackArg s 10) 0 (8 * 32) s.mem m' →
@@ -159,10 +160,10 @@ theorem crtPre_of {s t₁ t : State} (c : CrtCtx s) (h : CrtHeadPost s t₁) (hm
   have hql2 := c.hql2
   have hdi : t.gpr .rdi = stackArg s 10 := (k.gpr (by decide)).trans h.rdi
   have hz : offQ (((s.gpr .rcx).toNat + 7) / 8) (stackArg s 1).toNat + slot (wsWords (stackArg s 3).toNat) 8 +
-      tabBytes (wsWords (stackArg s 3).toNat) ≤ (stackArg s 11).toNat * 8 := by
-    unfold offQ slot wsWords hdrBytes tabBytes; omega
+      wsTab (wsWords (stackArg s 3).toNat) ≤ (stackArg s 11).toNat * 8 :=
+    crt_room hk1 hpl2 hql2 hZ
   exact
-    { scr := h.scr.congr k.2.2, rdi := hdi, z := hz, zk := hZ, k1 := hk1, k2 := hk2, hO := (by rw [hm]; exact h.hO),
+    { scr := h.scr.congr k.2.2, rdi := hdi, z := hz, zk := (by omega), k1 := hk1, k2 := hk2, hO := (by rw [hm]; exact h.hO),
       hN := (by rw [hm]; exact h.hN), hK := (by rw [hm]; exact h.hK), hIn := (by rw [hm]; exact h.hIn),
       hP := (by rw [hm]; exact h.hP), hPl := (by rw [hm]; exact h.hPl), hQ := (by rw [hm]; exact h.hQ),
       hQl := (by rw [hm]; exact h.hQl), hDp := (by rw [hm]; exact h.hDp), hDq := (by rw [hm]; exact h.hDq),
@@ -212,15 +213,15 @@ theorem crtCode_fin {s t₁ t₂ t : State} (c : CrtCtx s) (h : CrtHeadPost s t�
 
 /-- `vg_rsa_private_crt` with Montgomery multiplication `M`, given that its
 code never loads MXCSR (which the registration file evaluates). -/
-theorem crtCode_correct (M : Mont) (hmx : (Crt.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
+theorem crtCode_correct (M : Mont) (E : CrtExpL M) (hmx : (Crt.code M.mm E.code).allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : crtContract.pre s) :
-    ∃ t s', Exec isa (Crt.code M.mm) s t s' ∧ abiPreserved s s' ∧ crtContract.post s s' := by
+    ∃ t s', Exec isa (Crt.code M.mm E.code) s t s' ∧ abiPreserved s s' ∧ crtContract.post s s' := by
   have c := crtCtx_of h
   clear h
   have hZ' := c.hZ
   have hk1 := c.hk1
   have hk2 := c.hk2
-  suffices hwp : WP isa (Crt.code M.mm) s fun s' => gprPreserved s s' ∧ crtContract.post s s' by
+  suffices hwp : WP isa (Crt.code M.mm E.code) s fun s' => gprPreserved s s' ∧ crtContract.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
     exact ⟨t, s', he, abiPreserved_of_exec hmx he hg, hp⟩
   unfold Crt.code
@@ -240,7 +241,7 @@ theorem crtCode_correct (M : Mont) (hmx : (Crt.code M.mm).allInstrs (fun i => !l
       fun t hp => crtCode_fin c h₁ hm₂ k₂ hp (fun h => absurd h (by rw [hv]; decide)) fun _ => ⟨rfl, rfl⟩
   · have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat))
         (s.gpr .rcx).toNat = true := by simpa using hb
-    exact WP.mono (crtMain_ok M hpre hv) fun t ⟨Mk, hp, hiff⟩ => crtCode_fin c h₁ hm₂ k₂ hp
+    exact WP.mono (crtMain_ok M E hpre hv) fun t ⟨Mk, hp, hiff⟩ => crtCode_fin c h₁ hm₂ k₂ hp
       (fun _ => ⟨hiff, rfl⟩) fun h => absurd h (by rw [hv]; decide)
 
 end VG.Proof.Bignum.X86_64

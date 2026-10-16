@@ -1,12 +1,17 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Proof.P256.Comb7
 public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
+import VerifiedGarbage.Proof.Divstep.Bound
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFixedDigitTiming
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigitTiming
+import VerifiedGarbage.Proof.P256.Prime
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on AArch64

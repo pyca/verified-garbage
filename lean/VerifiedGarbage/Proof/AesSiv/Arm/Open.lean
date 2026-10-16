@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.Seal
-public import VerifiedGarbage.Proof.AesCcm.Arm.Mask
+import VerifiedGarbage.Proof.AesCcm.Arm.Mask
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 
 /-!
 # AES-SIV on ARMv7: `vg_aes_siv_decrypt`

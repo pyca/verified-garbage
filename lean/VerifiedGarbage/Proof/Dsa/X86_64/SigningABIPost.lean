@@ -1,10 +1,18 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPre
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Signing correctness and ABI preservation against the shared contract -/
 
@@ -51,13 +59,13 @@ theorem signingSharedPost {s t : State} (h : SigningABI s) (hp : SigningPost h.i
   rw [h.outLength]
   exact hout
 
-theorem signingCorrect (M : Mont)
-    (hmx : (SignVerify.sign M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
+theorem signingCorrect (M : Mont) (Sq : MontS)
+    (hmx : (SignVerify.sign Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : (Spec.Dsa.signContract abi).pre s) :
-    ∃ trace t, Exec isa (SignVerify.sign M.mm) s trace t ∧ abiPreserved s t ∧
+    ∃ trace t, Exec isa (SignVerify.sign Sq.mm M.mm) s trace t ∧ abiPreserved s t ∧
       (Spec.Dsa.signContract abi).post s t := by
   have ha := signingABI_of h
-  obtain ⟨trace, t, he, hp⟩ := signingMain_ok M ha.pre
+  obtain ⟨trace, t, he, hp⟩ := signingMain_ok M Sq ha.pre
   exact ⟨trace, t, he, abiPreserved_of_exec hmx he (signingGprPreserved ha hp), signingSharedPost ha hp⟩
 
 end VG.Proof.Dsa.X86_64

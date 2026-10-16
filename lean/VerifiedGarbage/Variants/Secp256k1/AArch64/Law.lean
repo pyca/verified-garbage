@@ -3,6 +3,9 @@ module
 public import VerifiedGarbage.Proof.Secp256k1.Curve
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 public import VerifiedGarbage.Proof.Weierstrass.InvArith
+import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+import VerifiedGarbage.Proof.Divstep.Bound
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # secp256k1's group law and inversions, on AArch64

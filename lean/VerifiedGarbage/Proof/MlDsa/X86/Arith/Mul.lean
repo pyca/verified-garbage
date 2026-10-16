@@ -8,6 +8,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_multiply_ntt` and `vg_mldsa_multiply_add_ntt`
@@ -334,7 +338,7 @@ theorem MulPre.arg_P0 {acc : Bool} {s₀ : State} (hp : MulPre acc s₀) {i : Na
 theorem mulInit_piece (acc : Bool) (V : Nat → Nat → Nat → Nat) :
     Piece (MulPre acc) MulPub (fun s₀ s => s = P0 s₀) (MulInv V · 0) (.block mulInit) := by
   refine Piece.taint [.esp] (fun s₀ s hp e => ?_) (fun s₀ s₀' s s' _ _ hq e e' r hr => ?_)
-    (by taint_decide)
+    (by native_taint_decide)
   · subst e
     obtain ⟨a₀, i₀, v₀⟩ := hp.arg_P0 (i := 0) (by omega)
     obtain ⟨a₁, i₁, v₁⟩ := hp.arg_P0 (i := 1) (by omega)
@@ -383,7 +387,7 @@ theorem mulSat_zero (a : Addr) (ha : a.toNat < 0x5000) : mulSatMem a = 0 := by
     ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)]
 
 theorem mul_verified : Verified X86.target mul (mulContract X86.abi 16) := by
-  refine Piece.verified (((mul_piece mul_core (NoSp.of_all (by decide +kernel)) (by taint_decide)).pre_mono
+  refine Piece.verified (((mul_piece mul_core (NoSp.of_all (by decide +kernel)) (by native_taint_decide)).pre_mono
     (fun _ h => MulPre.of_mul h) fun s s' _ _ h => by
       sig_pub [mulContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
       exact h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
@@ -409,7 +413,7 @@ theorem mul_verified : Verified X86.target mul (mulContract X86.abi 16) := by
     all_goals exact Region.disjoint_of_sep (by decide)
 
 theorem mulAdd_verified : Verified X86.target mulAdd (mulAddContract X86.abi 16) := by
-  refine Piece.verified ((((mul_piece mulAdd_core (NoSp.of_all (by decide +kernel)) (by taint_decide)).pre_mono
+  refine Piece.verified ((((mul_piece mulAdd_core (NoSp.of_all (by decide +kernel)) (by native_taint_decide)).pre_mono
     (fun _ h => MulPre.of_mulAdd h) fun s s' _ _ h => by
       sig_pub [mulAddContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
       exact h)).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_

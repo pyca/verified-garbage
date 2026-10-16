@@ -3,12 +3,15 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeLoop
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyLoop
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
-public import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
+import VerifiedGarbage.Proof.Ed448.X86.BaseMain
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.X86.BaseSetup
+import VerifiedGarbage.Proof.X448.X86.FnLit
+import VerifiedGarbage.Proof.X448.X86.Iter
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): the whole function
@@ -173,6 +176,7 @@ theorem ventry_ok {s₀ : State} (h : VerifyPre s₀) {base : Addr} (hbase : (ar
   have o12 : Outside base 0 8192 s₁.mem s₂.mem :=
     (oK.mono (by omega) (by omega)).trans (oS.mono (by omega) (by omega))
   unfold vinit
+  refine WP.seq ?_
   simp only [List.cons_append, List.nil_append]
   have bs : bytesAt s₁.mem ((arg s₀ 1).setWidth 64 + BitVec.ofNat 64 57) 57 =
       bytesAt s₀.mem ((arg s₀ 1).setWidth 64 + BitVec.ofNat 64 57) 57 := by
@@ -194,8 +198,6 @@ theorem ventry_ok {s₀ : State} (h : VerifyPre s₀) {base : Addr} (hbase : (ar
   have rr4 : s₄.rd ++ s₄.wr = s₀.rd ++ s₀.wr := by rw [v₄.rd, v₄.wr, v₃.rd, v₃.wr, k₂.2.1, k₂.2.2, rr1]
   have o04 : Outside base 0 8192 s₀.mem s₄.mem :=
     (o1w.trans o12).trans (o₄.mono (by omega) (by decide))
-  change WP isa (.block (sCheck ++ initSlots)) s₄ _
-  rw [WP.block_append_iff]
   refine WP.mono (sCheck_ok hs₄ (q := (arg s₀ 1).setWidth 64 + BitVec.ofNat 64 57) (by rw [esi₄])
     (by rw [esi₄]; exact h.f1) (fun j hj => by rw [rr4, Offset.add_add]; exact isig.read _ (by omega))
     (fun j hj => by rw [Offset.add_add]; exact isig.far _ (by omega))) fun s₅ ⟨c₅, o₅, k₅⟩ => ?_

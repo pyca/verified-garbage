@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! Curves using a public early-exit inverse also supply its Montgomery-form
 arithmetic theorem. This proof-only interface leaves contracts and the TCB unchanged. -/

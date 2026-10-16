@@ -3,12 +3,15 @@ module
 public import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
-public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Rsa.X86_64.RpCode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
 # The RSA functions' postconditions do not read the return address

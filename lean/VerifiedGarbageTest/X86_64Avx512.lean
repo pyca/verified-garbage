@@ -10,7 +10,10 @@ legacy SSE instructions and `vzeroupper` leave in bits 511:256, and the
 unmasked EVEX.512 forms of VPADDQ, VPMULUDQ, VPANDQ, VPORQ, VPANDNQ, VPSLLQ,
 VPSRLQ, VPBROADCASTQ and VMOVDQA64, on an Intel Xeon (Cascade Lake), and
 of VPRORQ and VPERMQ (immediate forms) and the EVEX.256 and EVEX.128 forms of
-VPRORQ, on an Intel Xeon (Emerald Rapids); and the
+VPRORQ, on an Intel Xeon (Emerald Rapids); `kmovw k1, eax` and the masked
+VMOVDQU64 load and store of `kLoad` and `kStore`, on an Intel Xeon with
+AVX-512F, with the 64 bytes at the end of a page followed by one mapped
+`PROT_NONE`, where the masked-off quadwords do not fault; and the
 embedded-broadcast forms, run as the printed strings in Rust naked
 functions), and is compared with the model's result on the same inputs.
 -/
@@ -213,6 +216,33 @@ def s5 : State := (ZOp.vpshufd .xmm5 .xmm0 0xe4).exec s
   (·.mem.readW 0x200 512)) == some B
 #guard (exec (.vmovdqu32Store { base := .rdi, disp := 0x101 } .xmm1) s).isNone
 
+/-- `s` with the mask `k` in `rax`. -/
+def sk (k : BitVec 64) : State := { s with gpr := fun r => if r = .rax then k else s.gpr r }
+
+/-- `zmm5` after `kmovw k1, eax; vmovdqu64 zmm5 {k1}{z}, ZMMWORD PTR [rdi+disp]`. -/
+def kld (k : BitVec 64) (disp : Int) : Option (BitVec 512) :=
+  (exec (.kLoad .rax .xmm5 { base := .rdi, disp := disp }) (sk k)).map (·.zmm .xmm5)
+
+/-- The 64 bytes at `0x200` after `kmovw k1, eax; vmovdqu64 ZMMWORD PTR
+[rdi+disp] {k1}, zmm1`. -/
+def kst (k : BitVec 64) (disp : Int) : Option (BitVec 512) :=
+  (exec (.kStore { base := .rdi, disp := disp } .rax .xmm1) (sk k)).map (·.mem.readW 0x200 512)
+
+#guard kld 0xA5 0 == some 0x0badf00dfeedface00000000000000008899aabbccddeeff00000000000000000000000000000000c3d2e1f08796a5b40000000000000000fedcba9876543210#512
+-- Only bits 7:0 of the mask are used.
+#guard kld 0x1234FFA5 0 == kld 0xA5 0
+-- The masked-off quadwords may lie outside the regions, and are not read.
+#guard kld 0x07 40 == some 0x000000000000000000000000000000000000000000000000000000000000000000000000000000000badf00dfeedfacedeadbeef00c0ffee8899aabbccddeeff#512
+#guard (kld 0x0F 40).isNone
+#guard kld 0 1000 == some 0
+#guard kst 0x5A 0x100 == some 0x00000000000000005555aaaa3333cccc000000000000000013579bdf2468ace00123456789abcdef0000000000000000ffffffff800000000000000000000000#512
+#guard kst 0x07 0x128 == some 0xdeadbeefcafebabeffffffff800000007fffffff1234567800000000000000000000000000000000000000000000000000000000000000000000000000000000#512
+#guard (kst 0x0F 0x128).isNone
+#guard (kst 0x5A 0x100) == kst 0x1234FF5A 0x100
+-- They leak the address and the mask.
+#guard addrs (.kLoad .rax .xmm5 { base := .rdi, disp := 8 }) (sk 0x1234FFA5) == [0x108, 0xA5]
+#guard addrs (.kStore { base := .rdi } .rax .xmm1) (sk 0x07) == [0x100, 0x07]
+
 /-- `zmm5` after `op zmm5, zmm1, QWORD PTR [rdi+disp]{1to8}`, where memory
 holds `A`. -/
 def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
@@ -257,6 +287,10 @@ def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
 #guard printer.instr (.vmovdqu32Load .xmm0 { base := .rsi, disp := 64 }) ==
   ["vmovdqu32 zmm0, ZMMWORD PTR [rsi+64]"]
 #guard printer.instr (.vmovdqu32Store { base := .rcx } .xmm14) == ["vmovdqu32 ZMMWORD PTR [rcx], zmm14"]
+#guard printer.instr (.kLoad .rcx .xmm3 { base := .rdx, disp := 64 }) ==
+  ["kmovw k1, ecx", "vmovdqu64 zmm3 {k1}{z}, ZMMWORD PTR [rdx+64]"]
+#guard printer.instr (.kStore { base := .rdx, disp := 64 } .r10 .xmm15) ==
+  ["kmovw k1, r10d", "vmovdqu64 ZMMWORD PTR [rdx+64] {k1}, zmm15"]
 #guard printer.instr (.vbroadcasti32x4 .xmm1 { base := .rdi, disp := 48 }) ==
   ["vbroadcasti32x4 zmm1, XMMWORD PTR [rdi+48]"]
 #guard printer.instr (.zbcst .vpmuludq .xmm5 .xmm1 { base := .rdi, disp := 13 }) ==
@@ -283,6 +317,8 @@ def bcst (op : ZBcstOp) (disp : Int) : Option (BitVec 512) :=
 #guard isa.requires (.vmovdqu32Load .xmm0 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.vmovdqu32Store { base := .rdi } .xmm0) == ["avx512f"]
 #guard isa.requires (.vbroadcasti32x4 .xmm0 { base := .rdi }) == ["avx512f"]
+#guard isa.requires (.kLoad .rax .xmm0 { base := .rdi }) == ["avx512f"]
+#guard isa.requires (.kStore { base := .rdi } .rax .xmm0) == ["avx512f"]
 #guard isa.requires (.zbcst .vpmuludq .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.zbcst .vpandq .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]
 #guard isa.requires (.zbcst .vporq .xmm0 .xmm1 { base := .rdi }) == ["avx512f"]

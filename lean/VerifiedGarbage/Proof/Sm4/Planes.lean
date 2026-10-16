@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.Planes
-public import VerifiedGarbage.Proof.Sm4.Bitsliced
+import VerifiedGarbage.Proof.Sm4.Bitsliced
 public import VerifiedGarbage.Proof.Sm4.Bitsliced32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,15 +1,20 @@
 module
 
 public import VerifiedGarbage.Impl.X25519.X86.Base
-public import VerifiedGarbage.Proof.X25519.Edwards.Ladder
-public import VerifiedGarbage.Proof.Ed25519.Bytes
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
+import VerifiedGarbage.Proof.X25519.Edwards.Ladder
+import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
 public import VerifiedGarbage.Spec.X25519.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
+import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
+import VerifiedGarbage.Proof.Ed25519.X86.InputBits
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # X25519 of the base point on x86: correctness

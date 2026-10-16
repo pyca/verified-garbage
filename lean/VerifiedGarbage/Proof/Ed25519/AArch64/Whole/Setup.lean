@@ -2,12 +2,15 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Whole.Setup
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 @[expose] public section
 
@@ -23,6 +26,13 @@ def valid : Value → Prop
   | .const n => n < 65536
   | .frame d => d < 4096
   | .caller j d => j < 6 ∧ d < 4096
+
+deriving instance DecidableEq for Value
+
+instance : DecidablePred valid
+  | .const n => inferInstanceAs (Decidable (n < 65536))
+  | .frame d => inferInstanceAs (Decidable (d < 4096))
+  | .caller j d => inferInstanceAs (Decidable (j < 6 ∧ d < 4096))
 
 structure SetupStep (rs : List Reg) (s t : State) : Prop where
   rd : t.rd = s.rd

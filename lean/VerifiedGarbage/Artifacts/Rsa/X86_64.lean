@@ -5,14 +5,20 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 public import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 public import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 public import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
-public import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
 public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
-public import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
-public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
+import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -107,25 +113,39 @@ def artifacts : List Artifact := [
         window's power of the input, from a table of all 16 after the prime's working space, read \
         by a masked selection from every entry."])
     code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.base.mm
+      (Impl.Rsa.X86_64.Crt.expLoopS Proof.Rsa.X86_64.CallMont.lazyBase Proof.Rsa.X86_64.CallMont.base.mm
+        Impl.Rsa.X86_64.Crt.tabSelect)
     contract := Spec.Rsa.privateCrtContract X86_64.abi 8
     stack := 8
     verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
-      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel))
-      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnBase)
+      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnBase
+        (Proof.Bignum.X86_64.CrtExpL.w4S Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)
+        (by decide +kernel))
+      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnBase
+        (Proof.Bignum.X86_64.CrtExpL.w4S Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)
+        (Proof.Bignum.X86_64.CrtExpL.w4S_ct Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy))
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with
     target := X86_64.target
     name := Spec.Rsa.privateCrtApi.name ++ "_adx"
     doc := Spec.Rsa.privateCrtApi.doc
       (notes := ["`vg_rsa_private_crt`'s code, with Montgomery multiplication by calls of \
-        `vg_rsa_mont_mul_adx`."])
+        `vg_rsa_mont_mul_adx`, and the exponents scanned by a fixed window of 5 bits: five squares and a \
+        multiplication by the window's power, from a table of all 32, read by a masked selection four \
+        words at a time in AVX2's 256-bit registers."])
     code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.adx.mm
+      (Impl.Rsa.X86_64.Crt.expLoop5S Proof.Rsa.X86_64.CallMont.lazyAdx Proof.Rsa.X86_64.CallMont.adx.mm
+        Impl.Rsa.X86_64.Crt.tabSelectV)
     contract := Spec.Rsa.privateCrtContract X86_64.abi 8
     stack := 8
     verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
-      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel))
-      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx)
-    features := ["bmi2", "adx"]
+      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx
+        (Proof.Bignum.X86_64.CrtExpL.w5S Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx)
+        (by decide +kernel))
+      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx
+        (Proof.Bignum.X86_64.CrtExpL.w5S Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx)
+        (Proof.Bignum.X86_64.CrtExpL.w5S_ct Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx))
+    features := ["avx", "avx2", "bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with
     target := X86_64.target

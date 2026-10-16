@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on x86 (32-bit): `u` in K-PKE.Encrypt
@@ -70,7 +71,7 @@ def safe (L : KemLay) (Y : Lay) (bs : List Buf) : Bool :=
   Y.apart (bACC L Y.sc) bs && safeS L Y bs && (List.range L.p.k).all fun i => Y.apart (bCU L Y.sc i) bs
 
 /-- `sc_decide`, for facts that `safe` and `safeS` state. -/
-macro "sc_decide'" : tactic => `(tactic| (simp only [safe, safeS]; sc_decide))
+macro "sc_decide'" : tactic => `(tactic| plain_simp_names (simp only [safe, safeS]; sc_decide))
 
 theorem keepS {I : Inp} {s₀ s s' : State} (hp : TPre Y s₀) {bs : List Buf} {M : Nat} (hM : M + 16 ≤ Y.stk)
     (hs : safeS L Y bs = true) (fr : Frame (FR s₀ bs M) s.mem s'.mem) (c : Ctx Y s₀ s') (h₁ : Base L Y I s₀ s)

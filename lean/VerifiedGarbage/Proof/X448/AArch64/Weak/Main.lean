@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
-public import VerifiedGarbage.Proof.X448.AArch64.Weak.FinalSwap
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
+import VerifiedGarbage.Proof.X448.AArch64.Weak.FinalSwap
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Inv
 public import VerifiedGarbage.Proof.X448.AArch64.Main
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.X448.AArch64.BitBody
+import VerifiedGarbage.Proof.X448.AArch64.Bits
 
 @[expose] public section
 

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Idea.KeyLit
+import VerifiedGarbage.Proof.Idea.KeyLit
 meta import VerifiedGarbage.Proof.Idea.KeyLit
 public import VerifiedGarbage.Impl.Idea.AArch64
 meta import VerifiedGarbage.Impl.Idea.AArch64

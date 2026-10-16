@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.SignCached.Layout
 public import VerifiedGarbage.Proof.Ed448.Arm.Shake.Header
-public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

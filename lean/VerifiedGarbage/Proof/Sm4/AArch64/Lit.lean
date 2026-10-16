@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Ecb
 public import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
 meta import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
-public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
+import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 public import VerifiedGarbage.Impl.Sm4.AArch64.Cbc
 meta import VerifiedGarbage.Impl.Sm4.AArch64.Cbc
@@ -32,6 +32,7 @@ namespace VG.Proof.Sm4.AArch64
 materialize_flat_code expandKeyCode := Impl.Sm4.AArch64.expandKey
 materialize_flat_code ecbEncrypt := Impl.Sm4.AArch64.ecb .encrypt
 materialize_flat_code ecbDecrypt := Impl.Sm4.AArch64.ecb .decrypt
+materialize_flat_code ecbAnyCode := Impl.Sm4.AArch64.ecbAny
 materialize_flat_code ctrCode := Impl.Sm4.AArch64.ctr
 materialize_flat_code cbcEncryptCode := Impl.Sm4.AArch64.cbcEncrypt
 materialize_flat_code cbcDecryptCode := Impl.Sm4.AArch64.cbcDecrypt

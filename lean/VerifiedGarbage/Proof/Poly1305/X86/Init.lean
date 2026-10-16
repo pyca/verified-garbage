@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Poly1305.X86.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.X86.Blocks
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Poly1305.Contract
+import VerifiedGarbage.Spec.Poly1305.Contract
 meta import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
@@ -14,6 +14,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Poly1305.X86.Lit
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
 
 /-!
 # Poly1305 on x86 (32-bit): `init`

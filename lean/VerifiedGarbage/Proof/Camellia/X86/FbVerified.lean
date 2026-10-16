@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Camellia.X86.CbcVerified
 meta import VerifiedGarbage.Proof.Camellia.X86.CbcVerified
 public import VerifiedGarbage.Proof.Camellia.FbScratch
@@ -10,6 +14,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # Camellia-OFB and Camellia-CFB128 on x86 (32-bit) meet their contracts
@@ -124,6 +130,7 @@ theorem data_eq (m : Mem) (s : State) :
     Proof.Modes.chunksAt (4 * (dirCore .encrypt).bw) m ((arg s 3).setWidth 64) (arg s 4).toNat = dataAt m s := rfl
 theorem iv_eq (m : Mem) (s : State) :
     Spec.Aes.bytesAt m ((arg s 2).setWidth 64) (4 * (dirCore .encrypt).bw) = ivAt m s := rfl
+attribute [local irreducible] Spec.Camellia.cipher in
 theorem cipher_eq (s : State) :
     (dirCoreSpec .encrypt).cipher ((arg s 1).toNat, schedWords s.mem ((arg s 0).setWidth 64) (arg s 1).toNat) =
       ciph s := rfl
@@ -200,17 +207,32 @@ theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h�
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
+/-- What is public at the core's loop of pairs of rounds (as
+`cbcPairTaint`, with the IV's region before the scratch buffer). -/
+def fbPairTaint : VG.X86.Taint.T :=
+  { regs := .ofList [.eax, .esp, .esi, .edi], flags := true, lens := [0, 16, 4 * (dirCore .encrypt).total],
+    bases := [(.edi, 2, 0)], slots := [(2, 4 * grpSlot, 4), (2, 4 * (dirCore .encrypt).dSlot, 8)],
+    argLen := 28, argBases := [(16, 0), (12, 1), (24, 2)] }
+
+/-! The loop of pairs of rounds, which the three modes run for 18 and 24
+rounds, analysed once, as a summary. -/
+
+taint_summary fbPairSum : VG.X86.taint fbPairTaint (.block pairBody)
+
 theorem ofb_ct : ConstantTime isa (fbX86 ofbPost).pre (fbX86 ofbPost).pub ofb :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by native_taint_decide_sum [fbPairSum] :
+    ∃ h, (VG.X86.taint.check fbTaint ofb h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfbEncrypt_ct : ConstantTime isa (fbX86 cfbEncPost).pre (fbX86 cfbEncPost).pub cfbEncrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by native_taint_decide_sum [fbPairSum] :
+    ∃ h, (VG.X86.taint.check fbTaint cfbEncrypt h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 theorem cfbDecrypt_ct : ConstantTime isa (fbX86 cfbDecPost).pre (fbX86 cfbDecPost).pub cfbDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+  let ⟨_, h⟩ := (by native_taint_decide_sum [fbPairSum] :
+    ∃ h, (VG.X86.taint.check fbTaint cfbDecrypt h).isSome = true)
+  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/
 
@@ -237,16 +259,19 @@ def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 272⟩, ⟨
 def narrowWr (s : State) : List Region :=
   [⟨(arg s 3).setWidth 64, 16 * (arg s 4).toNat⟩, ⟨(arg s 2).setWidth 64, 16⟩, ⟨(arg s 5).setWidth 64, 8 * 341⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [VG.Proof.Camellia.X86.Fb.fbX86, VG.Proof.Camellia.X86.Fb.wideContract,
-    VG.Proof.Camellia.X86.Fb.narrowRd, VG.Proof.Camellia.X86.Fb.narrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+tactic_template "narrow_camellia_x86_fbverified" : tactic => `(tactic| simp only [VG.Proof.Camellia.X86.Fb.fbX86, VG.Proof.Camellia.X86.Fb.wideContract,
+                     VG.Proof.Camellia.X86.Fb.narrowRd, VG.Proof.Camellia.X86.Fb.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+tactic_template "narrow_camellia_x86_fbverified" loc:Lean.Parser.Tactic.location : tactic => `(tactic| simp only [VG.Proof.Camellia.X86.Fb.fbX86, VG.Proof.Camellia.X86.Fb.wideContract,
+                     VG.Proof.Camellia.X86.Fb.narrowRd, VG.Proof.Camellia.X86.Fb.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem wide_pre (post : State → State → Prop) (s : State) (h : (wideContract post).pre s) :
     (fbX86 post).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  narrow_camellia_x86_fbverified
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 18, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -374,7 +399,7 @@ theorem fb_verified {post : State → State → Prop} {c : Prog isa}
   · intro s s' _ h
     exact hR _ _ _ _ _ _ h
   · intro s₁ s₂ _ _ h
-    narrow
+    narrow_camellia_x86_fbverified
     exact h
 
 theorem ofb_verified : Verified X86.target ofb (Proof.Camellia.ofbScratchContract X86.abi 341) :=

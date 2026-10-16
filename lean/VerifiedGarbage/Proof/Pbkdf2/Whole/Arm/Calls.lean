@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Pbkdf2.Generic
+import VerifiedGarbage.Spec.Pbkdf2.Generic
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Hash
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -9,6 +9,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the calls of HMAC's functions and of `iterate`

@@ -6,6 +6,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Linear
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # CFB8 as a mode a byte at a time on ARMv7
@@ -26,10 +32,10 @@ open VG VG.Arm VG.Impl.Modes.Arm
 open VG.Spec.Aes (bytesAt)
 
 theorem cfb8Enc_ok (c : Core) (h : encodable (BitVec.ofNat 32 (oOff + c.bs)) = true) : ModeOk c cfb8Enc :=
-  ⟨by decide, by decide, by decide, h⟩
+  ⟨by rfl, by rfl, by decide, h⟩
 
 theorem cfb8Dec_ok (c : Core) (h : encodable (BitVec.ofNat 32 (oOff + c.bs)) = true) : ModeOk c cfb8Dec :=
-  ⟨by decide, by decide, by decide, h⟩
+  ⟨by rfl, by rfl, by decide, h⟩
 
 theorem next_cons (iv cs : List Byte) (x : Byte) (hiv : iv ≠ []) :
     Spec.Cfb8.next iv (x :: cs) = Spec.Cfb8.next (iv.tail ++ [x]) cs := by

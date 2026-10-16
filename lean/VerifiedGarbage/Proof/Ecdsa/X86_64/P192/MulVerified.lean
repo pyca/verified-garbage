@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.Verified
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.MulLit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.MulLit
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.MulLit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
+import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.InvFnX
 public import VerifiedGarbage.Proof.Weierstrass.PointFacts
 meta import VerifiedGarbage.Proof.Weierstrass.PointFacts
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Spec.Weierstrass.Mul
 meta import VerifiedGarbage.Spec.Weierstrass.Mul
@@ -18,6 +18,20 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # `vg_p192_mul` on x86-64: `Verified`
@@ -152,7 +166,7 @@ theorem mul_correct (hL : Law Spec.P192.curve) (hI : InvSounds) (s : State) (hs 
     rw [qx, qy, dq hL, dq hL]
     rfl
   have hQ : onCurve p192.C (ptQ p192 (s.gpr .rdi) s) = true := by rw [← eP]; exact hon
-  have W := mulFn_ok hc rfl hL hS hmp' hz' hone' ha' hb3' hx' hy' hQ
+  have W := mulFn_ok hc (.inl rfl) hL hS hmp' hz' hone' ha' hb3' hx' hy' hQ
   rw [Code.inline_of_noCalls hnc] at W
   obtain ⟨t, s', he, K', U', M', L', R'⟩ := W
   have sv' := invFnX_gpr hv hncB he
@@ -194,7 +208,8 @@ theorem agree (s₁ s₂ : State) (_ : mK.pre s₁) (_ : mK.pre s₂) (h : mK.pu
 /-- Constant time by taint tracking, `rdi` and `rsp` public. -/
 theorem mul_ct : ConstantTime isa mK.pre mK.pub p192.mulFn := by
   show ConstantTime isa _ _ mulCode
-  exact VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsp]) agree (by taint_decide)
+  exact VG.Taint.constantTime_mapBlocks (c' := mulCodeErased) taint_eraseInv (Taint.ofRegs [.rdi, .rsp]) rfl
+    agree rfl (by taint_decide)
 
 /-- The memory of `satState`: `p`, one, `a` and `3 b` in Montgomery's form,
 and `G`'s coordinates in Montgomery's form, at their slots for `ws = 0x1000`,

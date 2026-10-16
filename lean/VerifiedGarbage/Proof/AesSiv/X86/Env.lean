@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesSiv.X86.Contract
+import VerifiedGarbage.Proof.AesSiv.X86.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86.Common
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Impl.AesSiv.X86

@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Final
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA verification on x86 (32-bit): the body
@@ -60,7 +62,7 @@ theorem ok1_piece : VP p (fun s₀ s => H1 p s₀ s ∧ (hOf p s₀).isSome = tr
     · exact ⟨h.1, ho, fun j hj => absurd hj (Nat.not_lt_zero _), by
         rw [e, ifp (fun j hj => absurd hj (Nat.not_lt_zero _)) _ _]⟩
     · rw [hn] at hs; exact absurd hs (by decide)
-  refine ifOk_piece (Y := YV p) (fun s₀ => decide (NormsOk p s₀ p.ℓ)) (by lvd) (by taint_decide)
+  refine ifOk_piece (Y := YV p) (fun s₀ => decide (NormsOk p s₀ p.ℓ)) (by lvd) (by native_taint_decide)
     (fun _ _ _ h => h.ctx) (fun s₀ s s' _ h h' m => ⟨h', ?_, ?_, ?_⟩) (fun s₀ s _ h => ?_)
     (fun _ _ _ _ hq => norms_pub hq) (ok2_piece hP hF) fun s₀ s _ h hn => ⟨h.ctx, .inr ⟨?_, ?_⟩⟩
   · obtain ⟨hh, e, hi⟩ := h.hint; exact ⟨hh, e, by rw [m]; exact hi⟩
@@ -85,7 +87,7 @@ theorem ret_piece : VP p (VFin p) (Done p) (.block [.mov .eax (.mem (at_ .esi oA
 theorem body_piece : VP p (fun s₀ s => s = P0 s₀) (Done p) (body P p) := by
   unfold body
   refine (ldsc_piece (Y := YV p) (ht := .block []) (by kernel_rfl)).seq ((hint_piece hP hF).seq ?_)
-  refine Piece.seq (ifOk_piece (Y := YV p) (fun s₀ => (hOf p s₀).isSome) (by lvd) (by taint_decide)
+  refine Piece.seq (ifOk_piece (Y := YV p) (fun s₀ => (hOf p s₀).isSome) (by lvd) (by native_taint_decide)
     (fun _ _ _ h => h.1) (fun s₀ s s' _ h h' m => ⟨h', ?_⟩) (fun s₀ s _ h => ?_) (fun _ _ _ _ hq => by
       rw [hOf_pub hq]) (ok1_piece hP hF) fun s₀ s _ h hn => ⟨h.1, .inr ⟨?_, ?_⟩⟩) (ret_piece hF)
   · rcases h.2 with ⟨e, hh, eh, hi⟩ | ⟨e, hn⟩

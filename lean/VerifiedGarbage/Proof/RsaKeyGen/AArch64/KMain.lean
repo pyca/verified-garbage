@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.KTail
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.GcdE
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Trial
@@ -7,6 +8,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
+public import VerifiedGarbage.Proof.RsaKeyGen.TrialMath
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # A candidate on AArch64: once `rand` has the candidate's octets
@@ -77,14 +83,14 @@ theorem finUsed_end {s sX : State} {B : Addr} {Z : Nat} {op up : Addr} {k st u :
     (KEnd.of_fin ho h).trans_pre (outBytes_inScr hin ho.outZ) (kk.mono (by decide))
 
 /-- Disjointness of a header word from a list of literal ranges. -/
-macro "k_disj" : tactic => `(tactic| (
+tactic_template "k_disj" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, loadCRanges, closeRanges,
     gcdRanges, slot, hdrBytes, aN, aX, aAcc, aTmp, aY, aTab, kT0, kG, sCnt, sW, sArr, sStride, Public.sMask, sFn, kOut,
     kLen, Public.sK, kUsedP, kE, kElen, kP, kPlen, kRand, kRandLen, kUsed]
   and_intros <;> omega_arith))
 
 /-- Bounds of a list of literal ranges. -/
-macro "k_le" : tactic => `(tactic| (
+tactic_template "k_le" : tactic => `(tactic| first | hdr_disj | (
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, loadCRanges, closeRanges,
     gcdRanges, slot, hdrBytes, aN, aX, aAcc, aTmp, aY, aTab, kT0, kG, sCnt, sW, sArr, sStride, Public.sMask, sFn,
     kUsed]
@@ -206,7 +212,7 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
     exact hc₃
   have hM₄ : word s₄.mem B (8 * Public.sMask) = mask true :=
     (hW f₄ (by decide) (by k_disj)).trans ((hW f₃ (by decide) (by k_disj)).trans ((hW f₂ (by decide) (by k_disj)).trans hM₁))
-  refine WP.mono (kTail_ok M h₄ hw4 hw64 hc₄ hsh ho₄ ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.out)
+  refine WP.mono (kTail_ok M h₄ hw4 hw64 (by simp only [slot, hdrBytes, aE]; omega_arith) hc₄ hsh ho₄ ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.out)
     ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.len) hU₄ hM₄
     ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.rand) ((hk₄ (by decide) (by decide) (by k_disj) (by k_disj)).trans h.rlen)
     hus₄ (h.rsrc.congrK hin₄ k14) h.rl hrk) fun t ht => ?_

@@ -4,12 +4,16 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
 meta import VerifiedGarbage.Proof.MlKem.X86_64.S4Vec
-public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+meta import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_decode12_avx2`
@@ -67,7 +71,7 @@ theorem cand_dword' (a : BitVec 128) {l j : Nat} (hl : l < 2) (hj : j < 4) :
     toNat_dword_ofBytes _ (show 2 < 4 by decide), toNat_dword_ofBytes _ (show 3 < 4 by decide),
     candN, cb, Nat.reduceMul, Nat.reduceAdd, Nat.reduceMod, Nat.reduceDiv, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
     show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceEqDiff, Nat.add_zero] <;>
-  omega
+  first | exact S4.cand_lo (hb _) (hb _) | exact S4.cand_hi (hb _) (hb _)
 
 /-! ## The constants -/
 

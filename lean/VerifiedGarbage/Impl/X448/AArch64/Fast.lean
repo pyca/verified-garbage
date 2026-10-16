@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.X448.AArch64.Weak
 public import VerifiedGarbage.Impl.Curve448.AArch64.Fast
 public import VerifiedGarbage.Impl.Curve448.AArch64.Neon
+public import VerifiedGarbage.Impl.AArch64Weave
 
 /-!
 # X448: AArch64 implementation with register-resident field arithmetic
@@ -61,16 +62,7 @@ def ops : List Op → Prog isa
 
 def codeOf (l : List Op) : List Instr := l.flatMap Op.code
 
-/-- Interleave `a` and `b`, keeping each at the same relative progress, `i`
-instructions of `a` (of `n`) and `j` of `b` (of `m`) taken. -/
-def weaveGo (n m : Nat) : Nat → Nat → Nat → List Instr → List Instr → List Instr
-  | 0, _, _, a, b => a ++ b
-  | _ + 1, _, _, [], b => b
-  | _ + 1, _, _, x :: a, [] => x :: a
-  | f + 1, i, j, x :: a, y :: b =>
-    if i * m ≤ j * n then x :: weaveGo n m f (i + 1) j a (y :: b) else y :: weaveGo n m f i (j + 1) (x :: a) b
-
-def weave (a b : List Instr) : List Instr := weaveGo a.length b.length (a.length + b.length) 0 0 a b
+export VG.Impl.AArch64Weave (weave weaveGo)
 
 /-- `DA = D A` and `CB = C B` in AdvSIMD, beside `AA`, `BB`, `X2 = AA BB`,
 `E = AA - BB` and `T2 = AA + a24 E`. -/
@@ -106,9 +98,5 @@ def vsave : List Instr := (List.range 8).map fun k => Curve448.AArch64.Neon.stq 
 def vrestore : List Instr := (List.range 8).map fun k => Curve448.AArch64.Neon.ldq (8 + k) (VSAVE + 16 * k)
 
 def setup : List Instr := Weak.setup ++ save ++ vsave
-
-def finish : Prog isa :=
-  .block (fmul X2 X2 T7 ++ Curve448.AArch64.toLegacy X2 ++ AArch64.freeze ++
-    (List.range 8).flatMap AArch64.packPair ++ [ld .x19 0, ld .x20 8] ++ restore ++ vrestore)
 
 end VG.Impl.X448.AArch64.Fast

@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
+import VerifiedGarbage.Proof.RsaOaep.X86_64.DecLoops
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # RSAES-OAEP decryption on x86-64: the outputs

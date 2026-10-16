@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Weierstrass.Window
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # The x86 window loop's frame and Jacobian doublings
@@ -194,11 +197,11 @@ theorem winJ_sl {K : WinCfg} {o p q : Pt} (ho : ∀ x ∈ [o.x, o.y, o.z], x ∈
     · exact hq _ (by simp)
 
 /-- What a program reads is in `V`. -/
-local macro "rcb_sub" : tactic => `(tactic| (
-  intro x hx
-  simp only [rcbR, WinCfg.zeroPt, List.cons_append, List.nil_append, List.mem_cons,
-    List.not_mem_nil, or_false] at hx ⊢
-  rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
+local macro "rcb_sub" : tactic => `(tactic| plain_simp_names (
+                   intro x hx
+                   simp only [rcbR, WinCfg.zeroPt, List.cons_append, List.nil_append, List.mem_cons,
+                     List.not_mem_nil, or_false] at hx ⊢
+                   rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
 
 /-- `R = 16 R` in Jacobian coordinates, but `Y`: the triple `(X : Y : Z)` stands for
 `[16 e]P` (or `Z = 0`), `R` is `(XZ : Y : Z³)` and `E.z` is `Z`. -/

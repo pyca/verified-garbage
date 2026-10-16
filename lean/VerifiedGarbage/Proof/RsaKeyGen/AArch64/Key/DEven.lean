@@ -1,11 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
-public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # An RSA key from its primes on AArch64: `d` for an even `e`
@@ -46,12 +51,12 @@ theorem dEvenMask_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {b : Bool} (h15
   refine WP.mono (evenMaskOf_k h₁ (j := aL) (by decide)) fun s₂ ⟨h₂, m₂, h15₂, _, _, k₂⟩ => ?_
   rw [m₁] at h15₂
   have h10₂ : s₂.gpr .x10 = mask b := (k₂.gpr .x10 (by decide)).trans h10
-  have hst := h₂.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega)
+  have hst := h₂.ws.scr.st (d := 8 * kOk) (by have := h.ws.h256; unfold kOk sFn; omega_using [this])
   refine WP.mono (WP.keep [.x4, .x7, .x10, .x15] (Q := fun t => t.mem = s₂.mem.writeW (off I.B (8 * kOk))
       (mask (!(decide (av I s.mem aL % 2 = 0) || b))) ∧ t.gpr .x15 = mask (decide (av I s.mem aL % 2 = 0) || b)) (by
     brun [notMask, h₂.ws.x0, hdr_enc (show kOk < 32 by decide), hst, h15₂, h10₂, dEven_mask_or,
       dEven_mask_not]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨hm, h15t⟩, k₃⟩ => ?_
-  obtain ⟨ht, f₃, hw⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega) hm k₃
+  obtain ⟨ht, f₃, hw⟩ := h₂.hdrW (i := kOk) (by unfold kOk sFn; omega_using []) hm k₃
   exact ⟨ht, by rw [m₁, ← m₂] at *; exact f₃, hw, h15t⟩
 
 theorem dEven_eq : dEven = loadEv ++ (divisorOf aL ++
@@ -70,7 +75,7 @@ theorem dEven_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 :
     (_hLW : L < 2 ^ (64 * I.W)) :
     WP isa (seqs dEven) s fun t => KS I s₀ t ∧ KF I.B I.W csD s.mem t.mem ∧ DRes I e L t.mem := by
   have hZ := h.hZ
-  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega
+  have hw1 : 1 ≤ I.W := by have := h.ws.w1; omega_using [this]
   rw [dEven_eq]
   -- `[aE] := e`, `[aM] := L`, or 1 for `L = 0`.
   refine wp_seqs_append (by simp [loadEv]) (by simp) (WP.mono (loadEv_k h he64 hev) fun s₁ ⟨h₁, f₁, e₁⟩ => ?_)
@@ -80,7 +85,7 @@ theorem dEven_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 :
     (by decide)) fun s₂ ⟨h₂, f₂, vM₂⟩ => ?_)
   rw [vL₁] at vM₂
   generalize hM₁ : dv L = M₁ at vM₂
-  have hM₁0 : 0 < M₁ := by rw [← hM₁]; unfold dv; split <;> omega
+  have hM₁0 : 0 < M₁ := by rw [← hM₁]; unfold dv; split <;> omega_arith
   have hM₁L : L ≠ 0 → M₁ = L := fun h0 => by rw [← hM₁]; unfold dv; rw [ite_eq_right_iff.mpr (fun h' => absurd h' h0)]
   have hok2 : [Rc.arr aM, Rc.arr aC].all Rc.ok = true := by decide
   have vE₂ : av I s₂.mem aE = e := by rw [f₂.av hok2 (by decide) (by decide) hZ, vE₁]
@@ -138,10 +143,10 @@ theorem dEven_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 :
   have hgood : bad = false → L % 2 = 1 ∧ 3 ≤ L := fun hb => by
     rw [← hbad] at hb
     simp only [Bool.or_eq_false_iff, decide_eq_false_iff_not] at hb
-    omega
+    omega_using [hb]
   have hMo : M % 2 = 1 ∧ 1 < M := by
     rw [← hM]; cases hb : bad
-    · have := hgood hb; simp only [Bool.false_eq_true, ite_false]; omega
+    · have := hgood hb; simp only [Bool.false_eq_true, ite_false]; omega_using [this]
     · simp
   -- The inverse modulo `M`.
   refine wp_seqs_append (by simp [invFrom]) (by simp) (WP.mono (invFrom_k h₁₃ (j := aM) (by decide) (by decide))
@@ -185,7 +190,7 @@ theorem dEven_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 :
   have vDt : av I t.mem aDd = x := by
     rw [vD, f₁₆.av (by decide) (by decide) (by decide) hZ, hx]
   have hMe : bad = false → M = L := fun hb => by rw [← hM, hb]; rfl
-  have hM₁e : bad = false → M₁ = L := fun hb => hM₁L (by have := hgood hb; omega)
+  have hM₁e : bad = false → M₁ = L := fun hb => hM₁L (by have := hgood hb; omega_using [this])
   refine ⟨ht, ?_, ⟨_, okt, ?_, ?_⟩⟩
   · exact (((((((((((((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆).trans f₇).trans f₈).trans
       f₁₀').trans f₁₁).trans f₁₂).trans f₁₃).trans f₁₄).trans f₁₅).trans f₁₆).trans f₁₇).mono (by decide)
@@ -195,7 +200,7 @@ theorem dEven_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 :
       by_contra hc
       have : ¬ (L % 2 = 1 ∧ 3 ≤ L ∧ Nat.gcd (e % L) L = 1) := fun ⟨h1, h2, h3⟩ => by
         have hb : bad = false := by
-          rw [← hbad]; simp only [Bool.or_eq_false_iff, decide_eq_false_iff_not]; omega
+          rw [← hbad]; simp only [Bool.or_eq_false_iff, decide_eq_false_iff_not]; omega_using [h1, h2]
         exact hc (by rw [hb, hMe hb, hM₁e hb]; simp [h3])
       rw [VG.Proof.RsaKeyGen.inverse_even_none hee this] at hd
       cases hd
@@ -210,7 +215,7 @@ theorem dEven_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he64 :
   · intro d hd
     by_cases hc : L % 2 = 1 ∧ 3 ≤ L ∧ Nat.gcd (e % L) L = 1
     · have hb : bad = false := by
-        rw [← hbad]; simp only [Bool.or_eq_false_iff, decide_eq_false_iff_not]; omega
+        rw [← hbad]; simp only [Bool.or_eq_false_iff, decide_eq_false_iff_not]; omega_using [hc]
       rw [hg₁₅, hMe hb, hM₁e hb, hc.2.2] at hdv₁₅
       rw [hMe hb] at hx₁₅
       rw [VG.Proof.RsaKeyGen.inverse_even hc.2.1 (by exact_mod_cast hdv₁₅) hx₁₅] at hd

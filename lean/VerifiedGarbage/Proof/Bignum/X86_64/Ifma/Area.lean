@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the regions as numbers
@@ -35,7 +36,7 @@ structure Ar (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (M k : Na
   kw : ∀ p < 2, ∀ t < 4, word m B (l.D * p + l.oK0 + 8 * t) = BitVec.ofNat 64 (k p)
   klt : ∀ p < 2, k p < 2 ^ 52
   k0 : ∀ p < 2, (limb l m B (l.D * p + oM) 0 * k p + 1) % 2 ^ 52 = 0
-  bnd : ∀ p < 2, 4 * M p ≤ 2 ^ (52 * l.L)
+  bnd : ∀ p < 2, 4 * M p ≤ 2 ^ (52 * l.S)
 
 /-- The number at offset `c` of prime `p`'s region: limbs of 52 bits, below `2 M p`. -/
 structure Good (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (m : Mem) (B : Addr) (M : Nat → Nat) (c p : Nat) : Prop where
@@ -93,7 +94,7 @@ theorem amm2_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {M k : Nat �
     (ga : ∀ p < 2, Good l s.mem B M a p) (gb : ∀ p < 2, Good l s.mem B M b p) :
     WP isa (amm l o a b) s fun s' =>
       (∀ p < 2, Good l s'.mem B M o p ∧
-        val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.L) % M p =
+        val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % M p =
           val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) % M p) ∧
       Out2 l B o l.NB s.mem s'.mem ∧ Ar l s'.mem B M k ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
@@ -116,7 +117,7 @@ theorem ammCore2_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {M k : N
     (ga : ∀ p < 2, Good l s.mem B M a p) (gb : ∀ p < 2, Good l s.mem B M b p) :
     WP isa (ammCore l) s fun s' =>
       (∀ p < 2, Good l s'.mem B M o p ∧
-        val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.L) % M p =
+        val52 l s'.mem B (l.D * p + o) * 2 ^ (52 * l.S) % M p =
           val52 l s.mem B (l.D * p + a) * val52 l s.mem B (l.D * p + b) % M p) ∧
       Out2 l B o l.NB s.mem s'.mem ∧ Ar l s'.mem B M k ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r9 → r ≠ .r10 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧

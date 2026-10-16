@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
-public import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
+import VerifiedGarbage.Impl.ChaCha20.X86_64.XorBuf
 
 /-!
 # ChaCha20 keystream XOR with AVX2: the last bytes
@@ -245,19 +245,67 @@ def storeSetT (a b c d : XReg) (off : Nat) : List Instr :=
    .vop (.vperm2i128 .xmm12 a b 0x31), .vmovdquStore .l256 (at_ .r9 (off + 64)) .xmm12,
    .vop (.vperm2i128 .xmm12 c d 0x31), .vmovdquStore .l256 (at_ .r9 (off + 96)) .xmm12]
 
+/-! ## With AVX-512VL
+
+The same rounds with each rotation one `vprold` (AVX-512F and AVX-512VL), of
+a register by itself: no masks and no scratch registers. -/
+
+/-- A rotation left by `n` of the doublewords of `d`, by `vprold`. -/
+def rolV (d : XReg) (n : Nat) : List Instr := [.vop (.vprold .l256 d d (BitVec.ofNat 8 n))]
+
+/-- `half2` with `vprold`: the rotation of `d` by `r₁`, that of `b` by `r₂`. -/
+def half2V (r₁ r₂ : Nat) : List Instr :=
+  [v .vpaddd .xmm0 .xmm0 .xmm1, v .vpaddd .xmm4 .xmm4 .xmm5,
+   v .vpxor .xmm3 .xmm3 .xmm0, v .vpxor .xmm7 .xmm7 .xmm4] ++
+  rolV .xmm3 r₁ ++ rolV .xmm7 r₁ ++
+  [v .vpaddd .xmm2 .xmm2 .xmm3, v .vpaddd .xmm6 .xmm6 .xmm7,
+   v .vpxor .xmm1 .xmm1 .xmm2, v .vpxor .xmm5 .xmm5 .xmm6] ++
+  rolV .xmm1 r₂ ++ rolV .xmm5 r₂
+
+def doubleRound2V : List Instr :=
+  half2V 16 12 ++ half2V 8 7 ++ rot2 0x39 0x4e 0x93 ++
+  half2V 16 12 ++ half2V 8 7 ++ rot2 0x93 0x4e 0x39
+
+def half1V (r₁ r₂ : Nat) : List Instr :=
+  [v .vpaddd .xmm0 .xmm0 .xmm1, v .vpxor .xmm3 .xmm3 .xmm0] ++ rolV .xmm3 r₁ ++
+  [v .vpaddd .xmm2 .xmm2 .xmm3, v .vpxor .xmm1 .xmm1 .xmm2] ++ rolV .xmm1 r₂
+
+def doubleRound1V : List Instr :=
+  half1V 16 12 ++ half1V 8 7 ++ rot1 0x39 0x4e 0x93 ++
+  half1V 16 12 ++ half1V 8 7 ++ rot1 0x93 0x4e 0x39
+
+def half3V (r₁ r₂ : Nat) : List Instr :=
+  [v .vpaddd .xmm0 .xmm0 .xmm1, v .vpaddd .xmm4 .xmm4 .xmm5, v .vpaddd .xmm8 .xmm8 .xmm9,
+   v .vpxor .xmm3 .xmm3 .xmm0, v .vpxor .xmm7 .xmm7 .xmm4, v .vpxor .xmm11 .xmm11 .xmm8] ++
+  rolV .xmm3 r₁ ++ rolV .xmm7 r₁ ++ rolV .xmm11 r₁ ++
+  [v .vpaddd .xmm2 .xmm2 .xmm3, v .vpaddd .xmm6 .xmm6 .xmm7, v .vpaddd .xmm10 .xmm10 .xmm11,
+   v .vpxor .xmm1 .xmm1 .xmm2, v .vpxor .xmm5 .xmm5 .xmm6, v .vpxor .xmm9 .xmm9 .xmm10] ++
+  rolV .xmm1 r₂ ++ rolV .xmm5 r₂ ++ rolV .xmm9 r₂
+
+def doubleRound3V : List Instr :=
+  half3V 16 12 ++ half3V 8 7 ++ rot3 0x39 0x4e 0x93 ++
+  half3V 16 12 ++ half3V 8 7 ++ rot3 0x93 0x4e 0x39
+
+/-- `n` double rounds on one set (`S = 1`), two or three, with `vprold` if `vl`. -/
+def roundsS (vl : Bool) (S : Nat) : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (roundsS vl S n) (.block (match vl, S with
+    | false, 1 => doubleRound1 | false, 2 => doubleRound2 | false, _ => doubleRound3
+    | true, 1 => doubleRound1V | true, 2 => doubleRound2V | true, _ => doubleRound3V))
+
 /-! ## The tail -/
 
 /-- XOR the `rdx` bytes of keystream in `buf` into the data. -/
 def fromBuf : Prog isa := XorBuf.xorBuf .rsi .r9
 
 /-- At most 256 bytes: four blocks into `buf`, and the data from there. -/
-def last : Prog isa :=
-  .seq (.block setup) (.seq (rounds2 10) (.seq (.block (addIn ++
+def last (vl : Bool) : Prog isa :=
+  .seq (.block setup) (.seq (roundsS vl 2 10) (.seq (.block (addIn ++
     storeSet .xmm0 .xmm1 .xmm2 .xmm3 0 ++ storeSet .xmm4 .xmm5 .xmm6 .xmm7 128)) fromBuf))
 
 /-- At most 128 bytes: two blocks into `buf`, and the data from there. -/
-def last1 : Prog isa :=
-  .seq (.block setup1) (.seq (rounds1 10) (.seq (.block (addIn1 ++ storeSet .xmm0 .xmm1 .xmm2 .xmm3 0))
+def last1 (vl : Bool) : Prog isa :=
+  .seq (.block setup1) (.seq (roundsS vl 1 10) (.seq (.block (addIn1 ++ storeSet .xmm0 .xmm1 .xmm2 .xmm3 0))
     fromBuf))
 
 /-- At most 64 bytes, by `vg_chacha20_xor`, whose one block takes less time
@@ -267,26 +315,27 @@ def scalar : Prog isa :=
   .seq (.block [.vop .vzeroupper]) (.seq (.call "vg_chacha20_xor" Xor.xor) (.block [.mov .r9 (.reg .rsi)]))
 
 /-- The last `rdx` bytes, from 1 to 128. -/
-def small : Prog isa :=
-  .seq (.block [.alu .cmp .rdx (.imm 65)]) (.ite .b scalar last1)
+def small (vl : Bool) : Prog isa :=
+  .seq (.block [.alu .cmp .rdx (.imm 65)]) (.ite .b scalar (last1 vl))
 
 /-- 257 to 384 bytes: six blocks, the first four XORed into the next 256
 bytes of data and the last two into `buf`, from which the rest is XORed. -/
-def last3 : Prog isa :=
-  .seq (.block setup3) (.seq (rounds3 10) (.seq (.block (addIn3 ++
+def last3 (vl : Bool) : Prog isa :=
+  .seq (.block setup3) (.seq (roundsS vl 3 10) (.seq (.block (addIn3 ++
     xorSetT .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSetT .xmm4 .xmm5 .xmm6 .xmm7 128 ++
     storeSetT .xmm8 .xmm9 .xmm10 .xmm11 0 ++
     ([.alu .add .rsi (.imm 256), .alu .sub .rdx (.imm 256)] : List Instr))) fromBuf))
 
 /-- Fewer than 257 bytes. -/
-def rest : Prog isa :=
+def rest (vl : Bool) : Prog isa :=
   .seq (.block [.alu .cmp .rdx (.imm 129)])
-    (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) small)) last)
+    (.ite .b (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) (small vl))) (last vl))
 
-/-- The last `rdx` bytes (fewer than 385); then `rsi` points at `buf`. -/
-def tail : Prog isa :=
+/-- The last `rdx` bytes (fewer than 385), with `vprold` if `vl`; then `rsi`
+points at `buf`. -/
+def tail (vl : Bool) : Prog isa :=
   .seq (.block [.mov .r9 (.reg .rcx), .alu .cmp .rdx (.imm 257)])
-  (.seq (.ite .b rest last3)
+  (.seq (.ite .b (rest vl) (last3 vl))
     (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))
 
 end VG.Impl.ChaCha20.X86_64.Avx2Tail

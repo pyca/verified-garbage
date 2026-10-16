@@ -6,12 +6,22 @@ public import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 meta import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWinAdx
 public import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDH over P-521 on x86-64 with BMI2 and ADX: `Verified`
@@ -44,11 +54,8 @@ theorem post_of_x {s s' : State} (h : EPost p521x s s') : ecdhX86_64.post s s' :
   rcases q with _ | z <;> exact id
 
 /-! The facts about every instruction, each its own declaration: the code is
-large enough that the three in one would leave `ecdh_x86` little of its
+large enough that the two in one would leave `ecdh_x86` little of its
 budget. -/
-
-theorem ecdh_rsp_adx : exchangeP521Adx.inline.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
-  rw [Code.allInstrs_inline]; lit_decide
 
 theorem ecdh_inlineOk_adx : exchangeP521Adx.InlineOk = true := by lit_decide
 
@@ -62,11 +69,7 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X8
     ∃ t s', Exec isa exchangeP521Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (c := p521x) (p521x_ok hI).toBaseCfgOk hL
     (mulQJ4_ok (p521x_ok hI) (by decide) hL hO (by decide +kernel)) (mulQJ4_w (p521x_ok hI)) (pre_of_x hs)
-  have hsp : ∀ i ∈ instrs exchangeP521Adx.inline, Taint.clobbers i .rsp = false := by
-    have h := ecdh_rsp_adx
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
+  have hsp := Code.clobbers_rsp_of_inlineOk ecdh_inlineOk_adx
   have F := (Exec.regions he ecdh_noCalls_adx).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec ecdh_mxcsr_adx he ⟨fun r hr => ?_, ?_⟩, post_of_x hpost⟩

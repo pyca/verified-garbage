@@ -2,12 +2,22 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseOCT
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseACT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
+meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.BlockTr
 
 /-!
 # ML-DSA signing on x86-64: constant time

@@ -1,11 +1,29 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+public import VerifiedGarbage.Proof.MlKem.X86_64.Zero
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 
 /-!
 # ML-DSA key generation on x86-64: its contract, parameters and buffers
@@ -179,29 +197,29 @@ theorem sepB_13_bp (bs : List (Reg × Nat)) (o l o' l' : Nat) :
 
 /-- Unfolds the checks of pointers into the layout into arithmetic, then
 `omega` (in each case of `η`). -/
-syntax "lay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| lay) => `(tactic| lay [])
-  | `(tactic| lay [$ls,*]) => `(tactic| (
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [VG.Proof.MlKem.X86_64.keepB, VG.Proof.MlDsa.X86_64.KeyGen.sepB_same,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_bp, VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_bx,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_12, VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_bx,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_bx,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_12,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_12, VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_bp,
-        VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_bp,
-        VG.Proof.MlDsa.X86_64.KeyGen.inB_rbp, VG.Proof.MlDsa.X86_64.KeyGen.inB_rbx,
-        VG.Proof.MlDsa.X86_64.KeyGen.inB_r12, VG.Proof.MlDsa.X86_64.KeyGen.inB_r13,
-        VG.Proof.MlDsa.X86_64.KeyGen.inB_rbxW, VG.Proof.MlDsa.X86_64.KeyGen.inB_r12W,
-        VG.Proof.MlDsa.X86_64.KeyGen.inB_r13W, List.all_cons, List.all_nil,
-        Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, Bool.and_true, Bool.true_and, true_and, and_true, $ls,*]
-      set_option linter.unusedSimpArgs false in
-      try simp only [VG.Proof.MlDsa.X86_64.KeyGen.scrLen, VG.Spec.MlDsa.scratchWords,
-        VG.Impl.MlDsa.X86_64.KeyGen.oP, VG.Impl.MlDsa.X86_64.KeyGen.oSA, VG.Impl.MlDsa.X86_64.KeyGen.oSB,
-        VG.Impl.MlDsa.X86_64.KeyGen.oSA4, VG.Impl.MlDsa.X86_64.KeyGen.oR4,
-        VG.Impl.MlDsa.X86_64.KeyGen.oHX, VG.Impl.MlDsa.X86_64.KeyGen.oKL, VG.Impl.MlKem.X86_64.oSS,
-        VG.Impl.MlKem.X86_64.oSV, VG.Impl.MlDsa.X86_64.KeyGen.oT0, $ls,*]
-      and_intros <;> omega_arith))
+tactic_template "lay" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [VG.Proof.MlKem.X86_64.keepB, VG.Proof.MlDsa.X86_64.KeyGen.sepB_same,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_bp, VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_bx,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_12, VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_bx,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_bx,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_12,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_12, VG.Proof.MlDsa.X86_64.KeyGen.sepB_12_bp,
+                         VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_13, VG.Proof.MlDsa.X86_64.KeyGen.sepB_13_bp,
+                         VG.Proof.MlDsa.X86_64.KeyGen.inB_rbp, VG.Proof.MlDsa.X86_64.KeyGen.inB_rbx,
+                         VG.Proof.MlDsa.X86_64.KeyGen.inB_r12, VG.Proof.MlDsa.X86_64.KeyGen.inB_r13,
+                         VG.Proof.MlDsa.X86_64.KeyGen.inB_rbxW, VG.Proof.MlDsa.X86_64.KeyGen.inB_r12W,
+                         VG.Proof.MlDsa.X86_64.KeyGen.inB_r13W, List.all_cons, List.all_nil,
+                         Bool.and_eq_true, Bool.or_eq_true, decide_eq_true_eq, Bool.and_true, Bool.true_and, true_and, and_true, $ls,*]
+                       set_option linter.unusedSimpArgs false in
+                       try simp only [VG.Proof.MlDsa.X86_64.KeyGen.scrLen, VG.Spec.MlDsa.scratchWords,
+                         VG.Impl.MlDsa.X86_64.KeyGen.oP, VG.Impl.MlDsa.X86_64.KeyGen.oSA, VG.Impl.MlDsa.X86_64.KeyGen.oSB,
+                         VG.Impl.MlDsa.X86_64.KeyGen.oSA4, VG.Impl.MlDsa.X86_64.KeyGen.oR4,
+                         VG.Impl.MlDsa.X86_64.KeyGen.oHX, VG.Impl.MlDsa.X86_64.KeyGen.oKL, VG.Impl.MlKem.X86_64.oSS,
+                         VG.Impl.MlKem.X86_64.oSV, VG.Impl.MlDsa.X86_64.KeyGen.oT0, $ls,*]
+                       and_intros <;> omega_arith))
+
+/-- `lay` without extra lemmas. -/
+tactic_template "lay" : tactic => `(tactic| lay [])
 
 end VG.Proof.MlDsa.X86_64.KeyGen

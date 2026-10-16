@@ -56,6 +56,36 @@ pub(crate) mod blowfish_cfb;
 pub(crate) mod blowfish_ofb;
 
 #[rustfmt::skip]
+pub(crate) mod brainpoolp256r1_check_point;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp256r1_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp256r1_mul;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp384r1_check_point;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp384r1_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp384r1_mul;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp512r1_check_point;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp512r1_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp512r1_mont;
+
+#[rustfmt::skip]
+pub(crate) mod brainpoolp512r1_mul;
+
+#[rustfmt::skip]
 pub(crate) mod camellia;
 
 #[rustfmt::skip]
@@ -101,6 +131,18 @@ pub(crate) mod consts;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod dsa;
+
+#[rustfmt::skip]
+pub(crate) mod ec_brainpoolp256r1;
+
+#[rustfmt::skip]
+pub(crate) mod ec_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ec_brainpoolp512r1;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p192;
 
 #[rustfmt::skip]
@@ -119,6 +161,15 @@ pub(crate) mod ec_p521;
 pub(crate) mod ec_secp256k1;
 
 #[rustfmt::skip]
+pub(crate) mod ecdh_brainpoolp256r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_brainpoolp512r1;
+
+#[rustfmt::skip]
 pub(crate) mod ecdh_p192;
 
 #[rustfmt::skip]
@@ -135,6 +186,21 @@ pub(crate) mod ecdh_p521;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_secp256k1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp256r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp256r1_sha256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp384r1;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp384r1_sha384;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_brainpoolp512r1;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p192;
@@ -188,6 +254,9 @@ pub(crate) mod ed448;
 pub(crate) mod ed448_r56;
 
 #[rustfmt::skip]
+pub(crate) mod ffdh;
+
+#[rustfmt::skip]
 pub(crate) mod gcm;
 
 #[rustfmt::skip]
@@ -236,6 +305,9 @@ pub(crate) mod idea_ofb;
 pub(crate) mod md5;
 
 #[rustfmt::skip]
+pub(crate) mod miller_rabin;
+
+#[rustfmt::skip]
 pub(crate) mod mldsa;
 
 #[rustfmt::skip]
@@ -257,7 +329,16 @@ pub(crate) mod mlkem1024;
 pub(crate) mod mlkem768;
 
 #[rustfmt::skip]
+pub(crate) mod p192_check_point;
+
+#[rustfmt::skip]
 pub(crate) mod p192_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod p192_mul;
+
+#[rustfmt::skip]
+pub(crate) mod p224_check_point;
 
 #[rustfmt::skip]
 pub(crate) mod p224_inverse;
@@ -266,10 +347,19 @@ pub(crate) mod p224_inverse;
 pub(crate) mod p224_point_ops;
 
 #[rustfmt::skip]
+pub(crate) mod p256_check_point;
+
+#[rustfmt::skip]
+pub(crate) mod p384_check_point;
+
+#[rustfmt::skip]
 pub(crate) mod p384_inverse;
 
 #[rustfmt::skip]
 pub(crate) mod p384_mont;
+
+#[rustfmt::skip]
+pub(crate) mod p521_check_point;
 
 #[rustfmt::skip]
 pub(crate) mod p521_inverse;
@@ -315,6 +405,9 @@ pub(crate) mod rsa;
 
 #[rustfmt::skip]
 pub(crate) mod rsa_keygen;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_mont;
 
 #[rustfmt::skip]
 pub(crate) mod rsa_oaep_sha1_mgf1_sha1;
@@ -389,7 +482,13 @@ pub(crate) mod rsa_pss_sha512_mgf1_sha512;
 pub(crate) mod scrypt;
 
 #[rustfmt::skip]
+pub(crate) mod secp256k1_check_point;
+
+#[rustfmt::skip]
 pub(crate) mod secp256k1_inverse;
+
+#[rustfmt::skip]
+pub(crate) mod secp256k1_mul;
 
 #[rustfmt::skip]
 pub(crate) mod seed;

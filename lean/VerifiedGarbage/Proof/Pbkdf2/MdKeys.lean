@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Pbkdf2.MdStep
 public import VerifiedGarbage.Proof.Hmac.Generic.Common
-public import VerifiedGarbage.Proof.Pbkdf2.Memory
-public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Pbkdf2.Memory
+import VerifiedGarbage.Proof.Framework.Bswap
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ops
 public import VerifiedGarbage.Proof.Ed448.Formulas
 public import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
@@ -8,6 +8,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.X448.AArch64.Setup
 
 /-!
 # Ed448 on AArch64: the encoding's sign byte

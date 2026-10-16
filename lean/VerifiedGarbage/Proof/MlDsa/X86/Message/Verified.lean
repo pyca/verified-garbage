@@ -10,6 +10,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
+meta import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: the functions
@@ -48,31 +54,31 @@ theorem verify87Fn : VerifyFn mlDsa87 Impl.MlDsa.X86.Verify.verify87 :=
 theorem signMessage44_verified :
     Verified X86.target (signMessage sign44Api.name (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa44) mlDsa44)
       (signMessageContract mlDsa44 X86.abi 136) :=
-  signMessage_verified (List.mem_cons_self ..) sign44Fn (by taint_decide)
+  signMessage_verified (List.mem_cons_self ..) sign44Fn (by native_taint_decide)
 theorem signMessage65_verified :
     Verified X86.target (signMessage sign65Api.name (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa65) mlDsa65)
       (signMessageContract mlDsa65 X86.abi 136) :=
-  signMessage_verified (List.mem_cons_of_mem _ (List.mem_cons_self ..)) sign65Fn (by taint_decide)
+  signMessage_verified (List.mem_cons_of_mem _ (List.mem_cons_self ..)) sign65Fn (by native_taint_decide)
 theorem signMessage87_verified :
     Verified X86.target (signMessage sign87Api.name (Impl.MlDsa.X86.Sign.sign Sign.prims mlDsa87) mlDsa87)
       (signMessageContract mlDsa87 X86.abi 136) :=
   signMessage_verified (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) sign87Fn
-    (by taint_decide)
+    (by native_taint_decide)
 
 theorem verifyMessage44_verified :
     Verified X86.target (verifyMessage verify44Api.name Impl.MlDsa.X86.Verify.verify44 mlDsa44)
       (verifyMessageContract mlDsa44 X86.abi 132) :=
-  verifyMessage_verified (List.mem_cons_self ..) verify44Fn (by taint_decide) (by taint_decide) (by taint_decide)
+  verifyMessage_verified (List.mem_cons_self ..) verify44Fn (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)
     (NoSp.of_all (by decide +kernel))
 theorem verifyMessage65_verified :
     Verified X86.target (verifyMessage verify65Api.name Impl.MlDsa.X86.Verify.verify65 mlDsa65)
       (verifyMessageContract mlDsa65 X86.abi 132) :=
-  verifyMessage_verified (List.mem_cons_of_mem _ (List.mem_cons_self ..)) verify65Fn (by taint_decide)
-    (by taint_decide) (by taint_decide) (NoSp.of_all (by decide +kernel))
+  verifyMessage_verified (List.mem_cons_of_mem _ (List.mem_cons_self ..)) verify65Fn (by native_taint_decide)
+    (by native_taint_decide) (by native_taint_decide) (NoSp.of_all (by decide +kernel))
 theorem verifyMessage87_verified :
     Verified X86.target (verifyMessage verify87Api.name Impl.MlDsa.X86.Verify.verify87 mlDsa87)
       (verifyMessageContract mlDsa87 X86.abi 132) :=
   verifyMessage_verified (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) verify87Fn
-    (by taint_decide) (by taint_decide) (by taint_decide) (NoSp.of_all (by decide +kernel))
+    (by native_taint_decide) (by native_taint_decide) (by native_taint_decide) (NoSp.of_all (by decide +kernel))
 
 end VG.Proof.MlDsa.X86.Message

@@ -4,10 +4,14 @@ public import VerifiedGarbage.Proof.Camellia.Arm.ExpandKey
 meta import VerifiedGarbage.Proof.Camellia.Arm.ExpandKey
 public import VerifiedGarbage.Proof.Camellia.Arm.Verified
 meta import VerifiedGarbage.Proof.Camellia.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # The Camellia key schedule on ARMv7 meets its contracts
@@ -53,8 +57,20 @@ theorem expandKeyTaint_agree (s₁ s₂ : State) (h₁ : expandKeyArm.pre s₁) 
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.2.1, h₂.2.1, p2, p3]
 
+/-- What `KA` and `KB` need public: the arguments, the scratch buffer's and
+the table's pointers, and the schedule's address and the key's length in
+their slots. Not the sigma constants, which the prologue stores in the
+table: each is a public slot of its own, which the analysis of every later
+instruction would look through. -/
+def kaKbTaint : VG.Arm.Taint.T :=
+  { regs := .ofList [.r0, .r1, .r2, .r3, .r8, .r9], flags := false, lens := [272, 4 * slots],
+    bases := [(.r3, 1), (.r8, 1)], slots := [(1, 4 * nSlot, 4), (1, 4 * dSlot, 4)] }
+
+taint_summary kaKbSum : taintS kaKbTaint kaKb
+
 theorem expandKey_ct : ConstantTime isa expandKeyArm.pre expandKeyArm.pub expandKey :=
-  VG.Taint.constantTime (A := VG.Arm.taint) expandKeyTaint expandKeyTaint_agree (by taint_decide)
+  let ⟨_, h⟩ := (by taint_decide_sum [kaKbSum] : ∃ h, (taintS.check expandKeyTaint expandKey h).isSome = true)
+  VG.Taint.constantTime (A := taintS) expandKeyTaint expandKeyTaint_agree h
 
 theorem expandKey_correct (s : State) (hs : expandKeyArm.pre s) :
     ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyArm.post s s' := by

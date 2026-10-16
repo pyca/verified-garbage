@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Stages
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Stages
-public import VerifiedGarbage.Proof.Framework.ContractPost
+import VerifiedGarbage.Proof.Framework.ContractPost
 meta import VerifiedGarbage.Proof.Framework.ContractPost
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 meta import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
+import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
@@ -20,6 +20,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Arm.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+meta import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 @[expose] public section
 
@@ -669,7 +679,7 @@ theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub Impl.ChaCha20Poly1305
     simp only [VG.Proof.Poly1305.length_bytesAt, AL, L, p3, a1]
   have A : RelCT isa (fun a b => a = s₁ ∧ b = s₂) sealMain fun a b => True ∧ PreFs s₁ a ∧ PreFs s₂ b :=
     (RelCT.taint (A := taint) (τ₀ true) (fun a b (h : a = s₁ ∧ b = s₂) => by
-      obtain ⟨rfl, rfl⟩ := h; exact agree₀ hp₁ hp₂ hpub) (by taint_decide)).wp
+      obtain ⟨rfl, rfl⟩ := h; exact agree₀ hp₁ hp₂ hpub) (by native_taint_decide)).wp
       fun a b (h : a = s₁ ∧ b = s₂) => by obtain ⟨rfl, rfl⟩ := h; exact ⟨sealMain_ok hp₁, sealMain_ok hp₂⟩
   have F : RelCT isa (fun a b => True ∧ PreFs s₁ a ∧ PreFs s₂ b) finalize
       fun a b => True ∧ PostFs s₁ a ∧ PostFs s₂ b :=
@@ -680,7 +690,7 @@ theorem seal_ct : ConstantTime isa sealArm.pre sealArm.pub Impl.ChaCha20Poly1305
   have B : RelCT isa (fun a b => True ∧ PostFs s₁ a ∧ PostFs s₂ b) (.block sealEnd) fun _ _ => True :=
     RelCT.taint (A := taint) (VG.Arm.Taint.ofRegs [.r7]) (fun a b h => VG.Arm.Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      rw [h.2.1.regs.r7, h.2.2.regs.r7, cP, cP, hpub.2.2.2.2.2.2.2.2]) (by taint_decide)
+      rw [h.2.1.regs.r7, h.2.2.regs.r7, cP, cP, hpub.2.2.2.2.2.2.2.2]) (by native_taint_decide)
   exact ((A.seq (F.seq B)) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-! ## Open -/
@@ -695,7 +705,7 @@ theorem open_ct : ConstantTime isa openArm.pre openArm.pub Impl.ChaCha20Poly1305
     simp only [VG.Proof.Poly1305.length_bytesAt, AL, L, p3, a1]
   have A : RelCT isa (fun a b => a = s₁ ∧ b = s₂) openMain fun a b => True ∧ PreFo s₁ a ∧ PreFo s₂ b :=
     (RelCT.taint (A := taint) (τ₀ false) (fun a b (h : a = s₁ ∧ b = s₂) => by
-      obtain ⟨rfl, rfl⟩ := h; exact agree₀ hp₁ hp₂ hpub) (by taint_decide)).wp
+      obtain ⟨rfl, rfl⟩ := h; exact agree₀ hp₁ hp₂ hpub) (by native_taint_decide)).wp
       fun a b (h : a = s₁ ∧ b = s₂) => by obtain ⟨rfl, rfl⟩ := h; exact ⟨openMain_ok hp₁, openMain_ok hp₂⟩
   have F : RelCT isa (fun a b => True ∧ PreFo s₁ a ∧ PreFo s₂ b) finalize
       fun a b => True ∧ PostFo s₁ a ∧ PostFo s₂ b :=
@@ -705,7 +715,7 @@ theorem open_ct : ConstantTime isa openArm.pre openArm.pub Impl.ChaCha20Poly1305
       h.2.2.r1, h.2.2.r12, by rw [h.2.1.cnt, h.2.2.cnt, hlen]⟩).wp
       fun _ _ h => ⟨finalize_open_ok hp₁ h.2.1, finalize_open_ok hp₂ h.2.2⟩
   have B : RelCT isa (fun a b => True ∧ PostFo s₁ a ∧ PostFo s₂ b) openEnd fun _ _ => True :=
-    RelCT.taint (A := taint) τB (fun a b h => agreeB hp₁ hp₂ hpub h.2.1.inv h.2.2.inv) (by taint_decide)
+    RelCT.taint (A := taint) τB (fun a b h => agreeB hp₁ hp₂ hpub h.2.1.inv h.2.2.inv) (by native_taint_decide)
   exact ((A.seq (F.seq B)) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-! ## `Verified` -/

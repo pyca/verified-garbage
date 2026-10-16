@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # RSASSA-PSS on AArch64: MGF1
@@ -130,12 +131,12 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     (by rw [hml]; omega_using [hnb1]) (by omega_using [hnb]) (fun i hi => ?_)) fun u4 ⟨O4, d4⟩ => ?_)
   · rw [getD_app, hsl]
     by_cases h1 : i < H.D
-    · simp (disch := omega_arith) only [ctrV, updL, ite_eq_left, ite_eq_right]
+    · simp (disch := omega_arith) only [ctrV, updL, ↓ite_eq_left, ↓ite_eq_right]
       rw [Nat.add_sub_cancel_left]
     · by_cases h2 : i < H.D + 4
-      · simp (disch := omega_arith) only [ctrV, ite_eq_left, ite_eq_right]
+      · simp (disch := omega_arith) only [ctrV, ↓ite_eq_left, ↓ite_eq_right]
         rw [show oY + i - (oY + H.D) = i - H.D by omega_using []]
-      · simp (disch := omega_arith) only [ctrV, updL, clr, ite_eq_left, ite_eq_right]
+      · simp (disch := omega_arith) only [ctrV, updL, clr, ↓ite_eq_left, ↓ite_eq_right]
         rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by rw [i2osp_len]; omega_using [h2])]
         rfl
   have L4 := L3.congr O4.sp O4.wr (O4.cs .x20 (by decide))
@@ -178,7 +179,7 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   · -- The bytes of `EM`: `DB` with one more digest XORed in.
     have hV4 : u4.mem (off S o) = mixV V mk e (min (c * H.D) db) o := by
       rw [O4.em o ho₁ ho₂]
-      simp (disch := omega_using [ho₂]) only [ctrV, updL, clr, ite_eq_right]
+      simp (disch := omega_using [ho₂]) only [ctrV, updL, clr, ↓ite_eq_right]
       exact I.em o ho₁ ho₂
     rw [R6 o (by omega_using [c2, c6, ho₂])]
     simp only [xorV]

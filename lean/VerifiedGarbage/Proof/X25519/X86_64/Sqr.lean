@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # X25519 on x86-64: squaring
@@ -257,7 +258,7 @@ theorem diag_ok {s : State} {base : Addr} (hs : Scr s base) {t u : Reg} {d : Nat
     rw [hz'] at e5
     have := Bool.toNat_le c1; have := Bool.toNat_le c4
     have := Bool.toNat_le (decide (2 ^ 64 ≤ hi.toNat + 0 + c1.toNat))
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1,
       hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
@@ -375,16 +376,21 @@ theorem sqrBnd_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : 
       k8.1 .r11 (by decide), k7.1 .r11 (by decide), k8.1 .r12 (by decide), k8.1 .r13 (by decide)]
     have hz : (0 : BitVec 64).toNat = 0 := rfl
     rw [hz] at e5
+    obtain ⟨w0, h0⟩ : ∃ v, (word s.mem base a).toNat = v := ⟨_, rfl⟩
+    obtain ⟨w1, h1⟩ : ∃ v, (word s.mem base (a + 8)).toNat = v := ⟨_, rfl⟩
+    obtain ⟨w2, h2⟩ : ∃ v, (word s.mem base (a + 16)).toNat = v := ⟨_, rfl⟩
+    obtain ⟨w3, h3⟩ : ∃ v, (word s.mem base (a + 24)).toNat = v := ⟨_, rfl⟩
+    simp only [h0, h1, h2, h3] at e1 e2 e3 e4 e5 e6 e7 e8 hb ⊢
     -- The products `a_i a_j` (`i < j`), then the squares added to their double.
     have hX : (s₁.gpr .r9).toNat + 2 ^ 64 * (s₁.gpr .r10).toNat + 2 ^ 128 * (s₂.gpr .r11).toNat +
         2 ^ 192 * (s₂.gpr .r12).toNat + 2 ^ 256 * (s₃.gpr .r13).toNat +
         2 ^ 256 * (2 ^ 64 * (s₃.gpr .r14).toNat) =
-          (word s.mem base a).toNat * (word s.mem base (a + 8)).toNat +
-          2 ^ 64 * ((word s.mem base a).toNat * (word s.mem base (a + 16)).toNat) +
-          2 ^ 128 * ((word s.mem base a).toNat * (word s.mem base (a + 24)).toNat) +
-          2 ^ 128 * ((word s.mem base (a + 8)).toNat * (word s.mem base (a + 16)).toNat) +
-          2 ^ 192 * ((word s.mem base (a + 8)).toNat * (word s.mem base (a + 24)).toNat) +
-          2 ^ 256 * ((word s.mem base (a + 16)).toNat * (word s.mem base (a + 24)).toNat) := by
+          w0 * w1 +
+          2 ^ 64 * (w0 * w2) +
+          2 ^ 128 * (w0 * w3) +
+          2 ^ 128 * (w1 * w2) +
+          2 ^ 192 * (w1 * w3) +
+          2 ^ 256 * (w2 * w3) := by
       omega_using [e1, e2, e3]
     have hS : (s₅.gpr .r8).toNat + 2 ^ 64 * (s₅.gpr .r9).toNat + 2 ^ 128 * (s₆.gpr .r10).toNat +
         2 ^ 192 * (s₆.gpr .r11).toNat + 2 ^ 256 * (s₇.gpr .r12).toNat +
@@ -394,23 +400,23 @@ theorem sqrBnd_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : 
           2 ^ 192 * (s₄.gpr .r11).toNat + 2 ^ 256 * (s₄.gpr .r12).toNat +
           2 ^ 256 * (2 ^ 64 * (s₄.gpr .r13).toNat) + 2 ^ 256 * (2 ^ 128 * (s₄.gpr .r14).toNat) +
           2 ^ 256 * (2 ^ 192 * (s₄.gpr .r15).toNat) +
-          (word s.mem base a).toNat * (word s.mem base a).toNat +
-          2 ^ 128 * ((word s.mem base (a + 8)).toNat * (word s.mem base (a + 8)).toNat) +
-          2 ^ 256 * ((word s.mem base (a + 16)).toNat * (word s.mem base (a + 16)).toNat) +
-          2 ^ 256 * (2 ^ 128 * ((word s.mem base (a + 24)).toNat *
-            (word s.mem base (a + 24)).toNat)) := by
+          w0 * w0 +
+          2 ^ 128 * (w1 * w1) +
+          2 ^ 256 * (w2 * w2) +
+          2 ^ 256 * (2 ^ 128 * (w3 *
+            w3)) := by
       omega_using [e5, e6, e7, e8]
     have hD : 2 ^ 64 * (s₄.gpr .r9).toNat + 2 ^ 128 * (s₄.gpr .r10).toNat +
         2 ^ 192 * (s₄.gpr .r11).toNat + 2 ^ 256 * (s₄.gpr .r12).toNat +
         2 ^ 256 * (2 ^ 64 * (s₄.gpr .r13).toNat) + 2 ^ 256 * (2 ^ 128 * (s₄.gpr .r14).toNat) +
         2 ^ 256 * (2 ^ 192 * (s₄.gpr .r15).toNat) =
-          2 * (2 ^ 64 * ((word s.mem base a).toNat * (word s.mem base (a + 8)).toNat) +
-            2 ^ 128 * ((word s.mem base a).toNat * (word s.mem base (a + 16)).toNat) +
-            2 ^ 192 * ((word s.mem base a).toNat * (word s.mem base (a + 24)).toNat) +
-            2 ^ 192 * ((word s.mem base (a + 8)).toNat * (word s.mem base (a + 16)).toNat) +
-            2 ^ 256 * ((word s.mem base (a + 8)).toNat * (word s.mem base (a + 24)).toNat) +
-            2 ^ 256 * (2 ^ 64 * ((word s.mem base (a + 16)).toNat *
-              (word s.mem base (a + 24)).toNat))) := by
+          2 * (2 ^ 64 * (w0 * w1) +
+            2 ^ 128 * (w0 * w2) +
+            2 ^ 192 * (w0 * w3) +
+            2 ^ 192 * (w1 * w2) +
+            2 ^ 256 * (w1 * w3) +
+            2 ^ 256 * (2 ^ 64 * (w2 *
+              w3))) := by
       omega_using [e4, hX]
     have := (s₈.gpr .rbp).toNat.zero_le
     omega_using [hS, hD, hb]

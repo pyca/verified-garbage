@@ -1,7 +1,11 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.Sm4.X86.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.X86.ModeCore
+public import VerifiedGarbage.Proof.Sm4.X86.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.X86.CryptSum
 public import VerifiedGarbage.Proof.Modes.X86.Modes
 meta import VerifiedGarbage.Proof.Modes.X86.Modes
 public import VerifiedGarbage.Proof.Sm4.CbcScratch
@@ -18,6 +22,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # SM4-CBC on x86 (32-bit) meets its contracts
@@ -109,12 +115,12 @@ theorem keyArgs_of {enc : Bool} (d : Dir) {s : State} (h : (cbcX86 enc).pre s) :
 theorem cbcEncrypt_wp {s₀ : State} (hp : (cbcX86 true).pre s₀) :
     WP isa cbcEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (cbcX86 true).post s₀ s' :=
   WP.mono (cbcEnc_wp (dirCoreSpec .encrypt) (seqPre_of .encrypt rfl rfl hp) (keyArgs_of .encrypt hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => ⟨h1, by simp only [dirCoreSpec_cipher, dirCipher] at h2; exact h2⟩
 
 theorem cbcDecrypt_wp {s₀ : State} (hp : (cbcX86 false).pre s₀) :
     WP isa cbcDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (cbcX86 false).post s₀ s' :=
   WP.mono (cbcDec_wp (dirCoreSpec .decrypt) (seqPre_of .decrypt rfl rfl hp) (keyArgs_of .decrypt hp))
-    fun _ ⟨h1, h2⟩ => ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => ⟨h1, by simp only [dirCoreSpec_cipher, dirCipher] at h2; exact h2⟩
 
 /-! ## Constant time -/
 
@@ -161,13 +167,15 @@ theorem cbcTaint_agree {enc : Bool} {s₁ s₂ : State} (h₁ : (cbcX86 enc).pre
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
-theorem cbcEncrypt_ct : ConstantTime isa (cbcX86 true).pre (cbcX86 true).pub cbcEncrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem cbcEncrypt_ct : ConstantTime isa (cbcX86 true).pre (cbcX86 true).pub cbcEncrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check cbcTaint cbcEncrypt h).isSome = true :=
+    by taint_decide_sum [cryptSumCbc]
+  exact VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp) h
 
-theorem cbcDecrypt_ct : ConstantTime isa (cbcX86 false).pre (cbcX86 false).pub cbcDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem cbcDecrypt_ct : ConstantTime isa (cbcX86 false).pre (cbcX86 false).pub cbcDecrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check cbcTaint cbcDecrypt h).isSome = true :=
+    by taint_decide_sum [cryptSumCbc]
+  exact VG.Taint.constantTime (A := VG.X86.taint) cbcTaint (fun _ _ h₁ h₂ hp => cbcTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/
 
@@ -195,16 +203,22 @@ def cbcNarrowRd (s : State) : List Region :=
 def cbcNarrowWr (s : State) : List Region :=
   [⟨(arg s 2).setWidth 64, 16 * (arg s 3).toNat⟩, ⟨(arg s 4).setWidth 64, 8 * 181⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
+tactic_template "sm4_cbc_narrow" : tactic =>
   `(tactic| simp only [VG.Proof.Sm4.cbcX86, VG.Proof.Sm4.X86.cbcWideContract,
-    VG.Proof.Sm4.X86.cbcNarrowRd, VG.Proof.Sm4.X86.cbcNarrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.Proof.Sm4.X86.cbcNarrowRd, VG.Proof.Sm4.X86.cbcNarrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+
+tactic_template "sm4_cbc_narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [VG.Proof.Sm4.cbcX86, VG.Proof.Sm4.X86.cbcWideContract,
+                     VG.Proof.Sm4.X86.cbcNarrowRd, VG.Proof.Sm4.X86.cbcNarrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem cbcWide_pre (enc : Bool) (s : State) (h : (cbcWideContract enc).pre s) :
     (cbcX86 enc).pre (s.withRegions (cbcNarrowRd s) (cbcNarrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  sm4_cbc_narrow
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -302,10 +316,10 @@ theorem cbcEncrypt_verified : Verified X86.target cbcEncrypt (Proof.Sm4.cbcEncSc
     simp only [cbcNarrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    sm4_cbc_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    sm4_cbc_narrow
     exact h
 
 /-- cbcEncrypt with its working space on the stack. -/
@@ -343,10 +357,10 @@ theorem cbcDecrypt_verified : Verified X86.target cbcDecrypt (Proof.Sm4.cbcDecSc
     simp only [cbcNarrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    sm4_cbc_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    sm4_cbc_narrow
     exact h
 
 /-- cbcDecrypt with its working space on the stack. -/

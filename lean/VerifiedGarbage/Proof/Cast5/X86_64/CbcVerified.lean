@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Cast5.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
+import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
 meta import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Cast5.ModeScratch
 meta import VerifiedGarbage.Proof.Cast5.ModeScratch
 public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
@@ -288,7 +288,7 @@ theorem cbc_implies {postX : State → State → Prop} {post : Spec.Cast5.cbcSig
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
     · repeat' apply And.intro
-      all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)⟩
+      all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl⟩
 
 theorem cbcEncrypt_verified : Verified X86_64.target cbcEncrypt (cbcK (Proof.Cast5.cbcEncPost X86_64.abi.ptrBits)) :=
   Verified.of_correct (fun s hs => by
@@ -337,7 +337,7 @@ theorem cbcFrame_sat (post : Spec.Cast5.cbcSig.Post X86_64.abi.ptrBits) :
     simp only [List.mem_singleton] at hr; subst hr
     exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 /-- `cbcEncrypt` with its working space on the stack. -/
 theorem cbcEncrypt_framed :

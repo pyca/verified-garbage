@@ -1,22 +1,26 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Prims
-public import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.X86.Arith.AddSub
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Mul
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.Ntt
 public import VerifiedGarbage.Proof.MlDsa.X86.Arith.NttInv
-public import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.X86.Round.Bits
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.NormLt
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.HintF
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
-public import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
+import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.X86.Sample.BallTop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.NttLoop
 
 /-!
 # ML-DSA signing on x86 (32-bit): the primitives it calls

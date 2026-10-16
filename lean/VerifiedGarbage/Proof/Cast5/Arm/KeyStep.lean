@@ -11,7 +11,7 @@ import all Init.Data.Vector.Basic
 # CAST5 key expansion on ARMv7: a step
 
 `step` chooses the step's bytes by the step's number in `r2` (`sel_ok`),
-gathers them into `r4`–`r7` (`gather_ok`), scans `tab5678`, and chooses what
+gathers them into `r4`–`r7` (`gather_ok`), scans `VG_CAST5_S5678`, and chooses what
 to do with the four values (`postE_ok`, `postL_ok`): the step of the spec's
 `stepRun` (`step_ok`).
 -/
@@ -28,7 +28,7 @@ open VG VG.Arm VG.Arm.RegUpd VG.Impl.Cast5 VG.Impl.Cast5.Arm VG.Proof.Cast5
 theorem sel_ok (cs : List (List Instr)) (i : Nat) {s : State} {j : Nat} (hij : i ≤ j) (hj : j < i + cs.length)
     (hlen : i + cs.length ≤ 256) (h2 : s.gpr .r2 = BitVec.ofNat 32 j) {Q : State → Prop}
     (hQ : ∀ u : State, (∀ r, u.gpr r = s.gpr r) → u.mem = s.mem → u.rd = s.rd → u.wr = s.wr → u.sp = s.sp →
-      WP isa (.block (cs.getD (j - i) [])) u Q) :
+      u.syms = s.syms → WP isa (.block (cs.getD (j - i) [])) u Q) :
     WP isa (sel cs i) s Q := by
   induction cs generalizing i s with
   | nil => simp at hj; omega
@@ -48,22 +48,23 @@ theorem sel_ok (cs : List (List Instr)) (i : Nat) {s : State} {j : Nat} (hij : i
         rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (0 : BitVec 32).toNat = 0 from rfl] at this
         omega
       subst hji
-      have := hQ (putSub s (s.gpr .r2) (BitVec.ofNat 32 j)) (fun r => rfl) rfl rfl rfl rfl
+      have := hQ (putSub s (s.gpr .r2) (BitVec.ofNat 32 j)) (fun r => rfl) rfl rfl rfl rfl rfl
       rwa [Nat.sub_self, List.getD_cons_zero] at this
     · have hne : j ≠ i := by
         intro e; subst e
         rw [z_sub, h2] at hz
         simp at hz
       refine ih (i + 1) (by omega) (by simp at hj; omega) (by simp at hlen ⊢; omega) (by rw [gpr_sub, h2])
-        fun u hg hm hrd hwr hsp => ?_
-      have := hQ u (fun r => (hg r).trans (gpr_sub _ _ _ _)) hm hrd hwr hsp
+        fun u hg hm hrd hwr hsp hsy => ?_
+      have := hQ u (fun r => (hg r).trans (gpr_sub _ _ _ _)) hm hrd hwr hsp hsy
       rwa [show j - i = (j - (i + 1)) + 1 by omega, List.getD_cons_succ] at this
 
 /-! ## The state of key expansion -/
 
 /-- The state of key expansion from the memory `m0`: the working space at
 `cb` in `r12`, the schedule at `kb`, the arrays, subkeys and extra lookups
-of `k` in memory. -/
+of `k` in memory; the table `VG_CAST5_S5678`, readable, held in `m0` and
+apart from the working space's first 64 bytes and the schedule. -/
 structure KS (m0 : Mem) (cb kb : BitVec 32) (s : State) (k : KSt) : Prop where
   r12 : s.gpr .r12 = cb
   mem : KMem m0 s.mem (State.addr cb) (State.addr kb) k.xz k.ws
@@ -74,6 +75,13 @@ structure KS (m0 : Mem) (cb kb : BitVec 32) (s : State) (k : KSt) : Prop where
   scr : (⟨State.addr cb, 256⟩ : Region) ∈ s.wr
   sch : (⟨State.addr kb, 128⟩ : Region) ∈ s.wr
   dKS : Region.Disjoint ⟨State.addr kb, 128⟩ ⟨State.addr cb, 256⟩
+  tfit : (s.syms s5678Sym).toNat + 4096 ≤ 2 ^ 32
+  trd : (⟨State.addr (s.syms s5678Sym), 4096⟩ : Region) ∈ s.rd ++ s.wr
+  held0 : Held m0 (State.addr (s.syms s5678Sym)) s5678
+  dTS : Region.Disjoint ⟨State.addr (s.syms s5678Sym), 4096⟩ ⟨State.addr cb, 64⟩
+  dTK : Region.Disjoint ⟨State.addr (s.syms s5678Sym), 4096⟩ ⟨State.addr kb, 128⟩
+
+theorem s5678_len : 8 * s5678.length = 4096 := by rw [s5678, table_length]
 
 section
 variable {m0 : Mem} {cb kb : BitVec 32} {s : State} {k : KSt} (h : KS m0 cb kb s k)
@@ -93,8 +101,19 @@ theorem KS.dKS64 : Region.Disjoint ⟨State.addr kb, 128⟩ ⟨State.addr cb, 64
 theorem KS.update {u : State} {k' : KSt} (hc : u.gpr .r12 = s.gpr .r12)
     (hm : KMem m0 u.mem (State.addr cb) (State.addr kb) k'.xz k'.ws)
     (he : ∀ i < 4, u.mem.readW (State.addr cb + BitVec.ofNat 64 (extraOff + 4 * i)) 32 = k'.ex i)
-    (hl : k'.ws.length ≤ 32) (hwr : u.wr = s.wr) : KS m0 cb kb u k' :=
-  ⟨hc.trans h.r12, hm, he, hl, h.cfit, h.kfit, by rw [hwr]; exact h.scr, by rw [hwr]; exact h.sch, h.dKS⟩
+    (hl : k'.ws.length ≤ 32) (hwr : u.wr = s.wr) (hsy : u.syms = s.syms) (hrd : u.rd = s.rd) : KS m0 cb kb u k' :=
+  ⟨hc.trans h.r12, hm, he, hl, h.cfit, h.kfit, by rw [hwr]; exact h.scr, by rw [hwr]; exact h.sch, h.dKS,
+    by rw [hsy]; exact h.tfit, by rw [hsy, hrd, hwr]; exact h.trd, by rw [hsy]; exact h.held0,
+    by rw [hsy]; exact h.dTS, by rw [hsy]; exact h.dTK⟩
+
+/-- The table, still held. -/
+theorem KS.held : Held s.mem (State.addr (s.syms s5678Sym)) s5678 := by
+  refine held_frame h.mem.fr (fun r hr => ?_) (by rw [s5678_len]; decide) h.held0
+  rw [s5678_len]
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h.dTS
+  · exact h.dTK
 
 end
 
@@ -153,7 +172,7 @@ theorem postE_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : KS m0
   crun [h.r12, aS, inS, v0, v1, v2, v3]
   have dKS := h.dKS64
   have hl := h.len
-  refine ⟨h.update rfl ?_ (fun i hi => ?_) hl rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨h.update rfl ?_ (fun i hi => ?_) hl rfl rfl rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
   · exact (((h.mem.write dKS hl _ (by decide) (by decide)).write dKS hl _ (by decide) (by decide)).write dKS hl _
       (by decide) (by decide)).write dKS hl _ (by decide) (by decide)
   · simp only [extraOff]
@@ -232,7 +251,8 @@ theorem storeQuad_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : K
   have hin := h.inS (off := off a + 4 * q) (w := 4) (by omega)
   unfold storeCode
   crun [h.r12, aS _ ho, hin, ho', h0, rev_eq]
-  refine ⟨h.update rfl (h.mem.quad h.dKS64 h.len a hq v) (fun i hi => ?_) h.len rfl, ⟨by keep_regs, rfl, rfl, rfl⟩⟩
+  refine ⟨h.update rfl (h.mem.quad h.dKS64 h.len a hq v) (fun i hi => ?_) h.len rfl rfl rfl,
+    ⟨by keep_regs, rfl, rfl, rfl⟩⟩
   rw [Mem.readW_writeW_sep (Offset.sep _ (d := extraOff + 4 * i) (n := 32 / 8) (e := off a + 4 * q) (k := 32 / 8)
     (by unfold extraOff; omega) (by unfold extraOff; omega) (by omega)) (by decide)]
   exact h.ex i hi
@@ -251,7 +271,8 @@ theorem storeKey_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : KS
   have ho : 4 * j < 4096 := by omega
   unfold storeCode
   crun [ea, hin, ho, h0]
-  refine ⟨h.update rfl (h.mem.key h.dKS64 hl v) (fun i hi => ?_) (by simp; omega) rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
+  refine ⟨h.update rfl (h.mem.key h.dKS64 hl v) (fun i hi => ?_) (by simp; omega) rfl rfl rfl,
+    ⟨fun _ _ => rfl, rfl, rfl, rfl⟩⟩
   rw [Mem.readW_writeW_sep (h.dKS.symm.sep (Offset.contains_base _ (by have := ex_off hi; omega)
       (by unfold extraOff; omega))
     (Offset.contains_base _ (by omega) (by omega))) (by decide)]
@@ -281,12 +302,12 @@ theorem postL_ok {m0 : Mem} {cb kb : BitVec 32} {u : State} {k : KSt} (h : KS m0
     rw [hw] at this
     simpa using this
   rw [post_line, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (lineHead_ok h ⟨he.1.1.2, he.1.2⟩) fun v ⟨v0, vk, vm⟩ => ?_
+  refine VG.Arm.WP.mono_syms (lineHead_ok h ⟨he.1.1.2, he.1.2⟩) fun v ⟨v0, vk, vm⟩ vsy => ?_
   have hv : KS m0 cb kb v k := h.update (vk.gpr _ (by decide)) (by rw [vm]; exact h.mem)
-    (fun i hi => by rw [vm]; exact h.ex i hi) h.len vk.wr
-  refine WP.mono (wordCode_ok hv l.word hq) fun w ⟨w0, wk, wm⟩ => ?_
+    (fun i hi => by rw [vm]; exact h.ex i hi) h.len vk.wr vsy vk.rd
+  refine VG.Arm.WP.mono_syms (wordCode_ok hv l.word hq) fun w ⟨w0, wk, wm⟩ wsy => ?_
   have hw : KS m0 cb kb w k := hv.update (wk.gpr _ (by decide)) (by rw [wm]; exact hv.mem)
-    (fun i hi => by rw [wm]; exact hv.ex i hi) hv.len wk.wr
+    (fun i hi => by rw [wm]; exact hv.ex i hi) hv.len wk.wr wsy wk.rd
   have wv : w.gpr .r0 = lineE k.xz k.ex l := by
     rw [w0, v0, h8, h9, h10, h11]
     unfold lineE

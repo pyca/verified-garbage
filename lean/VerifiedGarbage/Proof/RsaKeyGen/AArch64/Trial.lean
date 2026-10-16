@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialEntry
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate on AArch64: trial division

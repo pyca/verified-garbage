@@ -12,16 +12,36 @@ public import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
 meta import VerifiedGarbage.Impl.Camellia.X86_64.Cbc
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
+public import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
+meta import VerifiedGarbage.Proof.Camellia.X86_64.PairSum
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Camellia.X86_64.Lit
 meta import VerifiedGarbage.Proof.Camellia.X86_64.Lit
+import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
+meta import VerifiedGarbage.Proof.Camellia.X86_64.ModesLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+public import VerifiedGarbage.Proof.AesSiv.Words
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+public import VerifiedGarbage.Proof.Modes.X86_64.Xor
+meta import VerifiedGarbage.Proof.AesSiv.Ctr32
+meta import VerifiedGarbage.Proof.AesSiv.Words
+meta import VerifiedGarbage.Proof.Cmac.Stream
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Proof.Modes.X86_64.Ctr
+meta import VerifiedGarbage.Proof.Modes.X86_64.Xor
 
 /-!
 # Camellia-CBC on x86-64 meets its contracts
@@ -160,7 +180,8 @@ theorem cbcTaint_agree (s t : State) (hs : cbcDecX86_64.pre s) (ht : cbcDecX86_6
     simp only [cbcTaint, RegSet.not_mem_empty] at hr
 
 theorem cbcDecrypt_ct : ConstantTime isa cbcDecX86_64.pre cbcDecX86_64.pub cbcDecrypt :=
-  VG.Taint.constantTime (A := taint) cbcTaint cbcTaint_agree (by taint_decide)
+  let ⟨_, h⟩ := (by taint_decide_sum [pairSum] : ∃ h, (taintS.check cbcTaint cbcDecrypt h).isSome = true)
+  VG.Taint.constantTime (A := taintS) cbcTaint cbcTaint_agree h
 
 theorem cbcDecrypt_correct (s : State) (hs : cbcDecX86_64.pre s) :
     ∃ t s', Exec isa cbcDecrypt s t s' ∧ abiPreserved s s' ∧ cbcDecX86_64.post s s' := by
@@ -249,7 +270,8 @@ theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
   · rw [encCipher_eq] at hdata; exact hdata
 
 theorem cbcEncrypt_ct : ConstantTime isa cbcEncX86_64.pre cbcEncX86_64.pub cbcEncrypt :=
-  VG.Taint.constantTime (A := taint) cbcTaint cbcTaint_agree (by taint_decide)
+  let ⟨_, h⟩ := (by taint_decide_sum [pairSum] : ∃ h, (taintS.check cbcTaint cbcEncrypt h).isSome = true)
+  VG.Taint.constantTime (A := taintS) cbcTaint cbcTaint_agree h
 
 theorem cbcEncrypt_correct (s : State) (hs : cbcEncX86_64.pre s) :
     ∃ t s', Exec isa cbcEncrypt s t s' ∧ abiPreserved s s' ∧ cbcEncX86_64.post s s' := by

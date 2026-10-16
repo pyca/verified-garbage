@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.X86_64
+import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 
 /-!
 # AES-GCM-SIV: x86-64 implementation
@@ -35,6 +36,10 @@ implementations as AES-GCM is (`Impl.AesGcm.X86_64.Callees`: only `ctr`,
   `vg_aes_encrypt_blocks` and XORed into the data 16 bytes at a time
   (`ksXor`); the last bytes are XORed with a keystream block from
   `vg_aes_ctr32` (`crypt`).
+* With `wide` (the instances whose callees need AVX2), the copies are
+  reversed and the keystream XORed four blocks at a time, two in each of two
+  256-bit loads (`revLoopY`, `ksLoop`, `quadsThenOnes`) when a chunk has
+  eight or more, and the blocks left one at a time as without it.
 * `seal` copies the tag from `W` to `tag` at the end (`tagOut`); `open`
   copies the received tag from `tag` to `W` first (`recv`), computes the tag of the plaintext at `W + 128` and compares the two
   without a branch (`cmp`), then masks the data with `0 − ok`, 16 bytes at
@@ -187,13 +192,57 @@ def revLoop : Prog isa :=
       .store (at_ .rdi 0) .rdx, .store (at_ .rdi 8) .rax, .alu .add .rsi (imm 16), .alu .add .rdi (imm 16),
       .alu .sub .rcx (imm 1)]) .ne)
 
+/-- The mask with which `vpshufb` reverses the bytes of each 128-bit lane, in
+both lanes of `ymm1` (through `rax` and `xmm12`). -/
+def revMaskY : List Instr :=
+  Impl.Gcm.X86_64.Pclmul.const .xmm1 Impl.Gcm.X86_64.Pclmul.revMask ++
+    ([.vop (.vinserti128 .xmm1 .xmm1 .xmm1 1)] : List Instr)
+
+/-- Two blocks at `rsi + d` copied to `rdi + d`, the bytes of each reversed. -/
+def rev2 (d : Nat) : List Instr :=
+  [.vmovdquLoad .l256 .xmm0 (at_ .rsi d), .vop (.vbin .vpshufb .l256 .xmm0 .xmm0 .xmm1),
+    .vmovdquStore .l256 (at_ .rdi d) .xmm0]
+
+/-- Four blocks at `rsi` copied to `rdi`, the bytes of each reversed; `rcx`
+four fewer, compared with 4. -/
+def revQuad : List Instr :=
+  rev2 0 ++ rev2 32 ++
+    ([.alu .add .rsi (imm 64), .alu .add .rdi (imm 64), .alu .sub .rcx (imm 4), .alu .cmp .rcx (imm 4)] : List Instr)
+
+/-- The body of `revLoop`: one block at `rsi` copied to `rdi`, its bytes
+reversed; `rcx` one fewer. -/
+def revOne : List Instr :=
+  [.mov .rax (.mem (at_ .rsi 0)), .mov .rdx (.mem (at_ .rsi 8)), .bswap .rax, .bswap .rdx,
+    .store (at_ .rdi 0) .rdx, .store (at_ .rdi 8) .rax, .alu .add .rsi (imm 16), .alu .add .rdi (imm 16),
+    .alu .sub .rcx (imm 1)]
+
+/-- The `rcx` (at least 1) blocks: if there are eight or more, four at a time
+with `quad` while there are four (after `pre`); then one at a time with
+`one`. Below eight, the setup and `vzeroupper` cost more than the quads save,
+and no 256-bit register gets used; `vzeroupper` after the quads keeps the
+SSE instructions after them (and in the functions called later) from paying
+for their dirty upper halves. -/
+def quadsThenOnes (pre quad one : List Instr) : Prog isa :=
+  .seq (.block [.alu .cmp .rcx (imm 8)])
+  (.ite .b (.loop (.block one) .ne)
+    (.seq (.block pre) (.seq (.loop (.block quad) .ae) (.seq (.block [.vop .vzeroupper])
+      (.seq (.block [.alu .test .rcx (.reg .rcx)]) (.ite .e (.block []) (.loop (.block one) .ne)))))))
+
+/-- `revLoop` four blocks at a time on 256-bit registers, then one at a
+time. -/
+def revLoopY : Prog isa :=
+  .seq (.block [.mov .rcx (.reg .r14)]) (quadsThenOnes revMaskY revQuad revOne)
+
+/-- `revLoop`, or `revLoopY` if `wide`. -/
+def revSel (wide : Bool) : Prog isa := if wide then revLoopY else revLoop
+
 /-- Up to 64 of the `rbx` whole blocks at `r12` (`r14` of them), reversed and
 absorbed; `r12` and `rbx` past them. -/
-def absorbChunk : Prog isa :=
+def absorbChunk (wide : Bool) : Prog isa :=
   .seq (.block [.mov32 .r14 (imm 64), .alu .cmp .rbx (.reg .r14)])
   (.seq (.ite .b (.block [.mov .r14 (.reg .rbx)]) (.block []))
   (.seq (.block (([.mov .rsi (.reg .r12)] : List Instr) ++ ptr .rdi .r15 revO))
-  (.seq revLoop
+  (.seq (revSel wide)
   (.seq (.block (ghArgs ++ ptr .rdx .r15 revO ++ ([.mov .rcx (.reg .r14)] : List Instr)))
   (.seq (callGh c)
     (.block [.mov .rax (.reg .r14), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
@@ -210,9 +259,9 @@ def absorbTail : Prog isa :=
     (callGh c)))
 
 /-- The `rbp` bytes at `r12`, padded with zeros to whole blocks, absorbed. -/
-def absorb : Prog isa :=
+def absorb (wide : Bool) : Prog isa :=
   .seq (.block [.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)])
-  (.seq (.ite .e (.block []) (.loop (absorbChunk c) .ne))
+  (.seq (.ite .e (.block []) (.loop (absorbChunk c wide) .ne))
   (.seq (.block [.alu .test .rbp (.reg .rbp)])
     (.ite .e (.block []) (absorbTail c))))
 
@@ -258,24 +307,43 @@ def ecbArgs : List Instr :=
   ptr .rdi .r15 skO ++ ([.mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++ ptr .rdx .r15 revO ++
     ([.mov .rcx (.reg .r14)] : List Instr) ++ ptr .r8 .r15 scrO
 
-/-- The `r14` keystream blocks at `W + revO` XORed into the data at `r12`,
-16 bytes at a time; `r12` past them. -/
-def ksXor : Prog isa :=
-  .seq (.block (([.mov .rcx (.reg .r14)] : List Instr) ++ ptr .rsi .r15 revO))
-    (.loop (.block [.movdquLoad .xmm0 (at_ .r12 0), .movdquLoad .xmm1 (at_ .rsi 0), .xop (.bin .pxor .xmm0 .xmm1),
-        .movdquStore (at_ .r12 0) .xmm0, .alu .add .r12 (imm 16), .alu .add .rsi (imm 16),
-        .alu .sub .rcx (imm 1)]) .ne)
+/-- The body of the keystream XOR: one keystream block at `rsi` XORed into
+the data at `r12`; both on, and `rcx` one fewer. -/
+def ksOne : List Instr :=
+  [.movdquLoad .xmm0 (at_ .r12 0), .movdquLoad .xmm1 (at_ .rsi 0), .xop (.bin .pxor .xmm0 .xmm1),
+    .movdquStore (at_ .r12 0) .xmm0, .alu .add .r12 (imm 16), .alu .add .rsi (imm 16), .alu .sub .rcx (imm 1)]
+
+/-- Two keystream blocks at `rsi + d` XORed into the data at `r12 + d`. -/
+def xor2 (d : Nat) : List Instr :=
+  [.vmovdquLoad .l256 .xmm1 (at_ .rsi d), .vmovdquLoad .l256 .xmm0 (at_ .r12 d),
+    .vop (.vbin .vpxor .l256 .xmm1 .xmm1 .xmm0), .vmovdquStore .l256 (at_ .r12 d) .xmm1]
+
+/-- Four keystream blocks at `rsi` XORed into the data at `r12`; `rcx`
+four fewer, compared with 4. -/
+def ksQuad : List Instr :=
+  xor2 0 ++ xor2 32 ++
+    ([.alu .add .r12 (imm 64), .alu .add .rsi (imm 64), .alu .sub .rcx (imm 4), .alu .cmp .rcx (imm 4)] : List Instr)
+
+/-- The loop of the keystream XOR: one block at a time, or, if `wide`, four
+at a time on 256-bit registers while four are left. -/
+def ksLoop (wide : Bool) : Prog isa :=
+  if wide then quadsThenOnes [] ksQuad ksOne else .loop (.block ksOne) .ne
+
+/-- The `r14` keystream blocks at `W + revO` XORed into the data at `r12`;
+`r12` past them. -/
+def ksXor (wide : Bool) : Prog isa :=
+  .seq (.block (([.mov .rcx (.reg .r14)] : List Instr) ++ ptr .rsi .r15 revO)) (ksLoop wide)
 
 /-- Up to 64 of the `rbx` whole blocks left at `r12` (`r14` of them)
 encrypted: their counter blocks, encrypted by `vg_aes_encrypt_blocks` in
 place, XORed into them; `rbx` fewer left (ZF set when none are). -/
-def cryptChunk : Prog isa :=
+def cryptChunk (wide : Bool) : Prog isa :=
   .seq (.block [.mov32 .r14 (imm 64), .alu .cmp .rbx (.reg .r14)])
   (.seq (.ite .b (.block [.mov .r14 (.reg .rbx)]) (.block []))
   (.seq ctrGen
   (.seq (.block ecbArgs)
   (.seq (callEcb e)
-  (.seq ksXor (.block [.alu .sub .rbx (.reg .r14)]))))))
+  (.seq (ksXor wide) (.block [.alu .sub .rbx (.reg .r14)]))))))
 
 /-- The last `rbp` (1 to 15) bytes at `r12` XORed with the keystream block. -/
 def cryptTail : Prog isa :=
@@ -285,12 +353,12 @@ def cryptTail : Prog isa :=
 
 /-- The data encrypted (or decrypted) in place, from the tag at `W` with the
 top bit of its last byte set. -/
-def crypt : Prog isa :=
+def crypt (wide : Bool) : Prog isa :=
   .seq (.block [.mov .rax (.mem (at_ .r15 tagO)), .store (at_ .r15 cmO) .rax, .mov .rax (.mem (at_ .r15 (tagO + 8))),
       .movImm64 .rcx 0x8000000000000000, .alu .or .rax (.reg .rcx), .store (at_ .r15 (cmO + 8)) .rax,
       .mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov .rbx (.reg .rbp),
       .shift .shr .rbx 4, .alu .and .rbp (imm 15), .alu .test .rbx (.reg .rbx)])
-  (.seq (.ite .e (.block []) (.loop (cryptChunk e) .ne))
+  (.seq (.ite .e (.block []) (.loop (cryptChunk e wide) .ne))
   (.seq (.block [.alu .test .rbp (.reg .rbp)])
     (.ite .e (.block []) (cryptTail c))))
 
@@ -339,22 +407,69 @@ def keys : Prog isa :=
   .seq (derive e) (.seq (expand c) (.block hkey))
 
 /-- POLYVAL of the additional data, the data and the lengths, and the tag
-input. -/
-def polyval : Prog isa :=
+input, absorbing up to 64 blocks per call of `vg_ghash`. -/
+def polyvalLong (wide : Bool) : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))])
-  (.seq (absorb c)
+  (.seq (absorb c wide)
   (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))])
-  (.seq (absorb c)
+  (.seq (absorb c wide)
   (.seq (lens c) (.block tagIn)))))
 
+/-- The last `rbp` (1 to 15) bytes at `rsi`, padded with zeros, reversed at
+`rdi`; `rdi` past them. -/
+def stageTail : Prog isa :=
+  .seq (.block (([.mov .rbx (.reg .rdi)] : List Instr) ++ zero16 bO ++ ptr .rdi .r15 bO ++
+      ([.mov .rcx (.reg .rbp)] : List Instr)))
+  (.seq copyLoop
+    (.block [.mov .rax (.mem (at_ .r15 bO)), .mov .rdx (.mem (at_ .r15 (bO + 8))), .bswap .rax, .bswap .rdx,
+      .store (at_ .rbx 0) .rdx, .store (at_ .rbx 8) .rax, .mov .rdi (.reg .rbx), .alu .add .rdi (imm 16)]))
+
+/-- The `rbp` bytes at `r12`, padded with zeros to whole blocks, reversed at
+`rdi`; `rdi` past them. -/
+def stage (wide : Bool) : Prog isa :=
+  .seq (.block [.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .and .rbp (imm 15), .mov .rsi (.reg .r12),
+      .alu .test .rbx (.reg .rbx)])
+  (.seq (.ite .e (.block []) (.seq (.block [.mov .r14 (.reg .rbx)]) (revSel wide)))
+  (.seq (.block [.alu .test .rbp (.reg .rbp)])
+    (.ite .e (.block []) stageTail)))
+
+/-- The lengths block at `rdi`, in GHASH's order, and `vg_ghash`'s arguments
+for the blocks from `W + revO` to it. -/
+def lensAt : List Instr :=
+  [.mov .rax (.mem (at_ .r15 lenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .rdi 0) .rax,
+    .mov .rax (.mem (at_ .r15 alenO)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .bswap .rax, .store (at_ .rdi 8) .rax,
+    .mov .rcx (.reg .rdi), .alu .sub .rcx (.reg .r15), .shift .shr .rcx 4, .alu .sub .rcx (imm (revO / 16 - 1))] ++
+  ghArgs ++ ptr .rdx .r15 revO
+
+/-- POLYVAL with one call of `vg_ghash`: the padded additional data, the
+padded data and the lengths block, all reversed from `W + revO` first. -/
+def polyvalOne (wide : Bool) : Prog isa :=
+  .seq (.block (ptr .rdi .r15 revO ++ ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] :
+      List Instr)))
+  (.seq (stage wide)
+  (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))])
+  (.seq (stage wide)
+  (.seq (.block lensAt)
+  (.seq (callGh c) (.block tagIn))))))
+
+/-- POLYVAL of the additional data, the data and the lengths, and the tag
+input: with one call of `vg_ghash` if their blocks fit the 64 at `W + revO`
+(the whole blocks number at most 61), else `polyvalLong`. -/
+def polyval (wide : Bool) : Prog isa :=
+  .seq (.block [.mov .rax (.mem (at_ .r15 alenO)), .shift .shr .rax 4, .mov .rdx (.mem (at_ .r15 lenO)),
+      .shift .shr .rdx 4, .alu .add .rax (.reg .rdx), .alu .cmp .rax (imm 62)])
+    (.ite .ae (polyvalLong c wide) (polyvalOne c wide))
+
 /-- `vg_aes_gcm_siv_seal`. -/
-def «seal» : Prog isa :=
-  .seq (.block entry) (.seq (keys c e) (.seq (polyval c) (.seq (tag c tagO) (.seq (crypt c e)
+def «seal» (wide : Bool) : Prog isa :=
+  .seq (.block entry) (.seq (keys c e) (.seq (polyval c wide) (.seq (tag c tagO) (.seq (crypt c e wide)
     (.block (tagOut ++ restore))))))
 
 /-- `vg_aes_gcm_siv_open`. -/
-def «open» : Prog isa :=
-  .seq (.block entry) (.seq (.block recv) (.seq (keys c e) (.seq (crypt c e) (.seq (polyval c) (.seq (tag c bO)
+def «open» (wide : Bool) : Prog isa :=
+  .seq (.block entry) (.seq (.block recv) (.seq (keys c e) (.seq (crypt c e wide) (.seq (polyval c wide) (.seq (tag c bO)
     (.seq (.block cmp) (.seq mask (.block (([.mov .rax (.mem (at_ .r15 okO))] : List Instr) ++ restore)))))))))
 
 end VG.Impl.AesGcmSiv.X86_64

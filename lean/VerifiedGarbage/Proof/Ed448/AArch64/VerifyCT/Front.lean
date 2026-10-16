@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
 meta import VerifiedGarbage.Proof.Ed448.AArch64.VerifyCT.Erase
-public import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 meta import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
+meta import VerifiedGarbage.Proof.Ed448.AArch64.CombSum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -43,7 +45,7 @@ theorem front_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check
     (Taint.ofRegs [.x0, .x1, .x2, .x3]) wfront h).map
     ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
   apply exists_map_le_of_eraseT
-  simp only [Code.eraseT, wfront, bitsAt, decodes, negA, decode, Point56.powCall, fnCall, Point56.powFn, asFn, root,
+  simp only [Code.eraseT, wfront, ventry, bitsAt, decodes, negA, decode, Point56.powCall, fnCall, Point56.powFn, asFn, root,
     ops_eraseT, sqn_eraseT, List.map_append, eqSlots_eraseT]
   refine ⟨?h, ?g⟩
   case g => taint_decide
@@ -55,13 +57,15 @@ theorem table_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check (Tain
   refine ⟨?h, ?g⟩
   case g => taint_decide
 
+/- `[S]B` without what the analysis does not read, its comb's call analysed with the comb's
+summary (`CombBase.combSum`). -/
+taint_summary sBaseSum : (taintS [Impl.X448.AArch64.Base.combSym]) (Taint.ofRegs [.x3])
+  (Code.eraseT sBase) using VG.Proof.Ed448.AArch64.CombBase.combSum
+
 theorem sBase_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check (Taint.ofRegs [.x3]) sBase h).map
     ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
   apply exists_map_le_of_eraseT
-  refine Split.exists_map_le (c' := ?c') ?s ⟨?h, ?g⟩
-  case s =>
-    simp only [sBase, Code.eraseT]
-    exact .refl _
-  case g => taint_decide
+  obtain ⟨g, τ', hg, hR, -⟩ := sBaseSum (Taint.ofRegs [.x3]) (by decide)
+  exact ⟨g, by rw [hg]; exact congrArg some (VG.Taint.Mono.le_R (by decide) hR)⟩
 
 end VG.Proof.Ed448.AArch64

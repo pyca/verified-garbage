@@ -1,20 +1,23 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86.Lit
-meta import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
+meta import VerifiedGarbage.Proof.TripleDes.X86.FunctionsLit
 public import VerifiedGarbage.Impl.TripleDes.X86.Fb
 meta import VerifiedGarbage.Impl.TripleDes.X86.Fb
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # Triple DES-OFB, -CFB64 and -CFB8 on x86 (32-bit): the code as literals
 
 The code of the functions as literals (`materialize_code`), which the checks
 of the whole functions (`taint_decide`, `lit_decide`) read rather than build
-the code again.
+the code again. They read the literals of the block function's parts
+(`FunctionsLit.lean`), as `CbcLit.lean` does.
 -/
 
 @[expose] public section

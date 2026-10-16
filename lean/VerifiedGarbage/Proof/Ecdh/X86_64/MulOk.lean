@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDH on x86-64: what the whole function needs of its scalar multiplication
@@ -76,7 +79,7 @@ structure MulW (c : Cfg) (W : List (Nat × Nat)) : Prop where
 abbrev mulQW (c : Cfg) : List (Nat × Nat) :=
   winX c ++ slW c mulI ++ pwW c ++ [(bitsAt c.n 0, 64 * c.n + 8)]
 
-theorem mulQ_ok (hc : BaseCfgOk c) (hC : Law c.C) (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true) :
+theorem mulQ_ok (hc : BaseCfgOk c) (hC : Law c.C) (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8) ∧ c.mulFn.noCalls = true) :
     MulOk c (Impl.Ecdh.X86_64.Cfg.mulQ c) (mulQW c) :=
   fun hs _ F hbp _ hP hpx hpy hrep hrx hry hrz _ hk hk8 ht₀ ht₁ _ _ h =>
     mulPow_ok hc hC hs F hbp hP hpx hpy hrep hrx hry hrz hk hk8 ht₀ ht₁ hm fun s' L =>

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # SHA-512/224 on x86-64

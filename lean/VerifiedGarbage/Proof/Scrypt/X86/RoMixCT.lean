@@ -17,6 +17,10 @@ import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import all Init.Data.Nat.Power2.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # scryptROMix on x86 (32-bit): verified
@@ -101,7 +105,7 @@ theorem bm_callPre (hr : 0 < r) (hlt : 128 * r < 2 ^ 32)
   have r4 : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64, 4⟩ (below (s.gpr .esp) 36) := by
     have := below_inner (sp := s.gpr .esp) (a := 4) (b := 36) (k := 20) (by omega) hlo
     rw [show s.gpr .esp - BitVec.ofNat 32 24 = s.gpr .esp - BitVec.ofNat 32 20 - BitVec.ofNat 32 4 by
-      bv_omega]
+      bv_omega_arith]
     exact this
   have s12 : Region.Sub ⟨(s.gpr .esp - BitVec.ofNat 32 24).setWidth 64 - 12, 12⟩ (below (s.gpr .esp) 36) := by
     intro a ha
@@ -110,7 +114,7 @@ theorem bm_callPre (hr : 0 < r) (hlt : 128 * r < 2 ^ 32)
     have := (s.gpr .esp).isLt
     have hE : ((s.gpr .esp).setWidth 64).toNat = (s.gpr .esp).toNat := addr_toNat _
     generalize (s.gpr .esp).setWidth 64 = b at *
-    bv_omega
+    bv_omega_arith
   refine ⟨?_, ?_, ?_⟩
   · simp only [Proof.Scrypt.blockMixX86, State.withRegions_rd, State.withRegions_wr,
       State.withRegions_gpr, arg_withRegions, argAddr_withRegions, a0, a1, a2, a3, a4, eSp, tr,
@@ -129,16 +133,16 @@ theorem bm_callPre (hr : 0 < r) (hlt : 128 * r < 2 ^ 32)
     · obtain ⟨R', hR', hc'⟩ := isrc
       refine InRegions_append_cons.mpr (.inr ⟨R', hR', ?_⟩)
       simp only [Region.Contains] at hcn hc' ⊢
-      bv_omega
+      bv_omega_using [hcn, hc']
     · exact InRegions_append_cons.mpr (.inl hcn)
     · obtain ⟨R', hR', hc'⟩ := idst
       refine InRegions_append_cons.mpr (.inr ⟨R', List.mem_append_right _ hR', ?_⟩)
       simp only [Region.Contains] at hcn hc' ⊢
-      bv_omega
+      bv_omega_using [hcn, hc']
     · obtain ⟨R', hR', hc'⟩ := iscr
       refine InRegions_append_cons.mpr (.inr ⟨R', List.mem_append_right _ hR', ?_⟩)
       simp only [Region.Contains] at hcn hc' ⊢
-      bv_omega
+      bv_omega_using [hcn, hc']
   · intro a n ⟨R, hR, hcn⟩
     simp only [bmWr, List.mem_cons, List.not_mem_nil, or_false] at hR
     rw [c128] at hR
@@ -146,11 +150,11 @@ theorem bm_callPre (hr : 0 < r) (hlt : 128 * r < 2 ^ 32)
     · obtain ⟨R', hR', hc'⟩ := idst
       refine ⟨R', List.mem_cons_of_mem _ hR', ?_⟩
       simp only [Region.Contains] at hcn hc' ⊢
-      bv_omega
+      bv_omega_using [hcn, hc']
     · obtain ⟨R', hR', hc'⟩ := iscr
       refine ⟨R', List.mem_cons_of_mem _ hR', ?_⟩
       simp only [Region.Contains] at hcn hc' ⊢
-      bv_omega
+      bv_omega_using [hcn, hc']
 
 end
 
@@ -695,10 +699,10 @@ def narrowWr (s : State) : List Region :=
 /-- Rewrites the contracts at a narrowed state (`arg` does not unfold
 cheaply). -/
 local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [Proof.Scrypt.roMixX86, VG.Proof.Scrypt.X86.RoMix.roMixWide,
-    VG.Proof.Scrypt.X86.RoMix.narrowRd, VG.Proof.Scrypt.X86.RoMix.narrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+  `(tactic| plain_simp_names simp only [Proof.Scrypt.roMixX86, VG.Proof.Scrypt.X86.RoMix.roMixWide,
+                     VG.Proof.Scrypt.X86.RoMix.narrowRd, VG.Proof.Scrypt.X86.RoMix.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
 
 theorem roMixWide_pre (s : State) (h : roMixWide.pre s) :
     Proof.Scrypt.roMixX86.pre (s.withRegions (narrowRd s) (narrowWr s)) := by

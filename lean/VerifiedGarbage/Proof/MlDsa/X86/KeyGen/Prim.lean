@@ -7,6 +7,31 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.MlKem.X86.AddSub
+public import VerifiedGarbage.Proof.MlKem.X86.CallRet
+public import VerifiedGarbage.Proof.MlKem.X86.Cbd
+public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.X86.Decode12
+public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem.X86.Encode12
+public import VerifiedGarbage.Proof.MlKem.X86.Mul
+public import VerifiedGarbage.Proof.MlKem.X86.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86.Sample
+public import VerifiedGarbage.Proof.MlKem.X86.TopPrim3
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.Arith
+public import VerifiedGarbage.Proof.Sha3.X86.Lit
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86 (32-bit): calls of the polynomial primitives
@@ -35,7 +60,7 @@ variable {Y : Lay} {lk : State → List Byte} {A B : State → State → Prop}
 
 /-- Closes the facts of a callee's precondition about its stack and regions,
 from those in the context. -/
-macro "ent_pre" : tactic => `(tactic| (and_intros <;>
+tactic_template "ent_pre" : tactic => `(tactic| (and_intros <;>
   first | exact True.intro | with_reducible assumption | omega | rfl))
 
 theorem sw_app (a b : BitVec 32) : BitVec.setWidth 32 (a ++ b) = b := BitVec.setWidth_append_eq_right

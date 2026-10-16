@@ -8,6 +8,13 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # Deterministic ECDSA over P-224 with HMAC-SHA-224 on x86-64
@@ -85,14 +92,12 @@ theorem implies : (rfcX86_64 Impl.Ecdsa.X86_64.p224.combConsts Spec.Ecdsa.Rfc697
       Abi.constsHeld, stackBelow] at h
     obtain ⟨hsp, hd, hheld, hfit, hdw, hdr, hds, ht, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd,
       ng, nc⟩ := h
-    refine ⟨hsp, ?_, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, fun c hc => ?_,
-      fun T hT => ?_⟩
+    refine ⟨hsp, ?_, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, fun c hc => ?_, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]
-      simp only [p224_combConsts, Abi.constRegions, List.map_cons, List.map_nil]
+      rw [p224_combConsts, Abi.constRegions_cons, Abi.constRegions_nil]
       rfl
     · simp only [p224_combConsts, List.mem_singleton] at hc; subst hc; exact hheld
-    · simp only [p224_combConsts, Abi.constRegions, List.map_cons, List.map_nil, List.mem_singleton] at hT
-      subst hT
+    · rw [p224_combConsts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
       refine ⟨hfit, fun r hr => ?_⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -129,7 +134,8 @@ def pack (hL : Weierstrass.Law Spec.P224.curve)
   ecdsa := rfl
   hash := rfl
   len := rfl
-  tries := rfl
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
   hDB := .inr (.inr (.inr ⟨rfl, rfl⟩))
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl

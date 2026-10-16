@@ -1,11 +1,14 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingInitialize
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyFailure
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Both verifying branches return the packed byte specification -/
 
@@ -21,9 +24,9 @@ def VerifyingPost (p : VerifyingInput) (original t : State) : Prop :=
   (∀ i < 6, t.gpr (saved.getD i .rax) = original.gpr (saved.getD i .rax)) ∧
   InScr p.base usedBytes original.mem t.mem ∧ Keep coreRegs original t
 
-theorem verifyingAccepted_ok (M : Mont) {p : VerifyingInput} {original s : State} (h : VerifyingPre p original)
+theorem verifyingAccepted_ok (M : Mont) (Sq : MontS) {p : VerifyingInput} {original s : State} (h : VerifyingPre p original)
     (hi : VerifyingInitialized p original h.pLength h.qLength s) (ha : p.accepted = true) :
-    WP isa (verifyBody M.mm) s (VerifyingPost p original) := by
+    WP isa (verifyBody Sq.mm M.mm) s (VerifyingPost p original) := by
   obtain ⟨pi, qi, hr, ho, hm, hsave, hf, hk⟩ := hi
   let L := (p.layout original h.pLength h.qLength).withInverses pi qi
   obtain ⟨hsize, hpodd, hqodd⟩ := p.shapeFacts ha
@@ -37,7 +40,7 @@ theorem verifyingAccepted_ok (M : Mont) {p : VerifyingInput} {original s : State
     exact Nat.le_of_lt hh
   have hqn := VG.Proof.Dsa.subgroup_scan_width hsize
   have hkey : Spec.Dsa.publicKeyBytes L.pLen L.qLen p.key = p.values.key L := rfl
-  refine WP.mono (verifyBody_spec M (L := L) hr p.values ho hsize hpodd hqodd hpf hqf
+  refine WP.mono (verifyBody_spec M Sq (L := L) hr p.values ho hsize hpodd hqodd hpf hqf
     p.keyLength p.signatureLength hkey rfl rfl hqn rfl hm)
     fun t ⟨hret, hsaved, hframe, hkeep⟩ => ?_
   exact ⟨hret, fun i hi => (hsaved i hi).trans (hsave i hi),

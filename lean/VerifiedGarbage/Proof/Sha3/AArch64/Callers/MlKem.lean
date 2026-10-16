@@ -6,13 +6,13 @@ public import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
 meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
 public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
 meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
+import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
+import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
-public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 meta import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Impl.MlKem.AArch64.Sample
+import VerifiedGarbage.Impl.MlKem.AArch64.Sample
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Sample
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

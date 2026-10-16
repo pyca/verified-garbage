@@ -1,10 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.DirectKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Memory
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Constant-time selection from the runtime projective table. -/
 

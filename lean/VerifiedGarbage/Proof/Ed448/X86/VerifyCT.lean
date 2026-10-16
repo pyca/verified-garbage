@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86.VerifyMain
 meta import VerifiedGarbage.Proof.Ed448.X86.VerifyMain
-public import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
+import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 meta import VerifiedGarbage.Proof.Ed448.X86.VerifyLit
 public import VerifiedGarbage.Proof.X448.X86.Runs
 meta import VerifiedGarbage.Proof.X448.X86.Runs
@@ -10,6 +10,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.X86.VerifyRoot
+meta import VerifiedGarbage.Proof.Ed448.X86.VerifyRoot
+import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
+meta import VerifiedGarbage.Proof.Ed448.X86.BaseMain
+meta import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
 
 /-!
 # Ed448 verification's equation on x86 (32-bit): constant time

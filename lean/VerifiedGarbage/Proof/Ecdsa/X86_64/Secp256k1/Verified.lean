@@ -10,24 +10,33 @@ public import VerifiedGarbage.Proof.Secp256k1.Point
 meta import VerifiedGarbage.Proof.Secp256k1.Point
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Inline
 meta import VerifiedGarbage.Proof.Framework.X86_64.Inline
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-public import VerifiedGarbage.Proof.Secp256k1.Prime
+import VerifiedGarbage.Proof.Secp256k1.Prime
 meta import VerifiedGarbage.Proof.Secp256k1.Prime
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! # secp256k1 signing on x86-64: correctness, memory safety and constant time
 
@@ -100,21 +109,20 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre secp256k1 s := by
 
 /-- `[k]G` is a call of `vg_secp256k1_mul`, which calls no other function. -/
 theorem secp256k1_mulBase : MulBaseOk secp256k1 :=
-  ⟨fun h => absurd h (by decide), fun _ => ⟨rfl, by lit_decide⟩⟩
+  ⟨fun h => absurd h (by decide), fun _ => ⟨.inl rfl, by lit_decide⟩⟩
 
 theorem sign_x86 (hL : Law Spec.Secp256k1.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signSecp256k1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (secp256k1_ok hI) hL secp256k1_tbls (pre_of hs) secp256k1_mulBase
-  have hsp : ∀ i ∈ instrs signSecp256k1.inline, Taint.clobbers i .rsp = false := by
-    have h : signSecp256k1.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have hok : signSecp256k1.InlineOk = true := by lit_decide
+  have hsp := Code.clobbers_rsp_of_inlineOk hok
+  have hmx : signSecp256k1.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
+    rw [Code.allInstrs_inline]; lit_decide
+  have F := (Exec.regions he (Code.noCalls_inline hok)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl

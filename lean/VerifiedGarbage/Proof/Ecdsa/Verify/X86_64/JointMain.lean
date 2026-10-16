@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! End-to-end correctness of public Jacobian joint verification. -/
 
@@ -22,14 +25,13 @@ theorem jointVerify_inline (c : Cfg) (j : Joint.Cfg) (double : Prog isa) :
     (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify c j double).inline =
     .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) (.seq (Impl.Ecdh.X86_64.Cfg.prefix' c (some D))
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
-      (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline
+      (.seq (Impl.Ecdh.X86_64.Cfg.check c).inline (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline
       (.seq c.nPow.inline (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline
       (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline
         (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail c).inline)))))))) := by
-  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.validate c).inline
+  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.check c).inline
     (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline (Code.seq c.nPow.inline
     (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline _))))))) = _
-  rw [show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _]
   rfl
 
 theorem jointVerify_ok {c : Cfg} {j : Joint.Cfg} {double : Prog isa}

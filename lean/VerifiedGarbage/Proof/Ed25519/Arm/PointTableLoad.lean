@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.PackField
-public import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
+import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 public import VerifiedGarbage.Proof.Ed25519.Arm.Points
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

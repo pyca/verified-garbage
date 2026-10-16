@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_pkcs1_recover` on x86-64: correctness
@@ -159,7 +160,8 @@ theorem valA_sub {s : State} (hp : PreR s) : Region.Sub ⟨valA s, (s.gpr .rsi).
 theorem copyOut_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx = s.gpr .rcx) :
     WP isa copyOut t fun u => Env s u ∧ (u.gpr .rax).setWidth 32 = 1 ∧
       Spec.Rsa.bytesAt u.mem (s.gpr .rdi) (s.gpr .rsi).toNat =
-        Spec.Rsa.bytesAt t.mem (valA s) (s.gpr .rsi).toNat := by
+        Spec.Rsa.bytesAt t.mem (valA s) (s.gpr .rsi).toNat ∧
+      u.mem = writeBytes t.mem (s.gpr .rdi) (Spec.Rsa.bytesAt t.mem (valA s) (s.gpr .rsi).toNat) := by
   have hs := he.scr hp
   have ol := hp.ol
   have hk2 := hp.k2
@@ -191,7 +193,7 @@ theorem copyOut_ok {s t : State} (hp : PreR s) (he : Env s t) (hcx : t.gpr .rcx 
     exact ne_of_disjoint ((hp.dKo.sub_left (valA_sub hp))) (by omega_arith) (by omega_arith) hj hi
   refine WP.seq (WP.mono (copyLoop_ok hb (by omega_arith) (by omega_arith) (by simp) hW rfl h9 hr hd) fun t₂ hW₂ => ?_)
   refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = t₂.mem ∧ u.gpr .rax = 1) (by xrun) rfl)
-    fun u ⟨⟨hm, hax⟩, hK⟩ => ⟨?_, by rw [hax]; rfl, ?_⟩
+    fun u ⟨⟨hm, hax⟩, hK⟩ => ⟨?_, by rw [hax]; rfl, ?_, by rw [hm, hW₂.2.1, h8, List.nil_append, hsi₁, hm₁, hm₀]⟩
   · have hm' : u.mem = writeBytes t₁.mem (s.gpr .rdi)
         (Spec.Rsa.bytesAt t₁.mem (t₁.gpr .rsi) (s.gpr .rsi).toNat) := by
       rw [hm, hW₂.2.1, h8, List.nil_append]
@@ -310,7 +312,7 @@ theorem tail_ok {s t₂ t₃ : State} (hp : PreR s) (he₂ : Env s t₂) (hK₃ 
     by_cases hq : em = em'
     · subst hq
       refine WP.ite false (by simp [eval, hz₇, hdiff.2 rfl]) (by simp) (fun _ => ?_)
-      refine WP.mono (copyOut_ok hp he₇ (by rw [hs₇.1, hK₆.gpr (by decide), hcx₅])) fun u ⟨heu, hax', hout⟩ =>
+      refine WP.mono (copyOut_ok hp he₇ (by rw [hs₇.1, hK₆.gpr (by decide), hcx₅])) fun u ⟨heu, hax', hout, _⟩ =>
         ⟨heu, ?_⟩
       have hv : Spec.Rsa.bytesAt t₇.mem (valA s) (s.gpr .rsi).toNat = em.drop (k - (s.gpr .rsi).toNat) := by
         rw [hs₇.2.1, hm₆, hm₅, hs₄.2.1, hmem (by rw [hl']; exact dVE) (by omega_arith), hval]

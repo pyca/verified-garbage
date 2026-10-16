@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Sha3.Contract
-public import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -54,75 +54,118 @@ variable (pb : Nat)
 theorem absorbPre_local : ∀ vs m₁ m₂, vs.length = (absorbSig.words pb).length →
     (∀ b ∈ Sig.bufs absorbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (absorbSig.words pb) (absorbPre pb) vs m₁ →
-      Curry.apply (absorbSig.words pb) (absorbPre pb) vs m₂
-  | [_, _, _, _, _], _, _, _, _, h => h
+      Curry.apply (absorbSig.words pb) (absorbPre pb) vs m₂ := by
+  intro vs _ _ hlen _ h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 4
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  exact h
 
 theorem absorbPost_local : ∀ vs m₁ m₂ m' r, vs.length = (absorbSig.words pb).length →
     (∀ b ∈ Sig.bufs absorbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (absorbSig.words pb) (absorbPost pb) vs m₁ m' r →
-      Curry.apply (absorbSig.words pb) (absorbPost pb) vs m₂ m' r
-  | [st, _, _, data, len], m₁, m₂, m', r, _, hb, h => by
-    simp only [absorbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hs := agree_of hb.1
-    have hd := agree_of hb.2
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
-      (absorbPost pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
-      (absorbPost pb) _ m₂ m' r
-    dsimp only [Curry.apply, absorbPost, ArgWord.ofRaw] at h ⊢
-    refine ⟨fun msg hr hp => ?_, h.2⟩
-    have := Nat.mod_le len.toNat (2 ^ pb)
-    rw [bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-    refine h.1 msg ?_ hp
-    unfold Spec.Sha3.Repr at hr ⊢
-    rw [← hr]; exact (stateAt_congr fun i hi => hs i (by omega)).symm
+      Curry.apply (absorbSig.words pb) (absorbPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨len, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [absorbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs := agree_of hb.1
+  have hd := agree_of hb.2
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (absorbPost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (absorbPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, absorbPost, ArgWord.ofRaw] at h ⊢
+  refine ⟨fun msg hr hp => ?_, h.2⟩
+  have := Nat.mod_le len.toNat (2 ^ pb)
+  rw [bytesAt_congr (n := (len.setWidth pb).toNat) fun i hi => hd i (by
+    rw [BitVec.toNat_setWidth] at hi; omega)]
+  refine h.1 msg ?_ hp
+  unfold Spec.Sha3.Repr at hr ⊢
+  rw [← hr]; exact (stateAt_congr fun i hi => hs i (by omega)).symm
 
 theorem padPre_local : ∀ vs m₁ m₂, vs.length = (padSig.words pb).length →
     (∀ b ∈ Sig.bufs padSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (padSig.words pb) (padPre pb) vs m₁ →
-      Curry.apply (padSig.words pb) (padPre pb) vs m₂
-  | [_, _, _, _], _, _, _, _, h => h
+      Curry.apply (padSig.words pb) (padPre pb) vs m₂ := by
+  intro vs _ _ hlen _ h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 3
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  exact h
 
 theorem padPost_local : ∀ vs m₁ m₂ m' r, vs.length = (padSig.words pb).length →
     (∀ b ∈ Sig.bufs padSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (padSig.words pb) (padPost pb) vs m₁ m' r →
-      Curry.apply (padSig.words pb) (padPost pb) vs m₂ m' r
-  | [st, _, _, _], m₁, m₂, m', r, _, hb, h => by
-    simp only [padSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
-      Elem.size] at hb
-    have hs := agree_of hb
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.int 32]
-      (padPost pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.int 32]
-      (padPost pb) _ m₂ m' r
-    dsimp only [Curry.apply, padPost, ArgWord.ofRaw] at h ⊢
-    intro msg hr hp
-    refine h msg ?_ hp
-    unfold Spec.Sha3.Repr at hr ⊢
-    rw [← hr]; exact (stateAt_congr fun i hi => hs i (by omega)).symm
+      Curry.apply (padSig.words pb) (padPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 3
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [padSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq,
+    Elem.size] at hb
+  have hs := agree_of hb
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.int 32]
+    (padPost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.int 32]
+    (padPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, padPost, ArgWord.ofRaw] at h ⊢
+  intro msg hr hp
+  refine h msg ?_ hp
+  unfold Spec.Sha3.Repr at hr ⊢
+  rw [← hr]; exact (stateAt_congr fun i hi => hs i (by omega)).symm
 
 theorem squeezePre_local : ∀ vs m₁ m₂, vs.length = (squeezeSig.words pb).length →
     (∀ b ∈ Sig.bufs squeezeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (squeezeSig.words pb) (squeezePre pb) vs m₁ →
-      Curry.apply (squeezeSig.words pb) (squeezePre pb) vs m₂
-  | [_, _, _, _, _], _, _, _, _, h => h
+      Curry.apply (squeezeSig.words pb) (squeezePre pb) vs m₂ := by
+  intro vs _ _ hlen _ h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 4
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  exact h
 
 theorem squeezePost_local : ∀ vs m₁ m₂ m' r, vs.length = (squeezeSig.words pb).length →
     (∀ b ∈ Sig.bufs squeezeSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (squeezeSig.words pb) (squeezePost pb) vs m₁ m' r →
-      Curry.apply (squeezeSig.words pb) (squeezePost pb) vs m₂ m' r
-  | [st, _, _, _, _], m₁, m₂, m', r, _, hb, h => by
-    simp only [squeezeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hs := agree_of hb.1
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
-      (squeezePost pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
-      (squeezePost pb) _ m₂ m' r
-    dsimp only [Curry.apply, squeezePost, ArgWord.ofRaw] at h ⊢
-    rw [stateAt_congr (m := m₁) (m' := m₂) fun i hi => hs i (by omega)]
-    exact h
+      Curry.apply (squeezeSig.words pb) (squeezePost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 4) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 4
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [squeezeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (squeezePost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.int pb, ArgWord.addr, ArgWord.int pb]
+    (squeezePost pb) _ m₂ m' r
+  dsimp only [Curry.apply, squeezePost, ArgWord.ofRaw] at h ⊢
+  rw [stateAt_congr (m := m₁) (m' := m₂) fun i hi => hs i (by omega)]
+  exact h
 
 end VG.Proof.Sha3

@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointMixedTiming
@@ -8,6 +11,30 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import Mathlib.Algebra.Group.Nat.Defs
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+public import VerifiedGarbage.Proof.Weierstrass.JacInplace
 
 /-! ## `AllocatedMixedTiming` -/
 
@@ -112,8 +139,8 @@ open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
 open VG.Proof.Mont VG.Proof.Mont.AArch64 VG.Proof.Weierstrass VG.Proof.Weierstrass.AArch64 Spec.Weierstrass
 open VG.Proof.Ed25519.AArch64 (read_x)
 
-local macro "jslots" : tactic => `(tactic| (simp only [jointSlots,jointLive,jointWork,
-  jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))
+tactic_template "afd_jslots" : tactic => `(tactic| plain_simp_names (simp only [jointSlots,jointLive,jointWork,
+                   jacWinSlots,nafLive,winRo,winOther,rcbW,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind))
 
 theorem fixedSum_relCT (raw : RawCorrect)
     {base : Addr} {E : Nat → Fe C}
@@ -123,7 +150,7 @@ theorem fixedSum_relCT (raw : RawCorrect)
       (.seq VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.mixedAdd (.block (copyPt 4 cfg.K.R cfg.K.D)))
       (fun s t => ∃ E',FieldPair cfg.K.M base 8192 C.p (·∈jointSlots cfg) (jointLive cfg) E' s t) := by
   let hL := JointLayout.fixedLayout
-  have vr : ∀ x∈rcbR cfg.K.S cfg.K.R cfg.K.E,x∈[cfg.K.E.x,cfg.K.E.y,cfg.K.E.z]++jointLive cfg := by intro x hx; jslots
+  have vr : ∀ x∈rcbR cfg.K.S cfg.K.R cfg.K.E,x∈[cfg.K.E.x,cfg.K.E.y,cfg.K.E.z]++jointLive cfg := by intro x hx; afd_jslots
   apply RelCT.seq (mixedAdd_relCT raw hm vr hOne hc.mixed)
   apply RelCT.exists_
   intro E'

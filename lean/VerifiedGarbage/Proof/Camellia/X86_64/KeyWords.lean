@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Camellia.Common
+import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # Halves as little-endian words
@@ -22,12 +24,8 @@ namespace VG.Proof.Camellia.X86_64
 open VG VG.X86_64
 
 theorem bswap64_bit (a : BitVec 64) {i j : Nat} (hi : i < 8) (hj : j < 8) :
-    (bswap64 a).getLsbD (56 - 8 * i + j) = a.getLsbD (8 * i + j) := by
-  unfold bswap64
-  change BitVec.getLsbD (w := 8 + 8 + 8 + 8 + 8 + 8 + 8 + 8) _ _ = _
-  simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  repeat' split
-  all_goals (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+    (bswap64 a).getLsbD (56 - 8 * i + j) = a.getLsbD (8 * i + j) :=
+  (VG.byteRev64_getLsbD a (by omega)).trans (congrArg a.getLsbD (by omega))
 
 /-- `bswap` of such a word is the half. -/
 theorem bswap_of_wordOf {w h : BitVec 64} (hw : WordOf w h) : bswap64 w = h := by

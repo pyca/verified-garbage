@@ -8,18 +8,21 @@ public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 
 `vg_chacha20_poly1305_seal_gather(key = rdi, nonce = rsi, aad = rdx,
 aad_len = rcx, src = r8, src_count = r9, dst = [rsp + 8], len = [rsp + 16],
-tag = [rsp + 24])` copies the slices `src` lists, one after the other, to
-`dst`, and encrypts them there in place with a call of
-`vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, dst, len, tag)`
-(`name`, `code`: an instance of it).
+tag = [rsp + 24])` copies the slices `src` lists but the first, one after the
+other, to `dst` after the first slice's length, and encrypts the data there,
+its first slice read from where it is, with a call of
+`vg_chacha20_poly1305_seal_split(key, nonce, aad, aad_len, src₀, len₀, dst,
+len, tag)` (`name`, `code`: an instance of it), `src₀` and `len₀` the first
+slice (`src` and 0 without slices).
 
-Its frame pushes the six argument registers: `key`, `nonce`, `aad` and
-`aad_len` wait there for the call, and the stack pointer stays a multiple of
-16 at the call, with `tag` pushed for it. Our stack arguments are then at
+Its frame pushes the six argument registers: `key`, `nonce`, `aad`,
+`aad_len`, `src` and `src_count` wait there for the call, and the stack
+pointer stays a multiple of 16 at the call, with `dst`, `len` and `tag`
+pushed for it. Our stack arguments are then at
 `rsp + 56` … `rsp + 72`. The copy has `r11` at the next descriptor, `r9` the
 number of slices left and `rdi` where the next slice goes; each slice is
 copied from `rsi`, its length in `rcx` (`copyBytes`), as wide as the CPUs
-of the implementation of `vg_chacha20_poly1305_seal` called allow (`Width`:
+of the implementation of `vg_chacha20_poly1305_seal_split` called allow (`Width`:
 `c` = 16 bytes with SSE2's `movdqu`, 32 with AVX's `vmovdqu` of a `ymm`
 register, 64 with AVX-512's `vmovdqu32` of a `zmm` register). With at
 least `2 c` bytes, it copies the first `c`, then `2 c` at a time through
@@ -50,13 +53,16 @@ inductive Width where
   /-- 64, with AVX-512's `vmovdqu32` of `zmm0`. -/
   | z64
 
-/-- The widest copy the CPUs of an implementation of `vg_poly1305_blocks`
-have: the instance of `vg_chacha20_poly1305_seal` called runs on the CPUs of
-the implementation of `vg_poly1305_blocks` it calls. -/
+/-- The copy for an implementation of `vg_poly1305_blocks`: the widest its
+CPUs have (the instance of `vg_chacha20_poly1305_seal_split` called runs on
+the CPUs of the implementation of `vg_poly1305_blocks` it calls), but 32
+bytes with the AVX-512 one without IFMA, whose `seal` runs no 512-bit
+instruction for short data (`Stitch.sealSmall`): on its CPUs (Skylake-SP,
+Cascade Lake) a 512-bit copy would lower the clock for the `seal` after it. -/
 def Width.ofBlocks : Impl.Poly1305.X86_64.Blocks → Width
   | .scalar => .x16
   | .avx2 => .y32
-  | .avx512 => .z64
+  | .avx512 => .y32
   | .ifma => .z64
 
 /-- The number of bytes, a power of two. -/
@@ -178,21 +184,74 @@ def gather (w : Width) : Prog isa := .seq (.block [.alu .cmp .r9 (imm 0)]) (.ite
 /-- The descriptors in `r11`, and `dst` in `rdi`. -/
 def entry : List Instr := [.mov .r11 (.reg .r8), .mov .rdi (.mem (at_ .rsp 56))]
 
-/-- The call's arguments: `key`, `nonce`, `aad` and `aad_len` back from the
-frame, `dst` and `len`, and `tag` in `rax`, to push. -/
+/-- Past the first slice, if there is one: the next descriptor, the second,
+in `r11`, one slice fewer in `r9`, and `rdi` past where the first slice goes,
+which `vg_chacha20_poly1305_seal_split` reads from where it is. -/
+def skipFirst : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (imm 0)]) (.ite .e (.block []) (.block (next ++ advance)))
+
+/-- The call's arguments: `key`, `nonce`, `aad`, `aad_len`, `src` and
+`src_count` back from the frame, and `tag`, `len` and `dst` in `rax`, `r10`
+and `r11`, to push. -/
 def callArgs : List Instr :=
+  [.mov .rdi (.mem (at_ .rsp 40)), .mov .rsi (.mem (at_ .rsp 32)), .mov .rdx (.mem (at_ .rsp 24)),
+    .mov .rcx (.mem (at_ .rsp 16)), .mov .r8 (.mem (at_ .rsp 8)), .mov .r9 (.mem (at_ .rsp 0)),
+    .mov .rax (.mem (at_ .rsp 72)), .mov .r10 (.mem (at_ .rsp 64)), .mov .r11 (.mem (at_ .rsp 56))]
+
+/-- The first slice as the call's `src` and `src_len` (`r8`, `r9`), if there
+is one; else no bytes (`r9` = `src_count` = 0) at `src`. -/
+def firstArgs : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (imm 0)])
+    (.ite .e (.block []) (.block [.mov .r9 (.mem (at_ .r8 8)), .mov .r8 (.mem (at_ .r8 0))]))
+
+/-- `vg_chacha20_poly1305_seal_gather`, copying `2 ^ w.log` bytes at a time
+and calling `vg_chacha20_poly1305_seal_split` (`name`, `code`). -/
+def sealGather (w : Width) (name : String) (code : Prog isa) : Prog isa :=
+  .frame (.push [.rdi, .rsi, .rdx, .rcx, .r8, .r9])
+    (.seq (.block entry)
+    (.seq skipFirst
+    (.seq (gather w)
+    (.seq (.block callArgs)
+    (.seq firstArgs
+      (.frame (.push [.rax, .r10, .r11]) (.call name code) (.pop .rax 3)))))))
+    (.pop .rax 6)
+
+/-- For `sealGatherWhole`, the call's arguments: `key`, `nonce`, `aad` and
+`aad_len` back from the frame, `dst` and `len`, and `tag` in `rax`, to push. -/
+def callArgsWhole : List Instr :=
   [.mov .rdi (.mem (at_ .rsp 40)), .mov .rsi (.mem (at_ .rsp 32)), .mov .rdx (.mem (at_ .rsp 24)),
     .mov .rcx (.mem (at_ .rsp 16)), .mov .r8 (.mem (at_ .rsp 56)), .mov .r9 (.mem (at_ .rsp 64)),
     .mov .rax (.mem (at_ .rsp 72))]
 
-/-- `vg_chacha20_poly1305_seal_gather`, copying `2 ^ w.log` bytes at a time
-and calling `vg_chacha20_poly1305_seal` (`name`, `code`). -/
-def sealGather (w : Width) (name : String) (code : Prog isa) : Prog isa :=
+/-- `vg_chacha20_poly1305_seal_gather` copying all of the slices, `2 ^ w.log`
+bytes at a time, and calling `vg_chacha20_poly1305_seal` (`name`, `code`)
+on them in place. -/
+def sealGatherWhole (w : Width) (name : String) (code : Prog isa) : Prog isa :=
   .frame (.push [.rdi, .rsi, .rdx, .rcx, .r8, .r9])
     (.seq (.block entry)
     (.seq (gather w)
-    (.seq (.block callArgs)
+    (.seq (.block callArgsWhole)
       (.frame (.push [.rax]) (.call name code) (.pop .rax 1)))))
     (.pop .rax 6)
+
+/-- `vg_chacha20_poly1305_seal_gather` calling `seal` (`sealName`,
+`sealCode`) for fewer than `lim` bytes of data (`sealGatherWhole`), and
+`seal_split` (`splitName`, `splitCode`) for more (`sealGather`), branching on
+`len` (`[rsp + 16]`) in `rax`. With `lim` 961, `seal` takes the data the
+first keystream of `seal_split` with `vg_chacha20_xor_avx512` would cover and
+copy anyway; with `byLim`'s 1025 for the AVX-512 instances without IFMA,
+also the lengths their `seal` encrypts with the AVX2 code (`Stitch.winLo` to
+`Stitch.winHi - 1`), much faster on their CPUs than `seal_split`'s AVX-512
+code, for a copy of the first slice. -/
+def sealGatherBy (lim : Nat) (w : Width) (sealName : String) (sealCode : Prog isa) (splitName : String)
+    (splitCode : Prog isa) : Prog isa :=
+  .seq (.block [.mov .rax (.mem (at_ .rsp 16)), .alu .cmp .rax (imm lim)])
+    (.ite .b (sealGatherWhole w sealName sealCode) (sealGather w splitName splitCode))
+
+/-- `sealGatherBy`'s limit for an implementation of `vg_poly1305_blocks`:
+`Stitch.winHi` (1025) for the AVX-512 one without IFMA, 961 otherwise. -/
+def byLim : Poly1305.X86_64.Blocks → Nat
+  | .avx512 => 1025
+  | _ => 961
 
 end VG.Impl.ChaCha20Poly1305.X86_64.SealGather

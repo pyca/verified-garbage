@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Argon2.X86.HPrime
+import VerifiedGarbage.Impl.Argon2.X86.HPrime
 
 /-!
 # Argon2 derivation on x86 (32-bit): the frame

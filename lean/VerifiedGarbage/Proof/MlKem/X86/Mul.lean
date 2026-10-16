@@ -1,16 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86.Table
+import VerifiedGarbage.Proof.MlKem.X86.Table
 meta import VerifiedGarbage.Proof.MlKem.X86.Table
 public import VerifiedGarbage.Proof.MlKem.X86.NttLoop
 meta import VerifiedGarbage.Proof.MlKem.X86.NttLoop
-public import VerifiedGarbage.Proof.MlKem.X86.Red
+import VerifiedGarbage.Proof.MlKem.X86.Red
 meta import VerifiedGarbage.Proof.MlKem.X86.Red
-public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
 meta import VerifiedGarbage.Proof.MlKem.X86.Leaf
-public import VerifiedGarbage.Spec.MlKem.Poly
+import VerifiedGarbage.Spec.MlKem.Poly
 meta import VerifiedGarbage.Spec.MlKem.Poly
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig
@@ -20,6 +20,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on x86 (32-bit): `vg_mlkem_multiply_ntts`
@@ -193,24 +195,24 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
   have hg := hp.g_fit
   have hh := hp.h_fit
   have hs := hp.s_fit
-  have i0 : 2 * t < n := by rw [n_eq]; omega
-  have i1 : 2 * t + 1 < n := by rw [n_eq]; omega
-  have it : t < n := by rw [n_eq]; omega
+  have i0 : 2 * t < n := by rw [n_eq]; omega_using [ht]
+  have i1 : 2 * t + 1 < n := by rw [n_eq]; omega_using [ht]
+  have it : t < n := by rw [n_eq]; omega_using [ht]
   -- The addresses.
   have ea_f0 : (s.gpr .esi + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (fA s₀) (2 * t) := by
-    rw [h.esi, ea_add (by omega)]; congr 2; omega
+    rw [h.esi, ea_add (by omega_using [ht, hf])]; congr 2; omega_using []
   have ea_f1 : (s.gpr .esi + BitVec.ofNat 32 4).setWidth 64 = coeffAddr (fA s₀) (2 * t + 1) := by
-    rw [h.esi, ea_add (by omega)]; congr 2; omega
+    rw [h.esi, ea_add (by omega_using [ht, hf])]; congr 2; omega_using []
   have ea_g0 : (s.gpr .edi + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (gA s₀) (2 * t) := by
-    rw [h.edi, ea_add (by omega)]; congr 2; omega
+    rw [h.edi, ea_add (by omega_using [ht, hg])]; congr 2; omega_using []
   have ea_g1 : (s.gpr .edi + BitVec.ofNat 32 4).setWidth 64 = coeffAddr (gA s₀) (2 * t + 1) := by
-    rw [h.edi, ea_add (by omega)]; congr 2; omega
+    rw [h.edi, ea_add (by omega_using [ht, hg])]; congr 2; omega_using []
   have ea_z : (s.gpr .ebp + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (sA s₀) t := by
-    rw [h.ebp, ea_add (by omega), Nat.add_zero]
+    rw [h.ebp, ea_add (by omega_using [ht, hs]), Nat.add_zero]
   have ea_h0 : (s.gpr .ebx + BitVec.ofNat 32 0).setWidth 64 = coeffAddr (hA s₀) (2 * t) := by
-    rw [h.ebx, ea_add (by omega)]; congr 2; omega
+    rw [h.ebx, ea_add (by omega_using [ht, hh])]; congr 2; omega_using []
   have ea_h1 : (s.gpr .ebx + BitVec.ofNat 32 4).setWidth 64 = coeffAddr (hA s₀) (2 * t + 1) := by
-    rw [h.ebx, ea_add (by omega)]; congr 2; omega
+    rw [h.ebx, ea_add (by omega_using [ht, hh])]; congr 2; omega_using []
   have ea_sl : (s.gpr .esp + BitVec.ofNat 32 32).setWidth 64 = argAddr s₀ 3 := by
     rw [h.esp]; exact P0_argAddr s₀ 3
   -- The permissions.
@@ -224,10 +226,10 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
   have in_h1 : InRegions s.wr (coeffAddr (hA s₀) (2 * t + 1)) 4 := hp.in_w h.wr (by simp) (coeff_contains _ i1)
   have in_sl := hp.in_a h.wr (i := 3) (by decide)
   -- The values.
-  have vf0 := hp.f_keep h.frame (i := 2 * t) (by omega)
-  have vf1 := hp.f_keep h.frame (i := 2 * t + 1) (by omega)
-  have vg0 := hp.g_keep h.frame (i := 2 * t) (by omega)
-  have vg1 := hp.g_keep h.frame (i := 2 * t + 1) (by omega)
+  have vf0 := hp.f_keep h.frame (i := 2 * t) (by omega_using [i0])
+  have vf1 := hp.f_keep h.frame (i := 2 * t + 1) (by omega_using [i1])
+  have vg0 := hp.g_keep h.frame (i := 2 * t) (by omega_using [i0])
+  have vg1 := hp.g_keep h.frame (i := 2 * t + 1) (by omega_using [i1])
   have vz := h.tbl t ht
   rw [coeffAt_eq] at vf0 vf1 vg0 vg1 vz
   have lf0 := hp.f_red (2 * t) i0
@@ -245,7 +247,7 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
   generalize coeffAt s₀.mem (gA s₀) (2 * t + 1) = G1 at vg1 lg1 pg1
   rw [q_eq] at lf0 lf1 lg0 lg1 lz
   have p11 : F1.toNat * G1.toNat < 2 ^ 32 := by
-    have := Nat.mul_lt_mul_of_lt_of_lt lf1 lg1; omega
+    have := Nat.mul_lt_mul_of_lt_of_lt lf1 lg1; omega_using [this]
   rw [mulBody, WP.block_append_iff]
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execMul,
@@ -265,7 +267,7 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
   have cx₁ : s₁.gpr .ecx = BitVec.ofNat 32 (F1.toNat * G1.toNat % q) := eq_ofNat_of_toNat v₁
   have lr₁ := Nat.mod_lt (F1.toNat * G1.toNat) (show q > 0 by rw [q_eq]; decide)
   rw [q_eq] at lr₁
-  have hzv : (BitVec.ofNat 32 (gammas.getD t 0)).toNat = gammas.getD t 0 := toNat_ofNat32 (by omega)
+  have hzv : (BitVec.ofNat 32 (gammas.getD t 0)).toNat = gammas.getD t 0 := toNat_ofNat32 (by omega_using [lz])
   have x2 : F1.toNat * G1.toNat % q * gammas.getD t 0 + F0.toNat * G0.toNat < 2 ^ 32 := by
     have := Nat.mul_lt_mul_of_lt_of_lt lr₁ lz
     have := Nat.mul_lt_mul_of_lt_of_lt lf0 lg0
@@ -277,12 +279,12 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
     Option.map_some, esi₁, edi₁, ebp₁, cx₁, m₁, rd₁, wr₁, ea_z, ea_f0, ea_g0, in_z, in_f0, in_g0, vz, vf0,
     vg0, Option.some.injEq, exists_eq_left']
   have p00 : F0.toNat * G0.toNat < 2 ^ 32 := by
-    have := Nat.mul_lt_mul_of_lt_of_lt lf0 lg0; omega
+    have := Nat.mul_lt_mul_of_lt_of_lt lf0 lg0; omega_using [this]
   have ev2 : (BitVec.ofNat 32 ((BitVec.ofNat 32 (F1.toNat * G1.toNat % q)).toNat *
       (BitVec.ofNat 32 (gammas.getD t 0)).toNat) + BitVec.ofNat 32 (F0.toNat * G0.toNat)).toNat =
       F1.toNat * G1.toNat % q * gammas.getD t 0 + F0.toNat * G0.toNat := by
-    rw [toNat_ofNat32 (n := F1.toNat * G1.toNat % q) (by rw [q_eq]; omega), hzv, BitVec.toNat_add,
-      toNat_ofNat32 (by omega), toNat_ofNat32 p00, Nat.mod_eq_of_lt x2]
+    rw [toNat_ofNat32 (n := F1.toNat * G1.toNat % q) (by rw [q_eq]; omega_using []), hzv, BitVec.toNat_add,
+      toNat_ofNat32 (by omega_using [x2]), toNat_ofNat32 p00, Nat.mod_eq_of_lt x2]
   refine red_spec (r := .ecx) (by decide) (by decide) _ _ _
     (x := F1.toNat * G1.toNat % q * gammas.getD t 0 + F0.toNat * G0.toNat)
     (by simp only [ite_true, ite_false, reduceCtorEq]; exact ev2)
@@ -306,9 +308,9 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
   have wg0 := sep hp.h_g.symm i0
   have wg1 := sep hp.h_g.symm i1
   have p01 : F0.toNat * G1.toNat < 2 ^ 32 := by
-    have := Nat.mul_lt_mul_of_lt_of_lt lf0 lg1; omega
+    have := Nat.mul_lt_mul_of_lt_of_lt lf0 lg1; omega_using [this]
   have p10 : F1.toNat * G0.toNat < 2 ^ 32 := by
-    have := Nat.mul_lt_mul_of_lt_of_lt lf1 lg0; omega
+    have := Nat.mul_lt_mul_of_lt_of_lt lf1 lg0; omega_using [this]
   have x3 : F0.toNat * G1.toNat + F1.toNat * G0.toNat < 2 ^ 32 := by
     have := Nat.mul_lt_mul_of_lt_of_lt lf0 lg1
     have := Nat.mul_lt_mul_of_lt_of_lt lf1 lg0
@@ -355,7 +357,7 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
   have v1 : BitVec.ofNat 32 ((F0.toNat * G1.toNat + F1.toNat * G0.toNat) % q) = V s₀ (2 * t + 1) := by
     rw [V, multiplyNTTs_odd _ _ ht, mul_odd, pf0, pg0, pf1, pg1]
   have hsep : ∀ {k : Nat}, k < 128 → ∀ j, j < n → Mem.Sep (coeffAddr (sA s₀) k) 4 (coeffAddr (hA s₀) j) 4 :=
-    fun hk j hj => hp.h_s.symm.sep (coeff_contains _ (by rw [n_eq]; omega)) (coeff_contains _ hj)
+    fun hk j hj => hp.h_s.symm.sep (coeff_contains _ (by rw [n_eq]; omega_using [hk])) (coeff_contains _ hj)
   refine ⟨⟨by simp [esp₃, h.esp], h.rd, h.wr, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · simp only [ite_true, show Reg.ebx ≠ Reg.ebp by decide, show Reg.ebx ≠ Reg.edi by decide,
       show Reg.ebx ≠ Reg.esi by decide, ite_false, h.ebx]
@@ -372,21 +374,21 @@ theorem mul_step {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 128) {s : St
     exact h.tbl k hk
   · exact sl₂ _ _
   · intro i hi
-    rw [coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega) i1,
-      coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega) i0]
+    rw [coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega_using [ht, hi]) i1,
+      coeffAt_writeW _ _ (show i < n by rw [n_eq]; omega_using [ht, hi]) i0]
     by_cases e1 : 2 * t + 1 = i
     · rw [ite_eq_left e1, ← e1, v1]
     rw [ite_eq_right e1]
     by_cases e0 : 2 * t = i
     · rw [ite_eq_left e0, ← e0, v0]
     rw [ite_eq_right e0]
-    exact h.out i (by omega)
+    exact h.out i (by omega_using [hi, e1, e0])
   · simp only [eval, Option.map_some, h.ebx]
-    rw [show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl, add_ofNat_add, NttLoop.end_cmp _ (by omega)]
+    rw [show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl, add_ofNat_add, NttLoop.end_cmp _ (by omega_using [ht])]
     by_cases e : t + 1 = 128
-    · simp [e, show 8 * t = 1016 by omega]
-    · simp only [show ¬ 8 * t + 8 = 1024 by omega, decide_false, Bool.not_false]
-      simp only [Option.some.injEq]; exact (decide_eq_true (by omega)).symm
+    · simp [e, show 8 * t = 1016 by omega_using [e]]
+    · simp only [show ¬ 8 * t + 8 = 1024 by omega_using [e], decide_false, Bool.not_false]
+      simp only [Option.some.injEq]; exact (decide_eq_true (by omega_using [ht, e])).symm
 
 /-! ## The function -/
 
@@ -395,7 +397,7 @@ theorem arg_sep {s₀ : State} (hp : Pre s₀) {i j : Nat} (hi : i < 4) (hj : j 
   have := hp.sp'
   intro x h₁ h₂
   simp only [argAddr, E0] at this h₁ h₂
-  have : i < j ∨ j < i := by omega
+  have : i < j ∨ j < i := by omega_using [h]
   bv_omega
 
 /-- After `mulLd`. -/
@@ -412,8 +414,8 @@ theorem ld_piece : Piece Pre Pub (fun s₀ s => s = P0 s₀) S1 (.block mulLd) :
   · subst e
     have fit := hp.sp'
     have a₃ := P0_argAddr s₀ 3
-    have i₃ := P0_argIn (s₀ := s₀) (n := 4) (i := 3) (by omega) fit (by simp [hp.wr])
-    have v₃ := P0_arg hp.sp (n := 4) (i := 3) (by omega) fit (by simpa [← hp.stk_eq] using hp.stk_a)
+    have i₃ := P0_argIn (s₀ := s₀) (n := 4) (i := 3) (by omega_using []) fit (by simp [hp.wr])
+    have v₃ := P0_arg hp.sp (n := 4) (i := 3) (by omega_using []) fit (by simpa [← hp.stk_eq] using hp.stk_a)
     simp only [Nat.reduceMul, Nat.reduceAdd] at a₃
     apply WP.of_runBlock
     simp only [mulLd, at_, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.ea,
@@ -433,8 +435,8 @@ theorem setup_piece : Piece Pre Pub S1 (MI · 0) (.block mulSetup) := by
     refine table_spec gammaTable (b := .eax) (by decide) (p := sA s₀) _ s _
       (fun k hk => by
         show (s.gpr .eax + BitVec.ofNat 32 (4 * k)).setWidth 64 = _
-        rw [h.eax, ea_off (by omega)])
-      (fun k hk => hp.in_w h.wr (by simp) (coeff_contains _ (by rw [n_eq]; omega))) fun s₁ o₁ f₁ c₁ => ?_
+        rw [h.eax, ea_off (by omega_using [fs, hk])])
+      (fun k hk => hp.in_w h.wr (by simp) (coeff_contains _ (by rw [n_eq]; omega_using [hk]))) fun s₁ o₁ f₁ c₁ => ?_
     have esp₁ : s₁.gpr .esp = (P0 s₀).gpr .esp := by rw [o₁.gpr .esp (by decide), h.esp]
     have eax₁ : s₁.gpr .eax = sP s₀ := by rw [o₁.gpr .eax (by decide), h.eax]
     have wr₁ : s₁.wr = (P0 s₀).wr := o₁.wr.trans h.wr
@@ -472,10 +474,10 @@ theorem setup_piece : Piece Pre Pub S1 (MI · 0) (.block mulSetup) := by
       ite_false, Option.some.injEq, exists_eq_left']
     have hs1 : Frame [polyRegion (sA s₀)] (P0 s₀).mem s₁.mem := h.mem ▸ f₁
     refine ⟨by simp [esp₁], rd₁, wr₁, by simp, by simp, by simp, by simp [eax₁], ?_, ?_, ?_,
-      fun i hi => absurd hi (by omega)⟩
+      fun i hi => absurd hi (by omega_using [])⟩
     · exact (hs1.mono (by simp)).writeW (by simp) _ (hp.arg_in (by decide))
     · intro k hk
-      rw [coeffAt_writeW_sep _ _ _ (hp.s_a.sep (coeff_contains _ (by rw [n_eq]; omega)) (hp.arg_in (by decide))),
+      rw [coeffAt_writeW_sep _ _ _ (hp.s_a.sep (coeff_contains _ (by rw [n_eq]; omega_using [hk])) (hp.arg_in (by decide))),
         c₁ k hk]
       rfl
     · exact Mem.readW_writeW_self32 _ _ _
@@ -506,7 +508,7 @@ theorem hW {s₀ : State} (hp : Pre s₀) : ∀ r ∈ W s₀, (frameR s₀).Disj
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (MI s₀ 128) s₀ s')
     Impl.MlKem.X86.multiplyNTTs :=
-  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
+  Piece.leaf W (NoSp.of_all (by decide +kernel)) (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega_using [this]⟩)
     (fun _ hp => hW hp) (fun _ _ _ _ hq => hq.1)
     ((Piece.seq ld_piece (Piece.seq setup_piece loop_piece)).mono (fun _ _ _ h => h)
       fun _ _ _ h => ⟨⟨h.frame, h.esp, h.rd, h.wr⟩, h⟩)
@@ -523,7 +525,7 @@ theorem verified : Verified X86.target Impl.MlKem.X86.multiplyNTTs (mulContract 
     refine ⟨habi, ?_⟩
     sig_post [mulContract, mulSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     rw [hm]
-    exact polyIs_of_coeffAt fun i hi => hinv.out i (by rw [n_eq] at hi; omega)
+    exact polyIs_of_coeffAt fun i hi => hinv.out i (by rw [n_eq] at hi; omega_using [hi])
   · let st := satState satMem [⟨0x400, 1024⟩, ⟨0x800, 1024⟩] [⟨0, 1024⟩, ⟨0xc00, 1024⟩, ⟨0x5004, 16⟩]
     have a0 : arg st 0 = 0 := by decide
     have a1 : arg st 1 = 0x400 := by decide
@@ -540,8 +542,8 @@ theorem verified : Verified X86.target Impl.MlKem.X86.multiplyNTTs (mulContract 
       | exact Region.disjoint_of_sep (by decide)
       | (show satMem a = 0
          simp only [satMem]
-         rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega),
-           ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega),
-           ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega)])
+         rw [ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha]),
+           ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha]),
+           ite_eq_right_iff.mpr fun h => absurd (congrArg BitVec.toNat h) (by simp; omega_using [ha])])
 
 end VG.Proof.MlKem.X86.Mul

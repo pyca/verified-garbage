@@ -5,6 +5,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlKem.Arm.CallF
+public import VerifiedGarbage.Proof.MlKem.Arm.Cbd2
+public import VerifiedGarbage.Proof.MlKem.Arm.CompressEncode
+public import VerifiedGarbage.Proof.MlKem.Arm.Decode12
+public import VerifiedGarbage.Proof.MlKem.Arm.Decompress
+public import VerifiedGarbage.Proof.MlKem.Arm.Encode12
+public import VerifiedGarbage.Proof.MlKem.Arm.Ntt
+import VerifiedGarbage.Proof.MlKem.Arm.NttInv
 
 /-!
 # ML-KEM-768 on 32-bit ARM: calling the primitives on buffers

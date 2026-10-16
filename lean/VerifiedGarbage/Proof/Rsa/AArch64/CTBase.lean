@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 meta import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
 meta import VerifiedGarbage.Proof.Bignum.AArch64.PdCTRest
@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA key routines on AArch64: relational constant time, piece by piece

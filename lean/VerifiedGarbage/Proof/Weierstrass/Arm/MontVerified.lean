@@ -2,16 +2,26 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
-public import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Mont.Read
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Spec.X25519
 
 /-!
 # Montgomery arithmetic modulo the curves' `p` and `n`, as functions, on 32-bit ARM: verified
@@ -137,168 +147,168 @@ theorem sub_verified (M : Modulus) (hM : ModOk M.k M.m) (hk : M.k ≤ 9)
 
 theorem p224p_mul_ct : ConstantTime isa (mulArm p224p).pre (mulArm p224p).pub (mulFn p224p.k p224p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p224p_mul_verified : Verified Arm.target (mulFn p224p.k p224p.m) (p224p.mulContract Arm.abi) :=
   mul_verified p224p p224p_ok (by decide) p224p_mul_ct
 
 theorem p224p_add_ct : ConstantTime isa (addArm p224p).pre (addArm p224p).pub (addFn p224p.k p224p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p224p_add_verified : Verified Arm.target (addFn p224p.k p224p.m) (p224p.addContract Arm.abi) :=
   add_verified p224p p224p_ok (by decide) p224p_add_ct
 
 theorem p224p_sub_ct : ConstantTime isa (subArm p224p).pre (subArm p224p).pub (subFn p224p.k p224p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p224p_sub_verified : Verified Arm.target (subFn p224p.k p224p.m) (p224p.subContract Arm.abi) :=
   sub_verified p224p p224p_ok (by decide) p224p_sub_ct
 
 theorem p224n_mul_ct : ConstantTime isa (mulArm p224n).pre (mulArm p224n).pub (mulFn p224n.k p224n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p224n_mul_verified : Verified Arm.target (mulFn p224n.k p224n.m) (p224n.mulContract Arm.abi) :=
   mul_verified p224n p224n_ok (by decide) p224n_mul_ct
 
 theorem p224n_add_ct : ConstantTime isa (addArm p224n).pre (addArm p224n).pub (addFn p224n.k p224n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p224n_add_verified : Verified Arm.target (addFn p224n.k p224n.m) (p224n.addContract Arm.abi) :=
   add_verified p224n p224n_ok (by decide) p224n_add_ct
 
 theorem p224n_sub_ct : ConstantTime isa (subArm p224n).pre (subArm p224n).pub (subFn p224n.k p224n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p224n_sub_verified : Verified Arm.target (subFn p224n.k p224n.m) (p224n.subContract Arm.abi) :=
   sub_verified p224n p224n_ok (by decide) p224n_sub_ct
 
 theorem p256p_mul_ct : ConstantTime isa (mulArm p256p).pre (mulArm p256p).pub (mulFn p256p.k p256p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p256p_mul_verified : Verified Arm.target (mulFn p256p.k p256p.m) (p256p.mulContract Arm.abi) :=
   mul_verified p256p p256p_ok (by decide) p256p_mul_ct
 
 theorem p256p_add_ct : ConstantTime isa (addArm p256p).pre (addArm p256p).pub (addFn p256p.k p256p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p256p_add_verified : Verified Arm.target (addFn p256p.k p256p.m) (p256p.addContract Arm.abi) :=
   add_verified p256p p256p_ok (by decide) p256p_add_ct
 
 theorem p256p_sub_ct : ConstantTime isa (subArm p256p).pre (subArm p256p).pub (subFn p256p.k p256p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p256p_sub_verified : Verified Arm.target (subFn p256p.k p256p.m) (p256p.subContract Arm.abi) :=
   sub_verified p256p p256p_ok (by decide) p256p_sub_ct
 
 theorem p256n_mul_ct : ConstantTime isa (mulArm p256n).pre (mulArm p256n).pub (mulFn p256n.k p256n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p256n_mul_verified : Verified Arm.target (mulFn p256n.k p256n.m) (p256n.mulContract Arm.abi) :=
   mul_verified p256n p256n_ok (by decide) p256n_mul_ct
 
 theorem p256n_add_ct : ConstantTime isa (addArm p256n).pre (addArm p256n).pub (addFn p256n.k p256n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p256n_add_verified : Verified Arm.target (addFn p256n.k p256n.m) (p256n.addContract Arm.abi) :=
   add_verified p256n p256n_ok (by decide) p256n_add_ct
 
 theorem p256n_sub_ct : ConstantTime isa (subArm p256n).pre (subArm p256n).pub (subFn p256n.k p256n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p256n_sub_verified : Verified Arm.target (subFn p256n.k p256n.m) (p256n.subContract Arm.abi) :=
   sub_verified p256n p256n_ok (by decide) p256n_sub_ct
 
 theorem p384p_mul_ct : ConstantTime isa (mulArm p384p).pre (mulArm p384p).pub (mulFn p384p.k p384p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p384p_mul_verified : Verified Arm.target (mulFn p384p.k p384p.m) (p384p.mulContract Arm.abi) :=
   mul_verified p384p p384p_ok (by decide) p384p_mul_ct
 
 theorem p384p_add_ct : ConstantTime isa (addArm p384p).pre (addArm p384p).pub (addFn p384p.k p384p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p384p_add_verified : Verified Arm.target (addFn p384p.k p384p.m) (p384p.addContract Arm.abi) :=
   add_verified p384p p384p_ok (by decide) p384p_add_ct
 
 theorem p384p_sub_ct : ConstantTime isa (subArm p384p).pre (subArm p384p).pub (subFn p384p.k p384p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p384p_sub_verified : Verified Arm.target (subFn p384p.k p384p.m) (p384p.subContract Arm.abi) :=
   sub_verified p384p p384p_ok (by decide) p384p_sub_ct
 
 theorem p384n_mul_ct : ConstantTime isa (mulArm p384n).pre (mulArm p384n).pub (mulFn p384n.k p384n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p384n_mul_verified : Verified Arm.target (mulFn p384n.k p384n.m) (p384n.mulContract Arm.abi) :=
   mul_verified p384n p384n_ok (by decide) p384n_mul_ct
 
 theorem p384n_add_ct : ConstantTime isa (addArm p384n).pre (addArm p384n).pub (addFn p384n.k p384n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p384n_add_verified : Verified Arm.target (addFn p384n.k p384n.m) (p384n.addContract Arm.abi) :=
   add_verified p384n p384n_ok (by decide) p384n_add_ct
 
 theorem p384n_sub_ct : ConstantTime isa (subArm p384n).pre (subArm p384n).pub (subFn p384n.k p384n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p384n_sub_verified : Verified Arm.target (subFn p384n.k p384n.m) (p384n.subContract Arm.abi) :=
   sub_verified p384n p384n_ok (by decide) p384n_sub_ct
 
 theorem p521p_mul_ct : ConstantTime isa (mulArm p521p).pre (mulArm p521p).pub (mulFn p521p.k p521p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p521p_mul_verified : Verified Arm.target (mulFn p521p.k p521p.m) (p521p.mulContract Arm.abi) :=
   mul_verified p521p p521p_ok (by decide) p521p_mul_ct
 
 theorem p521p_add_ct : ConstantTime isa (addArm p521p).pre (addArm p521p).pub (addFn p521p.k p521p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p521p_add_verified : Verified Arm.target (addFn p521p.k p521p.m) (p521p.addContract Arm.abi) :=
   add_verified p521p p521p_ok (by decide) p521p_add_ct
 
 theorem p521p_sub_ct : ConstantTime isa (subArm p521p).pre (subArm p521p).pub (subFn p521p.k p521p.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p521p_sub_verified : Verified Arm.target (subFn p521p.k p521p.m) (p521p.subContract Arm.abi) :=
   sub_verified p521p p521p_ok (by decide) p521p_sub_ct
 
 theorem p521n_mul_ct : ConstantTime isa (mulArm p521n).pre (mulArm p521n).pub (mulFn p521n.k p521n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p521n_mul_verified : Verified Arm.target (mulFn p521n.k p521n.m) (p521n.mulContract Arm.abi) :=
   mul_verified p521n p521n_ok (by decide) p521n_mul_ct
 
 theorem p521n_add_ct : ConstantTime isa (addArm p521n).pre (addArm p521n).pub (addFn p521n.k p521n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p521n_add_verified : Verified Arm.target (addFn p521n.k p521n.m) (p521n.addContract Arm.abi) :=
   add_verified p521n p521n_ok (by decide) p521n_add_ct
 
 theorem p521n_sub_ct : ConstantTime isa (subArm p521n).pre (subArm p521n).pub (subFn p521n.k p521n.m) :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (armPub_agree hp)) (by native_taint_decide)
 
 theorem p521n_sub_verified : Verified Arm.target (subFn p521n.k p521n.m) (p521n.subContract Arm.abi) :=
   sub_verified p521n p521n_ok (by decide) p521n_sub_ct

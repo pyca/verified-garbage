@@ -1,14 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Init
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Init
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Finalize
-public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.CT
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.CT
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Implies
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Lit
 
 /-!
 # TDEA-CMAC on AArch64: `Verified`

@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.X86_64.YNttLay
 
 @[expose] public section
 
@@ -32,11 +33,11 @@ theorem layF_get (F : Poly) {len : Nat} (hl : 0 < len) (zi : Nat → Nat) {b : N
       (if j % (2 * len) < len then (op F[j]! F[j + len]! (zetas (zi (j / (2 * len))))).1
         else (op F[j - len]! F[j]! (zetas (zi (j / (2 * len))))).2) else F[j]! := by
   induction b generalizing j with
-  | zero => rw [ite_eq_right (by omega)]; rfl
+  | zero => rw [ite_eq_right (by omega_arith)]; rfl
   | succ b ih =>
     have hb' : 2 * len * b + 2 * len ≤ 256 := by rw [Nat.mul_succ] at hb; exact hb
     rw [layF, foldl_range_succ, ← layF,
-      hblk.get _ len _ _ len hl (Nat.le_refl _) (by rw [n_eq]; omega) j (by rw [n_eq]; exact hj)]
+      hblk.get _ len _ _ len hl (Nat.le_refl _) (by rw [n_eq]; omega_arith) j (by rw [n_eq]; exact hj)]
     have hd : ∀ i, 2 * len * b ≤ i → i < 2 * len * b + 2 * len → i / (2 * len) = b ∧
         i % (2 * len) = i - 2 * len * b := fun i h1 h2 => by
       have e1 : i / (2 * len) = b := by
@@ -45,28 +46,28 @@ theorem layF_get (F : Poly) {len : Nat} (hl : 0 < len) (zi : Nat → Nat) {b : N
         · rw [Nat.succ_mul, Nat.mul_comm b]; exact h2
       refine ⟨e1, ?_⟩
       have := Nat.div_add_mod i (2 * len)
-      rw [e1] at this; omega
+      rw [e1] at this; omega_arith
     by_cases h1 : 2 * len * b ≤ j ∧ j < 2 * len * b + len
-    · obtain ⟨d1, d2⟩ := hd j h1.1 (by omega)
-      rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ih (by omega) hj, ih (by omega) (by omega), d1,
-        ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega)),
-        ite_eq_left_of_eq_true _ _ (eq_true (show j % (2 * len) < len by omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by omega)),
-        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j + len < 2 * len * b by omega))]
+    · obtain ⟨d1, d2⟩ := hd j h1.1 (by omega_arith)
+      rw [ite_eq_left_of_eq_true _ _ (eq_true h1), ih (by omega_arith) hj, ih (by omega_arith) (by omega_arith), d1,
+        ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega_arith)),
+        ite_eq_left_of_eq_true _ _ (eq_true (show j % (2 * len) < len by omega_arith)),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by omega_arith)),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j + len < 2 * len * b by omega_arith))]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
       by_cases h2 : 2 * len * b + len ≤ j ∧ j < 2 * len * b + len + len
-      · obtain ⟨d1, d2⟩ := hd j (by omega) (by omega)
-        rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ih (by omega) (by omega), ih (by omega) hj, d1,
-          ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j % (2 * len) < len by omega)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j - len < 2 * len * b by omega)),
-          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by omega))]
-      · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ih (by omega) hj]
+      · obtain ⟨d1, d2⟩ := hd j (by omega_arith) (by omega_arith)
+        rw [ite_eq_left_of_eq_true _ _ (eq_true h2), ih (by omega_arith) (by omega_arith), ih (by omega_arith) hj, d1,
+          ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega_arith)),
+          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j % (2 * len) < len by omega_arith)),
+          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j - len < 2 * len * b by omega_arith)),
+          ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * b by omega_arith))]
+      · rw [ite_eq_right_of_eq_false _ _ (eq_false h2), ih (by omega_arith) hj]
         by_cases h3 : j < 2 * len * b
         · rw [ite_eq_left_of_eq_true _ _ (eq_true h3),
-            ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega))]
+            ite_eq_left_of_eq_true _ _ (eq_true (show j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega_arith))]
         · rw [ite_eq_right_of_eq_false _ _ (eq_false h3),
-            ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega))]
+            ite_eq_right_of_eq_false _ _ (eq_false (show ¬ j < 2 * len * (b + 1) by rw [Nat.mul_succ]; omega_arith))]
 
 end
 
@@ -83,16 +84,16 @@ theorem polyIs_write2L {m : Mem} {p : Addr} {P R : Poly} (hP : PolyIs m p P) {j 
     PolyIs ((m.writeW (coeffAddr p j) (s.ymm x)).writeW (coeffAddr p j') (s.ymm y)) p R :=
   polyIs_write2Y hP hj hj' hsep (a := fun e => R[j + e]!) (b := fun e => R[j' + e]!)
     (ylanes_ymm (fun e he => (hx 0 (by decide) e he).trans (by simp only [Nat.mul_zero, Nat.add_zero]))
-      (fun e he => (hx 1 (by decide) e he).trans (by dsimp only; rw [show j + 4 * 1 + e = j + (e + 4) by omega])))
+      (fun e he => (hx 1 (by decide) e he).trans (by dsimp only; rw [show j + 4 * 1 + e = j + (e + 4) by omega_arith])))
     (ylanes_ymm (fun e he => (hy 0 (by decide) e he).trans (by simp only [Nat.mul_zero, Nat.add_zero]))
-      (fun e he => (hy 1 (by decide) e he).trans (by dsimp only; rw [show j' + 4 * 1 + e = j' + (e + 4) by omega])))
+      (fun e he => (hy 1 (by decide) e he).trans (by dsimp only; rw [show j' + 4 * 1 + e = j' + (e + 4) by omega_arith])))
     fun i hi => by
       by_cases h1 : j ≤ i ∧ i < j + 8
-      · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), show j + (i - j) = i by omega]
+      · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), show j + (i - j) = i by omega_arith]
       · rw [ite_eq_right_of_eq_false _ _ (eq_false h1)]
         by_cases h2 : j' ≤ i ∧ i < j' + 8
-        · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), show j' + (i - j') = i by omega]
-        · rw [ite_eq_right_of_eq_false _ _ (eq_false h2)]; exact hR i hi (by omega) (by omega)
+        · rw [ite_eq_left_of_eq_true _ _ (eq_true h2), show j' + (i - j') = i by omega_arith]
+        · rw [ite_eq_right_of_eq_false _ _ (eq_false h2)]; exact hR i hi (by omega_arith) (by omega_arith)
 
 theorem DLanes.congr {x : BitVec 128} {f g : Nat → Word} (h : DLanes x f) (e : ∀ i < 4, f i = g i) : DLanes x g :=
   fun i hi => by rw [h i hi, e i hi]
@@ -145,8 +146,8 @@ theorem ystep {fP : Addr} {len st u k : Nat} (hl : 8 ≤ len) (hs : st + 2 * len
         Frame [pR fP] s.mem s'.mem ∧ YConsts s' ∧ (∀ l < 2, s'.lane .xmm13 l = s.lane .xmm13 l) ∧
         (∀ l < 2, s'.lane .xmm12 l = s.lane .xmm12 l) ∧ Keep [.rdx, .rcx] s s' ∧
         s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) ∧ s'.mxcsr = s.mxcsr := by
-  have j0 : st + 8 * u + 8 ≤ 256 := by omega
-  have j1 : st + 8 * u + len + 8 ≤ 256 := by omega
+  have j0 : st + 8 * u + 8 ≤ 256 := by omega_arith
+  have j1 : st + 8 * u + len + 8 ≤ 256 := by omega_arith
   have a1 : coeffAddr fP (st + 8 * u) + BitVec.ofNat 64 (4 * len) = coeffAddr fP (st + 8 * u + len) :=
     coeffAddr_add _ _ _
   have r0 : InRegions (s.rd ++ s.wr) (coeffAddr fP (st + 8 * u) + BitVec.ofNat 64 0) 32 := by
@@ -183,16 +184,16 @@ theorem ystep {fP : Addr} {len st u k : Nat} (hl : 8 ≤ len) (hs : st + 2 * len
   · have hR : ∀ i < 256, (blk G len k st (8 * (u + 1)))[i]! = if st + 8 * u ≤ i ∧ i < st + 8 * u + 8 then
         (op P[i]! P[i + len]! (zetas k)).1 else if st + 8 * u + len ≤ i ∧ i < st + 8 * u + len + 8 then
         (op P[i - len]! P[i]! (zetas k)).2 else P[i]! := fun i hi => by
-      rw [← hP, show 8 * (u + 1) = 8 * u + 8 by omega, hblk.add, hblk.get _ _ _ _ _ (by omega) (by omega)
-        (by rw [n_eq]; omega) _ (by rw [n_eq]; exact hi)]
-    refine polyIs_write2L (s := s3) hS j0 j1 (by omega) (fun l hl e he => ?_) (fun l hl e he => ?_)
-      (fun i hi h1 h2 => by rw [hR i hi, ite_eq_right (by omega), ite_eq_right (by omega)])
-    · rw [(B3 l hl).1 e he]; dsimp only; rw [hR _ (by omega), ite_eq_left (by omega),
-        show st + 8 * u + len + 4 * l + e = st + 8 * u + 4 * l + e + len by omega]
-    · rw [(B3 l hl).2 e he]; dsimp only; rw [hR _ (by omega), ite_eq_right (by omega), ite_eq_left (by omega),
-        show st + 8 * u + len + 4 * l + e - len = st + 8 * u + 4 * l + e by omega]
+      rw [← hP, show 8 * (u + 1) = 8 * u + 8 by omega_arith, hblk.add, hblk.get _ _ _ _ _ (by omega_arith) (by omega_arith)
+        (by rw [n_eq]; omega_arith) _ (by rw [n_eq]; exact hi)]
+    refine polyIs_write2L (s := s3) hS j0 j1 (by omega_arith) (fun l hl e he => ?_) (fun l hl e he => ?_)
+      (fun i hi h1 h2 => by rw [hR i hi, ite_eq_right (by omega_arith), ite_eq_right (by omega_arith)])
+    · rw [(B3 l hl).1 e he]; dsimp only; rw [hR _ (by omega_arith), ite_eq_left (by omega_arith),
+        show st + 8 * u + len + 4 * l + e = st + 8 * u + 4 * l + e + len by omega_arith]
+    · rw [(B3 l hl).2 e he]; dsimp only; rw [hR _ (by omega_arith), ite_eq_right (by omega_arith), ite_eq_left (by omega_arith),
+        show st + 8 * u + len + 4 * l + e - len = st + 8 * u + 4 * l + e by omega_arith]
   · rw [show (32 : BitVec 64) = BitVec.ofNat 64 (4 * 8) from rfl, coeffAddr_add,
-      show st + 8 * u + 8 = st + 8 * (u + 1) by omega]
+      show st + 8 * u + 8 = st + 8 * (u + 1) by omega_arith]
   · exact frame_write2Y (Frame.refl _ _) j0 j1 _ _
   · exact ylanes_gpr (s := s3) (fun r l => by simp only [lane_setReg, lane_setFlags, State.setMem_lane]) o13 hc
       (by decide) (by decide)
@@ -234,7 +235,7 @@ theorem yblock_ok {fP sP : Addr} {len st kz : Nat} (h8 : 8 ≤ len) (hl8 : len %
   have dx2 : s2.gpr .rdx = coeffAddr fP st := by rw [o2.keep.gpr (by decide), g1, hdx]
   have hw2 : pR fP ∈ s2.wr := by rw [o2.keep.2.2, o1.wr]; exact hwf
   have m2 : s2.mem = s.mem := by rw [o2.mem, o1.mem]
-  refine WP.seq (WP.mono (wp_rcxLoopY (N := len / 8) (by omega) (by omega)
+  refine WP.seq (WP.mono (wp_rcxLoopY (N := len / 8) (by omega_arith) (by omega_arith)
     (fun u w => PolyIs w.mem fP (blk G len kz st (8 * u)) ∧ w.gpr .rdx = coeffAddr fP (st + 8 * u) ∧
       YConsts w ∧ (∀ l < 2, w.lane .xmm13 l = s2.lane .xmm13 l) ∧ (∀ l < 2, w.lane .xmm12 l = s2.lane .xmm12 l) ∧
       Keep [.rcx, .rdx] s2 w ∧ Frame [pR fP] s2.mem w.mem ∧ w.mxcsr = s2.mxcsr)
@@ -243,7 +244,7 @@ theorem yblock_ok {fP sP : Addr} {len st kz : Nat} (h8 : 8 ≤ len) (hl8 : len %
       fun l _ => o.lane hy _ l, fun l _ => o.lane hy _ l, o.keep.mono (by simp),
       by rw [o.mem]; exact Frame.refl _ _, o.mxcsr⟩)
     (fun u hu w ⟨hS', hdx', hc', hz', hzo', hk', hf', hx'⟩ => WP.mono (ystep hbf hY hblk h8 hs (by
-        have := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero hl8); omega) hc'
+        have := Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero hl8); omega_arith) hc'
         (fun l hl => by rw [hz' l hl, l2]; exact (z1 l hl).1)
         (fun l hl => by rw [hz' l hl, hzo' l hl, l2, l2]; exact (z1 l hl).2) hdx' hS'
         (by rw [hk'.2.2]; exact hw2))
@@ -254,8 +255,8 @@ theorem yblock_ok {fP sP : Addr} {len st kz : Nat} (h8 : 8 ≤ len) (hl8 : len %
   rw [show 8 * (len / 8) = len from Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hl8)] at hS3 hdx3
   have hax : w.gpr .rax = s.gpr .rax := by rw [hk3.gpr (by decide), o2.keep.gpr (by decide), g1]
   have h8w : w.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz := by rw [hk3.gpr (by decide), h82, g1]
-  vrund [hdx3, sx_ofNat (show 4 * len < 2 ^ 31 by omega), hax, h8w]
-  refine ⟨hS3, by rw [coeffAddr_add, show st + len + len = st + 2 * len by omega], ?_⟩
+  vrund [hdx3, sx_ofNat (show 4 * len < 2 ^ 31 by omega_arith), hax, h8w]
+  refine ⟨hS3, by rw [coeffAddr_add, show st + len + len = st + 2 * len by omega_arith], ?_⟩
   have k1 : Keep [.r8, .rcx, .rdx, .rax] s w :=
     (Keep.trans (⟨fun r _ => by rw [g1], o1.rd, o1.wr⟩ : Keep [] s s1) (o2.keep.trans hk3)).mono (by simp)
   refine ⟨⟨fun r hr => ?_, k1.2.1, k1.2.2⟩, by rw [← m2]; exact hf3,
@@ -284,15 +285,15 @@ theorem ylay_ok {fP sP : Addr} {len k : Nat} (hlen : len ∈ [8, 16, 32, 64, 128
       w.gpr .rax = BitVec.ofNat 64 (128 / len) ∧ GOnly [.rdx, .r8, .rax] s w ∧ w.ymmHi = s.ymmHi)
     (by
       simp only [leaR]
-      vrund [sx_ofNat (show 4 * k < 2 ^ 31 by omega), hsi, hdi, RegUpd.ymmHi_setReg]
+      vrund [sx_ofNat (show 4 * k < 2 ^ 31 by omega_arith), hsi, hdi, RegUpd.ymmHi_setReg]
       refine ⟨?_, by gonlyd, rfl⟩
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-      omega) fun w ⟨hdx, h8r, hax, o, hy⟩ => ?_)
+      omega_arith) fun w ⟨hdx, h8r, hax, o, hy⟩ => ?_)
   have hwf' : pR fP ∈ w.wr := by rw [o.keep.2.2]; exact hwf
   have hw' : pR sP ∈ w.wr := by rw [o.keep.2.2]; exact hw
   have cw : YConsts w := ylanes_gpr (s := s) (o.lane hy) (YOnly.refl [] s) hc (by decide) (by decide)
-  refine WP.mono (wp_countdown (cnt := .rax) (N := 128 / len) (by omega) hpos
+  refine WP.mono (wp_countdown (cnt := .rax) (N := 128 / len) (by omega_arith) hpos
     (fun c u => PolyIs u.mem fP (layF blk F len zi c) ∧ u.gpr .rdx = coeffAddr fP (2 * len * c) ∧
       u.gpr .r8 = coeffAddr sP (zi c) ∧ BInvY fP w u ∧ Tab zmTab u.mem sP 256)
     (fun c hc u ⟨hS', hdx', h8', hb', hT'⟩ _ => ?_) (fun u h => h)
@@ -301,8 +302,8 @@ theorem ylay_ok {fP sP : Addr} {len k : Nat} (hlen : len ∈ [8, 16, 32, 64, 128
     fun u ⟨hS', _, _, hb', _⟩ => ⟨hS', ⟨(o.keep.trans hb'.keep).mono (by simp),
       by rw [← o.mem]; exact hb'.frame, hb'.consts, by rw [hb'.mxcsr, o.mxcsr]⟩⟩
   have hs : 2 * len * c + 2 * len ≤ 256 := by
-    have : 2 * len * (c + 1) ≤ 2 * len * (128 / len) := Nat.mul_le_mul_left _ (by omega)
-    rw [Nat.mul_succ] at this; omega
+    have : 2 * len * (c + 1) ≤ 2 * len * (128 / len) := Nat.mul_le_mul_left _ (by omega_arith)
+    rw [Nat.mul_succ] at this; omega_arith
   refine WP.mono (yblock_ok hbf hY hblk h8 hl8 hl128 hs (hzi c hc) dz hb'.consts hdx' h8' hS' hT'
     (by rw [hb'.keep.2.2]; exact hwf') (by rw [hb'.keep.2.2]; exact hw'))
     fun u' ⟨hS'', hdx'', h8'', hax'', hzf'', hb''⟩ =>
@@ -330,8 +331,8 @@ theorem ystep4 {fP sP : Addr} {m kb : Nat} (hm : m < 16) (o₀ o₁ : BitVec 8) 
       PolyIs s'.mem fP (layF blk F 4 zi (2 * (m + 1))) ∧ s'.gpr .rdx = coeffAddr fP (16 * (m + 1)) ∧
       s'.gpr .r8 = s.gpr .r8 + BitVec.signExtend 64 dz ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) ∧ BInvY fP s s' := by
-  have j0 : 16 * m + 8 ≤ 256 := by omega
-  have j1 : 16 * m + 8 + 8 ≤ 256 := by omega
+  have j0 : 16 * m + 8 ≤ 256 := by omega_arith
+  have j1 : 16 * m + 8 + 8 ≤ 256 := by omega_arith
   have a1 : coeffAddr fP (16 * m) + BitVec.ofNat 64 32 = coeffAddr fP (16 * m + 8) := coeffAddr_add _ _ 8
   have r0 : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 0) 32 := by
     rw [hdx, add_ofNat_zero]; exact f_in32 (List.mem_append_right s.rd hwf) j0
@@ -346,8 +347,8 @@ theorem ystep4 {fP sP : Addr} {m kb : Nat} (hm : m < 16) (o₀ o₁ : BitVec 8) 
   have o12 := o1.trans o2
   -- the zetas
   rw [WP.block_append_iff]
-  have hk0 : ∀ j < 4, kb + sel o₀ j < 256 := fun j _ => by have := sel_lt o₀ j; omega
-  have hk1 : ∀ j < 4, kb + sel o₁ j < 256 := fun j _ => by have := sel_lt o₁ j; omega
+  have hk0 : ∀ j < 4, kb + sel o₀ j < 256 := fun j _ => by have := sel_lt o₀ j; omega_arith
+  have hk1 : ∀ j < 4, kb + sel o₁ j < 256 := fun j _ => by have := sel_lt o₁ j; omega_arith
   refine WP.mono (yzetaS_ok o₀ o₁ (zP := sP) (k := kb) hk0 hk1 (by rw [o12.gpr, h8])
     (by rw [o12.rd, o12.wr]; exact tab_in (List.mem_append_right _ hw) hk) (by rw [o12.mem]; exact hT))
     fun s3 ⟨Z0, Z1, ZO, o3⟩ => ?_
@@ -374,16 +375,16 @@ theorem ystep4 {fP sP : Addr} {m kb : Nat} (hm : m < 16) (o₀ o₁ : BitVec 8) 
       rw [o6.lane _ (by decide) l hl, P5 l hl, perm20 _ _ hl]
       rcases lane01 hl with rfl | rfl
       · rw [ifp rfl, q4 0 (by decide)]
-        exact (dlanes_loadY hS j0 (by decide)).congr fun e _ => getP_congr P (by omega)
+        exact (dlanes_loadY hS j0 (by decide)).congr fun e _ => getP_congr P (by omega_arith)
       · rw [ifn (by decide), q5 0 (by decide)]
-        exact (dlanes_loadY hS j1 (by decide)).congr fun e _ => getP_congr P (by omega))
+        exact (dlanes_loadY hS j1 (by decide)).congr fun e _ => getP_congr P (by omega_arith))
     (fun l hl => by
       rw [P6 l hl, perm31 _ _ hl, o5.lane .xmm4 (by decide) 1 (by decide), o5.lane .xmm5 (by decide) 1 (by decide)]
       rcases lane01 hl with rfl | rfl
       · rw [ifp rfl, q4 1 (by decide)]
-        exact (dlanes_loadY hS j0 (by decide)).congr fun e _ => getP_congr P (by omega)
+        exact (dlanes_loadY hS j0 (by decide)).congr fun e _ => getP_congr P (by omega_arith)
       · rw [ifn (by decide), q5 1 (by decide)]
-        exact (dlanes_loadY hS j1 (by decide)).congr fun e _ => getP_congr P (by omega))
+        exact (dlanes_loadY hS j1 (by decide)).congr fun e _ => getP_congr P (by omega_arith))
     (fun l hl => by
       rw [(o5.trans o6).lane _ (by decide) l hl, l4]
       rcases lane01 hl with rfl | rfl
@@ -416,43 +417,43 @@ theorem ystep4 {fP sP : Addr} {m kb : Nat} (hm : m < 16) (o₀ o₁ : BitVec 8) 
       (if i % (2 * 4) < 4 then (op P[i]! P[i + 4]! (zetas (zi (i / (2 * 4))))).1
         else (op P[i - 4]! P[i]! (zetas (zi (i / (2 * 4))))).2) else P[i]! := fun i hi => by
     have hF : ∀ j, 16 * m ≤ j → j < 256 → P[j]! = F[j]! := fun j h1 h2 => by
-      rw [← hP, layF_get hblk F (by decide) zi (by omega) h2, ite_eq_right (by omega)]
-    rw [layF_get hblk F (by decide) zi (by omega) hi]
+      rw [← hP, layF_get hblk F (by decide) zi (by omega_arith) h2, ite_eq_right (by omega_arith)]
+    rw [layF_get hblk F (by decide) zi (by omega_arith) hi]
     by_cases h1 : 16 * m ≤ i ∧ i < 16 * m + 16
-    · rw [ite_eq_left (by omega), ite_eq_left h1]
+    · rw [ite_eq_left (by omega_arith), ite_eq_left h1]
       by_cases h2 : i % (2 * 4) < 4
-      · rw [ite_eq_left h2, ite_eq_left h2, hF _ h1.1 hi, hF _ (by omega) (by omega)]
-      · rw [ite_eq_right h2, ite_eq_right h2, hF _ (by omega) (by omega), hF _ h1.1 hi]
-    · rw [ite_eq_right h1, ← hP, layF_get hblk F (by decide) zi (by omega) hi]
+      · rw [ite_eq_left h2, ite_eq_left h2, hF _ h1.1 hi, hF _ (by omega_arith) (by omega_arith)]
+      · rw [ite_eq_right h2, ite_eq_right h2, hF _ (by omega_arith) (by omega_arith), hF _ h1.1 hi]
+    · rw [ite_eq_right h1, ← hP, layF_get hblk F (by decide) zi (by omega_arith) hi]
       by_cases h3 : i < 16 * m
-      · rw [ite_eq_left (show i < 2 * 4 * (2 * (m + 1)) by omega),
-          ite_eq_left (show i < 2 * 4 * (2 * m) by omega)]
-      · rw [ite_eq_right (show ¬ i < 2 * 4 * (2 * (m + 1)) by omega),
-          ite_eq_right (show ¬ i < 2 * 4 * (2 * m) by omega)]
+      · rw [ite_eq_left (show i < 2 * 4 * (2 * (m + 1)) by omega_arith),
+          ite_eq_left (show i < 2 * 4 * (2 * m) by omega_arith)]
+      · rw [ite_eq_right (show ¬ i < 2 * 4 * (2 * (m + 1)) by omega_arith),
+          ite_eq_right (show ¬ i < 2 * 4 * (2 * m) by omega_arith)]
   refine ⟨?_, ?_, ?_, ?_, ?_, ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_⟩⟩
-  · refine polyIs_write2L (s := s9) hS j0 j1 (by omega) (fun l hl => ?_) (fun l hl => ?_)
-      (fun i hi h1 h2 => by rw [hR i hi, ite_eq_right (by omega)])
+  · refine polyIs_write2L (s := s9) hS j0 j1 (by omega_arith) (fun l hl => ?_) (fun l hl => ?_)
+      (fun i hi h1 h2 => by rw [hR i hi, ite_eq_right (by omega_arith)])
     · rw [o9.lane .xmm4 (by decide) l hl, P8 l hl, perm20 _ _ hl]
       rcases lane01 hl with rfl | rfl
       · rw [ifp rfl]
         exact (B7 0 (by decide)).1.congr fun e he => by
-          rw [hR _ (by omega), ite_eq_left (by omega), ite_eq_left (by omega)]
-          exact congrArg Prod.fst (op_idx op P zi (by omega) (by omega) (by omega))
+          rw [hR _ (by omega_arith), ite_eq_left (by omega_arith), ite_eq_left (by omega_arith)]
+          exact congrArg Prod.fst (op_idx op P zi (by omega_arith) (by omega_arith) (by omega_arith))
       · rw [ifn (by decide)]
         exact (B7 0 (by decide)).2.congr fun e he => by
-          rw [hR _ (by omega), ite_eq_left (by omega), ite_eq_right (by omega)]
-          exact congrArg Prod.snd (op_idx op P zi (by omega) (by omega) (by omega))
+          rw [hR _ (by omega_arith), ite_eq_left (by omega_arith), ite_eq_right (by omega_arith)]
+          exact congrArg Prod.snd (op_idx op P zi (by omega_arith) (by omega_arith) (by omega_arith))
     · rw [P9 l hl, perm31 _ _ hl, o8.lane .xmm0 (by decide) 1 (by decide),
         o8.lane .xmm3 (by decide) 1 (by decide)]
       rcases lane01 hl with rfl | rfl
       · rw [ifp rfl]
         exact (B7 1 (by decide)).1.congr fun e he => by
-          rw [hR _ (by omega), ite_eq_left (by omega), ite_eq_left (by omega)]
-          exact congrArg Prod.fst (op_idx op P zi (by omega) (by omega) (by omega))
+          rw [hR _ (by omega_arith), ite_eq_left (by omega_arith), ite_eq_left (by omega_arith)]
+          exact congrArg Prod.fst (op_idx op P zi (by omega_arith) (by omega_arith) (by omega_arith))
       · rw [ifn (by decide)]
         exact (B7 1 (by decide)).2.congr fun e he => by
-          rw [hR _ (by omega), ite_eq_left (by omega), ite_eq_right (by omega)]
-          exact congrArg Prod.snd (op_idx op P zi (by omega) (by omega) (by omega))
+          rw [hR _ (by omega_arith), ite_eq_left (by omega_arith), ite_eq_right (by omega_arith)]
+          exact congrArg Prod.snd (op_idx op P zi (by omega_arith) (by omega_arith) (by omega_arith))
   · rw [show BitVec.signExtend 64 (64 : BitVec 32) = BitVec.ofNat 64 (4 * 16) by decide, coeffAddr_add,
       Nat.mul_succ]
   · rw [g9, h84, o3.gpr, o12.gpr]
@@ -478,7 +479,7 @@ theorem ylay4_ok {fP sP : Addr} (k : Nat) (o₀ o₁ : BitVec 8) (dz : BitVec 32
     (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr)
     (hd : (pR sP).Disjoint (pR fP)) :
     WP isa (ylay4 bf k o₀ o₁ dz) s fun s' => PolyIs s'.mem fP (layF blk F 4 zi 32) ∧ BInvY fP s s' := by
-  have hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega
+  have hk0 : k + 4 ≤ 256 := by have := hk 0 (by decide); omega_arith
   refine WP.seq (WP.mono (ypre21 k hk0 hdi hsi) fun w ⟨hdx, h8, og, hy⟩ => ?_)
   have cw : YConsts w := ylanes_gpr (s := s) (og.lane hy) (YOnly.refl [] s) hc (by decide) (by decide)
   refine WP.mono (wp_rcxLoopY (N := 16) (by decide) (by decide)

@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Calls of `vg_gf25519_r32_pow250` on x86 (32-bit)
@@ -36,21 +38,20 @@ theorem sub_apart {x : BitVec 32} {s : State} (hc : Ctx 8192 x s) {d n : Nat} (h
   (hc.stk rfl (Nat.le_refl _)).2.sub_left (by
     rw [scR_eq]; exact sub_sub hc.fit (Nat.zero_le _) (by omega) (by omega))
 
-theorem pow250Call_ok {x : BitVec 32} {s : State} (hc : Ctx 8192 x s) :
+/-- A call from a working space of `W` bytes, the 4096 the function uses apart
+from the 8 bytes of stack below `esp`. -/
+theorem pow250Call_ok' {W : Nat} {x : BitVec 32} {s : State} (hc : Ctx W x s) (hE : 8 ≤ (s.gpr .esp).toNat)
+    (dis4 : (scR 4096 x).Disjoint (callStk s)) :
     WP isa pow250Call s fun t => Keep s t ∧ Frame [sub x 512 512, callStk s] s.mem t.mem ∧
       F t.mem x E1 = pw (F s.mem x Spec.X25519.Field32.aAt) (2 ^ 250 - 1) ∧
       F t.mem x E0 = pw (F s.mem x Spec.X25519.Field32.aAt) 11 := by
-  obtain ⟨hE, hdis⟩ := hc.stk rfl (Nat.le_refl _)
-  have hfit8 := hc.fit
-  have hfit : x.toNat + 4096 ≤ 2 ^ 32 := by omega
+  have hfit : x.toNat + 4096 ≤ 2 ^ 32 := hc.fit4
   have fit : 4 * [Reg.edi].length + 4 ≤ (s.gpr .esp).toNat := hE
   let rd : List Region := [below (s.gpr .esp) 4]
   let wr : List Region := [scR 4096 x]
   obtain ⟨e, he⟩ : ∃ e, e = (pushed [.edi] s).callEntry.withRegions rd wr := ⟨_, rfl⟩
   have esp_e : e.gpr .esp = s.gpr .esp - BitVec.ofNat 32 8 := by
     rw [he, State.withRegions_gpr]; exact callEntry_esp' [.edi] s
-  have sub4 : Region.Sub (scR 4096 x) (scR 8192 x) := Region.sub_prefix (by decide)
-  have dis4 : (scR 4096 x).Disjoint (callStk s) := hdis.sub_left sub4
   have entry : Entry e x := by
     refine ⟨?_, hfit, by rw [he]; exact List.mem_singleton_self _, ?_⟩
     · rw [he, arg_withRegions, callEntry_arg fit (by decide) (by decide)]; exact hc.edi
@@ -74,10 +75,10 @@ theorem pow250Call_ok {x : BitVec 32} {s : State} (hc : Ctx 8192 x s) :
     refine hf.readW (Region.contains_self _ _) (fun r hr => hret.sub_right ?_) (by decide)
     rw [List.mem_singleton.mp hr, scR_eq]
     exact sub_sub hfit (Nat.zero_le _) (by decide) (by decide)
-  have cov4 : ∀ ts : List Region, scR 8192 x ∈ ts → Covers wr ts := fun ts h =>
-    Covers.of_sub fun r hr => ⟨scR 8192 x, h, 0, by
+  have cov4 : ∀ ts : List Region, scR W x ∈ ts → Covers wr ts := fun ts h =>
+    Covers.of_sub fun r hr => ⟨scR W x, h, 0, by
       rw [List.mem_singleton.mp hr]; exact (BitVec.add_zero _).symm, by
-      rw [List.mem_singleton.mp hr]; show 0 + 4096 ≤ 8192; decide⟩
+      rw [List.mem_singleton.mp hr]; show 0 + 4096 ≤ W; omega_using [hc.room]⟩
   refine WP.callWith (k := K) (rd := rd) (wr := wr) hK pow250Fn_noSp (by decide) (by decide)
     (by rw [pow250Fn_stack]; exact hE)
     ⟨he.symm, Covers.append_left (Covers.of_mem fun r hr => by
@@ -100,5 +101,12 @@ theorem pow250Call_ok {x : BitVec 32} {s : State} (hc : Ctx 8192 x s) :
       rw [List.mem_singleton.mp hr]; exact List.mem_cons_self ..)
   · rw [← hm2, h1, fstk _ (by decide)]
   · rw [← hm2, h0, fstk _ (by decide)]
+
+theorem pow250Call_ok {x : BitVec 32} {s : State} (hc : Ctx 8192 x s) :
+    WP isa pow250Call s fun t => Keep s t ∧ Frame [sub x 512 512, callStk s] s.mem t.mem ∧
+      F t.mem x E1 = pw (F s.mem x Spec.X25519.Field32.aAt) (2 ^ 250 - 1) ∧
+      F t.mem x E0 = pw (F s.mem x Spec.X25519.Field32.aAt) 11 :=
+  have h := hc.stk rfl (Nat.le_refl _)
+  pow250Call_ok' hc h.1 (h.2.sub_left (Region.sub_prefix (by decide)))
 
 end VG.Proof.X25519.X86.Field32

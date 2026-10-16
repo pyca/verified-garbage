@@ -29,7 +29,7 @@ structure Abs where
 def writesVec : Instr → Bool
   | .movdquLoad .. | .xop _ | .vop _ | .vmovdquLoad .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
-  | .eop _ | .evLoad .. | .evMadd52Load .. => true
+  | .eop _ | .evLoad .. | .evMadd52Load .. | .kLoad .. => true
   | _ => false
 
 /-- What is known of `r` after an instruction. -/
@@ -83,6 +83,38 @@ def keeps (r : Reg) (c : Prog isa) : Bool :=
   | some a => a.ok
   | none => false
 
+/-- An instruction that writes no vector register leaves what is known of
+the SSE registers. -/
+theorem step_xs {r : Reg} {i : Instr} (h : writesVec i = false) (a : Abs) : (step r a i).xs = a.xs := by
+  unfold step
+  split
+  · simp [writesVec] at h
+  · cases _ == r <;> rfl
+  · simp only [h, Bool.cond_false]
+
+theorem foldl_xs {r : Reg} : ∀ {is : List Instr}, is.all (fun i => !writesVec i) = true →
+    ∀ a : Abs, (is.foldl (step r) a).xs = a.xs
+  | [], _, _ => rfl
+  | i :: is, h, a => by
+    simp only [List.all_cons, Bool.and_eq_true, Bool.not_eq_true'] at h
+    rw [List.foldl_cons, foldl_xs (by simpa only [Bool.not_eq_true'] using h.2), step_xs h.1]
+
+/-- A block `pre ++ mid ++ post` keeps `r` if `mid` writes no vector register
+and `post` brings `r` back from where `pre` saved it, whatever `mid` did to
+`r`: only `pre` and `post` are evaluated (`hp`), not `mid` (`hm`, one pass
+for every register). -/
+theorem keeps_around {r : Reg} {pre mid post : List Instr}
+    (hm : mid.all (fun i => !writesVec i) = true)
+    (hp : ∀ b, (post.foldl (step r) ⟨b, (pre.foldl (step r) ⟨true, .empty⟩).xs⟩).ok = true) :
+    keeps r (.block (pre ++ mid ++ post)) = true := by
+  change (run r (pre ++ mid ++ post) (⟨true, .empty⟩ : Abs).ok (⟨true, .empty⟩ : Abs).xs.bits).ok = true
+  rw [run_eq, List.foldl_append, List.foldl_append]
+  have hx := foldl_xs (r := r) hm (pre.foldl (step r) ⟨true, .empty⟩)
+  generalize mid.foldl (step r) (pre.foldl (step r) ⟨true, .empty⟩) = a at hx
+  obtain ⟨b, xs⟩ := a
+  simp only at hx; subst hx
+  exact hp b
+
 /-! ## Soundness -/
 
 /-- What `a` says of `r` and `v` holds in `s`. -/
@@ -115,6 +147,7 @@ theorem exec_xmm {i : Instr} (hw : writesVec i = false) {s s' : State} (h : exec
     all_goals first
       | (simp only [exec, reduceCtorEq] at h; done)
       | (simp only [exec, Option.some.injEq] at h; subst h; rfl)
+      | (obtain ⟨_, rfl⟩ := State.storeMasked512_eq h; rfl)
       | (simp only [exec, State.store64, State.store32, State.store8, State.store128, State.store512,
           State.store256] at h
          split at h <;> cases h; rfl)

@@ -1,10 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # The `zmm` comb: what the vector instructions keep
@@ -40,9 +43,9 @@ theorem vop_exec_syms (o : VOp) (s : State) : (o.exec s).syms = s.syms := by
 
 /-- Closes `t.f = s.f` for `f` the memory, the regions, the registers or the statics, `t` built
 from `s` by vector instructions (unfolding local definitions). -/
-macro "zkeep" : tactic => `(tactic| simp (config := { zetaDelta := true }) only [ZOp.exec_mem, ZOp.exec_rd,
-  ZOp.exec_wr, ZOp.exec_gpr, zop_exec_syms, VOp.exec_mem, VOp.exec_rd, VOp.exec_wr, VOp.exec_gpr, vop_exec_syms,
-  State.setV_mem, State.setV_rd, State.setV_wr, State.setV_gpr, setV_syms, State.setZ_mem, State.setZ_rd,
-  State.setZ_wr, State.setZ_gpr, setZ_syms, State.setMem_rd, State.setMem_wr, State.setMem_gpr, setMem_syms])
+tactic_template "zkeep" : tactic => `(tactic| simp (config := { zetaDelta := true }) only [ZOp.exec_mem, ZOp.exec_rd,
+                   ZOp.exec_wr, ZOp.exec_gpr, zop_exec_syms, VOp.exec_mem, VOp.exec_rd, VOp.exec_wr, VOp.exec_gpr, vop_exec_syms,
+                   State.setV_mem, State.setV_rd, State.setV_wr, State.setV_gpr, setV_syms, State.setZ_mem, State.setZ_rd,
+                   State.setZ_wr, State.setZ_gpr, setZ_syms, State.setMem_rd, State.setMem_wr, State.setMem_gpr, setMem_syms])
 
 end VG.Proof.Ed25519.X86_64.Zmm

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.MlKem1024.X86.Unpack
 meta import VerifiedGarbage.Proof.MlKem1024.X86.Unpack
-public import VerifiedGarbage.Proof.MlKem.Encode1024
+import VerifiedGarbage.Proof.MlKem.Encode1024
 meta import VerifiedGarbage.Proof.MlKem.Encode1024
 public import VerifiedGarbage.Spec.MlKem.Contract1024
 meta import VerifiedGarbage.Spec.MlKem.Contract1024
@@ -18,6 +18,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM-1024 on x86 (32-bit): `vg_mlkem1024_decode_decompress`

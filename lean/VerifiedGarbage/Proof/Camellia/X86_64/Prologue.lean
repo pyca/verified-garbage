@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.Copy
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.Bitslice.Sym
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

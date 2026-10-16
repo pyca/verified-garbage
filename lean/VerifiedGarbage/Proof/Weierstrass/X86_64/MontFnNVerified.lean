@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
+import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnN
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnXVerified
@@ -8,6 +8,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Weierstrass.Slots
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Impl.Weierstrass.Slots
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # P-521's product modulo `n` as a function, on x86-64: verified

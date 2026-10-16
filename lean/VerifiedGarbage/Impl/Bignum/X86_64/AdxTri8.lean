@@ -40,13 +40,34 @@ def rowStep (i : Nat) (lo hi : Reg) (tail : List Reg) : Prog isa :=
 
 def rotate (rs : List Reg) : List Reg := rs.drop 2 ++ rs.take 1
 
+/-- A word of the first row, whose columns hold nothing yet: the low product
+straight into `col`, then the high word before it added. -/
+def word0 (k : Nat) (hi prev col : Reg) : List Instr :=
+  [.mulx hi col (.mem (at_ .rbp (8*k))),.adcx col (.reg prev)]
+
+/-- The first row's words from `k` on: the last column takes the last high
+word and the carry. -/
+def chain0 (k : Nat) (hi other prev : Reg) : List Reg → List Instr
+  | [] => []
+  | [col] => [.mov32 col (.imm 0),.adcx col (.reg prev)]
+  | col::next::rest => word0 k hi prev col ++ chain0 (k+1) other hi hi (next::rest)
+
+/-- The block's first row, which writes its columns rather than adding to
+them, so that nothing clears them first. -/
+def row0Core : List Reg → List Instr
+  | [] => []
+  | col::rest => ([.mov .rdx (.mem (at_ .rbp 0)),.alu32 .xor .rax (.reg .rax),
+      .mulx .rbx col (.mem (at_ .rbp 8))] : List Instr) ++ chain0 2 .rax .rbx .rbx rest
+
+def rowStep0 (lo hi : Reg) (tail : List Reg) : Prog isa :=
+  .seq (.block (row0Core (lo::hi::tail)))
+    (.seq (storeHead 0 lo hi) (.block [.mov32 lo (.imm 0)]))
+
 def rows : Nat → Nat → List Reg → Prog isa
   | 0, _, _ => .block []
   | n+1, i, rs => .seq (rowStep i rs[0]! rs[1]! (rs.drop 2)) (rows n (i+1) (rotate rs))
 
 def columns : List Reg := [.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15]
-
-def clearColumns : List Instr := columns.map (fun r => .mov32 r (.imm 0))
 
 def setup (a : Nat) : List Instr :=
   [.mov .rax (.mem (hdr (sFn 12))),.shift .shl .rax 3,
@@ -54,12 +75,13 @@ def setup (a : Nat) : List Instr :=
 
 /-- Zero the two words of the block's sixteen output words that no row writes,
 its first and last: the rows then write the other fourteen, and nothing has to
-clear the whole product buffer first. `r8` is zero. -/
+clear the whole product buffer first. -/
 def clearEnds : Prog isa := .seq (.block headBases)
-  (.seq (.block [.store (at_ .rcx 16) .r8]) (.block [.store (at_ .rcx 136) .r8]))
+  (.seq (.block [.mov32 .rax (.imm 0),.store (at_ .rcx 16) .rax]) (.block [.store (at_ .rcx 136) .rax]))
 
 def block (a : Nat) : Prog isa :=
-  .seq (.block (setup a)) (.seq (.block clearColumns) (.seq clearEnds (rows 7 0 columns)))
+  .seq (.block (setup a)) (.seq clearEnds
+    (.seq (rowStep0 .r8 .r9 [.r10,.r11,.r12,.r13,.r14,.r15]) (rows 6 1 (rotate columns))))
 
 def nextBlock : List Instr :=
   [.mov .rax (.mem (hdr (sFn 12))),.alu .add .rax (.imm 8),

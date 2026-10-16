@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Arm.Fixed
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
+import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # ECDSA on 32-bit ARM: `x`, `r`, `k R mod n` and the checks of `d`, `k`, `r`

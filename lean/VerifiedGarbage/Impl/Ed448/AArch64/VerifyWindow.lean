@@ -37,7 +37,7 @@ namespace VG.Impl.Ed448.AArch64
 
 open VG.AArch64
 open VG.Impl.X448.AArch64 (ld st slot BITS)
-open VG.Impl.X448.AArch64.Fast (codeOf)
+open VG.Impl.X448.AArch64.Fast (codeOf opsK)
 open VG.Impl.X448.AArch64.Base (constSlot)
 
 /-! ## The working space -/
@@ -166,14 +166,14 @@ def wcross : Prog isa :=
     Curve448.AArch64.copy (slot 2) (slot 5) ++ Curve448.AArch64.copy (slot 3) RX ++
     Curve448.AArch64.copy (slot 4) RY ++ constSlot (slot 5) 1)) <|
   .seq Point56.doubleCall <| .seq Point56.doubleCall <|
-  .block (codeOf [.mul (slot 12) (slot 0) (slot 5), .mul (slot 13) (slot 3) (slot 2),
-     .mul (slot 14) (slot 1) (slot 5), .mul (slot 15) (slot 4) (slot 2)])
+  opsK [.mul (slot 12) (slot 0) (slot 5), .mul (slot 13) (slot 3) (slot 2),
+     .mul (slot 14) (slot 1) (slot 5), .mul (slot 15) (slot 4) (slot 2)]
 
 /-- One comparison: slots 12 and 13 compared (`eqSlots`), then slots 14 and 15 copied into
 them, for the second pass, and `x19` counted down. -/
-def wcmp : List Instr :=
-  eqSlots 12 13 ++ Curve448.AArch64.copy (slot 12) (slot 14) ++ Curve448.AArch64.copy (slot 13) (slot 15) ++
-    [.subImm .x .x19 .x19 1]
+def wcmp : Prog isa :=
+  .seq (eqSlots 12 13) <| .block (Curve448.AArch64.copy (slot 12) (slot 14) ++
+    Curve448.AArch64.copy (slot 13) (slot 15) ++ [.subImm .x .x19 .x19 1])
 
 /-- The result `x0 = (x20 == 0)`, and the registers restored. -/
 def wresult : List Instr :=
@@ -184,12 +184,12 @@ def wresult : List Instr :=
 /-- The comparisons of slots 12 and 13, then 14 and 15: two passes of `wcmp`, counted by
 `x19`; then `wresult`. -/
 def wfinish : Prog isa :=
-  .seq (.seq (.block [.movz .x .x19 2 0]) (.loop (.block wcmp) (.nonzero .x .x19))) (.block wresult)
+  .seq (.seq (.block [.movz .x .x19 2 0]) (.loop wcmp (.nonzero .x .x19))) (.block wresult)
 
 /-- The entry, the bits of `S`, its check, and the decodings of `A` (negated, into slots 6–7) and
 `R` (into slots 8–9), by one copy of `decode` (`decodes`). -/
 def wfront : Prog isa :=
-  .seq (.block (ventry ++ wsave)) <| .seq (bitsAt .x1 57 0 BITS) <| .seq (.block sCheck) <|
+  .seq (.seq ventry (.block wsave)) <| .seq (bitsAt .x1 57 0 BITS) <| .seq (.block sCheck) <|
   decodes
 
 def verifyEquation : Prog isa :=

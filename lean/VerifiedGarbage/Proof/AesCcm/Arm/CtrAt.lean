@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesCcm.Arm.Words
+import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 
 /-!
 # AES-CCM on ARMv7: a counter block `Ctrᵢ` (`ctrAt`)

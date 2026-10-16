@@ -6,12 +6,28 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskTail
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseCCTBase
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedMasksTiming
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! ## From `CachedMaskPrefix.lean` -/
 

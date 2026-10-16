@@ -2,12 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Fn
-public import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Copy
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Copy
 
 /-!
 # AES-GCM streaming encryption out of place, x86-64: constant time

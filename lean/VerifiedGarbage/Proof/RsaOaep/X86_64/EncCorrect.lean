@@ -5,12 +5,19 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 
 /-!
 # RSAES-OAEP encryption on x86-64: correctness
 
 The frame, the prologue and the checks of `k` and the message's length
-(zeros to `out` if either fails, `encMain` otherwise): `enc_correct`.
+(zeros to `out` if either fails, then the rest of the function):
+`encBodyWith_ok`, for `vg_rsa_oaep_<H>_mgf1_<G>_encrypt_precomputed`
+(`PcCorrect`).
 -/
 
 @[expose] public section
@@ -148,41 +155,26 @@ theorem encHead_ok {H : Spec.Mgf1.Hash} {Hm : Impl.Pbkdf2.Md.X86_64.Stream} {s :
 variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
   (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
 
-include hH KH hG KG mH mG in
-theorem enc_correct (s : State) (h : (encK mH.G mG.G).pre s) :
-    ∃ t s', Exec isa (encrypt Hl.stream Gm.stream pubChecked.name pubChecked.code) s t s' ∧ abiPreserved s s' ∧
-      (encK mH.G mG.G).post s s' := by
-  have hp : EPre mH.G s := EPre.of mH.G h
+include hH in
+/-- The prologue and the checks, then `main` from a state in the frame if
+they pass: `Q`, if failing them leads to `Q` and `main` does. -/
+theorem encBodyWith_ok {Hs : Spec.Mgf1.Hash} {main : Prog isa} {s : State} (hp : EPre Hs s) {Q : State → Prop}
+    (hfail : ∀ t', EnvE s t' → Spec.Rsa.written t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t'.gpr .rax).setWidth 32)
+      none → ¬ 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat → Q t')
+    (hmain : ∀ t, EnvE s t → Lay t (fb s) (stackArg s 5) →
+      Rep t.mem (fb s) (stackArg s 5) (fun o => s.mem (off (stackArg s 5) o)) (encW s) →
+      2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat → WP isa main t Q) :
+    WP isa (encBodyWith Hl.stream main) (allocState frameBytes s) Q := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD := hH.hD0; have hDN := hH.hDN; have hN := hH.N_le
-  have hlen : mH.G.len = Hl.D := mH.len
   have hsD : Hl.stream.D = Hl.D := rfl
-  have hnl : (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat).length = (s.gpr .rcx).toNat := by
-    simp [Spec.Rsa.bytesAt]
-  have hml : (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat).length = (stackArg s 3).toNat := by
-    simp [Spec.Rsa.bytesAt]
-  have hsl : (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len).length = mH.G.len := by simp [Spec.Rsa.bytesAt]
-  suffices hw : WP isa (encrypt Hl.stream Gm.stream pubChecked.name pubChecked.code) s
-      fun s' => abiPreserved s s' ∧ (encK mH.G mG.G).post s s' by
-    obtain ⟨t, s', he, hq⟩ := hw; exact ⟨t, s', he, hq⟩
-  refine wp_alloc (by have := hp.sp1; unfold encStack at this; unfold frameBytes; omega) ?_
-  have fin : ∀ s₂, EnvE s s₂ → Spec.Rsa.written s₂.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((s₂.gpr .rax).setWidth 32)
-      (Spec.RsaOaep.encrypt mH.G mG.G (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
-        (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
-        (Spec.Rsa.bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat)
-        (Spec.Rsa.bytesAt s.mem (stackArg s 2) (stackArg s 3).toNat)
-        (Spec.Rsa.bytesAt s.mem (stackArg s 4) mH.G.len)) →
-      s₂.gpr .rsp = fb s ∧ s₂.wr = (allocState frameBytes s).wr ∧
-        (abiPreserved s (freed frameBytes s₂) ∧ (encK mH.G mG.G).post s (freed frameBytes s₂)) :=
-    fun s₂ he hw => encEnd_ok hp he hw
-  unfold encBody seqs seqs seqs
+  unfold encBodyWith seqs seqs seqs
   have hW : ArgsW s (encW s) := fun _ _ => rfl
   obtain ⟨w14, w21, w22, w23, w24, w25, w26, w27, w28, w29, w30, w31⟩ := hW.w
   refine WP.seq (WP.mono (encHead_ok (Hm := Hl.stream) hp (by omega)) fun t2 ⟨he2, L2, R2, hax2, hcf2⟩ => ?_)
   refine WP.ite (M := isa) _ (show isa.eval .b t2 = _ from hcf2) (fun hb => ?_) (fun hb => ?_)
   · rw [decide_eq_true_eq] at hb
-    refine WP.mono (encFail_ok hp he2 L2 R2 hW) fun t' ⟨he', hw'⟩ => fin t' he' ?_
-    rw [encrypt_none (by rw [hnl, hlen, hml]; omega)]; exact hw'
+    exact WP.mono (encFail_ok hp he2 L2 R2 hW) fun t' ⟨he', hw'⟩ => hfail t' he' hw' (by omega)
   · rw [decide_eq_false_iff_not] at hb
     refine WP.seq (WP.mono (wp_good (block_good _ rfl) (chkMsg_ok (Hm := Hl.stream) L2 R2 (k := (s.gpr .rcx).toNat)
       (mLen := (stackArg s 3).toNat) (by rw [w30, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hax2 (by omega)
@@ -193,13 +185,8 @@ theorem enc_correct (s : State) (h : (encK mH.G mG.G).pre s) :
     have R3 : Rep t3.mem (fb s) (stackArg s 5) (fun o => s.mem (off (stackArg s 5) o)) (encW s) := hm3 ▸ R2
     refine WP.ite (M := isa) _ (show isa.eval .b t3 = _ from hcf3) (fun hb' => ?_) (fun hb' => ?_)
     · rw [decide_eq_true_eq] at hb'
-      refine WP.mono (encFail_ok hp he3 L3 R3 hW) fun t' ⟨he', hw'⟩ => fin t' he' ?_
-      rw [encrypt_none (by rw [hnl, hlen, hml]; omega)]; exact hw'
+      exact WP.mono (encFail_ok hp he3 L3 R3 hW) fun t' ⟨he', hw'⟩ => hfail t' he' hw' (by omega)
     · rw [decide_eq_false_iff_not] at hb'
-      refine WP.mono (encMain_ok hH KH hG KG mH mG hp he3 L3 R3 hW (by omega)) fun t' ⟨he', hw'⟩ =>
-        fin t' he' ?_
-      rw [encrypt_some (by rw [hsl]) (by rw [hnl, hlen, hml]; omega), hnl, hml, hlen]
-      rw [hlen] at hw'
-      exact hw'
+      exact hmain t3 he3 L3 R3 (by omega)
 
 end VG.Proof.RsaOaep.X86_64

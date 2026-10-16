@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
 # RSASSA-PSS verification on x86-64: the precondition by name, the frame
@@ -61,7 +63,7 @@ structure VPre (s : State) : Prop where
   L1 : 1 ≤ (s.gpr .rcx).toNat
   L2 : (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat
   hsg : (stackArg s 0).toNat = (s.gpr .rsi).toNat
-  hsl : 16 * (s.gpr .rsi).toNat + 1024 ≤ (stackArg s 4).toNat
+  hsl : 16 * (s.gpr .rsi).toNat + 32 + 1024 ≤ (stackArg s 4).toNat
 
 theorem VPre.of {s : State} (h : (verifyK G).pre s) : VPre G s := by
   simp only [verifyK] at h

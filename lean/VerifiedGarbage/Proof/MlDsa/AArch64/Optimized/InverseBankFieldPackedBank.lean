@@ -1,16 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePacked
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PackedLanes
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PackedLanes
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseArithmetic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseBankFieldSchedule
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Residue
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedBank
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TailBank
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
+import VerifiedGarbage.Spec.MlKem
 
 /-! ## From `InverseBankFieldPacked.lean` -/
 

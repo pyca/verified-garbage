@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
 /-!
 # AES-GCM's key setup and streaming functions on AArch64, with their working space on the stack

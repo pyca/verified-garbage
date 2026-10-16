@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.Loop
-public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Weierstrass.Words
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: tables of bits, and masks of bits
@@ -71,10 +74,10 @@ theorem bitMask_ok {s : State} {base : Addr} {size len : Nat} (hs : Scr s base s
   have hs₂ := hs.of_rest k₂' (by decide)
   have hf₂ := hf.of_rest k₂'
   have ea : State.addr (s₂.gpr .r4 + BitVec.ofNat 32 (d % 4096)) = off base (d + t) := by
-    rw [hf₂.ea_reg hs₂ e₂ (by have := far_add hd8; omega)]
+    rw [hf₂.ea_reg hs₂ e₂ (by have := far_add hd8; omega_using [hd, this])]
     have := far_add hd8
-    congr 1; omega
-  refine wp_ldrb (by omega) ea (hf₂.read (d := d + t) (n := 1) hd) fun s₃ u₃ => ?_
+    congr 1; omega_using [this]
+  refine wp_ldrb (by omega_using []) ea (hf₂.read (d := d + t) (n := 1) hd) fun s₃ u₃ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₄ u₄ => ?_
   refine wp_dp (op2_reg _ _) fun s₅ u₅ => WP.block_nil ⟨?_, k₂'.trans ((u₃.rest (by simp)).trans
     ((u₄.rest (by simp)).trans (u₅.rest (by simp)))), by rw [u₅.mem, u₄.mem, u₃.mem, m₂, u₁.mem]⟩
@@ -105,12 +108,12 @@ theorem bits_eq (src dst nbytes : Nat) :
   rfl
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
-    ((((b.setWidth 32 >>> j) &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD j then 1 else 0 := by
-  decide +kernel
+    ((((b.setWidth 32 >>> j) &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD j then 1 else 0 :=
+  fun b j _ => bitByte_getLsbD 32 (by decide) b j
 
 theorem bit_byte0 : ∀ b : BitVec 8,
-    (((b.setWidth 32 &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD 0 then 1 else 0 := by
-  decide +kernel
+    (((b.setWidth 32 &&& 1).setWidth 8) : BitVec 8) = if b.getLsbD 0 then 1 else 0 := fun b => by
+  rw [← BitVec.ushiftRight_zero (b.setWidth 32)]; exact bitByte_getLsbD 32 (by decide) b 0
 
 /-- Byte `j` of the eight at `r5 + dst`: bit `j` of the byte in `r4`. -/
 theorem bitJ_ok {s : State} {base : Addr} {size len : Nat} (hs : Scr s base size) (hf : Far s base len) {i : Nat}
@@ -120,8 +123,8 @@ theorem bitJ_ok {s : State} {base : Addr} {size len : Nat} (hs : Scr s base size
     WP isa (.block (bitJ dst j)) s fun s' => Rest [.r7] s s' ∧
       s'.mem = s.mem.writeW (off base (dst + (8 * i + j))) (if b.getLsbD j then 1 else 0 : BitVec 8) := by
   have fa := far_add hd8
-  have hoff : dst % 4096 + j < 4096 := by omega
-  have e : 8 * i + farOff dst + (dst % 4096 + j) = dst + (8 * i + j) := by omega
+  have hoff : dst % 4096 + j < 4096 := by omega_using [hj, hal]
+  have e : 8 * i + farOff dst + (dst % 4096 + j) = dst + (8 * i + j) := by omega_using [fa]
   rcases Nat.eq_zero_or_pos j with rfl | hj0
   · simp only [bitJ, ite_true, List.cons_append, List.nil_append]
     refine wp_dp (op2_imm (by decide)) fun s₁ u₁ => ?_
@@ -130,21 +133,21 @@ theorem bitJ_ok {s : State} {base : Addr} {size len : Nat} (hs : Scr s base size
     have hf₁ := hf.of_rest k₁
     have hb₁ : s₁.gpr .r5 = s₁.gpr .r12 + BitVec.ofNat 32 (8 * i + farOff dst) := by
       rw [k₁.gpr _ (by decide), k₁.gpr _ (by decide), hb]
-    refine wp_strb hoff (by rw [hf₁.ea_reg hs₁ hb₁ (by omega), e])
-      (hf₁.write (d := dst + (8 * i + 0)) (n := 1) (by omega)) fun s₂ m₂ => WP.block_nil
+    refine wp_strb hoff (by rw [hf₁.ea_reg hs₁ hb₁ (by omega_using [hd, e]), e])
+      (hf₁.write (d := dst + (8 * i + 0)) (n := 1) (by omega_using [hd])) fun s₂ m₂ => WP.block_nil
       ⟨k₁.trans (m₂.rest _), ?_⟩
     rw [m₂.mem, u₁.mem, u₁.gpr, dpVal, ha]
     exact congrArg _ (bit_byte0 b)
-  · simp only [bitJ, show ¬j = 0 by omega, ite_false, List.cons_append, List.nil_append]
-    refine wp_mov (op2_lsr (by omega)) fun s₁ u₁ => ?_
+  · simp only [bitJ, show ¬j = 0 by omega_using [hj0], ite_false, List.cons_append, List.nil_append]
+    refine wp_mov (op2_lsr (by omega_using [hj, hj0])) fun s₁ u₁ => ?_
     refine wp_dp (op2_imm (by decide)) fun s₂ u₂ => ?_
     have k₂ : Rest [.r7] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
     have hs₂ := hs.of_rest k₂ (by decide)
     have hf₂ := hf.of_rest k₂
     have hb₂ : s₂.gpr .r5 = s₂.gpr .r12 + BitVec.ofNat 32 (8 * i + farOff dst) := by
       rw [k₂.gpr _ (by decide), k₂.gpr _ (by decide), hb]
-    refine wp_strb hoff (by rw [hf₂.ea_reg hs₂ hb₂ (by omega), e])
-      (hf₂.write (d := dst + (8 * i + j)) (n := 1) (by omega)) fun s₃ m₃ => WP.block_nil
+    refine wp_strb hoff (by rw [hf₂.ea_reg hs₂ hb₂ (by omega_using [hd, e]), e])
+      (hf₂.write (d := dst + (8 * i + j)) (n := 1) (by omega_using [hd])) fun s₃ m₃ => WP.block_nil
       ⟨k₂.trans (m₃.rest _), ?_⟩
     rw [m₃.mem, u₂.mem, u₁.mem, u₂.gpr, dpVal, u₁.gpr, ha]
     exact congrArg _ (bit_byte b j hj)
@@ -162,17 +165,17 @@ theorem bitJs_ok {s : State} {base : Addr} {size len : Nat} (hs : Scr s base siz
   | k + 1, hk => by
     have hn := hf.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine VG.Proof.X25519.Arm.WP.append (bitJs_ok hs hf hb ha hd hd8 hal k (by omega)) fun s₁ ⟨k₁, e₁, O₁⟩ => ?_
+    refine VG.Proof.X25519.Arm.WP.append (bitJs_ok hs hf hb ha hd hd8 hal k (by omega_using [hk])) fun s₁ ⟨k₁, e₁, O₁⟩ => ?_
     refine WP.mono (bitJ_ok (hs.of_rest k₁ (by decide)) (hf.of_rest k₁) (i := i)
       (by rw [k₁.gpr _ (by decide), k₁.gpr _ (by decide), hb]) (b := b) (by rw [k₁.gpr _ (by decide), ha])
-      (j := k) (by omega) (by omega) hd8 hal) fun s₂ ⟨k₂, m₂⟩ => ?_
+      (j := k) (by omega_using [hk]) (by omega_using [hd, hk]) hd8 hal) fun s₂ ⟨k₂, m₂⟩ => ?_
     have O₂ : Outside base (dst + (8 * i + k)) 1 s₁.mem s₂.mem := by
-      rw [m₂]; exact writeW8_outside _ _ _ (by omega)
+      rw [m₂]; exact writeW8_outside _ _ _ (by omega_using [hd, hk, hn])
     refine ⟨k₁.trans k₂, fun j hj => ?_,
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
+      (O₁.mono (Nat.le_refl _) (by omega_using [])).trans (O₂.mono (by omega_using []) (by omega_using []))⟩
     rcases Nat.lt_or_ge j k with h | h
-    · rw [O₂ _ (by rw [ofs_off0 base (d := dst + (8 * i + j)) (by omega)]; omega), e₁ j h]
-    · obtain rfl : j = k := by omega
+    · rw [O₂ _ (by rw [ofs_off0 base (d := dst + (8 * i + j)) (by omega_using [hd, hk, hn, h])]; omega_using [h]), e₁ j h]
+    · obtain rfl : j = k := by omega_using [hj, h]
       rw [m₂, writeW8_self]
 
 /-- `r12 + (i << 3)`. -/
@@ -180,7 +183,7 @@ theorem rowAddr (e : BitVec 32) (i : Nat) : e + BitVec.ofNat 32 i <<< 3 = e + Bi
   congr 1
   apply BitVec.eq_of_toNat_eq
   rw [VG.Proof.X25519.Arm.toNat_shl, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-  omega
+  omega_using []
 
 /-- One byte of the number at `src`, the one below `r11 = i + 1`: its bits to
 the table at `dst`. -/
@@ -194,15 +197,15 @@ theorem bitsBody_ok {s : State} {base : Addr} {size len : Nat} (hs : Scr s base 
         if (s.mem (off base (src + i))).getLsbD j then 1 else 0) ∧
       Outside base (dst + 8 * i) 8 s.mem s'.mem := by
   simp only [bitsBody, List.cons_append, List.append_assoc]
-  refine wp_decCounter (j := i + 1) (by omega) ht fun s₁ u₁ => ?_
+  refine wp_decCounter (j := i + 1) (by omega_using []) ht fun s₁ u₁ => ?_
   have c₁ : s₁.gpr .r11 = BitVec.ofNat 32 i := by rw [u₁.gpr, Nat.add_sub_cancel]
   refine wp_dp (op2_reg _ _) fun s₂ u₂ => ?_
   have k₂ : Rest [.r4, .r5, .r7, .r11] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
   have hs₂ := hs.of_rest k₂ (by decide)
   have e₂ : s₂.gpr .r4 = s₂.gpr .r12 + BitVec.ofNat 32 i := by
     rw [u₂.gpr, dpVal, c₁, u₂.other _ (by decide)]
-  refine wp_ldrb (hs.off_lt (by omega)) (hs₂.ea_reg e₂ (d := src) (by omega))
-    (hs₂.read (d := i + src) (n := 1) (by omega)) fun s₃ u₃ => ?_
+  refine wp_ldrb (hs.off_lt (by omega_using [hsrc])) (hs₂.ea_reg e₂ (d := src) (by omega_using [hsrc]))
+    (hs₂.read (d := i + src) (n := 1) (by omega_using [hsrc])) fun s₃ u₃ => ?_
   refine wp_dp (op2_lsl (by decide)) fun s₄ u₄ => ?_
   have k₄ : Rest [.r4, .r5, .r7, .r11] s s₄ := k₂.trans ((u₃.rest (by simp)).trans (u₄.rest (by simp)))
   have r5₄ : s₄.gpr .r5 = s₄.gpr .r12 + BitVec.ofNat 32 (8 * i) := by
@@ -221,10 +224,10 @@ theorem bitsBody_ok {s : State} {base : Addr} {size len : Nat} (hs : Scr s base 
     rw [k₅.gpr _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), c₁]
   have r4₅ : s₅.gpr .r4 = (s.mem (off base (src + i))).setWidth 32 := by
     rw [k₅.gpr _ (by decide), r4₄]
-  refine VG.Proof.X25519.Arm.WP.append (bitJs_ok hs₅ hf₅ r5₅ r4₅ (dst := dst) (by omega) hd8 hal 8
+  refine VG.Proof.X25519.Arm.WP.append (bitJs_ok hs₅ hf₅ r5₅ r4₅ (dst := dst) (by omega_using [hd]) hd8 hal 8
     (Nat.le_refl _)) fun s₆ ⟨k₆, e₆, O₆⟩ => ?_
   have r11₆ : s₆.gpr .r11 = BitVec.ofNat 32 i := by rw [k₆.gpr _ (by decide), r11₅]
-  refine wp_testCounter (by omega) r11₆ fun s₇ f₇ z₇ => WP.block_nil
+  refine wp_testCounter (by omega_using [hi]) r11₆ fun s₇ f₇ z₇ => WP.block_nil
     ⟨by rw [f₇.gpr, r11₆], z₇, (k₅'.trans (k₆.mono (by simp))).trans (f₇.rest _), ?_, ?_⟩
   · rw [f₇.mem]; exact e₆
   · rw [f₇.mem, ← mem₄, ← m₅]; exact O₆
@@ -256,24 +259,24 @@ theorem bits_ok {s : State} {base : Addr} {size len : Nat} (hs : Scr s base size
     wp_mov (op2_imm henc) fun s₁ u₁ => WP.block_nil ⟨hs.of_rest (u₁.rest (ws := [.r4, .r5, .r7, .r11])
       (by simp)) (by decide), hf.of_rest (u₁.rest (ws := [.r4, .r5, .r7, .r11]) (by simp)), u₁.gpr,
       u₁.rest (by simp), by rw [u₁.mem]; exact VG.Proof.Mont.Outside.refl _ _ _ _,
-      fun t ht ht' => absurd ht' (by omega)⟩
+      fun t ht ht' => absurd ht' (by omega_using [ht])⟩
   refine WP.seq (WP.mono h0 fun s₁ h₁ => ?_)
   refine countLoop_ok (Inv := fun j s' => BInv base size len src dst n s s' j) (n := 8 * n)
-    (fun j s' h1 h2 hb => ?_) (fun s' hb => ⟨fun t ht => ?_, hb.keep, hb.mem⟩) (by omega) h₁
-  · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
-    refine WP.mono (bitsBody_ok hb.scr hb.far hb.r11 (by omega) (by omega) (by omega) hd8 hal)
+    (fun j s' h1 h2 hb => ?_) (fun s' hb => ⟨fun t ht => ?_, hb.keep, hb.mem⟩) (by omega_using [hn0]) h₁
+  · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega_using [h1]⟩
+    refine WP.mono (bitsBody_ok hb.scr hb.far hb.r11 (by omega_using [hdst, hnw, h2]) (by omega_using [hsrc, h2]) (by omega_using [hdst, h2]) hd8 hal)
       fun s'' ⟨b', z', k', bits', O'⟩ => ?_
     have hbyte : s'.mem (off base (src + i)) = s.mem (off base (src + i)) :=
-      hb.mem _ (by rw [ofs_off0 base (d := src + i) (by have := hs.nowrap; omega)]; omega)
+      hb.mem _ (by rw [ofs_off0 base (d := src + i) (by have := hs.nowrap; omega_using [hsrc, h2, this])]; omega_using [hsep, h2])
     refine ⟨⟨hb.scr.of_rest k' (by decide), hb.far.of_rest k', b', hb.keep.trans k',
-      hb.mem.trans (O'.mono (by omega) (by omega)), fun t ht ht' => ?_⟩, by rw [z']; rfl⟩
+      hb.mem.trans (O'.mono (by omega_using []) (by omega_using [h2])), fun t ht ht' => ?_⟩, by rw [z']; rfl⟩
     rcases Nat.lt_or_ge t (8 * (i + 1)) with h | h
-    · have e := bits' (t - 8 * i) (by omega)
-      rw [show 8 * i + (t - 8 * i) = t by omega, hbyte] at e
-      rw [e, show t / 8 = i by omega, show t % 8 = t - 8 * i by omega]
-    · rw [O' _ (by rw [ofs_off0 base (d := dst + t) (by omega)]; omega), hb.bits t h ht']
-  · rw [hb.bits t (by omega) ht, show t = 8 * (t / 8) + t % 8 from (Nat.div_add_mod t 8).symm,
-      VG.Proof.Weierstrass.testBit_byte s.mem base (a := src) (n := n) (by omega) (Nat.mod_lt _ (by decide))]
-    simp only [show (8 * (t / 8) + t % 8) / 8 = t / 8 by omega, show (8 * (t / 8) + t % 8) % 8 = t % 8 by omega]
+    · have e := bits' (t - 8 * i) (by omega_using [h])
+      rw [show 8 * i + (t - 8 * i) = t by omega_using [ht], hbyte] at e
+      rw [e, show t / 8 = i by omega_using [ht, h], show t % 8 = t - 8 * i by omega_using [ht, h]]
+    · rw [O' _ (by rw [ofs_off0 base (d := dst + t) (by omega_using [hdst, hnw, ht'])]; omega_using [h]), hb.bits t h ht']
+  · rw [hb.bits t (by omega_using []) ht, show t = 8 * (t / 8) + t % 8 from (Nat.div_add_mod t 8).symm,
+      VG.Proof.Weierstrass.testBit_byte s.mem base (a := src) (n := n) (by omega_using [ht]) (Nat.mod_lt _ (by decide))]
+    simp only [show (8 * (t / 8) + t % 8) / 8 = t / 8 by omega_using [], show (8 * (t / 8) + t % 8) % 8 = t % 8 by omega_using []]
 
 end VG.Proof.Weierstrass.Arm

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.AArch64.FbVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # IDEA-CFB64 artifacts on baseline AArch64 -/
 

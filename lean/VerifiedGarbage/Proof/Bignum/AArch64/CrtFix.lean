@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.Ranges
+import VerifiedGarbage.Proof.Rsa.Ranges
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
-public import VerifiedGarbage.Proof.Bignum.AArch64.R2
-public import VerifiedGarbage.Proof.Bignum.AArch64.Setup
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtRows
+import VerifiedGarbage.Proof.Bignum.AArch64.R2
+import VerifiedGarbage.Proof.Bignum.AArch64.Setup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_private_crt` on AArch64: the fixes and the products
@@ -319,7 +322,7 @@ theorem rowsHdr_ok {s : State} {B : Addr} {Z w op oq wp wq ja : Nat} {A Q : Addr
     (hpw : word s.mem B (op + 8 * sW) = BitVec.ofNat 64 wp)
     (hqw : word s.mem B (oq + 8 * sW) = BitVec.ofNat 64 wq)
     (hpa : word s.mem B (op + 8 * sArr ja) = A) (hqa : word s.mem B (oq + 8 * sArr aN) = Q)
-    (hja : ja < 8) (_hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + tabBytes wp ≤ oq) (hoq : oq + slot wq 8 + tabBytes wq ≤ Z) :
+    (hja : ja < 8) (_hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + wsTab wp ≤ oq) (hoq : oq + slot wq 8 + wsTab wq ≤ Z) :
     WP isa (.block (rowsHdr ja)) s fun t =>
       t.gpr .x11 = A ∧ t.gpr .x13 = BitVec.ofNat 64 wp ∧ t.gpr .x9 = Q ∧ t.gpr .x12 = BitVec.ofNat 64 wq ∧
       t.gpr .x8 = off B (slot w aAcc) ∧ t.gpr .x7 = 0 ∧ t.mem = s.mem ∧ Keep mmRegs s t := by
@@ -353,7 +356,7 @@ theorem pqProduct_ok {s : State} {B : Addr} {Z w op oq wp wq : Nat} {mi : BitVec
     (hqw : word s.mem B (oq + 8 * sW) = BitVec.ofNat 64 wq)
     (hpa : word s.mem B (op + 8 * sArr aN) = off B (op + slot wp aN))
     (hqa : word s.mem B (oq + 8 * sArr aN) = off B (oq + slot wq aN))
-    (hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + tabBytes wp ≤ oq) (hoq : oq + slot wq 8 + tabBytes wq ≤ Z)
+    (hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + wsTab wp ≤ oq) (hoq : oq + slot wq 8 + wsTab wq ≤ Z)
     (hwp : 1 ≤ wp) (hwp' : wp ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) :
     WP isa (seqs pqProduct) s fun t =>
       wv t.mem B (slot w aAcc) (2 * w + 2) = wv s.mem B (op + slot wp aN) wp * wv s.mem B (oq + slot wq aN) wq ∧
@@ -418,7 +421,7 @@ theorem finishSum_ok {s : State} {B : Addr} {Z w op oq wp wq : Nat} {mi : BitVec
     (hpy : word s.mem B (op + 8 * sArr aY) = off B (op + slot wp aY))
     (hqy : word s.mem B (oq + 8 * sArr aY) = off B (oq + slot wq aY))
     (hqa : word s.mem B (oq + 8 * sArr aN) = off B (oq + slot wq aN))
-    (hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + tabBytes wp ≤ oq) (hoq : oq + slot wq 8 + tabBytes wq ≤ Z)
+    (hlo : slot w 8 ≤ op) (hop : op + slot wp 8 + wsTab wp ≤ oq) (hoq : oq + slot wq 8 + wsTab wq ≤ Z)
     (hwp : 1 ≤ wp) (hwp' : wp ≤ w) (hwq : 1 ≤ wq) (hwq' : wq ≤ w) :
     WP isa (seqs finishSum) s fun t =>
       wv t.mem B (slot w aAcc) (2 * w + 2) = wv s.mem B (oq + slot wq aY) wq +

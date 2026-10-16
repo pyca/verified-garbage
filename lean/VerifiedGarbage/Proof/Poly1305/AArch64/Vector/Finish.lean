@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
 
 /-!
 # Poly1305 on AArch64 in AdvSIMD: the last group and the end
@@ -51,10 +52,10 @@ theorem sumLanes_ok (s : State) :
 
 /-- Reads of the general-purpose registers and the carry through the writes so far. -/
 macro "cstep" : tactic =>
-  `(tactic| simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
-    State.read, Size.bits, BitVec.setWidth_eq, reduceCtorEq, ↓reduceIte, Bool.toNat_false, Nat.add_zero,
-    BitVec.ofNat_eq_ofNat, BitVec.add_zero, Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.setWidth_zero,
-    ofNat_bool])
+  `(tactic| plain_simp_names simp only [RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,
+                     State.read, Size.bits, BitVec.setWidth_eq, reduceCtorEq, ↓reduceIte, Bool.toNat_false, Nat.add_zero,
+                     BitVec.ofNat_eq_ofNat, BitVec.add_zero, Nat.mul_zero, BitVec.shiftLeft_zero, BitVec.setWidth_zero,
+                     ofNat_bool])
 
 theorem pack_ok (s : State) :
     WP isa (.block pack) s fun t =>

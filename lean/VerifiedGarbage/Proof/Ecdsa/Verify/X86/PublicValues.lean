@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdh.X86.Main
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 @[expose] public section
 

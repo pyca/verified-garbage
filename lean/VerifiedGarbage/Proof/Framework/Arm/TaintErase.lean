@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Taint tracking for ARMv7: code without its offsets
@@ -49,26 +50,26 @@ def NoBase (τ : T) : Prop := τ.bases = [] ∧ τ.argLen = 0
 theorem noBase_ofRegs (rs : List Reg) : NoBase (ofRegs rs) := ⟨rfl, rfl⟩
 
 theorem step_eraseOff {τ : T} (h : NoBase τ) (i : Instr) :
-    stepKD τ i.eraseOff = stepKD τ i := by
+    stepKM τ i.eraseOff = stepKM τ i := by
   obtain ⟨regs, flags, lens, bases, slots, argLen, argBases⟩ := τ
   obtain ⟨rfl, rfl⟩ := h
   cases i <;> rfl
 
-theorem step_noBase {τ τ' : T} (h : NoBase τ) {i : Instr} (hs : stepKD τ i = some τ') :
+theorem step_noBase {τ τ' : T} (h : NoBase τ) {i : Instr} (hs : stepKM τ i = some τ') :
     NoBase τ' := by
   obtain ⟨regs, flags, lens, bases, slots, argLen, argBases⟩ := τ
   obtain ⟨rfl, rfl⟩ := h
-  cases i <;> simp only [stepKD, stepKDFn, storeStepKD, Bool.cond_eq_ite] at hs <;>
+  cases i <;> simp only [stepKM, storeStepKM, stepKD, stepKDFn, Bool.cond_eq_ite] at hs <;>
     first
     | (cases hs; exact ⟨rfl, rfl⟩)
     | (cases hs; exact ⟨by rename_i o; cases o <;> rfl, rfl⟩)
     | (split at hs <;> cases hs; exact ⟨rfl, rfl⟩)
     | cases hs
 
-theorem le_noBase {m σ : T} (hl : leK m σ = true) (h : NoBase σ) : NoBase m := by
+theorem le_noBase {m σ : T} (hl : leC m σ = true) (h : NoBase σ) : NoBase m := by
   obtain ⟨regs, flags, lens, bases, slots, argLen, argBases⟩ := m
   obtain ⟨hb, ha⟩ := h
-  simp only [leK, Bool.and_eq_true] at hl
+  simp only [leC, Bool.and_eq_true] at hl
   obtain ⟨⟨⟨⟨⟨⟨-, -⟩, -⟩, hbs⟩, -⟩, hal⟩, -⟩ := hl
   refine ⟨?_, ?_⟩
   · cases bases with
@@ -78,9 +79,9 @@ theorem le_noBase {m σ : T} (hl : leK m σ = true) (h : NoBase σ) : NoBase m :
       cases hbs.1
   · exact (Nat.eq_of_beq_eq_true hal).trans ha
 
-theorem meet_noBase {τ₁ τ₂ : T} (h : NoBase τ₁) : NoBase (meet τ₁ τ₂) := by
-  refine ⟨by simp [meet, h.1], ?_⟩
-  simp only [meet, h.2]
+theorem meet_noBase {τ₁ τ₂ : T} (h : NoBase τ₁) : NoBase (meetC τ₁ τ₂) := by
+  refine ⟨by simp [meetC, meet, h.1], ?_⟩
+  simp only [meetC, meet, h.2]
   split <;> rfl
 
 theorem callStep_noBase {τ : T} (h : NoBase τ) : NoBase (callStep τ) := by
@@ -97,7 +98,7 @@ theorem checkBlock_noBase {τ τ' : T} (h : NoBase τ) {is : List Instr}
   induction is generalizing τ with
   | nil => cases hc; exact h
   | cons i is ih =>
-    have hc : (stepKD τ i).bind (taint.checkBlock · is) = some τ' := hc
+    have hc : (stepKM τ i).bind (taint.checkBlock · is) = some τ' := hc
     obtain ⟨σ, hσ, hc⟩ := Option.bind_eq_some_iff.mp hc
     exact ih (step_noBase h hσ) hc
 
@@ -106,7 +107,7 @@ theorem checkBlock_eraseOff {τ : T} (h : NoBase τ) (is : List Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (stepKD τ i.eraseOff).bind (taint.checkBlock · _) = (stepKD τ i).bind (taint.checkBlock · _)
+    show (stepKM τ i.eraseOff).bind (taint.checkBlock · _) = (stepKM τ i).bind (taint.checkBlock · _)
     rw [step_eraseOff h]
     exact bind_congr fun σ hσ => ih (step_noBase h hσ)
 

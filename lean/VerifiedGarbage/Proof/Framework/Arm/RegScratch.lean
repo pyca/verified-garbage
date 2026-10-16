@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A scratch buffer in a register, on the stack (ARMv7)
@@ -113,12 +114,12 @@ theorem narrowR_pre (hcl : ScratchInReg sig r) (hloc : (locs sig).all (Loc.avoid
   obtain ⟨hb0, -, -, -, hb4⟩ := hb
   rw [pre_arm hl] at hs
   obtain ⟨⟨hst, -⟩, hrd, hwr, hpw, hres, hnw, hpr⟩ := hs
-  have hsb : stack + bytes ≤ s.sp.toNat := by omega
+  have hsb : stack + bytes ≤ s.sp.toNat := by omega_using [hst]
   have hlt := s.sp.isLt
   have hsp : State.addr (s.sp - BitVec.ofNat 32 bytes) = State.addr s.sp - BitVec.ofNat 64 bytes :=
-    addr_sub' (by omega)
+    addr_sub' (by omega_using [hsb])
   have hE : (State.addr s.sp).toNat = s.sp.toNat := by
-    simp only [State.addr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega)
+    simp only [State.addr, BitVec.toNat_setWidth]; exact Nat.mod_eq_of_lt (by omega_using [])
   have hlen := armArgs_length sig s
   have hnil := argArea_eq_nil hcl.2.1 s
   rw [allRegions, hnil, List.append_nil] at hrd hwr hpw hres
@@ -129,7 +130,7 @@ theorem narrowR_pre (hcl : ScratchInReg sig r) (hloc : (locs sig).all (Loc.avoid
     Sig.bufs_append_array abi.ptrBits nm e n _ sig.params _ hlen
   have hbelow : (⟨State.addr s.sp - BitVec.ofNat 64 (stack + bytes), stack + bytes⟩ : Region) ∈
       stackBelow (State.addr s.sp) (stack + bytes) := by
-    rw [show stack + bytes = (stack + bytes - 1) + 1 by omega]; simp [stackBelow]
+    rw [show stack + bytes = (stack + bytes - 1) + 1 by omega_using [hb0]]; simp [stackBelow]
   have hout : ∀ a ∈ Sig.bufs sig.params (armArgs sig s), ∀ {x k : Nat}, x ≤ stack + bytes →
       stack + bytes - x + k ≤ stack + bytes →
       a.1.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 x, k⟩ := fun a ha _ _ hx hk =>
@@ -141,30 +142,30 @@ theorem narrowR_pre (hcl : ScratchInReg sig r) (hloc : (locs sig).all (Loc.avoid
   rw [allRegions, narrowR_armArgs hcl hloc, argArea_eq_nil (nsaa_withScratch_reg hcl nm e n), hbufs,
     nsaa_withScratch_reg hcl, narrowR_sp, List.append_nil]
   refine ⟨⟨.inr ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [sub_toNat' (by omega)]; omega
-  · rw [sub_toNat' (by omega)]; omega
+  · rw [sub_toNat' (by omega_using [hsb])]; omega_using [hsb]
+  · rw [sub_toNat' (by omega_using [hsb])]; omega_using []
   · simp only [narrowR_rd, hrd, List.filter_append, List.map_append]; simp
   · simp only [narrowR_wr, hwr, List.filter_append, List.map_append]; simp
   · refine List.pairwise_append.mpr ⟨hpw, List.pairwise_singleton _ _, fun a ha b hb _ => ?_⟩
     simp only [List.mem_singleton] at hb; subst hb
-    rw [hsp]; exact hout a ha (by omega) (by omega)
+    rw [hsp]; exact hout a ha (by omega_using []) (by omega_using [hb4])
   · intro x hx a ha
     rw [hsp, stackBelow_sub] at hx
     by_cases h0 : stack = 0
     · simp [h0] at hx
     simp only [h0, ite_false, List.mem_singleton] at hx; subst hx
     rcases List.mem_append.mp ha with ha | ha
-    · exact Region.Disjoint.symm (hout a ha (by omega) (by omega))
+    · exact Region.Disjoint.symm (hout a ha (by omega_using []) (by omega_using []))
     · simp only [List.mem_singleton] at ha; subst ha
       rw [hsp]
       exact below_disjoint _ (stack + bytes) (a := bytes + stack) (n := stack) (b := bytes)
-        (k := n * e.size) (by omega) (by omega) (.inl (by omega)) (by omega) (by omega)
+        (k := n * e.size) (by omega_using []) (by omega_using []) (.inl (by omega_using [])) (by omega_using [hsb]) (by omega_using [hb4, hsb])
   · intro a ha
     rcases List.mem_append.mp ha with ha | ha
     · exact hnw a ha
     · simp only [List.mem_singleton] at ha; subst ha
       show (State.addr (s.sp - BitVec.ofNat 32 bytes)).toNat + n * e.size ≤ 2 ^ 32
-      rw [hsp, toNat_sub64 (by omega), hE]; omega
+      rw [hsp, toNat_sub64 (by omega_using [hsb, hE]), hE]; omega_using [hb4, hsb]
   · exact Eq.mpr (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params pre _ _ hlen) s.mem) hpr
 
 /-- The public data of the contract without the buffer, and its leak, are
@@ -204,7 +205,7 @@ theorem narrowR_pub (hcl : ScratchInReg sig r) (hloc : (locs sig).all (Loc.avoid
     rw [List.getElem?_append_left (by rw [lp]; exact hik)] at hi
     exact hpa i hi
   · simp only [List.getD_eq_getElem?_getD]
-    rw [List.getElem?_append_right (by omega), List.getElem?_append_right (by omega), l₁, l₂]
+    rw [List.getElem?_append_right (by omega_using [l₁, hik]), List.getElem?_append_right (by omega_using [l₂, hik]), l₁, l₂]
 
 /-- A run of the code from `narrowR s` is a run of `withRegScratch` from `s`,
 with the same trace, which keeps what the calling convention requires, and
@@ -220,12 +221,12 @@ theorem withRegScratch_run {c : Prog isa} (hcl : ScratchInReg sig r) (hb : FitsR
   obtain ⟨hb0, hb1, hb2, hb3, hb4⟩ := hb
   rw [pre_arm hl] at hs
   obtain ⟨⟨hst, -⟩, -, -, -, -, -, -⟩ := hs
-  have hsb : stack + bytes ≤ s.sp.toNat := by omega
+  have hsb : stack + bytes ≤ s.sp.toNat := by omega_using [hst]
   have hsp : State.addr (s.sp - BitVec.ofNat 32 bytes) = State.addr s.sp - BitVec.ofNat 64 bytes :=
-    addr_sub' (by omega)
+    addr_sub' (by omega_using [hsb])
   have hpush : isa.push (.alloc bytes) s = some (allocState bytes s) := by
     simp only [isa, push]
-    exact ite_eq_left ⟨hb0, hb1, hb2, hb3, by omega⟩
+    exact ite_eq_left ⟨hb0, hb1, hb2, hb3, by omega_using [hsb]⟩
   have hblk : Exec isa (.block [.addSp r 0]) (allocState bytes s) [] (regState bytes r s) :=
     .block (by simp only [execBlock, isa, exec, show (0 : Nat) < 256 by decide, ite_true,
       Option.map_some, addrs, List.map_nil, List.append_nil, regState])
@@ -233,7 +234,7 @@ theorem withRegScratch_run {c : Prog isa} (hcl : ScratchInReg sig r) (hb : FitsR
       (⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩ :: s.wr) :=
     Covers.append_left (Covers.of_mem fun r hr => List.mem_cons_of_mem _ hr)
       (Covers.one ⟨_, List.mem_cons_self .., by
-        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩)
+        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using [hb4]⟩)
   have hw := Exec.widen he (rd := s.rd) (wr := ⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩ :: s.wr)
     (by simpa using Covers.append (Covers.refl s.rd) hcov) (by simpa using hcov)
   rw [show (narrowR e n bytes r s).withRegions s.rd

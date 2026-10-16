@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
+import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
 meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.AArch64
 public import VerifiedGarbage.Impl.Ecdh.Secp256k1.AArch64
 meta import VerifiedGarbage.Impl.Ecdh.Secp256k1.AArch64
@@ -36,6 +36,9 @@ materialize_code invFnP := Cfg.invFn secp256k1 (Cfg.pPowI secp256k1)
 materialize_code invFnN := Cfg.invFn secp256k1 (Cfg.nPowI secp256k1)
 materialize_code pPow := Cfg.pPow secp256k1
 materialize_code nPow := Cfg.nPow secp256k1
+materialize_code mulFn := Cfg.mulFn secp256k1
+materialize_code checkBody := Impl.Ecdh.AArch64.Cfg.checkBody secp256k1
+materialize_code checkFn := Impl.Ecdh.AArch64.Cfg.checkFn secp256k1
 materialize_code validate := Impl.Ecdh.AArch64.Cfg.validate secp256k1
 
 end VG.Proof.Weierstrass.AArch64.Secp256k1Literals

@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
 meta import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
+meta import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.SboxLit
 
 @[expose] public section
 

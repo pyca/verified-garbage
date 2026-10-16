@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Impl.Argon2.X86_64.Relative
 meta import VerifiedGarbage.Impl.Argon2.X86_64.Relative
-public import VerifiedGarbage.Proof.Argon2.Reference
+import VerifiedGarbage.Proof.Argon2.Reference
 meta import VerifiedGarbage.Proof.Argon2.Reference
-public import VerifiedGarbage.Proof.Argon2.X86_64.Mix
+import VerifiedGarbage.Proof.Argon2.X86_64.Mix
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Mix
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! # The baseline reference-window mapping is fixed time and preserves memory -/
 

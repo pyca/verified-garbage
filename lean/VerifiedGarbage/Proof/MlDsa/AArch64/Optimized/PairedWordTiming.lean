@@ -4,12 +4,18 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntryAccess
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
 
 @[expose] public section
 

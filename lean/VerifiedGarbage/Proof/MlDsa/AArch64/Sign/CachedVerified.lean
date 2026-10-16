@@ -1,57 +1,77 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedRestCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedRestCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedRestCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedRestCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedLoopTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsForget
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedInitializationTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedLoopCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedLoopCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedLoopCorrect
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedArtifactDepth
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedArtifactDepth
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixRoots
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsPrologue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsPrologue
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsPrologue
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashCall
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashCall
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMatrixTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSignTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSignTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedSignTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashSetup
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashSetup
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedHashSetup
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCommitmentTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedLoopConcrete
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedLoopConcrete
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedLoopConcrete
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedCommitmentCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedCommitmentCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedCommitmentCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedSignContract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskPrefixTailTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.CachedMaskPrefixTailTiming
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedLoopInit
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedPairedDepth
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTrace
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! ## From `CachedRestTiming.lean` -/
 

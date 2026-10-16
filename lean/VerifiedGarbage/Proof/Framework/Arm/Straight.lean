@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Bitslice.Dom
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ARMv7: straight-line bitwise code, by evaluation

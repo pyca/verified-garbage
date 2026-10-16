@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
+import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
 meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMain
 public import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
 meta import VerifiedGarbage.Proof.Ed448.Arm.ScalarMulAddMain
@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Framework.Arm.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Spec.Ed448.Contract
 meta import VerifiedGarbage.Spec.Ed448.Contract
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -71,7 +73,7 @@ theorem scalarReduceTaint_wf {s : State} (h : scalarReduceLocal.pre s) :
 
 theorem scalarReduce_ct :
     ConstantTime isa scalarReduceLocal.pre scalarReduceLocal.pub scalarReduce := by
-  refine VG.Taint.constantTime (A := taint) scalarReduceTaint ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) scalarReduceTaint ?_ (by native_taint_decide)
   intro s t hs ht ⟨_, h0, h1, h2⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, scalarReduceTaint_wf hs,
     scalarReduceTaint_wf ht, fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
@@ -131,7 +133,7 @@ theorem scalarMulAdd_argByte (s : State) (k : Nat) :
 
 theorem scalarMulAdd_ct :
     ConstantTime isa scalarMulAddLocal.pre scalarMulAddLocal.pub scalarMulAdd := by
-  refine VG.Taint.constantTime (A := taint) scalarMulAddTaint ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) scalarMulAddTaint ?_ (by native_taint_decide)
   intro s t hs ht ⟨hsp, h0, h1, h2, h3, ha⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, scalarMulAddTaint_wf hs,
     scalarMulAddTaint_wf ht, fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,

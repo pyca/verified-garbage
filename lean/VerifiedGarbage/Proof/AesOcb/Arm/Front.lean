@@ -3,10 +3,20 @@ module
 public import VerifiedGarbage.Proof.AesOcb.Arm.Body
 public import VerifiedGarbage.Proof.AesOcb.Arm.Nonce
 public import VerifiedGarbage.Proof.AesGcm.Arm.Entry
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.Arm.Words
+public import VerifiedGarbage.Proof.AesOcb.Arm.Offset0
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.CmacAes.Arm.Call
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Ocb.Bytes
+public import VerifiedGarbage.Proof.Ocb.State
+public import VerifiedGarbage.Proof.Ocb.Stretch32
 
 /-!
 # AES-OCB on ARMv7: before the data
@@ -154,22 +164,22 @@ end
 
 /-- Proves that a block of `W` misses a frame of parts of `W` and the stack
 below `sp`. -/
-macro "wdisj" L:term : tactic => `(tactic| (
-  simp only [nonceR, hashR, bodyR, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-  and_intros
-  all_goals first
-    | (with_reducible refine Lay.w_w $L ?_ ?_ ?_) <;> decide
-    | (with_reducible refine (Lay.bw' $L ?_).symm) <;> decide
-    | (with_reducible refine (Lay.d_w' $L ?_).symm) <;> decide))
+tactic_template "wdisj" L:term : tactic => `(tactic| plain_simp_names (
+                   simp only [nonceR, hashR, bodyR, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
+                   and_intros
+                   all_goals first
+                     | (with_reducible refine Lay.w_w $L ?_ ?_ ?_) <;> decide
+                     | (with_reducible refine (Lay.bw' $L ?_).symm) <;> decide
+                     | (with_reducible refine (Lay.d_w' $L ?_).symm) <;> decide))
 
 /-- Proves that the data misses a frame of parts of `W` and the stack below
 `sp`. -/
-macro "ddisj" L:term : tactic => `(tactic| (
-  simp only [nonceR, hashR, bodyR, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
-  and_intros
-  all_goals first
-    | (with_reducible refine Lay.d_w' $L ?_) <;> decide
-    | with_reducible exact (Lay.bd $L).symm))
+tactic_template "ddisj" L:term : tactic => `(tactic| plain_simp_names (
+                   simp only [nonceR, hashR, bodyR, List.forall_mem_cons, List.not_mem_nil, false_implies, implies_true, and_true]
+                   and_intros
+                   all_goals first
+                     | (with_reducible refine Lay.d_w' $L ?_) <;> decide
+                     | with_reducible exact (Lay.bd $L).symm))
 
 /-! ## The entry -/
 

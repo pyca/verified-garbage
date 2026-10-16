@@ -1,11 +1,19 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPrep
 public import VerifiedGarbage.Proof.Weierstrass.X86.WinLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinEntry
 
 /-! # Scratch layout and preservation for the x86 P-256 window -/
 
@@ -31,14 +39,14 @@ private theorem listLay {M : Mod} {sz : Nat} {xs : List Nat}
   · exact of_decide_eq_true (List.all_eq_true.mp hmo x hx)
   · exact of_decide_eq_true (List.all_eq_true.mp htmp x hx)
 
-macro "window_layout" h:term : tactic => `(tactic|
-  (simp only [Impl.Ecdsa.Verify.X86.Cfg.windowQ, Impl.Ecdh.X86.Cfg.windowCfg, Impl.Ecdsa.X86.Cfg.MP',
-    Impl.Ecdsa.X86.Cfg.rcbSlots, Impl.Ecdsa.X86.Cfg.pt, Impl.Ecdsa.X86.Cfg.sl,
-    slot, ($h), winSlots, winRo, winOther, winWs, winTblSlots, rcbW,
-    List.map_append, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
-    winW, Impl.Ecdh.X86.Cfg.windowBits, Mont.outW, Mont.own, Spec.Weierstrass.Mont.ownAt,
-    Spec.Weierstrass.Mont.ownBytes, words, List.forall_mem_cons, List.forall_mem_nil, List.forall_mem_append,
-    List.forall_mem_map]; decide))
+tactic_template "window_layout" h:term : tactic => `(tactic|
+  plain_simp_names (simp only [Impl.Ecdsa.Verify.X86.Cfg.windowQ, Impl.Ecdh.X86.Cfg.windowCfg, Impl.Ecdsa.X86.Cfg.MP',
+                     Impl.Ecdsa.X86.Cfg.rcbSlots, Impl.Ecdsa.X86.Cfg.pt, Impl.Ecdsa.X86.Cfg.sl,
+                     slot, ($h), winSlots, winRo, winOther, winWs, winTblSlots, rcbW,
+                     List.map_append, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
+                     winW, Impl.Ecdh.X86.Cfg.windowBits, Mont.outW, Mont.own, Spec.Weierstrass.Mont.ownAt,
+                     Spec.Weierstrass.Mont.ownBytes, words, List.forall_mem_cons, List.forall_mem_nil, List.forall_mem_append,
+                     List.forall_mem_map]; decide +kernel))
 
 /-- The variable-base table is disjoint from all original slots. -/
 theorem windowLay (h4 : c.n = 4) : WinLay (Impl.Ecdsa.Verify.X86.Cfg.windowQ c) size := by

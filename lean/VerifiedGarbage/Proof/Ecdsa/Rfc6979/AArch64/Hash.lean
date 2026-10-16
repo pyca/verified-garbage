@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Regs
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.PbkCalls
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
@@ -8,6 +10,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.MdStream.AArch64.Words
+public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Copy
+public import VerifiedGarbage.Proof.Pbkdf2.Memory
+public import VerifiedGarbage.Proof.Sha256.AArch64.Lit
 
 /-!
 # Deterministic ECDSA on AArch64: the hash function
@@ -46,11 +54,13 @@ structure RfcHash where
   satI : ∃ s, (Spec.Hmac.initScratchContract ok.SH H.W AArch64.abi 16).pre s
   satF : ∃ s, (Spec.Hmac.finalizeScratchContract ok.SH H.W AArch64.abi 16).pre s
   /-- The instance is of the curve, with this hash function's HMAC, its
-  output length and 8 candidates. -/
+  output length, and tries at least one candidate, as many as a 16-bit
+  immediate holds. -/
   ecdsa : I.ecdsa = R.inst
   hash : I.hash = ok.SH.H
   len : I.hashLen = H.D
-  tries : I.tries = 8
+  tries_pos : 0 < I.tries
+  tries_lt : I.tries < 2 ^ 16
   /-- The sizes the frame and `scratch` hold: the output and block sizes of
   SHA-256, SHA-384 or SHA-512. -/
   hDB : (H.D = 32 ∧ H.P.B = 64) ∨ (H.D = 48 ∧ H.P.B = 128) ∨ (H.D = 64 ∧ H.P.B = 128) ∨
@@ -148,7 +158,7 @@ end RfcHash
 
 /-- Facts about the sizes of the hash function `‹RfcHash›`'s states, working
 space, block and output, and the arithmetic they decide. -/
-macro "anums" : tactic => `(tactic| first | omega |
+tactic_template "anums" : tactic => `(tactic| first | omega |
   (obtain ⟨_, _, _, _, _, _, _, _, _, _, _⟩ := RfcHash.sizes ‹RfcHash›
    obtain ⟨_, _, _, _, _, _, _⟩ := RfcHash.wsizes ‹RfcHash›; omega))
 
@@ -160,7 +170,7 @@ def cfgOf (P : RfcHash) : Cfg where
   wide := P.R.wide
   sh := P.R.sh
   n := P.R.E.C.n
-  tries := 8
+  tries := P.I.tries
   coreN := P.R.coreN
   coreC := P.R.coreC
 

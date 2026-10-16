@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Hmac
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Words32
-public import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
+import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): `h = bits2octets(digest)`
@@ -255,8 +256,8 @@ theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g 
       Frame [⟨L.B + BitVec.ofNat 64 76, 176⟩] t.mem t'.mem ∧
       Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 204) (4 * P.k)) =
         Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg (4 * P.k)) % P.R.E.C.n := by
-  have hk : P.k ≤ 12 := by have := (P.sizesA hA).2.1; simp only [RfcHash.k, RfcHash.w] at *; omega_arith
-  have hk6 : 6 ≤ P.k := by have := P.R.n3; simp only [RfcHash.k]; omega_arith
+  have hk : P.k ≤ 12 := (P.sizesA hA).2.1
+  have hk6 : 6 ≤ P.k := by have := P.R.len_words; have := P.R.n3; simp only [RfcHash.k]; split <;> omega_arith
   rw [Cfg.reduce, WP.block_append_iff, WP.block_append_iff, w_cfgOf]
   refine WP.mono (subs_ok (P := P) hL hn hk P.k (Nat.le_refl _) t
     ⟨hc, hsi, Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _), fun i hi => absurd hi (Nat.not_lt_zero _),
@@ -275,8 +276,8 @@ theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g 
       rw [Offset.add_add, h'.h j hj]
       exact Proof.Pbkdf2.Whole.byteRev32_byteRev32 _
   have hch := chain P.R.E.C.n P.k t.mem L.dg P.k
-  have e32 : 32 * P.k = 64 * P.R.E.n := by simp only [RfcHash.k]; omega_arith
-  rw [wsum_nWn, Nat.mod_eq_of_lt (by rw [e32]; exact P.R.n_lt)] at hch
+  have e32 : 32 * P.k = 8 * P.R.E.C.len := by have := (P.sizesA hA).1; simp only [RfcHash.Q] at this; omega_arith
+  rw [wsum_nWn, Nat.mod_eq_of_lt (by rw [e32]; exact (Nat.log2_lt P.R.n_ne).mp (by rw [← (P.R.sizesA hA).2.2.1]; unfold Spec.Ecdsa.nBits; omega))] at hch
   rw [dg_ofBytes hL hc hn]
   change Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) =
     Spec.Weierstrass.ofBytes (Spec.Ecdsa.bytesAt _ _ (4 * P.k)) % _

@@ -6,7 +6,10 @@ name: Publish Lean cache
 # runs serialize (CI runs on main can finish out of order), and GitHub
 # cancels a waiting run when another queues, which in CI would mark a run
 # that passed as cancelled. A cancelled run here only means a newer commit
-# took over; each run also skips a commit main has moved past.
+# took over. A run publishes its commit's build unless the published one is
+# of a newer commit: while main moves faster than a run packages the build,
+# each run still replaces an older cache, rather than leaving it to a newer
+# run that main will also have moved past.
 on:
   workflow_run:
     workflows: [CI]
@@ -29,7 +32,7 @@ jobs:
       && github.event.workflow_run.conclusion == 'success'
       && github.event.workflow_run.event == 'push'
       && github.event.workflow_run.head_repository.full_name == github.repository }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # Only the steps that talk to the registry see the token: the others run
     # third-party code (elan's installer, Mathlib's `cache` tool).
     permissions:
@@ -68,11 +71,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CACHE_KEY: ${{ steps.keys.outputs.build-cache }}-${{ env.CACHE_FORMAT }}
         run: |
-          head=$(gh api "repos/$GH_REPO/commits/main" --jq .sha)
-          if [ "$head" != "$HEAD_SHA" ]; then
-            echo "Main has advanced: its newer run will publish the cache."
-            exit 0
-          fi
           # Read the manifest's annotations, without pulling the archive. The
           # token goes on stdin to this command alone: nothing stores it.
           if printf '%s' "$GH_TOKEN" | oras manifest fetch --username "$GITHUB_ACTOR" --password-stdin "$IMAGE" \
@@ -81,6 +79,15 @@ jobs:
             if [ "$key" = "$CACHE_KEY" ]; then
               echo "The checked Lean cache is already published."
               exit 0
+            fi
+            # Never replace a newer commit's cache with this one's.
+            published=$(jq -r '.annotations["org.opencontainers.image.revision"] // empty' "$RUNNER_TEMP/lean-cache-manifest.json")
+            if [ -n "$published" ]; then
+              status=$(gh api "repos/$GH_REPO/compare/$published...$HEAD_SHA" --jq .status)
+              if [ "$status" = behind ]; then
+                echo "The published Lean cache is of a newer commit, $published."
+                exit 0
+              fi
             fi
           else
             # A missing image is expected on the first publish. Other registry
@@ -114,12 +121,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CACHE_KEY: ${{ steps.keys.outputs.build-cache }}-${{ env.CACHE_FORMAT }}
         run: |
-          # Check immediately before publishing, while holding the workflow's lock.
-          head=$(gh api "repos/$GH_REPO/commits/main" --jq .sha)
-          if [ "$head" != "$HEAD_SHA" ]; then
-            echo "Main has advanced: its newer run will publish the cache."
-            exit 0
-          fi
+          # Runs hold the workflow's lock from the decision to here, so no
+          # newer cache was published since.
           # The archive is the one layer, as it is: the README's restore
           # streams it from the registry API into `zstd -dc | tar -x`.
           toolchain=$(cat lean/lean-toolchain)

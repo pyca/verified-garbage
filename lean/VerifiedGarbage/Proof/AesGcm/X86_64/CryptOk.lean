@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
+import VerifiedGarbage.Proof.Cmac.Frame
 
 /-!
 # AES-GCM on x86-64: `crypt`
@@ -520,6 +524,16 @@ theorem crypt_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : Sta
     · obtain ⟨j, hj⟩ := hj
       refine WP.seq (WP.mono (cryptWhole_ok v L hj (hj.ciph L)) fun s'' hj' => ?_)
       exact cryptTail_ok v L hj' (by have := hj.le; omega_arith) (hj'.ciph L)
+
+omit L in
+/-- `cryptHead` alone, for data within the rest of the keystream block. -/
+theorem cryptHead_out {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
+    (h : CrIn Ctx St W SP R icb P D n s) (hn : n ≠ 0) (hP : P % 16 ≠ 0) (hle : n ≤ 16 - P % 16) :
+    WP isa cryptHead s (CrOut Ctx St W SP R icb P D n s.mem) := by
+  have e : min (16 - P % 16) n = n := Nat.min_eq_right hle
+  refine WP.mono (cryptHead_ok h hn hP) fun s' hm => ?_
+  rw [e] at hm
+  exact ⟨hm.env, hm.rounds, hm.ctr, hm.done, hm.frame⟩
 
 omit L in
 /-- From the start of a keystream block, nothing done yet. -/

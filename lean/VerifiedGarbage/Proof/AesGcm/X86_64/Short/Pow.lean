@@ -1,10 +1,11 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Gh
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Pow
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Tab
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Bcast
 public import VerifiedGarbage.Proof.Gcm.Powers
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -114,34 +115,6 @@ theorem pow4a_ok (s : State) :
     VG.Proof.Gcm.X86_64.StitchZ.shuf44_2, VG.Proof.Gcm.X86_64.StitchZ.shuf44_3, VG.Proof.Gcm.X86_64.StitchZ.State.zlane_setV256, State.zlane_setV_ne,
     reduceCtorEq, ↓reduceIte, Nat.one_ne_zero, BitVec.getLsbD_ofNat]
   all_goals simp [State.lane, State.zlane, State.setV, pr4]
-
-/-- Lane 0 of `r` in its four lanes. -/
-theorem bcast_ok (r : XReg) (s : State) :
-    WP isa (.block [.vop (.vinserti128 r r r 1), .zop (.vshufi32x4 r r r 0x44)]) s fun t =>
-      (∀ l < 4, t.zlane r l = s.xmm r) ∧ ZFrame [r] s t := by
-  refine WP.mono (WP.zframe (rs := [r]) (by simp [vecDst, VOp.dst?, ZOp.dst])
-    (Q := fun t => ∀ l < 4, t.zlane r l = s.xmm r) ?_) fun t h => h
-  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-  rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil fun l hl => ?_⟩
-  simp only [VOp.exec, zlane_zbin, zlane_vshufi32x4 _ _ _ _ _ _ hl, ite_true]
-  rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
-  all_goals simp only [VG.Proof.Gcm.X86_64.StitchZ.shuf44_0, VG.Proof.Gcm.X86_64.StitchZ.shuf44_1,
-    VG.Proof.Gcm.X86_64.StitchZ.shuf44_2, VG.Proof.Gcm.X86_64.StitchZ.shuf44_3]
-  all_goals simp [State.lane, State.zlane, State.setV]
-
-/-- The mask and the reduction constant in every lane of `zmm0` and `zmm1`. -/
-theorem pow4c_ok (s : State) :
-    WP isa (.block (([.vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .zop (.vshufi32x4 .xmm0 .xmm0 .xmm0 0x44)] : List Instr) ++
-        ([.vop (.vinserti128 .xmm1 .xmm1 .xmm1 1), .zop (.vshufi32x4 .xmm1 .xmm1 .xmm1 0x44)] : List Instr))) s fun t =>
-      (∀ l < 4, t.zlane .xmm0 l = s.xmm .xmm0) ∧ (∀ l < 4, t.zlane .xmm1 l = s.xmm .xmm1) ∧
-      ZFrame [.xmm0, .xmm1] s t := by
-  rw [WP.block_append_iff]
-  refine WP.mono (bcast_ok .xmm0 s) fun t₁ ⟨b₁, f₁⟩ => WP.mono (bcast_ok .xmm1 t₁) fun t ⟨b, f⟩ => ⟨fun l hl => ?_,
-    fun l hl => ?_, (f₁.mono (rs' := [.xmm0, .xmm1]) (by simp)).trans (f.mono (by simp))⟩
-  · rw [f.zlane _ (by decide) l hl, b₁ l hl]
-  · rw [b l hl]
-    have := f₁.zlane .xmm1 (by decide) 0 (by decide)
-    simpa [State.zlane, State.lane] using this
 
 /-- Group `j` of the table at `T` holds its powers of `H`. -/
 def GrpOk (m : Mem) (T : Addr) (H : Block) (j : Nat) : Prop :=

@@ -3,11 +3,13 @@ module
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Layout
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
 
 /-!
 # Ed448 signing with a cached public key on x86-64: the precondition and the layout

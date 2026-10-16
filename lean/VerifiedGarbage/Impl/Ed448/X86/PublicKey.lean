@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed448.X86.Shake
+public import VerifiedGarbage.Impl.Ed25519.X86.Whole.Wipe
 
 /-!
 # Ed448 public-key derivation on x86 (32-bit)

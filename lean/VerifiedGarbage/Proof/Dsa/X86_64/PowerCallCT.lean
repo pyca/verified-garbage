@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.PowerCT
 public import VerifiedGarbage.Proof.Dsa.X86_64.SetupCT
@@ -10,6 +11,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Dsa.X86_64.Frame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Spec.Dsa
 
 /-! # Constant time of setup, load and complete DSA exponentiation -/
 
@@ -54,9 +61,9 @@ theorem PowerCallBytes.frame {p : PowerCallPublic} {s t : State} (h : PowerCallB
     (work_parent hc hf (by decide)).trans hep, (work_parent hc hf (by decide)).trans hel,
     hbl, helen, work_source hc hf hk hb, work_source hc hf hk he⟩
 
-theorem powerCall_prepare {p : PowerCallPublic} {s : State} (h : PowerCallPre p s) :
-    WP isa Arithmetic.constants s (PowerCallPrepared p) := by
-  refine WP.mono (prepare_ok h.1 p.lower p.width48 p.greater h.2.1.modulus h.2.1.inverse)
+theorem powerCall_prepare (M : Mont) {p : PowerCallPublic} {s : State} (h : PowerCallPre p s) :
+    WP isa (Arithmetic.constants M.mm) s (PowerCallPrepared p) := by
+  refine WP.mono (prepare_ok M h.1 p.lower p.width48 p.greater p.odd h.2.1.modulus h.2.1.inverse)
     fun t ⟨hc, hm, hone, hr2, hf, hk⟩ => ?_
   exact ⟨⟨hc, hm, h.2.2.frame h.1 hf hk⟩, hone, hr2⟩
 
@@ -83,12 +90,12 @@ theorem powerCall_load {p : PowerCallPublic} {s : State} (h : PowerCallPrepared 
     helen, helen ▸ p.expPositive, helen ▸ p.expLimit, work_source hc hfw hk he⟩,
     (hfa.wv_of_not_mem (by decide) (by decide) hz).trans hr2⟩
 
-theorem powerCall_ct (M : Mont) : RelCT isa (Two PowerCallPre)
-    (Arithmetic.power M.mm arg argLen arg2 arg2Len) (fun _ _ => True) := by
+theorem powerCall_ct (M : Mont) (Sq : MontS) : RelCT isa (Two PowerCallPre)
+    (Arithmetic.power Sq.mm M.mm arg argLen arg2 arg2Len) (fun _ _ => True) := by
   unfold Arithmetic.power
   refine RelCT.seq (two_post (Ψ := PowerCallPrepared)
     (two_map (fun p : PowerCallPublic => p.toPowerPublic.product) (fun p s h =>
-      ⟨h.2.1, p.width48, p.greater⟩) constants_ct) (fun _ _ h => powerCall_prepare h)) ?_
+      ⟨h.2.1, p.width48, p.greater, p.odd⟩) (constants_ct M)) (fun _ _ h => powerCall_prepare M h)) ?_
   refine RelCT.seq (two_post (Ψ := fun p s => PowerCorePre p.toPowerPublic s)
     (two_map (fun p : PowerCallPublic => (⟨p.x, p.base, p.baseLen⟩ : BPub)) ?_
       (loadArr_ct (j := aX) (sp := arg) (sl := argLen) (by decide) (by taint_decide) (by taint_decide)))
@@ -99,6 +106,6 @@ theorem powerCall_ct (M : Mont) : RelCT isa (Two PowerCallPre)
     have hbw : (bb.length + 7) / 8 ≤ p.x.wx := hbl ▸ p.baseFits
     have hw48 : p.x.wx ≤ 48 := p.width48
     omega
-  · exact two_map PowerCallPublic.toPowerPublic (fun _ _ h => h) (powerCore_ct M)
+  · exact two_map PowerCallPublic.toPowerPublic (fun _ _ h => h) (powerCore_ct M Sq)
 
 end VG.Proof.Dsa.X86_64

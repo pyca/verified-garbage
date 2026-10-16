@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.AesCbc.X86.Call
-public import VerifiedGarbage.Proof.AesCbc.Mem32
-public import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
+import VerifiedGarbage.Proof.AesCbc.Mem32
+import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

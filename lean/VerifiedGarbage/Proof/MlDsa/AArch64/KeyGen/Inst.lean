@@ -1,27 +1,38 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.AddSub
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.BitPack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourSqueezeApart
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA key generation on AArch64, with this library's primitives

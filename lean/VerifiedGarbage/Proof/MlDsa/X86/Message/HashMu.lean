@@ -2,12 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
 meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Hash
-public import VerifiedGarbage.Proof.MlKem.KPke
+import VerifiedGarbage.Proof.MlKem.KPke
 meta import VerifiedGarbage.Proof.MlKem.KPke
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.MlKem.X86.Sample
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Impl.MlKem.X86.Sample
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: `μ` and `tr`
@@ -113,7 +121,7 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
     have := hnA s₀ h₀; simp only [Arg.ok, decide_eq_true_eq]; omega
   -- `0 ‖ ctx_len`.
   refine Piece.seq (kabs_piece (.off oHdr) (.imm 2) (.imm 64) (fun s₀ => (lay s₀).X32 + BitVec.ofNat 32 944)
-    (fun _ => 2) (fun _ => 64) (by taint_decide) hpub (fun _ _ _ h => h.1)
+    (fun _ => 2) (fun _ => 64) (by native_taint_decide) hpub (fun _ _ _ h => h.1)
     (fun _ _ => absOk rfl rfl rfl rfl rfl) (fun s₀ s h₀ h => ⟨h.1.ctx.off _, rfl, rfl⟩)
     (fun s₀ s₀' h₀ h₀' hq => ⟨by rw [(hpub s₀ s₀' h₀ h₀' hq).x], rfl, rfl⟩) (fun s₀ s h₀ h => ?_)
     (B := fun s₀ s => CtxO lay s₀ s ∧ Repr s.mem (lay s₀).ST 136 (trv s₀ ++ hdrBytes (lay s₀)))
@@ -134,7 +142,7 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
     rwa [ehd, h.1.ctx.hdr] at this
   -- The context string.
   refine Piece.seq (kabs_piece (.arg 3) (.arg 4) (.imm 66) (fun s₀ => (lay s₀).ctx)
-    (fun s₀ => (lay s₀).ctxLen.toNat) (fun _ => 66) (by taint_decide) hpub (fun _ _ _ h => h.1)
+    (fun s₀ => (lay s₀).ctxLen.toNat) (fun _ => 66) (by native_taint_decide) hpub (fun _ _ _ h => h.1)
     (fun s₀ h₀ => absOk (argA s₀ h₀ 3 (by omega)) (argA s₀ h₀ 4 (by omega)) rfl rfl rfl)
     (fun s₀ s h₀ h => ⟨by rw [h.1.ctx.arg' h.1.ok (by omega), h.1.ok.a3],
       by rw [h.1.ctx.arg' h.1.ok (by omega), h.1.ok.a4, ofNat_toNat32], rfl⟩)
@@ -153,7 +161,7 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
     rwa [h.1.ctx.bytesAt_eq hL.xCtx hL.kCtx (by have := hL.nCtx; omega)] at this
   -- The message.
   refine Piece.seq (kabs_piece (.arg 1) (.arg 2) .ret (fun s₀ => (lay s₀).msg)
-    (fun s₀ => (lay s₀).len.toNat) (fun s₀ => (66 + (lay s₀).ctxLen.toNat) % 136) (by taint_decide) hpub
+    (fun s₀ => (lay s₀).len.toNat) (fun s₀ => (66 + (lay s₀).ctxLen.toNat) % 136) (by native_taint_decide) hpub
     (fun _ _ _ h => h.1)
     (fun s₀ h₀ => absOk (argA s₀ h₀ 1 (by omega)) (argA s₀ h₀ 2 (by omega)) rfl rfl rfl)
     (fun s₀ s h₀ h => ⟨by rw [h.1.ctx.arg' h.1.ok (by omega), h.1.ok.a1],
@@ -176,7 +184,7 @@ theorem muHash_piece (tr : Arg) (trp : State → BitVec 32) (trv : State → Lis
     rwa [h.1.ctx.bytesAt_eq hL.xMsg hL.kMsg (by have := hL.nMsg; omega)] at this
   -- Pad and squeeze.
   refine Piece.seq (kpad_piece .ret (fun s₀ => ((66 + (lay s₀).ctxLen.toNat) % 136 + (lay s₀).len.toNat) % 136)
-    (by taint_decide) hpub (fun _ _ _ h => h.1) (fun _ _ => padOk rfl) (fun s₀ s h₀ h => ofNat_toNat_eq32 h.2.2)
+    (by native_taint_decide) hpub (fun _ _ _ h => h.1) (fun _ _ => padOk rfl) (fun s₀ s h₀ h => ofNat_toNat_eq32 h.2.2)
     (fun s₀ s₀' h₀ h₀' hq => by rw [(hpub s₀ s₀' h₀ h₀' hq).ctxLen, (hpub s₀ s₀' h₀ h₀' hq).len])
     (fun _ _ _ _ => Nat.mod_lt _ (by decide))
     (B := fun s₀ s => CtxO lay s₀ s ∧ stateAt s.mem (lay s₀).ST = Spec.Sha3.absorb 136

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Words
+import VerifiedGarbage.Proof.AesOcb.AArch64.Words
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
 public import VerifiedGarbage.Proof.Ocb.State

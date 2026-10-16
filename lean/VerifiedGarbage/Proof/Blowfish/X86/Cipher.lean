@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Blowfish on x86 (32-bit): the block function
@@ -336,7 +337,7 @@ theorem cipher_run {sch : Nat} {S B : BitVec 32} {s : State} (E : CipherEnv sch 
     (P₁₇ := pEntry K (ord up 17)) Ev.bp bfit (Ev.slotW (by decide)) (Ev.slotW (by decide))
     (Ev.slotR (by decide)) V.pp a16 a17 (Ev.rd _ r16) (Ev.rd _ r17)
     (by rw [← pEntry_read _ _ o16, hK]) (by rw [← pEntry_read _ _ o17, hK])) (by
-      cases up <;> simp [writesOnly, Code.allInstrs, Taint.clobbers, Taint.dst, VG.Proof.MlDsa.X86.Pack.allRegs]))
+      cases up <;> decide))
     fun t ⟨tm, tk⟩ => ?_
   refine ⟨?_, (V.keep.trans tk).mono (by decide), by
     rw [tm]; exact frame_slot (frame_slot V.frame (by decide) (by decide) _) (by decide) (by decide) _⟩

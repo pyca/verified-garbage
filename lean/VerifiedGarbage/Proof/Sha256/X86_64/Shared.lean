@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha256.X86_64.Compress
+import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Compress
-public import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
+import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
-public import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
-public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
+import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
+import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
 public import VerifiedGarbage.Spec.Sha256.Contract
 meta import VerifiedGarbage.Spec.Sha256.Contract
@@ -24,6 +24,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sha256.Digest
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Sha256.Digest
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 
 /-!
 # Streaming SHA-256 on x86-64: `init`

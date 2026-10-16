@@ -1,19 +1,20 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.StaticCore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryTraversal
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.StaticCore
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.MemoryTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Spec.MlDsa.PositiveNtt
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.NttTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableArtifact
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Contracts
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! ## From `NttContract.lean` -/
 

@@ -1,11 +1,18 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignBytesSpec
 public import VerifiedGarbage.Proof.Dsa.X86_64.SignRelease
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.Dsa.SizeBounds
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Complete computation and signature release from initialized scratch -/
 
@@ -31,9 +38,9 @@ structure SigningOperands (L : ExecutionLayout) (data : SignValues) (yb qb : Lis
   digestBound : data.digest.length < 2 ^ 64
   subgroupValue : Spec.Dsa.decodeBE qb = L.subgroup
 
-def signBody (mul : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (signCompute mul) signRelease
+def signBody (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa) : Prog isa := .seq (signCompute sq mul) signRelease
 
-theorem signBody_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
+theorem signBody_ok (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
     (hp : 1 < L.modulus) (hq : 255 < L.subgroup)
     (hop : L.modulus % 2 = 1) (hoq : L.subgroup % 2 = 1)
     (hpf : L.modulus ≤ 256 ^ L.pLen) (hqf : L.subgroup ≤ 256 ^ L.qLen)
@@ -41,7 +48,7 @@ theorem signBody_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L 
     {valid : Bool} (hm : word s0.mem L.base Field.mask.offset = mask valid)
     (hw : ∀ i < 2 * L.qLen, InRegions s0.wr (L.fields .out + BitVec.ofNat 64 i) 1)
     (hsep : ∀ i < 2 * L.qLen, usedBytes ≤ ofs L.base (L.fields .out + BitVec.ofNat 64 i)) :
-    WP isa (signBody M.mm) s0 fun t =>
+    WP isa (signBody Sq.mm M.mm) s0 fun t =>
       t.gpr .rax = BitVec.ofNat 64 (signAccepted L data yb valid).toNat ∧
       Spec.Rsa.bytesAt t.mem (L.fields .out) (2 * L.qLen) =
         (if signAccepted L data yb valid then Spec.Dsa.encodeBE L.qLen (data.r L) ++
@@ -50,7 +57,7 @@ theorem signBody_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L 
       (∀ x, usedBytes ≤ ofs L.base x → (∀ i < 2 * L.qLen, x ≠ L.fields .out + BitVec.ofNat 64 i) →
         t.mem x = s0.mem x) ∧ Keep coreRegs s0 t := by
   unfold signBody
-  refine WP.seq (WP.mono (signCompute_ok M h0 hp hq hop hoq hpf hqf data h.generator h.publicValue
+  refine WP.seq (WP.mono (signCompute_ok M Sq h0 hp hq hop hoq hpf hqf data h.generator h.publicValue
     h.subgroup h.privateScalar h.nonce h.digest h.generatorLength h.publicLength h.subgroupLength
     h.privateLength h.nonceLength h.digestBound h.subgroupValue hm)
     fun s1 ⟨h1, hm1, hr1, hs1, hf1, hk1⟩ => ?_)
@@ -66,7 +73,7 @@ theorem signBody_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L 
       have hu : 128 ≤ usedBytes := by decide
       omega)))
 
-theorem signBody_spec (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
+theorem signBody_spec (M : Mont) (Sq : MontS) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
     (data : SignValues) {yb qb key digest : List Byte} {n : Nat}
     (h : SigningOperands L data yb qb s0)
     (hsize : Spec.Dsa.supportedSizes (Spec.Dsa.bitLength L.modulus) (Spec.Dsa.bitLength L.subgroup))
@@ -78,7 +85,7 @@ theorem signBody_spec (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
     (hm : word s0.mem L.base Field.mask.offset = mask true)
     (hw : ∀ i < 2 * L.qLen, InRegions s0.wr (L.fields .out + BitVec.ofNat 64 i) 1)
     (hsep : ∀ i < 2 * L.qLen, usedBytes ≤ ofs L.base (L.fields .out + BitVec.ofNat 64 i)) :
-    WP isa (signBody M.mm) s0 fun t =>
+    WP isa (signBody Sq.mm M.mm) s0 fun t =>
       let result := Spec.Dsa.signBytes L.pLen L.qLen key data.nonce digest
       t.gpr .rax = BitVec.ofNat 64 (Spec.Dsa.signStatus result) ∧
       Spec.Rsa.bytesAt t.mem (L.fields .out) (2 * L.qLen) = result.getD (List.replicate (2 * L.qLen) 0) ∧
@@ -87,7 +94,7 @@ theorem signBody_spec (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready 
         t.mem x = s0.mem x) ∧ Keep coreRegs s0 t := by
   obtain ⟨hp, hq, _⟩ := VG.Proof.Dsa.supported_bounds hsize
   have he := signBytes_compute L data yb key digest n hsize hop hoq hpf hqf h.publicLength hkl h.nonceLength hk hqn hz
-  refine WP.mono (signBody_ok M h0 hp hq hop hoq hpf hqf data h hm hw hsep) fun t ht => ?_
+  refine WP.mono (signBody_ok M Sq h0 hp hq hop hoq hpf hqf data h hm hw hsep) fun t ht => ?_
   rw [he]
   cases hc : signAccepted L data yb true <;> simpa only [hc, Bool.toNat_false, Bool.toNat_true, Bool.false_eq_true, ↓reduceIte,
     Spec.Dsa.signStatus, Option.isSome_none, Option.isSome_some, Option.getD_none, Option.getD_some] using ht

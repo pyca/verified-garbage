@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
 meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Contract
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
 meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Loop
-public import VerifiedGarbage.Proof.Rc2.X86.Cbc.Body
+import VerifiedGarbage.Proof.Rc2.X86.Cbc.Body
 meta import VerifiedGarbage.Proof.Rc2.X86.Cbc.Body
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
@@ -14,6 +14,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
 
 @[expose] public section
 

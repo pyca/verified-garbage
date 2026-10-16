@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
 
 /-! # Keccak-f[1600] on two interleaved states on AArch64 -/
 

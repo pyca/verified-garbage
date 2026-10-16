@@ -1,15 +1,16 @@
 module
 
 public import VerifiedGarbage.Spec.Hmac.Generic
-public import VerifiedGarbage.Proof.Md5.Stream
-public import VerifiedGarbage.Proof.Sha1.Stream
-public import VerifiedGarbage.Proof.Sha256.Scratch
-public import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Md5.Stream
+import VerifiedGarbage.Proof.Sha1.Stream
+import VerifiedGarbage.Proof.Sha256.Scratch
+import VerifiedGarbage.Proof.Sha512.Stream
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Sha256.Stream
 
 /-!
 # HMAC's postconditions read memory only within the buffers
@@ -50,42 +51,66 @@ variable (S : StreamingHash) (pb : Nat)
 theorem initPre_local : ∀ vs m₁ m₂, vs.length = ((initSig S).words pb).length →
     (∀ b ∈ Sig.bufs (initSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply ((initSig S).words pb) (initPre S pb) vs m₁ →
-      Curry.apply ((initSig S).words pb) (initPre S pb) vs m₂
-  | [_, _, _, _], _, _, _, _, h => h
+      Curry.apply ((initSig S).words pb) (initPre S pb) vs m₂ := by
+  intro vs _ _ hlen _ h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 3
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  exact h
 
 theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = ((initSig S).words pb).length →
     (∀ b ∈ Sig.bufs (initSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply ((initSig S).words pb) (initPost S pb) vs m₁ m' r →
-      Curry.apply ((initSig S).words pb) (initPost S pb) vs m₂ m' r
-  | [_, _, key, kl], m₁, m₂, m', r, _, hb, h => by
-    simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq] at hb
-    have hk : ∀ i < (kl.setWidth pb).toNat, m₂ (key + BitVec.ofNat 64 i) = m₁ (key + BitVec.ofNat 64 i) :=
-      fun i hi => by
-        have := Nat.mod_le kl.toNat (2 ^ pb)
-        have := kl.isLt
-        rw [BitVec.toNat_setWidth] at hi
-        exact (hb.2.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
-    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (initPost S pb) _ m₁ m' r
-      at h
-    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (initPost S pb) _ m₂ m' r
-    dsimp only [Curry.apply, initPost] at h ⊢
-    rw [show Spec.Sha256.bytesAt m₂ (ArgWord.addr.ofRaw key) ((ArgWord.int pb).ofRaw kl).toNat =
-      Spec.Sha256.bytesAt m₁ key (kl.setWidth pb).toNat from Sha256.Stream.bytesAt_congr hk]
-    exact h
+      Curry.apply ((initSig S).words pb) (initPost S pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨kl, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq] at hb
+  have hk : ∀ i < (kl.setWidth pb).toNat, m₂ (key + BitVec.ofNat 64 i) = m₁ (key + BitVec.ofNat 64 i) :=
+    fun i hi => by
+      have := Nat.mod_le kl.toNat (2 ^ pb)
+      have := kl.isLt
+      rw [BitVec.toNat_setWidth] at hi
+      exact (hb.2.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (initPost S pb) _ m₁ m' r
+    at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.addr, ArgWord.int pb] (initPost S pb) _ m₂ m' r
+  dsimp only [Curry.apply, initPost] at h ⊢
+  rw [show Spec.Sha256.bytesAt m₂ (ArgWord.addr.ofRaw key) ((ArgWord.int pb).ofRaw kl).toNat =
+    Spec.Sha256.bytesAt m₁ key (kl.setWidth pb).toNat from Sha256.Stream.bytesAt_congr hk]
+  exact h
 
 theorem finalizePost_local (hR : ReprLocal S) (hS : S.stateBytes < 2 ^ 64) : ∀ vs m₁ m₂ m' r,
     vs.length = ((finalizeSig S).words pb).length →
     (∀ b ∈ Sig.bufs (finalizeSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m₁ m' r →
-      Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m₂ m' r
-  | [inn, out, _, _], m₁, m₂, m', r, _, hb, h => by
-    simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hs : ∀ (p : Addr), (∀ a, Region.Contains ⟨p, S.stateBytes⟩ a 1 → m₁ a = m₂ a) →
-        ∀ i < S.stateBytes, m₁ (p + BitVec.ofNat 64 i) = m₂ (p + BitVec.ofNat 64 i) :=
-      fun p hp i hi => hp _ (Offset.contains_base _ (by omega) (by omega))
-    intro k0 text h1 h2 hri hc hro
-    exact h k0 text h1 h2 (hR (hs _ hb.1) hri) hc (hR (hs _ hb.2.1) hro)
+      Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨inn, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 3) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨out, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs : ∀ (p : Addr), (∀ a, Region.Contains ⟨p, S.stateBytes⟩ a 1 → m₁ a = m₂ a) →
+      ∀ i < S.stateBytes, m₁ (p + BitVec.ofNat 64 i) = m₂ (p + BitVec.ofNat 64 i) :=
+    fun p hp i hi => hp _ (Offset.contains_base _ (by omega) (by omega))
+  intro k0 text h1 h2 hri hc hro
+  exact h k0 text h1 h2 (hR (hs _ hb.1) hri) hc (hR (hs _ hb.2.1) hro)
 
 end VG.Proof.Hmac

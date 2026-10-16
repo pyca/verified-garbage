@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.VerifyCorrect
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.ArgTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

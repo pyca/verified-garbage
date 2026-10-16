@@ -8,6 +8,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: the functions it calls, and its parts
@@ -169,6 +170,52 @@ theorem layout : F.L.buf = 8 * F.W + 36 ∧ F.st0O = 8 * F.W + 36 ∧ F.st1O = 8
 
 theorem end_le (hz : Sizes F) : F.intO + 4 ≤ F.L8 := by
   have := layout (F := F); have := hz.fits; simp only [Fns.L8]; omega
+
+/-! Bounds of the parts of `scratch`, each proved once for the many places that
+need it (each an `omega` call of its own otherwise), down the chain of their
+definitions from `end_le`, without `omega`. -/
+
+theorem Sizes.intO_le (hz : Sizes F) : F.intO ≤ F.L8 := Nat.le_trans (Nat.le_add_right _ 4) (end_le hz)
+theorem Sizes.hkO_F (hz : Sizes F) : F.hkO + F.H.F ≤ F.L8 := hz.intO_le
+theorem Sizes.hkO_le (hz : Sizes F) : F.hkO ≤ F.L8 := Nat.le_trans (Nat.le_add_right _ _) hz.hkO_F
+theorem Sizes.hkO_D (hz : Sizes F) : F.hkO + F.H.D ≤ F.L8 :=
+  Nat.le_trans (Nat.add_le_add_left hz.D.2.1 _) hz.hkO_F
+theorem Sizes.tO_D (hz : Sizes F) : F.tO + F.H.D ≤ F.L8 := hz.hkO_le
+theorem Sizes.tO_le (hz : Sizes F) : F.tO ≤ F.L8 := Nat.le_trans (Nat.le_add_right _ _) hz.tO_D
+theorem Sizes.uO_D (hz : Sizes F) : F.uO + F.H.D ≤ F.L8 := hz.tO_le
+theorem Sizes.uO_le (hz : Sizes F) : F.uO ≤ F.L8 := Nat.le_trans (Nat.le_add_right _ _) hz.uO_D
+theorem Sizes.stWO_S (hz : Sizes F) : F.stWO + F.H.S ≤ F.L8 := hz.uO_le
+theorem Sizes.stWO_le (hz : Sizes F) : F.stWO ≤ F.L8 := Nat.le_trans (Nat.le_add_right _ _) hz.stWO_S
+theorem Sizes.stSO_S (hz : Sizes F) : F.stSO + F.H.S ≤ F.L8 := hz.stWO_le
+theorem Sizes.stSO_le (hz : Sizes F) : F.stSO ≤ F.L8 := Nat.le_trans (Nat.le_add_right _ _) hz.stSO_S
+theorem Sizes.st1O_S (hz : Sizes F) : F.st1O + F.H.S ≤ F.L8 := hz.stSO_le
+theorem Sizes.st1O_le (hz : Sizes F) : F.st1O ≤ F.L8 := Nat.le_trans (Nat.le_add_right _ _) hz.st1O_S
+theorem Sizes.st0O_S (hz : Sizes F) : F.st0O + F.H.S ≤ F.L8 := hz.st1O_le
+theorem Sizes.st0O_2S (hz : Sizes F) : F.st0O + 2 * F.H.S ≤ F.L8 := by
+  rw [Nat.two_mul, ← Nat.add_assoc]; exact hz.stSO_le
+theorem Sizes.st0O_3S (hz : Sizes F) : F.st0O + 3 * F.H.S ≤ F.L8 := by
+  rw [show 3 * F.H.S = F.H.S + F.H.S + F.H.S from by rw [Nat.succ_mul, Nat.two_mul], ← Nat.add_assoc,
+    ← Nat.add_assoc]
+  exact hz.stWO_le
+theorem Sizes.st0O_lt (hz : Sizes F) : F.st0O < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right hz.S.1) hz.st0O_S
+theorem Sizes.st1O_lt (hz : Sizes F) : F.st1O < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right hz.S.1) hz.st1O_S
+theorem Sizes.stWO_lt (hz : Sizes F) : F.stWO < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right hz.S.1) hz.stWO_S
+theorem Sizes.uO_lt (hz : Sizes F) : F.uO < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right hz.D.1) hz.uO_D
+theorem Sizes.tO_lt (hz : Sizes F) : F.tO < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right hz.D.1) hz.tO_D
+theorem Sizes.hkO_lt (hz : Sizes F) : F.hkO < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right hz.D.1) hz.hkO_D
+theorem Sizes.intO_lt (hz : Sizes F) : F.intO < F.L8 := Nat.lt_of_lt_of_le (Nat.lt_add_of_pos_right (by decide)) (end_le hz)
+theorem Sizes.stWO_S_intO (_hz : Sizes F) : F.stWO + F.H.S ≤ F.intO :=
+  show F.uO ≤ F.intO from Nat.le_trans (Nat.le_add_right F.uO F.H.D)
+    (Nat.le_trans (Nat.le_add_right F.tO F.H.D) (Nat.le_add_right F.hkO F.H.F))
+theorem Sizes.lt16 (hz : Sizes F) {o : Nat} (h : o < F.L8) : o < 2 ^ 16 :=
+  Nat.lt_of_lt_of_le h (Nat.le_trans hz.reach (by decide))
+theorem Sizes.st0O_lt16 (hz : Sizes F) : F.st0O < 2 ^ 16 := hz.lt16 hz.st0O_lt
+theorem Sizes.st1O_lt16 (hz : Sizes F) : F.st1O < 2 ^ 16 := hz.lt16 hz.st1O_lt
+theorem Sizes.stWO_lt16 (hz : Sizes F) : F.stWO < 2 ^ 16 := hz.lt16 hz.stWO_lt
+theorem Sizes.uO_lt16 (hz : Sizes F) : F.uO < 2 ^ 16 := hz.lt16 hz.uO_lt
+theorem Sizes.hkO_lt16 (hz : Sizes F) : F.hkO < 2 ^ 16 := hz.lt16 hz.hkO_lt
+theorem Sizes.D_lt16 (hz : Sizes F) : F.H.D < 2 ^ 16 :=
+  Nat.lt_of_le_of_lt (Nat.le_trans hz.D.2.1 hz.D.2.2) (by decide)
 
 /-- The save area of our caller's registers. -/
 abbrev svR (F : Fns) (s₀ : State) : Region := saveR F.L (scr s₀)

@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Build all seventeen projective multiples without inversions. Invalid decoded points
 still execute safely; group membership is needed only when interpreting the final equation. -/
@@ -75,9 +76,12 @@ theorem table_ok {P : Point64.Ops} (hP : Point64.PointOk P) {s : State} {base : 
   refine WP.mono (store_ok (k2.scr (k1.scr hs)) 0 (by decide)) fun s3 ⟨k3, _, e3, p3⟩ => ?_
   have ds : E s3.mem base 11 = Spec.Ed448.d := by rw [e3, e2, e1]; exact hd
   have az : (pt (E s.mem base) 6 7 10).Z = 1 := hz
-  have aa : pt (E s3.mem base) 8 9 10 = pt (E s.mem base) 6 7 10 := by rw [e3, e2, e1]; rfl
-  have pp : pt (E s3.mem base) 0 1 2 = Spec.Ed448.identity := by rw [e3, e2, e1]; exact hp
-  have tt : tablePoint s3.mem base 0 = Spec.Ed448.identity := by rw [p3, e2, e1]; exact hp
+  have aa : pt (E s3.mem base) 8 9 10 = pt (E s.mem base) 6 7 10 := by
+    rw [e3, e2, e1]; simp (disch := decide) only [pt, Function.update_self, Function.update_of_ne]
+  have pp : pt (E s3.mem base) 0 1 2 = Spec.Ed448.identity := by
+    rw [e3, e2, e1, ← hp]; simp (disch := decide) only [pt, Function.update_of_ne]
+  have tt : tablePoint s3.mem base 0 = Spec.Ed448.identity := by
+    rw [p3, e2, e1, ← hp]; simp (disch := decide) only [pt, Function.update_of_ne]
   refine WP.mono (build_ok hP (k3.scr (k2.scr (k1.scr hs))) ds az aa pp tt 16 (by decide))
     fun u ⟨ku, du, _, _, tu⟩ => ?_
   exact ⟨((KeepW.of_keep (k1.trans k2)).trans k3).trans ku, du, fun i hi => tu i (by omega)⟩

@@ -365,7 +365,7 @@ fn call_sign<const N: usize>(
     // allocations; `PrivateKey::from_crt` gives `64 ≤ n_len ≤ 1024`,
     // `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`, `1 ≤ q_len < n_len`,
     // `dp_len = qinv_len = p_len` and `dq_len = q_len`; `out_len = n_len` and
-    // `scratch_len = 16 n_len + 1024`; and the CPU has the features of the
+    // `scratch_len = 16 n_len + 1056`; and the CPU has the features of the
     // function `functions` chose.
     unsafe {
         f(
@@ -414,7 +414,7 @@ fn call_verify<const N: usize>(
     // `digest` for the hash function's values), and none overlaps another or
     // wraps around, as they are distinct Rust allocations; `PublicKey::new`
     // gives `64 ≤ n_len ≤ 1024` and `1 ≤ e_len ≤ 5 ≤ n_len`; `sig_len = n_len`
-    // and `scratch_len = 16 n_len + 1024`; and the CPU has the features of
+    // and `scratch_len = 16 n_len + 1056`; and the CPU has the features of
     // the function `functions` chose. `pre` holds the verified precomputed
     // values for `key.n`, with their required length.
     unsafe {

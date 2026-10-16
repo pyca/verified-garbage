@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KTail
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Close
-public import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.RsaKeyGen.Table
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # A candidate on x86-64: once `rand` has its octets
@@ -36,6 +39,7 @@ structure MainCtx (s : State) (B : Addr) (Z k : Nat) (op up eP pP rP : Addr) (eB
   scr : Scr s B Z
   rdi : s.gpr .rdi = B
   z : slot (k / 8) aTab + 2048 ≤ Z
+  zx : slot (k / 8) aRm1 + 8 * (k / 8 + 2) ≤ Z
   k1 : 32 ≤ k
   k2 : k ≤ 512
   k8 : k % 8 = 0
@@ -61,7 +65,7 @@ structure MainCtx (s : State) (B : Addr) (Z k : Nat) (op up eP pP rP : Addr) (eB
 theorem kMain_eq (mul : Nat → Nat → Nat → Prog isa) : kMain mul =
     seqs (loadC ++ (closeCheck ++ ([.ite .ne (finUsed 2) (seqs (trial ++
       ([.ite .ne (finUsed 3) (seqs (gcdCheck ++
-        ([.ite .ne (finUsed 3) (seqs (montSetup mul ++ millerRabin mul ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) := by
+        ([.ite .ne (finUsed 3) (seqs (montSetup mul ++ expSetup ++ millerRabin mul ++ [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))) := by
   unfold kMain; rw [List.append_assoc]
 
 theorem seg_zero (r : List Byte) (n : Nat) : VG.Proof.RsaKeyGen.seg r 0 n = r.take n := by
@@ -85,6 +89,47 @@ theorem finUsed_end {s sX : State} {B : Addr} {Z : Nat} {op up : Addr} {k st u :
     WP isa (finUsed st) sX fun t => KEnd s t B Z op up k st u none :=
   WP.mono (finUsed_ok hs hdi h8 hst hu hU ho.upw ho.upZ) fun _ h =>
     (KEnd.of_fin ho h).trans_pre hlo (fun x hx => hhi x hx) kk ho.outZ
+
+/-- What `kMain`'s frames need of the ranges `closeCheck` changes. -/
+theorem closeRanges_fr (w : Nat) : (∀ r ∈ closeRanges w, 208 ≤ r.1) ∧ (∀ r ∈ closeRanges w, r.1 + r.2 ≤ slot w 8) ∧
+    (∀ r ∈ closeRanges w, slot w aN + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aN) ∧
+    (∀ r ∈ closeRanges w, r.1 + r.2 ≤ slot w aTab + 2048) := by
+  have hs : VG.Proof.RsaKeyGen.SlotShape w (closeRanges w) [] [aX, aAcc, aTmp] := fun r hr => by
+    simp only [closeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    exacts [.inr ⟨_, .head _, rfl⟩, .inr ⟨_, .tail _ (.head _), rfl⟩, .inr ⟨_, .tail _ (.tail _ (.head _)), rfl⟩]
+  exact ⟨hs.geD rfl rfl, hs.leD rfl rfl, hs.apartW rfl rfl,
+    fun r hr => Nat.le_trans (hs.leD (a := aTab) rfl rfl r hr) (Nat.le_add_right _ _)⟩
+
+/-- The same for the ranges the trial division changes. -/
+theorem trialRanges_fr (w : Nat) :
+    (∀ r ∈ [(slot w aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)], 208 ≤ r.1) ∧
+    (∀ r ∈ [(slot w aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)], r.1 + r.2 ≤ slot w aTab + 2048) ∧
+    (∀ r ∈ [(slot w aTab, 2048), (8 * kT0, 8), (8 * kT1, 8), (8 * kT2, 8)],
+      slot w aN + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aN) :=
+  ⟨by rng_le, by rng_le, by rng_disj⟩
+
+/-- The same for the ranges the gcd check changes. -/
+theorem gcdRanges_fr (w : Nat) :
+    (∀ r ∈ [(slot w aX, 8 * (w + 2)), (8 * kG, 8)], 208 ≤ r.1) ∧
+    (∀ r ∈ [(slot w aX, 8 * (w + 2)), (8 * kG, 8)], r.1 + r.2 ≤ slot w 8) ∧
+    (∀ r ∈ [(slot w aX, 8 * (w + 2)), (8 * kG, 8)], slot w aN + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w aN) ∧
+    (∀ r ∈ [(slot w aX, 8 * (w + 2)), (8 * kG, 8)], r.1 + r.2 ≤ slot w aTab + 2048) := by
+  have hs : VG.Proof.RsaKeyGen.SlotShape w [(slot w aX, 8 * (w + 2)), (8 * kG, 8)] [(8 * kG, 8)] [aX] :=
+    fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      exacts [.inr ⟨_, .head _, rfl⟩, .inl (.head _)]
+  exact ⟨hs.geD rfl rfl, hs.leD rfl rfl, hs.apartW rfl rfl,
+    fun r hr => Nat.le_trans (hs.leD (a := aTab) rfl rfl r hr) (Nat.le_add_right _ _)⟩
+
+/-- The header words `kMain` keeps across `loadC`. -/
+theorem loadCRanges_hdr (w : Nat) : ∀ i ∈ [kOut, kLen, kUsedP, kE, kElen, kP, kPlen, kRand, kRandLen],
+    ∀ r ∈ loadCRanges w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := by
+  have h : ∀ i ∈ [kOut, kLen, kUsedP, kE, kElen, kP, kPlen, kRand, kRandLen], 8 * i + 8 ≤ VG.Impl.Bignum.hdrBytes ∧
+      ∀ h ∈ ([(48, 8), (64, 64), (200, 8)] : List (Nat × Nat)), 8 * i + 8 ≤ h.1 ∨ h.1 + h.2 ≤ 8 * i := by
+    decide
+  exact fun i hi => VG.Proof.RsaKeyGen.hdr_of_shape (loadCRanges_shape w) (h i hi).1 (h i hi).2
 
 /-- `kMain`. -/
 theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP : Addr} {eB pB r : List Byte}
@@ -118,8 +163,7 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
       i = kRandLen → word s₁.mem B (8 * i) = word s.mem B (8 * i) := fun {i} hi => by
     have hi32 : i < 32 := by rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     refine hf₁.word_eq ?_ (by omega_arith)
-    simp only [loadCRanges]
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rng_disj
+    exact loadCRanges_hdr w i (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact hi)
   have hin₁ : InScr B Z s.mem s₁.mem := InScr.of_frm hf₁ (by simp only [loadCRanges]; rng_le)
   have hsv₁ : ∀ i < 6, word s₁.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
     hf₁.word_eq (fun r hr => Or.inl (by revert r hr; simp only [loadCRanges]; rng_le)) (by omega_arith)
@@ -132,8 +176,8 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
     (by rw [hh₁ (by simp)]; exact h.len) (by rw [hh₁ (by simp)]; exact h.plen) h.pl (h.psrc.congrK hin₁ k₁))
     fun s₂ ⟨hz₂, hg₂, hf₂, k₂⟩ => ?_
   rw [hc₁] at hz₂
-  have st₂ := stage hf₂ (by simp only [closeRanges]; rng_le) (fun r hr => by
-    have : r.1 + r.2 ≤ slot w 8 := by revert r hr; simp only [closeRanges]; rng_le
+  have st₂ := stage hf₂ (closeRanges_fr w).1 (fun r hr => by
+    have : r.1 + r.2 ≤ slot w 8 := (closeRanges_fr w).2.1 r hr
     omega_arith) st₁
   have k12 : Keep mmRegs s s₂ := (k₁.trans k₂).mono (by decide)
   have hsv₂ : ∀ i < 6, word s₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi =>
@@ -153,7 +197,7 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
     simp only [↓reduceIte, CandEnd, List.length_drop]
     rwa [show r.length - (r.length - 8 * w) = 8 * w by have := h.rk; omega_arith]
   have hc₂ : wv s₂.mem B (slot w aN) w = c := by
-    rw [hf₂.wv_eq (d := slot w aN) (k := w) (by simp only [closeRanges]; rng_disj)
+    rw [hf₂.wv_eq (d := slot w aN) (k := w) (closeRanges_fr w).2.2.1
       (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]; exact hc₁
   have hgt : 8161 < c := by
     obtain ⟨_, hlo, _⟩ := hsh
@@ -174,8 +218,8 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
   refine wp_seqs_append (by simp [trial]) (by simp) ?_
   refine WP.mono (trial_ok hg₂ hZ hTZ (by omega_arith) (by omega_arith)) fun s₃ ⟨hz₃, hg₃, hf₃, k₃⟩ => ?_
   rw [hc₂, trialAny_eq hgt] at hz₃
-  have st₃ := stage hf₃ (by rng_le) (fun r hr => by
-    have : r.1 + r.2 ≤ slot w aTab + 2048 := by revert r hr; rng_le
+  have st₃ := stage hf₃ (trialRanges_fr w).1 (fun r hr => by
+    have : r.1 + r.2 ≤ slot w aTab + 2048 := (trialRanges_fr w).2.1 r hr
     omega_arith) st₂
   have k13 : Keep mmRegs s s₃ := (k12.trans k₃).mono (by decide)
   refine WP.ite (Spec.RsaKeyGen.obviouslyComposite (64 * w) c) (by simp [eval, hz₃]) (fun hoc => ?_) (fun hoc => ?_)
@@ -184,7 +228,7 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
     simp only [hcl, hoc, Bool.false_eq_true, ↓reduceIte, Bool.not_true, Bool.false_and]
     exact hrej t ht
   have hc₃ : wv s₃.mem B (slot w aN) w = c := by
-    rw [hf₃.wv_eq (d := slot w aN) (k := w) (by rng_disj)
+    rw [hf₃.wv_eq (d := slot w aN) (k := w) (trialRanges_fr w).2.2
       (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]; exact hc₂
   have hk₃ : ∀ {i}, i = kOut ∨ i = kLen ∨ i = kUsedP ∨ i = kE ∨ i = kElen ∨ i = kP ∨ i = kPlen ∨ i = kRand ∨
       i = kRandLen → word s₃.mem B (8 * i) = word s.mem B (8 * i) := fun {i} hi => by
@@ -196,8 +240,8 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
     (by rw [hc₃]; omega_arith) (by rw [hk₃ (by simp)]; exact h.e) (by rw [hk₃ (by simp)]; exact h.elen) h.el1 h.el8
     (h.esrc.congrK (hin₁.trans st₃.2) k13)) fun s₄ ⟨hz₄, hg₄, hf₄, k₄⟩ => ?_
   rw [hc₃] at hz₄
-  have st₄ := stage hf₄ (by rng_le) (fun r hr => by
-    have : r.1 + r.2 ≤ slot w 8 := by revert r hr; rng_le
+  have st₄ := stage hf₄ (gcdRanges_fr w).1 (fun r hr => by
+    have : r.1 + r.2 ≤ slot w 8 := (gcdRanges_fr w).2.1 r hr
     omega_arith) st₃
   have k14 : Keep mmRegs s s₄ := (k13.trans k₄).mono (by decide)
   refine WP.ite (!decide (Nat.gcd (c - 1) (Spec.Rsa.os2ip eB) = 1)) (by simp [eval, hz₄]) (fun hgc => ?_)
@@ -209,13 +253,15 @@ theorem kMain_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {op up eP pP rP :
     exact hrej t ht
   simp only [Bool.not_eq_false', decide_eq_true_eq] at hgc
   have hc₄ : wv s₄.mem B (slot w aN) w = c := by
-    rw [hf₄.wv_eq (d := slot w aN) (k := w) (by rng_disj)
+    rw [hf₄.wv_eq (d := slot w aN) (k := w) (gcdRanges_fr w).2.2.1
       (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]; exact hc₃
   have hk₄ : ∀ {i}, i = kOut ∨ i = kLen ∨ i = kUsedP ∨ i = kE ∨ i = kElen ∨ i = kP ∨ i = kPlen ∨ i = kRand ∨
       i = kRandLen → word s₄.mem B (8 * i) = word s.mem B (8 * i) := fun {i} hi => by
     have : i ≤ 25 := by rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     rw [st₄.1 i this, hh₁ hi]
-  refine WP.mono (kTail_ok M hg₄ hZ hTZ (by omega_arith) (by omega_arith) hc₄ hsh (h.ou.congr k14.2.2)
+  have hXZ := h.zx
+  rw [hw8] at hXZ
+  refine WP.mono (kTail_ok M hg₄ hZ hXZ (by omega_arith) (by omega_arith) hc₄ hsh (h.ou.congr k14.2.2)
     (by rw [hk₄ (by simp)]; exact h.out) (by rw [hk₄ (by simp)]; exact h.len) (by rw [hk₄ (by simp)]; exact h.usedP)
     (by rw [hk₄ (by simp)]; exact h.rand) (by rw [hk₄ (by simp)]; exact h.rlen)
     (by rw [st₄.1 kUsed (by decide), hus₁]) (h.rsrc.congrK (hin₁.trans st₄.2) k14) h.rl h.rk) fun t ht => ?_

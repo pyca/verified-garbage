@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Machine
-public import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+import VerifiedGarbage.Proof.TripleDes.Bitslice.Pass
+import VerifiedGarbage.Proof.TripleDes.Bitslice.OutIdx
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.Sbox
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # One S-box of an AVX2 round, and the exchange of the halves
@@ -213,8 +216,8 @@ theorem outIdxW_lt (j x i : Nat) (h : outIdxW j x = some i) : i < 4 := by
 
 /-- The output into word `x` above `rsi`, by the one above `r13`. -/
 theorem outIdx_off : ∀ ρ : Role, ∀ j < 8, ∀ x < 64, outIdx ρ j x =
-    if wrOff ρ ≤ x ∧ x < 63 + wrOff ρ then outIdxW j (x - wrOff ρ) else none := by
-  intro ρ; cases ρ <;> lit_decide
+    if wrOff ρ ≤ x ∧ x < 63 + wrOff ρ then outIdxW j (x - wrOff ρ) else none :=
+  VG.Proof.TripleDes.Bitslice.outIdx_off
 
 theorem outIdx_lt (ρ : Role) (j x i : Nat) (h : outIdx ρ j x = some i) : i < 4 := by
   have := List.mem_of_find?_eq_some h

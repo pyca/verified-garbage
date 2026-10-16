@@ -2,11 +2,19 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointSeed
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafTableTiming
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuildTiming
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCacheBuildTiming
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JointLoopTiming
 
 /-! Shared field values through odd-table setup, cache construction and the seed. -/
 
@@ -38,8 +46,11 @@ theorem jointTables_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat}
       revert hc
       rw [Joint.cacheCode]
       split
-      · exact fun hc => (nafCacheUnrolled_relCT (E:=E') hL.layout.lay hm 8 hCL.hz hCL.cache hc).mono
-          (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
+      · split
+        · exact fun hc => (nafCacheUnrolled_relCT (E:=E') hL.layout.lay hm 8 hCL.hz hCL.cache hc).mono
+            (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
+        · exact fun hc => (nafCacheStaged_relCT (E:=E') hL.layout.lay hm hCL hc).mono
+            (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
       · exact fun hc => (nafCacheTable_relCT (E:=E') hL.layout.lay hm hCL hc).mono
           (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
     exact code.mono

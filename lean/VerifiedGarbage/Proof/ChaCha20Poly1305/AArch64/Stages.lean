@@ -1,17 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Init
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Finalize
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
-public import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
+import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Spec.ChaCha20Poly1305
-public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
+import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.Offset
 public import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Framework.Omega
@@ -652,17 +652,17 @@ theorem const_word (c : BitVec 32) :
 theorem load_word (v : BitVec 32) : ((v.setWidth 64).setWidth 32) = v := by
   rw [BitVec.setWidth_setWidth_of_le _ (by lit_omega), BitVec.setWidth_eq]
 
-theorem stW_ok {c kp np : Addr} {k : Nat} (hk : k < 16) {s : State} (hx21 : s.gpr .x21 = c)
-    (hx0 : s.gpr .x0 = kp) (hx1 : s.gpr .x1 = np) (hc : CtxOk c kp np s) :
-    WP isa (.block (stW k)) s fun s' =>
-      s'.mem = s.mem.writeW (off c (64 + 4 * k)) (wordOf s.mem kp np k) ∧
+theorem stW_ok {c kp np : Addr} {b k : Nat} (hb : b + 64 ≤ 760) (hb4 : b % 4 = 0) (hk : k < 16) {s : State}
+    (hx21 : s.gpr .x21 = c) (hx0 : s.gpr .x0 = kp) (hx1 : s.gpr .x1 = np) (hc : CtxOk c kp np s) :
+    WP isa (.block (stWAt b k)) s fun s' =>
+      s'.mem = s.mem.writeW (off c (b + 4 * k)) (wordOf s.mem kp np k) ∧
       (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have o := (hc.1 (64 + 4 * k) 4 (by lit_omega)).2
-  unfold stW stSrc wordOf
+  have o := (hc.1 (b + 4 * k) 4 (by lit_omega)).2
+  unfold stWAt stSrc wordOf
   by_cases h₁ : k < 4
   · simp only [h₁, ite_true, List.cons_append, List.nil_append]
     refine wp_movz32 fun s₁ u₁ => wp_movk32 fun s₂ u₂ => ?_
-    refine wp_str32 (a := off c (64 + 4 * k)) (by lit_omega) (by rw [u₂.other _ (by decide),
+    refine wp_str32 (a := off c (b + 4 * k)) (by lit_omega) (by rw [u₂.other _ (by decide),
       u₁.other _ (by decide), hx21]) (by rw [u₂.wr, u₁.wr]; exact o) fun s₃ g₃ => WP.block_nil ?_
     refine ⟨by rw [g₃.mem, u₂.gpr, u₂.mem, u₁.gpr, u₁.mem, const_word], fun r hr => by
       rw [g₃.gpr, u₂.other r hr, u₁.other r hr], by rw [g₃.rd, u₂.rd, u₁.rd], by rw [g₃.wr, u₂.wr, u₁.wr]⟩
@@ -670,35 +670,35 @@ theorem stW_ok {c kp np : Addr} {k : Nat} (hk : k < 16) {s : State} (hx21 : s.gp
   · simp only [h₁, h₂, ite_true, ite_false, List.cons_append, List.nil_append]
     have i := hc.2.1 (4 * (k - 4)) (by lit_omega)
     refine wp_ldr32 (a := off kp (4 * (k - 4))) (by lit_omega) (by rw [hx0]) i fun s₁ u₁ => ?_
-    refine wp_str32 (a := off c (64 + 4 * k)) (by lit_omega) (by rw [u₁.other _ (by decide), hx21])
+    refine wp_str32 (a := off c (b + 4 * k)) (by lit_omega) (by rw [u₁.other _ (by decide), hx21])
       (by rw [u₁.wr]; exact o) fun s₃ g₃ => WP.block_nil ?_
     refine ⟨by rw [g₃.mem, u₁.gpr, u₁.mem, load_word], fun r hr => by
       rw [g₃.gpr, u₁.other r hr], by rw [g₃.rd, u₁.rd], by rw [g₃.wr, u₁.wr]⟩
   by_cases h₃ : k = 12
   · simp only [h₃, ite_true]
     refine wp_movz32 fun s₁ u₁ => ?_
-    refine wp_str32 (a := off c (64 + 4 * 12)) (by lit_omega) (by rw [u₁.other _ (by decide), hx21])
+    refine wp_str32 (a := off c (b + 4 * 12)) (by lit_omega) (by rw [u₁.other _ (by decide), hx21])
       (by rw [u₁.wr]; exact h₃ ▸ o) fun s₃ g₃ => WP.block_nil ?_
     refine ⟨by rw [g₃.mem, u₁.gpr, u₁.mem]; rfl, fun r hr => by
       rw [g₃.gpr, u₁.other r hr], by rw [g₃.rd, u₁.rd], by rw [g₃.wr, u₁.wr]⟩
   · simp only [h₁, h₂, h₃, ite_false, List.cons_append, List.nil_append]
     have i := hc.2.2 (4 * (k - 13)) (by lit_omega)
     refine wp_ldr32 (a := off np (4 * (k - 13))) (by lit_omega) (by rw [hx1]) i fun s₁ u₁ => ?_
-    refine wp_str32 (a := off c (64 + 4 * k)) (by lit_omega) (by rw [u₁.other _ (by decide), hx21])
+    refine wp_str32 (a := off c (b + 4 * k)) (by lit_omega) (by rw [u₁.other _ (by decide), hx21])
       (by rw [u₁.wr]; exact o) fun s₃ g₃ => WP.block_nil ?_
     refine ⟨by rw [g₃.mem, u₁.gpr, u₁.mem, load_word], fun r hr => by
       rw [g₃.gpr, u₁.other r hr], by rw [g₃.rd, u₁.rd], by rw [g₃.wr, u₁.wr]⟩
 
 /-- A word `[a, a + 4)` of a buffer `⟨p, n⟩` apart from the frame. -/
-theorem readW_frame_buf {c p : Addr} {m m' : Mem} {k n : Nat} (hf : Frame [⟨off c 64, k⟩] m m')
-    (hd : (⟨off c 64, k⟩ : Region).Disjoint ⟨p, n⟩) {a : Nat} (ha : a + 4 ≤ n) :
+theorem readW_frame_buf {c p : Addr} {m m' : Mem} {b k n : Nat} (hf : Frame [⟨off c b, k⟩] m m')
+    (hd : (⟨off c b, k⟩ : Region).Disjoint ⟨p, n⟩) {a : Nat} (ha : a + 4 ≤ n) :
     m'.readW (off p a) 32 = m.readW (off p a) 32 := by
   refine hf.readW (r := ⟨off p a, 4⟩) (Region.contains_self _ _) ?_ (by decide)
   simp only [List.mem_singleton, forall_eq]
   exact (hd.sub_right (Offset.sub_base p (d := a) (n := 4) ha)).symm
 
-theorem wordOf_frame {c kp np : Addr} {m m' : Mem} {n : Nat} (hf : Frame [⟨off c 64, n⟩] m m')
-    (hk : (⟨off c 64, n⟩ : Region).Disjoint ⟨kp, 32⟩) (hn : (⟨off c 64, n⟩ : Region).Disjoint ⟨np, 12⟩)
+theorem wordOf_frame {c kp np : Addr} {m m' : Mem} {b n : Nat} (hf : Frame [⟨off c b, n⟩] m m')
+    (hk : (⟨off c b, n⟩ : Region).Disjoint ⟨kp, 32⟩) (hn : (⟨off c b, n⟩ : Region).Disjoint ⟨np, 12⟩)
     {k : Nat} (hk16 : k < 16) : wordOf m' kp np k = wordOf m kp np k := by
   unfold wordOf
   split_ifs
@@ -707,17 +707,18 @@ theorem wordOf_frame {c kp np : Addr} {m m' : Mem} {n : Nat} (hf : Frame [⟨off
   · rfl
   · exact readW_frame_buf hf hn (by lit_omega)
 
-theorem initState_step (j : Nat) : (List.range (j + 1)).flatMap stW = (List.range j).flatMap stW ++ stW j := by
+theorem initState_step (b j : Nat) :
+    (List.range (j + 1)).flatMap (stWAt b) = (List.range j).flatMap (stWAt b) ++ stWAt b j := by
   simp [List.range_succ, List.flatMap_append]
 
 /-- The first `j` words of the ChaCha20 state. -/
-theorem initState_ok {c kp np : Addr} {j : Nat} (hj : j ≤ 16) {s : State} (hx21 : s.gpr .x21 = c)
-    (hx0 : s.gpr .x0 = kp) (hx1 : s.gpr .x1 = np) (hc : CtxOk c kp np s)
-    (hk : (⟨off c 64, 64⟩ : Region).Disjoint ⟨kp, 32⟩) (hn : (⟨off c 64, 64⟩ : Region).Disjoint ⟨np, 12⟩) :
-    WP isa (.block ((List.range j).flatMap stW)) s fun s' =>
+theorem initState_ok {c kp np : Addr} {b j : Nat} (hb : b + 64 ≤ 760) (hb4 : b % 4 = 0) (hj : j ≤ 16) {s : State}
+    (hx21 : s.gpr .x21 = c) (hx0 : s.gpr .x0 = kp) (hx1 : s.gpr .x1 = np) (hc : CtxOk c kp np s)
+    (hk : (⟨off c b, 64⟩ : Region).Disjoint ⟨kp, 32⟩) (hn : (⟨off c b, 64⟩ : Region).Disjoint ⟨np, 12⟩) :
+    WP isa (.block ((List.range j).flatMap (stWAt b))) s fun s' =>
       (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame [⟨off c 64, 4 * j⟩] s.mem s'.mem ∧
-      ∀ i < j, s'.mem.readW (off c (64 + 4 * i)) 32 = wordOf s.mem kp np i := by
+      Frame [⟨off c b, 4 * j⟩] s.mem s'.mem ∧
+      ∀ i < j, s'.mem.readW (off c (b + 4 * i)) 32 = wordOf s.mem kp np i := by
   induction j with
   | zero =>
     exact WP.block_nil (M := isa) ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _, fun i hi => absurd hi (by lit_omega)⟩
@@ -725,8 +726,8 @@ theorem initState_ok {c kp np : Addr} {j : Nat} (hj : j ≤ 16) {s : State} (hx2
     rw [initState_step]
     refine WP.block_append (WP.mono (ih (by lit_omega)) fun s₁ ⟨g₁, rd₁, wr₁, f₁, w₁⟩ => ?_)
     have hc₁ : CtxOk c kp np s₁ := by rw [CtxOk, rd₁, wr₁]; exact hc
-    have hsub : Region.Sub ⟨off c 64, 4 * j⟩ ⟨off c 64, 64⟩ := Region.sub_prefix (by lit_omega)
-    refine WP.mono (stW_ok (by lit_omega) (by rw [g₁ _ (by decide), hx21]) (by rw [g₁ _ (by decide), hx0])
+    have hsub : Region.Sub ⟨off c b, 4 * j⟩ ⟨off c b, 64⟩ := Region.sub_prefix (by lit_omega)
+    refine WP.mono (stW_ok hb hb4 (by lit_omega) (by rw [g₁ _ (by decide), hx21]) (by rw [g₁ _ (by decide), hx0])
       (by rw [g₁ _ (by decide), hx1]) hc₁) fun s₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_
     refine ⟨fun r hr => by rw [g₂ r hr, g₁ r hr], by rw [rd₂, rd₁], by rw [wr₂, wr₁], ?_, fun i hi => ?_⟩
     · rw [m₂]
@@ -743,10 +744,10 @@ theorem consts_eq : ∀ i < 4, consts.getD i 0 = Spec.ChaCha20.constants.getD i 
 
 /-- The words stored are the initial ChaCha20 state for the key, counter 0
 and the nonce. -/
-theorem stateAt_initState {s₀ : State} (hp : APre e s₀) {m₁ m' : Mem}
+theorem stateAt_initState {s₀ : State} (hp : APre e s₀) {b : Nat} {m₁ m' : Mem}
     (hf₁ : Frame [sub s₀ 576 56] s₀.mem m₁)
-    (hw : ∀ i < 16, m'.readW (off (cx s₀) (64 + 4 * i)) 32 = wordOf m₁ (kp s₀) (np s₀) i) :
-    stateAt m' (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
+    (hw : ∀ i < 16, m'.readW (off (cx s₀) (b + 4 * i)) 32 = wordOf m₁ (kp s₀) (np s₀) i) :
+    stateAt m' (off (cx s₀) b) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
   have r₁ : ∀ {p : Addr} {n : Nat}, (ctxR s₀).Disjoint ⟨p, n⟩ → ∀ a, a + 4 ≤ n →
       m₁.readW (off p a) 32 = s₀.mem.readW (off p a) 32 := by
     intro p n hd a ha
@@ -757,7 +758,7 @@ theorem stateAt_initState {s₀ : State} (hp : APre e s₀) {m₁ m' : Mem}
   apply Vector.ext
   intro i hi
   simp only [stateAt, Spec.ChaCha20.initState, Vector.getElem_ofFn]
-  rw [show off (cx s₀) 64 + BitVec.ofNat 64 (4 * i) = off (cx s₀) (64 + 4 * i) from off_off _ _ _, hw i hi]
+  rw [show off (cx s₀) b + BitVec.ofNat 64 (4 * i) = off (cx s₀) (b + 4 * i) from off_off _ _ _, hw i hi]
   unfold wordOf
   split_ifs with h₁ h₂ h₃
   · exact consts_eq i h₁
@@ -822,7 +823,8 @@ theorem block1_ok {s₀ : State} (hp : APre e s₀) :
       exact ⟨kR s₀, by simp [hp.k_rd], Offset.contains_base _ ha (by lit_omega)⟩
     · rw [rd₁, wr₁]
       exact ⟨nR s₀, by simp [hp.n_rd], Offset.contains_base _ ha (by lit_omega)⟩
-  refine WP.block_append (WP.mono (WP.withSp (initState_ok (j := 16) (Nat.le_refl _) e21 e0 e1 hc₁
+  refine WP.block_append (WP.mono (WP.withSp (initState_ok (b := 64) (j := 16) (by lit_omega) (by decide) (Nat.le_refl _)
+    e21 e0 e1 hc₁
     (hp.c_k.sub_left (sub_ctx s₀ (k := 64) (n := 64) (by lit_omega)))
     (hp.c_n.sub_left (sub_ctx s₀ (k := 64) (n := 64) (by lit_omega)))))
     fun s₂ ⟨⟨g₂, rd₂, wr₂, f₂, w₂⟩, sp₂⟩ => ?_)

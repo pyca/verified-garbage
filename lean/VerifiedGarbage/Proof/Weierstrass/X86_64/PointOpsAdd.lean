@@ -2,11 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.PointOpsVal
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
+import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Point operations as functions on x86-64: what the cached addition computes
@@ -264,7 +271,7 @@ theorem cachedAdd_val (hC : CachedPts (m := m) K sel size Sl) (hm : UnitMod m (2
   apply WP.seq
   refine WP.mono (cachedHead_val hL hm ib) fun c ⟨kc, ic, eh, er⟩ => ?_
   have pre : ProgKeep K.M base (rcbW K.S K.D) s c :=
-    ((ka.mono (by simp)).trans (kb.mono (by simp))).trans kc
+    ((ka.mono (by regions_sub)).trans (kb.mono (by regions_sub))).trans kc
   let EH := runOps (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) E
   have hro : ∀ x ∈ jacCoords K.R, EH x = E x := fun x hx =>
     CachedJac.head_readonly hL.apart E (by

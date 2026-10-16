@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Blowfish.Contract
-public import VerifiedGarbage.Proof.Blowfish.Schedule
+import VerifiedGarbage.Proof.Blowfish.Schedule
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -126,75 +126,110 @@ theorem ecbPost_local (direction : Direction) : ∀ vs m₁ m₂ m' r,
     vs.length = (ecbSig.words pb).length →
     (∀ b ∈ Sig.bufs ecbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (ecbSig.words pb) (ecbPost direction pb) vs m₁ m' r →
-      Curry.apply (ecbSig.words pb) (ecbPost direction pb) vs m₂ m' r
-  | [sch, data, n], m₁, m₂, m', r, _, hb, h => by
-    simp only [ecbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hs := agree_of hb.1
-    have hd := agree_of hb.2
-    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost direction pb) _
-      m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost direction pb) _
-      m₂ m' r
-    dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
-    have := Nat.mod_le n.toNat (2 ^ pb)
-    rw [scheduleAt_congr hs, blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega)]
-    exact h
+      Curry.apply (ecbSig.words pb) (ecbPost direction pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨sch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [ecbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs := agree_of hb.1
+  have hd := agree_of hb.2
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost direction pb) _
+    m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost direction pb) _
+    m₂ m' r
+  dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
+  have := Nat.mod_le n.toNat (2 ^ pb)
+  rw [scheduleAt_congr hs, blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega)]
+  exact h
 
 theorem ecbPostOut_local (direction : Direction) : ∀ vs m m₁ m₂ r,
     vs.length = (ecbSig.words pb).length →
     (∀ b ∈ Sig.bufs ecbSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (ecbSig.words pb) (ecbPost direction pb) vs m m₁ r →
-      Curry.apply (ecbSig.words pb) (ecbPost direction pb) vs m m₂ r
-  | [_, data, n], m, m₁, m₂, r, _, hb, h => by
-    simp only [ecbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hd := agree_of hb.2
-    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost direction pb) _
-      m m₁ r at h
-    change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost direction pb) _
-      m m₂ r
-    dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
-    have := Nat.mod_le n.toNat (2 ^ pb)
-    rw [blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
-      rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega)]
-    exact h
+      Curry.apply (ecbSig.words pb) (ecbPost direction pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨data, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨n, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [ecbSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hd := agree_of hb.2
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost direction pb) _
+    m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.addr, ArgWord.int pb] (ecbPost direction pb) _
+    m m₂ r
+  dsimp only [Curry.apply, ecbPost, ArgWord.ofRaw] at h ⊢
+  have := Nat.mod_le n.toNat (2 ^ pb)
+  rw [blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
+    rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega)]
+  exact h
 
 theorem expandKeyPre_local : ∀ vs m₁ m₂, vs.length = (expandKeySig.words pb).length →
     (∀ b ∈ Sig.bufs expandKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (expandKeySig.words pb) (expandKeyPre pb) vs m₁ →
-      Curry.apply (expandKeySig.words pb) (expandKeyPre pb) vs m₂
-  | [_, _, _], _, _, _, _, h => h
+      Curry.apply (expandKeySig.words pb) (expandKeyPre pb) vs m₂ := by
+  intro vs _ _ hlen _ h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  iterate 2
+    obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+    replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  exact h
 
 theorem expandKeyPost_local : ∀ vs m₁ m₂ m' r, vs.length = (expandKeySig.words pb).length →
     (∀ b ∈ Sig.bufs expandKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m₁ m' r →
-      Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m₂ m' r
-  | [key, keyLen, _], m₁, m₂, m', r, _, hb, h => by
-    simp only [expandKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hk := agree_of hb.1
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m₁ m' r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m₂ m' r
-    dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h ⊢
-    have := Nat.mod_le keyLen.toNat (2 ^ pb)
-    rw [bytesAt_congr (n := (keyLen.setWidth pb).toNat) fun i hi => hk i (by
-      rw [BitVec.toNat_setWidth] at hi; omega)]
-    exact h
+      Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨key, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨keyLen, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [expandKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hk := agree_of hb.1
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m₁ m' r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m₂ m' r
+  dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h ⊢
+  have := Nat.mod_le keyLen.toNat (2 ^ pb)
+  rw [bytesAt_congr (n := (keyLen.setWidth pb).toNat) fun i hi => hk i (by
+    rw [BitVec.toNat_setWidth] at hi; omega)]
+  exact h
 
 theorem expandKeyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (expandKeySig.words pb).length →
     (∀ b ∈ Sig.bufs expandKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
     Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m m₁ r →
-      Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m m₂ r
-  | [_, _, sch], m, m₁, m₂, r, _, hb, h => by
-    simp only [expandKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-      forall_eq, Elem.size, Nat.mul_one] at hb
-    have hs := agree_of hb.2
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m m₁ r at h
-    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m m₂ r
-    dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h ⊢
-    rw [scheduleAt_congr hs]
-    exact h
+      Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨_, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨sch, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [expandKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq, Elem.size, Nat.mul_one] at hb
+  have hs := agree_of hb.2
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m m₁ r at h
+  change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m m₂ r
+  dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h ⊢
+  rw [scheduleAt_congr hs]
+  exact h
 
 end VG.Proof.Blowfish

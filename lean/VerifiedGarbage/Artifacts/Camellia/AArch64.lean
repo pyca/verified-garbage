@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.Verified
 public import VerifiedGarbage.Proof.Camellia.AArch64.KeyVerified
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

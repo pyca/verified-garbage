@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.Arm.Ctr
-public import VerifiedGarbage.Proof.AesGcm.Arm.Fn
+import VerifiedGarbage.Proof.AesGcm.Arm.Fn
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

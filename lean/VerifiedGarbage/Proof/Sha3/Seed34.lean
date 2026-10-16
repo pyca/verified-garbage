@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.KPke
-public import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.Arith
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

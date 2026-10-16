@@ -22,6 +22,24 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Poly1305.X86.Lit
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.Poly1305.X86.Lit
+public import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Poly1305.X86.Finalize
+public import VerifiedGarbage.Proof.Poly1305.X86.Init
+meta import VerifiedGarbage.Proof.ChaCha20.X86.Kernels
+meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.Poly1305.X86.Finalize
+meta import VerifiedGarbage.Proof.Poly1305.X86.Init
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 @[expose] public section
 
@@ -50,7 +68,7 @@ theorem APre.t_sub {s₀ : State} (hp : APre e s₀) {k n : Nat} (h : k + n ≤ 
 at different offsets, the stack below the return address, the data, the
 additional data and the return address. (Matching only reducibly, so that a
 lemma that does not apply fails fast.) -/
-macro "rdisj" : tactic => `(tactic| first
+tactic_template "rdisj" : tactic => `(tactic| first
   | with_reducible exact sub_disj _ (by lit_omega) (by lit_omega) (by lit_omega)
   | with_reducible exact (APre.stk_sub ‹APre _ _› (by lit_omega)).symm
   | with_reducible exact APre.stk_sub ‹APre _ _› (by lit_omega)
@@ -76,10 +94,10 @@ macro "rdisj" : tactic => `(tactic| first
   | with_reducible assumption)
 
 /-- A region is disjoint from each of a list of regions. -/
-macro "rdisj_all" : tactic => `(tactic| (
-  simp only [macR, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-  repeat' apply And.intro
-  all_goals rdisj))
+tactic_template "rdisj_all" : tactic => `(tactic| (
+                   simp only [macR, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+                   repeat' apply And.intro
+                   all_goals rdisj))
 
 theorem srcA {s₀ : State} (hp : APre e s₀) : Src s₀ (arg s₀ 2) (arg s₀ 3).toNat :=
   ⟨hp.fit_a, hp.c_a, hp.stk_a, List.mem_append_left _ hp.a_rd⟩

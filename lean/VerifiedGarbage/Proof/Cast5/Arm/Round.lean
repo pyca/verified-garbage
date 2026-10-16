@@ -7,12 +7,15 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Arm.Syms
+public import VerifiedGarbage.Proof.Framework.ReadHalves
 
 /-!
 # CAST5 on ARMv7: a round
 
 `round up` computes `I` (`byType mix`, `rotate`), spreads its bytes over
-`r4`–`r7` (`spread`), scans `tab1234` and combines the four values into `f`
+`r4`–`r7` (`spread`), scans `VG_CAST5_S1234` and combines the four values into `f`
 (`byType comb`), makes the Feistel step (`feistel`), and moves the type and
 the count of rounds left on (`next`).
 -/
@@ -22,6 +25,7 @@ the count of rounds left on (`next`).
 namespace VG.Proof.Cast5.Arm
 
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Cast5.Arm
+open VG.Impl.Cast5 (s1234Sym)
 
 /-! ## Choosing by the type -/
 
@@ -232,7 +236,9 @@ def fT (t : Nat) (km kr d : Spec.Cast5.Word) : Spec.Cast5.Word :=
     (Spec.Cast5.S3 (Spec.Cast5.byte i 2)) (Spec.Cast5.S4 (Spec.Cast5.byte i 3))
 
 /-- What a round needs: `(L, R)` in `(r2, r3)`; `Kmᵢ` at `lr` and `Krᵢ` at
-`lr + 64`; the type `t` and the count `cnt` of rounds left in their slots. -/
+`lr + 64`; the type `t` and the count `cnt` of rounds left in their slots;
+the scan's slots writable; and the table `VG_CAST5_S1234`, readable and
+apart from them. -/
 structure RoundPre (s : State) (km kr l r : Spec.Cast5.Word) (t : Nat) (cnt : BitVec 32) : Prop where
   r2 : s.gpr .r2 = l
   r3 : s.gpr .r3 = r
@@ -246,6 +252,13 @@ structure RoundPre (s : State) (km kr l r : Spec.Cast5.Word) (t : Nat) (cnt : Bi
   inC : InRegions s.wr (slot s 16) 4
   valC : s.mem.readW (slot s 16) 32 = cnt
   sep : Mem.Sep (slot s 16) 4 (slot s 20) 4
+  cfit : (s.gpr .r12).toNat + 32 ≤ 2 ^ 32
+  inS24 : InRegions s.wr (State.addr (s.gpr .r12) + BitVec.ofNat 64 24) 4
+  inS28 : InRegions s.wr (State.addr (s.gpr .r12) + BitVec.ofNat 64 28) 4
+  tfit : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32
+  trd : (⟨State.addr (s.syms s1234Sym), 4096⟩ : Region) ∈ s.rd ++ s.wr
+  held : Held s.mem (State.addr (s.syms s1234Sym)) Impl.Cast5.s1234
+  dTS : Region.Disjoint ⟨State.addr (s.syms s1234Sym), 4096⟩ ⟨State.addr (s.gpr .r12) + BitVec.ofNat 64 24, 8⟩
 
 theorem RoundPre.inT' {s : State} {km kr l r : Spec.Cast5.Word} {t : Nat} {cnt : BitVec 32}
     (h : RoundPre s km kr l r t cnt) : InRegions (s.rd ++ s.wr) (slot s 20) 4 := by
@@ -260,18 +273,30 @@ def preRegs : List Reg := [.r0, .r1, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
 /-- The registers a round writes. -/
 def roundRegs : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr]
 
+/-- The slots of the working space, as the scan addresses them. -/
+theorem slot_addr {s : State} (hc : (s.gpr .r12).toNat + 32 ≤ 2 ^ 32) {off : Nat} (ho : off < 32) :
+    slot s off = State.addr (s.gpr .r12) + BitVec.ofNat 64 off := addr_add (by omega)
+
+/-- A slot below the scan's, past its stores. -/
+theorem scanMem_slot (s : State) (hc : (s.gpr .r12).toNat + 32 ≤ 2 ^ 32) {off : Nat} (ho : off + 4 ≤ 24) :
+    (scanMem s spillEcb).readW (slot s off) 32 = s.mem.readW (slot s off) 32 := by
+  rw [slot_addr hc (by omega), scanMem, spillEcb,
+    Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide),
+    Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
+
 theorem round_ok (s : State) (up : Bool) {km kr l r : Spec.Cast5.Word} {t : Nat} {cnt : BitVec 32}
     (h : RoundPre s km kr l r t cnt) :
     WP isa (round up) s fun u =>
       u.gpr .r2 = r ∧ u.gpr .r3 = l ^^^ fT t km kr r ∧
       u.gpr .lr = (if up then s.gpr .lr + 4 else s.gpr .lr - 4) ∧
-      u.mem = (s.mem.writeW (slot s 20) (BitVec.ofNat 32 (nextT up t))).writeW (slot s 16) (cnt - 1) ∧
+      u.mem = ((scanMem s spillEcb).writeW (slot s 20) (BitVec.ofNat 32 (nextT up t))).writeW (slot s 16)
+        (cnt - 1) ∧
       u.z = (cnt - 1 == 0) ∧ Keep roundRegs s u := by
   have ht := h.ht
   unfold round
   -- `I` before the rotation.
-  refine WP.seq (WP.mono (byType_ok s Impl.Cast5.Arm.mix (Q := fun v => v.gpr .r1 = Proof.Cast5.mix t km r ∧
-      Keep [.r0, .r1] s v ∧ v.mem = s.mem) ht h.inT' h.valT fun u uk um => ?_) fun v hv => ?_)
+  refine WP.seq (VG.Arm.WP.mono_syms (byType_ok s Impl.Cast5.Arm.mix (Q := fun v => v.gpr .r1 = Proof.Cast5.mix t km r ∧
+      Keep [.r0, .r1] s v ∧ v.mem = s.mem) ht h.inT' h.valT fun u uk um => ?_) fun v hv vsy => ?_)
   · have g (q : Reg) (hq : q ≠ .r0) : u.gpr q = s.gpr q := uk.gpr q (by simpa using hq)
     exact WP.mono (mix_ok u ht (by rw [g _ (by decide)]; exact h.r3)
       (by rw [uk.rd, uk.wr, g _ (by decide)]; exact h.inM) (by rw [um, g _ (by decide)]; exact h.valM))
@@ -281,36 +306,53 @@ theorem round_ok (s : State) (up : Bool) {km kr l r : Spec.Cast5.Word} {t : Nat}
   -- The rotation, the indices and the scan.
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine (WP.mono (rotate_ok v v1 (kr := kr) (by rw [vk.rd, vk.wr, gv _ (by decide)]; exact h.inR)
-    (by rw [vm, gv _ (by decide)]; exact h.valR)) fun w ⟨w1, wk, wm⟩ => ?_)
+  refine (VG.Arm.WP.mono_syms (rotate_ok v v1 (kr := kr) (by rw [vk.rd, vk.wr, gv _ (by decide)]; exact h.inR)
+    (by rw [vm, gv _ (by decide)]; exact h.valR)) fun w ⟨w1, wk, wm⟩ wsy => ?_)
   obtain ⟨i, hi⟩ : ∃ i, (Proof.Cast5.mix t km r).rotateLeft (kr.toNat % 32) = i := ⟨_, rfl⟩
   rw [hi] at w1
-  refine WP.mono (spread_ok w w1) fun x ⟨xi, xk, xm⟩ => ?_
-  refine WP.seq (WP.mono (scan_ok x tab1234 fun k hk => by rw [xi k hk]; exact idx_lt i hk) fun y ⟨ya, yk, ym⟩ => ?_)
-  have kxy := (vk.mono (by decide)).trans ((wk.mono (by decide)).trans ((xk.mono (by decide)).trans
-    (yk.mono (show ∀ r ∈ [Reg.r0, .r1, .r8, .r9, .r10, .r11], r ∈ preRegs by decide))))
-  have my : y.mem = s.mem := ym.trans (xm.trans (wm.trans vm))
+  refine VG.Arm.WP.mono_syms (spread_ok w w1) fun x ⟨xi, xk, xm⟩ xsy => ?_
+  have kx := (vk.mono (by decide)).trans ((wk.mono (by decide)).trans
+    (xk.mono (show ∀ q ∈ [Reg.r4, .r5, .r6, .r7], q ∈ preRegs by decide)))
+  have mx : x.mem = s.mem := xm.trans (wm.trans vm)
+  have sx : x.syms = s.syms := xsy.trans (wsy.trans vsy)
+  have r12x : x.gpr .r12 = s.gpr .r12 := kx.gpr _ (by decide)
+  have sp : ScanPre s1234Sym spillEcb x :=
+    { idx := fun k hk => by rw [xi k hk]; exact idx_lt i hk
+      cfit := by rw [r12x]; have := h.cfit; unfold spillEcb; omega
+      ofit := by decide
+      s0 := by rw [r12x, kx.wr]; exact h.inS24
+      s4 := by rw [r12x, kx.wr]; exact h.inS28
+      tfit := by rw [sx]; exact h.tfit
+      trd := by rw [sx, kx.rd, kx.wr]; exact h.trd
+      dTS := by rw [sx, r12x]; exact h.dTS }
+  have ex : scanMem x spillEcb = scanMem s spillEcb := by
+    rw [scanMem, scanMem, mx, r12x, kx.gpr _ (by decide), kx.gpr _ (by decide)]
+  refine WP.seq (WP.mono (scan_ok x s1234Sym spillEcb sp) fun y ⟨ya, yk, ym⟩ => ?_)
+  have kxy := kx.trans (yk.mono (show ∀ r ∈ [Reg.r0, .r1, .r8, .r9, .r10, .r11], r ∈ preRegs by decide))
+  rw [ex] at ym
   have r12y : y.gpr .r12 = s.gpr .r12 := kxy.gpr _ (by decide)
+  have esl (off : Nat) : slot y off = slot s off := by rw [r12y]
+  have valT : y.mem.readW (slot y 20) 32 = BitVec.ofNat 32 t := by
+    rw [ym, esl, scanMem_slot s h.cfit (by decide)]; exact h.valT
   -- `f`.
   refine WP.seq (WP.mono (byType_ok y Impl.Cast5.Arm.comb (Q := fun z => z.gpr .r1 = fT t km kr r ∧
-      Keep preRegs s z ∧ z.mem = s.mem) ht (by rw [kxy.rd, kxy.wr, r12y]; exact h.inT')
-      (by rw [my, r12y]; exact h.valT) fun u uk um => ?_) fun z hz => ?_)
+      Keep preRegs s z ∧ z.mem = scanMem s spillEcb) ht (by rw [kxy.rd, kxy.wr, r12y]; exact h.inT')
+      valT fun u uk um => ?_) fun z hz => ?_)
   · have g (q : Reg) (hq : q ≠ .r0) : u.gpr q = y.gpr q := uk.gpr q (by simpa using hq)
     refine WP.mono (comb_ok u ht) fun z ⟨z1, zk, zm⟩ => ⟨?_, kxy.trans ((uk.mono (by decide)).trans
-      (zk.mono (by decide))), zm.trans (um.trans my)⟩
-    have a0 : y.gpr .r8 = _ := ya 0 (by decide)
-    have a1 : y.gpr .r9 = _ := ya 1 (by decide)
-    have a2 : y.gpr .r10 = _ := ya 2 (by decide)
-    have a3 : y.gpr .r11 = _ := ya 3 (by decide)
-    rw [z1, g _ (by decide), g _ (by decide), g _ (by decide), g _ (by decide), a0, a1, a2, a3,
-      xi 0 (by decide), xi 1 (by decide),
-      xi 2 (by decide), xi 3 (by decide)]
+      (zk.mono (by decide))), zm.trans (um.trans ym)⟩
+    have hT := h.tfit
+    have ent (k : Nat) (hk : k < 4) : y.gpr (accReg k) = tableEnt Spec.Cast5.S4 Spec.Cast5.S3 Spec.Cast5.S2
+        Spec.Cast5.S1 (idx i k).toNat k := by
+      rw [ya k hk, mx, xi k hk, sx]; exact tw_table hT h.held (idx_lt i hk) hk
+    have a0 : y.gpr .r8 = _ := ent 0 (by decide)
+    have a1 : y.gpr .r9 = _ := ent 1 (by decide)
+    have a2 : y.gpr .r10 = _ := ent 2 (by decide)
+    have a3 : y.gpr .r11 = _ := ent 3 (by decide)
+    rw [z1, g _ (by decide), g _ (by decide), g _ (by decide), g _ (by decide), a0, a1, a2, a3]
     unfold fT
     rw [hi]
-    simp only [tab1234_eq (idx_lt i (show 0 < 4 by decide)) (show 0 < 4 by decide),
-      tab1234_eq (idx_lt i (show 1 < 4 by decide)) (show 1 < 4 by decide),
-      tab1234_eq (idx_lt i (show 2 < 4 by decide)) (show 2 < 4 by decide),
-      tab1234_eq (idx_lt i (show 3 < 4 by decide)) (show 3 < 4 by decide), tabOf, idx_byte i (show 0 < 4 by decide), idx_byte i (show 1 < 4 by decide),
+    simp only [tableEnt, idx_byte i (show 0 < 4 by decide), idx_byte i (show 1 < 4 by decide),
       idx_byte i (show 2 < 4 by decide), idx_byte i (show 3 < 4 by decide)]
   obtain ⟨z1, zk, zm⟩ := hz
   have gz (q : Reg) (hq : q ∉ preRegs) : z.gpr q = s.gpr q := zk.gpr q hq
@@ -320,9 +362,13 @@ theorem round_ok (s : State) (up : Bool) {km kr l r : Spec.Cast5.Word} {t : Nat}
     (ak.mono (show ∀ q ∈ [Reg.r1, .r2, .r3, .lr], q ∈ roundRegs by decide))
   have r12a : a.gpr .r12 = s.gpr .r12 := ka.gpr _ (by decide)
   have es (off : Nat) : slot a off = slot s off := by rw [r12a]
-  have ma : a.mem = s.mem := am.trans zm
-  refine WP.mono (next_ok a up ht (cnt := cnt) (by rw [es, ka.wr]; exact h.inT) (by rw [es, ma]; exact h.valT)
-    (by rw [es, ka.wr]; exact h.inC) (by rw [es, ma]; exact h.valC) (by rw [es, es]; exact h.sep))
+  have ma : a.mem = scanMem s spillEcb := am.trans zm
+  have hinT := h.inT
+  have hinC := h.inC
+  refine WP.mono (next_ok a up ht (cnt := cnt) (by rw [es, ka.wr]; exact h.inT)
+    (by rw [es, ma, scanMem_slot s h.cfit (by decide)]; exact h.valT)
+    (by rw [es, ka.wr]; exact h.inC) (by rw [es, ma, scanMem_slot s h.cfit (by decide)]; exact h.valC)
+    (by rw [es, es]; exact h.sep))
     fun b ⟨bm, bz, bk⟩ => ?_
   have gb (q : Reg) (hq : q ≠ .r0) : b.gpr q = a.gpr q := bk.gpr q (by simpa using hq)
   refine ⟨by rw [gb _ (by decide), a2, gz _ (by decide), h.r3], ?_, ?_, by rw [bm, es, es, ma], bz,

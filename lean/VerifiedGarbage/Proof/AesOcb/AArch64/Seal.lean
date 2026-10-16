@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Body
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Entry
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
-public import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
+import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
+import VerifiedGarbage.Proof.AesOcb.AArch64.Nonce
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ocb.Bytes
 
 /-!
 # AES-OCB on AArch64: `vg_aes_ocb_seal`

@@ -1,12 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddChain
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddChain
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddClose
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxBlock
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 @[expose] public section
 

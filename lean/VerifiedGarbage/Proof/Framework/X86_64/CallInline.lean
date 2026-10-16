@@ -163,6 +163,41 @@ theorem store512_patch (hc : Clear H s) (a : Addr) (v : BitVec 512) :
   by_cases hi : InRegions s.wr a 64 <;> simp only [hi, ite_true, ite_false, Option.map_some, Option.map_none]
   rw [overlay_writeW fun x hx => hc.miss wr_mem hi hx]; rfl
 
+theorem loadMasked512_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) :
+    (s.patch H hv u).loadMasked512 a k = s.loadMasked512 a k := by
+  simp only [State.loadMasked512, State.patch]
+  by_cases hi : ∀ j ∈ State.qOn k, InRegions (s.rd ++ s.wr) (State.qAddr a j) 8
+  · -- Not `cases` on the bit and `rfl`: on a clear bit, `rfl` first tries to
+    -- unify the two reads, unfolding them.
+    have hq : ∀ j, j < 8 →
+        (if k.getLsbD j then (overlay H hv s.mem).readW (State.qAddr a j) 64 else 0) =
+          (if k.getLsbD j then s.mem.readW (State.qAddr a j) 64 else 0) := fun j hj =>
+      ite_congr rfl (fun hk => overlay_readW (by decide) fun _ hx =>
+        hc.miss (fun _ h => h) (hi j (List.mem_filter.mpr ⟨List.mem_range.mpr hj, hk⟩)) hx) fun _ => rfl
+    simp only [hq 0 (by decide), hq 1 (by decide), hq 2 (by decide), hq 3 (by decide),
+      hq 4 (by decide), hq 5 (by decide), hq 6 (by decide), hq 7 (by decide)]
+  · simp only [hi, ↓reduceIte]
+
+theorem foldl_qwrites_patch (hc : Clear H s) {a : Addr} (f : Nat → BitVec 64) :
+    ∀ (l : List Nat), (∀ j ∈ l, InRegions s.wr (State.qAddr a j) 8) → ∀ m : Mem,
+      l.foldl (fun m j => m.writeW (State.qAddr a j) (f j)) (overlay H hv m) =
+        overlay H hv (l.foldl (fun m j => m.writeW (State.qAddr a j) (f j)) m)
+  | [], _, _ => rfl
+  | j :: l, hl, m => by
+    simp only [List.foldl_cons]
+    rw [overlay_writeW fun x hx => hc.miss wr_mem (hl j List.mem_cons_self) hx]
+    exact foldl_qwrites_patch hc f l (fun j h => hl j (List.mem_cons_of_mem _ h)) _
+
+theorem storeMasked512_patch (hc : Clear H s) (a : Addr) (k : BitVec 64) (v : BitVec 512) :
+    (s.patch H hv u).storeMasked512 a k v = (s.storeMasked512 a k v).map (State.patch H hv u) := by
+  unfold State.storeMasked512
+  rw [show (s.patch H hv u).wr = s.wr from rfl]
+  by_cases hi : ∀ j ∈ State.qOn k, InRegions s.wr (State.qAddr a j) 8
+  · rw [ite_eq_left hi, ite_eq_left hi, Option.map_some]
+    simp only [State.patch]
+    rw [foldl_qwrites_patch hc _ _ hi]
+  · rw [ite_eq_right hi, ite_eq_right hi]; rfl
+
 theorem readSrc_patch (hc : Clear H s) (src : Src) : readSrc (s.patch H hv u) src = readSrc s src := by
   cases src with
   | mem m => exact load64_patch hc _
@@ -237,6 +272,11 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> rfl
   | evStore m r => exact store256_patch hc _ _
+  | kLoad k d m =>
+    simp only [exec, Option.map_map]
+    rw [show (s.patch H hv u).ea m = s.ea m from rfl, show (s.patch H hv u).gpr k = s.gpr k from rfl,
+      loadMasked512_patch hc]; rfl
+  | kStore m k r => exact storeMasked512_patch hc _ _ _
   | evMadd52Load hi d a m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load256_patch hc]
     congr 1; funext v; cases d <;> rfl
@@ -295,6 +335,7 @@ def Instr.rspFree : Instr → Bool
   | .imul d r => d != .rsp && r != .rsp
   | .mulx hi lo src => hi != .rsp && lo != .rsp && src.noRsp
   | .movImm64 d _ => d != .rsp
+  | .bswap d => d != .rsp
   | .xop (.movq _ r) => r != .rsp
   | .xop _ => true
   | .movqR d _ => d != .rsp
@@ -450,6 +491,9 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
   | movImm64 d v =>
     simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
     simp only [exec, Option.map_some, setReg_setRsp hi]
+  | bswap d =>
+    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
+    simp only [exec, Option.map_some, setRsp_gpr hi, setReg_setRsp hi]
   | xop op =>
     simp only [exec, Option.map_some]; congr 1
     cases op with
@@ -549,7 +593,7 @@ theorem execBlock_length {l : List Instr} {s s' : State} {t : List Leak} (h : ex
 `rsp`, there are no frames, and each function called calls none and has
 only instructions that do not touch `rsp`. -/
 def _root_.VG.Code.InlineOk : Prog isa → Bool
-  | .block l => l.all fun i => !Taint.clobbers i .rsp
+  | .block l => KList.all l fun i => !Taint.clobbers i .rsp
   | .seq a b => a.InlineOk && b.InlineOk
   | .ite _ t e => t.InlineOk && e.InlineOk
   | .loop b _ => b.InlineOk
@@ -575,6 +619,37 @@ theorem _root_.VG.Code.noCalls_inline {c : Prog isa} (h : c.InlineOk = true) : c
   | call _ b _ =>
     simp only [Code.InlineOk, Bool.and_eq_true] at h
     exact h.1
+  | frame _ _ _ _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
+
+/-- An instruction that neither reads nor writes `rsp` does not write it. -/
+theorem _root_.VG.X86_64.Instr.clobbers_rsp_of_rspFree {i : Instr} (h : i.rspFree = true) :
+    Taint.clobbers i .rsp = false := by
+  cases i <;> simp_all [Instr.rspFree, Taint.clobbers, Taint.dstOf, @eq_comm _ Reg.rsp]
+
+/-- No instruction of inlined code writes `rsp`: what `Code.InlineOk` checks
+of the code outside the calls, and of the calls' instructions (`rspFree`). -/
+theorem _root_.VG.Code.clobbers_rsp_of_inlineOk {c : Prog isa} (h : c.InlineOk = true) :
+    ∀ i ∈ instrs c.inline, Taint.clobbers i .rsp = false := by
+  induction c with
+  | block l =>
+    simp only [Code.InlineOk, KList.all_eq, List.all_eq_true, Bool.not_eq_true'] at h
+    exact h
+  | seq a b iha ihb =>
+    simp only [Code.InlineOk, Bool.and_eq_true] at h
+    simp only [Code.inline, instrs, List.mem_append]
+    rintro i (hi | hi)
+    exacts [iha h.1 i hi, ihb h.2 i hi]
+  | ite _ t e iht ihe =>
+    simp only [Code.InlineOk, Bool.and_eq_true] at h
+    simp only [Code.inline, instrs, List.mem_append]
+    rintro i (hi | hi)
+    exacts [iht h.1 i hi, ihe h.2 i hi]
+  | loop b _ ih =>
+    simp only [Code.InlineOk] at h
+    exact ih h
+  | call _ b _ =>
+    simp only [Code.InlineOk, Bool.and_eq_true, Code.allInstrs_eq, List.all_eq_true] at h
+    exact fun i hi => Instr.clobbers_rsp_of_rspFree (h.2 i hi)
   | frame _ _ _ _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
 
 /-- Code without calls is its own inlined form. -/
@@ -810,7 +885,7 @@ theorem Exec.uninline {c : Prog isa} (hc : c.InlineOk = true) {sp : Addr} {b b' 
   induction c generalizing b b' t hv u with
   | block l =>
     simp only [Code.inline] at h
-    simp only [Code.InlineOk, List.all_eq_true, Bool.not_eq_true'] at hc
+    simp only [Code.InlineOk, KList.all_eq, List.all_eq_true, Bool.not_eq_true'] at hc
     refine ⟨hv, u, t, Exec.F (H := hole sp) rfl (fun i _ s hs => ⟨exec_patch hs i, addrs_patch i⟩)
       (fun k _ => eval_patch k) h hb, ?_, Exec.lifts_self _ rfl h⟩
     rw [Exec.gpr (c := .block l) (fun i hi => hc i hi) h, hsp]

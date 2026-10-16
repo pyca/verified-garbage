@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.Rc2.X86.Lookup
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -9,6 +12,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.X86.SseDword
 
 /-!
 # RC2 on x86: PITABLE in SSE2 registers
@@ -33,27 +39,27 @@ theorem ea_memOp (s : State) (b : Reg) (d : Nat) : s.ea (memOp b d) = addr (s.gp
 
 /-- `lrun`: a block run by `simp`, one instruction at a time, the state a
 chain of register, flag and memory updates (as `crun`, `Proof/Cast5/X86/Run.lean`). -/
-syntax "lrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| lrun) => `(tactic| lrun [])
-  | `(tactic| lrun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      refine ⟨?_, ?_, ?_⟩
-      rotate_left
-      · set_option linter.unusedSimpArgs false in
-        simp only [runBlock_cons, runStep_some, runBlock_nil, imm, rr,
-        exec, readSrc, ea_memOp, State.load32, State.store32, State.load128, State.store128, execAlu, execShift,
-        XOp.exec, Option.map_some, Option.bind_some,
-        gpr_setReg, mem_setReg, rd_setReg, wr_setReg, xmm_setReg,
-        gpr_setFlags, mem_setFlags, rd_setFlags, wr_setFlags, xmm_setFlags,
-        gpr_arithFlags, mem_arithFlags, rd_arithFlags, wr_arithFlags, xmm_arithFlags,
-        gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne,
-        Option.some.injEq, exists_eq_left',
-        ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceMul, Nat.reduceAdd, Nat.reduceLT,
-        Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff,
-        and_self, eq_self_iff_true, not_false_eq_true, true_and, and_true, List.cons_append,
-        List.nil_append, $ls,*]
-        first | done | rfl))
+tactic_template "lrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                       apply WP.of_runBlock
+                       refine ⟨?_, ?_, ?_⟩
+                       rotate_left
+                       · set_option linter.unusedSimpArgs false in
+                         simp only [runBlock_cons, runStep_some, runBlock_nil, imm, rr,
+                         exec, readSrc, ea_memOp, State.load32, State.store32, State.load128, State.store128, execAlu, execShift,
+                         XOp.exec, Option.map_some, Option.bind_some,
+                         gpr_setReg, mem_setReg, rd_setReg, wr_setReg, xmm_setReg,
+                         gpr_setFlags, mem_setFlags, rd_setFlags, wr_setFlags, xmm_setFlags,
+                         gpr_arithFlags, mem_arithFlags, rd_arithFlags, wr_arithFlags, xmm_arithFlags,
+                         gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, xmm_setXmm_self, xmm_setXmm_of_ne,
+                         Option.some.injEq, exists_eq_left',
+                         ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceMul, Nat.reduceAdd, Nat.reduceLT,
+                         Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff,
+                         and_self, eq_self_iff_true, not_false_eq_true, true_and, and_true, List.cons_append,
+                         List.nil_append, $ls,*]
+                         first | done | rfl))
+
+/-- `lrun []`. -/
+tactic_template "lrun" : tactic => `(tactic| lrun [])
 
 /-! ## Lanes -/
 
@@ -191,7 +197,7 @@ theorem piStartSse_ok (s : State) :
   unfold piStart
   lrun [idx_and255, idx_shr2]
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, fun _ _ => rfl, rfl, rfl, rfl⟩, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    simp (disch := decide) only [xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, gpr_setXmm,
+    simp only [ne_eq, not_false_eq_true, xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, gpr_setXmm,
       gpr_setReg, gpr_setFlags, gpr_arithFlags, mem_setXmm, mem_setReg,
       mem_setFlags, mem_arithFlags, rd_setXmm, rd_setReg, rd_setFlags, rd_arithFlags, wr_setXmm, wr_setReg,
       wr_setFlags, wr_arithFlags,

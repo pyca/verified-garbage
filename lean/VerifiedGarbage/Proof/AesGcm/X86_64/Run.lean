@@ -5,6 +5,26 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Spec.Aes
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.KeyExp
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Env
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+public import VerifiedGarbage.Proof.Gcm.Ctr
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-GCM on x86-64: running straight-line blocks
@@ -26,16 +46,16 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
 open VG.Spec.Aes (bytesAt)
 
 /-- Runs a block of the instructions the AES-GCM code uses. -/
-macro "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-    readSrc32, execAlu, execAlu32, execShift, State.load64, State.store64, State.load32, State.store32,
-    State.load8, State.store8, State.ea, State.setReg32, offset_nat, at_, imm, ptr, stO, tO, uO, roundsO, alenO, tlenO, dataO,
-    lenO, auxO, tlO, aadO, tagPO, vO, rO, scrO, List.cons_append,
-    List.nil_append, List.append_assoc, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags,
-    gpr_setFlags, mem_setReg, mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags,
-    wr_setReg, wr_arithFlags, wr_setFlags, cf_setReg, cf_arithFlags, zf_setReg, zf_arithFlags,
-    ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff,
-    Nat.reduceAdd, and_self, and_true, true_and, $ts,*]) <;> try rfl)
+tactic_template "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                   simp (disch := first | decide | omega) only [imm_eq, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+                     readSrc32, execAlu, execAlu32, execShift, State.load64, State.store64, State.load32, State.store32,
+                     State.load8, State.store8, State.ea, State.setReg32, offset_nat, at_, imm, ptr, stO, tO, uO, roundsO, alenO, tlenO, dataO,
+                     lenO, auxO, tlO, aadO, tagPO, vO, rO, scrO, List.cons_append,
+                     List.nil_append, List.append_assoc, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags,
+                     gpr_setFlags, mem_setReg, mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags,
+                     wr_setReg, wr_arithFlags, wr_setFlags, cf_setReg, cf_arithFlags, zf_setReg, zf_arithFlags,
+                     ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff,
+                     Nat.reduceAdd, and_self, and_true, true_and, $ts,*]) <;> try rfl)
 
 /-- A buffer of `n` bytes at `D` that the code may read, apart from the
 context, the state, `W` and the stack below `SP`. -/

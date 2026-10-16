@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 
 /-!
 # ECDSA verification on x86-64: `x` and the result
@@ -77,9 +81,9 @@ theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) 
   exact this
 
 theorem final_eq (c : Cfg) : (Impl.Ecdsa.Verify.X86_64.Cfg.final c).inline =
-    .seq (.block (Impl.Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
-    (.seq (.block (Impl.Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
-    (.seq (mulN c XN X R2N)
+    .seq ((c.mulPS (c.sl XM) (c.sl RX) (c.sl ACC)).inline)
+    (.seq ((c.mulPS (c.sl X) (c.sl XM) (c.sl ONE)).inline)
+    (.seq (mulNS c XN X R2N)
     (.seq (.block (Impl.Mont.X86_64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')))
       (.block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.checkZero c (c.sl W) ++
         Impl.Ecdsa.Verify.X86_64.Cfg.finish c))))) := rfl
@@ -112,19 +116,19 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   rw [final_eq, List.append_assoc]
   -- `XM = X · ACC`.
   have hM₁ := modP_of hc F₁.mp
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₁ hM₁ (o := XM) (a := RX) (b := ACC) (by decide)
+  refine WP.seq (WP.mono (slMulPSFinish_ok h7 hs₁ hM₁ (o := XM) (a := RX) (b := ACC) (by decide)
     (by decide) (by decide) (by decide) lt₁) fun s₂ ⟨k₂, _, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
-  have M₂ := hM₁.keep (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
+  have M₂ := hM₁.keepShared (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₂ i = sv c base s₁ i := fun hi h₁ h₂ =>
-    sv_keep (MP'_n c) rfl h7 hn k₂ hi h₁ h₂
+    sv_shared_keep (MP'_n c) rfl h7 hn k₂ hi h₁ h₂
   -- `X = XM · 1`.
   have one₂ : sv c base s₂ ONE = 1 := (v₂ (by decide) (by decide) (by decide)).trans F₁.one
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (MP'_tmp c) (MP'_mo c) h7 hs₂ M₂ (o := X) (a := XM) (b := ONE) (by decide)
+  refine WP.seq (WP.mono (slMulPSFinish_ok h7 hs₂ M₂ (o := X) (a := XM) (b := ONE) (by decide)
     (by decide) (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
   have v₃ : ∀ {i}, i < 45 → i ≠ X → i ≠ TMP → sv c base s₃ i = sv c base s₂ i := fun hi h₁ h₂ =>
-    sv_keep (MP'_n c) rfl h7 hn k₃ hi h₁ h₂
+    sv_shared_keep (MP'_n c) rfl h7 hn k₃ hi h₁ h₂
   have x₃ : Fin.ofNat c.C.p (sv c base s₃ X) =
       tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) := by
     have acc₁ : toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ ACC) =
@@ -139,7 +143,7 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n :=
     (v₃ (by decide) (by decide) (by decide)).trans ((v₂ (by decide) (by decide) (by decide)).trans
       ((e₁ (by decide) (by decide)).trans F.r2n))
-  refine WP.seq (WP.mono (mulN_ok hc hs₃ hMN₃ (o := XN) (a := X) (b := R2N) (by decide)
+  refine WP.seq (WP.mono (mulNS_ok hc hs₃ hMN₃ (o := XN) (a := X) (b := R2N) (by decide)
     (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega)) (by decide))
     fun s₄ ⟨hs₄, M₄, _, _, _, U₄, v₄, lt₄, e₄⟩ => ?_)
   have rm₄ : sv c base s₄ RM' = sv c base s RM' := by
@@ -162,15 +166,15 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
   rw [WP.block_append_iff]
   refine WP.mono (checkZero_ok c hs₆ h0 (sl_le c h7 (i := W) (by decide)) hf) fun s₇ ⟨f₇, k₇, O₇⟩ => ?_
   have hs₇ := hs₆.of_keepRegs k₇ (by decide)
-  have U : Unch base (slW c [ACC, PT, TMP, XM, X, XN, W] ++ ([(c.sl FLAG, 8)] ++
+  have U : Unch base (slW c [62, ACC, PT, TMP, XM, X, XN, W] ++ ([(c.sl FLAG, 8)] ++
       [(bitsAt c.n 3, 64 * c.n + 64)])) s.mem s₇.mem := by
-    refine (U₁.trans ((unch_slots (MP'_n c) rfl k₂.unch (l := [XM, TMP]) (by simp) (by simp)).trans
-      ((unch_slots (MP'_n c) rfl k₃.unch (l := [X, TMP]) (by simp) (by simp)).trans
+    refine (U₁.trans ((unch_shared_slots (MP'_n c) rfl k₂.unch (l := [62, XM, TMP]) (by simp) (by simp) (by simp)).trans
+      ((unch_shared_slots (MP'_n c) rfl k₃.unch (l := [62, X, TMP]) (by simp) (by simp) (by simp)).trans
       (U₄.trans
       ((unch_slots (MN'_n c) rfl k₅.unch (l := [W, TMP]) (by simp) (by simp)).trans
       (O₆.unch.trans O₇.unch)))))).mono fun w hw => ?_
-    have sl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ [ACC, PT, TMP, XM, X, XN, W]) → w ∈ slW c l →
-        w ∈ slW c [ACC, PT, TMP, XM, X, XN, W] ++ ([(c.sl FLAG, 8)] ++ [(bitsAt c.n 3, 64 * c.n + 64)]) :=
+    have sl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ [62, ACC, PT, TMP, XM, X, XN, W]) → w ∈ slW c l →
+        w ∈ slW c [62, ACC, PT, TMP, XM, X, XN, W] ++ ([(c.sl FLAG, 8)] ++ [(bitsAt c.n 3, 64 * c.n + 64)]) :=
       fun hl hw => by
         obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
         exact List.mem_append_left _ (List.mem_map_of_mem (hl i hi))
@@ -207,13 +211,13 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
       Fin.ofNat c.C.n (sv c base s₃ X) = Fin.ofNat c.C.n (sigR c s₀)) then BitVec.allOnes 64 else 0 := by
     have hW₆ : wordsVal s₆.mem base (c.sl W) c.n = sv c base s₅ W :=
       sv_flag O₆ h0 h7 hn (by decide) (by decide)
-    have U₅ : Unch base (slW c [ACC, PT, TMP, XM, X, XN, W] ++ [(bitsAt c.n 3, 64 * c.n + 64)]) s.mem s₅.mem := by
-      refine (U₁.trans ((unch_slots (MP'_n c) rfl k₂.unch (l := [XM, TMP]) (by simp) (by simp)).trans
-        ((unch_slots (MP'_n c) rfl k₃.unch (l := [X, TMP]) (by simp) (by simp)).trans
+    have U₅ : Unch base (slW c [62, ACC, PT, TMP, XM, X, XN, W] ++ [(bitsAt c.n 3, 64 * c.n + 64)]) s.mem s₅.mem := by
+      refine (U₁.trans ((unch_shared_slots (MP'_n c) rfl k₂.unch (l := [62, XM, TMP]) (by simp) (by simp) (by simp)).trans
+        ((unch_shared_slots (MP'_n c) rfl k₃.unch (l := [62, X, TMP]) (by simp) (by simp) (by simp)).trans
         (U₄.trans
         (unch_slots (MN'_n c) rfl k₅.unch (l := [W, TMP]) (by simp) (by simp)))))).mono fun w hw => ?_
-      have sl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ [ACC, PT, TMP, XM, X, XN, W]) → w ∈ slW c l →
-          w ∈ slW c [ACC, PT, TMP, XM, X, XN, W] ++ [(bitsAt c.n 3, 64 * c.n + 64)] := fun hl hw => by
+      have sl : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ [62, ACC, PT, TMP, XM, X, XN, W]) → w ∈ slW c l →
+          w ∈ slW c [62, ACC, PT, TMP, XM, X, XN, W] ++ [(bitsAt c.n 3, 64 * c.n + 64)] := fun hl hw => by
         obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
         exact List.mem_append_left _ (List.mem_map_of_mem (hl i hi))
       simp only [List.mem_append] at hw

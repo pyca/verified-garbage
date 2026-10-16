@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Cmp
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Cmp
-public import VerifiedGarbage.Proof.MlDsa.Verify.Final
+import VerifiedGarbage.Proof.MlDsa.Verify.Final
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Final
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA verification on 32-bit ARM: `vg_mldsa44_verify`, `vg_mldsa65_verify`, `vg_mldsa87_verify`
@@ -217,7 +219,7 @@ theorem vepi_piece {p : Params} {STK : Nat} :
     VPiece p STK (VFin p STK)
       (fun σ s => Arm.target.abiPreserved σ s ∧ (Spec.MlDsa.verifyContract p Arm.abi STK).post σ s)
       (.block topEnd) :=
-  ⟨fun _ _ _ h => vepi_ok h, vrel7 (fun _ _ h => h.1) (by taint_decide)⟩
+  ⟨fun _ _ _ h => vepi_ok h, vrel7 (fun _ _ h => h.1) (by native_taint_decide)⟩
 
 /-! ## The function -/
 

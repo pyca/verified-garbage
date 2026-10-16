@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Common
 meta import VerifiedGarbage.Proof.AesGcm.X86.Common
-public import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Gcm.Stream
 meta import VerifiedGarbage.Proof.Gcm.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

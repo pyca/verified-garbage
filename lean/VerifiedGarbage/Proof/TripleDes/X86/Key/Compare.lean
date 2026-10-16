@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.Key.Rotation
 public import VerifiedGarbage.Proof.TripleDes.X86.RoundStep
-public import VerifiedGarbage.Proof.TripleDes.KeySchedule
+import VerifiedGarbage.Proof.TripleDes.KeySchedule
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Taint
 
 @[expose] public section
 

@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the exponentiations
@@ -88,7 +89,7 @@ structure WinInv (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (t₀ : State) (B : Addr) 
 theorem winStep_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E bs : Nat → Nat}
     {j i : Nat} (hj : j < 2) (hi : i < l.E) (h13 : t₀.gpr .r13 = BitVec.ofNat 64 i) (hbs : ∀ p < 2, bs p < 256)
     (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * l.D))
-    (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p)) (h : WinInv l t₀ B M k x Q E bs j t) :
+    (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p)) (h : WinInv l t₀ B M k x Q E bs j t) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (window l ++ ([.block [.alu .sub .r14 (.imm 1)]] : List (Prog isa)))) t
       fun t' => WinInv l t₀ B M k x Q E bs (j + 1) t' ∧ t'.zf = some (decide (j + 1 = 2)) := by
   have hBt : t.gpr .rbx = B := by
@@ -126,7 +127,7 @@ theorem winStep_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → N
 /-- The two windows of the bytes `bs`. -/
 theorem winLoop_ok (hl : LayOk l) {t₀ : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E bs : Nat → Nat}
     {i : Nat} (hi : i < l.E) (h13 : t₀.gpr .r13 = BitVec.ofNat 64 i) (hbs : ∀ p < 2, bs p < 256) (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * l.D))
-    (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p)) {t : State} (h : WinInv l t₀ B M k x Q E bs 0 t) :
+    (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p)) {t : State} (h : WinInv l t₀ B M k x Q E bs 0 t) :
     WP isa (.loop (VG.Impl.Bignum.X86_64.seqs (window l ++
       ([.block [.alu .sub .r14 (.imm 1)]] : List (Prog isa)))) .ne) t (WinInv l t₀ B M k x Q E bs 2) := by
   refine WP.loop (M := isa) (c := .ne) (Q := WinInv l t₀ B M k x Q E bs 2)
@@ -203,7 +204,7 @@ def byteBody (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prog isa :=
 /-- The byte `i` of both exponents. -/
 theorem byteIter_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {i : Nat}
     (hi : i < l.E) (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * l.D))
-    (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p)) (h : ByteInv l t₀ B M k x Q i t) :
+    (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p)) (h : ByteInv l t₀ B M k x Q i t) :
     WP isa (byteBody l) t fun t' => ByteInv l t₀ B M k x Q (i + 1) t' ∧ t'.zf = some false := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   have hD := hl.D_bounds
@@ -350,7 +351,7 @@ theorem OutW.fin (hl : LayOk l) {B : Addr} {m m' : Mem} (h : OutW l B m m') {M :
 
 /-- After the last byte: `Y := Y Fin / R`, `ZF`. -/
 theorem finIter_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
-    (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (gf : ∀ p < 2, Good l t₀.mem B M l.oFin p) (h : ByteInv l t₀ B M k x Q l.E t) :
     WP isa (byteBody l) t fun t' => FinOut l t₀ B M x Q t' ∧ t'.zf = some true := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
@@ -422,7 +423,7 @@ theorem finIter_ok (hl : LayOk l) {t₀ t : State} {B : Addr} {M k x : Nat → N
 
 /-- The loop over the bytes, from byte `E + 1 - n` (byte `E` the last window, `Y Fin`). -/
 theorem byteLoop_ok (hl : LayOk l) {t₀ : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
-    (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (hB : t₀.gpr .rbx = B) (hs : Scr t₀ B (2 * l.D)) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (gf : ∀ p < 2, Good l t₀.mem B M l.oFin p) :
     ∀ n t, 1 ≤ n → n ≤ l.E + 1 → ByteInv l t₀ B M k x Q (l.E + 1 - n) t →
       WP isa (.loop (byteBody l) .ne) t (FinOut l t₀ B M x Q) := by

@@ -1,22 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFinish
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFinish
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFinish
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejOutcome
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejEnvTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFirstBlocks
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFirstBlocks
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFirstBlocks
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatchTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdaptive
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTimingDone
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejTailReadyTiming
@@ -24,6 +24,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
 
 /-! ## From `ResidentRejContract.lean` -/
 

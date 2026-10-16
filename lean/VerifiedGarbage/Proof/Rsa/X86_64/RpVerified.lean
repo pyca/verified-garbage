@@ -7,6 +7,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # `vg_rsa_recover_primes` on x86-64: verified against the shared contract
@@ -37,10 +39,11 @@ def rpSatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x6009 then 0x30 else if a = 0x6010 then 1 else if a = 0x6019 then 0x31
+  mem a := if a = 0x6030 then 0x20
+    else if a = 0x6009 then 0x30 else if a = 0x6010 then 1 else if a = 0x6019 then 0x31
     else if a = 0x6020 then 1 else if a = 0x6029 then 0x80 else if a = 0x6031 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x3100, 1⟩, ⟨0x6008, 48⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x1100, 64⟩, ⟨0x8000, 8192⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x1100, 64⟩, ⟨0x8000, 8448⟩]
 
 theorem rp_implies : rpContract.Implies (Spec.Rsa.recoverPrimesContract abi) where
   pre := by

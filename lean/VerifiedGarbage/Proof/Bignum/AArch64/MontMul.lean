@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Multiword arithmetic on AArch64: Montgomery multiplication
@@ -54,14 +56,20 @@ def mmRegs : List Reg :=
 
 /-- Montgomery multiplication: `[o] = [a] [b] R⁻¹ mod m` for `m = [mo]`, if
 `[b] < m` and `-m⁻¹` is right. -/
-theorem montMul_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
-    (h0 : s.gpr .x0 = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
+theorem montMul_from_bases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
+    (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     {mo acc tmp o a b : Nat} (hmo : mo < 8) (hacc : acc < 8) (htmp : tmp < 8) (ho : o < 8) (ha : a < 8)
     (hb : b < 8) (d1 : acc ≠ mo) (d2 : acc ≠ tmp) (d3 : acc ≠ o) (d4 : acc ≠ a) (d5 : acc ≠ b)
     (d6 : tmp ≠ mo) (d7 : tmp ≠ o)
     (hinv : ((word s.mem B (slot w mo)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
-    (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w mo) w) :
-    WP isa (montMul mo acc tmp o a b) s fun t =>
+    (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w mo) w)
+    (head : Prog isa)
+    (head_ok : WP isa head s fun t =>
+      (t.gpr .x8 = off B (slot w acc) ∧ t.gpr .x9 = off B (slot w b) ∧ t.gpr .x10 = off B (slot w mo) ∧
+      t.gpr .x11 = off B (slot w a) ∧ t.gpr .x5 = off B (slot w o) ∧ t.gpr .x6 = off B (slot w tmp) ∧
+      t.gpr .x12 = BitVec.ofNat 64 w ∧ t.gpr .x15 = minv ∧ t.gpr .x7 = 0 ∧ t.mem = s.mem) ∧
+      Keep mmRegs s t) :
+    WP isa (.seq head (.seq zeroAcc (.seq rounds (.seq subMod selectAcc)))) s fun t =>
       wv t.mem B (slot w o) w < wv s.mem B (slot w mo) w ∧
       wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w mo) w =
         wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w mo) w ∧
@@ -71,9 +79,8 @@ theorem montMul_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
   have hN0 : 0 < wv s.mem B (slot w mo) w := by omega
-  unfold montMul
   -- The bases.
-  refine WP.seq (WP.mono (bases_ok hs h0 hH hZ ho ha hb hmo hacc htmp)
+  refine WP.seq (WP.mono head_ok
     fun s₁ ⟨⟨h8, h9, h10, h11, h5, h6, h12, h15, h7, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.wr
   -- The accumulator := 0.
@@ -142,5 +149,22 @@ theorem montMul_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
     have a6 : Arrays B w [acc, tmp, o] s₅.mem t.mem :=
       Arrays.of_outside (j := o) (by simp) hot (Nat.le_refl _) (by omega)
     exact (a3.trans a5).trans a6
+
+/-- Montgomery multiplication with array indices fixed in the code. -/
+theorem montMul_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
+    (h0 : s.gpr .x0 = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
+    {mo acc tmp o a b : Nat} (hmo : mo < 8) (hacc : acc < 8) (htmp : tmp < 8) (ho : o < 8) (ha : a < 8)
+    (hb : b < 8) (d1 : acc ≠ mo) (d2 : acc ≠ tmp) (d3 : acc ≠ o) (d4 : acc ≠ a) (d5 : acc ≠ b)
+    (d6 : tmp ≠ mo) (d7 : tmp ≠ o)
+    (hinv : ((word s.mem B (slot w mo)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w mo) w) :
+    WP isa (montMul mo acc tmp o a b) s fun t =>
+      wv t.mem B (slot w o) w < wv s.mem B (slot w mo) w ∧
+      wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w mo) w =
+        wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w mo) w ∧
+      Arrays B w [acc, tmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
+  exact montMul_from_bases_ok hs hZ hw hw' hmo hacc htmp ho ha hb d1 d2 d3 d4 d5 d6 d7 hinv hB
+    (.block (bases o a b mo acc tmp))
+    (WP.mono (bases_ok hs h0 hH hZ ho ha hb hmo hacc htmp) fun _ ⟨h, k⟩ => ⟨h, k.mono (by decide)⟩)
 
 end VG.Proof.Bignum.AArch64

@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.Words
-public import VerifiedGarbage.Proof.Rc2.PairMem
+import VerifiedGarbage.Proof.Rc2.PairMem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Numbers as 32-bit words, on any target

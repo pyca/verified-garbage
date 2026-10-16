@@ -9,6 +9,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86-64: the contracts the rounding proofs are written against
@@ -114,25 +116,23 @@ theorem agree_regsLo {rs los : List Reg} {s₁ s₂ : State} (h : ∀ r ∈ rs, 
 
 /-- `sig_implies`, whose satisfiability witness may need `Reduced` of the
 memory of zeros. -/
-syntax "round_implies " "[" Lean.Parser.Tactic.simpLemma,* "]" " [" Lean.Parser.Tactic.simpLemma,* "]"
-  " using " term : tactic
-macro_rules
-  | `(tactic| round_implies [$ls,*] [$ws,*] using $w) => `(tactic| exact
-      { pre := by sig_implies_pre [$ls,*]
-        post := by sig_implies_post [$ls,*]
-        pub := by sig_implies_pub [$ls,*]
-        sat := by
-          refine ⟨$w, ?_⟩
-          sig_pre [$ls,*]
-          and_intros
-          all_goals first
-            | rfl
-            | decide
-            | exact Region.disjoint_of_sep (by decide)
-            | exact reduced_zero _
-            | (intro a h₁ h₂
-               set_option linter.unusedSimpArgs false in
-               simp only [Region.Contains, $ws,*] at h₁ h₂
-               bv_omega) })
+tactic_template "round_implies " "[" ls:Lean.Parser.Tactic.simpLemma,* "]"
+    " [" ws:Lean.Parser.Tactic.simpLemma,* "]" " using " w:term : tactic => `(tactic| exact
+  { pre := by sig_implies_pre [$ls,*]
+    post := by sig_implies_post [$ls,*]
+    pub := by sig_implies_pub [$ls,*]
+    sat := by
+      refine ⟨$w, ?_⟩
+      sig_pre [$ls,*]
+      and_intros
+      all_goals first
+        | rfl
+        | decide
+        | exact Region.disjoint_of_sep (by decide)
+        | exact reduced_zero _
+        | (intro a h₁ h₂
+           set_option linter.unusedSimpArgs false in
+           simp only [Region.Contains, $ws,*] at h₁ h₂
+           bv_omega) })
 
 end VG.Proof.MlDsa.X86_64.Round

@@ -1,0 +1,67 @@
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Main
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Main
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Contract
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Contract
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Lit
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP384r1.Config
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+
+/-!
+# ECDSA verification over brainpoolP384r1 on AArch64: `Verified`
+
+brainpoolp384r1 is a curve the proof supports (`brainpoolp384r1_ok`, and `Law` for its group law,
+which the registration file supplies: `Proof.BrainpoolP384r1.law`), so `verify_ok` gives
+the contract's postcondition; `x19` and `x20` are restored, and no instruction
+writes the other callee-saved registers, `sp` or a SIMD register
+(`abiPreserved_of`). Constant time by taint tracking: the only branches are on
+loop counters, and every address is an argument plus a constant or a counter,
+so only the pointers affect timing (the contract would let the key, the hash
+and the signature affect it too).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1
+
+open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
+open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.BrainpoolP384r1
+
+theorem pre_of {s : State} (h : verifyAArch64.pre s) : FrontPre brainpoolp384r1 s := by
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  exact ⟨⟨[], h1⟩, h2, h3, h4, h5, h6⟩
+
+theorem verify_a64 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weierstrass.AArch64.InvSounds) (s : State) (hs : verifyAArch64.pre s) :
+    ∃ t s', Exec isa VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP384r1.verify s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (brainpoolp384r1_ok hI) hL (pre_of hs)
+  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
+
+theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP384r1.verify :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+    (fun _ _ _ _ ⟨h0, h1, h2, h3, hsp⟩ => ⟨hsp, fun r hr => by
+      simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact h0
+      · exact h1
+      · exact h2
+      · exact h3⟩) (by taint_decide)
+
+theorem verify_verified (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (hI : Weierstrass.AArch64.InvSounds) :
+    Verified AArch64.target VG.Impl.Ecdsa.Verify.AArch64.BrainpoolP384r1.verify (Spec.Ecdsa.BrainpoolP384r1.inst.verifyContract AArch64.abi) :=
+  Verified.of_correct (verify_a64 hL hI) verify_ct implies
+
+end VG.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1

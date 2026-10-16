@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Arm.Verified
+import VerifiedGarbage.Proof.Camellia.Arm.Verified
 public import VerifiedGarbage.Proof.Camellia.Arm.KeyVerified
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

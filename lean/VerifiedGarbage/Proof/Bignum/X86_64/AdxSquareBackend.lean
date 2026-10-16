@@ -2,24 +2,28 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRawCrossCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRawCrossCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledMontCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8CT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareDispatch
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareDispatch
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCT
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledChoiceCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledChoiceCT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledChoiceCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
+meta import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
 
 /-! ## AdxTiledSquareRawCT -/
 

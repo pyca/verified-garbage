@@ -1,10 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrRound
+import VerifiedGarbage.Proof.RsaKeyGen.Hdr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # A candidate on AArch64: Miller–Rabin's loop
@@ -36,6 +39,7 @@ and `used` octets of `rand`. -/
 structure MrSt (B : Addr) (Z w : Nat) (c ch : Nat) (rp : Addr) (r : List Byte) (s₀ : State)
     (res : Option (Bool × List Byte)) (i uni used : Nat) (s : State) : Prop where
   ctx : ∃ bm, MrCtx s B Z w c bm
+  ex : ECtx s.mem B w c
   r2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c
   rand : word s.mem B (8 * kRand) = rp
   len : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w)
@@ -80,17 +84,10 @@ theorem statCmp_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w)
       hS']) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h3, hm⟩, k⟩ => ?_
   exact ⟨by rw [eval_zero, h3, sub4_beq hv], hm, k⟩
 
-/-- Bounds of the ranges of a round. -/
-theorem roundRanges_le (w : Nat) : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ slot w 16 := by
-  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, roundRanges, preRanges,
-    witRanges, expRanges, bitRanges, List.cons_append, List.nil_append, slot, hdrBytes, aX, aAcc, aTmp, aY, aXm,
-    aB, kG, kFlag, kPlen, kV, kT0, sCnt, kBits, kT2, kWords, kT1, kUsed, kU, kI, kElen, kUni, kP, kStat, sFn]
-  and_intros <;> omega_arith
-
 /-- The header words a round keeps. -/
 theorem roundRanges_hdr (w : Nat) {k : Nat} (hk : k = kRand ∨ k = kLen ∨ k = kRandLen ∨ k = kChecks ∨ k = kOut ∨
     k = kUsedP) : ∀ r ∈ roundRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> rd_disj
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> hdr_disj
 
 theorem ofNat_sub_ofNat' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
     BitVec.ofNat 64 a - BitVec.ofNat 64 b = BitVec.ofNat 64 (a - b) := by
@@ -101,7 +98,7 @@ theorem ofNat_sub_ofNat' {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 64) :
 
 /-- The test of `rand`'s octets left: `x5 = 0` iff fewer than `8 w`. -/
 theorem iterHead_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {r : List Byte} {used : Nat}
-    (hw64 : w ≤ 64) (hrl : r.length < 2 ^ 64) (hul : used ≤ r.length)
+    (hw128 : w ≤ 128) (hrl : r.length < 2 ^ 64) (hul : used ≤ r.length)
     (hlen : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hrlen : word s.mem B (8 * kRandLen) = BitVec.ofNat 64 r.length)
     (hus : word s.mem B (8 * kUsed) = BitVec.ofNat 64 used) :
@@ -133,8 +130,8 @@ theorem iterHead_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {r : Lis
 
 /-- One iteration of `millerRabin`'s loop. -/
 theorem mrIter_ok (M : Mont) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List Byte}
-    {s₀ : State} {res : Option (Bool × List Byte)} (hw4 : 4 ≤ w) (hw64 : w ≤ 64) (hc1 : 1 < c)
-    (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
+    {s₀ : State} {res : Option (Bool × List Byte)} (hw4 : 4 ≤ w) (hw128 : w ≤ 128)
+    (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc1 : 1 < c) (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
     {i uni used : Nat} (s : State) (hI : MrSt B Z w c ch rp r s₀ res i uni used s) :
     WP isa (seqs [
       .block ([ldh .x3 kRandLen, ldh .x4 kUsed, .sub .x .x3 .x3 .x4, ldh .x4 kLen] ++ geFlag),
@@ -144,16 +141,19 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List B
         (res = none → r.length < used + 8 * w) ∧
         (∀ b rest, res = some (b, rest) → rest.length + (used + 8 * w) = r.length)) ∨
       (isa.eval (.zero .x .x3) s' = some true ∧ ∃ uni', MrSt B Z w c ch rp r s₀ res (i + 1) uni' (used + 8 * w) s') := by
-  obtain ⟨⟨bm, hc⟩, hr2, hrp, hlen, hrlen, hchk, hsrc, hi, hun, hus, hul, hgo, hiu, huni, hres, hfrm, hkeep⟩ := hI
+  obtain ⟨⟨bm, hc⟩, hE, hr2, hrp, hlen, hrlen, hchk, hsrc, hi, hun, hus, hul, hgo, hiu, huni, hres, hfrm, hkeep⟩ := hI
   have h := hc.ws
   have hZ := h.hZ
   have hnw := h.scr.nowrap
   have h256 := h.h256
+  have hEn : B.toNat + slot w aE + 8 * (w + 1) ≤ 2 ^ 64 := by omega_arith
+  have hEr : ∀ r ∈ roundRanges w, slot w aE + 8 * (w + 1) ≤ r.1 ∨ r.1 + r.2 ≤ slot w aE := fun r hr =>
+    Or.inr (roundRanges_lt w r hr)
   obtain ⟨_, _, hwb⟩ := VG.Proof.RsaKeyGen.cand_bits (by omega_arith) hsh
   have hres' := VG.Proof.RsaKeyGen.mrLoop_step c ch (Spec.Rsa.splitTwos (c - 1)).1 (Spec.Rsa.splitTwos (c - 1)).2
     (8 * w) r i uni used hgo hwb (by omega_arith)
   simp only [seqs]
-  refine WP.seq (WP.mono (iterHead_ok h hw64 hrl hul hlen hrlen hus) fun s₁ ⟨hz₁, hm₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (iterHead_ok h hw128 hrl hul hlen hrlen hus) fun s₁ ⟨hz₁, hm₁, k₁⟩ => ?_)
   refine WP.seq (WP.ite (decide (r.length < used + 8 * w)) hz₁ (fun hb => ?_) (fun hb => ?_))
   · -- Out of octets: `kStat := 0`.
     simp only [decide_eq_true_eq] at hb
@@ -165,15 +165,15 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List B
     have hf₂ : Frm B [(8 * kStat, 8)] s.mem s₂.mem := by
       rw [hm₂, hm₁]
       exact Frm.of_outside (writeW_outside _ B _ (d := 8 * kStat) (by simp only [kStat, sFn]; omega_arith)) (by simp)
-    have hc₂ : MrCtx s₂ B Z w c bm := hc.of_frm hf₂ (by kmut) (k₁.trans k₂) (by decide) (by rd_disj) (by rd_disj)
-      (by rd_disj) (by rd_disj) (by rd_disj)
+    have hc₂ : MrCtx s₂ B Z w c bm := hc.of_frm hf₂ (by kmut) (k₁.trans k₂) (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+      (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
     refine WP.mono (statCmp_ok hc₂.ws (v := 0) (by decide) (by rw [hm₂, word_writeW_self]))
       fun t ⟨hz, hm, k⟩ => Or.inl ⟨hz.trans rfl, ?_⟩
     have hres0 : res = none := hres.symm.trans (hres'.trans (VG.Proof.RsaKeyGen.ite_f (by omega_arith) _ _))
     have hft : Frm B [(8 * kStat, 8)] s.mem t.mem :=
       hf₂.trans (show Frm B [(8 * kStat, 8)] s₂.mem t.mem by rw [hm]; exact Frm.refl _ _ _)
-    refine ⟨⟨⟨bm, hc.of_frm hft (by kmut) ((k₁.trans k₂).trans k) (by decide) (by rd_disj) (by rd_disj)
-        (by rd_disj) (by rd_disj) (by rd_disj)⟩,
+    refine ⟨⟨⟨bm, hc.of_frm hft (by kmut) ((k₁.trans k₂).trans k) (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+        (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)⟩,
       ?_, ?_, ?_, (((hkeep.trans k₁).trans k₂).trans k).mono (by decide)⟩, fun _ => hb,
       fun b rest h1 => by rw [hres0] at h1; cases h1⟩
     · intro _; rw [hm, hm₂, word_writeW_self]
@@ -186,8 +186,8 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List B
     have hi61 : i < 2 ^ 61 := by
       have : 32 * i ≤ 8 * w * i := Nat.mul_le_mul_right _ (by omega_arith)
       omega_arith
-    refine WP.mono (mrRound_ok (rp := rp) (used := used) (r := r) (i := i) (uni := uni) (ch := ch) M hw4 hw64 hc₁
-      (by rw [hm₁]; exact hr2) hc1 hsh (by rw [hm₁]; exact hrp)
+    refine WP.mono (mrRound_ok (rp := rp) (used := used) (r := r) (i := i) (uni := uni) (ch := ch) M hw4 hw128 hEZ hc₁
+      (by rw [hm₁]; exact hE) (by rw [hm₁]; exact hr2) hc1 hsh (by rw [hm₁]; exact hrp)
       (by rw [hm₁]; exact hus) (by rw [hm₁]; exact hlen) (hsrc.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) hb
       (by rw [hm₁]; exact hi) (by rw [hm₁]; exact hun) (by rw [hm₁]; exact hchk) hi61 (by omega_arith) hch)
       fun s₂ ⟨hc₂, hr₂, hus₂, hst₂, hcnt₂, hfr₂, k₂⟩ => ?_
@@ -226,7 +226,8 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List B
       simp only [↓reduceIte, hu] at hres'
       by_cases hcnd : i + 1 < 17 ∨ uni + wt.2.toNat < ch
       · -- On to the next witness.
-        refine Or.inr ⟨hz.trans (by simp [hcnd]), uni + wt.2.toNat, ⟨⟨_, hct⟩, ?_, ?_, ?_, ?_, ?_,
+        refine Or.inr ⟨hz.trans (by simp [hcnd]), uni + wt.2.toNat, ⟨⟨_, hct⟩,
+          by rw [hm]; exact hE.of_frm hfr hEr hEn, ?_, ?_, ?_, ?_, ?_,
           ?_, by rw [hm]; exact hI₂, by rw [hm]; exact hN₂, by rw [hm]; exact hus₂, by omega_arith, ?_, ?_, ?_, ?_, hft,
           hkt⟩⟩
         · rw [hm]; exact hr₂
@@ -238,7 +239,8 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List B
         · rw [hm, hfr.word_eq (roundRanges_hdr w (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))
             (by simp only [kChecks, kE, sFn]; omega_arith)]
           exact hchk
-        · have hle : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ Z := fun r hr => (roundRanges_le w r hr).trans hZ
+        · have hle : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ Z := fun r hr => by
+            have := roundRanges_lt w r hr; omega_arith
           exact hsrc.congrK (by rw [hm]; exact InScr.of_frm hfr hle) ((k₁.trans k₂).trans k)
         · exact hcnd.imp (fun h => show i + 1 ≤ 16 by omega_arith) id
         · rw [Nat.mul_add, Nat.mul_one]; omega_arith
@@ -268,7 +270,7 @@ theorem mrIter_ok (M : Mont) {B : Addr} {Z w c ch : Nat} {rp : Addr} {r : List B
 
 /-- The start of `millerRabin`: `kI := 1`, `kUni := 0`. -/
 theorem mrInit_ok {B : Addr} {Z w c ch bm : Nat} {rp : Addr} {r : List Byte} {s : State} {used : Nat}
-    (hc : MrCtx s B Z w c bm) (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
+    (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c) (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
     (hrp : word s.mem B (8 * kRand) = rp) (hlen : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hrlen : word s.mem B (8 * kRandLen) = BitVec.ofNat 64 r.length)
     (hchk : word s.mem B (8 * kChecks) = BitVec.ofNat 64 ch) (hsrc : Src s B Z rp r)
@@ -290,26 +292,26 @@ theorem mrInit_ok {B : Addr} {Z w c ch bm : Nat} {rp : Addr} {r : List Byte} {s 
     exact (Frm.of_outside (writeW_outside _ B _ (d := 8 * kI) (by simp only [kI, kElen, sFn]; omega_arith)) (by simp)).trans
       (Frm.of_outside (writeW_outside _ B _ (d := 8 * kUni) (by simp only [kUni, kP, sFn]; omega_arith)) (by simp))
   have sR2 : slot w aR2 + 8 * (w + 2) ≤ Z := by have := slot_lt (w := w) (show aR2 < 16 by decide); omega_arith
-  refine ⟨⟨bm, hc.of_frm hf₁ (by kmut) k₁ (by decide) (by rd_disj) (by rd_disj) (by rd_disj) (by rd_disj)
-      (by rd_disj)⟩, ?_, ?_, ?_, ?_, ?_, hsrc.congrK (InScr.of_frm hf₁ (by
+  refine ⟨⟨bm, hc.of_frm hf₁ (by kmut) k₁ (by decide) (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+      (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)⟩, hE.of_frm hf₁ (VG.Proof.RsaKeyGen.SlotShapeC.apartW1 rfl rfl) (by omega_arith), ?_, ?_, ?_, ?_, ?_, hsrc.congrK (InScr.of_frm hf₁ (by
         simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, kI, kElen, kUni, kP, sFn]
         omega_arith)) k₁,
     by rw [hm₁, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), word_writeW_self],
     by rw [hm₁, word_writeW_self], ?_, hu2, Or.inl (by decide), by omega_arith, by omega_arith, rfl,
     hf₁.mono (by simp [roundRanges]), k₁.mono (by decide)⟩
-  · rw [hf₁.wv_eq (d := slot w aR2) (k := w) (by rd_disj) (by omega_arith)]; exact hr2
-  · rw [hf₁.word_eq (by rd_disj) (by simp only [kRand, sFn]; omega_arith)]; exact hrp
-  · rw [hf₁.word_eq (by rd_disj) (by simp only [kLen, sK, sFn]; omega_arith)]; exact hlen
-  · rw [hf₁.word_eq (by rd_disj) (by simp only [kRandLen, sFn]; omega_arith)]; exact hrlen
-  · rw [hf₁.word_eq (by rd_disj) (by simp only [kChecks, kE, sFn]; omega_arith)]; exact hchk
-  · rw [hf₁.word_eq (by rd_disj) (by simp only [kUsed, sFn]; omega_arith)]; exact hus
+  · rw [hf₁.wv_eq (d := slot w aR2) (k := w) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (by omega_arith)]; exact hr2
+  · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kRand, sFn]; omega_arith)]; exact hrp
+  · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kLen, sK, sFn]; omega_arith)]; exact hlen
+  · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kRandLen, sFn]; omega_arith)]; exact hrlen
+  · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kChecks, kE, sFn]; omega_arith)]; exact hchk
+  · rw [hf₁.word_eq (VG.Proof.RsaKeyGen.HdrShapeC.hdrW rfl rfl) (by simp only [kUsed, sFn]; omega_arith)]; exact hus
 
 /-- `millerRabin`: the witnesses from offset `used`, as `primalityTest`'s
 loop from `(1, 0)`. -/
 theorem millerRabin_ok (M : Mont) {B : Addr} {Z w c ch bm : Nat} {rp : Addr}
-    {r : List Byte} {s : State} {used : Nat} (hw4 : 4 ≤ w) (hw64 : w ≤ 64) (hc1 : 1 < c)
-    (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
-    (hc : MrCtx s B Z w c bm) (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
+    {r : List Byte} {s : State} {used : Nat} (hw4 : 4 ≤ w) (hw128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
+    (hc1 : 1 < c) (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c) (hrl : r.length < 2 ^ 64) (hch : ch < 2 ^ 62)
+    (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c) (hr2 : wv s.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c)
     (hrp : word s.mem B (8 * kRand) = rp) (hlen : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w))
     (hrlen : word s.mem B (8 * kRandLen) = BitVec.ofNat 64 r.length)
     (hchk : word s.mem B (8 * kChecks) = BitVec.ofNat 64 ch) (hsrc : Src s B Z rp r)
@@ -317,9 +319,9 @@ theorem millerRabin_ok (M : Mont) {B : Addr} {Z w c ch bm : Nat} {rp : Addr}
     WP isa (seqs (millerRabin M.mm)) s (MrEnd B Z w c r s (mrRest c ch r 1 0 used)) := by
   unfold millerRabin
   simp only [seqs]
-  refine WP.seq (WP.mono (mrInit_ok hc hr2 hrp hlen hrlen hchk hsrc hus hu1 hu2) fun s₁ h => ?_)
+  refine WP.seq (WP.mono (mrInit_ok hc hE hEZ hr2 hrp hlen hrlen hchk hsrc hus hu1 hu2) fun s₁ h => ?_)
   exact WP.loop (fun n t => ∃ i uni u, n = r.length - u ∧ MrSt B Z w c ch rp r s (mrRest c ch r 1 0 used) i uni u t)
-    (fun n t ⟨i, uni, u, hn, hI⟩ => WP.mono (mrIter_ok M hw4 hw64 hc1 hsh hrl hch t hI)
+    (fun n t ⟨i, uni, u, hn, hI⟩ => WP.mono (mrIter_ok M hw4 hw128 hEZ hc1 hsh hrl hch t hI)
       fun t' h => h.imp (fun h => ⟨h.1, h.2.1⟩)
       fun ⟨he, uni', hI'⟩ => ⟨he, r.length - (u + 8 * w), by have := hI'.ul; omega_arith,
         i + 1, uni', u + 8 * w, rfl, hI'⟩) (r.length - used) s₁ ⟨1, 0, used, rfl, h⟩

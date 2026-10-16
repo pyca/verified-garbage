@@ -6,7 +6,9 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamCallee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherCallee
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSplit
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Verified
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 public import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
@@ -16,11 +18,14 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -88,8 +93,11 @@ calling `encrypt_blocks_to` for the whole blocks when the text so far ends a
 block and `stream_encrypt` for the rest, after copying it, in a frame of 2232
 bytes for its 2192 bytes of working space (`StreamTo/Verified.lean`), and
 4856 bytes of stack in all; and `seal_gather`, from a list of slices: for a
-text shorter than `copyBelow` bytes, by copying the slices to the output
-and calling `seal` there (with the same key context), and otherwise by
+text shorter than `copyBelow` bytes or whose first slice holds all its whole
+blocks, by copying the slices to the output and calling `seal` there (with
+the same key context), or, from a first slice holding all the whole blocks
+and at least `splitFrom` bytes, by copying the slices after it and calling
+`seal_split`, and otherwise by
 calling `stream_init`, `stream_aad`, `stream_encrypt_to` once for each slice
 and `stream_finish` (`Impl/AesGcm/X86_64/SealGather.lean`), in a frame of
 240 bytes for its 184 bytes of working space (`Gather/Verified.lean`), and
@@ -133,7 +141,7 @@ theorem StitchName.okP : (n : StitchName) →
 /-- The loops `p` names for a key context of `vg_aes_gcm_init_precomputed`,
 with their proof, if they read the powers of the hash subkey from it. -/
 def StitchPart.implP (p : StitchPart) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
-  p.pieceP.map fun q => ⟨p.name.encP, p.name.decP, false, p.name.okP, q.enc, q.dec⟩
+  p.pieceP.map fun q => ⟨p.name.encP, p.name.decP, false, false, p.name.okP, q.enc, q.dec⟩
 
 /-- The out-of-place loops named `n` interleave counter mode and GHASH
 correctly. -/
@@ -169,18 +177,18 @@ def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
 number of blocks from 16 on if `fullR`). -/
 theorem StitchName.okR : (n : StitchName) →
     Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR n.decR
-      (if n.fullR then 1 else 16)
-  | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok.toM _
+      (if n.fullR then 1 else 16) (if n.fullDR then 1 else 16)
+  | .vaes => Proof.Gcm.X86_64.StitchR.stitchR_ok
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitchR_ok
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchR_ok
 
 def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
-  v.stitch.bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.okR, q.enc, q.dec⟩
+  v.stitch.bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.decR, p.name.fullR, p.name.fullDR, p.name.okR, q.enc, q.dec⟩
 
 theorem StitchToName.okR : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR
       (if n.fullR then 1 else 16)
-  | .vaes => Proof.Gcm.X86_64.StitchTo.stitchTo_ok _
+  | .vaes => Proof.Gcm.X86_64.StitchR.stitchTo_ok
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZHTo.stitchToR_ok
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitchToR_ok
 
@@ -204,6 +212,22 @@ def shortNote (v : GcmImpl) : List String :=
     ["For a 12-byte nonce and fewer than 32 blocks of additional data and text, with some text or \
       more than 16 bytes of additional data, this implementation computes just the powers of the hash \
       subkey and the keystream they need, on 512-bit registers, without calls."]
+  else []
+
+/-- How an instance of `seal_prepared` or `open_prepared` works, besides `note`. -/
+def shortNoteP (v : GcmImpl) : List String :=
+  if v.short then
+    ["For a 12-byte nonce and fewer than 32 blocks of additional data and text, with some text or \
+      more than 16 bytes of additional data, this implementation copies the powers of the hash subkey \
+      from the key context and computes just the keystream it needs, on 512-bit registers, without calls."]
+  else []
+
+/-- How an instance of `open_prepared` works, besides `note` and `shortNoteP`. -/
+def openFastNote (v : GcmImpl) : List String :=
+  if v.short then
+    ["For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this \
+      implementation multiplies the additional data by the prepared power of the hash subkey in the key \
+      context, and computes the tag from the prepared powers in the key context, without calls."]
   else []
 
 /-- How an instance of `seal` ends, besides `note` and `shortNote`. -/
@@ -523,26 +547,35 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
   else []
 
 
-/-- How an instance of `vg_aes_gcm_seal_gather` works: below `t` bytes it
-calls `sealName`, and otherwise `enc`. -/
-def gatherNote (t : Nat) (sealName enc : String) : String :=
-  "For a text shorter than " ++ toString t ++ " bytes, this implementation copies the slices to the \
-    output and encrypts them there with `" ++ sealName ++ "`. For a longer one, it runs the streaming \
-    functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block \
-    (as GHASH pads it), and encrypts each slice from where it is to the output with `" ++ enc ++ "`."
+/-- How an instance of `vg_aes_gcm_seal_gather` works: below `t` bytes, or
+when its first slice holds all the whole blocks, it takes the short path:
+`splitName` (`vg_aes_gcm_seal_split`) if that slice also holds at least `ts`
+bytes, and otherwise `sealName` (`vg_aes_gcm_seal`) on the whole text
+copied; otherwise `enc`. -/
+def gatherNote (t ts : Nat) (sealName splitName enc : String) : String :=
+  "When the text is shorter than " ++ toString t ++ " bytes, or its first slice holds all its whole \
+    blocks, this implementation takes a short path. If that slice holds all the whole blocks and at least " ++
+    toString ts ++ " bytes, it copies the slices after it to the output after its length and encrypts the \
+    text with `" ++ splitName ++ "`, from the first slice where it is and the rest in the output; \
+    otherwise it copies all the slices to the output and encrypts the text there with `" ++ sealName ++
+    "`. Otherwise, it runs the streaming functions on a state of its own: it absorbs the additional data, \
+    padded with zeros to a whole block (as GHASH pads it), and encrypts each slice from where it is to the \
+    output with `" ++ enc ++ "`."
 
-/-- Below how many bytes `vg_aes_gcm_seal_gather` copies the text to the
-output and calls `vg_aes_gcm_seal`, rather than the streaming functions,
-by the out-of-place interleaved loops a variant has (`GcmVariant.stitchTo`),
-as measured on a VAES and AVX-512 Xeon: on 512-bit registers, below 48
-blocks, where the streaming functions' calls cost more than the copy saves;
-on 256-bit registers, below 16 KiB, where a slice ending within a block,
-which the streaming functions buffer, costs more than the copy saves; and
-on 128-bit registers (AES-NI and AVX), below 3 KiB, as measured on an AMD
-EPYC 7763 and a Xeon, where a text of two slices, the first ending within a
-block, gains from the streaming functions from about 3 KiB on. Without them, the streaming path copies the blocks too, so all texts but
-those of 2 GiB or more (where the cost of its calls is negligible) take the
-copy. -/
+/-- Below how many bytes `vg_aes_gcm_seal_gather` takes its short path
+(copying the text to the output and calling `vg_aes_gcm_seal`, or, from a
+first slice holding all the whole blocks, `vg_aes_gcm_seal_split`), rather
+than the streaming functions, by the out-of-place interleaved loops a variant
+has (`GcmVariant.stitchTo`), as measured on a VAES and AVX-512 Xeon: on
+512-bit registers, below 48 blocks, where the streaming functions' calls
+cost more than the copy saves; on 256-bit registers, below 16 KiB, where a
+slice ending within a block, which the streaming functions buffer, costs
+more than the copy saves; and on 128-bit registers (AES-NI and AVX), below
+3 KiB, as measured on an AMD EPYC 7763 and a Xeon, where a text of two
+slices, the first ending within a block, gains from the streaming functions
+from about 3 KiB on. Without them, the streaming path copies the blocks too,
+so all texts but those of 2 GiB or more (where the cost of its calls is
+negligible) take the copy. -/
 def copyBelow (v : GcmVariant) : Nat :=
   match ((v.stitch.bind (·.toPart)).map (·.name) : Option StitchToName) with
   | some .vaesAvx512 => 768
@@ -552,6 +585,31 @@ def copyBelow (v : GcmVariant) : Nat :=
 
 theorem copyBelow_lt (v : GcmVariant) : copyBelow v < 2 ^ 31 := by
   unfold copyBelow; split <;> decide
+
+/-- From how many bytes a first slice holding all the whole blocks of a text
+on `vg_aes_gcm_seal_gather`'s short path is sealed where it is by
+`vg_aes_gcm_seal_split`, rather than copied with the rest and sealed by
+`vg_aes_gcm_seal`: without out-of-place interleaved loops, never (their
+`vg_aes_gcm_encrypt_blocks_to` copies the blocks and calls
+`vg_aes_gcm_encrypt_blocks` anyway); with them, from as many bytes as their
+loop needs to beat the copy and `vg_aes_gcm_seal`'s fewer calls, measured by
+the Benchmarks workflow on AMD and Intel runners. A 600-byte TLS record's
+text was sealed no faster from where it is with VAES or AVX-512, and a
+1350-byte one faster; with AES-NI and AVX both were faster. With AVX-512 that
+leaves the texts the gathering would otherwise stream (`copyBelow` less a
+block). -/
+def splitFrom (v : GcmVariant) : Nat :=
+  match ((v.stitch.bind (·.toPart)).map (·.name) : Option StitchToName) with
+  | some .vaesAvx512 => 752
+  | some .vaes => 1024
+  | some .aesniAvx => 384
+  | none => 2 ^ 31 - 17
+
+theorem splitFrom_pos (v : GcmVariant) : 1 ≤ splitFrom v := by
+  unfold splitFrom; split <;> decide
+
+theorem splitFrom_le (v : GcmVariant) : splitFrom v + 16 ≤ copyBelow v := by
+  unfold splitFrom copyBelow; split <;> simp_all <;> decide
 
 theorem sealCode_xdepth (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     (v.sealCode (v.withBlk B)).x86_64Depth ≤ 24 := by
@@ -568,6 +626,18 @@ theorem sealCode_mx (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : Blk
   · split
     · exact SealFin.sealFM_mx v B
     · exact sealM_mx v B
+
+theorem sealCodeP_xdepth (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    (v.sealCodeP (v.withBlk B)).x86_64Depth ≤ 24 := by
+  unfold GcmImpl.sealCodeP; split
+  · exact Short.sealMP_xdepth v B
+  · exact sealCode_xdepth v B
+
+theorem sealCodeP_mx (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    (v.sealCodeP (v.withBlk B)).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true := by
+  unfold GcmImpl.sealCodeP; split
+  · exact Short.sealMP_mx v B
+  · exact sealCode_mx v B
 
 /-- The instance of `vg_aes_gcm_seal` calling the implementations `v`. -/
 def sealFn (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
@@ -624,6 +694,36 @@ def toFnP (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.powers 
     (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkToP v) (encFnP v.impl)))
     (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToP v) (encFnP v.impl)))
 
+/-- The instance of `vg_aes_gcm_seal_split` of a variant. -/
+def splitFn (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
+  .ofBase ⟨Spec.Gcm.sealSplitApi.name ++ v.impl.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2616 5
+        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkB) (blkTo v).fn))⟩
+    (Split.sealSplit_framed v.impl Short.shortFacts v.impl.blkB (blkTo v))
+    (X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkB (blkTo v)))
+    (StreamTo.framed_xdepth (Split.sealSplit_xdepth v.impl v.impl.blkB (blkTo v)))
+    (StreamTo.framed_mx (Split.sealSplit_mx v.impl v.impl.blkB (blkTo v)))
+
+/-- The instance of `vg_aes_gcm_seal_split_precomputed` of a variant. -/
+def splitFnP (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
+  .ofPowers ⟨Spec.Gcm.sealSplitPrecomputedApi.name ++ v.impl.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2616 5
+        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkP) (blkToP v).fn))⟩
+    (Split.sealSplitP_framed v.impl Short.shortFacts v.impl.blkP (blkToP v))
+    (X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkP (blkToP v)))
+    (StreamTo.framed_xdepth (Split.sealSplit_xdepth v.impl v.impl.blkP (blkToP v)))
+    (StreamTo.framed_mx (Split.sealSplit_mx v.impl v.impl.blkP (blkToP v)))
+
+/-- The short path of `vg_aes_gcm_seal_gather` of a variant: the text copied
+and sealed by `vg_aes_gcm_seal`, or sealed from its first slice by
+`vg_aes_gcm_seal_split`. -/
+def shortFn (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
+  .ofBoth (sealFn v.impl) (splitFn v) (copyBelow_lt v) (splitFrom_pos v) (splitFrom_le v)
+
+/-- The short path of `vg_aes_gcm_seal_gather_precomputed` of a variant. -/
+def shortFnP (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
+  .ofBoth (sealFnP v.impl) (splitFnP v) (copyBelow_lt v) (splitFrom_pos v) (splitFrom_le v)
+
 /-- `vg_aes_gcm_seal_gather` calling the implementations `v`, and the
 `_precomputed` one if its loops read the powers from the key context. -/
 def artifactsGather (v : GcmVariant) : List Artifact :=
@@ -631,16 +731,17 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
     name := Spec.Gcm.sealGatherApi.name ++ v.impl.suffix
     target := X86_64.target
     doc := Spec.Gcm.sealGatherApi.doc
-      (notes := [gatherNote (copyBelow v) (sealFn v.impl).fn.name (toFn v).fn.name])
+      (notes := [gatherNote (copyBelow v) (splitFrom v) (sealFn v.impl).fn.name (splitFn v).fn.name (toFn v).fn.name])
     code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
-      (Impl.AesGcm.X86_64.SealGather.sealGather (sealFn v.impl).fn (copyBelow v) (initFn v.impl).fn
+      (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
+        (shortFn v).code (initFn v.impl).fn
         (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn)
     contract := Spec.Gcm.sealGatherContract X86_64.abi 5128
     stack := 5128
-    verified := Gather.sealGather_framed (sealFn v.impl) (copyBelow_lt v) (initFn v.impl) (aadFn v.impl) (toFn v)
+    verified := Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
       (finFn v.impl)
     spSafe := X86_64.withStackArgScratch_spSafe
-      (Gather.sealGather_spAll (sealFn v.impl) (copyBelow v) (initFn v.impl) (aadFn v.impl) (toFn v)
+      (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
         (finFn v.impl))
     features := v.impl.features }] ++
   if v.impl.stitchP.isSome && v.stitchR.isNone then
@@ -648,16 +749,17 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
       name := Spec.Gcm.sealGatherPrecomputedApi.name ++ v.impl.suffix
       target := X86_64.target
       doc := Spec.Gcm.sealGatherPrecomputedApi.doc
-        (notes := [gatherNote (copyBelow v) (sealFnP v.impl).fn.name (toFnP v).fn.name])
+        (notes := [gatherNote (copyBelow v) (splitFrom v) (sealFnP v.impl).fn.name (splitFnP v).fn.name (toFnP v).fn.name])
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
-        (Impl.AesGcm.X86_64.SealGather.sealGather (sealFnP v.impl).fn (copyBelow v) (initFn v.impl).fn
+        (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnP v).quick (shortFnP v).fast (shortFnP v).test
+        (shortFnP v).code (initFn v.impl).fn
           (aadFn v.impl).fn (toFnP v).fn (finFn v.impl).fn)
       contract := Spec.Gcm.sealGatherPrecomputedContract X86_64.abi 5128
       stack := 5128
-      verified := Gather.sealGatherP_framed (sealFnP v.impl) (copyBelow_lt v) (initFn v.impl) (aadFn v.impl)
+      verified := Gather.sealGatherP_framed (shortFnP v) (initFn v.impl) (aadFn v.impl)
         (toFnP v) (finFn v.impl)
       spSafe := X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (sealFnP v.impl) (copyBelow v) (initFn v.impl) (aadFn v.impl) (toFnP v)
+        (Gather.sealGather_spAll (shortFnP v) (initFn v.impl) (aadFn v.impl) (toFnP v)
           (finFn v.impl))
       features := v.impl.features }]
   else []
@@ -701,22 +803,22 @@ def artifactsR (v : GcmVariant) : List Artifact := [
   { Spec.Gcm.sealPreparedApi with
     name := Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix
     target := X86_64.target
-    doc := Spec.Gcm.sealPreparedApi.doc (notes := note v.impl :: shortNote v.impl ++ finNote v.impl)
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode (v.impl.withBlk (blkR v)))
+    doc := Spec.Gcm.sealPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl ++ finNote v.impl)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v)))
     contract := Spec.Gcm.sealPreparedContract X86_64.abi 2624
     stack := 2624
     verified := sealSelPrepared_framed v.impl (blkR v) Short.shortFacts
-    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl (blkR v))
+    spSafe := X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
   { Spec.Gcm.openPreparedApi with
     name := Spec.Gcm.openPreparedApi.name ++ v.impl.suffix
     target := X86_64.target
-    doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNote v.impl)
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCode (v.impl.withBlk (blkR v)))
+    doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl ++ openFastNote v.impl)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))
     contract := Spec.Gcm.openPreparedContract X86_64.abi 2632
     stack := 2632
     verified := openSelPrepared_framed v.impl (blkR v) Short.shortFacts
-    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl (blkR v))
+    spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
   { Spec.Gcm.streamEncryptPreparedApi with
     name := Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix
@@ -792,34 +894,105 @@ def artifactsToR (v : GcmVariant) : List Artifact :=
 /-- The instance of `vg_aes_gcm_seal_prepared` of a variant. -/
 def sealFnR (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
   .ofPrepared ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix,
-      Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode (v.impl.withBlk (blkR v)))⟩
+      Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v)))⟩
     (sealSelPrepared_framed v.impl (blkR v) Short.shortFacts)
-    (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl (blkR v)))
-    (StreamTo.framed_xdepth (sealCode_xdepth v.impl (blkR v))) (StreamTo.framed_mx (sealCode_mx v.impl (blkR v)))
+    (X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v)))
+    (StreamTo.framed_xdepth (sealCodeP_xdepth v.impl (blkR v))) (StreamTo.framed_mx (sealCodeP_mx v.impl (blkR v)))
+
+/-- The instance of `vg_aes_gcm_seal_split_prepared` of a variant. -/
+def splitFnR (v : GcmVariant) : Gather.SplitFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  .ofPrepared ⟨Spec.Gcm.sealSplitPreparedApi.name ++ v.impl.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2616 5
+        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))⟩
+    (Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts)
+    (X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v)))
+    (StreamTo.framed_xdepth (Split.sealSplitR_xdepth v.impl (blkR v) (blkToR v)))
+    (StreamTo.framed_mx (Split.sealSplitR_mx v.impl (blkR v) (blkToR v)))
+
+/-- The short path of `vg_aes_gcm_seal_gather_prepared` of a variant. -/
+def shortFnR (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  .ofBoth (sealFnR v) (splitFnR v) (copyBelow_lt v) (splitFrom_pos v) (splitFrom_le v)
 
 def artifactsGatherR (v : GcmVariant) : List Artifact :=
   [{ Spec.Gcm.sealGatherPreparedApi with
       name := Spec.Gcm.sealGatherPreparedApi.name ++ v.impl.suffix
       target := X86_64.target
       doc := Spec.Gcm.sealGatherPreparedApi.doc
-        (notes := [gatherNote (copyBelow v) (sealFnR v).fn.name (toFnR v).fn.name])
+        (notes := [gatherNote (copyBelow v) (splitFrom v) (sealFnR v).fn.name (splitFnR v).fn.name (toFnR v).fn.name])
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
-        (Impl.AesGcm.X86_64.SealGather.sealGather (sealFnR v).fn (copyBelow v) (initFn v.impl).fn
+        (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnR v).quick (shortFnR v).fast (shortFnR v).test
+        (shortFnR v).code (initFn v.impl).fn
           (aadFn v.impl).fn (toFnR v).fn (finFn v.impl).fn)
       contract := Spec.Gcm.sealGatherPreparedContract X86_64.abi 5128
       stack := 5128
-      verified := Gather.sealGatherPrepared_framed (sealFnR v) (copyBelow_lt v) (initFn v.impl) (aadFn v.impl)
+      verified := Gather.sealGatherPrepared_framed (shortFnR v) (initFn v.impl) (aadFn v.impl)
         (toFnR v) (finFn v.impl)
       spSafe := X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (sealFnR v) (copyBelow v) (initFn v.impl) (aadFn v.impl) (toFnR v)
+        (Gather.sealGather_spAll (shortFnR v) (initFn v.impl) (aadFn v.impl) (toFnR v)
           (finFn v.impl))
       features := v.impl.features }]
+
+/-- How an instance of `vg_aes_gcm_seal_split` works. -/
+def splitNote (blk : String) : String :=
+  "This implementation encrypts the whole blocks at `src` straight to `dst` with `" ++ blk ++ "`, copies \
+    the bytes of `src` left after them to `dst`, and goes on as `vg_aes_gcm_seal` does from there: it \
+    encrypts the rest in place, then the bytes left after its whole blocks, and computes the tag."
+
+/-- How an instance of `seal_split_prepared` works, besides `note` and `splitNote`. -/
+def fastNote (v : GcmImpl) : List String :=
+  if v.short then
+    ["For a 12-byte nonce, at most 16 bytes of additional data and at least 256 bytes of text, this \
+      implementation multiplies the additional data by the prepared power of the hash subkey in the key \
+      context, without calls."]
+  else []
+
+/-- `vg_aes_gcm_seal_split` of a variant, and the `_precomputed` or
+`_prepared` one for the key context its loops read the powers from. -/
+def artifactsSplit (v : GcmVariant) : List Artifact :=
+  [{ Spec.Gcm.sealSplitApi with
+    name := Spec.Gcm.sealSplitApi.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.sealSplitApi.doc (notes := [note v.impl, splitNote (blkTo v).fn.name])
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
+      (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkB) (blkTo v).fn))
+    contract := Spec.Gcm.sealSplitContract X86_64.abi 2672
+    stack := 2672
+    verified := Split.sealSplit_framed v.impl Short.shortFacts v.impl.blkB (blkTo v)
+    spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkB (blkTo v))
+    features := v.impl.features }] ++
+  (if v.impl.stitchP.isSome && v.stitchR.isNone then
+    [{ Spec.Gcm.sealSplitPrecomputedApi with
+      name := Spec.Gcm.sealSplitPrecomputedApi.name ++ v.impl.suffix
+      target := X86_64.target
+      doc := Spec.Gcm.sealSplitPrecomputedApi.doc (notes := [note v.impl, splitNote (blkToP v).fn.name])
+      code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
+        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkP) (blkToP v).fn))
+      contract := Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2672
+      stack := 2672
+      verified := Split.sealSplitP_framed v.impl Short.shortFacts v.impl.blkP (blkToP v)
+      spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkP (blkToP v))
+      features := v.impl.features }]
+  else []) ++
+  (if v.stitchR.isSome then
+    [{ Spec.Gcm.sealSplitPreparedApi with
+      name := Spec.Gcm.sealSplitPreparedApi.name ++ v.impl.suffix
+      target := X86_64.target
+      doc := Spec.Gcm.sealSplitPreparedApi.doc
+        (notes := [note v.impl, splitNote (blkToR v).fn.name] ++ fastNote v.impl)
+      code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
+        (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))
+      contract := Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672
+      stack := 2672
+      verified := Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts
+      spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v))
+      features := v.impl.features }]
+  else [])
 
 /-- Artifacts propagate the context format supported by each variant: prepared
 powers when available, otherwise raw precomputed powers. -/
 def artifacts (v : GcmVariant) : List Artifact :=
   artifactsOf v.impl ++ (if v.impl.stitchP.isSome && v.stitchR.isNone then artifactsP v.impl else []) ++ artifactsTo v ++
-    artifactsGather v ++
+    artifactsGather v ++ artifactsSplit v ++
     (if v.stitchR.isSome then artifactsR v ++ artifactsToR v ++ artifactsGatherR v else [])
 
 end VG.Generic.AesGcm.X86_64.AesGcm

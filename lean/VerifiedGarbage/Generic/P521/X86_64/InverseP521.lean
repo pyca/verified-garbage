@@ -1,8 +1,16 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseVerified
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.InverseLit
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TComb
+import VerifiedGarbage.Spec.EcKey.Generic
 
 /-!
 # P-521's inversions modulo `p` and `n` on x86-64

@@ -2,15 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Gcm.X86_64.Bits
+import VerifiedGarbage.Proof.Gcm.X86_64.Bits
 public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! ## Buffer -/
 
@@ -19,17 +20,17 @@ import all Init.Data.Vector.Basic
 section
 
 /-!
-# Integer preparation of the counter and hash buffers
+# Integer preparation of the counter buffer
 
-The integer pipeline writes counter words and reversed hash inputs while
-leaving every vector register available to the interleaved AES/GHASH work.
+The integer pipeline writes counter words while leaving every vector
+register available to the interleaved AES/GHASH work.
 -/
 
 namespace VG.Proof.Gcm.X86_64.StitchAvx8
 
 open VG VG.X86_64 VG.X86_64.RegUpd
 open VG.Impl.Aes.X86_64.AesNi (at_)
-open VG.Impl.Gcm.X86_64.StitchAvx8 (prepCounter prepare)
+open VG.Impl.Gcm.X86_64.StitchAvx8 (prepCounter)
 
 private theorem ea_at (s : State) (r : Reg) (n : Nat) :
     s.ea (at_ r n) = s.gpr r + BitVec.ofNat 64 n := by
@@ -37,9 +38,6 @@ private theorem ea_at (s : State) (r : Reg) (n : Nat) :
 
 private theorem store32_eq (s : State) (a : Addr) (v : BitVec 32) :
     s.store32 a v = if InRegions s.wr a 4 then some (s.setMem (s.mem.writeW a v)) else none := rfl
-
-private theorem store64_eq (s : State) (a : Addr) (v : BitVec 64) :
-    s.store64 a v = if InRegions s.wr a 8 then some (s.setMem (s.mem.writeW a v)) else none := rfl
 
 /-- Integer preparation only changes `rax`, flags, and memory. -/
 structure BufferFrame (s t : State) : Prop where
@@ -80,70 +78,6 @@ theorem prepCounter_ok (s : State) (i : Nat)
   · simp only [State.setMem_ymmHi, ymmHi_setReg, ymmHi_arithFlags]
   · simp only [State.setMem_rd, rd_setReg, rd_arithFlags]
   · simp only [State.setMem_wr, wr_setReg, wr_arithFlags]
-
-/-- The high source word is stored first, as the low native field word. -/
-def prepareMem (m : Mem) (src dst : Addr) : Mem :=
-  (m.writeW dst (bswap64 (m.readW (src + 8) 64))).writeW (dst + 8)
-    (bswap64 (m.readW src 64))
-
-theorem prepare_ok (s : State) (k : Nat)
-    (hr₀ : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (16 * k)) 8)
-    (hr₁ : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (16 * k + 8)) 8)
-    (hw₀ : InRegions s.wr (s.gpr .r11 + BitVec.ofNat 64 (512 + 16 * (k % 8))) 8)
-    (hw₁ : InRegions s.wr (s.gpr .r11 + BitVec.ofNat 64 (520 + 16 * (k % 8))) 8)
-    (hsep : Mem.Sep (s.gpr .rdx + BitVec.ofNat 64 (16 * k)) 8
-      (s.gpr .r11 + BitVec.ofNat 64 (512 + 16 * (k % 8))) 8) :
-    WP isa (.block (prepare k)) s fun t =>
-      t.mem = prepareMem s.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * k))
-        (s.gpr .r11 + BitVec.ofNat 64 (512 + 16 * (k % 8))) ∧ BufferFrame s t := by
-  apply WP.of_runBlock
-  simp only [prepare, runBlock_cons, runStep_some, runBlock_nil, exec, isa,
-    readSrc, State.load64, store64_eq, ea_at, gpr_setReg, mem_setReg,
-    rd_setReg, wr_setReg, State.setMem_gpr, State.setMem_rd, State.setMem_wr,
-    State.setMem_mem, reduceCtorEq, ↓reduceIte, hr₀, hr₁, hw₀, hw₁,
-    Option.map_some, Mem.readW_writeW_sep (w := 64) (w' := 64) hsep (by decide),
-    Option.some.injEq, exists_eq_left']
-  refine ⟨?_, ?_⟩
-  · have es : s.gpr .rdx + BitVec.ofNat 64 (16 * k) + 8 =
-        s.gpr .rdx + BitVec.ofNat 64 (16 * k + 8) := by
-      rw [show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add]
-    have ed : s.gpr .r11 + BitVec.ofNat 64 (512 + 16 * (k % 8)) + 8 =
-        s.gpr .r11 + BitVec.ofNat 64 (520 + 16 * (k % 8)) := by
-      rw [show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, BitVec.add_assoc, ← BitVec.ofNat_add]
-      congr 2; omega
-    simp only [prepareMem, es, ed]
-  · constructor
-    · intro r hr
-      simp only [State.setMem_gpr, gpr_setReg, hr, ite_false]
-    · simp only [State.setMem_xmm, xmm_setReg]
-    · simp only [State.setMem_ymmHi, ymmHi_setReg]
-    · simp only [State.setMem_rd, rd_setReg]
-    · simp only [State.setMem_wr, wr_setReg]
-
-private theorem read128_halves (m : Mem) (a : Addr) :
-    m.readW a 128 = m.readW (a + 8) 64 ++ m.readW a 64 := by
-  have h := BitVec.extractLsb'_append_extractLsb' (x := m.readW a 128) (w := 64) (len := 64)
-  rw [readW_extract m a (k := 8) (n := 8) (by decide),
-    readW_extract m a (k := 0) (n := 8) (by decide)] at h
-  simpa using h.symm
-
-/-- A prepared pair of integer stores is the native representation of the
-big-endian GHASH block. -/
-theorem prepareMem_read (m : Mem) (src dst : Addr) :
-    (prepareMem m src dst).readW dst 128 = Spec.Gcm.blockAt m src := by
-  rw [read128_halves, prepareMem, Mem.readW_writeW_self64]
-  have hs : Mem.Sep dst 8 (dst + 8) 8 := by
-    simpa using
-      (Offset.sep dst (d := 0) (e := 8) (n := 8) (k := 8) (by omega) (by omega) (by omega))
-  rw [Mem.readW_writeW_sep hs (by decide), Mem.readW_writeW_self64]
-  simpa using blockAt_bswap m src
-
-theorem prepareMem_frame (m : Mem) (src dst : Addr) :
-    Frame [⟨dst, 16⟩] m (prepareMem m src dst) := by
-  unfold prepareMem
-  refine ((Frame.refl _ _).writeW List.mem_cons_self _ ?_).writeW List.mem_cons_self _ ?_
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide
-  · exact Offset.contains_base dst (d := 8) (n := 8) (k := 16) (by decide) (by decide)
 
 /-- The memory effect of preparing any collection of next-counter slots. -/
 def prepCountersMem (m : Mem) (p : Addr) (v : BitVec 32) (is : List Nat) : Mem :=

@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFinish
-public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
+import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
 public import VerifiedGarbage.Spec.MlDsa.RejNTT2
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

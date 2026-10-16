@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.X86.Sse
-public import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseDword
 
 /-!
 # SSE2 values as their four dword lanes

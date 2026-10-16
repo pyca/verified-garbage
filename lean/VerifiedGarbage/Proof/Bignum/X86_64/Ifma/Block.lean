@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: a step on the machine
@@ -14,7 +15,9 @@ From a state with `StepIn`, the code of step
 `i` leaves in role `k`'s lanes at step `i + 1` the limbs of
 `Amm52N.step (4 R)`, the zero register still zero, and changes nothing but
 the vector registers and `rax` (`ammStep_ok`); a block of `R` steps moves
-`r9` to the next block's limbs and counts down `rcx` (`ammBlock_ok`).
+`r9` to the next block's limbs and counts down `rcx` (`ammBlock_ok`), and
+the steps of a block that stay within the `S` of a multiplication leave its
+lanes after them (`steps_chain`).
 -/
 
 @[expose] public section
@@ -28,6 +31,12 @@ open VG.Proof.Bignum.X86_64.AmmSym (ops Ctx Keeps ofNat_add64)
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 theorem LayOk.bounds (hl : LayOk l) : 2 ≤ l.R ∧ l.R ≤ 10 := by
+  rcases hl with rfl | rfl | rfl <;> decide
+
+/-- The steps: `S / R` blocks, then `S % R` more, at most `4 R`. -/
+theorem LayOk.steps (hl : LayOk l) :
+    1 ≤ l.S / l.R ∧ l.S / l.R ≤ 4 ∧ 2 ≤ l.S ∧ l.S ≤ l.L ∧ l.R * (l.S / l.R) + l.S % l.R = l.S ∧
+      l.S % l.R < l.R := by
   rcases hl with rfl | rfl | rfl <;> decide
 
 theorem regOf_lt {p k i : Nat} (hp : p < 2) (hR : 2 ≤ l.R) : regOf l p k i < 2 * l.R := by
@@ -139,14 +148,14 @@ theorem off_blk (hR : 2 ≤ l.R) {blk i : Nat} (hi : i < l.R) : l.off (l.R * blk
     Nat.mod_eq_of_lt hi, Nat.div_eq_of_lt hi, Nat.zero_add]
 
 theorem InBlk.stepIn (hl : LayOk l) {s₀ s : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
-    {bl : Nat → Nat → Nat} {blk i : Nat} (hb : blk < 4) (hi : i < l.R) (e : Env l s₀ a m k bl)
+    {bl : Nat → Nat → Nat} {blk i : Nat} (hb : l.R * blk + i < l.S) (hi : i < l.R) (e : Env l s₀ a m k bl)
     (h : InBlk l s₀ s a m k bl blk i) :
     StepIn l s i (fun p => lm l a m k bl p (l.R * blk + i)) a m k (fun p => bl p (l.R * blk + i)) ∧
       Ctx (lim l) s := by
   obtain ⟨hR, hR10⟩ := hl.bounds
   have hbi : l.R * blk + i < l.L := by
-    have := Nat.mul_le_mul_left l.R (Nat.le_of_lt_succ hb)
-    simp only [Lay.L]; omega
+    have := hl.steps; omega
+  have hb4 : blk < 4 := Nat.lt_of_mul_lt_mul_left (a := l.R) (by simp only [Lay.L] at hbi; omega)
   refine ⟨⟨h.z, h.lanes, fun p _ j hj => lm_lt hR10 (by omega) hj, fun p hp kk hk t ht => ?_,
     fun p hp kk hk t ht => ?_, fun p hp t ht => ?_, fun p hp => ?_, e.alt, e.mlt, e.klt,
     fun p hp => e.blt p hp _ hbi⟩, ?_⟩
@@ -167,18 +176,18 @@ theorem InBlk.stepIn (hl : LayOk l) {s₀ s : State} {a m : Nat → Nat → Nat}
       omega
 
 theorem steps_chain (hl : LayOk l) {s₀ : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
-    {bl : Nat → Nat → Nat} {blk : Nat} (hb : blk < 4) (e : Env l s₀ a m k bl) :
-    ∀ i ≤ l.R, ∀ s, InBlk l s₀ s a m k bl blk 0 →
+    {bl : Nat → Nat → Nat} {blk : Nat} (e : Env l s₀ a m k bl) :
+    ∀ i ≤ l.R, l.R * blk + i ≤ l.S → ∀ s, InBlk l s₀ s a m k bl blk 0 →
       WP isa (.block ((List.range i).flatMap (ammStep l))) s fun s' =>
         InBlk l s₀ s' a m k bl blk i ∧ (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mxcsr = s.mxcsr := by
   intro i
   induction i with
-  | zero => intro _ s h; exact WP.block_nil ⟨h, fun _ _ => rfl, rfl⟩
+  | zero => intro _ _ s h; exact WP.block_nil ⟨h, fun _ _ => rfl, rfl⟩
   | succ i ih =>
-    intro hi s h
+    intro hi hb s h
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (ih (by omega) s h) fun s₁ ⟨h₁, g₁, x₁⟩ => ?_
-    obtain ⟨hst, hc⟩ := h₁.stepIn hl hb (by omega) e
+    refine WP.mono (ih (by omega) (by omega) s h) fun s₁ ⟨h₁, g₁, x₁⟩ => ?_
+    obtain ⟨hst, hc⟩ := h₁.stepIn hl (by omega) (by omega) e
     refine WP.mono (ammStep_ok hl (by omega) hst hc) fun s₂ ⟨l₂, z₂, k₂⟩ => ?_
     refine ⟨⟨fun p hp kk hk t ht => ?_, z₂, ?_, ?_, ?_, ?_, ?_, ?_⟩, fun r hr => (k₂.gpr r hr).trans (g₁ r hr),
       k₂.mxcsr.trans x₁⟩
@@ -195,24 +204,28 @@ theorem regOf_R (p kk : Nat) : regOf l p kk l.R = regOf l p kk 0 := by
 
 /-- A block: `R` steps, `r9` to the next block's limbs, the count down. -/
 theorem ammBlock_ok (hl : LayOk l) {s₀ s : State} {a m : Nat → Nat → Nat} {k : Nat → Nat}
-    {bl : Nat → Nat → Nat} {blk : Nat} (hb : blk < 4) (e : Env l s₀ a m k bl)
-    (h : InBlk l s₀ s a m k bl blk 0) (hcx : s.gpr .rcx = BitVec.ofNat 64 (4 - blk)) :
+    {bl : Nat → Nat → Nat} {blk : Nat} (hb : blk < l.S / l.R) (e : Env l s₀ a m k bl)
+    (h : InBlk l s₀ s a m k bl blk 0) (hcx : s.gpr .rcx = BitVec.ofNat 64 (l.S / l.R - blk)) :
     WP isa (.block (ammBlock l)) s fun s' =>
-      InBlk l s₀ s' a m k bl (blk + 1) 0 ∧ s'.gpr .rcx = BitVec.ofNat 64 (4 - (blk + 1)) ∧
-      s'.zf = some (decide (blk + 1 = 4)) ∧ (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → s'.gpr r = s.gpr r) ∧
+      InBlk l s₀ s' a m k bl (blk + 1) 0 ∧ s'.gpr .rcx = BitVec.ofNat 64 (l.S / l.R - (blk + 1)) ∧
+      s'.zf = some (decide (blk + 1 = l.S / l.R)) ∧ (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → s'.gpr r = s.gpr r) ∧
       s'.mxcsr = s.mxcsr := by
   rw [show ammBlock l = (List.range l.R).flatMap (ammStep l) ++
     ([.alu .add .r9 (.imm 8), .alu .sub .rcx (.imm 1)] : List Instr) from rfl, WP.block_append_iff]
-  refine WP.mono (steps_chain hl hb e l.R (Nat.le_refl _) s h) fun s₁ ⟨h₁, g₁, x₁⟩ => ?_
+  have hst := hl.steps
+  have hRb : l.R * (blk + 1) ≤ l.R * (l.S / l.R) := Nat.mul_le_mul_left _ hb
+  refine WP.mono (steps_chain hl e l.R (Nat.le_refl _) (by rw [Nat.mul_add, Nat.mul_one] at hRb; omega) s h)
+    fun s₁ ⟨h₁, g₁, x₁⟩ => ?_
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
     Option.some.injEq, exists_eq_left']
   have r9₁ := h₁.r9
-  have cx₁ : s₁.gpr .rcx = BitVec.ofNat 64 (4 - blk) := by rw [g₁ _ (by decide)]; exact hcx
+  have cx₁ : s₁.gpr .rcx = BitVec.ofNat 64 (l.S / l.R - blk) := by rw [g₁ _ (by decide)]; exact hcx
   have e8 : BitVec.signExtend 64 (8 : BitVec 32) = BitVec.ofNat 64 8 := rfl
   have e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := rfl
-  have hc : BitVec.ofNat 64 (4 - blk) - 1 = BitVec.ofNat 64 (4 - (blk + 1)) := by
-    rw [show 4 - blk = (4 - (blk + 1)) + 1 by omega, BitVec.ofNat_add]; exact BitVec.add_sub_cancel _ _
+  have hc : BitVec.ofNat 64 (l.S / l.R - blk) - 1 = BitVec.ofNat 64 (l.S / l.R - (blk + 1)) := by
+    rw [show l.S / l.R - blk = (l.S / l.R - (blk + 1)) + 1 by omega, BitVec.ofNat_add]
+    exact BitVec.add_sub_cancel _ _
   simp only [e8, e1]
   generalize hS₂ : (arithFlags s₁ (s₁.gpr .r9 + BitVec.ofNat 64 8) _ _).setReg .r9 (s₁.gpr .r9 + BitVec.ofNat 64 8) = S₂
   have g₂ : ∀ r, r ≠ .r9 → S₂.gpr r = s₁.gpr r := fun r hr => by
@@ -229,7 +242,7 @@ theorem ammBlock_ok (hl : LayOk l) {s₀ s : State} {a m : Nat → Nat → Nat} 
   have q₃ : ∀ r t, qv S₃ r t = qv S₂ r t := fun r t => by rw [← hS₃]; rfl
   have v₃ : S₃.mem = S₂.mem ∧ S₃.rd = S₂.rd ∧ S₃.wr = S₂.wr ∧ S₃.mxcsr = S₂.mxcsr := by
     rw [← hS₃]; exact ⟨rfl, rfl, rfl, rfl⟩
-  have cx₂ : S₂.gpr .rcx = BitVec.ofNat 64 (4 - blk) := by rw [g₂ _ (by decide), cx₁]
+  have cx₂ : S₂.gpr .rcx = BitVec.ofNat 64 (l.S / l.R - blk) := by rw [g₂ _ (by decide), cx₁]
   refine ⟨⟨fun p hp kk hk t ht => ?_, fun t ht => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_,
     fun r h1 h2 h3 => ?_, ?_⟩
   · rw [q₃, q₂, ← regOf_R p kk, show l.R * (blk + 1) + 0 = l.R * blk + l.R by rw [Nat.mul_add, Nat.mul_one, Nat.add_zero]]
@@ -243,7 +256,11 @@ theorem ammBlock_ok (hl : LayOk l) {s₀ s : State} {a m : Nat → Nat → Nat} 
   · rw [v₃.2.2.1, v₂.2.2.1]; exact h₁.wr
   · rw [cx₃, cx₂, hc]
   · rw [z₃, cx₂, hc]
-    rcases (by omega : blk = 0 ∨ blk = 1 ∨ blk = 2 ∨ blk = 3) with rfl | rfl | rfl | rfl <;> rfl
+    have hb4 := hst.2.1
+    generalize l.S / l.R = nb at hb hb4
+    rcases (by omega : blk = 0 ∨ blk = 1 ∨ blk = 2 ∨ blk = 3) with rfl | rfl | rfl | rfl <;>
+      rcases (by omega : nb = 1 ∨ nb = 2 ∨ nb = 3 ∨ nb = 4) with rfl | rfl | rfl | rfl <;>
+      first | rfl | omega
   · rw [g₃ _ h2, g₂ _ h3]; exact g₁ r h1
   · rw [v₃.2.2.2, v₂.2.2.2]; exact x₁
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.Layout
+import VerifiedGarbage.Proof.Camellia.Layout
 public import VerifiedGarbage.Proof.Camellia.Bitsliced32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

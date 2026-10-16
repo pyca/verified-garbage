@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_rej_ntt_poly`, constant time but for the seed, and `Verified`
@@ -69,11 +71,11 @@ theorem try_ct {t : Nat} :
       have e : a.z = false := Option.some.inj hab.2
       refine ⟨e, ?_⟩
       rw [← e, hab.1.1.z, hab.1.2.z, Lt_eq h]
-  refine RelCT.seq (R := fun a b => T1 σ₁ t a ∧ T1 σ₂ t b) (relW (taintRel [] nil_regs (by taint_decide))
+  refine RelCT.seq (R := fun a b => T1 σ₁ t a ∧ T1 σ₂ t b) (relW (taintRel [] nil_regs (by native_taint_decide))
     fun a b hab => ⟨tryA hab.1.1 (hz a b hab).1, tryA hab.1.2 (hz a b hab).2⟩) ?_
   refine RelCT.ite (fun a b hab => by
-    show some a.z = some b.z; rw [hab.1.z, hab.2.z, V_eq h]) (taintRel [] nil_regs (by taint_decide))
-    (taintRel [.r2, .r5] (fun a b hab r hr => ?_) (by taint_decide))
+    show some a.z = some b.z; rw [hab.1.z, hab.2.z, V_eq h]) (taintRel [] nil_regs (by native_taint_decide))
+    (taintRel [.r2, .r5] (fun a b hab r hr => ?_) (by native_taint_decide))
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · rw [hab.1.1.lat.r2, hab.1.2.lat.r2, Lt_eq h]
@@ -86,15 +88,15 @@ theorem body_ct {t : Nat} (ht : t < 336) :
   have hp₂ := h.hp₂
   refine relW ?_ fun a b hab => ⟨body_ok hp₁ ht hab.1, body_ok hp₂ ht hab.2⟩
   refine RelCT.seq (R := fun a b => M1 σ₁ t a ∧ M1 σ₂ t b) (relW (taintRel [.r0, .r2] (fun a b hab r hr => ?_)
-    (by taint_decide)) fun a b hab => ⟨pieceA hp₁ ht hab.1, pieceA hp₂ ht hab.2⟩) ?_
+    (by native_taint_decide)) fun a b hab => ⟨pieceA hp₁ ht hab.1, pieceA hp₂ ht hab.2⟩) ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · rw [hab.1.r0, hab.2.r0, h.r2]
     · rw [hab.1.r2, hab.2.r2, Lt_eq h]
   refine RelCT.seq (R := fun a b => M2 σ₁ t a ∧ M2 σ₂ t b) (relW ?_
-    fun a b hab => ⟨pieceB hp₁ ht hab.1, pieceB hp₂ ht hab.2⟩) (taintRel [] nil_regs (by taint_decide))
+    fun a b hab => ⟨pieceB hp₁ ht hab.1, pieceB hp₂ ht hab.2⟩) (taintRel [] nil_regs (by native_taint_decide))
   exact RelCT.ite (fun a b hab => by show some a.z = some b.z; rw [hab.1.z, hab.2.z, Lt_eq h])
-    (taintRel [] nil_regs (by taint_decide)) (try_ct h)
+    (taintRel [] nil_regs (by native_taint_decide)) (try_ct h)
 
 theorem loop_ct :
     RelCT isa (fun a b => LAt σ₁ 0 a ∧ LAt σ₂ 0 b) (.loop rnBody .ne) fun a b =>
@@ -129,7 +131,7 @@ theorem all_ct : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) Impl.MlDsa.Arm.S
   have eP := sp_eq h
   have hp₂' : SpOk (spOf σ₁) σ₂ := eP ▸ hp₂
   refine RelCT.seq (R := fun a b => J0 (spOf σ₁) σ₁ a ∧ J0 (spOf σ₁) σ₂ b) (relW (taintRel [.r0, .r1, .r2]
-    (fun a b hab r hr => ?_) (by taint_decide)) fun a b hab => ⟨?_, ?_⟩) ?_
+    (fun a b hab r hr => ?_) (by native_taint_decide)) fun a b hab => ⟨?_, ?_⟩) ?_
   · rw [hab.1, hab.2]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -137,11 +139,11 @@ theorem all_ct : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) Impl.MlDsa.Arm.S
   · rw [hab.1]; exact pro_rn hp₁ rfl rfl rfl rfl rfl
   · rw [hab.2]; exact pro_rn hp₂' h.r0.symm h.r1.symm h.r2.symm rfl rfl
   refine RelCT.seq (sponge_ct hp₁ hp₂' h.sp (rate := 168) (outlen := 1008) (by decide) (by decide) (by decide)
-    (by decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+    (by decide) (by native_taint_decide) (by native_taint_decide) (by native_taint_decide)) ?_
   refine RelCT.seq (R := fun a b => LAt σ₁ 336 a ∧ LAt σ₂ 336 b) (RelCT.seq (R := fun a b => LAt σ₁ 0 a ∧ LAt σ₂ 0 b)
-    (relW (taintRel [] nil_regs (by taint_decide)) fun a b hab => ⟨lat0 hab.1, lat0 (eP ▸ hab.2)⟩) (loop_ct h)) ?_
+    (relW (taintRel [] nil_regs (by native_taint_decide)) fun a b hab => ⟨lat0 hab.1, lat0 (eP ▸ hab.2)⟩) (loop_ct h)) ?_
   exact taintRel [.r6] (fun a b hab r hr => by
-    rw [List.mem_singleton] at hr; subst hr; rw [hab.1.env.r6, hab.2.env.r6, sp_eq h]) (by taint_decide)
+    rw [List.mem_singleton] at hr; subst hr; rw [hab.1.env.r6, hab.2.env.r6, sp_eq h]) (by native_taint_decide)
 
 end
 

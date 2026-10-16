@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Resident
-public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit

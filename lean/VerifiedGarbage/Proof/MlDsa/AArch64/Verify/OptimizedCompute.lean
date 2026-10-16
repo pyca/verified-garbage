@@ -2,12 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedVectors
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedPiece
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedRowTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedFinish
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Aes.Arm.Sbox
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A block that stores only at given offsets of `sb` (ARMv7)

@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # RSA with the CRT on x86-64: the exponentiation is constant time
@@ -33,13 +35,13 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Cr
 open VG.Proof.MlKem.X86_64
 
 /-- The prime's workspace of `p` and its context, as the steps' bounds need it. -/
-def XCtx (p : XPub) (s : State) : Prop :=
-  ∃ (minv : BitVec 64) (X Xc : Nat), CExpCtx s (off p.B p.o) p.wx minv X Xc ∧ Xc < X ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30
+def XCtx (p : XPub) (s : State) (n : Nat := 16) : Prop :=
+  ∃ (minv : BitVec 64) (X Xc : Nat), CExpCtx s (off p.B p.o) p.wx minv X Xc n ∧ Xc < X ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30
 
-theorem XCtx.goodW {p : XPub} {s : State} (h : XCtx p s) : GoodW p.ws s :=
+theorem XCtx.goodW {p : XPub} {s : State} {n : Nat} (h : XCtx p s n) : GoodW p.ws s :=
   let ⟨minv, _, _, hc, _⟩ := h; ⟨minv, hc.good, Nat.le_refl _⟩
 
-theorem XCtx.rdi {p : XPub} {s : State} (h : XCtx p s) : s.gpr .rdi = off p.B p.o :=
+theorem XCtx.rdi {p : XPub} {s : State} {n : Nat} (h : XCtx p s n) : s.gpr .rdi = off p.B p.o :=
   let ⟨_, _, _, hc, _⟩ := h; hc.good.rdi
 
 theorem pins_rdi {α : Type} {Φ : α → State → Prop} (f : α → Addr) (h : ∀ a s, Φ a s → s.gpr .rdi = f a) :
@@ -57,7 +59,7 @@ theorem rdi_ct {α : Type} {Φ : α → State → Prop} (f : α → Addr) (h : �
 
 /-- After `j` passes of the selection, in the workspace of `p`. -/
 def GathPassI (p : XPub) (j : Nat) (s : State) : Prop :=
-  ∃ (t₀ : State) (minv : BitVec 64) (X Xc v : Nat), GathPassInv t₀ (off p.B p.o) p.wx minv X Xc v j s ∧
+  ∃ (t₀ : State) (minv : BitVec 64) (X Xc v : Nat), GathPassInv t₀ (off p.B p.o) p.wx minv X Xc v 16 j s ∧
     2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧ v < 16
 
 /-- After the head of pass `q.2`: its bases, counts and masks, whatever the window. -/
@@ -118,13 +120,13 @@ theorem passBody_ct : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ Gath
   exact two_taint _ pins_GathE (by taint_decide)
 
 /-- `tabSel_ok`'s hypotheses. -/
-def SelP (p : XPub) (s : State) : Prop :=
-  ∃ (minv : BitVec 64) (X Xc v : Nat), CExpCtx s (off p.B p.o) p.wx minv X Xc ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
-    v < 16 ∧ word s.mem (off p.B p.o) (8 * Crt.sTab) = off (off p.B p.o) (slot p.wx 8) ∧
+def SelP (n : Nat) (p : XPub) (s : State) : Prop :=
+  ∃ (minv : BitVec 64) (X Xc v : Nat), CExpCtx s (off p.B p.o) p.wx minv X Xc n ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
+    v < n ∧ word s.mem (off p.B p.o) (8 * Crt.sTab) = off (off p.B p.o) (slot p.wx 8) ∧
     word s.mem (off p.B p.o) (8 * Crt.sNib) = BitVec.ofNat 64 v
 
 /-- The selection leaks the same in runs with the same workspace. -/
-theorem tabSel_ct : RelCT isa (Two SelP) (seqs Crt.tabSelect) fun _ _ => True := by
+theorem tabSel_ct : RelCT isa (Two (SelP 16)) (seqs Crt.tabSelect) fun _ _ => True := by
   rw [tabSelect_eq]
   simp only [seqs]
   refine RelCT.seq (two_piece (Ψ := fun p s => 0 < 2 ∧ GathPassI p 0 s) [.rdi]
@@ -150,39 +152,52 @@ theorem tabSel_ct : RelCT isa (Two SelP) (seqs Crt.tabSelect) fun _ _ => True :=
         ⟨eval_ne_count hj hz, fun _ => ⟨t₀, minv, X, Xc, v, hI', hw, hw', hv⟩, fun _ => trivial⟩).mono
     (fun _ _ h => h) fun _ _ _ => trivial
 
+/-- A selection is constant time, as `tabSel_ct` says of `CrtSel.sse`. -/
+def CrtSel.CT {n : Nat} (S : CrtSel n) : Prop := RelCT isa (Two (SelP n)) (seqs S.code) fun _ _ => True
+
+theorem CrtSel.sse_ct : CrtSel.sse.CT := tabSel_ct
+
 /-! ## A window -/
 
 /-- After `j` windows of a byte, in the prime's workspace of `p`. -/
 def WinI (p : XPub) (j : Nat) (s : State) : Prop :=
   ∃ (t₀ : State) (minv : BitVec 64) (X Xc E v : Nat),
-    CWinInv t₀ (off p.B p.o) p.wx minv X Xc False 0 E v j s ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
+    CWinInv t₀ (off p.B p.o) p.wx minv X Xc X False 0 E v j s ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
     Nat.Coprime (2 ^ (64 * p.wx)) X ∧ Xc < X ∧ v < 256
 
-/-- Within a window: the workspace, its table, `Y < X` and the value in `sV`. -/
-def WinQ (p : XPub) (t : State) : Prop :=
+/-- Within a window: the workspace, its table, `Y < bd X R` (`Y < X` but for
+lazy squarings) and the value in `sV`. -/
+def WinQ (p : XPub) (t : State) (bd : Nat → Nat → Nat := fun m _ => m) : Prop :=
   ∃ (minv : BitVec 64) (X Xc V : Nat), CExpCtx t (off p.B p.o) p.wx minv X Xc ∧
-    CTab t.mem (off p.B p.o) p.wx X False 0 ∧ wv t.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < X ∧
+    CTab t.mem (off p.B p.o) p.wx X False 0 ∧
+    wv t.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < bd X (2 ^ (64 * p.wx)) ∧
     word t.mem (off p.B p.o) (8 * Crt.sV) = BitVec.ofNat 64 V ∧ V < 2 ^ 56 ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
     Nat.Coprime (2 ^ (64 * p.wx)) X
 
-theorem WinQ.goodW {p : XPub} {t : State} (h : WinQ p t) : GoodW p.ws t :=
+theorem WinQ.goodW {p : XPub} {t : State} {bd : Nat → Nat → Nat} (h : WinQ p t bd) : GoodW p.ws t :=
   let ⟨minv, _, _, _, hc, _⟩ := h; ⟨minv, hc.good, Nat.le_refl _⟩
 
-theorem WinQ.rdi {p : XPub} {t : State} (h : WinQ p t) : t.gpr .rdi = off p.B p.o :=
+theorem WinQ.rdi {p : XPub} {t : State} {bd : Nat → Nat → Nat} (h : WinQ p t bd) : t.gpr .rdi = off p.B p.o :=
   let ⟨_, _, _, _, hc, _⟩ := h; hc.good.rdi
 
-/-- A squaring keeps `WinQ`. -/
-theorem winSq_q (M : Mont) {p : XPub} {s : State} (h : WinQ p s) :
-    WP isa (M.mm Public.aY Public.aY Public.aY) s (WinQ p) := by
+/-- A squaring by `Sq` keeps `WinQ` with its bound. -/
+theorem winSqS_q (Sq : MontS) {p : XPub} {s : State} (h : WinQ p s Sq.bd) :
+    WP isa Sq.mm s (WinQ p · Sq.bd) := by
   obtain ⟨minv, X, Xc, V, hc, htab, hY, hV, hV', hw, hw', hR⟩ := h
-  refine WP.mono (crtSq_ok M (Q := False) (x := 0) (E := 0) hc hw hw' hR hY False.elim)
+  refine WP.mono (crtSqS_ok Sq (Q := False) (x := 0) (E := 0) hc hw hw' hR hY False.elim)
     fun t ⟨hc', hY', _, hh, hf, _⟩ => ⟨minv, X, Xc, V, hc', htab.of_win hf hc.scrT.nowrap, hY', ?_, hV', hw, hw', hR⟩
   rw [hh _ (by decide)]; exact hV
 
+/-- A squaring keeps `WinQ`. -/
+theorem winSq_q (M : Mont) {p : XPub} {s : State} (h : WinQ p s) :
+    WP isa (M.mm Public.aY Public.aY Public.aY) s (WinQ p) :=
+  winSqS_q M.toS h
+
 /-- Before the selection: `tabSel_ok`'s hypotheses, and the rest of `WinQ`. -/
-def WinS (p : XPub) (t : State) : Prop :=
-  SelP p t ∧ ∃ (minv : BitVec 64) (X Xc : Nat), CExpCtx t (off p.B p.o) p.wx minv X Xc ∧
-    CTab t.mem (off p.B p.o) p.wx X False 0 ∧ wv t.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < X ∧
+def WinS (p : XPub) (t : State) (bd : Nat → Nat → Nat := fun m _ => m) : Prop :=
+  SelP 16 p t ∧ ∃ (minv : BitVec 64) (X Xc : Nat), CExpCtx t (off p.B p.o) p.wx minv X Xc ∧
+    CTab t.mem (off p.B p.o) p.wx X False 0 ∧
+    wv t.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < bd X (2 ^ (64 * p.wx)) ∧
     Nat.Coprime (2 ^ (64 * p.wx)) X
 
 /-- After the selection: `T < X`, for `Y := Y T`. -/
@@ -191,31 +206,33 @@ def WinT (p : XPub) (t : State) : Prop :=
     wv t.mem (off p.B p.o) (slot p.wx Crt.aT) p.wx < X ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30
 
 /-- A window leaks the same in runs with the same workspace, whatever the window. -/
-theorem crtWin_ct (M : Mont) :
-    RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ WinI q.1 q.2 s) (seqs (Crt.expWin M.mm))
+theorem crtWin_ct (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) :
+    RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ WinI q.1 q.2 s) (seqs (Crt.expWin Sq.mm M.mm S.code))
       fun _ _ => True := by
   rw [expWin_eq]
-  refine RelCT.seqs_append (by simp) (by simp [tabSelect_eq]) ?_
-  have sq : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s) (M.mm Public.aY Public.aY Public.aY)
-      (Two fun (q : XPub × Nat) s => WinQ q.1 s) :=
-    two_post (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ h => h.goodW) (M.ct (by unfold MmUse; decide)))
-      fun _ _ h => winSq_q M h
+  refine RelCT.seqs_append (by simp) (by simp) ?_
+  have sq : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd) Sq.mm
+      (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd) :=
+    two_post (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ h => h.goodW) Sq.ct)
+      fun _ _ h => winSqS_q Sq h
   -- Four squarings.
-  have sq0 : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ WinI q.1 q.2 s) (M.mm Public.aY Public.aY Public.aY)
-      (Two fun (q : XPub × Nat) s => WinQ q.1 s) :=
+  have sq0 : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ WinI q.1 q.2 s) Sq.mm
+      (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd) :=
     two_post (two_map (fun q : XPub × Nat => q.1.ws)
       (fun _ _ ⟨_, _, _, _, _, _, _, hI, _⟩ => ⟨_, hI.ctx.good, Nat.le_refl _⟩)
-      (M.ct (by unfold MmUse; decide))) fun q s ⟨_, t₀, minv, X, Xc, E, v, hI, hw, hw', hR, hXN, hv⟩ => by
+      Sq.ct) fun q s ⟨_, t₀, minv, X, Xc, E, v, hI, hw, hw', hR, hXN, hv⟩ => by
         have hp : v * 16 ^ q.2 < 2 ^ 56 := by
           have : 16 ^ q.2 ≤ 16 := by rcases (show q.2 = 0 ∨ q.2 = 1 by omega_arith) with h | h <;> rw [h] <;> decide
           have := Nat.mul_le_mul_left v this; omega_arith
-        exact winSq_q M ⟨minv, X, Xc, _, hI.ctx, hI.tab, hI.ylt, hI.v, hp, hw, hw', hR⟩
+        have hXR : X ≤ 2 ^ (64 * q.1.wx) := by rw [← hI.ctx.n]; exact Nat.le_of_lt (wv_lt _ _ _ _)
+        exact winSqS_q Sq ⟨minv, X, Xc, _, hI.ctx, hI.tab, Nat.lt_of_lt_of_le hI.ylt (Sq.le hXR), hI.v, hp, hw, hw',
+          hR⟩
   -- The window, and `sV` up.
-  have mid : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s)
+  have mid : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s Sq.bd)
       (.block [.mov .rdx (.mem (hdr Crt.sV)), .mov .rax (.reg .rdx), .alu .add .rax (.reg .rax),
         .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .store (hdr Crt.sV) .rax,
         .shift .shr .rdx 4, .alu .and .rdx (.imm 15), .store (hdr Crt.sNib) .rdx])
-      (Two fun (q : XPub × Nat) s => WinS q.1 s) := by
+      (Two fun (q : XPub × Nat) s => WinS q.1 s Sq.bd) := by
     refine two_piece [.rdi] (pins_rdi (fun q : XPub × Nat => off q.1.B q.1.o) fun _ _ h => h.rdi) (by taint_decide)
       fun q s h => ?_
     obtain ⟨minv, X, Xc, V, hc, htab, hY, hV, hV', hw, hw', hR⟩ := h
@@ -238,15 +255,15 @@ theorem crtWin_ct (M : Mont) :
           hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]; exact htab.tab,
         by rw [hm, word_writeW_self]⟩,
       minv, X, Xc, hc', htab.of_win f hn, hYe ▸ hY, hR⟩
-  refine RelCT.seq (R := Two fun (q : XPub × Nat) s => WinS q.1 s) ?_ ?_
+  refine RelCT.seq (R := Two fun (q : XPub × Nat) s => WinS q.1 s Sq.bd) ?_ ?_
   · simp only [seqs]
     exact RelCT.seq sq0 (RelCT.seq sq (RelCT.seq sq (RelCT.seq sq mid)))
   -- The selection, `Y := Y T` and the count.
-  refine RelCT.seqs_append (by simp [tabSelect_eq]) (by simp) ?_
+  refine RelCT.seqs_append S.ne (by simp) ?_
   refine RelCT.seq (two_post (Ψ := fun (q : XPub × Nat) s => WinT q.1 s)
-    (two_map (fun q : XPub × Nat => q.1) (fun _ _ h => h.1) tabSel_ct) fun q s h => ?_) ?_
+    (two_map (fun q : XPub × Nat => q.1) (fun _ _ h => h.1) hS) fun q s h => ?_) ?_
   · obtain ⟨⟨minv, X, Xc, v, hc, hw, hw', hv, ht, hN⟩, minv', X', Xc', hc₂, htab, -, -⟩ := h
-    refine WP.mono (tabSel_ok hc hw hw' hv ht hN) fun t ⟨hc', hT, _, _⟩ => ⟨minv, X, Xc, hc', ?_, hw, hw'⟩
+    refine WP.mono (S.ok hc hw hw' hv ht hN) fun t ⟨hc', hT, _, _⟩ => ⟨minv, X, Xc, hc', ?_, hw, hw'⟩
     have hX : X' = X := hc₂.n.symm.trans hc.n
     rw [hT, ← hX]; exact htab.lt _ hv
   simp only [seqs]
@@ -260,12 +277,12 @@ theorem crtWin_ct (M : Mont) :
   exact rdi_ct (fun q : XPub × Nat => off q.1.B q.1.o) (fun _ _ h => h) (by taint_decide)
 
 /-- The two windows of a byte leak the same in runs with the same workspace. -/
-theorem crtWins_ct (M : Mont) :
-    RelCT isa (Two fun p s => 0 < 2 ∧ WinI p 0 s) (.loop (seqs (Crt.expWin M.mm)) .ne)
+theorem crtWins_ct (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) :
+    RelCT isa (Two fun p s => 0 < 2 ∧ WinI p 0 s) (.loop (seqs (Crt.expWin Sq.mm M.mm S.code)) .ne)
       (Two fun p s => WinI p 2 s) :=
-  two_loop (Φ := WinI) (fun _ => 2) (crtWin_ct M)
+  two_loop (Φ := WinI) (fun _ => 2) (crtWin_ct M Sq S hS)
     fun _ _ _ hj ⟨t₀, minv, X, Xc, E, v, hI, hw, hw', hR, hXN, hv⟩ =>
-      WP.mono (crtWinStep_ok M hw hw' hR hv hj hI) fun _ ⟨hz, hI'⟩ =>
+      WP.mono (crtWinStep_ok M Sq S hw hw' hR hv hj hI) fun _ ⟨hz, hI'⟩ =>
         ⟨eval_ne_count hj hz, fun _ => ⟨t₀, minv, X, Xc, E, v, hI', hw, hw', hR, hXN, hv⟩,
           fun h => h ▸ ⟨t₀, minv, X, Xc, E, v, hI', hw, hw', hR, hXN, hv⟩⟩
 
@@ -274,7 +291,7 @@ theorem crtWins_ct (M : Mont) :
 /-- After `i` bytes of the exponent (at `a.ptr`, `a.len` bytes). -/
 def CBytesInv (a : BPub) (i : Nat) (s : State) : Prop :=
   ∃ (t₀ : State) (minv : BitVec 64) (X Xc : Nat) (eb : List Byte),
-    CByteInv t₀ (off a.x.B a.x.o) a.x.wx minv X Xc False 0 a.ptr eb.length eb i s ∧ 2 ≤ a.x.wx ∧
+    CByteInv t₀ (off a.x.B a.x.o) a.x.wx minv X Xc X False 0 a.ptr eb.length eb i s ∧ 2 ≤ a.x.wx ∧
     a.x.wx < 2 ^ 30 ∧ Nat.Coprime (2 ^ (64 * a.x.wx)) X ∧ Xc < X ∧
     eb.length = a.len ∧ eb.length < 2 ^ 31 ∧ Src t₀ a.x.B a.x.Z a.ptr eb ∧
     ∀ i < eb.length, slot a.x.wx 8 + tabBytes a.x.wx ≤ ofs (off a.x.B a.x.o) (a.ptr + BitVec.ofNat 64 i)
@@ -296,11 +313,11 @@ theorem pins_cHeadMid : Pins CHeadMid [.rdi, .rax, .rcx] := by
 
 /-- One byte of the exponent leaks the same in runs with the same workspace
 and the same exponent's pointer and length. -/
-theorem crtByte_ct (M : Mont) : RelCT isa (Two fun (q : BPub × Nat) s => q.2 < q.1.len ∧ CBytesInv q.1 q.2 s)
+theorem crtByte_ct (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) : RelCT isa (Two fun (q : BPub × Nat) s => q.2 < q.1.len ∧ CBytesInv q.1 q.2 s)
     (seqs [.block [.mov .rax (.mem (hdr Crt.sExp)), .mov .rcx (.mem (hdr Crt.sI)),
         .movzx8 .rax { base := .rax, index := some .rcx }, .store (hdr Crt.sV) .rax, .mov32 .rax (.imm 2),
         .store (hdr Crt.sBit) .rax],
-      .loop (seqs (Crt.expWin M.mm)) .ne,
+      .loop (seqs (Crt.expWin Sq.mm M.mm S.code)) .ne,
       .block [.mov .rax (.mem (hdr Crt.sI)), .alu .add .rax (.imm 1), .store (hdr Crt.sI) .rax,
         .alu .cmp .rax (.mem (hdr Crt.sExpLen))]]) fun _ _ => True := by
   simp only [seqs]
@@ -322,14 +339,15 @@ theorem crtByte_ct (M : Mont) : RelCT isa (Two fun (q : BPub × Nat) s => q.2 < 
     rdi_ct (fun p : XPub => off p.B p.o) (fun _ _ ⟨_, _, _, _, _, _, hI, _⟩ => hI.ctx.good.rdi) (by taint_decide)
   exact RelCT.seq (RelCT.block_append (RelCT.seq (two_piece _ pins_cBytes (by taint_decide) w₁)
       (two_piece _ pins_cHeadMid (by taint_decide) w₂)))
-    (RelCT.seq (two_map (fun q : BPub × Nat => q.1.x) (fun _ _ h => h) (crtWins_ct M)) h₃)
+    (RelCT.seq (two_map (fun q : BPub × Nat => q.1.x) (fun _ _ h => h) (crtWins_ct M Sq S hS)) h₃)
 
 /-! ## The table -/
 
-/-- `toEnt a` into entry `q.2`: its bases, as the header gives them. -/
-def EntP (a : Nat) (q : XPub × Nat) (s : State) : Prop :=
-  XCtx q.1 s ∧ word s.mem (off q.1.B q.1.o) (8 * Crt.sEnt) = off (off q.1.B q.1.o) (slot q.1.wx (8 + q.2)) ∧
-    q.2 < 16 ∧ a < 8
+/-- `toEnt a` into entry `q.2` of a table of `n` entries: its bases, as the
+header gives them. -/
+def EntP (n a : Nat) (q : XPub × Nat) (s : State) : Prop :=
+  XCtx q.1 s n ∧ word s.mem (off q.1.B q.1.o) (8 * Crt.sEnt) = off (off q.1.B q.1.o) (slot q.1.wx (8 + q.2)) ∧
+    q.2 < n ∧ a < 8
 
 /-- `toEnt a`'s bases. -/
 def EntB (a : Nat) (q : XPub × Nat) (s : State) : Prop :=
@@ -346,10 +364,10 @@ theorem pins_entB (a : Nat) : Pins (EntB a) [.r12, .rsi, .rbx] := by
 
 /-- `toEnt a` leaks the same in runs with the same workspace and entry,
 given that the taint analysis checks its loads from `rdi`. -/
-theorem toEnt_ct {a : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+theorem toEnt_ct {n a : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rdi]) (.block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr a))),
       .mov .rbx (.mem (hdr Crt.sEnt))]) hc).isSome = true) :
-    RelCT isa (Two (EntP a)) (seqs (Crt.toEnt a)) fun _ _ => True := by
+    RelCT isa (Two (EntP n a)) (seqs (Crt.toEnt a)) fun _ _ => True := by
   unfold Crt.toEnt
   simp only [seqs]
   refine RelCT.seq (two_piece (Ψ := EntB a) [.rdi] (pins_rdi (fun q : XPub × Nat => off q.1.B q.1.o)
@@ -362,23 +380,24 @@ theorem toEnt_ct {a : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
       hc.ld (i := Crt.sEnt) (by decide), hc.ld (i := sW) (by decide), hc.good.hdr.harr a ha, he,
       hc.good.hdr.hw]) rfl) fun t ⟨h, _⟩ => h
 
-/-- After `i` of the table's products, in the workspace of `p`. -/
-def BldI (p : XPub) (i : Nat) (s : State) : Prop :=
-  ∃ (t₀ : State) (minv : BitVec 64) (X Xc : Nat), BuildInv t₀ (off p.B p.o) p.wx minv X Xc False 0 i s ∧
+/-- After `i` of the products of a table of `n` entries, in the workspace of
+`p`. -/
+def BldI (n : Nat) (p : XPub) (i : Nat) (s : State) : Prop :=
+  ∃ (t₀ : State) (minv : BitVec 64) (X Xc : Nat), BuildInv t₀ (off p.B p.o) p.wx minv X Xc False 0 n i s ∧
     2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧ Nat.Coprime (2 ^ (64 * p.wx)) X ∧ Xc < X
 
 /-- After the product `i`: the entry `i + 1` in `sEnt`. -/
-def BldM (q : XPub × Nat) (s : State) : Prop :=
-  XCtx q.1 s ∧ word s.mem (off q.1.B q.1.o) (8 * Crt.sEnt) = off (off q.1.B q.1.o) (slot q.1.wx (8 + (q.2 + 1))) ∧
-    q.2 < 14
+def BldM (n : Nat) (q : XPub × Nat) (s : State) : Prop :=
+  XCtx q.1 s n ∧ word s.mem (off q.1.B q.1.o) (8 * Crt.sEnt) = off (off q.1.B q.1.o) (slot q.1.wx (8 + (q.2 + 1))) ∧
+    q.2 < n - 2
 
 /-- A product of the table's build leaks the same in runs with the same workspace. -/
-theorem buildBody_ct (M : Mont) :
-    RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 14 ∧ BldI q.1 q.2 s)
+theorem buildBody_ct (M : Mont) (n : Nat) :
+    RelCT isa (Two fun (q : XPub × Nat) s => q.2 < n - 2 ∧ BldI n q.1 q.2 s)
       (seqs (tabBody M.mm)) fun _ _ => True := by
   -- `T := T Xc`.
-  have mmPart : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 14 ∧ BldI q.1 q.2 s) (M.mm Crt.aT Crt.aT Crt.aXc)
-      (Two BldM) := by
+  have mmPart : RelCT isa (Two fun (q : XPub × Nat) s => q.2 < n - 2 ∧ BldI n q.1 q.2 s) (M.mm Crt.aT Crt.aT Crt.aXc)
+      (Two (BldM n)) := by
     refine two_post (two_map (fun q : XPub × Nat => q.1.ws)
       (fun _ _ ⟨_, _, minv, _, _, hI, _⟩ => ⟨minv, hI.ctx.good, Nat.le_refl _⟩)
       (M.ct (o := Crt.aT) (a := Crt.aT) (b := Crt.aXc) (by unfold MmUse; decide)))
@@ -387,11 +406,12 @@ theorem buildBody_ct (M : Mont) :
     refine WP.mono (M.mm_ok (o := Crt.aT) (a := Crt.aT) (b := Crt.aXc) hc.good (Nat.le_refl _) hw (by omega_arith)
       (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.inv
       (by rw [hc.x, hc.n]; exact hXN)) fun t ⟨_, _, _, ha, k⟩ => ?_
-    have f : Frm (off q.1.B q.1.o) (buildRanges q.1.wx) s.mem t.mem := Frm.of_arrays ha (by simp [buildRanges])
+    have f : Frm (off q.1.B q.1.o) (buildRanges q.1.wx n) s.mem t.mem := Frm.of_arrays ha (by simp [buildRanges])
     exact ⟨⟨minv, X, Xc, hc.of_frm (f.mono (buildRanges_sub q.1.wx)) k.2.2 (k.gpr (by decide)), hXN, hw, hw'⟩,
       by rw [ha.hslot (by decide)]; exact hI.ent, hi⟩
   -- `sEnt` up.
-  have entPart : RelCT isa (Two BldM) Crt.nextEnt (Two fun (q : XPub × Nat) s => EntP Crt.aT (q.1, q.2 + 2) s) := by
+  have entPart : RelCT isa (Two (BldM n)) Crt.nextEnt
+      (Two fun (q : XPub × Nat) s => EntP n Crt.aT (q.1, q.2 + 2) s) := by
     refine two_post (rdi_ct (fun q : XPub × Nat => off q.1.B q.1.o) (fun _ _ h => h.1.rdi) (by taint_decide))
       fun q s ⟨⟨minv, X, Xc, hc, hXN, hw, hw'⟩, he, hi⟩ => ?_
     refine WP.mono (nextEnt_ok hc he) fun t ⟨hm, k⟩ => ?_
@@ -402,7 +422,7 @@ theorem buildBody_ct (M : Mont) :
       (k.gpr (by decide)), hXN, hw, hw'⟩, by rw [hm, word_writeW_self, ← slot_succ]; rfl, by simp only; omega_arith,
       by decide⟩
   -- Entry `i + 2 := T`, the count.
-  have restPart : RelCT isa (Two fun (q : XPub × Nat) s => EntP Crt.aT (q.1, q.2 + 2) s)
+  have restPart : RelCT isa (Two fun (q : XPub × Nat) s => EntP n Crt.aT (q.1, q.2 + 2) s)
       (seqs (Crt.toEnt Crt.aT ++
         [.block [.mov .rax (.mem (hdr Crt.sBit)), .alu .sub .rax (.imm 1), .store (hdr Crt.sBit) .rax]]))
       fun _ _ => True := by
@@ -417,31 +437,34 @@ theorem buildBody_ct (M : Mont) :
   simp only [seqs]
   exact RelCT.seq mmPart entPart
 
-/-- `tabBuild_ok`'s hypotheses, for the bounds. -/
-def TPre (p : XPub) (s : State) : Prop :=
-  ∃ (minv : BitVec 64) (X Xc : Nat), CExpCtx s (off p.B p.o) p.wx minv X Xc ∧ Xc < X ∧
+/-- `tabBuild_ok`'s hypotheses, for the bounds, for a table of `n` entries. -/
+def TPre (n : Nat) (p : XPub) (s : State) : Prop :=
+  ∃ (minv : BitVec 64) (X Xc : Nat), CExpCtx s (off p.B p.o) p.wx minv X Xc n ∧ Xc < X ∧
     wv s.mem (off p.B p.o) (slot p.wx Public.aY) p.wx < X ∧ 2 ≤ p.wx ∧ p.wx < 2 ^ 30 ∧
     Nat.Coprime (2 ^ (64 * p.wx)) X
 
-theorem toEnt_post {a : Nat} {q : XPub × Nat} {s : State} (h : EntP a q s) :
-    WP isa (seqs (Crt.toEnt a)) s fun t => XCtx q.1 t ∧
+theorem toEnt_post {n a : Nat} {q : XPub × Nat} {s : State} (h : EntP n a q s) :
+    WP isa (seqs (Crt.toEnt a)) s fun t => XCtx q.1 t n ∧
       ∀ k < 32, word t.mem (off q.1.B q.1.o) (8 * k) = word s.mem (off q.1.B q.1.o) (8 * k) := by
   obtain ⟨⟨minv, X, Xc, hc, hXN, hw, hw'⟩, he, hj, ha⟩ := h
   have hn := hc.scrT.nowrap
   have hE := ent_le q.1.wx hj
   have hE8 := slot_mono q.1.wx (show 8 ≤ 8 + q.2 by omega_arith)
   refine WP.mono (toEnt_ok hc hw hw' ha hj he) fun t ⟨_, o, k⟩ => ⟨⟨minv, X, Xc, hc.of_frm
-    (Frm.of_outside (o.mono (o' := slot q.1.wx 8) (n' := tabBytes q.1.wx) hE8 (by omega_arith)) (by simp [crtExpRanges]))
+    (Frm.of_outside (o.mono (o' := slot q.1.wx 8) (n' := tabBytes q.1.wx n) hE8 (by omega_arith)) (by simp [crtExpRanges]))
     k.2.2 (k.gpr (by decide)), hXN, hw, hw'⟩, fun k hk => ?_⟩
   exact o.word (by have := hdr_lt_slot q.1.wx (8 + q.2) hk; omega_arith) (by omega_arith)
 
 /-- The table's first entries leak the same in runs with the same workspace. -/
-theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
+theorem tabPre_ct (n : Nat) (hn : 3 ≤ n) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block [.mov32 .rax (.imm (BitVec.ofNat 32 (n - 2))),
+      .store (hdr Crt.sBit) .rax]) hc).isSome = true) :
+    RelCT isa (Two (TPre n)) (seqs (tabPre (n - 2))) fun _ _ => True := by
   unfold tabPre
   refine RelCT.seqs_append (by simp) (by simp [Crt.toEnt]) ?_
   simp only [seqs]
   -- The base.
-  refine RelCT.seq (two_post (Ψ := fun p s => EntP Public.aY (p, 0) s)
+  refine RelCT.seq (two_post (Ψ := fun p s => EntP n Public.aY (p, 0) s)
     (rdi_ct (fun p : XPub => off p.B p.o) (fun _ _ ⟨_, _, _, hc, _⟩ => hc.good.rdi) (by taint_decide))
     fun p s ⟨minv, X, Xc, hc, hXN, hY, hw, hw', hR⟩ => ?_) ?_
   · refine WP.mono (tabInit_ok hc) fun t ⟨hm, k⟩ => ?_
@@ -449,19 +472,19 @@ theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
     have o2 := writeW_outside (s.mem.writeW (off (off p.B p.o) (8 * Crt.sTab)) (off (off p.B p.o) (slot p.wx 8)))
       (off p.B p.o) (d := 8 * Crt.sEnt) (off (off p.B p.o) (slot p.wx 8)) (by decide)
     rw [← hm] at o2
-    have f : Frm (off p.B p.o) (buildRanges p.wx) s.mem t.mem :=
+    have f : Frm (off p.B p.o) (buildRanges p.wx n) s.mem t.mem :=
       (Frm.of_outside o1 (by simp [buildRanges])).trans (Frm.of_outside o2 (by simp [buildRanges]))
     exact ⟨⟨minv, X, Xc, hc.of_frm (f.mono (buildRanges_sub p.wx)) k.2.2 (k.gpr (by decide)), hXN, hw, hw'⟩,
       by rw [hm, word_writeW_self]; rfl, by simp only; omega_arith, by decide⟩
   -- `T_0 := Y`.
   refine RelCT.seqs_append (by simp [Crt.toEnt]) (by simp) (RelCT.seq (two_post
-    (Ψ := fun p s => XCtx p s ∧ word s.mem (off p.B p.o) (8 * Crt.sEnt) = off (off p.B p.o) (slot p.wx 8))
+    (Ψ := fun p s => XCtx p s n ∧ word s.mem (off p.B p.o) (8 * Crt.sEnt) = off (off p.B p.o) (slot p.wx 8))
     (two_map (fun p : XPub => (p, 0)) (fun _ _ h => h) (toEnt_ct (by taint_decide))) fun p s h =>
       WP.mono (toEnt_post h) fun t ⟨hx, hh⟩ => ⟨hx, by rw [hh _ (by decide)]; exact h.2.1⟩) ?_)
   refine RelCT.seqs_append (by simp) (by simp [Crt.toEnt]) ?_
   simp only [seqs]
   -- `sEnt` up.
-  refine RelCT.seq (two_post (Ψ := fun p s => EntP Crt.aXc (p, 1) s)
+  refine RelCT.seq (two_post (Ψ := fun p s => EntP n Crt.aXc (p, 1) s)
     (rdi_ct (fun p : XPub => off p.B p.o) (fun _ _ h => h.1.rdi) (by taint_decide))
     fun p s ⟨⟨minv, X, Xc, hc, hXN, hw, hw'⟩, he⟩ => ?_) ?_
   · refine WP.mono (nextEnt_ok hc he) fun t ⟨hm, k⟩ => ?_
@@ -473,7 +496,7 @@ theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
       by decide⟩
   -- `T_1 := Xc`.
   refine RelCT.seqs_append (by simp [Crt.toEnt]) (by simp [Crt.copyArr]) (RelCT.seq (two_post
-    (Ψ := fun p s => XCtx p s) (two_map (fun p : XPub => (p, 1)) (fun _ _ h => h) (toEnt_ct (by taint_decide)))
+    (Ψ := fun p s => XCtx p s n) (two_map (fun p : XPub => (p, 1)) (fun _ _ h => h) (toEnt_ct (by taint_decide)))
     fun p s h => WP.mono (toEnt_post h) fun t ⟨hx, _⟩ => hx) ?_)
   -- `T := Xc`, the count.
   refine RelCT.seqs_append (by simp [Crt.copyArr]) (by simp) (RelCT.seq (two_post
@@ -482,18 +505,23 @@ theorem tabPre_ct : RelCT isa (Two TPre) (seqs tabPre) fun _ _ => True := by
     WP.mono (copyArr_ok hc.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (o := Crt.aT) (a := Crt.aXc)
       (by decide) (by decide) (by decide)) fun t ⟨_, _, k⟩ => (k.gpr (by decide)).trans hc.good.rdi) ?_)
   simp only [seqs]
-  exact rdi_ct (fun p : XPub => off p.B p.o) (fun _ _ h => h) (by taint_decide)
+  exact rdi_ct (fun p : XPub => off p.B p.o) (fun _ _ h => h) hT
 
-/-- The table's build leaks the same in runs with the same workspace. -/
-theorem tabBuild_ct (M : Mont) : RelCT isa (Two TPre) (seqs (Crt.tabBuild M.mm)) fun _ _ => True := by
+/-- The build of a table of `n` entries leaks the same in runs with the same
+workspace. -/
+theorem tabBuild_ct (M : Mont) (n : Nat) (hn3 : 3 ≤ n) (hn32 : n ≤ 32) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block [.mov32 .rax (.imm (BitVec.ofNat 32 (n - 2))),
+      .store (hdr Crt.sBit) .rax]) hc).isSome = true) :
+    RelCT isa (Two (TPre n)) (seqs (Crt.tabBuildN M.mm (n - 2))) fun _ _ => True := by
   rw [tabBuild_eq]
-  refine RelCT.seqs_append (by simp [tabPre]) (by simp) (RelCT.seq (two_post (Ψ := fun p s => 0 < 14 ∧ BldI p 0 s)
-    tabPre_ct fun p s ⟨minv, X, Xc, hc, hXN, hY, hw, hw', hR⟩ =>
-      WP.mono (tabPre_ok (Q := False) (x := 0) hc hw hw' hXN False.elim hY False.elim) fun t hI =>
-        ⟨by decide, s, minv, X, Xc, hI, hw, hw', hR, hXN⟩) ?_)
-  exact (two_loop (Φ := BldI) (Ψ := fun _ _ => True) (fun _ => 14) (buildBody_ct M)
+  refine RelCT.seqs_append (by simp [tabPre]) (by simp) (RelCT.seq (two_post
+    (Ψ := fun p s => 0 < n - 2 ∧ BldI n p 0 s)
+    (tabPre_ct n hn3 hT) fun p s ⟨minv, X, Xc, hc, hXN, hY, hw, hw', hR⟩ =>
+      WP.mono (tabPre_ok (Q := False) (x := 0) hc hn3 hn32 hw hw' hXN False.elim hY False.elim) fun t hI =>
+        ⟨by omega, s, minv, X, Xc, hI, hw, hw', hR, hXN⟩) ?_)
+  exact (two_loop (Φ := BldI n) (Ψ := fun _ _ => True) (fun _ => n - 2) (buildBody_ct M n)
     fun p i s hi ⟨t₀, minv, X, Xc, hI, hw, hw', hR, hXN⟩ =>
-      WP.mono (buildStep_ok M hw hw' hR hXN False.elim hi hI) fun s' ⟨hz, hI'⟩ =>
+      WP.mono (buildStep_ok M hw hw' hR hXN False.elim hn32 hi hI) fun s' ⟨hz, hI'⟩ =>
         ⟨eval_ne_count hi hz, fun _ => ⟨t₀, minv, X, Xc, hI', hw, hw', hR, hXN⟩, fun _ => trivial⟩).mono
     (fun _ _ h => h) fun _ _ _ => trivial
 
@@ -529,7 +557,7 @@ theorem crtLink_ok {sp sl : Nat} {a : BPub} {s : State} (h : EPre sp sl a s) :
 theorem crtExpInit_tpre {sp sl : Nat} {a : BPub} {s : State} (h : EPre sp sl a s) :
     WP isa (.block [.mov .rax (.mem (hdr Crt.sLink)), .mov .rdx (.mem (Crt.ws .rax sp)),
       .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
-      .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) s (TPre a.x) := by
+      .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) s (TPre 16 a.x) := by
   obtain ⟨minv, X, x, y, eb, hc, hw2, hwx, hw30, hn, hinv, hodd, hxl, -, hyl, -, hsp, hsl, hep, hel, -⟩ := h
   have hPn := hc.scrT.nowrap
   have hY0 := slot_le (w := a.x.wx) (show Public.aY < 8 by decide)
@@ -555,20 +583,21 @@ theorem crtExpInit_tpre {sp sl : Nat} {a : BPub} {s : State} (h : EPre sp sl a s
 
 /-- `expLoop M.mm sp sl` is constant time, given that the taint analysis
 checks its start after the link's load. -/
-theorem crtExpLoop_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+theorem crtExpLoopS_ct (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) {sp sl : Nat}
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (hT : (taint.check (Taint.ofRegs [.rdi, .rax]) (.block [.mov .rdx (.mem (Crt.ws .rax sp)),
       .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
       .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) hc).isSome = true) :
-    ExpCT M sp sl := by
-  unfold ExpCT
+    ExpCTS M Sq S sp sl := by
+  unfold ExpCTS
   rw [expLoop_eq, ← List.cons_append]
   refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (two_post
     (Ψ := fun a s => 0 < a.len ∧ CBytesInv a 0 s) ?_ fun a s h => ?_) ?_)
   · -- The start and the table.
     rw [← List.singleton_append]
-    refine RelCT.seqs_append (by simp) (by simp [tabBuild_eq, tabPre]) (RelCT.seq (two_post (Ψ := fun a s => TPre a.x s)
+    refine RelCT.seqs_append (by simp) (by simp [Crt.tabBuild, tabBuild_eq, tabPre]) (RelCT.seq (two_post (Ψ := fun a s => TPre 16 a.x s)
       ?_ fun _ _ h => by simp only [seqs, expInit]; exact crtExpInit_tpre h) (two_map (fun a : BPub => a.x)
-        (fun _ _ h => h) (tabBuild_ct M)))
+        (fun _ _ h => h) (tabBuild_ct M 16 (by decide) (by decide) (by taint_decide))))
     simp only [seqs, expInit]
     rw [crtExpInit_eq]
     exact RelCT.block_append (RelCT.seq (two_piece (Ψ := fun (a : BPub) t => t.gpr .rdi = off a.x.B a.x.o ∧
@@ -596,15 +625,31 @@ theorem crtExpLoop_ct (M : Mont) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Tai
       hsp hsl hep hel he) fun t hI => ⟨by omega_arith, s, minv, X, _, eb, hI, hw2, by omega_arith,
         VG.Proof.Bignum.coprime_pow2 hodd _, hxl, hL, by omega_arith, he, hout⟩
   simp only [seqs, expBytes]
-  refine (two_loop (Φ := CBytesInv) (Ψ := fun _ _ => True) (fun a => a.len) (crtByte_ct M) ?_).mono
+  refine (two_loop (Φ := CBytesInv) (Ψ := fun _ _ => True) (fun a => a.len) (crtByte_ct M Sq S hS) ?_).mono
     (fun _ _ h => h) fun _ _ _ => trivial
   rintro a i s hi ⟨t₀, minv, X, Xc, eb, hI, hw, hw', hR, hXN, hL, hL', he, hout⟩
-  exact WP.mono (crtByte_ok M hw hw' hR rfl hL' (by omega_arith) he.rd he.val hout hI)
+  exact WP.mono (crtByte_ok M Sq S hw hw' hR rfl hL' (by omega_arith) he.rd he.val hout hI)
     fun s' ⟨hz, hI'⟩ => ⟨eval_ne_count hi (by rw [hz, hL]), fun _ => ⟨t₀, minv, X, Xc, eb, hI', hw, hw', hR, hXN, hL,
       hL', he, hout⟩, fun _ => trivial⟩
 
-theorem expLoop_ct_P (M : Mont) : ExpCT M sDp sPlen := crtExpLoop_ct M (by taint_decide)
+/-- `crtExpLoopS_ct` with the squarings by `M`: `expLoop M.mm`. -/
+theorem crtExpLoop_ct (M : Mont) (S : CrtSel) (hS : S.CT) {sp sl : Nat} {hc : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.rdi, .rax]) (.block [.mov .rdx (.mem (Crt.ws .rax sp)),
+      .store (hdr Crt.sExp) .rdx, .mov .rdx (.mem (Crt.ws .rax sl)), .store (hdr Crt.sExpLen) .rdx,
+      .mov32 .rdx (.imm 0), .store (hdr Crt.sI) .rdx]) hc).isSome = true) :
+    ExpCT M S sp sl :=
+  crtExpLoopS_ct M M.toS S hS hT
 
-theorem expLoop_ct_Q (M : Mont) : ExpCT M sDq sQlen := crtExpLoop_ct M (by taint_decide)
+theorem expLoop_ct_P (M : Mont) (S : CrtSel) (hS : S.CT) : ExpCT M S sDp sPlen :=
+  crtExpLoop_ct M S hS (by taint_decide)
+
+theorem expLoop_ct_Q (M : Mont) (S : CrtSel) (hS : S.CT) : ExpCT M S sDq sQlen :=
+  crtExpLoop_ct M S hS (by taint_decide)
+
+theorem expLoopS_ct_P (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) : ExpCTS M Sq S sDp sPlen :=
+  crtExpLoopS_ct M Sq S hS (by taint_decide)
+
+theorem expLoopS_ct_Q (M : Mont) (Sq : MontS) (S : CrtSel) (hS : S.CT) : ExpCTS M Sq S sDq sQlen :=
+  crtExpLoopS_ct M Sq S hS (by taint_decide)
 
 end VG.Proof.Bignum.X86_64

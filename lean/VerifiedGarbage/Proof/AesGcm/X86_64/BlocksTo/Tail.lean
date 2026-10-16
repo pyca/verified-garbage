@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Mid
-public import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Copy
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Copy
 public import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Call
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Gcm.Split
 
 /-!
 # AES-GCM on whole blocks out of place, x86-64: the blocks left

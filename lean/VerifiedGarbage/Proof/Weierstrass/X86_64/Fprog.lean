@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Impl.Weierstrass.X86_64
-public import VerifiedGarbage.Proof.Mont.X86_64.Ops
+import VerifiedGarbage.Proof.Mont.X86_64.Ops
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Field programs on x86-64
@@ -206,6 +210,42 @@ theorem fprog_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
     rw [k₂.mem x (fun w hw => hx w (List.mem_cons_of_mem _ hw)) ht,
       k₁.mem x (hx _ (List.mem_cons_self ..)) ht]
 
+/-- What `Mont.callOf` gives a call of, case by case: split once here, for the
+three products below. -/
+theorem callOf_some {M : Mod} {f : String} {body : Prog isa} (h : Mont.callOf M = some (f, body)) :
+    (M.n = 9 ∧ M.red = .friendly p521Ws ∧ M.tmp = Mont.fnTmp ∧ (body = Mont.mulFn ∨ body = Mont.mulFnX)) ∨
+    (M.n = 6 ∧ M.sparse ∧ M.tmp = Mont.fnTmp6 ∧ (body = Mont.mulFn6 false ∨ body = Mont.mulFn6 true)) ∨
+    (M.n = 9 ∧ M.fnN ∧ M.tmp = Mont.fnTmp ∧ body = Mont.mulFnN) ∨
+    (M.n = 6 ∧ M.fnN ∧ M.tmp = Mont.fnTmp6 ∧ (body = Mont.mulFnN6 false ∨ body = Mont.mulFnN6 true)) ∨
+    (M.n = 8 ∧ M.tmp = Mont.Wide8.tmp ∧ M.fnMod = some (Mont.Wide8.modulus false) ∧ body = Mont.Wide8.fn false) ∨
+    (M.n = 8 ∧ M.tmp = Mont.Wide8.tmp ∧ M.fnMod = some (Mont.Wide8.modulus true) ∧ body = Mont.Wide8.fn true) := by
+  unfold Mont.callOf at h
+  split at h
+  · rename_i hc
+    exact .inl ⟨hc.1, hc.2.1, hc.2.2, by split at h <;> (cases h; simp)⟩
+  split at h
+  · rename_i hc
+    exact .inr (.inl ⟨hc.1, hc.2.1, hc.2.2.1, by split at h <;> (cases h; simp)⟩)
+  split at h
+  · rename_i hc
+    cases h
+    exact .inr (.inr (.inl ⟨hc.1, hc.2.1, hc.2.2, rfl⟩))
+  split at h
+  · rename_i hc
+    exact .inr (.inr (.inr (.inl ⟨hc.1, hc.2.1, hc.2.2, by split at h <;> (cases h; simp)⟩)))
+  split at h
+  · rename_i hc
+    split at h
+    · rename_i hm
+      cases h
+      exact .inr (.inr (.inr (.inr (.inl ⟨hc.1, hc.2, hm, rfl⟩))))
+    split at h
+    · rename_i hm
+      cases h
+      exact .inr (.inr (.inr (.inr (.inr ⟨hc.1, hc.2, hm, rfl⟩))))
+    · cases h
+  · cases h
+
 /-- One operation, a call for a product modulo P-521's or P-384's `p` with the
 functions' temporary area, or P-521's `n` (`opProg`), inlined
 (`Code.inline`). -/
@@ -230,42 +270,38 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
         · rename_i hlow
           cases hc
           simp only [Option.getD_some]
-          unfold Mont.callOf at hcall
           simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
             forall_eq_or_imp, forall_eq] at hS hR
-          split at hcall
-          · rename_i hM
-            obtain ⟨hn9, hred, ht⟩ := hM
-            have hbody : body = Mont.mulFn ∨ body = Mont.mulFnX := by
-              split at hcall <;> (cases hcall; simp)
-            refine WP.mono (Mont.mulCall_ok hbody hI.scr hI.mod hred ht (hn9 ▸ hlow) (hI.lt b hR.2))
+          rcases callOf_some hcall with ⟨hn9, hred, ht, hbody⟩ | ⟨hn6, hsp, ht, hbody⟩ | ⟨hn9, hf, ht, rfl⟩ |
+              ⟨hn6, hf, ht, hbody⟩ | ⟨hn8, ht, hf, rfl⟩ | ⟨hn8, ht, hf, rfl⟩
+          · refine WP.mono (Mont.mulCall_ok hbody hI.scr hI.mod hred ht (hn9 ▸ hlow) (hI.lt b hR.2))
               fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
             rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
-          split at hcall
-          · rename_i hM
-            obtain ⟨hn6, hsp, ht, -⟩ := hM
-            have hbody : body = Mont.mulFn6 false ∨ body = Mont.mulFn6 true := by
-              split at hcall <;> (cases hcall; simp)
-            refine WP.mono (Mont.mulCall6_ok hbody hI.scr hI.mod hsp ht (hn6 ▸ hlow) (hL.le o hS.1)
+          · refine WP.mono (Mont.mulCall6_ok hbody hI.scr hI.mod hsp ht (hn6 ▸ hlow) (hL.le o hS.1)
               (hL.le a hS.2.1) (hL.le b hS.2.2) (hI.lt b hR.2))
               fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
             rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
-          split at hcall
-          · rename_i hM
-            obtain ⟨hn9, hf, ht⟩ := hM
-            cases hcall
-            refine WP.mono (Mont.mulCallN_ok hI.scr hI.mod hf ht (hn9 ▸ hlow) (hI.lt b hR.2))
+          · refine WP.mono (Mont.mulCallN_ok hI.scr hI.mod hf hn9 ht (hn9 ▸ hlow) (hI.lt b hR.2))
               fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
             rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
-          · cases hcall
+          · refine WP.mono (Mont.mulCallN6_ok hbody hI.scr hI.mod hf hn6 ht (hn6 ▸ hlow) (hL.le o hS.1)
+              (hL.le a hS.2.1) (hL.le b hS.2.2) (hI.lt b hR.2))
+              fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+            rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+          · refine WP.mono (Mont.mulCall8_ok false hI.scr hI.mod hf hn8 ht (hn8 ▸ hlow) (hI.lt b hR.2))
+              fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+            rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+          · refine WP.mono (Mont.mulCall8_ok true hI.scr hI.mod hf hn8 ht (hn8 ▸ hlow) (hI.lt b hR.2))
+              fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+            rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
         · cases hc
       · cases hc
 
 /-- A product modulo a modulus of general reduction (`opProg`), a call of
-P-521's `n`'s function or inline: as the inline product. -/
+P-521's or P-384's `n`'s function or inline: as the inline product. -/
 theorem opMulN_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s base Z)
     (hM : ModOkW M Z m s.mem base) (hred : M.red = .general) (hsp : M.sparse = false) {o a b : Nat}
-    (hB : wordsVal s.mem base b M.n < m)
+    (hoZ : o + 8 * M.n ≤ Z) (haZ : a + 8 * M.n ≤ Z) (hbZ : b + 8 * M.n ≤ Z) (hB : wordsVal s.mem base b M.n < m)
     (hin : WP isa (.block (VG.Impl.Mont.X86_64.mul M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m) :
@@ -280,17 +316,43 @@ theorem opMulN_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s ba
     simp only
     split
     · rename_i hlow
-      unfold Mont.callOf at hcall
-      split at hcall
-      · rename_i h; rw [hred] at h; exact absurd h.2.1 (by simp)
-      split at hcall
-      · rename_i h; rw [hsp] at h; exact absurd h.2.1 (by simp)
-      split at hcall
-      · rename_i h
-        obtain ⟨hn9, hf, ht⟩ := h
-        cases hcall
-        exact Mont.mulCallN_ok hs hM hf ht (hn9 ▸ hlow) hB
-      · cases hcall
+      rcases callOf_some hcall with ⟨-, h, -⟩ | ⟨-, h, -⟩ | ⟨hn9, hf, ht, rfl⟩ | ⟨hn6, hf, ht, hbody⟩ |
+          ⟨hn8, ht, hm, rfl⟩ | ⟨hn8, ht, hm, rfl⟩
+      · rw [hred] at h; exact absurd h (by simp)
+      · rw [hsp] at h; exact absurd h (by simp)
+      · exact Mont.mulCallN_ok hs hM hf hn9 ht (hn9 ▸ hlow) hB
+      · exact Mont.mulCallN6_ok hbody hs hM hf hn6 ht (hn6 ▸ hlow) hoZ haZ hbZ hB
+      · exact Mont.mulCall8_ok false hs hM hm hn8 ht (hn8 ▸ hlow) hB
+      · exact Mont.mulCall8_ok true hs hM hm hn8 ht (hn8 ▸ hlow) hB
+    · exact hin
+
+/-- A product modulo P-521's or P-384's `p` (`opProg`), a call of its function
+or inline: as the inline product. -/
+theorem opMulP_ok {M : Mod} {base : Addr} {Z m : Nat} {s : State} (hs : Scr s base Z)
+    (hM : ModOkW M Z m s.mem base) (hfn : M.fnN = false) {o a b : Nat} (hoZ : o + 8 * M.n ≤ Z)
+    (haZ : a + 8 * M.n ≤ Z) (hbZ : b + 8 * M.n ≤ Z) (hB : wordsVal s.mem base b M.n < m)
+    (hin : WP isa (.block (VG.Impl.Mont.X86_64.mul M o a b)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m) :
+    WP isa (opProg M (.mul o a b)).inline s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+  simp only [opProg, opCall?]
+  cases hcall : Mont.callOf M with
+  | none => exact hin
+  | some p =>
+    obtain ⟨f, body⟩ := p
+    simp only
+    split
+    · rename_i hlow
+      rcases callOf_some hcall with ⟨hn9, hred, ht, hbody⟩ | ⟨hn6, hsp, ht, hbody⟩ | ⟨-, h, -⟩ | ⟨-, h, -⟩ |
+          ⟨hn8, ht, hm, rfl⟩ | ⟨hn8, ht, hm, rfl⟩
+      · exact Mont.mulCall_ok hbody hs hM hred ht (hn9 ▸ hlow) hB
+      · exact Mont.mulCall6_ok hbody hs hM hsp ht (hn6 ▸ hlow) hoZ haZ hbZ hB
+      · rw [hfn] at h; exact absurd h (by simp)
+      · rw [hfn] at h; exact absurd h (by simp)
+      · exact Mont.mulCall8_ok false hs hM hm hn8 ht (hn8 ▸ hlow) hB
+      · exact Mont.mulCall8_ok true hs hM hm hn8 ht (hn8 ▸ hlow) hB
     · exact hin
 
 /-- A field program, its products calls where `opProg` makes them, inlined. -/

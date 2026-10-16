@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Seed.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 public import VerifiedGarbage.Proof.Seed.CbcScratch
 meta import VerifiedGarbage.Proof.Seed.CbcScratch
-public import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
+import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
@@ -20,6 +20,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # SEED-CBC on x86-64 meets its contracts
@@ -80,6 +82,14 @@ namespace VG.Proof.Seed.X86_64
 open VG VG.X86_64 VG.Impl.Seed.X86_64
 open VG.Proof.Seed (cbcDecX86_64 cbcEncX86_64)
 
+attribute [local irreducible] Spec.Seed.invCipher in
+/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
+theorem decCipher_eq : (dirCoreSpec .decrypt).cipher = Spec.Seed.invCipher := rfl
+
+attribute [local irreducible] Spec.Seed.cipher in
+/-- The core's cipher is the contract's (stated once: unifying them unfolds the cipher's spec). -/
+theorem encCipher_eq : (dirCoreSpec .encrypt).cipher = Spec.Seed.cipher := rfl
+
 theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
     WP isa cbcDecrypt s₀ fun s' => gprPreserved s₀ s' ∧ cbcDecX86_64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dVD, dVS, dDS, dRD, dRS, fitK, fitV, fitD, fitB⟩ := hp
@@ -97,7 +107,7 @@ theorem cbcDecrypt_wp {s₀ : State} (hp : cbcDecX86_64.pre s₀) :
     rcases hr with rfl | rfl
     · exact dRS
     · exact dRD
-  · rw [dirCore_bw, show 8 * 2 = 16 from rfl] at hdata
+  · rw [dirCore_bw, show 8 * 2 = 16 from rfl, decCipher_eq] at hdata
     exact hdata
 
 def cbcTaint : X86_64.Taint.T :=
@@ -208,7 +218,7 @@ theorem cbcEncrypt_wp {s₀ : State} (hp : cbcEncX86_64.pre s₀) :
     rcases hr with rfl | rfl
     · exact dRS
     · exact dRD
-  · rw [dirCore_bw, show 8 * 2 = 16 from rfl] at hdata
+  · rw [dirCore_bw, show 8 * 2 = 16 from rfl, encCipher_eq] at hdata
     exact hdata
 
 theorem cbcEncrypt_ct : ConstantTime isa cbcEncX86_64.pre cbcEncX86_64.pub cbcEncrypt :=

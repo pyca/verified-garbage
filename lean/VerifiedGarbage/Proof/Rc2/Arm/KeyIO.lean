@@ -1,12 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.Arm.Save
+import VerifiedGarbage.Proof.Rc2.Arm.Save
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Rc2.Arm.KeyLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.Rc2.Expansion
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Syms
 
 @[expose] public section
 
@@ -180,11 +186,12 @@ namespace VG.Proof.Rc2.Arm
 open VG VG.Arm VG.Impl.Rc2.Arm
 
 theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht' : t8 < 128)
+    {T : BitVec 32} (hT : PiAt T s) (sep : (⟨State.addr T, 256⟩ : Region).Disjoint ⟨State.addr (s.gpr .r6), 128⟩)
     (outFit : (s.gpr .r6).toNat + 128 ≤ 2 ^ 32)
     (len : s.gpr .r1 = BitVec.ofNat 32 t8) (start : s.gpr .r0 = BitVec.ofNat 32 (128 - t8))
     (writable : ∀ i < 128, InRegions s.wr (State.addr (s.gpr .r6) + BitVec.ofNat 64 i) 1)
     (initialPrefix : BytesPrefix s.mem (State.addr (s.gpr .r6)) l 128) :
-    WP isa (.loop (.block descendKey) .ne) s (fun s' =>
+    WP isa (.loop descendKey .ne) s (fun s' =>
       s'.gpr .r0 = 0 ∧ KeyFrame s s' ∧
       BytesPrefix s'.mem (State.addr (s.gpr .r6)) (descend l t8 (128 - t8)) 128) := by
   let I (j : Nat) (s' : State) := s'.gpr .r0 = BitVec.ofNat 32 (128 - t8 - j) ∧ KeyFrame s s' ∧
@@ -195,7 +202,7 @@ theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht
     simp only [I, Nat.sub_self]
     rfl
   rw [← finish]
-  apply forwardLoop (.block descendKey) I (128 - t8) _ 0 (by omega) s
+  apply forwardLoop descendKey I (128 - t8) _ 0 (by omega) s
     ⟨start, KeyFrame.refl s, initialPrefix⟩
   intro j hj s₁ ⟨index₁, frame₁, prefix₁⟩
   have outPtr := frame₁.reg .r6 (by decide)
@@ -223,8 +230,8 @@ theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht
     rw [loAddr]; exact read₁ _ (by omega)
   have readHi : InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.gpr .r6 + (s₁.gpr .r0 - 1 + s₁.gpr .r1))) 1 := by
     rw [hiAddr]; exact read₁ _ (by omega)
-  apply WP.mono (descendKey_ok s₁ readLo readHi write₁)
-  intro s₂ h₂
+  apply WP.mono_syms (descendKey_ok s₁ (hT.frame frame₁ sep) readLo readHi write₁)
+  intro s₂ h₂ sy₂
   let b := Spec.Rc2.pi ((descend l t8 j).getD (127 - t8 - j + 1) 0 ^^^
     (descend l t8 j).getD (127 - t8 - j + t8) 0)
   have keep₂ : Keep keyTemps {s₁ with
@@ -233,7 +240,7 @@ theorem descendLoop_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht
     rw [loAddr, hiAddr, prefix₁ _ (by omega), prefix₁ _ (by omega), outPtr, indexNew, addr_add (by omega)] at h
     exact h
   constructor
-  · refine ⟨?_, frame₁.step (127 - t8 - j) (by omega) b keep₂, ?_⟩
+  · refine ⟨?_, frame₁.step (127 - t8 - j) (by omega) b keep₂ sy₂, ?_⟩
     · rw [h₂.1]
       change s₁.gpr .r0 - 1 = _
       rw [indexNew]
@@ -264,11 +271,12 @@ namespace VG.Proof.Rc2.Arm
 open VG VG.Arm VG.Impl.Rc2.Arm
 
 theorem fillLoop_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' : key.length < 128)
+    {T : BitVec 32} (hT : PiAt T s) (sep : (⟨State.addr T, 256⟩ : Region).Disjoint ⟨State.addr (s.gpr .r6), 128⟩)
     (outFit : (s.gpr .r6).toNat + 128 ≤ 2 ^ 32)
     (len : s.gpr .r5 = BitVec.ofNat 32 key.length) (start : s.gpr .r0 = BitVec.ofNat 32 key.length)
     (writable : ∀ i < 128, InRegions s.wr (State.addr (s.gpr .r6) + BitVec.ofNat 64 i) 1)
     (initialPrefix : BytesPrefix s.mem (State.addr (s.gpr .r6)) (fill key 0) key.length) :
-    WP isa (.loop (.block fillKey) .ne) s (fun s' =>
+    WP isa (.loop fillKey .ne) s (fun s' =>
       s'.gpr .r0 = 128 ∧ KeyFrame s s' ∧
       BytesPrefix s'.mem (State.addr (s.gpr .r6)) (fill key (128 - key.length)) 128) := by
   let I (j : Nat) (s' : State) := s'.gpr .r0 = BitVec.ofNat 32 (key.length + j) ∧ KeyFrame s s' ∧
@@ -279,7 +287,7 @@ theorem fillLoop_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' :
     simp only [I, Nat.add_sub_of_le (Nat.le_of_lt ht')]
     rfl
   rw [← finish]
-  apply forwardLoop (.block fillKey) I (128 - key.length) _ 0 (by omega) s
+  apply forwardLoop fillKey I (128 - key.length) _ 0 (by omega) s
     ⟨start, KeyFrame.refl s, initialPrefix⟩
   intro j hj s₁ ⟨index₁, frame₁, prefix₁⟩
   have outPtr := frame₁.reg .r6 (by decide)
@@ -304,8 +312,8 @@ theorem fillLoop_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' :
     rw [loAddr]; exact read₁ _ (by omega)
   have readHi : InRegions (s₁.rd ++ s₁.wr) (State.addr (s₁.gpr .r6 + (s₁.gpr .r0 - s₁.gpr .r5))) 1 := by
     rw [hiAddr]; exact read₁ _ (by omega)
-  apply WP.mono (fillKey_ok s₁ readLo readHi write₁)
-  intro s₂ h₂
+  apply WP.mono_syms (fillKey_ok s₁ (hT.frame frame₁ sep) readLo readHi write₁)
+  intro s₂ h₂ sy₂
   let b := Spec.Rc2.pi ((fill key j).getD (key.length + j - 1) 0 + (fill key j).getD j 0)
   have keep₂ : Keep keyTemps {s₁ with
       mem := s₁.mem.writeW (State.addr (s.gpr .r6) + BitVec.ofNat 64 (key.length + j)) b} s₂ := by
@@ -313,7 +321,7 @@ theorem fillLoop_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' :
     rw [loAddr, hiAddr, prefix₁ _ (by omega), prefix₁ _ (by omega), outPtr, index₁, addr_add (by omega)] at h
     exact h
   constructor
-  · refine ⟨?_, frame₁.step (key.length + j) (by omega) b keep₂, ?_⟩
+  · refine ⟨?_, frame₁.step (key.length + j) (by omega) b keep₂ sy₂, ?_⟩
     · rw [h₂.1, index₁, counter_add, Nat.add_assoc]
     · rw [keep₂.mem, fill_succ]
       have h := prefix₁.extend (show key.length + j < 128 by omega) b
@@ -371,7 +379,7 @@ theorem copyLoop_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
     simpa only [outPtr, index₁, addr_add (by omega : (s.gpr .r6).toNat + i < 2 ^ 32)] using keep₂
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   constructor
-  · refine ⟨?_, frame₁.step i (by omega) _ keep₂', ?_⟩
+  · refine ⟨?_, frame₁.step i (by omega) _ keep₂' (runBlock_syms run₂), ?_⟩
     · rw [index₂, index₁, counter_add]
     · rw [keep₂'.mem]
       have prefix₂ := prefix₁.extend (show i < 128 by omega) (key.getD i 0)
@@ -401,18 +409,19 @@ theorem cmp128_ok (s : State) :
   · exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
 
 theorem maybeFill_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' : key.length ≤ 128)
+    {T : BitVec 32} (hT : PiAt T s) (sep : (⟨State.addr T, 256⟩ : Region).Disjoint ⟨State.addr (s.gpr .r6), 128⟩)
     (outFit : (s.gpr .r6).toNat + 128 ≤ 2 ^ 32)
     (len : s.gpr .r5 = BitVec.ofNat 32 key.length) (start : s.gpr .r0 = BitVec.ofNat 32 key.length)
     (writable : ∀ i < 128, InRegions s.wr (State.addr (s.gpr .r6) + BitVec.ofNat 64 i) 1)
     (initialPrefix : BytesPrefix s.mem (State.addr (s.gpr .r6)) (fill key 0) key.length) :
     WP isa (.seq (.block [.cmp .r0 (.imm 128)])
-      (.ite .ne (.loop (.block fillKey) .ne) (.block []))) s (fun s' =>
+      (.ite .ne (.loop fillKey .ne) (.block []))) s (fun s' =>
         s'.gpr .r0 = 128 ∧ KeyFrame s s' ∧
         BytesPrefix s'.mem (State.addr (s.gpr .r6)) (fill key (128 - key.length)) 128) := by
   apply WP.seq
   obtain ⟨s₁, run₁, flag₁, keep₁⟩ := cmp128_ok s
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp [keyTemps]))
+  have frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp [keyTemps])) (runBlock_syms run₁)
   have flag : zeroFlag s₁ = some (decide (key.length = 128)) := by
     rw [flag₁, start]
     exact congrArg some (counter_eq _ _ (by omega) (by decide))
@@ -432,7 +441,8 @@ theorem maybeFill_ok (s : State) (key : List Byte) (ht : 1 ≤ key.length) (ht' 
         rw [keep₁.wr, ptr₁]; exact writable
       have initial : BytesPrefix s₁.mem (State.addr (s₁.gpr .r6)) (fill key 0) key.length := by
         rw [keep₁.mem, ptr₁]; exact initialPrefix
-      apply WP.mono (fillLoop_ok s₁ key ht (by omega) (by rw [ptr₁]; exact outFit)
+      apply WP.mono (fillLoop_ok s₁ key ht (by omega) (hT.run run₁ keep₁) (by rw [ptr₁]; exact sep)
+        (by rw [ptr₁]; exact outFit)
         ((keep₁.reg .r5 (by simp)).trans len) ((keep₁.reg .r0 (by simp)).trans start) writes initial)
       intro s₂ h₂
       exact ⟨h₂.1, frame₁.trans h₂.2.1, by rw [ptr₁] at h₂; exact h₂.2.2⟩
@@ -469,17 +479,18 @@ theorem setReduction_ok (s : State) (bits : Nat) (hb : 1 ≤ bits) (hb' : bits �
     · simp only [wr_setReg]
 
 theorem maybeDescend_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (ht' : t8 ≤ 128)
+    {T : BitVec 32} (hT : PiAt T s) (sep : (⟨State.addr T, 256⟩ : Region).Disjoint ⟨State.addr (s.gpr .r6), 128⟩)
     (outFit : (s.gpr .r6).toNat + 128 ≤ 2 ^ 32)
     (len : s.gpr .r1 = BitVec.ofNat 32 t8) (start : s.gpr .r0 = BitVec.ofNat 32 (128 - t8))
     (writable : ∀ i < 128, InRegions s.wr (State.addr (s.gpr .r6) + BitVec.ofNat 64 i) 1)
     (initialPrefix : BytesPrefix s.mem (State.addr (s.gpr .r6)) l 128) :
     WP isa (.seq (.block [.cmp .r0 (.imm 0)])
-      (.ite .ne (.loop (.block descendKey) .ne) (.block []))) s (fun s' =>
+      (.ite .ne (.loop descendKey .ne) (.block []))) s (fun s' =>
         KeyFrame s s' ∧ BytesPrefix s'.mem (State.addr (s.gpr .r6)) (descend l t8 (128 - t8)) 128) := by
   apply WP.seq
   obtain ⟨s₁, run₁, flag₁, keep₁⟩ := cmpZero_ok s
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp [keyTemps]))
+  have frame₁ := (KeyFrame.refl s).keep (keep₁.weaken (by simp [keyTemps])) (runBlock_syms run₁)
   have flag : zeroFlag s₁ = some (decide (t8 = 128)) := by
     rw [flag₁, start]
     have eqZero := counter_eq (128 - t8) 0 (by omega) (by decide)
@@ -503,7 +514,8 @@ theorem maybeDescend_ok (s : State) (l : KeyBytes) (t8 : Nat) (ht : 1 ≤ t8) (h
         rw [keep₁.wr, ptr₁]; exact writable
       have initial : BytesPrefix s₁.mem (State.addr (s₁.gpr .r6)) l 128 := by
         rw [keep₁.mem, ptr₁]; exact initialPrefix
-      apply WP.mono (descendLoop_ok s₁ l t8 ht (by omega) (by rw [ptr₁]; exact outFit)
+      apply WP.mono (descendLoop_ok s₁ l t8 ht (by omega) (hT.run run₁ keep₁) (by rw [ptr₁]; exact sep)
+        (by rw [ptr₁]; exact outFit)
         ((keep₁.reg .r1 (by simp)).trans len) ((keep₁.reg .r0 (by simp)).trans start) writes initial)
       intro s₂ h₂
       exact ⟨frame₁.trans h₂.2.1, by rw [ptr₁] at h₂; exact h₂.2.2⟩
@@ -547,6 +559,7 @@ theorem CoreFrame.trans {s₀ s₁ s₂ : State} (h₁ : CoreFrame s₀ s₁) (h
   exact h₁.mem.trans frame₂
 
 theorem expandCopyFill_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
+    {T : BitVec 32} (hT : PiAt T s) (tsep : (⟨State.addr T, 256⟩ : Region).Disjoint ⟨State.addr (s.gpr .r6), 128⟩)
     (keyFit : (s.gpr .r4).toNat + t ≤ 2 ^ 32)
     (outFit : (s.gpr .r6).toNat + 128 ≤ 2 ^ 32)
     (len : s.gpr .r5 = BitVec.ofNat 32 t) (zero : s.gpr .r0 = 0)
@@ -565,21 +578,23 @@ theorem expandCopyFill_ok (s : State) (t : Nat) (ht : 1 ≤ t) (ht' : t ≤ 128)
   have writes : ∀ i < 128, InRegions s₁.wr (State.addr (s₁.gpr .r6) + BitVec.ofNat 64 i) 1 := by
     rw [h₁.2.1.wr, ptr₁]; exact writable
   apply WP.mono (maybeFill_ok s₁ (Spec.Rc2.bytesAt s.mem (State.addr (s.gpr .r4)) t)
-    (by rw [length]; exact ht) (by rw [length]; exact ht') (by rw [ptr₁]; exact outFit)
+    (by rw [length]; exact ht) (by rw [length]; exact ht') (hT.frame h₁.2.1 tsep) (by rw [ptr₁]; exact tsep)
+    (by rw [ptr₁]; exact outFit)
     (by rw [length]; exact (h₁.2.1.reg .r5 (by decide)).trans len)
     (by rw [length]; exact h₁.1) writes (by rw [ptr₁, length]; exact h₁.2.2))
   intro s₂ h₂
   exact ⟨h₁.2.1.trans h₂.2.1, by rw [length, ptr₁] at h₂; exact h₂.2.2⟩
 
 theorem reduceDescend_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bits) (hb' : bits ≤ 1024)
+    {T : BitVec 32} (hT : PiAt T s) (sep : (⟨State.addr T, 256⟩ : Region).Disjoint ⟨State.addr (s.gpr .r6), 128⟩)
     (outFit : (s.gpr .r6).toNat + 128 ≤ 2 ^ 32)
     (len : s.gpr .r1 = BitVec.ofNat 32 ((bits + 7) / 8))
     (index : s.gpr .r0 = BitVec.ofNat 32 (128 - (bits + 7) / 8))
     (mask : (s.gpr .r2).setWidth 8 = BitVec.ofNat 8 (255 % 2 ^ (8 + bits - 8 * ((bits + 7) / 8))))
     (writable : ∀ i < 128, InRegions s.wr (State.addr (s.gpr .r6) + BitVec.ofNat 64 i) 1)
     (initialPrefix : BytesPrefix s.mem (State.addr (s.gpr .r6)) l 128) :
-    WP isa (.seq (.block reduceKey) (.seq (.block [.cmp .r0 (.imm 0)])
-      (.ite .ne (.loop (.block descendKey) .ne) (.block [])))) s (fun s' =>
+    WP isa (.seq reduceKey (.seq (.block [.cmp .r0 (.imm 0)])
+      (.ite .ne (.loop descendKey .ne) (.block [])))) s (fun s' =>
         KeyFrame s s' ∧ BytesPrefix s'.mem (State.addr (s.gpr .r6))
           (descend (reduce l bits) ((bits + 7) / 8) (128 - (bits + 7) / 8)) 128) := by
   have bound : 1 ≤ (bits + 7) / 8 ∧ (bits + 7) / 8 ≤ 128 := by omega
@@ -589,24 +604,26 @@ theorem reduceDescend_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bit
     obtain ⟨r, hr, hc⟩ := writes
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   apply WP.seq
-  apply WP.mono (reduceKey_ok s reads writes)
-  intro s₁ h₁
+  apply WP.mono_syms (reduceKey_ok s hT reads writes)
+  intro s₁ h₁ sy₁
   have keep₁ := h₁.2
   rw [index, addr_add (by omega), initialPrefix _ (by omega), mask] at keep₁
-  have frame₁ := (KeyFrame.refl s).step _ (by omega) _ keep₁
+  have frame₁ := (KeyFrame.refl s).step _ (by omega) _ keep₁ sy₁
   have ptr₁ := keep₁.reg .r6 (by decide)
   have prefix₁ : BytesPrefix s₁.mem (State.addr (s.gpr .r6)) (reduce l bits) 128 := by
     rw [keep₁.mem]
     exact initialPrefix.write (by decide) (by omega) _
   have write₁ : ∀ i < 128, InRegions s₁.wr (State.addr (s₁.gpr .r6) + BitVec.ofNat 64 i) 1 := by
     rw [keep₁.wr, ptr₁]; exact writable
-  apply WP.mono (maybeDescend_ok s₁ (reduce l bits) ((bits + 7) / 8) bound.1 bound.2 (by rw [ptr₁]; exact outFit)
+  apply WP.mono (maybeDescend_ok s₁ (reduce l bits) ((bits + 7) / 8) bound.1 bound.2 (hT.frame frame₁ sep)
+    (by rw [ptr₁]; exact sep) (by rw [ptr₁]; exact outFit)
     ((keep₁.reg .r1 (by decide)).trans len) (h₁.1.trans index) write₁
     (by rw [ptr₁]; exact prefix₁))
   intro s₂ h₂
   exact ⟨frame₁.trans h₂.1, by rw [ptr₁] at h₂; exact h₂.2⟩
 
 theorem expandReduce_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bits) (hb' : bits ≤ 1024)
+    {T : BitVec 32} (hT : PiAt T s) (sep : (⟨State.addr T, 256⟩ : Region).Disjoint ⟨State.addr (s.gpr .r6), 128⟩)
     (outFit : (s.gpr .r6).toNat + 128 ≤ 2 ^ 32)
     (input : s.gpr .r7 = BitVec.ofNat 32 bits)
     (writable : ∀ i < 128, InRegions s.wr (State.addr (s.gpr .r6) + BitVec.ofNat 64 i) 1)
@@ -618,13 +635,15 @@ theorem expandReduce_ok (s : State) (l : KeyBytes) (bits : Nat) (hb : 1 ≤ bits
   obtain ⟨s₁, run₁, len₁, index₁, keep₁⟩ := setReduction_ok s bits hb hb' input
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   apply WP.seq
-  apply WP.mono (maskCode_ok s₁ bits hb hb' ((keep₁.reg .r7 (by decide)).trans input))
-  intro s₂ h₂
+  apply WP.mono_syms (maskCode_ok s₁ bits hb hb' ((keep₁.reg .r7 (by decide)).trans input))
+  intro s₂ h₂ sy₂
+  have hT₁ := hT.run run₁ keep₁
+  have hT₂ : PiAt T s₂ := ⟨hT₁.toPiTab.keep h₂.2, by rw [sy₂]; exact hT₁.syms⟩
   have frame := (CoreFrame.of_keep keep₁ (by decide)).trans (CoreFrame.of_keep h₂.2 (by decide))
   have ptr₂ := frame.reg .r6 (by decide)
   have writes : ∀ i < 128, InRegions s₂.wr (State.addr (s₂.gpr .r6) + BitVec.ofNat 64 i) 1 := by
     rw [frame.wr, ptr₂]; exact writable
-  apply WP.mono (reduceDescend_ok s₂ l bits hb hb' (by rw [ptr₂]; exact outFit)
+  apply WP.mono (reduceDescend_ok s₂ l bits hb hb' hT₂ (by rw [ptr₂]; exact sep) (by rw [ptr₂]; exact outFit)
     ((h₂.2.reg .r1 (by decide)).trans len₁) ((h₂.2.reg .r0 (by decide)).trans index₁) h₂.1 writes
     (by rw [ptr₂, h₂.2.mem, keep₁.mem]; exact initialPrefix))
   intro s₃ h₃

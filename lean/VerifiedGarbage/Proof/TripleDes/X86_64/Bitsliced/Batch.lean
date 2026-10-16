@@ -1,13 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Passes
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.BatchIO
-public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Bytes
 public import VerifiedGarbage.Proof.TripleDes.Core
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Transpose
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.TripleDes.Schedule
 
 /-!
 # A batch

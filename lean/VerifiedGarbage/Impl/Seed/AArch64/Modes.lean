@@ -34,7 +34,7 @@ keeps in `v31` (`Core.viaV`).
 namespace VG.Impl.Seed.AArch64
 
 open VG.AArch64
-open VG.Impl.Aes.AArch64 (sb)
+open VG.Impl.Aes.AArch64 (sb movR)
 open VG.Impl.Modes.AArch64 (copyW)
 open VG.Spec.Seed (Direction)
 
@@ -44,12 +44,34 @@ def bufSlot : Nat := scratchSlots
 /-- The schedule's copy, after the buffer. -/
 def schedSlot : Nat := bufSlot + 32
 
+/-- A call of `vg_seed_encrypt_blocks` or `vg_seed_decrypt_blocks` (the ECB
+code with the working space as an argument). -/
+def blockCall : Direction → Prog isa
+  | .encrypt => .call "vg_seed_encrypt_blocks" encrypt
+  | .decrypt => .call "vg_seed_decrypt_blocks" decrypt
+
+/-- `vg_seed_ecb_encrypt` or `vg_seed_ecb_decrypt` within its frame, which
+allocates the working space at `x3`: a call of the blocks function in the
+direction `d`, in a frame saving `x30`. -/
+def ecbCall (d : Direction) : Prog isa := .frame (.push .x30) (blockCall d) (.pop .x30)
+
+/-- Before the call: the return address, the scratch buffer's address, the
+data's address and the blocks left to `v28`, `v27`, `v29` and `v30` (the
+callee writes no vector register, and the taint analysis keeps them public
+across it), then the arguments: the schedule's copy, the buffer, its sixteen
+blocks and the working space (`sb`). -/
+def cryptHead : List Instr :=
+  [.vop (.dup .d2 .v28 .x30), .vop (.dup .d2 .v27 sb), .vop (.dup .d2 .v29 .x23), .vop (.dup .d2 .v30 .x24),
+   .addImm .x .x0 sb (8 * schedSlot), .addImm .x .x1 sb (8 * bufSlot), .movz .x .x2 16 0, movR .x3 sb]
+
+/-- After the call: the four registers back. -/
+def cryptTail : List Instr :=
+  [.umov .x sb .v27 0, .umov .x .x30 .v28 0, .umov .x .x23 .v29 0, .umov .x .x24 .v30 0]
+
 /-- SEED's core for the modes, in the direction `d`. -/
 def dirCore (d : Direction) : Impl.Modes.AArch64.Core where
   prepare := .block ((List.range 16).flatMap (copyW .x6 sb .x0 (8 * schedSlot) 0))
-  crypt := .seq (.block [.vop (.dup .d2 .v29 .x23), .vop (.dup .d2 .v30 .x24), .addImm .x .x1 sb (8 * bufSlot),
-      .movz .x .x2 16 0, .addImm .x .x0 sb (8 * schedSlot + keyStart d)])
-    (.seq (batch d) (.block [.umov .x .x23 .v29 0, .umov .x .x24 .v30 0]))
+  crypt := .seq (.block cryptHead) (.seq (blockCall d) (.block cryptTail))
   slots := schedSlot + 16
   total := schedSlot + 28
   buf := bufSlot

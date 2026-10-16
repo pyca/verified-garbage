@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.X448.X86.BitsInput
-public import VerifiedGarbage.Proof.X448.X86.Finish
-public import VerifiedGarbage.Proof.X448.X86.Ladder
+import VerifiedGarbage.Proof.X448.X86.BitsInput
+import VerifiedGarbage.Proof.X448.X86.Finish
+import VerifiedGarbage.Proof.X448.X86.Ladder
 public import VerifiedGarbage.Proof.X448.X86.FinalSwap
 public import VerifiedGarbage.Proof.X448.X86.Inv
 public import VerifiedGarbage.Spec.X448.Contract
@@ -11,6 +11,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.X448.X86.Setup
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.X86.FnLit
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on x86 (32-bit): the whole function

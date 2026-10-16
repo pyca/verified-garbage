@@ -14,6 +14,22 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Body
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Sha256.Stream
+meta import VerifiedGarbage.Proof.Sha256.X86.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86.Lit
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 @[expose] public section
 
@@ -148,39 +164,30 @@ open VG VG.X86 VG.Spec.Argon2
 
 /-! ## Constant time -/
 
-/-- The taint analysis starts with the stack arguments public, and the words
-holding `out` and `scratch` known to be the base addresses of the writable
-regions. -/
-def τ₀ : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [1024, 4096], argLen := 20,
-    argBases := [(12, 0), (16, 1)] }
+/-- The taint analysis starts with the stack arguments public. It knows
+nothing of the writable regions: the code never reads back a public value
+from them, and tracking their public bytes would cost the kernel at every
+store. -/
+def τ₀ : VG.X86.Taint.T := { regs := .ofList [.esp], flags := false, argLen := 20 }
 
 theorem wf₀ {s : State} (hp : Pre s) : VG.X86.Taint.Wf τ₀ s := by
-  have ho := hp.out_fits; have hsc := hp.scr_fits; have hs := hp.esp_fits
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀], by simpa [hp.wr] using hp.out_scr, ?_⟩,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨hs, ?_⟩, ?_⟩
-  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth] <;> omega
-  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl)
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_out hp.arg_out
-    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_scr hp.arg_scr
-  · intro p hp'
-    simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
-    rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
-      simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
+  have hs := hp.esp_fits
+  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun h => (h rfl).elim, fun _ h => (List.not_mem_nil h).elim,
+    fun _ h => (List.not_mem_nil h).elim, fun _ => ⟨hs, ?_⟩, fun _ h => (List.not_mem_nil h).elim⟩
+  simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl)
+  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_out hp.arg_out
+  · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.ret_scr hp.arg_scr
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : compressX86.pre s₁) (h₂ : compressX86.pre s₂)
     (hpub : compressX86.pub s₁ s₂) : VG.X86.Taint.Agree τ₀ s₁ s₂ := by
   obtain ⟨hesp, ha⟩ := hpub
   have hp₁ := pre_of _ h₁; have hp₂ := pre_of _ h₂
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hp₁, wf₀ hp₂,
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => (h rfl).elim, wf₀ hp₁, wf₀ hp₂,
     VG.X86.Taint.slotsOk_empty, VG.X86.Taint.slotsAgree_empty, fun _ => hesp,
     fun k h4 hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr; exact hesp
-  · rw [hp₁.wr, hp₂.wr]; simp only [outR, scrR, op, scr, ha 2 (by decide), ha 3 (by decide)]
   · simp only [τ₀] at hk
     rw [show VG.X86.Taint.depth τ₀.stk = 0 from rfl, Nat.zero_add]
     rw [VG.X86.Taint.argByte_eq (by have := hp₁.esp_fits; omega) h4 hk,
@@ -248,9 +255,9 @@ def compressWide : Contract X86.isa :=
 def satWide : State :=
   { satState with rd := [⟨0x1000, 1024⟩, ⟨0x1400, 1024⟩], wr := [⟨0x2000, 1024⟩, ⟨0x3000, 4096⟩, ⟨0x5004, 16⟩] }
 
-macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [compressX86, compressWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-    State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
+tactic_template "narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| plain_simp_names simp only [compressX86, compressWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
+                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $loc)
 
 theorem compressWide_verified : Verified X86.target Impl.Argon2.X86.compress compressWide :=
   Verified.narrowTo compress_verified
@@ -258,7 +265,7 @@ theorem compressWide_verified : Verified X86.target Impl.Argon2.X86.compress com
     (fun s => [⟨(arg s 2).setWidth 64, 1024⟩, ⟨(arg s 3).setWidth 64, 4096⟩])
     (fun _ h => by
       obtain ⟨_, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆⟩ := h
-      narrow
+      narrow at ⊢
       exact ⟨trivial, trivial, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅,
         by omega⟩)
     (fun _ h => by
@@ -283,7 +290,7 @@ theorem compressWide_verified : Verified X86.target Impl.Argon2.X86.compress com
       · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩)
     (fun _ _ _ h => by narrow at h ⊢; exact h)
-    (fun _ _ _ _ h => by narrow; exact h)
+    (fun _ _ _ _ h => by narrow at ⊢; exact h)
     ⟨satWide, by
       have a0 : arg satWide 0 = 0x1000 := by decide
       have a1 : arg satWide 1 = 0x1400 := by decide

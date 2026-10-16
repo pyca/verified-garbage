@@ -6,6 +6,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.NatPairs
+import VerifiedGarbage.Proof.Mont.AArch64.Row
+import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 @[expose] public section
 
@@ -33,7 +38,8 @@ theorem prefix_ok (s : State) : WP isa (.block prefixCode) s fun t =>
   simp only [prefixCode,input,other,output,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,Size.bits,
     RegUpd.gpr_write,RegUpd.c_write,RegUpd.gpr_addWithCarry,RegUpd.c_addWithCarry,
     BitVec.setWidth_eq,show 16*0<64 by decide,show 2<64 by decide,show 62<64 by decide,
-    ite_true,ite_false,reduceCtorEq,Option.some.injEq,exists_eq_left']
+    ite_true,ite_false,reduceCtorEq,Option.some.injEq,exists_eq_left',
+    subWords,shift2,highWord,addCarry,carryOut]
   refine ⟨rfl,rfl,rfl,?_,rfl,rfl,rfl,rfl⟩
   reg_keeps
 
@@ -50,7 +56,8 @@ theorem reduce_ok (s : State) (hz : s.gpr .x17=0) : WP isa (.block reduce) s fun
   simp only [reduce,output,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,Size.bits,
     RegUpd.gpr_write,RegUpd.gpr_addWithCarry,RegUpd.c_addWithCarry,
     BitVec.setWidth_eq,show 16*0<64 by decide,show 32<64 by decide,hz,
-    ite_true,ite_false,reduceCtorEq,Option.some.injEq,exists_eq_left']
+    ite_true,ite_false,reduceCtorEq,Option.some.injEq,exists_eq_left',
+    addWords,correction,addCarry,carryOut]
   refine ⟨rfl,rfl,?_,rfl,rfl,rfl,rfl⟩
   reg_keeps
 

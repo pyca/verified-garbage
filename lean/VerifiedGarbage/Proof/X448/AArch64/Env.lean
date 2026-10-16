@@ -1,15 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.X448.AArch64.PointwiseOps
-public import VerifiedGarbage.Proof.X448.Wide.TailMul
-public import VerifiedGarbage.Proof.X448.AArch64.AddSub
-public import VerifiedGarbage.Proof.X448.AArch64.Small
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseOps
+import VerifiedGarbage.Proof.X448.Wide.TailMul
+import VerifiedGarbage.Proof.X448.AArch64.AddSub
+import VerifiedGarbage.Proof.X448.AArch64.Small
 public import VerifiedGarbage.Proof.X448.AArch64.Swap
 public import Mathlib.Logic.Function.Basic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # X448 on AArch64: the working space as field-element slots

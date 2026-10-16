@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Lit
 public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
 meta import VerifiedGarbage.Proof.Argon2.X86_64.Compress
@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # Verified Argon2 block compression on x86-64 with AVX2

@@ -1,0 +1,84 @@
+module
+
+public import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ProductCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointEncodeCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointEncodeCT
+public import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
+meta import VerifiedGarbage.Proof.Dsa.X86_64.JointPrepare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Spec.Dsa
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Spec.Dsa
+
+/-! # Constant-time preparation of the joint exponentiation table -/
+
+@[expose] public section
+
+namespace VG.Proof.Dsa.X86_64
+open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
+open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
+
+theorem jointPrepare_ct (M : Mont) :
+    RelCT isa (Two (fun p : ProductCallPublic => PowerCallPre p.toPowerCallPublic))
+      (Joint.prepare M.mm) (fun _ _ => True) := by
+  unfold Joint.prepare seqs
+  refine RelCT.seq (two_post (Ψ := fun p : ProductCallPublic => PowerCallPrepared p.toPowerCallPublic)
+    (two_map (fun p : ProductCallPublic => p.toPowerPublic.product)
+      (fun p _ h => ⟨h.2.1, p.width48, p.greater, p.odd⟩) (constants_ct M))
+    (fun _ _ h => powerCall_prepare M h)) ?_
+  refine RelCT.seq (two_post (Ψ := fun p : ProductCallPublic => PowerCallPrepared p.toPowerCallPublic)
+    (two_map (fun p : ProductCallPublic => (⟨p.x, p.base, p.baseLen⟩ : BPub)) ?_
+      (loadArr_ct (j := aX) (sp := arg) (sl := argLen) (by decide) (by taint_decide) (by taint_decide))) ?_) ?_
+  · intro p s ⟨⟨hc, _, bb, _, hp, hl, _, _, hbl, _, hb, _⟩, _⟩
+    refine ⟨p.minv, bb, hc, p.lower, p.fits, p.upper, by decide, by decide, by decide,
+      hp, hl, hbl, hb, hbl ▸ p.basePositive, ?_, hbl ▸ p.baseFits⟩
+    have hbw : (bb.length + 7) / 8 ≤ p.x.wx := hbl ▸ p.baseFits
+    have hw48 : p.x.wx ≤ 48 := p.width48
+    omega
+  · intro p s h
+    obtain ⟨bb, _, hp, hl, _, _, hbl, _, hb, _⟩ := h.1.2.2
+    exact productCall_load (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      h hp hl hb (hbl ▸ p.basePositive) (hbl ▸ p.baseFits)
+  refine RelCT.seq (two_post (Ψ := fun p : ProductCallPublic => PowerCallPrepared p.toPowerCallPublic)
+    (two_map (fun p : ProductCallPublic => p.bytes) ?_
+      (loadArr_ct (j := aXm) (sp := arg2) (sl := arg2Len) (by decide) (by taint_decide) (by taint_decide))) ?_) ?_
+  · intro p s ⟨⟨hc, _, _, eb, _, _, hp, hl, _, hel, _, hb⟩, _⟩
+    refine ⟨p.minv, eb, hc, p.lower, p.fits, p.upper, by decide, by decide, by decide,
+      hp, hl, hel, hb, hel ▸ p.expPositive, ?_, hel ▸ p.secondFits⟩
+    have hbw : (eb.length + 7) / 8 ≤ p.x.wx := hel ▸ p.secondFits
+    have hw48 : p.x.wx ≤ 48 := p.width48
+    omega
+  · intro p s h
+    obtain ⟨_, eb, _, _, hp, hl, _, hel, _, hb⟩ := h.1.2.2
+    exact productCall_load (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      h hp hl hb (hel ▸ p.expPositive) (hel ▸ p.secondFits)
+  refine RelCT.seq (two_post (Ψ := fun p : ProductCallPublic => JointBuildPre 0 p.x)
+    (two_map (fun p : ProductCallPublic => p.toPowerPublic.product) (fun p s ⟨⟨_, hm, _⟩, hone, hr2⟩ => by
+    refine ⟨hm, ?_⟩
+    intro j hj
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
+    rcases hj with rfl | rfl
+    · dsimp only [PowerPublic.product]
+      rw [hr2]
+      exact Nat.mod_lt _ (by have := p.greater; omega)
+    · dsimp only [PowerPublic.product]
+      rw [hone]
+      exact p.greater) (jointEncode_ct M)) ?_) (two_map (fun p : ProductCallPublic => p.x) (fun _ _ h => h) (jointBuild_ct M))
+
+  intro p s ⟨⟨hc, hm, _⟩, hone, hr2⟩
+  have hr2' : wv s.mem (off p.x.B p.x.o) (slot p.x.wx aR2) p.x.wx =
+      (2 ^ (64 * p.x.wx) * 2 ^ (64 * p.x.wx)) % p.modulus := by
+    rw [hr2, ← Nat.pow_add, show 64 * p.x.wx + 64 * p.x.wx = 128 * p.x.wx by omega]
+  have hR := coprime_pow2 p.odd (64 * p.x.wx)
+  exact WP.mono (jointEncode_ok M ⟨hm, hc.scrT⟩ p.lower (by have : p.x.wx ≤ 48 := p.width48; omega)
+    p.greater hR rfl rfl hone hr2') fun t ⟨ht, hv, _, _⟩ =>
+      ⟨p.minv, p.modulus, _, _, ht, hv, p.lower, by have : p.x.wx ≤ 48 := p.width48; omega,
+        by have := p.greater; omega, hR⟩
+
+end VG.Proof.Dsa.X86_64

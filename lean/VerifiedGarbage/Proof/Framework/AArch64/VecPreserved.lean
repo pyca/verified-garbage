@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import Mathlib.Tactic.SplitIfs
 
 /-! Vector register preservation, including through calls and stack frames. -/
 
@@ -15,7 +16,7 @@ def VOp.dst : VOp → VReg
   | .ext d .. | .rev _ d .. | .perm _ _ d .. | .tbl d .. => d
   | .dupE _ d .. | .insE _ d .. | .cmeq _ d .. | .bsel _ d .. | .tblN _ _ d .. => d
   | .umull _ d .. | .umlal _ d .. | .mul d .. | .mla d .. | .mls d .. => d
-  | .sqdmulh d .. | .umin d .. | .pmull _ d .. => d
+  | .sqdmulh d .. | .umin d .. | .mulH _ d .. | .pmull _ d .. => d
   | .aese d .. | .aesd d .. | .aesmc d .. | .aesimc d .. => d
   | .sha1 _ d .. | .sha1h d .. | .sha1su0 d .. | .sha1su1 d .. => d
   | .sha256h d .. | .sha256h2 d .. | .sha256su0 d .. | .sha256su1 d .. => d
@@ -30,11 +31,19 @@ def vdstOf : Instr → Option VReg
 
 theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
     (h : op.eval s = some (d, v)) : d = op.dst := by
-  cases op <;> (try cases ‹VArr›) <;> simp only [VOp.eval] at h
-  all_goals
-    repeat' split at h
-    all_goals simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
-    all_goals first | exact h.1.symm | contradiction
+  cases op
+  case dup a _ _ =>
+    cases a <;> simp only [VOp.eval] at h <;> exact (Prod.mk.inj (Option.some.inj h)).1.symm
+  case ins a _ _ _ =>
+    cases a <;> simp only [VOp.eval] at h <;>
+    exact (Prod.mk.inj (Option.some.inj (Option.ite_none_right_eq_some.mp h).2)).1.symm
+  case sqdmulh =>
+    simp only [VOp.eval] at h
+    split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
+    exact h.1.symm
+  case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH =>
+    exact (Prod.mk.inj (Option.some.inj (Option.ite_none_right_eq_some.mp h).2)).1.symm
+  all_goals exact (Prod.mk.inj (Option.some.inj h)).1.symm
 
 theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
     (hi : vdstOf i ≠ some r) (h : exec i s = some s') : s'.v r = s.v r := by
@@ -68,12 +77,11 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
     simp only [Option.some.injEq] at h; subst h
     split <;> rfl
   | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
-  | _ =>
-    simp only [exec] at h
-    first
-    | (simp only [Option.some.injEq] at h; subst h; rfl)
-    | (split at h <;> [skip; cases h]
-       simp only [Option.some.injEq] at h; subst h; rfl)
+  | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
+  | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
+  | umov _ _ _ _ =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h; rfl
+  | _ => obtain rfl := Option.some.inj h; rfl
 
 theorem execBlock_vec {is : List Instr} {r : VReg} {s s' : State} {t : List Leak}
     (hc : ∀ i ∈ is, vdstOf i ≠ some r) (h : execBlock isa is s = some (s', t)) :

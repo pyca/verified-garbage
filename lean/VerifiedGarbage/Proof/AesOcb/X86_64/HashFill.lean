@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
+import VerifiedGarbage.Proof.AesOcb.X86_64.Nonce
 public import VerifiedGarbage.Proof.AesOcb.X86_64.LNtz
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

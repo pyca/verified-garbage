@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpHalf
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubR2
-public import VerifiedGarbage.Proof.Bignum.AArch64.Csub
+import VerifiedGarbage.Proof.Bignum.AArch64.Csub
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: Montgomery form

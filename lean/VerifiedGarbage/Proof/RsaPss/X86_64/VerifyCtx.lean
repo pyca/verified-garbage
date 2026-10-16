@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-public import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # RSASSA-PSS verification on x86-64: the contract on the registers
@@ -81,9 +83,10 @@ def verifySatState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x10008 then 0x40 else if a = 0x10022 then 0x02 else if a = 0x10029 then 0x08 else 0
+  mem a := if a = 0x10028 then 0x20
+    else if a = 0x10008 then 0x40 else if a = 0x10022 then 0x02 else if a = 0x10029 then 0x08 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4600, G.len⟩, ⟨0x4000, 64⟩, ⟨0x10008, 40⟩]
-  wr := [⟨0x20000, 2048 * 8⟩]
+  wr := [⟨0x20000, 2080 * 8⟩]
 
 /-- `verifyContract` is satisfiable for each of `MdHash`'s hash functions. -/
 theorem verify_sat (hG : G ∈ Pbkdf2.Md.X86_64.mdHashes) :

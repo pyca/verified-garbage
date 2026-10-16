@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # X25519 on 32-bit ARM: the conditional swap
@@ -55,17 +57,17 @@ theorem cswap_ok {x y : Nat} (hx : x + 64 ≤ 4096) (hy : y + 64 ≤ 4096) (hxy 
     wd_frame h.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+      · exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [hx, hk]) (by omega_using [hx, hk])
+      · exact Offset.disjoint _ (by omega_using [hxy, hk]) (by omega_using [hx, hk]) (by omega_using [hy, hk])
   have wy : wd s.mem (State.addr b) (y + 4 * k) = limb s0.mem (State.addr b) y k :=
     wd_frame h.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-      · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+      · exact Offset.disjoint _ (by omega_using [hxy, hk]) (by omega_using [hy, hk]) (by omega_using [hx, hk])
+      · exact Offset.disjoint _ (.inr (by omega_using [])) (by omega_using [hy, hk]) (by omega_using [hy, hk])
   unfold cswapStep
-  refine ldr0_ok hcs (d := x + 4 * k) (by omega) fun t1 v1 => ?_
-  refine ldr0_ok (hcs.of_rest (v1.rest (ws := [.r2]) (by decide)) (by decide)) (d := y + 4 * k) (by omega)
+  refine ldr0_ok hcs (d := x + 4 * k) (by omega_using [hx, hk]) fun t1 v1 => ?_
+  refine ldr0_ok (hcs.of_rest (v1.rest (ws := [.r2]) (by decide)) (by decide)) (d := y + 4 * k) (by omega_using [hy, hk])
     fun t2 v2 => ?_
   refine wp_dp (op2_reg _ _) fun t3 v3 => wp_dp (op2_reg _ _) fun t4 v4 => ?_
   refine wp_dp (op2_reg _ _) fun t5 v5 => wp_dp (op2_reg _ _) fun t6 v6 => ?_
@@ -73,8 +75,8 @@ theorem cswap_ok {x y : Nat} (hx : x + 64 ≤ 4096) (hy : y + 64 ≤ 4096) (hxy 
     (v1.rest (by decide)).trans ((v2.rest (by decide)).trans ((v3.rest (by decide)).trans
       ((v4.rest (by decide)).trans ((v5.rest (by decide)).trans (v6.rest (by decide))))))
   have hc6 : CtxN e b t6 := hcs.of_rest hr6 (by decide)
-  refine str0_ok hc6 (d := x + 4 * k) (by omega) fun t7 v7 => ?_
-  refine str0_ok (hc6.of_rest (v7.rest []) (by decide)) (d := y + 4 * k) (by omega) fun t8 v8 => ?_
+  refine str0_ok hc6 (d := x + 4 * k) (by omega_using [hx, hk]) fun t7 v7 => ?_
+  refine str0_ok (hc6.of_rest (v7.rest []) (by decide)) (d := y + 4 * k) (by omega_using [hy, hk]) fun t8 v8 => ?_
   refine WP.block_nil ?_
   -- The values.
   have eX : t2.gpr .r2 = s.mem.readW (State.addr b + BitVec.ofNat 64 (x + 4 * k)) 32 := by
@@ -108,21 +110,21 @@ theorem cswap_ok {x y : Nat} (hx : x + 64 ≤ 4096) (hy : y + 64 ≤ 4096) (hxy 
   refine ⟨h.rest.trans (hr6.trans ((v7.rest _).trans (v8.rest _))), ?_, fun j hj => ?_, fun j hj => ?_⟩
   · rw [hm8]
     refine ((h.frame.sub fun r hr => ?_).writeW (List.mem_cons_self ..) _
-      (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))).writeW
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [hx, hk]))).writeW
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _
-      (Offset.contains _ (Nat.le_add_right _ _) (by omega) (by omega))
+      (Offset.contains _ (Nat.le_add_right _ _) (by omega_using []) (by omega_using [hy, hk]))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by omega)⟩
-    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by omega)⟩
-  · rw [limb, hm8, wd_write_other _ _ _ (by omega) (by omega) (by omega)]
+    · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by omega_using [])⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Region.sub_prefix (by omega_using [])⟩
+  · rw [limb, hm8, wd_write_other _ _ _ (by omega_using [hxy, hk, hj]) (by omega_using [hx, hk, hj]) (by omega_using [hy, hk])]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega)]; exact h.lx j hj
+    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega_using [hx, hk])]; exact h.lx j hj
     · rw [wd_write_self, vx]
   · rw [limb, hm8]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega),
-        wd_write_other _ _ _ (by omega) (by omega) (by omega)]; exact h.ly j hj
+    · rw [wd_write_other _ _ _ (by omega) (by omega) (by omega_using [hy, hk]),
+        wd_write_other _ _ _ (by omega) (by omega) (by omega_using [hx, hk])]; exact h.ly j hj
     · rw [wd_write_self, vy]
 
 end

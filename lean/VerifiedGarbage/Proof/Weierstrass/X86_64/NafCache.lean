@@ -6,6 +6,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafCopy
 
 /-! Cache lookup addresses and exact copies of both cached field elements. -/
 
@@ -119,7 +124,7 @@ theorem nafCachedEntry_ok {K : WinCfg} {s : State} {base : Addr} {size tbl dst a
   have su := hs.of_keepRegs ku (by decide)
   have hu8 : u.gpr .r8=BitVec.ofNat 64 a := (ku.gpr .r8 (by decide)).trans h8
   refine WP.mono (nafCacheRead_ok su hu8 ha ha' hodd hc hn hC hD hDC) fun t ⟨et,kt,ot⟩ => ?_
-  refine ⟨fun j hj => ?_,fun j hj => ?_,ku.trans (kt.mono (by simp)),fun x he hd => ?_⟩
+  refine ⟨fun j hj => ?_,fun j hj => ?_,ku.trans (kt.mono (by regions_sub)),fun x he hd => ?_⟩
   · have := entry_end_le (8*K.M.n) hj
     rw [ot.wordsVal (by omega) (by omega),eu j hj]
   · have := entry_end_le (8*K.M.n) hj

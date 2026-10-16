@@ -2,12 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Md
-public import VerifiedGarbage.Proof.Sha512.Digest
+import VerifiedGarbage.Proof.Sha512.Digest
 meta import VerifiedGarbage.Proof.Sha512.Digest
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MdStream.Prefix
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.MdStream.Prefix
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 
 /-!
 # Streaming SHA-384, SHA-512/256 and SHA-512/224 on x86-64: `finalize`
@@ -76,16 +84,19 @@ theorem out224_ok (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr .rbx) 64)
 theorem shape384 : ShapeD (P := params384) md 48 where
   le := by decide
   len := shape.len
+  lenV := shape.lenV
   out s hin hout hd := out64_take (n := 6) (by decide) s hin hout hd
 
 theorem shape512_256 : ShapeD (P := params512_256) md 32 where
   le := by decide
   len := shape.len
+  lenV := shape.lenV
   out s hin hout hd := out64_take (n := 4) (by decide) s hin hout hd
 
 theorem shape512_224 : ShapeD (P := params512_224) md 28 where
   le := by decide
   len := shape.len
+  lenV := shape.lenV
   out s hin hout hd := out224_ok s hin hout hd
 
 theorem taints384 : Taints params384 :=

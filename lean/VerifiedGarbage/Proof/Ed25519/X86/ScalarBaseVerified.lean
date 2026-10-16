@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 public import VerifiedGarbage.Proof.Ed25519.X86.CombCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombCT
-public import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
+import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -16,6 +16,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTLit
+meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseCT`. -/
 
@@ -35,7 +41,7 @@ theorem scalarBaseFinish_ct (s₀ t₀ : State) (hs : BaseRegions s₀) (ht : Ba
   obtain ⟨pt, _, _⟩ := scalarBase_pre ht
   have loadct : RelCT isa (BaseSaved s₀ t₀)
       (.block [.mov .esi (.mem (Impl.X25519.X86.at_ .esp 4))]) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.esp]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.esp]) _ (by native_taint_decide)
     intro s t h
     exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸
       (h.1.esp.trans (hp.1.trans h.2.esp.symm)))
@@ -43,7 +49,7 @@ theorem scalarBaseFinish_ct (s₀ t₀ : State) (hs : BaseRegions s₀) (ht : Ba
     loadArg_ok (i := 0) pt h.2 (by decide)⟩)
   have tailct : RelCT isa (fun s t => s.gpr .edi = t.gpr .edi ∧ s.gpr .esi = t.gpr .esi)
       (.block (outputWords 96 8 ++ Impl.X25519.X86.restore)) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .esi]) _ (by taint_decide)
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .esi]) _ (by native_taint_decide)
     intro s t h
     apply regsTaint_agree
     intro r hr

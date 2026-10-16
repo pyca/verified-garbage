@@ -2,11 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Mix
 public import VerifiedGarbage.Proof.Rc2.AArch64.Lookup
-public import VerifiedGarbage.Proof.Rc2.AArch64.Rounds
+import VerifiedGarbage.Proof.Rc2.AArch64.Rounds
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.Simd
 
 /-!
 # Reverse mixing rounds on eight blocks

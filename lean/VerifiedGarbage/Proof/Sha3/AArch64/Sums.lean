@@ -12,6 +12,8 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
 meta import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -42,11 +44,11 @@ def callee : List Reg := [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, 
 /-! ## ML-KEM's functions -/
 
 taint_summary ntt : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
-  (.call "vg_mlkem_ntt" Impl.MlKem.AArch64.ntt)
+  (.call "vg_mlkem_ntt" Impl.MlKem.AArch64.Ntt16.ntt)
   keeping (VectorTaint.ofRegs callee)
 
 taint_summary nttInv : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
-  (.call "vg_mlkem_inv_ntt" Impl.MlKem.AArch64.nttInv)
+  (.call "vg_mlkem_inv_ntt" Impl.MlKem.AArch64.Ntt16.nttInv)
   keeping (VectorTaint.ofRegs callee)
 
 taint_summary mul : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])

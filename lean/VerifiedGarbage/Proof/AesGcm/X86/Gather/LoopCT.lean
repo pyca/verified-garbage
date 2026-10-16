@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
 meta import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
-public import VerifiedGarbage.Proof.Framework.Scratch
+import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

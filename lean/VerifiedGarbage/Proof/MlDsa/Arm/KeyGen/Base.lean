@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.Arm.KeyGen.Frag
 public import VerifiedGarbage.Proof.MlKem.Arm.HashCT
-public import VerifiedGarbage.Proof.MlKem.Arm.CallF
+import VerifiedGarbage.Proof.MlKem.Arm.CallF
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

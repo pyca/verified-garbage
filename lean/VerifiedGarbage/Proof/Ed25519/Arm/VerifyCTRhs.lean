@@ -1,17 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.Arm.RecoverCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
+import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointEqual
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
 meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTPublic
-public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
+import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.VerifyCTLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTFrom
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-! Merged from `Proof.Ed25519.Arm.PointEqualCT`. -/
 
@@ -45,7 +49,7 @@ theorem equalSecond_ct (base : BitVec 32) (u v : Spec.X25519.Fe) :
   have ht : CT (fun s t => (Ctx base s ∧ AllLim s.mem base ∧ env s.mem base 10 = u ∧ env s.mem base 11 = v) ∧
       (Ctx base t ∧ AllLim t.mem base ∧ env t.mem base 10 = u ∧ env t.mem base 11 = v))
       (fieldEqual 10 11) (fun _ _ => True) := by
-    apply ctRegs [.r0] _ (by taint_decide)
+    apply ctRegs [.r0] _ (by native_taint_decide)
     exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
   have hw (s : State) (h : Ctx base s ∧ AllLim s.mem base ∧ env s.mem base 10 = u ∧ env s.mem base 11 = v) :
       WP isa (fieldEqual 10 11) s fun t => t.z = decide (u = v) := by
@@ -62,7 +66,7 @@ theorem pointEqual_ct (base : BitVec 32) (p q : Spec.Ed25519.Point) :
       Impl.Ed25519.Arm.pointEqual (fun _ _ => True) := by
   have ht : CT (fun s t => EqualCTPre base p q s ∧ EqualCTPre base p q t)
       (.seq (fieldCode pointEqualOps) (fieldEqual 8 9)) (fun _ _ => True) := by
-    apply ctRegs [.r0] _ (by taint_decide)
+    apply ctRegs [.r0] _ (by native_taint_decide)
     exact fun _ _ h => r0_agree h.1.1.r0 h.2.1.r0
   have hw (s : State) (h : EqualCTPre base p q s) :
       WP isa (.seq (fieldCode pointEqualOps) (fieldEqual 8 9)) s fun t =>
@@ -106,7 +110,7 @@ theorem verifyLoadScalar_ct (b pk sig challenge : BitVec 32) :
       (.block (loadHeader 8164 ++ ([.dp .add .r12 .r12 (.imm 32)] : List Instr)))
       (fun s t => FromCTPre b (sig + 32) 16 s ∧ FromCTPre b (sig + 32) 16 t) := by
   apply ctBoth
-  · apply ctRegs [.r0] _ (by taint_decide)
+  · apply ctRegs [.r0] _ (by native_taint_decide)
     intro s t h r hr
     rw [List.mem_singleton] at hr
     subst r
@@ -125,7 +129,7 @@ theorem verifyConstBase_ct (b ptr : BitVec 32) :
     CT (fun s t => FromCTPre b ptr 16 s ∧ FromCTPre b ptr 16 t)
       (constPoint Spec.Ed25519.basePoint) (fun s t => FromCTPre b ptr 16 s ∧ FromCTPre b ptr 16 t) := by
   apply ctBoth
-  · apply ctRegs [.r0] _ (by taint_decide)
+  · apply ctRegs [.r0] _ (by native_taint_decide)
     intro s t h r hr
     rw [List.mem_singleton] at hr
     subst r
@@ -145,7 +149,7 @@ theorem verifyLhs_ct (b pk sig challenge : BitVec 32) :
         h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2) (fun _ v => (v.1.ctx h.2.1).r0)⟩)
   refine RelCT.seq (verifyLoadScalar_ct b pk sig challenge)
     (RelCT.seq (verifyConstBase_ct b (sig + 32)) (RelCT.seq hm ?_))
-  apply ctRegs [.r0] _ (by taint_decide)
+  apply ctRegs [.r0] _ (by native_taint_decide)
   intro s t h r hr
   rw [List.mem_singleton] at hr
   subst r
@@ -167,7 +171,7 @@ theorem verifyLoadChallenge_ct (b pk sig challenge : BitVec 32) :
       (.block (pointTableRead 7776 ++ loadHeader 8168))
       (fun s t => FromCTPre b challenge 32 s ∧ FromCTPre b challenge 32 t) := by
   apply ctBoth
-  · apply ctRegs [.r0] _ (by taint_decide)
+  · apply ctRegs [.r0] _ (by native_taint_decide)
     intro s t h r hr
     rw [List.mem_singleton] at hr
     subst r
@@ -241,7 +245,7 @@ theorem verifyCombine_ct (b : BitVec 32) (ka r lhs : Spec.Ed25519.Point) :
       verifyCombine (fun s t => EqualCTPre b lhs (Spec.Ed25519.pointAdd r ka) s ∧
         EqualCTPre b lhs (Spec.Ed25519.pointAdd r ka) t) := by
   apply ctBoth
-  · apply ctRegs [.r0] _ (by taint_decide)
+  · apply ctRegs [.r0] _ (by native_taint_decide)
     intro s t h reg hr
     rw [List.mem_singleton] at hr
     subst reg

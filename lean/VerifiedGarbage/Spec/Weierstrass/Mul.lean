@@ -3,15 +3,19 @@ module
 public import VerifiedGarbage.Spec.Weierstrass.MulBase
 public import VerifiedGarbage.Spec.P192
 public import VerifiedGarbage.Spec.Secp256k1
+public import VerifiedGarbage.Spec.BrainpoolP256r1
+public import VerifiedGarbage.Spec.BrainpoolP384r1
+public import VerifiedGarbage.Spec.BrainpoolP512r1
 
 /-!
 # The multiplication of a point, in a curve's working space, as a function
 
 **Trusted** (as every file in `Spec/`). The contract of one function for each
-curve of `curves` (so far P-192 and secp256k1), on the working space where
-the x86-64 code of the curve's ECDSA signature and verification, public key
-derivation and ECDH keeps its numbers, so that all of them can call one copy
-of the multiplication instead of repeating it:
+curve of `curves` (so far P-192, secp256k1, brainpoolP256r1,
+brainpoolP384r1 and brainpoolP512r1), on the working space where the x86-64 code of the curve's
+ECDSA signature and verification, public key derivation and ECDH keeps its
+numbers, so that all of them can call one copy of the multiplication instead
+of repeating it:
 
 * `vg_<curve>_mul(ws)`: `P = [k]Q` (`Weierstrass.mul`, SEC 1 §2.2.1) for the
   affine point `Q` and the number `k` in `ws`, as a point in projective
@@ -37,9 +41,11 @@ form, below `p`, on the curve, in the first two slots of the result (slots
 words). The result `P` replaces `Q`, in slots 14 to 16 (`pAt`). The
 function takes no offsets, so that every address it computes is `ws` plus a
 constant. Slots 17 to 30 (where the code keeps, among others, its copy of
-`Q`), the curve's temporary slot (`tmpAt`) and the `64 k + 8` bytes from
-slot 45 (`bitsAt`, where the code keeps a table of `k`'s bits) are the
-function's own working space (`Own`); on return they are unspecified and may
+`Q`), the curve's temporary slot (`tmpAt`) and the `64 k + 8 s` bytes from
+slot 45 (`bitsAt`, where the code keeps a table of `k`'s bits, then in `s`
+words, `saved`, the callee-saved registers it changes: one, but six for
+brainpoolP512r1, whose products of eight words change more of them on
+AArch64) are the function's own working space (`Own`); on return they are unspecified and may
 hold intermediate values, secret ones among them. Every other byte of `ws`
 keeps its value but the result's (`Keeps`).
 
@@ -57,14 +63,16 @@ open MulBase (Represents sig)
 /-- A curve whose points' multiplication is a function: the curve `W` (its
 group and prime `p`), its name (the function is `vg_<curve>_mul`, in the
 Rust module `<curve>_mul`), the count `k` of 64-bit words of a coordinate,
-with `p < 2^(64 k)`, how the documentation names it, and the slot of its
-products' temporary area. -/
+with `p < 2^(64 k)`, how the documentation names it, the slot of its
+products' temporary area, and the count of words past the table of bits
+where the function may keep the callee-saved registers it changes. -/
 structure Curve where
   W : Weierstrass.Curve
   curve : String
   k : Nat
   desc : String
   tmp : Nat
+  saved : Nat := 1
 
 namespace Curve
 
@@ -120,10 +128,11 @@ def qAt : Nat := C.pAt
 def mont (x : Nat) : Nat := x * 2 ^ (64 * C.k) % C.W.p
 
 /-- Byte `i` is in the function's own working space: slots 17 to 30, the
-temporary slot, or the `64 k + 8` bytes of the table of bits. -/
+temporary slot, or the `64 k + 8 saved` bytes of the table of bits and the
+words past it. -/
 def Own (i : Nat) : Prop :=
   (C.slot 17 ≤ i ∧ i < C.slot 31) ∨ (C.tmpAt ≤ i ∧ i < C.tmpAt + 8 * C.k) ∨
-    (C.bitsAt ≤ i ∧ i < C.bitsAt + 64 * C.k + 8)
+    (C.bitsAt ≤ i ∧ i < C.bitsAt + 64 * C.k + 8 * C.saved)
 
 /-- Every byte of `ws` but those of the function's own working space and of
 the result keeps its value. -/
@@ -173,7 +182,7 @@ def module : String := C.curve ++ "_mul"
 /-- What the documentation says the function's own working space is. -/
 def ownDoc : String :=
   s!"Bytes {rangeDoc (C.slot 17) (C.slot 31 - C.slot 17)}, \
-    {rangeDoc C.tmpAt (8 * C.k)} and {rangeDoc C.bitsAt (64 * C.k + 8)} of `ws`"
+    {rangeDoc C.tmpAt (8 * C.k)} and {rangeDoc C.bitsAt (64 * C.k + 8 * C.saved)} of `ws`"
 
 /-- `vg_<curve>_mul` on every target. -/
 def mulApi : Api where
@@ -207,8 +216,21 @@ end Curve
 def p192 : Curve := { W := Spec.P192.curve, curve := "p192", k := 4, desc := "P-192", tmp := 2 }
 def secp256k1 : Curve :=
   { W := Spec.Secp256k1.curve, curve := "secp256k1", k := 4, desc := "secp256k1", tmp := 2 }
+def brainpoolp256r1 : Curve :=
+  { W := Spec.BrainpoolP256r1.curve, curve := "brainpoolp256r1", k := 4, desc := "brainpoolP256r1",
+    tmp := 2 }
+
+/-- brainpoolP384r1's temporary area is in slot 83's place, as P-384's is for six
+words (`Impl.Ecdsa.X86_64.Cfg.sl`). -/
+def brainpoolp384r1 : Curve :=
+  { W := Spec.BrainpoolP384r1.curve, curve := "brainpoolp384r1", k := 6, desc := "brainpoolP384r1",
+    tmp := 83 }
+
+def brainpoolp512r1 : Curve :=
+  { W := Spec.BrainpoolP512r1.curve, curve := "brainpoolp512r1", k := 8, desc := "brainpoolP512r1",
+    tmp := 2, saved := 6 }
 
 /-- Every curve. -/
-def curves : List Curve := [p192, secp256k1]
+def curves : List Curve := [p192, secp256k1, brainpoolp256r1, brainpoolp384r1, brainpoolp512r1]
 
 end VG.Spec.Weierstrass.Mul

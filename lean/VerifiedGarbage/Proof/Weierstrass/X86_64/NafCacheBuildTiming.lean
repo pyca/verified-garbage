@@ -6,6 +6,15 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.WinLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 /-! Exact cache environments relate the two public executions of table setup. -/
 
@@ -23,6 +32,16 @@ theorem nafCacheTable_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     RelCT isa (FieldPair M base size m Sl V E) (Naf.cacheTable M ptbl tbl e).inline
       (FieldPair M base size m Sl (cacheTableSlots M.n tbl 8++V) (cacheTableEnv M.n ptbl tbl E 8)) :=
   fieldProgram_relCT hc (fun _ hi => WP.mono (nafCacheTable_fields_ok hL hm hC hi) fun _ h => h.2)
+
+/-- `nafCacheTable_relCT`, for the loop's steps unrolled (`Naf.cacheStaged`). -/
+theorem nafCacheStaged_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
+    {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hm : UnitMod m (2^(64*M.n))) {ptbl tbl e : Nat}
+    {V : List Nat} {E : Nat → Fin m} (hC : CacheLoopLay M size Sl ptbl tbl e V)
+    (hc : ScratchCT (Naf.cacheStaged M ptbl tbl e).inline) :
+    RelCT isa (FieldPair M base size m Sl V E) (Naf.cacheStaged M ptbl tbl e).inline
+      (FieldPair M base size m Sl (cacheTableSlots M.n tbl 8++V) (cacheTableEnv M.n ptbl tbl E 8)) :=
+  fieldProgram_relCT hc (fun _ hi => WP.mono (nafCacheStaged_fields_ok hL hm hC hi) fun _ h => h.2)
 
 /-! ## The cache unrolled -/
 

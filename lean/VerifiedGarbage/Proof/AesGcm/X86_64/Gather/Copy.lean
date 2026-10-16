@@ -318,6 +318,13 @@ theorem round_ofNat (n k : Nat) (hn : n < 2 ^ 63) :
     have : n / 2 ^ k * 2 ^ k ≤ n := Nat.div_mul_le_self n _
     omega), Nat.mul_comm]
 
+/-- `16 ⌊n / 16⌋`, by shifts, for any `n` that fits. -/
+theorem round16 {n : Nat} (hn : n < 2 ^ 64) : BitVec.ofNat 64 n >>> 4 <<< 4 = BitVec.ofNat 64 (16 * (n / 16)) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, toNat_ofNat_of_lt hn, toNat_ofNat_of_lt (by omega),
+    Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega)]
+  omega
+
 section
 variable {s : State} {S D : Addr} {n : Nat} (h : CopyPre s S D n)
 include h

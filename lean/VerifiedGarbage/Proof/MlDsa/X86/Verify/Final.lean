@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
 meta import VerifiedGarbage.Proof.MlDsa.X86.Verify.Row
-public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 meta import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA verification on x86 (32-bit): `c̃′` and the result
@@ -60,7 +62,7 @@ theorem hash_piece : VP p (CI p · p.ℓ true p.k) (CH p)
   have hw := hF.w1; have hct := hF.ct
   refine hash2_piece (Y := YV p) 0 200 136 0x1f ⟨1, 0, 64⟩ (sb oB (p.k * w1Len p)) (sb oCT p.ctildeLen)
     Proof.MlKem.rate136 (by lvd) (by rw [YV_stk]; omega) (by decide) (by show p.k * w1Len p < 2 ^ 32; omega)
-    (by show p.ctildeLen < 2 ^ 32; omega) (by taint_decide) (h₁ := .block []) (by kernel_rfl)
+    (by show p.ctildeLen < 2 ^ 32; omega) (by native_taint_decide) (h₁ := .block []) (by kernel_rfl)
     (h₂ := .block []) (by kernel_rfl) (h₃ := .block []) (by kernel_rfl) (h₄ := .block []) (by kernel_rfl)
     (fun _ _ _ ⟨_, _, _, h⟩ => h.ctx) fun s₀ s s' hp ⟨hh, A, C, h⟩ h' fr out => ⟨hh, A, C,
       h.keep hp (N := 40) (by omega) (by safeCs hF (Nat.le_refl p.k)) (fun i hi => by lvd) (by lvd) fr h', ?_⟩
@@ -85,8 +87,8 @@ theorem mask_and {P : Prop} [Decidable P] {x : Bool} (hx : x = true ↔ P) :
 theorem cmp_piece' : VP p (CH p) (VFin p) (cmpAnd (sb oCT p.ctildeLen) ⟨2, 0, p.ctildeLen⟩ p.ctildeLen) := by
   have hct := hF.ct
   refine cmpAnd_piece (Y := YV p) (a := sb oCT p.ctildeLen) (b := ⟨2, 0, p.ctildeLen⟩) rfl (by lvd) (by lvd)
-    (by lvd) rfl (by show p.ctildeLen < 2 ^ 32; omega) (h₁ := .block []) (by kernel_rfl) (by taint_decide)
-    (by taint_decide) (fun _ _ _ ⟨_, _, _, h, _⟩ => h.ctx) fun s₀ s s' hp ⟨hh, A, C, h, hct'⟩ h' m' => ⟨h', ?_⟩
+    (by lvd) rfl (by show p.ctildeLen < 2 ^ 32; omega) (h₁ := .block []) (by kernel_rfl) (by native_taint_decide)
+    (by native_taint_decide) (fun _ _ _ ⟨_, _, _, h, _⟩ => h.ctx) fun s₀ s s' hp ⟨hh, A, C, h, hct'⟩ h' m' => ⟨h', ?_⟩
   have ea : accV s₀ s' = accV s₀ s &&& Proof.MlKem.X86.Decaps.mask
       (ctOf p s₀ hh A C = vCt p (vSig p s₀)) := by
     rw [accV, m', acc_write]

@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Impl.EcKey.Secp256k1.AArch64
 public import VerifiedGarbage.Proof.EcKey.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Main
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # secp256k1 public-key derivation without constant tables -/
 

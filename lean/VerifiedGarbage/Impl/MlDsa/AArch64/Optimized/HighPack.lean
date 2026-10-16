@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Round.Round
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
+import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Encode
 
 @[expose] public section
 

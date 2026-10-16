@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
+import VerifiedGarbage.Impl.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceLane
 public import VerifiedGarbage.Impl.Argon2.AArch64.FirstLane
 public import VerifiedGarbage.Impl.Argon2.AArch64.ReferenceStart

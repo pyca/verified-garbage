@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Ed448.Arm.VerifyVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # Ed448 verification's equation on ARMv7

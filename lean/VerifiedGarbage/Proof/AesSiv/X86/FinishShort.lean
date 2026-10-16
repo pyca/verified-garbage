@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesSiv.X86.S2v
-public import VerifiedGarbage.Proof.AesSiv.Long
+import VerifiedGarbage.Proof.AesSiv.Long
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 
 /-!
 # AES-SIV on x86: finishing S2V with a short string

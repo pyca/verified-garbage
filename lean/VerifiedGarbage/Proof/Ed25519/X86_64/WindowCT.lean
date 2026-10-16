@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
@@ -14,6 +14,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.Window
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Ed25519.Window
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Merged from `Proof.Ed25519.X86_64.PointEqualCT`. -/
 

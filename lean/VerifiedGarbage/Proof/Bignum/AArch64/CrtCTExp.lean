@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+meta import Mathlib.Data.Int.ModEq
+meta import VerifiedGarbage.Proof.Framework.AArch64.Call
 
 /-!
 # RSA with the CRT on AArch64: the exponentiation is constant time

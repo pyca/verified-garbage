@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.TopCT
 meta import VerifiedGarbage.Proof.AesCcm.X86.TopCT
-public import VerifiedGarbage.Proof.AesCcm.X86.Open
+import VerifiedGarbage.Proof.AesCcm.X86.Open
 meta import VerifiedGarbage.Proof.AesCcm.X86.Open
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+meta import VerifiedGarbage.Proof.AesGcm.X86.Cmp
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+meta import VerifiedGarbage.Proof.AesCcm.BytesAt
 
 /-!
 # AES-CCM on x86: `vg_aes_ccm_open` is constant time

@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Cmac.Dbl
 public import VerifiedGarbage.Proof.Cmac.Mem32
 public import VerifiedGarbage.Proof.Framework.Bswap
-public import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Bits
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -33,17 +33,8 @@ theorem ofBytes_toBytes (x : Spec.Gcm.Block) : Spec.Gcm.ofBytes (Spec.Gcm.toByte
   simp [hj]
 
 theorem getLsbD_byteRev32 (a : BitVec 32) {i : Nat} (hi : i < 32) :
-    (byteRev32 a).getLsbD i = a.getLsbD (8 * (3 - i / 8) + i % 8) := by
-  simp only [byteRev32]
-  rw [VG.getLsbD_cat4]
-  rcases (by omega : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ 24 ≤ i) with h | h | h | h
-  · simp only [h, ite_true, BitVec.getLsbD_extractLsb', decide_true, Bool.true_and]; congr 1; omega
-  · simp only [show ¬ i < 8 by omega, h.2, ite_true, ite_false, BitVec.getLsbD_extractLsb',
-      show i - 8 < 8 by omega, decide_true, Bool.true_and]; congr 1; omega
-  · simp only [show ¬ i < 8 by omega, show ¬ i < 16 by omega, h.2, ite_true, ite_false,
-      BitVec.getLsbD_extractLsb', show i - 16 < 8 by omega, decide_true, Bool.true_and]; congr 1; omega
-  · simp only [show ¬ i < 8 by omega, show ¬ i < 16 by omega, show ¬ i < 24 by omega, ite_false,
-      BitVec.getLsbD_extractLsb', show i - 24 < 8 by omega, decide_true, Bool.true_and]; congr 1; omega
+    (byteRev32 a).getLsbD i = a.getLsbD (8 * (3 - i / 8) + i % 8) :=
+  VG.byteRev32_getLsbD a hi
 
 theorem getD_le4_append4 (a b c d : BitVec 32) {k : Nat} (hk : k < 16) :
     (le4 a ++ le4 b ++ le4 c ++ le4 d).getD k 0 =
@@ -67,6 +58,25 @@ theorem getD_le4_append4 (a b c d : BitVec 32) {k : Nat} (hk : k < 16) :
       getD_le4 _ (by omega)]
     simp [show ¬ k < 4 by omega, show ¬ k < 8 by omega, show ¬ k < 12 by omega, show k % 4 = k - 4 - 4 - 4 by omega]
 
+/-- Bit `32 q + r` of four words, `r < 32`: bit `r` of word `3 - q`. -/
+theorem getLsbD_app4_d (a b c d : BitVec 32) {r : Nat} (hr : r < 32) : (a ++ b ++ c ++ d).getLsbD r = d.getLsbD r := by
+  rw [BitVec.getLsbD_append, ite_eq_left hr]
+
+theorem getLsbD_app4_c (a b c d : BitVec 32) {r : Nat} (hr : r < 32) :
+    (a ++ b ++ c ++ d).getLsbD (32 + r) = c.getLsbD r := by
+  rw [BitVec.getLsbD_append, ite_eq_right (by omega), Nat.add_sub_cancel_left, BitVec.getLsbD_append, ite_eq_left hr]
+
+theorem getLsbD_app4_b (a b c d : BitVec 32) {r : Nat} (hr : r < 32) :
+    (a ++ b ++ c ++ d).getLsbD (64 + r) = b.getLsbD r := by
+  rw [BitVec.getLsbD_append, ite_eq_right (by omega), show 64 + r - 32 = 32 + r by omega, BitVec.getLsbD_append,
+    ite_eq_right (by omega), Nat.add_sub_cancel_left, BitVec.getLsbD_append, ite_eq_left hr]
+
+theorem getLsbD_app4_a (a b c d : BitVec 32) {r : Nat} (hr : r < 32) :
+    (a ++ b ++ c ++ d).getLsbD (96 + r) = a.getLsbD r := by
+  rw [BitVec.getLsbD_append, ite_eq_right (by omega), show 96 + r - 32 = 64 + r by omega, BitVec.getLsbD_append,
+    ite_eq_right (by omega), show 64 + r - 32 = 32 + r by omega, BitVec.getLsbD_append, ite_eq_right (by omega),
+    Nat.add_sub_cancel_left]
+
 /-- Storing the byte-reversed words of `a ++ b ++ c ++ d` stores its bytes,
 big-endian. -/
 theorem le4_rev4 (a b c d : BitVec 32) :
@@ -78,22 +88,21 @@ theorem le4_rev4 (a b c d : BitVec 32) :
   intro j hj
   rw [BitVec.getLsbD_extractLsb', BitVec.getLsbD_extractLsb']
   simp only [hj, decide_true, Bool.true_and]
-  rcases (by omega : k < 4 ∨ (4 ≤ k ∧ k < 8) ∨ (8 ≤ k ∧ k < 12) ∨ 12 ≤ k) with h | h | h | h
-  · simp only [h, ite_true, getLsbD_byteRev32 _ (show 8 * (k % 4) + j < 32 by omega)]
-    simp only [BitVec.getLsbD_append]
-    split_ifs <;> first | omega | (congr 1; omega)
-  · simp only [show ¬ k < 4 by omega, h.2, ite_true, ite_false,
-      getLsbD_byteRev32 _ (show 8 * (k % 4) + j < 32 by omega)]
-    simp only [BitVec.getLsbD_append]
-    split_ifs <;> first | omega | (congr 1; omega)
-  · simp only [show ¬ k < 4 by omega, show ¬ k < 8 by omega, h.2, ite_true, ite_false,
-      getLsbD_byteRev32 _ (show 8 * (k % 4) + j < 32 by omega)]
-    simp only [BitVec.getLsbD_append]
-    split_ifs <;> first | omega | (congr 1; omega)
-  · simp only [show ¬ k < 4 by omega, show ¬ k < 8 by omega, show ¬ k < 12 by omega, ite_false,
-      getLsbD_byteRev32 _ (show 8 * (k % 4) + j < 32 by omega)]
-    simp only [BitVec.getLsbD_append]
-    split_ifs <;> first | omega | (congr 1; omega)
+  -- The indices, for each of the 16 bytes and 8 bits.
+  have T : ∀ k < 16, ∀ j < 8, 8 * (k % 4) + j < 32 ∧ 8 * (3 - (8 * (k % 4) + j) / 8) + (8 * (k % 4) + j) % 8 < 32 ∧
+      8 * (15 - k) + j = 32 * (3 - k / 4) + (8 * (3 - (8 * (k % 4) + j) / 8) + (8 * (k % 4) + j) % 8) := by
+    decide +kernel
+  obtain ⟨hi, hr, hp⟩ := T k hk j hj
+  rw [hp, apply_ite (BitVec.getLsbD · _), apply_ite (BitVec.getLsbD · _), apply_ite (BitVec.getLsbD · _),
+    getLsbD_byteRev32 _ hi, getLsbD_byteRev32 _ hi, getLsbD_byteRev32 _ hi, getLsbD_byteRev32 _ hi]
+  have Q : ∀ k < 16, (k < 4 → 3 - k / 4 = 3) ∧ (¬ k < 4 → k < 8 → 3 - k / 4 = 2) ∧
+      (¬ k < 8 → k < 12 → 3 - k / 4 = 1) ∧ (¬ k < 12 → 3 - k / 4 = 0) := by decide +kernel
+  obtain ⟨q0, q1, q2, q3⟩ := Q k hk
+  split_ifs with h0 h1 h2
+  · rw [q0 h0, getLsbD_app4_a _ _ _ _ hr]
+  · rw [q1 h0 h1, getLsbD_app4_b _ _ _ _ hr]
+  · rw [q2 h1 h2, getLsbD_app4_c _ _ _ _ hr]
+  · rw [q3 h2, Nat.mul_zero, Nat.zero_add, getLsbD_app4_d _ _ _ _ hr]
 
 theorem mask_eq32 (hi : BitVec 32) :
     ((0 : BitVec 32) - (hi >>> 31)) &&& 0x87 = if hi.msb then 0x87 else 0 := by
@@ -107,7 +116,7 @@ theorem mask_eq32 (hi : BitVec 32) :
   rw [h]
   split <;> decide
 
-theorem bit135_32 : ∀ p < 32, (135 : BitVec 32).getLsbD p = (135 : BitVec 128).getLsbD p := by decide
+theorem bit135_32 : ∀ p < 32, (135 : BitVec 32).getLsbD p = (135 : BitVec 128).getLsbD p := by decide +kernel
 
 /-- The words the 32-bit targets store, from the big-endian words `b₀ … b₃`
 of a block: the block doubled. -/
@@ -117,8 +126,16 @@ def dblW3 (b₀ b₃ : BitVec 32) : BitVec 32 := (b₃ <<< 1) ^^^ (((0 : BitVec 
 theorem getLsbD_cat4w (b₀ b₁ b₂ b₃ : BitVec 32) {i : Nat} (hi : i < 128) :
     (b₀ ++ b₁ ++ b₂ ++ b₃).getLsbD i = if i < 32 then b₃.getLsbD i else if i < 64 then b₂.getLsbD (i - 32)
       else if i < 96 then b₁.getLsbD (i - 64) else b₀.getLsbD (i - 96) := by
-  simp only [BitVec.getLsbD_append]
-  split_ifs <;> first | omega | (congr 1; omega) | rfl
+  rw [BitVec.getLsbD_append, BitVec.getLsbD_append, BitVec.getLsbD_append]
+  by_cases h0 : i < 32
+  · rw [ite_eq_left h0, ite_eq_left h0]
+  rw [ite_eq_right h0, ite_eq_right h0]
+  by_cases h1 : i < 64
+  · rw [ite_eq_left (show i - 32 < 32 by omega), ite_eq_left h1]
+  rw [ite_eq_right (show ¬ i - 32 < 32 by omega), ite_eq_right h1]
+  by_cases h2 : i < 96
+  · rw [ite_eq_left (show i - 32 - 32 < 32 by omega), ite_eq_left h2, Nat.sub_sub]
+  rw [ite_eq_right (show ¬ i - 32 - 32 < 32 by omega), ite_eq_right h2, Nat.sub_sub, Nat.sub_sub]
 
 theorem getLsbD_shl1 (x : BitVec 32) {i : Nat} (hi : i < 32) :
     (x <<< 1).getLsbD i = (decide (1 ≤ i) && x.getLsbD (i - 1)) := by

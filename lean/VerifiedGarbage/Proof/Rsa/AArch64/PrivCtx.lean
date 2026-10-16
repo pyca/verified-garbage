@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the contract on the registers
@@ -95,7 +96,8 @@ def chkSatState : State where
     | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x2000 | .x3 => 64 | .x4 => 0x3000 | .x5 => 1
     | .x6 => 0x4000 | .x7 => 64 | _ => 0
   sp := 0x10000
-  mem a := bif Nat.beq a.toNat 0x10001 then 0x41 else bif Nat.beq a.toNat 0x10008 then 1
+  mem a := bif Nat.beq a.toNat 0x10058 then 0x20
+    else bif Nat.beq a.toNat 0x10001 then 0x41 else bif Nat.beq a.toNat 0x10008 then 1
     else bif Nat.beq a.toNat 0x10011 then 0x42 else bif Nat.beq a.toNat 0x10018 then 1
     else bif Nat.beq a.toNat 0x10021 then 0x43 else bif Nat.beq a.toNat 0x10028 then 1
     else bif Nat.beq a.toNat 0x10031 then 0x44 else bif Nat.beq a.toNat 0x10038 then 1
@@ -103,7 +105,7 @@ def chkSatState : State where
     else bif Nat.beq a.toNat 0x10052 then 0x02 else bif Nat.beq a.toNat 0x10059 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 64⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩,
     ⟨0x4500, 1⟩, ⟨0x10000, 96⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x20000, 8192⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x20000, 8448⟩]
 
 theorem private_checked_implies : chkA.Implies (Spec.Rsa.privateCheckedContract abi stackBytes) where
   pre := by

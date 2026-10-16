@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.FastNafSubtract
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafChoose
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! Width-five and width-seven public digit selection on x86-64. -/
 

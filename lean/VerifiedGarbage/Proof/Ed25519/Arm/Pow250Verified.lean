@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # `vg_gf25519_r16_pow250` on ARMv7, verified
@@ -100,7 +104,7 @@ theorem pow_arm (s : State) (hs : powF.pre s) :
 
 theorem pow_ct : ConstantTime isa powF.pre powF.pub pow250Fn :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r0])
-    (fun _ _ _ _ hp => Taint.agree_ofRegs (fPub_agree hp)) (by taint_decide)
+    (fun _ _ _ _ hp => Taint.agree_ofRegs (fPub_agree hp)) (by native_taint_decide)
 
 /-- A state satisfying the precondition: `ws` at `0x1000`, all zero, and
 the stack at `0x10000`. -/

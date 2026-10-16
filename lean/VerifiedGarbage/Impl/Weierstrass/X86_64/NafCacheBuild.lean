@@ -55,4 +55,15 @@ def cacheStep (M : Mod) (ptbl tbl e : Nat) : Prog isa :=
 def cacheTable (M : Mod) (ptbl tbl e : Nat) : Prog isa :=
   .seq (.block [.mov32 .rbx (.imm 0)]) (.loop (cacheStep M ptbl tbl e) .b)
 
+/-- The first `k` steps of the loop, one after the other. -/
+def cacheSteps (M : Mod) (ptbl tbl e : Nat) : Nat → Prog isa
+  | 0 => .block []
+  | k+1 => .seq (cacheSteps M ptbl tbl e k) (cacheStep M ptbl tbl e)
+
+/-- The loop's eight steps unrolled: each entry's products are on `e`'s
+slots, below the table, so that nine-word products are calls of
+`vg_p521_mul_mod_p` rather than written out. -/
+def cacheStaged (M : Mod) (ptbl tbl e : Nat) : Prog isa :=
+  .seq (.block [.mov32 .rbx (.imm 0)]) (cacheSteps M ptbl tbl e 8)
+
 end VG.Impl.Weierstrass.X86_64.Naf

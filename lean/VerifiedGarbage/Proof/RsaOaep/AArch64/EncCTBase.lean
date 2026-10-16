@@ -7,12 +7,13 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # RSAES-OAEP encryption on AArch64: two runs
 
 As for decryption (`DecCTBase.lean`): two runs whose public data agree (the
-pointers and lengths, `n` and `e`) have the same layout, and between the
+pointers and lengths, `n`, `e` and `pre`'s words) have the same layout, and between the
 frames' pushes and pops they are related by `PW`: each is `In` the frames
 (`Ctx`, the pieces' `Rep` with our arguments in their slots) and satisfies
 `X`, which fixes the registers the next piece's addresses and arguments
@@ -30,10 +31,12 @@ namespace VG.Proof.RsaOaep.AArch64.Enc
 open VG VG.AArch64 VG.Impl.RsaOaep.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 
-/-- `n` and `e` agree in the two runs' memories. -/
+/-- `n`, `e` and the words of the buffers `X` (`pre`) agree in the two
+runs' memories. -/
 def LeakEq (L : ELay) (m₁ m₂ : Mem) : Prop :=
   Spec.Rsa.bytesAt m₁ L.n L.k.toNat = Spec.Rsa.bytesAt m₂ L.n L.k.toNat ∧
-    Spec.Rsa.bytesAt m₁ L.e L.el.toNat = Spec.Rsa.bytesAt m₂ L.e L.el.toNat
+    Spec.Rsa.bytesAt m₁ L.e L.el.toNat = Spec.Rsa.bytesAt m₂ L.e L.el.toNat ∧
+    ∀ R ∈ L.X, Spec.Rsa.wordsAt m₁ R.base (R.len / 8) = Spec.Rsa.wordsAt m₂ R.base (R.len / 8)
 
 /-- The layout of two runs, and what each has on entry. -/
 structure Env where
@@ -69,6 +72,22 @@ theorem pw_wp {P : Nat} {e : Env} {c : Prog isa} {X X' : (Nat → BitVec 64) →
   obtain ⟨hL, hP, hk, ⟨c₁, V₁, W₁, R₁, S₁, x₁⟩, ⟨c₂, V₂, W₂, R₂, S₂, x₂⟩⟩ := hp
   obtain ⟨_, u₁, y₁, z₁⟩ := hw _ _ _ s₁ _ _ hL hP c₁ R₁ S₁ x₁
   obtain ⟨_, u₂, y₂, z₂⟩ := hw _ _ _ s₂ _ _ hL hP c₂ R₂ S₂ x₂
+  obtain ⟨-, rfl⟩ := Exec.det e₁ y₁
+  obtain ⟨-, rfl⟩ := Exec.det e₂ y₂
+  exact ⟨ht, hL, hP, hk, z₁, z₂⟩
+
+/-- `pw_wp`, for a piece whose correctness needs `Q` of the entry memory,
+which both runs' satisfy. -/
+theorem pw_wpQ {P : Nat} {e : Env} {c : Prog isa} {X X' : (Nat → BitVec 64) → State → Prop} {Q : Mem → Prop}
+    (q₁ : Q e.m₁) (q₂ : Q e.m₂) (hct : RelCT isa (PW P e X) c fun _ _ => True)
+    (hw : ∀ g vv m₀ (t : State) V W, Q m₀ → e.L.Ok → e.L.P = P → Ctx e.L g vv m₀ t →
+      Rep t.mem e.L.Q e.L.scr V W → Slots e.L W → X W t → WP isa c t (In e.L g vv m₀ X')) :
+    RelCT isa (PW P e X) c (PW P e X') := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  obtain ⟨ht, -⟩ := hct _ _ _ _ _ _ hp e₁ e₂
+  obtain ⟨hL, hP, hk, ⟨c₁, V₁, W₁, R₁, S₁, x₁⟩, ⟨c₂, V₂, W₂, R₂, S₂, x₂⟩⟩ := hp
+  obtain ⟨_, u₁, y₁, z₁⟩ := hw _ _ _ s₁ _ _ q₁ hL hP c₁ R₁ S₁ x₁
+  obtain ⟨_, u₂, y₂, z₂⟩ := hw _ _ _ s₂ _ _ q₂ hL hP c₂ R₂ S₂ x₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ y₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ y₂
   exact ⟨ht, hL, hP, hk, z₁, z₂⟩

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.Round
-public import VerifiedGarbage.Proof.Cast5.Memory
+import VerifiedGarbage.Proof.Cast5.Memory
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

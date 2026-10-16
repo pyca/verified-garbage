@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # X448 on x86-64: the ladder
@@ -101,7 +104,8 @@ def opsList (fld : Field) : List Instr :=
   fld.mul (slot (2 : Index).val) (slot (11 : Index).val) (slot (2 : Index).val)
 
 theorem step_eq : step fld = stepPre ++ (opsList fld ++ ([.alu .test .rbx (.reg .rbx)] : List Instr)) := by
-  simp only [step, stepPre, opsList, List.append_assoc]
+  delta step stepPre opsList
+  simp only [List.append_assoc]
   rfl
 
 /-- The slots after the field operations of an iteration. -/
@@ -118,7 +122,8 @@ theorem ops_ok {s1 : State} {base : Addr} (hs1 : Scr s1 base) {sw : Bool}
     (hm : s1.gpr .rcx = mask sw) :
     WP isa (.block (opsList fld)) s1 fun s' =>
       Keep base s1 s' ∧ E s'.mem base = stepEnv sw (E s1.mem base) := by
-  simp only [opsList, List.append_assoc]
+  delta opsList
+  simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (cswapE hs1 1 3 (by decide) hm) fun s2 ⟨k2, c2, e2⟩ => ?_
   have hs2 := k2.scr hs1

@@ -3,15 +3,16 @@ module
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Proof.Sm3.Arm.Compress
-public import VerifiedGarbage.Proof.Sm3.Arm.Stream.Init
+import VerifiedGarbage.Proof.Sm3.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Sm3.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sm3.Scratch
-public import VerifiedGarbage.Spec.Sm3.Contract
+import VerifiedGarbage.Spec.Sm3.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # SM3 on ARMv7: the shared contracts

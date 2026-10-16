@@ -102,6 +102,11 @@ class Selection(unittest.TestCase):
             stack.enter_context(mock.patch.object(planner, 'read', self.read))
             stack.enter_context(mock.patch.object(planner, 'rust_files', lambda root='.': sorted(
                 p for p in self.files if p.startswith('src/'))))
+            # As `read`: a file not changed at the base is there too.
+            stack.enter_context(mock.patch.object(planner, 'bench_rust_files', lambda revision=None, root='.': sorted(
+                p for p in {*self.files, *(self.base_files if revision else ())}
+                if p.startswith('bench/') and p.endswith('.rs'))))
+            planner.includes.cache_clear()
             if registered is not None:
                 stack.enter_context(mock.patch.object(planner, 'registrations',
                                                       return_value=set(registered)))
@@ -389,6 +394,70 @@ class Selection(unittest.TestCase):
         self.files['bench/benches/primitives/x448.rs'] = ''
         self.assertEqual(len(self.rows(['bench/benches/primitives/kem.rs'])), self.full_matrix())
 
+    def test_included_files_select_their_includers_uses(self):
+        self.files.update({
+            # On x86-64 alone, through a `#[path]` module.
+            'bench/benches/primitives/x448.rs': 'pub const USES: &[&str] = &["x448"];\n'
+                                                '#[cfg(target_arch = "x86_64")]\n'
+                                                '#[path = "../../support/shared.rs"]\nmod shared;\n',
+            # Everywhere, through an `include!` in a differential test.
+            'bench/tests/argon2.rs': 'include!("../support/shared.rs");\n',
+            'bench/support/shared.rs': 'pub fn helper() {}\n',
+        })
+        rows = self.rows(['bench/support/shared.rs'])
+        self.assertEqual(self.modules(rows), {'x86_64': 'argon2 x448', 'aarch64': 'argon2',
+                                              'x86': 'argon2', 'arm': 'argon2'})
+        # A file outside `bench/` (e.g. test vectors), and one a helper
+        # includes, follow the benchmarks including them in turn.
+        self.files['bench/tests/argon2.rs'] = ''
+        self.files['bench/support/shared.rs'] = '#[path = "../../tests/cavp/v.rs"]\nmod v;\n'
+        self.files['tests/cavp/v.rs'] = ''
+        self.assertEqual(self.modules(self.rows(['tests/cavp/v.rs'])), {'x86_64': 'x448'})
+        # Included by a benchmark at the base alone, it was measured there.
+        self.base_files['bench/benches/primitives/x448.rs'] = self.files.pop('bench/benches/primitives/x448.rs')
+        self.files['bench/benches/primitives/argon2.rs'] += '\n#[path = "../../support/shared.rs"]\nmod s;\n'
+        self.assertEqual(self.modules(self.rows(['bench/support/shared.rs'])),
+                         {'x86_64': 'argon2 x448', 'aarch64': 'argon2', 'x86': 'argon2', 'arm': 'argon2'})
+        # A file nothing includes needs nothing outside `bench/`, and every
+        # benchmark inside it.
+        self.assertEqual(self.rows(['tests/cavp/other.rs']), [])
+        self.assertEqual(len(self.rows(['bench/support/other.rs'])), self.full_matrix())
+
+    def test_files_included_by_no_benchmark_or_unresolved_run_every_benchmark(self):
+        self.files['bench/support/shared.rs'] = ''
+        for includer, text in [
+                ('bench/benches/primitives/main.rs', '#[path = "../../support/shared.rs"]\nmod shared;\n'),
+                # In an inline module, whose path this does not follow.
+                ('bench/benches/primitives/argon2.rs',
+                 'pub const USES: &[&str] = &["argon2"];\nmod m {\n    #[path = "x/shared.rs"]\n    mod s;\n}\n'),
+                # Two files including each other, which no benchmark includes.
+                ('bench/support/other.rs', '#[path = "shared.rs"]\nmod s;\n')]:
+            with self.subTest(includer=includer):
+                self.files[includer] = text
+                if includer == 'bench/support/other.rs':
+                    self.files['bench/support/shared.rs'] = '#[path = "other.rs"]\nmod o;\n'
+                self.assertEqual(len(self.rows(['bench/support/shared.rs'])), self.full_matrix())
+                del self.files[includer]
+
+    def test_manifest_target_tables_select_their_architectures(self):
+        manifest = '[package]\nname = "b"\n\n[dev-dependencies]\nx = "1"\n'
+        target = ('\n[target.\'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))\'.dev-dependencies]\n'
+                  'x = { version = "1", features = ["all"] }\n')
+        for path in planner.MANIFESTS:
+            with self.subTest(path=path):
+                self.base_files[path] = manifest
+                self.files[path] = manifest + target
+                rows = self.rows([path])
+                self.assertEqual({r['arch'] for r in rows}, {'x86_64', 'aarch64'})
+                self.assertTrue(all(r['modules'] == '' for r in rows))
+                # A `cfg` this cannot decide, a target triple, a change
+                # outside the target tables, and unparsable TOML: everywhere.
+                for new in [manifest + target.replace('target_arch = "aarch64"', 'unix'),
+                            manifest + '\n[target.x86_64-unknown-linux-gnu.dependencies]\ny = "1"\n',
+                            manifest.replace('"1"', '"2"') + target, manifest + '[']:
+                    self.files[path] = new
+                    self.assertEqual(len(self.rows([path])), self.full_matrix())
+
     def test_manual_runs_select_architectures_and_configurations(self):
         rows = planner.manual()
         # Every configuration, split into shards of BENCHMARKS_PER_JOB.
@@ -451,6 +520,21 @@ class Selection(unittest.TestCase):
         self.assertEqual(bench_compare.shard_groups(groups, 1, 1), sorted(groups))
         # More shards than groups leaves some empty.
         self.assertEqual(bench_compare.shard_groups({'a': 1}, 2, 2), [])
+
+    def test_pull_requests_never_run_every_benchmark(self):
+        for path in ['Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
+            with self.subTest(path=path):
+                rows, skipped = planner.without_full_runs(self.rows([path]))
+                self.assertEqual(rows, [])
+                self.assertIn(', '.join(planner.PLATFORMS), skipped)
+        # Targeted entries stay, those of an architecture needing every
+        # benchmark go, in all of its configurations.
+        matrix = (planner.platforms('x86_64', {'sha256'}, benchmarks=1)
+                  + planner.platforms('aarch64', benchmarks=200))
+        rows, skipped = planner.without_full_runs(matrix)
+        self.assertEqual(rows, planner.platforms('x86_64', {'sha256'}, benchmarks=1))
+        self.assertIn('every benchmark on aarch64,', skipped)
+        self.assertEqual(planner.without_full_runs(rows), (rows, None))
 
     def test_changes_to_tests_alone_need_nothing(self):
         code = 'fn f() {}\n'
@@ -589,6 +673,41 @@ class Selection(unittest.TestCase):
             self.assertEqual(bench_compare.selected_modules('base', ''), '')
 
 
+class Interleaving(unittest.TestCase):
+    """The order the two sides' benchmarks run in."""
+
+    LIST = ("sha256: bench\nsha256/verified-garbage/64: benchmark\nsha256/verified-garbage/1024: benchmark\n\n"
+            "hmac_sha256: bench\nhmac-sha256/verified-garbage/64: benchmark\n\n"
+            "hmac-sha256-verify/verified-garbage/64: benchmark\n")
+
+    def test_the_list_names_each_groups_benchmark(self):
+        groups, owner = bench_compare.parse_list(self.LIST)
+        self.assertEqual(groups, {'sha256': 2, 'hmac-sha256': 1, 'hmac-sha256-verify': 1})
+        self.assertEqual(owner, {'sha256': 'sha256', 'hmac-sha256': 'hmac_sha256',
+                                 'hmac-sha256-verify': 'hmac_sha256'})
+        # A binary that does not name them (base's own benchmarks), or a group
+        # in two benchmarks, leaves the sides whole.
+        unnamed = re.sub(r'^\w+: bench\n', '', self.LIST, flags=re.M)
+        self.assertEqual(bench_compare.parse_list(unnamed), (groups, None))
+        self.assertIsNone(bench_compare.parse_list(self.LIST + 'x: bench\nsha256/verified-garbage/9: benchmark\n')[1])
+
+    def test_each_benchmark_runs_on_both_sides_alternately(self):
+        _, owner = bench_compare.parse_list(self.LIST)
+        runs = bench_compare.units(['hmac-sha256-verify', 'sha256', 'hmac-sha256'], owner)
+        self.assertEqual(runs, [('sha256', ['sha256']), ('hmac_sha256', ['hmac-sha256', 'hmac-sha256-verify'])])
+        both = {'base': 'b', 'head': 'h'}
+        self.assertEqual([(s, b) for s, b, _ in bench_compare.interleaved(runs, both)],
+                         [('base', 'sha256'), ('head', 'sha256'), ('head', 'hmac_sha256'), ('base', 'hmac_sha256')])
+        self.assertEqual([s for s, _, _ in bench_compare.interleaved(runs, both, 1)],
+                         ['head', 'base', 'base', 'head'])
+        self.assertEqual([s for s, _, _ in bench_compare.interleaved(runs, {'base': None, 'head': 'h'})],
+                         ['head', 'head'])
+        # Without the benchmarks' names, each side runs at once.
+        self.assertEqual(bench_compare.units(None, None), [(None, None)])
+        self.assertEqual(list(bench_compare.interleaved([(None, None)], both, 1)),
+                         [('head', None, None), ('base', None, None)])
+
+
 class Lacking(unittest.TestCase):
     """A benchmark run that src/cpu.rs stops for naming features the CPU
     does not have."""
@@ -626,24 +745,42 @@ if __name__ == '__main__':
 
 
 class FreshCopies(unittest.TestCase):
-    def test_only_the_p521_comb_groups_run_from_copies(self):
+    def test_only_the_p521_comb_chacha20poly1305_and_aes_gcm_groups_run_from_copies(self):
         # P-521's comb table (747 KB) moved its times by up to 7% between
         # identical copies of one binary; P-384's and P-256's did not move.
-        for group in ['ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key']:
+        # ChaCha20-Poly1305's moved by up to 29% on AMD's Zen 3, and
+        # AES-GCM's by up to 35%; ChaCha20's, Poly1305's and AES-GCM-SIV's
+        # own groups are not known to.
+        for group in ['ecdsa_p521_sha512_sign', 'ecdsa_p521_sha512_verify', 'ec_p521_public_key',
+                      'chacha20poly1305', 'chacha20poly1305-decrypt',
+                      'chacha20poly1305-encrypt-out-of-place', 'chacha20poly1305-copy-encrypt-in-place',
+                      'aes-128-gcm-encrypt', 'aes-128-gcm-decrypt', 'aes-128-gcm-stream',
+                      'aes-128-gcm-tls-seal', 'aes-256-gcm-tls-open']:
             self.assertTrue(bench_compare.FRESH_COPIES.match(group), group)
-        for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key']:
+        for group in ['ecdh_p521', 'ecdsa_p384_sha384_sign', 'ec_p384_public_key', 'ec_p256_public_key',
+                      'chacha20', 'poly1305', 'xchacha20poly1305',
+                      'aes-128-gcm-siv-encrypt', 'aes-128-gcm-siv-decrypt', 'aes-128-ctr', 'gcm-ghash']:
             self.assertFalse(bench_compare.FRESH_COPIES.match(group), group)
 
-    def test_the_copies_select_only_the_module_with_those_groups(self):
+    def test_the_copies_select_only_the_modules_with_those_groups(self):
         # Every group of FRESH_COPIES is in the benchmarks that
         # FRESH_COPIES_MODULES selects, and those alone run from the copies.
         root = pathlib.Path(__file__).resolve().parent.parent
         catalog = planner.bench_catalog(root=str(root))
+        modules = bench_compare.FRESH_COPIES_MODULES.split()
         selected = [name for name, uses in catalog.items()
-                    if bench_compare.FRESH_COPIES_MODULES in uses]
-        self.assertEqual(selected, ['ecdsa_p521'])
+                    if any(m in uses for m in modules)]
+        self.assertEqual(sorted(selected), ['aes_gcm', 'aes_gcm_siv', 'chacha20poly1305', 'ecdsa_p521'])
         source = (root / 'bench/benches/primitives/ecdsa_p521.rs').read_text()
         for group in ['ec_p521_public_key', 'ecdsa_p521_{name}_sign', 'ecdsa_p521_{name}_verify']:
+            self.assertIn(f'"{group}"', source)
+        source = (root / 'bench/benches/primitives/chacha20poly1305.rs').read_text()
+        for group in ['chacha20poly1305', 'chacha20poly1305-decrypt', 'chacha20poly1305-encrypt-out-of-place',
+                      'chacha20poly1305-copy-encrypt-in-place']:
+            self.assertIn(f'"{group}"', source)
+        source = (root / 'bench/benches/primitives/aes_gcm.rs').read_text()
+        for group in ['aes-128-gcm-encrypt', 'aes-128-gcm-decrypt', 'aes-{bits}-gcm-tls-seal',
+                      'aes-{bits}-gcm-tls-open']:
             self.assertIn(f'"{group}"', source)
 
     def test_both_sides_are_built_at_one_path(self):
@@ -677,9 +814,10 @@ class FreshCopies(unittest.TestCase):
             return subprocess.CompletedProcess(cmd, 0, stdout='a/verified-garbage/1: benchmark\n')
         with mock.patch.dict(os.environ, {'VG_CPU_FEATURES': 'avx512f'}), \
                 mock.patch.object(bench_compare.subprocess, 'run', fake_run):
-            self.assertEqual(bench_compare.list_groups('bin', 'ec_p521'), {'a': 1})
+            self.assertEqual(bench_compare.list_groups('bin', 'ec_p521'), ({'a': 1}, None))
         self.assertNotIn('VG_CPU_FEATURES', seen)
         self.assertEqual(seen['VG_BENCH_MODULES'], 'ec_p521')
+        self.assertEqual(seen['VG_BENCH_NAMES'], '1')
 
     def test_a_copy_is_a_new_executable_file(self):
         with tempfile.TemporaryDirectory() as tmp:

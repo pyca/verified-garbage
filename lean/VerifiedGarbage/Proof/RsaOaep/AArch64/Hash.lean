@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 public import VerifiedGarbage.Spec.Rsa.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # RSAES-OAEP on AArch64: calling the streaming hash functions
@@ -73,7 +76,7 @@ macro "blk_step" : term => `(Step.blk _ rfl rfl rfl rfl cs_rfl rfl)
 
 /-- Closes what remains of a block's run: facts reduced to `True`, `Step`,
 closed equalities, and the callee-saved registers. -/
-macro "oaep_fin" : tactic =>
+tactic_template "oaep_fin" : tactic =>
   `(tactic| (and_intros <;> first | trivial | exact blk_step | exact cs_rfl | decide))
 
 /-- A byte store in our working space keeps `Step`'s frame. -/

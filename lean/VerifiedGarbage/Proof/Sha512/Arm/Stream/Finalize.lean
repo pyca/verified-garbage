@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MdStream.Arm.Finalize
 meta import VerifiedGarbage.Proof.MdStream.Arm.Finalize
-public import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.MdStream.Arm.Words
 meta import VerifiedGarbage.Proof.MdStream.Arm.Words
 public import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
 meta import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # Streaming SHA-512 on ARMv7: `finalize`

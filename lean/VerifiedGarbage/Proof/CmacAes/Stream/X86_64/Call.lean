@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Framework.OffsetBelow
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
-public import VerifiedGarbage.Proof.Cmac.Stream
-public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

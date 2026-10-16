@@ -25,10 +25,8 @@ namespace VG.Proof.CmacTripleDes
 open VG Spec.TripleDes Proof.Cmac Spec.Cmac
 
 theorem getLsbD_byteRev64 (w : BitVec 64) {i : Nat} (hi : i < 64) :
-    (byteRev64 w).getLsbD i = w.getLsbD (8 * (7 - i / 8) + i % 8) := by
-  have hj : i % 8 < 8 := Nat.mod_lt _ (by decide)
-  simp only [byteRev64, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  split_ifs <;> (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+    (byteRev64 w).getLsbD i = w.getLsbD (8 * (7 - i / 8) + i % 8) :=
+  VG.byteRev64_getLsbD w hi
 
 theorem getLsbD_foldl_bytes (L : List Byte) (init : BitVec 64) {i : Nat} (hi : i < 64) :
     (L.foldl (fun (out : BitVec 64) (byte : Byte) => (out <<< 8) ||| byte.zeroExtend 64) init).getLsbD i =

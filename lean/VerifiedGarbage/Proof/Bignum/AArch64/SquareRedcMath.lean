@@ -1,11 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonalCore
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Low-word cancellation and pending high carries for REDC. -/
 

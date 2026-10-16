@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 @[expose] public section
 
@@ -112,8 +115,8 @@ structure Prepared (s₀ s : State) (n : Nat := 0) : Prop where
     rw [hab.mem,hm₀] at hfc
     exact hfc
 
-theorem compute_ok (s : State) (hp : CP s) :
-    WP isa (.seq prepare (rounds 10)) s fun u => Prepared s u 10 := by
+theorem compute_ok {sve : Bool} (s : State) (hp : CP s) :
+    WP isa (.seq prepare (rounds sve 10)) s fun u => Prepared s u 10 := by
   apply WP.seq
   refine (prepare_ok s hp).mono fun a h => ?_
   refine (rounds_ok h.vec h.table h.scalar 10).mono fun b ⟨hv,hc,hsp,ht⟩ => ?_

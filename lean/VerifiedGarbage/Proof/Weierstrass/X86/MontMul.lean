@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-public import VerifiedGarbage.Proof.Mont.X86.Loop
+import VerifiedGarbage.Proof.Mont.X86.Loop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Montgomery arithmetic as functions on x86 (32-bit): the rows of the product
@@ -38,7 +41,7 @@ theorem MulOk.m_pos {k m : Nat} (h : MulOk k m) : 0 < m := by
   · exact h'
 
 theorem mod_ok (k m : Nat) : (mod k m).ok m = true := by
-  simp only [Mod.ok, mod, Bool.not_false, Bool.true_or, Bool.and_true]
+  simp only [Mod.ok, mod, Option.all_none, Bool.not_false, Bool.true_or, Bool.and_true]
   exact p256RedChoice_ok k m
 
 theorem minv_lt (m : Nat) : minv m < 2 ^ 64 := by unfold minv; exact Nat.mod_lt _ (by decide)

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86.Frame
+import VerifiedGarbage.Proof.AesGcm.X86.Frame
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

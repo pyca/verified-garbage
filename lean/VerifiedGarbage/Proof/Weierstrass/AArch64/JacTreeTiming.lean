@@ -1,15 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-! The public tree carries exact paired field values and fixed loop counters. -/
 

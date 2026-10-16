@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
+import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragPrim
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
@@ -10,6 +10,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_decode_decompress`

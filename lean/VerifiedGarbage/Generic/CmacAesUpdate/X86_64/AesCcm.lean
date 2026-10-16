@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Frame
+import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
 
 /-!
 # AES-CCM (NIST SP 800-38C) on x86-64

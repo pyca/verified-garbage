@@ -4,12 +4,18 @@ public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTBody
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointMulLoop
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMulLoop
-public import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
+import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseCTInit`. -/
 
@@ -156,8 +162,8 @@ theorem pointMultiply_ct (b ptr : BitVec 32) (count scalar₁ scalar₂ : Nat)
       subst r
       exact h.1.1.r0.trans h.2.1.r0.symm
     rcases hn with rfl | rfl
-    · exact ctRegs [.r0] hr (by taint_decide)
-    · exact ctRegs [.r0] hr (by taint_decide)
+    · exact ctRegs [.r0] hr (by native_taint_decide)
+    · exact ctRegs [.r0] hr (by native_taint_decide)
   intro x y tx ty u v h ex ey
   cases ex with
   | seq ep ex =>

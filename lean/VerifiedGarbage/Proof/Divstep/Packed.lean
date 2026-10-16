@@ -5,12 +5,13 @@ public import Mathlib.Tactic.Linarith
 public import Mathlib.Tactic.NormNum
 public import Mathlib.Tactic.Ring
 public import VerifiedGarbage.Proof.Divstep.Batch
-public import VerifiedGarbage.Proof.Divstep.Word
+import VerifiedGarbage.Proof.Divstep.Word
 public import VerifiedGarbage.Proof.Divstep.PackedDef
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Divstep.WordBasic
 
 /-!
 # Packed divsteps on 64-bit words

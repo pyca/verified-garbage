@@ -1,11 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.AArch64.Crypt
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.AArch64.J0
+public import VerifiedGarbage.Proof.Cmac.Dbl32
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Gcm.Be64
 
 /-!
 # AES-GCM-SIV on AArch64: comparing the tags, and `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`
@@ -378,24 +384,24 @@ theorem tagOut_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (hT : TagSlot 
 
 /-- Proves that a region is disjoint from each of a list of regions: parts
 of `W`, the data, or the key schedule. -/
-macro "disj_tac" L:term : tactic => `(tactic| (
-  simp only [List.forall_mem_cons, List.mem_nil_iff, false_imp_iff, implies_true, and_true]
-  repeat' apply And.intro
-  all_goals first
-    | (with_reducible refine Lay.w_w $L (.inl ?_) ?_ ?_) <;> decide
-    | (with_reducible refine Lay.w_w $L (.inr ?_) ?_ ?_) <;> decide
-    | (with_reducible refine Lay.d_w' $L ?_) <;> decide
-    | (with_reducible refine (Lay.d_w' $L ?_).symm) <;> decide
-    | (with_reducible refine Lay.k_w' $L ?_) <;> decide
-    | (with_reducible refine Lay.n_w' $L ?_) <;> decide
-    | (with_reducible refine Lay.a_w' $L ?_) <;> decide
-    | with_reducible exact Lay.k_d $L
-    | with_reducible exact Lay.n_d $L
-    | with_reducible exact Lay.a_d $L
-    | (with_reducible refine Lay.t_w' $L ?_) <;> decide
-    | with_reducible exact Lay.t_d $L
-    | with_reducible exact (Lay.t_d $L).symm
-    | with_reducible exact (Lay.d_w $L).symm))
+tactic_template "disj_tac" L:term : tactic => `(tactic| (
+                   simp only [List.forall_mem_cons, List.mem_nil_iff, false_imp_iff, implies_true, and_true]
+                   repeat' apply And.intro
+                   all_goals first
+                     | (with_reducible refine Lay.w_w $L (.inl ?_) ?_ ?_) <;> decide
+                     | (with_reducible refine Lay.w_w $L (.inr ?_) ?_ ?_) <;> decide
+                     | (with_reducible refine Lay.d_w' $L ?_) <;> decide
+                     | (with_reducible refine (Lay.d_w' $L ?_).symm) <;> decide
+                     | (with_reducible refine Lay.k_w' $L ?_) <;> decide
+                     | (with_reducible refine Lay.n_w' $L ?_) <;> decide
+                     | (with_reducible refine Lay.a_w' $L ?_) <;> decide
+                     | with_reducible exact Lay.k_d $L
+                     | with_reducible exact Lay.n_d $L
+                     | with_reducible exact Lay.a_d $L
+                     | (with_reducible refine Lay.t_w' $L ?_) <;> decide
+                     | with_reducible exact Lay.t_d $L
+                     | with_reducible exact (Lay.t_d $L).symm
+                     | with_reducible exact (Lay.d_w $L).symm))
 
 end VG.Proof.AesGcmSiv.AArch64
 

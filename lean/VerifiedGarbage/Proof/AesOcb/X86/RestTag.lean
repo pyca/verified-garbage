@@ -1,10 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesOcb.X86.Whole
+import VerifiedGarbage.Proof.AesOcb.X86.Whole
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesOcb.X86.PadTo
+import VerifiedGarbage.Proof.AesCcm.BytesAt
+import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.Ocb.State
 
 /-!
 # AES-OCB on x86: the rest of the data and the tag (`rest`, `tag`)

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTLcm
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTOut
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.CTOut
@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Crt
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Crt
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.LoadC
 
 /-!
 # An RSA key from its primes on AArch64: constant time, `keyPart`

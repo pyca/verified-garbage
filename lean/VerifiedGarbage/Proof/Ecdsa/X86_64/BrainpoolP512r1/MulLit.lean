@@ -1,0 +1,46 @@
+module
+
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86_64
+meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.X86_64
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+public import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.LitShare
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-!
+# `vg_brainpoolp512r1_mul` on x86-64: the code, as literals
+
+The function's code (`Cfg.mulFn`) and its body, as literals
+(`materialize_code`), which `lit_decide` and `taint_decide` read rather than
+building the code again.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdsa.X86_64.BrainpoolP512r1.Mul
+
+open VG.Impl.Ecdsa.X86_64
+
+/-- `vg_brainpoolp512r1_mul`. -/
+def mulCode : Prog VG.X86_64.isa := brainpoolp512r1.mulFn
+
+/-- Its body, which writes no vector register. -/
+def bodyCode : Prog VG.X86_64.isa := brainpoolp512r1.mulBody
+
+materialize_code bodyCode
+materialize_code mulCode
+
+/-! The function without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check (`mul_ct`) analyses
+(`Proof/Framework/X86_64/TaintErase.lean`). -/
+
+def mulCodeErased : Prog VG.X86_64.isa := VG.X86_64.Code.erase mulCode
+materialize_shared mulCodeErased
+
+end VG.Proof.Ecdsa.X86_64.BrainpoolP512r1.Mul

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.EcKey.X86.P384.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86.P384.Contract
 public import VerifiedGarbage.Proof.EcKey.X86.P384.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86.P384.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
@@ -18,6 +18,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # P-384 public keys on x86 (32-bit): `Verified`

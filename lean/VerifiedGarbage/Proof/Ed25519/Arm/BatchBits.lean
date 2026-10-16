@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.BatchBits
-public import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
-public import VerifiedGarbage.Proof.Ed25519.Arm.Packed
+import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
+import VerifiedGarbage.Proof.Ed25519.Arm.Packed
 public import VerifiedGarbage.Proof.Ed25519.Arm.AccumulateStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-! Merged from `Proof.Ed25519.Arm.BatchDigit`. -/
 

@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
+import VerifiedGarbage.Proof.AesGcm.X86_64.InitP
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Convert
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
 
 /-! # Converting the cached powers in place at key setup, one pair per iteration -/
 

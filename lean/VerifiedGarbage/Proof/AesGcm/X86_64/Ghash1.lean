@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 public import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

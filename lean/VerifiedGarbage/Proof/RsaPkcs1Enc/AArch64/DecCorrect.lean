@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.DecOut
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
+import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on AArch64: correctness

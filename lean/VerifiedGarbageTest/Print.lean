@@ -23,6 +23,7 @@ def text (ls : List Line) : List String :=
     | .sym s .pageOff n => s!"{s}<pageoff {n}>"
     | .sym s .ripRel n => s!"{s}<riprel {n}>"
     | .sym s .x86PcRel n => s!"{s}<pcrel {n}>"
+    | .sym s .armPcRel n => s!"{s}<armpcrel {n}>"
 
 open X86_64
 
@@ -418,6 +419,24 @@ instructions. -/
 -- syntax of the object format (`TCB/Rust.lean`).
 #guard text (AArch64.printer.function (.block [.adrSym .x16 "VG_TABLE"] : Prog AArch64.isa)) == [
   "adrp x16, <page VG_TABLE>", "add x16, x16, <pageoff VG_TABLE>", "ret"]
+
+-- The address of a static (ARMv7): `movw` and `movt` of its distance from the
+-- `pc` the `add` between labels 2 and 3 reads, the same text in ARM and Thumb
+-- code. `asm` gives the text `Rust.line` writes, for reading.
+#guard text (Arm.printer.function (.block [.adrSym .r4 "VG_TABLE"] : Prog Arm.isa)) == [
+  "movw r4, #:lower16:(<armpcrel VG_TABLE>", "movt r4, #:upper16:(<armpcrel VG_TABLE>", "2:",
+  "add r4, pc", "3:", "bx lr"]
+#guard Rust.line Arm.printer.call (.sym "movw r4, #:lower16:(" .armPcRel "VG_TABLE") ==
+  "        \"movw r4, #:lower16:({VG_TABLE} - (2f + 2 * (3f - 2f)))\",\n"
+#guard Arm.Instr.asm (.adrSym .r4 "VG_TABLE") == [
+  "movw r4, #:lower16:(VG_TABLE - (2f + 2 * (3f - 2f)))",
+  "movt r4, #:upper16:(VG_TABLE - (2f + 2 * (3f - 2f)))", "2:", "add r4, pc", "3:"]
+-- It writes the static's address to its register alone.
+#guard match Arm.exec (.adrSym .lr "VG_TABLE")
+    { gpr := fun _ => 17, sp := 4096, n := true, z := false, c := true, v := false,
+      mem := fun _ => 0, rd := [], wr := [], syms := fun _ => 12288 } with
+  | none => false
+  | some s => s.gpr .lr == 12288 && s.gpr .r4 == 17 && s.sp == 4096 && s.n && !s.z && s.c && !s.v
 
 -- Pass two arguments on the stack, inside a frame saving `lr` (ARMv7). A pop
 -- loads the lowest word of its frame.

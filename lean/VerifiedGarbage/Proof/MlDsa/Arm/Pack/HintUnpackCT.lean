@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackMain
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintUnpackMain
-public import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
+import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Pack.HintCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_unpack`, constant time and `Verified`
@@ -135,7 +139,7 @@ theorem main_ct : RelCT isa (fun a b => UZ s₁ a ∧ UZ s₂ b) hbuMain fun _ _
       b0 b1 b2 b3 b6 bz
     exact ⟨⟨t₁, u₁, e₁⟩, t₂, u₂, e₂⟩
   · refine RelCT.taint (A := Hint.memTaint) (Taint.ofRegs [.r0, .r1, .r2, .r3, .r6])
-      (fun a' b' ⟨a, b, ⟨ha, hb⟩, ea, eb⟩ => ?_) (by taint_decide)
+      (fun a' b' ⟨a, b, ⟨ha, hb⟩, ea, eb⟩ => ?_) (by native_taint_decide)
     subst ea eb
     refine ⟨Taint.agree_ofRegs fun r hr => ?_, rfl, rfl, fun x ⟨r, hr, hc⟩ => ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -205,7 +209,7 @@ theorem trail_ct : RelCT isa (fun a b => UM s₁ a ∧ UM s₂ b) hbuTrail fun _
       (by rw [yR_eq h]; exact List.mem_singleton_self _)
     exact ⟨⟨t₁, u₁, e₁⟩, t₂, u₂, e₂⟩
   · refine RelCT.taint (A := Hint.memTaint) (Taint.ofRegs [.r0, .r1, .r2])
-      (fun a' b' ⟨a, b, ⟨ha, hb⟩, ea, eb⟩ => ?_) (by taint_decide)
+      (fun a' b' ⟨a, b, ⟨ha, hb⟩, ea, eb⟩ => ?_) (by native_taint_decide)
     subst ea eb
     obtain ⟨sa, hza, hca, hsa⟩ := ha
     obtain ⟨sb, hzb, hcb, hsb⟩ := hb
@@ -231,7 +235,7 @@ theorem body_ct : RelCT isa (fun a b => a = P1 s₁ ∧ b = P1 s₂) hintBitUnpa
   refine RelCT.seq (R := fun a b => UZ s₁ a ∧ UZ s₂ b) (relct_wp ?_ fun a b ⟨ea, eb⟩ =>
     ⟨by rw [ea]; exact zeroP_ok hp₁, by rw [eb]; exact zeroP_ok hp₂⟩) ?_
   · refine RelCT.taint (A := VG.Arm.taint) (Taint.ofRegs [.r1, .r2, .r3, .r12])
-      (fun a b ⟨ea, eb⟩ => Taint.agree_ofRegs fun r hr => ?_) (by taint_decide)
+      (fun a b ⟨ea, eb⟩ => Taint.agree_ofRegs fun r hr => ?_) (by native_taint_decide)
     subst ea eb
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl

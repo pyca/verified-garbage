@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.CorrectBlock
-public import VerifiedGarbage.Proof.TripleDes.X86.BlockCT
+import VerifiedGarbage.Proof.TripleDes.X86.BlockCT
 public import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

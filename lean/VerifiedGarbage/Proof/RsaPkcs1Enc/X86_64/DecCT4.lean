@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecCT3
-public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecSel
+import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecSel
 meta import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecSel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # RSAES-PKCS1-v1_5 decryption on x86-64: constant time, from `KDK` on

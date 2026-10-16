@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-public import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
-public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
+import VerifiedGarbage.Proof.Ecdsa.X86.Inv
+import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
+import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 public import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 public import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 public import VerifiedGarbage.Proof.Ecdsa.Sign
@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.X86.Finish
 
 /-!
 # ECDSA on x86 (32-bit): the whole function

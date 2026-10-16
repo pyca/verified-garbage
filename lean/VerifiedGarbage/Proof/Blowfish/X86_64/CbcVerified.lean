@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcDecrypt
-public import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
+import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 meta import VerifiedGarbage.Proof.Modes.X86_64.CbcEncrypt
 public import VerifiedGarbage.Proof.Blowfish.CbcScratch
 meta import VerifiedGarbage.Proof.Blowfish.CbcScratch
-public import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
+import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
@@ -20,6 +20,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Blowfish-CBC on x86-64 meets its contracts

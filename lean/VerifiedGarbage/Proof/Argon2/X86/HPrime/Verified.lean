@@ -10,6 +10,26 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Sha512.Word64
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
+public import VerifiedGarbage.Proof.Blake2.Scratch
+public import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
+public import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
+meta import VerifiedGarbage.Proof.Argon2.X86.HPrime.HashCT
+meta import VerifiedGarbage.Proof.Blake2.Scratch
+meta import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
+meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Init
+meta import VerifiedGarbage.Proof.Blake2.X86.Stream.Update
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Sha256.X86.Compress
+meta import VerifiedGarbage.Proof.Sha256.X86.Lit
 
 @[expose] public section
 
@@ -427,10 +447,6 @@ def hPrimeWide : Contract X86.isa :=
 def hSatWide : State :=
   { hSatState with rd := [⟨0x1000, 1⟩], wr := [⟨0x2000, 1⟩, ⟨0x10000, 16384⟩, ⟨0x5004, 20⟩] }
 
-macro "hnarrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [hPrimeX86, hPrimeWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-    State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
-
 theorem hPrimeWide_verified : Verified X86.target Impl.Argon2.X86.HPrime.code hPrimeWide :=
   Verified.narrowTo hPrime_verified
     (fun s => [⟨(arg s 0).setWidth 64, (arg s 1).toNat⟩, ⟨argAddr s 0, 20⟩])
@@ -440,7 +456,8 @@ theorem hPrimeWide_verified : Verified X86.target Impl.Argon2.X86.HPrime.code hP
         h₂₁, h₂₂, h₂₃, h₂₄⟩ := h
       have e : (⟨((s.gpr .esp) - BitVec.ofNat 32 60).setWidth 64, 60⟩ : Region) =
           ⟨(s.gpr .esp).setWidth 64 - 60, 60⟩ := by rw [Taint.sub_setWidth h₂₀]; rfl
-      hnarrow
+      simp only [hPrimeX86, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
+        State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr]
       refine ⟨trivial, trivial, h₄, h₆, h₇.symm, h₈.symm, h₁₀, h₁₁, ?_, ?_, ?_, h₁₇, h₁₈, h₁₉, h₂₀,
         by omega, h₂₃⟩
       · simp only [below]; rw [e]; exact h₁₃
@@ -466,8 +483,12 @@ theorem hPrimeWide_verified : Verified X86.target Impl.Argon2.X86.HPrime.code hP
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_cons_self, 0, by simp, by simp⟩
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, 0, by simp, by simp⟩)
-    (fun _ _ _ h => by hnarrow at h ⊢; exact h)
-    (fun _ _ _ _ h => by hnarrow; exact h)
+    (fun _ _ _ h => by
+      simp only [hPrimeX86, hPrimeWide, VG.X86.arg_withRegions, State.withRegions_mem] at h ⊢
+      exact h)
+    (fun _ _ _ _ h => by
+      simp only [hPrimeX86, VG.X86.arg_withRegions, State.withRegions_gpr]
+      exact h)
     ⟨hSatWide, by
       have a0 : arg hSatWide 0 = 0x1000 := by decide
       have a1 : arg hSatWide 1 = 1 := by decide

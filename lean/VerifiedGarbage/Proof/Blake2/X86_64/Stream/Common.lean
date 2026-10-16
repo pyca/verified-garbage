@@ -4,11 +4,12 @@ public import VerifiedGarbage.Proof.Blake2.Stream
 public import VerifiedGarbage.Proof.Blake2.X86_64.Contract
 public import VerifiedGarbage.Proof.MdStream.X86_64.Common
 public import VerifiedGarbage.Impl.Blake2.X86_64.Stream
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 
 /-!
 # Streaming BLAKE2 on x86-64: common lemmas

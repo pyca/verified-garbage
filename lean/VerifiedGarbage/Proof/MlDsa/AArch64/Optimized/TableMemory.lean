@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.OuterFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.TableWords
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

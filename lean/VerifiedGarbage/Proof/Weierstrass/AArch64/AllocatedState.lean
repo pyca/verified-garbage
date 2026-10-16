@@ -6,6 +6,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JointInvariant
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Spec.Weierstrass.CheckPoint
 
 /-! Transfer only initialized field values and stable data across allocated
 arithmetic. Dead intermediate words and temporary registers need not agree. -/

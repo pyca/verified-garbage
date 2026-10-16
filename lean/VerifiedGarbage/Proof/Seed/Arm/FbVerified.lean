@@ -1,12 +1,14 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 public import VerifiedGarbage.Proof.Seed.Arm.ModeCore
 meta import VerifiedGarbage.Proof.Seed.Arm.ModeCore
 public import VerifiedGarbage.Proof.Seed.FbScratch
 meta import VerifiedGarbage.Proof.Seed.FbScratch
 public import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
 meta import VerifiedGarbage.Proof.Modes.Arm.OfbCfb
-public import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Arm.StackScratchWipe
 public import VerifiedGarbage.Impl.Seed.Arm.Modes
 meta import VerifiedGarbage.Impl.Seed.Arm.Modes
@@ -14,6 +16,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # SEED-OFB and SEED-CFB128 on ARMv7 meet their contracts
@@ -49,7 +53,7 @@ def fbSat (len : Nat) : State where
 def fbFrameSat (len : Nat) : State := { fbSat len with rd := [⟨0x1000, 128⟩], wr := [⟨0x2000, 16⟩, ⟨0x3000, len⟩] }
 
 theorem ofbTaint : SeqTaint (ecbCore .encrypt) VG.Impl.Modes.Arm.ofb :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem ofb_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) VG.Impl.Modes.Arm.ofb).Implies
     (Proof.Seed.fbScratchContract Arm.abi 9 Proof.Seed.ofbPost 752) where
@@ -87,7 +91,7 @@ theorem ofb_framed :
     (Proof.Seed.ofbPostOut_local _) ofbFrameSat
 
 theorem cfbEncryptTaint : SeqTaint (ecbCore .encrypt) cfbEnc :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem cfbEncrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbEnc).Implies
     (Proof.Seed.fbScratchContract Arm.abi 9 Proof.Seed.cfbEncPost 752) where
@@ -125,7 +129,7 @@ theorem cfbEncrypt_framed :
     (Proof.Seed.cfbEncPostOut_local _) cfbEncryptFrameSat
 
 theorem cfbDecryptTaint : SeqTaint (ecbCore .encrypt) cfbDec :=
-  ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  ⟨⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 theorem cfbDecrypt_implies : (seqArm (ecbCore .encrypt) (ecbSpec .encrypt) cfbDec).Implies
     (Proof.Seed.fbScratchContract Arm.abi 9 Proof.Seed.cfbDecPost 752) where

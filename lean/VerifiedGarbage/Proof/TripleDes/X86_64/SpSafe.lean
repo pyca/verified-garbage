@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Lit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx2.SboxLit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.SboxLit
 
 /-!
 # The bitsliced ECB code on x86-64 writes `rsp` only in its frame

@@ -4,31 +4,31 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.InitFill
 meta import VerifiedGarbage.Impl.Argon2.AArch64.InitFill
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillFinish
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillFinish
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
+import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillCompressSetup
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillIterationsBody
+import VerifiedGarbage.Proof.Argon2.AArch64.FillIterationsBody
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillIterationsBody
 public import VerifiedGarbage.Proof.Framework.Mem
 meta import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Impl.Argon2.AArch64.FillSetup
 meta import VerifiedGarbage.Impl.Argon2.AArch64.FillSetup
-public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
+import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
+import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
 meta import VerifiedGarbage.Proof.Argon2.AArch64.FillIterations
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
 meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.RelCT
-public import VerifiedGarbage.Proof.Argon2.Dimensions
+import VerifiedGarbage.Proof.Argon2.Dimensions
 meta import VerifiedGarbage.Proof.Argon2.Dimensions
-public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitLit
+import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitLit
 meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitLit
 public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitBlock
 meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitBlock
-public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitCall
+import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitCall
 meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitCall
 public import VerifiedGarbage.Proof.Argon2.Matrix
 meta import VerifiedGarbage.Proof.Argon2.Matrix
-public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitScale
+import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitScale
 meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitScale
 public import VerifiedGarbage.Proof.Argon2.AArch64.InitialLayout
 meta import VerifiedGarbage.Proof.Argon2.AArch64.InitialLayout
@@ -36,7 +36,7 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
 meta import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
 public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitClearMemory
 meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitClearMemory
-public import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
+import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 meta import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
 public import VerifiedGarbage.Proof.Argon2.MemoryInit
 meta import VerifiedGarbage.Proof.Argon2.MemoryInit
@@ -44,6 +44,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
 
 @[expose] public section
 

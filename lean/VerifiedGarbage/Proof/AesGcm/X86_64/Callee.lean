@@ -9,10 +9,14 @@ public import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 public import VerifiedGarbage.Proof.Gcm.X86_64.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Spec.TripleDes
 
 /-!
 # AES-GCM on x86-64: the functions called
@@ -72,30 +76,34 @@ theorem nosp_of {c : Prog isa} (h : ((instrs c).all fun i => !Taint.clobbers i .
 namespace KeyImpl
 
 /-- `vg_aes_expand_key_scratch`, in the baseline ISA. -/
-def scalar : KeyImpl where
-  fn := ⟨"vg_aes_expand_key_scratch", Impl.Aes.X86_64.expandKey⟩
-  depth := by lit_decide
-  ok := Proof.Aes.X86_64.expandKey_correct
-  ct := Proof.Aes.X86_64.expandKey_ct
-  nosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
-  mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
-  features := []
+def scalar : KeyImpl := by
+  refine {
+    fn := ⟨"vg_aes_expand_key_scratch", Impl.Aes.X86_64.expandKey⟩
+    depth := ?_
+    ok := Proof.Aes.X86_64.expandKey_correct
+    ct := Proof.Aes.X86_64.expandKey_ct
+    nosp := nosp_of ((Code.allInstrs_eq _ _).symm.trans ?_)
+    mxcsr := ?_
+    spSafe := Code.all_of_allInstrs ?_
+    features := [] }
+  taint_decide_all
 
 /-- `vg_aes_expand_key_scratch_aesni`. -/
-def aesni : KeyImpl where
-  fn := ⟨"vg_aes_expand_key_scratch_aesni", Impl.Aes.X86_64.AesNi.expandKey⟩
-  depth := by lit_decide
-  ok s hs := Proof.Aes.X86_64.AesNi.Key.expandKey_correct s
-    ⟨hs.1, hs.2.1, hs.2.2.2.2.2.1, hs.2.2.2.2.2.2.2⟩
-  ct s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp :=
-    Proof.Aes.X86_64.AesNi.Key.expandKey_ct s₁ s₂ t₁ t₂ s₁' s₂'
-      ⟨h₁.1, h₁.2.1, h₁.2.2.2.2.2.1, h₁.2.2.2.2.2.2.2⟩ ⟨h₂.1, h₂.2.1, h₂.2.2.2.2.2.1, h₂.2.2.2.2.2.2.2⟩
-      ⟨hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1⟩
-  nosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
-  mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
-  features := ["aes"]
+def aesni : KeyImpl := by
+  refine {
+    fn := ⟨"vg_aes_expand_key_scratch_aesni", Impl.Aes.X86_64.AesNi.expandKey⟩
+    depth := ?_
+    ok s hs := Proof.Aes.X86_64.AesNi.Key.expandKey_correct s
+      ⟨hs.1, hs.2.1, hs.2.2.2.2.2.1, hs.2.2.2.2.2.2.2⟩
+    ct s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp :=
+      Proof.Aes.X86_64.AesNi.Key.expandKey_ct s₁ s₂ t₁ t₂ s₁' s₂'
+        ⟨h₁.1, h₁.2.1, h₁.2.2.2.2.2.1, h₁.2.2.2.2.2.2.2⟩ ⟨h₂.1, h₂.2.1, h₂.2.2.2.2.2.1, h₂.2.2.2.2.2.2.2⟩
+        ⟨hp.1, hp.2.1, hp.2.2.1, hp.2.2.2.1⟩
+    nosp := nosp_of ((Code.allInstrs_eq _ _).symm.trans ?_)
+    mxcsr := ?_
+    spSafe := Code.all_of_allInstrs ?_
+    features := ["aes"] }
+  taint_decide_all
 
 end KeyImpl
 
@@ -393,19 +401,25 @@ structure StitchImpl where
   decP : Piece dec
 
 open Gcm.X86_64.Stitch (CtxMode StitchOkM) in
-/-- Loops for a key context of kind `M`, with their proof; with `full`, the
-encryption loop takes any number of blocks from 16 on. -/
+/-- Loops for a key context of kind `M`, with their proof; with `full`
+(`fullD`), the encryption (decryption) loop takes any number of blocks from
+16 on. -/
 structure StitchCode (M : CtxMode) (aligned : Bool := false) where
   enc : Prog isa
   dec : Prog isa
   full : Bool
-  ok : StitchOkM M enc dec (if full then 1 else 16)
+  fullD : Bool
+  ok : StitchOkM M enc dec (if full then 1 else 16) (if fullD then 1 else 16)
   encP : Piece enc aligned full
-  decP : Piece dec aligned
+  decP : Piece dec aligned fullD
 
 /-- Whether the encryption loop of `st`, if any, takes all the blocks. -/
 def encFull {M : Gcm.X86_64.Stitch.CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) : Bool :=
   st.any (·.full)
+
+/-- Whether the decryption loop of `st`, if any, takes all the blocks. -/
+def decFull {M : Gcm.X86_64.Stitch.CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) : Bool :=
+  st.any (·.fullD)
 
 open Gcm.X86_64.Stitch (CtxMode StitchOkM) in
 /-- The loops `st` meet their contracts for a key context of kind `M`. -/
@@ -421,7 +435,7 @@ open Gcm.X86_64.Stitch (CtxMode) in
 /-- The loops `st`, for a key context of kind `M` (they read only its first
 256 bytes). -/
 def StitchImpl.code (st : StitchImpl) (M : CtxMode) : StitchCode M :=
-  ⟨st.enc, st.dec, st.full, st.okM M, st.encP, st.decP⟩
+  ⟨st.enc, st.dec, st.full, false, st.okM M, st.encP, st.decP⟩
 
 namespace StitchImpl
 
@@ -430,39 +444,23 @@ theorem any_false {α : Type} (st : Option α) : st.any (fun _ => false) = false
 theorem encFull_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
     encFull (st.map (·.code M)) = st.any (·.full) := by cases st <;> rfl
 
-variable {aligned : Bool} {α : Type} (st : Option α) {f : α → Prog isa} {g : α → Bool}
-  (hf : ∀ i, Piece (f i) aligned (g i))
-include hf
+theorem decFull_code (st : Option StitchImpl) (M : Gcm.X86_64.Stitch.CtxMode) :
+    decFull (st.map (·.code M)) = false := by cases st <;> rfl
 
-theorem head_mxcsr : (Blocks.head (st.map f) aligned (st.any g)).allInstrs (fun i => !loadsMxcsr i) = true := by
+/-- A property of `Blocks.blocks` for the loops of `st`, from its three
+shapes: no loops, loops taking the first `16 ⌊n / 16⌋` blocks, and loops
+taking all of them. -/
+theorem blocks_cases {α : Type} (st : Option α) (f : α → Prog isa) (g : α → Bool) (aligned : Bool)
+    (first second : Prog isa) (P : Prog isa → Prop)
+    (hnone : P (Blocks.blocks none first second aligned))
+    (hpart : ∀ i, g i = false → P (Blocks.blocks (some (f i)) first second aligned))
+    (hfull : ∀ i, g i = true → P (Blocks.blocks (some (f i)) first second aligned true)) :
+    P (Blocks.blocks (st.map f) first second aligned (st.any g)) := by
   rcases st with _ | i
-  · rfl
-  · simp only [Option.map, Option.any, Blocks.head, Blocks.stitchPart, Code.allInstrs, (hf i).mxcsr]
-    clear hf; cases aligned <;> split <;> decide
-
-theorem head_spSafe : (Blocks.head (st.map f) aligned (st.any g)).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases st with _ | i
-  · rfl
-  · simp only [Option.map, Option.any, Blocks.head, Blocks.stitchPart, Code.all, (hf i).spSafe]
-    clear hf; cases aligned <;> split <;> decide
-
-theorem head_nosp : (Blocks.head (st.map f) aligned (st.any g)).allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
-  rcases st with _ | i
-  · rfl
-  · simp only [Option.map, Option.any, Blocks.head, Blocks.stitchPart, Code.allInstrs, (hf i).nosp]
-    clear hf; cases aligned <;> split <;> decide
-
-theorem head_depth : (Blocks.head (st.map f) aligned (st.any g)).depth = 0 := by
-  rcases st with _ | i
-  · rfl
-  · simp only [Option.map, Option.any, Blocks.head, Blocks.stitchPart, Code.depth, (hf i).depth]
-    clear hf; cases aligned <;> rfl
-
-theorem head_xdepth : (Blocks.head (st.map f) aligned (st.any g)).x86_64Depth = 0 := by
-  rcases st with _ | i
-  · rfl
-  · simp only [Option.map, Option.any, Blocks.head, Blocks.stitchPart, Code.x86_64Depth, (hf i).xdepth]
-    clear hf; cases aligned <;> rfl
+  · exact hnone
+  · cases h : g i
+    · simpa [Option.map, Option.any, h] using hpart i h
+    · simpa [Option.map, Option.any, h] using hfull i h
 
 end StitchImpl
 

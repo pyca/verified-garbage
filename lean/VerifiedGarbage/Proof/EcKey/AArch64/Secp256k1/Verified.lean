@@ -6,14 +6,20 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Contract
 meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Contract
 public import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Lit
 meta import VerifiedGarbage.Proof.EcKey.AArch64.Secp256k1.Lit
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Secp256k1.Config
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # secp256k1 public keys on AArch64: `Verified`

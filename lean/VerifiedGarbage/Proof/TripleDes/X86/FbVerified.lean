@@ -1,11 +1,15 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
 meta import VerifiedGarbage.Proof.TripleDes.X86.CbcVerified
 public import VerifiedGarbage.Proof.TripleDes.FbScratch
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
 public import VerifiedGarbage.Proof.TripleDes.X86.FbLit
 meta import VerifiedGarbage.Proof.TripleDes.X86.FbLit
+public import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
+meta import VerifiedGarbage.Proof.TripleDes.X86.BlockSum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -130,35 +134,35 @@ theorem bytes_eq (m : Mem) (s : State) :
 theorem cipher_eq (s : State) :
     (dirCoreSpec .encrypt).cipher (Spec.TripleDes.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
 
-local macro "post_eq" h:ident h':ident : tactic =>
+tactic_template "tdes_post_eq" h:ident h':ident : tactic =>
   `(tactic| simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.bytes0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp,
-    Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, bytes_eq, cipher_eq]
-    at $h:ident $h':ident)
+                     Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Nat.reduceAdd, data_eq, iv_eq, bytes_eq, cipher_eq]
+                     at $h:ident $h':ident)
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 8 ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 8 ofbPost).post s₀ s' :=
   WP.mono (ofb_wp (dirCoreSpec .encrypt) (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2 h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbEncrypt_wp {s₀ : State} (hp : (fbX86 8 cfbEncPost).pre s₀) :
     WP isa cfbEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 8 cfbEncPost).post s₀ s' :=
   WP.mono (cfbEnc_wp (dirCoreSpec .encrypt) (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2 h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : (fbX86 8 cfbDecPost).pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 8 cfbDecPost).post s₀ s' :=
   WP.mono (cfbDec_wp (dirCoreSpec .encrypt) (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2 h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfb8Encrypt_wp {s₀ : State} (hp : (fbX86 1 cfb8EncPost).pre s₀) :
     WP isa cfb8Encrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 1 cfb8EncPost).post s₀ s' :=
   WP.mono (cfb8Enc_wp (dirCoreSpec .encrypt) (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2 h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfb8Decrypt_wp {s₀ : State} (hp : (fbX86 1 cfb8DecPost).pre s₀) :
     WP isa cfb8Decrypt s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 1 cfb8DecPost).post s₀ s' :=
   WP.mono (cfb8Dec_wp (dirCoreSpec .encrypt) (seqPre_of rfl (by decide) (by decide) hp) (keyArgs_of hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2 h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by tdes_post_eq h2 h3; exact ⟨h1, h2, h3⟩
 
 /-! ## Constant time -/
 
@@ -221,25 +225,30 @@ theorem fbTaint_agree {st : Nat} {post : State → State → Prop} {s₁ s₂ : 
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
-theorem ofb_ct : ConstantTime isa (fbX86 8 ofbPost).pre (fbX86 8 ofbPost).pub ofb :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem ofb_ct : ConstantTime isa (fbX86 8 ofbPost).pre (fbX86 8 ofbPost).pub ofb := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint ofb h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
-theorem cfbEncrypt_ct : ConstantTime isa (fbX86 8 cfbEncPost).pre (fbX86 8 cfbEncPost).pub cfbEncrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem cfbEncrypt_ct : ConstantTime isa (fbX86 8 cfbEncPost).pre (fbX86 8 cfbEncPost).pub cfbEncrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint cfbEncrypt h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
-theorem cfbDecrypt_ct : ConstantTime isa (fbX86 8 cfbDecPost).pre (fbX86 8 cfbDecPost).pub cfbDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem cfbDecrypt_ct : ConstantTime isa (fbX86 8 cfbDecPost).pre (fbX86 8 cfbDecPost).pub cfbDecrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint cfbDecrypt h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
-theorem cfb8Encrypt_ct : ConstantTime isa (fbX86 1 cfb8EncPost).pre (fbX86 1 cfb8EncPost).pub cfb8Encrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem cfb8Encrypt_ct : ConstantTime isa (fbX86 1 cfb8EncPost).pre (fbX86 1 cfb8EncPost).pub cfb8Encrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint cfb8Encrypt h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
-theorem cfb8Decrypt_ct : ConstantTime isa (fbX86 1 cfb8DecPost).pre (fbX86 1 cfb8DecPost).pub cfb8Decrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem cfb8Decrypt_ct : ConstantTime isa (fbX86 1 cfb8DecPost).pre (fbX86 1 cfb8DecPost).pub cfb8Decrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint cfb8Decrypt h).isSome = true :=
+    by taint_decide_sum [encSum]
+  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/
 
@@ -268,16 +277,16 @@ def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 384⟩, ⟨
 def narrowWr (st : Nat) (s : State) : List Region :=
   [⟨(arg s 2).setWidth 64, st * (arg s 3).toNat⟩, ⟨(arg s 1).setWidth 64, 8⟩, ⟨(arg s 4).setWidth 64, 8 * 118⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
+tactic_template "tdes_fb_narrow" : tactic =>
   `(tactic| simp only [VG.Proof.TripleDes.X86.Fb.fbX86, VG.Proof.TripleDes.X86.Fb.wideContract,
-    VG.Proof.TripleDes.X86.Fb.narrowRd, VG.Proof.TripleDes.X86.Fb.narrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.Proof.TripleDes.X86.Fb.narrowRd, VG.Proof.TripleDes.X86.Fb.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
 
 theorem wide_pre (st : Nat) (post : State → State → Prop) (s : State) (h : (wideContract st post).pre s) :
     (fbX86 st post).pre (s.withRegions (narrowRd s) (narrowWr st s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  tdes_fb_narrow
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -447,7 +456,7 @@ theorem fb_verified {st : Nat} {post : State → State → Prop} {c : Prog isa}
   · intro s s' _ h
     exact hR _ _ _ _ _ _ h
   · intro s₁ s₂ _ _ h
-    narrow
+    tdes_fb_narrow
     exact h
 
 theorem ofb_verified :

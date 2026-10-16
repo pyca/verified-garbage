@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86.KaKb
-public import VerifiedGarbage.Proof.Camellia.KeySched
+import VerifiedGarbage.Proof.Camellia.KeySched
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Camellia's key schedule on x86 (32-bit): the subkeys' stores

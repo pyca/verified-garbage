@@ -27,8 +27,12 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - {tag: "verified-garbage-runner:i686", platform: "linux/386", os: ubuntu-latest}
-          - {tag: "verified-garbage-runner:armv7l", platform: "linux/arm/v7", os: ubuntu-24.04-arm}
+          # i686 runs without seccomp: Docker 29.4.2 on ubuntu-26.04 denies
+          # socketcall(2), which i386 glibc makes its socket calls through
+          # (actions/runner-images#14790); drop it once the runner has Docker
+          # 29.4.3 or later.
+          - {tag: "verified-garbage-runner:i686", platform: "linux/386", os: ubuntu-26.04, run-options: "--security-opt seccomp=unconfined"}
+          - {tag: "verified-garbage-runner:armv7l", platform: "linux/arm/v7", os: ubuntu-26.04-arm}
     name: ${{ matrix.image.tag }}
     runs-on: ${{ matrix.image.os }}
     timeout-minutes: 20
@@ -82,8 +86,9 @@ jobs:
       - name: Check the image
         env:
           PULL: ${{ env.PUBLISH == 'true' && 'always' || 'never' }}
+          RUN_OPTIONS: ${{ matrix.image.run-options }}
         run: |
-          docker run --rm --platform "$PLATFORM" --pull="$PULL" \
+          docker run --rm --platform "$PLATFORM" --pull="$PULL" $RUN_OPTIONS \
             -v "$(readlink -f "$(command -v node)")":/runner-node:ro \
             "$IMAGE" \
             sh -euxc '

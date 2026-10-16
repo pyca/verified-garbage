@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Impl.Ecdh.P521.AArch64
+import VerifiedGarbage.Impl.Ecdh.P521.AArch64
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Verified
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
 # ECDH over P-521 (SP 800-56A) on AArch64

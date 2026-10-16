@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86.BaseMain
 meta import VerifiedGarbage.Proof.Ed448.X86.BaseMain
-public import VerifiedGarbage.Proof.Ed448.X86.BaseLit
+import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 meta import VerifiedGarbage.Proof.Ed448.X86.BaseLit
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
 meta import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
+meta import VerifiedGarbage.Proof.Ed448.X86.BaseEncode
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): constant time

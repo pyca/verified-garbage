@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Spec.MlKem.Poly
 public import VerifiedGarbage.Proof.MlKem.Arith
 public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -144,7 +144,7 @@ inductive Q
   | unph (a b : Q)
   /-- `vshufi32x4` with the immediate `sel`. -/
   | shuf (a b : Q) (sel : Nat)
-  deriving DecidableEq, Repr
+  deriving DecidableEq
 
 /-- The quadword of `vshufi32x4` with the immediate `sel` that quadword `k`
 of the result is: in the first source for the lower two lanes, else the

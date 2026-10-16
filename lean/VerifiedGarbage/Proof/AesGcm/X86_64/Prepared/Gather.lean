@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
 import all Init.Data.Array.Basic
@@ -74,12 +74,12 @@ theorem gatherPrepared_implies : (Proof.AesGcm.sealGatherX86_64M CtxMode.prepare
     (Proof.AesGcm.sealGatherPreparedScratchContract X86_64.abi 4888) :=
   ⟨fun _ h => gatherPrePrepared_of h, fun _ _ _ h => gatherPostPrepared_of h, fun _ _ _ _ h => gatherPubPrepared_of h, gatherSatPrepared_pre⟩
 
-theorem sealGatherPrepared_core (S : SealFn CtxMode.prepared) {t : Nat} (ht : t < 2 ^ 31) (I : InitFn) (A : AadFn)
+theorem sealGatherPrepared_core (Sh : ShortFn CtxMode.prepared) (I : InitFn) (A : AadFn)
     (T : ToFn CtxMode.prepared) (F : FinFn) :
-    Verified X86_64.target (sealGather S.fn t I.fn A.fn T.fn F.fn)
+    Verified X86_64.target (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn)
       (Proof.AesGcm.sealGatherPreparedScratchContract X86_64.abi 4888) :=
-  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.prepared) (sealGather_correct S t I A T F (ht := ht))
-    (sealGather_ct S ht I A T F) gatherPrepared_implies
+  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.prepared) (sealGather_correct Sh I A T F)
+    (sealGather_ct Sh I A T F) gatherPrepared_implies
 
 theorem gatherFrameSatPrepared_pre : ∃ s, (Spec.Gcm.sealGatherPreparedContract X86_64.abi 5128).pre s := by
   refine ⟨gatherFrameSatP, ?_⟩
@@ -93,16 +93,16 @@ theorem gatherFrameSatPrepared_pre : ∃ s, (Spec.Gcm.sealGatherPreparedContract
     | exact Region.disjoint_of_sep (by decide)
     | exact preparedPowersRepr_of_zero fun _ hi => by simp only [ctx_low hi, ite_false]
 
-theorem sealGatherPrepared_framed (S : SealFn CtxMode.prepared) {t : Nat} (ht : t < 2 ^ 31) (I : InitFn)
+theorem sealGatherPrepared_framed (Sh : ShortFn CtxMode.prepared) (I : InitFn)
     (A : AadFn) (T : ToFn CtxMode.prepared) (F : FinFn) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather S.fn t I.fn A.fn T.fn F.fn))
+      (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather Sh.quick Sh.fast Sh.test Sh.code I.fn A.fn T.fn F.fn))
       (Spec.Gcm.sealGatherPreparedContract X86_64.abi 5128) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPreparedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Spec.Gcm.sealGatherPreparedPre X86_64.abi.ptrBits)
     (post := Spec.Gcm.sealGatherPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
-    (sealGatherPrepared_core S ht I A T F) (by decide) (by decide) (by decide) (sealGather_spAll S t I A T F)
-    (sealGather_xdepth S t I A T F) (Proof.AesGcm.sealGatherPreparedPre_local _)
+    (sealGatherPrepared_core Sh I A T F) (by decide) (by decide) (by decide) (sealGather_spAll Sh I A T F)
+    (sealGather_xdepth Sh I A T F) (Proof.AesGcm.sealGatherPreparedPre_local _)
     (Proof.AesGcm.sealGatherPrecomputedPost_local _) gatherFrameSatPrepared_pre
 
 end VG.Proof.AesGcm.X86_64.Gather

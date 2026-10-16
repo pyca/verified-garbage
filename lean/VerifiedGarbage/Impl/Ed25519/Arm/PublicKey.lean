@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Entry
 public import VerifiedGarbage.Impl.Ed25519.Arm.Whole.Wipe
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
 public import VerifiedGarbage.Impl.Sha512.Arm.Stream
-public import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Spec.Ed25519.Contract
 public import VerifiedGarbage.Spec.Sha512.Contract
 
 @[expose] public section

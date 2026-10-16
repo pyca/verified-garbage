@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.ChaCha20.Keystream
 meta import VerifiedGarbage.Proof.ChaCha20.Keystream
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 meta import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.Framework.X86_64.Abi
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
@@ -14,11 +14,11 @@ public import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
 meta import VerifiedGarbage.Impl.ChaCha20.X86_64.Xor
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
+import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.XorBuf
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

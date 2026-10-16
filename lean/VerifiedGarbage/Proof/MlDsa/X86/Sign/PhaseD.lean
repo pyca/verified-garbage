@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PhaseA
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
-public import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimD
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimA
+import VerifiedGarbage.Proof.MlDsa.X86.Sign.PrimD
 public import VerifiedGarbage.Proof.MlDsa.Sample.Hash
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-DSA signing on x86 (32-bit): the private key, and `ρ″`

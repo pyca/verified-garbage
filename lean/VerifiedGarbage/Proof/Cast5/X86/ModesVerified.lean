@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Cast5.X86.ModeCore
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Cast5.X86.ModeCore
 public import VerifiedGarbage.Proof.Cast5.X86.ModesLit
 meta import VerifiedGarbage.Proof.Cast5.X86.ModesLit
@@ -24,6 +26,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Cast5.Memory
+meta import VerifiedGarbage.Proof.Cast5.Memory
 
 /-!
 # CAST5-CBC, -OFB and -CFB64 on x86 (32-bit): correctness
@@ -229,35 +233,35 @@ theorem invCipher_eq (s : State) :
     (dirCoreSpec false).cipher (Spec.Cast5.scheduleAt s.mem ((arg s 0).setWidth 64), (arg s 1).toNat) =
       invCiph s := rfl
 
-local macro "post_eq" h:ident : tactic =>
+tactic_template "post_eq_cast5_x86_modesverified" h:ident : tactic =>
   `(tactic| simp only [Proof.Modes.X86.blocks0, Proof.Modes.X86.iv0, Proof.Modes.X86.Dp,
-    Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Mode.dirCore_bw, Nat.reduceMul, Nat.reduceAdd,
-    data_eq, iv_eq, cipher_eq, invCipher_eq] at $h:ident)
+                     Proof.Modes.X86.P, Proof.Modes.X86.N, dirCore_ka, Mode.dirCore_bw, Nat.reduceMul, Nat.reduceAdd,
+                     data_eq, iv_eq, cipher_eq, invCipher_eq] at $h:ident)
 
 theorem cbcEncrypt_wp {s₀ : State} (hp : (modeX false cbcEncPost).pre s₀) :
     WP isa cbcEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX false cbcEncPost).post s₀ s' :=
   WP.mono (cbcEnc_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2⟩ => by post_eq h2; exact ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => by post_eq_cast5_x86_modesverified h2; exact ⟨h1, h2⟩
 
 theorem cbcDecrypt_wp {s₀ : State} (hp : (modeX false cbcDecPost).pre s₀) :
     WP isa cbcDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX false cbcDecPost).post s₀ s' :=
   WP.mono (cbcDec_wp (dirCoreSpec false) (seqPre_of false rfl rfl hp) (keyArgs_of false hp))
-    fun _ ⟨h1, h2⟩ => by post_eq h2; exact ⟨h1, h2⟩
+    fun _ ⟨h1, h2⟩ => by post_eq_cast5_x86_modesverified h2; exact ⟨h1, h2⟩
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (modeX true ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true ofbPost).post s₀ s' :=
   WP.mono (ofb_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2; post_eq h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbEncrypt_wp {s₀ : State} (hp : (modeX true cfbEncPost).pre s₀) :
     WP isa cfbEncrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true cfbEncPost).post s₀ s' :=
   WP.mono (cfbEnc_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2; post_eq h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : (modeX true cfbDecPost).pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => abiPreserved s₀ s' ∧ (modeX true cfbDecPost).post s₀ s' :=
   WP.mono (cfbDec_wp (dirCoreSpec true) (seqPre_of true rfl rfl hp) (keyArgs_of true hp))
-    fun _ ⟨h1, h2, h3⟩ => by post_eq h2; post_eq h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3⟩ => by post_eq_cast5_x86_modesverified h2; post_eq_cast5_x86_modesverified h3; exact ⟨h1, h2, h3⟩
 
 /-! ## Constant time -/
 
@@ -556,7 +560,7 @@ theorem cbc_sat {post : Spec.Cast5.cbcSig.Post X86.abi.ptrBits} : (cbcK post).pr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem cbcEncrypt_verified :
     Verified X86.target cbcEncrypt (cbcK (Proof.Cast5.cbcEncPost X86.abi.ptrBits)) :=
@@ -620,7 +624,7 @@ theorem cbcFrame_sat (post : Spec.Cast5.cbcSig.Post X86.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 /-- `cbcEncrypt` with its working space on the stack. -/
 theorem cbcEncrypt_framed :
@@ -762,7 +766,7 @@ theorem ofb_sat {post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits} :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem ofb_frameSat (post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Cast5.ofbSig.contract (X86.abi.withConsts ecbConsts) (Spec.Cast5.ofbPre X86.abi.ptrBits) post true
@@ -785,7 +789,7 @@ theorem ofb_frameSat (post : Spec.Cast5.ofbSig.Post X86.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem cfb_pre {post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits} (s : State)
     (h : (fbK Spec.Cast5.cfbSig (Spec.Cast5.cfbPre X86.abi.ptrBits) post).pre s) :
@@ -897,7 +901,7 @@ theorem cfb_sat {post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits} :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 theorem cfb_frameSat (post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits) :
     ∃ s, (Spec.Cast5.cfbSig.contract (X86.abi.withConsts ecbConsts) (Spec.Cast5.cfbPre X86.abi.ptrBits) post true
@@ -920,7 +924,7 @@ theorem cfb_frameSat (post : Spec.Cast5.cfbSig.Post X86.abi.ptrBits) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   · repeat' apply And.intro
-    all_goals first | rfl | decide | exact Or.inr rfl | exact Region.disjoint_of_sep (by decide)
+    all_goals first | exact Region.disjoint_of_sep (by decide) | decide | rfl | exact Or.inr rfl
 
 
 theorem ofb_verified :

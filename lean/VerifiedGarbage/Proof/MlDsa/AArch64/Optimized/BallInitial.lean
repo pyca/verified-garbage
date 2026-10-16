@@ -1,15 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.AbsorbWord
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallTry
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallTry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFirst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSponge
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Ball
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Range
 
 /-! ## From `BallZero.lean` -/
 

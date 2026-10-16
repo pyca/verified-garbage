@@ -1,9 +1,13 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.P224.Comb7
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P224Sha224
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Sha512.Word64
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-224 with HMAC-SHA-224 on AArch64

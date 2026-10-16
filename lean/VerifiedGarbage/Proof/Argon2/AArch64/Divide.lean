@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-public import VerifiedGarbage.Proof.Argon2.Divide
+import VerifiedGarbage.Proof.Argon2.Divide
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! # Complete fixed-time division for Argon2's indices -/
 

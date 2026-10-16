@@ -1,10 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.P256.Linear.Arithmetic
+import VerifiedGarbage.Proof.P256.Linear.Arithmetic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.P256.VerifySparse.Arithmetic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.NatPairs
+import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.P256.VerifyArithmetic
 
 @[expose] public section
 

@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86.Ecb
-public import VerifiedGarbage.Proof.Sm4.Planes
+import VerifiedGarbage.Proof.Sm4.Planes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.RegUpd
 
 /-!
 # The start of the SM4 key schedule on x86 (32-bit)

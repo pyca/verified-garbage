@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Sha1.Arm.Shared
+import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-! # SHA-1 (FIPS 180-4) on ARMv7 -/
 

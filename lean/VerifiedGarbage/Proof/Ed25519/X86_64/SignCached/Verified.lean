@@ -16,12 +16,36 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+import VerifiedGarbage.Spec.Weierstrass
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+meta import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Ed25519.Recode
+import VerifiedGarbage.Proof.Ed25519.Signing
+import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Proof.Ed25519.Recode
+meta import VerifiedGarbage.Proof.Ed25519.Signing
+meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+meta import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Merged from `Proof.Ed25519.X86_64.SignCached.Body`. -/
 

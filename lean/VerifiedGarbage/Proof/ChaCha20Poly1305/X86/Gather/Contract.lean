@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.ChaCha20Poly1305.OutOfPlace
 public import VerifiedGarbage.Proof.AesGcm.X86.Gather.Loop
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

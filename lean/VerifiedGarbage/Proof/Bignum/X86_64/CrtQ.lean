@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 
 /-!
 # RSA with the CRT on x86-64: `q`'s phase
@@ -26,12 +28,12 @@ def unitSteps (mul : Nat → Nat → Nat → Prog isa) (sl : Nat) : List (Prog i
     [.block [leave]]
 
 /-- The power in a prime's phase (`powPhase_ok`). -/
-def powSteps (mul : Nat → Nat → Nat → Prog isa) (sl sd slen : Nat) : List (Prog isa) :=
-  [.block [.mov .rdi (.mem (hdr sl))]] ++ redc mul Public.aY ++ Crt.expLoop mul sd slen
+def powSteps (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) (sl sd slen : Nat) : List (Prog isa) :=
+  [.block [.mov .rdi (.mem (hdr sl))]] ++ redc mul Public.aY ++ ex sd slen
 
-theorem qPhase_eq (mul : Nat → Nat → Nat → Prog isa) : qPhase mul =
+theorem qPhase_eq (mul : Nat → Nat → Nat → Prog isa) (ex : Nat → Nat → List (Prog isa)) : qPhase mul ex =
     unitSteps mul sWsQ ++ ([mul Public.aY Public.aXm Public.aY] ++
-      (powSteps mul sWsQ sDq sQlen ++ [mul Public.aY Public.aY Public.aOne, .block [leave]])) := by
+      (powSteps mul ex sWsQ sDq sQlen ++ [mul Public.aY Public.aY Public.aOne, .block [leave]])) := by
   simp only [qPhase, unitSteps, powSteps, enterQ, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- A Montgomery multiplication in the modulus' workspace that changes only
@@ -79,16 +81,16 @@ theorem NVals.of_frm {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N o 
 
 /-- `q`'s phase: `m_q = c^dQ mod q` into `q`'s `Y`, if `q` divides `N` and
 `X_m ≡ c R (mod N)`. -/
-theorem qPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C o wx : Nat}
+theorem qPhase_ok (M : Mont) (E : CrtExpL M) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C o wx : Nat}
     {ep : Addr} {eb : List Byte}
-    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z)
+    (hg : Good s B Z w minv) (hw : 8 ≤ w) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + wsTab wx ≤ Z)
     (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hslv : word s.mem B (8 * sWsQ) = off B o) (hws : WsAt s.mem B o wx mx)
     (hN : NVals s B w minv N) (hodd : N % 2 = 1) (hN1 : 1 < N)
     (hXm : wv s.mem B (slot w Public.aXm) w % N = C * 2 ^ (64 * w) % N)
     (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hep : word s.mem B (8 * sDq) = ep) (hel : word s.mem B (8 * sQlen) = BitVec.ofNat 64 eb.length)
     (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024) (he : Src s B Z ep eb) :
-    WP isa (seqs (qPhase M.mm)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
+    WP isa (seqs (qPhase M.mm E.code)) s fun t => Good t B Z w minv ∧ WsAt t.mem B o wx mx ∧ XVals t B o wx mx X ∧
       wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
       (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb % X) ∧
       Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem ∧ Keep mmRegs s t := by
@@ -126,7 +128,7 @@ theorem qPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVe
   rw [qPhase_eq]
   -- `R_q mod q`.
   refine wp_seqs_append (by simp [unitSteps]) (by simp) ?_
-  refine WP.mono (unitPhase_ok M hg hw hw28 hlo hhi hwx2 hwx (by decide) (by decide) (by decide) hslv hws hN
+  refine WP.mono (unitPhase_ok M hg hw hw28 hlo (by have := tabBytes_le_wsTab wx; omega_using [hhi, this]) hwx2 hwx (by decide) (by decide) (by decide) hslv hws hN
     hodd hN1 hX hX1 hXodd) fun s₁ ⟨hg₁, hws₁, hX₁, hlt₁, hG₁, hlq₁, hyq₁, _, f₁, k₁⟩ => ?_
   have hN₁ := hN.of_frm f₁ hlo hz (by omega_using [hwx2, hwx])
   have hXm₁ : wv s₁.mem B (slot w Public.aXm) w = wv s.mem B (slot w Public.aXm) w :=
@@ -147,12 +149,7 @@ theorem qPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVe
     ac_rfl
   have hxo : ∀ i < 32, word s₂.mem (off B o) (8 * i) = word s₁.mem (off B o) (8 * i) := fun i hi => by
     rw [word_off, word_off]
-    exact f₂.word_eq (fun r hr => Or.inr (by
-      simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      have := slot_le (w := w) (show Public.aAcc < 8 by decide)
-      have := slot_le (w := w) (show Public.aTmp < 8 by decide)
-      have := slot_le (w := w) (show Public.aY < 8 by decide)
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith)) (by omega_using [hX8, hoL, hi])
+    exact f₂.word_eq (fun r hr => Or.inr (by have := gRanges_le w r hr; omega_using [this, hlo])) (by omega_using [hX8, hoL, hi])
   have f02 : Frm B (gRanges w ++ [xRange o wx]) s.mem s₂.mem := f₁.trans f₂'
   have hb₂ : ∀ i < 32, i ≠ Crt.sD → i ≠ Public.sCnt → word s₂.mem B (8 * i) = word s.mem B (8 * i) :=
     hhd f02
@@ -166,22 +163,12 @@ theorem qPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVe
   have hYq₂ : wv s₂.mem (off B o) (slot wx Public.aY) wx = wv s₁.mem (off B o) (slot wx Public.aY) wx := by
     have := slot_le (w := wx) (show Public.aY < 8 by decide)
     rw [wv_off, wv_off]
-    exact f₂.wv_eq (fun r hr => Or.inr (by
-      simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      have := slot_le (w := w) (show Public.aAcc < 8 by decide)
-      have := slot_le (w := w) (show Public.aTmp < 8 by decide)
-      have := slot_le (w := w) (show Public.aY < 8 by decide)
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith)) (by omega_using [hoL, this])
+    exact f₂.wv_eq (fun r hr => Or.inr (by have := gRanges_le w r hr; omega_using [this, hlo])) (by omega_using [hoL, this])
   -- `c^dQ R_q mod q`.
   refine wp_seqs_append (by simp [powSteps]) (by simp) ?_
-  refine WP.mono (powPhase_ok M hg₂ hw28 hlo hhi hwx2 hwx (sl := sWsQ) (by decide)
+  refine WP.mono (powPhase_ok M E hg₂ hw28 hlo hhi hwx2 hwx (sl := sWsQ) (by decide)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hslv) (hws₁.of_words fun i hi => hxo i (by omega_using [hi]))
-    (hX₁.of_below f₂ (fun r hr => by
-      simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
-      have := slot_le (w := w) (show Public.aAcc < 8 by decide)
-      have := slot_le (w := w) (show Public.aTmp < 8 by decide)
-      have := slot_le (w := w) (show Public.aY < 8 by decide)
-      rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith) hoL)
+    (hX₁.of_below f₂ (fun r hr => (gRanges_le w r hr).trans hlo) hoL)
     hX1 hXodd hcg (by rw [hYq₂]; exact hlq₁) (fun hd => by rw [hYq₂]; exact hyq₁ hd) (sd := sDq) (slen := sQlen)
     (by decide) (by decide) (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hep)
     (by rw [hb₂ _ (by decide) (by decide) (by decide)]; exact hel) hL1 hL2 (he.congrK i02 (k₁.trans k₂)))

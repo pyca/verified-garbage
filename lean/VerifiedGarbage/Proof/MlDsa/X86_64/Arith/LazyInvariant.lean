@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay21
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyLay21
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyButterfly
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

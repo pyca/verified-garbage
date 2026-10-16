@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.Arm.Keys
-public import VerifiedGarbage.Proof.Sm4.Common
+import VerifiedGarbage.Proof.Sm4.Common
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Copying blocks on ARMv7

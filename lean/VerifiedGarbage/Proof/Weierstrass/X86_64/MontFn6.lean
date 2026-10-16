@@ -2,13 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Reloc
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.MontFnX
-public import VerifiedGarbage.Proof.Mont.X86_64.SqrM
-public import VerifiedGarbage.Proof.Mont.X86_64.MulS
-public import VerifiedGarbage.Proof.Mont.X86_64.CsubR
+import VerifiedGarbage.Proof.Mont.X86_64.SqrM
+import VerifiedGarbage.Proof.Mont.X86_64.MulS
+import VerifiedGarbage.Proof.Mont.X86_64.CsubR
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # P-384's product modulo `p` as a function, on x86-64
@@ -47,28 +52,13 @@ theorem fnTmp6_eq : fnTmp6 = 4048 := rfl
 theorem sqrSA_reloc (adx : Bool) (a o : Nat) :
     (sqrSA (fnMod6 adx) mO mA).map (Instr.mapMem (unptr [(.rbx, a), (.rsi, o)] ∘ relocTo [(mA, .rbx), (mO, .rsi)])) =
       sqrSA (fnMod6 adx) o a := by
-  simp only [sqrSA_eq, List.map_append]
-  cases adx <;>
-  refine congrArg₂ (· ++ ·) (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl rfl)) (congrArg₂ (· ++ ·) rfl
-    (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl
-      (congrArg₂ (· ++ ·) rfl rfl))))))
+  cases adx <;> kernel_rfl
 
 theorem mulRounds_reloc (adx : Bool) (a b : Nat) :
     (mulRounds (fnMod6 adx) mA mB).map
         (Instr.mapMem (unptr [(.rbx, a), (.rsi, b)] ∘ relocTo [(mA, .rbx), (mB, .rsi)])) =
       mulRounds (fnMod6 adx) a b := by
-  cases adx
-  · simp only [mulRounds, show (fnMod6 false).adx = false from rfl, Bool.false_eq_true, false_and, ↓reduceIte,
-      show (fnMod6 false).n = 6 from rfl, show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl, List.flatMap_cons,
-      List.flatMap_nil, List.append_nil, List.map_append]
-    refine congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl
-      (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl rfl)))))
-  · simp only [mulRounds, show (fnMod6 true).adx = true from rfl, show (fnMod6 true).sparse = true from rfl,
-      show (fnMod6 true).n = 6 from rfl, and_self, ↓reduceIte,
-      show List.range 5 = [0, 1, 2, 3, 4] from rfl, List.flatMap_cons,
-      List.flatMap_nil, List.append_nil, List.map_append]
-    refine congrArg₂ (· ++ ·) (congrArg₂ (· ++ ·) rfl rfl) (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl
-      (congrArg₂ (· ++ ·) rfl (congrArg₂ (· ++ ·) rfl rfl))))
+  cases adx <;> kernel_rfl
 
 theorem storesW_reloc (o : Nat) :
     (stores sqWin6 mO).map (Instr.mapMem (unptr [(.rsi, o)] ∘ relocTo [(mO, .rsi)])) = stores sqWin6 o := rfl

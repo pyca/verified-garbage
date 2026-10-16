@@ -2,13 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Spread
 public import VerifiedGarbage.Proof.CmacTripleDes.Block
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 
 /-!
 # TDEA on AArch64: the passes and the block

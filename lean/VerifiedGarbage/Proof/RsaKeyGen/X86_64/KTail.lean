@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KEnd
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrShift
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # A candidate on x86-64: Montgomery setup, Miller–Rabin and the result
@@ -81,18 +83,17 @@ theorem mrResult_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c : Nat
 /-- `montSetup`, `millerRabin` and `mrResult`, for the candidate `c` in
 `aN`, from offset `8 w` of `rand`. -/
 theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c : Nat} {op up rp : Addr}
-    {r : List Byte} (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z) (hTZ : slot w aTab + 2048 ≤ Z) (hw4 : 4 ≤ w)
+    {r : List Byte} (hg : Good s B Z w mi) (hZ : slot w 8 ≤ Z) (hXZ : slot w aRm1 + 8 * (w + 2) ≤ Z) (hw4 : 4 ≤ w)
     (hw64 : w ≤ 64) (hn : wv s.mem B (slot w aN) w = c) (hsh : VG.Proof.RsaKeyGen.PrimeShape (64 * w) c)
     (ho : OutUp s B Z op up (8 * w)) (hO : word s.mem B (8 * kOut) = op)
     (hK : word s.mem B (8 * kLen) = BitVec.ofNat 64 (8 * w)) (hU : word s.mem B (8 * kUsedP) = up)
     (hrp : word s.mem B (8 * kRand) = rp) (hrlen : word s.mem B (8 * kRandLen) = BitVec.ofNat 64 r.length)
     (hus : word s.mem B (8 * kUsed) = BitVec.ofNat 64 (8 * w)) (hsrc : Src s B Z rp r) (hrl : r.length < 2 ^ 64)
     (hrk : 8 * w ≤ r.length) :
-    WP isa (seqs (montSetup M.mm ++ millerRabin M.mm ++ [mrResult])) s fun t =>
+    WP isa (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult])) s fun t =>
       TestEnd s t B Z op up (8 * w) r c (Spec.RsaKeyGen.primalityTest c (r.drop (8 * w))) := by
   have hnw := hg.scr.nowrap
-  have hXZ : slot w aRm1 + 8 * (w + 2) ≤ Z := by unfold slot aRm1 aTab at *; omega_arith
-  have hd : MrDims B Z w := ⟨hZ, hXZ, hw4, hw64⟩
+  have hd : MrDims B Z w := ⟨hZ, hXZ, hw4, by omega_arith⟩
   obtain ⟨hodd, hlo, hhi⟩ := hsh
   have htop : 2 ^ (64 * w - 1) ≤ c := by
     have : 2 ^ (64 * w - 1) = 2 ^ (64 * w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_arith
@@ -100,30 +101,51 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
   have hc1 : 1 < c := by
     have : 2 ≤ 2 ^ (64 * w - 1) := Nat.le_trans (by decide) (Nat.pow_le_pow_right (by decide) (show 1 ≤ 64 * w - 1 by omega_arith))
     omega_arith
-  rw [List.append_assoc]
-  refine wp_seqs_append (by simp [montSetup]) (by simp) ?_
-  refine WP.mono (montSetup_ok M hg hZ hXZ hw4 hw64 hn hodd htop) fun s₁ ⟨mi', hg₁, hinv₁, hr2₁, hr1₁, hrm₁, hch₁,
-    hf₁, k₁⟩ => ?_
+  rw [List.append_assoc, List.append_assoc]
+  refine wp_seqs_append (by simp [montSetup]) (by simp [expSetup, lowWord]) ?_
+  refine WP.mono (montSetup_ok M hg hZ hXZ hw4 hw64 hn hodd htop) fun s₀ ⟨mi', hg₀, hinv₀, hr2₀, hr1₀, hrm₀, hch₀,
+    hf₀, k₀⟩ => ?_
+  have hn₀ : wv s₀.mem B (slot w aN) w = c := by
+    rw [hf₀.wv_eq (d := slot w aN) (k := w) (by simp only [msRanges]; rng_disj)
+      (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]; exact hn
+  refine wp_seqs_append (by simp [expSetup, lowWord]) (by simp [millerRabin]) ?_
+  refine WP.mono (expSetup_ok hg₀ hd hn₀ hodd hc1) fun s₁ ⟨hE₁, hfE, hg₁, kEx⟩ => ?_
+  have hf₁ : Frm B (msRanges w ++ [(slot w aE, 8 * (w + 1))]) s.mem s₁.mem :=
+    (hf₀.mono fun r hr => List.mem_append_left _ hr).trans (hfE.mono fun r hr => List.mem_append_right _ hr)
+  have k₁ : Keep mmRegs s s₁ := (k₀.trans kEx).mono (by decide)
+  have hEw : ∀ {d k : Nat}, d + 8 * k ≤ slot w aE ∨ slot w aE + 8 * (w + 1) ≤ d → d + 8 * k ≤ 2 ^ 64 →
+      wv s₁.mem B d k = wv s₀.mem B d k := fun h h' => hfE.wv_eq (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact h) h'
+  have hinv₁ : ((word s₁.mem B (slot w aN)).toNat * mi'.toNat + 1) % 2 ^ 64 = 0 := by
+    rw [hfE.word_eq (d := slot w aN) (by rng_disj) (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]
+    exact hinv₀
+  have hr2₁ : wv s₁.mem B (slot w aR2) w = 2 ^ (64 * w) * 2 ^ (64 * w) % c := by
+    rw [hEw (Or.inl (by simp only [slot, hdrBytes, aR2, aE]; omega)) (by have := slot_le (w := w) (show aR2 < 8 by decide); omega_arith)]; exact hr2₀
+  have hr1₁ : wv s₁.mem B (slot w aR1) w = 2 ^ (64 * w) % c := by
+    rw [hEw (Or.inr (by simp only [slot, hdrBytes, aR1, aE]; omega)) (by unfold slot aR1 aRm1 at *; omega_arith)]; exact hr1₀
+  have hrm₁ : wv s₁.mem B (slot w aRm1) w = c - 2 ^ (64 * w) % c := by
+    rw [hEw (Or.inr (by simp only [slot, hdrBytes, aRm1, aE]; omega)) (by omega_arith)]; exact hrm₀
+  have hch₁ : word s₁.mem B (8 * kChecks) = BitVec.ofNat 64 (checksW w) := by
+    rw [hfE.word_eq (d := 8 * kChecks) (by rng_disj) (by unfold kChecks kE sFn; omega_arith)]; exact hch₀
   have hw₁ : ∀ {k}, k = kRand ∨ k = kLen ∨ k = kRandLen ∨ k = kUsed ∨ k = kOut ∨ k = kUsedP →
       word s₁.mem B (8 * k) = word s.mem B (8 * k) := fun {k} hk => by
     have hk32 : k < 32 := by rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    have hd : ∀ r ∈ msRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-      simp only [msRanges]
+    have hd : ∀ r ∈ msRanges w ++ [(slot w aE, 8 * (w + 1))], 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
+      simp only [msRanges, List.cons_append, List.nil_append]
       rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> rng_disj
     exact hf₁.word_eq hd (by omega_arith)
-  have hsl₁ : ∀ r ∈ msRanges w, r.1 + r.2 ≤ Z := fun r hr => by
+  have hsl₁ : ∀ r ∈ msRanges w ++ [(slot w aE, 8 * (w + 1))], r.1 + r.2 ≤ Z := fun r hr => by
     have : r.1 + r.2 ≤ slot w aRm1 + 8 * (w + 2) := by
-      revert r hr; simp only [msRanges]; rng_le
+      revert r hr; simp only [msRanges, List.cons_append, List.nil_append]; rng_le
     omega_arith
   have hc₁ : MrCtx s₁ B Z w mi' c (wv s₁.mem B (slot w aB) w) :=
-    ⟨hg₁, hinv₁, by rw [hf₁.wv_eq (d := slot w aN) (k := w) (by simp only [msRanges]; rng_disj)
-      (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]; exact hn, rfl, hr1₁, hrm₁⟩
+    ⟨hg₁, hinv₁, by rw [hfE.wv_eq (d := slot w aN) (k := w) (by rng_disj)
+      (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]; exact hn₀, rfl, hr1₁, hrm₁⟩
   have hsrc₁ := hsrc.congrK (InScr.of_frm hf₁ hsl₁) k₁
   have hres : mrRest c (checksW w) r 1 0 (8 * w) = Spec.RsaKeyGen.primalityTest c (r.drop (8 * w)) := by
     rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) ⟨hodd, hlo, hhi⟩, checksW_eq w (by omega_arith) hw4]
   refine wp_seqs_append (by simp [millerRabin]) (by simp) ?_
-  refine WP.mono (millerRabin_ok M hd hc1 ⟨hodd, hlo, hhi⟩ hrl (by unfold checksW; split <;> (try split) <;>
-      (try split) <;> (try split) <;> (try split) <;> (try split) <;> decide) hc₁ hr2₁
+  refine WP.mono (millerRabin_ok M hd hc1 ⟨hodd, hlo, hhi⟩ hrl (Nat.lt_of_le_of_lt (checksW_le w) (by decide)) hc₁ hE₁ hr2₁
     (by rw [hw₁ (Or.inl rfl)]; exact hrp) (by rw [hw₁ (Or.inr (Or.inl rfl))]; exact hK)
     (by rw [hw₁ (Or.inr (Or.inr (Or.inl rfl)))]; exact hrlen) hch₁ hsrc₁
     (by rw [hw₁ (Or.inr (Or.inr (Or.inr (Or.inl rfl))))]; exact hus) (Nat.le_refl _) hrk)
@@ -144,11 +166,11 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
     have h2 : ∀ r ∈ roundRanges w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := fun r hr => by
       have : 48 ≤ r.1 := by
         revert r hr
-        simp only [roundRanges, preRanges, witRanges, expRanges, bitRanges, List.cons_append, List.nil_append]
+        simp only [roundRanges, preRanges, witRanges, tabRanges, expRanges, winRanges, List.cons_append, List.nil_append]
         rng_le
       omega_arith
-    have h1' : ∀ r ∈ msRanges w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := fun r hr => by
-      have : 48 ≤ r.1 := by revert r hr; simp only [msRanges]; rng_le
+    have h1' : ∀ r ∈ msRanges w ++ [(slot w aE, 8 * (w + 1))], 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := fun r hr => by
+      have : 48 ≤ r.1 := by revert r hr; simp only [msRanges, List.cons_append, List.nil_append]; rng_le
       omega_arith
     rw [hf₂.word_eq h2 (by omega_arith), hf₁.word_eq h1' (by omega_arith)]
   have k12 : Keep mmRegs s s₂ := (k₁.trans k₂).mono (by decide)

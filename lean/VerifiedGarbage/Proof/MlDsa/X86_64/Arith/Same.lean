@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86-64: checks of code, but for the functions it calls
@@ -94,7 +96,7 @@ theorem Same.ok {m : Prog isa → Bool} {a b : Prog isa} (h : Same m a b) (hb : 
 /-- `Same m c c'` for code `c` that calls functions whose `mc` the
 hypotheses state, and the same code `c'` but for empty functions in their
 place: from the structure of the code. -/
-macro "same_tac " hm:term : tactic =>
+tactic_template "same_tac " hm:term : tactic =>
   `(tactic| repeat' (first
     | (apply Same.call $hm; assumption)
     | apply Same.seq $hm

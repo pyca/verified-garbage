@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.Arm.Words
-public import VerifiedGarbage.Proof.Ocb.State
+import VerifiedGarbage.Proof.Ocb.State
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

@@ -2,24 +2,26 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTCode
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTFin
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTP
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetup
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # `vg_rsa_private_crt` on x86-64: verified against the shared contract
@@ -38,18 +40,18 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 
 /-- `vg_rsa_private_crt` is constant time but for `n`. -/
-theorem crtCode_constantTime (M : Mont) : ConstantTime isa crtContract.pre crtContract.pub (Crt.code M.mm) :=
-  crtCode_constantTime_of M setup_ct checks_ct
-    (qPhase_ct M (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
-      (pow_ct M (redc_ct_Y M) (expLoop_ct_Q M) (by taint_decide)))
-    (pPhase_ct M (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
-      (pow_ct M (redc_ct_Y M) (expLoop_ct_P M) (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
+theorem crtCode_constantTime (M : Mont) (E : CrtExpL M) (hE : E.CT) : ConstantTime isa crtContract.pre crtContract.pub (Crt.code M.mm E.code) :=
+  crtCode_constantTime_of M E setup_ct checks_ct
+    (qPhase_ct M E (unit_ct M (gPow_ct_Q M) (redc_ct_Y M) (by taint_decide))
+      (pow_ct M E (redc_ct_Y M) hE.2 (by taint_decide)))
+    (pPhase_ct M E (unit_ct M (gPow_ct_P M) (redc_ct_Y M) (by taint_decide))
+      (pow_ct M E (redc_ct_Y M) hE.1 (by taint_decide)) (redc_ct_X M) loadArr_ct_pI)
     crtFinish_ct
 
 /-- `vg_rsa_private_crt` with Montgomery multiplication `M`, given that its
 code never loads MXCSR (which the registration file evaluates). -/
-theorem crt_verified (M : Mont) (hmx : (Crt.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (Crt.code M.mm) (Spec.Rsa.privateCrtContract abi) :=
-  Verified.of_correct (crtCode_correct M hmx) (crtCode_constantTime M) crt_implies
+theorem crt_verified (M : Mont) (E : CrtExpL M) (hE : E.CT) (hmx : (Crt.code M.mm E.code).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified target (Crt.code M.mm E.code) (Spec.Rsa.privateCrtContract abi) :=
+  Verified.of_correct (crtCode_correct M E hmx) (crtCode_constantTime M E hE) crt_implies
 
 end VG.Proof.Bignum.X86_64

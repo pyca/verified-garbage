@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecoverFrame
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: the call of `vg_rsa_public_checked`

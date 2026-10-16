@@ -1,18 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CTReady
+import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CTReady
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.CTReady
 public import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.BlocksCT
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashFinalize
-public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
+import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.HashInputs
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Calls
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Reduce
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Base
@@ -20,18 +20,30 @@ public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
-public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 meta import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-public import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 meta import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
 meta import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
-public import VerifiedGarbage.Proof.Framework.X86.Syms
+import VerifiedGarbage.Proof.Framework.X86.Syms
 meta import VerifiedGarbage.Proof.Framework.X86.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.Signing
+import VerifiedGarbage.Proof.Framework.OffsetBelow
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Ed25519.Signing
+meta import VerifiedGarbage.Proof.Framework.OffsetBelow
+meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+meta import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.CTCommon`. -/
 
@@ -188,7 +200,7 @@ theorem update_prefix (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
         (Spec.Ed25519.bytesAt s.mem (L.E.setWidth 64 + 64) 32) := by
   have e : (L.E + 64).setWidth 64 = L.E.setWidth 64 + 64 :=
     addr_eq (x := L.E) (k := 64) (by have := hL.top; omega)
-  refine WP.mono (update_step hc hL ha (c := 0#32) (by decide) (by simp [Whole.valid]) ?_
+  refine WP.mono (update_step hc hL ha (c := 0#32) (by decide) (by exact Whole.valid_all (by decide)) ?_
     (prefix_input hL) (prev := []) (by decide) hr) fun t ⟨ht, hf, hp⟩ => ⟨ht, hf, ?_⟩
   · intro t ht
     exact update_args hL 0 (.frame 64) (.const 32) ht
@@ -617,7 +629,7 @@ theorem mul_call_ct (hL : L.Ok) :
 theorem saveSecret_ct (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (.block saveSecret)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  refine two_wp (Whole.block_rel (fun _ _ h => two_esp h) (by taint_decide)) ?_ ?_
+  refine two_wp (Whole.block_rel (fun _ _ h => two_esp h) (by native_taint_decide)) ?_ ?_
   · intro t hc _
     exact WP.mono (saveSecret_ok hc hL rfl) fun _ h => ⟨h.1, trivial⟩
   · intro t hc _
@@ -626,7 +638,7 @@ theorem saveSecret_ct (hL : L.Ok) :
 theorem wipe_ct (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) (.block wipe)
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  refine two_wp (Whole.block_rel (fun _ _ h => two_esp h) (by taint_decide)) ?_ ?_
+  refine two_wp (Whole.block_rel (fun _ _ h => two_esp h) (by native_taint_decide)) ?_ ?_
   · intro t hc _
     exact WP.mono (wipe_ok hc hL) fun _ h => ⟨h.1, trivial⟩
   · intro t hc _
@@ -724,7 +736,7 @@ variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem init_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) init (Two L g₁ g₂ m₁ m₂ fun _ => True) :=
-  (setup_ct hL ha hb [.caller 5 0] (by decide) (by simp [Whole.valid]) (by taint_decide)).seq
+  (setup_ct hL ha hb [.caller 5 0] (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide)).seq
     (init_call_ct hL)
 
 theorem update_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
@@ -759,35 +771,35 @@ theorem hashSeed_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) 
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hashSeed
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hs := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 0 (.caller 1 0) (.const 32)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (by simpa [value, Lay.value] using seed_input hL)
-    (by taint_decide)
-  exact (init_ct hL ha hb).seq (hs.seq (finalize_ct hL ha hb 32 (by decide) false (by taint_decide)))
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa [value, Lay.value] using seed_input hL)
+    (by native_taint_decide)
+  exact (init_ct hL ha hb).seq (hs.seq (finalize_ct hL ha hb 32 (by decide) false (by native_taint_decide)))
 
 theorem hashNonce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hashNonce
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hs := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 0 (.frame 64) (.const 32)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (prefix_input hL) (by taint_decide)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (prefix_input hL) (by native_taint_decide)
   have hm := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 32 (.caller 3 0) (.caller 4 0)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (by simpa only [value, Lay.value, BitVec.add_zero] using message_input hL)
-    (by taint_decide)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa only [value, Lay.value, BitVec.add_zero] using message_input hL)
+    (by native_taint_decide)
   exact (init_ct hL ha hb).seq (hs.seq (hm.seq
-    (finalize_ct hL ha hb 32 (by decide) true (by taint_decide))))
+    (finalize_ct hL ha hb 32 (by decide) true (by native_taint_decide))))
 
 theorem hashChallenge_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) hashChallenge
       (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
   have hr := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 0 (.caller 0 0) (.const 32)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (by simpa [value, Lay.value] using point_input hL)
-    (by taint_decide)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa [value, Lay.value] using point_input hL)
+    (by native_taint_decide)
   have hp := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 32 (.caller 2 0) (.const 32)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (by simpa [value, Lay.value] using key_input hL)
-    (by taint_decide)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa [value, Lay.value] using key_input hL)
+    (by native_taint_decide)
   have hm := update_ct (g₁ := g₁) (g₂ := g₂) hL ha hb 64 (.caller 3 0) (.caller 4 0)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (by simpa only [value, Lay.value, BitVec.add_zero] using message_input hL)
-    (by taint_decide)
+    (Whole.valid_of (by decide)) (Whole.valid_of (by decide)) (by simpa only [value, Lay.value, BitVec.add_zero] using message_input hL)
+    (by native_taint_decide)
   exact (init_ct hL ha hb).seq (hr.seq (hp.seq (hm.seq
-    (finalize_ct hL ha hb 64 (by decide) true (by taint_decide)))))
+    (finalize_ct hL ha hb 64 (by decide) true (by native_taint_decide)))))
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -804,15 +816,15 @@ theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) body
       (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) := by
   have r96 := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.frame 96, .frame 192, .caller 5 0]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)).seq
+    (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide)).seq
     (reduce_call_ct hL 96 (by decide) (by decide))
   have r128 := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.frame 128, .frame 192, .caller 5 0]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)).seq
+    (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide)).seq
     (reduce_call_ct hL 128 (by decide) (by decide))
   have b := (two_syms (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 0 0, .frame 96, .caller 5 0]
-    (by decide) (by simp [Whole.valid]) (by taint_decide))).seq (base_call_ct hL ha hb)
+    (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide))).seq (base_call_ct hL ha hb)
   have m := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 0 32, .frame 96, .frame 128, .frame 32, .caller 5 0]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)).seq (mul_call_ct hL)
+    (by decide) (by exact Whole.valid_all (by decide)) (by native_taint_decide)).seq (mul_call_ct hL)
   exact (two_syms ((hashSeed_ct hL ha hb).seq (saveSecret_ct hL))).seq
     (((two_syms (hashNonce_ct hL ha hb)).seq ((two_syms r96).seq b)).seq
       (two_syms (((hashChallenge_ct hL ha hb).seq (r128.seq m)).seq (wipe_ct hL))))
@@ -904,8 +916,8 @@ theorem signCached_ct : ConstantTime isa signCachedLocal.pre signCachedLocal.pub
   rintro a b ta tb a' b' ⟨s₁, s₂, ⟨p₁, p₂, hp⟩, rfl, rfl⟩ ea eb
   have he := lay_eq hp
   have h₂ : Ctx (lay s₁) s₂.gpr s₂.mem (pushed (List.replicate 64 .eax) s₂) :=
-    he ▸ push_ctx p₂
-  have ha₂ : Arguments (lay s₁) s₂.mem := he ▸ lay_arguments p₂
+    by rw [he]; exact push_ctx p₂
+  have ha₂ : Arguments (lay s₁) s₂.mem := by rw [he]; exact lay_arguments p₂
   have y₂ : Named (lay s₁) (pushed (List.replicate 64 .eax) s₂) := by
     rw [he]; rfl
   exact ⟨(body_ct (lay_ok p₁) (lay_arguments p₁) ha₂ _ _ _ _ _ _

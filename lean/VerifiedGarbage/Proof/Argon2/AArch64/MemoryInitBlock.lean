@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitCall
 public import VerifiedGarbage.Impl.Argon2.AArch64.MemoryInit
-public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
-public import VerifiedGarbage.Proof.Blake2.Stream
+import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
+import VerifiedGarbage.Proof.Blake2.Stream
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! Merged from `Proof.Argon2.AArch64.MemoryInitArgs`. -/
 

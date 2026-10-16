@@ -1,14 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.Setup
-public import VerifiedGarbage.Proof.AesCcm.Bytes
-public import VerifiedGarbage.Proof.AesGcm.X86.Loops
-public import VerifiedGarbage.Proof.Ocb.Bytes
+import VerifiedGarbage.Proof.AesCcm.Bytes
+import VerifiedGarbage.Proof.AesGcm.X86.Loops
+import VerifiedGarbage.Proof.Ocb.Bytes
 public import VerifiedGarbage.Proof.Ocb.Nonce
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # AES-OCB on x86: the block `Nonce` (`nonceBlock`)
@@ -41,40 +42,40 @@ theorem or_byte32 (b : Byte) {v : Nat} (hv : v < 256) :
     ((b.setWidth 32 ||| BitVec.ofNat 32 v).setWidth 8 : Byte) = b ||| BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_or, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := v) (by omega), Nat.mod_eq_of_lt (a := v) (by omega),
-    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega)]
-  exact Nat.mod_eq_of_lt (Nat.or_lt_two_pow b.isLt (by omega))
+  rw [Nat.mod_eq_of_lt (a := v) (by omega_arith), Nat.mod_eq_of_lt (a := v) (by omega_arith),
+    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega_arith)]
+  exact Nat.mod_eq_of_lt (Nat.or_lt_two_pow b.isLt (by omega_arith))
 
 theorem and_byte32 (b : Byte) {v : Nat} (hv : v < 256) :
     ((b.setWidth 32 &&& BitVec.ofNat 32 v).setWidth 8 : Byte) = b &&& BitVec.ofNat 8 v := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_ofNat]
-  rw [Nat.mod_eq_of_lt (a := v) (by omega), Nat.mod_eq_of_lt (a := v) (by omega),
-    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega)]
+  rw [Nat.mod_eq_of_lt (a := v) (by omega_arith), Nat.mod_eq_of_lt (a := v) (by omega_arith),
+    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega_arith)]
   exact Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_left b.isLt)
 
 theorem and63_32 (b : Byte) : b.setWidth 32 &&& BitVec.ofNat 32 63 = BitVec.ofNat 32 (b.toNat % 64) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_setWidth, BitVec.toNat_and, BitVec.toNat_ofNat]
   rw [show (63 : Nat) % 2 ^ 32 = 2 ^ 6 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod,
-    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega)]
-  exact (Nat.mod_eq_of_lt (by omega)).symm
+    Nat.mod_eq_of_lt (a := b.toNat) (by have := b.isLt; omega_arith)]
+  exact (Nat.mod_eq_of_lt (by omega_arith)).symm
 
 theorem and15_32 {t : Nat} (ht : t < 2 ^ 32) : BitVec.ofNat 32 t &&& BitVec.ofNat 32 15 = BitVec.ofNat 32 (t % 16) := by
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_and, toNat_ofNat32 ht, toNat_ofNat32 (by decide),
-    show (15 : Nat) = 2 ^ 4 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod, toNat_ofNat32 (by omega)]
+    show (15 : Nat) = 2 ^ 4 - 1 by decide, Nat.and_two_pow_sub_one_eq_mod, toNat_ofNat32 (by omega_arith)]
 
 theorem sub32 (W : BitVec 32) {a b : Nat} (h : b ≤ a) (ha : a < 2 ^ 32) :
     W + BitVec.ofNat 32 a - BitVec.ofNat 32 b = W + BitVec.ofNat 32 (a - b) := by
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_add, toNat_ofNat32 ha, toNat_ofNat32 (by omega),
-    toNat_ofNat32 (by omega)]
+  rw [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_add, toNat_ofNat32 ha, toNat_ofNat32 (by omega_arith),
+    toNat_ofNat32 (by omega_arith)]
   have := W.isLt
-  omega
+  omega_arith
 
 theorem contains_pre (p : Addr) {j n : Nat} (h : j ≤ n) : (⟨p, n⟩ : Region).Contains p j := by
-  simpa using Offset.contains_base p (d := 0) (n := j) (k := n) (by omega) (by decide)
+  simpa using Offset.contains_base p (d := 0) (n := j) (k := n) (by omega_arith) (by decide)
 
 /-- What `nonceBlock` leaves. -/
 structure NoncePost (p : Prm) (nonce : List Byte) (s s' : State) : Prop where
@@ -94,7 +95,7 @@ theorem copyW_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) {S : BitVec 32}
     (by rw [P.other _ (by decide) (by decide) (by decide) (by decide), E.ebp])
     (by rw [P.other _ (by decide) (by decide) (by decide) (by decide), E.esp]) P.rd P.wr
     (frame_toMut (rs := [⟨w64 p.W + BitVec.ofNat 64 d, n⟩]) (by
-      rw [P.mem, L.aW (by omega)]
+      rw [P.mem, L.aW (by omega_arith)]
       exact writeBytes_frame _ _ _ (by rw [length_bytesAt]; exact Region.contains_self _ _))
       fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inl hd)), P⟩
 
@@ -121,28 +122,28 @@ theorem nonceHead_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
     refine ⟨_, by grun [zero4, E.ebp, L.aW, E.perm.wW, E.perm.wR, hN, hnl], by gmems [hz], by gregs [hN],
       ?_, by gregs [hnl], fun r h₁ h₂ h₃ h₄ => by gregs [h₁, h₂, h₃, h₄], by gmems [], by gmems []⟩
     gregs [hnl, E.ebp]
-    exact sub32 _ (by omega) (by decide)
-  have a128 : w64 (p.W + BitVec.ofNat 32 (128 - p.nl)) = w64 p.W + BitVec.ofNat 64 (128 - p.nl) := L.aW (by omega)
+    exact sub32 _ (by omega_arith) (by decide)
+  have a128 : w64 (p.W + BitVec.ofNat 32 (128 - p.nl)) = w64 p.W + BitVec.ofNat 64 (128 - p.nl) := L.aW (by omega_arith)
   have fr₂ : Frame [⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩] s.mem s₂.mem := by
     rw [m₂]; exact Proof.Cmac.frame_store4 _ _ _ _ _
   refine ⟨s₂, run₂, E.mut L (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), E.ebp])
     (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), E.esp]) rd₂ wr₂
     (frame_toMut fr₂ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inl (by decide))),
-    ⟨di₂, dx₂, cx₂, h1, by omega, L.nw, by rw [L.nW (by omega)]; have := L.ww; omega,
-      by rw [rd₂, wr₂]; exact E.perm.non, by rw [a128, wr₂]; exact E.perm.wC (by omega),
-      by rw [a128]; exact L.n_w' (by omega)⟩, m₂, g₂, rd₂, wr₂⟩
+    ⟨di₂, dx₂, cx₂, h1, by omega_arith, L.nw, by rw [L.nW (by omega_arith)]; have := L.ww; omega_arith,
+      by rw [rd₂, wr₂]; exact E.perm.non, by rw [a128, wr₂]; exact E.perm.wC (by omega_arith),
+      by rw [a128]; exact L.n_w' (by omega_arith)⟩, m₂, g₂, rd₂, wr₂⟩
 
 theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
     WP isa nonceBlock s (NoncePost p (bytesAt s.mem (w64 p.N) p.nl) s) := by
   have h1 := L.nl1
   have h15 := L.nl15
   obtain ⟨s₂, run₂, -, lp, m₂, g₂, rd₂, wr₂⟩ := nonceHead_ok L E
-  have a128 : w64 (p.W + BitVec.ofNat 32 (128 - p.nl)) = w64 p.W + BitVec.ofNat 64 (128 - p.nl) := L.aW (by omega)
+  have a128 : w64 (p.W + BitVec.ofNat 32 (128 - p.nl)) = w64 p.W + BitVec.ofNat 64 (128 - p.nl) := L.aW (by omega_arith)
   have fr₂ : Frame [⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩] s.mem s₂.mem := by
     rw [m₂]; exact Proof.Cmac.frame_store4 _ _ _ _ _
   have eN : bytesAt s₂.mem (w64 p.N) p.nl = bytesAt s.mem (w64 p.N) p.nl :=
     Proof.AesGcm.X86.bytesAt_frame fr₂ (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.n_w' (by decide)) (by omega)
+      simp only [List.mem_singleton] at hr; subst hr; exact L.n_w' (by decide)) (by omega_arith)
   unfold nonceBlock
   refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
   refine WP.seq (WP.mono (copyLoop_ok s₂ lp) fun s₃ P₃ => ?_)
@@ -157,19 +158,19 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       rw [m₃]
       exact writeBytes_frame _ _ _ (by
         rw [length_bytesAt]
-        exact Offset.contains (w64 p.W) (d := 128 - p.nl) (n := p.nl) (e := 112) (k := 16) (by omega) (by omega)
+        exact Offset.contains (w64 p.W) (d := 128 - p.nl) (n := p.nl) (e := 112) (k := 16) (by omega_arith) (by omega_arith)
           (by decide)))
       fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inl (by decide)))
   have hnl₃ := E₃.slots.nlen
   have htl₃ := E₃.slots.tlen
   simp only [slotv_eq] at hnl₃ htl₃
   have hsub : p.W + BitVec.ofNat 32 127 - BitVec.ofNat 32 p.nl = p.W + BitVec.ofNat 32 (127 - p.nl) :=
-    sub32 _ (by omega) (by decide)
+    sub32 _ (by omega_arith) (by decide)
   have a127 : w64 (p.W + BitVec.ofNat 32 (127 - p.nl) + BitVec.ofNat 32 0) = w64 p.W + BitVec.ofNat 64 (127 - p.nl) := by
     rw [show p.W + BitVec.ofNat 32 (127 - p.nl) + BitVec.ofNat 32 0 = p.W + BitVec.ofNat 32 (127 - p.nl) from
       BitVec.add_zero _]
-    exact L.aW (by omega)
-  have w127 : InRegions s₃.wr (w64 p.W + BitVec.ofNat 64 (127 - p.nl)) 1 := E₃.perm.wW (by omega)
+    exact L.aW (by omega_arith)
+  have w127 : InRegions s₃.wr (w64 p.W + BitVec.ofNat 64 (127 - p.nl)) 1 := E₃.perm.wW (by omega_arith)
   obtain ⟨s₄, run₄, m₄, g₄, rd₄, wr₄⟩ : ∃ s₄, runBlock isa [.mov .ecx (slot nlO), .mov .edx (.reg .ebp),
       .alu .add .edx (imm (tmpO + 15)), .alu .sub .edx (.reg .ecx), .mov .eax (imm 1), .store8 (at_ .edx 0) .al] s₃ =
         some s₄ ∧
@@ -183,12 +184,12 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
     (frame_toMut (rs := [⟨w64 p.W + BitVec.ofNat 64 112, 16⟩]) (by
       rw [m₄]
       exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
-        (Offset.contains (w64 p.W) (d := 127 - p.nl) (n := 1) (e := 112) (k := 16) (by omega) (by omega)
+        (Offset.contains (w64 p.W) (d := 127 - p.nl) (n := 1) (e := 112) (k := 16) (by omega_arith) (by omega_arith)
           (by decide)))
       fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inl (by decide)))
   have htl₄ := E₄.slots.tlen
   simp only [slotv_eq] at htl₄
-  have ht : p.tl < 2 ^ 32 := by have := L.tl16; omega
+  have ht : p.tl < 2 ^ 32 := by have := L.tl16; omega_arith
   have d2 : ∀ a : Nat, BitVec.ofNat 32 a + BitVec.ofNat 32 a = BitVec.ofNat 32 (2 * a) := fun a => by
     rw [← BitVec.ofNat_add, Nat.two_mul]
   obtain ⟨s₅, run₅, ax₅, g₅, m₅, rd₅, wr₅⟩ : ∃ s₅, runBlock isa [.mov .eax (slot tlO), .alu .and .eax (imm 15),
@@ -198,7 +199,7 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
     refine ⟨_, by grun [E₄.ebp, L.aW, E₄.perm.wR, htl₄], ?_, fun r h => by gregs [h], by gmems [], by gmems [],
       by gmems []⟩
     gregs [htl₄, and15_32 ht, d2]
-    congr 1; omega
+    congr 1; omega_arith
   have E₅ : Env p s₅ := E₄.keep (by rw [g₅ _ (by decide)]) (by rw [g₅ _ (by decide)]) rd₅ wr₅ m₅
   obtain ⟨s₆, run₆, m₆, g₆, rd₆, wr₆⟩ : ∃ s₆, runBlock isa [.movzx8 .ecx (at_ .ebp tmpO), .alu .or .ecx (.reg .eax),
       .store8 (at_ .ebp tmpO) .cl] s₅ = some s₆ ∧
@@ -207,7 +208,7 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       (∀ r, r ≠ .ecx → s₆.gpr r = s₅.gpr r) ∧ s₆.rd = s₅.rd ∧ s₆.wr = s₅.wr := by
     refine ⟨_, by grun [E₅.ebp, L.aW, E₅.perm.wR, E₅.perm.wW], ?_, fun r h => by gregs [h], by gmems [],
       by gmems []⟩
-    gmems [ax₅, or_byte32 _ (show 16 * (p.tl % 16) < 256 by omega)]
+    gmems [ax₅, or_byte32 _ (show 16 * (p.tl % 16) < 256 by omega_arith)]
   have E₆ : Env p s₆ := E₅.mut L (by rw [g₆ _ (by decide), E₅.ebp]) (by rw [g₆ _ (by decide), E₅.esp]) rd₆ wr₆
     (frame_toMut (rs := [⟨w64 p.W + BitVec.ofNat 64 112, 16⟩]) (by
       rw [m₆]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_pre _ (by decide)))
@@ -228,27 +229,27 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
     rw [m₂, Proof.Cmac.zero4_bytes]; rfl
   have e128 : w64 p.W + BitVec.ofNat 64 (128 - p.nl) =
       w64 p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 (16 - p.nl) := by
-    rw [Offset.add_add, show 112 + (16 - p.nl) = 128 - p.nl by omega]
+    rw [Offset.add_add, show 112 + (16 - p.nl) = 128 - p.nl by omega_arith]
   have e127 : w64 p.W + BitVec.ofNat 64 (127 - p.nl) =
       w64 p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 (15 - p.nl) := by
-    rw [Offset.add_add, show 112 + (15 - p.nl) = 127 - p.nl by omega]
+    rw [Offset.add_add, show 112 + (15 - p.nl) = 127 - p.nl by omega_arith]
   have L₃ : bytesAt s₃.mem (w64 p.W + BitVec.ofNat 64 112) 16 =
       Spec.Ocb.zeros (16 - p.nl) ++ bytesAt s.mem (w64 p.N) p.nl := by
-    rw [m₃, e128, bytesAt_writeBytes_at _ _ _ (by rw [hlen]; omega) (by decide), L₂, hlen]
-    rw [show 16 - p.nl + p.nl = 16 by omega]
+    rw [m₃, e128, bytesAt_writeBytes_at _ _ _ (by rw [hlen]; omega_arith) (by decide), L₂, hlen]
+    rw [show 16 - p.nl + p.nl = 16 by omega_arith]
     simp only [Spec.Ocb.zeros, List.take_replicate, List.drop_replicate,
-      show min (16 - p.nl) 16 = 16 - p.nl by omega, Nat.sub_self, List.replicate_zero, List.append_nil]
+      show min (16 - p.nl) 16 = 16 - p.nl by omega_arith, Nat.sub_self, List.replicate_zero, List.append_nil]
   have L₄ : bytesAt s₄.mem (w64 p.W + BitVec.ofNat 64 112) 16 =
       Spec.Ocb.zeros (15 - p.nl) ++ [1] ++ bytesAt s.mem (w64 p.N) p.nl := by
-    rw [m₄, e127, bytesAt_writeW8_at _ _ _ (by omega) (by decide), L₃]
+    rw [m₄, e127, bytesAt_writeW8_at _ _ _ (by omega_arith) (by decide), L₃]
     simp only [Spec.Ocb.zeros, List.take_append, List.take_replicate, List.drop_append, List.drop_replicate,
-      List.length_replicate, show min (15 - p.nl) (16 - p.nl) = 15 - p.nl by omega,
-      show 15 - p.nl - (16 - p.nl) = 0 by omega, show 16 - p.nl - (15 - p.nl + 1) = 0 by omega,
-      show 15 - p.nl + 1 - (16 - p.nl) = 0 by omega, List.take_zero, List.drop_zero, List.replicate_zero,
+      List.length_replicate, show min (15 - p.nl) (16 - p.nl) = 15 - p.nl by omega_arith,
+      show 15 - p.nl - (16 - p.nl) = 0 by omega_arith, show 16 - p.nl - (15 - p.nl + 1) = 0 by omega_arith,
+      show 15 - p.nl + 1 - (16 - p.nl) = 0 by omega_arith, List.take_zero, List.drop_zero, List.replicate_zero,
       List.nil_append, List.append_nil, List.append_assoc]
   have L₄d : ∀ k < 16, (bytesAt s₄.mem (w64 p.W + BitVec.ofNat 64 112) 16).getD k 0 =
       nbase (bytesAt s.mem (w64 p.N) p.nl) k := fun k hk => by
-    have := Proof.Ocb.nbase_list (bytesAt s.mem (w64 p.N) p.nl) (by rw [hlen]; omega) (by rw [hlen]; omega) hk
+    have := Proof.Ocb.nbase_list (bytesAt s.mem (w64 p.N) p.nl) (by rw [hlen]; omega_arith) (by rw [hlen]; omega_arith) hk
     rw [hlen] at this; rw [L₄]; exact this
   have e127' : w64 p.W + BitVec.ofNat 64 127 = w64 p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 15 :=
     (Offset.add_add _ 112 15).symm
@@ -264,9 +265,9 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
     unfold nb
     rcases k with _ | k
     · rfl
-    · simp only [List.getD_cons_succ, show k + 1 ≠ 0 by omega, ↓reduceIte]
+    · simp only [List.getD_cons_succ, show k + 1 ≠ 0 by omega_arith, ↓reduceIte]
       rw [List.getD_eq_getElem?_getD, List.getElem?_drop, ← List.getD_eq_getElem?_getD,
-        show 1 + k = k + 1 by omega]
+        show 1 + k = k + 1 by omega_arith]
       exact L₄d (k + 1) hk
   have b15e : s₆.mem (w64 p.W + BitVec.ofNat 64 127) = nb p.tl (bytesAt s.mem (w64 p.N) p.nl) 15 := by
     rw [e127', Proof.Ocb.getD_bytesAt_eq s₆.mem (w64 p.W + BitVec.ofNat 64 112) (k := 15) (n := 16) (by decide),
@@ -297,11 +298,11 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
         rw [m₃]
         refine (writeBytes_frame _ _ _ (R := ⟨w64 p.W + BitVec.ofNat 64 112, 16⟩) ?_).mono
           (fun r hr => by simp at hr; simp [hr])
-        rw [length_bytesAt, e128]; exact Offset.contains_base _ (by omega) (by omega))
+        rw [length_bytesAt, e128]; exact Offset.contains_base _ (by omega_arith) (by omega_arith))
     rw [m₇, m₆, m₅, m₄]
     refine (((F₃.writeW (List.mem_cons_self ..) _ ?_).writeW (List.mem_cons_self ..) _ ?_).writeW
       (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ ?_).writeW (List.mem_cons_self ..) _ ?_
-    · rw [e127]; exact Offset.contains_base _ (by omega) (by omega)
+    · rw [e127]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
     · exact contains_pre _ (by decide)
     · exact Region.contains_self _ _
     · rw [e127']; exact Offset.contains_base _ (by decide) (by decide)
@@ -311,10 +312,10 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
     apply Proof.Ocb.toBytes_inj
     rw [Proof.Ocb.toBytes_ofBytes hlen16]
     refine Proof.Cmac.ext16 hlen16 (Proof.Ocb.toBytes_length _) fun k hk => ?_
-    rw [L₇d k hk, Proof.Ocb.nonceN_masked_byte _ _ (by omega) (by omega) hk]
+    rw [L₇d k hk, Proof.Ocb.nonceN_masked_byte _ _ (by omega_arith) (by omega_arith) hk]
   · -- `bottom`
     rw [slotv_eq, m₇, Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
-      Mem.readW_writeW_self32, b15e, Proof.Ocb.nonceN_bottom _ _ (by omega) (by omega)]
+      Mem.readW_writeW_self32, b15e, Proof.Ocb.nonceN_bottom _ _ (by omega_arith) (by omega_arith)]
   · intro r h1 h2 h3 h4
     rw [g₇ r h1 h2, g₆ r h2, g₅ r h1, g₄ r h1 h2 h3, P₃.other r h1 h4 h3 h2, g₂ r h1 h2 h3 h4]
   · rw [rd₇, rd₆, rd₅, rd₄, P₃.rd, rd₂]

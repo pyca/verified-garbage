@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
 
 /-!
 # Streaming AES-CMAC on x86-64: copying bytes

@@ -4,11 +4,15 @@ public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyMessage.Args
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyVerified
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyMessage.Hash`. -/
 
@@ -30,7 +34,7 @@ theorem init_ok (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
       Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr [] := by
   unfold init VG.Impl.Ed25519.AArch64.Whole.callWith initArgs
   apply WP.seq
-  refine WP.mono (args_ok hc hL ha (args := [(.x0,.caller 4 0)]) (by decide) (by simp [Whole.valid]) (by simp [known]) (by decide)) ?_
+  refine WP.mono (args_ok hc hL ha (args := [(.x0,.caller 4 0)]) (by decide) (by decide) (by decide) (by decide)) ?_
   intro t ⟨ht, _, hv⟩
   have a0 : t.gpr .x0 = L.scr := by
     have hh := hv (.x0,.caller 4 0) (by simp)
@@ -137,7 +141,7 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 variable {L : Lay} {g : Reg → BitVec 64} {v : VReg → BitVec 128} {m₀ : Mem} {s : State}
 
 def challenge (L : Lay) : Region := ⟨L.E+128,64⟩
-def equationRd (L : Lay) : List Region := [L.PK,L.SIG,challenge L]
+def equationRd (L : Lay) : List Region := [L.PK,L.SIG,challenge L,L.TB]
 def equationWr (L : Lay) : List Region := [L.SCR]
 def EqArgs (L : Lay) (s : State) : Prop := s.gpr .x0 = L.pk ∧
   s.gpr .x1 = L.sig ∧ s.gpr .x2 = L.E+128 ∧ s.gpr .x3 = L.scr
@@ -147,23 +151,31 @@ theorem equation_noFrames : verifyEquation.noFrames = true := by lit_decide
 theorem challengeWithin (L : Lay) : Whole.Within (challenge L) L.FR :=
   ⟨128,rfl,by change 128+64≤256; decide⟩
 
-theorem equation_pre (hL : L.Ok) (ha : EqArgs L s) :
+theorem equation_pre (hL : L.Ok) (ha : EqArgs L s) (hsy : s.syms bSym = L.T)
+    (hm : BWords L.T s.mem) :
     verifyLocal.pre (s.callEntry.withRegions (equationRd L) (equationWr L)) := by
+  have hT : (s.callEntry.withRegions (equationRd L) (equationWr L)).syms bSym = L.T := hsy
+  have hB : BHeld (s.callEntry.withRegions (equationRd L) (equationWr L)) [L.SCR] := by
+    refine ⟨fun i hi => ?_, ?_, fun r hr => ?_⟩
+    · rw [hT]; exact hm i hi
+    · rw [hT]; exact hL.tbfit
+    · rw [hT, List.mem_singleton.mp hr]; exact hL.sc _ (by simp [Lay.inputs])
   simp only [verifyLocal, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs), ha.1,ha.2.1,ha.2.2.1,ha.2.2.2]
+    State.callEntry_gpr _ (by decide : Reg.x3 ∉ linkRegs), ha.1,ha.2.1,ha.2.2.1,ha.2.2.2, hT]
   exact ⟨rfl,rfl,hL.sc _ (by simp [Lay.inputs]),hL.sc _ (by simp [Lay.inputs]),
-    hL.kc.sub_left (challengeWithin L).sub,hL.nc⟩
+    hL.kc.sub_left (challengeWithin L).sub,hL.nc,hB⟩
 
 theorem equation_covers : Covers (equationRd L ++ equationWr L) (L.inputs ++ L.FR :: L.outputs) := by
   apply covers
   simp only [equationRd,equationWr,List.cons_append,List.nil_append,List.mem_cons,List.not_mem_nil,or_false]
-  rintro r (rfl | rfl | rfl | rfl)
+  rintro r (rfl | rfl | rfl | rfl | rfl)
   · exact .inr ⟨L.PK,by simp [Lay.inputs],0,by simp,by simp⟩
   · exact .inr ⟨L.SIG,by simp [Lay.inputs],0,by simp,by simp⟩
   · exact .inl (challengeWithin L)
+  · exact .inr ⟨L.TB,by simp [Lay.inputs],0,by simp,by simp⟩
   · exact .inr (scratch_covered L)
 
 theorem equation_writes : ∀ r ∈ equationWr L,
@@ -172,12 +184,13 @@ theorem equation_writes : ∀ r ∈ equationWr L,
   rw [List.mem_singleton.mp hr]
   exact .inr ⟨L.SCR,by simp [Lay.outputs],scratchWithin L⟩
 
-theorem equation_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
+theorem equation_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : EqArgs L s) (hsy : s.syms bSym = L.T)
+    (hm : BWords L.T s.mem) :
     WP isa (.call "vg_ed25519_verify_equation" verifyEquation) s fun t => Ctx L g v m₀ t ∧
       t.gpr .x0 = signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt s.mem L.pk 32) (Spec.Ed25519.bytesAt s.mem L.sig 64)
         (Spec.Ed25519.bytesAt s.mem (L.E+128) 64)) := by
-  refine Whole.call_ok hc verify_ok equation_noFrames (equation_pre hL ha)
+  refine Whole.call_ok hc verify_ok equation_noFrames (equation_pre hL ha hsy hm)
     equation_covers equation_writes fun t ht _ hp => ⟨ht,?_⟩
   change t.gpr .x0 = signWord (Spec.Ed25519.verifyEquation
     (Spec.Ed25519.bytesAt s.mem (s.callEntry.gpr .x0) 32)
@@ -188,15 +201,16 @@ theorem equation_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : EqArgs L s) :
     State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs),ha.1,ha.2.1,ha.2.2.1] at hp
   exact hp
 
-theorem equation_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem equation_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    (hsy : s.syms bSym = L.T) :
     WP isa (VG.Impl.Ed25519.AArch64.Whole.callWith VG.Impl.Ed25519.AArch64.VerifyMessage.equationArgs "vg_ed25519_verify_equation" verifyEquation) s
       fun t => Ctx L g v m₀ t ∧ t.gpr .x0 = signWord (Spec.Ed25519.verifyEquation
         (Spec.Ed25519.bytesAt s.mem L.pk 32) (Spec.Ed25519.bytesAt s.mem L.sig 64)
         (Spec.Ed25519.bytesAt s.mem (L.E+128) 64)) := by
-  refine WP.seq (WP.mono (args_ok hc hL ha
+  refine WP.seq (WP.mono_syms (args_ok hc hL ha
     (args := [(.x0,.caller 0 0),(.x1,.caller 3 0),(.x2,.frame 128),(.x3,.caller 4 0)])
-    (by simp) (by simp [Whole.valid]) (by simp [known]) (by simp [preserved]))
-    fun u ⟨hu,hm,hav⟩ => ?_)
+    (by simp) (by decide) (by decide) (by decide))
+    fun u ⟨hu,hm,hav⟩ su => ?_)
   have a0 := hav (.x0,.caller 0 0) (by simp)
   have a1 := hav (.x1,.caller 3 0) (by simp)
   have a2 := hav (.x2,.frame 128) (by simp)
@@ -205,7 +219,8 @@ theorem equation_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀
   change u.gpr .x1 = L.sig+0#64 at a1
   change u.gpr .x3 = L.scr+0#64 at a3
   rw [BitVec.add_zero] at a0 a1 a3
-  refine WP.mono (equation_call hu hL ⟨a0,a1,a2,a3⟩) fun t ⟨ht,hp⟩ => ⟨ht,?_⟩
+  refine WP.mono (equation_call hu hL ⟨a0,a1,a2,a3⟩ (by rw [su]; exact hsy) (hu.tbl hL ha.2))
+    fun t ⟨ht,hp⟩ => ⟨ht,?_⟩
   rw [hm] at hp
   exact hp
 
@@ -249,8 +264,8 @@ theorem message_step (backend : Whole.Backend) (hc : Ctx L g v m₀ s) (hL : L.O
     WP isa (update backend.code backend.suffix messageArgs) s fun t =>
       Ctx L g v m₀ t ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr
         (prev ++ Spec.Ed25519.bytesAt s.mem L.msg L.len.toNat) := by
-  apply update_ok backend hc hL ha (by simp) (by simp [Whole.valid])
-    (by simp [known]) (by decide) (p := L.msg) (len := L.len) (prev := prev) ?_
+  apply update_ok backend hc hL ha (by simp) (by decide)
+    (by decide) (by decide) (p := L.msg) (len := L.len) (prev := prev) ?_
     (hL.sc _ (by simp [Lay.inputs])) ?_ hr
   · intro t hav
     have a0 := hav (.x0,.caller 4 0) (by simp)
@@ -295,7 +310,7 @@ theorem finalize_ok (backend : Whole.Backend) (hc : Ctx L g v m₀ s) (hL : L.Ok
   apply WP.seq
   refine WP.mono (args_ok hc hL ha
     (args := [(.x0,.caller 4 0),(.x1,.caller 2 64),(.x2,.frame 192),(.x3,.caller 4 192)])
-    (by decide) (by simp [Whole.valid]) (by simp [known]) (by decide)) ?_
+    (by decide) (by decide) (by decide) (by decide)) ?_
   intro t ⟨ht, htmem, hav⟩
   have a0 : t.gpr .x0 = L.scr := by
     have hh := hav (.x0,.caller 4 0) (by simp)
@@ -444,7 +459,7 @@ theorem reduce_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀) 
         Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt s.mem (L.E + 192) 64) := by
   refine WP.seq (WP.mono (args_ok hc hL ha
     (args := [(.x0, .frame 128), (.x1, .frame 192), (.x2, .caller 4 0)])
-    (by simp) (by simp [Whole.valid]) (by simp [known]) (by simp [preserved]))
+    (by simp) (by decide) (by decide) (by decide))
     fun u ⟨hu, hm, hs⟩ => ?_)
   have a0 := hs (.x0, .frame 128) (by simp)
   have a1 := hs (.x1, .frame 192) (by simp)
@@ -530,16 +545,16 @@ theorem hashInput_eq (L : Lay) (m : Mem) : hashInput L m =
   rfl
 
 theorem body_ok (backend : Whole.Backend) (hc : Ctx L g v m₀ s) (hL : L.Ok)
-    (ha : Arguments L m₀) :
+    (ha : Arguments L m₀) (hsy : s.syms Impl.Ed25519.AArch64.bSym = L.T) :
     WP isa (body backend.code backend.suffix) s fun t => Ctx L g v m₀ t ∧
       t.gpr .x0 = signWord (Spec.Ed25519.verify (Spec.Ed25519.bytesAt m₀ L.pk 32)
         (Spec.Ed25519.bytesAt m₀ L.msg L.len.toNat) (Spec.Ed25519.bytesAt m₀ L.sig 64)) := by
-  refine WP.seq (WP.mono (hash_ok backend hc hL ha) fun t ⟨ht,hh⟩ => ?_)
-  refine WP.seq (WP.mono (reduce_step ht hL ha) fun u ⟨hu,_,hr⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hash_ok backend hc hL ha) fun t ⟨ht,hh⟩ st => ?_)
+  refine WP.seq (WP.mono_syms (reduce_step ht hL ha) fun u ⟨hu,_,hr⟩ su => ?_)
   rw [hh] at hr
-  refine WP.seq (WP.mono (extend_step hu hr) fun w ⟨hw,he⟩ => ?_)
+  refine WP.seq (WP.mono_syms (extend_step hu hr) fun w ⟨hw,he⟩ sw => ?_)
   rw [hashInput_eq] at he
-  refine WP.mono (equation_step hw hL ha) fun z ⟨hz,eq⟩ => ⟨hz,?_⟩
+  refine WP.mono (equation_step hw hL ha (by rw [sw, su, st]; exact hsy)) fun z ⟨hz,eq⟩ => ⟨hz,?_⟩
   rw [hw.input_bytes hL (r := L.PK) (by simp [Lay.inputs]) (by change 32≤2^64; decide),
     hw.input_bytes hL (r := L.SIG) (by simp [Lay.inputs]) (by change 64≤2^64; decide),he] at eq
   exact eq

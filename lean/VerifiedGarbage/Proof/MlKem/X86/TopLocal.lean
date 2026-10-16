@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.NttLoop
 
 /-!
 # ML-KEM on x86 (32-bit): the code of the top-level functions between calls
@@ -97,21 +101,21 @@ theorem wordw_bytes {m : Mem} {d : Addr} {w : BitVec 32} {k j : Nat} (hk : 4 * k
   by_cases e : 4 * k ≤ j
   · have t : (d + BitVec.ofNat 64 j - (d + BitVec.ofNat 64 (4 * k))).toNat = j - 4 * k := by
       rw [show d + BitVec.ofNat 64 j - (d + BitVec.ofNat 64 (4 * k)) = BitVec.ofNat 64 (j - 4 * k) by
-        rw [show j = 4 * k + (j - 4 * k) by omega, BitVec.ofNat_add]; bv_omega]
-      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-    rw [ite_eq_left e, t, ite_eq_left (by omega)]
+        rw [show j = 4 * k + (j - 4 * k) by omega_using [e], BitVec.ofNat_add]; bv_omega]
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj])]
+    rw [ite_eq_left e, t, ite_eq_left (by omega_using [hj])]
     rfl
   · rw [ite_eq_right e, ite_eq_right fun h => ?_]
     have t : (d + BitVec.ofNat 64 j - (d + BitVec.ofNat 64 (4 * k))).toNat = 2 ^ 64 - (4 * k - j) := by
       have : d + BitVec.ofNat 64 j - (d + BitVec.ofNat 64 (4 * k)) = BitVec.ofNat 64 j - BitVec.ofNat 64 (4 * k) := by
         bv_omega
-      rw [this, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega),
-        Nat.mod_eq_of_lt (a := 4 * k) (by omega)]
-      omega
+      rw [this, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := j) (by omega_using [hk, e]),
+        Nat.mod_eq_of_lt (a := 4 * k) (by omega_using [hk])]
+      omega_using [hk, e]
     rw [t] at h
-    omega
+    omega_using [hk, h]
 
-theorem copyW_piece (sa so da dO n : Nat) (hn : 0 < n) (hn' : n < 2 ^ 30)
+theorem copyW_piece (sa so da dO n : Nat) (hn : 0 < n) (_hn' : n < 2 ^ 30)
     (hc : (Y.ok ⟨sa, so, 4 * n⟩ && Y.okW ⟨da, dO, 4 * n⟩ && Y.sep ⟨sa, so, 4 * n⟩ ⟨da, dO, 4 * n⟩) = true)
     {h₁ h₂ : Taint.Hint VG.X86.Taint.T}
     (t₁ : (VG.X86.taint.check (τr [.esp, .esi]) (.block (ptrTo Y.sc .edi ⟨sa, so, 4 * n⟩ ++
@@ -150,23 +154,23 @@ theorem copyW_piece (sa so da dO n : Nat) (hn : 0 < n) (hn' : n < 2 ^ 30)
       u.gpr .ebp = D.ptr s₀ + BitVec.ofNat 32 (4 * k) ∧ u.gpr .ecx = BitVec.ofNat 32 (n - k) ∧
       Frame [D.rgn s₀] s.mem u.mem ∧ ∀ j < 4 * k, u.mem (D.addr s₀ + BitVec.ofNat 64 j) = s.mem (S.addr s₀ + BitVec.ofNat 64 j)
     have i0 : I 0 s₁ := ⟨h₁, by rw [e₁]; simp, by rw [e₂]; simp, e₃, by rw [m₁]; exact Frame.refl _ _,
-      fun j hj => absurd hj (by omega)⟩
+      fun j hj => absurd hj (by omega_using [])⟩
     refine (wp_count hn I i0 fun k hk u ⟨cu, du, bu, xu, fu, cpu⟩ => ?_).mono fun u ⟨cu, _, _, _, fu, cpu⟩ => ?_
     · have eS : u.ea (at_ .edi 0) = S.addr s₀ + BitVec.ofNat 64 (4 * k) := by
-        simp only [State.ea, at_, du]; rw [ea_add (by omega)]; rfl
+        simp only [State.ea, at_, du]; rw [ea_add (by omega_using [fS, hk])]; rfl
       have eD : u.ea (at_ .ebp 0) = D.addr s₀ + BitVec.ofNat 64 (4 * k) := by
-        simp only [State.ea, at_, bu]; rw [ea_add (by omega)]; rfl
+        simp only [State.ea, at_, bu]; rw [ea_add (by omega_using [fD, hk])]; rfl
       have hinS : InRegions (u.rd ++ u.wr) (S.addr s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
-        Buf.inRegR hp hS cu.rd cu.wr (show 4 * k + 4 ≤ 4 * n by omega)
+        Buf.inRegR hp hS cu.rd cu.wr (show 4 * k + 4 ≤ 4 * n by omega_using [hk])
       refine wp_movm' (by rw [eS]; exact hinS) fun u₁ o₁ v₁ => ?_
       have c₁ := cu.only o₁ (by decide) (by decide)
       have eD₁ : u₁.ea (at_ .ebp 0) = D.addr s₀ + BitVec.ofNat 64 (4 * k) := by
         rw [← eD]; simp only [State.ea, at_, o₁.gpr _ (by decide : Reg.ebp ∉ [Reg.eax])]
       have hinD : InRegions u₁.wr (D.addr s₀ + BitVec.ofNat 64 (4 * k)) 4 :=
-        Buf.inRegW hp hD₁ (Lay.okW_iff.mp hD).2 c₁.wr (show 4 * k + 4 ≤ 4 * n by omega)
+        Buf.inRegW hp hD₁ (Lay.okW_iff.mp hD).2 c₁.wr (show 4 * k + 4 ≤ 4 * n by omega_using [hk])
       refine wp_store' (by rw [eD₁]; exact hinD) fun u₂ g₂ r₂ w₂ m₂ => ?_
       obtain ⟨r, hr, hcr⟩ := Buf.contains hp hD₁ (Lay.okW_iff.mp hD).2 (o := 4 * k) (n := 4)
-        (show 4 * k + 4 ≤ 4 * n by omega)
+        (show 4 * k + 4 ≤ 4 * n by omega_using [hk])
       have c₂ : Ctx Y s₀ u₂ := ⟨by rw [g₂]; exact c₁.esp, by rw [r₂]; exact c₁.rd, by rw [w₂]; exact c₁.wr,
         by rw [g₂]; exact c₁.esi, by rw [m₂, eD₁]; exact c₁.frame.writeW hr _ hcr⟩
       refine wp_addi fun u₃ o₃ v₃ => wp_addi fun u₄ o₄ v₄ => wp_subi_last fun u₅ o₅ v₅ z₅ => ?_
@@ -180,26 +184,26 @@ theorem copyW_piece (sa so da dO n : Nat) (hn : 0 < n) (hn' : n < 2 ^ 30)
       refine ⟨⟨c₅, ?_, ?_, by rw [v₅, ex]; exact cnt_next hk, ?_, ?_⟩, ?_⟩
       · rw [o₅.gpr _ (by decide), o₄.gpr _ (by decide), v₃, g₂, o₁.gpr _ (by decide), du]
         show _ + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 4 = _
-        rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega]
+        rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega_using []]
       · rw [o₅.gpr _ (by decide), v₄, o₃.gpr _ (by decide), g₂, o₁.gpr _ (by decide), bu]
         show _ + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 4 = _
-        rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega]
+        rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega_using []]
       · rw [m₅, o₁.mem]
         exact fu.writeW (List.mem_singleton_self _) _ (by
           show (⟨D.addr s₀, 4 * n⟩ : Region).Contains _ 4
-          simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega)]; omega)
+          simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat _ (by omega_using [fD, hk])]; omega_using [hk])
       · intro j hj
-        rw [m₅, o₁.mem, wordw_bytes (by omega) hj]
+        rw [m₅, o₁.mem, wordw_bytes (by omega_using [fD, hk]) hj]
         split
         · rename_i e
-          rw [← Mem.readW_byte _ _ (by omega), BitVec.add_assoc, ← BitVec.ofNat_add,
-            show 4 * k + (j - 4 * k) = j by omega]
+          rw [← Mem.readW_byte _ _ (by omega_using [hj]), BitVec.add_assoc, ← BitVec.ofNat_add,
+            show 4 * k + (j - 4 * k) = j by omega_using [e]]
           exact fu.bytes (R := S.rgn s₀) (fun r hr => by
-            rw [List.mem_singleton] at hr; subst hr; exact dd) (by show 4 * n ≤ 2 ^ 64; omega)
-            (show j < 4 * n by omega)
+            rw [List.mem_singleton] at hr; subst hr; exact dd) (by show 4 * n ≤ 2 ^ 64; omega_using [fD])
+            (show j < 4 * n by omega_using [hk, hj])
         · exact cpu j (by omega)
       · show u₅.zf.map (!·) = _
-        rw [z₅, ex]; exact cnt_ne hk (by omega)
+        rw [z₅, ex]; exact cnt_ne hk (by omega_using [fD])
     · refine hQ s₀ s u hp ha cu fu ?_
       exact List.map_congr_left fun j hj => cpu j (List.mem_range.mp hj)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -276,18 +280,18 @@ theorem maskA_piece (ao po : Nat)
       (∀ i < k, coeffAt u.mem (P.addr s₀) i = coeffAt s.mem (P.addr s₀) i &&& (0 - s.gpr .eax)) ∧
       (∀ i, k ≤ i → i < 256 → coeffAt u.mem (P.addr s₀) i = coeffAt s.mem (P.addr s₀) i)
     have i0 : I 0 s₈ := ⟨c₈, by rw [o₈.gpr _ (by decide), v₇, v₆, g₅, c₄.esi]; simp; rfl,
-      v₈, rE, fC.mono (by simp), aC, fun i hi => absurd hi (by omega), fun i _ hi => cP i hi⟩
+      v₈, rE, fC.mono (by simp), aC, fun i hi => absurd hi (by omega_using []), fun i _ hi => cP i hi⟩
     refine (wp_count (N := 256) (by decide) I i0 fun k hk u ⟨cu, du, xu, eu, fu, au, lo, hi⟩ => ?_).mono
       fun u ⟨cu, _, _, _, fu, au, lo, _⟩ => hQ s₀ s u hp ha cu fu au lo
     have eP : u.ea (at_ .edi 0) = coeffAddr (P.addr s₀) k := by
-      simp only [State.ea, at_, du]; rw [ea_add (by omega)]; rfl
+      simp only [State.ea, at_, du]; rw [ea_add (by omega_using [fP, hk])]; rfl
     have hk' : k < n := by rw [n_eq]; exact hk
     have inP : InRegions u.wr (coeffAddr (P.addr s₀) k) 4 :=
-      Buf.inRegW hp hP₁ (Lay.okW_iff.mp hP).2 cu.wr (show 4 * k + 4 ≤ 1024 by omega)
+      Buf.inRegW hp hP₁ (Lay.okW_iff.mp hP).2 cu.wr (show 4 * k + 4 ≤ 1024 by omega_using [hk])
     obtain ⟨rP, hrP, hcP⟩ := Buf.contains hp hP₁ (Lay.okW_iff.mp hP).2 (o := 4 * k) (n := 4)
-      (show 4 * k + 4 ≤ 1024 by omega)
+      (show 4 * k + 4 ≤ 1024 by omega_using [hk])
     have inP' : InRegions (u.rd ++ u.wr) (coeffAddr (P.addr s₀) k) 4 :=
-      Buf.inRegR hp hP₁ cu.rd cu.wr (show 4 * k + 4 ≤ 1024 by omega)
+      Buf.inRegR hp hP₁ cu.rd cu.wr (show 4 * k + 4 ≤ 1024 by omega_using [hk])
     refine wp_movm' (by rw [eP]; exact inP') fun u₁ o₁ v₁ => ?_
     have c₁ := cu.only o₁ (by decide) (by decide)
     refine wp_andr fun u₂ o₂ v₂ => ?_
@@ -308,17 +312,17 @@ theorem maskA_piece (ao po : Nat)
     refine ⟨⟨c₅, ?_, by rw [v₅, ex]; exact cnt_next hk, ?_, ?_, ?_, fun i hi' => ?_, fun i hi₁ hi₂ => ?_⟩, ?_⟩
     · rw [o₅.gpr _ (by decide), v₄, g₃, o₂.gpr _ (by decide), o₁.gpr _ (by decide), du]
       show _ + BitVec.ofNat 32 (4 * k) + BitVec.ofNat 32 4 = _
-      rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega]
+      rw [add_ofNat_add, show 4 * (k + 1) = 4 * k + 4 by omega_using []]
     · rw [o₅.gpr _ (by decide), o₄.gpr _ (by decide), g₃, o₂.gpr _ (by decide), o₁.gpr _ (by decide), eu]
     · rw [m₅]; exact fu.writeW (r := P.rgn s₀) (by simp) _ (coeff_contains _ hk')
     · rw [m₅, Mem.readW_writeW_sep (dd.sep (Region.contains_self _ _) (coeff_contains _ hk')) (by decide)]
       exact au
-    · rw [m₅, coeffAt_writeW _ _ (by rw [n_eq]; omega) hk']
+    · rw [m₅, coeffAt_writeW _ _ (by rw [n_eq]; omega_using [hk, hi']) hk']
       split
       · rename_i e; subst e; rfl
       · exact lo i (by omega)
-    · rw [m₅, coeffAt_writeW_ne _ _ (by rw [n_eq]; omega) hk' (by omega)]
-      exact hi i (by omega) hi₂
+    · rw [m₅, coeffAt_writeW_ne _ _ (by rw [n_eq]; omega_using [hi₂]) hk' (by omega_using [hi₁])]
+      exact hi i (by omega_using [hi₁]) hi₂
     · show u₅.zf.map (!·) = _
       rw [z₅, ex]; exact cnt_ne hk (by decide)
   · simp only [List.mem_singleton] at hr

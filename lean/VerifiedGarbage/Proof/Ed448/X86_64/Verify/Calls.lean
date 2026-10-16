@@ -1,15 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
+import VerifiedGarbage.Proof.Ed448.X86_64.VariantBounds
 public import VerifiedGarbage.Proof.Ed448.X86_64.BaseLocal
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Hash
 public import VerifiedGarbage.Proof.Ed448.X86_64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLocal
-public import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
+import VerifiedGarbage.Proof.Ed448.X86_64.VerifyLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 
 /-!
 # Ed448 verification on x86-64: the challenge and the equation

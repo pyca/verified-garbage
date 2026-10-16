@@ -152,6 +152,30 @@ def load512 (s : State) (a : Addr) : Option (BitVec 512) :=
 def store512 (s : State) (a : Addr) (v : BitVec 512) : Option State :=
   if InRegions s.wr a 64 then some { s with mem := s.mem.writeW a v } else none
 
+/-- The address of quadword `j` of a 64-byte access at `a`. -/
+def qAddr (a : Addr) (j : Nat) : Addr := a + BitVec.ofNat 64 (8 * j)
+
+/-- The quadwords of a 64-byte access that the mask `k` enables: bit `j`
+of `k` for quadword `j`, from 0 to 7. -/
+def qOn (k : BitVec 64) : List Nat := (List.range 8).filter k.getLsbD
+
+/-- Load the quadwords of the 64 bytes at `a` that `k` enables, the others
+0 (zeroing-masking); faults unless each enabled quadword may be read, and
+reads no other. -/
+def loadMasked512 (s : State) (a : Addr) (k : BitVec 64) : Option (BitVec 512) :=
+  if ∀ j ∈ qOn k, InRegions (s.rd ++ s.wr) (qAddr a j) 8 then
+    let q (j : Nat) : BitVec 64 := if k.getLsbD j then s.mem.readW (qAddr a j) 64 else 0
+    some (q 7 ++ q 6 ++ q 5 ++ q 4 ++ q 3 ++ q 2 ++ q 1 ++ q 0)
+  else none
+
+/-- Store the quadwords of `v` that `k` enables to the 64 bytes at `a`,
+leaving the others' bytes unchanged (merging-masking); faults unless each
+enabled quadword may be written, and writes no other. -/
+def storeMasked512 (s : State) (a : Addr) (k : BitVec 64) (v : BitVec 512) : Option State :=
+  if ∀ j ∈ qOn k, InRegions s.wr (qAddr a j) 8 then
+    some { s with mem := (qOn k).foldl (fun m j => m.writeW (qAddr a j) (v.extractLsb' (64 * j) 64)) s.mem }
+  else none
+
 /-- Lane `i` (bits `128i+127:128i`, for `i` 0 or 1) of an AVX register. -/
 def lane (s : State) (r : XReg) (i : Nat) : BitVec 128 := if i = 0 then s.xmm r else s.ymmHi r
 

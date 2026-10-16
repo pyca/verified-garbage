@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-KEM-768 on x86-64: `vg_mlkem768_keygen`, `vg_mlkem768_encaps_h` and `vg_mlkem768_decaps`

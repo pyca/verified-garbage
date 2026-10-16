@@ -5,6 +5,9 @@ public import VerifiedGarbage.Impl.X25519.X86_64
 public import VerifiedGarbage.Proof.X25519.X86_64.Invert
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 public import VerifiedGarbage.Proof.X25519.X86_64.Lit
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Divstep.Bound
+import VerifiedGarbage.Impl.Mont.Mod
 
 /-! # Curve25519's inversion, in radix `2^64`, on x86-64 -/
 

@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86.Cmp
 
 /-!
 # AES-GCM-SIV on x86: a block encrypted with the encryption key (`tag`)
@@ -124,10 +125,8 @@ theorem tagArgs_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) {o : Nat} (ho
     refine ⟨_, by simp only [copy16, zero4, ctrArgs]; grun [E.ebp, L.aW, E.perm.wW, E.perm.wR, hcp, hz, rR'],
       ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
       first
+      | (gregs [E.ebp, E.esp, rR']; done)
       | (gmems [hcp, hz]; done)
-      | (gregs [E.ebp, rR']; done)
-      | (gregs [E.ebp, E.esp]; done)
-      | (gregs []; done)
       | rfl
   have f₁ : Frame [⟨w64 p.W + BitVec.ofNat 64 112, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 o, 16⟩] t.mem t₁.mem := by
     rw [hm₁, Proof.Cmac.zero4]

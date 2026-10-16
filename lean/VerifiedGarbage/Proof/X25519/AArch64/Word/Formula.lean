@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.X25519.Ladder
+import Mathlib.Tactic.SplitIfs
 
 /-! The shared field operations implement precisely the RFC 7748 ladder formulas. -/
 

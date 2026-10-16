@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: `Verified`

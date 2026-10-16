@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Sha256.AArch64.Compress
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
-public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Spec.Sha256.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
@@ -12,6 +12,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sha256.Digest
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # Sha256 on AArch64: the shared contracts

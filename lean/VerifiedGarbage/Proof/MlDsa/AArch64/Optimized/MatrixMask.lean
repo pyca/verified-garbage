@@ -1,15 +1,24 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseAdd
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MatrixMask
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskStep
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskStep
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskMemory
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Mem
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! ## From `MatrixMaskGroup.lean` -/
 

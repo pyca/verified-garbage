@@ -2,14 +2,28 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
 meta import VerifiedGarbage.Proof.MlDsa.X86.Message.Call
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
-public import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
+import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
 meta import VerifiedGarbage.Proof.MlKem.X86.SampleSetup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+meta import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit), `sign_message` and `verify_message`: SHAKE256 through the sponge functions
@@ -185,7 +199,7 @@ theorem zeroSt_piece (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀
       exact (zeroSt_ok h.ok h.ctx).mono fun s' ⟨c, f, z⟩ => hQ s₀ s s' h₀ ha ⟨h.ok, c⟩ f z)
     (fun s₀ s₀' s s' h₀ h₀' hq ha ha' r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      rw [(hA s₀ s h₀ ha).ctx.esi, (hA s₀' s' h₀' ha').ctx.esi, (hpub s₀ s₀' h₀ h₀' hq).x]) (by taint_decide)
+      rw [(hA s₀ s h₀ ha).ctx.esi, (hA s₀' s' h₀' ha').ctx.esi, (hpub s₀ s₀' h₀ h₀' hq).x]) (by native_taint_decide)
 
 /-- The stack the sponge functions' calls use. -/
 theorem kb_stk {L : Lay} (hL : L.Ok) {a : Nat} (ha : a ≤ 40) : Region.Sub (below L.E1 a) L.STK :=
@@ -412,7 +426,7 @@ theorem ksqz_piece (hpub : ∀ s₀ s₀', Pre s₀ → Pre s₀' → Pub s₀ s
     simp only [Arg.val, hc.esi, oST, oKS, oMU, x0'] at e0 e1 e2 e3 e4 e5
     exact ⟨e0, e1, e2, e3, e4, e5⟩
   refine argsWith_piece Proof.Sha3.X86.Stream.Squeeze.squeeze_verified.1
-    Proof.Sha3.X86.Stream.Squeeze.squeeze_verified.2.1 squeeze_nosp (by decide) (by decide) (by taint_decide) hpub hA hok
+    Proof.Sha3.X86.Stream.Squeeze.squeeze_verified.2.1 squeeze_nosp (by decide) (by decide) (by native_taint_decide) hpub hA hok
     (fun _ => [])
     (fun s₀ => [reg32 (lay s₀).X32 200, reg32 ((lay s₀).X32 + BitVec.ofNat 32 840) 64,
       reg32 ((lay s₀).X32 + BitVec.ofNat 32 200) 640, below (lay s₀).E1 24])

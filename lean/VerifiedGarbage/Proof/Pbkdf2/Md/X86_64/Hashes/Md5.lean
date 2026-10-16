@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
 meta import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
 public import VerifiedGarbage.Proof.Md5.X86_64.Lit
 meta import VerifiedGarbage.Proof.Md5.X86_64.Lit
-public import VerifiedGarbage.Proof.Hmac.Generic.Common
+import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Spec.Md5.Contract
 meta import VerifiedGarbage.Spec.Md5.Contract
@@ -18,6 +18,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
 
 /-!
 # MD5 on x86-64, as a Merkle–Damgård hash function

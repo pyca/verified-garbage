@@ -7,6 +7,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
+import Mathlib.Tactic.SplitIfs
 
 /-! AES-NI round execution on IA-32. Register updates stay folded; the same
 proof applies to any distinct block registers other than the key temporary. -/

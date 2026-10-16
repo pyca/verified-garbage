@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCacheMeta
-public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsPrepare
+import VerifiedGarbage.Proof.Argon2.X86_64.AddressCallsPrepare
 public import VerifiedGarbage.Proof.Argon2.X86_64.AddressCalls
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
 
 /-! Merged from `Proof.Argon2.X86_64.AddressGeneration`. -/
 

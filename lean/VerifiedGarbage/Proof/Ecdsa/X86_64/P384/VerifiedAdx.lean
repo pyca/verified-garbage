@@ -4,10 +4,27 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitEraseAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.RspMxcsr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Proof.P384.Prime
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+meta import VerifiedGarbage.Proof.P384.Prime
 
 /-!
 # ECDSA over P-384 on x86-64 with BMI2 and ADX: `Verified`
@@ -104,7 +121,7 @@ theorem p384x_ok (hI : InvSounds) : CfgOk p384x where
 
 /-- `[k]G` is a call of `vg_p384_mul_base_adx`, which calls no other function. -/
 theorem p384x_mulBase : MulBaseOk p384x :=
-  ⟨fun _ => ⟨_, rfl, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
+  ⟨fun _ => ⟨_, rfl, by decide, by lit_decide⟩, fun h => absurd h (by decide)⟩
 
 theorem p384x_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
     CombTbls p384x := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
@@ -126,14 +143,13 @@ theorem sign_x86_adx (hL : Law Spec.P384.curve)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384x_ok hI) hL (p384x_tbls hT) (pre_of_x hs) p384x_mulBase
-  have hsp : ∀ i ∈ instrs signP384Adx.inline, Taint.clobbers i .rsp = false := by
-    have h : signP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
-    intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have hok : signP384Adx.InlineOk = true := by lit_decide
+  have hsp := Code.clobbers_rsp_of_inlineOk hok
+  have hmx : signP384Adx.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
+    rw [Code.allInstrs_inline]; lit_decide
+  have F := (Exec.regions he (Code.noCalls_inline hok)).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl

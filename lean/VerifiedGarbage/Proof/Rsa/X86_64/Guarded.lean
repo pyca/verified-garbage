@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 meta import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Tactic.Set
+meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA on x86-64: a function guarded by the check of its public exponent

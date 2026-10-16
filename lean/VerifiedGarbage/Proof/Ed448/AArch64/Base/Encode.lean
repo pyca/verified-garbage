@@ -5,10 +5,16 @@ public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.AArch64.Base.Add
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
 public import VerifiedGarbage.Proof.X448.AArch64.Fast.Inv
+public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.MulSlots
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+public import VerifiedGarbage.Proof.X448.AArch64.FinalSwap
+public import VerifiedGarbage.Proof.X448.AArch64.Ladder
+public import VerifiedGarbage.Proof.X448.AArch64.Weak.Ladder
 
 /-!
 # Ed448 base-point multiplication on AArch64: the encoding
@@ -68,18 +74,20 @@ theorem encode_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : BEnv s.mem
   -- `1/Z` into `T7`.
   refine WP.seq (WP.mono (invert_ok hs hb) fun s1 ⟨k1, b1, e1⟩ => ?_)
   have hs1 : Scr s1 base := hs.of_keeps k1.regs (by decide)
-  simp only [sign, List.append_assoc]
-  rw [List.cons_append]
   refine WP.seq ?_
+  unfold sign
+  rw [WP.seq_iff]
   -- The output pointer.
   rw [← List.singleton_append, WP.block_append_iff]
   refine WP.mono (moveOutput_ok s1) fun s2 ⟨x2, m2, k2⟩ => ?_
   have hs2 : Scr s2 base := hs1.of_keeps k2 (by decide)
   have b2 : BEnv s2.mem base := by rw [m2]; exact b1
   -- `Y` to slot 3, and `X/Z` into `X2`.
-  rw [WP.block_append_iff]
-  refine block_codeOf (copyOp hs2 b2 3 1 fun s3 k3 b3 _ _ e3 =>
-    mulOp (k3.scr hs2) b3 1 0 21 (Or.inr (by decide)) fun s4 k4 b4 m4 _ e4 => WP.block_nil ?_)
+  refine block_codeOf (copyOp hs2 b2 3 1 fun s3 k3 b3 _ _ e3 => WP.block_nil ?_)
+  rw [WP.seq_iff]
+  refine WP.mono (VG.Proof.Ed448.AArch64.Point56.mulCallKE (k3.scr hs2) b3 1 0 21 (by decide))
+    fun s4 ⟨k4, b4, m4, _, e4⟩ => ?_
+  replace e4 : EV s4.mem base = Function.update (EV s3.mem base) 1 (EV s3.mem base 0 * EV s3.mem base 21) := e4
   have hs4 : Scr s4 base := k4.scr (k3.scr hs2)
   rw [WP.block_append_iff]
   refine WP.mono (VG.Proof.Curve448.AArch64.toLegacy_ok' hs4 (o := X2) (by decide) (by decide)

@@ -1,14 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
-public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-public import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSAES-PKCS1-v1_5 encryption on x86-64: the frame
@@ -32,8 +33,8 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 structure EPre (s : State) : Prop where
   sp1 : encStack ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 56 ≤ 2 ^ 64
-  hrd : s.rd = [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
-    ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArgAddr s 0, 48⟩]
+  hrd : Covers [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩,
+    ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArgAddr s 0, 48⟩] s.rd
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩]
   dOn : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   dOe : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
@@ -71,13 +72,13 @@ structure EPre (s : State) : Prop where
   L2 : (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat
   hml : (stackArg s 1).toNat + 11 ≤ (s.gpr .rcx).toNat
   hpl : (stackArg s 3).toNat = (s.gpr .rcx).toNat - (stackArg s 1).toNat - 3
-  hsl : 16 * (s.gpr .rcx).toNat ≤ (stackArg s 5).toNat
+  hsl : 16 * (s.gpr .rcx).toNat + 32 ≤ (stackArg s 5).toNat
 
 theorem ePre_of {s : State} (h : encK.pre s) : EPre s := by
   simp only [encK] at h
   obtain ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOm, dOp, dOs, dOa, dns, des, dms, dps, dsa, dRo, -, -, -, -, dRs, -,
     dKo, dKn, dKe, dKm, dKp, dKs, dKa, wO, wN, wE, wM, wP, wS, ⟨k1, k2⟩, hsi, L1, L2, hml, hpl, hsl⟩ := h
-  exact ⟨sp1, sp2, hrd, hwr, dOn, dOe, dOm, dOp, dOs, dOa, dns, des, dms, dps, dsa, dRo, dRs, dKo, dKn, dKe, dKm,
+  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, hwr, dOn, dOe, dOm, dOp, dOs, dOa, dns, des, dms, dps, dsa, dRo, dRs, dKo, dKn, dKe, dKm,
     dKp, dKs, dKa, wO, wN, wE, wM, wP, wS, k1, k2, hsi, L1, L2, hml, hpl, hsl⟩
 
 /-- The length of `PS`. -/
@@ -172,8 +173,10 @@ theorem ea_arg {t : State} {s : State} (h : t.gpr .rsp = fb s) (j : Nat) :
 
 theorem arg_in {s : State} (hp : EPre s) {rd : List Region} (hrd : rd = s.rd) (wr : List Region) {j : Nat}
     (hj : j < 6) : InRegions (rd ++ wr) (stackArgAddr s j) 8 :=
-  ⟨⟨stackArgAddr s 0, 48⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp),
-    by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
+  by
+    rw [hrd]
+    exact hp.hrd.left _ _ ⟨⟨stackArgAddr s 0, 48⟩, by simp,
+      by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
 
 /-- What the first block leaves. -/
 structure Setup (s t : State) : Prop where

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha1.X86_64.Compress
 meta import VerifiedGarbage.Proof.Sha1.X86_64.Compress
-public import VerifiedGarbage.Proof.Sha1.Stream
+import VerifiedGarbage.Proof.Sha1.Stream
 meta import VerifiedGarbage.Proof.Sha1.Stream
 public import VerifiedGarbage.Impl.Sha1.X86_64.Stream
 meta import VerifiedGarbage.Impl.Sha1.X86_64.Stream

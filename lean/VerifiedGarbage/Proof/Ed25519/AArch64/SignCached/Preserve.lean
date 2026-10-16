@@ -1,7 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Args
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.HashPre
@@ -9,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.Calls`. -/
 
@@ -131,7 +136,7 @@ theorem init_step (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) 
     WP isa init s fun t => Ctx L g vec m₀ t ∧ Frame (hashWrites L) s.mem t.mem ∧
       Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr [] := by
   refine WP.seq (WP.mono (args_ok hc hL ha (args := [(.x0, .caller 5 0)])
-    (by decide) (by simp [Whole.valid]) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by decide) (by decide) (by decide)) fun u ⟨hu, hm, hs⟩ => ?_)
   have a0 := hs (.x0, .caller 5 0) (by simp)
   change u.gpr .x0 = L.scr + 0#64 at a0
   rw [BitVec.add_zero] at a0
@@ -188,11 +193,11 @@ theorem update_step (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Ar
       Whole.valid x.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro x (rfl | rfl | rfl | rfl | rfl)
-    · simp [Whole.valid]
+    · decide
     · exact hc16
     · exact hp
     · exact hn
-    · simp [Whole.valid]
+    · decide
   refine WP.seq (WP.mono (args_ok hc hL ha (by simp) hv (by simp [preserved]))
     fun u ⟨hu, hm, hs⟩ => ?_)
   have a0 := hs (.x0, .caller 5 0) (by simp)
@@ -227,10 +232,10 @@ theorem finalize_step (v : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : 
       (.x2, .frame 192), (.x3, .caller 5 192)] → Whole.valid x.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro x (rfl | rfl | rfl | rfl)
-    · simp [Whole.valid]
+    · decide
     · cases b <;> simp [Whole.valid] <;> omega
-    · simp [Whole.valid]
-    · simp [Whole.valid]
+    · decide
+    · decide
   refine WP.seq (WP.mono (args_ok hc hL ha (by simp) hv (by simp [preserved]))
     fun u ⟨hu, hm, hs⟩ => ?_)
   have a0 := hs (.x0, .caller 5 0) (by simp)
@@ -329,7 +334,7 @@ theorem update_input (v : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : A
     rw [BitVec.add_zero]
     exact hi
   refine WP.mono (update_step v hc hL ha count (.caller source 0) (.const 32) hc16
-    ⟨hj, by decide⟩ (by simp [Whole.valid]) inp hcount hr) fun t ⟨ht, hf, hh⟩ => ⟨ht, hf, ?_⟩
+    ⟨hj, by decide⟩ (by decide) inp hcount hr) fun t ⟨ht, hf, hh⟩ => ⟨ht, hf, ?_⟩
   change Spec.Sha512.Repr _ t.mem _ (prev ++ Spec.Ed25519.bytesAt s.mem (L.value source + 0#64) 32) at hh
   rw [BitVec.add_zero] at hh
   exact hh
@@ -340,7 +345,7 @@ theorem update_prefix (v : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : 
       Frame (hashWrites L) s.mem t.mem ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem L.scr
         (Spec.Ed25519.bytesAt s.mem (L.E + 64) 32) := by
   refine WP.mono (update_step v hc hL ha 0 (.frame 64) (.const 32) (by decide)
-    (by simp [Whole.valid]) (by simp [Whole.valid]) (prefix_input hL) rfl hr) fun t ⟨ht, hf, hh⟩ => ⟨ht, hf, ?_⟩
+    (by decide) (by decide) (prefix_input hL) rfl hr) fun t ⟨ht, hf, hh⟩ => ⟨ht, hf, ?_⟩
   change Spec.Sha512.Repr _ t.mem _ ([] ++ Spec.Ed25519.bytesAt s.mem (L.E + 64) 32) at hh
   rw [List.nil_append] at hh
   exact hh
@@ -354,7 +359,7 @@ theorem update_message (v : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha :
   have inp : Input L (value L (.caller 3 0)) (value L (.caller 4 0)) := by
     simpa only [value, Lay.value, BitVec.add_zero] using message_input hL
   refine WP.mono (update_step v hc hL ha count (.caller 3 0) (.caller 4 0) hc16
-    (by simp [Whole.valid]) (by simp [Whole.valid]) inp hcount hr) fun t ⟨ht, hf, hh⟩ => ⟨ht, hf, ?_⟩
+    (by decide) (by decide) inp hcount hr) fun t ⟨ht, hf, hh⟩ => ⟨ht, hf, ?_⟩
   simp only [value, Lay.value, BitVec.add_zero] at hh
   rw [hc.input_bytes hL (r := L.MSG) (by simp [Lay.inputs]) (Nat.le_of_lt L.len.isLt)] at hh
   exact hh
@@ -535,7 +540,7 @@ theorem base_pre (hL : L.Ok) (ha : BaseArgs L s) (hsy : s.syms Impl.Ed25519.AArc
     State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), ha.1, ha.2.1, ha.2.2, hT]
   exact ⟨rfl, rfl, field_scr hL (by decide), hL.nc, hC⟩
 
-theorem base_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : BaseArgs L s)
+theorem base_call [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : BaseArgs L s)
     (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) (hm : TblWords L.T s.mem) :
     WP isa (.call "vg_ed25519_scalar_base" scalarBase) s fun t => Ctx L g v m₀ t ∧
       Frame (baseWr L) s.mem t.mem ∧
@@ -562,7 +567,7 @@ theorem base_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : BaseArgs L s)
     State.callEntry_mem, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), ha.1, ha.2.1] using hp
 
-theorem base_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+theorem base_step [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) :
     WP isa (callWith baseArgs "vg_ed25519_scalar_base" scalarBase) s fun t =>
       Ctx L g v m₀ t ∧ Frame (baseWr L) s.mem t.mem ∧
@@ -570,7 +575,7 @@ theorem base_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
         Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.mem (L.E + 96) 32) := by
   refine WP.seq (WP.mono_syms (args_ok hc hL ha
     (args := [(.x0, .caller 0 0), (.x1, .frame 96), (.x2, .caller 5 0)])
-    (by decide) (by simp [Whole.valid]) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ sy => ?_)
+    (by decide) (by decide) (by decide)) fun u ⟨hu, hm, hs⟩ sy => ?_)
   have a0 := hs (.x0, .caller 0 0) (by simp)
   have a1 := hs (.x1, .frame 96) (by simp)
   have a2 := hs (.x2, .caller 5 0) (by simp)
@@ -652,7 +657,7 @@ theorem mul_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
         (Spec.Ed25519.bytesAt s.mem (L.E + 32) 32) := by
   refine WP.seq (WP.mono (args_ok hc hL ha
     (args := [(.x0, .caller 0 32), (.x1, .frame 96), (.x2, .frame 128), (.x3, .frame 32), (.x4, .caller 5 0)])
-    (by decide) (by simp [Whole.valid]) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by decide) (by decide) (by decide)) fun u ⟨hu, hm, hs⟩ => ?_)
   have a0 := hs (.x0, .caller 0 32) (by simp)
   have a1 := hs (.x1, .frame 96) (by simp)
   have a2 := hs (.x2, .frame 128) (by simp)

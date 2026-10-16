@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Entry
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-public import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import VerifiedGarbage.Proof.Bignum.X86_64.Store
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # A candidate on x86-64: zeros to `out`, and the ends
@@ -33,15 +35,15 @@ theorem zeroOut_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B 
     WP isa zeroOut s fun t => (∀ i < k, t.mem (op + BitVec.ofNat 64 i) = 0) ∧
       (∀ x, (∀ i < k, x ≠ op + BitVec.ofNat 64 i) → t.mem x = s.mem x) ∧ Keep [.rsi, .rcx, .rax] s t := by
   have hn := hs.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
   unfold zeroOut
   refine WP.seq (WP.mono (WP.keep [.rsi, .rcx, .rax] (Q := fun t => t.gpr .rsi = op ∧
       t.gpr .rcx = BitVec.ofNat 64 k ∧ t.gpr .rax = 0 ∧ t.mem = s.mem) (by
     xrun [State.ea, hdr, hdi, hdrOff, hl kOut (by decide), hl kLen (by decide), hO, hK]) rfl)
     fun s₁ ⟨⟨hsi, hcx, hax, hm₁⟩, k₁⟩ => ?_)
-  refine WP.mono (wp_upto (a := 0) (N := k) (by omega) (FailInv s₁ op k) ?_ (fun t h => h)
+  refine WP.mono (wp_upto (a := 0) (N := k) (by omega_using [hk1]) (FailInv s₁ op k) ?_ (fun t h => h)
     ⟨Keep.refl _ _, by rw [hsi, show BitVec.ofNat 64 0 = 0#64 from rfl, BitVec.add_zero], by rw [hcx, Nat.sub_zero],
-      fun i hi => absurd hi (by omega), fun x _ => rfl⟩) fun t hI => ⟨hI.bytes, fun x hx => by
+      fun i hi => absurd hi (by omega_using []), fun x _ => rfl⟩) fun t hI => ⟨hI.bytes, fun x hx => by
         rw [hI.frame x hx, hm₁], ((k₁.trans hI.keep).mono (by decide))⟩
   intro j _ hj t hI
   have hst : InRegions t.wr (op + BitVec.ofNat 64 j) 1 := by
@@ -52,19 +54,19 @@ theorem zeroOut_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B 
       t'.gpr .rsi = op + BitVec.ofNat 64 (j + 1) ∧ t'.gpr .rcx = BitVec.ofNat 64 (k - (j + 1)) ∧
       t'.zf = some (decide (j + 1 = k))) (by
     xrun [State.ea, at0, hI.rsi, hI.rcx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero, hst, hax',
-      ofNat64_pred (show 1 ≤ k - j by omega) (by omega), BitVec.add_assoc, ofNat_add_one,
-      ofNat64_beq_zero (show k - j - 1 < 2 ^ 64 by omega)]
-    exact ⟨by rw [show k - j - 1 = k - (j + 1) by omega], decide_eq_decide.mpr (by omega)⟩) rfl)
+      ofNat64_pred (show 1 ≤ k - j by omega_using [hj]) (by omega_using [hk']), BitVec.add_assoc, ofNat_add_one,
+      ofNat64_beq_zero (show k - j - 1 < 2 ^ 64 by omega_using [hk'])]
+    exact ⟨by rw [show k - j - 1 = k - (j + 1) by omega_using []], decide_eq_decide.mpr (by omega_using [hj])⟩) rfl)
     fun t' ⟨⟨hm, hsi', hcx', hz⟩, k'⟩ => ⟨hz, (hI.keep.trans k').mono (by decide), hsi', hcx', ?_, ?_⟩
   · intro i hi
     rw [hm, writeW8_apply]
     by_cases hij : i = j
     · subst hij; simp
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega) (by omega) hij))]
-      exact hI.bytes i (by omega)
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (out_ne (by omega_using [hk', hj, hi]) (by omega_using [hk', hj]) hij))]
+      exact hI.bytes i (by omega_using [hi, hij])
   · intro x hx
-    rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
-    exact hI.frame x fun i hi => hx i (by omega)
+    rw [hm, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega_using [])))]
+    exact hI.frame x fun i hi => hx i (by omega_using [hi])
 
 /-- What an end leaves: the status `st` returned, `u` at `used`, the saved
 registers restored, and memory outside the scratch space and `used`
@@ -87,8 +89,8 @@ theorem up_sep {B up : Addr} {Z : Nat} (hn : B.toNat + Z ≤ 2 ^ 64) (hZ : 8 * 3
   have e1 := addr_of_sub x (off B (8 * i))
   have e2 := addr_of_sub x up
   have := hupZ _ h2
-  rw [← e2, e1, ofs_off B (by omega)] at this
-  omega
+  rw [← e2, e1, ofs_off B (by omega_arith)] at this
+  omega_arith
 
 theorem finish_eq (st : Nat) : finish st = [.mov .rdx (.mem (hdr kUsedP)), .store (at0 .rdx) .rax,
     .mov32 .rax (.imm (BitVec.ofNat 32 st)), .mov .rbx (.mem (hdr 0)), .mov .rbp (.mem (hdr 1)),
@@ -101,7 +103,7 @@ theorem finish_ok {s : State} {B : Addr} {Z : Nat} {up : Addr} {st u : Nat} (hs 
     (hupZ : ∀ b < 8, Z ≤ ofs B (up + BitVec.ofNat 64 b)) :
     WP isa (.block (finish st)) s (FinPost s · B Z up st u) := by
   have hn := hs.nowrap
-  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
+  have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega_using [hZ, hi])
   have hw : ∀ i < 32, ∀ v : BitVec 64, word (s.mem.writeW up v) B (8 * i) = word s.mem B (8 * i) := fun i hi v =>
     Mem.readW_writeW_sep (up_sep hn hZ hupZ hi) (by decide)
   refine WP.mono (WP.keep [.rdx, .rax, .rbx, .rbp, .r12, .r13, .r14, .r15] (Q := fun t =>
@@ -114,11 +116,11 @@ theorem finish_ok {s : State} {B : Addr} {Z : Nat} {up : Addr} {st u : Nat} (hs 
       hl 4 (by decide), hl 5 (by decide), hw 0 (by decide), hw 1 (by decide), hw 2 (by decide), hw 3 (by decide),
       hw 4 (by decide), hw 5 (by decide)]
     apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]) rfl) fun t ⟨⟨hax', hm, h0, h1, h2, h3, h4, h5⟩, k⟩ => ⟨hax', ?_, ?_, ?_, k.mono (by decide)⟩
+    rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using []),
+      Nat.mod_eq_of_lt (by omega_using [hst]), Nat.mod_eq_of_lt (by omega_using [hst])]) rfl) fun t ⟨⟨hax', hm, h0, h1, h2, h3, h4, h5⟩, k⟩ => ⟨hax', ?_, ?_, ?_, k.mono (by decide)⟩
   · rw [hm]; exact Mem.readW_writeW_self64 _ _ _
   · intro i hi
-    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
     · exact h0
     · exact h1
     · exact h2
@@ -156,7 +158,7 @@ theorem finUsed_ok {s : State} {B : Addr} {Z : Nat} {up : Addr} {st u : Nat} (hs
   rw [show ∀ l : List Instr, [Instr.mov .rax (.mem (hdr kUsed))] ++ l = [.mov .rax (.mem (hdr kUsed))] ++ l
     from fun _ => rfl, WP.block_append_iff]
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 u ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * kUsed) (by unfold kUsed sFn; omega), hu]) rfl)
+    xrun [State.ea, hdr, hdi, hdrOff, hs.ld (d := 8 * kUsed) (by unfold kUsed sFn; omega_using [hZ]), hu]) rfl)
     fun s₁ ⟨⟨hax, hm₁⟩, k₁⟩ => ?_
   refine WP.mono (finish_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) hZ hst hax
     (by rw [hm₁]; exact hU) (by rw [k₁.2.2]; exact hupw) hupZ) fun t h => ?_
@@ -189,10 +191,10 @@ theorem finPrime_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {op up :
         t.mem x = s.mem x) ∧ Keep mmRegs s t := by
   have hn := hg.scr.nowrap
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
-    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hg.scr.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ, this])
   have sN := Nat.le_trans (slot_le (w := w) (show aN < 8 by decide)) hZ
-  have hw8 : w = (8 * w + 7) / 8 := by omega
-  have hZ8 : 8 * 32 ≤ Z := by have := hdr_lt_slot w 8 (show 31 < 32 by decide); omega
+  have hw8 : w = (8 * w + 7) / 8 := by omega_using []
+  have hZ8 : 8 * 32 ≤ Z := by have := hdr_lt_slot w 8 (show 31 < 32 by decide); omega_using [hZ, this]
   -- `used`, and the arguments of `storeBE`.
   unfold finPrime
   refine WP.seq (WP.mono (WP.keep [.rax, .rdx, .rbx, .rsi, .rcx, .r15] (Q := fun t => t.gpr .rbx = off B (slot w aN) ∧
@@ -205,20 +207,20 @@ theorem finPrime_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {op up :
   have hZx₁ : ∀ x, ofs B x < Z → s₁.mem x = s.mem x := fun x hx => by
     rw [hm₁]; refine Mem.write_apply fun h => ?_
     have := hupZ _ h
-    rw [← addr_of_sub x up] at this; omega
+    rw [← addr_of_sub x up] at this; omega_using [hx, this]
   have hwv₁ : wv s₁.mem B (slot w aN) w = wv s.mem B (slot w aN) w :=
-    wv_congr fun i hi => Mem.readW_congr fun b hb => hZx₁ _ (by rw [ofs_off B (by omega)]; omega)
-  refine WP.seq (WP.mono (storeBE_ok hs₁ hbx hsi hcx h15 (by omega) (by omega) hw8 (by omega)
+    wv_congr fun i hi => Mem.readW_congr fun b hb => hZx₁ _ (by rw [ofs_off B (by omega_using [hn, sN, hi, hb])]; omega_using [sN, hi, hb])
+  refine WP.seq (WP.mono (storeBE_ok hs₁ hbx hsi hcx h15 (by omega_using [hw]) (by omega_using [hw']) hw8 (by omega_using [sN])
     (fun j hj => by rw [k₁.2.2]; exact hout j hj) hsep) fun s₂ ⟨hb₂, hf₂, hwr₂, hrd₂, k₂⟩ => ?_)
   simp only [↓reduceIte] at hb₂
   have hZx : ∀ x, ofs B x < Z → s₂.mem x = s.mem x := fun x hx =>
-    (hf₂ x fun j hj he => by have := hsep j hj; rw [← he] at this; omega).trans (hZx₁ x hx)
+    (hf₂ x fun j hj he => by have := hsep j hj; rw [← he] at this; omega_using [hx, this]).trans (hZx₁ x hx)
   have hw₂ : ∀ d, d + 8 ≤ Z → word s₂.mem B d = word s.mem B d := fun d hd =>
-    Mem.readW_congr fun b hb => hZx _ (by rw [ofs_off B (by omega)]; omega)
+    Mem.readW_congr fun b hb => hZx _ (by rw [ofs_off B (by omega_using [hn, hd, hb])]; omega_using [hd, hb])
   have hs₂ : Scr s₂ B Z := ⟨by rw [hwr₂, k₁.2.2]; exact hg.scr.1, hn⟩
   have hdi₂ : s₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi)
   have hl₂ : ∀ i < 32, InRegions (s₂.rd ++ s₂.wr) (off B (8 * i)) 8 := fun i hi =>
-    hs₂.ld (by have := hdr_lt_slot w 8 hi; omega)
+    hs₂.ld (by have := hdr_lt_slot w 8 hi; omega_using [hZ8, hi])
   -- Status 1, and the saved registers.
   refine WP.mono (WP.keep [.rax, .rbx, .rbp, .r12, .r13, .r14, .r15] (Q := fun t =>
       t.gpr .rax = BitVec.ofNat 64 1 ∧ t.mem = s₂.mem ∧
@@ -232,13 +234,13 @@ theorem finPrime_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {op up :
   · rw [hm]
     refine (Mem.readW_congr fun b hb => hf₂ _ fun j hj he => hou j hj b hb he.symm).trans ?_
     rw [hm₁]; exact Mem.readW_writeW_self64 _ _ _
-  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega) with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact h0.trans (hw₂ _ (by omega))
-    · exact h1.trans (hw₂ _ (by omega))
-    · exact h2.trans (hw₂ _ (by omega))
-    · exact h3.trans (hw₂ _ (by omega))
-    · exact h4.trans (hw₂ _ (by omega))
-    · exact h5.trans (hw₂ _ (by omega))
+  · rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 by omega_using [hi]) with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact h0.trans (hw₂ _ (by omega_using [hZ8]))
+    · exact h1.trans (hw₂ _ (by omega_using [hZ8]))
+    · exact h2.trans (hw₂ _ (by omega_using [hZ8]))
+    · exact h3.trans (hw₂ _ (by omega_using [hZ8]))
+    · exact h4.trans (hw₂ _ (by omega_using [hZ8]))
+    · exact h5.trans (hw₂ _ (by omega_using [hZ8]))
   · rw [hm, hf₂ x hx'', hm₁]
     exact Mem.write_apply fun h => hx' _ h (addr_of_sub x up)
 

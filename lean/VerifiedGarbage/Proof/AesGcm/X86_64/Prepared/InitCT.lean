@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Init
 meta import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Init
@@ -8,6 +8,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
+import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.InitCT
+meta import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
+import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.CTBase
+meta import VerifiedGarbage.Proof.AesGcm.X86_64.FnCT
 
 /-! # Constant-time key setup with prepared GHASH powers -/
 

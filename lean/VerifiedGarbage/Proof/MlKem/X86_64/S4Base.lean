@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.SampleNtt
-public import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
+import VerifiedGarbage.Proof.Sha3.X86_64.X4.Bytes
 public import VerifiedGarbage.Impl.MlKem.X86_64.Sample4
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_sample_ntt4_avx2`, the layout

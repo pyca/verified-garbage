@@ -16,6 +16,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
+public import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.WriteBytes
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Coeffs
+meta import VerifiedGarbage.Proof.MlDsa.Pack.HintMem
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): what the proofs of the hint encodings share
@@ -56,16 +68,16 @@ theorem setFlags_zf (s : State) (a b c d : Option Bool) : (s.setFlags a b c d).z
 syntax "hrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| hrun) => `(tactic| hrun [])
-  | `(tactic| hrun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-        execAlu, arithFlags_eq, Proof.MlKem.X86.ea_at, State.load32, State.load8, State.store32,
-        State.store8, Reg8.reg, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-        RegUpd.cf_setReg, RegUpd.zf_setReg, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags,
-        RegUpd.wr_setFlags, setFlags_cf, setFlags_zf,
-        Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
-        ite_false, reduceCtorEq, BitVec.sub_self, sub_zero', true_and, and_true, $ls,*]))
+  | `(tactic| hrun [$ls,*]) => `(tactic| plain_simp_names (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+                         execAlu, arithFlags_eq, Proof.MlKem.X86.ea_at, State.load32, State.load8, State.store32,
+                         State.store8, Reg8.reg, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+                         RegUpd.cf_setReg, RegUpd.zf_setReg, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags,
+                         RegUpd.wr_setFlags, setFlags_cf, setFlags_zf,
+                         Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
+                         ite_false, reduceCtorEq, BitVec.sub_self, sub_zero', true_and, and_true, $ls,*]))
 
 /-- `s'` differs from `s` only in the registers `rs` (flags and memory
 aside), with the same permissions. -/
@@ -220,7 +232,7 @@ theorem countLoopN {body : List Instr} {cnd : Cond} (Inv : Nat → State → Sta
 theorem nil_piece {A B : State → State → Prop} (h : ∀ s₀ s, Pre s₀ → A s₀ s → B s₀ s) :
     Piece Pre Pub A B (.block []) :=
   Piece.taint [] (fun s₀ s hp ha => WP.block_nil_iff.mpr (h s₀ s hp ha))
-    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)
+    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)
 
 end
 

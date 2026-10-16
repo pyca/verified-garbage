@@ -1,11 +1,19 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingABIPost
-public import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingAgreement
+import VerifiedGarbage.Proof.Dsa.X86_64.VerifyingAgreement
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # DSA verifying verified against the shared contract -/
 
@@ -34,9 +42,9 @@ theorem verifyingSatisfiable : ∃ s, (Spec.Dsa.verifyContract abi).pre s := by
   sig_implies_sat [Spec.Dsa.verifyContract, Spec.Dsa.verifySig, abi, argRegs, stackArgs_four]
     [verifyingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using verifyingSatState
 
-theorem verifying_verified (M : Mont)
-    (hmx : (SignVerify.verify M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    Verified target (SignVerify.verify M.mm) (Spec.Dsa.verifyContract abi) :=
-  ⟨verifyingCorrect M hmx, verifyingConstantTime M, verifyingSatisfiable⟩
+theorem verifying_verified (M : Mont) (Sq : MontS)
+    (hmx : (SignVerify.verify Sq.mm M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
+    Verified target (SignVerify.verify Sq.mm M.mm) (Spec.Dsa.verifyContract abi) :=
+  ⟨verifyingCorrect M Sq hmx, verifyingConstantTime M Sq, verifyingSatisfiable⟩
 
 end VG.Proof.Dsa.X86_64

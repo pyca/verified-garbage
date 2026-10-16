@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Fn
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Lit
+public import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Keeps
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-!
 # The point operations a caller runs
@@ -35,25 +37,6 @@ class PtOk (pt : Point64.Ops) : Prop where
 namespace Point64
 
 variable {fld : Arith} [EdArith fld]
-
-/-- The functions' bodies keep `rbp` and `r12`–`r15`. -/
-theorem doubleFn_keeps (t : Bool) : ∀ r ∈ keptRegs, KeepReg.keeps r (doubleFn fld t) = true := by
-  intro r hr
-  simp only [keptRegs, kept, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases EdArith.known (fld := fld) with rfl | rfl <;> cases t <;>
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide
-
-theorem addFn_keeps (t : Bool) : ∀ r ∈ keptRegs, KeepReg.keeps r (addFn fld t) = true := by
-  intro r hr
-  simp only [keptRegs, kept, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases EdArith.known (fld := fld) with rfl | rfl <;> cases t <;>
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide
-
-theorem addAffineFn_keeps : ∀ r ∈ keptRegs, KeepReg.keeps r (addAffineFn fld) = true := by
-  intro r hr
-  simp only [keptRegs, kept, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases EdArith.known (fld := fld) with rfl | rfl <;>
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> lit_decide
 
 /-- A body's `Keep`, from `fn_ok`: its results are in slots 0–15. -/
 theorem fn_keep {s : State} {base : Addr} (hs : Scratch s base) (ops : List FieldOp)

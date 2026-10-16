@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
+import VerifiedGarbage.Proof.Bignum.AArch64.SquareDiagonal
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Bignum.AArch64.Square
+public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Bignum.AArch64.Run
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.AArch64.MulAdd
 
 /-! Register arithmetic of one doubled cross-product pair plus a diagonal. -/
 

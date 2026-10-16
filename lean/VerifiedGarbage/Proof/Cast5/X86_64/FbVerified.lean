@@ -4,13 +4,13 @@ public import VerifiedGarbage.Proof.Cast5.X86_64.CbcVerified
 meta import VerifiedGarbage.Proof.Cast5.X86_64.CbcVerified
 public import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
-public import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
+import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
 meta import VerifiedGarbage.Proof.Cast5.X86_64.EcbVerified
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
 meta import VerifiedGarbage.Proof.Cast5.ModeScratch
 public import VerifiedGarbage.Proof.Modes.X86_64.Fb
 meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
-public import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
+import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
 meta import VerifiedGarbage.Proof.Modes.X86_64.KeepIv
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
@@ -20,6 +20,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # CAST5-OFB and -CFB64 on x86-64 meet their contracts

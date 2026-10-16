@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Table
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.SignedSelect
 
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! One joint window: five doublings followed by two selected additions. -/
 

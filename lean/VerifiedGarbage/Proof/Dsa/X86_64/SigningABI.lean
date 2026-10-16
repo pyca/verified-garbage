@@ -7,6 +7,13 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # The signing ABI and its shared-contract precondition -/
 
@@ -40,7 +47,7 @@ structure SigningABI (s : State) : Prop where
   lengths : Spec.Dsa.lengthsValid (s.gpr .r8).toNat (stackArg s 0).toNat
   outLength : (s.gpr .rsi).toNat = 2 * (stackArg s 0).toNat
   keyLength : (s.gpr .rcx).toNat = 3 * (s.gpr .r8).toNat + 2 * (stackArg s 0).toNat
-  scratchLength : Spec.Rsa.scratchWords (s.gpr .r8).toNat ≤ (stackArg s 4).toNat
+  scratchLength : Spec.Dsa.scratchWords (s.gpr .r8).toNat ≤ (stackArg s 4).toNat
 
 theorem signingABI_of {s : State} (h : (Spec.Dsa.signContract abi).pre s) : SigningABI s := by
   sig_pre [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, stackArgs_five] at h
@@ -65,7 +72,7 @@ theorem SigningABI.used {s : State} (h : SigningABI s) : usedBytes ≤ (stackArg
   have hl := h.lengths
   have hs := h.scratchLength
   unfold Spec.Dsa.lengthsValid at hl
-  unfold Spec.Rsa.scratchWords at hs
+  unfold Spec.Dsa.scratchWords at hs
   change 15712 ≤ _
   omega
 

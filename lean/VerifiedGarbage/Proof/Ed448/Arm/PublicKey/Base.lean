@@ -1,16 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
+import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Prune
 public import VerifiedGarbage.Proof.Ed448.Arm.BaseVerified
-public import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
+import VerifiedGarbage.Proof.Ed448.Arm.BaseLit
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wipe
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed448.PruneBytes
+import VerifiedGarbage.Proof.X448.Arm.BitWrite
 
 /-!
 # Ed448 public-key derivation on ARMv7: the pruning, the scalar's call, and the whole

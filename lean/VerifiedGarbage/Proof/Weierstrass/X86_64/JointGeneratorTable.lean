@@ -1,12 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.JointGenerator
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
-public import VerifiedGarbage.Proof.Weierstrass.CombW
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
+import VerifiedGarbage.Proof.Weierstrass.CombW
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelect
 
 /-! The existing width-seven comb table supplies the joint generator row directly. -/
 

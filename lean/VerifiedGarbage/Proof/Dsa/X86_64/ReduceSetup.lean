@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
 
 /-! # Preparing the ordinary accumulator for streaming byte reduction -/
 
@@ -84,7 +86,7 @@ theorem reduceSetup_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat}
   have hw' : wx < 2 ^ 31 := by omega
   have hz := hc.good.scr.nowrap
   unfold Arithmetic.reduceSetup seqs
-  refine WP.seq (WP.mono (prepare_ok hc hw hw48 hm hn hinv)
+  refine WP.seq (WP.mono (prepare_ok M hc hw hw48 hm hodd hn hinv)
     fun u ⟨hcu, hmu, huone, hur2, hfu, hku⟩ => ?_)
   refine WP.seq (WP.mono (mont_step M hmu (Nat.le_refl _) hw hw'
     (by unfold MmUse; decide) (by rw [huone]; exact hm))

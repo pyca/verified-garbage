@@ -20,7 +20,7 @@ public import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
 meta import VerifiedGarbage.Proof.Md5.Arm.Stream.Md
 public import VerifiedGarbage.Proof.Sha1.Arm.Lit
 meta import VerifiedGarbage.Proof.Sha1.Arm.Lit
-public import VerifiedGarbage.Proof.Sha512.Arm.Lit
+import VerifiedGarbage.Proof.Sha512.Arm.Lit
 meta import VerifiedGarbage.Proof.Sha512.Arm.Lit
 public import VerifiedGarbage.Proof.Sha512.Arm.Shared
 meta import VerifiedGarbage.Proof.Sha512.Arm.Shared

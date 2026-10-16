@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 
@@ -233,7 +237,7 @@ theorem salsaSpec : SalsaSpec Impl.Scrypt.X86.salsa := by
   have b8 : Region.Sub (below E 8) (below E 12) := below_sub (by omega) hlo
   have r4 : Region.Sub ⟨(E - BitVec.ofNat 32 12).setWidth 64, 4⟩ (below E 12) := by
     have := below_inner (sp := E) (a := 4) (b := 12) (k := 8) (by omega) hlo
-    rw [show E - BitVec.ofNat 32 12 = E - BitVec.ofNat 32 8 - BitVec.ofNat 32 4 by bv_omega]
+    rw [show E - BitVec.ofNat 32 12 = E - BitVec.ofNat 32 8 - BitVec.ofNat 32 4 by bv_omega_arith]
     exact this
   have e12 : 4 * [Reg.eax, dR].length + stackUse Impl.Scrypt.X86.salsa + 4 = 12 := by
     rw [salsa_stack]; rfl
@@ -257,23 +261,23 @@ theorem salsaSpec : SalsaSpec Impl.Scrypt.X86.salsa := by
       exact InRegions_append_cons.mpr (.inr ⟨r', List.mem_append_right _ hr', by
         have : (⟨d.setWidth 64, 64⟩ : Region).Contains a n := hcn
         simp only [Region.Contains] at this hc' ⊢
-        bv_omega⟩)
+        bv_omega_arith⟩)
     · obtain ⟨r', hr', hc'⟩ := hins
       exact InRegions_append_cons.mpr (.inr ⟨r', List.mem_append_right _ hr', by
         have : (⟨sc.setWidth 64, 64⟩ : Region).Contains a n := hcn
         simp only [Region.Contains] at this hc' ⊢
-        bv_omega⟩)
+        bv_omega_arith⟩)
   · intro a n ⟨r, hr, hcn⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · obtain ⟨r', hr', hc'⟩ := hind
       refine ⟨r', List.mem_cons_of_mem _ hr', ?_⟩
       simp only [Region.Contains] at hcn hc' ⊢
-      bv_omega
+      bv_omega_arith
     · obtain ⟨r', hr', hc'⟩ := hins
       refine ⟨r', List.mem_cons_of_mem _ hr', ?_⟩
       simp only [Region.Contains] at hcn hc' ⊢
-      bv_omega
+      bv_omega_arith
   · rw [e12] at f'
     have hsE' := callEntry_frame fit hrs
     rw [show 4 * [Reg.eax, dR].length + 4 = 12 from rfl, ← hsE] at hsE'
@@ -408,10 +412,10 @@ def narrowWr (s : State) : List Region :=
 /-- Rewrites the contracts at a narrowed state (`arg` does not unfold
 cheaply). -/
 local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [Proof.Scrypt.blockMixX86, VG.Proof.Scrypt.X86.BlockMix.blockMixWide,
-    VG.Proof.Scrypt.X86.BlockMix.narrowRd, VG.Proof.Scrypt.X86.BlockMix.narrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+  `(tactic| plain_simp_names simp only [Proof.Scrypt.blockMixX86, VG.Proof.Scrypt.X86.BlockMix.blockMixWide,
+                     VG.Proof.Scrypt.X86.BlockMix.narrowRd, VG.Proof.Scrypt.X86.BlockMix.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
 
 theorem blockMixWide_pre (s : State) (h : blockMixWide.pre s) :
     Proof.Scrypt.blockMixX86.pre (s.withRegions (narrowRd s) (narrowWr s)) := by

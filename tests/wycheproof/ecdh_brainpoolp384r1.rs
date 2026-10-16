@@ -1,0 +1,92 @@
+//! ECDH over brainpoolP384r1 (`EcdhTest` vectors of
+//! `ecdh_brainpoolP384r1_test.json`, public keys as DER `SubjectPublicKeyInfo`).
+//!
+//! [`PrivateKey::diffie_hellman`] takes an uncompressed public key, so a
+//! vector's key is passed only if it is the DER encoding of an uncompressed
+//! point with brainpoolP384r1's named curve parameters: a valid vector must
+//! give its shared secret, and an invalid or acceptable one must be refused
+//! (the one acceptable vector so encoded changes the point's last byte, which
+//! takes it off the curve). A key in any other encoding (an explicit or wrong
+//! curve, a compressed point, malformed DER) cannot be passed, and its vector
+//! must not be valid.
+
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
+
+use serde::Deserialize;
+use verified_garbage::ecdh::{BrainpoolP384r1, Error, PrivateKey};
+
+use super::harness::{self, Count, Expectation, Hex};
+use crate::require_vectors;
+
+#[derive(Deserialize)]
+struct Group {
+    curve: String,
+    encoding: String,
+}
+
+#[derive(Deserialize)]
+struct Case {
+    public: Hex,
+    private: Hex,
+    shared: Hex,
+}
+
+/// The DER encoding of a `SubjectPublicKeyInfo` up to its point (RFC 5480
+/// §2): `id-ecPublicKey` with the named curve brainpoolP384r1
+/// (1.3.36.3.3.2.8.1.1.11, RFC 5639 §4.1), then the 98-byte bit string
+/// holding the 97-byte point.
+const SPKI_PREFIX: [u8; 26] = [
+    0x30, 0x7a, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01, 0x06, 0x09, 0x2b,
+    0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0b, 0x03, 0x62,
+];
+
+/// The uncompressed point of a named-curve `SubjectPublicKeyInfo`, if `der`
+/// is one.
+fn point(der: &[u8]) -> Option<[u8; 97]> {
+    let rest = der.strip_prefix(&SPKI_PREFIX)?.strip_prefix(&[0])?;
+    let point = <[u8; 97]>::try_from(rest).ok()?;
+    (point[0] == 4).then_some(point)
+}
+
+/// A private key of up to 49 bytes (Wycheproof writes them as signed
+/// integers), as 48.
+fn private_key(bytes: &[u8]) -> [u8; 48] {
+    let bytes = bytes.strip_prefix(&[0]).unwrap_or(bytes);
+    let mut d = [0; 48];
+    d[48 - bytes.len()..].copy_from_slice(bytes);
+    d
+}
+
+#[test]
+fn ecdh_brainpoolp384r1_test() {
+    require_vectors!();
+    let file = harness::load::<Group, Case>("ecdh_brainpoolP384r1_test.json");
+    let (checked, refused) = (Count::default(), Count::default());
+    file.par_tests(|group, test| {
+        assert_eq!(group.params.curve, "brainpoolP384r1");
+        assert_eq!(group.params.encoding, "asn");
+        let key = PrivateKey::<BrainpoolP384r1>::from_bytes(&private_key(&test.case.private.0));
+        let Some(public) = point(&test.case.public.0) else {
+            assert_ne!(test.result, Expectation::Valid, "tcId {}", test.tc_id);
+            return;
+        };
+        let result = key.diffie_hellman(&public).map(|z| z.to_vec());
+        let shared = Ok(test.case.shared.0.clone());
+        match test.result {
+            Expectation::Valid => {
+                assert_eq!(result, shared, "tcId {}", test.tc_id);
+                checked.add();
+            }
+            Expectation::Invalid | Expectation::Acceptable => {
+                assert_eq!(result, Err(Error::InvalidKey), "tcId {}", test.tc_id);
+                refused.add();
+            }
+        }
+    });
+    assert!(checked.get() > 0 && refused.get() > 0);
+}

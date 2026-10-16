@@ -6,6 +6,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Rc2.PairMem
+public import VerifiedGarbage.Proof.Rc2.Select
+public import VerifiedGarbage.Proof.Rc2.Word
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvRedMath
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareBody
+public import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareInit
 
 /-! # Initial state of the 256-bit divstep inversion -/
 
@@ -16,7 +24,7 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Weierstrass.X86
   VG.Proof.Mont.X86 VG.Proof.Mont
 
 local macro "apart" : tactic => `(tactic|
-  ((try simp only [InvCfg.sF, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sW, InvCfg.sCount]) <;> omega))
+  plain_simp_names ((try simp only [InvCfg.sF, InvCfg.sG, InvCfg.sA, InvCfg.sB, InvCfg.sW, InvCfg.sCount]) <;> omega))
 
 theorem init_ok {P : InvCfg} {s : State} {base : Addr} {size p : Nat}
     (hs : Scr s base size) (L : InvLay P size) (hm : val32 s.mem base P.M.mo 8 = p) :

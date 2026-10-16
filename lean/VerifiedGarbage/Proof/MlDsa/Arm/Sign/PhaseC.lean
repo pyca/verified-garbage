@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseD
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PrimsC
 public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.Arm.Lay
 
 /-!
 # ML-DSA signing on ARMv7: the commitment of an iteration

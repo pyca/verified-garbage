@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Argon2.X86.CompressVerified
 public import VerifiedGarbage.Proof.Argon2.X86.HPrime.Verified
 public import VerifiedGarbage.Proof.Argon2.X86.Derive.Verified

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.RpCT7
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCT7
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpCode
 meta import VerifiedGarbage.Proof.Rsa.AArch64.RpCode
-public import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
+import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
 meta import VerifiedGarbage.Proof.Rsa.AArch64.CvCTCode
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

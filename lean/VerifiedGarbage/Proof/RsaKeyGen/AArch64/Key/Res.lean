@@ -1,11 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Tail
-public import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
+import VerifiedGarbage.Proof.RsaKeyGen.KeyOp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
+import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.Front
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # An RSA key from its primes on AArch64: the results, against `keyOp`
@@ -51,7 +56,7 @@ theorem keyOp_ok_k {pl : Nat} {eB pB qB : List Byte} {k : Spec.RsaKeyGen.Key}
   unfold keyOp; rw [h]
 
 theorem setWidth32_k (n : Nat) (h : n < 2 ^ 32) : ((BitVec.ofNat 64 n).setWidth 32).toNat = n := by
-  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega),
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show n < 2 ^ 64 by omega_using [h]),
     Nat.mod_eq_of_lt h]
 
 /-- The zeros and the status 2, for `d ≤ 2^(8 pl)`. -/
@@ -64,7 +69,7 @@ theorem outsRes_zeros {I : KIn} {s t : State} {d : Nat}
       by_cases h : I.P₀ < I.Q₀ <;> simp [KIn.P, KIn.Q, h]
     rw [hswap]
     dsimp only
-    rw [show Nat.lcm (I.P - 1) (I.Q - 1) = I.L from rfl, hd, show 16 * I.pl / 2 = 8 * I.pl by omega]
+    rw [show Nat.lcm (I.P - 1) (I.Q - 1) = I.L from rfl, hd, show 16 * I.pl / 2 = 8 * I.pl by omega_using []]
     dsimp only
     rw [ite_eq_left hsm]
   rw [OutsRes, keyOp_inr_k hr, Z.1]
@@ -81,7 +86,7 @@ theorem outsRes_tail {I : KIn} {s t : State} (L : KLens I) {ok : Bool}
     OutsRes I t.mem (t.gpr .x0) := by
   obtain ⟨x, hx, hxl, ⟨hax, hN, hD, hP, hQ, hDp, hDq, hQi⟩, -⟩ := T
   have hk := keyFromPrimes_code (x := x) L.pl1 L.pl2 (lt_of_os2ip_len L.pbl) (lt_of_os2ip_len L.qbl) L.E_lt hx hxl
-  have hW : 64 * I.W - 1 = 16 * I.pl - 1 := by rw [L.W]; have := L.pl8; omega
+  have hW : 64 * I.W - 1 = 16 * I.pl - 1 := by rw [L.W]; have := L.pl8; omega_using [this]
   simp only [finalOk, hW] at hax hN hD hP hQ hDp hDq hQi
   have hstat : ∀ c : Bool, ((BitVec.ofNat 64 c.toNat).setWidth 32).toNat = c.toNat := fun c =>
     setWidth32_k _ (by cases c <;> decide)
@@ -104,12 +109,12 @@ theorem outsRes_tail {I : KIn} {s t : State} (L : KLens I) {ok : Bool}
     have hd := hdd d hi
     rw [hd, Bool.and_true, decide_eq_false_iff_not] at hb
     have hd2 : 2 ≤ d := by
-      have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 1 ≤ 8 * I.pl by have := L.pl1; omega)
-      omega
-    have hqp : I.Q ≤ I.P := by simp only [KIn.P, KIn.Q]; split <;> omega
+      have := Nat.pow_le_pow_right (show 0 < 2 by decide) (show 1 ≤ 8 * I.pl by have := L.pl1; omega_using [this])
+      omega_using [hb, this]
+    have hqp : I.Q ≤ I.P := by simp only [KIn.P, KIn.Q]; split <;> omega_arith
     obtain ⟨hP3, hQ2, -⟩ := primes_of_inverse hqp hi hd2
-    have hdvP : dv (I.P - 1) = I.P - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega
-    have hdvQ : dv (I.Q - 1) = I.Q - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega
+    have hdvP : dv (I.P - 1) = I.P - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega_using [hP3]
+    have hdvQ : dv (I.Q - 1) = I.Q - 1 := by simp only [dv]; rw [ite_eq_right_iff]; omega_using [hQ2]
     simp only [Bool.and_true, KIn.L] at hax hN hD hP hQ hDp hDq hQi hi hk
     rw [hi] at hk
     simp only [ite_eq_right_iff.mpr (fun h => absurd h hb)] at hk

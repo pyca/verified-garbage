@@ -3,6 +3,11 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Secp256k1Sha256
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 
 /-!
 # Deterministic ECDSA (RFC 6979) over secp256k1 with HMAC-SHA-256 on AArch64

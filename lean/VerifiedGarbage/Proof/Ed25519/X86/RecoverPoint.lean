@@ -4,11 +4,16 @@ public import VerifiedGarbage.Impl.Ed25519.X86.Recover
 public import VerifiedGarbage.Proof.Ed25519.X86.Power
 public import VerifiedGarbage.Proof.Ed25519.Recover
 public import VerifiedGarbage.Proof.Ed25519.X86.RecoverSign
-public import VerifiedGarbage.Proof.Ed25519.X86.AccumulateStep
+import VerifiedGarbage.Proof.Ed25519.X86.AccumulateStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86.CallWith
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Spec.Rc2
 
 /-! Merged from `Proof.Ed25519.X86.RecoverCandidate`. -/
 
@@ -126,6 +131,66 @@ private theorem sign_known {s : State} {base : BitVec 32} (hs : Ctx base s)
   refine WP.mono (recoverSign_ok hs b hb) fun t ⟨kt, tr⟩ => ?_
   exact ⟨kt, by rw [hx, hy] at tr; exact tr⟩
 
+/-- The root `recoverRoot` leaves in slot 0, if there is one. -/
+def rootSel (y : Spec.X25519.Fe) : Option Spec.X25519.Fe :=
+  if rootV y * rootX y * rootX y = rootU y then some (rootX y)
+  else if rootV y * rootX y * rootX y = 0 - rootU y then some (rootX y * Spec.Ed25519.sqrtM1) else none
+
+theorem recoverResult_sel (y : Spec.X25519.Fe) (b : Bool) :
+    recoverResult y b = (rootSel y).bind fun x => signResult x y b := by
+  unfold recoverResult rootSel
+  by_cases h : rootV y * rootX y * rootX y = rootU y
+  · rw [ite_eq_left h, ite_eq_left h, Option.bind_some]
+  · rw [ite_eq_right h, ite_eq_right h]
+    by_cases h' : rootV y * rootX y * rootX y = 0 - rootU y
+    · rw [ite_eq_left h', ite_eq_left h', Option.bind_some]
+    · rw [ite_eq_right h', ite_eq_right h', Option.bind_none]
+
+theorem recoverRoot_ok {s : State} {base : BitVec 32} (hs : Ctx base s) (y : Spec.X25519.Fe)
+    (hx : env s.mem base 0 = rootX y)
+    (hu : env s.mem base 6 = rootU y)
+    (hvx : env s.mem base 11 = rootV y * rootX y * rootX y)
+    (hnu : env s.mem base 12 = 0 - rootU y) :
+    WP isa recoverRoot s fun t => FieldKeep base s t ∧ env t.mem base 1 = env s.mem base 1 ∧
+      t.gpr .eax = signWord (rootSel y).isSome ∧ ∀ x, rootSel y = some x → env t.mem base 0 = x := by
+  refine WP.seq (WP.mono (fieldEqual_ok hs 11 6) fun c ⟨kc, ce, cz⟩ => ?_)
+  have cx : env c.mem base 0 = rootX y := (ce 0 (by decide)).trans hx
+  have cy : env c.mem base 1 = env s.mem base 1 := ce 1 (by decide)
+  apply WP.ite (decide (rootV y * rootX y * rootX y = rootU y)) (by rw [← hvx, ← hu]; exact cz)
+  · intro ht
+    have hsel : rootSel y = some (rootX y) := by rw [rootSel, ite_eq_left (of_decide_eq_true ht)]
+    refine WP.mono (returnFlag_ok c base true) fun t ⟨kt, mt, rt⟩ =>
+      ⟨kc.trans kt, by rw [mt]; exact cy, by rw [rt, hsel, Option.isSome_some], fun x hx' => ?_⟩
+    rw [hsel] at hx'
+    rw [← Option.some.inj hx', mt]; exact cx
+  · intro hf
+    have hf' := of_decide_eq_false hf
+    refine WP.seq (WP.mono (fieldEqual_ok (kc.ctx hs) 11 12) fun d ⟨kd, de, dz⟩ => ?_)
+    have kcd := kc.trans kd
+    have dx : env d.mem base 0 = rootX y := (de 0 (by decide)).trans cx
+    have dy : env d.mem base 1 = env s.mem base 1 := (de 1 (by decide)).trans cy
+    apply WP.ite (decide (rootV y * rootX y * rootX y = 0 - rootU y))
+      (by rw [ce 11 (by decide), ce 12 (by decide), hvx, hnu] at dz; exact dz)
+    · intro ht
+      have hsel : rootSel y = some (rootX y * Spec.Ed25519.sqrtM1) := by
+        rw [rootSel, ite_eq_right hf', ite_eq_left (of_decide_eq_true ht)]
+      rw [WP.block_append_iff]
+      refine WP.mono (fieldCode_ok [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18] (kcd.ctx hs))
+        fun e ⟨ke, ve⟩ => ?_
+      have ex : env e.mem base 0 = rootX y * Spec.Ed25519.sqrtM1 := by
+        rw [ve]; change env d.mem base 0 * Spec.Ed25519.sqrtM1 = _; rw [dx]
+      have ey : env e.mem base 1 = env s.mem base 1 := by rw [ve]; exact dy
+      refine WP.mono (returnFlag_ok e base true) fun t ⟨kt, mt, rt⟩ =>
+        ⟨(kcd.trans ke).trans kt, by rw [mt]; exact ey, by rw [rt, hsel, Option.isSome_some], fun x hx' => ?_⟩
+      rw [hsel] at hx'
+      rw [← Option.some.inj hx', mt]; exact ex
+    · intro hf2
+      have hsel : rootSel y = none := by
+        rw [rootSel, ite_eq_right hf', ite_eq_right (of_decide_eq_false hf2)]
+      refine WP.mono (returnFlag_ok d base false) fun t ⟨kt, mt, rt⟩ =>
+        ⟨kcd.trans kt, by rw [mt]; exact dy, by rw [rt, hsel, Option.isSome_none], fun x hx' => ?_⟩
+      rw [hsel] at hx'; cases hx'
+
 theorem recoverChecks_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
     (b : Bool) (hb : s.gpr .esi = signWord b) (y : Spec.X25519.Fe)
     (hx : env s.mem base 0 = rootX y) (hy : env s.mem base 1 = y)
@@ -133,37 +198,23 @@ theorem recoverChecks_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
     (hvx : env s.mem base 11 = rootV y * rootX y * rootX y)
     (hnu : env s.mem base 12 = 0 - rootU y) :
     WP isa recoverChecks s fun t => FieldKeep base s t ∧ DecodeResult base (recoverResult y b) t := by
-  refine WP.seq (WP.mono (fieldEqual_ok hs 11 6) fun c ⟨kc, ce, cz⟩ => ?_)
-  have cx : env c.mem base 0 = rootX y := (ce 0 (by decide)).trans hx
-  have cy : env c.mem base 1 = y := (ce 1 (by decide)).trans hy
-  apply WP.ite (decide (rootV y * rootX y * rootX y = rootU y)) (by rw [← hvx, ← hu]; exact cz)
+  refine WP.seq (WP.mono (recoverRoot_ok hs y hx hu hvx hnu) fun a ⟨ka, ay, ra, xa⟩ => ?_)
+  refine WP.seq (WP.mono (flagTest_ok base _ ra) fun c ⟨kc, mc, zc⟩ => ?_)
+  have kac := ka.trans kc
+  rw [recoverResult_sel]
+  apply WP.ite _ zc
   · intro ht
-    have ht' := of_decide_eq_true ht
-    refine WP.mono (sign_known (kc.ctx hs) b (kc.keep.esi.trans hb) _ _ cx cy) fun t ⟨kt, tr⟩ => ?_
-    exact ⟨kc.trans kt, by simpa only [recoverResult, ht', ite_true] using tr⟩
+    obtain ⟨x, hxs⟩ := Option.isSome_iff_exists.mp ht
+    refine WP.mono (sign_known (kac.ctx hs) b (kac.keep.esi.trans hb) x y (by rw [mc]; exact xa x hxs)
+      (by rw [mc, ay]; exact hy)) fun t ⟨kt, tr⟩ => ⟨kac.trans kt, ?_⟩
+    rw [hxs, Option.bind_some]; exact tr
   · intro hf
-    have hf' := of_decide_eq_false hf
-    refine WP.seq (WP.mono (fieldEqual_ok (kc.ctx hs) 11 12) fun d ⟨kd, de, dz⟩ => ?_)
-    have kcd := kc.trans kd
-    have dx : env d.mem base 0 = rootX y := (de 0 (by decide)).trans cx
-    have dy : env d.mem base 1 = y := (de 1 (by decide)).trans cy
-    apply WP.ite (decide (rootV y * rootX y * rootX y = 0 - rootU y))
-      (by rw [ce 11 (by decide), ce 12 (by decide), hvx, hnu] at dz; exact dz)
-    · intro ht
-      have ht' := of_decide_eq_true ht
-      refine WP.seq (WP.mono (fieldCode_ok [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18] (kcd.ctx hs))
-        fun e ⟨ke, ve⟩ => ?_)
-      have ex : env e.mem base 0 = rootX y * Spec.Ed25519.sqrtM1 := by
-        rw [ve]; change env d.mem base 0 * Spec.Ed25519.sqrtM1 = _; rw [dx]
-      have ey : env e.mem base 1 = y := by rw [ve]; exact dy
-      have kcde := kcd.trans ke
-      refine WP.mono (sign_known (kcde.ctx hs) b (kcde.keep.esi.trans hb) _ _ ex ey)
-        fun t ⟨kt, tr⟩ => ?_
-      exact ⟨kcde.trans kt, by rw [recoverResult, ite_eq_right hf', ite_eq_left ht']; exact tr⟩
-    · intro hf2
-      have hf2' := of_decide_eq_false hf2
-      refine WP.mono (recoverInvalid_ok d base) fun t ⟨kt, tr⟩ => ?_
-      exact ⟨kcd.trans kt, by simpa only [recoverResult, hf', hf2', ite_false] using tr⟩
+    have hn : rootSel y = none := by
+      cases h : rootSel y with
+      | none => rfl
+      | some _ => rw [h] at hf; cases hf
+    refine WP.mono (recoverInvalid_ok c base) fun t ⟨kt, tr⟩ => ⟨kac.trans kt, ?_⟩
+    rw [hn, Option.bind_none]; exact tr
 
 theorem recoverPoint_ok {s : State} {base : BitVec 32} (hs : Ctx base s)
     (b : Bool) (hb : wd s.mem base 32 = signWord b) :

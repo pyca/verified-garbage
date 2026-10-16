@@ -1,10 +1,14 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlKem.X86.Common
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!
 # ML-DSA on x86 (32-bit): running blocks symbolically
@@ -57,15 +61,15 @@ end
 syntax "xrun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 macro_rules
   | `(tactic| xrun) => `(tactic| xrun [])
-  | `(tactic| xrun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-        execAlu, execShift, arithFlags_eq, Proof.MlKem.X86.ea_at, State.load32, State.load8, State.store32,
-        State.store8, Reg8.reg, setReg_gpr, setReg_mem, setReg_rd, setReg_wr, setReg_cf, setReg_zf,
-        setFlags_gpr, setFlags_mem, setFlags_rd, setFlags_wr, setFlags_cf, setFlags_zf,
-        Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
-        ite_false, reduceCtorEq, BitVec.sub_self, true_and, and_true, $ls,*]))
+  | `(tactic| xrun [$ls,*]) => `(tactic| plain_simp_names (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+                         execAlu, execShift, arithFlags_eq, Proof.MlKem.X86.ea_at, State.load32, State.load8, State.store32,
+                         State.store8, Reg8.reg, setReg_gpr, setReg_mem, setReg_rd, setReg_wr, setReg_cf, setReg_zf,
+                         setFlags_gpr, setFlags_mem, setFlags_rd, setFlags_wr, setFlags_cf, setFlags_zf,
+                         Option.bind_some, Option.map_some, Option.map, Option.some.injEq, exists_eq_left', ite_true,
+                         ite_false, reduceCtorEq, BitVec.sub_self, true_and, and_true, $ls,*]))
 
 /-! ## What a block keeps -/
 

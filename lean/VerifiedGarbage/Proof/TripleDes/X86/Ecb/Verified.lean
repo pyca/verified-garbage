@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.TripleDes.X86.VerifiedBlock
 public import VerifiedGarbage.Impl.TripleDes.X86.Ecb
 public import VerifiedGarbage.Proof.Rc2.X86.Cbc.CallFrame
@@ -12,6 +14,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Rc2.X86.Save
+public import VerifiedGarbage.Proof.Framework.CallLay
+public import VerifiedGarbage.Proof.Rc2.Select
+public import VerifiedGarbage.Proof.Rc2.Word
+public import VerifiedGarbage.Proof.Rc2.Word32
+public import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
+public import VerifiedGarbage.Proof.Rc2.X86.KeyLookup
+public import VerifiedGarbage.Proof.TripleDes.Schedule
+public import VerifiedGarbage.Proof.TripleDes.Word
+public import VerifiedGarbage.Proof.TripleDes.X86.BlockCT
+public import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput
+public import VerifiedGarbage.Proof.TripleDes.X86.WordStore
 
 /-! ## `Call` -/
 
@@ -979,16 +993,22 @@ def narrowRd (s : State) : List Region := [⟨addr32 (arg s 0), 384⟩, ⟨argAd
 def narrowWr (s : State) : List Region :=
   [⟨addr32 (arg s 1), 8 * (arg s 2).toNat⟩, ⟨addr32 (arg s 3), 1024⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
+tactic_template "tdes_ecb_narrow" : tactic =>
   `(tactic| simp only [VG.Proof.TripleDes.X86.Ecb.contract, VG.Proof.TripleDes.X86.Ecb.wideContract,
-    VG.Proof.TripleDes.X86.Ecb.narrowRd, VG.Proof.TripleDes.X86.Ecb.narrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.Proof.TripleDes.X86.Ecb.narrowRd, VG.Proof.TripleDes.X86.Ecb.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
+
+tactic_template "tdes_ecb_narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [VG.Proof.TripleDes.X86.Ecb.contract, VG.Proof.TripleDes.X86.Ecb.wideContract,
+                     VG.Proof.TripleDes.X86.Ecb.narrowRd, VG.Proof.TripleDes.X86.Ecb.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $loc)
 
 theorem wide_pre (d : Spec.TripleDes.Direction) (s : State) (h : (wideContract d).pre s) :
     (contract d).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  tdes_ecb_narrow
   exact ⟨trivial, trivial, h⟩
 
 def satState : State where
@@ -1053,10 +1073,10 @@ theorem ecb_verified (d : Spec.TripleDes.Direction) :
     simp only [narrowWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp_all only [or_true, true_or]
   · intro s s' _ h
-    narrow at h ⊢
+    tdes_ecb_narrow at h ⊢
     exact h
   · intro s₁ s₂ _ _ h
-    narrow
+    tdes_ecb_narrow
     exact h
 
 theorem encrypt_verified : Verified target Impl.TripleDes.X86.Ecb.encrypt (Proof.TripleDes.ecbEncryptScratchContract abi 16) := ecb_verified .encrypt

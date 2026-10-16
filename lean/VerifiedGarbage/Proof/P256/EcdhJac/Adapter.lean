@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhJac.State
-public import VerifiedGarbage.Proof.Ecdh.AArch64.Window
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.P256.EcdhJac.State
+import VerifiedGarbage.Proof.Ecdh.AArch64.Window
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.P256.EcdhJac.Finish
 public import VerifiedGarbage.Proof.P256.EcdhJac.Multiply
 public import VerifiedGarbage.Proof.P256.EcdhJac.Lit
@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import VerifiedGarbage.Proof.Weierstrass.Booth
 
 /-! ## `Prep` -/
 

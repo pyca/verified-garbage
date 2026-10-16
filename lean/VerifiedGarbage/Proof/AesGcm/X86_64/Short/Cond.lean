@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Small
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
+import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 
 /-!
 # AES-GCM's short path on x86-64: the condition

@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86.ScalarStep
-public import VerifiedGarbage.Proof.X448.X86.Counters
-public import VerifiedGarbage.Proof.X448.X86.Decode
-public import VerifiedGarbage.Proof.X448.X86.Fill
+import VerifiedGarbage.Proof.X448.X86.Counters
+import VerifiedGarbage.Proof.X448.X86.Decode
+import VerifiedGarbage.Proof.X448.X86.Fill
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.X25519.X86
+import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # Ed448 scalar arithmetic on x86 (32-bit): the loops

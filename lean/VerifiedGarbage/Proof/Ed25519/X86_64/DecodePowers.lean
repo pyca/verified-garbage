@@ -4,12 +4,22 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
 public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
-public import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
+import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RootPair
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
+import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+import VerifiedGarbage.Proof.X25519.X86_64.Setup
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyFrame
+meta import VerifiedGarbage.Proof.X25519.X86_64.Setup
 
 /-!
 # Ed25519 verification on x86-64: both square roots' powers first

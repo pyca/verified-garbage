@@ -1,9 +1,9 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHStoredField
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHStoredField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintSpecPre
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedZStoredField
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskSemantic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedHintOrder
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintPacked
@@ -11,18 +11,19 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedEntry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedTiming
 public import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCount
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCoverage
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintCount
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedPassOutput
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckCoverage
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseHintCount
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSatMemory
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.Encode
 
 /-! ## From `PairedHAllFields.lean` -/
 

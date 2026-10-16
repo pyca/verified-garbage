@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.R2wDiv
-public import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import VerifiedGarbage.Proof.Bignum.X86_64.Csub
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Bignum.WordStep
 
 /-!
 # `R² mod m` by word steps on x86-64: `x 2^64 - q̂ m`

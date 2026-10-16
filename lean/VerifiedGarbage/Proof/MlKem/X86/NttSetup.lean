@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86.NttLoop
 meta import VerifiedGarbage.Proof.MlKem.X86.NttLoop
-public import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.TCB.X86.Target
 meta import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig
@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.MlKem.X86.Compress
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Impl.MlKem.X86.Compress
 
 /-!
 # ML-KEM on x86 (32-bit): the start of `vg_mlkem_ntt` and `vg_mlkem_inv_ntt`

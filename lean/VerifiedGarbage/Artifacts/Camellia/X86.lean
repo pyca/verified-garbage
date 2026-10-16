@@ -1,7 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Camellia.X86.Verified
+import VerifiedGarbage.Proof.Camellia.X86.Verified
 public import VerifiedGarbage.Proof.Camellia.X86.KeyVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Camellia artifacts on baseline x86 (32-bit) -/
 

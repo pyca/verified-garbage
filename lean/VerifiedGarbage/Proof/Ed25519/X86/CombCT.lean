@@ -2,23 +2,25 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.Comb
 meta import VerifiedGarbage.Impl.Ed25519.X86.Comb
-public import VerifiedGarbage.Proof.Ed25519.X86.CombLit
+import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.CombLit
 public import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
-public import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 meta import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! The comb has a public trace: its loops' counters (`esi`) are public, and every address is
 the workspace pointer `edi` plus a constant or `8 esi`, or the tables' address plus
 `768 esi` and a constant. The tables' address is the word at byte `combTbl` of the workspace,
 which the comb never writes, public (`callTaint combTbl`): the digits only reach masks. The
-calls of `vg_ed25519_r32_add_affine` are analysed by its summary, and those of `_double` and
-`_point_add`, after the loop, as part of the comb. -/
+calls of `vg_ed25519_r32_add_affine` and of `_point_add` are analysed by their summaries, and
+those of `_double`, after the loop, as part of the comb. -/
 
 @[expose] public section
 
@@ -30,7 +32,7 @@ theorem combMultiply_ct {x : BitVec 32} : RelCT isa
     (fun s t => PointCTCtx x s ∧ PointCTCtx x t ∧ s.wr = t.wr ∧ s.gpr .esp = t.gpr .esp ∧
       wd s.mem x combTbl = wd t.mem x combTbl) combMultiply (fun _ _ => True) := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check (callTaint combTbl) combMultiply h).isSome = true := by
-    taint_decide_sum [affSum]
+    native_taint_decide_sum [affSum, addSum]
   apply VG.RelCT.taint (A := taint) (callTaint combTbl) _ hc
   intro s t ⟨hs, ht, hw, hsp, hv⟩
   exact callTaint_agree hs ht hw hsp (by decide) hv

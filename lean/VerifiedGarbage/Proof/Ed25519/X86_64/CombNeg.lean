@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -388,10 +388,10 @@ theorem negWords_ok {s : State} {base : Addr} (hs : Scr s base) {x : Nat}
     simp only [VG.Proof.X25519.X86_64.val4] at he he2 ⊢
     rw [hr] at he2
     -- `c = 0`: the difference stays above `38 β`
-    have hc0 : c = 0 := by simp only [P] at he; omega
+    have hc0 : c = 0 := by simp only [P] at he; omega_arith
     subst hc0
     simp only [P] at he ⊢
-    omega
+    omega_arith
 
 /-- The selection: `r8`–`r11` keep the negation if the mask `rcx` is all ones,
 and are the words at `x` otherwise (`cmove`, since `test` sets `ZF` exactly

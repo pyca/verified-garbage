@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontContract
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -10,6 +10,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Mont.Read
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Mont.Read
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Montgomery products modulo the curves' `p` and `n`, as functions, on AArch64: verified

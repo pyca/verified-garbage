@@ -1,16 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86.Head
-public import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput
-public import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
+import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput
+import VerifiedGarbage.Proof.Rc2.X86.BlockArgs
 public import VerifiedGarbage.Spec.TripleDes.Contract
-public import VerifiedGarbage.Proof.TripleDes.X86.Body
-public import VerifiedGarbage.Proof.TripleDes.X86.WordStore
-public import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.TripleDes.X86.Body
+import VerifiedGarbage.Proof.TripleDes.X86.WordStore
+import VerifiedGarbage.Proof.TripleDes.Schedule
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.TripleDes.Word
 
 /-! ## `RestoredTail` -/
 

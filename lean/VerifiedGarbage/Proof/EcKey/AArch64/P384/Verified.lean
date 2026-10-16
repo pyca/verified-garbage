@@ -6,12 +6,22 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.P384.Contract
 meta import VerifiedGarbage.Proof.EcKey.AArch64.P384.Contract
 public import VerifiedGarbage.Proof.EcKey.AArch64.P384.Lit
 meta import VerifiedGarbage.Proof.EcKey.AArch64.P384.Lit
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 
 /-!
 # P-384 public keys on AArch64: `Verified`

@@ -8,20 +8,23 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # SEED-CBC on x86 (32-bit): the code as literals
 
 The code of CBC encryption and decryption as literals
-(`materialize_flat_code`), which the checks of the whole functions
+(`materialize_code`), which the checks of the whole functions
 (`taint_decide`, `lit_decide`) read rather than build the code again.
+Not flattened (`materialize_flat_code`): its unfolding measured slower here.
 -/
 
 @[expose] public section
 
 namespace VG.Proof.Seed.X86
 
-materialize_flat_code cbcEncryptCode := Impl.Seed.X86.cbcEncrypt
-materialize_flat_code cbcDecryptCode := Impl.Seed.X86.cbcDecrypt
+materialize_code cbcEncryptCode := Impl.Seed.X86.cbcEncrypt
+materialize_code cbcDecryptCode := Impl.Seed.X86.cbcDecrypt
 
 end VG.Proof.Seed.X86

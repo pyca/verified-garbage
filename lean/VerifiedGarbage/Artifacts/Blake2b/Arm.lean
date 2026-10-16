@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Blake2.Arm.Blake2b
+import VerifiedGarbage.Spec.Rc2
 
 /-! # BLAKE2b (RFC 7693) on ARMv7 -/
 

@@ -10,6 +10,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
+public import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
+public import VerifiedGarbage.Proof.Cmac.Spec
+public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-GCM on x86: where everything is
@@ -327,31 +335,31 @@ theorem zf_setMem (s : State) (m : Mem) : (setMem s m).zf = s.zf := rfl
 
 /-- Runs a block of the instructions the AES-GCM code uses. The facts given
 rewrite the addresses and discharge the permissions. -/
-macro "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | omega) only [runBlock_cons, runStep_some,
-    runBlock_nil, exec, readSrc, execAlu, execShift, State.load32, store32_eq, State.load8, store8_eq,
-    State.ea, at_, imm, slot, argOp, stO, tO, uO, ctxO, roundsO, alO, ahO, xlO, xhO, dataO, lenO, aadO, tglO,
-    auxO, zO, nlO, vO, rO, tpO, dO, nO, bO, scrO, List.cons_append, List.nil_append, List.append_assoc,
-    Option.bind_some, Option.map_some, gpr_setReg_self, gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, mem_setReg,
-    mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags, wr_setReg, wr_arithFlags,
-    wr_setFlags, cf_setReg, cf_arithFlags, zf_setReg, zf_arithFlags, gpr_setMem, mem_setMem, rd_setMem,
-    wr_setMem, cf_setMem, zf_setMem, ite_true, ite_false, reduceCtorEq, Nat.reduceAdd, ↓reduceIte, Nat.reduceLT,
-    Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceMul, and_self, and_true, true_and,
-    eq_self_iff_true, $ts,*]) <;>
-  try rfl)
+tactic_template "xrun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                   simp (disch := first | decide | omega) only [runBlock_cons, runStep_some,
+                     runBlock_nil, exec, readSrc, execAlu, execShift, State.load32, store32_eq, State.load8, store8_eq,
+                     State.ea, at_, imm, slot, argOp, stO, tO, uO, ctxO, roundsO, alO, ahO, xlO, xhO, dataO, lenO, aadO, tglO,
+                     auxO, zO, nlO, vO, rO, tpO, dO, nO, bO, scrO, List.cons_append, List.nil_append, List.append_assoc,
+                     Option.bind_some, Option.map_some, gpr_setReg_self, gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, mem_setReg,
+                     mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags, wr_setReg, wr_arithFlags,
+                     wr_setFlags, cf_setReg, cf_arithFlags, zf_setReg, zf_arithFlags, gpr_setMem, mem_setMem, rd_setMem,
+                     wr_setMem, cf_setMem, zf_setMem, ite_true, ite_false, reduceCtorEq, Nat.reduceAdd, ↓reduceIte, Nat.reduceLT,
+                     Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceMul, and_self, and_true, true_and,
+                     eq_self_iff_true, $ts,*]) <;>
+                   try rfl)
 
 /-- Reads registers through the writes of a block. -/
-macro "regs" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := decide) only [gpr_setMem, gpr_setReg_self, gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags,
-    $ts,*]))
+tactic_template "regs" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                   simp (disch := decide) only [gpr_setMem, gpr_setReg_self, gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags,
+                     $ts,*]))
 
 /-- Reads the memory, flags and permissions through the writes of a block. -/
-macro "mems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | omega) only [mem_setMem, mem_setReg, mem_arithFlags, mem_setFlags,
-    rd_setMem, rd_setReg, rd_arithFlags, rd_setFlags, wr_setMem, wr_setReg, wr_arithFlags, wr_setFlags,
-    zf_setMem, zf_setReg, zf_arithFlags, cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setReg_self,
-    gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, Mem.readW_writeW_self32, readW_writeW_off, stO, tO, uO,
-    ctxO, roundsO, alO, ahO, xlO, xhO, dataO, lenO, aadO, tglO, auxO, zO, nlO, vO, rO, tpO, dO, nO, bO, scrO,
-    Nat.reduceAdd, $ts,*]))
+tactic_template "mems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                   simp (disch := first | decide | omega) only [mem_setMem, mem_setReg, mem_arithFlags, mem_setFlags,
+                     rd_setMem, rd_setReg, rd_arithFlags, rd_setFlags, wr_setMem, wr_setReg, wr_arithFlags, wr_setFlags,
+                     zf_setMem, zf_setReg, zf_arithFlags, cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setReg_self,
+                     gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, Mem.readW_writeW_self32, readW_writeW_off, stO, tO, uO,
+                     ctxO, roundsO, alO, ahO, xlO, xhO, dataO, lenO, aadO, tglO, auxO, zO, nlO, vO, rO, tpO, dO, nO, bO, scrO,
+                     Nat.reduceAdd, $ts,*]))
 
 end VG.Proof.AesGcm.X86

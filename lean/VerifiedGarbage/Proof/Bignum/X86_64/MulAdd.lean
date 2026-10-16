@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Loop
-public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Poly1305.Limbs64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

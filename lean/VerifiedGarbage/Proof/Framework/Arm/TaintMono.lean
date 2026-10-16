@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 public import VerifiedGarbage.Proof.Framework.TaintSum
 public import VerifiedGarbage.Proof.Framework.RegSetOrder
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Summaries for the ARMv7 taint analysis
@@ -448,6 +449,9 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     simp only [step, Option.some.injEq] at hs ⊢; cases hs
     exact ⟨_, rfl, h.upd h.regs and2 h.bases'⟩
   | movw d _ =>
+    simp only [step, Option.some.injEq] at hs ⊢; cases hs
+    exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d)⟩
+  | adrSym d _ =>
     simp only [step, Option.some.injEq] at hs ⊢; cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d)⟩
   | addSp d _ =>

@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 meta import VerifiedGarbage.Proof.MlDsa.X86.Pack.Run
 public import VerifiedGarbage.Proof.Framework.X86.ArgTaint
 meta import VerifiedGarbage.Proof.Framework.X86.ArgTaint
-public import VerifiedGarbage.Proof.Framework.X86.RelCT
+import VerifiedGarbage.Proof.Framework.X86.RelCT
 meta import VerifiedGarbage.Proof.Framework.X86.RelCT
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -18,6 +18,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

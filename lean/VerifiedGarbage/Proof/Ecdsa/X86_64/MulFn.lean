@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulBase
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
 
 /-!
 # `vg_<curve>_mul` on x86-64, and `R = [k]G` by its call
@@ -232,10 +237,10 @@ theorem mulBody_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (
   · rw [Nat.shiftRight_zero] at R'
     exact R'
 
-/-- `vg_<curve>_mul`, for a curve of four words: what its body gives
+/-- `vg_<curve>_mul`, for a curve of four or six words: what its body gives
 (`mulBody_ok`); the registers it copies to `xmm` registers and back are
 among those its body changes (`powClob`). -/
-theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4) (hC : Law c.C) {base : Addr} {s : State}
+theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4 ∨ c.n = 6 ∨ c.n = 8) (hC : Law c.C) {base : Addr} {s : State}
     (hs : Scr s base size)
     (hmp : sv c base s MP = c.C.p) (hz : sv c base s ZERO = 0)
     (hone : sv c base s ONEP = 2 ^ (64 * c.n) % c.C.p)
@@ -247,7 +252,8 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4) (hC : Law c.C) {base : Addr} 
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
         (tmv c.C c.n base s' (c.sl RZ)) (mul (sv c base s K) (ptQ c base s)) := by
-  have hkept : ∀ r ∈ Cfg.invKeptX.map Prod.fst, r ∈ powClob c.n := by rw [h4]; decide
+  have hkept : ∀ r ∈ Cfg.invKeptX.map Prod.fst, r ∈ powClob c.n := by
+    rcases h4 with h | h | h <;> rw [h] <;> decide
   show WP isa (.seq (.block _) (.seq c.mulBody.inline (.block _))) s _
   refine WP.seq (WP.mono (savesX_ok s) fun s₁ ⟨g₁, m₁, rd₁, wr₁⟩ => ?_)
   have hs₁ : Scr s₁ base size := ⟨by rw [g₁]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
@@ -275,7 +281,7 @@ theorem mulFn_ok (hc : BaseCfgOk c) (h4 : c.n = 4) (hC : Law c.C) {base : Addr} 
 write. -/
 theorem mulW_sub :
     ∀ w ∈ slW c [RX, RY] ++ mulW c, ∃ w' ∈ gWA c, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
-  have hA : ACC ∈ [ACC] := List.mem_singleton_self _
+  have hA : ACC ∈ c.mulBaseSlots := by unfold Cfg.mulBaseSlots; split <;> simp
   intro w hw
   refine ⟨w, ?_, Nat.le_refl _, Nat.le_refl _⟩
   rcases List.mem_append.mp hw with hw | hw
@@ -303,12 +309,12 @@ theorem gMulKC_ok (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : Co
   unfold Cfg.gMulKC
   cases hm : c.mulBase with
   | some C =>
-    obtain ⟨d, hcd, hj, h6, hnc⟩ := hmb.1 (by rw [hm]; rfl)
+    obtain ⟨d, hcd, h3, hnc⟩ := hmb.1 (by rw [hm]; rfl)
     obtain ⟨hTM, hout⟩ := tbl_of hcd hp hS.rd hS.unch
     rw [← hS.syms] at hTM hout
     show WP isa c.mulBaseFn s _
     rw [← Code.inline_of_noCalls hnc]
-    refine WP.mono (mulBaseFn_ok hc h6 hC hT hcd hj hS.scr hS.fixed.mp hS.fixed.zero hTM hout)
+    refine WP.mono (mulBaseFn_ok hc h3 hC hT hcd hS.scr hS.fixed.mp hS.fixed.zero hTM hout)
       fun s' ⟨g', _, rd', wr', _, U', M', L', R'⟩ => ⟨⟨g', rd', wr'⟩, U', M', L', ?_⟩
     rw [← hS.k]; exact R'
   | none =>

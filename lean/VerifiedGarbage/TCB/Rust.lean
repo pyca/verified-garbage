@@ -67,7 +67,12 @@ x86-64 by `lea` of the RIP-relative operand `[rip + <sym>]`, which is the
 same in every object format (`SymPart.ripRel`); on IA-32, by a call to the
 next instruction and an ADD of the difference between its return address
 and the static (`SymPart.x86PcRel`, the ADD immediate emitted as `.long`
-because LLVM's Intel-syntax operand parser rejects symbol differences). The
+because LLVM's Intel-syntax operand parser rejects symbol differences); on
+ARMv7, by `movw` and `movt` of the difference between the static and the
+`pc` an `add` then adds (`SymPart.armPcRel`, the same text in ARM and Thumb
+code, and position independent; ELF only, as COFF, for Windows' Thumb
+targets, cannot represent the difference, so such code does not assemble
+there). The
 linker resolves them to the static's address, which the model gives
 (`State.syms`, fixed for the run as a static's address is) and at which the
 contract (`Abi.withConsts`) says the memory holds the table, readable and
@@ -129,6 +134,7 @@ def line (call : String) : Line → String
     s!"        concat!(\"{escape s}\", vg_sym_pageoff!(\"" ++ "{" ++ n ++ "}\")),\n"
   | .sym s .ripRel n => s!"        \"{escape s}[rip + " ++ "{" ++ n ++ "}]\",\n"
   | .sym s .x86PcRel n => s!"        \"{escape s}" ++ "{" ++ n ++ "} - 2b\",\n"
+  | .sym s .armPcRel n => s!"        \"{escape s}" ++ "{" ++ n ++ "} - (2f + 2 * (3f - 2f)))\",\n"
 
 /-- `fs` as an English list of code spans: "`a`, `b` and `c`". -/
 def codeList : List String → String

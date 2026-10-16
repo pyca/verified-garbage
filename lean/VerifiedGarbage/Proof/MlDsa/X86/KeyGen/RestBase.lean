@@ -6,6 +6,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+public import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA key generation on x86 (32-bit): after the samplers
@@ -56,8 +66,8 @@ structure SafeR (p : Params) (np nr : Nat) (bs : List Buf) : Prop where
 
 /-- Proves a `SafeR`, with the facts of the parameter set `hF`: each check decided for each
 parameter set if it can be (`layd`). -/
-macro "safeR " hF:term:max : tactic => `(tactic| (
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> intros <;> (try refine ⟨?_, ?_⟩) <;> first | layd | layp $hF))
+tactic_template "safeR " hF:term:max : tactic => `(tactic| (
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> intros <;> (try refine ⟨?_, ?_⟩) <;> first | layd | layp $hF []))
 
 theorem apart_append {Y : Lay} {b : Buf} {bs₁ bs₂ : List Buf} (h₁ : Y.apart b bs₁ = true)
     (h₂ : Y.apart b bs₂ = true) : Y.apart b (bs₁ ++ bs₂) = true := by
@@ -91,11 +101,11 @@ theorem ykOk {p : Params} {a o l : Nat} (ha : a < 4) (hl : 0 < l) (h : o + l ≤
   simp only [Lay.ok, YK_n, ha, hl, h, decide_true, Bool.and_self]
 
 /-- Closes the arithmetic of a check of one buffer, in each case of `η` if it needs it. -/
-macro "safe1 " hF:term:max : tactic => `(tactic| (
-  try simp only [VG.Impl.MlDsa.X86.KeyGen.oACC, VG.Impl.MlDsa.X86.KeyGen.oP, VG.Impl.MlDsa.X86.KeyGen.oT0]
-  first
-    | omega_arith
-    | rcases ($hF).eta with ⟨_, e⟩ | ⟨_, e⟩ <;> simp only [e] at * <;> omega_arith))
+tactic_template "safe1 " hF:term:max : tactic => `(tactic| (
+                   try simp only [VG.Impl.MlDsa.X86.KeyGen.oACC, VG.Impl.MlDsa.X86.KeyGen.oP, VG.Impl.MlDsa.X86.KeyGen.oT0]
+                   first
+                     | omega_arith
+                     | rcases ($hF).eta with ⟨_, e⟩ | ⟨_, e⟩ <;> simp only [e] at * <;> omega_arith))
 
 /-- A buffer of `scratch` apart from the accumulator, `Â` and `s₂`. -/
 theorem SafeR.sc {p : Params} (hF : PFacts p) {np nr : Nat} (hnp : np ≤ p.ℓ + p.k) (hnr : nr ≤ p.k) {o l : Nat}
@@ -207,20 +217,20 @@ theorem copies_piece {p : Params} (hF : PFacts p) :
   refine Piece.seq (B := fun s₀ s => KSamp p (p.k * p.ℓ) (p.ℓ + p.k) s₀ s ∧
       bytesAt s.mem (Buf.addr s₀ ⟨1, 0, 32⟩) 32 = rhoOf p s₀)
     (copyW_piece (Y := YK p) kS oHX 1 0 8 (by decide) (by decide) (by layd) (h₁ := .block []) (by kernel_rfl)
-      (by taint_decide) (fun _ _ _ h => h.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.keep hp (N := 0) (by omega)
+      (by native_taint_decide) (fun _ _ _ h => h.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.keep hp (N := 0) (by omega)
         ⟨by layd, by layd, fun _ _ => by layd, fun _ _ => by layd⟩ (fr1 fr) h', ?_⟩) ?_
   · show bytesAt s'.mem _ 32 = _
     rw [cp]; exact h.kb.rho
   refine Piece.seq (B := fun s₀ s => KSamp p (p.k * p.ℓ) (p.ℓ + p.k) s₀ s ∧
       bytesAt s.mem (Buf.addr s₀ ⟨1, 0, 32⟩) 32 = rhoOf p s₀ ∧ bytesAt s.mem (Buf.addr s₀ ⟨2, 0, 32⟩) 32 = rhoOf p s₀)
     (copyW_piece (Y := YK p) kS oHX 2 0 8 (by decide) (by decide) (by layd) (h₁ := .block []) (by kernel_rfl)
-      (by taint_decide) (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.1.keep hp (N := 0) (by omega)
+      (by native_taint_decide) (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' fr cp => ⟨h.1.keep hp (N := 0) (by omega)
         ⟨by layd, by layd, fun _ _ => by layd, fun _ _ => by layd⟩ (fr1 fr) h',
         by rw [keepBytes hp (N := 0) (stkN (by omega)) (b := ⟨1, 0, 32⟩) (by layd) (fr1 fr)]; exact h.2, ?_⟩) ?_
   · show bytesAt s'.mem _ 32 = _
     rw [cp]; exact h.1.kb.rho
   refine copyW_piece (Y := YK p) kS (oHX + 96) 2 32 8 (by decide) (by decide) (by layd) (h₁ := .block [])
-    (by kernel_rfl) (by taint_decide) (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' fr cp => ?_
+    (by kernel_rfl) (by native_taint_decide) (fun _ _ _ h => h.1.kb.ctx) fun s₀ s s' hp h h' fr cp => ?_
   obtain ⟨⟨kb, A, S, hA, hS, hG⟩, e1, e2⟩ := h
   have k : ∀ b : Buf, (YK p).apart b [⟨2, 32, 32⟩] = true →
       bytesAt s'.mem (Buf.addr s₀ b) b.len = bytesAt s.mem (Buf.addr s₀ b) b.len :=

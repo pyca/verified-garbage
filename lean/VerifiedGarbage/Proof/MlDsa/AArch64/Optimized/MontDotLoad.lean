@@ -2,11 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotVec
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.MontDot
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductLoad
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductLoad
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Spec.MlKem
 
 /-! ## From `MontDotVec.lean` -/
 
@@ -64,7 +68,7 @@ theorem reduce_ok {d : VReg} {s : State} {rest : List Instr} {Q : State → Prop
   refine wp_vop (d := d) rfl fun s₇ h₇ => k s₇
     (VChg.mono (rs' := [.v2,.v3,.v4,d])
       ((((h₃.chg.trans h₄.chg).trans h₅.chg).trans h₆.chg).trans h₇.chg)
-      (by intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)) ?_
+      (by simp (config := { contextual := true }) only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc, true_or, or_true, implies_true, and_self, forall_eq_or_imp])) ?_
   rw [h₇.v, h₆.get .v2, a₅, a₆]
   exact unzip_wide true _ _ _ _
 
@@ -176,7 +180,7 @@ theorem dotTerm_ok {s : State} {off k : Nat}
     exact h19 (by simpa using hn)
   · have hc : VChg [.v0,.v1,.v2,.v3] s t :=
       ((h1.chg.trans h2.chg).trans ht).mono (by
-        intro r hr; simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at *; grind only)
+        simp (config := { contextual := true }) only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc, implies_true])
     have ev e : accWord (decide (k=0)) (dotAccum s off k e)
         (vword (b.v .v0) e) (vword (b.v .v1) e)=dotAccum s off (k+1) e := by
       rw [h2.get .v0,h1.v,h2.v,h1.chg.mem,h1.chg.gpr]

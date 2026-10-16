@@ -4,15 +4,15 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPointsTiming
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointContract
-public import VerifiedGarbage.Proof.P224.X86_64.JointTiming
+import VerifiedGarbage.Proof.P224.X86_64.JointTiming
 meta import VerifiedGarbage.Proof.P224.X86_64.JointTiming
 public import VerifiedGarbage.Proof.P224.X86_64.NafTableTiming
 meta import VerifiedGarbage.Proof.P224.X86_64.NafTableTiming
 public import VerifiedGarbage.Proof.P224.X86_64.JointLayout
 meta import VerifiedGarbage.Proof.P224.X86_64.JointLayout
-public import VerifiedGarbage.Proof.P224.X86_64.JointFrame
+import VerifiedGarbage.Proof.P224.X86_64.JointFrame
 meta import VerifiedGarbage.Proof.P224.X86_64.JointFrame
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
@@ -22,6 +22,20 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
+import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.P224Literals
+meta import VerifiedGarbage.Spec.EcKey.Generic
 
 /-! Concrete timing checks and the doubler of P-224's joint verification. -/
 

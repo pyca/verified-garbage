@@ -6,9 +6,9 @@ public import VerifiedGarbage.Spec.Weierstrass.Mont
 # Complete point addition on a curve, in Montgomery form, as functions
 
 **Trusted** (as every file in `Spec/`). The contracts of two functions for
-each curve of `curves` (P-192, P-224, P-256 and P-384), so that the code of
-a curve's functions can call one copy of its point addition instead of
-repeating it at every use:
+each curve of `curves` (P-192, P-224, P-256, P-384, brainpoolP256r1,
+brainpoolP384r1 and brainpoolP512r1), so that the code of a curve's functions can call one copy of its point addition
+instead of repeating it at every use:
 
 * `vg_<curve>_point_add(ws)`: the sum `O = P + Q` of the points at fixed
   offsets of the working space, by the complete addition formula of Renes,
@@ -261,8 +261,15 @@ def p192 : Curve := { curve := "p192", p := Spec.P192.p, k := 3, desc := "P-192"
 def p224 : Curve := { curve := "p224", p := Spec.P224.p, k := 4, desc := "P-224" }
 def p256 : Curve := { curve := "p256", p := Spec.P256.p, k := 4, desc := "P-256" }
 def p384 : Curve := { curve := "p384", p := Spec.P384.p, k := 6, desc := "P-384" }
+def brainpoolp256r1 : Curve :=
+  { curve := "brainpoolp256r1", p := Spec.BrainpoolP256r1.p, k := 4, desc := "brainpoolP256r1" }
+def brainpoolp384r1 : Curve :=
+  { curve := "brainpoolp384r1", p := Spec.BrainpoolP384r1.p, k := 6, desc := "brainpoolP384r1" }
+def brainpoolp512r1 : Curve :=
+  { curve := "brainpoolp512r1", p := Spec.BrainpoolP512r1.p, k := 8, desc := "brainpoolP512r1" }
 
 /-- Every curve. -/
-def curves : List Curve := [p192, p224, p256, p384]
+def curves : List Curve := [p192, p224, p256, p384, brainpoolp256r1, brainpoolp384r1,
+  brainpoolp512r1]
 
 end VG.Spec.Weierstrass.Point

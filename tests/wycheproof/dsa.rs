@@ -1,5 +1,8 @@
 //! DSA P1363 verification: scalar ranges, malformed signatures and edge cases.
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;

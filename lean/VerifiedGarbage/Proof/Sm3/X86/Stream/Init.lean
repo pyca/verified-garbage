@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.MdStream.X86.Common
+import VerifiedGarbage.Proof.MdStream.X86.Common
 meta import VerifiedGarbage.Proof.MdStream.X86.Common
-public import VerifiedGarbage.Proof.Sm3.Stream
+import VerifiedGarbage.Proof.Sm3.Stream
 meta import VerifiedGarbage.Proof.Sm3.Stream
-public import VerifiedGarbage.Proof.Sm3.StateMem
+import VerifiedGarbage.Proof.Sm3.StateMem
 meta import VerifiedGarbage.Proof.Sm3.StateMem
 public import VerifiedGarbage.Proof.Sm3.X86.Contract
 meta import VerifiedGarbage.Proof.Sm3.X86.Contract
@@ -20,6 +20,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming SM3 on x86 (32-bit): `init`

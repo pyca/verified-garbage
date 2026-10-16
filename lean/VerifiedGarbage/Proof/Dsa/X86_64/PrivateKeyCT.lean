@@ -1,11 +1,18 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.ScheduleCheckCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+meta import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
 
 /-! # Constant time of private-key consistency and nonce validation -/
 
@@ -16,13 +23,13 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86_64
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.MlKem.X86_64
 
-theorem privateKey_ct (M : Mont) (inputs : SchedulePublic → List (Operand × Nat))
+theorem privateKey_ct (M : Mont) (Sq : MontS) (inputs : SchedulePublic → List (Operand × Nat))
     (stable : ∀ p a, a ∈ inputs p → a.1.length ≠ .mask ∧ stablePointer a.1.pointer)
     (hg : ∀ p, (Core.generator, p.layout.pLen) ∈ inputs p)
     (hy : ∀ p, (Core.publicValue, p.layout.pLen) ∈ inputs p)
     (hx : ∀ p, (Core.privateScalar, p.layout.qLen) ∈ inputs p)
     (hk : ∀ p, (Core.nonce, p.layout.qLen) ∈ inputs p) :
-    RelCT isa (Two (ScheduleState inputs)) (Checks.privateKey M.mm)
+    RelCT isa (Two (ScheduleState inputs)) (Checks.privateKey Sq.mm M.mm)
       (Two (ScheduleState inputs)) := by
   have pp (p : SchedulePublic) : 1 ≤ p.layout.pLen := by have := p.layout.widths; omega
   have qp (p : SchedulePublic) : 1 ≤ p.layout.qLen := p.layout.widths.1
@@ -33,7 +40,7 @@ theorem privateKey_ct (M : Mont) (inputs : SchedulePublic → List (Operand × N
     (by simp [pointerFits, Core.privateScalar]) (by simp [stablePointer, Core.privateScalar]) qp qf (by taint_decide)
   have h2 := scheduleRange_ct inputs stable .q Core.nonce (fun p => p.layout.qLen) false
     (by simp [pointerFits, Core.nonce]) (by simp [stablePointer, Core.nonce]) qp qf (by taint_decide)
-  have h3 := schedulePow_ct M inputs stable .p t Core.generator Core.privateScalar
+  have h3 := schedulePow_ct M Sq inputs stable .p t Core.generator Core.privateScalar
     (fun p => p.layout.pLen) (fun p => p.layout.qLen)
     (by simp [pointerFits, Core.generator]) (by simp [pointerFits, Core.privateScalar])
     (by simp [stablePointer, Core.generator]) (by simp [stablePointer, Core.privateScalar])

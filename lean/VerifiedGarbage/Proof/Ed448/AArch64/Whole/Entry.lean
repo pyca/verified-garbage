@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
-public import VerifiedGarbage.Proof.X25519.Bytes
-public import VerifiedGarbage.Spec.Ed448.Contract
-public import VerifiedGarbage.Spec.Sha3
+import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Spec.Sha3
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-!
 # Ed448's complete operations on AArch64: words kept in the locals

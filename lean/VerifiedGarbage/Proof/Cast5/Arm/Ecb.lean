@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.Arm.Block
 public import VerifiedGarbage.Proof.Framework.Arm.Spill
+public import VerifiedGarbage.Proof.Framework.Arm.StackScratchConsts
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Cast5.Memory
 
 /-!
 # CAST5 on ARMv7: ECB
@@ -21,6 +23,7 @@ on each block in turn (`ecbLoop_ok`) and restores the registers
 namespace VG.Proof.Cast5.Arm
 
 open VG VG.Arm VG.Arm.RegUpd VG.Impl.Cast5.Arm
+open VG.Impl.Cast5 (s1234Sym s1234 ecbConsts)
 
 /-! ## Frames of the layouts -/
 
@@ -56,11 +59,12 @@ theorem savedSlots_ne : ∀ p ∈ savedSlots, p.1 ≠ .r12 := by decide
 
 /-- The state of ECB with `j` of the `N` blocks at `d` done, from the memory
 `m0` after the setup: the slots, the blocks, and nothing else written but the
-data and the first 24 bytes of the working space at `c`. -/
+data and the first 32 bytes of the working space at `c`; the table
+`VG_CAST5_S1234` still held. -/
 structure LInv (s : State) (m0 : Mem) (up : Bool) (k : Spec.Cast5.Schedule) (c d kb : BitVec 32) (n N j : Nat)
     (u : State) : Prop where
   r12 : u.gpr .r12 = c
-  fr : Frame [⟨State.addr d, 8 * N⟩, ⟨State.addr c, 24⟩] m0 u.mem
+  fr : Frame [⟨State.addr d, 8 * N⟩, ⟨State.addr c, 32⟩] m0 u.mem
   blocks : ∀ i < N, Spec.Cast5.blockAt u.mem (State.addr d + BitVec.ofNat 64 (8 * i)) =
     if i < j then cipher up k n (Spec.Cast5.blockAt m0 (State.addr d + BitVec.ofNat 64 (8 * i)))
     else Spec.Cast5.blockAt m0 (State.addr d + BitVec.ofNat 64 (8 * i))
@@ -72,9 +76,13 @@ structure LInv (s : State) (m0 : Mem) (up : Bool) (k : Spec.Cast5.Schedule) (c d
   rd : u.rd = s.rd
   wr : u.wr = s.wr
   sp : u.sp = s.sp
+  syms : u.syms = s.syms
+  held : Held u.mem (State.addr (s.syms s1234Sym)) s1234
 
 /-- What the loop needs of the layout: the schedule at `kb`, the `N` blocks at
-`d` and the working space at `c`, separate and within the address space. -/
+`d` and the working space at `c`, separate and within the address space;
+the table `VG_CAST5_S1234`, readable, within the address space and apart
+from the blocks and the working space. -/
 structure Lay (s : State) (c d kb : BitVec 32) (n N : Nat) : Prop where
   cfit : c.toNat + 256 ≤ 2 ^ 32
   dfit : d.toNat + 8 * N ≤ 2 ^ 32
@@ -86,6 +94,10 @@ structure Lay (s : State) (c d kb : BitVec 32) (n N : Nat) : Prop where
   dKS : Region.Disjoint ⟨State.addr kb, 128⟩ ⟨State.addr c, 256⟩
   dKD : Region.Disjoint ⟨State.addr kb, 128⟩ ⟨State.addr d, 8 * N⟩
   nv : n = 12 ∨ n = 16
+  tfit : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32
+  trd : (⟨State.addr (s.syms s1234Sym), 4096⟩ : Region) ∈ s.rd ++ s.wr
+  dTD : Region.Disjoint ⟨State.addr (s.syms s1234Sym), 4096⟩ ⟨State.addr d, 8 * N⟩
+  dTS : Region.Disjoint ⟨State.addr (s.syms s1234Sym), 4096⟩ ⟨State.addr c, 256⟩
 
 theorem addr_blk {d : BitVec 32} {N j : Nat} (hd : d.toNat + 8 * N ≤ 2 ^ 32) (hj : j < N) :
     State.addr (d + BitVec.ofNat 32 (8 * j)) = State.addr d + BitVec.ofNat 64 (8 * j) := addr_add (by omega)
@@ -93,12 +105,14 @@ theorem addr_blk {d : BitVec 32} {N j : Nat} (hd : d.toNat + 8 * N ≤ 2 ^ 32) (
 theorem sub_blk (D : Addr) {N j : Nat} (hj : j < N) :
     Region.Sub ⟨D + BitVec.ofNat 64 (8 * j), 8⟩ ⟨D, 8 * N⟩ := Offset.sub_base _ (by omega)
 
-theorem sub_c24 (C : Addr) : Region.Sub ⟨C, 24⟩ ⟨C, 256⟩ := fun x hx => by
+theorem sub_c32 (C : Addr) : Region.Sub ⟨C, 32⟩ ⟨C, 256⟩ := fun x hx => by
   simp only [Region.Contains] at hx ⊢; omega
 
-theorem sub_ct256 (C : Addr) : Region.Sub ⟨C + BitVec.ofNat 64 16, 8⟩ ⟨C, 256⟩ := Offset.sub_base _ (by decide)
+theorem sub_ct256 (C : Addr) : Region.Sub ⟨C + BitVec.ofNat 64 16, 16⟩ ⟨C, 256⟩ := Offset.sub_base _ (by decide)
 
-theorem sub_ct (C : Addr) : Region.Sub ⟨C + BitVec.ofNat 64 16, 8⟩ ⟨C, 24⟩ := Offset.sub_base _ (by decide)
+theorem sub_ct (C : Addr) : Region.Sub ⟨C + BitVec.ofNat 64 16, 16⟩ ⟨C, 32⟩ := Offset.sub_base _ (by decide)
+
+theorem s1234_len : 8 * s1234.length = 4096 := by rw [s1234, table_length]
 
 /-- The block function's precondition, at block `j`. -/
 theorem LInv.bpre {s u : State} {m0 : Mem} {up : Bool} {k : Spec.Cast5.Schedule} {c d kb : BitVec 32} {n N j : Nat}
@@ -124,6 +138,10 @@ theorem LInv.bpre {s u : State} {m0 : Mem} {up : Bool} {k : Spec.Cast5.Schedule}
   sched := h.sslot
   rounds := h.rslot
   nv := hl.nv
+  tfit := by rw [h.syms]; exact hl.tfit
+  trd := by rw [h.syms, h.rd, h.wr]; exact hl.trd
+  held := by rw [h.syms]; exact h.held
+  dTS := by rw [h.syms]; exact hl.dTS
 
 theorem ofNat_sub_one {a : Nat} (ha : 1 ≤ a) (hb : a < 2 ^ 32) :
     BitVec.ofNat 32 a - 1 = BitVec.ofNat 32 (a - 1) := by
@@ -161,7 +179,7 @@ theorem step_ok {s u : State} {m0 : Mem} {up : Bool} {k : Spec.Cast5.Schedule} {
   have hcf := hl.cfit
   have hdf := hl.dfit
   have eP := addr_blk hdf hj
-  refine WP.seq (WP.mono (crypt_ok (h.bpre hl hj) up) fun v ⟨vb, vf, v12, vrd, vwr, vsp⟩ => ?_)
+  refine WP.seq (VG.Arm.WP.mono_syms (crypt_ok (h.bpre hl hj) up) fun v ⟨vb, vf, v12, vrd, vwr, vsp⟩ vsy => ?_)
   rw [eP] at vb vf
   -- The regions the block function wrote, against the slots and the other blocks.
   have dCt (off : Nat) (ho : off + 4 ≤ 16) : ∀ r ∈ [(⟨State.addr d + BitVec.ofNat 64 (8 * j), 8⟩ : Region), ctRegion c],
@@ -176,18 +194,18 @@ theorem step_ok {s u : State} {m0 : Mem} {up : Bool} {k : Spec.Cast5.Schedule} {
     vf.readW (Region.contains_self _ _) (dCt off ho) (by decide)
   have hin : ∀ {off w : Nat}, off + w ≤ 256 → InRegions v.wr (State.addr c + BitVec.ofNat 64 off) w :=
     fun hw => by rw [vwr, h.wr]; exact ⟨_, hl.scr, Offset.contains_base _ hw (by omega)⟩
-  refine WP.mono (advance_ok v v12 hcf hin (x := d + BitVec.ofNat 32 (8 * j)) (y := BitVec.ofNat 32 (N - j))
+  refine VG.Arm.WP.mono_syms (advance_ok v v12 hcf hin (x := d + BitVec.ofNat 32 (8 * j)) (y := BitVec.ofNat 32 (N - j))
     (by rw [vslot 0 (by decide)]; exact h.dslot)
     (by rw [Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide),
-      vslot 4 (by decide)]; exact h.nslot)) fun w ⟨wm, wz, w12, wrd, wwr, wsp⟩ => ?_
+      vslot 4 (by decide)]; exact h.nslot)) fun w ⟨wm, wz, w12, wrd, wwr, wsp⟩ wsy => ?_
   -- The writes of `advance`.
-  have fw : Frame [⟨State.addr c, 24⟩] v.mem w.mem := by
+  have fw : Frame [⟨State.addr c, 32⟩] v.mem w.mem := by
     rw [wm]
     exact ((Frame.refl _ _).writeW List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
       List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))
-  have dC24 (R : Region) (hR : Region.Disjoint R ⟨State.addr c, 256⟩) : ∀ r ∈ [(⟨State.addr c, 24⟩ : Region)],
+  have dC24 (R : Region) (hR : Region.Disjoint R ⟨State.addr c, 256⟩) : ∀ r ∈ [(⟨State.addr c, 32⟩ : Region)],
       Region.Disjoint R r := by
-    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hR.sub_right (sub_c24 _)
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact hR.sub_right (sub_c32 _)
   have frK : ∀ r ∈ [(⟨State.addr d + BitVec.ofNat 64 (8 * j), 8⟩ : Region), ctRegion c],
       Region.Disjoint ⟨State.addr kb, 128⟩ r := by
     intro r hr
@@ -196,7 +214,7 @@ theorem step_ok {s u : State} {m0 : Mem} {up : Bool} {k : Spec.Cast5.Schedule} {
     · exact hl.dKD.sub_right (sub_blk _ hj)
     · exact hl.dKS.sub_right (sub_ct256 _)
   refine ⟨⟨w12, ?_, fun i hi => ?_, ?_, ?_, ?_, ?_, ?_, wrd.trans (vrd.trans h.rd), wwr.trans (vwr.trans h.wr),
-    wsp.trans (vsp.trans h.sp)⟩, ?_⟩
+    wsp.trans (vsp.trans h.sp), wsy.trans (vsy.trans h.syms), ?_⟩, ?_⟩
   · refine h.fr.trans ((vf.sub fun r hr => ?_).trans (fw.mono (by simp)))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -229,6 +247,13 @@ theorem step_ok {s u : State} {m0 : Mem} {up : Bool} {k : Spec.Cast5.Schedule} {
     exact h.rslot
   · rw [scheduleAt_frame fw (dC24 _ hl.dKS), scheduleAt_frame vf frK]
     exact h.sk
+  · refine held_frame fw (by rw [s1234_len]; exact dC24 _ hl.dTS) (by rw [s1234_len]; decide)
+      (held_frame vf (fun r hr => ?_) (by rw [s1234_len]; decide) h.held)
+    rw [s1234_len]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hl.dTD.sub_right (sub_blk _ hj)
+    · exact hl.dTS.sub_right (sub_ct256 _)
   · rw [wz, ofNat_sub_one (by omega) (by omega)]
     by_cases he : j + 1 = N
     · rw [decide_eq_true he, show N - j - 1 = 0 by omega]; rfl
@@ -254,6 +279,33 @@ theorem ecbLoop_ok {s u : State} {m0 : Mem} {up : Bool} {k : Spec.Cast5.Schedule
 
 /-! ## The whole function -/
 
+section
+variable {name : String} {ws : List (BitVec 64)} {st : Nat} {s : State}
+
+/-- What the contract says of a function's one table: its words. -/
+theorem ConstsOk.held1 (h : ConstsOk [(name, ws)] st s) : Held s.mem (State.addr (s.syms name)) ws :=
+  h.2.1 _ List.mem_cons_self
+
+/-- The code may read it. -/
+theorem ConstsOk.rd1 (h : ConstsOk [(name, ws)] st s) :
+    (⟨State.addr (s.syms name), 8 * ws.length⟩ : Region) ∈ s.rd := by
+  have hm : (⟨State.addr (s.syms name), 8 * ws.length⟩ : Region) ∈
+      s.rd.drop (s.rd.length - [(name, ws)].length) := by
+    rw [h.1]; exact List.mem_cons_self
+  exact List.mem_of_mem_drop hm
+
+/-- No writable region overlaps it. -/
+theorem ConstsOk.wr1 (h : ConstsOk [(name, ws)] st s) :
+    ∀ r ∈ s.wr, Region.Disjoint ⟨State.addr (s.syms name), 8 * ws.length⟩ r :=
+  (h.2.2 _ List.mem_cons_self).2.1
+
+end
+
+theorem stackArg_strip (K : List (String × List (BitVec 64))) (s : State) (i : Nat) :
+    stackArg (stripConsts K s) i = stackArg s i := rfl
+theorem stackArgAddr_strip (K : List (String × List (BitVec 64))) (s : State) (i : Nat) :
+    stackArgAddr (stripConsts K s) i = stackArgAddr s i := rfl
+
 /-- The ECB functions' contract on ARMv7, as their proof states it. -/
 def ecbArm (up : Bool) : Contract isa where
   pre s :=
@@ -278,11 +330,11 @@ theorem cipher_map (up : Bool) (k : Spec.Cast5.Schedule) (n : Nat) (bs : List Sp
   cases up <;> rfl
 
 /-- What the end needs: every block done, and nothing else written since the
-setup but the first 24 bytes of the working space. -/
+setup but the first 32 bytes of the working space. -/
 structure Done (s : State) (m0 : Mem) (up : Bool) (k : Spec.Cast5.Schedule) (c d : BitVec 32) (n N : Nat)
     (u : State) : Prop where
   r12 : u.gpr .r12 = c
-  fr : Frame [⟨State.addr d, 8 * N⟩, ⟨State.addr c, 24⟩] m0 u.mem
+  fr : Frame [⟨State.addr d, 8 * N⟩, ⟨State.addr c, 32⟩] m0 u.mem
   blocks : ∀ i < N, Spec.Cast5.blockAt u.mem (State.addr d + BitVec.ofNat 64 (8 * i)) =
     cipher up k n (Spec.Cast5.blockAt m0 (State.addr d + BitVec.ofNat 64 (8 * i)))
   rd : u.rd = s.rd
@@ -294,13 +346,14 @@ theorem LInv.done {s u : State} {m0 : Mem} {up : Bool} {k : Spec.Cast5.Schedule}
 
 /-- The end: the registers restored, and the blocks as the contract says. -/
 theorem restore_ok {s u : State} {m0 : Mem} {up : Bool} {c : BitVec 32} (hc : c = stackArg s 0)
-    (hs : (ecbArm up).pre s)
+    (hs : (ecbArm up).pre (stripConsts ecbConsts s))
     (hsv : Spill.Saved m0 (State.addr c) (s.setReg .r12 c).gpr savedSlots)
     (hm0 : Frame [⟨State.addr c, 256⟩] s.mem m0)
     (h : Done s m0 up (Spec.Cast5.scheduleAt s.mem (State.addr (s.gpr .r0))) c (s.gpr .r2)
       (s.gpr .r1).toNat (s.gpr .r3).toNat u) :
     WP isa (.block restore) u fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ (ecbArm up).post s s' := by
   obtain ⟨hrd, hwr, dKD, dKS, dDS, _, _, _, hdf, hcf, _, _⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr, stackArg_strip] at hwr dKS dDS hdf hcf
   rw [← hc] at hcf dKS dDS hwr
   have hsv' : Spill.Saved u.mem (State.addr (u.gpr .r12)) (s.setReg .r12 c).gpr savedSlots := by
     rw [h.r12]
@@ -349,14 +402,21 @@ theorem slot_frame (m : Mem) (C : Addr) (a b x y : BitVec 32) :
     List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))).writeW
     List.mem_cons_self _ (Offset.contains_base _ (by decide) (by decide))
 
-theorem ecb_correct (up : Bool) (s : State) (hs : (ecbArm up).pre s) :
+theorem ecb_correct (up : Bool) (s : State) (hs : (ecbArm up).pre (stripConsts ecbConsts s))
+    (hk : ConstsOk ecbConsts 0 s) :
     WP isa (ecb up) s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ (ecbArm up).post s s' := by
   have hs₀ := hs
   obtain ⟨hrd, hwr, dKD, dKS, dDS, _, _, hkf, hdf, hcf, _, hn⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr, stackArg_strip, stackArgAddr_strip] at hrd hwr dKD dKS dDS hkf
+  simp only [stripConsts_gpr, stackArg_strip] at hdf hcf hn
+  have tfit : (s.syms s1234Sym).toNat + 4096 ≤ 2 ^ 32 := s1234_len ▸ hk.fit List.mem_cons_self
+  have trd : (⟨State.addr (s.syms s1234Sym), 4096⟩ : Region) ∈ s.rd := s1234_len ▸ ConstsOk.rd1 hk
+  have twr : ∀ r ∈ s.wr, Region.Disjoint ⟨State.addr (s.syms s1234Sym), 4096⟩ r := s1234_len ▸ ConstsOk.wr1 hk
+  have held : Held s.mem (State.addr (s.syms s1234Sym)) s1234 := ConstsOk.held1 hk
   obtain ⟨c, hc⟩ : ∃ c, c = stackArg s 0 := ⟨_, rfl⟩
   rw [← hc] at hcf dKS dDS hwr
   have hargs : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 0)) 4 :=
-    ⟨⟨stackArgAddr s 0, 4⟩, by rw [hrd]; simp, Region.contains_self _ _⟩
+    ⟨⟨stackArgAddr s 0, 4⟩, List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp)), Region.contains_self _ _⟩
   have inC : ∀ {off w : Nat}, off + w ≤ 256 → InRegions s.wr (State.addr c + BitVec.ofNat 64 off) w :=
     fun hw => ⟨⟨State.addr c, 256⟩, by rw [hwr]; simp, Offset.contains_base _ hw (by omega)⟩
   unfold ecb
@@ -369,12 +429,13 @@ theorem ecb_correct (up : Bool) (s : State) (hs : (ecbArm up).pre s) :
   refine WP.mono h1 fun s₁ e₁ => ?_
   subst e₁
   rw [WP.block_append_iff, save_eq]
-  refine WP.mono (WP.keep [] (Spill.save_block_ok savedSlots_ok (s := s.setReg .r12 c)
+  refine VG.Arm.WP.mono_syms (WP.keep [] (Spill.save_block_ok savedSlots_ok (s := s.setReg .r12 c)
     (by simp only [gpr_setReg_self]; omega) fun d _ hd => by simp only [gpr_setReg_self, wr_setReg]; exact inC (by omega))
-    (by decide)) fun s₂ ⟨⟨g₂, rd₂, wr₂, m₂⟩, k₂⟩ => ?_
+    (by decide)) fun s₂ ⟨⟨g₂, rd₂, wr₂, m₂⟩, k₂⟩ sy₂ => ?_
   simp only [gpr_setReg_self] at m₂
   have c₂ : s₂.gpr .r12 = c := by rw [g₂, gpr_setReg_self]
-  refine WP.mono (slots_ok s₂ c₂ hcf fun hw => by rw [wr₂]; exact inC hw) fun s₃ ⟨m₃, z₃, g₃, rd₃, wr₃, sp₃⟩ => ?_
+  refine VG.Arm.WP.mono_syms (slots_ok s₂ c₂ hcf fun hw => by rw [wr₂]; exact inC hw)
+    fun s₃ ⟨m₃, z₃, g₃, rd₃, wr₃, sp₃⟩ sy₃ => ?_
   -- The memory after the setup.
   obtain ⟨m0, hm0e⟩ : ∃ m0, s₃.mem = m0 := ⟨_, rfl⟩
   have hsv : Spill.Saved m0 (State.addr c) (s.setReg .r12 c).gpr savedSlots := by
@@ -395,7 +456,9 @@ theorem ecb_correct (up : Bool) (s : State) (hs : (ecbArm up).pre s) :
   have sp₃' : s₃.sp = s.sp := sp₃.trans k₂.sp
   have lay : Lay s c (s.gpr .r2) (s.gpr .r0) (s.gpr .r1).toNat (s.gpr .r3).toNat :=
     { cfit := hcf, dfit := hdf, kfit := hkf, scr := by rw [hwr]; simp, dat := by rw [hwr]; simp,
-      sch := by rw [hrd]; simp, dDS := dDS, dKS := dKS, dKD := dKD, nv := hn }
+      sch := List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp)), dDS := dDS, dKS := dKS, dKD := dKD,
+      nv := hn, tfit := tfit, trd := List.mem_append_left _ trd, dTD := twr _ (by rw [hwr]; simp),
+      dTS := twr _ (by rw [hwr]; simp) }
   have done : ∀ u : State, Done s m0 up (Spec.Cast5.scheduleAt s.mem (State.addr (s.gpr .r0))) c (s.gpr .r2)
       (s.gpr .r1).toNat (s.gpr .r3).toNat u → WP isa (.block restore) u fun s' =>
         (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ (ecbArm up).post s s' :=
@@ -439,7 +502,13 @@ theorem ecb_correct (up : Bool) (s : State) (hs : (ecbArm up).pre s) :
           exact scheduleAt_frame hm0 fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dKS
         rd := rd₃'
         wr := wr₃'
-        sp := sp₃' }
+        sp := sp₃'
+        syms := by rw [sy₃, sy₂]; rfl
+        held := by
+          rw [hm0e]
+          refine held_frame hm0 (fun r hr => ?_) (by rw [s1234_len]; decide) held
+          simp only [List.mem_singleton] at hr; subst hr
+          rw [s1234_len]; exact twr _ (by rw [hwr]; simp) }
     exact WP.mono (ecbLoop_ok lay hN l0) fun u hu => hu.done
 
 end VG.Proof.Cast5.Arm

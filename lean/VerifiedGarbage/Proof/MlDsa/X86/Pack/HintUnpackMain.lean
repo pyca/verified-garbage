@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_unpack`
@@ -43,7 +47,7 @@ theorem q1_piece (i : Nat) : Piece Pre Pub (fun s₀ s => OM s₀ i (PS s₀ i) 
     (fun s₀ s => (OM s₀ i (PS s₀ i) s ∧ i < K s₀) ∧ s.gpr .edx = arg s₀ 0 + BitVec.ofNat 32 (ω s₀ + i))
     (.block [.mov .edx (.mem (at_ .esp 36))]) := by
   refine Piece.taint [.esp] (fun s₀ s hp ⟨h, hi⟩ => ?_) (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_)
-    (by taint_decide)
+    (by native_taint_decide)
   · have a4 : addr (s.gpr .esp) 36 = argAddr s₀ 4 := argEa h.esp 4
     have i4 := h.argIn hp (i := 4) (by omega)
     have hb : WP isa (.block [.mov .edx (.mem (at_ .esp 36))]) s fun s' =>
@@ -61,7 +65,7 @@ theorem q2_piece (i : Nat) : Piece Pre Pub
       isa.eval .b s = some (decide (bnd s₀ i < idxOf (PS s₀ i))))
     (.block [.movzx8 .ebx (at_ .edx 0), .alu .cmp .ebx (.reg .eax)]) := by
   refine Piece.taint [.edx] (fun s₀ s hp ⟨⟨h, hi⟩, hd⟩ => ?_)
-    (fun s₀ s₀' s s' _ _ hq ⟨_, hd⟩ ⟨_, hd'⟩ r hr => ?_) (by taint_decide)
+    (fun s₀ s₀' s s' _ _ hq ⟨_, hd⟩ ⟨_, hd'⟩ r hr => ?_) (by native_taint_decide)
   · have hf := hp.facts
     have hy : ω s₀ + i < yL s₀ := by omega
     have ea : addr (s.gpr .edx) 0 = rA s₀ + BitVec.ofNat 64 (ω s₀ + i) := by rw [hd]; exact yAddr hp hy
@@ -86,7 +90,7 @@ theorem fail1_piece (i : Nat) : Piece Pre Pub
       isa.eval .b s = some (decide (bnd s₀ i < idxOf (PS s₀ i)))) ∧ decide (bnd s₀ i < idxOf (PS s₀ i)) = true)
     (fun s₀ s => OM s₀ i (PS s₀ (i + 1)) s) hbuFail := by
   refine Piece.taint [] (fun s₀ s hp ⟨⟨⟨⟨h, _⟩, _⟩, _⟩, hb⟩ => ?_)
-    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)
+    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)
   have e := PS_fail₁ (of_decide_eq_true hb)
   have hbk : WP isa hbuFail s fun s' => s'.gpr .eax = 256 ∧ s'.mem = s.mem := by hrun [hbuFail]
   exact (WP.keep [.eax] hbk (by decide)).mono fun s' ⟨⟨e1, m⟩, k⟩ =>
@@ -99,7 +103,7 @@ theorem q3_piece (i : Nat) : Piece Pre Pub
       ¬ bnd s₀ i < idxOf (PS s₀ i)) ∧ isa.eval .b s = some (decide (ω s₀ < bnd s₀ i)))
     (.block [.mov .edx (.mem (at_ .esp 28)), .alu .cmp .edx (.reg .ebx)]) := by
   refine Piece.taint [.esp] (fun s₀ s hp ⟨⟨⟨⟨h, hi⟩, he⟩, _⟩, hb⟩ => ?_)
-    (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨⟨h, _⟩, _⟩, _⟩, _⟩ ⟨⟨⟨⟨h', _⟩, _⟩, _⟩, _⟩ r hr => ?_) (by taint_decide)
+    (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨⟨h, _⟩, _⟩, _⟩, _⟩ ⟨⟨⟨⟨h', _⟩, _⟩, _⟩, _⟩ r hr => ?_) (by native_taint_decide)
   · have a2 : addr (s.gpr .esp) 28 = argAddr s₀ 2 := argEa h.esp 2
     have i2 := h.argIn hp (i := 2) (by omega)
     have v2 := h.argw hp (i := 2) (by omega) (by omega) (by omega)
@@ -121,7 +125,7 @@ theorem fail2_poly_piece (i : Nat) : Piece Pre Pub
       decide (ω s₀ < bnd s₀ i) = true)
     (fun s₀ s => OM s₀ i (PS s₀ (i + 1)) s) hbuFail := by
   refine Piece.taint [] (fun s₀ s hp ⟨⟨⟨⟨⟨h, _⟩, _⟩, _⟩, _⟩, hb⟩ => ?_)
-    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)
+    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)
   have e := PS_fail₂ (of_decide_eq_true hb)
   have hbk : WP isa hbuFail s fun s' => s'.gpr .eax = 256 ∧ s'.mem = s.mem := by hrun [hbuFail]
   exact (WP.keep [.eax] hbk (by decide)).mono fun s' ⟨⟨e1, m⟩, k⟩ =>
@@ -146,7 +150,7 @@ theorem end_piece (i : Nat) : Piece Pre Pub (fun s₀ s => OM s₀ i (PS s₀ (i
     (fun s₀ s => OM s₀ (i + 1) (PS s₀ (i + 1)) s ∧ isa.eval .ne s = some (decide (i + 1 < K s₀)))
     (.block hbuPolyEnd) := by
   refine Piece.taint [.esp] (fun s₀ s hp ⟨h, hi⟩ => ?_) (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_)
-    (by taint_decide)
+    (by native_taint_decide)
   · have hf := hp.facts
     have a1 : addr (s.gpr .esp) 24 = argAddr s₀ 1 := argEa h.esp 1
     have a4 : addr (s.gpr .esp) 36 = argAddr s₀ 4 := argEa h.esp 4

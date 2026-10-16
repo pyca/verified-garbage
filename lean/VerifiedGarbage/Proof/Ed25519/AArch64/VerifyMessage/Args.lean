@@ -4,10 +4,12 @@ public import VerifiedGarbage.Impl.Ed25519.AArch64.VerifyMessage
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
 public import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
+public import VerifiedGarbage.Proof.Ed25519.AArch64.VerifyTbl
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Offset
 
 /-! Merged from `Proof.Ed25519.AArch64.VerifyMessage.Layout`. -/
 
@@ -24,6 +26,8 @@ structure Lay where
   sig : BitVec 64
   scr : BitVec 64
   E : BitVec 64
+  /-- The static of the cached `-[1]B … -[15]B`, which `vg_ed25519_verify_equation` reads. -/
+  T : BitVec 64
 
 namespace Lay
 variable (L : Lay)
@@ -34,7 +38,8 @@ abbrev SCR : Region := ⟨L.scr, 8192⟩
 abbrev ARGS : Region := Whole.ARGS L.E
 abbrev FR : Region := Whole.FR L.E
 abbrev CK : Region := Whole.CK L.E
-def inputs : List Region := [L.PK, L.MSG, L.SIG, L.ARGS]
+abbrev TB : Region := ⟨L.T, 1920⟩
+def inputs : List Region := [L.PK, L.MSG, L.SIG, L.TB, L.ARGS]
 def outputs : List Region := [L.SCR]
 def value (j : Nat) : BitVec 64 :=
   match j with | 0 => L.pk | 1 => L.msg | 2 => L.len | 3 => L.sig | _ => L.scr
@@ -51,6 +56,7 @@ structure Ok : Prop where
   e16 : 16 ≤ L.E.toNat
   ck : ∀ r ∈ L.inputs, L.CK.Disjoint r
   cc : L.CK.Disjoint L.SCR
+  tbfit : L.T.toNat + 1920 ≤ 2 ^ 64
 end Lay
 
 /-- An input is outside the frame of a call. -/
@@ -115,6 +121,21 @@ theorem arg_word (hc : Ctx L g v m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 6) :
     · exact (hL.ks _ ha).symm
     · exact (hL.ck _ ha).symm
 
+/-- The static's words, as on entry: no write reaches them. -/
+theorem tbl (hc : Ctx L g v m₀ t) (hL : L.Ok) (hm : BWords L.T m₀) : BWords L.T t.mem :=
+  fun i hi => by
+    have := hL.tbfit
+    have ht : L.TB ∈ L.inputs := by simp [Lay.inputs]
+    rw [← hm i hi]
+    refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    intro R hR
+    simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl | rfl
+    · exact hL.sc _ ht
+    · exact (hL.ks _ ht).symm
+    · exact (hL.ck _ ht).symm
+
 end Ctx
 end VG.Proof.Ed25519.AArch64.VerifyMessage
 end
@@ -122,12 +143,18 @@ end
 namespace VG.Proof.Ed25519.AArch64.VerifyMessage
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.Whole
 
+/-- The saved arguments, and the static's words. -/
 def Arguments (L : Lay) (m : Mem) : Prop :=
-  ∀ j < 5, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.value j
+  (∀ j < 5, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.value j) ∧ BWords L.T m
 
 def known : Value → Prop
   | .caller j _ => j < 5
   | _ => True
+
+instance : DecidablePred known
+  | .caller j _ => inferInstanceAs (Decidable (j < 5))
+  | .const _ => inferInstanceAs (Decidable True)
+  | .frame _ => inferInstanceAs (Decidable True)
 
 def value (L : Lay) : Value → BitVec 64
   | .const n => BitVec.ofNat 64 n
@@ -147,7 +174,7 @@ theorem Ctx.value (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   | caller j d =>
     change j < 5 at hv
     change s.mem.readW (L.E + BitVec.ofNat 64 (256 + 8*j)) 64 + BitVec.ofNat 64 d = _
-    rw [hc.arg_word hL (by omega), ha j hv]
+    rw [hc.arg_word hL (by omega), ha.1 j hv]
     rfl
 
 theorem args_ok (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)

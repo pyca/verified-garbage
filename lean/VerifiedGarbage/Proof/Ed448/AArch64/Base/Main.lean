@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.Point56.Combine
-public import VerifiedGarbage.Proof.Ed448.AArch64.Base.Setup
+import VerifiedGarbage.Proof.Ed448.AArch64.Base.Setup
 public import VerifiedGarbage.Proof.Ed448.AArch64.Base.Encode
 public import VerifiedGarbage.Proof.Ed448.AArch64.CombBase
 public import VerifiedGarbage.Proof.Ed448.Group.Projective

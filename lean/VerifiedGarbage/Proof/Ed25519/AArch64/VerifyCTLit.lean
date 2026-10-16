@@ -30,14 +30,12 @@ materialize_code rootAdjustBlock :=
 materialize_code successBlock := (.block recoverSuccess : Prog isa)
 materialize_code pointEqualFirst := (.block (fieldCode pointEqualOps ++ fieldEqual 8 9) : Prog isa)
 materialize_code pointEqualSecond := (.block (fieldEqual 10 11) : Prog isa)
-materialize_code verifyWriteA := (.block (pointTableWrite 7424) : Prog isa)
-materialize_code verifyWriteR := (.block (pointTableWrite 7552) : Prog isa)
 materialize_code verifySetupBlock := (.block verifySetup : Prog isa)
 materialize_code verifyScalarTail := (.block (loadScalarWords ++ scalarSubtract ++ ([.sbcs .x .x8 .x10 .x10] : List Instr)) : Prog isa)
 materialize_code verifyFinishBlock :=
   (.block (([mov .x2 .x0, mov .x0 .x8] : List Instr) ++ scalarRestore) : Prog isa)
 materialize_code windowPrepLit :=
-  (.seq (.seq (.seq (.block windowSetup) aTable) (.block bTable)) (.block windowInit) : Prog isa)
+  (.seq (.seq (.seq (.block windowSetup) aTable) bTable) (.block windowInit) : Prog isa)
 materialize_code doubleWindow
 materialize_code addDigitA :=
   (.block (([.subImm .x .x19 .x19 1] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++

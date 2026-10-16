@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.Arm.Call
+import VerifiedGarbage.Proof.CmacAes.Arm.Call
 public import VerifiedGarbage.Proof.Cmac.Block32
 public import VerifiedGarbage.Proof.MdStream.Arm.Common
 import all Init.Data.Array.Basic

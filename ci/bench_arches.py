@@ -47,10 +47,19 @@ files changed:
   * `bench/benches/primitives/<name>.rs`, or its differential test
     `bench/tests/<name>.rs`: the modules in its `USES`, or for a helper
     without one (e.g. `mlkem.rs`, a macro), those of the benchmarks that
-    call it.
+    call it;
+  * any other file a Rust file of `bench/` includes (`#[path = "…"] mod`,
+    `include!`, e.g. `bench/support/ffdh.rs` or `tests/cavp/dsa_vectors.rs`),
+    at base or now: those of the files including it, on the architectures
+    that compile the inclusion; every benchmark if one of them is no
+    benchmark's (e.g. `main.rs`).
 
 A change to a file of `src/` only inside its tests (a top-level
 `#[cfg(test)] mod`, which no benchmark compiles) needs nothing.
+
+A change to a manifest (`Cargo.toml`, `bench/Cargo.toml`) only inside its
+`[target.'cfg(…)'.*]` tables needs every benchmark on the architectures
+where a changed table's `cfg` can hold, and nothing elsewhere.
 
 The benchmarks run those that use any of them, and all of them for a module
 none uses (e.g. `lib`, or the generated `src/asm/<arch>/mod.rs`). Any
@@ -82,6 +91,10 @@ With a `BENCHMARKS_PER_JOB`, each configuration is split into jobs of at most
 that many of the benchmarks it runs (`shard` is `i/n`, empty for one):
 `bench_compare.py --shard` runs that share of them.
 
+A pull request never runs every benchmark of an architecture, which takes
+dozens of jobs: `--base` leaves out the architectures a change needs every
+benchmark on (`modules` empty), and names them on stderr, for a manual run.
+
 `--all` (the workflow's manual runs) runs every benchmark in every
 configuration of every architecture, or, for a targeted run, only those of
 `--arches` (space-separated names of `PLATFORMS`); only the benchmarks that
@@ -110,23 +123,39 @@ import posixpath
 import subprocess
 import re
 import sys
+import tomllib
 
 # The architectures benchmarked, and where each one runs natively (as in
 # ci.yml's `rust` job: the 32-bit ones in a 32-bit userspace container, built
 # by ci/runner.Dockerfile, on the 64-bit host of the same family).
 PLATFORMS = {
-    "x86_64": {"os": "ubuntu-latest"},
-    "aarch64": {"os": "ubuntu-24.04-arm"},
+    "x86_64": {"os": "ubuntu-26.04"},
+    "aarch64": {"os": "ubuntu-26.04-arm"},
     "x86": {
-        "os": "ubuntu-latest",
+        "os": "ubuntu-26.04",
         "image": "ghcr.io/pyca/verified-garbage-runner:i686",
-        "options": "--platform linux/386",
+        # Docker 29.4.2 on ubuntu-26.04 denies socketcall(2), which i386
+        # glibc makes its socket calls through (actions/runner-images#14790);
+        # drop seccomp=unconfined once the runner has Docker 29.4.3 or later.
+        "options": "--platform linux/386 --security-opt seccomp=unconfined",
     },
     "arm": {
-        "os": "ubuntu-24.04-arm",
+        "os": "ubuntu-26.04-arm",
         "image": "ghcr.io/pyca/verified-garbage-runner:armv7l",
         "options": "--platform linux/arm/v7",
     },
+}
+
+# Platforms only a run by hand measures (`--arches`), never a pull request's
+# selection, each with the architecture whose code, configurations and
+# benchmarks it runs: Apple's cores, whose choices among implementations
+# (e.g. `vg_poly1305_update_neon`, chosen for `target_vendor = "apple"`) are
+# measured before they are made. Its runner is a shared VM: one run of each
+# side measured `x25519` 22% slower and `x25519_raw` 39% faster on code
+# that did not change, so it runs `rounds` interleaved runs of each side
+# and compares the fastest (bench_compare.py's `--rounds`).
+MANUAL_PLATFORMS = {
+    "aarch64-apple": {"os": "macos-latest", "of": "aarch64", "rounds": 5},
 }
 
 # The other `VG_CPU_FEATURES` each architecture is benchmarked with, so that
@@ -139,7 +168,10 @@ PLATFORMS = {
 # chooses, and with both in 256-bit registers alone, which a runner with
 # AVX512BW never chooses; Argon2 with G's AVX-512 code and BLAKE2b's
 # baseline code, which a runner with AVX2 never chooses, and with BLAKE2b's
-# AVX2 code, which a runner with AVX512VL never chooses; RSAES-PKCS1-v1_5
+# AVX2 code, which a runner with AVX512VL never chooses; ChaCha20's and
+# ChaCha20-Poly1305's `_avx512vl` instances, which a runner with AVX512_IFMA
+# never chooses, and `_avx512`, which one with AVX512VL never chooses;
+# RSAES-PKCS1-v1_5
 # decryption with SHA-256's SHA extensions and RSA's baseline code, which a
 # runner with ADX never chooses; on AArch64,
 # ChaCha20's `_neon` instances, which the SVE2 runner never chooses; no
@@ -164,6 +196,7 @@ CPU_FEATURES = {
         "aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq",
         "avx,avx512f",
         "avx,avx2,avx512f",
+        "avx,avx2,avx512f,avx512vl",
         "none",
     ],
     "aarch64": ["neon", "sha3", "none"],
@@ -177,8 +210,11 @@ CPU_FEATURES = {
 # (bench_compare.py), every benchmark took 21-28 minutes on the x86-64
 # runners, and some passed the 30-minute timeout once P-521's groups also
 # ran from fresh copies (bench_compare.py's FRESH_COPIES), so a run of all
-# of them is split in two. A targeted run, of fewer, stays one job.
-BENCHMARKS_PER_JOB = 60
+# of them was split in two. With AES-GCM's groups from copies too, those
+# took about 7.7 minutes of each half (14 runs of about 75 benchmark ids),
+# and the slower runners passed the timeout again, so it is split in three.
+# A targeted run, of fewer, stays one job.
+BENCHMARKS_PER_JOB = 40
 
 # Changes to this script choose benchmarks but are not measured by any:
 # `ci/test_check_benchmarks.py` tests it.
@@ -204,6 +240,16 @@ BENCH = re.compile(r"bench/benches/primitives/(?!main\.rs$)([a-z0-9_]+)\.rs$")
 # A differential test of one algorithm's benchmark's API, next to it.
 BENCH_TEST = re.compile(r"bench/tests/([a-z0-9_]+)\.rs$")
 USES = re.compile(r"pub const USES: &\[&str\] = &\[([^\]]*)\];")
+# A file a Rust file of `bench/` includes: a `#[path]` module (after
+# anything else on its line, it may be in an inline module, whose path this
+# does not follow) or an `include!`, both relative to the including file's
+# directory.
+PATH_ATTR = re.compile(r'^([^\n]*?)#\[\s*path\s*=\s*"([^"]+)"\s*\]', re.M)
+INCLUDE = re.compile(r'\binclude(?:_str|_bytes)?!\s*\(\s*"([^"]+)"')
+INCLUSION = re.compile(r"#\[\s*path\b|\binclude(?:_str|_bytes)?!")
+# The manifests whose `[target.'cfg(…)']` tables apply to some architectures.
+MANIFESTS = ("Cargo.toml", "bench/Cargo.toml")
+TARGET_CFG = re.compile(r"cfg\((.*)\)", re.S)
 QUOTED = re.compile(r'"([a-z0-9_]+)"')
 # A generated variant's CPU features (a `Features` constant, or a list of
 # names at a base revision from before it was one), and the features
@@ -516,6 +562,99 @@ def affected(path, base):
         return [a for a in PLATFORMS if for_arch(old, a) != for_arch(new, a)]
     except Unreadable:
         return list(PLATFORMS)
+
+
+def bench_rust_files(revision=None, root="."):
+    """The Rust files of `bench/` at `revision` (None: now)."""
+    if revision is None:
+        return sorted(p.relative_to(root).as_posix() for p in pathlib.Path(root, "bench").glob("**/*.rs"))
+    result = subprocess.run(["git", "ls-tree", "-r", "--name-only", revision, "bench/"], cwd=root,
+                            capture_output=True, text=True, check=False)
+    return sorted(p for p in result.stdout.split() if p.endswith(".rs"))
+
+
+@functools.lru_cache(None)
+def includes(revision=None):
+    """The files Rust files of `bench/` include at `revision`: for each, the
+    files including it and the architectures compiling each inclusion; and
+    the names of files an inclusion this cannot resolve may be."""
+    found, unresolved = {}, set()
+    for path in bench_rust_files(revision):
+        text = read(path, revision) or ""
+        if not INCLUSION.search(text):
+            continue
+        directory = pathlib.PurePosixPath(path).parent
+        try:
+            unresolved |= {posixpath.basename(m[2]) for m in PATH_ATTR.finditer(without_comments(text)) if m[1]}
+        except Unreadable:
+            unresolved |= {posixpath.basename(m[2]) for m in PATH_ATTR.finditer(text) if m[1].strip()}
+        for arch in PLATFORMS:
+            try:
+                compiled = "\n".join(for_arch(text, arch))
+            except Unreadable:
+                # Whatever it may include, everywhere.
+                compiled = text
+            for target in [m[2] for m in PATH_ATTR.finditer(compiled)] + INCLUDE.findall(compiled):
+                target = posixpath.normpath(str(directory / target))
+                found.setdefault(target, {}).setdefault(path, set()).add(arch)
+    return found, unresolved
+
+
+def included_uses(path, base, catalog, seen=frozenset()):
+    """The modules the benchmarks including `path` use, on each architecture
+    compiling an inclusion of it (at `base` or now); None if no Rust file of
+    `bench/` includes it, and ALL if one that is no benchmark does, or an
+    inclusion may be it."""
+    by = {}
+    for revision in [base, None] if base else [None]:
+        found, unresolved = includes(revision)
+        if posixpath.basename(path) in unresolved:
+            return ALL
+        for includer, arches in found.get(path, {}).items():
+            by[includer, revision] = arches
+    if not by:
+        return None
+    needed = {}
+    for (includer, revision), arches in by.items():
+        if bench := BENCH.match(includer) or BENCH_TEST.match(includer):
+            uses = (bench_uses(f"bench/benches/primitives/{bench[1]}.rs", revision)
+                    or helper_uses(bench[1], catalog))
+            if not uses:
+                return ALL
+            of = {a: uses for a in arches}
+        elif includer in seen:
+            return ALL
+        else:
+            of = included_uses(includer, base, catalog, seen | {path})
+        if of is None or of is ALL:
+            return ALL
+        for a in arches & set(of):
+            needed.setdefault(a, set()).update(of[a])
+    return needed
+
+
+def manifest_arches(path, base):
+    """The benchmarked architectures the change to the manifest `path` since
+    `base` can affect: those where the `cfg` of a changed
+    `[target.'cfg(…)']` table can hold, if nothing else changed; all of
+    them otherwise."""
+    try:
+        old, new = (tomllib.loads(read(path, r) or "") for r in (base, None))
+    except tomllib.TOMLDecodeError:
+        return list(PLATFORMS)
+    targets = [old.pop("target", {}), new.pop("target", {})]
+    if old != new or not base:
+        return list(PLATFORMS)
+    arches = set()
+    for key in set(targets[0]) | set(targets[1]):
+        if targets[0].get(key) == targets[1].get(key):
+            continue
+        m = TARGET_CFG.fullmatch(key)
+        try:
+            arches |= {a for a in PLATFORMS if m and cfg_value(m[1], a) is not False} if m else set(PLATFORMS)
+        except Unreadable:
+            return list(PLATFORMS)
+    return [a for a in PLATFORMS if a in arches]
 
 
 def members(family, known):
@@ -856,6 +995,15 @@ def arches(changed, base=None):
             for a in targets:
                 for m in uses:
                     need(a, m)
+        elif path in MANIFESTS:
+            for a in manifest_arches(path, base):
+                needed[a] = ALL
+        elif (included := included_uses(path, base, catalogs[-1])) is not None:
+            for a in PLATFORMS if included is ALL else targets:
+                if included is ALL:
+                    needed[a] = ALL
+                for m in () if included is ALL else included.get(a, ()):
+                    need(a, m)
         elif SHARED.match(path):
             for a in targets:
                 needed[a] = ALL
@@ -943,6 +1091,18 @@ def cpu_modules(arch, changes, known, revisions):
     return modules
 
 
+def without_full_runs(matrix):
+    """`matrix` without the entries that run every benchmark, which only a
+    manual run does, and the architectures of those, in words (or None)."""
+    full = [a for a in PLATFORMS if any(p["arch"] == a and not p["modules"] for p in matrix)]
+    if not full:
+        return matrix, None
+    return [p for p in matrix if p["arch"] not in full], (
+        f"This change needs every benchmark on {', '.join(full)}, which pull requests never run:"
+        " run the Benchmarks workflow by hand (workflow_dispatch) with base_commit set to the"
+        f" base and arches='{' '.join(full)}' to compare them, or narrow the change.")
+
+
 def run_requirements(arch, modules, catalogs, revisions):
     """The `requirements` of the benchmarks that use any of `modules`, or
     None (every configuration) for all of them or an unreadable catalog."""
@@ -990,18 +1150,27 @@ def manual(arch_names="", cpu_features="", modules=""):
     the space-separated `modules`, if given, in the configurations that
     choose among their implementations (unless `cpu_features` names them)."""
     chosen = arch_names.split() or list(PLATFORMS)
-    if unknown := [a for a in chosen if a not in PLATFORMS]:
-        raise ValueError(f"unknown architecture(s) {', '.join(unknown)}; known: {', '.join(PLATFORMS)}"
-                         " (see --choices)")
+    if unknown := [a for a in chosen if a not in PLATFORMS and a not in MANUAL_PLATFORMS]:
+        raise ValueError(f"unknown architecture(s) {', '.join(unknown)}; known: "
+                         f"{', '.join([*PLATFORMS, *MANUAL_PLATFORMS])} (see --choices)")
     catalog = bench_catalog()
     selected = set(modules.split()) or ALL
     if selected is not ALL and (unknown := sorted(selected - set().union(*(catalog or {}).values()))):
         raise ValueError(f"no benchmark uses module(s) {', '.join(unknown)} (see --choices)")
     configurations = [("" if c == "-" else c) for c in cpu_features.split()] or None
-    return [p for a in PLATFORMS if a in chosen
+    runs = [p for a in PLATFORMS if a in chosen
             for p in platforms(a, selected,
                                None if configurations else run_requirements(a, selected, [catalog], [None]),
                                bench_count(selected), configurations)]
+    for name, platform in MANUAL_PLATFORMS.items():
+        if name not in chosen:
+            continue
+        of = platform["of"]
+        runs += [{**p, "arch": name, **{k: v for k, v in platform.items() if k != "of"}}
+                 for p in platforms(of, selected,
+                                    None if configurations else run_requirements(of, selected, [catalog], [None]),
+                                    bench_count(selected), configurations)]
+    return runs
 
 
 def choices():
@@ -1017,6 +1186,9 @@ def choices():
         lines += [f"  {arch} (runner: {platform['os']}{', in ' + platform['image'] if 'image' in platform else ''})",
                   f"    configurations: {' '.join(['-', *CPU_FEATURES.get(arch, [])])}",
                   f"    features: {','.join(sorted(detected)) if detected else '(none)'}"]
+    for name, platform in MANUAL_PLATFORMS.items():
+        lines += [f"  {name} (runner: {platform['os']}; only when named, with {platform['of']}'s"
+                  " configurations and benchmarks)"]
     lines += ["", "A configuration naming a feature the runner's CPU lacks measures nothing, with a"
               " warning. Modules (--modules), with the benchmarks (bench/benches/primitives/<name>.rs)"
               " that run for each:", ""]
@@ -1047,5 +1219,8 @@ if __name__ == "__main__":
     else:
         if sys.argv[1:] and (len(sys.argv) != 3 or sys.argv[1] != "--base"):
             sys.exit(USAGE)
-        matrix = arches(sys.stdin.read().split(), sys.argv[2] if len(sys.argv) == 3 else None)
+        matrix, skipped = without_full_runs(
+            arches(sys.stdin.read().split(), sys.argv[2] if len(sys.argv) == 3 else None))
+        if skipped:
+            print(skipped, file=sys.stderr)
     print(json.dumps(matrix))

@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Step
+import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 public import VerifiedGarbage.Proof.Ed25519.Field64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Mem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Merged from `Proof.Ed25519.AArch64.Carry`. -/
 
@@ -18,7 +20,7 @@ namespace VG.Proof.Ed25519.AArch64
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 Word64 VG.Proof.X25519
 
 private theorem carry38_word (c : Bool) :
-    addCarry 0 0 c * 38 = BitVec.ofNat 64 (38 * c.toNat) := by
+    (if c = true then (38 : Word) else 0) = BitVec.ofNat 64 (38 * c.toNat) := by
   cases c <;> decide
 
 private theorem carry38_arith (a0 a1 a2 a3 v : Word) (hv : v.toNat < 2 ^ 58) :
@@ -26,7 +28,7 @@ private theorem carry38_arith (a0 a1 a2 a3 v : Word) (hv : v.toNat < 2 ^ 58) :
     let c1 := carryOut a1 0 c0
     let c2 := carryOut a2 0 c1
     let c3 := carryOut a3 0 c2
-    toFe (val4 (addCarry a0 v false + addCarry 0 0 c3 * 38)
+    toFe (val4 (addCarry a0 v false + if c3 = true then 38 else 0)
       (addCarry a1 0 c0) (addCarry a2 0 c1) (addCarry a3 0 c2)) =
       toFe (val4 a0 a1 a2 a3 + v.toNat) := by
   intro c0 c1 c2 c3

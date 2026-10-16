@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Mont.X86_64.SqrS
-public import VerifiedGarbage.Proof.Mont.X86_64.Rounds
-public import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+import VerifiedGarbage.Proof.Mont.X86_64.Rounds
+import VerifiedGarbage.Proof.Mont.X86_64.Friendly
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -1037,12 +1037,15 @@ theorem redsShort_ok (x : Bool) {m : Nat}
       WP isa (.block (redsShort x k)) s fun s' =>
         (∃ U, U < 2 ^ (64 * k) ∧ 2 ^ (64 * k) * regsVal s' (sqWins k) = regsVal s (sqWins 0) + U * m) ∧
         regsVal s' (sqWins k) < 2 ^ (64 * 6) ∧
-        Keeps (.rax :: .rcx :: .rdx :: .rbp :: sqWin6) s s'
-  | 0, s, h0 => WP.block_nil ⟨⟨0, by simp⟩, h0, fun _ _ => rfl, rfl, rfl, rfl⟩
-  | k + 1, s, h0 => by
+        Keeps (.rax :: .rcx :: .rdx :: .rbp :: sqWin6) s s' := by
+  intro k
+  induction k with
+  | zero => intro s h0; exact WP.block_nil ⟨⟨0, by simp⟩, h0, fun _ _ => rfl, rfl, rfl, rfl⟩
+  | succ k ih =>
+    intro s h0
     obtain ⟨hm1, hm2⟩ := p384_bounds hm
     rw [redsShort, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (redsShort_ok x hm k h0) fun s₁ h₁ => ?_
+    refine WP.mono (ih h0) fun s₁ h₁ => ?_
     obtain ⟨⟨U, hU, eU⟩, hT, k₁⟩ := h₁
     have hf := fresh_sqWins k
     rw [sqWins_eq] at hf hT

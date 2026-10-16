@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
+import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
 meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Common
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+meta import VerifiedGarbage.Proof.CmacAes.X86_64.Finalize
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+meta import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Call
+public import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
+meta import VerifiedGarbage.Impl.CmacAes.Stream.X86_64
 
 /-!
 # Streaming AES-CMAC on x86-64: `vg_cmac_aes_init`

@@ -11,7 +11,8 @@ import all Init.Data.Vector.Basic
 # AES-GCM's short path on x86-64: the powers, `G` and the keystream
 
 Untrusted: everything here is checked by Lean. `front_ok`: after `J₀` and
-the counts, what `seal` and `open` share: the table of powers (`powers`),
+the counts, what `seal` and `open` share: the table of powers (`powers`,
+or any code `pw` that leaves the same, `PowFrom`),
 `G` zeroed with the additional data copied in after its zero blocks
 (`zeroG`, `copyA`), and the keystream (`keystream`), each written in its own
 part of `W` (`Front`).
@@ -73,15 +74,37 @@ theorem wk_T {W D : Addr} {n : Nat} : Wk W D n ⟨W + BitVec.ofNat 64 1536, 512�
 theorem wk_G {W D : Addr} {n : Nat} {o k : Nat} (h : o + k ≤ 1536) : Wk W D n ⟨W + BitVec.ofNat 64 (512 + o), k⟩ :=
   .inr (.inl (Offset.sub W (by omega) (by omega)))
 
-/-- The powers, `G` and the keystream, then `rest`. -/
-theorem front_ok (hF : ShortFacts) {k : Nat} {s₀ s : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J : Block} {tl : BitVec 64}
-    (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hR : R = (s₀.gpr .rsi).toNat)
+/-- What a table of powers' code `pw` leaves, from `s` to `t`: the table at
+`W + 1536` for the hash subkey of `s`, nothing else written, the constants
+in every lane of `zmm0` and `zmm1`, and the registers but `rax` and `r11`. -/
+def PowPost (Ctx W : Addr) (g : Nat) (s t : State) : Prop :=
+  TabOk t.mem (W + BitVec.ofNat 64 1536) (ctxH s.mem Ctx) g ∧
+    Frame [⟨W + BitVec.ofNat 64 1536, 512⟩] s.mem t.mem ∧
+    (∀ l < 4, t.zlane .xmm0 l = revMask) ∧ (∀ l < 4, t.zlane .xmm1 l = poly) ∧
+    (∀ r, r ≠ .rax → r ≠ .r11 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr
+
+/-- `pw` leaves `PowPost` for `g` groups from the states the short path runs
+it in after the entry `s₀`: which wrote only `W`, the data and the stack
+below `SP`. -/
+def PowFrom (pw : Prog isa) (s₀ : State) (Ctx W SP D : Addr) (n : Nat) : Prop :=
+  ∀ {g : Nat} (s : State), Env Ctx (W + BitVec.ofNat 64 16) W SP s →
+    s.mem.readW (W + BitVec.ofNat 64 288) 64 = BitVec.ofNat 64 (4 * g) → 1 ≤ g → g ≤ 8 →
+    Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 24] s₀.mem s.mem → s.rd = s₀.rd → s.wr = s₀.wr →
+    WP isa pw s (PowPost Ctx W g s)
+
+/-- `powers`, from the hash subkey at `ctx + 240`. -/
+theorem powFrom_powers (hF : ShortFacts) {s₀ : State} {Ctx W SP D : Addr} {n : Nat} :
+    PowFrom powers s₀ Ctx W SP D n := fun s he h1 h2 h3 _ _ _ => hF.powers s he h1 h2 h3
+
+/-- The powers (from `pw`), `G` and the keystream, then `rest`. -/
+theorem front_ok {pw : Prog isa} {k : Nat} {s₀ s : State} {Ctx W SP Np A D : Addr} {nl al n R : Nat} {J : Block} {tl : BitVec 64}
+    (C : OneCtx s₀ k Ctx W SP Np A D nl al n) (hpw : PowFrom pw s₀ Ctx W SP D n) (hR : R = (s₀.gpr .rsi).toNat)
     (hal5 : al < 512) (hn5 : n < 512) (h32 : nb16 al + nb16 n < 32)
     (S : SM s₀ Ctx W SP A D R al n J tl s) (haad : bytesAt s.mem A al = bytesAt s₀.mem A al)
     (hdat : bytesAt s.mem D n = bytesAt s₀.mem D n)
     {rest : Prog isa} {Q : State → Prop}
     (hrest : ∀ t, Front s₀ Ctx W SP A D R al n J tl (bytesAt s₀.mem A al) t → WP isa rest t Q) :
-    WP isa (.seq powers (.seq (.block zeroG) (.seq copyA (.seq keystream rest)))) s Q := by
+    WP isa (.seq pw (.seq (.block zeroG) (.seq copyA (.seq keystream rest)))) s Q := by
   have L := C.lay
   have dD := C.dE
   have h32' := h32
@@ -91,7 +114,8 @@ theorem front_ok (hF : ShortFacts) {k : Nat} {s₀ s : State} {Ctx W SP Np A D :
   have hlead : 4 * grp al n - (nb16 al + nb16 n + 1) < 4 := by simp only [grp, nb16]; omega
   have hR' : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   -- The powers.
-  refine WP.seq (WP.mono (hF.powers s S.env S.r288 hg1 hg8) fun s₃ ⟨tab₃, fT, z0₃, z1₃, g₃, rd₃, wr₃⟩ => ?_)
+  refine WP.seq (WP.mono (hpw s S.env S.r288 hg1 hg8 S.frame S.rd S.wr)
+    fun s₃ ⟨tab₃, fT, z0₃, z1₃, g₃, rd₃, wr₃⟩ => ?_)
   have S₃ := S.keep dD fT (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact wk_T)
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

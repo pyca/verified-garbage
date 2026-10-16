@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.X86_64.FbVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Triple DES-CFB64 artifacts on baseline x86-64 -/
 
@@ -19,16 +20,16 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.TripleDes.cfbEncryptApi.doc (notes := [note])
     code := Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.cfbEncrypt
-    contract := Spec.TripleDes.cfbEncryptContract X86_64.abi 976
-    stack := 976
+    contract := Spec.TripleDes.cfbEncryptContract X86_64.abi 984
+    stack := 984
     verified := Proof.TripleDes.X86_64.cfbEncrypt_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.TripleDes.cfbDecryptApi with
     target := X86_64.target
     doc := Spec.TripleDes.cfbDecryptApi.doc (notes := [note])
     code := Impl.StackScratch.X86_64.withStackScratchWiped 976 .r8 121 Impl.TripleDes.X86_64.cfbDecrypt
-    contract := Spec.TripleDes.cfbDecryptContract X86_64.abi 976
-    stack := 976
+    contract := Spec.TripleDes.cfbDecryptContract X86_64.abi 984
+    stack := 984
     verified := Proof.TripleDes.X86_64.cfbDecrypt_framed
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 meta import VerifiedGarbage.Impl.MlKem.X86_64.Frag
-public import VerifiedGarbage.Proof.MlKem.X86_64.Lay
+import VerifiedGarbage.Proof.MlKem.X86_64.Lay
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Lay
 public import VerifiedGarbage.Proof.Framework.KernelRfl
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -16,6 +16,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Sha3.Arith
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Sha3.Arith
 
 /-!
 # ML-KEM on x86-64: four instances of `PRF₂` at once

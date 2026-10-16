@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Ecb
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.Ecb
 public import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedSse.ConstantTime
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Bitsliced.Verified
-public import VerifiedGarbage.Proof.TripleDes.Scratch
+import VerifiedGarbage.Proof.TripleDes.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! # The SSE2 bitsliced ECB functions meet their contracts -/
 

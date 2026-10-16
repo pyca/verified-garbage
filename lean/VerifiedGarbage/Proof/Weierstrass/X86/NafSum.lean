@@ -5,6 +5,15 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
+import VerifiedGarbage.Proof.Weierstrass.X86.WinQuad
+import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+public import VerifiedGarbage.Proof.Weierstrass.Words32
+public import VerifiedGarbage.Proof.Weierstrass.X86.JacDouble
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
+public import VerifiedGarbage.Proof.Weierstrass.X86.WinFinish
 
 /-! Adding a signed digit to the doubled accumulator. -/
 
@@ -14,8 +23,8 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
 open VG.Proof.Mont.X86 VG.Proof.Mont Spec.Weierstrass
 
-local macro "jmem" : tactic => `(tactic| simp only [nafLive,nafTableLive,jacCoords,nafSlots,nafWrites,
-  winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true])
+local macro "jmem" : tactic => `(tactic| plain_simp_names simp only [nafLive,nafTableLive,jacCoords,nafSlots,nafWrites,
+                   winRo,winOther,rcbR,rcbW,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,true_or,or_true])
 
 /-- Complete Jacobian addition followed by copying the result into R. -/
 theorem nafAdd_ok {F : Spec.Weierstrass.Mont.Modulus} {K : WinCfg} {C : Curve} {base : Addr} {size wk e e' : Nat}

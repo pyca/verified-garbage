@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Aes.X86.Linear
 public import VerifiedGarbage.Impl.Seed.W32
+public import VerifiedGarbage.Impl.Seed.Layers
 
 /-!
 # SEED's G on eight words at once, bitsliced, on x86 (32-bit)

@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
+meta import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YNtt
 
 /-! Lazy forward NTT: range/congruence through eight layers, followed by
 canonical reduction, under the existing public NTT contract. -/

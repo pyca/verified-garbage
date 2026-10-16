@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
 meta import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
@@ -16,12 +16,22 @@ public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 public import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.LitShare
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDH over P-256 on x86-64: `Verified`

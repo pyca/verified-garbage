@@ -1,12 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.X86_64.JointFixed
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafExternalCopy
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafExternalCopy
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Spec.Weierstrass.Point
+import VerifiedGarbage.Impl.Ecdsa.X86_64
 
 @[expose] public section
 
@@ -84,7 +90,7 @@ theorem jointFixedLoad_ok {K : WinCfg} {s : State} {base T : Addr} {size a : Nat
     simpa only [hy,ku.2.1] using
       nafExternalCopy_fieldAt (o:=K.E.x) (d:=8*K.M.n) (w:=K.M.n) ev (by omega) (by omega)
   · exact (KeepRegs.mk (fun r h => (congrFun gv r).trans (ku.1 r h))
-      (rv.trans ku.2.2.1) (wv.trans ku.2.2.2)).trans (kt.mono (by simp))
+      (rv.trans ku.2.2.1) (wv.trans ku.2.2.2)).trans (kt.mono (by regions_sub))
   · intro x hx
     rw [ot x (hx (K.E.z,8*K.M.n) (by simp)),ov x (hx (K.E.x,16*K.M.n) (by simp)),ku.2.1]
 

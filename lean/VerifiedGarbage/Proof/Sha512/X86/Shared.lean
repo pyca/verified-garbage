@@ -15,6 +15,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sha512.Digest
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.Proof.MdStream.Prefix
+public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
+public import VerifiedGarbage.Proof.MdStream.X86.Words
+public import VerifiedGarbage.Proof.Sha256.X86.Compress
+public import VerifiedGarbage.Proof.Sha256.X86.Lit
 
 /-!
 # Sha512 on X86: the shared contracts
@@ -104,10 +112,10 @@ theorem le272 {x : Nat} (h : x + 1376 ≤ 2 ^ 32) : x + 272 ≤ 2 ^ 32 := by ome
 /-- Rewrites the per-target contracts at a narrowed state (`arg` does not
 unfold cheaply). -/
 macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [Proof.Sha512.compressX86, Proof.Sha512.updateX86, Proof.Sha512.finalizeX86,
-    Proof.Sha512.countX86, compressWide, updateWide, finalizeWide, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd,
-    State.withRegions_wr] $(loc)?)
+  `(tactic| plain_simp_names simp only [Proof.Sha512.compressX86, Proof.Sha512.updateX86, Proof.Sha512.finalizeX86,
+                     Proof.Sha512.countX86, compressWide, updateWide, finalizeWide, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd,
+                     State.withRegions_wr] $(loc)?)
 
 theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
     Verified X86.target Impl.Sha512.X86.compress compressWide :=
@@ -270,9 +278,9 @@ def finalizeDigestWide (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byt
 
 /-- Rewrites `finKD` and `finalizeDigestWide` at a narrowed state. -/
 macro "narrowD" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [MdStream.X86.finKD, Proof.Sha512.countX86, finalizeDigestWide, MdStream.X86.count,
-    VG.X86.arg_withRegions, VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem,
-    State.withRegions_rd, State.withRegions_wr] $(loc)?)
+  `(tactic| plain_simp_names simp only [MdStream.X86.finKD, Proof.Sha512.countX86, finalizeDigestWide, MdStream.X86.count,
+                     VG.X86.arg_withRegions, VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem,
+                     State.withRegions_rd, State.withRegions_wr] $(loc)?)
 
 theorem finalizeDigestWide_verified {code : Prog X86.isa} {o : List Instr} {D : Nat}
     {iv : Spec.Sha512.HashValue} {digest : List Byte → List Byte}

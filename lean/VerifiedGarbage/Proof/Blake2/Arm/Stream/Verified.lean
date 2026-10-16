@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Init
+import VerifiedGarbage.Proof.Blake2.Arm.Stream.Init
 meta import VerifiedGarbage.Proof.Blake2.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Blake2.Arm.Stream.Finalize
 meta import VerifiedGarbage.Proof.Blake2.Arm.Stream.Finalize
-public import VerifiedGarbage.Proof.Framework.RelCT
+import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -22,6 +22,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Spec.Rc2
 
 @[expose] public section
 

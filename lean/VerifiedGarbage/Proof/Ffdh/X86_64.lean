@@ -1,9 +1,10 @@
 module
 
 public import VerifiedGarbage.Spec.Ffdh.Contract
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Ffdh.Choose
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Impl.Ffdh.X86_64
-public import VerifiedGarbage.Proof.Framework.Semantics
+import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import all Init.Data.Array.Basic
@@ -30,7 +31,7 @@ theorem correct (s : State) (_ : contract.pre s) :
     exact BitVec.xor_comm _ _
   obtain ⟨tr, t, he, ho, hk⟩ := WP.keep [.rax, .rdx, .rcx] h (by rfl)
   refine ⟨tr, t, he, abiPreserved_of_exec (by decide +kernel) he ?_, ho⟩
-  exact ⟨fun r hr => hk.gpr (by cases r <;> simp_all [calleeSaved]), by rw [ho.2]⟩
+  exact ⟨fun r hr => hk.gpr (by revert r; decide), by rw [ho.2]⟩
 
 theorem ct : ConstantTime isa contract.pre contract.pub Impl.Ffdh.X86_64.choose := by
   refine ConstantTime.of_silent fun s tr t _ h => ?_
@@ -54,22 +55,6 @@ theorem verified : Verified target Impl.Ffdh.X86_64.choose (Spec.Ffdh.chooseCont
 
 /-- The mask expression really selects by the low bit, for all words. -/
 theorem choose_low_bit (a b bit : BitVec 64) :
-    Spec.Ffdh.choose a b bit = if bit &&& 1 = 0 then a else b := by
-  unfold Spec.Ffdh.choose
-  have hl : (bit &&& 1).toNat ≤ 1 := by
-    simp only [BitVec.toNat_and]
-    exact Nat.and_le_right
-  by_cases h : bit &&& 1 = 0
-  · rw [h]
-    simp only [BitVec.sub_self, BitVec.and_zero, BitVec.xor_zero, ↓reduceIte]
-  · have h1 : bit &&& 1 = 1 := by
-      apply BitVec.eq_of_toNat_eq
-      have hn : (bit &&& 1).toNat ≠ 0 := by
-        intro hz
-        exact h (BitVec.eq_of_toNat_eq hz)
-      change (bit &&& 1).toNat = 1
-      omega
-    rw [ite_eq_right h, h1]
-    change a ^^^ ((a ^^^ b) &&& BitVec.allOnes 64) = b
-    rw [BitVec.and_allOnes, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
+    Spec.Ffdh.choose a b bit = if bit &&& 1 = 0 then a else b :=
+  VG.Proof.Ffdh.choose_low_bit a b bit
 end VG.Proof.Ffdh.X86_64

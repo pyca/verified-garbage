@@ -3,12 +3,15 @@ module
 public import VerifiedGarbage.Proof.Ed25519.Arm.FieldMemory
 public import VerifiedGarbage.Proof.Ed25519.Arm.MulFnFn
 public import VerifiedGarbage.Proof.Framework.Arm.Call
-public import VerifiedGarbage.Proof.Framework.Covers
+import VerifiedGarbage.Proof.Framework.Covers
 public import Mathlib.Logic.Function.Basic
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.X25519.Arm.Slots
+public import VerifiedGarbage.Spec.Ed25519
+import Mathlib.Tactic.SplitIfs
 
 /-! Compositional field programs and the extended Edwards formulas. -/
 

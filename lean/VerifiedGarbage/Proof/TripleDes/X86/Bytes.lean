@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Bytes
+import VerifiedGarbage.Proof.TripleDes.Bytes
 public import VerifiedGarbage.Proof.TripleDes.X86.Permutation
-public import VerifiedGarbage.Proof.Framework.X86.Exec
+import VerifiedGarbage.Proof.Framework.X86.Exec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Bswap
+import VerifiedGarbage.Proof.Framework.X86.Taint
 
 @[expose] public section
 
@@ -29,7 +31,7 @@ theorem decodeBlock_readW (m : Mem) (p : Addr) :
       (24 ≤ i ∧ i < 32) ∨ (32 ≤ i ∧ i < 40) ∨ (40 ≤ i ∧ i < 48) ∨
       (48 ≤ i ∧ i < 56) ∨ 56 ≤ i := by omega
   rcases ranges with h | h | h | h | h | h | h | h <;>
-    simp (disch := omega) only [BitVec.getLsbD_append, ite_eq_left, ite_eq_right,
+    simp (disch := omega) only [BitVec.getLsbD_append, ↓ite_eq_left, ↓ite_eq_right,
       Nat.sub_sub] <;> rfl
 
 theorem packed28 (c d : BitVec 28) :

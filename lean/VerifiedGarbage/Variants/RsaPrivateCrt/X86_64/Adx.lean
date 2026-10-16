@@ -3,6 +3,15 @@ module
 public import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Adx
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSelV
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTMain
+public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExpL
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTSetupWs
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCTLoop
+import VerifiedGarbage.Proof.Rsa.X86_64.RpCT1
 
 /-!
 # `vg_rsa_private_crt` on x86-64: with BMI2 and ADX
@@ -10,7 +19,9 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 A variant of `RsaPrivateCrt` on x86-64 (see `TCB/Emit.lean`):
 `vg_rsa_private_crt_adx`, checked with `vg_rsa_public_precompute_adx` and
 `vg_rsa_public_precomputed_checked_adx`, all three by calls of
-`vg_rsa_mont_mul_adx`, which needs BMI2 and ADX.
+`vg_rsa_mont_mul_adx`, which needs BMI2 and ADX; the first exponentiates by
+windows of 5 bits (`Crt.expLoop5`), reading its table of 32 powers with AVX2
+(`Crt.tabSelectV`).
 -/
 
 @[expose] public section
@@ -22,9 +33,14 @@ open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 def variant : CrtImpl where
   name := Spec.Rsa.privateCrtApi.name ++ "_adx"
   code := Impl.Rsa.X86_64.Crt.code CallMont.adx.mm
+    (Impl.Rsa.X86_64.Crt.expLoop5S CallMont.lazyAdx CallMont.adx.mm Impl.Rsa.X86_64.Crt.tabSelectV)
   depth := by decide +kernel
-  ok := crt_call_ok (by decide +kernel) (crtCode_correct Mont.fnAdx (by decide +kernel))
-  ct := crt_call_ct (by decide +kernel) (crtCode_correct Mont.fnAdx (by decide +kernel)) (crtCode_constantTime Mont.fnAdx)
+  ok := crt_call_ok (by decide +kernel)
+    (crtCode_correct Mont.fnAdx (CrtExpL.w5S Mont.fnAdx MontS.fnLazyAdx) (by decide +kernel))
+  ct := crt_call_ct (by decide +kernel)
+    (crtCode_correct Mont.fnAdx (CrtExpL.w5S Mont.fnAdx MontS.fnLazyAdx) (by decide +kernel))
+    (crtCode_constantTime Mont.fnAdx (CrtExpL.w5S Mont.fnAdx MontS.fnLazyAdx)
+      (CrtExpL.w5S_ct Mont.fnAdx MontS.fnLazyAdx))
   nosp := noSp_of (by decide +kernel)
   spSafe := Code.all_of_allInstrs (by decide +kernel)
   montSuffix := "_adx"
@@ -37,6 +53,6 @@ def variant : CrtImpl where
   pcDepth := by decide +kernel
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
   suffix := "_adx"
-  features := ["bmi2", "adx"]
+  features := ["avx", "avx2", "bmi2", "adx"]
 
 end VG.Variants.RsaPrivateCrt.X86_64.Adx

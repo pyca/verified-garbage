@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # Blocks as little-endian words
@@ -22,11 +24,8 @@ open VG VG.X86_64 VG.Spec.TripleDes
 theorem xor56_eq : ∀ p < 64, p ^^^ 56 = 8 * (7 - p / 8) + p % 8 := by decide
 
 theorem getLsbD_bswap64 (x : BitVec 64) {p : Nat} (hp : p < 64) :
-    (bswap64 x).getLsbD p = x.getLsbD (p ^^^ 56) := by
-  rw [xor56_eq p hp]
-  have hj : p % 8 < 8 := Nat.mod_lt _ (by decide)
-  simp only [bswap64, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  split_ifs <;> (rw [decide_eq_true (by omega), Bool.true_and]; congr 1; omega)
+    (bswap64 x).getLsbD p = x.getLsbD (p ^^^ 56) :=
+  (xor56_eq p hp).symm ▸ VG.byteRev64_getLsbD x hp
 
 theorem xor56_lt {p : Nat} (hp : p < 64) : p ^^^ 56 < 64 := Nat.xor_lt_two_pow (n := 6) hp (by decide)
 

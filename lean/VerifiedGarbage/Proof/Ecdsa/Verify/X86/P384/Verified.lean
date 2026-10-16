@@ -11,15 +11,17 @@ meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.Framework.X86.Inline
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CallTaint
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.CallSumsP
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.CallSumsP
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.CallSumsN
-meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.CallSumsN
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA verification over P-384 on x86 (32-bit): `Verified`
@@ -116,11 +118,21 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-/-- Constant time by taint tracking, with the summaries of the field
-functions (`CallTaint`) in place of the analysis of each call. -/
+/-! The multiplication modulo `p`, analysed once from what is public on entry
+to its calls (`τVTop` from the verifier's code, `τVPoint` from the point
+functions'), in place of each call. Summaries of the other field functions,
+called less often, cost more than they save. -/
+
+taint_summary mulPSum : taint τVTop
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p384p.k Spec.Weierstrass.Mont.p384p.m)
+taint_summary mulPPointSum : taint τVPoint
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p384p.k Spec.Weierstrass.Mont.p384p.m)
+
+/-- Constant time by taint tracking, with the summaries of the
+multiplication in place of the analysis of each of its calls. -/
 theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP384 := by
   obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ verifyP384 h).isSome = true := by
-    taint_decide_sum [mulPSum, addPSum, subPSum, mulNSum, subNSum]
+    native_taint_decide_sum [mulPSum, mulPPointSum]
   exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'

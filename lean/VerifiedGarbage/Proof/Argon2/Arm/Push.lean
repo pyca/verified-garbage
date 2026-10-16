@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.CallF
-public import VerifiedGarbage.Proof.Framework.Arm.RelCT
+import VerifiedGarbage.Proof.Framework.Arm.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Argon2 on ARMv7: calls in frames of their stack arguments

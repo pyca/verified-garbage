@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.Proof.X448.Arm.Counters
-public import VerifiedGarbage.Proof.X448.Arm.FinalSwap
+import VerifiedGarbage.Proof.X448.Arm.FinalSwap
 public import VerifiedGarbage.Impl.Ed448.Arm.ScalarBase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Call
 
 /-!
 # Ed448 base-point multiplication on ARMv7: the loop over the bits

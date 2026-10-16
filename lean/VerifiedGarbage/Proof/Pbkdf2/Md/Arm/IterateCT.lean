@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # PBKDF2-HMAC's iteration over a Merkle–Damgård hash function on ARMv7: constant time
@@ -96,7 +97,7 @@ theorem load_st (hR : md.Reloc) {o : Nat} (ho : o + H.N ≤ 2 * (H.N + H.B)) (ho
     (h : St H sc md s₀ v s) :
     WP isa (.block (H.loadKey o)) s (St H sc md s₀ v) := by
   have := hz.N64; have := hp.fits; have := hz.DN; have := hz.pad; have := hz.NL
-  have hB : 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B with h | h <;> omega
+  have hB := hz.B_range
   rw [← List.append_nil (H.loadKey o)]
   exact load_ok hz hp hR h.toRegs ho ho4 fun s' g rd wr sp f _ => WP.block_nil
     ⟨h.toRegs.write (fun r hr => g r (ne12 r hr)) rd wr sp (frame_scr (a := H.hvO) (by simp only [Hash.hvO]; omega) f),
@@ -114,8 +115,8 @@ theorem cmp_st (hf : CompOk md H.so H.compC) {s : State} (h : St H sc md s₀ v 
 theorem mid_st (ho : OutOk md H.out) (hR : md.Reloc) {s : State} (h : St H sc md s₀ v s) :
     WP isa (.block (H.digest ++ H.loadKey (H.N + H.B))) s (St H sc md s₀ v) := by
   have := hz.N64; have := hp.fits; have := hz.NL; have := hz.N4
-  have hB : 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B with h | h <;> omega
-  have hB4 : H.B % 4 = 0 := by rcases hz.B with h | h <;> omega
+  have hB := hz.B_range
+  have hB4 := hz.B4
   refine digest_ok hz hp ho h.toRegs h.pad fun s' g rd wr sp f _ p => ?_
   exact load_st hz hp hR (by omega) (by omega)
     ⟨h.toRegs.write (fun r hr => g r (ne9 r hr) (ne10 r hr) (ne12 r hr)) rd wr sp
@@ -157,7 +158,7 @@ theorem body_rel (ho : OutOk md H.out) (hR : md.Reloc) (hf : CompOk md H.so H.co
       fun s s' => (eval .ne s = some (r != 0) ∧ Inv H sc md s₀ r s) ∧
         (eval .ne s' = some (r != 0) ∧ Inv H sc md s₀' r s') := by
   have := hz.N64; have := hz.NL
-  have hB : 64 ≤ H.B ∧ H.B ≤ 128 := by rcases hz.B with h | h <;> omega
+  have hB := hz.B_range
   have l0 : RelCT isa (fun s s' => St H sc md s₀ (BitVec.ofNat 32 (r + 1)) s ∧
       St H sc md s₀' (BitVec.ofNat 32 (r + 1)) s') (.block (H.loadKey 0))
       fun s s' => St H sc md s₀ (BitVec.ofNat 32 (r + 1)) s ∧ St H sc md s₀' (BitVec.ofNat 32 (r + 1)) s' :=

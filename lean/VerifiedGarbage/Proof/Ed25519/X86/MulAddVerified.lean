@@ -1,18 +1,18 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
-public import VerifiedGarbage.Proof.Ed25519.X86.Workspace
+import VerifiedGarbage.Proof.Ed25519.X86.Workspace
 meta import VerifiedGarbage.Proof.Ed25519.X86.Workspace
 public import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
 meta import VerifiedGarbage.Impl.Ed25519.X86.MulAdd
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
 meta import VerifiedGarbage.Proof.Ed25519.X86.CommonInput
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarCodec
-public import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
 meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
-public import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
+import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
 meta import VerifiedGarbage.Proof.Ed25519.X86.MulAddLit
 public import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
 meta import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
@@ -24,6 +24,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-! Merged from `Proof.Ed25519.X86.MulAddMain`. -/
 
@@ -229,7 +231,7 @@ theorem scalarMulAdd_wf {s : State} (h : scalarMulAddLocal.pre s) :
   exact scalarTaint_wf hp ho wr ao
 
 theorem scalarMulAdd_ct : ConstantTime isa scalarMulAddLocal.pre scalarMulAddLocal.pub scalarMulAdd := by
-  refine VG.Taint.constantTime (A := taint) (scalarTaint 4 5) ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) (scalarTaint 4 5) ?_ (by native_taint_decide)
   intro s t hs ht hp
   obtain ⟨sp, a0, a1, a2, a3, a4⟩ := hp
   have ps := (scalarMulAdd_pre hs).1

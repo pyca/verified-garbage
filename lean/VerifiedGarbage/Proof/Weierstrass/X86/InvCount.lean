@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
+import VerifiedGarbage.Proof.Weierstrass.X86.InvHalf
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvLoop
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvState
-public import VerifiedGarbage.Proof.Divstep.Word32
+import VerifiedGarbage.Proof.Divstep.Word32
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.X25519.X86.Arith
+import VerifiedGarbage.Spec.Rc2
 
 /-! ## `InvStart` -/
 

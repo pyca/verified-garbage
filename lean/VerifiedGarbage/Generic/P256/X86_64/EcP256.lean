@@ -1,14 +1,21 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.P256.Comb7
-public import VerifiedGarbage.Impl.EcKey.P256.X86_64
-public import VerifiedGarbage.Proof.EcKey.X86_64.Verified
+import VerifiedGarbage.Impl.EcKey.P256.X86_64
+import VerifiedGarbage.Proof.EcKey.X86_64.Verified
 public import VerifiedGarbage.Proof.EcKey.X86_64.Lit
 public import VerifiedGarbage.Proof.EcKey.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # P-256 public keys (FIPS 186-5 §A.2) on x86-64
@@ -36,7 +43,8 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     doc := Spec.EcKey.P256.publicKeyApi.doc (notes := ["The function is `vg_ecdsa_p256_sign" ++ (if adx then "_adx" else "") ++ "`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves \
       its caller's callee-saved registers in `scratch`; field elements are four 64-bit words in \
-      Montgomery form, " ++ Proof.Ecdsa.X86_64.mulNote adx ++ "; `[d]G` is the signature's comb over the 7-bit windows of `d`, from \
+      Montgomery form, " ++ Proof.Ecdsa.X86_64.mulNote adx ++ "; `[d]G` is the signature's " ++
+      (if adx then "call of `vg_p256_mul_base_adx`, a " else "") ++ "comb over the 7-bit windows of `d`, from \
       the static `VG_P256_COMB`; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, \
       so the time depends only on the pointers."])
     consts := Impl.Ecdsa.X86_64.p256.combConsts

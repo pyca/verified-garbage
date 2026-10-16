@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
+meta import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Scratch counters are public by correctness, including after table stores. -/
 

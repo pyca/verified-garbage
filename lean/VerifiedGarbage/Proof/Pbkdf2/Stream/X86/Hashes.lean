@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Hmac.Generic.Common
 meta import VerifiedGarbage.Proof.Hmac.Generic.Common
 public import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-public import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
 public import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 meta import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
@@ -20,6 +20,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Md5.X86.Lit
+meta import VerifiedGarbage.Proof.Md5.X86.Lit
 
 /-!
 # HMAC over any streaming hash function on x86 (32-bit): the hash functions

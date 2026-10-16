@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: `decaps`, the first phase
@@ -63,14 +67,23 @@ def deL (P : KemLay) : Layout where
   len b := [P.dkLen, P.ctLen, 32, P.scl].getD b 0
   slot k := k
 
-/-- Arithmetic on the offsets and the buffers of `deL`. -/
-macro "dek" : tactic => `(tactic| (
+/-- The offsets of the buffers in `scratch` and `dk` that `dek`'s goals use, proved once. -/
+theorem offs (hP : P.Wf) : RB + 32 ≤ P.scl ∧ KP + 32 ≤ P.scl ∧ MB + 32 ≤ P.scl ∧
+    768 * P.k + 64 ≤ P.dkLen := by
+  have := hP; refine ⟨?_, ?_, ?_, ?_⟩ <;> lom
+
+/-- Arithmetic on the offsets and the buffers of `deL`: decided, or from `offs`,
+or by `kom`. -/
+tactic_template "dek" : tactic => `(tactic| (
   simp -failIfUnchanged only [deL, List.getD_cons_zero, List.getD_cons_succ, Layout.sc]
-  first | decide | kom))
+  first | decide | omega_using [offs (‹Pre _ _ _›).wf] | kom))
 
 theorem pre_of (hP : P.Wf) {s₀ : State} (h : (decapsAArch64 P).pre s₀) : Pre P (deL P) s₀ := by
   obtain ⟨rd, wr, d02, d03, d12, d13, d23, sp16, k0, k1, k2, k3⟩ := h
-  refine ⟨by rw [rd]; rfl, by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
+  refine ⟨by
+    intro b hb
+    have hb' : b = 0 ∨ b = 1 := by change b < 2 at hb; omega
+    rcases hb' with rfl | rfl <;> rw [rd] <;> simp [kA, deL, argReg], by rw [wr]; rfl, ⟨fun b hb c hc hbc hw => ?_, fun b hb => ?_, fun b hb => ?_⟩, sp16,
     fun k hk => hk, by dek, rfl, hP⟩
   · have e : ∀ {x y : Region}, x.Disjoint y → y.Disjoint x := fun h => h.symm
     simp only [deL] at hb hc hw

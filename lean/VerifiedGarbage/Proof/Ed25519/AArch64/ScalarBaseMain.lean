@@ -1,14 +1,19 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
-public import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-! Merged from `Proof.Ed25519.AArch64.ScalarBaseMemory`. -/
 
@@ -91,7 +96,7 @@ theorem farScr {base p : Addr} {n : Nat}
   change (off p i - base).toNat < 8192 at h
   omega
 
-theorem scalarBase_correct {s : State} (hs : scalarBaseLocal.pre s) :
+theorem scalarBase_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} (hs : scalarBaseLocal.pre s) :
     WP isa scalarBase s fun t => abiPreserved s t ∧ scalarBaseLocal.post s t := by
   apply WP.withPreservedV (hc := by lit_decide)
   obtain ⟨hr, hw, hd, hn, hct⟩ := hs

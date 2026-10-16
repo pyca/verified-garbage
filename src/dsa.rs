@@ -13,33 +13,43 @@
 //! Keys own their components, so each operation's buffers are disjoint.
 //! Private keys, nonces and scratch are wiped when their owners are dropped.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use alloc::{vec, vec::Vec};
 use core::fmt;
 
+#[cfg(test)]
+use crate::arch::dsa::vg_dsa_sign;
+#[cfg(all(target_arch = "x86_64", test))]
+use crate::arch::dsa::vg_dsa_sign_adx;
+#[cfg(target_arch = "x86_64")]
 use crate::arch::dsa::{
-    VG_DSA_SIGN_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES, vg_dsa_sign, vg_dsa_sign_adx,
-    vg_dsa_verify, vg_dsa_verify_adx,
+    VG_DSA_SIGN_RANDOM_ADX_FEATURES, VG_DSA_VERIFY_ADX_FEATURES, vg_dsa_sign_random_adx,
+    vg_dsa_verify_adx,
 };
+use crate::arch::dsa::{vg_dsa_sign_random, vg_dsa_verify};
 use crate::cpu::{Features, detected};
 use crate::zeroize::{Int, zeroize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Backend {
     Baseline,
+    #[cfg(target_arch = "x86_64")]
     Adx,
 }
 
 impl Backend {
-    fn select(features: Features) -> Self {
-        if features.contains(VG_DSA_SIGN_ADX_FEATURES)
-            && features.contains(VG_DSA_VERIFY_ADX_FEATURES)
+    fn select(_features: Features) -> Self {
+        #[cfg(target_arch = "x86_64")]
+        if _features.contains(VG_DSA_SIGN_RANDOM_ADX_FEATURES)
+            && _features.contains(VG_DSA_VERIFY_ADX_FEATURES)
         {
-            Self::Adx
-        } else {
-            Self::Baseline
+            return Self::Adx;
         }
+        Self::Baseline
     }
 }
 
@@ -73,18 +83,6 @@ impl fmt::Display for Error {
 }
 
 impl core::error::Error for Error {}
-
-// Examine every byte: an early-exit integer comparison would expose a
-// prefix of the nonce that is subsequently used for signing.
-fn nonce_in_range(nonce: &[u8], q: &[u8]) -> bool {
-    let mut borrow = 0u16;
-    let mut nonzero = 0u8;
-    for (&a, &b) in nonce.iter().zip(q).rev() {
-        borrow = (u16::from(a).wrapping_sub(u16::from(b) + borrow)) >> 15;
-        nonzero |= a;
-    }
-    (borrow == 1) & (nonzero != 0)
-}
 
 /// An owned DSA public key. Import checks widths; verification checks the
 /// domain and public value. Domain primality is the caller's responsibility.
@@ -149,6 +147,7 @@ impl PublicKey {
         }
         let result = match self.backend {
             Backend::Baseline => verify!(vg_dsa_verify),
+            #[cfg(target_arch = "x86_64")]
             Backend::Adx => verify!(vg_dsa_verify_adx),
         };
         result == 1
@@ -215,35 +214,57 @@ impl PrivateKey {
         digest: &[u8],
         mut random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Vec<u8>, Error> {
-        let q = &self.public.packed[self.public.p_len..self.public.p_len + self.public.q_len];
-        let first = q
-            .iter()
-            .position(|&b| b != 0)
-            .ok_or(Error::InvalidKeyOrNonce)?;
-        let high_mask = u8::MAX >> q[first].leading_zeros();
-        let mut nonce = Secret(vec![0u8; self.public.q_len]);
-        let mut scratch = Secret(vec![0u64; 16 * self.public.p_len]);
+        let mut tape = Secret(Vec::with_capacity(8 * 128 * self.public.q_len));
+        let mut scratch = Secret(vec![0u64; 16 * self.public.p_len + 64]);
         let mut output = vec![0u8; 2 * self.public.q_len];
-        for _ in 0..8 {
-            let mut sampled = false;
-            for _ in 0..128 {
-                random(&mut nonce.0[first..])?;
-                nonce.0[first] &= high_mask;
-                if nonce_in_range(&nonce.0, q) {
-                    sampled = true;
-                    break;
+        loop {
+            let mut used = [0u64; 1];
+            macro_rules! sign {
+                ($function:path) => {
+                    // SAFETY: imports establish supported widths. All writable
+                    // buffers are separate owned allocations, disjoint from
+                    // the key, digest and random tape. Scratch has the required
+                    // size, and backend selection establishes CPU features.
+                    unsafe {
+                        $function(
+                            output.as_mut_ptr(),
+                            output.len(),
+                            &mut used,
+                            self.packed.0.as_ptr(),
+                            self.packed.0.len(),
+                            self.public.p_len,
+                            self.public.q_len,
+                            digest.as_ptr(),
+                            digest.len(),
+                            tape.0.as_ptr(),
+                            tape.0.len(),
+                            scratch.0.as_mut_ptr(),
+                            scratch.0.len(),
+                        )
+                    }
+                };
+            }
+            let status = match self.public.backend {
+                Backend::Baseline => sign!(vg_dsa_sign_random),
+                #[cfg(target_arch = "x86_64")]
+                Backend::Adx => sign!(vg_dsa_sign_random_adx),
+            };
+            match status {
+                1 => return Ok(output),
+                2 => {
+                    // The contract permits extending an exhausted tape and
+                    // replaying this same signing operation. Preserve its
+                    // prefix; never reuse the tape for another signing.
+                    let start = tape.0.len();
+                    tape.0.resize(start + self.public.q_len, 0);
+                    random(&mut tape.0[start..])?;
                 }
-            }
-            if !sampled {
-                return Err(Error::InvalidKeyOrNonce);
-            }
-            if self.sign_once(digest, &nonce.0, &mut output, &mut scratch.0) {
-                return Ok(output);
+                _ => return Err(Error::InvalidKeyOrNonce),
             }
         }
-        Err(Error::InvalidKeyOrNonce)
     }
 
+    #[cfg(test)]
     fn sign_once(
         &self,
         digest: &[u8],
@@ -279,6 +300,7 @@ impl PrivateKey {
         }
         let result = match self.public.backend {
             Backend::Baseline => sign!(vg_dsa_sign),
+            #[cfg(target_arch = "x86_64")]
             Backend::Adx => sign!(vg_dsa_sign_adx),
         };
         result == 1

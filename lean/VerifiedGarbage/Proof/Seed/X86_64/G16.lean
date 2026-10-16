@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Seed.X86_64.G16
 public import VerifiedGarbage.Proof.Seed.G16
-public import VerifiedGarbage.Proof.Framework.X86_64.Linear
+import VerifiedGarbage.Proof.Framework.X86_64.Linear
 public import VerifiedGarbage.Proof.Aes.X86_64.Encrypt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

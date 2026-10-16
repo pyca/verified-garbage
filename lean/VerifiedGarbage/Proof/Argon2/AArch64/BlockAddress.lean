@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Argon2.AArch64.BlockAddress
 meta import VerifiedGarbage.Impl.Argon2.AArch64.BlockAddress
 public import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
 meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideStep
-public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitScale
+import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitScale
 meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitScale
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Fault-free matrix pointer calculation, with no memory accesses. -/
 

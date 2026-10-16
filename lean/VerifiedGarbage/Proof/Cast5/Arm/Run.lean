@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.Cast5.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -9,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # CAST5 on ARMv7: running blocks
@@ -148,21 +153,20 @@ end
 
 /-- `crun`: symbolic execution of a block by `simp` (see the module doc),
 with extra lemmas (the block's accesses, …). -/
-syntax "crun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| crun) => `(tactic| crun [])
-  | `(tactic| crun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp only [runBlock_cons, runStep_some, runBlock_nil,
-        exec_dpI, exec_dpR, exec_dpS, exec_movI, exec_movR, exec_movS, exec_movw, exec_movt, exec_rev, dpv, shv,
-        exec_cmpI, exec_subsI, exec_ldr', exec_str', exec_ldrb', exec_strb', exec_ldrSp',
-        gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg,
-        gpr_mem, mem_mem, rd_mem, wr_mem, sp_mem, z_mem, gpr_sub, mem_sub, rd_sub, wr_sub, sp_sub, z_sub,
-        BitVec.reduceToNat, Option.some.injEq, exists_eq_left',
-        ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul,
-        Nat.reduceAdd, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff, and_self, eq_self_iff_true,
-        true_and, and_true, List.cons_append, List.nil_append, $ls,*]))
+tactic_template "crun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp only [runBlock_cons, runStep_some, runBlock_nil,
+                         exec_dpI, exec_dpR, exec_dpS, exec_movI, exec_movR, exec_movS, exec_movw, exec_movt, exec_rev, dpv, shv,
+                         exec_cmpI, exec_subsI, exec_ldr', exec_str', exec_ldrb', exec_strb', exec_ldrSp',
+                         gpr_setReg, mem_setReg, rd_setReg, wr_setReg, sp_setReg, z_setReg,
+                         gpr_mem, mem_mem, rd_mem, wr_mem, sp_mem, z_mem, gpr_sub, mem_sub, rd_sub, wr_sub, sp_sub, z_sub,
+                         BitVec.reduceToNat, Option.some.injEq, exists_eq_left',
+                         ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul,
+                         Nat.reduceAdd, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff, and_self, eq_self_iff_true,
+                         true_and, and_true, List.cons_append, List.nil_append, $ls,*]))
+/-- `crun` with no extra lemmas. -/
+tactic_template "crun" : tactic => `(tactic| crun [])
 
 /-! ## Branches -/
 
@@ -176,11 +180,11 @@ theorem wp_ite_ne {th el : Prog isa} {s : State} {Q : State → Prop} (ht : s.z 
 /-! ## What a block keeps -/
 
 /-- `∀ r ∉ rs, (s with registers written).gpr r = s.gpr r`. -/
-macro "keep_regs" : tactic => `(tactic| (
-  intro r hr
-  simp only [gpr_setReg, gpr_sub, gpr_mem]
-  repeat' split
-  all_goals first | rfl | (subst_vars; exact absurd hr (by decide))))
+tactic_template "keep_regs" : tactic => `(tactic| (
+                   intro r hr
+                   simp only [gpr_setReg, gpr_sub, gpr_mem]
+                   repeat' split
+                   all_goals first | rfl | (subst_vars; exact absurd hr (by decide))))
 
 /-- The registers but `rs`, the regions and the stack pointer are kept. -/
 structure Keep (rs : List Reg) (s s' : State) : Prop where

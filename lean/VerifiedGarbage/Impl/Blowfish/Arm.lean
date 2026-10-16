@@ -197,19 +197,32 @@ def decrypt : Prog isa := ecb false
 
 `vg_blowfish_expand_key(key = r0, key_len = r1, schedule = r2, scratch = r3)`. -/
 
-/-- Word `i` of the initial schedule's image, little-endian. -/
-def initWord32 (i : Nat) : BitVec 32 :=
-  (initWord (i / 2)).extractLsb' (32 * (i % 2)) 32
+/-- The name of the static holding the initial schedule (`Impl.Blowfish.initWords`). -/
+def initSym : String := "VG_BLOWFISH_INIT"
 
-/-- Word `i` of the initial schedule, through `r9`, at `r11` (the S-boxes,
-`i < 1024`) or `r12` (the P-array): both at `r2 + 0` and `r2 + 4096`, which
-the taint analysis does not take for the schedule's base. -/
-def initStore (i : Nat) : List Instr :=
-  [.movw .r9 ((initWord32 i).extractLsb' 0 16), .movt .r9 ((initWord32 i).extractLsb' 16 16),
-   if i < 1024 then .str .r9 .r11 (4 * i) else .str .r9 .r12 (4 * (i - 1024))]
+def initConsts : List (String × List (BitVec 64)) := [(initSym, Impl.Blowfish.initWords)]
 
-def initSchedule : List Instr :=
-  [.dp .add .r11 .r2 (imm 0), .dp .add .r12 .r2 (imm pOff)] ++ (List.range 1042).flatMap initStore
+/-- The registers a step of the copy holds its words in. -/
+def copyRegs : List Reg := [.r4, .r5, .r6, .r7, .r8, .r10, .lr]
+
+def copyReg (i : Nat) : Reg := copyRegs.getD i .r4
+
+/-- `k` words (`k ≤ 7`) from the table at `r9` to the schedule at `r11`: the
+loads, then the stores. -/
+def copyWords (k : Nat) : List Instr :=
+  (List.range k).map (fun i => .ldr (copyReg i) .r9 (4 * i)) ++
+    (List.range k).map (fun i => .str (copyReg i) .r11 (4 * i))
+
+/-- Seven words, the pointers past them, and the steps left in `r12`. -/
+def copyStep : List Instr :=
+  copyWords 7 ++ [.dp .add .r9 .r9 (imm 28), .dp .add .r11 .r11 (imm 28), .subs .r12 .r12 (imm 1)]
+
+/-- The initial schedule, 1042 words, copied from the static `initSym`: 148
+steps of seven words, then six. The schedule is written through `r11`, at
+`r2 + 0`, which the taint analysis does not take for the schedule's base. -/
+def initSchedule : Prog isa :=
+  .seq (.block [.adrSym .r9 initSym, .dp .add .r11 .r2 (imm 0), .mov .r12 (imm 148)])
+    (.seq (.loop (.block copyStep) .ne) (.block (copyWords 6)))
 
 /-- The next key byte into the low byte of `r5` (shifted up), cycling: the
 byte at `r0 + r4`, then `r4 := r4 + 1`, or 0 at `key_len` (`r1`). -/
@@ -265,9 +278,9 @@ def encryptS : Prog isa :=
     (.loop (.seq (cipher true) storeS) .ne)
 
 def expandKey : Prog isa :=
-  .seq (.block (save ++ initSchedule))
+  .seq (.block save) (.seq initSchedule
     (.seq keyP
       (.seq (.block [.mov sch (.reg .r2), .mov xL (imm 0), .mov xR (imm 0)])
-        (.seq encryptP (.seq encryptS (.block restore)))))
+        (.seq encryptP (.seq encryptS (.block restore))))))
 
 end VG.Impl.Blowfish.Arm

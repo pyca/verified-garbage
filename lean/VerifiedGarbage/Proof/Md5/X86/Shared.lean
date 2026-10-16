@@ -13,6 +13,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Md5.StateMem
+public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
+public import VerifiedGarbage.Proof.MdStream.X86.Words
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # MD5 on x86: the shared contracts
@@ -59,9 +65,14 @@ def updateWide : Contract X86.isa :=
 
 /-- Rewrites the per-target contracts at a narrowed state (`arg` does not
 unfold cheaply). -/
-macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
+tactic_template "narrow" : tactic =>
   `(tactic| simp only [Proof.Md5.updateX86, updateWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-    State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
+                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr])
+
+/-- `narrow` at a location. -/
+tactic_template "narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [Proof.Md5.updateX86, updateWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
+                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $loc)
 
 /-- `update` only reads its arguments. -/
 theorem updateWide_verified (hsat : ∃ s, updateWide.pre s) :

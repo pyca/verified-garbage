@@ -28,6 +28,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # SM3 compression function on x86 (32-bit): the message expansion and the iterations
@@ -97,74 +101,9 @@ theorem round_sep (t : Nat) :
   generalize t % 4 = c at *
   revert this; revert c; decide
 
-set_option hygiene false in
-/-- The symbolic execution of an iteration (`round_lo`, `round_hi`): for any
-offsets `a … h` of the registers (which `round_sep` says are in separate
-words). -/
-macro "round_tac" : tactic => `(tactic| (
-  have hin := hS.rd; have hout := hS.wr
-  have hrw := readW_writeW_scr hS.fits
-  have hs := hin (slot t) (by have := slot_lt t; omega)
-  have hs₄ := hin (slot (t + 4)) (by have := slot_lt (t + 4); omega)
-  have hsep := round_sep t
-  obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := var_succ t
-  simp only [Vars, e0, e1, e2, e3, e4, e5, e6, e7] at hv ⊢
-  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
-  apply WP.of_runBlock
-  simp only [Impl.Sm3.X86.round, ht, ite_true, ite_false, List.cons_append, List.nil_append]
-  generalize var t 0 = a at *
-  generalize var t 1 = b at *
-  generalize var t 2 = c at *
-  generalize var t 3 = d at *
-  generalize var t 4 = e at *
-  generalize var t 5 = f at *
-  generalize var t 6 = g at *
-  generalize var t 7 = h at *
-  simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil,
-    forall_eq_or_imp, false_implies, implies_true, List.Pairwise.nil, and_true, or_false,
-    forall_eq] at hsep
-  simp only
-    [hsep, runBlock_cons, runBlock_nil, runStep_some, exec, execAlu, execShift, readSrc, ea_at, sc,
-    RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_of_ne, RegUpd.mem_setReg, RegUpd.rd_setReg,
-    RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
-    RegUpd.wr_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags,
-    RegUpd.wr_setFlags, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, not_false_eq_true,
-    reduceCtorEq,
-    State.load32, State.store32, ite_true, ite_false,
-    hesi, hin, hout, hs, hs₄, hrw, Mem.readW_writeW_self32, h0, h1, h2, h3, h4, h5, h6, h7, hw,
-    hw₄, Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ⟨_, _, _, _, rfl⟩, trivial, trivial, fun r hr => ?_⟩
-  rotate_right
-  · simp only [pubRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;>
-      simp only [RegUpd.gpr_setReg_of_ne, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
-        not_false_eq_true, reduceCtorEq]
-  all_goals
-    simp (config := {failIfUnchanged := false}) only [roundW_0, roundW_1, roundW_2, roundW_3,
-      roundW_4, roundW_5, roundW_6, roundW_7, Spec.Sm3.ff, Spec.Sm3.gg, ht, ite_true, ite_false,
-      maj_eq, ch_eq, tj, rotl9, rotl12, rotl7, rotl19] <;>
-    first | exact tt1_eq _ _ _ _ _ | exact tt2_eq _ _ _ _))
-
-theorem round_lo (t : Nat) (ht : t < 16) (s : State) (v : HashValue) (w w₄ : Word) (scr : BitVec 32)
-    (hS : Scratch s scr) (hv : Vars t scr s.mem v) (hesi : s.gpr .esi = scr)
-    (hw : s.mem.readW (addr scr (slot t)) 32 = w) (hw₄ : s.mem.readW (addr scr (slot (t + 4))) 32 = w₄) :
-    WP isa (.block (round t)) s fun s' =>
-      Vars (t + 1) scr s'.mem (roundW v t w w₄) ∧
-      (∃ x y z u : Word, s'.mem = (((s.mem.writeW (addr scr (var t 3)) x).writeW (addr scr (var t 7)) y).writeW
-        (addr scr (var t 1)) z).writeW (addr scr (var t 5)) u) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
-  round_tac
-
-theorem round_hi (t : Nat) (ht : ¬t < 16) (s : State) (v : HashValue) (w w₄ : Word) (scr : BitVec 32)
-    (hS : Scratch s scr) (hv : Vars t scr s.mem v) (hesi : s.gpr .esi = scr)
-    (hw : s.mem.readW (addr scr (slot t)) 32 = w) (hw₄ : s.mem.readW (addr scr (slot (t + 4))) 32 = w₄) :
-    WP isa (.block (round t)) s fun s' =>
-      Vars (t + 1) scr s'.mem (roundW v t w w₄) ∧
-      (∃ x y z u : Word, s'.mem = (((s.mem.writeW (addr scr (var t 3)) x).writeW (addr scr (var t 7)) y).writeW
-        (addr scr (var t 1)) z).writeW (addr scr (var t 5)) u) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
-  round_tac
-
+/-- The symbolic execution of an iteration, of either shape (`t < 16` or not; one tactic for
+both, written once, not as a macro, whose definition costs a second to elaborate): for any
+offsets `a … h` of the registers (which `round_sep` says are in separate words). -/
 theorem round_ok (t : Nat) (s : State) (v : HashValue) (w w₄ : Word) (scr : BitVec 32)
     (hS : Scratch s scr) (hv : Vars t scr s.mem v) (hesi : s.gpr .esi = scr)
     (hw : s.mem.readW (addr scr (slot t)) 32 = w) (hw₄ : s.mem.readW (addr scr (slot (t + 4))) 32 = w₄) :
@@ -173,9 +112,49 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (w w₄ : Word) (scr : Bi
       (∃ x y z u : Word, s'.mem = (((s.mem.writeW (addr scr (var t 3)) x).writeW (addr scr (var t 7)) y).writeW
         (addr scr (var t 1)) z).writeW (addr scr (var t 5)) u) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
-  by_cases ht : t < 16
-  · exact round_lo t ht s v w w₄ scr hS hv hesi hw hw₄
-  · exact round_hi t ht s v w w₄ scr hS hv hesi hw hw₄
+  by_cases ht : t < 16 <;> (
+    have hin := hS.rd; have hout := hS.wr
+    have hrw := readW_writeW_scr hS.fits
+    have hs := hin (slot t) (by have := slot_lt t; omega)
+    have hs₄ := hin (slot (t + 4)) (by have := slot_lt (t + 4); omega)
+    have hsep := round_sep t
+    obtain ⟨e0, e1, e2, e3, e4, e5, e6, e7⟩ := var_succ t
+    simp only [Vars, e0, e1, e2, e3, e4, e5, e6, e7] at hv ⊢
+    obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := hv
+    apply WP.of_runBlock
+    simp only [Impl.Sm3.X86.round, ht, ite_true, ite_false, List.cons_append, List.nil_append]
+    generalize var t 0 = a at *
+    generalize var t 1 = b at *
+    generalize var t 2 = c at *
+    generalize var t 3 = d at *
+    generalize var t 4 = e at *
+    generalize var t 5 = f at *
+    generalize var t 6 = g at *
+    generalize var t 7 = h at *
+    simp only [List.pairwise_cons, List.mem_cons, List.not_mem_nil,
+      forall_eq_or_imp, false_implies, implies_true, List.Pairwise.nil, and_true, or_false,
+      forall_eq] at hsep
+    simp only
+      [hsep, runBlock_cons, runBlock_nil, runStep_some, exec, execAlu, execShift, readSrc, ea_at, sc,
+      RegUpd.gpr_setReg_self, RegUpd.gpr_setReg_of_ne, RegUpd.mem_setReg, RegUpd.rd_setReg,
+      RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
+      RegUpd.wr_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags,
+      RegUpd.wr_setFlags, Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, not_false_eq_true,
+      reduceCtorEq,
+      State.load32, State.store32, ite_true, ite_false,
+      hesi, hin, hout, hs, hs₄, hrw, Mem.readW_writeW_self32, h0, h1, h2, h3, h4, h5, h6, h7, hw,
+      hw₄, Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
+    refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ⟨_, _, _, _, rfl⟩, trivial, trivial, fun r hr => ?_⟩
+    rotate_right
+    · simp only [pubRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;>
+        simp only [RegUpd.gpr_setReg_of_ne, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
+          not_false_eq_true, reduceCtorEq]
+    all_goals
+      simp (config := {failIfUnchanged := false}) only [roundW_0, roundW_1, roundW_2, roundW_3,
+        roundW_4, roundW_5, roundW_6, roundW_7, Spec.Sm3.ff, Spec.Sm3.gg, ht, ite_true, ite_false,
+        maj_eq, ch_eq, tj, rotl9, rotl12, rotl7, rotl19] <;>
+      first | exact tt1_eq _ _ _ _ _ | exact tt2_eq _ _ _ _)
 
 theorem expand_ok (i : Nat) (s : State) (M : Block) (bp scr : BitVec 32) (hS : Scratch s scr)
     (hedi : s.gpr .edi = bp) (hesi : s.gpr .esi = scr)

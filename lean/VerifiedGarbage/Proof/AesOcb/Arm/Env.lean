@@ -9,6 +9,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-OCB on ARMv7: where everything is
@@ -36,7 +38,7 @@ open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesGcm.Arm (below covers_off in_off in_left covers_left covers_prefix)
 
 /-- Runs a block of the instructions the AES-OCB code uses. -/
-macro "orun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
+tactic_template "orun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
   arun [Impl.AesOcb.Arm.tagO, Impl.AesOcb.Arm.ofsO, Impl.AesOcb.Arm.ckO, Impl.AesOcb.Arm.sumO,
     Impl.AesOcb.Arm.ldO, Impl.AesOcb.Arm.l0O, Impl.AesOcb.Arm.lO, Impl.AesOcb.Arm.tmpO, Impl.AesOcb.Arm.t2O,
     Impl.AesOcb.Arm.ohO, Impl.AesOcb.Arm.botO, Impl.AesOcb.Arm.cnO, Impl.AesOcb.Arm.o0O, Impl.AesOcb.Arm.vO,
@@ -57,10 +59,10 @@ theorem runBlock_append (a b : List Instr) (s : State) :
 abbrev Others (rs : List Reg) (s s' : State) : Prop := ∀ r, r ∉ rs → s'.gpr r = s.gpr r
 
 /-- Proves `Others` of a state `orun` computed. -/
-macro "others_tac" : tactic => `(tactic| (
-  intro r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  simp [gpr_setReg, hr]))
+tactic_template "others_tac" : tactic => `(tactic| plain_simp_names (
+                   intro r hr
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+                   simp [gpr_setReg, hr]))
 
 /-- The public arguments. -/
 structure Prm where

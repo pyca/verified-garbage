@@ -1,14 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Base
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Pack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Round
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-DSA signing on AArch64: calls of the other primitives

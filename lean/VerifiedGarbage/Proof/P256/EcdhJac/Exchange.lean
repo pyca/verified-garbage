@@ -1,15 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.P256.EcdhJac.Frontend
-public import VerifiedGarbage.Proof.P256.EcdhJac.Setup
+import VerifiedGarbage.Proof.P256.EcdhJac.Setup
 public import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
-public import VerifiedGarbage.Proof.Ecdh.AArch64.Main
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
-public import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
+import VerifiedGarbage.Proof.Ecdh.AArch64.Main
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdh.AArch64.MulOk
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
 
 @[expose] public section
 
@@ -65,7 +68,7 @@ theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {mq inverse : Prog isa} (h
   have hq₂ : s₂.gpr .x6 = s₀.gpr .x2 := by rw [S₂.gpr _ (by decide), x6₁]
   have hrw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [S₂.rd, S₂.wr, hrd₁]
   -- The peer's key.
-  refine WP.seq (WP.mono (peer_ok hc S₂.scr hq₂ (by rw [hrw₂, hp.rd]; simp) hp.peer_sc S₂.fixed.mp)
+  refine WP.seq (WP.mono (peer_ok hc S₂.scr hq₂ (by rw [hrw₂, hp.rd]; simp) hp.peer_sc)
     fun s₃ ⟨hs₃, k₃, U₃, r2₃, bp₃, y₃, f₃⟩ => ?_)
   have F₃ := S₂.fixed.unch h7 hn ((fixedOk_slW (l := [R2P, BP, QY]) (by decide)).append fixedOk_flag) U₃
   have e₃ : ∀ {i}, i < 45 → i ∉ [R2P, BP, QY] → i ≠ FLAG →
@@ -79,9 +82,8 @@ theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {mq inverse : Prog isa} (h
     have := keep_of_disjoint' W₂ hp.peer_sc (by omega) (i := 0) (by omega) (by omega)
     rwa [BitVec.add_zero] at this
   -- What the code checks of the peer's key so far.
-  have hf₃ : word s₃.mem (s₀.gpr .x3) (c.sl FLAG) = mask (((s₀.mem (s₀.gpr .x2) = 4 ∧
-      sv c (s₀.gpr .x3) s₃ E < c.C.p) ∧ sv c (s₀.gpr .x3) s₃ QY < c.C.p)) := by
-    rw [f₃, S₂.flag, BitVec.allOnes_and, mask_and, mask_and, x₃, hq0]
+  have hf₃ : word s₃.mem (s₀.gpr .x3) (c.sl FLAG) = mask (s₀.mem (s₀.gpr .x2) = 4) := by
+    rw [f₃, S₂.flag, BitVec.allOnes_and, hq0]
   refine WP.seq (WP.mono (validate_ok hc hs₃ F₃ r2₃ bp₃ hf₃)
     fun s₄ ⟨hs₄, g₄, rd₄, wr₄, U₄, f₄, px_lt, py_lt, px, py⟩ => ?_)
   have F₄ := F₃.unch h7 hn ((fixedOk_slW (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append

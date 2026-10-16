@@ -9,6 +9,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # `vg_rsa_private_checked` on AArch64: where everything is
@@ -138,7 +139,7 @@ structure Ok : Prop where
   dpl : L.dpl.toNat = L.pl.toNat
   qil : L.qil.toNat = L.pl.toNat
   dql : L.dql.toNat = L.ql.toNat
-  slk : 16 * L.k.toNat ≤ L.sl.toNat
+  slk : 16 * L.k.toNat + 32 ≤ L.sl.toNat
 
 end Lay
 

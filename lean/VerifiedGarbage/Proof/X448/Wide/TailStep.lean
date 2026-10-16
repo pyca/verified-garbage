@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.X448.Wide.TailRegs
+import VerifiedGarbage.Proof.X448.Wide.TailRegs
 public import VerifiedGarbage.Proof.X448.Wide.CarryStep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Wide.CoefficientIO
 
 /-! Untrusted: narrow carry steps whose input coefficient already fits in one word. -/
 

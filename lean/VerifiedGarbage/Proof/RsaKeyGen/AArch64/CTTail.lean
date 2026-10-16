@@ -8,6 +8,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 
 /-!
 # A candidate on AArch64: constant time of the tail
@@ -195,8 +198,19 @@ theorem ts_ms0 {q : FPub} {s : State} (h : TS q s) : MS0 q.L s := by
   exact ⟨hws, hdm.w4, hdm.w64, _, hc,
     VG.Proof.RsaKeyGen.candidate_shape (bits := 64 * q.w) (by have := hdm.w4; omega) _⟩
 
+/-- What Miller–Rabin needs but its exponent. -/
+def MrPre0 (q : FPub) (s : State) : Prop :=
+  4 ≤ q.w ∧ q.w ≤ 64 ∧ slot q.w aE + 8 * (q.w + 2) ≤ q.Z ∧ q.rl < 2 ^ 64 ∧ ∃ (c bm : Nat) (r : List Byte),
+    MrCtx s q.B q.Z q.w c bm ∧
+    wv s.mem q.B (slot q.w aR2) q.w = 2 ^ (64 * q.w) * 2 ^ (64 * q.w) % c ∧ 1 < c ∧
+    VG.Proof.RsaKeyGen.PrimeShape (64 * q.w) c ∧ word s.mem q.B (8 * kRand) = q.rP ∧
+    word s.mem q.B (8 * kRandLen) = BitVec.ofNat 64 r.length ∧ r.length = q.rl ∧
+    word s.mem q.B (8 * kChecks) = BitVec.ofNat 64 (checksW q.w) ∧ Src s q.B q.Z q.rP r ∧
+    word s.mem q.B (8 * kUsed) = BitVec.ofNat 64 (8 * q.w) ∧ 8 * q.w ≤ r.length ∧
+    shapeOf (mrRest c (checksW q.w) r 1 0 (8 * q.w)) = q.sch.mr ∧ EndW q s
+
 /-- `montSetup` leaves what Miller–Rabin needs, with the shape of its result. -/
-theorem ms_mrpre (M : Mont) {q : FPub} {s : State} (h : TS q s) : WP isa (seqs (montSetup M.mm)) s (MrPre q) := by
+theorem ms_mrpre (M : Mont) {q : FPub} {s : State} (h : TS q s) : WP isa (seqs (montSetup M.mm)) s (MrPre0 q) := by
   obtain ⟨⟨hwr, hdm, hws, hh, ho, pB, r, hc, -, -, hsrc, -, hrl, hS⟩, hcl, hco, hgb⟩ := h
   have hw4 := hdm.w4
   have hw64 := hdm.w64
@@ -235,21 +249,77 @@ theorem ms_mrpre (M : Mont) {q : FPub} {s : State} (h : TS q s) : WP isa (seqs (
     fun _ hd => f₁.word_eq hd (by have := hws.h256; omega)
   have hsl₁ : ∀ r ∈ msRanges q.w, r.1 + r.2 ≤ q.Z := by kt_disj
   have hin₁ : InScr q.B q.Z s.mem t.mem := InScr.of_frm f₁ (fun r hr => by have := hsl₁ r hr; omega)
-  refine ⟨hw4, hw64, hdm.rl, c, _, r, ⟨h₁, hinv₁, hn₁, rfl, hr1₁, hrm₁⟩, hr2₁, hc1, ⟨hodd, hlo, hhi⟩,
+  have hEZ : slot q.w aE + 8 * (q.w + 2) ≤ q.Z := by
+    have e : slot q.w aE = 256 + 27 * (8 * (q.w + 2)) := rfl
+    have := hdm.z; omega
+  refine ⟨hw4, hw64, hEZ, hdm.rl, c, _, r,
+    ⟨h₁, hinv₁, hn₁, rfl, hr1₁, hrm₁⟩, hr2₁, hc1, ⟨hodd, hlo, hhi⟩,
     (hW (by decide) (by kt_disj)).trans hh.rand, by rw [(hW (by decide) (by kt_disj)).trans hh.rlen, hrl], hrl, hch₁,
     hsrc.congrK hin₁ k₁, (hW (by decide) (by kt_disj)).trans hh.used, by rw [hrl]; exact hdm.rk,
     by rw [hres, e4], (hW (by decide) (by kt_disj)).trans hh.out, (hW (by decide) (by kt_disj)).trans hh.usedP,
     (hW (by decide) (by kt_disj)).trans hh.len, ho.congr k₁.wr⟩
 
+/-! ## Miller–Rabin's exponent -/
+
+/-- `expSetup` keeps what Miller–Rabin needs, and computes its exponent. -/
+theorem expSetup_mrpre {q : FPub} {s : State} (h : MrPre0 q s) : WP isa (seqs expSetup) s (MrPre q) := by
+  obtain ⟨h4, h64, hEZ, hrl, c, bm, r, hc, hr2, hc1, hsh, hR, hRL, hrlen, hC, hsrc, hU, hu1, hS, hO, hUP, hK, ho⟩ := h
+  have hn := hc.ws.scr.nowrap
+  have h256 := hc.ws.h256
+  have hR2 := hc.ws.sl (show aR2 < 16 by decide)
+  refine WP.mono (expSetup_ok hc.ws hEZ hc.n hsh.1 hc1) fun t ⟨hE, hf, hw, k⟩ => ?_
+  have hW : ∀ {i : Nat}, i < 32 → word t.mem q.B (8 * i) = word s.mem q.B (8 * i) := fun hi =>
+    hf.word_eq (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      have := hdr_lt_slot q.w aE hi; exact Or.inl (by simp only; omega)) (by omega)
+  have hin : InScr q.B q.Z s.mem t.mem := InScr.of_frm hf (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; simp only; omega)
+  refine ⟨h4, by omega_arith, hEZ, hrl, c, bm, r, hc.of_frm hf (by w_mut) k (by decide) (VG.Proof.RsaKeyGen.past_hdrW rfl) (VG.Proof.RsaKeyGen.apart_one VG.Proof.RsaKeyGen.mul_le_w1 rfl) (VG.Proof.RsaKeyGen.apart_one VG.Proof.RsaKeyGen.mul_le_w1 rfl)
+      (VG.Proof.RsaKeyGen.apart_one VG.Proof.RsaKeyGen.mul_le_w1 rfl) (VG.Proof.RsaKeyGen.apart_one VG.Proof.RsaKeyGen.mul_le_w1 rfl), hE, ?_, hc1, hsh, by rw [hW (by decide)]; exact hR,
+    by rw [hW (by decide)]; exact hRL, hrlen, by rw [hW (by decide)]; exact hC, hsrc.congrK hin k,
+    by rw [hW (by decide)]; exact hU, hu1, hS, by rw [hW (by decide)]; exact hO, by rw [hW (by decide)]; exact hUP,
+    by rw [hW (by decide)]; exact hK, ho.congr k.wr⟩
+  rw [hf.wv_eq (fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact Or.inl (by have := VG.Proof.Rsa.slot_lt (w := q.w) (show aR2 < aE by decide); simp only; omega))
+    (by omega)]
+  exact hr2
+
+/-- `lowWord`'s registers. -/
+def lwVal (q : FPub) : Reg → BitVec 64
+  | .x0 => q.B
+  | .x12 => BitVec.ofNat 64 q.w
+  | _ => BitVec.ofNat 64 (8 * (q.w + 2))
+
+theorem expSetup_ct : RelCT isa (Two MrPre0) (seqs expSetup) (Two MrPre) := by
+  rw [expSetup_eq]
+  refine two_post (ct_app' (by simp [lowWord]) (by simp) (Ψ := fun q t => ∀ r ∈ [Reg.x0, .x12, .x11], t.gpr r = lwVal q r)
+    ?_ ((two_taint [.x0, .x12, .x11] (fun _ _ _ h₁ h₂ r hr => (h₁ r hr).trans (h₂ r hr).symm)
+      (by taint_decide)).mono (fun _ _ h => h)
+      fun _ _ _ => trivial)) fun _ _ h => expSetup_mrpre h
+  have e : seqs lowWord = Code.seq _ _ := rfl
+  rw [e]
+  refine ws_ct (fun q : FPub => q.B) (fun q : FPub => q.Z) (fun q : FPub => q.w)
+    (fun _ _ ⟨_, _, _, _, _, _, _, hc, _⟩ => hc.ws) (by taint_decide) fun q s h => ?_
+  obtain ⟨-, -, -, -, c, bm, r, hc, -, hc1, hsh, -⟩ := h
+  have hW : WP isa (seqs lowWord) s fun t => ∀ r ∈ [Reg.x0, .x12, .x11], t.gpr r = lwVal q r :=
+    WP.mono (lowWord_ok hc.ws hc.n hsh.1 hc1) fun t ⟨_, _, _, _, h11, h12, k⟩ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact (k.gpr .x0 (by decide)).trans hc.ws.x0
+      · exact h12
+      · exact h11
+  exact hW
+
 /-- The tail of a candidate, from `montSetup` to the result, leaks the same
 in runs related by `TS`. -/
 theorem kTail_ct (M : Mont) :
-    RelCT isa (Two TS) (seqs (montSetup M.mm ++ millerRabin M.mm ++ [mrResult])) fun _ _ => True := by
-  rw [List.append_assoc]
-  exact ct_app' (by simp [montSetup]) (by simp [millerRabin])
+    RelCT isa (Two TS) (seqs (montSetup M.mm ++ expSetup ++ millerRabin M.mm ++ [mrResult])) fun _ _ => True := by
+  rw [List.append_assoc, List.append_assoc]
+  exact ct_app' (by simp [montSetup]) (by simp [expSetup, lowWord])
     (two_post (two_map FPub.L (fun _ _ h => ts_ms0 h) (montSetup_ct M)) fun _ _ h => ms_mrpre M h)
-    (ct_app' (by simp [millerRabin]) (by simp)
+    (ct_app' (by simp [expSetup, lowWord]) (by simp [millerRabin]) expSetup_ct (ct_app' (by simp [millerRabin]) (by simp)
       ((millerRabin_ct M).mono (fun _ _ h => h) fun _ _ h => two_mono (fun _ _ h => loopEnd_endq h) h)
-      mrResult_ct)
+      mrResult_ct))
 
 end VG.Proof.RsaKeyGen.AArch64

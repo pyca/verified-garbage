@@ -7,15 +7,21 @@ public import VerifiedGarbage.Spec.P224
 public import VerifiedGarbage.Spec.P256
 public import VerifiedGarbage.Spec.Secp256k1
 public import VerifiedGarbage.Spec.P521
+public import VerifiedGarbage.Spec.BrainpoolP256r1
+public import VerifiedGarbage.Spec.BrainpoolP384r1
+public import VerifiedGarbage.Spec.BrainpoolP512r1
 
 /-!
 # Inverses modulo a curve's prime and order, in its working space, as functions
 
 **Trusted** (as every file in `Spec/`). The contracts of two functions for
-each curve of `curves` (so far P-192, P-224, P-256, secp256k1, P-384 and
-P-521), on the working space where the x86-64 code of the curve's ECDSA
-signature, verification and public key derivation keeps its numbers, so that
-they can call one copy of each inversion instead of repeating it:
+each curve of `curves` (so far P-192, P-224, P-256, secp256k1, P-384,
+P-521, brainpoolP256r1, brainpoolP384r1 and brainpoolP512r1), on the working
+space where the
+x86-64 code of
+the curve's ECDSA signature, verification and public key derivation keeps
+its numbers, so that they can call one copy of each inversion instead of
+repeating it:
 
 * `vg_<curve>_inv_mod_p(ws)`: `A = Z^(p - 2)` modulo the curve's prime `p`,
   for the number `Z` at slot 16 (the code's `Z` coordinate of `[k]G`);
@@ -35,8 +41,10 @@ The working space `ws` of 8192 bytes is the x86-64 code's: numbers of `k`
 words in slots from byte 64 (`slot`), where the caller provides `p` (slot 0)
 or `n` (slot 1) and the number to invert. The functions take no offsets.
 Slot 30, the curve's temporary slot (`tmpAt`) and the `64 k + 64` bytes from
-`workAt` (past the code's three tables of bits), and for P-521 72 more
-(`workExtra`), are the functions' own working space (`Own`); on return they are unspecified and may hold intermediate
+`workAt` (past the code's three tables of bits), and for P-521 72 more and
+for brainpoolP512r1 48 more (`workExtra`, where the AArch64 code keeps the
+callee-saved registers its products change), are the functions' own working
+space (`Own`); on return they are unspecified and may hold intermediate
 values, secret ones among them, and the caller's callee-saved registers.
 Every other byte of `ws` keeps its value but the result's (`Keeps`).
 
@@ -206,7 +214,20 @@ inversion keeps `9 k` words and the registers it saves there. -/
 def p521 : Curve :=
   { W := Spec.P521.curve, curve := "p521", k := 9, desc := "P-521", tmp := 55, workExtra := 72 }
 
+def brainpoolp256r1 : Curve :=
+  { W := Spec.BrainpoolP256r1.curve, curve := "brainpoolp256r1", k := 4, desc := "brainpoolP256r1",
+    tmp := 2 }
+
+def brainpoolp384r1 : Curve :=
+  { W := Spec.BrainpoolP384r1.curve, curve := "brainpoolp384r1", k := 6, desc := "brainpoolP384r1",
+    tmp := 83 }
+
+def brainpoolp512r1 : Curve :=
+  { W := Spec.BrainpoolP512r1.curve, curve := "brainpoolp512r1", k := 8, desc := "brainpoolP512r1",
+    tmp := 2, workExtra := 48 }
+
 /-- Every curve. -/
-def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521]
+def curves : List Curve := [p192, p224, p256, secp256k1, p384, p521, brainpoolp256r1, brainpoolp384r1,
+  brainpoolp512r1]
 
 end VG.Spec.Weierstrass.Inverse

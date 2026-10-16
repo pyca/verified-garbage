@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 public import VerifiedGarbage.Proof.Framework.ConstMem
-public import VerifiedGarbage.Proof.Weierstrass.TCombWords
-public import VerifiedGarbage.Proof.P521.Comb7Shape
+import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.P521.Comb7Shape
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

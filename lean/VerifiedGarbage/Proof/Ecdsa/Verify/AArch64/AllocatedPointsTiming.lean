@@ -1,19 +1,22 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticTableTiming
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticProduction
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.CachedChecks
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPoints
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointFinishTiming
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointGenerator
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointFinishTiming
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointGenerator
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPrefix
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableHead
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.ArithmeticTableTail
 
 /-! ## `ArithmeticTableChecks` -/
 

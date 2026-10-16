@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
+import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # SHA-512 compression backends on AArch64

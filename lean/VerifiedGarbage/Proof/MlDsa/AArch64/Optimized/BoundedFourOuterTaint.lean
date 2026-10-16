@@ -4,12 +4,20 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitializ
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.TCB.Axioms
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRate
 
 @[expose] public section
 

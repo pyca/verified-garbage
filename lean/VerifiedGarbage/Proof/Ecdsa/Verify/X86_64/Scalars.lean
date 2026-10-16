@@ -1,10 +1,18 @@
 module
 
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.SharedSlots
+
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Front
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.SlotOps
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Scalar
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # ECDSA verification on x86-64: `u` and `v`
@@ -29,7 +37,7 @@ open VG.Impl.Ecdsa.Verify.X86_64 (SM' EM' RM' UM VM U V)
 variable {c : Cfg}
 
 /-- The slots `mid_ok` writes. -/
-abbrev midW : List Nat := [SM', TMP, ACC, PT, EM', RM', UM, VM, U, V]
+abbrev midW : List Nat := [62, SM', TMP, ACC, PT, EM', RM', UM, VM, U, V]
 
 /-- After `u` and `v`. -/
 structure Mid (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (s : State) : Prop where
@@ -73,9 +81,12 @@ abbrev mulN (c : Cfg) (o a b : Nat) : Prog isa := (opProg c.MN' (.mul (c.sl o) (
 theorem scalars_eq (c : Cfg) : (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline =
     .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT))) (mulN c SM' PT R2N) := rfl
 
+/-- A shared product, after the scalar inversion has consumed its exponent table. -/
+abbrev mulNS (c : Cfg) (o a b : Nat) : Prog isa := (opProg c.MNS (.mul (c.sl o) (c.sl a) (c.sl b))).inline
+
 theorem uv_eq (c : Cfg) : (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline =
-    .seq (mulN c EM' D R2N) (.seq (mulN c RM' K R2N) (.seq (mulN c UM EM' ACC)
-    (.seq (mulN c VM RM' ACC) (.seq (mulN c U UM ONE) (mulN c V VM ONE))))) := rfl
+    .seq (mulNS c EM' D R2N) (.seq (mulNS c RM' K R2N) (.seq (mulNS c UM EM' ACC)
+    (.seq (mulNS c VM RM' ACC) (.seq (mulNS c U UM ONE) (mulNS c V VM ONE))))) := rfl
 
 /-- One multiplication modulo `n`, on numbered slots: it keeps the modulus and
 every other slot but the temporary area's. -/
@@ -91,11 +102,36 @@ theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
   have h7 := hc.n10
   have hn := hs.nowrap
-  exact WP.mono (opMulN_ok hs hMN rfl rfl hB (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN ho ha hb hS hB))
+  exact WP.mono (opMulN_ok hs hMN rfl rfl (sl_le c h7 ho) (sl_le c h7 ha) (sl_le c h7 hb) hB (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN ho ha hb hS hB))
     fun s' ⟨k, lt, e⟩ =>
     ⟨k.scr hs, hMN.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k (Ne.symm hoN) (by decide),
       k.gpr, k.rd, k.wr, unch_slots (MN'_n c) rfl k.unch (l := [o, TMP]) (by simp) (by simp),
       fun hi h₁ h₂ => sv_keep (MN'_n c) rfl h7 hn k hi h₁ h₂, lt, e⟩
+
+/-- Shared multiplication with its high temporary slot included in the frame. -/
+theorem mulNS_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+    (hMN : ModOkW c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
+    (hS : SlotsOk o a b MN) (hB : sv c base s b < c.C.n) (hoN : o ≠ MN) :
+    WP isa (mulNS c o a b) s fun s' =>
+      Scr s' base size ∧ ModOkW c.MN' size c.C.n s'.mem base ∧
+      (∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      Unch base (slW c [62, o, TMP]) s.mem s'.mem ∧
+      (∀ {i}, i < 45 → i ≠ o → i ≠ TMP → sv c base s' i = sv c base s i) ∧
+      sv c base s' o < c.C.n ∧
+      sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  exact WP.mono (slMulNS_ok h7 hs hMN ho ha hb hS hB) fun s' ⟨k, lt, e⟩ =>
+    ⟨k.scr hs, hMN.keepShared (j := MN) (by decide) rfl rfl rfl rfl h7 hn k (Ne.symm hoN) (by decide),
+      k.gpr, k.rd, k.wr,
+      unch_shared_slots (MN'_n c) rfl k.unch (l := [62, o, TMP]) (by simp) (by simp) (by simp),
+      fun hi h₁ h₂ => sv_shared_keep (MN'_n c) rfl h7 hn k hi h₁ h₂, lt, e⟩
+
+/-- A range of the slots `l` is one of the slots `l'`, when `l`'s are among `l'`'s. -/
+theorem slW_mem {c : Cfg} {l l' : List Nat} (h : ∀ i ∈ l, i ∈ l') {w : Nat × Nat} (hw : w ∈ slW c l) :
+    w ∈ slW c l' := by
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
+  exact List.mem_map_of_mem (h i hi)
 
 /-- The checks of `r` and `s`, `w = s^(n-2)`, `u` and `v`. -/
 theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
@@ -160,28 +196,28 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
   -- `u` and `v`.
   rw [uv_eq]
   refine WP.seq ?_
-  refine WP.seq (WP.mono_syms (mulN_ok hc hs₄ (modN_of hc F₄.mn) (o := EM') (a := D) (b := R2N) (by decide)
+  refine WP.seq (WP.mono_syms (mulNS_ok hc hs₄ (modN_of hc F₄.mn) (o := EM') (a := D) (b := R2N) (by decide)
     (by decide) (by decide) (by decide) (hr2lt F₄.r2n) (by decide)) fun s₅ ⟨hs₅, M₅, g₅, rd₅, wr₅, U₅, v₅, lt₅, e₅⟩ sy₅ => ?_)
   have F₅ := F₄.unch h7 hn (fixedOk_slW (by decide)) U₅
-  refine WP.seq (WP.mono_syms (mulN_ok hc hs₅ M₅ (o := RM') (a := K) (b := R2N) (by decide)
+  refine WP.seq (WP.mono_syms (mulNS_ok hc hs₅ M₅ (o := RM') (a := K) (b := R2N) (by decide)
     (by decide) (by decide) (by decide) (hr2lt F₅.r2n) (by decide)) fun s₆ ⟨hs₆, M₆, g₆, rd₆, wr₆, U₆, v₆, lt₆, e₆⟩ sy₆ => ?_)
   have F₆ := F₅.unch h7 hn (fixedOk_slW (by decide)) U₆
   have acc₆ : sv c base s₆ ACC = sv c base s₄ ACC := by
     rw [v₆ (by decide) (by decide) (by decide), v₅ (by decide) (by decide) (by decide)]
-  refine WP.seq (WP.mono_syms (mulN_ok hc hs₆ M₆ (o := UM) (a := EM') (b := ACC) (by decide)
+  refine WP.seq (WP.mono_syms (mulNS_ok hc hs₆ M₆ (o := UM) (a := EM') (b := ACC) (by decide)
     (by decide) (by decide) (by decide) (acc₆ ▸ lt₄) (by decide)) fun s₇ ⟨hs₇, M₇, g₇, rd₇, wr₇, U₇, v₇, lt₇, e₇⟩ sy₇ => ?_)
   have F₇ := F₆.unch h7 hn (fixedOk_slW (by decide)) U₇
   have acc₇ : sv c base s₇ ACC = sv c base s₄ ACC := by
     rw [v₇ (by decide) (by decide) (by decide), acc₆]
-  refine WP.seq (WP.mono_syms (mulN_ok hc hs₇ M₇ (o := VM) (a := RM') (b := ACC) (by decide)
+  refine WP.seq (WP.mono_syms (mulNS_ok hc hs₇ M₇ (o := VM) (a := RM') (b := ACC) (by decide)
     (by decide) (by decide) (by decide) (acc₇ ▸ lt₄) (by decide))
     fun s₈ ⟨hs₈, M₈, g₈, rd₈, wr₈, U₈, v₈, lt₈, e₈⟩ sy₈ => ?_)
   have F₈ := F₇.unch h7 hn (fixedOk_slW (by decide)) U₈
-  refine WP.seq (WP.mono_syms (mulN_ok hc hs₈ M₈ (o := U) (a := UM) (b := ONE) (by decide)
+  refine WP.seq (WP.mono_syms (mulNS_ok hc hs₈ M₈ (o := U) (a := UM) (b := ONE) (by decide)
     (by decide) (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from F₈.one]; omega) (by decide))
     fun s₉ ⟨hs₉, M₉, g₉, rd₉, wr₉, U₉, v₉, lt₉, e₉⟩ sy₉ => ?_)
   have F₉ := F₈.unch h7 hn (fixedOk_slW (by decide)) U₉
-  refine WP.mono_syms (mulN_ok hc hs₉ M₉ (o := V) (a := VM) (b := ONE) (by decide)
+  refine WP.mono_syms (mulNS_ok hc hs₉ M₉ (o := V) (a := VM) (b := ONE) (by decide)
     (by decide) (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from F₉.one]; omega) (by decide))
     fun s₁₀ ⟨hs₁₀, M₁₀, g₁₀, rd₁₀, wr₁₀, U₁₀, v₁₀, lt₁₀, e₁₀⟩ sy₁₀ => h s₁₀ ?_
   have F₁₀ := F₉.unch h7 hn (fixedOk_slW (by decide)) U₁₀
@@ -189,13 +225,12 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
   have UW : Unch base ([(c.sl FLAG, 8)] ++ slW c midW ++ [(bitsAt c.n 3, 64 * c.n + 64)]) s.mem s₁₀.mem := by
     refine (U₂.trans (U₃.trans (U₄.trans (U₅.trans (U₆.trans (U₇.trans (U₈.trans (U₉.trans
       U₁₀)))))))).mono fun w hw => ?_
-    simp only [List.mem_append, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
-      or_false] at hw ⊢
-    rcases hw with hw | hw | hw | hw | hw | hw | hw | hw | hw
+    simp only [pwW, List.mem_append, or_assoc] at hw
+    rcases hw with hw | hw | hw | hw | hw | hw | hw | hw | hw | hw
     all_goals first
-      | exact Or.inl (Or.inl hw)
-      | (rcases hw with hw | hw <;> subst hw <;> simp)
-      | (rcases hw with (hw | hw | hw) | hw <;> subst hw <;> simp)
+      | exact List.mem_append_left _ (List.mem_append_right _ (slW_mem (by decide) hw))
+      | exact List.mem_append_left _ (List.mem_append_left _ hw)
+      | exact List.mem_append_right _ hw
   have a : ∀ {i}, i < 45 → i ∉ midW → i ≠ FLAG → sv c base s₁₀ i = sv c base s i := fun hi hl hf =>
     sv_unch UW h7 hn hi (apart_append (apart_append (apart_flag h0 hf) (apart_slW hl)) (apart_pwA hi))
   -- The values.
@@ -218,12 +253,11 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
   have U' : Unch base (slW c midW ++ [(bitsAt c.n 3, 64 * c.n + 64)]) s₂.mem s₁₀.mem := by
     refine (U₃.trans (U₄.trans (U₅.trans (U₆.trans (U₇.trans (U₈.trans (U₉.trans
       U₁₀))))))).mono fun w hw => ?_
-    simp only [List.mem_append, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
-      or_false] at hw ⊢
-    rcases hw with hw | hw | hw | hw | hw | hw | hw | hw
+    simp only [pwW, List.mem_append, or_assoc] at hw
+    rcases hw with hw | hw | hw | hw | hw | hw | hw | hw | hw
     all_goals first
-      | (rcases hw with hw | hw <;> subst hw <;> simp)
-      | (rcases hw with (hw | hw | hw) | hw <;> subst hw <;> simp)
+      | exact List.mem_append_left _ (slW_mem (by decide) hw)
+      | exact List.mem_append_right _ hw
   refine ⟨hs₁₀, by rw [wr₁₀, wr₉, wr₈, wr₇, wr₆, wr₅, K₄.wr, wr₃, k₂.wr, k₁.wr, hF.wr],
     by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, rd₅, K₄.rd, rd₃, k₂.rd, k₁.rd, hF.rd], F₁₀,
     by rw [a (i := K) (by decide) (by decide) (by decide), hF.k],
@@ -250,9 +284,7 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
       v₆ (by decide) (by decide) (by decide)]; exact lt₅,
     by rw [v₁₀ (by decide) (by decide) (by decide), v₉ (by decide) (by decide) (by decide),
       v₈ (by decide) (by decide) (by decide), v₇ (by decide) (by decide) (by decide)]; exact em₆⟩
-  · rw [tbl_unch UW h7 hn (j := 1) (by decide) ht (apart_append (apart_append (tbl_apart_flag h0 1 t)
-      (tbl_apart_slW (by decide) 1 t ht)) (tbl_apart_pwA (by decide) ht))]
-    exact hF.t₁ h9 t ht
+  · exact False.elim (h9 (by omega))
   · rw [flag_unch_of U' h7 h0 hn (apart_append (apart_slW (by decide)) (apart_pwA (by decide)))]
     exact flag₂
   · refine unch_whole (hF.unch.trans UW) fun w hw => ?_
@@ -260,7 +292,7 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
     rcases hw with hw | (hw | hw) | hw
     · rw [List.mem_singleton.mp hw]; exact Nat.le_of_eq (Nat.zero_add _)
     · exact flag_le h0 h7 w hw
-    · exact slW_le h7 (by decide) w hw
+    · exact slW_le84 h7 (by decide) w hw
     · rw [List.mem_singleton.mp hw]; exact pwA_le h7
 
 end VG.Proof.Ecdsa.Verify.X86_64

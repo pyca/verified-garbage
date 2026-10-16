@@ -2,14 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha3.X86.Permute
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.X86.Stream.Squeeze
 public import VerifiedGarbage.Spec.Sha3.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # SHA-3 on x86 (32-bit): the shared contracts

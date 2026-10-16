@@ -2,13 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Impl.Weierstrass.AArch64
-public import VerifiedGarbage.Proof.Mont.AArch64.Ops
-public import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Field programs on AArch64
@@ -36,9 +38,11 @@ open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64
 theorem callOf_small {M : Mod} (h : M.n ≤ 4) : Mont.callOf M = none := by
   unfold Mont.callOf; split
   · have h6 : (6 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
+    have h8 : (8 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
     have h9 : (9 == M.n) = false := by simp only [beq_eq_false_iff_ne]; omega
     simp only [Mont.fns, List.find?_cons, List.find?_nil, Spec.Weierstrass.Mont.p384p,
-      Spec.Weierstrass.Mont.p521p, Spec.Weierstrass.Mont.p384n, Spec.Weierstrass.Mont.p521n, h6, h9,
+      Spec.Weierstrass.Mont.p521p, Spec.Weierstrass.Mont.p384n, Spec.Weierstrass.Mont.p521n,
+      Spec.Weierstrass.Mont.brainpoolp512r1p, Spec.Weierstrass.Mont.brainpoolp512r1n, h6, h8, h9,
       Bool.false_and, Option.map_none]
   · rfl
 
@@ -269,9 +273,20 @@ theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
         forall_eq_or_imp, forall_eq] at hS hR
       simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq] at hown
-      refine WP.mono (Mont.mulCall_ok hI.scr hI.mod hH ht hown.1 hown.2.1 hown.2.2
-        (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
-      rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+      by_cases hsq : (a == b && sparseOk M.n m') = true
+      · simp only [Bool.and_eq_true, beq_iff_eq] at hsq
+        obtain ⟨rfl, hsp⟩ := hsq
+        obtain ⟨hn6, hm'⟩ := Mont.sparseOk_eq hsp
+        subst hm'
+        simp only [hsp, beq_self_eq_true, Bool.and_self, ↓reduceIte]
+        refine WP.mono (Mont.sqrCall_ok hI.scr hI.mod hn6 ht hown.1 hown.2.1 (hI.lt a hR.1))
+          fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+        rw [toM_mul hm heq, hI.val a hR.1]
+      · simp only [Bool.not_eq_true] at hsq
+        simp only [hsq, Bool.false_eq_true, ↓reduceIte]
+        refine WP.mono (Mont.mulCall_ok hI.scr hI.mod hH ht hown.1 hown.2.1 hown.2.2
+          (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+        rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
   | add o a b => exact fop_ok hL hAl hm hI hS hR
   | sub o a b => exact fop_ok hL hAl hm hI hS hR
 

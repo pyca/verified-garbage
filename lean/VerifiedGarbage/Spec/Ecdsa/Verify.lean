@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.Ecdsa
+import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Spec.EcKey
 
 /-!

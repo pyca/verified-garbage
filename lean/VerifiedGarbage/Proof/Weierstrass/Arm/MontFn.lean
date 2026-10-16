@@ -2,13 +2,16 @@ module
 
 public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
 public import VerifiedGarbage.Proof.Mont.Arm.Ops
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Const
-public import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Proof.Weierstrass.Arm.Const
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
 public import VerifiedGarbage.TCB.Arm.Target
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, as functions, on 32-bit ARM
@@ -54,17 +57,17 @@ def Kept (n : Nat) (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
   Outs base [(o, 8 * n), (own n, 64 * n)] m m'
 
 theorem own_le (n : Nat) (h : n ≤ 9) : own n + 64 * n = 4096 := by
-  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega
+  simp only [own, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega_using [h]
 
 theorem saves_off (n : Nat) : ∀ p ∈ saves n, saveAt n ≤ p.2 ∧ p.2 + 4 ≤ saveAt n + 32 := by
   intro p hp
   obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hp
   have : q.2 + 4 ≤ 32 := (by decide : ∀ q ∈ savedRegs, q.2 + 4 ≤ 32) q hq
-  dsimp only; omega
+  dsimp only; omega_using [this]
 
 theorem saves_pairwise (n : Nat) : (saves n).Pairwise (fun p q => p.2 + 4 ≤ q.2 ∨ q.2 + 4 ≤ p.2) := by
   rw [saves, List.pairwise_map]
-  exact List.Pairwise.imp (fun h => by dsimp only; omega)
+  exact List.Pairwise.imp (fun h => by dsimp only; omega_using [h])
     (by decide : savedRegs.Pairwise fun p q => p.2 + 4 ≤ q.2 ∨ q.2 + 4 ≤ p.2)
 
 theorem saves_regs (n : Nat) : (saves n).map Prod.fst = savedRegs.map Prod.fst := by
@@ -111,7 +114,7 @@ theorem Outs.sub {base : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Ou
   fun x hx => h x fun r hr => by
     obtain ⟨r', hr', h1, h2⟩ := hs r hr
     have := hx r' hr'
-    omega
+    omega_using [h1, h2, this]
 
 theorem minv_lt (m : Nat) : minv m < 2 ^ 64 := Nat.mod_lt _ (by decide)
 
@@ -127,15 +130,15 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s) {rb :
   simp only [entry, List.cons_append, List.append_assoc]
   refine wp_mov (op2_reg _ _) fun s₁ u₁ => ?_
   have hs₁ : Scr s₁ (State.addr (s.gpr .r0)) 4096 := ⟨by rw [u₁.gpr], ⟨8192, by decide, by decide,
-    by rw [u₁.wr, hp.wr]; simp⟩, by rw [VG.Proof.X25519.Arm.addr_toNat]; omega, by decide⟩
+    by rw [u₁.wr, hp.wr]; simp⟩, by rw [VG.Proof.X25519.Arm.addr_toNat]; omega_using [hfit], by decide⟩
   -- The saves.
   refine VG.Proof.X25519.Arm.WP.append (strs_ok hs₁ (saves n) (fun p hp' => by
-    have := saves_off n p hp'; simp only [saveAt, moAt, tmpAt] at this; omega) (saves_pairwise n))
+    have := saves_off n p hp'; simp only [saveAt, moAt, tmpAt] at this; omega_using [hn3, hown, this]) (saves_pairwise n))
     fun s₂ ⟨K₂, O₂, V₂⟩ => ?_
   have hs₂ := hs₁.of_rest K₂ (by decide)
   -- The modulus.
   refine VG.Proof.X25519.Arm.WP.append (setConst_ok hs₂ (o := moAt n) (n := n) (by
-    simp only [moAt, tmpAt]; omega) hM.m_lt) fun s₃ ⟨V₃, K₃, O₃⟩ => ?_
+    simp only [moAt, tmpAt]; omega_using [hn3, hown]) hM.m_lt) fun s₃ ⟨V₃, K₃, O₃⟩ => ?_
   have hs₃ := hs₂.of_rest K₃ (by decide)
   -- The pointers.
   refine wp_dp (op2_reg _ _) fun s₄ u₄ => ?_
@@ -154,9 +157,9 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s) {rb :
   have w₃ : s₃.gpr .r12 = s.gpr .r0 := by rw [K₃.gpr _ (by decide), K₂.gpr _ (by simp), u₁.gpr]
   have w₆ : s₆.gpr .r12 = s.gpr .r0 := by rw [K₆.gpr _ (by simp [Ne.symm hb12]), w₃]
   have m₆ : s₆.mem = s₃.mem := by rw [u₆.mem, u₅.mem, u₄.mem]
-  refine ⟨hs₃.of_rest K₆ (by simp [Ne.symm hb12]), ⟨by simp only [mod]; omega,
-    by simp only [mod, moAt, tmpAt]; omega, by simp only [mod, tmpAt]; omega,
-    .inr (by simp only [mod, moAt]; omega), by rw [m₆]; exact V₃,
+  refine ⟨hs₃.of_rest K₆ (by simp [Ne.symm hb12]), ⟨by simp only [mod]; omega_using [hn3],
+    by simp only [mod, moAt, tmpAt]; omega_using [hn3, hown], by simp only [mod, tmpAt]; omega_using [hn3, hown],
+    .inr (by simp only [mod, moAt]; omega_using []), by rw [m₆]; exact V₃,
     by rw [show (mod n m).minv = BitVec.ofNat 64 (minv m) from rfl, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (minv_lt m)]; exact hM.inv, hM.red⟩, w₆, ?_, ?_, ?_, fun r hr => ?_, fun p hp' => ?_, ?_,
     by rw [u₆.rd, u₅.rd, u₄.rd, K₃.rd, K₂.rd, u₁.rd], by rw [u₆.wr, u₅.wr, u₄.wr, K₃.wr, K₂.wr, u₁.wr],
@@ -175,10 +178,10 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s) {rb :
     rw [← u₁.other p.1 (saves_r12 n p hp'), ← V₂ p hp', m₆]
     refine Mem.readW_congr fun i hi => O₃ _ ?_
     simp only [moAt, saveAt, tmpAt] at this ⊢
-    rw [ofs_off _ (by omega)]
-    omega
+    rw [ofs_off _ (by omega_using [hown, this, hi])]
+    omega_using [this]
   · have hsv : ∀ p ∈ saves n, own n ≤ p.2 ∧ p.2 + 4 ≤ own n + 64 * n := fun p hp' => by
-      have := saves_off n p hp'; simp only [saveAt, moAt, tmpAt] at this; omega
+      have := saves_off n p hp'; simp only [saveAt, moAt, tmpAt] at this; omega_using [hn3, this]
     rw [m₆]
     refine (Outs.sub (rs := (saves n).map fun p => (p.2, 4)) (m' := s₂.mem) ?_ ?_).trans
       (Outs.sub (rs := [(moAt n, 8 * n)]) ?_ ?_)
@@ -190,7 +193,7 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s) {rb :
     · intro r hr
       rw [List.mem_singleton] at hr
       subst hr
-      exact ⟨_, List.mem_singleton_self _, by simp only [moAt, tmpAt]; omega, by simp only [moAt, tmpAt]; omega⟩
+      exact ⟨_, List.mem_singleton_self _, by simp only [moAt, tmpAt]; omega_using [], by simp only [moAt, tmpAt]; omega_using [hn3]⟩
 
 /-- The function of an operation that, from the entry's state, keeps what
 an operation keeps (`OpKeep`) and leaves memory satisfying `R`: the
@@ -212,17 +215,17 @@ theorem fn_ok {n m : Nat} (hM : ModOk n m) {rb : Reg} (hrb : rb ∉ [.r1, .r3, .
   refine WP.seq (WP.mono (hop s₁ E) fun s₂ ⟨K, hR⟩ => ?_)
   have hs₂ := E.scr.of_rest K.rest (by decide)
   have hsv : ∀ p ∈ saves n, saveAt n ≤ p.2 ∧ p.2 + 4 ≤ saveAt n + 32 := saves_off n
-  have hsa : saveAt n + 32 ≤ 4096 := by simp only [saveAt, moAt, tmpAt]; omega
-  refine WP.mono (ldrs_ok hs₂ (saves n) (fun p hp' => by have := hsv p hp'; omega) (saves_nodup n)
+  have hsa : saveAt n + 32 ≤ 4096 := by simp only [saveAt, moAt, tmpAt]; omega_using [hn3, hown]
+  refine WP.mono (ldrs_ok hs₂ (saves n) (fun p hp' => by have := hsv p hp'; omega_using [hsa, this]) (saves_nodup n)
     (saves_r12 n)) fun s₃ ⟨M₃, K₃, V₃⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_, by rw [M₃]; exact hR, ?_⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     have hsave : ∀ p ∈ saves n, s₃.gpr p.1 = s.gpr p.1 := fun p hp' => by
       have := hsv p hp'
       rw [V₃ p hp', ← E.saved p hp']
-      refine Unch.readW32 (VG.Proof.Weierstrass.Arm.Outs.unch K.mem) (fun w hw => ?_) (by omega)
+      refine Unch.readW32 (VG.Proof.Weierstrass.Arm.Outs.unch K.mem) (fun w hw => ?_) (by omega_using [hsa, this])
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       simp only [mod, saveAt, moAt, tmpAt, accLen, digits] at this hw ⊢
-      rcases hw with rfl | rfl | rfl <;> dsimp only <;> omega
+      rcases hw with rfl | rfl | rfl <;> dsimp only <;> omega_using [ho, this]
     have hkeep : ∀ r ∈ [Reg.r10, .r11], s₃.gpr r = s.gpr r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -247,10 +250,10 @@ theorem fn_ok {n m : Nat} (hM : ModOk n m) {rb : Reg} (hrb : rb ∉ [.r1, .r3, .
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨_, List.mem_cons_self, Nat.le_refl _, by simp [mod]⟩
-      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by simp only [mod, tmpAt]; omega,
-          by simp only [mod, tmpAt]; omega⟩
+      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by simp only [mod, tmpAt]; omega_using [],
+          by simp only [mod, tmpAt]; omega_using [hn3]⟩
       · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Nat.le_refl _,
-          by simp only [mod, accLen, digits]; omega⟩
+          by simp only [mod, accLen, digits]; omega_using [hn3]⟩
   · rw [K₃.gpr _ (by rw [saves_regs]; decide), K.rest.gpr _ (by decide), E.r12]
 
 /-- The operations' layout: the numbers below the own working space, its
@@ -265,8 +268,8 @@ theorem opLay {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n m s) :
 theorem Entered.val {n m : Nat} (hM : ModOk n m) {rb : Reg} {s s₁ : State} (E : Entered n m rb s s₁) {d : Nat}
     (hd : d + 8 * n ≤ own n) : wordsVal s₁.mem (State.addr (s.gpr .r0)) d n =
       wordsVal s.mem (State.addr (s.gpr .r0)) d n :=
-  Outs.wordsVal E.mem (fun r hr => by rw [List.mem_singleton] at hr; subst hr; omega)
-    (by have := own_le n hM.n9; omega)
+  Outs.wordsVal E.mem (fun r hr => by rw [List.mem_singleton] at hr; subst hr; omega_using [hd])
+    (by have := own_le n hM.n9; omega_using [hd, this])
 
 /-- The pointers of the entry. -/
 def Entered.ptrs {n m : Nat} {rb : Reg} {s s₁ : State} (E : Entered n m rb s s₁) :

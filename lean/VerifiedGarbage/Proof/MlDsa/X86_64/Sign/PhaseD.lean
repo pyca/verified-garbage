@@ -2,11 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PhaseA4
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.PrimsD
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Hash
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
+import VerifiedGarbage.Impl.MlKem.X86_64.Frag
+import VerifiedGarbage.Proof.MlKem.X86_64.SampleLoop
 
 /-!
 # ML-DSA signing on x86-64: the private key and `ρ″`

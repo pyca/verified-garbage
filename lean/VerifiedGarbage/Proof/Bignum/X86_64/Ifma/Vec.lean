@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # RSA with AVX512_IFMA on x86-64, any size: the vector code
@@ -105,12 +106,12 @@ theorem Out2.byte (hl : LayOk l) {B : Addr} {o n : Nat} {m m' : Mem} (h : Out2 l
 
 /-- The vector code inside the MXCSR prologue and epilogue. -/
 theorem vecBody_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB : s.gpr .rbx = B)
-    (hs : Scr s B (2 * l.D)) (ar : Ar l s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (hs : Scr s B (2 * l.D)) (ar : Ar l s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (gx : ∀ p < 2, Good l s.mem B M l.oX p) (gy : ∀ p < 2, Good l s.mem B M l.oY p)
     (gk : ∀ p < 2, Good l s.mem B M l.oK1 p) (gf : ∀ p < 2, Good l s.mem B M l.oFin p)
     (vx : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oX) % M p = x p * 2 ^ (64 * l.W) % M p)
     (vy : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ (64 * l.W) % M p)
-    (vk : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oK1) % M p = 2 ^ (416 * l.R - 64 * l.W) % M p) :
+    (vk : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - 64 * l.W) % M p) :
     WP isa (VG.Impl.Bignum.X86_64.seqs (expLoop l)) s fun s' =>
       (∀ p < 2, Good l s'.mem B M l.oY p ∧
         (Q → val52 l s'.mem B (l.D * p + l.oY) % M p =
@@ -167,12 +168,12 @@ end
 
 /-- The vector code: `Y ≡ x^e Fin` for each prime. -/
 theorem vec_ok (hl : LayOk l) {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} (hB : s.gpr .rbx = B)
-    (hs : Scr s B (2 * l.D + 8)) (ar : Ar l s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.L)) (M p))
+    (hs : Scr s B (2 * l.D + 8)) (ar : Ar l s.mem B M k) (hR : ∀ p < 2, Nat.Coprime (2 ^ (52 * l.S)) (M p))
     (gx : ∀ p < 2, Good l s.mem B M l.oX p) (gy : ∀ p < 2, Good l s.mem B M l.oY p)
     (gk : ∀ p < 2, Good l s.mem B M l.oK1 p) (gf : ∀ p < 2, Good l s.mem B M l.oFin p)
     (vx : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oX) % M p = x p * 2 ^ (64 * l.W) % M p)
     (vy : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oY) % M p = 1 * 2 ^ (64 * l.W) % M p)
-    (vk : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oK1) % M p = 2 ^ (416 * l.R - 64 * l.W) % M p) :
+    (vk : Q → ∀ p < 2, val52 l s.mem B (l.D * p + l.oK1) % M p = 2 ^ (104 * l.S - 64 * l.W) % M p) :
     WP isa (vec l) s fun s' =>
       (∀ p < 2, Good l s'.mem B M l.oY p ∧
         (Q → val52 l s'.mem B (l.D * p + l.oY) % M p =

@@ -10,6 +10,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MlKem.Encode
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.Common
+meta import VerifiedGarbage.Proof.Framework.X86.Lit
+meta import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_sample_in_ball`, the state of the loop
@@ -44,7 +54,7 @@ def L : Lay := { nA := 5, iA := 3, iS := 4, rate := 136, outlen := 272, mlen := 
 
 theorem hL : L.Ok :=
   ⟨by decide, by decide, by decide, by decide, by decide, fun k hk => by simp [L] at hk,
-    ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+    ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩, ⟨_, by native_taint_decide⟩⟩
 
 /-- `τ`. -/
 abbrev τ (s₀ : State) : Nat := (arg s₀ 2).toNat
@@ -129,7 +139,7 @@ structure ZI (s₀ : State) (k : Nat) (s : State) : Prop extends Out L s₀ s wh
 
 theorem zinit_piece : Piece QPre QPub (Out L) (ZI · 0)
     (.block [.mov .ebp (.mem (argOp 3)), .mov .eax (.imm 0), .mov .edi (.reg .ebp), .mov .ecx (.imm 256)]) := by
-  refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by taint_decide)
+  refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · have a₃ := h.argEa (i := 3)
     have i₃ := h.argIn hp.1 (i := 3) (by decide)
     have v₃ := h.args 3 (by decide)
@@ -181,7 +191,7 @@ theorem zero_piece : Piece QPre QPub (Out L) (ZI · 256) bZero :=
     (fun k _ s₀ s₀' s s' _ _ hq h h' r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
-      rw [h.edi, h'.edi, hq.1.aP hL]) (by taint_decide))
+      rw [h.edi, h'.edi, hq.1.aP hL]) (by native_taint_decide))
 
 /-! ## The setup of the loop -/
 
@@ -197,7 +207,7 @@ theorem slots_sep {s₀ : State} (hp : QPre s₀) : Mem.Sep (argAddr s₀ 1) 4 (
 theorem setup_piece : Piece QPre QPub (ZI · 256) (fun s₀ s => BI s₀ 0 (st (L.Msg s₀) (τ s₀) 0) s)
     (.block bSetup) := by
   refine Piece.taint [.esp, .esi] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_)
-    (by taint_decide)
+    (by native_taint_decide)
   · have hs := hp.1.s_fit
     have a₁ := h.argEa (i := 1)
     have a₂ := h.argEa (i := 2)

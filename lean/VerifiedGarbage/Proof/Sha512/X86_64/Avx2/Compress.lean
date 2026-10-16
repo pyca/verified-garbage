@@ -8,9 +8,9 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 meta import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 meta import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 meta import VerifiedGarbage.Proof.Framework.X86_64.Spill

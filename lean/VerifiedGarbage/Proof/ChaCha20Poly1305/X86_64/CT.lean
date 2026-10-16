@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
@@ -40,6 +42,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
+meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2Tail.Last3
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Final
+meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Lit
 
 /-!
 # ChaCha20-Poly1305 on x86-64: the calls
@@ -584,9 +592,13 @@ abbrev stkR : Region := below (s₀.gpr .rsp) 24
 abbrev sub (k n : Nat) : Region := ⟨off (cx s₀) k, n⟩
 end
 
-/-- What the proof uses of the precondition; `enc` for `seal`. -/
+/-- What the proof uses of the precondition; `enc` for `seal`. The code may
+read more than the regions the contract names (`rd`), as when
+`vg_chacha20_poly1305_seal_split` runs `seal` with the code of
+`vg_chacha20_xor_split_avx512` inline, which reads `src`. -/
 structure APre (enc : Bool) (s₀ : State) : Prop where
-  rd : s₀.rd = if enc then [kR s₀, nR s₀, aR s₀, argR s₀] else [kR s₀, nR s₀, aR s₀, tR s₀, argR s₀]
+  rd : ∃ more, s₀.rd = (if enc then [kR s₀, nR s₀, aR s₀, argR s₀] else [kR s₀, nR s₀, aR s₀, tR s₀, argR s₀]) ++
+    more
   wr : s₀.wr = if enc then [dR s₀, tR s₀, ctxR s₀] else [dR s₀, ctxR s₀]
   c_k : (ctxR s₀).Disjoint (kR s₀)
   c_n : (ctxR s₀).Disjoint (nR s₀)
@@ -618,7 +630,7 @@ structure APre (enc : Bool) (s₀ : State) : Prop where
 
 theorem APre.of {enc : Bool} (s₀ : State) (h : preX86_64 enc s₀) : APre enc s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29⟩
+  exact ⟨⟨[], by rw [List.append_nil]; exact h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29⟩
 
 theorem APre.a_d {enc : Bool} {s₀ : State} (hp : APre enc s₀) : (aR s₀).Disjoint (dR s₀) := hp.d_a.symm
 
@@ -633,22 +645,22 @@ theorem APre.d_wr {s₀ : State} (hp : APre e s₀) : dR s₀ ∈ s₀.wr := by
   rw [hp.wr]; cases e <;> simp
 
 theorem APre.a_rd {s₀ : State} (hp : APre e s₀) : aR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
+  obtain ⟨_, h⟩ := hp.rd; rw [h]; cases e <;> simp
 
 theorem APre.k_rd {s₀ : State} (hp : APre e s₀) : kR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
+  obtain ⟨_, h⟩ := hp.rd; rw [h]; cases e <;> simp
 
 theorem APre.n_rd {s₀ : State} (hp : APre e s₀) : nR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
+  obtain ⟨_, h⟩ := hp.rd; rw [h]; cases e <;> simp
 
 theorem APre.g_rd {s₀ : State} (hp : APre e s₀) : argR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; cases e <;> simp
+  obtain ⟨_, h⟩ := hp.rd; rw [h]; cases e <;> simp
 
 theorem APre.t_wr {s₀ : State} (hp : APre true s₀) : tR s₀ ∈ s₀.wr := by
   rw [hp.wr]; simp
 
 theorem APre.t_rd {s₀ : State} (hp : APre false s₀) : tR s₀ ∈ s₀.rd := by
-  rw [hp.rd]; simp
+  obtain ⟨_, h⟩ := hp.rd; rw [h]; simp
 
 /-! ## Regions -/
 
@@ -1256,7 +1268,24 @@ theorem and1023 (len : Nat) (hl : len < 2 ^ 64) :
     toNat_ofNat_lt (by omega_using [])]
 
 theorem round64 : ∀ y < 1087, BitVec.ofNat 64 y &&& BitVec.signExtend 64 (BitVec.ofInt 32 (-64)) =
-    BitVec.ofNat 64 (y / 64 * 64) := by decide +kernel
+    BitVec.ofNat 64 (y / 64 * 64) := by
+  intro y hy
+  rw [show BitVec.signExtend 64 (BitVec.ofInt 32 (-64)) = BitVec.ofNat 64 ((2 ^ 58 - 1) <<< 6) by decide]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (by omega : y < 2 ^ 64), Nat.mod_eq_of_lt (by omega : y / 64 * 64 < 2 ^ 64),
+    Nat.mod_eq_of_lt (by decide : (2 ^ 58 - 1) <<< 6 < 2 ^ 64),
+    show y / 64 * 64 = (y >>> 6) <<< 6 by rw [Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]]
+  apply Nat.eq_of_testBit_eq
+  intro i
+  rw [Nat.testBit_and, Nat.testBit_shiftLeft, Nat.testBit_shiftLeft, Nat.testBit_shiftRight,
+    Nat.testBit_two_pow_sub_one]
+  by_cases h₁ : 6 ≤ i
+  · by_cases h₂ : i - 6 < 58
+    · simp [h₁, h₂, Nat.add_sub_cancel' h₁]
+    · have : y.testBit i = false := Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le (by omega) (Nat.pow_le_pow_right (by decide) (by omega : 64 ≤ i)))
+      simp [h₁, h₂, Nat.add_sub_cancel' h₁, this]
+  · simp [h₁]
 
 /-- `splitM` for a pass of 1024 bytes. -/
 theorem splitM_ok {fold len : Nat} (hf : fold + 1 < 2 ^ 31) (hl : len < 2 ^ 64) {s : State}
@@ -1799,8 +1828,9 @@ theorem B3_eq : anchor .rsi 128 ++ ptr .rdi .r15 448 ++ ptr .rsi .r15 672 =
     anchor .rsi 128 ++ (ptr .rdi .r15 448 ++ ptr .rsi .r15 672) := by
   simp only [List.append_assoc]
 
-theorem prologueB_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
-    (h : AfterF fold pass s₀ s) : WP isa prologueB s (PostP fold pass s₀) := by
+theorem prologueBF_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
+    (h : AfterF fold pass s₀ s) : WP isa prologueB s fun s' =>
+      PostP fold pass s₀ s' ∧ Frame [sub s₀ 448 128, stkR s₀] s.mem s'.mem := by
   have hm := mOf_le fold pass (L s₀)
   have hml := mOf_le_len fold pass (L s₀)
   unfold prologueB
@@ -1851,6 +1881,14 @@ theorem prologueB_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : 
       rcases hr with rfl | rfl
       · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
       · exact ⟨stkR s₀, by simp, below8_stk s₀⟩
+  have fr : Frame [sub s₀ 448 128, stkR s₀] s.mem s₁₀.mem := by
+    rw [m₁₀, ← mm₈]
+    exact f₉.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨sub s₀ 448 128, by simp, fun _ h => h⟩
+      · exact ⟨stkR s₀, by simp, below8_stk s₀⟩
+  refine ⟨?_, fr⟩
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, h.rd], by rw [wr₁₀, wr₉, wr₈'], ?_,
     (h.fine.trans ff).sub fun r hr => ?_⟩, ?_, ?_, h.fine.trans ff, ?_, ?_, fun k hk => ?_⟩
   · rw [e10, rdi₉, off_sub]
@@ -1892,6 +1930,10 @@ theorem prologueB_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : 
         (by simp only [Region.Contains]; rw [BitVec.sub_self]; simp) hc
     rw [e, show 736 + k = 672 + (64 + k) by omega_using [], h.ks (64 + k) (by omega_using [hk]),
       keystream_shift (K s₀) (N s₀) (L := L s₀) (n := 64 + mOf fold pass (L s₀)) (by omega_using [hml, hk]) (by omega_using [hk])]
+
+theorem prologueB_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp : APre e s₀) {s : State}
+    (h : AfterF fold pass s₀ s) : WP isa prologueB s (PostP fold pass s₀) :=
+  WP.mono (prologueBF_ok hf hp h) fun _ h => h.1
 
 /-- The prologue, for the implementation `v` of `vg_chacha20_xor` and the
 `pass` of `splitM`. -/
@@ -3396,35 +3438,39 @@ theorem APre.stk_d' {s₀ : State} (hp : APre e s₀) : (stkR s₀).Disjoint (dR
 theorem APre.stk_a' {s₀ : State} (hp : APre e s₀) : (stkR s₀).Disjoint (aR s₀) := hp.stk_a
 theorem APre.stk_t' {s₀ : State} (hp : APre e s₀) : (stkR s₀).Disjoint (tR s₀) := hp.stk_t
 
+/-- `Region.Disjoint.symm`, by a name that is not also a global constant
+(Mathlib's `symm`), so that `rdisj`'s template keeps it a field. -/
+theorem _root_.VG.Region.Disjoint.dsymm {r₁ r₂ : Region} (h : r₁.Disjoint r₂) : r₂.Disjoint r₁ := h.symm
+
 /-- That two of the regions the parts use are disjoint: parts of the context
 at different offsets, the stack below the return address, and the data.
 (Matching only reducibly, so that a lemma that does not apply fails fast.) -/
-macro "rdisj" : tactic => `(tactic| first
+tactic_template "rdisj" : tactic => `(tactic| first
   | with_reducible exact sub_disj _ (by lit_omega) (by lit_omega) (by lit_omega)
-  | with_reducible exact (APre.stk_sub ‹APre _ _› (by lit_omega)).symm
+  | with_reducible exact (APre.stk_sub ‹APre _ _› (by lit_omega)).dsymm
   | with_reducible exact APre.stk_sub ‹APre _ _› (by lit_omega)
   | with_reducible exact (‹APre _ _›).c_d.sub_left (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_d.symm.sub_right (sub_ctx _ (by lit_omega))
-  | with_reducible exact (APre.stk_d' ‹APre _ _›).symm
-  | with_reducible exact (‹APre _ _›).c_a.symm.sub_right (sub_ctx _ (by lit_omega))
-  | with_reducible exact (APre.stk_a' ‹APre _ _›).symm
+  | with_reducible exact (‹APre _ _›).c_d.dsymm.sub_right (sub_ctx _ (by lit_omega))
+  | with_reducible exact (APre.stk_d' ‹APre _ _›).dsymm
+  | with_reducible exact (‹APre _ _›).c_a.dsymm.sub_right (sub_ctx _ (by lit_omega))
+  | with_reducible exact (APre.stk_a' ‹APre _ _›).dsymm
   | with_reducible exact (‹APre _ _›).a_d
   | with_reducible exact (‹APre _ _›).ret_c.sub_right (sub_ctx _ (by lit_omega))
   | with_reducible exact (‹APre _ _›).ret_d
   | with_reducible exact (‹APre _ _›).ret_t
   | with_reducible exact (‹APre _ _›).c_t.sub_left (sub_ctx _ (by lit_omega))
-  | with_reducible exact (‹APre _ _›).c_t.symm.sub_right (sub_ctx _ (by lit_omega))
+  | with_reducible exact (‹APre _ _›).c_t.dsymm.sub_right (sub_ctx _ (by lit_omega))
   | with_reducible exact (‹APre _ _›).d_t
-  | with_reducible exact (‹APre _ _›).d_t.symm
+  | with_reducible exact (‹APre _ _›).d_t.dsymm
   | with_reducible exact APre.stk_t' ‹APre _ _›
-  | with_reducible exact (APre.stk_t' ‹APre _ _›).symm
+  | with_reducible exact (APre.stk_t' ‹APre _ _›).dsymm
   | with_reducible exact ret_stk _)
 
 /-- A region is disjoint from each of a list of regions. -/
-macro "rdisj_all" : tactic => `(tactic| (
-  simp only [macR, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-  repeat' apply And.intro
-  all_goals rdisj))
+tactic_template "rdisj_all" : tactic => `(tactic| (
+                   simp only [macR, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+                   repeat' apply And.intro
+                   all_goals rdisj))
 
 theorem hRDX (s₀ : State) : s₀.gpr .rcx = BitVec.ofNat 64 (AL s₀) := by simp [AL]
 

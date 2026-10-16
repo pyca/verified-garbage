@@ -2,12 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelSpec
 public import VerifiedGarbage.Impl.Argon2.AArch64.DependentWord
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelArgs
-public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelPrepare
+import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelArgs
+import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelPrepare
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
+import VerifiedGarbage.Proof.Argon2.AArch64.Initialize
+import VerifiedGarbage.Proof.Argon2.AArch64.Instructions
+import VerifiedGarbage.Proof.Argon2.FillPositions
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Merged from `Proof.Argon2.AArch64.DependentWordPointer`. -/
 

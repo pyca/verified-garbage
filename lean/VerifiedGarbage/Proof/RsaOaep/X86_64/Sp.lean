@@ -6,6 +6,13 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Int.ModEq
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.Pub
 
 /-!
 # RSAES-OAEP on x86-64: `rsp` written only by the frames
@@ -32,16 +39,6 @@ theorem Good.all {c : Prog isa} (h : Good c) : c.all (fun i => !isa.writesSp i) 
     exact List.all_eq_true.mpr fun i hi => by rw [SpSafe.of_noSp h.noSp i hi]; rfl)
 
 variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
-
-include hH KH hG KG in
-theorem enc_spSafe :
-    (encrypt Hl.stream Gm.stream pubChecked.name pubChecked.code).all (fun i => !isa.writesSp i) = true := by
-  have g := HGood.of hH KH
-  have g' := HGood.of hG KG
-  simp only [encrypt, encBody, encMain, encEm, encFail, seqs, Code.all,
-    zeroOut_good.all, clearEm_good.all, (copySeed_good _).all, (hashLabel_good g oDig).all, (copyLh_good _).all,
-    putMsg_good.all, (mgfXor_good g').all, pubChecked.spSafe, Bool.and_true]
-  rfl
 
 include hH KH hG KG in
 theorem dec_spSafe (v : PrivImpl) :

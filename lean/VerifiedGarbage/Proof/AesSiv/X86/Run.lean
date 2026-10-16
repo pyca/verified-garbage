@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesSiv.X86.Contract
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-SIV on x86: running straight-line blocks
@@ -40,32 +43,32 @@ theorem add_ofNat_assoc (p : Addr) (a b : Nat) :
 
 /-- Runs a block of the instructions the AES-SIV code uses. The facts given
 rewrite the addresses and discharge the permissions. -/
-macro "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | omega) only [runBlock_cons, runStep_some,
-    runBlock_nil, exec, readSrc, execAlu, execShift, State.load32, store32_eq, State.load8, store8_eq,
-    State.ea, at_, imm, slot, argOp, zOff, tailOff, ksOff, cbOff, tOff, stOff, dbOff, ctxO, roundsO, adsO, leftO,
-    dataO, lenO, strO, slenO, nbO, jO, okO, csOff, dOff, List.cons_append, List.nil_append, List.append_assoc,
-    Option.bind_some, Option.map_some, readW_writeW_off, readW_writeB_off, gpr_setReg_self, gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, mem_setReg,
-    mem_arithFlags, mem_setFlags, rd_setReg, rd_arithFlags, rd_setFlags, wr_setReg, wr_arithFlags,
-    wr_setFlags, cf_setReg, cf_arithFlags, zf_setReg, zf_arithFlags, gpr_setMem, mem_setMem, rd_setMem,
-    wr_setMem, cf_setMem, zf_setMem, ite_true, ite_false, reduceCtorEq, Nat.reduceAdd, ↓reduceIte, Nat.reduceLT,
-    Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceMul, and_self, and_true, true_and,
-    eq_self_iff_true, Reg8.reg, $ts,*]) <;>
-  try rfl)
+tactic_template "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                   simp (disch := first | decide | omega) only [VG.X86.runBlock_cons, VG.X86.runStep_some,
+                     VG.X86.runBlock_nil, VG.X86.exec, VG.X86.readSrc, VG.X86.execAlu, VG.X86.execShift, VG.X86.State.load32, VG.Proof.AesGcm.X86.store32_eq, VG.X86.State.load8, VG.Proof.AesGcm.X86.store8_eq,
+                     VG.X86.State.ea, VG.Impl.AesGcm.X86.at_, VG.Impl.AesGcm.X86.imm, VG.Impl.AesGcm.X86.slot, VG.Impl.AesGcm.X86.argOp, VG.Impl.AesSiv.X86.zOff, VG.Impl.AesSiv.X86.tailOff, VG.Impl.AesSiv.X86.ksOff, VG.Impl.AesSiv.X86.cbOff, VG.Impl.AesSiv.X86.tOff, VG.Impl.AesSiv.X86.stOff, VG.Impl.AesSiv.X86.dbOff, VG.Impl.AesSiv.X86.ctxO, VG.Impl.AesSiv.X86.roundsO, VG.Impl.AesSiv.X86.adsO, VG.Impl.AesSiv.X86.leftO,
+                     VG.Impl.AesSiv.X86.dataO, VG.Impl.AesSiv.X86.lenO, VG.Impl.AesSiv.X86.strO, VG.Impl.AesSiv.X86.slenO, VG.Impl.AesSiv.X86.nbO, VG.Impl.AesSiv.X86.jO, VG.Impl.AesSiv.X86.okO, VG.Impl.AesSiv.X86.csOff, VG.Impl.AesSiv.X86.dOff, List.cons_append, List.nil_append, List.append_assoc,
+                     Option.bind_some, Option.map_some, VG.Proof.AesGcm.X86.readW_writeW_off, VG.Proof.AesSiv.X86.readW_writeB_off, VG.X86.RegUpd.gpr_setReg_self, VG.X86.RegUpd.gpr_setReg_of_ne, VG.X86.RegUpd.gpr_arithFlags, VG.X86.RegUpd.gpr_setFlags, VG.X86.RegUpd.mem_setReg,
+                     VG.X86.RegUpd.mem_arithFlags, VG.X86.RegUpd.mem_setFlags, VG.X86.RegUpd.rd_setReg, VG.X86.RegUpd.rd_arithFlags, VG.X86.RegUpd.rd_setFlags, VG.X86.RegUpd.wr_setReg, VG.X86.RegUpd.wr_arithFlags,
+                     VG.X86.RegUpd.wr_setFlags, VG.X86.RegUpd.cf_setReg, VG.X86.RegUpd.cf_arithFlags, VG.X86.RegUpd.zf_setReg, VG.X86.RegUpd.zf_arithFlags, VG.Proof.AesGcm.X86.gpr_setMem, VG.Proof.AesGcm.X86.mem_setMem, VG.Proof.AesGcm.X86.rd_setMem,
+                     VG.Proof.AesGcm.X86.wr_setMem, VG.Proof.AesGcm.X86.cf_setMem, VG.Proof.AesGcm.X86.zf_setMem, ite_true, ite_false, reduceCtorEq, Nat.reduceAdd, ↓reduceIte, Nat.reduceLT,
+                     Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceMul, and_self, and_true, true_and,
+                     eq_self_iff_true, VG.X86.Reg8.reg, $ts,*]) <;>
+                   try rfl)
 
 /-- Reads registers through the writes of a block. -/
-macro "cregs" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | with_reducible assumption) only [gpr_setMem, gpr_setReg_self, gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags,
-    $ts,*]))
+tactic_template "cregs" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                   simp (disch := first | decide | with_reducible assumption) only [VG.Proof.AesGcm.X86.gpr_setMem, VG.X86.RegUpd.gpr_setReg_self, VG.X86.RegUpd.gpr_setReg_of_ne, VG.X86.RegUpd.gpr_arithFlags, VG.X86.RegUpd.gpr_setFlags,
+                     $ts,*]))
 
 /-- Reads the memory, flags and permissions through the writes of a block. -/
-macro "cmems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp (disch := first | decide | omega) only [mem_setMem, mem_setReg, mem_arithFlags, mem_setFlags,
-    rd_setMem, rd_setReg, rd_arithFlags, rd_setFlags, wr_setMem, wr_setReg, wr_arithFlags, wr_setFlags,
-    zf_setMem, zf_setReg, zf_arithFlags, cf_setMem, cf_setReg, cf_arithFlags, gpr_setMem, gpr_setReg_self,
-    gpr_setReg_of_ne, gpr_arithFlags, gpr_setFlags, Mem.readW_writeW_self32, readW_writeW_off, readW_writeB_off, zOff, tailOff,
-    ksOff, cbOff, tOff, stOff, dbOff, ctxO, roundsO, adsO, leftO, dataO, lenO, strO, slenO, nbO, jO, okO, csOff, dOff,
-    Nat.reduceAdd, Reg8.reg, eq_self_iff_true, and_self, $ts,*]))
+tactic_template "cmems" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                   simp (disch := first | decide | omega) only [VG.Proof.AesGcm.X86.mem_setMem, VG.X86.RegUpd.mem_setReg, VG.X86.RegUpd.mem_arithFlags, VG.X86.RegUpd.mem_setFlags,
+                     VG.Proof.AesGcm.X86.rd_setMem, VG.X86.RegUpd.rd_setReg, VG.X86.RegUpd.rd_arithFlags, VG.X86.RegUpd.rd_setFlags, VG.Proof.AesGcm.X86.wr_setMem, VG.X86.RegUpd.wr_setReg, VG.X86.RegUpd.wr_arithFlags, VG.X86.RegUpd.wr_setFlags,
+                     VG.Proof.AesGcm.X86.zf_setMem, VG.X86.RegUpd.zf_setReg, VG.X86.RegUpd.zf_arithFlags, VG.Proof.AesGcm.X86.cf_setMem, VG.X86.RegUpd.cf_setReg, VG.X86.RegUpd.cf_arithFlags, VG.Proof.AesGcm.X86.gpr_setMem, VG.X86.RegUpd.gpr_setReg_self,
+                     VG.X86.RegUpd.gpr_setReg_of_ne, VG.X86.RegUpd.gpr_arithFlags, VG.X86.RegUpd.gpr_setFlags, VG.Mem.readW_writeW_self32, VG.Proof.AesGcm.X86.readW_writeW_off, VG.Proof.AesSiv.X86.readW_writeB_off, VG.Impl.AesSiv.X86.zOff, VG.Impl.AesSiv.X86.tailOff,
+                     VG.Impl.AesSiv.X86.ksOff, VG.Impl.AesSiv.X86.cbOff, VG.Impl.AesSiv.X86.tOff, VG.Impl.AesSiv.X86.stOff, VG.Impl.AesSiv.X86.dbOff, VG.Impl.AesSiv.X86.ctxO, VG.Impl.AesSiv.X86.roundsO, VG.Impl.AesSiv.X86.adsO, VG.Impl.AesSiv.X86.leftO, VG.Impl.AesSiv.X86.dataO, VG.Impl.AesSiv.X86.lenO, VG.Impl.AesSiv.X86.strO, VG.Impl.AesSiv.X86.slenO, VG.Impl.AesSiv.X86.nbO, VG.Impl.AesSiv.X86.jO, VG.Impl.AesSiv.X86.okO, VG.Impl.AesSiv.X86.csOff, VG.Impl.AesSiv.X86.dOff,
+                     Nat.reduceAdd, VG.X86.Reg8.reg, eq_self_iff_true, and_self, $ts,*]))
 
 theorem eval_e {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .e s = some b := h
 

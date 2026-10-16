@@ -2,21 +2,23 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowKernel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedWordTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
-public import VerifiedGarbage.Spec.MlDsa.PairedResponse
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSpecFrame
+import VerifiedGarbage.Spec.MlDsa.PairedResponse
 public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
-public import VerifiedGarbage.Proof.MlDsa.Arith.Zq
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
+import VerifiedGarbage.Proof.MlDsa.Arith.Zq
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMaskInvariant
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedAbi
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedSatMemory
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttCallTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseLowField
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
 
 /-! ## `PairedLowAllFields` -/
 

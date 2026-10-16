@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.CT
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratchWipe
-public import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
+import VerifiedGarbage.Spec.ChaCha20Poly1305.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -56,16 +56,36 @@ def openSat : State where
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x3000, 16⟩, ⟨0x8008, 16⟩]
   wr := [⟨0x2100, 0⟩, ⟨0, 1696⟩]
 
-/-- `seal` and `open` never write the stack pointer. -/
+/-- `vg_poly1305_blocks`, in each implementation, never writes the stack
+pointer: checked once for each, rather than at each of its calls in every
+configuration of the callers. -/
+theorem blocks_spSafe (b : Impl.Poly1305.X86_64.Blocks) :
+    b.code.all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases b <;> exact Code.all_of_allInstrs (by lit_decide)
+
+/-- `seal` and `open` never write the stack pointer. The callees' code is
+generalized away (`P`), so that `simp` does not unfold the predicate, and the
+kernel checks the rest once for each configuration of `fold`, `pass` and
+`wide`. -/
 theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («seal» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb | hb⟩ <;>
-    (simp only [«seal», prologue, crypt, cryptBig, Code.all, v.spSafe, hf, hpass, hw, hb]; lit_decide)
+  have hc := v.spSafe
+  have hb := blocks_spSafe v.poly
+  generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ⊢
+  rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
+    (simp only [«seal», prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
+       macPad, macPadLengths, wholeBlocks, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+     subst hP; lit_decide)
 
 theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
     («open» v.callee v.poly).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases v.fold_poly with ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb⟩ | ⟨hf, hpass, hw, hb | hb⟩ <;>
-    (simp only [«open», prologue, crypt, cryptBig, Code.all, v.spSafe, hf, hpass, hw, hb]; lit_decide)
+  have hc := v.spSafe
+  have hb := blocks_spSafe v.poly
+  generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ⊢
+  rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
+    (simp only [«open», prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
+       macPad, macPadLengths, wholeBlocks, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+     subst hP; lit_decide)
 
 theorem seal_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa («seal» v.callee v.poly) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' :=

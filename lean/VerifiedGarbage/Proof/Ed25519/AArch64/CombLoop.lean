@@ -1,15 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CombSelect
-public import VerifiedGarbage.Proof.Ed25519.AArch64.CombStart
+import VerifiedGarbage.Proof.Ed25519.AArch64.CombStart
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Point64.Call
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointSelect
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PointPowers
-public import VerifiedGarbage.Proof.Ed25519.PointDouble
+import VerifiedGarbage.Proof.Ed25519.PointDouble
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 /-!
 # The comb's loops and doublings

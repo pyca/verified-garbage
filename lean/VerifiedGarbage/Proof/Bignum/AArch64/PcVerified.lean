@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # `vg_rsa_public_precompute` on AArch64: verified against the shared contract
@@ -26,11 +29,11 @@ open VG VG.AArch64 VG.Impl.Rsa.AArch64
 and the working space at `0x4000`. -/
 def pcSatState : State where
   gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 16 | .x2 => 0x2000 | .x3 => 64 | .x4 => 0x4000 | .x5 => 1024 | _ => 0
+    | .x0 => 0x1000 | .x1 => 16 | .x2 => 0x2000 | .x3 => 64 | .x4 => 0x4000 | .x5 => 1056 | _ => 0
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x2000, 64⟩]
-  wr := [⟨0x1000, 128⟩, ⟨0x4000, 8192⟩]
+  wr := [⟨0x1000, 128⟩, ⟨0x4000, 8448⟩]
 
 theorem precompute_implies : pcContract.Implies (Spec.Rsa.publicPrecomputeContract abi) := by
   sig_implies [Spec.Rsa.publicPrecomputeContract, Spec.Rsa.publicPrecomputeSig, abi, argRegs, pcContract]

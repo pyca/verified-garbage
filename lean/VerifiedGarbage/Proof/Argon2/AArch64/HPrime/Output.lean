@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Copy
-public import VerifiedGarbage.Proof.Blake2.Stream
-public import VerifiedGarbage.Proof.MdStream.AArch64.Common
+import VerifiedGarbage.Proof.Blake2.Stream
+import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! # H′: emitting a digest or its 32-byte prefix -/
 

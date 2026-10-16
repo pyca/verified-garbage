@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
 public import VerifiedGarbage.Spec.Ed448.Contract
@@ -10,6 +10,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed448.Arm.PublicKey.Hash
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.Arm.Stream.Squeeze
 
 /-!
 # Ed448 public-key derivation on ARMv7: constant time, and `Verified`

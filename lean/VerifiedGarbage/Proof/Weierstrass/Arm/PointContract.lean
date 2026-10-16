@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.Arm.PointFn
-public import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontContract
 public import VerifiedGarbage.Proof.Weierstrass.Law
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Spec.X25519
 
 /-!
 # Complete point addition and doubling as functions, on 32-bit ARM: the contracts
@@ -85,16 +88,14 @@ theorem prePt_of {C : Spec.Weierstrass.Point.Curve} (hk3 : 3 ≤ C.k) (hk6 : C.k
   have e : ∀ x, x < 4096 → C.coordAt s.mem (State.addr (s.gpr .r0)) x =
       wordsVal s.mem (State.addr (s.gpr .r0)) x C.k := fun x hx => coordAt_eq C _ _ (by omega)
   refine ⟨hrd, hwr, hfit, hk3, hk6, fun x hx => ?_⟩
+  have hx' := enc_rIds hk3 hk6 dbl x hx
+  rw [← e _ (by omega_using [hx', hl])]
   simp only [Spec.Weierstrass.Point.Curve.pointAt, qOf] at p0 p1 p2 q0 q1 q2
   simp only [rIds, List.mem_cons, List.not_mem_nil, or_false] at hx
   rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> cases dbl <;>
     simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one,
-      Nat.add_zero, Bool.false_eq_true] at q0 q1 q2 ⊢ <;>
-    first
-    | (rw [← e _ (by omega)]; assumption)
-    | (rw [← e _ (by omega), show Spec.Weierstrass.Point.elemBytes C.k * 2 = 2 * Spec.Weierstrass.Point.elemBytes C.k by omega]; assumption)
-    | (rw [← e _ (by omega)]; exact ha)
-    | (rw [← e _ (by omega)]; exact hb)
+      Nat.add_zero, Bool.false_eq_true, Nat.mul_comm (Spec.Weierstrass.Point.elemBytes C.k) 2] at q0 q1 q2 ⊢ <;>
+    with_reducible assumption
 
 /-- `vg_<curve>_point_add` or `vg_<curve>_point_double` meets its contract,
 by register. -/
@@ -108,20 +109,20 @@ theorem sum_arm {C : Spec.Weierstrass.Point.Curve} (hM : ModOk C.k C.p) (hk6 : C
   have hu : UnitMod C.p C.R := unitMod_pow_two hodd _
   have dq := dec_eq C h1 hF hu
   have e : ∀ (m : Mem) x, x < 4096 → C.coordAt m (State.addr (s.gpr .r0)) x =
-      wordsVal m (State.addr (s.gpr .r0)) x C.k := fun m x hx => coordAt_eq C _ _ (by omega)
-  have e2 : Spec.Weierstrass.Point.elemBytes C.k * 2 = 2 * Spec.Weierstrass.Point.elemBytes C.k := by omega
+      wordsVal m (State.addr (s.gpr .r0)) x C.k := fun m x hx => coordAt_eq C _ _ (by omega_using [hx])
+  have e2 : Spec.Weierstrass.Point.elemBytes C.k * 2 = 2 * Spec.Weierstrass.Point.elemBytes C.k := Nat.mul_comm _ _
   refine ⟨t, s', he, A, ?_, ?_, keeps_of_outs hk3 hk6 O⟩
   · have h0 := hlt 0 (by decide); have h1' := hlt 1 (by decide); have h2 := hlt 2 (by decide)
     simp only [enc, Nat.reduceLT, ↓reduceIte, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at h0 h1' h2
     refine ⟨?_, ?_, ?_⟩ <;> simp only [Spec.Weierstrass.Point.Curve.pointAt]
-    · rw [e _ _ (by omega)]; exact h0
-    · rw [e _ _ (by omega)]; exact h1'
-    · rw [e _ _ (by omega)]; rw [e2] at h2; exact h2
+    · rw [e _ _ (by omega_using [hl])]; exact h0
+    · rw [e _ _ (by omega_using [hl])]; exact h1'
+    · rw [e _ _ (by omega_using [hl])]; rw [e2] at h2; exact h2
   · simp only [enc, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, Nat.reduceSub, Nat.mul_zero, Nat.mul_one,
       Nat.add_zero, E₀, e2] at hEq
     simp only [Spec.Weierstrass.Point.Curve.decPt, Spec.Weierstrass.Point.Curve.pointAt, Spec.Weierstrass.Point.Curve.sum, rcbAdd_eq, dq, qOf]
     cases dbl <;> simp only [Bool.false_eq_true, ↓reduceIte] at hEq ⊢ <;>
-      (repeat rw [e _ _ (by omega)]) <;>
+      (repeat rw [e _ _ (by omega_using [hl])]) <;>
       exact hEq
 
 end VG.Proof.Weierstrass.Arm.Point

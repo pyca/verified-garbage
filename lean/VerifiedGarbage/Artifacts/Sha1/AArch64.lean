@@ -3,6 +3,10 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Sha1.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha1.AArch64.Sha2.Compress
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # SHA-1 (FIPS 180-4) on AArch64 -/
 

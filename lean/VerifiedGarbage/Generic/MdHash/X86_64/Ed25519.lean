@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
@@ -8,6 +8,10 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
 public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Divstep.Bound
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
 
 /-!
 # Ed25519 (RFC 8032) on x86-64, over SHA-512
@@ -115,16 +119,16 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   | none => []
   | some c => withField c Impl.X25519.X86_64.baseline "" []
         (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) []
-        ⟨Proof.Ed25519.X86_64.VerifyCode.baseline_call, by lit_decide, by lit_decide,
+        ⟨Proof.Ed25519.X86_64.VerifyCode.baseline_call, Proof.Ed25519.X86_64.VerifyCode.baseline_noSp, by lit_decide,
           Proof.Ed25519.X86_64.VerifyCode.baseline_spSafe⟩ ++
       withField c Impl.X25519.X86_64.adx "_adx" ["bmi2", "adx"] Impl.Ed25519.X86_64.scalarBase_adx
         ["avx", "avx2", "bmi2", "adx"]
-        ⟨Proof.Ed25519.X86_64.VerifyCode.adx_call, by lit_decide, by lit_decide,
+        ⟨Proof.Ed25519.X86_64.VerifyCode.adx_call, Proof.Ed25519.X86_64.VerifyCode.adx_noSp, by lit_decide,
           Proof.Ed25519.X86_64.VerifyCode.adx_spSafe⟩ ++
       [verifyWith c Impl.X25519.X86_64.adx
         Impl.Ed25519.X86_64.Ifma.windows "_ifma"
         ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
-        ⟨Proof.Ed25519.X86_64.VerifyCode.ifma_call, by lit_decide, by lit_decide,
+        ⟨Proof.Ed25519.X86_64.VerifyCode.ifma_call, Proof.Ed25519.X86_64.VerifyCode.ifma_noSp, by lit_decide,
           Proof.Ed25519.X86_64.VerifyCode.ifma_spSafe⟩,
         publicKeyWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
           ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"],

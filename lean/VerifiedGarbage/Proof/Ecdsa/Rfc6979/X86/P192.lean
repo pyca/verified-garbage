@@ -12,6 +12,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-192
@@ -45,7 +47,7 @@ def p192 (hL : Weierstrass.Law Spec.P192.curve) : RfcCurve where
   inst := Spec.Ecdsa.P192.inst
   curve := rfl
   wide := false
-  sizes := ⟨.inl rfl, rfl, p192_nBits, by decide +kernel⟩
+  sizes := ⟨.inl rfl, .inl rfl, p192_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 24 - Spec.Ecdsa.nBits Spec.P192.curve = 0; rw [p192_nBits]

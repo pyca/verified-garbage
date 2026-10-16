@@ -1,11 +1,13 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
+import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! Public table transfers preserve the selected Jacobian point. -/
 

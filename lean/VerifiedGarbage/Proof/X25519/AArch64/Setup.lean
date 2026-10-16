@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.Final
-public import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.X25519.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

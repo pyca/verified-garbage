@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X25519.Arm.Mul
 
 /-!
 # X25519 on 32-bit ARM: the ladder
@@ -176,7 +178,7 @@ theorem ladOps_vals (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) :
   simp only [LQ, List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;>
     simp only [ladOps, runOps, FOp.out, FOp.val, upd, swapV, ladV, cswap_fst, cswap_snd, X1, X2, Z2, X3,
-      Z3, A, B, C, D, AA, BB, E, DA, CB, A24, Nat.reduceEqDiff, ite_true, ite_false]
+      Z3, A, B, C, D, AA, BB, E, DA, CB, A24, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem ofNat_xor {x y : Nat} (hx : x < 2 ^ 32) (hy : y < 2 ^ 32) :
     BitVec.ofNat 32 x ^^^ BitVec.ofNat 32 y = BitVec.ofNat 32 (x ^^^ y) := by

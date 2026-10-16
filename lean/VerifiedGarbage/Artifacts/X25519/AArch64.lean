@@ -1,10 +1,13 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.DivstepSound
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Impl.X25519.AArch64.Word
-public import VerifiedGarbage.Proof.X25519.AArch64.Word.Verified
+public import VerifiedGarbage.Impl.X25519.AArch64.Hybrid
+public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Verified
 public import VerifiedGarbage.Impl.X25519.AArch64.Base
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Verified
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! # X25519 (RFC 7748) on AArch64 -/
 
@@ -16,12 +19,15 @@ def artifacts : List Artifact := [
   { Spec.X25519.x25519Api with
     target := AArch64.target
     doc := Spec.X25519.x25519Api.doc (notes := ["The function saves the callee-saved registers \
-      it uses (`x19`–`x24`) in `scratch`. Field elements use four 64-bit words with \
-      `mul`/`umulh`, dedicated squaring, and reduction modulo 2^255 - 19. The inversion \
-      uses the ref10 addition chain (254 squarings and 11 multiplications)."])
-    code := Impl.X25519.AArch64.Word.x25519
+      it uses (`x19`–`x24`, and the low halves of `v8`–`v15`) in `scratch`. Field elements use \
+      four 64-bit words with `mul`/`umulh`, dedicated squaring, and reduction modulo 2^255 - 19. \
+      Each ladder step computes the products `DA` and `CB` with AdvSIMD, in radix 2^25.5 \
+      (`umull`/`umlal` on two lanes), interleaved with the scalar field operations that do not \
+      depend on them. The inversion uses the ref10 addition chain (254 squarings and 11 \
+      multiplications)."])
+    code := Impl.X25519.AArch64.Hybrid.x25519
     contract := Spec.X25519.x25519Contract AArch64.abi
-    verified := Proof.X25519.AArch64.Word.x25519_verified
+    verified := Proof.X25519.AArch64.Hybrid.x25519_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.X25519.x25519BaseApi with
     target := AArch64.target

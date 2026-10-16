@@ -1,14 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
+import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
 public import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
 meta import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
-public import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 meta import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 public import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
 meta import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
@@ -20,6 +20,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+meta import Mathlib.Tactic.Conv
+meta import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 
 /-!
 # ML-KEM-1024 on x86-64: `vg_mlkem1024_keygen`, `vg_mlkem1024_encaps_h` and `vg_mlkem1024_decaps`

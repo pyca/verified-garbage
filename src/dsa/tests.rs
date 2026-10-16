@@ -70,7 +70,38 @@ fn cavp_signatures() {
         let expected = [hex(&v["R"], q.len()), hex(&v["S"], q.len())].concat();
         assert_eq!(signature, expected, "vector {i}");
         assert!(key.public_key().verify(&digest, &signature), "vector {i}");
+        let nonce = hex(&v["K"], q.len());
+        let randomized = key
+            .sign_with_rng(&digest, |buf| {
+                buf.copy_from_slice(&nonce);
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(randomized, expected, "random tape vector {i}");
     }
+}
+
+#[test]
+fn random_tape_rejection_and_replay() {
+    let (key, digest, nonce) = sample();
+    let mut expected = vec![0; 2 * key.public.q_len];
+    let mut scratch = Secret(vec![0u64; 16 * key.public.p_len]);
+    assert!(key.sign_once(&digest, &nonce, &mut expected, &mut scratch.0));
+    let mut draws = 0;
+    let signature = key
+        .sign_with_rng(&digest, |buf| {
+            if draws == 0 {
+                buf.fill(0);
+            } else {
+                buf.copy_from_slice(&nonce);
+            }
+            draws += 1;
+            Ok(())
+        })
+        .unwrap();
+    assert_eq!(draws, 2);
+    assert_eq!(signature, expected);
+    assert!(key.public_key().verify(&digest, &signature));
 }
 
 #[test]
@@ -114,6 +145,83 @@ fn padded_domain_and_scalars() {
 }
 
 #[test]
+fn public_subgroup_windows() {
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    let v = &cases[0];
+    let p = hex(&v["P"], 0);
+    let q = hex(&v["Q"], 0);
+    let g = hex(&v["G"], p.len());
+    let y = hex(&v["Y"], p.len());
+    let x = hex(&v["X"], q.len());
+    let nonce = hex(&v["K"], q.len());
+    let digest = digest(&v["Hash"], &hex(&v["Msg"], 0));
+    let signature = [hex(&v["R"], q.len()), hex(&v["S"], q.len())].concat();
+    let mut minus_one = p.clone();
+    // p is odd, so subtracting one cannot borrow from the final byte.
+    *minus_one.last_mut().unwrap() -= 1;
+    // Each has order two, although their product is one. Both subgroup
+    // checks must reject them independently for the odd subgroup order.
+    for (generator, public) in [(&minus_one, &y), (&g, &minus_one), (&minus_one, &minus_one)] {
+        let key = PublicKey::from_components(&p, &q, generator, public).unwrap();
+        assert!(!key.verify(&digest, &signature));
+    }
+    // Malformed odd orders still execute the public exponentiation path.
+    // Exercise zero windows, dense windows and every table digit. With
+    // g = -1 and odd q, subgroup validation must always fail.
+    for pattern in [0x00, 0xff, 0xf0, 0x01] {
+        let mut order = vec![pattern; q.len()];
+        order[0] |= 0x80;
+        *order.last_mut().unwrap() |= 1;
+        if pattern == 0x01 {
+            order[1..9].copy_from_slice(&[0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]);
+        }
+        let key = PrivateKey::from_components(&p, &order, &minus_one, &y, &x).unwrap();
+        assert!(!key.public_key().verify(&digest, &signature));
+        let mut output = vec![0xa5; signature.len()];
+        let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p.len()]);
+        assert!(!key.sign_once(&digest, &nonce, &mut output, &mut scratch.0));
+        assert_eq!(output, vec![0; signature.len()]);
+    }
+}
+
+#[test]
+fn signing_key_consistency_implies_public_subgroup() {
+    let cases = vectors(include_str!("../../vectors/nist-cavp-dsa/SigGen.txt"), true);
+    let v = &cases[0];
+    let p = hex(&v["P"], 0);
+    let q = hex(&v["Q"], 0);
+    let g = hex(&v["G"], p.len());
+    let y = hex(&v["Y"], p.len());
+    let x = hex(&v["X"], q.len());
+    let nonce = hex(&v["K"], q.len());
+    let digest = digest(&v["Hash"], &hex(&v["Msg"], 0));
+    let mut minus_one = p.clone();
+    *minus_one.last_mut().unwrap() -= 1;
+    let mut one = vec![0; q.len()];
+    *one.last_mut().unwrap() = 1;
+    let mut output = vec![0xa5; 2 * q.len()];
+    let mut scratch = Secret(vec![0xa5a5a5a5a5a5a5a5; 16 * p.len()]);
+
+    // A valid generator with an out-of-subgroup public value fails g^x = y.
+    // With x = 1, g = y = -1 passes consistency but must fail g^q = 1.
+    // With x = 1 and the original y, both subgroup checks pass but consistency fails.
+    for (generator, public, private) in [
+        (&g, &minus_one, &x),
+        (&minus_one, &minus_one, &one),
+        (&g, &y, &one),
+    ] {
+        let key = PrivateKey::from_components(&p, &q, generator, public, private).unwrap();
+        output.fill(0xa5);
+        assert!(!key.sign_once(&digest, &nonce, &mut output, &mut scratch.0));
+        assert_eq!(output, vec![0; 2 * q.len()]);
+    }
+    // The same boundary private scalar succeeds when y = g.
+    let key = PrivateKey::from_components(&p, &q, &g, &g, &one).unwrap();
+    assert!(key.sign_once(&digest, &nonce, &mut output, &mut scratch.0));
+    assert!(key.public_key().verify(&digest, &output));
+}
+
+#[test]
 fn malformed_keys_nonces_and_bounded_retries() {
     let (mut key, digest, nonce) = sample();
     let mut output = vec![0xa5; 40];
@@ -148,6 +256,7 @@ fn malformed_keys_nonces_and_bounded_retries() {
     );
     assert_eq!(draws, 8);
     key.public.packed[128..148].fill(0);
+    key.packed.0[128..148].fill(0);
     assert_eq!(
         key.sign_with_rng(&digest, |_| panic!("zero q needs no RNG")),
         Err(Error::InvalidKeyOrNonce)
@@ -184,6 +293,7 @@ fn import_lengths_errors_and_backends() {
     );
     assert_eq!(Backend::select(Features::of(&[])), Backend::Baseline);
     assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Baseline);
+    #[cfg(target_arch = "x86_64")]
     assert_eq!(
         Backend::select(Features::of(&["bmi2", "adx"])),
         Backend::Adx
@@ -191,17 +301,5 @@ fn import_lengths_errors_and_backends() {
     for error in [Error::Length, Error::InvalidKeyOrNonce, Error::Randomness] {
         assert!(!error.to_string().is_empty());
         assert!(!format!("{error:?}").is_empty());
-    }
-}
-
-#[test]
-fn nonce_range_comparison() {
-    for q in [1u16, 255, 256, 257, 65535] {
-        for k in [0u16, 1, 254, 255, 256, 257, 65534, 65535] {
-            assert_eq!(
-                nonce_in_range(&k.to_be_bytes(), &q.to_be_bytes()),
-                k != 0 && k < q
-            );
-        }
     }
 }

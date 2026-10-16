@@ -11,6 +11,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Aes.Contract
 meta import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -189,16 +190,21 @@ theorem rot_byte (x c : BitVec 64) {t : Nat} (ht : t < 4) :
     ((((x.setWidth 32).rotateRight 8).setWidth 64) ^^^ c).extractLsb' (8 * t) 8 =
       x.extractLsb' (8 * ((t + 1) % 4)) 8 ^^^ c.extractLsb' (8 * t) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
+  obtain ⟨Ta, Tb, Tc, Td, Te⟩ := of_decide_eq_true (List.all_eq_true.mp (List.all_eq_true.mp
+    (show (List.range 4).all (fun t => (List.range 8).all fun j => decide (8 * t + j < 64 ∧ 8 * t + j < 32 ∧
+      8 * ((t + 1) % 4) + j < 32 ∧ (8 * t + j < 32 - 8 % 32 → 8 % 32 + (8 * t + j) = 8 * ((t + 1) % 4) + j) ∧
+      (¬ 8 * t + j < 32 - 8 % 32 → 8 * t + j - (32 - 8 % 32) = 8 * ((t + 1) % 4) + j))) = true by
+      decide +kernel) t (List.mem_range.mpr ht)) j (List.mem_range.mpr hj))
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_xor, BitVec.getLsbD_setWidth,
     BitVec.getLsbD_rotateRight]
-  simp only [hj, decide_true, Bool.true_and, show 8 * t + j < 64 by omega]
-  by_cases h : t < 3
-  · rw [ite_eq_left ((show 8 * t + j < 32 - 8 % 32 by omega)),
-      show 8 % 32 + (8 * t + j) = 8 * ((t + 1) % 4) + j by omega]
-    simp [show 8 * ((t + 1) % 4) + j < 32 by omega]
-  · rw [ite_eq_right ((show ¬ 8 * t + j < 32 - 8 % 32 by omega)),
-      show 8 * t + j - (32 - 8 % 32) = 8 * ((t + 1) % 4) + j by omega]
-    simp [show 8 * ((t + 1) % 4) + j < 32 by omega]
+  simp only [hj, decide_true, Bool.true_and, Ta]
+  by_cases h : 8 * t + j < 32 - 8 % 32
+  · rw [ite_eq_left h,
+      Td h]
+    simp [Tc]
+  · rw [ite_eq_right h,
+      Te h]
+    simp [Tc]
     intro; omega
 
 theorem ld_byte (m : Mem) (a : Addr) {t : Nat} (ht : t < 4) :
@@ -236,17 +242,16 @@ theorem diff_beq (K x : Nat) (hx : x < 2 ^ 64) :
 theorem cmp16 {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
     (0 - BitVec.ofNat 64 a + BitVec.ofNat 64 b - (-16 : BitVec 32).signExtend 64 == 0) =
       decide (b + 16 = a) := by
-  rw [show (-16 : BitVec 32).signExtend 64 = 0 - 16 by decide]
-  by_cases h : b + 16 = a
-  · simp only [h, decide_true, beq_iff_eq]; bv_omega
-  · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]; bv_omega
+  rw [show (-16 : BitVec 32).signExtend 64 = 0 - BitVec.ofNat 64 16 by decide,
+    show 0 - BitVec.ofNat 64 a + BitVec.ofNat 64 b - (0 - BitVec.ofNat 64 16) =
+      BitVec.ofNat 64 (b + 16) - BitVec.ofNat 64 a by rw [← BitVec.ofNat_add_ofNat]; grind,
+    VG.Offset.ofNat_sub_ofNat_beq (by omega) (by omega)]
 
 theorem cmp32 {a : Nat} (ha : a < 2 ^ 32) :
     (0 - BitVec.ofNat 64 a - (-32 : BitVec 32).signExtend 64 == 0) = decide (a = 32) := by
-  rw [show (-32 : BitVec 32).signExtend 64 = 0 - 32 by decide]
-  by_cases h : a = 32
-  · simp only [h, decide_true, beq_iff_eq]; bv_omega
-  · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]; bv_omega
+  rw [show (-32 : BitVec 32).signExtend 64 = 0 - BitVec.ofNat 64 32 by decide,
+    show 0 - BitVec.ofNat 64 a - (0 - BitVec.ofNat 64 32) = BitVec.ofNat 64 32 - BitVec.ofNat 64 a by grind,
+    VG.Offset.ofNat_sub_ofNat_beq (by omega) (by omega), decide_eq_decide.mpr eq_comm]
 
 theorem addr_back (S : Addr) {i n : Nat} (h : n ≤ i) :
     S + BitVec.ofNat 64 (4 * i) + (0 - BitVec.ofNat 64 (4 * n)) = S + BitVec.ofNat 64 (4 * (i - n)) := by
@@ -925,7 +930,7 @@ theorem expandKey_correct (s : State) (hs : Proof.Aes.expandKeyX86_64.pre s) :
     ∃ t s', Exec isa Impl.Aes.X86_64.expandKey s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.expandKeyX86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := ek_correct hs
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyX86_64.pre Proof.Aes.expandKeyX86_64.pub
     Impl.Aes.X86_64.expandKey := by

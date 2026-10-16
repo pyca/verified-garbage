@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3Backend
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Sha512.AArch64.Shared
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on AArch64 -/
 

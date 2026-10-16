@@ -1,18 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.CTCommon
-public import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
+import VerifiedGarbage.Proof.Ed25519.Arm.PublicKey.PruneCT
 public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Args
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 public import VerifiedGarbage.Spec.Ed25519.CachedSign
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Body
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed25519.Arm.SignCached.Body
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
 
 /-! Merged from `Proof.Ed25519.Arm.SignCached.CTReady`. -/
 

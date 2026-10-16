@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.CallPost
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxMont
+public import VerifiedGarbage.Impl.Bignum.X86_64.MontFnLazy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # Montgomery multiplication by calls, on x86-64
@@ -37,6 +39,16 @@ def CallMont.base : CallMont := ⟨"vg_rsa_mont_mul", Impl.Bignum.X86_64.MontFn.
 
 /-- By calls of `vg_rsa_mont_mul_adx`. -/
 def CallMont.adx : CallMont := ⟨"vg_rsa_mont_mul_adx", Impl.Bignum.X86_64.MontFn.mulAdx, Mont.fnAdx⟩
+
+/-- The squaring of `aY` by a call of `vg_rsa_lazy_mont_mul`. -/
+def CallMont.lazyBase : Prog isa :=
+  Impl.Bignum.X86_64.MontFn.call "vg_rsa_lazy_mont_mul" Impl.Bignum.X86_64.MontFn.mulBase
+    Impl.Bignum.X86_64.Public.aY Impl.Bignum.X86_64.Public.aY Impl.Bignum.X86_64.Public.aY
+
+/-- The squaring of `aY` by a call of `vg_rsa_lazy_mont_mul_adx`. -/
+def CallMont.lazyAdx : Prog isa :=
+  Impl.Bignum.X86_64.MontFn.call "vg_rsa_lazy_mont_mul_adx" Impl.Bignum.X86_64.MontFn.mulAdxLazy
+    Impl.Bignum.X86_64.Public.aY Impl.Bignum.X86_64.Public.aY Impl.Bignum.X86_64.Public.aY
 
 /-- `Verified.of_inline` for a contract `Sig.contract` builds with 8 bytes
 of stack, from the shared contract `k₀` it implies. -/

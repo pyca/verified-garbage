@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X448.X86_64.Setup
 
 /-! A complete coordinate scan, with one final write to scratch. -/
 
@@ -60,8 +61,7 @@ private theorem entries_ok {pick : Nat → List Instr} {value : Mem → Addr →
     rw [eu, ew, kw.2.1, kv.2.1]
     have ev : rv v W = rv s W := rv_congr (fun r _ => kv.1 r (by simp))
     rw [ev]
-    simp only [decide_eq_true_eq]
-    rfl
+    simp only [decide_eq_true_eq, picked, List.foldl_cons]
 
 /-- The selected coordinate is stored once; the digit and all other slots survive. -/
 theorem scanCoord_ok {pick : Nat → List Instr} {value : Mem → Addr → Nat → Spec.X448.Fe}

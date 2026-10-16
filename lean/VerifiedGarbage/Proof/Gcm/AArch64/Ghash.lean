@@ -1,12 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Gcm.AArch64
 meta import VerifiedGarbage.Impl.Gcm.AArch64
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Proof.Framework.Range
 public import VerifiedGarbage.Proof.Gcm.Spec
 meta import VerifiedGarbage.Proof.Gcm.Spec
@@ -14,11 +14,11 @@ public import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Gcm.Bits
 meta import VerifiedGarbage.Proof.Gcm.Bits
-public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 meta import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
@@ -334,10 +334,11 @@ theorem blockAt_rev (m : Mem) (p : Addr) :
       blockAt m p := by
   have e : ∀ j : Nat, j < 15 → p + BitVec.ofNat 64 j + 1 = p + BitVec.ofNat 64 (j + 1) :=
     fun j _ => Offset.add_add p j 1
-  rw [rev64_readW, rev64_readW, e 0 (by decide), e 1 (by decide), e 2 (by decide),
-    e 3 (by decide), e 4 (by decide), e 5 (by decide), e 6 (by decide), e 8 (by decide), e 9 (by decide),
-    e 10 (by decide), e 11 (by decide), e 12 (by decide), e 13 (by decide), e 14 (by decide),
-    Spec.Gcm.blockAt, bytesAt_16, ofBytes_16]
+  rw [rev64_readW, rev64_readW]
+  simp only [e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide), e 4 (by decide),
+    e 5 (by decide), e 6 (by decide), e 8 (by decide), e 9 (by decide), e 10 (by decide), e 11 (by decide),
+    e 12 (by decide), e 13 (by decide), e 14 (by decide)]
+  rw [Spec.Gcm.blockAt, bytesAt_16, ofBytes_16]
 
 theorem read_8 (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by
   simp only [Mem.readW]; exact (BitVec.setWidth_eq _).symm

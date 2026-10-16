@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.Inline
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Calls (ARMv7)

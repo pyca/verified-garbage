@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.KeyWords
-public import VerifiedGarbage.Proof.Camellia.X86_64.Group
-public import VerifiedGarbage.Proof.Camellia.KeySched
+import VerifiedGarbage.Proof.Camellia.X86_64.Group
+import VerifiedGarbage.Proof.Camellia.KeySched
 public import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
 # Storing the subkeys on x86-64

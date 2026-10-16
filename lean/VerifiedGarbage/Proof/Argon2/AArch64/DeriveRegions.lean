@@ -7,12 +7,14 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Proof.Argon2.AArch64.FillCompress
 public import VerifiedGarbage.Impl.Argon2.AArch64.Derive
-public import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
+import VerifiedGarbage.Proof.Argon2.AArch64.InitialArgs
 public import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 /-! Merged from `Proof.Argon2.AArch64.DeriveNormalize`. -/
 

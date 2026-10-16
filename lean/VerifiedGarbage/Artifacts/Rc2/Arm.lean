@@ -1,9 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Rc2.Arm.Block
-public import VerifiedGarbage.Proof.Rc2.Arm.Key
-public import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Verified
+import VerifiedGarbage.Proof.Rc2.Arm.Block
+import VerifiedGarbage.Proof.Rc2.Arm.Key
+import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.Arm.Stream.Frame
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Impl.MdStream.Arm
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # RC2 artifacts on baseline ARMv7 -/
 
@@ -15,9 +21,10 @@ def artifacts : List Artifact := [
   { Spec.Rc2.cbcInitApi with
     target := Arm.target
     doc := Spec.Rc2.cbcInitApi.doc (notes := ["Baseline ARMv7, copying the IV and calling the verified \
-      key expansion."])
+      key expansion (which scans PITABLE in the static `VG_RC2_PITABLE`)."])
+    consts := Impl.Rc2.piConsts
     code := Impl.StackScratch.Arm.withStackScratchWiped 592 2 144 Impl.Rc2.Arm.Stream.init
-    contract := Spec.Rc2.cbcInitContract Arm.abi 600
+    contract := Spec.Rc2.cbcInitContract (Arm.abi.withConsts Impl.Rc2.piConsts) 600
     stack := 600
     ofSig := by exact (⟨_, _, _, by unfold Spec.Rc2.cbcInitContract; rfl⟩)
     verified := Proof.Rc2.Arm.Stream.init_framed
@@ -65,16 +72,21 @@ def artifacts : List Artifact := [
   { Spec.Rc2.expandKeyApi with
     target := Arm.target
     doc := Spec.Rc2.expandKeyApi.doc
-      (notes := ["Baseline ARMv7. PITABLE selection scans all 256 candidates in a fixed order."])
+      (notes := ["Baseline ARMv7. Each PITABLE lookup scans the 256 bytes of the static `VG_RC2_PITABLE` in \
+        order, at addresses that depend only on the entry's number, keeping each byte under a mask that is \
+        nonzero exactly when the secret index is the entry's number (`eor`, then `(x - 1) >> 8`). No secret \
+        is an address or a branch condition."])
+    consts := Impl.Rc2.piConsts
     code := Impl.Rc2.Arm.expandKey
-    contract := Spec.Rc2.expandKeyContract Arm.abi
+    contract := Spec.Rc2.expandKeyContract (Arm.abi.withConsts Impl.Rc2.piConsts)
     stack := 0
     verified := Proof.Rc2.Arm.key_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rc2.encryptBlockApi with
     target := Arm.target
     doc := Spec.Rc2.encryptBlockApi.doc
-      (notes := ["Baseline ARMv7. Mashing scans all 64 schedule words in a fixed order."])
+      (notes := ["Baseline ARMv7. Mashing scans all 64 schedule words in a fixed order, in a loop, \
+      two words per 32-bit load."])
     code := Impl.Rc2.Arm.encryptBlock
     contract := Spec.Rc2.encryptBlockContract Arm.abi
     stack := 0
@@ -83,7 +95,8 @@ def artifacts : List Artifact := [
   { Spec.Rc2.decryptBlockApi with
     target := Arm.target
     doc := Spec.Rc2.decryptBlockApi.doc
-      (notes := ["Baseline ARMv7. Reverse mashing scans all 64 schedule words in a fixed order."])
+      (notes := ["Baseline ARMv7. Reverse mashing scans all 64 schedule words in a fixed order, in a \
+      loop, two words per 32-bit load."])
     code := Impl.Rc2.Arm.decryptBlock
     contract := Spec.Rc2.decryptBlockContract Arm.abi
     stack := 0

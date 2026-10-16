@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Pow
-public import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.Proof.Gcm.Split
 public import Mathlib.Tactic.LinearCombination
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 
 /-!
 # AES-GCM's short path on x86-64: GHASH of the buffer, in the field
@@ -85,6 +86,9 @@ theorem gacc_ghash {m : Mem} {G T : Addr} {H : Block} {g : Nat} (hT : TabOk m T 
     Nat.sub_self, Nat.mul_zero, pow_zero, mul_one]
 
 /-- What the short path's proofs need from the algebra of the field. -/
-theorem shortFacts : ShortFacts := ⟨powers_ok, powHead_ok, gacc_ghash, finPow_facts⟩
+theorem shortFacts : ShortFacts :=
+  ⟨powers_ok, powHead_ok, gacc_ghash, finPow_facts,
+    fun H _ _ => step1' _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]),
+    fun H _ _ _ => step2 _ _ _ _ _ _ (by rw [x_φ_hInvF_hpow, pow_one]) (x_φ_hInvF_hpow H 2)⟩
 
 end VG.Proof.AesGcm.X86_64.Short

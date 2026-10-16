@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejWideStep
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejAdvance
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejGuard
 
 @[expose] public section
 

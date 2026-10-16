@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Register
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Ops
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X448.X86_64.Setup
 
 /-! Conditional point negation for balanced window digits. -/
 
@@ -71,7 +72,7 @@ theorem negateSelected_ok {s : State} {base : Addr} (hs : Scr s base) {o k t : N
       rw [km] at ou; exact ou.mono (by decide) (by decide)⟩
   refine ⟨ksw.trans ku, ?_, ?_⟩
   · have vy : rv y W = rv x W := rv_congr (fun r hr => ky.1 r (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false]; intro h; subst r; contradiction))
+      simp only [List.mem_cons, List.not_mem_nil, or_false]; intro h; subst r; exact absurd hr (by decide)))
     rw [eu, Function.update_self, vz, vy, vx, ky.2.1, kx.2.1]
     change VG.Proof.X448.toFe (if decide (k / 2 ^ (t + 4) % 2 = 1) then fe w.mem base (slot 3)
       else fe w.mem base (slot 8)) = _

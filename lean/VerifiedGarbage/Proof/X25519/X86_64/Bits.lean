@@ -2,10 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Iter
 public import VerifiedGarbage.Proof.X25519.Bytes
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-!
 # X25519 on x86-64: the bits of the scalar
@@ -112,7 +114,9 @@ theorem off_eq_iff (base : Addr) {d e : Nat} (hd : d < 2 ^ 64) (he : e < 2 ^ 64)
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
     (((b.setWidth 64 >>> j) &&& BitVec.signExtend 64 (1 : BitVec 32)).setWidth 8 : BitVec 8) =
-      BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by decide +kernel
+      BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := fun b j _ => by
+  rw [show BitVec.signExtend 64 (1 : BitVec 32) = 1 from by decide]
+  exact bitByte 64 (by decide) b j
 
 /-- Bit `j` of `rax` (a byte) into `BITS[8 rbx + j]`. -/
 def bitJ (j : Nat) : List Instr :=

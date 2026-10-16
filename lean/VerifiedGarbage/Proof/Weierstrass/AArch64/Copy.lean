@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Weierstrass.Words
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # Short Weierstrass curves on AArch64: copies, selections and constants
@@ -38,19 +40,19 @@ theorem copy_ok {size : Nat} : ∀ (n : Nat) {s : State} {base : Addr} {o a : Na
   | n + 1, s, base, o, a, hs, ho, ha, ho8, ha8, hsep => by
     have hn := hs.nowrap
     rw [copy, WP.block_append_iff, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (ld_ok hs (d := a) (by omega) ha8 .x1) fun s₀ ⟨l₀, k₀, _⟩ => ?_
+    refine WP.mono (ld_ok hs (d := a) (by omega_using [ha]) ha8 .x1) fun s₀ ⟨l₀, k₀, _⟩ => ?_
     have hs₀ := hs.of_keeps k₀ (by decide)
-    refine WP.mono (st_out hs₀ (o := o) (by omega) ho8 .x1) fun s₁ ⟨m₁, k₁, _⟩ => ?_
+    refine WP.mono (st_out hs₀ (o := o) (by omega_using [ho]) ho8 .x1) fun s₁ ⟨m₁, k₁, _⟩ => ?_
     rw [l₀, k₀.mem] at m₁
     have k₀₁ : KeepRegs [.x1] s s₁ := (Keeps.regs k₀).trans (k₁.mono (by simp))
     have hs₁ := hs.of_keepRegs k₀₁ (by decide)
-    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
+    have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega_using [ho, hn])
     have e₁ : wordsVal s₁.mem base (a + 8) n = wordsVal s.mem base (a + 8) n :=
-      O₁.wordsVal (by omega) (by omega)
-    refine WP.mono (copy_ok n hs₁ (o := o + 8) (a := a + 8) (by omega) (by omega) (by omega)
-      (by omega) (by omega)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-    refine ⟨?_, k₀₁.trans k₂, fun x hx => by rw [O₂ x (by omega), O₁ x (by omega)]⟩
-    rw [wordsVal, O₂.word (by omega) (by omega), m₁, word_writeW_self, e₂, e₁, wordsVal]
+      O₁.wordsVal (by omega_using [hsep]) (by omega_using [ha, hn])
+    refine WP.mono (copy_ok n hs₁ (o := o + 8) (a := a + 8) (by omega_using [ho]) (by omega_using [ha]) (by omega_using [ho8])
+      (by omega_using [ha8]) (by omega_using [hsep])) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+    refine ⟨?_, k₀₁.trans k₂, fun x hx => by rw [O₂ x (by omega_using [hx]), O₁ x (by omega_using [hx])]⟩
+    rw [wordsVal, O₂.word (by omega_using []) (by omega_using [ho, hn]), m₁, word_writeW_self, e₂, e₁, wordsVal]
 
 /-- `x1 = x1 ^ ((x2 ^ x1) & x3)`, through `x2`. -/
 theorem selWord_ok (s : State) :
@@ -79,33 +81,33 @@ theorem sel_ok {size : Nat} (c : Bool) : ∀ (n : Nat) {s : State} {base : Addr}
   | n + 1, s, base, o, a, b, hs, hc, ho, ha, hb, ho8, ha8, hb8, hsa, hsb => by
     have hn := hs.nowrap
     rw [sel, WP.block_append_iff, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (ld_ok hs (d := a) (by omega) ha8 .x1) fun s₀ ⟨l₀, k₀, _⟩ => ?_
+    refine WP.mono (ld_ok hs (d := a) (by omega_using [ha]) ha8 .x1) fun s₀ ⟨l₀, k₀, _⟩ => ?_
     have hs₀ := hs.of_keeps k₀ (by decide)
     rw [← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (ld_ok hs₀ (d := b) (by omega) hb8 .x2) fun s₁ ⟨l₁, k₁, _⟩ => ?_
+    refine WP.mono (ld_ok hs₀ (d := b) (by omega_using [hb]) hb8 .x2) fun s₁ ⟨l₁, k₁, _⟩ => ?_
     have hs₁ := hs₀.of_keeps k₁ (by decide)
     rw [show ([.logic .eor .x .x2 .x2 .x1, .logic .and .x .x2 .x2 .x3, .logic .eor .x .x1 .x1 .x2,
         st .x1 o] : List Instr) = [.logic .eor .x .x2 .x2 .x1, .logic .and .x .x2 .x2 .x3,
         .logic .eor .x .x1 .x1 .x2] ++ [st .x1 o] from rfl, WP.block_append_iff]
     refine WP.mono (selWord_ok s₁) fun s₂ ⟨v₂, k₂⟩ => ?_
     have hs₂ := hs₁.of_keeps k₂ (by decide)
-    refine WP.mono (st_out hs₂ (o := o) (by omega) ho8 .x1) fun s₃ ⟨m₃, k₃, _⟩ => ?_
+    refine WP.mono (st_out hs₂ (o := o) (by omega_using [ho]) ho8 .x1) fun s₃ ⟨m₃, k₃, _⟩ => ?_
     have k₀₃ : KeepRegs [.x1, .x2] s s₃ := (((Keeps.regs k₀).mono (by simp)).trans
       ((Keeps.regs k₁).mono (by simp))).trans (((Keeps.regs k₂).mono (by simp)).trans (k₃.mono (by simp)))
     have hx3 : s₁.gpr .x3 = s.gpr .x3 := by rw [k₁.gpr _ (by decide), k₀.gpr _ (by decide)]
     have h1 : s₁.gpr .x1 = word s.mem base a := by rw [k₁.gpr _ (by decide), l₀]
     rw [v₂, l₁, h1, hx3, hc, sel_word, k₂.mem, k₁.mem, k₀.mem] at m₃
     have hs₃ := hs.of_keepRegs k₀₃ (by decide)
-    have O₁ : Outside base o 8 s.mem s₃.mem := by rw [m₃]; exact writeW_outside _ _ _ (by omega)
+    have O₁ : Outside base o 8 s.mem s₃.mem := by rw [m₃]; exact writeW_outside _ _ _ (by omega_using [ho, hn])
     have ea : wordsVal s₃.mem base (a + 8) n = wordsVal s.mem base (a + 8) n :=
-      O₁.wordsVal (by omega) (by omega)
+      O₁.wordsVal (by omega_using [hsa]) (by omega_using [ha, hn])
     have eb : wordsVal s₃.mem base (b + 8) n = wordsVal s.mem base (b + 8) n :=
-      O₁.wordsVal (by omega) (by omega)
+      O₁.wordsVal (by omega_using [hsb]) (by omega_using [hb, hn])
     refine WP.mono (sel_ok c n hs₃ (o := o + 8) (a := a + 8) (b := b + 8)
-      (by rw [k₀₃.gpr _ (by decide), hc]) (by omega) (by omega) (by omega) (by omega) (by omega)
-      (by omega) (by omega) (by omega)) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
-    refine ⟨?_, k₀₃.trans k₄, fun x hx => by rw [O₄ x (by omega), O₁ x (by omega)]⟩
-    rw [wordsVal, O₄.word (by omega) (by omega), m₃, word_writeW_self, e₄, ea, eb]
+      (by rw [k₀₃.gpr _ (by decide), hc]) (by omega_using [ho]) (by omega_using [ha]) (by omega_using [hb]) (by omega_using [ho8]) (by omega_using [ha8])
+      (by omega_using [hb8]) (by omega_using [hsa]) (by omega_using [hsb])) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
+    refine ⟨?_, k₀₃.trans k₄, fun x hx => by rw [O₄ x (by omega_using [hx]), O₁ x (by omega_using [hx])]⟩
+    rw [wordsVal, O₄.word (by omega_using []) (by omega_using [ho, hn]), m₃, word_writeW_self, e₄, ea, eb]
     cases c <;> simp only [Bool.false_eq_true, ite_false, ite_true, wordsVal]
 
 /-- `o = b` if the mask `x3` is all ones (`c`), `a` if it is zero, for points

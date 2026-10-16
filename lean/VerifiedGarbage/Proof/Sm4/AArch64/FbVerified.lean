@@ -19,11 +19,33 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
+public import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.AArch64.CryptSum
 meta import VerifiedGarbage.Proof.Sm4.AArch64.FbLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.AesSiv.Ctr32
+public import VerifiedGarbage.Proof.AesSiv.Words
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Gcm.Bits
+public import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+public import VerifiedGarbage.Proof.Modes.AArch64.Xor
+public import VerifiedGarbage.Proof.Sm4.AArch64.Imm
+public import VerifiedGarbage.Proof.Sm4.AArch64.Lit
+meta import VerifiedGarbage.Proof.AesSiv.Ctr32
+meta import VerifiedGarbage.Proof.AesSiv.Words
+meta import VerifiedGarbage.Proof.Cmac.Stream
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Gcm.Bits
+meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+meta import VerifiedGarbage.Proof.Modes.AArch64.Xor
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Imm
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 
 /-!
 # SM4-OFB and SM4-CFB128 on AArch64 meet their contracts
@@ -177,8 +199,9 @@ theorem ofb_verified :
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (ofb_wp hs) (by lit_decide) (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
-      (by taint_decide)) (by
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+      (by taint_decide_sum [cryptSum])) (by
     sig_implies [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig, Proof.Sm4.ofbPost,
       ofbAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots, tableEnd, tableSlot] [fbSat] using fbSat)
 
@@ -188,8 +211,9 @@ theorem cfbEncrypt_verified :
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbEncrypt_wp hs) (by lit_decide)
         (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
-      (by taint_decide)) (by
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+      (by taint_decide_sum [cryptSum])) (by
     sig_implies [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig, Proof.Sm4.cfbEncPost,
       cfbEncAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots, tableEnd, tableSlot] [fbSat] using fbSat)
 
@@ -199,8 +223,9 @@ theorem cfbDecrypt_verified :
       obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbDecrypt_wp hs) (by lit_decide)
         (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
-      (by taint_decide)) (by
+    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
+        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+      (by taint_decide_sum [cryptSum])) (by
     sig_implies [Proof.Sm4.fbScratchContract, Proof.Sm4.fbScratchSig, Spec.Sm4.ofbSig, Proof.Sm4.cfbDecPost,
       cfbDecAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs, slots, tableEnd, tableSlot] [fbSat] using fbSat)
 

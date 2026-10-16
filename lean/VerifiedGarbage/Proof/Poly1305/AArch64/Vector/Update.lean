@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Vec
+import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Vec
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Vector.Vec
-public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
 public import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame
 meta import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Frame

@@ -7,6 +7,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on x86-64: the layers of the NTT and its inverse with `len ≥ 4`
@@ -29,13 +31,14 @@ open VG.Proof.MlKem.X86_64 (XOnly xmm_setXmm ifp ifn sel sel_lt sel_zero add_ofN
 open VG.Spec.MlDsa (q n Poly Zq coeffAt polyAt Reduced PolyIs zetas)
 
 /-- Runs a block of general-purpose and SSE instructions. -/
-syntax "vrund" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| vrund) => `(tactic| vrund [])
-  | `(tactic| vrund [$ls,*]) => `(tactic| vrunm [ea_atD, $ls,*])
+tactic_template "vrund" : tactic => `(tactic| vrunm [ea_atD])
+
+/-- `vrund` with extra lemmas. -/
+tactic_template "vrund" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic =>
+  `(tactic| vrunm [ea_atD, $ls,*])
 
 /-- `GOnly` of a chain of `setReg` and `setFlags`. -/
-macro "gonlyd" : tactic => `(tactic| exact ⟨⟨fun r hr => by
+tactic_template "gonlyd" : tactic => `(tactic| exact ⟨⟨fun r hr => by
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false], rfl, rfl⟩, rfl, rfl, rfl⟩)
 

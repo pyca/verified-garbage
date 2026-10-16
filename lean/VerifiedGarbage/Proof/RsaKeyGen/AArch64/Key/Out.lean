@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 
 /-!
 # An RSA key from its primes on AArch64: the outputs
@@ -101,7 +104,7 @@ theorem stores_ok {B : Addr} {Z w : Nat} {c : Bool} {Q : State → Prop} :
     have hpw' := List.pairwise_cons.mp hpw
     refine stores_ok L rest s₁ hr h₁ (by rw [frm_word f₁ h256 (by decide)]; exact hm)
       (fun e' he' => (ho e' (List.mem_cons_of_mem _ he')).congr f₁ h256 k₁.wr) hpw'.2
-      (fun t ht ft bt xt kt => k t ht (Frm.trans f₁ ft) ?_ ?_ ((k₁.trans kt).mono (by simp)))
+      (fun t ht ft bt xt kt => k t ht (Frm.trans f₁ ft) ?_ ?_ ((k₁.trans kt).mono (by decide)))
     · intro e' he'
       rcases List.mem_cons.mp he' with rfl | he''
       · rw [← b₁]
@@ -158,7 +161,7 @@ theorem zeros_ok {B : Addr} {Z w : Nat} {Q : State → Prop} :
       have h₁ : Ws s₁ B Z w := h.congr f₁ (fun r hr' => by
         rw [List.mem_singleton.mp hr']; exact Or.inl (by omega)) k₁ (by decide)
       refine zeros_ok L rest s₁ hr h₁ (fun e' he' => (ho e' (List.mem_cons_of_mem _ he')).congr f₁ h256 k₁.wr)
-        hpw'.2 (fun t ht ft zt xt kt => k t ht (Frm.trans f₁ ft) ?_ ?_ ((k₁.trans kt).mono (by simp)))
+        hpw'.2 (fun t ht ft zt xt kt => k t ht (Frm.trans f₁ ft) ?_ ?_ ((k₁.trans kt).mono (by decide)))
       · intro e' he'
         rcases List.mem_cons.mp he' with rfl | he₂
         · intro i hi

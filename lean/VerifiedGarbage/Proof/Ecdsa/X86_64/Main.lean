@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Inv
 public import VerifiedGarbage.Proof.Ecdsa.Sign
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Finish
 
 /-!
 # ECDSA on x86-64: the whole function
@@ -65,18 +69,22 @@ theorem stage₂ (hc : BaseCfgOk c) (hmb : MulBaseOk c) (hC : Law c.C) (hT : Com
       show s₅.mem (off (s₀.gpr .r8) (bitsAt c.n 1 + t)) = _
       rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_gWA (Or.inl rfl) ht)]
       exact hS.t₁ h9 t ht)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
+  have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → i ≠ TT →
       i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] →
-      sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s i := fun hi h₁ h₂ =>
+      sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s i := fun hi h₁ h₃ h₂ =>
     (sv_unch U₆ h7 hn hi (apart_pwW hi h₁)).trans
-      (sv_unch U₅ h7 hn hi (apart_gWA hi h₂ fun h => h₁ (List.mem_cons.mpr (.inl (List.mem_singleton.mp h)))))
+      (sv_unch U₅ h7 hn hi (apart_gWA hi h₂ fun h => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+        rcases h with rfl | rfl
+        · exact h₁ (by decide)
+        · exact h₃ rfl))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
   refine ⟨⟨hs₅.of_keepRegs K₆ (rdi_not_invClob _), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
     F₅.unch h7 hn fixedOk_pwW U₆⟩,
-    by rw [e₆ (by decide) (by decide) (by decide), hS.k],
-    by rw [e₆ (by decide) (by decide) (by decide), hS.d],
-    by rw [e₆ (by decide) (by decide) (by decide), hS.e],
+    by rw [e₆ (by decide) (by decide) (by decide) (by decide), hS.k],
+    by rw [e₆ (by decide) (by decide) (by decide) (by decide), hS.d],
+    by rw [e₆ (by decide) (by decide) (by decide) (by decide), hS.e],
     by rw [flag_unch_pwW U₆ h7 h0 hn, flag_unch_gWA U₅ h7 h0 hn, hS.flag], ?_, ?_, lt₆, ?_,
     ?_⟩
   · rw [K₆.gpr _ (rsi_not_invClob _), K₅.gpr _ (rsi_not_powClob _), hS.rsi]
@@ -191,7 +199,7 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s�
   rw [scalar_eq]
   refine scalarIn_ok hc hS.scr (modN_of hc F.mn) F.r2n
     fun s₁₀ hs₁₀ hM₁₀ g₁₀ _ wr₁₀ U₁₀ _ dm em trm tdm tem => ?_
-  have F₁₀ := F.unch h7 hn (fixedOk_slW (l := [RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₀
+  have F₁₀ := F.unch h7 hn (fixedOk_slW (l := [62, RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₀
   refine scalarOut_ok hc hs₁₀ hM₁₀ F₁₀.one dm em
     fun s₁₁ hs₁₁ g₁₁ _ wr₁₁ U₁₁ ss_lt ss => ?_
   have hF := sl_le c h7 (i := FLAG) (by decide)
@@ -199,7 +207,7 @@ theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s�
   refine WP.mono (checkNonzero_ok c hs₁₁ h0 (sl_le c h7 (i := SS) (by decide)) (by omega))
     fun s₁₂ ⟨f₁₂, k₁₂, O₁₂⟩ => ?_
   have hs₁₂ := hs₁₁.of_keepRegs k₁₂ (by decide)
-  have F₁₂ := (F₁₀.unch h7 hn (fixedOk_slW (l := [RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₁).unch
+  have F₁₂ := (F₁₀.unch h7 hn (fixedOk_slW (l := [62, RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₁).unch
     h7 hn fixedOk_flag O₁₂.unch
   have acc₁₀ : sv c base s₁₀ ACC = sv c base s ACC := sv_unch U₁₀ h7 hn (by decide) (apart_slW (by decide))
   have rr₁₂ : sv c base s₁₂ RR = sv c base s RR :=

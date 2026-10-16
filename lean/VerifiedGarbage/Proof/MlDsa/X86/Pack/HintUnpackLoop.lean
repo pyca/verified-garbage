@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 
 /-!
 # ML-DSA on x86 (32-bit): `vg_mldsa_hint_bit_unpack`, the coefficients of a polynomial
@@ -206,7 +210,7 @@ theorem cmp_piece (i : Nat) (o : State → Option (Array (Vector Bool n) × Nat)
       (fun s₀ s => (IM s₀ i (o s₀) s ∧ X s₀) ∧ isa.eval .b s = some (decide (idxOf (o s₀) < bnd s₀ i)))
       (.block [.alu .cmp .eax (.reg .ebx)]) := by
   refine Piece.taint [] (fun s₀ s hp ⟨h, hx⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
-    (by taint_decide)
+    (by native_taint_decide)
   have hb : WP isa (.block [.alu .cmp .eax (.reg .ebx)]) s fun s' =>
       s'.cf = some (decide ((s.gpr .eax).toNat < (s.gpr .ebx).toNat)) ∧ s'.gpr .eax = s.gpr .eax ∧
         s'.mem = s.mem := by hrun
@@ -222,7 +226,7 @@ theorem first_piece (i : Nat) : Piece Pre Pub (fun s₀ s => IM s₀ i (G s₀ i
     (fun s₀ s => (IM s₀ i (G s₀ i 0) s ∧ fst s₀ i < bnd s₀ i) ∧ s.gpr .ebp = BitVec.ofNat 32 (yb s₀ (fst s₀ i)))
     (.block hbuFirst) := by
   refine Piece.taint [.edi, .eax] (fun s₀ s hp ⟨h, hl⟩ => ?_)
-    (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_) (by taint_decide)
+    (fun s₀ s₀' s s' _ _ hq ⟨h, _⟩ ⟨h', _⟩ r hr => ?_) (by native_taint_decide)
   · have hy := idx_lt_yL hp h hl
     have ea : addr (s.gpr .edi + s.gpr .eax) 0 = rA s₀ + BitVec.ofNat 64 (fst s₀ i) := by
       rw [h.edi, h.eax]; exact yAddr hp hy
@@ -243,7 +247,7 @@ theorem set1_piece (i : Nat) : Piece Pre Pub
     (fun s₀ s => IM s₀ i (G s₀ i 1) s ∧ isa.eval .b s = some (decide (fst s₀ i + 1 < bnd s₀ i)))
     (.block (hbuSet ++ ([.alu .cmp .eax (.reg .ebx)] : List Instr))) := by
   refine Piece.taint [.ebp, .ecx] (fun s₀ s hp ⟨⟨h, hl⟩, he⟩ => ?_)
-    (fun s₀ s₀' s s' _ _ hq ⟨⟨h, _⟩, he⟩ ⟨⟨h', _⟩, he'⟩ r hr => ?_) (by taint_decide)
+    (fun s₀ s₀' s s' _ _ hq ⟨⟨h, _⟩, he⟩ ⟨⟨h', _⟩, he'⟩ r hr => ?_) (by native_taint_decide)
   · have hb' := bnd_lt s₀ i
     have hbw := h.bw
     have hf := hp.facts
@@ -288,7 +292,7 @@ theorem loads_piece (i k : Nat) : Piece Pre Pub (NI i k)
       isa.eval .b s = some (decide (yb s₀ (fst s₀ i + k) < yb s₀ (fst s₀ i + k + 1))))
     (.block hbuLoads) := by
   refine Piece.taint [.edi, .eax] (fun s₀ s hp h => ?_)
-    (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by taint_decide)
+    (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_) (by native_taint_decide)
   · obtain ⟨hI, hx, hl⟩ := h
     have hy := idx_lt_yL hp hI hl
     have hax : s.gpr .eax = BitVec.ofNat 32 (fst s₀ i + k + 1) := by rw [hI.eax, hx]
@@ -326,7 +330,7 @@ theorem set2_piece (i k : Nat) : Piece Pre Pub
       decide (yb s₀ (fst s₀ i + k) < yb s₀ (fst s₀ i + k + 1)) = true)
     (fun s₀ s => IM s₀ i (G s₀ i (k + 2)) s ∧ fst s₀ i + k + 1 < bnd s₀ i) (.block hbuSet) := by
   refine Piece.taint [.ebp, .ecx] (fun s₀ s hp ⟨⟨⟨⟨hI, hx, hl⟩, he⟩, _⟩, hb⟩ => ?_)
-    (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨hn, he⟩, _⟩, _⟩ ⟨⟨⟨hn', he'⟩, _⟩, _⟩ r hr => ?_) (by taint_decide)
+    (fun s₀ s₀' s s' _ _ hq ⟨⟨⟨hn, he⟩, _⟩, _⟩ ⟨⟨⟨hn', he'⟩, _⟩, _⟩ r hr => ?_) (by native_taint_decide)
   · have hlt := of_decide_eq_true hb
     have hb' := bnd_lt s₀ i
     obtain ⟨st, e, est⟩ := G_some hx (by omega)
@@ -356,7 +360,7 @@ theorem fail2_piece (i k : Nat) : Piece Pre Pub
       decide (yb s₀ (fst s₀ i + k) < yb s₀ (fst s₀ i + k + 1)) = false)
     (fun s₀ s => IM s₀ i (G s₀ i (k + 2)) s ∧ fst s₀ i + k + 1 < bnd s₀ i) hbuFail := by
   refine Piece.taint [] (fun s₀ s hp ⟨⟨⟨⟨hI, hx, hl⟩, _⟩, _⟩, hb⟩ => ?_)
-    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)
+    (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by native_taint_decide)
   have hge := of_decide_eq_false hb
   have hb' := bnd_lt s₀ i
   obtain ⟨st, e, est⟩ := G_some hx (by omega)

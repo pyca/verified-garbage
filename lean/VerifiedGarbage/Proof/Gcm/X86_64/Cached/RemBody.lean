@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64.StitchZH
 public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
-public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.Base
 public import VerifiedGarbage.Proof.Framework.X86_64.Lane0
-public import VerifiedGarbage.Proof.Framework.X86_64.YFrame
+import VerifiedGarbage.Proof.Framework.X86_64.YFrame
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 
 /-!
 # One of the blocks after the last group
@@ -27,7 +28,7 @@ namespace VG.Proof.Gcm.X86_64.StitchZH
 open VG VG.X86_64
 open VG.Proof.Gcm.X86_64.Pclmul (Prod prod Only acc_ok eval_pxor)
 open VG.Impl.Gcm.X86_64.StitchZTo (atIx)
-open VG.Impl.Gcm.X86_64.StitchZH (remBody remNext remNext1)
+open VG.Impl.Gcm.X86_64.StitchZH (remBody remNext)
 open VG.Proof.Gcm.X86_64.StitchZTo (ea_atIx)
 open VG.Proof.Gcm.X86_64 (revMask blockAt_eq pshufb_rev_xor)
 open VG.Spec.Gcm (Block blockAt)
@@ -188,33 +189,5 @@ theorem remNext_ok (s : State) {m : Nat} (h1 : 1 ≤ m) (h15 : m ≤ 15) {i : Na
     Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, trivial, fun r h1 h2 => by simp only [h1, h2, ite_false], fun _ _ => rfl, trivial,
     trivial, trivial⟩
-
-/-- Whether `16 + m` is a multiple of four, as `test r9, 3` finds it. -/
-theorem test3 : ∀ m < 16, (BitVec.ofNat 64 (16 + m) &&& BitVec.signExtend 64 (3 : BitVec 32) == 0) =
-    decide (m % 4 = 0) := by decide
-
-/-- `add r10, 16`, `sub r9, 1`, `test r9, 3`. -/
-theorem remNext1_ok (s : State) {m : Nat} (h1 : 1 ≤ m) (h15 : m ≤ 15) {i : Nat}
-    (h9 : s.gpr .r9 = BitVec.ofNat 64 (16 + m)) (h10 : s.gpr .r10 = BitVec.ofNat 64 (16 * i)) :
-    WP isa (.block remNext1) s fun s' =>
-      s'.gpr .r10 = BitVec.ofNat 64 (16 * (i + 1)) ∧ s'.gpr .r9 = BitVec.ofNat 64 (16 + (m - 1)) ∧
-      s'.zf = some (decide ((m - 1) % 4 = 0)) ∧ (∀ r, r ≠ .r9 → r ≠ .r10 → s'.gpr r = s.gpr r) ∧
-      (∀ r l, s'.lane r l = s.lane r l) ∧ (∀ r l, s'.zlane r l = s.zlane r l) ∧ s'.mem = s.mem ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have e16 : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
-  have e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
-  have a10 : BitVec.ofNat 64 (16 * i) + 16 = BitVec.ofNat 64 (16 * (i + 1)) := by
-    rw [show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ← BitVec.ofNat_add]; congr 1
-  have s9 : BitVec.ofNat 64 (16 + m) - 1 = BitVec.ofNat 64 (16 + (m - 1)) := by
-    rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
-      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega) (by omega)]
-    congr 1; omega
-  have z9 := test3 (m - 1) (by omega)
-  apply WP.of_runBlock
-  simp only [remNext1, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
-    readSrc, arithFlags, State.setFlags, isa, State.setReg, e16, e1, h9, h10, a10, s9, z9,
-    Option.bind_some, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, trivial, trivial, fun r h1 h2 => by simp only [h1, h2, ite_false], fun _ _ => rfl,
-    fun _ _ => rfl, trivial, trivial, trivial⟩
 
 end VG.Proof.Gcm.X86_64.StitchZH

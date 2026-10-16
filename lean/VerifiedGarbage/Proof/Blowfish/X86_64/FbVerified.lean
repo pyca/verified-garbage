@@ -2,11 +2,11 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
 meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModeCore
-public import VerifiedGarbage.Proof.Modes.X86_64.Fb
+import VerifiedGarbage.Proof.Modes.X86_64.Fb
 meta import VerifiedGarbage.Proof.Modes.X86_64.Fb
 public import VerifiedGarbage.Proof.Blowfish.FbScratch
 meta import VerifiedGarbage.Proof.Blowfish.FbScratch
-public import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
+import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 meta import VerifiedGarbage.Proof.Blowfish.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintMono
@@ -18,6 +18,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Words
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.X86_64.Words
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Spec.Rc2
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Blowfish-OFB and -CFB64 on x86-64 meet their contracts

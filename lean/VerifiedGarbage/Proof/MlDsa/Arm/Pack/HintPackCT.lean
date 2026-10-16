@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.Pack.Mem
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_hint_bit_pack`, constant time and `Verified`
@@ -141,7 +147,7 @@ theorem main_ct : RelCT isa (fun a b => ZP s₁ a ∧ ZP s₂ b) hbpMain fun _ _
       b0 b1 b2 b3 bz
     exact ⟨⟨t₁, u₁, e₁⟩, t₂, u₂, e₂⟩
   · refine RelCT.taint (A := Hint.memTaint) (Taint.ofRegs [.r0, .r1, .r2, .r3])
-      (fun a' b' ⟨a, b, ⟨ha, hb⟩, ea, eb⟩ => ?_) (by taint_decide)
+      (fun a' b' ⟨a, b, ⟨ha, hb⟩, ea, eb⟩ => ?_) (by native_taint_decide)
     subst ea eb
     refine ⟨Taint.agree_ofRegs fun r hr => ?_, rfl, rfl, memEq h (a := a) (b := b) ha hb⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -159,7 +165,7 @@ theorem body_ct : RelCT isa (fun a b => a = P1 s₁ ∧ b = P1 s₂) hintBitPack
   refine RelCT.seq (R := fun a b => ZP s₁ a ∧ ZP s₂ b) (relct_wp ?_ fun a b ⟨ea, eb⟩ =>
     ⟨by rw [ea]; exact zeroP_ok hp₁, by rw [eb]; exact zeroP_ok hp₂⟩) ?_
   · refine RelCT.taint (A := VG.Arm.taint) (Taint.ofRegs [.r2, .r3, .r12])
-      (fun a b ⟨ea, eb⟩ => Taint.agree_ofRegs fun r hr => ?_) (by taint_decide)
+      (fun a b ⟨ea, eb⟩ => Taint.agree_ofRegs fun r hr => ?_) (by native_taint_decide)
     subst ea eb
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl

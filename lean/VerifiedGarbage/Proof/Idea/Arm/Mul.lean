@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.Idea.Arith32
 public import VerifiedGarbage.Impl.Idea.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -8,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # IDEA on ARMv7: ⊙ without branches
@@ -74,10 +78,10 @@ theorem mul_ofNat32 (x y : BitVec 32) : x * y = BitVec.ofNat 32 (x.toNat * y.toN
 /-- The mask `0xffff` is in `r12`. -/
 abbrev MaskOk (s : State) : Prop := s.gpr .r12 = 65535
 
-macro "keep_tac" : tactic => `(tactic| (
-  refine ⟨fun q hq => ?_, rfl, rfl, rfl, rfl⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
-  simp only [RegUpd.gpr_setReg, hq, ite_false]))
+tactic_template "keep_tac" : tactic => `(tactic| (
+                   refine ⟨fun q hq => ?_, rfl, rfl, rfl, rfl⟩
+                   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
+                   simp only [RegUpd.gpr_setReg, hq, ite_false]))
 
 theorem mul_run (d a b : Reg) (hb : b ≠ .r8) (s : State) (hm : MaskOk s) :
     ∃ s', runBlock isa (mulCode d a b) s = some s' ∧

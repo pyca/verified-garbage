@@ -1,0 +1,22 @@
+module
+
+public import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.X86_64
+meta import VerifiedGarbage.Impl.EcKey.BrainpoolP256r1.X86_64
+import VerifiedGarbage.Proof.Weierstrass.X86_64.BrainpoolP256r1Literals
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.BrainpoolP256r1Literals
+public import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+@[expose] public section
+
+namespace VG.Proof.EcKey.X86_64.BrainpoolP256r1
+
+open VG.Impl.EcKey.X86_64
+
+materialize_code publicKeyBrainpoolP256r1
+
+end VG.Proof.EcKey.X86_64.BrainpoolP256r1

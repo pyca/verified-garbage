@@ -1,14 +1,16 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
-public import VerifiedGarbage.Proof.Weierstrass.CombW
+import VerifiedGarbage.Proof.Weierstrass.CombW
 public import VerifiedGarbage.Proof.Weierstrass.CombDigitW
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.CombDigit
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # The comb from tables in memory on AArch64: digits

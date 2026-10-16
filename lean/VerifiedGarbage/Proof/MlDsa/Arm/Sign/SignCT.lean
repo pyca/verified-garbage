@@ -2,12 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseOCT
-public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseACT
+import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseACT
 meta import VerifiedGarbage.Proof.MlDsa.Arm.Sign.PhaseACT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.Arm.Prf
+meta import VerifiedGarbage.Proof.MlKem.Arm.Prf
+import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+meta import VerifiedGarbage.Proof.MlKem.Arm.CallsCT
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA signing on ARMv7: constant time
@@ -100,7 +106,7 @@ theorem sign_ct {P : Prims} (hP : PrimsOk P D) (h3 : Ok3 p) :
       exact ⟨hpub.2.2.2.2.2.1, hpub.2.2.2.2.1⟩)) (fun x y h => ⟨h, trivial⟩) fun _ _ h => h) ?_
   refine RelCT.seq (expandA_tr hP ha) ?_
   refine RelCT.seq (Q := fun _ _ => True) (R := fun (x y : State) => ∀ r ∈ [Reg.r7], x.gpr r = y.gpr r) ?_
-    (VG.Proof.MlKem.Arm.taint_prog [.r7] (fun x y h => h) (by taint_decide))
+    (VG.Proof.MlKem.Arm.taint_prog [.r7] (fun x y h => h) (by native_taint_decide))
   unfold ifOk
   refine ifOkElse_tr (D := D) (P := RA p D (p.k * p.ℓ)) (fun x y h => by rw [h.2]) (RelCT.mono (rest_tr hP h3)
     (fun x y ⟨x₀, y₀, ⟨⟨σ₁, σ₂, p₁, p₂, hpub, i₁, i₂⟩, h15⟩, ⟨hPx, _, _⟩, ⟨hPy, _, _⟩, hne⟩ => ?_)

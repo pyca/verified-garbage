@@ -1,17 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Mul
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.CombLit
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
-public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+import VerifiedGarbage.Spec.Weierstrass
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+meta import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Ed25519.Recode
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Spec.Ecdsa.Generic
+meta import VerifiedGarbage.Proof.Ed25519.Recode
+meta import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+meta import VerifiedGarbage.Spec.EcKey.Generic
+meta import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Ed25519's fixed-base multiplication with AVX512_IFMA: `Verified`

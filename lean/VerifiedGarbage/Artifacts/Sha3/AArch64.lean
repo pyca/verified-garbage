@@ -2,11 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
+import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
-public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
-public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
-public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Pad
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+import Mathlib.Tactic.IntervalCases
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 
 /-! # SHA-3 and SHAKE (FIPS 202) on AArch64 -/
 

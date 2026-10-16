@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Wide.Fold
-public import VerifiedGarbage.Proof.X448.Wide.TailPass
+import VerifiedGarbage.Proof.X448.Wide.TailPass
 public import VerifiedGarbage.Proof.Curve448.AArch64.Collect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.X448.Wide.TailBounds
 
 /-! Untrusted: reduce wide coefficients to eight limbs with explicit headroom. -/
 

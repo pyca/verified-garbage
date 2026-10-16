@@ -6,6 +6,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombTailCT
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
 
 @[expose] public section
 

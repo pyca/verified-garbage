@@ -1,17 +1,18 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Verified
-public import VerifiedGarbage.Proof.Rc2.X86_64.Key
+import VerifiedGarbage.Proof.Rc2.X86_64.Key
 public import VerifiedGarbage.Impl.Rc2.X86_64.Stream
-public import VerifiedGarbage.Proof.Rc2.Stream
+import VerifiedGarbage.Proof.Rc2.Stream
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Framework.X86_64.Exec
+import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 public import VerifiedGarbage.Proof.Rc2.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 @[expose] public section
 

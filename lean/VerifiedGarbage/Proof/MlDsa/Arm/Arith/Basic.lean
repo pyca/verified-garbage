@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlKem.Arm.Common
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mul32
 public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
@@ -8,6 +9,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on 32-bit ARM: the values of the arithmetic modulo `q`
@@ -145,10 +147,10 @@ theorem keep_iff {rs : List Reg} {s s' : State} :
   ⟨fun h => ⟨h.gpr, h.rd, h.wr, h.sp⟩, fun h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2⟩⟩
 
 /-- The lemmas that prove `Keep` after a symbolic execution (`run_block`). -/
-macro "keep_simp" : tactic => `(tactic| (
-  set_option linter.unusedSimpArgs false in
-  simp (config := {decide := true}) only [keep_iff, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
-    implies_true, and_self, and_true, true_and, ite_true, ite_false]))
+macro "keep_simp" : tactic => `(tactic| plain_simp_names (
+                   set_option linter.unusedSimpArgs false in
+                   simp (config := {decide := true}) only [keep_iff, List.forall_mem_cons, List.not_mem_nil, false_imp_iff,
+                     implies_true, and_self, and_true, true_and, ite_true, ite_false]))
 
 theorem Keep.refl (rs : List Reg) (s : State) : Keep rs s s := ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
 

@@ -1,20 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Calls
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Scratch
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, x86-64: the blocks of a short text
 
 Untrusted: everything here is checked by Lean. What each block of the path
-of a text shorter than `t` bytes does, from the arguments kept in `work`:
-the test of the length (`shortTest_ok`), the nonce kept in the streaming
-state's slots and the gathering's registers (`copyEntry_ok`), what the
+of a text copied whole does, from the arguments kept in `work`: the nonce
+kept in the streaming state's slots and the gathering's registers (`copyEntry_ok`), what the
 gathering needs (`copyGatherPre`) and leaves (`gathered_eq`), and the
 arguments of `vg_aes_gcm_seal` (`sealArgs_ok`).
 -/
@@ -45,25 +45,6 @@ structure SBase (s : State) (st : State) : Prop extends CBase s st where
 section
 variable {M : CtxMode} {s : State} (hp : SG M s)
 include hp
-
-/-- The length of the text, `CF` if it is shorter than `t` bytes. -/
-theorem shortTest_ok {t : Nat} (ht : t < 2 ^ 31) {ap : BitVec 64} {i : Nat} {st : State} (h : Base s ap i st) :
-    WP isa (.block (shortTest t)) st fun st' =>
-      st'.gpr .r11 = W s ∧ st'.cf = some (decide (L s < t)) ∧
-      (∀ r, r ≠ .rax → r ≠ .r11 → st'.gpr r = st.gpr r) ∧ st'.mem = st.mem ∧ st'.rd = st.rd ∧ st'.wr = st.wr := by
-  obtain ⟨a₅, e₅⟩ := h.w hp
-  have r₅ := h.slot hp (d := 40) (by decide)
-  have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
-  have hlen : st.mem.readW (W s + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (L s) := by
-    rw [h.kept.len, ofNat_toNat]
-  have it := imm_eq ht
-  apply WP.of_runBlock
-  refine ⟨_, by simp only [shortTest, gLen]; xrun [a₅, e₅, r₅, hlen, it], ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp [gpr_setReg, gpr_arithFlags]
-  · rw [cf_arithFlags]; simp only [gpr_setReg, ite_true, reduceCtorEq, ↓reduceIte, hlen,
-      toNat_ofNat_of_lt hL, toNat_ofNat_of_lt (show t < 2 ^ 64 by omega)]
-  · intro r a b; simp [gpr_setReg, gpr_arithFlags, a, b]
-  all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
 
 /-- The nonce and its length kept, and the gathering's registers: all the
 slices left, `dst`, and the first descriptor. -/

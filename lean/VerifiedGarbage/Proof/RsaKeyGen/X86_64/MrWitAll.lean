@@ -1,10 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
+import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.RsaKeyGen.Hdr
+public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBit
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.RsaKeyGen.Slots
 
 /-!
 # A candidate on x86-64: `mrWitness`
@@ -24,6 +30,18 @@ open VG.Proof.MlKem.X86_64
 
 /-- What `mrWitness` changes. -/
 def witRanges (w : Nat) : List (Nat × Nat) := [(slot w aX, 8 * (w + 2)), (8 * kUsed, 8), (8 * kU, 8)]
+
+/-- `witRanges`'s ranges, in the header and in the arrays. -/
+theorem witRanges_shape (w : Nat) : VG.Proof.RsaKeyGen.RangeShape w [(200, 8), (240, 8)]
+    [(1, 1)] (witRanges w) := by
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false,
+    witRanges, Public.aX, aX, sFn, kU, kUsed] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact .inr ⟨(1, 1), by decide, by simp only [slot, hdrBytes]; omega_using [],
+      by simp only [slot, hdrBytes]; omega_using []⟩
+  · exact .inl (by decide)
+  · exact .inl (by decide)
 
 theorem mrWitness_eq : mrWitness =
     ([.block [.mov .rsi (.mem (hdr kRand)), .mov .rax (.mem (hdr kUsed)), .alu .add .rsi (.reg .rax),
@@ -56,14 +74,14 @@ theorem mrWitness_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm :
   have hg := hc.good
   have hZ := hd.z
   have hw4 := hd.w4
-  have hw' : w < 2 ^ 27 := by have := hd.w64; omega
+  have hw' : w < 2 ^ 27 := by have := hd.w128; omega
   have hn := hg.scr.nowrap
   have sX := Nat.le_trans (slot_le (w := w) (show aX < 8 by decide)) hZ
   rw [mrWitness_eq]
   refine wp_seqs_append (by simp) (by simp) ?_
   refine WP.mono (witLoad_ok hg hZ (by omega) hw' hR hU hK hsrc hbl) fun s₁ ⟨hx₁, hu₁, hf₁, hg₁, k₁⟩ => ?_
-  have hc₁ : MrCtx s₁ B Z w mi c bm := hc.of_frm hd hf₁ hg₁.scr hg₁.rdi (by rng_disj) (by rng_disj) (by rng_disj)
-    (by rng_disj) (by rng_disj)
+  have hc₁ : MrCtx s₁ B Z w mi c bm := hc.of_frm hd hf₁ hg₁.scr hg₁.rdi (VG.Proof.RsaKeyGen.HdrShapeC.geD rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
+    (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl) (VG.Proof.RsaKeyGen.SlotShapeC.apartW rfl rfl)
   have hx : Spec.Rsa.os2ip bs < 2 ^ (64 * w) := by
     have := os2ip_lt bs; rw [hbl, pow256_eq] at this; rwa [show 8 * (8 * w) = 64 * w by omega] at this
   refine wp_seqs_append (by simp) (by simp) ?_

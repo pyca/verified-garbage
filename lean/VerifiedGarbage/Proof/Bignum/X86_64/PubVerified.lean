@@ -7,6 +7,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # RSAEP on x86-64: helpers for the shared contracts
@@ -35,10 +37,11 @@ def satState : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x6009 then 0x40 else if a = 0x6010 then 0x40 else if a = 0x6019 then 0x80
+  mem a := if a = 0x6020 then 0x20
+    else if a = 0x6009 then 0x40 else if a = 0x6010 then 0x40 else if a = 0x6019 then 0x80
     else if a = 0x6021 then 0x04 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 64⟩, ⟨0x6008, 32⟩]
-  wr := [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩]
+  wr := [⟨0x1000, 64⟩, ⟨0x8000, 8448⟩]
 
 /-- The leak of `n` and `e`, as bytes, determines each when `n`'s length is
 the same. -/

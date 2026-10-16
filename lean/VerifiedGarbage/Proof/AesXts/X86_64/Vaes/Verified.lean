@@ -1,0 +1,114 @@
+module
+
+public import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
+meta import VerifiedGarbage.Proof.AesXts.X86_64.Vaes.Dec
+import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
+meta import VerifiedGarbage.Proof.AesCbc.X86_64.Verified
+public import VerifiedGarbage.Proof.Framework.X86_64.Taint
+meta import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-!
+# One-pass XTS-AES on x86-64: `Verified`
+
+Correctness from `encrypt_wp` and `decrypt_wp`; constant time by the taint analysis of the
+whole function, from the public arguments (pointers, `rounds` and `n`); and
+the shared contract of `Spec/Xts/Contract.lean`, with the 8 bytes of stack
+of `vg_aes_xts_encrypt`'s (the precondition `UPre` the proofs share with it
+includes them; this function writes none).
+-/
+
+@[expose] public section
+
+namespace VG.Proof.AesXts.X86_64.Vaes
+
+open VG VG.X86_64
+open VG.Proof.AesCbc (ciphOf)
+open VG.Proof.AesCbc.X86_64
+
+theorem encrypt_mx : Impl.AesXts.X86_64Vaes.encrypt.allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide +kernel
+
+theorem encrypt_spSafe : Impl.AesXts.X86_64Vaes.encrypt.all (fun i => !X86_64.isa.writesSp i) = true := by
+  decide +kernel
+
+theorem encrypt_correct (s : State) (hs : (modeX86_64 (AesXts.xtsMode true)).pre s) :
+    ∃ t s', Exec isa Impl.AesXts.X86_64Vaes.encrypt s t s' ∧ abiPreserved s s' ∧
+      (modeX86_64 (AesXts.xtsMode true)).post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := encrypt_wp hs
+  exact ⟨t, s', he, abiPreserved_of_exec encrypt_mx he hg, hp⟩
+
+theorem encrypt_ct : ConstantTime isa (modeX86_64 (AesXts.xtsMode true)).pre (modeX86_64 (AesXts.xtsMode true)).pub
+    Impl.AesXts.X86_64Vaes.encrypt := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9])
+    ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, _⟩
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem encrypt_verified :
+    Verified X86_64.target Impl.AesXts.X86_64Vaes.encrypt (Spec.Xts.aesEncryptContract X86_64.abi 8) :=
+  Verified.of_correct encrypt_correct encrypt_ct
+    { pre := by sig_implies_pre [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, modeX86_64, X86_64.abi,
+        X86_64.argRegs]
+      -- `xtsMode.chain` counts the blocks, which are `n`.
+      post := by
+        intro s s' _ h
+        sig_post [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf, X86_64.abi,
+          X86_64.argRegs]
+        sig_reduce [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf,
+          X86_64.abi, X86_64.argRegs] at h
+        sig_simp [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf, X86_64.abi,
+          X86_64.argRegs] [] at h
+        rwa [VG.Proof.AesCbc.length_blocksAt] at h
+      pub := by sig_implies_pub [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, modeX86_64, X86_64.abi,
+        X86_64.argRegs]
+      sat := by sig_implies_sat [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, modeX86_64, X86_64.abi,
+        X86_64.argRegs] [sat] using sat }
+
+theorem decrypt_mx : Impl.AesXts.X86_64Vaes.decrypt.allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide +kernel
+
+theorem decrypt_spSafe : Impl.AesXts.X86_64Vaes.decrypt.all (fun i => !X86_64.isa.writesSp i) = true := by
+  decide +kernel
+
+theorem decrypt_correct (s : State) (hs : (modeX86_64 (AesXts.xtsMode false)).pre s) :
+    ∃ t s', Exec isa Impl.AesXts.X86_64Vaes.decrypt s t s' ∧ abiPreserved s s' ∧
+      (modeX86_64 (AesXts.xtsMode false)).post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := decrypt_wp hs
+  exact ⟨t, s', he, abiPreserved_of_exec decrypt_mx he hg, hp⟩
+
+theorem decrypt_ct : ConstantTime isa (modeX86_64 (AesXts.xtsMode false)).pre (modeX86_64 (AesXts.xtsMode false)).pub
+    Impl.AesXts.X86_64Vaes.decrypt := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .r9])
+    ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, _⟩
+  refine Taint.agree_ofRegs fun r hr => ?_
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem decrypt_verified :
+    Verified X86_64.target Impl.AesXts.X86_64Vaes.decrypt (Spec.Xts.aesDecryptContract X86_64.abi 8) :=
+  Verified.of_correct decrypt_correct decrypt_ct
+    { pre := by sig_implies_pre [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, modeX86_64, X86_64.abi,
+        X86_64.argRegs]
+      -- `xtsMode.chain` counts the blocks, which are `n`.
+      post := by
+        intro s s' _ h
+        sig_post [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf, X86_64.abi,
+          X86_64.argRegs]
+        sig_reduce [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf,
+          X86_64.abi, X86_64.argRegs] at h
+        sig_simp [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, modeX86_64, AesXts.xtsMode, ciphOf, X86_64.abi,
+          X86_64.argRegs] [] at h
+        rwa [VG.Proof.AesCbc.length_blocksAt] at h
+      pub := by sig_implies_pub [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, modeX86_64, X86_64.abi,
+        X86_64.argRegs]
+      sat := by sig_implies_sat [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, modeX86_64, X86_64.abi,
+        X86_64.argRegs] [sat] using sat }
+
+end VG.Proof.AesXts.X86_64.Vaes

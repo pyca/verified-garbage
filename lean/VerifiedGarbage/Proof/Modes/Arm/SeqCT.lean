@@ -8,6 +8,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Linear
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Aes.SboxSpec
+meta import VerifiedGarbage.Proof.Framework.Arm.Contract
+meta import VerifiedGarbage.Proof.Framework.Arm.Linear
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
+meta import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # The modes one block at a time on ARMv7: constant time
@@ -68,7 +80,8 @@ theorem pub_N : N c s₀ = N c s₀' := by
   exacts [by rw [hq.2.2.2.2.1], by rw [hq.2.2.2.2.2.1]]
 theorem pub_Sc : Sc c s₀ = Sc c s₀' := by
   cases hr : c.rounds <;> simp only [Sc, scArg, hr, Bool.false_eq_true, ↓reduceIte]
-  exacts [hq.2.2.2.2.2.1, hq.2.2.2.2.2.2 hr]
+  exacts [hq.2.2.2.2.2.1, hq.2.2.2.2.2.2.1 hr]
+theorem pub_syms : ∀ x ∈ S.consts, s₀.syms x.1 = s₀'.syms x.1 := hq.2.2.2.2.2.2.2
 theorem pub_Dk (k : Nat) : Dk s₀ c M k = Dk s₀' c M k := by simp only [Dk]; rw [pub_Dp hq]
 
 /-- The registers the invariant pins agree in both runs. -/
@@ -96,13 +109,13 @@ end
 
 /-- The relation before a block, in two runs. -/
 def BRel (c : Core) (S : CoreSpec c) (M : Mode) (s₀ s₀' : State) (k : Nat) (s₁ s₂ : State) : Prop :=
-  (k < N c s₀ ∧ LInv c S M s₀ k s₁) ∧ (k < N c s₀' ∧ LInv c S M s₀' k s₂)
+  (k < N c s₀ ∧ LInv c S M s₀ k s₁ ∧ s₁.syms = s₀.syms) ∧ (k < N c s₀' ∧ LInv c S M s₀' k s₂ ∧ s₂.syms = s₀'.syms)
 
 /-- What is known after the code before the call. -/
 def AfterPre (c : Core) (S : CoreSpec c) (M : Mode) (s₀ : State) (k : Nat) (s₂ : State) : Prop :=
   ∃ (hk : k < N c s₀) (s : State), LInv c S M s₀ k s ∧
     PreA (c := c) (M := M) s₀ k (runOps M.pre ((rK S s₀ M k).2.set .d
-      ((xs c s₀ M)[k]'(by rw [length_blocksOf]; exact hk)))) s s₂
+      ((xs c s₀ M)[k]'(by rw [length_blocksOf]; exact hk)))) s s₂ ∧ s₂.syms = s₀.syms
 
 /-- The registers the code after the call uses, after it. -/
 structure AfterCall (c : Core) (M : Mode) (s₀ : State) (k : Nat) (s₃ : State) : Prop where
@@ -114,7 +127,7 @@ theorem afterCall {c : Core} {S : CoreSpec c} {M : Mode} {s₀ : State} {k : Nat
     (h : AfterPre c S M s₀ k s₂)
     (cp : CallPost c S s₂ (Kp s₀) (Rp s₀) (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt) (Cs c s₀) s₃) :
     AfterCall c M s₀ k s₃ := by
-  obtain ⟨_, s, hl, a⟩ := h
+  obtain ⟨_, s, hl, a, -⟩ := h
   have g : ∀ r ∈ preserved, r ≠ .lr → r ≠ .r9 → r ≠ .r10 → s₃.gpr r = s.gpr r := fun r hr hl h9 h10 => by
     rw [cp.saved r hr hl, a.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)
       (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr) h9 h10
@@ -135,25 +148,28 @@ include hp hp' hq
 /-- One run of the body from `k` blocks is constant time. -/
 theorem body_ct (hM : ModeOk c M) (hT : SeqTaint c M) (k : Nat) :
     RelCT isa (BRel c S M s₀ s₀' k) (c.body M) fun _ _ => True := by
-  have a := rel_agree (F := fun s => k < N c s₀ ∧ LInv c S M s₀ k s)
-    (F' := fun s => k < N c s₀' ∧ LInv c S M s₀' k s)
+  have a := rel_agree (F := fun s => k < N c s₀ ∧ LInv c S M s₀ k s ∧ s.syms = s₀.syms)
+    (F' := fun s => k < N c s₀' ∧ LInv c S M s₀' k s ∧ s.syms = s₀'.syms)
     (G := AfterPre c S M s₀ k) (G' := AfterPre c S M s₀' k) (Taint.ofRegs (loopRegs c))
-    (fun _ _ h h' => Taint.agree_ofRegs (LInv.agree hq h.2 h'.2)) hT.pre
-    (fun _ h => WP.mono (pre_wp hp hM h.1 h.2) fun _ x => ⟨h.1, _, h.2, x⟩)
-    (fun _ h => WP.mono (pre_wp hp' hM h.1 h.2) fun _ x => ⟨h.1, _, h.2, x⟩)
+    (fun _ _ h h' => Taint.agree_ofRegs (LInv.agree hq h.2.1 h'.2.1)) hT.pre
+    (fun _ h => VG.Arm.WP.mono_syms (pre_wp hp hM h.1 h.2.1) fun _ x sy => ⟨h.1, _, h.2.1, x, sy.trans h.2.2⟩)
+    (fun _ h => VG.Arm.WP.mono_syms (pre_wp hp' hM h.1 h.2.1) fun _ x sy => ⟨h.1, _, h.2.1, x, sy.trans h.2.2⟩)
   -- The call, with the same regions in both runs.
   let rd : List Region := [⟨State.addr (Kp s₀), S.keyLen⟩]
   let wr : List Region := [⟨State.addr (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt), c.bs⟩]
   have cpre : ∀ {t₀ : State} (hpt : UPre c S M t₀) {s₂ : State} (h : AfterPre c S M t₀ k s₂),
       CallPre c S s₂ (Kp t₀) (Rp t₀) (bt c (Dk t₀ c M k) (Sc c t₀) M.tgt) (Cs c t₀) := fun {_} hpt {_} h => by
-    obtain ⟨hk, s, hl, pa⟩ := h
-    exact PreA.callPre hpt hM hk hl pa
+    obtain ⟨hk, s, hl, pa, sy⟩ := h
+    exact PreA.callPre hpt hM hk hl pa sy
   have spA : ∀ {s₂ s₂' : State}, AfterPre c S M s₀ k s₂ → AfterPre c S M s₀' k s₂' → s₂.sp = s₂'.sp :=
-    fun ⟨_, _, hl, x⟩ ⟨_, _, hl', x'⟩ => by rw [x.sp, hl.sp, x'.sp, hl'.sp, pub_sp hq]
+    fun ⟨_, _, hl, x, _⟩ ⟨_, _, hl', x', _⟩ => by rw [x.sp, hl.sp, x'.sp, hl'.sp, pub_sp hq]
+  have syA : ∀ {s₂ s₂' : State}, AfterPre c S M s₀ k s₂ → AfterPre c S M s₀' k s₂' →
+      ∀ x ∈ S.consts, s₂.syms x.1 = s₂'.syms x.1 :=
+    fun ⟨_, _, _, _, sy⟩ ⟨_, _, _, _, sy'⟩ x hx => by rw [sy, sy', pub_syms hq x hx]
   -- The arguments in registers, through the callee's view of a state.
   have regsA : ∀ {s₂ s₂' : State} (h : AfterPre c S M s₀ k s₂) (h' : AfterPre c S M s₀' k s₂'),
       s₂.gpr .r0 = s₂'.gpr .r0 ∧ s₂.gpr .r1 = s₂'.gpr .r1 ∧ s₂.gpr .r2 = s₂'.gpr .r2 ∧
-        (c.rounds = true → s₂.gpr .r3 = s₂'.gpr .r3) := fun h h' => by
+        (c.r3Pub = true → s₂.gpr .r3 = s₂'.gpr .r3) := fun h h' => by
     have p := cpre hp h
     have p' := cpre hp' h'
     rw [← pub_K hq, ← pub_R hq, ← pub_Dk hq, ← pub_Sc hq] at p'
@@ -169,8 +185,12 @@ theorem body_ct (hM : ModeOk c M) (hT : SeqTaint c M) (k : Nat) :
         rwa [hN] at rN
       · have hD : c.dReg = .r2 := by unfold Core.dReg; rw [hr]; rfl
         rwa [hD] at rD
-    · have hN : c.nReg = .r3 := by unfold Core.nReg; rw [hr]; rfl
-      rwa [hN] at rN
+    · cases hr' : c.rounds
+      · have hs : c.arg3.isSome = true := by simpa [Core.r3Pub, hr'] using hr
+        obtain ⟨k, hk⟩ := Option.isSome_iff_exists.mp hs
+        rw [p.a3 k hk, p'.a3 k hk]
+      · have hN : c.nReg = .r3 := by unfold Core.nReg; rw [hr']; rfl
+        rwa [hN] at rN
   have callR : RelCT isa (fun s₂ s₂' => AfterPre c S M s₀ k s₂ ∧ AfterPre c S M s₀' k s₂') c.callStep
       fun _ _ => True := by
     unfold Core.callStep
@@ -188,24 +208,29 @@ theorem body_ct (hM : ModeOk c M) (hT : SeqTaint c M) (k : Nat) :
       rw [push_pushed (rs := [.r12, .lr]) rfl (by simpa using p'.sp8 hs), Option.some.injEq] at pb
       subst pa pb
       have eA : Push.argR s₂' = Push.argR s₂ := by rw [Push.argR, Push.argR, hsp]
+      have syms := syA h h'
+      have eT : tabRegs S.consts s₂' = tabRegs S.consts s₂ := by
+        simp only [tabRegs, Abi.constRegions]
+        exact List.map_congr_left fun x hx => by rw [syms x hx]
       let wr' : List Region := [⟨State.addr (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt), c.bs⟩,
         ⟨State.addr (Cs c s₀), c.stackScratch⟩]
       have cw : Covers ([⟨State.addr (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt), c.bs⟩] ++
           [⟨State.addr (Cs c s₀), c.stackScratch⟩]) s₂.wr := Covers.append_left p.wB (p.wC hs)
       have cw' : Covers ([⟨State.addr (bt c (Dk s₀ c M k) (Sc c s₀) M.tgt), c.bs⟩] ++
           [⟨State.addr (Cs c s₀), c.stackScratch⟩]) s₂'.wr := Covers.append_left p'.wB (p'.wC hs)
-      refine RelCT.call S.correct S.ct ([⟨State.addr (Kp s₀), S.keyLen⟩, Push.argR s₂]) wr'
+      refine RelCT.call S.correct S.ct ([⟨State.addr (Kp s₀), S.keyLen⟩, Push.argR s₂] ++ tabRegs S.consts s₂) wr'
         (P := fun x y => x = pushed [.r12, .lr] s₂ ∧ y = pushed [.r12, .lr] s₂')
         (fun x y ⟨ex, ey⟩ => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
       subst ex ey
       have v := p.ecbPreS hs
       have v' := p'.ecbPreS hs
-      rw [eA] at v'
+      have c' := p'.cov hs
+      rw [eA, eT] at v' c'
       obtain ⟨r0, r1, r2, r3⟩ := regsA h h'
       have e0 : ∀ (t : State) (r : Reg), r ≠ .r12 → r ≠ .lr → ∀ rd wr, (Push.view t rd wr).gpr r = t.gpr r :=
         fun t r a b rd wr => Push.view_gpr _ _ _ _ (by simp [linkRegs, a, b])
-      refine ⟨S.pre_ofS hs _ v, S.pre_ofS hs _ v', S.pub_ofS hs _ _ ?_ ?_ ?_ ?_ (fun hr => ?_) ?_,
-        Push.cov (p.sp8 hs) p.rK cw, Push.covW cw, eA ▸ Push.cov (p'.sp8 hs) p'.rK cw', Push.covW cw'⟩
+      refine ⟨S.pre_ofS hs _ v, S.pre_ofS hs _ v', S.pub_ofS hs _ _ ?_ ?_ ?_ ?_ (fun hr => ?_) ?_ syms,
+        p.cov hs, Push.covW cw, c', Push.covW cw'⟩
       · simp only [State.withRegions_sp, State.callEntry_sp, pushed_sp, hsp]
       · rw [e0 _ _ (by decide) (by decide), e0 _ _ (by decide) (by decide), r0]
       · rw [e0 _ _ (by decide) (by decide), e0 _ _ (by decide) (by decide), r1]
@@ -255,10 +280,14 @@ theorem loop_ct (hM : ModeOk c M) (hT : SeqTaint c M) (n : Nat) :
   · exact RelCT.of_false fun _ _ h => hn h.1
   subst hn
   have ct := (body_ct hp hp' hq hM hT k).wp
-    (F₁ := fun (s : State) => (LInv c S M s₀ (k + 1) s ∧ s.z = decide (N c s₀ - (k + 1) = 0)) ∧ k < N c s₀)
-    (F₂ := fun (s : State) => LInv c S M s₀' (k + 1) s ∧ s.z = decide (N c s₀' - (k + 1) = 0))
-    fun _ _ h => ⟨WP.mono (body_ok hp hM h.1.1 h.1.2) fun _ r => ⟨r, h.1.1⟩, body_ok hp' hM h.2.1 h.2.2⟩
-  refine ct.mono (fun _ _ h => h.2) fun s₁ s₂ ⟨_, ⟨⟨l₁, z₁⟩, hk⟩, ⟨l₂, z₂⟩⟩ => ?_
+    (F₁ := fun (s : State) => ((LInv c S M s₀ (k + 1) s ∧ s.z = decide (N c s₀ - (k + 1) = 0)) ∧ k < N c s₀) ∧
+      s.syms = s₀.syms)
+    (F₂ := fun (s : State) => (LInv c S M s₀' (k + 1) s ∧ s.z = decide (N c s₀' - (k + 1) = 0)) ∧
+      s.syms = s₀'.syms)
+    fun _ _ h => ⟨VG.Arm.WP.mono_syms (body_ok hp hM h.1.1 h.1.2.1 h.1.2.2) fun _ r sy => ⟨⟨r, h.1.1⟩,
+        sy.trans h.1.2.2⟩,
+      VG.Arm.WP.mono_syms (body_ok hp' hM h.2.1 h.2.2.1 h.2.2.2) fun _ r sy => ⟨r, sy.trans h.2.2.2⟩⟩
+  refine ct.mono (fun _ _ h => h.2) fun s₁ s₂ ⟨_, ⟨⟨⟨l₁, z₁⟩, hk⟩, y₁⟩, ⟨⟨l₂, z₂⟩, y₂⟩⟩ => ?_
   have e₁ : isa.eval .ne s₁ = some !decide (N c s₀ - (k + 1) = 0) := by
     show VG.Arm.eval .ne s₁ = _; rw [eval_ne, z₁]
   have e₂ : isa.eval .ne s₂ = some !decide (N c s₀ - (k + 1) = 0) := by
@@ -271,7 +300,7 @@ theorem loop_ct (hM : ModeOk c M) (hT : SeqTaint c M) (n : Nat) :
     exact ⟨h0 ▸ l₁, by rw [← hN, h0]; exact l₂⟩
   · rw [e₁] at ht
     have h0 : N c s₀ - (k + 1) ≠ 0 := by simpa using ht
-    exact ⟨N c s₀ - (k + 1), by omega, k + 1, rfl, ⟨by omega, l₁⟩, ⟨by rw [← hN]; omega, l₂⟩⟩
+    exact ⟨N c s₀ - (k + 1), by omega, k + 1, rfl, ⟨by omega, l₁, y₁⟩, ⟨by rw [← hN]; omega, l₂, y₂⟩⟩
 
 end
 
@@ -292,8 +321,8 @@ theorem seq_rel {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk c M) (hT : S
       exact ⟨h.spF, by rw [e]; exact h.arg_wr⟩
   have hj : argBytes c = 4 * (if c.rounds then 2 else 1) := by unfold argBytes; split <;> rfl
   have pro := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀')
-    (G := fun s => LInv c S M s₀ 0 s ∧ s.z = decide (N c s₀ = 0))
-    (G' := fun s => LInv c S M s₀' 0 s ∧ s.z = decide (N c s₀' = 0))
+    (G := fun s => (LInv c S M s₀ 0 s ∧ s.z = decide (N c s₀ = 0)) ∧ s.syms = s₀.syms)
+    (G' := fun s => (LInv c S M s₀' 0 s ∧ s.z = decide (N c s₀' = 0)) ∧ s.syms = s₀'.syms)
     (argTaint [.r0, .r1, .r2, .r3] (argBytes c))
     (fun s s' e e' => by
       subst e e'
@@ -310,30 +339,31 @@ theorem seq_rel {c : Core} (S : CoreSpec c) {M : Mode} (hM : ModeOk c M) (hT : S
           exact hq.2.2.2.2.2.1
         · rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
           · exact hq.2.2.2.2.2.1
-          · exact hq.2.2.2.2.2.2 hr) hT.pro
-    (fun s e => by rw [e]; exact prologue_wp hp) (fun s e => by rw [e]; exact prologue_wp hp')
+          · exact hq.2.2.2.2.2.2.1 hr) hT.pro
+    (fun s e => by rw [e]; exact VG.Arm.WP.mono_syms (prologue_wp hp) fun _ h sy => ⟨h, sy⟩)
+    (fun s e => by rw [e]; exact VG.Arm.WP.mono_syms (prologue_wp hp') fun _ h sy => ⟨h, sy⟩)
   have ev {s : State} (h : s.z = decide (N c s₀ = 0)) : isa.eval .eq s = some (decide (N c s₀ = 0)) := by
     show VG.Arm.eval .eq s = _; rw [eval_eq, h]
   have ev' {s : State} (h : s.z = decide (N c s₀' = 0)) : isa.eval .eq s = some (decide (N c s₀ = 0)) := by
     show VG.Arm.eval .eq s = _; rw [eval_eq, h, hN]
   have nil := RelCT.taint (A := taint)
-    (P := fun a b => ((LInv c S M s₀ 0 a ∧ a.z = decide (N c s₀ = 0)) ∧
-      (LInv c S M s₀' 0 b ∧ b.z = decide (N c s₀' = 0))) ∧ isa.eval .eq a = some true)
+    (P := fun a b => (((LInv c S M s₀ 0 a ∧ a.z = decide (N c s₀ = 0)) ∧ a.syms = s₀.syms) ∧
+      ((LInv c S M s₀' 0 b ∧ b.z = decide (N c s₀' = 0)) ∧ b.syms = s₀'.syms)) ∧ isa.eval .eq a = some true)
     (Taint.ofRegs []) (fun _ _ _ => Taint.agree_ofRegs fun r hr => by simp at hr) hnil
-  have mid : RelCT isa (fun a b => (LInv c S M s₀ 0 a ∧ a.z = decide (N c s₀ = 0)) ∧
-      (LInv c S M s₀' 0 b ∧ b.z = decide (N c s₀' = 0)))
+  have mid : RelCT isa (fun a b => ((LInv c S M s₀ 0 a ∧ a.z = decide (N c s₀ = 0)) ∧ a.syms = s₀.syms) ∧
+      ((LInv c S M s₀' 0 b ∧ b.z = decide (N c s₀' = 0)) ∧ b.syms = s₀'.syms))
       (.ite .eq (.block []) (.loop (c.body M) .ne))
       (fun a b => LInv c S M s₀ (N c s₀) a ∧ LInv c S M s₀' (N c s₀') b) := by
-    refine RelCT.ite (fun a b h => by rw [ev h.1.2, ev' h.2.2]) ?_ ?_
+    refine RelCT.ite (fun a b h => by rw [ev h.1.1.2, ev' h.2.1.2]) ?_ ?_
     · refine (nil.wp (F₁ := LInv c S M s₀ (N c s₀)) (F₂ := LInv c S M s₀' (N c s₀')) fun a b h => ?_).mono
         (fun _ _ h => h) fun _ _ h => h.2
       have h0 : N c s₀ = 0 := by
-        have := h.2; rw [ev h.1.1.2] at this; simpa using this
-      exact ⟨WP.block_nil (h0 ▸ h.1.1.1), WP.block_nil (by rw [← hN, h0]; exact h.1.2.1)⟩
+        have := h.2; rw [ev h.1.1.1.2] at this; simpa using this
+      exact ⟨WP.block_nil (h0 ▸ h.1.1.1.1), WP.block_nil (by rw [← hN, h0]; exact h.1.2.1.1)⟩
     · refine (loop_ct hp hp' hq hM hT (N c s₀ - 0)).mono
-        (fun a b h => ⟨0, rfl, ⟨?_, h.1.1.1⟩, ⟨?_, h.1.2.1⟩⟩) fun _ _ h => h
+        (fun a b h => ⟨0, rfl, ⟨?_, h.1.1.1.1, h.1.1.2⟩, ⟨?_, h.1.2.1.1, h.1.2.2⟩⟩) fun _ _ h => h
       all_goals
-        have := h.2; rw [ev h.1.1.2] at this
+        have := h.2; rw [ev h.1.1.1.2] at this
         have : N c s₀ ≠ 0 := by simpa using this
         omega
   have epi := RelCT.taint (A := taint)

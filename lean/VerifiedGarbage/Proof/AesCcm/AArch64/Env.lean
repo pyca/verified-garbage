@@ -10,6 +10,13 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesCcm.BytesAt
+public import VerifiedGarbage.Proof.Cmac.Block
+public import VerifiedGarbage.Proof.Cmac.Stream
+public import VerifiedGarbage.Proof.Gcm.Be64
+public import VerifiedGarbage.Proof.Gcm.Compose
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # AES-CCM on AArch64: where everything is
@@ -48,14 +55,14 @@ theorem setWidth_8_32 (x : BitVec 64) : BitVec.setWidth 8 (BitVec.setWidth 32 x)
   BitVec.setWidth_setWidth_of_le _ (by decide)
 
 /-- Runs a block of the instructions the AES-CCM code uses. -/
-macro "carun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr,
-    State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
-    sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self, BitVec.add_zero,
-    mov, ptr, imm, zero16, bO, c0O, c1O, ksO, uO, aadO, alenO, nlenO, vO, rO, scrO, List.cons_append,
-    List.nil_append, List.append_assoc, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff,
-    Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, and_true, true_and,
-    eq_self_iff_true, imm_lit, setWidth_8_32, $ts,*]) <;> try rfl)
+tactic_template "carun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr,
+                     State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
+                     sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self, BitVec.add_zero,
+                     mov, ptr, imm, zero16, bO, c0O, c1O, ksO, uO, aadO, alenO, nlenO, vO, rO, scrO, List.cons_append,
+                     List.nil_append, List.append_assoc, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff,
+                     Nat.reduceSub, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod, and_true, true_and,
+                     eq_self_iff_true, imm_lit, setWidth_8_32, $ts,*]) <;> try rfl)
 
 /-! ## Reassociating sequences -/
 

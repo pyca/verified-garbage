@@ -2,15 +2,15 @@ module
 
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
 meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.Lit
-public import VerifiedGarbage.Impl.X25519.X86_64.Adx
+import VerifiedGarbage.Impl.X25519.X86_64.Adx
 meta import VerifiedGarbage.Impl.X25519.X86_64.Adx
 public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
+import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
 public import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
 meta import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBasePrecomputed
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

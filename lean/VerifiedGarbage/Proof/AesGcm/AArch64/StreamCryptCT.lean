@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamCrypt
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Open
+import VerifiedGarbage.Proof.AesGcm.AArch64.Open
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.Open
 public import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.BodyCT
@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
+meta import VerifiedGarbage.Proof.AesGcm.AArch64.StreamInit
 
 /-!
 # AES-GCM on AArch64: `vg_aes_gcm_stream_encrypt` and `_decrypt` are constant time

@@ -1,13 +1,19 @@
 module
 
-public import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
-public import VerifiedGarbage.Impl.Ecdh.P256.X86_64
-public import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
-public import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
+import VerifiedGarbage.Impl.Ecdh.P256.X86_64
+import VerifiedGarbage.Proof.Ecdh.X86_64.Verified
+import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
 public import VerifiedGarbage.Proof.Ecdh.X86_64.VerifiedAdx
-public import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
+import VerifiedGarbage.Proof.Ecdh.X86_64.LitAdx
+public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDH over P-256 (SP 800-56A) on x86-64

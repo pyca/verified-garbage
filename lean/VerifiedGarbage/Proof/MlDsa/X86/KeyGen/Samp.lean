@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Leak
+import VerifiedGarbage.Proof.MlDsa.KeyGen.Mask32
 
 /-!
 # ML-DSA key generation on x86 (32-bit): the samplers
@@ -93,7 +96,7 @@ theorem expA_piece {e : Nat} (he : e < p.k * p.ℓ) : KP p (KSamp p e 0) (KSamp 
     (fun s₀ s₀' s s' _ _ hq h h' => by rw [h.seed, h'.seed, (TPub.leak hq).1])
     fun s₀ s s' hp h h' fr red out => ?_) ?_
   · obtain ⟨A, S, hA, -, hG⟩ := h.ex
-    have sf : SafeS p e 0 [aB e, ssB 2048] := ⟨by layd, by layd, fun _ _ => by layp hF,
+    have sf : SafeS p e 0 [aB e, ssB 2048] := ⟨by layd, by layd, fun _ _ => by layp hF [],
       fun _ h => absurd h (by omega)⟩
     refine ⟨h.kb.keep hp (N := 80) (by omega) sf.kb fr h', ⟨A, S, fun e' he' => keepPolyD hp (stkN (by omega))
       (sf.a e' he') fr (hA e' he'), ?_⟩, red, ?_⟩
@@ -110,7 +113,7 @@ theorem expA_piece {e : Nat} (he : e < p.k * p.ℓ) : KP p (KSamp p e 0) (KSamp 
   obtain ⟨a01, aiff⟩ := Proof.MlDsa.KeyGen.acc_and (good_01 hG) r01
   have fr' := fr2 fr
   have sk : safeKB p [sb oACC 4, aB e] = true := by layd
-  have sa : ∀ e' < e, (YK p).apart (aB e') [sb oACC 4, aB e] = true := fun _ _ => by layp hF
+  have sa : ∀ e' < e, (YK p).apart (aB e') [sb oACC 4, aB e] = true := fun _ _ => by layp hF []
   refine ⟨h.kb.keep hp (N := 0) (by omega) sk fr' h', fun e' => if e' = e then polyAt s'.mem (Buf.addr s₀ (aB e))
     else A e', S, fun e' he' => ?_, fun _ h => absurd h (Nat.not_lt_zero _), ?_⟩
   · dsimp only
@@ -173,7 +176,7 @@ theorem expS_piece {r : Nat} (hr : r < p.ℓ + p.k) :
     (fun _ _ _ h => h.kb.ctx) (fun s₀ s₀' s s' _ _ hq h h' => by rw [h.seed, h'.seed, (TPub.leak hq).2 r hr])
     fun s₀ s s' hp h h' fr red out => ?_) ?_
   · obtain ⟨A, S, hA, hS, hG⟩ := h.ex
-    have sf : SafeS p (p.k * p.ℓ) r [sB p r, ssB 2048] := ⟨by layd, by layd, fun _ _ => by layp hF,
+    have sf : SafeS p (p.k * p.ℓ) r [sB p r, ssB 2048] := ⟨by layd, by layd, fun _ _ => by layp hF [],
       fun _ _ => by layd⟩
     refine ⟨h.kb.keep hp (N := 80) (by omega) sf.kb fr h', ⟨A, S, fun e' he' => keepPolyD hp (stkN (by omega))
       (sf.a e' he') fr (hA e' he'), fun r' hr' => ⟨keepPolyD hp (stkN (by omega)) (sf.s r' hr') fr (hS r' hr').1,
@@ -191,7 +194,7 @@ theorem expS_piece {r : Nat} (hr : r < p.ℓ + p.k) :
   obtain ⟨a01, aiff⟩ := Proof.MlDsa.KeyGen.acc_and (good_01 hG) r01
   have fr' := fr2 fr
   have sk : safeKB p [sb oACC 4, sB p r] = true := by layd
-  have sa : ∀ e' < p.k * p.ℓ, (YK p).apart (aB e') [sb oACC 4, sB p r] = true := fun _ _ => by layp hF
+  have sa : ∀ e' < p.k * p.ℓ, (YK p).apart (aB e') [sb oACC 4, sB p r] = true := fun _ _ => by layp hF []
   have ss : ∀ r' < r, (YK p).apart (sB p r') [sb oACC 4, sB p r] = true := fun _ _ => by layd
   have kA : ∀ e' < p.k * p.ℓ, PolyIs s'.mem (Buf.addr s₀ (aB e')) (A e') := fun e' he' =>
     keepPolyD hp (stkN (by omega)) (sa e' he') fr' (hA e' he')

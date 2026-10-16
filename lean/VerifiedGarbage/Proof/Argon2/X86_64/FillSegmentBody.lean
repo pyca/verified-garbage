@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
+import VerifiedGarbage.Proof.Argon2.X86_64.FillKernelStable
 public import VerifiedGarbage.Impl.Argon2.X86_64.FillSegment
 public import VerifiedGarbage.Proof.Argon2.X86_64.FillBlock
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Argon2.X86_64.HPrime
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 
 /-! Merged from `Proof.Argon2.X86_64.FillIndex`. -/
 

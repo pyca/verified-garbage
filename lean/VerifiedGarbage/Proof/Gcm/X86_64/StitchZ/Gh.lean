@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Group
 public import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Aes
 public import VerifiedGarbage.Proof.Framework.X86_64.ZLaneSse
 public import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock

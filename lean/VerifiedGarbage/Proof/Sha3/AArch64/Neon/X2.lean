@@ -2,13 +2,13 @@ module
 
 public import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.TCB.Axioms
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 public import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig
@@ -16,6 +16,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Impl.Sha3.AArch64.Callee
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+meta import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # `vg_keccak_f1600_x2` on AArch64

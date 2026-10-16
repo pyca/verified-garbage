@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
 public import VerifiedGarbage.Proof.RsaPss.AArch64.EmView
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # RSASSA-PSS on AArch64: the encoding, verified
@@ -218,18 +219,18 @@ theorem signEnc_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
     fun u6 ⟨O6, d6⟩ => ?_)
   · rw [← hmsg, getD_app, getD_app, RsaPss.zeros_length]
     by_cases h1 : i < 8
-    · simp (disch := omega_arith) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
+    · simp (disch := omega_arith) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right, hdBl, List.length_append,
         RsaPss.zeros_length]
       exact (RsaPss.zeros_getD _ _).symm
     by_cases h2 : i < 8 + H.D
-    · simp (disch := omega_arith) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
+    · simp (disch := omega_arith) only [updL, ↓ite_eq_left, ↓ite_eq_right, hdBl, List.length_append,
         RsaPss.zeros_length]
       rw [show oY + i - (oY + 8) = i - 8 by omega_using []]
     by_cases h3 : i < 8 + H.D + sl
-    · simp (disch := omega_arith) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
+    · simp (disch := omega_arith) only [updL, ↓ite_eq_left, ↓ite_eq_right, hdBl, List.length_append,
         RsaPss.zeros_length]
       rw [show oY + i - (oY + 8 + H.D) = i - (8 + H.D) by omega_using []]
-    · simp (disch := omega_arith) only [updL, clr, ite_eq_left, ite_eq_right, hsBl, hdBl, List.length_append,
+    · simp (disch := omega_arith) only [updL, clr, ↓ite_eq_left, ↓ite_eq_right, hdBl, List.length_append,
         RsaPss.zeros_length]
       rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega_using [hsBl, h3])]
       rfl

@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Crypt
-public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitch.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.ChaCha20.AArch64.Rows6.Xor
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
 
 /-!
 # ChaCha20-Poly1305 on AArch64, stitched: `cryptStitched`

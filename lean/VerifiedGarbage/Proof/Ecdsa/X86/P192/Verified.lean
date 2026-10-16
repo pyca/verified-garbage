@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Framework.NativeTaint
 meta import VerifiedGarbage.Proof.Framework.NativeTaint
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Main
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
+import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontP192
 public import VerifiedGarbage.Proof.Ecdsa.X86.P192.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P192.Contract
@@ -20,6 +20,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA over P-192 on x86 (32-bit): `Verified`

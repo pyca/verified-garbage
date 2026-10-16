@@ -1,20 +1,22 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.Mul
-public import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
-public import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
-public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+import VerifiedGarbage.Proof.MlKem.X86_64.Mul
+import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
-public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
-public import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
+import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
-public import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
 
 /-!
 # The polynomial arithmetic a top-level function of ML-KEM calls on x86-64

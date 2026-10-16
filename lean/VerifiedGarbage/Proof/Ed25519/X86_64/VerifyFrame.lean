@@ -1,17 +1,19 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
-public import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
-public import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
+import VerifiedGarbage.Proof.Ed25519.X86_64.CachedPoint
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulBatch
-public import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
+import VerifiedGarbage.Proof.Ed25519.X86_64.DecodeBits
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarStep
-public import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.PointLoop
 public import VerifiedGarbage.Proof.Ed25519.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.X25519.X86_64.Setup
 
 /-!
 # Verification preserves its inputs and saved pointers

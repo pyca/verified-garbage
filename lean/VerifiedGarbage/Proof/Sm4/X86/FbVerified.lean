@@ -1,15 +1,21 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+
 public import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
 meta import VerifiedGarbage.Proof.Sm4.X86.CbcVerified
 public import VerifiedGarbage.Proof.Sm4.FbScratch
 meta import VerifiedGarbage.Proof.Sm4.FbScratch
 public import VerifiedGarbage.Proof.Sm4.X86.FbLit
 meta import VerifiedGarbage.Proof.Sm4.X86.FbLit
+public import VerifiedGarbage.Proof.Sm4.X86.CryptSum
+meta import VerifiedGarbage.Proof.Sm4.X86.CryptSum
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # SM4-OFB and SM4-CFB128 on x86 (32-bit) meet their contracts
@@ -30,7 +36,7 @@ namespace VG.Proof.Sm4.X86.Fb
 
 open VG VG.X86 VG.Impl.Sm4.X86 VG.Impl.Modes
 open VG.Proof.Modes.X86 (SeqPre ofb_wp cfbEnc_wp cfbDec_wp)
-open VG.Proof.Sm4.X86 (scr_eq disjoint_empty KeyArgs dirCoreSpec)
+open VG.Proof.Sm4.X86 (scr_eq disjoint_empty KeyArgs dirCoreSpec dirCoreSpec_cipher)
 
 /-- SM4 under the schedule at the first argument. -/
 abbrev ciph (s : State) : Spec.Cbc.Cipher := Spec.Sm4.cipher (Spec.Sm4.scheduleAt s.mem ((arg s 0).setWidth 64))
@@ -108,7 +114,8 @@ theorem data_eq (m : Mem) (s : State) :
 theorem iv_eq (m : Mem) (s : State) :
     Spec.Aes.bytesAt m ((arg s 1).setWidth 64) (4 * (dirCore .encrypt).bw) = ivAt m s := rfl
 theorem cipher_eq (s : State) :
-    (dirCoreSpec .encrypt).cipher (Spec.Sm4.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := rfl
+    (dirCoreSpec .encrypt).cipher (Spec.Sm4.scheduleAt s.mem ((arg s 0).setWidth 64)) = ciph s := by
+  rw [dirCoreSpec_cipher]; rfl
 
 theorem ofb_wp_x86 {s₀ : State} (hp : (fbX86 ofbPost).pre s₀) :
     WP isa ofb s₀ fun s' => abiPreserved s₀ s' ∧ (fbX86 ofbPost).post s₀ s' :=
@@ -182,17 +189,20 @@ theorem fbTaint_agree {post : State → State → Prop} {s₁ s₂ : State} (h�
       Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
     exact congrArg _ (ha _ (by omega))
 
-theorem ofb_ct : ConstantTime isa (fbX86 ofbPost).pre (fbX86 ofbPost).pub ofb :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem ofb_ct : ConstantTime isa (fbX86 ofbPost).pre (fbX86 ofbPost).pub ofb := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint ofb h).isSome = true :=
+    by taint_decide_sum [cryptSum]
+  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
-theorem cfbEncrypt_ct : ConstantTime isa (fbX86 cfbEncPost).pre (fbX86 cfbEncPost).pub cfbEncrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem cfbEncrypt_ct : ConstantTime isa (fbX86 cfbEncPost).pre (fbX86 cfbEncPost).pub cfbEncrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint cfbEncrypt h).isSome = true :=
+    by taint_decide_sum [cryptSum]
+  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
-theorem cfbDecrypt_ct : ConstantTime isa (fbX86 cfbDecPost).pre (fbX86 cfbDecPost).pub cfbDecrypt :=
-  VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp)
-    (by taint_decide)
+theorem cfbDecrypt_ct : ConstantTime isa (fbX86 cfbDecPost).pre (fbX86 cfbDecPost).pub cfbDecrypt := by
+  obtain ⟨_, h⟩ : ∃ h, (VG.X86.taint.check fbTaint cfbDecrypt h).isSome = true :=
+    by taint_decide_sum [cryptSum]
+  exact VG.Taint.constantTime (A := VG.X86.taint) fbTaint (fun _ _ h₁ h₂ hp => fbTaint_agree h₁ h₂ hp) h
 
 /-! ## The contracts -/
 
@@ -219,16 +229,16 @@ def narrowRd (s : State) : List Region := [⟨(arg s 0).setWidth 64, 128⟩, ⟨
 def narrowWr (s : State) : List Region :=
   [⟨(arg s 2).setWidth 64, 16 * (arg s 3).toNat⟩, ⟨(arg s 1).setWidth 64, 16⟩, ⟨(arg s 4).setWidth 64, 8 * 181⟩]
 
-local macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
+tactic_template "sm4_fb_narrow" : tactic =>
   `(tactic| simp only [VG.Proof.Sm4.X86.Fb.fbX86, VG.Proof.Sm4.X86.Fb.wideContract,
-    VG.Proof.Sm4.X86.Fb.narrowRd, VG.Proof.Sm4.X86.Fb.narrowWr, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
-    VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr] $(loc)?)
+                     VG.Proof.Sm4.X86.Fb.narrowRd, VG.Proof.Sm4.X86.Fb.narrowWr, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, VG.X86.State.withRegions_gpr, VG.X86.State.withRegions_mem,
+                     VG.X86.State.withRegions_rd, VG.X86.State.withRegions_wr])
 
 theorem wide_pre (post : State → State → Prop) (s : State) (h : (wideContract post).pre s) :
     (fbX86 post).pre (s.withRegions (narrowRd s) (narrowWr s)) := by
   obtain ⟨_, _, h⟩ := h
-  narrow
+  sm4_fb_narrow
   exact ⟨trivial, trivial, h⟩
 
 /-- Memory holding the arguments `0x1000, 0x2000, 0x3000, 0, 0x4000` at `0x8004`. -/
@@ -348,7 +358,7 @@ theorem fb_verified {post : State → State → Prop} {c : Prog isa}
   · intro s s' _ h
     exact hR _ _ _ _ _ _ h
   · intro s₁ s₂ _ _ h
-    narrow
+    sm4_fb_narrow
     exact h
 
 theorem ofb_verified : Verified X86.target ofb (Proof.Sm4.fbScratchContract X86.abi 181 Proof.Sm4.ofbPost) :=

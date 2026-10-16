@@ -4,8 +4,8 @@ public import VerifiedGarbage.Impl.Cast5.X86_64
 public import VerifiedGarbage.Proof.Cast5.Table
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
 public import VerifiedGarbage.Proof.Framework.X86_64.Sse
-public import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
+import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

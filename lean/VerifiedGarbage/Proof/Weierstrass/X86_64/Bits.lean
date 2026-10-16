@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -91,11 +92,16 @@ theorem addr_bit (base : Addr) (i dst j : Nat) :
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
     (((b.setWidth 64 >>> j) &&& BitVec.signExtend 64 (1 : BitVec 32)).setWidth 8 : BitVec 8) =
-      if b.getLsbD j then 1 else 0 := by decide +kernel
+      if b.getLsbD j then 1 else 0 := fun b j _ => by
+  rw [show BitVec.signExtend 64 (1 : BitVec 32) = 1 from by decide]
+  exact bitByte_getLsbD 64 (by decide) b j
 
 theorem bit_byte0 : ∀ b : BitVec 8,
     ((b.setWidth 64 &&& BitVec.signExtend 64 (1 : BitVec 32)).setWidth 8 : BitVec 8) =
-      if b.getLsbD 0 then 1 else 0 := by decide +kernel
+      if b.getLsbD 0 then 1 else 0 := fun b => by
+  rw [show BitVec.signExtend 64 (1 : BitVec 32) = 1 from by decide,
+    ← BitVec.ushiftRight_zero (b.setWidth 64)]
+  exact bitByte_getLsbD 64 (by decide) b 0
 
 theorem bitJ_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {i : Nat}
     (ht : s.gpr .rbx = BitVec.ofNat 64 i) {b : BitVec 8} (ha : s.gpr .rax = b.setWidth 64)

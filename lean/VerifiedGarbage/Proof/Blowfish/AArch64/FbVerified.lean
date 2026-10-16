@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Blowfish.AArch64.ModeCore
-public import VerifiedGarbage.Proof.Modes.AArch64.Fb
+import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
 public import VerifiedGarbage.Proof.Blowfish.FbScratch
 meta import VerifiedGarbage.Proof.Blowfish.FbScratch
@@ -18,6 +18,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # Blowfish-OFB and Blowfish-CFB64 on AArch64 meet their contracts

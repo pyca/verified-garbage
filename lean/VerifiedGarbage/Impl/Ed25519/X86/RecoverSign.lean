@@ -17,13 +17,20 @@ def recoverInvalid : Prog isa := .block [.mov .eax (.imm 0)]
 def recoverAdjustSign : Prog isa :=
   .seq (.block (freeze 64 ++ recoverParity))
     (.seq (.ite .e (.block []) (.block (fieldCode [.const 5 0, .sub 0 5 0]))) (.block recoverSuccess))
+/-- `eax = 1` if `x = 0` and the sign bit `esi` is 1 (no point), and 0 otherwise. -/
+def recoverZero : Prog isa :=
+  .seq (.block (fieldZero 0)) (.ite .e (.block [.mov .eax (.reg .esi)]) (.block [.mov .eax (.imm 0)]))
 def recoverSign : Prog isa :=
-  .seq (.block (fieldZero 0)) (.ite .e
-    (.seq (.block [.alu .test .esi (.reg .esi)]) (.ite .ne recoverInvalid recoverAdjustSign)) recoverAdjustSign)
-def recoverChecks : Prog isa :=
-  .seq (.block (fieldEqual 11 6)) (.ite .e recoverSign
+  .seq recoverZero (.seq (.block [.alu .test .eax (.reg .eax)]) (.ite .ne recoverInvalid recoverAdjustSign))
+/-- `x` kept and `eax = 1` if `v x² = u`; `x` times `√-1` and `eax = 1` if `v x² = -u`; `eax = 0`
+otherwise. -/
+def recoverRoot : Prog isa :=
+  .seq (.block (fieldEqual 11 6)) (.ite .e (.block [.mov .eax (.imm 1)])
     (.seq (.block (fieldEqual 11 12)) (.ite .e
-      (.seq (.block (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18])) recoverSign) recoverInvalid)))
+      (.block (fieldCode [.const 18 Spec.Ed25519.sqrtM1, .mul 0 0 18] ++ [.mov .eax (.imm 1)]))
+      recoverInvalid)))
+def recoverChecks : Prog isa :=
+  .seq recoverRoot (.seq (.block [.alu .test .eax (.reg .eax)]) (.ite .ne recoverSign recoverInvalid))
 def recoverPoint : Prog isa :=
   .seq recoverCandidate (.seq (.block [.mov .esi (.mem (sc 32))]) recoverChecks)
 

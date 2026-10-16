@@ -13,7 +13,8 @@
 //! exponent within BoringSSL's limits (odd, from 3 to `2^33 - 1`) and the
 //! input, computes `input^e mod n` by Montgomery multiplication, and writes it
 //! out. Their timing may depend on the public key (`n` and `e`) but not on
-//! the input. On a CPU with BMI2 and ADX, `vg_rsa_public_precompute_adx` and
+//! the input. On a CPU with BMI2, ADX and AVX2 (as for the private-key
+//! operation below), `vg_rsa_public_precompute_adx` and
 //! `vg_rsa_public_precomputed_checked_adx`, with the same contracts, do the
 //! same with a faster Montgomery multiplication.
 //!
@@ -25,8 +26,9 @@
 //! does: a fault in the computation, or a key whose values do not match, is
 //! never released ([`Error::Fault`]). Its timing may depend on the public key
 //! and the lengths of `p` and `q`, but not on the input or on the private
-//! key's values. On a CPU with BMI2 and ADX, `vg_rsa_private_checked_adx`
-//! does the same with the faster Montgomery multiplication; on one with
+//! key's values. On a CPU with BMI2, ADX and AVX2,
+//! `vg_rsa_private_checked_adx` does the same with the faster Montgomery
+//! multiplication, reading its exponentiation's table with AVX2; on one with
 //! AVX512_IFMA and AVX512VL too, `vg_rsa_private_checked_ifma` does the same,
 //! computing the two exponentiations of a 2048-, 3072- or 4096-bit key with
 //! primes of half its size at once, in 256-bit vector registers.
@@ -37,7 +39,7 @@
 //! computes, or from `(n, e, d)` alone, whose primes the verified
 //! `vg_rsa_recover_primes` (contract `VG.Spec.Rsa.recoverPrimesContract`)
 //! recovers by SP 800-56B Rev. 2 Appendix C.1 (`vg_rsa_recover_primes_adx`
-//! on a CPU with BMI2 and ADX). The timing of the first may depend on `n`
+//! on a CPU with BMI2, ADX and AVX2). The timing of the first may depend on `n`
 //! but not on the private key; that of the second on `n`, `e` and the number
 //! of candidates the recovery tried (1 or 2 for most keys), but not
 //! otherwise on `d`.
@@ -95,7 +97,7 @@ pub(crate) enum Backend {
     /// The baseline ISA.
     Baseline,
     /// Montgomery multiplication with BMI2's `mulx` and ADX's `adcx` and
-    /// `adox`.
+    /// `adox`, and the private-key operation's table read with AVX2.
     #[cfg(target_arch = "x86_64")]
     Adx,
     /// `Adx`, and for the private-key operation, AVX512_IFMA's
@@ -183,7 +185,7 @@ impl core::error::Error for Error {}
 /// The words of working space the operations need for an `n_len`-byte
 /// modulus (`VG.Spec.Rsa.scratchWords`).
 pub(crate) fn scratch_words(n_len: usize) -> usize {
-    16 * n_len
+    16 * n_len + 32
 }
 
 /// `x` without its leading zero bytes.
@@ -209,9 +211,10 @@ fn exponent(e: &[u8]) -> Result<&[u8], Error> {
 /// needs (`VG.Spec.Rsa.publicPrecompute`), once its first operation has
 /// computed them.
 ///
-/// After PSS verification, retains one wiped working buffer for reuse.
-/// Concurrent verifications use independent buffers; cloning a key starts with an
-/// empty cache, and with the values of `n` if they are computed.
+/// After OAEP encryption, PSS or PKCS #1 signature verification, retains
+/// one wiped working buffer for reuse. Concurrent operations use independent
+/// buffers; cloning a key starts with an empty cache, and with the values
+/// of `n` if they are computed.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicKey {
     pub(crate) n: Vec<u8>,
@@ -272,7 +275,7 @@ impl PublicKey {
         // are distinct Rust allocations; `PublicKey::new` and the check above
         // give `64 ≤ out_len ≤ 1024`, `input_len = out_len`,
         // `pre_len = 2 ⌈out_len / 8⌉`, `1 ≤ e_len ≤ 5 ≤ out_len`, and
-        // `scratch_len = 16 out_len`; `pre` holds what
+        // `scratch_len = 16 out_len + 32`; `pre` holds what
         // `vg_rsa_public_precompute` (or its variant, with the same contract)
         // wrote for the modulus, returning 1; and the CPU has the features of
         // the function `select` chose.
@@ -395,8 +398,21 @@ pub(crate) mod tests {
     #[test]
     fn backends_x86_64() {
         assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Baseline);
+        // The private-key operation's `_adx` code reads its table with AVX2.
         assert_eq!(
             Backend::select(VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES),
+            Backend::Baseline
+        );
+        assert_eq!(
+            Backend::select(VG_RSA_RECOVER_PRIMES_ADX_FEATURES),
+            Backend::Baseline
+        );
+        assert_eq!(
+            Backend::select(Features::all(&[
+                VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
+                VG_RSA_RECOVER_PRIMES_ADX_FEATURES,
+                Features::of(&["avx", "avx2"]),
+            ])),
             Backend::Adx
         );
         assert_eq!(
@@ -404,11 +420,10 @@ pub(crate) mod tests {
             Backend::Adx
         );
         assert_eq!(
-            Backend::select(VG_RSA_RECOVER_PRIMES_ADX_FEATURES),
-            Backend::Adx
-        );
-        assert_eq!(
-            Backend::select(VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES),
+            Backend::select(Features::all(&[
+                VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
+                Features::of(&["avx2"]),
+            ])),
             Backend::Ifma
         );
         assert_eq!(

@@ -1,7 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratch
-public import VerifiedGarbage.Proof.Framework.Arm.Exec
+import VerifiedGarbage.Proof.Framework.Arm.Exec
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A scratch buffer in a register, on the stack, wiped after use (ARMv7)

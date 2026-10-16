@@ -1,10 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
-meta import VerifiedGarbage.Proof.Seed.AArch64.ModeCore
-public import VerifiedGarbage.Proof.Modes.AArch64.Fb
+public import VerifiedGarbage.Proof.Seed.AArch64.Link
+meta import VerifiedGarbage.Proof.Seed.AArch64.Link
+import VerifiedGarbage.Proof.Modes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Modes.AArch64.Fb
-public import VerifiedGarbage.Proof.Modes.AArch64.ViaV
+import VerifiedGarbage.Proof.Modes.AArch64.ViaV
 meta import VerifiedGarbage.Proof.Modes.AArch64.ViaV
 public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
@@ -18,12 +18,14 @@ public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
+import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 meta import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # SEED-OFB and SEED-CFB128 on AArch64 meet their contracts
@@ -94,6 +96,7 @@ def cfbDecAArch64 : Contract isa where
 def fbCoreSpec : Modes.AArch64.BlockSpec fbCore :=
   (dirCoreSpec .encrypt).viaV .v31 (by decide) (by decide) (by decide) fun _ h => h
 
+attribute [local irreducible] Spec.Seed.cipher in
 /-- The core's cipher is the contract's, without unfolding it. -/
 theorem fbCipher_eq (k : Spec.Seed.Schedule) : fbCoreSpec.cipher k = Spec.Seed.cipher k := rfl
 
@@ -175,7 +178,7 @@ def fbSat : State where
 theorem ofb_verified :
     Verified AArch64.target ofb (Proof.Seed.fbScratchContract AArch64.abi 182 Proof.Seed.ofbPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (ofb_wp hs) (by lit_decide) (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' ofb_keeps_x30 (ofb_wp hs)
       exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide)) (by
@@ -185,8 +188,7 @@ theorem ofb_verified :
 theorem cfbEncrypt_verified :
     Verified AArch64.target cfbEncrypt (Proof.Seed.fbScratchContract AArch64.abi 182 Proof.Seed.cfbEncPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbEncrypt_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbEncrypt_keeps_x30 (cfbEncrypt_wp hs)
       exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide)) (by
@@ -196,8 +198,7 @@ theorem cfbEncrypt_verified :
 theorem cfbDecrypt_verified :
     Verified AArch64.target cfbDecrypt (Proof.Seed.fbScratchContract AArch64.abi 182 Proof.Seed.cfbDecPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbDecrypt_wp hs) (by lit_decide)
-        (by lit_decide)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbDecrypt_keeps_x30 (cfbDecrypt_wp hs)
       exact ⟨t, s', he, modeAbi_of he h₁ h₃ (by lit_decide), h₂⟩)
     (VG.Taint.constantTime (A := VectorTaint.taint) (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
       (by taint_decide)) (by

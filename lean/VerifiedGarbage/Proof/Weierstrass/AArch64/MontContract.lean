@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
-public import VerifiedGarbage.Proof.Mont.Read
+import VerifiedGarbage.Proof.Mont.Read
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-!
 # Montgomery products as functions on AArch64: the contracts

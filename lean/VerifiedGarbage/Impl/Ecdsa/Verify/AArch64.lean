@@ -23,15 +23,17 @@ on x86-64 (`Impl/Ecdsa/Verify/X86_64.lean`):
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
    `w = s^(n-2)`, in Montgomery form modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
-5. `[u]G` by the signature's comb (from the table of `u`'s bits), saved
+5. `[u]G` by the signature's comb (from the table of `u`'s bits), reading
+   the entries of the public `u`'s digits directly, saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's window method and
    `[u]G + [v]Q` by the complete addition, into `R`;
-6. for P-256, compare `X` with `rZ` and, when `r+n < p`, `(r+n)Z`, without
-   inversion; for the other curves, compute `x = X Z^(p-2)` and compare it
-   with `r` modulo `n`. Reject `Z = 0` and return the accumulated flag.
+6. compare `X` with `rZ` and, when `r+n < p`, `(r+n)Z`, without inversion
+   (for a curve with `n < p ≤ 2n`, as all these are; otherwise compute
+   `x = X Z^(p-2)` and compare it with `r` modulo `n`). Reject `Z = 0` and
+   return the accumulated flag.
 
-All validity checks run regardless of earlier failures. P-256's comb
-addresses depend on its public scalar; the remaining memory accesses and
+All validity checks run regardless of earlier failures. The comb's
+addresses depend on the public scalar `u`; the remaining memory accesses and
 branches depend only on pointers and fixed loop counters.
 -/
 
@@ -96,11 +98,21 @@ def save : List Instr :=
   copy c.n (c.sl UX) (c.sl RX) ++ copy c.n (c.sl UY) (c.sl RY) ++ copy c.n (c.sl UZ) (c.sl RZ) ++
   setConst c.n (c.sl RX) 0 ++ setConst c.n (c.sl RY) (c.mont 1) ++ setConst c.n (c.sl RZ) 0
 
-/-- `R = U + R`, through `D`. -/
+/-- `D` to `R`. -/
+def fromD : List Instr :=
+  copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++ copy c.n (c.sl RZ) (c.sl DZ)
+
+/-- `R = U + R`, through `D`: inline, or for a curve whose complete additions are a function
+(`padd`) a call of it, which adds `T` to `R` and reads `b` at `EM`'s slot (free here): `b` to `EM`,
+`R` to `T` and `U` to `R` before the call. -/
 def sum : Prog isa :=
-  .seq (fprogB c.MP' (rcb3 c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
-    (.block (copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++
-      copy c.n (c.sl RZ) (c.sl DZ)))
+  match c.padd with
+  | none =>
+    .seq (fprogB c.MP' (rcb3 c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ))) (.block (fromD c))
+  | some f =>
+    .seq (.block (copy c.n (c.sl EM) (c.sl BM) ++ copyPt c.n (c.pt TX TY TZ) (c.pt RX RY RZ))) <|
+    .seq (.seq (.block (copyPt c.n (c.pt RX RY RZ) (c.pt UX UY UZ)))
+      (addP c.MP' c.rcbSlots (c.pt RX RY RZ) (c.pt TX TY TZ) (c.pt DX DY DZ) (some f))) (.block (fromD c))
 
 /-- `x19`–`x25` restored, and the flag's low bit to `x0`. -/
 def finish : List Instr :=
@@ -110,17 +122,18 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
 and `x R - r R mod n`, the checks of `Z` and of `x ≡ r`, and the result. -/
 def final : Prog isa :=
-  .seq (.block (Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC))) <|
-  .seq (.block (Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE))) <|
+  .seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC)) <|
+  .seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE)) <|
   .seq (c.mulNP (c.sl XN) (c.sl X) (c.sl R2N)) <|
   .seq (.block (Mont.AArch64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM')))
     (.block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++ finish c))
 
 /-- `[u]G + [v]Q`, into `R`: `[u]G` by the comb from the table of the bits of
-`u`, `[v]Q` by ECDH's window method. P-256 verification selects its public
-comb digits directly; the other curves retain the table scan. -/
+`u`, `[v]Q` by ECDH's window method. `u` is public (from the digest and
+the signature), so the comb reads its entries directly, without the table
+scan of signing. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (TCombCfg.comb c.combCfg (c.C.len == 32)) <|
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (TCombCfg.comb c.combCfg true) <|
   .seq (.block (save c)) <|
   .seq (c.winPrep (c.sl V)) <| .seq (WinCfg.window (c.winCfg PX PY)) (sum c)
 
@@ -148,17 +161,23 @@ def projectiveMatch : List Instr :=
 def projectiveChecks : List Instr :=
   projectiveMatch c ++ c.andFlag ++ c.checkNonzero (c.sl RZ) ++ finish c
 
+/-- Convert `r` to Montgomery form, sharing the eight-word product. -/
+def projectiveConvert : Prog isa :=
+  if c.n = 8 then c.mulPP (c.sl XM) (c.sl K) (c.sl XM)
+  else .block (mul c.MP' (c.sl XM) (c.sl K) (c.sl XM))
+
 /-- ECDSA's final check using projective coordinates. The caller establishes
 `n < p ≤ 2n`, so `r` and `r+n` exhaust the possible affine coordinates. -/
 def projectiveFinal : Prog isa :=
   .seq (.seq (.block (projectivePrepare c))
-    (.seq (.block (mul c.MP' (c.sl XM) (c.sl K) (c.sl XM)))
+    (.seq (projectiveConvert c)
       (fprogB c.MP' (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
-/-- P-256 compares projective coordinates directly; the other curves retain
-an affine conversion until the direct path has been benchmarked for them. -/
+/-- A curve with `n < p ≤ 2n` (every curve this verifier serves) compares
+projective coordinates directly, with no inversion; any other would convert
+to affine coordinates first. -/
 def tail : Prog isa :=
-  if c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
+  if c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
   else .seq c.pPow (final c)
 
 /-- Everything after the checks of the key. -/

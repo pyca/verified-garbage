@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.KeyGenPre
-public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
+import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # ML-KEM on x86 (32-bit): the start of key generation

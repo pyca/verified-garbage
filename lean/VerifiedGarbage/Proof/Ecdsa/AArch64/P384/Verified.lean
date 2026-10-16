@@ -1,27 +1,29 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Lit
+import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Lit
-public import VerifiedGarbage.Proof.P384.Point
+import VerifiedGarbage.Proof.P384.Point
 meta import VerifiedGarbage.Proof.P384.Point
-public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-public import VerifiedGarbage.Proof.P384.Prime
+import VerifiedGarbage.Proof.P384.Prime
 meta import VerifiedGarbage.Proof.P384.Prime
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # ECDSA over P-384 on AArch64: `Verified`
@@ -49,6 +51,7 @@ theorem p384_nBits : 64 * p384.n ≤ Spec.Ecdsa.nBits p384.C := by
   omega
 
 theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
+  window_tmp := by decide +kernel
   n0 := by decide
   n10 := by decide
   onG := Proof.P384.onCurve_G
@@ -90,6 +93,7 @@ theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
   inv_at := .inr (by decide +kernel)
   inv_fn := fun _ => ⟨by decide, by lit_decide, by lit_decide, by lit_decide, by lit_decide⟩
   padd := fun h => absurd rfl h
+  check_fn := fun _ => ⟨by lit_decide, by lit_decide, by lit_decide⟩
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p384 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, held, fit, hdw⟩ := h

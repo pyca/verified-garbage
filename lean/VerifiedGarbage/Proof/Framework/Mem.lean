@@ -7,6 +7,7 @@ public import Batteries.Data.List.Basic
 public import VerifiedGarbage.TCB.Mem
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.GetElem
+public import VerifiedGarbage.Proof.Framework.RegionsSub
 
 /-!
 # Memory: reads after writes, regions, frames

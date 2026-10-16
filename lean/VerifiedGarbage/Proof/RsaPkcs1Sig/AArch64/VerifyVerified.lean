@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # `vg_rsa_pkcs1_verify` on AArch64: `Verified`
@@ -39,19 +40,20 @@ theorem code_constantTime (c : PubChecked) :
     ⟨s₁, ⟨preV_of h₁, PubV.refl s₁⟩, preV_of h₂, pubV_of hp⟩) fun _ _ h => h)
 
 /-- A state meeting the precondition: a 512-bit modulus, a one-byte `e`, a
-one-byte hash value and signature, a working space of 1024 words, and the
+one-byte hash value and signature, a working space of 1056 words, and the
 stack pointer at `2^40`, far above them. -/
 def satState : State where
   gpr r := match r with
     | .x0 => 0x1000 | .x1 => 64 | .x2 => 0x2000 | .x3 => 1 | .x5 => 0x3000 | .x6 => 1 | .x7 => 0x4000
     | _ => 0
   sp := 0x10000000000
-  mem a := if a = 0x10000000000 then 1 else if a = 0x1000000000A then 1
+  mem a := if a = 0x10000000010 then 0x20
+    else if a = 0x10000000000 then 1 else if a = 0x1000000000A then 1
     else if a = 0x10000000011 then 4 else 0
   rd := [⟨0x1000, 64⟩, ⟨0x2000, 1⟩, ⟨0x3000, 1⟩, ⟨0x4000, 1⟩, ⟨0x10000000000, 24⟩]
-  wr := [⟨0x10000, 8192⟩]
+  wr := [⟨0x10000, 8448⟩]
 
-theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x10000 ∧ stackArg satState 2 = 1024 := by
+theorem sat_args : stackArg satState 0 = 1 ∧ stackArg satState 1 = 0x10000 ∧ stackArg satState 2 = 1056 := by
   decide
 
 theorem sat (K : Nat) (hK : K ≤ 2 ^ 20) : ∃ s, (Spec.RsaPkcs1Sig.verifyContract abi (stk K)).pre s := by

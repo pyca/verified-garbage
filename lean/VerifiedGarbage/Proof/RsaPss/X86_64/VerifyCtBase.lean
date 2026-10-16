@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyBody
-public import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
+import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyFixed
 public import VerifiedGarbage.Proof.RsaPss.X86_64.MgfCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
+import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
 
 /-!
 # RSASSA-PSS verification on x86-64: two runs

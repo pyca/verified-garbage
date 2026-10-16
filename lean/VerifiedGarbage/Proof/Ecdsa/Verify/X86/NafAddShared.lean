@@ -4,10 +4,18 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafPrepChecks
 public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
 meta import VerifiedGarbage.Proof.Weierstrass.X86.NafTableTiming
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA verification on x86 (32-bit): the checks shared by the NAF's additions
@@ -30,37 +38,37 @@ def nafAddZeroP : Prog isa := (.block (Jacobian.zeroTest nafK.M.n nafK.R.z))
 materialize_code nafAddZeroP
 
 theorem nafAddZeroP_ct : ScratchCT nafAddZeroP :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafAddZeroH : Prog isa := (.block (Jacobian.zeroTest nafK.M.n nafK.S.t3))
 materialize_code nafAddZeroH
 
 theorem nafAddZeroH_ct : ScratchCT nafAddZeroH :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafAddZeroR : Prog isa := (.block (Jacobian.zeroTest nafK.M.n nafK.S.t5))
 materialize_code nafAddZeroR
 
 theorem nafAddZeroR_ct : ScratchCT nafAddZeroR :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafAddCopyP : Prog isa := (.block (copyPt nafK.M.n nafK.D nafK.R))
 materialize_code nafAddCopyP
 
 theorem nafAddCopyP_ct : ScratchCT nafAddCopyP :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafAddDouble : Prog isa := (fprog p256Comb.SP (dblJMul nafK.S nafK.R nafK.D))
 materialize_code nafAddDouble
 
 theorem nafAddDouble_ct : ScratchCT nafAddDouble :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 def nafAddInfinity : Prog isa := (.block (Jacobian.infinity nafK nafK.D))
 materialize_code nafAddInfinity
 
 theorem nafAddInfinity_ct : ScratchCT nafAddInfinity :=
-  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by taint_decide)
+  Taint.constantTime (A:=sseTaint) _ (fun _ _ _ _ h => h) (by native_taint_decide)
 
 /-- The checks of an addition of `q` to `R` into `D`, from those of the code
 reading `q`. -/

@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
-public import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseEntry
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

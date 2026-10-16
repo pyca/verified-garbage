@@ -1,12 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
-public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyMain
 public import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyEntry
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Set
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 
 /-!
 # `vg_rsa_check_crt_key` on x86-64: correctness

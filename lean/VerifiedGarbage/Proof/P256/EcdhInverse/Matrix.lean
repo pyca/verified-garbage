@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
-public import VerifiedGarbage.Proof.P256.EcdhInverse.MachineExtract
+import VerifiedGarbage.Proof.P256.EcdhInverse.MachineExtract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Mont.AArch64.Row
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Inv
+import VerifiedGarbage.Proof.Divstep.WordDef
 
 /-! Fixed matrix multiplication blocks in the packed divstep batch. -/
 

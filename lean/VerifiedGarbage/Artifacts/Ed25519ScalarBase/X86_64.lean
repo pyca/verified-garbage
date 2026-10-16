@@ -2,9 +2,19 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 public import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.Divstep.Bound
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Ed25519.Recode
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Complete unsigned scalar multiplication by the Ed25519 base point. -/
 

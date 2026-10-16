@@ -1,13 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoop
-public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemMask
+public import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemQuadK
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 public import VerifiedGarbage.Proof.Framework.X86_64.Avx
-public import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
+import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 
 /-!
 # The setup of the blocks after the last group
@@ -155,5 +157,16 @@ theorem remSetup_ok (s : State) {r : Nat} (h1 : 1 ≤ r) (h15 : r ≤ 15)
   · rw [ax', g₃, f₂.gpr, g₁ _ (by decide)]
   · rw [g' q h1 h2, g₃, f₂.gpr, g₁ q h1]
   · rw [z', z₃, f₂.zlane x (by simp [hx]) l hl, z₁]
+
+/-- `cmp r9, 16`: whether blocks are left after the last group. -/
+theorem cmp16_ok (s : State) :
+    WP isa (.block [.alu .cmp .r9 (.imm 16)]) s fun s' =>
+      s'.zf = some (s.gpr .r9 - 16 == 0) ∧ s'.gpr = s.gpr ∧
+        (∀ r l, s'.zlane r l = s.zlane r l) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have e16 : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags, isa,
+    e16, Option.bind_some, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, trivial, fun _ _ => rfl, trivial, trivial, trivial⟩
 
 end VG.Proof.Gcm.X86_64.StitchZH

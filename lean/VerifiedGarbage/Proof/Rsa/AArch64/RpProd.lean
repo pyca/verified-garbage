@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: `M = d e`
@@ -96,7 +99,7 @@ theorem prodLoop_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Na
     (by rw [eA]; exact Nat.two_pow_pos _)) fun t ⟨hv, o, k₆⟩ => ?_
   have o' : Outside B (slot w aM) (16 * (w + 2)) s.mem t.mem := fun x hx => by
     rw [o x (by omega), m₅]
-  refine ⟨?_, o', (k₅.trans k₆).mono (by simp [prodRegs, mrRegs])⟩
+  refine ⟨?_, o', (k₅.trans k₆).mono (by decide)⟩
   -- The words above the product are still zero.
   have hz' : ∀ q < 2 * (w + 2), word s.mem B (slot w aM + 8 * q) = 0 := (wv_eq_zero_iff _ _ _ _).mp hz
   have e2 := wv_add t.mem B (slot w aM) ((el + 7) / 8 + w + 2) (2 * (w + 2) - ((el + 7) / 8 + w + 2))
@@ -140,6 +143,6 @@ theorem prod_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
       o₂.wv (Or.inl (by omega)) (by omega), z₁, Nat.mul_zero]
   refine WP.mono (prodLoop_ok h₂ hel₂ he1 he2 (by rw [o12.wv (Or.inl (by omega)) (by omega)]; exact hE) hz)
     fun t ⟨hv, o, k₃⟩ => ⟨by rw [hv, o12.wv (Or.inl (by omega)) (by omega), o12.wv (Or.inl (by omega)) (by omega)],
-      fun x hx => by rw [o x hx, o12 x hx], ((k₁.trans k₂).trans k₃).mono (by simp [prodRegs])⟩
+      fun x hx => by rw [o x hx, o12 x hx], ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 end VG.Proof.Rsa.AArch64

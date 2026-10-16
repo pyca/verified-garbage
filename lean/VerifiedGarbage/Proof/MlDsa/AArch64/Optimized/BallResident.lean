@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSecondCall
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSecondCall
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallChunkTiming
-public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Backend
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallCorrect
@@ -18,6 +18,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentLit
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
 
 /-! ## From `BallSecondPrefix.lean` -/
 

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesCbc.X86.Verified
+import VerifiedGarbage.Proof.AesCbc.X86.Verified
 public import VerifiedGarbage.Proof.AesCfb8.X86.CT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

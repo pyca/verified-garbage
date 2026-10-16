@@ -1,14 +1,19 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Bignum.AArch64.SquareHelper
 public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
 public import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyVerified
 public import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTCode
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTN
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowRunContext
+import VerifiedGarbage.Proof.Bignum.AArch64.FoldedPhaseCT
 
 /-! # RSA (RFC 8017) on AArch64 -/
 
@@ -16,7 +21,36 @@ public import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
 
 namespace VG.Artifacts.Rsa.AArch64
 
-def artifacts : List Artifact := [
+/-- The two repeated squares are shared by all RSA callers. -/
+def squareHelper (slot : Spec.Rsa.MontSquare.Slot) : Artifact :=
+  let M := match slot with
+    | .r2 => Proof.Bignum.AArch64.Mont.blocked
+    | .y => Proof.Bignum.AArch64.Mont.squareEight
+  { Spec.Rsa.MontSquare.squareApi slot with
+    target := AArch64.target
+    doc := (Spec.Rsa.MontSquare.squareApi slot).doc
+      (notes := ["Baseline AArch64 symmetric square with eight-limb blocked reduction for widths \
+        of at least sixteen limbs divisible by eight; other widths retain the row-wise reduction."])
+    contract := Spec.Rsa.MontSquare.squareContract slot AArch64.abi
+    code := M.mm slot.index slot.index slot.index
+    verified := Proof.Bignum.AArch64.SquareHelper.verified M slot
+    spSafe := Code.all_of_forall (fun _ => rfl) _ }
+
+/-- Share the repeated five-square window body across all CRT callers. -/
+def windowHelper : Artifact :=
+  { Spec.Rsa.MontWindow.windowApi with
+    target := AArch64.target
+    doc := Spec.Rsa.MontWindow.windowApi.doc
+      (notes := ["Baseline AArch64: shares register saves across five lazy Montgomery squares and one \
+        canonical product, with a constant-time four-vector table scan. Widths of at least sixteen \
+        limbs divisible by eight use eight-limb product tiles and blocked reduction; other widths \
+        retain the existing canonical square and multiplication kernels."])
+    code := Proof.Bignum.AArch64.WindowFive.body.code
+    contract := Spec.Rsa.MontWindow.windowContract AArch64.abi
+    verified := Proof.Bignum.AArch64.WindowShared.verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ }
+
+def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelper,
   { Spec.Rsa.publicCheckedApi with
     target := AArch64.target
     doc := Spec.Rsa.publicCheckedApi.doc
@@ -25,7 +59,9 @@ def artifacts : List Artifact := [
         integrated operand scanning with `mul` and `umulh`, the final subtraction selected with \
         `csel`), and symmetric Montgomery squares using each cross-product once, with four-word \
         MAC blocks and scalar tails, reusing the accumulator and temporary arrays; below eight \
-        limbs, squares retain the general kernel. R² mod n by constant-time doublings and squarings, and the exponent scanned \
+        limbs, squares retain the general kernel. Squares of at least sixteen limbs, with a width \
+        divisible by eight, use eight-limb register-blocked reduction; other widths retain the \
+        row-wise reduction. R² mod n by constant-time doublings and squarings, and the exponent scanned \
         left to right from its first set bit, which starts the result as the input; a square per \
         later bit and a multiplication per later set bit."])
     code := Impl.Rsa.AArch64.Checked.publicChecked
@@ -49,7 +85,7 @@ def artifacts : List Artifact := [
         the general exponentiation. `pre` is checked (`n` odd, \
         its top word not zero, `R² mod n` below it) before any arithmetic, so that values of no modulus \
         are safe."])
-    code := Impl.Rsa.AArch64.Folded.checked Proof.Bignum.AArch64.Mont.base.mm
+    code := Impl.Rsa.AArch64.Folded.checked Proof.Bignum.AArch64.Mont.productEight.mm
     contract := Spec.Rsa.publicPrecomputedCheckedContract AArch64.abi
     verified := Proof.Rsa.AArch64.FoldedPublic.checked_verified _
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
@@ -62,12 +98,12 @@ def artifacts : List Artifact := [
         the result is stored masked. Each prime has its own working space, with its own \
         Montgomery multiplication (`vg_rsa_public_checked`'s); the input is reduced modulo it by \
         Montgomery reduction of chunks of its size, and the exponents are scanned left to right \
-        over all their bits by a fixed window of 4 bits: four squares and a multiplication by the \
-        window's power of the input, from a table of all 16 after the prime's working space, read \
-        by a masked selection from every entry."])
-    code := Impl.Rsa.AArch64.Crt.code Proof.Bignum.AArch64.Mont.base.mm
+        over all their bits. Moduli of at least 128 bytes whose two prime byte lengths are \
+        multiples of 64 use shared five-bit windows, 32-entry tables within the existing scratch \
+        allocation, and a four-vector masked scan. Other lengths retain the four-bit window. The final partial window consumes exactly its remaining bits."])
+    code := Proof.Bignum.AArch64.WindowFive.code
     contract := Spec.Rsa.privateCrtContract AArch64.abi
-    verified := Proof.Bignum.AArch64.crt_verified _
+    verified := Proof.Bignum.AArch64.WindowFive.base_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rsa.crtValuesApi with
     target := AArch64.target

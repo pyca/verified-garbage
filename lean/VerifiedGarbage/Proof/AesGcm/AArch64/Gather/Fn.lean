@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Callee
-public import VerifiedGarbage.Proof.AesGcm.ScratchGather
+import VerifiedGarbage.Proof.AesGcm.ScratchGather
 public import VerifiedGarbage.Proof.AesGcm.CtxFrame
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import all Init.Data.Array.Basic

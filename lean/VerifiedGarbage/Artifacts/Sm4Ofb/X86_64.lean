@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # SM4-OFB artifacts on baseline x86-64 -/
 
@@ -23,6 +24,6 @@ def artifacts : List Artifact := [
     contract := Spec.Sm4.ofbContract X86_64.abi 3144
     stack := 3144
     verified := Proof.Sm4.X86_64.ofb_framed
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Sm4Ofb.X86_64

@@ -1,17 +1,19 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
+import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
 meta import VerifiedGarbage.Proof.Ed25519.Arm.BatchBits
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 public import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarBaseCTBits`. -/
 
@@ -35,7 +37,7 @@ theorem batchBits_ct (b p : BitVec 32) (j : Nat) :
         (y.gpr .r0 = b ∧ y.gpr .r12 = p ∧ y.gpr .r2 = BitVec.ofNat 32 j)) := by
     apply ctBoth
     · dsimp only [head]
-      apply ctRegs [.r0] _ (by taint_decide)
+      apply ctRegs [.r0] _ (by native_taint_decide)
       intro x y h r hr
       rw [List.mem_singleton] at hr
       subst r
@@ -52,7 +54,7 @@ theorem batchBits_ct (b p : BitVec 32) (j : Nat) :
     (([.dp .add .r12 .r12 (.shifted .r2 .lsl 1)] : List Instr) ++ unpackSrc 0 0 ++ expandBits))) _
   refine ctBlockAppend hh ?_
   dsimp only [head]
-  apply ctRegsKeeping [.r0, .r12, .r2] [.r0] _ (by taint_decide)
+  apply ctRegsKeeping [.r0, .r12, .r2] [.r0] _ (by native_taint_decide)
   intro x y h r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
@@ -81,7 +83,7 @@ theorem batchStart_ct (b p : BitVec 32) (j : Nat) :
     CT (fun x y => BodyCTPre b p j x ∧ BodyCTPre b p j y)
       (.block batchStart) (fun x y => BodyCTReady b p j x ∧ BodyCTReady b p j y) := by
   apply ctBoth
-  · apply ctRegs [.r0] _ (by taint_decide)
+  · apply ctRegs [.r0] _ (by native_taint_decide)
     intro x y h r hr
     rw [List.mem_singleton] at hr
     subst r
@@ -96,7 +98,7 @@ theorem prepareBatch_ct (b p : BitVec 32) (j : Nat) (hj : j < 32) :
     CT (fun x y => BodyCTReady b p j x ∧ BodyCTReady b p j y)
       prepareBatch (fun x y => BitsCTPre b p j x ∧ BitsCTPre b p j y) := by
   apply ctBoth
-  · apply ctRegs [.r0, .r11] _ (by taint_decide)
+  · apply ctRegs [.r0, .r11] _ (by native_taint_decide)
     intro x y h r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -113,7 +115,7 @@ theorem pointMulBody_ct (b p : BitVec 32) (j : Nat) (hj : j < 32) :
   rw [pointMulBody]
   refine RelCT.seq (batchStart_ct b p j)
     (RelCT.seq (prepareBatch_ct b p j hj) (RelCT.seq (batchBits_ct b p j) ?_))
-  apply ctRegs [.r0] _ (by taint_decide)
+  apply ctRegs [.r0] _ (by native_taint_decide)
   intro x y h
   exact h
 

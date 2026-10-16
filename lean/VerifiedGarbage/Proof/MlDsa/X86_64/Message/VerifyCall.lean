@@ -7,6 +7,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Same
+import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Call
 
 /-!
 # ML-DSA on x86-64, `verify_message`: the call of the verification function on `μ`

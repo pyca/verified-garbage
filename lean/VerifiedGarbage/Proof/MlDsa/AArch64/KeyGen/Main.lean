@@ -1,13 +1,31 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Samp4
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestRow
+import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedSecrets
+public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
+meta import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Hash
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-!
 # ML-DSA key generation on AArch64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
@@ -170,11 +188,12 @@ theorem rest_piece {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF :
       fun i _ hi => row_piece hP hF (by omega)) (fun _ _ _ h => h) fun _ _ _ h => ?_
     simpa using h
 
-theorem keyGen_piece {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PFacts p) :
+theorem keyGen_piece {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PFacts p)
+    (hs : (p.ℓ + p.k) % 4 = 0 ∨ (p.ℓ + p.k) % 4 = 3) :
     Piece p S' (fun σ s => s = σ)
-      (fun σ s => abiPreserved σ s ∧ (Spec.MlDsa.keyGenContract p AArch64.abi S').post σ s) ((keyGenWith keccak.callee) P p) :=
-  (pro_piece hF).seq ((seeds_piece hF hP.s16 hP.s64).seq ((sampAll_piece hP hF).seq ((sampS_piece hP hF).seq
-    ((rest_piece hP hF).seq (epi_piece hF)))))
+      (fun σ s => abiPreserved σ s ∧ (Spec.MlDsa.keyGenContract p AArch64.abi S').post σ s) (keyGenWith keccak.callee P p) :=
+  (pro_piece hF).seq ((seeds_piece hF hP.s16 hP.s64).seq ((sampAll_piece hP hF).seq
+    ((Optimized.secrets_piece keccak.callee hF hs S').seq ((rest_piece hP hF).seq (epi_piece hF)))))
 
 /-- `vg_mldsa*_keygen` of the parameter set `p` meets its contract, for any
 verified implementations `P` of the primitives it calls that use at most `S`
@@ -182,9 +201,10 @@ bytes of stack, if the contract is satisfiable. -/
 theorem keyGen_verified {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params)
     (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87)
     (hsat : ∃ s, (Spec.MlDsa.keyGenContract p AArch64.abi S).pre s) :
-    Verified AArch64.target ((keyGenWith keccak.callee) P p) (Spec.MlDsa.keyGenContract p AArch64.abi S) :=
-  ⟨fun σ hσ => (keyGen_piece hP (pfacts hp)).ok σ σ (kgPre_of_shared hσ) rfl,
-    fun s t l m u v hs ht pub es et => relStart (Q := fun _ _ => True)
-      (keyGen_piece hP (pfacts hp)).tr s t l m u v (kgPre_of_shared hs) (kgPre_of_shared ht) pub es et, hsat⟩
+    Verified AArch64.target (keyGenWith keccak.callee P p) (Spec.MlDsa.keyGenContract p AArch64.abi S) :=
+  have hs : (p.ℓ + p.k) % 4 = 0 ∨ (p.ℓ + p.k) % 4 = 3 := by rcases hp with rfl | rfl | rfl <;> decide
+  ⟨fun σ hσ => (keyGen_piece hP (pfacts hp) hs).ok σ σ (kgPre_of_shared hσ) rfl,
+    fun s t l m u v hs' ht pub es et => relStart (Q := fun _ _ => True)
+      (keyGen_piece hP (pfacts hp) hs).tr s t l m u v (kgPre_of_shared hs') (kgPre_of_shared ht) pub es et, hsat⟩
 
 end VG.Proof.MlDsa.AArch64.KeyGen

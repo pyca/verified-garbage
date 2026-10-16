@@ -4,12 +4,14 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
 public import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.CTSupport
-public import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
+import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
 meta import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverPoint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Impl.Mont.Mod
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
 

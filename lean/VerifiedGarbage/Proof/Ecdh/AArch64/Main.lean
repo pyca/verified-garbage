@@ -6,6 +6,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
 
 /-!
 # ECDH on AArch64: the result, and the whole function
@@ -91,8 +96,8 @@ theorem ecFinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s bas
     exact R₃.gpr p hp
 
 theorem middle_eq (c : Cfg) : Impl.Ecdh.AArch64.Cfg.middle c =
-    .seq (.block (Impl.Mont.AArch64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
-    (.seq (.block (Impl.Mont.AArch64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE)))
+    .seq (c.mulPP (c.sl XM) (c.sl RX) (c.sl ACC))
+    (.seq (c.mulPP (c.sl X) (c.sl XM) (c.sl ONE))
     (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.finish c))) := rfl
 
 /-- Whether the result is a shared secret: the peer's key (`V`), `d` in
@@ -123,15 +128,15 @@ theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have hM := modP_of hc F.mp
   have hone : sv c base s ONE = 1 := F.one
   -- `XM = X · ACC`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs hM (MP'_A c) (o := XM) (a := RX) (b := ACC) (by decide)
-    (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
+  refine WP.seq (WP.mono (slMulP_ok hc hs hM (o := XM) (a := RX) (b := ACC) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have kP₁ := hM.keepA64 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have v₁ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₁ i = sv c base s i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₁ hi h₁ h₂
   -- `X = XM · 1`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) h7 hs₁ kP₁ (MP'_A c) (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega))
+  refine WP.seq (WP.mono (slMulP_ok hc hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ X → i ≠ TMP → sv c base s₂ i = sv c base s i := fun hi h₁ h₂ h₃ =>
@@ -312,7 +317,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have hq₂ : s₂.gpr .x6 = s₀.gpr .x2 := by rw [S₂.gpr _ (by decide), x6₁]
   have hrw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [S₂.rd, S₂.wr, hrd₁]
   -- The peer's key.
-  refine WP.seq (WP.mono (peer_ok hc S₂.scr hq₂ (by rw [hrw₂, hp.rd]; simp) hp.peer_sc S₂.fixed.mp)
+  refine WP.seq (WP.mono (peer_ok hc S₂.scr hq₂ (by rw [hrw₂, hp.rd]; simp) hp.peer_sc)
     fun s₃ ⟨hs₃, k₃, U₃, r2₃, bp₃, y₃, f₃⟩ => ?_)
   have F₃ := S₂.fixed.unch h7 hn ((fixedOk_slW (l := [R2P, BP, QY]) (by decide)).append fixedOk_flag) U₃
   have e₃ : ∀ {i}, i < 45 → i ∉ [R2P, BP, QY] → i ≠ FLAG →
@@ -326,9 +331,8 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     have := keep_of_disjoint' W₂ hp.peer_sc (by omega) (i := 0) (by omega) (by omega)
     rwa [BitVec.add_zero] at this
   -- What the code checks of the peer's key so far.
-  have hf₃ : word s₃.mem (s₀.gpr .x3) (c.sl FLAG) = mask (((s₀.mem (s₀.gpr .x2) = 4 ∧
-      sv c (s₀.gpr .x3) s₃ E < c.C.p) ∧ sv c (s₀.gpr .x3) s₃ QY < c.C.p)) := by
-    rw [f₃, S₂.flag, BitVec.allOnes_and, mask_and, mask_and, x₃, hq0]
+  have hf₃ : word s₃.mem (s₀.gpr .x3) (c.sl FLAG) = mask (s₀.mem (s₀.gpr .x2) = 4) := by
+    rw [f₃, S₂.flag, BitVec.allOnes_and, hq0]
   refine WP.seq (WP.mono (validate_ok hc hs₃ F₃ r2₃ bp₃ hf₃)
     fun s₄ ⟨hs₄, g₄, rd₄, wr₄, U₄, f₄, px_lt, py_lt, px, py⟩ => ?_)
   have F₄ := F₃.unch h7 hn ((fixedOk_slW (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append

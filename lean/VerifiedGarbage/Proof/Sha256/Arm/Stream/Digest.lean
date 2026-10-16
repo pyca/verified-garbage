@@ -2,12 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
 meta import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
-public import VerifiedGarbage.Proof.Sha256.Digest
+import VerifiedGarbage.Proof.Sha256.Digest
 meta import VerifiedGarbage.Proof.Sha256.Digest
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Sha256.Arm.Lit
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Sha256.Arm.Lit
+import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.MdStream.Prefix
+meta import VerifiedGarbage.Proof.MdStream.Arm.Words
+meta import VerifiedGarbage.Proof.MdStream.Prefix
 
 /-!
 # Streaming SHA-224 on ARMv7: `finalize224`

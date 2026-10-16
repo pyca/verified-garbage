@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.Arm.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
+meta import VerifiedGarbage.Proof.Sm4.Arm.LayersLit
 public import VerifiedGarbage.Impl.Sm4.Arm.Ecb
 meta import VerifiedGarbage.Impl.Sm4.Arm.Ecb
 public import VerifiedGarbage.Impl.Sm4.Arm.ExpandKey
@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # SM4 on Arm: the code as literals
@@ -25,7 +27,6 @@ code again in each of them.
 namespace VG.Proof.Sm4.Arm
 
 materialize_flat_code expandKeyCode := Impl.Sm4.Arm.expandKey
-materialize_flat_code ecbEncrypt := Impl.Sm4.Arm.ecb .encrypt
-materialize_flat_code ecbDecrypt := Impl.Sm4.Arm.ecb .decrypt
+materialize_flat_code ecbAnyCode := Impl.Sm4.Arm.ecbAny
 
 end VG.Proof.Sm4.Arm

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Call
 public import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
-public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 public import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 public import VerifiedGarbage.Proof.Framework.CallLay
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
@@ -11,6 +11,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Encode
 
 /-!
 # ML-DSA on AArch64: moves, layouts and what code leaves

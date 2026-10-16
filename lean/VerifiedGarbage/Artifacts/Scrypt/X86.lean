@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Impl.Scrypt.X86.Salsa
-public import VerifiedGarbage.Impl.Scrypt.X86.BlockMix
-public import VerifiedGarbage.Impl.Scrypt.X86.RoMix
+import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Impl.Scrypt.X86.Salsa
+import VerifiedGarbage.Impl.Scrypt.X86.BlockMix
+import VerifiedGarbage.Impl.Scrypt.X86.RoMix
 public import VerifiedGarbage.Proof.Scrypt.X86.BlockMixVerified
 public import VerifiedGarbage.Proof.Scrypt.X86.RoMixCT
 public import VerifiedGarbage.Proof.Scrypt.X86.Salsa
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-! # scrypt (RFC 7914): Salsa20/8, scryptBlockMix and scryptROMix on x86 -/
 

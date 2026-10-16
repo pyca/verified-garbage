@@ -8,6 +8,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Sha256.X86.Shared
+import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 
 /-!
 # Deterministic ECDSA over P-521 with HMAC-SHA-512 on x86 (32-bit)
@@ -67,8 +71,9 @@ def pack (hL : Weierstrass.Law Spec.P521.curve) : RfcHash where
   macLen x := by
     show (Spec.Sha512.finalHash Spec.Sha512.H0_512 x).length = 64
     exact Proof.Hmac.Generic.Common.finalHash_length _ _
-  tries := rfl
-  hDB := .inr (.inr ⟨rfl, rfl⟩)
+  tries_pos := Nat.le_of_ble_eq_true rfl
+  tries_lt := Nat.le_of_ble_eq_true rfl
+  hDB := .inr (.inr (.inl ⟨rfl, rfl⟩))
   hS := Nat.le_of_ble_eq_true rfl
   hWi := Nat.le_of_ble_eq_true rfl
   hWf := Nat.le_of_ble_eq_true rfl

@@ -3,6 +3,12 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
 public import VerifiedGarbage.Proof.Weierstrass.Arm.MontVerified
+import Batteries.Logic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Spec.Rc2
+import VerifiedGarbage.Spec.X25519
 
 /-! # Montgomery arithmetic modulo the curves' `p` and `n` on ARMv7 -/
 

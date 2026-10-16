@@ -1,15 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
+import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
-public import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
+import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
+import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Ecdsa.X86_64.Lays
 
 /-!
 # ECDH on x86-64: `[d]P` by windows, and `Z^(p-2)`
@@ -505,7 +509,7 @@ theorem mulPow_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (h
     {k : Nat} (hk : sv c base s K = k) (hk8 : k < 2 ^ (8 * c.C.len))
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
-    (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true)
+    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8) ∧ c.mulFn.noCalls = true)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', MulPost c base P k s s' → WP isa rest s' R) :
     WP isa (.seq (Impl.Ecdh.X86_64.Cfg.mulQ c).inline (.seq c.pPow.inline rest)) s R := by
   have h0 := hc.n0

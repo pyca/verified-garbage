@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Linear blocks with words in slots, on ARMv7
@@ -20,7 +21,8 @@ slots kept), as Camellia's on AArch64
 namespace VG.Proof.Sm4.Arm
 
 open VG VG.Arm VG.Bitslice VG.Arm.Straight
-open VG.Arm.Straight (inWord outWord bitOf xorBits assign inWord_rel outWord_rel)
+open VG.Arm.Straight (inWord outWord bitOf xorBits assign inWord_rel outWord_rel outOk outOk_spec
+  outWord_rel_of_lt)
 
 /-- The registers `ins` and the slots `sins` hold input words, and the slots
 `cs` constants. -/
@@ -36,8 +38,7 @@ hold what `e₀` gives them. -/
 def linPostG (k : Nat) (outs : List (Reg × (Nat → List Nat))) (souts : List (Nat × (Nat → List Nat)))
     (keep : List Nat) (e₀ : Env (Nat × Nat)) (e : Env (Nat × Nat)) : Bool :=
   linPost k outs e &&
-    (souts.all fun o => e.slot o.1 == some (outWord o.2) &&
-      (List.range 32).all fun p => (o.2 p).all (· < 2 ^ k)) &&
+    (souts.all fun o => outOk k (e.slot o.1) o.2) &&
     keep.all fun j => (e₀.slot j).isSome && e.slot j == e₀.slot j
 
 /-- `linear_ok`, with input words and constants in slots, and output slots. -/
@@ -94,13 +95,11 @@ theorem linG_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat
   obtain ⟨⟨hpost, hspost⟩, hkeep⟩ := hpost
   refine ⟨s', hs', fun r g hrg q hq => ?_, fun j g hjg hj q hq => ?_, fun j hj hjs => ?_, p.rd, p.wr,
     p.sp, fun r hr => p.other r (by simp [hr]), p.frame, p.base, p.ext⟩
-  · have h := List.all_eq_true.mp hpost (r, g) hrg
-    simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
-    exact outWord_rel (fun p hp a ha => h.2 p hp a ha) (p.rel.reg r _ h.1) q hq
-  · have h := List.all_eq_true.mp hspost (j, g) hjg
-    simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
+  · obtain ⟨h1, h2⟩ := outOk_spec (List.all_eq_true.mp hpost (r, g) hrg)
+    exact outWord_rel_of_lt h2 (p.rel.reg r _ h1) q hq
+  · obtain ⟨h1, h2⟩ := outOk_spec (List.all_eq_true.mp hspost (j, g) hjg)
     rw [← p.base]
-    exact outWord_rel (fun p hp a ha => h.2 p hp a ha) (p.rel.slot j _ hj h.1) q hq
+    exact outWord_rel_of_lt h2 (p.rel.slot j _ hj h1) q hq
   · have h := List.all_eq_true.mp hkeep j hj
     simp only [Bool.and_eq_true, beq_iff_eq, Option.isSome_iff_exists] at h
     obtain ⟨⟨a, ha⟩, he⟩ := h

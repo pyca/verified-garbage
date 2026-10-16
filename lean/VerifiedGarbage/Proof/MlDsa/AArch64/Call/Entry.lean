@@ -5,6 +5,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlKem.Encode
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.WriteBytes
+public import VerifiedGarbage.Proof.MlDsa.Verify.Mem
+public import VerifiedGarbage.Proof.MlKem.KPke
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+public import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # ML-DSA on AArch64: entry to a callee
@@ -97,9 +109,7 @@ theorem SameIn.argi {as : List (Reg × Arg)} {x y x1 y1 : State} (h1 : Args as x
 
 /-- The facts of a callee's precondition that the layout gives: its stack,
 the disjointness of its buffers, and that they do not wrap around. -/
-syntax "cpre " term:max : tactic
-macro_rules
-  | `(tactic| cpre $L) => `(tactic| (
+tactic_template "cpre " L:term:max : tactic => `(tactic| (
       and_intros
       all_goals first
         | with_reducible rfl

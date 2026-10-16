@@ -1,11 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Curve448.AArch64.Memory
-public import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.X448.Wide.Memory
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

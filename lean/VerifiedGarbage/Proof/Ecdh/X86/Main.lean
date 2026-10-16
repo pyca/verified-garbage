@@ -6,6 +6,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
+import VerifiedGarbage.Proof.Ecdsa.X86.Finish
+import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
 
 /-!
 # ECDH on x86 (32-bit): the result, and the whole function

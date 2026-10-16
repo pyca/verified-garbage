@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64
-public import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Naf
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.NafPrep
 

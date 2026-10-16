@@ -2,12 +2,22 @@ module
 
 public import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 meta import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
-public import VerifiedGarbage.Proof.Sha256.Digest
+import VerifiedGarbage.Proof.Sha256.Digest
 meta import VerifiedGarbage.Proof.Sha256.Digest
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.MdStream.Prefix
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.MdStream.Prefix
+meta import VerifiedGarbage.Proof.MdStream.X86_64.Words
 
 /-!
 # Streaming SHA-224 on x86-64: `finalize224`
@@ -30,6 +40,7 @@ open VG.Impl.Sha256.X86_64.Stream (Callee params224 finalize224)
 theorem shape224 : ShapeD (P := params224) md 28 where
   le := by decide
   len := shape.len
+  lenV := shape.lenV
   out s hin hout hd := by
     refine (out32_ok (n := 7) true (by decide) (inRegions_prefix hin (by decide)) hout
       (hd.sub_left (Region.sub_prefix (by decide)))).mono fun s' ⟨g, rd, wr, m⟩ => ⟨g, rd, wr, ?_⟩

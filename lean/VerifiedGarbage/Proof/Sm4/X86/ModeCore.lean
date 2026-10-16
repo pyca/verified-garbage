@@ -9,6 +9,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.Taint
 
 /-!
 # SM4's core for the modes on x86 (32-bit)
@@ -157,5 +159,11 @@ def dirCoreSpec (d : Dir) : CoreSpec (dirCore d) where
   ready_frame h _ _ _ _ hf _ hd := ⟨fun e he => (h.1 e he).congr fun _ hj => entry_keep h.2 hf hd he hj, h.2⟩
   prepare_wp hB hs hR hk hst := WP.mono (prepare_wp d hB hs hR hk hst) fun _ ⟨r, h⟩ => ⟨⟨r, hs.fit⟩, h⟩
   crypt_wp hB hs hr hst := WP.mono (crypt_wp d hB hs hr.1 hst) fun _ ⟨b, e, r, h⟩ => ⟨b, e, ⟨r, hr.2⟩, h⟩
+
+/-- The core's cipher, without unfolding SM4's: elaborating
+`(dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k` by unification unfolds
+`Spec.Sm4.cipher` first, and evaluates the cipher (seconds; minutes in the
+kernel). -/
+theorem dirCoreSpec_cipher (d : Dir) : (dirCoreSpec d).cipher = dirCipher d := rfl
 
 end VG.Proof.Sm4.X86

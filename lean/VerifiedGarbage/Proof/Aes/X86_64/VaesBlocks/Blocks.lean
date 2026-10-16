@@ -2,14 +2,21 @@ module
 
 public import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
 meta import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Dec
-public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 meta import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 public import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+public import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.List.Induction
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Data.List.Induction
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # VAES: encryption and decryption of whole blocks
@@ -394,9 +401,9 @@ theorem decrypt_correct {s₀ : State} (hp : Pre s₀) :
       gprPreserved s₀ s' ∧ (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).post s₀ s' := by
   have hscr : (scrR s₀) ∈ s₀.wr := by rw [hp.wr]; simp
   have hsch : (AesNi.Ecb.sR s₀) ∈ s₀.rd ++ s₀.wr := List.mem_append_left _ (by rw [hp.rd]; simp)
-  refine WP.seq (WP.mono (imcKeys_ok hp.rounds (by simp) hscr hsch hp.s_scr)
+  refine WP.seq (WP.mono (imcKeys_ok hp.rounds (by simp) ⟨_, hscr, Region.contains_self _ _⟩ hsch hp.s_scr)
     fun s₁ ⟨S, hS₁, hcov⟩ => ?_)
-  have hK₁ := dKeys_of_imc (keys₀ hp) hscr hp.s_scr hS₁ hcov
+  have hK₁ := dKeys_of_imc (keys₀ hp) ⟨_, hscr, Region.contains_self _ _⟩ hp.s_scr hS₁ hcov
   refine WP.seq (WP.mono (blocksLoad_ok s₁) fun s₂ ⟨r10₂, g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
   have g : ∀ r, r ≠ .r10 → s₂.gpr r = s₀.gpr r := fun r h => by rw [g₂ r h, hS₁.gpr]
   have hI₂ : Inv (KPd s₀) (Spec.Aes.invCipher (nr s₀) (sch s₀)) s₀ 0 0 s₂ :=
@@ -429,13 +436,13 @@ theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksX86_64 Spec.Aes
     ∃ t s', Exec isa Impl.Aes.X86_64.VaesBlocks.encryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksX86_64 Spec.Aes.cipher).post s s' := by
   obtain ⟨t, s', he, h⟩ := encrypt_correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa Impl.Aes.X86_64.VaesBlocks.decryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksX86_64 Spec.Aes.invCipher).post s s' := by
   obtain ⟨t, s', he, h⟩ := decrypt_correct (pre_of s hs)
-  exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
+  exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
 
 theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pre
     (Proof.Aes.blocksX86_64 Spec.Aes.cipher).pub Impl.Aes.X86_64.VaesBlocks.encryptBlocks := by

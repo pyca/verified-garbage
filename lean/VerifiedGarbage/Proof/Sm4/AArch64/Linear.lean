@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
+public import VerifiedGarbage.Proof.Sm4.AArch64.LayersLit
 public import VerifiedGarbage.Proof.Sm4.Bitsliced
 public import VerifiedGarbage.Proof.Camellia.AArch64.Linear
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # The linear layers of bitsliced SM4 on AArch64, by evaluation
@@ -102,45 +104,73 @@ def linKeep (a : Nat) : List Nat :=
 def linOuts (l : Lin) (a : Nat) : List (Nat × (Nat → List Nat)) :=
   (List.range 8).map fun j => (stateSlot a j, linG l a j)
 
+/-- `linG` written out, without `List.map`, whose evaluation by the kernel
+costs most of a check that evaluates `linG` at every bit of every output
+(`linOuts_eq_flat`). -/
+def linGFlat : Lin → Nat → Nat → Nat → List Nat
+  | .enc, a, j, p =>
+    if 2 ≤ j then
+      [64 * (8 + 8 * a + j) + p, 64 * j + rotP p 0, 64 * j + rotP p 3, 64 * (j - 2) + rotP p 0,
+        64 * (j - 2) + rotP p 1, 64 * (j - 2) + rotP p 2]
+    else
+      [64 * (8 + 8 * a + j) + p, 64 * j + rotP p 0, 64 * j + rotP p 3, 64 * (j + 6) + rotP p 1,
+        64 * (j + 6) + rotP p 2, 64 * (j + 6) + rotP p 3]
+  | .key, a, j, p =>
+    [64 * (8 + 8 * a + j) + p, 64 * j + rotP p 0,
+      if 5 ≤ j then 64 * (j - 5) + rotP p 1 else 64 * (j + 3) + rotP p 2,
+      if j = 7 then 64 * 0 + rotP p 2 else 64 * (j + 1) + rotP p 3]
+
+theorem linG_eq_flat : linG = linGFlat := by
+  funext l a j p
+  cases l <;> simp only [linG, linGFlat, Lin.terms, Proof.Sm4.linTerms, Proof.Sm4.keyTerms]
+  · split <;> simp
+  · by_cases h5 : 5 ≤ j <;> by_cases h7 : j = 7 <;> simp [h5, h7]
+
+def linOutsFlat (l : Lin) (a : Nat) : List (Nat × (Nat → List Nat)) :=
+  (List.range 8).map fun j => (stateSlot a j, linGFlat l a j)
+
+theorem linOuts_eq_flat : linOuts = linOutsFlat := by
+  funext l a; simp only [linOuts, linOutsFlat, linG_eq_flat]
+
 theorem linE0_check :
     check (lanes 64 12) linCfg (linExt 40) (lin .enc 0) linEnv
       (linPostG 12 [] (linOuts .enc 0) (linKeep 0) linEnv) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linE1_check :
     check (lanes 64 12) linCfg (linExt 40) (lin .enc 1) linEnv
       (linPostG 12 [] (linOuts .enc 1) (linKeep 1) linEnv) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linE2_check :
     check (lanes 64 12) linCfg (linExt 40) (lin .enc 2) linEnv
       (linPostG 12 [] (linOuts .enc 2) (linKeep 2) linEnv) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linE3_check :
     check (lanes 64 12) linCfg (linExt 40) (lin .enc 3) linEnv
       (linPostG 12 [] (linOuts .enc 3) (linKeep 3) linEnv) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linK0_check :
     check (lanes 64 12) linCfg (linExt 40) (lin .key 0) linEnv
       (linPostG 12 [] (linOuts .key 0) (linKeep 0) linEnv) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linK1_check :
     check (lanes 64 12) linCfg (linExt 40) (lin .key 1) linEnv
       (linPostG 12 [] (linOuts .key 1) (linKeep 1) linEnv) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linK2_check :
     check (lanes 64 12) linCfg (linExt 40) (lin .key 2) linEnv
       (linPostG 12 [] (linOuts .key 2) (linKeep 2) linEnv) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 theorem linK3_check :
     check (lanes 64 12) linCfg (linExt 40) (lin .key 3) linEnv
       (linPostG 12 [] (linOuts .key 3) (linKeep 3) linEnv) = true := by
-  decide +kernel
+  rw [linOuts_eq_flat]; decide +kernel
 
 /-! ## The transposes -/
 
@@ -162,7 +192,7 @@ def toBsOuts : List (Nat × (Nat → List Nat)) :=
 theorem toBs_check :
     check (lanes 64 11) bsCfg (linExt 0) toBs toBsEnv
       (linPostG 11 [] toBsOuts keyMaskSlots toBsEnv) = true := by
-  decide +kernel
+  lit_decide
 
 def fromBsEnv : Env (Nat × Nat) := linEnvG [] (stateIns 0) keyMasks
 
@@ -178,7 +208,7 @@ def fromBsOuts : List (Nat × (Nat → List Nat)) :=
 theorem fromBs_check :
     check (lanes 64 11) bsCfg (linExt 0) fromBs fromBsEnv
       (linPostG 11 [] fromBsOuts (keyMaskSlots ++ stateSlots) fromBsEnv) = true := by
-  decide +kernel
+  lit_decide
 
 /-! ## The round keys' planes -/
 

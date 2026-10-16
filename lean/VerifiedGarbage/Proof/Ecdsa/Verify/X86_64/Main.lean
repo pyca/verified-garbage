@@ -2,11 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
 public import VerifiedGarbage.Proof.Ecdsa.Verify
-public import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDSA verification on x86-64: the whole function
@@ -44,7 +47,7 @@ theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.verify c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
-      (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c)
+      (.seq (Impl.Ecdh.X86_64.Cfg.check c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c)
       (.seq c.nPow (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c)
       (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c)
         (Impl.Ecdsa.Verify.X86_64.Cfg.tail c))))))))) := rfl
@@ -55,15 +58,14 @@ theorem verify_inline (c : Cfg) : (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
-      (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline
+      (.seq (Impl.Ecdh.X86_64.Cfg.check c).inline (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline
       (.seq c.nPow.inline (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline
       (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c).inline
         (Impl.Ecdsa.Verify.X86_64.Cfg.tail c).inline)))))))) := by
   rw [verify_eq'']
-  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.validate c).inline
+  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.check c).inline
     (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline (Code.seq c.nPow.inline
     (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline _))))))) = _
-  rw [show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _]
   rfl
 
 /-- What the slots of `a`, `3b` and `G` stand for. -/
@@ -84,7 +86,7 @@ theorem consts_tmv (hc : BaseCfgOk c) {base : Addr} {g : Reg → BitVec 64} {s :
 verification holds, and restores the callee-saved registers. -/
 theorem verify_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
     (hp : VPre c s₀)
-    (hm : c.mul.isSome = true → c.n = 4 ∧ c.mulFn.noCalls = true := by exact fun h => absurd h (by decide)) :
+    (hm : c.mul.isSome = true → (c.n = 4 ∨ c.n = 6 ∨ c.n = 8) ∧ c.mulFn.noCalls = true := by exact fun h => absurd h (by decide)) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)

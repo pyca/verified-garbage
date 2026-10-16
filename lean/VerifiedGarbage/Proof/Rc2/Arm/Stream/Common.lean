@@ -4,18 +4,22 @@ public import VerifiedGarbage.Spec.Rc2.Contract
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Impl.Rc2.Arm.Stream
-public import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.MdStream.Arm.Common
 public import VerifiedGarbage.Proof.Framework.WriteBytes
-public import VerifiedGarbage.Proof.Rc2.Stream
+import VerifiedGarbage.Proof.Rc2.Stream
 public import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Verified
 public import VerifiedGarbage.Proof.Rc2.Arm.Key
 public import VerifiedGarbage.Proof.Framework.Arm.Frame
-public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
+import VerifiedGarbage.Proof.Framework.Arm.RegUpd
 public import VerifiedGarbage.Proof.Rc2.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Rc2.CbcMemory
 
 @[expose] public section
 
@@ -35,6 +39,7 @@ the same arguments and stack pointer in two runs, are constant time.
 namespace VG.Proof.Rc2.Arm.Stream
 
 open VG VG.Arm VG.Impl.Rc2.Arm
+open VG.Impl.Rc2 (piSym piQuads piConsts)
 
 /-- Addresses below a pointer do not wrap. -/
 theorem addr_sub {a : BitVec 32} {k : Nat} (h : k ≤ a.toNat) :
@@ -131,7 +136,11 @@ theorem view_gpr (s : State) (rd wr : List Region) (r : Reg) (hr : r ∉ linkReg
 
 /-! ## `vg_rc2_expand_key` -/
 
-/-- What the call of `vg_rc2_expand_key` needs. -/
+/-- The region of PITABLE's table, at the address of `VG_RC2_PITABLE`. -/
+abbrev tbl (s : State) : Region := ⟨State.addr (s.syms piSym), 256⟩
+
+/-- What the call of `vg_rc2_expand_key` needs: its arguments and regions,
+and the table, readable, held, and apart from what the call writes. -/
 structure KeyPre (s : State) (K KL E O S : BitVec 32) : Prop where
   r0 : s.gpr .r0 = K
   r1 : s.gpr .r1 = KL
@@ -151,6 +160,12 @@ structure KeyPre (s : State) (K KL E O S : BitVec 32) : Prop where
   hS : S.toNat + 512 ≤ 2 ^ 32
   reads : Covers [⟨State.addr K, KL.toNat⟩] (s.rd ++ s.wr)
   writes : Covers [⟨State.addr O, 128⟩, ⟨State.addr S, 512⟩] s.wr
+  tfit : (s.syms piSym).toNat + 256 ≤ 2 ^ 32
+  tHeld : Proof.Rc2.PiHeld s.mem (State.addr (s.syms piSym))
+  tO : (tbl s).Disjoint ⟨State.addr O, 128⟩
+  tS : (tbl s).Disjoint ⟨State.addr S, 512⟩
+  tb : (below s).Disjoint (tbl s)
+  trd : tbl s ∈ s.rd
 
 /-- What the call of `vg_rc2_expand_key` leaves. -/
 structure KeyPost (s : State) (K KL E O S : BitVec 32) (s' : State) : Prop where
@@ -165,7 +180,10 @@ structure KeyPost (s : State) (K KL E O S : BitVec 32) (s' : State) : Prop where
 abbrev keyRd (s : State) (K KL : BitVec 32) : List Region := [⟨State.addr K, KL.toNat⟩, argR s]
 abbrev keyWr (O S : BitVec 32) : List Region := [⟨State.addr O, 128⟩, ⟨State.addr S, 512⟩]
 
-theorem KeyPre.pre {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) :
+/-- The callee's readable regions: the key, its stack argument and the table. -/
+abbrev keyRdC (s : State) (K KL : BitVec 32) : List Region := keyRd s K KL ++ [tbl s]
+
+theorem KeyPre.pre0 {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) :
     keyContract.pre (view s (keyRd s K KL) (keyWr O S)) := by
   have hv := view_sp h.hsp (keyRd s K KL) (keyWr O S)
   simp only [keyContract, arg0 h.hsp, sa0 h.hsp, view_gpr _ _ _ .r0 (by decide), view_gpr _ _ _ .r1 (by decide),
@@ -175,13 +193,68 @@ theorem KeyPre.pre {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S
   · exact (h.bo.sub_left (Region.sub_prefix (by decide)))
   · exact (h.bs.sub_left (Region.sub_prefix (by decide)))
 
+theorem view_syms (s : State) (rd wr : List Region) : (view s rd wr).syms = s.syms := rfl
+
+/-- The table, as the callee's calling convention states it. -/
+theorem KeyPre.consts {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) :
+    ConstsOk piConsts 0 (view s (keyRdC s K KL) (keyWr O S)) := by
+  have e : constRegs piConsts (view s (keyRdC s K KL) (keyWr O S)) = [tbl s] := by
+    rw [constRegs, piConsts_eq, Abi.constRegions_cons, Abi.constRegions_nil, piQuads_length]; rfl
+  refine ⟨by rw [e]; rfl, ?_, ?_⟩
+  · rw [piConsts_eq]
+    intro c hc i hi
+    simp only [List.mem_singleton] at hc
+    subst hc
+    rw [piQuads_length] at hi
+    show (pushed [.r12, .lr] s).mem.readW (State.addr (s.syms piSym) + BitVec.ofNat 64 (8 * i)) 64 = _
+    rw [(fA h.hsp).readW (r := tbl s) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact h.tb.symm) (by decide)]
+    exact h.tHeld i (by rw [piQuads_length]; exact hi)
+  · rw [e]
+    intro t ht
+    simp only [List.mem_singleton] at ht
+    subst ht
+    refine ⟨?_, fun r hr => ?_, fun r hr => nomatch hr⟩
+    · rw [abi_ptrBits]
+      show (State.addr (s.syms piSym)).toNat + 256 ≤ 2 ^ 32
+      have := h.tfit
+      simp only [State.addr, BitVec.toNat_setWidth]
+      rw [Nat.mod_eq_of_lt (by omega)]
+      exact this
+    · change r ∈ keyWr O S at hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact h.tO
+      · exact h.tS
+
+theorem KeyPre.pre {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) :
+    keyContractC.pre (view s (keyRdC s K KL) (keyWr O S)) :=
+  ⟨h.pre0, h.consts⟩
+
+/-- The callee's regions, which the frame covers with `s`'s. -/
+theorem covC {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) :
+    Covers (keyRdC s K KL ++ keyWr O S) ((pushed [.r12, .lr] s).rd ++ (pushed [.r12, .lr] s).wr) := by
+  have c := cov h.hsp h.reads h.writes
+  have ct : Covers [tbl s] ((pushed [.r12, .lr] s).rd ++ (pushed [.r12, .lr] s).wr) :=
+    Covers.left (Covers.of_mem fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [pushed_rd]; exact h.trd)
+  refine Covers.of_forall fun r hr => ?_
+  simp only [keyRdC, keyRd, keyWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+    or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact (Covers.of_mem fun x hx => by simp only [List.mem_singleton] at hx; subst hx; simp).trans c
+  · exact (Covers.of_mem fun x hx => by simp only [List.mem_singleton] at hx; subst hx; simp).trans c
+  · exact ct
+  · exact (Covers.of_mem fun x hx => by simp only [List.mem_singleton] at hx; subst hx; simp).trans c
+  · exact (Covers.of_mem fun x hx => by simp only [List.mem_singleton] at hx; subst hx; simp).trans c
+
 theorem key_noCalls : expandKey.noCalls = true := by decide +kernel
 
 theorem key_call {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) :
     WP isa Stream.keyCall s (KeyPost s K KL E O S) := by
   refine WP.frame (rs := [.r12, .lr]) (r := .r12) rfl (by simpa using h.hsp) (by simp) ?_
-  refine WP.call (k := keyContract) key_correct (rd := keyRd s K KL) (wr := keyWr O S) h.pre
-    (cov h.hsp h.reads h.writes) (covW h.writes) ?_ key_noCalls
+  refine WP.call (k := keyContractC) key_correct (rd := keyRdC s K KL) (wr := keyWr O S) h.pre
+    (covC h) (covW h.writes) ?_ key_noCalls
   intro s₂ hrd₂ hwr₂ hsp₂ hf hcs _ hpost
   have bytesK : Spec.Rc2.bytesAt (pushed [.r12, .lr] s).mem (State.addr K) KL.toNat =
       Spec.Rc2.bytesAt s.mem (State.addr K) KL.toNat :=
@@ -202,35 +275,41 @@ theorem key_call {s : State} {K KL E O S : BitVec 32} (h : KeyPre s K KL E O S) 
       (hf.sub fun r hr => ⟨r, by simp at hr; rcases hr with rfl | rfl <;> simp, fun _ h => h⟩)
   · rw [popped_mem]; exact hpost
 
-theorem key_rel {K KL E O S sp₀ : BitVec 32} {P : State → State → Prop}
-    (h : ∀ s₁ s₂, P s₁ s₂ → KeyPre s₁ K KL E O S ∧ KeyPre s₂ K KL E O S ∧ s₁.sp = sp₀ ∧ s₂.sp = sp₀) :
+theorem key_rel {K KL E O S sp₀ T₀ : BitVec 32} {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → KeyPre s₁ K KL E O S ∧ KeyPre s₂ K KL E O S ∧ s₁.sp = sp₀ ∧ s₂.sp = sp₀ ∧
+      s₁.syms piSym = T₀ ∧ s₂.syms piSym = T₀) :
     RelCT isa P Stream.keyCall fun _ _ => True := by
-  refine RelCT.frame (fun s₁ s₂ hp => by obtain ⟨_, _, h₁, h₂⟩ := h _ _ hp; rw [h₁, h₂]) ?_
+  refine RelCT.frame (fun s₁ s₂ hp => by obtain ⟨_, _, h₁, h₂, _⟩ := h _ _ hp; rw [h₁, h₂]) ?_
   refine RelCT.call key_correct expandKey_constantTime
-    [⟨State.addr K, KL.toNat⟩, ⟨State.addr sp₀ - 8, 4⟩] (keyWr O S) fun a b ⟨s₁, s₂, hp, pa, pb⟩ => ?_
-  obtain ⟨h₁, h₂, sp₁, sp₂⟩ := h _ _ hp
+    [⟨State.addr K, KL.toNat⟩, ⟨State.addr sp₀ - 8, 4⟩, ⟨State.addr T₀, 256⟩] (keyWr O S)
+    fun a b ⟨s₁, s₂, hp, pa, pb⟩ => ?_
+  obtain ⟨h₁, h₂, sp₁, sp₂, t₁, t₂⟩ := h _ _ hp
   rw [push_pushed rfl (by simpa using h₁.hsp), Option.some.injEq] at pa
   rw [push_pushed rfl (by simpa using h₂.hsp), Option.some.injEq] at pb
   subst pa pb
-  have e₁ : keyRd s₁ K KL = [⟨State.addr K, KL.toNat⟩, ⟨State.addr sp₀ - 8, 4⟩] := by rw [← sp₁]
-  have e₂ : keyRd s₂ K KL = [⟨State.addr K, KL.toNat⟩, ⟨State.addr sp₀ - 8, 4⟩] := by rw [← sp₂]
+  have e₁ : keyRdC s₁ K KL = [⟨State.addr K, KL.toNat⟩, ⟨State.addr sp₀ - 8, 4⟩, ⟨State.addr T₀, 256⟩] := by
+    rw [← sp₁, ← t₁]; rfl
+  have e₂ : keyRdC s₂ K KL = [⟨State.addr K, KL.toNat⟩, ⟨State.addr sp₀ - 8, 4⟩, ⟨State.addr T₀, 256⟩] := by
+    rw [← sp₂, ← t₂]; rfl
   have p₁ := h₁.pre
   have p₂ := h₂.pre
-  have c₁ := cov h₁.hsp h₁.reads h₁.writes
-  have c₂ := cov h₂.hsp h₂.reads h₂.writes
-  rw [show argR s₁ = ⟨State.addr sp₀ - 8, 4⟩ by rw [← sp₁]] at c₁
-  rw [show argR s₂ = ⟨State.addr sp₀ - 8, 4⟩ by rw [← sp₂]] at c₂
-  have a₁ := arg0 h₁.hsp (keyRd s₁ K KL) (keyWr O S)
-  have a₂ := arg0 h₂.hsp (keyRd s₂ K KL) (keyWr O S)
+  have c₁ := covC h₁
+  have c₂ := covC h₂
+  rw [e₁] at c₁
+  rw [e₂] at c₂
+  have a₁ := arg0 h₁.hsp (keyRdC s₁ K KL) (keyWr O S)
+  have a₂ := arg0 h₂.hsp (keyRdC s₂ K KL) (keyWr O S)
   rw [view, e₁] at p₁ a₁
   rw [view, e₂] at p₂ a₂
-  refine ⟨p₁, p₂, ?_, c₁, covW h₁.writes, c₂, covW h₂.writes⟩
-  simp only [keyContract, a₁, a₂, State.withRegions_gpr, State.withRegions_sp,
-    State.callEntry_sp, pushed_sp, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs), pushed_gpr, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₂.r0, h₂.r1,
-    h₂.r2, h₂.r3, h₁.r12, h₂.r12, sp₁, sp₂]
-  exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
+  refine ⟨p₁, p₂, ⟨?_, ?_⟩, c₁, covW h₁.writes, c₂, covW h₂.writes⟩
+  · simp only [keyContract, a₁, a₂, State.withRegions_gpr, State.withRegions_sp,
+      State.callEntry_sp, pushed_sp, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
+      State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs), State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs),
+      State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs), pushed_gpr, h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₂.r0, h₂.r1,
+      h₂.r2, h₂.r3, h₁.r12, h₂.r12, sp₁, sp₂]
+    exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
+  · show s₁.syms piSym = s₂.syms piSym
+    rw [t₁, t₂]
 
 /-! ## The CBC functions -/
 
@@ -523,8 +602,10 @@ written out for ARMv7 and a stack of 8 bytes (`initContract`,
 namespace VG.Proof.Rc2.Arm.Stream
 
 open VG VG.Arm
+open VG.Impl.Rc2 (piSym piQuads piConsts)
 
-def initContract : Contract isa where
+/-- `vg_rc2_cbc_init`'s contract under `abi`, spelled out. -/
+def initContract0 : Contract isa where
   pre s :=
     let key : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
     let iv : Region := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩
@@ -600,10 +681,124 @@ def updateSatState : State where
   rd := [⟨0x2000, 0⟩, ⟨0x6000, 12⟩]
   wr := [⟨0x1000, 144⟩, ⟨0x3000, 0⟩, ⟨0x4000, 576⟩]
 
-theorem init_implies : initContract.Implies (Proof.Rc2.cbcInitScratchContract abi 8) := by
+theorem init_implies0 : initContract0.Implies (Proof.Rc2.cbcInitScratchContract abi 8) := by
   sig_implies [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs,
-    Arm.reduceClassify, Arm.Loc.val, State.addr, initContract]
+    Arm.reduceClassify, Arm.Loc.val, State.addr, initContract0]
     [initSatState, stackArg, stackArgAddr, Mem.readW, Mem.read] using initSatState
+
+/-- `initContract0` with the table's region last among the readable ones, as
+the proofs state it. -/
+def initContract : Contract isa :=
+  { initContract0 with
+    pre s :=
+      let key : Region := ⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩
+      let iv : Region := ⟨State.addr (s.gpr .r3), (stackArg s 0).toNat⟩
+      let args : Region := ⟨stackArgAddr s 0, 12⟩
+      let ctx : Region := ⟨State.addr (stackArg s 1), 144⟩
+      let scr : Region := ⟨State.addr (stackArg s 2), 576⟩
+      let below : Region := ⟨State.addr s.sp - 8, 8⟩
+      8 ≤ s.sp.toNat ∧ s.sp.toNat + 12 ≤ 2 ^ 32 ∧ s.rd = [key, iv, args, tbl s] ∧ s.wr = [ctx, scr] ∧
+        key.Disjoint ctx ∧ key.Disjoint scr ∧ iv.Disjoint ctx ∧ iv.Disjoint scr ∧ ctx.Disjoint scr ∧
+        ctx.Disjoint args ∧ scr.Disjoint args ∧ below.Disjoint key ∧ below.Disjoint iv ∧
+        below.Disjoint ctx ∧ below.Disjoint scr ∧ below.Disjoint args ∧
+        (s.gpr .r0).toNat + (s.gpr .r1).toNat ≤ 2 ^ 32 ∧ (s.gpr .r3).toNat + (stackArg s 0).toNat ≤ 2 ^ 32 ∧
+        (stackArg s 1).toNat + 144 ≤ 2 ^ 32 ∧ (stackArg s 2).toNat + 576 ≤ 2 ^ 32 }
+
+/-- What the calling convention says of the table, as `init` needs it. -/
+structure InitTab (s : State) : Prop where
+  fit : (s.syms piSym).toNat + 256 ≤ 2 ^ 32
+  held : Proof.Rc2.PiHeld s.mem (State.addr (s.syms piSym))
+  wr : ∀ r ∈ s.wr, (tbl s).Disjoint r
+  below : (tbl s).Disjoint ⟨State.addr s.sp - 8, 8⟩
+
+/-- `vg_rc2_cbc_init`'s contract under `abi.withConsts piConsts`, as the
+proofs state it. -/
+def initContractC : Contract isa where
+  pre s := initContract.pre s ∧ InitTab s
+  post := initContract.post
+  pub s₁ s₂ := initContract.pub s₁ s₂ ∧ s₁.syms piSym = s₂.syms piSym
+
+theorem stackArg_stripConsts' (K : List (String × List (BitVec 64))) (s : State) (i : Nat) :
+    stackArg (stripConsts K s) i = stackArg s i := rfl
+
+/-- The precondition with the table, from the one without it (`stripConsts`)
+and what the calling convention says of the table. -/
+theorem initC_pre {s : State} (h : initContract0.pre (stripConsts piConsts s)) (hc : ConstsOk piConsts 8 s) :
+    initContractC.pre s := by
+  obtain ⟨hT, twr, tdrop, held, tres⟩ := consts_pi hc
+  obtain ⟨a1, a2, hrd, rest⟩ := h
+  refine ⟨⟨a1, a2, ?_, rest⟩, ⟨hT.fit, held, twr, tres _ List.mem_cons_self⟩⟩
+  rw [← List.take_append_drop (s.rd.length - 1) s.rd, tdrop]
+  have h' : s.rd.take (s.rd.length - piConsts.length) = _ := hrd
+  exact congrArg (· ++ _) h'
+
+/-- The memory of the witness with the table: the table at `0x100000`, and
+`initSatState`'s elsewhere (irreducible: unfolding it in a definitional check
+would evaluate the table). -/
+@[irreducible] def initSatMem : Mem := fun a =>
+  if (a - 0x100000).toNat < 256 then constMem 0x100000 piQuads a else initSatState.mem a
+
+theorem initSatMem_held : ∀ i < piQuads.length,
+    initSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = piQuads.getD i 0 := by
+  intro i hi
+  rw [piQuads_length] at hi
+  rw [← constMem_held 0x100000 piQuads (by rw [piQuads_length]; decide) i (by rw [piQuads_length]; exact hi)]
+  apply Mem.readW_congr
+  intro j hj
+  unfold initSatMem
+  refine ite_eq_left ?_
+  rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
+  omega
+
+/-- The witness's memory outside the table. -/
+theorem initSatMem_eq (a : Addr) (ha : ¬ (a - 0x100000).toNat < 256) : initSatMem a = initSatState.mem a := by
+  unfold initSatMem
+  exact ite_eq_right ha
+
+/-- `initSatState` with the table. -/
+def initSatC : State :=
+  { initSatState with
+    mem := initSatMem, rd := [⟨0x1000, 0⟩, ⟨0x2000, 0⟩, ⟨0x6000, 12⟩, ⟨0x100000, 256⟩], syms := fun _ => 0x100000 }
+
+theorem initSatC_arg {i : Nat} (hi : i < 3) : stackArg initSatC i = stackArg initSatState i := by
+  apply Mem.readW_congr
+  intro j hj
+  apply initSatMem_eq
+  have h : ∀ i < 3, ∀ j < 4, ¬ (stackArgAddr initSatState i + BitVec.ofNat 64 j - 0x100000).toNat < 256 := by
+    decide
+  exact h i hi j hj
+
+theorem initSat_pre : (Proof.Rc2.cbcInitScratchContract (abi.withConsts piConsts) 8).pre initSatC := by
+  have hl : piQuads.length = 32 := piQuads_length
+  have held := initSatMem_held
+  have a0 := initSatC_arg (i := 0) (by decide)
+  have a1 := initSatC_arg (i := 1) (by decide)
+  have a2 := initSatC_arg (i := 2) (by decide)
+  rw [piConsts_eq]
+  generalize piQuads = W at hl held ⊢
+  generalize e : initSatC = s at a0 a1 a2
+  sig_pre [Proof.Rc2.cbcInitScratchContract, Proof.Rc2.cbcInitScratchSig, Spec.Rc2.cbcInitPost, abi, argRegs,
+    Arm.reduceClassify, Arm.Loc.val, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+  subst e
+  have v0 : stackArg initSatState 0 = 0 := by decide
+  have v1 : stackArg initSatState 1 = 0x3000 := by decide
+  have v2 : stackArg initSatState 2 = 0x4000 := by decide
+  rw [a0, a1, a2, v0, v1, v2, hl]
+  refine ⟨by decide, by decide, by decide, fun i hi => held i (by rw [hl]; exact hi), by decide, ?_, ?_⟩
+  · intro r hr
+    change r ∈ ([⟨0x3000, 144⟩, ⟨0x4000, 576⟩] : List Region) at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
+  · repeat' apply And.intro
+    all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)
+
+theorem init_implies : initContractC.Implies (Proof.Rc2.cbcInitScratchContract (abi.withConsts piConsts) 8) where
+  pre _ hs := initC_pre (init_implies0.pre _ (pre_consts.mp hs).1) (pre_consts.mp hs).2
+  post s s' hs hp := post_consts.mpr (init_implies0.post (stripConsts piConsts s) s' (pre_consts.mp hs).1 hp)
+  pub s₁ s₂ h₁ h₂ hp := ⟨init_implies0.pub (stripConsts piConsts s₁) (stripConsts piConsts s₂)
+      (pre_consts.mp h₁).1 (pre_consts.mp h₂).1 (pub_consts.mp hp).1,
+    symAddr_eq_iff.mp ((pub_consts.mp hp).2 _ List.mem_cons_self)⟩
+  sat := ⟨initSatC, initSat_pre⟩
 
 theorem update_implies (d : Spec.Rc2.Direction) :
     (updateContract d).Implies (Proof.Rc2.cbcUpdateScratchContract abi d 8) := by

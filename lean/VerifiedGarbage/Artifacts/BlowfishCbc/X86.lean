@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.CbcVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Blowfish-CBC artifacts on baseline x86 (32-bit) -/
 

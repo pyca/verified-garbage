@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.X25519.Arm.Mul
+import VerifiedGarbage.Proof.X25519.Arm.Mul
 public import VerifiedGarbage.Proof.X25519.Arm.Cswap
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # X25519 on 32-bit ARM: the field elements the working space holds
@@ -72,17 +73,17 @@ theorem slots_after (hA : acc + 128 ≤ 4096) {o : Nat} {qs : List Nat} (hq : Se
     limb_frame hf fun r hr k hk => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-      · exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
+      · exact Offset.disjoint _ (by omega_using [hqo, h1, hk]) (by omega_using [hA, h3, hk]) (by omega_using [hA, ho])
+      · exact Offset.disjoint _ (.inl (by omega_using [h3, hk])) (by omega_using [hA, h3, hk]) (by omega_using [hA])
   refine ⟨fun k hk => by rw [e k hk]; exact (hS q hq').1 k hk, ?_⟩
   rw [FS, V, val16_congr e]; exact (hS q hq').2
 
-theorem frame_FA (hA : acc + 128 ≤ 4096) {o : Nat} (ho : 64 ≤ o ∧ o + 64 ≤ acc) {m m' : Mem}
+theorem frame_FA (_hA : acc + 128 ≤ 4096) {o : Nat} (ho : 64 ≤ o ∧ o + 64 ≤ acc) {m m' : Mem}
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩, ⟨State.addr b + BitVec.ofNat 64 acc, 128⟩] m m') :
     Frame [FA acc b] m m' := by
   refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega) (by omega)
+  rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega_using [ho]) (by omega)
 
 theorem mulS (hA : acc + 128 ≤ 4096) {o x y : Nat} {qs : List Nat} {v : Nat → Fe}
     (hq : Sep1 acc o qs = true)
@@ -112,7 +113,7 @@ theorem addS (hA : acc + 128 ≤ 4096) {o x y : Nat} {qs : List Nat} {v : Nat �
       SlotsOk s'.mem (State.addr b) (o :: qs) (upd v o (v x + v y)) := by
   have hx' := sep1_get hq hx
   have hy' := sep1_get hq hy
-  refine WP.mono (add_ok (by omega) (by omega) (by omega)
+  refine WP.mono (add_ok (by omega_using [hA, ho]) (by omega_using [hA, hx']) (by omega_using [hA, hy'])
     (hx'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm) (hy'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm)
     hc (hS x hx).1 (hS y hy).1) fun s' ⟨hr, hf, hl, hv⟩ => ⟨hr, frame_FA hA ho (frame_o hf), fun q hq' => ?_⟩
   by_cases hqo : q = o
@@ -131,7 +132,7 @@ theorem subS (hA : acc + 128 ≤ 4096) {o x y : Nat} {qs : List Nat} {v : Nat �
       SlotsOk s'.mem (State.addr b) (o :: qs) (upd v o (v x - v y)) := by
   have hx' := sep1_get hq hx
   have hy' := sep1_get hq hy
-  refine WP.mono (sub_ok (by omega) (by omega) (by omega)
+  refine WP.mono (sub_ok (by omega_using [hA, ho]) (by omega_using [hA, hx']) (by omega_using [hA, hy'])
     (hx'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm) (hy'.1.elim (fun h => .inl h.symm) fun h => .inr h.symm)
     hc (hS x hx).1 (hS y hy).1) fun s' ⟨hr, hf, hl, hv⟩ => ⟨hr, frame_FA hA ho (frame_o hf), fun q hq' => ?_⟩
   by_cases hqo : q = o
@@ -154,7 +155,7 @@ theorem cswapS (hA : acc + 128 ≤ 4096) {x y : Nat} {qs : List Nat} {v : Nat �
       SlotsOk s'.mem (State.addr b) qs (swapV x y sw v) := by
   have hx' := sep1_get hq hx
   have hy' := sep1_get hq hy
-  refine WP.mono (cswap_ok (b := b) (by omega) (by omega) hxy hc hsw h9) fun s' h => ⟨h.rest, ?_, ?_⟩
+  refine WP.mono (cswap_ok (b := b) (by omega_using [hA, hx']) (by omega_using [hA, hy']) hxy hc hsw h9) fun s' h => ⟨h.rest, ?_, ?_⟩
   · refine h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega) (by omega)
@@ -194,8 +195,8 @@ theorem cswapS (hA : acc + 128 ≤ 4096) {x y : Nat} {qs : List Nat} {v : Nat �
         limb_frame h.frame fun r hr k hk => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact Offset.disjoint _ (by omega) (by omega) (by omega)
-          · exact Offset.disjoint _ (by omega) (by omega) (by omega)
+          · exact Offset.disjoint _ (by omega_using [hqx, h1, hk]) (by omega_using [hA, h3, hk]) (by omega_using [hA, hx'])
+          · exact Offset.disjoint _ (by omega_using [hqy, h1', hk]) (by omega_using [hA, h3, hk]) (by omega_using [hA, hy'])
       refine ⟨fun k hk => by rw [e k hk]; exact (hS q hq'').1 k hk, ?_⟩
       rw [FS, V, val16_congr e]; exact (hS q hq'').2
 

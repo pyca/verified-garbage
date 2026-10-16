@@ -2,12 +2,20 @@ module
 
 public import VerifiedGarbage.Proof.X448.X86.CallCT
 meta import VerifiedGarbage.Proof.X448.X86.CallCT
-public import VerifiedGarbage.Proof.X448.X86.Square
+import VerifiedGarbage.Proof.X448.X86.Square
 meta import VerifiedGarbage.Proof.X448.X86.Square
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.X25519.X86
+import VerifiedGarbage.Proof.X448.X86.FnLit
+meta import VerifiedGarbage.Impl.X25519.X86
+meta import VerifiedGarbage.Proof.X448.X86.FnLit
 
 /-!
 # Field arithmetic on x86 (32-bit): two runs, piece by piece

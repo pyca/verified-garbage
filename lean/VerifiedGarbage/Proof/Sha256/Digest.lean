@@ -1,9 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Sha256.Md
-public import VerifiedGarbage.Proof.MdStream.Prefix
+import VerifiedGarbage.Proof.MdStream.Prefix
 public import VerifiedGarbage.Spec.Sha256.Contract
-public import VerifiedGarbage.Proof.Sha256.Scratch
+import VerifiedGarbage.Proof.Sha256.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -54,13 +54,20 @@ theorem finalize224Post_local (pb : Nat) :
     ∀ vs m₁ m₂ m' r, vs.length = (Spec.Sha256.finalize224Sig.words pb).length →
       (∀ b ∈ Sig.bufs Spec.Sha256.finalize224Sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (Spec.Sha256.finalize224Sig.words pb) (Spec.Sha256.finalize224Post pb) vs m₁ m' r →
-        Curry.apply (Spec.Sha256.finalize224Sig.words pb) (Spec.Sha256.finalize224Post pb) vs m₂ m' r
-  | [st, ct, ot], m₁, m₂, m', r, _, hb, h => by
-    simp only [Spec.Sha256.finalize224Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
-      forall_eq_or_imp, forall_eq] at hb
-    have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
-      (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
-    intro msg hr hc
-    exact h msg (reprFrom_congr (fun i hi => (hs i hi).symm) hr) hc
+        Curry.apply (Spec.Sha256.finalize224Sig.words pb) (Spec.Sha256.finalize224Post pb) vs m₂ m' r := by
+  intro vs m₁ m₂ m' r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [Spec.Sha256.finalize224Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq] at hb
+  have hs : ∀ i < 96, m₂ (st + BitVec.ofNat 64 i) = m₁ (st + BitVec.ofNat 64 i) := fun i hi =>
+    (hb.1 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+  intro msg hr hc
+  exact h msg (reprFrom_congr (fun i hi => (hs i hi).symm) hr) hc
 
 end VG.Proof.Sha256

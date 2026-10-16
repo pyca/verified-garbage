@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Round.Arith
-public import VerifiedGarbage.Proof.MlKem.X86.Leaf
+import VerifiedGarbage.Proof.MlKem.X86.Leaf
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -9,6 +9,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.Round.Mem
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-DSA on x86 (32-bit): what the rounding functions share

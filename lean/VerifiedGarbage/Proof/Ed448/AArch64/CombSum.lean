@@ -1,0 +1,47 @@
+module
+
+public import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
+meta import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
+public import VerifiedGarbage.Proof.Framework.TaintSum
+meta import VerifiedGarbage.Proof.Framework.TaintSum
+public import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-!
+# The AArch64 comb's taint, analysed once
+
+The comb (`vg_ed448_r56_comb_base`) is called by the base-point multiplications of
+X448 and Ed448 and by the verifier's `[S]B`. `combSum` analyses it once, without
+what the analysis does not read, for all of them (`taint_decide_sum [combSum]`), and
+for the comb's own check (`CombBase.comb_check`); `x20`, which the comb does not
+write, stays as public as it was. The comb's step is built once, as a literal, which
+the summary and the check of the step's stores read.
+-/
+
+@[expose] public section
+
+namespace VG
+
+materialize_code Impl.X448.AArch64.Base.stepR
+
+end VG
+
+namespace VG.Proof.Ed448.AArch64.CombBase
+
+open VG VG.AArch64 VG.Impl.Ed448.AArch64.CombBase
+open VG.Impl.X448.AArch64.Base (combSym)
+
+taint_summary combSum : (taintS [combSym]) (Taint.ofRegs [.x0, .x1]) (Code.eraseT combBaseFn)
+  keeping (Taint.ofRegs [.x20])
+
+end VG.Proof.Ed448.AArch64.CombBase

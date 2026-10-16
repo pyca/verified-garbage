@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
+import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
 meta import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelCT
@@ -10,6 +10,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
 # RSAES-OAEP decryption on AArch64: the decoding in constant time

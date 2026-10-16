@@ -10,9 +10,9 @@ public import VerifiedGarbage.Proof.Sha512.X86.Compress
 meta import VerifiedGarbage.Proof.Sha512.X86.Compress
 public import VerifiedGarbage.Impl.Sha512.X86.Stream
 meta import VerifiedGarbage.Impl.Sha512.X86.Stream
-public import VerifiedGarbage.Proof.Sha512.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86.Lit
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

@@ -1,12 +1,17 @@
 module
 
-public import VerifiedGarbage.Proof.P256.EcdhJac.StoreWords
+import VerifiedGarbage.Proof.P256.EcdhJac.StoreWords
 public import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
+import VerifiedGarbage.Proof.Weierstrass.Booth
+import VerifiedGarbage.Proof.Weierstrass.JacMadd
 
 /-! ## `Store` -/
 
@@ -52,7 +57,7 @@ theorem storeEntry_ok {base : Addr} {s : State} {m : Nat}
     (by intro i hi; change (if i<12 then 704+8*i else 5400+8*(i-12))+8≤8192; split <;> omega)
     (by intro i hi; change (if i<12 then 704+8*i else 5400+8*(i-12))%8=0; split <;> omega)
     (by intro i hi; change 2816+160*(m-1)+8*20≤(if i<12 then 704+8*i else 5400+8*(i-12)) ∨ (if i<12 then 704+8*i else 5400+8*(i-12))+8≤2816+160*(m-1); split <;> omega) 20 (by omega)) fun t ⟨vals,kt,ot⟩ => ?_
-  refine ⟨?_,(Keeps.regs ka).trans (kt.mono (by simp)),?_⟩
+  refine ⟨?_,(Keeps.regs ka).trans (kt.mono (by regions_sub)),?_⟩
   · simpa only [ka.mem] using vals
   · simpa only [ka.mem] using ot
 

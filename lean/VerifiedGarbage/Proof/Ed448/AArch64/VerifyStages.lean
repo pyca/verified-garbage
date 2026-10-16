@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyDecode
-public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
+import VerifiedGarbage.Proof.Ed448.AArch64.VerifyBits
 public import VerifiedGarbage.Proof.Ed448.AArch64.VerifyEntry
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -51,28 +51,34 @@ theorem mov01_ok (s : State) :
 
 /-- `x0 := x1`, `x1 := x3`. -/
 theorem mov013_ok (s : State) :
-    WP isa (.block [.addImm .x .x0 .x1 0, .addImm .x .x1 .x3 0]) s fun t =>
-      t.gpr .x0 = s.gpr .x1 ∧ t.gpr .x1 = s.gpr .x3 ∧ t.mem = s.mem ∧ Keeps [.x0, .x1] s t := by
+    WP isa (.block [.addImm .x .x0 .x1 0, .addImm .x .x1 .x3 0, .sub .x .x19 .x0 .x3]) s fun t =>
+      t.gpr .x0 = s.gpr .x1 ∧ t.gpr .x1 = s.gpr .x3 ∧ t.gpr .x19 = s.gpr .x1 - s.gpr .x3 ∧
+      t.mem = s.mem ∧ Keeps [.x0, .x1, .x19] s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
     show (0 : Nat) < 4096 from by decide, ite_true, RegUpd.gpr_write_self, BitVec.setWidth_eq,
     BitVec.add_zero, Option.some.injEq, exists_eq_left', RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x3 ≠ .x0),
-    RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x0 ≠ .x1)]
-  refine ⟨trivial, trivial, rfl, fun r hr => ?_, rfl, rfl⟩
+    RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x0 ≠ .x1), RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x0 ≠ .x19),
+    RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x1 ≠ .x19),
+    RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x3 ≠ .x1)]
+  refine ⟨trivial, trivial, trivial, rfl, fun r hr => ?_, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-  rw [RegUpd.gpr_write_of_ne _ _ _ hr.2, RegUpd.gpr_write_of_ne _ _ _ hr.1]
+  rw [RegUpd.gpr_write_of_ne _ _ _ hr.2.2, RegUpd.gpr_write_of_ne _ _ _ hr.2.1,
+    RegUpd.gpr_write_of_ne _ _ _ hr.1]
 
 /-- After `A` is decoded into slots 8–9 (with 1 in slot 10): `-A` into slots 6 and 7, `x` (a
 product by 1, below the products' bound) subtracted from zero in slot 13, `x0 := x1` and
 `x1 := x3`. -/
-theorem negA_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) (h10 : E s.mem base 10 = 1) :
+theorem negA_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) (h10 : E s.mem base 10 = 1)
+    (h19 : s.gpr .x19 = s.gpr .x1 - s.gpr .x3) :
     WP isa negA s fun t =>
       E t.mem base 6 = 0 - E s.mem base 8 ∧ E t.mem base 7 = E s.mem base 9 ∧
       (∀ i : Fin 22, i ≠ 6 → i ≠ 7 → i ≠ 12 → i ≠ 13 → E t.mem base i = E s.mem base i) ∧
       t.gpr .x0 = s.gpr .x1 ∧ t.gpr .x1 = s.gpr .x3 ∧ Scr t base ∧ BEnv t.mem base ∧
       Keeps (.x1 :: VG.Proof.X448.AArch64.Fast.fclob) s t ∧ DFrame base s.mem t.mem := by
   unfold negA
-  refine WP.seq (mulOp (rest := [.copy (slot 7) (slot 9)]) hs hb 6 8 10 (Or.inr (by decide))
+  refine WP.seq (VG.Proof.Ed448.AArch64.Point56.mulOpK (rest := [.copy (slot 7) (slot 9)]) hs hb 6 8 10
+    (Or.inr (by decide))
     fun s2 k2 b2 m2 sm2 e2 => ?_)
   have hs2 := k2.scr hs
   refine WP.seq (WP.mono (copyE hs2 b2 7 9) fun s2b ⟨k2b, b2b, _, sm2b, e2b⟩ => WP.block_nil ?_)
@@ -101,7 +107,20 @@ theorem negA_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem bas
   have hs4 := k4.scr hs3
   refine WP.seq (WP.mono (copyE hs4 b4 6 12) fun s5 ⟨k5, b5, _, _, e5⟩ => WP.block_nil ?_)
   have hs5 := k5.scr hs4
-  refine WP.mono (mov013_ok s5) fun t ⟨x0t, x1t, mt, kt⟩ => ?_
+  refine WP.mono (mov013_ok s5) fun t ⟨x0t, x1t, x19t, mt, kt'⟩ => ?_
+  have kt : Keeps [.x0, .x1] s5 t := by
+    refine ⟨fun r hr => ?_, kt'.2.1, kt'.2.2⟩
+    by_cases e : r = .x19
+    · subst e
+      have k1 : s5.gpr .x1 = s.gpr .x1 := by
+        rw [k5.regs.1 _ (by decide), k4.regs.1 _ (by decide), k3.1 _ (by decide), k2b.regs.1 _ (by decide),
+          k2.regs.1 _ (by decide)]
+      have k3' : s5.gpr .x3 = s.gpr .x3 := by rw [hs5.x3, hs.x3]
+      have k19 : s5.gpr .x19 = s.gpr .x19 := by
+        rw [k5.regs.1 _ (by decide), k4.regs.1 _ (by decide), k3.1 _ (by decide), k2b.regs.1 _ (by decide),
+          k2.regs.1 _ (by decide)]
+      rw [x19t, k1, k3', k19, h19]
+    · exact kt'.1 r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr ⊢; exact ⟨hr.1, hr.2, e⟩)
   have h0 : E s3.mem base 13 = 0 := VG.Proof.X448.AArch64.Base.F_of_words w3
   have Et : ∀ i, E t.mem base i = E s5.mem base i := fun i => by rw [mt]
   have keep : ∀ i : Fin 22, i ≠ 6 → i ≠ 7 → i ≠ 12 → i ≠ 13 → E t.mem base i = E s.mem base i :=
@@ -188,7 +207,8 @@ theorem decodes_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) 
   have z2 : (s2.gpr .x19 != 0) = true := by
     rw [c2, g1.1 _ (by decide), hs1.x3]; exact ne_of_far (hfR 0 (by decide))
   refine WP.ite_of (eval19 z2) (fun _ => ?_) (fun h => absurd h (by decide))
-  refine WP.mono (negA_ok hs2 (by rw [m2]; exact b1) (by rw [m2]; exact one1))
+  refine WP.mono (negA_ok hs2 (by rw [m2]; exact b1) (by rw [m2]; exact one1)
+    (by rw [c2, k2.1 .x1 (by decide), k2.1 .x3 (by decide)]))
     fun s3 ⟨n6, n7, nk, x03, x13', hs3, b3, k3, f3⟩ => ⟨eval19 (by rw [k3.1 _ (by decide)]; exact z2), ?_⟩
   have O3 : Outside base 0 8192 s.mem s3.mem := (f1.trans (by rw [← m2]; exact f3)).whole
   have rr3 : s3.rd ++ s3.wr = s.rd ++ s.wr := by

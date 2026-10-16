@@ -1,13 +1,16 @@
 module
 
-public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Core
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Core
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Reduce
-public import VerifiedGarbage.Proof.Weierstrass.Words32
-public import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
+import VerifiedGarbage.Proof.Weierstrass.Words32
+import VerifiedGarbage.Proof.Ecdsa.Arm.Setup
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Weierstrass.Layout
+import VerifiedGarbage.Proof.Weierstrass.Arm.Saves
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # Deterministic ECDSA on 32-bit ARM: the blocks between the calls
@@ -130,8 +133,9 @@ theorem initKV_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
 /-! ## The number of candidates -/
 
 theorem initCnt_ok {t : State} (hc : Ctx L g m₀ t) :
-    WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .r9 = BitVec.ofNat 32 8 :=
-  movw_ok hc (d := .r9) (v := 8) (by decide) (by decide) fun t' c' m' v' _ => WP.block_nil ⟨c', m', v'⟩
+    WP isa (.block (cfgOf P).initCnt) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧
+      t'.gpr .r9 = BitVec.ofNat 32 P.I.tries :=
+  movw_ok hc (d := .r9) (v := P.I.tries) (by decide) P.tries_lt fun t' c' m' v' _ => WP.block_nil ⟨c', m', v'⟩
 
 /-! ## Whether to go on -/
 

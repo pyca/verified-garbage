@@ -231,9 +231,6 @@ def setup : Prog isa :=
 frozen and packed to the output, and the registers restored. -/
 def finish : Prog isa :=
   .seq (.block (codeOf [.mul X2 AY AY, .mul Z2 AX AX])) <|
-  .seq Fast.invert <|
-  .block (.addImm .x .x1 .x20 0 :: Fast.fmul X2 X2 T7 ++ Curve448.AArch64.toLegacy X2 ++
-    AArch64.freeze ++ (List.range 8).flatMap AArch64.packPair ++ [ld .x19 0, ld .x20 8] ++
-    restore ++ Fast.vrestore)
+  .seq Fast.invert <| .seq (.block [.addImm .x .x1 .x20 0]) Fast.finish
 
 end VG.Impl.X448.AArch64.Base

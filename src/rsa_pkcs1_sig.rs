@@ -16,10 +16,13 @@
 //! `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`), which accepts a signature exactly
 //! when `s^e mod n` is the encoding of the hash value, as BoringSSL's
 //! `RSA_verify` does. It reuses the public key's precomputed modulus values
-//! and selects ADX multiplication when available. [`recover`] is `vg_rsa_pkcs1_recover` (contract
-//! `VG.Spec.RsaPkcs1Sig.recoverContract`), which returns the hash value a
-//! signature signs, as BoringSSL's `EVP_PKEY_verify_recover` does. Everything
-//! they read is public and their timing may depend on it.
+//! and selects ADX multiplication when available. [`recover`] is
+//! `vg_rsa_pkcs1_recover_precomputed` (contract
+//! `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`), with its ADX variant
+//! on x86-64, which reuses the key's precomputed values as [`verify`] does
+//! and returns the hash value a signature signs, as BoringSSL's
+//! `EVP_PKEY_verify_recover` does. Everything they read is public and their
+//! timing may depend on it.
 //!
 //! This module only checks the lengths and allocates the memory the
 //! functions work in.
@@ -34,11 +37,12 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_verify_precomputed,
+    vg_rsa_pkcs1_recover_precomputed, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_verify_precomputed,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma, vg_rsa_pkcs1_verify_precomputed_adx,
+    vg_rsa_pkcs1_recover_precomputed_adx, vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma,
+    vg_rsa_pkcs1_verify_precomputed_adx,
 };
 use crate::cpu::detected;
 use crate::rsa::{Backend, PrivateKey, PublicKey, scratch_words};
@@ -140,7 +144,7 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
     // distinct Rust allocations; `PrivateKey::from_crt` gives
     // `64 ≤ n_len ≤ 1024`, `1 ≤ e_len ≤ 5 ≤ n_len`, `1 ≤ p_len < n_len`,
     // `1 ≤ q_len < n_len`, `dp_len = qinv_len = p_len` and `dq_len = q_len`;
-    // `out_len = n_len` and `scratch_len = 16 n_len`; and the CPU has the
+    // `out_len = n_len` and `scratch_len = 16 n_len + 32`; and the CPU has the
     // features of the function `select` chose.
     let r = unsafe {
         f(
@@ -180,9 +184,11 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
 
 /// RSASSA-PKCS1-V1_5-VERIFY (RFC 8017 §8.2.2): whether `signature` is a
 /// valid signature of the hash value `digest` of the hash function `hash`.
+///
+/// Reuses the public key's verification buffer, wiping it after each call.
 pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> bool {
     let k = key.n.len();
-    let mut scratch = vec![0u64; scratch_words(k)];
+    let mut scratch = key.verify_scratch.take(scratch_words(k));
     let pre = key.pre(&mut scratch);
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_verify_precomputed,
@@ -192,7 +198,7 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
     // SAFETY: each pointer is valid for its length (`scratch` for writes),
     // and none overlaps another or wraps around, as they are distinct Rust
     // allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024` and
-    // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 16 n_len`; and `pre`
+    // `1 ≤ e_len ≤ 5 ≤ n_len`; `scratch_len = 16 n_len + 32`; and `pre`
     // holds the verified precomputation for `key.n`, with `2 * ceil(n_len / 8)`
     // words. The CPU supports the selected function's features.
     let r = unsafe {
@@ -212,7 +218,7 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
             pre.len(),
         )
     };
-    // The working space holds only public values.
+    // ScratchLease wipes the working space before returning it to the key.
     r == 1
 }
 
@@ -222,13 +228,22 @@ pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>,
     let k = key.n.len();
     let mut out = vec![0; hash.digest_len()];
     let mut scratch = vec![0u64; scratch_words(k)];
+    let pre = key.pre(&mut scratch);
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_rsa_pkcs1_recover_precomputed,
+        // `select` chose it because the CPU has the features it needs.
+        #[cfg(target_arch = "x86_64")]
+        Backend::Adx | Backend::Ifma => vg_rsa_pkcs1_recover_precomputed_adx,
+    };
     // SAFETY: each pointer is valid for its length (`out` and `scratch` for
     // writes), and none overlaps another or wraps around, as they are
     // distinct Rust allocations; `PublicKey::new` gives `64 ≤ n_len ≤ 1024`
     // and `1 ≤ e_len ≤ 5 ≤ n_len`; `hash` is in `0..=11` and `out_len` is the
-    // length of its values; and `scratch_len = 16 n_len`.
+    // length of its values; `scratch_len = 16 n_len + 32`; `pre` holds the
+    // verified precomputation for `key.n`, with `2 * ceil(n_len / 8)` words;
+    // and the CPU supports the selected function's features.
     let r = unsafe {
-        vg_rsa_pkcs1_recover(
+        f(
             out.as_mut_ptr(),
             out.len(),
             key.n.as_ptr(),
@@ -240,6 +255,8 @@ pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>,
             signature.len(),
             scratch.as_mut_ptr(),
             scratch.len(),
+            pre.as_ptr(),
+            pre.len(),
         )
     };
     // The working space holds only public values.

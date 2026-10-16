@@ -7,6 +7,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.BitVec
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Proof.Divstep.WordDef
 
 /-!
 # Inversion by divsteps on x86-64: packed divsteps
@@ -63,7 +67,7 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
     rcases hg with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
     · irun [pstepCode, execCmov, eval, h63, hE, hF, hG, hsw, hz, zf_setFlags', sextm2, RegUpd.zf_setReg,
         RegUpd.zf_arithFlags, RegUpd.cf_setReg, RegUpd.cf_arithFlags, RegUpd.cf_setFlags, decide_true]
-      refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+      refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hr
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, h1, h2, h3, h4, h5, h6, h7,
@@ -75,7 +79,7 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
       rcases hg with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
       · irun [pstepCode, execCmov, eval, h63, hE, hF, hG, hsw, hz, zf_setFlags', sextm2, RegUpd.zf_setReg,
           RegUpd.zf_arithFlags, RegUpd.cf_setReg, RegUpd.cf_arithFlags, RegUpd.cf_setFlags, decide_false]
-        refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+        refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hr
         simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, h1, h2, h3, h4, h5, h6, h7,
@@ -85,7 +89,7 @@ theorem pstepCode_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
       rcases hg with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
       · irun [pstepCode, execCmov, eval, h63, hE, hF, hG, hsw, hz, zf_setFlags', sextm2, RegUpd.zf_setReg,
           RegUpd.zf_arithFlags, RegUpd.cf_setReg, RegUpd.cf_arithFlags, RegUpd.cf_setFlags, decide_false]
-        refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+        refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
         simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
         obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hr
         simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, h1, h2, h3, h4, h5, h6, h7,
@@ -126,7 +130,7 @@ theorem pstepsCode_ok (s : State) {n : Nat} (hn : n ≤ 15) :
     rw [hg] at e₁
     irun
     refine ⟨e₁, k₁.trans ?_⟩
-    refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+    refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg], by simp only [RegUpd.rd_setReg], by simp only [RegUpd.wr_setReg]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, hr.2.2.2.2.2.2, ↓reduceIte]
 
@@ -140,7 +144,7 @@ theorem psetRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   have h1 : ¬ r = .rax := fun h => hr (by simp [h])
   have h2 : ¬ Reg.rax = r := fun h => h1 h.symm
   irun [psetRow, load_sc hs ht, sext7fff, h1, h2, RegUpd.gpr_setReg_self]
-  refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
+  refine ⟨fun q hq => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_arithFlags]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hq.1, hq.2, ↓reduceIte]
 
@@ -171,7 +175,7 @@ theorem pext_ok (s : State) :
       s'.gpr .r13 = pextLo (s.gpr .r13) ∧ s'.gpr .rbp = pextHi (s.gpr .r13) ∧
       Keeps [.rcx, .rbp, .r8, .r13] s s' := by
   irun [pext, pextLo, pextHi, sext16k]
-  refine ⟨rfl, rfl, rfl, rfl, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨rfl, rfl, rfl, rfl, fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2,
     ↓reduceIte]
@@ -189,7 +193,7 @@ theorem ldMul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     WP isa (.block (ldMul d r)) s fun s' => s'.gpr .rax = word s.mem base d * s.gpr r ∧ Keeps [.rax, .rdx] s s' := by
   have h1 : ¬ r = .rax := fun h => hr (by simp [h])
   irun [ldMul, load_sc hs hd, mul_lo, h1]
-  refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
+  refine ⟨fun q hq => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hq.1, hq.2, ↓reduceIte]
 
@@ -202,12 +206,12 @@ theorem addShrSt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   have h : WP isa (.block [.alu .add .rax (.mem (sc d)), .shift .shr .rax n]) s fun s₁ =>
       s₁.gpr .rax = (s.gpr .rax + word s.mem base d) >>> n ∧ Keeps [.rax] s s₁ := by
     irun [load_sc hs hd, hn]
-    refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
+    refine ⟨fun q hq => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hq, ↓reduceIte]
   refine WP.mono h fun s₁ ⟨e₁, k₁⟩ => ?_
   refine WP.mono (storeReg_ok (hs.of_keeps k₁ (by decide)) .rax he) fun s₂ ⟨m₂, _, _, k₂⟩ =>
-    ⟨by rw [m₂, e₁, k₁.2.1], (Keeps.regs k₁).trans (k₂.mono (by simp))⟩
+    ⟨by rw [m₂, e₁, k₁.2.1], (Keeps.regs k₁).trans (k₂.mono (by regions_sub))⟩
 
 /-- A chunk's update of the low words at `[t]`, `[t + 8]`. -/
 theorem plow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n t : Nat} (hn : 1 ≤ n ∧ n ≤ 63)
@@ -291,9 +295,9 @@ theorem plow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n
   refine ⟨?_, ?_, ?_, ?_⟩
   · rw [mu, word_writeW_self, a₉, w8_16]
   · rw [mu, ap _ _ _ _ (by omega) (by omega) (by omega), k₉.2.1, w8_8]
-  · exact ((((((((((Keeps.regs k₁).trans (k₂.mono (by simp))).trans (Keeps.regs k₃)).trans
-      (k₄.mono (by simp))).trans (Keeps.regs k₅)).trans (k₆.mono (by simp))).trans (Keeps.regs k₇)).trans
-      (k₈.mono (by simp))).trans ((Keeps.regs k₉).mono (by simp))).trans (ku.mono (by simp)))
+  · exact ((((((((((Keeps.regs k₁).trans (k₂.mono (by regions_sub))).trans (Keeps.regs k₃)).trans
+      (k₄.mono (by regions_sub))).trans (Keeps.regs k₅)).trans (k₆.mono (by regions_sub))).trans (Keeps.regs k₇)).trans
+      (k₈.mono (by regions_sub))).trans ((Keeps.regs k₉).mono (by regions_sub))).trans (ku.mono (by regions_sub)))
   · rw [mu, k₉.2.1, m₈, k₇.2.1, m₆, k₅.2.1, m₄, k₃.2.1, m₂, k₁.2.1]
     exact (((((ou _ (t + 16) _ (by omega) (by omega)).trans (ou _ (t + 16) _ (by omega) (by omega))).trans
       (ou _ t _ (by omega) (by omega))).trans (ou _ (t + 8) _ (by omega) (by omega))).trans
@@ -306,7 +310,7 @@ theorem pfirst_ok (s : State) :
       s'.gpr .r9 = s.gpr .r8 ∧ s'.gpr .r10 = s.gpr .rcx ∧ s'.gpr .r11 = s.gpr .r13 ∧ s'.gpr .r12 = s.gpr .rbp ∧
         Keeps [.r9, .r10, .r11, .r12] s s' := by
   irun [pfirst]
-  refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg], by simp only [RegUpd.rd_setReg], by simp only [RegUpd.wr_setReg]⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ↓reduceIte]
 
@@ -334,7 +338,7 @@ theorem pcol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {t
   have h0 : WP isa (.block [.mov .rax (.reg .r13), .mul x]) s fun s₁ =>
       s₁.gpr .rax = s.gpr .r13 * s.gpr x ∧ Keeps [.rax, .rdx] s s₁ := by
     irun [mul_lo, a1, a2]
-    refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+    refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr.1, hr.2, ↓reduceIte]
   refine WP.mono h0 fun s₁ ⟨a₁, k₁⟩ => ?_
@@ -347,7 +351,7 @@ theorem pcol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {t
         Keeps [.rax, .rdx, x] s₂ s₃ := by
     irun [mul_lo, a1, a2, a3, a4, d1, d2, d3, d4, e1, e2, c1, c2, b1, b2, b3, b4, hxy.1, hxy.2,
       RegUpd.gpr_setReg_self]
-    refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
+    refine ⟨fun r hr => ?_, by simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, RegUpd.mem_arithFlags], by simp only [RegUpd.rd_setReg, RegUpd.rd_setFlags, RegUpd.rd_arithFlags], by simp only [RegUpd.wr_setReg, RegUpd.wr_setFlags, RegUpd.wr_arithFlags]⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2, ↓reduceIte]
   refine WP.mono h1 fun s₃ ⟨x₃, a₃, k₃⟩ => ?_
@@ -382,7 +386,7 @@ theorem pcomp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h | h <;> subst h <;> decide)
   have g' : ∀ r ∈ [Reg.r9, .r11], s₂.gpr r = s₁.gpr r := fun r hr => k₂.gpr r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> subst h <;> decide)
-  refine ⟨?_, ?_, ?_, ?_, (k₁.mono (by simp)).trans (k₂.mono (by simp)), o₁.trans o₂⟩
+  refine ⟨?_, ?_, ?_, ?_, (k₁.mono (by regions_sub)).trans (k₂.mono (by regions_sub)), o₁.trans o₂⟩
   · rw [g' .r9 (by simp), x₁]
   · rw [g' .r11 (by simp), y₁]
   · rw [x₂, g .r8 (by simp), g .r10 (by simp), g .rcx (by simp), g .r12 (by simp)]

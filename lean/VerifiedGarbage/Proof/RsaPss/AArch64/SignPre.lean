@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # RSASSA-PSS signing on AArch64: the precondition and the frame
@@ -107,7 +108,7 @@ structure PreS (D K : Nat) (s : State) : Prop where
   hdp : (stackArg s 3).toNat = (s.gpr .x7).toNat
   hqi : (stackArg s 7).toNat = (s.gpr .x7).toNat
   hdq : (stackArg s 5).toNat = (stackArg s 1).toNat
-  hs : 16 * (s.gpr .x3).toNat + 1024 ≤ (stackArg s 12).toNat
+  hs : 16 * (s.gpr .x3).toNat + 32 + 1024 ≤ (stackArg s 12).toNat
 
 theorem preS_of (G : Spec.Mgf1.Hash) {K : Nat} {s : State}
     (h : (Spec.RsaPss.signContract G G abi (stk K)).pre s) : PreS G.len K s := by

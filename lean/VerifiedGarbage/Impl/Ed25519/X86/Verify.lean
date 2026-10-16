@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ed25519.X86.InputSlice
 public import VerifiedGarbage.Impl.Ed25519.X86.PointDecode
-public import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
+import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 public import VerifiedGarbage.Impl.Ed25519.X86.Scalar
 public import VerifiedGarbage.Impl.Ed25519.X86.VerifyWindow
 
@@ -32,7 +32,7 @@ def pointEqual : Prog isa :=
 
 /-- Returns 1 in `eax` if `[S]B = R + [k]A`, for `A` at byte 7680 and `R` at byte 7808: the
 windows' `[k]A - [S]B` compared with `-R`. -/
-def verifyEquationPoints : Prog isa := .seq windowMultiply (.seq (.block negR) pointEqual)
+def verifyEquationPoints : Prog isa := .seq bTable (.seq windowMultiply (.seq (.block negR) pointEqual))
 
 /-! ## Decoding `A` and `R` -/
 

@@ -7,8 +7,10 @@ meta import VerifiedGarbage.Proof.Ecdh.X86.Main
 public import VerifiedGarbage.Proof.Ecdh.X86.P384.Contract
 meta import VerifiedGarbage.Proof.Ecdh.X86.P384.Contract
 public import VerifiedGarbage.Proof.Ecdh.X86.P384.Lit
+public import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
+meta import VerifiedGarbage.Proof.Ecdh.X86.CallTaint
 meta import VerifiedGarbage.Proof.Ecdh.X86.P384.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P384.Verified
 public import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.X86.Taint
@@ -18,6 +20,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDH over P-384 on x86 (32-bit): `Verified`
@@ -132,9 +136,26 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.p
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP384 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by native_taint_decide_weak weak)
+/-! The field functions, analysed once from what is public on entry to
+their calls (`CallTaint`), in place of each call. -/
+
+taint_summary mulSum : taint (callτ 48)
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p384p.k Spec.Weierstrass.Mont.p384p.m)
+taint_summary addSum : taint (callτ 48)
+  (Impl.Weierstrass.X86.Mont.addFn Spec.Weierstrass.Mont.p384p.k Spec.Weierstrass.Mont.p384p.m)
+taint_summary subSum : taint (callτ 48)
+  (Impl.Weierstrass.X86.Mont.subFn Spec.Weierstrass.Mont.p384p.k Spec.Weierstrass.Mont.p384p.m)
+taint_summary mulNestedSum : taint (nestedCallτ 48)
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p384p.k Spec.Weierstrass.Mont.p384p.m)
+taint_summary addNestedSum : taint (nestedCallτ 48)
+  (Impl.Weierstrass.X86.Mont.addFn Spec.Weierstrass.Mont.p384p.k Spec.Weierstrass.Mont.p384p.m)
+taint_summary subNestedSum : taint (nestedCallτ 48)
+  (Impl.Weierstrass.X86.Mont.subFn Spec.Weierstrass.Mont.p384p.k Spec.Weierstrass.Mont.p384p.m)
+
+theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP384 := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeP384 h).isSome = true := by
+    native_taint_decide_sum [mulSum, addSum, subSum, mulNestedSum, addNestedSum, subNestedSum]
+  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/

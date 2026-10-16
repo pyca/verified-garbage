@@ -476,6 +476,164 @@ pub fn bench(c: &mut Criterion) {
         })
     });
     g.finish();
+    tls_records(c);
+}
+
+/// TLS records, as a TLS library seals and opens them with a key reused for
+/// the connection: AES-128-GCM and AES-256-GCM, a 12-byte nonce and a TLS 1.3
+/// record's 5 bytes of additional data; sealed out of place from two pieces
+/// (the payload and its content type byte), and opened in place. aws-lc-rs
+/// seals in place (the payload and the content type already in the record
+/// buffer), and OpenSSL streams the pieces through one context.
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
+fn tls_records(c: &mut Criterion) {
+    use std::hint::black_box;
+
+    use aws_lc_rs::aead::{AES_128_GCM, AES_256_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
+    use criterion::{BenchmarkId, Throughput};
+    use openssl::cipher::Cipher as OsslCipher;
+    use openssl::cipher_ctx::CipherCtx;
+    use verified_garbage::aes_gcm::AesGcm;
+
+    use crate::{AWS_LC, OPENSSL, VG};
+
+    /// The payloads: a full record, a common web record, and smaller ones,
+    /// each next to sizes that are not a multiple of 16 (as most records'
+    /// are), since the end of a record costs differently from its blocks.
+    const TLS_SIZES: [usize; 15] = [
+        255, 256, 257, 1023, 1024, 1025, 4095, 4096, 4097, 9999, 10000, 10001, 16383, 16384, 16385,
+    ];
+
+    let nonce = [0x24; 12];
+    let aad = [0x17, 0x03, 0x03, 0x40, 0x11];
+    let ty = [0x17u8];
+    for (bits, key) in [(128, &[0x42u8; 16][..]), (256, &[0x42u8; 32][..])] {
+        let (alg, ossl_alg) = if bits == 128 {
+            (&AES_128_GCM, OsslCipher::aes_128_gcm())
+        } else {
+            (&AES_256_GCM, OsslCipher::aes_256_gcm())
+        };
+        let vg_key = AesGcm::new(key).unwrap();
+        let aws_lc_key = LessSafeKey::new(UnboundKey::new(alg, key).unwrap());
+        let mut ossl = CipherCtx::new().unwrap();
+        ossl.encrypt_init(Some(ossl_alg), Some(key), None).unwrap();
+        let mut ossl_dec = CipherCtx::new().unwrap();
+        ossl_dec
+            .decrypt_init(Some(ossl_alg), Some(key), None)
+            .unwrap();
+        for size in TLS_SIZES {
+            let data = vec![0u8; size];
+            let mut out = vec![0u8; size + 1];
+            let mut t = [0u8; 16];
+            let mut ossl_out = vec![0u8; size + 1 + 16];
+            let tag = vg_key
+                .encrypt(&nonce, &aad, &[&data, &ty], &mut out)
+                .unwrap();
+            let ct = out.clone();
+            let mut record = [&data[..], &ty].concat();
+            let aws_lc_tag = aws_lc_key
+                .seal_in_place_separate_tag(
+                    Nonce::assume_unique_for_key(nonce),
+                    Aad::from(aad),
+                    &mut record,
+                )
+                .unwrap();
+            assert_eq!((&record, aws_lc_tag.as_ref()), (&ct, &tag[..]));
+
+            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-seal"));
+            g.throughput(Throughput::Bytes(size as u64 + 1));
+            g.bench_function(BenchmarkId::new(VG, size), |b| {
+                b.iter(|| {
+                    vg_key
+                        .encrypt(
+                            black_box(&nonce),
+                            black_box(&aad),
+                            &[black_box(&data[..]), black_box(&ty[..])],
+                            black_box(&mut out),
+                        )
+                        .unwrap()
+                })
+            });
+            g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+                b.iter(|| {
+                    ossl.encrypt_init(None, None, Some(black_box(&nonce)))
+                        .unwrap();
+                    ossl.cipher_update(black_box(&aad), None).unwrap();
+                    let n = ossl
+                        .cipher_update(black_box(&data), Some(&mut ossl_out))
+                        .unwrap();
+                    let n = n + ossl
+                        .cipher_update(black_box(&ty), Some(&mut ossl_out[n..]))
+                        .unwrap();
+                    ossl.cipher_final(&mut ossl_out[n..]).unwrap();
+                    ossl.tag(&mut t).unwrap();
+                    t
+                })
+            });
+            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+                b.iter(|| {
+                    aws_lc_key
+                        .seal_in_place_separate_tag(
+                            Nonce::assume_unique_for_key(*black_box(&nonce)),
+                            Aad::from(black_box(&aad)),
+                            black_box(&mut record),
+                        )
+                        .unwrap()
+                })
+            });
+            g.finish();
+
+            // Each iteration opens the record again from its ciphertext.
+            let mut buf = ct.clone();
+            let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-open"));
+            g.throughput(Throughput::Bytes(size as u64 + 1));
+            g.bench_function(BenchmarkId::new(VG, size), |b| {
+                b.iter(|| {
+                    buf.copy_from_slice(&ct);
+                    vg_key
+                        .decrypt_in_place(
+                            black_box(&nonce),
+                            black_box(&aad),
+                            black_box(&mut buf),
+                            &tag,
+                        )
+                        .unwrap()
+                })
+            });
+            g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+                b.iter(|| {
+                    ossl_dec
+                        .decrypt_init(None, None, Some(black_box(&nonce)))
+                        .unwrap();
+                    ossl_dec.cipher_update(black_box(&aad), None).unwrap();
+                    let n = ossl_dec
+                        .cipher_update(black_box(&ct), Some(&mut ossl_out))
+                        .unwrap();
+                    ossl_dec.set_tag(&tag).unwrap();
+                    ossl_dec.cipher_final(&mut ossl_out[n..]).unwrap();
+                })
+            });
+            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+                b.iter(|| {
+                    buf.copy_from_slice(&ct);
+                    aws_lc_key
+                        .open_in_place_separate_tag(
+                            Nonce::assume_unique_for_key(*black_box(&nonce)),
+                            Aad::from(black_box(&aad)),
+                            &tag,
+                            black_box(&mut buf),
+                        )
+                        .unwrap();
+                })
+            });
+            g.finish();
+        }
+    }
 }
 
 #[cfg(not(any(

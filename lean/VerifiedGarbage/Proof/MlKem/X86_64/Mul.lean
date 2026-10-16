@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMul
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VMul
-public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
+import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 meta import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 public import VerifiedGarbage.Proof.MlKem.Ntt
 meta import VerifiedGarbage.Proof.MlKem.Ntt
@@ -14,6 +14,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_multiply_ntts`

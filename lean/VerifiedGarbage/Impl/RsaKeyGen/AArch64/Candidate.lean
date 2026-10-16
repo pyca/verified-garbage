@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64.Keys
 public import VerifiedGarbage.Impl.RsaKeyGen.Primes
+public import VerifiedGarbage.Impl.MillerRabin.AArch64.Core
 
 /-!
 # A candidate for a prime of an RSA key on AArch64
@@ -14,7 +15,9 @@ routines (`Impl/Rsa/AArch64/Keys.lean`): a header of 32 words, then arrays
 of `w + 2` words for `w = out_len / 8`, array `j` at
 `256 + 8 (w + 2) j`, its base computed from `x0` and the stride. Besides
 `vg_rsa_public`'s eight arrays: `b R mod c` (`aB`), `R mod c` (`aR1`),
-`c − R mod c` (`aRm1`), then the table of small primes (`aTab`, 256 words).
+`c − R mod c` (`aRm1`), then the table of small primes (`aTab`, 256 words),
+which Miller–Rabin's table of 16 arrays (`aT0`) overlaps, and its exponent
+(`aE`).
 The candidate `c` is in `aN`, where Montgomery multiplication `mul` (the
 baseline `mm`, or one for other CPU features) takes its modulus.
 
@@ -37,16 +40,26 @@ baseline `mm`, or one for other CPU features) takes its modulus.
    masks (`Proof/RsaKeyGen/Gcd.lean`); 3 unless it is 1.
 6. `-c⁻¹`, `R² mod c` as `vg_rsa_public_precompute` computes it (`r2Steps`),
    `R mod c` (`aR1`) and `c − R mod c` (`aRm1`): 1 and `−1` in Montgomery
-   form; and the number of uniform witnesses needed.
+   form; and the number of uniform witnesses needed. Then Miller–Rabin's
+   exponent: for `c − 1 = m 2^a` (`m` odd), `E = (c − 1) / 2^σ` with
+   `σ ∈ [1, 4]` and `σ ≡ a (mod 4)`, so that `E = m 16^v`: `c / 2`, halved
+   again under the masks of `σ > 1`, `σ > 2` and `σ > 3`, which come from
+   the lowest set bit of `c − 1`'s lowest nonzero word (found by masks over
+   its words).
 7. Miller–Rabin, one witness an iteration: 0 if `rand` has fewer than
    `out_len` octets left; else the witness `x`, the next `out_len` octets,
    uniform if `2 ≤ x < c − 1`, otherwise bit 1 set and the top bit cleared;
-   its Montgomery form (`aB`); then over the bits of `c − 1` from the top
-   down to bit 1 (bit 0 is not needed), `y := y² b^bit` (the factor
-   selected between `aB` and `aR1` under the bit's mask) and the flag of
-   `Proof/RsaKeyGen/MillerRabin.lean`: at a set bit `y = ±1`, at a clear
-   one the flag or `y = −1`. A clear flag ends with 3; otherwise the witness
-   counts, and the loop goes on while fewer than 16 witnesses or fewer than
+   its Montgomery form (`aB`), the table of its powers `T_j = x^j R mod c`
+   (`j < 16`); then `E`'s windows of 4 bits from the top
+   (`Proof/RsaKeyGen/MrWindow.lean`): four squarings `y := y²`, each or'ing
+   the flag with `y = −1`, then `y := y T_d` for the window's digit `d`, the
+   entry selected from all 16 under the masks of `j = d`, and if `d ≠ 0`
+   the flag `y = 1 ∨ y = −1`; then three more squarings, or'ing the flag
+   with `y = −1` under the masks of `σ > 1`, `σ > 2`, `σ > 3`. The flag is
+   `mrIteration`'s result: the windows end at `b^m`'s lowest set bit, and
+   the squarings after it look at `b^m` squared up to `a − 1` times. A
+   clear flag ends with 3; otherwise the witness counts, and the loop goes
+   on while fewer than 16 witnesses or fewer than
    `BN_prime_checks_for_size` uniform ones have passed; then the result is
    1 and `c` is written to `out`.
 
@@ -65,58 +78,6 @@ namespace VG.Impl.RsaKeyGen.AArch64.Candidate
 
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public VG.Impl.Rsa.AArch64
 open VG.Impl.Rsa.AArch64.Keys VG.Impl.RsaKeyGen
-
-/-! ## Header slots
-
-`out_len` is in `vg_rsa_public`'s `sK`, from which `Keys.head` computes
-`w`; `Keys.head` also sets the stride (`sStride`) and the mask `sMask` all
-ones, which `finPrime` stores `c` under; `r2Steps` counts its doublings in
-`sCnt`, which is otherwise a temporary (`kT0`). -/
-
-def kOut : Nat := sFn 0
-def kUsedP : Nat := sFn 1
-def kLen : Nat := sK
-def kE : Nat := sFn 3
-def kElen : Nat := sFn 4
-def kP : Nat := sFn 5
-def kPlen : Nat := sFn 7
-def kRand : Nat := sFn 8
-def kRandLen : Nat := sFn 9
-/-- The octets of `rand` read so far. -/
-def kUsed : Nat := sFn 11
-/-- Temporaries. -/
-def kT0 : Nat := sCnt
-def kT1 : Nat := sFn 13
-def kT2 : Nat := sFn 14
-/-- Miller–Rabin's state: what became of the last witness. -/
-def kStat : Nat := sFn 15
-/-- The mask of the witness being uniform (header slot 0, which no register
-is saved in). -/
-def kU : Nat := 0
-/-- `gcd(c − 1, e)`, and Miller–Rabin's mask of `y = −1` (slot 1). -/
-def kG : Nat := 1
-
-/-- Miller–Rabin's slots, once `e` and `p` are no longer needed: the uniform
-witnesses it needs, the witnesses so far plus one, the uniform ones, the
-flag, the word of `c` being scanned, the words left and the bits left. -/
-def kChecks : Nat := kE
-def kI : Nat := kElen
-def kUni : Nat := kP
-def kFlag : Nat := kPlen
-def kV : Nat := kT0
-def kWords : Nat := kT1
-def kBits : Nat := kT2
-
-/-! ## Arrays
-
-Besides `vg_rsa_public`'s eight: `b R mod c` (`aB`), `R mod c` (`aR1`),
-`c − R mod c` (`aRm1`), then the table (`aTab`, 256 words). `aX` holds `p`,
-then `c − 1`, then the witness. -/
-
-def aB : Nat := 8
-def aR1 : Nat := 9
-def aRm1 : Nat := 10
-def aTab : Nat := 11
 
 /-! ## Entry and exit -/
 
@@ -288,42 +249,6 @@ def montSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
   ([.block ([ldh .x12 sW, movi .x5 27] ++ checksIf 5 8 ++ checksIf 6 7 ++ checksIf 7 6 ++ checksIf 8 5 ++
     checksIf 22 4 ++ checksIf 59 3 ++ [sth .x5 kChecks])] : List (Prog isa))
 
-/-! ## Miller–Rabin -/
-
-/-- `x15 :=` the mask of `[aY] = [j]`. -/
-def eqMask (j : Nat) : List (Prog isa) :=
-  eqA aY j ++ ([.block ([movi .x7 0, movi .x4 1, .subs .x .x3 .x9 .x4] ++ borrowMask)] : List (Prog isa))
-
-/-- `x15 := ` the mask of the top bit of `kV` (`x7 := 0`). -/
-def bitMask : List Instr := [ldh .x3 kV, .lsr .x .x3 .x3 63, movi .x7 0, .sub .x .x15 .x7 .x3]
-
-/-- One bit of `c`, at the top of `kV`: `y := y²`; `[aXm] := bit ? [aB] : [aR1]`;
-`y := y [aXm]`; the flag `P := bit ? (y = 1 ∨ y = −1) : (P ∨ y = −1)`; then
-`kV := 2 kV` and `x3 := kBits := kBits − 1`. -/
-def mrExpBit (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
-  mul aY aY aY,
-  copyA aXm aR1,
-  .block (bitMask ++ ws ++ base aB .x16 ++ base aXm .x17 ++ [mov .x14 .x12]),
-  Crt.selLoop,
-  mul aY aY aXm] ++
-  eqMask aRm1 ++ ([.block [sth .x15 kG]] : List (Prog isa)) ++ eqMask aR1 ++ ([
-  .block [mov .x9 .x15, ldh .x3 kV, .lsr .x .x3 .x3 63, movi .x7 0, .sub .x .x6 .x7 .x3, ldh .x5 kG,
-    .logic .orr .x .x9 .x9 .x5, .logic .and .x .x9 .x9 .x6, ldh .x4 kFlag, .logic .orr .x .x4 .x4 .x5,
-    .subImm .x .x8 .x7 1, .logic .eor .x .x6 .x6 .x8, .logic .and .x .x4 .x4 .x6, .logic .orr .x .x4 .x4 .x9,
-    sth .x4 kFlag, ldh .x3 kV, .lsl .x .x3 .x3 1, sth .x3 kV, ldh .x3 kBits, .subImm .x .x3 .x3 1,
-        sth .x3 kBits]] : List (Prog isa))
-
-/-- The flag over the bits of `c` from the top down to bit 1: its words from
-the top, 64 bits each but 63 of the last. -/
-def mrExpLoop (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
-  .block [ldh .x3 sW, sth .x3 kWords, movi .x3 0, sth .x3 kFlag],
-  .loop (seqs [
-    .block [ldh .x3 kWords, .subImm .x .x3 .x3 1, sth .x3 kWords, ldh .x4 (sArr aN), .lsl .x .x5 .x3 3,
-      .add .x .x4 .x4 .x5, ld .x5 .x4, sth .x5 kV, movi .x6 64, movi .x7 63, movi .x4 1, .subs .x .x8 .x3 .x4,
-      .csel .x .x6 .x6 .x7, sth .x6 kBits],
-    .loop (seqs (mrExpBit mul)) (.nonzero .x .x3),
-    .block [ldh .x3 kWords]]) (.nonzero .x .x3)]
-
 /-- The witness in `aX` from the next `out_len` octets of `rand`, `used`
 advanced; the mask of `2 ≤ x < c − 1` (`x ≥ 2` and `(x | 1) < c`) into
 `kU`; if it is clear, bit 1 set and the top bit cleared. -/
@@ -346,11 +271,12 @@ def mrWitness : List (Prog isa) := [
     .lsl .x .x5 .x12 3, .add .x .x16 .x16 .x5, .subImm .x .x16 .x16 8, .movz .x .x4 0x8000 3,
     .logic .and .x .x4 .x4 .x9, .logic .eor .x .x4 .x4 .x8, ld .x3 .x16, .logic .and .x .x3 .x3 .x4, st .x3 .x16])]
 
-/-- One witness: its Montgomery form into `aXm` and `aB`, `y := 1`, the flag;
-`kStat := 3` if it is clear; otherwise the witness counts, and `kStat := 4`
-to go on (fewer than 16 witnesses, or fewer uniform ones than needed) or 1. -/
+/-- One witness: its Montgomery form into `aXm` and `aB`, the table, `y := 1`,
+the flag; `kStat := 3` if it is clear; otherwise the witness counts, and
+`kStat := 4` to go on (fewer than 16 witnesses, or fewer uniform ones than
+needed) or 1. -/
 def mrRound (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  mrWitness ++ [mul aXm aX aR2, copyA aB aXm, copyA aY aR1] ++ mrExpLoop mul ++ ([
+  mrWitness ++ [mul aXm aX aR2, copyA aB aXm] ++ preparedRound mul ++ ([
   .block [ldh .x3 kFlag],
   .ite (.zero .x .x3) (.block [movi .x3 3, sth .x3 kStat])
     (.block [ldh .x3 kI, .addImm .x .x3 .x3 1, sth .x3 kI, ldh .x4 kU, movi .x5 1, .logic .and .x .x4 .x4 .x5,
@@ -379,12 +305,49 @@ def mrResult : Prog isa :=
 def kMain (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs (loadC ++ closeCheck ++ ([.ite (.nonzero .x .x15) (finUsed 2) (seqs (trial ++
     ([.ite (.nonzero .x .x1) (finUsed 3) (seqs (gcdCheck ++
-      ([.ite (.nonzero .x .x3) (finUsed 3) (seqs (montSetup mul ++ millerRabin mul ++
+      ([.ite (.nonzero .x .x3) (finUsed 3) (seqs (montSetup mul ++ expSetup ++ millerRabin mul ++
         [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))
 
 /-- `vg_rsa_keygen_candidate`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs [.block kEntry, zeroOut kOut kLen, .block ([ldh .x3 kRandLen, ldh .x4 kLen] ++ geFlag),
     .ite (.zero .x .x5) finNone (kMain mul)]
+
+/-! ## Generic prepared-round callers
+
+Witness preparation and the RSA policy stay here; the prepared round can be
+inlined or called through the shared Miller–Rabin entry point.
+-/
+
+def mrRoundWith (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : List (Prog isa) :=
+  mrWitness ++ [mul aXm aX aR2, copyA aB aXm] ++ roundCode ++ ([
+  .block [ldh .x3 kFlag],
+  .ite (.zero .x .x3) (.block [movi .x3 3, sth .x3 kStat])
+    (.block [ldh .x3 kI, .addImm .x .x3 .x3 1, sth .x3 kI, ldh .x4 kU, movi .x5 1, .logic .and .x .x4 .x4 .x5,
+      ldh .x5 kUni, .add .x .x4 .x4 .x5, sth .x4 kUni,
+      -- `x13 := 4` if `i ≤ 16` or `uniform < checks`, else 1.
+      movi .x9 4, movi .x10 1, movi .x5 17, .subs .x .x6 .x3 .x5, .csel .x .x13 .x10 .x9, ldh .x5 kChecks,
+      .subs .x .x6 .x4 .x5, .csel .x .x13 .x13 .x9, sth .x13 kStat])] : List (Prog isa))
+
+
+def millerRabinWith (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : List (Prog isa) := [
+  .block [movi .x3 1, sth .x3 kI, movi .x3 0, sth .x3 kUni],
+  .loop (seqs [
+    .block ([ldh .x3 kRandLen, ldh .x4 kUsed, .sub .x .x3 .x3 .x4, ldh .x4 kLen] ++ geFlag),
+    .ite (.zero .x .x5) (.block [movi .x3 0, sth .x3 kStat]) (seqs (mrRoundWith mul roundCode)),
+    .block [ldh .x3 kStat, .subImm .x .x3 .x3 4]]) (.zero .x .x3)]
+
+
+def kMainWith (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
+  seqs (loadC ++ closeCheck ++ ([.ite (.nonzero .x .x15) (finUsed 2) (seqs (trial ++
+    ([.ite (.nonzero .x .x1) (finUsed 3) (seqs (gcdCheck ++
+      ([.ite (.nonzero .x .x3) (finUsed 3) (seqs (montSetup mul ++ expSetup ++ millerRabinWith mul roundCode ++
+        [mrResult]))] : List (Prog isa))))] : List (Prog isa))))] : List (Prog isa)))
+
+
+def codeWith (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
+  seqs [.block kEntry, zeroOut kOut kLen, .block ([ldh .x3 kRandLen, ldh .x4 kLen] ++ geFlag),
+    .ite (.zero .x .x5) finNone (kMainWith mul roundCode)]
+
 
 end VG.Impl.RsaKeyGen.AArch64.Candidate

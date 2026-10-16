@@ -158,6 +158,7 @@ def ckcIn (s : State) : CkIn where
   B := stackArg s 6
   Z := (stackArg s 7).toNat * 8
   k := (s.gpr .x1).toNat
+  cap := CheckCrtKey.capacity (s.gpr .x1).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat
   el := (s.gpr .x3).toNat
   dl := (s.gpr .x5).toNat
   pl := (s.gpr .x5).toNat
@@ -209,18 +210,24 @@ theorem ckcCtx_of {s : State} (h : ckcA.pre s) : CkcCtx s := by
   rw [hdql] at ddqs wDq hrd
   refine ⟨⟨hk1, hk2, hel1, hel2, hpl1, Nat.le_of_lt hpl2, hpl1, hpl2, hql1, hql2, bytesAt_length _ _ _,
       bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _, bytesAt_length _ _ _,
-      bytesAt_length _ _ _, bytesAt_length _ _ _, by simp only [ckcIn]; omega⟩, hs,
-    fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩,
+      bytesAt_length _ _ _, bytesAt_length _ _ _, by simp only [ckcIn]; omega_using [hsl],
+      by simp only [ckcIn, CheckCrtKey.capacity]; omega_using [hk1],
+      by simp only [ckcIn, CheckCrtKey.capacity]; omega_using [hpl2, hql2],
+      by simp only [ckcIn, CheckCrtKey.capacity]; omega_using [],
+      by simp only [ckcIn, CheckCrtKey.capacity]; omega_using [],
+      by simp only [ckcIn, CheckCrtKey.capacity]; omega_using [],
+      by simp only [ckcIn, CheckCrtKey.capacity, wW, wk]; omega_using []⟩, hs,
+    fun j hj => ⟨_, hargs, by rw [stkAddr_eq s j]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩,
     fun j hj m' ho => Mem.readW_congr fun b hb => ho _ (Or.inr (by
-      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 64) (by omega) (by omega))
-      rw [← stkAddr_add s j b] at this; omega)),
-    src_of_region (by rw [hrd]; simp) (by omega) dns,
-    src_of_region (by rw [hrd]; simp) (by omega) des,
-    src_of_region (by rw [hrd]; simp) (by omega) dps,
-    src_of_region (by rw [hrd]; simp) (by omega) dqs,
-    src_of_region (by rw [hrd]; simp) (by omega) ddps,
-    src_of_region (by rw [hrd]; simp) (by omega) ddqs,
-    src_of_region (by rw [hrd]; simp) (by omega) dqis⟩
+      have := out_scr dsa.symm (contains_byte (stackArgAddr s 0) (i := 8 * j + b) (len := 64) (by omega_using [hj, hb]) (by omega_using []))
+      rw [← stkAddr_add s j b] at this; omega_using [hsl, this])),
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dns,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) des,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dps,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dqs,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) ddps,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) ddqs,
+    src_of_region (by rw [hrd]; simp) (by omega_using []) dqis⟩
 
 /-- After `entry`, from `s`. -/
 structure CkcHeadPost (s t : State) : Prop where
@@ -238,7 +245,7 @@ theorem ckcHead_ok' {s : State} (c : CkcCtx s) : WP isa (.block entry) s (CkcHea
   have hn := c.hs.nowrap
   have hZ : 128 * (s.gpr .x1).toNat ≤ (stackArg s 7).toNat * 8 := c.L.z
   have hk1 : 64 ≤ (s.gpr .x1).toNat := c.L.k1
-  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 6) (8 * i)) 8 := fun i hi => c.hs.st (by omega)
+  have hw : ∀ i < 32, InRegions s.wr (off (stackArg s 6) (8 * i)) 8 := fun i hi => c.hs.st (by omega_using [hZ, hk1, hi])
   refine WP.mono (ckcEntry_ok rfl hw c.ha c.hsep) fun t ⟨h0, h4, h5, hm, k⟩ => ?_
   obtain ⟨hN, hK, hE, hEl, hD, hDl, hP, hPl, hQ, hQl, hDP, hDQ, hQI, ho⟩ :=
     ckcEntryMem_facts s.mem (stackArg s 6) (s.gpr .x0) (s.gpr .x1) (s.gpr .x2) (s.gpr .x3) (s.gpr .x4) (s.gpr .x5)
@@ -251,7 +258,7 @@ theorem ckcHead_ok' {s : State} (c : CkcCtx s) : WP isa (.block entry) s (CkcHea
       show word _ (stackArg s 6) _ = BitVec.ofNat 64 (s.gpr .x5).toNat by rw [hPl, ofNat_toNat64], hQ,
       show word _ (stackArg s 6) _ = BitVec.ofNat 64 (s.gpr .x7).toNat by rw [hQl, ofNat_toNat64], hDP, hDQ,
       hQI⟩,
-    InScr.of_outside ho (by omega), k⟩
+    InScr.of_outside ho (by omega_using [hZ, hk1]), k⟩
 
 /-- `main`'s hypotheses after the head and the checks of `e` and `n`. -/
 theorem ckcPre_of {s t₁ t : State} (c : CkcCtx s) (h : CkcHeadPost s t₁) (hm : t.mem = t₁.mem)
@@ -292,7 +299,7 @@ theorem ckcCode_correct (s : State) (h : ckcA.pre s) :
   refine WP.seq (WP.mono (ckcHead_ok' c) fun t₁ h₁ => ?_)
   have heb₁ := c.e.congrK h₁.inScr h₁.keep
   have hel : (ckcIn s).eb.length = (s.gpr .x3).toNat := bytesAt_length _ _ _
-  refine WP.seq (WP.mono (expCheck_ok (eb := (ckcIn s).eb) h₁.x4 h₁.x5 hel1 (by omega)
+  refine WP.seq (WP.mono (expCheck_ok (eb := (ckcIn s).eb) h₁.x4 h₁.x5 hel1 (by omega_using [hk2, hel2])
     (fun i hi => heb₁.rd i (by rw [hel]; exact hi)) ?_) fun t₂ ⟨hz₂, hm₂, k₂⟩ => ?_)
   · rw [← hel]
     refine List.ext_getElem (by simp [Spec.Rsa.bytesAt]) fun i h1 h2 => ?_
@@ -312,7 +319,7 @@ theorem ckcCode_correct (s : State) (h : ckcA.pre s) :
     have hn := hs₂.nowrap
     have hZ : 128 * (s.gpr .x1).toNat ≤ (stackArg s 7).toNat * 8 := c.L.z
     have h0₂ : t₂.gpr .x0 = stackArg s 6 := (k₂.gpr .x0 (by decide)).trans h₁.x0
-    have hl : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (stackArg s 6) (8 * i)) 8 := fun i hi => hs₂.ld (by omega)
+    have hl : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off (stackArg s 6) (8 * i)) 8 := fun i hi => hs₂.ld (by omega_using [hk1, hZ, hi])
     have aN : word t₂.mem (stackArg s 6) (8 * Public.sN) = s.gpr .x0 := by rw [hm₂]; exact h₁.args.n
     have aK : word t₂.mem (stackArg s 6) (8 * Public.sK) = BitVec.ofNat 64 (s.gpr .x1).toNat := by
       rw [hm₂]; exact h₁.args.k
@@ -340,7 +347,7 @@ theorem ckcCode_correct (s : State) (h : ckcA.pre s) :
       rfl
     · have hv' : Spec.Rsa.modulusValid (ckcIn s).N (s.gpr .x1).toNat = true := by simpa using hb'
       have hpre := ckcPre_of c h₁ (by rw [hm₄, hm₃, hm₂]) ((k₂.trans (k₃.trans k₄)).mono (by decide))
-      refine WP.mono (WP.keep (.x0 :: mmRegs) (ckcMain_ok hpre hv' hv) (by decide +kernel)
+      refine WP.mono (WP.keep (.x0 :: mmRegs) (ckcMain_ok hpre hv' hv rfl) (by decide +kernel)
         (by decide) (by decide +kernel)) fun t ⟨hx, kt⟩ =>
         ⟨abiPreserved_of_keep ((kk₄.trans kt).mono (by decide)), ?_⟩
       show (t.gpr .x0).setWidth 32 = if ckcKeyOf s then 1 else 0

@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourLoad
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourStore
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdvance
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourRead
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourStore
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourAdvance
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 

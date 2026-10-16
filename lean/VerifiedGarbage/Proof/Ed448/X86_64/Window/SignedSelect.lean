@@ -1,12 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.Ed448.X86_64.Window.Sign
+import VerifiedGarbage.Proof.Ed448.X86_64.Window.Sign
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectBase
 public import VerifiedGarbage.Proof.Ed448.X86_64.Window.SelectKey
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+import VerifiedGarbage.Proof.Framework.X86_64.Spill
 
 /-! Signed selection composes full scans with conditional point negation. -/
 
@@ -50,7 +52,8 @@ theorem selectSignedKey_ok {s : State} {base : Addr} (hs : Scr s base) {o k t : 
     ((kv.gpr _ (by decide)).trans hb) (bs.keep ho hbnd kv)) fun u ⟨ku, xu, fu⟩ => ?_
   refine ⟨kv.trans ku, ?_, fun j h3 h4 h5 h8 h9 h10 => (fu j h3 h8).trans (fv j h3 h4 h5 h8 h9 h10)⟩
   rw [← pv]
-  simp only [pt, xu, fu 9 (by decide) (by decide), fu 10 (by decide) (by decide), SignedWindow.signedPoint]
+  simp only [pt, xu, fu 9 (by decide) (by decide), fu 10 (by decide) (by decide), SignedWindow.signedPoint,
+    Proof.Ed448.negPoint, zero_sub]
   split <;> rfl
 
 end VG.Proof.Ed448.X86_64.Window

@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.X86_64
-public import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-public import VerifiedGarbage.Proof.Gcm.Bits
+import VerifiedGarbage.Proof.Framework.X86_64.Bswap
+import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Framework.Omega
@@ -66,10 +66,11 @@ theorem blockAt_bswap (m : Mem) (p : Addr) :
       X86_64.bswap64 (m.readW (p + BitVec.ofNat 64 8) 64) = Spec.Gcm.blockAt m p := by
   have e : ∀ j : Nat, j < 15 → p + BitVec.ofNat 64 j + 1 = p + BitVec.ofNat 64 (j + 1) :=
     fun j _ => Offset.add_add p j 1
-  rw [X86_64.bswap64_readW, X86_64.bswap64_readW, e 0 (by decide), e 1 (by decide), e 2 (by decide),
-    e 3 (by decide), e 4 (by decide), e 5 (by decide), e 6 (by decide), e 8 (by decide), e 9 (by decide),
-    e 10 (by decide), e 11 (by decide), e 12 (by decide), e 13 (by decide), e 14 (by decide),
-    Spec.Gcm.blockAt, bytesAt_16, ofBytes_16]
+  rw [X86_64.bswap64_readW, X86_64.bswap64_readW]
+  simp only [e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide), e 4 (by decide),
+    e 5 (by decide), e 6 (by decide), e 8 (by decide), e 9 (by decide), e 10 (by decide), e 11 (by decide),
+    e 12 (by decide), e 13 (by decide), e 14 (by decide)]
+  rw [Spec.Gcm.blockAt, bytesAt_16, ofBytes_16]
 
 theorem bswap64_bswap64 (a : BitVec 64) : X86_64.bswap64 (X86_64.bswap64 a) = a :=
   byteRev64_byteRev64 a

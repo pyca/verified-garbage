@@ -40,8 +40,16 @@ def sboxL : List Byte := Spec.Sm4.sbox.toList
 /-- The S-box on input `c`, as a number, from `sboxL`. -/
 def sboxN (c : Nat) : Nat := (sboxL.getD c 0).toNat
 
+/-- A vector's entries are its list's, for any vector: stated for `Spec.Sm4.sbox`
+directly, the kernel's check of the `simp` proof took seconds. -/
+theorem toList_getD_toNat (v : Vector Byte 256) (c : Nat) :
+    (v.toList.getD c 0).toNat = (v.getD c 0).toNat := by
+  simp [Vector.getD, Array.getD_eq_getD_getElem?]
+
 theorem sboxN_eq {c : Nat} (hc : c < 256) : sboxN c = (sboxB (BitVec.ofNat 8 c)).toNat := by
-  simp [sboxN, sboxL, sboxB, Nat.mod_eq_of_lt hc, Vector.getD, Array.getD_eq_getD_getElem?]
+  unfold sboxN sboxB sboxL
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  exact toList_getD_toNat _ _
 
 /-- The truth table of bit `j` of the S-box. -/
 def sboxT (j : Nat) : Nat := tableOf (fun c => (sboxN c).testBit j) 256

@@ -1,11 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
+import VerifiedGarbage.Proof.Weierstrass.AArch64.AddCall
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # The window method on AArch64: the table
@@ -114,7 +115,7 @@ theorem copyD_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) (hA : WinA K) {
   have st := tblPt_slots K hm1 hm8
   have dO : ∀ y ∈ [K.D.x, K.D.y, K.D.z], y ∈ winOther K := by
     intro y hy; simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-    rcases hy with rfl | rfl | rfl <;> win_in
+    rcases hy with rfl | rfl | rfl <;> simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
   have sl : ∀ x ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z, K.D.x, K.D.y, K.D.z], x ∈ winSlots K := by
     intro x hx
     rcases List.mem_append.mp (show x ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z] ++
@@ -202,7 +203,8 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     rcases List.mem_append.mp hx with hx | hx
     · exact List.mem_append_right _ (List.mem_append_right _ hx)
     simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> win_in
+    rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [winRo, winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
   have hO : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.E K.P, x ∈ winSlots K := fun x hx =>
     List.mem_append_left _ (hLo x hx)
   have hlt : ∀ x ∈ rcbR K.S K.E K.P, wordsVal s₁.mem base x K.M.n < C.p := by
@@ -243,13 +245,14 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
       obtain ⟨rxy, rxz, ryz, hR, -⟩ := hL.other_ne
       have hRo : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winOther K := by
         intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl | rfl <;> win_in
+        rcases hx with rfl | rfl | rfl <;> simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
       have hLo' : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.R K.E, x ∈ winRo K ++ winOther K := by
         intro x hx
         rcases List.mem_append.mp hx with hx | hx
         · exact List.mem_append_right _ (List.mem_append_right _ hx)
         simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> win_in
+        rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+          simp only [winRo, winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
       have hrV : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∉ rcbR K.S K.E K.P := by
         intro x hx hxr
         simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hxr
@@ -302,7 +305,8 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
   -- `E = D`.
   have eO : ∀ y ∈ [K.E.x, K.E.y, K.E.z, K.D.x, K.D.y, K.D.z], y ∈ winOther K := by
     intro y hy; simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-    rcases hy with rfl | rfl | rfl | rfl | rfl | rfl <;> win_in
+    rcases hy with rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
   obtain ⟨-, -, -, -, exy, exz, eyz, hED, -, -⟩ := hL.other_ne
   have hEd : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∉ [K.D.x, K.D.y, K.D.z] := by
     intro x hx hd
@@ -366,7 +370,7 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
       refine Or.inr ⟨y, ?_, rfl⟩
       rcases List.mem_append.mp hy with hy | hy
       · simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-        rcases hy with rfl | rfl | rfl <;> win_in
+        rcases hy with rfl | rfl | rfl <;> simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
       · exact List.mem_append_right _ hy
     · exact Or.inl (List.mem_singleton.mp h)
   have L3 : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)],
@@ -374,9 +378,9 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     intro w hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl
-    · exact ⟨_, by win_in, rfl⟩
-    · exact ⟨_, by win_in, rfl⟩
-    · exact ⟨_, by win_in, rfl⟩
+    · exact ⟨_, by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true], rfl⟩
+    · exact ⟨_, by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true], rfl⟩
+    · exact ⟨_, by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true], rfl⟩
   have L4 : ∀ w ∈ [((K.tblPt (m + 1)).x, 8 * K.M.n), ((K.tblPt (m + 1)).y, 8 * K.M.n),
       ((K.tblPt (m + 1)).z, 8 * K.M.n)], ∃ y ∈ [(K.tblPt (m + 1)).x, (K.tblPt (m + 1)).y,
         (K.tblPt (m + 1)).z], w = (y, 8 * K.M.n) := by
@@ -473,7 +477,7 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
     rcases hx with rfl | rfl | rfl <;> simp [winRo]
   have eO : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∈ winOther K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl <;> win_in
+    rcases hx with rfl | rfl | rfl <;> simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
   have b64 : ∀ x ∈ winSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
     have := hL.lay.le x hx; omega_using [hn, this]
   -- `[1]P = P`.
@@ -547,9 +551,12 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
     obtain ⟨i, hi, rfl, -, -⟩ := tblPt_mem K (m := 1) (Nat.le_refl _) (by omega_using []) x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl
-    · exact (hL.tbl_apart (x := K.E.x) (List.mem_append_right _ (by win_in)) hi).symm
-    · exact (hL.tbl_apart (x := K.E.y) (List.mem_append_right _ (by win_in)) hi).symm
-    · exact (hL.tbl_apart (x := K.E.z) (List.mem_append_right _ (by win_in)) hi).symm
+    · exact (hL.tbl_apart (x := K.E.x) (List.mem_append_right _
+      (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) hi).symm
+    · exact (hL.tbl_apart (x := K.E.y) (List.mem_append_right _
+      (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) hi).symm
+    · exact (hL.tbl_apart (x := K.E.z) (List.mem_append_right _
+      (by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true])) hi).symm
   have kP : ∀ x ∈ [K.P.x, K.P.y, K.P.z], wordsVal s₁.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
     intro x hx
     refine U₁.wordsVal (fun w hw => ?_) (b64 x (winRo_slots K x (pRo x hx)))

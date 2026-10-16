@@ -1,13 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Copy
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # The complete addition by a call, on AArch64

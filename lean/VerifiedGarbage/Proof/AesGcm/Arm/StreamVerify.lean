@@ -1,11 +1,12 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
+import VerifiedGarbage.Proof.AesGcm.Arm.StreamFinish
 public import VerifiedGarbage.Proof.AesGcm.Arm.Compare
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.Arm.StreamCrypt
 
 /-!
 # AES-GCM on ARMv7: `vg_aes_gcm_stream_verify`

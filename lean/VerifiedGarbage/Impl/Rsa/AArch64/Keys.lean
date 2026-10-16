@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.Rsa.AArch64.CarrySelect
 public import VerifiedGarbage.Impl.Rsa.AArch64.Crt
 
 /-!
@@ -155,7 +156,7 @@ def divSubP (iR iD iT : Nat) : List (Prog isa) := [
   countLoop .x14 subBody,
   .block ([ld .x3 .x16, .sbcs .x .x3 .x3 .x7, st .x3 .x13] ++ carryMask ++ base iT .x16 ++ base iR .x17 ++
     ([.addImm .x .x14 .x12 1] : List Instr)),
-  Crt.selLoop]
+  CarrySelect.code]
 
 /-- `[q] += 1` if it did not borrow (its low bit is clear after the shift),
 and the step counter `x6` counted down. -/

@@ -2,16 +2,17 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Body
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
 public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Args
 public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
-public import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-public import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Equation
+import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Equation
 public import VerifiedGarbage.Proof.Framework.Arm.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyMessage.CTReady`. -/
 

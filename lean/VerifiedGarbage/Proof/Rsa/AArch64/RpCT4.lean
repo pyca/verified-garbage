@@ -6,6 +6,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtSel
 
 /-!
 # `vg_rsa_recover_primes` on AArch64: constant time, the squarings
@@ -86,14 +90,14 @@ theorem SQ.step {hy : Bool} {p : RpP} {s u : State} (h : SQ hy p s) {js hs : Lis
   obtain ⟨minv, N, r, t, kk, done, ok, hcs, hk, h1, h2, h3, hyl⟩ := h
   have hZ16 := hcs.hZ16
   have h32 : ∀ i ∈ hs, i < 32 := fun i hi => by
-    have := (hhs i hi).1; simp only [rSlot, Bool.or_eq_true, beq_iff_eq] at this; omega
+    have := (hhs i hi).1; simp only [rSlot, Bool.or_eq_true, beq_iff_eq] at this; omega_using [this]
   have hw : ∀ i, i < 32 → i ∉ hs → word u.mem p.B (8 * i) = word s.mem p.B (8 * i) := fun i hi hn =>
     hf.rg_word hi hn
   refine ⟨minv, N, r, t, kk, done, ok, hcs.congr hf hjs hhs k hr, hk, ?_, ?_, ?_, fun e => ?_⟩
   · rw [hw _ (by decide) fun hm => (hc _ hm).1 rfl]; exact h1
   · rw [hw _ (by decide) fun hm => (hc _ hm).2.1 rfl]; exact h2
   · rw [hw _ (by decide) fun hm => (hc _ hm).2.2 rfl]; exact h3
-  · rw [hf.rg_wv hZ16 h32 (by decide) (hY e) (by omega)]; exact hyl e
+  · rw [hf.rg_wv hZ16 h32 (by decide) (hY e) (by omega_using [])]; exact hyl e
 
 /-- `selLoop`'s and `sqNext`'s registers after `sqLogic`. -/
 def sqVal (p : RpP) : Reg → BitVec 64
@@ -116,12 +120,12 @@ theorem sqTail_ct : RelCT isa (Two SQM)
     have hw2 := hc.ws.w2
     rw [sqLogic_eq]
     refine WP.block_append_iff.mpr (WP.mono (sqMasks_ok hc.ws (k := k) (t := t) (done := done) (ok := ok)
-      (by omega) (by have := hc.t2; omega) h1 hc.ht h2 h3 hm rfl) fun u₆ ⟨⟨_, m₆⟩, k₆⟩ => ?_)
+      (by omega_using [hk, he2, hw2]) (by have := hc.t2; omega_using [he2, hw2, this]) h1 hc.ht h2 h3 hm rfl) fun u₆ ⟨⟨_, m₆⟩, k₆⟩ => ?_)
     have h256 := hc.ws.h256
     have hf₆ : Frm p.B (rg (wk p.k) [] [sC2, sC3]) s.mem u₆.mem := by
       rw [m₆]
-      exact (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC2, sFn]; omega)) [] [sC2, sC3]
-        (by decide)).trans (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC3, sFn]; omega)) [] [sC2, sC3]
+      exact (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC2, sFn]; omega_using [])) [] [sC2, sC3]
+        (by decide)).trans (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC3, sFn]; omega_using [])) [] [sC2, sC3]
           (by decide))
     have hw₆ := hc.ws.congrG hf₆ (by decide) k₆ (by decide)
     refine WP.mono (bases2w_ok hw₆ aX aY) fun u₇ ⟨⟨h16, h17, h14, _⟩, k₇⟩ r hr => ?_
@@ -139,11 +143,11 @@ theorem sqTail_ct : RelCT isa (Two SQM)
     have hZ16 := hc.hZ16
     rw [sqLogic_eq]
     refine WP.seq (WP.block_append_iff.mpr (WP.mono (sqMasks_ok hc.ws (k := k) (t := t) (done := done) (ok := ok)
-      (by omega) (by have := hc.t2; omega) h1 hc.ht h2 h3 hm rfl) fun u₆ ⟨⟨h15₆, m₆⟩, k₆⟩ => ?_))
+      (by omega_using [hk, he2, hw2]) (by have := hc.t2; omega_using [he2, hw2, this]) h1 hc.ht h2 h3 hm rfl) fun u₆ ⟨⟨h15₆, m₆⟩, k₆⟩ => ?_))
     have hf₆ : Frm p.B (rg (wk p.k) [] [sC2, sC3]) s.mem u₆.mem := by
       rw [m₆]
-      exact (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC2, sFn]; omega)) [] [sC2, sC3]
-        (by decide)).trans (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC3, sFn]; omega)) [] [sC2, sC3]
+      exact (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC2, sFn]; omega_using [])) [] [sC2, sC3]
+        (by decide)).trans (Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sC3, sFn]; omega_using [])) [] [sC2, sC3]
           (by decide))
     have hc₆ := hc.congr hf₆ (by decide) (by decide) k₆ (by decide)
     refine WP.mono (bases2w_ok hc₆.ws aX aY) fun u₇ ⟨⟨h16, h17, h14, m₇⟩, k₇⟩ => ?_
@@ -152,13 +156,13 @@ theorem sqTail_ct : RelCT isa (Two SQM)
     have h15₇ : u₇.gpr .x15 = _ := (k₇.gpr .x15 (by decide)).trans h15₆
     have sY := hc₇.ws.sl (j := aY) (by decide)
     have sX := hc₇.ws.sl (j := aX) (by decide)
-    refine WP.seq (WP.mono (selLoop_ok hc₇.ws.scr h16 h17 h14 h15₇ (by omega) (by omega) (by omega) (by omega)
-      (by have := slot_sep (w := wk p.k) (show aY ≠ aX by decide); omega)) fun u₈ ⟨_, o₈, k₈⟩ => ?_)
-    have hf₈ : Frm p.B (rg (wk p.k) [aY] []) u₇.mem u₈.mem := Frm.rg_of_out o₈ (by omega) _ _ (by decide)
+    refine WP.seq (WP.mono (selLoop_ok hc₇.ws.scr h16 h17 h14 h15₇ (by omega_using [hw1]) (by omega_using [hw2]) (by omega_using [sX]) (by omega_using [sY])
+      (by have := slot_sep (w := wk p.k) (show aY ≠ aX by decide); omega_using [this])) fun u₈ ⟨_, o₈, k₈⟩ => ?_)
+    have hf₈ : Frm p.B (rg (wk p.k) [aY] []) u₇.mem u₈.mem := Frm.rg_of_out o₈ (by omega_using []) _ _ (by decide)
     have hc₈ := hc₇.congr hf₈ (by decide) (by simp) k₈ (by decide)
     have hc1₈ : word u₈.mem p.B (8 * sC1) = BitVec.ofNat 64 k := by
       rw [hf₈.rg_word (by decide) (by simp), m₇, hf₆.rg_word (by decide) (by decide)]; exact h1
-    exact WP.mono (sqNext_ok hc₈.ws hc₈.hel (by omega) hc1₈ hk) fun _ _ => trivial
+    exact WP.mono (sqNext_ok hc₈.ws hc₈.hel (by omega_using [he2, hw2]) hc1₈ hk) fun _ _ => trivial
 
 /-- A squaring leaks the same in runs that agree on the public data. -/
 theorem sqBody_ct (M : Mont) : RelCT isa (Two (SQ true)) (sqBody M.mm) fun _ _ => True := by
@@ -173,12 +177,12 @@ theorem sqBody_ct (M : Mont) : RelCT isa (Two (SQ true)) (sqBody M.mm) fun _ _ =
       fun p s h => ?_) (mm_gct RpP.B RpP.Z (fun p => wk p.k) (hB true) M (by unfold MmUse; decide) fun p s h => ?_)
     · have hw := h.ws
       exact WP.mono (copyA_ok hw (o := aX) (a := aY) (by decide) (by decide) (by decide)) fun u ⟨_, o, _, _, k⟩ =>
-        h.step (Frm.rg_of_out o (by omega) [aX] [] (by decide)) (by decide) (by simp) (by simp) (by decide) k
+        h.step (Frm.rg_of_out o (by omega_using []) [aX] [] (by decide)) (by decide) (by simp) (by simp) (by decide) k
           (by decide)
     · obtain ⟨minv, N, r, t, kk, done, ok, hc, hk, h1, h2, h3, hyl⟩ := h
       have hg := hc.good
       have hw2 := hc.ws.w2
-      exact WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 (by omega) (o := aX) (a := aX) (b := aY) (by decide)
+      exact WP.mono (M.mm_ok hg.1 hg.2 hc.ws.w1 (by omega_using [hw2]) (o := aX) (a := aX) (b := aY) (by decide)
         (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hc.hinv
         (by rw [hc.hn]; exact hyl rfl)) fun u ⟨_, _, _, ha, k⟩ =>
         (show SQ false p s from ⟨minv, N, r, t, kk, done, ok, hc, hk, h1, h2, h3, fun e => by cases e⟩).step
@@ -196,7 +200,7 @@ theorem sqBody_ct (M : Mont) : RelCT isa (Two (SQ true)) (sqBody M.mm) fun _ _ =
     have hn := h.ws.scr.nowrap
     refine WP.mono (zstore_ok h.ws (i := sMask) (by decide) (by decide)) fun u ⟨⟨_, m⟩, k⟩ =>
       ⟨?_, decide (s.gpr .x9 = 0), ?_⟩
-    · exact h.step (js := []) (Frm.rg_of_hdr (m ▸ writeW_outside _ _ _ (by simp only [sMask, sFn]; omega))
+    · exact h.step (js := []) (Frm.rg_of_hdr (m ▸ writeW_outside _ _ _ (by simp only [sMask, sFn]; omega_using []))
         [] [sMask] (List.mem_singleton_self _)) (by decide) (by decide) (by decide) (by simp) k (by decide)
     · rw [m, word_writeW_self]
   refine RelCT.seqs_append (by simp [eqA]) (by simp) (RelCT.seq (R := Two SQM)
@@ -218,12 +222,12 @@ theorem sqLoop_ct (M : Mont) : RelCT isa (Two fun p s => 0 < 64 * (wk p.k + (p.e
     (two_map (fun q => q.1) (fun q s hq => by
       obtain ⟨hk, t₀, minv, N, r, t, st₀, hc, hI⟩ := hq
       have hcu := hc.congr hI.frm (by decide) sq_hs hI.keep (by decide)
-      have hN : 0 < N := by have := hc.n1; omega
+      have hN : 0 < N := by have := hc.n1; omega_using [this]
       exact ⟨minv, N, r, t, q.2, _, _, hcu, hk, hI.c1, hI.c2, hI.c3, fun _ => by
         rw [hI.y]; exact Nat.mod_lt _ hN⟩) (sqBody_ct M))
     fun p k s hk ⟨t₀, minv, N, r, t, st₀, hc, hI⟩ =>
       WP.mono (sqBody_ok M hc hk hI) fun s' ⟨hI', hz⟩ =>
-        ⟨by rw [eval_nonzero, ne_zero_iff]; exact congrArg some (decide_eq_decide.mpr (by rw [hz]; omega)),
+        ⟨by rw [eval_nonzero, ne_zero_iff]; exact congrArg some (decide_eq_decide.mpr (by rw [hz]; omega_using [hk])),
           fun _ => ⟨t₀, minv, N, r, t, st₀, hc, hI'⟩, fun e => e ▸ ⟨t₀, minv, N, r, t, st₀, hc, hI'⟩⟩
 
 end Rp

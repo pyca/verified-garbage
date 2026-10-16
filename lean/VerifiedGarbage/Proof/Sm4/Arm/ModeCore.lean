@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.Arm.Verified
+public import VerifiedGarbage.Proof.Sm4.Arm.EcbCall
 public import VerifiedGarbage.Proof.Modes.Arm.Core
 public import VerifiedGarbage.Impl.Sm4.Arm.Cbc
 public import VerifiedGarbage.Proof.Sm4.CbcScratch
@@ -8,14 +8,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Sm4.CtrCipher
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
 
 /-!
 # SM4's ECB functions on ARMv7 as the modes' core
 
 `ecbSpec dir`: what the modes need of `vg_sm4_ecb_encrypt` and
 `vg_sm4_ecb_decrypt` (`Proof.Modes.Arm.CoreSpec`), from their shared
-contract (`Spec.Sm4.ecbContract`, with 1456 bytes of stack) and its proof
-(`ecb_framed`): the schedule is SM4's 128-byte schedule, and the cipher on
+contract (`Spec.Sm4.ecbContract`, with 1480 bytes of stack) and its proof
+(`ecbCall_verified`): the schedule is SM4's 128-byte schedule, and the cipher on
 a block is `Spec.Sm4.cipher` or `Spec.Sm4.invCipher` of it.
 -/
 
@@ -56,17 +60,17 @@ theorem ecb_dir (dir : Dir) (k : Spec.Sm4.Schedule) (xs : List Spec.Sm4.Block) :
     Spec.Sm4.ecb k (specDirArm dir) xs = xs.map (dirBlock dir k) := by
   cases dir <;> rfl
 
-theorem ecb_stack (dir : Dir) : VG.Arm.FrameStack.armStack (ecbCode dir) ≤ 1456 := by
+theorem ecb_stack (dir : Dir) : VG.Arm.FrameStack.armStack (ecbCode dir) ≤ 1480 := by
   cases dir <;> decide +kernel
 
 /-- SM4's ECB function in the direction `dir`, as the modes' core. -/
 def ecbSpec (dir : Dir) : CoreSpec (ecbCore dir) where
   keyLen := 128
-  stack := 1456
+  stack := 1480
   ciphAt m K _ := dirCipher dir (Spec.Sm4.scheduleAt m K)
-  contract := Spec.Sm4.ecbContract Arm.abi (specDirArm dir) 1456
-  correct := (ecb_framed dir).1
-  ct := (ecb_framed dir).2.1
+  contract := Spec.Sm4.ecbContract Arm.abi (specDirArm dir) 1480
+  correct := (ecbCall_verified dir).1
+  ct := (ecbCall_verified dir).2.1
   depth := ecb_stack dir
   pre_of _ s h := by
     obtain ⟨stk, rd, wr, kd, bk, bd, fK, fD, -⟩ := h

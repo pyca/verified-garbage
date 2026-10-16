@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
+import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Body
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.SignCached.Entry
@@ -16,6 +17,18 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha512.Word64
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Sha512.Word64
+public import VerifiedGarbage.Spec.Ed25519.CachedSign
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+meta import VerifiedGarbage.Spec.Ed25519.CachedSign
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarVerified
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.Correct`. -/
 
@@ -38,7 +51,7 @@ theorem body_depth (v : Whole.Backend) : (body v.code v.suffix).aarch64Depth ≤
     Impl.Sha512.AArch64.Stream.init, hr, hb, hm]
   omega
 
-theorem signCached_ok (v : Whole.Backend) {s : State} (h : signCachedLocal.pre s) :
+theorem signCached_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) {s : State} (h : signCachedLocal.pre s) :
     WP isa (code v.code v.suffix) s fun u => abiPreserved s u ∧ signCachedLocal.post s u := by
   have hw := Whole.wrap_ok (body_depth v) (entry_below h) (entry_writes h)
     (P := fun m m' _ => Spec.Ed25519.bytesAt m' (s.gpr .x0) 64 = Spec.Ed25519.sign
@@ -128,8 +141,8 @@ theorem finalize_call_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁)
 theorem init_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) init
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
-  (setup_ct hL ha hb [(.x0, .caller 5 0)] (by decide) (by simp [Whole.valid])
-    (by simp [preserved]) (by taint_decide)).seq (init_call_ct hL ha hb)
+  (setup_ct hL ha hb [(.x0, .caller 5 0)] (by decide) (by decide)
+    (by decide) (by taint_decide)).seq (init_call_ct hL ha hb)
 
 theorem update_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     (count : Nat) (p n : Value) (hc : count < 65536) (hp : Whole.valid p) (hn : Whole.valid n)
@@ -145,11 +158,11 @@ theorem update_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : 
       (.x2, p), (.x3, n), (.x4, .caller 5 192)] → Whole.valid x.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro x (rfl | rfl | rfl | rfl | rfl)
-    · simp [Whole.valid]
+    · decide
     · exact hc
     · exact hp
     · exact hn
-    · simp [Whole.valid]
+    · decide
   exact (setup_ct hL ha hb _ (by simp) hv (by simp [preserved]) ht).seq
     (update_call_ct backend hL ha hb count p n hi)
 
@@ -165,10 +178,10 @@ theorem finalize_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb 
       (.x1, if b then .caller 4 n else .const n), (.x2, .frame 192), (.x3, .caller 5 192)] → Whole.valid p.2 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro p (rfl | rfl | rfl | rfl)
-    · simp [Whole.valid]
+    · decide
     · exact hv
-    · simp [Whole.valid]
-    · simp [Whole.valid]
+    · decide
+    · decide
   exact (setup_ct hL ha hb _ (by simp) hvall (by simp [preserved]) ht).seq
     (finalize_call_ct backend hL ha hb n b)
 
@@ -189,7 +202,7 @@ theorem hashSeed_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb 
     rw [BitVec.add_zero]
     exact seed_input hL
   exact (init_ct hL ha hb).seq ((update_ct backend hL ha hb 0 (.caller 1 0) (.const 32)
-    (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hi (by taint_decide)).seq
+    (by decide) (by decide) (by decide) hi (by taint_decide)).seq
     (finalize_ct backend hL ha hb 32 (by decide) false (by taint_decide)))
 
 theorem hashNonce_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
@@ -201,9 +214,9 @@ theorem hashNonce_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb
     rw [BitVec.add_zero, BitVec.add_zero]
     exact message_input hL
   exact (init_ct hL ha hb).seq ((update_ct backend hL ha hb 0 (.frame 64) (.const 32)
-    (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hp (by taint_decide)).seq
+    (by decide) (by decide) (by decide) hp (by taint_decide)).seq
     ((update_ct backend hL ha hb 32 (.caller 3 0) (.caller 4 0)
-      (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hm (by taint_decide)).seq
+      (by decide) (by decide) (by decide) hm (by taint_decide)).seq
       (finalize_ct backend hL ha hb 32 (by decide) true (by taint_decide))))
 
 theorem hashChallenge_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
@@ -222,11 +235,11 @@ theorem hashChallenge_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁)
     rw [BitVec.add_zero, BitVec.add_zero]
     exact message_input hL
   exact (init_ct hL ha hb).seq ((update_ct backend hL ha hb 0 (.caller 0 0) (.const 32)
-    (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) ho (by taint_decide)).seq
+    (by decide) (by decide) (by decide) ho (by taint_decide)).seq
     ((update_ct backend hL ha hb 32 (.caller 2 0) (.const 32)
-      (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hk (by taint_decide)).seq
+      (by decide) (by decide) (by decide) hk (by taint_decide)).seq
       ((update_ct backend hL ha hb 64 (.caller 3 0) (.caller 4 0)
-        (by decide) (by simp [Whole.valid]) (by simp [Whole.valid]) hm (by taint_decide)).seq
+        (by decide) (by decide) (by decide) hm (by taint_decide)).seq
         (finalize_ct backend hL ha hb 64 (by decide) true (by taint_decide)))))
 
 end VG.Proof.Ed25519.AArch64.SignCached
@@ -256,7 +269,7 @@ theorem reduce_call_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m�
       call_gpr_eq (p := (.x1, .frame 192)) h (by simp) (by decide),
       call_gpr_eq (p := (.x2, .caller 5 0)) h (by simp) (by decide)⟩
 
-theorem base_call_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem base_call_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (OutArgs L [(.x0, .caller 0 0), (.x1, .frame 96), (.x2, .caller 5 0)]))
       (.call "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
@@ -335,17 +348,17 @@ theorem reduce_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro p (rfl | rfl | rfl)
     · exact hv
-    · simp [Whole.valid]
-    · simp [Whole.valid]
+    · decide
+    · decide
   exact (setup_ct hL ha hb _ (by simp) hvall (by simp [preserved]) ht).seq
     (reduce_call_ct hL ha hb d hd)
 
-theorem base_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem base_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True)
       (callWith baseArgs "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
   (setup_ct hL ha hb [(.x0, .caller 0 0), (.x1, .frame 96), (.x2, .caller 5 0)]
-    (by decide) (by simp [Whole.valid]) (by simp [preserved]) (by taint_decide)).seq
+    (by decide) (by decide) (by decide) (by taint_decide)).seq
     (base_call_ct hL ha hb)
 
 theorem mul_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
@@ -354,10 +367,10 @@ theorem mul_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
   (setup_ct hL ha hb [(.x0, .caller 0 32), (.x1, .frame 96), (.x2, .frame 128),
     (.x3, .frame 32), (.x4, .caller 5 0)]
-    (by decide) (by simp [Whole.valid]) (by simp [preserved]) (by taint_decide)).seq
+    (by decide) (by decide) (by decide) (by taint_decide)).seq
     (mul_call_ct hL ha hb)
 
-theorem body_ct (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem body_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (backend : Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (body backend.code backend.suffix)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) :=
   ((hashSeed_ct backend hL ha hb).seq saveSecret_ct).seq
@@ -378,7 +391,7 @@ theorem lay_eq {s t : State} (hp : signCachedLocal.pub s t) : lay s = lay t := b
   obtain ⟨sp, h0, h1, h2, h3, h4, h5, hsy⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, h3, h4, h5, hsy]
 
-theorem signCached_ct (v : Whole.Backend) :
+theorem signCached_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) :
     ConstantTime isa signCachedLocal.pre signCachedLocal.pub (code v.code v.suffix) := by
   refine Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
@@ -570,7 +583,7 @@ end
 namespace VG.Proof.Ed25519.AArch64.SignCached
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.SignCached
 
-theorem signCached_verified (v : Whole.Backend) :
+theorem signCached_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) :
     Verified AArch64.target (code v.code v.suffix)
       (Spec.Ed25519.signCachedContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts) 352) :=
   Verified.of_implies

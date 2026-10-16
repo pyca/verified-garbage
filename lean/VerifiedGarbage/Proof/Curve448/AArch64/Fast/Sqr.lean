@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Columns
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # Squaring
@@ -30,8 +33,8 @@ def doubles : List Instr :=
     [.add .x Sqr.R.t (Sqr.limb h k) (Sqr.limb h k), st Sqr.R.t (KD + 24 * h + 8 * k)])
 
 theorem sqr_split (o a : Nat) :
-    sqr o a = loadA a ++ consts ++ zadds ++ doubles ++ columns Sqr.R a Sqr.L Sqr.H Sqr.column o ++
-      finish o := rfl
+    sqr o a = loadA .x3 a ++ consts ++ zadds ++ doubles ++
+      columns Sqr.R .x3 a Sqr.L Sqr.H Sqr.column .x3 o ++ finish .x3 o := rfl
 
 def zRegs : List Reg := [.x10, .x11, .x13, .x14]
 
@@ -192,7 +195,7 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
   let f := limbs s.mem base a
   rw [sqr_split, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc,
     WP.block_append_iff]
-  refine WP.mono (loadA_ok hs (by omega) ha8) fun t1 ⟨a1, m1, k1⟩ => ?_
+  refine WP.mono (loadA_ok hs (PtrOk.x3 hs ha8 (by omega)) (by decide)) fun t1 ⟨a1, m1, k1⟩ => ?_
   have s1 : Scr t1 base := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (consts_ok t1) fun t2 ⟨mk2, z2, m2, k2⟩ => ?_
@@ -263,16 +266,17 @@ theorem sqr_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
     · intro i j hij hj; rw [hv 1 (by decide) i j hij hj]; rfl
     · intro i j hij hj; rw [hv 2 (by decide) i j hij hj]; simp only [lv]; grind
   rw [WP.block_append_iff]
-  refine WP.mono (columns_ok sqr_good sqr_colRegs (by decide) (by decide) (by decide) ha8 (by omega)
-    ho8 (by omega)
-    hfit sqr_ops P hP hsem s4 ⟨fun _ _ _ _ => rfl, fun _ _ _ => rfl⟩
+  refine WP.mono (columns_ok sqr_good sqr_colRegs (by decide) (by decide) (by decide) (by decide)
+    (by decide) hfit sqr_ops P hP hsem s4 (PtrOk.x3 s4 ha8 (by omega)) (PtrOk.x3 s4 ho8 (by omega))
+    ⟨fun _ _ _ _ => rfl, fun _ _ _ => rfl⟩
     (by rw [k4.1 _ (by decide), k3.1 _ (by decide)]; exact mk2)
     (by rw [k4.1 _ (by decide), k3.1 _ (by decide)]; exact z2))
     fun t5 ⟨p5, i5, k5⟩ => ?_
   have lb : ∀ j < 8, (if j < 4 then chainLimb (reduced (rows f f 8)) 0 j
       else chainLimb (reduced (rows f f 8)) 4 (j - 4)) < radix := fun j _ => by
     split <;> exact Nat.mod_lt _ (by decide)
-  refine WP.mono (finish_ok i5.scr (by omega) ho8 i5.mask (stage_limbs i5) lb (i5.cl (by decide))
+  refine WP.mono (finish_ok i5.scr (PtrOk.x3 i5.scr ho8 (by omega)) (by decide) i5.mask (stage_limbs i5)
+    lb (i5.cl (by decide))
     (i5.ch (by decide)) hfit.c₀ hfit.c₄)
     fun t6 ⟨v6, o6, k6⟩ => ⟨fun i hi => by rw [v6 i hi, finVal_out _ i hi], ?_, ?_⟩
   · intro x h1 h2

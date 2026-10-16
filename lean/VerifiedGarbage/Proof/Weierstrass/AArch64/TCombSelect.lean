@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombDigit
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Weierstrass.CombLay
 
 /-!
 # The comb from tables in memory on AArch64: the selection's scalar parts
@@ -65,7 +69,7 @@ theorem selSetup_ok (K : TCombCfg) {s : State}
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_mul, BitVec.toNat_ofNat, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth,
         Nat.shiftLeft_eq, Nat.mul_zero, Nat.pow_zero, Nat.mul_one, Size.bits,
-        Nat.mod_eq_of_lt (show K.tblBytes < 2 ^ 16 by omega), Nat.mod_mod]
+        Nat.mod_eq_of_lt (show K.tblBytes < 2 ^ 16 by omega_using [htb]), Nat.mod_mod]
       rw [← Nat.mul_mod]
     all_goals first | rfl | trivial | skip
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -85,7 +89,7 @@ theorem zWords_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (zWords_ok K hs hx7 hz hz8 k (by omega)) fun s₁ ⟨e₁, c₁, k₁, O₁⟩ => ?_
+    refine WP.mono (zWords_ok K hs hx7 hz hz8 k (by omega_using [hk])) fun s₁ ⟨e₁, c₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
     rw [WP.block_append_iff]
     refine WP.mono (const64c_ok s₁ .x6 (wordOf K.one k)) fun s₂ ⟨e₂, k₂, c₂'⟩ => ?_
@@ -104,23 +108,23 @@ theorem zWords_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Sc
       · first | rfl | trivial
     refine WP.mono hsel fun s₃ ⟨e₃, k₃, c₃⟩ => ?_
     have hs₃ := hs₂.of_keeps k₃ (by decide)
-    refine WP.mono (st_ok hs₃ (d := K.E.z + 8 * k) (by omega) (by omega) .x6) fun t et => ?_
+    refine WP.mono (st_ok hs₃ (d := K.E.z + 8 * k) (by omega_using [hz, hk]) (by omega_using [hz8]) .x6) fun t et => ?_
     have mt : t.mem = s₃.mem.writeW (off base (K.E.z + 8 * k)) (s₃.gpr .x6) := by rw [et]
     have kt : KeepRegs [] s₃ t := by subst et; exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
     have ct : t.c = s₃.c := by rw [et]
     have O₂ : Outside base (K.E.z + 8 * k) 8 s₃.mem t.mem := by
-      rw [mt]; exact writeW_outside _ _ _ (by omega)
+      rw [mt]; exact writeW_outside _ _ _ (by omega_using [hz, hk, hn])
     have hm₃ : s₃.mem = s₁.mem := by rw [k₃.mem, k₂.mem]
     refine ⟨fun i hi => ?_, by rw [ct, c₃], k₁.trans (((Keeps.regs k₂).trans (Keeps.regs k₃)).trans
       (kt.mono fun _ h => absurd h List.not_mem_nil)), ?_⟩
     · rcases Nat.lt_or_ge i k with h | h
-      · rw [O₂.word (by omega) (by omega), hm₃, e₁ i h]
-      · obtain rfl : i = k := by omega
+      · rw [O₂.word (by omega_using [h]) (by omega_using [hz, hk, hn, h]), hm₃, e₁ i h]
+      · obtain rfl : i = k := by omega_using [hi, h]
         rw [mt, word_writeW_self, e₃]
 
-    · refine (O₁.mono (Nat.le_refl _) (by omega)).trans ?_
+    · refine (O₁.mono (Nat.le_refl _) (by omega_using [])).trans ?_
       rw [← hm₃]
-      exact O₂.mono (by omega) (by omega)
+      exact O₂.mono (by omega_using []) (by omega_using [])
 
 /-- The carry after `subs _, x, 1` for `x = a`: set exactly if `1 ≤ a`. -/
 theorem selZ_carry (s : State) {a : Nat} (ha : a < 2 ^ 64) (hx2 : s.gpr .x2 = BitVec.ofNat 64 a)
@@ -134,11 +138,11 @@ theorem selZ_carry (s : State) {a : Nat} (ha : a < 2 ^ 64) (hx2 : s.gpr .x2 = Bi
     congr 1
     apply propext
     constructor
-    · intro h; by_contra h'; exact h (by rw [show a = 0 by omega]; rfl)
+    · intro h; by_contra h'; exact h (by rw [show a = 0 by omega_using [h']]; rfl)
     · intro h e
       have := congrArg BitVec.toNat e
       rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha] at this
-      simp at this; omega
+      simp at this; omega_using [h, this]
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_addWithCarry, hr, ite_false]
 
@@ -149,12 +153,12 @@ theorem wordsVal_of_bytes {m m' : Mem} {A : Addr} :
   | 0, _, _ => rfl
   | k + 1, o, h => by
     have hw : word m' A o = word m A o := Mem.readW_congr fun b hb => by
-      have := h 0 (by omega) b (by omega)
+      have := h 0 (by omega_using []) b (by omega_using [hb])
       rwa [Nat.mul_zero, Nat.add_zero] at this
     have ih : wordsVal m' A (o + 8) k = wordsVal m A (o + 8) k :=
       wordsVal_of_bytes k (o + 8) fun i hi b hb => by
-        have := h (i + 1) (by omega) b hb
-        rwa [show o + 8 * (i + 1) = o + 8 + 8 * i by omega] at this
+        have := h (i + 1) (by omega_using [hi]) b hb
+        rwa [show o + 8 * (i + 1) = o + 8 + 8 * i by omega_using []] at this
     simp only [wordsVal, hw, ih]
 
 end VG.Proof.Weierstrass.AArch64

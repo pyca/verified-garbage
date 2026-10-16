@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Common
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: a block of the output, up to `U₁`
@@ -71,10 +72,10 @@ theorem Wks.disj {r : Region} (h : Wks F s₀ r) :
       (sR s₀ F.intO 4).Disjoint r := by
   have hl := layout (F := F); have he := end_le hz; have hz_D := hz.D
   rcases h with ⟨k, rfl, hk⟩ | ⟨o, n, rfl, h₁, h₂⟩
-  · exact ⟨sv_low hz hk, low_sub (by omega), (low_disj hz (by omega) (by omega)).symm,
-      (low_disj hz (by omega) (by omega)).symm⟩
-  · exact ⟨sv_disj hz (by omega) (by omega_using [h₂, he]), part_sub (by omega),
-      part_disj hz (Or.inl (by omega)) (by omega) (by omega), part_disj hz (Or.inr (by omega)) (by omega) (by omega)⟩
+  · exact ⟨sv_low hz hk, low_sub (by omega_using [hl, he, hk]), (low_disj hz (by omega_using [hl, hk]) hz.st0O_3S).symm,
+      (low_disj hz (by omega_using [hl, hk]) (end_le hz)).symm⟩
+  · exact ⟨sv_disj hz (by omega_using [hl, h₁]) (by omega_using [h₂, he]), part_sub (by omega_using [he, h₂]),
+      part_disj hz (Or.inl (by omega_using [hl, h₁])) hz.st0O_3S (by omega_using [he, h₂]), part_disj hz (Or.inr (by omega_using [h₂])) (end_le hz) (by omega_using [he, h₂])⟩
 
 /-- `Inv` survives writes where a step writes, and to the stack below `sp`. -/
 theorem Inv.keep {k : Nat} {s s' : State} (h : Inv hF s₀ k s) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
@@ -93,12 +94,12 @@ theorem Inv.keep {k : Nat} {s s' : State} (h : Inv hF s₀ k s) (hrd : s'.rd = s
     · exact ⟨_, by simp, fun _ h => h⟩
   · rcases hw r hr with hw | rfl
     · exact (hw.disj hz).2.2.1
-    · exact (hsb.sub_right (part_sub (by omega))).symm
+    · exact (hsb.sub_right (part_sub hz.st0O_3S)).symm
   · rw [← h.intW]
     refine hf.readW (r := sR s₀ F.intO 4) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     rcases hw r hr with hw | rfl
     · exact (hw.disj hz).2.2.2
-    · exact (hsb.sub_right (part_sub (by omega))).symm
+    · exact (hsb.sub_right (part_sub (end_le hz))).symm
   · rw [← h.outB]
     have osub : Region.Sub ⟨State.addr (out s₀), dn F s₀ k⟩ (outR s₀) :=
       Region.sub_prefix (Nat.min_le_right _ _)
@@ -164,7 +165,7 @@ theorem loopInit_ok {s : State} (hk : KR F s₀ s) (hst : States hF s₀ s.mem) 
   refine wp_mov (op2_imm (by decide)) fun s₁ u₁ => wp_rev fun s₂ u₂ => ?_
   have k₂ := (hk.upd (by decide) u₁).upd (by decide) u₂
   refine wp_str (a := A s₀ F.intO) (by omega_using [hz_reach, he]) (addr_scr hp k₂ (by omega_using [he]))
-    (by rw [u₂.wr, u₁.wr]; exact in_sc hp hz hk.wr (by omega)) fun s₃ m₃ => ?_
+    (by rw [u₂.wr, u₁.wr]; exact in_sc hp hz hk.wr (end_le hz)) fun s₃ m₃ => ?_
   have f₃ : Frame [sR s₀ F.intO 4] s.mem s₃.mem := by
     rw [m₃.mem, u₂.mem, u₁.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
@@ -174,7 +175,7 @@ theorem loopInit_ok {s : State} (hk : KR F s₀ s) (hst : States hF s₀ s.mem) 
       simp only [kregs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [m₃.gpr, u₂.other r (by rcases hr with rfl | rfl | rfl <;> decide),
         u₁.other r (by rcases hr with rfl | rfl | rfl <;> decide)])
-    (by omega) (by omega) f₃
+    (by omega_using [hl]) (end_le hz) f₃
   refine wp_mov (op2_imm (by decide)) fun s₄ u₄ => wp_arg hp (k₃.upd (by decide) u₄) (i := 2) (by decide)
     fun s₅ u₅ => ?_
   refine wp_cmp (op2_imm (by decide)) fun s₆ f₆ z₆ => WP.block_nil ⟨⟨?_, ?_, hkl, ?_, ?_, by simp [Gk, Whole.G], ?_⟩, ?_⟩
@@ -182,7 +183,7 @@ theorem loopInit_ok {s : State} (hk : KR F s₀ s) (hst : States hF s₀ s.mem) 
   · rw [f₆.mem, u₅.mem, u₄.mem]
     exact hst.keep hz f₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact part_disj hz (Or.inl (by omega)) (by omega) (by omega)
+      exact part_disj hz (Or.inl (by omega_using [hl])) hz.st0O_3S (end_le hz)
   · rw [f₆.gpr, u₅.other _ (by decide), u₄.gpr]; simp [dn, Whole.done]
   · rw [f₆.mem, u₅.mem, u₄.mem, m₃.mem, Mem.readW_writeW_self32, u₂.gpr, u₁.gpr]; rfl
   · simp [dn, Whole.done, bytesAt]
@@ -195,7 +196,7 @@ theorem b1_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) :
     WP isa (copy .r11 F.stSO .r11 F.stWO F.H.S) s fun t => Inv hF s₀ k t ∧
       hF.hH.SH.Repr t.mem (A s₀ F.stWO) (xorPad (K0 hF s₀) ipad ++ saltB s₀) := by
   have hl := layout (F := F); have he := end_le hz; have hz_S := hz.S; have hz_D := hz.D; have hz_reach := hz.reach
-  refine WP.mono (copy_part_ok hp hz h.kr hz.S.1 (by omega) (by omega) (by omega) (Or.inl (by omega)))
+  refine WP.mono (copy_part_ok hp hz h.kr hz.S.1 hz.stSO_S hz.stWO_S (by omega_using [hl]) (Or.inl (by omega_using [hl])))
     fun t ⟨kt, g, m⟩ => ⟨?_, ?_⟩
   · have f : Frame [sR s₀ F.stWO F.H.S] s.mem t.mem := by
       rw [m]; exact writeBytes_frame _ _ _ (by rw [bytesAt_length]; exact Region.contains_self _ _)
@@ -205,9 +206,9 @@ theorem b1_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) :
         rcases hr with rfl | rfl | rfl | rfl <;> decide))
       f fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
-        exact .inl (.inr ⟨_, _, rfl, Nat.le_refl _, by omega⟩)
+        exact .inl (.inr ⟨_, _, rfl, Nat.le_refl _, by omega_using [hl]⟩)
   · refine hF.hH.repr _ _ _ _ _ (fun i hi => ?_) h.st.stS
-    rw [m]; exact copied_byte (by omega) i hi
+    rw [m]; exact copied_byte (by omega_using [hz_S]) i hi
 
 omit hp hz in
 theorem add_ofNat_eq (x : BitVec 32) {n : Nat} (h : x.toNat + n < 2 ^ 32) :
@@ -215,7 +216,7 @@ theorem add_ofNat_eq (x : BitVec 32) {n : Nat} (h : x.toNat + n < 2 ^ 32) :
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
   have := h
-  omega
+  omega_using []
 
 omit hz in
 /-- The count of bytes absorbed, `B + salt_len + j`. -/
@@ -224,8 +225,8 @@ theorem count_salt {j : Nat} (hz : Sizes F) (hj : j ≤ 4) {s : State} (h2 : s.g
   have hsf := salt_fit hp hz
   have : sl s₀ = (s₀.gpr .r3).toNat := rfl
   simp only [count]
-  rw [h3, h2, zero_append, add_ofNat_eq _ (by omega), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  congr 1; omega
+  rw [h3, h2, zero_append, add_ofNat_eq _ (by omega_using [hj, hsf, this]), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hj, hsf, this])]
+  congr 1; omega_using [this]
 
 /-- `update`'s arguments: the working state, `INT (i)`, and the bytes absorbed. -/
 theorem b2_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) :
@@ -234,7 +235,7 @@ theorem b2_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) :
       count t = BitVec.ofNat 64 (F.H.B + (sl s₀ + 0)) ∧ t.mem = s.mem := by
   have hl := layout (F := F); have he := end_le hz; have hz_reach := hz.reach
   simp only [Fns.updArgs, List.append_assoc]
-  refine scr_ok h.kr (by omega) fun s₁ u₁ => ?_
+  refine scr_ok h.kr hz.stWO_lt16 fun s₁ u₁ => ?_
   have i₁ := h.upd12 hp hz (by decide) u₁
   refine scr_ok i₁.kr (by omega_using [hz_reach, he]) fun s₂ u₂ => ?_
   have i₂ := i₁.upd12 hp hz (by decide) u₂
@@ -259,7 +260,7 @@ theorem b3_args {k : Nat} {s : State} (h : Inv hF s₀ k s) (h0 : s.gpr .r0 = dO
   have hl := layout (F := F); have he := end_le hz; have hz_S := hz.S; have hz_D := hz.D; have hz_W := hz.W; have hz_reach := hz.reach
   have := hF.hH.hWb
   have hk := h.kr
-  have ea := dO_addr hp (o := F.stWO) (by omega)
+  have ea := dO_addr hp (o := F.stWO) hz.stWO_lt
   have ei := dO_addr hp (o := F.intO) (by omega_using [he])
   exact
     { r0 := h0
@@ -267,29 +268,29 @@ theorem b3_args {k : Nat} {s : State} (h : Inv hF s₀ k s) (h0 : s.gpr .r0 = dO
       r7 := h7
       r10 := h10
       hlen := by decide
-      sp16 := by rw [hk.sp]; have hp_sp24 := hp.sp24; omega
+      sp16 := by rw [hk.sp]; have hp_sp24 := hp.sp24; omega_using [hp_sp24]
       cd := by
         rw [ei]
         exact Covers.of_sub fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          obtain ⟨r', hr', off, e, l⟩ := cov_part hp hk (o := F.intO) (n := 4) (by omega)
+          obtain ⟨r', hr', off, e, l⟩ := cov_part hp hk (o := F.intO) (n := 4) (end_le hz)
           exact ⟨r', List.mem_append_right _ hr', off, e, l⟩
       cw := by
         rw [ea]
         exact Covers.of_sub fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact cov_part hp hk (by omega)
-          · exact cov_low hp hk (by omega)
-      st_sc := by rw [ea]; exact (low_disj hz (k := hF.hH.Wb) (by omega) (by omega)).symm
-      d_st := by rw [ei, ea]; exact part_disj hz (Or.inr (by omega)) (by omega) (by omega)
-      d_sc := by rw [ei]; exact (low_disj hz (k := hF.hH.Wb) (by omega) (by omega)).symm
-      b_st := by rw [ea]; exact b16 hp hk (part_sub (by omega))
-      b_d := by rw [ei]; exact b16 hp hk (part_sub (by omega))
-      b_sc := b16 hp hk (low_sub (by omega))
-      nst := by rw [dO_toNat hp (by omega)]; have hp_nsc := hp.nsc; omega
-      nd := by rw [dO_toNat hp (by omega)]; have hp_nsc := hp.nsc; omega_using [hp_nsc, he]
-      nsc := by have hp_nsc := hp.nsc; omega }
+          · exact cov_part hp hk hz.stWO_S
+          · exact cov_low hp hk (by omega_using [hl, he, hz_W, this])
+      st_sc := by rw [ea]; exact (low_disj hz (k := hF.hH.Wb) (by omega_using [hl, hz_W, this]) hz.stWO_S).symm
+      d_st := by rw [ei, ea]; exact part_disj hz (Or.inr (by omega_using [hl])) (end_le hz) hz.stWO_S
+      d_sc := by rw [ei]; exact (low_disj hz (k := hF.hH.Wb) (by omega_using [hl, hz_W, this]) (end_le hz)).symm
+      b_st := by rw [ea]; exact b16 hp hk (part_sub hz.stWO_S)
+      b_d := by rw [ei]; exact b16 hp hk (part_sub (end_le hz))
+      b_sc := b16 hp hk (low_sub (by omega_using [hl, he, hz_W, this]))
+      nst := by rw [dO_toNat hp hz.stWO_lt]; have hp_nsc := hp.nsc; omega_using [hl, he, hp_nsc]
+      nd := by rw [dO_toNat hp hz.intO_lt]; have hp_nsc := hp.nsc; omega_using [hp_nsc, he]
+      nsc := by have hp_nsc := hp.nsc; omega_using [hl, he, hz_W, this, hp_nsc] }
 
 /-- `update` with `INT (k + 1)`. -/
 theorem b3_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) (h0 : s.gpr .r0 = dO s₀ F.stWO)
@@ -301,13 +302,13 @@ theorem b3_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) (h0 : s.gpr .r0 = dO s
         hF.hH.SH.Repr t.mem (A s₀ F.stWO) (xorPad (K0 hF s₀) ipad ++ saltB s₀ ++ Spec.Pbkdf2.int (k + 1)) := by
   have hl := layout (F := F); have he := end_le hz; have hz_S := hz.S; have hz_D := hz.D; have hz_W := hz.W; have hz_reach := hz.reach
   have := hF.hH.hWb
-  have ea := dO_addr hp (o := F.stWO) (by omega)
-  have ei := dO_addr hp (o := F.intO) (by omega)
+  have ea := dO_addr hp (o := F.stWO) hz.stWO_lt
+  have ei := dO_addr hp (o := F.intO) hz.intO_lt
   refine upd_frame hF.hH (b3_args hp hz h h0 h1 h7 h10) fun s' a r => ⟨h.after hp hz (After.of_hmac a)
     fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact .inr ⟨_, _, by rw [ea], Nat.le_refl _, by omega⟩
+    · exact .inr ⟨_, _, by rw [ea], Nat.le_refl _, by omega_using [hl]⟩
     · exact .inl ⟨_, rfl, by omega_using [this, hz_W]⟩
   · have := r _ (by rw [ea]; exact hr) (by
       rw [hc, List.length_append, xorPad_length, h.k0l, bytesAt_length]; rfl)
@@ -328,9 +329,9 @@ theorem b4_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) :
   simp only [Fns.finArgs, List.append_assoc]
   refine scr_ok h.kr (by omega_using [hz_reach, he, hl]) fun s₁ u₁ => ?_
   have i₁ := h.upd12 hp hz (by decide) u₁
-  refine scr_ok i₁.kr (by omega) fun s₂ u₂ => ?_
+  refine scr_ok i₁.kr hz.st1O_lt16 fun s₂ u₂ => ?_
   have i₂ := i₁.upd12 hp hz (by decide) u₂
-  refine scr_ok i₂.kr (by omega) fun s₃ u₃ => ?_
+  refine scr_ok i₂.kr hz.uO_lt16 fun s₃ u₃ => ?_
   have i₃ := i₂.upd12 hp hz (by decide) u₃
   refine wp_mov (op2_reg _ _) fun s₄ u₄ =>
     wp_add (op2_imm hz.encB4) fun s₅ u₅ => wp_mov (op2_imm (by decide)) fun s₆ u₆ => WP.block_nil ?_
@@ -355,7 +356,7 @@ theorem b5_args {k : Nat} {s : State} (h : Inv hF s₀ k s) (h0 : s.gpr .r0 = dO
   have hk := h.kr
   have ew := dO_addr hp (o := F.stWO) (by omega_using [he, hl])
   have e1 := dO_addr hp (o := F.st1O) (by omega_using [he, hl])
-  have eu := dO_addr hp (o := F.uO) (by omega)
+  have eu := dO_addr hp (o := F.uO) hz.uO_lt
   exact
     { r0 := h0
       r1 := h1
@@ -373,22 +374,22 @@ theorem b5_args {k : Nat} {s : State} (h : Inv hF s₀ k s) (h0 : s.gpr .r0 = dO
         exact Covers.of_sub fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl
-          · exact cov_part hp hk (by omega)
+          · exact cov_part hp hk hz.stWO_S
           · exact cov_part hp hk (by omega_using [he, hl])
           · exact cov_low hp hk (by omega_using [hF_hWf, he, hl])
-      i_u := by rw [hS, ew, e1]; exact part_disj hz (Or.inr (by omega)) (by omega) (by omega)
-      i_o := by rw [hS, hD, ew, eu]; exact part_disj hz (Or.inl (by omega)) (by omega) (by omega)
-      i_s := by rw [hS, ew]; exact (low_disj hz (by omega_using [hF_hWf, hl]) (by omega)).symm
-      u_o := by rw [hS, hD, e1, eu]; exact part_disj hz (Or.inl (by omega)) (by omega) (by omega)
-      u_s := by rw [hS, e1]; exact (low_disj hz (by omega_using [hF_hWf, hl]) (by omega)).symm
-      o_s := by rw [hD, eu]; exact (low_disj hz (by omega_using [hF_hWf, hl]) (by omega)).symm
-      b_i := by rw [hS, ew]; exact b24 hp hk (part_sub (by omega))
-      b_u := by rw [hS, e1]; exact b24 hp hk (part_sub (by omega))
-      b_o := by rw [hD, eu]; exact b24 hp hk (part_sub (by omega))
-      b_s := b24 hp hk (low_sub (by omega))
-      ni := by rw [hS, dO_toNat hp (by omega)]; have hp_nsc := hp.nsc; omega_using [hp_nsc, he, hl]
-      nu := by rw [hS, dO_toNat hp (by omega)]; have hp_nsc := hp.nsc; omega_using [hp_nsc, he, hl]
-      no := by rw [hD, dO_toNat hp (by omega)]; have hp_nsc := hp.nsc; omega_using [hp_nsc, he, hl]
+      i_u := by rw [hS, ew, e1]; exact part_disj hz (Or.inr (by omega_using [hl])) hz.stWO_S hz.st1O_S
+      i_o := by rw [hS, hD, ew, eu]; exact part_disj hz (Or.inl (by omega_using [hl])) hz.stWO_S hz.uO_D
+      i_s := by rw [hS, ew]; exact (low_disj hz (by omega_using [hF_hWf, hl]) hz.stWO_S).symm
+      u_o := by rw [hS, hD, e1, eu]; exact part_disj hz (Or.inl (by omega_using [hl])) hz.st1O_S hz.uO_D
+      u_s := by rw [hS, e1]; exact (low_disj hz (by omega_using [hF_hWf, hl]) hz.st1O_S).symm
+      o_s := by rw [hD, eu]; exact (low_disj hz (by omega_using [hF_hWf, hl]) hz.uO_D).symm
+      b_i := by rw [hS, ew]; exact b24 hp hk (part_sub hz.stWO_S)
+      b_u := by rw [hS, e1]; exact b24 hp hk (part_sub hz.st1O_S)
+      b_o := by rw [hD, eu]; exact b24 hp hk (part_sub hz.uO_D)
+      b_s := b24 hp hk (low_sub (by omega_using [hl, he, hF_hWf]))
+      ni := by rw [hS, dO_toNat hp hz.stWO_lt]; have hp_nsc := hp.nsc; omega_using [hp_nsc, he, hl]
+      nu := by rw [hS, dO_toNat hp hz.st1O_lt]; have hp_nsc := hp.nsc; omega_using [hp_nsc, he, hl]
+      no := by rw [hD, dO_toNat hp hz.uO_lt]; have hp_nsc := hp.nsc; omega_using [hp_nsc, he, hl]
       nsc := by have hp_nsc := hp.nsc; omega_using [hp_nsc, hF_hWf, he, hl] }
 
 /-- HMAC's `finalize`: `U₁ = PRF (salt ‖ INT (k + 1))`. -/
@@ -400,16 +401,16 @@ theorem b5_ok {k : Nat} {s : State} (h : Inv hF s₀ k s) (h0 : s.gpr .r0 = dO s
       bytesAt t.mem (A s₀ F.uO) F.H.D = prf hF s₀ (saltB s₀ ++ Spec.Pbkdf2.int (k + 1)) := by
   have hl := layout (F := F); have he := end_le hz; have hz_S := hz.S; have hz_D := hz.D; have hz_W := hz.W; have hz_reach := hz.reach
   have hF_hWf := hF.hWf; have hS := hF.hH.hS; have hD := hF.hH.hD; have hB := hF.hH.hB
-  have ew := dO_addr hp (o := F.stWO) (by omega)
-  have e1 := dO_addr hp (o := F.st1O) (by omega)
-  have eu := dO_addr hp (o := F.uO) (by omega)
+  have ew := dO_addr hp (o := F.stWO) hz.stWO_lt
+  have e1 := dO_addr hp (o := F.st1O) hz.st1O_lt
+  have eu := dO_addr hp (o := F.uO) hz.uO_lt
   have hsf := salt_fit hp hz
   refine hf_frame (FnsOK.reprOK hF) (by rw [hS]; omega_using [hz_S]) hF.hf hF.hfSt (b5_args hp hz h h0 h1 h10 h12)
     fun s' a post => ⟨h.after hp hz a fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact .inr ⟨_, _, by rw [ew, hS], Nat.le_refl _, by omega⟩
-    · exact .inr ⟨_, _, by rw [eu, hD], by omega, by omega⟩
+    · exact .inr ⟨_, _, by rw [ew, hS], Nat.le_refl _, by omega_using [hl]⟩
+    · exact .inr ⟨_, _, by rw [eu, hD], by omega_using [hl], by omega_using [hl]⟩
     · exact .inl ⟨_, rfl, by omega_using [hF_hWf]⟩
   · have := post (K0 hF s₀) (saltB s₀ ++ Spec.Pbkdf2.int (k + 1)) (by rw [h.k0l, hB])
       (by rw [h.k0l, List.length_append, bytesAt_length]; simp only [Spec.Pbkdf2.int, List.length_cons,

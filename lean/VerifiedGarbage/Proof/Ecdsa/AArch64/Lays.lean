@@ -5,6 +5,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-!
 # ECDSA on AArch64: where the powers' slots are
@@ -30,9 +31,9 @@ variable {c : Cfg}
 abbrev Apart (x k y k' : Nat) : Prop := x + k ≤ y ∨ y + k' ≤ x
 
 /-- Slots away from where the temporary area may be (`sl_apart`). -/
-abbrev Away (l : List Nat) : Prop := ∀ i ∈ l, i ≠ 54 ∧ i ≠ 82
+abbrev Away (l : List Nat) : Prop := ∀ i ∈ l, i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82
 
-theorem sl_mem_map (hn : 0 < c.n) {i : Nat} {l : List Nat} (hi : i ≠ 54 ∧ i ≠ 82) (hl : Away l) :
+theorem sl_mem_map (hn : 0 < c.n) {i : Nat} {l : List Nat} (hi : i ≠ 54 ∧ i ≠ 61 ∧ i ≠ 82) (hl : Away l) :
     c.sl i ∈ l.map c.sl ↔ i ∈ l := by
   constructor
   · intro h
@@ -96,9 +97,9 @@ theorem ct_le (c : Cfg) (h7 : c.n < 10) : c.sl CT + 9 * (8 * c.n) ≤ size := by
 /-- The powers' table is apart from the temporary area. -/
 theorem ct_tmp (c : Cfg) : c.sl CT + 9 * (8 * c.n) ≤ c.sl TMP ∨ c.sl TMP + 8 * c.n ≤ c.sl CT := by
   rw [sl_eq c CT]
-  by_cases hr : c.n = 6 ∨ c.n = 9
+  by_cases hr : c.n = 6 ∨ c.n = 8 ∨ c.n = 9
   · rw [sl_tmp c hr]; simp only [Mont.moAt, CT]
-    rcases hr with h | h <;> rw [h] <;> omega
+    rcases hr with h | h | h <;> rw [h] <;> omega
   · rw [sl_aff c hr]; simp only [TMP, CT]; right
     have : 8 * c.n * 2 + 8 * c.n ≤ 8 * c.n * 69 := by
       rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by decide)
@@ -136,7 +137,7 @@ theorem invTmp_ge64 (hc : BaseCfgOk c) : 64 ≤ c.invTmp := by
   rcases hc.inv_at with h | h
   · rw [invTmp_none h]; exact sl_ge64 c _
   · rcases h.2.2.2 with h' | h'
-    · rw [h'.1]; exact sl_ge64 c _
+    · rw [h'.1]; exact Nat.le_add_right _ _
     · have := sl_ge64 c CT
       have := sl_ge64 c nslots
       omega
@@ -150,14 +151,14 @@ theorem invTmp8 (hc : BaseCfgOk c) : c.invTmp % 8 = 0 := by
   rcases hc.inv_at with h | h
   · rw [invTmp_none h]; exact sl_mod8 c _
   · rcases h.2.2.2 with h' | h'
-    · rw [h'.1]; exact sl_mod8 c _
+    · rw [h'.1]; simp only [slot, Nat.mul_assoc]; omega
     · exact h'.2.2.1
 
 theorem invTmp_le (hc : BaseCfgOk c) : c.invTmp + 8 * c.n ≤ size := by
   rcases hc.inv_at with h | h
   · rw [invTmp_none h]; exact sl_le c hc.n10 (by decide)
   · rcases h.2.2.2 with h' | h'
-    · rw [h'.1]; exact sl_le c hc.n10 (by decide)
+    · rw [h'.1]; have := hc.n10; simp only [slot, TMP, size]; omega
     · exact h'.2.1
 
 theorem invTbl_tmp (hc : BaseCfgOk c) :
@@ -182,7 +183,7 @@ theorem sl_invTmp (hc : BaseCfgOk c) {i : Nat} (hi : i < 45) (hT : i ≠ TMP) :
   rcases hc.inv_at with h | h
   · rw [invTmp_none h]; exact sl_apart c hT
   · rcases h.2.2.2 with h' | h'
-    · rw [h'.1]; exact sl_apart c hT
+    · rw [h'.1]; exact sl_apart_raw_tmp c hT
     · rcases h'.1 with h'' | h''
       · have := sl_invTbl hc hi hT
         exact Or.inl (by omega)

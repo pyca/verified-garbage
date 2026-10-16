@@ -5,6 +5,11 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.X25519.X86.Invert
+import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.X25519.X86.Freeze
+import VerifiedGarbage.Spec.Rc2
 
 /-!
 # X25519 on x86 (32-bit): the whole function
@@ -21,28 +26,28 @@ namespace VG.Proof.X25519.X86
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
 
 theorem x25519_code : Impl.X25519.X86.x25519 =
-    .seq (.block setup) (.seq (.seq (.block [.mov .esi (.imm 255)]) (.loop (.block step) .ne))
+    .seq setup (.seq (.seq (.block [.mov .esi (.imm 255)]) (.loop (.block step) .ne))
       (.seq (.block lastSwap) (.seq Impl.X25519.X86.invert (.block finish)))) := rfl
 
-theorem finish_eq : finish = ops ([.mul X2 X2 T1] : List Op) ++ (freeze X2 ++ (.mov .esi (.mem (at_ .esp 4)) ::
+theorem finish_eq : finish = ops ([.mul X2 X2 Field32.E1] : List Op) ++ (freeze X2 ++ (.mov .esi (.mem (at_ .esp 4)) ::
     (((List.range 8).flatMap fun k => ([.mov .eax (.mem (sc (X2 + 4 * k))), .store (at_ .esi (4 * k)) .eax] :
       List Instr)) ++ restore))) := by
   simp only [finish, ops, List.flatMap_cons, List.flatMap_nil, Op.code, List.append_nil, List.append_assoc,
     List.cons_append]
 
 /-- The result `r`, as the words of its value at `[x + X2]`, to `out`, and the registers restored. -/
-theorem finish_ok {s₀ s : State} (hp : Pre s₀) (hb : Base (arg s₀ 3) (kOf s₀) s₀ s) :
+theorem finish_ok {s₀ s : State} (hp : Pre s₀) (hb : After (arg s₀ 3) s₀ s) :
     WP isa (.block finish) s fun s' => abiPreserved s₀ s' ∧
       Spec.X25519.bytesAt s'.mem ((arg s₀ 0).setWidth 64) 32 =
-        encodeUCoordinate (F s.mem (arg s₀ 3) X2 * F s.mem (arg s₀ 3) T1) := by
+        encodeUCoordinate (F s.mem (arg s₀ 3) X2 * F s.mem (arg s₀ 3) Field32.E1) := by
   have hfit := hp.sc_fit
   rw [finish_eq]
-  refine WP.block_append (WP.mono (ops_ok (lo := 288) [.mul X2 X2 T1] hb.ctx (by decide)) fun s₁ ⟨k₁, f₁, e₁⟩ => ?_)
+  refine WP.block_append (WP.mono (ops_ok (lo := 288) [.mul X2 X2 Field32.E1] hb.ctx (by decide)) fun s₁ ⟨k₁, f₁, e₁⟩ => ?_)
   have b₁ := hb.ops k₁ f₁
   refine WP.block_append (WP.mono (freeze_ok b₁.ctx (lo := 288) (o := X2) (by decide)) fun s₂ ⟨k₂, f₂, e₂⟩ => ?_)
   have b₂ := b₁.ops k₂ (frame_wide hfit (lo := 288) (by decide) (by decide) f₂)
   -- The value: fully reduced.
-  have hv : fe s₂.mem (arg s₀ 3) X2 = (F s.mem (arg s₀ 3) X2 * F s.mem (arg s₀ 3) T1).val := by
+  have hv : fe s₂.mem (arg s₀ 3) X2 = (F s.mem (arg s₀ 3) X2 * F s.mem (arg s₀ 3) Field32.E1).val := by
     rw [e₂, ← toFe_val]
     have := e₁ X2 (by decide)
     simp only [X86.run, opOut, opVal, Function.update_self] at this
@@ -50,7 +55,7 @@ theorem finish_ok {s₀ s : State} (hp : Pre s₀) (hb : Base (arg s₀ 3) (kOf 
   refine Wp.wp_ldm (B := s₂.gpr .esp) (o := 4) rfl (by rw [b₂.esp, b₂.rd, b₂.wr]; exact hp.argIn (i := 0) (by decide))
     fun s₃ u₃ => ?_
   have o₃ : OInv s₀ s₃ 0 s₃ := ⟨by rw [u₃.other _ (by decide)]; exact b₂.ctx.edi,
-    by rw [u₃.gpr, b₂.esp]; exact hp.arg_same b₂.frame (i := 0) (by decide), rfl, rfl, rfl, Frame.refl _ _,
+    by rw [u₃.gpr, b₂.esp]; exact hp.arg_same' b₂.frame (i := 0) (by decide), rfl, rfl, rfl, Frame.refl _ _,
     fun _ h => absurd h (Nat.not_lt_zero _)⟩
   have w₃ : s₃.wr = s₀.wr := by rw [u₃.wr, b₂.wr]
   refine WP.block_append (WP.mono (outWords_ok hp w₃ 8 (Nat.le_refl _) s₃ o₃) fun s₄ o₄ => ?_)
@@ -75,8 +80,11 @@ theorem finish_ok {s₀ s : State} (hp : Pre s₀) (hb : Base (arg s₀ 3) (kOf 
         o₄.frame.readW (Region.contains_self _ _) (by simp only [List.mem_singleton]; rintro r rfl; exact hp.ret_out)
           (by decide)
       rw [r₄, u₃.mem]
-      exact b₂.frame.readW (Region.contains_self _ _) (by simp only [List.mem_singleton]; rintro r rfl; exact hp.ret_sc)
-        (by decide)
+      exact b₂.frame.readW (Region.contains_self _ _) (by
+        simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro r (rfl | rfl)
+        · exact hp.ret_sc
+        · exact hp.ret_stk) (by decide)
   · rw [m₅, encodeUCoordinate_eq]
     refine bytesAt_leBytes_words32 _ _ _ fun j hj => ?_
     have hof := hp.out_fit
@@ -101,7 +109,7 @@ theorem x25519_correct {s₀ : State} (hp : Pre s₀) :
       by rw [u₂.mem, ladderAfter_255_eq]; exact z3₁, by rw [u₂.mem, ladderAfter_255_eq]; exact sw₁⟩
   refine WP.mono (ladderLoop_ok L₂) fun s₃ L₃ => ?_
   refine WP.seq (WP.mono (lastSwap_ok L₃) fun s₄ ⟨b₄, x2₄, z2₄⟩ => ?_)
-  refine WP.seq (WP.mono (invert_ok b₄) fun s₅ ⟨b₅, t1₅, x2₅⟩ => ?_)
+  refine WP.seq (WP.mono (invert_ok b₄ hp.sp_room hp.sc_callStk) fun s₅ ⟨b₅, t1₅, x2₅⟩ => ?_)
   refine WP.mono (finish_ok hp b₅) fun s₆ ⟨abi, out⟩ => ⟨abi, ?_⟩
   show Spec.X25519.bytesAt s₆.mem ((arg s₀ 0).setWidth 64) 32 = _
   rw [out, t1₅, x2₅, x2₄, z2₄, x25519_eq]

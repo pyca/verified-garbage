@@ -5,6 +5,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 
 /-!
 # An RSA key from its primes on AArch64: `dP` and `dQ`
@@ -91,7 +95,7 @@ theorem crtPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {d a b : Nat} (hd
   have vMb : dv b < 2 ^ (64 * I.W) := by rw [← v₇]; exact wv_lt _ _ _ _
   refine ⟨ht, ?_, ?_, ?_⟩
   · exact (((((((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆).trans f₇).trans f₈).trans f₉).trans
-      f₁₀).mono (by simp)
+      f₁₀).mono (by decide)
   · rw [f₁₀.av hok4 (by decide) (by decide) hZ, f₉.av (by decide) (by decide) (by decide) hZ,
       f₈.av (by decide) (by decide) (by decide) hZ, vX₇]
   · rw [← hR']

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Argon2.X86_64.Avx512.Cols
-public import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
+import VerifiedGarbage.Proof.Argon2.X86_64.Avx2.Ends
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

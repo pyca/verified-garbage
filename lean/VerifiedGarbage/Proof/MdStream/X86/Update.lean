@@ -4,11 +4,12 @@ public import VerifiedGarbage.Proof.MdStream.X86.Common
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.X86.Inline
-public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
+import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Streaming Merkle–Damgård hash functions on x86 (32-bit): `update`

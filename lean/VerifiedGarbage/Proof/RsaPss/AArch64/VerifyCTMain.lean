@@ -8,6 +8,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyParts
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.SignEnc
+meta import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyB1
 
 /-!
 # RSASSA-PSS verification on AArch64: the checks of `EM` are constant time
@@ -47,6 +55,7 @@ structure VOk (D : Nat) (a : State) : Prop where
   k2 : kV a ≤ 1024
   fit : D + 2 ≤ kV a - loA a
   lo : loA a ≤ 1
+  salt : anyV a = 0 → (a.gpr .x7).toNat < dbA D a
 
 /-- A run after the call, from an entry state with the anchor's public data:
 the frame and the working space, and registers (`rs`) and slots (`sl`) the
@@ -434,17 +443,6 @@ theorem cmpH_vct {K : Nat} :
       have := h.ok.db; have := h.ok.lo; have hDN := hH.sizes.DN; have hN := hH.N_le
       exact WP.mono (cmpH_ok hH h.L (fun _ _ => rfl) (e := oEm + loA a) (db := dbA H.D a) (acc := u.gpr .x26)
         (by unfold oEm oY; omega) h.x21 h.x24 h.x25 rfl) fun _ ⟨O, _⟩ => by rw [O.sp, h.L.sp]
-
-/-- The checks of `EM` are constant time. -/
-theorem check_ct {K : Nat} {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) :
-    RelCT isa (Two (VR H.D K (vregs H.D) vslots))
-      (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck, clearY, copyDigest H, copyDb H, shift H,
-        .block (verifyNb H), ctHash H, cmpH H]) (Two fun a t => t.sp = fb a) := by
-  unfold seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
-  exact RelCT.seq acc0_vct (RelCT.seq (mgfXor_vct hH hGh hGl hG hc) (RelCT.seq clearTop_vct (RelCT.seq posScan_vct
-    (RelCT.seq posCheck_vct (RelCT.seq clearY_vct (RelCT.seq (copyDigest_vct hH) (RelCT.seq (copyDb_vct hH)
-      (RelCT.seq (shift_vct hH) (RelCT.seq (verifyNb_vct hH) (RelCT.seq (ctHash_vct hH hc) (cmpH_vct hH)))))))))))
 
 end
 

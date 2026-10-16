@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! The executable suffix replacement agrees with the proved sparse operation bodies.
 The prefix is kept symbolic so the proof does not evaluate the full instruction list. -/
@@ -48,7 +49,8 @@ theorem op_mul (o a b : Nat) (hab : a≠b) : Impl.P256.VerifySparse.op (.mul o a
   have raw : opCode Impl.P256.VerifySparse.M (.mul o a b)=pre++tail := by
     rw [opCode,h]
     change mul Impl.P256.VerifySparse.M o a b=pre++tail
-    rw [mul_eq]
+    have hn : Impl.P256.VerifySparse.M.n = 4 := rfl
+    rw [mul_eq, mulR, hn]
     simp only [pre,tail,ts,List.append_assoc]
     rfl
   dsimp only [Impl.P256.VerifySparse.op]

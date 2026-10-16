@@ -2,6 +2,9 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.AesGcmSiv.Arm.Verified
+import Mathlib.Algebra.Field.ZMod
+import Mathlib.RingTheory.AdjoinRoot
+import VerifiedGarbage.Proof.Gcm.Poly
 
 /-!
 # AES-GCM-SIV (RFC 8452) on ARMv7

@@ -14,6 +14,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_make_hint`
@@ -267,7 +273,7 @@ def satState : State where
 
 theorem verified : Verified Arm.target Impl.MlDsa.Arm.Round.makeHint (Spec.MlDsa.makeHintContract Arm.abi 12) := by
   refine ⟨fun s hs => ?_, ct_of_saving [.r4, .r5, .r6] _ [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_)
-    (by taint_decide), ?_⟩
+    (by native_taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, hh, h0⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
     sig_post [Spec.MlDsa.makeHintContract, Spec.MlDsa.makeHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,

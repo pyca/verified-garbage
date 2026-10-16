@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Key.DBase
-public import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
+import VerifiedGarbage.Proof.RsaKeyGen.KeyMath
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Rsa.AArch64.CvLoad
 
 /-!
 # An RSA key from its primes on AArch64: `d` for an odd `e`
@@ -270,7 +274,7 @@ theorem dOdd_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {e L : Nat} (he3 : 3
   refine ⟨ht, ?_, ⟨_, okt, ?_, ?_⟩⟩
   · have f₁₁ : KF I.B I.W [] s₁₀.mem s₁₁.mem := KF.of_eq m₁₁
     exact (((((((((((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆).trans f₇).trans f₈).trans f₉).trans
-      f₁₀).trans f₁₁).trans f₁₂).trans f₁₃).trans ft).mono (by simp)
+      f₁₀).trans f₁₁).trans f₁₂).trans f₁₃).trans ft).mono (by decide)
   · -- The inverse exists iff both hold.
     have hQR : L = e * (L / e) + L % e := (Nat.div_add_mod L e).symm
     constructor

@@ -1,11 +1,19 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Seed4
-public import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
+import VerifiedGarbage.Proof.MlDsa.Sample.Rej4
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Call4
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Blocks
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 /-! Signing matrix expansion in batches of four: sampler outcomes, bounded failure, and the single-stream remainder. -/
 

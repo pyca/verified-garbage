@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.X86_64.Exec
 public import VerifiedGarbage.Impl.Aes.X86_64.AesNi
 public import VerifiedGarbage.Spec.Gcm
-public import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Spec.Aes
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Gcm.X86_64.Rev

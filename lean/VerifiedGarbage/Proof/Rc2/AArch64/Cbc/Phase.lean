@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Loop
-public import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Loop
+import VerifiedGarbage.Proof.Rc2.AArch64.Vec.Loop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Rc2.AArch64.Cbc.Slice
+import VerifiedGarbage.Proof.Rc2.CbcList
 
 /-!
 # Decryption's groups of eight blocks

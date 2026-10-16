@@ -12,6 +12,42 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.IntervalCases
+meta import Mathlib.Tactic.IntervalCases
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+public import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
+public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
+meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
+meta import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Control
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Round
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.UnrolledLit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorCoreExec
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.ResidentBulk
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Restore
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Save
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Store
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # The scalar Keccak backend with its resident absorb
@@ -77,7 +113,7 @@ taint_summary VSums.absorb24_26 : VectorTaint.taint
 
 /-- `sponge_taint_decide VSums`, with the summaries of the absorb above and
 `VectorSlots.VSums`'s others, in the same order. -/
-local macro "sponge_taint_decide_resident" : tactic => `(tactic|
+tactic_template "sha3_scalar_resident_taint_decide" : tactic => `(tactic|
   taint_decide_sum [
     VSums.absorb23, VSums.absorb24, VSums.absorb28, VSums.absorb27, VSums.absorb24_26,
     VectorSlots.VSums.pad28, VectorSlots.VSums.pad27, VectorSlots.VSums.pad26,
@@ -124,7 +160,7 @@ theorem absorb_correct (a : State) (hp : Proof.Sha3.absorbAArch64.pre a) :
 
 theorem absorbTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (Impl.Sha3.AArch64.Stream.absorbWith callee) h).isSome = true :=
-  by sponge_taint_decide_resident
+  by sha3_scalar_resident_taint_decide
 
 theorem padTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x4])
     (Impl.Sha3.AArch64.Stream.padWith callee) h).isSome = true :=

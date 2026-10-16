@@ -18,6 +18,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-!
 # ML-DSA on 32-bit ARM: `vg_mldsa_power2round`
@@ -198,7 +202,7 @@ def satState : State where
 
 theorem verified :
     Verified Arm.target Impl.MlDsa.Arm.Round.power2Round (Spec.MlDsa.power2RoundContract Arm.abi 4) := by
-  refine ⟨fun s hs => ?_, ct_of_saving [.r4] _ [.r0, .r1, .r2] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
+  refine ⟨fun s hs => ?_, ct_of_saving [.r4] _ [.r0, .r1, .r2] (fun s₁ s₂ h => ?_) (by native_taint_decide), ?_⟩
   · obtain ⟨t, s', he, hpres, hsp, h1, h0⟩ := correct (pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
     sig_post [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, Arm.abi, Arm.argRegs,

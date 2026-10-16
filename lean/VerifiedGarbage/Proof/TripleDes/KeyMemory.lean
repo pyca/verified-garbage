@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.TripleDes.Schedule
+import VerifiedGarbage.Proof.TripleDes.Schedule
 public import VerifiedGarbage.Proof.TripleDes.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

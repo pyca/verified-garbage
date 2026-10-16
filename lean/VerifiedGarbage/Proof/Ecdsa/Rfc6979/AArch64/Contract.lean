@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Generic
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Impl.Ecdsa.AArch64
@@ -9,6 +9,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Deterministic ECDSA on AArch64: the contract the proof is written against

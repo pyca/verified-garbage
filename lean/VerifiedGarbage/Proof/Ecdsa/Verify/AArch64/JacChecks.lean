@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
@@ -24,6 +26,38 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
+import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafEntryTiming
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
+meta import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPoints
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombSum
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeStep
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafTableInit
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.NafWindow
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
+meta import VerifiedGarbage.Proof.Weierstrass.BytesLen
 
 @[expose] public section
 
@@ -32,7 +66,7 @@ open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Weierstrass.AArch64
 open VG.Impl.Weierstrass.AArch64
 
-macro "jac_field_ct" : tactic => `(tactic|
+tactic_template "jac_field_ct" : tactic => `(tactic|
   exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.x0])
     (fun _ _ _ _ h => h) (by taint_decide))
 
@@ -59,7 +93,7 @@ theorem jacComb_checks : JacCombChecks p256.combCfg where
 
 theorem jacComb_finish_ct : FieldCT (Jacobian.jacCombFinish p256.combCfg) := by jac_field_ct
 
-macro "jac_reg_ct" rs:term : tactic => `(tactic|
+tactic_template "jac_reg_ct" rs:term : tactic => `(tactic|
   exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs $rs)
     (fun _ _ _ _ h => h) (by taint_decide))
 

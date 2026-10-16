@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Proof.Poly1305.Limbs64
+import VerifiedGarbage.Proof.Poly1305.Limbs64
 public import VerifiedGarbage.Spec.Rsa
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

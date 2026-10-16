@@ -154,6 +154,15 @@ def copyLoop : Prog isa :=
     (.loop (.block [.movzx8 .rax srcB, .store8 dstB .rax, .alu .add .r10 (imm 1),
       .alu .cmp .r10 (.reg .rcx)]) .ne)
 
+/-- `copyLoop` for a tag: its `rcx` (1 to 16) bytes, a word at a time if
+there are 16, as for a whole tag. -/
+def copyTag : Prog isa :=
+  .seq (.block [.alu .cmp .rcx (imm 16)])
+    (.ite .e
+      (.block [.mov .rax (.mem (at_ .rsi 0)), .mov .r10 (.mem (at_ .rsi 8)), .store (at_ .rdi 0) .rax,
+        .store (at_ .rdi 8) .r10])
+      copyLoop)
+
 /-- XORs the `rcx` (at least 1) bytes at `rsi` into those at `rdi`. -/
 def xorLoop : Prog isa :=
   .seq (.block [.mov32 .r10 (imm 0)])
@@ -344,14 +353,14 @@ def j0 : Prog isa :=
 def recv : Prog isa :=
   .seq (.block (([.mov32 .rax (imm 0), .store (at_ .r15 rO) .rax, .store (at_ .r15 (rO + 8)) .rax] : List Instr) ++
     ptr .rdi .r15 rO ++ ([.mov .rcx (.reg .rbx)] : List Instr)))
-    copyLoop
+    copyTag
 
 /-- The first `rbx` bytes of the tag at `W + o`, padded with zeros at
 `W + vO`, compared with the received one: `eax = 1` if they are equal. -/
 def cmp (o : Nat) : Prog isa :=
   .seq (.block (([.mov32 .rax (imm 0), .store (at_ .r15 vO) .rax, .store (at_ .r15 (vO + 8)) .rax] : List Instr) ++
     ptr .rdi .r15 vO ++ ptr .rsi .r15 o ++ ([.mov .rcx (.reg .rbx)] : List Instr)))
-  (.seq copyLoop
+  (.seq copyTag
     (.block [.mov .rax (.mem (at_ .r15 vO)), .alu .xor .rax (.mem (at_ .r15 rO)),
       .mov .rdx (.mem (at_ .r15 (vO + 8))), .alu .xor .rdx (.mem (at_ .r15 (rO + 8))),
       .alu .or .rax (.reg .rdx), .alu .cmp .rax (imm 1), .mov32 .rax (imm 0), .alu32 .adc .rax (imm 0)]))
@@ -486,17 +495,25 @@ def streamBlocks (f : Fn) : Prog isa :=
 `vg_aes_gcm_encrypt_blocks` interleaves (`CF`). -/
 def streamSmall : List Instr := [.mov32 .rcx (imm 256), .alu .cmp .rbp (.reg .rcx)]
 
+/-- `cr` (counter mode) and `ab` (`absorb`) over the data kept:
+encrypting absorbs after `cr`, decrypting before. -/
+def partWith (enc : Bool) (cr ab : Prog isa) : Prog isa :=
+  if enc then .seq cr (.seq (.block streamLoad) ab) else .seq ab (.seq (.block streamLoad) cr)
+
+/-- The head, if the text so far left a block partial: it fits in the rest
+of that keystream block and of the buffer, so `cryptHead` and `absorbHead`
+alone do it. -/
+def headPart (enc : Bool) : Prog isa :=
+  .seq (.block [.alu .test .rbx (.reg .rbx)]) (.ite .e (.block []) (partWith enc cryptHead (absorbHead c 16)))
+
 /-- The text of `encrypt` (`enc`) or `decrypt`: if there is any, the
 additional data padded first if there is no text yet; then, unless there are
 fewer than 256 bytes (`streamSmall`), the head (the bytes that finish the
-block the text so far left partial) with `crypt` and `absorb` and the whole
-blocks in one call of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks`; and
-the rest (all of it, if there were fewer than 256 bytes) with `crypt` and
-`absorb`. Encrypting absorbs each part after `crypt`, decrypting
-before. -/
+block the text so far left partial, `headPart`) and the whole blocks in one
+call of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks`; and the rest (all
+of it, if there were fewer than 256 bytes) with `crypt` and `absorb`. -/
 def streamText (enc : Bool) : Prog isa :=
-  let part : Prog isa := if enc then .seq (crypt c) (.seq (.block streamLoad) (absorb c 16))
-    else .seq (absorb c 16) (.seq (.block streamLoad) (crypt c))
+  let part : Prog isa := partWith enc (crypt c) (absorb c 16)
   .seq (.block [.alu .test .rbp (.reg .rbp)])
     (.ite .e (.block [])
       (.seq (.block [.mov .rax (.mem (at_ .r15 tlenO)), .alu .test .rax (.reg .rax)])
@@ -505,7 +522,7 @@ def streamText (enc : Bool) : Prog isa :=
       (.seq (.block streamSmall)
       (.seq (.ite .b (.block [])
         (.seq streamHead
-        (.seq part
+        (.seq (headPart c enc)
         (.seq (.block streamNext)
         (.seq (streamBlocks (if enc then c.enc else c.dec))
           (.block streamLoad))))))

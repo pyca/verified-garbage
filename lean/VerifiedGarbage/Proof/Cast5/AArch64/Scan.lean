@@ -2,11 +2,12 @@ module
 
 public import VerifiedGarbage.Proof.Cast5.AArch64.Run
 public import VerifiedGarbage.Proof.Cast5.Table
-public import VerifiedGarbage.Proof.Framework.CallLay
+import VerifiedGarbage.Proof.Framework.CallLay
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # CAST5 on AArch64: the scan of a table

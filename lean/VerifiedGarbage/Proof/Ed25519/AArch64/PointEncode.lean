@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointEncode
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Power
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.CounterKeep
-public import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
+import VerifiedGarbage.Proof.Ed25519.AArch64.Freeze
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-! Merged from `Proof.Ed25519.AArch64.PointAffine`. -/
 
@@ -21,25 +22,36 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 theorem affine_eval (e : Env) :
     evalOps affineOps e 0 = e 0 * e 15 ∧ evalOps affineOps e 1 = e 1 * e 15 := ⟨rfl, rfl⟩
 
-theorem pointAffine_ok {s : State} {base : Addr} (hs : Scr s base) :
+theorem pointAffine_ok [Divstep.Sound] {s : State} {base : Addr} (hs : Scr s base) :
     WP isa pointAffine s fun t => CounterKeep base s t ∧
       env t.mem base 0 = env s.mem base 0 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2) ∧
       env t.mem base 1 = env s.mem base 1 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2) := by
   rw [pointAffine]
-  refine WP.seq (WP.mono (invert_ok hs) fun t ⟨hk, hv⟩ => ?_)
-  refine WP.mono (fieldCode_ok affineOps (hk.scr hs)) fun u ⟨ku, vu⟩ => ?_
-  refine ⟨⟨fun r hr hb => (ku.gpr r hr).trans (hk.gpr r hr hb), ku.rd.trans hk.rd,
+  refine WP.seq (WP.mono (Divstep.invert_ok hs) fun t ⟨hv, hk, h1, hO⟩ => ?_)
+  have invClob : ∀ r ∈ (.x19 :: VG.Proof.Mont.AArch64.clob 4 ++ ([.x2, .x20] : List Reg)),
+      r = .x1 ∨ r = .x19 ∨ r ∈ clob := by decide
+  have hkg : ∀ r, r ∉ clob → r ≠ .x19 → t.gpr r = s.gpr r := fun r hr hb => by
+    by_cases hx : r = .x1
+    · subst hx; exact h1
+    · exact hk.gpr r fun hm => by
+        rcases invClob r hm with h | h | h
+        · exact hx h
+        · exact hb h
+        · exact hr h
+  have ht : Scr t base := ⟨(hkg _ (by decide) (by decide)).trans hs.x0, hk.wr ▸ hs.wr, hs.nowrap⟩
+  refine WP.mono (fieldCode_ok affineOps ht) fun u ⟨ku, vu⟩ => ?_
+  refine ⟨⟨fun r hr hb => (ku.gpr r hr).trans (hkg r hr hb), ku.rd.trans hk.rd,
     ku.wr.trans hk.wr, ku.sp.trans hk.sp,
-    (hk.mem.mono (by decide) (by decide)).trans ku.mem⟩, ?_, ?_⟩
+    (hO.mono (by decide) (by decide)).trans ku.mem⟩, ?_, ?_⟩
   · rw [vu, (affine_eval _).1, hv]
     have he : env t.mem base 0 = env s.mem base 0 := by
       change F t.mem base 64 = F s.mem base 64
-      unfold F; rw [hk.mem.fe (Or.inl (by decide)) (by decide)]
+      unfold F; rw [hO.fe (Or.inl (by decide)) (by decide)]
     rw [he, Proof.X25519.invert_eq]
   · rw [vu, (affine_eval _).2, hv]
     have he : env t.mem base 1 = env s.mem base 1 := by
       change F t.mem base 96 = F s.mem base 96
-      unfold F; rw [hk.mem.fe (Or.inl (by decide)) (by decide)]
+      unfold F; rw [hO.fe (Or.inl (by decide)) (by decide)]
     rw [he, Proof.X25519.invert_eq]
 
 end VG.Proof.Ed25519.AArch64
@@ -103,7 +115,7 @@ theorem encodeSign_ok (s : State) (x y : Nat) (hy : y < 2 ^ 255)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_write, hr, ite_false]
 
-theorem pointEncode_ok {s : State} {base : Addr} (hs : Scr s base) :
+theorem pointEncode_ok [Divstep.Sound] {s : State} {base : Addr} (hs : Scr s base) :
     WP isa pointEncode s fun t => CounterKeep base s t ∧
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) =
         (env s.mem base 1 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2)).val +

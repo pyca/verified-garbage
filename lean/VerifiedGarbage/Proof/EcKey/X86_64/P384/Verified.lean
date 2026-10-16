@@ -6,16 +6,40 @@ public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Contract
 public import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
 meta import VerifiedGarbage.Proof.EcKey.X86_64.P384.Lit
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 public import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
+meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CodeErase
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
+meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Framework.TaintMap
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.TaintMap
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
+meta import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+meta import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 
 /-!
 # P-384 public keys on x86-64: `Verified`
@@ -62,6 +86,19 @@ theorem post_of {s s' : State} (h : PkPost p384 s s') : pkX86_64.post s s' := by
   rw [show Spec.EcKey.publicKey p384.C (dk p384 s) = pk s.mem (s.gpr .rsi) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
+/-- `publicKeyP384` without its displacements, as a literal of shared blocks
+(`materialize_shared`): what its constant-time check analyses
+(`Proof/Framework/X86_64/TaintErase.lean`), and its checks of every
+instruction (`Proof/Weierstrass/X86_64/CodeErase.lean`). -/
+def publicKeyP384Erased : Prog isa := Code.erase publicKeyP384
+
+materialize_shared publicKeyP384Erased
+
+theorem pk_inlineOk : publicKeyP384.InlineOk = true := by
+  rw [← Code.InlineOk_erase]
+  show publicKeyP384Erased.InlineOk = true
+  lit_decide
+
 theorem pk_x86 (hL : Weierstrass.Law Spec.P384.curve)
     (hT : Weierstrass.CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds)
@@ -69,13 +106,19 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P384.curve)
     ∃ t s', Exec isa publicKeyP384.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs) p384_mulBase
   have hsp : ∀ i ∈ instrs publicKeyP384.inline, Taint.clobbers i .rsp = false := by
-    have h : publicKeyP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
+    have h : publicKeyP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+      rw [← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [Taint.clobbers_erase]]
+      show publicKeyP384Erased.allInstrs _ = true
+      lit_decide
     rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  have F := (Exec.regions he (Code.noCalls_inline pk_inlineOk)).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+  refine ⟨t, s', he, abiPreserved_of_exec (by
+    rw [Code.allInstrs_inline, ← Code.allInstrs_mapBlocks (f := Instr.erase) fun i => by rw [loadsMxcsr_erase]]
+    show publicKeyP384Erased.allInstrs _ = true
+    lit_decide) he
     ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -94,7 +137,8 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P384.curve)
       · exact hrs) (by decide)
 
 theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP384 :=
-  VG.Taint.constantTime (A := taintSym ["VG_P384_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp])
+  VG.Taint.constantTime_mapBlocks (c' := publicKeyP384Erased) (taintSym_eraseInv ["VG_P384_COMB"])
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) rfl
     (fun _ _ _ _ ⟨h0, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -102,7 +146,7 @@ theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP384 :=
       · exact h2
       · exact h3
       · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
-    (by taint_decide)
+    rfl (by taint_decide)
 
 theorem sat_spec8 :
     (Spec.EcKey.P384.inst.publicKeyContract (X86_64.abi.withConsts p384.combConsts) 8).pre satState := by
@@ -133,7 +177,7 @@ theorem pk_verified (hL : Weierstrass.Law Spec.P384.curve)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP384
       (Spec.EcKey.P384.inst.publicKeyContract (X86_64.abi.withConsts p384.combConsts) 8) :=
-  Verified.of_inline_ct (by lit_decide) (pk_x86 hL hT hI) pk_ct implies8
+  Verified.of_inline_ct pk_inlineOk (pk_x86 hL hT hI) pk_ct implies8
     (fun _ h => Sig.clear_of_pre_consts h) pk_patch
 
 end VG.Proof.EcKey.X86_64.P384

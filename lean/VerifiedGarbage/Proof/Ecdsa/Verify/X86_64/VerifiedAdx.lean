@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
-public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitEraseAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitEraseAdx
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitEraseAdx
-public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 meta import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 meta import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
@@ -14,6 +14,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Mont.X86_64.Wide
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+meta import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDSA verification over P-256 on x86-64 with BMI2 and ADX: `Verified`

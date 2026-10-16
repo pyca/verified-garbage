@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Main
-public import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
+import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 meta import VerifiedGarbage.Proof.Weierstrass.X86.MontContract
 public import VerifiedGarbage.Proof.Ecdsa.X86.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.Contract
@@ -16,14 +16,18 @@ public import VerifiedGarbage.Proof.Framework.X86.Inline
 meta import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Framework.X86.TaintMono
 meta import VerifiedGarbage.Proof.Framework.X86.TaintMono
-public import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumP
+import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumP
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumP
-public import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
+import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
 meta import VerifiedGarbage.Proof.Ecdsa.X86.P521.MulSumN
+import VerifiedGarbage.Proof.Framework.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.NativeTaint
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDSA over P-521 on x86 (32-bit): `Verified`
@@ -168,7 +172,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : signX86.pre s₁) (h₂ : signX86.p
     · exact congrArg _ a4
 
 theorem sign_ct : ConstantTime isa signX86.pre signX86.pub signP521 := by
-  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ signP521 h).isSome = true := by taint_decide_sum [mulPSum, mulNSum]
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ signP521 h).isSome = true := by native_taint_decide_sum [mulPSum, mulNSum]
   exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'

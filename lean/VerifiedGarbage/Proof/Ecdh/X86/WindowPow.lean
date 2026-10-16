@@ -2,12 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
-public import VerifiedGarbage.Proof.Ecdh.X86.Main
+import VerifiedGarbage.Proof.Ecdh.X86.Main
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowMul
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-! # Signed-window multiplication followed by affine conversion for x86 ECDH -/
 

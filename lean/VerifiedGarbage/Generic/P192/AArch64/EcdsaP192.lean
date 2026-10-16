@@ -1,9 +1,12 @@
 module
 
-public import VerifiedGarbage.TCB.AArch64.Target
+import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Verified
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! # p192 on AArch64, generic over its proven group law and inversions -/
 

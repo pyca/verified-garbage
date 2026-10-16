@@ -1,11 +1,19 @@
 module
 
+public import VerifiedGarbage.Proof.Bignum.X86_64.MontSq
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABIPre
-public import VerifiedGarbage.Proof.Dsa.X86_64.PublicSlices
+import VerifiedGarbage.Proof.Dsa.X86_64.PublicSlices
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Dsa.X86_64.EqualCT
+import VerifiedGarbage.Proof.Dsa.X86_64.JointCallCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyMinusCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ReadyRangeCT
+import VerifiedGarbage.Proof.Dsa.X86_64.ZeroCT
+import VerifiedGarbage.Proof.MdStream.Spec
 
 /-! # Only the signing ABI's declared public observations determine its schedule -/
 
@@ -78,9 +86,9 @@ theorem signingPublicRelated {s₁ s₂ : State} (h₁ : SigningABI s₁) (h₂ 
   exact ⟨h₂.call, ⟨h₁.call, signingAgreement h₁ h₂ hdi hdx h8 h9 hsp a0 a1 a2 a3 hb, rfl⟩,
     ⟨h₂.call, ⟨rfl, rfl, rfl, rfl, rfl⟩, rfl⟩⟩
 
-theorem signingConstantTime (M : Mont) : ConstantTime isa (Spec.Dsa.signContract abi).pre
-    (Spec.Dsa.signContract abi).pub (SignVerify.sign M.mm) := by
+theorem signingConstantTime (M : Mont) (Sq : MontS) : ConstantTime isa (Spec.Dsa.signContract abi).pre
+    (Spec.Dsa.signContract abi).pub (SignVerify.sign Sq.mm M.mm) := by
   intro s₁ s₂ trace₁ trace₂ t₁ t₂ h₁ h₂ hp e₁ e₂
-  exact (signingMain_ct M _ _ _ _ _ _ (signingPublicRelated (signingABI_of h₁) (signingABI_of h₂) hp) e₁ e₂).1
+  exact (signingMain_ct M Sq _ _ _ _ _ _ (signingPublicRelated (signingABI_of h₁) (signingABI_of h₂) hp) e₁ e₂).1
 
 end VG.Proof.Dsa.X86_64

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Arm.StackScratch
 public import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # A scratch buffer on the stack, after stack arguments, wiped after use (ARMv7)
@@ -88,7 +89,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     fun s hs => by
       rw [pre_arm hl] at hs
       obtain ⟨⟨hst, -⟩, -⟩ := hs
-      omega
+      omega_using [hst]
   -- The buffer is below the stack the contract without it reserves, so apart
   -- from its buffers.
   have hdisj : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s →
@@ -100,10 +101,10 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     obtain ⟨-, -, -, -, hres, -, -⟩ := hs
     have hbelow : (⟨State.addr s.sp - BitVec.ofNat 64 (stack + bytes), stack + bytes⟩ : Region) ∈
         stackBelow (State.addr s.sp) (stack + bytes) := by
-      rw [show stack + bytes = (stack + bytes - 1) + 1 by omega]; simp [stackBelow]
-    rw [sa_sub (by omega) (by omega)]
+      rw [show stack + bytes = (stack + bytes - 1) + 1 by omega_using [hb1]]; simp [stackBelow]
+    rw [sa_sub (by omega_using [hb1]) (by omega_using [h0])]
     exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb'))).sub_right
-      (Offset.sub_below _ (by omega) (by omega))
+      (Offset.sub_below _ (by omega_using []) (by omega_using [hb1]))
   -- Every run is `setArgs`, then the code's run from `narrow`, then the wipe.
   have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → ∃ t s₃ s₄,
       Exec isa c (narrow sig e n bytes m s) t s₃ ∧
@@ -125,13 +126,13 @@ theorem Verified.stackScratchWiped {c : Prog isa}
     have hbuf : (⟨sa (s.sp - BitVec.ofNat 32 bytes) (4 * m + 8), n * e.size⟩ : Region) ∈ s₃.wr := by
       rw [hwr₃]
       simp [narrow, oldRegions, List.filter_append]
-    have hF : (s.sp - BitVec.ofNat 32 bytes).toNat = s.sp.toNat - bytes := sub_toNat' (by omega)
-    obtain ⟨m', hblk, hfr⟩ := wipeAt_run _ s₃ (4 * m + 8) words hbuf (by omega) (by omega)
+    have hF : (s.sp - BitVec.ofNat 32 bytes).toNat = s.sp.toNat - bytes := sub_toNat' (by omega_using [h0])
+    obtain ⟨m', hblk, hfr⟩ := wipeAt_run _ s₃ (4 * m + 8) words hbuf (by omega_using [hb5]) (by omega_using [hw, hb1, hb6])
       (fun k hk' => by
         have hlt := s.sp.isLt
         rw [hsp₃, BitVec.add_assoc, BitVec.ofNat_add_ofNat, sa,
-          addr_add (by rw [hF]; omega), addr_add (by rw [hF]; omega)]
-        exact Offset.contains _ (by omega) (by omega) (by omega))
+          addr_add (by rw [hF]; omega_using [hb1, h0]), addr_add (by rw [hF]; omega_using [hw, hb1, h0, hk'])]
+        exact Offset.contains _ (by omega_using []) (by omega_using [hw, hk']) (by omega_using [hb1, h0]))
     have he' := Exec.seq he (Exec.block hblk)
     have ha' : abiPreserved (narrow sig e n bytes m s)
         { (s₃.setReg .r12 (s₃.sp + BitVec.ofNat 32 (4 * m + 8))).setReg .r2 0 with mem := m' } := by

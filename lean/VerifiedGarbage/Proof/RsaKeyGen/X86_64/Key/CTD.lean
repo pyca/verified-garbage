@@ -6,6 +6,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # An RSA key from its primes on x86-64: constant time, `d`
@@ -64,7 +66,7 @@ theorem loadEvBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
     exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k₄⟩ => ?_
   have kk := (k₂.trans k₃).trans k₄
   obtain ⟨ht, f⟩ := h.arrSome (by decide) hm kk (by decide)
-  exact ⟨ht, f, kk.mono (by simp)⟩
+  exact ⟨ht, f, kk.mono (by decide)⟩
 
 theorem loadEv_ct {F : KIn → State → Prop} (hF : Stab F [.arr aE] allR) :
     RelCT isa (Two (KG F)) (seqs loadEv) (Two (KG F)) := by
@@ -81,7 +83,7 @@ theorem lGe2_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kOk] al
     RelCT isa (Two (KG F)) (seqs lGe2) (Two (KG F)) := by
   unfold lGe2
   simp only [List.append_assoc]
-  refine rs_app (by simp [constA]) (by simp [ltA]) (constA_ct 2 (hF.mono (by simp) (by simp)).sub (by taint_decide)
+  refine rs_app (by simp [constA]) (by simp [ltA]) (constA_ct 2 (hF.mono (by decide) (by simp)).sub (by taint_decide)
     (by taint_decide)) ?_
   refine rs_app (by simp [ltA]) (by simp) (ltA_ct (G := F) (by decide) (by decide)
     (fun I s t hZ hf hm k _ => hF I s t hZ hf (kf_eq hm) (k.mono (by decide))) (by taint_decide)) ?_
@@ -91,13 +93,13 @@ theorem lGe2_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kOk] al
       xrun [State.ea, hdr, h.ws.rdi, hdrOff, hst]
       exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ?_
     obtain ⟨ht, f⟩ := h.hdrSome (by unfold kOk sFn; omega) hm k (by decide)
-    exact ⟨ht, hF I s t h.hZ hf (f.mono (by simp)) (k.mono (by decide))⟩
+    exact ⟨ht, hF I s t h.hZ hf (f.mono (by decide)) (k.mono (by decide))⟩
 
 theorem gcdIsOne_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kOk] allR) :
     RelCT isa (Two (KG F)) (seqs gcdIsOne) (Two (KG F)) := by
   unfold gcdIsOne
   simp only [List.append_assoc]
-  refine rs_app (by simp [constA]) (by simp [eqMask, eqA]) (constA_ct 1 (hF.mono (by simp) (by simp)).sub
+  refine rs_app (by simp [constA]) (by simp [eqMask, eqA]) (constA_ct 1 (hF.mono (by decide) (by simp)).sub
     (by taint_decide) (by taint_decide)) ?_
   refine rs_app (by simp [eqMask, eqA]) (by simp) (eqMask_ct (G := F) (by decide) (by decide)
     (fun I s t hZ hf hm k _ => hF I s t hZ hf (kf_eq hm) (k.mono (by decide))) (by taint_decide)) ?_
@@ -108,7 +110,7 @@ theorem gcdIsOne_ct {F : KIn → State → Prop} (hF : Stab F [.arr aC, .hdr kOk
       xrun [State.ea, hdr, h.ws.rdi, hdrOff, hst, hld]
       exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ?_
     obtain ⟨ht, f⟩ := h.hdrSome (by unfold kOk sFn; omega) hm k (by decide)
-    exact ⟨ht, hF I s t h.hZ hf (f.mono (by simp)) (k.mono (by decide))⟩
+    exact ⟨ht, hF I s t h.hZ hf (f.mono (by decide)) (k.mono (by decide))⟩
 
 /-! ## `inverse` from `invFrom` -/
 
@@ -212,7 +214,7 @@ theorem dBlk2_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) :
       exact ⟨_, rfl⟩) rfl) fun t ⟨hm, k⟩ => ?_
   have kk := ((ku₁.trans ku₂).trans ku₃).trans k
   obtain ⟨ht, f⟩ := h.hdrSome (by unfold sMo sFn; omega) hm kk (by decide)
-  exact ⟨ht, f, kk.mono (by simp)⟩
+  exact ⟨ht, f, kk.mono (by decide)⟩
 
 /-- `dOdd`'s store of `c` into `[aDd]` and its base, `Q`'s, and `t`, after
 `ws`. -/
@@ -250,7 +252,7 @@ theorem dBlk3_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hz : Zero 
           hs₄.ld (d := 8 * sMo) (by have := h.ws.h256; unfold sMo sFn; omega)]) rfl) fun t ⟨⟨h9t, mt⟩, kt⟩ =>
       ⟨by rw [mt, mu₄, mu₃], ((ku₄.trans kt).gpr (by decide)).trans ((ku₃.gpr (by decide)).trans h8), h9t,
         (((ku₂.trans ku₃).trans ku₄).trans kt).gpr (by decide) |>.trans h12,
-        ((((ku₁.trans ku₂).trans ku₃).trans ku₄).trans kt).mono (by simp)⟩
+        ((((ku₁.trans ku₂).trans ku₃).trans ku₄).trans kt).mono (by decide)⟩
   have o₁ := writeW_outside s.mem I.B (s.gpr .r15) (d := slot I.W aDd) (by omega)
   rw [← m₁] at o₁
   have f₁ := KF.arr1 (I := I) (j := aDd) o₁ (Nat.le_refl _) (by omega)
@@ -280,7 +282,7 @@ theorem dBlk3_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hz : Zero 
   refine WP.mono (mulAddRow_ok h₁.ws.scr h8 h9 h12 (by omega) (by omega) (by omega) (by omega) (by omega) hbound)
     fun t ⟨_, o, kt⟩ => ?_
   have ft := KF.arr1 (I := I) (j := aDd) o (Nat.le_refl _) (Nat.le_refl _)
-  exact ⟨h₁.step ft (all_mut_arr (by decide)) kt (by decide), (f₁.trans ft).mono (by simp),
+  exact ⟨h₁.step ft (all_mut_arr (by decide)) kt (by decide), (f₁.trans ft).mono (by decide),
     (k₁.trans kt).mono (by decide)⟩
 
 theorem dOdd_eq2 : dOdd = loadEv ++ ([zeroA aQt, copyA aQt aL, divmod aQt aR aE aT] ++ ([zeroA aU, copyA aU aR] ++
@@ -362,7 +364,7 @@ theorem oBlk_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {c : Bool} (
       exact ⟨⟨_, rfl⟩, _, rfl⟩) rfl) fun t ⟨⟨hm, hbp⟩, k₂⟩ => ?_
   have kk := k₁.trans k₂
   obtain ⟨ht, f⟩ := h.hdrSome (by unfold kOk sFn; omega) hm kk (by decide)
-  exact ⟨ht, f, hbp, kk.mono (by simp)⟩
+  exact ⟨ht, f, hbp, kk.mono (by decide)⟩
 
 theorem dEven_eq2 : dEven = loadEv ++ ([zeroA aM, copyA aM aL] ++ (constA 0 ++ (eqMask aL aC ++
     (([.block [.mov .r15 (.reg .rbp)]] : List (Prog isa)) ++ (constA 1 ++ (([.block (ws ++ mBlk)] : List (Prog isa)) ++
@@ -403,13 +405,13 @@ theorem dEven_ct : RelCT isa (Two (KG NF)) (seqs dEven) (Two (KG NF)) := by
     (by taint_decide) (by taint_decide)) ?_
   refine rs_app (by simp [ltA]) (by simp) (ltA_ct (G := fun I t => (NF I t ∧ TopZ aU I t) ∧ RbpM I t)
     (by decide) (by decide) (fun I s t hZ hf hm k hbp => ⟨sT [] (by decide) (by decide) I s t hZ hf (kf_eq hm)
-      (k.mono (by simp)), _, hbp⟩) (by taint_decide)) ?_
+      (k.mono (by decide)), _, hbp⟩) (by taint_decide)) ?_
   refine rs_app (by simp) (by simp) (show RelCT isa _ (seqs [.block ([.mov .rcx (.reg .rbp),
     .alu .xor .rcx (.imm (BitVec.ofInt 32 (-1)))] ++ (ws ++ oBlk))]) _ from RelCT.block_append (RelCT.seq
       (kg_regs (G := fun I t => (NF I t ∧ TopZ aU I t) ∧ ∃ c, t.gpr .rcx = mask c) (rs := [.rcx]) (by decide)
         (by taint_decide) fun I s hZ ⟨hf, c, hbp⟩ => WP.mono (WP.keep [.rcx] (Q := fun t =>
           t.gpr .rcx = mask (!c) ∧ t.mem = s.mem) (by xrun [hbp, sxM1, maskNot]) rfl) fun t ⟨⟨hcx, hm⟩, k⟩ =>
-            ⟨hm, k, sT [] (by decide) (by decide) I s t hZ hf (kf_eq hm) (k.mono (by simp)), _, hcx⟩)
+            ⟨hm, k, sT [] (by decide) (by decide) I s t hZ hf (kf_eq hm) (k.mono (by decide)), _, hcx⟩)
       (kg_wsb (G := fun I t => (NF I t ∧ TopZ aU I t) ∧ RbpM I t) (by taint_decide) fun I _ s h _ ⟨hf, c, hcx⟩ =>
         WP.mono (oBlk_k h hcx) fun t ⟨ht, f, hbp, k⟩ =>
           ⟨ht, sT [.hdr kOk] (by decide) (by decide) I s t h.hZ hf f (k.mono (by decide)), hbp⟩))) ?_

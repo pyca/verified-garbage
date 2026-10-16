@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
 meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Whole
 public import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
 meta import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Lit
-public import VerifiedGarbage.Proof.Framework.X86.SseTaint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 meta import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Impl.MdStream.X86
+meta import VerifiedGarbage.Impl.MdStream.X86
 
 @[expose] public section
 

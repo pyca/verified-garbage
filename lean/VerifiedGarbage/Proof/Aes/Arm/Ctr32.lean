@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.Arm.Group
 meta import VerifiedGarbage.Proof.Aes.Arm.Group
-public import VerifiedGarbage.Spec.Gcm
+import VerifiedGarbage.Spec.Gcm
 meta import VerifiedGarbage.Spec.Gcm
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
@@ -16,6 +16,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Bytes
+meta import VerifiedGarbage.Proof.Framework.Arm.Bytes
 
 /-!
 # AES counter mode on ARMv7: the whole function
@@ -206,11 +208,11 @@ theorem sep_ctr_slot {b c : BitVec 32} (hd : Region.Disjoint ⟨State.addr c, 16
     Mem.Sep (State.addr c + BitVec.ofNat 64 x) (32 / 8) (slotA (State.addr b) k) (32 / 8) :=
   hd.sep (by
     simp only [Region.Contains]
-    rw [show State.addr c + BitVec.ofNat 64 x - State.addr c = BitVec.ofNat 64 x by bv_omega,
+    rw [show State.addr c + BitVec.ofNat 64 x - State.addr c = BitVec.ofNat 64 x by grind,
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
     omega_arith) (by
     simp only [Region.Contains, slotA]
-    rw [show State.addr b + BitVec.ofNat 64 (4 * k) - State.addr b = BitVec.ofNat 64 (4 * k) by bv_omega,
+    rw [show State.addr b + BitVec.ofNat 64 (4 * k) - State.addr b = BitVec.ofNat 64 (4 * k) by grind,
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
     omega_arith)
 
@@ -298,7 +300,7 @@ theorem ctrSetup_wp {s : State} {b c : BitVec 32} (hp : PSetup s b c) (hb : s.gp
     have sa0 : ∀ {k : Nat}, k < 512 → Mem.Sep (stackArgAddr s 0) (32 / 8) (slotA (State.addr b) k) (32 / 8) :=
       fun {k} hk => hp.args.sep (Region.contains_self _ _) (by
         simp only [Region.Contains, slotA]
-        rw [show State.addr b + BitVec.ofNat 64 (4 * k) - State.addr b = BitVec.ofNat 64 (4 * k) by bv_omega,
+        rw [show State.addr b + BitVec.ofNat 64 (4 * k) - State.addr b = BitVec.ofNat 64 (4 * k) by grind,
           BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
         omega_arith)
     have v₁₀ : s₉.mem.readW (stackArgAddr s 0) 32 = stackArg s 0 := by
@@ -323,14 +325,14 @@ variable {m : Mem} {b c : BitVec 32} {N : BitVec 32}
 theorem c_off (C : Addr) {x n : Nat} (h : x + n ≤ 16) :
     (⟨C, 16⟩ : Region).Contains (C + BitVec.ofNat 64 x) n := by
   simp only [Region.Contains]
-  rw [show C + BitVec.ofNat 64 x - C = BitVec.ofNat 64 x by bv_omega, BitVec.toNat_ofNat,
+  rw [show C + BitVec.ofNat 64 x - C = BitVec.ofNat 64 x by grind, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (by omega_arith)]
   omega_arith
 
 theorem s_off {B : Addr} {L : Nat} (hL : L < 2 ^ 64) {k : Nat} (h : 4 * k + 4 ≤ L) :
     (⟨B, L⟩ : Region).Contains (slotA B k) 4 := by
   simp only [Region.Contains, slotA]
-  rw [show B + BitVec.ofNat 64 (4 * k) - B = BitVec.ofNat 64 (4 * k) by bv_omega, BitVec.toNat_ofNat,
+  rw [show B + BitVec.ofNat 64 (4 * k) - B = BitVec.ofNat 64 (4 * k) by grind, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (by omega_arith)]
   omega_arith
 
@@ -499,7 +501,7 @@ theorem arg_in {s : State} (hsp : s.sp.toNat + 8 ≤ 2 ^ 32) (hr : argR s ∈ s.
   · simp [Region.Contains]
   · rw [argAddr_one s hsp]
     simp only [Region.Contains]
-    rw [show stackArgAddr s 0 + BitVec.ofNat 64 4 - stackArgAddr s 0 = BitVec.ofNat 64 4 by bv_omega]
+    rw [show stackArgAddr s 0 + BitVec.ofNat 64 4 - stackArgAddr s 0 = BitVec.ofNat 64 4 by grind]
     decide
 
 /-- The stack arguments are as on entry. -/
@@ -515,7 +517,7 @@ theorem stackArg_frame {s s' : State} {rs : List Region} (hf : Frame rs s.mem s'
     rw [show 4 * 1 = 4 from rfl, this]
     simp only [Region.Contains, stackArgAddr]
     rw [show State.addr (s.sp + BitVec.ofNat 32 (4 * 0)) + BitVec.ofNat 64 4 -
-      State.addr (s.sp + BitVec.ofNat 32 (4 * 0)) = BitVec.ofNat 64 4 by bv_omega]
+      State.addr (s.sp + BitVec.ofNat 32 (4 * 0)) = BitVec.ofNat 64 4 by grind]
     decide
 
 theorem shl4 (x : BitVec 32) : x <<< 4 = BitVec.ofNat 32 (16 * x.toNat) := by
@@ -731,7 +733,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     · exact hp.dDS
     · exact hp.dCD.symm
   refine WP.seq (WP.mono (Q := GDone s₀.mem s₁₃ b (dP s₀) n R w icb) ?_ fun s₁₄ gd => ?_)
-  · have e0 : ∀ x : BitVec 32, x - (0 : BitVec 32) = x := fun x => by bv_omega
+  · have e0 : ∀ x : BitVec 32, x - (0 : BitVec 32) = x := fun x => by grind
     refine WP.ite (stackArg s₀ 0 == 0) (by simp only [Arm.eval, z₁₃, n₁₂, e0]) (fun h0 => ?_)
       (fun h0 => ?_)
     · have hn0 : n = 0 := by

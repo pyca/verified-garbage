@@ -1,18 +1,21 @@
 module
 
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRestoreLoop
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductInit
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFinalLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedRestoreLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductInit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCallFrame
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedMiddle
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedFirstLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedLowLoop
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseTraversal
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.Traversal
 
 /-! ## From `PairedFinalReturn.lean` -/
 

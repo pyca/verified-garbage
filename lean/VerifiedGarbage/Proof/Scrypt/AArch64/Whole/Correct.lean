@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Steps
 public import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
-public import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Contract
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Pbkdf2.Generic
@@ -11,6 +11,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
 
 @[expose] public section
 

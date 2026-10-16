@@ -2,9 +2,9 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 public import VerifiedGarbage.Impl.Bignum.X86_64.AdxRect8
-public import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddInput
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddInput
 public import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-public import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
+import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

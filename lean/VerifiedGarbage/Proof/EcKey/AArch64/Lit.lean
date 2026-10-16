@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P256Literals
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -10,6 +10,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Impl.P256.VerifyDouble
+meta import VerifiedGarbage.Impl.P256.VerifyDouble
 
 /-!
 # P-256 public keys on AArch64: the code as a literal

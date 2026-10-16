@@ -1,17 +1,26 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
 meta import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
+import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
+meta import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # X25519 of the base point on AArch64: constant time and the contract
@@ -95,14 +104,14 @@ private theorem start_ct (base k out T : Addr) :
   exact (hc.wp (fun _ _ h => ⟨start_ok h.1, start_ok h.2⟩)).mono
     (fun _ _ h => h) (fun _ _ h => h.2)
 
-private theorem engine_ready {base k out T : Addr} {s : State} (hs : BasePrepared base k out T s) :
+private theorem engine_ready [VG.Proof.Ed25519.AArch64.Divstep.Sound] {base k out T : Addr} {s : State} (hs : BasePrepared base k out T s) :
     WP isa engine s (BaseReady base out) := by
   obtain ⟨⟨h1, h2, h3, h4, h5, h6⟩, ho⟩ := hs
   refine WP.mono (engine_ok h1 h2 h3 h4 h5 h6) fun t ⟨kt, _⟩ => ?_
   exact ⟨kt.scratch h1, ((powersKeep_outside kt).word
     (d := 48) (Or.inl (by decide)) (by decide)).trans ho⟩
 
-private theorem engine_ct' (base k out T : Addr) :
+private theorem engine_ct' [VG.Proof.Ed25519.AArch64.Divstep.Sound] (base k out T : Addr) :
     CT (fun x y => BasePrepared base k out T x ∧ BasePrepared base k out T y)
       engine (fun x y => BaseReady base out x ∧ BaseReady base out y) := by
   have hc := (engine_ct base k T).mono
@@ -139,7 +148,7 @@ private theorem finish_ct (base out : Addr) :
   · exact h.1.1.trans h.2.1.symm
   · exact h.1.2.trans h.2.2.symm
 
-theorem x25519Base_ct : ConstantTime isa baseLocal.pre baseLocal.pub x25519Base := by
+theorem x25519Base_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] : ConstantTime isa baseLocal.pre baseLocal.pub x25519Base := by
   intro x y tx ty x' y' hx hy ⟨hsp, ho, hk, hb, hsy⟩ ex ey
   have hc := CT.seq (start_ct (x.gpr .x2) (x.gpr .x1) (x.gpr .x0) (x.syms combSym))
     (CT.seq (engine_ct' (x.gpr .x2) (x.gpr .x1) (x.gpr .x0) (x.syms combSym))
@@ -147,7 +156,7 @@ theorem x25519Base_ct : ConstantTime isa baseLocal.pre baseLocal.pub x25519Base 
   exact (hc _ _ _ _ _ _ ⟨hsp, ⟨hx, rfl, rfl, rfl, rfl⟩, ⟨hy, ho.symm, hk.symm, hb.symm, hsy.symm⟩⟩
     ex ey).1
 
-theorem x25519Base_ok (s : State) (hs : baseLocal.pre s) :
+theorem x25519Base_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) (hs : baseLocal.pre s) :
     ∃ t s', Exec isa x25519Base s t s' ∧ abiPreserved s s' ∧ baseLocal.post s s' :=
   x25519Base_correct hs
 
@@ -202,7 +211,7 @@ theorem x25519Base_implies : baseLocal.Implies
     exact ⟨hsp, h0, h1, h2, hsy⟩
   sat := ⟨baseSatState, x25519Base_sat⟩
 
-theorem x25519Base_verified :
+theorem x25519Base_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
     Verified AArch64.target x25519Base (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts combConsts)) :=
   Verified.of_correct x25519Base_ok x25519Base_ct x25519Base_implies
 

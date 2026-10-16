@@ -7,6 +7,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Aes.SboxSpec
+import VerifiedGarbage.Proof.Framework.Arm.Contract
+import VerifiedGarbage.Proof.Framework.Arm.Linear
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
+import VerifiedGarbage.Impl.Aes.Arm.Alloc
 
 /-!
 # OFB and CFB as modes one block at a time on ARMv7
@@ -28,11 +34,11 @@ namespace VG.Proof.Modes.Arm
 open VG VG.Arm VG.Impl.Modes.Arm
 
 theorem ofb_ok (c : Core) : ModeOk c ofb :=
-  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
+  ⟨by rfl, by rfl, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
 theorem cfbEnc_ok (c : Core) : ModeOk c cfbEnc :=
-  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
+  ⟨by rfl, by rfl, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
 theorem cfbDec_ok (c : Core) : ModeOk c cfbDec :=
-  ⟨by decide, by decide, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
+  ⟨by rfl, by rfl, by decide, by show encodable (BitVec.ofNat 32 40) = true; decide⟩
 
 theorem runSeq_ofb (ciph : Spec.Cbc.Cipher) :
     ∀ (b : Blks) (xs : List (List Byte)),
@@ -106,14 +112,15 @@ def RwPre : Prop :=
 end
 
 theorem seqArm_pre_rw {c : Core} {S : CoreSpec c} {M : Mode} (hr : c.rounds = false) {len : Nat → Nat}
-    (hl : ∀ n, len n = n * c.ds M) {s : State} (h : RwPre c S len s) : (seqArm c S M).pre s := by
+    (hl : ∀ n, len n = n * c.ds M) {s : State} (h : RwPre c S len s)
+    (ht : TabsOk S.consts S.stack s := by exact tabsOk_nil _ _) : (seqArm c S M).pre s := by
   simp only [RwPre, hl] at h
   obtain ⟨e1, e2, e3, e4, e5⟩ := args_plain hr s
   show (seqArm c S M).pre s
   unfold seqArm; simp only [e1, e2, e3, e4, e5]
   obtain ⟨a1, a2, rd, wr, -, kd, ks, vd, vs, va, ds, da, sa, bk, -, bd, bs, -, fk, fv, fd, fs⟩ := h
   refine ⟨a1, a2, by simp [rd], by simp [wr], by simp [rd], by simp [wr], by simp [wr], kd, ks, vd, vs, ds,
-    bk, bd, bs, fk, fv, fd, fs, fun _ => by simp [wr], ?_, fun h => absurd h (by simp [hr])⟩
+    bk, bd, bs, fk, fv, fd, fs, fun _ => by simp [wr], ?_, fun h => absurd h (by simp [hr]), ht⟩
   intro r hr
   rw [wr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -147,14 +154,37 @@ def RwPreR : Prop :=
 end
 
 theorem seqArm_pre_rwR {c : Core} {S : CoreSpec c} {M : Mode} (hr : c.rounds = true) {len : Nat → Nat}
-    (hl : ∀ n, len n = n * c.ds M) {s : State} (h : RwPreR c S len s) : (seqArm c S M).pre s := by
+    (hl : ∀ n, len n = n * c.ds M) {s : State} (h : RwPreR c S len s)
+    (ht : TabsOk S.consts S.stack s := by exact tabsOk_nil _ _) : (seqArm c S M).pre s := by
   simp only [RwPreR, hl] at h
   obtain ⟨e1, e2, e3, e4, e5⟩ := args_rounds hr s
   show (seqArm c S M).pre s
   unfold seqArm; simp only [e1, e2, e3, e4, e5]
   obtain ⟨a1, a2, rd, wr, -, kd, ks, vd, vs, va, ds, da, sa, bk, -, bd, bs, -, fk, fv, fd, fs, rk⟩ := h
   refine ⟨a1, a2, by simp [rd], by simp [wr], by simp [rd], by simp [wr], by simp [wr], kd, ks, vd, vs, ds,
-    bk, bd, bs, fk, fv, fd, fs, fun _ => by simp [wr], ?_, fun _ => rk⟩
+    bk, bd, bs, fk, fv, fd, fs, fun _ => by simp [wr], ?_, fun _ => rk, ht⟩
+  intro r hr
+  rw [wr] at hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact va.symm
+  · exact da.symm
+  · exact sa.symm
+
+/-- `seqArm_pre_rwR` for a core that reads tables: the precondition holds of
+the state without their regions (`rd'`, among `s`'s), and `s` holds them. -/
+theorem seqArm_pre_rwR' {c : Core} {S : CoreSpec c} {M : Mode} (hr : c.rounds = true) {len : Nat → Nat}
+    (hl : ∀ n, len n = n * c.ds M) {s : State} {rd' : List Region} (h : RwPreR c S len (s.withRegions rd' s.wr))
+    (hrd : ∀ r ∈ rd', r ∈ s.rd) (ht : TabsOk S.consts S.stack s) : (seqArm c S M).pre s := by
+  simp only [RwPreR, hl, State.withRegions_gpr, State.withRegions_sp, State.withRegions_rd, State.withRegions_wr,
+    stackArg_withRegions, stackArgAddr_withRegions] at h
+  obtain ⟨e1, e2, e3, e4, e5⟩ := args_rounds hr s
+  show (seqArm c S M).pre s
+  unfold seqArm; simp only [e1, e2, e3, e4, e5]
+  obtain ⟨a1, a2, rd, wr, -, kd, ks, vd, vs, va, ds, da, sa, bk, -, bd, bs, -, fk, fv, fd, fs, rk⟩ := h
+  have mr : ∀ r ∈ rd', r ∈ s.rd ++ s.wr := fun r h => List.mem_append_left _ (hrd r h)
+  refine ⟨a1, a2, mr _ (by simp [rd]), by simp [wr], mr _ (by simp [rd]), by simp [wr], by simp [wr], kd, ks, vd,
+    vs, ds, bk, bd, bs, fk, fv, fd, fs, fun _ => by simp [wr], ?_, fun _ => rk, ht⟩
   intro r hr
   rw [wr] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

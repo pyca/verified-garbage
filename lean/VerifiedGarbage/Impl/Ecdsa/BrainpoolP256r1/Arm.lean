@@ -1,0 +1,20 @@
+module
+
+public import VerifiedGarbage.Impl.Ecdsa.Arm
+public import VerifiedGarbage.Spec.BrainpoolP256r1
+
+/-! # ECDSA over brainpoolP256r1 on 32-bit ARM: four-word field elements and scalars -/
+
+@[expose] public section
+
+namespace VG.Impl.Ecdsa.Arm
+
+open VG.Arm
+
+/-- brainpoolP256r1 as the code has it. -/
+def brainpoolp256r1 : Cfg := ⟨4, Spec.BrainpoolP256r1.curve, Spec.Weierstrass.Mont.brainpoolp256r1p, Spec.Weierstrass.Mont.brainpoolp256r1n⟩
+
+/-- `vg_ecdsa_brainpoolp256r1_sign`. -/
+def signBrainpoolP256r1 : Prog isa := brainpoolp256r1.sign
+
+end VG.Impl.Ecdsa.Arm

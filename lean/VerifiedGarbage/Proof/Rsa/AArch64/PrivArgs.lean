@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # `vg_rsa_private_checked` on AArch64: the arguments of the CRT
@@ -22,12 +24,12 @@ namespace VG.Proof.Rsa.AArch64
 open VG VG.AArch64 VG.Impl.Rsa.AArch64.PrivChecked
 
 /-- The registers a block writes, other than the callee-saved ones. -/
-macro "priv_cs_tac" : tactic => `(tactic| (
-  intro r hr _
-  revert hr
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false]
-  rintro (h | h | h | h | h | h | h | h | h | h | h) <;> subst h <;>
-    simp only [RegUpd.gpr_write, reduceCtorEq, ite_false]))
+macro "priv_cs_tac" : tactic => `(tactic| plain_simp_names (
+                   intro r hr _
+                   revert hr
+                   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false]
+                   rintro (h | h | h | h | h | h | h | h | h | h | h) <;> subst h <;>
+                     simp only [RegUpd.gpr_write, reduceCtorEq, ite_false]))
 
 /-- Six words stored in the slots. -/
 theorem six_ok (B : Addr) (_hB : B.toNat + 128 ≤ 2 ^ 64) (m : Mem) (a b c d e f : BitVec 64) :

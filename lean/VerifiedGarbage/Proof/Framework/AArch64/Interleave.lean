@@ -1,14 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
+public import VerifiedGarbage.Impl.AArch64Weave
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # AArch64: interleaving independent code
 
 Untrusted: everything here is checked by Lean. Each instruction of a class
-(the scalar arithmetic, loads and stores at `[x3, #off]`, and the AdvSIMD
+(the scalar arithmetic, loads and stores at `[xb, #off]` for a base register
+`xb`, and the AdvSIMD
 arithmetic, permutations and multiplications) has a *footprint*: the
-registers, vector registers and bytes (at offsets from `x3`) it may read and
+registers, vector registers and bytes (at offsets from `xb`) it may read and
 write, and whether it reads or writes the flags (NZCV). Two instructions whose
 footprints are independent (neither writes what the other reads or writes)
 commute (`exec_comm`), so any interleaving of two blocks whose footprints are
@@ -23,6 +26,8 @@ namespace VG.AArch64.Interleave
 
 open VG
 
+variable {xb : Reg}
+
 /-- Bit `r` of a register mask. -/
 def gbit (r : Reg) : Nat := 2 ^ r.ctorIdx
 /-- Bit `r` of a vector register mask. -/
@@ -31,7 +36,7 @@ def vbit (r : VReg) : Nat := 2 ^ r.ctorIdx
 def range (off n : Nat) : Nat := (2 ^ n - 1) * 2 ^ off
 
 /-- What an instruction may read and write: registers and vector registers
-by `ctorIdx`, memory by byte offset from `x3`. -/
+by `ctorIdx`, memory by byte offset from the base register. -/
 structure Fp where
   gr : Nat
   gw : Nat
@@ -49,13 +54,13 @@ def Fp.union (a b : Fp) : Fp :=
   ⟨a.gr ||| b.gr, a.gw ||| b.gw, a.vr ||| b.vr, a.vw ||| b.vw, a.cr || b.cr, a.cw || b.cw,
     a.mr ||| b.mr, a.mw ||| b.mw⟩
 
-/-- Neither writes what the other reads or writes, and neither writes `x3`. -/
-def Fp.indep (a b : Fp) : Bool :=
+/-- Neither writes what the other reads or writes, and neither writes the base `xb`. -/
+def Fp.indep (xb : Reg) (a b : Fp) : Bool :=
   (a.gw &&& (b.gr ||| b.gw)) == 0 && (b.gw &&& a.gr) == 0 &&
   (a.vw &&& (b.vr ||| b.vw)) == 0 && (b.vw &&& a.vr) == 0 &&
   !(a.cw && (b.cr || b.cw)) && !(b.cw && a.cr) &&
   (a.mw &&& (b.mr ||| b.mw)) == 0 && (b.mw &&& a.mr) == 0 &&
-  !(a.gw.testBit Reg.x3.ctorIdx) && !(b.gw.testBit Reg.x3.ctorIdx) &&
+  !(a.gw.testBit xb.ctorIdx) && !(b.gw.testBit xb.ctorIdx) &&
   a.mr >>> 65536 == 0 && a.mw >>> 65536 == 0 && b.mr >>> 65536 == 0 && b.mw >>> 65536 == 0
 
 def regFp (r w : Nat) : Fp := ⟨r, w, 0, 0, false, false, 0, 0⟩
@@ -66,67 +71,67 @@ def VOp.fp : VOp → Option Fp
   | .movi0 d => some (vecFp 0 (vbit d))
   | .dup _ d n => some ⟨gbit n, 0, 0, vbit d, false, false, 0, 0⟩
   | .logic _ d n m | .add _ d n m | .sub _ d n m | .ext d n m _ | .perm _ _ d n m
-  | .umull _ d n m => some (vecFp (vbit n ||| vbit m) (vbit d))
+  | .umull _ d n m | .mul d n m => some (vecFp (vbit n ||| vbit m) (vbit d))
   | .shift _ _ d n _ => some (vecFp (vbit d ||| vbit n) (vbit d))
   | .umlal _ d n m => some (vecFp (vbit d ||| vbit n ||| vbit m) (vbit d))
   | _ => none
 
-/-- The footprint of an instruction of the class, `none` for any other. -/
-def fp : Instr → Option Fp
+/-- The footprint of an instruction of the class (memory at `[xb, #off]`), `none` for any other. -/
+def fp (xb : Reg) : Instr → Option Fp
   | .add _ d n m | .sub _ d n m | .logic _ _ d n m | .extr _ d n m _ | .mul _ d n m
   | .umulh d n m => some (regFp (gbit n ||| gbit m) (gbit d))
   | .adds _ d n m | .subs _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, false, true, 0, 0⟩
   | .adcs _ d n m | .sbcs _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, true, true, 0, 0⟩
-  | .adc _ d n m | .sbc _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, true, false, 0, 0⟩
+  | .adc _ d n m | .sbc _ d n m | .csel _ d n m => some ⟨gbit n ||| gbit m, gbit d, 0, 0, true, false, 0, 0⟩
   | .addImm _ d n _ | .subImm _ d n _ | .lsr _ d n _ | .lsl _ d n _ =>
     some (regFp (gbit n) (gbit d))
   | .madd _ d n m a => some (regFp (gbit n ||| gbit m ||| gbit a) (gbit d))
   | .movz _ d _ _ => some (regFp 0 (gbit d))
   | .movk _ d _ _ => some (regFp (gbit d) (gbit d))
   | .ldr sz t n off =>
-    if n = .x3 then some ⟨gbit .x3, gbit t, 0, 0, false, false, range off sz.bytes, 0⟩ else none
+    if n = xb then some ⟨gbit xb, gbit t, 0, 0, false, false, range off sz.bytes, 0⟩ else none
   | .str sz t n off =>
-    if n = .x3 then some ⟨gbit .x3 ||| gbit t, 0, 0, 0, false, false, 0, range off sz.bytes⟩ else none
+    if n = xb then some ⟨gbit xb ||| gbit t, 0, 0, 0, false, false, 0, range off sz.bytes⟩ else none
   | .ldrq t n off =>
-    if n = .x3 then some ⟨gbit .x3, 0, 0, vbit t, false, false, range off 16, 0⟩ else none
+    if n = xb then some ⟨gbit xb, 0, 0, vbit t, false, false, range off 16, 0⟩ else none
   | .strq t n off =>
-    if n = .x3 then some ⟨gbit .x3, 0, vbit t, 0, false, false, 0, range off 16⟩ else none
+    if n = xb then some ⟨gbit xb, 0, vbit t, 0, false, false, 0, range off 16⟩ else none
   | .vop op => VOp.fp op
   | _ => none
 
 /-- The union of the footprints of a block, `none` if one is outside the class. -/
-def blockFp : List Instr → Option Fp
+def blockFp (xb : Reg) : List Instr → Option Fp
   | [] => some .empty
-  | i :: is => (fp i).bind fun a => (blockFp is).map fun b => a.union b
+  | i :: is => (fp xb i).bind fun a => (blockFp xb is).map fun b => a.union b
 
 /-! ## What a footprint promises -/
 
 /-- The condition flags. -/
 abbrev _root_.VG.AArch64.State.flags (s : State) : Bool × Bool × Bool × Bool := (s.nf, s.zf, s.c, s.vf)
 
-/-- `s` and `t` agree on what `F` reads (and on `x3` and the regions). -/
-structure Reads (F : Fp) (s t : State) : Prop where
+/-- `s` and `t` agree on what `F` reads (and on the base `xb` and the regions). -/
+structure Reads (xb : Reg) (F : Fp) (s t : State) : Prop where
   gpr : ∀ r : Reg, F.gr.testBit r.ctorIdx → s.gpr r = t.gpr r
   v : ∀ r : VReg, F.vr.testBit r.ctorIdx → s.v r = t.v r
   c : F.cr → s.flags = t.flags
-  x3 : s.gpr .x3 = t.gpr .x3
-  mem : ∀ o, F.mr.testBit o → s.mem (s.gpr .x3 + BitVec.ofNat 64 o) = t.mem (s.gpr .x3 + BitVec.ofNat 64 o)
+  base : s.gpr xb = t.gpr xb
+  mem : ∀ o, F.mr.testBit o → s.mem (s.gpr xb + BitVec.ofNat 64 o) = t.mem (s.gpr xb + BitVec.ofNat 64 o)
   rd : s.rd = t.rd
   wr : s.wr = t.wr
 
 /-- `s'` and `t'` agree on what `F` writes. -/
-structure Writes (F : Fp) (s' t' : State) : Prop where
+structure Writes (xb : Reg) (F : Fp) (s' t' : State) : Prop where
   gpr : ∀ r : Reg, F.gw.testBit r.ctorIdx → s'.gpr r = t'.gpr r
   v : ∀ r : VReg, F.vw.testBit r.ctorIdx → s'.v r = t'.v r
   c : F.cw → s'.flags = t'.flags
-  mem : ∀ o, F.mw.testBit o → s'.mem (s'.gpr .x3 + BitVec.ofNat 64 o) = t'.mem (s'.gpr .x3 + BitVec.ofNat 64 o)
+  mem : ∀ o, F.mw.testBit o → s'.mem (s'.gpr xb + BitVec.ofNat 64 o) = t'.mem (s'.gpr xb + BitVec.ofNat 64 o)
 
 /-- `s'` is `s` but for what `F` writes. -/
-structure Frame (F : Fp) (s s' : State) : Prop where
+structure Frame (xb : Reg) (F : Fp) (s s' : State) : Prop where
   gpr : ∀ r : Reg, F.gw.testBit r.ctorIdx = false → s'.gpr r = s.gpr r
   v : ∀ r : VReg, F.vw.testBit r.ctorIdx = false → s'.v r = s.v r
   c : F.cw = false → s'.flags = s.flags
-  mem : ∀ x, (∀ o, F.mw.testBit o → x ≠ s.gpr .x3 + BitVec.ofNat 64 o) → s'.mem x = s.mem x
+  mem : ∀ x, (∀ o, F.mw.testBit o → x ≠ s.gpr xb + BitVec.ofNat 64 o) → s'.mem x = s.mem x
   sp : s'.sp = s.sp
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
@@ -202,7 +207,7 @@ theorem write_at (m : Mem) (a : Addr) (n : Nat) (v : BitVec (8 * n)) {k : Nat} (
 /-! ## Frames of the instructions' effects -/
 
 theorem Frame.write {F : Fp} {s : State} (sz : Size) (d : Reg) (v : BitVec sz.bits)
-    (hd : F.gw.testBit d.ctorIdx = true) : Frame F s (s.write sz d v) where
+    (hd : F.gw.testBit d.ctorIdx = true) : Frame xb F s (s.write sz d v) where
   gpr r hr := by
     have : r ≠ d := fun e => by rw [e, hd] at hr; exact Bool.noConfusion hr
     simp only [State.write, this, ite_false]
@@ -216,8 +221,8 @@ theorem Frame.write {F : Fp} {s : State} (sz : Size) (d : Reg) (v : BitVec sz.bi
   syms := rfl
 
 theorem Frame.awc {F : Fp} {s : State} (sz : Size) (d : Reg) (a b : BitVec sz.bits) (c : Bool)
-    (hd : F.gw.testBit d.ctorIdx = true) (hc : F.cw = true) : Frame F s (s.addWithCarry sz d a b c) where
-  gpr r hr := (Frame.write (s := s) sz d (a + b + BitVec.ofNat sz.bits c.toNat) hd).gpr r hr
+    (hd : F.gw.testBit d.ctorIdx = true) (hc : F.cw = true) : Frame xb F s (s.addWithCarry sz d a b c) where
+  gpr r hr := (Frame.write (xb := xb) (s := s) sz d (a + b + BitVec.ofNat sz.bits c.toNat) hd).gpr r hr
   v _ _ := rfl
   c h := by rw [hc] at h; exact Bool.noConfusion h
   mem _ _ := rfl
@@ -228,7 +233,7 @@ theorem Frame.awc {F : Fp} {s : State} (sz : Size) (d : Reg) (a b : BitVec sz.bi
   syms := rfl
 
 theorem Frame.setV {F : Fp} {s : State} (d : VReg) (x : BitVec 128)
-    (hd : F.vw.testBit d.ctorIdx = true) : Frame F s (s.setV d x) where
+    (hd : F.vw.testBit d.ctorIdx = true) : Frame xb F s (s.setV d x) where
   gpr _ _ := rfl
   v r hr := by
     have : r ≠ d := fun e => by rw [e, hd] at hr; exact Bool.noConfusion hr
@@ -243,7 +248,7 @@ theorem Frame.setV {F : Fp} {s : State} (d : VReg) (x : BitVec 128)
 
 theorem Frame.store {F : Fp} {s s' : State} {off n : Nat} {v : BitVec (8 * n)}
     (hm : ∀ o, off ≤ o → o < off + n → F.mw.testBit o = true)
-    (h : s.store (s.gpr .x3 + BitVec.ofNat 64 off) n v = some s') : Frame F s s' := by
+    (h : s.store (s.gpr xb + BitVec.ofNat 64 off) n v = some s') : Frame xb F s s' := by
   simp only [State.store] at h
   split at h
   · cases h
@@ -262,7 +267,7 @@ theorem testBit_union_right {a b i : Nat} (h : b.testBit i = true) : (a ||| b).t
   simp [Nat.testBit_or, h]
 
 theorem VOp.frame {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s s' : State}
-    (he : (op.eval s).map (fun (p : VReg × BitVec 128) => s.setV p.1 p.2) = some s') : Frame F s s' := by
+    (he : (op.eval s).map (fun (p : VReg × BitVec 128) => s.setV p.1 p.2) = some s') : Frame xb F s s' := by
   cases op <;> simp only [VOp.fp, reduceCtorEq] at hf <;> cases hf <;>
     simp only [VOp.eval, Option.map_some, Option.some.injEq] at he
   all_goals first
@@ -274,8 +279,8 @@ theorem VOp.frame {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s s' : State}
     | (rename_i a _ _; cases a <;> simp only [Option.map_some, Option.some.injEq] at he <;> subst he <;>
         exact Frame.setV _ _ (by simp))
 
-theorem frame {i : Instr} {F : Fp} (hf : fp i = some F) {s s' : State} (he : exec i s = some s') :
-    Frame F s s' := by
+theorem frame {i : Instr} {F : Fp} (hf : fp xb i = some F) {s s' : State} (he : exec i s = some s') :
+    Frame xb F s s' := by
   cases i <;> simp only [fp, reduceCtorEq] at hf
   case vop op => exact VOp.frame hf he
   all_goals first
@@ -305,18 +310,18 @@ theorem frame {i : Instr} {F : Fp} (hf : fp i = some F) {s s' : State} (he : exe
 
 /-! ## Reads determine writes -/
 
-theorem Reads.symm {F : Fp} {s t : State} (h : Reads F s t) : Reads F t s where
+theorem Reads.symm {F : Fp} {s t : State} (h : Reads xb F s t) : Reads xb F t s where
   gpr r hr := (h.gpr r hr).symm
   v r hr := (h.v r hr).symm
   c hc := (h.c hc).symm
-  x3 := h.x3.symm
-  mem o ho := by rw [← h.x3]; exact (h.mem o ho).symm
+  base := h.base.symm
+  mem o ho := by rw [← h.base]; exact (h.mem o ho).symm
   rd := h.rd.symm
   wr := h.wr.symm
 
 theorem Writes.write {F : Fp} {s t : State} (sz : Size) (d : Reg) (v : BitVec sz.bits)
     (hF : ∀ r : Reg, F.gw.testBit r.ctorIdx → r = d) (hv : F.vw = 0) (hc : F.cw = false) (hm : F.mw = 0) :
-    Writes F (s.write sz d v) (t.write sz d v) where
+    Writes xb F (s.write sz d v) (t.write sz d v) where
   gpr r hr := by rw [hF r hr]; simp only [State.write, ite_true]
   v r hr := by rw [hv] at hr; simp at hr
   c h := by rw [hc] at h; exact Bool.noConfusion h
@@ -325,7 +330,7 @@ theorem Writes.write {F : Fp} {s t : State} (sz : Size) (d : Reg) (v : BitVec sz
 
 theorem Writes.setV {F : Fp} {s t : State} (d : VReg) (x : BitVec 128)
     (hF : ∀ r : VReg, F.vw.testBit r.ctorIdx → r = d) (hg : F.gw = 0) (hc : F.cw = false) (hm : F.mw = 0) :
-    Writes F (s.setV d x) (t.setV d x) where
+    Writes xb F (s.setV d x) (t.setV d x) where
   gpr r hr := by rw [hg] at hr; simp at hr
   v r hr := by rw [hF r hr]; simp only [State.setV, ite_true]
   c h := by rw [hc] at h; exact Bool.noConfusion h
@@ -333,36 +338,36 @@ theorem Writes.setV {F : Fp} {s t : State} (d : VReg) (x : BitVec 128)
 
 theorem Writes.awc {F : Fp} {s t : State} (sz : Size) (d : Reg) (a b : BitVec sz.bits) (c : Bool)
     (hF : ∀ r : Reg, F.gw.testBit r.ctorIdx → r = d) (hv : F.vw = 0) (hm : F.mw = 0) :
-    Writes F (s.addWithCarry sz d a b c) (t.addWithCarry sz d a b c) where
+    Writes xb F (s.addWithCarry sz d a b c) (t.addWithCarry sz d a b c) where
   gpr r hr := by rw [hF r hr]; simp only [State.addWithCarry, State.write, ite_true]
   v r hr := by rw [hv] at hr; simp at hr
   c _ := rfl
   mem o ho := by rw [hm] at ho; simp at ho
 
 /-- What two runs of a footprint's instruction from states that agree on its reads share. -/
-def Det (i : Instr) (F : Fp) : Prop :=
-  ∀ s t, Reads F s t → ∀ s', exec i s = some s' → ∃ t', exec i t = some t' ∧ Writes F s' t'
+def Det (xb : Reg) (i : Instr) (F : Fp) : Prop :=
+  ∀ s t, Reads xb F s t → ∀ s', exec i s = some s' → ∃ t', exec i t = some t' ∧ Writes xb F s' t'
 
 theorem only_gbit {d r : Reg} (h : (gbit d).testBit r.ctorIdx = true) : r = d := by simpa using h
 
 theorem only_vbit {d r : VReg} (h : (vbit d).testBit r.ctorIdx = true) : r = d := by simpa using h
 
 
-theorem load_congr {F : Fp} {s t : State} (h : Reads F s t) {off n : Nat}
+theorem load_congr {F : Fp} {s t : State} (h : Reads xb F s t) {off n : Nat}
     (hr : ∀ o, off ≤ o → o < off + n → F.mr.testBit o = true) :
-    s.load (s.gpr .x3 + BitVec.ofNat 64 off) n = t.load (t.gpr .x3 + BitVec.ofNat 64 off) n := by
-  simp only [State.load, ← h.x3, ← h.rd, ← h.wr]
+    s.load (s.gpr xb + BitVec.ofNat 64 off) n = t.load (t.gpr xb + BitVec.ofNat 64 off) n := by
+  simp only [State.load, ← h.base, ← h.rd, ← h.wr]
   rw [read_congr (m' := t.mem) fun k hk => by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]
     exact h.mem _ (hr _ (by omega) (by omega))]
 
-theorem store_det {F : Fp} {s t : State} (h : Reads F s t) {off n : Nat} (v : BitVec (8 * n))
+theorem store_det {F : Fp} {s t : State} (h : Reads xb F s t) {off n : Nat} (v : BitVec (8 * n))
     (hn : n ≤ 16) (hw : ∀ o, F.mw.testBit o = true → off ≤ o ∧ o < off + n)
     (hg : F.gw = 0) (hv : F.vw = 0) (hc : F.cw = false) (s' : State)
-    (he : s.store (s.gpr .x3 + BitVec.ofNat 64 off) n v = some s') :
-    ∃ t', t.store (t.gpr .x3 + BitVec.ofNat 64 off) n v = some t' ∧ Writes F s' t' := by
+    (he : s.store (s.gpr xb + BitVec.ofNat 64 off) n v = some s') :
+    ∃ t', t.store (t.gpr xb + BitVec.ofNat 64 off) n v = some t' ∧ Writes xb F s' t' := by
   simp only [State.store] at he ⊢
-  rw [← h.x3, ← h.wr]
+  rw [← h.base, ← h.wr]
   split at he
   · cases he
     rename_i hin
@@ -371,14 +376,14 @@ theorem store_det {F : Fp} {s t : State} (h : Reads F s t) {off n : Nat} (v : Bi
       fun c => by rw [hc] at c; exact Bool.noConfusion c, fun o ho => ?_⟩
     · obtain ⟨h1, h2⟩ := hw o ho
       simp only
-      rw [show s.gpr .x3 + BitVec.ofNat 64 o = (s.gpr .x3 + BitVec.ofNat 64 off) + BitVec.ofNat 64 (o - off) by
+      rw [show s.gpr xb + BitVec.ofNat 64 o = (s.gpr xb + BitVec.ofNat 64 off) + BitVec.ofNat 64 (o - off) by
         rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_cancel' h1]]
       rw [write_at _ _ _ _ (by omega) (by omega), write_at _ _ _ _ (by omega) (by omega)]
   · cases he
 
 
 
-theorem VOp.det {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s t : State} (h : Reads F s t) :
+theorem VOp.det {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s t : State} (h : Reads xb F s t) :
     VOp.eval s op = VOp.eval t op := by
   have hv := h.v
   have hg := h.gpr
@@ -404,8 +409,8 @@ theorem VOp.dst_eq {op : VOp} {F : Fp} (hf : VOp.fp op = some F) {s : State} {d 
        · simp only [Option.some.injEq, Prod.mk.injEq] at he; obtain ⟨rfl, -⟩ := he; simpa [vecFp] using hr
        · cases he)
 
-theorem det_add {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.add sz d n m) = some F) :
-    Det (.add sz d n m) F := by
+theorem det_add {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.add sz d n m) = some F) :
+    Det xb (.add sz d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -415,8 +420,8 @@ theorem det_add {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.ad
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
 
-theorem det_sub {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.sub sz d n m) = some F) :
-    Det (.sub sz d n m) F := by
+theorem det_sub {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.sub sz d n m) = some F) :
+    Det xb (.sub sz d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -426,8 +431,8 @@ theorem det_sub {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.su
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
 
-theorem det_mul {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.mul sz d n m) = some F) :
-    Det (.mul sz d n m) F := by
+theorem det_mul {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.mul sz d n m) = some F) :
+    Det xb (.mul sz d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -437,8 +442,8 @@ theorem det_mul {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.mu
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
 
-theorem det_umulh {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.umulh d n m) = some F) :
-    Det (.umulh d n m) F := by
+theorem det_umulh {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.umulh d n m) = some F) :
+    Det xb (.umulh d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -448,8 +453,8 @@ theorem det_umulh {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.umulh d n m)
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
 
-theorem det_madd {sz : Size} {d : Reg} {n : Reg} {m : Reg} {a : Reg} {F : Fp} (hf : fp (.madd sz d n m a) = some F) :
-    Det (.madd sz d n m a) F := by
+theorem det_madd {sz : Size} {d : Reg} {n : Reg} {m : Reg} {a : Reg} {F : Fp} (hf : fp xb (.madd sz d n m a) = some F) :
+    Det xb (.madd sz d n m a) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -459,8 +464,8 @@ theorem det_madd {sz : Size} {d : Reg} {n : Reg} {m : Reg} {a : Reg} {F : Fp} (h
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
 
-theorem det_logic {op : LogicOp} {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.logic op sz d n m) = some F) :
-    Det (.logic op sz d n m) F := by
+theorem det_logic {op : LogicOp} {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.logic op sz d n m) = some F) :
+    Det xb (.logic op sz d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -470,8 +475,8 @@ theorem det_logic {op : LogicOp} {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : 
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
 
-theorem det_adc {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.adc sz d n m) = some F) :
-    Det (.adc sz d n m) F := by
+theorem det_adc {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.adc sz d n m) = some F) :
+    Det xb (.adc sz d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   have hc : s.c = t.c := by
@@ -484,8 +489,8 @@ theorem det_adc {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.ad
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
 
-theorem det_sbc {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.sbc sz d n m) = some F) :
-    Det (.sbc sz d n m) F := by
+theorem det_csel {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.csel sz d n m) = some F) :
+    Det xb (.csel sz d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   have hc : s.c = t.c := by
@@ -498,8 +503,22 @@ theorem det_sbc {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.sb
   refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
   rfl
 
-theorem det_adds {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.adds sz d n m) = some F) :
-    Det (.adds sz d n m) F := by
+theorem det_sbc {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.sbc sz d n m) = some F) :
+    Det xb (.sbc sz d n m) F := by
+  intro s t h s' he
+  have hg := h.gpr
+  have hc : s.c = t.c := by
+    have := h.c (by simp only [fp, Option.some.injEq] at hf; subst hf; rfl)
+    simp only [State.flags, Prod.mk.injEq] at this; exact this.2.2.1
+  simp only [fp, Option.some.injEq] at hf
+  subst hf
+  simp (disch := simp [regFp, Nat.testBit_or]) only [exec, State.read, hg, hc, Option.some.injEq] at he
+  subst he
+  refine ⟨_, ?_, Writes.write (t := t) _ _ _ (fun r hr => only_gbit hr) rfl rfl rfl⟩
+  rfl
+
+theorem det_adds {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.adds sz d n m) = some F) :
+    Det xb (.adds sz d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -509,8 +528,8 @@ theorem det_adds {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.a
   refine ⟨_, ?_, Writes.awc (t := t) _ _ _ _ _ (fun r hr => only_gbit hr) rfl rfl⟩
   rfl
 
-theorem det_subs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.subs sz d n m) = some F) :
-    Det (.subs sz d n m) F := by
+theorem det_subs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.subs sz d n m) = some F) :
+    Det xb (.subs sz d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -520,8 +539,8 @@ theorem det_subs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.s
   refine ⟨_, ?_, Writes.awc (t := t) _ _ _ _ _ (fun r hr => only_gbit hr) rfl rfl⟩
   rfl
 
-theorem det_adcs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.adcs sz d n m) = some F) :
-    Det (.adcs sz d n m) F := by
+theorem det_adcs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.adcs sz d n m) = some F) :
+    Det xb (.adcs sz d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   have hc : s.c = t.c := by
@@ -534,8 +553,8 @@ theorem det_adcs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.a
   refine ⟨_, ?_, Writes.awc (t := t) _ _ _ _ _ (fun r hr => only_gbit hr) rfl rfl⟩
   rfl
 
-theorem det_sbcs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.sbcs sz d n m) = some F) :
-    Det (.sbcs sz d n m) F := by
+theorem det_sbcs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp xb (.sbcs sz d n m) = some F) :
+    Det xb (.sbcs sz d n m) F := by
   intro s t h s' he
   have hg := h.gpr
   have hc : s.c = t.c := by
@@ -548,8 +567,8 @@ theorem det_sbcs {sz : Size} {d : Reg} {n : Reg} {m : Reg} {F : Fp} (hf : fp (.s
   refine ⟨_, ?_, Writes.awc (t := t) _ _ _ _ _ (fun r hr => only_gbit hr) rfl rfl⟩
   rfl
 
-theorem det_addImm {sz : Size} {d : Reg} {n : Reg} {imm : Nat} {F : Fp} (hf : fp (.addImm sz d n imm) = some F) :
-    Det (.addImm sz d n imm) F := by
+theorem det_addImm {sz : Size} {d : Reg} {n : Reg} {imm : Nat} {F : Fp} (hf : fp xb (.addImm sz d n imm) = some F) :
+    Det xb (.addImm sz d n imm) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -563,8 +582,8 @@ theorem det_addImm {sz : Size} {d : Reg} {n : Reg} {imm : Nat} {F : Fp} (hf : fp
     simp only [exec, State.read, hcond, ite_true]
   · cases he
 
-theorem det_subImm {sz : Size} {d : Reg} {n : Reg} {imm : Nat} {F : Fp} (hf : fp (.subImm sz d n imm) = some F) :
-    Det (.subImm sz d n imm) F := by
+theorem det_subImm {sz : Size} {d : Reg} {n : Reg} {imm : Nat} {F : Fp} (hf : fp xb (.subImm sz d n imm) = some F) :
+    Det xb (.subImm sz d n imm) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -578,8 +597,8 @@ theorem det_subImm {sz : Size} {d : Reg} {n : Reg} {imm : Nat} {F : Fp} (hf : fp
     simp only [exec, State.read, hcond, ite_true]
   · cases he
 
-theorem det_lsr {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp (.lsr sz d n sh) = some F) :
-    Det (.lsr sz d n sh) F := by
+theorem det_lsr {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp xb (.lsr sz d n sh) = some F) :
+    Det xb (.lsr sz d n sh) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -593,8 +612,8 @@ theorem det_lsr {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp (.l
     simp only [exec, State.read, hcond, ite_true]
   · cases he
 
-theorem det_lsl {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp (.lsl sz d n sh) = some F) :
-    Det (.lsl sz d n sh) F := by
+theorem det_lsl {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp xb (.lsl sz d n sh) = some F) :
+    Det xb (.lsl sz d n sh) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -608,8 +627,8 @@ theorem det_lsl {sz : Size} {d : Reg} {n : Reg} {sh : Nat} {F : Fp} (hf : fp (.l
     simp only [exec, State.read, hcond, ite_true]
   · cases he
 
-theorem det_extr {sz : Size} {d : Reg} {n : Reg} {m : Reg} {lsb : Nat} {F : Fp} (hf : fp (.extr sz d n m lsb) = some F) :
-    Det (.extr sz d n m lsb) F := by
+theorem det_extr {sz : Size} {d : Reg} {n : Reg} {m : Reg} {lsb : Nat} {F : Fp} (hf : fp xb (.extr sz d n m lsb) = some F) :
+    Det xb (.extr sz d n m lsb) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -623,8 +642,8 @@ theorem det_extr {sz : Size} {d : Reg} {n : Reg} {m : Reg} {lsb : Nat} {F : Fp} 
     simp only [exec, State.read, hcond, ite_true]
   · cases he
 
-theorem det_movz {sz : Size} {d : Reg} {imm : BitVec 16} {hw : Nat} {F : Fp} (hf : fp (.movz sz d imm hw) = some F) :
-    Det (.movz sz d imm hw) F := by
+theorem det_movz {sz : Size} {d : Reg} {imm : BitVec 16} {hw : Nat} {F : Fp} (hf : fp xb (.movz sz d imm hw) = some F) :
+    Det xb (.movz sz d imm hw) F := by
   intro s t h s' he
   simp only [fp, Option.some.injEq] at hf
   subst hf
@@ -637,8 +656,8 @@ theorem det_movz {sz : Size} {d : Reg} {imm : BitVec 16} {hw : Nat} {F : Fp} (hf
     simp only [exec, hcond, ite_true]
   · cases he
 
-theorem det_movk {sz : Size} {d : Reg} {imm : BitVec 16} {hw : Nat} {F : Fp} (hf : fp (.movk sz d imm hw) = some F) :
-    Det (.movk sz d imm hw) F := by
+theorem det_movk {sz : Size} {d : Reg} {imm : BitVec 16} {hw : Nat} {F : Fp} (hf : fp xb (.movk sz d imm hw) = some F) :
+    Det xb (.movk sz d imm hw) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp, Option.some.injEq] at hf
@@ -652,8 +671,8 @@ theorem det_movk {sz : Size} {d : Reg} {imm : BitVec 16} {hw : Nat} {F : Fp} (hf
     simp only [exec, State.read, hcond, ite_true]
   · cases he
 
-theorem det_str {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp (.str sz r n off) = some F) :
-    Det (.str sz r n off) F := by
+theorem det_str {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.str sz r n off) = some F) :
+    Det xb (.str sz r n off) F := by
   intro s t h s' he
   have hg := h.gpr
   simp only [fp] at hf
@@ -666,14 +685,14 @@ theorem det_str {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp (.str sz r
     · rename_i ha
       simp only [Option.bind_some, ha, and_self, ite_true] at he ⊢
       simp (disch := simp [Nat.testBit_or]) only [State.read, hg] at he
-      rw [← h.x3] at he
+      rw [← h.base] at he
       exact store_det h _ (by cases sz <;> decide) (fun o ho => by simpa [testBit_range] using ho)
         rfl rfl rfl s' he
     · cases he
   · cases hf
 
-theorem det_strq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp (.strq r n off) = some F) :
-    Det (.strq r n off) F := by
+theorem det_strq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.strq r n off) = some F) :
+    Det xb (.strq r n off) F := by
   intro s t h s' he
   have hv := h.v
   simp only [fp] at hf
@@ -690,8 +709,8 @@ theorem det_strq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp (.strq r n o
     · cases he
   · cases hf
 
-theorem det_ldr {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp (.ldr sz r n off) = some F) :
-    Det (.ldr sz r n off) F := by
+theorem det_ldr {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.ldr sz r n off) = some F) :
+    Det xb (.ldr sz r n off) F := by
   intro s t h s' he
   simp only [fp] at hf
   split at hf
@@ -703,7 +722,7 @@ theorem det_ldr {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp (.ldr sz r
     · rename_i ha
       simp only [Option.bind_some, ha, and_self, ite_true] at he ⊢
       rw [load_congr (off := off) (n := sz.bytes) h (fun o h1 h2 => by simp [testBit_range]; omega)] at he
-      cases e : t.load (t.gpr .x3 + BitVec.ofNat 64 off) sz.bytes with
+      cases e : t.load (t.gpr n + BitVec.ofNat 64 off) sz.bytes with
       | none => rw [e] at he; cases he
       | some x =>
         rw [e] at he
@@ -713,8 +732,8 @@ theorem det_ldr {sz : Size} {r n : Reg} {off : Nat} {F : Fp} (hf : fp (.ldr sz r
     · cases he
   · cases hf
 
-theorem det_ldrq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp (.ldrq r n off) = some F) :
-    Det (.ldrq r n off) F := by
+theorem det_ldrq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp xb (.ldrq r n off) = some F) :
+    Det xb (.ldrq r n off) F := by
   intro s t h s' he
   simp only [fp] at hf
   split at hf
@@ -726,7 +745,7 @@ theorem det_ldrq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp (.ldrq r n o
     · rename_i ha
       simp only [Option.bind_some, ha, and_self, ite_true] at he ⊢
       rw [load_congr (off := off) (n := 16) h (fun o h1 h2 => by simp [testBit_range]; omega)] at he
-      cases e : t.load (t.gpr .x3 + BitVec.ofNat 64 off) 16 with
+      cases e : t.load (t.gpr n + BitVec.ofNat 64 off) 16 with
       | none => rw [e] at he; cases he
       | some x =>
         rw [e] at he
@@ -736,7 +755,7 @@ theorem det_ldrq {r : VReg} {n : Reg} {off : Nat} {F : Fp} (hf : fp (.ldrq r n o
     · cases he
   · cases hf
 
-theorem det_vop {op : VOp} {F : Fp} (hf : fp (.vop op) = some F) : Det (.vop op) F := by
+theorem det_vop {op : VOp} {F : Fp} (hf : fp xb (.vop op) = some F) : Det xb (.vop op) F := by
   intro s t h s' he
   simp only [fp] at hf
   simp only [exec] at he ⊢
@@ -750,7 +769,7 @@ theorem det_vop {op : VOp} {F : Fp} (hf : fp (.vop op) = some F) : Det (.vop op)
     obtain ⟨h1, h2, h3⟩ := VOp.fp_shape hf
     exact ⟨_, rfl, Writes.setV (t := t) _ _ (VOp.dst_eq hf e) h1 h2 h3⟩
 
-theorem det {i : Instr} {F : Fp} (hf : fp i = some F) : Det i F := by
+theorem det {i : Instr} {F : Fp} (hf : fp xb i = some F) : Det xb i F := by
   cases i
   case add => exact det_add hf
   case sub => exact det_sub hf
@@ -760,6 +779,7 @@ theorem det {i : Instr} {F : Fp} (hf : fp i = some F) : Det i F := by
   case logic => exact det_logic hf
   case adc => exact det_adc hf
   case sbc => exact det_sbc hf
+  case csel => exact det_csel hf
   case adds => exact det_adds hf
   case subs => exact det_subs hf
   case adcs => exact det_adcs hf
@@ -811,7 +831,7 @@ theorem lt_pow {m o : Nat} (hm : m >>> 65536 = 0) (h : m.testBit o = true) : o <
   omega
 
 /-- What independence says, one location at a time. -/
-structure Indep (F G : Fp) : Prop where
+structure Indep (xb : Reg) (F G : Fp) : Prop where
   gw_gr : ∀ i, F.gw.testBit i = true → G.gr.testBit i = false
   gw_gw : ∀ i, F.gw.testBit i = true → G.gw.testBit i = false
   gw_gr' : ∀ i, G.gw.testBit i = true → F.gr.testBit i = false
@@ -823,14 +843,14 @@ structure Indep (F G : Fp) : Prop where
   mw_mr : ∀ o, F.mw.testBit o = true → G.mr.testBit o = false
   mw_mw : ∀ o, F.mw.testBit o = true → G.mw.testBit o = false
   mw_mr' : ∀ o, G.mw.testBit o = true → F.mr.testBit o = false
-  x3 : F.gw.testBit Reg.x3.ctorIdx = false
-  x3' : G.gw.testBit Reg.x3.ctorIdx = false
+  nb : F.gw.testBit xb.ctorIdx = false
+  nb' : G.gw.testBit xb.ctorIdx = false
   fmr : ∀ o, F.mr.testBit o = true → o < 2 ^ 64
   fmw : ∀ o, F.mw.testBit o = true → o < 2 ^ 64
   gmr : ∀ o, G.mr.testBit o = true → o < 2 ^ 64
   gmw : ∀ o, G.mw.testBit o = true → o < 2 ^ 64
 
-theorem Indep.of {F G : Fp} (h : F.indep G = true) : Indep F G := by
+theorem Indep.of {F G : Fp} (h : F.indep xb G = true) : Indep xb F G := by
   simp only [Fp.indep, Bool.and_eq_true, Bool.not_eq_true', beq_iff_eq] at h
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩, h12⟩, h13⟩, h14⟩ := h
   refine ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => and_zero h2 hi, fun i hi => ?_, fun i hi => ?_,
@@ -857,7 +877,7 @@ theorem addr_ne {b : Addr} {o o' : Nat} (h : o ≠ o') (ho : o < 2 ^ 64) (ho' : 
   exact h this
 
 /-- Running an instruction keeps what an independent footprint reads. -/
-theorem reads_of_frame {F G : Fp} (hI : Indep F G) {s s' : State} (hfr : Frame F s s') : Reads G s s' where
+theorem reads_of_frame {F G : Fp} (hI : Indep xb F G) {s s' : State} (hfr : Frame xb F s s') : Reads xb G s s' where
   gpr r hr := (hfr.gpr r (by
     cases e : F.gw.testBit r.ctorIdx
     · rfl
@@ -870,14 +890,14 @@ theorem reads_of_frame {F G : Fp} (hI : Indep F G) {s s' : State} (hfr : Frame F
     cases e : F.cw
     · rfl
     · rw [(hI.cw e).1] at hc; exact Bool.noConfusion hc)).symm
-  x3 := (hfr.gpr _ hI.x3).symm
+  base := (hfr.gpr _ hI.nb).symm
   mem o ho := (hfr.mem _ fun o' ho' e => by
     have hne : o ≠ o' := fun h => by rw [h, hI.mw_mr _ ho'] at ho; exact Bool.noConfusion ho
     exact addr_ne hne (hI.gmr _ ho) (hI.fmw _ ho') e).symm
   rd := hfr.rd.symm
   wr := hfr.wr.symm
 
-theorem Indep.symm {F G : Fp} (h : Indep F G) : Indep G F where
+theorem Indep.symm {F G : Fp} (h : Indep xb F G) : Indep xb G F where
   gw_gr := h.gw_gr'
   gw_gw i hi := by
     cases e : F.gw.testBit i
@@ -901,15 +921,15 @@ theorem Indep.symm {F G : Fp} (h : Indep F G) : Indep G F where
     · rfl
     · rw [h.mw_mw _ e] at ho; exact Bool.noConfusion ho
   mw_mr' := h.mw_mr
-  x3 := h.x3'
-  x3' := h.x3
+  nb := h.nb'
+  nb' := h.nb
   fmr := h.gmr
   fmw := h.gmw
   gmr := h.fmr
   gmw := h.fmw
 
 
-theorem exec_comm {i j : Instr} {F G : Fp} (hi : fp i = some F) (hj : fp j = some G) (hI : Indep F G)
+theorem exec_comm {i j : Instr} {F G : Fp} (hi : fp xb i = some F) (hj : fp xb j = some G) (hI : Indep xb F G)
     (s : State) : (exec i s).bind (exec j) = (exec j s).bind (exec i) := by
   cases ei : exec i s with
   | none =>
@@ -941,8 +961,8 @@ theorem exec_comm {i j : Instr} {F G : Fp} (hi : fp i = some F) (hj : fp j = som
       have f2 := frame hj hs2
       have g1 := frame hj ej
       have g2 := frame hi ht2
-      have x1 : s1.gpr .x3 = s.gpr .x3 := f1.gpr _ hI.x3
-      have y1 : t1.gpr .x3 = s.gpr .x3 := g1.gpr _ hI.x3'
+      have x1 : s1.gpr xb = s.gpr xb := f1.gpr _ hI.nb
+      have y1 : t1.gpr xb = s.gpr xb := g1.gpr _ hI.nb'
       apply state_ext
       · funext r
         cases hF : F.gw.testBit r.ctorIdx
@@ -963,13 +983,13 @@ theorem exec_comm {i j : Instr} {F G : Fp} (hi : fp i = some F) (hj : fp j = som
           · rw [← wG.v r hG, g2.v r hF]
         · rw [f2.v r (hI.vw_vw _ hF), wF.v r hF]
       · funext x
-        by_cases hx : ∃ o, F.mw.testBit o = true ∧ x = s.gpr .x3 + BitVec.ofNat 64 o
+        by_cases hx : ∃ o, F.mw.testBit o = true ∧ x = s.gpr xb + BitVec.ofNat 64 o
         · obtain ⟨o, ho, rfl⟩ := hx
           have hFG : ∀ o', G.mw.testBit o' = true → o ≠ o' := fun o' ho' h => by
             subst h; rw [hI.mw_mw _ ho] at ho'; exact Bool.noConfusion ho'
           rw [f2.mem _ fun o' ho' e => addr_ne (hFG o' ho') (hI.fmw _ ho) (hI.gmw _ ho') (by rw [e, x1]),
             ← x1, wF.mem o ho]
-        · by_cases hy : ∃ o, G.mw.testBit o = true ∧ x = s.gpr .x3 + BitVec.ofNat 64 o
+        · by_cases hy : ∃ o, G.mw.testBit o = true ∧ x = s.gpr xb + BitVec.ofNat 64 o
           · obtain ⟨o, ho, rfl⟩ := hy
             have hGF : ∀ o', F.mw.testBit o' = true → o ≠ o' := fun o' ho' h => by
               subst h; rw [hI.symm.mw_mw _ ho] at ho'; exact Bool.noConfusion ho'
@@ -977,9 +997,9 @@ theorem exec_comm {i j : Instr} {F G : Fp} (hi : fp i = some F) (hj : fp j = som
             have w := wG.mem o ho
             rw [y1] at w
             exact w.symm
-          · have nF : ∀ o, F.mw.testBit o = true → x ≠ s.gpr .x3 + BitVec.ofNat 64 o :=
+          · have nF : ∀ o, F.mw.testBit o = true → x ≠ s.gpr xb + BitVec.ofNat 64 o :=
               fun o ho e => hx ⟨o, ho, e⟩
-            have nG : ∀ o, G.mw.testBit o = true → x ≠ s.gpr .x3 + BitVec.ofNat 64 o :=
+            have nG : ∀ o, G.mw.testBit o = true → x ≠ s.gpr xb + BitVec.ofNat 64 o :=
               fun o ho e => hy ⟨o, ho, e⟩
             rw [f2.mem x (by rw [x1]; exact nG), f1.mem x nF, g2.mem x (by rw [y1]; exact nF), g1.mem x nG]
       · rw [f2.rd, f1.rd, g2.rd, g1.rd]
@@ -991,11 +1011,11 @@ theorem exec_comm {i j : Instr} {F G : Fp} (hi : fp i = some F) (hj : fp j = som
 /-! ## Blocks -/
 
 /-- Every instruction of `a` is independent of every instruction of `b`. -/
-def Indeps (a b : List Instr) : Prop :=
-  ∀ x ∈ a, ∀ y ∈ b, ∃ F G, fp x = some F ∧ fp y = some G ∧ Indep F G
+def Indeps (xb : Reg) (a b : List Instr) : Prop :=
+  ∀ x ∈ a, ∀ y ∈ b, ∃ F G, fp xb x = some F ∧ fp xb y = some G ∧ Indep xb F G
 
 theorem comm_block {y : Instr} {a : List Instr}
-    (ha : ∀ x ∈ a, ∃ F G, fp x = some F ∧ fp y = some G ∧ Indep F G) (s : State) :
+    (ha : ∀ x ∈ a, ∃ F G, fp xb x = some F ∧ fp xb y = some G ∧ Indep xb F G) (s : State) :
     (exec y s).bind (runBlock isa a) = (runBlock isa a s).bind (exec y) := by
   induction a generalizing s with
   | nil =>
@@ -1021,7 +1041,7 @@ theorem runBlock_append (a b : List Instr) (s : State) :
     funext u
     exact ih u
 
-theorem run_merge {c a b : List Instr} (hm : Merge c a b) (hind : Indeps a b) (s : State) :
+theorem run_merge {c a b : List Instr} (hm : Merge c a b) (hind : Indeps xb a b) (s : State) :
     runBlock isa c s = runBlock isa (a ++ b) s := by
   induction hm generalizing s with
   | nil => rfl
@@ -1067,7 +1087,7 @@ theorem Sub.trans {F A B : Fp} (h₁ : Sub F A) (h₂ : Sub A B) : Sub F B :=
 theorem false_of_sub {a b : Bool} (h : a = true → b = true) (hb : b = false) : a = false := by
   cases a <;> simp_all
 
-theorem Indep.mono {A B F G : Fp} (h : Indep A B) (hF : Sub F A) (hG : Sub G B) : Indep F G where
+theorem Indep.mono {A B F G : Fp} (h : Indep xb A B) (hF : Sub F A) (hG : Sub G B) : Indep xb F G where
   gw_gr i hi := false_of_sub (hG.gr i) (h.gw_gr i (hF.gw i hi))
   gw_gw i hi := false_of_sub (hG.gw i) (h.gw_gw i (hF.gw i hi))
   gw_gr' i hi := false_of_sub (hF.gr i) (h.gw_gr' i (hG.gw i hi))
@@ -1079,15 +1099,15 @@ theorem Indep.mono {A B F G : Fp} (h : Indep A B) (hF : Sub F A) (hG : Sub G B) 
   mw_mr o ho := false_of_sub (hG.mr o) (h.mw_mr o (hF.mw o ho))
   mw_mw o ho := false_of_sub (hG.mw o) (h.mw_mw o (hF.mw o ho))
   mw_mr' o ho := false_of_sub (hF.mr o) (h.mw_mr' o (hG.mw o ho))
-  x3 := false_of_sub (hF.gw _) h.x3
-  x3' := false_of_sub (hG.gw _) h.x3'
+  nb := false_of_sub (hF.gw _) h.nb
+  nb' := false_of_sub (hG.gw _) h.nb'
   fmr o ho := h.fmr o (hF.mr o ho)
   fmw o ho := h.fmw o (hF.mw o ho)
   gmr o ho := h.gmr o (hG.mr o ho)
   gmw o ho := h.gmw o (hG.mw o ho)
 
-theorem blockFp_sub {a : List Instr} {A : Fp} (ha : blockFp a = some A) :
-    ∀ x ∈ a, ∃ F, fp x = some F ∧ Sub F A := by
+theorem blockFp_sub {a : List Instr} {A : Fp} (ha : blockFp xb a = some A) :
+    ∀ x ∈ a, ∃ F, fp xb x = some F ∧ Sub F A := by
   induction a generalizing A with
   | nil => intro x hx; cases hx
   | cons y a ih =>
@@ -1099,8 +1119,8 @@ theorem blockFp_sub {a : List Instr} {A : Fp} (ha : blockFp a = some A) :
     · obtain ⟨F', hx', hs⟩ := ih hb x hx
       exact ⟨F', hx', hs.trans (Sub.right F B)⟩
 
-theorem indeps_of {a b : List Instr} {A B : Fp} (ha : blockFp a = some A) (hb : blockFp b = some B)
-    (h : A.indep B = true) : Indeps a b := by
+theorem indeps_of {a b : List Instr} {A B : Fp} (ha : blockFp xb a = some A) (hb : blockFp xb b = some B)
+    (h : A.indep xb B = true) : Indeps xb a b := by
   intro x hx y hy
   obtain ⟨F, hx', hF⟩ := blockFp_sub ha x hx
   obtain ⟨G, hy', hG⟩ := blockFp_sub hb y hy
@@ -1108,11 +1128,11 @@ theorem indeps_of {a b : List Instr} {A B : Fp} (ha : blockFp a = some A) (hb : 
 
 /-- Independence by evaluating both blocks' footprints. -/
 theorem indeps_of_check {a b : List Instr}
-    (h : ((blockFp a).bind fun A => (blockFp b).map fun B => A.indep B) = some true) : Indeps a b := by
-  cases ha : blockFp a with
+    (h : ((blockFp xb a).bind fun A => (blockFp xb b).map fun B => A.indep xb B) = some true) : Indeps xb a b := by
+  cases ha : blockFp xb a with
   | none => rw [ha] at h; cases h
   | some A =>
-    cases hb : blockFp b with
+    cases hb : blockFp xb b with
     | none => rw [ha, hb] at h; cases h
     | some B =>
       rw [ha, hb] at h
@@ -1137,9 +1157,31 @@ theorem runBlock_of_WP {is : List Instr} {s : State} {Q : State → Prop} (h : W
     exact ⟨s', by show (exec i s).bind (runBlock isa is) = _; rw [h₁']; exact h', hq⟩
 
 /-- An interleaving of independent blocks runs as the first block and then the second. -/
-theorem WP.merge {c a b : List Instr} (hm : Merge c a b) (hind : Indeps a b) {s : State}
+theorem WP.merge {c a b : List Instr} (hm : Merge c a b) (hind : Indeps xb a b) {s : State}
     {Q : State → Prop} (h : WP isa (.block (a ++ b)) s Q) : WP isa (.block c) s Q := by
   obtain ⟨s', h', hq⟩ := runBlock_of_WP h
   exact WP.of_runBlock ⟨s', by rw [run_merge hm hind]; exact h', hq⟩
+
+/-! ## Weaving -/
+
+open VG.Impl.AArch64Weave (weave weaveGo) in
+theorem weaveGo_merge (n m : Nat) : ∀ f i j (a b : List Instr), Merge (weaveGo n m f i j a b) a b
+  | 0, _, _, a, b => Merge.append a b
+  | _ + 1, _, _, [], b => Merge.nil_left b
+  | _ + 1, _, _, x :: a, [] => Merge.nil_right (x :: a)
+  | f + 1, i, j, x :: a, y :: b => by
+    rw [weaveGo]
+    split
+    · exact .left (weaveGo_merge n m f _ _ _ _)
+    · exact .right (weaveGo_merge n m f _ _ _ _)
+
+theorem weave_merge (a b : List Instr) : Merge (VG.Impl.AArch64Weave.weave a b) a b :=
+  weaveGo_merge _ _ _ _ _ _ _
+
+/-- Independent blocks, interleaved, run as the first and then the second. -/
+theorem WP.weave {a b : List Instr} (hind : Indeps xb a b) {s : State}
+    {Q : State → Prop} (h : WP isa (.block a) s fun t => WP isa (.block b) t Q) :
+    WP isa (.block (VG.Impl.AArch64Weave.weave a b)) s Q :=
+  WP.merge (weave_merge a b) hind (WP.block_append_iff.mpr h)
 
 end VG.AArch64.Interleave

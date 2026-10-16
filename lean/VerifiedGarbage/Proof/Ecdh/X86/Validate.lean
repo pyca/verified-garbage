@@ -3,13 +3,14 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 public import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 public import VerifiedGarbage.Proof.Ecdh.X86.Peer
-public import VerifiedGarbage.Proof.Ecdsa.X86.Lays
-public import VerifiedGarbage.Proof.Ecdsa.X86.Middle
+import VerifiedGarbage.Proof.Ecdsa.X86.Lays
+import VerifiedGarbage.Proof.Ecdsa.X86.Middle
 public import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # ECDH on x86 (32-bit): the peer's point, `[d]P` and `Z^(p-2)`

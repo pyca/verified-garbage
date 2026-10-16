@@ -4,14 +4,16 @@ public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Impl.CmacTripleDes.X86
 meta import VerifiedGarbage.Impl.CmacTripleDes.X86
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.KeysLit
+import VerifiedGarbage.Proof.CmacTripleDes.X86.KeysLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86.KeysLit
-public import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
+import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
 meta import VerifiedGarbage.Proof.CmacTripleDes.X86.RoundLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-! # TDEA-CMAC's x86 code as literals, for kernel-evaluated checks -/
 

@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.Idea.X86_64.Verified
-public import VerifiedGarbage.Proof.Idea.KeyBits
+import VerifiedGarbage.Proof.Idea.KeyBits
 public import VerifiedGarbage.Proof.Framework.X86_64.Linear
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Idea.KeyLit
 
 /-!
 # IDEA key expansion on x86-64

@@ -5,6 +5,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86.Lit
 
 /-!
 # PBKDF2-HMAC on x86 (32-bit), the whole derivation: the prologue and the key
@@ -129,18 +131,18 @@ omit hH in
 theorem hk2_args {s : State} (hk : KR F s₀ s) (hdi : s.gpr .edi = dO s₀ F.stWO) :
     InitArgs (H := F.H) s .edi (dO s₀ F.stWO) := by
   have hl := layout (F := F); have he := end_le hz; have := hz.S; have := hz.D
-  have ea := dO_addr hp (o := F.stWO) (by omega_arith)
+  have ea := dO_addr hp (o := F.stWO) (hz.stWO_lt)
   refine ⟨hdi, by decide, by rw [hk.esp]; have := hp.sp76; omega_arith, ?_, ?_, ?_⟩
   · rw [ea]; exact Covers.of_sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp hk (by omega_arith)
-  · rw [ea]; exact b48 hp hk (part_sub (by omega_arith))
-  · rw [dO_toNat hp (by omega_arith)]; have := hp.nsc; omega_arith
+      simp only [List.mem_singleton] at hr; subst hr; exact cov_part hp hk (hz.stWO_S)
+  · rw [ea]; exact b48 hp hk (part_sub (hz.stWO_S))
+  · rw [dO_toNat hp (hz.stWO_lt)]; have := hp.nsc; omega_arith
 
 theorem hk2_ok {s : State} (hk : KR F s₀ s) (hdi : s.gpr .edi = dO s₀ F.stWO) :
     WP isa (F.H.callInit .edi) s fun t => KR F s₀ t ∧ hH.SH.Repr t.mem (A s₀ F.stWO) [] ∧
       t.gpr .edi = s.gpr .edi := by
   have hl := layout (F := F); have he := end_le hz; have := hz.S
-  have ea := dO_addr hp (o := F.stWO) (by omega_arith)
+  have ea := dO_addr hp (o := F.stWO) (hz.stWO_lt)
   refine init_frame hH (hk2_args hp hz hk hdi) fun s' a r => ⟨hk.call hp hz (After.of_hmac (by
     rw [hk.esp]; exact hp.sp76) a) fun r hr => ?_, by rw [← ea]; exact r, a.cs _ (by decide)⟩
   simp only [List.mem_singleton] at hr; subst hr
@@ -168,7 +170,7 @@ theorem hk4_args {s : State} (hk : KR F s₀ s) (hdi : s.gpr .edi = dO s₀ F.st
     UpdArgs hH s .esi .edi (dO s₀ F.stWO) (pw s₀) (scr s₀) 0 (pwl s₀) := by
   have hl := layout (F := F); have he := end_le hz; have := hz.S; have := hz.D; have := hz.W
   have := hH.hWb
-  have ea := dO_addr hp (o := F.stWO) (by omega_arith)
+  have ea := dO_addr hp (o := F.stWO) (hz.stWO_lt)
   exact
     { hst := hdi
       hlo := hsi
@@ -186,15 +188,15 @@ theorem hk4_args {s : State} (hk : KR F s₀ s) (hdi : s.gpr .edi = dO s₀ F.st
         exact Covers.of_sub fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl
-          · exact cov_part hp hk (by omega_arith)
+          · exact cov_part hp hk (hz.stWO_S)
           · exact cov_low hp hk (by omega_arith)
-      st_sc := by rw [ea]; exact (low_disj hz (k := hH.Wb) (by omega_arith) (by omega_arith)).symm
-      d_st := by rw [ea]; exact hp.pw_s.sub_right (part_sub (by omega_arith))
+      st_sc := by rw [ea]; exact (low_disj hz (k := hH.Wb) (by omega_arith) (hz.stWO_S)).symm
+      d_st := by rw [ea]; exact hp.pw_s.sub_right (part_sub (hz.stWO_S))
       d_sc := hp.pw_s.sub_right (low_sub (by omega_arith))
-      b_st := by rw [ea]; exact b48 hp hk (part_sub (by omega_arith))
+      b_st := by rw [ea]; exact b48 hp hk (part_sub (hz.stWO_S))
       b_d := hp.b_pw.sub_left (stk48_sub hp hk)
       b_sc := b48 hp hk (low_sub (by omega_arith))
-      nst := by rw [dO_toNat hp (by omega_arith)]; have := hp.nsc; omega_arith
+      nst := by rw [dO_toNat hp (hz.stWO_lt)]; have := hp.nsc; omega_arith
       nd := hp.npw
       nsc := by have := hp.nsc; omega_arith }
 
@@ -206,7 +208,7 @@ theorem hk4_ok {s : State} (hk : KR F s₀ s) (hdi : s.gpr .edi = dO s₀ F.stWO
         t.gpr .edi = s.gpr .edi := by
   have hl := layout (F := F); have he := end_le hz; have := hz.S; have := hz.D; have := hz.W
   have := hH.hWb
-  have ea := dO_addr hp (o := F.stWO) (by omega_arith)
+  have ea := dO_addr hp (o := F.stWO) (hz.stWO_lt)
   refine upd_frame hH (hk4_args hp hz hH hk hdi hsi hax hcx hdx) fun s' a r => ⟨hk.call hp hz (After.of_hmac (by
     rw [hk.esp]; exact hp.sp76) a) fun r hr => ?_, ?_, a.cs _ (by decide)⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -238,8 +240,8 @@ theorem hk6_args {s : State} (hk : KR F s₀ s) (hdi : s.gpr .edi = dO s₀ F.st
     FinArgs hH s .edi (dO s₀ F.stWO) (dO s₀ F.hkO) (scr s₀) (arg s₀ 1) 0 := by
   have hl := layout (F := F); have he := end_le hz; have := hz.S; have := hz.D; have := hz.W
   have := hH.hWb
-  have ea := dO_addr hp (o := F.stWO) (by omega_arith)
-  have eh := dO_addr hp (o := F.hkO) (by omega_arith)
+  have ea := dO_addr hp (o := F.stWO) (hz.stWO_lt)
+  have eh := dO_addr hp (o := F.hkO) (hz.hkO_lt)
   exact
     { hst := hdi
       eax := hax
@@ -253,17 +255,17 @@ theorem hk6_args {s : State} (hk : KR F s₀ s) (hdi : s.gpr .edi = dO s₀ F.st
         exact Covers.of_sub fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl
-          · exact cov_part hp hk (by omega_arith)
-          · exact cov_part hp hk (by omega_arith)
+          · exact cov_part hp hk (hz.stWO_S)
+          · exact cov_part hp hk (hz.hkO_F)
           · exact cov_low hp hk (by omega_arith)
-      st_o := by rw [ea, eh]; exact part_disj hz (Or.inl (by omega_arith)) (by omega_arith) (by omega_arith)
-      st_sc := by rw [ea]; exact (low_disj hz (k := hH.Wb) (by omega_arith) (by omega_arith)).symm
-      o_sc := by rw [eh]; exact (low_disj hz (k := hH.Wb) (by omega_arith) (by omega_arith)).symm
-      b_st := by rw [ea]; exact b48 hp hk (part_sub (by omega_arith))
-      b_o := by rw [eh]; exact b48 hp hk (part_sub (by omega_arith))
+      st_o := by rw [ea, eh]; exact part_disj hz (Or.inl (by omega_arith)) (hz.stWO_S) (hz.hkO_F)
+      st_sc := by rw [ea]; exact (low_disj hz (k := hH.Wb) (by omega_arith) (hz.stWO_S)).symm
+      o_sc := by rw [eh]; exact (low_disj hz (k := hH.Wb) (by omega_arith) (hz.hkO_F)).symm
+      b_st := by rw [ea]; exact b48 hp hk (part_sub (hz.stWO_S))
+      b_o := by rw [eh]; exact b48 hp hk (part_sub (hz.hkO_F))
       b_sc := b48 hp hk (low_sub (by omega_arith))
-      nst := by rw [dO_toNat hp (by omega_arith)]; have := hp.nsc; omega_arith
-      no := by rw [dO_toNat hp (by omega_arith)]; have := hp.nsc; omega_arith
+      nst := by rw [dO_toNat hp (hz.stWO_lt)]; have := hp.nsc; omega_arith
+      no := by rw [dO_toNat hp (hz.hkO_lt)]; have := hp.nsc; omega_arith
       nsc := by have := hp.nsc; omega_arith }
 
 theorem hk6_ok {s : State} (hk : KR F s₀ s) (hdi : s.gpr .edi = dO s₀ F.stWO) (hax : s.gpr .eax = arg s₀ 1)
@@ -274,8 +276,8 @@ theorem hk6_ok {s : State} (hk : KR F s₀ s) (hdi : s.gpr .edi = dO s₀ F.stWO
         bytesAt t.mem (A s₀ F.hkO) F.H.D = hH.SH.H.hash (bytesAt s₀.mem ((pw s₀).setWidth 64) (pwl s₀)) := by
   have hl := layout (F := F); have he := end_le hz; have := hz.S; have := hz.D; have := hz.W
   have := hH.hWb
-  have ea := dO_addr hp (o := F.stWO) (by omega_arith)
-  have eh := dO_addr hp (o := F.hkO) (by omega_arith)
+  have ea := dO_addr hp (o := F.stWO) (hz.stWO_lt)
+  have eh := dO_addr hp (o := F.hkO) (hz.hkO_lt)
   refine fin_frame hH (hk6_args hp hz hH hk hdi hax hcx hdx) fun s' a r => ⟨hk.call hp hz (After.of_hmac (by
     rw [hk.esp]; exact hp.sp76) a) fun r hr => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -392,7 +394,7 @@ theorem key_toNat : (kp F s₀).toNat + kl F s₀ ≤ 2 ^ 32 := by
   · simp only [kp, kl, h, ↓reduceIte]; exact hp.npw
   · simp only [kp, kl, h, ↓reduceIte]
     have := end_le hz; have := layout (F := F); have := hz.D
-    rw [dO_toNat hp (by omega_arith)]
+    rw [dO_toNat hp (hz.hkO_lt)]
     have := hp.nsc; omega_arith
 
 /-- The key is apart from the parts of `scratch` after the hashed password,

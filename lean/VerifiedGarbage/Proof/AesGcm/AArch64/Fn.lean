@@ -1,13 +1,14 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
+import VerifiedGarbage.Proof.AesGcm.AArch64.Cmp
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Save
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
+import VerifiedGarbage.Proof.AesGcm.AArch64.Crypt
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.AesGcm.AArch64.J0
 
 /-!
 # AES-GCM on AArch64: what every function uses

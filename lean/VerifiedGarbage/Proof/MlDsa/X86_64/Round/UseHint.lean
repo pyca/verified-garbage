@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
+import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
@@ -78,6 +78,17 @@ theorem and_mask (c : Bool) (y : BitVec 64) : (y &&& (0#64 - BitVec.setWidth 64 
 
 theorem dMod_cases (g : Nat) : dMod g = 16 ∨ dMod g = 44 := by unfold dMod; split <;> simp
 
+/-- Two conditional subtractions of `d ≥ 2` reduce `x ≤ 2d + 1` modulo `d`. -/
+theorem twoSub_mod {d x : Nat} (hd : 2 ≤ d) (hx : x ≤ 2 * d + 1) :
+    (if (if x < d then x else x - d) < d then (if x < d then x else x - d)
+      else (if x < d then x else x - d) - d) = x % d := by
+  by_cases h1 : x < d
+  · rw [ite_eq_left h1, ite_eq_left h1, Nat.mod_eq_of_lt h1]
+  · rw [ite_eq_right h1, Nat.mod_eq_sub_mod (Nat.le_of_not_lt h1)]
+    by_cases h2 : x - d < d
+    · rw [ite_eq_left h2, Nat.mod_eq_of_lt h2]
+    · rw [ite_eq_right h2, Nat.mod_eq_sub_mod (Nat.le_of_not_lt h2), Nat.mod_eq_of_lt (by omega)]
+
 /-- Two conditional subtractions of `m` reduce `x ≤ 2m + 1` modulo `m`. -/
 theorem condAddV_twice {g : Nat} {x : BitVec 64} (hx : x.toNat ≤ 2 * dMod g + 1) :
     (condAddV (condAddV x (BitVec.signExtend 64 (mImm g)) (mImm g)) (BitVec.signExtend 64 (mImm g))
@@ -85,7 +96,8 @@ theorem condAddV_twice {g : Nat} {x : BitVec 64} (hx : x.toNat ≤ 2 * dMod g + 
   have hm : dMod g < 2 ^ 31 := by rcases dMod_cases g with e | e <;> rw [e] <;> decide
   rw [condAddV_imm_toNat' hm (by rw [condAddV_imm_toNat' hm (by omega)]; split <;> omega),
     condAddV_imm_toNat' hm (by omega)]
-  rcases dMod_cases g with e | e <;> rw [e] at hx ⊢ <;> (repeat' split) <;> omega
+  have hd : 2 ≤ dMod g := by rcases dMod_cases g with e | e <;> rw [e] <;> decide
+  exact twoSub_mod hd hx
 
 theorem uhS_toNat {g : Nat} (h : g ∈ gamma2s) (hv : BitVec 32) {a : BitVec 32} (ha : a.toNat < q) :
     (uhS g hv a).toNat = (if hv ≠ 0 then (if hbF g a.toNat * (2 * g) < a.toNat then

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.X86.Inline
 public import VerifiedGarbage.Proof.Sm3.X86.Compress
@@ -13,6 +15,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
+public import VerifiedGarbage.Proof.MdStream.X86.Words
+public import VerifiedGarbage.Proof.Sm3.StateMem
 
 /-!
 # SM3 on x86: the shared contracts
@@ -61,9 +67,12 @@ def updateWide : Contract X86.isa :=
 
 /-- Rewrites the per-target contracts at a narrowed state (`arg` does not
 unfold cheaply). -/
-macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
+tactic_template "narrow" : tactic =>
   `(tactic| simp only [Proof.Sm3.updateX86, updateWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
-    State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
+                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr])
+tactic_template "narrow" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [Proof.Sm3.updateX86, updateWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions,
+                     State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $loc)
 
 /-- `update` only reads its arguments. -/
 theorem updateWide_verified (hsat : ∃ s, updateWide.pre s) :
@@ -124,10 +133,14 @@ theorem sub112 (a : Addr) : Region.Sub ⟨a, 112⟩ ⟨a, 576⟩ := Region.sub_p
 def compressSat : State := { Proof.Sm3.X86.satState with wr := [⟨0x1000, 32⟩, ⟨0x3000, 576⟩] }
 
 /-- Rewrites the per-target contract at a narrowed state. -/
-macro "narrowC" loc:(Lean.Parser.Tactic.location)? : tactic =>
+tactic_template "narrowC" : tactic =>
   `(tactic| simp only [Proof.Sm3.compressX86, compressWide, VG.X86.arg_withRegions,
-    VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd,
-    State.withRegions_wr] $(loc)?)
+                     VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd,
+                     State.withRegions_wr])
+tactic_template "narrowC" loc:Lean.Parser.Tactic.location : tactic =>
+  `(tactic| simp only [Proof.Sm3.compressX86, compressWide, VG.X86.arg_withRegions,
+                     VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_rd,
+                     State.withRegions_wr] $loc)
 
 theorem compressWide_implies : compressWide.Implies (Spec.Sm3.compressContract X86.abi) := by
   contract_implies [Spec.Sm3.compressContract, Spec.Sm3.compressSig, compressWide,

@@ -2,12 +2,24 @@ module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Rel
 meta import VerifiedGarbage.Proof.Ed448.X86_64.SignCached.Rel
-public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
+import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
 meta import VerifiedGarbage.Proof.Ed448.X86_64.Verify.HashCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+meta import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
+meta import VerifiedGarbage.Spec.X25519
 
 /-!
 # Ed448 signing with a cached public key on x86-64: the hashes leak only the layout

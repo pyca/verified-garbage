@@ -6,6 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 
 /-! # General complete addition for secp256k1 verification -/
 
@@ -23,6 +24,10 @@ variable {c : VG.Impl.Ecdsa.AArch64.Cfg}
 
 abbrev sumR : List Nat := [AP, EXPP, UX, UY, UZ, RX, RY, RZ]
 abbrev sumSl : List Nat := sumR ++ [T0, T1, T2, T3, T4, T5, DX, DY, DZ]
+
+/-- The slots `sum` writes: not `EM` or `T`, which the shared `sumW` (of the
+addition by a call of `padd`) includes. -/
+abbrev sumW : List Nat := [T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, RX, RY, RZ]
 
 theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkA c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
@@ -84,7 +89,7 @@ theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base siz
   refine WP.mono (copySl_ok hc hs₃ (o := RZ) (a := DZ) (by decide) (by decide) (by decide))
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have o : ∀ {s s' : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem s'.mem → i < 45 → i ≠ j →
-      j ≠ 54 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => VG.Proof.Ecdh.AArch64.sv_out O h7 hn hi hij hj
+      j ≠ 54 ∧ j ≠ 61 ∧ j ≠ 82 → sv c base s' i = sv c base s i := fun O hi hij hj => VG.Proof.Ecdh.AArch64.sv_out O h7 hn hi hij hj
   have x₄ : sv c base s₄ RX = sv c base s₁ DX := by
     rw [o O₄ (by decide) (by decide) (by decide), o O₃ (by decide) (by decide) (by decide), e₂]
   have y₄ : sv c base s₄ RY = sv c base s₁ DY := by

@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.X86_64.FbVerified
+import Mathlib.Tactic.SplitIfs
 
 /-! # Camellia-CFB128 artifacts on baseline x86-64 -/
 

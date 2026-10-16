@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Gcm.Poly
-public import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.GcmSiv.Spec
 public import VerifiedGarbage.Proof.GcmSiv.Words
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq

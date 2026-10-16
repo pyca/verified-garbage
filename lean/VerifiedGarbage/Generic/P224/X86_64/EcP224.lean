@@ -5,7 +5,13 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.P224.Comb7
 public import VerifiedGarbage.Impl.EcKey.P224.X86_64
 public import VerifiedGarbage.Proof.EcKey.X86_64.P224.Verified
-public import VerifiedGarbage.Proof.EcKey.X86_64.P224.Lit
+import VerifiedGarbage.Proof.EcKey.X86_64.P224.Lit
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # P-224 public keys (FIPS 186-5 §A.2) on x86-64

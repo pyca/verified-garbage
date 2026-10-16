@@ -53,7 +53,7 @@ may also leak how many candidates it tried, which is 1 or 2 for most keys
 value depends on secrets (whether the input is below `n`, and whether the
 private key is consistent).
 
-`scratch` is working space of at least `16 n_len` `u64`s, whose contents on
+`scratch` is working space of at least `16 n_len + 32` `u64`s, whose contents on
 return are unspecified. `stack` is the number of bytes below the stack
 pointer that an implementation's calls and frames use. The functions may
 overwrite their arguments passed in memory, where the calling convention
@@ -69,7 +69,7 @@ def bytesAt (m : Mem) (p : Addr) (n : Nat) : List Byte :=
   (List.range n).map fun i => m (p + BitVec.ofNat 64 i)
 
 /-- The least working space, in `u64`s, for a modulus of `nLen` octets. -/
-def scratchWords (nLen : Nat) : Nat := 16 * nLen
+def scratchWords (nLen : Nat) : Nat := 16 * nLen + 32
 
 /-- The bounds on the modulus' length, in octets. -/
 def lenValid (nLen : Nat) : Prop := 64 ≤ nLen ∧ nLen ≤ 1024
@@ -97,7 +97,7 @@ def precomputedWords (nLen : Nat) : Nat := 2 * modulusWords nLen
 
 /-- The `# Safety` items on the working space. -/
 def scratchSafety : List String :=
-  ["`scratch_len` must be at least `16 * n_len`.",
+  ["`scratch_len` must be at least `16 * n_len + 32`.",
     "The contents of `scratch` on return are unspecified and may contain secrets; the caller \
       must destroy them after use."]
 

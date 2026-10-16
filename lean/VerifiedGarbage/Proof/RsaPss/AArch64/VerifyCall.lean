@@ -1,12 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.RsaPss.AArch64.VerifyFrame
-public import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
+import VerifiedGarbage.Proof.RsaPss.AArch64.SignCall
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Encode
 
 /-!
 # RSASSA-PSS verification on AArch64: the call of the public operation

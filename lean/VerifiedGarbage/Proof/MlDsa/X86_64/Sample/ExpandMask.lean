@@ -2,14 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMaskLoop
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMaskLoop
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBounded
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBounded
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBounded
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 meta import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.MlKem.Mem
+meta import VerifiedGarbage.Proof.MlKem.Mem
 
 /-!
 # ML-DSA on x86-64: `vg_mldsa_expand_mask_poly`

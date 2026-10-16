@@ -1,13 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.X86.TopPrim
-public import VerifiedGarbage.Proof.MlKem.X86.Sample
-public import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
-public import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem.X86.Sample
+import VerifiedGarbage.Proof.MlKem.X86.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86.DecodeDecompress
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Proof.MlKem.X86.NttLoop
 
 /-!
 # ML-KEM on x86 (32-bit): calls of `vg_mlkem_sample_ntt`, `vg_mlkem_compress_encode` and `vg_mlkem_decode_decompress`

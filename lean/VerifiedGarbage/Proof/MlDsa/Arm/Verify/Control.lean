@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Inv
-public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Call
-public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Call
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

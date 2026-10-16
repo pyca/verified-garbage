@@ -1,0 +1,88 @@
+module
+
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP256r1.GMul
+public import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.AArch64
+import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+
+/-! # brainpoolP256r1 multiplication of a point, by a call of `vg_brainpoolp256r1_mul` -/
+
+@[expose] public section
+
+namespace VG.Proof.Ecdh.AArch64.BrainpoolP256r1
+
+open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
+open VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.AArch64.BrainpoolP256r1
+open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.Weierstrass Spec.Weierstrass
+
+open VG.Impl.Ecdh.AArch64 (PX PY)
+open VG.Impl.Ecdh.AArch64.BrainpoolP256r1
+open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdsa.AArch64.BrainpoolP256r1
+
+/-- A point that coordinates with `Z = 1` stand for is the affine point of
+their `X` and `Y`. -/
+theorem affine_of_rep_one {C : Curve} (hC : Law C) {X Y : Fe C} {P : Point C} (h : Rep C X Y 1 P) :
+    P = .affine X Y := by
+  cases P with
+  | infinity => exact absurd h.2.2 hC.one_ne_zero
+  | affine x y =>
+    obtain ⟨-, hx, hy⟩ := h
+    rw [Lean.Grind.Semiring.mul_one] at hx hy
+    rw [hx, hy]
+
+/-- What `qMul` writes: the call's, and `EXPP`'s slot. -/
+abbrev qW : List (Nat × Nat) := slW brainpoolp256r1 [EXPP] ++ gW
+
+theorem qMul_ok (hc : BaseCfgOk brainpoolp256r1) (hC : Law brainpoolp256r1.C)
+    {P : Point brainpoolp256r1.C} (hP : onCurve brainpoolp256r1.C P = true)
+    {base : Addr} {g : Reg → BitVec 64} {s : State} (hs : Scr s base size)
+    (F : Fixed brainpoolp256r1 base g s.mem)
+    (hpx : sv brainpoolp256r1 base s PX < brainpoolp256r1.C.p) (hpy : sv brainpoolp256r1 base s PY < brainpoolp256r1.C.p)
+    (hG : Rep brainpoolp256r1.C (tmv brainpoolp256r1.C 4 base s (brainpoolp256r1.sl PX))
+      (tmv brainpoolp256r1.C 4 base s (brainpoolp256r1.sl PY)) (tmv brainpoolp256r1.C 4 base s (brainpoolp256r1.sl ONEP)) P) :
+    WP isa qMul s fun s' => KeepRegs (powClob 4) s s' ∧
+      Unch base qW s.mem s'.mem ∧ Fixed brainpoolp256r1 base g s'.mem ∧
+      ModOkA brainpoolp256r1.MP' size brainpoolp256r1.C.p s'.mem base ∧
+      (∀ x ∈ [brainpoolp256r1.sl RX, brainpoolp256r1.sl RY, brainpoolp256r1.sl RZ], wordsVal s'.mem base x 4 < brainpoolp256r1.C.p) ∧
+      Rep brainpoolp256r1.C (tmv brainpoolp256r1.C 4 base s' (brainpoolp256r1.sl RX))
+        (tmv brainpoolp256r1.C 4 base s' (brainpoolp256r1.sl RY))
+        (tmv brainpoolp256r1.C 4 base s' (brainpoolp256r1.sl RZ)) (mul (sv brainpoolp256r1 base s K) P) ∧
+      sv brainpoolp256r1 base s' EXPP = brainpoolp256r1.mont (3 * brainpoolp256r1.C.b) := by
+  have hn := hs.nowrap
+  have h7 := hc.n10
+  have hp3 := hc.p_ge
+  have hpR := unitMod_pow_two hc.p_odd (64 * brainpoolp256r1.n)
+  refine WP.seq (WP.mono (setConst_ok hs (n := 4) (o := brainpoolp256r1.sl EXPP)
+    (x := brainpoolp256r1.mont (3 * brainpoolp256r1.C.b)) (by decide) (by decide) (by decide +kernel))
+    fun s₁ ⟨b₁, K₁, O₁⟩ => ?_)
+  have U₁ : Unch base (slW brainpoolp256r1 [EXPP]) s.mem s₁.mem := O₁.unch
+  have hs₁ := hs.of_keepRegs K₁ (by decide)
+  have F₁ := F.unch h7 hn (fixedOk_slW (l := [EXPP]) (by decide)) U₁
+  have e₁ : ∀ {i}, i < 45 → i ≠ EXPP → sv brainpoolp256r1 base s₁ i = sv brainpoolp256r1 base s i :=
+    fun hi he => sv_unch U₁ h7 hn hi (apart_slW (by simpa using he))
+  have eP : ∀ {i}, i < 45 → i ≠ EXPP →
+      tmv brainpoolp256r1.C 4 base s₁ (brainpoolp256r1.sl i) = tmv brainpoolp256r1.C 4 base s (brainpoolp256r1.sl i) :=
+    fun hi he => congrArg (fun x => toM brainpoolp256r1.C.p (2 ^ (64 * brainpoolp256r1.n)) x) (e₁ hi he)
+  have hone : tmv brainpoolp256r1.C 4 base s (brainpoolp256r1.sl ONEP) = 1 := by
+    show toM _ _ (wordsVal s.mem base (brainpoolp256r1.sl ONEP) brainpoolp256r1.n) = 1
+    rw [F.onep]; exact toM_one hpR
+  rw [hone] at hG
+  have hPe := affine_of_rep_one hC hG
+  have hPe₁ : P = .affine (tmv brainpoolp256r1.C brainpoolp256r1.n base s₁ (brainpoolp256r1.sl PX)) (tmv brainpoolp256r1.C brainpoolp256r1.n base s₁ (brainpoolp256r1.sl PY)) := by
+    show P = .affine (tmv brainpoolp256r1.C 4 base s₁ (brainpoolp256r1.sl PX)) (tmv brainpoolp256r1.C 4 base s₁ (brainpoolp256r1.sl PY))
+    rw [eP (i := PX) (by decide) (by decide), eP (i := PY) (by decide) (by decide)]; exact hPe
+  refine WP.mono (mulAt_ok hc (.inl rfl) (.inl (by decide)) ladLayM ladAM hC mulFn_v mulFn_nf
+    (name := Spec.Weierstrass.Mul.brainpoolp256r1.mulApi.name) (px := PX) (py := PY) (by decide) (by decide)
+    (by decide) (by decide) (by decide) hs₁ F₁ (by rw [e₁ (by decide) (by decide)]; exact hpx)
+    (by rw [e₁ (by decide) (by decide)]; exact hpy) (by rw [← hPe₁]; exact hP))
+    fun s' ⟨K, U, F', M, L, R⟩ => ⟨(K₁.mono (by decide)).trans K, U₁.trans U, F', M, L, ?_, ?_⟩
+  · rw [← hPe₁, e₁ (by decide) (by decide)] at R; exact R
+  · exact (sv_unch U h7 hn (i := EXPP) (by decide)
+      (apart_append (apart_slW (by decide)) (apart_mulWF (.inl (by decide)) (by decide) (by decide)))).trans b₁
+
+end VG.Proof.Ecdh.AArch64.BrainpoolP256r1

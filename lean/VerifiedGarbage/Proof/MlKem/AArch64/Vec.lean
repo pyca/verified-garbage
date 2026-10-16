@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 public import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: vectors
@@ -93,74 +96,11 @@ theorem readW64_hi (m : Mem) (a : Addr) :
   rw [getLsbD_read m _ a (32 + i) (by bdd_omega), getLsbD_read m _ _ i (by bdd_omega), BitVec.add_assoc,
     ← BitVec.ofNat_add, show 4 + i / 8 = (32 + i) / 8 by bdd_omega, show i % 8 = (32 + i) % 8 by bdd_omega]
 
-theorem getLsbD_ofVWords (w0 w1 w2 w3 : BitVec 32) {i : Nat} (hi : i < 128) :
-    (ofVWords w0 w1 w2 w3).getLsbD i =
-      if i < 32 then w0.getLsbD i else if i < 64 then w1.getLsbD (i - 32)
-      else if i < 96 then w2.getLsbD (i - 64) else w3.getLsbD (i - 96) := by
-  simp only [ofVWords, BitVec.getLsbD_append]
-  by_cases h0 : i < 32
-  · simp [h0]
-  by_cases h1 : i < 64
-  · simp [h0, h1, show i - 32 < 32 by bdd_omega]
-  by_cases h2 : i < 96
-  · simp [h0, h1, h2, show ¬ i - 32 < 32 by bdd_omega, show i - 32 - 32 = i - 64 by bdd_omega, show i - 64 < 32 by bdd_omega]
-  · simp [h0, h1, h2, show ¬ i - 32 < 32 by bdd_omega, show ¬ i - 32 - 32 < 32 by bdd_omega,
-      show i - 32 - 32 - 32 = i - 96 by bdd_omega]
-
 theorem write16 (m : Mem) (a : Addr) (w0 w1 w2 w3 : BitVec 32) :
     m.write a 16 (ofVWords w0 w1 w2 w3) =
       (((m.writeW a w0).writeW (a + BitVec.ofNat 64 4) w1).writeW (a + BitVec.ofNat 64 8) w2).writeW
-        (a + BitVec.ofNat 64 12) w3 := by
-  funext x
-  have e : ∀ c : Nat, x - (a + BitVec.ofNat 64 c) = (x - a) - BitVec.ofNat 64 c := fun c =>
-    Offset.sub_add_eq x a _
-  simp only [Mem.writeW, Mem.write, e, show 32 / 8 = 4 from rfl]
-  generalize x - a = d
-  rw [toNat_sub_c d 4 (by bdd_omega), toNat_sub_c d 8 (by bdd_omega), toNat_sub_c d 12 (by bdd_omega)]
-  have := d.isLt
-  have ext : ∀ (k : Nat) (w : BitVec 32), k < 4 → 4 * k ≤ d.toNat → d.toNat < 4 * k + 4 →
-      (∀ b < 8, w.getLsbD (8 * (d.toNat - 4 * k) + b) = (ofVWords w0 w1 w2 w3).getLsbD (8 * d.toNat + b)) →
-      (ofVWords w0 w1 w2 w3).extractLsb' (8 * d.toNat) 8 =
-        (w.setWidth (8 * 4)).extractLsb' (8 * (d.toNat - 4 * k)) 8 := by
-    intro k w hk h1 h2 hw
-    apply BitVec.eq_of_getLsbD_eq
-    intro b hb
-    simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, hb, decide_true, Bool.true_and,
-      show 8 * (d.toNat - 4 * k) + b < 8 * 4 by bdd_omega]
-    exact (hw b hb).symm
-  have g := fun (b : Nat) (h : 8 * d.toNat + b < 128) => getLsbD_ofVWords w0 w1 w2 w3 h
-  by_cases c3 : 12 ≤ d.toNat
-  · by_cases c4 : d.toNat < 16
-    · simp only [c3, c4, ite_true, show d.toNat - 12 < 4 by bdd_omega]
-      refine ext 3 w3 (by bdd_omega) c3 (by bdd_omega) fun b hb => ?_
-      rw [g b (by bdd_omega)]
-      simp only [show ¬ 8 * d.toNat + b < 96 by bdd_omega, show ¬ 8 * d.toNat + b < 64 by bdd_omega,
-        show ¬ 8 * d.toNat + b < 32 by bdd_omega, ite_false, show 8 * (d.toNat - 4 * 3) + b = 8 * d.toNat + b - 96 by bdd_omega]
-    · simp only [c3, c4, ite_true, ite_false, show ¬ d.toNat - 12 < 4 by bdd_omega,
-        show ¬ d.toNat - 8 < 4 by bdd_omega, show ¬ d.toNat - 4 < 4 by bdd_omega, show 8 ≤ d.toNat by bdd_omega,
-        show 4 ≤ d.toNat by bdd_omega, show ¬ d.toNat < 4 by bdd_omega]
-  by_cases c2 : 8 ≤ d.toNat
-  · simp only [c3, c2, ite_true, ite_false, show d.toNat < 16 by bdd_omega, show d.toNat - 8 < 4 by bdd_omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by bdd_omega]
-    refine ext 2 w2 (by bdd_omega) c2 (by bdd_omega) fun b hb => ?_
-    rw [g b (by bdd_omega)]
-    simp only [show 8 * d.toNat + b < 96 by bdd_omega, show ¬ 8 * d.toNat + b < 64 by bdd_omega,
-      show ¬ 8 * d.toNat + b < 32 by bdd_omega, ite_false, ite_true,
-      show 8 * (d.toNat - 4 * 2) + b = 8 * d.toNat + b - 64 by bdd_omega]
-  by_cases c1 : 4 ≤ d.toNat
-  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by bdd_omega, show d.toNat - 4 < 4 by bdd_omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by bdd_omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by bdd_omega]
-    refine ext 1 w1 (by bdd_omega) c1 (by bdd_omega) fun b hb => ?_
-    rw [g b (by bdd_omega)]
-    simp only [show 8 * d.toNat + b < 64 by bdd_omega, show ¬ 8 * d.toNat + b < 32 by bdd_omega, ite_false,
-      ite_true, show 8 * (d.toNat - 4 * 1) + b = 8 * d.toNat + b - 32 by bdd_omega]
-  · simp only [c3, c2, c1, ite_true, ite_false, show d.toNat < 16 by bdd_omega, show d.toNat < 4 by bdd_omega,
-      show ¬ 2 ^ 64 + d.toNat - 12 < 4 by bdd_omega, show ¬ 2 ^ 64 + d.toNat - 8 < 4 by bdd_omega,
-      show ¬ 2 ^ 64 + d.toNat - 4 < 4 by bdd_omega]
-    refine ext 0 w0 (by bdd_omega) (by bdd_omega) (by bdd_omega) fun b hb => ?_
-    rw [g b (by bdd_omega)]
-    simp only [show 8 * d.toNat + b < 32 by bdd_omega, ite_true, show 8 * (d.toNat - 4 * 0) + b = 8 * d.toNat + b by bdd_omega]
-
+        (a + BitVec.ofNat 64 12) w3 :=
+  VG.AArch64.write16 m a w0 w1 w2 w3
 
 /-! ## Lanes -/
 
@@ -432,20 +372,9 @@ def writesV : Instr → Bool
   | _ => false
 
 theorem exec_v {i : Instr} (hi : writesV i = false) {s s' : State} (h : exec i s = some s') :
-    s'.v = s.v := by
-  cases i <;> simp only [writesV, Bool.true_eq_false] at hi
-  all_goals
-    simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
-  all_goals
-    repeat' first
-      | split at h
-      | simp only [Option.map_eq_some_iff] at h
-      | rcases h with ⟨_, _, h⟩
-  all_goals
-    simp_all only [State.store]
-  all_goals
-    repeat' first | split at h | cases h
-  all_goals rfl
+    s'.v = s.v :=
+  have hd : vdstOf i = none := by cases i <;> first | rfl | cases hi
+  funext fun _ => exec_vec (by rw [hd]; exact nofun) h
 
 /-- Code that writes no vector register keeps them. -/
 theorem WP.keepV : ∀ {is : List Instr} {s : State} {Q : State → Prop},
@@ -630,142 +559,6 @@ theorem vcsub_ok {d t : VReg} (hdt : d ≠ t := by decide) (hq : Lanes (s.v .v16
   refine (lanes_umin (by rw [h₁.get d hdt]; exact hf) l₁).congr fun e he => ?_
   have := hlt e he
   omega
-
-/-- `vmulq d z t`: `d · z mod q`, for lanes less than `q`. -/
-theorem vmulq_ok {d z t : VReg} (hdt : d ≠ t := by decide)
-    (ht16 : t ≠ .v16 := by decide) (ht17 : t ≠ .v17 := by decide) (hd16 : d ≠ .v16 := by decide)
-    (hd17 : d ≠ .v17 := by decide) (hc : VConsts s) {f g : Nat → Nat}
-    (hf : Lanes (s.v d) f) (hf' : ∀ e < 4, f e < 3329) (hg : Lanes (s.v z) g) (hg' : ∀ e < 4, g e < 3329)
-    (k : ∀ s', VChg [d, t, d, t, d] s s' → Lanes (s'.v d) (fun e => f e * g e % 3329) →
-      WP isa (.block rest) s' Q) :
-    WP isa (.block (vmulq d z t ++ rest)) s Q := by
-  have hfg : ∀ e < 4, f e * g e < 3329 * 3329 := fun e he =>
-    Nat.mul_lt_mul_of_lt_of_lt (hf' e he) (hg' e he)
-  refine wp_vop (d := d) rfl fun s₁ h₁ => ?_
-  have l₁ : Lanes (s₁.v d) fun e => f e * g e := by
-    rw [h₁.v]
-    exact (lanes_mul hf hg).congr fun e he => Nat.mod_eq_of_lt (by have := hfg e he; omega)
-  have c₁ := hc.chg h₁.chg (by simpa using hd16.symm) (by simpa using hd17.symm)
-  obtain ⟨x₂, e₂, l₂⟩ := eval_sqdmulh (d := t) l₁ c₁.m (fun e he => by have := hfg e he; omega)
-    (fun _ _ => by decide)
-  refine wp_vop e₂ fun s₂ h₂ => ?_
-  have c₂ := c₁.chg h₂.chg (by simpa using ht16.symm) (by simpa using ht17.symm)
-  refine wp_vop (d := d) rfl fun s₃ h₃ => ?_
-  have c₃ := c₂.chg h₃.chg (by simpa using hd16.symm) (by simpa using hd17.symm)
-  have a₂ : Lanes (s₂.v d) fun e => f e * g e := by rw [h₂.get d hdt]; exact l₁
-  have b₂ : Lanes (s₂.v t) fun e => f e * g e * 645083 / 2 ^ 31 := by rw [h₂.v]; exact l₂
-  have l₃ := lanes_mls a₂ b₂ c₂.q
-  rw [← h₃.v] at l₃
-  have hb : ∀ e < 4, f e * g e * 645083 / 2 ^ 31 * 3329 ≤ f e * g e ∧
-      f e * g e < f e * g e * 645083 / 2 ^ 31 * 3329 + 2 * 3329 := fun e he =>
-    barrett_nat (by have := hfg e he; omega)
-  refine vcsub_ok hdt c₃.q (f := fun e => f e * g e - f e * g e * 645083 / 2 ^ 31 * 3329)
-    (l₃.congr fun e he => ?_) (fun e he => ?_) fun s₄ h₄ l₄ =>
-    k s₄ (((h₁.chg.trans h₂.chg).trans h₃.chg).trans h₄) (l₄.congr fun e he => ?_)
-  · show _ = f e * g e - f e * g e * 645083 / 2 ^ 31 * 3329
-    have := hb e he
-    have : f e * g e * 645083 / 2 ^ 31 * 3329 % 2 ^ 32 = f e * g e * 645083 / 2 ^ 31 * 3329 :=
-      Nat.mod_eq_of_lt (by have := hfg e he; omega)
-    omega
-  · have := hb e he; omega
-  · show (f e * g e - f e * g e * 645083 / 2 ^ 31 * 3329) % 3329 = f e * g e % 3329
-    have hb' := (hb e he).1
-    rw [Nat.mul_comm] at hb'
-    rw [Nat.mul_comm _ 3329, Nat.sub_mul_mod hb']
-
-/-- `vbfly z`: the butterflies of Algorithm 9 on the lanes of `v0` and `v1`. -/
-theorem vbfly_ok {z : VReg} (hc : VConsts s) {A B Z : Nat → Nat} (hA : Lanes (s.v .v0) A) (hA' : ∀ e < 4, A e < 3329)
-    (hB : Lanes (s.v .v1) B) (hB' : ∀ e < 4, B e < 3329) (hZ : Lanes (s.v z) Z)
-    (hZ' : ∀ e < 4, Z e < 3329)
-    (k : ∀ s', VChg [.v1, .v2, .v3, .v4] s s' →
-      Lanes (s'.v .v2) (fun e => (A e + B e * Z e % 3329) % 3329) →
-      Lanes (s'.v .v1) (fun e => (A e + (3329 - B e * Z e % 3329)) % 3329) →
-      WP isa (.block rest) s' Q) :
-    WP isa (.block (vbfly z ++ rest)) s Q := by
-  simp only [vbfly, List.append_assoc, List.cons_append]
-  refine vmulq_ok (hc := hc) (hf := hB) (hf' := hB') (hg := hZ) (hg' := hZ')
-    (k := fun s₁ h₁ l₁ => ?_)
-  have c₁ := hc.chg h₁
-  have t₁ : ∀ e < 4, B e * Z e % 3329 < 3329 := fun e _ => Nat.mod_lt _ (by decide)
-  refine wp_vop (d := .v2) rfl fun s₂ h₂ => ?_
-  have a₁ : Lanes (s₁.v .v0) A := by rw [h₁.get .v0]; exact hA
-  have l₂ := lanes_add a₁ l₁
-  rw [← h₂.v] at l₂
-  refine vcsub_ok (by decide) (c₁.chg h₂.chg).q (f := fun e => (A e + B e * Z e % 3329) % 2 ^ 32) l₂ (fun e he => ?_) fun s₃ h₃ l₃ => ?_
-  · have := hA' e he; have := t₁ e he; omega
-  refine wp_vop (d := .v3) rfl fun s₄ h₄ => wp_vop (d := .v4) rfl fun s₅ h₅ => wp_vop (d := .v1) rfl
-    fun s₆ h₆ => ?_
-  have e0 : s₃.v .v0 = s.v .v0 := by rw [h₃.get .v0, h₂.get .v0, h₁.get .v0]
-  have e1 : s₃.v .v1 = s₁.v .v1 := by rw [h₃.get .v1, h₂.get .v1]
-  have a₃ : Lanes (s₃.v .v0) A := by rw [e0]; exact hA
-  have b₃ : Lanes (s₃.v .v1) fun e => B e * Z e % 3329 := by rw [e1]; exact l₁
-  have l₄ := lanes_sub a₃ b₃
-  rw [← h₄.v] at l₄
-  have l₅ := lanes_add l₄ (c₁.chg ((h₂.chg.trans h₃).trans h₄.chg)).q
-  rw [← h₅.v] at l₅
-  have a₅ : Lanes (s₅.v .v3) fun e => (2 ^ 32 - B e * Z e % 3329 + A e) % 2 ^ 32 := by
-    rw [h₅.get .v3]; exact l₄
-  have l₆ := lanes_umin a₅ l₅
-  rw [← h₆.v] at l₆
-  refine k s₆ (((((h₁.trans h₂.chg).trans h₃).trans h₄.chg).trans h₅.chg).trans h₆.chg |>.mono)
-    (by rw [h₆.get .v2, h₅.get .v2, h₄.get .v2]
-        exact l₃.congr fun e he => by
-          show (A e + B e * Z e % 3329) % 2 ^ 32 % 3329 = _
-          have := hA' e he; have := t₁ e he
-          rw [Nat.mod_eq_of_lt (show A e + B e * Z e % 3329 < 2 ^ 32 by bdd_omega)])
-    (l₆.congr fun e he => ?_)
-  have := hA' e he; have := t₁ e he
-  show min _ _ = _
-  omega
-
-/-- `vibfly z`: the butterflies of Algorithm 10 on the lanes of `v0` and `v1`. -/
-theorem vibfly_ok {z : VReg} (hz : z ∉ [VReg.v0, .v1, .v2, .v3, .v4, .v16, .v17] := by decide)
-    (hc : VConsts s) {A B Z : Nat → Nat} (hA : Lanes (s.v .v0) A) (hA' : ∀ e < 4, A e < 3329)
-    (hB : Lanes (s.v .v1) B) (hB' : ∀ e < 4, B e < 3329) (hZ : Lanes (s.v z) Z)
-    (hZ' : ∀ e < 4, Z e < 3329)
-    (k : ∀ s', VChg [.v1, .v2, .v3] s s' →
-      Lanes (s'.v .v2) (fun e => (A e + B e) % 3329) →
-      Lanes (s'.v .v1) (fun e => (B e + (3329 - A e)) % 3329 * Z e % 3329) →
-      WP isa (.block rest) s' Q) :
-    WP isa (.block (vibfly z ++ rest)) s Q := by
-  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hz
-  simp only [vibfly, List.append_assoc, List.cons_append]
-  refine wp_vop (d := .v2) rfl fun s₁ h₁ => ?_
-  have l₁ := lanes_add hA hB
-  rw [← h₁.v] at l₁
-  refine vcsub_ok (by decide) (hc.chg h₁.chg).q (f := fun e => (A e + B e) % 2 ^ 32) l₁ (fun e he => ?_) fun s₂ h₂ l₂ => ?_
-  · have := hA' e he; have := hB' e he; omega
-  have c₂ := hc.chg (h₁.chg.trans h₂)
-  refine wp_vop (d := .v1) rfl fun s₃ h₃ => wp_vop (d := .v3) rfl fun s₄ h₄ => wp_vop (d := .v1) rfl
-    fun s₅ h₅ => ?_
-  have e0 : s₂.v .v0 = s.v .v0 := by rw [h₂.get .v0, h₁.get .v0]
-  have e1 : s₂.v .v1 = s.v .v1 := by rw [h₂.get .v1, h₁.get .v1]
-  have a₂ : Lanes (s₂.v .v1) B := by rw [e1]; exact hB
-  have b₂ : Lanes (s₂.v .v0) A := by rw [e0]; exact hA
-  have l₃ := lanes_sub a₂ b₂
-  rw [← h₃.v] at l₃
-  have l₄ := lanes_add l₃ (c₂.chg h₃.chg).q
-  rw [← h₄.v] at l₄
-  have a₄ : Lanes (s₄.v .v1) fun e => (2 ^ 32 - A e + B e) % 2 ^ 32 := by
-    rw [h₄.get .v1]; exact l₃
-  have l₅ := lanes_umin a₄ l₄
-  rw [← h₅.v] at l₅
-  have c₅ := c₂.chg ((h₃.chg.trans h₄.chg).trans h₅.chg)
-  have d₅ : ∀ e < 4, min ((2 ^ 32 - A e + B e) % 2 ^ 32) (((2 ^ 32 - A e + B e) % 2 ^ 32 + 3329) % 2 ^ 32) =
-      (B e + (3329 - A e)) % 3329 := fun e he => by
-    have := hA' e he; have := hB' e he; omega
-  have z₅ : Lanes (s₅.v z) Z := by
-    rw [h₅.get z hz.2.1, h₄.get z hz.2.2.2.1, h₃.get z hz.2.1, h₂.v z (by simp [hz.2.2.1, hz.2.2.2.1]),
-      h₁.get z hz.2.2.1]
-    exact hZ
-  refine vmulq_ok (d := .v1) (z := z) (t := .v3) (hc := c₅) (hf := l₅.congr d₅)
-    (hf' := fun e _ => Nat.mod_lt _ (by decide)) (hg := z₅) (hg' := hZ') (k := fun s₆ h₆ l₆ => ?_)
-  refine k s₆ ((((h₁.chg.trans h₂).trans h₃.chg).trans h₄.chg).trans h₅.chg |>.trans h₆ |>.mono)
-    (by rw [h₆.get .v2, h₅.get .v2, h₄.get .v2, h₃.get .v2]
-        exact l₂.congr fun e he => by
-          show (A e + B e) % 2 ^ 32 % 3329 = _
-          have := hA' e he; have := hB' e he
-          rw [Nat.mod_eq_of_lt (show A e + B e < 2 ^ 32 by bdd_omega)]) l₆
 
 /-- `sqdmulh t, d, M; mls d, t, q`: Barrett reduction of lanes `x < 2³¹`, to
 `x - ⌊x · M / 2³¹⌋ · q`, which is less than `2q` and congruent to `x`. -/

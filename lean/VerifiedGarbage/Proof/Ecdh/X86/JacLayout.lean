@@ -7,6 +7,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Weierstrass.BytesLen
+public import VerifiedGarbage.Proof.Weierstrass.Window
+public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+public import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
 
 /-! The five-bit ECDH window fits the existing P-256 scratch layout. -/
 
@@ -31,12 +37,12 @@ private theorem listLay {M : Mod} {sz : Nat} {xs : List Nat}
   · exact of_decide_eq_true (List.all_eq_true.mp htmp x hx)
 
 macro "jwin_layout" h:term : tactic => `(tactic|
-  (simp only [Impl.Ecdh.X86.Cfg.jwinCfg,Impl.Ecdsa.X86.Cfg.MP',
-    Impl.Ecdsa.X86.Cfg.rcbSlots,Impl.Ecdsa.X86.Cfg.pt,Impl.Ecdsa.X86.Cfg.sl,
-    slot,($h),JWin.slots,JWin.ro,JWin.work,JWin.temps,JacWinCfg.E,JacWinCfg.z2,JacWinCfg.z3,
-    List.cons_append,List.nil_append,Impl.Ecdh.X86.Cfg.windowBits,
-    Mont.own,Spec.Weierstrass.Mont.ownAt,Spec.Weierstrass.Mont.ownBytes,VG.Impl.Mont.X86.words,
-    List.forall_mem_cons,List.forall_mem_nil,List.forall_mem_append] <;> decide))
+  plain_simp_names (simp only [Impl.Ecdh.X86.Cfg.jwinCfg,Impl.Ecdsa.X86.Cfg.MP',
+                     Impl.Ecdsa.X86.Cfg.rcbSlots,Impl.Ecdsa.X86.Cfg.pt,Impl.Ecdsa.X86.Cfg.sl,
+                     slot,($h),JWin.slots,JWin.ro,JWin.work,JWin.temps,JacWinCfg.E,JacWinCfg.z2,JacWinCfg.z3,
+                     List.cons_append,List.nil_append,Impl.Ecdh.X86.Cfg.windowBits,
+                     Mont.own,Spec.Weierstrass.Mont.ownAt,Spec.Weierstrass.Mont.ownBytes,VG.Impl.Mont.X86.words,
+                     List.forall_mem_cons,List.forall_mem_nil,List.forall_mem_append] <;> decide))
 
 theorem jwinLay (h4 : c.n=4) :
     JWin.Layout (Impl.Ecdh.X86.Cfg.jwinCfg c) size (Mont.own c.n) := by

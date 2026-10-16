@@ -50,6 +50,56 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
+public import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
+public import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+public import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
+public import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
+public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
+public import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitScale
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlock
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
+public import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
+public import VerifiedGarbage.Proof.Argon2.AArch64.Relative
+public import VerifiedGarbage.Proof.Argon2.AArch64.Wrap
+public import VerifiedGarbage.Proof.Argon2.Divide
+public import VerifiedGarbage.Proof.Argon2.FillPositions
+public import VerifiedGarbage.Proof.Argon2.Permutation
+public import VerifiedGarbage.Proof.Argon2.References
+public import VerifiedGarbage.Proof.Blake2.AArch64.Compress
+public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Init
+public import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Update
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Range
+public import VerifiedGarbage.Proof.Framework.RelCTAssoc
+meta import VerifiedGarbage.Proof.Argon2.AArch64.AddressCacheWord
+meta import VerifiedGarbage.Proof.Argon2.AArch64.BlockAddress
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Carry
+meta import VerifiedGarbage.Proof.Argon2.AArch64.DivideCT
+meta import VerifiedGarbage.Proof.Argon2.AArch64.FillKernelStable
+meta import VerifiedGarbage.Proof.Argon2.AArch64.FillWriteCover
+meta import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Compare
+meta import VerifiedGarbage.Proof.Argon2.AArch64.MemoryInitScale
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReduceBlock
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReductionClear
+meta import VerifiedGarbage.Proof.Argon2.AArch64.ReferenceStart
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Relative
+meta import VerifiedGarbage.Proof.Argon2.AArch64.Wrap
+meta import VerifiedGarbage.Proof.Argon2.Divide
+meta import VerifiedGarbage.Proof.Argon2.FillPositions
+meta import VerifiedGarbage.Proof.Argon2.Permutation
+meta import VerifiedGarbage.Proof.Argon2.References
+meta import VerifiedGarbage.Proof.Blake2.AArch64.Compress
+meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Init
+meta import VerifiedGarbage.Proof.Blake2.AArch64.Stream.Update
+meta import VerifiedGarbage.Proof.Framework.Bswap
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 @[expose] public section
 

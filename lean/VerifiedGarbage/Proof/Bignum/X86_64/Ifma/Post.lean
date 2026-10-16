@@ -2,12 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
 public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
-public import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
 public import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # RSA with AVX512_IFMA on x86-64: after the exponentiations
@@ -39,8 +40,8 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
     {N X oq op wx m1 : Nat} {qp : Addr} {qib : List Byte} {c : Bool}
     (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hN : NVals s B w minv N) (hw2 : w = 2 * wx)
     (hq : word s.mem B (8 * sWsQ) = off B oq) (hwsq : WsAt s.mem B oq wx mq)
-    (hhiq : oq + slot wx 8 + tabBytes wx ≤ Z)
-    (hlo : slot w 8 ≤ op) (hhi : op + slot wx 8 + tabBytes wx ≤ oq) (hwx2 : 2 ≤ wx)
+    (hhiq : oq + slot wx 8 + wsTab wx ≤ Z)
+    (hlo : slot w 8 ≤ op) (hhi : op + slot wx 8 + wsTab wx ≤ oq) (hwx2 : 2 ≤ wx)
     (hsp : word s.mem B (8 * sWsP) = off B op) (hws : WsAt s.mem B op wx mx) (hX : XVals s B op wx mx X)
     (hX1 : 1 < X) (hXodd : X % 2 = 1)
     (hyl : wv s.mem (off B op) (slot wx Public.aY) wx < X)
@@ -82,7 +83,7 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
     hw28 hlo (by omega_using [hhiq, hhi]) hwx2 hwx (by decide) hsp hws hX hX1) fun s₁ ⟨hc₁, hX₁, hlt₁, hv₁, f₁, r₁, k₁⟩ => ?_)
   rw [hK] at hv₁
   have hb₁ : ∀ d, d + 8 ≤ op → word s₁.mem B d = word s.mem B d := fun d hd => f₁.x_below hd ho64
-  have hab₁ : ∀ d, op + slot wx 8 + tabBytes wx ≤ d → d + 8 ≤ 2 ^ 64 → word s₁.mem B d = word s.mem B d :=
+  have hab₁ : ∀ d, op + slot wx 8 + wsTab wx ≤ d → d + 8 ≤ 2 ^ 64 → word s₁.mem B d = word s.mem B d :=
     fun d hd hd' => f₁.word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_using [lC, hC0, hd]) hd'
   have hs₁ := hs.congr k₁.2.2
   have hsP := hc₁.good.scr
@@ -167,7 +168,7 @@ theorem post_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx mq : BitV
   have i04 : InScr B Z s.mem s₄.mem :=
     InScr.of_frm f04 fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_arith
   -- `h`.
-  refine wp_seqs_append (by simp [subModArr]) (by simp) (WP.mono (hTail_ok M hc₄ hX₄ hw28 hwx2 hwx
+  refine wp_seqs_append (by simp [subModArr]) (by simp) (WP.mono (hTail_ok M hc₄ (by omega_arith) hX₄ hw28 hwx2 hwx
     (by rw [hY₄]; exact hyl) hlt₄' hM₄ (by rw [hb₄ _ (by unfold sQinv sFn; omega_arith)]; exact hqp)
     (by rw [hb₄ _ (by unfold sPlen sFn; omega_arith)]; exact hql)
     (hqs.congrK i04 (((k₁.trans k₂).trans k₃).trans k₄)) hq1 hq2 hqw hqi)

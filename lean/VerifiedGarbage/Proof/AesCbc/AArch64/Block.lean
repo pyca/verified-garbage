@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.AesCbc.AArch64
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # AES-CBC on AArch64: the code between the calls
@@ -30,13 +33,13 @@ theorem read8 (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by
   simp [Mem.readW]
 
 /-- Runs a block of the instructions the AES-CBC code uses. -/
-macro "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VG.AArch64.addr,
-    State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
-    sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,
-    mov, List.cons_append, List.nil_append, reduceCtorEq, ↓reduceIte, Nat.reduceLT,
-    Nat.reduceLeDiff, Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod,
-    and_true, true_and, write8, read8, BitVec.add_zero, $ts,*]) <;> try rfl)
+macro "crun" "[" ts:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| plain_simp_names (
+                   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VG.AArch64.addr,
+                     State.load, State.store, Size.bytes, Size.bits, State.read, gpr_write, mem_write, rd_write, wr_write,
+                     sp_write, ite_true, ite_false, Option.bind_some, Option.map_some, BitVec.setWidth_eq, and_self,
+                     mov, List.cons_append, List.nil_append, reduceCtorEq, ↓reduceIte, Nat.reduceLT,
+                     Nat.reduceLeDiff, Nat.reduceAdd, Nat.reduceMul, Nat.reduceMod,
+                     and_true, true_and, write8, read8, BitVec.add_zero, $ts,*]) <;> try rfl)
 
 /-! ## Saving and restoring the registers -/
 

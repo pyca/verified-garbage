@@ -1,10 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.KgB
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # ML-KEM on AArch64: `keygen`, the calls of phase C
@@ -28,7 +32,7 @@ open VG.Spec.Sha3 (bytesAt stateAt Repr)
 variable {P : KemLay}
 
 /-- Two buffers are apart: in different arguments, or at offsets apart. -/
-macro "rdisj" : tactic => `(tactic|
+tactic_template "rdisj" : tactic => `(tactic|
   exact (‹Pre _ _›).args.rdisj (by decide) (by decide) (by kl) (by kl) (by kl))
 
 /-- A polynomial buffer in `scratch` for phase C: past `Â`'s start, below

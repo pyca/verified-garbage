@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
 public import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
 meta import VerifiedGarbage.Proof.Ecdsa.X86.CombVerified
-public import VerifiedGarbage.Proof.Ecdsa.X86.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 public import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -12,6 +12,14 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+import VerifiedGarbage.Proof.Framework.X86.Sse
+import VerifiedGarbage.Proof.X25519.X86.Column
+meta import Mathlib.Data.Finset.Card
+meta import Mathlib.Data.Nat.Find
+meta import VerifiedGarbage.Proof.Framework.X86.Sse
+meta import VerifiedGarbage.Proof.X25519.X86.Column
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): P-256
@@ -60,7 +68,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
   inst := Spec.Ecdsa.P256.inst
   curve := rfl
   wide := false
-  sizes := ⟨.inr (.inl rfl), rfl, p256_nBits, by decide +kernel⟩
+  sizes := ⟨.inr (.inl rfl), .inl rfl, p256_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.P256.curve = 0; rw [p256_nBits]

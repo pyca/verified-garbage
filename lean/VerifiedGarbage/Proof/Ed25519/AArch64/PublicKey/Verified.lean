@@ -1,13 +1,26 @@
 module
 
+public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
 meta import VerifiedGarbage.Proof.Ed25519.AArch64.PublicKey.CTCommon
-public import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Sha512.Word64
+meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Sha512.Word64
+import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+meta import VerifiedGarbage.Impl.Mont.Mod
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
+meta import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 
 /-! Merged from `Proof.Ed25519.AArch64.PublicKey.CT`. -/
 
@@ -30,17 +43,17 @@ variable {L : Lay} {t : State}
 
 def init_ready (hs : Slots L initValues t) :
     Whole.CallReady (Proof.Sha512.initAArch64 Spec.Sha512.H0_512) L.E L.inputs L.outputs t := by
-  have h0 := hs (.x0, .caller 2 0) (by simp [initValues])
+  have h0 := hs (.x0, .caller 2 0) (by decide)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0
   have hw := Whole.init_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
   exact ⟨[], Whole.initWr L.scr, Whole.init_pre h0, Whole.covers_writes hw, hw⟩
 
 def update_ready (hL : L.Ok) (hsp : t.sp = L.E) (hs : Slots L updateValues t) :
     Whole.CallReady Proof.Sha512.updateAArch64 L.E L.inputs L.outputs t := by
-  have h0 := hs (.x0, .caller 2 0) (by simp [updateValues])
-  have h2 := hs (.x2, .caller 1 0) (by simp [updateValues])
-  have h3 := hs (.x3, .const 32) (by simp [updateValues])
-  have h4 := hs (.x4, .caller 2 192) (by simp [updateValues])
+  have h0 := hs (.x0, .caller 2 0) (by decide)
+  have h2 := hs (.x2, .caller 1 0) (by decide)
+  have h3 := hs (.x3, .const 32) (by decide)
+  have h4 := hs (.x4, .caller 2 192) (by decide)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h2 h3 h4
   have hw := Whole.hash_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
   refine ⟨Whole.updateRd L.seed 32, Whole.hashWr L.scr, Whole.update_pre h0 h2 h3 h4 hL.sc
@@ -55,9 +68,9 @@ def update_ready (hL : L.Ok) (hsp : t.sp = L.E) (hs : Slots L updateValues t) :
 
 def finalize_ready (hL : L.Ok) (hsp : t.sp = L.E) (hs : Slots L finalizeValues t) :
     Whole.CallReady Proof.Sha512.finalizeAArch64 L.E L.inputs L.outputs t := by
-  have h0 := hs (.x0, .caller 2 0) (by simp [finalizeValues])
-  have h2 := hs (.x2, .frame 192) (by simp [finalizeValues])
-  have h3 := hs (.x3, .caller 2 192) (by simp [finalizeValues])
+  have h0 := hs (.x0, .caller 2 0) (by decide)
+  have h2 := hs (.x2, .frame 192) (by decide)
+  have h3 := hs (.x3, .caller 2 192) (by decide)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h2 h3
   have hd : Region.Disjoint ⟨L.E + 192, 64⟩ L.SCR :=
     hL.kc.sub_left (Offset.sub_base _ (by decide : 192 + 64 ≤ 336))
@@ -69,9 +82,9 @@ def finalize_ready (hL : L.Ok) (hsp : t.sp = L.E) (hs : Slots L finalizeValues t
 def base_ready (hL : L.Ok) (hsy : t.syms Impl.Ed25519.AArch64.combSym = L.T) (hm : TblWords L.T t.mem)
     (hs : Slots L baseValues t) :
     Whole.CallReady scalarBaseLocal L.E L.inputs L.outputs t := by
-  have h0 := hs (.x0, .caller 0 0) (by simp [baseValues])
-  have h1 := hs (.x1, .frame 32) (by simp [baseValues])
-  have h2 := hs (.x2, .caller 2 0) (by simp [baseValues])
+  have h0 := hs (.x0, .caller 0 0) (by decide)
+  have h1 := hs (.x1, .frame 32) (by decide)
+  have h2 := hs (.x2, .caller 2 0) (by decide)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2
   exact ⟨[⟨L.E + 32, 32⟩, L.TB], L.outputs, base_pre hL ⟨h0, h1, h2⟩ hsy hm, base_covers L, base_writes L⟩
 
@@ -90,7 +103,7 @@ theorem init_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) : Re
     (Proof.Sha512.AArch64.Stream.init_verified _).2.1 (Whole.depth_of_noFrames rfl)
     (fun _ _ _ _ h => init_ready h)
   · intro a b ar aw br bw hsp _ hg
-    exact ⟨hg (.x0, .caller 2 0) (by simp [initValues]), hsp⟩
+    exact ⟨hg (.x0, .caller 2 0) (by decide), hsp⟩
   · simp [initValues, linkRegs]
 
 theorem update_ct (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
@@ -100,9 +113,9 @@ theorem update_ct (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : 
   apply call_ct hL ha hb v.update_verified.1 v.update_verified.2.1 (Whole.update_depth v)
     (fun _ hsp _ _ h => update_ready hL hsp h)
   · intro a b ar aw br bw hsp _ hg
-    exact ⟨hg (.x0, .caller 2 0) (by simp [updateValues]), hg (.x1, .const 0) (by simp [updateValues]),
-      hg (.x2, .caller 1 0) (by simp [updateValues]), hg (.x3, .const 32) (by simp [updateValues]),
-      hg (.x4, .caller 2 192) (by simp [updateValues]), hsp⟩
+    exact ⟨hg (.x0, .caller 2 0) (by decide), hg (.x1, .const 0) (by decide),
+      hg (.x2, .caller 1 0) (by decide), hg (.x3, .const 32) (by decide),
+      hg (.x4, .caller 2 192) (by decide), hsp⟩
   · simp [updateValues, linkRegs]
 
 theorem finalize_ct (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
@@ -112,18 +125,18 @@ theorem finalize_ct (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb 
   apply call_ct hL ha hb v.finalize_verified.1 v.finalize_verified.2.1 (Whole.finalize_depth v)
     (fun _ hsp _ _ h => finalize_ready hL hsp h)
   · intro a b ar aw br bw hsp _ hg
-    exact ⟨hg (.x0, .caller 2 0) (by simp [finalizeValues]), hg (.x1, .const 32) (by simp [finalizeValues]),
-      hg (.x2, .frame 192) (by simp [finalizeValues]), hg (.x3, .caller 2 192) (by simp [finalizeValues]), hsp⟩
+    exact ⟨hg (.x0, .caller 2 0) (by decide), hg (.x1, .const 32) (by decide),
+      hg (.x2, .frame 192) (by decide), hg (.x3, .caller 2 192) (by decide), hsp⟩
   · simp [finalizeValues, linkRegs]
 
-theorem base_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L baseValues))
+theorem base_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L baseValues))
     (.call "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase)
     (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   apply call_ct hL ha hb scalarBase_ok scalarBase_ct (Whole.depth_of_noFrames base_noFrames)
     (fun _ _ hy hm h => base_ready hL hy hm h)
   · intro a b ar aw br bw hsp hy hg
-    exact ⟨hsp, hg (.x0, .caller 0 0) (by simp [baseValues]), hg (.x1, .frame 32) (by simp [baseValues]),
-      hg (.x2, .caller 2 0) (by simp [baseValues]), hy⟩
+    exact ⟨hsp, hg (.x0, .caller 0 0) (by decide), hg (.x1, .frame 32) (by decide),
+      hg (.x2, .caller 2 0) (by decide), hy⟩
   · simp [baseValues, linkRegs]
 
 theorem prune_ct : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (.block prune)
@@ -142,21 +155,21 @@ theorem wipe_ct (hL : L.Ok) : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun
   · intro t ⟨hc, hy, _⟩; exact WP.mono_syms (wipe_step hc hL) fun _ ⟨hu, _⟩ sy => ⟨hu, sy ▸ hy, trivial⟩
   · intro t ⟨hc, hy, _⟩; exact WP.mono_syms (wipe_step hc hL) fun _ ⟨hu, _⟩ sy => ⟨hu, sy ▸ hy, trivial⟩
 
-theorem body_ct (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+theorem body_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (body v.code v.suffix)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   have i := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb initValues
     (by decide) (by simp [initValues, Whole.valid]) (by simp [initValues])
-    (by simp [initValues, preserved]) (by taint_decide)
+    (by decide) (by taint_decide)
   have u := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb updateValues
     (by decide) (by simp [updateValues, Whole.valid]) (by simp [updateValues])
-    (by simp [updateValues, preserved]) (by taint_decide)
+    (by decide) (by taint_decide)
   have f := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb finalizeValues
     (by decide) (by simp [finalizeValues, Whole.valid]) (by simp [finalizeValues])
-    (by simp [finalizeValues, preserved]) (by taint_decide)
+    (by decide) (by taint_decide)
   have b := setup_ct (g₁ := g₁) (g₂ := g₂) (v₁ := v₁) (v₂ := v₂) hL ha hb baseValues
     (by decide) (by simp [baseValues, Whole.valid]) (by simp [baseValues])
-    (by simp [baseValues, preserved]) (by taint_decide)
+    (by decide) (by taint_decide)
   exact ((i.seq (init_ct hL ha hb)).seq ((u.seq (update_ct v hL ha hb)).seq
     (f.seq (finalize_ct v hL ha hb)))).seq (prune_ct.seq ((b.seq (base_ct hL ha hb)).seq (wipe_ct hL)))
 
@@ -164,7 +177,7 @@ theorem lay_eq {s t : State} (hp : pkLocal.pub s t) : lay s = lay t := by
   obtain ⟨sp, h0, h1, h2, hsy⟩ := hp
   simp only [lay, Whole.base, sp, h0, h1, h2, hsy]
 
-theorem publicKey_ct (v : Whole.Backend) : ConstantTime isa pkLocal.pre pkLocal.pub (code v.code v.suffix) := by
+theorem publicKey_ct [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) : ConstantTime isa pkLocal.pre pkLocal.pub (code v.code v.suffix) := by
   refine Whole.wrap_ct (fun _ _ hp => hp.1) ?_ ?_
   · intro s hs p hp
     exact WP.mono (body_ok v (entry_ctx hs hp) (lay_ok hs) (entry_args hs hp) (entry_syms hp))
@@ -256,7 +269,7 @@ theorem pk_implies : pkLocal.Implies
       combConsts_eq, Abi.withConsts]
   sat := sat
 
-theorem publicKey_verified (v : Whole.Backend) :
+theorem publicKey_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] (v : Whole.Backend) :
     Verified AArch64.target (code v.code v.suffix)
       (Spec.Ed25519.publicKeyContract (AArch64.abi.withConsts combConsts) 352) :=
   Verified.of_implies

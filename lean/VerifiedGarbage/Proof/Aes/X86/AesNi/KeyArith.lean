@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Impl.Aes.X86.AesNi
+import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Bswap
+public import VerifiedGarbage.Proof.Framework.X86.Exec
+public import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
+public import VerifiedGarbage.TCB.X86.Target
 
 @[expose] public section
 
@@ -85,7 +91,7 @@ theorem rot_cat (a b c d : BitVec 8) : (a ++ b ++ c ++ d).rotateRight 8 = d ++ a
   have hi' : i < 32 := hi
   simp only [BitVec.getLsbD_rotateRight, BitVec.getLsbD_append, hi', decide_true, Bool.true_and]
   rcases (by omega : i < 8 ∨ (8 ≤ i ∧ i < 16) ∨ (16 ≤ i ∧ i < 24) ∨ 24 ≤ i) with h | h | h | h <;>
-    simp (disch := omega) only [ite_eq_left, ite_eq_right] <;>
+    simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right] <;>
     exact congrArg _ (by omega)
 
 theorem wv_cat (a b c d : BitVec 8) : wv (a ++ b ++ c ++ d) = [d, c, b, a] := by

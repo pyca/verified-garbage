@@ -163,6 +163,20 @@ def powMore : Prog isa :=
 def powers : Prog isa :=
   .seq (.block (powSse ++ ptr .r11 .r15 tbO ++ pow4 ++ ([.mov .rax (.mem (at_ .r15 mpO))] : List Instr))) powMore
 
+/-- With a prepared key context (`VG.Spec.Gcm.PreparedPowersRepr`), the
+constants in every lane of `zmm0` and `zmm1`, and the table of powers copied
+from the context, whose 64 bytes at `ctx + 256 + 64 j` hold `H'⁴ʲ⁺²`,
+`H'⁴ʲ⁺¹`, `H'⁴ʲ⁺⁴`, `H'⁴ʲ⁺³`: each group swapped by halves into the table's
+`H'⁴ʲ⁺⁴`–`H'⁴ʲ⁺¹`, all eight groups. -/
+def powersP : Prog isa :=
+  .block (Gcm.X86_64.Pclmul.const .xmm0 revMask ++ Gcm.X86_64.Pclmul.const .xmm1 poly ++
+    ([.vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .zop (.vshufi32x4 .xmm0 .xmm0 .xmm0 0x44),
+      .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1), .zop (.vshufi32x4 .xmm1 .xmm1 .xmm1 0x44)] : List Instr) ++
+    ptr .r11 .r15 tbO ++
+    (List.range 8).flatMap fun j =>
+      [.vmovdqu32Load .xmm8 (at_ .r13 (256 + 64 * j)), .zop (.vshufi32x4 .xmm8 .xmm8 .xmm8 0x4E),
+        .vmovdqu32Store (at_ .r11 (64 * j)) .xmm8])
+
 /-! ## The keystream -/
 
 /-- The counters `J₀`, `J₀ + 1`, `J₀ + 2`, `J₀ + 3` in the lanes of `zmm14`
@@ -227,9 +241,26 @@ def tagK (o : Nat) : List Instr :=
 `[rdi + r10]` (`G`). -/
 def kB : MemOp := { base := .rdx, index := some .r10 }
 
+/-- Eight (if `w`) or four bytes at `[rsi + r10]` XORed with those at
+`[rdx + r10]` through `rax`, stored back and, if `g`, at `[rdi + r10]`. -/
+def xorWord (g w : Bool) : List Instr :=
+  (if w then ([.mov .rax (.mem srcB), .alu .xor .rax (.mem kB), .store srcB .rax] : List Instr) ++
+      (if g then [.store dstB .rax] else [])
+    else ([.mov32 .rax (.mem srcB), .alu32 .xor .rax (.mem kB), .store32 srcB .rax] : List Instr) ++
+      (if g then [.store32 dstB .rax] else [])) ++
+  [.alu .add .r10 (imm (if w then 8 else 4))]
+
+/-- The bytes from `r10` to `rcx` at `rsi` XORed with those at `rdx`, one at
+a time, and if `g` also stored at `rdi`. -/
+def xorBytes (g : Bool) : Prog isa :=
+  .loop (.block (([.movzx8 .rax srcB, .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] : List Instr) ++
+    (if g then [.store8 dstB .rax] else []) ++
+    ([.alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)] : List Instr))) .ne
+
 /-- The `rcx` bytes at `rsi` XORed with the keystream at `rdx`, and, if `g`,
-also stored at `rdi`: 16 at a time (through `xmm4`), then one at
-a time. -/
+also stored at `rdi`: 16 at a time (through `xmm4`), then, of the fewer than
+16 left, 8 and 4 at a time (through `rax`) as the bits of `rcx` say, and the
+last one at a time; fewer than 4 left go straight to the last loop. -/
 def xorText (g : Bool) : Prog isa :=
   .seq (.block [.mov32 .r10 (imm 0), .mov .r8 (.reg .rcx), .shift .shr .r8 4, .shift .shl .r8 4, .alu .cmp .r8 (imm 0)])
   (.seq (.ite .e (.block [])
@@ -237,11 +268,16 @@ def xorText (g : Bool) : Prog isa :=
           .vmovdquStore .l128 srcB .xmm4] : List Instr) ++
           (if g then [.vmovdquStore .l128 dstB .xmm4] else []) ++
           ([.alu .add .r10 (imm 16), .alu .cmp .r10 (.reg .r8)] : List Instr))) .ne))
-  (.seq (.block [.alu .cmp .r10 (.reg .rcx)])
+  (.seq (.block [.alu .test .rcx (imm 15)])
     (.ite .e (.block [])
-      (.loop (.block (([.movzx8 .rax srcB, .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] : List Instr) ++
-          (if g then [.store8 dstB .rax] else []) ++
-          ([.alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)] : List Instr))) .ne))))
+      (.seq (.block [.alu .test .rcx (imm 12)])
+        (.ite .e (xorBytes g)
+          (.seq (.block [.alu .test .rcx (imm 8)])
+          (.seq (.ite .e (.block []) (.block (xorWord g true)))
+          (.seq (.block [.alu .test .rcx (imm 4)])
+          (.seq (.ite .e (.block []) (.block (xorWord g false)))
+          (.seq (.block [.alu .test .rcx (imm 3)])
+            (.ite .e (.block []) (xorBytes g))))))))))))
 
 /-- The arguments of `xorText`: the data, `K[1]`, the text's blocks in `G`
 and the length. -/
@@ -250,11 +286,12 @@ def textArgs : List Instr :=
 
 /-! ## `seal` and `open` -/
 
-/-- The short `seal`: the ciphertext written to the data and `G`, and the
-tag at `W`. -/
-def sealShort : Prog isa :=
+/-- The short `seal`, with the table of powers from `pw` (`powers`, or
+`powersP` with a prepared key context): the ciphertext written to the data
+and `G`, and the tag at `W`. -/
+def sealShort (pw : Prog isa := powers) : Prog isa :=
   .seq (.block (j012 ++ sizes))
-  (.seq powers
+  (.seq pw
   (.seq (.block zeroG)
   (.seq copyA
   (.seq keystream
@@ -277,9 +314,9 @@ def openChk : Prog isa :=
 /-- The short `open`, after `tagLenOk` (with `rbx` the tag's length, kept
 at `tlO`): the tag compared with the received one (`openChk`), and the data
 decrypted only if they are equal; `rax` as `open` returns it. -/
-def openShort : Prog isa :=
+def openShort (pw : Prog isa := powers) : Prog isa :=
   .seq (.block (j012 ++ sizes))
-  (.seq (.seq powers (.seq (.block zeroG) (.seq copyA (.seq keystream openChk))))
+  (.seq (.seq pw (.seq (.block zeroG) (.seq copyA (.seq keystream openChk))))
   (.seq (.ite .e (.block []) (.seq (.block textArgs) (xorText false)))
     (.block [.mov .rax (.mem (at_ .r15 auxO))])))
 
@@ -358,6 +395,24 @@ def finishWith (ks : Prog isa) : Prog isa :=
 /-- `finishWith` the keystream of `finKs`, in two lanes of `zmm5`. -/
 def finish : Prog isa := finishWith finKs
 
+/-- `H'` into `xmm3` and `H'²` into `xmm6` from a prepared key context
+(`VG.Spec.Gcm.PreparedPowersRepr`), which keeps them at `ctx + 272` and
+`ctx + 256`, with the constants in `xmm0` and `xmm1`. -/
+def finPowP : List Instr :=
+  Gcm.X86_64.Pclmul.const .xmm0 revMask ++ Gcm.X86_64.Pclmul.const .xmm1 poly ++
+  [.movdquLoad .xmm3 (at_ .r13 272), .movdquLoad .xmm6 (at_ .r13 256)]
+
+/-- `finishWith ks` with `H'` and `H'²` from a prepared key context
+(`finPowP`), for at most 16 bytes left, which `xorText` encrypts in one
+block. -/
+def finishP (ks : Prog isa) : Prog isa :=
+  .seq (.block finPowP)
+  (.seq ks
+  (.seq (.block [.mov .rax (.mem (at_ .r15 lenO)), .alu .test .rax (.reg .rax)])
+    (.ite .e (.block (finLens ++ finGh1 ++ tagK 0))
+      (.seq (.block finTextArgs)
+        (.seq (xorText true) (.block (finLens ++ finGh2 ++ tagK 0)))))))
+
 /-- `J₀` and the counter block in `xmm5` and `xmm7`, and the key schedule,
 the number of rounds and the last round key's address in `rdi`, `rsi` and
 `r10`, for `AesNi.aes`. -/
@@ -376,29 +431,33 @@ def finKsA : Prog isa :=
 
 variable (c : Callees)
 
-/-- `seal` with the short path (`cond`), or else the other instances' body. -/
-def «seal» : Prog isa :=
+/-- `seal` with the short path (`cond`), with the table of powers from `pw`,
+or else the other instances' body. -/
+def «seal» (pw : Prog isa := powers) : Prog isa :=
   .seq (.block (oneEntry 32))
     (.seq (.seq cond (.ite .e
-        (.seq (oneAad c) (.seq (oneBlocks c.enc) finish)) sealShort))
+        (.seq (oneAad c) (.seq (oneBlocks c.enc) finish)) (sealShort pw)))
       (.seq (.block (tagOut (at_ .rsp 24))) (.block restore)))
 
-/-- `open` with the short path (`cond`), or else the other instances' body. -/
-def «open» : Prog isa :=
+/-- The other instances' body of `open`, after the entry and `tagLenOk`. -/
+def openLong : Prog isa :=
+  .seq (oneAad c)
+  (.seq (oneBlocks c.dec)
+  (.seq (oneTag c uO)
+  (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
+  (.seq recv
+  (.seq (cmp uO)
+  (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
+  (.seq (.ite .e (oneUndo c) (oneCrypt c))
+    (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))
+
+/-- `open` with the short path (`cond`), with the table of powers from `pw`,
+or else `lng` (the other instances' body, `openLong`, by default). -/
+def «open» (pw : Prog isa := powers) (lng : Prog isa := openLong c) : Prog isa :=
   .seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
-      (.seq cond (.ite .e
-        (.seq (oneAad c)
-        (.seq (oneBlocks c.dec)
-        (.seq (oneTag c uO)
-        (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
-        (.seq recv
-        (.seq (cmp uO)
-        (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
-        (.seq (.ite .e (oneUndo c) (oneCrypt c))
-          (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))))
-        openShort)))
+      (.seq cond (.ite .e lng (openShort pw))))
     (.block restore)))
 
 end VG.Impl.AesGcm.X86_64.Short

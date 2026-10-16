@@ -8,6 +8,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+meta import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Absorb
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Stream.Squeeze
 
 /-!
 # Ed448's complete operations on AArch64: each call in constant time

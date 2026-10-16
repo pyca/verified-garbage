@@ -10,12 +10,18 @@ public import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 public import VerifiedGarbage.Spec.X448.Field16
 meta import VerifiedGarbage.Spec.X448.Field16
-public import VerifiedGarbage.Proof.X448.X86.FnLit
+import VerifiedGarbage.Proof.X448.X86.FnLit
 meta import VerifiedGarbage.Proof.X448.X86.FnLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.Omega
+meta import Mathlib.Tactic.SplitIfs
+meta import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Impl.X25519.X86
+meta import VerifiedGarbage.Impl.X25519.X86
 
 /-!
 # X448 on x86 (32-bit): the field functions' `Verified`

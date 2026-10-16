@@ -4,13 +4,22 @@ public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Layout
 public import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Base
 public import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Args
 public import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
-public import VerifiedGarbage.Proof.Ed25519.Signing
-public import VerifiedGarbage.Proof.Ed25519.VerifyBytes
-public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.Signing
+import VerifiedGarbage.Proof.Ed25519.VerifyBytes
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarVerified
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Keep
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Sym
+import VerifiedGarbage.Spec.Weierstrass
+import VerifiedGarbage.Proof.Ed25519.Recode
+import VerifiedGarbage.Proof.Ed25519.X86_64.Point64.Ops
+import VerifiedGarbage.Proof.Ed25519.X86_64.Zmm.Half
+import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
+import VerifiedGarbage.Spec.EcKey.Generic
+import VerifiedGarbage.Spec.Ecdsa.Generic
 
 /-! Merged from `Proof.Ed25519.X86_64.SignCached.Prune`. -/
 

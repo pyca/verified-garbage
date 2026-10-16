@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
 meta import VerifiedGarbage.Impl.Bignum.X86_64.MontFn
 public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
-public import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
+import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 meta import VerifiedGarbage.Proof.Framework.X86_64.VecKeep
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 meta import VerifiedGarbage.Proof.Framework.X86_64.CallInline
@@ -12,6 +12,10 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.Omega
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 @[expose] public section
 

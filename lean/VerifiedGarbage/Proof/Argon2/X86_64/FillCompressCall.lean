@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.Argon2.X86_64.Compress
+import VerifiedGarbage.Proof.Argon2.X86_64.Compress
 public import VerifiedGarbage.Proof.Argon2.X86_64.CompressImpl
-public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic

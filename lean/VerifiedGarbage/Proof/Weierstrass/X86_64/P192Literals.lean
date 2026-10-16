@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
-public import VerifiedGarbage.Impl.Ecdsa.P192.X86_64
+import VerifiedGarbage.Impl.Ecdsa.P192.X86_64
 meta import VerifiedGarbage.Impl.Ecdsa.P192.X86_64
 public import VerifiedGarbage.Impl.Ecdh.P192.X86_64
 meta import VerifiedGarbage.Impl.Ecdh.P192.X86_64
@@ -33,5 +33,7 @@ materialize_code pPow := Cfg.pPow p192
 materialize_code nPow := Cfg.nPow p192
 materialize_code gMulK := Cfg.gMulK p192
 materialize_code validate := Impl.Ecdh.X86_64.Cfg.validate p192
+materialize_code checkFn := Cfg.invFnX (Impl.Ecdh.X86_64.Cfg.checkBody p192)
+materialize_code check := Impl.Ecdh.X86_64.Cfg.check p192
 
 end VG.Proof.Weierstrass.X86_64.P192Literals

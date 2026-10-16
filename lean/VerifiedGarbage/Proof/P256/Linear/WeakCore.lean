@@ -1,12 +1,13 @@
 module
 
 public import VerifiedGarbage.Proof.P256.Linear.WeakWords
-public import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import VerifiedGarbage.Proof.Mont.AArch64.Ops
 public import VerifiedGarbage.Proof.Ed25519.AArch64.SqrRows
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
 
 @[expose] public section
 
@@ -24,7 +25,7 @@ theorem addCode_ok (s : State) : WP isa (.block addCode) s fun t =>
   apply WP.of_runBlock
   simp only [regs,addCode,runBlock_cons,runStep_some,runBlock_nil,exec,read_x,Size.bits,
     RegUpd.gpr_addWithCarry,RegUpd.c_addWithCarry,BitVec.setWidth_eq,
-    ite_false,reduceCtorEq,Option.some.injEq,exists_eq_left']
+    ite_false,reduceCtorEq,Option.some.injEq,exists_eq_left',addWords,addCarry,carryOut]
   refine ⟨rfl,rfl,?_,rfl,rfl,rfl,rfl⟩
   reg_keeps
 

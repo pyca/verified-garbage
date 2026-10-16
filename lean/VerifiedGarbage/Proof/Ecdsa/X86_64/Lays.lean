@@ -5,6 +5,9 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-!
 # ECDSA on x86-64: where the ladder's and the powers' slots are
@@ -174,12 +177,12 @@ theorem powLay_of (hc : BaseCfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     (minv : BitVec 64) {red : Red} {adx sparse fnN : Bool}
     {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
     (ho45 : one < 45) {nb : Nat} (hnb : 1 ≤ nb ∧ nb ≤ 64 * c.n) (hjT : j ≠ 1 ∨ c.n ≠ 9) :
-    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse, false, fnN⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
+    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse, false, fnN, none⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       nb⟩ size := by
   have hn := hc.n0
   have h7 := hc.n10
   have hw : ∀ i, i ∉ [ACC, PT, TMP] →
-      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse, false, fnN⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
+      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx, sparse, false, fnN, none⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
         bitsAt c.n j, nb⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
     intro i hi w hw
     simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw

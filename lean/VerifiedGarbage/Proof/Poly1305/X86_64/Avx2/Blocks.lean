@@ -6,11 +6,11 @@ public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Group
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Gpr
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
+import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
-public import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
+import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Variant
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Variant

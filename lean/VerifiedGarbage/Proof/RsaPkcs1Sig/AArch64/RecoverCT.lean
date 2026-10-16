@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 
 /-!
 # `vg_rsa_pkcs1_recover` on AArch64: constant time
@@ -289,7 +291,7 @@ theorem afterPub_ct {K : Nat} : RelCT isa (Two (At K JA)) afterPub fun _ _ => Tr
   refine RelCT.seq (two_post (Ψ := At K JF)
     (encode_taint fun a u₁ u₂ ⟨s₁, h₁, _, j₁⟩ ⟨s₂, h₂, _, j₂⟩ => ⟨by rw [j₁.mid.sp, j₂.mid.sp, h₁.fb, h₂.fb],
       fun r hr => ?_⟩)
-    fun a u ⟨s, h, g, hu⟩ => WP.mono (enc_ok h.1 h.hh.1 h.hh.2 hu) fun w hw => ⟨s, h, g, hw⟩) tail_ct
+    fun a u ⟨s, h, g, hu⟩ => WP.mono (enc_ok h.1 h.hh.1 h.hh.2 hu) fun w hw => ⟨s, h, g, hw.1⟩) tail_ct
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · rw [j₁.x8, j₂.x8, h₁.fb, h₂.fb]

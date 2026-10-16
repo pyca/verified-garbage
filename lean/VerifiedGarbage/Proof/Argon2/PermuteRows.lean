@@ -53,11 +53,11 @@ theorem rotRows_get (n : Nat) (v : Vector Word 16) (j : Nat) (hj : j < 16) :
 theorem GB_get' (v : Vector Word 16) {a b c d : Fin 16} (hab : a.1 ≠ b.1) (hac : a.1 ≠ c.1)
     (had : a.1 ≠ d.1) (hbc : b.1 ≠ c.1) (hbd : b.1 ≠ d.1) (hcd : c.1 ≠ d.1)
     (k : Nat) (hk : k < 16) :
-    (GB v a b c d)[k] =
-      if b.1 = k then (mix v[a.1] v[b.1] v[c.1] v[d.1]).2.1
-      else if c.1 = k then (mix v[a.1] v[b.1] v[c.1] v[d.1]).2.2.1
-      else if d.1 = k then (mix v[a.1] v[b.1] v[c.1] v[d.1]).2.2.2
-      else if a.1 = k then (mix v[a.1] v[b.1] v[c.1] v[d.1]).1 else v[k] :=
+    (GB v a b c d)[k]'hk =
+      if b.1 = k then (mix (v[a.1]'a.2) (v[b.1]'b.2) (v[c.1]'c.2) (v[d.1]'d.2)).2.1
+      else if c.1 = k then (mix (v[a.1]'a.2) (v[b.1]'b.2) (v[c.1]'c.2) (v[d.1]'d.2)).2.2.1
+      else if d.1 = k then (mix (v[a.1]'a.2) (v[b.1]'b.2) (v[c.1]'c.2) (v[d.1]'d.2)).2.2.2
+      else if a.1 = k then (mix (v[a.1]'a.2) (v[b.1]'b.2) (v[c.1]'c.2) (v[d.1]'d.2)).1 else (v[k]'hk) :=
   GB_get v hab hac had hbc hbd hcd k hk
 
 theorem cases16 {j : Nat} (hj : j < 16) : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨

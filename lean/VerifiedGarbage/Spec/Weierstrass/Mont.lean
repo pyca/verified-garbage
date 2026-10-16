@@ -7,14 +7,19 @@ public import VerifiedGarbage.Spec.P256
 public import VerifiedGarbage.Spec.P384
 public import VerifiedGarbage.Spec.P521
 public import VerifiedGarbage.Spec.Secp256k1
+public import VerifiedGarbage.Spec.BrainpoolP256r1
+public import VerifiedGarbage.Spec.BrainpoolP384r1
+public import VerifiedGarbage.Spec.BrainpoolP512r1
 
 /-!
 # Montgomery arithmetic modulo a curve's `p` or `n`, a step at a time
 
 **Trusted** (as every file in `Spec/`). The contracts of three functions for
 each modulus `m` of `moduli` (the primes `p` and the orders `n` of P-192,
-P-224, P-256, P-384, P-521 and secp256k1), so that the code of a curve's functions can call one
-copy of its field arithmetic instead of repeating it at every use:
+P-224, P-256, P-384, P-521, secp256k1, brainpoolP256r1, brainpoolP384r1 and
+brainpoolP512r1),
+so that the code of a curve's functions can call one copy of its field arithmetic instead of
+repeating it at every use:
 
 * `vg_<curve>_mul_mod_<p|n>`: Montgomery's product, the number below `m`
   congruent to `a b R⁻¹` modulo `m`, with `R = 2^(64 k)` for numbers of `k`
@@ -114,6 +119,17 @@ def mulContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
       Keeps M.k ws o m m')
     (stack := stack)
 
+/-- `sqr`: `mul` with `a` for `b` (the number at `b` is not read): for `a`
+below `m`, the number at `o` is below `m` and congruent to `a² R⁻¹`. -/
+def sqrContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  sig.contract A
+    (pre := fun ws o a b m => M.Fit o a b ∧ numAt m ws a M.k < M.m)
+    (post := fun ws o a _ m m' _ =>
+      numAt m' ws o M.k < M.m ∧
+      numAt m' ws o M.k * M.R % M.m = numAt m ws a M.k * numAt m ws a M.k % M.m ∧
+      Keeps M.k ws o m m')
+    (stack := stack)
+
 /-- `add`: for `a + b` below `2 m`, the number at `o` is `(a + b) mod m`. -/
 def addContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A
@@ -166,6 +182,17 @@ def mulApi : Api where
     congruent to `a b 2^-{64 * M.k}` to `o`. " ++ M.common
   safety := M.safety s!"The number at `b` must be below {M.desc}."
 
+/-- `vg_<curve>_sqr_mod_<which>`, on the targets with a squaring. -/
+def sqrApi : Api where
+  module := M.module
+  name := M.fn "sqr"
+  sig := sig
+  contracts := some fun A stack => M.sqrContract A stack
+  summary := s!"Montgomery's square modulo {M.desc}: writes the number below the modulus \
+    congruent to `a² 2^-{64 * M.k}` to `o`, as the product with `b = a` would, without \
+    reading `b` (contract: `sqrContract`). " ++ M.common
+  safety := M.safety s!"The number at `a` must be below {M.desc}."
+
 /-- `vg_<curve>_add_mod_<which>` on every target. -/
 def addApi : Api where
   module := M.module
@@ -201,9 +228,23 @@ def p521p : Modulus := ⟨"p521", "p", Spec.P521.p, 9, "P-521's prime `p`"⟩
 def p521n : Modulus := ⟨"p521", "n", Spec.P521.n, 9, "P-521's order `n`"⟩
 def secp256k1p : Modulus := ⟨"secp256k1", "p", Spec.Secp256k1.p, 4, "secp256k1's prime `p`"⟩
 def secp256k1n : Modulus := ⟨"secp256k1", "n", Spec.Secp256k1.n, 4, "secp256k1's order `n`"⟩
+def brainpoolp256r1p : Modulus :=
+  ⟨"brainpoolp256r1", "p", Spec.BrainpoolP256r1.p, 4, "brainpoolP256r1's prime `p`"⟩
+def brainpoolp256r1n : Modulus :=
+  ⟨"brainpoolp256r1", "n", Spec.BrainpoolP256r1.n, 4, "brainpoolP256r1's order `n`"⟩
+def brainpoolp384r1p : Modulus :=
+  ⟨"brainpoolp384r1", "p", Spec.BrainpoolP384r1.p, 6, "brainpoolP384r1's prime `p`"⟩
+def brainpoolp384r1n : Modulus :=
+  ⟨"brainpoolp384r1", "n", Spec.BrainpoolP384r1.n, 6, "brainpoolP384r1's order `n`"⟩
+def brainpoolp512r1p : Modulus :=
+  ⟨"brainpoolp512r1", "p", Spec.BrainpoolP512r1.p, 8, "brainpoolP512r1's prime `p`"⟩
+def brainpoolp512r1n : Modulus :=
+  ⟨"brainpoolp512r1", "n", Spec.BrainpoolP512r1.n, 8, "brainpoolP512r1's order `n`"⟩
 
 /-- Every modulus. -/
 def moduli : List Modulus :=
-  [p192p, p192n, p224p, p224n, p256p, p256n, p384p, p384n, p521p, p521n, secp256k1p, secp256k1n]
+  [p192p, p192n, p224p, p224n, p256p, p256n, p384p, p384n, p521p, p521n, secp256k1p, secp256k1n,
+    brainpoolp256r1p, brainpoolp256r1n, brainpoolp384r1p, brainpoolp384r1n,
+    brainpoolp512r1p, brainpoolp512r1n]
 
 end VG.Spec.Weierstrass.Mont

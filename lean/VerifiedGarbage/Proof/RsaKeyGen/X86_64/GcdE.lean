@@ -3,11 +3,14 @@ module
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.ModE
 public import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 public import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-public import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!
 # A candidate on x86-64: `gcd(c − 1, e)` for an odd `e > 1`

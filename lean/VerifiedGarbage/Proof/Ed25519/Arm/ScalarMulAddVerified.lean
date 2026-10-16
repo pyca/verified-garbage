@@ -1,24 +1,24 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
+import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
 meta import VerifiedGarbage.Impl.Ed25519.Arm.Scalar
-public import VerifiedGarbage.Proof.Ed25519.Arm.Field
+import VerifiedGarbage.Proof.Ed25519.Arm.Field
 meta import VerifiedGarbage.Proof.Ed25519.Arm.Field
 public import VerifiedGarbage.Proof.X25519.Arm.Mul
 meta import VerifiedGarbage.Proof.X25519.Arm.Mul
 public import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
 meta import VerifiedGarbage.Impl.Ed25519.Arm.ScalarMulAdd
-public import VerifiedGarbage.Proof.X25519.Arm.AddSub
+import VerifiedGarbage.Proof.X25519.Arm.AddSub
 meta import VerifiedGarbage.Proof.X25519.Arm.AddSub
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
-public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarLoop
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarABI
 public import VerifiedGarbage.TCB.Arm.Target
 meta import VerifiedGarbage.TCB.Arm.Target
-public import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
+import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 meta import VerifiedGarbage.Proof.Ed25519.Arm.UnpackField
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarFinish
@@ -34,6 +34,16 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Logic.Function.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Call
+meta import Mathlib.Logic.Function.Basic
+meta import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Arm.Spill
+import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.Arm.Spill
+meta import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
+meta import VerifiedGarbage.Proof.Framework.Arm.NativeTaint
 
 /-! Merged from `Proof.Ed25519.Arm.ScalarMulAddEngine`. -/
 
@@ -776,7 +786,7 @@ theorem scalarMulAdd_argByte (s : State) (k : Nat) :
   simp [VG.Arm.Taint.argByte, stackArgAddr]
 
 theorem scalarMulAdd_ct : ConstantTime isa scalarMulAddLocal.pre scalarMulAddLocal.pub scalarMulAdd := by
-  refine VG.Taint.constantTime (A := taint) scalarMulAddTaint ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taint) scalarMulAddTaint ?_ (by native_taint_decide)
   intro s t hs ht ⟨hsp, h0, h1, h2, h3, ha⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, scalarMulAddTaint_wf hs, scalarMulAddTaint_wf ht,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,

@@ -1,5 +1,8 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Impl.Cast5.X86
 public import VerifiedGarbage.Proof.Framework.X86.Exec
 public import VerifiedGarbage.Proof.Framework.X86.RegUpd
@@ -12,6 +15,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+public import VerifiedGarbage.Proof.Framework.Bswap
 
 /-!
 # CAST5 on 32-bit x86: running blocks
@@ -97,26 +101,25 @@ end
 
 /-- `crun`: symbolic execution of a block by `simp` (see the module doc),
 with extra lemmas (the block's accesses, …). -/
-syntax "crun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| crun) => `(tactic| crun [])
-  | `(tactic| crun [$ls,*]) => `(tactic| (
-      apply WP.of_runBlock
-      set_option linter.unusedSimpArgs false in
-      simp only [runBlock_cons, runStep_some, runBlock_nil, Impl.Cast5.X86.imm,
-        exec, readSrc, ea_at, State.load32, State.store32, State.load8, State.store8, State.load128,
-        State.store128, execAlu, execShift, XOp.exec, Option.map_some, Option.bind_some,
-        gpr_setReg, mem_setReg, rd_setReg, wr_setReg, zf_setReg, xmm_setReg', syms_setReg',
-        gpr_setFlags, mem_setFlags, rd_setFlags, wr_setFlags, zf_setFlags', xmm_setFlags', syms_setFlags',
-        gpr_arithFlags, mem_arithFlags, rd_arithFlags, wr_arithFlags, zf_arithFlags, xmm_arithFlags',
-        syms_arithFlags',
-        gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm', syms_setXmm', xmm_setXmm_self,
-        xmm_setXmm_of_ne,
-        gpr_mem, mem_mem, rd_mem, wr_mem, xmm_mem, zf_mem, syms_mem,
-        Option.some.injEq, exists_eq_left',
-        ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul,
-        Nat.reduceAdd, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff, and_self, eq_self_iff_true,
-        not_false_eq_true, true_and, and_true, List.cons_append, List.nil_append, $ls,*]))
+tactic_template "crun" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+                       apply WP.of_runBlock
+                       set_option linter.unusedSimpArgs false in
+                       simp only [runBlock_cons, runStep_some, runBlock_nil, Impl.Cast5.X86.imm,
+                         exec, readSrc, ea_at, State.load32, State.store32, State.load8, State.store8, State.load128,
+                         State.store128, execAlu, execShift, XOp.exec, Option.map_some, Option.bind_some,
+                         gpr_setReg, mem_setReg, rd_setReg, wr_setReg, zf_setReg, xmm_setReg', syms_setReg',
+                         gpr_setFlags, mem_setFlags, rd_setFlags, wr_setFlags, zf_setFlags', xmm_setFlags', syms_setFlags',
+                         gpr_arithFlags, mem_arithFlags, rd_arithFlags, wr_arithFlags, zf_arithFlags, xmm_arithFlags',
+                         syms_arithFlags',
+                         gpr_setXmm, mem_setXmm, rd_setXmm, wr_setXmm, zf_setXmm', syms_setXmm', xmm_setXmm_self,
+                         xmm_setXmm_of_ne,
+                         gpr_mem, mem_mem, rd_mem, wr_mem, xmm_mem, zf_mem, syms_mem,
+                         Option.some.injEq, exists_eq_left',
+                         ite_true, ite_false, reduceCtorEq, ↓reduceIte, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceMul,
+                         Nat.reduceAdd, Nat.reduceSub, Nat.reduceMod, Nat.reducePow, Nat.reduceEqDiff, and_self, eq_self_iff_true,
+                         not_false_eq_true, true_and, and_true, List.cons_append, List.nil_append, $ls,*]))
+/-- `crun` with no extra lemmas. -/
+macro "crun" : tactic => `(tactic| crun [])
 
 /-! ## What code keeps -/
 

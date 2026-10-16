@@ -6,6 +6,12 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Mont.X86_64.Wide
+import VerifiedGarbage.Proof.Weierstrass.CombLay
+import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
+import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 
 /-! Build the odd peer table and its powers of Z without changing either digit stream. -/
 
@@ -52,14 +58,16 @@ theorem jointCache_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {a 
   have hCL := hL.cacheLay
   rw [Joint.cacheCode]
   split
-  · refine WP.mono (nafCacheUnrolled_current_ok hL.layout.n hL.layout.lay hm 8
-      (by have := hCL.sep; omega) ii hCL.hz hCL.cache) fun t ⟨kt,it,ht⟩ =>
-      ⟨⟨⟨fun r hr => kt.gpr r (fun h => hr (List.mem_cons_of_mem _ h)),kt.rd,kt.wr⟩,
-        kt.unch.mono fun w hw => ?_⟩,it,ht⟩
-    simp only [List.mem_append,List.mem_map,List.mem_singleton] at hw ⊢
-    rcases hw with ⟨x,hx,rfl⟩|rfl
-    · exact Or.inl ⟨x,List.mem_append_left _ hx,rfl⟩
-    · exact Or.inr rfl
+  · split
+    · refine WP.mono (nafCacheUnrolled_current_ok hL.layout.n hL.layout.lay hm 8
+        (by have := hCL.sep; omega) ii hCL.hz hCL.cache) fun t ⟨kt,it,ht⟩ =>
+        ⟨⟨⟨fun r hr => kt.gpr r (fun h => hr (List.mem_cons_of_mem _ h)),kt.rd,kt.wr⟩,
+          kt.unch.mono fun w hw => ?_⟩,it,ht⟩
+      simp only [List.mem_append,List.mem_map,List.mem_singleton] at hw ⊢
+      rcases hw with ⟨x,hx,rfl⟩|rfl
+      · exact Or.inl ⟨x,List.mem_append_left _ hx,rfl⟩
+      · exact Or.inr rfl
+    · exact nafCacheStaged_current_ok hL.layout.lay hm hCL ii
   · exact nafCacheTable_current_ok hL.layout.lay hm hCL ii
 
 theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}

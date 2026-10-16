@@ -2,14 +2,36 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedRestTiming
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCorrect
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedCorrect
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.SignCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Compute
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseACT
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseACT
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseZMemory
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedExpansion
+meta import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsPrologue
+import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+import VerifiedGarbage.Proof.MlKem.AArch64.Common
+import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
+meta import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 
 @[expose] public section
 

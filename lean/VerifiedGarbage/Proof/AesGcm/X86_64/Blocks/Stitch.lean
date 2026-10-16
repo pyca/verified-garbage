@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.AlignedScratch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Mid
-public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -264,7 +264,7 @@ theorem stitch_ok {piece : Prog isa} {Post : State → State → Prop} {ys : Nat
       hpost s₃ s₄ h9 ga gc g11 rd₃' wr₃' hk₃ hf₃ hP
 
 /-- Encryption: the blocks hashed are those written. -/
-theorem stitchE_ok {enc dec : Prog isa} (hS : Gcm.X86_64.Stitch.StitchOkM M enc dec) {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
+theorem stitchE_ok {enc dec : Prog isa} {wd : Nat} (hS : Gcm.X86_64.Stitch.StitchOkM M enc dec 16 wd) {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
     WP isa (stitchPart enc aligned) s₁
       (Mid s (n s - n s % 16) 0

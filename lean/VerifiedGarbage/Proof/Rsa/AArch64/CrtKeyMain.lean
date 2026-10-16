@@ -1,11 +1,15 @@
 module
 
-public import VerifiedGarbage.Proof.Rsa.AArch64.CkMain
+public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyHead
 public import VerifiedGarbage.Proof.Rsa.AArch64.CrtKeyPhase
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.AArch64.Call
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Bignum.AArch64.PcCT
+import VerifiedGarbage.Proof.Rsa.AArch64.CvMain
 
 /-!
 # `vg_rsa_check_crt_key` on AArch64: `main`
@@ -42,12 +46,18 @@ theorem ckc_final {k N E P Q DP DQ QI : Nat} {pq gP gQ gQI : Bool} (hv : Spec.Rs
     have hb : ∀ a b : Nat, (a == b) = decide (a = b) := fun a b => by
       cases h' : decide (a = b) <;> simp_all
     simp only [hb, h, decide_true, Bool.true_and, Bool.and_true, Bool.and_assoc]
-    cases decide (DP < P - 1) <;> cases decide (E * DP % (P - 1) = 1) <;> cases decide (DQ < Q - 1) <;>
-      cases decide (E * DQ % (Q - 1) = 1) <;> cases decide (QI < P) <;> cases decide (Q * QI % P = 1) <;> rfl
+    generalize decide (DP < P - 1) = b0
+    generalize decide (E * DP % (P - 1) = 1) = b1
+    generalize decide (DQ < Q - 1) = b2
+    generalize decide (E * DQ % (Q - 1) = 1) = b3
+    generalize decide (QI < P) = b4
+    generalize decide (Q * QI % P = 1) = b5
+    revert b0 b1 b2 b3 b4 b5
+    decide
   · have : (P * Q == N) = false := by simpa using h
     simp [h, this]
 
-theorem ckcMain_eq : VG.Impl.Rsa.AArch64.CheckCrtKey.main = seqs (([.block VG.Impl.Rsa.AArch64.CheckKey.head] : List (Prog isa)) ++
+theorem ckcMain_eq : VG.Impl.Rsa.AArch64.CheckCrtKey.main = seqs (([.block VG.Impl.Rsa.AArch64.CheckCrtKey.head] : List (Prog isa)) ++
     (loadA 0 Public.sN Public.sK ++
     (loadA aE sE sElen ++ (([zeroA aOne, .block (setOneA aOne)] : List (Prog isa)) ++
     ((loadA aX sP sPlen ++ (loadA aR sQ sQlen ++ (mulXR ++ (eqA aA 0 ++ ([.block andZero] : List (Prog isa)))))) ++
@@ -59,7 +69,8 @@ theorem ckcMain_eq : VG.Impl.Rsa.AArch64.CheckCrtKey.main = seqs (([.block VG.Im
 /-- `main`, from a valid modulus and exponent: the mask of `crtKeyValid`
 returned. -/
 theorem ckcMain_ok {I : CkIn} {s : State} (h : CkPre I s) (hv : Spec.Rsa.modulusValid I.N I.k = true)
-    (he : Spec.Rsa.exponentValid I.E = true) :
+    (he : Spec.Rsa.exponentValid I.E = true)
+    (hc : I.cap = VG.Impl.Rsa.AArch64.CheckCrtKey.capacity I.k I.pl I.ql) :
     WP isa VG.Impl.Rsa.AArch64.CheckCrtKey.main s fun t =>
       t.gpr .x0 = BitVec.ofNat 64 (Spec.Rsa.crtKeyValid I.k I.N I.E I.P I.Q I.DP I.DQ I.QI).toNat := by
   have L := h.L
@@ -73,7 +84,7 @@ theorem ckcMain_ok {I : CkIn} {s : State} (h : CkPre I s) (hv : Spec.Rsa.modulus
   have hPn : I.P < I.N := Nat.lt_of_lt_of_le hPl ((Nat.pow_le_pow_right (by decide) (by have := L.pl2; omega)).trans hlo)
   have hQn : I.Q < I.N := Nat.lt_of_lt_of_le hQl ((Nat.pow_le_pow_right (by decide) (by have := L.ql2; omega)).trans hlo)
   rw [ckcMain_eq]
-  refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (ckHeadS_ok h) fun s₁ ⟨h₁, m₁⟩ => ?_)
+  refine wp_seqs_append (by simp) (by simp [loadA]) (WP.mono (ckcHeadS_ok h hc) fun s₁ ⟨h₁, m₁⟩ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp [loadA]) (WP.mono (ckLoad_ok h₁ (j := 0) (by decide) (by decide)
     (by decide) h₁.args.n h₁.args.k h₁.n L.nl (by omega) (Nat.le_refl _)) fun s₂ ⟨h₂, m₂, v₂, o₂⟩ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp) (WP.mono (ckLoad_ok h₂ (j := aE) (by decide) (by decide)
@@ -84,10 +95,10 @@ theorem ckcMain_ok {I : CkIn} {s : State} (h : CkPre I s) (hv : Spec.Rsa.modulus
     by rw [o₄ aE (by decide) (by decide), v₃], v₄⟩
   refine wp_seqs_append (by simp [loadA]) (by simp [modChecks]) (WP.mono (phPQ_ok k₄ L) fun s₆ k₆ => ?_)
   refine wp_seqs_append (by simp [modChecks]) (by simp [modChecks]) (WP.mono (phModC_ok k₆ L hE64
-    (by decide) (by decide) (by decide) L.pl1 L.pl2 L.pbl L.dpbl
+    (by decide) (by decide) (by decide) L.pl1 L.pl2 L.pcap L.pbl L.dpbl
     (fun t ht => ⟨ht.args.p, ht.args.pl, ht.p, ht.args.dp, ht.dp⟩)) fun s₇ ⟨gP, k₇, hgP⟩ => ?_)
   refine wp_seqs_append (by simp [modChecks]) (by simp [loadA]) (WP.mono (phModC_ok k₇ L hE64
-    (by decide) (by decide) (by decide) L.ql1 L.ql2 L.qbl L.dqbl
+    (by decide) (by decide) (by decide) L.ql1 L.ql2 L.qcap L.qbl L.dqbl
     (fun t ht => ⟨ht.args.q, ht.args.ql, ht.q, ht.args.dq, ht.dq⟩)) fun s₈ ⟨gQ, k₈, hgQ⟩ => ?_)
   refine wp_seqs_append (by simp [loadA]) (by simp) (WP.mono (phQIC_ok k₈ L) fun s₉ ⟨gQI, k₉, hgQI⟩ => ?_)
   obtain ⟨h₉, m₉, -⟩ := k₉

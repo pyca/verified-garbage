@@ -1,12 +1,15 @@
 module
 
 public import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Args
-public import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
-public import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Hash
+import VerifiedGarbage.Proof.X25519.Bytes
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.Conv
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 
 /-!
 # Ed448 verification on x86-64: the hash

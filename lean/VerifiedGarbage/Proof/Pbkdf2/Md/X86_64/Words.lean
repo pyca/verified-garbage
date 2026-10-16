@@ -1,14 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
-public import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
-public import VerifiedGarbage.Proof.MdStream.X86_64.Words
-public import VerifiedGarbage.Proof.Hmac.Common
-public import VerifiedGarbage.Spec.Pbkdf2
+import VerifiedGarbage.Proof.Pbkdf2.X86_64.Copy
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.Hmac.Common
+import VerifiedGarbage.Spec.Pbkdf2
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import Mathlib.Tactic.SplitIfs
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 
 /-!
 # PBKDF2-HMAC over any Merkle–Damgård hash function on x86-64: words

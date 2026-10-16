@@ -2,12 +2,18 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.StoreCT
 meta import VerifiedGarbage.Proof.Dsa.X86_64.StoreCT
-public import VerifiedGarbage.Proof.Dsa.X86_64.Finish
+import VerifiedGarbage.Proof.Dsa.X86_64.Finish
 meta import VerifiedGarbage.Proof.Dsa.X86_64.Finish
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
+import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+import VerifiedGarbage.Spec.Dsa.SignVerify
+meta import VerifiedGarbage.Proof.Bignum.X86_64.CTR2
+meta import VerifiedGarbage.Spec.Dsa.SignVerify
 
 /-! # Constant time of arithmetic result storage and return -/
 

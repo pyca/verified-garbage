@@ -7,6 +7,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 
 /-!
 # ChaCha20-Poly1305 encryption out of place, from a list of slices, AArch64: `Verified`
@@ -117,10 +118,11 @@ theorem sealCode_noFrames (v : Proof.ChaCha20.AArch64.XorImpl) : (sealCode v.cal
   generalize v.stitched = st
   generalize v.callee = c at hv
   have hs : (cryptStitched c.sve true).noFrames = true := by cases c.sve <;> decide +kernel
+  have hshort : (Short.sealMain c.sve).noFrames = true := by cases c.sve <;> decide +kernel
   cases st <;>
-  simp only [sealCode, sealStitched, sealWith, sealMain, sealStitchedMain, sealTail, prologue, macPad, cryptWith,
-    absorbLengths, finalizeTag, padTail, Code.noFrames, hv, hs, Bool.and_true, Bool.true_and, Bool.false_eq_true,
-    ite_false, ite_true] <;>
+  simp only [sealCode, sealMainCode, sealStitched, sealWith, sealMain, sealStitchedMain, sealTail, prologue, macPad,
+    cryptWith, absorbLengths, finalizeTag, padTail, Code.noFrames, hv, hs, hshort, Bool.and_true, Bool.true_and,
+    Bool.false_eq_true, ite_false, ite_true] <;>
   decide +kernel
 
 open VG.Impl.ChaCha20Poly1305.AArch64 in

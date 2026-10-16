@@ -8,6 +8,8 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.Call
+meta import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-! # `vg_rsa_mont_mul_adx` meets `vg_rsa_mont_mul`'s contract -/
 
@@ -21,7 +23,7 @@ open VG.Spec.Rsa.Mont (numAt wOf wordAt Layout Operand Keeps arrAt aM minvWord)
 
 theorem fnAdx_correct (s : State) (h : fnContract.pre s) :
     ∃ t s', Exec isa mulAdx s t s' ∧ abiPreserved s s' ∧ fnContract.post s s' := by
-  obtain ⟨hs, hH, hZ, hw, hw'⟩ := fn_good h
+  obtain ⟨hs, hH, hZ, hw, hw'⟩ := fn_good (fnLazy_pre h)
   obtain ⟨-, hwr, hret, hnw, -, ⟨ho, ho2, ho3⟩, ⟨ha, ha2, ha3⟩, ⟨hb, hb2, hb3⟩, hinv, hB⟩ := h
   suffices hwp : WP isa mulAdx s fun s' => gprPreserved s s' ∧ fnContract.post s s' by
     obtain ⟨t, s', he, hg, hp⟩ := hwp
@@ -77,8 +79,8 @@ theorem fnAdx_rel : RelCT isa (Two FnPhi) mulAdx fun _ _ => True := by
 theorem fnAdx_ct : ConstantTime isa fnContract.pre fnContract.pub mulAdx :=
   RelCT.constantTime (fnAdx_rel.mono (fun s₁ s₂ ⟨h₁, h₂, hsp, hdi, hsi, hdx, hcx, h8, hw⟩ =>
     ⟨⟨s₁.gpr .rdi, (s₁.gpr .rsi).toNat * 8, wOf s₁.mem (s₁.gpr .rdi), idx s₁ .rdx, idx s₁ .rcx, idx s₁ .r8⟩,
-      ⟨h₁, rfl, rfl, rfl, rfl, rfl, rfl⟩,
-      ⟨h₂, hdi.symm, by rw [hsi], (congrArg (wOf s₂.mem) hdi).trans hw.symm, by simp only [idx, hdx], by simp only [idx, hcx],
+      ⟨fnLazy_pre h₁, rfl, rfl, rfl, rfl, rfl, rfl⟩,
+      ⟨fnLazy_pre h₂, hdi.symm, by rw [hsi], (congrArg (wOf s₂.mem) hdi).trans hw.symm, by simp only [idx, hdx], by simp only [idx, hcx],
         by simp only [idx, h8]⟩⟩) fun _ _ h => h)
 
 /-- `vg_rsa_mont_mul_adx` on x86-64. -/

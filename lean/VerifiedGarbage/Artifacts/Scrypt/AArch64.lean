@@ -1,13 +1,14 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Target
-public import VerifiedGarbage.Impl.Scrypt.AArch64.Salsa
-public import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
+import VerifiedGarbage.Impl.Scrypt.AArch64.Salsa
+import VerifiedGarbage.Impl.Scrypt.AArch64.BlockMix
 public import VerifiedGarbage.Impl.Scrypt.AArch64.RoMix
 public import VerifiedGarbage.Proof.Scrypt.AArch64.BlockMixVerified
 public import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
-public import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
-public import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+import VerifiedGarbage.Proof.Scrypt.AArch64.Salsa
+import VerifiedGarbage.Proof.Scrypt.AArch64.Lit
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # scrypt (RFC 7914): Salsa20/8, scryptBlockMix and scryptROMix on AArch64

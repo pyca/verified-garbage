@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.MlKem.Bits
 public import VerifiedGarbage.Proof.MlKem.Compress
 import all Init.Data.Array.Basic
@@ -80,13 +81,13 @@ theorem ofNat8_digits {w : Nat} {L : List Nat} (h : ∀ a ∈ L, a < 2 ^ w) (p :
 closes the goal, a byte or field of a group (`… = BitVec.ofNat 8 x` or
 `… = decompress d x`), by `omega` on the few digits left: much smaller
 problems than the number of the whole group. -/
-macro "win_eval" : tactic => `(tactic| (
-  set_option linter.unusedSimpArgs false in
-  simp only [win, Nat.reduceMul, Nat.reduceLeDiff, Nat.reduceLT, Nat.reduceSub, Nat.reducePow, ↓reduceIte,
-    Nat.pow_zero, Nat.div_one, Nat.mod_one, Nat.add_zero, Nat.zero_add, Nat.mul_zero]
-  try first
-    | exact congrArg (BitVec.ofNat 8) (by omega)
-    | exact congrArg (decompress _) (by omega)))
+macro "win_eval" : tactic => `(tactic| plain_simp_names (
+                   set_option linter.unusedSimpArgs false in
+                   simp only [win, Nat.reduceMul, Nat.reduceLeDiff, Nat.reduceLT, Nat.reduceSub, Nat.reducePow, ↓reduceIte,
+                     Nat.pow_zero, Nat.div_one, Nat.mod_one, Nat.add_zero, Nat.zero_add, Nat.mul_zero]
+                   try first
+                     | exact congrArg (BitVec.ofNat 8) (by omega)
+                     | exact congrArg (decompress _) (by omega)))
 
 /-- The digits of an explicit list. -/
 theorem digits_map_range {w c : Nat} (g : Nat → Nat) :

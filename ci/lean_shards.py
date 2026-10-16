@@ -104,6 +104,8 @@ DEFAULT_TIME = 3.0
 # `import`, and in a module `public`, `meta` and `all` imports.
 IMPORT = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?(\S+)", re.M)
 BUILT = re.compile(r"\bBuilt (\S+) \((\d+(?:\.\d+)?)(ms|s)\)")
+# The steps of a module of a precompiled library after its `.olean`.
+NATIVE_FACETS = ("c.o", "dynlib")
 
 
 def modules() -> dict[str, pathlib.Path]:
@@ -379,8 +381,14 @@ def main(args: list[str]) -> int:
     if args == ["times"]:
         times = {}
         for m in BUILT.finditer(sys.stdin.read()):
-            if ":" not in m.group(1):
-                times[m.group(1)] = float(m.group(2)) / (1000 if m.group(3) == "ms" else 1)
+            # A module of a precompiled library is also compiled to native
+            # code and linked (`<module>:c.o`, `<module>:dynlib`), in every
+            # shard that builds it: that is part of the module's time. A
+            # library's own steps (`NativeTactics:shared`) belong to no module.
+            name, _, facet = m.group(1).partition(":")
+            if facet in ("", *NATIVE_FACETS):
+                t = float(m.group(2)) / (1000 if m.group(3) == "ms" else 1)
+                times[name] = times.get(name, 0.0) + t
         print(json.dumps(times, indent=1, sort_keys=True))
         return 0
     if len(args) >= 2 and args[0] == "manifest":

@@ -145,7 +145,7 @@ inductive T
   | p2 (a b : T) (hi : Bool)
   /-- `a` in quadwords 0 and 1, zero in the others (`vzeroupper`). -/
   | low (a : T)
-  deriving DecidableEq, Repr
+  deriving DecidableEq
 
 def T.eval (s₀ : State) : T → Nat → BitVec 64
   | .reg r, k => qw s₀ (xr r) k

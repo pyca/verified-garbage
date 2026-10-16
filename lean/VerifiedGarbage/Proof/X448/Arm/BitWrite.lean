@@ -1,11 +1,14 @@
 module
 
 public import VerifiedGarbage.Proof.X448.Arm.Iter
-public import VerifiedGarbage.Proof.X448.Bytes
+import VerifiedGarbage.Proof.X448.Bytes
+public import VerifiedGarbage.Proof.Framework.BitByte
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.Framework.Arm.Call
+import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # X448 on ARMv7: expanding scalar bytes
@@ -53,7 +56,9 @@ theorem write1_eq (m : Mem) (p : Addr) (v : BitVec 8) : m.write p 1 v = m.writeW
 
 theorem bit_byte : ∀ b : BitVec 8, ∀ j < 8,
     ((b.setWidth 32 >>> j) &&& (1 : BitVec 32)).setWidth 8 =
-      BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by decide +kernel
+      BitVec.ofNat 8 ((b.toNat >>> j) &&& 1) := by
+  intro b j _
+  exact bitByte 32 (by decide) b j
 
 def bitJ (j : Nat) : List Instr :=
   [.mov .r2 (if j = 0 then .reg .r3 else .shifted .r3 .lsr j),

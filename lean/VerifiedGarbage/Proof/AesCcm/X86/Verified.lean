@@ -1,15 +1,17 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.SealCT
-public import VerifiedGarbage.Proof.AesCcm.X86.OpenCT
+import VerifiedGarbage.Proof.AesCcm.X86.OpenCT
 public import VerifiedGarbage.Proof.CmacAes.X86.Verified
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Spec.Ccm.Contract
+import VerifiedGarbage.Spec.Ccm.Contract
 public import VerifiedGarbage.Proof.AesCcm.Scratch
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
+import VerifiedGarbage.Proof.AesCcm.X86.Open
+import VerifiedGarbage.Proof.AesCcm.X86.Seal
 
 /-!
 # AES-CCM on x86: `Verified`
