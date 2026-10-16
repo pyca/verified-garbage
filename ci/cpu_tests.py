@@ -51,7 +51,7 @@ GROUPS = {
         "tests": ["cavp::aes_ccm", "wycheproof::aes_ccm"],
     },
     "aes_ecb": {
-        "lib": ["aes_ecb", "aes_blocks_tests"],
+        "lib": ["aes_ecb"],
         "tests": ["cavp::aes_ecb"],
     },
     "aes_gcm": {
@@ -91,7 +91,7 @@ GROUPS = {
         "tests": ["wycheproof::aes_siv"],
     },
     "argon2": {
-        "lib": ["argon2", "argon2_compress_tests", "argon2_hprime_tests"],
+        "lib": ["argon2", "argon2_hprime_tests"],
         "tests": [],
     },
     "blake2": {

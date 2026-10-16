@@ -264,17 +264,10 @@ mod tests {
         }
     }
 
-    /// The baseline agrees with the implementation chosen for this CPU,
-    /// and the choice follows the features.
+    /// The choice of implementation follows the features (CI tests each
+    /// end to end, `VG_CPU_FEATURES=none` the baseline).
     #[test]
     fn backends() {
-        let k = [0x42; 32];
-        let u = PrivateKey::from_bytes(&[0x24; 32]).public_key();
-        let mut out = [0u8; 32];
-        let mut scratch = [0u64; 512];
-        // SAFETY: as in `x25519`, and the baseline needs no CPU feature.
-        unsafe { vg_x25519(&mut out, &k, &u, &mut scratch) };
-        assert_eq!(out, x25519(&k, &u));
         assert_eq!(Backend::select(Features(0)), Backend::Baseline);
         #[cfg(target_arch = "x86_64")]
         {
