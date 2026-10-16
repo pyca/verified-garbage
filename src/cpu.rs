@@ -94,17 +94,13 @@ const fn bit(name: &str) -> usize {
 )]
 const fn eq(a: &str, b: &str) -> bool {
     let (a, b) = (a.as_bytes(), b.as_bytes());
-    if a.len() != b.len() {
-        return false;
-    }
+    let mut same = a.len() == b.len();
     let mut i = 0;
-    while i < a.len() {
-        if a[i] != b[i] {
-            return false;
-        }
+    while same && i < a.len() {
+        same = a[i] == b[i];
         i += 1;
     }
-    true
+    same
 }
 
 /// A set of CPU features.
@@ -444,6 +440,14 @@ mod tests {
         for (j, name) in NAMES.iter().enumerate() {
             assert_eq!(bit(name), j);
         }
+    }
+
+    #[test]
+    fn eq_names() {
+        assert!(eq("avx2", "avx2"));
+        assert!(!eq("avx", "avx2"));
+        assert!(!eq("avx2", "avx"));
+        assert!(!eq("aes", "adx"));
     }
 
     #[test]
