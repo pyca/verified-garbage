@@ -105,7 +105,7 @@ def expected : String := "/// Returns 1 plus word 1 of its table.
 #[unsafe(naked)]
 pub(crate) unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
     core::arch::naked_asm!(
-        \"lea rdx, [rip + {VG_TEST_ALUTBL}]
+        r\"lea rdx, [rip + {VG_TEST_ALUTBL}]
 movabs rax, 1
 add rax, QWORD PTR [rdx+8]
 ret
