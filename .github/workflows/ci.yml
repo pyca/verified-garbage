@@ -326,12 +326,14 @@ jobs:
               # runner has Docker 29.4.3 or later.
               options: --platform linux/386 --security-opt seccomp=unconfined
           - os: ubuntu-26.04-arm
-          # ARMv7: a 32-bit userspace, run natively on the ARM64 host, in the
-          # same Dockerfile's image for it.
+          # ARMv7: cross-compiled on the ARM64 host, in the same Dockerfile's
+          # 64-bit image for it, whose Cargo runs the tests (ci/arm32-run)
+          # natively when the CPU has AArch32 and under QEMU when it doesn't:
+          # some runners are Neoverse V3, which has none, and on which a
+          # 32-bit container can't even start.
           - os: ubuntu-26.04-arm
             container:
-              image: ghcr.io/pyca/verified-garbage-runner:armv7l
-              options: --platform linux/arm/v7
+              image: ghcr.io/pyca/verified-garbage-runner:armv7-cross
           - os: macos-latest
           - os: windows-latest
         rust: [stable]
@@ -411,10 +413,16 @@ jobs:
       # restore: pull requests can read only caches saved on their own branch
       # or on main, and that workflow does not run on main. A new stable Rust
       # changes the key (ci/bench_cache_key.sh), so every push to main looks
-      # it up, without downloading, and builds only on a miss.
+      # it up, without downloading, and builds only on a miss. Not when
+      # cross-compiling (the ARMv7 image sets CARGO_BUILD_TARGET): the
+      # Benchmarks workflow builds ARMv7's natively, in the armv7l image, and
+      # this compiler's key is ARM64's.
       - id: bench-cache-key
         if: ${{ matrix.rust == 'stable' && runner.os == 'Linux' && github.event_name == 'push' }}
-        run: echo "key=$(sh ci/bench_cache_key.sh bench)" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ -z "${CARGO_BUILD_TARGET:-}" ]; then
+            echo "key=$(sh ci/bench_cache_key.sh bench)" >> "$GITHUB_OUTPUT"
+          fi
       - id: bench-cache
         if: ${{ steps.bench-cache-key.outputs.key }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -466,10 +474,10 @@ jobs:
   # The ARM code in Thumb (T32): the `rust` job's ARMv7 target assembles it
   # as A32, while thumbv7neon-*, Android, Windows and M-profile targets
   # assemble the same text as T32 (see "Modelling choices" in
-  # lean/VerifiedGarbage/TCB/Arm/Isa.lean). Run natively, like ARMv7, on the
-  # ARM64 host. Without coverage: the standard library of this target has
-  # no profiler runtime, and its Rust code is the ARMv7 job's, which is
-  # covered there.
+  # lean/VerifiedGarbage/TCB/Arm/Isa.lean). Cross-compiled and run like
+  # ARMv7, in its image. Without coverage: the standard library of this
+  # target has no profiler runtime, and its Rust code is the ARMv7 job's,
+  # which is covered there.
   rust-thumb:
     strategy:
       fail-fast: false
@@ -479,11 +487,11 @@ jobs:
     name: Rust (Thumb, ${{ matrix.rust }})
     runs-on: ubuntu-26.04-arm
     container:
-      image: ghcr.io/pyca/verified-garbage-runner:armv7l
-      options: --platform linux/arm/v7
+      image: ghcr.io/pyca/verified-garbage-runner:armv7-cross
     env:
       RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
-      # For every cargo command, with the container's native linker.
+      # For every cargo command, in place of the image's ARMv7 (with the
+      # same linker and runner).
       CARGO_BUILD_TARGET: thumbv7neon-unknown-linux-gnueabihf
       RUSTFLAGS: -D warnings
       WYCHEPROOF_ROOT: wycheproof
