@@ -78,5 +78,25 @@ class InstructionLocations(unittest.TestCase):
         self.assertEqual(stderr.getvalue().splitlines(), expected)
 
 
+class ColdBranch(unittest.TestCase):
+    PROLOGUE = [
+        "stmxcsr DWORD PTR [rsp]",
+        "mov eax, 8127",
+        "mov DWORD PTR [rsp+4], eax",
+        "ldmxcsr DWORD PTR [rsp+4]",
+        "lfence",
+    ]
+    EPILOGUE = ["lfence", "ldmxcsr DWORD PTR [rsp]", "ret"]
+
+    def test_cold_branch_inside_a_region(self):
+        # `je 20f` to cold code after the `ret`, whose `jmp 21b` returns into
+        # the region.
+        instrs = self.PROLOGUE + ["je 20f", "pmuludq xmm0, xmm1"] + self.EPILOGUE + [
+            "pmuludq xmm0, xmm2", "jmp 21b"]
+        labels = {"21": [6], "20": [len(instrs) - 2]}
+        errors, _ = check_mcdt.check_function("f", instrs, list(range(len(instrs))), labels)
+        self.assertIn("f:11: `jmp 21b` jumps into the MCDT region at line 5 from outside it", errors)
+
+
 if __name__ == "__main__":
     unittest.main()
