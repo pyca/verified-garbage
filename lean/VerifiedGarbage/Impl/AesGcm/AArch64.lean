@@ -555,12 +555,17 @@ def openMain : Prog isa :=
   (.seq (.ite (.zero .x .x27) (.block []) (oneCrypt c))
     (.block [mov .x0 .x27]))))))))))
 
+/-- The entry of `open`: `oneEntry`, `tag_len` stashed, and `tag` in `x12`. -/
+def openEntry : List Instr := oneEntry 16 ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)
+
+/-- `vg_aes_gcm_open` after its entry. -/
+def openRest : Prog isa :=
+  .seq tagLenOk
+  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openMain c)))
+    (.block restore))
+
 /-- `vg_aes_gcm_open`, with `tag = [sp]` (in `x12` until `tagIn`),
 `tag_len = [sp + 8]` (kept at `W + 248`) and `work = [sp + 16]`. -/
-def «open» : Prog isa :=
-  .seq (.block (oneEntry 16 ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)))
-  (.seq tagLenOk
-  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openMain c)))
-    (.block restore)))
+def «open» : Prog isa := .seq (.block openEntry) (openRest c)
 
 end VG.Impl.AesGcm.AArch64

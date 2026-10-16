@@ -76,12 +76,12 @@ theorem absFrame_wd {W D : Addr} {n : Nat} {m m' : Mem} (h : Frame (absFrame (W 
 /-- Between the calls of `run`: where everything is, the pointers and lengths
 in their registers, `H'` kept, and memory changed since `ρ` only in the
 working space and the text. -/
-structure Mid (Ctx W SP : Addr) (H : Block) (R n : Nat) (D Tg : Addr) (ρ s : State) : Prop where
+structure Mid (Ctx W SP : Addr) (H : Block) (R n : Nat) (D Tg X : Addr) (ρ s : State) : Prop where
   env : Env Ctx (W + BitVec.ofNat 64 16) W SP s
   x22 : s.gpr .x22 = BitVec.ofNat 64 R
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   x26 : s.gpr .x26 = BitVec.ofNat 64 n
-  x27 : s.gpr .x27 = D
+  x27 : s.gpr .x27 = X
   x28 : s.gpr .x28 = Tg
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   key : KeyAt H s.mem W
@@ -95,9 +95,9 @@ variable {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W)
 include L
 
 /-- `Mid` after `cryptAl`. -/
-theorem Mid.crypt {H : Block} {R n : Nat} {D Tg : Addr} {ρ s s' : State} {icb : Block}
-    (h : Mid Ctx W SP H R n D Tg ρ s) (o : CrOut Ctx (W + BitVec.ofNat 64 16) W SP s.gpr R icb 0 D n s.mem s')
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Ctx W SP H R n D Tg ρ s' := by
+theorem Mid.crypt {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s' : State} {icb : Block}
+    (h : Mid Ctx W SP H R n D Tg X ρ s) (o : CrOut Ctx (W + BitVec.ofNat 64 16) W SP s.gpr R icb 0 D n s.mem s')
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Ctx W SP H R n D Tg X ρ s' := by
   have dWK : ∀ r ∈ crFrame (W + BitVec.ofNat 64 16) W D n, (keyR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -116,10 +116,10 @@ theorem Mid.crypt {H : Block} {R n : Nat} {D Tg : Addr} {ρ s s' : State} {icb :
   · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
 
 /-- `Mid` after the call of `vg_ghash` on the whole blocks. -/
-theorem Mid.absorb {H : Block} {R n : Nat} {D Tg : Addr} {ρ s s' : State} {x : List Byte} {j : Nat}
-    (h : Mid Ctx W SP H R n D Tg ρ s)
+theorem Mid.absorb {H : Block} {R n : Nat} {D Tg X : Addr} {ρ s s' : State} {x : List Byte} {j : Nat}
+    (h : Mid Ctx W SP H R n D Tg X ρ s)
     (o : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s.gpr 16 H x D n 0 s.mem j s')
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Ctx W SP H R n D Tg ρ s' := by
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Mid Ctx W SP H R n D Tg X ρ s' := by
   refine ⟨o.env, by rw [o.kept .x22 (by decide), h.x22], h.rounds, by rw [o.kept .x26 (by decide), h.x26],
     by rw [o.kept .x27 (by decide), h.x27], by rw [o.kept .x28 (by decide), h.x28], o.hH,
     h.key.frame o.frame fun r hr => ?_, h.data.of_eq hrd hwr, h.fr.trans (absFrame_wd o.frame),
@@ -138,7 +138,7 @@ theorem ctA_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D Tg : A
     (h22 : s₁.gpr .x22 = BitVec.ofNat 64 R) (hR : R = 10 ∨ R = 12 ∨ R = 14) (h28 : s₁.gpr .x28 = Tg)
     (hf : Frame [workR W, ⟨D, n⟩] ρ.mem s₁.mem) (hrd : s₁.rd = ρ.rd) (hwr : s₁.wr = ρ.wr) :
     WP isa (.seq Impl.AesGcm.AArch64.Fast.front (.block [mov .x27 .x23, mov .x24 .x26, imm .x25 0])) s₁
-      fun s₃ => Mid Ctx W SP H R n D Tg ρ s₃ ∧ CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₃.gpr R 0 D n s₃ := by
+      fun s₃ => Mid Ctx W SP H R n D Tg D ρ s₃ ∧ CrIn Ctx (W + BitVec.ofNat 64 16) W SP s₃.gpr R 0 D n s₃ := by
   refine WP.seq (WP.mono (front_ok L hMK hJ haad hal h4 h5 h6 h7) fun s₂ h₂ => ?_)
   obtain ⟨s₃, run₃, x27₃, x24₃, x25₃, r₃⟩ : ∃ s₃, runBlock isa [mov .x27 .x23, mov .x24 .x26, imm .x25 0] s₂ =
       some s₃ ∧ s₃.gpr .x27 = D ∧ s₃.gpr .x24 = BitVec.ofNat 64 n ∧
@@ -161,7 +161,7 @@ theorem ctA_ok (hMK : MulKey) {k : Reg → BitVec 64} {H : Block} {Np A D Tg : A
     by rw [r₃.others _ (by decide), h₂.x23], x24₃, x25₃, hd₃⟩⟩
 
 /-- The arguments of the call on the whole blocks of the ciphertext. -/
-theorem ctC_ok {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ : State} (h : Mid Ctx W SP H R n D Tg ρ s₄)
+theorem ctC_ok {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ : State} (h : Mid Ctx W SP H R n D Tg D ρ s₄)
     (h25 : s₄.gpr .x25 = BitVec.ofNat 64 0) :
     WP isa (.block ([mov .x23 .x27, mov .x24 .x26] ++ absSeg2 16)) s₄
       (Abs3 Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr 16 H [] D n 0 s₄.mem 0) := by
@@ -183,12 +183,13 @@ theorem ctC_ok {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ : State} (h : Mid 
 /-- From the call on the whole blocks to the call of the tag: `H'` and `Y`
 reloaded, the last bytes and the lengths absorbed, and the arguments of the
 call. -/
-theorem ctE_ok (hMK : MulKey) {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ s₇ : State} {x : List Byte} {j : Nat}
-    (h : Mid Ctx W SP H R n D Tg ρ s₇) (hm : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr 16 H x D n 0 s₄.mem j s₇)
+theorem ctE_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {R n : Nat} {D Tg X : Addr}
+    {ρ s₄ s₇ : State} {x : List Byte} {j : Nat}
+    (h : Mid Ctx W SP H R n D Tg X ρ s₇) (hm : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr 16 H x D n 0 s₄.mem j s₇)
     (hlt : n - j < 16) :
     WP isa (.seq (.block (Impl.AesGcm.AArch64.Fast.hReload ++ Impl.Gcm.AArch64.Pmull.loadRev Y .x20 16 ++
-        [mov .x13 .x24, mov .x12 .x23])) (.seq Impl.AesGcm.AArch64.Fast.padMul (.block Impl.AesGcm.AArch64.Fast.lensTag))) s₇
-      fun s => ∃ k Yv J m, Tag1 Ctx (W + BitVec.ofNat 64 16) W SP k 0 R Yv J m s ∧ k .x28 = Tg := by
+        [mov .x13 .x24, mov .x12 .x23])) (.seq Impl.AesGcm.AArch64.Fast.padMul (.block (Impl.AesGcm.AArch64.Fast.lensTagAt o)))) s₇
+      fun s => ∃ k Yv J m, Tag1 Ctx (W + BitVec.ofNat 64 16) W SP k o R Yv J m s ∧ k .x28 = Tg := by
   have he₇ := h.env
   have hjn := hm.le
   refine WP.seq ?_
@@ -218,7 +219,7 @@ theorem ctE_ok (hMK : MulKey) {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ s�
   refine WP.seq (WP.mono (WP.with_rdwr (padMul_ok hMK (y := blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16)) he₁₀ hk₁₀
     (by rw [v₁₀, l₉, rev64b_read]) x12₁₀ x13₁₀ (by omega) hdj.rd
     (hdj.w.sub_right (Lay.wSub (by decide))))) fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
-  unfold Impl.AesGcm.AArch64.Fast.lensTag
+  unfold Impl.AesGcm.AArch64.Fast.lensTagAt
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   have w₁ := he₁₁.perm.wW (show 96 + 8 ≤ 2560 by decide)
@@ -250,7 +251,7 @@ theorem ctE_ok (hMK : MulKey) {H : Block} {R n : Nat} {D Tg : Addr} {ρ s₄ s�
     rw [g₁₄, og₁₂ _ (by decide), og₁₁ _ (by decide), r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h.x22]
   have x28₁₄ : s₁₄.gpr .x28 = Tg := by
     rw [g₁₄, og₁₂ _ (by decide), og₁₁ _ (by decide), r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h.x28]
-  exact WP.mono (tagSeg_ok L (o := 0) (.inl rfl) he₁₄ (fun _ _ => rfl : Kept s₁₄.gpr s₁₄) x22₁₄ h.rounds)
+  exact WP.mono (tagSeg_ok L (o := o) ho he₁₄ (fun _ _ => rfl : Kept s₁₄.gpr s₁₄) x22₁₄ h.rounds)
     fun s' h' => ⟨_, _, _, _, h', x28₁₄⟩
 
 /-- `runWith gh` in two runs, from the same public pointers and lengths,
@@ -319,7 +320,7 @@ theorem runWith_rel (v : GcmImpl) (gh : Fn) (hMK : MulKey) {k₁ k₂ : Reg → 
   refine RelCT.seq_assoc3 (rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24, .x26] (by rw [N₁.env.sp, N₂.env.sp])
       (by agree_tac [N₁.env.x19, N₂.env.x19, N₁.env.x20, N₂.env.x20, N₁.env.x21, N₂.env.x21, b₁.x23, b₂.x23,
         b₁.x24, b₂.x24, N₁.x26, N₂.x26]) ⟨_, by taint_decide⟩)
-    (ctE_ok L hMK N₁ b₁ l₁) (ctE_ok L hMK N₂ b₂ l₂) fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
+    (ctE_ok L hMK (.inl rfl) N₁ b₁ l₁) (ctE_ok L hMK (.inl rfl) N₂ b₂ l₂) fun s₁₆ t₁₆ ⟨_, _, _, _, T₁, k28₁⟩ ⟨_, _, _, _, T₂, k28₂⟩ => ?_)
   refine rel_seq (rel_ctr v.ctr T₁.call T₂.call (by rw [T₁.env.sp, T₂.env.sp]))
     (tagCall_ok L v (.inl rfl) T₁) (tagCall_ok L v (.inl rfl) T₂) fun s₁₇ t₁₇ O₁ O₂ => ?_
   exact rel_taint [.x19, .x28] (by rw [O₁.env.sp, O₂.env.sp])

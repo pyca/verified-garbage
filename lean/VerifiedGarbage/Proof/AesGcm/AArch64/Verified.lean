@@ -80,7 +80,7 @@ theorem seal_keepsV (v : GcmImpl) : («seal» v.callees).allInstrs keepsV = true
     Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]; decide +kernel
 
 theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true := by
-  simp only [«open», openMain, oneCrypt, cryptAl, crArgs, tagLenOk, tlTest, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs,
+  simp only [«open», openEntry, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk, tlTest, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs,
     finBody, tag, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor,
     padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.key.keepsV, v.gh.keepsV]
   decide +kernel
