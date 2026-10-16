@@ -87,12 +87,12 @@ variable (c : Callees)
 /-- After the entry: `front`, the text (at `x27`, of `x26` bytes) encrypted,
 its whole blocks hashed by `vg_ghash`, its last bytes and the lengths
 absorbed, and the tag, to `x28`. -/
-def run : Prog isa :=
+def runWith (gh : Fn) : Prog isa :=
   .seq (front)
   (.seq (.block [mov .x27 .x23, mov .x24 .x26, imm .x25 0])
   (.seq (cryptAl c)
   (.seq (.block ([mov .x23 .x27, mov .x24 .x26] ++ absSeg2 16))
-  (.seq (ghCall c)
+  (.seq (.call gh.name gh.code)
   (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
   (.seq padMul
   (.seq (.block lensTag)
@@ -100,9 +100,20 @@ def run : Prog isa :=
   (.seq (.block tagOut)
     (.block restore))))))))))
 
+/-- `runWith`, hashing the whole blocks with `vg_ghash`. -/
+def run : Prog isa := runWith c c.gh
+
 /-- `vg_aes_gcm_seal` with this path: the entry, `cond`, then `run` or `sealRest`. -/
 def «seal» : Prog isa :=
   .seq (.block (oneEntry 8 ++ stashArg 0))
     (.seq cond (.ite (.zero .x .x10) (run c) (sealRest c)))
+
+/-- `seal`, with the whole blocks of this path hashed by `gh`: for
+`vg_aes_gcm_seal_prepared`, `vg_ghash_prepared`, which reads the powers of
+`H` from the prepared context instead of computing them (`sealRest` reads
+only the first 256 bytes of the context, as in `seal`). -/
+def sealWith (gh : Fn) : Prog isa :=
+  .seq (.block (oneEntry 8 ++ stashArg 0))
+    (.seq cond (.ite (.zero .x .x10) (runWith c gh) (sealRest c)))
 
 end VG.Impl.AesGcm.AArch64.Fast

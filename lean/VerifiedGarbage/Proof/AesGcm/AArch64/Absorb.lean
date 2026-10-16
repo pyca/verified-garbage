@@ -421,14 +421,16 @@ theorem absSeg2_ok {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr
     (by rw [r₁.rd, r₁.wr]; exact hdj.rd)
 
 /-- The second call: the whole blocks absorbed. -/
-theorem absCall2_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr} {n o : Nat}
-    {m₀ : Mem} {j : Nat} {s : State} (h : Abs3 Ctx St W SP k yo H x D n o m₀ j s) :
-    WP isa (ghCall v.callees) s fun s' =>
+theorem absCall2With_ok {c : Prog isa} {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr} {n o : Nat}
+    {m₀ : Mem} {j : Nat} {s : State} (h : Abs3 Ctx St W SP k yo H x D n o m₀ j s)
+    (hc : WP isa c s (GhPost s (Ctx + BitVec.ofNat 64 240) (St + BitVec.ofNat 64 yo) (D + BitVec.ofNat 64 j)
+      (W + BitVec.ofNat 64 512) ((n - j) / 16))) :
+    WP isa c s fun s' =>
       AbsMid Ctx St W SP k yo H x D n o m₀ (j + 16 * ((n - j) / 16)) s' ∧ n - (j + 16 * ((n - j) / 16)) < 16 := by
   have hm := h
   have hn' := hm.data.lt
   have hle := hm.le
-  refine WP.mono (gh_call v.gh h.call) fun s' g => ?_
+  refine WP.mono hc fun s' g => ?_
   have hdata : bytesAt s.mem D n = bytesAt m₀ D n :=
     bytesAt_frame hm.frame (data_absFrame hyo hm.data) (by omega_arith)
   refine ⟨⟨g.env hm.env, hm.kept.of_saved g.saved, by omega_arith, ?_, ?_, ?_, hm.data.of_eq g.rd g.wr,
@@ -466,6 +468,13 @@ theorem absCall2_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {x : List 
     · have hw : (x.length + j) % 16 = 0 := hm.whole.resolve_left (by omega_arith)
       exact .inr (by omega_arith)
 
+
+/-- The second call, of `vg_ghash`: the whole blocks absorbed. -/
+theorem absCall2_ok (v : GcmImpl) {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr} {n o : Nat}
+    {m₀ : Mem} {j : Nat} {s : State} (h : Abs3 Ctx St W SP k yo H x D n o m₀ j s) :
+    WP isa (ghCall v.callees) s fun s' =>
+      AbsMid Ctx St W SP k yo H x D n o m₀ (j + 16 * ((n - j) / 16)) s' ∧ n - (j + 16 * ((n - j) / 16)) < 16 :=
+  absCall2With_ok L hyo h (gh_call v.gh h.call)
 /-- The last bytes, buffered. -/
 theorem absTail_ok {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr} {n o : Nat}
     {m₀ : Mem} {j : Nat} {s : State} (h : AbsMid Ctx St W SP k yo H x D n o m₀ j s) (hj : n - j < 16) :

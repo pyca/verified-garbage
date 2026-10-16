@@ -196,21 +196,25 @@ def oneCore (n w : Nat) (s : State) : Prop :=
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
     (stackArg s w).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * n ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
 
-/-- What `vg_aes_gcm_seal` needs: its common arguments, `tag = [sp]` and `work = [sp + 8]`. -/
-def sealPre (s : State) : Prop :=
+/-- What `vg_aes_gcm_seal` needs: its common arguments, `tag = [sp]` and `work = [sp + 8]`, with
+`extra` regions also readable. -/
+def sealPreX (extra : List Region) (s : State) : Prop :=
   let ctx : Region := ⟨s.gpr .x0, 256⟩
   let nonce : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
   let aad : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
   let data : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   let tag : Region := ⟨stackArg s 0, 16⟩
   let work : Region := ⟨stackArg s 1, 2560⟩
-  s.rd = [ctx, nonce, aad, args s 2] ∧ s.wr = [data, tag, work] ∧
+  s.rd = [ctx, nonce, aad, args s 2] ++ extra ∧ s.wr = [data, tag, work] ∧
     ctx.Disjoint data ∧ ctx.Disjoint work ∧ nonce.Disjoint data ∧ nonce.Disjoint work ∧
     aad.Disjoint data ∧ aad.Disjoint work ∧ data.Disjoint tag ∧
     data.Disjoint work ∧ data.Disjoint (args s 2) ∧ tag.Disjoint work ∧ work.Disjoint (args s 2) ∧
     (s.gpr .x0).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 ∧
     (s.gpr .x4).toNat + (s.gpr .x5).toNat ≤ 2 ^ 64 ∧ (s.gpr .x6).toNat + (s.gpr .x7).toNat ≤ 2 ^ 64 ∧
     (stackArg s 1).toNat + 2560 ≤ 2 ^ 64 ∧ s.sp.toNat + 8 * 2 ≤ 2 ^ 64 ∧ rounds (s.gpr .x1)
+
+/-- What `vg_aes_gcm_seal` needs (`sealPreX` with nothing else readable). -/
+def sealPre (s : State) : Prop := sealPreX [] s
 
 /-- The public arguments of `seal` and `open`, with `n` on the stack. -/
 def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
