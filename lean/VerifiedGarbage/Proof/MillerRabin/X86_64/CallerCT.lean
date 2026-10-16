@@ -51,16 +51,9 @@ private theorem ready_pub {L : Public} {s t : State} (hs : Ready L s) (ht : Read
   · rw [hbs, hbt]
     exact (ready_width hs).trans (ready_width ht).symm
 
-private theorem no_mx_load (v : RoundImpl) : ∀ i ∈ instrs v.code, loadsMxcsr i = false := by
-  have h := v.mxSafe
-  rw [Code.allInstrs_eq] at h
-  intro i hi
-  have := List.all_eq_true.mp h i hi
-  simpa only [Bool.not_eq_true'] using this
-
 private theorem prepared_call_ct (v : RoundImpl) :
     RelCT isa (Two Ready) (.call v.name v.code) fun _ _ => True := by
-  apply RelCT.callEx (k := roundContract) (round_correct v.mont (no_mx_load v)) (round_ct v.mont)
+  apply RelCT.callEx (k := roundContract) v.correct v.ct
   rintro s t ⟨L, hs, ht⟩
   have hcs := ready_covers hs
   have hct := ready_covers ht
