@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
 import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
+import VerifiedGarbage.Proof.MlKem.X86_64.RowY
 meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
@@ -174,21 +175,21 @@ theorem kgMulAvx3_ct : ConstantTime isa (kgMulK 3).pre (kgMulK 3).pub (keygenMul
 
 theorem kgMulAvx3_correct : ∀ s, (kgMulK 3).pre s →
     ∃ t s', Exec isa (keygenMul .avx2 3) s t s' ∧ abiPreserved s s' ∧ (kgMulK 3).post s s' :=
-  kgMul_correct BodiesOk.avx2 RowY.rowOk_avx2 (by decide) (by decide) kgMulAvx3_wo kgMulAvx3_ctl
+  kgMul_correct BodiesOk.avx2 KgMul.rowOk_avx2 (by decide) (by decide) kgMulAvx3_wo kgMulAvx3_ctl
 
 theorem kgMulAvx3_verified :
     Verified X86_64.target (keygenMul .avx2 3) (Spec.MlKem.keygenMulContract 3 X86_64.abi) :=
-  kgMul3_verified _ BodiesOk.avx2 RowY.rowOk_avx2 kgMulAvx3_wo kgMulAvx3_ctl kgMulAvx3_ct
+  kgMul3_verified _ BodiesOk.avx2 KgMul.rowOk_avx2 kgMulAvx3_wo kgMulAvx3_ctl kgMulAvx3_ct
 
 theorem kgMulAvx4_ct : ConstantTime isa (kgMulK 4).pre (kgMulK 4).pub (keygenMul .avx2 4) :=
   VG.Taint.constantTime (A := taint) _ kgMul_agree (by taint_decide)
 
 theorem kgMulAvx4_correct : ∀ s, (kgMulK 4).pre s →
     ∃ t s', Exec isa (keygenMul .avx2 4) s t s' ∧ abiPreserved s s' ∧ (kgMulK 4).post s s' :=
-  kgMul_correct BodiesOk.avx2 RowY.rowOk_avx2 (by decide) (by decide) kgMulAvx4_wo kgMulAvx4_ctl
+  kgMul_correct BodiesOk.avx2 KgMul.rowOk_avx2 (by decide) (by decide) kgMulAvx4_wo kgMulAvx4_ctl
 
 theorem kgMulAvx4_verified :
     Verified X86_64.target (keygenMul .avx2 4) (Spec.MlKem.keygenMulContract 4 X86_64.abi) :=
-  kgMul4_verified _ BodiesOk.avx2 RowY.rowOk_avx2 kgMulAvx4_wo kgMulAvx4_ctl kgMulAvx4_ct
+  kgMul4_verified _ BodiesOk.avx2 KgMul.rowOk_avx2 kgMulAvx4_wo kgMulAvx4_ctl kgMulAvx4_ct
 
 end VG.Proof.MlKem.X86_64
