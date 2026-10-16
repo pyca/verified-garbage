@@ -254,21 +254,13 @@ theorem nttInvAccY_correct (s : State) (hs : (invAccK accY).pre s) :
       hw hd) fun s2 ⟨hS, hT, hc, hf2, k2⟩ => ?_)
     have hsi2 : s2.gpr .rsi = s.gpr .rsi := k2.gpr (by decide)
     have hw2 : pR (s.gpr .rsi) ∈ s2.wr := by rw [k2.2.2]; exact hw
-    refine LIY.seq hsi2 hw2 invLay2Y_ok ?_ ⟨hS, hT, hc, Keep.refl _ _, Frame.refl _ _⟩
-    refine fun _ hI => LIY.seq hsi2 hw2 invLay4Y_ok ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 invLay8Y_ok ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (invLayY_ok 16 112 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (invLayY_ok 32 120 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (invLayY_ok 64 124 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (invLayY_ok 128 126 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (fun _ hc hsi hS _ hw => yscale_ok hc hsi hS hw) ?_ hI
-    intro s3 hI
+    refine WP.seq (WP.mono (nttInvLazy_ok hc hsi2 hS hT hw2) fun s3 ⟨hS3, hb3⟩ => ?_)
+    have hI : LIY (s.gpr .rsi) s2 zInv _ s3 :=
+      ⟨hS3, hT.frame hb3.frame, hb3.consts, hb3.keep.mono (by decide), hb3.frame⟩
     refine WP.mono (yepi_ok hI.c hI.S (by rw [hI.keep.gpr (by decide), k2.gpr (by decide)])
       (by rw [hI.keep.gpr (by decide), hsi2]) (by rw [hI.keep.2.2, k2.2.2]; exact hwf)
       (by rw [hI.keep.2.2]; exact hw2) hd) fun s4 ⟨hP, hf4⟩ => ⟨?_, ?_⟩
-    · rw [nttInv_eq_layers]
-      simp only [nttInvLens, List.foldl_cons, List.foldl_nil]
-      exact hP
+    · exact hP
     · refine (frame_fs hf2 ?_).trans ((frame_fs hI.frame ?_).trans (frame_fs hf4 ?_)) <;>
         intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
       exacts [.inr fun _ h => h, .inr (pR_sub_S _), .inl fun _ h => h]

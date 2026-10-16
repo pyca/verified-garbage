@@ -1,9 +1,7 @@
 module
 
-public import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
-meta import VerifiedGarbage.Proof.MlKem.X86_64.YNttPack
-public import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
-meta import VerifiedGarbage.Proof.MlKem.X86_64.NttInv
+public import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
+meta import VerifiedGarbage.Proof.MlKem.X86_64.NttLazy
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -14,11 +12,10 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 /-!
 # ML-KEM on x86-64: `vg_mlkem_ntt_avx2` and `vg_mlkem_inv_ntt_avx2`
 
-As `vg_mlkem_ntt` and `vg_mlkem_inv_ntt` (`Ntt.lean`, `NttInv.lean`), on
-sixteen words at a time: the prologue leaves the table of zetas (in the order
-the layers read it) and `f` as words in `scratch` (`ypro_ok`), each layer is
-`nttLayer` or `nttInvLayer` (`ylay_ok`, `ylay8_ok`, `ylay4_ok`, `ylay2_ok`),
-and the epilogue unpacks `S` into `f` (`yepi_ok`).
+The prologue leaves the table of zetas (in the order the layers read it) and
+`f` as words in `scratch` (`ypro_ok`), the lazy layers take them to the
+words of `NTT(f)` or `NTT⁻¹(f)` (`nttLazy_ok`, `nttInvLazy_ok`), and the
+epilogue unpacks `S` into `f` (`yepi_ok`).
 -/
 
 @[expose] public section
@@ -27,91 +24,6 @@ namespace VG.Proof.MlKem.X86_64
 
 open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
-
-/-! ## The butterflies in each lane -/
-
-theorem lane_vbfly : laneSseBlock (toY vbfly) = some vbfly := by decide +kernel
-theorem lane_vibfly : laneSseBlock (toY vibfly) = some vibfly := by decide +kernel
-theorem lane_vbfly4 : laneSseBlock (toY (gath4 ++ vbfly ++ scat4)) = some (gath4 ++ vbfly ++ scat4) := by
-  decide +kernel
-theorem lane_vibfly4 : laneSseBlock (toY (gath4 ++ vibfly ++ scat4)) = some (gath4 ++ vibfly ++ scat4) := by
-  decide +kernel
-theorem lane_vbfly2 : laneSseBlock (toY (gath2 ++ vbfly ++ scat2)) = some (gath2 ++ vbfly ++ scat2) := by
-  decide +kernel
-theorem lane_vibfly2 : laneSseBlock (toY (gath2 ++ vibfly ++ scat2)) = some (gath2 ++ vibfly ++ scat2) := by
-  decide +kernel
-
-/-! ## The layers of `NTT` -/
-
-/-- A layer of `NTT` with `len ≥ 16`, whose first zeta is `zeta t`. -/
-theorem fwdLayY_ok {sP : Addr} (len t : Nat) (hlen : len ∈ [16, 32, 64, 128]) (ht : 128 / len = t)
-    {F : Poly} (s : State) (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16 s.mem (spW sP) F)
-    (hT : TZ s.mem sP zeta) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay vbfly len t) s fun s' => S16 s'.mem (spW sP) (nttLayer F len) ∧ BInvY sP s s' := by
-  subst ht
-  have h8 : 128 / len ≤ 8 := by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
-    rcases hlen with rfl | rfl | rfl | rfl <;> decide
-  rw [nttLayer_eq]
-  exact ylay_ok vbfly_spec lane_vbfly nttBlk_ok hlen (fun c => 128 / len + c) (fun c _ => ⟨by omega, rfl⟩)
-    hc hsi hS hT hw
-
-theorem fwdLay8Y_ok {sP : Addr} {F : Poly} (s : State) (hc : YConsts s) (hsi : s.gpr .rsi = sP)
-    (hS : S16 s.mem (spW sP) F) (hT : TZ s.mem sP zeta) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay8 vbfly 16) s fun s' => S16 s'.mem (spW sP) (nttLayer F 8) ∧ BInvY sP s s' := by
-  rw [nttLayer_eq]
-  exact ylay8_ok vbfly_spec lane_vbfly nttBlk_ok (fun c => 16 + c) (fun c hc' => ⟨by omega, rfl⟩) hc hsi hS hT hw
-
-theorem fwdLay4Y_ok {sP : Addr} {F : Poly} (s : State) (hc : YConsts s) (hsi : s.gpr .rsi = sP)
-    (hS : S16 s.mem (spW sP) F) (hT : TZ s.mem sP zeta) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay4 vbfly 32) s fun s' => S16 s'.mem (spW sP) (nttLayer F 4) ∧ BInvY sP s s' := by
-  rw [nttLayer_eq]
-  exact ylay4_ok vbfly_spec nttBlk_ok lane_vbfly4 (fun c => 32 + c) (fun c hc' => ⟨by omega, rfl⟩) hc hsi hS hT hw
-
-theorem fwdLay2Y_ok {sP : Addr} {F : Poly} (s : State) (hc : YConsts s) (hsi : s.gpr .rsi = sP)
-    (hS : S16 s.mem (spW sP) F) (hT : TZ s.mem sP zeta) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay2 vbfly 64) s fun s' => S16 s'.mem (spW sP) (nttLayer F 2) ∧ BInvY sP s s' := by
-  rw [nttLayer_eq]
-  exact ylay2_ok vbfly_spec nttBlk_ok lane_vbfly2 (fun c => 64 + c) (fun c hc' => ⟨by omega, rfl⟩) hc hsi hS hT hw
-
-/-! ## The layers of `NTT⁻¹` -/
-
-/-- The zetas of `NTT⁻¹` in the order its layers read them. -/
-abbrev zInv (k : Nat) : Zq := zeta (127 - k)
-
-theorem zmTabInv_eq (k : Nat) : zmTabInv k = (zInv k).val * 65536 % 3329 := zmTab_eq _
-
-/-- A layer of `NTT⁻¹` with `len ≥ 16`, whose zetas start at entry `t` of
-the table. -/
-theorem invLayY_ok {sP : Addr} (len t : Nat) (hlen : len ∈ [16, 32, 64, 128])
-    (ht : ∀ c < 128 / len, t + c < 128 ∧ 127 - (t + c) = 256 / len - 1 - c)
-    {F : Poly} (s : State) (hc : YConsts s) (hsi : s.gpr .rsi = sP) (hS : S16 s.mem (spW sP) F)
-    (hT : TZ s.mem sP zInv) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay vibfly len t) s fun s' => S16 s'.mem (spW sP) (nttInvLayer F len) ∧ BInvY sP s s' := by
-  rw [nttInvLayer_eq]
-  exact ylay_ok vibfly_spec lane_vibfly nttInvBlk_ok hlen (fun c => 256 / len - 1 - c) (z := zInv)
-    (fun c hc' => ⟨(ht c hc').1, congrArg zeta (ht c hc').2⟩) hc hsi hS hT hw
-
-theorem invLay8Y_ok {sP : Addr} {F : Poly} (s : State) (hc : YConsts s) (hsi : s.gpr .rsi = sP)
-    (hS : S16 s.mem (spW sP) F) (hT : TZ s.mem sP zInv) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay8 vibfly 96) s fun s' => S16 s'.mem (spW sP) (nttInvLayer F 8) ∧ BInvY sP s s' := by
-  rw [nttInvLayer_eq]
-  exact ylay8_ok vibfly_spec lane_vibfly nttInvBlk_ok (fun c => 31 - c) (z := zInv)
-    (fun c hc' => ⟨by omega, congrArg zeta (by omega)⟩) hc hsi hS hT hw
-
-theorem invLay4Y_ok {sP : Addr} {F : Poly} (s : State) (hc : YConsts s) (hsi : s.gpr .rsi = sP)
-    (hS : S16 s.mem (spW sP) F) (hT : TZ s.mem sP zInv) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay4 vibfly 64) s fun s' => S16 s'.mem (spW sP) (nttInvLayer F 4) ∧ BInvY sP s s' := by
-  rw [nttInvLayer_eq]
-  exact ylay4_ok vibfly_spec nttInvBlk_ok lane_vibfly4 (fun c => 63 - c) (z := zInv)
-    (fun c hc' => ⟨by omega, congrArg zeta (by omega)⟩) hc hsi hS hT hw
-
-theorem invLay2Y_ok {sP : Addr} {F : Poly} (s : State) (hc : YConsts s) (hsi : s.gpr .rsi = sP)
-    (hS : S16 s.mem (spW sP) F) (hT : TZ s.mem sP zInv) (hw : pR sP ∈ s.wr) :
-    WP isa (ylay2 vibfly 0) s fun s' => S16 s'.mem (spW sP) (nttInvLayer F 2) ∧ BInvY sP s s' := by
-  rw [nttInvLayer_eq]
-  exact ylay2_ok vibfly_spec nttInvBlk_ok lane_vibfly2 (fun c => 127 - c) (z := zInv)
-    (fun c hc' => ⟨by omega, congrArg zeta (by omega)⟩) hc hsi hS hT hw
 
 /-! ## `vg_mlkem_ntt_avx2` -/
 
@@ -136,22 +48,11 @@ theorem nttY_correct (s : State) (hs : (inPlaceK ntt).pre s) :
       (by rw [k1.2.2]; exact hw) hd) fun s2 ⟨hS, hT, hc, hf2, k2⟩ => ?_)
     have hsi2 : s2.gpr .rsi = s.gpr .rsi := by rw [k2.gpr (by decide), hsi1]
     have hw2 : pR (s.gpr .rsi) ∈ s2.wr := by rw [k2.2.2, k1.2.2]; exact hw
-    refine LIY.seq hsi2 hw2 (fwdLayY_ok 128 1 (by decide) (by decide)) ?_
-      ⟨hS, hT, hc, Keep.refl _ _, Frame.refl _ _⟩
-    refine fun _ hI => LIY.seq hsi2 hw2 (fwdLayY_ok 64 2 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (fwdLayY_ok 32 4 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (fwdLayY_ok 16 8 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 fwdLay8Y_ok ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 fwdLay4Y_ok ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 fwdLay2Y_ok ?_ hI
-    intro s3 hI
-    refine WP.mono (yepi_ok hI.c hI.S (by rw [hI.keep.gpr (by decide), k2.gpr (by decide), hdi1])
-      (by rw [hI.keep.gpr (by decide), hsi2]) (by rw [hI.keep.2.2, k2.2.2, k1.2.2]; exact hwf)
-      (by rw [hI.keep.2.2]; exact hw2) hd) fun s4 ⟨hP, hf4⟩ => ⟨?_, ?_⟩
-    · rw [ntt_eq_layers]
-      simp only [nttLens, List.foldl_cons, List.foldl_nil]
-      exact hP
-    · refine (frame_fs f1 ?_).trans ((frame_fs hf2 ?_).trans ((frame_fs hI.frame ?_).trans (frame_fs hf4 ?_))) <;>
+    refine WP.seq (WP.mono (nttLazy_ok hc hsi2 hS hT hw2) fun s3 ⟨hS3, hb3⟩ => ?_)
+    refine WP.mono (yepi_ok hb3.consts hS3 (by rw [hb3.keep.gpr (by decide), k2.gpr (by decide), hdi1])
+      (by rw [hb3.keep.gpr (by decide), hsi2]) (by rw [hb3.keep.2.2, k2.2.2, k1.2.2]; exact hwf)
+      (by rw [hb3.keep.2.2]; exact hw2) hd) fun s4 ⟨hP, hf4⟩ => ⟨hP, ?_⟩
+    · refine (frame_fs f1 ?_).trans ((frame_fs hf2 ?_).trans ((frame_fs hb3.frame ?_).trans (frame_fs hf4 ?_))) <;>
         intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
       exacts [.inr (mx_sub _), .inr fun _ h => h, .inr (pR_sub_S _), .inl fun _ h => h]
   obtain ⟨t, s', he, ⟨s2, ⟨hP, hf⟩, hf', -⟩, hk⟩ :=
@@ -199,22 +100,11 @@ theorem nttInvY_correct (s : State) (hs : (inPlaceK nttInv).pre s) :
       (by rw [k1.2.2]; exact hw) hd) fun s2 ⟨hS, hT, hc, hf2, k2⟩ => ?_)
     have hsi2 : s2.gpr .rsi = s.gpr .rsi := by rw [k2.gpr (by decide), hsi1]
     have hw2 : pR (s.gpr .rsi) ∈ s2.wr := by rw [k2.2.2, k1.2.2]; exact hw
-    refine LIY.seq hsi2 hw2 invLay2Y_ok ?_ ⟨hS, hT, hc, Keep.refl _ _, Frame.refl _ _⟩
-    refine fun _ hI => LIY.seq hsi2 hw2 invLay4Y_ok ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 invLay8Y_ok ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (invLayY_ok 16 112 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (invLayY_ok 32 120 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (invLayY_ok 64 124 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (invLayY_ok 128 126 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (fun _ hc hsi hS _ hw => yscale_ok hc hsi hS hw) ?_ hI
-    intro s3 hI
-    refine WP.mono (yepi_ok hI.c hI.S (by rw [hI.keep.gpr (by decide), k2.gpr (by decide), hdi1])
-      (by rw [hI.keep.gpr (by decide), hsi2]) (by rw [hI.keep.2.2, k2.2.2, k1.2.2]; exact hwf)
-      (by rw [hI.keep.2.2]; exact hw2) hd) fun s4 ⟨hP, hf4⟩ => ⟨?_, ?_⟩
-    · rw [nttInv_eq_layers]
-      simp only [nttInvLens, List.foldl_cons, List.foldl_nil]
-      exact hP
-    · refine (frame_fs f1 ?_).trans ((frame_fs hf2 ?_).trans ((frame_fs hI.frame ?_).trans (frame_fs hf4 ?_))) <;>
+    refine WP.seq (WP.mono (nttInvLazy_ok hc hsi2 hS hT hw2) fun s3 ⟨hS3, hb3⟩ => ?_)
+    refine WP.mono (yepi_ok hb3.consts hS3 (by rw [hb3.keep.gpr (by decide), k2.gpr (by decide), hdi1])
+      (by rw [hb3.keep.gpr (by decide), hsi2]) (by rw [hb3.keep.2.2, k2.2.2, k1.2.2]; exact hwf)
+      (by rw [hb3.keep.2.2]; exact hw2) hd) fun s4 ⟨hP, hf4⟩ => ⟨hP, ?_⟩
+    · refine (frame_fs f1 ?_).trans ((frame_fs hf2 ?_).trans ((frame_fs hb3.frame ?_).trans (frame_fs hf4 ?_))) <;>
         intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
       exacts [.inr (mx_sub _), .inr fun _ h => h, .inr (pR_sub_S _), .inl fun _ h => h]
   obtain ⟨t, s', he, ⟨s2, ⟨hP, hf⟩, hf', -⟩, hk⟩ :=

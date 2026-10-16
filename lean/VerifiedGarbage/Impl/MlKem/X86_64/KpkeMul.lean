@@ -80,10 +80,7 @@ def mulAccB (o : Nat) : Prog isa :=
       leaR .rsi .rbx 2048)) X86_64.add))
 
 /-- `vg_mlkem_ntt_avx2`'s code, storing to `r10`. -/
-def nttOBY : Prog isa :=
-  .seq (ypro zmTab) (.seq (ylay vbfly 128 1) (.seq (ylay vbfly 64 2) (.seq (ylay vbfly 32 4)
-    (.seq (ylay vbfly 16 8) (.seq (ylay8 vbfly 16) (.seq (ylay4 vbfly 32) (.seq (ylay2 vbfly 64)
-      (.seq (.block [.mov .rdi (.reg .r10)]) yepi))))))))
+def nttOBY : Prog isa := .seq (ypro zmTab) (.seq nttLazy (.seq (.block [.mov .rdi (.reg .r10)]) yepi))
 
 def Bodies.sse : Bodies := ⟨nttOB, nttInvB, zeroB, [], mulAccB⟩
 

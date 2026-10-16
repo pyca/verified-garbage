@@ -279,7 +279,7 @@ theorem zlanes_512Y : ZLanes (ofDwords 0x02000200 0x02000200 0x02000200 0x020002
 theorem yscale_ok {sP : Addr} {F : Poly} {s : State} (hc : YConsts s) (hsi : s.gpr .rsi = sP)
     (hS : S16 s.mem (spW sP) F) (hw : pR sP ∈ s.wr) :
     WP isa yscale s fun s' => S16 s'.mem (spW sP) (F.map (· * 3303)) ∧ BInvY sP s s' := by
-  simp only [yscale]
+  simp only [yscale, ymulc]
   refine WP.seq ?_
   rw [WP.block_append_iff]
   refine WP.mono (Q := fun (w : State) => w.gpr .rdx = spW sP ∧ GOnly [.rdx] s w ∧ w.ymmHi = s.ymmHi)

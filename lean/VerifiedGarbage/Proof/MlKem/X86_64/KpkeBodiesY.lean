@@ -45,15 +45,9 @@ theorem nttOBY_correct (s : State) (hs : nttOK.pre s) :
       fun s2 ⟨hS, hT, hc, hf2, k2⟩ => ?_)
     have hsi2 : s2.gpr .rsi = s.gpr .rsi := k2.gpr (by decide)
     have hw2 : pR (s.gpr .rsi) ∈ s2.wr := by rw [k2.2.2]; exact hw
-    refine LIY.seq hsi2 hw2 (fwdLayY_ok 128 1 (by decide) (by decide)) ?_
-      ⟨hS, hT, hc, Keep.refl _ _, Frame.refl _ _⟩
-    refine fun _ hI => LIY.seq hsi2 hw2 (fwdLayY_ok 64 2 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (fwdLayY_ok 32 4 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 (fwdLayY_ok 16 8 (by decide) (by decide)) ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 fwdLay8Y_ok ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 fwdLay4Y_ok ?_ hI
-    refine fun _ hI => LIY.seq hsi2 hw2 fwdLay2Y_ok ?_ hI
-    intro s3 hI
+    refine WP.seq (WP.mono (nttLazy_ok hc hsi2 hS hT hw2) fun s3 ⟨hS3, hb3⟩ => ?_)
+    have hI : LIY (s.gpr .rsi) s2 zeta _ s3 :=
+      ⟨hS3, hT.frame hb3.frame, hb3.consts, hb3.keep.mono (by decide), hb3.frame⟩
     refine WP.seq (WP.mono (movDiR10Y_ok s3) fun s4 ⟨hdi4, hm4, hl4, k4⟩ => ?_)
     have k34 := hI.keep.trans k4
     have hS4 := hI.S
@@ -63,9 +57,7 @@ theorem nttOBY_correct (s : State) (hs : nttOK.pre s) :
       hS4 (by rw [hdi4, hI.keep.gpr (by decide), k2.gpr (by decide)])
       (by rw [k34.gpr (by decide), hsi2]) (by rw [k34.2.2, k2.2.2]; exact hwt)
       (by rw [k34.2.2]; exact hw2) hs.2.2.2.1) fun s5 ⟨hP, hf5⟩ => ⟨?_, ?_⟩
-    · rw [ntt_eq_layers]
-      simp only [nttLens, List.foldl_cons, List.foldl_nil]
-      exact hP
+    · exact hP
     · rw [hm4] at hf5
       refine (frame_fs hf2 ?_).trans ((frame_fs hI.frame ?_).trans (frame_fs hf5 ?_)) <;>
         intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
