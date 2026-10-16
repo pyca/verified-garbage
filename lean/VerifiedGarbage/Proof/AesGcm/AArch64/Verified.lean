@@ -256,7 +256,7 @@ theorem open_verified (v : GcmImpl) :
     Verified AArch64.target («open» v.callees) (Proof.AesGcm.openScratchContract AArch64.abi) :=
   Verified.of_correct (open_correct v) (open_ct v) (by
     sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
-      Spec.Gcm.openPost, Spec.Gcm.openLeak, openAArch64, openPre, onePub, openRes, openLeakOf, args, rounds,
+      Spec.Gcm.openPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
       AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
       List.range.loop]
       [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)

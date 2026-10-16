@@ -465,7 +465,7 @@ theorem openRunWith_post (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Addr
 /-- `vg_aes_gcm_open` with the path for TLS records, its whole blocks hashed
 by `gh`, which hashes as `vg_ghash` when called with memory changed since the
 entry only in the working space and the text. -/
-theorem openWith_wp (v : GcmImpl) (hMK : MulKey) {s : State} (hs : openAArch64.pre s)
+theorem openWith_wp (v : GcmImpl) (hMK : MulKey) {extra : List Region} {s : State} (hs : openPreX extra s)
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR (stackArg s 2)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s 2)) →
       s'.rd = s.rd → s'.wr = s.wr → Frame [workR (stackArg s 2), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →

@@ -49,7 +49,7 @@ theorem fastOpen_verified (v : GcmImpl) (hMK : Proof.Gcm.AArch64.Pmull.MulKey) :
       (Proof.AesGcm.openScratchContract AArch64.abi) :=
   Verified.of_correct (fastOpen_correct v hMK) (Fast.open_fast_ct v hMK) (by
     sig_implies [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre,
-      Spec.Gcm.openPost, Spec.Gcm.openLeak, openAArch64, openPre, onePub, openRes, openLeakOf, args, rounds,
+      Spec.Gcm.openPost, Spec.Gcm.openLeak, openAArch64, openPre, openPreX, List.append_nil, onePub, openRes, openLeakOf, args, rounds,
       AArch64.abi, AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range,
       List.range.loop]
       [openSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using openSat)

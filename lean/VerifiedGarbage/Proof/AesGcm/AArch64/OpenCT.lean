@@ -222,7 +222,8 @@ theorem openMain_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {R nl al n tl : N
 /-- Code that is `open`'s entry and then `X` is constant time if `X` is in two
 runs from what the entry leaves (`OpenIn`, with the values of the first run),
 whose tags compare alike. -/
-theorem open_ct_of {X : Prog isa} {pre : State → Prop} (hpre : ∀ s, pre s → openAArch64.pre s)
+theorem open_ct_of {X : Prog isa} {pre : State → Prop} {extra : State → List Region}
+    (hpre : ∀ s, pre s → openPreX (extra s) s)
     (hX : ∀ {σ₁ σ₂ s₁ s₂ : State}, pre σ₁ → pre σ₂ → onePub 3 σ₁ σ₂ →
       OpenIn (σ₁.gpr .x0) (stackArg σ₁ 2) σ₁.sp (σ₁.gpr .x2) (σ₁.gpr .x4) (σ₁.gpr .x6) (stackArg σ₁ 0)
         (σ₁.gpr .x1).toNat (σ₁.gpr .x3).toNat (σ₁.gpr .x5).toNat (σ₁.gpr .x7).toNat (stackArg σ₁ 1).toNat σ₁ s₁ →
@@ -289,7 +290,7 @@ theorem open_ct_of {X : Prog isa} {pre : State → Prop} (hpre : ∀ s, pre s �
   · exact q7.symm
 
 theorem open_ct (v : GcmImpl) : ConstantTime isa openAArch64.pre openAArch64.pub («open» v.callees) :=
-  open_ct_of (fun _ h => h) fun _ _ _ o₁ o₂ x12₁ x12₂ _ _ hb =>
+  open_ct_of (extra := fun _ => []) (fun _ h => h) fun _ _ _ o₁ o₂ x12₁ x12₂ _ _ hb =>
     openRestWith_rel o₁ o₂ x12₁ x12₂ (fun o' hT hok _ => openMain_post v o' hT hok)
       (fun o' hT hok _ => openMain_post v o' hT hok) fun p₁' p₂' rt₁' rt₂' hok _ _ =>
         openMain_rel v p₁' p₂' rt₁' rt₂' hok hb
