@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlKem.Arm.Encrypt
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -165,7 +167,7 @@ def eidx : Reg → Nat
   | .r4 => 2 | .r6 => 3 | .r8 => 4 | _ => 0
 
 /-- Decides a fact about the offsets in the buffers. -/
-macro "edecide" : tactic => `(tactic| plain_simp_names first
+tactic_template "edecide" : tactic => `(tactic| first
                    | decide
                    | ((try simp only [lay_sizes, layM_sizes, eSz, okW, eidx, kRegs, List.all_cons, List.all_nil, List.all_append,
                          List.map_cons, List.map_nil, trip, Bool.and_true])
