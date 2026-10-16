@@ -332,9 +332,6 @@ pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
             scratch.len(),
         )
     };
-    // The working space holds the private key, `D`, `KDK` and the
-    // alternative message.
-    zeroize(&mut scratch);
     // `PrivateKey::from_crt` checked `n`, `e` and the key, so a refusal
     // means the ciphertext is not below the modulus.
     match r {
