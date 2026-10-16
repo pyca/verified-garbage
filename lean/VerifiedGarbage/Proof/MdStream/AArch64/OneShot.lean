@@ -1,0 +1,628 @@
+module
+
+public import VerifiedGarbage.Proof.MdStream.AArch64.Update
+public import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
+public import VerifiedGarbage.Impl.MdStream.AArch64.OneShot
+public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+public import VerifiedGarbage.Proof.Framework.AArch64.Call
+public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import all Init.Data.Array.Basic
+import all Init.Data.Array.DecidableEq
+import all Init.Data.Nat.Bitwise.Basic
+import all Init.Data.Vector.Basic
+
+/-!
+# One-shot Merkle–Damgård digests on AArch64
+
+The functional correctness of `OneShot.digest` (`Impl/MdStream/AArch64/OneShot.lean`),
+for any hash function (`Md`), any correct compression function (`CalleeOk`)
+and any code `init` storing an initial hash value `iv`: it runs `init`, then
+the bodies of the streaming `update` and `finalize`, whose proofs
+(`Update.correctMain`, `Finalize.correctMain`) it composes, each on the
+regions of its own precondition (`WP.narrow`), in a frame of its own. Constant
+time is proven for each hash function's code by the taint analysis, calls
+included, as for `update` and `finalize`.
+-/
+
+@[expose] public section
+
+namespace VG.Proof.MdStream.AArch64.OneShot
+
+open VG VG.AArch64 VG.Impl.MdStream.AArch64 VG.Impl.MdStream.AArch64.OneShot
+open VG.Spec.Sha256 (bytesAt)
+open VG.Proof.Sha256.Stream (bytesAt_congr)
+
+/-! ## The precondition -/
+
+section
+variable (P : Params) (s : State)
+
+abbrev dp : Addr := s.gpr .x0
+abbrev len : Nat := (s.gpr .x1).toNat
+abbrev out : Addr := s.gpr .x2
+/-- The base of the frame. -/
+abbrev fb : Addr := s.sp - BitVec.ofNat 64 (frameBytes P)
+abbrev dR : Region := ⟨dp s, len s⟩
+abbrev oR (D : Nat) : Region := ⟨out s, D⟩
+abbrev fR : Region := ⟨fb P s, frameBytes P⟩
+/-- The streaming state, the scratch space and the saved registers, in the frame. -/
+abbrev stR : Region := ⟨fb P s, P.N + P.B⟩
+abbrev scR : Region := ⟨fb P s + BitVec.ofNat 64 (scO P), P.so + 48⟩
+abbrev slR : Region := ⟨fb P s + BitVec.ofNat 64 (slO P), 24⟩
+
+end
+
+/-- The message is readable, `out` writable, they do not overlap each other
+or the frame, which fits below the stack pointer. -/
+structure Pre (P : Params) (D : Nat) (s : State) : Prop where
+  rd : s.rd = [dR s]
+  wr : s.wr = [oR s D]
+  d_o : (dR s).Disjoint (oR s D)
+  sp : frameBytes P ≤ s.sp.toNat
+  f_d : (fR P s).Disjoint (dR s)
+  f_o : (fR P s).Disjoint (oR s D)
+
+/-- The contract: the first `D` bytes of the digest, from `iv`, of the message. -/
+def oneK {P : Params} (H : Md P.B P.N P.L) (iv : H.HV) (D : Nat) : Contract isa where
+  pre := Pre P D
+  post s s' := H.lenOk (len s) →
+    bytesAt s'.mem (out s) D = (H.hash iv (bytesAt s.mem (dp s) (len s))).take D
+  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.sp = s₂.sp
+
+/-- What the code storing the initial hash value does: on a state whose only
+region is the streaming state at `x0`, it makes the state represent the empty
+message. -/
+def initK {P : Params} (H : Md P.B P.N P.L) (iv : H.HV) : Contract isa where
+  pre s := s.rd = [] ∧ s.wr = [⟨s.gpr .x0, P.N + P.B⟩]
+  post s s' := H.Repr iv s'.mem (s.gpr .x0) []
+  pub _ _ := True
+
+/-- The sizes the frame needs: it fits an immediate, and the state is whole
+doublewords. -/
+structure Fits (P : Params) : Prop where
+  lt : frameBytes P < 4096
+  st : (P.N + P.B) % 8 = 0
+  sl : slO P % 8 = 0
+
+/-! ## The frame -/
+
+section
+variable {P : Params}
+
+theorem Fits.sl_le (hF : Fits P) : slO P + 24 ≤ frameBytes P := by
+  have := hF.lt; simp only [frameBytes] at *; omega
+
+theorem sc_le (P : Params) : scO P + P.so + 48 ≤ slO P := by simp [slO]
+
+theorem st_le (P : Params) : P.N + P.B ≤ scO P := by simp [scO]
+
+theorem Fits.so (hF : Fits P) : P.so + 48 + (P.N + P.B) + 24 < 4096 := by
+  have := hF.lt; have := hF.sl_le; simp only [slO, scO] at *; omega
+
+variable (hF : Fits P) (s : State)
+include hF
+
+theorem st_sc : (stR P s).Disjoint (scR P s) :=
+  Offset.base_disjoint _ (st_le P) (by have := hF.so; simp only [scO]; omega)
+
+theorem st_sl : (stR P s).Disjoint (slR P s) :=
+  Offset.base_disjoint _ (by have := sc_le P; have := st_le P; omega) (by have := hF.so; simp only [slO, scO]; omega)
+
+theorem sc_sl : (scR P s).Disjoint (slR P s) :=
+  Offset.disjoint _ (.inl (sc_le P)) (by have := hF.so; simp only [scO]; omega)
+    (by have := hF.so; simp only [slO, scO]; omega)
+
+theorem st_sub : Region.Sub (stR P s) (fR P s) :=
+  Region.sub_prefix (by have := sc_le P; have := st_le P; have := hF.sl_le; omega)
+
+theorem sc_sub : Region.Sub (scR P s) (fR P s) :=
+  Offset.sub_base _ (by have := sc_le P; have := hF.sl_le; omega)
+
+theorem sl_sub : Region.Sub (slR P s) (fR P s) :=
+  Offset.sub_base _ hF.sl_le
+
+end
+
+/-! ## One instruction at a time: `add d, sp, #imm` -/
+
+theorem wp_addSp {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {imm : Nat} (h : imm < 4096)
+    (k : ∀ s', Upd s s' d (s.sp + BitVec.ofNat 64 imm) → WP isa (.block is) s' Q) :
+    WP isa (.block (.addSp d imm :: is)) s Q :=
+  WP.cons (s' := s.write .x d (s.sp + BitVec.ofNat 64 imm)) (by simp [exec, h]) (k _ (Upd.write64 _ _ _))
+
+
+/-! ## `setup`: saving `x25`, `x26` and `x30` -/
+
+/-- The saved registers: `x25`, `x26` and `x30` of `s` at `slO`. -/
+def Slots (P : Params) (s : State) (m : Mem) : Prop :=
+  m.readW (fb P s + BitVec.ofNat 64 (slO P)) 64 = s.gpr .x25 ∧
+  m.readW (fb P s + BitVec.ofNat 64 (slO P + 8)) 64 = s.gpr .x26 ∧
+  m.readW (fb P s + BitVec.ofNat 64 (slO P + 16)) 64 = s.gpr .x30
+
+/-- The state after `setup`, from `s` (on entry). -/
+structure S1 (P : Params) (s t : State) : Prop where
+  rd : t.rd = s.rd
+  wr : t.wr = fR P s :: s.wr
+  sp : t.sp = fb P s
+  x0 : t.gpr .x0 = fb P s
+  x1 : t.gpr .x1 = s.gpr .x1
+  x2 : t.gpr .x2 = dp s
+  x3 : t.gpr .x3 = s.gpr .x1
+  x25 : t.gpr .x25 = s.gpr .x1
+  x26 : t.gpr .x26 = s.gpr .x2
+  keep : ∀ r ∈ preserved, r ≠ .x25 → r ≠ .x26 → t.gpr r = s.gpr r
+  frame : Frame [fR P s] s.mem t.mem
+  slots : Slots P s t.mem
+
+theorem slot_in {P : Params} (hF : Fits P) (s : State) {t : State} (hwr : t.wr = fR P s :: s.wr) {j : Nat} (hj : j ≤ 2) :
+    InRegions t.wr (fb P s + BitVec.ofNat 64 (slO P + 8 * j)) 8 :=
+  ⟨fR P s, by rw [hwr]; exact List.mem_cons_self .., Offset.contains_base _ (by have := hF.sl_le; omega)
+    (by have := hF.lt; have := hF.sl_le; omega)⟩
+
+theorem setup_ok {P : Params} (hF : Fits P) {s a : State} (ha : a = allocated (frameBytes P) s) :
+    WP isa (.block (setup P)) a (S1 P s) := by
+  have hsl := hF.sl_le; have hlt := hF.lt; have h8 := hF.sl
+  subst ha
+  have hfb : (allocated (frameBytes P) s).sp + BitVec.ofNat 64 0 = fb P s := by
+    simp [allocated]
+  have hwr : (allocated (frameBytes P) s).wr = fR P s :: s.wr := rfl
+  simp only [setup]
+  refine wp_addSp (by decide) fun s₁ u₁ => ?_
+  have h10 : s₁.gpr .x10 = fb P s := u₁.gpr.trans hfb
+  refine wp_str (a := fb P s + BitVec.ofNat 64 (slO P)) (by omega) (by rw [h10])
+    (by have := slot_in hF s (t := s₁) (u₁.wr.trans hwr) (j := 0) (by omega); simpa using this) fun s₂ m₂ => ?_
+  refine wp_str (a := fb P s + BitVec.ofNat 64 (slO P + 8)) (by omega) (by rw [m₂.gpr, h10])
+    (by rw [m₂.wr]; exact slot_in hF s (t := s₁) (u₁.wr.trans hwr) (j := 1) (by omega)) fun s₃ m₃ => ?_
+  refine wp_str (a := fb P s + BitVec.ofNat 64 (slO P + 16)) (by omega) (by rw [m₃.gpr, m₂.gpr, h10])
+    (by rw [m₃.wr, m₂.wr]; exact slot_in hF s (t := s₁) (u₁.wr.trans hwr) (j := 2) (by omega)) fun s₄ m₄ => ?_
+  refine wp_mov fun s₅ u₅ => wp_mov fun s₆ u₆ => wp_mov fun s₇ u₇ => wp_mov fun s₈ u₈ =>
+    wp_addSp (by decide) fun s₉ u₉ => WP.block_nil ?_
+  -- Registers of `s₄` are those of `s` but `x10`.
+  have g₄ : ∀ r, r ≠ .x10 → s₄.gpr r = s.gpr r := fun r hr => by
+    rw [m₄.gpr, m₃.gpr, m₂.gpr, u₁.other r hr]; rfl
+  have sp₉ : s₉.sp = fb P s := by
+    rw [u₉.sp, u₈.sp, u₇.sp, u₆.sp, u₅.sp, m₄.sp, m₃.sp, m₂.sp, u₁.sp]; rfl
+  have mem₉ : s₉.mem = s₄.mem := by rw [u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem]
+  have mem₄ : s₄.mem = ((s.mem.writeW (fb P s + BitVec.ofNat 64 (slO P)) (s.gpr .x25)).writeW
+      (fb P s + BitVec.ofNat 64 (slO P + 8)) (s.gpr .x26)).writeW
+      (fb P s + BitVec.ofNat 64 (slO P + 16)) (s.gpr .x30) := by
+    simp only [m₄.mem, m₃.mem, m₂.mem, u₁.mem, m₃.gpr, m₂.gpr, u₁.other .x25 (by decide),
+      u₁.other .x26 (by decide), u₁.other .x30 (by decide)]; rfl
+  have hR : (fR P s).Contains (fb P s + BitVec.ofNat 64 (slO P)) 24 :=
+    Offset.contains_base _ (by omega) (by omega)
+  refine
+    { rd := by rw [u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, m₄.rd, m₃.rd, m₂.rd, u₁.rd]; rfl
+      wr := by rw [u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, m₄.wr, m₃.wr, m₂.wr, u₁.wr]; rfl
+      sp := sp₉
+      x0 := by rw [u₉.gpr, u₈.sp, u₇.sp, u₆.sp, u₅.sp, m₄.sp, m₃.sp, m₂.sp, u₁.sp]; simp [allocated]
+      x1 := by rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
+        u₆.other _ (by decide), u₅.other _ (by decide), g₄ _ (by decide)]
+      x2 := by rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr, u₆.other _ (by decide),
+        u₅.other _ (by decide), g₄ _ (by decide)]
+      x3 := by rw [u₉.other _ (by decide), u₈.gpr, u₇.other _ (by decide), u₆.other _ (by decide),
+        u₅.other _ (by decide), g₄ _ (by decide)]
+      x25 := by rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
+        u₆.other _ (by decide), u₅.gpr, g₄ _ (by decide)]
+      x26 := by rw [u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
+        u₆.gpr, u₅.other _ (by decide), g₄ _ (by decide)]
+      keep := fun r hr h25 h26 => by
+        have : r ≠ .x0 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x10 := by
+          simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
+        rw [u₉.other _ this.1, u₈.other _ this.2.2.1, u₇.other _ this.2.1, u₆.other _ h26,
+          u₅.other _ h25, g₄ _ this.2.2.2]
+      frame := by
+        rw [mem₉, mem₄]
+        exact (((Frame.refl _ _).writeW (List.mem_singleton_self _) _
+          (Offset.contains_base _ (by omega) (by omega))).writeW (List.mem_singleton_self _) _
+          (Offset.contains_base _ (by omega) (by omega))).writeW (List.mem_singleton_self _) _
+          (Offset.contains_base _ (by omega) (by omega))
+      slots := by
+        rw [mem₉, mem₄]
+        refine ⟨?_, ?_, Mem.readW_writeW_self64 _ _ _⟩
+        · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide),
+            Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide),
+            Mem.readW_writeW_self64]
+        · rw [Mem.readW_writeW_sep (Offset.sep _ (.inl (by omega)) (by omega) (by omega)) (by decide),
+            Mem.readW_writeW_self64] }
+
+
+/-! ## Between the phases -/
+
+/-- What every state inside the frame keeps of `s`, the state on entry. -/
+structure Mid (P : Params) (s t : State) : Prop where
+  rd : t.rd = s.rd
+  wr : t.wr = fR P s :: s.wr
+  sp : t.sp = fb P s
+  x25 : t.gpr .x25 = s.gpr .x1
+  x26 : t.gpr .x26 = s.gpr .x2
+  keep : ∀ r ∈ preserved, r ≠ .x25 → r ≠ .x26 → r ≠ .x30 → t.gpr r = s.gpr r
+  frame : Frame (fR P s :: s.wr) s.mem t.mem
+  slots : Slots P s t.mem
+
+theorem S1.mid {P : Params} {s t : State} (h : S1 P s t) : Mid P s t :=
+  ⟨h.rd, h.wr, h.sp, h.x25, h.x26, fun r hr h25 h26 _ => h.keep r hr h25 h26,
+    h.frame.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self ..,
+    h.slots⟩
+
+/-- Regions at offsets within the frame are covered by the regions of a
+state inside it. -/
+theorem covers_frame {P : Params} (s : State) {t : State} (hwr : t.wr = fR P s :: s.wr) {rs : List Region}
+    (h : ∀ r ∈ rs, ∃ off, r.base = fb P s + BitVec.ofNat 64 off ∧ off + r.len ≤ frameBytes P) :
+    Covers rs t.wr :=
+  Covers.of_sub fun r hr => by
+    obtain ⟨off, hb, hl⟩ := h r hr
+    exact ⟨fR P s, by rw [hwr]; exact List.mem_cons_self .., off, hb, hl⟩
+
+theorem fb_zero (P : Params) (s : State) : fb P s = fb P s + BitVec.ofNat 64 0 := by simp
+
+/-- A change of memory within regions of the frame other than the saved
+registers', and of no register `Mid` keeps, keeps `Mid`. -/
+theorem Mid.of_frame {P : Params} (hF : Fits P) {s t t' : State} (h : Mid P s t)
+    (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp)
+    (hg : ∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r) {rs : List Region}
+    (hf : Frame rs t.mem t'.mem) (hsub : ∀ r ∈ rs, ∃ r' ∈ fR P s :: s.wr, Region.Sub r r')
+    (hsl : ∀ r ∈ rs, (slR P s).Disjoint r) : Mid P s t' where
+  rd := hrd.trans h.rd
+  wr := hwr.trans h.wr
+  sp := hsp.trans h.sp
+  x25 := (hg _ (by decide) (by decide)).trans h.x25
+  x26 := (hg _ (by decide) (by decide)).trans h.x26
+  keep r hr h25 h26 h30 := (hg r hr h30).trans (h.keep r hr h25 h26 h30)
+  frame := h.frame.trans (hf.sub hsub)
+  slots := by
+    have hn : (24 : Nat) ≤ 2 ^ 64 := by decide
+    have hc : ∀ j ≤ 2, (slR P s).Contains (fb P s + BitVec.ofNat 64 (slO P + 8 * j)) 8 := fun j hj => by
+      have := hF.lt; have := hF.sl_le
+      exact Offset.contains _ (by omega) (by omega) (by omega)
+    obtain ⟨a, b, c⟩ := h.slots
+    refine ⟨?_, ?_, ?_⟩
+    · rw [← a]; exact hf.readW (by simpa using hc 0 (by omega)) hsl (by decide)
+    · rw [← b]; exact hf.readW (hc 1 (by omega)) hsl (by decide)
+    · rw [← c]; exact hf.readW (hc 2 (by omega)) hsl (by decide)
+
+
+/-! ## `init` -/
+
+theorem mem_preserved_ne_x9 {r : Reg} (hr : r ∈ preserved) : r ≠ .x9 := by
+  rintro rfl; simp [preserved] at hr
+
+theorem init_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} {iv : H.HV} {init : Prog isa}
+    (hi : ∀ s, (initK H iv).pre s → ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧
+      (initK H iv).post s s')
+    (hiw : ∀ r, r ≠ .x9 → ∀ i ∈ instrs init, clobbers i r = false) (hin : init.noCalls = true)
+    {s t : State} (h : S1 P s t) :
+    WP isa init t fun t' => Mid P s t' ∧ t'.gpr .x0 = fb P s ∧ t'.gpr .x2 = dp s ∧
+      t'.gpr .x3 = s.gpr .x1 ∧ H.Repr iv t'.mem (fb P s) [] := by
+  have := hF.lt; have := hF.sl_le; have := sc_le P; have := st_le P
+  have hcov : Covers [stR P s] t.wr :=
+    covers_frame s h.wr fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨0, fb_zero P s, show 0 + (P.N + P.B) ≤ frameBytes P by omega⟩
+  refine WP.inline hi (rd := []) (wr := [stR P s]) ⟨rfl, by simp [State.withRegions, h.x0]⟩
+    (Covers.right hcov) hcov (fun t' hrd hwr habi hf hg hpost => ?_) hin
+  have hk : ∀ r, r ≠ .x9 → t'.gpr r = t.gpr r := fun r hr => hg r (hiw r hr)
+  refine ⟨Mid.of_frame hF h.mid hrd hwr habi.2.1 (fun r hr _ => hk r (mem_preserved_ne_x9 hr)) hf
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., st_sub hF s⟩)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact (st_sl hF s).symm),
+    (hk _ (by decide)).trans h.x0, (hk _ (by decide)).trans h.x2, (hk _ (by decide)).trans h.x3, ?_⟩
+  simpa [initK, State.withRegions, h.x0] using hpost
+
+
+/-! ## `update` -/
+
+theorem updateMain_noFrames {P : Params} {H : Md P.B P.N P.L} {name : String} {code : Prog isa}
+    (hf : CalleeOk H code) : (updateMain P name code).noFrames = true := by
+  simp only [updateMain, updateBody, fill, copy, direct, compressN, compressWith, Code.noFrames,
+    hf.noFrames, Bool.and_self]
+
+/-- The message's bytes are those on entry: the frame is disjoint from it. -/
+theorem data_eq {P : Params} {D : Nat} {s t : State} (hp : Pre P D s) (h : Mid P s t) :
+    bytesAt t.mem (dp s) (len s) = bytesAt s.mem (dp s) (len s) :=
+  bytesAt_congr fun i hi => h.frame.bytes (R := dR s)
+    (fun r hr => by
+      rw [hp.wr] at hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact hp.f_d.symm
+      · exact hp.d_o)
+    (Nat.le_of_lt (s.gpr .x1).isLt) hi
+
+theorem upd_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {iv : H.HV} {D : Nat}
+    {name : String} {code : Prog isa} (hf : CalleeOk H code)
+    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), clobbers i r = false)
+    {s t : State} (hp : Pre P D s) (h : Mid P s t) (h0 : t.gpr .x0 = fb P s) (h2 : t.gpr .x2 = dp s)
+    (h3 : t.gpr .x3 = s.gpr .x1) (hr : H.Repr iv t.mem (fb P s) []) :
+    WP isa (.seq (.block (updArgs P)) (updateMain P name code)) t fun t' =>
+      Mid P s t' ∧ H.Repr iv t'.mem (fb P s) (bytesAt s.mem (dp s) (len s)) := by
+  have := hF.lt; have := hF.sl_le; have := sc_le P; have := st_le P
+  refine WP.seq (WP.mono (Q := fun (t₁ : State) => Mid P s t₁ ∧ t₁.gpr .x0 = fb P s ∧ t₁.gpr .x1 = 0 ∧
+      t₁.gpr .x2 = dp s ∧ t₁.gpr .x3 = s.gpr .x1 ∧ t₁.gpr .x4 = fb P s + BitVec.ofNat 64 (scO P) ∧
+      t₁.mem = t.mem) ?_ fun t₁ ⟨hm, g0, g1, g2, g3, g4, gm⟩ => ?_)
+  · simp only [updArgs]
+    refine wp_movz fun t₁ u₁ => wp_addSp (by omega) fun t₂ u₂ => WP.block_nil ?_
+    have hk : ∀ r, r ≠ .x1 → r ≠ .x4 → t₂.gpr r = t.gpr r := fun r h1 h4 => by
+      rw [u₂.other r h4, u₁.other r h1]
+    refine ⟨Mid.of_frame hF h (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr]) (by rw [u₂.sp, u₁.sp])
+        (fun r hr _ => hk r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr))
+        (rs := []) (fun x _ => by rw [u₂.mem, u₁.mem]) (fun _ hr => absurd hr List.not_mem_nil)
+        (fun _ hr => absurd hr List.not_mem_nil), (hk _ (by decide) (by decide)).trans h0,
+      by rw [u₂.other _ (by decide), u₁.gpr]; rfl, (hk _ (by decide) (by decide)).trans h2,
+      (hk _ (by decide) (by decide)).trans h3, by rw [u₂.gpr, u₁.sp, h.sp], by rw [u₂.mem, u₁.mem]⟩
+  · have hcov : Covers [stR P s, scR P s] t₁.wr :=
+      covers_frame s hm.wr fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact ⟨0, fb_zero P s, show 0 + (P.N + P.B) ≤ frameBytes P by omega⟩
+        · exact ⟨scO P, rfl, show scO P + (P.so + 48) ≤ frameBytes P by omega⟩
+    have hrd : Covers [dR s] t₁.rd := by rw [hm.rd, hp.rd]; exact Covers.refl _
+    have edR : Update.dR (t₁.withRegions [dR s] [stR P s, scR P s]) = dR s := by
+      simp only [Update.dR, Update.dp, Update.len, State.withRegions_gpr, g2, g3]
+    have est : Update.stR P (t₁.withRegions [dR s] [stR P s, scR P s]) = stR P s := by
+      simp only [Update.stR, Update.st, State.withRegions_gpr, g0]
+    have esc : Update.scR P (t₁.withRegions [dR s] [stR P s, scR P s]) = scR P s := by
+      simp only [Update.scR, Update.scr, State.withRegions_gpr, g4]
+    have hpre : Update.Pre P (t₁.withRegions [dR s] [stR P s, scR P s]) :=
+      { rd := by rw [edR]; rfl
+        wr := by rw [est, esc]; rfl
+        st_scr := by rw [est, esc]; exact st_sc hF s
+        d_st := by rw [edR, est]; exact hp.f_d.symm.sub_right (st_sub hF s)
+        d_scr := by rw [edR, esc]; exact hp.f_d.symm.sub_right (sc_sub hF s) }
+    refine WP.narrow (Update.correctMain hd hf hu hpre) (Covers.append (hrd.trans (Covers.refl _)) hcov
+        |>.trans (Covers.refl _)) hcov (fun t' hrd' hwr' hsp' hf' hpost => ?_)
+      (updateMain_noFrames hf)
+    obtain ⟨hg, -, hu'⟩ := hpost
+    refine ⟨Mid.of_frame hF hm hrd' hwr' hsp' (fun r hr h30 => by simpa using hg r hr h30) hf'
+        (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact ⟨_, List.mem_cons_self .., st_sub hF s⟩
+          · exact ⟨_, List.mem_cons_self .., sc_sub hF s⟩)
+        (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact (st_sl hF s).symm
+          · exact (sc_sl hF s).symm), ?_⟩
+    have := hu' iv [] (by simpa [g0, gm] using hr) (by simp [g1])
+    simp only [State.withRegions_mem, State.withRegions_gpr, g0, g2, g3, gm, List.nil_append] at this
+    rwa [data_eq hp h] at this
+
+
+/-! ## `finalize` -/
+
+theorem finalizeMain_noFrames {P : Params} {H : Md P.B P.N P.L} {name : String} {code : Prog isa}
+    (hf : CalleeOk H code) : (finalizeMain P name code).noFrames = true := by
+  simp only [finalizeMain, finalizeBody, zero, compressAt, compressWith, Code.noFrames,
+    hf.noFrames, Bool.and_self]
+
+theorem fin_ok {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {o : List Instr} {D : Nat}
+    (hs : ShapeD (P := { P with out := o }) H D) {iv : H.HV} {name : String} {code : Prog isa}
+    (hf : CalleeOk H code)
+    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain { P with out := o } name code), clobbers i r = false)
+    {s t : State} (hp : Pre P D s) (h : Mid P s t)
+    (hr : H.Repr iv t.mem (fb P s) (bytesAt s.mem (dp s) (len s))) :
+    WP isa (.seq (.block (finArgs P)) (finalizeMain { P with out := o } name code)) t fun t' =>
+      Mid P s t' ∧ (H.lenOk (len s) →
+        bytesAt t'.mem (out s) D = (H.hash iv (bytesAt s.mem (dp s) (len s))).take D) := by
+  have := hF.lt; have := hF.sl_le; have := sc_le P; have := st_le P
+  refine WP.seq (WP.mono (Q := fun (t₁ : State) => Mid P s t₁ ∧ t₁.gpr .x0 = fb P s ∧
+      t₁.gpr .x1 = s.gpr .x1 ∧ t₁.gpr .x2 = out s ∧ t₁.gpr .x3 = fb P s + BitVec.ofNat 64 (scO P) ∧
+      t₁.mem = t.mem) ?_ fun t₁ ⟨hm, g0, g1, g2, g3, gm⟩ => ?_)
+  · simp only [finArgs]
+    refine wp_addSp (by omega) fun t₁ u₁ => wp_mov fun t₂ u₂ => wp_mov fun t₃ u₃ =>
+      wp_addSp (by omega) fun t₄ u₄ => WP.block_nil ?_
+    have hk : ∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x2 → r ≠ .x3 → t₄.gpr r = t.gpr r := fun r h0 h1 h2 h3 => by
+      rw [u₄.other r h3, u₃.other r h2, u₂.other r h1, u₁.other r h0]
+    have hp' : ∀ r ∈ preserved, r ≠ .x0 ∧ r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 := fun r hr => by
+      simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+    have sp₄ : t₄.sp = t.sp := by rw [u₄.sp, u₃.sp, u₂.sp, u₁.sp]
+    refine ⟨Mid.of_frame hF h (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd]) (by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]) sp₄
+        (fun r hr _ => have := hp' r hr; hk r this.1 this.2.1 this.2.2.1 this.2.2.2)
+        (rs := []) (fun x _ => by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]) (fun _ hr => absurd hr List.not_mem_nil)
+        (fun _ hr => absurd hr List.not_mem_nil), ?_, ?_, ?_, ?_, by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]⟩
+    · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, h.sp]; simp
+    · rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), h.x25]
+    · rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), h.x26]
+    · rw [u₄.gpr, u₃.sp, u₂.sp, u₁.sp, h.sp]
+  · have hwr : t₁.wr = [fR P s, oR s D] := by rw [hm.wr, hp.wr]
+    have hcov : Covers [stR P s, oR s D, scR P s] t₁.wr :=
+      Covers.of_sub fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact ⟨fR P s, by rw [hwr]; simp, 0, fb_zero P s, show 0 + (P.N + P.B) ≤ frameBytes P by omega⟩
+        · exact ⟨oR s D, by rw [hwr]; simp, 0, by simp, by simp⟩
+        · exact ⟨fR P s, by rw [hwr]; simp, scO P, rfl, show scO P + (P.so + 48) ≤ frameBytes P by omega⟩
+    let PF : Params := { P with out := o }
+    let u := t₁.withRegions [] [stR P s, oR s D, scR P s]
+    have est : Finalize.stR PF u = stR P s := by
+      simp only [u, Finalize.stR, Finalize.st, State.withRegions_gpr, g0] <;> rfl
+    have eout : Finalize.outR u D = oR s D := by
+      simp only [u, Finalize.outR, Finalize.out, State.withRegions_gpr, g2]
+    have esc : Finalize.scR PF u = scR P s := by
+      simp only [u, Finalize.scR, Finalize.scr, State.withRegions_gpr, g3] <;> rfl
+    have hpre : Finalize.PreD PF D u :=
+      { rd := rfl
+        wr := by rw [est, eout, esc]; rfl
+        st_out := by rw [est, eout]; exact hp.f_o.sub_left (st_sub hF s)
+        st_scr := by rw [est, esc]; exact st_sc hF s
+        out_scr := by rw [eout, esc]; exact (hp.f_o.sub_left (sc_sub hF s)).symm }
+    refine WP.narrow (Finalize.correctMain (P := PF) ⟨hd.1, hd.2, hd.3, hd.4⟩ hs (hf.withOut o) hu hpre)
+      (Covers.right hcov) hcov (fun t' hrd' hwr' hsp' hf' hpost => ?_) (finalizeMain_noFrames (hf.withOut o))
+    obtain ⟨hg, -, hfin⟩ := hpost
+    have hsub : ∀ r ∈ [stR P s, oR s D, scR P s], ∃ r' ∈ fR P s :: s.wr, Region.Sub r r' := fun r hr => by
+      rw [hp.wr]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., st_sub hF s⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_self .., sc_sub hF s⟩
+    refine ⟨Mid.of_frame hF hm hrd' hwr' hsp' (fun r hr h30 => by simpa using hg r hr h30) hf' hsub
+        (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl | rfl
+          · exact (st_sl hF s).symm
+          · exact hp.f_o.sub_left (sl_sub hF s)
+          · exact (sc_sl hF s).symm), fun hok => ?_⟩
+    have hlen : (bytesAt s.mem (dp s) (len s)).length = len s := by simp [bytesAt]
+    have := hfin iv (bytesAt s.mem (dp s) (len s)) (by simpa [u, g0, gm] using hr) (by rwa [hlen])
+      (by simp [g1, hlen])
+    simpa [u, g2] using this
+
+
+/-! ## Zeroing the state and restoring the registers -/
+
+theorem finish_ok {P : Params} (hF : Fits P) {D : Nat} (hD : D ≤ 2 ^ 64) {s t : State} (hp : Pre P D s)
+    (h : Mid P s t) :
+    WP isa (.block (finish P)) t fun t' =>
+      t'.rd = s.rd ∧ t'.wr = fR P s :: s.wr ∧ t'.sp = fb P s ∧ (∀ r ∈ preserved, t'.gpr r = s.gpr r) ∧
+      bytesAt t'.mem (out s) D = bytesAt t.mem (out s) D := by
+  have := hF.lt; have := hF.sl_le; have := sc_le P; have := st_le P; have h8 := hF.st; have h8' := hF.sl
+  simp only [finish]
+  rw [WP.block_append_iff]
+  let u : State := { t with wr := stR P s :: t.wr }
+  have hsp : u.sp = fb P s := h.sp
+  have hcov : Covers [stR P s] t.wr :=
+    covers_frame s h.wr fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨0, fb_zero P s, show 0 + (P.N + P.B) ≤ frameBytes P by omega⟩
+  have hw : Covers u.wr t.wr := Covers.cons hcov (Covers.refl _)
+  obtain ⟨m', he, hfr⟩ := wipe_run (stR P s) u ((P.N + P.B) / 8) (List.mem_cons_self ..)
+    (by omega) fun k hk => by rw [hsp]; exact Offset.contains_base _ (by omega) (by omega)
+  have hex := Exec.widen (Exec.block he) (rd := t.rd) (wr := t.wr)
+    (Covers.append (Covers.refl _) hw) hw
+  refine ⟨_, _, hex, ?_⟩
+  -- The state after the wipe.
+  let w := ({ ((u.write .x .x16 (u.sp + BitVec.ofNat 64 0)).write .x .x17
+      ((0 : BitVec 16).setWidth 64 <<< (16 * 0))) with mem := m' } : State).withRegions t.rd t.wr
+  have w16 : w.gpr .x16 = fb P s := by simp [w, State.write, hsp]
+  have wg : ∀ r, r ≠ .x16 → r ≠ .x17 → w.gpr r = t.gpr r := fun r h16 h17 => by
+    simp [w, State.write, h16, h17, u]
+  have wsp : w.sp = fb P s := hsp
+  have wmem : w.mem = m' := rfl
+  have wrd : w.rd = t.rd := rfl
+  have wwr : w.wr = t.wr := rfl
+  -- The slots are outside the state.
+  have hsl : Slots P s m' := by
+    have hc : ∀ j ≤ 2, (slR P s).Contains (fb P s + BitVec.ofNat 64 (slO P + 8 * j)) 8 := fun j hj =>
+      Offset.contains _ (by omega) (by omega) (by omega)
+    have hd : ∀ r' ∈ [stR P s], (slR P s).Disjoint r' := fun r' hr' => by
+      simp only [List.mem_singleton] at hr'; subst hr'; exact (st_sl hF s).symm
+    obtain ⟨a, b, c⟩ := h.slots
+    exact ⟨by rw [← a]; exact hfr.readW (by simpa using hc 0 (by omega)) hd (by decide),
+      by rw [← b]; exact hfr.readW (hc 1 (by omega)) hd (by decide),
+      by rw [← c]; exact hfr.readW (hc 2 (by omega)) hd (by decide)⟩
+  have hin : ∀ j ≤ 2, InRegions (w.rd ++ w.wr) (fb P s + BitVec.ofNat 64 (slO P + 8 * j)) 8 := fun j hj =>
+    ⟨fR P s, by rw [wwr, h.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
+  show WP isa (.block (OneShot.restore P)) w _
+  simp only [OneShot.restore]
+  refine wp_ldr (a := fb P s + BitVec.ofNat 64 (slO P)) (by omega) (by rw [w16])
+    (by simpa using hin 0 (by omega)) fun w₁ v₁ => ?_
+  refine wp_ldr (a := fb P s + BitVec.ofNat 64 (slO P + 8)) (by omega) (by rw [v₁.other _ (by decide), w16])
+    (by rw [v₁.rd, v₁.wr]; exact hin 1 (by omega)) fun w₂ v₂ => ?_
+  refine wp_ldr (a := fb P s + BitVec.ofNat 64 (slO P + 16)) (by omega)
+    (by rw [v₂.other _ (by decide), v₁.other _ (by decide), w16])
+    (by rw [v₂.rd, v₂.wr, v₁.rd, v₁.wr]; exact hin 2 (by omega)) fun w₃ v₃ => WP.block_nil ?_
+  have m₃ : w₃.mem = m' := by rw [v₃.mem, v₂.mem, v₁.mem, wmem]
+  refine ⟨by rw [v₃.rd, v₂.rd, v₁.rd, wrd, h.rd], by rw [v₃.wr, v₂.wr, v₁.wr, wwr, h.wr],
+    by rw [v₃.sp, v₂.sp, v₁.sp, wsp], fun r hr => ?_, ?_⟩
+  · by_cases h25 : r = .x25
+    · subst h25; rw [v₃.other _ (by decide), v₂.other _ (by decide), v₁.gpr, wmem, hsl.1]
+    by_cases h26 : r = .x26
+    · subst h26; rw [v₃.other _ (by decide), v₂.gpr, v₁.mem, wmem, hsl.2.1]
+    by_cases h30 : r = .x30
+    · subst h30; rw [v₃.gpr, v₂.mem, v₁.mem, wmem, hsl.2.2]
+    have h16 : r ≠ .x16 := by rintro rfl; simp [preserved] at hr
+    have h17 : r ≠ .x17 := by rintro rfl; simp [preserved] at hr
+    rw [v₃.other _ h30, v₂.other _ h26, v₁.other _ h25, wg r h16 h17, h.keep r hr h25 h26 h30]
+  · rw [m₃]
+    refine bytesAt_congr fun i hi => hfr.bytes (R := oR s D)
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr
+                      exact (hp.f_o.sub_left (st_sub hF s)).symm) hD hi
+
+
+/-! ## The digest -/
+
+theorem frameBytes_ok {P : Params} (hF : Fits P) :
+    0 < frameBytes P ∧ frameBytes P < 4096 ∧ frameBytes P % 16 = 0 :=
+  ⟨by have := hF.sl_le; omega, hF.lt, by simp [frameBytes, Nat.mul_mod_left]⟩
+
+/-- The one-shot digest is correct, given that `init` stores `iv`, writing
+only `x9`, and that the streaming bodies never write `untouched`. -/
+theorem correct {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {o : List Instr} {D : Nat}
+    (hs : ShapeD (P := { P with out := o }) H D) {iv : H.HV} {init : Prog isa} {name : String}
+    {code : Prog isa} (hf : CalleeOk H code)
+    (hi : ∀ s, (initK H iv).pre s → ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ (initK H iv).post s s')
+    (hiw : ∀ r, r ≠ .x9 → ∀ i ∈ instrs init, clobbers i r = false) (hin : init.noCalls = true)
+    (huu : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), clobbers i r = false)
+    (huf : ∀ r ∈ untouched, ∀ i ∈ instrs (finalizeMain { P with out := o } name code), clobbers i r = false)
+    (hv : (digest P { P with out := o } init name code).allInstrs keepsV = true)
+    {s : State} (hp : Pre P D s) :
+    WP isa (digest P { P with out := o } init name code) s fun s' =>
+      abiPreserved s s' ∧ (oneK H iv D).post s s' := by
+  have hD : D ≤ 2 ^ 64 := by have : D ≤ P.N := hs.le; have := hF.so; omega
+  apply WP.withPreservedV (hc := hv)
+  refine WP.alloc (frameBytes_ok hF) hp.sp ?_
+  unfold body
+  refine WP.seq (WP.mono (setup_ok hF rfl) fun t₁ h₁ => ?_)
+  refine WP.seq (WP.mono (init_ok hF hi hiw hin h₁) fun t₂ ⟨m₂, g0, g2, g3, hr₂⟩ => ?_)
+  refine WP.seq (WP.mono (upd_ok hF hd hf huu hp m₂ g0 g2 g3 hr₂) fun t₃ ⟨m₃, hr₃⟩ => ?_)
+  refine WP.seq (WP.mono (fin_ok hF hd hs hf huf hp m₃ hr₃) fun t₄ ⟨m₄, hout⟩ => ?_)
+  refine WP.mono (finish_ok hF hD hp m₄) fun t₅ ⟨_, _, hsp, hg, hb⟩ => ?_
+  refine ⟨⟨fun r hr => hg r hr, by simp only [freed, hsp, fb, BitVec.sub_add_cancel]⟩, fun hok => ?_⟩
+  show bytesAt t₅.mem (out s) D = _
+  rw [hb, hout hok]
+
+
+/-- The one-shot digest writes no vector register if `init` and the
+compression function do not. -/
+theorem digest_keepsV {P : Params} {H : Md P.B P.N P.L} {o : List Instr} {D : Nat}
+    (hs : ShapeD (P := { P with out := o }) H D) {init : Prog isa} {name : String} {code : Prog isa}
+    (hi : init.allInstrs VG.AArch64.keepsV = true) (h : code.allInstrs VG.AArch64.keepsV = true) :
+    (digest P { P with out := o } init name code).allInstrs VG.AArch64.keepsV = true := by
+  have hw := List.all_eq_true.mp (storeWord_keepsV P)
+  have hw' := List.all_eq_true.mp (storeWord_keepsV { P with out := o })
+  rw [Code.allInstrs_eq] at h hi ⊢
+  have hc := List.all_eq_true.mp h
+  have hii := List.all_eq_true.mp hi
+  simp [digest, body, setup, updArgs, finArgs, finish, OneShot.restore, Impl.StackScratch.AArch64.wipe,
+    Impl.StackScratch.AArch64.wipeStores, updateMain, updateStart, updateBody, fill, copy, copyWordBody,
+    copyBody, direct, finalizeMain, finalizeStart, finalizeBody, zero, zeroWordBody, zeroBody,
+    compressAt, compressN, compressWith, save, saved, Impl.MdStream.AArch64.restore, instrs, lg, mov,
+    VG.AArch64.keepsV, vdstOf, h, hs.lenKeepsV, hs.outKeepsV]
+  refine ⟨fun x hx => ?_, fun x hx => ?_, fun x hx => ?_⟩
+  · simpa [VG.AArch64.keepsV, vdstOf] using hii x hx
+  · simpa [VG.AArch64.keepsV, vdstOf] using hw x hx
+  · simpa [VG.AArch64.keepsV, vdstOf] using hw' x hx
+
+/-- The one-shot digest is verified, given that it is constant time (which
+the taint analysis proves of each hash function's code). -/
+theorem verified {P : Params} (hF : Fits P) {H : Md P.B P.N P.L} (hd : Dims P) {o : List Instr} {D : Nat}
+    (hs : ShapeD (P := { P with out := o }) H D) {iv : H.HV} {init : Prog isa} {name : String}
+    {code : Prog isa} (hf : CalleeOk H code)
+    (hi : ∀ s, (initK H iv).pre s → ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ (initK H iv).post s s')
+    (hiw : ∀ r, r ≠ .x9 → ∀ i ∈ instrs init, clobbers i r = false) (hin : init.noCalls = true)
+    (hiv : init.allInstrs VG.AArch64.keepsV = true)
+    (huu : ((instrs (updateMain P name code)).all fun i => untouched.all fun r => !clobbers i r) = true)
+    (huf : ((instrs (finalizeMain { P with out := o } name code)).all fun i =>
+      untouched.all fun r => !clobbers i r) = true)
+    (hct : ConstantTime isa (oneK H iv D).pre (oneK H iv D).pub (digest P { P with out := o } init name code))
+    (hsat : ∃ s, Pre P D s) :
+    Verified AArch64.target (digest P { P with out := o } init name code) (oneK H iv D) := by
+  have conv : ∀ {c : Prog isa}, ((instrs c).all fun i => untouched.all fun r => !clobbers i r) = true →
+      ∀ r ∈ untouched, ∀ i ∈ instrs c, clobbers i r = false := fun h r hr i hi => by
+    simpa using List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
+  refine ⟨fun s hp => ?_, hct, hsat⟩
+  obtain ⟨t, s', he, h⟩ := correct hF hd hs hf hi hiw hin (conv huu) (conv huf)
+    (digest_keepsV hs hiv hf.keepsV) hp
+  exact ⟨t, s', he, h⟩
+
+/-- The initial taint agrees on the public arguments. -/
+theorem agree₀ {P : Params} {H : Md P.B P.N P.L} {iv : H.HV} {D : Nat} {s₁ s₂ : State}
+    (hpub : (oneK H iv D).pub s₁ s₂) :
+    VG.AArch64.Taint.Agree (VG.AArch64.Taint.ofRegs [.x0, .x1, .x2]) s₁ s₂ := by
+  obtain ⟨p0, p1, p2, hsp⟩ := hpub
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
+
+end VG.Proof.MdStream.AArch64.OneShot
