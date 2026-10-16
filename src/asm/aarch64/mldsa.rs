@@ -3359,19 +3359,22 @@ pub(crate) unsafe extern "C" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32;
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
-movz x10, #256, lsl #0
+movz w10, #57343, lsl #0
+movk w10, #64639, lsl #16
+dup v16.4s, w9
+dup v17.4s, w10
+movz x12, #64, lsl #0
 20:
-ldr w11, [x0, #0]
-ldr w12, [x1, #0]
-add x11, x11, x12
-sub x11, x11, x9
-lsr x12, x11, #63
-madd x11, x12, x9, x11
-str w11, [x0, #0]
-add x0, x0, #4
-add x1, x1, #4
-sub x10, x10, #1
-cbnz x10, 20b
+ldr q0, [x0, #0]
+ldr q1, [x1, #0]
+add v0.4s, v0.4s, v1.4s
+sub v4.4s, v0.4s, v16.4s
+umin v0.4s, v0.4s, v4.4s
+str q0, [x0, #0]
+add x0, x0, #16
+add x1, x1, #16
+sub x12, x12, #1
+cbnz x12, 20b
 ret
 .p2align 6",
     )
@@ -3394,20 +3397,23 @@ pub(crate) unsafe extern "C" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32;
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
-movz x10, #256, lsl #0
+movz w10, #57343, lsl #0
+movk w10, #64639, lsl #16
+dup v16.4s, w9
+dup v17.4s, w10
+movz x12, #64, lsl #0
 20:
-ldr w11, [x0, #0]
-ldr w12, [x1, #0]
-add x11, x11, x9
-sub x11, x11, x12
-sub x11, x11, x9
-lsr x12, x11, #63
-madd x11, x12, x9, x11
-str w11, [x0, #0]
-add x0, x0, #4
-add x1, x1, #4
-sub x10, x10, #1
-cbnz x10, 20b
+ldr q0, [x0, #0]
+ldr q1, [x1, #0]
+add v0.4s, v0.4s, v16.4s
+sub v0.4s, v0.4s, v1.4s
+sub v4.4s, v0.4s, v16.4s
+umin v0.4s, v0.4s, v4.4s
+str q0, [x0, #0]
+add x0, x0, #16
+add x1, x1, #16
+sub x12, x12, #1
+cbnz x12, 20b
 ret
 .p2align 6",
     )
@@ -10249,20 +10255,18 @@ ret
     )
 }
 
-/// Adds the polynomial `*g` to `*f` modulo `q` = 8380417, coefficient by coefficient (FIPS 204 Algorithm 44).
-///
-/// Contract: `VG.Spec.MlDsa.addContract`. Constant time: only the pointers may affect timing, not the data.
+/// Writes the canonical sum of coefficientwise polynomial products, scaled by the inverse of 2^32 modulo q.
 ///
 /// # Safety
 ///
-/// * `f` must be valid for reads and writes of 1024 bytes.
-/// * `g` must be valid for reads of 1024 bytes.
-/// * Each of the 256 `u32`s of `f` must be less than `q` = 8380417.
-/// * Each of the 256 `u32`s of `g` must be less than `q` = 8380417.
-/// * `f` must not overlap `g` (distinct Rust objects never do).
-/// * Neither `f` nor `g` may wrap around the end of the address space (no Rust object does).
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `a` must be valid for reads of 4096 bytes.
+/// * `b` must be valid for reads of 4096 bytes.
+/// * All coefficients in both input families must be less than 25141251 (3q).
+/// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
+/// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_keygen_add(f: *mut [u32; 256], g: *const [u32; 256]) {
+pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024]) {
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
@@ -10272,16 +10276,459 @@ dup v16.4s, w9
 dup v17.4s, w10
 movz x12, #64, lsl #0
 20:
-ldr q0, [x0, #0]
-ldr q1, [x1, #0]
-add v0.4s, v0.4s, v1.4s
+ldr q0, [x1, #0]
+ldr q1, [x2, #0]
+umull v2.2d, v0.2s, v1.2s
+umull2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #1024]
+ldr q1, [x2, #1024]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #2048]
+ldr q1, [x2, #2048]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #3072]
+ldr q1, [x2, #3072]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+uzp1 v4.4s, v2.4s, v3.4s
+mul v4.4s, v4.4s, v17.4s
+umlal v2.2d, v4.2s, v16.2s
+umlal2 v3.2d, v4.4s, v16.4s
+uzp2 v0.4s, v2.4s, v3.4s
 sub v4.4s, v0.4s, v16.4s
 umin v0.4s, v0.4s, v4.4s
 str q0, [x0, #0]
 add x0, x0, #16
 add x1, x1, #16
+add x2, x2, #16
 sub x12, x12, #1
 cbnz x12, 20b
+ret
+.p2align 6",
+    )
+}
+
+/// Writes the canonical sum of coefficientwise polynomial products, scaled by the inverse of 2^32 modulo q.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `a` must be valid for reads of 5120 bytes.
+/// * `b` must be valid for reads of 5120 bytes.
+/// * All coefficients in both input families must be less than 25141251 (3q).
+/// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
+/// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280]) {
+    core::arch::naked_asm!(
+        r"movz w9, #57345, lsl #0
+movk w9, #127, lsl #16
+movz w10, #57343, lsl #0
+movk w10, #64639, lsl #16
+dup v16.4s, w9
+dup v17.4s, w10
+movz x12, #64, lsl #0
+20:
+ldr q0, [x1, #0]
+ldr q1, [x2, #0]
+umull v2.2d, v0.2s, v1.2s
+umull2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #1024]
+ldr q1, [x2, #1024]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #2048]
+ldr q1, [x2, #2048]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #3072]
+ldr q1, [x2, #3072]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #4096]
+ldr q1, [x2, #4096]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+uzp1 v4.4s, v2.4s, v3.4s
+mul v4.4s, v4.4s, v17.4s
+umlal v2.2d, v4.2s, v16.2s
+umlal2 v3.2d, v4.4s, v16.4s
+uzp2 v0.4s, v2.4s, v3.4s
+sub v4.4s, v0.4s, v16.4s
+umin v0.4s, v0.4s, v4.4s
+str q0, [x0, #0]
+add x0, x0, #16
+add x1, x1, #16
+add x2, x2, #16
+sub x12, x12, #1
+cbnz x12, 20b
+ret
+.p2align 6",
+    )
+}
+
+/// Writes the canonical sum of coefficientwise polynomial products, scaled by the inverse of 2^32 modulo q.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `a` must be valid for reads of 7168 bytes.
+/// * `b` must be valid for reads of 7168 bytes.
+/// * All coefficients in both input families must be less than 25141251 (3q).
+/// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
+/// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792]) {
+    core::arch::naked_asm!(
+        r"movz w9, #57345, lsl #0
+movk w9, #127, lsl #16
+movz w10, #57343, lsl #0
+movk w10, #64639, lsl #16
+dup v16.4s, w9
+dup v17.4s, w10
+movz x12, #64, lsl #0
+20:
+ldr q0, [x1, #0]
+ldr q1, [x2, #0]
+umull v2.2d, v0.2s, v1.2s
+umull2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #1024]
+ldr q1, [x2, #1024]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #2048]
+ldr q1, [x2, #2048]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #3072]
+ldr q1, [x2, #3072]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #4096]
+ldr q1, [x2, #4096]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #5120]
+ldr q1, [x2, #5120]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+ldr q0, [x1, #6144]
+ldr q1, [x2, #6144]
+umlal v2.2d, v0.2s, v1.2s
+umlal2 v3.2d, v0.4s, v1.4s
+uzp1 v4.4s, v2.4s, v3.4s
+mul v4.4s, v4.4s, v17.4s
+umlal v2.2d, v4.2s, v16.2s
+umlal2 v3.2d, v4.4s, v16.4s
+uzp2 v0.4s, v2.4s, v3.4s
+sub v4.4s, v0.4s, v16.4s
+umin v0.4s, v0.4s, v4.4s
+str q0, [x0, #0]
+add x0, x0, #16
+add x1, x1, #16
+add x2, x2, #16
+sub x12, x12, #1
+cbnz x12, 20b
+ret
+.p2align 6",
+    )
+}
+
+/// Multiplies two positive NTT polynomials with the Montgomery factor R inverse, returning canonical coefficients.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 1024 bytes.
+/// * `a` must be valid for reads of 1024 bytes.
+/// * `b` must be valid for reads of 1024 bytes.
+/// * Each input coefficient must be less than 3q, where q = 8380417.
+/// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
+/// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_product(out: *mut [u32; 256], a: *const [u32; 256], b: *const [u32; 256]) {
+    core::arch::naked_asm!(
+        r"movz w9, #57345, lsl #0
+movk w9, #127, lsl #16
+movz w10, #57343, lsl #0
+movk w10, #64639, lsl #16
+dup v16.4s, w9
+dup v17.4s, w10
+movz x12, #64, lsl #0
+20:
+ldr q0, [x1, #0]
+ldr q1, [x2, #0]
+umull v2.2d, v0.2s, v1.2s
+umull2 v3.2d, v0.4s, v1.4s
+uzp1 v4.4s, v2.4s, v3.4s
+mul v4.4s, v4.4s, v17.4s
+umlal v2.2d, v4.2s, v16.2s
+umlal2 v3.2d, v4.4s, v16.4s
+uzp2 v0.4s, v2.4s, v3.4s
+sub v4.4s, v0.4s, v16.4s
+umin v0.4s, v0.4s, v4.4s
+str q0, [x0, #0]
+add x0, x0, #16
+add x1, x1, #16
+add x2, x2, #16
+sub x12, x12, #1
+cbnz x12, 20b
+ret
+.p2align 6",
+    )
+}
+
+/// Writes the packed HighBits of the 256 canonical coefficients of `r`. Its timing depends only on the pointers, as specified by `highPackContract`.
+///
+/// # Safety
+///
+/// * `r` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of 128 bytes.
+/// * Each coefficient of `r` must be less than 8380417.
+/// * `out` must not overlap `r` (distinct Rust objects never do).
+/// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_high_pack4(r: *const [u32; 256], out: *mut [u8; 128]) {
+    core::arch::naked_asm!(
+        r"movz w9, #57345, lsl #0
+movk w9, #127, lsl #16
+dup v16.4s, w9
+movz w9, #127, lsl #0
+movk w9, #0, lsl #16
+dup v17.4s, w9
+movz w9, #1025, lsl #0
+movk w9, #0, lsl #16
+dup v18.4s, w9
+movz w9, #0, lsl #0
+movk w9, #32, lsl #16
+dup v19.4s, w9
+movz w9, #16, lsl #0
+movk w9, #0, lsl #16
+dup v20.4s, w9
+movz w9, #65024, lsl #0
+movk w9, #7, lsl #16
+dup v21.4s, w9
+movz w9, #1, lsl #0
+movk w9, #0, lsl #16
+dup v22.4s, w9
+movi v23.2d, #0
+movi v28.2d, #0
+movz x9, #256, lsl #0
+movk x9, #1026, lsl #16
+movk x9, #1541, lsl #32
+movk x9, #2312, lsl #48
+dup v29.2d, x9
+movz x9, #3082, lsl #0
+movk x9, #3597, lsl #16
+movk x9, #65535, lsl #32
+movk x9, #65535, lsl #48
+mov v29.d[1], x9
+movz x9, #256, lsl #0
+movk x9, #65535, lsl #16
+movk x9, #1284, lsl #32
+movk x9, #65535, lsl #48
+dup v24.2d, x9
+movz x9, #2312, lsl #0
+movk x9, #65535, lsl #16
+movk x9, #3340, lsl #32
+movk x9, #65535, lsl #48
+mov v24.d[1], x9
+movz x9, #770, lsl #0
+movk x9, #65535, lsl #16
+movk x9, #1798, lsl #32
+movk x9, #65535, lsl #48
+dup v25.2d, x9
+movz x9, #2826, lsl #0
+movk x9, #65535, lsl #16
+movk x9, #3854, lsl #32
+movk x9, #65535, lsl #48
+mov v25.d[1], x9
+movz x11, #16, lsl #0
+20:
+ldr q0, [x0, #0]
+add v0.4s, v0.4s, v17.4s
+ushr v0.4s, v0.4s, #7
+mul v0.4s, v0.4s, v18.4s
+add v0.4s, v0.4s, v19.4s
+ushr v0.4s, v0.4s, #22
+sub v7.4s, v0.4s, v20.4s
+sshr v7.4s, v7.4s, #31
+and v0.16b, v0.16b, v7.16b
+ldr q1, [x0, #16]
+add v1.4s, v1.4s, v17.4s
+ushr v1.4s, v1.4s, #7
+mul v1.4s, v1.4s, v18.4s
+add v1.4s, v1.4s, v19.4s
+ushr v1.4s, v1.4s, #22
+sub v7.4s, v1.4s, v20.4s
+sshr v7.4s, v7.4s, #31
+and v1.16b, v1.16b, v7.16b
+ldr q2, [x0, #32]
+add v2.4s, v2.4s, v17.4s
+ushr v2.4s, v2.4s, #7
+mul v2.4s, v2.4s, v18.4s
+add v2.4s, v2.4s, v19.4s
+ushr v2.4s, v2.4s, #22
+sub v7.4s, v2.4s, v20.4s
+sshr v7.4s, v7.4s, #31
+and v2.16b, v2.16b, v7.16b
+ldr q3, [x0, #48]
+add v3.4s, v3.4s, v17.4s
+ushr v3.4s, v3.4s, #7
+mul v3.4s, v3.4s, v18.4s
+add v3.4s, v3.4s, v19.4s
+ushr v3.4s, v3.4s, #22
+sub v7.4s, v3.4s, v20.4s
+sshr v7.4s, v7.4s, #31
+and v3.16b, v3.16b, v7.16b
+uzp1 v4.16b, v0.16b, v1.16b
+uzp1 v5.16b, v2.16b, v3.16b
+uzp1 v4.16b, v4.16b, v4.16b
+uzp1 v5.16b, v5.16b, v5.16b
+zip1 v6.2d, v4.2d, v5.2d
+uzp1 v4.16b, v6.16b, v6.16b
+uzp2 v5.16b, v6.16b, v6.16b
+shl v5.16b, v5.16b, #4
+orr v4.16b, v4.16b, v5.16b
+umov x9, v4.d[0]
+str x9, [x1, #0]
+add x0, x0, #64
+add x1, x1, #8
+sub x11, x11, #1
+cbnz x11, 20b
+ret
+.p2align 6",
+    )
+}
+
+/// Writes the packed HighBits of the 256 canonical coefficients of `r`. Its timing depends only on the pointers, as specified by `highPackContract`.
+///
+/// # Safety
+///
+/// * `r` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of 192 bytes.
+/// * Each coefficient of `r` must be less than 8380417.
+/// * `out` must not overlap `r` (distinct Rust objects never do).
+/// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mldsa_high_pack6(r: *const [u32; 256], out: *mut [u8; 192]) {
+    core::arch::naked_asm!(
+        r"movz w9, #57345, lsl #0
+movk w9, #127, lsl #16
+dup v16.4s, w9
+movz w9, #127, lsl #0
+movk w9, #0, lsl #16
+dup v17.4s, w9
+movz w9, #11275, lsl #0
+movk w9, #0, lsl #16
+dup v18.4s, w9
+movz w9, #0, lsl #0
+movk w9, #128, lsl #16
+dup v19.4s, w9
+movz w9, #44, lsl #0
+movk w9, #0, lsl #16
+dup v20.4s, w9
+movz w9, #59392, lsl #0
+movk w9, #2, lsl #16
+dup v21.4s, w9
+movz w9, #1, lsl #0
+movk w9, #0, lsl #16
+dup v22.4s, w9
+movi v23.2d, #0
+movi v28.2d, #0
+movz x9, #256, lsl #0
+movk x9, #1026, lsl #16
+movk x9, #1541, lsl #32
+movk x9, #2312, lsl #48
+dup v29.2d, x9
+movz x9, #3082, lsl #0
+movk x9, #3597, lsl #16
+movk x9, #65535, lsl #32
+movk x9, #65535, lsl #48
+mov v29.d[1], x9
+movz x9, #256, lsl #0
+movk x9, #65535, lsl #16
+movk x9, #1284, lsl #32
+movk x9, #65535, lsl #48
+dup v24.2d, x9
+movz x9, #2312, lsl #0
+movk x9, #65535, lsl #16
+movk x9, #3340, lsl #32
+movk x9, #65535, lsl #48
+mov v24.d[1], x9
+movz x9, #770, lsl #0
+movk x9, #65535, lsl #16
+movk x9, #1798, lsl #32
+movk x9, #65535, lsl #48
+dup v25.2d, x9
+movz x9, #2826, lsl #0
+movk x9, #65535, lsl #16
+movk x9, #3854, lsl #32
+movk x9, #65535, lsl #48
+mov v25.d[1], x9
+movz x11, #16, lsl #0
+20:
+ldr q0, [x0, #0]
+add v0.4s, v0.4s, v17.4s
+ushr v0.4s, v0.4s, #7
+mul v0.4s, v0.4s, v18.4s
+add v0.4s, v0.4s, v19.4s
+ushr v0.4s, v0.4s, #24
+sub v7.4s, v0.4s, v20.4s
+sshr v7.4s, v7.4s, #31
+and v0.16b, v0.16b, v7.16b
+ldr q1, [x0, #16]
+add v1.4s, v1.4s, v17.4s
+ushr v1.4s, v1.4s, #7
+mul v1.4s, v1.4s, v18.4s
+add v1.4s, v1.4s, v19.4s
+ushr v1.4s, v1.4s, #24
+sub v7.4s, v1.4s, v20.4s
+sshr v7.4s, v7.4s, #31
+and v1.16b, v1.16b, v7.16b
+ldr q2, [x0, #32]
+add v2.4s, v2.4s, v17.4s
+ushr v2.4s, v2.4s, #7
+mul v2.4s, v2.4s, v18.4s
+add v2.4s, v2.4s, v19.4s
+ushr v2.4s, v2.4s, #24
+sub v7.4s, v2.4s, v20.4s
+sshr v7.4s, v7.4s, #31
+and v2.16b, v2.16b, v7.16b
+ldr q3, [x0, #48]
+add v3.4s, v3.4s, v17.4s
+ushr v3.4s, v3.4s, #7
+mul v3.4s, v3.4s, v18.4s
+add v3.4s, v3.4s, v19.4s
+ushr v3.4s, v3.4s, #24
+sub v7.4s, v3.4s, v20.4s
+sshr v7.4s, v7.4s, #31
+and v3.16b, v3.16b, v7.16b
+uzp1 v4.16b, v0.16b, v1.16b
+uzp1 v5.16b, v2.16b, v3.16b
+uzp1 v4.16b, v4.16b, v4.16b
+uzp1 v5.16b, v5.16b, v5.16b
+zip1 v6.2d, v4.2d, v5.2d
+uzp1 v4.16b, v6.16b, v6.16b
+uzp2 v5.16b, v6.16b, v6.16b
+zip1 v4.16b, v4.16b, v28.16b
+zip1 v5.16b, v5.16b, v28.16b
+shl v5.4s, v5.4s, #6
+orr v4.16b, v4.16b, v5.16b
+tbl v5.16b, {{v4.16b}}, v24.16b
+tbl v6.16b, {{v4.16b}}, v25.16b
+shl v6.4s, v6.4s, #12
+orr v5.16b, v5.16b, v6.16b
+tbl v4.16b, {{v5.16b}}, v29.16b
+umov x9, v4.d[0]
+str x9, [x1, #0]
+umov w9, v4.s[2]
+str w9, [x1, #8]
+add x0, x0, #64
+add x1, x1, #12
+sub x11, x11, #1
+cbnz x11, 20b
 ret
 .p2align 6",
     )
@@ -10300,7 +10747,7 @@ ret
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_keygen_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub x9, x3, #128
 cbz x9, 20f
@@ -10530,7 +10977,7 @@ ret
 /// * `out` must not overlap `f` (distinct Rust objects never do).
 /// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_keygen_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r"sub x9, x4, #96
 cbz x9, 20f
@@ -11093,956 +11540,6 @@ add x0, x0, #32
 add x2, x2, #3
 sub x15, x15, #1
 cbnz x15, 227b
-21:
-ret
-.p2align 6",
-    )
-}
-
-/// `Power2Round` (FIPS 204 Algorithm 35) of each coefficient of `*t`: writes the `r1`s to `*t1` and the `r0`s, modulo `q` = 8380417, to `*t0`.
-///
-/// Contract: `VG.Spec.MlDsa.power2RoundContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `t` must be valid for reads of 1024 bytes.
-/// * `t1` must be valid for reads and writes of 1024 bytes.
-/// * `t0` must be valid for reads and writes of 1024 bytes.
-/// * Each of the 256 `u32`s of `t` must be less than `q` = 8380417.
-/// * `t1` and `t0` must not overlap each other or `t` (distinct Rust objects never do).
-/// * None of `t`, `t1` and `t0` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_keygen_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
-    core::arch::naked_asm!(
-        r"movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-dup v16.4s, w9
-movz w9, #4095, lsl #0
-movk w9, #0, lsl #16
-dup v17.4s, w9
-movz x10, #16, lsl #0
-20:
-ldr q0, [x0, #0]
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #13
-shl v2.4s, v1.4s, #13
-sub v0.4s, v0.4s, v2.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-str q1, [x1, #0]
-str q0, [x2, #0]
-ldr q0, [x0, #16]
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #13
-shl v2.4s, v1.4s, #13
-sub v0.4s, v0.4s, v2.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-str q1, [x1, #16]
-str q0, [x2, #16]
-ldr q0, [x0, #32]
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #13
-shl v2.4s, v1.4s, #13
-sub v0.4s, v0.4s, v2.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-str q1, [x1, #32]
-str q0, [x2, #32]
-ldr q0, [x0, #48]
-add v1.4s, v0.4s, v17.4s
-ushr v1.4s, v1.4s, #13
-shl v2.4s, v1.4s, #13
-sub v0.4s, v0.4s, v2.4s
-sshr v7.4s, v0.4s, #31
-and v7.16b, v7.16b, v16.16b
-add v0.4s, v0.4s, v7.4s
-str q1, [x1, #48]
-str q0, [x2, #48]
-add x0, x0, #64
-add x1, x1, #64
-add x2, x2, #64
-sub x10, x10, #1
-cbnz x10, 20b
-ret
-.p2align 6",
-    )
-}
-
-/// Writes the canonical sum of coefficientwise polynomial products, scaled by the inverse of 2^32 modulo q.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 1024 bytes.
-/// * `a` must be valid for reads of 4096 bytes.
-/// * `b` must be valid for reads of 4096 bytes.
-/// * All coefficients in both input families must be less than 25141251 (3q).
-/// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
-/// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot4(out: *mut [u32; 256], a: *const [u32; 1024], b: *const [u32; 1024]) {
-    core::arch::naked_asm!(
-        r"movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-movz w10, #57343, lsl #0
-movk w10, #64639, lsl #16
-dup v16.4s, w9
-dup v17.4s, w10
-movz x12, #64, lsl #0
-20:
-ldr q0, [x1, #0]
-ldr q1, [x2, #0]
-umull v2.2d, v0.2s, v1.2s
-umull2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #1024]
-ldr q1, [x2, #1024]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #2048]
-ldr q1, [x2, #2048]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #3072]
-ldr q1, [x2, #3072]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-uzp1 v4.4s, v2.4s, v3.4s
-mul v4.4s, v4.4s, v17.4s
-umlal v2.2d, v4.2s, v16.2s
-umlal2 v3.2d, v4.4s, v16.4s
-uzp2 v0.4s, v2.4s, v3.4s
-sub v4.4s, v0.4s, v16.4s
-umin v0.4s, v0.4s, v4.4s
-str q0, [x0, #0]
-add x0, x0, #16
-add x1, x1, #16
-add x2, x2, #16
-sub x12, x12, #1
-cbnz x12, 20b
-ret
-.p2align 6",
-    )
-}
-
-/// Writes the canonical sum of coefficientwise polynomial products, scaled by the inverse of 2^32 modulo q.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 1024 bytes.
-/// * `a` must be valid for reads of 5120 bytes.
-/// * `b` must be valid for reads of 5120 bytes.
-/// * All coefficients in both input families must be less than 25141251 (3q).
-/// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
-/// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot5(out: *mut [u32; 256], a: *const [u32; 1280], b: *const [u32; 1280]) {
-    core::arch::naked_asm!(
-        r"movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-movz w10, #57343, lsl #0
-movk w10, #64639, lsl #16
-dup v16.4s, w9
-dup v17.4s, w10
-movz x12, #64, lsl #0
-20:
-ldr q0, [x1, #0]
-ldr q1, [x2, #0]
-umull v2.2d, v0.2s, v1.2s
-umull2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #1024]
-ldr q1, [x2, #1024]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #2048]
-ldr q1, [x2, #2048]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #3072]
-ldr q1, [x2, #3072]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #4096]
-ldr q1, [x2, #4096]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-uzp1 v4.4s, v2.4s, v3.4s
-mul v4.4s, v4.4s, v17.4s
-umlal v2.2d, v4.2s, v16.2s
-umlal2 v3.2d, v4.4s, v16.4s
-uzp2 v0.4s, v2.4s, v3.4s
-sub v4.4s, v0.4s, v16.4s
-umin v0.4s, v0.4s, v4.4s
-str q0, [x0, #0]
-add x0, x0, #16
-add x1, x1, #16
-add x2, x2, #16
-sub x12, x12, #1
-cbnz x12, 20b
-ret
-.p2align 6",
-    )
-}
-
-/// Writes the canonical sum of coefficientwise polynomial products, scaled by the inverse of 2^32 modulo q.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 1024 bytes.
-/// * `a` must be valid for reads of 7168 bytes.
-/// * `b` must be valid for reads of 7168 bytes.
-/// * All coefficients in both input families must be less than 25141251 (3q).
-/// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
-/// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_dot7(out: *mut [u32; 256], a: *const [u32; 1792], b: *const [u32; 1792]) {
-    core::arch::naked_asm!(
-        r"movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-movz w10, #57343, lsl #0
-movk w10, #64639, lsl #16
-dup v16.4s, w9
-dup v17.4s, w10
-movz x12, #64, lsl #0
-20:
-ldr q0, [x1, #0]
-ldr q1, [x2, #0]
-umull v2.2d, v0.2s, v1.2s
-umull2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #1024]
-ldr q1, [x2, #1024]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #2048]
-ldr q1, [x2, #2048]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #3072]
-ldr q1, [x2, #3072]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #4096]
-ldr q1, [x2, #4096]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #5120]
-ldr q1, [x2, #5120]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-ldr q0, [x1, #6144]
-ldr q1, [x2, #6144]
-umlal v2.2d, v0.2s, v1.2s
-umlal2 v3.2d, v0.4s, v1.4s
-uzp1 v4.4s, v2.4s, v3.4s
-mul v4.4s, v4.4s, v17.4s
-umlal v2.2d, v4.2s, v16.2s
-umlal2 v3.2d, v4.4s, v16.4s
-uzp2 v0.4s, v2.4s, v3.4s
-sub v4.4s, v0.4s, v16.4s
-umin v0.4s, v0.4s, v4.4s
-str q0, [x0, #0]
-add x0, x0, #16
-add x1, x1, #16
-add x2, x2, #16
-sub x12, x12, #1
-cbnz x12, 20b
-ret
-.p2align 6",
-    )
-}
-
-/// Multiplies two positive NTT polynomials with the Montgomery factor R inverse, returning canonical coefficients.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 1024 bytes.
-/// * `a` must be valid for reads of 1024 bytes.
-/// * `b` must be valid for reads of 1024 bytes.
-/// * Each input coefficient must be less than 3q, where q = 8380417.
-/// * `out` must not overlap `a` or `b` (distinct Rust objects never do).
-/// * None of `out`, `a` and `b` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_montgomery_product(out: *mut [u32; 256], a: *const [u32; 256], b: *const [u32; 256]) {
-    core::arch::naked_asm!(
-        r"movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-movz w10, #57343, lsl #0
-movk w10, #64639, lsl #16
-dup v16.4s, w9
-dup v17.4s, w10
-movz x12, #64, lsl #0
-20:
-ldr q0, [x1, #0]
-ldr q1, [x2, #0]
-umull v2.2d, v0.2s, v1.2s
-umull2 v3.2d, v0.4s, v1.4s
-uzp1 v4.4s, v2.4s, v3.4s
-mul v4.4s, v4.4s, v17.4s
-umlal v2.2d, v4.2s, v16.2s
-umlal2 v3.2d, v4.4s, v16.4s
-uzp2 v0.4s, v2.4s, v3.4s
-sub v4.4s, v0.4s, v16.4s
-umin v0.4s, v0.4s, v4.4s
-str q0, [x0, #0]
-add x0, x0, #16
-add x1, x1, #16
-add x2, x2, #16
-sub x12, x12, #1
-cbnz x12, 20b
-ret
-.p2align 6",
-    )
-}
-
-/// Writes the packed HighBits of the 256 canonical coefficients of `r`. Its timing depends only on the pointers, as specified by `highPackContract`.
-///
-/// # Safety
-///
-/// * `r` must be valid for reads of 1024 bytes.
-/// * `out` must be valid for reads and writes of 128 bytes.
-/// * Each coefficient of `r` must be less than 8380417.
-/// * `out` must not overlap `r` (distinct Rust objects never do).
-/// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_high_pack4(r: *const [u32; 256], out: *mut [u8; 128]) {
-    core::arch::naked_asm!(
-        r"movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-dup v16.4s, w9
-movz w9, #127, lsl #0
-movk w9, #0, lsl #16
-dup v17.4s, w9
-movz w9, #1025, lsl #0
-movk w9, #0, lsl #16
-dup v18.4s, w9
-movz w9, #0, lsl #0
-movk w9, #32, lsl #16
-dup v19.4s, w9
-movz w9, #16, lsl #0
-movk w9, #0, lsl #16
-dup v20.4s, w9
-movz w9, #65024, lsl #0
-movk w9, #7, lsl #16
-dup v21.4s, w9
-movz w9, #1, lsl #0
-movk w9, #0, lsl #16
-dup v22.4s, w9
-movi v23.2d, #0
-movi v28.2d, #0
-movz x9, #256, lsl #0
-movk x9, #1026, lsl #16
-movk x9, #1541, lsl #32
-movk x9, #2312, lsl #48
-dup v29.2d, x9
-movz x9, #3082, lsl #0
-movk x9, #3597, lsl #16
-movk x9, #65535, lsl #32
-movk x9, #65535, lsl #48
-mov v29.d[1], x9
-movz x9, #256, lsl #0
-movk x9, #65535, lsl #16
-movk x9, #1284, lsl #32
-movk x9, #65535, lsl #48
-dup v24.2d, x9
-movz x9, #2312, lsl #0
-movk x9, #65535, lsl #16
-movk x9, #3340, lsl #32
-movk x9, #65535, lsl #48
-mov v24.d[1], x9
-movz x9, #770, lsl #0
-movk x9, #65535, lsl #16
-movk x9, #1798, lsl #32
-movk x9, #65535, lsl #48
-dup v25.2d, x9
-movz x9, #2826, lsl #0
-movk x9, #65535, lsl #16
-movk x9, #3854, lsl #32
-movk x9, #65535, lsl #48
-mov v25.d[1], x9
-movz x11, #16, lsl #0
-20:
-ldr q0, [x0, #0]
-add v0.4s, v0.4s, v17.4s
-ushr v0.4s, v0.4s, #7
-mul v0.4s, v0.4s, v18.4s
-add v0.4s, v0.4s, v19.4s
-ushr v0.4s, v0.4s, #22
-sub v7.4s, v0.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v0.16b, v0.16b, v7.16b
-ldr q1, [x0, #16]
-add v1.4s, v1.4s, v17.4s
-ushr v1.4s, v1.4s, #7
-mul v1.4s, v1.4s, v18.4s
-add v1.4s, v1.4s, v19.4s
-ushr v1.4s, v1.4s, #22
-sub v7.4s, v1.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v1.16b, v1.16b, v7.16b
-ldr q2, [x0, #32]
-add v2.4s, v2.4s, v17.4s
-ushr v2.4s, v2.4s, #7
-mul v2.4s, v2.4s, v18.4s
-add v2.4s, v2.4s, v19.4s
-ushr v2.4s, v2.4s, #22
-sub v7.4s, v2.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v2.16b, v2.16b, v7.16b
-ldr q3, [x0, #48]
-add v3.4s, v3.4s, v17.4s
-ushr v3.4s, v3.4s, #7
-mul v3.4s, v3.4s, v18.4s
-add v3.4s, v3.4s, v19.4s
-ushr v3.4s, v3.4s, #22
-sub v7.4s, v3.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v3.16b, v3.16b, v7.16b
-uzp1 v4.16b, v0.16b, v1.16b
-uzp1 v5.16b, v2.16b, v3.16b
-uzp1 v4.16b, v4.16b, v4.16b
-uzp1 v5.16b, v5.16b, v5.16b
-zip1 v6.2d, v4.2d, v5.2d
-uzp1 v4.16b, v6.16b, v6.16b
-uzp2 v5.16b, v6.16b, v6.16b
-shl v5.16b, v5.16b, #4
-orr v4.16b, v4.16b, v5.16b
-umov x9, v4.d[0]
-str x9, [x1, #0]
-add x0, x0, #64
-add x1, x1, #8
-sub x11, x11, #1
-cbnz x11, 20b
-ret
-.p2align 6",
-    )
-}
-
-/// Writes the packed HighBits of the 256 canonical coefficients of `r`. Its timing depends only on the pointers, as specified by `highPackContract`.
-///
-/// # Safety
-///
-/// * `r` must be valid for reads of 1024 bytes.
-/// * `out` must be valid for reads and writes of 192 bytes.
-/// * Each coefficient of `r` must be less than 8380417.
-/// * `out` must not overlap `r` (distinct Rust objects never do).
-/// * Neither `r` nor `out` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_high_pack6(r: *const [u32; 256], out: *mut [u8; 192]) {
-    core::arch::naked_asm!(
-        r"movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-dup v16.4s, w9
-movz w9, #127, lsl #0
-movk w9, #0, lsl #16
-dup v17.4s, w9
-movz w9, #11275, lsl #0
-movk w9, #0, lsl #16
-dup v18.4s, w9
-movz w9, #0, lsl #0
-movk w9, #128, lsl #16
-dup v19.4s, w9
-movz w9, #44, lsl #0
-movk w9, #0, lsl #16
-dup v20.4s, w9
-movz w9, #59392, lsl #0
-movk w9, #2, lsl #16
-dup v21.4s, w9
-movz w9, #1, lsl #0
-movk w9, #0, lsl #16
-dup v22.4s, w9
-movi v23.2d, #0
-movi v28.2d, #0
-movz x9, #256, lsl #0
-movk x9, #1026, lsl #16
-movk x9, #1541, lsl #32
-movk x9, #2312, lsl #48
-dup v29.2d, x9
-movz x9, #3082, lsl #0
-movk x9, #3597, lsl #16
-movk x9, #65535, lsl #32
-movk x9, #65535, lsl #48
-mov v29.d[1], x9
-movz x9, #256, lsl #0
-movk x9, #65535, lsl #16
-movk x9, #1284, lsl #32
-movk x9, #65535, lsl #48
-dup v24.2d, x9
-movz x9, #2312, lsl #0
-movk x9, #65535, lsl #16
-movk x9, #3340, lsl #32
-movk x9, #65535, lsl #48
-mov v24.d[1], x9
-movz x9, #770, lsl #0
-movk x9, #65535, lsl #16
-movk x9, #1798, lsl #32
-movk x9, #65535, lsl #48
-dup v25.2d, x9
-movz x9, #2826, lsl #0
-movk x9, #65535, lsl #16
-movk x9, #3854, lsl #32
-movk x9, #65535, lsl #48
-mov v25.d[1], x9
-movz x11, #16, lsl #0
-20:
-ldr q0, [x0, #0]
-add v0.4s, v0.4s, v17.4s
-ushr v0.4s, v0.4s, #7
-mul v0.4s, v0.4s, v18.4s
-add v0.4s, v0.4s, v19.4s
-ushr v0.4s, v0.4s, #24
-sub v7.4s, v0.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v0.16b, v0.16b, v7.16b
-ldr q1, [x0, #16]
-add v1.4s, v1.4s, v17.4s
-ushr v1.4s, v1.4s, #7
-mul v1.4s, v1.4s, v18.4s
-add v1.4s, v1.4s, v19.4s
-ushr v1.4s, v1.4s, #24
-sub v7.4s, v1.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v1.16b, v1.16b, v7.16b
-ldr q2, [x0, #32]
-add v2.4s, v2.4s, v17.4s
-ushr v2.4s, v2.4s, #7
-mul v2.4s, v2.4s, v18.4s
-add v2.4s, v2.4s, v19.4s
-ushr v2.4s, v2.4s, #24
-sub v7.4s, v2.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v2.16b, v2.16b, v7.16b
-ldr q3, [x0, #48]
-add v3.4s, v3.4s, v17.4s
-ushr v3.4s, v3.4s, #7
-mul v3.4s, v3.4s, v18.4s
-add v3.4s, v3.4s, v19.4s
-ushr v3.4s, v3.4s, #24
-sub v7.4s, v3.4s, v20.4s
-sshr v7.4s, v7.4s, #31
-and v3.16b, v3.16b, v7.16b
-uzp1 v4.16b, v0.16b, v1.16b
-uzp1 v5.16b, v2.16b, v3.16b
-uzp1 v4.16b, v4.16b, v4.16b
-uzp1 v5.16b, v5.16b, v5.16b
-zip1 v6.2d, v4.2d, v5.2d
-uzp1 v4.16b, v6.16b, v6.16b
-uzp2 v5.16b, v6.16b, v6.16b
-zip1 v4.16b, v4.16b, v28.16b
-zip1 v5.16b, v5.16b, v28.16b
-shl v5.4s, v5.4s, #6
-orr v4.16b, v4.16b, v5.16b
-tbl v5.16b, {{v4.16b}}, v24.16b
-tbl v6.16b, {{v4.16b}}, v25.16b
-shl v6.4s, v6.4s, #12
-orr v5.16b, v5.16b, v6.16b
-tbl v4.16b, {{v5.16b}}, v29.16b
-umov x9, v4.d[0]
-str x9, [x1, #0]
-umov w9, v4.s[2]
-str w9, [x1, #8]
-add x0, x0, #64
-add x1, x1, #12
-sub x11, x11, #1
-cbnz x11, 20b
-ret
-.p2align 6",
-    )
-}
-
-/// `SimpleBitPack(f, b)` (FIPS 204 Algorithm 16): writes the 256 coefficients of `*f` to `out` as `bitlen b`-bit little-endian fields.
-///
-/// Contract: `VG.Spec.MlDsa.simpleBitPackContract`. Constant time: only the pointers, `b` and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `f` must be valid for reads of 1024 bytes.
-/// * `out` must be valid for reads and writes of `len` bytes.
-/// * `b` must be 1023, 43 or 15, and `len` must be `32 * bitlen b` (320, 192 or 128).
-/// * Each of the 256 `u32`s of `f` must be at most `b`.
-/// * `out` must not overlap `f` (distinct Rust objects never do).
-/// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r"sub x9, x3, #128
-cbz x9, 20f
-sub x9, x3, #192
-cbz x9, 22f
-movz x11, #64, lsl #0
-24:
-movz x9, #0, lsl #0
-ldr w10, [x0, #0]
-add x9, x9, x10
-strb w9, [x2, #0]
-lsr x9, x9, #8
-ldr w10, [x0, #4]
-lsl x10, x10, #2
-add x9, x9, x10
-strb w9, [x2, #1]
-lsr x9, x9, #8
-ldr w10, [x0, #8]
-lsl x10, x10, #4
-add x9, x9, x10
-strb w9, [x2, #2]
-lsr x9, x9, #8
-ldr w10, [x0, #12]
-lsl x10, x10, #6
-add x9, x9, x10
-strb w9, [x2, #3]
-lsr x9, x9, #8
-strb w9, [x2, #4]
-lsr x9, x9, #8
-add x0, x0, #16
-add x2, x2, #5
-sub x11, x11, #1
-cbnz x11, 24b
-b 23f
-22:
-movz x11, #64, lsl #0
-25:
-movz x9, #0, lsl #0
-ldr w10, [x0, #0]
-add x9, x9, x10
-ldr w10, [x0, #4]
-lsl x10, x10, #6
-add x9, x9, x10
-strb w9, [x2, #0]
-lsr x9, x9, #8
-ldr w10, [x0, #8]
-lsl x10, x10, #4
-add x9, x9, x10
-strb w9, [x2, #1]
-lsr x9, x9, #8
-ldr w10, [x0, #12]
-lsl x10, x10, #2
-add x9, x9, x10
-strb w9, [x2, #2]
-lsr x9, x9, #8
-add x0, x0, #16
-add x2, x2, #3
-sub x11, x11, #1
-cbnz x11, 25b
-23:
-b 21f
-20:
-movz x11, #128, lsl #0
-26:
-movz x9, #0, lsl #0
-ldr w10, [x0, #0]
-add x9, x9, x10
-ldr w10, [x0, #4]
-lsl x10, x10, #4
-add x9, x9, x10
-strb w9, [x2, #0]
-lsr x9, x9, #8
-add x0, x0, #8
-add x2, x2, #1
-sub x11, x11, #1
-cbnz x11, 26b
-21:
-ret
-.p2align 6",
-    )
-}
-
-/// `BitPack(f mod± q, a, b)` (FIPS 204 Algorithm 17): writes `b - (fᵢ mod± q)` for the 256 coefficients `fᵢ` of `*f` to `out` as `bitlen (a + b)`-bit little-endian fields.
-///
-/// Contract: `VG.Spec.MlDsa.bitPackContract`. Constant time: only the pointers, `a`, `b` and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `f` must be valid for reads of 1024 bytes.
-/// * `out` must be valid for reads and writes of `len` bytes.
-/// * `(a, b)` must be `(2, 2)`, `(4, 4)`, `(4095, 4096)`, `(2^17 - 1, 2^17)` or `(2^19 - 1, 2^19)`, and `len` must be `32 * bitlen (a + b)`.
-/// * Each of the 256 `u32`s of `f` must be less than `q` = 8380417.
-/// * Each coefficient `fᵢ mod± q` of `f` (the one of `fᵢ` and `fᵢ - q` whose absolute value is less than `q/2`) must be in `[-a, b]`.
-/// * `out` must not overlap `f` (distinct Rust objects never do).
-/// * Neither `f` nor `out` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r"add x2, x3, #0
-movz x13, #57345, lsl #0
-movk x13, #127, lsl #16
-movk x13, #0, lsl #32
-movk x13, #0, lsl #48
-sub x9, x4, #96
-cbz x9, 20f
-sub x9, x4, #128
-cbz x9, 22f
-sub x9, x4, #416
-cbz x9, 24f
-sub x9, x4, #576
-cbz x9, 26f
-movz x12, #0, lsl #0
-movk x12, #8, lsl #16
-movk x12, #0, lsl #32
-movk x12, #0, lsl #48
-movz x11, #128, lsl #0
-28:
-movz x9, #0, lsl #0
-ldr w10, [x0, #0]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-add x9, x9, x10
-strb w9, [x2, #0]
-lsr x9, x9, #8
-strb w9, [x2, #1]
-lsr x9, x9, #8
-ldr w10, [x0, #4]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #4
-add x9, x9, x10
-strb w9, [x2, #2]
-lsr x9, x9, #8
-strb w9, [x2, #3]
-lsr x9, x9, #8
-strb w9, [x2, #4]
-lsr x9, x9, #8
-add x0, x0, #8
-add x2, x2, #5
-sub x11, x11, #1
-cbnz x11, 28b
-b 27f
-26:
-movz x12, #0, lsl #0
-movk x12, #2, lsl #16
-movk x12, #0, lsl #32
-movk x12, #0, lsl #48
-movz x11, #64, lsl #0
-29:
-movz x9, #0, lsl #0
-ldr w10, [x0, #0]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-add x9, x9, x10
-strb w9, [x2, #0]
-lsr x9, x9, #8
-strb w9, [x2, #1]
-lsr x9, x9, #8
-ldr w10, [x0, #4]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #2
-add x9, x9, x10
-strb w9, [x2, #2]
-lsr x9, x9, #8
-strb w9, [x2, #3]
-lsr x9, x9, #8
-ldr w10, [x0, #8]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #4
-add x9, x9, x10
-strb w9, [x2, #4]
-lsr x9, x9, #8
-strb w9, [x2, #5]
-lsr x9, x9, #8
-ldr w10, [x0, #12]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #6
-add x9, x9, x10
-strb w9, [x2, #6]
-lsr x9, x9, #8
-strb w9, [x2, #7]
-lsr x9, x9, #8
-strb w9, [x2, #8]
-lsr x9, x9, #8
-add x0, x0, #16
-add x2, x2, #9
-sub x11, x11, #1
-cbnz x11, 29b
-27:
-b 25f
-24:
-movz x12, #4096, lsl #0
-movk x12, #0, lsl #16
-movk x12, #0, lsl #32
-movk x12, #0, lsl #48
-movz x11, #32, lsl #0
-210:
-movz x9, #0, lsl #0
-ldr w10, [x0, #0]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-add x9, x9, x10
-strb w9, [x2, #0]
-lsr x9, x9, #8
-ldr w10, [x0, #4]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #5
-add x9, x9, x10
-strb w9, [x2, #1]
-lsr x9, x9, #8
-strb w9, [x2, #2]
-lsr x9, x9, #8
-ldr w10, [x0, #8]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #2
-add x9, x9, x10
-strb w9, [x2, #3]
-lsr x9, x9, #8
-ldr w10, [x0, #12]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #7
-add x9, x9, x10
-strb w9, [x2, #4]
-lsr x9, x9, #8
-strb w9, [x2, #5]
-lsr x9, x9, #8
-ldr w10, [x0, #16]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #4
-add x9, x9, x10
-strb w9, [x2, #6]
-lsr x9, x9, #8
-strb w9, [x2, #7]
-lsr x9, x9, #8
-ldr w10, [x0, #20]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #1
-add x9, x9, x10
-strb w9, [x2, #8]
-lsr x9, x9, #8
-ldr w10, [x0, #24]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #6
-add x9, x9, x10
-strb w9, [x2, #9]
-lsr x9, x9, #8
-strb w9, [x2, #10]
-lsr x9, x9, #8
-ldr w10, [x0, #28]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #3
-add x9, x9, x10
-strb w9, [x2, #11]
-lsr x9, x9, #8
-strb w9, [x2, #12]
-lsr x9, x9, #8
-add x0, x0, #32
-add x2, x2, #13
-sub x11, x11, #1
-cbnz x11, 210b
-25:
-b 23f
-22:
-movz x12, #4, lsl #0
-movk x12, #0, lsl #16
-movk x12, #0, lsl #32
-movk x12, #0, lsl #48
-movz x11, #128, lsl #0
-211:
-movz x9, #0, lsl #0
-ldr w10, [x0, #0]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-add x9, x9, x10
-ldr w10, [x0, #4]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #4
-add x9, x9, x10
-strb w9, [x2, #0]
-lsr x9, x9, #8
-add x0, x0, #8
-add x2, x2, #1
-sub x11, x11, #1
-cbnz x11, 211b
-23:
-b 21f
-20:
-movz x12, #2, lsl #0
-movk x12, #0, lsl #16
-movk x12, #0, lsl #32
-movk x12, #0, lsl #48
-movz x11, #32, lsl #0
-212:
-movz x9, #0, lsl #0
-ldr w10, [x0, #0]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-add x9, x9, x10
-ldr w10, [x0, #4]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #3
-add x9, x9, x10
-ldr w10, [x0, #8]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #6
-add x9, x9, x10
-strb w9, [x2, #0]
-lsr x9, x9, #8
-ldr w10, [x0, #12]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #1
-add x9, x9, x10
-ldr w10, [x0, #16]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #4
-add x9, x9, x10
-ldr w10, [x0, #20]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #7
-add x9, x9, x10
-strb w9, [x2, #1]
-lsr x9, x9, #8
-ldr w10, [x0, #24]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #2
-add x9, x9, x10
-ldr w10, [x0, #28]
-sub x10, x12, x10
-lsr x14, x10, #63
-madd x10, x14, x13, x10
-lsl x10, x10, #5
-add x9, x9, x10
-strb w9, [x2, #2]
-lsr x9, x9, #8
-add x0, x0, #32
-add x2, x2, #3
-sub x11, x11, #1
-cbnz x11, 212b
 21:
 ret
 .p2align 6",
@@ -24343,21 +23840,55 @@ pub(crate) unsafe extern "C" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *
     core::arch::naked_asm!(
         r"movz w9, #57345, lsl #0
 movk w9, #127, lsl #16
-movz x10, #256, lsl #0
+dup v16.4s, w9
+movz w9, #4095, lsl #0
+movk w9, #0, lsl #16
+dup v17.4s, w9
+movz x10, #16, lsl #0
 20:
-ldr w11, [x0, #0]
-add x11, x11, #4095
-lsr x12, x11, #13
-str w12, [x1, #0]
-lsl x13, x12, #13
-sub x11, x11, x13
-sub x11, x11, #4095
-lsr x13, x11, #63
-madd x11, x13, x9, x11
-str w11, [x2, #0]
-add x0, x0, #4
-add x1, x1, #4
-add x2, x2, #4
+ldr q0, [x0, #0]
+add v1.4s, v0.4s, v17.4s
+ushr v1.4s, v1.4s, #13
+shl v2.4s, v1.4s, #13
+sub v0.4s, v0.4s, v2.4s
+sshr v7.4s, v0.4s, #31
+and v7.16b, v7.16b, v16.16b
+add v0.4s, v0.4s, v7.4s
+str q1, [x1, #0]
+str q0, [x2, #0]
+ldr q0, [x0, #16]
+add v1.4s, v0.4s, v17.4s
+ushr v1.4s, v1.4s, #13
+shl v2.4s, v1.4s, #13
+sub v0.4s, v0.4s, v2.4s
+sshr v7.4s, v0.4s, #31
+and v7.16b, v7.16b, v16.16b
+add v0.4s, v0.4s, v7.4s
+str q1, [x1, #16]
+str q0, [x2, #16]
+ldr q0, [x0, #32]
+add v1.4s, v0.4s, v17.4s
+ushr v1.4s, v1.4s, #13
+shl v2.4s, v1.4s, #13
+sub v0.4s, v0.4s, v2.4s
+sshr v7.4s, v0.4s, #31
+and v7.16b, v7.16b, v16.16b
+add v0.4s, v0.4s, v7.4s
+str q1, [x1, #32]
+str q0, [x2, #32]
+ldr q0, [x0, #48]
+add v1.4s, v0.4s, v17.4s
+ushr v1.4s, v1.4s, #13
+shl v2.4s, v1.4s, #13
+sub v0.4s, v0.4s, v2.4s
+sshr v7.4s, v0.4s, #31
+and v7.16b, v7.16b, v16.16b
+add v0.4s, v0.4s, v7.4s
+str q1, [x1, #48]
+str q0, [x2, #48]
+add x0, x0, #64
+add x1, x1, #64
+add x2, x2, #64
 sub x10, x10, #1
 cbnz x10, 20b
 ret
@@ -25448,45 +24979,6 @@ add x1, x1, #8
 sub x11, x11, #1
 cbnz x11, 23b
 21:
-ret
-.p2align 6",
-    )
-}
-
-/// Subtracts the polynomial `*g` from `*f` modulo `q` = 8380417, coefficient by coefficient.
-///
-/// Contract: `VG.Spec.MlDsa.subContract`. Constant time: only the pointers may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `f` must be valid for reads and writes of 1024 bytes.
-/// * `g` must be valid for reads of 1024 bytes.
-/// * Each of the 256 `u32`s of `f` must be less than `q` = 8380417.
-/// * Each of the 256 `u32`s of `g` must be less than `q` = 8380417.
-/// * `f` must not overlap `g` (distinct Rust objects never do).
-/// * Neither `f` nor `g` may wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa_verify_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
-    core::arch::naked_asm!(
-        r"movz w9, #57345, lsl #0
-movk w9, #127, lsl #16
-movz w10, #57343, lsl #0
-movk w10, #64639, lsl #16
-dup v16.4s, w9
-dup v17.4s, w10
-movz x12, #64, lsl #0
-20:
-ldr q0, [x0, #0]
-ldr q1, [x1, #0]
-add v0.4s, v0.4s, v16.4s
-sub v0.4s, v0.4s, v1.4s
-sub v4.4s, v0.4s, v16.4s
-umin v0.4s, v0.4s, v4.4s
-str q0, [x0, #0]
-add x0, x0, #16
-add x1, x1, #16
-sub x12, x12, #1
-cbnz x12, 20b
 ret
 .p2align 6",
     )

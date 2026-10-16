@@ -9,17 +9,17 @@ open VG VG.AArch64 VG.Impl.MlDsa.AArch64.Call
 variable (P : Prims)
 
 def addAt (f g : Ptr) : Prog isa :=
-  callAt "vg_mldsa_keygen_add" P.add [(.x0,.ptr f),(.x1,.ptr g)]
+  callAt "vg_mldsa_add" P.add [(.x0,.ptr f),(.x1,.ptr g)]
 
 def power2RoundAt (t t1 t0 : Ptr) : Prog isa :=
-  callAt "vg_mldsa_keygen_power2round" P.power2Round [(.x0,.ptr t),(.x1,.ptr t1),(.x2,.ptr t0)]
+  callAt "vg_mldsa_power2round" P.power2Round [(.x0,.ptr t),(.x1,.ptr t1),(.x2,.ptr t0)]
 
 def simpleBitPackAt (f : Ptr) (b : Nat) (out : Ptr) (len : Nat) : Prog isa :=
-  callAt "vg_mldsa_keygen_simple_bit_pack" P.simpleBitPack
+  callAt "vg_mldsa_simple_bit_pack" P.simpleBitPack
     [(.x0,.ptr f),(.x1,.imm b),(.x2,.ptr out),(.x3,.imm len)]
 
 def bitPackAt (f : Ptr) (a b : Nat) (out : Ptr) (len : Nat) : Prog isa :=
-  callAt "vg_mldsa_keygen_bit_pack" P.bitPack
+  callAt "vg_mldsa_bit_pack" P.bitPack
     [(.x0,.ptr f),(.x1,.imm a),(.x2,.imm b),(.x3,.ptr out),(.x4,.imm len)]
 
 def packSecret (p : Spec.MlDsa.Params) (r : Nat) : Prog isa :=
