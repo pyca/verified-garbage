@@ -78,5 +78,29 @@ class InstructionLocations(unittest.TestCase):
         self.assertEqual(stderr.getvalue().splitlines(), expected)
 
 
+class Alignment(unittest.TestCase):
+    PROLOGUE = [
+        "stmxcsr DWORD PTR [rsp]",
+        "mov eax, 8127",
+        "mov DWORD PTR [rsp+4], eax",
+        "ldmxcsr DWORD PTR [rsp+4]",
+        "lfence",
+    ]
+    EPILOGUE = ["lfence", "ldmxcsr DWORD PTR [rsp]", "ret"]
+
+    def check(self, instrs):
+        return check_mcdt.check_function("f", instrs, list(range(len(instrs))), {})
+
+    def test_alignment_outside_a_region(self):
+        instrs = [".p2align 5"] + self.PROLOGUE + ["pmuludq xmm0, xmm1"] + self.EPILOGUE
+        self.assertEqual(self.check(instrs), ([], 1))
+
+    def test_alignment_inside_a_region(self):
+        instrs = self.PROLOGUE + [".p2align 5", "pmuludq xmm0, xmm1"] + self.EPILOGUE
+        self.assertEqual(
+            self.check(instrs), (["f:5: `.p2align 5` is inside an MCDT region"], 1)
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

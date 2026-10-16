@@ -28,4 +28,12 @@ theorem runStep_some {s : State} {is : List Instr} :
     runStep isa (some s : Option State) is = runBlock isa is s := by
   rw [runStep]; rfl
 
+/-- Alignment padding executes as a NOP. -/
+@[simp] theorem exec_align {k : Nat} {s : State} : exec (.align k) s = some s := (rfl)
+
+/-- A block runs past its alignment padding unchanged. -/
+theorem runBlock_align {k : Nat} {is : List Instr} {s : State} :
+    runBlock isa (.align k :: is : List Instr) s = runBlock isa is s := by
+  rw [runBlock_cons, exec_align, runStep_some]
+
 end VG.X86_64
