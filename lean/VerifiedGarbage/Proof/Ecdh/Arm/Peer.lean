@@ -84,7 +84,7 @@ theorem checkZero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr 
 /-- `-(((b ^ 4) - 1) >>> 31)` is the mask of `b = 4`, for a byte `b`. -/
 theorem lead_mask (b : BitVec 8) :
     (0 : BitVec 32) - ((b.setWidth 32 ^^^ 4) - 1) >>> 31 = mask32 (b = 4) := by
-  revert b; decide
+  revert b; decide +kernel
 
 /-- `checkLead q`: the flag `&=` the mask of the byte `q` points to being `04`. -/
 theorem checkLead_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {q : Reg}

@@ -109,7 +109,7 @@ end
 
 /-- A byte is `4` iff its `xor` with `4` is below 1. -/
 theorem lead_iff (b : BitVec 8) : (b.setWidth 32 ^^^ 4 : BitVec 32).toNat < (1 : BitVec 32).toNat ↔ b = 4 := by
-  revert b; decide
+  revert b; decide +kernel
 
 /-- `checkLeadAt i`: the flag `&=` the mask of the byte at the key argument `i` points to being `04`. -/
 theorem checkLead_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {q32 : BitVec 32}

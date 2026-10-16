@@ -218,19 +218,15 @@ theorem rcbApart_naf {K : WinCfg} {size : Nat} (hL : WinLay K size) :
     RcbApart K.S K.P K.P K.E ∧ RcbApart K.S K.D K.E K.R ∧ RcbApart K.S K.E K.P K.R ∧
       RcbApart K.S K.E K.D K.R ∧ RcbApart K.S K.R K.R K.D ∧ RcbApart K.S K.R K.E K.D ∧
       RcbApart K.S ⟨K.zero, K.zero, K.zero⟩ K.R K.E ∧
-      RcbApart K.S K.E ⟨K.zero, K.zero, K.zero⟩ K.R := by
-  have hnd := hL.nodup
-  have ha := hL.ro K.S.a (by simp [winRo])
-  have hb := hL.ro K.S.b3 (by simp [winRo])
-  have hz := hL.ro K.zero (by simp [winRo])
-  have hx := hL.ro K.P.x (by simp [winRo])
-  have hy := hL.ro K.P.y (by simp [winRo])
-  have hzz := hL.ro K.P.z (by simp [winRo])
-  simp only [winOther, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
-    List.not_mem_nil, or_false, not_or] at hnd ha hb hz hx hy hzz
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩ <;>
-    simp only [rcbW, rcbR, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
-      List.nodup_nil, and_true, forall_eq_or_imp, forall_eq] <;> grind
+      RcbApart K.S K.E ⟨K.zero, K.zero, K.zero⟩ K.R :=
+  ⟨hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 3, 4, 5]) (lr := [16, 17, 19, 20, 21, 19, 20, 21]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 0, 1, 2]) (lr := [16, 17, 13, 14, 15, 3, 4, 5]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 0, 1, 2]) (lr := [16, 17, 3, 4, 5, 19, 20, 21]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 0, 1, 2]) (lr := [16, 17, 3, 4, 5, 13, 14, 15]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 13, 14, 15]) (lr := [16, 17, 0, 1, 2, 0, 1, 2]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 13, 14, 15]) (lr := [16, 17, 0, 1, 2, 3, 4, 5]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 3, 4, 5]) (lr := [16, 17, 18, 18, 18, 0, 1, 2]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 0, 1, 2]) (lr := [16, 17, 3, 4, 5, 18, 18, 18]) rfl rfl⟩
 
 /-- What a point operation into `R`, `D` or `E` keeps and gives. -/
 theorem jacPost_frame {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)

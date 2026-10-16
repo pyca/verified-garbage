@@ -33,16 +33,10 @@ the doublings between `R` and `D`, and `fromJ` from `R` into `D` (`z` the
 slots of zero). -/
 theorem _root_.VG.Proof.Weierstrass.WinLay.rcbApart_winJ {K : WinCfg} {size : Nat} (hL : WinLay K size) :
     RcbApart K.S K.R K.R K.D ∧ RcbApart K.S K.D K.D K.R ∧
-      RcbApart K.S K.R ⟨K.zero, K.zero, K.zero⟩ K.D := by
-  have hnd := hL.nodup
-  have ha := hL.ro K.S.a (by simp [winRo])
-  have hb := hL.ro K.S.b3 (by simp [winRo])
-  have hz := hL.ro K.zero (by simp [winRo])
-  simp only [winOther, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,
-    List.not_mem_nil, or_false, not_or] at hnd ha hb hz
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩ <;>
-    simp only [rcbW, rcbR, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
-      List.nodup_nil, and_true, forall_eq_or_imp, forall_eq] <;> grind
+      RcbApart K.S K.R ⟨K.zero, K.zero, K.zero⟩ K.D :=
+  ⟨hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 13, 14, 15]) (lr := [16, 17, 0, 1, 2, 0, 1, 2]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 0, 1, 2]) (lr := [16, 17, 13, 14, 15, 13, 14, 15]) rfl rfl,
+    hL.rcbApart_codes (lw := [7, 8, 9, 10, 11, 12, 13, 14, 15]) (lr := [16, 17, 0, 1, 2, 18, 18, 18]) rfl rfl⟩
 
 /-- A table slot is apart from what the loop's field programs write. -/
 theorem tbl_apart_loopW {K : WinCfg} {size : Nat} (hL : WinLay K size) {j : Nat} (hj1 : 1 ≤ j) (hj8 : j ≤ 8)

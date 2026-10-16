@@ -194,7 +194,7 @@ theorem keeps_of_unch {C : Spec.Weierstrass.CheckPoint.Curve} (hk : C.k = c.n) (
     (try simp only [QXM, QYM, W0, W1, W2, W3, PY, XM, X, KM, TT, SM, RM, SS, FLAG,
       sl_eq c 34 (by decide), sl_eq c 35 (by decide), sl_eq c 37 (by decide), sl_eq c 41 (by decide),
       sl_eq c 42 (by decide), sl_eq c 38 (by decide), sl_eq c 43 (by decide), sl_eq c 44 (by decide)] at hT ⊢) <;>
-    omega
+    first | (simp only [hown, hp]; done) | omega
 
 /-- The contract's postcondition, from `checkBodyR_ok`'s facts. -/
 theorem post_of_raw (hc : BaseCfgOk c) {C : Spec.Weierstrass.CheckPoint.Curve} (hW : C.W = c.C)
