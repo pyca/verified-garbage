@@ -356,11 +356,12 @@ theorem encPre {p q : Ptr} {s s1 : State} (h : TwoH p q 1024 384 s) (hr : Reduce
   refine ⟨trivial, trivial, h.d, ret_disj s1 (by rw [hsp]; exact h.kP), ret_disj s1 (by rw [hsp]; exact h.kQ), ?_⟩
   rw [ce_reduced s1 (by rw [hsp]; exact h.kP), hm]; exact hr
 
-theorem enc12At_ok {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 1024 384 s) (hr : Reduced s.mem (pa s p)) :
-    WP isa (enc12At p q) s fun s' => Post s s' [⟨pa s q, 384⟩] ∧
+theorem enc12At_ok {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 1024 384 s)
+    (hr : Reduced s.mem (pa s p)) :
+    WP isa (enc12At A p q) s fun s' => Post s s' [⟨pa s q, 384⟩] ∧
       bytesAt s'.mem (pa s q) 384 = encode12 (polyAt s.mem (pa s p)) := by
   have hq1 : q.1 ≠ .rdi := fun e => hq (by rw [e]; decide)
-  refine WP.mono (glueCall_ok encode12_correct encode12_nosp (by rw [encode12_depth]; decide)
+  refine WP.mono (glueCall_ok hA.enc12.ok hA.enc12.nosp (by rw [hA.enc12.depth]; decide)
     (accGlue_ok p q h.off.1 h.off.2 hq1 s) (fun s1 hv hm k => encPre h hr hv hm k) h.c h.w)
     fun s' ⟨hpost, s1, hV, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, ?_⟩
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
@@ -368,12 +369,12 @@ theorem enc12At_ok {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 1024 384 s)
     ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), hV.1, hV.2, hm₂, ce_polyAt s1 (by rw [hsp]; exact h.kP), hm] at hq
   exact hq
 
-theorem enc12At_tr {p q : Ptr} (hq : NA q) :
+theorem enc12At_tr {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) :
     RelCT isa (fun x y => (TwoH p q 1024 384 x ∧ Reduced x.mem (pa x p)) ∧ (TwoH p q 1024 384 y ∧
       Reduced y.mem (pa y p)) ∧ x.gpr p.1 = y.gpr p.1 ∧ x.gpr q.1 = y.gpr q.1 ∧ x.gpr .rsp = y.gpr .rsp)
-      (enc12At p q) fun _ _ => True := by
+      (enc12At A p q) fun _ _ => True := by
   have hq1 : q.1 ≠ .rdi := fun e => hq (by rw [e]; decide)
-  exact glueCall_tr encode12_correct encode12_ct (V := fun x x1 => ((x1.gpr .rdi = pa x p ∧ x1.gpr .rsi = pa x q) ∧
+  exact glueCall_tr hA.enc12.ok hA.enc12.ct (V := fun x x1 => ((x1.gpr .rdi = pa x p ∧ x1.gpr .rsi = pa x q) ∧
       x1.mem = x.mem) ∧ Keep argRegs x x1)
     (block_nomem_tr (nomem_append (lea_nomem _ _) (lea_nomem _ _)))
     (fun x y ⟨hx, hy, _⟩ => ⟨accGlue_ok p q hx.1.off.1 hx.1.off.2 hq1 x, accGlue_ok p q hy.1.off.1 hy.1.off.2 hq1 y⟩)

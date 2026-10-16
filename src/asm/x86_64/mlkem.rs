@@ -2212,6 +2212,96 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem_decode12_avx2(b: *const [u8; 384],
     )
 }
 
+/// The CPU features `vg_mlkem_encode12_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLKEM_ENCODE12_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+
+/// `ByteEncode₁₂` (FIPS 203 Algorithm 5): writes the 256 coefficients of `*f`, each less than `q` = 3329, to `*out` as 12-bit little-endian fields.
+///
+/// Contract: `VG.Spec.MlKem.encode12Contract`. Constant time: only the pointers may affect timing, not the data.
+///
+/// The function computes on 32 coefficients at a time in AVX2 registers: it packs them into words, forms each pair's 24-bit value with shifts and an addition, gathers the bytes with `vpshufb` and `vpermd`, and stores the 48 bytes as 32 and 16, so that it writes only the 384 bytes of `*out`. It has no multiplications.
+///
+/// # Safety
+///
+/// * `f` must be valid for reads of 1024 bytes.
+/// * `out` must be valid for reads and writes of 384 bytes.
+/// * Each of the 256 `u32`s of `f` must be less than 3329.
+/// * `out` must not overlap `f` (distinct Rust objects never do).
+/// * Neither `f` nor `out` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem_encode12_avx2(f: *const [u32; 256], out: *mut [u8; 384]) {
+    core::arch::naked_asm!(
+        "movabs rax, 650776764766880000",
+        "vmovq xmm8, rax",
+        "movabs rax, -9187201952355906550",
+        "vmovq xmm0, rax",
+        "vpunpcklqdq xmm8, xmm8, xmm0",
+        "movabs rax, 650776764766880000",
+        "vmovq xmm0, rax",
+        "movabs rax, -9187201952355906550",
+        "vmovq xmm1, rax",
+        "vpunpcklqdq xmm0, xmm0, xmm1",
+        "vinserti128 ymm8, ymm8, xmm0, 1",
+        "movabs rax, 4294967296",
+        "vmovq xmm9, rax",
+        "movabs rax, 17179869186",
+        "vmovq xmm0, rax",
+        "vpunpcklqdq xmm9, xmm9, xmm0",
+        "movabs rax, 25769803781",
+        "vmovq xmm0, rax",
+        "movabs rax, 0",
+        "vmovq xmm1, rax",
+        "vpunpcklqdq xmm0, xmm0, xmm1",
+        "vinserti128 ymm9, ymm9, xmm0, 1",
+        "movabs rax, 17179869186",
+        "vmovq xmm10, rax",
+        "movabs rax, 25769803781",
+        "vmovq xmm0, rax",
+        "vpunpcklqdq xmm10, xmm10, xmm0",
+        "movabs rax, 0",
+        "vmovq xmm0, rax",
+        "movabs rax, 4294967296",
+        "vmovq xmm1, rax",
+        "vpunpcklqdq xmm0, xmm0, xmm1",
+        "vinserti128 ymm10, ymm10, xmm0, 1",
+        "mov ecx, 8",
+        "20:",
+        "vmovdqu ymm0, YMMWORD PTR [rdi]",
+        "vmovdqu ymm1, YMMWORD PTR [rdi+32]",
+        "vpackssdw ymm0, ymm0, ymm1",
+        "vpermq ymm0, ymm0, 216",
+        "vpsrld ymm1, ymm0, 16",
+        "vpslld ymm1, ymm1, 12",
+        "vpslld ymm0, ymm0, 16",
+        "vpsrld ymm0, ymm0, 16",
+        "vpaddd ymm0, ymm0, ymm1",
+        "vpshufb ymm0, ymm0, ymm8",
+        "vmovdqu ymm2, YMMWORD PTR [rdi+64]",
+        "vmovdqu ymm3, YMMWORD PTR [rdi+96]",
+        "vpackssdw ymm2, ymm2, ymm3",
+        "vpermq ymm2, ymm2, 216",
+        "vpsrld ymm3, ymm2, 16",
+        "vpslld ymm3, ymm3, 12",
+        "vpslld ymm2, ymm2, 16",
+        "vpsrld ymm2, ymm2, 16",
+        "vpaddd ymm2, ymm2, ymm3",
+        "vpshufb ymm2, ymm2, ymm8",
+        "vpermd ymm0, ymm9, ymm0",
+        "vpermd ymm2, ymm10, ymm2",
+        "vpblendd ymm0, ymm0, ymm2, 192",
+        "vmovdqu YMMWORD PTR [rsi], ymm0",
+        "vmovdqu XMMWORD PTR [rsi+32], xmm2",
+        "add rdi, 128",
+        "add rsi, 48",
+        "sub rcx, 1",
+        "jne 20b",
+        "vzeroupper",
+        "ret",
+        ".p2align 6",
+    )
+}
+
 /// `SamplePolyCBD₂` (FIPS 203 Algorithm 8 with `η` = 2): writes the polynomial sampled from the 128 bytes `*b` to `*f` (256 coefficients less than `q` = 3329).
 ///
 /// Contract: `VG.Spec.MlKem.cbd2Contract`. Constant time: only the pointers may affect timing, not the data.

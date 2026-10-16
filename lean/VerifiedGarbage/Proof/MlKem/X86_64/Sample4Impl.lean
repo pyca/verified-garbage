@@ -177,7 +177,7 @@ tactic_template "s4_ctl " v:ident : tactic =>
     | with_reducible exact ($v).arith.em_ctl | apply ctlOk_seq | apply ctlOk_ite
     | (apply ctlOk_call; exact ($v).mxcsr) | exact ($v).prfs_ctl _ _ _ _ | exact ($v).arith.mul.ctl
     | exact ($v).arith.ntt.ctl | exact ($v).arith.nttInv.ctl | exact ($v).arith.add.ctl | exact ($v).arith.sub.ctl
-    | exact ($v).arith.cbd.ctl | exact ($v).arith.dec12.ctl | exact Codecs.ce_ctl _ | exact Codecs.dd_ctl _
+    | exact ($v).arith.cbd.ctl | exact ($v).arith.dec12.ctl | exact ($v).arith.enc12.ctl | exact Codecs.ce_ctl _ | exact Codecs.dd_ctl _
     | rfl))
 
 /-- Code that does not call the implementation `v` never writes the stack pointer: by evaluation. -/
@@ -191,7 +191,7 @@ tactic_template "s4_sp " v:ident : tactic =>
     | apply all_seq | apply all_ite
     | (apply all_call; exact ($v).spSafe) | exact ($v).prfs_sp _ _ _ _ | exact ($v).arith.mul.sp
     | exact ($v).arith.ntt.sp | exact ($v).arith.nttInv.sp | exact ($v).arith.add.sp | exact ($v).arith.sub.sp
-    | exact ($v).arith.cbd.sp | exact ($v).arith.dec12.sp | exact Codecs.ce_sp _ | exact Codecs.dd_sp _
+    | exact ($v).arith.cbd.sp | exact ($v).arith.dec12.sp | exact ($v).arith.enc12.sp | exact Codecs.ce_sp _ | exact Codecs.dd_sp _
     | rfl))
 
 end VG.Proof.MlKem.X86_64

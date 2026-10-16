@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Arith
 public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
 public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
 public import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
+public import VerifiedGarbage.Impl.MlKem.X86_64.Encode12Avx2
 public import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
 public import VerifiedGarbage.Impl.MlKem.X86_64.Compress
 public import VerifiedGarbage.Impl.MlKem.X86_64.CompressAvx2
@@ -155,6 +156,8 @@ structure Arith where
   cbd : Prog isa
   dec12N : String
   dec12 : Prog isa
+  enc12N : String
+  enc12 : Prog isa
   /-- The code `vg_mlkem*_decrypt_mul` inlines, and the suffix of its name. -/
   bodies : Bodies
   sfx : String
@@ -163,12 +166,12 @@ structure Arith where
 def Arith.sse : Arith :=
   ⟨"vg_mlkem_multiply_ntts", multiplyNTTs, "vg_mlkem_ntt", X86_64.ntt, "vg_mlkem_inv_ntt", X86_64.nttInv,
     "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem_decode12", decode12,
-    .sse, "", .base⟩
+    "vg_mlkem_encode12", encode12, .sse, "", .base⟩
 
 def Arith.avx2 : Arith :=
   ⟨"vg_mlkem_multiply_ntts_avx2", multiplyNTTsAvx2, "vg_mlkem_ntt_avx2", nttAvx2, "vg_mlkem_inv_ntt_avx2",
     nttInvAvx2, "vg_mlkem_add_avx2", addAvx2, "vg_mlkem_sub_avx2", subAvx2, "vg_mlkem_cbd2", cbd2,
-    "vg_mlkem_decode12_avx2", decode12Avx2, .avx2, "_avx2", .avx2⟩
+    "vg_mlkem_decode12_avx2", decode12Avx2, "vg_mlkem_encode12_avx2", encode12Avx2, .avx2, "_avx2", .avx2⟩
 
 def nttAt (A : Arith) (f : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call A.nttN A.ntt)
@@ -185,8 +188,8 @@ def subAt (A : Arith) (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea 
 
 def cbd2At (A : Arith) (b f : Ptr) : Prog isa := .seq (.block (lea .rdi b ++ lea .rsi f)) (.call A.cbdN A.cbd)
 
-def enc12At (f out : Ptr) : Prog isa :=
-  .seq (.block (lea .rdi f ++ lea .rsi out)) (.call "vg_mlkem_encode12" encode12)
+def enc12At (A : Arith) (f out : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi f ++ lea .rsi out)) (.call A.enc12N A.enc12)
 
 def dec12At (A : Arith) (b f : Ptr) : Prog isa :=
   .seq (.block (lea .rdi b ++ lea .rsi f)) (.call A.dec12N A.dec12)

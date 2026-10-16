@@ -146,7 +146,7 @@ theorem row_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} 
   refine WP.seq (WP.mono (addAt_ok hA L₁ rbx_na hac hp₁.1 he₁.1) fun s₂ ⟨hP₂, hp₂⟩ => ?_)
   have L₂ := L₁.post hP₂.b (kgB_bases L)
   rw [hp₁.2, he₁.2, ← hP₂.pa rbx_cs] at hp₂
-  refine WP.mono (enc12At_okL L₂ r12_na htw hp₂.1) fun s₃ ⟨hP₃, hb₃⟩ => ?_
+  refine WP.mono (enc12At_okL hA L₂ r12_na htw hp₂.1) fun s₃ ⟨hP₃, hb₃⟩ => ?_
   have hk := h.keep W hp (PPost.app (PPost.app hP₁ hP₂ (by decide)) hP₃ (by simp [calleeSaved])) hrc
   refine ⟨hk.kc, hk.rho, hk.sig, hk.r15, hk.mat, hk.prf, hk.se, fun i' hi' => ?_, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
@@ -155,13 +155,14 @@ theorem row_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} 
 
 /-! ## `ŝ`, encoded to `dk` -/
 
-theorem encS_ok {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {j : Nat} (hj : j < L.k) {s : State}
-    (h : KRest L (2 * L.k) L.k j σ s) : WP isa (encS j) s (KRest L (2 * L.k) L.k (j + 1) σ) := by
+theorem encS_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} (hp : (keyGenK L).pre σ) {j : Nat}
+    (hj : j < L.k) {s : State}
+    (h : KRest L (2 * L.k) L.k j σ s) : WP isa (encS A j) s (KRest L (2 * L.k) L.k (j + 1) σ) := by
   have hc := W.encS j hj
   simp only [encSChk, Bool.and_eq_true] at hc
   have L₀ := h.kc.lay W hp
   have hs := h.se j (by omega)
-  refine WP.mono (enc12At_okL L₀ r13_na hc.1 hs.1) fun s' ⟨hP, hb⟩ => ?_
+  refine WP.mono (enc12At_okL hA L₀ r13_na hc.1 hs.1) fun s' ⟨hP, hb⟩ => ?_
   have hk := h.keep W hp hP hc.2
   refine ⟨hk.kc, hk.rho, hk.sig, hk.r15, hk.mat, hk.prf, hk.se, hk.ek, fun j' hj' => ?_⟩
   rcases (by omega : j' < j ∨ j' = j) with hj' | rfl

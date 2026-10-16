@@ -144,7 +144,7 @@ theorem row_tr {A : Arith} (hA : ArithOk A) {i : Nat} (hi : i < L.k) :
       (fun x Lx hx => ?_)
       (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15))) (kgB_bases L) (addAt_tr hA rbx_na hac)
         (fun x Lx hx => WP.mono (addAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
-          ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩) (enc12At_trL r12_na htw)))
+          ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩) (enc12At_trL hA r12_na htw)))
     fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc,
       ⟨fun k hk => ⟨(h₁.matIJ hi hk).1, (h₁.se k (by omega)).1⟩, (h₁.se (L.k + i) (by omega)).1⟩,
       ⟨fun k hk => ⟨(h₂.matIJ hi hk).1, (h₂.se k (by omega)).1⟩, (h₂.se (L.k + i) (by omega)).1⟩⟩
@@ -155,11 +155,11 @@ theorem row_tr {A : Arith} (hA : ArithOk A) {i : Nat} (hi : i < L.k) :
 
 /-! ## The rows of `dk` -/
 
-theorem encS_tr {j : Nat} (hj : j < L.k) :
-    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRest L (2 * L.k) L.k j)) (encS j) fun _ _ => True := by
+theorem encS_tr {A : Arith} (hA : ArithOk A) {j : Nat} (hj : j < L.k) :
+    RelCT isa (Rel2 (keyGenK L).pre (keyGenK L).pub (KRest L (2 * L.k) L.k j)) (encS A j) fun _ _ => True := by
   have hc := W.encS j hj
   simp only [encSChk, Bool.and_eq_true] at hc
-  exact rel2_of (enc12At_trL r13_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
+  exact rel2_of (enc12At_trL hA r13_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ =>
     ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, (h₁.se j (by omega)).1, (h₂.se j (by omega)).1⟩
 
 /-! ## The rest of the keys -/
