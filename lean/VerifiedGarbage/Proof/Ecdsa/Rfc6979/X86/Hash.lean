@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Regs
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Common
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Curve
@@ -142,7 +144,7 @@ end RfcHash
 
 /-- Facts about the sizes of the hash function `‹RfcHash›`'s states, working
 space, block and output, and the arithmetic they decide. -/
-macro "nums" : tactic => `(tactic| first | omega |
+tactic_template "nums" : tactic => `(tactic| first | omega |
   (obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ := RfcHash.sizes ‹RfcHash›; omega))
 
 /-- The code, with the hash function `P`. -/

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Flags
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Ladder
@@ -242,12 +244,12 @@ structure SetupPost (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s 
 /-! ## Slots -/
 
 /-- That a slot is not the temporary area, from the context. -/
-macro "sl_ne" : tactic =>
+tactic_template "sl_ne" : tactic =>
   `(tactic| plain_simp_names first | decide | with_reducible assumption | (simp only [TMP] at *; omega) | (intro hT; subst hT; simp only [List.mem_cons, List.mem_append, true_or, or_true, not_true_eq_false] at *))
 
 /-- That one of two slots is not the temporary area, or the other is not
 where the temporary area is (slot `54` or `82`). -/
-macro "sl_or" : tactic =>
+tactic_template "sl_or" : tactic =>
   `(tactic| first | decide | exact .inl (by decide) | exact .inr (by decide) | exact .inr ⟨by omega, by omega⟩ | exact .inl (by sl_ne))
 
 theorem sl_eq (c : Cfg) (i : Nat) (h : i ≠ TMP := by sl_ne) : c.sl i = 64 + 8 * c.n * i := by
