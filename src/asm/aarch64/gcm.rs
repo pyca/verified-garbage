@@ -4324,6 +4324,215 @@ ret
     )
 }
 
+/// The CPU features `vg_aes_gcm_init_prepared_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_INIT_PREPARED_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// Writes a 1024-byte AES-GCM key context. The first 256 bytes are the key schedule and hash subkey of `vg_aes_gcm_init`. At byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words. The encoding is `VG.Spec.Gcm.preparedPower`; the context satisfies `KeyRepr` and `PreparedPowersRepr`. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Only the pointers and key length are public. Contract: `VG.Spec.Gcm.initPreparedContract`.
+///
+/// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
+///
+/// This implementation computes `H' = H · x⁻¹` as `vg_ghash_aes` does, then each even power `H'²ᵏ` by squaring `H'ᵏ`, read back from the context, and each odd power by one multiplication by `H'`; `preparedPower(Hᵏ)` is `Hᵏ · x⁻¹`, so each power is stored as it is computed.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 1024 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the 2560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_init_prepared_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r".arch_extension aes
+sub sp, sp, #2560
+add x3, sp, #0
+str x20, [x3, #136]
+str x21, [x3, #144]
+str x22, [x3, #152]
+str x23, [x3, #160]
+str x24, [x3, #168]
+str x25, [x3, #176]
+str x26, [x3, #184]
+str x27, [x3, #192]
+str x28, [x3, #200]
+str x30, [x3, #208]
+str x19, [x3, #128]
+add x19, x3, #0
+add x21, x2, #0
+lsr x22, x1, #2
+add x22, x22, #6
+add x3, x19, #512
+bl {vg_aes_expand_key_scratch_aes}
+movz x9, #0, lsl #0
+str x9, [x21, #240]
+str x9, [x21, #248]
+str x9, [x19, #96]
+str x9, [x19, #104]
+add x0, x21, #0
+add x1, x22, #0
+add x2, x19, #96
+add x3, x21, #240
+movz x4, #1, lsl #0
+add x5, x19, #512
+bl {vg_aes_ctr32_aes}
+add x0, x21, #240
+ldr q6, [x0, #0]
+rev64 v6.16b, v6.16b
+movz x5, #49664, lsl #48
+dup v1.2d, x5
+movz x6, #3, lsl #0
+movz x7, #17920, lsl #48
+mov v17.d[0], x6
+mov v17.d[1], x7
+mov v25.d[0], x7
+mov v25.d[1], x6
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v24.16b, v5.16b, v7.16b
+ext v16.16b, v24.16b, v24.16b, #8
+str q16, [x21, #272]
+movz x6, #49664, lsl #48
+mov v18.d[0], x6
+movz x6, #1, lsl #0
+mov v18.d[1], x6
+add x9, x21, #256
+add x10, x21, #256
+movz x11, #12, lsl #0
+20:
+ldr q19, [x9, #16]
+ext v20.16b, v19.16b, v19.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v20.1d, v20.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v20.2d, v20.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v20.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v20.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v21.16b, v5.16b, v7.16b
+ext v22.16b, v21.16b, v21.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v18.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v18.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v18.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v18.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v23.16b, v5.16b, v7.16b
+ext v26.16b, v23.16b, v23.16b, #8
+str q22, [x10, #0]
+str q26, [x10, #16]
+ldr q19, [x9, #0]
+ext v20.16b, v19.16b, v19.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v20.1d, v20.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v20.2d, v20.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v20.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v20.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v18.16b, v5.16b, v7.16b
+ext v22.16b, v18.16b, v18.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v21.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v21.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v21.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v21.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v23.16b, v5.16b, v7.16b
+ext v26.16b, v23.16b, v23.16b, #8
+str q22, [x10, #32]
+str q26, [x10, #48]
+add x9, x9, #32
+add x10, x10, #64
+sub x11, x11, #1
+cbnz x11, 20b
+ldr x20, [x19, #136]
+ldr x21, [x19, #144]
+ldr x22, [x19, #152]
+ldr x23, [x19, #160]
+ldr x24, [x19, #168]
+ldr x25, [x19, #176]
+ldr x26, [x19, #184]
+ldr x27, [x19, #192]
+ldr x28, [x19, #200]
+ldr x30, [x19, #208]
+ldr x19, [x19, #128]
+add sp, sp, #2560
+ret
+.arch_extension noaes
+.p2align 6",
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
+        vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
+    )
+}
+
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.

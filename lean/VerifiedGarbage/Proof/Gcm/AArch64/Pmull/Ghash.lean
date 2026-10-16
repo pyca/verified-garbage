@@ -4,6 +4,12 @@ public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Arith
 meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Arith
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
 meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.PrepKey
+public import VerifiedGarbage.Proof.Gcm.Powers
+meta import VerifiedGarbage.Proof.Gcm.Powers
+import Mathlib.Tactic.SplitIfs
+meta import Mathlib.Tactic.SplitIfs
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 meta import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -90,6 +96,93 @@ theorem mulV_keyV : MulKey := fun b H => by
   rw [mulV, ρ_reduce, Prod.val_acc, Prod.val_zero, zero_add, ρ_ext8_self, ρ_ext8_self, keyV,
     φ_ext8_self, hu, φ_mul]
   linear_combination φ b * φ H * x2_φ_xInv2
+
+/-! ## The prepared powers
+
+`Spec.Gcm.preparedPower v` is `v · x⁻¹` in `Q` (`x_φ_preparedPower`), so
+`mul` of prepared powers is the prepared power of their product (`prepPow`,
+the `PrepPow` that `Pmull/PrepKey.lean` states without the algebra).
+-/
+
+section
+open Polynomial
+
+/-- `x⁻¹` (`1 + x + x⁶ + x¹²⁷`), the constant `preparedPower` adds. -/
+def xInvB : BitVec 128 := 0xc2000000000000000000000000000001#128
+
+theorem gp_xInvB : gp xInvB = 1 + X + X ^ 6 + X ^ 127 := by
+  have hb : ∀ d < 128, xInvB.getMsbD d = (d = 0 || d = 1 || d = 6 || d = 127) := by decide +kernel
+  ext d
+  rw [coeff_gp]
+  simp only [coeff_add, coeff_X_pow, coeff_X, coeff_one]
+  by_cases hd : d < 128
+  · rw [hb d hd]
+    rcases (by omega : d = 0 ∨ d = 1 ∨ d = 6 ∨ d = 127 ∨ (d ≠ 0 ∧ d ≠ 1 ∧ d ≠ 6 ∧ d ≠ 127)) with
+      rfl | rfl | rfl | rfl | ⟨h0, h1, h6, h7⟩
+    · decide
+    · decide
+    · decide
+    · decide
+    · simp only [bit, h0, decide_false, h1, Bool.or_self, h6, h7, Bool.false_eq_true, ↓reduceIte,
+        show (1 : Nat) ≠ d from fun h => h1 h.symm, add_zero]
+  · have e : xInvB.getMsbD d = false := by
+      simp only [BitVec.getMsbD, Nat.add_one_sub_one, Bool.and_eq_false_imp, decide_eq_true_eq]; omega
+    rw [e]
+    simp only [bit, Bool.false_eq_true, ↓reduceIte, show d ≠ 0 by omega, show (1 : Nat) ≠ d by omega,
+      add_zero, show d ≠ 6 by omega, show d ≠ 127 by omega]
+
+theorem x_φ_xInvB : x * φ xInvB = 1 := by
+  simp only [φ, gp_xInvB, map_add, map_one, map_pow, AdjoinRoot.mk_X]
+  linear_combination x128 + (x + x ^ 2 + x ^ 7) * two_Q
+
+theorem gp_shl1' (h : BitVec 128) : X * gp (h <<< 1) + C (bit (h.getMsbD 0)) = gp h := by
+  ext d
+  rw [coeff_add, coeff_C, coeff_gp]
+  rcases d with _ | d
+  · simp only [mul_coeff_zero, coeff_X_zero, zero_mul, ↓reduceIte, zero_add]
+  · rw [coeff_X_mul, coeff_gp, BitVec.getMsbD_shiftLeft]
+    simp only [Nat.add_eq_zero_iff, one_ne_zero, and_false, ↓reduceIte, add_zero]
+
+/-- `preparedPower v` is `v · x⁻¹`. -/
+theorem x_φ_preparedPower (h : Spec.Gcm.Block) : x * φ (Spec.Gcm.preparedPower h) = φ h := by
+  have e := congrArg (AdjoinRoot.mk g) (gp_shl1' h)
+  simp only [map_add, map_mul, AdjoinRoot.mk_X, AdjoinRoot.mk_C] at e
+  rw [Spec.Gcm.preparedPower, φ_xor, mul_add]
+  change x * AdjoinRoot.mk g (gp (h <<< 1)) + _ = AdjoinRoot.mk g (gp h)
+  rw [← e]
+  split_ifs with hb
+  · rw [show (0xc2000000000000000000000000000001 : BitVec 128) = xInvB from rfl, x_φ_xInvB, hb]
+    simp only [bit, ↓reduceIte, map_one]
+  · rw [φ_zero, Bool.not_eq_true] at *; rw [hb]
+    simp only [mul_zero, add_zero, bit, Bool.false_eq_true, ↓reduceIte, map_zero]
+
+/-- The prepared power of `Hᵏ` is `Hᵏ · x⁻¹`. -/
+theorem x_φ_preparedPower_hpow (H : Spec.Gcm.Block) (k : Nat) :
+    x * φ (Spec.Gcm.preparedPower (Spec.Gcm.hpow H k)) = φ H ^ k := by
+  rw [x_φ_preparedPower, φ_hpow]
+
+end
+
+/-- `x` cancels. -/
+theorem x_cancel {a b : Q} (h : x * a = x * b) : a = b := by
+  linear_combination (x * φ xInv2) * h - (a - b) * x2_φ_xInv2
+
+theorem x_φ_pp (H : Spec.Gcm.Block) (k : Nat) : x * φ (pp H k) = φ H ^ k :=
+  x_φ_preparedPower_hpow H k
+
+theorem prepPow : PrepPow where
+  key H := by
+    apply φ_inj
+    apply x_cancel
+    rw [keyV, φ_ext8_self, mulV, ρ_reduce, Prod.val_acc, Prod.val_zero, zero_add, ρ_ext8_self, x_φ_pp,
+      pow_one]
+    linear_combination φ H * x2_φ_xInv2
+  mul H a b := by
+    apply ρ_inj
+    rw [mulV, ρ_reduce, Prod.val_acc, Prod.val_zero, zero_add, ρ_ext8_self, ρ_ext8_self]
+    apply x_cancel
+    have hab : x * φ (pp H (a + b)) = φ H ^ a * φ H ^ b := by rw [x_φ_pp, pow_add]
+    linear_combination (x * φ (pp H b)) * x_φ_pp H a + φ H ^ a * x_φ_pp H b - hab
 
 end VG.Proof.Gcm.AArch64.Pmull
 

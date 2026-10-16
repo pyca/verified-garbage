@@ -405,12 +405,15 @@ def initSeg2 : List Instr :=
     .str .x .x9 .x19 (tO + 8), mov .x0 .x21, mov .x1 .x22, ptr .x2 .x19 tO, ptr .x3 .x21 240,
     imm .x4 1, ptr .x5 .x19 scrO]
 
-def init : Prog isa :=
+/-- Key setup up to the hash subkey, then `fin` (which restores the registers). -/
+def initWith (fin : Prog isa) : Prog isa :=
   .seq (.block initSeg1)
   (.seq (.call c.key.name c.key.code)
   (.seq (.block initSeg2)
   (.seq (ctrCall c)
-    (.block restore))))
+    fin)))
+
+def init : Prog isa := initWith c (.block restore)
 
 /-- `vg_aes_gcm_stream_init(ctx = x0, nonce = x1, nonce_len = x2, state = x3, scratch = x4)`. -/
 def siEntry : List Instr :=

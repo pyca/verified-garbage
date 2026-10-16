@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Verified
+
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -140,7 +142,27 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.AArch64.Gather.sealGather_verified (sealFn v)
     features := v.features }]
 
+/-- How `vg_aes_gcm_init_prepared` computes the powers. -/
+def preparedNote : String :=
+  "This implementation computes `H' = H · x⁻¹` as `vg_ghash_aes` does, then each even power `H'²ᵏ` by \
+    squaring `H'ᵏ`, read back from the context, and each odd power by one multiplication by `H'`; \
+    `preparedPower(Hᵏ)` is `Hᵏ · x⁻¹`, so each power is stored as it is computed."
+
+/-- The functions with a prepared key context, for the implementations with PMULL. -/
+def artifactsPrepared (v : GcmImpl) : List Artifact :=
+  if v.gh.pmull then [
+    Spec.Gcm.initPreparedApi.artifact AArch64.target {
+      suffix := v.suffix
+      notes := [note v, preparedNote]
+      code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3
+        (Impl.AesGcm.AArch64.Prepared.init v.callees)
+      stack := 2560
+      verified := initPrepared_framed v Proof.Gcm.AArch64.Pmull.prepPow
+      features := v.features }]
+  else []
+
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl ++ artifactsGather v.impl
+def artifacts (v : GcmVariant) : List Artifact :=
+  artifactsOf v.impl ++ artifactsGather v.impl ++ artifactsPrepared v.impl
 
 end VG.Generic.AesGcm.AArch64.AesGcm
