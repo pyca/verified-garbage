@@ -172,10 +172,11 @@ theorem streamVal_eq {s : State} {B : Addr} {w d : Nat} (hd : d+8 ≤ 2*w)
   generalize (2 : Nat)^(64*8) = R
   grind
 
-/-- A column block, then a block `blk` that moves the column index to the
-next block (any such, setting ZF to `zfv`). -/
-theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Nat} {mi : BitVec 64}
-    {blk : List Instr} {zfv : Bool}
+/-- A column block `tile` that does what `streamTile` does (`htile`), then a
+block `blk` that moves the column index to the next block (any such, setting
+ZF to `zfv`). -/
+theorem streamStep_tile {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Nat} {mi : BitVec 64}
+    {tile : Prog isa} {blk : List Instr} {zfv : Bool}
     (hZ : slot w 8 ≤ Z) (_hw : w < (2 : Nat)^31) (hi : i+8 ≤ w)
     (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hn : w = j₀+8*n) (hk : k < n)
@@ -184,8 +185,12 @@ theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Na
       WP isa (.block blk) u fun t =>
         t.mem = u.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (j₀+8*k+8)) ∧ t.zf = some zfv ∧
           Keep [.rax] u t)
+    (htile : ∀ {eA eB eO : Nat}, s.gpr .rcx = off B eA → s.gpr .rbp = off B eB →
+      s.gpr .rsi = off B eO → eA + 64 ≤ Z → eB + 64 ≤ Z → eO + 128 ≤ Z →
+      (eA + 64 ≤ eO ∨ eO + 128 ≤ eA) → (eB + 64 ≤ eO ∨ eO + 128 ≤ eB) → carryOffset + 8 ≤ eO →
+      eO = rawBase w+8*(i+j₀+8*k) → WP isa tile s (TilePost s B eA eB eO))
     (h : StreamInv s₀ B Z w a b i j₀ k mi x cb s) :
-    WP isa (.seq AdxRect8.streamTile (.block blk)) s fun t =>
+    WP isa (.seq tile (.block blk)) s fun t =>
       t.zf = some zfv ∧ StreamInv s₀ B Z w a b i j₀ (k+1) mi x 2 t := by
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega_using [hZ, nowrap]
@@ -208,8 +213,8 @@ theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Na
   have eR : rawBase w ≤ e ∧ e+128 ≤ rawBase w+8*(2*w) := by rw [← he]; omega_using [hdw]
   have cJ : 8*sFn 13+8 ≤ carryOffset ∨ carryOffset+8 ≤ 8*sFn 13 := by unfold carryOffset sFn; omega_using []
   have cI : 8*sFn 12+8 ≤ carryOffset ∨ carryOffset+8 ≤ 8*sFn 12 := by unfold carryOffset sFn; omega_using []
-  refine WP.seq (WP.mono (streamTile_ok h.scr h.rdi h.pa h.pb po (by omega_using [hZ, ar]) (by omega_using [hZ, br]) (by omega_using [rawZ, eOdef, eR])
-    ar.2.2 (by omega_using [br]) (by rw [← eOdef]; exact eC)) fun u ⟨eq,two,_,fr,pu,bu,ku⟩ => ?_)
+  refine WP.seq (WP.mono (htile h.pa h.pb po (by omega_using [hZ, ar]) (by omega_using [hZ, br]) (by omega_using [rawZ, eOdef, eR])
+    ar.2.2 (by omega_using [br]) (by rw [← eOdef]; exact eC) eOdef.symm) fun u ⟨eq,two,_,fr,pu,bu,ku⟩ => ?_)
   rw [← eOdef] at fr eq pu
   have fr3 : Frm B [(e,64),(carryOffset,8),(8*sFn 13,8)] s.mem u.mem := fr.mono (by simp)
   have hu : Hdr u.mem B w mi := frame_hdr h.hdr eH fr3
@@ -311,6 +316,24 @@ theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Na
     generalize (2 : Nat)^(64*d) = P at hPQ prev ⊢
     exact stream_arith hPQ eq prev
 
+/-- A column block, then a block `blk` that moves the column index to the
+next block (any such, setting ZF to `zfv`). -/
+theorem streamStep_gen {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Nat} {mi : BitVec 64}
+    {blk : List Instr} {zfv : Bool}
+    (hZ : slot w 8 ≤ Z) (hw : w < (2 : Nat)^31) (hi : i+8 ≤ w)
+    (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hn : w = j₀+8*n) (hk : k < n)
+    (hblk : ∀ u : State, Scr u B Z → u.gpr .rdi = B → Hdr u.mem B w mi →
+      word u.mem B (8*sFn 13) = BitVec.ofNat 64 (j₀+8*k) →
+      WP isa (.block blk) u fun t =>
+        t.mem = u.mem.writeW (off B (8*sFn 13)) (BitVec.ofNat 64 (j₀+8*k+8)) ∧ t.zf = some zfv ∧
+          Keep [.rax] u t)
+    (h : StreamInv s₀ B Z w a b i j₀ k mi x cb s) :
+    WP isa (.seq AdxRect8.streamTile (.block blk)) s fun t =>
+      t.zf = some zfv ∧ StreamInv s₀ B Z w a b i j₀ (k+1) mi x 2 t :=
+  streamStep_tile hZ hw hi ha hb ha1 ha2 hb1 hb2 hn hk hblk
+    (fun pa pb po hA hB hO sA sB sC _ => streamTile_ok h.scr h.rdi pa pb po hA hB hO sA sB sC) h
+
 theorem streamStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Nat} {mi : BitVec 64}
     (hZ : slot w 8 ≤ Z) (hw : w < (2 : Nat)^31) (hi : i+8 ≤ w)
     (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
@@ -321,6 +344,59 @@ theorem streamStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n x cb : Na
   unfold AdxRect8.rowStep
   refine WP.mono (streamStep_gen hZ hw hi ha hb ha1 ha2 hb1 hb2 hn hk
     (fun u hs hd hh hj => nextColumn_ok hs hd hh hZ (by omega_using [hw, hn, hk]) (by omega_using [hw]) hj) h) fun t ⟨zt,ht⟩ => ⟨?_,ht⟩
+  rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega_using [hn]))
+
+private theorem pow_split {a b c : Nat} (h : a + b = c) : (2 : Nat)^a * 2^b = 2^c := by
+  rw [← Nat.pow_add, h]
+
+private theorem first_zero {L C X Y c P Q R A Bk T : Nat}
+    (hv : L + Q*C + P*(X + R*Y) + P*c = A*Bk) (hA : A < T) (hB : Bk < Q) (hP : T*Q = P) :
+    X = 0 ∧ c = 0 := by
+  have hV : A*Bk < P := hP ▸ Nat.mul_lt_mul'' hA hB
+  generalize A*Bk = V at hv hV
+  have h1 : P*(X+c) ≤ V := by rw [← hv, Nat.mul_add]; grind
+  have h2 : X + c < 1 := Nat.lt_of_mul_lt_mul_left (by rw [Nat.mul_one]; exact Nat.lt_of_le_of_lt h1 hV)
+  omega
+
+/-- In a first row (the raw product zero at its start, nothing handed), the
+eight words above column block `k`'s output and the pending carry are zero:
+the invariant's value is below the words above. -/
+theorem first_row_zero {s₀ s : State} {B : Addr} {Z w a b k n cb : Nat} {mi : BitVec 64}
+    (hn : w = 8*n) (hk : k < n)
+    (hz : wv s₀.mem B (rawBase w) (2*w) = 0)
+    (h : StreamInv s₀ B Z w a b 0 0 k mi 0 cb s) :
+    wv s.mem B (rawBase w+8*(8*k+8)) 8 = 0 ∧ (word s.mem B carryOffset).toNat = 0 := by
+  have hv := h.val
+  rw [hz] at hv
+  simp only [Nat.zero_add,Nat.add_zero,Nat.mul_zero,Nat.pow_zero,Nat.one_mul] at hv
+  unfold streamVal at hv
+  rw [show 2*w-(8*k+8) = 8+(2*w-(8*k+16)) by omega_using [hn, hk],wv_add,
+    show rawBase w+8*(8*k+8)+8*8 = rawBase w+8*(8*k+16) by omega_using [],
+    show 8*(k+1) = 8*k+8 by omega_using []] at hv
+  have bA := wv_lt s₀.mem B (slot w a) 8
+  have bB := wv_lt s₀.mem B (slot w b) (8*k)
+  exact first_zero hv bA bB (pow_split (a := 64*8) (b := 64*(8*k)) (c := 64*(8*k+8)) (by omega_using []))
+
+/-- A first row's column block: the raw product zero at the row's start and
+nothing handed to it, the eight words above the block's output and the carry
+are zero (`first_row_zero`), so `streamTile0`, which adds neither, does what
+`streamTile` does. -/
+theorem streamStep0_inv {s₀ s : State} {B : Addr} {Z w a b k n cb : Nat} {mi : BitVec 64}
+    (hZ : slot w 8 ≤ Z) (hw : w < (2 : Nat)^31) (hi : 8 ≤ w)
+    (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hn : w = 8*n) (hk : k < n)
+    (hz : wv s₀.mem B (rawBase w) (2*w) = 0)
+    (h : StreamInv s₀ B Z w a b 0 0 k mi 0 cb s) :
+    WP isa AdxRect8.rowStep0 s fun t =>
+      t.zf = some (decide (k+1=n)) ∧ StreamInv s₀ B Z w a b 0 0 (k+1) mi 0 2 t := by
+  have zero := first_row_zero hn hk hz h
+  unfold AdxRect8.rowStep0
+  refine WP.mono (streamStep_tile hZ hw (by omega_using [hi]) ha hb ha1 ha2 hb1 hb2
+    (by omega_using [hn] : w = 0+8*n) hk
+    (fun u hs hd hh hj => nextColumn_ok hs hd hh hZ (by omega_using [hw, hn, hk]) (by omega_using [hw]) hj)
+    (fun pa pb po hA hB hO sA sB sC he => streamTile0_ok h.scr pa pb po hA hB hO sA sB sC
+      (by rw [he,show rawBase w+8*(0+0+8*k)+64 = rawBase w+8*(8*k+8) by omega_using []]; exact zero.1)
+      zero.2) h) fun t ⟨zt,ht⟩ => ⟨?_,ht⟩
   rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega_using [hn]))
 
 end VG.Proof.Bignum.X86_64.AdxRect8
@@ -422,6 +498,28 @@ theorem row_ok {s : State} {B : Addr} {Z w a b i j₀ n : Nat} {mi : BitVec 64}
     (StreamInv s B Z w a b i j₀ · mi 0 2)
     (fun _ _ hk _ h => streamStep_inv hZ hw hi ha hb ha1 ha2 hb1 hb2 hwN hk h)
     (fun _ h => h) hv0) fun t ht => rowEnd_ok hZ hi hwN ht)
+
+/-- The first row of a product, from a zero raw product. -/
+theorem row0_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
+    (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca cb : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (hZ : slot w 8 ≤ Z) (hw : w < 2^31)
+    (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hwN : w = 8*n) (hn : 0 < n)
+    (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 0)
+    (hjdx : word s.mem B (8*sFn 13) = BitVec.ofNat 64 0)
+    (hc : (word s.mem B carryOffset).toNat = 0)
+    (hz : wv s.mem B (rawBase w) (2*w) = 0) :
+    WP isa (AdxRect8.row0 ca cb) s (RowInv s B Z w a b 0 0 n mi 0 2) := by
+  unfold AdxRect8.row0 AdxRect8.rowOf
+  refine WP.seq (WP.mono (setup_ok hs hd hh hZ hv pa pb hidx hjdx) fun u ⟨ua,ub,uo,um,ku⟩ => ?_)
+  refine WP.seq (WP.mono (rowLoad_ok (s₀ := s) (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (um ▸ hh) hZ
+    (by omega_using [hwN, hn]) (by omega_using [hwN, hn]) (um ▸ hidx) (um ▸ hjdx) (um ▸ hc) ua ub uo um
+    (ku.mono (by decide))) fun v hv0 => ?_)
+  exact WP.seq (WP.mono (wp_upto (a := 0) (N := n) (Q := StreamInv s B Z w a b 0 0 n mi 0 2) hn
+    (StreamInv s B Z w a b 0 0 · mi 0 2)
+    (fun _ _ hk _ h => streamStep0_inv hZ hw (by omega_using [hwN, hn]) ha hb ha1 ha2 hb1 hb2 hwN hk hz h)
+    (fun _ h => h) hv0) fun t ht => rowEnd_ok hZ (by omega_using [hwN, hn]) (by omega_using [hwN] : w = 0+8*n) ht)
 
 end VG.Proof.Bignum.X86_64.AdxRect8
 

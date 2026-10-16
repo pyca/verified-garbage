@@ -80,6 +80,43 @@ theorem save_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : GoodV ps 
   exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega)⟩,
     hv.of_outside o (by unfold slot sFn hdrBytes; omega)⟩
 
+open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase) in
+/-- `zero_fw`, with the raw product's window zero. -/
+theorem zero0_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Ready ps L s) :
+    WP isa Adx.zeroWin8 s fun t => GoodV ps L t ∧ wv t.mem L.B (rawBase L.w) (2*L.w) = 0 := by
+  obtain ⟨⟨⟨mi,hg⟩,hv⟩,p,w⟩ := h
+  have pads := AdxHeader.pads_bound L.hZ
+  have hw := L.hw
+  refine WP.mono (zeroWin8_ok hg.scr p w L.hwN L.hn (by omega)
+    (by unfold AdxHeader.highPad at pads; omega)) fun t ⟨z,o,k⟩ => ?_
+  exact ⟨⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega)⟩,
+    hv.of_outside o (by unfold slot sFn hdrBytes; omega)⟩,wv_zero fun k hk => z k (by omega)⟩
+
+open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase) in
+open VG.Proof.Bignum.X86_64.AdxHeader (highPad) in
+/-- `save_fw`, keeping the raw product's window. -/
+theorem save0_fw {ps : List (Nat × Nat)} (L : Layout) (s : State)
+    (h : GoodV ps L s ∧ wv s.mem L.B (rawBase L.w) (2*L.w) = 0) :
+    WP isa AdxHeader.save s fun t => GoodV ps L t ∧ wv t.mem L.B (rawBase L.w) (2*L.w) = 0 := by
+  obtain ⟨⟨⟨mi,hg⟩,hv⟩,hz⟩ := h
+  have pads := AdxHeader.pads_bound L.hZ
+  have nowrap := hg.scr.nowrap
+  refine WP.mono (AdxHeader.save_ok hg.scr hg.rdi hg.hdr L.hZ) fun t ⟨_,_,f,k⟩ => ?_
+  have o : Outside L.B (slot L.w aAcc) (16*L.w+32) s.mem t.mem := by
+    intro x hx
+    apply f x
+    intro r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl <;> simp only [] <;> unfold AdxHeader.highPad at * <;> omega
+  refine ⟨⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega)⟩,
+    hv.of_outside o (by unfold slot sFn hdrBytes; omega)⟩,?_⟩
+  rw [f.wv_eq (by
+    intro r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,highPad] at * <;> omega) (by
+      unfold rawBase highPad at *; omega)]
+  exact hz
+
 theorem raw_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (ha : a<8) (hb : b<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
@@ -89,7 +126,7 @@ theorem raw_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
     RelCT isa (Two (GoodV ps)) (AdxTiledProduct.rawProduct ca cb) (fun _ _ => True) := by
   unfold AdxTiledProduct.rawProduct
   refine RelCT.seq (two_piece [.rdi] (pins_goodV ps) hS (setup_fw pb)) ?_
-  refine RelCT.seq (two_piece [.r8,.rbx] ?_ (by taint_decide) zero_fw) ?_
+  refine RelCT.seq (two_piece [.r8,.rbx] ?_ (by taint_decide) zero0_fw) ?_
   · intro L s t hs ht r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl
@@ -97,7 +134,8 @@ theorem raw_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
     · exact hs.2.2.trans ht.2.2.symm
   have mapGood : ∀ L s, GoodV ps L s → GoodW ⟨L.B,L.Z,L.w⟩ s := by
     rintro L s ⟨⟨mi,hg⟩,_⟩; exact ⟨mi,hg,L.hZ⟩
-  refine RelCT.seq (two_post (two_map (fun L : Layout => (⟨L.B,L.Z,L.w⟩ : Ws)) mapGood AdxHeader.save_ct) save_fw) ?_
+  refine RelCT.seq (two_post (two_map (fun L : Layout => (⟨L.B,L.Z,L.w⟩ : Ws)) (fun L s h => mapGood L s h.1)
+    AdxHeader.save_ct) save0_fw) ?_
   exact RelCT.seq (rows_ct pa pb ha hb ha1 ha2 hb1 hb2 hR)
     (two_map (fun L : Layout => (⟨L.B,L.Z,L.w⟩ : Ws)) mapGood AdxHeader.restore_ct)
 
@@ -110,7 +148,7 @@ theorem rawBare_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ 
     RelCT isa (Two (GoodV ps)) (AdxTiledProduct.rawProductBare ca cb) (fun _ _ => True) := by
   unfold AdxTiledProduct.rawProductBare
   refine RelCT.seq (two_piece [.rdi] (pins_goodV ps) hS (setup_fw pb)) ?_
-  refine RelCT.seq (two_piece [.r8,.rbx] ?_ (by taint_decide) zero_fw) ?_
+  refine RelCT.seq (two_piece [.r8,.rbx] ?_ (by taint_decide) zero0_fw) ?_
   · intro L s t hs ht r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl

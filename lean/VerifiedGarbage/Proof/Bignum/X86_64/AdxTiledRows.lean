@@ -36,18 +36,21 @@ private theorem drop_carry {L Q C V : Nat} (h : L+Q*C=V) (hb : V<Q) : L=V := by
     omega
   simpa only [hc,Nat.mul_zero,Nat.add_zero] using h
 
-theorem row_inv {s₀ s : State} {B : Addr} {Z w a b k n : Nat} {mi : BitVec 64}
-    {ps : List (Nat × Nat)} (hv : Ops s₀.mem B w ps) {ca cb : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
-    (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hwN : w=8*n) (hk : k<n)
+/-- Row `k` by any program `r` that adds it (`hr`, as `row_ok`). -/
+theorem row_inv_of {s₀ s : State} {B : Addr} {Z w a b k n : Nat} {mi : BitVec 64} {r : Prog isa}
+    (hZ : slot w 8 ≤ Z) (hwN : w=8*n) (hk : k<n)
     (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
-    (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (h : Inv s₀ B Z w a b k mi s) :
-    WP isa (AdxTiledProduct.row ca cb) s fun t =>
+    (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (h : Inv s₀ B Z w a b k mi s)
+    (hr : WP isa r s fun t =>
+      t.zf = some (decide (8*k+8=w)) ∧ word t.mem B (8*sFn 12) = BitVec.ofNat 64 (8*k+8) ∧
+      (∃ c, wv t.mem B (rawBase w) (2*w)+(2 : Nat)^(128*w)*c =
+        wv s.mem B (rawBase w) (2*w)+(2 : Nat)^(64*(8*k))*wv s.mem B (slot w a+8*(8*k)) 8*wv s.mem B (slot w b) w) ∧
+      Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t) :
+    WP isa r s fun t =>
       t.zf = some (decide (k+1=n)) ∧ Inv s₀ B Z w a b (k+1) mi t := by
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
-  refine WP.mono (row_ok h.scr h.rdi h.hdr (frame_ops hv h.frame) pa pb hZ hw hwN (by omega)
-    (by omega : w=8*k+8+8*(n-k-1)) ha hb ha1 ha2 hb1 hb2 h.indexI)
-    fun t ⟨zt,it,⟨c,eq⟩,ht,ft,kt⟩ => ?_
+  refine WP.mono hr fun t ⟨zt,it,⟨c,eq⟩,ht,ft,kt⟩ => ?_
   have va := input_preserved ha ha1 ha2 (by omega : 8*k+8 ≤ w) Z64 h.frame
   have vb := input_preserved hb hb1 hb2 (by omega : 0+w ≤ w) Z64 h.frame
   simp only [Nat.mul_zero,Nat.add_zero] at vb
@@ -65,6 +68,30 @@ theorem row_inv {s₀ s : State} {B : Addr} {Z w a b k n : Nat} {mi : BitVec 64}
     (h.keep.trans kt).mono (by decide),h.frame.trans ft,drop_carry val bound⟩⟩
   · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega))
   · simpa only [show 8*(k+1)=8*k+8 by omega] using it
+
+theorem row_inv {s₀ s : State} {B : Addr} {Z w a b k n : Nat} {mi : BitVec 64}
+    {ps : List (Nat × Nat)} (hv : Ops s₀.mem B w ps) {ca cb : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hwN : w=8*n) (hk : k<n)
+    (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (h : Inv s₀ B Z w a b k mi s) :
+    WP isa (AdxTiledProduct.row ca cb) s fun t =>
+      t.zf = some (decide (k+1=n)) ∧ Inv s₀ B Z w a b (k+1) mi t :=
+  row_inv_of hZ hwN hk ha hb ha1 ha2 hb1 hb2 h
+    (row_ok h.scr h.rdi h.hdr (frame_ops hv h.frame) pa pb hZ hw hwN (by omega)
+      (by omega : w=8*k+8+8*(n-k-1)) ha hb ha1 ha2 hb1 hb2 h.indexI)
+
+/-- The first row, from the zero raw product of `Inv`'s row 0. -/
+theorem row0_inv {s₀ s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
+    {ps : List (Nat × Nat)} (hv : Ops s₀.mem B w ps) {ca cb : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hwN : w=8*n) (hn : 0<n)
+    (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
+    (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (h : Inv s₀ B Z w a b 0 mi s) :
+    WP isa (AdxTiledProduct.row0 ca cb) s fun t =>
+      t.zf = some (decide (0+1=n)) ∧ Inv s₀ B Z w a b (0+1) mi t :=
+  row_inv_of hZ hwN hn ha hb ha1 ha2 hb1 hb2 h
+    (row0_ok h.scr h.rdi h.hdr (frame_ops hv h.frame) pa pb hZ hw hwN hn
+      (by omega : w=8*0+8+8*(n-0-1)) ha hb ha1 ha2 hb1 hb2 h.indexI
+      (by rw [h.val]; simp only [wv,Nat.zero_mul]))
 
 theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
@@ -96,8 +123,16 @@ theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
       ku.mono (by decide),fu,by
         rw [ou.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega)]
         simpa only [Nat.mul_zero,wv,Nat.zero_mul] using hz⟩
-  exact wp_upto (a := 0) (N := n) hn (Inv s B Z w a b · mi)
-    (fun _ _ hk _ h => row_inv hv pa pb hZ hw hwN hk ha hb ha1 ha2 hb1 hb2 h)
-    (fun _ h => ⟨by simpa only [← hwN] using h.val,h.hdr,h.frame,h.keep⟩) h0
+  have fin : ∀ t, Inv s B Z w a b n mi t →
+      wv t.mem B (rawBase w) (2*w)=wv s.mem B (slot w a) w*wv s.mem B (slot w b) w ∧
+      Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t :=
+    fun _ h => ⟨by simpa only [← hwN] using h.val,h.hdr,h.frame,h.keep⟩
+  refine WP.seq (WP.mono (row0_inv hv pa pb hZ hw hwN hn ha hb ha1 ha2 hb1 hb2 h0) fun v ⟨zv,hv1⟩ => ?_)
+  by_cases h1 : n = 1
+  · subst h1
+    exact WP.ite true (by simp [eval,zv]) (fun _ => WP.block_nil (fin v hv1)) (by simp)
+  · refine WP.ite false (by simp [eval,zv]; omega) (by simp) (fun _ => ?_)
+    exact wp_upto (a := 1) (N := n) (by omega) (Inv s B Z w a b · mi)
+      (fun _ _ hk _ h => row_inv hv pa pb hZ hw hwN hk ha hb ha1 ha2 hb1 hb2 h) fin hv1
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct

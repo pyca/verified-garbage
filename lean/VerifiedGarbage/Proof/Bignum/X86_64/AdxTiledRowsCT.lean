@@ -88,6 +88,71 @@ theorem row_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) 
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
     subst r; exact hs.trans ht.symm
 
+/-- `RowStart` of the first row, from a zero raw product. -/
+def RowStart0 (ps : List (Nat × Nat)) (L : RowLayout) (s : State) : Prop :=
+  RowStart ps L s ∧ L.i = 0 ∧ wv s.mem L.B (rawBase L.w) (2*L.w) = 0
+
+theorem init0_fw {ps : List (Nat × Nat)} (L : RowLayout) (s : State) (h : RowStart0 ps L s) :
+    WP isa (.block AdxTiledProduct.rowInit) s fun t =>
+      RowReady ps L t ∧ L.i = 0 ∧ wv t.mem L.B (rawBase L.w) (2*L.w) = 0 := by
+  obtain ⟨⟨tail,j0,⟨mi,hg⟩,hv,idx⟩,i0,hz⟩ := h
+  have hw := L.hw; have hZ := L.hZ; have nowrap := hg.scr.nowrap
+  refine WP.mono (rowInit_ok hg.scr hg.rdi L.hZ) fun t ⟨c,j,o,k⟩ => ?_
+  have f : Frm L.B (ranges L.w) s.mem t.mem := by
+    intro x hx
+    apply o x
+    have := hx (8*sFn 12,32) (by simp [ranges])
+    simp only [sFn] at *; omega
+  have hh : Hdr t.mem L.B L.w mi := frame_hdr hg.hdr f
+  have it : word t.mem L.B (8*sFn 12)=BitVec.ofNat 64 L.i := by
+    rw [o.word (by decide) (by decide)]; exact idx
+  have raw : wv t.mem L.B (rawBase L.w) (2*L.w) = wv s.mem L.B (rawBase L.w) (2*L.w) :=
+    o.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega)
+  exact ⟨⟨tail,j0,⟨mi,⟨hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hh⟩,frame_ops hv f,it,
+    by rw [j0]; exact j⟩,c⟩,i0,raw.trans hz⟩
+
+theorem inner0_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (ha : a<8) (hb : b<8)
+    (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
+    (L : RowLayout) (s : State)
+    (h : RowReady ps L s ∧ L.i = 0 ∧ wv s.mem L.B (rawBase L.w) (2*L.w) = 0) :
+    WP isa (AdxRect8.row0 ca cb) s (fun t => TailReady L t ∧ ∃ q, L.w=L.i+8+8*q) := by
+  obtain ⟨⟨tail,j0,⟨mi,hg,hv,idx,jdx⟩,carry⟩,i0,hz⟩ := h
+  simp only [Nat.mul_zero,Nat.add_zero] at jdx
+  have wn := L.hwN
+  rw [j0,Nat.zero_add] at wn
+  rw [i0] at idx; rw [j0] at jdx
+  refine WP.mono (AdxRect8.row0_ok hg.scr hg.rdi hg.hdr hv pa pb L.hZ L.hw ha hb ha1 ha2 hb1 hb2
+    wn L.hn idx jdx (by rw [carry]; rfl) hz) fun t ht => ?_
+  have ptr := ht.endPtr.resolve_left (by have := L.hn; omega)
+  rw [Nat.add_zero,Nat.zero_add] at ptr
+  exact ⟨⟨⟨mi,ht.scr,ht.rdi,ht.hdr⟩,by rw [i0]; exact ht.indexI,by
+    rw [i0,Nat.zero_add]; simpa only [← wn] using ptr⟩,tail⟩
+
+theorem row0_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (ha : a<8) (hb : b<8)
+    (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
+    {hint : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca cb)) hint).isSome=true) :
+    RelCT isa (Two (RowStart0 ps)) (AdxTiledProduct.row0 ca cb) (fun _ _ => True) := by
+  unfold AdxTiledProduct.row0 AdxTiledProduct.rowOf
+  refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) init0_fw) ?_
+  · rintro L s t ⟨⟨_,_,⟨mi,hs⟩,_,_⟩,_⟩ ⟨⟨_,_,⟨mj,ht⟩,_,_⟩,_⟩ r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    subst r; exact hs.rdi.trans ht.rdi.symm
+  refine RelCT.seq (two_post (two_map id (fun _ _ h => ⟨⟨h.1.2.2.1,h.1.2.2.2⟩,h.2.1,h.1.2.1,h.2.2⟩)
+    ((AdxRect8.row0_ct pa pb ha hb ha1 ha2 hb1 hb2 hS).mono (fun _ _ h => h) (fun _ _ _ => True.intro)))
+    (inner0_fw pa pb ha hb ha1 ha2 hb1 hb2)) ?_
+  refine RelCT.seq (two_post (two_map id (fun _ _ h => h.1) tail_ct)
+    (Ψ := fun L s => s.gpr .rdi=L.B) ?_)
+    (two_taint [.rdi] ?_ (by taint_decide))
+  · rintro L s ⟨⟨⟨mi,hg⟩,idx,ptr⟩,q,hq⟩
+    exact WP.mono (tail_ok hg.scr hg.rdi hg.hdr L.hZ L.hw hq idx ptr)
+      fun t ⟨_,_,k⟩ => (k.gpr (by decide)).trans hg.rdi
+  · intro L s t hs ht r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    subst r; exact hs.trans ht.symm
+
 end VG.Proof.Bignum.X86_64.AdxTiledProduct
 
 end
@@ -175,19 +240,96 @@ theorem rows_init_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Good
   exact ⟨L.hn,mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,frame_hdr hg.hdr ft⟩,
     frame_ops hv ft,by rw [mt,word_writeW_self]; rfl⟩
 
+open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase) in
+theorem rows_init0_fw {ps : List (Nat × Nat)} (L : Layout) (s : State)
+    (h : GoodV ps L s ∧ wv s.mem L.B (rawBase L.w) (2*L.w) = 0) :
+    WP isa (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) s
+      (fun t => (0<L.n ∧ LoopState ps L 0 t) ∧ wv t.mem L.B (rawBase L.w) (2*L.w) = 0) := by
+  obtain ⟨⟨⟨mi,hg⟩,hv⟩,hz⟩ := h
+  have hZ := L.hZ; have hw := L.hw
+  have iZ : 8*sFn 12+8 ≤ L.Z := by
+    have := hdr_lt_slot L.w 8 (show sFn 12<32 by decide); omega
+  have nowrap := hg.scr.nowrap
+  refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem=s.mem.writeW (off L.B (8*sFn 12)) (0 : BitVec 64)) ?_ rfl)
+    fun t ⟨mt,kt⟩ => ?_
+  · xrun [State.ea,hdr,hg.rdi,hdrOff,hg.scr.st iZ]; rfl
+  have ot : Outside L.B (8*sFn 12) 8 s.mem t.mem := by rw [mt]; exact writeW_outside _ _ _ (by decide)
+  have ft : Frm L.B (ranges L.w) s.mem t.mem := by
+    intro x hx
+    apply ot x
+    have := hx (8*sFn 12,32) (by simp [ranges]); omega
+  refine ⟨⟨L.hn,mi,⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,frame_hdr hg.hdr ft⟩,
+    frame_ops hv ft,by rw [mt,word_writeW_self]; rfl⟩,?_⟩
+  rw [ot.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega)]
+  exact hz
+
+open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase) in
+theorem row0_loop_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (ha : a<8) (hb : b<8)
+    (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
+    {hint : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca cb)) hint).isSome=true) :
+    RelCT isa (Two fun L s => (0<L.n ∧ LoopState ps L 0 s) ∧ wv s.mem L.B (rawBase L.w) (2*L.w) = 0)
+      (AdxTiledProduct.row0 ca cb) (fun _ _ => True) := by
+  intro s t ts tt s' t' ⟨L,⟨⟨hk,mi,gs,vs,is⟩,zs⟩,⟨_,mj,gt,vt,it⟩,zt⟩ es et
+  have wn := L.hwN
+  let R : AdxRect8.RowLayout := ⟨L.B,L.Z,L.w,0,0,L.n,L.hZ,L.hw,by omega,by omega,L.hn⟩
+  apply row0_ct pa pb ha hb ha1 ha2 hb1 hb2 hS s t ts tt s' t' ?_ es et
+  exact ⟨R,⟨⟨⟨L.n-1,by dsimp [R]; omega⟩,rfl,⟨mi,gs⟩,vs,is⟩,rfl,zs⟩,
+    ⟨⟨L.n-1,by dsimp [R]; omega⟩,rfl,⟨mj,gt⟩,vt,it⟩,rfl,zt⟩
+
+open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase) in
+theorem row0_loop_fw {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (ha : a<8) (hb : b<8)
+    (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
+    (L : Layout) (s : State) (h : (0<L.n ∧ LoopState ps L 0 s) ∧ wv s.mem L.B (rawBase L.w) (2*L.w) = 0) :
+    WP isa (AdxTiledProduct.row0 ca cb) s fun t =>
+      isa.eval .e t=some (decide (1=L.n)) ∧ (1<L.n → LoopState ps L 1 t) ∧ (1=L.n → GoodV ps L t) := by
+  obtain ⟨⟨hk,mi,hg,hv,idx⟩,hz⟩ := h
+  have wn := L.hwN
+  refine WP.mono (row0_ok hg.scr hg.rdi hg.hdr hv pa pb L.hZ L.hw L.hwN L.hn
+    (by omega : L.w=8*0+8+8*(L.n-0-1)) ha hb ha1 ha2 hb1 hb2 idx hz)
+    fun t ⟨zt,it,_,ht,ft,kt⟩ => ?_
+  have good : Good t L.B L.Z L.w mi := ⟨hg.scr.congr kt.2.2,(kt.gpr (by decide)).trans hg.rdi,ht⟩
+  have hv' := frame_ops hv ft
+  refine ⟨?_,fun _ => ⟨mi,good,hv',?_⟩,fun _ => ⟨⟨mi,good⟩,hv'⟩⟩
+  · simp only [eval,zt]
+    exact congrArg some (decide_eq_decide.mpr (by omega))
+  · simpa only [Nat.mul_zero,Nat.zero_add,Nat.mul_one] using it
+
+open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase) in
 theorem rows_ct {ps : List (Nat × Nat)} {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (ha : a<8) (hb : b<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
     {hint : VG.Taint.Hint VG.X86_64.Taint.T}
     (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup ca cb)) hint).isSome=true) :
-    RelCT isa (Two (GoodV ps)) (AdxTiledProduct.rows ca cb) (Two (GoodV ps)) := by
+    RelCT isa (Two fun L s => GoodV ps L s ∧ wv s.mem L.B (rawBase L.w) (2*L.w) = 0)
+      (AdxTiledProduct.rows ca cb) (Two (GoodV ps)) := by
   unfold AdxTiledProduct.rows
-  refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) rows_init_fw)
-    (two_loop (fun L : Layout => L.n) (row_loop_ct pa pb ha hb ha1 ha2 hb1 hb2 hS)
-      (row_loop_fw pa pb ha hb ha1 ha2 hb1 hb2))
-  rintro L s t ⟨⟨mi,hs⟩,_⟩ ⟨⟨mj,ht⟩,_⟩ r hr
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-  subst r; exact hs.rdi.trans ht.rdi.symm
+  refine RelCT.seq (two_piece [.rdi] ?_ (by taint_decide) rows_init0_fw) ?_
+  · rintro L s t ⟨⟨⟨mi,hs⟩,_⟩,_⟩ ⟨⟨⟨mj,ht⟩,_⟩,_⟩ r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    subst r; exact hs.rdi.trans ht.rdi.symm
+  refine RelCT.seq (two_post (row0_loop_ct pa pb ha hb ha1 ha2 hb1 hb2 hS)
+    (row0_loop_fw pa pb ha hb ha1 ha2 hb1 hb2)) ?_
+  refine two_ite (fun L s t hs ht => hs.1.trans ht.1.symm) ?_ ?_
+  · apply RelCT.block_nil
+    rintro s t ⟨L,⟨hs,es⟩,⟨ht,_⟩⟩
+    have h1 : 1 = L.n := by rw [hs.1] at es; simpa using es
+    exact ⟨L,hs.2.2 h1,ht.2.2 h1⟩
+  · refine (two_loop (fun L : Layout => L.n-1) (Φ := fun L j s => LoopState ps L (j+1) s)
+      (two_map (fun p : Layout × Nat => (p.1,p.2+1)) (fun p s h => ⟨by have := h.1; dsimp only at this ⊢; omega,h.2⟩)
+        (row_loop_ct pa pb ha hb ha1 ha2 hb1 hb2 hS))
+      (fun L j s hj h => WP.mono (row_loop_fw pa pb ha hb ha1 ha2 hb1 hb2 L (j+1) s (by omega) h)
+        fun t ⟨et,lt,gt⟩ => ⟨by rw [et]; exact congrArg some (decide_eq_decide.mpr (by omega)),
+          fun hl => lt (by omega),fun he => gt (by omega)⟩)).mono ?_ (fun _ _ h => h)
+    rintro s t ⟨L,⟨hs,es⟩,⟨ht,_⟩⟩
+    have h1 : 1 < L.n := by
+      rw [hs.1] at es
+      have := L.hn
+      simp only [Option.some.injEq,decide_eq_false_iff_not] at es
+      omega
+    exact ⟨L,⟨by omega,hs.2.1 h1⟩,by omega,ht.2.1 h1⟩
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct
 

@@ -37,12 +37,29 @@ def streamTile : Prog isa :=
 def rowStep : Prog isa :=
   .seq streamTile (.block nextColumn)
 
-/-- Process the remaining column blocks of a row, the columns loaded once at
-its start and stored once at its end; the caller supplies its starting public
-column index and a zero pending carry. -/
-def row (a b : Nat) : Prog isa :=
+/-- Process the remaining column blocks of a row by `step`, the columns
+loaded once at its start and stored once at its end; the caller supplies its
+starting public column index and a zero pending carry. -/
+def rowOf (step : Prog isa) (a b : Nat) : Prog isa :=
   .seq (.block (setup a b)) (.seq (.block AdxRotate8.loadCols)
-    (.seq (.loop rowStep .ne) (.block AdxRotate8.storeCols)))
+    (.seq (.loop step .ne) (.block AdxRotate8.storeCols)))
+
+def row (a b : Nat) : Prog isa := rowOf rowStep a b
+
+/-! ## The first row of a product
+
+Below the first row, the raw product is zero, and so are the words above each
+of its tiles and its pending carry: its tiles add nothing to their columns. -/
+
+/-- `streamTile` without the addition of the next eight output words and the
+carry, both zero. -/
+def streamTile0 : Prog isa :=
+  .seq (AdxRotate8.productN 8) (.block [.alu .add .rsi (.imm 64), .alu .add .rbp (.imm 64)])
+
+def rowStep0 : Prog isa :=
+  .seq streamTile0 (.block nextColumn)
+
+def row0 (a b : Nat) : Prog isa := rowOf rowStep0 a b
 
 /-! ## A row of a square, with the carry of the row before
 

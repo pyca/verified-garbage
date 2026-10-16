@@ -30,11 +30,18 @@ def nextRow : List Instr :=
   [.mov .rax (.mem (hdr (sFn 12))), .alu .add .rax (.imm 8),
    .store (hdr (sFn 12)) .rax, .alu .cmp .rax (.mem (hdr sW))]
 
-def row (a b : Nat) : Prog isa := .seq (.block rowInit)
-  (.seq (AdxRect8.row a b) (.seq tail (.block nextRow)))
+/-- A row by `r`, `AdxRect8`'s row or first row. -/
+def rowOf (r : Prog isa) : Prog isa := .seq (.block rowInit)
+  (.seq r (.seq tail (.block nextRow)))
+
+def row (a b : Nat) : Prog isa := rowOf (AdxRect8.row a b)
+
+/-- The first row, which adds nothing from the zero words above its tiles. -/
+def row0 (a b : Nat) : Prog isa := rowOf (AdxRect8.row0 a b)
 
 def rows (a b : Nat) : Prog isa :=
-  .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax]) (.loop (row a b) .ne)
+  .seq (.block [.mov32 .rax (.imm 0),.store (hdr (sFn 12)) .rax])
+    (.seq (row0 a b) (.ite .e (.block []) (.loop (row a b) .ne)))
 
 /-- The borrowed header is saved only after the scratch window is cleared. -/
 def rawProduct (a b : Nat) : Prog isa :=

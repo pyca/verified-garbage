@@ -108,6 +108,19 @@ theorem streamEnd_ok {s : State} {B : Addr} {Z eB : Nat}
   · rw [mt]
     exact ⟨wa,oa,pt,(ka.trans kt).mono (by simp)⟩
 
+/-- What a column block does: the product of the eight words at `eA` and `eB`
+added to the columns, the next eight output words and the carry added to them,
+the columns' low words into the eight output words at `eO`. -/
+abbrev TilePost (s : State) (B : Addr) (eA eB eO : Nat) (t : State) : Prop :=
+  wv t.mem B eO 8 + 2^512 * cols t + 2^512 * 2^512 * (word t.mem B carryOffset).toNat =
+    cols s + 2^512 * wv s.mem B (eO+64) 8 + wv s.mem B eA 8 * wv s.mem B eB 8 +
+      2^512 * (word s.mem B carryOffset).toNat ∧
+  (word t.mem B carryOffset).toNat ≤ 2 ∧
+  ((word s.mem B carryOffset).toNat ≤ 1 → (word t.mem B carryOffset).toNat ≤ 1) ∧
+  Frm B [(eO,64),(carryOffset,8)] s.mem t.mem ∧ t.gpr .rsi = off B (eO+64) ∧
+  t.gpr .rbp = off B (eB+64) ∧
+  Keep [.rdx,.rax,.rbx,.rsi,.rbp,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t
+
 /-- A tile whose upper words stay in the columns: the eight products, with
 the columns as the tile's low words, into eight output words, and the next
 eight output words and the carry added to the columns. -/
@@ -118,15 +131,7 @@ theorem streamTile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
     (sepA : eA + 64 ≤ eO ∨ eO + 128 ≤ eA)
     (sepB : eB + 64 ≤ eO ∨ eO + 128 ≤ eB)
     (sepC : carryOffset + 8 ≤ eO) :
-    WP isa AdxRect8.streamTile s fun t =>
-      wv t.mem B eO 8 + 2^512 * cols t + 2^512 * 2^512 * (word t.mem B carryOffset).toNat =
-        cols s + 2^512 * wv s.mem B (eO+64) 8 + wv s.mem B eA 8 * wv s.mem B eB 8 +
-          2^512 * (word s.mem B carryOffset).toNat ∧
-      (word t.mem B carryOffset).toNat ≤ 2 ∧
-      ((word s.mem B carryOffset).toNat ≤ 1 → (word t.mem B carryOffset).toNat ≤ 1) ∧
-      Frm B [(eO,64),(carryOffset,8)] s.mem t.mem ∧ t.gpr .rsi = off B (eO+64) ∧
-      t.gpr .rbp = off B (eB+64) ∧
-      Keep [.rdx,.rax,.rbx,.rsi,.rbp,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
+    WP isa AdxRect8.streamTile s (TilePost s B eA eB eO) := by
   have nowrap := hs.nowrap
   unfold AdxRect8.streamTile
   refine WP.seq (WP.mono (productN_disjoint_ok (n := 8) hs ha hb ho (by omega) (by omega) hB
@@ -163,6 +168,39 @@ theorem streamTile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
   · have ab : Outside B eO 64 s.mem c.mem := by
       rw [kc.2.1,mb]; exact oa
     exact (Frm.of_outside ab (by simp)).trans (Frm.of_outside ot (by simp))
+
+/-- A first row's column block: as `streamTile`, when the next eight output
+words and the carry, which it does not add, are zero. -/
+theorem streamTile0_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
+    (hs : Scr s B Z) (ha : s.gpr .rcx = off B eA)
+    (hb : s.gpr .rbp = off B eB) (ho : s.gpr .rsi = off B eO)
+    (hA : eA + 64 ≤ Z) (hB : eB + 64 ≤ Z) (hO : eO + 128 ≤ Z)
+    (sepA : eA + 64 ≤ eO ∨ eO + 128 ≤ eA)
+    (sepB : eB + 64 ≤ eO ∨ eO + 128 ≤ eB)
+    (sepC : carryOffset + 8 ≤ eO)
+    (hw0 : wv s.mem B (eO+64) 8 = 0) (hc0 : (word s.mem B carryOffset).toNat = 0) :
+    WP isa AdxRect8.streamTile0 s (TilePost s B eA eB eO) := by
+  have nowrap := hs.nowrap
+  unfold AdxRect8.streamTile0
+  refine WP.seq (WP.mono (productN_disjoint_ok (n := 8) hs ha hb ho (by omega) (by omega) hB
+    (by omega) (by omega)) fun a ⟨ea,oa,ka⟩ => ?_)
+  have pa : a.gpr .rsi = off B eO := (ka.gpr (by decide)).trans ho
+  have ba : a.gpr .rbp = off B eB := (ka.gpr (by decide)).trans hb
+  refine WP.mono (WP.keep [.rsi,.rbp] (Q := fun t =>
+    t.gpr .rsi = off B (eO+64) ∧ t.gpr .rbp = off B (eB+64) ∧ t.mem = a.mem) ?_ rfl)
+    fun t ⟨⟨pt,bt,mt⟩,kt⟩ => ?_
+  · xrun [pa, ba, show (64 : BitVec 32).signExtend 64 = 64 from rfl]
+    simp only [off,BitVec.ofNat_add,BitVec.add_assoc]
+    exact ⟨rfl,rfl⟩
+  have ct : word t.mem B carryOffset = word s.mem B carryOffset := by
+    rw [mt]; exact oa.word (by omega) (by omega)
+  simp only [Nat.reduceMul] at ea
+  refine ⟨?_,?_,?_,?_,pt,bt,(ka.trans kt).mono (by decide)⟩
+  · rw [ct,hc0,mt,cols_keep kt (by decide),hw0]
+    omega_using [ea]
+  · rw [ct,hc0]; decide
+  · intro _; rw [ct,hc0]; decide
+  · rw [mt]; exact Frm.of_outside oa (by simp)
 
 end VG.Proof.Bignum.X86_64.AdxRect8
 
