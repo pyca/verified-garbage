@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: verifying messages
@@ -39,37 +40,31 @@ def notes : List String :=
     calls the verification function on it, which uses the rest of `scratch`."]
 
 def artifacts (v : ArithImpl) : List Artifact := [
-  { Spec.MlDsa.verifyMessage44Api with
-    name := Spec.MlDsa.verifyMessage44Api.name ++ v.code.sfx
+  Spec.MlDsa.verifyMessage44Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.verifyMessage44Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Message.verifyMessage (Spec.MlDsa.verify44Api.name ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa44 X86_64.abi 112
     stack := 112
     verified := verifyMessage_verified (verifyFn v (List.mem_cons_self ..)) (List.mem_cons_self ..)
     spSafe := verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_self ..)) },
-  { Spec.MlDsa.verifyMessage65Api with
-    name := Spec.MlDsa.verifyMessage65Api.name ++ v.code.sfx
+  Spec.MlDsa.verifyMessage65Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.verifyMessage65Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Message.verifyMessage (Spec.MlDsa.verify65Api.name ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa65 X86_64.abi 112
     stack := 112
     verified := verifyMessage_verified (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
       (List.mem_cons_of_mem _ (List.mem_cons_self ..))
     spSafe := verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..))) },
-  { Spec.MlDsa.verifyMessage87Api with
-    name := Spec.MlDsa.verifyMessage87Api.name ++ v.code.sfx
+  Spec.MlDsa.verifyMessage87Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.verifyMessage87Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Message.verifyMessage (Spec.MlDsa.verify87Api.name ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa87 X86_64.abi 112
     stack := 112
     verified := verifyMessage_verified (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))

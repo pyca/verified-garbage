@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesOcb.X86.Frame
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-OCB (RFC 7253) on x86
@@ -31,34 +32,28 @@ def callNote (v : Proof.Aes.X86.BlocksImpl) (dec : Bool) : String :=
     (if dec then ", and deciphers with `" ++ v.dec.name ++ "`." else ".")
 
 def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
-  { Spec.Ocb.initApi with
-    name := Spec.Ocb.initApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Ocb.initApi.doc (notes := ["This implementation expands the key with `" ++ v.expand.name ++
-      "`, and enciphers `L_*` with `" ++ v.enc.name ++ "`."])
+  Spec.Ocb.initApi.artifact X86.target {
+    suffix := v.suffix
+    notes := ["This implementation expands the key with `" ++ v.expand.name ++
+      "`, and enciphers `L_*` with `" ++ v.enc.name ++ "`."]
     code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesOcb.X86.init (callees v))
-    contract := Spec.Ocb.initContract X86.abi 2604
     stack := 2604
     verified := init_framed v
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (init_spSafe v)
     features := v.features },
-  { Spec.Ocb.sealApi with
-    name := Spec.Ocb.sealApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Ocb.sealApi.doc (notes := [callNote v false])
+  Spec.Ocb.sealApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v false]
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.seal (callees v))
-    contract := Spec.Ocb.sealContract X86.abi 2632
     stack := 2632
     verified := seal_framed v
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (seal_spSafe v)
     features := v.features },
-  { Spec.Ocb.openApi with
-    name := Spec.Ocb.openApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Ocb.openApi.doc (notes := [callNote v true,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."])
+  Spec.Ocb.openApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [callNote v true,
+      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.open (callees v))
-    contract := Spec.Ocb.openContract X86.abi 2632
     stack := 2632
     verified := open_framed v
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (open_spSafe v)

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesSiv.X86.Verified
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-SIV (RFC 5297) on x86
@@ -34,35 +35,29 @@ def cryptNote (v : Proof.Aes.X86.Ctr32Impl) : String :=
     Spec.Cmac.aesUpdateApi.name ++ v.suffix ++ "`), and encrypts with `" ++ v.callee.name ++ "`."
 
 def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
-  { Spec.Siv.initApi with
-    name := Spec.Siv.initApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Siv.initApi.doc (notes := [
+  Spec.Siv.initApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [
       "This implementation expands the keys with `" ++ v.expand.name ++ "` and computes the CMAC subkeys \
-      with `" ++ Spec.Cmac.aesSubkeysApi.name ++ v.suffix ++ "`."])
+      with `" ++ Spec.Cmac.aesSubkeysApi.name ++ v.suffix ++ "`."]
     code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesSiv.X86.initCore v.expand v.callee v.suffix)
-    contract := Spec.Siv.initContract X86.abi 2628
     stack := 2628
     verified := init_framed v
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (init_spSafe v)
     features := v.features },
-  { Spec.Siv.encryptApi with
-    name := Spec.Siv.encryptApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Siv.encryptApi.doc (notes := [cryptNote v])
+  Spec.Siv.encryptApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [cryptNote v]
     code := Impl.StackScratch.X86.withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt v.callee v.suffix)
-    contract := Spec.Siv.encryptContract X86.abi 2668
     stack := 2668
     verified := encrypt_framed v
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (encrypt_spSafe v)
     features := v.features },
-  { Spec.Siv.decryptApi with
-    name := Spec.Siv.decryptApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Siv.decryptApi.doc (notes := [cryptNote v,
-      "It compares the IVs and overwrites the data with zeros without a branch on the result."])
+  Spec.Siv.decryptApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [cryptNote v,
+      "It compares the IVs and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86.withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt v.callee v.suffix)
-    contract := Spec.Siv.decryptContract X86.abi 2668
     stack := 2668
     verified := decrypt_framed v
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (decrypt_spSafe v)

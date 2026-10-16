@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Deterministic ECDSA (RFC 6979) over p192 with HMAC-SHA-256 on x86-64
@@ -40,15 +41,11 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.
   match v.sha256 with
   | none => []
   | some c => [
-    { Spec.Ecdsa.Rfc6979.P192Sha256.signApi with
-      name := Spec.Ecdsa.Rfc6979.P192Sha256.signApi.name ++ c.suffix
-      target := X86_64.target
-      doc := Spec.Ecdsa.Rfc6979.P192Sha256.signApi.doc
-        (notes := [signNotes (cfgOf (pack h.law h.inv c)).H 32
-          Spec.Ecdsa.P192.signApi.name])
+    Spec.Ecdsa.Rfc6979.P192Sha256.signApi.artifact X86_64.target {
+      suffix := c.suffix
+      notes := [signNotes (cfgOf (pack h.law h.inv c)).H 32
+          Spec.Ecdsa.P192.signApi.name]
       code := (cfgOf (pack h.law h.inv c)).sign
-      contract := Spec.Ecdsa.Rfc6979.P192Sha256.inst.signContract
-        X86_64.abi 240
       stack := 240
       verified := sign_verified h.law h.inv c
       spSafe := sign_spSafe (pack h.law h.inv c)

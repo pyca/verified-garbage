@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Weierstrass.X86.PointSecp256k1
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # secp256k1's point addition and doubling on x86 (32-bit)
@@ -33,21 +34,15 @@ def notes : List String := ["The function saves `ebx` in its own working space, 
   `eax`, `ecx` and `edx` (and `ebx`, which it restores)."]
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
-  { Impl.Secp256k1.point.addApi with
-    target := X86.target
-    doc := Impl.Secp256k1.point.addApi.doc (notes := notes)
+  Impl.Secp256k1.point.addApi.artifact X86.target {
+    notes := notes
     code := Impl.Weierstrass.X86.Point.pointAdd Impl.Secp256k1.point
-    contract := Impl.Secp256k1.point.addContract X86.abi 20
     stack := 20
-    verified := secp256k1_add_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Impl.Secp256k1.point.doubleApi with
-    target := X86.target
-    doc := Impl.Secp256k1.point.doubleApi.doc (notes := notes)
+    verified := secp256k1_add_verified (fermat_of_law h.law) },
+  Impl.Secp256k1.point.doubleApi.artifact X86.target {
+    notes := notes
     code := Impl.Weierstrass.X86.Point.pointDouble Impl.Secp256k1.point
-    contract := Impl.Secp256k1.point.doubleContract X86.abi 20
     stack := 20
-    verified := secp256k1_double_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := secp256k1_double_verified (fermat_of_law h.law) }]
 
 end VG.Generic.Secp256k1.X86.PointSecp256k1

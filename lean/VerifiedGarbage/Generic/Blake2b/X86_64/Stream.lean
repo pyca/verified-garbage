@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Streaming BLAKE2b on x86-64, for every compression backend
@@ -27,22 +28,16 @@ def artifacts (v : Proof.Blake2.X86_64.Backend) : List Artifact := [
     verified := v.verified
     spSafe := v.spSafe
     features := v.features },
-  { Spec.Blake2.updateBApi with
-    name := Spec.Blake2.updateBApi.name ++ v.suffix
-    target := VG.X86_64.target
-    doc := Spec.Blake2.updateBApi.doc
+  Spec.Blake2.updateBApi.artifact VG.X86_64.target {
+    suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
-    contract := Spec.Blake2.updateBContract VG.X86_64.abi (8 + 584)
     stack := 8 + 584
     verified := v.update_framed
     spSafe := VG.X86_64.withStackScratch_spSafe (by decide) v.updateSpSafe
     features := v.features },
-  { Spec.Blake2.finalizeBApi with
-    name := Spec.Blake2.finalizeBApi.name ++ v.suffix
-    target := VG.X86_64.target
-    doc := Spec.Blake2.finalizeBApi.doc
+  Spec.Blake2.finalizeBApi.artifact VG.X86_64.target {
+    suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
-    contract := Spec.Blake2.finalizeBContract VG.X86_64.abi (8 + 584)
     stack := 8 + 584
     verified := v.finalize_framed
     spSafe := VG.X86_64.withStackScratch_spSafe (by decide) v.finalizeSpSafe

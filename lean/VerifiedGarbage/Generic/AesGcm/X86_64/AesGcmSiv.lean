@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealVerified
 public import VerifiedGarbage.Generic.AesGcm.X86_64.AesGcm
 import VerifiedGarbage.Proof.Framework.X86_64.HighRegs
 import VerifiedGarbage.Proof.Gcm.X86_64.Cached.RemLoopOne
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-GCM-SIV (RFC 8452) on x86-64
@@ -88,23 +89,19 @@ theorem openCode_spSafe (v : GcmImpl) : (openCode v).all (fun i => !X86_64.isa.w
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  { Spec.GcmSiv.sealApi with
-    name := Spec.GcmSiv.sealApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.GcmSiv.sealApi.doc (notes := [note v])
+  Spec.GcmSiv.sealApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v)
-    contract := Spec.GcmSiv.sealContract X86_64.abi 3856
     stack := 3856
     verified := sealCode_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v)
     features := features v },
-  { Spec.GcmSiv.openApi with
-    name := Spec.GcmSiv.openApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.GcmSiv.openApi.doc (notes := [note v,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."])
+  Spec.GcmSiv.openApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v,
+      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v)
-    contract := Spec.GcmSiv.openContract X86_64.abi 3856
     stack := 3856
     verified := openCode_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v)

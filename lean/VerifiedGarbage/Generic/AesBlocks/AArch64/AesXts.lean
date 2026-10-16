@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesXts.AArch64.Verified
 import VerifiedGarbage.Proof.AesOcb.AArch64.Env
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on AArch64
@@ -24,25 +25,19 @@ namespace VG.Generic.AesBlocks.AArch64.AesXts
 open VG.Proof.AesXts.AArch64
 
 def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
-  { Spec.Xts.aesEncryptApi with
-    name := Spec.Xts.aesEncryptApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Xts.aesEncryptApi.doc (notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."])
+  Spec.Xts.aesEncryptApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := ["This implementation enciphers one block at a time with `" ++
+      v.enc.name ++ "`."]
     code := Impl.AesXts.AArch64.encrypt v.enc
-    contract := Spec.Xts.aesEncryptContract AArch64.abi
     verified := encrypt_verified v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Xts.aesDecryptApi with
-    name := Spec.Xts.aesDecryptApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Xts.aesDecryptApi.doc (notes := ["This implementation deciphers one block at a time with `" ++
-      v.dec.name ++ "`."])
+  Spec.Xts.aesDecryptApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := ["This implementation deciphers one block at a time with `" ++
+      v.dec.name ++ "`."]
     code := Impl.AesXts.AArch64.decrypt v.dec
-    contract := Spec.Xts.aesDecryptContract AArch64.abi
     verified := decrypt_verified v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 end VG.Generic.AesBlocks.AArch64.AesXts

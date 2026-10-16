@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-521 with HMAC-SHA-512 on x86-64
@@ -46,16 +47,12 @@ multiplication with BMI2 and ADX (`adx`, `_adx`, calling
 `vg_ecdsa_p521_sign_adx`) or not. -/
 def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) (c : Proof.Sha512.X86_64.Compress)
     (adx : Bool) : Artifact :=
-  { Spec.Ecdsa.Rfc6979.P521Sha512.signApi with
-    name := Spec.Ecdsa.Rfc6979.P521Sha512.signApi.name ++ c.suffix ++ (if adx then "_adx" else "")
-    target := X86_64.target
-    doc := Spec.Ecdsa.Rfc6979.P521Sha512.signApi.doc
-      (notes := [signNotesWide (cfgOf (pack adx h.law (Proof.P521.combOk7 h.law) h.inv c)).H 66 521 64
-        (Spec.Ecdsa.P521.signApi.name ++ (if adx then "_adx" else ""))])
+  Spec.Ecdsa.Rfc6979.P521Sha512.signApi.artifact X86_64.target {
+    suffix := c.suffix ++ (if adx then "_adx" else "")
+    notes := [signNotesWide (cfgOf (pack adx h.law (Proof.P521.combOk7 h.law) h.inv c)).H 66 521 64
+        (Spec.Ecdsa.P521.signApi.name ++ (if adx then "_adx" else ""))]
     code := (cfgOf (pack adx h.law (Proof.P521.combOk7 h.law) h.inv c)).sign
     consts := Impl.Ecdsa.X86_64.p521.combConsts
-    contract := Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 384
     stack := 384
     verified := sign_verified adx h.law (Proof.P521.combOk7 h.law) h.inv c
     spSafe := sign_spSafe (pack adx h.law (Proof.P521.combOk7 h.law) h.inv c)

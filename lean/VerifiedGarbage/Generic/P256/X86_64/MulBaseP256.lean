@@ -11,6 +11,7 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-256's base point multiplication on x86-64
@@ -52,15 +53,12 @@ def note : String :=
   coordinates (with `Y = 1` for the point at infinity)."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) : List Artifact :=
-  [{ C.mulBaseApi with
-      name := C.mulBaseApi.name ++ "_adx"
-      target := X86_64.target
-      doc := C.mulBaseApi.doc (notes := [note])
+  [C.mulBaseApi.artifact X86_64.target {
+      suffix := "_adx"
+      notes := [note]
       consts := p256.combConsts
       code := cfg.mulBaseFn
-      contract := C.mulBaseContract (X86_64.abi.withConsts p256.combConsts)
       verified := mb_verified h.law (Proof.P256.combOk7 h.law) h.inv
-      spSafe := Code.all_of_allInstrs (by lit_decide)
       features := ["bmi2", "adx", "avx", "avx2"] }]
 
 end VG.Generic.P256.X86_64.MulBaseP256

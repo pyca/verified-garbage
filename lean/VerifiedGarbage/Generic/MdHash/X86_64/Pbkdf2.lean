@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # PBKDF2-HMAC (RFC 8018) over a Merkle–Damgård hash function on x86-64
@@ -29,24 +30,16 @@ emitted on its own, as `vg_pbkdf2_hmac_sha256_scratch`.
 namespace VG.Generic.MdHash.X86_64.Pbkdf2
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
-  { v.I.iterateApi with
-    name := v.I.iterateApi.name ++ v.suffix
-    target := X86_64.target
-    doc := v.I.iterateApi.doc
+  v.I.iterateApi.artifact X86_64.target {
+    suffix := v.suffix
     code := v.H.iterate
-    contract := v.I.iterateContract X86_64.abi 8
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 8
     verified := v.iterate
     spSafe := v.iterateSp
     features := v.features },
-  { v.I.pbkdf2Api with
-    name := v.I.pbkdf2Api.name ++ v.suffix
-    target := X86_64.target
-    doc := v.I.pbkdf2Api.doc
+  v.I.pbkdf2Api.artifact X86_64.target {
+    suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch (Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I) 1 v.H.pbkdf2
-    contract := v.I.pbkdf2Contract X86_64.abi (24 + Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 24 + Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I
     verified := v.pbkdf2F
     spSafe := X86_64.withStackArgScratch_spSafe v.pbkdf2Sp
@@ -55,13 +48,9 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
   match v.sha256 with
   | none => []
   | some _ => [
-    { v.I.pbkdf2ScratchApi with
-      name := v.I.pbkdf2ScratchApi.name ++ v.suffix
-      target := X86_64.target
-      doc := v.I.pbkdf2ScratchApi.doc
+    v.I.pbkdf2ScratchApi.artifact X86_64.target {
+      suffix := v.suffix
       code := v.H.pbkdf2
-      contract := v.I.pbkdf2ScratchContract X86_64.abi 24
-      ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2ScratchContract; rfl⟩)
       stack := 24
       verified := v.pbkdf2
       spSafe := v.pbkdf2Sp

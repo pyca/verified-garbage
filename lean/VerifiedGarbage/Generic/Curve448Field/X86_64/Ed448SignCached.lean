@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Ed448.X86_64.VariantVerified
 public import VerifiedGarbage.Proof.Ed448.Facts
 import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Layout
 import VerifiedGarbage.Proof.Ed448.X86_64.Verify.Correct
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Ed448 signing with a cached public key on x86-64
@@ -21,11 +22,10 @@ file imports it, with the reference ladder's agreement with the specification
 namespace VG.Generic.Curve448Field.X86_64.Ed448SignCached
 
 def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
-  { Spec.Ed448.signCachedApi with
-    name := Spec.Ed448.signCachedApi.name ++ v.suffix
+  Spec.Ed448.signCachedApi.artifact X86_64.target {
+    suffix := v.suffix
     features := v.features
-    target := X86_64.target
-    doc := Spec.Ed448.signCachedApi.doc (notes := ["Uses the selected field backend and baseline integer instructions elsewhere. \
+    notes := ["Uses the selected field backend and baseline integer instructions elsewhere. \
       Hashes the private key, `dom4(0, C) || prefix || M` and `dom4(0, C) || R || A || M` with \
       `vg_keccak_absorb`, `vg_keccak_pad` and `vg_keccak_squeeze` (SHAKE256, with the Keccak \
       state and the sponge functions' working space in `scratch`) into a stack frame; prunes \
@@ -33,9 +33,8 @@ def artifacts (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
       `vg_ed448_scalar_reduce`; writes `R = [r]B` with `vg_ed448_scalar_base` and \
       `S = (r + k s) mod L` with `vg_ed448_scalar_mul_add` into `out`; and clears `s` and `r` \
       from the frame. The hashes, and the scalar operations' working values, are left in \
-      `scratch`."])
+      `scratch`."]
     code := Impl.Ed448.X86_64.SignCached.signCachedFor v
-    contract := Spec.Ed448.signCachedContract X86_64.abi 464
     stack := 464
     verified := Proof.Ed448.X86_64.SignCached.signCached_verified
       (Proof.Ed448.X86_64.scalarBaseFor_ok v Proof.Ed448.baseLadder_ok)

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-384's Jacobian point operations on x86-64
@@ -53,25 +54,21 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List
   let one (adx : Bool) (a : Artifact) : Artifact :=
     if adx then { a with name := a.name ++ "_adx", features := ["bmi2", "adx"] } else a
   [false, true].flatMap fun adx => [
-    one adx { C.addCachedApi with
-      target := X86_64.target
-      doc := C.addCachedApi.doc (notes := [common adx, addWhat true])
+    one adx (C.addCachedApi.artifact X86_64.target {
+      notes := [common adx, addWhat true]
       code := addCachedFn adx
-      contract := C.addCachedContract X86_64.abi
       verified := addCached_verified hFe adx
       spSafe := by
         cases adx
         · exact Code.all_of_allInstrs (by rw [addCachedLit.lit_eq]; decide +kernel)
-        · exact Code.all_of_allInstrs (by rw [addCachedAdxLit.lit_eq]; decide +kernel) },
-    one adx { C.addAffineApi with
-      target := X86_64.target
-      doc := C.addAffineApi.doc (notes := [common adx, addWhat false])
+        · exact Code.all_of_allInstrs (by rw [addCachedAdxLit.lit_eq]; decide +kernel) }),
+    one adx (C.addAffineApi.artifact X86_64.target {
+      notes := [common adx, addWhat false]
       code := addAffineFn adx
-      contract := C.addAffineContract X86_64.abi
       verified := addAffine_verified hFe adx
       spSafe := by
         cases adx
         · exact Code.all_of_allInstrs (by rw [addAffineLit.lit_eq]; decide +kernel)
-        · exact Code.all_of_allInstrs (by rw [addAffineAdxLit.lit_eq]; decide +kernel) }]
+        · exact Code.all_of_allInstrs (by rw [addAffineAdxLit.lit_eq]; decide +kernel) })]
 
 end VG.Generic.P384.X86_64.PointOpsP384

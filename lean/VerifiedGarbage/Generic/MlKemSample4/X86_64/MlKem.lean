@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.Top768
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-KEM-768 and ML-KEM-1024 (FIPS 203) on x86-64: key generation, encapsulation (with `H(ek)` given) and decapsulation
@@ -31,62 +32,50 @@ def notes (v : Sample4Impl) : List String :=
     v.callee.name ++ "`, and computes the outputs of `PRF` " ++ v.prfsDoc ++ "."]
 
 def artifacts (v : Sample4Impl) : List Artifact := [
-  { Spec.MlKem.keyGenApi with
-    name := Spec.MlKem.keyGenApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.MlKem.keyGenApi.doc (notes := notes v)
+  Spec.MlKem.keyGenApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := notes v
     code := Impl.MlKem.X86_64.keyGen v.callee
-    contract := Spec.MlKem.keyGenContract X86_64.abi 32
     stack := 32
     verified := Proof.MlKem.X86_64.keyGen_verified v
     spSafe := by s4_sp v
     features := v.features },
-  { Spec.MlKem.encapsHApi with
-    name := Spec.MlKem.encapsHApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.MlKem.encapsHApi.doc (notes := notes v)
+  Spec.MlKem.encapsHApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := notes v
     code := Impl.MlKem.X86_64.encapsH v.callee
-    contract := Spec.MlKem.encapsHContract X86_64.abi 32
     stack := 32
     verified := Proof.MlKem.X86_64.encapsH_verified v
     spSafe := by s4_sp v
     features := v.features },
-  { Spec.MlKem.decapsApi with
-    name := Spec.MlKem.decapsApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.MlKem.decapsApi.doc (notes := notes v)
+  Spec.MlKem.decapsApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := notes v
     code := Impl.MlKem.X86_64.decaps v.callee
-    contract := Spec.MlKem.decapsContract X86_64.abi 32
     stack := 32
     verified := Proof.MlKem.X86_64.decaps_verified v
     spSafe := by s4_sp v
     features := v.features },
-  { Spec.MlKem1024.keyGenApi with
-    name := Spec.MlKem1024.keyGenApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.MlKem1024.keyGenApi.doc (notes := notes v)
+  Spec.MlKem1024.keyGenApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := notes v
     code := Impl.MlKem1024.X86_64.keyGen1024 v.callee
-    contract := Spec.MlKem1024.keyGenContract X86_64.abi 32
     stack := 32
     verified := Proof.MlKem1024.X86_64.keyGen1024_verified v
     spSafe := by s4_sp v
     features := v.features },
-  { Spec.MlKem1024.encapsHApi with
-    name := Spec.MlKem1024.encapsHApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.MlKem1024.encapsHApi.doc (notes := notes v)
+  Spec.MlKem1024.encapsHApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := notes v
     code := Impl.MlKem1024.X86_64.encapsH1024 v.callee
-    contract := Spec.MlKem1024.encapsHContract X86_64.abi 32
     stack := 32
     verified := Proof.MlKem1024.X86_64.encapsH1024_verified v
     spSafe := by s4_sp v
     features := v.features },
-  { Spec.MlKem1024.decapsApi with
-    name := Spec.MlKem1024.decapsApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.MlKem1024.decapsApi.doc (notes := notes v)
+  Spec.MlKem1024.decapsApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := notes v
     code := Impl.MlKem1024.X86_64.decaps1024 v.callee
-    contract := Spec.MlKem1024.decapsContract X86_64.abi 32
     stack := 32
     verified := Proof.MlKem1024.X86_64.decaps1024_verified v
     spSafe := by s4_sp v

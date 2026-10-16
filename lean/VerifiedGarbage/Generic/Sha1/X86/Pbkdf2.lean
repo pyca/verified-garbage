@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha1
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Frame
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # PBKDF2-HMAC-SHA-1 (RFC 8018) on x86, for every x86 SHA-1 backend: the iteration and the whole derivation
@@ -29,24 +30,16 @@ in a frame holding its working space (`Proof.Pbkdf2.Whole.X86.pbkFramed`).
 namespace VG.Generic.Sha1.X86.Pbkdf2
 
 def artifacts (v : Proof.Sha1.X86.Variants.Backend) : List Artifact := [
-  { Spec.Hmac.sha1I.iterateApi with
-    name := Spec.Hmac.sha1I.iterateApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Hmac.sha1I.iterateApi.doc
+  Spec.Hmac.sha1I.iterateApi.artifact X86.target {
+    suffix := v.suffix
     code := v.M.iterate
-    contract := Spec.Hmac.sha1I.iterateContract X86.abi 48
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.iterateContract; rfl⟩)
     stack := 48
     verified := v.iterate
     spSafe := v.iterSp
     features := v.features },
-  { Spec.Hmac.sha1I.pbkdf2Api with
-    name := Spec.Hmac.sha1I.pbkdf2Api.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Hmac.sha1I.pbkdf2Api.doc
+  Spec.Hmac.sha1I.pbkdf2Api.artifact X86.target {
+    suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha1I) 7 v.F.pbkdf2
-    contract := Spec.Hmac.sha1I.pbkdf2Contract X86.abi (76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha1I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.pbkdf2Contract Spec.Pbkdf2.pbkdf2Contract; rfl⟩)
     stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha1I
     verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha1_verified v) (by decide)
       (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2Sp) (Proof.Pbkdf2.Whole.X86.sha1_stack v)

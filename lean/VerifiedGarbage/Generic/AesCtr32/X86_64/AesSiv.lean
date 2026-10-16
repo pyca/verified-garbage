@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-SIV (RFC 5297) key setup on x86-64
@@ -29,15 +30,13 @@ namespace VG.Generic.AesCtr32.X86_64.AesSiv
 open VG.Proof.AesSiv.X86_64
 
 def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
-  { Spec.Siv.initApi with
-    name := Spec.Siv.initApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Siv.initApi.doc (notes := [
+  Spec.Siv.initApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [
       "This implementation expands the keys with `" ++ v.expand.name ++ "` and computes the CMAC subkeys \
-      with `" ++ Spec.Cmac.aesSubkeysApi.name ++ v.suffix ++ "`."])
+      with `" ++ Spec.Cmac.aesSubkeysApi.name ++ v.suffix ++ "`."]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx
       (Impl.AesSiv.X86_64.init v.expand v.callee v.suffix)
-    contract := Spec.Siv.initContract X86_64.abi 2584
     stack := 2584
     verified := init_framed v
     spSafe := X86_64.withStackScratch_spSafe (by decide) (init_spSafe v)

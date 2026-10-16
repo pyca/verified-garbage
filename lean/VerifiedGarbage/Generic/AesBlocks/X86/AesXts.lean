@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.AesXts.X86.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on x86
@@ -23,24 +24,20 @@ namespace VG.Generic.AesBlocks.X86.AesXts
 open VG.Proof.AesXts.X86
 
 def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
-  { Spec.Xts.aesEncryptApi with
-    name := Spec.Xts.aesEncryptApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Xts.aesEncryptApi.doc (notes := ["This implementation enciphers one block at a time with `" ++
-      v.enc.name ++ "`."])
+  Spec.Xts.aesEncryptApi.artifact X86.target {
+    suffix := v.suffix
+    notes := ["This implementation enciphers one block at a time with `" ++
+      v.enc.name ++ "`."]
     code := Impl.AesXts.X86.encrypt v.enc
-    contract := Spec.Xts.aesEncryptContract X86.abi 24
     stack := 24
     verified := encrypt_verified v
     spSafe := encrypt_spSafe v
     features := v.features },
-  { Spec.Xts.aesDecryptApi with
-    name := Spec.Xts.aesDecryptApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Xts.aesDecryptApi.doc (notes := ["This implementation deciphers one block at a time with `" ++
-      v.dec.name ++ "`."])
+  Spec.Xts.aesDecryptApi.artifact X86.target {
+    suffix := v.suffix
+    notes := ["This implementation deciphers one block at a time with `" ++
+      v.dec.name ++ "`."]
     code := Impl.AesXts.X86.decrypt v.dec
-    contract := Spec.Xts.aesDecryptContract X86.abi 24
     stack := 24
     verified := decrypt_verified v
     spSafe := decrypt_spSafe v

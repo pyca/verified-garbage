@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Impl.Weierstrass.X86_64.DoubleCms
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-384's base point multiplication on x86-64
@@ -48,13 +49,11 @@ def note (adx : Bool) : String :=
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List Artifact :=
   [false, true].map fun adx =>
-    { C.mulBaseApi with
-      name := C.mulBaseApi.name ++ (if adx then "_adx" else "")
-      target := X86_64.target
-      doc := C.mulBaseApi.doc (notes := [note adx])
+    C.mulBaseApi.artifact X86_64.target {
+      suffix := (if adx then "_adx" else "")
+      notes := [note adx]
       consts := p384.combConsts
       code := (cfg adx).mulBaseFn
-      contract := C.mulBaseContract (X86_64.abi.withConsts p384.combConsts)
       verified := mb_verified h.law (Proof.P384.combOk7 h.law) h.inv adx
       spSafe := by cases adx <;> exact Code.all_of_allInstrs (by lit_decide)
       features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }

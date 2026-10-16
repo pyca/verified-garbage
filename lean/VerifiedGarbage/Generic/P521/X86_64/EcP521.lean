@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-521 public keys (FIPS 186-5 §A.2) on x86-64
@@ -38,10 +39,9 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
-  { Spec.EcKey.P521.publicKeyApi with
-    name := Spec.EcKey.P521.publicKeyApi.name ++ (if adx then "_adx" else "")
-    target := X86_64.target
-    doc := Spec.EcKey.P521.publicKeyApi.doc (notes := ["The function is `vg_ecdsa_p521_sign" ++
+  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target {
+    suffix := (if adx then "_adx" else "")
+    notes := ["The function is `vg_ecdsa_p521_sign" ++
       (if adx then "_adx" else "") ++ "`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
       saves its caller's callee-saved registers in `scratch`; field elements are nine 64-bit \
@@ -57,11 +57,9 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
       checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
       The number of steps is fixed, so the time does not depend on `Z`. The result (or zeros) is \
       selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the \
-      pointers."])
+      pointers."]
     consts := Impl.Ecdsa.X86_64.p521.combConsts
     code
-    contract := Spec.EcKey.P521.inst.publicKeyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 8
     stack := 8
     verified := hv
     spSafe := hsp

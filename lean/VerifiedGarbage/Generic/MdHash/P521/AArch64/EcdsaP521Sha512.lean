@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P521Sha512
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Deterministic ECDSA (RFC 6979) over P-521 with HMAC-SHA-512 on AArch64
@@ -39,19 +40,14 @@ def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch6
   match v.sha512 with
   | none => []
   | some c => [
-    { Spec.Ecdsa.Rfc6979.P521Sha512.signApi with
-      name := Spec.Ecdsa.Rfc6979.P521Sha512.signApi.name ++ c.suffix
-      target := AArch64.target
-      doc := Spec.Ecdsa.Rfc6979.P521Sha512.signApi.doc
-        (notes := [signNotesWide (cfgOf (pack h.law h.inv (Proof.P521.combOk7 h.law) c)).H 66 521 64
-          Spec.Ecdsa.P521.signApi.name])
+    Spec.Ecdsa.Rfc6979.P521Sha512.signApi.artifact AArch64.target {
+      suffix := c.suffix
+      notes := [signNotesWide (cfgOf (pack h.law h.inv (Proof.P521.combOk7 h.law) c)).H 66 521 64
+          Spec.Ecdsa.P521.signApi.name]
       code := (cfgOf (pack h.law h.inv (Proof.P521.combOk7 h.law) c)).sign
       consts := Impl.Ecdsa.AArch64.p521.combConsts
-      contract := Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract
-        (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts) 400
       stack := 400
       verified := sign_verified h.law h.inv (Proof.P521.combOk7 h.law) c
-      spSafe := Code.all_of_forall (fun _ => rfl) _
       features := c.features }]
 
 end VG.Generic.MdHash.P521.AArch64.EcdsaP521Sha512

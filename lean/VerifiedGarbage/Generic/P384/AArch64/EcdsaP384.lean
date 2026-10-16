@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDSA over P-384 (FIPS 186-5) on AArch64
@@ -23,9 +24,8 @@ A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 namespace VG.Generic.P384.AArch64.EcdsaP384
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List Artifact := [
-  { Spec.Ecdsa.P384.signApi with
-    target := AArch64.target
-    doc := Spec.Ecdsa.P384.signApi.doc (notes := ["The function saves the callee-saved registers \
+  Spec.Ecdsa.P384.signApi.artifact AArch64.target {
+    notes := ["The function saves the callee-saved registers \
       `x19`–`x25` in `scratch`. Field elements and scalars are six 64-bit words in \
       Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and \
       `umulh`, four of the multiplicand's words in registers and the other two loaded for each \
@@ -47,15 +47,12 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
       384-bit moduli by Bernstein and Yang's bound (which the proof checks); then `f = ±1`, and `Z⁻¹` is `a` times a \
       constant or its negation by `f`'s sign. The number of steps is fixed, so the time does not \
       depend on `Z` or `k`. The signature \
-      (or zeros) is selected by a mask, so the time depends only on the pointers."])
+      (or zeros) is selected by a mask, so the time depends only on the pointers."]
     consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.Ecdsa.AArch64.signP384
-    contract := Spec.Ecdsa.P384.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts)
-    verified := Proof.Ecdsa.AArch64.P384.sign_verified h.law h.inv (Proof.P384.combOk7 h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Ecdsa.P384.verifyApi with
-    target := AArch64.target
-    doc := Spec.Ecdsa.P384.verifyApi.doc (notes := ["The function is `vg_ecdsa_p384_sign`'s setup, \
+    verified := Proof.Ecdsa.AArch64.P384.sign_verified h.law h.inv (Proof.P384.combOk7 h.law) },
+  Spec.Ecdsa.P384.verifyApi.artifact AArch64.target {
+    notes := ["The function is `vg_ecdsa_p384_sign`'s setup, \
       field arithmetic, comb and inversions, with `vg_ecdh_p384`'s checks of the public key: it \
       saves the callee-saved registers `x19`–`x25` in `scratch`; field elements and \
       scalars are six 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
@@ -78,11 +75,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
       `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without inverting `Z`) as a mask, so the \
       comb's addresses depend on `u`, from the digest and the signature, the non-adjacent \
       form's branches and addresses on `v`, from the signature, and on the key, and the rest of \
-      the time only on the pointers."])
+      the time only on the pointers."]
     consts := Impl.Ecdsa.AArch64.p384.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP384
-    contract := Spec.Ecdsa.P384.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts)
-    verified := Proof.Ecdsa.Verify.AArch64.P384.verify_verified h.law h.inv (Proof.P384.combOk7 h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Ecdsa.Verify.AArch64.P384.verify_verified h.law h.inv (Proof.P384.combOk7 h.law) }]
 
 end VG.Generic.P384.AArch64.EcdsaP384

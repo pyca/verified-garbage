@@ -18,6 +18,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldErase
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDSA over P-384 (FIPS 186-5) on x86-64
@@ -39,10 +40,9 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.Ecdsa.P384.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
-  { Spec.Ecdsa.P384.signApi with
-    name := Spec.Ecdsa.P384.signApi.name ++ (if adx then "_adx" else "")
-    target := X86_64.target
-    doc := Spec.Ecdsa.P384.signApi.doc (notes := ["The function saves its caller's callee-saved \
+  Spec.Ecdsa.P384.signApi.artifact X86_64.target {
+    suffix := (if adx then "_adx" else "")
+    notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, \
       " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ ". `[k]G` is a call of `vg_p384_mul_base" ++ (if adx then "_adx" else "") ++ "`, which \
       expands `k` into a table of its bits and runs a fixed-base comb of 7-bit signed digits, its \
@@ -65,11 +65,9 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
       The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is by \
       the same divsteps, from `f = n`, `g = k`, a call of `vg_p384_inv_mod_n" ++
       (if adx then "_adx" else "") ++ "`. The signature (or zeros) \
-      is selected by a mask, so the time depends only on the pointers."])
+      is selected by a mask, so the time depends only on the pointers."]
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     code
-    contract := Spec.Ecdsa.P384.inst.signContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8
     stack := 8
     verified := hv
     spSafe := hsp
@@ -82,10 +80,9 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
-  { Spec.Ecdsa.P384.verifyApi with
-    name := Spec.Ecdsa.P384.verifyApi.name ++ (if adx then "_adx" else "")
-    target := X86_64.target
-    doc := Spec.Ecdsa.P384.verifyApi.doc (notes := ["The function saves its caller's callee-saved \
+  Spec.Ecdsa.P384.verifyApi.artifact X86_64.target {
+    suffix := (if adx then "_adx" else "")
+    notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, \
       " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ ". The public key is checked without branches \
       (its first byte, both coordinates below `p`, and the curve's equation); an invalid key is \
@@ -106,11 +103,9 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-384 has \
       `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the \
       conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend \
-      on the public verification inputs, as permitted by the contract."])
+      on the public verification inputs, as permitted by the contract."]
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     code
-    contract := Spec.Ecdsa.P384.inst.verifyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts) 8
     stack := 8
     verified := hv
     spSafe := hsp

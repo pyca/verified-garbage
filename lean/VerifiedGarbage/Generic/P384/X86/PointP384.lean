@@ -7,6 +7,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.X25519.X86.Column
 import VerifiedGarbage.Proof.X25519.X86.Arith
 import VerifiedGarbage.Spec.Rc2
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-384's point addition and doubling on x86 (32-bit)
@@ -32,21 +33,15 @@ def notes : List String := ["The function saves `ebx` in its own working space, 
   `eax`, `ecx` and `edx` (and `ebx`, which it restores)."]
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := [
-  { Spec.Weierstrass.Point.p384.addApi with
-    target := X86.target
-    doc := Spec.Weierstrass.Point.p384.addApi.doc (notes := notes)
+  Spec.Weierstrass.Point.p384.addApi.artifact X86.target {
+    notes := notes
     code := Impl.Weierstrass.X86.Point.pointAdd Spec.Weierstrass.Point.p384
-    contract := Spec.Weierstrass.Point.p384.addContract X86.abi 20
     stack := 20
-    verified := p384_add_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Weierstrass.Point.p384.doubleApi with
-    target := X86.target
-    doc := Spec.Weierstrass.Point.p384.doubleApi.doc (notes := notes)
+    verified := p384_add_verified (fermat_of_law h.law) },
+  Spec.Weierstrass.Point.p384.doubleApi.artifact X86.target {
+    notes := notes
     code := Impl.Weierstrass.X86.Point.pointDouble Spec.Weierstrass.Point.p384
-    contract := Spec.Weierstrass.Point.p384.doubleContract X86.abi 20
     stack := 20
-    verified := p384_double_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := p384_double_verified (fermat_of_law h.law) }]
 
 end VG.Generic.P384.X86.PointP384

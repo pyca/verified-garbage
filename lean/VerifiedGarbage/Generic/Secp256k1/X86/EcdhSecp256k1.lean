@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Ecdh.X86.Secp256k1.Lit
 import VerifiedGarbage.Proof.X25519.X86.Column
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDH over secp256k1 (SP 800-56A) on x86 (32-bit)
@@ -22,9 +23,8 @@ A generic file (see `TCB/Emit.lean`) over secp256k1's group law `h`, the variant
 namespace VG.Generic.Secp256k1.X86.EcdhSecp256k1
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.Secp256k1.curve) : List Artifact := [
-  { Spec.Ecdh.Secp256k1.exchangeApi with
-    target := X86.target
-    doc := Spec.Ecdh.Secp256k1.exchangeApi.doc (notes := ["The function is `vg_ecdsa_secp256k1_sign`'s setup, \
+  Spec.Ecdh.Secp256k1.exchangeApi.artifact X86.target {
+    notes := ["The function is `vg_ecdsa_secp256k1_sign`'s setup, \
       field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the \
       callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements are eight \
       32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, \
@@ -37,11 +37,9 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.Secp256k1.curve) : L
       `vg_secp256k1_point_double` and `vg_secp256k1_point_add`) and a \
       masked selection for each bit; `Z⁻¹` is computed by constant-time divsteps. The \
       result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so \
-      the time depends only on the pointers."])
+      the time depends only on the pointers."]
     code := Impl.Ecdh.X86.exchangeSecp256k1
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.Secp256k1.inst X86.abi 28
     stack := 28
-    verified := Proof.Ecdh.X86.Secp256k1.ecdh_verified h.law h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Ecdh.X86.Secp256k1.ecdh_verified h.law h.inv }]
 
 end VG.Generic.Secp256k1.X86.EcdhSecp256k1

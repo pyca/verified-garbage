@@ -7,6 +7,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # brainpoolP512r1's point multiplication on AArch64
@@ -37,12 +38,9 @@ def note : String :=
   `k` or `Q` but through masks. It writes no vector register."
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.BrainpoolP512r1.curve) : List Artifact :=
-  [{ C.mulApi with
-      target := AArch64.target
-      doc := C.mulApi.doc (notes := [note])
+  [C.mulApi.artifact AArch64.target {
+      notes := [note]
       code := brainpoolp512r1.mulFn
-      contract := C.mulContract AArch64.abi
-      verified := mul_verified h.law h.inv
-      spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+      verified := mul_verified h.law h.inv }]
 
 end VG.Generic.BrainpoolP512r1.AArch64.MulBrainpoolP512r1

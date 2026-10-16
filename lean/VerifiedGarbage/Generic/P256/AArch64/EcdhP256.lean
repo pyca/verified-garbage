@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Front
 import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 import VerifiedGarbage.Proof.P256.Prime
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDH over P-256 (SP 800-56A) on AArch64
@@ -27,9 +28,8 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 namespace VG.Generic.P256.AArch64.EcdhP256
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : List Artifact := [
-  { Spec.Ecdh.P256.exchangeApi with
-    target := AArch64.target
-    doc := Spec.Ecdh.P256.exchangeApi.doc (notes := ["The peer's encoding and coordinates are checked \
+  Spec.Ecdh.P256.exchangeApi.artifact AArch64.target {
+    notes := ["The peer's encoding and coordinates are checked \
       without branches. Scalar multiplication uses the peer's point when it is valid and the \
       generator otherwise. Field elements are four 64-bit Montgomery words. Signed 5-bit \
       windows recode the scalar as `d + 16 Σ_{j<52} 32^j`; a 16-entry Jacobian table is built \
@@ -43,10 +43,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : 
       spills and restores the additional ABI registers and live output pointer. Inversion \
       retains the fixed 590-divstep schedule. The result or zeros is selected by the input \
       checks, `d` in `[1, n-1]`, and a nonzero projective denominator. Time depends only on \
-      the pointers; the public contract and 8192-byte scratch requirement are unchanged."])
+      the pointers; the public contract and 8192-byte scratch requirement are unchanged."]
     code := Impl.P256.EcdhJac.exchange
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi
-    verified := Proof.P256.EcdhJac.verified h.law h.inv h.prime h.invToMP
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.P256.EcdhJac.verified h.law h.inv h.prime h.invToMP }]
 
 end VG.Generic.P256.AArch64.EcdhP256

@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesSiv.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-SIV (RFC 5297) encryption and decryption on x86-64
@@ -34,25 +35,21 @@ def cryptNote (v : Proof.CmacAes.X86_64.UpdateImpl) : String :=
     v.ctr.suffix ++ "`), and encrypts with `" ++ v.ctr.callee.name ++ "`."
 
 def artifacts (v : Proof.CmacAes.X86_64.UpdateImpl) : List Artifact := [
-  { Spec.Siv.encryptApi with
-    name := Spec.Siv.encryptApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Siv.encryptApi.doc (notes := [cryptNote v])
+  Spec.Siv.encryptApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [cryptNote v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1
       (Impl.AesSiv.X86_64.encrypt v.callee v.ctr.callee v.ctr.suffix)
-    contract := Spec.Siv.encryptContract X86_64.abi 2616
     stack := 2616
     verified := encrypt_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (encrypt_spSafe v)
     features := v.ctr.features },
-  { Spec.Siv.decryptApi with
-    name := Spec.Siv.decryptApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Siv.decryptApi.doc (notes := [cryptNote v,
-      "It compares the IVs and overwrites the data with zeros without a branch on the result."])
+  Spec.Siv.decryptApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [cryptNote v,
+      "It compares the IVs and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1
       (Impl.AesSiv.X86_64.decrypt v.callee v.ctr.callee v.ctr.suffix)
-    contract := Spec.Siv.decryptContract X86_64.abi 2616
     stack := 2616
     verified := decrypt_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (decrypt_spSafe v)

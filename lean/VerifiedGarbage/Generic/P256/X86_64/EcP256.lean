@@ -16,6 +16,7 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-256 public keys (FIPS 186-5 §A.2) on x86-64
@@ -37,20 +38,17 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.EcKey.P256.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
-  { Spec.EcKey.P256.publicKeyApi with
-    name := Spec.EcKey.P256.publicKeyApi.name ++ (if adx then "_adx" else "")
-    target := X86_64.target
-    doc := Spec.EcKey.P256.publicKeyApi.doc (notes := ["The function is `vg_ecdsa_p256_sign" ++ (if adx then "_adx" else "") ++ "`'s \
+  Spec.EcKey.P256.publicKeyApi.artifact X86_64.target {
+    suffix := (if adx then "_adx" else "")
+    notes := ["The function is `vg_ecdsa_p256_sign" ++ (if adx then "_adx" else "") ++ "`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it saves \
       its caller's callee-saved registers in `scratch`; field elements are four 64-bit words in \
       Montgomery form, " ++ Proof.Ecdsa.X86_64.mulNote adx ++ "; `[d]G` is the signature's " ++
       (if adx then "call of `vg_p256_mul_base_adx`, a " else "") ++ "comb over the 7-bit windows of `d`, from \
       the static `VG_P256_COMB`; and `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, \
-      so the time depends only on the pointers."])
+      so the time depends only on the pointers."]
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     code
-    contract := Spec.EcKey.P256.inst.publicKeyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8
     stack := 8
     verified := hv
     spSafe := hsp

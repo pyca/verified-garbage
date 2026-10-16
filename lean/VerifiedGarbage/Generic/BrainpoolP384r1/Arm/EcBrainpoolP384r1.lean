@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.EcKey.BrainpoolP384r1.Arm
 public import VerifiedGarbage.Proof.EcKey.Arm.BrainpoolP384r1.Verified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM
@@ -19,9 +20,8 @@ A generic file (see `TCB/Emit.lean`) over brainpoolP384r1's group law `h`, the v
 namespace VG.Generic.BrainpoolP384r1.Arm.EcBrainpoolP384r1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP384r1.curve) : List Artifact := [
-  { Spec.EcKey.BrainpoolP384r1.publicKeyApi with
-    target := Arm.target
-    doc := Spec.EcKey.BrainpoolP384r1.publicKeyApi.doc (notes := ["The function is `vg_ecdsa_brainpoolp384r1_sign`'s \
+  Spec.EcKey.BrainpoolP384r1.publicKeyApi.artifact Arm.target {
+    notes := ["The function is `vg_ecdsa_brainpoolp384r1_sign`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
       saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in \
       `lr` (in `r10` during the calls); field elements are twenty-four 16-bit digits in Montgomery form, multiplied by \
@@ -32,10 +32,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP384r1.curve) : List A
       every addition and doubling (calls of `vg_brainpoolp384r1_point_double` and \
       `vg_brainpoolp384r1_point_add`) and a masked selection for each bit; and `Z⁻¹` is Fermat's, \
       by square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected \
-      by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
+      by a mask of `d ∈ [1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.EcKey.Arm.publicKeyBrainpoolP384r1
-    contract := Spec.EcKey.BrainpoolP384r1.inst.publicKeyContract Arm.abi
-    verified := Proof.EcKey.Arm.BrainpoolP384r1.pk_verified h.law
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.EcKey.Arm.BrainpoolP384r1.pk_verified h.law }]
 
 end VG.Generic.BrainpoolP384r1.Arm.EcBrainpoolP384r1

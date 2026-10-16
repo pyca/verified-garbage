@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # The checked RSA private-key operation on x86-64
@@ -34,17 +35,15 @@ def pcName (v : CrtImpl) : String := Spec.Rsa.publicPrecomputeApi.name ++ v.mont
 def pdName (v : CrtImpl) : String := v.pubOp.name
 
 def artifacts (v : CrtImpl) : List Artifact := [
-  { Spec.Rsa.privateCheckedApi with
-    name := Spec.Rsa.privateCheckedApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Rsa.privateCheckedApi.doc (notes := ["This implementation computes the result `m` with `" ++
+  Spec.Rsa.privateCheckedApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := ["This implementation computes the result `m` with `" ++
       v.name ++ "` into its frame, then `m^e mod n` with `" ++ pcName v ++ "` and `" ++ pdName v ++
       "`, which also checks `e`. It compares that with the input in constant time, and copies `m` to `out` \
       under a mask, which is clear unless the CRT and the public operation succeeded and the two match. \
       The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's \
-      copy of `m` with zeros."])
+      copy of `m` with zeros."]
     code := Impl.Rsa.X86_64.PrivChecked.code v.name v.code (pcName v) v.pc (pdName v) v.pubOp.code
-    contract := Spec.Rsa.privateCheckedContract X86_64.abi stackBytes
     stack := stackBytes
     verified := code_verified v _ _
     spSafe := code_spSafe v _ _

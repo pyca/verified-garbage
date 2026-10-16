@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-GCM (NIST SP 800-38D) on AArch64
@@ -43,99 +44,72 @@ def note (v : GcmImpl) : String :=
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  { Spec.Gcm.initApi with
-    name := Spec.Gcm.initApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.initApi.doc (notes := [note v])
+  Spec.Gcm.initApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (Impl.AesGcm.AArch64.init v.callees)
-    contract := Spec.Gcm.initContract AArch64.abi 2560
     stack := 2560
     verified := init_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.ctr.features },
-  { Spec.Gcm.sealApi with
-    name := Spec.Gcm.sealApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.sealApi.doc (notes := [note v])
+  Spec.Gcm.sealApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1
       (Impl.AesGcm.AArch64.«seal» v.callees)
-    contract := Spec.Gcm.sealContract AArch64.abi 2576
     stack := 2576
     verified := seal_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Gcm.openApi with
-    name := Spec.Gcm.openApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.openApi.doc (notes := [note v])
+  Spec.Gcm.openApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
       (Impl.AesGcm.AArch64.«open» v.callees)
-    contract := Spec.Gcm.openContract AArch64.abi 2592
     stack := 2592
     verified := open_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Gcm.streamInitApi with
-    name := Spec.Gcm.streamInitApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamInitApi.doc (notes := [note v])
+  Spec.Gcm.streamInitApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x4 (Impl.AesGcm.AArch64.streamInit v.callees)
-    contract := Spec.Gcm.streamInitContract AArch64.abi 2560
     stack := 2560
     verified := streamInit_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.gh.features },
-  { Spec.Gcm.streamAadApi with
-    name := Spec.Gcm.streamAadApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamAadApi.doc (notes := [note v])
+  Spec.Gcm.streamAadApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x5 (Impl.AesGcm.AArch64.streamAad v.callees)
-    contract := Spec.Gcm.streamAadContract AArch64.abi 2560
     stack := 2560
     verified := streamAad_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.gh.features },
-  { Spec.Gcm.streamEncryptApi with
-    name := Spec.Gcm.streamEncryptApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamEncryptApi.doc (notes := [note v])
+  Spec.Gcm.streamEncryptApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamEncrypt v.callees)
-    contract := Spec.Gcm.streamEncryptContract AArch64.abi 2560
     stack := 2560
     verified := streamEncrypt_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Gcm.streamDecryptApi with
-    name := Spec.Gcm.streamDecryptApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamDecryptApi.doc (notes := [note v])
+  Spec.Gcm.streamDecryptApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamDecrypt v.callees)
-    contract := Spec.Gcm.streamDecryptContract AArch64.abi 2560
     stack := 2560
     verified := streamDecrypt_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Gcm.streamFinishApi with
-    name := Spec.Gcm.streamFinishApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamFinishApi.doc (notes := [note v])
+  Spec.Gcm.streamFinishApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x6
       (Impl.AesGcm.AArch64.streamFinish v.callees)
-    contract := Spec.Gcm.streamFinishContract AArch64.abi 2560
     stack := 2560
     verified := streamFinish_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
-  { Spec.Gcm.streamVerifyApi with
-    name := Spec.Gcm.streamVerifyApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.streamVerifyApi.doc (notes := [note v])
+  Spec.Gcm.streamVerifyApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7
       (Impl.AesGcm.AArch64.streamVerify v.callees)
-    contract := Spec.Gcm.streamVerifyContract AArch64.abi 2560
     stack := 2560
     verified := streamVerify_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 /-- What `vg_aes_gcm_seal_gather` does: it calls `vg_aes_gcm_seal`. -/
@@ -152,15 +126,12 @@ def sealFn (v : GcmImpl) : Proof.AesGcm.AArch64.Gather.SealFn where
 
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
 def artifactsGather (v : GcmImpl) : List Artifact := [
-  { Spec.Gcm.sealGatherApi with
-    name := Spec.Gcm.sealGatherApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Gcm.sealGatherApi.doc (notes := [gatherNote (sealFn v).fn.name])
+  Spec.Gcm.sealGatherApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [gatherNote (sealFn v).fn.name]
     code := Impl.AesGcm.AArch64.SealGather.sealGather (sealFn v).fn
-    contract := Spec.Gcm.sealGatherContract AArch64.abi 2592
     stack := 2592
     verified := Proof.AesGcm.AArch64.Gather.sealGather_verified (sealFn v)
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 /-- The artifacts of a variant, from the implementations it names. -/

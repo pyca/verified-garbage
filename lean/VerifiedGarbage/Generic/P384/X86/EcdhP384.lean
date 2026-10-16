@@ -6,6 +6,7 @@ public import VerifiedGarbage.Impl.Ecdh.P384.X86
 public import VerifiedGarbage.Proof.Ecdh.X86.P384.Verified
 import VerifiedGarbage.Proof.Ecdh.X86.P384.Lit
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDH over P-384 (SP 800-56A) on x86 (32-bit)
@@ -19,9 +20,8 @@ A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 namespace VG.Generic.P384.X86.EcdhP384
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := [
-  { Spec.Ecdh.P384.exchangeApi with
-    target := X86.target
-    doc := Spec.Ecdh.P384.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p384_sign`'s setup, \
+  Spec.Ecdh.P384.exchangeApi.artifact X86.target {
+    notes := ["The function is `vg_ecdsa_p384_sign`'s setup, \
       field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the \
       callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements are twelve \
       32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, \
@@ -34,11 +34,9 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
       `vg_p384_point_double` and `vg_p384_point_add`) and a \
       masked selection for each bit; `Z⁻¹` is Fermat's, by square-and-always-multiply. The \
       result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so \
-      the time depends only on the pointers."])
+      the time depends only on the pointers."]
     code := Impl.Ecdh.X86.exchangeP384
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst X86.abi 28
     stack := 28
-    verified := Proof.Ecdh.X86.P384.ecdh_verified h.law
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Ecdh.X86.P384.ecdh_verified h.law }]
 
 end VG.Generic.P384.X86.EcdhP384
