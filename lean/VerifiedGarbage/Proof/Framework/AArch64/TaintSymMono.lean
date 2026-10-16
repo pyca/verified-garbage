@@ -60,8 +60,10 @@ theorem keepsI_empty (i : Instr) : keepsI RegSet.empty i = true := by
     simp [RegSet.mem, RegSet.empty]
   simp only [keepsI]
   split
-  · rw [h]; rfl
-  · rfl
+  · rw [h, h]; rfl
+  · split
+    · rw [h]; rfl
+    · rfl
 
 theorem call_keeps {F Φ σ σ' : T} (hk : keepsCall F = true) (hΦF : Φ.subset F = true)
     (hΦ : Φ.subset σ = true) (hs : AArch64.taint.call σ = some σ') : Φ.subset σ' = true := by

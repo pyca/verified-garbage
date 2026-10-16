@@ -45,6 +45,8 @@ def step (τ : T) : Instr → Option T
 private theorem scalar_vectors {i : Instr} {s s' : State}
     (hi : scalar i = true) (he : exec i s = some s') : s'.v = s.v := by
   cases i <;> simp only [scalar, Bool.false_eq_true] at hi
+  case ldp => obtain ⟨_, _, rfl⟩ := exec_ldp_eq he; rfl
+  case stp => obtain ⟨_, rfl⟩ := exec_stp_eq he; rfl
   all_goals
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at he
   all_goals

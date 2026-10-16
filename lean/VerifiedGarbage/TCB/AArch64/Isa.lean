@@ -445,6 +445,13 @@ inductive Instr
   /-- `strb wt, [n, #off]` (STRB (immediate), unsigned offset, `off < 4096`):
   the low byte of `t` -/
   | strb (t n : Reg) (off : Nat)
+  /-- `ldp xt1, xt2, [n, #off]` (LDP, 64-bit, signed offset, with a
+  non-negative offset: a multiple of 8, at most 504): the 64-bit words at
+  `n + off` and `n + off + 8` into `t1` and `t2`, which must differ -/
+  | ldp (t1 t2 n : Reg) (off : Nat)
+  /-- `stp xt1, xt2, [n, #off]` (STP, 64-bit, signed offset, as for `ldp`):
+  `t1` at `n + off` and `t2` at `n + off + 8` -/
+  | stp (t1 t2 n : Reg) (off : Nat)
   /-- `str xr, [sp, #-16]!` (STR (immediate), 64-bit, pre-index): the push
   of a frame of 16 bytes (see `push`) -/
   | push (r : Reg)
@@ -959,6 +966,19 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
 * "LDRB (immediate)": `data = Mem[address, 1]; X[t, 32] = ZeroExtend(data,
   32)` (hence zero-extended to 64 bits); "STRB (immediate)": `data = X[t,
   8]; Mem[address, 1] = data`, the low byte of `t`;
+* "LDP" and "STP", 64-bit (`opc = '10'`, `scale = 3`), signed offset
+  (`wback = FALSE`, `postindex = FALSE`): `offset = LSL(SignExtend(imm7,
+  64), scale)`, only the non-negative ones (`imm7 < 64`, so `off = 8 *
+  imm7 ≤ 504`); `address = X[n, 64] + offset`; `dbytes = 8`. STP:
+  `Mem[address, dbytes] = X[t, 64]; Mem[address + dbytes, dbytes] = X[t2,
+  64]`. LDP: `data1 = Mem[address, dbytes]; data2 = Mem[address + dbytes,
+  dbytes]; X[t, 64] = data1; X[t2, 64] = data2`. An LDP with `t == t2` is
+  CONSTRAINED UNPREDICTABLE (`Unpredictable_LDPOVERLAP`: UNKNOWN values,
+  UNDEFINED or a NOP), so it faults. Without writeback, `t` or `t2` may be
+  `n`: the address is computed before either is written. Both are baseline
+  A64 instructions. See Arm DDI 0487 C6.2 "LDP", "STP" and
+  https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/LDP--Load-pair-of-registers-
+  https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/STP--Store-pair-of-registers-;
 * an AdvSIMD or cryptographic instruction: `VOp.eval`;
 * "LDR (immediate, SIMD&FP)", "STR (immediate, SIMD&FP)" (128-bit, unsigned
   offset: `offset = LSL(imm12, 4)`): `V[t] = Mem[address, 16]` and
@@ -1054,6 +1074,18 @@ def exec : Instr → State → Option State
     (addr s 1 n off).bind fun a => (s.load a 1).map fun v => s.write .w t (v.setWidth 32)
   | .strb t n off, s =>
     (addr s 1 n off).bind fun a => s.store a 1 ((s.read .w t).setWidth 8)
+  | .ldp t1 t2 n off, s =>
+    if t1 ≠ t2 ∧ off % 8 = 0 ∧ off ≤ 504 then
+      let a := s.gpr n + BitVec.ofNat 64 off
+      (s.load a 8).bind fun v₁ => (s.load (a + 8) 8).map fun v₂ =>
+        (s.write .x t1 (v₁.setWidth 64)).write .x t2 (v₂.setWidth 64)
+    else none
+  | .stp t1 t2 n off, s =>
+    if off % 8 = 0 ∧ off ≤ 504 then
+      let a := s.gpr n + BitVec.ofNat 64 off
+      (s.store a 8 ((s.read .x t1).setWidth 64)).bind fun s' =>
+        s'.store (a + 8) 8 ((s.read .x t2).setWidth 64)
+    else none
   | .ldrSp t off, s =>
     if off % 8 = 0 ∧ off < 32768 then
       (s.load (s.sp + BitVec.ofNat 64 off) 8).map fun v => s.write .x t (v.setWidth 64)
@@ -1074,6 +1106,8 @@ def addrs : Instr → State → List Addr
   | .str _ _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .ldrb _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .strb _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
+  | .ldp _ _ n off, s | .stp _ _ n off, s =>
+    [s.gpr n + BitVec.ofNat 64 off, s.gpr n + BitVec.ofNat 64 off + 8]
   | .ldrq _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .strq _ n off, s => [s.gpr n + BitVec.ofNat 64 off]
   | .ldrSp _ off, s => [s.sp + BitVec.ofNat 64 off]

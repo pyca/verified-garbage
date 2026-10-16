@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
+public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import Mathlib.Tactic.SplitIfs
 
 /-! Vector register preservation, including through calls and stack frames. -/
@@ -77,6 +78,8 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
     simp only [Option.some.injEq] at h; subst h
     split <;> rfl
   | push _ | pop _ | alloc _ | free _ => simp only [exec, reduceCtorEq] at h
+  | ldp t1 t2 n off => obtain ⟨_, _, rfl⟩ := exec_ldp_eq h; rfl
+  | stp t1 t2 n off => obtain ⟨_, rfl⟩ := exec_stp_eq h; rfl
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
   | umov _ _ _ _ =>

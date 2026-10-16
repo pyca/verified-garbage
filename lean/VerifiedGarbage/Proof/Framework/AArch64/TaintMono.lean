@@ -49,7 +49,8 @@ theorem step_mono {τ σ τ' : T} (i : Instr) (h : τ.subset σ = true) (hs : st
        exact ⟨⟨pub_mono h hp.1.1, pub_mono h hp.1.2⟩, pub_mono h hp.2⟩)
     | (split at hs <;> [rename_i hn; cases hs]
        cases hs
-       exact ⟨_, by simp only [pub_mono h hn, ↓reduceIte]; rfl, (by first | exact set_mono h _ id | exact h)⟩)
+       exact ⟨_, by simp only [pub_mono h hn, ↓reduceIte]; rfl,
+         (by first | exact set_mono h _ id | exact h | exact set_mono (set_mono h _ id) _ id)⟩)
 
 theorem condPub_mono {τ σ : T} (c : Cond) (h : τ.subset σ = true)
     (hc : AArch64.taint.condPub τ c = true) : AArch64.taint.condPub σ c = true := by
@@ -82,9 +83,12 @@ def gprDst : Instr → Option Reg
 
 /-- `i` writes no register of `F`. -/
 def keepsI (F : T) (i : Instr) : Bool :=
-  match gprDst i with
-  | some d => !F.mem d
-  | none => true
+  match i with
+  | .ldp t1 t2 _ _ => !F.mem t1 && !F.mem t2
+  | _ =>
+    match gprDst i with
+    | some d => !F.mem d
+    | none => true
 
 theorem set_keeps {Φ F σ : T} (hΦF : Φ.subset F = true) (hΦ : Φ.subset σ = true) {d : Reg}
     (hd : F.mem d = false) (p : Bool) : Φ.subset (set σ d p) = true := by
@@ -97,6 +101,11 @@ theorem step_keeps {F Φ σ σ' : T} (i : Instr) (hk : keepsI F i = true) (hΦF 
     (hΦ : Φ.subset σ = true) (hs : step σ i = some σ') : Φ.subset σ' = true := by
   cases i <;> simp only [step, stepFn, reduceCtorEq] at hs <;>
     simp only [keepsI, gprDst, Bool.not_eq_true'] at hk
+  case ldp =>
+    split at hs <;> [skip; cases hs]
+    cases hs
+    simp only [Bool.and_eq_true, Bool.not_eq_true'] at hk
+    exact set_keeps hΦF (set_keeps hΦF hΦ hk.1 _) hk.2 _
   all_goals first
     | (cases hs; exact set_keeps hΦF hΦ hk _)
     | (cases hs; exact hΦ)
@@ -278,8 +287,10 @@ instance : VG.Taint.LeFrame taint where
       simp [RegSet.mem, RegSet.empty]
     simp only [keeps, Taint.keepsI]
     split
-    · rw [h]; rfl
-    · rfl
+    · rw [h, h]; rfl
+    · split
+      · rw [h]; rfl
+      · rfl
   keepsCall_bot := rfl
   step_keeps i hk hΦF hΦ hs := step_keeps i hk hΦF hΦ hs
   call_keeps {F Φ σ σ'} hk hΦF hΦ hs := by

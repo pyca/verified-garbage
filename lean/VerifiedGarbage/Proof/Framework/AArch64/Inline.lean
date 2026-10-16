@@ -32,27 +32,36 @@ def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd :
 @[simp] theorem State.withRegions_withRegions (s : State) (rd wr rd' wr') :
     (s.withRegions rd wr).withRegions rd' wr' = s.withRegions rd' wr' := rfl
 
-/-- The register an instruction writes, if any (a frame's pop writes its
-register). -/
+/-- The register an instruction writes, if it writes exactly one (a frame's
+pop writes its register); none for `ldp`, which writes two (`dsts`). -/
 def dstOf : Instr → Option Reg
   | .adds _ d .. | .adcs _ d .. | .subs _ d .. | .sbcs _ d .. | .adc _ d .. | .sbc _ d .. | .csel _ d .. | .umulh d .. | .umaddl d .. | .umull d .. | .adrSym d _ => some d
   | .add _ d .. | .sub _ d .. | .addImm _ d .. | .subImm _ d .. | .logic _ _ d .. | .logicRor _ _ d .. | .bicRor _ d .. | .ror _ d .. | .extr _ d ..
   | .lsr _ d .. | .lsl _ d .. | .madd _ d .. | .mul _ d .. | .rev32 d _ | .rev d _ | .movz _ d ..
   | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. => some d
   | .cselc _ d .. | .csneg _ d .. => some d
-  | .str .. | .strb .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .strq .. | .tst .. | .ccmp .. => none
+  | .str .. | .strb .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .strq .. | .tst .. | .ccmp ..
+  | .ldp .. | .stp .. => none
 
 /-- The general-purpose registers instruction `i` writes. -/
-def dsts (i : Instr) : List Reg := (dstOf i).toList
+def dsts (i : Instr) : List Reg :=
+  match i with
+  | .ldp t1 t2 _ _ => [t1, t2]
+  | _ => (dstOf i).toList
 
 /-- Whether instruction `i` writes the general-purpose register `r`, one of
 `dsts i`. The lemmas about the registers code keeps are stated with it (or
 `dsts`), not with `dstOf`, which names only an instruction's single
 destination. -/
-def clobbers (i : Instr) (r : Reg) : Bool := dstOf i == some r
+def clobbers (i : Instr) (r : Reg) : Bool :=
+  match i with
+  | .ldp t1 t2 _ _ => r == t1 || r == t2
+  | _ => dstOf i == some r
 
 theorem clobbers_iff {i : Instr} {r : Reg} : clobbers i r = true ↔ r ∈ dsts i := by
   unfold clobbers dsts
+  split
+  · simp
   cases dstOf i with
   | none => simp
   | some d =>
@@ -74,7 +83,11 @@ theorem clobbers_eq_false_of_isEmpty {i : Instr} {r : Reg} (h : (dsts i).isEmpty
   clobbers_eq_false fun hm => by simp [List.isEmpty_iff.mp h] at hm
 
 theorem clobbers_of_dstOf {i : Instr} {r : Reg} (h : dstOf i = some r) : clobbers i r = true :=
-  clobbers_iff.mpr (by simp [dsts, h])
+  clobbers_iff.mpr (by
+    unfold dsts
+    split
+    · simp [dstOf] at h
+    · simp [h])
 
 theorem dstOf_ne_of_clobbers {i : Instr} {r : Reg} (h : clobbers i r = false) : dstOf i ≠ some r :=
   fun e => by simp [clobbers_of_dstOf e] at h
@@ -130,6 +143,21 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [exec, Option.bind_eq_some_iff] at h ⊢
     obtain ⟨a, ha, hs⟩ := h
     exact ⟨a, ha, store_widen hw hs⟩
+  | ldp t1 t2 n off =>
+    obtain ⟨hh, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    obtain ⟨v₁, hv₁, v₂, hv₂, rfl⟩ := h
+    simp only [exec, hh, ne_eq, not_false_eq_true, and_self, ite_true, State.withRegions_gpr,
+      load_widen hc hv₁, load_widen hc hv₂, Option.bind_some, Option.map_some]
+    rfl
+  | stp t1 t2 n off =>
+    obtain ⟨hh, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff] at h
+    obtain ⟨s₁, h₁, h₂⟩ := h
+    have e : s₁.wr = s.wr := by
+      simp only [State.store] at h₁; split at h₁ <;> cases h₁; rfl
+    simp only [exec, hh, and_self, ite_true, Option.bind_eq_some_iff]
+    exact ⟨s₁.withRegions rd wr, store_widen hw h₁, store_widen (e ▸ hw) h₂⟩
   | vop op =>
     simp only [exec, Option.map_eq_some_iff] at h ⊢
     obtain ⟨⟨d, x⟩, he, rfl⟩ := h
@@ -190,6 +218,20 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
     exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
+  | ldp t1 t2 n off =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    obtain ⟨_, -, _, -, rfl⟩ := h
+    exact ⟨rfl, rfl, rfl, Frame.refl _ _⟩
+  | stp t1 t2 n off =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, State.store] at h
+    obtain ⟨_, h₁, h₂⟩ := h
+    split at h₁ <;> cases h₁
+    rename_i hi₁; obtain ⟨r₁, hr₁, hc₁⟩ := hi₁
+    split at h₂ <;> cases h₂
+    rename_i hi₂; obtain ⟨r₂, hr₂, hc₂⟩ := hi₂
+    exact ⟨rfl, rfl, rfl, ((Frame.refl _ _).write hr₁ _ hc₁).write hr₂ _ hc₂⟩
   | vop op =>
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨⟨_, _⟩, -, rfl⟩ := h
@@ -214,6 +256,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
 
 theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s = some s') :
     s'.gpr r = s.gpr r := by
+  have hcl := hi
   replace hi := dstOf_ne_of_clobbers hi
   have hw : ∀ (t : State) sz (d : Reg) (v : BitVec sz.bits), d ≠ r → (t.write sz d v).gpr r = t.gpr r :=
     fun t sz d v hd => by simp [State.write, Ne.symm hd]
@@ -241,6 +284,19 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s
   | ldrq t n off =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
+    rfl
+  | ldp t1 t2 n off =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    obtain ⟨_, -, _, -, rfl⟩ := h
+    simp only [clobbers, Bool.or_eq_false_iff, beq_eq_false_iff_ne] at hcl
+    exact (hw _ _ _ _ fun e => hcl.2 e.symm).trans (hw _ _ _ _ fun e => hcl.1 e.symm)
+  | stp t1 t2 n off =>
+    obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h
+    simp only [Option.bind_eq_some_iff, State.store] at h
+    obtain ⟨_, h₁, h₂⟩ := h
+    split at h₁ <;> cases h₁
+    split at h₂ <;> cases h₂
     rfl
   | vop op =>
     simp only [exec, Option.map_eq_some_iff] at h
@@ -432,13 +488,27 @@ theorem WP.gprs {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s 
 `dstOf i` with every register of `rs`, which the kernel evaluates several
 times faster. -/
 def keeps (rs : RegSet Reg) (i : Instr) : Bool :=
-  match dstOf i with
-  | none => true
-  | some d => !rs.mem d
+  match i with
+  | .ldp t1 t2 _ _ => !rs.mem t1 && !rs.mem t2
+  | _ =>
+    match dstOf i with
+    | none => true
+    | some d => !rs.mem d
 
 theorem keeps_ofList (rs : List Reg) (i : Instr) :
     keeps (RegSet.ofList rs) i = rs.all fun r => !clobbers i r := by
   unfold keeps clobbers
+  split
+  · rename_i t1 t2 _ _
+    rw [Bool.eq_iff_iff, Bool.and_eq_true, Bool.not_eq_true', Bool.not_eq_true', List.all_eq_true]
+    have m : ∀ t, (RegSet.ofList rs).mem t = false ↔ t ∉ rs := fun t => by
+      rw [← RegSet.mem_ofList]
+      show _ ↔ ¬((RegSet.ofList rs).mem t = true)
+      simp
+    rw [m, m]
+    simp only [Bool.not_eq_eq_eq_not, Bool.not_true, Bool.or_eq_false_iff, beq_eq_false_iff_ne, ne_eq]
+    exact ⟨fun h r hr => ⟨fun e => h.1 (e ▸ hr), fun e => h.2 (e ▸ hr)⟩,
+      fun h => ⟨fun hd => (h t1 hd).1 rfl, fun hd => (h t2 hd).2 rfl⟩⟩
   cases dstOf i with
   | none => simp
   | some d =>
