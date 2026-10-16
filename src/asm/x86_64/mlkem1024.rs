@@ -9574,7 +9574,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx2(ek: *const [u8; 
         "mov edx, 1",
         "mov rcx, rbx",
         "add rcx, 19456",
-        "call {vg_mlkem_decode_decompress}",
+        "call {vg_mlkem_decode_decompress_avx2}",
         "mov rdi, rbx",
         "add rdi, 16384",
         "mov rsi, rbx",
@@ -9630,7 +9630,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx2(ek: *const [u8; 
         vg_mlkem1024_encrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_encrypt_mul_avx2,
         vg_mlkem_add_avx2 = sym super::mlkem::vg_mlkem_add_avx2,
         vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
+        vg_mlkem_decode_decompress_avx2 = sym super::mlkem::vg_mlkem_decode_decompress_avx2,
     )
 }
 
@@ -9743,7 +9743,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx2(dk: *const [u8; 31
         "mov rdx, rbx",
         "add rdx, 1248",
         "mov ecx, 32",
-        "call {vg_mlkem_compress_encode}",
+        "call {vg_mlkem_compress_encode_avx2}",
         "mov eax, 0",
         "mov QWORD PTR [rbx], rax",
         "mov QWORD PTR [rbx+8], rax",
@@ -11224,7 +11224,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx2(dk: *const [u8; 31
         "mov edx, 1",
         "mov rcx, rbx",
         "add rcx, 19456",
-        "call {vg_mlkem_decode_decompress}",
+        "call {vg_mlkem_decode_decompress_avx2}",
         "mov rdi, rbx",
         "add rdi, 16384",
         "mov rsi, rbx",
@@ -11285,7 +11285,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx2(dk: *const [u8; 31
         vg_mlkem_decode12_avx2 = sym super::mlkem::vg_mlkem_decode12_avx2,
         vg_mlkem1024_decrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_decrypt_mul_avx2,
         vg_mlkem_sub_avx2 = sym super::mlkem::vg_mlkem_sub_avx2,
-        vg_mlkem_compress_encode = sym super::mlkem::vg_mlkem_compress_encode,
+        vg_mlkem_compress_encode_avx2 = sym super::mlkem::vg_mlkem_compress_encode_avx2,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -11294,7 +11294,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx2(dk: *const [u8; 31
         vg_mlkem1024_encrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_encrypt_mul_avx2,
         vg_mlkem_add_avx2 = sym super::mlkem::vg_mlkem_add_avx2,
         vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
+        vg_mlkem_decode_decompress_avx2 = sym super::mlkem::vg_mlkem_decode_decompress_avx2,
     )
 }
 
@@ -13726,7 +13726,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx512(ek: *const [u8
         "mov edx, 1",
         "mov rcx, rbx",
         "add rcx, 19456",
-        "call {vg_mlkem_decode_decompress}",
+        "call {vg_mlkem_decode_decompress_avx2}",
         "mov rdi, rbx",
         "add rdi, 16384",
         "mov rsi, rbx",
@@ -13782,7 +13782,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_encaps_h_avx512(ek: *const [u8
         vg_mlkem1024_encrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_encrypt_mul_avx2,
         vg_mlkem_add_avx2 = sym super::mlkem::vg_mlkem_add_avx2,
         vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
+        vg_mlkem_decode_decompress_avx2 = sym super::mlkem::vg_mlkem_decode_decompress_avx2,
     )
 }
 
@@ -13895,7 +13895,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx512(dk: *const [u8; 
         "mov rdx, rbx",
         "add rdx, 1248",
         "mov ecx, 32",
-        "call {vg_mlkem_compress_encode}",
+        "call {vg_mlkem_compress_encode_avx2}",
         "mov eax, 0",
         "mov QWORD PTR [rbx], rax",
         "mov QWORD PTR [rbx+8], rax",
@@ -14997,7 +14997,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx512(dk: *const [u8; 
         "mov edx, 1",
         "mov rcx, rbx",
         "add rcx, 19456",
-        "call {vg_mlkem_decode_decompress}",
+        "call {vg_mlkem_decode_decompress_avx2}",
         "mov rdi, rbx",
         "add rdi, 16384",
         "mov rsi, rbx",
@@ -15058,7 +15058,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx512(dk: *const [u8; 
         vg_mlkem_decode12_avx2 = sym super::mlkem::vg_mlkem_decode12_avx2,
         vg_mlkem1024_decrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_decrypt_mul_avx2,
         vg_mlkem_sub_avx2 = sym super::mlkem::vg_mlkem_sub_avx2,
-        vg_mlkem_compress_encode = sym super::mlkem::vg_mlkem_compress_encode,
+        vg_mlkem_compress_encode_avx2 = sym super::mlkem::vg_mlkem_compress_encode_avx2,
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -15067,7 +15067,7 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_decaps_avx512(dk: *const [u8; 
         vg_mlkem1024_encrypt_mul_avx2 = sym super::mlkem1024::vg_mlkem1024_encrypt_mul_avx2,
         vg_mlkem_add_avx2 = sym super::mlkem::vg_mlkem_add_avx2,
         vg_mlkem1024_compress_encode = sym super::mlkem1024::vg_mlkem1024_compress_encode,
-        vg_mlkem_decode_decompress = sym super::mlkem::vg_mlkem_decode_decompress,
+        vg_mlkem_decode_decompress_avx2 = sym super::mlkem::vg_mlkem_decode_decompress_avx2,
     )
 }
 

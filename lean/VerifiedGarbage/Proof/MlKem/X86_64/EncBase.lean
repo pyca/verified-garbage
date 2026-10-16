@@ -47,8 +47,8 @@ theorem RelCT.stepL {rbs wbs : List (Reg × Nat)} (hcs : ∀ b ∈ rbs ++ wbs, b
 /-- The compression and decompression the parameter set `L` calls, verified
 for widths `wc` and `wd` that include `d_u` and `d_v`. -/
 structure KemCalls (L : Kem) (wc wd : List Nat) : Prop where
-  ce : CEImpl L.ceN L.ce wc
-  dd : DDImpl L.ddN L.dd wd
+  ce : ∀ cs, CEImpl (L.ceN cs) (L.ce cs) wc
+  dd : ∀ cs, DDImpl (L.ddN cs) (L.dd cs) wd
   du : L.du ∈ wc ∧ L.du ∈ wd
   dv : L.dv ∈ wc ∧ L.dv ∈ wd
 

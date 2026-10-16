@@ -41,7 +41,7 @@ theorem ecWf768 : Encaps.EcWf kem768 := by kem_wf kemWf768
 theorem dcWf768 : Decaps.DcWf kem768 := by kem_wf kemWf768
 
 /-- The compressions it calls. -/
-theorem calls768 : KemCalls kem768 compressWidths compressWidths := ⟨ceImpl, ddImpl, by decide, by decide⟩
+theorem calls768 : KemCalls kem768 compressWidths compressWidths := ⟨Codecs.ceI, Codecs.ddI, by decide, by decide⟩
 
 /-- States satisfying the shared contracts' preconditions. -/
 def keyGenSat : State where

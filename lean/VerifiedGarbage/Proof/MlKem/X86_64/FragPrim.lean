@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Sha3.X86_64.X4.Wp
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncodeAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
 
 /-!
@@ -602,6 +603,31 @@ theorem ceImpl : CEImpl "vg_mlkem_compress_encode" compressEncode compressWidths
 
 theorem ddImpl : DDImpl "vg_mlkem_decode_decompress" decodeDecompress compressWidths :=
   ⟨fun _ => widths_lt, decodeDecompress_correct, decodeDecompress_ct, dd_nosp, dd_depth⟩
+
+/-- The implementations of `vg_mlkem_compress_encode` and `vg_mlkem_decode_decompress`. -/
+theorem Codecs.ceI : ∀ cs : Codecs, CEImpl cs.ceN cs.ce compressWidths
+  | .base => ceImpl
+  | .avx2 => ⟨fun _ => widths_lt, CEY.correct, compressEncodeY_ct, nosp_of (by decide +kernel), by decide +kernel⟩
+
+theorem Codecs.ddI : ∀ cs : Codecs, DDImpl cs.ddN cs.dd compressWidths
+  | .base => ddImpl
+  | .avx2 => ⟨fun _ => widths_lt, DDY.correct, decodeDecompressY_ct, nosp_of (by decide +kernel), by decide +kernel⟩
+
+theorem Codecs.ce_ctl : ∀ cs : Codecs, ctlOk cs.ce = true
+  | .base => by decide +kernel
+  | .avx2 => by decide +kernel
+
+theorem Codecs.dd_ctl : ∀ cs : Codecs, ctlOk cs.dd = true
+  | .base => by decide +kernel
+  | .avx2 => by decide +kernel
+
+theorem Codecs.ce_sp : ∀ cs : Codecs, cs.ce.all (fun i => !isa.writesSp i) = true
+  | .base => Code.all_of_allInstrs (by decide +kernel)
+  | .avx2 => Code.all_of_allInstrs (by decide +kernel)
+
+theorem Codecs.dd_sp : ∀ cs : Codecs, cs.dd.all (fun i => !isa.writesSp i) = true
+  | .base => Code.all_of_allInstrs (by decide +kernel)
+  | .avx2 => Code.all_of_allInstrs (by decide +kernel)
 
 /-! ## `SampleNTT` -/
 
