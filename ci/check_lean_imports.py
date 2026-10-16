@@ -3,8 +3,7 @@
 lean/VerifiedGarbage/, which keeps the trusted base small and separate from
 proofs. Exits non-zero on violations.
 
-  * TCB/   imports only Lean core (`Init`, `Lean`) and TCB/  (no Mathlib: smaller
-    trusted base).
+  * TCB/   imports only Lean core and TCB/  (no Mathlib: smaller trusted base).
   * Spec/  imports only TCB/, Spec/ and Mathlib.
   * Impl/  imports only TCB/, Spec/, Impl/, Mathlib and Lean core's
     elaborator (`Lean.Elab`, for term elaborators that build tables:
@@ -29,7 +28,7 @@ LEAN = ROOT / "lean" / "VerifiedGarbage"
 IMPORT = r"\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?"
 
 ALLOWED_IMPORTS = {
-    "TCB": ("Init", "Lean", "VerifiedGarbage.TCB."),
+    "TCB": ("Lean", "VerifiedGarbage.TCB."),
     "Spec": ("VerifiedGarbage.TCB.", "VerifiedGarbage.Spec.", "Mathlib"),
     "Impl": ("VerifiedGarbage.TCB.", "VerifiedGarbage.Spec.", "VerifiedGarbage.Impl.", "Mathlib",
              "Lean.Elab"),

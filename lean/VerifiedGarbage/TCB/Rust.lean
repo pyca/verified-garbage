@@ -1,8 +1,6 @@
 module
 
 public import VerifiedGarbage.TCB.Artifact
--- `ShareCommon.shareCommon'` returns its argument (`Prepared.code_eq`).
-import all Init.ShareCommon
 
 /-!
 # Rendering artifacts as Rust
@@ -368,31 +366,23 @@ def badCall {M : ISA} (P : Printer M) (printed : String → Option (List Line))
 
 /-- An artifact with what the checks read of it more than once, each computed
 once: its printed code (`Printer.function`, which a call of it is checked
-against in every function that calls it, `checkCalls`), its tables of
+against in every function that calls it, `checkCalls`) and its tables of
 constants (`tablesOf`, which every artifact of the target is checked
-against, `checkConsts`), and its code with equal parts shared
-(`ShareCommon.shareCommon'`, which returns its argument, as the same value
-in memory as equal parts of it): so that the code of each call of a
-function in it is the same value in memory as the first one's, as
-`badCall` and `distinctCalls` find at once, without going through the code
-of each call of a function. -/
+against, `checkConsts`). -/
 structure Prepared where
   art : Artifact
-  code : Prog art.target.isa
   lines : List Line
   tables : List (String × List (BitVec 64))
-  code_eq : code = art.code
   lines_eq : lines = art.target.printer.function art.code
   tables_eq : tables = tablesOf art
 
-def Prepared.of (a : Artifact) : Prepared :=
-  ⟨a, ShareCommon.shareCommon' a.code, _, _, by unfold ShareCommon.shareCommon'; rfl, rfl, rfl⟩
+def Prepared.of (a : Artifact) : Prepared := ⟨a, _, _, rfl, rfl⟩
 
 /-- `p`'s artifact declares exactly the CPU features its code requires
 (`featureCheck`). -/
 def checkFeatures (p : Prepared) : Except String Unit :=
   let a := p.art
-  featureCheck s!"{a.target.name}: {a.name}" a.doc (requiresDedup a.target.isa.requires p.code)
+  featureCheck s!"{a.target.name}: {a.name}" a.doc (requiresDedup a.target.isa.requires a.code)
     a.features
 
 /-- The target's printer can encode every instruction of the code of `p`'s
@@ -400,7 +390,7 @@ artifact, and of the functions it calls, as the model describes it
 (`Printer.unencodable`). -/
 def checkEncodable (p : Prepared) : Except String Unit :=
   let a := p.art
-  match firstSome? a.target.printer.unencodable p.code with
+  match firstSome? a.target.printer.unencodable a.code with
   | none => pure ()
   | some e => throw s!"{a.target.name}: {a.name}: {e}"
 
@@ -411,7 +401,7 @@ def checkCalls (ps : List Prepared) (p : Prepared) : Except String Unit :=
   let a := p.art
   match badCall a.target.printer
       (fun n => (ps.find? fun q => q.art.target.name == a.target.name && q.art.name == n).map
-        (·.lines)) p.code.calls with
+        (·.lines)) a.code.calls with
   | none => pure ()
   | some (n, false) => throw s!"{a.target.name}: {a.name} calls {n}, which is not an artifact"
   | some (n, true) =>
@@ -587,6 +577,13 @@ code has an instruction its target's printer cannot encode
 one checking them in order would give; what they read of an artifact more
 than once is computed once, on `tasks` tasks (`Prepared`, `prepareAll`). -/
 def files (as : List Artifact) : Except String (List (String × String)) := do
+  -- The same artifacts, with equal parts the same value in memory
+  -- (`ShareCommon.shareCommon'` returns its argument): the code of every call
+  -- of a function in an artifact is then the same value as its first call's,
+  -- which `badCall` and `distinctCalls` skip at once. Most calls' code was
+  -- an equal value made again, not the same one. First, as sharing values
+  -- that tasks have read takes several times longer.
+  let as := ShareCommon.shareCommon' as
   forMPar as checkApi
   checkUnique as
   let ps := prepareAll as
