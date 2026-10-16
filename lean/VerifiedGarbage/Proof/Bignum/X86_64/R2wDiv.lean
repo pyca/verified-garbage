@@ -546,16 +546,6 @@ theorem quot_ok {t : State} {B : Addr} {Z w ex em ev : Nat} (hs : Scr t B Z)
 
 /-! ## The reciprocal -/
 
-/-- `v = ⌊(2^128 - 1) / d⌋ - 2^64 = ⌊((2^64 - 1 - d) 2^64 + 2^64 - 1) / d⌋`. -/
-theorem recip_eq {d : Nat} (hd : d < 2 ^ 64) (_hd0 : 0 < d) :
-    ((2 ^ 64 - 1 - d) * 2 ^ 64 + (2 ^ 64 - 1)) / d = (2 ^ 128 - 1) / d - 2 ^ 64 := by
-  have e : (2 ^ 64 - 1 - d) * 2 ^ 64 + (2 ^ 64 - 1) = 2 ^ 128 - 1 - 2 ^ 64 * d := by
-    rw [Nat.sub_mul, Nat.sub_mul]
-    have := Nat.mul_le_mul_right (2 ^ 64) (show d ≤ 2 ^ 64 - 1 by omega_using [hd])
-    rw [Nat.sub_mul] at this
-    rw [Nat.mul_comm d]; omega_using [this]
-  rw [e, Nat.mul_comm (2 ^ 64) d, Nat.sub_mul_div]
-
 /-- `recip`: `v` for `d = m[w - 1] ≥ 2^63` into the word at `r8`, for `m` at
 `r10` of `w` words. -/
 theorem recip_ok {t : State} {B : Addr} {Z w em ev : Nat} (hs : Scr t B Z)

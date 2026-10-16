@@ -414,4 +414,14 @@ theorem wordStep_val {w X M u2 u1 Xl d ml T1 T2 T3 b c1 c2 : Nat} (hw : 2 ≤ w)
   unfold twos
   rw [Int.emod_eq_of_lt (Int.natCast_nonneg _) (Int.ofNat_lt.mpr (Nat.lt_trans hr hMW')), Int.toNat_natCast]
 
+/-- `v = ⌊(2^128 - 1) / d⌋ - 2^64 = ⌊((2^64 - 1 - d) 2^64 + 2^64 - 1) / d⌋`. -/
+theorem recip_eq {d : Nat} (hd : d < 2 ^ 64) (_hd0 : 0 < d) :
+    ((2 ^ 64 - 1 - d) * 2 ^ 64 + (2 ^ 64 - 1)) / d = (2 ^ 128 - 1) / d - 2 ^ 64 := by
+  have e : (2 ^ 64 - 1 - d) * 2 ^ 64 + (2 ^ 64 - 1) = 2 ^ 128 - 1 - 2 ^ 64 * d := by
+    rw [Nat.sub_mul, Nat.sub_mul]
+    have := Nat.mul_le_mul_right (2 ^ 64) (show d ≤ 2 ^ 64 - 1 by omega_using [hd])
+    rw [Nat.sub_mul] at this
+    rw [Nat.mul_comm d]; omega_using [this]
+  rw [e, Nat.mul_comm (2 ^ 64) d, Nat.sub_mul_div]
+
 end VG.Proof.Bignum.WordStep
