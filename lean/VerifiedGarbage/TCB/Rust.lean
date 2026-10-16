@@ -219,6 +219,25 @@ def featuresConst (name : String) : List String → String
       crate::cpu::Features::of(&[" ++
     ", ".intercalate (fs.map fun f => s!"\"{escape f}\"") ++ "]);\n\n"
 
+/-- The name of the constant of how much of its parameter `param` the
+function `name` writes (`Artifact.written`). -/
+def writtenName (name param : String) : String := s!"{name.toUpper}_{param.toUpper}_WRITTEN"
+
+/-- The constants of how much of its parameters the function `name` writes
+(`Artifact.written`), one per parameter; nothing if there are none. -/
+def writtenConsts (name : String) (written : List (String × Nat)) : String :=
+  String.join (written.map fun (p, n) =>
+    s!"/// The bytes of `{p}` that `{name}` may write: it changes no byte of `{p}` at this \
+      offset or beyond (`Artifact.written`).\n" ++
+    s!"pub(crate) const {writtenName name p}: usize = {n};\n\n")
+
+/-- The paragraphs documenting how much of its parameters the function `name`
+writes (`Artifact.written`). -/
+def writtenDoc (name : String) (written : List (String × Nat)) : List String :=
+  written.map fun (p, n) =>
+    s!"It writes at most the first {n} bytes of `{p}` (`{writtenName name p}`): no byte of \
+      `{p}` beyond them changes."
+
 /-- The features that the function `name`, with documentation `doc`, declares
 (`declared`) are exactly those its code requires (`required`, with
 repetitions); and if there are any, `doc` ends with its `# Safety`
@@ -336,7 +355,8 @@ first in it and `Sig.layoutDoc` at the end), and the CPU features it needs
 def fullDoc (a : Artifact) : String :=
   let A := a.target.abi
   let items := Sig.layoutDoc A a.sig a.writeArgs a.stack
-  featureDoc (prependSafety (insertNotes a.doc (Sig.layoutNote A a.sig a.writeArgs))
+  featureDoc (prependSafety (insertNotes a.doc
+      (Sig.layoutNote A a.sig a.writeArgs ++ writtenDoc a.name a.written))
     (Sig.validDoc a.sig) ++ String.join (items.map ("\n* " ++ ·))) a.features
 
 /-- If the emitter adds anything to the documentation of `a` from its
@@ -373,6 +393,7 @@ where
   let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
   let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
   featuresConst a.name a.features ++
+  writtenConsts a.name a.written ++
   docComment "" (fullDoc a) ++
   "#[unsafe(naked)]\n" ++
   s!"pub(crate) unsafe extern \"{a.target.rustAbi}\" fn {a.name}{a.sig.rust} " ++ "{\n" ++
@@ -475,6 +496,26 @@ def checkApi (a : Artifact) : Except String Unit :=
   unless a.contracts.isSome do
     throw s!"{a.target.name}: {a.name} is not made from an `Api` with a contract \
       (`Api.contracts`)"
+
+/-- Each bound of `a.written` names a writable array parameter of its
+signature, no parameter twice, and is at most the parameter's size in bytes:
+so the constant `writtenConsts` exports for it is a bound on the bytes of
+that buffer the function may change. -/
+def checkWritten (a : Artifact) : Except String Unit := do
+  let names := a.written.map (·.1)
+  for (p, n) in a.written do
+    unless (names.filter (· == p)).length == 1 do
+      throw s!"{a.target.name}: {a.name} bounds what it writes of `{p}` more than once"
+    match a.sig.params.lookup p with
+    | some (.array true e k) =>
+      unless n ≤ k * e.size do
+        throw s!"{a.target.name}: {a.name} bounds what it writes of `{p}` by {n} bytes, \
+          more than its {k * e.size}"
+    | some _ =>
+      throw s!"{a.target.name}: {a.name} bounds what it writes of `{p}`, which is not a \
+        writable array"
+    | none => throw s!"{a.target.name}: {a.name} bounds what it writes of `{p}`, which is not \
+        one of its parameters"
 
 /-- No two artifacts of a target have the same name. -/
 def checkUnique (as : List Artifact) : Except String Unit :=
@@ -661,9 +702,11 @@ contract (`checkApi`), two artifacts of a target have the same name
 tables of constants are not as `checkConsts` requires, an
 artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
-(`checkEncodable`) or its doc has no `# Safety` section at its end for what
-`fullDoc` adds to it (`checkLayout`). Each check of every artifact runs on
-`tasks` tasks (`forMPar`), one check after the other, so the error is the
+(`checkEncodable`), its doc has no `# Safety` section at its end for what
+`fullDoc` adds to it (`checkLayout`) or a bound on what it writes is not of a
+writable array parameter, at most its size (`checkWritten`). Each check of
+every artifact runs on `tasks` tasks (`forMPar`), one check after the other,
+so the error is the
 one checking them in order would give; what they read of an artifact more
 than once is computed once, on `tasks` tasks (`Prepared`, `prepareAll`). -/
 def files (as : List Artifact) : Except String (List (String × String)) := do
@@ -682,6 +725,7 @@ def files (as : List Artifact) : Except String (List (String × String)) := do
   forMPar ps checkFeatures
   forMPar ps checkEncodable
   forMPar as checkLayout
+  forMPar as checkWritten
   return render ps fun a n => ((callee as a n).map (·.module)).getD ""
 
 end VG.Rust
