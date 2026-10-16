@@ -158,7 +158,7 @@ theorem okBit_ok {s : State} {b : Bool} (h10 : s.gpr .x10 = BitVec.ofNat 64 (if 
 /-- `openMain` up to the branch on the tag. -/
 def omA (c : Callees) : Prog isa :=
   .seq (j0 c) (.seq (oneAad c) (.seq (.block encPrep) (.seq (decAbs c) (.seq (.block finPrep)
-    (.seq (finBody c uO) (.seq (.block [.ldr .x .x28 .x19 tlO]) (.seq cmpSeg
+    (.seq (finBody c uO) (.seq (.block [.ldr .x .x28 .x19 tlO]) (.seq cmp
       (.block [imm .x27 1, .sub .x .x27 .x27 .x10]))))))))
 
 /-- The rest: the branch on the tag, and the result. -/
@@ -317,7 +317,7 @@ theorem openMainA_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
     rw [show s₄.mem.read (W + 248#64) 8 = s₄.mem.readW (W + BitVec.ofNat 64 248) 64 from rfl, e]; rfl
   refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
   have he₅ := he₄.of_regs r₅
-  refine WP.seq (WP.mono (WP.with_rdwr (cmpSeg_ok L he₅ (fun _ _ => rfl : Kept s₅.gpr s₅) x28₅ hle))
+  refine WP.seq (WP.mono (WP.with_rdwr (cmp_ok L he₅ (fun _ _ => rfl : Kept s₅.gpr s₅) x28₅ hle))
     fun s₆ ⟨⟨x10₆, he₆, hk₆, _, f₆⟩, rd₆, wr₆⟩ => ?_)
   refine WP.mono (okBit_ok (b := decide (bytesAt s₅.mem (W + BitVec.ofNat 64 112) tl =
       bytesAt s₅.mem W tl)) (by rw [x10₆]; simp only [decide_eq_true_eq]))

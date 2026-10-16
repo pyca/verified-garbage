@@ -234,7 +234,7 @@ theorem absSeg1_ok {k : Reg → BitVec 64} {H : Block} {x : List Byte} {D : Addr
     · rw [r₂.rd, r₂.wr, r₁.rd, r₁.wr]; exact (h.data.take hk1).rd
     · rw [r₂.wr, r₁.wr]; exact he.perm.stC (by omega_arith)
     · exact (h.data.take hk1).st.sub_right (Lay.stSub (by omega_arith))
-  refine WP.seq (WP.mono (copy_ok s₂ x12₂ x11₂ x13₂ hlp) fun s₃ ⟨m₃, g₃, sp₃, rd₃, wr₃⟩ => ?_)
+  refine WP.seq (WP.mono (copyB_ok s₂ x12₂ x11₂ x13₂ hlp) fun s₃ ⟨m₃, g₃, sp₃, rd₃, wr₃⟩ => ?_)
   rw [r₂.mem, r₁.mem] at m₃
   have hdk := length_bytesAt s.mem D (headLen o n)
   -- The block after the copy.

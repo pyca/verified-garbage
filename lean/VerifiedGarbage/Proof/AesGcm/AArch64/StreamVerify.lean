@@ -152,7 +152,7 @@ theorem ver_run (v : GcmImpl) {s : State} (hs : streamVerifyAArch64.pre s) {a c 
     refine WP.seq (WP.mono (finBody_ok L v (.inr rfl) (a := a) (c := c) (H := ctxH s.mem (s.gpr .x0)) he₄ hk₄
       x22₄ hR x26₄ x27₄ hc hH₄) fun s₅ ⟨he₅, hk₅, f₅, out₅⟩ => ?_)
     have x28₅ : s₅.gpr .x28 = BitVec.ofNat 64 tl := by rw [hk₅ .x28 (by decide), x28₃]
-    refine WP.seq (WP.mono (cmpSeg_ok L he₅ hk₅ x28₅ hle) fun s₆ ⟨x10₆, he₆, _, _, f₆⟩ => ?_)
+    refine WP.seq (WP.mono (cmp_ok L he₅ hk₅ x28₅ hle) fun s₆ ⟨x10₆, he₆, _, _, f₆⟩ => ?_)
     refine WP.mono (verRet_ok
       (b := decide (bytesAt s₅.mem (s.gpr .x7 + BitVec.ofNat 64 112) tl = bytesAt s₅.mem (s.gpr .x7) tl))
       (by rw [x10₆]; by_cases hp : bytesAt s₅.mem (s.gpr .x7 + BitVec.ofNat 64 112) tl =
