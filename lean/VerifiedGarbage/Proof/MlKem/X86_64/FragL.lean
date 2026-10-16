@@ -14,8 +14,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Lit
 # ML-KEM-768 on x86-64: the calls of the polynomial primitives, in a layout
 
 Each call of a primitive from a state in a layout whose pointers pass its
-check: what it leaves (`PPost`) and computes (`nttAt_ok`, …), and that two
-runs in the layout leak the same (`nttAt_tr`, …); and the same for the byte
+check: what it leaves (`PPost`) and computes (`nttInvAt_ok`, …), and that two
+runs in the layout leak the same (`nttInvAt_tr`, …); and the same for the byte
 stores and copies between them.
 -/
 
@@ -42,23 +42,11 @@ theorem ipChk_in {bs wbs : List (Reg × Nat)} {f : Ptr} (hc : ipChk bs wbs f = t
     inB bs f 1024 = true ∧ inB bs (sc oSS) 1024 = true := by
   simp only [ipChk, Bool.and_eq_true] at hc; exact ⟨wrOk_in hc.1.1, wrOk_in hc.1.2⟩
 
-theorem nttAt_ok {A : Arith} (hA : ArithOk A) {s : State} (L : Lay rbs wbs s) {f : Ptr}
-    (hc : ipChk (rbs ++ wbs) wbs f = true) (red : Reduced s.mem (pa s f)) :
-    WP isa (nttAt A f) s fun s' => PPost s s' [(f, 1024), (sc oSS, 1024)] ∧
-      PolyIs s'.mem (pa s f) (ntt (polyAt s.mem (pa s f))) :=
-  ipAt_ok hA.ntt.ok hA.ntt.nosp (by rw [hA.ntt.depth]; decide) (IpH.of L hc red)
-
 theorem nttInvAt_ok {A : Arith} (hA : ArithOk A) {s : State} (L : Lay rbs wbs s) {f : Ptr}
     (hc : ipChk (rbs ++ wbs) wbs f = true) (red : Reduced s.mem (pa s f)) :
     WP isa (nttInvAt A f) s fun s' => PPost s s' [(f, 1024), (sc oSS, 1024)] ∧
       PolyIs s'.mem (pa s f) (nttInv (polyAt s.mem (pa s f))) :=
   ipAt_ok hA.nttInv.ok hA.nttInv.nosp (by rw [hA.nttInv.depth]; decide) (IpH.of L hc red)
-
-theorem nttAt_tr {A : Arith} (hA : ArithOk A) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true) :
-    RelCT isa (fun x y => LRel rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f)) (nttAt A f)
-      fun _ _ => True :=
-  RelCT.mono (ipAt_tr hA.ntt.ok hA.ntt.ct) (fun _ _ ⟨h, rx, ry⟩ => ⟨IpH.of h.1 hc rx, IpH.of h.2.1 hc ry,
-    h.eq (ipChk_in hc).1, h.eq (ipChk_in hc).2, h.2.2.2⟩) fun _ _ _ => trivial
 
 theorem nttInvAt_tr {A : Arith} (hA : ArithOk A) {f : Ptr} (hc : ipChk (rbs ++ wbs) wbs f = true) :
     RelCT isa (fun x y => LRel rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f)) (nttInvAt A f)
@@ -97,29 +85,6 @@ theorem subAt_tr {A : Arith} (hA : ArithOk A) {f g : Ptr} (hg : NA g) (hc : accC
   RelCT.mono (accAt_tr hA.sub.ok hA.sub.ct (fun e => hg (by rw [e]; decide)))
     (fun _ _ ⟨h, ⟨r1, r2⟩, r3, r4⟩ => ⟨AccH.of h.1 hc r1 r2, AccH.of h.2.1 hc r3 r4, h.eq (accChk_in hc).1,
       h.eq (accChk_in hc).2, h.2.2.2⟩) fun _ _ _ => trivial
-
-/-! ## `MultiplyNTTs` -/
-
-theorem mulChk_in {bs wbs : List (Reg × Nat)} {h f g : Ptr} (hc : mulChk bs wbs h f g = true) :
-    inB bs h 1024 = true ∧ inB bs f 1024 = true ∧ inB bs g 1024 = true ∧ inB bs (sc oSS) 1024 = true := by
-  simp only [mulChk, Bool.and_eq_true] at hc
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, _⟩, _⟩, _⟩, _⟩, _⟩ := hc
-  exact ⟨wrOk_in h1, rdOk_in h2, rdOk_in h3, wrOk_in h4⟩
-
-theorem mulAt_okL {A : Arith} (hA : ArithOk A) {s : State} (L : Lay rbs wbs s) {h f g : Ptr} (hf : NA f)
-    (hg : NA g) (hc : mulChk (rbs ++ wbs) wbs h f g = true) (rf : Reduced s.mem (pa s f))
-    (rg : Reduced s.mem (pa s g)) :
-    WP isa (mulAt A h f g) s fun s' => PPost s s' [(h, 1024), (sc oSS, 1024)] ∧
-      PolyIs s'.mem (pa s h) (multiplyNTTs (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) :=
-  mulAt_ok hA hf hg (MulH.of L hc rf rg)
-
-theorem mulAt_trL {A : Arith} (hA : ArithOk A) {h f g : Ptr} (hf : NA f) (hg : NA g)
-    (hc : mulChk (rbs ++ wbs) wbs h f g = true) :
-    RelCT isa (fun x y => LRel rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (mulAt A h f g) fun _ _ => True :=
-  RelCT.mono (mulAt_tr hA hf hg) (fun _ _ ⟨e, ⟨r1, r2⟩, r3, r4⟩ => ⟨MulH.of e.1 hc r1 r2, MulH.of e.2.1 hc r3 r4,
-    e.eq (mulChk_in hc).1, e.eq (mulChk_in hc).2.1, e.eq (mulChk_in hc).2.2.1, e.eq (mulChk_in hc).2.2.2,
-    e.2.2.2⟩) fun _ _ _ => trivial
 
 /-! ## Two pointers: `SamplePolyCBD₂`, `ByteEncode₁₂`, `ByteDecode₁₂` and the compressions -/
 

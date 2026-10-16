@@ -85,8 +85,38 @@ def mulAccK (R : AccRep) (T : TabRep) (o : Nat) : Contract isa where
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rbx = s₂.gpr .rbx ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
-/-- What `decryptMul` and `encryptMul` need of the code of a backend: each
-piece meets its contract, and calls nothing. -/
+/-- The accumulator at `rdi` of `f = rsi ×_T g = rdx`, with what `mulAccK`
+gives. -/
+def mulSetK (R : AccRep) (T : TabRep) : Contract isa where
+  pre s :=
+    s.rd = [pR (s.gpr .rsi), pR (s.gpr .rdx), tabR (s.gpr .rcx)] ∧
+    s.wr = [pR (s.gpr .rdi), pR (s.gpr .rcx), tmpR (s.gpr .rcx)] ∧
+    (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) ∧ (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rdx)) ∧
+    (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rcx)) ∧ (pR (s.gpr .rdi)).Disjoint (tmpR (s.gpr .rcx)) ∧
+    (pR (s.gpr .rdi)).Disjoint (tabR (s.gpr .rcx)) ∧
+    (pR (s.gpr .rsi)).Disjoint (pR (s.gpr .rcx)) ∧ (pR (s.gpr .rsi)).Disjoint (tmpR (s.gpr .rcx)) ∧
+    (pR (s.gpr .rdx)).Disjoint (pR (s.gpr .rcx)) ∧ (pR (s.gpr .rdx)).Disjoint (tmpR (s.gpr .rcx)) ∧
+    (pR (s.gpr .rcx)).Disjoint (tmpR (s.gpr .rcx)) ∧ (pR (s.gpr .rcx)).Disjoint (tabR (s.gpr .rcx)) ∧
+    (tmpR (s.gpr .rcx)).Disjoint (tabR (s.gpr .rcx)) ∧
+    (retR s).Disjoint (pR (s.gpr .rdi)) ∧ (retR s).Disjoint (pR (s.gpr .rsi)) ∧
+    (retR s).Disjoint (pR (s.gpr .rdx)) ∧ (retR s).Disjoint (pR (s.gpr .rcx)) ∧
+    (retR s).Disjoint (tmpR (s.gpr .rcx)) ∧ (retR s).Disjoint (tabR (s.gpr .rcx)) ∧
+    s.gpr .rbx = s.gpr .rcx ∧ Reduced s.mem (s.gpr .rsi) ∧ Reduced s.mem (s.gpr .rdx) ∧ T.is s.mem (s.gpr .rcx)
+  post s s' := R.is s'.mem (s.gpr .rdi) (multiplyNTTs (polyAt s.mem (s.gpr .rsi)) (polyAt s.mem (s.gpr .rdx)))
+  pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rbx = s₂.gpr .rbx ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
+/-- The polynomial at `rdi` plus the accumulator at `rsi`, to `rdi`. -/
+def finK (R : AccRep) : Contract isa where
+  pre s :=
+    s.rd = [pR (s.gpr .rsi)] ∧ s.wr = [pR (s.gpr .rdi)] ∧ (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) ∧
+    (retR s).Disjoint (pR (s.gpr .rdi)) ∧ (retR s).Disjoint (pR (s.gpr .rsi)) ∧ Reduced s.mem (s.gpr .rdi) ∧
+    ∃ F, R.is s.mem (s.gpr .rsi) F
+  post s s' := ∀ F, R.is s.mem (s.gpr .rsi) F → PolyIs s'.mem (s.gpr .rdi) (add (polyAt s.mem (s.gpr .rdi)) F)
+  pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
+/-- What `decryptMul`, `encryptMul` and `keygenMul` need of the code of a
+backend: each piece meets its contract, and calls nothing. -/
 structure BodiesOk (B : Bodies) (R : AccRep) (T : TabRep) : Prop where
   nttO : ∀ s, nttOK.pre s → ∃ t s', Exec isa B.nttO s t s' ∧ abiPreserved s s' ∧ nttOK.post s s'
   inv : ∀ s, (invAccK R).pre s → ∃ t s', Exec isa B.inv s t s' ∧ abiPreserved s s' ∧ (invAccK R).post s s'
@@ -97,6 +127,10 @@ structure BodiesOk (B : Bodies) (R : AccRep) (T : TabRep) : Prop where
     WP isa (.block B.tab) s fun s' => T.is s'.mem (s.gpr .rcx) ∧ Frame [tabR (s.gpr .rcx)] s.mem s'.mem ∧
       Keep [.r9, .r10] s s'
   nc : B.nttO.noCalls = true ∧ B.inv.noCalls = true ∧ B.zero.noCalls = true ∧ ∀ o, (B.mulAcc o).noCalls = true
+  fin : ∀ s, (finK R).pre s → ∃ t s', Exec isa B.fin s t s' ∧ abiPreserved s s' ∧ (finK R).post s s'
+  ncFin : B.fin.noCalls = true
+  mulSet : ∀ s, (mulSetK R T).pre s → ∃ t s', Exec isa B.mulSet s t s' ∧ abiPreserved s s' ∧ (mulSetK R T).post s s'
+  ncSet : B.mulSet.noCalls = true
 
 /-! ## SSE2 -/
 
@@ -262,9 +296,40 @@ theorem mulAccB_correct (o : Nat) (ho : 1024 * o < 2 ^ 31) (s : State) (hs : (mu
   rw [hA] at hX
   exact hP X hX
 
+/-- `vg_mlkem_add`'s code adds the polynomial at `rsi`. -/
+theorem finB_correct (s : State) (hs : (finK accSse).pre s) :
+    ∃ t s', Exec isa Impl.MlKem.X86_64.add s t s' ∧ abiPreserved s s' ∧ (finK accSse).post s s' := by
+  obtain ⟨hrd, hwr, hd, rA, rF, hRA, F, hF⟩ := hs
+  obtain ⟨t, s', he, ha, hp⟩ := add_correct s ⟨hrd, hwr, hd, rA, rF, hRA, hF.1⟩
+  exact ⟨t, s', he, ha, fun G hG => by rw [← hG.2]; exact hp⟩
+
+/-- `vg_mlkem_multiply_ntts`'s code stores the product. -/
+theorem mulB_set (s : State) (hs : (mulSetK accSse tabSse).pre s) :
+    ∃ t s', Exec isa mulB s t s' ∧ abiPreserved s s' ∧ (mulSetK accSse tabSse).post s s' := by
+  obtain ⟨hrd, hwr, dAF, dAG, dAC, _, _, dFC, _, dGC, _, _, _, _, rA, rF, rG, rC, _, _, _, hRF, hRG, _⟩ := hs
+  have hW : WP isa mulB s fun s' =>
+      PolyIs s'.mem (s.gpr .rdi) (multiplyNTTs (polyAt s.mem (s.gpr .rsi)) (polyAt s.mem (s.gpr .rdx))) ∧
+      Frame [pR (s.gpr .rdi), pR (s.gpr .rcx)] s.mem s'.mem := by
+    refine WP.inline (k := mulK) mulB_correct (rd := [pR (s.gpr .rsi), pR (s.gpr .rdx)])
+      (wr := [pR (s.gpr .rdi), pR (s.gpr .rcx)]) ?_ ?_ ?_ (fun s2 _ _ _ hf2 _ hpost2 => ?_)
+    · simp only [mulK, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem,
+        retR]
+      exact ⟨trivial, trivial, dAF, dAG, dAC, dFC, dGC, rA, rF, rG, rC, hRF, hRG⟩
+    · rw [hrd, hwr]
+      exact (cov_mem (by simp)).cons ((cov_mem (by simp)).cons ((cov_mem (by simp)).cons
+        ((cov_mem (by simp)).cons Covers.nil)))
+    · rw [hwr]
+      exact (cov_mem (by simp)).cons ((cov_mem (by simp)).cons Covers.nil)
+    simp only [mulK, State.withRegions_gpr, State.withRegions_mem] at hpost2
+    exact ⟨hpost2, hf2⟩
+  obtain ⟨t, s', he, ⟨hP, hf⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .rdi, .rsi, .r8, .r9, .r10] hW (by rfl)
+  exact ⟨t, s', he, abiPreserved_of_exec (by rfl) he (gprPreserved_of hk (by decide) hf
+    (by simpa using ⟨rA, rC⟩)), hP⟩
+
 theorem BodiesOk.sse : BodiesOk .sse accSse tabSse :=
   ⟨nttOB_correct, nttInvB_acc, zeroB_correct, mulAccB_correct,
     fun _ _ => WP.block_nil_iff.mpr ⟨trivial, Frame.refl _ _, Keep.refl _ _⟩,
-    ⟨by decide +kernel, by decide +kernel, by decide +kernel, fun _ => rfl⟩⟩
+    ⟨by decide +kernel, by decide +kernel, by decide +kernel, fun _ => rfl⟩, finB_correct, by decide +kernel,
+    mulB_set, by decide +kernel⟩
 
 end VG.Proof.MlKem.X86_64

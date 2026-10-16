@@ -93,6 +93,14 @@ def encMulAt (A : Arith) (u a t y z : Ptr) : Prog isa :=
   .seq (.block (lea .rdi u ++ lea .rsi a ++ lea .rdx t ++ lea .rcx y ++ lea .r8 z))
     (.call (L.p.fn "encrypt_mul" ++ A.sfx) (encryptMul A.bodies L.k))
 
+/-- `ŝ = NTT(s)` in place and `t̂ = Â ∘ ŝ + NTT(e)` to the `k` polynomials
+from `t`, for the `k` polynomials of `s` from `s` and of `e` from `e` and
+the `k²` of `Â` from `a`, with the working space `z` (4096 bytes):
+`vg_mlkem*_keygen_mul`, with the arithmetic of `A`. -/
+def kgMulAt (A : Arith) (t s a e z : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi t ++ lea .rsi s ++ lea .rdx a ++ lea .rcx e ++ lea .r8 z))
+    (.call (L.p.fn "keygen_mul" ++ A.sfx) (keygenMul A.bodies L.k))
+
 /-- `Decompress_d(ByteDecode_d(b))` to `f`, for `d = d_u` or `d_v`. -/
 def ddAt (cs : Codecs) (b : Ptr) (d : Nat) (f : Ptr) : Prog isa := ddCall (L.ddN cs) (L.dd cs) b d f
 
@@ -109,13 +117,6 @@ def ents (c : Callee4) : Nat → Nat → Prog isa
 def samples (c : Callee4) : Prog isa := L.ents c 0 (L.k * L.k)
 
 end Kem
-
-/-- `f[0] ×_T g[0] + ⋯ + f[n - 1] ×_T g[n - 1]` to polynomial 15 (with 16
-for the products), accumulated left to right. -/
-def dotN (A : Arith) (f g : Nat → Ptr) : Nat → Prog isa
-  | 0 => .block []
-  | 1 => mulAt A (pS 15) (f 0) (g 0)
-  | n + 2 => .seq (dotN A f g (n + 1)) (.seq (mulAt A (pS 16) (f (n + 1)) (g (n + 1))) (addAt A (pS 15) (pS 16)))
 
 /-- ML-KEM-768: `k = 3`, `d_u = 10`, `d_v = 4`; 28 polynomials in `scratch`:
 `Â` in polynomials 6–14, the working space from 17, the outputs of `PRF₂`

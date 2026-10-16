@@ -2,8 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
 meta import VerifiedGarbage.Proof.MlKem.X86_64.TopBase
-public import VerifiedGarbage.Proof.MlKem.X86_64.Dot
-meta import VerifiedGarbage.Proof.MlKem.X86_64.Dot
+public import VerifiedGarbage.Proof.MlKem.X86_64.FragKM
+meta import VerifiedGarbage.Proof.MlKem.X86_64.FragKM
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
 meta import VerifiedGarbage.Proof.MlKem.X86_64.FragS4
 public import VerifiedGarbage.Proof.MlKem.X86_64.Prfs
@@ -126,21 +126,27 @@ def prfsKChk : Bool :=
     (List.range (L.k * L.k)).all (fun e => keepB (kgB L) (prfsW (2 * L.k) L.oPR L.lPW) (pS (L.pA + e)) 1024)
 
 /-- What `se N` writes. -/
-abbrev seW (N : Nat) : List (Ptr × Nat) := [(pS N, 1024)] ++ [(pS N, 1024), (sc oSS, 1024)]
+abbrev seW (N : Nat) : List (Ptr × Nat) := [(pS N, 1024)]
 
 def seChk (N : Nat) : Bool :=
-  twoChk (kgB L) (kgW L) (prfO L N) 128 (pS N) 1024 && ipChk (kgB L) (kgW L) (pS N) && restChk L N 0 0 (seW N)
+  twoChk (kgB L) (kgW L) (prfO L N) 128 (pS N) 1024 && restChk L N 0 0 (seW N)
 
-/-- What `row i` writes. -/
-abbrev rowW (i : Nat) : List (Ptr × Nat) := dotW L.k ++ [(pS 15, 1024)] ++ [((.r12, 384 * i), 384)]
+/-- What `vg_mlkem*_keygen_mul` writes. -/
+abbrev kmW : List (Ptr × Nat) := [(pS L.pU, 1024 * L.k), (pS 0, 1024 * L.k), (pS L.pZ, 4096)]
 
-def rowChk (i : Nat) : Bool :=
-  dotChk (kgB L) (kgW L) (fun j => L.aS i j) pS L.k && accChk (kgB L) (kgW L) (pS 15) (pS (L.k + i)) &&
-    keepB (kgB L) (dotW L.k) (pS (L.k + i)) 1024 && twoChk (kgB L) (kgW L) (pS 15) 1024 (.r12, 384 * i) 384 &&
-    restChk L (2 * L.k) i 0 (rowW L i)
+/-- After `vg_mlkem*_keygen_mul`: what a piece writing `ws` keeps, with `r`
+rows of `ek` and `e` of `dk` written. -/
+def restTChk (r e : Nat) (ws : List (Ptr × Nat)) : Bool :=
+  kcChk L ws && keepB (kgB L) ws (sc oG) 32 && (List.range L.k).all (fun j => keepB (kgB L) ws (pS j) 1024) &&
+    (List.range L.k).all (fun i => keepB (kgB L) ws (pS (L.pU + i)) 1024) &&
+    (List.range r).all (fun i => keepB (kgB L) ws (.r12, 384 * i) 384) &&
+    (List.range e).all (fun j => keepB (kgB L) ws (.r13, 384 * j) 384)
+
+def encTChk (i : Nat) : Bool :=
+  twoChk (kgB L) (kgW L) (pS (L.pU + i)) 1024 (.r12, 384 * i) 384 && restTChk L i 0 [((.r12, 384 * i), 384)]
 
 def encSChk (j : Nat) : Bool :=
-  twoChk (kgB L) (kgW L) (pS j) 1024 (.r13, 384 * j) 384 && restChk L (2 * L.k) L.k j [((.r13, 384 * j), 384)]
+  twoChk (kgB L) (kgW L) (pS j) 1024 (.r13, 384 * j) 384 && restTChk L L.k j [((.r13, 384 * j), 384)]
 
 /-- The writes of `fin`. -/
 abbrev finW₁ : List (Ptr × Nat) := [((.r12, 384 * L.k), 32)]
@@ -189,7 +195,10 @@ structure KgWf : Prop extends KemWf L where
   -- the keys
   prfs : prfsKChk L = true
   se : ∀ N < 2 * L.k, seChk L N = true
-  row : ∀ i < L.k, rowChk L i = true
+  km : kmChk (kgB L) (kgW L) L.k (pS L.pU) (pS 0) (pS L.pA) (pS L.k) (pS L.pZ) = true
+  kmK : kcChk L (kmW L) = true
+  kmG : keepB (kgB L) (kmW L) (sc oG) 32 = true
+  encT : ∀ i < L.k, encTChk L i = true
   encS : ∀ j < L.k, encSChk L j = true
   f₁ : copyChk (kgB L) (kgW L) (.r12, 384 * L.k) (sc oG) 32 = true
   f₁K : kcChk L (finW₁ L) = true
