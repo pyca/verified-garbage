@@ -2,7 +2,13 @@ module
 
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMul
 meta import VerifiedGarbage.Proof.MlKem.X86_64.EncMul
+import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
+meta import VerifiedGarbage.Proof.MlKem.X86_64.KpkeBodiesY
+public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
+meta import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+meta import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 meta import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
 meta import VerifiedGarbage.Proof.MlKem.X86_64.WritesOnly
@@ -27,7 +33,7 @@ namespace VG.Proof.MlKem.X86_64
 open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
 
-theorem encMul_correct {B : Bodies} (hB : BodiesOk B) {k : Nat} (hk : k ≤ 4) (hk0 : 0 < k)
+theorem encMul_correct {B : Bodies} {R : AccRep} {T : TabRep} (hB : BodiesOk B R T) {k : Nat} (hk : k ≤ 4) (hk0 : 0 < k)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
       (EncMul.innerE B k) = true)
     (hctl : ctlOk (encryptMul B k) = true) (s : State) (hs : (encMulK k).pre s) :
@@ -59,7 +65,7 @@ def encMulSat (k : Nat) : State where
 section
 variable (B : Bodies)
 
-theorem encMul3_verified (hB : BodiesOk B)
+theorem encMul3_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
       (EncMul.innerE B 3) = true)
     (hctl : ctlOk (encryptMul B 3) = true)
@@ -86,7 +92,7 @@ theorem encMul3_verified (hB : BodiesOk B)
              bv_omega) }
 
 
-theorem encMul4_verified (hB : BodiesOk B)
+theorem encMul4_verified {R : AccRep} {T : TabRep} (hB : BodiesOk B R T)
     (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
       (EncMul.innerE B 4) = true)
     (hctl : ctlOk (encryptMul B 4) = true)
