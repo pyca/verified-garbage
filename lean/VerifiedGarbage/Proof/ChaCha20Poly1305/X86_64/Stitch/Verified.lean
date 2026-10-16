@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Pad
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Prologue
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
+import VerifiedGarbage.Proof.Framework.X86_64.Align
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -158,7 +159,7 @@ include hl
 theorem loop_rel :
     RelCT isa (fun s₁ s₂ => CI c dp L sp 1 s₁ ∧ CI c dp L sp 1 s₂ ∧
         s₁.cf = some (decide (L - 512 * 1 < 512)) ∧ s₂.cf = some (decide (L - 512 * 1 < 512)))
-      (.ite .b (.block []) (.loop (chunk vl false) .ae))
+      (.ite .b (.block []) (aligned (.loop (chunk vl false) .ae)))
       fun s₁ s₂ => ∃ T, CI c dp L sp T s₁ ∧ CI c dp L sp T s₂ ∧ L - 512 * T < 512 := by
   refine RelCT.ite (fun s₁ s₂ h => by simp only [eval, h.2.2.1, h.2.2.2]) ?_ ?_
   · obtain ⟨_, hn⟩ := nil_taint
@@ -188,6 +189,7 @@ theorem loop_rel :
       · rw [h₁.rcx, h₂.rcx]
       · rw [h₁.rsi, h₂.rsi]
       · rw [h₁.rsp, h₂.rsp]
+    refine RelCT.align_seq ?_
     refine (RelCT.loop (Q := fun s₁ s₂ => ∃ T, CI c dp L sp T s₁ ∧ CI c dp L sp T s₂ ∧ L - 512 * T < 512) I
       (fun n => ?_) (L - 512 * 1)).mono ?_ (fun _ _ h => h)
     · refine (RelCT.exists_ (P := fun (x : {t // n = L - 512 * t ∧ 512 ≤ L - 512 * t}) s₁ s₂ =>
@@ -512,7 +514,7 @@ the 448 bytes (on its permissions), from which the rest runs. -/
 def AfterP (vl : Bool) (c dp : Addr) (L : Nat) (sp : Addr) (s : State) : Prop :=
   CI c (dp + BitVec.ofNat 64 448) (L - 448) sp 1 (s.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448))) ∧
     s.cf = some (decide (L - 448 - 512 * 1 < 512)) ∧ s.wr = bulkWr c dp L ∧
-    ∃ F, WP isa (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) (restT vl))
+    ∃ F, WP isa (.seq (.ite .b (.block []) (aligned (.loop (chunk vl false) .ae))) (restT vl))
       (s.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448))) F
 
 omit hl in
@@ -544,7 +546,7 @@ theorem bulkP_rel (hge : 960 ≤ L) :
     (τR [.rdi, .rcx, .rsi, .rsp]) (fun s₁ s₂ h => agree_regs _ ?_) hC).wp
     (F₁ := AfterP vl c dp L sp) (F₂ := AfterP vl c dp L sp)
     fun _ _ h => ⟨h.1.2.2.2.2, h.2.2.2.2.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
-  · have rest := relCT_narrow (c := .seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) (restT vl))
+  · have rest := relCT_narrow (c := .seq (.ite .b (.block []) (aligned (.loop (chunk vl false) .ae))) (restT vl))
       (Pr := fun s₁ s₂ => AfterP vl c dp L sp s₁ ∧ AfterP vl c dp L sp s₂)
       (Pn := fun s₁ s₂ => CI c (dp + BitVec.ofNat 64 448) (L - 448) sp 1 s₁ ∧
         CI c (dp + BitVec.ofNat 64 448) (L - 448) sp 1 s₂ ∧
@@ -2020,7 +2022,8 @@ theorem chunkO_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 :
 /-- The chunks, while at least 512 bytes remain, from the first. -/
 theorem chunksO_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
     {m₀ : Mem} {sp : Addr} {s : State} (hge : 512 ≤ L) (h : LO c dp L R0 R1 A m₀ sp 0 s) :
-    WP isa (.loop (chunkO vl) .ae) s fun s' => ∃ T, LO c dp L R0 R1 A m₀ sp T s' ∧ L - 512 * T < 512 := by
+    WP isa (aligned (.loop (chunkO vl) .ae)) s fun s' => ∃ T, LO c dp L R0 R1 A m₀ sp T s' ∧ L - 512 * T < 512 := by
+  refine WP.align_seq ?_
   let Inv : Nat → State → Prop := fun n s => ∃ u, n = L - 512 * u ∧ 512 ≤ L - 512 * u ∧
     LO c dp L R0 R1 A m₀ sp u s
   refine WP.loop (M := isa) Inv (fun n s ⟨u, hn, hu, hL⟩ => ?_) _ s ⟨0, rfl, by omega, h⟩
@@ -3354,8 +3357,9 @@ include hl hge
 
 /-- The chunks, while at least 512 bytes remain. -/
 theorem loopO_rel :
-    RelCT isa (fun s₁ s₂ => CO c dp L sp 0 s₁ ∧ CO c dp L sp 0 s₂) (.loop (chunkO vl) .ae)
+    RelCT isa (fun s₁ s₂ => CO c dp L sp 0 s₁ ∧ CO c dp L sp 0 s₂) (aligned (.loop (chunkO vl) .ae))
       fun s₁ s₂ => ∃ T, CO c dp L sp T s₁ ∧ CO c dp L sp T s₂ ∧ L - 512 * T < 512 := by
+  refine RelCT.align_seq ?_
   obtain ⟨_, hc⟩ : ∃ h, (taintS.check (τR [.rdi, .rcx, .rsi, .rsp]) (chunkO vl) h).isSome = true := by
     cases vl
     · exact chunkO_taint

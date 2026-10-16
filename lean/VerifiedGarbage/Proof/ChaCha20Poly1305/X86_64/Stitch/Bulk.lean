@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Chunk
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.StoreRow
+import VerifiedGarbage.Proof.Framework.X86_64.Align
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -392,14 +393,14 @@ theorem firstChunk_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 
 theorem chunks_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1) {A : Nat}
     {m₀ : Mem} {sp : Addr} {t : Nat} {s : State} (h : LI c dp L R0 R1 A m₀ sp t s)
     (hcf : s.cf = some (decide (L - 512 * t < 512))) :
-    WP isa (.ite .b (.block []) (.loop (chunk vl false) .ae)) s fun s' =>
+    WP isa (.ite .b (.block []) (aligned (.loop (chunk vl false) .ae))) s fun s' =>
       ∃ T, LI c dp L R0 R1 A m₀ sp T s' ∧ L - 512 * T < 512 := by
   refine WP.ite (decide (L - 512 * t < 512)) (by simp only [eval, hcf]) (fun hb => ?_) (fun hb => ?_)
   · exact WP.block_nil ⟨t, h, by simpa using hb⟩
   · have hge : 512 ≤ L - 512 * t := by simp at hb; omega_arith
     let Inv : Nat → State → Prop := fun n s => ∃ u, n = L - 512 * u ∧ 512 ≤ L - 512 * u ∧
       LI c dp L R0 R1 A m₀ sp u s
-    refine WP.loop (M := isa) Inv (fun n s ⟨u, hn, hu, hL⟩ => ?_) _ s ⟨t, rfl, hge, h⟩
+    refine WP.align_seq (WP.loop (M := isa) Inv (fun n s ⟨u, hn, hu, hL⟩ => ?_) _ s ⟨t, rfl, hge, h⟩)
     refine WP.mono (chunk_ok vl hl hk hu hL) fun s' ⟨hL', cf'⟩ => ?_
     by_cases hlt : L - 512 * (u + 1) < 512
     · exact .inl ⟨by simp [eval, cf', hlt], u + 1, hL', hlt⟩

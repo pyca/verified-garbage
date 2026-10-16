@@ -1105,7 +1105,7 @@ theorem restLI_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) {R0 R1 :
     (v13 : m₀.readW (c + BitVec.ofNat 64 528) 64 = σ.gpr .r13)
     (v14 : m₀.readW (c + BitVec.ofNat 64 536) 64 = σ.gpr .r14)
     (L₂ : LI c dp L R0 R1 A m₀ (σ.gpr .rsp) 1 s₂) (cf₂ : s₂.cf = some (decide (L - 512 * 1 < 512))) :
-    WP isa (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) (restT vl)) s₂
+    WP isa (.seq (.ite .b (.block []) (aligned (.loop (chunk vl false) .ae))) (restT vl)) s₂
       fun s' => ∃ T, BulkL c dp L σ key msg T s' ∨ BulkT c dp L σ key msg T s' := by
   have hLe := hl.L_lt
   have hAP : A < P := hAm ▸ VG.Proof.Poly1305.accumulate_lt _ _

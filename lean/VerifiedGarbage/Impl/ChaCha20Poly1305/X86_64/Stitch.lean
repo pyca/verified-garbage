@@ -206,6 +206,12 @@ def chunkMain (vl pre : Bool) : Prog isa :=
 
 def chunk (vl pre : Bool) : Prog isa := .seq (chunkMain vl pre) (.block next)
 
+/-- `c`, a loop, with its head on a 64-byte boundary: the padding before it
+(`Instr.align`, NOPs) runs once, on entering the loop, and the loop's place in
+the op cache and the decoders' windows is the same whatever the code before
+it. -/
+abbrev aligned (c : Prog isa) : Prog isa := .seq (.block [.align 6]) c
+
 /-- `r12`–`r14` and the length stashed, the kernel's constants stored, and
 the key and the accumulator loaded from the Poly1305 state (`ctx + 448`,
 through `rdi`, which then points at the ChaCha20 state again). -/
@@ -389,7 +395,7 @@ def restT (vl : Bool) : Prog isa :=
 def bulk (vl : Bool) : Prog isa :=
   .seq (.block enter)
   (.seq (firstChunk vl)
-  (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae))
+  (.seq (.ite .b (.block []) (aligned (.loop (chunk vl false) .ae)))
     (restT vl)))
 
 /-- As `bulk`, after the first 448 bytes are encrypted from the prologue's
@@ -398,7 +404,7 @@ keystream (`rsi` at them): the first chunk absorbs them, and the rest is as
 def bulkP (vl : Bool) : Prog isa :=
   .seq (.block enter)
   (.seq (chunk vl true)
-  (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae))
+  (.seq (.ite .b (.block []) (aligned (.loop (chunk vl false) .ae)))
     (restT vl)))
 
 /-- The data and the ciphertext to absorb when there are no whole chunks:
@@ -626,7 +632,7 @@ def restO : Prog isa :=
 and of 64 to 256 bytes after them the first blocks absorbed and the
 keystream computed. -/
 def bulkO (vl : Bool) : Prog isa :=
-  .seq (.block enter) (.seq (.loop (chunkO vl) .ae) restO)
+  .seq (.block enter) (.seq (aligned (.loop (chunkO vl) .ae)) restO)
 
 /-- The arguments of the call on the rest of the data (`rbx`, `rbp`), from
 the counter the chunks left. -/

@@ -276,7 +276,7 @@ theorem bulkP_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge : 96
     · exact ⟨bufR (bfA c), by simp, 0, by simp, by simp⟩
     · exact ⟨psR c, by simp, 0, by simp, by simp⟩
     · exact ⟨kR (bfA c), by simp, 0, by simp, by simp⟩
-  have hn : ((.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) (restT vl) : Prog isa)).noCalls = true := by
+  have hn : ((.seq (.ite .b (.block []) (aligned (.loop (chunk vl false) .ae))) (restT vl) : Prog isa)).noCalls = true := by
     cases vl <;>
     decide +kernel
   have hlen : (msg ++ bytesAt s.mem dp 448).length % 16 = 0 := by
@@ -417,7 +417,7 @@ theorem bulkPHead_ok (vl : Bool) {c dp : Addr} {L : Nat} (hl : Lay c dp L) (hge 
         (∃ R0 R1 A m₀, Key R0 R1 ∧ LI c (dp + BitVec.ofNat 64 448) (L - 448) R0 R1 A m₀ (s.gpr .rsp) 1
           (s₂.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448)))) ∧
         s₂.cf = some (decide (L - 448 - 512 * 1 < 512)) ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr ∧
-        ∃ F, WP isa (.seq (.ite .b (.block []) (.loop (chunk vl false) .ae)) (restT vl))
+        ∃ F, WP isa (.seq (.ite .b (.block []) (aligned (.loop (chunk vl false) .ae))) (restT vl))
           (s₂.withRegions [] (bulkWr c (dp + BitVec.ofNat 64 448) (L - 448))) F := by
   have hl' := hl.shift (o := 448) (by omega_arith)
   refine WP.mono (enter_ok hwr hrcx)
