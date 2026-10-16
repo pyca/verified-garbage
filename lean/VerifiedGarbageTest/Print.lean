@@ -218,6 +218,16 @@ def sample8 : Prog isa := .block ([
   ["20:", "jne 21f", "mov rax, 3", "22:", "jae 20b", "ret",
     "21:", "jb 23f", "mov rax, 2", "24:", "jmp 22b", "23:", "mov rax, 1", "jmp 24b"]
 
+-- An ordinary `ite` and a cold branch in one loop body: the numbers stay
+-- distinct (the loop's 20, the `ite`'s 21 and 22, the cold branch's 23 and
+-- 24), the `ite`'s references are forward, and the cold code, after the
+-- return, jumps backward to its place in the loop.
+#guard text (printer.function
+    (.loop (.seq (.ite .e (.block [.mov .rax (.imm 1)]) (.block [.mov .rax (.imm 2)]))
+      (Code.iteCold .ne (.block [.mov .rcx (.imm 3)]) (.block [.mov .rcx (.imm 4)]))) .ae : Prog isa)) ==
+  ["20:", "je 21f", "mov rax, 2", "jmp 22f", "21:", "mov rax, 1", "22:",
+    "jne 23f", "mov rcx, 4", "24:", "jae 20b", "ret", "23:", "mov rcx, 3", "jmp 24b"]
+
 -- An `ite` whose `then` branch merely starts with one empty block is not cold.
 #guard text (printer.function
     (.ite .e (.seq (.block []) (.block [.mov .rax (.imm 1)])) (.block [.mov .rax (.imm 2)]) : Prog isa)) ==
