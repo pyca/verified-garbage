@@ -35,7 +35,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha256I) 3
       Proof.Pbkdf2.Whole.Arm.sha256F.pbkdf2
     stack := 24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha256I
-    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha256 (by decide)
+    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha256
       Proof.Pbkdf2.Whole.Arm.sha256_pbkFrameSat },
   -- Scrypt's code calls `pbkdf2` with its own working space.
   Spec.Hmac.sha256I.pbkdf2ScratchApi.artifact Arm.target {

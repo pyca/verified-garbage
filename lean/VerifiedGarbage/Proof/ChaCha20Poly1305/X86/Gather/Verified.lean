@@ -152,7 +152,7 @@ but its frames' push and pop. -/
 theorem sealGather_spSafe (v : XorImpl) :
     (sealGather (sealFn v).name (sealFn v).code).all (fun i => !X86.isa.writesSp i) = true := by
   have hc : (sealFn v).code.all (fun i => !X86.isa.writesSp i) = true :=
-    Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe (by decide +kernel)
+    Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
       (Proof.ChaCha20Poly1305.X86.seal_spSafe v)
   have he : (Code.block entry : Prog isa).all (fun i => !X86.isa.writesSp i) = true := by decide +kernel
   have hg : Impl.AesGcm.X86.SealGather.gather.all (fun i => !X86.isa.writesSp i) = true := by decide +kernel

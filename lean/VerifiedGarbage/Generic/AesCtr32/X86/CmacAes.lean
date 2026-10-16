@@ -70,7 +70,7 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
       (Impl.CmacAes.Stream.X86.init v.expand v.callee v.suffix)
     stack := 2372
     verified := Proof.CmacAes.Stream.X86.init_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe
       (Proof.CmacAes.Stream.X86.init_spSafe v)
     features := v.features },
   Spec.Cmac.aesAbsorbApi.artifact X86.target {
@@ -80,7 +80,7 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
       (Impl.CmacAes.Stream.X86.absorb v.callee v.suffix)
     stack := 2392
     verified := Proof.CmacAes.Stream.X86.absorb_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe
       (Proof.CmacAes.Stream.X86.absorb_spSafe v)
     features := v.features },
   Spec.Cmac.aesFinishApi.artifact X86.target {
@@ -90,7 +90,7 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
       (Impl.CmacAes.Stream.X86.finish v.callee v.suffix)
     stack := 2388
     verified := Proof.CmacAes.Stream.X86.finish_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe
       (Proof.CmacAes.Stream.X86.finish_spSafe v)
     features := v.features }]
 

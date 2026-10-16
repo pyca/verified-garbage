@@ -804,9 +804,9 @@ theorem open_spSafe (v : XorImpl) : (Impl.ChaCha20Poly1305.X86.«open» v.callee
 /-- The frame of `withStackScratchWiped` keeps the stack pointer for any `c`
 that does, if it does for an empty body (decided for literal sizes). -/
 theorem withStackScratchWiped_spSafe {bytes n words : Nat} {c : Prog isa}
+    (h : c.all (fun i => !isa.writesSp i) = true)
     (hf : (Impl.StackScratch.X86.withStackScratchWiped bytes n words (.block [])).all
-      (fun i => !isa.writesSp i) = true)
-    (h : c.all (fun i => !isa.writesSp i) = true) :
+      (fun i => !isa.writesSp i) = true := by decide +kernel) :
     (Impl.StackScratch.X86.withStackScratchWiped bytes n words c).all (fun i => !isa.writesSp i) = true := by
   simp only [Impl.StackScratch.X86.withStackScratchWiped, Impl.StackScratch.X86.withStackScratch, Code.all,
     List.all_nil, Bool.and_eq_true] at hf ⊢

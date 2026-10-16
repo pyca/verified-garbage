@@ -39,7 +39,7 @@ def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesOcb.X86.init (callees v))
     stack := 2604
     verified := init_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (init_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v)
     features := v.features },
   Spec.Ocb.sealApi.artifact X86.target {
     suffix := v.suffix
@@ -47,7 +47,7 @@ def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.seal (callees v))
     stack := 2632
     verified := seal_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (seal_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v)
     features := v.features },
   Spec.Ocb.openApi.artifact X86.target {
     suffix := v.suffix
@@ -56,7 +56,7 @@ def artifacts (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.open (callees v))
     stack := 2632
     verified := open_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (open_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v)
     features := v.features }]
 
 end VG.Generic.AesBlocks.X86.AesOcb

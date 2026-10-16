@@ -35,8 +35,8 @@ def pbkFrame (I : Spec.Hmac.Instance) : Nat := (12 + 8 + 8 * I.pbkdf2Scratch + 3
 
 theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (h : Verified Arm.target c (I.pbkdf2ScratchContract Arm.abi 24))
-    (hb : Fits 3 bytes .u64 I.pbkdf2Scratch)
-    (hsat : ∃ s, (I.pbkdf2Contract Arm.abi (24 + bytes)).pre s) :
+    (hsat : ∃ s, (I.pbkdf2Contract Arm.abi (24 + bytes)).pre s)
+    (hb : Fits 3 bytes .u64 I.pbkdf2Scratch := by decide) :
     Verified Arm.target (Impl.StackScratch.Arm.withStackScratch bytes 3 c)
       (I.pbkdf2Contract Arm.abi (24 + bytes)) :=
   Arm.Verified.stackScratch (sig := Spec.Pbkdf2.pbkdf2Sig) (nm := "scratch") (e := .u64)

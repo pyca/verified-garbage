@@ -43,7 +43,7 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesSiv.X86.initCore v.expand v.callee v.suffix)
     stack := 2628
     verified := init_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (init_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v)
     features := v.features },
   Spec.Siv.encryptApi.artifact X86.target {
     suffix := v.suffix
@@ -51,7 +51,7 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt v.callee v.suffix)
     stack := 2668
     verified := encrypt_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (encrypt_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (encrypt_spSafe v)
     features := v.features },
   Spec.Siv.decryptApi.artifact X86.target {
     suffix := v.suffix
@@ -60,7 +60,7 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt v.callee v.suffix)
     stack := 2668
     verified := decrypt_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (decrypt_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (decrypt_spSafe v)
     features := v.features }]
 
 end VG.Generic.AesCtr32.X86.AesSiv
