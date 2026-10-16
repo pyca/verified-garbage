@@ -31,8 +31,8 @@ loaded from the table 16 bytes at a time and inserted into `v2` where its
 mask is set (BIT), on the vector pipes, which the additions leave idle:
 every entry of the table is read, at addresses from the static's and the
 loop's counter. Each entry is negated, or not, with the mask of its digit's
-sign (from its nibble's top bit), by exchanging `Y - X` and `Y + X` and
-choosing between `2dT` and its negation. The loops' counter `x19`, which is
+sign: its `Y - X` and `Y + X` are exchanged in the vector registers (BIT),
+and its `2dT` chosen against its negation by `csel`. The loops' counter `x19`, which is
 also the table index, is public.
 -/
 
@@ -117,45 +117,62 @@ def candV (m : Nat) : VReg := [VReg.v24, .v25, .v26, .v27, .v28, .v29, .v0, .v1]
 def selectMasks : List Instr :=
   (List.range 8).map fun k => .vop (.dup .d2 (maskV (k + 1)) (magReg (k + 1)))
 
-/-- The start of half `h` of a coordinate's selection, in `v2`: words `2h` and `2h + 1` of the
+/-- The start of half `h` of a coordinate's selection, in `acc`: words `2h` and `2h + 1` of the
 identity's `Y - X` and `Y + X` (if `one`; `1` and `0` for `|d| = 0`, from `x22`) or zero. -/
-def selectHalfStart (one : Bool) (h : Nat) : List Instr :=
-  [.vop (.movi0 .v2)] ++ if one && h == 0 then [.vop (.ins .d2 .v2 0 .x22)] else []
+def selectHalfStart (acc : VReg) (one : Bool) (h : Nat) : List Instr :=
+  [.vop (.movi0 acc)] ++ if one && h == 0 then [.vop (.ins .d2 acc 0 .x22)] else []
 
 /-- Candidate `m + 1`'s half `h` of coordinate `c` (at `x9 + 256 c + 32 m + 16 h`), inserted
-into `v2` where its mask is set (BIT). -/
-def selectHalfCand (c h m : Nat) : List Instr :=
-  [.ldrq (candV m) .x9 (256 * c + 32 * m + 16 * h), .vop (.bsel .bit .v2 (candV m) (maskV (m + 1)))]
+into `acc` where its mask is set (BIT). -/
+def selectHalfCand (acc : VReg) (c h m : Nat) : List Instr :=
+  [.ldrq (candV m) .x9 (256 * c + 32 * m + 16 * h), .vop (.bsel .bit acc (candV m) (maskV (m + 1)))]
 
-/-- Half `h` (words `2h`, `2h + 1`) of entry `|d|`'s coordinate `c`, to byte `o + 16 h`. -/
+/-- Half `h` (words `2h`, `2h + 1`) of entry `|d|`'s coordinate `c`, into `acc`. -/
+def selectAcc (acc : VReg) (one : Bool) (c h : Nat) : List Instr :=
+  selectHalfStart acc one h ++ (List.range 8).flatMap (selectHalfCand acc c h)
+
+/-- Half `h` of entry `|d|`'s coordinate `c`, to byte `o + 16 h`. -/
 def selectHalf (one : Bool) (c o h : Nat) : List Instr :=
-  selectHalfStart one h ++ (List.range 8).flatMap (selectHalfCand c h) ++ [.strq .v2 .x0 (o + 16 * h)]
+  selectAcc .v2 one c h ++ [.strq .v2 .x0 (o + 16 * h)]
 
 /-- Coordinate `c` of entry `|d|`, to byte `o`. -/
 def selectField (one : Bool) (c o : Nat) : List Instr :=
   (List.range 2).flatMap fun h => selectHalf one c o h
 
-/-- The digit's entry from table `x19`, to slots 4–6: every candidate is loaded, 16 bytes at a
-time, and inserted where its digit's mask is set, so only the digit's survives. -/
+/-- `v30` = the sign's mask (`x1`) in both lanes. -/
+def signV : List Instr := [.vop (.dup .d2 .v30 .x1)]
+
+/-- Half `h` of the entry's `Y - X` and `Y + X`, into `v2` and `v3`, exchanged where the sign's
+mask in `v30` is set (BIT, through `v4`), to slots 4 and 5. -/
+def selectPairHalf (h : Nat) : List Instr :=
+  selectAcc .v2 true 0 h ++ selectAcc .v3 true 1 h ++
+    [.vop (.mov .v4 .v2), .vop (.bsel .bit .v2 .v3 .v30), .vop (.bsel .bit .v3 .v4 .v30),
+      .strq .v2 .x0 (offset 4 + 16 * h), .strq .v3 .x0 (offset 5 + 16 * h)]
+
+/-- The digit's entry from table `x19`, to slots 4–6, its `Y - X` and `Y + X` exchanged for a
+negative digit (the sign's mask in `x1`): every candidate is loaded, 16 bytes at a time, and
+inserted where its digit's mask is set, so only the digit's survives. -/
 def combSelect : List Instr :=
-  tblAddr ++ selectMasks ++ selectField true 0 (offset 4) ++ selectField true 1 (offset 5) ++
+  tblAddr ++ selectMasks ++ signV ++ selectPairHalf 0 ++ selectPairHalf 1 ++
     selectField false 2 (offset 6)
 
-/-- The cached point in slots `a`, `b`, `c` negated if its digit is negative, that is if the
-top bit of its nibble (at `x0 + 8 x19 + o + 3`) is clear, its mask `bit - 1` all ones:
-`[Y - X, Y + X, 2dT]` becomes `[Y + X, Y - X, -2dT]`, by exchanging slots `a` and `b`, and
-slots `c` and 8 (`0 - 2dT`, with zero in slot 21). -/
-def combNeg (a b c : Slot) (o : Nat) : List Instr :=
-  fieldCode [.sub 8 21 c] ++
-    [.lsl .x .x3 .x19 3, .add .x .x3 .x0 .x3, .ldrb .x3 .x3 (o + 3), .subImm .x .x3 .x3 1] ++
-    swapFields [(a, b), (c, 8)]
+/-- `x4`–`x7` where the sign's mask in `x1` is set, else `x12`–`x15`. -/
+def negSel : List Instr :=
+  [.tst .x .x1 .x1, .cselc .x .x4 .x4 .x12 .ne, .cselc .x .x5 .x5 .x13 .ne, .cselc .x .x6 .x6 .x14 .ne,
+    .cselc .x .x7 .x7 .x15 .ne]
+
+/-- Slot `c` negated where the sign's mask in `x1` is set: `0 - [c]` (slot 21 holds zero) into
+`x4`–`x7`, `[c]` into `x12`–`x15`, and the choice by `csel` stored back. -/
+def combNeg (c : Slot) : List Instr :=
+  [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldSubWords (offset 21) (offset c) ++ borrow38 ++
+    [.sub .x .x4 .x4 .x8] ++ loads (offset c) .x12 .x13 .x14 .x15 ++ negSel ++ store4 (offset c)
 
 /-- Step `x19 = j`: the entry of table `j` of the digit whose bits are at `x0 + 8 j + o`,
 negated for a negative digit, added to the accumulator. `x8` is nonzero while another step
 follows. -/
 def combStep (o : Nat) : Prog isa :=
   .seq (.block (combDigit o)) <|
-  .seq (.block (combSelect ++ combNeg 4 5 6 o)) <|
+  .seq (.block (combSelect ++ combNeg 6)) <|
   .seq Point64.affCall (.block [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 32])
 
 /-- The 32 steps of the digits whose bits are at `x0 + 8 j + o`. -/
