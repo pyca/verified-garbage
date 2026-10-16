@@ -394,6 +394,7 @@ jobs:
         run: |
           cargo fmt --check
           cargo clippy --all-targets --locked
+          cargo clippy --all-targets --locked --features std
           cargo clippy --all-targets --locked --features cpu-features-env
       # The benchmark crate, which is outside the library's workspace: on each
       # architecture the Benchmarks workflow runs it on, since its files are
@@ -444,6 +445,17 @@ jobs:
         if: ${{ env.TESTS == 'true' }}
         shell: bash
         run: $(command -v python3 || command -v python) ci/export_rust_coverage.py .rust-cov
+      # `std` without `cpu-features-env`, as a default-features user that
+      # enables it builds the library: AArch64 asks the operating system for
+      # its features (src/cpu.rs), which the build above, without `std`,
+      # does not, and `rust-cpu-features` does only with `VG_CPU_FEATURES`.
+      - name: Test CPU feature detection with std
+        if: ${{ env.TESTS == 'true' && matrix.platform.os == 'ubuntu-26.04-arm' }}
+        env:
+          LLVM_PROFILE_FILE: .rust-cov-std/cov-%p-%m.profraw
+        run: |
+          cargo test --locked --features std --lib cpu::
+          python3 ci/export_rust_coverage.py .rust-cov-std --features std --lib
       - if: ${{ env.TESTS == 'true' }}
         uses: ./.github/actions/upload-artifact
         with:
@@ -528,8 +540,9 @@ jobs:
   # CPU feature detection (src/cpu.rs) and the primitives that choose an
   # implementation by CPU feature, tested end to end on this runner's CPU,
   # on CPUs that Intel SDE emulates, and natively on ARM64 (where
-  # `cpu-features-env` detects features at run time; without it, AArch64
-  # detection is at compile time, which the `rust` job tests). SDE runs the
+  # `std`, which `cpu-features-env` enables, detects features at run time;
+  # without it, AArch64 detection is at compile time, which the `rust` job
+  # tests, along with `std` alone). SDE runs the
   # SHA extensions' code tens of times slower than hardware (#274), so the
   # chips that have them (arl, icx, dmr) run only the tests they are there
   # for. A job is one CPU (and userspace); its `runs` are lines of
