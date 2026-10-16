@@ -43,34 +43,42 @@ def bias (k : Nat) : Nat := if k = 0 then 2 ^ 28 - 76 else if k % 2 = 0 then 2 ^
 /-- The register holding `bias k` (`x9`, `x16` or `x17`). -/
 def biasReg (k : Nat) : Reg := if k = 0 then .x9 else if k % 2 = 0 then .x16 else .x17
 
-/-- The accumulator words: `x4`–`x7`, and `x20` above them. -/
-def accReg (w : Nat) : Reg := [Reg.x4, .x5, .x6, .x7, .x20].getD w .x20
+/-- Put limb `k`, in `x12`, at bit `limbOff k` of one of two accumulators: the
+limbs of even index in `x4`–`x7`, those of odd index in `x2`, `x3`, `x8`,
+`x21`, `x15`. Limbs of the same parity are 51 bits apart and below 2²⁹, so
+they never overlap: each word is written by its first limb and added to
+without a carry by the next. -/
+def put : Nat → List Instr
+  | 0 => [mov .x4 .x12]
+  | 1 => [.lsl .x .x2 .x12 26]
+  | 2 => [.lsl .x .x14 .x12 51, .add .x .x4 .x4 .x14, .lsr .x .x5 .x12 13]
+  | 3 => [.lsl .x .x3 .x12 13]
+  | 4 => [.lsl .x .x14 .x12 38, .add .x .x5 .x5 .x14, .lsr .x .x6 .x12 26]
+  | 5 => [mov .x8 .x12]
+  | 6 => [.lsl .x .x14 .x12 25, .add .x .x6 .x6 .x14]
+  | 7 => [.lsl .x .x14 .x12 51, .add .x .x8 .x8 .x14, .lsr .x .x21 .x12 13]
+  | 8 => [.lsl .x .x7 .x12 12]
+  | _ => [.lsl .x .x14 .x12 38, .add .x .x21 .x21 .x14, .lsr .x .x15 .x12 26]
 
-/-- Add `x12 · 2^(limbOff k)` to the accumulator. -/
-def place (k : Nat) : List Instr :=
-  let o := Neon.limbOff k
-  let w := o / 64
-  let sh := o % 64
-  if sh = 0 then [.adds .x (accReg w) (accReg w) .x12, .adcs .x (accReg (w + 1)) (accReg (w + 1)) .x10]
-  else
-    [.lsl .x .x14 .x12 sh, .lsr .x .x15 .x12 (64 - sh),
-      .adds .x (accReg w) (accReg w) .x14, .adcs .x (accReg (w + 1)) (accReg (w + 1)) .x15]
-
-/-- Limb `k` of `DA + CB` (or of `DA + 4p - CB`, if `sub`) into `x12`, and into the accumulator. -/
+/-- Limb `k` of `DA + CB` (or of `DA + 4p - CB`, if `sub`) into `x12`, and into its accumulator. -/
 def limbSum (sub : Bool) (k : Nat) : List Instr :=
   [ld .x12 (LBUF + 16 * k), ld .x13 (LBUF + 16 * k + 8)] ++
   (if sub then [.add .x .x12 .x12 (biasReg k), .sub .x .x12 .x12 .x13] else [.add .x .x12 .x12 .x13]) ++
-  place k
+  put k
+
+/-- The two accumulators' sum into `x4`–`x7` and `x20`. -/
+def combine : List Instr :=
+  [.adds .x .x4 .x4 .x2, .adcs .x .x5 .x5 .x3, .adcs .x .x6 .x6 .x8, .adcs .x .x7 .x7 .x21,
+    .adcs .x .x20 .x15 .x10]
 
 /-- `[o] := DA + CB` (or `DA - CB`, if `sub`), from the limbs at `LBUF`. -/
 def recombine (sub : Bool) (o : Nat) : List Instr :=
-  [.movz .w .x10 0 0, .movz .w .x11 38 0, .movz .w .x4 0 0, .movz .w .x5 0 0, .movz .w .x6 0 0,
-    .movz .w .x7 0 0, .movz .w .x20 0 0] ++
+  [.movz .w .x10 0 0, .movz .w .x11 38 0] ++
   (if sub then
     [.movz .w .x9 0xffb4 0, .movk .w .x9 0x0fff 1, .movz .w .x16 0xfffc 0, .movk .w .x16 0x0fff 1,
       .movz .w .x17 0xfffc 0, .movk .w .x17 0x07ff 1]
    else []) ++
-  (List.range 10).flatMap (limbSum sub) ++ fold ++ store4 o
+  (List.range 10).flatMap (limbSum sub) ++ combine ++ fold ++ store4 o
 
 /-- The scalar half of the products' phase: `AA`, `BB`, `E`, `X₂ = AA·BB`, `Z₂ = E·(AA + a24·E)`. -/
 def scalarA : List Instr :=
