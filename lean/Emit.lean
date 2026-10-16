@@ -15,10 +15,15 @@ generic file under `VerifiedGarbage/Generic/` for each variant under
 * `lake env lean --run Emit.lean --check [DIR]` writes nothing and fails if
   the files on disk differ from what would be generated; CI runs this.
 
-It writes a program that imports every registration file
-(`.lake/emit/Driver.lean`) and runs it with the same arguments. (It is run
-by the interpreter rather than as a `lean_exe` so that CI does not have to
-compile Mathlib to native code.) The interpreter runs the trusted base, which
+It writes a program that imports every registration file and runs it with
+the same arguments, as two programs with the same imports and list of
+artifacts (`VG.Emit.Part`): `.lake/emit/Audit.lean`, which elaborates only
+the audits, and `.lake/emit/Run.lean`, which runs only the emitter. With
+`--check`, which writes nothing, they run at once, as two processes, and it
+fails if either does; otherwise the audits run first, and the emitter only if
+they pass, so that it never writes files from artifacts that fail them. (It
+is run by the interpreter rather than as a `lean_exe` so that CI does not
+have to compile Mathlib to native code.) The interpreter runs the trusted base, which
 does the printing and checking, as the compiled code of the `NativeTCB`
 library (`lakefile.toml`), which `lake build` builds, and so an order of
 magnitude faster.
@@ -69,12 +74,25 @@ def main (args : List String) : IO UInt32 := do
   if let some problem ← mapCountProblem then
     IO.eprintln problem
     return 1
-  let driver : System.FilePath := ".lake" / "emit" / "Driver.lean"
+  let regs ← VG.Emit.registrations
+  let gens ← VG.Emit.genericGroups VG.Emit.genericDir
+  let vars ← VG.Emit.grouped VG.Emit.variantDir
+  let audit : System.FilePath := ".lake" / "emit" / "Audit.lean"
+  let run : System.FilePath := ".lake" / "emit" / "Run.lean"
   IO.FS.createDirAll ".lake/emit"
-  IO.FS.writeFile driver (VG.Emit.driver (← VG.Emit.registrations)
-    (← VG.Emit.genericGroups VG.Emit.genericDir) (← VG.Emit.grouped VG.Emit.variantDir))
-  let lean ← IO.appPath
-  let child ← IO.Process.spawn
-    { cmd := lean.toString,
-      args := #[s!"--load-dynlib={nativeTCB}", "--run", driver.toString] ++ args.toArray }
-  child.wait
+  IO.FS.writeFile audit (VG.Emit.driver regs gens vars .audit)
+  IO.FS.writeFile run (VG.Emit.driver regs gens vars .run)
+  let lean := (← IO.appPath).toString
+  let spawn (cmdArgs : Array String) : IO (IO.Process.Child {}) :=
+    IO.Process.spawn { cmd := lean, args := #[s!"--load-dynlib={nativeTCB}"] ++ cmdArgs }
+  let auditArgs := #[audit.toString]
+  let runArgs := #["--run", run.toString] ++ args.toArray
+  if args.head? == some "--check" then
+    let auditing ← spawn auditArgs
+    let running ← spawn runArgs
+    let a ← auditing.wait
+    let r ← running.wait
+    return if a != 0 then a else r
+  let a ← (← spawn auditArgs).wait
+  if a != 0 then return a
+  (← spawn runArgs).wait
