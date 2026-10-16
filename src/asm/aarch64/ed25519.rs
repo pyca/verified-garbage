@@ -491,42 +491,42 @@ str x4, [x0, #736]
 str x5, [x0, #744]
 str x6, [x0, #752]
 str x7, [x0, #760]
-movz x4, #50259, lsl #0
-movk x4, #1164, lsl #16
-movk x4, #44383, lsl #32
-movk x4, #28371, lsl #48
-movz x5, #45951, lsl #0
-movk x5, #2829, lsl #16
-movk x5, #10079, lsl #32
-movk x5, #25731, lsl #48
-movz x6, #48262, lsl #0
-movk x6, #44303, lsl #16
-movk x6, #54610, lsl #32
-movk x6, #30929, lsl #48
-movz x7, #26734, lsl #0
-movk x7, #18140, lsl #16
-movk x7, #20261, lsl #32
-movk x7, #23305, lsl #48
+movz x4, #19732, lsl #0
+movk x4, #3704, lsl #16
+movk x4, #12927, lsl #32
+movk x4, #9506, lsl #48
+movz x5, #5405, lsl #0
+movk x5, #45271, lsl #16
+movk x5, #55882, lsl #32
+movk x5, #3292, lsl #48
+movz x6, #56252, lsl #0
+movk x6, #36121, lsl #16
+movk x6, #1244, lsl #32
+movk x6, #24478, lsl #48
+movz x7, #6932, lsl #0
+movk x7, #13402, lsl #16
+movk x7, #62822, lsl #32
+movk x7, #2631, lsl #48
 str x4, [x0, #64]
 str x5, [x0, #72]
 str x6, [x0, #80]
 str x7, [x0, #88]
-movz x4, #62515, lsl #0
-movk x4, #49207, lsl #16
-movk x4, #38084, lsl #32
-movk x4, #13022, lsl #48
-movz x5, #8273, lsl #0
-movk x5, #21444, lsl #16
-movk x5, #38313, lsl #32
-movk x5, #36930, lsl #48
-movz x6, #4194, lsl #0
-movk x6, #46367, lsl #16
-movk x6, #25949, lsl #32
-movk x6, #3149, lsl #48
-movz x7, #18226, lsl #0
-movk x7, #20338, lsl #16
-movk x7, #25623, lsl #32
-movk x7, #20583, lsl #48
+movz x4, #63212, lsl #0
+movk x4, #7152, lsl #16
+movk x4, #46503, lsl #32
+movk x4, #42296, lsl #48
+movz x5, #22843, lsl #0
+movk x5, #23337, lsl #16
+movk x5, #47280, lsl #32
+movk x5, #5943, lsl #48
+movz x6, #51705, lsl #0
+movk x6, #39721, lsl #16
+movk x6, #22935, lsl #32
+movk x6, #12652, lsl #48
+movz x7, #638, lsl #0
+movk x7, #13703, lsl #16
+movk x7, #18230, lsl #32
+movk x7, #2371, lsl #48
 str x4, [x0, #96]
 str x5, [x0, #104]
 str x6, [x0, #112]
@@ -551,255 +551,29 @@ str x4, [x0, #128]
 str x5, [x0, #136]
 str x6, [x0, #144]
 str x7, [x0, #152]
-movz x4, #1599, lsl #0
-movk x4, #42217, lsl #16
-movk x4, #7981, lsl #32
-movk x4, #37831, lsl #48
-movz x5, #37884, lsl #0
-movk x5, #7984, lsl #16
-movk x5, #48553, lsl #32
-movk x5, #62233, lsl #48
-movz x6, #17807, lsl #0
-movk x6, #33687, lsl #16
-movk x6, #58383, lsl #32
-movk x6, #35615, lsl #48
-movz x7, #50115, lsl #0
-movk x7, #35671, lsl #16
-movk x7, #27029, lsl #32
-movk x7, #29551, lsl #48
+movz x4, #21093, lsl #0
+movk x4, #17697, lsl #16
+movk x4, #18186, lsl #32
+movk x4, #52560, lsl #48
+movz x5, #40439, lsl #0
+movk x5, #3071, lsl #16
+movk x5, #8693, lsl #32
+movk x5, #63940, lsl #48
+movz x6, #32329, lsl #0
+movk x6, #58054, lsl #16
+movk x6, #33041, lsl #32
+movk x6, #3634, lsl #48
+movz x7, #49440, lsl #0
+movk x7, #53819, lsl #16
+movk x7, #38278, lsl #32
+movk x7, #14477, lsl #48
 str x4, [x0, #160]
 str x5, [x0, #168]
 str x6, [x0, #176]
 str x7, [x0, #184]
 movz w19, #0, lsl #0
 21:
-lsl x8, x19, #3
-add x8, x0, x8
-ldrb w2, [x8, #775]
-add x2, x2, x2
-ldrb w3, [x8, #774]
-add x2, x2, x3
-add x2, x2, x2
-ldrb w3, [x8, #773]
-add x2, x2, x3
-add x2, x2, x2
-ldrb w3, [x8, #772]
-add x2, x2, x3
-sub x3, x2, #8
-lsr x1, x3, #63
-movz w9, #0, lsl #0
-sub x1, x9, x1
-eor x2, x3, x1
-sub x2, x2, x1
-sub x22, x2, #1
-lsr x22, x22, #63
-sub x12, x2, #1
-lsr x12, x12, #63
-sub x13, x2, #2
-lsr x13, x13, #63
-sub x14, x2, #3
-lsr x14, x14, #63
-sub x15, x2, #4
-lsr x15, x15, #63
-sub x16, x2, #5
-lsr x16, x16, #63
-sub x17, x2, #6
-lsr x17, x17, #63
-sub x20, x2, #7
-lsr x20, x20, #63
-sub x21, x2, #8
-lsr x21, x21, #63
-sub x12, x12, x13
-sub x13, x13, x14
-sub x14, x14, x15
-sub x15, x15, x16
-sub x16, x16, x17
-sub x17, x17, x20
-sub x20, x20, x21
-sub x21, x21, #1",
-        concat!("adrp x9, ", vg_sym_page!("{VG_ED25519_COMB}")),
-        concat!("add x9, x9, ", vg_sym_pageoff!("{VG_ED25519_COMB}")),
-        r"lsl x2, x19, #8
-add x9, x9, x2
-add x9, x9, x2
-add x9, x9, x2
-dup v16.2d, x12
-dup v17.2d, x13
-dup v18.2d, x14
-dup v19.2d, x15
-dup v20.2d, x16
-dup v21.2d, x17
-dup v22.2d, x20
-dup v23.2d, x21
-dup v30.2d, x1
-movi v2.2d, #0
-mov v2.d[0], x22
-ldr q24, [x9, #0]
-bit v2.16b, v24.16b, v16.16b
-ldr q25, [x9, #32]
-bit v2.16b, v25.16b, v17.16b
-ldr q26, [x9, #64]
-bit v2.16b, v26.16b, v18.16b
-ldr q27, [x9, #96]
-bit v2.16b, v27.16b, v19.16b
-ldr q28, [x9, #128]
-bit v2.16b, v28.16b, v20.16b
-ldr q29, [x9, #160]
-bit v2.16b, v29.16b, v21.16b
-ldr q0, [x9, #192]
-bit v2.16b, v0.16b, v22.16b
-ldr q1, [x9, #224]
-bit v2.16b, v1.16b, v23.16b
-movi v3.2d, #0
-mov v3.d[0], x22
-ldr q24, [x9, #256]
-bit v3.16b, v24.16b, v16.16b
-ldr q25, [x9, #288]
-bit v3.16b, v25.16b, v17.16b
-ldr q26, [x9, #320]
-bit v3.16b, v26.16b, v18.16b
-ldr q27, [x9, #352]
-bit v3.16b, v27.16b, v19.16b
-ldr q28, [x9, #384]
-bit v3.16b, v28.16b, v20.16b
-ldr q29, [x9, #416]
-bit v3.16b, v29.16b, v21.16b
-ldr q0, [x9, #448]
-bit v3.16b, v0.16b, v22.16b
-ldr q1, [x9, #480]
-bit v3.16b, v1.16b, v23.16b
-mov v4.16b, v2.16b
-bit v2.16b, v3.16b, v30.16b
-bit v3.16b, v4.16b, v30.16b
-str q2, [x0, #192]
-str q3, [x0, #224]
-movi v2.2d, #0
-ldr q24, [x9, #16]
-bit v2.16b, v24.16b, v16.16b
-ldr q25, [x9, #48]
-bit v2.16b, v25.16b, v17.16b
-ldr q26, [x9, #80]
-bit v2.16b, v26.16b, v18.16b
-ldr q27, [x9, #112]
-bit v2.16b, v27.16b, v19.16b
-ldr q28, [x9, #144]
-bit v2.16b, v28.16b, v20.16b
-ldr q29, [x9, #176]
-bit v2.16b, v29.16b, v21.16b
-ldr q0, [x9, #208]
-bit v2.16b, v0.16b, v22.16b
-ldr q1, [x9, #240]
-bit v2.16b, v1.16b, v23.16b
-movi v3.2d, #0
-ldr q24, [x9, #272]
-bit v3.16b, v24.16b, v16.16b
-ldr q25, [x9, #304]
-bit v3.16b, v25.16b, v17.16b
-ldr q26, [x9, #336]
-bit v3.16b, v26.16b, v18.16b
-ldr q27, [x9, #368]
-bit v3.16b, v27.16b, v19.16b
-ldr q28, [x9, #400]
-bit v3.16b, v28.16b, v20.16b
-ldr q29, [x9, #432]
-bit v3.16b, v29.16b, v21.16b
-ldr q0, [x9, #464]
-bit v3.16b, v0.16b, v22.16b
-ldr q1, [x9, #496]
-bit v3.16b, v1.16b, v23.16b
-mov v4.16b, v2.16b
-bit v2.16b, v3.16b, v30.16b
-bit v3.16b, v4.16b, v30.16b
-str q2, [x0, #208]
-str q3, [x0, #240]
-movi v2.2d, #0
-ldr q24, [x9, #512]
-bit v2.16b, v24.16b, v16.16b
-ldr q25, [x9, #544]
-bit v2.16b, v25.16b, v17.16b
-ldr q26, [x9, #576]
-bit v2.16b, v26.16b, v18.16b
-ldr q27, [x9, #608]
-bit v2.16b, v27.16b, v19.16b
-ldr q28, [x9, #640]
-bit v2.16b, v28.16b, v20.16b
-ldr q29, [x9, #672]
-bit v2.16b, v29.16b, v21.16b
-ldr q0, [x9, #704]
-bit v2.16b, v0.16b, v22.16b
-ldr q1, [x9, #736]
-bit v2.16b, v1.16b, v23.16b
-str q2, [x0, #256]
-movi v2.2d, #0
-ldr q24, [x9, #528]
-bit v2.16b, v24.16b, v16.16b
-ldr q25, [x9, #560]
-bit v2.16b, v25.16b, v17.16b
-ldr q26, [x9, #592]
-bit v2.16b, v26.16b, v18.16b
-ldr q27, [x9, #624]
-bit v2.16b, v27.16b, v19.16b
-ldr q28, [x9, #656]
-bit v2.16b, v28.16b, v20.16b
-ldr q29, [x9, #688]
-bit v2.16b, v29.16b, v21.16b
-ldr q0, [x9, #720]
-bit v2.16b, v0.16b, v22.16b
-ldr q1, [x9, #752]
-bit v2.16b, v1.16b, v23.16b
-str q2, [x0, #272]
-movz w10, #0, lsl #0
-movz w11, #38, lsl #0
-ldr x4, [x0, #736]
-ldr x9, [x0, #256]
-subs x4, x4, x9
-ldr x5, [x0, #744]
-ldr x9, [x0, #264]
-sbcs x5, x5, x9
-ldr x6, [x0, #752]
-ldr x9, [x0, #272]
-sbcs x6, x6, x9
-ldr x7, [x0, #760]
-ldr x9, [x0, #280]
-sbcs x7, x7, x9
-sbcs x8, x10, x10
-and x8, x8, x11
-subs x4, x4, x8
-sbcs x5, x5, x10
-sbcs x6, x6, x10
-sbcs x7, x7, x10
-sbcs x8, x10, x10
-and x8, x8, x11
-sub x4, x4, x8
-ldr x12, [x0, #256]
-ldr x13, [x0, #264]
-ldr x14, [x0, #272]
-ldr x15, [x0, #280]
-tst x1, x1
-csel x4, x4, x12, ne
-csel x5, x5, x13, ne
-csel x6, x6, x14, ne
-csel x7, x7, x15, ne
-str x4, [x0, #256]
-str x5, [x0, #264]
-str x6, [x0, #272]
-str x7, [x0, #280]
-mov v31.d[0], x30
-bl {vg_ed25519_r64_add_affine_ext}
-umov x30, v31.d[0]
-add x19, x19, #1
-sub x8, x19, #32
-cbnz x8, 21b
-movz w1, #4, lsl #0
-22:
-mov v31.d[0], x30
-bl {vg_ed25519_r64_double_ext}
-umov x30, v31.d[0]
-sub x1, x1, #1
-cbnz x1, 22b
-movz w19, #0, lsl #0
-23:
-lsl x8, x19, #3
+lsl x8, x19, #2
 add x8, x0, x8
 ldrb w2, [x8, #771]
 add x2, x2, x2
@@ -1014,8 +788,8 @@ mov v31.d[0], x30
 bl {vg_ed25519_r64_add_affine_ext}
 umov x30, v31.d[0]
 add x19, x19, #1
-sub x8, x19, #32
-cbnz x8, 23b
+sub x8, x19, #64
+cbnz x8, 21b
 add x20, x1, #0
 movz x2, #65517, lsl #0
 movk x2, #65535, lsl #16
@@ -1319,7 +1093,7 @@ str x12, [x0, #312]
 str x12, [x0, #320]
 str x12, [x0, #328]
 str x11, [x0, #304]
-24:
+22:
 sub x19, x19, #1
 movz x11, #1, lsl #0
 movz x12, #0, lsl #0
@@ -3041,7 +2815,7 @@ ldr x2, [x0, #352]
 str x2, [x0, #288]
 ldr x2, [x0, #360]
 str x2, [x0, #296]
-cbnz x19, 24b
+cbnz x19, 22b
 movz x12, #0, lsl #0
 ldr x3, [x0, #192]
 lsr x9, x3, #63
@@ -3810,7 +3584,6 @@ str x7, [x0, #24]
 ret
 .p2align 6",
         vg_ed25519_r64_add_affine_ext = sym super::ed25519_r64::vg_ed25519_r64_add_affine_ext,
-        vg_ed25519_r64_double_ext = sym super::ed25519_r64::vg_ed25519_r64_double_ext,
         VG_ED25519_COMB = sym super::consts::VG_ED25519_COMB,
     )
 }

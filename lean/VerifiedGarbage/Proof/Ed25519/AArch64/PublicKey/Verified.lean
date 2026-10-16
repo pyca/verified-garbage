@@ -205,7 +205,7 @@ def satState : State where
   gpr r := match r with | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x4000 | _ => 0
   sp := 0x9000
   mem := satMem
-  rd := [⟨0x2000, 32⟩, ⟨0x100000, 24576⟩]
+  rd := [⟨0x2000, 32⟩, ⟨0x100000, 49152⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
   syms _ := 0x100000
 

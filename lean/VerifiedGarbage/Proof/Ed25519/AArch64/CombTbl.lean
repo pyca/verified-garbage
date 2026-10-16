@@ -22,9 +22,9 @@ namespace VG.Proof.Ed25519.AArch64
 
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 
-theorem combWords_length : combWords.length = 32 * 96 := by simp [combWords]
+theorem combWords_length : combWords.length = 64 * 96 := by simp [combWords]
 
-theorem combWords_getD {i : Nat} (hi : i < 32 * 96) : combWords.getD i 0 = combWord i := by
+theorem combWords_getD {i : Nat} (hi : i < 64 * 96) : combWords.getD i 0 = combWord i := by
   simp [combWords, List.getD_eq_getElem?_getD, hi]
 
 /-- The comb's tables, the static `combSym`, in `s`, as a contract states them: its words, not

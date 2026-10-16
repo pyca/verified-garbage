@@ -1,27 +1,22 @@
 module
 
-public import VerifiedGarbage.Impl.Ed25519.CombTable
+public import VerifiedGarbage.Impl.Ed25519.CombTable16
 public import VerifiedGarbage.Impl.Ed25519.AArch64.PointSelect
 import VerifiedGarbage.Impl.Ed25519.AArch64.FieldMemory
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Point64
 
 /-!
-# Ed25519: base-point multiplication with a comb, two digits per table
+# Ed25519: base-point multiplication with a comb, one table per digit
 
 The scalar's 64 nibbles `n_i` (from its bits, expanded one per byte at byte
 768 of the workspace) give `[s]B = Σ d_i [16^i]B + [17 G]B` for the digits
-`d_i = n_i - 8`, from `-8` to `7`, and `G = 8 Σ_{j < 32} 256^j`. Table `j`
-holds `[k]([256^j]B)` for `k ≤ 8` (`combCached`), affine; the 32 tables are
-the static `combSym` (`combWords`, 768 bytes a table). Table `j` serves two
-digits, `d_{2j+1}` and `d_{2j}`: `[s]B = 16 A + E` for `A = Σ_j d_{2j+1}
-[256^j]B + [G]B` and `E = Σ_j d_{2j} [256^j]B + [G]B`. One accumulator, in
-slots 0–3, starts at `[G']B` (`combStart`), where `G' = 17 G / 16` modulo the
-group's order: the first loop adds the odd digits' entries, four doublings
-make it `[16 G' + 16 Σ_j d_{2j+1} 256^j]B = 16 A + [G]B`, and the second loop
-adds the even digits' entries, which makes it `16 A + E`.
-That is 64 additions of affine cached points, each a call of
-`vg_ed25519_r64_add_affine_ext` (seven multiplications), and four doublings,
-each a call of `vg_ed25519_r64_double_ext`.
+`d_i = n_i - 8`, from `-8` to `7`, and `G = 8 Σ_{j < 32} 256^j`. Table `i`
+holds `[k]([16^i]B)` for `k ≤ 8` (`combCached64`), affine; the 64 tables are
+the static `combSym` (`combWords`, 768 bytes a table, 48 KiB). The
+accumulator, in slots 0–3, starts at `[17 G]B` (`combStart`), and step `i`
+adds digit `i`'s entry of table `i`: 64 additions of affine cached points,
+each a call of `vg_ed25519_r64_add_affine_ext` (seven multiplications), and
+no doublings.
 
 The digits are secret: their entries are selected in constant time. The
 masks of the eight magnitudes `k = 1 … 8` (all ones exactly for `|d|`) and
@@ -41,11 +36,6 @@ also the table index, is public.
 namespace VG.Impl.Ed25519.AArch64
 
 open VG.AArch64
-
-/-- Four doublings, with the counter `x1`, which the calls keep. -/
-def double4 : Prog isa :=
-  .seq (.block [.movz .w .x1 4 0])
-    (.loop (.seq Point64.doubleCall (.block [.subImm .x .x1 .x1 1])) (.nonzero .x .x1))
 
 /-- `x2` = the nibble `b₀ + 2b₁ + 4b₂ + 8b₃` of the bits at `x8 + o`, by Horner's rule. -/
 def combNibble (o : Nat) : List Instr :=
@@ -76,10 +66,9 @@ def combMasks : List Instr :=
       if k < 7 then .sub .x (magRegs.getD k .x1) (magRegs.getD k .x1) (magRegs.getD (k + 1) .x1)
       else .subImm .x (magRegs.getD k .x1) (magRegs.getD k .x1) 1
 
-/-- The digit whose bits are at `x0 + 8 x19 + o` (`o = 772`: `d_{2j+1}`; `o = 768`: `d_{2j}`):
-its masks to `magRegs` and `x22`. -/
-def combDigit (o : Nat) : List Instr :=
-  [.lsl .x .x8 .x19 3, .add .x .x8 .x0 .x8] ++ combNibble o ++ combSign ++ combMasks
+/-- Digit `x19`, whose bits are at `x0 + 768 + 4 x19`: its masks to `magRegs` and `x22`. -/
+def combDigit : List Instr :=
+  [.lsl .x .x8 .x19 2, .add .x .x8 .x0 .x8] ++ combNibble 768 ++ combSign ++ combMasks
 
 /-- Word `w` of a field element. -/
 def feWord (v : Spec.X25519.Fe) (w : Nat) : BitVec 64 := BitVec.ofNat 64 (v.val / 2 ^ (64 * w))
@@ -92,11 +81,11 @@ def combSym : String := "VG_ED25519_COMB"
 /-- Word `i` of the tables: table `j = i / 96` takes 768 bytes, the `Y - X` (`c = 0`), the
 `Y + X` (`c = 1`) and the `2dT` (`c = 2`) of its entries `m + 1 = 1 … 8`, four words each. -/
 def combWord (i : Nat) : BitVec 64 :=
-  let e := combCached (i / 96) (i % 32 / 4 + 1)
+  let e := combCached64 (i / 96) (i % 32 / 4 + 1)
   feWord (if i % 96 < 32 then e.X else if i % 96 < 64 then e.Y else e.Z) (i % 4)
 
-/-- The words of the 32 tables, as the static `combSym` holds them. -/
-def combWords : List (BitVec 64) := (List.range (32 * 96)).map combWord
+/-- The words of the 64 tables, as the static `combSym` holds them. -/
+def combWords : List (BitVec 64) := (List.range (64 * 96)).map combWord
 
 /-- The static the comb reads. -/
 def combConsts : List (String × List (BitVec 64)) := [(combSym, combWords)]
@@ -167,24 +156,23 @@ def combNeg (c : Slot) : List Instr :=
   [.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldSubWords (offset 21) (offset c) ++ borrow38 ++
     [.sub .x .x4 .x4 .x8] ++ loads (offset c) .x12 .x13 .x14 .x15 ++ negSel ++ store4 (offset c)
 
-/-- Step `x19 = j`: the entry of table `j` of the digit whose bits are at `x0 + 8 j + o`,
-negated for a negative digit, added to the accumulator. `x8` is nonzero while another step
-follows. -/
-def combStep (o : Nat) : Prog isa :=
-  .seq (.block (combDigit o)) <|
+/-- Step `x19 = i`: digit `i`'s entry of table `i`, negated for a negative digit, added to the
+accumulator. `x8` is nonzero while another step follows. -/
+def combStep : Prog isa :=
+  .seq (.block combDigit) <|
   .seq (.block (combSelect ++ combNeg 6)) <|
-  .seq Point64.affCall (.block [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 32])
+  .seq Point64.affCall (.block [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 64])
 
-/-- The 32 steps of the digits whose bits are at `x0 + 8 j + o`. -/
-def combLoop (o : Nat) : Prog isa :=
-  .seq (.block [.movz .w .x19 0 0]) (.loop (combStep o) (.nonzero .x .x8))
+/-- The 64 steps, one per digit. -/
+def combLoop : Prog isa :=
+  .seq (.block [.movz .w .x19 0 0]) (.loop combStep (.nonzero .x .x8))
 
-/-- `(x, y)` of `[G']B`, for `G' = 17 G / 16` modulo the group's order. -/
+/-- `(x, y)` of `[17 G]B`. -/
 def combStartAff : Spec.X25519.Fe × Spec.X25519.Fe :=
-  (41176917087602200922503580706960208004229008980502190452852945120332811650131,
-    36367703937413619385114024693876283925576475149253676909240594479190906500147)
+  (4650268310714759443145295274883477433952106455267492499975084996511359585556,
+    4189685876054382644851338298926788466640410231895644581786650308218358658796)
 
-/-- `[G']B`, with `Z = 1`: where the accumulator starts. -/
+/-- `[17 G]B`, with `Z = 1`: where the accumulator starts. -/
 def combStart : Spec.Ed25519.Point :=
   ⟨combStartAff.1, combStartAff.2, 1, combStartAff.1 * combStartAff.2⟩
 
@@ -193,6 +181,6 @@ def combInit : List Instr := fieldCode ([.const 21 0] ++ constPointOps combStart
 
 /-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward. -/
 def combMultiply : Prog isa :=
-  .seq (.block combInit) (.seq (combLoop 772) (.seq double4 (combLoop 768)))
+  .seq (.block combInit) combLoop
 
 end VG.Impl.Ed25519.AArch64
