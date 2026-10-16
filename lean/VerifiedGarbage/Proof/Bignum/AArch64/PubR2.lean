@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Bignum.AArch64.Copy
+public import VerifiedGarbage.Proof.Bignum.AArch64.R2dFast
 public import VerifiedGarbage.Impl.Rsa.AArch64
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -54,24 +54,6 @@ structure SqsInv (s : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N E j : 
   cnt : word t.mem B (8 * sCnt) = BitVec.ofNat 64 (6 - j)
   frm : Frm B (r2Ranges w) s.mem t.mem
   keep : Keep mmRegs s t
-
-/-- `sqs`' count: the count `c ≥ 1` in slot `sCnt` less one, there and in `x13`. -/
-theorem sqCount_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good t B Z w minv)
-    (hZ : slot w 8 ≤ Z) {c : Nat} (hc : 1 ≤ c) (hc' : c < 2 ^ 64)
-    (hcnt : word t.mem B (8 * sCnt) = BitVec.ofNat 64 c) :
-    WP isa (.block (dblCount sCnt)) t fun t' => Good t' B Z w minv ∧
-      word t'.mem B (8 * sCnt) = BitVec.ofNat 64 (c - 1) ∧ t'.gpr .x13 = BitVec.ofNat 64 (c - 1) ∧
-      Outside B (8 * sCnt) 8 t.mem t'.mem ∧ Keep [.x13] t t' := by
-  have hn := hg.scr.nowrap
-  have hhs : ∀ j, 8 * sCnt + 8 ≤ slot w j := fun j => hdr_lt_slot w j (by decide)
-  have hld : InRegions (t.rd ++ t.wr) (off B (8 * sCnt)) 8 := hg.scr.ld (by have := hhs 8; omega)
-  refine WP.mono (WP.keep [.x13] (Q := fun t' => t'.mem = t.mem.writeW (off B (8 * sCnt))
-      (BitVec.ofNat 64 (c - 1)) ∧ t'.gpr .x13 = BitVec.ofNat 64 (c - 1)) (by
-    brun [hg.x0, hdr_enc (show sCnt < 32 by decide), hld,
-      hg.scr.st (show 8 * sCnt + 8 ≤ Z by have := hhs 8; omega), hcnt, ofNat_sub_one' hc hc']) rfl rfl rfl) fun t' ⟨⟨hm', h13'⟩, k'⟩ => ?_
-  exact ⟨⟨hg.scr.congr k'.wr, (k'.gpr .x0 (by decide)).trans hg.x0,
-    by rw [hm']; exact Hdr.store hg.hdr (by decide) (by decide) _⟩, by rw [hm', word_writeW_self], h13',
-    by rw [hm']; exact writeW_outside _ _ _ (by have := hhs 8; omega), k'⟩
 
 /-- One squaring of `sqs`, and its count. -/
 theorem sqIter_ok {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N E j : Nat} (hZ : slot w 8 ≤ Z)
