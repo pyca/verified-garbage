@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 public import VerifiedGarbage.Proof.Sha512.X86_64.Lit
 public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -33,8 +33,9 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.Sha512.compressApi.doc
       (notes := ["This implementation computes the message schedules of two blocks at a time in \
-        the two lanes of the AVX2 registers, and the rounds with BMI1 and BMI2."])
-    code := Impl.Sha512.X86_64.Avx2.compress
+        the two lanes of the AVX2 registers, and the rounds with BMI1 and BMI2, sixteen to an \
+        iteration of a loop, adding the round constants from a table."])
+    code := Impl.Sha512.X86_64.Avx2Rolled.compress
     contract := Spec.Sha512.compressContract X86_64.abi
     verified := Proof.Sha512.X86_64.Shared.compress_avx2
     features := ["avx", "avx2", "bmi1", "bmi2"]

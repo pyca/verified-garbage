@@ -12,8 +12,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Verified
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Verified
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 public import VerifiedGarbage.Impl.Sha512.X86_64.Stream
@@ -26,8 +26,8 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 meta import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
-import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
-meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
+meta import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 
 /-!
 # Streaming SHA-512 on x86-64: `update` and `finalize`
@@ -122,9 +122,9 @@ theorem scalar_ok : CalleeOk (P := params) md Callee.scalar.code :=
     (by change Impl.Sha512.X86_64.compress.depth = 0; lit_decide)
 
 theorem avx2_ok : CalleeOk (P := params) md Callee.avx2.code :=
-  .of_verified Avx2.compress_verified.1 Avx2.compress_verified.2.1
-    (by change (instrs Impl.Sha512.X86_64.Avx2.compress).all _ = true; rw [← Code.allInstrs_eq]; lit_decide)
-    (by change Impl.Sha512.X86_64.Avx2.compress.depth = 0; lit_decide)
+  .of_verified Avx2.Rolled.compress_verified.1 Avx2.Rolled.compress_verified.2.1
+    (by change (instrs Impl.Sha512.X86_64.Avx2Rolled.compress).all _ = true; rw [← Code.allInstrs_eq]; lit_decide)
+    (by change Impl.Sha512.X86_64.Avx2Rolled.compress.depth = 0; lit_decide)
 
 theorem shani_ok : CalleeOk (P := params) md Callee.shani.code :=
   .of_verified ShaNi.compressWide_verified.1 ShaNi.compressWide_verified.2.1
