@@ -13,9 +13,9 @@ a constant. Nothing depends on the numbers but through masks.
 * `f`, `g`: `n + 1` words each (two's complement), from `(p, x)`.
 * `a`, `b`: `n` words each in `[0, p)`, from `(0, 1)`; `f ≡ x a K`,
   `g ≡ x b K` modulo `p`.
-* a batch: `d` in `x1` and the low words of `f` and `g`, `N` word divsteps
-  (`wstepCode`, `Proof/Divstep/Word.lean`'s `wstep`) give the matrix
-  `(u, v, q, r)` (`x4`–`x7`); `(f, g) := (u f + v g, q f + r g) / 2^N`
+* a batch: `d` in `x1` and the low words of `f` and `g`, `N` packed
+  divsteps in chunks (`pwords`, `Proof/Divstep/PackedDef.lean`'s `pstep`)
+  give the matrix `(u, v, q, r)` (`x4`–`x7`); `(f, g) := (u f + v g, q f + r g) / 2^N`
   exactly, `(a, b) := (u a + v b, q a + r b) / 2^64 mod p`.
 * the end: `f = ±1`, `res = ±a ≡ x⁻¹ 2^(-5 B)`, and `acc = res C / R` for
   `C = 2^(5 B) R³ mod p`.
@@ -50,6 +50,91 @@ def wstepCode : List Instr :=
 def wsteps (N : Nat) : Prog isa :=
   .seq (.block [.movz .x .x13 (BitVec.ofNat 16 N) 0])
     (.loop (.block (.subImm .x .x13 .x13 1 :: wstepCode)) (.nonzero .x .x13))
+
+/-! ## Packed divsteps
+
+A batch's `59` divsteps run in chunks of `n ≤ 15` steps (`15, 15, 15, 14`),
+each from the low words of `f` and `g` in `x2` and `x3`: with
+`P = f mod 2^15 + 2^31` and `Q = g mod 2^15 + 2^47` (`pset`), the rows
+`u P + v Q` and `q P + r Q` of the chunk's matrix, modulo `2^64`, in `x8`
+and the `g` row's register (`x9` and `x10` in turn), are updated as
+`(f, g)` would be, doubled rather than halved (`pstepCode`), as
+`Proof/Divstep/PackedDef.lean`'s `pstep`. Their bits below 15 are `2^j f_j`
+and `2^j g_j`'s, so step `j`'s parity is bit `j` of the `g` row, tested
+with the mask `2^j` in `x12`, and their bits from 31 and 47 are `u` and `v`
+(`q` and `r`) plus `2^14` once `2^30 + 2^45 + 2^61` is added (`pext`).
+`~d` is in `x1`. Each chunk's matrix updates the low words (`plow`) and
+multiplies the batch's so far in `x4`–`x7` (`pcomp`). -/
+
+/-- A divstep of a chunk: `~d` in `x1`, the rows in `x8` and `g`, the mask
+`2^j` of step `j`'s parity in `x12`; the next `g` row into `t`. The `ccmp`
+leaves `mi` for an odd `g` and `d ≥ 0` (the sign bit of `~d` set), the swap:
+`t` is `g`, `g + f`, or on a swap `g - f`, `f` becomes `g` on a swap and is
+doubled, `~d` becomes `~(2 - d)` on a swap and `~(d + 2)` if not, and the
+mask is doubled. -/
+def pstepCode (g t : Reg) : List Instr :=
+  [.add .x t g .x8, .sub .x .x11 g .x8, .tst .x g .x12, .cselc .x t t g .ne,
+    .ccmp .x .x1 0 0 .ne, .cselc .x t .x11 t .mi, .add .x .x16 g g, .add .x .x8 .x8 .x8,
+    .cselc .x .x8 .x16 .x8 .mi, .addImm .x .x13 .x1 4, .subImm .x .x1 .x1 2, .csneg .x .x1 .x1 .x13 .pl,
+    .add .x .x12 .x12 .x12]
+
+/-- The `g` row's register before step `j`: `x9` and `x10` in turn. -/
+def gReg (j : Nat) : Reg := if j % 2 = 0 then .x9 else .x10
+
+/-- Steps `0 … n - 1`. -/
+def pstepsCode (n : Nat) : List Instr :=
+  (List.range n).flatMap fun j => pstepCode (gReg j) (gReg (j + 1))
+
+/-- The rows' start: `x8 = x2 mod 2^15 + 2^31`, `x9 = x3 mod 2^15 + 2^47`,
+and the mask `x12 = 1`. -/
+def pset : List Instr :=
+  [.movz .x .x13 0x7fff 0, .logic .and .x .x8 .x2 .x13, .logic .and .x .x9 .x3 .x13,
+    .movz .x .x16 0x8000 1, .add .x .x8 .x8 .x16, .movz .x .x16 0x8000 2, .add .x .x9 .x9 .x16,
+    .movz .x .x12 1 0]
+
+/-- `x13 = 2^30 + 2^45 + 2^61`, `x17 = 2^14`. -/
+def pextK : List Instr :=
+  [.movz .x .x13 0x4000 1, .movk .x .x13 0x2000 2, .movk .x .x13 0x2000 3, .movz .x .x17 0x4000 0]
+
+/-- The matrix `u, v, q, r` into `x8`, `x11`, `g`, `g'`, from the rows in
+`x8` and `g`: what makes their fields nonnegative in `x13` and `2^14` in
+`x17` (`pextK`). -/
+def pext (g g' : Reg) : List Instr :=
+  pextK ++ [.add .x .x8 .x8 .x13, .add .x g g .x13,
+    .lsr .x .x11 .x8 47, .sub .x .x11 .x11 .x17, .lsl .x .x8 .x8 17, .lsr .x .x8 .x8 48, .sub .x .x8 .x8 .x17,
+    .lsr .x g' g 47, .sub .x g' g' .x17, .lsl .x g g 17, .lsr .x g g 48, .sub .x g g .x17]
+
+/-- `x2 = (u x2 + v x3) >> n`, `x3 = (q x2 + r x3) >> n` (modulo `2^64`). -/
+def plow (n : Nat) (g g' : Reg) : List Instr :=
+  [.mul .x .x13 .x2 .x8, .madd .x .x13 .x3 .x11 .x13, .mul .x .x16 .x2 g, .madd .x .x16 .x3 g' .x16,
+    .lsr .x .x2 .x13 n, .lsr .x .x3 .x16 n]
+
+/-- The first chunk's matrix is the batch's so far. -/
+def pfirst (g g' : Reg) : List Instr :=
+  [.logic .orr .x .x4 .x8 .x8, .logic .orr .x .x5 .x11 .x11, .logic .orr .x .x6 g g,
+    .logic .orr .x .x7 g' g']
+
+/-- The batch's matrix times the chunk's: `(x4, x6) = (u x4 + v x6, q x4 + r x6)`
+and `(x5, x7)` alike. -/
+def pcomp (g g' : Reg) : List Instr :=
+  [.mul .x .x13 .x8 .x4, .madd .x .x13 .x11 .x6 .x13, .mul .x .x16 g .x4, .madd .x .x6 g' .x6 .x16,
+    .mul .x .x17 .x8 .x5, .madd .x .x17 .x11 .x7 .x17, .mul .x .x16 g .x5, .madd .x .x7 g' .x7 .x16,
+    .logic .orr .x .x4 .x13 .x13, .logic .orr .x .x5 .x17 .x17]
+
+/-- A chunk of `n` steps: the low words updated unless it is the last, and
+the matrix the batch's if it is the first. -/
+def pchunk (n : Nat) (first last : Bool) : List Instr :=
+  pset ++ pstepsCode n ++ pext (gReg n) (gReg (n + 1)) ++
+    (if last then [] else plow n (gReg n) (gReg (n + 1))) ++
+    (if first then pfirst (gReg n) (gReg (n + 1)) else pcomp (gReg n) (gReg (n + 1)))
+
+/-- `x1 = -1 - x1` (`~x1`), through `x13`. -/
+def notD : List Instr := [.movz .x .x13 0 0, .sub .x .x1 .x13 .x1, .subImm .x .x1 .x1 1]
+
+/-- A batch's `59` divsteps from `d` in `x1` and the low words of `f` and
+`g` in `x2`, `x3`: `d` back in `x1` and the matrix in `x4`–`x7`. -/
+def pwords : List Instr :=
+  notD ++ pchunk 15 true false ++ pchunk 15 false false ++ pchunk 15 false false ++ pchunk 14 false true ++ notD
 
 /-! ## Numbers of several words in memory
 
@@ -220,7 +305,7 @@ def abUpdate : List Instr :=
 
 /-- A batch. -/
 def batch : Prog isa :=
-  .seq (.block P.batchStart) (.seq (wsteps 59) (.block ((.movz .x .x12 0 0 :: P.fgUpdate) ++ P.abUpdate)))
+  .seq (.block P.batchStart) (.seq (.block pwords) (.block ((.movz .x .x12 0 0 :: P.fgUpdate) ++ P.abUpdate)))
 
 /-- The end: `f = ±1`; `[C] = C` if `f > 0`, else `Cn = p - C`, and `acc = a [C] / R`. -/
 def finish : List Instr :=

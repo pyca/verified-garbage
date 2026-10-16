@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvBatchStart
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvPacked
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.Unch
 public import VerifiedGarbage.Proof.Framework.Omega
@@ -194,42 +194,30 @@ theorem Unch.wv2 {base : Addr} {a b : Nat × Nat} {m m' : Mem} (h : Unch base [a
     · exact h1
     · exact h2) hd
 
-/-- A batch's words: `59` divsteps from the low words of `f`, `g` and the identity
+/-- A batch's words: `59` packed divsteps from the low words of `f`, `g`
 leave `d` and the matrix in `x1`, `x4`–`x7`. -/
 theorem words_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
     {I : Divstep.IState} (hI : IInv P base I s) (hd : |I.d| ≤ 2 ^ 30) (hf1 : I.f % 2 = 1)
     {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64) (h19 : s.gpr .x19 = BitVec.ofNat 64 j) :
-    WP isa (.block P.batchStart) s fun s₁ => WP isa (wsteps 59) s₁ fun t =>
+    WP isa (.block P.batchStart) s fun s₁ => WP isa (.block pwords) s₁ fun t =>
       let m := Divstep.msteps 59 (Divstep.MSt.init I.d I.f I.g)
       t.gpr .x1 = BitVec.ofInt 64 m.d ∧ t.gpr .x4 = BitVec.ofInt 64 m.u ∧ t.gpr .x5 = BitVec.ofInt 64 m.v ∧
       t.gpr .x6 = BitVec.ofInt 64 m.q ∧ t.gpr .x7 = BitVec.ofInt 64 m.r ∧
       t.gpr .x19 = BitVec.ofNat 64 (j - 1) ∧ t.mem = s.mem ∧
-      KeepRegs [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x19] s t := by
+      KeepRegs [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x16, .x17, .x19] s t := by
   obtain ⟨eL, eF, eG, -, -, -, -, -⟩ := slots P
   have n4 := hL.n4; have htbl := hL.tbl; have htbl8 := hL.tbl8
   refine WP.mono (batchStart_ok hs (by omega_using [eF, n4, htbl]) (by omega_using [eF, htbl8]) (by omega_using [eG, n4, htbl]) (by omega_using [eG, htbl8]) hj hj' h19)
-    fun s₁ ⟨c19, c11, c12, c2, c3, c4, c5, c6, c7, m₁, k₁⟩ => ?_
-  refine WP.mono (wstepsLoop_ok (N := 59) (by decide) (by decide) s₁ c11 c12) fun s₂ ⟨r₂, k₂⟩ => ?_
+    fun s₁ ⟨c19, _, _, c2, c3, _, _, _, _, m₁, k₁⟩ => ?_
   have hdvd : ((2 : Int) ^ 64) ∣ ((2 ^ (64 * P.L) : Nat) : Int) := by
     rw [Nat.cast_pow, Nat.cast_ofNat]; exact pow_dvd_pow 2 (by omega_using [eL])
   have low : ∀ (m : Mem) (d : Nat), ((word m base d).toNat : Int) % 2 ^ 64 =
       (wordsVal m base d P.L : Int) % 2 ^ 64 := fun m d => by
     rw [eL, wordsVal]; push_cast; rw [Int.add_mul_emod_self_left]
-  have hrel : (regsW s₁).rel (Divstep.MSt.init I.d I.f I.g) 64 := by
-    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · show s₁.gpr .x1 = _; rw [k₁.gpr _ (by decide)]; exact hI.d
-    · show s₁.gpr .x4 = _; rw [c4]; simp only [Divstep.MSt.init]; decide
-    · show s₁.gpr .x5 = _; rw [c5]; simp only [Divstep.MSt.init]; decide
-    · show s₁.gpr .x6 = _; rw [c6]; simp only [Divstep.MSt.init]; decide
-    · show s₁.gpr .x7 = _; rw [c7]; simp only [Divstep.MSt.init]; decide
-    · show ((s₁.gpr .x2).toNat : Int) % 2 ^ 64 = I.f % 2 ^ 64
-      rw [c2, low, ← Int.emod_emod_of_dvd _ hdvd, hI.f, Int.emod_emod_of_dvd _ hdvd]
-    · show ((s₁.gpr .x3).toNat : Int) % 2 ^ 64 = I.g % 2 ^ 64
-      rw [c3, low, ← Int.emod_emod_of_dvd _ hdvd, hI.g, Int.emod_emod_of_dvd _ hdvd]
-  have hrel' := Divstep.wsteps_rel (K := 64) (by decide) hrel (by show |I.d| + 2 * 64 < 2 ^ 62; omega_using [hd]) hf1 59
-    (by decide)
-  rw [← r₂] at hrel'
-  obtain ⟨hD, hU, hV, hQ, hR, -, -⟩ := hrel'
+  refine WP.mono (pwords_ok s₁ (g := I.g) hd hf1 (by rw [k₁.gpr _ (by decide)]; exact hI.d)
+    (by rw [c2, low, ← Int.emod_emod_of_dvd _ hdvd, hI.f, Int.emod_emod_of_dvd _ hdvd])
+    (by rw [c3, low, ← Int.emod_emod_of_dvd _ hdvd, hI.g, Int.emod_emod_of_dvd _ hdvd]))
+    fun t ⟨hD, hU, hV, hQ, hR, k₂⟩ => ?_
   exact ⟨hD, hU, hV, hQ, hR, by rw [k₂.gpr _ (by decide), c19], by rw [k₂.mem, m₁],
     (k₁.mono (by decide)).trans ((Keeps.regs k₂).mono (by decide))⟩
 
