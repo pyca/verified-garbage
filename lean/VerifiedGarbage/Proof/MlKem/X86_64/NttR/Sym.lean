@@ -92,6 +92,12 @@ structure Rules where
 /-- `NTT`: seven Cooley–Tukey layers, then the reduction by `2¹⁶ mod q`. -/
 def fwdRules : Rules := ⟨[.ct 128, .ct 64, .ct 32, .ct 16, .ct 8, .ct 4, .ct 2], zmTab 0⟩
 
+/-- `NTT⁻¹`: Gentleman–Sande layers from `len = 2`, every word reduced after
+`len = 8` and `len = 32`, and the output scaled by `3303` (Montgomery
+multiplication by `512 = 3303 · 2¹⁶ mod q`). -/
+def invRules : Rules :=
+  ⟨[.gs 2, .gs 4, .gs 8, .red, .gs 16, .gs 32, .red, .gs 64, .gs 128], 512⟩
+
 /-- The pair `p`, `p'` of a layer at distance `len`. -/
 def pairOk (len p p' : Nat) : Bool := p' == p + len && p % (2 * len) < len && p' < 256
 
