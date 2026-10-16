@@ -80,5 +80,8 @@ run_cmd do
 #assert_standard_axioms VG.Spec.Cmac.tdesInitContract
 #assert_standard_axioms VG.Spec.Cmac.tdesUpdateContract
 #assert_standard_axioms VG.Spec.Cmac.tdesFinalizeContract
+#assert_standard_axioms VG.Spec.Cmac.tdesStreamInitContract
+#assert_standard_axioms VG.Spec.Cmac.tdesAbsorbContract
+#assert_standard_axioms VG.Spec.Cmac.tdesFinishContract
 
 end VG.Test.CmacTripleDes
