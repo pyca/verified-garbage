@@ -33,9 +33,11 @@ theorem moveHigh_ok (s : State) :
   refine WP.mono (movz38_ok a) fun t ⟨tv,kt⟩ => ?_
   exact ⟨(kt.gpr _ (by decide)).trans av,tv,(ka.mono (by decide)).trans (kt.mono (by decide))⟩
 
-theorem mulA24_ok {s : State} {base : Addr} (hs : Scratch s base) (o a : Slot) :
+/-- `[o] := 121665 · [a]`, writing no other slot. -/
+theorem mulA24_okO {s : State} {base : Addr} (hs : Scratch s base) (o a : Slot) :
     WP isa (.block (VG.Impl.X25519.AArch64.mulA24 (offset o) (offset a))) s fun t =>
-      Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o (env s.mem base a * 121665) := by
+      Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o (env s.mem base a * 121665) ∧
+      Outside base (offset o) 32 s.mem t.mem := by
   rw [VG.Impl.X25519.AArch64.mulA24]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -71,7 +73,7 @@ theorem mulA24_ok {s : State} {base : Addr} (hs : Scratch s base) (o a : Slot) :
     (g.gpr .x4) (g.gpr .x5) (g.gpr .x6) (g.gpr .x7)
   have ov : Outside base (offset o) 32 s.mem (st4 g.mem base (offset o) (g.gpr .x4) (g.gpr .x5) (g.gpr .x6) (g.gpr .x7)) := by
     rw [← kk.mem]; exact om
-  refine ⟨⟨kk.gpr,kk.rd,kk.wr,kk.sp,ov.mono (by simp [offset]) (by simp only [offset]; omega)⟩,?_⟩
+  refine ⟨⟨kk.gpr,kk.rd,kk.wr,kk.sp,ov.mono (by simp [offset]) (by simp only [offset]; omega)⟩,?_,ov⟩
   rw [env_update o ov]
   apply congrArg (Function.update (env s.mem base) o)
   change toFe (fe _ _ _) = _
@@ -84,4 +86,10 @@ theorem mulA24_ok {s : State} {base : Addr} (hs : Scratch s base) (o a : Slot) :
     exact fold256 _ _
   rw [← ee]
   exact toFe_mul rfl |>.trans (by simp only [show toFe 121665 = (121665 : Fe) from rfl,env,F]; exact Fin.mul_comm _ _)
+
+theorem mulA24_ok {s : State} {base : Addr} (hs : Scratch s base) (o a : Slot) :
+    WP isa (.block (VG.Impl.X25519.AArch64.mulA24 (offset o) (offset a))) s fun t =>
+      Keep base s t ∧ env t.mem base = Function.update (env s.mem base) o (env s.mem base a * 121665) :=
+  WP.mono (mulA24_okO hs o a) fun _ ⟨k, e, _⟩ => ⟨k, e⟩
+
 end VG.Proof.X25519.AArch64.Word

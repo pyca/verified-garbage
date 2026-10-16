@@ -92,9 +92,15 @@ def vectorA : List Instr := Neon.prod2 LBUF (offset 8) (offset 5) (offset 7) (of
 from its reduction to the product. -/
 def tail : List Instr := fieldCode [.sqr 3 3] ++ fieldSqrMul (offset 4) (offset 0) (offset 4)
 
+/-- `A`, `B`, `C`, `D`: sums and differences with one fold of the carry, since
+slots 1–4 hold products and squares, stored below `2²⁵⁵ + 2¹³⁶`. -/
+def addSubs : List Instr :=
+  fieldAdd1 (offset 5) (offset 1) (offset 2) ++ fieldSub1 (offset 6) (offset 1) (offset 2) ++
+  fieldAdd1 (offset 7) (offset 3) (offset 4) ++ fieldSub1 (offset 8) (offset 3) (offset 4)
+
 /-- The field operations of an iteration. -/
 def stepFields : List Instr :=
-  fieldCode [.add 5 1 2, .sub 6 1 2, .add 7 3 4, .sub 8 3 4] ++ weave scalarA vectorA ++
+  addSubs ++ weave scalarA vectorA ++
   recombine false (offset 3) ++ recombine true (offset 4) ++ tail
 
 def step : List Instr := Word.stepHead ++ stepFields

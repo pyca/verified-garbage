@@ -48,7 +48,7 @@ theorem step_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} {st : Ladder} {i :
   simp only [VG.Impl.X25519.AArch64.Word.step, VG.Impl.X25519.AArch64.Word.stepHead,
     VG.Impl.X25519.AArch64.Word.cswap, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (prefix_ok hs hi hsw (bit_le k i) hc hw hb) fun a ⟨ka, ea, ca, ma, wa⟩ => ?_
+  refine WP.mono (prefix_ok hs hi hsw (bit_le k i) hc hw hb) fun a ⟨ka, ea, ca, ma, wa, _⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (swapField_ok (ka.scratch hs) 1 3 (by decide) ma) fun b ⟨kb, eb, mb⟩ => ?_
   have kab : LoopKeep base s b := ka.trans (LoopKeep.of_field kb)

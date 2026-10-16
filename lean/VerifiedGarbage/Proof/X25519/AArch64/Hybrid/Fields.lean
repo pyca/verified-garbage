@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Recombine
 public import VerifiedGarbage.Proof.X25519.AArch64.Hybrid.Weave
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Formula
+public import VerifiedGarbage.Proof.Ed25519.AArch64.FieldBound
 import VerifiedGarbage.Proof.X25519.AArch64.Word.Small
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
@@ -14,7 +15,9 @@ import all Init.Data.Vector.Basic
 
 Untrusted: everything here is checked by Lean. `Hybrid.stepFields` leaves in
 slots 1–4 what the four-word step's operations do (`Word.core`), writing only the
-slots and the vector buffers (`FKeep`).
+slots and the vector buffers (`FKeep`). It needs slots 1–4 small (`Small`), for
+the sums and differences with one fold (`addSubs`), and leaves them small: they
+are products and squares.
 -/
 
 @[expose] public section
@@ -23,10 +26,11 @@ namespace VG.Proof.X25519.AArch64.Hybrid
 
 open VG VG.AArch64 VG.Spec.X25519 VG.Proof.X25519
 open VG.Impl.Ed25519.AArch64 (Slot offset FieldOp fieldCode)
-open VG.Proof.Ed25519.AArch64 (Keep env evalOps evalOp F fieldCode_ok Outside ofs clob)
-open VG.Proof.X25519.AArch64.Word (core mulA24_ok)
+open VG.Proof.Ed25519.AArch64 (Keep env evalOps evalOp F fieldCode_ok Outside ofs clob Small fieldCode_okS
+  add1Slot_ok sub1Slot_ok)
+open VG.Proof.X25519.AArch64.Word (core mulA24_okO)
 open VG.Proof.Ed25519.AArch64 (word)
-open VG.Impl.X25519.AArch64.Hybrid (LBUF vectorA scalarA stepFields recombine tail)
+open VG.Impl.X25519.AArch64.Hybrid (LBUF vectorA scalarA stepFields recombine tail addSubs)
 open VG.Impl.X25519.AArch64.Neon (FBUF)
 
 /-- Memory changed at most in the slots and the vector buffers. -/
@@ -103,7 +107,8 @@ theorem toFe_fe (m : Mem) (base : Addr) (i : Slot) : toFe (feAt m base (offset i
 theorem vectorA_ok {s : State} {base : Addr} (hs : Scratch s base) (hc : Consts s.mem base) :
     WP isa (.block vectorA) s fun t =>
       FKeep base s t ∧ env t.mem base = env s.mem base ∧
-      LimbsIn t.mem base (env s.mem base 8 * env s.mem base 5) (env s.mem base 7 * env s.mem base 6) := by
+      LimbsIn t.mem base (env s.mem base 8 * env s.mem base 5) (env s.mem base 7 * env s.mem base 6) ∧
+      Outside base 784 320 s.mem t.mem := by
   refine WP.mono (prod2_ok hs hc (o := LBUF) ⟨by decide, by decide, by decide⟩ (below_offset 8) (below_offset 5)
     (below_offset 7) (below_offset 6)) fun t ⟨tw, to, tg, tr, tww, tsp, _⟩ => ?_
   have to' : Outside base 784 320 s.mem t.mem := by simpa only [LBUF, FBUF] using to
@@ -113,7 +118,7 @@ theorem vectorA_ok {s : State} {base : Addr} (hs : Scratch s base) (hc : Consts 
   have w1 : ∀ k < 10, (word t.mem base (LBUF + 16 * k + 8)).toNat =
       prodLimbs s.mem base (fun e => if e = 0 then offset 8 else offset 7) (fun e => if e = 0 then offset 5 else offset 6) 1 k :=
     fun k hk => by have := tw k hk 1 (by decide); simpa only [Nat.mul_one] using this
-  refine ⟨⟨fun r _ => by rw [tg], tr, tww, tsp, HMem.of_bufs to'⟩, env_of_bufs to', ⟨fun k hk => ⟨?_, ?_⟩, ?_, ?_⟩⟩
+  refine ⟨⟨fun r _ => by rw [tg], tr, tww, tsp, HMem.of_bufs to'⟩, env_of_bufs to', ⟨fun k hk => ⟨?_, ?_⟩, ?_, ?_⟩, to'⟩
   · rw [w0 k hk]; exact prodLimbs_lt _ _ _ _ _ k hk
   · rw [w1 k hk]; exact prodLimbs_le _ _ _ _ _ k hk
   · rw [← toFe_fe, ← toFe_fe]
@@ -148,9 +153,11 @@ theorem LimbsIn.of_keep {base : Addr} {m m' : Mem} {X Y : Fe} (h : Outside base 
   · rw [← hy, val, val]; exact congrArg toFe (S10_congr fun k hk => by rw [h1 k hk])
 
 /-- `X₃ := DA + CB`, `Z₃ := DA - CB` from the limbs. -/
-theorem recombs_ok {s : State} {base : Addr} (hs : Scratch s base) {X Y : Fe} (hL : LimbsIn s.mem base X Y) :
+theorem recombs_ok {s : State} {base : Addr} (hs : Scratch s base) {X Y : Fe} (hL : LimbsIn s.mem base X Y)
+    {S : Slot → Bool} (hS : Small s.mem base S) :
     WP isa (.block (recombine false (offset 3) ++ recombine true (offset 4))) s fun t =>
-      Keep base s t ∧ env t.mem base = Function.update (Function.update (env s.mem base) 3 (X + Y)) 4 (X - Y) := by
+      Keep base s t ∧ env t.mem base = Function.update (Function.update (env s.mem base) 3 (X + Y)) 4 (X - Y) ∧
+      Small t.mem base fun i => if i = 4 then false else if i = 3 then false else S i := by
   obtain ⟨hb, hx, hy⟩ := hL
   rw [WP.block_append_iff]
   refine WP.mono (recombine_ok hs false (by decide) (by decide) (by decide) hb) fun t ⟨kt, ot, et⟩ => ?_
@@ -158,7 +165,7 @@ theorem recombs_ok {s : State} {base : Addr} (hs : Scratch s base) {X Y : Fe} (h
   have hL' := LimbsIn.of_keep kt.mem ⟨hb, hx, hy⟩
   obtain ⟨hb', hx', hy'⟩ := hL'
   refine WP.mono (recombine_ok ht true (by decide) (by decide) (by decide) hb') fun u ⟨ku, ou, eu⟩ => ?_
-  refine ⟨kt.trans ku, ?_⟩
+  refine ⟨kt.trans ku, ?_, (hS.update ot false nofun).update ou false nofun⟩
   rw [VG.Proof.Ed25519.AArch64.env_update 4 ou, VG.Proof.Ed25519.AArch64.env_update 3 ot, eu, et]
   congr 1
   · congr 1
@@ -170,62 +177,89 @@ theorem recombs_ok {s : State} {base : Addr} (hs : Scratch s base) {X Y : Fe} (h
     rw [hsub, Nat.mul_comm 4 P, Nat.add_mul_mod_self_left]
 
 
+/-- Slots 1 and 2. -/
+def S12 : Slot → Bool := fun i => decide (i = 1 ∨ i = 2)
+
+/-- Slots 1–4. -/
+def S14 : Slot → Bool := fun i => decide (1 ≤ i.val ∧ i.val ≤ 4)
+
 theorem scalarA_ok {s : State} {base : Addr} (hs : Scratch s base) :
     WP isa (.block scalarA) s fun t =>
       Keep base s t ∧ env t.mem base = evalOps [.add 2 9 2, .mul 2 11 2]
         (Function.update (evalOps [.sqr 9 5, .sqr 10 6, .sub 11 9 10, .mul 1 9 10] (env s.mem base)) 2
-          (evalOps [.sqr 9 5, .sqr 10 6, .sub 11 9 10, .mul 1 9 10] (env s.mem base) 11 * 121665)) := by
+          (evalOps [.sqr 9 5, .sqr 10 6, .sub 11 9 10, .mul 1 9 10] (env s.mem base) 11 * 121665)) ∧
+      Small t.mem base S12 := by
   rw [scalarA, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (fieldCode_ok _ hs) fun a ⟨ka, ea⟩ => ?_
-  refine WP.mono (mulA24_ok (ka.scr hs) 2 11) fun b ⟨kb, eb⟩ => ?_
-  refine WP.mono (fieldCode_ok _ (kb.scr (ka.scr hs))) fun t ⟨kt, et⟩ => ?_
-  refine ⟨ka.trans (kb.trans kt), ?_⟩
+  refine WP.mono (fieldCode_okS _ hs (Small.none s.mem base)) fun a ⟨ka, ea, sa⟩ => ?_
+  refine WP.mono (mulA24_okO (ka.scr hs) 2 11) fun b ⟨kb, eb, ob⟩ => ?_
+  refine WP.mono (fieldCode_okS _ (kb.scr (ka.scr hs)) (sa.update ob false nofun)) fun t ⟨kt, et, st⟩ => ?_
+  refine ⟨ka.trans (kb.trans kt), ?_, st.mono (by decide)⟩
   rw [et, eb, ea]
 
 /-- `tail`: the last three field operations of the four-word step. -/
-theorem tail_ok {s : State} {base : Addr} (hs : Scratch s base) :
+theorem tail_ok {s : State} {base : Addr} (hs : Scratch s base) {S : Slot → Bool} (hS : Small s.mem base S) :
     WP isa (.block tail) s fun t =>
-      Keep base s t ∧ env t.mem base = evalOps [.sqr 3 3, .sqr 4 4, .mul 4 0 4] (env s.mem base) := by
+      Keep base s t ∧ env t.mem base = evalOps [.sqr 3 3, .sqr 4 4, .mul 4 0 4] (env s.mem base) ∧
+      Small t.mem base fun i => if i = 4 then true else if i = 3 then true else S i := by
   rw [tail, WP.block_append_iff]
-  refine WP.mono (fieldCode_ok _ hs) fun a ⟨ka, ea⟩ => ?_
-  refine WP.mono (VG.Proof.Ed25519.AArch64.sqrMulField_ok (ka.scr hs) 4 0 4) fun t ⟨kt, et⟩ => ?_
-  refine ⟨ka.trans kt, ?_⟩
-  rw [et, ea]
+  refine WP.mono (fieldCode_okS _ hs hS) fun a ⟨ka, ea, sa⟩ => ?_
+  refine WP.mono (VG.Proof.Ed25519.AArch64.sqrMul_okB (ka.scr hs) (VG.Proof.Ed25519.AArch64.slot_rangeWith 4)
+    (VG.Proof.Ed25519.AArch64.slot_rangeWith 0) (VG.Proof.Ed25519.AArch64.slot_rangeWith 4))
+    fun t ⟨ht, et, bt⟩ => ?_
+  refine ⟨ka.trans (VG.Proof.Ed25519.AArch64.op_keep ht), ?_, sa.update ht.mem true fun _ => by omega⟩
+  have e4 : F t.mem base (offset 4) = env a.mem base 0 * (env a.mem base 4 * env a.mem base 4) := et
+  rw [VG.Proof.Ed25519.AArch64.env_update 4 ht.mem, e4, ea]
   simp only [evalOps, List.foldl, evalOp, Function.update_idem, Function.update_self,
     Function.update_of_ne (show (0 : Slot) ≠ 4 by decide)]
 
-/-- An iteration's field operations: the four-word step's results in slots 1–4. -/
+/-- `A`, `B`, `C` and `D`, from small slots 1–4. -/
+theorem addSubs_ok {s : State} {base : Addr} (hs : Scratch s base) (hS : Small s.mem base S14) :
+    WP isa (.block addSubs) s fun t =>
+      Keep base s t ∧ env t.mem base = evalOps [.add 5 1 2, .sub 6 1 2, .add 7 3 4, .sub 8 3 4] (env s.mem base) := by
+  rw [addSubs, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (add1Slot_ok hs 5 1 2 hS (by decide) (by decide)) fun a ⟨ka, ea, sa⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (sub1Slot_ok (ka.scr hs) 6 1 2 sa (by decide)) fun b ⟨kb, eb, sb⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (add1Slot_ok (kb.scr (ka.scr hs)) 7 3 4 sb (by decide) (by decide)) fun c ⟨kc, ec, sc⟩ => ?_
+  refine WP.mono (sub1Slot_ok (kc.scr (kb.scr (ka.scr hs))) 8 3 4 sc (by decide)) fun t ⟨kt, et, _⟩ => ?_
+  exact ⟨ka.trans (kb.trans (kc.trans kt)), by rw [et, ec, eb, ea]; rfl⟩
+
+/-- An iteration's field operations: the four-word step's results in slots 1–4,
+which stay small. -/
 theorem stepFields_ok {s : State} {base : Addr} (hs : Scratch s base) (hc : Consts s.mem base)
-    (h18 : env s.mem base 18 = 121665) :
+    (h18 : env s.mem base 18 = 121665) (hS : Small s.mem base S14) :
     WP isa (.block stepFields) s fun t =>
       FKeep base s t ∧ Consts t.mem base ∧
       env t.mem base 1 = (core (env s.mem base)).x2 ∧ env t.mem base 2 = (core (env s.mem base)).z2 ∧
       env t.mem base 3 = (core (env s.mem base)).x3 ∧ env t.mem base 4 = (core (env s.mem base)).z3 ∧
-      env t.mem base 0 = env s.mem base 0 ∧ env t.mem base 18 = env s.mem base 18 := by
+      env t.mem base 0 = env s.mem base 0 ∧ env t.mem base 18 = env s.mem base 18 ∧
+      Small t.mem base S14 := by
   rw [stepFields, List.append_assoc (_ ++ _) (recombine false _) (recombine true _), WP.block_append_iff,
     WP.block_append_iff,
     WP.block_append_iff]
-  refine WP.mono (fieldCode_ok _ hs) fun a ⟨ka, ea⟩ => ?_
+  refine WP.mono (addSubs_ok hs hS) fun a ⟨ka, ea⟩ => ?_
   have ha : Scratch a base := ka.scr hs
   have hw : WP isa (.block (VG.Impl.AArch64Weave.weave scalarA vectorA)) a fun c => ∃ b : State,
       Keep base a b ∧ env b.mem base = evalOps [.add 2 9 2, .mul 2 11 2]
         (Function.update (evalOps [.sqr 9 5, .sqr 10 6, .sub 11 9 10, .mul 1 9 10] (env a.mem base)) 2
           (evalOps [.sqr 9 5, .sqr 10 6, .sub 11 9 10, .mul 1 9 10] (env a.mem base) 11 * 121665)) ∧
       FKeep base b c ∧ env c.mem base = env b.mem base ∧
-      LimbsIn c.mem base (env b.mem base 8 * env b.mem base 5) (env b.mem base 7 * env b.mem base 6) :=
-    Interleave.WP.weave indeps_A (WP.mono (scalarA_ok ha) fun b ⟨kb, eb⟩ =>
-      WP.mono (vectorA_ok (kb.scr ha) ((HMem.of_slots (ka.trans kb).mem).consts hc)) fun c ⟨kc, ec, lc⟩ =>
-        ⟨b, kb, eb, kc, ec, lc⟩)
-  refine WP.mono hw fun c ⟨b, kb, eb, kc, ec, lc⟩ => ?_
+      LimbsIn c.mem base (env b.mem base 8 * env b.mem base 5) (env b.mem base 7 * env b.mem base 6) ∧
+      Small c.mem base S12 :=
+    Interleave.WP.weave indeps_A (WP.mono (scalarA_ok ha) fun b ⟨kb, eb, sb⟩ =>
+      WP.mono (vectorA_ok (kb.scr ha) ((HMem.of_slots (ka.trans kb).mem).consts hc)) fun c ⟨kc, ec, lc, oc⟩ =>
+        ⟨b, kb, eb, kc, ec, lc, sb.frame oc (by decide)⟩)
+  refine WP.mono hw fun c ⟨b, kb, eb, kc, ec, lc, sc⟩ => ?_
   have hc3 : Scratch c base := kc.scratch (kb.scr ha)
-  refine WP.mono (recombs_ok hc3 lc) fun d ⟨kd, ed⟩ => ?_
-  refine WP.mono (tail_ok (kd.scr hc3)) fun t ⟨kt, et⟩ => ?_
+  refine WP.mono (recombs_ok hc3 lc sc) fun d ⟨kd, ed, sd⟩ => ?_
+  refine WP.mono (tail_ok (kd.scr hc3) sd) fun t ⟨kt, et, st⟩ => ?_
   have kall : FKeep base s t :=
     ((((FKeep.of_keep ka).trans (FKeep.of_keep kb)).trans kc).trans (FKeep.of_keep kd)).trans (FKeep.of_keep kt)
   refine ⟨kall, kall.mem.consts hc, ?_⟩
   rw [et, ed, ec, eb, ea]
   simp only [core]
-  refine ⟨rfl, ?_, rfl, rfl, rfl, rfl⟩
+  refine ⟨rfl, ?_, rfl, rfl, rfl, rfl, st.mono (by decide)⟩
   rw [h18]
   rfl
 
