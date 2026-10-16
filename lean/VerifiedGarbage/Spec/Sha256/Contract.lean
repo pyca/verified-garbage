@@ -21,9 +21,10 @@ inline.
 SHA-224 and SHA-256 share `update` and `finalize`, which hold for a state
 hashed from any initial hash value; each has its own `init`. SHA-224's own
 `finalize` (`finalize224Api`) writes its digest, the whole result of
-FIPS 180-4 §6.3.
+FIPS 180-4 §6.3. `digest` (`digestApi`) computes SHA-224's or SHA-256's
+digest of a message in memory in one call, with no streaming state.
 
-`update` and `finalize` take the number of bytes of stack below the stack pointer that
+`update`, `finalize` and `digest` take the number of bytes of stack below the stack pointer that
 an implementation's calls and frames use (`stack`, see `Sig.contract`), 0 for
 one that uses none: it depends on the target, and on which functions the
 implementation calls. They keep their working space there; `update_scratch`
@@ -251,5 +252,38 @@ def finalizeScratchApi : Api where
   safety := [
     "The contents of `state` on return are unspecified.",
     "The contents of `scratch` on return are unspecified."]
+
+/-- `vg_<alg>_digest(data: *const u8, len: usize, out: *mut [u8; D])`, for
+SHA-224 or SHA-256 with a `D`-byte digest: the whole computation in one
+call, with no streaming state. -/
+def digestSig (D : Nat) : Sig where
+  params := [("data", .slice false .u8 "len"), ("out", .array true .u8 D)]
+
+/-- Writes `digest` of the `len` bytes at `data` (`D` bytes) to `out`. A
+message in memory is shorter than 2⁶⁴ bytes on every target. -/
+def digestPost (D : Nat) (digest : List Byte → List Byte) (pb : Nat) : (digestSig D).Post pb :=
+  fun data len out m m' _ => bytesAt m' out D = digest (bytesAt m data len.toNat)
+
+/-- `digestPost`. The data is secret. -/
+def digestContract {M : ISA} (A : Abi M) (D : Nat) (digest : List Byte → List Byte)
+    (stack : Nat := 0) : Contract M :=
+  (digestSig D).contract A (post := digestPost D digest A.ptrBits) (stack := stack)
+
+/-- `name`, which computes the `alg` digest `digest` (`D` bytes, named
+`digestName`) of a message in one call, on every target. -/
+def digestApi (alg name digestName : String) (D : Nat) (digest : List Byte → List Byte) : Api where
+  module := "sha256"
+  name := name
+  sig := digestSig D
+  contracts := some fun A stack => digestContract A D digest stack
+  summary := s!"Computes the {alg} digest of the `len` bytes at `data` ({D} bytes, \
+    `VG.Spec.Sha256.{digestName}`) and writes it to `*out`, in one call: the same result as \
+    starting, updating and finishing a {alg} computation with that message.\n\n\
+    Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.{digestName}`. Constant time: \
+    only the pointers and `len` may affect timing, not the data."
+  safety := []
+
+def digest224Api : Api := digestApi "SHA-224" "vg_sha224_digest" "sha224" 28 sha224
+def digest256Api : Api := digestApi "SHA-256" "vg_sha256_digest" "hash" 32 hash
 
 end VG.Spec.Sha256
