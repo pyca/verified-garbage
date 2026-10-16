@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 `quotMG` computes `mgq v u a d`, which for `u < d`, `d ≥ 2^63` and the
 reciprocal `v = ⌊(2^128 - 1) / d⌋ - 2^64` is `⌊(u 2^64 + a) / d⌋` (`mgq_val`,
 Möller and Granlund's division, `mg_quot`); `quot` loads `d`, `u₂` and `u₁`
-and takes all ones for `u₂ = d` (`quot_ok`): `q̂`.
+and takes all ones for `u₂ = d` (`r2dQuot_ok`): `q̂`.
 -/
 
 @[expose] public section
@@ -37,13 +37,13 @@ def mgq (v u a d : BitVec 64) : BitVec 64 :=
   let r1 := if lt then r + d else r
   Q1 + 0 + BitVec.ofNat 64 (decide (2 ^ 64 ≤ r1.toNat + (~~~d).toNat + (true : Bool).toNat)).toNat
 
-theorem add_ofNat_zero (x : BitVec 64) : x + BitVec.ofNat 64 0 = x := BitVec.add_zero x
+theorem r2d_add_zero (x : BitVec 64) : x + BitVec.ofNat 64 0 = x := BitVec.add_zero x
 
-theorem add_ofNat_succ (x : BitVec 64) (c : Nat) :
+theorem r2d_add_succ (x : BitVec 64) (c : Nat) :
     x + BitVec.ofNat 64 (c + 1) = x + BitVec.ofNat 64 c + BitVec.ofNat 64 1 := by
   rw [BitVec.ofNat_add, BitVec.add_assoc]
 
-theorem ofNat_bool (c : Bool) : BitVec.ofNat 64 c.toNat = (BitVec.ofBool c).setWidth 64 := by
+theorem r2d_ofNat_bool (c : Bool) : BitVec.ofNat 64 c.toNat = (BitVec.ofBool c).setWidth 64 := by
   cases c <;> rfl
 
 /-- The complement's carry: `x + ~y + 1 ≥ 2^64` iff `y ≤ x`. -/
@@ -84,8 +84,8 @@ theorem mgq_val {v u a d : Nat} (hd : d < 2 ^ 64) (hn : 2 ^ 63 ≤ d) (hu : u < 
   have hD : (BitVec.ofNat 64 d).toNat = d := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hd]
   have hVv : (BitVec.ofNat 64 v).toNat = v := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hvl]
   unfold mgq
-  simp only [Bool.toNat_false, Nat.add_zero, add_ofNat_zero, add_ofNat_succ]
-  rw [hVv, hU, ofNat_bool]
+  simp only [Bool.toNat_false, Nat.add_zero, r2d_add_zero, r2d_add_succ]
+  rw [hVv, hU, r2d_ofNat_bool]
   -- `(q₁, q₀) = V u + a`.
   have hl : v * u ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_using [hvl]) (by omega_using [hul])
   have e := VG.Proof.Poly1305.Limbs64.add_adc_toNat (BitVec.ofNat 64 v * BitVec.ofNat 64 u) (BitVec.ofNat 64 a)
@@ -163,7 +163,7 @@ theorem r2d_exec_cselc (s : State) {d n m : Reg} {cond : CondCode} :
 /-- `8 (w - 1)`, as `quotHead` computes it. -/
 theorem shl3_sub8 {w : Nat} (hw : 1 ≤ w) (hw' : w < 2 ^ 61) :
     BitVec.ofNat 64 w <<< 3 - BitVec.ofNat 64 8 = BitVec.ofNat 64 (8 * (w - 1)) := by
-  rw [shl3_ofNat hw']
+  rw [r2d_ofNat_shl3 hw']
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
   omega
@@ -175,7 +175,7 @@ theorem off_sub8 (B : Addr) {e : Nat} (he : 8 ≤ e) : off B e - BitVec.ofNat 64
 /-- The estimate of the quotient of `x 2^64` by `m`:
 `q̂ = min(⌊(u₂ 2^64 + u₁) / d⌋, 2^64 - 1)` into `x1`, for `x` at `x11` and `m`
 at `x9` of `w` words, `u₂ ≤ d`, `d ≥ 2^63`, and `v` at `x6`. -/
-theorem quot_ok {t : State} {B : Addr} {Z w eX eM eV : Nat} (hs : Scr t B Z)
+theorem r2dQuot_ok {t : State} {B : Addr} {Z w eX eM eV : Nat} (hs : Scr t B Z)
     (h11 : t.gpr .x11 = off B eX) (h9 : t.gpr .x9 = off B eM) (h12 : t.gpr .x12 = BitVec.ofNat 64 w)
     (h6 : t.gpr .x6 = off B eV) (h7 : t.gpr .x7 = 0) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     (hX : eX + 8 * w ≤ Z) (hM : eM + 8 * w ≤ Z) (hE : eV + 8 ≤ Z)

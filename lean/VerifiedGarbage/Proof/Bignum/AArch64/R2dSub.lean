@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 `t + P = x 2^64 + 2^(64 (w + 1)) b` for the borrow `b` (`subPass_ok`).
 `addBack` adds `m` to the `w + 1` words `t` if `t ≥ 2^(64 (w + 1)) / 2`
 (its sign, in two's complement): `t' + 2^(64 (w + 1)) c = t + m` for the
-carry `c` (`addBack_ok`).
+carry `c` (`r2dAddBack_ok`).
 -/
 
 @[expose] public section
@@ -121,7 +121,7 @@ theorem subPass_ok {s : State} {B : Addr} {Z w eA eX : Nat} (hs : Scr s B Z)
 /-! ## `R - m` -/
 
 /-- After `j` words of `neg`'s loop: `x_j + m_j = 2^(64 j) b` for the borrow `b`. -/
-structure NegInv (m₀ : Mem) (s₀ : State) (B : Addr) (Z eX eM : Nat) (j : Nat) (t : State) : Prop where
+structure R2dNegInv (m₀ : Mem) (s₀ : State) (B : Addr) (Z eX eM : Nat) (j : Nat) (t : State) : Prop where
   scr : Scr t B Z
   keep : Keep [.x3, .x4, .x14, .x16, .x17] s₀ t
   x16 : t.gpr .x16 = off B (eX + 8 * j)
@@ -129,12 +129,12 @@ structure NegInv (m₀ : Mem) (s₀ : State) (B : Addr) (Z eX eM : Nat) (j : Nat
   out : Outside B eX (8 * j) m₀ t.mem
   val : wv t.mem B eX j + wv m₀ B eM j = 2 ^ (64 * j) * (!t.c).toNat
 
-theorem negStep_ok {m₀ : Mem} {s₀ : State} {B : Addr} {Z w eX eM : Nat} (h7 : s₀.gpr .x7 = 0)
+theorem r2dNegStep_ok {m₀ : Mem} {s₀ : State} {B : Addr} {Z w eX eM : Nat} (h7 : s₀.gpr .x7 = 0)
     (hX : eX + 8 * w ≤ Z) (hM : eM + 8 * w ≤ Z) (sM : eX + 8 * w ≤ eM ∨ eM + 8 * w ≤ eX) {j : Nat} (hj : j < w)
-    {t : State} (hI : NegInv m₀ s₀ B Z eX eM j t) :
+    {t : State} (hI : R2dNegInv m₀ s₀ B Z eX eM j t) :
     WP isa (.block ([ld .x4 .x17, .sbcs .x .x3 .x7 .x4, st .x3 .x16, next .x16, next .x17] ++
         ([.subImm .x .x14 .x14 1] : List Instr))) t fun t' =>
-      NegInv m₀ s₀ B Z eX eM (j + 1) t' ∧ t'.gpr .x14 = t.gpr .x14 - BitVec.ofNat 64 1 := by
+      R2dNegInv m₀ s₀ B Z eX eM (j + 1) t' ∧ t'.gpr .x14 = t.gpr .x14 - BitVec.ofNat 64 1 := by
   have hn := hI.scr.nowrap
   have t7 : t.gpr .x7 = 0 := (hI.keep.gpr .x7 (by decide)).trans h7
   rw [WP.block_append_iff]
@@ -169,7 +169,7 @@ theorem negStep_ok {m₀ : Mem} {s₀ : State} {B : Addr} {Z w eX eM : Nat} (h7 
 
 /-- `neg`: `x := R - m` over `w` words (`x` at `x11`, `m` at `x9`):
 `x + m = 2^(64 w) b` for the borrow `b`. -/
-theorem neg_ok {s : State} {B : Addr} {Z w eX eM : Nat} (hs : Scr s B Z)
+theorem r2dNeg_ok {s : State} {B : Addr} {Z w eX eM : Nat} (hs : Scr s B Z)
     (h11 : s.gpr .x11 = off B eX) (h9 : s.gpr .x9 = off B eM) (h12 : s.gpr .x12 = BitVec.ofNat 64 w)
     (h7 : s.gpr .x7 = 0) (hw : 1 ≤ w) (hw' : w < 2 ^ 31)
     (hX : eX + 8 * w ≤ Z) (hM : eM + 8 * w ≤ Z) (sM : eX + 8 * w ≤ eM ∨ eM + 8 * w ≤ eX) :
@@ -182,17 +182,17 @@ theorem neg_ok {s : State} {B : Addr} {Z w eX eM : Nat} (hs : Scr s B Z)
     t.gpr .x16 = off B eX ∧ t.gpr .x17 = off B eM ∧ t.gpr .x14 = BitVec.ofNat 64 w ∧ t.c = true ∧ t.mem = s.mem)
     (by brun [h11, h9, h12, h7]) (by decide) (by decide) (by decide +kernel))
     fun s₁ ⟨⟨h16, h17, h14, hc₁, hm₁⟩, k₁⟩ => ?_)
-  have h0 : NegInv s.mem s₁ B Z eX eM 0 s₁ :=
+  have h0 : R2dNegInv s.mem s₁ B Z eX eM 0 s₁ :=
     ⟨hs.congr k₁.wr, Keep.refl _ _, by rw [h16]; rfl, by rw [h17]; rfl, by rw [hm₁]; exact Outside.refl _ _ _ _,
       by rw [hc₁]; rfl⟩
-  refine WP.mono (wp_countdown (N := w) (by omega) (by omega) (NegInv s.mem s₁ B Z eX eM)
-    (fun j hj t hI _ => negStep_ok ((k₁.gpr .x7 (by decide)).trans h7) hX hM sM hj hI) h0 h14) fun t hI => ?_
+  refine WP.mono (wp_countdown (N := w) (by omega) (by omega) (R2dNegInv s.mem s₁ B Z eX eM)
+    (fun j hj t hI _ => r2dNegStep_ok ((k₁.gpr .x7 (by decide)).trans h7) hX hM sM hj hI) h0 h14) fun t hI => ?_
   exact ⟨!t.c, hI.val, hI.out, (k₁.trans hI.keep).mono (by decide)⟩
 
 /-! ## Adding `m` back -/
 
 /-- `adcs`, as numbers. -/
-theorem adcs_toNat (a b : BitVec 64) (c : Bool) :
+theorem adcs_val (a b : BitVec 64) (c : Bool) :
     (a + b + BitVec.ofNat 64 c.toNat).toNat + 2 ^ 64 * (decide (2 ^ 64 ≤ a.toNat + b.toNat + c.toNat)).toNat =
       a.toNat + b.toNat + c.toNat := by
   have ha := a.isLt; have hb := b.isLt
@@ -212,7 +212,7 @@ theorem sign_mask (v : BitVec 64) : 0 - v >>> 63 = mask (decide (2 ^ 63 ≤ v.to
   rw [e]; rfl
 
 /-- `(w <<< 3)` is `8 w`. -/
-theorem shl3_ofNat {w : Nat} (hw : w < 2 ^ 61) : BitVec.ofNat 64 w <<< 3 = BitVec.ofNat 64 (8 * w) := by
+theorem r2d_ofNat_shl3 {w : Nat} (hw : w < 2 ^ 61) : BitVec.ofNat 64 w <<< 3 = BitVec.ofNat 64 (8 * w) := by
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
   rw [Nat.mod_eq_of_lt (by omega : w < 2 ^ 64)]
@@ -289,7 +289,7 @@ theorem addBStep_ok {m₀ : Mem} {s₀ : State} {B : Addr} {Z w eA eM : Nat} {g 
   · rw [hm', hm]
     exact fun x hx' => (writeW_outside t.mem B _ (by omega) x (by omega)).trans (hI.out x (by omega))
   · rw [hm', hm, wv_writeW_top _ _ _ _ _ (by omega), hc', hc]
-    have hs := adcs_toNat (word t.mem B (eA + 8 * j)) (word t.mem B (eM + 8 * j) &&& mask g) t.c
+    have hs := adcs_val (word t.mem B (eA + 8 * j)) (word t.mem B (eM + 8 * j) &&& mask g) t.c
     rw [and_mask_toNat, hx, hy] at hs
     rw [and_mask_toNat, hx, hy, pow64_succ, wv, wv]
     exact addB_arith g hI.val hs
@@ -297,7 +297,7 @@ theorem addBStep_ok {m₀ : Mem} {s₀ : State} {B : Addr} {Z w eA eM : Nat} {g 
 /-- `addBack`: `m` (the `w` words at `x9`) added to the `w + 1` words `t` of
 the accumulator (at `x8`) if `t ≥ 2^(64 (w + 1)) / 2`, with the carry `c`
 out of the top word. -/
-theorem addBack_ok {s : State} {B : Addr} {Z w eA eM : Nat} (hs : Scr s B Z)
+theorem r2dAddBack_ok {s : State} {B : Addr} {Z w eA eM : Nat} (hs : Scr s B Z)
     (h8 : s.gpr .x8 = off B eA) (h9 : s.gpr .x9 = off B eM) (h12 : s.gpr .x12 = BitVec.ofNat 64 w)
     (h7 : s.gpr .x7 = 0) (hw : 1 ≤ w) (hw' : w < 2 ^ 31)
     (hA : eA + 8 * (w + 1) ≤ Z) (hM : eM + 8 * w ≤ Z) (sM : eA + 8 * (w + 1) ≤ eM ∨ eM + 8 * w ≤ eA) :
@@ -311,7 +311,7 @@ theorem addBack_ok {s : State} {B : Addr} {Z w eA eM : Nat} (hs : Scr s B Z)
   refine WP.seq (WP.mono (WP.keep [.x3, .x13, .x14, .x15, .x16, .x17] (Q := fun t =>
     t.gpr .x15 = mask g ∧ t.gpr .x16 = off B eA ∧ t.gpr .x17 = off B eM ∧ t.gpr .x14 = BitVec.ofNat 64 w ∧
     t.c = false ∧ t.mem = s.mem)
-    (by brun [h8, h9, h12, h7, shl3_ofNat (show w < 2 ^ 61 by omega), hs.ld (show eA + 8 * w + 8 ≤ Z by omega),
+    (by brun [h8, h9, h12, h7, r2d_ofNat_shl3 (show w < 2 ^ 61 by omega), hs.ld (show eA + 8 * w + 8 ≤ Z by omega),
         hg]; exact (sign_mask _).trans (congrArg mask hg)) (by decide) (by decide) (by decide +kernel))
     fun s₁ ⟨⟨h15, h16, h17, h14, hc₁, hm₁⟩, k₁⟩ => ?_)
   have h0 : AddBInv s.mem s₁ B Z eA eM g 0 s₁ :=
@@ -327,7 +327,7 @@ theorem addBack_ok {s : State} {B : Addr} {Z w eA eM : Nat} (hs : Scr s B Z)
     (by brun [hI.x16, t7, hI.scr.ld (show eA + 8 * w + 8 ≤ Z by omega),
       hI.scr.st (show eA + 8 * w + 8 ≤ Z by omega)]) (by decide) (by decide) (by decide +kernel))
     fun t' ⟨hm', k'⟩ => ?_
-  have hs' := adcs_toNat (word t.mem B (eA + 8 * w)) 0 t.c
+  have hs' := adcs_val (word t.mem B (eA + 8 * w)) 0 t.c
   refine ⟨decide (2 ^ 64 ≤ (word t.mem B (eA + 8 * w)).toNat + (0 : BitVec 64).toNat + t.c.toNat), ?_, ?_,
     ((k₁.trans hI.keep).trans k').mono (by decide)⟩
   · have hT : (2 ^ (64 * (w + 1)) / 2 ≤ wv s.mem B eA (w + 1)) = (g = true) := by

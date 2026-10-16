@@ -13,9 +13,9 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 `divBit` is a bit of restoring division: the remainder `r < d` becomes
 `2 r + 1` less `d` if that is at least `d`, and the quotient `q` becomes
-`2 q` plus that bit (`divBit_ok`). `recip` divides
+`2 q` plus that bit (`r2dDivBit_ok`). `recip` divides
 `(2^64 - 1 - d) 2^64 + 2^64 - 1` by `d` that way, 64 bits, to
-`v = ⌊(2^128 - 1) / d⌋ - 2^64` (`recip_ok`).
+`v = ⌊(2^128 - 1) / d⌋ - 2^64` (`r2dRecip_ok`).
 -/
 
 @[expose] public section
@@ -92,13 +92,13 @@ theorem dbR_val {r d : Nat} (hr : r < d) (hd : d < 2 ^ 64) :
 
 /-- After `k` bits of `recip`'s loop from `s₀`: `x2 = r`, `x10 = q` for
 `r₀ 2^k + 2^k - 1 = q d + r`, `r < d`. -/
-structure RecInv (s₀ : State) (d r0 : Nat) (k : Nat) (t : State) : Prop where
+structure R2dRecInv (s₀ : State) (d r0 : Nat) (k : Nat) (t : State) : Prop where
   keep : Keep [.x2, .x3, .x10, .x13, .x15, .x16] s₀ t
   mem : t.mem = s₀.mem
   val : ∃ q r, t.gpr .x2 = BitVec.ofNat 64 r ∧ t.gpr .x10 = BitVec.ofNat 64 q ∧
     r0 * 2 ^ k + (2 ^ k - 1) = q * d + r ∧ r < d
 
-theorem divBit_ok (t : State) (h4 : t.gpr .x4 = (BitVec.ofNat 16 1).setWidth 64) (h7 : t.gpr .x7 = 0) :
+theorem r2dDivBit_ok (t : State) (h4 : t.gpr .x4 = (BitVec.ofNat 16 1).setWidth 64) (h7 : t.gpr .x7 = 0) :
     WP isa (.block divBit) t fun t' => (t'.gpr .x2 = dbR (t.gpr .x2) (t.gpr .x5) ∧
       t'.gpr .x10 = t.gpr .x10 + t.gpr .x10 + dbB (t.gpr .x2) (t.gpr .x5) ∧ t'.mem = t.mem) ∧
       Keep [.x2, .x3, .x10, .x15, .x16] t t' := by
@@ -108,15 +108,15 @@ theorem divBit_ok (t : State) (h4 : t.gpr .x4 = (BitVec.ofNat 16 1).setWidth 64)
 
 theorem divStep_ok {s₀ : State} {d r0 : Nat} (hd : d < 2 ^ 64) (hr0 : r0 < d)
     (h4 : s₀.gpr .x4 = (BitVec.ofNat 16 1).setWidth 64) (h7 : s₀.gpr .x7 = 0)
-    (h5 : s₀.gpr .x5 = BitVec.ofNat 64 d) {k : Nat} (hk : k < 64) {t : State} (hI : RecInv s₀ d r0 k t) :
+    (h5 : s₀.gpr .x5 = BitVec.ofNat 64 d) {k : Nat} (hk : k < 64) {t : State} (hI : R2dRecInv s₀ d r0 k t) :
     WP isa (.block (divBit ++ ([.subImm .x .x13 .x13 1] : List Instr))) t fun t' =>
-      RecInv s₀ d r0 (k + 1) t' ∧ t'.gpr .x13 = t.gpr .x13 - BitVec.ofNat 64 1 := by
+      R2dRecInv s₀ d r0 (k + 1) t' ∧ t'.gpr .x13 = t.gpr .x13 - BitVec.ofNat 64 1 := by
   obtain ⟨q, r, h2, h10, hP, hr⟩ := hI.val
   have t4 := (hI.keep.gpr .x4 (by decide)).trans h4
   have t7 := (hI.keep.gpr .x7 (by decide)).trans h7
   have t5 := (hI.keep.gpr .x5 (by decide)).trans h5
   rw [WP.block_append_iff]
-  refine WP.mono (divBit_ok t t4 t7) fun t₁ ⟨⟨h2₁, h10₁, hm₁⟩, k₁⟩ => ?_
+  refine WP.mono (r2dDivBit_ok t t4 t7) fun t₁ ⟨⟨h2₁, h10₁, hm₁⟩, k₁⟩ => ?_
   refine WP.mono (dec_ok t₁ .x13) fun t' ⟨⟨h13, hm', _⟩, k'⟩ => ⟨?_, by rw [h13, k₁.gpr .x13 (by decide)]⟩
   -- `q < 2^k`, as `q d ≤ r₀ 2^k + 2^k - 1 < d 2^k`.
   have hpk : 0 < 2 ^ k := Nat.two_pow_pos k
@@ -147,7 +147,7 @@ theorem divStep_ok {s₀ : State} {d r0 : Nat} (hd : d < 2 ^ 64) (hr0 : r0 < d)
 
 /-- `recip`: `v = ⌊(2^128 - 1) / d⌋ - 2^64` for `d = m[w - 1] ≥ 2^63` into the
 word at `x6`, for `m` at `x9` of `w` words. -/
-theorem recip_ok {s : State} {B : Addr} {Z w eM eV : Nat} (hs : Scr s B Z)
+theorem r2dRecip_ok {s : State} {B : Addr} {Z w eM eV : Nat} (hs : Scr s B Z)
     (h9 : s.gpr .x9 = off B eM) (h12 : s.gpr .x12 = BitVec.ofNat 64 w) (h6 : s.gpr .x6 = off B eV)
     (h7 : s.gpr .x7 = 0) (hw : 1 ≤ w) (hw' : w < 2 ^ 31) (hM : eM + 8 * w ≤ Z) (hV : eV + 8 ≤ Z)
     (hd : 2 ^ 63 ≤ (word s.mem B (eM + 8 * (w - 1))).toNat) :
@@ -172,9 +172,9 @@ theorem recip_ok {s : State} {B : Addr} {Z w eM eV : Nat} (hs : Scr s B Z)
     (by decide) (by decide) (by decide +kernel))
     fun s₁ ⟨⟨h5, h2, h10, h4, h13, hm₁⟩, k₁⟩ => ?_)
   have hr0 : 2 ^ 64 - 1 - D.toNat < D.toNat := by omega
-  have h0 : RecInv s₁ D.toNat (2 ^ 64 - 1 - D.toNat) 0 s₁ :=
+  have h0 : R2dRecInv s₁ D.toNat (2 ^ 64 - 1 - D.toNat) 0 s₁ :=
     ⟨Keep.refl _ _, rfl, 0, 2 ^ 64 - 1 - D.toNat, h2, h10, by simp, hr0⟩
-  refine WP.seq (WP.mono (wp_countdown (N := 64) (by decide) (by decide) (RecInv s₁ D.toNat (2 ^ 64 - 1 - D.toNat))
+  refine WP.seq (WP.mono (wp_countdown (N := 64) (by decide) (by decide) (R2dRecInv s₁ D.toNat (2 ^ 64 - 1 - D.toNat))
     (fun k hk t hI _ => divStep_ok hD' hr0 h4 ((k₁.gpr .x7 (by decide)).trans h7) h5 hk hI) h0 h13)
     fun t hI => ?_)
   obtain ⟨q, r, _, h10t, hP, hr⟩ := hI.val

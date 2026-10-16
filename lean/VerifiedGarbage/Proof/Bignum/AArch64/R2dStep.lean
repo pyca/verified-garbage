@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 
 `step` makes `x := x 2^64 mod m` for `x < m` (array `aR2`), `m` of `w ≥ 2`
 words (array `aN`) with its top bit set, and its reciprocal `v` in the first
-word of array `aTmp` (`step_ok`), by `WordStep.wordStep_val`.
+word of array `aTmp` (`r2dStep_ok`), by `WordStep.wordStep_val`.
 -/
 
 @[expose] public section
@@ -42,7 +42,7 @@ theorem wv_split1 (m : Mem) (B : Addr) (e : Nat) {w : Nat} (hw : 1 ≤ w) :
   omega
 
 /-- The low `n` words are the number, if it is below `2^(64 n)`. -/
-theorem wv_low (m : Mem) (B : Addr) (e n : Nat) (h : wv m B e (n + 1) < 2 ^ (64 * n)) :
+theorem wv_low_top (m : Mem) (B : Addr) (e n : Nat) (h : wv m B e (n + 1) < 2 ^ (64 * n)) :
     wv m B e n = wv m B e (n + 1) := by
   have e1 : wv m B e (n + 1) = wv m B e n + 2 ^ (64 * n) * (word m B (e + 8 * n)).toNat := rfl
   rcases Nat.eq_zero_or_pos (word m B (e + 8 * n)).toNat with h0 | h0
@@ -51,7 +51,7 @@ theorem wv_low (m : Mem) (B : Addr) (e n : Nat) (h : wv m B e (n + 1) < 2 ^ (64 
     omega
 
 /-- The top word of `x < m` is at most that of `m`. -/
-theorem top_le {m : Mem} {B : Addr} {eX eM w : Nat} (hw : 1 ≤ w)
+theorem r2d_top_le {m : Mem} {B : Addr} {eX eM w : Nat} (hw : 1 ≤ w)
     (h : wv m B eX w < wv m B eM w) :
     (word m B (eX + 8 * (w - 1))).toNat ≤ (word m B (eM + 8 * (w - 1))).toNat := by
   have hx := wv_split1 m B eX hw
@@ -84,7 +84,7 @@ theorem StepRegs.keep {t t' : State} {B : Addr} {w : Nat} (h : StepRegs t B w) {
     (k.gpr .x6 h6).trans h.x6, (k.gpr .x12 h12).trans h.x12, (k.gpr .x7 h7).trans h.x7⟩
 
 /-- `bases` and `quot`: the registers, and `q̂` in `x1`. -/
-theorem head_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good t B Z w minv)
+theorem r2dHead_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good t B Z w minv)
     (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     (hu : (word t.mem B (slot w aR2 + 8 * (w - 1))).toNat ≤ (word t.mem B (slot w aN + 8 * (w - 1))).toNat)
     (hd : 2 ^ 63 ≤ (word t.mem B (slot w aN + 8 * (w - 1))).toNat)
@@ -114,7 +114,7 @@ theorem head_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good
     (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨hr, hm₁⟩, k₁⟩ => ?_
   have hs₁ := hs.congr k₁.wr
   rw [← hm₁] at hu hd hv
-  refine WP.mono (quot_ok hs₁ hr.x11 hr.x9 hr.x12 hr.x6 hr.x7 hw hw' (by have := sl aR2 (by decide); omega)
+  refine WP.mono (r2dQuot_ok hs₁ hr.x11 hr.x9 hr.x12 hr.x6 hr.x7 hw hw' (by have := sl aR2 (by decide); omega)
     (by have := sl aN (by decide); omega) (by have := sl aTmp (by decide); omega) hu hd hv)
     fun t' ⟨h1, hm, k⟩ => ⟨hr.keep k, by rw [h1, hm₁], by rw [hm, hm₁], (k₁.trans k).mono (by decide)⟩
 
@@ -122,7 +122,7 @@ theorem head_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good
 
 /-- `x := x 2^64 mod m`: `x < m` (array `aR2`) for `m` (array `aN`) of `w ≥ 2`
 words, its top word `D ≥ 2^63`, and `v` for `D` in the first word of `aTmp`. -/
-theorem step_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : Nat} (hg : Good t B Z w minv)
+theorem r2dStep_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : Nat} (hg : Good t B Z w minv)
     (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31) (hM : wv t.mem B (slot w aN) w = M)
     (hD : (word t.mem B (slot w aN + 8 * (w - 1))).toNat = D) (hd : 2 ^ 63 ≤ D)
     (hv : (word t.mem B (slot w aTmp)).toNat = (2 ^ 128 - 1) / D - 2 ^ 64)
@@ -139,10 +139,10 @@ theorem step_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : Nat
   have sAM := slot_sep (w := w) (show aAcc ≠ aN by decide)
   have sAX := slot_sep (w := w) (show aAcc ≠ aR2 by decide)
   have sXM := slot_sep (w := w) (show aR2 ≠ aN by decide)
-  have hu := top_le (m := t.mem) (B := B) (by omega : 1 ≤ w) (hM ▸ hX)
+  have hu := r2d_top_le (m := t.mem) (B := B) (by omega : 1 ≤ w) (hM ▸ hX)
   unfold step
   simp only [seqs]
-  refine WP.seq (WP.mono (head_ok hg hZ hw hw' hu (by rw [hD]; exact hd) (by rw [hv, hD]))
+  refine WP.seq (WP.mono (r2dHead_ok hg hZ hw hw' hu (by rw [hD]; exact hd) (by rw [hv, hD]))
     fun t₁ ⟨r₁, h1, hm₁, k₁⟩ => ?_)
   rw [hD] at h1
   generalize hq : min (((word t.mem B (slot w aR2 + 8 * (w - 1))).toNat * 2 ^ 64 +
@@ -178,7 +178,7 @@ theorem step_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : Nat
   have r₃ := r₂.keep k₃
   have hs₃ := hs₂.congr k₃.wr
   have P₃ : wv t₃.mem B (slot w aAcc) (w + 1) = q * M := by
-    rw [wv_low t₃.mem B (slot w aAcc) (w + 1) (by rw [hv₃]; exact hqM), hv₃]
+    rw [wv_low_top t₃.mem B (slot w aAcc) (w + 1) (by rw [hv₃]; exact hqM), hv₃]
   have X₃ : wv t₃.mem B (slot w aR2) w = X := by rw [o₃.wv (by omega) (by omega), X₂]
   have M₃ : wv t₃.mem B (slot w aN) w = M := by rw [o₃.wv (by omega) (by omega), M₂]
   -- `t := x 2^64 - q̂ m`.
@@ -189,13 +189,13 @@ theorem step_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : Nat
   have hs₄ := hs₃.congr k₄.wr
   have M₄ : wv t₄.mem B (slot w aN) w = M := by rw [o₄.wv (by omega) (by omega), M₃]
   -- `m` added back while `t` is negative.
-  refine WP.seq (WP.mono (addBack_ok hs₄ r₄.x8 r₄.x9 r₄.x12 r₄.x7 (by omega) hw' (by omega) (by omega)
+  refine WP.seq (WP.mono (r2dAddBack_ok hs₄ r₄.x8 r₄.x9 r₄.x12 r₄.x7 (by omega) hw' (by omega) (by omega)
     (by omega)) fun t₅ ⟨c1, hv₅, o₅, k₅⟩ => ?_)
   rw [M₄] at hv₅
   have r₅ := r₄.keep k₅
   have hs₅ := hs₄.congr k₅.wr
   have M₅ : wv t₅.mem B (slot w aN) w = M := by rw [o₅.wv (by omega) (by omega), M₄]
-  refine WP.seq (WP.mono (addBack_ok hs₅ r₅.x8 r₅.x9 r₅.x12 r₅.x7 (by omega) hw' (by omega) (by omega)
+  refine WP.seq (WP.mono (r2dAddBack_ok hs₅ r₅.x8 r₅.x9 r₅.x12 r₅.x7 (by omega) hw' (by omega) (by omega)
     (by omega)) fun t₆ ⟨c2, hv₆, o₆, k₆⟩ => ?_)
   rw [M₅] at hv₆
   have r₆ := r₅.keep k₆
@@ -230,6 +230,6 @@ theorem step_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {M D : Nat
     rw [← hm₇]
     exact Arrays.of_outside mX o' (Nat.le_refl _) (by omega)
   refine ⟨⟨hs₇.congr k'.wr, (kk.gpr .x0 (by decide)).trans hg.x0, ha.hdr hg.hdr⟩, ?_, ha, kk⟩
-  rw [hc, hm₇, wv_low t₆.mem B (slot w aAcc) w (by rw [hT3]; exact hMod), hT3]
+  rw [hc, hm₇, wv_low_top t₆.mem B (slot w aAcc) w (by rw [hT3]; exact hMod), hT3]
 
 end VG.Proof.Bignum.AArch64
