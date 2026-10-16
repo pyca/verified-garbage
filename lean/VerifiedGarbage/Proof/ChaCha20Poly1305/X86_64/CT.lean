@@ -19,6 +19,7 @@ meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Variant
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Spec
 public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
+import VerifiedGarbage.Proof.Framework.Cold
 meta import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64
 public import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -3676,15 +3677,8 @@ theorem macPadLengths_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : 
       bytesAt s.mem (P + BitVec.ofNat 64 (16 * (len / 16))) (len % 16) := by
     rw [← VG.Proof.Poly1305.bytesAt_add, Nat.div_add_mod]
   have hlen : (bytesAt s.mem P len).length = len := VG.Proof.Poly1305.length_bytesAt _ _ _
-  refine WP.ite (decide (len % 16 = 0)) (by simp only [eval, zf₃]) (fun hz => ?_) (fun hz => ?_)
-  · have h0 : len % 16 = 0 := by simpa using hz
-    refine WP.mono (absorbLengths_ok b hp i₃) fun s₄ ⟨i₄, cs₄, f₄, mx₄, r₄⟩ => ?_
-    refine ⟨i₄, fun r h => by rw [cs₄ r h, cs₃ r h], f₂.trans (by rw [← m₃]; exact f₄),
-      by rw [mx₄, mx₃, mx₂], fun key msg hr => ?_⟩
-    have := r₄ key _ (by rw [m₃]; exact repr₂ key msg hr)
-    rw [m₃, L₂] at this
-    rwa [show pad16 (bytesAt s.mem P len) = [] by simp [pad16, hlen, h0], List.append_nil,
-      ← show 16 * (len / 16) = len by omega_using [h0]]
+  rw [WP.iteCold_iff]
+  refine WP.ite (decide (len % 16 ≠ 0)) (by simp only [eval, zf₃]; cases len % 16 <;> rfl) (fun hz => ?_) (fun hz => ?_)
   · have h0 : len % 16 ≠ 0 := by simpa using hz
     refine WP.mono (macRest_ok b (k := 2) (.inr rfl) hp hr hs h0
       (by rw [cs₃ _ (by simp [calleeSaved]), h.r15])
@@ -3698,6 +3692,14 @@ theorem macPadLengths_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : 
     rw [show pad16 (bytesAt s.mem P len) = List.replicate (16 - len % 16) 0 by simp [pad16, hlen, h0],
       x_eq]
     simpa only [List.append_assoc, show 16 * 2 - 16 = 16 from rfl] using this
+  · have h0 : len % 16 = 0 := by simpa using hz
+    refine WP.mono (absorbLengths_ok b hp i₃) fun s₄ ⟨i₄, cs₄, f₄, mx₄, r₄⟩ => ?_
+    refine ⟨i₄, fun r h => by rw [cs₄ r h, cs₃ r h], f₂.trans (by rw [← m₃]; exact f₄),
+      by rw [mx₄, mx₃, mx₂], fun key msg hr => ?_⟩
+    have := r₄ key _ (by rw [m₃]; exact repr₂ key msg hr)
+    rw [m₃, L₂] at this
+    rwa [show pad16 (bytesAt s.mem P len) = [] by simp [pad16, hlen, h0], List.append_nil,
+      ← show 16 * (len / 16) = len by omega_using [h0]]
 
 /-- The return address is unchanged. -/
 theorem ret_kept {s₀ : State} (hp : APre e s₀) {m₆ m' : Mem} (hi : Frame [workR s₀, dR s₀, stkR s₀] s₀.mem m₆)
