@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
+import VerifiedGarbage.Proof.Sha512.AArch64.Stream.InitPairs
 import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
@@ -46,14 +47,14 @@ structure DigestOk (o : List Instr) (D : Nat) (suffix : String) (code : Prog isa
 `iv`, calling the compression function `code` with the suffix `suffix`. -/
 def oneShotWith (o : List Instr) (iv : Spec.Sha512.HashValue) (suffix : String) (code : Prog isa) :
     Prog isa :=
-  Impl.MdStream.AArch64.OneShot.digest Stream.params { Stream.params with out := o }
-    (Impl.Sha512.AArch64.Stream.init iv) (compressName suffix) code
+  Impl.MdStream.AArch64.OneShot.digest { Stream.params with out := o }
+    (Impl.Sha512.AArch64.Stream.initPairs iv) (compressName suffix) code
 
 /-- The one-shot digest is constant time. -/
 abbrev OneShotCT (o : List Instr) (D : Nat) (iv : Spec.Sha512.HashValue) (suffix : String)
     (code : Prog isa) : Prop :=
-  ConstantTime isa (MdStream.AArch64.OneShot.oneK (P := Stream.params) md iv D).pre
-    (MdStream.AArch64.OneShot.oneK (P := Stream.params) md iv D).pub
+  ConstantTime isa (MdStream.AArch64.OneShot.oneK (P := { Stream.params with out := o }) md iv D).pre
+    (MdStream.AArch64.OneShot.oneK (P := { Stream.params with out := o }) md iv D).pub
     (oneShotWith o iv suffix code)
 
 structure Compress where
@@ -91,26 +92,25 @@ namespace OneShot
 
 open MdStream.AArch64.OneShot (oneK initK Fits)
 
-theorem fits : Fits Stream.params := ⟨by decide, by decide, by decide⟩
+theorem frameBytes_out (o : List Instr) :
+    Impl.MdStream.AArch64.OneShot.frameBytes { Stream.params with out := o } =
+      Impl.MdStream.AArch64.OneShot.frameBytes Stream.params := rfl
+
+theorem fits (o : List Instr) : Fits { Stream.params with out := o } := ⟨by rw [frameBytes_out]; decide⟩
 
 theorem init_ok (iv : Spec.Sha512.HashValue) :
-    ∀ s, (initK (P := Stream.params) md iv).pre s → ∃ t s', Exec isa (Impl.Sha512.AArch64.Stream.init iv) s t s' ∧
+    ∀ s, (initK (P := Stream.params) md iv).pre s → ∃ t s',
+      Exec isa (Impl.Sha512.AArch64.Stream.initPairs iv) s t s' ∧
       abiPreserved s s' ∧ (initK (P := Stream.params) md iv).post s s' :=
-  fun s h => (VG.Proof.Sha512.AArch64.Stream.init_verified iv).1 s h
+  VG.Proof.Sha512.AArch64.Stream.initPairs_ok iv
 
 theorem init_writes (iv : Spec.Sha512.HashValue) :
-    ∀ r, r ≠ .x9 → ∀ i ∈ instrs (Impl.Sha512.AArch64.Stream.init iv), clobbers i r = false := by
-  intro r hr i hi
-  simp only [Impl.Sha512.AArch64.Stream.init, instrs, List.mem_flatMap, List.mem_range,
-    Impl.Sha512.AArch64.movImm64, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-    or_false] at hi
-  obtain ⟨k, -, hi⟩ := hi
-  rcases hi with rfl | rfl | rfl | rfl | rfl <;> simp [clobbers, dstOf, Ne.symm hr]
+    ∀ r, r ≠ .x9 → r ≠ .x10 → ∀ i ∈ instrs (Impl.Sha512.AArch64.Stream.initPairs iv), clobbers i r = false :=
+  VG.Proof.Sha512.AArch64.Stream.initPairs_writes iv
 
 theorem init_keepsV (iv : Spec.Sha512.HashValue) :
-    (Impl.Sha512.AArch64.Stream.init iv).allInstrs VG.AArch64.keepsV = true := by
-  rw [Code.allInstrs_eq]
-  simp [Impl.Sha512.AArch64.Stream.init, instrs, Impl.Sha512.AArch64.movImm64, VG.AArch64.keepsV, vdstOf]
+    (Impl.Sha512.AArch64.Stream.initPairs iv).allInstrs VG.AArch64.keepsV = true :=
+  VG.Proof.Sha512.AArch64.Stream.initPairs_keepsV iv
 
 /-- A state satisfying the precondition: an empty message at `0x1000`, the
 digest at `0x2000` and the stack pointer at `0x10000`. -/
@@ -122,7 +122,7 @@ def sat (D : Nat) : State where
   rd := [⟨0x1000, 0⟩]
   wr := [⟨0x2000, D⟩]
 
-theorem sat_pre {D : Nat} (hD : D ≤ 64) : MdStream.AArch64.OneShot.Pre Stream.params D (sat D) where
+theorem sat_pre₀ {D : Nat} (hD : D ≤ 64) : MdStream.AArch64.OneShot.Pre Stream.params D (sat D) where
   rd := rfl
   wr := rfl
   d_o := show Region.Disjoint ⟨0x1000, 0⟩ ⟨0x2000, D⟩ from
@@ -137,6 +137,17 @@ theorem sat_pre {D : Nat} (hD : D ≤ 64) : MdStream.AArch64.OneShot.Pre Stream.
       have : 8256 ≤ (0x10000 - BitVec.ofNat 64 (Impl.MdStream.AArch64.OneShot.frameBytes Stream.params) :
         BitVec 64).toNat := by decide
       dsimp only; omega) (by decide)).symm
+
+/-- The precondition does not depend on the digest code. -/
+theorem pre_out {o : List Instr} {D : Nat} {s : State} (h : MdStream.AArch64.OneShot.Pre Stream.params D s) :
+    MdStream.AArch64.OneShot.Pre { Stream.params with out := o } D s := by
+  have e := frameBytes_out o
+  exact ⟨h.rd, h.wr, h.d_o, by rw [e]; exact h.sp,
+    by simpa only [MdStream.AArch64.OneShot.fR, MdStream.AArch64.OneShot.fb, e] using h.f_d,
+    by simpa only [MdStream.AArch64.OneShot.fR, MdStream.AArch64.OneShot.fb, e] using h.f_o⟩
+
+theorem sat_pre {o : List Instr} {D : Nat} (hD : D ≤ 64) :
+    MdStream.AArch64.OneShot.Pre { Stream.params with out := o } D (sat D) := pre_out (sat_pre₀ hD)
 
 end OneShot
 
@@ -195,13 +206,12 @@ theorem finalize_depth : v.finalize.aarch64Depth = 1 := by
 /-- The one-shot digest with the digest code `o` (writing `D` bytes), from `iv`. -/
 theorem oneShot_verified {o : List Instr} {D : Nat} {iv : Spec.Sha512.HashValue} (hD : D ≤ 64)
     (hs : ShapeD (P := { Stream.params with out := o }) md D)
-    (hk : ((instrs (finalizeMain { Stream.params with out := o } (compressName v.suffix) v.code)).all fun i =>
-      untouched.all fun r => !clobbers i r) = true)
     (hct : OneShotCT o D iv v.suffix v.code) :
     Verified AArch64.target (oneShotWith o iv v.suffix v.code)
-      (MdStream.AArch64.OneShot.oneK (P := Stream.params) md iv D) :=
-  MdStream.AArch64.OneShot.verified OneShot.fits Stream.dims hs v.callee (OneShot.init_ok iv)
-    (OneShot.init_writes iv) rfl (OneShot.init_keepsV iv) v.updateKeeps hk hct
+      (MdStream.AArch64.OneShot.oneK (P := { Stream.params with out := o }) md iv D) :=
+  MdStream.AArch64.OneShot.verified (P := { Stream.params with out := o }) (OneShot.fits o)
+    ⟨Stream.dims.1, Stream.dims.2, Stream.dims.3, Stream.dims.4⟩ hs
+    (v.callee.withOut o) (OneShot.init_ok iv) (OneShot.init_writes iv) rfl (OneShot.init_keepsV iv) hct
     ⟨_, OneShot.sat_pre hD⟩
 
 end Compress
