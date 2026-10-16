@@ -281,7 +281,7 @@ theorem runWith_ok (v : GcmImpl) (gh : Fn) (hMK : MulKey) {extra : List Region} 
         exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)) h₁ h₂', m₁₀,
       slot_kept h₇.frame (slots_absFrame L) h₁ h₂', r₅.mem, slot₄ d h₁ h₂']
   -- The lengths block.
-  unfold Impl.AesGcm.AArch64.Fast.lensTag
+  unfold Impl.AesGcm.AArch64.Fast.lensTag Impl.AesGcm.AArch64.Fast.lensTagAt
   rw [WP.seq_iff]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]

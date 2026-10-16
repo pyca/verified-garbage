@@ -77,10 +77,13 @@ def front : Prog isa :=
 
 /-- The lengths block `[8 alen]₆₄ ‖ [8 len]₆₄` in `T` (the length of the text
 in `x26`), absorbed, the accumulator stored, and the arguments for the tag at
-`W`. -/
-def lensTag : List Instr :=
+`W + o`. -/
+def lensTagAt (o : Nat) : List Instr :=
   ([.ldr .x .x10 .x19 alenO, .lsl .x .x9 .x10 3, .rev .x9 .x9, .str .x .x9 .x19 tO, .lsl .x .x9 .x26 3,
-    .rev .x9 .x9, .str .x .x9 .x19 (tO + 8)] : List Instr) ++ mulT ++ storeY ++ tagSeg 0
+    .rev .x9 .x9, .str .x .x9 .x19 (tO + 8)] : List Instr) ++ mulT ++ storeY ++ tagSeg o
+
+/-- `lensTagAt`, with the tag at `W`. -/
+def lensTag : List Instr := lensTagAt 0
 
 variable (c : Callees)
 
@@ -115,5 +118,40 @@ only the first 256 bytes of the context, as in `seal`). -/
 def sealWith (gh : Fn) : Prog isa :=
   .seq (.block (oneEntry 8 ++ stashArg 0))
     (.seq cond (.ite (.zero .x .x10) (runWith c gh) (sealRest c)))
+
+/-! ## `open` -/
+
+/-- `open`'s path for TLS records, once the tag length is allowed and the
+received tag is at `W`: `front`; the whole blocks of the ciphertext (`x26`
+bytes at `x23`) hashed by `gh`; its last bytes and the lengths absorbed; the
+tag to `W + uO` (`uO`, as `openMain`), compared with the received one (the
+tag length still in `x28`, which nothing here writes); and the text
+decrypted only if they are equal, `x0` then 1 and else 0. -/
+def openRunWith (gh : Fn) : Prog isa :=
+  .seq front
+  (.seq (.block ([mov .x24 .x26, imm .x25 0] ++ absSeg2 16))
+  (.seq (.call gh.name gh.code)
+  (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
+  (.seq padMul
+  (.seq (.block (lensTagAt uO))
+  (.seq (ctrCall c)
+  (.seq cmp
+  (.seq (.block [imm .x27 1, .sub .x .x27 .x27 .x10])
+  (.seq (.ite (.zero .x .x27) (.block []) (oneCrypt c))
+    (.block [mov .x0 .x27]))))))))))
+
+/-- `openRest`, with `openRunWith` for `openMain`. -/
+def openFast (gh : Fn) : Prog isa :=
+  .seq tagLenOk
+  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openRunWith c gh)))
+    (.block restore))
+
+/-- `vg_aes_gcm_open` with this path: the entry, `cond`, then `openFast` or
+`openRest`; the ciphertext's whole blocks hashed by `gh`. -/
+def openWith (gh : Fn) : Prog isa :=
+  .seq (.block openEntry) (.seq cond (.ite (.zero .x .x10) (openFast c gh) (openRest c)))
+
+/-- `vg_aes_gcm_open` with this path, hashing with `vg_ghash`. -/
+def «open» : Prog isa := openWith c c.gh
 
 end VG.Impl.AesGcm.AArch64.Fast

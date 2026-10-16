@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Verified
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Prepared
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenVerified
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -49,6 +50,12 @@ def fastNote (v : GcmImpl) : List String :=
     the lengths block into the hash with PMULL in registers, calling `" ++ v.gh.fn.name ++ "` once, on the \
     whole blocks of the ciphertext."] else []
 
+/-- How `open` takes the records of TLS, for the implementations with PMULL. -/
+def fastOpenNote (v : GcmImpl) : List String :=
+  if v.gh.pmull then ["For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes \
+    the tag as `seal` does on that path, calling `" ++ v.gh.fn.name ++ "` once, on the whole blocks of the \
+    ciphertext, and decrypts only if it matches."] else []
+
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Gcm.initApi.artifact AArch64.target {
@@ -67,11 +74,10 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.openApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v]
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
-      (Impl.AesGcm.AArch64.«open» v.callees)
+    notes := [note v] ++ fastOpenNote v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode v)
     stack := 2592
-    verified := open_framed v
+    verified := openCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV
     features := v.features },
   Spec.Gcm.streamInitApi.artifact AArch64.target {
     suffix := v.suffix
