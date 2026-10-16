@@ -29,6 +29,14 @@ def artifacts : List Artifact := [
         that has at least eight blocks, then four, two and one."]
     code := Impl.Gcm.AArch64.Pmull.ghash
     verified := Proof.Gcm.AArch64.Pmull.ghash_verified
+    features := ["aes"] },
+  Spec.Gcm.ghashPreparedApi.artifact AArch64.target {
+    suffix := "_aes"
+    notes := ["Uses PMULL as `vg_ghash_aes` does, loading `H'` and, on calls with at least eight \
+        blocks, `H'²` to `H'⁸` from the context (`H'ᵏ = Hᵏ · x⁻¹` is the prepared power) \
+        instead of computing them."]
+    code := Impl.Gcm.AArch64.Pmull.ghashP
+    verified := Proof.Gcm.AArch64.Pmull.ghashP_verified
     features := ["aes"] }]
 
 end VG.Artifacts.Gcm.AArch64
