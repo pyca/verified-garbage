@@ -7,7 +7,11 @@ public import VerifiedGarbage.Proof.Framework.Registration
 
 namespace VG.Generic.Keccak.AArch64.MlKemSample
 
-def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
+/-- `SampleNTT`, which the single-state `keygen`, `encaps` and `decaps` call
+(`MlKem.legacyArtifacts`): the instances with the SHA-3 extension sample with
+their own paired code, and call none of these. -/
+def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
+  if v.callee.pairedSha3 then [] else [
   Spec.MlKem.sampleNTTApi.artifact AArch64.target {
     suffix := v.callee.suffix
     features := v.features
