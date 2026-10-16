@@ -69,10 +69,7 @@ theorem YK_awr2 (p : Params) : (YK p).awr 2 = true := rfl
 theorem YK_awr3 (p : Params) : (YK p).awr 3 = true := rfl
 
 /-- Unfolds checks of buffers against a layout into arithmetic, then `omega`. -/
-syntax "lay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| lay) => `(tactic| lay [])
-  | `(tactic| lay [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "lay" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [VG.Proof.MlKem.X86.Top.Lay.apart, VG.Proof.MlKem.X86.Top.Lay.ok,
                          VG.Proof.MlKem.X86.Top.Lay.okW, VG.Proof.MlKem.X86.Top.Lay.sep, VG.Impl.MlDsa.X86.KeyGen.Arg.ok, VG.Impl.MlDsa.X86.KeyGen.sb,
@@ -96,10 +93,7 @@ macro_rules
 
 /-- `lay`, with the facts of the parameter set `hF : PFacts p`: for any `η` if the check does not
 depend on it, and otherwise in each case of `η`. -/
-syntax "layp " term:max (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| layp $hF) => `(tactic| layp $hF [])
-  | `(tactic| layp $hF [$ls,*]) => `(tactic| (
+tactic_template "layp " hF:term:max " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
       have := ($hF).k; have := ($hF).l; have := ($hF).kl
       first
         | lay [($hF).pk, ($hF).sk, ($hF).sw, $ls,*]
