@@ -51,13 +51,16 @@ def E.eval (L : Nat → Nat → BitVec 16) (O : Nat → BitVec 16) : E → BitVe
   | .and a b => a.eval L O &&& b.eval L O
   | .junk => 0
 
-/-- The words after each number of layers obey the butterflies, the input's
-are below `2¹⁵`, and `O` is their reduction. -/
-structure Model (L : Nat → Nat → BitVec 16) (O : Nat → BitVec 16) : Prop where
+/-- The words after each number of layers obey the layers of `R`, the
+input's are below `2¹⁵`, and `O` is the reduction of the last ones. -/
+structure Model (R : Rules) (L : Nat → Nat → BitVec 16) (O : Nat → BitVec 16) : Prop where
   small : ∀ p < 256, (L 0 p).toNat < 32768
-  bfly : ∀ st p p' z z', bflyOk st p p' z z' = true →
+  bfly : ∀ st p p' z z', bflyOk R st p p' z z' = true →
     L (st + 1) p = L st p + mtW (L st p') z z' ∧ L (st + 1) p' = L st p - mtW (L st p') z z'
-  red : ∀ p < 256, O p = caddQ (mtW (L 7 p) (zmTab 0) (zmTab 0 * qinvN % 65536))
+  gsSum : ∀ st p p', gsPairOk R st p p' = true → L (st + 1) p = L st p + L st p'
+  gsDiff : ∀ st p p' z z', gsOk R st p p' z z' = true → L (st + 1) p' = mtW (L st p' - L st p) z z'
+  red : ∀ st p, redOk R st = true → p < 256 → L (st + 1) p = mtW (L st p) (zmTab 0) (zmTab 0 * qinvN % 65536)
+  out : ∀ p < 256, O p = caddQ (mtW (L R.ops.length p) R.fin (R.fin * qinvN % 65536))
 
 /-- The term `e` holds of the word `w`. -/
 def Hd (L : Nat → Nat → BitVec 16) (O : Nat → BitVec 16) (e : E) (w : BitVec 16) : Prop :=
@@ -115,13 +118,8 @@ theorem mkSra_ok {a : E} {x : BitVec 16} (ha : Hd L O a x) :
 
 theorem eval_mt (b : E) (z z' : Nat) : (mt b z z').eval L O = mtW (b.eval L O) z z' := rfl
 
-theorem bflyOk_lt {st p p' z z' : Nat} (h : bflyOk st p p' z z' = true) : p < 256 ∧ p' < 256 := by
-  simp only [bflyOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-  obtain ⟨⟨⟨⟨⟨_, h1⟩, _⟩, h3⟩, _⟩, _⟩ := h
-  omega
-
-theorem mkAdd_ok (hM : Model L O) {a b : E} {x y : BitVec 16} (ha : Hd L O a x) (hb : Hd L O b y) :
-    Hd L O (mkAdd a b) (x + y) := by
+theorem mkAdd_ok {R : Rules} (hM : Model R L O) {a b : E} {x y : BitVec 16} (ha : Hd L O a x) (hb : Hd L O b y) :
+    Hd L O (mkAdd R a b) (x + y) := by
   unfold mkAdd
   split
   · exact Hd.junk _
@@ -129,28 +127,32 @@ theorem mkAdd_ok (hM : Model L O) {a b : E} {x y : BitVec 16} (ha : Hd L O a x) 
   obtain ⟨h1, h2⟩ := isJunk_or a b (by simpa using hj)
   rw [ha.eq h1, hb.eq h2]
   split
-  · rename_i st p st₁ p' z st₂ p'' z' q
-    split
+  · split
     · rename_i hc
       simp only [Bool.and_eq_true, beq_iff_eq] at hc
       obtain ⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, hb'⟩ := hc
       exact Hd.of_eq (by simp only [E.eval]; exact ((hM.bfly _ _ _ _ _ hb').1).symm ▸ rfl)
     · exact Hd.of_eq rfl
-  · rename_i st p z st₁ p₁ z' q r q'
-    split
+  · split
+    · rename_i hc
+      simp only [Bool.and_eq_true, beq_iff_eq] at hc
+      obtain ⟨rfl, hp⟩ := hc
+      exact Hd.of_eq (by simp only [E.eval]; exact (hM.gsSum _ _ _ hp).symm ▸ rfl)
+    · exact Hd.of_eq rfl
+  · split
     · rename_i hc
       simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hc
       obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hr⟩, hp⟩ := hc
       obtain rfl := E.beq_eq hr
       refine Hd.of_eq ?_
       simp only [E.eval]
-      rw [hM.red _ hp]
+      rw [hM.out _ hp]
       rfl
     · exact Hd.of_eq rfl
   · exact Hd.of_eq rfl
 
-theorem mkSub_ok (hM : Model L O) {a b : E} {x y : BitVec 16} (ha : Hd L O a x) (hb : Hd L O b y) :
-    Hd L O (mkSub a b) (x - y) := by
+theorem mkSub_ok {R : Rules} (hM : Model R L O) {a b : E} {x y : BitVec 16} (ha : Hd L O a x) (hb : Hd L O b y) :
+    Hd L O (mkSub R a b) (x - y) := by
   unfold mkSub
   split
   · exact Hd.junk _
@@ -158,16 +160,27 @@ theorem mkSub_ok (hM : Model L O) {a b : E} {x y : BitVec 16} (ha : Hd L O a x) 
   obtain ⟨h1, h2⟩ := isJunk_or a b (by simpa using hj)
   rw [ha.eq h1, hb.eq h2]
   split
-  · rename_i st p st₁ p' z st₂ p'' z' q
-    split
+  · split
     · rename_i hc
       simp only [Bool.and_eq_true, beq_iff_eq] at hc
       obtain ⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, hb'⟩ := hc
       exact Hd.of_eq (by simp only [E.eval]; exact ((hM.bfly _ _ _ _ _ hb').2).symm ▸ rfl)
     · exact Hd.of_eq rfl
+  · split
+    · rename_i hc
+      simp only [Bool.and_eq_true, beq_iff_eq] at hc
+      obtain ⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hg⟩ := hc
+      exact Hd.of_eq (by simp only [E.eval]; exact (hM.gsDiff _ _ _ _ _ hg).symm ▸ rfl)
+    · exact Hd.of_eq rfl
+  · split
+    · rename_i hc
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hc
+      obtain ⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hr⟩, hp⟩ := hc
+      exact Hd.of_eq (by simp only [E.eval]; exact (hM.red _ _ hr hp).symm ▸ rfl)
+    · exact Hd.of_eq rfl
   · exact Hd.of_eq rfl
 
-theorem pk_ok (hM : Model L O) {lo hi : E} {x : BitVec 128} {j : Nat} (hj : j < 4)
+theorem pk_ok {R : Rules} (hM : Model R L O) {lo hi : E} {x : BitVec 128} {j : Nat} (hj : j < 4)
     (hl : Hd L O lo (word x (2 * j))) (hh : Hd L O hi (word x (2 * j + 1))) :
     Hd L O (pk lo hi) (satSignedWord (dword x j)) := by
   unfold pk

@@ -72,34 +72,83 @@ def qinvN : Nat := 62209
 /-- The terms `vmont` leaves of `b` and the zetas `z`, `z'` (`ζ` and `ζ q⁻¹`). -/
 def mt (b : E) (z z' : Nat) : E := .sub (.mhi b (.c z)) (.mhi (.mlo b (.c z')) (.c qN))
 
-/-- The distance of the butterflies of layer `st` (`len`). -/
-def lenOf (st : Nat) : Nat := 128 >>> st
+/-! ## The layers -/
 
-/-- The butterfly of `p` and `p'` in layer `st`, with the zetas `z` and `z'` of their block. -/
-def bflyOk (st p p' z z' : Nat) : Bool :=
-  st < 7 && p' == p + lenOf st && p % (2 * lenOf st) < lenOf st && p' < 256 &&
-    z == zmTab (128 / lenOf st + p / (2 * lenOf st)) && z' == z * qinvN % 65536
+/-- A layer of the transform: Cooley–Tukey butterflies at distance `len`
+(`NTT`), Gentleman–Sande ones (`NTT⁻¹`), or every word reduced (Montgomery
+multiplication by `2¹⁶ mod q`). -/
+inductive Op
+  | ct (len : Nat)
+  | gs (len : Nat)
+  | red
+  deriving DecidableEq, Inhabited
 
-/-- `a + b`, a butterfly's sum or the end of a reduction where it is one. -/
-def mkAdd (a b : E) : E :=
+/-- The layers of a transform, and the constant its output is scaled by
+(Montgomery multiplication) before it is reduced. -/
+structure Rules where
+  ops : List Op
+  fin : Nat
+
+/-- `NTT`: seven Cooley–Tukey layers, then the reduction by `2¹⁶ mod q`. -/
+def fwdRules : Rules := ⟨[.ct 128, .ct 64, .ct 32, .ct 16, .ct 8, .ct 4, .ct 2], zmTab 0⟩
+
+/-- The pair `p`, `p'` of a layer at distance `len`. -/
+def pairOk (len p p' : Nat) : Bool := p' == p + len && p % (2 * len) < len && p' < 256
+
+/-- The Cooley–Tukey butterfly of `p` and `p'` in layer `st`, with the zetas
+`z` and `z'` of their block. -/
+def bflyOk (R : Rules) (st p p' z z' : Nat) : Bool :=
+  match R.ops[st]? with
+  | some (.ct len) => pairOk len p p' && z == zmTab (128 / len + p / (2 * len)) && z' == z * qinvN % 65536
+  | _ => false
+
+/-- The pair of a Gentleman–Sande butterfly in layer `st`. -/
+def gsPairOk (R : Rules) (st p p' : Nat) : Bool :=
+  match R.ops[st]? with
+  | some (.gs len) => pairOk len p p'
+  | _ => false
+
+/-- The Gentleman–Sande butterfly of `p` and `p'` in layer `st`, with the
+zetas `z` and `z'` of their block. -/
+def gsOk (R : Rules) (st p p' z z' : Nat) : Bool :=
+  match R.ops[st]? with
+  | some (.gs len) => pairOk len p p' && z == zmTab (256 / len - 1 - p / (2 * len)) && z' == z * qinvN % 65536
+  | _ => false
+
+/-- Layer `st` reduces every word. -/
+def redOk (R : Rules) (st : Nat) : Bool := R.ops[st]? == some .red
+
+/-- `a + b`: a butterfly's sum, or the end of the output's reduction, where it is one. -/
+def mkAdd (R : Rules) (a b : E) : E :=
   if a.isJunk || b.isJunk then .junk else
   match a, b with
   | .lv st p, .sub (.mhi (.lv st₁ p') (.c z)) (.mhi (.mlo (.lv st₂ p'') (.c z')) (.c q)) =>
-    if st₁ == st && st₂ == st && p'' == p' && q == qN && bflyOk st p p' z z' then .lv (st + 1) p
+    if st₁ == st && st₂ == st && p'' == p' && q == qN && bflyOk R st p p' z z' then .lv (st + 1) p
     else .add a b
+  | .lv st p, .lv st₁ p' =>
+    if st₁ == st && gsPairOk R st p p' then .lv (st + 1) p else .add a b
   | .sub (.mhi (.lv st p) (.c z)) (.mhi (.mlo (.lv st₁ p₁) (.c z')) (.c q)),
     .and (.sra r) (.c q') =>
-    if st == 7 && st₁ == 7 && p₁ == p && q == qN && q' == qN && z == zmTab 0 && z' == zmTab 0 * qinvN % 65536
-      && r.beq a && p < 256 then .out p
+    if st == R.ops.length && st₁ == st && p₁ == p && q == qN && q' == qN && z == R.fin &&
+      z' == R.fin * qinvN % 65536 && r.beq a && p < 256 then .out p
     else .add a b
   | _, _ => .add a b
 
-/-- `a - b`, a butterfly's difference where it is one. -/
-def mkSub (a b : E) : E :=
+/-- `a - b`: a butterfly's difference, or a word's reduction, where it is one. -/
+def mkSub (R : Rules) (a b : E) : E :=
   if a.isJunk || b.isJunk then .junk else
   match a, b with
   | .lv st p, .sub (.mhi (.lv st₁ p') (.c z)) (.mhi (.mlo (.lv st₂ p'') (.c z')) (.c q)) =>
-    if st₁ == st && st₂ == st && p'' == p' && q == qN && bflyOk st p p' z z' then .lv (st + 1) p'
+    if st₁ == st && st₂ == st && p'' == p' && q == qN && bflyOk R st p p' z z' then .lv (st + 1) p'
+    else .sub a b
+  | .mhi (.sub (.lv st p') (.lv st₁ p)) (.c z),
+    .mhi (.mlo (.sub (.lv st₂ p'') (.lv st₃ p₁)) (.c z')) (.c q) =>
+    if st₁ == st && st₂ == st && st₃ == st && p'' == p' && p₁ == p && q == qN && gsOk R st p p' z z' then
+      .lv (st + 1) p'
+    else .sub a b
+  | .mhi (.lv st p) (.c z), .mhi (.mlo (.lv st₁ p₁) (.c z')) (.c q) =>
+    if st₁ == st && p₁ == p && q == qN && z == zmTab 0 && z' == zmTab 0 * qinvN % 65536 && redOk R st && p < 256 then
+      .lv (st + 1) p
     else .sub a b
   | _, _ => .sub a b
 
@@ -137,14 +186,14 @@ def binOk (op : VBinOp) (same : Bool) : Bool :=
   | _ => false
 
 /-- Word `e` of a binary vector instruction of `a` and `b`. -/
-def binW (op : VBinOp) (a b : Y) (e : Nat) : E :=
+def binW (R : Rules) (op : VBinOp) (a b : Y) (e : Nat) : E :=
   let l := e / 8
   let i := e % 8
   let A := fun j => a.get (8 * l + j)
   let B := fun j => b.get (8 * l + j)
   match op with
-  | .vpaddw => mkAdd (A i) (B i)
-  | .vpsubw => mkSub (A i) (B i)
+  | .vpaddw => mkAdd R (A i) (B i)
+  | .vpsubw => mkSub R (A i) (B i)
   | .vpmullw => mk2 .mlo (A i) (B i)
   | .vpmulhw => mk2 .mhi (A i) (B i)
   | .vpand => mk2 .and (A i) (B i)
@@ -231,9 +280,9 @@ def findAux (base : Reg) (d : Nat) : List Rg → Nat → Option (Nat × Nat)
 def find (rs : List Rg) (m : MemOp) : Option (Nat × Nat) :=
   if m.index = none ∧ 0 ≤ m.disp ∧ m.disp < 2 ^ 32 then findAux m.base m.disp.toNat rs 0 else none
 
-def St.vop (σ : St) : VOp → Option St
+def St.vop (R : Rules) (σ : St) : VOp → Option St
   | .vbin op .l256 d a b =>
-    if binOk op (a == b) then some (σ.set d (Y.ofFn (binW op (σ.reg a) (σ.reg b)))) else none
+    if binOk op (a == b) then some (σ.set d (Y.ofFn (binW R op (σ.reg a) (σ.reg b)))) else none
   | .vshift op .l256 d a n =>
     if shiftOk op n.toNat then some (σ.set d (Y.ofFn (shiftW op (σ.reg a)))) else none
   | .vpblendd .l256 d a b sel => some (σ.set d (Y.ofFn (blendW sel.toNat (σ.reg a) (σ.reg b))))
@@ -243,8 +292,8 @@ def St.vop (σ : St) : VOp → Option St
   | _ => none
 
 /-- One instruction of the vector code, with the regions `rs`. -/
-def St.step (rs : List Rg) (σ : St) : Instr → Option St
-  | .vop o => σ.vop o
+def St.step (R : Rules) (rs : List Rg) (σ : St) : Instr → Option St
+  | .vop o => σ.vop R o
   | .vmovdquTbl d m name ws =>
     if m.base = .r8 ∧ m.index = none ∧ name = tblName ∧ 0 ≤ m.disp ∧ m.disp.toNat % 8 = 0 ∧
         m.disp.toNat / 8 + 4 ≤ ws.length ∧ m.disp.toNat < 2 ^ 32 then
@@ -259,8 +308,8 @@ def St.step (rs : List Rg) (σ : St) : Instr → Option St
       else none
   | _ => none
 
-def St.run (rs : List Rg) (σ : St) : List Instr → Option St
+def St.run (R : Rules) (rs : List Rg) (σ : St) : List Instr → Option St
   | [] => some σ
-  | i :: is => (σ.step rs i).bind fun σ' => σ'.run rs is
+  | i :: is => (σ.step R rs i).bind fun σ' => σ'.run R rs is
 
 end VG.Proof.MlKem.X86_64.NttR
