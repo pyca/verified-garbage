@@ -21,32 +21,26 @@ def artifacts : List Artifact := [
   Spec.MlDsa.simpleBitPackApi.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.simpleBitPack
     stack := 16
-    verified := Proof.MlDsa.X86.Pack.SimpleBitPack.verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Pack.SimpleBitPack.verified },
   Spec.MlDsa.bitPackApi.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.bitPack
     stack := 16
-    verified := Proof.MlDsa.X86.Pack.BitPack.verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Pack.BitPack.verified },
   Spec.MlDsa.bitUnpackApi.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.bitUnpack
     stack := 16
-    verified := Proof.MlDsa.X86.Pack.Unpack.BU.verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Pack.Unpack.BU.verified },
   Spec.MlDsa.unpackT1Api.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.unpackT1
     stack := 16
-    verified := Proof.MlDsa.X86.Pack.Unpack.T1.verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Pack.Unpack.T1.verified },
   Spec.MlDsa.hintBitPackApi.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.hintBitPack
     stack := 16
-    verified := Proof.MlDsa.X86.Pack.Hint.hintBitPack_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Pack.Hint.hintBitPack_verified },
   Spec.MlDsa.hintBitUnpackApi.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.hintBitUnpack
     stack := 16
-    verified := Proof.MlDsa.X86.Pack.Hint.hintBitUnpack_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.MlDsa.X86.Pack.Hint.hintBitUnpack_verified }]
 
 end VG.Artifacts.MlDsaPack.X86

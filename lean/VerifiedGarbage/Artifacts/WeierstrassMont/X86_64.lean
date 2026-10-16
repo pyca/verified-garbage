@@ -41,8 +41,7 @@ def artifacts6 : List Artifact := [
       words once, doubles them and adds the squares, and reduces its low half by six rounds, to which \
       its high half is added."]
     code := mulFn6 false
-    verified := p384p_mul_verified false
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := p384p_mul_verified false },
   p384p.mulApi.artifact X86_64.target {
     suffix := "_adx"
     notes := [common6, "With BMI2 and ADX: the product by rows, each row's \
@@ -51,8 +50,7 @@ def artifacts6 : List Artifact := [
       two different words by rows, then doubles them through CF and adds the squares through OF."]
     code := mulFn6 true
     verified := p384p_mul_verified true
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }
+    features := ["bmi2", "adx"] }
 ]
 
 def artifacts : List Artifact := artifacts6 ++ [
@@ -61,8 +59,7 @@ def artifacts : List Artifact := artifacts6 ++ [
       scanning, the accumulator in three registers, `mul`, `[b]` through `rbp = ws + b`; a square \
       computes each product of two different words once and adds it twice)."]
     code := mulFn
-    verified := p521p_mul_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := p521p_mul_verified },
   p521p.mulApi.artifact X86_64.target {
     suffix := "_adx"
     notes := [common, "With BMI2 and ADX: the product by rows, each row's \
@@ -72,8 +69,7 @@ def artifacts : List Artifact := artifacts6 ++ [
       rows, then doubles them and adds the squares in one pass."]
     code := mulFnX
     verified := p521p_mulX_verified
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    features := ["bmi2", "adx"] },
   p521n.mulApi.artifact X86_64.target {
     notes := ["The function zero-extends the offsets and saves the \
       callee-saved registers it writes in `xmm0`–`xmm5` (`movq`), and the eighty bytes of `ws` from \
@@ -86,8 +82,7 @@ def artifacts : List Artifact := artifacts6 ++ [
       `c < 9` computes `u_c = t₀ (-n⁻¹) mod 2⁶⁴`, which clears the low word; the result, below \
       `2n`, is reduced by subtracting `n` and selecting the difference unless it borrowed."]
     code := mulFnN
-    verified := p521n_mul_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := p521n_mul_verified },
   p384n.mulApi.artifact X86_64.target {
     notes := ["The function zero-extends the offsets and saves the \
       callee-saved registers it writes in `xmm0`–`xmm5` (`movq`), `o` in `xmm6`, and the forty-eight \
@@ -100,8 +95,7 @@ def artifacts : List Artifact := artifacts6 ++ [
       registers; the result, below `2n`, is reduced by subtracting `n` and selecting the difference \
       unless it borrowed, then stored through `rsi = ws + o`."]
     code := mulFnN6 false
-    verified := p384n_mul_verified false
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := p384n_mul_verified false },
   p384n.mulApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["The function zero-extends the offsets and saves the \
@@ -117,8 +111,7 @@ def artifacts : List Artifact := artifacts6 ++ [
       unless it borrowed, then stored through `rsi = ws + o`."]
     code := mulFnN6 true
     verified := p384n_mul_verified true
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }
+    features := ["bmi2", "adx"] }
 ]
 
 end VG.Artifacts.WeierstrassMont.X86_64

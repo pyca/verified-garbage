@@ -40,21 +40,18 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.X86.Message.verifyMessage Spec.MlDsa.verify44Api.name
       Impl.MlDsa.X86.Verify.verify44 Spec.MlDsa.mlDsa44
     stack := 132
-    verified := Proof.MlDsa.X86.Message.verifyMessage44_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Message.verifyMessage44_verified },
   Spec.MlDsa.verifyMessage65Api.artifact X86.target {
     notes := notes
     code := Impl.MlDsa.X86.Message.verifyMessage Spec.MlDsa.verify65Api.name
       Impl.MlDsa.X86.Verify.verify65 Spec.MlDsa.mlDsa65
     stack := 132
-    verified := Proof.MlDsa.X86.Message.verifyMessage65_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Message.verifyMessage65_verified },
   Spec.MlDsa.verifyMessage87Api.artifact X86.target {
     notes := notes
     code := Impl.MlDsa.X86.Message.verifyMessage Spec.MlDsa.verify87Api.name
       Impl.MlDsa.X86.Verify.verify87 Spec.MlDsa.mlDsa87
     stack := 132
-    verified := Proof.MlDsa.X86.Message.verifyMessage87_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.MlDsa.X86.Message.verifyMessage87_verified }]
 
 end VG.Artifacts.MlDsaVerifyMessage.X86

@@ -20,7 +20,8 @@ The facts `Ref.lean` states, which every target's proofs take as hypotheses:
 * `verifyEq_ok`: `vladder` represents `[S >> n]B + [k >> n]a` the same way,
   and the equation follows (`verifyEquation_some`).
 
-Only registration files import this module.
+Only registration files, and the modules that pass its facts to them
+(`X86/ScalarBaseOk.lean`, `X86/VerifyEquationOk.lean`), import this module.
 -/
 
 @[expose] public section

@@ -32,13 +32,13 @@ def artifacts : List Artifact := [
   Spec.Hmac.sha512_256I.initApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_256I) 0 Proof.Pbkdf2.Md.Arm.sha512_256Md.hmacInit
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_256I
-    verified := Proof.Pbkdf2.Md.Arm.initFramed Proof.Pbkdf2.Md.Arm.Instances.sha512_256_init (by decide)
+    verified := Proof.Pbkdf2.Md.Arm.initFramed Proof.Pbkdf2.Md.Arm.Instances.sha512_256_init
       Proof.Pbkdf2.Md.Arm.sha512_256_initFrameSat },
   Spec.Hmac.sha512_256I.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_256I) 1 Proof.Pbkdf2.Md.Arm.sha512_256Md.hmacFin
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha512_256I
-    verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha512_256_finalize (by decide)
-      Proof.Hmac.sha512_256_local (by decide) Proof.Pbkdf2.Md.Arm.sha512_256_finFrameSat },
+    verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha512_256_finalize
+      Proof.Hmac.sha512_256_local Proof.Pbkdf2.Md.Arm.sha512_256_finFrameSat },
   Spec.Hmac.sha512_256I.initScratchApi.artifact Arm.target {
     code := Proof.Pbkdf2.Md.Arm.sha512_256Md.hmacInit
     stack := 16

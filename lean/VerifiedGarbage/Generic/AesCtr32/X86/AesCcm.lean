@@ -38,7 +38,7 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.seal v.callee v.suffix)
     stack := 2664
     verified := seal_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (seal_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v)
     features := v.features },
   Spec.Ccm.openApi.artifact X86.target {
     suffix := v.suffix
@@ -47,7 +47,7 @@ def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.open v.callee v.suffix)
     stack := 2664
     verified := open_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide) (open_spSafe v)
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v)
     features := v.features }]
 
 end VG.Generic.AesCtr32.X86.AesCcm

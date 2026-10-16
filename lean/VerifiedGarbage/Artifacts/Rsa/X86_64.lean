@@ -34,8 +34,7 @@ def artifacts : List Artifact := [
         by constant-time doublings and squarings, and the exponent scanned left to right, a square per \
         bit and a multiplication per set bit."]
     code := Impl.Rsa.X86_64.Checked.publicChecked
-    verified := Proof.Rsa.X86_64.publicChecked_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Rsa.X86_64.publicChecked_verified },
   Spec.Rsa.publicPrecomputeApi.artifact X86_64.target {
     notes := ["Baseline x86-64: for n whose top bit is set and whose number of words is a multiple \
         of 4, R² mod n from R - n by steps of long division, a word at a time (Knuth's Algorithm D, \
@@ -47,8 +46,7 @@ def artifacts : List Artifact := [
     stack := 8
     verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnBase (Proof.Bignum.X86_64.R2Impl.words _)
       (by decide +kernel) rfl
-      (by decide +kernel)
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+      (by decide +kernel) },
   Spec.Rsa.publicPrecomputeApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["`vg_rsa_public_precompute`'s code, with Montgomery multiplication by calls of \
@@ -62,8 +60,7 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnAdx (Proof.Bignum.X86_64.R2Impl.adx _)
       (by decide +kernel) rfl
       (by decide +kernel)
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    features := ["bmi2", "adx"] },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it; then Montgomery \
         multiplication as `vg_rsa_public_checked`'s. The result is the input raised to `e - 1` (`e` is \
@@ -73,8 +70,7 @@ def artifacts : List Artifact := [
         and leaves Montgomery form at once. `pre` is checked (`n` odd, its top word not \
         zero, `R² mod n` below it) before any arithmetic, so that values of no modulus are safe."]
     code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.base.mm
-    verified := Proof.Bignum.X86_64.FoldedPublic.base_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Bignum.X86_64.FoldedPublic.base_verified },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["The exponentiation of the baseline, with the last multiplication by the input itself. \
@@ -84,8 +80,7 @@ def artifacts : List Artifact := [
         ADX's `adcx` and `adox` (two carry chains at once), and is the baseline's otherwise."]
     code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.adxSquare.mm
     verified := Proof.Bignum.X86_64.FoldedPublic.adx_verified
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    features := ["bmi2", "adx"] },
   Spec.Rsa.privateCrtApi.artifact X86_64.target {
     notes := ["Baseline x86-64: the checks (`n` as `vg_rsa_public_precompute` checks it, the input \
         below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are \
@@ -106,8 +101,7 @@ def artifacts : List Artifact := [
         (by decide +kernel))
       (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnBase
         (Proof.Bignum.X86_64.CrtExpL.w4S Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)
-        (Proof.Bignum.X86_64.CrtExpL.w4S_ct Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy))
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+        (Proof.Bignum.X86_64.CrtExpL.w4S_ct Proof.Bignum.X86_64.Mont.fnBase Proof.Bignum.X86_64.MontS.fnLazy)) },
   Spec.Rsa.privateCrtApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["`vg_rsa_private_crt`'s code, with Montgomery multiplication by calls of \
@@ -125,8 +119,7 @@ def artifacts : List Artifact := [
       (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx
         (Proof.Bignum.X86_64.CrtExpL.w5S Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx)
         (Proof.Bignum.X86_64.CrtExpL.w5S_ct Proof.Bignum.X86_64.Mont.fnAdx Proof.Bignum.X86_64.MontS.fnLazyAdx))
-    features := ["avx", "avx2", "bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    features := ["avx", "avx2", "bmi2", "adx"] },
   Spec.Rsa.privateCrtApi.artifact X86_64.target {
     suffix := "_ifma"
     notes := ["`vg_rsa_private_crt_adx`'s code, but for a modulus of 32, 48 or 64 words and primes of \
@@ -152,8 +145,7 @@ def artifacts : List Artifact := [
         numbers, and `qInv` by `128 w` steps of the binary extended Euclidean algorithm modulo `p`, \
         each step's swaps and subtractions under masks."]
     code := Impl.Rsa.X86_64.Keys.CrtValues.code
-    verified := Proof.Rsa.X86_64.cv_verified (by decide +kernel)
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Rsa.X86_64.cv_verified (by decide +kernel) },
   Spec.Rsa.recoverPrimesApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and \
         the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words \
@@ -166,8 +158,7 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Rsa.X86_64.CallMont.base.mm
     stack := 8
     verified := Proof.Rsa.X86_64.rp_call_verified Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel) rfl
-      (by decide +kernel)
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+      (by decide +kernel) },
   Spec.Rsa.recoverPrimesApi.artifact X86_64.target {
     suffix := "_adx"
     notes := ["`vg_rsa_recover_primes`'s code, with Montgomery multiplication by calls of \
@@ -176,8 +167,7 @@ def artifacts : List Artifact := [
     stack := 8
     verified := Proof.Rsa.X86_64.rp_call_verified Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) rfl
       (by decide +kernel)
-    features := ["bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    features := ["bmi2", "adx"] },
   Spec.Rsa.checkKeyApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it and `n` as \
         `vg_rsa_public_precompute` checks it, which are the only branches on the key. Then every check \
@@ -187,8 +177,7 @@ def artifacts : List Artifact := [
         the divisor per bit of the product, `64 (w + 2)` or `64 (2 w + 2)` bits for `w`-word \
         numbers, its subtraction selected under a mask."]
     code := Impl.Rsa.X86_64.CheckKey.code
-    verified := Proof.Rsa.X86_64.Key.key_verified (by decide +kernel)
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.Rsa.X86_64.Key.key_verified (by decide +kernel) },
   Spec.Rsa.checkCrtKeyApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `vg_rsa_check_key`'s code without the checks of `d`. `e` and `n` \
         are checked first, which are the only branches on the key; then every check of the private key is \
@@ -198,7 +187,6 @@ def artifacts : List Artifact := [
         `q qInv`), which are below the divisor when the comparison before it holds: `64 c` doublings \
         modulo the divisor rather than one per bit of the product."]
     code := Impl.Rsa.X86_64.CheckCrtKey.code
-    verified := Proof.Rsa.X86_64.Key.ck_verified (by decide +kernel)
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.Rsa.X86_64.Key.ck_verified (by decide +kernel) }]
 
 end VG.Artifacts.Rsa.X86_64

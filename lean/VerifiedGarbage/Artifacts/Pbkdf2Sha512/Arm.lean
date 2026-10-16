@@ -35,7 +35,7 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512I) 3
       Proof.Pbkdf2.Whole.Arm.sha512F.pbkdf2
     stack := 24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha512I
-    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha512 (by decide)
+    verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha512
       Proof.Pbkdf2.Whole.Arm.sha512_pbkFrameSat }]
 
 end VG.Artifacts.Pbkdf2Sha512.Arm

@@ -30,19 +30,16 @@ def artifacts : List Artifact := [
     notes := notes
     code := Impl.MlDsa.X86.Verify.verify44
     stack := 96
-    verified := Proof.MlDsa.X86.Verify.verify44_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Verify.verify44_verified },
   Spec.MlDsa.verify65Api.artifact X86.target {
     notes := notes
     code := Impl.MlDsa.X86.Verify.verify65
     stack := 96
-    verified := Proof.MlDsa.X86.Verify.verify65_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    verified := Proof.MlDsa.X86.Verify.verify65_verified },
   Spec.MlDsa.verify87Api.artifact X86.target {
     notes := notes
     code := Impl.MlDsa.X86.Verify.verify87
     stack := 96
-    verified := Proof.MlDsa.X86.Verify.verify87_verified
-    spSafe := Code.all_of_allInstrs (by decide +kernel) }]
+    verified := Proof.MlDsa.X86.Verify.verify87_verified }]
 
 end VG.Artifacts.MlDsaVerify.X86
