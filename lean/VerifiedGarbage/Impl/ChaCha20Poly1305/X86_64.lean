@@ -261,19 +261,42 @@ decremented, setting `ZF` once it reaches 0. -/
 def tailIn : List Instr :=
   [.shift .shl .r9 8, .movzx8 .rcx tailByte, .alu .or .r9 (.reg .rcx), .alu .sub .rdx (.imm 1)]
 
+/-- `[rsi + rdx - 8]` and `[rsi + rdx - 4]`: the last 8 and the last 4 of
+the `rdx` bytes at `rsi`. -/
+def tailLast8 : MemOp := { base := .rsi, index := some .rdx, disp := -8 }
+def tailLast4 : MemOp := { base := .rsi, index := some .rdx, disp := -4 }
+
+/-- 8 to 15 bytes at `rsi` (`rdx` of them): `rax` the first 8, in one load,
+and `r9` the rest, the last 8 loaded and shifted right past the `16 - rdx`
+of them `rax` holds (by a byte, then by `8 * (15 - rdx)` bits, a count below
+64). Both loads are within the bytes. -/
+def padBig : List Instr :=
+  [.mov .rax (.mem (at_ .rsi 0)), .mov .r9 (.mem tailLast8), .shift .shr .r9 8,
+   .mov32 .rcx (.imm 15), .alu32 .sub .rcx (.reg .rdx), .shift32 .shl .rcx 3, .shiftCl .shr .r9]
+
+/-- 4 to 7 bytes at `rsi` (`rdx` of them), all in `rax`: the first 4, and
+the last 4 shifted right past the `8 - rdx` of them the first hold, then left
+by 4 bytes, added; `r9` cleared. Both loads are within the bytes. -/
+def padMid : List Instr :=
+  [.mov32 .rax (.mem (at_ .rsi 0)), .mov32 .r9 (.mem tailLast4), .mov32 .rcx (.imm 8),
+   .alu32 .sub .rcx (.reg .rdx), .shift32 .shl .rcx 3, .shiftCl .shr .r9, .shift .shl .r9 32,
+   .alu .add .rax (.reg .r9), .alu32 .xor .r9 (.reg .r9)]
+
 /-- The last `rdx` bytes (1 to 15) at `rsi`, padded with zeros, absorbed,
 with the `k - 1` blocks after the padded block in `ctx` (the lengths block,
 for `k = 2`). The padded block is built in `r9:rax` and stored as two
 quadwords, which the call's loads of it can forward from (they could not from
-`padCopy`'s byte stores): with 8 bytes or more, `rax` is the first 8, in one
-load, and `r9` the rest; with fewer, `rax` is all of them, shifted into `r9`
-from the last (`tailIn`) and moved. -/
+`padCopy`'s byte stores): from 4 bytes, in two loads that overlap
+(`padBig`, `padMid`); with fewer, shifted into `r9` from the last
+(`tailIn`) and moved to `rax`. -/
 def padTail (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
   .seq (.block [.alu32 .xor .r9 (.reg .r9), .alu .cmp .rdx (.imm 8)])
   (.seq (.ite .b
-    (.seq (.loop (.block tailIn) .ne) (.block [.mov .rax (.reg .r9), .alu32 .xor .r9 (.reg .r9)]))
-    (.seq (.block [.mov .rax (.mem (at_ .rsi 0)), .alu .add .rsi (.imm 8), .alu .sub .rdx (.imm 8)])
-      (.ite .e (.block []) (.loop (.block tailIn) .ne))))
+    (.seq (.block [.alu .cmp .rdx (.imm 4)])
+      (.ite .b
+        (.seq (.loop (.block tailIn) .ne) (.block [.mov .rax (.reg .r9), .alu32 .xor .r9 (.reg .r9)]))
+        (.block padMid)))
+    (.block padBig))
   (.seq (.block (ptr .rdi .r15 448 ++ ptr .rsi .r15 576 ++
     ([.store (at_ .rsi 0) .rax, .store (at_ .rsi 8) .r9, .mov32 .rdx (.imm (BitVec.ofNat 32 k))] : List Instr)))
   (.seq (.call b.name b.code)
