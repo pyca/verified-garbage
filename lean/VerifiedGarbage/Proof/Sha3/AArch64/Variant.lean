@@ -177,8 +177,8 @@ theorem Permutation.squeeze_depth (v : Permutation) :
   simp only [Impl.Sha3.AArch64.Stream.squeezeWith, Code.aarch64Depth, Instr.frameUnits, v.squeezeMain_depth]
 
 theorem keeps_of_check {c : Prog isa} {rs : List Reg}
-    (h : (c.allInstrs fun i => rs.all fun r => dstOf i != some r) = true) :
-    ∀ r ∈ rs, ∀ i ∈ instrs c, dstOf i ≠ some r := by
+    (h : (c.allInstrs fun i => rs.all fun r => !clobbers i r) = true) :
+    ∀ r ∈ rs, ∀ i ∈ instrs c, clobbers i r = false := by
   rw [Code.allInstrs_eq] at h
   intro r hr i hi
   have h' := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr

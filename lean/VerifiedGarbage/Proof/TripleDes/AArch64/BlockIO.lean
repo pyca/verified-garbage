@@ -86,7 +86,7 @@ theorem runAppend_some (xs ys : List Instr) (s t u : State)
 
 
 theorem initial_preserves : loadKept.all (fun r =>
-    (instrs initialPermutation.lit).all (fun op => dstOf op != some r)) = true := by
+    (instrs initialPermutation.lit).all (fun op => !clobbers op r)) = true := by
   decide +kernel
 
 theorem blockLoad_ok (s : State)

@@ -35,7 +35,7 @@ writes none of the others it preserves and no vector register, and calls
 nothing. -/
 theorem abi_of {c : Prog isa} {s : State} {Q : State → Prop}
     (h : WP isa c s fun s' => Q s' ∧ ∀ r ∈ savedRegs, s'.gpr r = s.gpr r)
-    (hc : c.allInstrs (fun i => unsaved.all fun r => dstOf i != some r) = true)
+    (hc : c.allInstrs (fun i => unsaved.all fun r => !clobbers i r) = true)
     (hn : c.noCalls = true) (hv : c.allInstrs keepsV = true) :
     ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Q s' := by
   obtain ⟨t, s', he, ⟨hq, hsv⟩, hg⟩ := WP.gprs h hc hn

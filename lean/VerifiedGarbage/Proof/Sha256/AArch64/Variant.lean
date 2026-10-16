@@ -39,9 +39,9 @@ structure Compress where
   finalizeCT : ConstantTime isa (finK (P := Stream.params) md).pre
     (finK (P := Stream.params) md).pub (finalize Stream.params name code)
   updateKeeps : ((instrs (updateMain Stream.params name code)).all fun i =>
-    untouched.all fun r => dstOf i != some r) = true
+    untouched.all fun r => !clobbers i r) = true
   finalizeKeeps : ((instrs (finalizeMain Stream.params name code)).all fun i =>
-    untouched.all fun r => dstOf i != some r) = true
+    untouched.all fun r => !clobbers i r) = true
   updateDepth : (updateMain Stream.params name code).aarch64Depth = 0
   finalizeDepth : (finalizeMain Stream.params name code).aarch64Depth = 0
   /-- SHA-224's `finalize`, writing its 28-byte digest: as `finalizeCT`,
@@ -50,7 +50,7 @@ structure Compress where
     (finKD (P := Impl.Sha256.AArch64.Stream.params224) md 28).pub
     (finalize Impl.Sha256.AArch64.Stream.params224 name code)
   finalize224Keeps : ((instrs (finalizeMain Impl.Sha256.AArch64.Stream.params224 name code)).all fun i =>
-    untouched.all fun r => dstOf i != some r) = true
+    untouched.all fun r => !clobbers i r) = true
   finalize224Depth : (finalizeMain Impl.Sha256.AArch64.Stream.params224 name code).aarch64Depth = 0
 
 namespace Compress

@@ -95,7 +95,7 @@ theorem storeRound_ok (s : State) (c d : BitVec 28) (j : Nat) (hj : j < 16)
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   rw [word₁] at word₂
   have checks : ∀ r ∈ (keyKept ++ [.x19, .x20, .x21, .x22]),
-      ((instrs keyPermutation2.lit).all fun op => dstOf op != some r) = true := by decide +kernel
+      ((instrs keyPermutation2.lit).all fun op => !clobbers op r) = true := by decide +kernel
   have keep₂ : ∀ r ∈ (keyKept ++ [.x19, .x20, .x21, .x22]), s₂.gpr r = s.gpr r := by
     intro r hr
     have unused : ∀ r ∈ (keyKept ++ [.x19, .x20, .x21, .x22]), r ≠ .x4 := by decide

@@ -10,9 +10,9 @@ open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Spec.Sha3 (stateAt)
 
 theorem zero_no_link (sc : Reg) (st : Nat) :
-    ∀i∈instrs (.block (zeroState sc st) : Prog isa),dstOf i≠some .x30 := by
+    ∀i∈instrs (.block (zeroState sc st) : Prog isa),clobbers i .x30 = false := by
   simp only [zeroState,ptrTo]
-  split <;> simp [instrs,dstOf]
+  split <;> simp [instrs,clobbers, dstOf]
 
 theorem zeroSave_ok {sc : Reg} {st wk rate : Nat} {s₀ : State}
     (hS : HSetup sc st wk rate s₀)

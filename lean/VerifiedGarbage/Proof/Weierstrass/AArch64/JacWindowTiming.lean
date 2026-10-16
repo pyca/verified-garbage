@@ -20,7 +20,7 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont Spec.Weierstrass
 
 structure JacWindowChecks (K : WinCfg) : Prop where
   tree : JacTreeChecks K
-  treeCopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), dstOf i≠some r
+  treeCopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), clobbers i r = false
   step : JacStepChecks K
   infinity : FieldCT (.block (Jacobian.infinity K K.R))
   counter : FieldCT (.block [.movz .x .x19 52 0])

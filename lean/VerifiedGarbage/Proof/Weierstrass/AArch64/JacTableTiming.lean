@@ -146,7 +146,7 @@ theorem jacStore_relCT {K : WinCfg} {base : Addr} {size a : Nat} {C : Curve}
 
 /-- Retain a known control register alongside a field relation. -/
 theorem relCT_keepGpr {P Q : State → State → Prop} {c : Prog isa} {r : Reg} {v : BitVec 64}
-    (h : RelCT isa P c Q) (hc : ∀ i∈instrs c, dstOf i≠some r) (hr : r∉linkRegs) :
+    (h : RelCT isa P c Q) (hc : ∀ i∈instrs c, clobbers i r = false) (hr : r∉linkRegs) :
     RelCT isa (fun s t => P s t ∧ s.gpr r=v ∧ t.gpr r=v) c
       (fun s t => Q s t ∧ s.gpr r=v ∧ t.gpr r=v) := by
   intro s t ts tt s' t' ⟨hp,ps,pt⟩ es et

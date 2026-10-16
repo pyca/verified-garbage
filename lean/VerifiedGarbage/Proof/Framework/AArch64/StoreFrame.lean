@@ -25,7 +25,7 @@ def storesAt (ok : Nat → Bool) : Instr → Bool
   | .str .x _ .x3 d => ok d
   | .strq _ .x3 d => ok d && ok (d + 8)
   | .str .. | .strb .. | .strq .. | .push _ | .pop _ | .alloc _ | .free _ => false
-  | i => dstOf i != some .x3
+  | i => !clobbers i .x3
 
 /-- The byte at `a` is in no store at `base + d`, for `ok d`. -/
 def Unstored (ok : Nat → Bool) (base a : Addr) : Prop :=
@@ -80,9 +80,9 @@ noncomputable def storeGet (ok : Nat → Bool) (s : State) : Addr × (Addr → B
 theorem exec_storeGet {ok : Nat → Bool} {i : Instr} {s s' : State} (hi : storesAt ok i = true)
     (h : exec i s = some s') : storeGet ok s' = storeGet ok s := by
   have h3 : s'.gpr .x3 = s.gpr .x3 := by
-    refine exec_gpr (fun hd => ?_) h
+    refine exec_gpr ?_ h
     unfold storesAt at hi
-    split at hi <;> simp_all [dstOf]
+    split at hi <;> simp_all [clobbers, dstOf]
   have hm : ∀ a, Unstored ok (s.gpr .x3) a → s'.mem a = s.mem a := by
     intro a ha
     unfold storesAt at hi

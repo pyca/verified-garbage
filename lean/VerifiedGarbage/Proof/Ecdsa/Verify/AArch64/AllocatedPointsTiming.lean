@@ -53,7 +53,7 @@ private theorem tail_lit : VG.Impl.P256.VerifyArithmetic.program Kc.M (VG.Impl.W
   exact congrArg Code.block Forward.ArithmeticTableTail.optimized_lit
 
 private theorem arithmeticTable_add_preserves : ∀ r∈[Reg.x19,Reg.x20],
-    ∀ i∈instrs (ArithmeticAdd.add Kc Kc.R (Naf.twice Kc) Kc.D),dstOf i≠some r := by
+    ∀ i∈instrs (ArithmeticAdd.add Kc Kc.R (Naf.twice Kc) Kc.D),clobbers i r = false := by
   rw [ArithmeticAdd.add,head_lit,tail_lit,jacWinCfg_double_lit]
   have h : (instrs (.seq (.block (zeroMask Kc.M.n Kc.R.z)) <|
       .ite (.nonzero .x .x2) (.block (copyPt Kc.M.n Kc.D (Naf.twice Kc))) <|
@@ -65,7 +65,7 @@ private theorem arithmeticTable_add_preserves : ∀ r∈[Reg.x19,Reg.x20],
         (.seq (.block (zeroMask Kc.M.n Kc.S.t5)) <|
           .ite (.nonzero .x .x2) (.block Forward.P256Bounds.rightRD.lit) (.block (Jacobian.infinity Kc Kc.D)))
         (.block Forward.ArithmeticTableTail.rightCode.lit) : Prog isa)).all
-      (fun i => decide (dstOf i≠some .x19 ∧ dstOf i≠some .x20))=true := by decide +kernel
+      (fun i => decide (clobbers i .x19 = false ∧ clobbers i .x20 = false))=true := by decide +kernel
   intro r hr i hi
   have hh := of_decide_eq_true (List.all_eq_true.mp h i hi)
   simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
@@ -459,7 +459,7 @@ private theorem restorePublic_relCT :
     (Exec.rdwr es).2.2.trans (hp.1.trans (Exec.rdwr et).2.2.symm),fun r hr => ?_⟩
   have : r=.x0 := by simpa only [Taint.mem_ofRegs,List.mem_singleton] using hr
   subst r
-  have keep : ∀i∈instrs (.block P256Allocated.restoreExtra : Prog isa),dstOf i≠some .x0 := by decide
+  have keep : ∀i∈instrs (.block P256Allocated.restoreExtra : Prog isa),clobbers i .x0 = false := by decide
   rw [Exec.gpr keep es,Exec.gpr keep et]
   exact hp.2 _ (by decide)
 

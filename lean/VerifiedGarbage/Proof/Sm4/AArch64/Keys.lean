@@ -65,8 +65,8 @@ theorem keyOne_step {s : State} {b : Addr} {e h : Nat} (hh : h = 0 ∨ h = 1)
     (fun kv hkv => ⟨by simp only [keyCfg]; exact mask_lt hkv, by simp only [keyCfg]; exact hm kv hkv⟩)
     (fun j hj => ⟨by simp only [keyCfg] at hj; omega, by simp only [keyCfg, Nat.zero_add]⟩)
   simp only [keyCfg] at hb₁ hkp₁ f₁
-  have hall₁ : ∀ r, r ∉ layerWrites → ((keyLoad h).all fun i => dstOf i != some r) = true := fun r hr => by
-    have : (layerKeep.all fun r => (keyLoad h).all fun i => dstOf i != some r) =
+  have hall₁ : ∀ r, r ∉ layerWrites → ((keyLoad h).all fun i => !clobbers i r) = true := fun r hr => by
+    have : (layerKeep.all fun r => (keyLoad h).all fun i => !clobbers i r) =
         true := by rcases hh with rfl | rfl <;> decide +kernel
     exact List.all_eq_true.mp this r (not_layerWrites r hr)
   have k₁ : ∀ r, r ∉ layerWrites → s₁.gpr r = s.gpr r := fun r hr => o₁ r (hall₁ r hr)
@@ -101,7 +101,7 @@ theorem keyOne_step {s : State} {b : Addr} {e h : Nat} (hh : h = 0 ∨ h = 1)
     (fun j i hji => by simp at hji) (fun kv hkv => by simp at hkv)
     (fun j hj => by simp [entryCfg] at hj)
   simp only [entryCfg] at hb₂ hso₂ f₂
-  have k₂ : ∀ r, s₂.gpr r = s₁.gpr r := fun r => o₂ r (by simp [keyStore, dstOf])
+  have k₂ : ∀ r, s₂.gpr r = s₁.gpr r := fun r => o₂ r (by simp [keyStore, clobbers, dstOf])
   have he₂ : ∀ j < 8, entryW s₂.mem b e j = Qs s₁ j := fun j hj => BitVec.eq_of_getLsbD_eq fun p hp => by
     have h := hso₂ j (fun p => [64 * j + p]) (by simp only [List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
       hj p hp

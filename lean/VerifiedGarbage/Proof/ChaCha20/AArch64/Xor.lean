@@ -702,7 +702,7 @@ are saved and restored). -/
 def untouched : List Reg := [.x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28]
 
 theorem untouched_ok (v : BlockImpl) : ∀ r ∈ untouched,
-    ∀ i ∈ instrs (Impl.ChaCha20.AArch64.Xor.xorWith v.callee), dstOf i ≠ some r := v.xorKeeps
+    ∀ i ∈ instrs (Impl.ChaCha20.AArch64.Xor.xorWith v.callee), clobbers i r = false := v.xorKeeps
 
 theorem correct (v : BlockImpl) {s₀ : State} (hp : XPre s₀) :
     ∃ t s', Exec isa (Impl.ChaCha20.AArch64.Xor.xorWith v.callee) s₀ t s' ∧ abiPreserved s₀ s' ∧

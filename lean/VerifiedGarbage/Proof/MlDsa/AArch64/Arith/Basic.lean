@@ -99,9 +99,7 @@ tactic_template "arun" : tactic => `(tactic| arun [])
 
 /-- Whether every instruction of `c` writes, if any register, one of `rs`. -/
 def writesOnly (rs : List Reg) (c : Prog isa) : Bool :=
-  c.allInstrs fun i => match dstOf i with
-    | none => true
-    | some d => rs.contains d
+  c.allInstrs fun i => (dsts i).all rs.contains
 
 /-- A register that no instruction writes keeps its value (code without calls). -/
 theorem WP.keep {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) (h : WP isa c s Q)
@@ -113,11 +111,7 @@ theorem WP.keep {c : Prog isa} {s : State} {Q : State → Prop} (rs : List Reg) 
     (Exec.rdwr he).2.1, (Exec.rdwr he).2.2, Exec.preservedV he hv⟩⟩
   unfold writesOnly at hc
   rw [Code.allInstrs_eq, List.all_eq_true] at hc
-  have := hc i hi
-  intro e
-  rw [e] at this
-  simp only [List.contains_iff_mem] at this
-  exact hr (by simpa using this)
+  exact clobbers_eq_false_of_all (hc i hi) (by simpa using hr)
 
 
 /-! ## Loops -/
@@ -271,7 +265,7 @@ theorem imm16 {k : Nat} (h : k < 65536) : (BitVec.ofNat 16 k).setWidth 64 = BitV
 /-- `movW d v`: `d ← v`. -/
 theorem movW_ok (d : Reg) (v : BitVec 32) (s : State) :
     WP isa (.block (movW d v)) s fun s' => (s'.gpr d = v.setWidth 64 ∧ s'.mem = s.mem) ∧ Keep [d] s s' := by
-  refine WP.keep _ ?_ (by simp [writesOnly, Code.allInstrs, movW, dstOf]) (hv := by simp [Code.allInstrs, movW, keepsV, vdstOf])
+  refine WP.keep _ ?_ (by simp [writesOnly, Code.allInstrs, movW, dsts, dstOf, Option.toList]) (hv := by simp [Code.allInstrs, movW, keepsV, vdstOf])
   unfold movW
   arun
   exact congrArg (BitVec.setWidth 64) (movz_movk v)
@@ -280,7 +274,7 @@ theorem movW_ok (d : Reg) (v : BitVec 32) (s : State) :
 theorem movImm_ok (d : Reg) (v : BitVec 64) (s : State) :
     WP isa (.block (Impl.MlKem.AArch64.movImm d v)) s fun s' => (s'.gpr d = v ∧ s'.mem = s.mem) ∧
       Keep [d] s s' := by
-  refine WP.keep _ ?_ (by simp [writesOnly, Code.allInstrs, Impl.MlKem.AArch64.movImm, dstOf]) (hv := by simp [Code.allInstrs, Impl.MlKem.AArch64.movImm, keepsV, vdstOf])
+  refine WP.keep _ ?_ (by simp [writesOnly, Code.allInstrs, Impl.MlKem.AArch64.movImm, dsts, dstOf, Option.toList]) (hv := by simp [Code.allInstrs, Impl.MlKem.AArch64.movImm, keepsV, vdstOf])
   unfold Impl.MlKem.AArch64.movImm
   arun
   have := movz_movk64' v

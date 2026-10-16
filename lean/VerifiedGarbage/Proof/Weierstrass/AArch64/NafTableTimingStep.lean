@@ -27,7 +27,7 @@ open VG.Proof.Ed25519.AArch64 (Keeps read_x)
     (hL : JacWinLay K size) (hJ : K.J=52) (hAl : Aligned K.M (·∈jacWinSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n))) (hOne : K.one<C.p)
     (hm1 : 1≤m) (hm7 : m≤7) (hc : NafTableChecks K)
-    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), dstOf i≠some r) :
+    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), clobbers i r = false) :
     RelCT isa (NafTablePair K C base size m) (Naf.tableStep K) (NafTablePair K C base size (m+1)) := by
   have rs : ∀ x∈jacCoords K.R, x∈jacWinSlots K := by
     intro x hx; apply List.mem_append_left

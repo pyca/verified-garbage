@@ -341,7 +341,7 @@ end
 /-- A block that writes no callee-saved register keeps them, and the stack
 pointer. -/
 theorem WP.kept {is : List Instr} {s : State} {Q : State → Prop} (h : WP isa (.block is) s Q)
-    (hc : (is.all fun i => preserved.all fun r => dstOf i != some r) = true) :
+    (hc : (is.all fun i => preserved.all fun r => !clobbers i r) = true) :
     WP isa (.block is) s fun s' => Q s' ∧ (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp := by
   obtain ⟨t, s', he, hq⟩ := h
   refine ⟨t, s', he, hq, fun r hr => Exec.gpr (fun i hi => ?_) he (.inl rfl), Exec.sp he⟩

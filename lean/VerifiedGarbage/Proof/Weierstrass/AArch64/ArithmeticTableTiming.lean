@@ -21,7 +21,7 @@ theorem arithmeticTable_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {C
     (hL : JacWinLay K size) (hJ : K.J=52) (hAl : Aligned K.M (·∈jacWinSlots K))
     (hm : UnitMod C.p (2^(64*K.M.n))) (hsize : 8192≤size) (ht : K.tbl<4096) (hOne : K.one<C.p)
     (hc : ArithmeticTableChecks K)
-    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), dstOf i≠some r)
+    (hcopy : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), clobbers i r = false)
     {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (·∈jacWinSlots K) (winRo K) E)
       (ArithmeticTable.table K)

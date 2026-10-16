@@ -73,9 +73,9 @@ theorem spread_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Ke
     (fun j hj => ⟨by simp only [keyCfg] at hj; omega, by
       simp only [keyCfg] at hj ⊢; simp only [W, Nat.zero_add, hj, ↓reduceIte]⟩)
   simp only [keyCfg] at hb' hkp f'
-  have hall : ∀ r, r ∉ layerWrites → ((spread d).all fun i => dstOf i != some r) = true := fun r hr => by
+  have hall : ∀ r, r ∉ layerWrites → ((spread d).all fun i => !clobbers i r) = true := fun r hr => by
     have h := not_layerWrites r hr
-    have : (layerKeep.all fun r => (spread d).all fun i => dstOf i != some r) = true := by
+    have : (layerKeep.all fun r => (spread d).all fun i => !clobbers i r) = true := by
       rcases hd with rfl | rfl <;> decide +kernel
     exact List.all_eq_true.mp this r h
   have hkeep : ∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r := fun r hr => o' r (hall r hr)

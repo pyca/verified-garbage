@@ -307,7 +307,7 @@ theorem compress_correct (s : State) (hs : compressLocal.pre s) :
     lit_decide
   intro i hi
   have h := List.all_eq_true.mp (List.all_eq_true.mp (instrs_keeps hk) i hi) r hr
-  simpa only [bne_iff_ne] using h
+  simpa using h
 
 theorem compress_verified : Verified AArch64.target Impl.Argon2.AArch64.compress
     (Spec.Argon2.compressContract AArch64.abi) :=

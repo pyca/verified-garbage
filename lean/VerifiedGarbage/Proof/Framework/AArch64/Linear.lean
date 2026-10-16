@@ -54,7 +54,7 @@ theorem linear_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × N
     ∃ s', runBlock isa is s = some s' ∧
       (∀ r g, (r, g) ∈ outs → ∀ p < 64, (s'.gpr r).getLsbD p = xorBits W (g p)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      (∀ r, (is.all fun i => dstOf i != some r) = true → s'.gpr r = s.gpr r) ∧
+      (∀ r, (is.all fun i => !clobbers i r) = true → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion c s] s.mem s'.mem := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk
   have hrel : Rel (LaneRel k (assign W (2 ^ k))) c (linExt xb) (linEnv ins) s := by
@@ -85,7 +85,7 @@ theorem linear_okC {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × 
     ∃ s', runBlock isa is s = some s' ∧
       (∀ r g, (r, g) ∈ outs → ∀ p < 64, (s'.gpr r).getLsbD p = xorBits W (g p)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      (∀ r, (is.all fun i => dstOf i != some r) = true → s'.gpr r = s.gpr r) ∧
+      (∀ r, (is.all fun i => !clobbers i r) = true → s'.gpr r = s.gpr r) ∧
       Frame [slotRegion c s] s.mem s'.mem := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk
   have hrel : Rel (LaneRel k (assign W (2 ^ k))) c (linExt xb) (linEnvC ins cs) s := by

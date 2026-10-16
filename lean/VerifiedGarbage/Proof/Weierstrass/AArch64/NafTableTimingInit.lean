@@ -35,7 +35,7 @@ structure NafTableChecks (K : WinCfg) : Prop where
   add : JacAddChecks K K.R (Naf.twice K) K.D
   copyStep : FieldCT (.block (copyPt K.M.n K.R K.D))
   advance : RegCT [.x19,.x20] (.block [.addImm .x .x20 .x20 96,decCounter])
-  keepAdd : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (Jacobian.jacAdd K K.R (Naf.twice K) K.D), dstOf i≠some r
+  keepAdd : ∀ r∈[Reg.x19,Reg.x20], ∀ i∈instrs (Jacobian.jacAdd K K.R (Naf.twice K) K.D), clobbers i r = false
 
  theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : JacWinLay K size) (hAl : Aligned K.M (·∈jacWinSlots K))

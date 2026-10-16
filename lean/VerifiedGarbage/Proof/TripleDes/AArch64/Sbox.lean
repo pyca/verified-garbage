@@ -49,7 +49,7 @@ def sboxWrites : List Reg := [.x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x1
 
 theorem sbox_preserves : ∀ i < 8,
     [Reg.x0, .x1, .x2, .x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30].all
-      (fun r => (instrs (sboxLiteral i)).all fun op => dstOf op != some r) = true := by
+      (fun r => (instrs (sboxLiteral i)).all fun op => !clobbers op r) = true := by
   decide +kernel
 
 def inputAt (s : State) (p : Nat) : BitVec 6 :=
@@ -88,7 +88,7 @@ theorem sbox_ok (i : Nat) (hi : i < 8) {s : State} (hok : Ok sboxCfg s) :
     exact beq_iff_eq.mp h
   have key : ∀ p < 64, ∃ s', runBlock isa (sboxCode i) s = some s' ∧
       Post (TableRel p (inputAt s p).toNat) sboxCfg (fun _ => none) e' s s'
-        (fun r => ((sboxCode i).all fun op => dstOf op != some r) = false) := by
+        (fun r => ((sboxCode i).all fun op => !clobbers op r) = false) := by
     intro p hp
     have hc := (inputAt s p).isLt
     refine run (table_sound hp hc) hok ⟨fun r a h => ?_,

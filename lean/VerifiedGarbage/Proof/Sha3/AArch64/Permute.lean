@@ -969,8 +969,8 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       by omega, hl⟩
 
 /-- No instruction writes a callee-saved register. -/
-theorem permute_preserved : ∀ r ∈ preserved, ∀ i ∈ instrs permute, dstOf i ≠ some r := by
-  have : ((instrs permute).all fun i => preserved.all fun r => dstOf i != some r) = true := by
+theorem permute_preserved : ∀ r ∈ preserved, ∀ i ∈ instrs permute, clobbers i r = false := by
+  have : ((instrs permute).all fun i => preserved.all fun r => !clobbers i r) = true := by
     rw [← Code.allInstrs_eq]; decide +kernel
   intro r hr i hi
   have := List.all_eq_true.mp (List.all_eq_true.mp this i hi) r hr

@@ -18,8 +18,8 @@ namespace VG.Proof.ChaCha20.AArch64
 open VG VG.AArch64
 
 theorem keeps_of_check {c : Prog isa} {rs : List Reg}
-    (h : (c.allInstrs fun i => rs.all fun r => dstOf i != some r) = true) :
-    ∀ r ∈ rs, ∀ i ∈ instrs c, dstOf i ≠ some r := by
+    (h : (c.allInstrs fun i => rs.all fun r => !clobbers i r) = true) :
+    ∀ r ∈ rs, ∀ i ∈ instrs c, clobbers i r = false := by
   rw [Code.allInstrs_eq] at h
   intro r hr i hi
   have h' := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
