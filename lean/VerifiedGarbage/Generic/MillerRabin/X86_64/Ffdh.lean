@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPrivate.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.CheckPublic.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Exchange.Backend
 public import VerifiedGarbage.Proof.Ffdh.X86_64.GenerateKey.Backend
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Emit FFDH domain operations for every shared arithmetic backend -/
@@ -68,6 +69,18 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     code := Proof.Ffdh.X86_64.CheckDomain.domainCode v
     verified := Proof.Ffdh.X86_64.CheckDomain.domainCode_verified v
     spSafe := Proof.Ffdh.X86_64.CheckDomain.domainCode_sp v
+    features := v.features },
+  Spec.Ffdh.parameterSearchApi.artifact X86_64.target {
+    suffix := v.suffix
+    stack := 160
+    notes := ["The whole candidate search runs in verified code: the attempt limit, the \
+        octets each rejected candidate consumed, and the length of the next entropy \
+        request. Both primes use the shared Miller–Rabin round with the selected \
+        Montgomery backend, with 64 or 128 independent witnesses for each. The random \
+        tape and the controller's four public words are public under the contract."]
+    code := Proof.Ffdh.X86_64.Generation.searchCode v
+    verified := Proof.Ffdh.X86_64.Generation.search_verified v
+    spSafe := Proof.Ffdh.X86_64.Generation.searchCode_sp v
     features := v.features }]
 
 end VG.Generic.MillerRabin.X86_64.Ffdh

@@ -82,6 +82,7 @@ theorem shape_ok {s : State} {rp op : Addr} {bs : List Byte} {bits : Nat}
       by_cases hx : i + 1 = bs.length
       · have hi0 : i = bs.length - 1 := by omega
         rw [ite_eq_left hx, hi0, ite_eq_left rfl]
+        rfl
       · have hni : i ≠ bs.length - 1 := by omega
         rw [ite_eq_right hx, ite_eq_right (out_ne (by omega) (by omega) hni)]
         exact ht.bytes i hil
