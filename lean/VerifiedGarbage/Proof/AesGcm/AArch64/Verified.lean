@@ -248,7 +248,7 @@ theorem seal_verified (v : GcmImpl) :
     Verified AArch64.target («seal» v.callees) (Proof.AesGcm.sealScratchContract AArch64.abi) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre,
-      Spec.Gcm.sealPost, sealAArch64, sealPre, onePub, args, rounds, AArch64.abi,
+      Spec.Gcm.sealPost, sealAArch64, sealPre, sealPreX, List.append_nil, onePub, args, rounds, AArch64.abi,
       AArch64.argRegs, AArch64.stackArg, AArch64.stackArgAddr, List.getD, List.range, List.range.loop]
       [sealSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using sealSat)
 

@@ -173,8 +173,8 @@ theorem entryStash_ok {s : State} {Ctx W : Addr} {k j : Nat} {V : BitVec 64} (hk
         exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide))
 
 /-- `sealPre`'s common arguments. -/
-theorem sealCore {s : State} (hs : sealPre s) : oneCore 2 1 s := by
-  simp only [sealPre] at hs
+theorem sealCore {extra : List Region} {s : State} (hs : sealPreX extra s) : oneCore 2 1 s := by
+  simp only [sealPreX] at hs
   sig_split hs
   rename_i hrd hwr dcd dcw dnd dnw dad daw hdrop8 ddw dda hdrop11 dwa wc wn wa wd ww wsp
   clear hdrop8 hdrop11
@@ -184,12 +184,12 @@ theorem sealCore {s : State} (hs : sealPre s) : oneCore 2 1 s := by
     by rw [hwr]; simp, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩
 
 /-- What `sealPre` gives. -/
-theorem sealLay {s : State} (hs : sealPre s) :
+theorem sealLay {extra : List Region} {s : State} (hs : sealPreX extra s) :
     OneLay s 2 1 ∧ Covers [⟨stackArg s 0, 16⟩] s.wr ∧
       (⟨stackArg s 0, 16⟩ : Region).Disjoint (workR (stackArg s 1)) ∧
       (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint ⟨stackArg s 0, 16⟩ := by
   have hs' := hs
-  simp only [sealPre] at hs'
+  simp only [sealPreX] at hs'
   obtain ⟨-, hwr, -, -, -, -, -, -, ddt, -, -, dtw, -⟩ := hs'
   exact ⟨oneLay (sealCore hs), covers_of_mem (by rw [hwr]; simp), dtw, ddt⟩
 
@@ -213,7 +213,7 @@ structure SealEntry (s s₁ : State) : Prop where
   wr : s₁.wr = s.wr
 
 /-- The entry of `seal`. -/
-theorem sealEntry_ok {s : State} (hs : sealAArch64.pre s) :
+theorem sealEntry_ok {extra : List Region} {s : State} (hs : sealPreX extra s) :
     WP isa (.block (oneEntry 8 ++ stashArg 0)) s (SealEntry s) := by
   obtain ⟨ol, -, -, -⟩ := sealLay hs
   obtain ⟨L, perm, hsp, dnW, daW, ddW, dcW, daA, dnd, dad, dcd, wn, wa, wd, hR, nR, aR, dW⟩ := ol
@@ -231,7 +231,8 @@ theorem sealEntry_ok {s : State} (hs : sealAArch64.pre s) :
       ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩
 
 /-- `seal` after its entry. -/
-theorem sealRest_ok (v : GcmImpl) {s s₁ : State} (hs : sealAArch64.pre s) (h₁ : SealEntry s s₁) :
+theorem sealRest_ok (v : GcmImpl) {extra : List Region} {s s₁ : State} (hs : sealPreX extra s)
+    (h₁ : SealEntry s s₁) :
     WP isa (sealRest v.callees) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' := by
   obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, _, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁
   obtain ⟨ol, tW, dtw, ddt⟩ := sealLay hs
