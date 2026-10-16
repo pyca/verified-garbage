@@ -24,9 +24,9 @@ open VG.AArch64 VG.Proof.MdStream.AArch64
 /-- The stack the one-shot digests use: their frame. -/
 abbrev stack : Nat := Impl.MdStream.AArch64.OneShot.frameBytes Impl.Sha256.AArch64.Stream.params
 
-theorem implies {iv : Spec.Sha256.HashValue} {D : Nat} {digest : List Byte → List Byte} (hD : D ≤ 64)
-    (hdg : ∀ m, (md.hash iv m).take D = digest m) :
-    (OneShot.oneK (P := Impl.Sha256.AArch64.Stream.params) md iv D).Implies
+theorem implies {o : List Instr} {iv : Spec.Sha256.HashValue} {D : Nat} {digest : List Byte → List Byte}
+    (hD : D ≤ 64) (hdg : ∀ m, (md.hash iv m).take D = digest m) :
+    (OneShot.oneK (P := { Impl.Sha256.AArch64.Stream.params with out := o }) md iv D).Implies
       (Spec.Sha256.digestContract AArch64.abi D digest stack) := by
   refine
     { pre := fun s h => ?_
@@ -37,12 +37,12 @@ theorem implies {iv : Spec.Sha256.HashValue} {D : Nat} {digest : List Byte → L
   · sig_pre [Spec.Sha256.digestContract, Spec.Sha256.digestSig, Spec.Sha256.digestPost, AArch64.abi,
       AArch64.argRegs] at h
     obtain ⟨hsp, hrd, hwr, hdo, hfd, hfo, -, -⟩ := h
-    exact ⟨hrd, hwr, hdo, hsp, hfd, hfo⟩
+    exact pre_out ⟨hrd, hwr, hdo, hsp, hfd, hfo⟩
   · sig_post [Spec.Sha256.digestContract, Spec.Sha256.digestSig, Spec.Sha256.digestPost, AArch64.abi,
       AArch64.argRegs]
     rw [← hdg]
     exact h trivial
-  · have hp := sat_pre hD
+  · have hp := sat_pre₀ hD
     sig_pre [Spec.Sha256.digestContract, Spec.Sha256.digestSig, Spec.Sha256.digestPost, AArch64.abi,
       AArch64.argRegs]
     sig_and_intros

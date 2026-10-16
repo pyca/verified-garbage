@@ -51,6 +51,7 @@ namespace VG.Proof.Pbkdf2.Md.AArch64.Sha224
 open VG.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.Sha256.AArch64 (Compress)
+open VG.Impl.MdStream.AArch64 (out32)
 
 /-- SHA-224's functions, calling the implementation `v` of SHA-256's
 compression function and SHA-256's streaming functions made with it, named
@@ -216,12 +217,11 @@ def stream : List StreamFn := [
     verified := Proof.Sha256.AArch64.Shared.finalize224_of v.finalize224_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { api := Spec.Sha256.digest224Api
-    code := Proof.Sha256.AArch64.oneShotWith Impl.Sha256.AArch64.Stream.params224 Spec.Sha256.H0_224 v.name
+    code := Proof.Sha256.AArch64.oneShotWith (out32 7 true) Spec.Sha256.H0_224 v.name
       v.code
     contract := Spec.Sha256.digestContract AArch64.abi 28 Spec.Sha256.sha224 Proof.Sha256.AArch64.OneShot.stack
     stack := Proof.Sha256.AArch64.OneShot.stack
-    verified := (v.oneShot_verified (by decide) rfl Proof.Sha256.AArch64.Stream.shape224 v.finalize224Keeps
-      v.oneShot224).of_implies
+    verified := (v.oneShot_verified (by decide) Proof.Sha256.AArch64.Stream.shape224 v.oneShot224).of_implies
         (Proof.Sha256.AArch64.OneShot.implies (by decide) Proof.Sha256.AArch64.OneShot.sha224_take)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
