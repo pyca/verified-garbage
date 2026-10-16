@@ -133,4 +133,40 @@ open VG.Emit
   \n\
   def main (args : List String) : IO UInt32 := VG.Emit.run VG.Emit.all args\n"
 
+
+-- The target directory of each kind of module.
+#guard targetDirOf "VerifiedGarbage.Artifacts.Sha3.X86_64" == some "X86_64"
+#guard targetDirOf "VerifiedGarbage.Generic.Sha256Compress.AArch64.Pbkdf2" == some "AArch64"
+#guard targetDirOf "VerifiedGarbage.Generic.Blake2b.Argon2Compress.X86_64.Argon2" == some "X86_64"
+#guard targetDirOf "VerifiedGarbage.Variants.Sha256Compress.Arm.ShaNi" == some "Arm"
+#guard targetDirOf "VerifiedGarbage.Artifacts.Sha3" == none
+#guard targetDirOf "VerifiedGarbage.Variants.Sha256Compress.X86_64" == none
+
+-- The modules of each target directory, in order of its name.
+#guard (parts ["VerifiedGarbage.Artifacts.Sha3.X86_64", "VerifiedGarbage.Artifacts.Sha3.AArch64"]
+    [(["I.X86_64"], ["VerifiedGarbage.Generic.I.X86_64.A"]),
+     (["I.AArch64"], ["VerifiedGarbage.Generic.I.AArch64.A"])]
+    [("I.X86_64", ["VerifiedGarbage.Variants.I.X86_64.P"]),
+     ("J.Arm", ["VerifiedGarbage.Variants.J.Arm.R"])]).toOption ==
+  some [("AArch64", ["VerifiedGarbage.Artifacts.Sha3.AArch64"],
+          [(["I.AArch64"], ["VerifiedGarbage.Generic.I.AArch64.A"])], []),
+       ("Arm", [], [], [("J.Arm", ["VerifiedGarbage.Variants.J.Arm.R"])]),
+       ("X86_64", ["VerifiedGarbage.Artifacts.Sha3.X86_64"],
+          [(["I.X86_64"], ["VerifiedGarbage.Generic.I.X86_64.A"])],
+          [("I.X86_64", ["VerifiedGarbage.Variants.I.X86_64.P"])])]
+#guard (parts ["VerifiedGarbage.Artifacts.Sha3"] [] []).toOption.isNone
+
+/-- `parseArgs`, with the directory as a string. -/
+def args (as : List String) : Option (Bool × Option String × String) :=
+  (parseArgs as).map fun (c, p, d) => (c, p, d.toString)
+
+#guard args [] == some (false, none, "../src/asm")
+#guard args ["--check", "--part", "f", "d"] == some (true, some "f", "d")
+#guard args ["--part", "f"] == some (false, some "f", "../src/asm")
+#guard args ["a", "b"] == none
+
+-- A target whose artifacts two parts emitted.
+#guard inTwoParts [[("x86_64", "c")], [("aarch64", "c")]] == none
+#guard inTwoParts [[("x86_64", "c")], [("aarch64", "c"), ("x86_64", "c")]] == some "x86_64"
+
 end VG.Test.Emit

@@ -533,19 +533,29 @@ def prepareAll (as : List Artifact) : List Prepared :=
     Task.spawn fun _ => ((as.drop (j * size)).take size).map Prepared.of
   (parts.map Task.get).flatten
 
+/-- The targets of the artifacts `as`, each once, with its Rust `cfg`
+(`Target.rustCfg`), in first-seen order. -/
+def targetsOf (as : List Artifact) : List (String × String) :=
+  (distinct as (·.target.name)).map fun t =>
+    (t, ((as.find? (·.target.name == t)).map (·.target.rustCfg)).getD "")
+
+/-- The root module, `mod.rs`: the macros its targets' modules use and a
+`mod` declaration of each target of `ts` (its name and Rust `cfg`), in order
+of their names. -/
+def rootFile (ts : List (String × String)) : String :=
+  header ++
+  "//! Formally verified assembly, emitted from Lean. See `lean/README.md`.\n" ++
+  "//!\n" ++
+  "//! Every function in these modules is the direct rendering of an `Artifact`\n" ++
+  "//! whose machine code has been proven correct, memory safe and constant time\n" ++
+  "//! against its contract.\n" ++
+  symMacros ++
+  modDecls ((ts.map (·.1)).mergeSort (· ≤ ·)) fun t => (ts.find? (·.1 == t)).map (·.2)
+
 /-- The generated files, given the module of each function each artifact calls. -/
 def render (as : List Artifact) (moduleOf : Artifact → String → String) : List (String × String) :=
   let targets := distinct as (·.target.name)
-  let cfgOf (t : String) : Option String := (as.find? (·.target.name == t)).map (·.target.rustCfg)
-  let root :=
-    header ++
-    "//! Formally verified assembly, emitted from Lean. See `lean/README.md`.\n" ++
-    "//!\n" ++
-    "//! Every function in these modules is the direct rendering of an `Artifact`\n" ++
-    "//! whose machine code has been proven correct, memory safe and constant time\n" ++
-    "//! against its contract.\n" ++
-    symMacros ++
-    modDecls targets cfgOf
+  let root := rootFile (targetsOf as)
   let perTarget (t : String) : List (String × String) :=
     let arts := as.filter (·.target.name == t)
     -- In order of their names, wherever their artifacts come in the list.
