@@ -1,12 +1,8 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Verified
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.SealVerified
-public import VerifiedGarbage.Generic.AesGcm.X86_64.AesGcm
-public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
-import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Stitch.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 
 /-!
 # AES-GCM-SIV (RFC 8452) on x86-64
@@ -44,47 +40,6 @@ open VG.Proof.AesGcmSiv.X86_64
 def note (v : GcmImpl) : String :=
   "This implementation encrypts with `" ++ (ecbOf v).enc.name ++ "` and `" ++ v.ctr.callee.name ++
     "` (and expands keys with `" ++ v.key.fn.name ++ "`) and computes POLYVAL with `" ++ v.gh.fn.name ++ "`."
-
-/-- The implementation of `vg_aes_encrypt_blocks` they call. -/
-def ecbFn (v : GcmImpl) : Impl.AesGcm.X86_64.Fn := ⟨(ecbOf v).enc.name, (ecbOf v).enc.code⟩
-
-/-- Whether `open` interleaves counter mode and POLYVAL: with VAES and
-VPCLMULQDQ (and so AVX2) in `v`'s callees. -/
-def sivStitch (v : GcmImpl) : Bool := v.ctr.features.contains "vaes" && v.gh.features.contains "vpclmulqdq"
-
-/-- The code of `open` for `v`. -/
-def openCode (v : GcmImpl) : Prog X86_64.isa :=
-  if sivStitch v then Impl.AesGcmSiv.X86_64Stitch.«open» v.callees (ecbFn v) (sivWide v)
-  else Impl.AesGcmSiv.X86_64.«open» v.callees (ecbFn v) (sivWide v)
-
-/-- The code of `seal` for `v`. -/
-def sealCode (v : GcmImpl) : Prog X86_64.isa :=
-  if sivStitch v then Impl.AesGcmSiv.X86_64Stitch.«seal» v.callees (ecbFn v) (sivWide v)
-  else Impl.AesGcmSiv.X86_64.«seal» v.callees (ecbFn v) (sivWide v)
-
-theorem sealCode_framed (v : GcmImpl) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v))
-      (Spec.GcmSiv.sealContract X86_64.abi 3856) := by
-  unfold sealCode; split
-  · exact sealS_framed v (ecbOf v) (sivWide v)
-  · exact seal_framed v (ecbOf v) (sivWide v)
-
-theorem sealCode_spSafe (v : GcmImpl) : (sealCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
-  unfold sealCode; split
-  · exact sealS_spSafe v (ecbOf v) (sivWide v)
-  · exact seal_spSafe v (ecbOf v) (sivWide v)
-
-theorem openCode_framed (v : GcmImpl) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v))
-      (Spec.GcmSiv.openContract X86_64.abi 3856) := by
-  unfold openCode; split
-  · exact openS_framed v (ecbOf v) (sivWide v)
-  · exact open_framed v (ecbOf v) (sivWide v)
-
-theorem openCode_spSafe (v : GcmImpl) : (openCode v).all (fun i => !X86_64.isa.writesSp i) = true := by
-  unfold openCode; split
-  · exact openS_spSafe v (ecbOf v) (sivWide v)
-  · exact open_spSafe v (ecbOf v) (sivWide v)
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
