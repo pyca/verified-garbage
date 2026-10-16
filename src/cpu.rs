@@ -52,6 +52,41 @@ pub(crate) const NAMES: [&str; 20] = [
     "avx512bw",
 ];
 
+/// The bit of the feature `name` in a [`Features`]: its index in [`NAMES`],
+/// which [`Features::of`] checks. A `match`, which the compiler evaluates in
+/// a few steps, rather than a search of [`NAMES`]: evaluating the generated
+/// `_FEATURES` constants by searching took a second of every build of the
+/// crate.
+#[cfg_attr(
+    not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
+    allow(dead_code)
+)]
+const fn bit(name: &str) -> usize {
+    match name.as_bytes() {
+        b"ssse3" => 0,
+        b"sha" => 1,
+        b"aes" => 2,
+        b"pclmulqdq" => 3,
+        b"avx" => 4,
+        b"avx2" => 5,
+        b"bmi1" => 6,
+        b"bmi2" => 7,
+        b"avx512f" => 8,
+        b"sha512" => 9,
+        b"sha2" => 10,
+        b"sha3" => 11,
+        b"adx" => 12,
+        b"avx512ifma" => 13,
+        b"avx512vl" => 14,
+        b"neon" => 15,
+        b"sve2" => 16,
+        b"vaes" => 17,
+        b"vpclmulqdq" => 18,
+        b"avx512bw" => 19,
+        _ => panic!("a CPU feature this library does not know"),
+    }
+}
+
 /// Whether two names are equal (`==` on strings, which is not `const`).
 #[cfg_attr(
     not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")),
@@ -59,17 +94,13 @@ pub(crate) const NAMES: [&str; 20] = [
 )]
 const fn eq(a: &str, b: &str) -> bool {
     let (a, b) = (a.as_bytes(), b.as_bytes());
-    if a.len() != b.len() {
-        return false;
-    }
+    let mut same = a.len() == b.len();
     let mut i = 0;
-    while i < a.len() {
-        if a[i] != b[i] {
-            return false;
-        }
+    while same && i < a.len() {
+        same = a[i] == b[i];
         i += 1;
     }
-    true
+    same
 }
 
 /// A set of CPU features.
@@ -94,11 +125,8 @@ impl Features {
         let mut acc = 0;
         let mut i = 0;
         while i < names.len() {
-            let mut j = 0;
-            while !eq(names[i], NAMES[j]) {
-                j += 1;
-                assert!(j < NAMES.len(), "a CPU feature this library does not know");
-            }
+            let j = bit(names[i]);
+            assert!(eq(names[i], NAMES[j]));
             acc |= 1 << j;
             i += 1;
         }
@@ -404,6 +432,22 @@ mod tests {
             ]),
             Features(0b11)
         );
+    }
+
+    /// Each name's bit is its index in `NAMES`.
+    #[test]
+    fn bits_are_indices() {
+        for (j, name) in NAMES.iter().enumerate() {
+            assert_eq!(bit(name), j);
+        }
+    }
+
+    #[test]
+    fn eq_names() {
+        assert!(eq("avx2", "avx2"));
+        assert!(!eq("avx", "avx2"));
+        assert!(!eq("avx2", "avx"));
+        assert!(!eq("aes", "adx"));
     }
 
     #[test]
