@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.AesSiv.AArch64.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-SIV (RFC 5297) key setup on AArch64
@@ -27,18 +28,15 @@ namespace VG.Generic.AesCtr32.AArch64.AesSiv
 open VG.Proof.AesSiv.AArch64
 
 def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
-  { Spec.Siv.initApi with
-    name := Spec.Siv.initApi.name ++ v.suffix
-    target := AArch64.target
-    doc := Spec.Siv.initApi.doc (notes := [
+  Spec.Siv.initApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [
       "This implementation expands the keys with `" ++ v.expand.name ++ "` and computes the CMAC subkeys \
-      with `" ++ Spec.Cmac.aesSubkeysApi.name ++ v.suffix ++ "`."])
+      with `" ++ Spec.Cmac.aesSubkeysApi.name ++ v.suffix ++ "`."]
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3
       (Impl.AesSiv.AArch64.init v.expand v.callee v.suffix)
-    contract := Spec.Siv.initContract AArch64.abi 2560
     stack := 2560
     verified := init_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
 end VG.Generic.AesCtr32.AArch64.AesSiv

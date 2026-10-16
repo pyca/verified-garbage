@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.AesCcm.X86_64.Frame
 import VerifiedGarbage.Proof.AesGcm.X86_64.Mask
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-CCM (NIST SP 800-38C) on x86-64
@@ -35,23 +36,19 @@ def callNote (v : Proof.CmacAes.X86_64.UpdateImpl) : String :=
     v.ctr.callee.name ++ "`."
 
 def artifacts (v : Proof.CmacAes.X86_64.UpdateImpl) : List Artifact := [
-  { Spec.Ccm.sealApi with
-    name := Spec.Ccm.sealApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Ccm.sealApi.doc (notes := [callNote v])
+  Spec.Ccm.sealApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [callNote v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesCcm.X86_64.seal v.callee v.ctr.callee)
-    contract := Spec.Ccm.sealContract X86_64.abi 2624
     stack := 2624
     verified := seal_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v)
     features := v.ctr.features },
-  { Spec.Ccm.openApi with
-    name := Spec.Ccm.openApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Ccm.openApi.doc (notes := [callNote v,
-      "It compares the tags and overwrites the data with zeros without a branch on the result."])
+  Spec.Ccm.openApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [callNote v,
+      "It compares the tags and overwrites the data with zeros without a branch on the result."]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesCcm.X86_64.open v.callee v.ctr.callee)
-    contract := Spec.Ccm.openContract X86_64.abi 2624
     stack := 2624
     verified := open_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v)

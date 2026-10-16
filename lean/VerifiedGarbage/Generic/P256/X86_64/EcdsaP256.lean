@@ -22,6 +22,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.JointDoubler
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JointFixedDigitTiming
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on x86-64
@@ -43,10 +44,9 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
-  { Spec.Ecdsa.P256.signApi with
-    name := Spec.Ecdsa.P256.signApi.name ++ (if adx then "_adx" else "")
-    target := X86_64.target
-    doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves its caller's callee-saved \
+  Spec.Ecdsa.P256.signApi.artifact X86_64.target {
+    suffix := (if adx then "_adx" else "")
+    notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
       " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". `[k]G` is " ++
       (if adx then "a call of `vg_p256_mul_base_adx`, which expands `k` into a table of its bits \
@@ -76,11 +76,9 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
       Yang's bound (which the proof checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or \
       its negation by `f`'s sign. The number of steps is fixed, so the time does not depend on \
       `Z` or `k`. The signature (or zeros) is selected by a mask, so the time depends only on the \
-      pointers."])
+      pointers."]
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     code
-    contract := Spec.Ecdsa.P256.inst.signContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8
     stack := 8
     verified := hv
     spSafe := hsp
@@ -93,10 +91,9 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
-  { Spec.Ecdsa.P256.verifyApi with
-    name := Spec.Ecdsa.P256.verifyApi.name ++ (if adx then "_adx" else "")
-    target := X86_64.target
-    doc := Spec.Ecdsa.P256.verifyApi.doc (notes := ["The function saves its caller's callee-saved \
+  Spec.Ecdsa.P256.verifyApi.artifact X86_64.target {
+    suffix := (if adx then "_adx" else "")
+    notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
       " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". The public key is checked without branches; an invalid \
       key is replaced with `G` for the point operations and rejected by the final validity flag. \
@@ -112,11 +109,9 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       The final comparison squares the Jacobian Z coordinate and checks `X = rZ²`, or \
       `X = (r+n)Z²` when `r+n < p`, without a field inversion. It rejects infinity and returns \
       the conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may \
-      depend on the public verification inputs, as permitted by the contract."])
+      depend on the public verification inputs, as permitted by the contract."]
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     code
-    contract := Spec.Ecdsa.P256.inst.verifyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 8
     stack := 8
     verified := hv
     spSafe := hsp

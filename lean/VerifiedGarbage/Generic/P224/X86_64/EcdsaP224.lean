@@ -13,6 +13,7 @@ import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDSA over P-224 (FIPS 186-5) on x86-64
@@ -26,9 +27,8 @@ inversions `h`, the variant `Variants/P224/X86_64/Law.lean`.
 namespace VG.Generic.P224.X86_64.EcdsaP224
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Artifact := [
-  { Spec.Ecdsa.P224.signApi with
-    target := X86_64.target
-    doc := Spec.Ecdsa.P224.signApi.doc (notes := ["The function saves its caller's callee-saved \
+  Spec.Ecdsa.P224.signApi.artifact X86_64.target {
+    notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery \
       form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional \
       subtraction; the 28-byte encodings are read and written a word at a time, the top word's \
@@ -49,17 +49,13 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
       The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is by \
       the same divsteps, from `f = n`, `g = k`, a call of `vg_p224_inv_mod_n`. The signature (or \
-      zeros) is selected by a mask, so the time depends only on the pointers."])
+      zeros) is selected by a mask, so the time depends only on the pointers."]
     consts := Impl.Ecdsa.X86_64.p224.combConsts
     code := Impl.Ecdsa.X86_64.signP224
-    contract := Spec.Ecdsa.P224.inst.signContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts) 8
     stack := 8
-    verified := Proof.Ecdsa.X86_64.P224.sign_verified h.law (Proof.P224.combOk7 h.law) h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Ecdsa.P224.verifyApi with
-    target := X86_64.target
-    doc := Spec.Ecdsa.P224.verifyApi.doc (notes := ["The function saves its caller's callee-saved \
+    verified := Proof.Ecdsa.X86_64.P224.sign_verified h.law (Proof.P224.combOk7 h.law) h.inv },
+  Spec.Ecdsa.P224.verifyApi.artifact X86_64.target {
+    notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
       multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional \
       subtraction. The public key is checked without branches (its first byte, both coordinates \
@@ -77,13 +73,10 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-224 has `n < p ≤ 2n`), without a field \
       inversion. It rejects infinity and returns the conjunction of the key, scalar-range and \
       coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as \
-      permitted by the contract."])
+      permitted by the contract."]
     consts := Impl.Ecdsa.X86_64.p224.combConsts
     code := Impl.Ecdsa.Verify.X86_64.jointVerifyP224
-    contract := Spec.Ecdsa.P224.inst.verifyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts) 8
     stack := 8
-    verified := Proof.Ecdsa.Verify.X86_64.P224.jointVerify_verified h.law (Proof.P224.combOk7 h.law) h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Ecdsa.Verify.X86_64.P224.jointVerify_verified h.law (Proof.P224.combOk7 h.law) h.inv }]
 
 end VG.Generic.P224.X86_64.EcdsaP224

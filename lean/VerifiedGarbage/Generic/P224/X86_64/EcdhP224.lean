@@ -10,6 +10,7 @@ import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDH over P-224 (SP 800-56A) on x86-64
@@ -24,9 +25,8 @@ inversions `h`, the variant
 namespace VG.Generic.P224.X86_64.EcdhP224
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Artifact := [
-  { Spec.Ecdh.P224.exchangeApi with
-    target := X86_64.target
-    doc := Spec.Ecdh.P224.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p224_sign`'s \
+  Spec.Ecdh.P224.exchangeApi.artifact X86_64.target {
+    notes := ["The function is `vg_ecdsa_p224_sign`'s \
       setup, field arithmetic and inversion, with the peer's point in place of `G`: it saves its \
       caller's callee-saved registers in `scratch`; field elements are four 64-bit words in \
       Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS) with a final \
@@ -41,11 +41,9 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       `por`) the one of the digit's magnitude, and negated by a mask of its sign, by the \
       complete addition formulas of Renes, Costello and Batina for `a = -3` (Algorithm 4); `Z⁻¹` \
       is by the signature's divsteps. The result (or zeros) is selected by a mask of the checks, \
-      `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
+      `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.Ecdh.X86_64.exchangeP224
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P224.inst X86_64.abi 8
     stack := 8
-    verified := Proof.Ecdh.X86_64.P224.ecdh_verified h.law h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Ecdh.X86_64.P224.ecdh_verified h.law h.inv }]
 
 end VG.Generic.P224.X86_64.EcdhP224

@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDSA over P-521 (FIPS 186-5) on AArch64
@@ -23,9 +24,8 @@ A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 namespace VG.Generic.P521.AArch64.EcdsaP521
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List Artifact := [
-  { Spec.Ecdsa.P521.signApi with
-    target := AArch64.target
-    doc := Spec.Ecdsa.P521.signApi.doc (notes := ["The function saves the callee-saved registers \
+  Spec.Ecdsa.P521.signApi.artifact AArch64.target {
+    notes := ["The function saves the callee-saved registers \
       `x19`–`x25` in `scratch`. Field elements and scalars are nine 64-bit words in \
       Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, with `mul` and \
       `umulh`, four of the multiplicand's words in registers and the other five loaded for each \
@@ -47,15 +47,12 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List A
       576-bit moduli by Bernstein and Yang's bound (which the proof checks); then `f = ±1`, and `Z⁻¹` is `a` times a \
       constant or its negation by `f`'s sign. The number of steps is fixed, so the time does not \
       depend on `Z` or `k`. The signature \
-      (or zeros) is selected by a mask, so the time depends only on the pointers."])
+      (or zeros) is selected by a mask, so the time depends only on the pointers."]
     consts := Impl.Ecdsa.AArch64.p521.combConsts
     code := Impl.Ecdsa.AArch64.signP521
-    contract := Spec.Ecdsa.P521.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts)
-    verified := Proof.Ecdsa.AArch64.P521.sign_verified h.law h.inv (Proof.P521.combOk7 h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Ecdsa.P521.verifyApi with
-    target := AArch64.target
-    doc := Spec.Ecdsa.P521.verifyApi.doc (notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
+    verified := Proof.Ecdsa.AArch64.P521.sign_verified h.law h.inv (Proof.P521.combOk7 h.law) },
+  Spec.Ecdsa.P521.verifyApi.artifact AArch64.target {
+    notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
       field arithmetic, comb and inversions, with `vg_ecdh_p521`'s checks of the public key: it \
       saves the callee-saved registers `x19`–`x25` in `scratch`; field elements and \
       scalars are nine 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
@@ -74,11 +71,9 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P521.curve) : List A
       `a = -3`, which also add the two. The result is the conjunction of the checks (the key, \
       `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `X = rZ` or, when `r + n < p`, `X = (r + n)Z`, compared in projective coordinates without inverting `Z`) as a mask, so the \
       comb's addresses depend on `u`, from the digest and the signature, and the rest of the \
-      time only on the pointers."])
+      time only on the pointers."]
     consts := Impl.Ecdsa.AArch64.p521.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP521
-    contract := Spec.Ecdsa.P521.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts)
-    verified := Proof.Ecdsa.Verify.AArch64.P521.verify_verified h.law h.inv (Proof.P521.combOk7 h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Ecdsa.Verify.AArch64.P521.verify_verified h.law h.inv (Proof.P521.combOk7 h.law) }]
 
 end VG.Generic.P521.AArch64.EcdsaP521

@@ -3,6 +3,7 @@ module
 import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # HMAC-SHA-224 (RFC 2104) on x86, for every x86 SHA-256 backend
@@ -29,50 +30,34 @@ same code with it as an argument, are what PBKDF2's code calls.
 namespace VG.Generic.Sha256.X86.HmacSha224
 
 def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
-  { Spec.Hmac.sha224I.initApi with
-    name := Spec.Hmac.sha224I.initApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Hmac.sha224I.initApi.doc
+  Spec.Hmac.sha224I.initApi.artifact X86.target {
+    suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha224I) 4
       v.M224.hmacInit
-    contract := Spec.Hmac.sha224I.initContract X86.abi (48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha224I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
     stack := 48 + Proof.Pbkdf2.Md.X86.initFrame Spec.Hmac.sha224I
     verified := Proof.Pbkdf2.Md.X86.initFramed v.hmacInit224 (by decide)
       (Proof.Pbkdf2.Md.X86.noEsp_of v.init224NoSp) v.init224Stack Proof.Pbkdf2.Md.X86.sha224_initFrameSat
     spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe (by decide) v.init224Sp
     features := v.features },
-  { Spec.Hmac.sha224I.finalizeApi with
-    name := Spec.Hmac.sha224I.finalizeApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Hmac.sha224I.finalizeApi.doc
+  Spec.Hmac.sha224I.finalizeApi.artifact X86.target {
+    suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha224I) 5
       v.M224.hmacFin
-    contract := Spec.Hmac.sha224I.finalizeContract X86.abi (48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha224I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
     stack := 48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha224I
     verified := Proof.Pbkdf2.Md.X86.finFramed v.hmacFin224 (by decide) Proof.Hmac.sha224_local
       (by decide) (Proof.Pbkdf2.Md.X86.noEsp_of v.finalize224NoSp) v.finalize224Stack Proof.Pbkdf2.Md.X86.sha224_finFrameSat
     spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe (by decide) v.fin224Sp
     features := v.features },
-  { Spec.Hmac.sha224I.initScratchApi with
-    name := Spec.Hmac.sha224I.initScratchApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Hmac.sha224I.initScratchApi.doc
+  Spec.Hmac.sha224I.initScratchApi.artifact X86.target {
+    suffix := v.suffix
     code := v.M224.hmacInit
-    contract := Spec.Hmac.sha224I.initScratchContract X86.abi 48
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
     stack := 48
     verified := v.hmacInit224
     spSafe := v.init224Sp
     features := v.features },
-  { Spec.Hmac.sha224I.finalizeScratchApi with
-    name := Spec.Hmac.sha224I.finalizeScratchApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Hmac.sha224I.finalizeScratchApi.doc
+  Spec.Hmac.sha224I.finalizeScratchApi.artifact X86.target {
+    suffix := v.suffix
     code := v.M224.hmacFin
-    contract := Spec.Hmac.sha224I.finalizeScratchContract X86.abi 48
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
     stack := 48
     verified := v.hmacFin224
     spSafe := v.fin224Sp

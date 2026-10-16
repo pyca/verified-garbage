@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.P521.Arm
 public import VerifiedGarbage.Proof.Ecdh.Arm.P521.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDH over P-521 (SP 800-56A) on 32-bit ARM
@@ -17,9 +18,8 @@ A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
 namespace VG.Generic.P521.Arm.EcdhP521
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := [
-  { Spec.Ecdh.P521.exchangeApi with
-    target := Arm.target
-    doc := Spec.Ecdh.P521.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
+  Spec.Ecdh.P521.exchangeApi.artifact Arm.target {
+    notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
       field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the \
       callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` \
       during the calls); field elements are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit \
@@ -32,10 +32,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       addition formulas of Renes, Costello and Batina and a masked selection for each bit; \
       `Z⁻¹` is Fermat's, by \
       square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, \
-      `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
+      `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.Ecdh.Arm.exchangeP521
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst Arm.abi
-    verified := Proof.Ecdh.Arm.P521.ecdh_verified h.law
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Ecdh.Arm.P521.ecdh_verified h.law }]
 
 end VG.Generic.P521.Arm.EcdhP521

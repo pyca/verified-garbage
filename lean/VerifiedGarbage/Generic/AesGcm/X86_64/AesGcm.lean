@@ -26,6 +26,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Split.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -251,114 +252,92 @@ def blocksNote (v : GcmImpl) (enc : Bool := false) : String :=
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
-  { Spec.Gcm.encryptBlocksApi with
-    name := Spec.Gcm.encryptBlocksApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.encryptBlocksApi.doc (notes := [blocksNote v true])
+  Spec.Gcm.encryptBlocksApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [blocksNote v true]
     code := v.callees.enc.code
-    contract := Spec.Gcm.encryptBlocksContract X86_64.abi 8
     stack := 8
     verified := encryptBlocks_verified v v.stitch
     spSafe := encryptBlocks_spSafeB v v.stitch
     features := v.features },
-  { Spec.Gcm.decryptBlocksApi with
-    name := Spec.Gcm.decryptBlocksApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.decryptBlocksApi.doc (notes := [blocksNote v])
+  Spec.Gcm.decryptBlocksApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [blocksNote v]
     code := v.callees.dec.code
-    contract := Spec.Gcm.decryptBlocksContract X86_64.abi 8
     stack := 8
     verified := decryptBlocks_verified v v.stitch
     spSafe := decryptBlocks_spSafeB v v.stitch
     features := v.features },
-  { Spec.Gcm.initApi with
-    name := Spec.Gcm.initApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.initApi.doc (notes := [note v])
+  Spec.Gcm.initApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init v.callees)
-    contract := Spec.Gcm.initContract X86_64.abi 2576
     stack := 2576
     verified := init_framed v
     spSafe := X86_64.withStackScratch_spSafe (by decide) (init_spSafe v)
     features := (v.ctr.features ++ v.key.features).dedup },
-  { Spec.Gcm.sealApi with
-    name := Spec.Gcm.sealApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.sealApi.doc (notes := note v :: shortNote v ++ finNote v)
+  Spec.Gcm.sealApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := note v :: shortNote v ++ finNote v
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)
-    contract := Spec.Gcm.sealContract X86_64.abi 2624
     stack := 2624
     verified := sealSel_framed v Short.shortFacts
     spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkB)
     features := v.features },
-  { Spec.Gcm.openApi with
-    name := Spec.Gcm.openApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.openApi.doc (notes := note v :: shortNote v)
+  Spec.Gcm.openApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := note v :: shortNote v
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees)
-    contract := Spec.Gcm.openContract X86_64.abi 2632
     stack := 2632
     verified := openSel_framed v Short.shortFacts
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB)
     features := v.features },
-  { Spec.Gcm.streamInitApi with
-    name := Spec.Gcm.streamInitApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamInitApi.doc (notes := [note v])
+  Spec.Gcm.streamInitApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r8
       (Impl.AesGcm.X86_64.streamInit v.callees)
-    contract := Spec.Gcm.streamInitContract X86_64.abi 2576
     stack := 2576
     verified := streamInit_framed v
     spSafe := X86_64.withStackScratch_spSafe (by decide) (streamInit_spSafe v)
     features := v.gh.features },
-  { Spec.Gcm.streamAadApi with
-    name := Spec.Gcm.streamAadApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamAadApi.doc (notes := [note v])
+  Spec.Gcm.streamAadApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9
       (Impl.AesGcm.X86_64.streamAad v.callees)
-    contract := Spec.Gcm.streamAadContract X86_64.abi 2576
     stack := 2576
     verified := streamAad_framed v
     spSafe := X86_64.withStackScratch_spSafe (by decide) (streamAad_spSafe v)
     features := v.gh.features },
-  { Spec.Gcm.streamEncryptApi with
-    name := Spec.Gcm.streamEncryptApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamEncryptApi.doc (notes := [note v])
+  Spec.Gcm.streamEncryptApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.callees)
-    contract := Spec.Gcm.streamEncryptContract X86_64.abi 2608
     stack := 2608
     verified := streamEncrypt_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v)
     features := v.features },
-  { Spec.Gcm.streamDecryptApi with
-    name := Spec.Gcm.streamDecryptApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamDecryptApi.doc (notes := [note v])
+  Spec.Gcm.streamDecryptApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.callees)
-    contract := Spec.Gcm.streamDecryptContract X86_64.abi 2608
     stack := 2608
     verified := streamDecrypt_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v)
     features := v.features },
-  { Spec.Gcm.streamFinishApi with
-    name := Spec.Gcm.streamFinishApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamFinishApi.doc (notes := [note v])
+  Spec.Gcm.streamFinishApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish v.callees)
-    contract := Spec.Gcm.streamFinishContract X86_64.abi 2584
     stack := 2584
     verified := streamFinish_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamFinish_spSafe v)
     features := (v.ctr.features ++ v.gh.features).dedup },
-  { Spec.Gcm.streamVerifyApi with
-    name := Spec.Gcm.streamVerifyApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamVerifyApi.doc (notes := [note v])
+  Spec.Gcm.streamVerifyApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify v.callees)
-    contract := Spec.Gcm.streamVerifyContract X86_64.abi 2592
     stack := 2592
     verified := streamVerify_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v)
@@ -378,74 +357,60 @@ def initNoteP (v : GcmImpl) : String :=
 
 /-- The `_precomputed` artifacts calling the implementations `v`. -/
 def artifactsP (v : GcmImpl) : List Artifact := [
-  { Spec.Gcm.initPrecomputedApi with
-    name := Spec.Gcm.initPrecomputedApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.initPrecomputedApi.doc (notes := [initNoteP v])
+  Spec.Gcm.initPrecomputedApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [initNoteP v]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.initPrecomputed v.callees)
-    contract := Spec.Gcm.initPrecomputedContract X86_64.abi 2576
     stack := 2576
     verified := initP_framed v
     spSafe := X86_64.withStackScratch_spSafe (by decide) (initP_spSafe v)
     features := (v.ctr.features ++ v.key.features ++ v.gh.features).dedup },
-  { Spec.Gcm.encryptBlocksPrecomputedApi with
-    name := Spec.Gcm.encryptBlocksPrecomputedApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.encryptBlocksPrecomputedApi.doc (notes := [blocksNoteP v])
+  Spec.Gcm.encryptBlocksPrecomputedApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [blocksNoteP v]
     code := v.blkP.enc.code
-    contract := Spec.Gcm.encryptBlocksPrecomputedContract X86_64.abi 8
     stack := 8
     verified := encryptBlocksP_verified v v.stitchP
     spSafe := v.blkP.encSp
     features := v.features },
-  { Spec.Gcm.decryptBlocksPrecomputedApi with
-    name := Spec.Gcm.decryptBlocksPrecomputedApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.decryptBlocksPrecomputedApi.doc (notes := [blocksNoteP v])
+  Spec.Gcm.decryptBlocksPrecomputedApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [blocksNoteP v]
     code := v.blkP.dec.code
-    contract := Spec.Gcm.decryptBlocksPrecomputedContract X86_64.abi 8
     stack := 8
     verified := decryptBlocksP_verified v v.stitchP
     spSafe := v.blkP.decSp
     features := v.features },
-  { Spec.Gcm.sealPrecomputedApi with
-    name := Spec.Gcm.sealPrecomputedApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.sealPrecomputedApi.doc (notes := note v :: shortNote v ++ finNote v)
+  Spec.Gcm.sealPrecomputedApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := note v :: shortNote v ++ finNote v
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode (v.withBlk v.blkP))
-    contract := Spec.Gcm.sealPrecomputedContract X86_64.abi 2624
     stack := 2624
     verified := sealSelP_framed v Short.shortFacts
     spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkP)
     features := v.features },
-  { Spec.Gcm.openPrecomputedApi with
-    name := Spec.Gcm.openPrecomputedApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.openPrecomputedApi.doc (notes := note v :: shortNote v)
+  Spec.Gcm.openPrecomputedApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := note v :: shortNote v
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode (v.withBlk v.blkP))
-    contract := Spec.Gcm.openPrecomputedContract X86_64.abi 2632
     stack := 2632
     verified := openSelP_framed v Short.shortFacts
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkP)
     features := v.features },
-  { Spec.Gcm.streamEncryptPrecomputedApi with
-    name := Spec.Gcm.streamEncryptPrecomputedApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamEncryptPrecomputedApi.doc (notes := [note v])
+  Spec.Gcm.streamEncryptPrecomputedApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamEncrypt (v.withBlk v.blkP))
-    contract := Spec.Gcm.streamEncryptPrecomputedContract X86_64.abi 2608
     stack := 2608
     verified := streamEncryptP_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v v.blkP)
     features := v.features },
-  { Spec.Gcm.streamDecryptPrecomputedApi with
-    name := Spec.Gcm.streamDecryptPrecomputedApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamDecryptPrecomputedApi.doc (notes := [note v])
+  Spec.Gcm.streamDecryptPrecomputedApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [note v]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamDecrypt (v.withBlk v.blkP))
-    contract := Spec.Gcm.streamDecryptPrecomputedContract X86_64.abi 2608
     stack := 2608
     verified := streamDecryptP_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v v.blkP)
@@ -497,49 +462,37 @@ def encFnP (v : GcmImpl) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.powers
 the implementations `v`, and the `_precomputed` ones if its loops read the
 powers from the key context. -/
 def artifactsTo (v : GcmVariant) : List Artifact :=
-  [{ Spec.Gcm.encryptBlocksToApi with
-    name := Spec.Gcm.encryptBlocksToApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.encryptBlocksToApi.doc
-      (notes := [blocksToNote v.stitchTo.isSome v.impl.blkB.enc.name])
+  [Spec.Gcm.encryptBlocksToApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := [blocksToNote v.stitchTo.isSome v.impl.blkB.enc.name]
     code := Impl.AesGcm.X86_64.BlocksTo.encrypt v.impl.blkB.enc (v.stitchTo.map (·.enc)) false (encFullTo v.stitchTo)
-    contract := Spec.Gcm.encryptBlocksToContract X86_64.abi 24
     stack := 24
     verified := encryptBlocksTo_verified v.impl.blkB v.stitchTo
     spSafe := encryptTo_spSafe v.stitchTo v.impl.blkB
     features := v.impl.features },
-  { Spec.Gcm.streamEncryptToApi with
-    name := Spec.Gcm.streamEncryptToApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamEncryptToApi.doc
-      (notes := [streamToNote (blkTo v).fn.name (encFn v.impl).fn.name])
+  Spec.Gcm.streamEncryptToApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := [streamToNote (blkTo v).fn.name (encFn v.impl).fn.name]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2232 3
       (Impl.AesGcm.X86_64.StreamTo.encrypt (blkTo v).fn (encFn v.impl).fn)
-    contract := Spec.Gcm.streamEncryptToContract X86_64.abi 4856
     stack := 4856
     verified := StreamTo.streamEncryptTo_framed (blkTo v) (encFn v.impl)
     spSafe := X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkTo v) (encFn v.impl))
     features := v.impl.features }] ++
   if v.impl.stitchP.isSome && v.stitchR.isNone then
-    [{ Spec.Gcm.encryptBlocksToPrecomputedApi with
-      name := Spec.Gcm.encryptBlocksToPrecomputedApi.name ++ v.impl.suffix
-      target := X86_64.target
-      doc := Spec.Gcm.encryptBlocksToPrecomputedApi.doc
-        (notes := [blocksToNote v.stitchToP.isSome v.impl.blkP.enc.name])
+    [Spec.Gcm.encryptBlocksToPrecomputedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      notes := [blocksToNote v.stitchToP.isSome v.impl.blkP.enc.name]
       code := Impl.AesGcm.X86_64.BlocksTo.encrypt v.impl.blkP.enc (v.stitchToP.map (·.enc)) false (encFullTo v.stitchToP)
-      contract := Spec.Gcm.encryptBlocksToPrecomputedContract X86_64.abi 24
       stack := 24
       verified := encryptBlocksToP_verified v.impl.blkP v.stitchToP
       spSafe := encryptTo_spSafe v.stitchToP v.impl.blkP
       features := v.impl.features },
-    { Spec.Gcm.streamEncryptToPrecomputedApi with
-      name := Spec.Gcm.streamEncryptToPrecomputedApi.name ++ v.impl.suffix
-      target := X86_64.target
-      doc := Spec.Gcm.streamEncryptToPrecomputedApi.doc
-        (notes := [streamToNote (blkToP v).fn.name (encFnP v.impl).fn.name])
+    Spec.Gcm.streamEncryptToPrecomputedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      notes := [streamToNote (blkToP v).fn.name (encFnP v.impl).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 2232 3
         (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToP v).fn (encFnP v.impl).fn)
-      contract := Spec.Gcm.streamEncryptToPrecomputedContract X86_64.abi 4856
       stack := 4856
       verified := StreamTo.streamEncryptToP_framed (blkToP v) (encFnP v.impl)
       spSafe := X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkToP v) (encFnP v.impl))
@@ -727,16 +680,13 @@ def shortFnP (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.p
 /-- `vg_aes_gcm_seal_gather` calling the implementations `v`, and the
 `_precomputed` one if its loops read the powers from the key context. -/
 def artifactsGather (v : GcmVariant) : List Artifact :=
-  [{ Spec.Gcm.sealGatherApi with
-    name := Spec.Gcm.sealGatherApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.sealGatherApi.doc
-      (notes := [gatherNote (copyBelow v) (splitFrom v) (sealFn v.impl).fn.name (splitFn v).fn.name (toFn v).fn.name])
+  [Spec.Gcm.sealGatherApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := [gatherNote (copyBelow v) (splitFrom v) (sealFn v.impl).fn.name (splitFn v).fn.name (toFn v).fn.name]
     code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
       (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
         (shortFn v).code (initFn v.impl).fn
         (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn)
-    contract := Spec.Gcm.sealGatherContract X86_64.abi 5128
     stack := 5128
     verified := Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v)
       (finFn v.impl)
@@ -745,16 +695,13 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
         (finFn v.impl))
     features := v.impl.features }] ++
   if v.impl.stitchP.isSome && v.stitchR.isNone then
-    [{ Spec.Gcm.sealGatherPrecomputedApi with
-      name := Spec.Gcm.sealGatherPrecomputedApi.name ++ v.impl.suffix
-      target := X86_64.target
-      doc := Spec.Gcm.sealGatherPrecomputedApi.doc
-        (notes := [gatherNote (copyBelow v) (splitFrom v) (sealFnP v.impl).fn.name (splitFnP v).fn.name (toFnP v).fn.name])
+    [Spec.Gcm.sealGatherPrecomputedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      notes := [gatherNote (copyBelow v) (splitFrom v) (sealFnP v.impl).fn.name (splitFnP v).fn.name (toFnP v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnP v).quick (shortFnP v).fast (shortFnP v).test
         (shortFnP v).code (initFn v.impl).fn
           (aadFn v.impl).fn (toFnP v).fn (finFn v.impl).fn)
-      contract := Spec.Gcm.sealGatherPrecomputedContract X86_64.abi 5128
       stack := 5128
       verified := Gather.sealGatherP_framed (shortFnP v) (initFn v.impl) (aadFn v.impl)
         (toFnP v) (finFn v.impl)
@@ -770,74 +717,60 @@ def blkR (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
     (Spec.Gcm.decryptBlocksPreparedApi.name ++ v.impl.suffix)
 
 def artifactsR (v : GcmVariant) : List Artifact := [
-  { Spec.Gcm.initPreparedApi with
-    name := Spec.Gcm.initPreparedApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.initPreparedApi.doc (notes := [initNoteP v.impl])
+  Spec.Gcm.initPreparedApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := [initNoteP v.impl]
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.Prepared.init v.impl.callees)
-    contract := Spec.Gcm.initPreparedContract X86_64.abi 2576
     stack := 2576
     verified := initPrepared_framed v.impl
     spSafe := X86_64.withStackScratch_spSafe (by decide) (initPrepared_spSafe v.impl)
     features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx", "avx2"]).dedup },
-  { Spec.Gcm.encryptBlocksPreparedApi with
-    name := Spec.Gcm.encryptBlocksPreparedApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.encryptBlocksPreparedApi.doc (notes := [blocksNoteP v.impl])
+  Spec.Gcm.encryptBlocksPreparedApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := [blocksNoteP v.impl]
     code := (blkR v).enc.code
-    contract := Spec.Gcm.encryptBlocksPreparedContract X86_64.abi 8
     stack := 8
     verified := encryptBlocksPrepared_verified v.impl v.stitchR
     spSafe := (blkR v).encSp
     features := v.impl.features },
-  { Spec.Gcm.decryptBlocksPreparedApi with
-    name := Spec.Gcm.decryptBlocksPreparedApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.decryptBlocksPreparedApi.doc (notes := [blocksNoteP v.impl])
+  Spec.Gcm.decryptBlocksPreparedApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := [blocksNoteP v.impl]
     code := (blkR v).dec.code
-    contract := Spec.Gcm.decryptBlocksPreparedContract X86_64.abi 8
     stack := 8
     verified := decryptBlocksPrepared_verified v.impl v.stitchR
     spSafe := (blkR v).decSp
     features := v.impl.features },
-  { Spec.Gcm.sealPreparedApi with
-    name := Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.sealPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl ++ finNote v.impl)
+  Spec.Gcm.sealPreparedApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := note v.impl :: shortNoteP v.impl ++ finNote v.impl
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCodeP (v.impl.withBlk (blkR v)))
-    contract := Spec.Gcm.sealPreparedContract X86_64.abi 2624
     stack := 2624
     verified := sealSelPrepared_framed v.impl (blkR v) Short.shortFacts
     spSafe := X86_64.withStackArgScratch_spSafe (sealCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
-  { Spec.Gcm.openPreparedApi with
-    name := Spec.Gcm.openPreparedApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNoteP v.impl ++ openFastNote v.impl)
+  Spec.Gcm.openPreparedApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := note v.impl :: shortNoteP v.impl ++ openFastNote v.impl
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCodeP (v.impl.withBlk (blkR v)))
-    contract := Spec.Gcm.openPreparedContract X86_64.abi 2632
     stack := 2632
     verified := openSelPrepared_framed v.impl (blkR v) Short.shortFacts
     spSafe := X86_64.withStackArgScratch_spSafe (openCodeP_spSafe v.impl (blkR v))
     features := v.impl.features },
-  { Spec.Gcm.streamEncryptPreparedApi with
-    name := Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamEncryptPreparedApi.doc (notes := [note v.impl])
+  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := [note v.impl]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR v)))
-    contract := Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608
     stack := 2608
     verified := streamEncryptPrepared_framed v.impl (blkR v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v.impl (blkR v))
     features := v.impl.features },
-  { Spec.Gcm.streamDecryptPreparedApi with
-    name := Spec.Gcm.streamDecryptPreparedApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.streamDecryptPreparedApi.doc (notes := [note v.impl])
+  Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := [note v.impl]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
       (Impl.AesGcm.X86_64.streamDecrypt (v.impl.withBlk (blkR v)))
-    contract := Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608
     stack := 2608
     verified := streamDecryptPrepared_framed v.impl (blkR v)
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR v))
@@ -867,25 +800,19 @@ def toFnR (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepare
 
 
 def artifactsToR (v : GcmVariant) : List Artifact :=
-  [{ Spec.Gcm.encryptBlocksToPreparedApi with
-      name := Spec.Gcm.encryptBlocksToPreparedApi.name ++ v.impl.suffix
-      target := X86_64.target
-      doc := Spec.Gcm.encryptBlocksToPreparedApi.doc
-        (notes := [blocksToNote v.stitchToR.isSome (blkR v).enc.name])
+  [Spec.Gcm.encryptBlocksToPreparedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      notes := [blocksToNote v.stitchToR.isSome (blkR v).enc.name]
       code := Impl.AesGcm.X86_64.BlocksTo.encrypt (blkR v).enc (v.stitchToR.map (·.enc)) true (encFullTo v.stitchToR)
-      contract := Spec.Gcm.encryptBlocksToPreparedContract X86_64.abi 24
       stack := 24
       verified := encryptBlocksToPrepared_verified (blkR v) v.stitchToR
       spSafe := encryptTo_spSafe v.stitchToR (blkR v)
       features := v.impl.features },
-    { Spec.Gcm.streamEncryptToPreparedApi with
-      name := Spec.Gcm.streamEncryptToPreparedApi.name ++ v.impl.suffix
-      target := X86_64.target
-      doc := Spec.Gcm.streamEncryptToPreparedApi.doc
-        (notes := [streamToNote (blkToR v).fn.name (encFnR v).fn.name])
+    Spec.Gcm.streamEncryptToPreparedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      notes := [streamToNote (blkToR v).fn.name (encFnR v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 2232 3
         (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToR v).fn (encFnR v).fn)
-      contract := Spec.Gcm.streamEncryptToPreparedContract X86_64.abi 4856
       stack := 4856
       verified := StreamTo.streamEncryptToPrepared_framed (blkToR v) (encFnR v)
       spSafe := X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkToR v) (encFnR v))
@@ -914,16 +841,13 @@ def shortFnR (v : GcmVariant) : Gather.ShortFn Proof.Gcm.X86_64.Stitch.CtxMode.p
   .ofBoth (sealFnR v) (splitFnR v) (copyBelow_lt v) (splitFrom_pos v) (splitFrom_le v)
 
 def artifactsGatherR (v : GcmVariant) : List Artifact :=
-  [{ Spec.Gcm.sealGatherPreparedApi with
-      name := Spec.Gcm.sealGatherPreparedApi.name ++ v.impl.suffix
-      target := X86_64.target
-      doc := Spec.Gcm.sealGatherPreparedApi.doc
-        (notes := [gatherNote (copyBelow v) (splitFrom v) (sealFnR v).fn.name (splitFnR v).fn.name (toFnR v).fn.name])
+  [Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      notes := [gatherNote (copyBelow v) (splitFrom v) (sealFnR v).fn.name (splitFnR v).fn.name (toFnR v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (Impl.AesGcm.X86_64.SealGather.sealGather (shortFnR v).quick (shortFnR v).fast (shortFnR v).test
         (shortFnR v).code (initFn v.impl).fn
           (aadFn v.impl).fn (toFnR v).fn (finFn v.impl).fn)
-      contract := Spec.Gcm.sealGatherPreparedContract X86_64.abi 5128
       stack := 5128
       verified := Gather.sealGatherPrepared_framed (shortFnR v) (initFn v.impl) (aadFn v.impl)
         (toFnR v) (finFn v.impl)
@@ -949,39 +873,32 @@ def fastNote (v : GcmImpl) : List String :=
 /-- `vg_aes_gcm_seal_split` of a variant, and the `_precomputed` or
 `_prepared` one for the key context its loops read the powers from. -/
 def artifactsSplit (v : GcmVariant) : List Artifact :=
-  [{ Spec.Gcm.sealSplitApi with
-    name := Spec.Gcm.sealSplitApi.name ++ v.impl.suffix
-    target := X86_64.target
-    doc := Spec.Gcm.sealSplitApi.doc (notes := [note v.impl, splitNote (blkTo v).fn.name])
+  [Spec.Gcm.sealSplitApi.artifact X86_64.target {
+    suffix := v.impl.suffix
+    notes := [note v.impl, splitNote (blkTo v).fn.name]
     code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
       (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkB) (blkTo v).fn))
-    contract := Spec.Gcm.sealSplitContract X86_64.abi 2672
     stack := 2672
     verified := Split.sealSplit_framed v.impl Short.shortFacts v.impl.blkB (blkTo v)
     spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkB (blkTo v))
     features := v.impl.features }] ++
   (if v.impl.stitchP.isSome && v.stitchR.isNone then
-    [{ Spec.Gcm.sealSplitPrecomputedApi with
-      name := Spec.Gcm.sealSplitPrecomputedApi.name ++ v.impl.suffix
-      target := X86_64.target
-      doc := Spec.Gcm.sealSplitPrecomputedApi.doc (notes := [note v.impl, splitNote (blkToP v).fn.name])
+    [Spec.Gcm.sealSplitPrecomputedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      notes := [note v.impl, splitNote (blkToP v).fn.name]
       code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMid (v.impl.withBlk v.impl.blkP) (blkToP v).fn))
-      contract := Spec.Gcm.sealSplitPrecomputedContract X86_64.abi 2672
       stack := 2672
       verified := Split.sealSplitP_framed v.impl Short.shortFacts v.impl.blkP (blkToP v)
       spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplit_spSafe v.impl v.impl.blkP (blkToP v))
       features := v.impl.features }]
   else []) ++
   (if v.stitchR.isSome then
-    [{ Spec.Gcm.sealSplitPreparedApi with
-      name := Spec.Gcm.sealSplitPreparedApi.name ++ v.impl.suffix
-      target := X86_64.target
-      doc := Spec.Gcm.sealSplitPreparedApi.doc
-        (notes := [note v.impl, splitNote (blkToR v).fn.name] ++ fastNote v.impl)
+    [Spec.Gcm.sealSplitPreparedApi.artifact X86_64.target {
+      suffix := v.impl.suffix
+      notes := [note v.impl, splitNote (blkToR v).fn.name] ++ fastNote v.impl
       code := Impl.StackScratch.X86_64.withStackArgScratch 2616 5
         (Impl.AesGcm.X86_64.SealSplit.«seal» (v.impl.splitMidR (v.impl.withBlk (blkR v)) (blkToR v).fn))
-      contract := Spec.Gcm.sealSplitPreparedContract X86_64.abi 2672
       stack := 2672
       verified := Split.sealSplitPrepared_framed v.impl (blkR v) (blkToR v) Short.shortFacts
       spSafe := X86_64.withStackArgScratch_spSafe (Split.sealSplitR_spSafe v.impl (blkR v) (blkToR v))

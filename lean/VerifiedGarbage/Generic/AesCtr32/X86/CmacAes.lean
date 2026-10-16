@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Aes.SboxSpec
 import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.X86.Straight
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-CMAC (NIST SP 800-38B) on x86
@@ -43,68 +44,56 @@ def streamNote (v : Proof.Aes.X86.Ctr32Impl) : String :=
     Spec.Cmac.aesUpdateApi.name ++ v.suffix ++ "`)."
 
 def artifacts (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
-  { Spec.Cmac.aesSubkeysApi with
-    name := Spec.Cmac.aesSubkeysApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Cmac.aesSubkeysApi.doc (notes := [ctrNote v])
+  Spec.Cmac.aesSubkeysApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [ctrNote v]
     code := Impl.CmacAes.X86.subkeys v.callee
-    contract := Spec.Cmac.aesSubkeysContract X86.abi 28
     stack := 28
     verified := subkeys_verified v
     spSafe := subkeys_spSafe v
     features := v.features },
-  { Spec.Cmac.aesUpdateApi with
-    name := Spec.Cmac.aesUpdateApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Cmac.aesUpdateApi.doc (notes := [ctrNote v])
+  Spec.Cmac.aesUpdateApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [ctrNote v]
     code := Impl.CmacAes.X86.update v.callee
-    contract := Spec.Cmac.aesUpdateContract X86.abi 28
     stack := 28
     verified := update_verified v
     spSafe := update_spSafe v
     features := v.features },
-  { Spec.Cmac.aesFinalizeApi with
-    name := Spec.Cmac.aesFinalizeApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Cmac.aesFinalizeApi.doc (notes := [ctrNote v])
+  Spec.Cmac.aesFinalizeApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [ctrNote v]
     code := Impl.CmacAes.X86.finalize v.callee
-    contract := Spec.Cmac.aesFinalizeContract X86.abi 28
     stack := 28
     verified := finalize_verified v
     spSafe := finalize_spSafe v
     features := v.features },
-  { Spec.Cmac.aesInitApi with
-    name := Spec.Cmac.aesInitApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Cmac.aesInitApi.doc (notes := [streamNote v,
-      "It expands the key with `" ++ v.expand.name ++ "`."])
+  Spec.Cmac.aesInitApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [streamNote v,
+      "It expands the key with `" ++ v.expand.name ++ "`."]
     code := Impl.StackScratch.X86.withStackScratch 2324 3
       (Impl.CmacAes.Stream.X86.init v.expand v.callee v.suffix)
-    contract := Spec.Cmac.aesInitContract X86.abi 2372
     stack := 2372
     verified := Proof.CmacAes.Stream.X86.init_framed v
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide)
       (Proof.CmacAes.Stream.X86.init_spSafe v)
     features := v.features },
-  { Spec.Cmac.aesAbsorbApi with
-    name := Spec.Cmac.aesAbsorbApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Cmac.aesAbsorbApi.doc (notes := [streamNote v])
+  Spec.Cmac.aesAbsorbApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [streamNote v]
     code := Impl.StackScratch.X86.withStackScratch 2336 6
       (Impl.CmacAes.Stream.X86.absorb v.callee v.suffix)
-    contract := Spec.Cmac.aesAbsorbContract X86.abi 2392
     stack := 2392
     verified := Proof.CmacAes.Stream.X86.absorb_framed v
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide)
       (Proof.CmacAes.Stream.X86.absorb_spSafe v)
     features := v.features },
-  { Spec.Cmac.aesFinishApi with
-    name := Spec.Cmac.aesFinishApi.name ++ v.suffix
-    target := X86.target
-    doc := Spec.Cmac.aesFinishApi.doc (notes := [streamNote v])
+  Spec.Cmac.aesFinishApi.artifact X86.target {
+    suffix := v.suffix
+    notes := [streamNote v]
     code := Impl.StackScratch.X86.withStackScratch 2332 5
       (Impl.CmacAes.Stream.X86.finish v.callee v.suffix)
-    contract := Spec.Cmac.aesFinishContract X86.abi 2388
     stack := 2388
     verified := Proof.CmacAes.Stream.X86.finish_framed v
     spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (by decide)

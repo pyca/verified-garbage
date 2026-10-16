@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.CmacAes.Stream.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # Streaming AES-CMAC's `absorb` on x86-64
@@ -23,13 +24,11 @@ of its call of `vg_aes_ctr32`.
 namespace VG.Generic.CmacAesUpdate.X86_64.Absorb
 
 def artifacts (v : Proof.CmacAes.X86_64.UpdateImpl) : List Artifact := [
-  { Spec.Cmac.aesAbsorbApi with
-    name := Spec.Cmac.aesAbsorbApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.Cmac.aesAbsorbApi.doc (notes := [
-      "This implementation chains blocks with `" ++ v.callee.name ++ "`."])
+  Spec.Cmac.aesAbsorbApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [
+      "This implementation chains blocks with `" ++ v.callee.name ++ "`."]
     code := Impl.StackScratch.X86_64.withStackScratch 2312 .r9 (Impl.CmacAes.Stream.X86_64.absorb v.callee)
-    contract := Spec.Cmac.aesAbsorbContract X86_64.abi 2328
     stack := 2328
     verified := Proof.CmacAes.Stream.X86_64.absorb_framed v
     spSafe := X86_64.withStackScratch_spSafe (by decide) (Proof.CmacAes.Stream.X86_64.absorb_spSafe v)

@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.SignFn
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: signing messages
@@ -39,37 +40,31 @@ def notes : List String :=
     calls the signing function on it, which uses the rest of `scratch`."]
 
 def artifacts (v : ArithImpl) : List Artifact := [
-  { Spec.MlDsa.signMessage44Api with
-    name := Spec.MlDsa.signMessage44Api.name ++ v.code.sfx
+  Spec.MlDsa.signMessage44Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.signMessage44Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Message.signMessage (Spec.MlDsa.sign44Api.name ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa44 X86_64.abi 112
     stack := 112
     verified := signMessage_verified (signFn v (List.mem_cons_self ..)) (List.mem_cons_self ..)
     spSafe := signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inl rfl)) },
-  { Spec.MlDsa.signMessage65Api with
-    name := Spec.MlDsa.signMessage65Api.name ++ v.code.sfx
+  Spec.MlDsa.signMessage65Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.signMessage65Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Message.signMessage (Spec.MlDsa.sign65Api.name ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa65 X86_64.abi 112
     stack := 112
     verified := signMessage_verified (signFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
       (List.mem_cons_of_mem _ (List.mem_cons_self ..))
     spSafe := signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inl rfl))) },
-  { Spec.MlDsa.signMessage87Api with
-    name := Spec.MlDsa.signMessage87Api.name ++ v.code.sfx
+  Spec.MlDsa.signMessage87Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.signMessage87Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Message.signMessage (Spec.MlDsa.sign87Api.name ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa87 X86_64.abi 112
     stack := 112
     verified := signMessage_verified (signFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))

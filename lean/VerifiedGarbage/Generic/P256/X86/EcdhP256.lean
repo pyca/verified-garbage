@@ -10,6 +10,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDH over P-256 (SP 800-56A) on x86 (32-bit)
@@ -23,9 +24,8 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 namespace VG.Generic.P256.X86.EcdhP256
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : List Artifact := [
-  { Spec.Ecdh.P256.exchangeApi with
-    target := X86.target
-    doc := Spec.Ecdh.P256.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p256_sign`'s setup, \
+  Spec.Ecdh.P256.exchangeApi.artifact X86.target {
+    notes := ["The function is `vg_ecdsa_p256_sign`'s setup, \
       field arithmetic and inversion, with the peer's point in place of `G`: it saves the \
       callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements are eight \
       32-bit words in Montgomery form, with dedicated Comba field squaring and word-by-word Montgomery multiplication (CIOS, \
@@ -38,11 +38,9 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : Lis
       points with cached powers of their Z coordinates. Shared-Z doubling and additions build \
       the table; `Z⁻¹` uses 20 batches of 30 constant-time divsteps. The \
       result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so \
-      the time depends only on the pointers."])
+      the time depends only on the pointers."]
     code := Impl.Ecdh.X86.exchangeP256
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86.abi 28
     stack := 28
-    verified := Proof.Ecdh.X86.ecdh_verified h.law h.inv h.prime
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Ecdh.X86.ecdh_verified h.law h.inv h.prime }]
 
 end VG.Generic.P256.X86.EcdhP256

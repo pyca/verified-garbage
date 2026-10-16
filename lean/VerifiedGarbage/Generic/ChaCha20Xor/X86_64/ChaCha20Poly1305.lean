@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Verified
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Stitch.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86-64
@@ -101,45 +102,37 @@ def features (v : Proof.ChaCha20.X86_64.XorImpl) : List String :=
   (v.features ++ v.poly.features).eraseDups
 
 def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
-  { Spec.ChaCha20Poly1305.sealApi with
-    name := Spec.ChaCha20Poly1305.sealApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.sealApi.doc (notes := sealNotes v)
+  Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := sealNotes v
     code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42
       (Impl.ChaCha20Poly1305.X86_64.Stitch.sealFor v.callee v.poly)
-    contract := Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744
     stack := 1744
     verified := Stitch.sealFor_framed v
     spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.sealFor_spSafe v)
     features := features v },
-  { Spec.ChaCha20Poly1305.openApi with
-    name := Spec.ChaCha20Poly1305.openApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.openApi.doc (notes := [xorNote v])
+  Spec.ChaCha20Poly1305.openApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [xorNote v]
     code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42
       (Impl.ChaCha20Poly1305.X86_64.Stitch.openFor v.callee v.poly)
-    contract := Spec.ChaCha20Poly1305.openContract X86_64.abi 1744
     stack := 1744
     verified := Stitch.openFor_framed v
     spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.openFor_spSafe v)
     features := features v },
-  { Spec.ChaCha20Poly1305.sealSplitApi with
-    name := Spec.ChaCha20Poly1305.sealSplitApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.sealSplitApi.doc (notes := [xorNote v, splitNote v])
+  Spec.ChaCha20Poly1305.sealSplitApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [xorNote v, splitNote v]
     code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1736 3 42
       (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)
-    contract := Spec.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800
     stack := 1800
     verified := Split.sealSplit_framed v
     spSafe := X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v)
     features := features v },
-  { Spec.ChaCha20Poly1305.sealGatherApi with
-    name := Spec.ChaCha20Poly1305.sealGatherApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.sealGatherApi.doc (notes := [gatherNote v])
+  Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := [gatherNote v]
     code := Gather.gatherCode v
-    contract := Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1880
     stack := 1880
     verified := Gather.gather_verified v
     spSafe := Gather.gather_spSafe v

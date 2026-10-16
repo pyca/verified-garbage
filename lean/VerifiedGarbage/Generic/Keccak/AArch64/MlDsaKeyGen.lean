@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 import VerifiedGarbage.Proof.MlKem.AArch64.Vec
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-DSA (FIPS 204) key generation on AArch64 -/
 
@@ -26,78 +27,57 @@ def notes : List String :=
     depend on whether key generation fails."]
 
 def legacyArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  { Spec.MlDsa.keyGen44Api with
-    name := Spec.MlDsa.keyGen44Api.name ++ v.callee.suffix
+  Spec.MlDsa.keyGen44Api.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.MlDsa.keyGen44Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.AArch64.KeyGen.keyGen44With v.callee
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa44 AArch64.abi 16
     stack := 16
-    verified := Proof.MlDsa.AArch64.KeyGen.keyGen44_verifiedWith (keccak := v)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.keyGen65Api with
-    name := Spec.MlDsa.keyGen65Api.name ++ v.callee.suffix
+    verified := Proof.MlDsa.AArch64.KeyGen.keyGen44_verifiedWith (keccak := v) },
+  Spec.MlDsa.keyGen65Api.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.MlDsa.keyGen65Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.AArch64.KeyGen.keyGen65With v.callee
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa65 AArch64.abi 16
     stack := 16
-    verified := Proof.MlDsa.AArch64.KeyGen.keyGen65_verifiedWith (keccak := v)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.keyGen87Api with
-    name := Spec.MlDsa.keyGen87Api.name ++ v.callee.suffix
+    verified := Proof.MlDsa.AArch64.KeyGen.keyGen65_verifiedWith (keccak := v) },
+  Spec.MlDsa.keyGen87Api.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.MlDsa.keyGen87Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.AArch64.KeyGen.keyGen87With v.callee
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa87 AArch64.abi 16
     stack := 16
-    verified := Proof.MlDsa.AArch64.KeyGen.keyGen87_verifiedWith (keccak := v)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.MlDsa.AArch64.KeyGen.keyGen87_verifiedWith (keccak := v) }]
 
 /-- SHA3 key generation uses hoisted matrix seeds, grouped secret sampling, and
 positive transform arithmetic. The scalar fallback shares its grouped secret
 sampling (`Optimized.secretsWith`), with the four-way samplers of its own
 permutation. -/
 def optimizedArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  { Spec.MlDsa.keyGen44Api with
-    name := Spec.MlDsa.keyGen44Api.name ++ v.callee.suffix
+  Spec.MlDsa.keyGen44Api.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.MlDsa.keyGen44Api.doc (notes := notes)
+    notes := notes
     consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa44
-      (AArch64.abi.withConsts Proof.MlDsa.AArch64.Sign.signRootConsts) 16
     stack := 16
-    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inl rfl)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.keyGen65Api with
-    name := Spec.MlDsa.keyGen65Api.name ++ v.callee.suffix
+    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inl rfl) },
+  Spec.MlDsa.keyGen65Api.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.MlDsa.keyGen65Api.doc (notes := notes)
+    notes := notes
     consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa65
-      (AArch64.abi.withConsts Proof.MlDsa.AArch64.Sign.signRootConsts) 16
     stack := 16
-    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inl rfl))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.keyGen87Api with
-    name := Spec.MlDsa.keyGen87Api.name ++ v.callee.suffix
+    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inl rfl)) },
+  Spec.MlDsa.keyGen87Api.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.MlDsa.keyGen87Api.doc (notes := notes)
+    notes := notes
     consts := Proof.MlDsa.AArch64.Sign.signRootConsts
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa87
-      (AArch64.abi.withConsts Proof.MlDsa.AArch64.Sign.signRootConsts) 16
     stack := 16
-    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) }]
 
 def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
   if v.callee.pairedSha3 then optimizedArtifacts v else legacyArtifacts v

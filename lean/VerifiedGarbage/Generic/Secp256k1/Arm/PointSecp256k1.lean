@@ -9,6 +9,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # secp256k1's point addition and doubling on 32-bit ARM
@@ -33,19 +34,13 @@ def notes : List String := ["The function saves `lr` in its own working space an
   `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`."]
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.Secp256k1.curve) : List Artifact := [
-  { Impl.Secp256k1.point.addApi with
-    target := Arm.target
-    doc := Impl.Secp256k1.point.addApi.doc (notes := notes)
+  Impl.Secp256k1.point.addApi.artifact Arm.target {
+    notes := notes
     code := Impl.Weierstrass.Arm.Point.pointAdd Impl.Secp256k1.point
-    contract := Impl.Secp256k1.point.addContract Arm.abi
-    verified := secp256k1_add_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Impl.Secp256k1.point.doubleApi with
-    target := Arm.target
-    doc := Impl.Secp256k1.point.doubleApi.doc (notes := notes)
+    verified := secp256k1_add_verified (fermat_of_law h.law) },
+  Impl.Secp256k1.point.doubleApi.artifact Arm.target {
+    notes := notes
     code := Impl.Weierstrass.Arm.Point.pointDouble Impl.Secp256k1.point
-    contract := Impl.Secp256k1.point.doubleContract Arm.abi
-    verified := secp256k1_double_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := secp256k1_double_verified (fermat_of_law h.law) }]
 
 end VG.Generic.Secp256k1.Arm.PointSecp256k1

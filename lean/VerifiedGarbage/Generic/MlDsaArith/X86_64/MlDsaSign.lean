@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Sign.Verified
 import Mathlib.Tactic.Conv
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) on x86-64: signing
@@ -31,33 +32,27 @@ def notes : List String :=
     is the only place an iteration's outcome affects timing."]
 
 def artifacts (v : ArithImpl) : List Artifact := [
-  { Spec.MlDsa.sign44Api with
-    name := Spec.MlDsa.sign44Api.name ++ v.code.sfx
+  Spec.MlDsa.sign44Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.sign44Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa44 X86_64.abi 32
     stack := 32
     verified := Proof.MlDsa.X86_64.Sign.sign_verified' v (.inl rfl)
     spSafe := Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inl rfl) },
-  { Spec.MlDsa.sign65Api with
-    name := Spec.MlDsa.sign65Api.name ++ v.code.sfx
+  Spec.MlDsa.sign65Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.sign65Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa65 X86_64.abi 32
     stack := 32
     verified := Proof.MlDsa.X86_64.Sign.sign_verified' v (.inr (.inl rfl))
     spSafe := Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inl rfl)) },
-  { Spec.MlDsa.sign87Api with
-    name := Spec.MlDsa.sign87Api.name ++ v.code.sfx
+  Spec.MlDsa.sign87Api.artifact X86_64.target {
+    suffix := v.code.sfx
     features := v.features
-    target := X86_64.target
-    doc := Spec.MlDsa.sign87Api.doc (notes := notes)
+    notes := notes
     code := Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.signContract Spec.MlDsa.mlDsa87 X86_64.abi 32
     stack := 32
     verified := Proof.MlDsa.X86_64.Sign.sign_verified' v (.inr (.inr rfl))
     spSafe := Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inr rfl)) }]

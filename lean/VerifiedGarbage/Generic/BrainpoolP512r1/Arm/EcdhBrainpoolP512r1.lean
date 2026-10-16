@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdh.BrainpoolP512r1.Arm
 public import VerifiedGarbage.Proof.Ecdh.Arm.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDH over brainpoolP512r1 (SP 800-56A) on 32-bit ARM
@@ -18,9 +19,8 @@ A generic file (see `TCB/Emit.lean`) over brainpoolP512r1's group law `h`, the v
 namespace VG.Generic.BrainpoolP512r1.Arm.EcdhBrainpoolP512r1
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List Artifact := [
-  { Spec.Ecdh.BrainpoolP512r1.exchangeApi with
-    target := Arm.target
-    doc := Spec.Ecdh.BrainpoolP512r1.exchangeApi.doc (notes := ["The function uses the generic Weierstrass setup, \
+  Spec.Ecdh.BrainpoolP512r1.exchangeApi.artifact Arm.target {
+    notes := ["The function uses the generic Weierstrass setup, \
       field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the \
       callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` \
       during the calls); field elements are thirty-two 16-bit digits in Montgomery form, multiplied by digit-by-digit \
@@ -32,10 +32,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP512r1.curve) : List A
       double-and-add ladder over all 512 bits of `d`, with the complete addition formulas of \
       Renes, Costello and Batina (inlined for eight-word coordinates) and a masked selection for each bit; `Z⁻¹` is Fermat's, by \
       square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, \
-      `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
+      `d` in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.Ecdh.Arm.exchangeBrainpoolP512r1
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.BrainpoolP512r1.inst Arm.abi
-    verified := Proof.Ecdh.Arm.BrainpoolP512r1.ecdh_verified h.law
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Ecdh.Arm.BrainpoolP512r1.ecdh_verified h.law }]
 
 end VG.Generic.BrainpoolP512r1.Arm.EcdhBrainpoolP512r1

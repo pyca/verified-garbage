@@ -14,6 +14,7 @@ import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDH over P-521 (SP 800-56A) on x86-64
@@ -35,10 +36,9 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
-  { Spec.Ecdh.P521.exchangeApi with
-    name := Spec.Ecdh.P521.exchangeApi.name ++ (if adx then "_adx" else "")
-    target := X86_64.target
-    doc := Spec.Ecdh.P521.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p521_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
+  Spec.Ecdh.P521.exchangeApi.artifact X86_64.target {
+    suffix := (if adx then "_adx" else "")
+    notes := ["The function is `vg_ecdsa_p521_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
       field arithmetic and inversion, with the peer's point in place of `G`: it saves its \
       caller's callee-saved registers in `scratch`; field elements are nine 64-bit words in \
       Montgomery form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ". The peer's key is checked without branches (its first byte, both \
@@ -57,9 +57,8 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       `n`, so the operands are never equal or opposite otherwise; the last digit's is by the \
       complete addition formulas of Renes, Costello and Batina for `a = -3` (Algorithm 4), in \
       projective coordinates. `Z⁻¹` is by the signature's divsteps. The result (or zeros) is selected by a mask of the checks, `d` \
-      in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
+      in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi 8
     stack := 8
     verified := hv
     spSafe := hsp

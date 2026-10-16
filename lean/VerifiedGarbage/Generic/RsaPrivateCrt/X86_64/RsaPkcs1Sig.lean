@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExpL
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # RSASSA-PKCS1-v1_5 signing on x86-64
@@ -27,17 +28,15 @@ open VG.Proof.Rsa.X86_64 (CrtImpl)
 open VG.Proof.RsaPkcs1Sig.X86_64
 
 def artifacts (v : CrtImpl) : List Artifact := [
-  { Spec.RsaPkcs1Sig.signApi with
-    name := Spec.RsaPkcs1Sig.signApi.name ++ v.suffix
-    target := X86_64.target
-    doc := Spec.RsaPkcs1Sig.signApi.doc (notes := ["This implementation writes EMSA-PKCS1-v1_5's \
+  Spec.RsaPkcs1Sig.signApi.artifact X86_64.target {
+    suffix := v.suffix
+    notes := ["This implementation writes EMSA-PKCS1-v1_5's \
       encoding of `digest` into its frame, signs it with `" ++ Sgn.privName v ++ "`, which checks the \
       signature against `e`, and then overwrites the encoding with zeros. Only the lengths, `hash` and \
       the public key decide a branch or an address. It uses 4456 bytes of stack: a frame of 1192 bytes, \
       which holds the encoding and the stack arguments of the call, the call's return address, and the \
-      3256 bytes its callee uses."])
+      3256 bytes its callee uses."]
     code := Impl.RsaPkcs1Sig.X86_64.Sign.code (Sgn.privName v) (Sgn.privCode v)
-    contract := Spec.RsaPkcs1Sig.signContract X86_64.abi sigStack
     stack := sigStack
     verified := Sgn.code_verified v
     spSafe := Sgn.code_spSafe v

@@ -7,6 +7,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # brainpoolP256r1's point addition and doubling on 32-bit ARM
@@ -31,19 +32,13 @@ def notes : List String := ["The function saves `lr` in its own working space an
   `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`."]
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.BrainpoolP256r1.curve) : List Artifact := [
-  { Spec.Weierstrass.Point.brainpoolp256r1.addApi with
-    target := Arm.target
-    doc := Spec.Weierstrass.Point.brainpoolp256r1.addApi.doc (notes := notes)
+  Spec.Weierstrass.Point.brainpoolp256r1.addApi.artifact Arm.target {
+    notes := notes
     code := Impl.Weierstrass.Arm.Point.pointAdd Spec.Weierstrass.Point.brainpoolp256r1
-    contract := Spec.Weierstrass.Point.brainpoolp256r1.addContract Arm.abi
-    verified := brainpoolp256r1_add_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Weierstrass.Point.brainpoolp256r1.doubleApi with
-    target := Arm.target
-    doc := Spec.Weierstrass.Point.brainpoolp256r1.doubleApi.doc (notes := notes)
+    verified := brainpoolp256r1_add_verified (fermat_of_law h.law) },
+  Spec.Weierstrass.Point.brainpoolp256r1.doubleApi.artifact Arm.target {
+    notes := notes
     code := Impl.Weierstrass.Arm.Point.pointDouble Spec.Weierstrass.Point.brainpoolp256r1
-    contract := Spec.Weierstrass.Point.brainpoolp256r1.doubleContract Arm.abi
-    verified := brainpoolp256r1_double_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := brainpoolp256r1_double_verified (fermat_of_law h.law) }]
 
 end VG.Generic.BrainpoolP256r1.Arm.PointBrainpoolP256r1

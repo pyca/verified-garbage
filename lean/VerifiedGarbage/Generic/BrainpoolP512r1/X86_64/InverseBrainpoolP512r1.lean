@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 import VerifiedGarbage.Spec.EcKey.Generic
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # brainpoolP512r1's inversions modulo `p` and `n` on x86-64
@@ -40,24 +41,14 @@ def note (mod : String) : String :=
   on the numbers but through masks and `cmov`."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.BrainpoolP512r1.curve) : List Artifact :=
-  [{ C.invPApi with
-      target := X86_64.target
-      doc := C.invPApi.doc (notes := [note "p"])
+  [C.invPApi.artifact X86_64.target {
+      notes := [note "p"]
       code := cfg.invFn cfg.pPowI
-      contract := C.invPContract X86_64.abi
-      ofSig := by exact (⟨_, _, _, by
-        unfold Spec.Weierstrass.Inverse.Curve.invPContract Spec.Weierstrass.Inverse.Curve.invContract
-        rfl⟩)
       verified := p_verified h.inv
       spSafe := Code.all_of_allInstrs (show invP.allInstrs _ = true by lit_decide) },
-    { C.invNApi with
-      target := X86_64.target
-      doc := C.invNApi.doc (notes := [note "n"])
+    C.invNApi.artifact X86_64.target {
+      notes := [note "n"]
       code := cfg.invFn cfg.nPowI
-      contract := C.invNContract X86_64.abi
-      ofSig := by exact (⟨_, _, _, by
-        unfold Spec.Weierstrass.Inverse.Curve.invNContract Spec.Weierstrass.Inverse.Curve.invContract
-        rfl⟩)
       verified := n_verified h.inv
       spSafe := Code.all_of_allInstrs (show invN.allInstrs _ = true by lit_decide) }]
 

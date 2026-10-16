@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.P192.MulLit
 import VerifiedGarbage.Spec.EcKey.Generic
 import VerifiedGarbage.Spec.Weierstrass.PointOps
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-192's point multiplication on x86-64
@@ -41,11 +42,9 @@ def note : String :=
   subtraction; nothing depends on `k` or `Q` but through masks."
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P192.curve) : List Artifact :=
-  [{ C.mulApi with
-      target := X86_64.target
-      doc := C.mulApi.doc (notes := [note])
+  [C.mulApi.artifact X86_64.target {
+      notes := [note]
       code := p192.mulFn
-      contract := C.mulContract X86_64.abi
       verified := mul_verified h.law h.inv
       spSafe := Code.all_of_allInstrs (show mulCode.allInstrs _ = true by lit_decide) }]
 

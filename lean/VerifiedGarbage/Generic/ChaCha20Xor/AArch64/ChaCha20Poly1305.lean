@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Verified
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Verified
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on AArch64
@@ -52,37 +53,28 @@ def sealFn (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AArch64
   depth := Proof.ChaCha20Poly1305.AArch64.Gather.seal_depth v
 
 def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
-  { Spec.ChaCha20Poly1305.sealApi with
-    name := Spec.ChaCha20Poly1305.sealApi.name ++ v.callee.suffix
+  Spec.ChaCha20Poly1305.sealApi.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.ChaCha20Poly1305.sealApi.doc (notes := notes v)
+    notes := notes v
     code := Impl.StackScratch.AArch64.withStackScratchWiped 768 .x7 95
       (Impl.ChaCha20Poly1305.AArch64.sealCode v.callee v.stitched)
-    contract := Spec.ChaCha20Poly1305.sealContract AArch64.abi 768
     stack := 768
-    verified := Proof.ChaCha20Poly1305.AArch64.seal_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20Poly1305.openApi with
-    name := Spec.ChaCha20Poly1305.openApi.name ++ v.callee.suffix
+    verified := Proof.ChaCha20Poly1305.AArch64.seal_framed v },
+  Spec.ChaCha20Poly1305.openApi.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.ChaCha20Poly1305.openApi.doc (notes := notes v)
+    notes := notes v
     code := Impl.StackScratch.AArch64.withStackScratchWiped 768 .x7 95
       (Impl.ChaCha20Poly1305.AArch64.openCode v.callee v.stitched)
-    contract := Spec.ChaCha20Poly1305.openContract AArch64.abi 768
     stack := 768
-    verified := Proof.ChaCha20Poly1305.AArch64.open_framed v
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.ChaCha20Poly1305.sealGatherApi with
-    name := Spec.ChaCha20Poly1305.sealGatherApi.name ++ v.callee.suffix
+    verified := Proof.ChaCha20Poly1305.AArch64.open_framed v },
+  Spec.ChaCha20Poly1305.sealGatherApi.artifact AArch64.target {
+    suffix := v.callee.suffix
     features := v.features
-    target := AArch64.target
-    doc := Spec.ChaCha20Poly1305.sealGatherApi.doc (notes := [gatherNote (sealFn v).name])
+    notes := [gatherNote (sealFn v).name]
     code := Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather (sealFn v).name (sealFn v).code
-    contract := Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 784
     stack := 784
-    verified := Proof.ChaCha20Poly1305.AArch64.Gather.sealGather_verified (sealFn v)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.ChaCha20Poly1305.AArch64.Gather.sealGather_verified (sealFn v) }]
 
 end VG.Generic.ChaCha20Xor.AArch64.ChaCha20Poly1305

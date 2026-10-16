@@ -8,6 +8,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDH over P-384 (SP 800-56A) on AArch64
@@ -21,9 +22,8 @@ A generic file (see `TCB/Emit.lean`) over P-384's group law `h`, the variant
 namespace VG.Generic.P384.AArch64.EcdhP384
 
 def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List Artifact := [
-  { Spec.Ecdh.P384.exchangeApi with
-    target := AArch64.target
-    doc := Spec.Ecdh.P384.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p384_sign`'s \
+  Spec.Ecdh.P384.exchangeApi.artifact AArch64.target {
+    notes := ["The function is `vg_ecdsa_p384_sign`'s \
       setup, field arithmetic and inversion, with the peer's point in place of `G`: it \
       saves the callee-saved registers `x19`–`x25` in `scratch`; field elements are \
       six 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication \
@@ -45,10 +45,8 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
       384-bit moduli by Bernstein and Yang's bound (which the proof checks); then `f = ±1`, and `Z⁻¹` is `a` times a \
       constant or its negation by `f`'s sign. The number of steps is fixed, so the time does not \
       depend on `Z`. The result (or zeros) is selected by a mask of the checks, `d` \
-      in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
+      in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."]
     code := Impl.Ecdh.AArch64.exchangeP384
-    contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P384.inst AArch64.abi
-    verified := Proof.Ecdh.AArch64.P384.ecdh_verified h.law h.inv
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Ecdh.AArch64.P384.ecdh_verified h.law h.inv }]
 
 end VG.Generic.P384.AArch64.EcdhP384

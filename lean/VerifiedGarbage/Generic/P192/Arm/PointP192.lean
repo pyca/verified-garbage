@@ -7,6 +7,7 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Spec.Rc2
 import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # P-192's point addition and doubling on 32-bit ARM
@@ -31,19 +32,13 @@ def notes : List String := ["The function saves `lr` in its own working space an
   `r1`–`r3`. It writes no register but `r0`–`r3`, `r12` and `lr`."]
 
 def artifacts (h : Proof.Weierstrass.HasLaw Spec.P192.curve) : List Artifact := [
-  { Spec.Weierstrass.Point.p192.addApi with
-    target := Arm.target
-    doc := Spec.Weierstrass.Point.p192.addApi.doc (notes := notes)
+  Spec.Weierstrass.Point.p192.addApi.artifact Arm.target {
+    notes := notes
     code := Impl.Weierstrass.Arm.Point.pointAdd Spec.Weierstrass.Point.p192
-    contract := Spec.Weierstrass.Point.p192.addContract Arm.abi
-    verified := p192_add_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Weierstrass.Point.p192.doubleApi with
-    target := Arm.target
-    doc := Spec.Weierstrass.Point.p192.doubleApi.doc (notes := notes)
+    verified := p192_add_verified (fermat_of_law h.law) },
+  Spec.Weierstrass.Point.p192.doubleApi.artifact Arm.target {
+    notes := notes
     code := Impl.Weierstrass.Arm.Point.pointDouble Spec.Weierstrass.Point.p192
-    contract := Spec.Weierstrass.Point.p192.doubleContract Arm.abi
-    verified := p192_double_verified (fermat_of_law h.law)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := p192_double_verified (fermat_of_law h.law) }]
 
 end VG.Generic.P192.Arm.PointP192

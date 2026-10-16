@@ -12,6 +12,7 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.X25519.X86.Column
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on x86 (32-bit)
@@ -25,9 +26,8 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 namespace VG.Generic.P256.X86.EcdsaP256
 
 def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : List Artifact := [
-  { Spec.Ecdsa.P256.signApi with
-    target := X86.target
-    doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves the callee-saved registers \
+  Spec.Ecdsa.P256.signApi.artifact X86.target {
+    notes := ["The function saves the callee-saved registers \
       `ebx`, `esi`, `edi` and `ebp` in `scratch`. Field elements and scalars are eight 32-bit \
       words in Montgomery form, with dedicated Comba field squaring and word-by-word Montgomery multiplication (CIOS, \
       with `mul` and the accumulator in `scratch`, in calls of `vg_p256_mul_mod_p`, \
@@ -36,16 +36,13 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : Lis
       uses a seven-bit signed comb: 37 complete additions, no doublings, and constant-time \
       SSE2 scans of a shared 148 KiB table. Its position-independent table address uses a \
       balanced four-byte CALL frame. Field and scalar inversion each use 20 batches of 30 constant-time divsteps. The signature (or zeros) is selected by a mask, so \
-      the time depends only on the pointers."])
+      the time depends only on the pointers."]
     code := Impl.Ecdsa.X86.signP256Comb
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
     stack := 20
-    contract := Spec.Ecdsa.P256.inst.signContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 20
-    verified := Proof.Ecdsa.X86.signComb_verified h.law h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Ecdsa.P256.verifyApi with
-    target := X86.target
-    doc := Spec.Ecdsa.P256.verifyApi.doc (notes := ["The function validates the public key and \
+    verified := Proof.Ecdsa.X86.signComb_verified h.law h.inv },
+  Spec.Ecdsa.P256.verifyApi.artifact X86.target {
+    notes := ["The function validates the public key and \
       signature without branches. Field elements and scalars are eight 32-bit words in \
       Montgomery form, multiplied, added and subtracted in calls of `vg_p256_mul_mod_p`, \
       `vg_p256_mul_mod_n` and the other functions of `p256_mont`. The fixed-base product `[u]G` uses a seven-bit signed comb: 37 complete \
@@ -56,12 +53,10 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : Lis
       two products. Scalar inversion uses 20 batches of 30 constant-time divsteps. \
       The final check avoids a field inversion: it compares `X = rZ`, or `X = (r+n)Z` when \
       `r+n < p`, and rejects `Z = 0`. Invalid inputs follow the same path and the result is selected by a mask; timing \
-      depends only on pointers and the static table address."])
+      depends only on pointers and the static table address."]
     code := Proof.Ecdsa.Verify.X86.vCombCode
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
     stack := 20
-    contract := Spec.Ecdsa.P256.inst.verifyContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 20
-    verified := Proof.Ecdsa.Verify.X86.vComb_verified h.law h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Ecdsa.Verify.X86.vComb_verified h.law h.inv }]
 
 end VG.Generic.P256.X86.EcdsaP256
