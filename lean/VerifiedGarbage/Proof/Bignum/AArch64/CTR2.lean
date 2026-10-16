@@ -516,7 +516,8 @@ def R2u (p : R2Pub) (s : State) : Prop :=
   R2Pre p s ∧ s.gpr .x3 = BitVec.ofNat 64 (decide (2 ^ 63 ≤ p.top)).toNat
 
 theorem fastTest_eq : R2Div.fastTest = ([ldh .x12 sW, ldh .x9 (sArr aN)] : List Instr) ++
-    [.lsl .x .x13 .x12 3, .subImm .x .x13 .x13 8, .add .x .x13 .x9 .x13, ld .x3 .x13, .lsr .x .x3 .x3 63] := rfl
+    ([.lsl .x .x13 .x12 3, .subImm .x .x13 .x13 8, .add .x .x13 .x9 .x13, ld .x3 .x13, .lsr .x .x3 .x3 63] :
+      List Instr) := rfl
 
 theorem r2t_ok {p : R2Pub} {s : State} (h : R2Pre p s) :
     WP isa (.block [ldh .x12 sW, ldh .x9 (sArr aN)]) s (R2t p) := by
