@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.Arm.KeyEq
 public import VerifiedGarbage.Impl.Rsa.Arm.Inverse
 public import VerifiedGarbage.Proof.Rsa.KeyMath
+public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -40,8 +41,8 @@ theorem wp_seqs_append {l₁ l₂ : List (Prog isa)} (h₁ : l₁ ≠ []) (h₂ 
         fun h => WP.mono h fun t ht => (ih (by simp)).mpr ht⟩
 
 /-- Index side conditions. -/
-macro "idx" : tactic => `(tactic| (simp only [aM, aNM, aZero, aT1, aT2, aT3, aT4, sOdd, sB, sC, sT,
-  List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, hdr] at * <;> omega))
+macro "idx" : tactic => `(tactic| ((try simp only [aM, aNM, aZero, aT1, aT2, aT3, aT4, sOdd, sB, sC, sT,
+  List.forall_mem_cons, List.not_mem_nil, false_imp_iff, implies_true, and_true, true_and, hdr, ne_eq]) <;> omega_arith))
 
 theorem subMod_impl {P M a b t1 β t4 e β' : Nat} (hM : M ≤ P) (hb : b < M)
     (h1 : t1 + b = a + P * β) (ht1 : t1 < P) (hβ : β ≤ 1) (h4 : t4 = if β = 0 then 0 else P - M)
@@ -69,15 +70,16 @@ theorem subModP_ok {s : State} {B : BitVec 32} {Z w N o a b : Nat} (h : Ws s B Z
         num t.mem B w o = subMod (num s.mem B w aM) (num s.mem B w a) (num s.mem B w b)) ∧
       Rest opRegs s t := by
   have hsB : sB + 4 ≤ hdr := by decide
+  simp only [aT1, aT4] at hoT1 hoT4 haT1 hbT1
   unfold subModP
-  rw [wp_seqs_cons (by simp)]
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sub3_ok h (by idx) ha hb hN (by idx) (by idx)) fun t1 ⟨h1, k1, v1, b1, r1⟩ => ?_
-  rw [wp_seqs_cons (by simp)]
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine wp_strSlot h1 hsB fun t2 m2 => WP.block_nil ?_
   have h2 := h1.of_mupd m2
   have k2 : Keep B w [] [sB] t1.mem t2.mem := by rw [m2.mem]; exact keep_write _ _ (by simp) (by decide)
   have s2 : slot t2.mem B sB = (t1.gpr .r11).toNat := by rw [m2.mem, slot_write_self]
-  rw [wp_seqs_cons (by simp)]
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (sel_ok h2 (by idx) (by idx) (by idx) hN (by idx) (by idx) hsB (by rw [s2]; exact b1))
     fun t3 ⟨h3, k3, v3, r3⟩ => ?_
   refine WP.mono (sub3_ok h3 ho (by idx) (by idx) hN hoT1 hoT4) fun t ⟨h4, k4, v4, b4, r4⟩ => ?_
