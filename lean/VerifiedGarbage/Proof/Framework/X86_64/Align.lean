@@ -24,7 +24,7 @@ theorem WP.align_seq {k : Nat} {p : Prog isa} {s : State} {Q : State → Prop} (
   WP.seq (WP.align h)
 
 theorem WP.append_align {k : Nat} {is : List Instr} {s : State} {Q : State → Prop}
-    (h : WP isa (.block is) s Q) : WP isa (.block (is ++ [.align k])) s Q :=
+    (h : WP isa (.block is) s Q) : WP isa (.block (is ++ ([.align k] : List Instr))) s Q :=
   WP.block_append_iff.mpr (WP.mono h fun _ ht => WP.align ht)
 
 theorem RelCT.align {k : Nat} {P : State → State → Prop} :
