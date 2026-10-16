@@ -109,8 +109,8 @@ theorem subLow_ok (s : State) (h : (s.gpr .x8).toNat ≤ (s.gpr .x4).toNat) :
 /-- Subtraction modulo p, including both possible borrow corrections, into `x4`–`x7`. -/
 theorem subRegs_ok {s : State} {base : Addr} (hs : Scr s base large) {a b : Nat}
     (ha : FieldRange a large) (hb : FieldRange b large) :
-    WP isa (.block ([.movz .w .x10 0 0, .movz .w .x11 38 0] ++ fieldSubWords a b ++ borrow38 ++
-        [.sub .x .x4 .x4 .x8])) s fun t =>
+    WP isa (.block (([.movz .w .x10 0 0, .movz .w .x11 38 0] : List Instr) ++ fieldSubWords a b ++
+        borrow38 ++ ([.sub .x .x4 .x4 .x8] : List Instr))) s fun t =>
       toFe (val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7)) = F s.mem base a - F s.mem base b ∧
       Keeps [.x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11] s t := by
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
