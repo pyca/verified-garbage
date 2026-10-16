@@ -345,6 +345,7 @@ def Instr.rspFree : Instr → Bool
   | .leaSym d _ => d != .rsp
   | .vop op => op.rspFree
   | .vbinLoad _ _ _ _ m | .vmovdquStore _ m _ => m.noRsp
+  | .align _ => true
   | _ => false
 
 section
@@ -533,6 +534,7 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
     cases len
     · simp only [exec, ea_setRsp hi, store128_setRsp]; rfl
     · simp only [exec, ea_setRsp hi, store256_setRsp]; rfl
+  | align k => simp only [exec, Option.map_some]
   | _ => simp [Instr.rspFree] at hi
 
 theorem srcAddrs_setRsp {src : Src} (h : src.noRsp = true) : srcAddrs (s.setReg .rsp x) src = srcAddrs s src := by
