@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.Framework.Arm.Exec
 public import VerifiedGarbage.Proof.Framework.Arm.RegUpd
@@ -83,9 +85,7 @@ theorem count_sub {N i k : Nat} (hi : i < N) :
 facts `ls` about the registers and memory it reads. Read through register
 writes without expanding the whole state at every step, then normalize the
 final state once for the postcondition. -/
-syntax "run_block " "[" Lean.Parser.Tactic.simpLemma,* "]" : tactic
-macro_rules
-  | `(tactic| run_block [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "run_block " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        apply WP.of_runBlock
                        set_option linter.unusedSimpArgs false in
                        simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec,

@@ -141,7 +141,7 @@ tactic_template "layk" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(
       List.all_cons, List.all_nil, VG.Impl.MlKem.X86_64.oSV, $ls,*])
 
 /-- `layk` without extra lemmas. -/
-macro "layk" : tactic => `(tactic| layk [])
+tactic_template "layk" : tactic => `(tactic| layk [])
 
 /-- A check about the layout that mentions no variable but the parameter set and
 bounded indices, decided for each parameter set (`decide_at`): cheaper than

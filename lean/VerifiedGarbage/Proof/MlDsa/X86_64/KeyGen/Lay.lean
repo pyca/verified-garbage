@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.TacticTemplate
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
 public import VerifiedGarbage.Proof.Framework.Omega
 import all Init.Data.Array.Basic
@@ -195,10 +197,7 @@ theorem sepB_13_bp (bs : List (Reg × Nat)) (o l o' l' : Nat) :
 
 /-- Unfolds the checks of pointers into the layout into arithmetic, then
 `omega` (in each case of `η`). -/
-syntax "lay" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
-macro_rules
-  | `(tactic| lay) => `(tactic| lay [])
-  | `(tactic| lay [$ls,*]) => `(tactic| plain_simp_names (
+tactic_template "lay" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
                        set_option linter.unusedSimpArgs false in
                        simp (config := { decide := true }) only [VG.Proof.MlKem.X86_64.keepB, VG.Proof.MlDsa.X86_64.KeyGen.sepB_same,
                          VG.Proof.MlDsa.X86_64.KeyGen.sepB_bx_bp, VG.Proof.MlDsa.X86_64.KeyGen.sepB_bp_bx,
@@ -219,5 +218,8 @@ macro_rules
                          VG.Impl.MlDsa.X86_64.KeyGen.oHX, VG.Impl.MlDsa.X86_64.KeyGen.oKL, VG.Impl.MlKem.X86_64.oSS,
                          VG.Impl.MlKem.X86_64.oSV, VG.Impl.MlDsa.X86_64.KeyGen.oT0, $ls,*]
                        and_intros <;> omega_arith))
+
+/-- `lay` without extra lemmas. -/
+tactic_template "lay" : tactic => `(tactic| lay [])
 
 end VG.Proof.MlDsa.X86_64.KeyGen
