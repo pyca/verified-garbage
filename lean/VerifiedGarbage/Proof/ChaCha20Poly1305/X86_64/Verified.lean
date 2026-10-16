@@ -72,9 +72,10 @@ theorem seal_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hc := v.spSafe
   have hb := blocks_spSafe v.poly
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ⊢
-  rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
-    (simp only [«seal», prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
-       macPad, macPadLengths, Code.iteCold, wholeBlocks, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+  rcases v.fold_poly with ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo | hpo⟩ <;>
+    (rw [hpo] at hb ⊢
+     simp only [dataCopy, «seal», prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
+       macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
      subst hP; lit_decide)
 
 theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
@@ -82,9 +83,10 @@ theorem open_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hc := v.spSafe
   have hb := blocks_spSafe v.poly
   generalize hP : (fun i => !X86_64.isa.writesSp i) = P at hc hb ⊢
-  rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
-    (simp only [«open», prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
-       macPad, macPadLengths, Code.iteCold, wholeBlocks, padTail, absorbLengths, Bool.and_true, Bool.true_and]
+  rcases v.fold_poly with ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo⟩ | ⟨hf, hpass, hw, hpo | hpo⟩ <;>
+    (rw [hpo] at hb ⊢
+     simp only [dataCopy, «open», prologue, crypt, cryptBig, Code.all, hc, hb, hf, hpass, hw,
+       macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, Bool.cond_false, padCopy, padTail, absorbLengths, Bool.and_true, Bool.true_and]
      subst hP; lit_decide)
 
 theorem seal_ok (v : Proof.ChaCha20.X86_64.XorImpl) (s : State) (hs : sealX86_64.pre s) :
@@ -172,18 +174,27 @@ theorem finalize_xdepth : Impl.Poly1305.X86_64.finalize.x86_64Depth = 0 := by li
 theorem blocks_xdepth (b : Impl.Poly1305.X86_64.Blocks) : b.code.x86_64Depth ≤ 16 := by
   cases b <;> lit_decide
 
+/-- `padRest`'s depth, whichever it is. -/
+theorem padRest_xdepth (c : Bool) (b : Impl.Poly1305.X86_64.Blocks) (k : Nat) :
+    (padRest c b k).x86_64Depth ≤ max (padCopy b k).x86_64Depth (padTail b k).x86_64Depth := by
+  cases c
+  · exact Nat.le_max_right _ _
+  · exact Nat.le_max_left _ _
+
 theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
+  have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
+  simp only [«seal», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTag, finalizeWith,
+    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ⊢
   omega
 
 theorem open_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («open» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [«open», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
-    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
+  have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
+  simp only [«open», prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks, padRest, Bool.cond_true, padCopy, padTail, crypt, cryptBig, cryptPre, absorbLengths, finalizeTo, finalizeWith,
+    Code.x86_64Depth, xorBuf_xdepth, foldM_xdepth, init_xdepth, finalize_xdepth, Nat.max_le] at hc ⊢
   omega
 
 /-- A state satisfying `seal`'s precondition, without the working space. -/
