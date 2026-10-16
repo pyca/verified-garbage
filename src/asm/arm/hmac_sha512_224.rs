@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_init(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1888
+        r"sub sp, sp, #1888
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8
@@ -230,7 +230,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_finalize(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1888
+        r"sub sp, sp, #1888
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #1888]
@@ -427,7 +427,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_init_scratch(inner: *mut [u8; 192], outer: *mut [u8; 192], key: *const u8, key_len: usize, scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #272]
 str r5, [r12, #276]
 str r6, [r12, #280]
@@ -635,7 +635,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha512_224_finalize_scratch(inner: *mut [u8; 192], outer: *const [u8; 192], count: u64, out: *mut [u8; 28], scratch: *mut [u64; 234]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #4]
+        r"ldr r12, [sp, #4]
 str r4, [r12, #272]
 str r5, [r12, #276]
 str r6, [r12, #280]

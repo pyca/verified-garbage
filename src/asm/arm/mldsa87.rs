@@ -23,7 +23,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_keygen(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r3, #840]
+        r"str r4, [r3, #840]
 str r5, [r3, #844]
 str r6, [r3, #848]
 str r7, [r3, #852]
@@ -3529,7 +3529,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_sign(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #840]
 str r5, [r12, #844]
 str r6, [r12, #848]
@@ -7558,7 +7558,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_sign_message(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 lsr r12, r12, #8
 cmp r12, #0
 bne 20f
@@ -7747,7 +7747,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_verify(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r3, #840]
+        r"str r4, [r3, #840]
 str r5, [r3, #844]
 str r6, [r3, #848]
 str r7, [r3, #852]
@@ -10810,7 +10810,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa87_verify_message(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 lsr r12, r12, #8
 cmp r12, #0
 bne 20f

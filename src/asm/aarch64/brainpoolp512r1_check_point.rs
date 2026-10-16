@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_check_point(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov v24.d[0], x21
+        r"mov v24.d[0], x21
 mov v24.d[1], x22
 mov v25.d[0], x23
 mov v25.d[1], x24

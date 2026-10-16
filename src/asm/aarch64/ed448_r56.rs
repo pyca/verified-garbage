@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_r56_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "add x3, x0, #0
+        r"add x3, x0, #0
 movz x12, #65535, lsl #0
 movk x12, #4095, lsl #16
 mov v16.d[0], x21
@@ -4384,7 +4384,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_r56_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "add x3, x0, #0
+        r"add x3, x0, #0
 movz x12, #65535, lsl #0
 movk x12, #4095, lsl #16
 mov v16.d[0], x21
@@ -7189,7 +7189,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed448_r56_comb_base(ws: *mut [u64; 1024], n: usize) {
     core::arch::naked_asm!(
-        "add x3, x0, #0
+        r"add x3, x0, #0
 movz x12, #65535, lsl #0
 movk x12, #4095, lsl #16
 mov v8.d[1], x21
@@ -7787,7 +7787,7 @@ sub x27, x27, x28
 sub x28, x28, #1",
         concat!("adrp x9, ", vg_sym_page!("{VG_X448_COMB}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_X448_COMB}")),
-        "lsl x8, x19, #10
+        r"lsl x8, x19, #10
 add x9, x9, x8
 movz w1, #0, lsl #0
 movz w2, #0, lsl #0

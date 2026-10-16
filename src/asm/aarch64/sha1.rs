@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_compress(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        "cbz x2, 20f
+        r"cbz x2, 20f
 22:
 ldr w4, [x0, #0]
 ldr w5, [x0, #4]
@@ -1545,7 +1545,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
     core::arch::naked_asm!(
-        "movz w9, #8961, lsl #0
+        r"movz w9, #8961, lsl #0
 movk w9, #26437, lsl #16
 str w9, [x0, #0]
 movz w9, #43913, lsl #0
@@ -1586,7 +1586,7 @@ pub(crate) const VG_SHA1_COMPRESS_SHA2_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_compress_sha2(state: *mut [u32; 5], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 cbz x2, 20f
 movz w4, #31129, lsl #0
 movk w4, #23170, lsl #16
@@ -1757,7 +1757,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #160
+        r"sub sp, sp, #160
 add x4, sp, #0
 str x30, [sp, #-16]!
 str x19, [x4, #112]
@@ -1929,7 +1929,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #160
+        r"sub sp, sp, #160
 add x3, sp, #0
 str x30, [sp, #-16]!
 str x19, [x3, #112]
@@ -2044,7 +2044,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_update_scratch(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 str x19, [x4, #112]
 str x20, [x4, #120]
 str x21, [x4, #128]
@@ -2215,7 +2215,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_finalize_scratch(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 str x19, [x3, #112]
 str x20, [x3, #120]
 str x21, [x3, #128]
@@ -2329,7 +2329,7 @@ pub(crate) const VG_SHA1_UPDATE_SHA2_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_update_sha2(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 sub sp, sp, #160
 add x4, sp, #0
 str x30, [sp, #-16]!
@@ -2507,7 +2507,7 @@ pub(crate) const VG_SHA1_FINALIZE_SHA2_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_finalize_sha2(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 sub sp, sp, #160
 add x3, sp, #0
 str x30, [sp, #-16]!
@@ -2628,7 +2628,7 @@ pub(crate) const VG_SHA1_UPDATE_SCRATCH_SHA2_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_update_scratch_sha2(state: *mut [u8; 84], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x30, [sp, #-16]!
 str x19, [x4, #112]
 str x20, [x4, #120]
@@ -2805,7 +2805,7 @@ pub(crate) const VG_SHA1_FINALIZE_SCRATCH_SHA2_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha1_finalize_scratch_sha2(state: *mut [u8; 84], count: u64, out: *mut [u8; 20], scratch: *mut [u64; 20]) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x30, [sp, #-16]!
 str x19, [x3, #112]
 str x20, [x3, #120]

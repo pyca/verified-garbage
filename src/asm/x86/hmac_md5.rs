@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-408]
+        r"lea esp, [esp-408]
 mov eax, DWORD PTR [esp+412]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+416]
@@ -182,7 +182,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-412]
+        r"lea esp, [esp-412]
 mov eax, DWORD PTR [esp+416]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+420]
@@ -313,7 +313,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init_scratch(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize, scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi
@@ -465,7 +465,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize_scratch(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+112], ebx
 mov DWORD PTR [eax+116], esi
 mov DWORD PTR [eax+120], edi

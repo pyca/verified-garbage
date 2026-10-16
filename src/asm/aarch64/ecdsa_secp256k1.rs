@@ -22,7 +22,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_secp256k1_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], k: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "str x19, [x4, #0]
+        r"str x19, [x4, #0]
 str x20, [x4, #8]
 str x21, [x4, #16]
 str x22, [x4, #24]
@@ -2618,7 +2618,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_secp256k1_verify(public: *const [u8; 65], digest: *const [u8; 32], sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "add x4, x3, #0
+        r"add x4, x3, #0
 add x6, x0, #0
 add x3, x2, #0
 add x8, x2, #32

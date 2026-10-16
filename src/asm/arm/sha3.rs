@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "str r4, [r1, #396]
+        r"str r4, [r1, #396]
 str r5, [r1, #400]
 str r6, [r1, #404]
 str r7, [r1, #408]
@@ -1379,7 +1379,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize) -> usize {
     core::arch::naked_asm!(
-        "sub sp, sp, #656
+        r"sub sp, sp, #656
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #656]
@@ -1451,7 +1451,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #4]
+        r"ldr r12, [sp, #4]
 str r4, [r12, #512]
 str r5, [r12, #516]
 str r6, [r12, #520]
@@ -1510,7 +1510,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
-        "sub sp, sp, #656
+        r"sub sp, sp, #656
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8
@@ -1553,7 +1553,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str lr, [r12, #512]
 add r2, r0, r2
 ldrb lr, [r2, #0]
@@ -1588,7 +1588,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
-        "sub sp, sp, #656
+        r"sub sp, sp, #656
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #656]
@@ -1657,7 +1657,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #4]
+        r"ldr r12, [sp, #4]
 str r4, [r12, #512]
 str r5, [r12, #516]
 str r6, [r12, #520]

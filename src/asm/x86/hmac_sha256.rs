@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-856]
+        r"lea esp, [esp-856]
 mov eax, DWORD PTR [esp+860]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+864]
@@ -182,7 +182,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-860]
+        r"lea esp, [esp-860]
 mov eax, DWORD PTR [esp+864]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+868]
@@ -337,7 +337,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_init_scratch(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+160], ebx
 mov DWORD PTR [eax+164], esi
 mov DWORD PTR [eax+168], edi
@@ -489,7 +489,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize_scratch(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+160], ebx
 mov DWORD PTR [eax+164], esi
 mov DWORD PTR [eax+168], edi
@@ -631,7 +631,7 @@ pub(crate) const VG_HMAC_SHA256_INIT_SHANI_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_init_shani(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-856]
+        r"lea esp, [esp-856]
 mov eax, DWORD PTR [esp+860]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+864]
@@ -798,7 +798,7 @@ pub(crate) const VG_HMAC_SHA256_FINALIZE_SHANI_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize_shani(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-860]
+        r"lea esp, [esp-860]
 mov eax, DWORD PTR [esp+864]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+868]
@@ -957,7 +957,7 @@ pub(crate) const VG_HMAC_SHA256_INIT_SCRATCH_SHANI_FEATURES: crate::cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_init_scratch_shani(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+160], ebx
 mov DWORD PTR [eax+164], esi
 mov DWORD PTR [eax+168], edi
@@ -1113,7 +1113,7 @@ pub(crate) const VG_HMAC_SHA256_FINALIZE_SCRATCH_SHANI_FEATURES: crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha256_finalize_scratch_shani(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+160], ebx
 mov DWORD PTR [eax+164], esi
 mov DWORD PTR [eax+168], edi

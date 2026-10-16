@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "movz x6, #65280, lsl #0
+        r"movz x6, #65280, lsl #0
 movk x6, #3, lsl #16
 movk x6, #0, lsl #32
 movk x6, #0, lsl #48
@@ -219,7 +219,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "movz x5, #3329, lsl #0
+        r"movz x5, #3329, lsl #0
 movk x5, #0, lsl #16
 movk x5, #0, lsl #32
 movk x5, #0, lsl #48
@@ -418,7 +418,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32 {
     core::arch::naked_asm!(
-        "movz x9, #3328, lsl #0
+        r"movz x9, #3328, lsl #0
 movz x10, #0, lsl #0
 movz x11, #512, lsl #0
 movz x14, #15, lsl #0
@@ -465,7 +465,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        "str x24, [x3, #27680]
+        r"str x24, [x3, #27680]
 str x25, [x3, #27688]
 str x26, [x3, #27696]
 str x27, [x3, #27704]
@@ -1522,7 +1522,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        "str x24, [x4, #30392]
+        r"str x24, [x4, #30392]
 str x30, [x4, #30400]
 str x25, [x4, #30408]
 str x26, [x4, #30416]
@@ -2688,7 +2688,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        "str x24, [x3, #30392]
+        r"str x24, [x3, #30392]
 str x30, [x3, #30400]
 str x25, [x3, #30408]
 str x26, [x3, #30416]
@@ -4031,7 +4031,7 @@ pub(crate) const VG_MLKEM1024_KEYGEN_SHA3_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen_sha3(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x24, [x3, #27680]
 str x25, [x3, #27688]
 str x26, [x3, #27696]
@@ -5094,7 +5094,7 @@ pub(crate) const VG_MLKEM1024_ENCAPS_SHA3_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_sha3(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x24, [x4, #30392]
 str x30, [x4, #30400]
 str x25, [x4, #30408]
@@ -6266,7 +6266,7 @@ pub(crate) const VG_MLKEM1024_DECAPS_SHA3_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps_sha3(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x24, [x3, #30392]
 str x30, [x3, #30400]
 str x25, [x3, #30408]
@@ -7611,7 +7611,7 @@ pub(crate) const VG_MLKEM1024_KEYGEN_PAIRED_SHA3_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen_paired_sha3(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x24, [x3, #27680]
 str x25, [x3, #27688]
 str x26, [x3, #27696]
@@ -7905,7 +7905,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #4128, lsl #0
+        r"movz x3, #4128, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -8418,7 +8418,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 249f
 add x2, x19, #400
@@ -8939,7 +8939,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2101f
 add x2, x19, #400
@@ -9552,7 +9552,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #6176, lsl #0
+        r"movz x3, #6176, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -10065,7 +10065,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2206f
 add x2, x19, #400
@@ -10586,7 +10586,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2258f
 add x2, x19, #400
@@ -11199,7 +11199,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #8224, lsl #0
+        r"movz x3, #8224, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -11712,7 +11712,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2363f
 add x2, x19, #400
@@ -12233,7 +12233,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2415f
 add x2, x19, #400
@@ -12846,7 +12846,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #10272, lsl #0
+        r"movz x3, #10272, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -13359,7 +13359,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2520f
 add x2, x19, #400
@@ -13880,7 +13880,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2572f
 add x2, x19, #400
@@ -14493,7 +14493,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #12320, lsl #0
+        r"movz x3, #12320, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -15006,7 +15006,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2677f
 add x2, x19, #400
@@ -15527,7 +15527,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2729f
 add x2, x19, #400
@@ -16140,7 +16140,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #14368, lsl #0
+        r"movz x3, #14368, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -16653,7 +16653,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2834f
 add x2, x19, #400
@@ -17174,7 +17174,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2886f
 add x2, x19, #400
@@ -17787,7 +17787,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #16416, lsl #0
+        r"movz x3, #16416, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -18300,7 +18300,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2991f
 add x2, x19, #400
@@ -18821,7 +18821,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 21043f
 add x2, x19, #400
@@ -19434,7 +19434,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #18464, lsl #0
+        r"movz x3, #18464, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -19947,7 +19947,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 21148f
 add x2, x19, #400
@@ -20468,7 +20468,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 21200f
 add x2, x19, #400
@@ -21173,7 +21173,7 @@ cbnz x5, 21256b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21257:
 ldr q0, [x2, #0]
@@ -21454,7 +21454,7 @@ cbnz x5, 21258b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21259:
 ldr q0, [x2, #0]
@@ -21867,7 +21867,7 @@ cbnz x5, 21260b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21261:
 ldr q0, [x2, #0]
@@ -22148,7 +22148,7 @@ cbnz x5, 21262b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21263:
 ldr q0, [x2, #0]
@@ -22561,7 +22561,7 @@ cbnz x5, 21264b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21265:
 ldr q0, [x2, #0]
@@ -22842,7 +22842,7 @@ cbnz x5, 21266b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21267:
 ldr q0, [x2, #0]
@@ -23255,7 +23255,7 @@ cbnz x5, 21268b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21269:
 ldr q0, [x2, #0]
@@ -23536,7 +23536,7 @@ cbnz x5, 21270b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21271:
 ldr q0, [x2, #0]
@@ -23693,7 +23693,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21272:
 movi v21.2d, #0
@@ -23816,7 +23816,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21273:
 movi v21.2d, #0
@@ -23939,7 +23939,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21274:
 movi v21.2d, #0
@@ -24062,7 +24062,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21275:
 movi v21.2d, #0
@@ -25307,7 +25307,7 @@ pub(crate) const VG_MLKEM1024_ENCAPS_PAIRED_SHA3_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_paired_sha3(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x24, [x4, #30392]
 str x30, [x4, #30400]
 str x25, [x4, #30408]
@@ -26695,7 +26695,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #4248, lsl #0
+        r"movz x3, #4248, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -27208,7 +27208,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 249f
 add x2, x19, #400
@@ -27729,7 +27729,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2101f
 add x2, x19, #400
@@ -28342,7 +28342,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #6296, lsl #0
+        r"movz x3, #6296, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -28855,7 +28855,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2206f
 add x2, x19, #400
@@ -29376,7 +29376,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2258f
 add x2, x19, #400
@@ -29989,7 +29989,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #8344, lsl #0
+        r"movz x3, #8344, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -30502,7 +30502,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2363f
 add x2, x19, #400
@@ -31023,7 +31023,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2415f
 add x2, x19, #400
@@ -31636,7 +31636,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #10392, lsl #0
+        r"movz x3, #10392, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -32149,7 +32149,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2520f
 add x2, x19, #400
@@ -32670,7 +32670,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2572f
 add x2, x19, #400
@@ -33283,7 +33283,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #12440, lsl #0
+        r"movz x3, #12440, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -33796,7 +33796,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2677f
 add x2, x19, #400
@@ -34317,7 +34317,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2729f
 add x2, x19, #400
@@ -34930,7 +34930,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #14488, lsl #0
+        r"movz x3, #14488, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -35443,7 +35443,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2834f
 add x2, x19, #400
@@ -35964,7 +35964,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2886f
 add x2, x19, #400
@@ -36577,7 +36577,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #16536, lsl #0
+        r"movz x3, #16536, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -37090,7 +37090,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2991f
 add x2, x19, #400
@@ -37611,7 +37611,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 21043f
 add x2, x19, #400
@@ -38224,7 +38224,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #18584, lsl #0
+        r"movz x3, #18584, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -38737,7 +38737,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 21148f
 add x2, x19, #400
@@ -39258,7 +39258,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 21200f
 add x2, x19, #400
@@ -39963,7 +39963,7 @@ cbnz x5, 21256b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21257:
 ldr q0, [x2, #0]
@@ -40244,7 +40244,7 @@ cbnz x5, 21258b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21259:
 ldr q0, [x2, #0]
@@ -40657,7 +40657,7 @@ cbnz x5, 21260b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21261:
 ldr q0, [x2, #0]
@@ -40938,7 +40938,7 @@ cbnz x5, 21262b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21263:
 ldr q0, [x2, #0]
@@ -41359,7 +41359,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21264:
 movi v21.2d, #0
@@ -41470,7 +41470,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 21265:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]
@@ -41819,7 +41819,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21267:
 movi v21.2d, #0
@@ -41930,7 +41930,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 21268:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]
@@ -42279,7 +42279,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21270:
 movi v21.2d, #0
@@ -42390,7 +42390,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 21271:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]
@@ -42739,7 +42739,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21273:
 movi v21.2d, #0
@@ -42850,7 +42850,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 21274:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]
@@ -43215,7 +43215,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21276:
 movi v21.2d, #0
@@ -43326,7 +43326,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 21277:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]
@@ -43839,7 +43839,7 @@ pub(crate) const VG_MLKEM1024_DECAPS_PAIRED_SHA3_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps_paired_sha3(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x24, [x3, #30392]
 str x30, [x3, #30400]
 str x25, [x3, #30408]
@@ -44010,7 +44010,7 @@ cbnz x5, 20b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21:
 ldr q0, [x2, #0]
@@ -44293,7 +44293,7 @@ cbnz x5, 22b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 23:
 ldr q0, [x2, #0]
@@ -44576,7 +44576,7 @@ cbnz x5, 24b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 25:
 ldr q0, [x2, #0]
@@ -44859,7 +44859,7 @@ cbnz x5, 26b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 27:
 ldr q0, [x2, #0]
@@ -45010,7 +45010,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 28:
 movi v21.2d, #0
@@ -45121,7 +45121,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 29:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]
@@ -45768,7 +45768,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #4248, lsl #0
+        r"movz x3, #4248, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -46281,7 +46281,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 260f
 add x2, x19, #400
@@ -46802,7 +46802,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2112f
 add x2, x19, #400
@@ -47415,7 +47415,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #6296, lsl #0
+        r"movz x3, #6296, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -47928,7 +47928,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2217f
 add x2, x19, #400
@@ -48449,7 +48449,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2269f
 add x2, x19, #400
@@ -49062,7 +49062,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #8344, lsl #0
+        r"movz x3, #8344, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -49575,7 +49575,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2374f
 add x2, x19, #400
@@ -50096,7 +50096,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2426f
 add x2, x19, #400
@@ -50709,7 +50709,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #10392, lsl #0
+        r"movz x3, #10392, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -51222,7 +51222,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2531f
 add x2, x19, #400
@@ -51743,7 +51743,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2583f
 add x2, x19, #400
@@ -52356,7 +52356,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #12440, lsl #0
+        r"movz x3, #12440, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -52869,7 +52869,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2688f
 add x2, x19, #400
@@ -53390,7 +53390,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2740f
 add x2, x19, #400
@@ -54003,7 +54003,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #14488, lsl #0
+        r"movz x3, #14488, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -54516,7 +54516,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2845f
 add x2, x19, #400
@@ -55037,7 +55037,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 2897f
 add x2, x19, #400
@@ -55650,7 +55650,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #16536, lsl #0
+        r"movz x3, #16536, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -56163,7 +56163,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 21002f
 add x2, x19, #400
@@ -56684,7 +56684,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 21054f
 add x2, x19, #400
@@ -57297,7 +57297,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "movz x3, #18584, lsl #0
+        r"movz x3, #18584, lsl #0
 add x3, x28, x3
 add x2, x19, #400
 movz x4, #256, lsl #0
@@ -57810,7 +57810,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 21159f
 add x2, x19, #400
@@ -58331,7 +58331,7 @@ movz x9, #0, lsl #0
 str x9, [x19, #1408]",
         concat!("adrp x16, ", vg_sym_page!("{VG_MLKEM_REJ_SHUFFLE}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_MLKEM_REJ_SHUFFLE}")),
-        "ldr x3, [x19, #1680]
+        r"ldr x3, [x19, #1680]
 ldr x4, [x19, #1688]
 cbz x4, 21211f
 add x2, x19, #400
@@ -59036,7 +59036,7 @@ cbnz x5, 21267b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21268:
 ldr q0, [x2, #0]
@@ -59317,7 +59317,7 @@ cbnz x5, 21269b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21270:
 ldr q0, [x2, #0]
@@ -59730,7 +59730,7 @@ cbnz x5, 21271b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21272:
 ldr q0, [x2, #0]
@@ -60011,7 +60011,7 @@ cbnz x5, 21273b
 add x2, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_NTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_NTT16_ZETAS}")),
-        "add x4, x0, #0
+        r"add x4, x0, #0
 movz x5, #8, lsl #0
 21274:
 ldr q0, [x2, #0]
@@ -60432,7 +60432,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21275:
 movi v21.2d, #0
@@ -60543,7 +60543,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 21276:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]
@@ -60893,7 +60893,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21278:
 movi v21.2d, #0
@@ -61004,7 +61004,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 21279:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]
@@ -61354,7 +61354,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21281:
 movi v21.2d, #0
@@ -61465,7 +61465,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 21282:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]
@@ -61815,7 +61815,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21284:
 movi v21.2d, #0
@@ -61926,7 +61926,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 21285:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]
@@ -62292,7 +62292,7 @@ dup v16.4s, w9
 dup v17.4s, w10",
         concat!("adrp x3, ", vg_sym_page!("{VG_MLKEM_GAMMA}")),
         concat!("add x3, x3, ", vg_sym_pageoff!("{VG_MLKEM_GAMMA}")),
-        "movz x11, #32, lsl #0
+        r"movz x11, #32, lsl #0
 movz x12, #0, lsl #0
 21287:
 movi v21.2d, #0
@@ -62403,7 +62403,7 @@ add x2, x0, #0
 add x3, x1, #0",
         concat!("adrp x6, ", vg_sym_page!("{VG_MLKEM_INTT16_ZETAS}")),
         concat!("add x6, x6, ", vg_sym_pageoff!("{VG_MLKEM_INTT16_ZETAS}")),
-        "movz x5, #8, lsl #0
+        r"movz x5, #8, lsl #0
 21288:
 ldr q20, [x2, #0]
 ldr q21, [x2, #16]

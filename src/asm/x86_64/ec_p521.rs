@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ec_p521_public_key(out: *mut [u8; 133], d: *const [u8; 66], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov r8, rdx
+        r"mov r8, rdx
 mov rcx, rsi
 mov rdx, rsi
 mov QWORD PTR [r8], rbx
@@ -7045,7 +7045,7 @@ pub(crate) const VG_EC_P521_PUBLIC_KEY_ADX_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ec_p521_public_key_adx(out: *mut [u8; 133], d: *const [u8; 66], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov r8, rdx
+        r"mov r8, rdx
 mov rcx, rsi
 mov rdx, rsi
 mov QWORD PTR [r8], rbx

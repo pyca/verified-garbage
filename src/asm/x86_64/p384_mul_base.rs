@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_mul_base(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+1456], rbx
+        r"mov QWORD PTR [rdi+1456], rbx
 mov QWORD PTR [rdi+1464], rbp
 mov QWORD PTR [rdi+1472], r12
 mov QWORD PTR [rdi+1480], r13
@@ -8487,7 +8487,7 @@ pub(crate) const VG_P384_MUL_BASE_ADX_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_mul_base_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+1456], rbx
+        r"mov QWORD PTR [rdi+1456], rbx
 mov QWORD PTR [rdi+1464], rbp
 mov QWORD PTR [rdi+1472], r12
 mov QWORD PTR [rdi+1480], r13

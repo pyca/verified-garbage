@@ -15,7 +15,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
-        "ldr r2, [r1, #0]
+        r"ldr r2, [r1, #0]
 str r2, [r0, #24]
 ldr r2, [r1, #4]
 str r2, [r0, #28]
@@ -55,7 +55,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "str r4, [r0, #56]
+        r"str r4, [r0, #56]
 str r5, [r0, #60]
 str r6, [r0, #64]
 str r7, [r0, #68]
@@ -708,7 +708,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #144
+        r"sub sp, sp, #144
 add r12, sp, #0
 str lr, [r12, #12]
 ldr lr, [sp, #144]
@@ -1848,7 +1848,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #144
+        r"sub sp, sp, #144
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #144]
@@ -2570,7 +2570,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_finalize_scratch(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #4]
+        r"ldr r12, [sp, #4]
 str r4, [r12, #0]
 str r5, [r12, #4]
 str r6, [r12, #8]

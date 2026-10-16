@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cbc_encrypt(schedule: *const [u8; 4168], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-112]
+        r"lea esp, [esp-112]
 mov eax, DWORD PTR [esp+116]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+120]
@@ -450,7 +450,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_cbc_decrypt(schedule: *const [u8; 4168], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-112]
+        r"lea esp, [esp-112]
 mov eax, DWORD PTR [esp+116]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+120]

@@ -24,7 +24,7 @@ pub(crate) const VG_AES_OCB_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2580]
+        r"lea esp, [esp-2580]
 mov eax, DWORD PTR [esp+2584]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2588]
@@ -123,7 +123,7 @@ pub(crate) const VG_AES_OCB_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2608]
+        r"lea esp, [esp-2608]
 mov eax, DWORD PTR [esp+2612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2616]
@@ -1428,7 +1428,7 @@ pub(crate) const VG_AES_OCB_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2608]
+        r"lea esp, [esp-2608]
 mov eax, DWORD PTR [esp+2612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2616]
@@ -2755,7 +2755,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2580]
+        r"lea esp, [esp-2580]
 mov eax, DWORD PTR [esp+2584]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2588]
@@ -2850,7 +2850,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2608]
+        r"lea esp, [esp-2608]
 mov eax, DWORD PTR [esp+2612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2616]
@@ -4151,7 +4151,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2608]
+        r"lea esp, [esp-2608]
 mov eax, DWORD PTR [esp+2612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2616]

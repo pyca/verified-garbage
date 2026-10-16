@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+32], ebx
 mov DWORD PTR [eax+36], esi
 mov DWORD PTR [eax+40], edi
@@ -459,7 +459,7 @@ pub(crate) const VG_GHASH_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ghash_pclmul(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov eax, 66051
+        r"mov eax, 66051
 movd xmm0, eax
 pslldq xmm0, 4
 mov eax, 67438087
@@ -595,7 +595,7 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2580]
+        r"lea esp, [esp-2580]
 mov eax, DWORD PTR [esp+2584]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2588]
@@ -691,7 +691,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aesni(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2592]
+        r"lea esp, [esp-2592]
 mov eax, DWORD PTR [esp+2596]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2600]
@@ -869,7 +869,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aesni(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2584]
+        r"lea esp, [esp-2584]
 mov eax, DWORD PTR [esp+2588]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2592]
@@ -1181,7 +1181,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -1569,7 +1569,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -1956,7 +1956,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2600]
+        r"lea esp, [esp-2600]
 mov eax, DWORD PTR [esp+2604]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2608]
@@ -2174,7 +2174,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -2468,7 +2468,7 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -3352,7 +3352,7 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2608]
+        r"lea esp, [esp-2608]
 mov eax, DWORD PTR [esp+2612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2616]
@@ -4318,7 +4318,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-48]
+        r"lea esp, [esp-48]
 mov DWORD PTR [esp+36], ebx
 mov DWORD PTR [esp+40], esi
 mov DWORD PTR [esp+44], edi
@@ -4413,7 +4413,7 @@ pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aesni_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2580]
+        r"lea esp, [esp-2580]
 mov eax, DWORD PTR [esp+2584]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2588]
@@ -4513,7 +4513,7 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES: crate::cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aesni_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2592]
+        r"lea esp, [esp-2592]
 mov eax, DWORD PTR [esp+2596]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2600]
@@ -4695,7 +4695,7 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Featu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aesni_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2584]
+        r"lea esp, [esp-2584]
 mov eax, DWORD PTR [esp+2588]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2592]
@@ -5007,7 +5007,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -5395,7 +5395,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES: crate::cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -5782,7 +5782,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2600]
+        r"lea esp, [esp-2600]
 mov eax, DWORD PTR [esp+2604]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2608]
@@ -6000,7 +6000,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES: crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -6294,7 +6294,7 @@ pub(crate) const VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -7178,7 +7178,7 @@ pub(crate) const VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2608]
+        r"lea esp, [esp-2608]
 mov eax, DWORD PTR [esp+2612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2616]
@@ -8144,7 +8144,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES: crate::cpu::Featu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-48]
+        r"lea esp, [esp-48]
 mov DWORD PTR [esp+36], ebx
 mov DWORD PTR [esp+40], esi
 mov DWORD PTR [esp+44], edi
@@ -8235,7 +8235,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_init_pclmul(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2580]
+        r"lea esp, [esp-2580]
 mov eax, DWORD PTR [esp+2584]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2588]
@@ -8335,7 +8335,7 @@ pub(crate) const VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2592]
+        r"lea esp, [esp-2592]
 mov eax, DWORD PTR [esp+2596]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2600]
@@ -8517,7 +8517,7 @@ pub(crate) const VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2584]
+        r"lea esp, [esp-2584]
 mov eax, DWORD PTR [esp+2588]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2592]
@@ -8829,7 +8829,7 @@ pub(crate) const VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -9217,7 +9217,7 @@ pub(crate) const VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -9604,7 +9604,7 @@ pub(crate) const VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2600]
+        r"lea esp, [esp-2600]
 mov eax, DWORD PTR [esp+2604]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2608]
@@ -9822,7 +9822,7 @@ pub(crate) const VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_pclmul(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -10116,7 +10116,7 @@ pub(crate) const VG_AES_GCM_SEAL_PCLMUL_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -11000,7 +11000,7 @@ pub(crate) const VG_AES_GCM_OPEN_PCLMUL_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2608]
+        r"lea esp, [esp-2608]
 mov eax, DWORD PTR [esp+2612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2616]
@@ -11966,7 +11966,7 @@ pub(crate) const VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-48]
+        r"lea esp, [esp-48]
 mov DWORD PTR [esp+36], ebx
 mov DWORD PTR [esp+40], esi
 mov DWORD PTR [esp+44], edi
@@ -12057,7 +12057,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2580]
+        r"lea esp, [esp-2580]
 mov eax, DWORD PTR [esp+2584]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2588]
@@ -12153,7 +12153,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2592]
+        r"lea esp, [esp-2592]
 mov eax, DWORD PTR [esp+2596]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2600]
@@ -12331,7 +12331,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2584]
+        r"lea esp, [esp-2584]
 mov eax, DWORD PTR [esp+2588]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2592]
@@ -12639,7 +12639,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -13023,7 +13023,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -13406,7 +13406,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2600]
+        r"lea esp, [esp-2600]
 mov eax, DWORD PTR [esp+2604]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2608]
@@ -13620,7 +13620,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -13910,7 +13910,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-2604]
+        r"lea esp, [esp-2604]
 mov eax, DWORD PTR [esp+2608]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2612]
@@ -14790,7 +14790,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea esp, [esp-2608]
+        r"lea esp, [esp-2608]
 mov eax, DWORD PTR [esp+2612]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+2616]
@@ -15752,7 +15752,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-48]
+        r"lea esp, [esp-48]
 mov DWORD PTR [esp+36], ebx
 mov DWORD PTR [esp+40], esi
 mov DWORD PTR [esp+44], edi

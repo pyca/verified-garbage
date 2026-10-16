@@ -21,7 +21,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encrypt_mul(u: *mut [u32; 1024], a: *const [u32; 2304], t: *const [u32; 768], y: *const [u32; 768], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+3072], rbp
+        r"mov QWORD PTR [r8+3072], rbp
 mov QWORD PTR [r8+3080], r12
 mov QWORD PTR [r8+3088], r13
 mov QWORD PTR [r8+3096], r14
@@ -1813,7 +1813,7 @@ pub(crate) const VG_MLKEM768_ENCRYPT_MUL_AVX2_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encrypt_mul_avx2(u: *mut [u32; 1024], a: *const [u32; 2304], t: *const [u32; 768], y: *const [u32; 768], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+3072], rbp
+        r"mov QWORD PTR [r8+3072], rbp
 mov QWORD PTR [r8+3080], r12
 mov QWORD PTR [r8+3088], r13
 mov QWORD PTR [r8+3096], r14
@@ -3188,7 +3188,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decrypt_mul(w: *mut [u32; 256], s: *const [u32; 768], u: *const [u32; 768], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+3072], rbp
+        r"mov QWORD PTR [rcx+3072], rbp
 mov QWORD PTR [rcx+3080], r12
 mov QWORD PTR [rcx+3088], r13
 mov QWORD PTR [rcx+3096], r14
@@ -4295,7 +4295,7 @@ pub(crate) const VG_MLKEM768_DECRYPT_MUL_AVX2_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decrypt_mul_avx2(w: *mut [u32; 256], s: *const [u32; 768], u: *const [u32; 768], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+3072], rbp
+        r"mov QWORD PTR [rcx+3072], rbp
 mov QWORD PTR [rcx+3080], r12
 mov QWORD PTR [rcx+3088], r13
 mov QWORD PTR [rcx+3096], r14
@@ -5260,7 +5260,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_mul(t: *mut [u32; 768], s: *mut [u32; 768], a: *const [u32; 2304], e: *const [u32; 768], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+3072], rbp
+        r"mov QWORD PTR [r8+3072], rbp
 mov QWORD PTR [r8+3080], r12
 mov QWORD PTR [r8+3088], r13
 mov QWORD PTR [r8+3096], r14
@@ -6805,7 +6805,7 @@ pub(crate) const VG_MLKEM768_KEYGEN_MUL_AVX2_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_mul_avx2(t: *mut [u32; 768], s: *mut [u32; 768], a: *const [u32; 2304], e: *const [u32; 768], scratch: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+3072], rbp
+        r"mov QWORD PTR [r8+3072], rbp
 mov QWORD PTR [r8+3080], r12
 mov QWORD PTR [r8+3088], r13
 mov QWORD PTR [r8+3096], r14
@@ -7992,7 +7992,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
     core::arch::naked_asm!(
-        "mov r8d, 0
+        r"mov r8d, 0
 mov ecx, 384
 20:
 movzx eax, BYTE PTR [rdi]
@@ -8043,7 +8043,7 @@ pub(crate) const VG_MLKEM768_KEYGEN_AVX2_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx2(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+840], rbx
+        r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
 mov QWORD PTR [rcx+856], r12
 mov QWORD PTR [rcx+864], r13
@@ -9480,7 +9480,7 @@ pub(crate) const VG_MLKEM768_ENCAPS_H_AVX2_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx2(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+840], rbx
+        r"mov QWORD PTR [r9+840], rbx
 mov QWORD PTR [r9+848], rbp
 mov QWORD PTR [r9+856], r12
 mov QWORD PTR [r9+864], r13
@@ -11600,7 +11600,7 @@ pub(crate) const VG_MLKEM768_DECAPS_AVX2_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx2(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+840], rbx
+        r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
 mov QWORD PTR [rcx+856], r12
 mov QWORD PTR [rcx+864], r13
@@ -13835,7 +13835,7 @@ pub(crate) const VG_MLKEM768_KEYGEN_AVX512_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen_avx512(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+840], rbx
+        r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
 mov QWORD PTR [rcx+856], r12
 mov QWORD PTR [rcx+864], r13
@@ -14893,7 +14893,7 @@ pub(crate) const VG_MLKEM768_ENCAPS_H_AVX512_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h_avx512(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+840], rbx
+        r"mov QWORD PTR [r9+840], rbx
 mov QWORD PTR [r9+848], rbp
 mov QWORD PTR [r9+856], r12
 mov QWORD PTR [r9+864], r13
@@ -16255,7 +16255,7 @@ pub(crate) const VG_MLKEM768_DECAPS_AVX512_FEATURES: crate::cpu::Features = crat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps_avx512(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+840], rbx
+        r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
 mov QWORD PTR [rcx+856], r12
 mov QWORD PTR [rcx+864], r13
@@ -17728,7 +17728,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+840], rbx
+        r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
 mov QWORD PTR [rcx+856], r12
 mov QWORD PTR [rcx+864], r13
@@ -18578,7 +18578,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_encaps_h(ek: *const [u8; 1184], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+840], rbx
+        r"mov QWORD PTR [r9+840], rbx
 mov QWORD PTR [r9+848], rbp
 mov QWORD PTR [r9+856], r12
 mov QWORD PTR [r9+864], r13
@@ -19500,7 +19500,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+840], rbx
+        r"mov QWORD PTR [rcx+840], rbx
 mov QWORD PTR [rcx+848], rbp
 mov QWORD PTR [rcx+856], r12
 mov QWORD PTR [rcx+864], r13

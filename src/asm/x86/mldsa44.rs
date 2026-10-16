@@ -25,7 +25,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_keygen(seed: *const [u8; 32], pk: *mut [u8; 1312], sk: *mut [u8; 2560], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -1733,7 +1733,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_sign(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -4076,7 +4076,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_sign_message(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -4325,7 +4325,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_verify(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -5771,7 +5771,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa44_verify_message(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp

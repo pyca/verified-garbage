@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_inv_mod_p(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+1504], rbx
+        r"mov QWORD PTR [rdi+1504], rbx
 mov QWORD PTR [rdi+1512], rbp
 mov QWORD PTR [rdi+1520], r12
 mov QWORD PTR [rdi+1528], r13
@@ -3119,7 +3119,7 @@ pub(crate) const VG_P384_INV_MOD_P_ADX_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_inv_mod_p_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+1504], rbx
+        r"mov QWORD PTR [rdi+1504], rbx
 mov QWORD PTR [rdi+1512], rbp
 mov QWORD PTR [rdi+1520], r12
 mov QWORD PTR [rdi+1528], r13
@@ -6051,7 +6051,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_inv_mod_n(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+1504], rbx
+        r"mov QWORD PTR [rdi+1504], rbx
 mov QWORD PTR [rdi+1512], rbp
 mov QWORD PTR [rdi+1520], r12
 mov QWORD PTR [rdi+1528], r13
@@ -9328,7 +9328,7 @@ pub(crate) const VG_P384_INV_MOD_N_ADX_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_inv_mod_n_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdi+1504], rbx
+        r"mov QWORD PTR [rdi+1504], rbx
 mov QWORD PTR [rdi+1512], rbp
 mov QWORD PTR [rdi+1520], r12
 mov QWORD PTR [rdi+1528], r13

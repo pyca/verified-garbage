@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "push {{r4}}
+        r"push {{r4}}
 push {{r5}}
 push {{r6}}
 push {{r7}}
@@ -1217,7 +1217,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "push {{r4}}
+        r"push {{r4}}
 push {{r5}}
 push {{r6}}
 push {{r7}}
@@ -2444,7 +2444,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "push {{r4}}
+        r"push {{r4}}
 push {{r5}}
 push {{r6}}
 push {{r7}}
@@ -2514,7 +2514,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "push {{r4}}
+        r"push {{r4}}
 push {{r5}}
 push {{r6}}
 push {{r7}}
@@ -2585,7 +2585,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r2, #256
+        r"mov r2, #256
 20:
 ldr r3, [r0, #0]
 ldr r12, [r1, #0]
@@ -2621,7 +2621,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r2, #256
+        r"mov r2, #256
 20:
 ldr r3, [r0, #0]
 ldr r12, [r1, #0]
@@ -2654,7 +2654,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "cmp r1, #15
+        r"cmp r1, #15
 beq 20f
 cmp r1, #43
 beq 22f
@@ -2745,7 +2745,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "push {{r4}}
+        r"push {{r4}}
 mov r12, r2
 mov r2, r3
 cmp r12, #2
@@ -3078,7 +3078,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 push {{r4}}
 mov r1, r12
 cmp r3, #2
@@ -3456,7 +3456,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r2, #64
+        r"mov r2, #64
 20:
 mov r3, #0
 ldrb r12, [r0, #0]
@@ -3514,7 +3514,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 push {{r4, r5}}
 sub r1, r12, r2
 mov r4, r12
@@ -3570,7 +3570,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 push {{r4, r5, r6, r7}}
 sub r6, r1, r2
 mov r4, r12
@@ -3705,7 +3705,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push {{r4}}
+        r"push {{r4}}
 mov r3, #256
 20:
 ldr r12, [r0, #0]
@@ -3747,7 +3747,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "cmp r1, #95232
+        r"cmp r1, #95232
 beq 20f
 mov r1, #256
 22:
@@ -3807,7 +3807,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "cmp r1, #95232
+        r"cmp r1, #95232
 beq 20f
 mov r1, #256
 22:
@@ -3884,7 +3884,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
-        "push {{r4}}
+        r"push {{r4}}
 mov r4, #0
 mov r2, #256
 20:
@@ -3929,7 +3929,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
     core::arch::naked_asm!(
-        "push {{r4}}
+        r"push {{r4}}
 push {{r5}}
 push {{r6}}
 cmp r2, #95232
@@ -4050,7 +4050,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "push {{r4}}
+        r"push {{r4}}
 push {{r5}}
 push {{r6}}
 cmp r2, #95232
@@ -4164,7 +4164,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r2, #2012]
+        r"str r4, [r2, #2012]
 str r5, [r2, #2016]
 str r6, [r2, #2020]
 str r7, [r2, #2024]
@@ -4325,7 +4325,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r3, #2012]
+        r"str r4, [r3, #2012]
 str r5, [r3, #2016]
 str r6, [r3, #2020]
 str r7, [r3, #2024]
@@ -4589,7 +4589,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "str r4, [r3, #2012]
+        r"str r4, [r3, #2012]
 str r5, [r3, #2016]
 str r6, [r3, #2020]
 str r7, [r3, #2024]
@@ -4828,7 +4828,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #2012]
 str r5, [r12, #2016]
 str r6, [r12, #2020]

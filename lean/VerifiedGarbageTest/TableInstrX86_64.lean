@@ -105,7 +105,7 @@ def expected : String := "/// Returns 1 plus word 1 of its table.
 #[unsafe(naked)]
 pub(crate) unsafe extern \"sysv64\" fn vg_test_alutbl() -> u64 {
     core::arch::naked_asm!(
-        \"lea rdx, [rip + {VG_TEST_ALUTBL}]
+        r\"lea rdx, [rip + {VG_TEST_ALUTBL}]
 movabs rax, 1
 add rax, QWORD PTR [rdx+8]
 ret
@@ -127,13 +127,13 @@ ret
 
 /// A table of constants, aligned to a cache line.
 #[repr(C, align(64))]
-pub(crate) struct Table<const N: usize>(pub(crate) [u64; N]);
+pub(crate) struct Table<const N: usize>(pub(crate) [u8; N]);
 
 /// The table of constants `VG_TEST_ALUTBL` (`Artifact.consts`).
-pub(crate) static VG_TEST_ALUTBL: Table<2> = Table([
-    7,
-    42,
-]);
+pub(crate) static VG_TEST_ALUTBL: Table<16> = Table(*b\"\\
+    \\x07\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\
+    \\x2a\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\
+\");
 "
 
 -- Two artifacts carrying the same table: one static. Another giving it other

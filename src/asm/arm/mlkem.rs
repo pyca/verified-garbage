@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_sample_ntt(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r2, #1680]
+        r"str r4, [r2, #1680]
 str r5, [r2, #1684]
 str r6, [r2, #1688]
 str r7, [r2, #1692]
@@ -186,7 +186,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "str r4, [r1, #512]
+        r"str r4, [r1, #512]
 str r5, [r1, #516]
 str r6, [r1, #520]
 str r7, [r1, #524]
@@ -535,7 +535,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "str r4, [r1, #512]
+        r"str r4, [r1, #512]
 str r5, [r1, #516]
 str r6, [r1, #520]
 str r7, [r1, #524]
@@ -911,7 +911,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_multiply_ntts(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "str r4, [r3, #512]
+        r"str r4, [r3, #512]
 str r5, [r3, #516]
 str r6, [r3, #520]
 str r7, [r3, #524]
@@ -1268,7 +1268,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r2, #256
+        r"mov r2, #256
 20:
 ldr r3, [r0, #0]
 ldr r12, [r1, #0]
@@ -1304,7 +1304,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r2, #256
+        r"mov r2, #256
 20:
 ldr r3, [r0, #0]
 ldr r12, [r1, #0]
@@ -1336,7 +1336,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r2, #128
+        r"mov r2, #128
 20:
 ldrb r3, [r0, #0]
 lsl r3, r3, #30
@@ -1390,7 +1390,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_encode12(f: *const [u32; 256], out: *mut [u8; 384]) {
     core::arch::naked_asm!(
-        "mov r2, #128
+        r"mov r2, #128
 20:
 ldr r3, [r0, #0]
 ldr r12, [r0, #4]
@@ -1421,7 +1421,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_decode12(b: *const [u8; 384], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r2, #128
+        r"mov r2, #128
 20:
 ldrb r3, [r0, #0]
 ldrb r12, [r0, #1]
@@ -1470,7 +1470,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_compress_encode(f: *const [u32; 256], d: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "cmp r1, #1
+        r"cmp r1, #1
 beq 20f
 cmp r1, #4
 beq 22f
@@ -1671,7 +1671,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_decode_decompress(b: *const u8, len: usize, d: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "cmp r2, #1
+        r"cmp r2, #1
 beq 20f
 cmp r2, #4
 beq 22f

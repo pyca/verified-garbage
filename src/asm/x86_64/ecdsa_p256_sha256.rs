@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha256_sign(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -496,7 +496,7 @@ pub(crate) const VG_ECDSA_P256_SHA256_SIGN_ADX_FEATURES: crate::cpu::Features = 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha256_sign_adx(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -972,7 +972,7 @@ pub(crate) const VG_ECDSA_P256_SHA256_SIGN_AVX2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha256_sign_avx2(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -1448,7 +1448,7 @@ pub(crate) const VG_ECDSA_P256_SHA256_SIGN_AVX2_ADX_FEATURES: crate::cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha256_sign_avx2_adx(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -1924,7 +1924,7 @@ pub(crate) const VG_ECDSA_P256_SHA256_SIGN_SHANI_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha256_sign_shani(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx
@@ -2400,7 +2400,7 @@ pub(crate) const VG_ECDSA_P256_SHA256_SIGN_SHANI_ADX_FEATURES: crate::cpu::Featu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha256_sign_shani_adx(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "push rdi
+        r"push rdi
 push rsi
 push rdx
 push rcx

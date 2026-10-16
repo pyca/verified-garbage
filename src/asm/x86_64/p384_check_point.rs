@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_check_point(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbx
+        r"movq xmm0, rbx
 movq xmm1, rbp
 movq xmm2, r12
 movq xmm3, r13
@@ -2715,7 +2715,7 @@ pub(crate) const VG_P384_CHECK_POINT_ADX_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_check_point_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbx
+        r"movq xmm0, rbx
 movq xmm1, rbp
 movq xmm2, r12
 movq xmm3, r13

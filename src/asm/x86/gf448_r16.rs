@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf448_r16_mul(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+4080], ebx
 mov DWORD PTR [eax+4084], esi
 mov DWORD PTR [eax+4088], edi
@@ -7087,7 +7087,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf448_r16_add(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+4080], ebx
 mov DWORD PTR [eax+4084], esi
 mov DWORD PTR [eax+4088], edi
@@ -7728,7 +7728,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf448_r16_sub(ws: *mut [u64; 1024], o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+4080], ebx
 mov DWORD PTR [eax+4084], esi
 mov DWORD PTR [eax+4088], edi
@@ -8397,7 +8397,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf448_r16_mul_a24(ws: *mut [u64; 1024], o: u32, a: u32) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+4080], ebx
 mov DWORD PTR [eax+4084], esi
 mov DWORD PTR [eax+4088], edi

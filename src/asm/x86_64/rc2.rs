@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_init(key: *const u8, key_len: usize, effective_bits: usize, iv: *const u8, iv_len: usize, ctx: *mut [u8; 144]) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-592]
+        r"lea rsp, [rsp-592]
 mov rax, rsp
 add rax, 16
 mov QWORD PTR [rsp+8], rax
@@ -155,7 +155,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_encrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-592]
+        r"lea rsp, [rsp-592]
 mov rax, rsp
 add rax, 16
 mov QWORD PTR [rsp+8], rax
@@ -325,7 +325,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_decrypt_update(ctx: *mut [u8; 144], pending_len: usize, data: *const u8, len: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-592]
+        r"lea rsp, [rsp-592]
 mov rax, rsp
 add rax, 16
 mov QWORD PTR [rsp+8], rax
@@ -495,7 +495,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+264], rbx
+        r"mov QWORD PTR [r8+264], rbx
 mov QWORD PTR [r8+272], rbp
 mov rbx, rsi
 mov rbp, rcx
@@ -542,7 +542,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rc2_cbc_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+264], rbx
+        r"mov QWORD PTR [r8+264], rbx
 mov QWORD PTR [r8+272], rbp
 mov rbx, rsi
 mov rbp, rcx
@@ -592,7 +592,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rc2_expand_key(key: *const u8, key_len: usize, effective_bits: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8], rbx
+        r"mov QWORD PTR [r8], rbx
 mov QWORD PTR [r8+8], rbp
 mov QWORD PTR [r8+16], r12
 mov QWORD PTR [r8+24], r13
@@ -1974,7 +1974,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rc2_encrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], r12
+        r"mov QWORD PTR [rdx], r12
 mov QWORD PTR [rdx+8], r13
 mov QWORD PTR [rdx+16], r14
 mov QWORD PTR [rdx+24], r15
@@ -3987,7 +3987,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rc2_decrypt_block(schedule: *const [u8; 128], data: *mut [u8; 8], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], r12
+        r"mov QWORD PTR [rdx], r12
 mov QWORD PTR [rdx+8], r13
 mov QWORD PTR [rdx+16], r14
 mov QWORD PTR [rdx+24], r15

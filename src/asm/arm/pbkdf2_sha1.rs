@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1_iterate(key: *const [u8; 168], u: *const [u8; 20], n: u32, t: *mut [u8; 20], scratch: *mut [u64; 56]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #160]
 str r5, [r12, #164]
 str r6, [r12, #168]
@@ -177,7 +177,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha1(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #1152
+        r"sub sp, sp, #1152
 add r12, sp, #0
 str lr, [r12, #16]
 ldr lr, [sp, #1152]

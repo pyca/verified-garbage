@@ -15,7 +15,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, DWORD PTR [esp+8]
 mov edx, DWORD PTR [ecx]
 mov DWORD PTR [eax+24], edx
@@ -58,7 +58,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_blocks(state: *mut [u64; 16], blocks: *const [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+116], ebx
 mov DWORD PTR [eax+120], esi
 mov DWORD PTR [eax+124], edi
@@ -328,7 +328,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-156]
+        r"lea esp, [esp-156]
 mov eax, DWORD PTR [esp+160]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+164]
@@ -815,7 +815,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-152]
+        r"lea esp, [esp-152]
 mov eax, DWORD PTR [esp+156]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+160]
@@ -1117,7 +1117,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_poly1305_finalize_scratch(state: *mut [u64; 16], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+116], ebx
 mov DWORD PTR [eax+120], esi
 mov DWORD PTR [eax+124], edi

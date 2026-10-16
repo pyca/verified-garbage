@@ -25,7 +25,7 @@ pub(crate) const VG_CMAC_AES_UPDATE_AES_CBC_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_update_aes_cbc(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 cbz x4, 20f
 ldr q16, [x0, #0]
 ldr q17, [x0, #16]
@@ -178,7 +178,7 @@ pub(crate) const VG_CMAC_AES_SUBKEYS_AES_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_subkeys_aes(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 str x19, [x3, #2064]
 str x20, [x3, #2072]
 str x30, [x3, #2080]
@@ -263,7 +263,7 @@ pub(crate) const VG_CMAC_AES_UPDATE_AES_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_update_aes(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 str x19, [x5, #2064]
 str x20, [x5, #2072]
 str x21, [x5, #2080]
@@ -341,7 +341,7 @@ pub(crate) const VG_CMAC_AES_FINALIZE_AES_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize_aes(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub x9, x4, #16
 cbz x9, 20f
 movz x9, #0, lsl #0
@@ -431,7 +431,7 @@ pub(crate) const VG_CMAC_AES_INIT_AES_FEATURES: crate::cpu::Features = crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2304
 add x3, sp, #0
 str x19, [x3, #2176]
@@ -488,7 +488,7 @@ pub(crate) const VG_CMAC_AES_FINISH_AES_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2304
 add x4, sp, #0
 ldr x9, [x0, #272]
@@ -539,7 +539,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], rounds: usize, subkeys: *mut [u8; 32], scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "str x19, [x3, #2064]
+        r"str x19, [x3, #2064]
 str x20, [x3, #2072]
 str x30, [x3, #2080]
 add x19, x2, #0
@@ -618,7 +618,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_update(schedule: *const [u8; 240], rounds: usize, state: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "str x19, [x5, #2064]
+        r"str x19, [x5, #2064]
 str x20, [x5, #2072]
 str x21, [x5, #2080]
 str x22, [x5, #2088]
@@ -690,7 +690,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], rounds: usize, state: *mut [u8; 16], last: *const u8, last_len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "sub x9, x4, #16
+        r"sub x9, x4, #16
 cbz x9, 20f
 movz x9, #0, lsl #0
 str x9, [x5, #2048]
@@ -774,7 +774,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2304
+        r"sub sp, sp, #2304
 add x3, sp, #0
 str x19, [x3, #2176]
 str x20, [x3, #2184]
@@ -825,7 +825,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2304
+        r"sub sp, sp, #2304
 add x4, sp, #0
 ldr x9, [x0, #272]
 str x9, [x3, #0]
@@ -876,7 +876,7 @@ pub(crate) const VG_CMAC_AES_ABSORB_AES_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aes(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2304
 add x5, sp, #0
 str x19, [x5, #2176]
@@ -1012,7 +1012,7 @@ pub(crate) const VG_CMAC_AES_ABSORB_AES_CBC_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aes_cbc(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2304
 add x5, sp, #0
 str x19, [x5, #2176]
@@ -1144,7 +1144,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2304
+        r"sub sp, sp, #2304
 add x5, sp, #0
 str x19, [x5, #2176]
 str x20, [x5, #2184]

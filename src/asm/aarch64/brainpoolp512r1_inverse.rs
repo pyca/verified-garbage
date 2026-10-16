@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_inv_mod_p(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x0, #5080]
+        r"str x19, [x0, #5080]
 str x21, [x0, #5088]
 str x22, [x0, #5096]
 str x23, [x0, #5104]
@@ -2490,7 +2490,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp512r1_inv_mod_n(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x0, #5080]
+        r"str x19, [x0, #5080]
 str x21, [x0, #5088]
 str x22, [x0, #5096]
 str x23, [x0, #5104]

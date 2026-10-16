@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_miller_rabin_round(ws: *mut u64, ws_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x12, [x0, #48]
+        r"ldr x12, [x0, #48]
 ldr x11, [x0, #224]
 add x3, x11, #0
 add x3, x3, x3

@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ec_p224_public_key(out: *mut [u8; 57], d: *const [u8; 28], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "add x4, x2, #0
+        r"add x4, x2, #0
 add x3, x1, #0
 add x2, x1, #0
 str x19, [x4, #0]
@@ -504,7 +504,7 @@ sub x2, x2, x4
 movz x7, #0, lsl #0",
         concat!("adrp x16, ", vg_sym_page!("{VG_P224_COMB}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_P224_COMB}")),
-        "movz x17, #4096, lsl #0
+        r"movz x17, #4096, lsl #0
 mul x17, x19, x17
 add x16, x16, x17
 movz x5, #1, lsl #0

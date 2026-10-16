@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_salsa20_8(b: *mut [u8; 64], scratch: *mut [u32; 16]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 movdqu xmm0, XMMWORD PTR [eax]
 movdqu xmm1, XMMWORD PTR [eax+16]
 movdqu xmm2, XMMWORD PTR [eax+32]
@@ -351,7 +351,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt_blockmix(b: *const [u8; 128], r: usize, y: *mut [u8; 128], ry: usize, scratch: *mut [u32; 32]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+64], ebx
 mov DWORD PTR [eax+68], esi
 mov DWORD PTR [eax+72], edi
@@ -453,7 +453,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+128], ebx
 mov DWORD PTR [eax+132], esi
 mov DWORD PTR [eax+136], edi
@@ -587,7 +587,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push eax
+        r"push eax
 push eax
 push eax
 push eax
@@ -702,7 +702,7 @@ pub(crate) const VG_SCRYPT_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push eax
+        r"push eax
 push eax
 push eax
 push eax

@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_salsa20_8(b: *mut [u8; 64], scratch: *mut [u32; 16]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rsi+16], rbx
+        r"mov QWORD PTR [rsi+16], rbx
 mov QWORD PTR [rsi+24], rbp
 mov QWORD PTR [rsi+32], r12
 mov QWORD PTR [rsi+40], r13
@@ -653,7 +653,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_scrypt_blockmix(b: *const [u8; 128], r: usize, y: *mut [u8; 128], ry: usize, scratch: *mut [u32; 32]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+64], rbx
+        r"mov QWORD PTR [r8+64], rbx
 mov QWORD PTR [r8+72], rbp
 mov QWORD PTR [r8+80], r12
 mov QWORD PTR [r8+88], r14
@@ -2002,7 +2002,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_scrypt_romix(b: *mut [u8; 128], r: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+128], rbx
+        r"mov QWORD PTR [r8+128], rbx
 mov QWORD PTR [r8+136], rbp
 mov QWORD PTR [r8+144], r12
 mov QWORD PTR [r8+152], r14
@@ -2131,7 +2131,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push r9
+        r"push r9
 push r8
 push rsi
 push rdi
@@ -2217,7 +2217,7 @@ pub(crate) const VG_SCRYPT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_scrypt_avx2(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push r9
+        r"push r9
 push r8
 push rsi
 push rdi
@@ -2303,7 +2303,7 @@ pub(crate) const VG_SCRYPT_SHANI_FEATURES: crate::cpu::Features = crate::cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_scrypt_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        "push r9
+        r"push r9
 push r8
 push rsi
 push rdi

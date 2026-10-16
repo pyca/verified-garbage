@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p224_point_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3584], edi
 mov edi, eax
 mov eax, 3424
@@ -526,7 +526,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p224_point_double(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+3584], edi
 mov edi, eax
 mov eax, 3328

@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1448]
+        r"lea esp, [esp-1448]
 mov eax, DWORD PTR [esp+1452]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1456]
@@ -3891,7 +3891,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1452]
+        r"lea esp, [esp-1452]
 mov eax, DWORD PTR [esp+1456]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1460]
@@ -7522,7 +7522,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1452]
+        r"lea esp, [esp-1452]
 mov eax, DWORD PTR [esp+1456]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1460]

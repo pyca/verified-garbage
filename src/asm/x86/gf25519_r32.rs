@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf25519_r32_pow250(ws: *mut [u64; 512]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov DWORD PTR [eax+928], ebx
 mov DWORD PTR [eax+932], esi
 mov DWORD PTR [eax+936], edi

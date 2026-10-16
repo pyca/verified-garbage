@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_block(state: *const [u32; 16], buf: *mut [u32; 64]) {
     core::arch::naked_asm!(
-        "str r4, [r1, #144]
+        r"str r4, [r1, #144]
 str r5, [r1, #148]
 str r6, [r1, #152]
 str r7, [r1, #156]
@@ -1307,7 +1307,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mut u8, len: usize, buf: *mut [u32; 80]) {
     core::arch::naked_asm!(
-        "str r4, [r3, #256]
+        r"str r4, [r3, #256]
 str r5, [r3, #260]
 str r6, [r3, #264]
 str lr, [r3, #268]
@@ -1371,7 +1371,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *const [u8; 32], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        "ldr r3, [r1, #0]
+        r"ldr r3, [r1, #0]
 str r3, [r0, #16]
 ldr r3, [r1, #4]
 str r3, [r0, #20]
@@ -1433,7 +1433,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], nonce: *const [u8; 16]) {
     core::arch::naked_asm!(
-        "ldr r2, [r1, #0]
+        r"ldr r2, [r1, #0]
 ldr r3, [r1, #4]
 ldr r12, [r1, #8]
 ldr r1, [r1, #12]
@@ -1478,7 +1478,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr r3, [r0, #128]
+        r"ldr r3, [r0, #128]
 ldr r12, [r0, #132]
 cmp r3, r2
 mov r3, #0

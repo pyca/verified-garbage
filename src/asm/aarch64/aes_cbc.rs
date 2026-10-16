@@ -25,7 +25,7 @@ pub(crate) const VG_AES_CBC_ENCRYPT_AES_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cbc_encrypt_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 str x19, [x5, #2064]
 str x20, [x5, #2072]
 str x21, [x5, #2080]
@@ -102,7 +102,7 @@ pub(crate) const VG_AES_CBC_DECRYPT_AES_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 str x19, [x5, #2064]
 str x20, [x5, #2072]
 str x21, [x5, #2080]
@@ -179,7 +179,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "str x19, [x5, #2064]
+        r"str x19, [x5, #2064]
 str x20, [x5, #2072]
 str x21, [x5, #2080]
 str x22, [x5, #2088]
@@ -250,7 +250,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "str x19, [x5, #2064]
+        r"str x19, [x5, #2064]
 str x20, [x5, #2072]
 str x21, [x5, #2080]
 str x22, [x5, #2088]

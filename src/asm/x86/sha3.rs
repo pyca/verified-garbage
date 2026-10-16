@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+8]
+        r"mov eax, DWORD PTR [esp+8]
 mov ecx, DWORD PTR [esp+4]
 mov DWORD PTR [eax+392], esi
 mov DWORD PTR [eax+396], edi
@@ -1542,7 +1542,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize) -> usize {
     core::arch::naked_asm!(
-        "lea esp, [esp-668]
+        r"lea esp, [esp-668]
 mov eax, DWORD PTR [esp+672]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+676]
@@ -1633,7 +1633,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+512], ebx
 mov DWORD PTR [eax+516], esi
 mov DWORD PTR [eax+520], edi
@@ -1705,7 +1705,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
-        "lea esp, [esp-664]
+        r"lea esp, [esp-664]
 mov eax, DWORD PTR [esp+668]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+672]
@@ -1765,7 +1765,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+512], ebx
 mov DWORD PTR [eax+516], esi
 mov esi, eax
@@ -1811,7 +1811,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
-        "lea esp, [esp-668]
+        r"lea esp, [esp-668]
 mov eax, DWORD PTR [esp+672]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+676]
@@ -1902,7 +1902,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+512], ebx
 mov DWORD PTR [eax+516], esi
 mov DWORD PTR [eax+520], edi

@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #832
+        r"sub sp, sp, #832
 add x4, sp, #0
 str x19, [x4, #160]
 str x20, [x4, #168]
@@ -159,7 +159,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #832
+        r"sub sp, sp, #832
 add x4, sp, #0
 str x19, [x4, #160]
 str x20, [x4, #168]
@@ -299,7 +299,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_scratch(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #160]
+        r"str x19, [x4, #160]
 str x20, [x4, #168]
 str x21, [x4, #176]
 str x22, [x4, #184]
@@ -440,7 +440,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_scratch(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #160]
+        r"str x19, [x4, #160]
 str x20, [x4, #168]
 str x21, [x4, #176]
 str x22, [x4, #184]
@@ -579,7 +579,7 @@ pub(crate) const VG_HMAC_SHA224_INIT_SHA2_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_sha2(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 sub sp, sp, #832
 add x4, sp, #0
 str x19, [x4, #160]
@@ -727,7 +727,7 @@ pub(crate) const VG_HMAC_SHA224_FINALIZE_SHA2_FEATURES: crate::cpu::Features = c
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_sha2(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 sub sp, sp, #832
 add x4, sp, #0
 str x19, [x4, #160]
@@ -873,7 +873,7 @@ pub(crate) const VG_HMAC_SHA224_INIT_SCRATCH_SHA2_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_scratch_sha2(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize, scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x19, [x4, #160]
 str x20, [x4, #168]
 str x21, [x4, #176]
@@ -1020,7 +1020,7 @@ pub(crate) const VG_HMAC_SHA224_FINALIZE_SCRATCH_SHA2_FEATURES: crate::cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_scratch_sha2(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28], scratch: *mut [u64; 104]) {
     core::arch::naked_asm!(
-        ".arch_extension sha2
+        r".arch_extension sha2
 str x19, [x4, #160]
 str x20, [x4, #168]
 str x21, [x4, #176]

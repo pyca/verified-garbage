@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_square_4_4(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
-        "ldr x12, [x0, #48]
+        r"ldr x12, [x0, #48]
 lsr x3, x12, #4
 movz x4, #7, lsl #0
 and x4, x12, x4
@@ -1612,7 +1612,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_square_6_6(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
-        "ldr x12, [x0, #48]
+        r"ldr x12, [x0, #48]
 lsr x3, x12, #4
 movz x4, #7, lsl #0
 and x4, x12, x4
@@ -6290,7 +6290,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_square_window5(ws: *mut u64, ws_len: usize) {
     core::arch::naked_asm!(
-        "ldr x12, [x0, #48]
+        r"ldr x12, [x0, #48]
 lsr x3, x12, #4
 movz x4, #7, lsl #0
 and x4, x12, x4
@@ -12146,7 +12146,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_public_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "movz x16, #65535, lsl #0
+        r"movz x16, #65535, lsl #0
 movk x16, #65535, lsl #16
 movk x16, #3, lsl #32
 movz x17, #0, lsl #0
@@ -12923,7 +12923,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "str x0, [x4, #128]
+        r"str x0, [x4, #128]
 str x2, [x4, #136]
 str x3, [x4, #144]
 add x0, x4, #0
@@ -13181,7 +13181,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_public_precomputed_checked(out: *mut u8, out_len: usize, pre: *const u64, pre_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "movz x16, #65535, lsl #0
+        r"movz x16, #65535, lsl #0
 movk x16, #65535, lsl #16
 movk x16, #3, lsl #32
 movz x17, #0, lsl #0
@@ -20774,7 +20774,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_private_crt(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x8, [sp, #64]
+        r"ldr x8, [sp, #64]
 str x0, [x8, #128]
 str x2, [x8, #136]
 str x3, [x8, #144]
@@ -30136,7 +30136,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq: *mut u8, dq_len: usize, qinv: *mut u8, qinv_len: usize, n: *const u8, n_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x8, [sp, #48]
+        r"ldr x8, [sp, #48]
 str x0, [x8, #128]
 str x1, [x8, #168]
 str x2, [x8, #152]
@@ -31587,7 +31587,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_recover_primes(p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x8, [sp, #16]
+        r"ldr x8, [sp, #16]
 str x0, [x8, #128]
 str x2, [x8, #168]
 str x4, [x8, #136]
@@ -33887,7 +33887,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x8, [sp, #64]
+        r"ldr x8, [sp, #64]
 str x0, [x8, #136]
 str x1, [x8, #144]
 str x2, [x8, #152]
@@ -35940,7 +35940,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_check_crt_key(n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr x8, [sp, #48]
+        r"ldr x8, [sp, #48]
 str x0, [x8, #136]
 str x1, [x8, #144]
 str x2, [x8, #152]
@@ -37609,7 +37609,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_private_checked(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, input: *const u8, input_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 sub sp, sp, #3232
 add x15, sp, #0
 str x0, [x15, #80]

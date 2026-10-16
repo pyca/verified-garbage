@@ -22,7 +22,7 @@ pub(crate) const VG_AES_OCB_INIT_AES_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2560
 add x3, sp, #0
 str x20, [x3, #168]
@@ -95,7 +95,7 @@ pub(crate) const VG_AES_OCB_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
@@ -1198,7 +1198,7 @@ pub(crate) const VG_AES_OCB_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
@@ -2365,7 +2365,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2560
+        r"sub sp, sp, #2560
 add x3, sp, #0
 str x20, [x3, #168]
 str x21, [x3, #176]
@@ -2432,7 +2432,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2592
+        r"sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
 str x17, [x16, #0]
@@ -3529,7 +3529,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #2592
+        r"sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
 str x17, [x16, #0]

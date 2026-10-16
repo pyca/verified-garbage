@@ -13,7 +13,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        "movw r12, #40664
+        r"movw r12, #40664
 movt r12, #49413
 str r12, [r0, #0]
 movw r12, #54535
@@ -55,7 +55,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #624
+        r"sub sp, sp, #624
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #624]
@@ -173,7 +173,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 70]) {
     core::arch::naked_asm!(
-        "str r4, [r3, #68]
+        r"str r4, [r3, #68]
 str r5, [r3, #72]
 str r6, [r3, #76]
 str r7, [r3, #80]
@@ -2535,7 +2535,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        "movw r12, #58983
+        r"movw r12, #58983
 movt r12, #27145
 str r12, [r0, #0]
 movw r12, #44677
@@ -2576,7 +2576,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #624
+        r"sub sp, sp, #624
 add r12, sp, #0
 str lr, [r12, #12]
 ldr lr, [sp, #624]
@@ -2727,7 +2727,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #624
+        r"sub sp, sp, #624
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #624]
@@ -2848,7 +2848,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_update_scratch(state: *mut [u8; 96], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 76]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #8]
+        r"ldr r12, [sp, #8]
 str r4, [r12, #112]
 str r5, [r12, #116]
 str r6, [r12, #120]
@@ -2990,7 +2990,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha256_finalize_scratch(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 76]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #4]
+        r"ldr r12, [sp, #4]
 str r4, [r12, #112]
 str r5, [r12, #116]
 str r6, [r12, #120]

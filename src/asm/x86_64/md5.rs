@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_compress(state: *mut [u32; 4], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 8]) {
     core::arch::naked_asm!(
-        "test rdx, rdx
+        r"test rdx, rdx
 je 20f
 mov eax, DWORD PTR [rdi]
 mov r8d, DWORD PTR [rdi+4]
@@ -646,7 +646,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_init(state: *mut [u8; 80]) {
     core::arch::naked_asm!(
-        "mov eax, 1732584193
+        r"mov eax, 1732584193
 mov DWORD PTR [rdi], eax
 mov eax, -271733879
 mov DWORD PTR [rdi+4], eax
@@ -672,7 +672,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_update(state: *mut [u8; 80], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-120]
+        r"lea rsp, [rsp-120]
 mov r8, rsp
 add r8, 8
 mov QWORD PTR [r8+64], rbx
@@ -834,7 +834,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_finalize(state: *mut [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-120]
+        r"lea rsp, [rsp-120]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx+64], rbx
@@ -979,7 +979,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_update_scratch(state: *mut [u8; 80], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+64], rbx
+        r"mov QWORD PTR [r8+64], rbx
 mov QWORD PTR [r8+72], rbp
 mov QWORD PTR [r8+80], r12
 mov QWORD PTR [r8+88], r13
@@ -1139,7 +1139,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_md5_finalize_scratch(state: *mut [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 14]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+64], rbx
+        r"mov QWORD PTR [rcx+64], rbx
 mov QWORD PTR [rcx+72], rbp
 mov QWORD PTR [rcx+80], r12
 mov QWORD PTR [rcx+88], r13

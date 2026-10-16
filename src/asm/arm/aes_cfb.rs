@@ -21,7 +21,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #4]
+        r"ldr r12, [sp, #4]
 str r4, [r12, #2064]
 str r5, [r12, #2068]
 str r6, [r12, #2072]
@@ -122,7 +122,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #4]
+        r"ldr r12, [sp, #4]
 str r4, [r12, #2064]
 str r5, [r12, #2068]
 str r6, [r12, #2072]

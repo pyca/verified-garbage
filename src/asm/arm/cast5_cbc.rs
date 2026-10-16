@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_cbc_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #328
+        r"sub sp, sp, #328
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #328]
@@ -188,7 +188,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_cbc_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #328
+        r"sub sp, sp, #328
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #328]

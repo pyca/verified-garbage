@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_seed_expand_key(key: *const [u8; 16], schedule: *mut [u8; 128]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1064]
+        r"lea rsp, [rsp-1064]
 mov rdx, rsp
 add rdx, 8
 mov r9, rdx
@@ -1255,7 +1255,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_seed_ecb_encrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1064]
+        r"lea rsp, [rsp-1064]
 mov rcx, rsp
 add rcx, 8
 mov r9, rcx
@@ -4217,7 +4217,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_seed_ecb_decrypt(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1064]
+        r"lea rsp, [rsp-1064]
 mov rcx, rsp
 add rcx, 8
 mov r9, rcx

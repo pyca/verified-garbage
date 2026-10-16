@@ -35,7 +35,7 @@ open X86_64
     "lea esp, [esp+4]", "ret"]
 
 #guard Rust.line "call" (.sym ".long " .x86PcRel "VG_TABLE") ==
-  "        \".long {VG_TABLE} - 2b\",\n"
+  "        r\".long {VG_TABLE} - 2b\",\n"
 
 -- Neither a plain block nor an invalid frame can use symPush.
 def symState : X86.State :=
@@ -432,19 +432,24 @@ def callSample : Prog X86_64.isa :=
 #guard X86.printer.function (.call "vg_f" (.block []) : Prog X86.isa) == [.call "vg_f", .text "ret"]
 #guard Arm.printer.function (.call "vg_f" (.block []) : Prog Arm.isa) == [.call "vg_f", .text "bx lr"]
 
-#guard Rust.line printer.call (.call "vg_f") == "        \"call {vg_f}\",\n"
-#guard Rust.line Arm.printer.call (.call "vg_f") == "        \"bl {vg_f}\",\n"
+#guard Rust.line printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
+#guard Rust.line Arm.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
 #guard Rust.line printer.call (.text "mov rax, QWORD PTR [rdi]") ==
-  "        \"mov rax, QWORD PTR [rdi]\",\n"
+  "        r\"mov rax, QWORD PTR [rdi]\",\n"
+
+-- A raw string literal, unless the text has a `"` or a carriage return.
+#guard Rust.literal "mov rax, rbx\nret" == "r\"mov rax, rbx\nret\""
+#guard Rust.literal ".ascii \"a\\b\"\nret" == "\".ascii \\\"a\\\\b\\\"\\nret\""
+#guard Rust.literal "a\rb" == "\"a\\rb\""
 
 -- A run of lines that are text alone is one string literal, its lines
 -- separated by newlines (as `naked_asm!` joins its arguments); the page of a
 -- static's address, which a macro writes, is an argument of its own.
 #guard Rust.template "bl" [.text "mov x0, x1", .call "vg_f", .sym "adrp x16, " .page "VG_T",
     .text "ret", .text ".p2align 6"] ==
-  "        \"mov x0, x1\nbl {vg_f}\",\n" ++
+  "        r\"mov x0, x1\nbl {vg_f}\",\n" ++
   "        concat!(\"adrp x16, \", vg_sym_page!(\"{VG_T}\")),\n" ++
-  "        \"ret\n.p2align 6\",\n"
+  "        r\"ret\n.p2align 6\",\n"
 #guard Rust.template "bl" [] == ""
 
 /-! ## Frames
@@ -469,7 +474,7 @@ instructions. -/
   "movw r4, #:lower16:(<armpcrel VG_TABLE>", "movt r4, #:upper16:(<armpcrel VG_TABLE>", "2:",
   "add r4, pc", "3:", "bx lr"]
 #guard Rust.line Arm.printer.call (.sym "movw r4, #:lower16:(" .armPcRel "VG_TABLE") ==
-  "        \"movw r4, #:lower16:({VG_TABLE} - (2f + 2 * (3f - 2f)))\",\n"
+  "        r\"movw r4, #:lower16:({VG_TABLE} - (2f + 2 * (3f - 2f)))\",\n"
 #guard Arm.Instr.asm (.adrSym .r4 "VG_TABLE") == [
   "movw r4, #:lower16:(VG_TABLE - (2f + 2 * (3f - 2f)))",
   "movt r4, #:upper16:(VG_TABLE - (2f + 2 * (3f - 2f)))", "2:", "add r4, pc", "3:"]
@@ -501,7 +506,7 @@ instructions. -/
       Prog X86_64.isa)) == [
   "push rbx", "push rcx", "push rax", "<call vg_f>", "pop rdx", "pop rdx", "pop rbx", "ret"]
 
-#guard Rust.line Arm.printer.call (.text "push {r4, lr}") == "        \"push {{r4, lr}}\",\n"
+#guard Rust.line Arm.printer.call (.text "push {r4, lr}") == "        r\"push {{r4, lr}}\",\n"
 
 /-! ## CPU features
 

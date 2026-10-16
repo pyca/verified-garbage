@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf448_r56_pow_p34(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "add x3, x0, #0
+        r"add x3, x0, #0
 movz x12, #65535, lsl #0
 movk x12, #4095, lsl #16
 mov v16.d[0], x21
@@ -3565,7 +3565,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_gf448_r56_mul(ws: *mut [u64; 1024], o: u64, a: u64, b: u64) {
     core::arch::naked_asm!(
-        "mov v21.d[0], x30
+        r"mov v21.d[0], x30
 mov v21.d[1], x21
 mov v22.d[0], x22
 mov v22.d[1], x23

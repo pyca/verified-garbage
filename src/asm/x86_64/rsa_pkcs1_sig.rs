@@ -24,7 +24,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]
+        r"mov rax, QWORD PTR [rsp+24]
 cmp rax, rsi
 jne 20f
 lea rsp, [rsp-2136]
@@ -975,7 +975,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_recover(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]
+        r"mov rax, QWORD PTR [rsp+24]
 cmp rax, rcx
 jne 20f
 lea rsp, [rsp-2136]
@@ -1989,7 +1989,7 @@ pub(crate) const VG_RSA_PKCS1_SIGN_ADX_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1192]
+        r"lea rsp, [rsp-1192]
 mov QWORD PTR [rsp+112], rdi
 mov QWORD PTR [rsp+120], rsi
 mov QWORD PTR [rsp+128], rdx
@@ -2955,7 +2955,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1192]
+        r"lea rsp, [rsp-1192]
 mov QWORD PTR [rsp+112], rdi
 mov QWORD PTR [rsp+120], rsi
 mov QWORD PTR [rsp+128], rdx
@@ -3925,7 +3925,7 @@ pub(crate) const VG_RSA_PKCS1_SIGN_IFMA_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1192]
+        r"lea rsp, [rsp-1192]
 mov QWORD PTR [rsp+112], rdi
 mov QWORD PTR [rsp+120], rsi
 mov QWORD PTR [rsp+128], rdx
@@ -4894,7 +4894,7 @@ pub(crate) const VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES: crate::cpu::Featu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]
+        r"mov rax, QWORD PTR [rsp+24]
 cmp rax, rsi
 jne 20f
 lea rsp, [rsp-2136]
@@ -5862,7 +5862,7 @@ pub(crate) const VG_RSA_PKCS1_RECOVER_PRECOMPUTED_ADX_FEATURES: crate::cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_recover_precomputed_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]
+        r"mov rax, QWORD PTR [rsp+24]
 cmp rax, rcx
 jne 20f
 lea rsp, [rsp-2136]
@@ -6867,7 +6867,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]
+        r"mov rax, QWORD PTR [rsp+24]
 cmp rax, rsi
 jne 20f
 lea rsp, [rsp-2136]
@@ -7831,7 +7831,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_recover_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov rax, QWORD PTR [rsp+24]
+        r"mov rax, QWORD PTR [rsp+24]
 cmp rax, rcx
 jne 20f
 lea rsp, [rsp-2136]

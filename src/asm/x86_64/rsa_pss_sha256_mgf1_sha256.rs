@@ -37,7 +37,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_CRT_ADX_FEATURES: crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_sign_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -587,7 +587,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -1141,7 +1141,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_CRT_IFMA_FEATURES: crate::cp
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_sign_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -1695,7 +1695,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_SHA256_AVX2_CRT_ADX_FEATURES
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_avx2_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -2249,7 +2249,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_SHA256_AVX2_FEATURES: crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_avx2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -2803,7 +2803,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_SHA256_AVX2_CRT_IFMA_FEATURE
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_avx2_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -3357,7 +3357,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_SHA256_SHANI_CRT_ADX_FEATURE
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_shani_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -3911,7 +3911,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_SHA256_SHANI_FEATURES: crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -4465,7 +4465,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_SIGN_SHA256_SHANI_CRT_IFMA_FEATUR
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_shani_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 32], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -5018,7 +5018,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_RSA_ADX_FEATUR
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_verify_precomputed_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 32], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -6001,7 +6001,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 32], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -6988,7 +6988,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_SHA256_AVX2_RS
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_verify_precomputed_sha256_avx2_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 32], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -7975,7 +7975,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_SHA256_AVX2_FE
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_verify_precomputed_sha256_avx2(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 32], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -8962,7 +8962,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_SHA256_SHANI_R
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_verify_precomputed_sha256_shani_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 32], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12
@@ -9949,7 +9949,7 @@ pub(crate) const VG_RSA_PSS_SHA256_MGF1_SHA256_VERIFY_PRECOMPUTED_SHA256_SHANI_F
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha256_mgf1_sha256_verify_precomputed_sha256_shani(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 32], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-392]
+        r"lea rsp, [rsp-392]
 mov QWORD PTR [rsp+328], rbx
 mov QWORD PTR [rsp+336], rbp
 mov QWORD PTR [rsp+344], r12

@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_jac_add_cached(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -9826,7 +9826,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_jac_add_affine(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -18309,7 +18309,7 @@ pub(crate) const VG_P384_JAC_ADD_CACHED_ADX_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_jac_add_cached_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14
@@ -24902,7 +24902,7 @@ pub(crate) const VG_P384_JAC_ADD_AFFINE_ADX_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_p384_jac_add_affine_adx(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movq xmm0, rbp
+        r"movq xmm0, rbp
 movq xmm1, r12
 movq xmm2, r13
 movq xmm3, r14

@@ -25,7 +25,7 @@ pub(crate) const VG_AES_XTS_ENCRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+2064], ebx
 mov DWORD PTR [eax+2068], esi
 mov DWORD PTR [eax+2072], edi
@@ -217,7 +217,7 @@ pub(crate) const VG_AES_XTS_DECRYPT_AESNI_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_xts_decrypt_aesni(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+2064], ebx
 mov DWORD PTR [eax+2068], esi
 mov DWORD PTR [eax+2072], edi
@@ -405,7 +405,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+2064], ebx
 mov DWORD PTR [eax+2068], esi
 mov DWORD PTR [eax+2072], edi
@@ -593,7 +593,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_xts_decrypt(schedule: *const [u8; 240], rounds: usize, tweak: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+2064], ebx
 mov DWORD PTR [eax+2068], esi
 mov DWORD PTR [eax+2072], edi

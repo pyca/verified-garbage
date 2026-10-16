@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_cfb128_encrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-888]
+        r"lea esp, [esp-888]
 mov eax, DWORD PTR [esp+892]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+896]
@@ -6108,7 +6108,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_cfb128_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-888]
+        r"lea esp, [esp-888]
 mov eax, DWORD PTR [esp+892]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+896]

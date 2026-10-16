@@ -27,7 +27,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_AES_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #3824
 add x16, sp, #0
 add x17, sp, #16
@@ -466,7 +466,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_AES_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #3824
 add x16, sp, #0
 add x17, sp, #16
@@ -928,7 +928,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #3824
+        r"sub sp, sp, #3824
 add x16, sp, #0
 add x17, sp, #16
 str x17, [x16, #0]
@@ -1361,7 +1361,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #3824
+        r"sub sp, sp, #3824
 add x16, sp, #0
 add x17, sp, #16
 str x17, [x16, #0]

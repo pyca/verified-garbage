@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 384]) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-520]
+        r"lea rsp, [rsp-520]
 mov rcx, rsp
 add rcx, 8
 mov QWORD PTR [rcx], rbx
@@ -1403,7 +1403,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_encrypt_block(schedule: *const [u8; 384], data: *mut [u8; 8], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -3607,7 +3607,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_decrypt_block(schedule: *const [u8; 384], data: *mut [u8; 8], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx], rbx
+        r"mov QWORD PTR [rdx], rbx
 mov QWORD PTR [rdx+8], rbp
 mov QWORD PTR [rdx+16], r12
 mov QWORD PTR [rdx+24], r13
@@ -5811,7 +5811,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt_core(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "cmp rdx, 128
+        r"cmp rdx, 128
 jb 20f
 mov QWORD PTR [rcx+1016], rbx
 mov QWORD PTR [rcx+1008], r12
@@ -12431,7 +12431,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt_core(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize, scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "cmp rdx, 128
+        r"cmp rdx, 128
 jb 20f
 mov QWORD PTR [rcx+1016], rbx
 mov QWORD PTR [rcx+1008], r12
@@ -19049,7 +19049,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1032]
+        r"lea rsp, [rsp-1032]
 mov rcx, rsp
 add rcx, 8
 call {vg_triple_des_ecb_encrypt_core}
@@ -19204,7 +19204,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1032]
+        r"lea rsp, [rsp-1032]
 mov rcx, rsp
 add rcx, 8
 call {vg_triple_des_ecb_decrypt_core}
@@ -19363,7 +19363,7 @@ pub(crate) const VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt_avx2(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1032]
+        r"lea rsp, [rsp-1032]
 mov rcx, rsp
 add rcx, 8
 cmp rdx, 256
@@ -20905,7 +20905,7 @@ pub(crate) const VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES: crate::cpu::Features =
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt_avx2(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1032]
+        r"lea rsp, [rsp-1032]
 mov rcx, rsp
 add rcx, 8
 cmp rdx, 256
@@ -22447,7 +22447,7 @@ pub(crate) const VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_encrypt_avx512(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1032]
+        r"lea rsp, [rsp-1032]
 mov rcx, rsp
 add rcx, 8
 cmp rdx, 512
@@ -25272,7 +25272,7 @@ pub(crate) const VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_triple_des_ecb_decrypt_avx512(schedule: *const [u8; 384], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-1032]
+        r"lea rsp, [rsp-1032]
 mov rcx, rsp
 add rcx, 8
 cmp rdx, 512

@@ -18,13 +18,13 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
     core::arch::naked_asm!(
-        "movz x6, #64, lsl #0
+        r"movz x6, #64, lsl #0
 dup v2.16b, w6
 movz x6, #128, lsl #0
 dup v3.16b, w6",
         concat!("adrp x9, ", vg_sym_page!("{VG_BLOWFISH_INIT}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_BLOWFISH_INIT}")),
-        "add x12, x2, #0
+        r"add x12, x2, #0
 movz x11, #64, lsl #0
 20:
 ldr q28, [x9, #0]
@@ -998,7 +998,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_ecb_encrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #256
+        r"sub sp, sp, #256
 add x3, sp, #0
 str q8, [x3, #128]
 str q9, [x3, #144]
@@ -2837,7 +2837,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_ecb_decrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #256
+        r"sub sp, sp, #256
 add x3, sp, #0
 str q8, [x3, #128]
 str q9, [x3, #144]

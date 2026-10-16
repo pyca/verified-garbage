@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp384r1_mul(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x0, #2608]
+        r"str x19, [x0, #2608]
 movz x19, #48, lsl #0
 movz x5, #1, lsl #0
 20:

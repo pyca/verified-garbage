@@ -16,7 +16,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: *mut [u64; 64]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rsi+392], rbx
+        r"mov QWORD PTR [rsi+392], rbx
 mov QWORD PTR [rsi+400], rbp
 mov QWORD PTR [rsi+408], r12
 mov QWORD PTR [rsi+416], r13
@@ -525,7 +525,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_keccak_absorb(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize) -> usize {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-648]
+        r"lea rsp, [rsp-648]
 mov r9, rsp
 add r9, 8
 mov QWORD PTR [r9+512], rbx
@@ -615,7 +615,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], rate: usize, pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+512], rbx
+        r"mov QWORD PTR [r9+512], rbx
 mov QWORD PTR [r9+520], rbp
 mov QWORD PTR [r9+528], r12
 mov QWORD PTR [r9+536], r13
@@ -697,7 +697,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-648]
+        r"lea rsp, [rsp-648]
 mov r8, rsp
 add r8, 8
 movzx eax, BYTE PTR [rdi+rdx*1]
@@ -730,7 +730,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rate: usize, pos: usize, suffix: u32, scratch: *mut [u64; 80]) {
     core::arch::naked_asm!(
-        "movzx eax, BYTE PTR [rdi+rdx*1]
+        r"movzx eax, BYTE PTR [rdi+rdx*1]
 xor rax, rcx
 mov BYTE PTR [rdi+rdx*1], al
 movzx eax, BYTE PTR [rdi+rsi*1-1]
@@ -758,7 +758,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-648]
+        r"lea rsp, [rsp-648]
 mov r9, rsp
 add r9, 8
 mov QWORD PTR [r9+512], rbx
@@ -843,7 +843,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25], rate: usize, pos: usize, out: *mut u8, outlen: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r9+512], rbx
+        r"mov QWORD PTR [r9+512], rbx
 mov QWORD PTR [r9+520], rbp
 mov QWORD PTR [r9+528], r12
 mov QWORD PTR [r9+536], r13

@@ -21,7 +21,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_mont_mul(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 mov ecx, ecx
 mov r8d, r8d
 movq xmm8, rbx
@@ -162,7 +162,7 @@ pub(crate) const VG_RSA_MONT_MUL_ADX_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_mont_mul_adx(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 mov ecx, ecx
 mov r8d, r8d
 movq xmm8, rbx
@@ -2626,7 +2626,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_lazy_mont_mul(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 mov ecx, ecx
 mov r8d, r8d
 movq xmm8, rbx
@@ -2766,7 +2766,7 @@ pub(crate) const VG_RSA_LAZY_MONT_MUL_ADX_FEATURES: crate::cpu::Features = crate
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_lazy_mont_mul_adx(ws: *mut u64, ws_len: usize, o: u32, a: u32, b: u32) {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 mov ecx, ecx
 mov r8d, r8d
 movq xmm8, rbx

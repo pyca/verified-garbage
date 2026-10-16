@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #384
+        r"sub sp, sp, #384
 add x4, sp, #0
 str x19, [x4, #112]
 str x20, [x4, #120]
@@ -159,7 +159,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #384
+        r"sub sp, sp, #384
 add x4, sp, #0
 str x19, [x4, #112]
 str x20, [x4, #120]
@@ -258,7 +258,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init_scratch(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize, scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #112]
+        r"str x19, [x4, #112]
 str x20, [x4, #120]
 str x21, [x4, #128]
 str x22, [x4, #136]
@@ -399,7 +399,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize_scratch(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16], scratch: *mut [u64; 48]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #112]
+        r"str x19, [x4, #112]
 str x20, [x4, #120]
 str x21, [x4, #128]
 str x22, [x4, #136]

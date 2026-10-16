@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_compress(state: *mut [u64; 8], blocks: *const [u8; 128], n: usize, scratch: *mut [u64; 166]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+200], ebx
 mov DWORD PTR [eax+204], esi
 mov DWORD PTR [eax+208], edi
@@ -5661,7 +5661,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, -1056596264
 mov DWORD PTR [eax], ecx
 mov ecx, -876896931
@@ -5711,7 +5711,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, -205731576
 mov DWORD PTR [eax], ecx
 mov ecx, 1779033703
@@ -5761,7 +5761,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, 424955298
 mov DWORD PTR [eax], ecx
 mov ecx, -1942145080
@@ -5811,7 +5811,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, -64227540
 mov DWORD PTR [eax], ecx
 mov ecx, 573645204
@@ -5862,7 +5862,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1404]
+        r"lea esp, [esp-1404]
 mov eax, DWORD PTR [esp+1408]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1412]
@@ -6017,7 +6017,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1400]
+        r"lea esp, [esp-1400]
 mov eax, DWORD PTR [esp+1404]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1408]
@@ -6193,7 +6193,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_update_scratch(state: *mut [u8; 192], count: u64, data: *const u8, len: usize, scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+24]
+        r"mov eax, DWORD PTR [esp+24]
 mov DWORD PTR [eax+224], ebx
 mov DWORD PTR [eax+228], esi
 mov DWORD PTR [eax+232], edi
@@ -6335,7 +6335,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+224], ebx
 mov DWORD PTR [eax+228], esi
 mov DWORD PTR [eax+232], edi
@@ -6498,7 +6498,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha384_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1400]
+        r"lea esp, [esp-1400]
 mov eax, DWORD PTR [esp+1404]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1408]
@@ -6662,7 +6662,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_256_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1400]
+        r"lea esp, [esp-1400]
 mov eax, DWORD PTR [esp+1404]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1408]
@@ -6814,7 +6814,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha512_224_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-1400]
+        r"lea esp, [esp-1400]
 mov eax, DWORD PTR [esp+1404]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+1408]

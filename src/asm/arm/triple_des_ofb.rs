@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_triple_des_ofb(schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #64
+        r"sub sp, sp, #64
 add r12, sp, #0
 str lr, [r12, #4]
 add lr, sp, #8

@@ -21,7 +21,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r3, #840]
+        r"str r4, [r3, #840]
 str r5, [r3, #844]
 str r6, [r3, #848]
 str r7, [r3, #852]
@@ -435,7 +435,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #0]
+        r"ldr r12, [sp, #0]
 str r4, [r12, #840]
 str r5, [r12, #844]
 str r6, [r12, #848]
@@ -975,7 +975,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "str r4, [r3, #840]
+        r"str r4, [r3, #840]
 str r5, [r3, #844]
 str r6, [r3, #848]
 str r7, [r3, #852]
@@ -1606,7 +1606,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
     core::arch::naked_asm!(
-        "mov r1, #384
+        r"mov r1, #384
 mov r2, #0
 20:
 ldrb r3, [r0, #1]

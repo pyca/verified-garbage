@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_idea_ofb(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #208
+        r"sub sp, sp, #208
 add x4, sp, #0
 add x5, x4, #0
 str x19, [x5, #112]

@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "stmxcsr DWORD PTR [rsi+768]
+        r"stmxcsr DWORD PTR [rsi+768]
 mov r11d, DWORD PTR [rsi+768]
 and r11d, 65535
 mov eax, 8127
@@ -726,7 +726,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "stmxcsr DWORD PTR [rsi+768]
+        r"stmxcsr DWORD PTR [rsi+768]
 mov r11d, DWORD PTR [rsi+768]
 and r11d, 65535
 mov eax, 8127
@@ -1440,7 +1440,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r8, rdi
+        r"mov r8, rdi
 movdqu xmm6, XMMWORD PTR [rdi+1008]
 stmxcsr DWORD PTR [r8+1016]
 mov r11d, DWORD PTR [r8+1016]
@@ -1564,7 +1564,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r8, rdi
+        r"mov r8, rdi
 movdqu xmm6, XMMWORD PTR [rdi+1008]
 stmxcsr DWORD PTR [r8+1016]
 mov r11d, DWORD PTR [r8+1016]
@@ -1698,7 +1698,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov eax, 8380417
+        r"mov eax, 8380417
 movq xmm15, rax
 pshufd xmm15, xmm15, 0
 mov ecx, 64
@@ -1738,7 +1738,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov eax, 8380417
+        r"mov eax, 8380417
 movq xmm15, rax
 pshufd xmm15, xmm15, 0
 mov ecx, 64
@@ -1781,7 +1781,7 @@ pub(crate) const VG_MLDSA_NTT_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_ntt_avx2(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "stmxcsr DWORD PTR [rsi+768]
+        r"stmxcsr DWORD PTR [rsi+768]
 mov r11d, DWORD PTR [rsi+768]
 and r11d, 65535
 mov eax, 8127
@@ -2397,7 +2397,7 @@ pub(crate) const VG_MLDSA_MONTGOMERY_INV_NTT_AVX2_FEATURES: crate::cpu::Features
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_montgomery_inv_ntt_avx2(f: *mut [u32; 256], scratch: *mut [u64; 128]) {
     core::arch::naked_asm!(
-        "stmxcsr DWORD PTR [rsi+768]
+        r"stmxcsr DWORD PTR [rsi+768]
 mov r11d, DWORD PTR [rsi+768]
 and r11d, 65535
 mov eax, 8127
@@ -3077,7 +3077,7 @@ pub(crate) const VG_MLDSA_MONTGOMERY_MULTIPLY_NTT_AVX2_FEATURES: crate::cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_montgomery_multiply_ntt_avx2(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r8, rdi
+        r"mov r8, rdi
 vmovdqu ymm6, YMMWORD PTR [rdi+992]
 stmxcsr DWORD PTR [r8+1016]
 mov r11d, DWORD PTR [r8+1016]
@@ -3174,7 +3174,7 @@ pub(crate) const VG_MLDSA_MONTGOMERY_MULTIPLY_ADD_NTT_AVX2_FEATURES: crate::cpu:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_montgomery_multiply_add_ntt_avx2(h: *mut [u32; 256], f: *const [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov r8, rdi
+        r"mov r8, rdi
 vmovdqu ymm6, YMMWORD PTR [rdi+992]
 stmxcsr DWORD PTR [r8+1016]
 mov r11d, DWORD PTR [r8+1016]
@@ -3279,7 +3279,7 @@ pub(crate) const VG_MLDSA_ADD_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_add_avx2(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov eax, 8380417
+        r"mov eax, 8380417
 vmovq xmm15, rax
 vpbroadcastd ymm15, xmm15
 mov ecx, 32
@@ -3323,7 +3323,7 @@ pub(crate) const VG_MLDSA_SUB_AVX2_FEATURES: crate::cpu::Features = crate::cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_sub_avx2(f: *mut [u32; 256], g: *const [u32; 256]) {
     core::arch::naked_asm!(
-        "mov eax, 8380417
+        r"mov eax, 8380417
 vmovq xmm15, rax
 vpbroadcastd ymm15, xmm15
 mov ecx, 32
@@ -3360,7 +3360,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 mov r8, rdx
 cmp esi, 15
 je 20f
@@ -3459,7 +3459,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, b: u32, out: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 mov r8, rcx
 cmp edx, 2
 je 20f
@@ -3760,7 +3760,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a: u32, b: u32, f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov ecx, ecx
+        r"mov ecx, ecx
 mov rsi, r8
 cmp ecx, 2
 je 20f
@@ -4139,7 +4139,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov ecx, 64
+        r"mov ecx, 64
 20:
 mov r10d, 0
 movzx eax, BYTE PTR [rdi]
@@ -4200,7 +4200,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usize, omega: u32, y: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 mov eax, 0
 mov r9, rcx
 mov r10, r8
@@ -4251,7 +4251,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usize, omega: u32, h: *mut u32, hlen: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 mov eax, 0
 mov r9, rcx
 mov r10, r8
@@ -4354,7 +4354,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *mut [u32; 256], t0: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov ecx, 256
+        r"mov ecx, 256
 20:
 mov eax, DWORD PTR [rdi+rcx*4-4]
 add rax, 4095
@@ -4389,7 +4389,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 cmp esi, 261888
 mov r10, rdx
 je 20f
@@ -4448,7 +4448,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 cmp esi, 261888
 mov r10, rdx
 je 20f
@@ -4527,7 +4527,7 @@ pub(crate) const VG_MLDSA_HIGH_BITS_AVX2_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_high_bits_avx2(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 cmp esi, 261888
 mov r10, rdx
 je 20f
@@ -4629,7 +4629,7 @@ pub(crate) const VG_MLDSA_LOW_BITS_AVX2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_low_bits_avx2(r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 cmp esi, 261888
 mov r10, rdx
 je 20f
@@ -4744,7 +4744,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 mov r9, -1
 mov ecx, 256
 20:
@@ -4781,7 +4781,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 cmp edx, 261888
 mov r10, rcx
 mov r9d, 0
@@ -4887,7 +4887,7 @@ pub(crate) const VG_MLDSA_NORM_LT_AVX2_FEATURES: crate::cpu::Features = crate::c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_norm_lt_avx2(f: *const [u32; 256], bound: u32) -> u32 {
     core::arch::naked_asm!(
-        "mov esi, esi
+        r"mov esi, esi
 cmp esi, 8380417
 jb 20f
 mov esi, 8380417
@@ -4947,7 +4947,7 @@ pub(crate) const VG_MLDSA_MAKE_HINT_AVX2_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_make_hint_avx2(z: *const [u32; 256], r: *const [u32; 256], gamma2: u32, h: *mut [u32; 256]) -> u32 {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 cmp edx, 261888
 mov r10, rcx
 mov r9d, 0
@@ -5130,7 +5130,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 cmp edx, 261888
 mov r10, rcx
 je 20f
@@ -5234,7 +5234,7 @@ pub(crate) const VG_MLDSA_USE_HINT_AVX2_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_use_hint_avx2(h: *const [u32; 256], r: *const [u32; 256], gamma2: u32, out: *mut [u32; 256]) {
     core::arch::naked_asm!(
-        "mov edx, edx
+        r"mov edx, edx
 cmp edx, 261888
 mov r10, rcx
 je 20f
@@ -5382,7 +5382,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx+2024], rbx
+        r"mov QWORD PTR [rdx+2024], rbx
 mov QWORD PTR [rdx+2032], rbp
 mov QWORD PTR [rdx+2040], r12
 mov rbx, rdx
@@ -5496,7 +5496,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_rej_ntt_poly4(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx+4384], rbx
+        r"mov QWORD PTR [rdx+4384], rbx
 mov QWORD PTR [rdx+4392], rbp
 mov QWORD PTR [rdx+4400], r12
 mov QWORD PTR [rdx+4408], r13
@@ -5570,7 +5570,7 @@ pub(crate) const VG_MLDSA_REJ_NTT_POLY4_AVX2_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_rej_ntt_poly4_avx2(seeds: *const [u8; 136], a: *mut [u32; 1024], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rdx+4384], rbx
+        r"mov QWORD PTR [rdx+4384], rbx
 mov QWORD PTR [rdx+4392], rbp
 mov QWORD PTR [rdx+4400], r12
 mov QWORD PTR [rdx+4408], r13
@@ -8364,7 +8364,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66], eta: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+2024], rbx
+        r"mov QWORD PTR [rcx+2024], rbx
 mov QWORD PTR [rcx+2032], rbp
 mov QWORD PTR [rcx+2040], r12
 mov rbx, rcx
@@ -8566,7 +8566,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66], gamma1: u32, a: *mut [u32; 256], scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+2024], rbx
+        r"mov QWORD PTR [rcx+2024], rbx
 mov QWORD PTR [rcx+2032], rbp
 mov QWORD PTR [rcx+2040], r12
 mov rbx, rcx
@@ -8743,7 +8743,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_expand_mask_poly4(seeds: *const [u8; 264], gamma1: u32, a: *mut [u32; 1024], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+5088], rbx
+        r"mov QWORD PTR [rcx+5088], rbx
 mov QWORD PTR [rcx+5096], rbp
 mov QWORD PTR [rcx+5104], r12
 mov QWORD PTR [rcx+5112], r13
@@ -8817,7 +8817,7 @@ pub(crate) const VG_MLDSA_EXPAND_MASK_POLY4_AVX2_FEATURES: crate::cpu::Features 
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_expand_mask_poly4_avx2(seeds: *const [u8; 264], gamma1: u32, a: *mut [u32; 1024], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "mov QWORD PTR [rcx+5088], rbx
+        r"mov QWORD PTR [rcx+5088], rbx
 mov QWORD PTR [rcx+5096], rbp
 mov QWORD PTR [rcx+5104], r12
 mov QWORD PTR [rcx+5112], r13
@@ -10118,7 +10118,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: usize, tau: u32, c: *mut [u32; 256], scratch: *mut [u64; 256]) -> u32 {
     core::arch::naked_asm!(
-        "mov QWORD PTR [r8+2024], rbx
+        r"mov QWORD PTR [r8+2024], rbx
 mov QWORD PTR [r8+2032], rbp
 mov QWORD PTR [r8+2040], r12
 mov rbx, r8

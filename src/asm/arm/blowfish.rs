@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 4168]) {
     core::arch::naked_asm!(
-        "sub sp, sp, #64
+        r"sub sp, sp, #64
 add r3, sp, #0
 str r4, [r3, #0]
 str r5, [r3, #4]
@@ -690,7 +690,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_ecb_encrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #256
+        r"sub sp, sp, #256
 add r3, sp, #0
 str r4, [r3, #0]
 str r5, [r3, #4]
@@ -1005,7 +1005,7 @@ bx lr",
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_ecb_decrypt(schedule: *const [u8; 4168], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #256
+        r"sub sp, sp, #256
 add r3, sp, #0
 str r4, [r3, #0]
 str r5, [r3, #4]

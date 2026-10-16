@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_scalar_mul_add(out: *mut [u8; 32], r: *const [u8; 32], k: *const [u8; 32], s: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x4, #0]
+        r"str x19, [x4, #0]
 str x20, [x4, #8]
 str x21, [x4, #16]
 str x22, [x4, #24]
@@ -309,7 +309,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_scalar_reduce(out: *mut [u8; 32], wide: *const [u8; 64], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x2, #0]
+        r"str x19, [x2, #0]
 str x20, [x2, #8]
 str x21, [x2, #16]
 str x22, [x2, #24]
@@ -425,7 +425,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_scalar_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x2, #0]
+        r"str x19, [x2, #0]
 str x20, [x2, #8]
 str x21, [x2, #16]
 str x22, [x2, #24]
@@ -619,7 +619,7 @@ sub x20, x20, x21
 sub x21, x21, #1",
         concat!("adrp x9, ", vg_sym_page!("{VG_ED25519_COMB}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_ED25519_COMB}")),
-        "lsl x2, x19, #8
+        r"lsl x2, x19, #8
 add x9, x9, x2
 add x9, x9, x2
 add x9, x9, x2
@@ -897,7 +897,7 @@ sub x20, x20, x21
 sub x21, x21, #1",
         concat!("adrp x9, ", vg_sym_page!("{VG_ED25519_COMB}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_ED25519_COMB}")),
-        "lsl x2, x19, #8
+        r"lsl x2, x19, #8
 add x9, x9, x2
 add x9, x9, x2
 add x9, x9, x2
@@ -3038,7 +3038,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_verify_equation(pk: *const [u8; 32], signature: *const [u8; 64], challenge: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "add x8, x2, #0
+        r"add x8, x2, #0
 add x2, x3, #0
 str x19, [x2, #0]
 str x20, [x2, #8]
@@ -7593,7 +7593,7 @@ sub x8, x19, #15
 cbnz x8, 230b",
         concat!("adrp x9, ", vg_sym_page!("{VG_ED25519_VERIFY_NEG_BASE}")),
         concat!("add x9, x9, ", vg_sym_pageoff!("{VG_ED25519_VERIFY_NEG_BASE}")),
-        "movz w19, #0, lsl #0
+        r"movz w19, #0, lsl #0
 231:
 lsl x8, x19, #7
 add x8, x8, x0
@@ -13020,7 +13020,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_public_key(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 sub sp, sp, #320
 add x15, sp, #256
 str x0, [x15, #0]
@@ -13195,7 +13195,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_sign_cached(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 sub sp, sp, #320
 add x15, sp, #256
 str x0, [x15, #0]
@@ -13469,7 +13469,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_verify(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "str x30, [sp, #-16]!
+        r"str x30, [sp, #-16]!
 sub sp, sp, #320
 add x15, sp, #256
 str x0, [x15, #0]
@@ -13577,7 +13577,7 @@ pub(crate) const VG_ED25519_PUBLIC_KEY_SHA3_FEATURES: crate::cpu::Features = cra
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_public_key_sha3(out: *mut [u8; 32], seed: *const [u8; 32], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x30, [sp, #-16]!
 sub sp, sp, #320
 add x15, sp, #256
@@ -13758,7 +13758,7 @@ pub(crate) const VG_ED25519_SIGN_CACHED_SHA3_FEATURES: crate::cpu::Features = cr
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_sign_cached_sha3(out: *mut [u8; 64], seed: *const [u8; 32], pk: *const [u8; 32], message: *const u8, len: usize, scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x30, [sp, #-16]!
 sub sp, sp, #320
 add x15, sp, #256
@@ -14038,7 +14038,7 @@ pub(crate) const VG_ED25519_VERIFY_SHA3_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ed25519_verify_sha3(pk: *const [u8; 32], message: *const u8, len: usize, signature: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension sha3
+        r".arch_extension sha3
 str x30, [sp, #-16]!
 sub sp, sp, #320
 add x15, sp, #256

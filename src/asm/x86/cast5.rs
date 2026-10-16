@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_expand_key(key: *const u8, key_len: usize, schedule: *mut [u8; 128], scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+64], ebx
 mov DWORD PTR [eax+72], edi
 mov DWORD PTR [eax+76], ebp
@@ -3372,7 +3372,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_ecb_encrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+32], ebx
 mov DWORD PTR [eax+40], edi
 mov DWORD PTR [eax+44], ebp
@@ -4019,7 +4019,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cast5_ecb_decrypt(schedule: *const [u8; 128], rounds: usize, data: *mut [u8; 8], n: usize, scratch: *mut [u64; 32]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+20]
+        r"mov eax, DWORD PTR [esp+20]
 mov DWORD PTR [eax+32], ebx
 mov DWORD PTR [eax+40], edi
 mov DWORD PTR [eax+44], ebp

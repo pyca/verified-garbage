@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_inv_mod_p(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x0, #5704]
+        r"str x19, [x0, #5704]
 str x21, [x0, #5712]
 str x22, [x0, #5720]
 str x23, [x0, #5728]
@@ -2407,7 +2407,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p521_inv_mod_n(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "str x19, [x0, #5704]
+        r"str x19, [x0, #5704]
 str x21, [x0, #5712]
 str x22, [x0, #5720]
 str x23, [x0, #5728]

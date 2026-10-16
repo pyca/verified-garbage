@@ -18,7 +18,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_cbc_encrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3144]
+        r"lea rsp, [rsp-3144]
 mov r8, rsp
 add r8, 8
 mov r9, r8
@@ -4759,7 +4759,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sm4_cbc_decrypt(schedule: *const [u8; 128], iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-3144]
+        r"lea rsp, [rsp-3144]
 mov r8, rsp
 add r8, 8
 mov r9, r8

@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_compress(state: *mut [u32; 8], blocks: *const [u8; 64], n: usize, scratch: *mut [u64; 72]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+16]
+        r"mov eax, DWORD PTR [esp+16]
 mov DWORD PTR [eax+96], ebx
 mov DWORD PTR [eax+100], esi
 mov DWORD PTR [eax+104], edi
@@ -3537,7 +3537,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
     core::arch::naked_asm!(
-        "mov eax, DWORD PTR [esp+4]
+        r"mov eax, DWORD PTR [esp+4]
 mov ecx, 1937774191
 mov DWORD PTR [eax], ecx
 mov ecx, 1226093241
@@ -3574,7 +3574,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_update(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        "lea esp, [esp-188]
+        r"lea esp, [esp-188]
 mov eax, DWORD PTR [esp+192]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+196]
@@ -3730,7 +3730,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm3_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        "lea esp, [esp-184]
+        r"lea esp, [esp-184]
 mov eax, DWORD PTR [esp+188]
 mov DWORD PTR [esp+4], eax
 mov eax, DWORD PTR [esp+192]

@@ -27,7 +27,7 @@ pub(crate) const VG_AES_CCM_SEAL_AES_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
@@ -391,7 +391,7 @@ pub(crate) const VG_AES_CCM_OPEN_AES_FEATURES: crate::cpu::Features = crate::cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
@@ -795,7 +795,7 @@ pub(crate) const VG_AES_CCM_SEAL_AES_CBC_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
@@ -1159,7 +1159,7 @@ pub(crate) const VG_AES_CCM_OPEN_AES_CBC_FEATURES: crate::cpu::Features = crate:
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        ".arch_extension aes
+        r".arch_extension aes
 sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
@@ -1559,7 +1559,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut u8, tag_len: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #2592
+        r"sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
 str x17, [x16, #0]
@@ -1917,7 +1917,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "sub sp, sp, #2592
+        r"sub sp, sp, #2592
 add x16, sp, #0
 ldr x17, [sp, #2592]
 str x17, [x16, #0]

@@ -13,7 +13,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_check_ek(ek: *const [u8; 1184]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -73,7 +73,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_keygen(seed: *const [u8; 64], ek: *mut [u8; 1184], dk: *mut [u8; 2400], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -1447,7 +1447,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_encaps(ek: *const [u8; 1184], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1088], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp
@@ -3058,7 +3058,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem768_decaps(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
     core::arch::naked_asm!(
-        "push ebx
+        r"push ebx
 push esi
 push edi
 push ebp

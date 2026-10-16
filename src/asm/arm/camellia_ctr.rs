@@ -19,7 +19,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_camellia_ctr(schedule: *const [u8; 272], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        "sub sp, sp, #88
+        r"sub sp, sp, #88
 add r12, sp, #0
 str lr, [r12, #8]
 ldr lr, [sp, #88]

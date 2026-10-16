@@ -20,7 +20,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdh_p521(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov r8, rcx
+        r"mov r8, rcx
 mov r9, rdx
 mov rcx, rsi
 add rdx, 1
@@ -14277,7 +14277,7 @@ pub(crate) const VG_ECDH_P521_ADX_FEATURES: crate::cpu::Features = crate::cpu::F
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdh_p521_adx(out: *mut [u8; 66], d: *const [u8; 66], peer: *const [u8; 133], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "mov r8, rcx
+        r"mov r8, rcx
 mov r9, rdx
 mov rcx, rsi
 add rdx, 1

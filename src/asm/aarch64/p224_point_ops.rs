@@ -17,7 +17,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p224_proj_add(ws: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        "movz x7, #0, lsl #0
+        r"movz x7, #0, lsl #0
 ldr x4, [x0, #704]
 ldr x5, [x0, #712]
 ldr x16, [x0, #720]

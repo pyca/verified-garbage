@@ -22,7 +22,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p521_sign(out: *mut [u8; 132], d: *const [u8; 66], digest: *const [u8; 66], k: *const [u8; 66], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "str x19, [x4, #0]
+        r"str x19, [x4, #0]
 str x20, [x4, #8]
 str x21, [x4, #16]
 str x22, [x4, #24]
@@ -1016,7 +1016,7 @@ sub x2, x2, x4
 movz x7, #0, lsl #0",
         concat!("adrp x16, ", vg_sym_page!("{VG_P521_COMB}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_P521_COMB}")),
-        "movz x17, #9216, lsl #0
+        r"movz x17, #9216, lsl #0
 mul x17, x19, x17
 add x16, x16, x17
 movz x5, #1, lsl #0
@@ -5408,7 +5408,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_ecdsa_p521_verify(public: *const [u8; 133], digest: *const [u8; 66], sig: *const [u8; 132], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        "add x4, x3, #0
+        r"add x4, x3, #0
 add x6, x0, #0
 add x3, x2, #0
 add x8, x2, #66
@@ -6768,7 +6768,7 @@ sub x2, x2, x4
 movz x7, #0, lsl #0",
         concat!("adrp x16, ", vg_sym_page!("{VG_P521_COMB}")),
         concat!("add x16, x16, ", vg_sym_pageoff!("{VG_P521_COMB}")),
-        "movz x17, #9216, lsl #0
+        r"movz x17, #9216, lsl #0
 mul x17, x19, x17
 add x16, x16, x17
 movz x5, #1, lsl #0

@@ -27,7 +27,7 @@ pub(crate) const VG_DSA_SIGN_RANDOM_ADX_FEATURES: crate::cpu::Features = crate::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_random_adx(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-248]
+        r"lea rsp, [rsp-248]
 mov QWORD PTR [rsp+40], rdi
 mov QWORD PTR [rsp+48], rsi
 mov QWORD PTR [rsp+56], rdx
@@ -303,7 +303,7 @@ pub(crate) const VG_DSA_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_adx(out: *mut u8, out_len: usize, key: *const u8, key_len: usize, p_len: usize, nonce: *const u8, q_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+32]
+        r"mov r11, QWORD PTR [rsp+32]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -6969,7 +6969,7 @@ pub(crate) const VG_DSA_VERIFY_ADX_FEATURES: crate::cpu::Features = crate::cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_verify_adx(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+24]
+        r"mov r11, QWORD PTR [rsp+24]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -13767,7 +13767,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_sign_random(out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "lea rsp, [rsp-248]
+        r"lea rsp, [rsp-248]
 mov QWORD PTR [rsp+40], rdi
 mov QWORD PTR [rsp+48], rsi
 mov QWORD PTR [rsp+56], rdx
@@ -14039,7 +14039,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_sign(out: *mut u8, out_len: usize, key: *const u8, key_len: usize, p_len: usize, nonce: *const u8, q_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+32]
+        r"mov r11, QWORD PTR [rsp+32]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
@@ -20701,7 +20701,7 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_dsa_verify(key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "mov r11, QWORD PTR [rsp+24]
+        r"mov r11, QWORD PTR [rsp+24]
 mov QWORD PTR [r11], rbx
 mov QWORD PTR [r11+8], rbp
 mov QWORD PTR [r11+16], r12
