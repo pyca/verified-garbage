@@ -11,20 +11,12 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.Rsa.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Rsa.publicCheckedApi.artifact X86_64.target {
-    notes := ["Baseline x86-64: `e` is checked first, its bytes read into a register saturated at \
-        `2^34 - 1` once they reach `2^33`; then Montgomery multiplication on 64-bit words, with R² mod n \
-        by constant-time doublings and squarings, and the exponent scanned left to right, a square per \
-        bit and a multiplication per set bit."]
-    code := Impl.Rsa.X86_64.Checked.publicChecked
-    verified := Proof.Rsa.X86_64.publicChecked_verified },
   Spec.Rsa.publicPrecomputeApi.artifact X86_64.target {
     notes := ["Baseline x86-64: for n whose top bit is set and whose number of words is a multiple \
         of 4, R² mod n from R - n by steps of long division, a word at a time (Knuth's Algorithm D, \
         each quotient digit by Möller and Granlund's division by a reciprocal of n's top word, with \
-        its corrections by masks), then two squarings; for any other n, \
-        as `vg_rsa_public_checked` computes it. Montgomery multiplication by calls of \
-        `vg_rsa_mont_mul`."]
+        its corrections by masks), then two squarings; for any other n, by constant-time doublings \
+        and squarings. Montgomery multiplication by calls of `vg_rsa_mont_mul`."]
     code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.base.mm
     stack := 8
     verified := Proof.Rsa.X86_64.Instances.precompute_verified },
@@ -41,13 +33,14 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.X86_64.Instances.precomputeAdx_verified
     features := ["bmi2", "adx"] },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86_64.target {
-    notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it; then Montgomery \
-        multiplication as `vg_rsa_public_checked`'s. The result is the input raised to `e - 1` (`e` is \
-        odd): for `e = 65537` by sixteen squares, otherwise with the exponent less one scanned left to \
-        right from its first set bit, which starts the result as the input, a square per later bit and a \
-        multiplication per later set bit; then one multiplication by the input itself adds the last bit \
-        and leaves Montgomery form at once. `pre` is checked (`n` odd, its top word not \
-        zero, `R² mod n` below it) before any arithmetic, so that values of no modulus are safe."]
+    notes := ["Baseline x86-64: `e` is checked first, its bytes read into a register saturated at \
+        `2^34 - 1` once they reach `2^33`; then Montgomery multiplication on 64-bit words. The result \
+        is the input raised to `e - 1` (`e` is odd): for `e = 65537` by sixteen squares, otherwise \
+        with the exponent less one scanned left to right from its first set bit, which starts the \
+        result as the input, a square per later bit and a multiplication per later set bit; then one \
+        multiplication by the input itself adds the last bit and leaves Montgomery form at once. \
+        `pre` is checked (`n` odd, its top word not zero, `R² mod n` below it) before any \
+        arithmetic, so that values of no modulus are safe."]
     code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.base.mm
     verified := Proof.Bignum.X86_64.FoldedPublic.base_verified },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact X86_64.target {
@@ -65,7 +58,7 @@ def artifacts : List Artifact := [
         below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are \
         replaced by 3 under a clear mask, so that the arithmetic is the same whatever the key, and \
         the result is stored masked. Each prime has its own working space, with its own \
-        Montgomery multiplication (`vg_rsa_public_checked`'s, by calls of `vg_rsa_mont_mul`); the input is reduced modulo it by \
+        Montgomery multiplication (by calls of `vg_rsa_mont_mul`); the input is reduced modulo it by \
         Montgomery reduction of chunks of its size, and the exponents are scanned left to right \
         over all their bits by a fixed window of 4 bits: four squares and a multiplication by the \
         window's power of the input, from a table of all 16 after the prime's working space, read \
@@ -113,7 +106,7 @@ def artifacts : List Artifact := [
   Spec.Rsa.recoverPrimesApi.artifact X86_64.target {
     notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and \
         the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words \
-        of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by `vg_rsa_public`'s \
+        of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by \
         Montgomery multiplication (by calls of `vg_rsa_mont_mul`) over all the bits of `r`, a square and a multiplication by `g` or \
         1 (a masked selection) per bit, then `64 Bw` squarings, each kept or not under masks; the \
         candidates stop at the first that finds the factors, which is the only branch on the key. \
@@ -131,8 +124,8 @@ def artifacts : List Artifact := [
     verified := Proof.Rsa.X86_64.Instances.recoverAdx_verified
     features := ["bmi2", "adx"] },
   Spec.Rsa.checkKeyApi.artifact X86_64.target {
-    notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it and `n` as \
-        `vg_rsa_public_precompute` checks it, which are the only branches on the key. Then every check \
+    notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_precomputed_checked` checks it and \
+        `n` as `vg_rsa_public_precompute` checks it, which are the only branches on the key. Then every check \
         of the private key is computed whatever its outcome and and'ed into a mask: the comparisons by \
         a subtraction's borrow over `w` words, `p q = n` by a product of the two, and each remainder \
         (`d e mod (p - 1)` and the others, `q qInv mod p`) by restoring division, a doubling modulo \
