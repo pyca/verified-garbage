@@ -6,7 +6,7 @@ import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
-public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Lit
+public import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 public import VerifiedGarbage.Proof.Sha512.X86_64.Lit
 public import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
@@ -64,8 +64,8 @@ def scalar : Compress where
 def avx2 : Compress where
   callee := .avx2
   ok := Stream.avx2_ok
-  mxcsr := by change Impl.Sha512.X86_64.Avx2.compress.allInstrs _ = true; lit_decide
-  spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Avx2.compress.allInstrs _ = true; lit_decide)
+  mxcsr := by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide
+  spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := "_avx2"
   features := ["avx", "avx2", "bmi1", "bmi2"]
 
