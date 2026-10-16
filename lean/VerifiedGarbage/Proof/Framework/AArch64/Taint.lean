@@ -68,6 +68,8 @@ def stepFn : Instr → Step
   -- The stack pointer is public, and memory secret.
   | .ldrSp t _ => ⟨fun τ => some (set τ t false)⟩
   | .str _ _ n _ | .strb _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
+  | .ldp t1 t2 n _ => ⟨fun τ => if pub τ n then some (set (set τ t1 false) t2 false) else none⟩
+  | .stp _ _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
   | .vop _ => ⟨fun τ => some τ⟩
   | .ldrq _ n _ | .strq _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
   | .umov _ d _ _ => ⟨fun τ => some (set τ d false)⟩
@@ -298,6 +300,28 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨a₁, -, e₁⟩ := e₁; obtain ⟨a₂, -, e₂⟩ := e₂
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
+    exact ha
+  | ldp t1 t2 n off =>
+    simp only [step, stepFn] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hn; cases hs
+    refine ⟨by simp [addrs, ha.reg hn], ?_⟩
+    obtain ⟨-, e₁⟩ := Option.ite_none_right_eq_some.mp e₁
+    obtain ⟨-, e₂⟩ := Option.ite_none_right_eq_some.mp e₂
+    simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at e₁ e₂
+    obtain ⟨_, -, _, -, rfl⟩ := e₁; obtain ⟨_, -, _, -, rfl⟩ := e₂
+    exact (ha.write .x t1 fun h => by cases h).write .x t2 fun h => by cases h
+  | stp t1 t2 n off =>
+    simp only [step, stepFn] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hn; cases hs
+    refine ⟨by simp [addrs, ha.reg hn], ?_⟩
+    obtain ⟨-, e₁⟩ := Option.ite_none_right_eq_some.mp e₁
+    obtain ⟨-, e₂⟩ := Option.ite_none_right_eq_some.mp e₂
+    simp only [Option.bind_eq_some_iff, State.store] at e₁ e₂
+    obtain ⟨_, e₁, e₁'⟩ := e₁; obtain ⟨_, e₂, e₂'⟩ := e₂
+    split at e₁ <;> cases e₁; split at e₁' <;> cases e₁'
+    split at e₂ <;> cases e₂; split at e₂' <;> cases e₂'
     exact ha
   | vop op =>
     obtain rfl := Option.some.inj hs
