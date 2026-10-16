@@ -18,8 +18,6 @@ public import VerifiedGarbage.Proof.Sha512.Digest
 public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.MdStream.Arm.Words
 public import VerifiedGarbage.Proof.MdStream.Prefix
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Sha512 on Arm: the shared contracts
@@ -96,18 +94,11 @@ theorem le272 {x : Nat} (h : x + 1376 ≤ 2 ^ 32) : x + 272 ≤ 2 ^ 32 := by ome
 
 /-- Rewrites the per-target contracts at a narrowed state (`stackArg` does
 not unfold cheaply). -/
-tactic_template "narrow" : tactic =>
-  `(tactic| simp only [Proof.Sha512.compressArm, Proof.Sha512.updateArm, Proof.Sha512.finalizeArm,
+macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
+  `(tactic| plain_simp_names simp only [Proof.Sha512.compressArm, Proof.Sha512.updateArm, Proof.Sha512.finalizeArm,
                      Proof.Sha512.countArm, compressWide, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
                      VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp, State.withRegions_mem,
-                     State.withRegions_rd, State.withRegions_wr])
-
-/-- `narrow` at a location. -/
-tactic_template "narrow" loc:Lean.Parser.Tactic.location : tactic =>
-  `(tactic| simp only [Proof.Sha512.compressArm, Proof.Sha512.updateArm, Proof.Sha512.finalizeArm,
-                     Proof.Sha512.countArm, compressWide, updateWide, finalizeWide, VG.Arm.stackArg_withRegions,
-                     VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp, State.withRegions_mem,
-                     State.withRegions_rd, State.withRegions_wr] $loc)
+                     State.withRegions_rd, State.withRegions_wr] $(loc)?)
 
 theorem compressWide_verified (hsat : ∃ s, compressWide.pre s) :
     Verified Arm.target Impl.Sha512.Arm.compress compressWide :=
@@ -262,16 +253,10 @@ def finalizeDigestWide (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byt
     stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1
 
 /-- Rewrites `finKD` and `finalizeDigestWide` at a narrowed state. -/
-tactic_template "narrowD" : tactic =>
-  `(tactic| simp only [MdStream.Arm.finKD, Proof.Sha512.countArm, finalizeDigestWide, MdStream.Arm.count,
+macro "narrowD" loc:(Lean.Parser.Tactic.location)? : tactic =>
+  `(tactic| plain_simp_names simp only [MdStream.Arm.finKD, Proof.Sha512.countArm, finalizeDigestWide, MdStream.Arm.count,
                      VG.Arm.stackArg_withRegions, VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp,
-                     State.withRegions_mem, State.withRegions_rd, State.withRegions_wr])
-
-/-- `narrowD` at a location. -/
-tactic_template "narrowD" loc:Lean.Parser.Tactic.location : tactic =>
-  `(tactic| simp only [MdStream.Arm.finKD, Proof.Sha512.countArm, finalizeDigestWide, MdStream.Arm.count,
-                     VG.Arm.stackArg_withRegions, VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp,
-                     State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $loc)
+                     State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
 
 theorem finalizeDigestWide_verified {code : Prog Arm.isa} {o : List Instr} {D : Nat}
     {iv : Spec.Sha512.HashValue} {digest : List Byte → List Byte}

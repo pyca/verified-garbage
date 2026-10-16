@@ -42,8 +42,6 @@ public import VerifiedGarbage.Proof.Framework.Bswap
 public import VerifiedGarbage.Proof.MdStream.X86.ArgWord
 meta import VerifiedGarbage.Proof.Framework.Bswap
 meta import VerifiedGarbage.Proof.MdStream.X86.ArgWord
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
-public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 /-!
 # Streaming SHA-256 on x86 (32-bit): `init`
@@ -369,16 +367,10 @@ theorem le160 {x : Nat} (h : x + 608 ≤ 2 ^ 32) : x + 160 ≤ 2 ^ 32 := by omeg
 
 /-- Rewrites the per-target contracts at a narrowed state (`arg` does not
 unfold cheaply). -/
-tactic_template "narrow" : tactic =>
-  `(tactic| simp only [Proof.Sha256.compressX86, Proof.Sha256.updateX86, Proof.Sha256.finalizeX86,
+macro "narrow" loc:(Lean.Parser.Tactic.location)? : tactic =>
+  `(tactic| plain_simp_names simp only [Proof.Sha256.compressX86, Proof.Sha256.updateX86, Proof.Sha256.finalizeX86,
                      compressWide, updateWide, finalizeWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions, State.withRegions_gpr,
-                     State.withRegions_mem, State.withRegions_rd, State.withRegions_wr])
-
-/-- `narrow` at a location. -/
-tactic_template "narrow" loc:Lean.Parser.Tactic.location : tactic =>
-  `(tactic| simp only [Proof.Sha256.compressX86, Proof.Sha256.updateX86, Proof.Sha256.finalizeX86,
-                     compressWide, updateWide, finalizeWide, VG.X86.arg_withRegions, VG.X86.argAddr_withRegions, State.withRegions_gpr,
-                     State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $loc)
+                     State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
 
 theorem compressWide_of {code : Prog isa} (hv : Verified X86.target code Proof.Sha256.compressX86)
     (hsat : ∃ s, compressWide.pre s) :
