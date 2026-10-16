@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontVerified
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontSqrVerified
 import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Spec.Ecdsa.Generic
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Montgomery products modulo the curves' `p` and `n` on AArch64 -/
 
@@ -49,41 +50,26 @@ def notesG : List String := ["The function zero-extends the offsets, saves the c
   multiple of the modulus, then a final conditional subtraction selected by `csel`."]
 
 def artifacts : List Artifact := [
-  { p384p.mulApi with
-    target := AArch64.target
-    doc := p384p.mulApi.doc (notes := notes384)
+  p384p.mulApi.artifact AArch64.target {
+    notes := notes384
     code := mulFn p384p.k p384p.m
-    contract := p384p.mulContract AArch64.abi
-    verified := p384p_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p384p.sqrApi with
-    target := AArch64.target
-    doc := p384p.sqrApi.doc (notes := notesSqr384)
+    verified := p384p_mul_verified },
+  p384p.sqrApi.artifact AArch64.target {
+    notes := notesSqr384
     code := sqrFn384
-    contract := p384p.sqrContract AArch64.abi
-    verified := p384p_sqr_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p521p.mulApi with
-    target := AArch64.target
-    doc := p521p.mulApi.doc (notes := notes)
+    verified := p384p_sqr_verified },
+  p521p.mulApi.artifact AArch64.target {
+    notes := notes
     code := mulFn p521p.k p521p.m
-    contract := p521p.mulContract AArch64.abi
-    verified := p521p_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p384n.mulApi with
-    target := AArch64.target
-    doc := p384n.mulApi.doc (notes := notesG)
+    verified := p521p_mul_verified },
+  p384n.mulApi.artifact AArch64.target {
+    notes := notesG
     code := mulFn p384n.k p384n.m
-    contract := p384n.mulContract AArch64.abi
-    verified := p384n_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p521n.mulApi with
-    target := AArch64.target
-    doc := p521n.mulApi.doc (notes := notesG)
+    verified := p384n_mul_verified },
+  p521n.mulApi.artifact AArch64.target {
+    notes := notesG
     code := mulFn p521n.k p521n.m
-    contract := p521n.mulContract AArch64.abi
-    verified := p521n_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }
+    verified := p521n_mul_verified }
 ]
 
 end VG.Artifacts.WeierstrassMont.AArch64

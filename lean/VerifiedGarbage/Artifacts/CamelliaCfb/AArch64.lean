@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Camellia.AArch64.FbVerified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Camellia-CFB128 artifacts on baseline AArch64 -/
 
@@ -18,21 +19,15 @@ def note : String :=
   core's code."
 
 def artifacts : List Artifact := [
-  { Spec.Camellia.cfbEncryptApi with
-    target := AArch64.target
-    doc := Spec.Camellia.cfbEncryptApi.doc (notes := [note])
+  Spec.Camellia.cfbEncryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x5 406 Impl.Camellia.AArch64.cfbEncrypt
-    contract := Spec.Camellia.cfbEncryptContract AArch64.abi 3248
     stack := 3248
-    verified := Proof.Camellia.AArch64.cfbEncrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Camellia.cfbDecryptApi with
-    target := AArch64.target
-    doc := Spec.Camellia.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Camellia.AArch64.cfbEncrypt_framed },
+  Spec.Camellia.cfbDecryptApi.artifact AArch64.target {
+    notes := [note]
     code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x5 406 Impl.Camellia.AArch64.cfbDecrypt
-    contract := Spec.Camellia.cfbDecryptContract AArch64.abi 3248
     stack := 3248
-    verified := Proof.Camellia.AArch64.cfbDecrypt_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Camellia.AArch64.cfbDecrypt_framed }]
 
 end VG.Artifacts.CamelliaCfb.AArch64

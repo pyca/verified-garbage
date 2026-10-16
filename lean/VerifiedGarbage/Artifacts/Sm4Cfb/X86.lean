@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86.FbVerified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SM4-CFB128 artifacts on baseline x86 (32-bit) -/
 
@@ -17,21 +18,15 @@ def note : String :=
   `Impl/Modes/X86/`, over SM4's ECB core."
 
 def artifacts : List Artifact := [
-  { Spec.Sm4.cfbEncryptApi with
-    target := X86.target
-    doc := Spec.Sm4.cfbEncryptApi.doc (notes := [note])
+  Spec.Sm4.cfbEncryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 1472 4 362 Impl.Sm4.X86.cfbEncrypt
-    contract := Spec.Sm4.cfbEncryptContract X86.abi 1472
     stack := 1472
-    verified := Proof.Sm4.X86.Fb.cfbEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Sm4.cfbDecryptApi with
-    target := X86.target
-    doc := Spec.Sm4.cfbDecryptApi.doc (notes := [note])
+    verified := Proof.Sm4.X86.Fb.cfbEncrypt_framed },
+  Spec.Sm4.cfbDecryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 1472 4 362 Impl.Sm4.X86.cfbDecrypt
-    contract := Spec.Sm4.cfbDecryptContract X86.abi 1472
     stack := 1472
-    verified := Proof.Sm4.X86.Fb.cfbDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Sm4.X86.Fb.cfbDecrypt_framed }]
 
 end VG.Artifacts.Sm4Cfb.X86

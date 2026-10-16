@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.CmacTripleDes.AArch64.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on AArch64
@@ -25,29 +26,20 @@ def desNote : String :=
   so that the expansion is a byte layout, and the round keys are spread once per call (before all the blocks of an update)."
 
 def artifacts : List Artifact := [
-  { Spec.Cmac.tdesInitApi with
-    target := AArch64.target
-    doc := Spec.Cmac.tdesInitApi.doc (notes := [desNote])
+  Spec.Cmac.tdesInitApi.artifact AArch64.target {
+    notes := [desNote]
     code := Impl.StackScratch.AArch64.withStackScratch 640 .x3 Impl.CmacTripleDes.AArch64.init
-    contract := Spec.Cmac.tdesInitContract AArch64.abi 640
     stack := 640
-    verified := init_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Cmac.tdesUpdateApi with
-    target := AArch64.target
-    doc := Spec.Cmac.tdesUpdateApi.doc (notes := [desNote])
+    verified := init_framed },
+  Spec.Cmac.tdesUpdateApi.artifact AArch64.target {
+    notes := [desNote]
     code := Impl.StackScratch.AArch64.withStackScratch 640 .x4 Impl.CmacTripleDes.AArch64.update
-    contract := Spec.Cmac.tdesUpdateContract AArch64.abi 640
     stack := 640
-    verified := update_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Cmac.tdesFinalizeApi with
-    target := AArch64.target
-    doc := Spec.Cmac.tdesFinalizeApi.doc (notes := [desNote])
+    verified := update_framed },
+  Spec.Cmac.tdesFinalizeApi.artifact AArch64.target {
+    notes := [desNote]
     code := Impl.StackScratch.AArch64.withStackScratch 640 .x4 Impl.CmacTripleDes.AArch64.finalize
-    contract := Spec.Cmac.tdesFinalizeContract AArch64.abi 640
     stack := 640
-    verified := finalize_framed
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := finalize_framed }]
 
 end VG.Artifacts.CmacTripleDes.AArch64

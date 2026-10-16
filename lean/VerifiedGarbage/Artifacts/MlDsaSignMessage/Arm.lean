@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) on 32-bit ARM: signing messages
@@ -32,35 +33,26 @@ def notes : List String :=
     signing function on it, which uses the rest of `scratch`."]
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.signMessage44Api with
-    target := Arm.target
-    doc := Spec.MlDsa.signMessage44Api.doc (notes := notes)
+  Spec.MlDsa.signMessage44Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Message.signMessage Spec.MlDsa.sign44Api.name
       (Impl.MlDsa.Arm.Sign.sign Proof.MlDsa.Arm.Sign.prims Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa44 Arm.abi 36
     stack := 36
     verified := Proof.MlDsa.Arm.Message.signMessage_verified Proof.MlDsa.Arm.Message.sign44Fn
-      (List.mem_cons_self ..)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.signMessage65Api with
-    target := Arm.target
-    doc := Spec.MlDsa.signMessage65Api.doc (notes := notes)
+      (List.mem_cons_self ..) },
+  Spec.MlDsa.signMessage65Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Message.signMessage Spec.MlDsa.sign65Api.name
       (Impl.MlDsa.Arm.Sign.sign Proof.MlDsa.Arm.Sign.prims Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa65 Arm.abi 36
     stack := 36
     verified := Proof.MlDsa.Arm.Message.signMessage_verified Proof.MlDsa.Arm.Message.sign65Fn
-      (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.signMessage87Api with
-    target := Arm.target
-    doc := Spec.MlDsa.signMessage87Api.doc (notes := notes)
+      (List.mem_cons_of_mem _ (List.mem_cons_self ..)) },
+  Spec.MlDsa.signMessage87Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Message.signMessage Spec.MlDsa.sign87Api.name
       (Impl.MlDsa.Arm.Sign.sign Proof.MlDsa.Arm.Sign.prims Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa87 Arm.abi 36
     stack := 36
     verified := Proof.MlDsa.Arm.Message.signMessage_verified Proof.MlDsa.Arm.Message.sign87Fn
-      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) }]
 
 end VG.Artifacts.MlDsaSignMessage.Arm

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # GHASH on AArch64
@@ -19,25 +20,17 @@ one variant for that feature, not one for each suffix and their combination.
 namespace VG.Artifacts.Gcm.AArch64
 
 def artifacts : List Artifact := [
-  { Spec.Gcm.ghashApi with
-    target := AArch64.target
-    doc := Spec.Gcm.ghashApi.doc
-      (notes := ["`•` is computed bit by bit as Algorithm 1 of §6.3 does, with masks instead of \
-        branches."])
+  Spec.Gcm.ghashApi.artifact AArch64.target {
+    notes := ["`•` is computed bit by bit as Algorithm 1 of §6.3 does, with masks instead of \
+        branches."]
     code := Impl.Gcm.AArch64.ghash
-    contract := Spec.Gcm.ghashContract AArch64.abi
-    verified := Proof.Gcm.AArch64.ghash_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Gcm.ghashApi with
-    name := "vg_ghash_aes"
-    target := AArch64.target
-    doc := Spec.Gcm.ghashApi.doc
-      (notes := ["Uses PMULL: eight blocks at a time, with `H²` to `H⁸` computed on each call \
-        that has at least eight blocks, then four, two and one."])
+    verified := Proof.Gcm.AArch64.ghash_verified },
+  Spec.Gcm.ghashApi.artifact AArch64.target {
+    suffix := "_aes"
+    notes := ["Uses PMULL: eight blocks at a time, with `H²` to `H⁸` computed on each call \
+        that has at least eight blocks, then four, two and one."]
     code := Impl.Gcm.AArch64.Pmull.ghash
-    contract := Spec.Gcm.ghashContract AArch64.abi
     verified := Proof.Gcm.AArch64.Pmull.ghash_verified
-    features := ["aes"]
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    features := ["aes"] }]
 
 end VG.Artifacts.Gcm.AArch64

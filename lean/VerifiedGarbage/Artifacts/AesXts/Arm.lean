@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.AesXts.Arm.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) on ARMv7
@@ -21,23 +22,17 @@ namespace VG.Artifacts.AesXts.Arm
 open VG.Proof.AesXts.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Xts.aesEncryptApi with
-    target := Arm.target
-    doc := Spec.Xts.aesEncryptApi.doc (notes := [
-      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."])
+  Spec.Xts.aesEncryptApi.artifact Arm.target {
+    notes := [
+      "This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`."]
     code := Impl.AesXts.Arm.encrypt
-    contract := Spec.Xts.aesEncryptContract Arm.abi 8
     stack := 8
-    verified := encrypt_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Xts.aesDecryptApi with
-    target := Arm.target
-    doc := Spec.Xts.aesDecryptApi.doc (notes := [
-      "This implementation deciphers one block at a time with `vg_aes_decrypt_blocks`."])
+    verified := encrypt_verified },
+  Spec.Xts.aesDecryptApi.artifact Arm.target {
+    notes := [
+      "This implementation deciphers one block at a time with `vg_aes_decrypt_blocks`."]
     code := Impl.AesXts.Arm.decrypt
-    contract := Spec.Xts.aesDecryptContract Arm.abi 8
     stack := 8
-    verified := decrypt_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := decrypt_verified }]
 
 end VG.Artifacts.AesXts.Arm

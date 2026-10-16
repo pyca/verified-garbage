@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Blowfish.X86.CbcVerified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # Blowfish-CBC artifacts on baseline x86 (32-bit) -/
 
@@ -16,21 +17,15 @@ def note : String :=
   `Impl/Modes/X86/`, over Blowfish's ECB block."
 
 def artifacts : List Artifact := [
-  { Spec.Blowfish.cbcEncryptApi with
-    target := X86.target
-    doc := Spec.Blowfish.cbcEncryptApi.doc (notes := [note])
+  Spec.Blowfish.cbcEncryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcEncrypt
-    contract := Spec.Blowfish.cbcEncryptContract X86.abi 112
     stack := 112
-    verified := Proof.Blowfish.X86.cbcEncrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.Blowfish.cbcDecryptApi with
-    target := X86.target
-    doc := Spec.Blowfish.cbcDecryptApi.doc (notes := [note])
+    verified := Proof.Blowfish.X86.cbcEncrypt_framed },
+  Spec.Blowfish.cbcDecryptApi.artifact X86.target {
+    notes := [note]
     code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcDecrypt
-    contract := Spec.Blowfish.cbcDecryptContract X86.abi 112
     stack := 112
-    verified := Proof.Blowfish.X86.cbcDecrypt_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Blowfish.X86.cbcDecrypt_framed }]
 
 end VG.Artifacts.BlowfishCbc.X86

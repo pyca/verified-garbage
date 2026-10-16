@@ -4,6 +4,7 @@ public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.Verified
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Inv
 import VerifiedGarbage.Proof.MlDsa.X86.Sign.Run
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) on x86 (32-bit): signing messages
@@ -37,30 +38,24 @@ def notes : List String :=
     and calls the signing function on it, which uses the rest of `scratch`."]
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.signMessage44Api with
-    target := X86.target
-    doc := Spec.MlDsa.signMessage44Api.doc (notes := notes)
+  Spec.MlDsa.signMessage44Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign44Api.name
       (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa44 X86.abi 136
     stack := 136
     verified := Proof.MlDsa.X86.Message.signMessage44_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.signMessage65Api with
-    target := X86.target
-    doc := Spec.MlDsa.signMessage65Api.doc (notes := notes)
+  Spec.MlDsa.signMessage65Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign65Api.name
       (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa65 X86.abi 136
     stack := 136
     verified := Proof.MlDsa.X86.Message.signMessage65_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.signMessage87Api with
-    target := X86.target
-    doc := Spec.MlDsa.signMessage87Api.doc (notes := notes)
+  Spec.MlDsa.signMessage87Api.artifact X86.target {
+    notes := notes
     code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign87Api.name
       (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.signMessageContract Spec.MlDsa.mlDsa87 X86.abi 136
     stack := 136
     verified := Proof.MlDsa.X86.Message.signMessage87_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]

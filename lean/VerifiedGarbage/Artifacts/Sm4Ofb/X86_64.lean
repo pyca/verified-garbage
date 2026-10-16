@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.X86_64.FbVerified
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # SM4-OFB artifacts on baseline x86-64 -/
 
@@ -17,13 +18,10 @@ def note : String :=
   built once per call. The mode is the generic OFB of `Impl/Modes/X86_64/`, over SM4's ECB core."
 
 def artifacts : List Artifact := [
-  { Spec.Sm4.ofbApi with
-    target := X86_64.target
-    doc := Spec.Sm4.ofbApi.doc (notes := [note])
+  Spec.Sm4.ofbApi.artifact X86_64.target {
+    notes := [note]
     code := Impl.StackScratch.X86_64.withStackScratchWiped 3144 .r8 392 Impl.Sm4.X86_64.ofb
-    contract := Spec.Sm4.ofbContract X86_64.abi 3144
     stack := 3144
-    verified := Proof.Sm4.X86_64.ofb_framed
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := Proof.Sm4.X86_64.ofb_framed }]
 
 end VG.Artifacts.Sm4Ofb.X86_64

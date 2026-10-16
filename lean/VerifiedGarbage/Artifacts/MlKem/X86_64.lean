@@ -21,6 +21,7 @@ public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 public import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 import Mathlib.Tactic.Conv
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # ML-KEM (FIPS 203) on x86-64: the polynomial primitives -/
 
@@ -29,264 +30,178 @@ import Mathlib.Tactic.Conv
 namespace VG.Artifacts.MlKem.X86_64
 
 def artifacts : List Artifact := [
-  { Spec.MlKem.encryptMulApi with
-    target := X86_64.target
-    doc := Spec.MlKem.encryptMulApi.doc
-      (notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
+  Spec.MlKem.encryptMulApi.artifact X86_64.target {
+    notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
         `vg_mlkem_add` and `vg_mlkem_inv_ntt` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once \
         around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
-        loads the caller's MXCSR back before returning."])
+        loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.encryptMul .sse 3
-    contract := Spec.MlKem.encryptMulContract 3 X86_64.abi
     verified := Proof.MlKem.X86_64.encMulSse3_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlKem.encryptMulApi with
-    name := Spec.MlKem.encryptMulApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.encryptMulApi.doc
-      (notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
+  Spec.MlKem.encryptMulApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
         `vg_mlkem_multiply_ntts_avx2`, `vg_mlkem_add_avx2` and `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 \
         registers. It sets MXCSR to `0x1FBF` once \
         around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
-        loads the caller's MXCSR back before returning."])
+        loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.encryptMul .avx2 3
-    contract := Spec.MlKem.encryptMulContract 3 X86_64.abi
     verified := Proof.MlKem.X86_64.encMulAvx3_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.decryptMulApi with
-    target := X86_64.target
-    doc := Spec.MlKem.decryptMulApi.doc
-      (notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
+  Spec.MlKem.decryptMulApi.artifact X86_64.target {
+    notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
         `vg_mlkem_add` and `vg_mlkem_inv_ntt` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once \
         around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
-        loads the caller's MXCSR back before returning."])
+        loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.decryptMul .sse 3
-    contract := Spec.MlKem.decryptMulContract 3 X86_64.abi
     verified := Proof.MlKem.X86_64.decMulSse3_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlKem.decryptMulApi with
-    name := Spec.MlKem.decryptMulApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.decryptMulApi.doc
-      (notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
+  Spec.MlKem.decryptMulApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
         `vg_mlkem_multiply_ntts_avx2`, `vg_mlkem_add_avx2` and `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 \
         registers. It sets MXCSR to `0x1FBF` once \
         around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
-        loads the caller's MXCSR back before returning."])
+        loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.decryptMul .avx2 3
-    contract := Spec.MlKem.decryptMulContract 3 X86_64.abi
     verified := Proof.MlKem.X86_64.decMulAvx3_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.keygenMulApi with
-    target := X86_64.target
-    doc := Spec.MlKem.keygenMulApi.doc
-      (notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts` and \
+  Spec.MlKem.keygenMulApi.artifact X86_64.target {
+    notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts` and \
         `vg_mlkem_add` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once around all its \
         multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the \
-        caller's MXCSR back before returning."])
+        caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.keygenMul .sse 3
-    contract := Spec.MlKem.keygenMulContract 3 X86_64.abi
     verified := Proof.MlKem.X86_64.kgMulSse3_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlKem.keygenMulApi with
-    name := Spec.MlKem.keygenMulApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.keygenMulApi.doc
-      (notes := ["The function computes with the code of `vg_mlkem_ntt_avx2` and \
+  Spec.MlKem.keygenMulApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes with the code of `vg_mlkem_ntt_avx2` and \
         `vg_mlkem_multiply_ntts_avx2` inlined, on AVX2 registers, summing each row's products in 16-bit \
         words. It sets MXCSR to `0x1FBF` once around all its multiplications (Intel's mitigation of \
-        MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning."])
+        MXCSR-configuration-dependent timing) and loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.keygenMul .avx2 3
-    contract := Spec.MlKem.keygenMulContract 3 X86_64.abi
     verified := Proof.MlKem.X86_64.kgMulAvx3_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.nttInvApi with
-    target := X86_64.target
-    doc := Spec.MlKem.nttInvApi.doc
-      (notes := ["The function computes on eight coefficients at a time in SSE2 registers. It sets MXCSR \
+  Spec.MlKem.nttInvApi.artifact X86_64.target {
+    notes := ["The function computes on eight coefficients at a time in SSE2 registers. It sets MXCSR \
         to `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent \
-        timing) and loads the caller's MXCSR back before returning."])
+        timing) and loads the caller's MXCSR back before returning."]
     code := Impl.MlKem.X86_64.nttInv
-    contract := Spec.MlKem.nttInvContract X86_64.abi
-    verified := Proof.MlKem.X86_64.nttInv_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.MlKem.nttInvContract Spec.MlKem.inPlaceContract; rfl⟩) },
-  { Spec.MlKem.addApi with
-    target := X86_64.target
-    doc := Spec.MlKem.addApi.doc
+    verified := Proof.MlKem.X86_64.nttInv_verified },
+  Spec.MlKem.addApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.add
-    contract := Spec.MlKem.addContract X86_64.abi
-    verified := Proof.MlKem.X86_64.add_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.subApi with
-    target := X86_64.target
-    doc := Spec.MlKem.subApi.doc
+    verified := Proof.MlKem.X86_64.add_verified },
+  Spec.MlKem.subApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.sub
-    contract := Spec.MlKem.subContract X86_64.abi
-    verified := Proof.MlKem.X86_64.sub_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.addApi with
-    name := Spec.MlKem.addApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.addApi.doc
-      (notes := ["The function computes on eight coefficients at a time in AVX2 registers. It has no \
-        multiplications."])
+    verified := Proof.MlKem.X86_64.sub_verified },
+  Spec.MlKem.addApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes on eight coefficients at a time in AVX2 registers. It has no \
+        multiplications."]
     code := Impl.MlKem.X86_64.addAvx2
-    contract := Spec.MlKem.addContract X86_64.abi
     verified := Proof.MlKem.X86_64.addY_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.subApi with
-    name := Spec.MlKem.subApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.subApi.doc
-      (notes := ["The function computes on eight coefficients at a time in AVX2 registers. It has no \
-        multiplications."])
+  Spec.MlKem.subApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes on eight coefficients at a time in AVX2 registers. It has no \
+        multiplications."]
     code := Impl.MlKem.X86_64.subAvx2
-    contract := Spec.MlKem.subContract X86_64.abi
     verified := Proof.MlKem.X86_64.subY_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.sampleNTTApi with
-    target := X86_64.target
-    doc := Spec.MlKem.sampleNTTApi.doc
+  Spec.MlKem.sampleNTTApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.sampleNTT
-    contract := Spec.MlKem.sampleNTTContract X86_64.abi 16
     stack := 16
-    verified := Proof.MlKem.X86_64.sample_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.encode12Api with
-    target := X86_64.target
-    doc := Spec.MlKem.encode12Api.doc
+    verified := Proof.MlKem.X86_64.sample_verified },
+  Spec.MlKem.encode12Api.artifact X86_64.target {
     code := Impl.MlKem.X86_64.encode12
-    contract := Spec.MlKem.encode12Contract X86_64.abi
-    verified := Proof.MlKem.X86_64.encode12_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.decode12Api with
-    target := X86_64.target
-    doc := Spec.MlKem.decode12Api.doc
+    verified := Proof.MlKem.X86_64.encode12_verified },
+  Spec.MlKem.decode12Api.artifact X86_64.target {
     code := Impl.MlKem.X86_64.decode12
-    contract := Spec.MlKem.decode12Contract X86_64.abi
-    verified := Proof.MlKem.X86_64.decode12_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.decode12Api with
-    name := Spec.MlKem.decode12Api.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.decode12Api.doc
-      (notes := ["The function computes on eight coefficients at a time in AVX2 registers, from 12 bytes \
+    verified := Proof.MlKem.X86_64.decode12_verified },
+  Spec.MlKem.decode12Api.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes on eight coefficients at a time in AVX2 registers, from 12 bytes \
         loaded 16 at a time (the last 12 from 4 bytes before them, so that it reads only the 384 bytes of \
-        `*b`). It has no multiplications."])
+        `*b`). It has no multiplications."]
     code := Impl.MlKem.X86_64.decode12Avx2
-    contract := Spec.MlKem.decode12Contract X86_64.abi
     verified := Proof.MlKem.X86_64.decode12Y_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.encode12Api with
-    name := Spec.MlKem.encode12Api.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.encode12Api.doc
-      (notes := ["The function computes on 32 coefficients at a time in AVX2 registers: it packs them into \
+  Spec.MlKem.encode12Api.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function computes on 32 coefficients at a time in AVX2 registers: it packs them into \
         words, forms each pair's 24-bit value with shifts and an addition, gathers the bytes with `vpshufb` \
         and `vpermd`, and stores the 48 bytes as 32 and 16, so that it writes only the 384 bytes of `*out`. \
-        It has no multiplications."])
+        It has no multiplications."]
     code := Impl.MlKem.X86_64.encode12Avx2
-    contract := Spec.MlKem.encode12Contract X86_64.abi
     verified := Proof.MlKem.X86_64.encode12Y_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.cbd2Api with
-    target := X86_64.target
-    doc := Spec.MlKem.cbd2Api.doc
+  Spec.MlKem.cbd2Api.artifact X86_64.target {
     code := Impl.MlKem.X86_64.cbd2
-    contract := Spec.MlKem.cbd2Contract X86_64.abi
-    verified := Proof.MlKem.X86_64.cbd2_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.compressEncodeApi with
-    target := X86_64.target
-    doc := Spec.MlKem.compressEncodeApi.doc
+    verified := Proof.MlKem.X86_64.cbd2_verified },
+  Spec.MlKem.compressEncodeApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.compressEncode
-    contract := Spec.MlKem.compressEncodeContract X86_64.abi
-    verified := Proof.MlKem.X86_64.compressEncode_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.decodeDecompressApi with
-    target := X86_64.target
-    doc := Spec.MlKem.decodeDecompressApi.doc
+    verified := Proof.MlKem.X86_64.compressEncode_verified },
+  Spec.MlKem.decodeDecompressApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.decodeDecompress
-    contract := Spec.MlKem.decodeDecompressContract X86_64.abi
-    verified := Proof.MlKem.X86_64.decodeDecompress_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.compressEncodeApi with
-    name := Spec.MlKem.compressEncodeApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.compressEncodeApi.doc
-      (notes := ["For the widths 10 and 4, the function compresses eight coefficients at a time in AVX2 \
+    verified := Proof.MlKem.X86_64.decodeDecompress_verified },
+  Spec.MlKem.compressEncodeApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["For the widths 10 and 4, the function compresses eight coefficients at a time in AVX2 \
         registers, multiplying by sums of shifts, and packs them with `vpsllvd`, `vpsllvq` and `vpshufb`; \
-        the width 1 runs the baseline loop. It writes only the `len` bytes of `*out`."])
+        the width 1 runs the baseline loop. It writes only the `len` bytes of `*out`."]
     code := Impl.MlKem.X86_64.compressEncodeAvx2
-    contract := Spec.MlKem.compressEncodeContract X86_64.abi
     verified := Proof.MlKem.X86_64.compressEncodeY_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.decodeDecompressApi with
-    name := Spec.MlKem.decodeDecompressApi.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.decodeDecompressApi.doc
-      (notes := ["For the widths 10 and 4, the function decompresses eight values at a time in AVX2 \
+  Spec.MlKem.decodeDecompressApi.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["For the widths 10 and 4, the function decompresses eight values at a time in AVX2 \
         registers, extracted with `vpshufb` and `vpsrlvd` from 16 bytes loaded into both lanes, multiplying \
-        by sums of shifts; the width 1 runs the baseline loop. It reads only the `len` bytes of `*b`."])
+        by sums of shifts; the width 1 runs the baseline loop. It reads only the `len` bytes of `*b`."]
     code := Impl.MlKem.X86_64.decodeDecompressAvx2
-    contract := Spec.MlKem.decodeDecompressContract X86_64.abi
     verified := Proof.MlKem.X86_64.decodeDecompressY_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.checkEkApi with
-    target := X86_64.target
-    doc := Spec.MlKem.checkEkApi.doc
+  Spec.MlKem.checkEkApi.artifact X86_64.target {
     code := Impl.MlKem.X86_64.checkEk
-    contract := Spec.MlKem.checkEkContract X86_64.abi
-    verified := Proof.MlKem.X86_64.checkEk_verified
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
-  { Spec.MlKem.sampleNTT4Api with
-    target := X86_64.target
-    doc := Spec.MlKem.sampleNTT4Api.doc
-      (notes := ["The function calls `vg_mlkem_sample_ntt` on each seed, with 24 bytes of stack below its \
-        return address."])
+    verified := Proof.MlKem.X86_64.checkEk_verified },
+  Spec.MlKem.sampleNTT4Api.artifact X86_64.target {
+    notes := ["The function calls `vg_mlkem_sample_ntt` on each seed, with 24 bytes of stack below its \
+        return address."]
     code := Impl.MlKem.X86_64.Sample4.sampleNTT4
-    contract := Spec.MlKem.sampleNTT4Contract X86_64.abi 24
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_scalar_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlKem.sampleNTT4Api with
-    name := Spec.MlKem.sampleNTT4Api.name ++ "_avx2"
-    target := X86_64.target
-    doc := Spec.MlKem.sampleNTT4Api.doc
-      (notes := ["The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, \
+  Spec.MlKem.sampleNTT4Api.artifact X86_64.target {
+    suffix := "_avx2"
+    notes := ["The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, \
         each 64-bit lane of the Keccak states in a 256-bit AVX2 register holding that lane of all four; \
         it then samples from the output of each in turn, eight candidates at a time in AVX2 registers \
         (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask), \
         and finishes any that needs more than the 504 bytes it squeezed with `vg_mlkem_sample_ntt`, \
-        with 24 bytes of stack below its return address."])
+        with 24 bytes of stack below its return address."]
     code := Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2
-    contract := Spec.MlKem.sampleNTT4Contract X86_64.abi 24
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)
     features := ["avx", "avx2"] },
-  { Spec.MlKem.sampleNTT4Api with
-    name := Spec.MlKem.sampleNTT4Api.name ++ "_avx512"
-    target := X86_64.target
-    doc := Spec.MlKem.sampleNTT4Api.doc
-      (notes := ["The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, \
+  Spec.MlKem.sampleNTT4Api.artifact X86_64.target {
+    suffix := "_avx512"
+    notes := ["The function absorbs the four seeds and squeezes the four instances of SHAKE128 at once, \
         each 64-bit lane of the Keccak states in a 256-bit AVX2 register holding that lane of all four; \
         it then samples from the output of each in turn, eight candidates at a time in AVX2 registers \
         (keeping those less than `q` with `vpermd`, by a table in `*scratch` indexed by their mask), \
         and finishes any that needs more than the 504 bytes it squeezed with `vg_mlkem_sample_ntt`, \
-        using AVX-512VL quadword rotates in Keccak, with 24 bytes of stack below its return address."])
+        using AVX-512VL quadword rotates in Keccak, with 24 bytes of stack below its return address."]
     code := Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true
-    contract := Spec.MlKem.sampleNTT4Contract X86_64.abi 24
     stack := 24
     verified := Proof.MlKem.X86_64.sample4_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel)

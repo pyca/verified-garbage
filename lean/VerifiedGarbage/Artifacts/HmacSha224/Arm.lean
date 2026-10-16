@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha224
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # HMAC-SHA-224 (RFC 2104) on ARMv7
@@ -29,47 +30,23 @@ same code with it as an argument, are what PBKDF2's code calls.
 namespace VG.Artifacts.HmacSha224.Arm
 
 def artifacts : List Artifact := [
-  { Spec.Hmac.sha224I.initApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha224I.initApi.doc
+  Spec.Hmac.sha224I.initApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I) 0 Proof.Pbkdf2.Md.Arm.sha224Md.hmacInit
-    contract := Spec.Hmac.sha224I.initContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initContract; rfl⟩)
-    writeArgs := true
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I
     verified := Proof.Pbkdf2.Md.Arm.initFramed Proof.Pbkdf2.Md.Arm.Instances.sha224_init (by decide)
-      Proof.Pbkdf2.Md.Arm.sha224_initFrameSat
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha224I.finalizeApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha224I.finalizeApi.doc
+      Proof.Pbkdf2.Md.Arm.sha224_initFrameSat },
+  Spec.Hmac.sha224I.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I) 1 Proof.Pbkdf2.Md.Arm.sha224Md.hmacFin
-    contract := Spec.Hmac.sha224I.finalizeContract Arm.abi (16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I)
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeContract; rfl⟩)
-    writeArgs := true
     stack := 16 + Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha224I
     verified := Proof.Pbkdf2.Md.Arm.finFramed Proof.Pbkdf2.Md.Arm.Instances.sha224_finalize (by decide)
-      Proof.Hmac.sha224_local (by decide) Proof.Pbkdf2.Md.Arm.sha224_finFrameSat
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha224I.initScratchApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha224I.initScratchApi.doc
+      Proof.Hmac.sha224_local (by decide) Proof.Pbkdf2.Md.Arm.sha224_finFrameSat },
+  Spec.Hmac.sha224I.initScratchApi.artifact Arm.target {
     code := Proof.Pbkdf2.Md.Arm.sha224Md.hmacInit
-    contract := Spec.Hmac.sha224I.initScratchContract Arm.abi 16
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.initScratchContract; rfl⟩)
-    writeArgs := true
     stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha224_init
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.Hmac.sha224I.finalizeScratchApi with
-    target := Arm.target
-    doc := Spec.Hmac.sha224I.finalizeScratchApi.doc
+    verified := Proof.Pbkdf2.Md.Arm.Instances.sha224_init },
+  Spec.Hmac.sha224I.finalizeScratchApi.artifact Arm.target {
     code := Proof.Pbkdf2.Md.Arm.sha224Md.hmacFin
-    contract := Spec.Hmac.sha224I.finalizeScratchContract Arm.abi 16
-    ofSig := by exact (⟨_, _, _, by unfold Spec.Hmac.Instance.finalizeScratchContract; rfl⟩)
-    writeArgs := true
     stack := 16
-    verified := Proof.Pbkdf2.Md.Arm.Instances.sha224_finalize
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    verified := Proof.Pbkdf2.Md.Arm.Instances.sha224_finalize }]
 
 end VG.Artifacts.HmacSha224.Arm

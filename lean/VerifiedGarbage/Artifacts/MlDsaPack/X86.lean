@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Pack.Unpack
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintPack
 public import VerifiedGarbage.Proof.MlDsa.X86.Pack.HintUnpackEnd
 import Mathlib.Tactic.SplitIfs
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) on x86: the encodings
@@ -18,51 +19,33 @@ frame of 16 bytes below the return address (`stack := 16`).
 namespace VG.Artifacts.MlDsaPack.X86
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.simpleBitPackApi with
-    target := X86.target
-    doc := Spec.MlDsa.simpleBitPackApi.doc
+  Spec.MlDsa.simpleBitPackApi.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.simpleBitPack
-    contract := Spec.MlDsa.simpleBitPackContract X86.abi 16
     stack := 16
     verified := Proof.MlDsa.X86.Pack.SimpleBitPack.verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.bitPackApi with
-    target := X86.target
-    doc := Spec.MlDsa.bitPackApi.doc
+  Spec.MlDsa.bitPackApi.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.bitPack
-    contract := Spec.MlDsa.bitPackContract X86.abi 16
     stack := 16
     verified := Proof.MlDsa.X86.Pack.BitPack.verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.bitUnpackApi with
-    target := X86.target
-    doc := Spec.MlDsa.bitUnpackApi.doc
+  Spec.MlDsa.bitUnpackApi.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.bitUnpack
-    contract := Spec.MlDsa.bitUnpackContract X86.abi 16
     stack := 16
     verified := Proof.MlDsa.X86.Pack.Unpack.BU.verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.unpackT1Api with
-    target := X86.target
-    doc := Spec.MlDsa.unpackT1Api.doc
+  Spec.MlDsa.unpackT1Api.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.unpackT1
-    contract := Spec.MlDsa.unpackT1Contract X86.abi 16
     stack := 16
     verified := Proof.MlDsa.X86.Pack.Unpack.T1.verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.hintBitPackApi with
-    target := X86.target
-    doc := Spec.MlDsa.hintBitPackApi.doc
+  Spec.MlDsa.hintBitPackApi.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.hintBitPack
-    contract := Spec.MlDsa.hintBitPackContract X86.abi 16
     stack := 16
     verified := Proof.MlDsa.X86.Pack.Hint.hintBitPack_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
-  { Spec.MlDsa.hintBitUnpackApi with
-    target := X86.target
-    doc := Spec.MlDsa.hintBitUnpackApi.doc
+  Spec.MlDsa.hintBitUnpackApi.artifact X86.target {
     code := Impl.MlDsa.X86.Pack.hintBitUnpack
-    contract := Spec.MlDsa.hintBitUnpackContract X86.abi 16
     stack := 16
     verified := Proof.MlDsa.X86.Pack.Hint.hintBitUnpack_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]

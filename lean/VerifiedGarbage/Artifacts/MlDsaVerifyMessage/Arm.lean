@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.MlDsa.Arm.Message.Verified
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # ML-DSA (FIPS 204) on 32-bit ARM: verifying messages
@@ -32,35 +33,26 @@ def notes : List String :=
     verification function on it, which uses the rest of `scratch`."]
 
 def artifacts : List Artifact := [
-  { Spec.MlDsa.verifyMessage44Api with
-    target := Arm.target
-    doc := Spec.MlDsa.verifyMessage44Api.doc (notes := notes)
+  Spec.MlDsa.verifyMessage44Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Message.verifyMessage Spec.MlDsa.verify44Api.name
       Impl.MlDsa.Arm.Verify.verify44 Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa44 Arm.abi 36
     stack := 36
     verified := Proof.MlDsa.Arm.Message.verifyMessage_verified Proof.MlDsa.Arm.Message.verify44Fn
-      (List.mem_cons_self ..)
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.verifyMessage65Api with
-    target := Arm.target
-    doc := Spec.MlDsa.verifyMessage65Api.doc (notes := notes)
+      (List.mem_cons_self ..) },
+  Spec.MlDsa.verifyMessage65Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Message.verifyMessage Spec.MlDsa.verify65Api.name
       Impl.MlDsa.Arm.Verify.verify65 Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa65 Arm.abi 36
     stack := 36
     verified := Proof.MlDsa.Arm.Message.verifyMessage_verified Proof.MlDsa.Arm.Message.verify65Fn
-      (List.mem_cons_of_mem _ (List.mem_cons_self ..))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { Spec.MlDsa.verifyMessage87Api with
-    target := Arm.target
-    doc := Spec.MlDsa.verifyMessage87Api.doc (notes := notes)
+      (List.mem_cons_of_mem _ (List.mem_cons_self ..)) },
+  Spec.MlDsa.verifyMessage87Api.artifact Arm.target {
+    notes := notes
     code := Impl.MlDsa.Arm.Message.verifyMessage Spec.MlDsa.verify87Api.name
       Impl.MlDsa.Arm.Verify.verify87 Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa87 Arm.abi 36
     stack := 36
     verified := Proof.MlDsa.Arm.Message.verifyMessage_verified Proof.MlDsa.Arm.Message.verify87Fn
-      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+      (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) }]
 
 end VG.Artifacts.MlDsaVerifyMessage.Arm
