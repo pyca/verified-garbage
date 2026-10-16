@@ -23,16 +23,22 @@ def parameterAttempts (bits : Nat) : Nat := bits * bits * 64
 /-- A per-candidate entropy budget, independent of witness-count policy. -/
 def parameterEntropy (bits : Nat) : Nat := 32769 * ((bits + 7) / 8)
 
-/-- The next entropy request is chosen by verified code. -/
+/-- The next entropy request is chosen by verified code: at least twice the
+octets left, and at least 512 octets per octet of p, enough for a candidate
+and the 2 · 128 witnesses of its two Miller–Rabin tests even when about half
+of the witness draws are rejected. A shortage discards an incomplete
+candidate's work, so a request that holds a whole candidate keeps the
+accepted one, by far the most expensive, from being tested again. -/
 def parameterRequest (bits available : Nat) : Nat :=
-  min (2 * max available ((bits + 7) / 8)) (parameterEntropy bits)
+  min (2 * max available (256 * ((bits + 7) / 8))) (parameterEntropy bits)
 
 /-- Initialization returns the controller's four public words, followed by
-private workspace. All parameter validation and policy arithmetic are native. -/
+private workspace. The first request is `parameterRequest bits 0`. All parameter
+validation and policy arithmetic are native. -/
 def parameterInit (bits generator : Nat) : Option (List Nat) :=
   if 512 ≤ bits && bits ≤ 8192 && (generator == 2 || generator == 5) then
     some [parameterAttempts bits, (bits + 7) / 8, parameterEntropy bits,
-      2 * ((bits + 7) / 8)]
+      512 * ((bits + 7) / 8)]
   else none
 
 inductive ParameterSearchResult where
