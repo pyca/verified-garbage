@@ -136,21 +136,33 @@ instructions in an ISA model) go in their own PR before either.
 4. An `Artifact` in the registration file `Artifacts/<Alg>/<Target>.lean`,
    which defines `VG.Artifacts.<Alg>.<Target>.artifacts` (a new file for a
    new algorithm or target; see `Artifacts/Selftest/X86_64.lean`; never
-   `Artifacts.lean`, whose list is empty), made from the function's `Api`:
-   `{ Spec.<Alg>.fooApi with target := …, doc := Spec.<Alg>.fooApi.doc, … }`,
-   passing `doc` any notes on the implementation (`(notes := […])`). The
-   artifact takes the `Api`'s `contracts`, and `ofApi` checks that its
-   `contract` is `contracts` on its target for its `stack`: never set
+   `Artifacts.lean`, whose list is empty), made from the function's `Api`
+   by `Api.artifact` (`TCB/Registration.lean`), with the file importing
+   `Proof/Framework/Registration.lean` for its default proofs:
+
+   ```lean
+     Spec.<Alg>.fooApi.artifact X86_64.target {
+       stack := 8
+       code := Impl.<Alg>.X86_64.foo
+       verified := Proof.<Alg>.X86_64.foo_verified },
+   ```
+
+   A registration states only what the implementation chooses: the Rust
+   module, name, signature, `writeArgs`, documentation and contract come
+   from the `Api`, so never restate them. Give a variant's name its
+   `suffix` (`suffix := "_avx2"`), any notes on the implementation in
+   `notes` (`notes := […]`), the stack its calls and frames use in `stack`,
+   and the tables of constants it reads in `consts`. Its contract is found
+   from `verified`'s type, and must be the `Api`'s on the target for
+   `consts` and `stack` (`ofApi`, by `rfl`): give `contract` only when
+   `verified`'s type does not determine it. `of_sig` proves `ofSig`, and
+   `sp_safe` proves `spSafe`: by `Code.all_of_forall` on ARMv7 and AArch64,
+   which evaluates nothing, and by `Code.all_of_allInstrs (by lit_decide)`
+   on x86 and x86-64 (see "Code the kernel evaluates" below); where
+   `lit_decide` exceeds the recursion limit, give
+   `spSafe := Code.all_of_allInstrs (by decide +kernel)`. Never set
    `contracts` outside `Spec/` (the emitter refuses an artifact without
-   them). Set
-   `stack` to the contract's (and `writeArgs`, if the artifact is not made
-   from an `Api`): the default proof of `ofSig` checks both against the
-   contract, and the emitter documents what they imply. Set its `spSafe`
-   to `Code.all_of_forall (fun _ => rfl) _` on ARMv7 and AArch64, which
-   evaluates nothing, and to `Code.all_of_allInstrs (by decide +kernel)`
-   on x86 and x86-64, which runs in the registration file twice as fast as
-   the default, `decide +kernel` (`by lit_decide` if the code has a literal:
-   see "Code the kernel evaluates" below). If its code uses instructions outside
+   them). If its code uses instructions outside
    the target's baseline ISA, list the CPU features they require in
    `features` (the emitter rejects anything but the exact set).
    A function that calls another one with several implementations (e.g.

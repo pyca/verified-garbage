@@ -19,6 +19,8 @@ VerifiedGarbage/
     Sig.lean        Rust signatures and calling conventions (`Abi`)
     Artifact.lean   Target, Contract, `Verified`, `Artifact`: what "verified" means;
                     `Sig.contract`: the contract obligations a signature implies
+    Registration.lean  `Api.artifact`: an `Artifact` made from an `Api` and only
+                    what its implementation chooses (`Registration`)
     Rust.lean       rendering artifacts as Rust naked functions; checks that every
                     call is of the artifact whose code the model runs for it, and
                     that each artifact declares the CPU features its code needs
@@ -77,8 +79,10 @@ never import proofs.
    satisfiability of the precondition.
 4. **Registry** — the registration files `Artifacts/<Alg>/<Target>.lean`
    list every `Artifact`, bundling target, Rust name and signature, code,
-   contract and proof: mostly a function's `Api`, with the stack its contract
-   gives its calls (`stack`) and any notes on the implementation. An artifact
+   contract and proof: a function's `Api`, with what its implementation
+   chooses (`Api.artifact`, `TCB/Registration.lean`): the target, the code
+   and its proof, the stack its calls and frames use (`stack`), and any
+   notes on the implementation and suffix of its name. An artifact
    made from an `Api` takes the contract from it with the name and signature
    (`Api.contracts`), and must be proven against exactly that contract on its
    target (`Artifact.ofApi`), so a registration file, or a proof building
