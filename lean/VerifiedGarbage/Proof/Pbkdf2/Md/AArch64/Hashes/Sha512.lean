@@ -173,6 +173,8 @@ def ok (hR : I.S.Repr = Spec.Sha512.Repr iv)
       by decide, by decide, by decide, by decide⟩
   L := by show 0 < Impl.Sha512.AArch64.Stream.params.L ∧ Impl.Sha512.AArch64.Stream.params.L ≤ 16; decide
   W := by show I.scratch ≤ 256; omega
+  hPad := by show 16 * (D / 16 + 1) + 16 ≤ 128; omega
+  L816 := by show Impl.Sha512.AArch64.Stream.params.L = 8 ∨ Impl.Sha512.AArch64.Stream.params.L = 16; decide
 
 end
 
