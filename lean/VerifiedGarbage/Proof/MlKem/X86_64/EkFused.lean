@@ -96,46 +96,67 @@ theorem quadM_ok (v : Sample4Impl) (F : EkHWf L) {σ : State} (hp : (encK L).pre
     ⟨h.ec.step W hp hP hE, by rw [L₀.keepBytes hP hS]; exact h.sb, MatB.four h.mat h.sb L₀ hP hA h15 hres,
       by rw [L₀.keepBytes hP hH]; exact h.h⟩
 
-/-- `ρ` to `SB`, the fragments, `H(ek)` to `H`, and the remaining entries of `Â`. -/
-theorem matH_ok (v : Sample4Impl) (F : EkHWf L) {b : Prog isa} (hb : BatchHOk b) {σ : State}
-    (hp : (encK L).pre σ) {s : State} (h : ProOut L σ s) : WP isa (matH L v.callee b) s (MI L σ (L.k * L.k)) := by
+/-- After `ρ` to `SB`. -/
+structure RI (L : Kem) (σ s : State) : Prop where
+  ec : EK L σ s
+  sb : bytesAt s.mem (pa s (sc oSB)) 32 = Enc.rhoE L (ekE L σ)
+  r15 : s.gpr .r15 = 1
+
+theorem rho_ok (F : EkHWf L) {σ : State} (hp : (encK L).pre σ) {s : State} (h : ProOut L σ s) :
+    WP isa (copy (sc oSB) (.r14, 384 * L.k) 32) s (RI L σ) := by
   have W := F.toEcWf
   have L₀ := h.ec.lay W hp
   have hrC := F.rC
   simp only [Bool.and_eq_true] at hrC
-  have hlen : (ekE L σ).length = L.ekLen := bytesAt_length _ _ _
-  unfold matH
-  refine WP.seq (WP.mono (copy_okL L₀ (show Reg.r14 ≠ .rdi by decide) hrC.1) fun s₁ ⟨hP₁, hb₁⟩ => ?_)
-  have k₁ := h.ec.step W hp hP₁.b hrC.2
-  have L₁ := k₁.lay W hp
-  have hsb : bytesAt s₁.mem (pa s₁ (sc oSB)) 32 = Enc.rhoE L (ekE L σ) := by
-    rw [hP₁.pa rbx_cs, hb₁, ← h.ec.ek]
-    show _ = ((bytesAt s.mem (pa s (.r14, 0)) (384 * L.k + 32)).drop (384 * L.k)).take 32
-    rw [bytesAt_slice _ _ (Nat.le_refl _), pa, pa, off_add, Nat.zero_add]
+  refine WP.mono (copy_okL L₀ (show Reg.r14 ≠ .rdi by decide) hrC.1) fun s₁ ⟨hP₁, hb₁⟩ =>
+    ⟨h.ec.step W hp hP₁.b hrC.2, ?_, by rw [hP₁.cs .r15 (by decide), h.r15]⟩
+  rw [hP₁.pa rbx_cs, hb₁, ← h.ec.ek]
+  show _ = ((bytesAt s.mem (pa s (.r14, 0)) (384 * L.k + 32)).drop (384 * L.k)).take 32
+  rw [bytesAt_slice _ _ (Nat.le_refl _), pa, pa, off_add, Nat.zero_add]
+
+theorem hz_ok (F : EkHWf L) {σ : State} (hp : (encK L).pre σ) {s : State} (h : RI L σ s) :
+    WP isa (.block (hzero L)) s (FI L σ 0) := by
+  have W := F.toEcWf
+  have L₁ := h.ec.lay W hp
   have hzC := F.zC
   simp only [fkeep, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hzC
   obtain ⟨hzin, ⟨hzE, hzS⟩, -⟩ := hzC
-  refine WP.seq (WP.mono (hzero_ok L₁ hzin) fun s₂ ⟨hP₂, hz⟩ => ?_)
-  have f₂ : FI L σ 0 s₂ := ⟨k₁.step W hp hP₂.b hzE, by rw [L₁.keepBytes hP₂.b hzS]; exact hsb,
-    MatB.zero L _ (by rw [hP₂.cs .r15 (by decide), hP₁.cs .r15 (by decide), h.r15]),
+  exact WP.mono (hzero_ok L₁ hzin) fun s₂ ⟨hP₂, hz⟩ => ⟨h.ec.step W hp hP₂.b hzE,
+    by rw [L₁.keepBytes hP₂.b hzS]; exact h.sb, MatB.zero L _ (by rw [hP₂.cs .r15 (by decide), h.r15]),
     by rw [hP₂.pa rbx_cs, hz, HSponge.hstate_zero]⟩
-  refine WP.seq (WP.mono (frags_ok F.toEkFWf hb hp f₂) fun s₃ h₃ => ?_)
+
+theorem hcopy_ok (F : EkHWf L) {σ : State} (hp : (encK L).pre σ) {s : State} (h : FI L σ (nb L) s) :
+    WP isa (copy (sc oH) (sc (oHS L)) 32) s (MI L σ (3 * nb L)) := by
+  have W := F.toEcWf
   have hhC := F.hC
   simp only [fkeep, Bool.and_eq_true, List.all_eq_true, List.mem_range] at hhC
   obtain ⟨hcp, ⟨hE, hS⟩, hA⟩ := hhC
-  have L₃ := h₃.ec.lay W hp
+  have L₃ := h.ec.lay W hp
   have hn := F.nbE
-  refine WP.seq (WP.mono (copy_okL L₃ (show Reg.rbx ≠ .rdi by decide) hcp) fun s₄ ⟨hP₄, hb₄⟩ => ?_)
-  have m₄ : MI L σ (3 * nb L) s₄ := ⟨h₃.ec.step W hp hP₄.b hE, by rw [L₃.keepBytes hP₄.b hS]; exact h₃.sb,
-    ⟨by rw [hP₄.cs .r15 (by decide)]; exact h₃.mat.r15,
-      fun e he f hf => L₃.keepPoly hP₄.b (hA e he) (h₃.mat.mat e he f hf)⟩,
-    by rw [hP₄.pa rbx_cs, hb₄, HSponge.bytesAt_stateAt, h₃.hs, ← HSponge.H_of_hstate (by rw [hlen]; omega)]⟩
+  have hlen : (ekE L σ).length = L.ekLen := bytesAt_length _ _ _
+  exact WP.mono (copy_okL L₃ (show Reg.rbx ≠ .rdi by decide) hcp) fun s₄ ⟨hP₄, hb₄⟩ =>
+    ⟨h.ec.step W hp hP₄.b hE, by rw [L₃.keepBytes hP₄.b hS]; exact h.sb,
+      ⟨by rw [hP₄.cs .r15 (by decide)]; exact h.mat.r15,
+        fun e he f hf => L₃.keepPoly hP₄.b (hA e he) (h.mat.mat e he f hf)⟩,
+      by rw [hP₄.pa rbx_cs, hb₄, HSponge.bytesAt_stateAt, h.hs, ← HSponge.H_of_hstate (by rw [hlen]; omega)]⟩
+
+theorem entsM_ok (v : Sample4Impl) (F : EkHWf L) {σ : State} (hp : (encK L).pre σ) {s : State}
+    (h : MI L σ (3 * nb L) s) :
+    WP isa (L.ents v.callee (3 * nb L) (L.k * L.k - 3 * nb L)) s (MI L σ (L.k * L.k)) := by
   have := ents_ok L v.callee (I := fun e s => 3 * nb L ≤ e ∧ MI L σ e s)
     (fun e he he' _ hs => absurd F.noS (by omega))
     (fun q hq _ hs => WP.mono (quadM_ok v F hp hq hs.1 hs.2) fun _ h => ⟨by omega, h⟩)
-    (L.k * L.k - 3 * nb L) (3 * nb L) (by have := F.nbK; omega) F.eS s₄ ⟨Nat.le_refl _, m₄⟩
+    (L.k * L.k - 3 * nb L) (3 * nb L) (by have := F.nbK; omega) F.eS s ⟨Nat.le_refl _, h⟩
   rw [Nat.add_sub_cancel' F.nbK.2] at this
   exact WP.mono this fun _ h => h.2
+
+/-- `ρ` to `SB`, the fragments, `H(ek)` to `H`, and the remaining entries of `Â`. -/
+theorem matH_ok (v : Sample4Impl) (F : EkHWf L) {b : Prog isa} (hb : BatchHOk b) {σ : State}
+    (hp : (encK L).pre σ) {s : State} (h : ProOut L σ s) : WP isa (matH L v.callee b) s (MI L σ (L.k * L.k)) := by
+  unfold matH
+  exact WP.seq (WP.mono (rho_ok F hp h) fun _ h₁ => WP.seq (WP.mono (hz_ok F hp h₁) fun _ h₂ =>
+    WP.seq (WP.mono (frags_ok F.toEkFWf hb hp h₂) fun _ h₃ => WP.seq (WP.mono (hcopy_ok F hp h₃) fun _ h₄ =>
+      entsM_ok v F hp h₄))))
 
 /-- `m` to `M` and `G(m ‖ H(ek))`, keeping the matrix. -/
 theorem hashesF_ok (F : EkHWf L) {σ : State} (hp : (encK L).pre σ) {s : State} (h : MI L σ (L.k * L.k) s) :
