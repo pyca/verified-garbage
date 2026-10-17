@@ -30,6 +30,15 @@ open VG.Proof.X25519.Arm VG.Proof.Bignum.Arm
 open VG.Proof.Rsa.Arm.Recover (VP sub32 sub32_of)
 open VG.Proof.Rsa (b2n)
 
+set_option hygiene false in
+/-- Case split on `hj : j ∈ l` for a literal list `l`. -/
+macro "mem_cases" : tactic =>
+  `(tactic| (simp only [List.mem_cons, List.not_mem_nil, or_false] at hj; repeat' rcases hj with rfl | hj))
+
+set_option hygiene false in
+/-- `j ∈ l'` from `hj : j ∈ l` for literal lists. -/
+macro "mem_sub" : tactic => `(tactic| (revert hj; revert j; decide))
+
 /-- The working space's registers. -/
 abbrev kRegs : List Reg := [.r7, .r8, .r9]
 

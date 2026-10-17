@@ -52,4 +52,25 @@ theorem sF_taint : Cert (sel aF aTmp aTmp2 sH) := ⟨_, by taint_decide⟩
 theorem cntDown_taint : Cert (.block cntDown) := ⟨_, by taint_decide⟩
 theorem strHc_taint : Cert (.block [.str .r6 .r8 sHc]) := ⟨_, by taint_decide⟩
 
+theorem bitVe_taint : Cert (.block (bitOf sVe aV)) := ⟨_, by taint_decide⟩
+theorem notVe_taint : Cert (.block (notS sVe sVe)) := ⟨_, by taint_decide⟩
+theorem selU2_taint : Cert (sel aU2 aU aV sVe) := ⟨_, by taint_decide⟩
+theorem selV2_taint : Cert (sel aV2 aV aU sVe) := ⟨_, by taint_decide⟩
+theorem ltV2_taint : Cert (seqs (ltS sV2 aV2 aTwo)) := ⟨_, by taint_decide⟩
+theorem selT2_taint : Cert (sel aTmp2 aV2 aThree sV2) := ⟨_, by taint_decide⟩
+theorem mT2_taint : Cert (copy aM aTmp2) := ⟨_, by taint_decide⟩
+theorem u2Copy_taint : Cert (copy 0 aU2) := ⟨_, by taint_decide⟩
+theorem selG_taint : Cert (sel aG 1 aOne sV2) := ⟨_, by taint_decide⟩
+theorem lF_taint : Cert (copy aL aF) := ⟨_, by taint_decide⟩
+theorem dvG_taint : Cert (copy aDv aG) := ⟨_, by taint_decide⟩
+theorem hdrL_taint : Cert (.block (VG.Impl.Rsa.Arm.Recover.clrW aDv ++
+    VG.Impl.Rsa.Arm.CrtValues.divHdr aL aDr aDv aDt)) := ⟨_, by taint_decide⟩
+
+theorem eqE0_taint : Cert (eqS sE0 aE aZero aTmp) := ⟨_, by taint_decide⟩
+theorem eqE1_taint : Cert (eqS sE1 aE aOne aTmp) := ⟨_, by taint_decide⟩
+theorem bitEo_taint : Cert (.block (bitOf sEo aE)) := ⟨_, by taint_decide⟩
+theorem isE0_taint : Cert (.block (isOne sE0)) := ⟨_, by taint_decide⟩
+theorem isE1_taint : Cert (.block (isOne sE1)) := ⟨_, by taint_decide⟩
+theorem isEo_taint : Cert (.block (isOne sEo)) := ⟨_, by taint_decide⟩
+
 end VG.Proof.RsaKeyGen.Arm.Key
