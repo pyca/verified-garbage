@@ -38,6 +38,7 @@ structure StI (s0 : State) (X₁ X₂ : Nat) (s : State) : Prop where
   e1 : slot s.mem (cvB s0) sE1 = if X₁ = cvQ s0 then 1 else 0
   e2 : slot s.mem (cvB s0) sE2 = if X₂ = 0 then 1 else 0
   p : num s.mem (cvB s0) (cvW s0) aP = cvP s0
+  q : num s.mem (cvB s0) (cvW s0) aQ = cvQ s0
   d : num s.mem (cvB s0) (cvW s0) aD = cvD s0
   ddTop : w32 s.mem (State.addr (cvB s0)) (arr (cvW s0) aDD + 4 * cvW s0) = 0
   u : num s.mem (cvB s0) (cvW s0) 0 = cvQ s0
@@ -105,7 +106,7 @@ theorem checksA_ok {s0 s : State} (h : StC s0 s) :
       k3.num (by decide) (by decide) (fit _ (by decide)), k2.num (by decide) (by decide) (fit _ (by decide)),
       z0 _ (by decide)]
   have bt : Base s0 t := b1.keep K (by decide) (by decide) (by decide) R.sp R.rd R.wr
-  refine ⟨bt, ht, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨bt, ht, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [← h.count, ← m1]
     refine BitVec.eq_of_toNat_eq ?_
     exact K.slot (e := 16) (by decide) (by decide)
@@ -118,6 +119,7 @@ theorem checksA_ok {s0 s : State} (h : StC s0 s) :
       k4.slot (by decide) (by simp), e3, k2.num (j := aDR) (by decide) (by decide) (fit _ (by decide)),
       k2.num (j := aZero) (by decide) (by decide) (fit _ (by decide)), z0 aZero (by decide), m1]
   · rw [K1 _ (by decide) (by decide), h.p]
+  · rw [K1 _ (by decide) (by decide), h.q]
   · rw [K1 _ (by decide) (by decide), h.d]
   · rw [K.word (by simp only [S]; omega) (by decide) (by decide) (fit _ (by decide)), m1, h.ddTop]
   · rw [k9.num (by decide) (by simp) (fit _ (by decide)), k8.num (by decide) (by simp) (fit _ (by decide)),
