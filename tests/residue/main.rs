@@ -8,7 +8,8 @@
 //! start-up, or a first call's detection of the CPU features, which a warm-up
 //! run does first) are not counted. The operation runs 16 KiB below the
 //! thread's start (`below`), so that the thread's exit does not overwrite
-//! what it left.
+//! what it left, and only the bytes below that are counted: the thread's
+//! own data and code above it vary between runs.
 //!
 //! The secret is in a static, which each operation reads through a slice, so
 //! that the test's own frames never hold it. The operations of `CLEAN` must
@@ -111,8 +112,9 @@ fn run(stack: &mut [u8], op: fn(), s: u8) -> Vec<u8> {
         .collect()
 }
 
-/// How many bytes of the stack `op` leaves depending on the secret.
-fn residue(op: fn()) -> usize {
+/// The bytes of the stack below `DEPTH` that `op` leaves depending on the
+/// secret, by their distance below the stack's top.
+fn residue(op: fn()) -> Vec<usize> {
     let _guard = LOCK.lock().unwrap();
     let page = 1 << 16;
     let mut buf = vec![0u8; STACK + page];
@@ -127,19 +129,24 @@ fn residue(op: fn()) -> usize {
     );
     (0..STACK)
         .filter(|&i| a[i] == a2[i] && b[i] == b2[i] && a[i] != b[i])
-        .count()
+        .map(|i| STACK - i)
+        // Only `op` runs below `DEPTH`: the thread's own data (its control
+        // block, at the top) and code (its start and exit) are above.
+        .filter(|&d| d > DEPTH)
+        .collect()
 }
 
 /// Measures `op`, which must leave no residue if `name` is in `CLEAN`.
 pub(crate) fn check(name: &str, op: fn()) {
-    let n = residue(op);
-    eprintln!("residue of {name}: {n} bytes");
+    let r = residue(op);
+    eprintln!("residue of {name}: {} bytes", r.len());
     // Debug builds keep a copy of what they move, in temporaries of their
     // own: only optimized code is held to `CLEAN` (ci.yml runs these tests
     // with `--release` too).
     assert!(
-        n == 0 || !CLEAN.contains(&name) || cfg!(debug_assertions),
-        "{name} leaves {n} bytes of its secret on the stack"
+        r.is_empty() || !CLEAN.contains(&name) || cfg!(debug_assertions),
+        "{name} leaves {} bytes of its secret on the stack, at these distances below its top: {r:?}",
+        r.len()
     );
 }
 
@@ -162,6 +169,6 @@ fn leaky() {
         x.copy_from_slice(secret());
         std::hint::black_box(&mut x);
     }
-    let n = residue(copy);
+    let n = residue(copy).len();
     assert!(n >= 64, "found {n} bytes");
 }
