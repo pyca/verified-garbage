@@ -11,8 +11,10 @@ with the contract of `vg_chacha20_xor`, for CPUs with AVX-512F.
 While at least 1024 bytes of data remain, sixteen blocks of keystream (the
 counters `c, c + 1, …, c + 15` modulo 2³², `c` being word 12 of the state)
 are computed at once and XORed into the next 1024 bytes of the data, and
-word 12 of the state is advanced by 16. If 513 to 1023 bytes remain, they
-are XORed by one more computation of sixteen blocks (`last16`), whose first
+word 12 of the state is advanced by 16. If 513 to 768 bytes remain, they
+are XORed by one computation of twelve blocks in three sets of four lanes
+(`last12`, `Avx512Tail.part3`). If 769 to 1023 remain, they are XORed by
+one more computation of sixteen blocks (`last16`), whose first
 eight blocks are XORed into the data, the next ones as far as they fit, and
 the block the data ends in, if it ends within one, through `buf`. Fewer
 bytes are XORed by `Avx512Tail.tail`, eight or four blocks at a time.
@@ -244,9 +246,15 @@ def last16 : Prog isa :=
     (.seq (conds 8) (.seq (.block adv) (.seq Avx512Tail.fromBuf
       (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))))
 
+/-- The last 513 to 768 bytes: twelve blocks in three sets of four lanes
+(`Avx512Tail.part3`); then `rsi` points at `buf`, as after `last16`. -/
+def last12 : Prog isa :=
+  .seq (.block [.mov .r9 (.reg .rcx)]) (.seq Avx512Tail.part3 (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))
+
 def xor : Prog isa :=
   .seq (.block (Avx512Tail.consts ++ consts ++ ([.alu .cmp .rdx (.imm 1024)] : List Instr)))
   (.seq (.ite .b (.block []) (.loop body .ae))
-  (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Avx512Tail.tail last16)))
+  (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Avx512Tail.tail
+    (.seq (.block [.alu .cmp .rdx (.imm 769)]) (.ite .b last12 last16)))))
 
 end VG.Impl.ChaCha20.X86_64.Avx512
