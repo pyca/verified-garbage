@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Bignum.Arm.SecretExpBit
 public import VerifiedGarbage.Proof.Bignum.Arm.SelectPowerCT
 public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 meta import VerifiedGarbage.Impl.Bignum.Arm.SecretExp
 meta import VerifiedGarbage.Proof.Framework.Arm.Taint
 import all Init.Data.Array.Basic
@@ -38,11 +39,10 @@ theorem secretExpBit_ct {base : BitVec 32} {len w M1 M2 x1 x2 E1 E2 : Nat}
   let Q := fun (s t : State) => s.sp = t.sp ∧ ExpState base len w M1 x1 (2 * E1) s ∧
     ExpState base len w M2 x2 (2 * E2) t
   let R := fun (s t : State) => s.sp = t.sp ∧ ArithmeticReady base len w s ∧ ArithmeticReady base len w t
-  have square : RelCT isa P (montOp 6 6 6) (fun _ _ => True) := by
-    apply (montOp_ct (base := base) (o := 6) (a := 6) (b := 6)
+  have square : RelCT isa P (squareOp 6 6) (fun _ _ => True) := by
+    apply (squareOp_ct (base := base) (len := len) (w := w) (o := 6) (a := 6)
       (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) fit).mono
+      (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])).mono
       (fun _ _ h => ⟨⟨h.1.ready, by rw [h.1.modulus]; exact h.1.powerBound⟩,
         ⟨h.2.1.ready, by rw [h.2.1.modulus]; exact h.2.1.powerBound⟩, h.2.2⟩) (fun _ _ h => h)
   have squared := (relCT_keep_sp square (fun _ _ h => h.2.2)).wp

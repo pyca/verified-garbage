@@ -22,7 +22,7 @@ structure ExpBitInput (base : BitVec 32) (len w M x E V : Nat) (s : State) : Pro
   byte : s.mem.readW (VG.Proof.Mont.off (State.addr base) 200) 32 = BitVec.ofNat 32 V
 
 theorem ExpBitInput.square (s : State) {base : BitVec 32} {len w M x E V : Nat}
-    (h : ExpBitInput base len w M x E V s) : WP isa (montOp 6 6 6) s (ExpBitInput base len w M x (2 * E) V) := by
+    (h : ExpBitInput base len w M x E V s) : WP isa (squareOp 6 6) s (ExpBitInput base len w M x (2 * E) V) := by
   refine WP.mono (exp_square_ok s h.power) ?_
   rintro t ⟨power, keeps, _, _⟩
   have size : 256 ≤ 8 * len := by
@@ -48,7 +48,7 @@ theorem expBit_ct {base : BitVec 32} {len w M1 M2 x1 x2 E V : Nat}
       ExpBitInput base len w M2 x2 E V t ∧ s.sp = t.sp) expBit (fun _ _ => True) := by
   let P := fun (s t : State) => ExpBitInput base len w M1 x1 E V s ∧
     ExpBitInput base len w M2 x2 E V t ∧ s.sp = t.sp
-  have square := (relCT_keep_sp ((exp_square_ct fit).mono (P' := P)
+  have square := (relCT_keep_sp ((exp_square_ct (len := len) (w := w)).mono (P' := P)
     (fun _ _ h => ⟨h.1.power, h.2.1.power, h.2.2⟩) (fun _ _ h => h)) (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨h.1.square s, h.2.1.square t⟩)
   let Q := fun (s t : State) => s.sp = t.sp ∧ ExpBitInput base len w M1 x1 (2 * E) V s ∧

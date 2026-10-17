@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Bignum.Arm.ExpStep
 public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -15,14 +16,12 @@ namespace VG.Proof.Bignum.Arm
 open VG VG.Arm VG.Impl.Bignum.Arm
 open VG.Spec.Rsa.Mont (arrAt Operand)
 
-theorem exp_square_ct {base : BitVec 32} {len w M1 M2 x1 x2 E : Nat}
-    (fit : arrAt w 3 + 32 ≤ 8 * len) :
+theorem exp_square_ct {base : BitVec 32} {len w M1 M2 x1 x2 E : Nat} :
     RelCT isa (fun s t => ExpState base len w M1 x1 E s ∧ ExpState base len w M2 x2 E t ∧ s.sp = t.sp)
-      (montOp 6 6 6) (fun _ _ => True) := by
-  apply (montOp_ct (base := base) (o := 6) (a := 6) (b := 6)
+      (squareOp 6 6) (fun _ _ => True) := by
+  apply (squareOp_ct (base := base) (len := len) (w := w) (o := 6) (a := 6)
     (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])
-    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]) fit).mono ?_ (fun _ _ h => h)
+    (by simp [Operand, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp])).mono ?_ (fun _ _ h => h)
   intro s t h
   exact ⟨⟨h.1.ready, by rw [h.1.modulus]; exact h.1.powerBound⟩,
     ⟨h.2.1.ready, by rw [h.2.1.modulus]; exact h.2.1.powerBound⟩, h.2.2⟩

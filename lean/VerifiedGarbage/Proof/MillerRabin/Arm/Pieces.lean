@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MillerRabin.Arm.Taint
 public import VerifiedGarbage.Proof.MillerRabin.Arm.Math
 public import VerifiedGarbage.Proof.Rsa.Arm.RvVP
 public import VerifiedGarbage.Proof.Bignum.Arm.MontOpCT
+public import VerifiedGarbage.Proof.Bignum.Arm.SquareOpCT
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -171,6 +172,93 @@ theorem St.pmulY {b : Nat} (hb : b = aY ∨ b = aX) (hYl : aY ∉ L) (h2 : 2 ∉
       · exact ar'.ptr
       · rw [c0] at lt' v
         rw [eY, eB] at v
+        exact mm_eq pre.codd lt' v
+  -- The context.
+  · refine VP.taint [.r0] ctx_taint (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => ?_) fun σ s h => ?_
+    · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.ptr, h₂.ptr]
+    · rw [← List.append_nil ctx]
+      exact h.ks.ctx_ok h.ptr fun t ht hwt r m => WP.block_nil
+        ⟨⟨h.e, ht, by rw [r.gpr _ (by decide), h.ptr], by rw [m]; exact h.val⟩, hwt⟩
+  -- The top words cleared.
+  · refine VP.kv clrY_taint (fun _ _ h => h.2) fun σ s ⟨h, hw⟩ => ?_
+    have pre := h.ks.pre
+    rw [← List.append_nil (Impl.Rsa.Arm.Recover.clrTop aY)]
+    refine h.ks.clrTop_ok hw (by decide) fun t ht hwt _ => WP.block_nil ⟨h.e, ?_, hwt⟩
+    rw [← pre.numAt_val32, h.val] at ht
+    refine ht.mono (fun j hj => ⟨?_, ?_⟩) (fun d hd => ⟨hd, rfl⟩)
+    · exact hj
+    · rcases List.mem_cons.mp hj with rfl | hj'
+      · simp only [upd_self]
+      · have : j ≠ aY := fun e => hYl (e ▸ hj')
+        simp only [upd_ne _ _ this]
+
+
+/-- `sqY`: `[aY] := mm c w [aY] [aY]`, by the dedicated square. -/
+theorem St.psqY (hYl : aY ∉ L) (h2 : 2 ∉ L) (h3 : 3 ∉ L) (hYv : ∀ σ, E σ → A σ aY < cOf P σ.mem) :
+    VP (St P E A (aY :: L) V LS) (seqs sqY)
+      (St P E (fun σ => upd (A σ) aY (mm (cOf P σ.mem) P.w (A σ aY) (A σ aY))) (aY :: L) V LS) := by
+  have opd : Operand aY := by simp [Operand, aY, Spec.Rsa.Mont.aAcc, Spec.Rsa.Mont.aTmp]
+  have hbL : aY ∈ aY :: L := List.mem_cons_self
+  have hbv := hYv
+  simp only [sqY, seqs]
+  let G1 := fun σ s => St P E A (aY :: L) V LS σ s ∧ s.gpr .r0 = P.ws
+  let G2 := AfterM P E A L V LS (fun σ => mm (cOf P σ.mem) P.w (A σ aY) (A σ aY))
+  let G3 := fun σ s => G2 σ s ∧ Ws s P.B P.Z P.W nArr
+  refine VP.seq (G := G1) ?_ (VP.seq (G := G2) ?_ (VP.block_append (G := G3) ?_ ?_))
+  -- Frame word 0 into `r0`.
+  · show VP _ (.block ([(Reg.r0, 0)].map fun p => Instr.ldrSp p.1 p.2)) _
+    refine VP.ldrSp (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) fun σ s ⟨e, h, hw⟩ => ?_
+    · rw [h₁.2.1.sp, h₁.2.1.pre.sp, h₂.2.1.sp, h₂.2.1.pre.sp]
+    · have pre := h.pre
+      have spr : State.addr (s.sp + BitVec.ofNat 32 0) = State.addr P.sp := by rw [h.sp, pre.sp, BitVec.add_zero]
+      refine wp_loadStack (by decide) spr ⟨P.rF, List.mem_append_right _ (by rw [h.wr, pre.wr]; simp), by
+        simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; decide⟩ fun s1 u1 => WP.block_nil ?_
+      refine ⟨⟨e, h.of_rest (u1.rest (ws := [.r0]) (by simp)) u1.mem,
+        hw.of_upd u1 (by decide) (by decide) (by decide)⟩, ?_⟩
+      rw [u1.gpr]; have := h.frameWord (o := 0) (by decide); simp only [off, BitVec.add_zero] at this
+      rw [this, pre.saved]
+  -- The product.
+  · have rdy : ∀ σ s, G1 σ s → ArithmeticReady P.ws P.len P.w s ∧
+        numAt s.mem (State.addr P.ws) P.w aY < numAt s.mem (State.addr P.ws) P.w 0 := fun σ s ⟨⟨e, h, _⟩, r0⟩ => by
+      have pre := h.pre
+      have cR := pre.c_lt
+      have hb' := h.arrs aY hbL
+      refine ⟨h.ready r0, ?_⟩
+      rw [pre.numAt_eq (by rw [hb']; have := hbv σ e; omega), hb',
+        show numAt s.mem (State.addr P.ws) P.w 0 = cOf P s.mem from rfl, h.c_eq]
+      exact hbv σ e
+    refine VP.of_ct (fun σ₁ σ₂ => ?_) fun σ s hs => ?_
+    · intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
+      have ct := squareOp_ct (base := P.ws) (len := P.len) (w := P.w) opd opd
+      exact ct s₁ s₂ t₁ t₂ u₁ u₂ ⟨rdy _ _ hp.1, rdy _ _ hp.2, by
+        rw [hp.1.1.2.1.sp, hp.1.1.2.1.pre.sp, hp.2.1.2.1.sp, hp.2.1.2.1.pre.sp]⟩ e₁ e₂
+    · obtain ⟨ar, lt⟩ := rdy σ s hs
+      obtain ⟨⟨e, h, _⟩, r0⟩ := hs
+      have pre := h.pre
+      have cR := pre.c_lt
+      have hY := h.arrs aY (by simp)
+      have hB := h.arrs aY hbL
+      have eY : numAt s.mem (State.addr P.ws) P.w aY = A σ aY := by
+        rw [pre.numAt_eq (by rw [hY]; have := hYv σ e; omega), hY]
+      have eB : numAt s.mem (State.addr P.ws) P.w aY = A σ aY := by
+        rw [pre.numAt_eq (by rw [hB]; have := hbv σ e; omega), hB]
+      have c0 : numAt s.mem (State.addr P.ws) P.w 0 = cOf P σ.mem := h.c_eq
+      refine WP.mono (squareOp_ok s ar opd opd (by decide) lt)
+        fun t ⟨ar', _, lt', v, keeps, frame, rest⟩ => ?_
+      have k := keep_of_mont pre keeps frame
+      have hL : KS P σ (A σ) L (V σ) LS s := h.mono (fun j hj => ⟨List.mem_cons_of_mem _ hj, rfl⟩)
+        (fun d hd => ⟨hd, rfl⟩)
+      refine ⟨e, hL.core k (by decide) (by simp) rest.sp rest.rd rest.wr (hL.arrs_keep k ?_ (by simp))
+        (hL.sl_keep k (by simp) (by simp)) hL.live_lt hL.ls_ok, ?_, ?_⟩
+      · intro j hj hj'
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hj'
+        rcases hj' with rfl | rfl | rfl
+        · exact h2 hj
+        · exact h3 hj
+        · exact hYl hj
+      · exact ar'.ptr
+      · rw [c0] at lt' v
+        rw [eY] at v
         exact mm_eq pre.codd lt' v
   -- The context.
   · refine VP.taint [.r0] ctx_taint (fun σ₁ σ₂ s₁ s₂ h₁ h₂ r hr => ?_) fun σ s h => ?_
