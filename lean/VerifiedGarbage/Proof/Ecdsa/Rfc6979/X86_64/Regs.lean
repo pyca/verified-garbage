@@ -30,6 +30,8 @@ open VG VG.X86_64 VG.Impl.Ecdsa.Rfc6979.X86_64
 theorem ofInt_nat (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toInt_eq; simp
 
+theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero p
+
 theorem ea_stk (t : State) (d : Nat) : t.ea (stk d) = t.gpr .rsp + BitVec.ofNat 64 d := by
   show t.gpr .rsp + BitVec.ofInt 64 (d : Int) = _
   rw [ofInt_nat]
@@ -175,6 +177,52 @@ theorem mov32_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d
     Option.map_some, zx32 hn, Option.some.injEq, exists_eq_left']
   exact ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, RegUpd.gpr_setReg_self _ _ _,
     fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr⟩
+
+/-- `d ← [rsp + o]`, a word of the frame. -/
+theorem ld_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved) {o : Nat}
+    (ho : o + 8 ≤ 520) :
+    WP isa (.block [.mov d (.mem (stk o))]) u
+      (Upd L g m₀ u d (u.mem.readW (L.B + BitVec.ofNat 64 (24 + o)) 64)) := by
+  have hr := hc.inFr (d := 24 + o) (by omega) (by have := L.he; omega)
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, State.load64, ea_stk, hc.rsp,
+    Offset.add_add, hr, ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
+  exact ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, RegUpd.gpr_setReg_self _ _ _,
+    fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr⟩
+
+/-- `d ← d + a`. -/
+theorem addImm_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved) {a : Nat}
+    (ha : a < 2 ^ 31) :
+    WP isa (.block [.alu .add d (.imm (BitVec.ofNat 32 a))]) u (Upd L g m₀ u d (u.gpr d + BitVec.ofNat 64 a)) := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+    Option.bind_some, sx32 ha, Option.some.injEq, exists_eq_left']
+  refine ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
+  · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
+  · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
+
+/-- `d ← d + [rsp + o]`, a word of the frame. -/
+theorem addMem_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved) {o : Nat}
+    (ho : o + 8 ≤ 520) :
+    WP isa (.block [.alu .add d (.mem (stk o))]) u
+      (Upd L g m₀ u d (u.gpr d + u.mem.readW (L.B + BitVec.ofNat 64 (24 + o)) 64)) := by
+  have hr := hc.inFr (d := 24 + o) (by omega) (by have := L.he; omega)
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, State.load64, ea_stk, hc.rsp,
+    Offset.add_add, hr, ite_true, Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
+  · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
+  · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
+
+/-- `d ← d + r`. -/
+theorem addReg_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved) (r : Reg) :
+    WP isa (.block [.alu .add d (.reg r)]) u (Upd L g m₀ u d (u.gpr d + u.gpr r)) := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
+  · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
+  · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
 
 /-- Two pieces of code, each setting one register. -/
 theorem upd_append {is js : List Instr} {u : State} {d e : Reg} {v w : BitVec 64}

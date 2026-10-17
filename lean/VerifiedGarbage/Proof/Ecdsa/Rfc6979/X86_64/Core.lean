@@ -11,11 +11,11 @@ import VerifiedGarbage.Proof.Mont.X86_64.Row
 /-!
 # Deterministic ECDSA on x86-64: signing with a candidate
 
-The call of `vg_ecdsa_<curve>_sign` with `k = V` from the frame, or, if two
-`V`s make a candidate, the digest and the candidate above the frame's
-pointers (`core_ok`): it returns 1 and writes the signature, or returns 0
-and writes zeros, as `Spec.Ecdsa.signWith` gives for `d`, the digest and
-`k`, and changes only `out`, `scratch` and its return address.
+The call of `vg_ecdsa_<curve>_sign` with its digest `Y` and `k`, the
+candidate, above the frame's pointers (`core_ok`): it returns 1 and writes
+the signature, or returns 0 and writes zeros, as `Spec.Ecdsa.signWith` gives
+for `d`, the digest and `k`, and changes only `out`, `scratch` and its return
+address.
 -/
 
 @[expose] public section
@@ -37,36 +37,24 @@ abbrev coreRd (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region :=
   [⟨L.d, P.Q⟩, ⟨dgArg P L, P.Q⟩, ⟨kArg P L, P.Q⟩] ++ L.TBLs
 abbrev coreWr (P : RfcHash) {dn : Nat} (L : Lay dn) : List Region := [⟨L.out, 2 * P.Q⟩, L.SCR]
 
-/-- What `core`'s digest and `k` need of the layout: unless two `V`s make a
-candidate, the digest has `Q` bytes; if they do, the frame has the words
-above its pointers; and the tables are the comb's. -/
+/-- What the proof needs of the layout: scalars of `Q` bytes, the hash
+function's numbers in the frame, and the comb's tables. -/
 def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
-  L.q = P.Q ∧ (P.R.wide = false → P.Q ≤ dn) ∧ L.e = P.e ∧ L.cs = P.R.E.combConsts
+  L.q = P.Q ∧ HashLay P L ∧ L.cs = P.R.E.combConsts
 
-/-- `core`'s digest and `k`: in the digest or the frame, apart from `out`,
-`scratch` and the return address of a call from the frame. -/
-theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {x : Addr} (hx : x = dgArg P L ∨ x = kArg P L) :
+/-- `core`'s digest and `k`: in the frame, apart from `out`, `scratch` and
+the return address of a call from the frame. -/
+theorem coreArg_ok (hL : L.Ok) {x : Addr} (hx : x = dgArg P L ∨ x = kArg P L) :
     (∃ R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R) ∧ Region.Disjoint ⟨x, P.Q⟩ L.OUT ∧
       Region.Disjoint ⟨x, P.Q⟩ L.SCR ∧ Region.Disjoint ⟨x, P.Q⟩ ⟨L.B + BitVec.ofNat 64 8, 16⟩ := by
-  have hQ := P.sizes
-  cases hw : P.R.wide
-  · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
-    have hn := hk.2.1 hw
-    simp only [dgArg, kArg, hw, Bool.false_eq_true, ite_false] at hx
-    rcases hx with rfl | rfl
-    · exact ⟨⟨L.DG, by simp, within_base _ hn⟩, hL.og.symm.sub_left (Region.sub_prefix hn),
-        hL.gc.sub_left (Region.sub_prefix hn), ((hL.stk_DG (d := 8) (n := 16) (by omega_using [])).symm.sub_left
-          (Region.sub_prefix hn))⟩
-    · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_using []) (by omega_using [hQ8, h6])⟩, (hL.stk_OUT (by omega_using [hQ8, h6])),
-        hL.stk_SCR (by omega_using [hQ8, h6]), Offset.disjoint _ (by omega_using []) (by omega_using [hQ8, h6]) (by omega_using [])⟩
-  · obtain ⟨hw9, hQ66, -, -⟩ := P.sizesW hw
-    have he : L.e = 18 := by rw [hk.2.2.1]; simp only [RfcHash.e, hw, ite_true]
-    simp only [dgArg, kArg, hw, ite_true] at hx
-    rcases hx with rfl | rfl
-    · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_using []) (by omega_using [hQ66, he])⟩, (hL.stk_OUT (by omega_using [hQ66, he])),
-        hL.stk_SCR (by omega_using [hQ66, he]), Offset.disjoint _ (by omega_using []) (by omega_using [hQ66]) (by omega_using [])⟩
-    · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_using []) (by omega_using [hQ66, he])⟩, (hL.stk_OUT (by omega_using [hQ66, he])),
-        hL.stk_SCR (by omega_using [hQ66, he]), Offset.disjoint _ (by omega_using []) (by omega_using [hQ66]) (by omega_using [])⟩
+  have hQ : P.Q ≤ 66 := by nums
+  have he := L.he
+  simp only [dgArg, kArg] at hx
+  rcases hx with rfl | rfl
+  · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_using []) (by omega_using [hQ, he])⟩, (hL.stk_OUT (by omega_using [hQ, he])),
+      hL.stk_SCR (by omega_using [hQ, he]), Offset.disjoint _ (by omega_using []) (by omega_using [hQ]) (by omega_using [])⟩
+  · exact ⟨⟨L.FR, by simp, within_fr _ (by omega_using []) (by omega_using [hQ, he])⟩, (hL.stk_OUT (by omega_using [hQ, he])),
+      hL.stk_SCR (by omega_using [hQ, he]), Offset.disjoint _ (by omega_using []) (by omega_using [hQ]) (by omega_using [])⟩
 
 theorem ce_gpr (t : State) (rd wr : List Region) {r : Reg} (h : r ≠ .rsp) :
     (t.callEntry.withRegions rd wr).gpr r = t.gpr r := by
@@ -94,12 +82,12 @@ theorem ce_bytesAt {t : State} (hc : Ctx L g m₀ t) {p : Addr} {n : Nat}
 /-- The comb's tables, at the addresses the state gives their statics. -/
 theorem Ctx.tbls (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
     Abi.constRegions (fun n => t.syms n) P.R.E.combConsts = L.TBLs := by
-  rw [Lay.TBLs, ← hk.2.2.2]; exact constRegions_congr hc.sy
+  rw [Lay.TBLs, ← hk.2.2]; exact constRegions_congr hc.sy
 
 /-- The comb's tables, as on entry, on entry to a call from the frame. -/
 theorem tbl_held (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
     Abi.constsHeld t.callEntry.mem (fun n => t.syms n) P.R.E.combConsts := fun c hc' i hi => by
-  have hcs : c ∈ L.cs := by rw [hk.2.2.2]; exact hc'
+  have hcs : c ∈ L.cs := by rw [hk.2.2]; exact hc'
   show t.callEntry.mem.readW (t.syms c.1 + BitVec.ofNat 64 (8 * i)) 64 = c.2.getD i 0
   rw [hc.sy c hcs]
   obtain ⟨hn, tO, tS, tK⟩ := hL.tbl ⟨L.sy c.1, 8 * c.2.length⟩
@@ -127,8 +115,8 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
   have eD : (⟨L.d, P.R.E.C.len⟩ : Region) = L.D := by rw [Lay.D, hq]
   have eO : (⟨L.out, 2 * P.R.E.C.len⟩ : Region) = L.OUT := by rw [Lay.OUT, hq]
   have no : L.out.toNat + 2 * P.R.E.C.len ≤ 2 ^ 64 := by have := hL.no; rw [hq] at this; omega_using [this]
-  obtain ⟨-, gO, gS, gR⟩ := coreArg_ok hL hk (.inl rfl)
-  obtain ⟨-, kO, kS, -⟩ := coreArg_ok hL hk (.inr rfl)
+  obtain ⟨-, gO, gS, gR⟩ := coreArg_ok (P := P) hL (.inl rfl)
+  obtain ⟨-, kO, kS, -⟩ := coreArg_ok (P := P) hL (.inr rfl)
   have ht := hc.tbls hk
   have hT : ∀ T ∈ Abi.constRegions (fun n => t.syms n) P.R.E.combConsts, T.base.toNat + T.len ≤ 2 ^ 64 ∧
       ∀ r ∈ [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 16, 8⟩], T.Disjoint r := fun T hT => by
@@ -167,8 +155,8 @@ theorem core_clear (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ 
     List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | hr | rfl | rfl
   · rw [← hq]; exact (hL.stk_d (by omega_using [])).symm
-  · exact (coreArg_ok hL hk (.inl rfl)).2.2.2.sub_right hs
-  · exact (coreArg_ok hL hk (.inr rfl)).2.2.2.sub_right hs
+  · exact (coreArg_ok (P := P) hL (.inl rfl)).2.2.2.sub_right hs
+  · exact (coreArg_ok (P := P) hL (.inr rfl)).2.2.2.sub_right hs
   · exact (hL.tbl r hr).2.2.2.sub_right (Offset.sub_base _ (by omega_using []))
   · rw [show (⟨L.out, 2 * P.Q⟩ : Region) = L.OUT by simp only [Lay.OUT, hq]]; exact (hL.stk_OUT (by omega_using [])).symm
   · exact (hL.stk_SCR (by omega_using [])).symm
@@ -183,8 +171,8 @@ theorem core_covers (hk : CoreOk P L) (hL : L.Ok) {t : State} (hc : Ctx L g m₀
       List.mem_append, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | hr | rfl | rfl
     · exact ⟨L.D, m (by simp), within_base _ (by omega_using [hq])⟩
-    · obtain ⟨R, hR, hw⟩ := (coreArg_ok hL hk (.inl rfl)).1; exact ⟨R, m hR, hw⟩
-    · obtain ⟨R, hR, hw⟩ := (coreArg_ok hL hk (.inr rfl)).1; exact ⟨R, m hR, hw⟩
+    · obtain ⟨R, hR, hw⟩ := (coreArg_ok (P := P) hL (.inl rfl)).1; exact ⟨R, m hR, hw⟩
+    · obtain ⟨R, hR, hw⟩ := (coreArg_ok (P := P) hL (.inr rfl)).1; exact ⟨R, m hR, hw⟩
     · exact ⟨r, by rw [hc.rd]; simp [hr], 0, (BitVec.add_zero _).symm, by omega_using []⟩
     · exact ⟨L.OUT, m (by simp), within_base _ (by omega_using [hq])⟩
     · exact ⟨L.SCR, m (by simp), within_base _ (by omega_using [])⟩
@@ -239,8 +227,8 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     · exact .inl (sub_refl _)
     · exact .inr (.inl (sub_refl _))
     · exact safe_low L (by omega_using [])
-  · obtain ⟨-, -, -, gR⟩ := coreArg_ok hL hk (.inl rfl)
-    obtain ⟨-, -, -, kR⟩ := coreArg_ok hL hk (.inr rfl)
+  · obtain ⟨-, -, -, gR⟩ := coreArg_ok (P := P) hL (.inl rfl)
+    obtain ⟨-, -, -, kR⟩ := coreArg_ok (P := P) hL (.inr rfl)
     have hQl : P.R.E.C.len ≤ 72 := by have := P.R.len_words; have := P.R.n9; omega
     have hQl' : P.Q ≤ 72 := hQl
     have hk' : coreSigOf P.R.E t.callEntry.mem L.d (dgArg P L) (kArg P L) = coreSig P L t.mem := by
