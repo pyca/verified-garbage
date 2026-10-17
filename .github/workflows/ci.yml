@@ -19,10 +19,6 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -D warnings
-  # Whether the Rust jobs run their tests. A push to main is the commit the
-  # merge queue tested (see the `lean` job's `reuse`): its Rust jobs only
-  # build, for main's caches, which only main saves.
-  TESTS: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
 
 jobs:
   # Plans the Lean build: when it needs shards (see ci/lean_shards.py), it
@@ -309,16 +305,49 @@ jobs:
       - run: python3 ci/check_mcdt.py
       - run: python3 ci/check_vectors.py
 
+  # The architectures whose Rust tests run (each Rust job's `TESTS`; when
+  # false, a job only builds and lints). A pull request tests those its
+  # changes can affect (ci/rust_arches.py): an architecture's own
+  # `src/asm/<target>/`, or the shared code, which is every architecture's.
+  # The merge queue tests every architecture, so that the coverage, merged
+  # across them all, is checked before anything lands. A push to main is the
+  # commit the merge queue tested (see the `lean` job's `reuse`): its Rust
+  # jobs only build, for main's caches, which only main saves.
+  rust-arches:
+    name: "Rust: architectures to test"
+    runs-on: ubuntu-26.04
+    outputs:
+      arches: ${{ steps.arches.outputs.arches }}
+      all: ${{ steps.arches.outputs.all }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # A pull request's merge commit, and its first parent, the base.
+          fetch-depth: 2
+      - id: arches
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          case "$EVENT" in
+            pull_request) git diff --name-only --no-renames HEAD^1 HEAD | python3 ci/rust_arches.py ;;
+            push) printf 'arches=[]\nall=false\n' ;;
+            *) python3 ci/rust_arches.py --all ;;
+          esac | tee -a "$GITHUB_OUTPUT"
+
   rust:
+    needs: rust-arches
     strategy:
       fail-fast: false
       matrix:
         platform:
           - os: ubuntu-26.04
+            arch: x86_64
           # x86: a 32-bit userspace, run natively on the x86-64 host, in the
           # image ci/runner.Dockerfile builds (Runner images workflow). It
           # holds only that platform, so it is named.
           - os: ubuntu-26.04
+            arch: x86
             container:
               image: ghcr.io/pyca/verified-garbage-runner:i686
               # Docker 29.4.2 on ubuntu-26.04 denies socketcall(2), which i386
@@ -327,30 +356,37 @@ jobs:
               # runner has Docker 29.4.3 or later.
               options: --platform linux/386 --security-opt seccomp=unconfined
           - os: ubuntu-26.04-arm
+            arch: aarch64
           # ARMv7: cross-compiled on the ARM64 host, in the same Dockerfile's
           # 64-bit image for it, whose Cargo runs the tests (ci/arm32-run)
           # natively when the CPU has AArch32 and under QEMU when it doesn't:
           # some runners are Neoverse V3, which has none, and on which a
           # 32-bit container can't even start.
           - os: ubuntu-26.04-arm
+            arch: arm
             container:
               image: ghcr.io/pyca/verified-garbage-runner:armv7-cross
           - os: macos-latest
+            arch: aarch64
           - os: windows-latest
+            arch: x86_64
         rust: [stable]
         include:
           # The minimum supported Rust version (Cargo.toml's `rust-version`),
           # on one platform.
           - platform:
               os: ubuntu-26.04
+              arch: x86_64
             rust: "1.88"
           # One job each for the upcoming toolchains, to catch regressions (and
           # new warnings, which are errors here) before they reach stable.
           - platform:
               os: ubuntu-26.04
+              arch: x86_64
             rust: beta
           - platform:
               os: ubuntu-26.04
+              arch: x86_64
             rust: nightly
     runs-on: ${{ matrix.platform.os }}
     # With an empty image the job runs directly on the runner.
@@ -365,6 +401,8 @@ jobs:
       # Both relative to the crate root, where the test binaries run.
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
       WYCHEPROOF_ROOT: wycheproof
+      # Whether this job runs its tests (see `rust-arches`).
+      TESTS: ${{ contains(fromJSON(needs.rust-arches.outputs.arches), matrix.platform.arch) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -486,6 +524,7 @@ jobs:
         # The minimum supported Rust version is tested in the `rust` job.
         rust: [stable]
     name: Rust (Thumb, ${{ matrix.rust }})
+    needs: rust-arches
     runs-on: ubuntu-26.04-arm
     container:
       image: ghcr.io/pyca/verified-garbage-runner:armv7-cross
@@ -496,6 +535,8 @@ jobs:
       CARGO_BUILD_TARGET: thumbv7neon-unknown-linux-gnueabihf
       RUSTFLAGS: -D warnings
       WYCHEPROOF_ROOT: wycheproof
+      # ARM's code, as ARMv7's (see `rust-arches`).
+      TESTS: ${{ contains(fromJSON(needs.rust-arches.outputs.arches), 'arm') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -570,7 +611,7 @@ jobs:
   # dealt out by the CPU time each took on `main` on one class of host
   # (ci/cpu_shards.py, with the times `cpu-features-times` restores).
   rust-cpu-features:
-    needs: cpu-features-times
+    needs: [rust-arches, cpu-features-times]
     strategy:
       fail-fast: false
       matrix:
@@ -753,6 +794,8 @@ jobs:
       RUSTFLAGS: -D warnings -Cinstrument-coverage
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
       WYCHEPROOF_ROOT: wycheproof
+      # SDE's chips are x86-64's (see `rust-arches`).
+      TESTS: ${{ contains(fromJSON(needs.rust-arches.outputs.arches), matrix.arch || 'x86_64') }}
       SDE_VERSION: 10.13.1-2026-07-28
       SDE_URL: https://downloadmirror.intel.com/924984/sde-external-10.13.1-2026-07-28-lin.tar.xz
       SDE_SHA256: 94e97d623fec54385686e1e7ba65ebc9941748c05ee451423948334892bf2b50
@@ -973,12 +1016,13 @@ jobs:
           path: .cpu-features-times
           key: cpu-features-times-${{ github.run_id }}-${{ github.run_attempt }}
 
-  # Not on a push to main, which runs no tests (`TESTS`, which a job's `if`
-  # cannot read).
+  # Only when every architecture ran its tests (`rust-arches`): not on a push
+  # to main, which runs none, nor on a pull request that tests only some,
+  # whose coverage the merge queue checks.
   coverage:
     name: Rust coverage
-    needs: [rust, rust-cpu-features]
-    if: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+    needs: [rust-arches, rust, rust-cpu-features]
+    if: ${{ needs.rust-arches.outputs.all == 'true' }}
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -1030,7 +1074,7 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-shard, lean-imports, rust, rust-thumb, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, rust-arches, rust, rust-thumb, rust-cpu-features, coverage]
     runs-on: ubuntu-26.04
     # To list the run's artifacts.
     permissions:
@@ -1043,10 +1087,11 @@ jobs:
         id: check
         env:
           RESULTS: >-
-            ${{ needs.lean.result }} ${{ needs.lean-imports.result }}
+            ${{ needs.lean.result }} ${{ needs.lean-imports.result }} ${{ needs.rust-arches.result }}
             ${{ needs.rust.result }} ${{ needs.rust-thumb.result }} ${{ needs.rust-cpu-features.result }}
-          # Skipped on a push to main, which runs no tests (`TESTS`).
+          # Skipped unless every architecture ran its tests (`rust-arches`).
           COVERAGE: ${{ needs.coverage.result }}
+          ALL_ARCHES: ${{ needs.rust-arches.outputs.all }}
           # Skipped when `lean` built the proofs itself.
           SHARDS: ${{ needs.lean-shard.result }}
           GH_TOKEN: ${{ github.token }}
@@ -1056,7 +1101,7 @@ jobs:
           for r in $RESULTS; do
             [ "$r" = success ] || exit 1
           done
-          [ "$COVERAGE" = success ] || { [ "$TESTS" = false ] && [ "$COVERAGE" = skipped ]; } || exit 1
+          [ "$COVERAGE" = success ] || { [ "$ALL_ARCHES" != true ] && [ "$COVERAGE" = skipped ]; } || exit 1
           case "$SHARDS" in
             skipped) ;;
             success)

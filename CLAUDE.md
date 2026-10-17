@@ -44,6 +44,10 @@ Lake rebuilds your changes and anything not yet cached.
   (`src/` and `tests/`) from every platform and fails below 100%. Add tests
   or delete dead code; only exclude lines that genuinely cannot run, between
   `// NO-COVERAGE-START` and `// NO-COVERAGE-END`, with a comment saying why.
+  A pull request runs the Rust tests of only the architectures its changes
+  reach (`ci/rust_arches.py`: an architecture's `src/asm/<target>/`, or
+  shared code for all), and checks coverage only when that is all of them;
+  the merge queue always tests and checks every architecture.
 * **Known-answer tests need clear provenance.** Never type test vectors into
   a test. Use Wycheproof (`tests/wycheproof/`), or vendor the published
   files byte for byte into a directory under `vectors/`, with a new
