@@ -499,6 +499,7 @@ theorem loadD_ok {i : Nat} (hi : i < 8) (s : State) {p₀ p₁ : Addr} {M₀ M�
   have hd' := VG.nodup_reverse hd
   have q₀ := load_pair M₀ s.mem p₀ hi hb₀
   have q₁ := load_pair M₁ s.mem p₁ hi hb₁
+  have hbit : BitVec.getLsbD (1 : BitVec 8) 0 = true := by decide
   apply WP.of_runBlock
   simp only [load, vb, List.dropLast]
   generalize msg i = x at *
@@ -509,11 +510,11 @@ theorem loadD_ok {i : Nat} (hi : i < 8) (s : State) {p₀ p₁ : Addr} {M₀ M�
   simp only [T, t0, t1, t2, t3, mBswap, tmp, List.nodup_cons, List.mem_cons, List.not_mem_nil,
     or_false, not_or, List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hd hd' hm hm' ⊢
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec,
     isa, State.setV, State.lane, State.load128, ea_at, hrsi, hr15, hin₀,
-    hin₁, ite_true, ite_false, hd, hd', hm, hm', VBinOp.sse, q₀, q₁, Option.map_some,
+    hin₁, hd, hd', hm, hm', VBinOp.sse, q₀, q₁, hbit, Option.map_some,
     Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, trivial, fun r h1 h2 => by simp [h1, h2], trivial⟩
+  exact ⟨trivial, trivial, fun r h1 h2 => by simp [h1, h2], trivial, trivial, trivial, trivial, trivial⟩
 
 /-- `load`, storing the words plus their constants, from the table at `rax`. -/
 theorem loadR_ok {i : Nat} (hi : i < 8) (s : State) {p₀ p₁ scr : Addr} {M₀ M₁ : Block}
