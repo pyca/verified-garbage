@@ -4,24 +4,28 @@
 //! [`P256`], [`P384`], `P521`, `P192`, `P224`, `BrainpoolP256r1`,
 //! `BrainpoolP384r1`, `BrainpoolP512r1` and `Secp256k1`), and
 //! signs with a hash
-//! function `H` that the curve has signatures with ([`SignatureHash<C>`]: for
-//! P-192, SHA-256; for P-224, SHA-224; for P-256, SHA-256 and SHA-384; for P-384, SHA-384; for
-//! P-521, SHA-512; for secp256k1 and brainpoolP256r1, SHA-256; for
-//! brainpoolP384r1, SHA-384; for brainpoolP512r1, SHA-512), as in
-//! `key.sign::<Sha256>(message)`. Each signature is one call of
-//! verified code, for the curve and the hash function
-//! (`vg_ecdsa_<curve>_<hash>_sign`, contract
+//! function `H` that the curve has signatures with ([`SignatureHash<C>`]: on
+//! x86-64, SHA-1 and every SHA-2 function, for every curve; elsewhere, for
+//! P-192, SHA-256; for P-224, SHA-224; for P-256, SHA-256 and SHA-384; for
+//! P-384, SHA-384; for P-521, SHA-512; for secp256k1 and brainpoolP256r1,
+//! SHA-256; for brainpoolP384r1, SHA-384; for brainpoolP512r1, SHA-512), as
+//! in `key.sign::<Sha256>(message)`. Each signature is one call of verified
+//! code: on x86-64, for the curve, with the hash function as an argument
+//! (`vg_ecdsa_<curve>_rfc6979_sign`, contract
+//! `VG.Spec.Ecdsa.Rfc6979.Instance.signAnyContract`); elsewhere, for the
+//! curve and the hash function (`vg_ecdsa_<curve>_<hash>_sign`, contract
 //! `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`). That code
 //! derives the per-message secret number `k` from the key and the hash with
 //! HMAC, as RFC 6979 does, and signs with the verified ECDSA of a given `k`
 //! (`vg_ecdsa_<curve>_sign`). It checks the key, and tries further
 //! candidates for `k` when one is unsuitable. It follows the implementation
-//! of the hash function that this CPU runs (e.g. on x86-64,
-//! `vg_ecdsa_p256_sha256_sign_shani` with the SHA extensions, or on
-//! AArch64 `vg_ecdsa_p256_sha256_sign_sha2` with the SHA-256 instructions).
+//! of the hash functions that this CPU runs (e.g. on x86-64,
+//! `vg_ecdsa_p256_rfc6979_sign_hash_shani_avx2` with the SHA extensions and
+//! AVX2, or on AArch64 `vg_ecdsa_p256_sha256_sign_sha2` with the SHA-256
+//! instructions).
 //!
-//! Signing is constant time except for the number of candidates for `k`
-//! that it tries, almost always one.
+//! Signing is constant time except for the hash function and the number of
+//! candidates for `k` that it tries, almost always one.
 //!
 //! `public_key` derives a key's public key `Q = dG`, by one call of
 //! verified code (`vg_ec_<curve>_public_key`, contract
@@ -42,6 +46,7 @@
     target_arch = "arm"
 ))]
 
+mod any;
 mod brainpoolp256r1;
 mod brainpoolp384r1;
 mod brainpoolp512r1;
@@ -74,11 +79,16 @@ mod sealed {
 }
 
 /// A hash function that ECDSA signs with, and verifies signatures of, over
-/// the curve `C`: for P-224, [`Sha224`](crate::hashes::sha224::Sha224); for
-/// P-256, [`Sha256`](crate::hashes::sha256::Sha256) and
-/// [`Sha384`](crate::hashes::sha384::Sha384); for P-384, `Sha384`; for
-/// P-521, [`Sha512`](crate::hashes::sha512::Sha512); for secp256k1 and
-/// brainpoolP256r1, `Sha256`; for brainpoolP384r1, `Sha384`; for
+/// the curve `C`: on x86-64, [`Sha1`](crate::hashes::sha1::Sha1),
+/// [`Sha224`](crate::hashes::sha224::Sha224),
+/// [`Sha256`](crate::hashes::sha256::Sha256),
+/// [`Sha384`](crate::hashes::sha384::Sha384),
+/// [`Sha512`](crate::hashes::sha512::Sha512),
+/// [`Sha512_224`](crate::hashes::sha512_224::Sha512_224) and
+/// [`Sha512_256`](crate::hashes::sha512_256::Sha512_256), for every curve;
+/// elsewhere, for P-192, `Sha256`; for P-224, `Sha224`; for P-256, `Sha256`
+/// and `Sha384`; for P-384, `Sha384`; for P-521, `Sha512`; for secp256k1
+/// and brainpoolP256r1, `Sha256`; for brainpoolP384r1, `Sha384`; for
 /// brainpoolP512r1, `Sha512`.
 pub trait SignatureHash<C: Curve>: sealed::Functions<C> {}
 

@@ -147,6 +147,14 @@ GROUPS = {
             "wycheproof::ecdsa_brainpoolp512r1",
         ],
     },
+    # Deterministic ECDSA on x86-64, which signs with the hash function as an
+    # argument, calling the implementations of the hash functions' tier
+    # (`hashes::tier`) and, for P-256, P-384 and P-521, its multiplication:
+    # with every hash function over every curve.
+    "ecdsa_tier": {
+        "lib": [],
+        "tests": ["rfc6979::any"],
+    },
     "ed25519": {
         "lib": ["ed25519"],
         "tests": ["rfc8032::ed25519_vectors", "wycheproof::ed25519"],

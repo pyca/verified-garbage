@@ -1,8 +1,9 @@
-//! ECDSA over P-521: deterministic signatures with HMAC-SHA-512
-//! (`vg_ecdsa_p521_sha512_sign`, which calls `vg_ecdsa_p521_sign`), public
-//! keys (`vg_ec_p521_public_key`), and verification (`vg_ecdsa_p521_verify`),
-//! each with BMI2 and ADX (and the comb's selection by AVX2) where the CPU
-//! has them (`_adx`).
+//! ECDSA over P-521: deterministic signatures with HMAC with any of SHA-1
+//! and the SHA-2 functions on x86-64 (`vg_ecdsa_p521_rfc6979_sign`), and
+//! with HMAC-SHA-512 elsewhere (`vg_ecdsa_p521_sha512_sign`), each of which
+//! calls `vg_ecdsa_p521_sign`; public keys (`vg_ec_p521_public_key`), and
+//! verification (`vg_ecdsa_p521_verify`), each with BMI2 and ADX (and the
+//! comb's selection by AVX2) where the CPU has them (`_adx`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -11,22 +12,33 @@
     target_arch = "aarch64"
 ))]
 
-use super::{Error, P521, SignatureHash, SigningKey, sealed};
+use super::{Error, P521, SigningKey};
+#[cfg(not(target_arch = "x86_64"))]
+use super::{SignatureHash, sealed};
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify_adx;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::ecdsa_p521_rfc6979::{
+    vg_ecdsa_p521_rfc6979_sign, vg_ecdsa_p521_rfc6979_sign_adx,
+    vg_ecdsa_p521_rfc6979_sign_hash_avx2, vg_ecdsa_p521_rfc6979_sign_hash_avx2_adx,
+    vg_ecdsa_p521_rfc6979_sign_hash_shani, vg_ecdsa_p521_rfc6979_sign_hash_shani_adx,
+    vg_ecdsa_p521_rfc6979_sign_hash_shani_avx2, vg_ecdsa_p521_rfc6979_sign_hash_shani_avx2_adx,
+    vg_ecdsa_p521_rfc6979_sign_hash_shani_sha512, vg_ecdsa_p521_rfc6979_sign_hash_shani_sha512_adx,
+};
+#[cfg(not(target_arch = "x86_64"))]
 use crate::arch::ecdsa_p521_sha512::vg_ecdsa_p521_sha512_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p521_sha512::vg_ecdsa_p521_sha512_sign_sha3;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::ecdsa_p521_sha512::{
-    vg_ecdsa_p521_sha512_sign_adx, vg_ecdsa_p521_sha512_sign_avx2,
-    vg_ecdsa_p521_sha512_sign_avx2_adx, vg_ecdsa_p521_sha512_sign_shani,
-    vg_ecdsa_p521_sha512_sign_shani_adx,
-};
+use crate::cpu::Features;
 use crate::cpu::detected;
 use crate::ec::p521::{Mul, public_key};
+#[cfg(not(target_arch = "x86_64"))]
 use crate::hashes::sha512::{Sha512, Sha512Backend};
+#[cfg(target_arch = "x86_64")]
+use crate::hashes::tier::Tier;
+#[cfg(not(target_arch = "x86_64"))]
 use crate::zeroize::zeroize;
 
 impl SigningKey<P521> {
@@ -44,6 +56,7 @@ impl SigningKey<P521> {
 /// The 66 bytes `vg_ecdsa_p521_verify` takes for a hash shorter than them:
 /// the hash's integer shifted left by 7 bits, so that its leftmost 521 bits
 /// are the hash's integer (FIPS 186-5 §6.4.1).
+#[cfg(not(target_arch = "x86_64"))]
 fn widen(digest: &[u8; 64]) -> [u8; 66] {
     let mut out = [0; 66];
     for (i, b) in digest.iter().enumerate() {
@@ -53,6 +66,30 @@ fn widen(digest: &[u8; 64]) -> [u8; 66] {
     out
 }
 
+/// Whether `signature` verifies with `q` for the hash whose leftmost 521
+/// bits are those of `e`.
+fn verify_with(q: &[u8; 133], e: &[u8; 66], signature: &[u8; 132]) -> Result<(), Error> {
+    let mut scratch = [0u64; 1024];
+    let ok = match Mul::select(detected()) {
+        // SAFETY: `q` is valid for reads of 133 bytes, `e` of 66, `signature`
+        // of 132 and `scratch` for reads and writes of 8192; `scratch` is a
+        // distinct object from the others, so it overlaps neither them nor
+        // the call's stack frame, and, as Rust objects, none wraps around
+        // the address space.
+        Mul::Baseline => unsafe { vg_ecdsa_p521_verify(q, e, signature, &mut scratch) },
+        // SAFETY: as for `Mul::Baseline`, and the CPU has BMI2 and ADX
+        // (`Mul::select`).
+        #[cfg(target_arch = "x86_64")]
+        Mul::Adx => unsafe { vg_ecdsa_p521_verify_adx(q, e, signature, &mut scratch) },
+    };
+    if ok == 1 {
+        Ok(())
+    } else {
+        Err(Error::InvalidSignature)
+    }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
 impl sealed::Functions<P521> for Sha512 {
     fn sign(d: &[u8; 66], digest: &[u8; 64]) -> Result<[u8; 132], Error> {
         let f = detected();
@@ -60,16 +97,6 @@ impl sealed::Functions<P521> for Sha512 {
             (Sha512Backend::Scalar, Mul::Baseline) => vg_ecdsa_p521_sha512_sign,
             #[cfg(target_arch = "aarch64")]
             (Sha512Backend::Sha3, Mul::Baseline) => vg_ecdsa_p521_sha512_sign_sha3,
-            #[cfg(target_arch = "x86_64")]
-            (Sha512Backend::ShaNi, Mul::Baseline) => vg_ecdsa_p521_sha512_sign_shani,
-            #[cfg(target_arch = "x86_64")]
-            (Sha512Backend::Avx2, Mul::Baseline) => vg_ecdsa_p521_sha512_sign_avx2,
-            #[cfg(target_arch = "x86_64")]
-            (Sha512Backend::Scalar, Mul::Adx) => vg_ecdsa_p521_sha512_sign_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Sha512Backend::ShaNi, Mul::Adx) => vg_ecdsa_p521_sha512_sign_shani_adx,
-            #[cfg(target_arch = "x86_64")]
-            (Sha512Backend::Avx2, Mul::Adx) => vg_ecdsa_p521_sha512_sign_avx2_adx,
         };
         let mut out = [0; 132];
         let mut scratch = [0u64; 1024];
@@ -90,61 +117,79 @@ impl sealed::Functions<P521> for Sha512 {
     }
 
     fn verify(q: &[u8; 133], digest: &[u8; 64], signature: &[u8; 132]) -> Result<(), Error> {
-        let digest = widen(digest);
-        let mut scratch = [0u64; 1024];
-        let ok = match Mul::select(detected()) {
-            // SAFETY: `q` is valid for reads of 133 bytes, `digest` of 66,
-            // `signature` of 132 and `scratch` for reads and writes of 8192;
-            // `scratch` is a distinct object from the others, so it overlaps
-            // neither them nor the call's stack frame, and, as Rust objects,
-            // none wraps around the address space.
-            Mul::Baseline => unsafe { vg_ecdsa_p521_verify(q, &digest, signature, &mut scratch) },
-            // SAFETY: as for `Mul::Baseline`, and the CPU has BMI2 and ADX
-            // (`Mul::select`).
-            #[cfg(target_arch = "x86_64")]
-            Mul::Adx => unsafe { vg_ecdsa_p521_verify_adx(q, &digest, signature, &mut scratch) },
-        };
-        if ok == 1 {
-            Ok(())
-        } else {
-            Err(Error::InvalidSignature)
-        }
+        verify_with(q, &widen(digest), signature)
     }
 }
 
+#[cfg(not(target_arch = "x86_64"))]
 impl SignatureHash<P521> for Sha512 {}
+
+/// The signing function for a CPU with the features `f`: of its tier of
+/// hash functions and its multiplications.
+#[cfg(target_arch = "x86_64")]
+fn sign_fn(f: Features) -> super::any::SignFn<66, 132> {
+    match (Tier::select(f), Mul::select(f)) {
+        (Tier::Base, Mul::Baseline) => vg_ecdsa_p521_rfc6979_sign,
+        (Tier::Avx2, Mul::Baseline) => vg_ecdsa_p521_rfc6979_sign_hash_avx2,
+        (Tier::ShaNi, Mul::Baseline) => vg_ecdsa_p521_rfc6979_sign_hash_shani,
+        (Tier::ShaNiAvx2, Mul::Baseline) => vg_ecdsa_p521_rfc6979_sign_hash_shani_avx2,
+        (Tier::ShaNiSha512, Mul::Baseline) => vg_ecdsa_p521_rfc6979_sign_hash_shani_sha512,
+        (Tier::Base, Mul::Adx) => vg_ecdsa_p521_rfc6979_sign_adx,
+        (Tier::Avx2, Mul::Adx) => vg_ecdsa_p521_rfc6979_sign_hash_avx2_adx,
+        (Tier::ShaNi, Mul::Adx) => vg_ecdsa_p521_rfc6979_sign_hash_shani_adx,
+        (Tier::ShaNiAvx2, Mul::Adx) => vg_ecdsa_p521_rfc6979_sign_hash_shani_avx2_adx,
+        (Tier::ShaNiSha512, Mul::Adx) => vg_ecdsa_p521_rfc6979_sign_hash_shani_sha512_adx,
+    }
+}
+
+// The order has 521 bits: `e` is the hash's integer shifted left by 7 bits.
+#[cfg(target_arch = "x86_64")]
+super::any::any_hash!(P521, sign_fn, verify_with, 7);
 
 #[cfg(all(test, target_arch = "x86_64"))]
 mod tests {
     use super::*;
-    use crate::arch::ecdsa_p521_sha512::{
-        VG_ECDSA_P521_SHA512_SIGN_ADX_FEATURES, VG_ECDSA_P521_SHA512_SIGN_AVX2_ADX_FEATURES,
-        VG_ECDSA_P521_SHA512_SIGN_AVX2_FEATURES, VG_ECDSA_P521_SHA512_SIGN_SHANI_ADX_FEATURES,
-        VG_ECDSA_P521_SHA512_SIGN_SHANI_FEATURES,
+    use crate::arch::ecdsa_p521_rfc6979::{
+        VG_ECDSA_P521_RFC6979_SIGN_ADX_FEATURES, VG_ECDSA_P521_RFC6979_SIGN_HASH_AVX2_ADX_FEATURES,
+        VG_ECDSA_P521_RFC6979_SIGN_HASH_AVX2_FEATURES,
+        VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_ADX_FEATURES,
+        VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_AVX2_ADX_FEATURES,
+        VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES,
+        VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_FEATURES,
+        VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_SHA512_ADX_FEATURES,
+        VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES,
     };
-    use crate::cpu::{Features, NAMES};
+    use crate::cpu::NAMES;
 
-    /// The CPU features of the signature with SHA-512's backend `s` and the
+    /// The CPU features of the signature with the tier `t` and the
     /// multiplications `m`.
-    fn required(s: Sha512Backend, m: Mul) -> Features {
-        match (s, m) {
-            (Sha512Backend::Scalar, Mul::Baseline) => Features(0),
-            (Sha512Backend::ShaNi, Mul::Baseline) => VG_ECDSA_P521_SHA512_SIGN_SHANI_FEATURES,
-            (Sha512Backend::Avx2, Mul::Baseline) => VG_ECDSA_P521_SHA512_SIGN_AVX2_FEATURES,
-            (Sha512Backend::Scalar, Mul::Adx) => VG_ECDSA_P521_SHA512_SIGN_ADX_FEATURES,
-            (Sha512Backend::ShaNi, Mul::Adx) => VG_ECDSA_P521_SHA512_SIGN_SHANI_ADX_FEATURES,
-            (Sha512Backend::Avx2, Mul::Adx) => VG_ECDSA_P521_SHA512_SIGN_AVX2_ADX_FEATURES,
+    fn required(t: Tier, m: Mul) -> Features {
+        match (t, m) {
+            (Tier::Base, Mul::Baseline) => Features(0),
+            (Tier::Avx2, Mul::Baseline) => VG_ECDSA_P521_RFC6979_SIGN_HASH_AVX2_FEATURES,
+            (Tier::ShaNi, Mul::Baseline) => VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_FEATURES,
+            (Tier::ShaNiAvx2, Mul::Baseline) => VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_AVX2_FEATURES,
+            (Tier::ShaNiSha512, Mul::Baseline) => {
+                VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_SHA512_FEATURES
+            }
+            (Tier::Base, Mul::Adx) => VG_ECDSA_P521_RFC6979_SIGN_ADX_FEATURES,
+            (Tier::Avx2, Mul::Adx) => VG_ECDSA_P521_RFC6979_SIGN_HASH_AVX2_ADX_FEATURES,
+            (Tier::ShaNi, Mul::Adx) => VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_ADX_FEATURES,
+            (Tier::ShaNiAvx2, Mul::Adx) => VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_AVX2_ADX_FEATURES,
+            (Tier::ShaNiSha512, Mul::Adx) => {
+                VG_ECDSA_P521_RFC6979_SIGN_HASH_SHANI_SHA512_ADX_FEATURES
+            }
         }
     }
 
-    /// Each signature needs no CPU feature that the hash's backend and the
+    /// Each signature needs no CPU feature that the tier and the
     /// multiplications are not selected for: on every set of features that
     /// selects them.
     #[test]
     fn whole_algorithm_features() {
         for bits in 0..1u32 << NAMES.len() {
             let f = Features(bits);
-            let r = required(Sha512Backend::select(f), Mul::select(f));
+            let r = required(Tier::select(f), Mul::select(f));
             assert!(f.contains(r), "{bits:#b}");
         }
     }

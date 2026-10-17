@@ -4,6 +4,7 @@
 use criterion::Criterion;
 
 pub const USES: &[&str] = &[
+    "ecdsa_p521_rfc6979",
     "ecdsa_p521_sha512",
     "ecdsa_p521",
     "ec_p521",

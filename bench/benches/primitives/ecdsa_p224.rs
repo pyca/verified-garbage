@@ -3,6 +3,7 @@
 use criterion::Criterion;
 
 pub const USES: &[&str] = &[
+    "ecdsa_p224_rfc6979",
     "ecdsa_p224_sha224",
     "ecdsa_p224",
     "ec_p224",
