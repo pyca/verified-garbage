@@ -25,6 +25,20 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
     target_arch = "x86"
 ))]
 pub fn bench(c: &mut Criterion) {
+    // Measurement only: the parts of deriving the prepared context.
+    #[cfg(target_arch = "aarch64")]
+    {
+        let k = verified_garbage::aes_gcm::AesGcm::new(&[0x42; 16]).unwrap();
+        let mut out = [0u64; 48];
+        let mut g = c.benchmark_group("aes-128-gcm-derive-cost");
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, "derive"), |b| {
+            b.iter(|| verified_garbage::aes_gcm::bench_derive(std::hint::black_box(&k), &mut out))
+        });
+        g.bench_function(criterion::BenchmarkId::new(crate::VG, "box"), |b| {
+            b.iter(verified_garbage::aes_gcm::bench_box)
+        });
+        g.finish();
+    }
     use std::hint::black_box;
 
     use aws_lc_rs::aead::{AES_128_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
@@ -804,7 +818,7 @@ fn tls_connection_rows(c: &mut Criterion) {
         let mut t = [0u8; 16];
         let mut g = c.benchmark_group(format!("aes-{bits}-gcm-tls-connection"));
         // Measurement only: short connections too.
-        for records in [1, 2, 3] {
+        for records in [1, 2, 3, 4, 5, 6, 7, 8] {
             g.throughput(Throughput::Bytes((records * 256) as u64));
             g.bench_function(BenchmarkId::new(VG, records), |b| {
                 b.iter(|| {

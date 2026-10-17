@@ -2708,3 +2708,21 @@ mod tests {
         assert_eq!(d.update_aad(&[1]), Err(Error::InvalidAadLength));
     }
 }
+
+/// Measurement only: `vg_aes_gcm_derive_prepared8_aes` from `key`'s
+/// context into `out`.
+#[cfg(target_arch = "aarch64")]
+#[doc(hidden)]
+pub fn bench_derive(key: &AesGcm, out: &mut [u64; 48]) {
+    // SAFETY: as in `Powers::get`; the CPU has AES (the caller checks).
+    unsafe { vg_aes_gcm_derive_prepared8_aes(&key.ctx, out) };
+}
+
+/// Measurement only: allocating, clearing, wiping and freeing a context.
+#[cfg(target_arch = "aarch64")]
+#[doc(hidden)]
+pub fn bench_box() {
+    let mut b = Box::new([0u64; 48]);
+    core::hint::black_box(&mut *b);
+    zeroize(&mut *b);
+}
