@@ -19,8 +19,8 @@ import all Init.Data.Vector.Basic
 
 namespace VG
 
-materialize_code Impl.Camellia.X86_64.cbcEncrypt
-materialize_code Impl.Camellia.X86_64.cbcDecrypt
+materialize_code Impl.Camellia.X86_64.cbcEncryptChained
+materialize_code Impl.Camellia.X86_64.cbcDecryptChained
 materialize_code Impl.Camellia.X86_64.ofb
 materialize_code Impl.Camellia.X86_64.cfbEncrypt
 materialize_code Impl.Camellia.X86_64.cfbDecrypt

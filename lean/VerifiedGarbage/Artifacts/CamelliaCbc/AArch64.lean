@@ -10,15 +10,15 @@ public import VerifiedGarbage.Proof.Framework.Registration
 namespace VG.Artifacts.CamelliaCbc.AArch64
 
 def artifacts : List Artifact := [
-  Spec.Camellia.cbcEncryptApi.artifact AArch64.target {
-    notes := ["Baseline AArch64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups, in a batch of eight of which the other seven are unused; the table of bitsliced subkeys is built once per call. The mode is the generic CBC encryption of `Impl/Modes/AArch64/`, over Camellia's ECB core."]
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x5 406 Impl.Camellia.AArch64.cbcEncrypt
+  Spec.Camellia.cbcEncryptChainedApi.artifact AArch64.target {
+    notes := ["Baseline AArch64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups, in a batch of eight of which the other seven are unused; the table of bitsliced subkeys is built once per call. The mode is the generic CBC encryption of `Impl/Modes/AArch64/`, over Camellia's ECB core. The IV's address is kept in a register the core keeps, and after the last block the core's buffer, the last ciphertext block, goes back to the IV."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x5 406 Impl.Camellia.AArch64.cbcEncryptChained
     stack := 3248
-    verified := Proof.Camellia.AArch64.cbcEncrypt_framed },
-  Spec.Camellia.cbcDecryptApi.artifact AArch64.target {
-    notes := ["Baseline AArch64: eight blocks at a time, decrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call. The mode is the generic CBC decryption of `Impl/Modes/AArch64/`, over Camellia's ECB core."]
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x5 406 Impl.Camellia.AArch64.cbcDecrypt
+    verified := Proof.Camellia.AArch64.cbcEncryptChained_framed },
+  Spec.Camellia.cbcDecryptChainedApi.artifact AArch64.target {
+    notes := ["Baseline AArch64: eight blocks at a time, decrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call. The mode is the generic CBC decryption of `Impl/Modes/AArch64/`, over Camellia's ECB core. The last ciphertext block is copied to the IV before any block is decrypted."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x5 406 Impl.Camellia.AArch64.cbcDecryptChained
     stack := 3248
-    verified := Proof.Camellia.AArch64.cbcDecrypt_framed }]
+    verified := Proof.Camellia.AArch64.cbcDecryptChained_framed }]
 
 end VG.Artifacts.CamelliaCbc.AArch64

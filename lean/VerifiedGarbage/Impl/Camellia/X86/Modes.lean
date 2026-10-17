@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Camellia.X86.Ecb
 public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Impl.Modes.CbcChained
 
 /-!
 # Camellia's core for the modes on x86 (32-bit)
@@ -40,11 +41,11 @@ def dirCore (d : Dir) : Modes.X86.Core where
   bw := 4
   ka := 2
 
-/-- `vg_camellia_cbc_encrypt`, with its scratch buffer as the sixth argument. -/
-def cbcEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEnc 4)
+/-- `vg_camellia_cbc_encrypt_chained`, with its scratch buffer as the sixth argument. -/
+def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 4)
 
-/-- `vg_camellia_cbc_decrypt`, with its scratch buffer as the sixth argument. -/
-def cbcDecrypt : Prog isa := (dirCore .decrypt).seq (Modes.Mode.cbcDec 4)
+/-- `vg_camellia_cbc_decrypt_chained`, with its scratch buffer as the sixth argument. -/
+def cbcDecryptChained : Prog isa := (dirCore .decrypt).seq (Modes.Mode.cbcDecChained 4)
 
 /-- `vg_camellia_ofb`, with its scratch buffer as the sixth argument. -/
 def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 4)
