@@ -27,7 +27,7 @@ open VG.Impl.RsaKeyGen.Arm.Key (setWd)
 /-- The arrays after the loads and the constants. -/
 def A0 (P : CP) (σ : State) : Nat → Nat := upd (upd (upd (fun _ => 0) aC (cv P σ)) aOne 1) aTwo 2
 
-abbrev L0 : List Nat := [aTwo, aOne, aC, aZero]
+abbrev L0 : List Nat := [aTwo, aOne, aC, aZero, aBnd]
 
 /-- The header words after the candidate. -/
 def V0 (P : CP) : Nat → Nat := upd (fun _ => 0) sUsed P.L
@@ -131,18 +131,18 @@ def AL (P : CP) (σ : State) : Nat → Nat := upd (fun _ => 0) aC (xv P σ)
 
 /-- The bits of the candidate, the constants, and `used := out_len`. -/
 theorem candBits_vp {E : State → Prop} :
-    VP (St P E (AL P) [aTwo, aOne, aC, aZero] (fun _ _ => 0) []) (.block candBits) (S0 P E) := by
+    VP (St P E (AL P) [aTwo, aOne, aC, aZero, aBnd] (fun _ _ => 0) []) (.block candBits) (S0 P E) := by
   rw [candBits_eq]
-  refine VP.block_append (G := fun σ s => St P E (AL P) [aTwo, aOne, aC, aZero] (fun _ _ => 0) [] σ s ∧
+  refine VP.block_append (G := fun σ s => St P E (AL P) [aTwo, aOne, aC, aZero, aBnd] (fun _ _ => 0) [] σ s ∧
     s.gpr .r1 = BitVec.ofNat 32 P.L) ?_ ?_
   · refine VP.ldrSp (c := [(Reg.r1, foL)]) (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => ?_) fun σ s ⟨e, h, hw⟩ => ?_
     · rw [h₁.2.1.sp, h₁.2.1.pre.sp, h₂.2.1.sp, h₂.2.1.pre.sp]
     · exact h.ldrSp (o := foL) (by decide) fun t u => WP.block_nil
         ⟨⟨e, h.of_rest (u.rest (ws := [.r1]) (by simp)) u.mem, hw.of_upd u (by decide) (by decide) (by decide)⟩,
           u.gpr.trans h.pre.wL⟩
-  have hu : VP (fun σ s => St P E (AL P) [aTwo, aOne, aC, aZero] (fun _ _ => 0) [] σ s ∧
+  have hu : VP (fun σ s => St P E (AL P) [aTwo, aOne, aC, aZero, aBnd] (fun _ _ => 0) [] σ s ∧
       s.gpr .r1 = BitVec.ofNat 32 P.L) (.block [.str .r1 .r8 sUsed])
-      (St P E (AL P) [aTwo, aOne, aC, aZero] (fun _ => V0 P) [sUsed]) := by
+      (St P E (AL P) [aTwo, aOne, aC, aZero, aBnd] (fun _ => V0 P) [sUsed]) := by
     refine VP.kv usedL_taint (fun _ _ h => h.1.2.2) fun σ s ⟨⟨e, h, hw⟩, r1⟩ => ?_
     refine h.str hw (by decide) fun t ht hwt _ => WP.block_nil ⟨e, ?_, hwt⟩
     have pre := h.pre
@@ -158,9 +158,9 @@ theorem candBits_vp {E : State → Prop} :
       have := xv_lt P σ; rwa [show 32 * (P.W - 3) + 32 = 8 * P.L by omega]
     simp only [AL, upd_self]
     rw [topBits_val hx, show 32 * (P.W - 3) + 30 = 8 * P.L - 2 by omega]
-  have ht : VP (St P E (AL P) [aTwo, aOne, aC, aZero] (fun _ => V0 P) [sUsed]) (.block topBits)
+  have ht : VP (St P E (AL P) [aTwo, aOne, aC, aZero, aBnd] (fun _ => V0 P) [sUsed]) (.block topBits)
       (St P E (fun σ => upd (AL P σ) aC (xv P σ % 2 ^ (8 * P.L - 2) + 3 * 2 ^ (8 * P.L - 2)))
-        [aC, aTwo, aOne, aC, aZero] (fun _ => V0 P) [sUsed]) := by
+        [aC, aTwo, aOne, aC, aZero, aBnd] (fun _ => V0 P) [sUsed]) := by
     rw [topBits_eq]
     exact (St.phiOp (i := fun P => P.W - 3) (f := fun x => x ||| 0xC0000000#32)
       (g := fun σ => xv P σ % 2 ^ (8 * P.L - 2) + 3 * 2 ^ (8 * P.L - 2))
@@ -178,7 +178,7 @@ theorem candBits_vp {E : State → Prop} :
   have pre := h.2.1.pre
   have lE := pre.L_eq; have w4 := pre.w4
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-  rcases hj with rfl | rfl | rfl | rfl <;>
+  rcases hj with rfl | rfl | rfl | rfl | rfl <;>
     simp (config := {decide := true}) only [A0, AL, upd, ↓reduceIte, Nat.zero_add]
   rw [cv, candidate_eq (by omega) (xv_lt P σ)]
 
@@ -209,12 +209,12 @@ theorem loadC_vp {E : State → Prop} (hE : ∀ σ, E σ → In P σ ∧ P.L ≤
   · have := (hE σ e).2; have := h.fR; omega
   refine candBits_vp.mono (fun σ s ⟨e, h⟩ => h.st e fun j hj => ⟨?_, ?_⟩) (fun _ _ h => h)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-    rcases hj with rfl | rfl | rfl | rfl <;> decide
+    rcases hj with rfl | rfl | rfl | rfl | rfl <;> decide
   · have pre := h.bk.pre
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     have := xv_lt P σ
     have : 2 ^ (8 * P.L) ≤ 2 ^ (32 * P.W) := Nat.pow_le_pow_right (by decide) (by simp only [CP.W]; omega)
-    rcases hj with rfl | rfl | rfl | rfl <;> simp (config := {decide := true}) only [AL, upd, ↓reduceIte] <;>
+    rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp (config := {decide := true}) only [AL, upd, ↓reduceIte] <;>
       first | exact Nat.two_pow_pos _ | omega
 
 end
