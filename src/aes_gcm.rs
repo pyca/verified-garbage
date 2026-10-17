@@ -411,6 +411,13 @@ struct Prepared {
     /// AArch64.
     #[cfg(target_arch = "x86_64")]
     short: bool,
+    /// How many calls of at least `POWERS_MIN_LEN` bytes a key makes with
+    /// the key context of `vg_aes_gcm_init` before it computes the powers
+    /// (`Powers::get`), on x86-64: `POWERS_AFTER_FAST` where
+    /// `vg_aes_gcm_init_prepared` computes them as the loops on 512-bit
+    /// registers do, `POWERS_AFTER` where it calls `vg_ghash` once for each.
+    #[cfg(target_arch = "x86_64")]
+    after: u32,
 }
 
 /// The types of the `_prepared` instances on x86-64, on the key context
@@ -557,6 +564,7 @@ static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
     short: true,
+    after: POWERS_AFTER_FAST,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -569,6 +577,7 @@ static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul,
     short: false,
+    after: POWERS_AFTER,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -581,6 +590,7 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
     stream_encrypt: vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx,
     stream_decrypt: vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx,
     short: false,
+    after: POWERS_AFTER,
 };
 
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -591,6 +601,21 @@ static PREPARED_AES: Prepared = Prepared {
     seal: vg_aes_gcm_seal_with_powers_aes,
     open: vg_aes_gcm_open_with_powers_aes,
 };
+
+#[cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
+impl Prepared {
+    /// How many long calls a key makes before it computes the powers.
+    #[cfg(test)]
+    fn powers_after(&self) -> u32 {
+        #[cfg(target_arch = "x86_64")]
+        return self.after;
+        #[cfg(target_arch = "aarch64")]
+        return POWERS_AFTER;
+    }
+}
 
 #[cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64"),
@@ -643,6 +668,10 @@ const POWERS_MIN_LEN: usize = 128;
 /// and every later one saves 4–14%.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 32;
+/// `POWERS_AFTER` for the backends whose `vg_aes_gcm_init_prepared` computes
+/// the powers as their loops on 512-bit registers do (`Prepared::after`).
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+const POWERS_AFTER_FAST: u32 = 2;
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 2;
 
@@ -711,7 +740,7 @@ impl Powers {
     /// instances, for a call (long enough to gain from them) for `rounds`
     /// rounds with the key context `key` of `vg_aes_gcm_init`: none if the
     /// backend has no `_prepared` instances this CPU runs; otherwise the
-    /// powers, computed by this call if the key has made `POWERS_AFTER`
+    /// powers, computed by this call if the key has made `Prepared::after`
     /// such calls and they are not ready yet.
     #[cfg(target_arch = "x86_64")]
     fn get(&self, rounds: usize, key: &[u64; 32]) -> Option<(&Ctx, &'static Prepared)> {
@@ -723,7 +752,7 @@ impl Powers {
             return Some((unsafe { &*p }, fns));
         }
         let calls = self.calls.load(Ordering::Relaxed);
-        if calls < POWERS_AFTER - 1 {
+        if calls < fns.after - 1 {
             self.calls.store(calls + 1, Ordering::Relaxed);
             return None;
         }
@@ -2485,7 +2514,7 @@ mod tests {
                 cipher
                     .encrypt(&nonce, &[5; 5], &[&[0; 256], &[1]], &mut cold)
                     .unwrap();
-                for _ in 0..super::POWERS_AFTER {
+                for _ in 0..backend.prepared().map_or(0, |p| p.powers_after()) {
                     cipher.encrypt_in_place(&nonce, &[], &mut [0; 256]).unwrap();
                 }
                 for len in (256..272).chain([511, 512, 767, 768, 4097, 9995, 10000, 16384]) {
@@ -2521,15 +2550,14 @@ mod tests {
     ))]
     #[test]
     fn prepared_boundaries() {
-        use super::POWERS_AFTER;
         for &b in PREPARED {
-            if !detected().contains(b.features()) || b.prepared().is_none() {
+            let Some(p) = b.prepared().filter(|_| detected().contains(b.features())) else {
                 continue;
-            }
+            };
             for key_len in [16, 24, 32] {
                 let key = &[0x63; 32][..key_len];
                 let warm = AesGcm::new(key).unwrap().with_backend(b);
-                for _ in 0..POWERS_AFTER {
+                for _ in 0..p.powers_after() {
                     warm.encrypt_in_place(&[0; 12], &[], &mut [0; 256]).unwrap();
                 }
                 for len in [
@@ -2603,7 +2631,7 @@ mod tests {
     ))]
     #[test]
     fn powers() {
-        use super::{POWERS_AFTER, POWERS_MIN_LEN};
+        use super::POWERS_MIN_LEN;
         use alloc::boxed::Box;
         use core::sync::atomic::Ordering;
         let msg: [u8; 700] = core::array::from_fn(|i| (i * 11 + 5) as u8);
@@ -2616,9 +2644,10 @@ mod tests {
             for &b in PREPARED {
                 // Without the backend's features (or those of its key setup with
                 // the powers), only what needs none of them.
-                if !detected().contains(b.features()) || b.prepared().is_none() {
+                let Some(p) = b.prepared().filter(|_| detected().contains(b.features())) else {
                     continue;
-                }
+                };
+                let after = p.powers_after();
                 let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap().with_backend(b);
                 let ready = |k: &AesGcm| !k.powers.ctx.load(Ordering::Acquire).is_null();
                 // Short calls neither use nor count toward the powers.
@@ -2637,8 +2666,8 @@ mod tests {
                 // `decrypt_in_place`; on AArch64, where streaming takes the
                 // plain functions, three.
                 let per_round = if cfg!(target_arch = "x86_64") { 5 } else { 3 };
-                for i in 0..POWERS_AFTER / per_round + 2 {
-                    assert_eq!(ready(&k), per_round * i >= POWERS_AFTER);
+                for i in 0..after / per_round + 2 {
+                    assert_eq!(ready(&k), per_round * i >= after);
                     let len = [POWERS_MIN_LEN, 300, 512, 700][i as usize % 4];
                     let mut want = msg;
                     let want_tag = base

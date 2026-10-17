@@ -240,6 +240,11 @@ def blocksNoteP (v : GcmImpl) : String :=
 def initNoteP (v : GcmImpl) : String :=
   note v ++ " It computes the powers of the hash subkey with `" ++ v.gh.fn.name ++ "`, one at a time."
 
+/-- How an instance of `vg_aes_gcm_init_prepared` on 512-bit registers works. -/
+def initNoteZ (v : GcmImpl) : String :=
+  note v ++ " It computes the powers of the hash subkey as the loops on 512-bit registers do, " ++
+    "sixteen with VPCLMULQDQ and then 32 more four at a time."
+
 /-- The `_precomputed` artifacts calling the implementations `v`. -/
 def artifactsP (v : GcmImpl) : List Artifact := [
   Spec.Gcm.initPrecomputedApi.artifact X86_64.target {
@@ -412,12 +417,13 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
 def artifactsR (v : GcmVariant) : List Artifact := [
   Spec.Gcm.initPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    notes := [initNoteP v.impl]
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.Prepared.init v.impl.callees)
+    notes := [if v.impl.short then initNoteZ v.impl else initNoteP v.impl]
+    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx v.impl.initR
     stack := 2576
-    verified := initPrepared_framed v.impl
-    spSafe := X86_64.withStackScratch_spSafe_of (initPrepared_spSafe v.impl)
-    features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx", "avx2"]).dedup },
+    verified := v.impl.initR_framed
+    spSafe := X86_64.withStackScratch_spSafe_of v.impl.initR_spSafe
+    features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++
+      if v.impl.short then ["avx512f"] else ["avx", "avx2"]).dedup },
   Spec.Gcm.encryptBlocksPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     notes := [blocksNoteP v.impl]

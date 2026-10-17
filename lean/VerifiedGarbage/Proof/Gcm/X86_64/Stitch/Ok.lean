@@ -38,7 +38,8 @@ open VG.Spec.Gcm (Block blockAt mul)
 
 /-! ## The powers -/
 
-theorem setupG_ok {s₀ : State} (hp : SPre s₀) :
+/-- `setupG_ok`, from the key context's place alone. -/
+theorem setupG_ok' {s₀ : State} (hk_in : InRegions (s₀.rd ++ s₀.wr) (kp s₀) 256) :
     WP isa (.block setupG) s₀ fun s =>
       (∀ l < 2, s.lane .xmm0 l = revMask) ∧ (∀ l < 2, s.lane .xmm1 l = poly) ∧
       (∀ k < 8, ∀ l < 2, x * φ (s.lane (preg16 k) l) = φ (hk s₀) ^ (16 - 2 * k - l)) ∧
@@ -52,7 +53,7 @@ theorem setupG_ok {s₀ : State} (hp : SPre s₀) :
   rw [WP.block_append_iff]
   refine WP.mono (ldrev_ok .xmm7 .rdi 240 s₂ (by decide)
     (by rw [o₂.xmm _ (by decide), c₁, rev_eq])
-    (by rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr _ (by decide)]; exact in_sub_int hp.k_in (by decide))) fun s₃ ⟨l₃, o₃⟩ => ?_
+    (by rw [o₁₂.rd, o₁₂.wr, o₁₂.gpr _ (by decide)]; exact in_sub_int hk_in (by decide))) fun s₃ ⟨l₃, o₃⟩ => ?_
   have o₁₃ := o₁₂.trans o₃
   rw [WP.block_append_iff]
   refine WP.mono (hInv_ok s₃) fun s₄ ⟨t₄, o₄⟩ => ?_
@@ -73,6 +74,13 @@ theorem setupG_ok {s₀ : State} (hp : SPre s₀) :
     by rw [F.rd, rd₈, o₁₇.rd], by rw [F.wr, wr₈, o₁₇.wr]⟩
   · rw [F.lane _ (by decide) l hl]; exact l0 l hl
   · rw [F.lane _ (by decide) l hl]; exact l1 l hl
+
+theorem setupG_ok {s₀ : State} (hp : SPre s₀) :
+    WP isa (.block setupG) s₀ fun s =>
+      (∀ l < 2, s.lane .xmm0 l = revMask) ∧ (∀ l < 2, s.lane .xmm1 l = poly) ∧
+      (∀ k < 8, ∀ l < 2, x * φ (s.lane (preg16 k) l) = φ (hk s₀) ^ (16 - 2 * k - l)) ∧
+      (∀ r, r ≠ .rax → s.gpr r = s₀.gpr r) ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr :=
+  setupG_ok' hp.k_in
 
 theorem setup_ok {s₀ : State} (hp : SPre s₀) :
     WP isa (.block setup) s₀ fun s => ∃ P, Ready s₀ P s ∧

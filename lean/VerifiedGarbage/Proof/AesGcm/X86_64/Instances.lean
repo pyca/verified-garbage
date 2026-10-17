@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitVerified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitZVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
@@ -97,6 +97,26 @@ def GcmVariant.stitchTo (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64
 `vg_aes_gcm_init_precomputed`, with their proof. -/
 def GcmVariant.stitchToP (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
   (v.stitch.bind (·.toPart)).bind fun p => p.pieceP.map fun q => ⟨p.name.encP, false, p.name.okP, q.enc⟩
+
+/-- `vg_aes_gcm_init_prepared`'s code: on 512-bit registers
+(`Prepared.initZ`) for the implementations that need their CPU features
+(`short`), and with `vg_ghash` one power at a time for the others. -/
+def GcmImpl.initR (v : GcmImpl) : Prog X86_64.isa :=
+  if v.short then Impl.AesGcm.X86_64.Prepared.initZ v.callees else Impl.AesGcm.X86_64.Prepared.init v.callees
+
+theorem GcmImpl.initR_framed (v : GcmImpl) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx v.initR)
+      (Spec.Gcm.initPreparedContract X86_64.abi 2576) := by
+  unfold GcmImpl.initR
+  split
+  · exact initZ_framed v
+  · exact initPrepared_framed v
+
+theorem GcmImpl.initR_spSafe (v : GcmImpl) : v.initR.all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold GcmImpl.initR
+  split
+  · exact initZ_spSafe v
+  · exact initPrepared_spSafe v
 
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
