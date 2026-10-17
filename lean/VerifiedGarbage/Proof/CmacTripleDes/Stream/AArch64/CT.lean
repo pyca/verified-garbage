@@ -33,14 +33,16 @@ theorem init_ct : ConstantTime isa initAArch64.pre initAArch64.pub Impl.CmacTrip
   intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl
+  exacts [h0, h1, h2, h3]
 
 theorem finish_ct : ConstantTime isa finishAArch64.pre finishAArch64.pub Impl.CmacTripleDes.Stream.AArch64.finish := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl
+  exacts [h0, h1, h2, h3]
 
 theorem absorb₁_taint : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     Impl.CmacTripleDes.Stream.AArch64.absorb₁ h).isSome = true := ⟨_, by taint_decide⟩

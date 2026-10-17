@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.CmacTripleDes.Stream.AArch64
 public import VerifiedGarbage.Spec.Cmac.TripleDesContract
+public import VerifiedGarbage.Proof.Framework.PowLit
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
