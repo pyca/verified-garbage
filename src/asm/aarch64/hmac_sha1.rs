@@ -383,14 +383,8 @@ add x1, x2, #0
 add x2, x23, #216
 add x3, x23, #0
 bl {vg_sha1_finalize_scratch}
-ldr w9, [x20, #0]
-str w9, [x19, #0]
-ldr w9, [x20, #4]
-str w9, [x19, #4]
-ldr w9, [x20, #8]
-str w9, [x19, #8]
-ldr w9, [x20, #12]
-str w9, [x19, #12]
+ldp x9, x10, [x20, #0]
+stp x9, x10, [x19, #0]
 ldr w9, [x20, #16]
 str w9, [x19, #16]
 ldr w9, [x23, #216]
@@ -411,12 +405,9 @@ str w9, [x21, #20]
 movz x9, #0, lsl #0
 str w9, [x21, #24]
 str w9, [x21, #28]
-str w9, [x21, #32]
-str w9, [x21, #36]
-str w9, [x21, #40]
-str w9, [x21, #44]
-str w9, [x21, #48]
-str w9, [x21, #52]
+movz x10, #0, lsl #0
+stp x10, x10, [x21, #32]
+str x10, [x21, #48]
 movz x22, #84, lsl #0
 add x9, x22, x22
 add x9, x9, x9
@@ -633,14 +624,8 @@ add x1, x2, #0
 add x2, x23, #216
 add x3, x23, #0
 bl {vg_sha1_finalize_scratch}
-ldr w9, [x20, #0]
-str w9, [x19, #0]
-ldr w9, [x20, #4]
-str w9, [x19, #4]
-ldr w9, [x20, #8]
-str w9, [x19, #8]
-ldr w9, [x20, #12]
-str w9, [x19, #12]
+ldp x9, x10, [x20, #0]
+stp x9, x10, [x19, #0]
 ldr w9, [x20, #16]
 str w9, [x19, #16]
 ldr w9, [x23, #216]
@@ -661,12 +646,9 @@ str w9, [x21, #20]
 movz x9, #0, lsl #0
 str w9, [x21, #24]
 str w9, [x21, #28]
-str w9, [x21, #32]
-str w9, [x21, #36]
-str w9, [x21, #40]
-str w9, [x21, #44]
-str w9, [x21, #48]
-str w9, [x21, #52]
+movz x10, #0, lsl #0
+stp x10, x10, [x21, #32]
+str x10, [x21, #48]
 movz x22, #84, lsl #0
 add x9, x22, x22
 add x9, x9, x9
@@ -1101,14 +1083,8 @@ add x1, x2, #0
 add x2, x23, #216
 add x3, x23, #0
 bl {vg_sha1_finalize_scratch_sha2}
-ldr w9, [x20, #0]
-str w9, [x19, #0]
-ldr w9, [x20, #4]
-str w9, [x19, #4]
-ldr w9, [x20, #8]
-str w9, [x19, #8]
-ldr w9, [x20, #12]
-str w9, [x19, #12]
+ldp x9, x10, [x20, #0]
+stp x9, x10, [x19, #0]
 ldr w9, [x20, #16]
 str w9, [x19, #16]
 ldr w9, [x23, #216]
@@ -1129,12 +1105,9 @@ str w9, [x21, #20]
 movz x9, #0, lsl #0
 str w9, [x21, #24]
 str w9, [x21, #28]
-str w9, [x21, #32]
-str w9, [x21, #36]
-str w9, [x21, #40]
-str w9, [x21, #44]
-str w9, [x21, #48]
-str w9, [x21, #52]
+movz x10, #0, lsl #0
+stp x10, x10, [x21, #32]
+str x10, [x21, #48]
 movz x22, #84, lsl #0
 add x9, x22, x22
 add x9, x9, x9
@@ -1363,14 +1336,8 @@ add x1, x2, #0
 add x2, x23, #216
 add x3, x23, #0
 bl {vg_sha1_finalize_scratch_sha2}
-ldr w9, [x20, #0]
-str w9, [x19, #0]
-ldr w9, [x20, #4]
-str w9, [x19, #4]
-ldr w9, [x20, #8]
-str w9, [x19, #8]
-ldr w9, [x20, #12]
-str w9, [x19, #12]
+ldp x9, x10, [x20, #0]
+stp x9, x10, [x19, #0]
 ldr w9, [x20, #16]
 str w9, [x19, #16]
 ldr w9, [x23, #216]
@@ -1391,12 +1358,9 @@ str w9, [x21, #20]
 movz x9, #0, lsl #0
 str w9, [x21, #24]
 str w9, [x21, #28]
-str w9, [x21, #32]
-str w9, [x21, #36]
-str w9, [x21, #40]
-str w9, [x21, #44]
-str w9, [x21, #48]
-str w9, [x21, #52]
+movz x10, #0, lsl #0
+stp x10, x10, [x21, #32]
+str x10, [x21, #48]
 movz x22, #84, lsl #0
 add x9, x22, x22
 add x9, x9, x9
