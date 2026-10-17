@@ -623,7 +623,7 @@ def cryptIteS (x : Impl.ChaCha20.X86_64.Callee) : Prog isa :=
 
 theorem cryptS_eq (x : Impl.ChaCha20.X86_64.Callee) : cryptS x =
     .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))]) (.seq (cryptIteS x)
-      (.seq (.block (anchor .rsi 128)) (.seq (foldML x.fold)
+      (.seq (.block (anchor .rsi 128)) (.seq (wipeL x.fold 512)
         (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs x.wide))))) := rfl
 
 /-- `cryptS`'s branch on the length: the data encrypted, and its first `a`
@@ -780,19 +780,10 @@ theorem cryptS_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {s�
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
       · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
       · exact (hp.stk_sub (by lit_omega)).symm)
-  refine WP.seq (WP.mono (foldML_ok (fold := v.callee.fold) (pass := 512) (by lit_omega) i₃.r13 i₃.r15
-    (by rw [i₃.wr]; exact hp.in_ctx (a := 48) (w := 8) (by lit_omega))
-    (fun _ => by
-      rw [fc.readW (r := sub s₀ 48 8) (Region.contains_self _ _) (fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl | rfl
-        · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
-        · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
-        · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
-        · exact (hp.stk_sub (by lit_omega)).symm) (by decide)]
-      exact hms)) fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ => ?_)
-  refine WP.seq (WP.mono (add64_ok (n := mOf v.callee.fold 512 (L s₀)) d₄) fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
-  refine WP.mono (zeroKs_ok (wide_of v) hp (n := 64 + mOf v.callee.fold 512 (L s₀)) (by omega) (by lit_omega) d₅
+  refine WP.seq (WP.mono (wipeL_ok (fold := v.callee.fold) (extra := 512) (by lit_omega) (by decide) i₃.r13)
+    fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ => ?_)
+  refine WP.seq (WP.mono (add64_ok (n := wOf v.callee.fold 512 (L s₀)) d₄) fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
+  refine WP.mono (zeroKs_ok (wide_of v) hp (n := 64 + wOf v.callee.fold 512 (L s₀)) (by omega) (by simp only [wOf]; split <;> lit_omega) d₅
     (by rw [g₅ _ (by decide), g₄ _ (by decide), i₃.r15]) (by rw [wr₅, wr₄, i₃.wr]))
     fun s₆ ⟨g₆, rd₆, wr₆, f₆, _⟩ => ?_
   have g36 : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → s₆.gpr r = s₃.gpr r := fun r h1 h2 h3 => by

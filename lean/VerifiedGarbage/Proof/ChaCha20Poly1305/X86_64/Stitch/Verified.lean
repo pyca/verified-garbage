@@ -611,13 +611,13 @@ def bigR (x : Impl.ChaCha20.X86_64.Callee) : Prog isa :=
 
 def iteS (x : Impl.ChaCha20.X86_64.Callee) : Prog isa := .ite .b (smallS x.wide) (bigR x)
 
-/-- The keystream wiped, its length from `m` (`foldML`). -/
-def wipeS (fold w : Nat) : Prog isa :=
-  .seq (.block (anchor .rsi 128)) (.seq (foldML fold) (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs w)))
+/-- The keystream wiped (`wipeL`). -/
+def wipeS (fold extra w : Nat) : Prog isa :=
+  .seq (.block (anchor .rsi 128)) (.seq (wipeL fold extra) (.seq (.block [.alu .add .rdx (.imm 64)]) (zeroKs w)))
 
 /-- `sealStitched` after the branch. -/
 def postS (fold w : Nat) (b : Impl.Poly1305.X86_64.Blocks) : Prog isa :=
-  .seq (wipeS fold w) (.seq (macPadLengths b .rbx .rbp) (.seq finalizeTag (.block restore)))
+  .seq (wipeS fold 512 w) (.seq (macPadLengths b .rbx .rbp) (.seq finalizeTag (.block restore)))
 
 /-- The prologue's choice: the one-time key's block alone (the call) or with
 the tail's block (`twoKs`). -/
@@ -1582,7 +1582,7 @@ theorem sealS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hb := blocks_xdepth v.poly
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
   simp only [sealStitched, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
-    padRest, Bool.cond_true, padCopy, padTail, cryptS, foldML, preS, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
+    padRest, Bool.cond_true, padCopy, padTail, cryptS, wipeL_xdepth, preS, cryptPre, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
     foldM_xdepth, init_xdepth, finalize_xdepth, bigS_xdepth, bulkP_xdepth, tailP_xdepth, Nat.max_le] at hc ⊢
   omega
 
@@ -3128,6 +3128,10 @@ theorem smallO_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
       · exact ⟨dR s₀, by simp, fun _ h => h⟩
       · exact ⟨stkR s₀, by simp, fun _ h => h⟩
 
+theorem wipeL_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
+    (wipeL v.callee.fold 64).allInstrs (fun i => !loadsMxcsr i) = true := by
+  rcases v.fold_poly with ⟨hf, -, -⟩ | ⟨hf, -, -⟩ | ⟨hf, -, -⟩ <;> (rw [hf]; lit_decide)
+
 theorem foldM_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
     (foldM v.callee.fold v.callee.pass).allInstrs (fun i => !loadsMxcsr i) = true := by
   rcases v.fold_poly with ⟨hf, hpass, -⟩ | ⟨hf, hpass, -⟩ | ⟨hf, hpass, -⟩ <;>
@@ -3184,12 +3188,12 @@ theorem cryptO_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
       · exact hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))
       · exact (hp.stk_sub (by lit_omega)).symm)
-  refine WP.seq (WP.mono_mx (foldM_mx v) (foldM_ok (fold := v.callee.fold) (pass := v.callee.pass) (len := L s₀) (by lit_omega) (pass_of v)
-    hL9 (by rw [i₃.r13]; exact hL s₀)) fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ mx₄ => ?_)
-  refine WP.seq (WP.mono_mx (by lit_decide) (add64_ok (n := mOf v.callee.fold v.callee.pass (L s₀)) d₄)
+  refine WP.seq (WP.mono_mx (wipeL_mx v)
+    (wipeL_ok (fold := v.callee.fold) (extra := 64) (by lit_omega) (by decide) i₃.r13) fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ mx₄ => ?_)
+  refine WP.seq (WP.mono_mx (by lit_decide) (add64_ok (n := wOf v.callee.fold 64 (L s₀)) d₄)
     fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ mx₅ => ?_)
-  refine WP.mono_mx (by rcases wide_of v with h | h | h <;> (rw [h]; lit_decide)) (zeroKs_ok (wide_of v) hp (n := 64 + mOf v.callee.fold v.callee.pass (L s₀)) (by omega)
-    (by lit_omega) d₅ (by rw [g₅ _ (by decide), g₄ _ (by decide), i₃.r15]) (by rw [wr₅, wr₄, i₃.wr]))
+  refine WP.mono_mx (by rcases wide_of v with h | h | h <;> (rw [h]; lit_decide)) (zeroKs_ok (wide_of v) hp (n := 64 + wOf v.callee.fold 64 (L s₀)) (by omega)
+    (by simp only [wOf]; split <;> lit_omega) d₅ (by rw [g₅ _ (by decide), g₄ _ (by decide), i₃.r15]) (by rw [wr₅, wr₄, i₃.wr]))
     fun s₆ ⟨g₆, rd₆, wr₆, f₆, _⟩ mx₆ => ?_
   have g36 : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → s₆.gpr r = s₃.gpr r := fun r h1 h2 h3 => by
     rw [g₆ r h1 h2, g₅ r h3, g₄ r h3]
@@ -3565,10 +3569,19 @@ def bigO (x : Impl.ChaCha20.X86_64.Callee) (b : Impl.Poly1305.X86_64.Blocks) : P
 def iteO (x : Impl.ChaCha20.X86_64.Callee) (b : Impl.Poly1305.X86_64.Blocks) : Prog isa :=
   .ite .b (smallO x.wide b) (bigO x b)
 
+/-- `openStitched` after the branch: the keystream wiped (`wipeS`), the tag
+computed and compared. -/
+def openPostS (fold w : Nat) : Prog isa :=
+  .seq (wipeS fold 64 w) (.seq (finalizeTo 48) (.block (compare ++ restore)))
+
+theorem openPostS_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
+    ∃ h, (taintS.check (τ₁ false) (openPostS fold wide) h).isSome = true := by
+  rcases h with ⟨rfl, rfl, rfl, -⟩ | ⟨rfl, rfl, rfl, -⟩ | ⟨rfl, rfl, rfl, -⟩ <;> taint_decide_sum [finalizeSumO]
+
 theorem openS_exec {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks} {s s' : State}
     {t : List Leak} (h : Exec isa (openStitched x b) s t s') :
     Exec isa (.seq (.block entry) (.seq (prologueA x.fold x.pass x.wide) (.seq (xsel x)
-      (.seq (sealMid x.fold b) (.seq (iteO x b) (openPost x.fold x.pass x.wide)))))) s t s' := by
+      (.seq (sealMid x.fold b) (.seq (iteO x b) (openPostS x.fold x.wide)))))) s t s' := by
   cases h with | seq e₀ h => cases h with | seq hP h => cases hP with | seq ePA hP => cases hP with
   | seq eC ePB => cases h with | seq eMA h => cases h with | seq eLEN h => cases h with | seq hC h =>
   cases hC with | seq eCMP hC => cases hC with | seq eITE hC => cases hC with | seq eANC hC =>
@@ -4050,7 +4063,7 @@ theorem openS_rel (h₀ : preX86_64 false s₀) (h₀' : preX86_64 false s₀') 
   obtain ⟨_, hA⟩ := prologueA_taint false v.fold_poly
   obtain ⟨_, hmid⟩ := midO_taint v.fold_poly
   obtain ⟨_, hS⟩ := smallO_taint v.fold_poly
-  obtain ⟨_, hpost⟩ := openPost_taint v.fold_poly
+  obtain ⟨_, hpost⟩ := openPostS_taint v.fold_poly
   have pA := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = entryS s₀ ∧ s₂ = entryS s₀') (τ₀ false)
     (fun _ _ h => by rw [h.1, h.2]; exact agree₀ hp hp' hq) hA).wp
     (F₁ := FArgs v.callee.fold v.callee.pass s₀) (F₂ := FArgs v.callee.fold v.callee.pass s₀') fun _ _ h =>
@@ -4178,7 +4191,7 @@ theorem openS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   have hc := padRest_xdepth (dataCopy v.poly) v.poly 2
   simp only [openStitched, prologueX, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
     padRest, Bool.cond_true, padCopy, padTail, cryptO, decRest, xorTail, absorbLengths, finalizeTo, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
-    xorTail_xdepth, foldM_xdepth, init_xdepth,
+    xorTail_xdepth, foldM_xdepth, wipeL_xdepth, init_xdepth,
     finalize_xdepth, bulkO_xdepth, twoKs_xdepth, Nat.max_le] at hc ⊢
   omega
 

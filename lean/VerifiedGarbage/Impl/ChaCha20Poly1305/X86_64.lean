@@ -47,8 +47,9 @@ bytes are the one-time key, and the keystream of the first `m` bytes of the
 data. `crypt` XORs those into the data (`XorBuf.xorBuf`), and the rest of
 the data (none, or all but the first `m` bytes) by a second call of
 `vg_chacha20_xor`, from counter `1 + m / 64`. Then it zeros those `64 + m`
-bytes again, as the wrapper zeroes only `ctx[0, 672)`, and nothing else is
-written after it.
+bytes again, as the wrapper zeroes only `ctx[0, 672)`; the stitched AVX2 code
+(`Stitch`), whose tails store keystream after them too, zeros those as well
+for more than `fold` bytes (`wipeL`).
 
 The entry loads `work` and `tag` from the stack (`entry`). `r15` holds the
 context, `r14` the data, `r13` its length and `r12` the tag, which
@@ -205,10 +206,14 @@ def mStore (pass : Nat) : List Instr := if pass = 512 then [.store (at_ .r15 48)
 /-- `m` read back from `ctx + 48` (`mStore`). -/
 def mLoad : List Instr := [.mov .rdx (.mem (at_ .r15 48))]
 
-/-- `rdx = m`, as `foldM`, with `m` past `fold` read back (`mLoad`). -/
-def foldML (fold : Nat) : Prog isa :=
+/-- `rdx` for the stitched code's wipe (`zeroKs`, after `64` is added): the
+length of the data (in `r13`) if it is at most `fold`, else `extra`, so that
+`ctx[672, 736 + extra)` is zeroed, where the stitched code's tails also store
+keystream: `seal`'s `Stitch.tailK` in `ctx[736, 1248)` (`extra` 512),
+`open`'s `Stitch.twoKs` in `ctx[672, 800)` (`extra` 64). -/
+def wipeL (fold extra : Nat) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (fold + 1)))])
-    (.ite .b (.block [.mov .rdx (.reg .r13)]) (.block mLoad))
+    (.ite .b (.block [.mov .rdx (.reg .r13)]) (.block [.mov32 .rdx (.imm (BitVec.ofNat 32 extra))]))
 
 /-- The prologue up to the call of `vg_chacha20_xor`: saves the registers,
 moves the arguments, builds the ChaCha20 state twice (the copy for the call), zeros the first

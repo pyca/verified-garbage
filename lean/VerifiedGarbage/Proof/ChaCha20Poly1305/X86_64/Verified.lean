@@ -168,6 +168,7 @@ theorem splitM_xdepth (fold pass : Nat) : (splitM fold pass).x86_64Depth = 0 := 
   · split <;> rfl
 theorem foldM_xdepth (fold pass : Nat) : (foldM fold pass).x86_64Depth = 0 := by
   unfold foldM; split <;> simp only [Code.x86_64Depth, splitM_xdepth, Nat.max_self]
+theorem wipeL_xdepth (fold extra : Nat) : (wipeL fold extra).x86_64Depth = 0 := rfl
 theorem init_xdepth : Impl.Poly1305.X86_64.init.x86_64Depth = 0 := by lit_decide
 theorem finalize_xdepth : Impl.Poly1305.X86_64.finalize.x86_64Depth = 0 := by lit_decide
 
