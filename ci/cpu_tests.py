@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """The tests each line of CI's `rust-cpu-features` runs, named explicitly.
 
-A line of a CPU's `runs` is `<VG_CPU_FEATURES> | <groups>` (see ci.yml):
+A line of a CPU's `runs` is `<VG_CPU_FEATURES> | <groups>` (see ci.yml and
+ci/rust_matrix.toml):
 `all` for every test, or the names of groups in `GROUPS`, each the tests of
 one primitive, or of what is built on it, whose implementation the CPU's
 features choose. A group names its tests by their paths in the library's
@@ -30,14 +31,16 @@ built there too.
   cpu_tests.py check RECORD...
       fails if a path of a group selects no test on any CPU, or if a group
       is not used on any CPU
-  cpu_tests.py lint WORKFLOW
-      fails if a line of a `runs` in WORKFLOW names a group that is not in
-      `GROUPS`
+  cpu_tests.py lint MATRIX
+      fails if a line of a CPU's `runs` in MATRIX (ci/rust_matrix.toml)
+      names a group that is not in `GROUPS`, or a CPU's `runs` have a value
+      of `VG_CPU_FEATURES` twice
 """
 
 import json
 import re
 import sys
+import tomllib
 
 BINARIES = ("lib", "tests")
 
@@ -467,18 +470,23 @@ def check(records):
     return errors
 
 
-def lint(workflow):
-    """The errors of the `runs` of the workflow's text."""
+def lint(matrix):
+    """The errors of the `runs` of the CPUs of the matrices' text."""
     errors = []
     for name, group in GROUPS.items():
         for b in BINARIES:
             errors += [f"group {name}: {b} path {p!r} is not a path" for p in group[b]
                        if not PATH.fullmatch(p)]
-    block = workflow.split("\n  rust-cpu-features:\n", 1)[1].split("\n  cpu-features-times-save:", 1)[0]
-    for line in re.findall(r"^ +[a-z0-9,_-]+ \| (.*)$", block, re.M):
-        names = line.split()
-        if names != ["all"]:
-            errors += [f"{n}: not a group of ci/cpu_tests.py" for n in names if n not in GROUPS]
+    for cpu in tomllib.loads(matrix)["cpu"]:
+        seen = set()
+        for line in cpu["runs"].splitlines():
+            features, _, tests = line.partition("|")
+            features, names = features.strip(), tests.split()
+            if features in seen:
+                errors.append(f"{cpu['chip']}: VG_CPU_FEATURES={features} twice")
+            seen.add(features)
+            if names != ["all"]:
+                errors += [f"{n}: not a group of ci/cpu_tests.py" for n in names if n not in GROUPS]
     return errors
 
 
