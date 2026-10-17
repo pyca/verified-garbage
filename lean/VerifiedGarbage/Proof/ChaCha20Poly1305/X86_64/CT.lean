@@ -1162,9 +1162,9 @@ theorem bytesAt_serialize (m : Mem) (p : Addr) {n : Nat} (hn : n ≤ 64) :
 
 /-- For a pass of 512 bytes (`fold` 448), the lengths whose first `fold`
 bytes' keystream the prologue computes (`splitM`): the rest is whole chunks of
-512 and 1 to `512 - fold` bytes, or the length is 513 to 576 or 1025 to 1408. -/
+512 and 1 to `512 - fold` bytes, or the length is below 1409. -/
 abbrev PreLen (fold len : Nat) : Prop :=
-  fold ≤ (len - 1) % 512 ∨ (513 ≤ len ∧ len < 513 + 64) ∨ (1025 ≤ len ∧ len < 1025 + 384)
+  fold ≤ (len - 1) % 512 ∨ len < 1409
 
 /-- The bytes of more than `fold` whose keystream the prologue computes
 with the one-time key, for a pass of `pass` bytes (`splitM`): for 512, the
@@ -1375,9 +1375,6 @@ theorem sbb_mask (a : BitVec 64) (c : Bool) :
       BitVec.ofNat 64 (if c then 448 else 0) := by
   rw [BitVec.sub_self]; cases c <;> decide
 
-theorem se_neg384 : BitVec.signExtend 64 (BitVec.ofInt 32 (-((384 : Nat) : Int))) =
-    BitVec.ofNat 64 (2 ^ 64 - 384) := by decide
-
 theorem se_neg448 : BitVec.signExtend 64 (BitVec.ofInt 32 (-((448 : Nat) : Int))) =
     BitVec.ofNat 64 (2 ^ 64 - 448) := by decide
 
@@ -1393,20 +1390,14 @@ theorem splitM512_ok {fold len : Nat} (hf : fold = 448) (hl : len < 2 ^ 64) (h0 
   refine WP.seq (WP.mono (cmpLen_ok (n := 1409) (by decide) hl hr13) fun s₀ ⟨g₀, rd₀, wr₀, m₀, c₀⟩ => ?_)
   have r13₀ : s₀.gpr .r13 = BitVec.ofNat 64 len := by rw [g₀ _ (by decide), hr13]
   refine WP.ite (decide (len < 1409)) (by simp [eval, c₀]) (fun h₀ => ?_) (fun h₀ => ?_)
-  · -- Below 1409 bytes: any length but 577 to 960.
+  · -- Below 1409 bytes: every length.
     simp only [decide_eq_true_eq] at h₀
     apply WP.of_runBlock
-    simp only [lenOut, mask, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
-      exec, readSrc, execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags,
-      RegUpd.wr_arithFlags, RegUpd.cf_arithFlags, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
-      RegUpd.wr_setReg, RegUpd.cf_setReg, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
-      se_ofNat (show 577 < 2 ^ 31 by decide), se_neg384, r13₀, ite_true, sbb_mask]
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32, RegUpd.gpr_setReg,
+      RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some, Option.some.injEq,
+      exists_eq_left']
     refine ⟨?_, fun q hq => by simp [hq, g₀ q hq], by rw [rd₀], by rw [wr₀], by rw [m₀]⟩
-    have e : 2 ^ 64 ≤ (BitVec.ofNat 64 len - BitVec.ofNat 64 577).toNat + (BitVec.ofNat 64 (2 ^ 64 - 384)).toNat ↔
-        PreLen 448 len := by
-      rw [BitVec.toNat_sub, toNat_ofNat_lt hl, toNat_ofNat_lt (by decide), toNat_ofNat_lt (by decide)]
-      simp only [PreLen]; omega_using [h₀, h0]
-    rw [hs]; simp only [decide_eq_true_eq, e]
+    rw [hs, ite_eq_left (Or.inr h₀)]; rfl
   · -- From 1409 bytes: `(len - 1) mod 512` against `fold`.
     simp only [decide_eq_false_iff_not] at h₀
     apply WP.of_runBlock

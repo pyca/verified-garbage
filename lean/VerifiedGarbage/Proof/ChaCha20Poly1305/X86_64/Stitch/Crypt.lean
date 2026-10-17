@@ -59,6 +59,16 @@ theorem cmp512_ok {n : Nat} (hn : n < 2 ^ 64) {s : State} (hrdx : s.gpr .rdx = B
   rw [hrdx, toNat_ofNat_lt hn, show BitVec.signExtend 64 (512 : BitVec 32) = BitVec.ofNat 64 512 by decide,
     toNat_ofNat_lt (by decide)]
 
+theorem cmp513_ok {n : Nat} (hn : n < 2 ^ 64) {s : State} (hrdx : s.gpr .rdx = BitVec.ofNat 64 n) :
+    WP isa (.block [.alu .cmp .rdx (.imm 513)]) s fun s' =>
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mem = s.mem ∧ s'.cf = some (decide (n < 513)) := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, arithFlags, State.setFlags,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, trivial, trivial, ?_⟩
+  rw [hrdx, toNat_ofNat_lt hn, show BitVec.signExtend 64 (513 : BitVec 32) = BitVec.ofNat 64 513 by decide,
+    toNat_ofNat_lt (by decide)]
+
 /-- A byte of data that `bytesAt_xor` describes. -/
 theorem xor_at {m m' : Mem} {p : Addr} {n : Nat} {ks : List Byte} (hks : ks.length = n)
     (h : bytesAt m' p n = List.zipWith (· ^^^ ·) (bytesAt m p n) ks) {j : Nat} (hj : j < n) :
@@ -241,7 +251,7 @@ theorem args_repr {s₀ : State} {m : Mem} {key msg : List Byte} (h : Repr m (of
 
 /-- No whole chunks: nothing encrypted yet, nothing absorbed. -/
 theorem whole_mid {fold : Nat} {s₀ : State} (hp : APre e s₀) {s s₂ : State} (ha : Args s₀ s s₂)
-    (hf : fold < L s₀) (hnp : ¬ PreLen fold (L s₀)) (hlt : L s₀ < 512)
+    (hnp : ¬ PreLen fold (L s₀)) (hlt : L s₀ < 512)
     (hst : stateAt s.mem (off (cx s₀) 64) = initState (K s₀) 0 (N s₀))
     {key msg : List Byte} (hrep : Repr s.mem (off (cx s₀) 448) key msg) :
     WP isa (.block whole) s₂ (Mid fold s₀ s key msg 0 0) := by
@@ -375,13 +385,13 @@ theorem bulk_covers' {s₀ : State} (hp : APre e s₀) : Covers (bulkWr (cx s₀
       by show 736 + 512 ≤ 1696; omega⟩
 
 theorem movCmp_ok {n : Nat} (hn : n < 2 ^ 64) {s : State} (hrdx : s.gpr .rdx = BitVec.ofNat 64 n) :
-    WP isa (.block [.mov .rsi (.reg .r14), .alu .cmp .rdx (.imm 512)]) s fun s' =>
+    WP isa (.block [.mov .rsi (.reg .r14), .alu .cmp .rdx (.imm 513)]) s fun s' =>
       s'.gpr .rsi = s.gpr .r14 ∧ (∀ r, r ≠ .rsi → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.mem = s.mem ∧ s'.cf = some (decide (n < 512)) := by
-  rw [show ([.mov .rsi (.reg .r14), .alu .cmp .rdx (.imm 512)] : List Instr) =
-    [.mov .rsi (.reg .r14)] ++ [.alu .cmp .rdx (.imm 512)] from rfl]
+      s'.mem = s.mem ∧ s'.cf = some (decide (n < 513)) := by
+  rw [show ([.mov .rsi (.reg .r14), .alu .cmp .rdx (.imm 513)] : List Instr) =
+    [.mov .rsi (.reg .r14)] ++ [.alu .cmp .rdx (.imm 513)] from rfl]
   refine WP.block_append (WP.mono (Stitch.movR_ok .rsi .r14) fun s₁ ⟨rsi₁, g₁, m₁, rd₁, wr₁, _, _⟩ => ?_)
-  exact WP.mono (cmp512_ok hn (by rw [g₁ _ (by decide), hrdx])) fun s₂ ⟨g₂, rd₂, wr₂, m₂, c₂⟩ =>
+  exact WP.mono (cmp513_ok hn (by rw [g₁ _ (by decide), hrdx])) fun s₂ ⟨g₂, rd₂, wr₂, m₂, c₂⟩ =>
     ⟨by rw [g₂, rsi₁], fun r hr => by rw [g₂, g₁ r hr], by rw [rd₂, rd₁], by rw [wr₂, wr₁], by rw [m₂, m₁], c₂⟩
 
 /-- `cryptPre` for the 448 bytes: the arguments of the rest, and the
@@ -520,10 +530,11 @@ theorem preS_mid (v : Proof.ChaCha20.X86_64.XorImpl) (hf448 : v.callee.fold = 44
     refine ⟨rfl, r14₂, by rw [State.withRegions_gpr, g₂ _ (by decide), a₁.rdx],
       by rw [State.withRegions_gpr, g₂ _ (by decide), a₁.rcx, off_eq], ?_⟩
     rw [State.withRegions_mem, m₂, show psA (cx s₀) = off (cx s₀) 448 by rw [off_eq]]; exact rep₁
-  refine WP.ite (decide (L s₀ - 448 < 512)) (by simp [eval, c₂]) (fun hc => ?_) (fun hc => ?_)
+  refine WP.ite (decide (L s₀ - 448 < 513)) (by simp [eval, c₂]) (fun hc => ?_) (fun hc => ?_)
   · simp only [decide_eq_true_eq] at hc
     obtain ⟨w₁, r₁, d₁, c₁, R₁⟩ := bp rfl
-    exact fin (by decide +kernel) (tailP_ok hl (by omega) (by omega) w₁ r₁ d₁ c₁ R₁)
+    exact fin (by generalize v.callee.vl = vl; cases vl <;> decide +kernel)
+      (tailPS_ok _ hl (by omega) (by omega) w₁ r₁ d₁ c₁ R₁)
   · simp only [decide_eq_false_iff_not] at hc
     obtain ⟨w₁, r₁, d₁, c₁, R₁⟩ := bp rfl
     exact fin (by generalize v.callee.vl = vl; cases vl <;> decide +kernel) (bulkP_ok _ hl (by omega) (by omega) w₁ r₁ d₁ c₁ R₁)
@@ -713,7 +724,7 @@ theorem cryptIte_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) {s
         · rw [g₃, cs₂ r (by rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])]
       refine WP.ite (decide (L s₀ < 512)) (by simp [eval, cf₄]) (fun hc' => ?_) (fun hc' => ?_)
       · simp only [decide_eq_true_eq] at hc'
-        exact WP.mono (whole_mid hp ha (by omega) hnp hc' hst₃ hrep₃) fun s₄ hm₄ => .inl ⟨0, 0, hm₄⟩
+        exact WP.mono (whole_mid hp ha hnp hc' hst₃ hrep₃) fun s₄ hm₄ => .inl ⟨0, 0, hm₄⟩
       · simp only [decide_eq_false_iff_not] at hc'
         exact bulk_mid _ hp (by rw [wr₃, wr₂, h₁.wr]) ha (by omega) hnp (by omega) hst₃ hrep₃
     · -- 448: those by `cryptPre`, the rest by `bulkP` or `tailS`.

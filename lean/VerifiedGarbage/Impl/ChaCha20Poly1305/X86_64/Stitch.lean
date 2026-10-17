@@ -44,14 +44,16 @@ and in `rsi`, `rdx` the data not yet encrypted, for the call of
 length only.
 
 When whole chunks and 1 to 64 bytes would be left after the first 448 bytes
-(the length 448 to 511 bytes past a multiple of 512, or a multiple of 512),
-`sealFor` has the prologue compute the keystream of those 448 bytes with the
-one-time key's block (`splitM` for `pass` 512: eight blocks, one pass of the
-kernel), and `preS` encrypts them with it (`cryptPre`). Then the first chunk
-absorbs them (`chunk true`, whose rounds absorb 28 blocks), and `tailS`
-absorbs the last chunk while it encrypts the 1 to 64 bytes after it; or, with
-no whole chunk, `tailS` absorbs the 448 bytes. Either way only the last 1 to
-64 bytes are left for `macPadLengths` to absorb.
+(the length 448 to 511 bytes past a multiple of 512, or a multiple of 512), or
+the data is shorter than 1409 bytes, `sealFor` has the prologue compute the
+keystream of those 448 bytes with the one-time key's block (`splitM` for
+`pass` 512: eight blocks, one pass of the kernel), and `preS` encrypts them
+with it (`cryptPre`). Then the first chunk absorbs them (`chunk true`, whose
+rounds absorb 28 blocks), and `restT` absorbs the last chunk while it
+encrypts the bytes after it; or, with no whole chunk, `tailP` absorbs the 448
+bytes while it encrypts the 1 to 512 after them, by `tailS` or `tailK`'s
+code. Either way only those last bytes are left for `macPadLengths` to
+absorb.
 -/
 
 @[expose] public section
@@ -328,10 +330,11 @@ def padIns (r : Reg) : Nat → List Instr
 /-! ### 257 to 448 bytes left
 
 `tailK` computes the keystream of eight blocks, as a chunk does, while its
-rounds absorb the last chunk; but it stores the keystream to `ctx + 736`
-(`buf + 608`, `kOff`), past the Poly1305 state, unused once the prologue's
-keystream is (none is computed for these lengths, `splitM`), and XORs the
-bytes left into the data from there, as `tailS` does from `buf`. So
+rounds absorb the last chunk (or, `pre`, the 448 bytes before the first, with
+up to 512 bytes left); but it stores the keystream to `ctx + 736` (`buf +
+608`, `kOff`), past the Poly1305 state, unused once the prologue's keystream
+is XORed into the data (`cryptPre`), and XORs the bytes left into the data
+from there, as `tailS` does from `buf`. So
 `macPadLengths` absorbs only the bytes left, not the last chunk too, and
 there is no call of `vg_chacha20_xor`. -/
 
@@ -348,9 +351,9 @@ def storeRow (off row : Nat) (xs : List XReg) : List Instr :=
 
 /-- The eight blocks' keystream stored at `buf + kOff` while the 512 bytes
 at `rsi` (the last chunk) are absorbed. -/
-def tailKMain (vl : Bool) : Prog isa :=
+def tailKMain (vl pre : Bool) : Prog isa :=
   .seq (.block ChaCha20.X86_64.Avx2.setup)
-  (.seq (sroundsFor vl false) (.block (ChaCha20.X86_64.Avx2.finishWith (storeRow kOff))))
+  (.seq (sroundsFor vl pre) (.block (ChaCha20.X86_64.Avx2.finishWith (storeRow kOff))))
 
 /-- `tailK`'s moves: `buf` into `r9`, the stored keystream into `rsi`, the
 bytes left into `rdx`. -/
@@ -359,13 +362,13 @@ def movK : List Instr :=
    .mov .rdx (.reg .rbp)]
 
 /-- `tailKMain`, then `leaveT` and `movK`: `tailK` but for the XOR. -/
-def tailKAB (vl : Bool) : Prog isa :=
-  .seq (tailKMain vl) (.block (leaveT false ++ movK))
+def tailKAB (vl pre : Bool) : Prog isa :=
+  .seq (tailKMain vl pre) (.block (leaveT pre ++ movK))
 
 /-- `tailKAB`; then the bytes left encrypted from the stored keystream, as
 `tailS` does from `buf`. -/
-def tailKX (vl : Bool) : Prog isa :=
-  .seq (tailKAB vl)
+def tailKX (vl pre : Bool) : Prog isa :=
+  .seq (tailKAB vl pre)
   (.seq (.block [.alu .test .rdx (.reg .rdx)])
   (.seq (xorBufX 5 .rbx)
     (.block [.vop .vzeroupper, .mov .rcx (.reg .r9), .mov32 .rdx (.imm 0)])))
@@ -374,7 +377,7 @@ def tailKX (vl : Bool) : Prog isa :=
 with the padding before `restT`'s comparison with 448 the code after it keeps
 its offsets modulo 32. -/
 def tailK (vl : Bool) : Prog isa :=
-  .seq (tailKX vl) (.block (padIns .rax 29))
+  .seq (tailKX vl false) (.block (padIns .rax 29))
 
 /-- After the whole chunks: if 1 to 256 bytes are left, `tailS`; if 257 to
 448, `tailK`; otherwise `leave`. -/
@@ -411,14 +414,23 @@ def bigS (vl : Bool) : Prog isa :=
   .seq (.block (cryptArgs ++ ([.alu .cmp .rdx (.imm 512)] : List Instr)))
     (.ite .b (.block whole) (bulk vl))
 
+/-- After `enter`, with no whole chunk after the first 448 bytes: the rest
+(1 to 512 bytes) encrypted while they are absorbed, by `tailS` (up to 128
+bytes, or 256 with two sets of blocks) or by `tailKX` (eight blocks). -/
+def tailP (vl : Bool) : Prog isa :=
+  .seq (.block [.mov .rdx (.mem (at_ .rcx lenOff)), .alu .sub .rdx (.imm 1), .alu .cmp .rdx (.imm 256)])
+    (.ite .b
+      (.seq (.block [.alu .cmp .rdx (.imm 128)]) (.ite .b (tailS false true) (tailS true true)))
+      (tailKX vl true))
+
 /-- More than `fold` bytes, the keystream of whose first `m` (448) the
 prologue computed: those by `cryptPre`, then the whole chunks after them by
-`bulkP`, or, if there are none, the rest (1 to 128 bytes) by `tailS`, which
-absorbs the first 448. -/
+`bulkP`, or, if there are none (at most 512 bytes after them), the rest by
+`tailP`, which absorbs the first 448. -/
 def preS (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (cryptPre x.fold x.pass x.wide)
-  (.seq (.block [.mov .rsi (.reg .r14), .alu .cmp .rdx (.imm 512)])
-    (.ite .b (.seq (.block enter) (tailS false true)) (bulkP x.vl)))
+  (.seq (.block [.mov .rsi (.reg .r14), .alu .cmp .rdx (.imm 513)])
+    (.ite .b (.seq (.block enter) (tailP x.vl)) (bulkP x.vl)))
 
 /-! ### `open`'s prologue
 
@@ -538,7 +550,8 @@ def sealSmall (small : ChaCha20.X86_64.Callee) (big : Prog isa) : Prog isa :=
 /-- The `seal` an instance uses: with the AVX2 implementation of
 `vg_poly1305_blocks` (whose ChaCha20 is the AVX2 kernel), `sealStitched`,
 whose prologue computes the keystream of the first 448 bytes too when the
-rest is whole chunks and 1 to 64 bytes (`pass` 512, `splitM`); with the
+rest is whole chunks and 1 to 64 bytes, or the data is shorter than 1409
+bytes (`pass` 512, `splitM`); with the
 AVX-512 one (without IFMA), `sealSmall` of `seal`; otherwise `seal`. -/
 def sealFor (x : ChaCha20.X86_64.Callee) : Poly1305.X86_64.Blocks → Prog isa
   | .avx2 => sealStitched { x with pass := 512 } .avx2
