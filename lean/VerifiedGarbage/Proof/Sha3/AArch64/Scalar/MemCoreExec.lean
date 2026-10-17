@@ -93,4 +93,46 @@ theorem mem_step_ok {off : Nat} (op : ScalarOp) (hg : Good op) (f : File) (s : V
     · rw [hm, hsp]; exact hr.slots k hk
     · rw [hm]; exact Frame.refl _ _
 
+private theorem block_append' (xs ys : List Instr) (s : VG.AArch64.State) :
+    runBlock isa (xs ++ ys) s = (runBlock isa xs s).bind (runBlock isa ys) := by
+  induction xs generalizing s with
+  | nil => rfl
+  | cons x xs ih =>
+    rw [List.cons_append, runBlock_cons, runBlock_cons]
+    change (isa.exec x s).bind (fun s' => runBlock isa (xs ++ ys) s') =
+      ((isa.exec x s).bind (runBlock isa xs)).bind (runBlock isa ys)
+    rw [Option.bind_assoc]
+    exact congrArg (Option.bind (isa.exec x s)) (funext fun s' => ih s')
+
+theorem mem_list_ok {off : Nat} (ops : List ScalarOp) (hg : ∀ op ∈ ops, Good op)
+    (f : File) (s : VG.AArch64.State) (hr : MemFileRel off f s) (ho : SlotsOk off s) :
+    ∃ s', runBlock isa (ops.flatMap (lowerMem off)) s = some s' ∧ MemFileRel off (run ops f) s' ∧
+      Frame [⟨s.sp, off + 16⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      s'.v = s.v := by
+  induction ops generalizing f s with
+  | nil => exact ⟨s, rfl, hr, Frame.refl _ _, rfl, rfl, rfl, rfl⟩
+  | cons op ops ih =>
+    obtain ⟨s₁, hs₁, hr₁, hf₁, hrd₁, hwr₁, hsp₁, hv₁⟩ :=
+      mem_step_ok op (hg op (List.mem_cons_self ..)) f s hr ho
+    have ho₁ : SlotsOk off s₁ := ⟨ho.align, ho.small, fun k hk => by rw [hwr₁, hsp₁]; exact ho.wr k hk⟩
+    obtain ⟨s₂, hs₂, hr₂, hf₂, hrd₂, hwr₂, hsp₂, hv₂⟩ :=
+      ih (fun op ho => hg op (List.mem_cons_of_mem _ ho)) (step f op) s₁ hr₁ ho₁
+    refine ⟨s₂, ?_, hr₂, hf₁.trans (by rw [← hsp₁]; exact hf₂), hrd₂.trans hrd₁, hwr₂.trans hwr₁,
+      hsp₂.trans hsp₁, hv₂.trans hv₁⟩
+    simp only [List.flatMap_cons, block_append', hs₁, Option.bind_some, hs₂]
+
+/-- The memory-slot core has the lane semantics of the round through chi. -/
+theorem mem_core_ok {off : Nat} (A : Spec.Sha3.State) (s : VG.AArch64.State)
+    (hl : ∀ i : Nat, (hi : i < 25) → s.gpr (laneReg i) = A[i]) (ho : SlotsOk off s) :
+    ∃ s', runBlock isa (memCoreInstrs off) s = some s' ∧
+      (∀ i : Nat, (hi : i < 25) → s'.gpr (laneReg i) =
+        (Spec.Sha3.chi (Spec.Sha3.pi (Spec.Sha3.rho (Spec.Sha3.theta A))))[i]) ∧
+      Frame [⟨s.sp, off + 16⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      s'.v = s.v := by
+  let f : File := ⟨s.gpr, fun k => s.mem.readW (s.sp + BitVec.ofNat 64 (off + 8 * k)) 64⟩
+  have hr : MemFileRel off f s := ⟨fun _ => rfl, fun _ _ => rfl⟩
+  have hmath := core_math A f hl
+  obtain ⟨s', hs, hr', hf, hrd, hwr, hsp, hv⟩ := mem_list_ok coreOps core_good f s hr ho
+  exact ⟨s', hs, fun i hi => (hr'.regs (laneReg i)).trans (hmath i hi), hf, hrd, hwr, hsp, hv⟩
+
 end VG.Proof.Sha3.AArch64.Scalar
