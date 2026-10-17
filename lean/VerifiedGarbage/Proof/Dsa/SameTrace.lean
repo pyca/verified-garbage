@@ -98,6 +98,30 @@ theorem nil_seq {c : Prog M} {s₁ s₂ : M.State} (h : SameTrace M c s₁ s₂)
   seq block_nil (WP.block_nil (Q := fun t => t = s₁) rfl) (WP.block_nil (Q := fun t => t = s₂) rfl)
     fun _ _ e₁ e₂ => e₁ ▸ e₂ ▸ h
 
+/-- A branch followed by code: each branch followed by it. -/
+theorem seq_ite {c : M.Cond} {th el r : Prog M} {s₁ s₂ : M.State} (hc : M.eval c s₁ = M.eval c s₂)
+    (ht : M.eval c s₁ = some true → SameTrace M (.seq th r) s₁ s₂)
+    (he : M.eval c s₁ = some false → SameTrace M (.seq el r) s₁ s₂) :
+    SameTrace M (.seq (.ite c th el) r) s₁ s₂ := by
+  intro tr₁ tr₂ t₁ t₂ e₁ e₂
+  cases e₁ with
+  | seq a₁ b₁ =>
+    cases e₂ with
+    | seq a₂ b₂ =>
+      cases a₁ with
+      | iteT c₁ x₁ =>
+        cases a₂ with
+        | iteT _ x₂ =>
+          have H := ht c₁ _ _ _ _ (.seq x₁ b₁) (.seq x₂ b₂)
+          simp only [List.cons_append, H]
+        | iteF c₂ _ => rw [hc, c₂] at c₁; cases c₁
+      | iteF c₁ x₁ =>
+        cases a₂ with
+        | iteT c₂ _ => rw [hc, c₂] at c₁; cases c₁
+        | iteF _ x₂ =>
+          have H := he c₁ _ _ _ _ (.seq x₁ b₁) (.seq x₂ b₂)
+          simp only [List.cons_append, H]
+
 theorem constantTime {Pre : M.State → Prop} {Pub : M.State → M.State → Prop} {c : Prog M}
     (h : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ → SameTrace M c s₁ s₂) : ConstantTime M Pre Pub c :=
   fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => h _ _ h₁ h₂ hp _ _ _ _ e₁ e₂
