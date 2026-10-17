@@ -480,4 +480,77 @@ theorem digestClamp_ok {s : State} {base : Addr} {size W : Nat} (hs : Ws s base 
   · rw [m.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, M₆, M₅, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
     exact writeW32_outside _ _ _ (by omega)
 
+theorem digestPrefix_ok {s : State} {base : Addr} {size Q : Nat} (hs : Ws s base size) (hz : 120 ≤ size)
+    (h20 : hdr base s 20 = mask32 (Spec.Dsa.bitLength Q = 160))
+    (h24 : hdr base s 24 = mask32 (Spec.Dsa.bitLength Q = 224))
+    (h28 : hdr base s 28 = mask32 (Spec.Dsa.bitLength Q = 256)) :
+    WP isa Shape.digestPrefix s fun t =>
+      (hdr base t 112).toNat = min (hdr base s 108).toNat (qWidth Q) ∧
+      Rest [.r0, .r2, .r3, .r4, .r5, .r6, .r7] s t ∧ Outside base 112 4 s.mem t.mem := by
+  unfold Shape.digestPrefix
+  refine VG.Proof.X25519.Arm.WP.append (prefixWidth_ok hs hz h20 h24 h28) fun u ⟨Pu, Ru, Mu⟩ =>
+    WP.mono (digestClamp_ok (hs.of_rest Ru (by decide)) hz Pu (by have := qWidth_le Q; omega))
+    fun t ⟨Vt, Rt, Ot⟩ => ⟨by rw [Vt, hdr, hdr, Mu], (Ru.mono (by decide)).trans Rt, by rw [← Mu]; exact Ot⟩
+
+/-- The memory the shape's checks change. -/
+def shapeRanges : List (Nat × Nat) := [(8, 28), (112, 8), (256, 4704)]
+
+theorem check_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q : Nat} (hs : Ws s base size)
+    (hz : 4960 ≤ size) (wp : Width pLen nP) (wq : Width qLen nQ)
+    (Rp : Ready s base (.input .p) pLen) (Rq : Ready s base (.input .q) qLen)
+    (hP : operand base s (.input .p) pLen = P) (hQ : operand base s (.input .q) qLen = Q) :
+    WP isa (Shape.check pLen qLen) s fun t =>
+      t.z = decide (¬ shapeValid P Q) ∧ maskW base t = mask32 (shapeValid P Q) ∧
+      (hdr base t 112).toNat = min (hdr base s 108).toNat (qWidth Q) ∧
+      Rest coreClob s t ∧ Outs base shapeRanges s.mem t.mem := by
+  have nw := hs.nowrap
+  have fm : Impl.Dsa.Arm.Layout.field .mask = 116 := rfl
+  simp only [Shape.check, Core.sequence, List.foldr]
+  refine WP.seq (WP.mono (inspectP_ok hs hz wp Rp hP) fun u₁ ⟨E₁, E₂, E₃, E₄, R₁, O₁⟩ => ?_)
+  have w₁ := hs.of_rest R₁ (by decide)
+  have K₁ : Outs base arithRanges s.mem u₁.mem → True := fun _ => trivial
+  have Rq₁ : Ready u₁ base (.input .q) qLen := Rq.keep_rest R₁ (O := O₁) (hO := by decide)
+  have Q₁ : operand base u₁ (.input .q) qLen = Q := by
+    rw [operand, pointerValue_keep (R₁.gpr .r12 (by decide)) O₁ (by decide) Rq.ok,
+      Rq.bytes O₁ (by decide)]
+    exact hQ
+  refine WP.seq (WP.mono (inspectQ_ok w₁ hz wq Rq₁ Q₁ E₁ E₂ E₃ E₄) fun u₂ ⟨M₂, F₂, F₃, F₄, R₂, O₂⟩ => ?_)
+  have w₂ := w₁.of_rest R₂ (by decide)
+  refine WP.seq (WP.mono (digestPrefix_ok w₂ (by omega) F₂ F₃ F₄) fun u₃ ⟨D₃, R₃, O₃⟩ => ?_)
+  have w₃ := w₂.of_rest R₃ (by decide)
+  refine WP.seq (wp_ldr12 w₃ (by decide) (by omega) fun u₄ v₄ => VG.Proof.X25519.Arm.wp_cmp (op2_imm (by decide))
+    fun t f z => WP.block_nil (WP.block_nil ⟨?_, ?_, ?_, ?_, ?_⟩))
+  · have m₃ : hdr base u₃ (Impl.Dsa.Arm.Layout.field .mask) = mask32 (shapeValid P Q) := by
+      rw [show Impl.Dsa.Arm.Layout.field .mask = 116 from rfl, ← M₂]
+      exact hdr_keep (rs := [(112, 4)]) (Outs.of_outside O₃ (by simp)) (by simp) (by omega)
+    rw [z, v₄.gpr, m₃]
+    by_cases h : shapeValid P Q <;> simp only [mask32, h, ↓reduceIte, decide_true, decide_false, not_true_eq_false,
+      not_false_eq_true] <;> decide
+  · rw [show maskW base t = maskW base u₃ by simp only [maskW, flagW, f.mem, v₄.mem], ← M₂]
+    exact hdr_keep (rs := [(112, 4)]) (Outs.of_outside O₃ (by simp)) (by simp) (by omega)
+  · rw [show hdr base t 112 = hdr base u₃ 112 by simp only [hdr, f.mem, v₄.mem], D₃]
+    rw [hdr_keep (d := 108) O₂ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega) (by omega),
+      hdr_keep (d := 108) O₁ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> simp only <;> omega) (by omega)]
+  · exact ((R₁.trans R₂).trans (R₃.mono (by decide))).trans ((v₄.rest (by decide)).trans (f.rest _))
+  · rw [f.mem, v₄.mem]
+    refine ((Outs.within O₁ ?_).trans (Outs.within O₂ ?_)).trans
+      (Outs.within (Outs.of_outside O₃ (List.mem_singleton_self _)) ?_)
+    all_goals
+      intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    · rcases hr with rfl | rfl | rfl
+      · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
+      · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
+      · exact ⟨(256, 4704), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
+    · rcases hr with rfl | rfl | rfl
+      · exact ⟨(8, 28), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
+      · exact ⟨(112, 8), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
+      · exact ⟨(256, 4704), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
+    · subst hr
+      exact ⟨(112, 8), by simp [shapeRanges], by simp only; omega, by simp only; omega⟩
+
 end VG.Proof.Dsa.Arm
