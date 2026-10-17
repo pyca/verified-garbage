@@ -133,6 +133,7 @@ theorem sealWithEX_wp (v : GcmImpl) (cl : Prog isa) (hMK : Proof.Gcm.AArch64.Pmu
       Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region) →
       WP isa cl s' fun t => GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb t ex ∧ I t.mem) :
     WP isa (Impl.AesGcm.AArch64.Fast.sealWithE v.callees (8 * w) cl) s fun s' =>
       (GprAbi s s' ∧ sealAArch64.post s s') ∧ I s'.mem := by

@@ -94,6 +94,7 @@ theorem runWithPX_ok (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} {ext
       Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region) →
       WP isa cl s' fun t => GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb t ex ∧ I t.mem)
     (h₁ : SealEntry w s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
     (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) :
@@ -246,7 +247,8 @@ theorem runWithPX_ok (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} {ext
   refine WP.seq (WP.mono (WP.with_rdwr (absCall2WithX_ok L (.inr rfl)
       (fun r hr => (hexC r hr).sub_left (Lay.ctxSub (d := 240) (n := 16) (by decide)))
       (exW (stW (by decide))) h₆
-      (hgh s₆ h₆.call (stW (by decide)) (Lay.wSub (by decide)) rd₆' wr₆' h₆.env.sp FW)))
+      (hgh s₆ h₆.call (stW (by decide)) (Lay.wSub (by decide)) rd₆' wr₆' h₆.env.sp FW
+        (Offset.sub_base D (by omega)))))
     fun s₇ ⟨⟨⟨h₇, hlt₇⟩, I₇⟩, rd₇, wr₇⟩ => ?_)
   rw [Nat.zero_add, Nat.sub_zero] at h₇ hlt₇
   generalize hj : 16 * (n / 16) = j at h₇ hlt₇
@@ -540,7 +542,7 @@ theorem runWithP_ok (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} {extr
     (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) :
     WP isa (Impl.AesGcm.AArch64.Fast.runWithP v.callees cl) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
   WP.mono (runWithPX_ok v cl hMK (ex := []) (I := fun _ => True) hs (by simp) (by simp) (by simp)
-    (fun _ _ => trivial) (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf =>
+    (fun _ _ => trivial) (fun s' _ _ _ _ hc sY sS hrd hwr hsp hf _ =>
       WP.mono (hgh s' hc sY sS hrd hwr hsp hf) fun _ g => ⟨g, trivial⟩) h₁ hx h12 h16) fun _ q => q.1
 
 theorem run_ok (v : GcmImpl) (hMK : MulKey) {extra : List Region} {s s₁ : State} (hs : sealPreX extra s)

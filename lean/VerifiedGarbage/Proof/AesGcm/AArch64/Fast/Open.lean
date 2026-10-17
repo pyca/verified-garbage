@@ -126,6 +126,7 @@ theorem openRunAX_ok (v : GcmImpl) (hMK : MulKey) {s₀ t : State} {ex : List Re
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
       s'.rd = t.rd → s'.wr = t.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] t.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem) :
     WP isa (openRunA v.callees cl) t fun u =>
       MidO (fastFrame W ++ ex) Ctx W SP D Np A R 12 al n tl t u ∧ I u.mem := by
@@ -184,7 +185,8 @@ theorem openRunAX_ok (v : GcmImpl) (hMK : MulKey) {s₀ t : State} {ex : List Re
     fun ⟨r', h, hs⟩ => ⟨r', List.mem_append_left _ h, hs⟩
   refine WP.seq (WP.mono (WP.with_rdwr (absCall2WithX_ok L (.inr rfl)
     (fun r hr => (hexC r hr).sub_left (Lay.ctxSub (d := 240) (n := 16) (by decide))) (exW (stW (by decide))) h₆
-    (hgh s₆ h₆.call (stW (by decide)) (Lay.wSub (by decide)) rd₆' wr₆' h₆.env.sp FW)))
+    (hgh s₆ h₆.call (stW (by decide)) (Lay.wSub (by decide)) rd₆' wr₆' h₆.env.sp FW
+      (Offset.sub_base D (by omega)))))
     fun s₇ ⟨⟨⟨h₇, hlt₇⟩, I₇⟩, rd₇, wr₇⟩ => ?_)
   rw [Nat.zero_add, Nat.sub_zero] at h₇ hlt₇
   generalize hj : 16 * (n / 16) = j at h₇ hlt₇
@@ -452,7 +454,7 @@ theorem openRunA_ok (v : GcmImpl) (hMK : MulKey) {s₀ t : State}
       WP isa cl s' (GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb)) :
     WP isa (openRunA v.callees cl) t (MidO (fastFrame W) Ctx W SP D Np A R 12 al n tl t) :=
   WP.mono (openRunAX_ok cl v hMK (ex := []) (I := fun _ => True) o h4 h5 h6 h7 hal hok (by simp) (by simp)
-    (by simp) (fun _ _ => trivial) fun s' _ _ _ _ hc sY sS hrd hwr hsp hf =>
+    (by simp) (fun _ _ => trivial) fun s' _ _ _ _ hc sY sS hrd hwr hsp hf _ =>
       WP.mono (hgh s' hc sY sS hrd hwr hsp hf) fun _ g => ⟨g, trivial⟩) fun _ q => q.1
 
 end
@@ -514,6 +516,7 @@ theorem openRunWith_postX (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Add
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
       s'.rd = s₀.rd → s'.wr = s₀.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] s₀.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem) :
     WP isa (Impl.AesGcm.AArch64.Fast.openRunWithP v.callees cl) t fun u =>
       OpenPost Ctx W SP Np A D Tg R nl al n tl s₀ u ∧ I u.mem := by
@@ -528,8 +531,8 @@ theorem openRunWith_postX (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Add
   refine (openRunWith_split v.callees cl).symm.wp (WP.seq (WP.mono (openRunAX_ok cl v hMK o h4 h5 h6 h7 hal hok
     hexW hexD hexC (fun hi f => hI hi (f.sub fun r hr => ⟨workR W, List.mem_cons_self .., by
       simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩))
-    fun s' _ _ _ _ hc sY sS hrd hwr hsp hf => hgh s' hc sY sS (hrd.trans o.rd₀) (hwr.trans o.wr₀) hsp
-      (F₀.trans hf))
+    fun s' _ _ _ _ hc sY sS hrd hwr hsp hf hd => hgh s' hc sY sS (hrd.trans o.rd₀) (hwr.trans o.wr₀) hsp
+      (F₀.trans hf) hd)
     fun _ ⟨mo, i₇⟩ => WP.mono (omBX_ok v L o.rounds mo dD dC) fun s₄ ⟨hpost, f₈⟩ => ?_))
   have I₄ : I s₄.mem := hI i₇ (f₈.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -570,11 +573,12 @@ theorem openRunWith_postE (v : GcmImpl) (hMK : MulKey) {Ctx W SP Np A D Tg : Add
     (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
       s'.rd = s₀.rd → s'.wr = s₀.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] s₀.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex) :
     WP isa (Impl.AesGcm.AArch64.Fast.openRunWithP v.callees cl) t (OpenPost Ctx W SP Np A D Tg R nl al n tl s₀) :=
   WP.mono (openRunWith_postX cl v hMK (I := fun _ => True) o h12 h4 h5 h6 h7 hal hT₃ hok hexW hexD hexC
-    (fun _ _ => trivial) fun s' _ _ _ _ hc sY sS hr hw hsp hf =>
-      WP.mono (hgh s' hc sY sS hr hw hsp hf) fun _ g => ⟨g, trivial⟩) fun _ q => q.1
+    (fun _ _ => trivial) fun s' _ _ _ _ hc sY sS hr hw hsp hf hd =>
+      WP.mono (hgh s' hc sY sS hr hw hsp hf hd) fun _ g => ⟨g, trivial⟩) fun _ q => q.1
 
 /-- `openWithE_wp` for a TLS record with an allowed tag length, whose call
 may also write `ex` and establish `I` (`openRunWith_postX`). -/
@@ -589,6 +593,7 @@ theorem openWithEX_wp (v : GcmImpl) (hMK : MulKey) {w : Nat} (hw : w = 2 ∨ w =
       Region.Sub ⟨Y, 16⟩ (workR (stackArg s w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s w)) →
       s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       Frame [workR (stackArg s w), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb u ex ∧ I u.mem) :
     WP isa (Impl.AesGcm.AArch64.Fast.openWithE v.callees (8 * w) cl) s fun s' =>
       (GprAbi s s' ∧ openAArch64.post s s') ∧ I s'.mem := by

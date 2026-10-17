@@ -96,16 +96,19 @@ theorem openRunA_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {s₀₁ s₀
     (hgh₁ : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
       s'.rd = t₁.rd → s'.wr = t₁.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] t₁.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex)
     (hgh₂ : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
       s'.rd = t₂.rd → s'.wr = t₂.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] t₂.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex)
     (hrel : ∀ {s₁ s₂ : State} {Y Dd S : Addr} {nb : Nat}, GhCall s₁ (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       GhCall s₂ (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) → s₁.sp = SP → s₂.sp = SP →
       s₁.rd = t₁.rd → s₁.wr = t₁.wr → Frame [workR W, ⟨D, n⟩] t₁.mem s₁.mem →
       s₂.rd = t₂.rd → s₂.wr = t₂.wr → Frame [workR W, ⟨D, n⟩] t₂.mem s₂.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       RelCT isa (Eq2 s₁ s₂) cl TT) :
     RelCT isa (Eq2 t₁ t₂) (openRunA v.callees cl) TT := by
   have L := o₁.lay
@@ -131,11 +134,12 @@ theorem openRunA_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {s₀₁ s₀
   have hexB : ∀ r ∈ ex, (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32, 16⟩ : Region).Disjoint r := fun r hr =>
     (hexW r hr).sub_left (stW (by decide))
   have hexK : ∀ r ∈ ex, (keyR W).Disjoint r := fun r hr => (hexW r hr).sub_left (Lay.wSub (by decide))
-  refine rel_seq (hrel a₁.call a₂.call sY sS a₁.env.sp a₂.env.sp r₁ w₁ fr₁ r₂ w₂ fr₂)
+  have hDd : Region.Sub ⟨D + BitVec.ofNat 64 0, 16 * ((n - 0) / 16)⟩ ⟨D, n⟩ := Offset.sub_base D (by omega)
+  refine rel_seq (hrel a₁.call a₂.call sY sS a₁.env.sp a₂.env.sp r₁ w₁ fr₁ r₂ w₂ fr₂ hDd)
     (WP.with_rdwr (absCall2WithX_ok L (.inr rfl) (Q := fun _ => True) hexH hexB a₁
-      (WP.mono (hgh₁ _ a₁.call sY sS r₁ w₁ a₁.env.sp fr₁) fun _ g => ⟨g, trivial⟩)))
+      (WP.mono (hgh₁ _ a₁.call sY sS r₁ w₁ a₁.env.sp fr₁ hDd) fun _ g => ⟨g, trivial⟩)))
     (WP.with_rdwr (absCall2WithX_ok L (.inr rfl) (Q := fun _ => True) hexH hexB a₂
-      (WP.mono (hgh₂ _ a₂.call sY sS r₂ w₂ a₂.env.sp fr₂) fun _ g => ⟨g, trivial⟩)))
+      (WP.mono (hgh₂ _ a₂.call sY sS r₂ w₂ a₂.env.sp fr₂ hDd) fun _ g => ⟨g, trivial⟩)))
     fun s₇ t₇ ⟨⟨⟨b₁, l₁⟩, _⟩, rd₇, wr₇⟩ ⟨⟨⟨b₂, l₂⟩, _⟩, rd₇', wr₇'⟩ => ?_
   have N₁ := Mid.absorbX L M₁ b₁ (by rw [rd₇, rd₁]) (by rw [wr₇, wr₁]) hexK
   have N₂ := Mid.absorbX L M₂ b₂ (by rw [rd₇', rd₂]) (by rw [wr₇', wr₂]) hexK
@@ -169,16 +173,19 @@ theorem openRunWith_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {nl : Nat}
     (hgh₁ : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
       s'.rd = s₀₁.rd → s'.wr = s₀₁.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] s₀₁.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex)
     (hgh₂ : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
       s'.rd = s₀₂.rd → s'.wr = s₀₂.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] s₀₂.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex)
     (hrel : ∀ {s₁ s₂ : State} {Y Dd S : Addr} {nb : Nat}, GhCall s₁ (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       GhCall s₂ (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) → s₁.sp = SP → s₂.sp = SP →
       s₁.rd = s₀₁.rd → s₁.wr = s₀₁.wr → Frame [workR W, ⟨D, n⟩] s₀₁.mem s₁.mem →
       s₂.rd = s₀₂.rd → s₂.wr = s₀₂.wr → Frame [workR W, ⟨D, n⟩] s₀₂.mem s₂.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       RelCT isa (Eq2 s₁ s₂) cl TT) :
     RelCT isa (Eq2 t₁ t₂) (Impl.AesGcm.AArch64.Fast.openRunWithP v.callees cl) TT := by
   subst h12
@@ -190,23 +197,27 @@ theorem openRunWith_relX (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {nl : Nat}
   have g₁ : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
       s'.rd = t₁.rd → s'.wr = t₁.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] t₁.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex :=
-    fun s' _ _ _ _ hc sY sS hr hw hsp hf => hgh₁ s' hc sY sS (hr.trans o₁.rd₀) (hw.trans o₁.wr₀) hsp (F₁.trans hf)
+    fun s' _ _ _ _ hc sY sS hr hw hsp hf hd =>
+      hgh₁ s' hc sY sS (hr.trans o₁.rd₀) (hw.trans o₁.wr₀) hsp (F₁.trans hf) hd
   have g₂ : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb →
       Region.Sub ⟨Y, 16⟩ (workR W) → Region.Sub ⟨S, 256⟩ (workR W) →
       s'.rd = t₂.rd → s'.wr = t₂.wr → s'.sp = SP → Frame [workR W, ⟨D, n⟩] t₂.mem s'.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨D, n⟩ : Region) →
       WP isa cl s' fun u => GhPost s' (Ctx + BitVec.ofNat 64 240) Y Dd S nb u ex :=
-    fun s' _ _ _ _ hc sY sS hr hw hsp hf => hgh₂ s' hc sY sS (hr.trans o₂.rd₀) (hw.trans o₂.wr₀) hsp (F₂.trans hf)
+    fun s' _ _ _ _ hc sY sS hr hw hsp hf hd =>
+      hgh₂ s' hc sY sS (hr.trans o₂.rd₀) (hw.trans o₂.wr₀) hsp (F₂.trans hf) hd
   refine (openRunWith_split v.callees cl).symm.rel (rel_seq
-    (openRunA_relX v cl hMK hexW hexC o₁ o₂ hx₁ hx₂ hal g₁ g₂ fun c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ =>
+    (openRunA_relX v cl hMK hexW hexC o₁ o₂ hx₁ hx₂ hal g₁ g₂ fun c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd =>
       hrel c₁ c₂ sY sS sp₁ sp₂ (r₁.trans o₁.rd₀) (w₁.trans o₁.wr₀) (F₁.trans f₁) (r₂.trans o₂.rd₀) (w₂.trans o₂.wr₀)
-        (F₂.trans f₂))
+        (F₂.trans f₂) hd)
     (WP.mono (openRunAX_ok cl v hMK (I := fun _ => True) o₁ hx₁.1 hx₁.2.1 hx₁.2.2.1 hx₁.2.2.2 hal hok
-      hexW hexD hexC (fun _ _ => trivial) fun s' _ _ _ _ c y z r w sp f =>
-        WP.mono (g₁ s' c y z r w sp f) fun _ g => ⟨g, trivial⟩) fun _ q => q.1)
+      hexW hexD hexC (fun _ _ => trivial) fun s' _ _ _ _ c y z r w sp f hd =>
+        WP.mono (g₁ s' c y z r w sp f hd) fun _ g => ⟨g, trivial⟩) fun _ q => q.1)
     (WP.mono (openRunAX_ok cl v hMK (I := fun _ => True) o₂ hx₂.1 hx₂.2.1 hx₂.2.2.1 hx₂.2.2.2 hal hok
-      hexW hexD hexC (fun _ _ => trivial) fun s' _ _ _ _ c y z r w sp f =>
-        WP.mono (g₂ s' c y z r w sp f) fun _ g => ⟨g, trivial⟩) fun _ q => q.1) fun m₁ m₂ mo₁ mo₂ => ?_)
+      hexW hexD hexC (fun _ _ => trivial) fun s' _ _ _ _ c y z r w sp f hd =>
+        WP.mono (g₂ s' c y z r w sp f hd) fun _ g => ⟨g, trivial⟩) fun _ q => q.1) fun m₁ m₂ mo₁ mo₂ => ?_)
   refine omB_relD v L o₁.rounds mo₁ mo₂ (disj_ex (keep_of_sub (fastFrame_work W) o₁.ddW) hexD)
     (disj_ex (keep_of_sub (fastFrame_work W) o₁.dcW) hexC) ?_
   rw [mo₁.x27, mo₂.x27, tagBit o₁ rt₁ hok, tagBit o₂ rt₂ hok, hb]
@@ -230,6 +241,7 @@ theorem openWithEX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw
       Region.Sub ⟨Y, 16⟩ (workR (stackArg σ w)) → Region.Sub ⟨S, 256⟩ (workR (stackArg σ w)) →
       s.rd = σ.rd → s.wr = σ.wr → s.sp = σ.sp →
       Frame [workR (stackArg σ w), ⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩] σ.mem s.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨σ.gpr .x6, (σ.gpr .x7).toNat⟩ : Region) →
       WP isa cl s fun u => GhPost s (σ.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb u (ex σ))
     (hrel : ∀ {σ₁ σ₂ s₁ s₂ : State} {Y Dd S : Addr} {nb : Nat}, pre σ₁ → pre σ₂ → onePub (w + 1) σ₁ σ₂ →
       GhCall s₁ (σ₁.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
@@ -240,6 +252,7 @@ theorem openWithEX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw
       Frame [workR (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₁.mem s₁.mem →
       s₂.rd = σ₂.rd → s₂.wr = σ₂.wr →
       Frame [workR (stackArg σ₁ w), ⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩] σ₂.mem s₂.mem →
+      Region.Sub ⟨Dd, 16 * nb⟩ (⟨σ₁.gpr .x6, (σ₁.gpr .x7).toNat⟩ : Region) →
       RelCT isa (Eq2 s₁ s₂) cl TT) :
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (Impl.AesGcm.AArch64.Fast.openWithE v.callees (8 * w) cl) := by
@@ -279,14 +292,14 @@ theorem openWithEX_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw
     refine openRestWith_rel v₁ v₂ y12₁ y12₂
       (fun o' hT hok hx => have e := regs kk₁ hx
         openRunWith_postE cl v hMK o' hc.2 e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 hT hok (hexW p₁) (hexD p₁) (hexC p₁)
-          fun s' _ _ _ _ c sY sS hr hw hsp hf => hgh p₁ c sY sS hr hw hsp hf)
+          fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh p₁ c sY sS hr hw hsp hf hd)
       (fun o' hT hok hx => have e := regs kk₂ hx
         openRunWith_postE cl v hMK o' hc.2 e.1 e.2.1 e.2.2.1 e.2.2.2 hc.1 hT hok (hexW p₁) (hexD p₁) (hexC p₁)
-          fun s' _ _ _ _ c sY sS hr hw hsp hf => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf)
+          fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd)
       fun p₁' p₂' rt₁ rt₂ hok hx₁ hx₂ => openRunWith_relX v cl hMK (hexW p₁) (hexD p₁) (hexC p₁) p₁' p₂' hc.2 (regs kk₁ hx₁) (regs kk₂ hx₂)
-        hc.1 rt₁ rt₂ hok hb (fun s' _ _ _ _ c sY sS hr hw hsp hf => hgh p₁ c sY sS hr hw hsp hf)
-        (fun s' _ _ _ _ c sY sS hr hw hsp hf => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf)
-        fun c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ => hrel p₁ p₂ hq₀ c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂
+        hc.1 rt₁ rt₂ hok hb (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh p₁ c sY sS hr hw hsp hf hd)
+        (fun s' _ _ _ _ c sY sS hr hw hsp hf hd => hgh₂ p₂ c sY sS hr hw (hsp.trans qsp) hf hd)
+        fun c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd => hrel p₁ p₂ hq₀ c₁ c₂ sY sS sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ hd
   · exact openRestWith_rel v₁ v₂ y12₁ y12₂ (fun o' hT hok _ => openMain_post v o' hT hok)
       (fun o' hT hok _ => openMain_post v o' hT hok) fun p₁' p₂' rt₁ rt₂ hok _ _ =>
         openMain_rel v p₁' p₂' rt₁ rt₂ hok hb
@@ -312,7 +325,8 @@ theorem openWithE_ct (v : GcmImpl) (cl : Prog isa) (hMK : MulKey) {w : Nat} (hw 
     ConstantTime isa pre (fun s₁ s₂ => onePub (w + 1) s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
       (Impl.AesGcm.AArch64.Fast.openWithE v.callees (8 * w) cl) :=
   openWithEX_ct v cl hMK hw hpre (ex := fun _ => []) (fun _ => by simp) (fun _ => by simp) (fun _ => by simp)
-    (fun _ => rfl) hgh hrel
+    (fun _ => rfl) (fun p c y z r w sp f _ => hgh p c y z r w sp f)
+    fun p₁ p₂ hq c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂ _ => hrel p₁ p₂ hq c₁ c₂ y z sp₁ sp₂ r₁ w₁ f₁ r₂ w₂ f₂
 
 /-- `vg_aes_gcm_open` with the path for TLS records, its whole blocks hashed
 by `gh`, is constant time, for a `gh` that hashes as `vg_ghash` and leaks the
