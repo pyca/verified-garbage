@@ -7,6 +7,12 @@ pub const USES: &[&str] = &["rsa_keygen", "miller_rabin"];
 
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 pub fn bench(c: &mut Criterion) {
+    // Not measured on ARMv7 for now: its key generation (32 × 32-bit products
+    // from four 16-bit `mul`s, the model leaving out `umull`) takes these
+    // groups past the Benchmarks job's 30-minute timeout.
+    if cfg!(target_arch = "arm") {
+        return;
+    }
     use std::hint::black_box;
 
     use aws_lc_rs::rsa::{KeyPair, KeySize};
