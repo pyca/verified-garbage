@@ -557,4 +557,23 @@ theorem verified (hcs : TblShape A.R.E.combConsts) (hsat : ∃ s, A.contract.pre
 
 end RfcAny
 
+/-- The notes on the implementation, for scalars of `q` bytes signed by
+`core`; `wide` if they are longer than every hash function's output, of
+`nb` bits. -/
+def anyNotes (q : Nat) (core : String) (wide : Bool := false) (nb : Nat := 8 * q) : String :=
+  "Calls HMAC's `init`, the streaming `update` and HMAC's `finalize` of the hash function `hash` names, \
+  each through a dispatch on `hash` (a public argument), using the start of `scratch` for HMAC's states, \
+  working space and messages. " ++
+  (if wide then "Computes `h = bits2octets(digest)` as the digest after zero bytes (its integer is below `n`), \
+    and each candidate `k`, the leftmost " ++ toString nb ++ " bits of successive `V`s, and the digest for the \
+    signature are shifted into " ++ toString q ++ " bytes with word loads, shifts and stores. "
+  else "Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost " ++
+    toString q ++ " bytes (after zero bytes, for a shorter digest); each candidate `k` is the leftmost " ++
+    toString q ++ " bytes of successive `V`s. ") ++
+  "Each candidate is tried with `" ++ core ++ "`, which uses all of `scratch`; whether to try another is \
+  computed without branches from its result and the count of candidates left, so the code branches only on \
+  that and on `hash`. `K`, `V`, `h`, the candidate, the count, the pointers and the hash function's sizes are \
+  kept in a 520-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 bytes \
+  below it."
+
 end VG.Proof.Ecdsa.Rfc6979.X86_64

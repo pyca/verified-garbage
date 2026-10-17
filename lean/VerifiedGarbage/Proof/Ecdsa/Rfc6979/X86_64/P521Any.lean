@@ -19,10 +19,11 @@ public import VerifiedGarbage.Proof.P521.Comb7
 /-!
 # Deterministic ECDSA over P-521 on x86-64, with the hash function as an argument
 
-P-521 as the proof's curve with a tier `T` of hash functions, and its multiplication with BMI2 and ADX (`adx`) or without
-(`any`), and the contract `Spec.Ecdsa.Rfc6979.P521Sha512.inst.signAnyContract`
-for 544 bytes of stack and the comb's table, which a state permits (`sat`):
-`vg_ecdsa_p521_rfc6979_sign` is verified (`sign_verified`).
+P-521 as the proof's curve, with a tier `T` of hash functions and its multiplication
+with BMI2 and ADX (`adx`) or without (`any`); the contract
+`Spec.Ecdsa.Rfc6979.P521Sha512.inst.signAnyContract` for 544 bytes of stack and the
+comb's table, which a state permits (`sat`): `vg_ecdsa_p521_rfc6979_sign` is
+verified (`sign_verified`).
 -/
 
 @[expose] public section
@@ -76,7 +77,8 @@ theorem sat (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
 theorem sign_verified (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (T : Tier) :
-    Verified X86_64.target (any adx hL hT hI T).code (any adx hL hT hI T).contract :=
-  (any adx hL hT hI T).verified (shape adx hL hT hI T) (sat adx hL hT hI T)
+    Verified X86_64.target (any adx hL hT hI T).code
+      (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signAnyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 544) := by
+  cases adx <;> exact (any _ hL hT hI T).verified (shape _ hL hT hI T) (sat _ hL hT hI T)
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64.P521Any
