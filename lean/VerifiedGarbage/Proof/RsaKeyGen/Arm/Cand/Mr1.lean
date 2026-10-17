@@ -75,7 +75,7 @@ theorem mr_facts {σ : State} (pre : In P σ) (hm : EM P σ) :
     rw [take_rB hLr]; rfl
   refine ⟨?_, by rw [(VG.Proof.RsaKeyGen.cand_bits (by omega) sh).2.2]; omega,
     VG.Proof.RsaKeyGen.primalityTest_cand (by omega) sh _, VG.Proof.RsaKeyGen.checksW_eq _ (by omega) (by omega)⟩
-  rw [← pre.sch, VG.Proof.RsaKeyGen.sched_mr (by rw [ec]; exact hcl) (by rw [ec]; exact hco)
+  rw [← pre.sch hLr, VG.Proof.RsaKeyGen.sched_mr (by rw [ec]; exact hcl) (by rw [ec]; exact hco)
     (by rw [ec]; unfold gv at hg; simp [hg]), ec]
   rfl
 

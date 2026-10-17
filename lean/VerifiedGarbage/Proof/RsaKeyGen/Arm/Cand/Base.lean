@@ -156,7 +156,7 @@ structure In (P : CP) (σ : State) : Prop where
   aS : fw σ.mem P aoS = P.B
   aSl : fw σ.mem P aoSl = BitVec.ofNat 32 P.SL
   eB : Spec.Rsa.bytesAt σ.mem (State.addr P.eP) P.el = P.eB
-  sch : VG.Proof.RsaKeyGen.schedOf P.L P.e (Spec.RsaKeyGen.otherPrime (pB P σ)) (rB P σ) = P.sch
+  sch : P.L ≤ P.rl → VG.Proof.RsaKeyGen.schedOf P.L P.e (Spec.RsaKeyGen.otherPrime (pB P σ)) (rB P σ) = P.sch
 
 /-! ## Sizes -/
 
