@@ -120,7 +120,8 @@ theorem omB_rel (v : GcmImpl) {Ctx W SP D Np A : Addr} {R nl al n tl : Nat}
   unfold omB
   have tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  refine rel_seq ?_ (omIte_ok v L hR ddW dcW mo₁ hfr) (omIte_ok v L hR ddW dcW mo₂ hfr)
+  refine rel_seq ?_ (omIte_ok v L hR mo₁ (keep_of_sub hfr ddW) (keep_of_sub hfr dcW))
+    (omIte_ok v L hR mo₂ (keep_of_sub hfr ddW) (keep_of_sub hfr dcW))
     fun a b ⟨ea, xa, _, _⟩ ⟨eb, xb, _, _⟩ =>
       rel_taint [.x27] (by rw [ea.sp, eb.sp]) (by agree_tac [xa, xb, hx]) tm
   have x27₁ := mo₁.x27
