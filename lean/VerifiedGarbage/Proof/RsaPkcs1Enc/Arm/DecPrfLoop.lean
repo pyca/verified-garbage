@@ -10,7 +10,7 @@ import all Init.Data.Vector.Basic
 /-!
 # RSAES-PKCS1-v1_5 decryption on ARMv7: an IRPRF loop
 
-Block `i` of an IRPRF loop (`body_vp`): its message, HMAC's `init` with
+Block `i` of an IRPRF loop (`prfBody_vp`): its message, HMAC's `init` with
 `KDK`, `update` with the message and `finalize` to the block's place, and
 the counter; then the loop (`loop_vp`), from block 0 to all `nb` blocks.
 -/
@@ -210,7 +210,7 @@ theorem cmp_vp {n : Nat} (hn : i + 1 + n = R.nb) :
     rw [show R.nb - n = i + 1 by omega]
     exact ⟨hc', by rw [u.mem]; exact sI⟩
 
-theorem body_vp
+theorem prfBody_vp
     (cert : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r1, .r3]) (.block (msgBytes R.vs R.len))
       hc).isSome = true) {n : Nat} (hn : i + 1 + n = R.nb) :
     VP (B0 P R i) (prfBody decFns R.vs R.len R.dst) fun σ s =>
@@ -227,7 +227,7 @@ theorem loop_vp
   have h1 := R.nb1
   refine (VP.loop (I := LI P R) (fun n => ?_) (R.nb - 1)).mono (fun σ s h => ?_) fun _ _ h => h
   · by_cases hn : n + 1 ≤ R.nb
-    · exact (body_vp (i := R.nb - (n + 1)) cert (by omega)).mono (fun _ _ h => h.2) fun _ _ h => h
+    · exact (prfBody_vp (i := R.nb - (n + 1)) cert (by omega)).mono (fun _ _ h => h.2) fun _ _ h => h
     · exact VP.of_false fun _ _ h => hn h.1
   · refine ⟨by omega, ?_⟩
     rw [show R.nb - (R.nb - 1 + 1) = 0 by omega]; exact h
