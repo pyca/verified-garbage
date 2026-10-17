@@ -125,9 +125,9 @@ Modelling choices:
   `SCTLR_ELx.A` is 1 (DDI 0487 B2.5.2, "Alignment of data accesses"), which
   Linux, macOS and Windows leave 0 for user code.
 * The AdvSIMD data-processing instructions modelled here (MOV = ORR, MOVI,
-  DUP, INS, UMOV, AND, ORR, EOR, BIC, ORN, NOT, BSL, BIT, BIF, CMEQ, ADD,
-  SUB, SHL, USHR, SSHR, SRI, SLI, EXT, REV32, REV64, ZIP1, ZIP2, TRN1, TRN2,
-  UZP1, UZP2, TBL, TBX, UMULL, UMLAL, PMULL, MUL, MLA, MLS, SQDMULH, UMIN), and the cryptographic ones
+  DUP, INS, UMOV, AND, ORR, EOR, BIC, ORN, NOT, BSL, BIT, BIF, CMEQ, CMHI,
+  CMHS, ADD, SUB, ADDV, UADDLV, SHL, USHR, SSHR, SRI, SLI, EXT, REV32, REV64,
+  ZIP1, ZIP2, TRN1, TRN2, UZP1, UZP2, TBL, TBX, UMULL, UMLAL, PMULL, MUL, MLA, MLS, SQDMULH, UMIN), and the cryptographic ones
   (AESE, AESD, AESMC, AESIMC, SHA1C, SHA1P, SHA1M, SHA1H, SHA1SU0, SHA1SU1,
   SHA256H, SHA256H2, SHA256SU0, SHA256SU1, SHA512H, SHA512H2, SHA512SU0,
   SHA512SU1, EOR3, BCAX, RAX1, XAR), and SVE2's XAR, are all among those whose
@@ -234,6 +234,11 @@ inductive VRevOp | rev32b | rev32h | rev64b | rev64s
 inductive VMulHOp | mul | mla | mls | sqdmulh | sqrdmulh
   deriving DecidableEq, Repr
 
+/-- The unsigned comparisons of lanes CMHI (higher) and CMHS (higher or
+same). -/
+inductive VCmpOp | hi | hs
+  deriving DecidableEq, Repr
+
 /-- The bitwise selects BSL, BIT and BIF. -/
 inductive VSelOp | bsl | bit | bif
   deriving DecidableEq, Repr
@@ -263,6 +268,8 @@ inductive VOp
   | insE (a : VArr) (d : VReg) (i : Nat) (n : VReg) (j : Nat)
   /-- `cmeq vd.<a>, vn.<a>, vm.<a>` (CMEQ (register)) -/
   | cmeq (a : VArr) (d n m : VReg)
+  /-- `cmhi`/`cmhs vd.<a>, vn.<a>, vm.<a>` (CMHI (register), CMHS (register)) -/
+  | cmp (op : VCmpOp) (a : VArr) (d n m : VReg)
   /-- `bsl`/`bit`/`bif vd.16b, vn.16b, vm.16b` -/
   | bsel (op : VSelOp) (d n m : VReg)
   /-- `and`/`orr`/`eor`/`bic`/`orn vd.16b, vn.16b, vm.16b` -/
@@ -273,6 +280,13 @@ inductive VOp
   | add (a : VArr) (d n m : VReg)
   /-- `sub vd.<a>, vn.<a>, vm.<a>` (SUB (vector)) -/
   | sub (a : VArr) (d n m : VReg)
+  /-- `addv bd, vn.16b` / `addv hd, vn.8h` / `addv sd, vn.4s` (ADDV): the sum of
+  the lanes, a scalar of the lane size (`.2d` faults: no such form) -/
+  | addv (a : VArr) (d n : VReg)
+  /-- `uaddlv hd, vn.16b` / `uaddlv sd, vn.8h` / `uaddlv dd, vn.4s` (UADDLV): the
+  unsigned sum of the lanes, a scalar of twice the lane size (`.2d` faults: no
+  such form) -/
+  | uaddlv (a : VArr) (d n : VReg)
   /-- `shl`/`ushr`/`sri`/`sli vd.<a>, vn.<a>, #sh` -/
   | shift (op : VShiftOp) (a : VArr) (d n : VReg) (sh : Nat)
   /-- `ext vd.16b, vn.16b, vm.16b, #imm` -/
@@ -620,6 +634,18 @@ def VArr.ofLanes (a : VArr) (ls : List (BitVec 128)) : BitVec 128 :=
   | .b16 => ofVBytes fun e => (l e).setWidth 8
   | .h8 => ofVHalves fun e => (l e).setWidth 16
 
+/-- The test of CMHI (`element1 > element2`) and CMHS (`element1 >=
+element2`) on lanes `x` of `V[n]` and `y` of `V[m]`, as unsigned integers. -/
+def VCmpOp.test {w : Nat} (op : VCmpOp) (x y : BitVec w) : Bool :=
+  match op with
+  | .hi => decide (x.toNat > y.toNat)
+  | .hs => decide (x.toNat ≥ y.toNat)
+
+/-- The sum of the lanes of `x` in the arrangement `a`, each as an unsigned
+integer. -/
+def VArr.laneSum (a : VArr) (x : BitVec 128) : Nat :=
+  ((a.lanes x).map BitVec.toNat).sum
+
 /-- DDI 0487 C7.2, "ZIP1", "ZIP2", "TRN1", "TRN2", "UZP1", "UZP2", with
 `operand1 = V[n]` (lanes `n`) and `operand2 = V[m]` (lanes `m`), and `pairs`
 the number of lane pairs (`elements / 2`):
@@ -760,10 +786,22 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
   dst_index, esize] = element`;
 * "CMEQ (register)": `test_passed = (element1 == element2); Elem[result,
   e, esize] = if test_passed then Ones(esize) else Zeros(esize)`;
+* "CMHI (register)", "CMHS (register)": `element1 = Int(Elem[operand1, e,
+  esize], unsigned); element2 = Int(Elem[operand2, e, esize], unsigned);
+  test_passed = if cmp_eq then element1 >= element2 else element1 >
+  element2`, with `operand1 = V[n]`, `operand2 = V[m]`, and `Elem[result, e,
+  esize]` as for CMEQ;
 * "BSL", "BIT", "BIF": `VSelOp.eval`;
 * "AND", "ORR", "EOR", "BIC" (`operand1 AND NOT(operand2)`), "ORN"
   (`operand1 OR NOT(operand2)`) and "NOT" (vector, `.16b`);
 * "ADD (vector)", "SUB (vector)": lane-wise, modulo `2 ^ esize`;
+* "ADDV": `sum = Int(Elem[operand, 0, esize], unsigned); for e = 1 to
+  elements-1: sum = sum + Int(Elem[operand, e, esize], unsigned); V[d, esize]
+  = sum<esize-1:0>`; "UADDLV": the same sum, then `V[d, 2*esize] =
+  sum<2*esize-1:0>` (the sum of at most 16 lanes always fits). Each writes a
+  scalar register, so the other bits of `V[d]` are zero (`V[n, width] = value`
+  sets `_Z[n] = ZeroExtend(value, MAX_VL)`). Their 128-bit forms are `.16b`,
+  `.8h` and `.4s` (`size = '11'` is reserved), so `.2d` faults;
 * the shifts (`VShiftOp.eval`), the permutations (`VPermOp.eval`) and the
   reversals (`VRevOp.eval`);
 * "EXT": `concat = operand2:operand1; result = concat<position+127:position>`
@@ -835,6 +873,9 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
     else none
   | .cmeq a d n m =>
     some (d, a.map2 (fun w x y => if x = y then BitVec.allOnes w else 0) (s.v n) (s.v m))
+  | .cmp op a d n m =>
+    some (d, a.map2 (fun w x y =>
+      if op.test x y then BitVec.allOnes w else 0) (s.v n) (s.v m))
   | .bsel op d n m => some (d, op.eval (s.v d) (s.v n) (s.v m))
   | .logic op d n m =>
     let a := s.v n
@@ -845,6 +886,10 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .not d n => some (d, ~~~(s.v n))
   | .add a d n m => some (d, a.map2 (fun _ x y => x + y) (s.v n) (s.v m))
   | .sub a d n m => some (d, a.map2 (fun _ x y => x - y) (s.v n) (s.v m))
+  | .addv a d n =>
+    if a ≠ .d2 then some (d, BitVec.ofNat 128 (a.laneSum (s.v n) % 2 ^ a.esize)) else none
+  | .uaddlv a d n =>
+    if a ≠ .d2 then some (d, BitVec.ofNat 128 (a.laneSum (s.v n) % 2 ^ (2 * a.esize))) else none
   | .shift op a d n sh =>
     if op.ok a.esize sh then some (d, a.map2 (fun w x y => op.eval sh w x y) (s.v d) (s.v n))
     else none

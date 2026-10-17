@@ -80,6 +80,17 @@ def VPermOp.name : VPermOp → String
 def VMulHOp.name : VMulHOp → String
   | .mul => "mul" | .mla => "mla" | .mls => "mls" | .sqdmulh => "sqdmulh" | .sqrdmulh => "sqrdmulh"
 
+def VCmpOp.name : VCmpOp → String
+  | .hi => "cmhi" | .hs => "cmhs"
+
+/-- The scalar register of a lane of the arrangement (`b<n>`, `h<n>`, `s<n>`,
+`d<n>`), or of twice its size if `long`, as in ADDV and UADDLV. -/
+def VReg.scalar (r : VReg) (a : VArr) (long : Bool) : String :=
+  let p := match a, long with
+    | .b16, false => "b" | .h8, false | .b16, true => "h" | .s4, false | .h8, true => "s"
+    | .d2, false | .s4, true => "d" | .d2, true => "q"
+  s!"{p}{r.index}"
+
 def Sha1Op.name : Sha1Op → String
   | .c => "sha1c" | .p => "sha1p" | .m => "sha1m"
 
@@ -98,11 +109,14 @@ def VOp.asm : VOp → String
   | .dupE a d n i => s!"dup {d.arr a.name}, v{n.index}.{a.elem}[{i}]"
   | .insE a d i n j => s!"mov v{d.index}.{a.elem}[{i}], v{n.index}.{a.elem}[{j}]"
   | .cmeq a d n m => s!"cmeq {d.arr a.name}, {n.arr a.name}, {m.arr a.name}"
+  | .cmp op a d n m => s!"{op.name} {d.arr a.name}, {n.arr a.name}, {m.arr a.name}"
   | .bsel op d n m => s!"{op.name} {d.b}, {n.b}, {m.b}"
   | .logic op d n m => s!"{op.name} {d.b}, {n.b}, {m.b}"
   | .not d n => s!"not {d.b}, {n.b}"
   | .add a d n m => s!"add {d.arr a.name}, {n.arr a.name}, {m.arr a.name}"
   | .sub a d n m => s!"sub {d.arr a.name}, {n.arr a.name}, {m.arr a.name}"
+  | .addv a d n => s!"addv {d.scalar a false}, {n.arr a.name}"
+  | .uaddlv a d n => s!"uaddlv {d.scalar a true}, {n.arr a.name}"
   | .shift op a d n sh => s!"{op.name} {d.arr a.name}, {n.arr a.name}, #{sh}"
   | .ext d n m imm => s!"ext {d.b}, {n.b}, {m.b}, #{imm}"
   | .rev .rev32b d n => s!"rev32 {d.b}, {n.b}"
