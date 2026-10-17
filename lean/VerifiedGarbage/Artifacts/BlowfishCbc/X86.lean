@@ -17,15 +17,15 @@ def note : String :=
   `Impl/Modes/X86/`, over Blowfish's ECB block."
 
 def artifacts : List Artifact := [
-  Spec.Blowfish.cbcEncryptApi.artifact X86.target {
-    notes := [note]
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcEncrypt
+  Spec.Blowfish.cbcEncryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
+    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcEncryptChained
     stack := 112
-    verified := Proof.Blowfish.X86.cbcEncrypt_framed },
-  Spec.Blowfish.cbcDecryptApi.artifact X86.target {
-    notes := [note]
-    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcDecrypt
+    verified := Proof.Blowfish.X86.Cbc.cbcEncryptChained_framed },
+  Spec.Blowfish.cbcDecryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
+    code := Impl.StackScratch.X86.withStackScratchWiped 112 4 22 Impl.Blowfish.X86.cbcDecryptChained
     stack := 112
-    verified := Proof.Blowfish.X86.cbcDecrypt_framed }]
+    verified := Proof.Blowfish.X86.Cbc.cbcDecryptChained_framed }]
 
 end VG.Artifacts.BlowfishCbc.X86

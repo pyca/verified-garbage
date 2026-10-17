@@ -2,23 +2,25 @@
 //! Verified `blowfish_cbc` functions for `x86`.
 #![allow(dead_code)]
 
-/// Blowfish-CBC encryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`. No padding is added.
+/// Blowfish-CBC encryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Blowfish encryption under the schedule written by `vg_blowfish_expand_key`. No padding is added.
 ///
-/// Contract: `VG.Spec.Blowfish.cbcEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Blowfish.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// One block at a time: each S-box lookup reads the 256 entries of its four byte planes under masks, as in ECB, and the schedule is read in place through its argument. The mode is the generic CBC of `Impl/Modes/X86/`, over Blowfish's ECB block.
+///
+/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_blowfish_cbc_encrypt(schedule: *const [u8; 4168], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_cbc_encrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea esp, [esp-112]
 mov eax, DWORD PTR [esp+116]
@@ -399,6 +401,11 @@ jne 22b
 jmp 21f
 20:
 21:
+mov esi, DWORD PTR [esp+8]
+mov eax, DWORD PTR [edi+72]
+mov DWORD PTR [esi], eax
+mov eax, DWORD PTR [edi+76]
+mov DWORD PTR [esi+4], eax
 mov ebx, DWORD PTR [edi+48]
 mov esi, DWORD PTR [edi+52]
 mov ebp, DWORD PTR [edi+60]
@@ -432,23 +439,25 @@ ret
     )
 }
 
-/// Blowfish-CBC decryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is Blowfish decryption under the schedule written by `vg_blowfish_expand_key`. No padding is removed.
+/// Blowfish-CBC decryption (NIST SP 800-38A §6.2, Schneier, FSE 1994) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Blowfish decryption under the schedule written by `vg_blowfish_expand_key`. No padding is removed.
 ///
-/// Contract: `VG.Spec.Blowfish.cbcDecryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+/// Contract: `VG.Spec.Blowfish.cbcDecryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
 ///
 /// One block at a time: each S-box lookup reads the 256 entries of its four byte planes under masks, as in ECB, and the schedule is read in place through its argument. The mode is the generic CBC of `Impl/Modes/X86/`, over Blowfish's ECB block.
+///
+/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 4168 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_blowfish_cbc_decrypt(schedule: *const [u8; 4168], iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_blowfish_cbc_decrypt_chained(schedule: *const [u8; 4168], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea esp, [esp-112]
 mov eax, DWORD PTR [esp+116]
@@ -833,6 +842,11 @@ jne 22b
 jmp 21f
 20:
 21:
+mov esi, DWORD PTR [esp+8]
+mov eax, DWORD PTR [edi+72]
+mov DWORD PTR [esi], eax
+mov eax, DWORD PTR [edi+76]
+mov DWORD PTR [esi+4], eax
 mov ebx, DWORD PTR [edi+48]
 mov esi, DWORD PTR [edi+52]
 mov ebp, DWORD PTR [edi+60]
