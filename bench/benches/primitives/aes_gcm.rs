@@ -44,6 +44,36 @@ pub fn bench(c: &mut Criterion) {
     let key = [0x42; 16];
     let nonce = [0x24; 12];
     let aad = [0x5a; 16];
+    // Measurement only: GHASH alone, as a seal of additional data with no
+    // text (which hashes it with one call of `vg_ghash`).
+    for (bits, k) in [(128, &[0x42u8; 16][..]), (256, &[0x42u8; 32][..])] {
+        let alg = if bits == 128 {
+            &AES_128_GCM
+        } else {
+            &aws_lc_rs::aead::AES_256_GCM
+        };
+        let mut g = c.benchmark_group(format!("aes-{bits}-gcm-aad-only"));
+        for size in [10000usize, 16384] {
+            let a = vec![0x5au8; size];
+            g.throughput(Throughput::Bytes(size as u64));
+            let vg = AesGcm::new(k).unwrap();
+            g.bench_with_input(BenchmarkId::new(VG, size), &size, |b, _| {
+                b.iter(|| vg.encrypt_in_place(&nonce, black_box(&a), &mut []).unwrap())
+            });
+            let aws = LessSafeKey::new(UnboundKey::new(alg, k).unwrap());
+            g.bench_with_input(BenchmarkId::new(AWS_LC, size), &size, |b, _| {
+                b.iter(|| {
+                    aws.seal_in_place_separate_tag(
+                        Nonce::assume_unique_for_key(nonce),
+                        Aad::from(black_box(&a[..])),
+                        &mut [],
+                    )
+                    .unwrap()
+                })
+            });
+        }
+        g.finish();
+    }
     let cipher = Cipher::aes_128_gcm();
     let aws_lc_key = |key: &[u8]| LessSafeKey::new(UnboundKey::new(&AES_128_GCM, key).unwrap());
     let mut sizes = [SIZES.as_slice(), RECORD_SIZES.as_slice()].concat();
