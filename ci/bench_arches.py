@@ -1,14 +1,16 @@
 """Chooses which architectures' benchmarks a change needs.
 
-    git diff --name-only BASE HEAD | python3 ci/bench_arches.py
+    git diff --name-only BASE HEAD | python3 ci/bench_arches.py [--base BASE]
     python3 ci/bench_arches.py --all [--arches ARCHES] [--cpu-features CONFIGS] [--modules MODULES]
     python3 ci/bench_arches.py --choices
 
 Prints a JSON list of platforms (see `PLATFORMS`) for the Benchmarks
-workflow's matrix: an architecture is benchmarked when its own assembly
-(`src/asm/<arch>/`) changed, or anything shared by every architecture (the
-rest of `src/`, the benchmarks, the dependencies, the comparison). Changes
-to other files (e.g. Lean that leaves `src/asm/` as it was) need none.
+workflow's matrix. Given a change, it prints what the change needs, to scope
+a manual run of the workflow by: an architecture is benchmarked when its own
+assembly (`src/asm/<arch>/`) changed, or anything shared by every
+architecture (the rest of `src/`, the benchmarks, the dependencies, the
+comparison). Changes to other files (e.g. Lean that leaves `src/asm/` as it
+was) need none.
 
 A Rust file outside `src/asm/<arch>/` counts as changed on an architecture
 only if what that architecture compiles of it changed: without comments,
@@ -102,9 +104,10 @@ With a `BENCHMARKS_PER_JOB`, each configuration is split into jobs of at most
 that many of the benchmarks it runs (`shard` is `i/n`, empty for one):
 `bench_compare.py --shard` runs that share of them.
 
-A pull request never runs every benchmark of an architecture, which takes
-dozens of jobs: `--base` leaves out the architectures a change needs every
-benchmark on (`modules` empty), and names them on stderr, for a manual run.
+A run of every benchmark of an architecture takes dozens of jobs: `--base`
+leaves out the architectures a change needs every benchmark on (`modules`
+empty), and names them on stderr, to run only if the change must be measured
+there.
 
 `--all` (the workflow's manual runs) runs every benchmark in every
 configuration of every architecture, or, for a targeted run, only those of
@@ -1139,9 +1142,9 @@ def without_full_runs(matrix):
     if not full:
         return matrix, None
     return [p for p in matrix if p["arch"] not in full], (
-        f"This change needs every benchmark on {', '.join(full)}, which pull requests never run:"
-        " run the Benchmarks workflow by hand (workflow_dispatch) with base_commit set to the"
-        f" base and arches='{' '.join(full)}' to compare them, or narrow the change.")
+        f"This change needs every benchmark on {', '.join(full)}, dozens of jobs: only if it must"
+        " be measured there, run the Benchmarks workflow by hand (workflow_dispatch) with"
+        f" base_commit set to the base and arches='{' '.join(full)}', or narrow the change.")
 
 
 def run_requirements(arch, modules, catalogs, revisions):
