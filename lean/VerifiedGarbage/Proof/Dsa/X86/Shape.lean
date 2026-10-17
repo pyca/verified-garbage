@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeInspectQ
 public import VerifiedGarbage.Proof.Dsa.X86.DigestPrefix
+public import VerifiedGarbage.Proof.Dsa.Accepted
 
 /-! # Complete public domain-shape check, including its rejection flag -/
 
@@ -9,11 +10,6 @@ public import VerifiedGarbage.Proof.Dsa.X86.DigestPrefix
 namespace VG.Proof.Dsa.X86
 open VG VG.X86 VG.X86.Wp VG.Proof.Mont VG.Proof.Mont.X86 VG.Proof.Mont.X86.Dynamic
 open VG.Impl.Mont.X86 VG.Impl.Mont.X86.Dynamic VG.Impl.Dsa.X86 VG.Proof.Ecdsa.X86
-
-def shapeValid (p q : Nat) : Prop :=
-  Spec.Dsa.supportedSizes (Spec.Dsa.bitLength p) (Spec.Dsa.bitLength q) ∧ (q % 2 = 1 ∧ p % 2 = 1)
-
-instance (p q : Nat) : Decidable (shapeValid p q) := inferInstanceAs (Decidable (_ ∧ _))
 
 theorem shape_ok {s : State} {base : Addr} {size pLen qLen p q : Nat}
     (hs : Scr s base size) (hz : VG.Impl.Dsa.X86.Layout.saved ≤ size)

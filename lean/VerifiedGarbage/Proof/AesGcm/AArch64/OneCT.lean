@@ -180,14 +180,14 @@ theorem ldr9_ok {s : State} {W : Addr} {k : Nat} (hk : k % 8 = 0 ∧ k < 32768)
   WP.of_runBlock ⟨s', run, x9, g, sp, rd, wr⟩
 
 /-- The entry of `seal` and `open` in two runs, with `work` at `sp + k`. -/
-theorem entry_rel {σ₁ σ₂ : State} {W : Addr} {k : Nat} (hk : k = 8 ∨ k = 16)
+theorem entry_rel {σ₁ σ₂ : State} {W : Addr} {k : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 24)
     (hW₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 k) 64 = W) (hW₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 k) 64 = W)
     (hsp₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 k) 8)
     (hsp₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 k) 8)
     (hw₁ : Covers [⟨W, 2560⟩] σ₁.wr) (hw₂ : Covers [⟨W, 2560⟩] σ₂.wr) (qsp : σ₁.sp = σ₂.sp)
     (hq : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7], σ₁.gpr r = σ₂.gpr r) :
     RelCT isa (Eq2 σ₁ σ₂) (.block (oneEntry k)) TT := by
-  have hk' : k % 8 = 0 ∧ k < 32768 := by rcases hk with rfl | rfl <;> decide
+  have hk' : k % 8 = 0 ∧ k < 32768 := by rcases hk with rfl | rfl | rfl <;> decide
   have run : ∀ {σ : State}, σ.mem.readW (σ.sp + BitVec.ofNat 64 k) 64 = W →
       InRegions (σ.rd ++ σ.wr) (σ.sp + BitVec.ofNat 64 k) 8 → Covers [⟨W, 2560⟩] σ.wr →
       WP isa (.block ([.ldrSp .x9 k] ++ save .x9)) σ fun s' => s'.gpr .x9 = W ∧
@@ -196,7 +196,7 @@ theorem entry_rel {σ₁ σ₂ : State} {W : Addr} {k : Nat} (hk : k = 8 ∨ k =
       obtain ⟨s₂, run₂, g₂, sp₂, _, _, _⟩ := save_ok s₁ .x9 x9₁ (by rw [wr₁]; exact hw)
       exact WP.of_runBlock ⟨s₂, run₂, by rw [g₂, x9₁], fun r hr => by rw [g₂, g₁ r hr], by rw [sp₂, sp₁]⟩)
   have t₁ : ∃ h, (taint.check (Taint.ofRegs []) (.block [.ldrSp .x9 k]) h).isSome = true := by
-    rcases hk with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+    rcases hk with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   have t₂ : ∃ h, (taint.check (Taint.ofRegs [.x9]) (.block (save .x9)) h).isSome = true := ⟨_, by taint_decide⟩
   show RelCT isa _ (.block ([.ldrSp .x9 k] ++ save .x9 ++ _)) _
   refine RelCT.block_split (rel_seq (RelCT.block_split (rel_seq (rel_taint [] qsp (by agree_tac []) t₁)

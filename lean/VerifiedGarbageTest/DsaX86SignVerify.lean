@@ -1,15 +1,12 @@
 import VerifiedGarbage.Proof.Dsa.X86.SignSized
 import VerifiedGarbage.Proof.Dsa.X86.VerifySized
 import VerifiedGarbageTest.DsaX86Core
-import VerifiedGarbage.Proof.Dsa.X86.SignBytesSpec
-import VerifiedGarbage.Proof.Dsa.X86.VerifyBytesSpec
-import VerifiedGarbage.Proof.Dsa.X86.InvalidShapeSpec
+import VerifiedGarbage.Proof.Dsa.Accepted
 import VerifiedGarbage.Proof.Dsa.X86.SignBody
 import VerifiedGarbage.Proof.Dsa.X86.VerifyBody
 import VerifiedGarbage.Proof.Dsa.X86.SignCompute
 import VerifiedGarbage.Proof.Dsa.X86.VerifyCompute
 import VerifiedGarbage.Proof.Dsa.X86.WriteScalar
-import VerifiedGarbage.Proof.Dsa.X86.AcceptedSpec
 import VerifiedGarbage.Proof.Dsa.X86.Result
 import VerifiedGarbage.Impl.Dsa.X86.SignVerify
 
@@ -22,18 +19,18 @@ The public supported-size gate is tested separately. -/
 #assert_standard_axioms VG.Proof.Dsa.X86.verifySized_spec
 #assert_standard_axioms VG.Proof.Dsa.X86.signBody_spec
 #assert_standard_axioms VG.Proof.Dsa.X86.verifyBody_spec
-#assert_standard_axioms VG.Proof.Dsa.X86.signBytes_compute
-#assert_standard_axioms VG.Proof.Dsa.X86.verifyBytes_compute
-#assert_standard_axioms VG.Proof.Dsa.X86.signBytes_invalid_shape
-#assert_standard_axioms VG.Proof.Dsa.X86.verifyBytes_invalid_shape
+#assert_standard_axioms VG.Proof.Dsa.signBytes_compute
+#assert_standard_axioms VG.Proof.Dsa.verifyBytes_compute
+#assert_standard_axioms VG.Proof.Dsa.signBytes_invalid_shape
+#assert_standard_axioms VG.Proof.Dsa.verifyBytes_invalid_shape
 #assert_standard_axioms VG.Proof.Dsa.X86.signBody_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.verifyBody_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.signCompute_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.verifyCompute_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.result_ok
 #assert_standard_axioms VG.Proof.Dsa.X86.writeScalar_ok
-#assert_standard_axioms VG.Proof.Dsa.X86.publicChecks_spec
-#assert_standard_axioms VG.Proof.Dsa.X86.privateChecks_spec
+#assert_standard_axioms VG.Proof.Dsa.publicChecks_spec
+#assert_standard_axioms VG.Proof.Dsa.privateChecks_spec
 
 namespace VG.Test.DsaX86SignVerify
 open VG VG.X86 VG.Test.DsaX86Mont VG.Test.DsaX86Core VG.Impl.Dsa.X86

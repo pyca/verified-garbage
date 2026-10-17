@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Blowfish.X86
 public import VerifiedGarbage.Impl.Modes.X86.Seq
+public import VerifiedGarbage.Impl.Modes.CbcChained
 
 /-!
 # Blowfish's core for the modes on x86 (32-bit)
@@ -60,10 +61,10 @@ def dirCore (up : Bool) : Modes.X86.Core where
   G := 1
   bw := 2
 
-/-- `vg_blowfish_cbc_encrypt`, with its scratch buffer as the fifth argument. -/
-def cbcEncrypt : Prog isa := (dirCore true).seq (Modes.Mode.cbcEnc 2)
-/-- `vg_blowfish_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := (dirCore false).seq (Modes.Mode.cbcDec 2)
+/-- `vg_blowfish_cbc_encrypt_chained`, with its scratch buffer as the fifth argument. -/
+def cbcEncryptChained : Prog isa := (dirCore true).seq (Modes.Mode.cbcEncChained 2)
+/-- `vg_blowfish_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (dirCore false).seq (Modes.Mode.cbcDecChained 2)
 /-- `vg_blowfish_ofb`. -/
 def ofb : Prog isa := (dirCore true).seq (Modes.Mode.ofb 2)
 /-- `vg_blowfish_cfb64_encrypt`. -/

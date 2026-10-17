@@ -175,6 +175,8 @@ def ok : HashOK (hash v) where
     by simp only [hash] <;> decide, by simp only [hash] <;> decide⟩
   L := by simp only [hash] <;> decide
   W := by simp only [hash] <;> decide
+  hPad := by simp only [hash] <;> decide
+  L816 := by simp only [hash] <;> decide
 
 theorem satI : ∃ s, (Spec.Hmac.sha256I.initScratchContract AArch64.abi 16).pre s := by
   inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha256I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,

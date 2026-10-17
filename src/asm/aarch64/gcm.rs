@@ -689,52 +689,53 @@ ret
     )
 }
 
-/// The CPU features `vg_ghash_prepared8_aes` requires (`Artifact.features`).
-pub(crate) const VG_GHASH_PREPARED8_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+/// The CPU features `vg_ghash_with_powers_aes` requires (`Artifact.features`).
+pub(crate) const VG_GHASH_WITH_POWERS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// `vg_ghash` with `h` at byte 240 of a 384-byte context from `vg_aes_gcm_derive_prepared8`: the hash subkey `H` is the block at `h`, followed by the 8 prepared powers, which it may read. Replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (NIST SP 800-38D §6.4). The hash subkey, its powers, `Y` and the data are secret.
+/// `vg_ghash` with the 8 prepared powers of the hash subkey `H` at `h` at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (NIST SP 800-38D §6.4). The hash subkey, its powers, `Y` and the data are secret.
 ///
-/// Contract: `VG.Spec.Gcm.ghashPrepared8Contract`. Constant time: only the pointers and `n` may affect timing.
+/// Contract: `VG.Spec.Gcm.ghashWithPowersContract`. Constant time: only the pointers and `n` may affect timing.
 ///
-/// Uses PMULL as `vg_ghash_aes` does, loading `H'` and, on calls with at least eight blocks, `H'²` to `H'⁸` from the context (`H'ᵏ = Hᵏ · x⁻¹` is the prepared power) instead of computing them.
+/// Uses PMULL as `vg_ghash_aes` does, loading `H'` to `H'⁸` (`H'ᵏ = Hᵏ · x⁻¹`) from `pw` instead of computing them.
 ///
 /// # Safety
 ///
-/// * `h` must be valid for reads of 144 bytes.
+/// * `h` must be valid for reads of 16 bytes.
 /// * `y` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 256 bytes.
-/// * `h` must point at byte 240 of a key context with the 384-byte format written by `vg_aes_gcm_derive_prepared8`.
+/// * `pw` must be valid for reads of 128 bytes.
 /// * The contents of `scratch` on return are unspecified.
-/// * `y` and `scratch` must not overlap each other, `h` or `data` (distinct Rust objects never do).
-/// * None of `h`, `y`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `*pw` must be what a `*_store_powers` function wrote for the hash subkey at `h` (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and that subkey).
+/// * `y` and `scratch` must not overlap each other, `h`, `data` or `pw` (distinct Rust objects never do).
+/// * None of `h`, `y`, `data`, `scratch` and `pw` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ghash_prepared8_aes(h: *const [u8; 144], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32]) {
+pub(crate) unsafe extern "C" fn vg_ghash_with_powers_aes(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32], pw: *const [u64; 16]) {
     core::arch::naked_asm!(
         r".arch_extension aes
-ldr q16, [x0, #32]
+ldr q16, [x5, #16]
 ext v24.16b, v16.16b, v16.16b, #8
+ldr q17, [x5, #0]
+ext v25.16b, v17.16b, v17.16b, #8
+ldr q18, [x5, #48]
+ext v26.16b, v18.16b, v18.16b, #8
+ldr q19, [x5, #32]
+ext v27.16b, v19.16b, v19.16b, #8
+ldr q20, [x5, #80]
+ext v28.16b, v20.16b, v20.16b, #8
+ldr q21, [x5, #64]
+ext v29.16b, v21.16b, v21.16b, #8
+ldr q22, [x5, #112]
+ext v30.16b, v22.16b, v22.16b, #8
+ldr q23, [x5, #96]
+ext v31.16b, v23.16b, v23.16b, #8
 movz x5, #49664, lsl #48
 dup v1.2d, x5
 ldr q0, [x1, #0]
 rev64 v0.16b, v0.16b
 lsr x5, x3, #3
 cbz x5, 20f
-ldr q17, [x0, #16]
-ext v25.16b, v17.16b, v17.16b, #8
-ldr q18, [x0, #64]
-ext v26.16b, v18.16b, v18.16b, #8
-ldr q19, [x0, #48]
-ext v27.16b, v19.16b, v19.16b, #8
-ldr q20, [x0, #96]
-ext v28.16b, v20.16b, v20.16b, #8
-ldr q21, [x0, #80]
-ext v29.16b, v21.16b, v21.16b, #8
-ldr q22, [x0, #128]
-ext v30.16b, v22.16b, v22.16b, #8
-ldr q23, [x0, #112]
-ext v31.16b, v23.16b, v23.16b, #8
 22:
 movi v3.2d, #0
 movi v4.2d, #0
@@ -1002,6 +1003,492 @@ b 210f
 21:
 rev64 v0.16b, v0.16b
 str q0, [x1, #0]
+ret
+.arch_extension noaes
+.p2align 6",
+    )
+}
+
+/// The CPU features `vg_ghash_store_powers_aes` requires (`Artifact.features`).
+pub(crate) const VG_GHASH_STORE_POWERS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// `vg_ghash`, which also writes to `*pw` the 8 prepared powers of its hash subkey `H`: at byte `32*k`, for `k` from 0 to 3, `preparedPower(H^(2*k+2))` then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words (`VG.Spec.Gcm.Powers8Repr`, `VG.Spec.Gcm.preparedPower`). Its other results are those of `vg_ghash`. The powers are secret, as the hash subkey is: they may not affect timing. Contract: `VG.Spec.Gcm.ghashStorePowersContract`. Only the pointers and `n` may affect timing.
+///
+/// Uses PMULL as `vg_ghash_aes` does, computing `H'` to `H'⁸` on every call and storing them to `pw` after the hash.
+///
+/// # Safety
+///
+/// * `h` must be valid for reads of 16 bytes.
+/// * `y` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 256 bytes.
+/// * `pw` must be valid for reads and writes of 128 bytes.
+/// * The contents of `scratch` on return are unspecified.
+/// * `y`, `scratch` and `pw` must not overlap each other, `h` or `data` (distinct Rust objects never do).
+/// * None of `h`, `y`, `data`, `scratch` and `pw` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ghash_store_powers_aes(h: *const [u8; 16], y: *mut [u8; 16], data: *const [u8; 16], n: usize, scratch: *mut [u64; 32], pw: *mut [u64; 16]) {
+    core::arch::naked_asm!(
+        r".arch_extension aes
+add x8, x5, #0
+ldr q6, [x0, #0]
+rev64 v6.16b, v6.16b
+movz x5, #49664, lsl #48
+dup v1.2d, x5
+movz x6, #3, lsl #0
+movz x7, #17920, lsl #48
+mov v17.d[0], x6
+mov v17.d[1], x7
+mov v25.d[0], x7
+mov v25.d[1], x6
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v24.16b, v5.16b, v7.16b
+ext v16.16b, v24.16b, v24.16b, #8
+ldr q0, [x1, #0]
+rev64 v0.16b, v0.16b
+lsr x5, x3, #3
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v24.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v24.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v24.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v24.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v25.16b, v5.16b, v7.16b
+ext v17.16b, v25.16b, v25.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v25.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v25.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v25.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v25.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v26.16b, v5.16b, v7.16b
+ext v18.16b, v26.16b, v26.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v25.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v25.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v25.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v25.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v27.16b, v5.16b, v7.16b
+ext v19.16b, v27.16b, v27.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v27.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v27.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v27.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v27.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v28.16b, v5.16b, v7.16b
+ext v20.16b, v28.16b, v28.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v27.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v27.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v27.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v27.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v29.16b, v5.16b, v7.16b
+ext v21.16b, v29.16b, v29.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v27.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v27.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v27.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v27.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v30.16b, v5.16b, v7.16b
+ext v22.16b, v30.16b, v30.16b, #8
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+pmull v7.1q, v27.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v27.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v27.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v27.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v31.16b, v5.16b, v7.16b
+ext v23.16b, v31.16b, v31.16b, #8
+cbz x5, 20f
+22:
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v30.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v30.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v22.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v22.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #32]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v29.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v29.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v21.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v21.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #48]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v28.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v28.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v20.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v20.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #64]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #80]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #96]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #112]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v31.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v31.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v23.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v23.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #128
+sub x3, x3, #8
+lsr x5, x3, #3
+cbnz x5, 22b
+lsr x6, x3, #2
+cbz x6, 23f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v26.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v26.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v18.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v18.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #32]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #48]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v27.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v27.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v19.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v19.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #64
+sub x3, x3, #4
+lsr x5, x3, #3
+b 24f
+23:
+24:
+lsr x6, x3, #1
+cbz x6, 25f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #16]
+rev64 v6.16b, v6.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v25.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v25.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v17.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v17.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #32
+sub x3, x3, #2
+lsr x5, x3, #3
+b 26f
+25:
+26:
+cbz x3, 27f
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #16
+sub x3, x3, #1
+lsr x5, x3, #3
+b 28f
+27:
+28:
+b 21f
+20:
+cbz x3, 29f
+211:
+movi v3.2d, #0
+movi v4.2d, #0
+movi v5.2d, #0
+ldr q6, [x2, #0]
+rev64 v6.16b, v6.16b
+eor v6.16b, v6.16b, v0.16b
+pmull v7.1q, v6.1d, v24.1d
+eor v5.16b, v5.16b, v7.16b
+pmull2 v7.1q, v6.2d, v24.2d
+eor v3.16b, v3.16b, v7.16b
+pmull v7.1q, v6.1d, v16.1d
+eor v4.16b, v4.16b, v7.16b
+pmull2 v7.1q, v6.2d, v16.2d
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v3.1d, v1.1d
+ext v3.16b, v3.16b, v3.16b, #8
+eor v4.16b, v4.16b, v3.16b
+eor v4.16b, v4.16b, v7.16b
+pmull v7.1q, v4.1d, v1.1d
+ext v5.16b, v5.16b, v5.16b, #8
+eor v5.16b, v5.16b, v4.16b
+ext v7.16b, v7.16b, v7.16b, #8
+eor v0.16b, v5.16b, v7.16b
+add x2, x2, #16
+sub x3, x3, #1
+lsr x5, x3, #3
+cbnz x3, 211b
+b 210f
+29:
+210:
+21:
+rev64 v0.16b, v0.16b
+str q0, [x1, #0]
+str q16, [x8, #16]
+str q17, [x8, #0]
+str q18, [x8, #48]
+str q19, [x8, #32]
+str q20, [x8, #80]
+str q21, [x8, #64]
+str q22, [x8, #112]
+str q23, [x8, #96]
 ret
 .arch_extension noaes
 .p2align 6",
@@ -5191,231 +5678,41 @@ ret
     )
 }
 
-/// The CPU features `vg_aes_gcm_derive_prepared8_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_DERIVE_PREPARED8_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+/// The CPU features `vg_aes_gcm_seal_with_powers_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// Writes a 384-byte AES-GCM key context from the 256-byte key context at `src` (from `vg_aes_gcm_init`). Copies its 256 bytes, the key schedule and hash subkey `H`, to the first 256 bytes of `*dst`. At byte `256 + 32*k`, for `k` from 0 to 3, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words. This is the layout of the first 384 bytes of `vg_aes_gcm_init_prepared`'s context. The encoding is `VG.Spec.Gcm.preparedPower`; `*dst` satisfies `PreparedPowers8Repr`. Use only the `*_prepared8` APIs, or APIs that read the first 256 bytes, with this format. Only the pointers are public. Contract: `VG.Spec.Gcm.derivePrepared8Contract`.
-///
-/// This implementation copies the key context, then computes `H' = H · x⁻¹` as `vg_ghash_aes` does, then each even power `H'²ᵏ` by squaring `H'ᵏ`, read back from the context, and each odd power by one multiplication by `H'`; `preparedPower(Hᵏ)` is `Hᵏ · x⁻¹`, so each power is stored as it is computed.
-///
-/// # Safety
-///
-/// * `src` must be valid for reads of 256 bytes.
-/// * `dst` must be valid for reads and writes of 384 bytes.
-/// * `dst` must not overlap `src` (distinct Rust objects never do).
-/// * Neither `src` nor `dst` may wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_derive_prepared8_aes(src: *const [u64; 32], dst: *mut [u64; 48]) {
-    core::arch::naked_asm!(
-        r".arch_extension aes
-ldr q19, [x0, #0]
-str q19, [x1, #0]
-ldr q19, [x0, #16]
-str q19, [x1, #16]
-ldr q19, [x0, #32]
-str q19, [x1, #32]
-ldr q19, [x0, #48]
-str q19, [x1, #48]
-ldr q19, [x0, #64]
-str q19, [x1, #64]
-ldr q19, [x0, #80]
-str q19, [x1, #80]
-ldr q19, [x0, #96]
-str q19, [x1, #96]
-ldr q19, [x0, #112]
-str q19, [x1, #112]
-ldr q19, [x0, #128]
-str q19, [x1, #128]
-ldr q19, [x0, #144]
-str q19, [x1, #144]
-ldr q19, [x0, #160]
-str q19, [x1, #160]
-ldr q19, [x0, #176]
-str q19, [x1, #176]
-ldr q19, [x0, #192]
-str q19, [x1, #192]
-ldr q19, [x0, #208]
-str q19, [x1, #208]
-ldr q19, [x0, #224]
-str q19, [x1, #224]
-ldr q19, [x0, #240]
-str q19, [x1, #240]
-add x0, x1, #240
-ldr q6, [x0, #0]
-rev64 v6.16b, v6.16b
-movz x5, #49664, lsl #48
-dup v1.2d, x5
-movz x6, #3, lsl #0
-movz x7, #17920, lsl #48
-mov v17.d[0], x6
-mov v17.d[1], x7
-mov v25.d[0], x7
-mov v25.d[1], x6
-movi v3.2d, #0
-movi v4.2d, #0
-movi v5.2d, #0
-pmull v7.1q, v6.1d, v25.1d
-eor v5.16b, v5.16b, v7.16b
-pmull2 v7.1q, v6.2d, v25.2d
-eor v3.16b, v3.16b, v7.16b
-pmull v7.1q, v6.1d, v17.1d
-eor v4.16b, v4.16b, v7.16b
-pmull2 v7.1q, v6.2d, v17.2d
-eor v4.16b, v4.16b, v7.16b
-pmull v7.1q, v3.1d, v1.1d
-ext v3.16b, v3.16b, v3.16b, #8
-eor v4.16b, v4.16b, v3.16b
-eor v4.16b, v4.16b, v7.16b
-pmull v7.1q, v4.1d, v1.1d
-ext v5.16b, v5.16b, v5.16b, #8
-eor v5.16b, v5.16b, v4.16b
-ext v7.16b, v7.16b, v7.16b, #8
-eor v24.16b, v5.16b, v7.16b
-ext v16.16b, v24.16b, v24.16b, #8
-str q16, [x1, #272]
-movz x6, #49664, lsl #48
-mov v18.d[0], x6
-movz x6, #1, lsl #0
-mov v18.d[1], x6
-add x9, x1, #256
-add x10, x1, #256
-movz x11, #2, lsl #0
-20:
-ldr q19, [x9, #16]
-ext v20.16b, v19.16b, v19.16b, #8
-movi v3.2d, #0
-movi v4.2d, #0
-movi v5.2d, #0
-pmull v7.1q, v20.1d, v20.1d
-eor v5.16b, v5.16b, v7.16b
-pmull2 v7.1q, v20.2d, v20.2d
-eor v3.16b, v3.16b, v7.16b
-pmull v7.1q, v20.1d, v19.1d
-eor v4.16b, v4.16b, v7.16b
-pmull2 v7.1q, v20.2d, v19.2d
-eor v4.16b, v4.16b, v7.16b
-pmull v7.1q, v3.1d, v1.1d
-ext v3.16b, v3.16b, v3.16b, #8
-eor v4.16b, v4.16b, v3.16b
-eor v4.16b, v4.16b, v7.16b
-pmull v7.1q, v4.1d, v1.1d
-ext v5.16b, v5.16b, v5.16b, #8
-eor v5.16b, v5.16b, v4.16b
-ext v7.16b, v7.16b, v7.16b, #8
-eor v21.16b, v5.16b, v7.16b
-ext v22.16b, v21.16b, v21.16b, #8
-movi v3.2d, #0
-movi v4.2d, #0
-movi v5.2d, #0
-pmull v7.1q, v18.1d, v24.1d
-eor v5.16b, v5.16b, v7.16b
-pmull2 v7.1q, v18.2d, v24.2d
-eor v3.16b, v3.16b, v7.16b
-pmull v7.1q, v18.1d, v16.1d
-eor v4.16b, v4.16b, v7.16b
-pmull2 v7.1q, v18.2d, v16.2d
-eor v4.16b, v4.16b, v7.16b
-pmull v7.1q, v3.1d, v1.1d
-ext v3.16b, v3.16b, v3.16b, #8
-eor v4.16b, v4.16b, v3.16b
-eor v4.16b, v4.16b, v7.16b
-pmull v7.1q, v4.1d, v1.1d
-ext v5.16b, v5.16b, v5.16b, #8
-eor v5.16b, v5.16b, v4.16b
-ext v7.16b, v7.16b, v7.16b, #8
-eor v23.16b, v5.16b, v7.16b
-ext v26.16b, v23.16b, v23.16b, #8
-str q22, [x10, #0]
-str q26, [x10, #16]
-ldr q19, [x9, #0]
-ext v20.16b, v19.16b, v19.16b, #8
-movi v3.2d, #0
-movi v4.2d, #0
-movi v5.2d, #0
-pmull v7.1q, v20.1d, v20.1d
-eor v5.16b, v5.16b, v7.16b
-pmull2 v7.1q, v20.2d, v20.2d
-eor v3.16b, v3.16b, v7.16b
-pmull v7.1q, v20.1d, v19.1d
-eor v4.16b, v4.16b, v7.16b
-pmull2 v7.1q, v20.2d, v19.2d
-eor v4.16b, v4.16b, v7.16b
-pmull v7.1q, v3.1d, v1.1d
-ext v3.16b, v3.16b, v3.16b, #8
-eor v4.16b, v4.16b, v3.16b
-eor v4.16b, v4.16b, v7.16b
-pmull v7.1q, v4.1d, v1.1d
-ext v5.16b, v5.16b, v5.16b, #8
-eor v5.16b, v5.16b, v4.16b
-ext v7.16b, v7.16b, v7.16b, #8
-eor v18.16b, v5.16b, v7.16b
-ext v22.16b, v18.16b, v18.16b, #8
-movi v3.2d, #0
-movi v4.2d, #0
-movi v5.2d, #0
-pmull v7.1q, v21.1d, v24.1d
-eor v5.16b, v5.16b, v7.16b
-pmull2 v7.1q, v21.2d, v24.2d
-eor v3.16b, v3.16b, v7.16b
-pmull v7.1q, v21.1d, v16.1d
-eor v4.16b, v4.16b, v7.16b
-pmull2 v7.1q, v21.2d, v16.2d
-eor v4.16b, v4.16b, v7.16b
-pmull v7.1q, v3.1d, v1.1d
-ext v3.16b, v3.16b, v3.16b, #8
-eor v4.16b, v4.16b, v3.16b
-eor v4.16b, v4.16b, v7.16b
-pmull v7.1q, v4.1d, v1.1d
-ext v5.16b, v5.16b, v5.16b, #8
-eor v5.16b, v5.16b, v4.16b
-ext v7.16b, v7.16b, v7.16b, #8
-eor v23.16b, v5.16b, v7.16b
-ext v26.16b, v23.16b, v23.16b, #8
-str q22, [x10, #32]
-str q26, [x10, #48]
-add x9, x9, #32
-add x10, x10, #64
-sub x11, x11, #1
-cbnz x11, 20b
-ret
-.arch_extension noaes
-.p2align 6",
-    )
-}
-
-/// The CPU features `vg_aes_gcm_seal_prepared8_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_PREPARED8_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
-
-/// `vg_aes_gcm_seal` with a 384-byte context from `vg_aes_gcm_derive_prepared8`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 8 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPrepared8Contract`.
+/// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the hash subkey's `H · x⁻¹` once and multiplies the additional data, the last bytes of the ciphertext and the lengths block into the hash with PMULL in registers, calling `vg_ghash_prepared8_aes` once, on the whole blocks of the ciphertext, which reads the powers of `H` from the context. Otherwise it reads only the context's first 256 bytes, as `vg_aes_gcm_seal_aes` does.
+/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `vg_aes_gcm_seal_aes` does, calling `vg_ghash_with_powers_aes` once, on the whole blocks of the text, which reads the powers of `H` from `pw`. Otherwise it never reads `pw`, and computes as `vg_aes_gcm_seal_aes` does.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 384 bytes.
+/// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `pw` must be valid for reads of 128 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the 384-byte format written by `vg_aes_gcm_derive_prepared8` (not a 1024-byte context of `vg_aes_gcm_init_prepared` or `vg_aes_gcm_init_precomputed`).
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2576 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_prepared8_aes(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16], pw: *const [u64; 16]) {
     core::arch::naked_asm!(
         r".arch_extension aes
-sub sp, sp, #2576
+sub sp, sp, #2592
 add x16, sp, #0
-ldr x17, [sp, #2576]
+ldr x17, [sp, #2592]
 str x17, [x16, #0]
-add x17, sp, #16
+ldr x17, [sp, #2600]
 str x17, [x16, #8]
-ldr x9, [sp, #8]
+add x17, sp, #32
+str x17, [x16, #16]
+ldr x9, [sp, #16]
 str x20, [x9, #136]
 str x21, [x9, #144]
 str x22, [x9, #152]
@@ -6335,7 +6632,8 @@ add x4, x19, #512
 lsl x9, x3, #4
 add x23, x23, x9
 sub x24, x24, x9
-bl {vg_ghash_prepared8_aes}
+ldr x5, [sp, #8]
+bl {vg_ghash_with_powers_aes}
 ldr q16, [x19, #288]
 ldr q24, [x19, #304]
 movz x5, #49664, lsl #48
@@ -6484,117 +6782,40 @@ ldr x28, [x19, #200]
 ldr x30, [x19, #208]
 ldr x19, [x19, #128]
 27:
-add sp, sp, #2576
+add sp, sp, #2592
 ret
 .arch_extension noaes
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
-        vg_ghash_prepared8_aes = sym super::gcm::vg_ghash_prepared8_aes,
+        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes,
     )
 }
 
-/// The CPU features `vg_aes_gcm_seal_gather_prepared8_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SEAL_GATHER_PREPARED8_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+/// The CPU features `vg_aes_gcm_open_with_powers_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
-/// `vg_aes_gcm_seal_gather` with a 384-byte context from `vg_aes_gcm_derive_prepared8`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 8 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPrepared8Contract`.
-///
-/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_prepared8_aes`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 384 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `*ctx` must have the 384-byte format written by `vg_aes_gcm_derive_prepared8` (not a 1024-byte context of `vg_aes_gcm_init_prepared` or `vg_aes_gcm_init_precomputed`).
-/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_prepared8_aes(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r".arch_extension aes
-sub sp, sp, #16
-add x16, sp, #0
-str x30, [x16, #8]
-ldr x17, [sp, #32]
-str x17, [x16, #0]
-ldr x11, [sp, #16]
-cbz x7, 20f
-22:
-ldr x12, [x6, #0]
-ldr x13, [x6, #8]
-add x6, x6, #16
-lsr x14, x13, #4
-cbz x14, 23f
-25:
-ldr q0, [x12, #0]
-str q0, [x11, #0]
-add x12, x12, #16
-add x11, x11, #16
-sub x14, x14, #1
-cbnz x14, 25b
-b 24f
-23:
-24:
-movz x15, #15, lsl #0
-and x13, x13, x15
-cbz x13, 26f
-28:
-ldrb w14, [x12, #0]
-strb w14, [x11, #0]
-add x12, x12, #1
-add x11, x11, #1
-sub x13, x13, #1
-cbnz x13, 28b
-b 27f
-26:
-27:
-sub x7, x7, #1
-cbnz x7, 22b
-b 21f
-20:
-21:
-ldr x6, [sp, #16]
-ldr x7, [sp, #24]
-bl {vg_aes_gcm_seal_prepared8_aes}
-ldr x30, [sp, #8]
-add sp, sp, #16
-ret
-.arch_extension noaes
-.p2align 6",
-        vg_aes_gcm_seal_prepared8_aes = sym super::gcm::vg_aes_gcm_seal_prepared8_aes,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_open_prepared8_aes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_OPEN_PREPARED8_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
-
-/// `vg_aes_gcm_open` with a 384-byte context from `vg_aes_gcm_derive_prepared8`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 8 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPrepared8Contract`.
+/// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
 ///
 /// This implementation encrypts with `vg_aes_ctr32_aes` (and expands keys with `vg_aes_expand_key_scratch_aes`) and hashes with `vg_ghash_aes`.
 ///
-/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `vg_aes_gcm_seal_prepared8_aes` does, calling `vg_ghash_prepared8_aes` once, on the whole blocks of the ciphertext, and decrypts only if it matches. Otherwise it reads only the context's first 256 bytes, as `vg_aes_gcm_open_aes` does.
+/// For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as `vg_aes_gcm_open_aes` does, calling `vg_ghash_with_powers_aes` once, on the whole blocks of the text, which reads the powers of `H` from `pw`. Otherwise it never reads `pw`, and computes as `vg_aes_gcm_open_aes` does.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 384 bytes.
+/// * `ctx` must be valid for reads of 256 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `pw` must be valid for reads of 128 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the 384-byte format written by `vg_aes_gcm_derive_prepared8` (not a 1024-byte context of `vg_aes_gcm_init_prepared` or `vg_aes_gcm_init_precomputed`).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data`, `tag` and `pw` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_open_prepared8_aes(ctx: *const [u64; 48], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open_with_powers_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
         r".arch_extension aes
 sub sp, sp, #2592
@@ -6603,9 +6824,11 @@ ldr x17, [sp, #2592]
 str x17, [x16, #0]
 ldr x17, [sp, #2600]
 str x17, [x16, #8]
-add x17, sp, #32
+ldr x17, [sp, #2608]
 str x17, [x16, #16]
-ldr x9, [sp, #16]
+add x17, sp, #32
+str x17, [x16, #24]
+ldr x9, [sp, #24]
 str x20, [x9, #136]
 str x21, [x9, #144]
 str x22, [x9, #152]
@@ -7593,7 +7816,8 @@ add x4, x19, #512
 lsl x9, x3, #4
 add x23, x23, x9
 sub x24, x24, x9
-bl {vg_ghash_prepared8_aes}
+ldr x5, [sp, #16]
+bl {vg_ghash_with_powers_aes}
 ldr q16, [x19, #288]
 ldr q24, [x19, #304]
 movz x5, #49664, lsl #48
@@ -7904,7 +8128,7 @@ ret
 .p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
-        vg_ghash_prepared8_aes = sym super::gcm::vg_ghash_prepared8_aes,
+        vg_ghash_with_powers_aes = sym super::gcm::vg_ghash_with_powers_aes,
     )
 }
 

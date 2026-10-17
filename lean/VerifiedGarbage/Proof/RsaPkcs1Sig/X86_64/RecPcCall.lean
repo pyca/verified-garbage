@@ -9,6 +9,7 @@ import all Init.Data.Vector.Basic
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCT
 import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Rsa.Scratch
 
 /-!
 # `vg_rsa_pkcs1_recover_precomputed` on x86-64: the call
@@ -129,7 +130,8 @@ theorem call_pre {s t : State} (hp : PPreR s) (h : J1 s t) :
   refine ⟨by omega, rfl, rfl, hp.preStack.symm.sub_left sM, hp.dKe.sub_left sM, dKg.sub_left sM,
     hp.dKs.sub_left sM, dMA, hp.preScr, hp.des, dgs, (hp.dKs.sub_left sA).symm, dRM,
     hp.preStack.symm.sub_left sR, hp.dKe.sub_left sR, dKg.sub_left sR, hp.dKs.sub_left sR, dRA, wM,
-    hp.preWrap, hp.wE, wG, hp.wS, ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, hp.hsl⟩
+    hp.preWrap, hp.wE, wG, hp.wS, ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2,
+    VG.Proof.Rsa.publicScratch_le ⟨hk1, hk2⟩ hp.hsl⟩
 
 theorem call_covers {s t : State} (hp : PPreR s) (hsig : stackArg s 2 = s.gpr .rcx) (he : Env s t) :
     Covers (callRd s ++ pubWr s) (t.rd ++ t.wr) ∧ Covers (pubWr s) t.wr := by

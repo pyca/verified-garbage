@@ -93,7 +93,7 @@ theorem call_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s)
     (hp.dKs.sub_left sRet).sub_right sI, hp.preStack.symm.sub_left sRet, hp.dKe.sub_left sRet, dKsg.sub_left sRet,
     (hp.dKs.sub_left sRet).sub_right sR, dRA,
     by rw [toNat_off (by omega)]; omega, hp.preWrap, hp.wE, wSg, by rw [toNat_off (by omega), hsc]; omega,
-    ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by unfold Spec.Rsa.scratchWords; rw [hsc]; omega⟩
+    ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; rw [hsc]; omega⟩
 
 theorem call_covers {s t : State} (hp : Pre G s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr) :
     Covers (callRd s ++ vWr s) (t.rd ++ t.wr) ∧ Covers (vWr s) t.wr := by

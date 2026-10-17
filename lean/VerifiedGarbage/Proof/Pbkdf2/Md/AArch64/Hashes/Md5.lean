@@ -141,6 +141,8 @@ def ok : HashOK hash where
     by decide, by decide, by decide, by decide⟩
   L := by decide
   W := by decide
+  hPad := by decide
+  L816 := by decide
 
 theorem satI : ∃ s, (Spec.Hmac.md5I.initScratchContract AArch64.abi 16).pre s := by
   inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.md5I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,

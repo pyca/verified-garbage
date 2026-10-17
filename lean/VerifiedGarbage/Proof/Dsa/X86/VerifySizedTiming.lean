@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Dsa.X86.DigestSlice
+public import VerifiedGarbage.Proof.Dsa.OutputBytes
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeCall
 public import VerifiedGarbage.Proof.Dsa.X86.ShapeTiming
 public import VerifiedGarbage.Proof.Dsa.X86.FailureTiming

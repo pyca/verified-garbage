@@ -17,17 +17,17 @@ def note : String :=
   so no secret is an address. The subkeys and the number of rounds are reloaded from the arguments for each block."
 
 def artifacts : List Artifact := [
-  Spec.Cast5.cbcEncryptApi.artifact X86.target {
-    notes := [note]
+  Spec.Cast5.cbcEncryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
     consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcEncrypt
+    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcEncryptChained
     stack := 336
-    verified := Proof.Cast5.X86.ModeFns.cbcEncrypt_framed },
-  Spec.Cast5.cbcDecryptApi.artifact X86.target {
-    notes := [note]
+    verified := Proof.Cast5.X86.ModeFns.cbcEncryptChained_framed },
+  Spec.Cast5.cbcDecryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
     consts := Impl.Cast5.ecbConsts
-    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcDecrypt
+    code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cbcDecryptChained
     stack := 336
-    verified := Proof.Cast5.X86.ModeFns.cbcDecrypt_framed }]
+    verified := Proof.Cast5.X86.ModeFns.cbcDecryptChained_framed }]
 
 end VG.Artifacts.Cast5Cbc.X86

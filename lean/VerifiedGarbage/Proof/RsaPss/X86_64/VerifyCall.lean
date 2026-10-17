@@ -123,7 +123,7 @@ theorem pub_pre {s t : State} (hp : VPre G s) (hsp : t.gpr .rsp = fb s)
     (hp.dKs.sub_left sRet).sub_right sI, hp.dKn.sub_left sRet, hp.dKe.sub_left sRet, dKsg.sub_left sRet,
     (hp.dKs.sub_left sRet).sub_right sR, dRA,
     by rw [toNat_off (by omega)]; omega, hp.wN, hp.wE, wSg, by rw [toNat_off (by omega), hsc]; omega,
-    ⟨hk1, hk2⟩, trivial, trivial, hp.L1, hp.L2, by unfold Spec.Rsa.scratchWords; rw [hsc]; omega⟩
+    ⟨hk1, hk2⟩, trivial, trivial, hp.L1, hp.L2, by unfold Spec.Rsa.publicScratchWords Spec.Rsa.modulusWords; rw [hsc]; omega⟩
 
 theorem pub_covers {s t : State} (hp : VPre G s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr) :
     Covers (vRd s ++ vWr s) (t.rd ++ t.wr) ∧ Covers (vWr s) t.wr := by

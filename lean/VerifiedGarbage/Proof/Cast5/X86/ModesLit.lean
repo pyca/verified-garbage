@@ -23,8 +23,8 @@ rather than build the code again.
 
 namespace VG.Proof.Cast5.X86
 
-materialize_flat_code cbcEncryptCode := Impl.Cast5.X86.Modes.cbcEncrypt
-materialize_flat_code cbcDecryptCode := Impl.Cast5.X86.Modes.cbcDecrypt
+materialize_flat_code cbcEncryptChainedCode := Impl.Cast5.X86.Modes.cbcEncryptChained
+materialize_flat_code cbcDecryptChainedCode := Impl.Cast5.X86.Modes.cbcDecryptChained
 materialize_flat_code ofbCode := Impl.Cast5.X86.Modes.ofb
 materialize_flat_code cfbEncryptCode := Impl.Cast5.X86.Modes.cfbEncrypt
 materialize_flat_code cfbDecryptCode := Impl.Cast5.X86.Modes.cfbDecrypt

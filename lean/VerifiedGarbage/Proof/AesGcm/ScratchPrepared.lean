@@ -90,7 +90,8 @@ private theorem foldl_fix {α β : Type} (f : α → β → α) (a : α) (h : �
   | [] => rfl
   | b :: l => by rw [List.foldl_cons, h b]; exact foldl_fix f a h l
 
-private theorem mul_zero_right (x : Block) : mul x 0 = 0 := by
+/-- Multiplying by zero gives zero. -/
+theorem gcmMul_zero_right (x : Block) : mul x 0 = 0 := by
   unfold mul
   rw [foldl_fix _ _ fun i => ?_]
   have e : (0 : Block).getLsbD 0 = false := by decide
@@ -104,7 +105,7 @@ theorem preparedPowersRepr_zeroMem (p : Addr) : PreparedPowersRepr (fun _ => 0) 
     simp [blockAt, Spec.Aes.bytesAt, ofBytes]; decide
   have w : ∀ q : Addr, Mem.readW (fun _ => 0) q 128 = 0 := fun q => by
     simp [Mem.readW, Mem.read]
-  have hz : ∀ k, hpow 0 (k + 1) = 0 := fun _ => mul_zero_right _
+  have hz : ∀ k, hpow 0 (k + 1) = 0 := fun _ => gcmMul_zero_right _
   simp only [ctxH, z, hz, w]
   constructor <;> decide
 

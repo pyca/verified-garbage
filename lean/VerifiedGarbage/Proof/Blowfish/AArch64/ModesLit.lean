@@ -24,8 +24,8 @@ materialize_code Impl.Blowfish.AArch64.batchDec
 
 /-! The functions. -/
 
-materialize_code Impl.Blowfish.AArch64.cbcEncrypt
-materialize_code Impl.Blowfish.AArch64.cbcDecrypt
+materialize_code Impl.Blowfish.AArch64.cbcEncryptChained
+materialize_code Impl.Blowfish.AArch64.cbcDecryptChained
 materialize_code Impl.Blowfish.AArch64.ofb
 materialize_code Impl.Blowfish.AArch64.cfbEncrypt
 materialize_code Impl.Blowfish.AArch64.cfbDecrypt

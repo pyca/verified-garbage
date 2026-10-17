@@ -83,7 +83,7 @@ def ceAt (cs : Codecs) (f : Ptr) (d : Nat) (out : Ptr) : Prog isa := ceCall (L.c
 `vg_mlkem*_decrypt_mul`, with the arithmetic of `A`. -/
 def decMulAt (A : Arith) (w s u z : Ptr) : Prog isa :=
   .seq (.block (lea .rdi w ++ lea .rsi s ++ lea .rdx u ++ lea .rcx z))
-    (.call (L.p.fn "decrypt_mul" ++ A.sfx) (decryptMul A.bodies L.k))
+    (.call (L.p.fn "decrypt_mul" ++ A.sfx) (A.decMul L.k))
 
 /-- `NTT⁻¹(Â^⊺ ∘ NTT(y))` and `NTT⁻¹(t̂^⊺ ∘ NTT(y))` to the `k + 1`
 polynomials from `u`, for the `k²` polynomials of `Â` from `a` and the `k`
@@ -91,7 +91,7 @@ of `t̂` from `t` and of `y` from `y`, with the working space `z` (4096
 bytes): `vg_mlkem*_encrypt_mul`, with the arithmetic of `A`. -/
 def encMulAt (A : Arith) (u a t y z : Ptr) : Prog isa :=
   .seq (.block (lea .rdi u ++ lea .rsi a ++ lea .rdx t ++ lea .rcx y ++ lea .r8 z))
-    (.call (L.p.fn "encrypt_mul" ++ A.sfx) (encryptMul A.bodies L.k))
+    (.call (L.p.fn "encrypt_mul" ++ A.sfx) (A.encMul L.k))
 
 /-- `ŝ = NTT(s)` in place and `t̂ = Â ∘ ŝ + NTT(e)` to the `k` polynomials
 from `t`, for the `k` polynomials of `s` from `s` and of `e` from `e` and

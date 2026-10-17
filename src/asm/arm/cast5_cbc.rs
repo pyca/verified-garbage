@@ -2,22 +2,24 @@
 //! Verified `cast5_cbc` functions for `arm`.
 #![allow(dead_code)]
 
-/// CAST5-CBC encryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is CAST-128 encryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is added.
+/// CAST5-CBC encryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is added.
 ///
-/// Contract: `VG.Spec.Cast5.cbcEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Cast5.cbcEncryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// Baseline ARMv7: the generic CBC of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_cast5_ecb_encrypt` or `vg_cast5_ecb_decrypt` (which scans the S-boxes in the static `VG_CAST5_S1234`, so no secret is an address) on each block with the number of rounds and, as its stack argument, the end of a 312-byte working space on the stack (the mode's 56 bytes, then the 256 the ECB function works in), zeroed on return.
+///
+/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
-/// * `data` must not overlap `schedule`, `iv` or the arguments on the stack (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cast5_cbc_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cbc_encrypt_chained(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #328
 add r12, sp, #0
@@ -76,6 +78,10 @@ bne 22b
 b 21f
 20:
 21:
+ldr r9, [r8, #40]
+str r9, [r5, #0]
+ldr r9, [r8, #44]
+str r9, [r5, #4]
 ldr r4, [r8, #0]
 ldr r5, [r8, #4]
 ldr r6, [r8, #8]
@@ -171,22 +177,24 @@ bx lr",
     )
 }
 
-/// CAST5-CBC decryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is CAST-128 decryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is removed.
+/// CAST5-CBC decryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is CAST-128 decryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is removed.
 ///
-/// Contract: `VG.Spec.Cast5.cbcDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Cast5.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// Baseline ARMv7: the generic CBC of `Impl/Modes/Arm/`, one block at a time, calling the verified `vg_cast5_ecb_encrypt` or `vg_cast5_ecb_decrypt` (which scans the S-boxes in the static `VG_CAST5_S1234`, so no secret is an address) on each block with the number of rounds and, as its stack argument, the end of a 312-byte working space on the stack (the mode's 56 bytes, then the 256 the ECB function works in), zeroed on return.
+///
+/// The chaining value, the last ciphertext block, goes back to the IV at the end.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
-/// * `data` must not overlap `schedule`, `iv` or the arguments on the stack (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the 336 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cast5_cbc_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "C" fn vg_cast5_cbc_decrypt_chained(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"sub sp, sp, #328
 add r12, sp, #0
@@ -249,6 +257,10 @@ bne 22b
 b 21f
 20:
 21:
+ldr r9, [r8, #40]
+str r9, [r5, #0]
+ldr r9, [r8, #44]
+str r9, [r5, #4]
 ldr r4, [r8, #0]
 ldr r5, [r8, #4]
 ldr r6, [r8, #8]

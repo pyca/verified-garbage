@@ -1,17 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Cast5.X86_64
-public import VerifiedGarbage.Impl.Modes.X86_64.Cbc
-public import VerifiedGarbage.Impl.Modes.X86_64.CbcEnc
-public import VerifiedGarbage.Impl.Modes.X86_64.Fb
+public import VerifiedGarbage.Impl.Modes.X86_64.CbcChained
 
 /-!
 # CAST5-CBC, -OFB and -CFB64 on x86-64
 
-`cbcEncrypt`, `cbcDecrypt`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
+`cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and `cfbDecrypt`
 (schedule = rdi, rounds = rsi, iv = rdx, data = rcx, n = r8, scratch = r9):
-the modes' generic CBC, OFB and CFB (`Impl/Modes/X86_64/Cbc.lean`,
-`CbcEnc.lean`, `Fb.lean`) over the block code of
+the modes' generic CBC that updates the chaining value, OFB and CFB
+(`Impl/Modes/X86_64/CbcChained.lean`, `Fb.lean`) over the block code of
 `vg_cast5_ecb_{en,de}crypt` (`encryptBlock`, `decryptBlock`), one 8-byte
 block at a time, with the working space in the scratch buffer, which the
 artifact allocates on the stack.
@@ -25,7 +23,7 @@ neither the modes nor the block code write. `crypt` points `r8`, `rdx` and
 `rdi` at the working space, the buffer and the copy; `r8` is the scratch
 buffer's address (`sb`, which the rounds overwrite) again after the block.
 
-The feedback modes keep the IV's address in `xmm15` (its upper half zero),
+CBC encryption and the feedback modes keep the IV's address in `xmm15` (its upper half zero),
 which the block code does not write; but its scans load the table into
 `xmm5`, after which the taint analysis no longer knows `xmm15` public.
 `crypt` keeps its low half in `rcx`, which the block code only counts down
@@ -87,11 +85,11 @@ def dirCore (up : Bool) : Impl.Modes.X86_64.Core where
 /-- The registers of the arguments. -/
 def modeRegs : Impl.Modes.X86_64.CtrRegs := ⟨.rdx, .rcx, .r8, .r9⟩
 
-/-- `vg_cast5_cbc_encrypt`. -/
-def cbcEncrypt : Prog isa := (dirCore true).cbcEncrypt modeRegs
+/-- `vg_cast5_cbc_encrypt_chained`. -/
+def cbcEncryptChained : Prog isa := (dirCore true).cbcEncryptChained modeRegs
 
-/-- `vg_cast5_cbc_decrypt`. -/
-def cbcDecrypt : Prog isa := (dirCore false).cbcDecrypt modeRegs
+/-- `vg_cast5_cbc_decrypt_chained`. -/
+def cbcDecryptChained : Prog isa := (dirCore false).cbcDecryptChained modeRegs
 
 /-- `vg_cast5_ofb`. -/
 def ofb : Prog isa := (dirCore true).fb .ofb modeRegs

@@ -2167,3 +2167,1240 @@ ret
         vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes,
     )
 }
+
+/// The CPU features `vg_aes_xts_encrypt_unit_aesni` requires (`Artifact.features`).
+pub(crate) const VG_AES_XTS_ENCRYPT_UNIT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value and the data with `vg_aes_xts_encrypt_aesni` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_aesni(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+2208], rbx
+mov QWORD PTR [rax+2216], rbp
+mov QWORD PTR [rax+2224], r12
+mov QWORD PTR [rax+2232], r13
+mov QWORD PTR [rax+2240], r14
+mov QWORD PTR [rax+2248], r15
+mov r15, rax
+mov rbx, rdi
+mov rbp, rdx
+mov r12, r8
+mov r13, r9
+mov rax, QWORD PTR [rcx]
+mov QWORD PTR [r15+2176], rax
+mov rax, QWORD PTR [rcx+8]
+mov QWORD PTR [r15+2184], rax
+mov eax, 0
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rax
+mov rdi, rsi
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov rcx, r15
+add rcx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_aesni}
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+call {vg_aes_xts_encrypt_aesni}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+je 20f
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov ecx, 0
+22:
+movzx eax, BYTE PTR [rdx+rcx*1]
+movzx r9d, BYTE PTR [rdx+rcx*1+16]
+mov BYTE PTR [rdx+rcx*1], r9b
+mov BYTE PTR [rdx+rcx*1+16], al
+add rcx, 1
+cmp rcx, r8
+jne 22b
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_aesni}
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2208]
+mov rbp, QWORD PTR [r15+2216]
+mov r12, QWORD PTR [r15+2224]
+mov r13, QWORD PTR [r15+2232]
+mov r14, QWORD PTR [r15+2240]
+mov r15, QWORD PTR [r15+2248]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_xts_decrypt_unit_aesni` requires (`Artifact.features`).
+pub(crate) const VG_AES_XTS_DECRYPT_UNIT_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value with `vg_aes_xts_encrypt_aesni` (as one block from a zero tweak), deciphers the data with `vg_aes_xts_decrypt_aesni`, and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_aesni(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+2208], rbx
+mov QWORD PTR [rax+2216], rbp
+mov QWORD PTR [rax+2224], r12
+mov QWORD PTR [rax+2232], r13
+mov QWORD PTR [rax+2240], r14
+mov QWORD PTR [rax+2248], r15
+mov r15, rax
+mov rbx, rdi
+mov rbp, rdx
+mov r12, r8
+mov r13, r9
+mov rax, QWORD PTR [rcx]
+mov QWORD PTR [r15+2176], rax
+mov rax, QWORD PTR [rcx+8]
+mov QWORD PTR [r15+2184], rax
+mov eax, 0
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rax
+mov rdi, rsi
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov rcx, r15
+add rcx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_aesni}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+je 20f
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+sub r8, 1
+call {vg_aes_xts_decrypt_aesni}
+mov rax, QWORD PTR [r15+2176]
+mov rcx, QWORD PTR [r15+2184]
+mov rdx, rcx
+add rdx, rdx
+sbb rdx, rdx
+and rdx, 135
+add rax, rax
+adc rcx, rcx
+xor rax, rdx
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rcx
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_decrypt_aesni}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov ecx, 0
+22:
+movzx eax, BYTE PTR [rdx+rcx*1]
+movzx r9d, BYTE PTR [rdx+rcx*1+16]
+mov BYTE PTR [rdx+rcx*1], r9b
+mov BYTE PTR [rdx+rcx*1+16], al
+add rcx, 1
+cmp rcx, r8
+jne 22b
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_decrypt_aesni}
+jmp 21f
+20:
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+call {vg_aes_xts_decrypt_aesni}
+21:
+mov rbx, QWORD PTR [r15+2208]
+mov rbp, QWORD PTR [r15+2216]
+mov r12, QWORD PTR [r15+2224]
+mov r13, QWORD PTR [r15+2232]
+mov r14, QWORD PTR [r15+2240]
+mov r15, QWORD PTR [r15+2248]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt_aesni = sym super::aes_xts::vg_aes_xts_encrypt_aesni,
+        vg_aes_xts_decrypt_aesni = sym super::aes_xts::vg_aes_xts_decrypt_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_xts_encrypt_unit_aesni_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_XTS_ENCRYPT_UNIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "pclmulqdq"]);
+
+/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value and the data with `vg_aes_xts_encrypt_aesni_pclmul` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx` and `pclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+2208], rbx
+mov QWORD PTR [rax+2216], rbp
+mov QWORD PTR [rax+2224], r12
+mov QWORD PTR [rax+2232], r13
+mov QWORD PTR [rax+2240], r14
+mov QWORD PTR [rax+2248], r15
+mov r15, rax
+mov rbx, rdi
+mov rbp, rdx
+mov r12, r8
+mov r13, r9
+mov rax, QWORD PTR [rcx]
+mov QWORD PTR [r15+2176], rax
+mov rax, QWORD PTR [rcx+8]
+mov QWORD PTR [r15+2184], rax
+mov eax, 0
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rax
+mov rdi, rsi
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov rcx, r15
+add rcx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_aesni_pclmul}
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+call {vg_aes_xts_encrypt_aesni_pclmul}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+je 20f
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov ecx, 0
+22:
+movzx eax, BYTE PTR [rdx+rcx*1]
+movzx r9d, BYTE PTR [rdx+rcx*1+16]
+mov BYTE PTR [rdx+rcx*1], r9b
+mov BYTE PTR [rdx+rcx*1+16], al
+add rcx, 1
+cmp rcx, r8
+jne 22b
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_aesni_pclmul}
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2208]
+mov rbp, QWORD PTR [r15+2216]
+mov r12, QWORD PTR [r15+2224]
+mov r13, QWORD PTR [r15+2232]
+mov r14, QWORD PTR [r15+2240]
+mov r15, QWORD PTR [r15+2248]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt_aesni_pclmul = sym super::aes_xts::vg_aes_xts_encrypt_aesni_pclmul,
+    )
+}
+
+/// The CPU features `vg_aes_xts_decrypt_unit_aesni_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_XTS_DECRYPT_UNIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "pclmulqdq"]);
+
+/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value with `vg_aes_xts_encrypt_aesni_pclmul` (as one block from a zero tweak), deciphers the data with `vg_aes_xts_decrypt_aesni_pclmul`, and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx` and `pclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_aesni_pclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+2208], rbx
+mov QWORD PTR [rax+2216], rbp
+mov QWORD PTR [rax+2224], r12
+mov QWORD PTR [rax+2232], r13
+mov QWORD PTR [rax+2240], r14
+mov QWORD PTR [rax+2248], r15
+mov r15, rax
+mov rbx, rdi
+mov rbp, rdx
+mov r12, r8
+mov r13, r9
+mov rax, QWORD PTR [rcx]
+mov QWORD PTR [r15+2176], rax
+mov rax, QWORD PTR [rcx+8]
+mov QWORD PTR [r15+2184], rax
+mov eax, 0
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rax
+mov rdi, rsi
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov rcx, r15
+add rcx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_aesni_pclmul}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+je 20f
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+sub r8, 1
+call {vg_aes_xts_decrypt_aesni_pclmul}
+mov rax, QWORD PTR [r15+2176]
+mov rcx, QWORD PTR [r15+2184]
+mov rdx, rcx
+add rdx, rdx
+sbb rdx, rdx
+and rdx, 135
+add rax, rax
+adc rcx, rcx
+xor rax, rdx
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rcx
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_decrypt_aesni_pclmul}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov ecx, 0
+22:
+movzx eax, BYTE PTR [rdx+rcx*1]
+movzx r9d, BYTE PTR [rdx+rcx*1+16]
+mov BYTE PTR [rdx+rcx*1], r9b
+mov BYTE PTR [rdx+rcx*1+16], al
+add rcx, 1
+cmp rcx, r8
+jne 22b
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_decrypt_aesni_pclmul}
+jmp 21f
+20:
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+call {vg_aes_xts_decrypt_aesni_pclmul}
+21:
+mov rbx, QWORD PTR [r15+2208]
+mov rbp, QWORD PTR [r15+2216]
+mov r12, QWORD PTR [r15+2224]
+mov r13, QWORD PTR [r15+2232]
+mov r14, QWORD PTR [r15+2240]
+mov r15, QWORD PTR [r15+2248]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt_aesni_pclmul = sym super::aes_xts::vg_aes_xts_encrypt_aesni_pclmul,
+        vg_aes_xts_decrypt_aesni_pclmul = sym super::aes_xts::vg_aes_xts_decrypt_aesni_pclmul,
+    )
+}
+
+/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value and the data with `vg_aes_xts_encrypt` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+2208], rbx
+mov QWORD PTR [rax+2216], rbp
+mov QWORD PTR [rax+2224], r12
+mov QWORD PTR [rax+2232], r13
+mov QWORD PTR [rax+2240], r14
+mov QWORD PTR [rax+2248], r15
+mov r15, rax
+mov rbx, rdi
+mov rbp, rdx
+mov r12, r8
+mov r13, r9
+mov rax, QWORD PTR [rcx]
+mov QWORD PTR [r15+2176], rax
+mov rax, QWORD PTR [rcx+8]
+mov QWORD PTR [r15+2184], rax
+mov eax, 0
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rax
+mov rdi, rsi
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov rcx, r15
+add rcx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt}
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+call {vg_aes_xts_encrypt}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+je 20f
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov ecx, 0
+22:
+movzx eax, BYTE PTR [rdx+rcx*1]
+movzx r9d, BYTE PTR [rdx+rcx*1+16]
+mov BYTE PTR [rdx+rcx*1], r9b
+mov BYTE PTR [rdx+rcx*1+16], al
+add rcx, 1
+cmp rcx, r8
+jne 22b
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt}
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2208]
+mov rbp, QWORD PTR [r15+2216]
+mov r12, QWORD PTR [r15+2224]
+mov r13, QWORD PTR [r15+2232]
+mov r14, QWORD PTR [r15+2240]
+mov r15, QWORD PTR [r15+2248]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
+    )
+}
+
+/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value with `vg_aes_xts_encrypt` (as one block from a zero tweak), deciphers the data with `vg_aes_xts_decrypt`, and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+2208], rbx
+mov QWORD PTR [rax+2216], rbp
+mov QWORD PTR [rax+2224], r12
+mov QWORD PTR [rax+2232], r13
+mov QWORD PTR [rax+2240], r14
+mov QWORD PTR [rax+2248], r15
+mov r15, rax
+mov rbx, rdi
+mov rbp, rdx
+mov r12, r8
+mov r13, r9
+mov rax, QWORD PTR [rcx]
+mov QWORD PTR [r15+2176], rax
+mov rax, QWORD PTR [rcx+8]
+mov QWORD PTR [r15+2184], rax
+mov eax, 0
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rax
+mov rdi, rsi
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov rcx, r15
+add rcx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+je 20f
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+sub r8, 1
+call {vg_aes_xts_decrypt}
+mov rax, QWORD PTR [r15+2176]
+mov rcx, QWORD PTR [r15+2184]
+mov rdx, rcx
+add rdx, rdx
+sbb rdx, rdx
+and rdx, 135
+add rax, rax
+adc rcx, rcx
+xor rax, rdx
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rcx
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_decrypt}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov ecx, 0
+22:
+movzx eax, BYTE PTR [rdx+rcx*1]
+movzx r9d, BYTE PTR [rdx+rcx*1+16]
+mov BYTE PTR [rdx+rcx*1], r9b
+mov BYTE PTR [rdx+rcx*1+16], al
+add rcx, 1
+cmp rcx, r8
+jne 22b
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_decrypt}
+jmp 21f
+20:
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+call {vg_aes_xts_decrypt}
+21:
+mov rbx, QWORD PTR [r15+2208]
+mov rbp, QWORD PTR [r15+2216]
+mov r12, QWORD PTR [r15+2224]
+mov r13, QWORD PTR [r15+2232]
+mov r14, QWORD PTR [r15+2240]
+mov r15, QWORD PTR [r15+2248]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt = sym super::aes_xts::vg_aes_xts_encrypt,
+        vg_aes_xts_decrypt = sym super::aes_xts::vg_aes_xts_decrypt,
+    )
+}
+
+/// The CPU features `vg_aes_xts_encrypt_unit_vaes` requires (`Artifact.features`).
+pub(crate) const VG_AES_XTS_ENCRYPT_UNIT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes"]);
+
+/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value and the data with `vg_aes_xts_encrypt_vaes` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_vaes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+2208], rbx
+mov QWORD PTR [rax+2216], rbp
+mov QWORD PTR [rax+2224], r12
+mov QWORD PTR [rax+2232], r13
+mov QWORD PTR [rax+2240], r14
+mov QWORD PTR [rax+2248], r15
+mov r15, rax
+mov rbx, rdi
+mov rbp, rdx
+mov r12, r8
+mov r13, r9
+mov rax, QWORD PTR [rcx]
+mov QWORD PTR [r15+2176], rax
+mov rax, QWORD PTR [rcx+8]
+mov QWORD PTR [r15+2184], rax
+mov eax, 0
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rax
+mov rdi, rsi
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov rcx, r15
+add rcx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_vaes}
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+call {vg_aes_xts_encrypt_vaes}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+je 20f
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov ecx, 0
+22:
+movzx eax, BYTE PTR [rdx+rcx*1]
+movzx r9d, BYTE PTR [rdx+rcx*1+16]
+mov BYTE PTR [rdx+rcx*1], r9b
+mov BYTE PTR [rdx+rcx*1+16], al
+add rcx, 1
+cmp rcx, r8
+jne 22b
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_vaes}
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2208]
+mov rbp, QWORD PTR [r15+2216]
+mov r12, QWORD PTR [r15+2224]
+mov r13, QWORD PTR [r15+2232]
+mov r14, QWORD PTR [r15+2240]
+mov r15, QWORD PTR [r15+2248]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt_vaes = sym super::aes_xts::vg_aes_xts_encrypt_vaes,
+    )
+}
+
+/// The CPU features `vg_aes_xts_decrypt_unit_vaes` requires (`Artifact.features`).
+pub(crate) const VG_AES_XTS_DECRYPT_UNIT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes"]);
+
+/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value with `vg_aes_xts_encrypt_vaes` (as one block from a zero tweak), deciphers the data with `vg_aes_xts_decrypt_vaes`, and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_vaes(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+2208], rbx
+mov QWORD PTR [rax+2216], rbp
+mov QWORD PTR [rax+2224], r12
+mov QWORD PTR [rax+2232], r13
+mov QWORD PTR [rax+2240], r14
+mov QWORD PTR [rax+2248], r15
+mov r15, rax
+mov rbx, rdi
+mov rbp, rdx
+mov r12, r8
+mov r13, r9
+mov rax, QWORD PTR [rcx]
+mov QWORD PTR [r15+2176], rax
+mov rax, QWORD PTR [rcx+8]
+mov QWORD PTR [r15+2184], rax
+mov eax, 0
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rax
+mov rdi, rsi
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov rcx, r15
+add rcx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_vaes}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+je 20f
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+sub r8, 1
+call {vg_aes_xts_decrypt_vaes}
+mov rax, QWORD PTR [r15+2176]
+mov rcx, QWORD PTR [r15+2184]
+mov rdx, rcx
+add rdx, rdx
+sbb rdx, rdx
+and rdx, 135
+add rax, rax
+adc rcx, rcx
+xor rax, rdx
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rcx
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_decrypt_vaes}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov ecx, 0
+22:
+movzx eax, BYTE PTR [rdx+rcx*1]
+movzx r9d, BYTE PTR [rdx+rcx*1+16]
+mov BYTE PTR [rdx+rcx*1], r9b
+mov BYTE PTR [rdx+rcx*1+16], al
+add rcx, 1
+cmp rcx, r8
+jne 22b
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_decrypt_vaes}
+jmp 21f
+20:
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+call {vg_aes_xts_decrypt_vaes}
+21:
+mov rbx, QWORD PTR [r15+2208]
+mov rbp, QWORD PTR [r15+2216]
+mov r12, QWORD PTR [r15+2224]
+mov r13, QWORD PTR [r15+2232]
+mov r14, QWORD PTR [r15+2240]
+mov r15, QWORD PTR [r15+2248]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt_vaes = sym super::aes_xts::vg_aes_xts_encrypt_vaes,
+        vg_aes_xts_decrypt_vaes = sym super::aes_xts::vg_aes_xts_decrypt_vaes,
+    )
+}
+
+/// The CPU features `vg_aes_xts_encrypt_unit_vaes_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_XTS_ENCRYPT_UNIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "vpclmulqdq"]);
+
+/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value and the data with `vg_aes_xts_encrypt_vaes_vpclmul` (the tweak value as one block from a zero tweak), and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `vaes` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_encrypt_unit_vaes_vpclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+2208], rbx
+mov QWORD PTR [rax+2216], rbp
+mov QWORD PTR [rax+2224], r12
+mov QWORD PTR [rax+2232], r13
+mov QWORD PTR [rax+2240], r14
+mov QWORD PTR [rax+2248], r15
+mov r15, rax
+mov rbx, rdi
+mov rbp, rdx
+mov r12, r8
+mov r13, r9
+mov rax, QWORD PTR [rcx]
+mov QWORD PTR [r15+2176], rax
+mov rax, QWORD PTR [rcx+8]
+mov QWORD PTR [r15+2184], rax
+mov eax, 0
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rax
+mov rdi, rsi
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov rcx, r15
+add rcx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_vaes_vpclmul}
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+call {vg_aes_xts_encrypt_vaes_vpclmul}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+je 20f
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov ecx, 0
+22:
+movzx eax, BYTE PTR [rdx+rcx*1]
+movzx r9d, BYTE PTR [rdx+rcx*1+16]
+mov BYTE PTR [rdx+rcx*1], r9b
+mov BYTE PTR [rdx+rcx*1+16], al
+add rcx, 1
+cmp rcx, r8
+jne 22b
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_vaes_vpclmul}
+jmp 21f
+20:
+21:
+mov rbx, QWORD PTR [r15+2208]
+mov rbp, QWORD PTR [r15+2216]
+mov r12, QWORD PTR [r15+2224]
+mov r13, QWORD PTR [r15+2232]
+mov r14, QWORD PTR [r15+2240]
+mov r15, QWORD PTR [r15+2248]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt_vaes_vpclmul = sym super::aes_xts::vg_aes_xts_encrypt_vaes_vpclmul,
+    )
+}
+
+/// The CPU features `vg_aes_xts_decrypt_unit_vaes_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_XTS_DECRYPT_UNIT_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "vpclmulqdq"]);
+
+/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// This implementation enciphers the tweak value with `vg_aes_xts_encrypt_vaes_vpclmul` (as one block from a zero tweak), deciphers the data with `vg_aes_xts_decrypt_vaes_vpclmul`, and steals ciphertext by swapping bytes of the last two blocks in place.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule`, `i` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may overlap the return address on the stack or the 16 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `vaes` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_xts_decrypt_unit_vaes_vpclmul(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r"mov rax, QWORD PTR [rsp+8]
+mov QWORD PTR [rax+2208], rbx
+mov QWORD PTR [rax+2216], rbp
+mov QWORD PTR [rax+2224], r12
+mov QWORD PTR [rax+2232], r13
+mov QWORD PTR [rax+2240], r14
+mov QWORD PTR [rax+2248], r15
+mov r15, rax
+mov rbx, rdi
+mov rbp, rdx
+mov r12, r8
+mov r13, r9
+mov rax, QWORD PTR [rcx]
+mov QWORD PTR [r15+2176], rax
+mov rax, QWORD PTR [rcx+8]
+mov QWORD PTR [r15+2184], rax
+mov eax, 0
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rax
+mov rdi, rsi
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov rcx, r15
+add rcx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_encrypt_vaes_vpclmul}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+je 20f
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+sub r8, 1
+call {vg_aes_xts_decrypt_vaes_vpclmul}
+mov rax, QWORD PTR [r15+2176]
+mov rcx, QWORD PTR [r15+2184]
+mov rdx, rcx
+add rdx, rdx
+sbb rdx, rdx
+and rdx, 135
+add rax, rax
+adc rcx, rcx
+xor rax, rdx
+mov QWORD PTR [r15+2192], rax
+mov QWORD PTR [r15+2200], rcx
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2192
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_decrypt_vaes_vpclmul}
+mov rax, r13
+shr rax, 4
+shl rax, 4
+mov r8, r13
+sub r8, rax
+mov rdx, r12
+add rdx, rax
+sub rdx, 16
+mov ecx, 0
+22:
+movzx eax, BYTE PTR [rdx+rcx*1]
+movzx r9d, BYTE PTR [rdx+rcx*1+16]
+mov BYTE PTR [rdx+rcx*1], r9b
+mov BYTE PTR [rdx+rcx*1+16], al
+add rcx, 1
+cmp rcx, r8
+jne 22b
+mov rcx, rdx
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov r8d, 1
+mov r9, r15
+call {vg_aes_xts_decrypt_vaes_vpclmul}
+jmp 21f
+20:
+mov rdi, rbx
+mov rsi, rbp
+mov rdx, r15
+add rdx, 2176
+mov rcx, r12
+mov r8, r13
+shr r8, 4
+mov r9, r15
+call {vg_aes_xts_decrypt_vaes_vpclmul}
+21:
+mov rbx, QWORD PTR [r15+2208]
+mov rbp, QWORD PTR [r15+2216]
+mov r12, QWORD PTR [r15+2224]
+mov r13, QWORD PTR [r15+2232]
+mov r14, QWORD PTR [r15+2240]
+mov r15, QWORD PTR [r15+2248]
+ret
+.p2align 6",
+        vg_aes_xts_encrypt_vaes_vpclmul = sym super::aes_xts::vg_aes_xts_encrypt_vaes_vpclmul,
+        vg_aes_xts_decrypt_vaes_vpclmul = sym super::aes_xts::vg_aes_xts_decrypt_vaes_vpclmul,
+    )
+}

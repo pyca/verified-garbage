@@ -1,8 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86.SignBody
-public import VerifiedGarbage.Proof.Dsa.X86.SignBytesSpec
-public import VerifiedGarbage.Proof.Dsa.X86.OutputBytes
+public import VerifiedGarbage.Proof.Dsa.Accepted
+public import VerifiedGarbage.Proof.Dsa.OutputBytes
 
 /-! # The post-shape signing body satisfies the packed-byte signing result -/
 
