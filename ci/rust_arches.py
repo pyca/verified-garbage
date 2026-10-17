@@ -9,9 +9,11 @@ the emitter writes). So a pull request runs the Rust jobs of an
 architecture only when it changes that architecture's files or anything else
 that can change what the tests do (the shared Rust code, the tests, their
 vectors, Cargo's files, the Rust jobs' workflow, matrices and scripts):
-every path but those of one architecture and those in `NOT_RUST`. The merge
-queue runs every job, and a push to main runs every job without its tests
-(for main's caches).
+every path but those of one architecture and those in `NOT_RUST`. Each
+architecture's jobs cover every line it builds (ci/merge_rust_coverage.py),
+so a pull request's coverage is checked for those it tests. The merge queue
+runs every job, and a push to main runs every job without its tests (for
+main's caches).
 
   rust_arches.py pull_request < PATHS
       the jobs of the architectures the changed paths (one per line) reach

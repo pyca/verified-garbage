@@ -309,8 +309,9 @@ jobs:
   # architectures whose tests run: a pull request starts only the jobs of
   # those its changes can affect (ci/rust_arches.py): an architecture's own
   # `src/asm/<target>/`, or the shared code, which is every architecture's.
-  # The merge queue runs every job, so that the coverage, merged across them
-  # all, is checked before anything lands. A push to main is the commit the
+  # Each architecture's tests cover every line it builds (`coverage`), so
+  # those that run are checked alone. The merge queue runs every job, so that
+  # everything is checked before anything lands. A push to main is the commit the
   # merge queue tested (see the `lean` job's `reuse`): its Rust jobs all run,
   # but only build (each entry's `tests`, the jobs' `TESTS`), for main's
   # caches, which only main saves.
@@ -810,13 +811,19 @@ jobs:
           path: .cpu-features-times
           key: cpu-features-times-${{ github.run_id }}-${{ github.run_attempt }}
 
-  # Only when every architecture ran its tests (`rust-arches`): not on a push
-  # to main, which runs none, nor on a pull request that tests only some,
-  # whose coverage the merge queue checks.
+  # The coverage of the architectures whose tests ran (`rust-arches`), each
+  # of which covers every line it builds by itself (ci/merge_rust_coverage.py),
+  # so that a pull request that tests only some is checked too; not on a push
+  # to main, which runs none. Also when a Rust job was skipped, since its
+  # architectures were not tested, but not when one failed.
   coverage:
     name: Rust coverage
     needs: [rust-arches, rust, rust-cpu-features]
-    if: ${{ needs.rust-arches.outputs.all == 'true' }}
+    if: >-
+      ${{ !cancelled() && needs.rust-arches.outputs.arches != '[]'
+      && needs.rust-arches.result == 'success'
+      && contains(fromJSON('["success", "skipped"]'), needs.rust.result)
+      && contains(fromJSON('["success", "skipped"]'), needs.rust-cpu-features.result) }}
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -832,13 +839,16 @@ jobs:
           path: coverage-data/
       # Every path of ci/cpu_tests.py's groups selects a test on some CPU of
       # `rust-cpu-features`, from the tests each one listed: a test renamed
-      # or moved out of its group fails here, not by running less.
-      - uses: ./.github/actions/download-artifact
+      # or moved out of its group fails here, not by running less. Only when
+      # every CPU ran.
+      - if: ${{ needs.rust-arches.outputs.all == 'true' }}
+        uses: ./.github/actions/download-artifact
         with:
           pattern: cpu-tests-*
           merge-multiple: true
           path: cpu-tests/
       - name: Check the CPU feature runs' groups
+        if: ${{ needs.rust-arches.outputs.all == 'true' }}
         run: python3 ci/cpu_tests.py check cpu-tests/*.json
       - name: Combine coverage and fail if it's <100%
         id: combinecoverage
@@ -886,22 +896,21 @@ jobs:
           RUST: ${{ needs.rust.result }} ${{ needs.rust-arches.outputs.rust == '[]' }}
           THUMB: ${{ needs.rust-thumb.result }} ${{ needs.rust-arches.outputs.thumb == '[]' }}
           CPU: ${{ needs.rust-cpu-features.result }} ${{ needs.rust-arches.outputs.cpu == '[]' }}
-          # Skipped unless every architecture ran its tests (`rust-arches`).
-          COVERAGE: ${{ needs.coverage.result }}
-          ALL_ARCHES: ${{ needs.rust-arches.outputs.all }}
+          # Skipped exactly when no architecture ran its tests (`rust-arches`).
+          COVERAGE: ${{ needs.coverage.result }} ${{ needs.rust-arches.outputs.arches == '[]' }}
           # Skipped when `lean` built the proofs itself.
           SHARDS: ${{ needs.lean-shard.result }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          echo "$RESULTS | $RUST | $THUMB | $CPU | $COVERAGE $SHARDS"
+          echo "$RESULTS | $RUST | $THUMB | $CPU | $COVERAGE | $SHARDS"
           for r in $RESULTS; do
             [ "$r" = success ] || exit 1
           done
           for r in "$RUST" "$THUMB" "$CPU"; do
             [ "$r" = "success false" ] || [ "$r" = "skipped true" ] || exit 1
           done
-          [ "$COVERAGE" = success ] || { [ "$ALL_ARCHES" != true ] && [ "$COVERAGE" = skipped ]; } || exit 1
+          [ "$COVERAGE" = "success false" ] || [ "$COVERAGE" = "skipped true" ] || exit 1
           case "$SHARDS" in
             skipped) ;;
             success)
