@@ -178,9 +178,11 @@ structure GenOk (p : Instr → Bool) : Prop where
   ptrs : (Code.block Cfg.msgPtrs : Prog isa).allInstrs p = true
   dg : (Code.block Cfg.digestPtr : Prog isa).allInstrs p = true
   zero₀ : (Code.block ([.alu32 .xor .rcx (.reg .rcx)] ++
-    (List.range 9).map (fun j => .store (stk (fY + 8 * j)) .rcx) ++ Cfg.selLd) : Prog isa).allInstrs p = true
+    (List.range 9).map (fun j => .store (stk (fY + 8 * j)) .rcx)) : Prog isa).allInstrs p = true
   zero₁ : (Code.block ([.alu32 .xor .rcx (.reg .rcx)] ++
-    (List.range 18).map (fun j => .store (stk (fY + 8 * j)) .rcx) ++ Cfg.selLd) : Prog isa).allInstrs p = true
+    (List.range 18).map (fun j => .store (stk (fY + 8 * j)) .rcx)) : Prog isa).allInstrs p = true
+  copy : ∀ (c : Cfg) e, (Code.block (c.copyLen ++ Cfg.copyDst e) : Prog isa).allInstrs p = true
+  step : (Code.block Cfg.copyStep : Prog isa).allInstrs p = true
   kv : (Code.block Cfg.initKV : Prog isa).allInstrs p = true
   cnt : ∀ c : Cfg, (Code.block c.initCnt : Prog isa).allInstrs p = true
   offI : (Code.block Cfg.offInit : Prog isa).allInstrs p = true
@@ -190,7 +192,7 @@ structure GenOk (p : Instr → Bool) : Prop where
   go : (Code.block Cfg.goOn : Prog isa).allInstrs p = true
   again : (Code.block Cfg.again : Prog isa).allInstrs p = true
   stop : (Code.block Cfg.stop : Prog isa).allInstrs p = true
-  wipe : (Code.block Cfg.wipe : Prog isa).allInstrs p = true
+  wipe : (Cfg.wipe : Prog isa).allInstrs p = true
 
 theorem dims_mem' {T : Tier} {k : Nat} {v : MdHash} (hv : T.hashes[k]? = some v)
     (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) : v.H.D ∈ [20, 28, 32, 48, 64] := by
@@ -208,24 +210,30 @@ theorem sign_allInstrs (R : RfcCurve) (T : Tier) (tries : Nat) {p : Instr → Bo
       ((cfgRT R T tries).rekeyFull b).allInstrs p = true := fun b h =>
     ai_seq hG.ptrs (ai_seq (ai_block h) (ai_seq (hmac _ _ _ (hG.a₂M _)) hmacV))
   have rekey : (cfgRT R T tries).rekey.allInstrs p = true :=
-    ai_seq hG.ptrs (ai_seq (ai_block hcv.2.2.1) (ai_seq (hmac _ _ _ (hG.a₂M _)) hmacV))
+    ai_seq hG.ptrs (ai_seq (ai_block hcv.2.1) (ai_seq (hmac _ _ _ (hG.a₂M _)) hmacV))
   have candStep : (cfgRT R T tries).candStep.allInstrs p = true :=
-    ai_seq hmacV (ai_seq hG.offL (ai_block hcv.2.2.2.2.2.1))
+    ai_seq hmacV (ai_seq hG.offL (ai_block hcv.2.2.2.2.1))
   have cand : (cfgRT R T tries).cand.allInstrs p = true :=
-    ai_seq hG.offI (ai_if candStep (ai_seq candStep (ai_seq hG.scrP (ai_block hcv.2.2.2.2.2.2))))
+    ai_seq hG.offI (ai_if candStep (ai_seq candStep (ai_seq hG.scrP (ai_block hcv.2.2.2.2.2))))
   have zero : (Code.block (cfgRT R T tries).prepZero : Prog isa).allInstrs p = true := by
     unfold Cfg.prepZero
     split
     · exact hG.zero₁
     · exact hG.zero₀
+  have copyDg : ∀ e, ((cfgRT R T tries).copyDg e).allInstrs p = true := fun e =>
+    ai_seq (hG.copy _ e) (show (Code.block Cfg.copyStep : Prog isa).allInstrs p = true from hG.step)
+  have prepCopy : (cfgRT R T tries).prepCopy.allInstrs p = true := by
+    unfold Cfg.prepCopy
+    split
+    · exact ai_seq (copyDg _) (copyDg _)
+    · exact copyDg _
   have prep : (cfgRT R T tries).prep.allInstrs p = true :=
-    ai_seq zero (ai_seq (Proof.Dispatch.chain_allInstrs _ hG.test _ (cases_all (g := fun x : List Instr => Code.block x)
-      (f := fun H => (cfgRT R T tries).prepCase H.D) fun k v hk hv => ai_block (hcv.1 _ (dims_mem' hv hk)))) (ai_block hcv.2.1))
+    ai_seq zero (ai_seq prepCopy (ai_block hcv.1))
   have tryOne : (cfgRT R T tries).tryOne.allInstrs p = true :=
     ai_seq cand (ai_seq hG.args (ai_seq hI.core (ai_seq hG.go (ai_ite (ai_seq rekey hG.again) hG.stop))))
   exact ai_seq hG.entry (ai_seq (Proof.Dispatch.chain_allInstrs _ hG.test _ (cases_all (g := fun x : List Instr => Code.block x)
     (f := fun H => Cfg.sizes H.D H.P.B) fun _ _ _ _ => hG.sizes _ _)) (ai_frame hG.push (ai_seq hG.init (ai_seq hG.dg (ai_seq prep (ai_seq hG.kv
-      (ai_seq (rekeyF 0 hcv.2.2.2.1) (ai_seq (rekeyF 1 hcv.2.2.2.2.1) (ai_seq (hG.cnt _)
+      (ai_seq (rekeyF 0 hcv.2.2.1) (ai_seq (rekeyF 1 hcv.2.2.2.1) (ai_seq (hG.cnt _)
         (ai_seq tryOne hG.wipe)))))))) hG.pop))
 
 theorem genMx : GenOk fun i => !loadsMxcsr i where
@@ -243,6 +251,8 @@ theorem genMx : GenOk fun i => !loadsMxcsr i where
   dg := rfl
   zero₀ := rfl
   zero₁ := rfl
+  copy c _ := by unfold Cfg.copyLen; split <;> rfl
+  step := rfl
   kv := rfl
   cnt _ := rfl
   offI := rfl
@@ -269,6 +279,8 @@ theorem genSp : GenOk fun i => !isa.writesSp i where
   dg := rfl
   zero₀ := rfl
   zero₁ := rfl
+  copy c _ := by unfold Cfg.copyLen; split <;> rfl
+  step := rfl
   kv := rfl
   cnt _ := rfl
   offI := rfl

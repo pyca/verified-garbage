@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Loop
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CopyLoop
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -264,16 +265,22 @@ theorem stageE_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (hq : QD P L m�
       (by nums)).trans hq.v,
     by rw [hn', Nat.sub_zero], fun j hj => absurd hj (Nat.not_lt_zero _), hq.dg.frameOf hL hf' (by simp [DgApart])⟩
 
+/-- The result is kept by code that keeps `rax` and writes only the stack. -/
+theorem Exit.keepF {i : Nat} {u : State} (hx : Exit P L m₀ i u) (hk : CoreOk P L) {u' : State}
+    (ha : u'.gpr .rax = u.gpr .rax) {ws : List Region} (hf : Frame ws u.mem u'.mem)
+    (hd : ∀ r ∈ ws, Region.Disjoint r L.OUT) : Exit P L m₀ i u' :=
+  ⟨hx.lt, hx.fails, hx.last, hx.res.keep ha (bytesAt_frame hf (fun r hr =>
+    (hd r hr).symm.sub_left (Region.sub_prefix (by rw [hk.1]))) (by nums))⟩
+
 theorem stageG_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u) {i : Nat}
     (hx : Exit P L m₀ i u) :
-    WP isa (.block Cfg.wipe) u fun u' => Ctx L g m₀ u' ∧ Exit P L m₀ i u' :=
-  WP.mono (wipe_ok hL hc) fun _ ⟨hc₇, ha₇, hf₇⟩ => ⟨hc₇, hx.lt, hx.fails, hx.last,
-    hx.res.keep ha₇ (bytesAt_frame hf₇ (fun r hr => by
-      have := L.he
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact (hL.stk_OUT (by omega_using [this])).symm.sub_left (Region.sub_prefix (by rw [hk.1]))
-      · exact (hL.stk_OUT (by omega_using [this])).symm.sub_left (Region.sub_prefix (by rw [hk.1]))) (by nums))⟩
+    WP isa Cfg.wipe u fun u' => Ctx L g m₀ u' ∧ Exit P L m₀ i u' :=
+  WP.mono (wipe_ok hL hc) fun _ ⟨hc₇, ha₇, hf₇⟩ => ⟨hc₇, hx.keepF hk ha₇ hf₇ fun r hr => by
+    have := L.he
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hL.stk_OUT (by omega_using [this])
+    · exact hL.stk_OUT (by omega_using [this])⟩
 
 theorem body_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (cfgOf P).body t fun t' => Ctx L g m₀ t' ∧ ∃ i, Exit P L m₀ i t' :=

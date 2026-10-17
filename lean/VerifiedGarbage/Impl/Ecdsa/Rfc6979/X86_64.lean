@@ -22,7 +22,7 @@ and takes its digest's leftmost `qlen` bits (`bits2int`, a right shift by
 The hash function is public. Each call of one of HMAC's functions passes
 `hash` (`r9`) to the tier's, which chooses the hash function's; its output
 length `D` and block size `B` are chosen once, by a dispatch on `hash`
-(`Dispatch.X86_64.chain`) before the frame is pushed, and kept in the frame,
+(`Dispatch.X86_64.chain`) before the frame is allocated, and kept in the frame,
 from which every length that depends on them is computed, such as the bytes of
 the digest to copy (`prepCopy`, a loop).
 
@@ -50,8 +50,8 @@ candidates left, then `scratch`, `digest`, `d` and `out`, `core`'s digest
 (`Y`, 72 bytes), `h` (72), the candidate (`C`, 136), and `B`, `D` and
 `hash`. The calls use only `scratch`, which `core` overwrites entirely, the
 32 bytes below the frame, and, for HMAC's `finalize`, the 64 bytes at `K`'s
-or `V`'s place; `K`, `V`, `h`, `Y` and the candidate are cleared before the
-frame is popped. In `scratch`: HMAC's inner and outer streaming states (256
+or `V`'s place; the secrets, `K`, `V` and the candidate, are cleared before the
+frame is freed. In `scratch`: HMAC's inner and outer streaming states (256
 bytes each), the working space of HMAC's and the hash function's functions
 (2048 bytes), the message of steps d, f and h.3, and the words of a shift (if
 `wide`).
@@ -389,11 +389,18 @@ def tryOne : Prog isa :=
   (.seq (.block goOn)
     (.ite .ne (.seq c.rekey (.block again)) (.block stop)))))
 
-/-- `K`, `V`, the offset and the count cleared, and the words above the
-pointers but for `B`, `D` and `hash` (`rax`, the result, kept). -/
-def wipe : List Instr :=
-  ([.alu32 .xor .rcx (.reg .rcx)] : List Instr) ++ (List.range 22).map (fun j => .store (stk (8 * j)) .rcx) ++
-    (List.range extra).map fun j => .store (stk (fY + 8 * j)) .rcx
+/-- The secrets' bytes to clear: `rdx` zero, `rcx` 136. -/
+def wipeInit : List Instr := [.alu32 .xor .rdx (.reg .rdx), .mov32 .rcx (.imm (BitVec.ofNat 32 136))]
+
+/-- The word below `rcx` of `K`, `V` and the offset, and of the candidate,
+cleared, and `rcx` eight fewer; `ZF` set iff none are left. -/
+def wipeStep : List Instr :=
+  [.alu .sub .rcx (.imm 8), .store { base := .rsp, index := some .rcx } .rdx,
+    .store { base := .rsp, index := some .rcx, disp := (fC : Int) } .rdx]
+
+/-- `K`, `V`, the candidate's offset and the candidate cleared, the frame's
+secrets (`rax`, the result, kept). -/
+def wipe : Prog isa := .seq (.block wipeInit) (.loop (.block wipeStep) .ne)
 
 /-- The frame's body. -/
 def body : Prog isa :=
@@ -404,7 +411,7 @@ def body : Prog isa :=
   (.seq (c.rekeyFull 1)
   (.seq (.block c.initCnt)
   (.seq (.loop c.tryOne .ne)
-    (.block wipe)))))))
+    wipe))))))
 
 /-- The frame's bytes. -/
 def frameBytes : Nat := 520

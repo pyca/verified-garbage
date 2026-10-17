@@ -127,4 +127,90 @@ theorem copyLoop_ok {u : State} {S D : Addr} {n : Nat} (hn : 0 < n) (hn' : 4 * n
     rw [show k - 1 + 1 = k by omega]
     exact hb
 
+/-! ## Clearing the frame's secrets in a loop -/
+
+theorem ea_idx_disp (t : State) (b i : Reg) (d : Nat) :
+    t.ea { base := b, index := some i, disp := (d : Int) } = t.gpr b + t.gpr i + BitVec.ofNat 64 d := by
+  simp only [State.ea, BitVec.mul_one, ofInt_nat]
+
+theorem sub8 {k : Nat} (hk : 8 * (k + 1) < 2 ^ 63) :
+    BitVec.ofNat 64 (8 * (k + 1)) - (8 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (8 * k) := by
+  rw [show (8 : BitVec 32) = BitVec.ofNat 32 8 from rfl, sx32 (by decide), Offset.ofNat_sub_ofNat (by omega),
+    show 8 * (k + 1) - 8 = 8 * k by omega]
+
+theorem zf8 (k : Nat) (hk : k < 17) : (BitVec.ofNat 64 (8 * k) == 0) = decide (k = 0) := by
+  rcases Nat.eq_zero_or_pos k with rfl | h
+  · rfl
+  · have : BitVec.ofNat 64 (8 * k) ≠ 0 := fun h' => by
+      have := congrArg BitVec.toNat h'
+      rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+      simp at this; omega
+    have h₁ : (BitVec.ofNat 64 (8 * k) == 0) = false := by simpa using this
+    have h₂ : decide (k = 0) = false := by simp only [decide_eq_false_iff_not]; omega
+    rw [h₁, h₂]
+
+variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
+
+/-- One step of the wipe: the words below `rcx` of `K`, `V` and the offset,
+and of the candidate, written. -/
+theorem wipeStep_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {k : Nat}
+    (hcx : t.gpr .rcx = BitVec.ofNat 64 (8 * (k + 1))) (hk : k < 17) :
+    WP isa (.block Cfg.wipeStep) t fun t' => Ctx L g m₀ t' ∧
+      Frame [⟨L.B + BitVec.ofNat 64 (24 + 8 * k), 8⟩, ⟨L.B + BitVec.ofNat 64 (24 + 8 * k + 360), 8⟩] t.mem t'.mem ∧
+      (∀ r, r ≠ .rcx → t'.gpr r = t.gpr r) ∧ t'.gpr .rcx = BitVec.ofNat 64 (8 * k) ∧
+      isa.eval .ne t' = some (!decide (k = 0)) := by
+  have he := L.he
+  have w₁ := hc.inFrW (d := 24 + 8 * k) (n := 8) (by omega) (by omega)
+  have w₂ := hc.inFrW (d := 24 + 8 * k + 360) (n := 8) (by omega) (by omega)
+  refine Ctx.of_keep hL hc ?_ (by decide +kernel) fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact safe_low L (by omega)
+    · exact safe_high L (by omega) (by omega)
+  apply WP.of_runBlock
+  simp only [Cfg.wipeStep, fC, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, State.store64,
+    ea_idx, ea_idx_disp, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_arithFlags, reduceCtorEq,
+    ite_true, ite_false, hc.rsp, hcx, sub8 (k := k) (by omega), Offset.add_add, w₁, w₂, Option.bind_some,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, ?_, fun r hr => by simp only [hr, ite_false], trivial, ?_⟩
+  · have c8 : ∀ a : Addr, (⟨a, 8⟩ : Region).Contains a (64 / 8) := fun a => Region.contains_self a 8
+    exact ((Frame.refl _ _).writeW (List.mem_cons_self ..) _ (c8 _)).writeW
+      (List.mem_cons_of_mem _ (List.mem_singleton_self _)) _ (c8 _)
+  · simp only [eval, RegUpd.zf_setReg, RegUpd.zf_arithFlags, Option.map_some, zf8 k hk]
+
+/-- `rdx` zero and `rcx` 136. -/
+theorem wipeInit_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
+    WP isa (.block Cfg.wipeInit) t fun u => Ctx L g m₀ u ∧ u.mem = t.mem ∧ u.gpr .rax = t.gpr .rax ∧
+      u.gpr .rcx = BitVec.ofNat 64 (8 * (16 + 1)) := by
+  apply WP.of_runBlock
+  simp only [Cfg.wipeInit, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32, State.setReg32,
+    Option.bind_some, Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, reduceCtorEq, ite_false,
+    ite_true, Option.some.injEq, exists_eq_left', zx32 (show 136 < 2 ^ 32 by decide)]
+  exact ⟨hc.regs hL rfl rfl rfl rfl (by cs_tac), by triv, by triv, by triv⟩
+
+/-- The frame's secrets cleared: `K`, `V` and the offset, and the candidate. -/
+theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
+    WP isa Cfg.wipe t fun t' => Ctx L g m₀ t' ∧ t'.gpr .rax = t.gpr .rax ∧
+      Frame [⟨L.B + BitVec.ofNat 64 24, 136⟩, ⟨L.B + BitVec.ofNat 64 384, 136⟩] t.mem t'.mem := by
+  have h₁ := wipeInit_ok hL hc
+  refine WP.seq (WP.mono h₁ fun u ⟨hcu, hmu, hax, hcx⟩ => ?_)
+  refine WP.loop (M := isa) (fun k s => Ctx L g m₀ s ∧ s.gpr .rax = t.gpr .rax ∧
+      s.gpr .rcx = BitVec.ofNat 64 (8 * (k + 1)) ∧ k < 17 ∧
+      Frame [⟨L.B + BitVec.ofNat 64 24, 136⟩, ⟨L.B + BitVec.ofNat 64 384, 136⟩] t.mem s.mem) ?_ 16 u
+    ⟨hcu, hax, hcx, by omega, by rw [hmu]; exact Frame.refl _ _⟩
+  intro k s ⟨hcs, has, hcxs, hk, hfs⟩
+  refine WP.mono (wipeStep_ok hL hcs hcxs hk) fun s' ⟨hc', hf', hg', hcx', hne⟩ => ?_
+  have hf : Frame [⟨L.B + BitVec.ofNat 64 24, 136⟩, ⟨L.B + BitVec.ofNat 64 384, 136⟩] t.mem s'.mem :=
+    hfs.trans (hf'.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by omega) (by omega)⟩
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), Offset.sub _ (by omega) (by omega)⟩)
+  have ha : s'.gpr .rax = t.gpr .rax := (hg' _ (by decide)).trans has
+  rcases Nat.eq_zero_or_pos k with rfl | hpos
+  · exact .inl ⟨hne, hc', ha, hf⟩
+  · refine .inr ⟨by rw [hne]; simp only [decide_eq_false (Nat.pos_iff_ne_zero.mp hpos), Bool.not_false],
+      k - 1, by omega, hc', ha, by rw [hcx', show k - 1 + 1 = k by omega], by omega, hf⟩
+
 end VG.Proof.Ecdsa.Rfc6979.X86_64

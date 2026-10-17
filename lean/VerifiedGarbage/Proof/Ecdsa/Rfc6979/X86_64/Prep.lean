@@ -164,6 +164,40 @@ theorem zeros_sub {m : Mem} {p : Addr} {N : Nat} (hz : Spec.Sha256.bytesAt m p N
   rw [hz, List.take_replicate, Nat.min_eq_left h, Proof.Hmac.Common.bytesAt_add, ← List.replicate_append_replicate] at e
   exact (List.append_inj e (by simp [Spec.Sha256.bytesAt])).2
 
+/-- `copyLen`, then `rdx ← rsp + e - rcx`: the first byte of the copy. -/
+theorem copySetup_ok {t : State} {e m : Nat}
+    (hlen : WP isa (.block (cfgOf P).copyLen) t fun u => Ctx L g m₀ u ∧ u.mem = t.mem ∧
+      u.gpr .rcx = BitVec.ofNat 64 m ∧ ∀ r, r ≠ .rax → r ≠ .rcx → u.gpr r = t.gpr r)
+    (hL : L.Ok) (hme : m ≤ 24 + e) (he : e < 2 ^ 31) :
+    WP isa (.block ((cfgOf P).copyLen ++ Cfg.copyDst e)) t fun u => Ctx L g m₀ u ∧ u.mem = t.mem ∧
+      u.gpr .rcx = BitVec.ofNat 64 m ∧ u.gpr .rdx = L.B + BitVec.ofNat 64 (24 + e - m) ∧
+      ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → u.gpr r = t.gpr r := by
+  rw [WP.block_append_iff]
+  refine WP.mono hlen fun u ⟨hcu, hmu, hcx, hg⟩ => ?_
+  rw [show Cfg.copyDst e = Cfg.fr .rdx e ++ [.alu .sub .rdx (.reg .rcx)] from rfl, WP.block_append_iff]
+  refine WP.mono (fr_ok hL hcu (d := .rdx) (by decide) (o := e) he) fun u₁ h₁ => ?_
+  refine WP.mono (subReg_ok hL h₁.ctx (d := .rdx) (by decide) .rcx) fun u₂ h₂ => ?_
+  refine ⟨h₂.ctx, by rw [h₂.mem, h₁.mem, hmu], by rw [h₂.keep _ (by decide), h₁.keep _ (by decide), hcx], ?_,
+    fun r h₁' h₂' h₃' => by rw [h₂.keep _ h₃', h₁.keep _ h₃', hg r h₁' h₂']⟩
+  rw [h₂.val, h₁.val, h₁.keep _ (by decide), hcx, Offset.add_ofNat_sub _ hme]
+
+/-- One step of the copy, within the frame above its pointers, with `Ctx` kept. -/
+theorem copyStepC_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hsi : t.gpr .rsi = L.dg) {d k : Nat}
+    (hdx : t.gpr .rdx = L.B + BitVec.ofNat 64 d) (hcx : t.gpr .rcx = BitVec.ofNat 64 (4 * (k + 1)))
+    (hd₁ : 240 ≤ d) (hd₂ : d + 4 * (k + 1) ≤ 520) (hk : 4 * (k + 1) ≤ dn) (hk' : 4 * (k + 1) ≤ 64) :
+    WP isa (.block Cfg.copyStep) t fun t' => Ctx L g m₀ t' ∧ (∀ r, r ≠ .rax → r ≠ .rcx → t'.gpr r = t.gpr r) ∧
+      t'.gpr .rcx = BitVec.ofNat 64 (4 * k) ∧ isa.eval .ne t' = some (!decide (k = 0)) := by
+  have he := L.he
+  refine WP.mono_syms (copyStep_ok hcx (by omega) hsi hdx (hc.inDg (by omega) (by omega))
+    (by rw [Offset.add_add]; exact hc.inFrW (by omega) (by omega)))
+    fun t' ⟨hrd, hwr, hcx', hg, hne, _, hm⟩ hsy => ⟨hc.keep hL hrd hwr (hg _ (by decide) (by decide))
+      (fun r hr _ => hg r (ne_cs hr (by decide)) (ne_cs hr (by decide)))
+      (ws := [⟨L.B + BitVec.ofNat 64 (d + 4 * k), 4⟩]) (by
+        rw [hm, Offset.add_add]
+        exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _))
+      (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_high L (by omega) (by omega)) hsy,
+      hg, hcx', hne⟩
+
 /-- The digest's `m` leftmost bytes to the frame, ending at `rsp + e`, by a
 loop, for `m` (a multiple of 4) in `rcx` after `copyLen`. -/
 theorem copyDg_ok (hL : L.Ok) {t : State} (hsi : t.gpr .rsi = L.dg) {e m : Nat}
@@ -177,17 +211,7 @@ theorem copyDg_ok (hL : L.Ok) {t : State} (hsi : t.gpr .rsi = L.dg) {e m : Nat}
   have he := L.he
   have hm : 4 * (m / 4) = m := by omega
   rw [Cfg.copyDg]
-  have hblk : WP isa (.block ((cfgOf P).copyLen ++ Cfg.copyDst e)) t fun u => Ctx L g m₀ u ∧ u.mem = t.mem ∧
-      u.gpr .rcx = BitVec.ofNat 64 m ∧ u.gpr .rdx = L.B + BitVec.ofNat 64 (24 + e - m) ∧
-      ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → u.gpr r = t.gpr r := by
-    rw [WP.block_append_iff]
-    refine WP.mono hlen fun u ⟨hcu, hmu, hcx, hg⟩ => ?_
-    rw [show Cfg.copyDst e = Cfg.fr .rdx e ++ [.alu .sub .rdx (.reg .rcx)] from rfl, WP.block_append_iff]
-    refine WP.mono (fr_ok hL hcu (d := .rdx) (by decide) (o := e) (by omega)) fun u₁ h₁ => ?_
-    refine WP.mono (subReg_ok hL h₁.ctx (d := .rdx) (by decide) .rcx) fun u₂ h₂ => ?_
-    refine ⟨h₂.ctx, by rw [h₂.mem, h₁.mem, hmu], by rw [h₂.keep _ (by decide), h₁.keep _ (by decide), hcx], ?_,
-      fun r h₁' h₂' h₃' => by rw [h₂.keep _ h₃', h₁.keep _ h₃', hg r h₁' h₂']⟩
-    rw [h₂.val, h₁.val, h₁.keep _ (by decide), hcx, Offset.add_ofNat_sub _ (by omega)]
+  have hblk := copySetup_ok hlen hL (e := e) (m := m) (by omega) (by omega)
   refine WP.seq (WP.mono hblk fun u ⟨hcu, hmu, hcx, hdx, hg⟩ => ?_)
   have hsiu : u.gpr .rsi = L.dg := (hg _ (by decide) (by decide) (by decide)).trans hsi
   have hsep : Region.Disjoint ⟨L.dg, 4 * (m / 4)⟩ ⟨L.B + BitVec.ofNat 64 (24 + e - m), 4 * (m / 4)⟩ := by

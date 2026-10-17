@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 meta import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Reduce
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CopyLoop
+meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.CopyLoop
 
 /-!
 # Deterministic ECDSA on x86-64: constant time, up to the number of candidates
@@ -24,8 +26,8 @@ both satisfy `Ctx` with that layout (and `Φ`, what the next piece needs). The
 blocks address only the stack and the buffers, from registers that agree
 (the taint analysis; the blocks that depend on the curve are checked for it,
 `CurveBlks`, and those whose immediates depend on the hash function are
-checked once for any immediates, `taintOk_erase`); each dispatch on the hash
-function runs the same case in both runs (`two_dispatch`); each call is of
+checked once for any immediates, `taintOk_erase`); the dispatch on the hash
+function runs the same case in both runs (`entered_ct`); each call is of
 constant-time code whose public data agree (`RelCT.callEx`); and the loops'
 branches agree: the candidate's, since in both runs its offset is the same
 after the same number of `V`s, and the candidates', since in both runs it
@@ -102,37 +104,6 @@ theorem taintOk_erase {rs : List Reg} {is is' : List Instr}
   rw [← (taint_eraseInv.check (.block is) (Taint.ofRegs rs) hc rfl).1, he,
     (taint_eraseInv.check (.block is') (Taint.ofRegs rs) hc rfl).1]
   exact hs
-
-/-! ## The dispatches on the hash function -/
-
-/-- `Φ` does not depend on the flags. -/
-def NoFlags (Φ : Lay P.I.hashLen → Mem → State → Prop) : Prop :=
-  ∀ L m₀ t t', Φ L m₀ t → Proof.Dispatch.X86_64.FlagsOnly t t' → Φ L m₀ t'
-
-/-- A dispatch on the hash function, `hash` in `rax`: both runs run the case
-of `P`'s, from states of other flags. -/
-theorem two_dispatch {f : Impl.Pbkdf2.Md.X86_64.Hash → Prog isa} {Φ : Lay P.I.hashLen → Mem → State → Prop}
-    {Q : State → State → Prop} (hax : ∀ L m₀ t, Φ L m₀ t → t.gpr .rax = BitVec.ofNat 64 P.k) (hΦ : NoFlags Φ)
-    (h : RelCT isa (Two P Φ) (f P.H) Q) :
-    RelCT isa (Two P Φ) (Impl.Dispatch.X86_64.chain ((cfgOf P).hs.map fun p => (p.1, f p.2))) Q := by
-  have hk := P.hk
-  have hk8 : P.k < 8 := by
-    simp only [Spec.Ecdsa.Rfc6979.hashIds, List.mem_cons, List.not_mem_nil, or_false] at hk; omega
-  have hsel : ∀ L m₀ t, Φ L m₀ t → Proof.Dispatch.X86_64.sel t = P.k := fun L m₀ t h => by
-    rw [Proof.Dispatch.X86_64.sel, hax L m₀ t h, BitVec.toNat_ofNat]; omega
-  have hkeys := keys_cases P f
-  refine Proof.Dispatch.chain_relCT Proof.Dispatch.X86_64.tests ?_ ?_ ?_ ?_
-  · intro i hi
-    rw [Proof.Dispatch.keys, hkeys] at hi
-    simp only [Spec.Ecdsa.Rfc6979.hashIds, List.mem_cons, List.not_mem_nil, or_false] at hi; omega
-  · rw [Proof.Dispatch.keys, hkeys]; decide
-  · rintro s₁ s₂ ⟨_, _, _, _, _, _, f₁, f₂⟩
-    rw [hsel _ _ _ f₁, hsel _ _ _ f₂, Proof.Dispatch.keys, hkeys]; exact ⟨rfl, hk⟩
-  · intro k c hc s₁ s₂ t₁ t₂ s₁' s₂' ⟨a₁, a₂, ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩, hs, r₁, r₂, _, _⟩ e₁ e₂
-    rw [hsel _ _ _ f₁] at hs
-    subst hs
-    rw [case_eq P f hc] at e₁ e₂
-    exact h _ _ _ _ _ _ ⟨e, hL, hq, hx, c₁.flags hL r₁, c₂.flags hL r₂, hΦ _ _ _ _ f₁ r₁, hΦ _ _ _ _ f₂ r₂⟩ e₁ e₂
 
 /-- A relation shown for each pair it relates. -/
 theorem relCT_pt {c : Prog isa} {Φ : State → State → Prop} {Q : State → State → Prop}
@@ -248,7 +219,7 @@ theorem args₃_blk (e dst : Nat) : TaintOk [.rsp] (Cfg.hmacArgs₃ e dst) :=
   taintOk_erase (is' := Cfg.hmacArgs₃ 0 0) rfl ⟨_, by taint_decide⟩
 
 /-- `HMAC_K(data)`: its blocks address only the frame and `scratch`, from
-`rsp`, and its calls, each by a dispatch, are constant time with arguments
+`rsp`, and its calls, of the tier's functions, are constant time with arguments
 that agree. -/
 theorem hmac_ct {dataA : List Instr} {da : Lay P.I.hashLen → Addr} {e dst : Nat}
     {Φ : Lay P.I.hashLen → Mem → State → Prop}
@@ -506,63 +477,150 @@ theorem loop_ct :
 /-- `digest` in `rsi`, `scratch` in `rdi`. -/
 def DgIn {dn : Nat} (L : Lay dn) (_ : Mem) (u : State) : Prop := u.gpr .rsi = L.dg ∧ u.gpr .rdi = L.scr
 
-/-- And `hash` in `rax`, and `core`'s digest (and, if `wide`, `h`) cleared. -/
-def Zeroed (P : RfcHash) (L : Lay P.I.hashLen) (_ : Mem) (u : State) : Prop :=
-  u.gpr .rsi = L.dg ∧ u.gpr .rdi = L.scr ∧ u.gpr .rax = BitVec.ofNat 64 P.k ∧
-    Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 240) (8 * nz P) = List.replicate (8 * nz P) 0
-
-theorem zeroed_nf : NoFlags (Zeroed P) := fun _ _ _ _ h hf => by
-  simp only [Zeroed, hf.gpr, hf.mem]; exact h
-
 theorem prepZero_blk (c : Cfg) : TaintOk [.rsp] c.prepZero := by
   cases h : c.wide
   · simp only [Cfg.prepZero, h, Bool.false_eq_true, ite_false]; exact ⟨_, by taint_decide⟩
   · simp only [Cfg.prepZero, h, ite_true]; exact ⟨_, by taint_decide⟩
 
-/-- The digest's copies for `P`'s output length, by a dispatch: `scratch`
-stays in `rdi`. -/
-theorem prepCase_scr (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hz : Zeroed P L m₀ t) :
-    WP isa (Impl.Dispatch.X86_64.chain ((cfgOf P).hs.map fun p => (p.1, .block ((cfgOf P).prepCase p.2.D)))) t
-      fun u => Ctx L g m₀ u ∧ ScrIn L m₀ u := by
-  refine dispatch_ok P (f := fun H => .block ((cfgOf P).prepCase H.D)) hz.2.2.1 fun u hf => ?_
-  have hcu := hc.flags hL hf
-  have hsi : u.gpr .rsi = L.dg := (hf.gpr _).trans hz.1
-  have hdi : u.gpr .rdi = L.scr := (hf.gpr _).trans hz.2.1
-  have hm : u.mem = t.mem := hf.mem
-  have hdn : P.H.D ≤ P.I.hashLen := Nat.le_refl _
-  cases hw : P.R.wide
-  · have hz' : Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 240) 72 = List.replicate 72 0 := by
-      rw [hm]; simpa [nz, hw] using hz.2.2.2
-    exact WP.mono (prepCaseA_ok hL hw hcu hdn hsi hz') fun _ ⟨c, _, hg, _⟩ => ⟨c, (hg _ (by decide)).trans hdi⟩
-  · have hz' : Spec.Sha256.bytesAt u.mem (L.B + BitVec.ofNat 64 240) 144 = List.replicate 144 0 := by
-      rw [hm]; simpa [nz, hw] using hz.2.2.2
-    exact WP.mono (prepCaseW_ok hL hw hcu hdn hsi hz') fun _ ⟨c, _, hg, _, _⟩ => ⟨c, (hg _ (by decide)).trans hdi⟩
+/-- The copy's length and first byte, for any curve and end. -/
+theorem copySetup_blk (c : Cfg) (e : Nat) : TaintOk [.rsp] (c.copyLen ++ Cfg.copyDst e) := by
+  cases h : c.wide
+  · exact taintOk_erase (is' := [.mov .rcx (.mem (stk fHL)), .mov32 .rax (.imm 0), .alu .cmp .rcx (.reg .rax),
+      .cmov .ae .rcx (.reg .rax)] ++ Cfg.copyDst 0) (by simp only [Cfg.copyLen, h, Bool.false_eq_true, ite_false]; rfl)
+      ⟨_, by taint_decide⟩
+  · exact taintOk_erase (is' := [.mov .rcx (.mem (stk fHL))] ++ Cfg.copyDst 0)
+      (by simp only [Cfg.copyLen, h, ite_true]; rfl) ⟨_, by taint_decide⟩
 
-theorem dims_mem (P : RfcHash) : P.H.D ∈ [20, 28, 32, 48, 64] := by
-  rcases P.dims with ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] <;> decide
+theorem copyStep_blk : TaintOk [.rsi, .rdx, .rcx] Cfg.copyStep := ⟨_, by taint_decide⟩
+
+/-- Before step `n` of the copy (from the last): `digest` in `rsi`, `scratch`
+in `rdi`, the copy's first byte `B + d` in `rdx`, and `4 (n + 1)` bytes left
+in `rcx`, of `m`. -/
+def CL (d m n : Nat) {dn : Nat} (L : Lay dn) (_ : Mem) (t : State) : Prop :=
+  t.gpr .rsi = L.dg ∧ t.gpr .rdi = L.scr ∧ t.gpr .rdx = L.B + BitVec.ofNat 64 d ∧
+    t.gpr .rcx = BitVec.ofNat 64 (4 * (n + 1)) ∧ 4 * (n + 1) ≤ m
+
+/-- A step of the copy: in both runs, the same bytes left after it. -/
+theorem copyStep_ct {d m : Nat} (hd₁ : 240 ≤ d) (hd₂ : d + m ≤ 520) (hm : m ≤ P.H.D) (hm64 : m ≤ 64) (n : Nat) :
+    RelCT isa (Two P (CL d m n)) (.block Cfg.copyStep) fun s₁ s₂ => isa.eval .ne s₁ = isa.eval .ne s₂ ∧
+      (isa.eval .ne s₁ = some false → Two P DgIn s₁ s₂) ∧
+      (isa.eval .ne s₁ = some true → ∃ k < n, Two P (CL d m k) s₁ s₂) := by
+    have h := two_wp (Φ := CL d m n) (Ψ := fun L m₀ t => DgIn L m₀ t ∧ t.gpr .rdx = L.B + BitVec.ofNat 64 d ∧
+        t.gpr .rcx = BitVec.ofNat 64 (4 * n) ∧ isa.eval .ne t = some (!decide (n = 0)) ∧ 4 * (n + 1) ≤ m)
+      (two_blk [.rsi, .rdx, .rcx] (fun _ _ _ _ _ _ _ _ _ f₁ f₂ r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact f₁.1.trans f₂.1.symm
+        · exact f₁.2.2.1.trans f₂.2.2.1.symm
+        · exact f₁.2.2.2.1.trans f₂.2.2.2.1.symm) copyStep_blk)
+      fun L g m₀ _ hL _ hc ⟨hsi, hdi, hdx, hcx, hn⟩ => WP.mono (copyStepC_ok (dn := P.I.hashLen) hL hc hsi hdx hcx hd₁ (by omega)
+        (by show _ ≤ P.H.D; omega) (by omega)) fun (t' : State) ⟨hc', hg, hcx', hne⟩ =>
+          ⟨hc', ⟨(hg _ (by decide) (by decide)).trans hsi, (hg _ (by decide) (by decide)).trans hdi⟩,
+            (hg _ (by decide) (by decide)).trans hdx, hcx', hne, hn⟩
+    refine h.mono (fun _ _ x => x) fun a b ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ =>
+      ⟨by rw [f₁.2.2.2.1, f₂.2.2.2.1], fun _ => ⟨e, hL, hq, hx, c₁, c₂, f₁.1, f₂.1⟩, fun ht => ?_⟩
+    have hn : n ≠ 0 := fun h0 => by
+      rw [f₁.2.2.2.1, h0] at ht; simp at ht
+    refine ⟨n - 1, by omega, e, hL, hq, hx, c₁, c₂, ⟨f₁.1.1, f₁.1.2, f₁.2.1, ?_, by have := f₁.2.2.2.2; omega⟩,
+      ⟨f₂.1.1, f₂.1.2, f₂.2.1, ?_, by have := f₂.2.2.2.2; omega⟩⟩
+    · rw [f₁.2.2.1, show n - 1 + 1 = n by omega]
+    · rw [f₂.2.2.1, show n - 1 + 1 = n by omega]
+
+/-- The copy's loop: in both runs, as many steps from the same bytes left. -/
+theorem copyLoop_ct {d m : Nat} (hd₁ : 240 ≤ d) (hd₂ : d + m ≤ 520) (hm : m ≤ P.H.D) (hm64 : m ≤ 64) (n : Nat) :
+    RelCT isa (Two P (CL d m n)) (.loop (.block Cfg.copyStep) .ne) (Two P DgIn) :=
+  VG.RelCT.loop (M := isa) (fun n => Two P (CL d m n)) (copyStep_ct hd₁ hd₂ hm hm64) n
+
+/-- A copy of the digest's `m` leftmost bytes, ending at `rsp + e`. -/
+theorem copyDg_ct {e m : Nat}
+    (hlen : ∀ (L : Lay P.I.hashLen) g m₀ t, L.Ok → CoreOk P L → Ctx L g m₀ t →
+      WP isa (.block (cfgOf P).copyLen) t fun u => Ctx L g m₀ u ∧ u.mem = t.mem ∧
+        u.gpr .rcx = BitVec.ofNat 64 m ∧ ∀ r, r ≠ .rax → r ≠ .rcx → u.gpr r = t.gpr r)
+    (hm4 : m % 4 = 0) (hm0 : 0 < m) (hmD : m ≤ P.H.D) (hm64 : m ≤ 64) (he₁ : 216 + m ≤ e) (he₂ : 24 + e ≤ 520) :
+    RelCT isa (Two P DgIn) ((cfgOf P).copyDg e) (Two P DgIn) :=
+  (two_wp (Ψ := CL (24 + e - m) m (m / 4 - 1)) (two_blk [.rsp] rspOnly (copySetup_blk _ _))
+    fun L g m₀ t hL hk hc ⟨hsi, hdi⟩ => WP.mono (copySetup_ok (hlen L g m₀ t hL hk hc) hL (by omega) (by omega))
+      fun u ⟨hcu, _, hcx, hdx, hg⟩ => ⟨hcu, (hg _ (by decide) (by decide) (by decide)).trans hsi,
+        (hg _ (by decide) (by decide) (by decide)).trans hdi, hdx, by rw [hcx]; congr 1; omega, by omega⟩).seq
+    (copyLoop_ct (by omega) (by omega) hmD hm64 _)
 
 theorem prep_trace : RelCT isa (Two P DgIn) (cfgOf P).prep fun _ _ => True := by
-  refine (two_wp (Ψ := Zeroed P) (two_blk [.rsp] rspOnly (prepZero_blk _)) fun _ _ _ _ hL hk hc hd =>
-    WP.mono (prepZero_ok hL hk.2.1 hc) fun _ ⟨hc', hg, hax, _, hz⟩ =>
-      ⟨hc', ⟨(hg _ (by decide) (by decide)).trans hd.1, (hg _ (by decide) (by decide)).trans hd.2, hax, hz⟩⟩).seq ?_
-  refine (two_wp (Ψ := ScrIn) (two_dispatch (f := fun H => .block ((cfgOf P).prepCase H.D))
-      (fun _ _ _ h => h.2.2.1) zeroed_nf (two_blk [.rsp, .rsi] (fun _ _ _ _ _ _ _ c₁ c₂ f₁ f₂ r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact rsp_two c₁ c₂
-        · exact f₁.1.trans f₂.1.symm) (P.R.blks.prepCase P.H.D (dims_mem P))))
-    fun _ _ _ _ hL _ hc hz => prepCase_scr hL hc hz).seq ?_
+  refine (two_wp (Ψ := DgIn) (two_blk [.rsp] rspOnly (prepZero_blk _)) fun _ _ _ _ hL _ hc hd =>
+    WP.mono (prepZero_ok hL hc) fun _ ⟨hc', hg, _, _⟩ =>
+      ⟨hc', (hg _ (by decide)).trans hd.1, (hg _ (by decide)).trans hd.2⟩).seq ?_
+  have hD := P.sizes
+  have hcopy : RelCT isa (Two P DgIn) (cfgOf P).prepCopy (Two P DgIn) := by
+    cases hw : P.R.wide
+    · obtain ⟨hQ8, h8, hQ64⟩ := P.sizesA hw
+      have hm4 : min P.H.D P.Q % 4 = 0 := by
+        rcases hQ8 with h | ⟨-, h | h⟩ <;> rcases P.dims with ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ | ⟨h', -⟩ |
+          ⟨h', -⟩ | ⟨h', -⟩ <;> simp only [h, h'] <;> omega
+      have e : (cfgOf P).prepCopy = (cfgOf P).copyDg (fY + P.Q) := by
+        simp only [Cfg.prepCopy, cfgOf, hw, Bool.false_eq_true, ite_false]
+      rw [e]
+      exact copyDg_ct (e := 216 + P.Q) (fun _ _ _ _ hL hk hc => copyLenA_ok hL hk.2.1 hw hc) hm4 (by nums) (by omega)
+        (by nums) (by omega) (by nums)
+    · obtain ⟨hw9, hQ66⟩ := P.sizesW hw
+      have e : (cfgOf P).prepCopy = .seq ((cfgOf P).copyDg (fY + P.Q - 1)) ((cfgOf P).copyDg (fH + P.Q)) := by
+        simp only [Cfg.prepCopy, cfgOf, hw, ite_true]
+      rw [e]
+      exact (copyDg_ct (e := 216 + P.Q - 1) (fun _ _ _ _ hL hk hc => copyLenW_ok hL hk.2.1 hw hc) (by nums)
+        (by nums) (Nat.le_refl _) (by nums) (by omega) (by omega)).seq
+        (copyDg_ct (e := 288 + P.Q) (fun _ _ _ _ hL hk hc => copyLenW_ok hL hk.2.1 hw hc) (by nums) (by nums)
+        (Nat.le_refl _) (by nums) (by omega) (by omega))
+  refine hcopy.seq ?_
   exact two_blk [.rsp, .rdi] (fun _ _ _ _ _ _ _ c₁ c₂ f₁ f₂ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact rsp_two c₁ c₂
-    · exact f₁.trans f₂.symm) P.R.blks.post
+    · exact f₁.2.trans f₂.2.symm) P.R.blks.post
 
 /-! ## The frame's body -/
 
 theorem digestPtr_blk : TaintOk [.rsp] Cfg.digestPtr := ⟨_, by taint_decide⟩
 theorem initKV_blk : TaintOk [.rsp] Cfg.initKV := ⟨_, by taint_decide⟩
-theorem wipe_blk : TaintOk [.rsp] Cfg.wipe := ⟨_, by taint_decide⟩
+theorem wipeInit_blk : TaintOk [] Cfg.wipeInit := ⟨_, by taint_decide⟩
+theorem wipeStep_blk : TaintOk [.rsp, .rcx] Cfg.wipeStep := ⟨_, by taint_decide⟩
+
+/-- Before step `n` of the wipe (from the last): `8 (n + 1)` bytes left in
+`rcx`, and the result. -/
+def WL (P : RfcHash) (n : Nat) (L : Lay P.I.hashLen) (m₀ : Mem) (t : State) : Prop :=
+  t.gpr .rcx = BitVec.ofNat 64 (8 * (n + 1)) ∧ n < 17 ∧ ∃ i, Exit P L m₀ i t
+
+theorem wipeStep_ct (n : Nat) :
+    RelCT isa (Two P (WL P n)) (.block Cfg.wipeStep) fun s₁ s₂ => isa.eval .ne s₁ = isa.eval .ne s₂ ∧
+      (isa.eval .ne s₁ = some false → Two P (fun L m₀ t => ∃ i, Exit P L m₀ i t) s₁ s₂) ∧
+      (isa.eval .ne s₁ = some true → ∃ k < n, Two P (WL P k) s₁ s₂) := by
+  have h := two_wp (Φ := WL P n) (Ψ := fun L m₀ t => t.gpr .rcx = BitVec.ofNat 64 (8 * n) ∧
+      isa.eval .ne t = some (!decide (n = 0)) ∧ n < 17 ∧ ∃ i, Exit P L m₀ i t)
+    (two_blk [.rsp, .rcx] (fun _ _ _ _ _ _ _ c₁ c₂ f₁ f₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact rsp_two c₁ c₂
+      · exact f₁.1.trans f₂.1.symm) wipeStep_blk)
+    fun L g m₀ _ hL hk hc ⟨hcx, hn, i, hx⟩ => WP.mono (wipeStep_ok hL hc hcx hn)
+      fun (t' : State) ⟨hc', hf, hg, hcx', hne⟩ => ⟨hc', hcx', hne, hn, i, hx.keepF hk (hg _ (by decide)) hf
+        fun r hr => by
+          have := L.he
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact hL.stk_OUT (by omega)
+          · exact hL.stk_OUT (by omega)⟩
+  refine h.mono (fun _ _ x => x) fun a b ⟨e, hL, hq, hx, c₁, c₂, f₁, f₂⟩ =>
+    ⟨by rw [f₁.2.1, f₂.2.1], fun _ => ⟨e, hL, hq, hx, c₁, c₂, f₁.2.2.2, f₂.2.2.2⟩, fun ht => ?_⟩
+  have hn : n ≠ 0 := fun h0 => by
+    rw [f₁.2.1, h0] at ht; simp at ht
+  refine ⟨n - 1, by omega, e, hL, hq, hx, c₁, c₂, ⟨?_, by omega, f₁.2.2.2⟩, ⟨?_, by omega, f₂.2.2.2⟩⟩
+  · rw [f₁.1, show n - 1 + 1 = n by omega]
+  · rw [f₂.1, show n - 1 + 1 = n by omega]
+
+/-- The wipe: in both runs, the same steps. -/
+theorem wipe_ct : RelCT isa (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) Cfg.wipe
+    (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) :=
+  (two_wp (Ψ := WL P 16) (two_blk [] (fun _ _ _ _ _ _ _ _ _ _ _ _ hr => absurd hr List.not_mem_nil) wipeInit_blk) fun _ _ _ _ hL hk hc ⟨i, hx⟩ =>
+    WP.mono (wipeInit_ok hL hc) fun _ ⟨hcu, hmu, hax, hcx⟩ => ⟨hcu, hcx, by omega, i,
+      hx.keepF hk hax (ws := []) (by rw [hmu]; exact Frame.refl _ _) fun _ h => absurd h List.not_mem_nil⟩).seq
+    (VG.RelCT.loop (M := isa) (fun n => Two P (WL P n)) wipeStep_ct 16)
 
 /-- The count's initial store, for any count. -/
 theorem initCnt_blk (c : Cfg) : TaintOk [.rsp] c.initCnt :=
@@ -582,8 +640,7 @@ theorem body_ct :
   refine (two_wp (Ψ := fun L m₀ t => LoopInv P L m₀ 0 t) (two_blk [.rsp] rspOnly (initCnt_blk _))
     fun _ _ _ _ hL _ hc h => stageE_ok (P := P) hL hc h).seq ?_
   refine loop_ct.seq ?_
-  exact two_wp (two_blk [.rsp] rspOnly wipe_blk) fun _ _ _ _ hL hk hc ⟨i, h⟩ =>
-    WP.mono (stageG_ok hL hk hc h) fun _ ⟨c, x⟩ => ⟨c, i, x⟩
+  exact wipe_ct
 
 /-! ## The whole function -/
 
