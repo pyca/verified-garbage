@@ -571,6 +571,7 @@ theorem correct {s₀ : State} (hp : AArch64.Pre s₀) :
         by_cases hlast : i + 1 = nb s₀
         · exact .inl ⟨by rw [hev, hlast]; simp, hlast ▸ hV'.toCommon⟩
         · exact .inr ⟨by rw [hev]; simp; omega, nb s₀ - (i + 1), by omega, i + 1, rfl, by omega, hV', hk'⟩
+      refine WP.seq (WP.block_cons_iff.mpr ⟨s₂, rfl, WP.block_nil ?_⟩)
       exact WP.loop (M := isa) Inv hstep (nb s₀ - 1) s₂ ⟨0 + 1, rfl, by omega, hV, hk⟩
 
 

@@ -97,9 +97,14 @@ def store : List Instr :=
 /-- One block, building the constants if `c`. -/
 def oneBlock (c : Bool) : Prog isa := .seq (rounds c 16) (.block store)
 
+/-- The alignment of the loop over the later blocks: its head at a multiple
+of `2 ^ loopAlign` bytes, wherever the first block leaves it. -/
+def loopAlign : Nat := 6
+
 def compress : Prog isa :=
   .ite (.zero .x .x2) (.block [])
     (.seq (.block load) (.seq (oneBlock true)
-      (.ite (.zero .x .x2) (.block []) (.loop (oneBlock false) (.nonzero .x .x2)))))
+      (.ite (.zero .x .x2) (.block [])
+        (.seq (.block [.align loopAlign]) (.loop (oneBlock false) (.nonzero .x .x2))))))
 
 end VG.Impl.Sha256.AArch64.Sha2
