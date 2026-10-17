@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedFieldTiming
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointLoop
-public import VerifiedGarbage.Proof.P256.VerifyAllocated.Double
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedHead
 public import VerifiedGarbage.Proof.P256.VerifyAllocated.MixedTail
