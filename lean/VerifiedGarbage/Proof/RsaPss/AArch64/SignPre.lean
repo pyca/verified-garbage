@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Contract
+public import VerifiedGarbage.Spec.RsaPss.AnyHash
 public import VerifiedGarbage.Proof.RsaPss.AArch64.SignEncOk
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
 import all Init.Data.Array.Basic
@@ -12,9 +12,10 @@ import Mathlib.Tactic.SplitIfs
 /-!
 # RSASSA-PSS signing on AArch64: the precondition and the frame
 
-`PreS G K s`: the shared contract's precondition (`signContract`, with the
-stack `stk K` of the frame and a callee using `K` bytes), by name
-(`preS_of`). The frame of `frameBytes` bytes is at `fb s`, below which the
+`PreS D K s`: the shared contract's precondition (`signAnyContract`, with
+the stack `stk K` of the frame and a callee using `K` bytes), by name, for a
+digest of `D` bytes, the length of the values of the hash function `hash`
+names (`preS_of`). The frame of `frameBytes` bytes is at `fb s`, below which the
 callee uses `K` bytes.
 -/
 
@@ -23,14 +24,18 @@ callee uses `K` bytes.
 namespace VG.Proof.RsaPss.AArch64.Sgn
 
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64
-open VG.Proof.RsaPkcs1Sig.AArch64.Sgn (stackArgs_thirteen)
+
+theorem stackArgs_sixteen (s : State) :
+    List.map (stackArg s) (List.range 16) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
+      stackArg s 4, stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10,
+      stackArg s 11, stackArg s 12, stackArg s 13, stackArg s 14, stackArg s 15] := rfl
 
 /-- The stack signing uses: its frame, and its callee's stack. -/
 def stk (K : Nat) : Nat := frameBytes + K
 
 /-- The buffers: `out`, `n`, `e`, `p`, `q`, `dP`, `dQ`, `qInv`, the digest,
 the salt, the working space, the arguments on the stack, and the stack the
-function uses. -/
+function uses; and the hash functions' numbers. -/
 abbrev oR (s : State) : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
 abbrev nR (s : State) : Region := ⟨s.gpr .x2, (s.gpr .x3).toNat⟩
 abbrev eR (s : State) : Region := ⟨s.gpr .x4, (s.gpr .x5).toNat⟩
@@ -40,15 +45,17 @@ abbrev dpR (s : State) : Region := ⟨stackArg s 2, (stackArg s 3).toNat⟩
 abbrev dqR (s : State) : Region := ⟨stackArg s 4, (stackArg s 5).toNat⟩
 abbrev qiR (s : State) : Region := ⟨stackArg s 6, (stackArg s 7).toNat⟩
 abbrev dgR (D : Nat) (s : State) : Region := ⟨stackArg s 8, D⟩
-abbrev slR (s : State) : Region := ⟨stackArg s 9, (stackArg s 10).toNat⟩
-abbrev sR (s : State) : Region := ⟨stackArg s 11, (stackArg s 12).toNat * 8⟩
-abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 104⟩
+abbrev slR (s : State) : Region := ⟨stackArg s 10, (stackArg s 11).toNat⟩
+abbrev sR (s : State) : Region := ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩
+abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 128⟩
+abbrev kH (s : State) : Nat := (stackArg s 14).toNat
+abbrev kG (s : State) : Nat := (stackArg s 15).toNat
 abbrev kR (K : Nat) (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 (stk K), stk K⟩
 
 /-- What the code needs of `signContract.pre`, by name. -/
 structure PreS (D K : Nat) (s : State) : Prop where
   sp1 : stk K ≤ s.sp.toNat
-  sp2 : s.sp.toNat + 104 ≤ 2 ^ 64
+  sp2 : s.sp.toNat + 128 ≤ 2 ^ 64
   hrd : Covers [nR s, eR s, pR s, qR s, dpR s, dqR s, qiR s, dgR D s, slR s, aR s] s.rd
   hwo : oR s ∈ s.wr
   hws : sR s ∈ s.wr
@@ -94,8 +101,8 @@ structure PreS (D K : Nat) (s : State) : Prop where
   wdq : (stackArg s 4).toNat + (stackArg s 5).toNat ≤ 2 ^ 64
   wqi : (stackArg s 6).toNat + (stackArg s 7).toNat ≤ 2 ^ 64
   wdg : (stackArg s 8).toNat + D ≤ 2 ^ 64
-  wsl : (stackArg s 9).toNat + (stackArg s 10).toNat ≤ 2 ^ 64
-  ws : (stackArg s 11).toNat + (stackArg s 12).toNat * 8 ≤ 2 ^ 64
+  wsl : (stackArg s 10).toNat + (stackArg s 11).toNat ≤ 2 ^ 64
+  ws : (stackArg s 12).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .x3).toNat
   k2 : (s.gpr .x3).toNat ≤ 1024
   ol : (s.gpr .x1).toNat = (s.gpr .x3).toNat
@@ -108,27 +115,35 @@ structure PreS (D K : Nat) (s : State) : Prop where
   hdp : (stackArg s 3).toNat = (s.gpr .x7).toNat
   hqi : (stackArg s 7).toNat = (s.gpr .x7).toNat
   hdq : (stackArg s 5).toNat = (stackArg s 1).toNat
-  hs : 16 * (s.gpr .x3).toNat + 32 + 1024 ≤ (stackArg s 12).toNat
+  hs : 16 * (s.gpr .x3).toNat + 32 + 1024 ≤ (stackArg s 13).toNat
+  dl : (stackArg s 9).toNat = D
+  hh : (stackArg s 14).toNat < 8
+  hg : (stackArg s 15).toNat < 8
 
-theorem preS_of (G : Spec.Mgf1.Hash) {K : Nat} {s : State}
-    (h : (Spec.RsaPss.signContract G G abi (stk K)).pre s) : PreS G.len K s := by
+theorem preS_of {Hs : Spec.Mgf1.Hash} {K : Nat} {s : State}
+    (h : (Spec.RsaPss.signAnyContract abi (stk K)).pre s) (hk : Spec.HashId.mgf1 (kH s) = some Hs) :
+    PreS Hs.len K s := by
   have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
   rw [e] at h
-  sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, stackArgs_thirteen,
+  sig_pre [Spec.RsaPss.signAnyContract, Spec.RsaPss.signAnySig, abi, argRegs, stackArgs_sixteen,
     List.append_eq] at h
-  sig_pre [Spec.RsaPss.signContract, Spec.RsaPss.signSig, abi, argRegs, stackArgs_thirteen,
+  sig_pre [Spec.RsaPss.signAnyContract, Spec.RsaPss.signAnySig, abi, argRegs, stackArgs_sixteen,
     List.append_eq] at h
   sig_split h
   rename_i sp1 sp2 hrd hwr on oe op oq odp odq oqi odg osl os oa ns es ps qs dps dqs qis dgs sls sa
-    ko kn ke kp kq kdp kdq kqi kdg ksl ks ka wo wn we wp wq wdp wdq wqi wdg wsl ws _ob1 ol e1 e2 p1
+    ko kn ke kp kq kdp kdq kqi kdg ksl ks ka wo wn we wp wq wdp wdq wqi wdg wsl ws hh hg hdl _ob1 ol e1 e2 p1
     p2 q1 q2 hdp hqi hdq
   obtain ⟨k1, k2⟩ := _ob1
   have hs := h
+  have dl := hdl Hs hk
+  rw [dl] at odg dgs kdg wdg hrd
   rw [← e] at sp1 ko kn ke kp kq kdp kdq kqi kdg ksl ks ka
   exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, by rw [hwr]; simp, on, oe, op, oq, odp,
     odq, oqi, odg, osl, os, oa, ns, es, ps, qs, dps, dqs, qis, dgs, sls, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi,
     kdg, ksl, ks, ka, wo, wn, we, wp, wq, wdp, wdq, wqi, wdg, wsl, ws, k1, k2, ol, e1, e2, p1, p2, q1, q2, hdp,
-    hqi, hdq, by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs; omega⟩
+    hqi, hdq, by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hs; omega, dl,
+    by simp only [Spec.RsaPss.hashIds, List.mem_cons, List.not_mem_nil, or_false] at hh; omega,
+    by simp only [Spec.RsaPss.hashIds, List.mem_cons, List.not_mem_nil, or_false] at hg; omega⟩
 
 /-! ## The frame -/
 
@@ -148,7 +163,7 @@ theorem off_fb (K : Nat) (s : State) (d : Nat) :
   rw [fb_eq K, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
 theorem kb_toNat {D K : Nat} {s : State} (hp : PreS D K s) :
-    (kb K s).toNat + stk K = s.sp.toNat ∧ s.sp.toNat + 104 ≤ 2 ^ 64 := by
+    (kb K s).toNat + stk K = s.sp.toNat ∧ s.sp.toNat + 128 ≤ 2 ^ 64 := by
   have := hp.sp1; have := hp.sp2
   simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]
   constructor <;> omega
@@ -190,13 +205,13 @@ theorem keep_of_frame {K : Nat} {s : State} {R : Region} (hR : (kR K s).Disjoint
 
 /-- The stack arguments are readable. -/
 theorem arg_in {D K : Nat} {s : State} (hp : PreS D K s) {rs : List Region} (hrd : Covers s.rd rs) {j : Nat}
-    (hj : j < 13) : InRegions rs (stackArgAddr s j) 8 :=
+    (hj : j < 16) : InRegions rs (stackArgAddr s j) 8 :=
   hrd _ _ <| hp.hrd _ _ ⟨aR s, by simp, by
     rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
 
 /-- A stack argument, in memory changed only in the frame. -/
 theorem arg_frame {D K : Nat} {s : State} (hp : PreS D K s) {m : Mem} (h : Frame [⟨fb s, frameBytes⟩] s.mem m)
-    {j : Nat} (hj : j < 13) : m.readW (stackArgAddr s j) 64 = stackArg s j :=
+    {j : Nat} (hj : j < 16) : m.readW (stackArgAddr s j) 64 = stackArg s j :=
   h.readW (r := aR s) (by rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega))
     (keep_of_frame hp.ka) (by decide)
 
