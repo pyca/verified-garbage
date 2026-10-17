@@ -135,7 +135,8 @@ theorem tailH_ok (hash : FixedHash.HashFn)
     rcases List.mem_append.mp hr with hr | hr
     · exact far₁ (o := AH + 1024 * e) (l := 1024) (by lom) (.inr (by lom)) r hr
     · exact far₄ (o := AH + 1024 * e) (l := 1024) (by lom) (by lom) (.inr (by lom)) r hr
-  have f14 := f₁.trans k₄'.frame
+  have f14 := (f₁.mono (fun r hr => List.mem_append_left _ hr)).trans
+    (k₄'.frame.mono (fun r hr => List.mem_append_right [Region.mk (kA s₀ 4 + BitVec.ofNat 64 HB) 32] hr))
   refine ⟨⟨kb₄, Frame.refl _ _, ?_, ?_, ?_, ?_⟩, key₄, r₄, ?_⟩
   · rw [far34 (o := SB) (l := 32) (by lom) (by lom) (by decide) (by decide)]; exact hB.rho
   · rw [k₄.cs _ (by decide) (by decide), x24₃]; exact hB.acc
