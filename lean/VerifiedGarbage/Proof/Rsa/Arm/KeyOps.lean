@@ -107,7 +107,8 @@ theorem sel_ok {s : State} {B : BitVec 32} {Z w N o a b sl : Nat} (h : Ws s B Z 
 theorem copy_ok {s : State} {B : BitVec 32} {Z w N o a : Nat} (h : Ws s B Z w N)
     (ho : o < N) (ha : a < N) (hN : N ≤ 256) (hoa : o ≠ a) :
     WP isa (copy o a) s fun t => Ws t B Z w N ∧ Keep B w [o] [] s.mem t.mem ∧
-      num t.mem B w o = num s.mem B w a ∧ Rest opRegs s t := by
+      num t.mem B w o = num s.mem B w a ∧ Rest opRegs s t ∧
+      w32 t.mem (State.addr B) (arr w o + 4 * w) = w32 s.mem (State.addr B) (arr w o + 4 * w) := by
   rw [copy, WP.seq_iff]
   refine ptr3_ok h (by omega) (by omega) (by omega) fun s3 p0 p10 p12 r3 m3 h3 => ?_
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
@@ -125,9 +126,11 @@ theorem copy_ok {s : State} {B : BitVec 32} {Z w N o a : Nat} (h : Ws s B Z w N)
   intro t inv
   have v := inv.value
   rw [mu] at v
+  have fo := h.fit64 ho
   refine ⟨hu.rest inv.rest, Keep.of_arr (d := 0)
     (by simpa only [Nat.add_zero, mu] using inv.outside) (by simp only [S]; omega) (by simp), ?_,
-    restU.trans (inv.rest.mono (by simp))⟩
-  change val32 _ _ _ _ = _; rw [v]; split <;> rfl
+    restU.trans (inv.rest.mono (by simp)), ?_⟩
+  · change val32 _ _ _ _ = _; rw [v]; split <;> rfl
+  · rw [← mu]; exact inv.outside.w32 (by omega) (by simp only [S] at fo; omega)
 
 end VG.Proof.Rsa.Arm.Keys
