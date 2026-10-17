@@ -35,6 +35,10 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov wp_str wp_ldr wp_dp op2_imm 
 theorem field_bounds (f : Field) : 64 ≤ Impl.Dsa.Arm.Layout.field f ∧ Impl.Dsa.Arm.Layout.field f + 4 ≤ 120 := by
   cases f <;> decide
 
+/-- The saved pointers and lengths lie below the mask. -/
+theorem field_saved {f : Field} (hf : f ≠ .mask) : Impl.Dsa.Arm.Layout.field f + 4 ≤ 116 := by
+  cases f <;> first | decide | exact absurd rfl hf
+
 /-- The registers an operation may write. -/
 def coreClob : List Reg := .r11 :: .lr :: dclob
 
@@ -97,7 +101,8 @@ def pointerValue (base : Addr) (s : State) : Pointer → BitVec 32
 /-- A computed operand's offset is a `movw` immediate. -/
 def PtrOk : Pointer → Prop
   | .local o => o < 2 ^ 16
-  | _ => True
+  | .input f => f ≠ .mask
+  | .signatureS => True
 
 /-- An operand of `len` bytes that can be read and lies apart from the arithmetic. -/
 structure Ready (s : State) (base : Addr) (p : Pointer) (len : Nat) : Prop where
@@ -111,31 +116,36 @@ abbrev operand (base : Addr) (s : State) (p : Pointer) (len : Nat) : Nat :=
   Spec.Dsa.decodeBE (Spec.Rsa.bytesAt s.mem (State.addr (pointerValue base s p)) len)
 
 theorem field_keep {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (O : Outs base rs m m')
-    (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 120 ≤ r.1) (f : Field) :
+    (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1) {f : Field} (hf : f ≠ .mask) :
     m'.readW (off base (Impl.Dsa.Arm.Layout.field f)) 32 = m.readW (off base (Impl.Dsa.Arm.Layout.field f)) 32 :=
   (Mem.readW_congr fun i hi => (O _ fun r hr => by
     have := field_bounds f
+    have := field_saved hf
     have := hO r hr
     rw [ofs_off base (by omega)]
     omega).symm).symm
 
 theorem pointerValue_keep {base : Addr} {rs : List (Nat × Nat)} {s t : State} (h12 : t.gpr .r12 = s.gpr .r12)
-    (O : Outs base rs s.mem t.mem) (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 120 ≤ r.1) (p : Pointer) :
+    (O : Outs base rs s.mem t.mem) (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1) {p : Pointer} (hp : PtrOk p) :
     pointerValue base t p = pointerValue base s p := by
-  cases p <;> simp only [pointerValue, h12, field_keep O hO]
+  cases p with
+  | input f => exact field_keep O hO hp
+  | «local» o => simp only [pointerValue, h12]
+  | signatureS => simp only [pointerValue, field_keep O hO (f := .signature) (by decide),
+      field_keep O hO (f := .qLen) (by decide)]
 
 /-- The arithmetic and the computed operands keep the saved pointers. -/
-theorem arith_hdr : ∀ r ∈ arithRanges, r.1 + r.2 ≤ 64 ∨ 120 ≤ r.1 := by decide
+theorem arith_hdr : ∀ r ∈ arithRanges, r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1 := by decide
 
 theorem Ready.keep {base : Addr} {rs : List (Nat × Nat)} {s t : State} {p : Pointer} {len : Nat}
     (R : Ready s base p len) (h12 : t.gpr .r12 = s.gpr .r12) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
-    (O : Outs base rs s.mem t.mem) (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 120 ≤ r.1) : Ready t base p len := by
-  have P := pointerValue_keep h12 O hO p
+    (O : Outs base rs s.mem t.mem) (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1) : Ready t base p len := by
+  have P := pointerValue_keep h12 O hO R.ok
   exact ⟨R.ok, by rw [P]; exact R.fits, by rw [P, hrd, hwr]; exact R.reads, by rw [P]; exact R.apart⟩
 
 theorem Ready.keep_rest {base : Addr} {rs : List (Nat × Nat)} {ws : List Reg} {s t : State} {p : Pointer}
     {len : Nat} (R : Ready s base p len) (K : Rest ws s t) (h12 : .r12 ∉ ws := by decide)
-    (O : Outs base rs s.mem t.mem) (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 120 ≤ r.1) : Ready t base p len :=
+    (O : Outs base rs s.mem t.mem) (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1) : Ready t base p len :=
   R.keep (K.gpr _ h12) K.rd K.wr O hO
 
 /-- An operand's bytes are kept by stores apart from them. -/
@@ -150,7 +160,7 @@ theorem Ready.bytes {base : Addr} {rs : List (Nat × Nat)} {s t : State} {p : Po
 theorem Ready.arith {base : Addr} {s t : State} {p : Pointer} {len : Nat} (R : Ready s base p len)
     (h12 : t.gpr .r12 = s.gpr .r12) (O : Outs base arithRanges s.mem t.mem) :
     operand base t p len = operand base s p len := by
-  rw [operand, operand, pointerValue_keep h12 O arith_hdr, R.bytes O (by decide)]
+  rw [operand, operand, pointerValue_keep h12 O arith_hdr R.ok, R.bytes O (by decide)]
 
 /-! ## Steps of every operation -/
 

@@ -132,7 +132,7 @@ theorem power_ok {s : State} {base : Addr} {size len expLen n m output : Nat} {a
     exact A₁.trans (Ra.arith (Ru.gpr .r12 (by decide)) Ou)
   have B₂' : val32 u₂.mem base (slot n 11) (2 * n) = operand base s b expLen := by
     refine B₂.trans ?_
-    rw [operand, pointerValue_keep (R₁.gpr .r12 (by decide)) (Outs.of_slot (i := 8) O₁ (by decide) n48) arith_hdr,
+    rw [operand, pointerValue_keep (R₁.gpr .r12 (by decide)) (Outs.of_slot (i := 8) O₁ (by decide) n48) arith_hdr Rbu.ok,
       Rbu.bytes (Outs.of_slot (i := 8) O₁ (by decide) n48) (by decide)]
     exact Rb.arith (Ru.gpr .r12 (by decide)) Ou
   have ek : (expLen + 3) / 4 ≤ 2 * n := by omega
@@ -190,7 +190,7 @@ theorem productMod_ok {s : State} {base : Addr} {size len n m output : Nat} {a b
     exact A₁.trans (Ra.arith (Ru.gpr .r12 (by decide)) Ou)
   have B₂' : val32 u₂.mem base (slot n 11) (2 * n) = operand base s b len := by
     refine B₂.trans ?_
-    rw [operand, pointerValue_keep (R₁.gpr .r12 (by decide)) (Outs.of_slot (i := 8) O₁ (by decide) n48) arith_hdr,
+    rw [operand, pointerValue_keep (R₁.gpr .r12 (by decide)) (Outs.of_slot (i := 8) O₁ (by decide) n48) arith_hdr Rbu.ok,
       Rbu.bytes (Outs.of_slot (i := 8) O₁ (by decide) n48) (by decide)]
     exact Rb.arith (Ru.gpr .r12 (by decide)) Ou
   have rr₂ : val32 u₂.mem base (slot n 7) (2 * n) = 2 ^ (128 * n) % m := by
@@ -243,7 +243,7 @@ theorem sum_ok {s : State} {base : Addr} {size len n m output : Nat} {a b : Poin
     exact A₁.trans (Ra.arith (Ru.gpr .r12 (by decide)) Ou)
   have B₂' : val32 u₂.mem base (slot n 11) (2 * n) = operand base s b len := by
     refine B₂.trans ?_
-    rw [operand, pointerValue_keep (R₁.gpr .r12 (by decide)) (Outs.of_slot (i := 8) O₁ (by decide) n48) arith_hdr,
+    rw [operand, pointerValue_keep (R₁.gpr .r12 (by decide)) (Outs.of_slot (i := 8) O₁ (by decide) n48) arith_hdr Rbu.ok,
       Rbu.bytes (Outs.of_slot (i := 8) O₁ (by decide) n48) (by decide)]
     exact Rb.arith (Ru.gpr .r12 (by decide)) Ou
   refine WP.seq (WP.mono (ordinaryAdd_ok c₂ (by rw [A₂]; exact hA) (by rw [B₂']; exact hB))
@@ -264,11 +264,14 @@ def countValue (base : Addr) (s : State) : Core.Count → Nat
 
 def CountOk : Core.Count → Prop
   | .imm len => len < 2 ^ 16
-  | .field _ => True
+  | .field f => f ≠ .mask
 
 theorem countValue_keep {base : Addr} {rs : List (Nat × Nat)} {s t : State} (O : Outs base rs s.mem t.mem)
-    (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 120 ≤ r.1) (c : Core.Count) : countValue base t c = countValue base s c := by
-  cases c <;> simp only [countValue, field_keep O hO]
+    (hO : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ 116 ≤ r.1) {c : Core.Count} (hc : CountOk c) :
+    countValue base t c = countValue base s c := by
+  cases c with
+  | imm len => rfl
+  | field f => exact congrArg BitVec.toNat (field_keep O hO hc)
 
 /-- `lr = r11 + count`. -/
 theorem countEnd_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (hz : 120 ≤ size)
@@ -313,14 +316,14 @@ theorem reduce_ok {s : State} {base : Addr} {size len n m output : Nat} {count :
   rw [← w.n_eq]
   refine WP.seq (WP.mono (setup_ok hs hz w Rq hm (by omega) hodd) fun u ⟨cu, _, _, Ou, Ru⟩ => ?_)
   have Riu := Ri.keep_rest Ru (O := Ou) (hO := arith_hdr)
-  have Cu := countValue_keep Ou arith_hdr count
+  have Cu := countValue_keep Ou arith_hdr hc
   rw [← Cu] at Riu
   refine WP.seq (VG.Proof.X25519.Arm.WP.append (pointer_ok cu.ws (by omega) Riu.ok) fun v ⟨Pv, Rv, Mv⟩ =>
     WP.mono (countEnd_ok (cu.ws.of_rest Rv (by decide)) (by omega) hc) fun x ⟨Lx, Rx, Mx⟩ => ?_)
   have Rux : Rest [.r4, .r11, .lr] u x := (Rv.mono (by decide)).trans (Rx.mono (by decide))
   have cx := cu.of_rest Rux (by decide) (by rw [Mx, Mv])
   have Cv : countValue base v count = countValue base u count :=
-    countValue_keep (rs := []) (fun x _ => by rw [Mv]) (by simp) count
+    countValue_keep (rs := []) (fun x _ => by rw [Mv]) (by simp) hc
   have r11 : x.gpr .r11 = pointerValue base u input := by rw [Rx.gpr .r11 (by decide), Pv]
   rw [Cv, Pv] at Lx
   refine WP.seq (WP.mono (reduceStream_ok cx (by omega) Riu.fits r11 Lx
