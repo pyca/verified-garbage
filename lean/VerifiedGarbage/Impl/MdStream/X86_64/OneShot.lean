@@ -45,7 +45,7 @@ variable (P : Params)
 
 /-- Where the scratch space is in the buffer: after the hash value and the
 block, at a multiple of 16. -/
-def scO : Nat := (P.N + P.B + 15) / 16 * 16
+def scO : Nat := (P.N + P.B + 15) / 16 * 16 + 48
 
 /-- The scratch buffer's size. -/
 def scratchBytes : Nat := scO P + P.so + 48
