@@ -28,7 +28,7 @@ magnitude back, as s2n-bignum does.
 namespace VG.Impl.Ed25519.AArch64.Divstep
 
 open VG.AArch64
-open VG.Impl.Ed25519.AArch64 (ld st const64 offset)
+open VG.Impl.Ed25519.AArch64 (ld st const64 offset loads stores)
 
 /-! ## Layout (byte offsets) -/
 
@@ -153,15 +153,14 @@ def freeze : List Instr :=
 `d = 1`, and ten batches to go. -/
 def init : List Instr :=
   [st .x1 X1SAVE, .movz .x .x12 0 0, .movz .x .x6 19 0] ++ low63 ++
-  [ld .x2 (offset 2), ld .x3 (offset 2 + 8), ld .x4 (offset 2 + 16), ld .x5 (offset 2 + 24)] ++
-  fold ++ freeze ++ [st .x2 G, st .x3 (G + 8), st .x4 (G + 16), st .x5 (G + 24)] ++
-  storeConst F Spec.X25519.P ++ [st .x12 U, st .x12 (U + 8), st .x12 (U + 16), st .x12 (U + 24)] ++
+  loads (offset 2) .x2 .x3 .x4 .x5 ++ fold ++ freeze ++ stores G .x2 .x3 .x4 .x5 ++
+  storeConst F Spec.X25519.P ++ stores U .x12 .x12 .x12 .x12 ++
   storeConst V v0 ++ [.movz .x .x1 1 0, st .x1 DSAVE, .movz .x .x19 10 0, st .x19 CNT]
 
 /-- `[slot 15] ≡ f u`: `u` folded below `2p`, and `2p - u` if `f < 0`; `x1` back. -/
 def finish : List Instr :=
   [.movz .x .x12 0 0, .movz .x .x6 19 0] ++ low63 ++
-  [ld .x2 U, ld .x3 (U + 8), ld .x4 (U + 16), ld .x5 (U + 24)] ++ fold ++
+  loads U .x2 .x3 .x4 .x5 ++ fold ++
   -- 2p - u into x8–x11
   const64 .x9 (BitVec.ofNat 64 (2 ^ 64 - 38)) ++ const64 .x10 (BitVec.allOnes 64) ++
   [.subs .x .x8 .x9 .x2, .sbcs .x .x9 .x10 .x3, .sbcs .x .x11 .x10 .x4, .sbc .x .x10 .x10 .x5] ++
@@ -169,8 +168,7 @@ def finish : List Instr :=
   [ld .x13 (F + 24), .lsr .x .x13 .x13 63, .sub .x .x13 .x12 .x13] ++
   [(Reg.x2, Reg.x8), (.x3, .x9), (.x4, .x11), (.x5, .x10)].flatMap (fun (x, y) =>
     [.logic .eor .x y y x, .logic .and .x y y .x13, .logic .eor .x x x y]) ++
-  [st .x2 (offset 15), st .x3 (offset 15 + 8), st .x4 (offset 15 + 16), st .x5 (offset 15 + 24),
-    ld .x1 X1SAVE]
+  stores (offset 15) .x2 .x3 .x4 .x5 ++ [ld .x1 X1SAVE]
 
 /-- `[slot 15] ≡ [slot 2]^(p - 2)` (mod `p`). -/
 def invert : Prog isa :=
