@@ -192,10 +192,14 @@ def tests (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa))
   seqs (test true mul roundCode ++ [.block [ldh .x3 kStat, .subImm .x .x3 .x3 1],
     .ite (.zero .x .x3) (seqs (test false mul roundCode ++ [pResult])) qResult])
 
-/-- Once `rand` holds the candidate's octets. -/
+/-- Once `rand` holds the candidate's octets: `p`, its congruence, rejected
+before any other check (most candidates fail it); then the sieves of `p`
+and `q`, and the tests. -/
 def main (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
-  seqs (phase false ++ shapeP ++ residue ++ [tableWrite] ++ sieve ++ halveQ ++ sieve ++
-    [.block [ldh .x5 fBad], .ite (.zero .x .x5) (tests mul roundCode) (finUsed 2)])
+  seqs (phase false ++ shapeP ++ residue ++ [.block [ldh .x5 fBad], .ite (.zero .x .x5)
+    (seqs ([tableWrite] ++ sieve ++ halveQ ++ sieve ++
+      [.block [ldh .x5 fBad], .ite (.zero .x .x5) (tests mul roundCode) (finUsed 2)]))
+    (finUsed 2)])
 
 /-- `vg_ffdh_parameter_candidate`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=

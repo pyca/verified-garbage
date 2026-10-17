@@ -257,8 +257,10 @@ theorem tests_ct (M : Mont) (R : Kernel) : RelCT isa (Two TQd) (tests M.mm R.run
 /-! ## `main` -/
 
 theorem main_eq (M : Mont) (R : Kernel) : main M.mm R.run = seqs ((phase false ++ shapeP) ++ (residue ++
-    ([tableWrite] ++ (sieve ++ (halveQ ++ (sieve ++ ([.block [ldh .x5 fBad],
-      .ite (.zero .x .x5) (tests M.mm R.run) (finUsed 2)] : List (Prog isa)))))))) := by
+    ([.block [ldh .x5 fBad], .ite (.zero .x .x5)
+      (seqs ([tableWrite] ++ (sieve ++ (halveQ ++ (sieve ++ ([.block [ldh .x5 fBad],
+        .ite (.zero .x .x5) (tests M.mm R.run) (finUsed 2)] : List (Prog isa)))))))
+      (finUsed 2)] : List (Prog isa)))) := by
   simp only [main, List.append_assoc]
 
 theorem ms_ws {p : PP} {n : Nat} {s : State} (h : MS p n s) : WQ p.ws s := h.st.ws
@@ -271,6 +273,19 @@ theorem flag_ok {p : PP} {s : State} (h : C6 p s) : WP isa (.block [ldh .x5 fBad
   have hn := hw.scr.nowrap
   have h256 := hw.h256
   refine WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = shapeFlag p.g (cOf p) ∧ t.mem = s.mem)
+    (by brun [hw.x0, hdr_enc (show fBad < 32 by decide), hw.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega),
+      h.2]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h5, hm⟩, k⟩ => ⟨⟨?_, by rw [hm]; exact h.2⟩, h5⟩
+  exact h.1.frm (rs := []) (hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide))
+    (by rw [hm]; exact Frm.refl _ _ _) (by simp) (by simp) k (by simp) (by simp)
+
+/-- After the congruence's flag's load. -/
+def C2R (p : PP) (s : State) : Prop := C2 p s ∧ s.gpr .x5 = rOf p
+
+theorem flagR_ok {p : PP} {s : State} (h : C2 p s) : WP isa (.block [ldh .x5 fBad]) s (C2R p) := by
+  have hw := h.1.st.ws
+  have hn := hw.scr.nowrap
+  have h256 := hw.h256
+  refine WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = rOf p ∧ t.mem = s.mem)
     (by brun [hw.x0, hdr_enc (show fBad < 32 by decide), hw.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega),
       h.2]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h5, hm⟩, k⟩ => ⟨⟨?_, by rw [hm]; exact h.2⟩, h5⟩
   exact h.1.frm (rs := []) (hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide))
@@ -294,6 +309,14 @@ theorem main_ct (M : Mont) (R : Kernel) : RelCT isa (Two M0) (main M.mm R.run) f
   -- The congruence, the table and the sieve of `p`.
   refine ct_app' (by simp [residue]) (by simp) (Ψ := C2)
     (two_post (two_map PP.ws (fun _ _ h => ms_ws h) residue_ct) fun p s h => stB_ok h) ?_
+  refine RelCT.seq (two_piece (Ψ := C2R) [.x0] (ws fun _ _ h => h.1.st.ws) (by taint_decide)
+    fun p s h => flagR_ok h) (two_ite (fun _ _ _ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2]) ?_ ?_)
+  rotate_left
+  · rw [finUsed_split]
+    exact two_map (Φ' := UpF) (fun p : PP => (⟨p.B, p.Z, mW p.bits, p.op, p.up, p.L, 0⟩ : FQ))
+      (fun p s h => ⟨h.1.1.1.st.ws, h.1.1.1.st.args.usedP⟩)
+      (finStoreF_ct (fun _ _ h => h) 2 (.inr rfl) (by taint_decide) (by taint_decide))
+  refine two_map id (fun _ _ h => h.1.1) ?_
   refine ct_app' (a := [tableWrite]) (by simp) (by simp [sieve]) (Ψ := C3)
     (two_post (by rw [seqs_one]; exact two_map PP.ws (fun _ _ h => ms_ws h.1) tableWrite_ct)
       fun p s h => by rw [seqs_one]; exact stC_ok h) ?_

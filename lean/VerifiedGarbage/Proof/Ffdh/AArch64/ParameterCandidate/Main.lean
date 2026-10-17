@@ -213,7 +213,52 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
   rw [← hc'] at hn₂
   -- The generator's congruence.
   refine wp_seqs_append (by simp [residue]) (by simp) ?_
-  refine WP.mono (residue_ok st₂ hn₂) fun t₃ ⟨st₃, hr₃, f₃, k₃⟩ => ?_
+  refine WP.mono (residue_ok st₂ hn₂) fun t₃₀ ⟨st₃₀, hr₃₀, f₃₀, k₃₀⟩ => ?_
+  -- Its flag, rejected at once.
+  have hs₃₀ := st₃₀.ws.scr
+  refine WP.seq (WP.mono (WP.keep [.x5] (Q := fun t =>
+      t.gpr .x5 = resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) ∧ t.mem = t₃₀.mem) (by
+    brun [st₃₀.ws.x0, hdr_enc (show fBad < 32 by decide), hs₃₀.ld (d := 8 * fBad) (by omega), hr₃₀])
+    (by decide) (by decide) (by decide +kernel)) fun t₃ ⟨⟨h5r, hm₃⟩, k₃'⟩ => ?_)
+  have st₃ : PSt p (mW p.bits) t₃ := st₃₀.step (rs := []) (st₃₀.ws.congr' (rs := [])
+    (by rw [hm₃]; exact Frm.refl _ _ _) (by simp) k₃' (by decide)) (by rw [hm₃]; exact Frm.refl _ _ _)
+    (by simp) (by simp) k₃'
+  have hr₃ : word t₃.mem p.B (8 * fBad) = resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) := by
+    rw [hm₃]; exact hr₃₀
+  have f₃ : Frm p.B [(8 * fBad, 8)] t₂.mem t₃.mem := by rw [hm₃]; exact f₃₀
+  have k₃ : Keep mmRegs t₂ t₃ := (k₃₀.trans k₃').mono (by decide)
+  have e : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Frm p.B rs m m' → (∀ r ∈ rs, 8 * kUsed + 8 ≤ r.1 ∨
+      r.1 + r.2 ≤ 8 * kUsed) → word m' p.B (8 * kUsed) = word m p.B (8 * kUsed) := fun f d =>
+    f.word_eq d (by simp only [kUsed, sFn]; omega)
+  have hsh := shapeFlag_zero (x := Spec.Rsa.os2ip (p.r.take p.L)) hb1 hb2 h.dims.g
+  rw [← hc'] at hsh
+  refine WP.ite (resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) == 0) (by rw [eval_zero, h5r])
+    (fun hbr => ?_) (fun hbr => ?_)
+  rotate_left
+  · -- A rejected congruence.
+    have hz : resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) ≠ 0 := by simpa using hbr
+    have hz' : shapeFlag p.g c ≠ 0 := fun h0 => hz (by
+      simp only [shapeFlag, VG.Proof.Rsa.AArch64.or_eq_zero] at h0; exact h0.1.1.1)
+    have hshape : (Spec.Ffdh.generationShape p.bits p.g c && Spec.Ffdh.primeShape c &&
+        Spec.Ffdh.primeShape ((c - 1) / 2)) = false := Bool.eq_false_iff.mpr fun h' => hz' (hsh.mpr h')
+    rw [hshape]
+    simp only [Bool.not_false, ↓reduceIte]
+    have i₃ : InScr p.B p.Z s.mem t₃.mem := by
+      refine i₁.trans ((InScr.of_frm f₂ ?_).trans (InScr.of_frm f₃ ?_))
+      all_goals
+        intro r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> omega
+    have hU₃ : word t₃.mem p.B (8 * kUsed) = BitVec.ofNat 64 p.L := by
+      rw [e f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)),
+        e f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [kUsed, sFn]; omega))]
+      exact hU₁
+    have k₁₃ : Keep mmRegs s t₃ := ((ht.keep.trans k₂).trans k₃).mono (by decide)
+    refine WP.mono (finUsed_end (s := s) st₃.ws.scr st₃.ws.x0 (by omega) (by decide) hU₃
+      st₃.args.usedP st₃.ou i₃ k₁₃) fun t ht => ?_
+    show KEnd s t p.op p.up p.L 2 (p.r.length - (p.r.drop ((p.bits + 7) / 8)).length) none
+    rw [List.length_drop, show p.r.length - (p.r.length - (p.bits + 7) / 8) = p.L by simp only [PP.L] at hL ⊢; omega]
+    exact ht
   have hn₃ : wv t₃.mem p.B (slot (mW p.bits) aN) (mW p.bits) = c := by
     rw [f₃.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by omega)) (by omega)]; exact hn₂
   -- The table.
@@ -246,9 +291,6 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
   have hn₇ : wv t₇.mem p.B (slot (mW p.bits) aN) (mW p.bits) = c / 2 := by
     rw [f₇.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by omega)) (by omega)]; exact hn₆
   have hU₇ : word t₇.mem p.B (8 * kUsed) = BitVec.ofNat 64 p.L := by
-    have e : ∀ {m m' : Mem} {rs : List (Nat × Nat)}, Frm p.B rs m m' → (∀ r ∈ rs, 8 * kUsed + 8 ≤ r.1 ∨
-        r.1 + r.2 ≤ 8 * kUsed) → word m' p.B (8 * kUsed) = word m p.B (8 * kUsed) := fun f d =>
-      f.word_eq d (by simp only [kUsed, sFn]; omega)
     rw [e f₇ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)),
       e f₆ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -277,8 +319,6 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
   refine WP.seq (WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = shapeFlag p.g c ∧ t.mem = t₇.mem) (by
     brun [st₇.ws.x0, hdr_enc (show fBad < 32 by decide), hs₇.ld (d := 8 * fBad) (by omega), hflag])
     (by decide) (by decide) (by decide +kernel)) fun t₈ ⟨⟨h5, hm₈⟩, k₈⟩ => ?_)
-  have hsh := shapeFlag_zero (x := Spec.Rsa.os2ip (p.r.take p.L)) hb1 hb2 h.dims.g
-  rw [← hc'] at hsh
   have i₈ : InScr p.B p.Z s.mem t₈.mem := by rw [hm₈]; exact i₇
   have k₁₈ : Keep mmRegs s t₈ := (k₁₇.trans k₈).mono (by decide)
   have st₈ : PSt p (mW p.bits) t₈ := st₇.step (rs := []) (st₇.ws.congr' (rs := [])
