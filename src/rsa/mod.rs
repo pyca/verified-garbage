@@ -188,6 +188,13 @@ pub(crate) fn scratch_words(n_len: usize) -> usize {
     16 * n_len + 32
 }
 
+/// The words of working space the public-key operation and its
+/// precomputation need for an `n_len`-byte modulus
+/// (`VG.Spec.Rsa.publicScratchWords`).
+pub(crate) fn public_scratch_words(n_len: usize) -> usize {
+    8 * n_len.div_ceil(8) + 48
+}
+
 /// `x` without its leading zero bytes.
 pub(crate) fn trim(x: &[u8]) -> &[u8] {
     let z = x.iter().take_while(|&&b| b == 0).count();
@@ -262,7 +269,7 @@ impl PublicKey {
         if input.len() != k || out.len() != k {
             return Err(Error::InvalidLength);
         }
-        let mut scratch = vec![0u64; scratch_words(k)];
+        let mut scratch = vec![0u64; public_scratch_words(k)];
         let pre = self.pre(&mut scratch);
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_public_precomputed_checked,
@@ -275,7 +282,7 @@ impl PublicKey {
         // are distinct Rust allocations; `PublicKey::new` and the check above
         // give `64 ≤ out_len ≤ 1024`, `input_len = out_len`,
         // `pre_len = 2 ⌈out_len / 8⌉`, `1 ≤ e_len ≤ 5 ≤ out_len`, and
-        // `scratch_len = 16 out_len + 32`; `pre` holds what
+        // `scratch_len = 8 ⌈out_len / 8⌉ + 48`; `pre` holds what
         // `vg_rsa_public_precompute` (or its variant, with the same contract)
         // wrote for the modulus, returning 1; and the CPU has the features of
         // the function `select` chose.
@@ -312,6 +319,18 @@ pub use privatekey::PrivateKey;
 pub(crate) mod tests {
     use super::*;
     use alloc::string::ToString;
+
+    #[test]
+    fn public_scratch_within_scratch() {
+        // `VG.Proof.Rsa.publicScratch_le`: over every modulus length the
+        // functions accept, the public-key operation's working space is no
+        // more than the private-key operation's.
+        for n_len in MIN_MODULUS_LEN..=MAX_MODULUS_LEN {
+            assert!(public_scratch_words(n_len) <= scratch_words(n_len));
+        }
+        assert_eq!(public_scratch_words(256), 8 * 32 + 48);
+        assert_eq!(public_scratch_words(257), 8 * 33 + 48);
+    }
 
     /// The CRT form `[n, p, q, dP, dQ, qInv]` of a key whose values match
     /// each other for `e = 3`, but whose factors are not prime: `p = 2^(8a) - 1`
