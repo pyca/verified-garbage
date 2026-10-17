@@ -130,11 +130,11 @@ theorem Done.fin {s₀ t : State} (D : Done s₀ t) : Fin s₀ t :=
 theorem finalBlock_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) (sv : Saved s₀ t.mem)
     {used st : BitVec 32} (hu : slot t.mem (rBase s₀) oUsed = used)
     (hs : slot t.mem (rBase s₀) oStatus = st) :
-    WP isa (.block (clearNonce ++ [.mov .edx (.mem (Random.arg aUsed)), .mov .eax (.mem (sp oUsed)),
+    WP isa (.block (clearNonce ++ ([.mov .edx (.mem (Random.arg aUsed)), .mov .eax (.mem (sp oUsed)),
         .store (at_ .edx 0) .eax, .mov .eax (.imm 0), .store (at_ .edx 4) .eax,
         .mov .ebx (.mem (sp oSaveEbx)), .mov .esi (.mem (sp oSaveEsi)),
         .mov .edi (.mem (sp oSaveEdi)), .mov .ebp (.mem (sp oSaveEbp)),
-        .mov .eax (.mem (sp oStatus))])) t fun u =>
+        .mov .eax (.mem (sp oStatus))] : List Instr))) t fun u =>
       Ready s₀ u ∧ u.gpr .eax = st ∧ u.gpr .ebx = s₀.gpr .ebx ∧ u.gpr .esi = s₀.gpr .esi ∧
       u.gpr .edi = s₀.gpr .edi ∧ u.gpr .ebp = s₀.gpr .ebp ∧ Frame [rStack s₀, rUsed s₀] t.mem u.mem ∧
       slot u.mem (argumentPointer s₀ 2) 0 = used ∧ slot u.mem (argumentPointer s₀ 2) 4 = 0 := by

@@ -6,8 +6,8 @@ public import VerifiedGarbage.Impl.Dsa.X86.SignVerify
 
 The arithmetic bodies specialize public component and digest-prefix lengths.
 Only the public lengths and domain shape choose a path; acceptance checks
-inside each body accumulate a mask. These programs require whole-operation
-proofs before they may be emitted as API artifacts.
+inside each body accumulate a mask. `operation true` and `operation false`
+are `vg_dsa_sign` and `vg_dsa_verify` (`Proof/Dsa/X86/Verified.lean`).
 -/
 
 @[expose] public section

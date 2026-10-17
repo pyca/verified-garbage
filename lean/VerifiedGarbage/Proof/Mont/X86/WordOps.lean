@@ -134,8 +134,9 @@ theorem chainStep_ok {t : State} {base : Addr} {size : Nat} (ht : Scr t base siz
     (hop : op' = .adc ∨ op' = .sbb) {o a b j : Nat} {c : Bool}
     (hp : t.gpr .ebp = t.gpr .edi + BitVec.ofNat 32 (4 * j)) (hc : t.gpr .ecx = cmask c)
     (ho : o + 4 * j + 4 ≤ size) (ha : a + 4 * j + 4 ≤ size) (hb : b + 4 * j + 4 ≤ size) :
-    WP isa (.block ([.mov .eax (.mem (at_ .ebp a))] ++ restore ++
-      [.alu op' .eax (.mem (at_ .ebp b)), .store (at_ .ebp o) .eax, .alu .sbb .ecx (.reg .ecx)])) t fun u =>
+    WP isa (.block (([.mov .eax (.mem (at_ .ebp a))] : List Instr) ++ restore ++
+      ([.alu op' .eax (.mem (at_ .ebp b)), .store (at_ .ebp o) .eax, .alu .sbb .ecx (.reg .ecx)] :
+        List Instr))) t fun u =>
       u.mem = t.mem.writeW (off base (o + 4 * j)) (if op' = .adc then
         t.mem.readW (off base (a + 4 * j)) 32 + t.mem.readW (off base (b + 4 * j)) 32 + (BitVec.ofBool c).setWidth 32
         else t.mem.readW (off base (a + 4 * j)) 32 - t.mem.readW (off base (b + 4 * j)) 32 -

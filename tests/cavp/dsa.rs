@@ -1,6 +1,6 @@
 //! Every published FIPS 186-4 DSA verification vector, at all four widths.
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"),
     feature = "alloc"
 ))]
 

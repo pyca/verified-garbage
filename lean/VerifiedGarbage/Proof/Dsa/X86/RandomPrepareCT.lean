@@ -153,8 +153,8 @@ theorem significant_ct :
       exact ⟨s₀, A, rfl, by show ScanAt (rQBytes s₀).length s₀ u; rw [← he']; exact hu⟩
 
 theorem prepHead_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) :
-    WP isa (.block (clearNonce ++ [.mov .esi (.mem (Random.arg aKey)), .alu .add .esi (.mem (Random.arg aPLen)),
-      .mov .ecx (.mem (Random.arg aQLen))])) t (ScanPre s₀) := by
+    WP isa (.block (clearNonce ++ ([.mov .esi (.mem (Random.arg aKey)), .alu .add .esi (.mem (Random.arg aPLen)),
+      .mov .ecx (.mem (Random.arg aQLen))] : List Instr))) t (ScanPre s₀) := by
   have hqn := rQBytes_length A
   refine clearNonce_ok h.rf fun t₁ _ m₁ k₁ _ => ?_
   have h₁ : Ready s₀ t₁ := h.congr k₁ (by rw [m₁]; exact clearMem_frame s₀ _ 8 (by decide))

@@ -144,7 +144,7 @@ theorem zeroHead_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t)
 
 /-- The nonce cleared, and the address of `used`. -/
 theorem finPrefix_ok {s₀ t : State} (A : RandomSignABI s₀) (h : Ready s₀ t) :
-    WP isa (.block (clearNonce ++ [.mov .edx (.mem (Random.arg aUsed))])) t fun u =>
+    WP isa (.block (clearNonce ++ ([.mov .edx (.mem (Random.arg aUsed))] : List Instr))) t fun u =>
       Ready s₀ u ∧ u.gpr .edx = X86.arg s₀ 2 := by
   refine clearNonce_ok h.rf fun t₁ _ m₁ k₁ _ => ?_
   have h₁ : Ready s₀ t₁ := h.congr k₁ (by rw [m₁]; exact clearMem_frame s₀ _ 8 (by decide))
@@ -170,11 +170,11 @@ theorem zeroOut_ct : RelCT isa (Two fun p s => ReadyAt p s ∧ isa.eval .ne s = 
   · rw [c₁, c₂, pub_arg e 1 (by decide)]
 
 theorem finalBlock_ct : RelCT isa (Two ReadyAt)
-    (.block (clearNonce ++ [.mov .edx (.mem (Random.arg aUsed)), .mov .eax (.mem (sp oUsed)),
+    (.block (clearNonce ++ ([.mov .edx (.mem (Random.arg aUsed)), .mov .eax (.mem (sp oUsed)),
       .store (at_ .edx 0) .eax, .mov .eax (.imm 0), .store (at_ .edx 4) .eax,
       .mov .ebx (.mem (sp oSaveEbx)), .mov .esi (.mem (sp oSaveEsi)),
       .mov .edi (.mem (sp oSaveEdi)), .mov .ebp (.mem (sp oSaveEbp)),
-      .mov .eax (.mem (sp oStatus))])) fun _ _ => True := by
+      .mov .eax (.mem (sp oStatus))] : List Instr))) fun _ _ => True := by
   show RelCT isa _ (.block ((clearNonce ++ [.mov .edx (.mem (Random.arg aUsed))]) ++
     [.mov .eax (.mem (sp oUsed)), .store (at_ .edx 0) .eax, .mov .eax (.imm 0), .store (at_ .edx 4) .eax,
       .mov .ebx (.mem (sp oSaveEbx)), .mov .esi (.mem (sp oSaveEsi)),
