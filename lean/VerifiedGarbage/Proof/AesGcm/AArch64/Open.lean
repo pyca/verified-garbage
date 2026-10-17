@@ -807,6 +807,52 @@ theorem openRestWith_wp {m : Prog isa} {w : Nat} {s s₂ : State}
   rw [hm, hx0]
   exact post₄
 
+/-- `oiteWith_ok` for an allowed tag length, with `Q` of the memory beside
+`OpenPost`. -/
+theorem oiteWithX_ok {m : Prog isa} {Ctx W SP Np A D Tg : Addr} {R nl al n tl : Nat} {s₀ s₃ : State}
+    {Q : Mem → Prop} (o : OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ s₃) (x12₃ : s₃.gpr .x12 = Tg)
+    (x9₃ : s₃.gpr .x9 = BitVec.ofNat 64 (if Spec.Gcm.tagLenOk tl then 1 else 0))
+    (htl : Spec.Gcm.tagLenOk tl = true)
+    (hm : ∀ {t : State}, OpenIn Ctx W SP Np A D Tg R nl al n tl s₀ t →
+      bytesAt t.mem W tl = bytesAt s₀.mem Tg tl → Others loopRegs s₃ t →
+      WP isa m t fun u => OpenPost Ctx W SP Np A D Tg R nl al n tl s₀ u ∧ Q u.mem) :
+    WP isa (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) s₃
+      fun u => OpenPost Ctx W SP Np A D Tg R nl al n tl s₀ u ∧ Q u.mem := by
+  have ev : isa.eval (.zero .x .x9) s₃ = some (decide ((if Spec.Gcm.tagLenOk tl then 1 else 0) = 0)) :=
+    eval_zero x9₃ (by split <;> decide)
+  refine WP.ite _ ev (fun ht => ?_) (fun _ => ?_)
+  · simp [htl] at ht
+  · have hle := tagLenOk_le htl
+    refine WP.seq (WP.mono (tagIn_ok o.env.x19 x12₃ o.x28 hle o.tagR o.env.perm.w
+      (o.dtW.sub_right (Region.sub_prefix (by decide)))) fun s₃' ⟨rt, f, og, sp, rd, wr⟩ => ?_)
+    exact hm (o.tagIn f og sp rd wr) (by rw [rt, o.tag]) og
+
+/-- `openRestWith_wp` for an allowed tag length, with `Q` of the memory. -/
+theorem openRestWithX_wp {m : Prog isa} {w : Nat} {s s₂ : State} {Q : Mem → Prop}
+    (o₂ : OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+      (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s s₂)
+    (x12₂ : s₂.gpr .x12 = stackArg s 0) (htl : Spec.Gcm.tagLenOk (stackArg s 1).toNat = true)
+    (hm : ∀ {t : State}, OpenIn (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6) (stackArg s 0)
+        (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat (stackArg s 1).toNat s t →
+      bytesAt t.mem (stackArg s w) (stackArg s 1).toNat = bytesAt s.mem (stackArg s 0) (stackArg s 1).toNat →
+      (∀ r ∈ [Reg.x4, .x5, .x6, .x7], t.gpr r = s₂.gpr r) →
+      WP isa m t fun u => OpenPost (s.gpr .x0) (stackArg s w) s.sp (s.gpr .x2) (s.gpr .x4) (s.gpr .x6)
+        (stackArg s 0) (s.gpr .x1).toNat (s.gpr .x3).toNat (s.gpr .x5).toNat (s.gpr .x7).toNat
+        (stackArg s 1).toNat s u ∧ Q u.mem) :
+    WP isa (.seq tagLenOk (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn m)) (.block restore))) s₂
+      fun s' => (GprAbi s s' ∧ openAArch64.post s s') ∧ Q s'.mem := by
+  refine WP.seq (WP.mono (tagLenOk_ok s₂ o₂.x28 o₂.tlt) fun s₃ ⟨x9₃, r₃⟩ => ?_)
+  refine WP.seq (WP.mono (oiteWithX_ok (o₂.of_regs r₃) (by rw [r₃.others _ (by decide), x12₂]) x9₃ htl
+    fun o' hT og => hm o' hT fun r hr => by
+      rw [og r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
+        r₃.others r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide)])
+    fun s₄ ⟨⟨he₄, sv₄, post₄⟩, q₄⟩ => ?_)
+  refine WP.mono (exit_ok he₄.x19 (he₄.sp.trans o₂.sp₀.symm) (covers_left he₄.perm.w) sv₄)
+    fun s' ⟨ga, hm, hx0, _⟩ => ⟨⟨ga, ?_⟩, by rw [hm]; exact q₄⟩
+  simp only [openAArch64, openRes]
+  rw [hm, hx0]
+  exact post₄
+
 theorem open_wp (v : GcmImpl) {s : State} (hs : openAArch64.pre s) :
     WP isa («open» v.callees) s fun s' => GprAbi s s' ∧ openAArch64.post s s' := by
   refine WP.seq (WP.mono (openEntry_ok (.inl rfl) (openPreX_W hs)) fun s₂ ⟨o₂, x12₂⟩ => ?_)
