@@ -27,8 +27,8 @@ theorem andNotU_taint : Cert (.block (andNotS sU sA sBb)) := ⟨_, by taint_deci
 theorem copyXf_taint : Cert (copy aXf aX) := ⟨_, by taint_decide⟩
 theorem orTwoXf_taint : Cert (.block (orTwo aXf)) := ⟨_, by taint_decide⟩
 theorem clrTopBitXf_taint : Cert (.block (clrTopBit aXf)) := ⟨_, by taint_decide⟩
-theorem selX_taint : Cert (sel aX aXf aX sU) := ⟨_, by taint_decide⟩
-theorem copy1X_taint : Cert (copy (mBase + 1) aX) := ⟨_, by taint_decide⟩
+theorem selX_taint : Cert (sel aH1 aXf aX sU) := ⟨_, by taint_decide⟩
+theorem copy1X_taint : Cert (copy (mBase + 1) aH1) := ⟨_, by taint_decide⟩
 theorem wsTail_taint : ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs []) (.block [.mov .r2 (.shifted .r2 .lsr 3),
     .mov .r3 (.imm 21), .mul .r2 .r2 .r3, .dp .add .r2 .r2 (.imm 30), .dp .sub .r1 .r1 (.reg .r2)]) hc).isSome = true :=
   ⟨_, by taint_decide⟩
