@@ -152,7 +152,7 @@ GROUPS = {
     # (`hashes::tier`) and, for P-256, P-384 and P-521, its multiplication:
     # with every hash function over every curve.
     "ecdsa_tier": {
-        "lib": [],
+        "lib": ["ecdsa::rfc6979_x86_64"],
         "tests": ["rfc6979::any"],
     },
     "ed25519": {
@@ -190,7 +190,7 @@ GROUPS = {
         "tests": ["rfc6979::p224::p224_sha224"],
     },
     "p256": {
-        "lib": ["ec::p256", "ecdsa::p256"],
+        "lib": ["ec::p256"],
         "tests": [
             "cavp::ecdh_p256",
             "cavp::ecdsa_p256",
@@ -204,7 +204,7 @@ GROUPS = {
         "tests": ["rfc6979::p256::p256_sha256", "rfc6979::p256::p256_sha384"],
     },
     "p521": {
-        "lib": ["ec::p521", "ecdsa::p521"],
+        "lib": ["ec::p521"],
         "tests": [
             "cavp::ecdh_p521",
             "rfc6979::p521",
@@ -213,7 +213,7 @@ GROUPS = {
         ],
     },
     "p384": {
-        "lib": ["ec::p384", "ecdsa::p384"],
+        "lib": ["ec::p384"],
         "tests": [
             "cavp::ecdh_p384",
             "rfc6979::p384",
