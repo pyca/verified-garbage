@@ -69,7 +69,8 @@ def minv16 (m : Nat) : Nat := (List.range (2 ^ 16)).find? (fun x => (m * x + 1) 
 def machine (n modulus base size : Nat) (extra : Words → Words) : Machine :=
   let words := (List.range (size / 4)).foldl (fun w i =>
     w.insert (base / 4 + i) (0xa5a5a5a5 : BitVec 32)) ({} : Words)
-  let words := extra (put (put words (base + 64) (2 * n) modulus) base 1 (minv16 modulus))
+  let words := extra (put (put (put words (base + 64) (2 * n) modulus) (base + modS n) (2 * n) modulus)
+    base 1 (minv16 modulus))
   let state : State := {
     gpr := fun r => if r == .r12 then BitVec.ofNat 32 base else BitVec.ofNat 32 (0xdead00 + r.ctorIdx)
     sp := 0x8000, n := false, z := false, c := false, v := false
