@@ -110,9 +110,8 @@ theorem hintAt_row {m : Mem} {p : Addr} {k : Nat} {h : List (Vector Bool n)} (hh
       h.getD r (Vector.replicate n false) := by
   apply Vector.ext
   intro j hj
-  simp only [hintAt, List.range_one, List.map_cons, List.map_nil, List.headD_cons, Nat.mul_zero,
-    Nat.zero_add, Vector.getElem_ofFn, coeffAt_row, hh.2 r hr j hj]
-  rw [getElem!_pos _ j hj]
+  rw [hintAt, List.range_one, List.map_cons, List.map_nil, List.headD_cons, Vector.getElem_ofFn,
+    Nat.mul_zero, Nat.zero_add, coeffAt_row, hh.2 r hr j hj, getElem!_pos _ j hj]
   cases (h.getD r (Vector.replicate n false))[j] <;> decide
 
 theorem hintIs_congr {m m' : Mem} {p : Addr} {k : Nat} {h : List (Vector Bool n)}

@@ -100,15 +100,6 @@ def lane (v : VReg → BitVec 128) (R : Nat → VReg) (n : Nat) : Word := vword 
 
 def stepRegs : List VReg := lookupRegs ++ wordsRegs ++ fRegs
 
-theorem fAcc_step (K : Schedule) (x : Word) {j : Nat} (hj : j < 4) (prev : Word)
-    (hp : 0 < j → prev = fAcc K x (j - 1)) :
-    (if j = 0 then sq K x j else if j = 2 then prev ^^^ sq K x j else prev + sq K x j) = fAcc K x j := by
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
-  · rfl
-  · rw [hp (by decide)]; rfl
-  · rw [hp (by decide)]; rfl
-  · rw [hp (by decide)]; rfl
-
 theorem fReg_notin : ∀ k < 4, fReg k ∉ lookupRegs ∧ fReg k ∉ wordsRegs := by decide
 
 theorem sbox_run {s : State} {sch : Reg} (hR : Readable s sch) (hc : Consts s) {j : Nat} (hj : j < 4)
