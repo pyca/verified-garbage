@@ -76,6 +76,7 @@ def stepFn : Instr → Step
   -- domain does not track; its offset in the table, an immediate, is observed.
   | .ldrqTbl .. => ⟨fun τ => some τ⟩
   | .umov _ d _ _ => ⟨fun τ => some (set τ d false)⟩
+  | .align _ => ⟨fun τ => some τ⟩
   -- Frames are analysed by the `push` and `pop` hooks (`Taint.push`,
   -- `Taint.pop`), not here.
   | .push .. | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
@@ -363,6 +364,10 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨-, e₂⟩ := Option.ite_none_right_eq_some.mp e₂
     obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
     exact ⟨rfl, ha.write sz d fun h => by cases h⟩
+  | align k =>
+    obtain rfl := Option.some.inj hs
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha⟩
 
 theorem cond_sound {τ : T} {c : Cond} {s₁ s₂ : State} (ha : Agree τ s₁ s₂)
     (hc : condPub τ c = true) : eval c s₁ = eval c s₂ := by
