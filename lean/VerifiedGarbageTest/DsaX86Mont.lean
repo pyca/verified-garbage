@@ -106,13 +106,18 @@ def check (n modulus a b out base : Nat) : Except String Unit := do
 
 def checks : Except String Nat := do
   let mut count := 0
-  -- Padded scalar widths, and all supported DSA p widths.
-  for n in [1, 3, 4, 16, 32, 48] do
+  -- Padded scalar widths, in every layout.
+  for n in [1, 3, 4] do
     for modulus in [3, 2 ^ (64 * n - 1) + 1, 2 ^ (64 * n) - 1] do
       for (a, b) in [(0, 0), (modulus - 1, modulus - 1), (2 ^ (64 * n) - 1, 1)] do
         for out in [512, 1024, 2048] do
           check n modulus a b out 0x10000
           count := count + 1
+  -- All supported DSA p widths (the loops do not depend on the layout).
+  for n in [16, 32, 48] do
+    for modulus in [2 ^ (64 * n - 1) + 1, 2 ^ (64 * n) - 1] do
+      check n modulus (modulus - 1) (modulus - 1) 1024 0x10000
+      count := count + 1
   -- Exercise address arithmetic near the upper end of the 32-bit address space.
   check 48 (2 ^ 3072 - 3) (2 ^ 3072 - 4) (2 ^ 3072 - 4) 1024 0xffff0000
   return count + 1
