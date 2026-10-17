@@ -73,7 +73,8 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
   -- `r = t mod q`
   refine SameTrace.assoc_left (SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.r) (count := .imm pLen)
       (X₁.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₁.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
-      (ok _ (by omega)) (show pLen < 2 ^ 16 by omega) (X₁.E _ mq) (ptrEq_local X₁.C₁.S.ws X₁.C₂.S.ws _) rfl)
+      (ok _ (by omega)) (show pLen < 2 ^ 16 by omega) (X₁.E _ mq) (ptrEq_local X₁.C₁.S.ws X₁.C₂.S.ws _) rfl
+      (localReady (o := Impl.Dsa.Layout.t) X₁.C₁.S.ws (by omega) (by simp only [countValue]; omega) (by omega)) (localReady (o := Impl.Dsa.Layout.t) X₁.C₂.S.ws (by omega) (by simp only [countValue]; omega) (by omega)) D₁.hQ D₂.hQ)
     (reduce_ok (output := Impl.Dsa.Layout.r) X₁.C₁.S.ws (by omega) X.C₁.S.wq (X₁.C₁.inp mq).toReady
       (count := .imm pLen) (input := .local Impl.Dsa.Layout.t) (show pLen < 2 ^ 16 by omega)
       (localReady (o := Impl.Dsa.Layout.t) X₁.C₁.S.ws (by omega) (by simp only [countValue]; omega) (by omega))
@@ -111,7 +112,8 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (X₃.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₃.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
       (X₃.C₁.inp mx).toReady (X₃.C₂.inp mx).toReady
       (localReady (o := Impl.Dsa.Layout.r) X₃.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₃.E _ mq) (X₃.E _ mx) (ptrEq_local X₃.C₁.S.ws X₃.C₂.S.ws _))
+      (X₃.E _ mq) (X₃.E _ mx) (ptrEq_local X₃.C₁.S.ws X₃.C₂.S.ws _)
+      (localReady (o := Impl.Dsa.Layout.r) X₃.C₂.S.ws (by omega) (by omega) (by omega)))
     (productMod_ok (output := Impl.Dsa.Layout.u) X₃.C₁.S.ws (by omega) X.C₁.S.wq (X₃.C₁.inp mq).toReady
       (X₃.C₁.inp mx).toReady (localReady (o := Impl.Dsa.Layout.r) X₃.C₁.S.ws (by omega) (by omega) (by omega))
       (X₃.C₁.inp mq).value (by omega) D₁.hQo (by omega) (by omega) (by omega))
@@ -132,7 +134,8 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
   refine SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.z) (count := Core.digestPrefix)
       (X₄.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₄.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
       (by decide : Impl.Dsa.Layout.Field.digest ≠ .mask) (by simp only [CountOk, Core.digestPrefix]; decide)
-      (X₄.E _ mq) (X₄.E _ md) (((countValue_run A₁).trans hc₁).trans ((countValue_run A₂).trans hc₂).symm))
+      (X₄.E _ mq) (X₄.E _ md) (((countValue_run A₁).trans hc₁).trans ((countValue_run A₂).trans hc₂).symm)
+      I₁.toReady I₂.toReady D₁.hQ D₂.hQ)
     (reduce_ok (output := Impl.Dsa.Layout.z) X₄.C₁.S.ws (by omega) X.C₁.S.wq (X₄.C₁.inp mq).toReady
       (by simp only [CountOk, Core.digestPrefix]; decide) I₁.toReady (X₄.C₁.inp mq).value D₁.hQ D₁.hQo
       (by omega) (by omega) (by omega))
@@ -176,7 +179,8 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (localReady (o := Impl.Dsa.Layout.inverse) X₆.C₁.S.ws (by omega) (by omega) (by omega))
       (localReady (o := Impl.Dsa.Layout.inverse) X₆.C₂.S.ws (by omega) (by omega) (by omega))
       (localReady (o := Impl.Dsa.Layout.v) X₆.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₆.E _ mq) (ptrEq_local X₆.C₁.S.ws X₆.C₂.S.ws _) (ptrEq_local X₆.C₁.S.ws X₆.C₂.S.ws _))
+      (X₆.E _ mq) (ptrEq_local X₆.C₁.S.ws X₆.C₂.S.ws _) (ptrEq_local X₆.C₁.S.ws X₆.C₂.S.ws _)
+      (localReady (o := Impl.Dsa.Layout.v) X₆.C₂.S.ws (by omega) (by omega) (by omega)))
     (F₁ := fun _ => True) (F₂ := fun _ => True) (WP.mono (productMod_ok (output := Impl.Dsa.Layout.s) X₆.C₁.S.ws (by omega) X.C₁.S.wq
       (X₆.C₁.inp mq).toReady (localReady (o := Impl.Dsa.Layout.inverse) X₆.C₁.S.ws (by omega) (by omega) (by omega))
       (localReady (o := Impl.Dsa.Layout.v) X₆.C₁.S.ws (by omega) (by omega) (by omega))
@@ -238,7 +242,8 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
   refine SameTrace.assoc_left (SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.z) (count := Core.digestPrefix)
       (X₁.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₁.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
       (by decide : Impl.Dsa.Layout.Field.digest ≠ .mask) (by simp only [CountOk, Core.digestPrefix]; decide)
-      (X₁.E _ mq) (X₁.E _ md) (((countValue_run A₁).trans hc₁).trans ((countValue_run A₂).trans hc₂).symm))
+      (X₁.E _ mq) (X₁.E _ md) (((countValue_run A₁).trans hc₁).trans ((countValue_run A₂).trans hc₂).symm)
+      I₁.toReady I₂.toReady D₁.hQ D₂.hQ)
     (reduce_ok (output := Impl.Dsa.Layout.z) X₁.C₁.S.ws (by omega) X.C₁.S.wq (X₁.C₁.inp mq).toReady
       (by simp only [CountOk, Core.digestPrefix]; decide) I₁.toReady (X₁.C₁.inp mq).value D₁.hQ D₁.hQo
       (by omega) (by omega) (by omega))
@@ -253,7 +258,8 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (localReady (o := Impl.Dsa.Layout.z) X₂.C₁.S.ws (by omega) (by omega) (by omega))
       (localReady (o := Impl.Dsa.Layout.z) X₂.C₂.S.ws (by omega) (by omega) (by omega))
       (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₂.E _ mq) (ws X₂.C₁.S.ws X₂.C₂.S.ws _) (ws X₂.C₁.S.ws X₂.C₂.S.ws _))
+      (X₂.E _ mq) (ws X₂.C₁.S.ws X₂.C₂.S.ws _) (ws X₂.C₁.S.ws X₂.C₂.S.ws _)
+      (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₂.S.ws (by omega) (by omega) (by omega)))
     (productMod_ok (output := Impl.Dsa.Layout.u) X₂.C₁.S.ws (by omega) X.C₁.S.wq (X₂.C₁.inp mq).toReady
       (localReady (o := Impl.Dsa.Layout.z) X₂.C₁.S.ws (by omega) (by omega) (by omega))
       (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₁.S.ws (by omega) (by omega) (by omega))
@@ -269,7 +275,8 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (X₃.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₃.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
       (X₃.C₁.inp mr).toReady (X₃.C₂.inp mr).toReady
       (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₃.E _ mq) (X₃.E _ mr) (ws X₃.C₁.S.ws X₃.C₂.S.ws _))
+      (X₃.E _ mq) (X₃.E _ mr) (ws X₃.C₁.S.ws X₃.C₂.S.ws _)
+      (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₂.S.ws (by omega) (by omega) (by omega)))
     (productMod_ok (output := Impl.Dsa.Layout.v) X₃.C₁.S.ws (by omega) X.C₁.S.wq (X₃.C₁.inp mq).toReady
       (X₃.C₁.inp mr).toReady (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₁.S.ws (by omega) (by omega) (by omega))
       (X₃.C₁.inp mq).value (by omega) D₁.hQo (by omega) (by omega) (by omega))
@@ -315,7 +322,8 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (localReady (o := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega) (by omega) (by omega))
       (localReady (o := Impl.Dsa.Layout.t) X₆.C₂.S.ws (by omega) (by omega) (by omega))
       (localReady (o := Impl.Dsa.Layout.t2) X₆.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₆.E _ mp) (ws X₆.C₁.S.ws X₆.C₂.S.ws _) (ws X₆.C₁.S.ws X₆.C₂.S.ws _))
+      (X₆.E _ mp) (ws X₆.C₁.S.ws X₆.C₂.S.ws _) (ws X₆.C₁.S.ws X₆.C₂.S.ws _)
+      (localReady (o := Impl.Dsa.Layout.t2) X₆.C₂.S.ws (by omega) (by omega) (by omega)))
     (productMod_ok (output := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega) X.C₁.S.wp (X₆.C₁.inp mp).toReady
       (localReady (o := Impl.Dsa.Layout.t) X₆.C₁.S.ws (by omega) (by omega) (by omega))
       (localReady (o := Impl.Dsa.Layout.t2) X₆.C₁.S.ws (by omega) (by omega) (by omega))
@@ -329,7 +337,8 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
   -- mod q
   exact SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.u) (count := .imm pLen)
       (X₇.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₇.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
-      (ok _ (by omega)) (show pLen < 2 ^ 16 by omega) (X₇.E _ mq) (ws X₇.C₁.S.ws X₇.C₂.S.ws _) rfl)
+      (ok _ (by omega)) (show pLen < 2 ^ 16 by omega) (X₇.E _ mq) (ws X₇.C₁.S.ws X₇.C₂.S.ws _) rfl
+      (localReady X₇.C₁.S.ws (by omega) (by simp only [countValue]; omega) (by omega)) (localReady X₇.C₂.S.ws (by omega) (by simp only [countValue]; omega) (by omega)) D₁.hQ D₂.hQ)
     (F₁ := fun _ => True) (F₂ := fun _ => True)
     (WP.mono (reduce_ok (output := Impl.Dsa.Layout.u) X₇.C₁.S.ws (by omega) X.C₁.S.wq (X₇.C₁.inp mq).toReady
       (count := .imm pLen) (input := .local Impl.Dsa.Layout.t) (show pLen < 2 ^ 16 by omega)

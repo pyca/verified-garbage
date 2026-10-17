@@ -88,9 +88,9 @@ def satState : State where
   rd := []
   wr := [⟨0x1000, 4960⟩]
 
-/-- Bytes of 1: an odd number, above 1 when there are at least two. -/
+/-- Bytes of 1: an odd number, above 255 when there are at least two. -/
 theorem read_ones (a : Addr) : ∀ k, (Mem.read (fun _ => 1) a (k + 2)).toNat % 2 = 1 ∧
-    1 < (Mem.read (fun _ => 1) a (k + 2)).toNat := by
+    255 < (Mem.read (fun _ => 1) a (k + 2)).toNat := by
   intro k
   rw [VG.Proof.Mont.read_toNat_succ, VG.Proof.Mont.read_toNat_succ]
   rw [show (1 : BitVec 8).toNat = 1 from rfl]
@@ -122,7 +122,7 @@ theorem powArm_implies {n e : Nat} (hn : 0 < n) (hn48 : n ≤ 48) :
       unfold numAt
       rw [hk]
     · exact (read_ones _ k).1
-    · exact (read_ones _ k).2
+    · exact Nat.lt_of_lt_of_le (by decide) (read_ones _ k).2
 
 theorem verified (n e : Nat) (hn : 0 < n := by decide) (hn48 : n ≤ 48 := by decide) (he : 0 < e := by decide)
     (hen : e ≤ 2 * n := by decide) :
