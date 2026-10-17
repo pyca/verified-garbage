@@ -12,8 +12,8 @@ import all Init.Data.Vector.Basic
 # The ARMv7 PKCS #1 v1.5 functions: their callees SHA-256 and HMAC-SHA-256
 
 The contracts of SHA-256's `init`, `update` and `finalize` and of
-HMAC-SHA-256's `init` and `finalize` (with their working space in their own
-frames), at a call with given arguments: what the call needs (`*_pre`), that
+HMAC-SHA-256's `init` (for a key of any length) and `finalize` (with their
+working space in their own frames), at a call with given arguments: what the call needs (`*_pre`), that
 two calls with the same arguments are related as their contract asks
 (`*_pub`), and what the call gives (`*_post`). The 64-bit `count` is in
 `r2:r3`, the low word in `r2`; ours are below `2^32`.
@@ -177,37 +177,37 @@ abbrev hiWr (inn out : BitVec 32) : List Region := [⟨State.addr inn, 96⟩, �
 section
 variable {s : State} {inn out key : BitVec 32} {kl : Nat}
 
-theorem hi_pre {sp : BitVec 32} (h : HiArgs s inn out key kl) (hspE : s.sp = sp) (hsp : 880 ≤ sp.toNat)
+theorem hi_pre {sp : BitVec 32} (h : HiArgs s inn out key kl) (hspE : s.sp = sp) (hsp : 1656 ≤ sp.toNat)
     (dIO : Region.Disjoint ⟨State.addr inn, 96⟩ ⟨State.addr out, 96⟩)
     (dIK : Region.Disjoint ⟨State.addr inn, 96⟩ ⟨State.addr key, kl⟩)
     (dOK : Region.Disjoint ⟨State.addr out, 96⟩ ⟨State.addr key, kl⟩)
-    (lo : ∀ r ∈ hiWr inn out ++ hiRd key kl, (lowR sp 880).Disjoint r)
+    (lo : ∀ r ∈ hiWr inn out ++ hiRd key kl, (lowR sp 1656).Disjoint r)
     (fI : inn.toNat + 96 ≤ 2 ^ 32) (fO : out.toNat + 96 ≤ 2 ^ 32) (fK : key.toNat + kl ≤ 2 ^ 32) :
-    (Spec.Hmac.sha256I.initContract abi 880).pre (s.callEntry.withRegions (hiRd key kl) (hiWr inn out)) := by
+    (Spec.Hmac.sha256I.initAnyKeyContract abi 1656).pre (s.callEntry.withRegions (hiRd key kl) (hiWr inn out)) := by
   subst hspE
   have k32 : kl < 2 ^ 32 := by have := h.kl64; omega
-  sig_pre [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
+  sig_pre [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
     Spec.Hmac.initPost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, abi, argRegs, reduceClassify, Loc.val]
   simp only [h.r0, h.r1, h.r2, h.r3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32]
   exact ⟨hsp, by have := s.sp.isLt; omega, rfl, rfl, dIO, dIK, dOK, lo _ (by simp [State.addr]),
-    lo _ (by simp [State.addr]), lo _ (by simp [State.addr]), fI, fO, fK, h.kl64⟩
+    lo _ (by simp [State.addr]), lo _ (by simp [State.addr]), fI, fO, fK⟩
 
 theorem hi_pub {s₁ s₂ : State} (h₁ : HiArgs s₁ inn out key kl) (h₂ : HiArgs s₂ inn out key kl)
     (hsp : s₁.sp = s₂.sp) (rd wr : List Region) :
-    (Spec.Hmac.sha256I.initContract abi 880).pub (s₁.callEntry.withRegions rd wr)
+    (Spec.Hmac.sha256I.initAnyKeyContract abi 1656).pub (s₁.callEntry.withRegions rd wr)
       (s₂.callEntry.withRegions rd wr) := by
-  sig_pub [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
+  sig_pub [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
     Spec.Hmac.initPost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, abi, argRegs, reduceClassify, Loc.val]
   simp only [h₁.r0, h₁.r1, h₁.r2, h₁.r3, h₂.r0, h₂.r1, h₂.r2, h₂.r3]
   exact ⟨hsp, trivial, trivial, trivial, trivial⟩
 
 theorem hi_post {t : State} (h : HiArgs s inn out key kl) {rd wr : List Region}
-    (hp : (Spec.Hmac.sha256I.initContract abi 880).post (s.callEntry.withRegions rd wr) (t.withRegions rd wr)) :
+    (hp : (Spec.Hmac.sha256I.initAnyKeyContract abi 1656).post (s.callEntry.withRegions rd wr) (t.withRegions rd wr)) :
     let k0 := Spec.Hmac.blockKey Spec.Hmac.sha256 (Spec.Rsa.bytesAt s.mem (State.addr key) kl)
     Spec.Sha256.Repr t.mem (State.addr inn) (Spec.Hmac.xorPad k0 Spec.Hmac.ipad) ∧
       Spec.Sha256.Repr t.mem (State.addr out) (Spec.Hmac.xorPad k0 Spec.Hmac.opad) := by
   have k32 : kl < 2 ^ 32 := by have := h.kl64; omega
-  sig_post [Spec.Hmac.Instance.initContract, Spec.Hmac.initContract, Spec.Hmac.initSig, Spec.Hmac.initPre,
+  sig_post [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
     Spec.Hmac.initPost, Spec.Hmac.sha256I, Spec.Hmac.sha256S, abi, argRegs, reduceClassify, Loc.val] at hp
   simp only [h.r0, h.r1, h.r2, h.r3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt k32] at hp
   exact hp
