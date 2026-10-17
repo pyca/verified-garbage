@@ -121,12 +121,6 @@ theorem decMulSse3_ct : ConstantTime isa (decMulK 3).pre (decMulK 3).pub (decryp
 theorem decMulSse4_ct : ConstantTime isa (decMulK 4).pre (decMulK 4).pub (decryptMul .sse 4) :=
   VG.Taint.constantTime (A := taint) _ decMul_agree (by taint_decide)
 
-theorem decMulAvx3_ct : ConstantTime isa (decMulK 3).pre (decMulK 3).pub (decryptMul .avx2 3) :=
-  VG.Taint.constantTime (A := taint) _ decMul_agree (by taint_decide)
-
-theorem decMulAvx4_ct : ConstantTime isa (decMulK 4).pre (decMulK 4).pub (decryptMul .avx2 4) :=
-  VG.Taint.constantTime (A := taint) _ decMul_agree (by taint_decide)
-
 /-! The facts about the code, each checked once (on the literals of `Lit.lean`): the registers
 the inlined code writes, which depends only on the backend, and the loads of MXCSR. -/
 
@@ -134,15 +128,8 @@ theorem decMulSse_wo :
     writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (DecMul.inner .sse) = true :=
   writesOnly_of (by lit_decide)
 
-theorem decMulAvx_wo :
-    writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (DecMul.inner .avx2) = true :=
-  writesOnly_of (by lit_decide)
-
 theorem decMulSse3_ctl : ctlOk (decryptMul .sse 3) = true := by lit_decide
 theorem decMulSse4_ctl : ctlOk (decryptMul .sse 4) = true := by lit_decide
-theorem decMulAvx3_ctl : ctlOk (decryptMul .avx2 3) = true := by lit_decide
-theorem decMulAvx4_ctl : ctlOk (decryptMul .avx2 4) = true := by lit_decide
-
 theorem decMulSse3_correct : ∀ s, (decMulK 3).pre s →
     ∃ t s', Exec isa (decryptMul .sse 3) s t s' ∧ abiPreserved s s' ∧ (decMulK 3).post s s' :=
   decMul_correct BodiesOk.sse (by decide) (by decide) decMulSse_wo decMulSse3_ctl
@@ -151,26 +138,10 @@ theorem decMulSse4_correct : ∀ s, (decMulK 4).pre s →
     ∃ t s', Exec isa (decryptMul .sse 4) s t s' ∧ abiPreserved s s' ∧ (decMulK 4).post s s' :=
   decMul_correct BodiesOk.sse (by decide) (by decide) decMulSse_wo decMulSse4_ctl
 
-theorem decMulAvx3_correct : ∀ s, (decMulK 3).pre s →
-    ∃ t s', Exec isa (decryptMul .avx2 3) s t s' ∧ abiPreserved s s' ∧ (decMulK 3).post s s' :=
-  decMul_correct BodiesOk.avx2 (by decide) (by decide) decMulAvx_wo decMulAvx3_ctl
-
-theorem decMulAvx4_correct : ∀ s, (decMulK 4).pre s →
-    ∃ t s', Exec isa (decryptMul .avx2 4) s t s' ∧ abiPreserved s s' ∧ (decMulK 4).post s s' :=
-  decMul_correct BodiesOk.avx2 (by decide) (by decide) decMulAvx_wo decMulAvx4_ctl
-
 theorem decMulSse3_verified : Verified X86_64.target (decryptMul .sse 3) (Spec.MlKem.decryptMulContract 3 X86_64.abi) :=
   decMul3_verified _ BodiesOk.sse decMulSse_wo decMulSse3_ctl decMulSse3_ct
 
 theorem decMulSse4_verified : Verified X86_64.target (decryptMul .sse 4) (Spec.MlKem.decryptMulContract 4 X86_64.abi) :=
   decMul4_verified _ BodiesOk.sse decMulSse_wo decMulSse4_ctl decMulSse4_ct
-
-theorem decMulAvx3_verified :
-    Verified X86_64.target (decryptMul .avx2 3) (Spec.MlKem.decryptMulContract 3 X86_64.abi) :=
-  decMul3_verified _ BodiesOk.avx2 decMulAvx_wo decMulAvx3_ctl decMulAvx3_ct
-
-theorem decMulAvx4_verified :
-    Verified X86_64.target (decryptMul .avx2 4) (Spec.MlKem.decryptMulContract 4 X86_64.abi) :=
-  decMul4_verified _ BodiesOk.avx2 decMulAvx_wo decMulAvx4_ctl decMulAvx4_ct
 
 end VG.Proof.MlKem.X86_64

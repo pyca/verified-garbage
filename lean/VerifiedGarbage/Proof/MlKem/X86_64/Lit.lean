@@ -33,6 +33,7 @@ materialize_code Impl.MlKem.X86_64.add
 materialize_code Impl.MlKem.X86_64.zeroB
 materialize_code Impl.MlKem.X86_64.nttOBY
 materialize_code Impl.MlKem.X86_64.nttInvAccY
+materialize_code Impl.MlKem.X86_64.KpkeMul.nttAccY
 materialize_code Impl.MlKem.X86_64.mulAccY
 materialize_code Impl.MlKem.X86_64.mulSetY
 materialize_code Impl.MlKem.X86_64.zeroAccY

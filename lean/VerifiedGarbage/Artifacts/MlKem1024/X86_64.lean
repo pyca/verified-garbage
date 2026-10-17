@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlKem1024.X86_64.CheckEk
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 public import VerifiedGarbage.Proof.MlKem.X86_64.EncMulV
+public import VerifiedGarbage.Proof.MlKem.X86_64.MulYV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -25,12 +26,13 @@ def artifacts : List Artifact := [
   Spec.MlKem1024.encryptMulApi.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
-        `vg_mlkem_multiply_ntts_avx2`, `vg_mlkem_add_avx2` and `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 \
-        registers. It sets MXCSR to `0x1FBF` once \
-        around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
-        loads the caller's MXCSR back before returning."]
-    code := Impl.MlKem.X86_64.encryptMul .avx2 4
-    verified := Proof.MlKem.X86_64.encMulAvx4_verified
+        `vg_mlkem_multiply_ntts_avx2` and `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 registers: the `NTT`s \
+        first, as 16-bit words in the order the products read them, then each output's products summed in \
+        16-bit words and its `NTT⁻¹`. It sets MXCSR to `0x1FBF` once around all its multiplications \
+        (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
+        before returning."]
+    code := Impl.MlKem.X86_64.encryptMulY 4
+    verified := Proof.MlKem.X86_64.encMulY4_verified
     features := ["avx", "avx2"] },
   Spec.MlKem1024.decryptMulApi.artifact X86_64.target {
     notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
@@ -42,12 +44,13 @@ def artifacts : List Artifact := [
   Spec.MlKem1024.decryptMulApi.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
-        `vg_mlkem_multiply_ntts_avx2`, `vg_mlkem_add_avx2` and `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 \
-        registers. It sets MXCSR to `0x1FBF` once \
-        around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
-        loads the caller's MXCSR back before returning."]
-    code := Impl.MlKem.X86_64.decryptMul .avx2 4
-    verified := Proof.MlKem.X86_64.decMulAvx4_verified
+        `vg_mlkem_multiply_ntts_avx2` and `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 registers: the `NTT`s \
+        first, as 16-bit words in the order the products read them, then each output's products summed in \
+        16-bit words and its `NTT⁻¹`. It sets MXCSR to `0x1FBF` once around all its multiplications \
+        (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
+        before returning."]
+    code := Impl.MlKem.X86_64.decryptMulY 4
+    verified := Proof.MlKem.X86_64.decMulY4_verified
     features := ["avx", "avx2"] },
   Spec.MlKem1024.keygenMulApi.artifact X86_64.target {
     notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts` and \
