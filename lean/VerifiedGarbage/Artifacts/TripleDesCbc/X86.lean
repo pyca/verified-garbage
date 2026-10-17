@@ -17,15 +17,15 @@ def note : String :=
   copied into the working space once per call. The mode is the generic CBC of `Impl/Modes/X86/`."
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.cbcEncryptApi.artifact X86.target {
-    notes := [note]
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncrypt
+  Spec.TripleDes.cbcEncryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
+    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcEncryptChained
     stack := 984
-    verified := Proof.TripleDes.X86.Cbc.cbcEncrypt_framed },
-  Spec.TripleDes.cbcDecryptApi.artifact X86.target {
-    notes := [note]
-    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcDecrypt
+    verified := Proof.TripleDes.X86.Cbc.cbcEncryptChained_framed },
+  Spec.TripleDes.cbcDecryptChainedApi.artifact X86.target {
+    notes := [note, "The chaining value, the last ciphertext block, goes back to the IV at the end."]
+    code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cbcDecryptChained
     stack := 984
-    verified := Proof.TripleDes.X86.Cbc.cbcDecrypt_framed }]
+    verified := Proof.TripleDes.X86.Cbc.cbcDecryptChained_framed }]
 
 end VG.Artifacts.TripleDesCbc.X86

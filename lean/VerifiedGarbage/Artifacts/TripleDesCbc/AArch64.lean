@@ -17,15 +17,15 @@ def note : String :=
   `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  Spec.TripleDes.cbcEncryptApi.artifact AArch64.target {
-    notes := [note]
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cbcEncrypt
+  Spec.TripleDes.cbcEncryptChainedApi.artifact AArch64.target {
+    notes := [note, "The IV's address is kept in `x25`, which the core keeps, and after the last block the core's buffer, the last ciphertext block, goes back to the IV."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cbcEncryptChained
     stack := 1008
-    verified := Proof.TripleDes.AArch64.cbcEncrypt_framed },
-  Spec.TripleDes.cbcDecryptApi.artifact AArch64.target {
-    notes := [note]
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cbcDecrypt
+    verified := Proof.TripleDes.AArch64.cbcEncryptChained_framed },
+  Spec.TripleDes.cbcDecryptChainedApi.artifact AArch64.target {
+    notes := [note, "The last ciphertext block is copied to the IV before any block is decrypted."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cbcDecryptChained
     stack := 1008
-    verified := Proof.TripleDes.AArch64.cbcDecrypt_framed }]
+    verified := Proof.TripleDes.AArch64.cbcDecryptChained_framed }]
 
 end VG.Artifacts.TripleDesCbc.AArch64

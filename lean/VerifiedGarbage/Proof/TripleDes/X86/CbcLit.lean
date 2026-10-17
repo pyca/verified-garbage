@@ -25,7 +25,7 @@ rather than build the code again.
 
 namespace VG
 
-materialize_code Impl.TripleDes.X86.cbcEncrypt
-materialize_code Impl.TripleDes.X86.cbcDecrypt
+materialize_code Impl.TripleDes.X86.cbcEncryptChained
+materialize_code Impl.TripleDes.X86.cbcDecryptChained
 
 end VG
