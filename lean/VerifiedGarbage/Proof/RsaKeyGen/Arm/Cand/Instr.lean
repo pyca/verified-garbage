@@ -18,6 +18,9 @@ adds: `subs t, x, y; mov t, #0; adc t, t, #0` makes `t` 1 iff `y ≤ x`
 namespace VG.Proof.RsaKeyGen.Arm.Cand
 open VG VG.Arm VG.Proof.X25519.Arm
 
+theorem ofNat_toNat_lt {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).toNat = n := by
+  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
+
 section
 variable {is : List Instr} {s : State} {Q : State → Prop}
 

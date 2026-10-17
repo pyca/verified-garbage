@@ -31,9 +31,6 @@ theorem lo16 (v : BitVec 32) : ((v <<< 16) >>> 16).toNat = v.toNat % 2 ^ 16 := b
 theorem hi16 (v : BitVec 32) : (v >>> 16).toNat = v.toNat / 2 ^ 16 := by
   rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
 
-theorem ofNat_toNat_lt {n : Nat} (h : n < 2 ^ 32) : (BitVec.ofNat 32 n).toNat = n := by
-  rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
-
 /-- `(v − 1) >> 31` is 1 iff `v` is 0, for `v < 2^31`. -/
 theorem isZero_bit {v : BitVec 32} (h : v.toNat < 2 ^ 31) :
     ((v - 1) >>> 31).toNat = if v.toNat = 0 then 1 else 0 := by

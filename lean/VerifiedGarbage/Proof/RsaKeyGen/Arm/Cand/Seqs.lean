@@ -43,6 +43,13 @@ theorem exec_seqs_app {a b : List (Prog isa)} (ha : a ≠ []) (hb : b ≠ []) {s
       rw [← List.append_assoc]
       exact .seq (.seq e₁ f₁) f₂
 
+/-- A piece whose stages imply a fact about the public parameters. -/
+theorem VP.ofImp {F G : State → State → Prop} {c : Prog isa} {p : Prop} (hp : ∀ σ s, F σ s → p)
+    (h : p → VP F c G) : VP F c G :=
+  ⟨fun σ s hs => (h (hp σ s hs)).wp σ s hs, fun s₁ s₂ t₁ t₂ s₁' s₂' hs e₁ e₂ =>
+    match hs with
+    | ⟨σ₁, σ₂, h₁, h₂⟩ => (h (hp _ _ h₁)).ct s₁ s₂ t₁ t₂ s₁' s₂' ⟨σ₁, σ₂, h₁, h₂⟩ e₁ e₂⟩
+
 /-- Pieces of `seqs a` and `seqs b`: a piece of `seqs (a ++ b)`. -/
 theorem VP.seqs_app {F G H : State → State → Prop} {a b : List (Prog isa)} (ha : a ≠ []) (hb : b ≠ [])
     (h₁ : VP F (seqs a) G) (h₂ : VP G (seqs b) H) : VP F (seqs (a ++ b)) H := by
