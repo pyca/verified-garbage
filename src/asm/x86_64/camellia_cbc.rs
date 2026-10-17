@@ -2,22 +2,22 @@
 //! Verified `camellia_cbc` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// Camellia-CBC encryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is added.
+/// Camellia-CBC encryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is Camellia with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is added.
 ///
-/// Contract: `VG.Spec.Camellia.cbcEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Camellia.cbcEncryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline x86-64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups, in a batch of eight of which the other seven are unused; the table of bitsliced subkeys is built once per call. The mode is the generic CBC encryption of `Impl/Modes/X86_64/`, over Camellia's ECB core.
+/// Baseline x86-64: one block at a time (CBC encryption is sequential), encrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups, in a batch of eight of which the other seven are unused; the table of bitsliced subkeys is built once per call. The mode is the generic CBC encryption of `Impl/Modes/X86_64/`, over Camellia's ECB core. The IV's address is kept in `xmm15`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_camellia_cbc_encrypt(schedule: *const [u8; 272], rounds: usize, iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_camellia_cbc_encrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-3216]
 mov r9, rsp
@@ -29,6 +29,7 @@ mov QWORD PTR [r9+3160], r12
 mov QWORD PTR [r9+3168], r13
 mov QWORD PTR [r9+3176], r14
 mov QWORD PTR [r9+3184], r15
+movq xmm15, rdx
 test r8, r8
 je 20f
 mov rax, QWORD PTR [rcx]
@@ -2844,6 +2845,11 @@ jmp 214f
 add rdx, 16
 test r8, r8
 jne 28b
+movq rax, xmm15
+mov rbp, QWORD PTR [r9+3016]
+mov QWORD PTR [rax], rbp
+mov rbp, QWORD PTR [r9+3024]
+mov QWORD PTR [rax+8], rbp
 jmp 27f
 26:
 27:
@@ -3261,22 +3267,22 @@ ret
     )
 }
 
-/// Camellia-CBC decryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is Camellia's decryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is removed.
+/// Camellia-CBC decryption (NIST SP 800-38A §6.2, RFC 3713 §2.3) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is Camellia's decryption with `rounds` rounds under the subkeys at `schedule`, as `vg_camellia_expand_key` writes them. No padding is removed.
 ///
-/// Contract: `VG.Spec.Camellia.cbcDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Camellia.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
-/// Baseline x86-64: eight blocks at a time, decrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call. The mode is the generic CBC decryption of `Impl/Modes/X86_64/`, over Camellia's ECB core.
+/// Baseline x86-64: eight blocks at a time, decrypted bitsliced in general-purpose registers, the S-boxes as Boolean circuits, with no table lookups; the table of bitsliced subkeys is built once per call. The mode is the generic CBC decryption of `Impl/Modes/X86_64/`, over Camellia's ECB core. The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 272 bytes.
-/// * `iv` must be valid for reads of 16 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `rounds` must be 18 (for a key of 16 bytes) or 24 (for one of 24 or 32).
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 3216 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_camellia_cbc_decrypt(schedule: *const [u8; 272], rounds: usize, iv: *const [u8; 16], data: *mut [u8; 16], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_camellia_cbc_decrypt_chained(schedule: *const [u8; 272], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-3216]
 mov r9, rsp
@@ -3292,6 +3298,19 @@ mov rax, QWORD PTR [rdx]
 mov QWORD PTR [r9+3192], rax
 mov rax, QWORD PTR [rdx+8]
 mov QWORD PTR [r9+3200], rax
+test r8, r8
+je 20f
+mov rax, r8
+sub rax, 1
+shl rax, 4
+add rax, rcx
+mov rbx, QWORD PTR [rax]
+mov QWORD PTR [rdx], rbx
+mov rbx, QWORD PTR [rax+8]
+mov QWORD PTR [rdx+8], rbx
+jmp 21f
+20:
+21:
 mov rdx, rcx
 mov r8, r8
 movabs r14, 71777214294589695
@@ -3305,7 +3324,7 @@ mov QWORD PTR [r9+408], r14
 movabs r14, 1099494850560
 mov QWORD PTR [r9+416], r14
 cmp rsi, 18
-je 20f
+je 22f
 mov rsi, r9
 add rsi, 768
 add rdi, 256
@@ -3757,7 +3776,7 @@ mov QWORD PTR [rsi+56], r13
 add rsi, 64
 sub rdi, 8
 movabs r15, 30
-22:
+24:
 mov rax, QWORD PTR [rdi]
 mov rbx, rax
 mov rcx, rax
@@ -3983,7 +4002,7 @@ mov QWORD PTR [rsi+56], r13
 add rsi, 64
 sub rdi, 8
 sub r15, 1
-jne 22b
+jne 24b
 sub rdi, 8
 mov rax, QWORD PTR [rdi]
 mov rbx, rax
@@ -4433,8 +4452,8 @@ mov QWORD PTR [rsi+56], r13
 add rsi, 64
 mov rdi, r9
 add rdi, 2816
-jmp 21f
-20:
+jmp 23f
+22:
 mov rsi, r9
 add rsi, 768
 add rdi, 192
@@ -4886,7 +4905,7 @@ mov QWORD PTR [rsi+56], r13
 add rsi, 64
 sub rdi, 8
 movabs r15, 22
-23:
+25:
 mov rax, QWORD PTR [rdi]
 mov rbx, rax
 mov rcx, rax
@@ -5112,7 +5131,7 @@ mov QWORD PTR [rsi+56], r13
 add rsi, 64
 sub rdi, 8
 sub r15, 1
-jne 23b
+jne 25b
 sub rdi, 8
 mov rax, QWORD PTR [rdi]
 mov rbx, rax
@@ -5562,22 +5581,22 @@ mov QWORD PTR [rsi+56], r13
 add rsi, 64
 mov rdi, r9
 add rdi, 2304
-21:
+23:
 test r8, r8
-je 24f
-26:
+je 26f
+28:
 movabs rcx, 8
 cmp r8, 8
-jb 27f
-jmp 28f
-27:
+jb 29f
+jmp 210f
+29:
 mov rcx, r8
-28:
+210:
 mov rax, r9
 add rax, 3016
 mov rbx, rdx
 mov r10, rcx
-29:
+211:
 mov rbp, QWORD PTR [rbx]
 mov QWORD PTR [rax], rbp
 mov rbp, QWORD PTR [rbx+8]
@@ -5585,7 +5604,7 @@ mov QWORD PTR [rax+8], rbp
 add rax, 16
 add rbx, 16
 sub rcx, 1
-jne 29b
+jne 211b
 mov QWORD PTR [r9+2952], rdx
 mov QWORD PTR [r9+2960], r8
 mov QWORD PTR [r9+2944], rdi
@@ -6070,10 +6089,10 @@ mov r14, QWORD PTR [r9+632]
 xor r14, QWORD PTR [rsi+120]
 mov QWORD PTR [r9+632], r14
 add rsi, 128
-210:
+212:
 mov rdi, rsi
 add rdi, 384
-211:
+213:
 xor rax, QWORD PTR [rsi]
 xor rbx, QWORD PTR [rsi+8]
 xor rcx, QWORD PTR [rsi+16]
@@ -7224,12 +7243,12 @@ xor r13, QWORD PTR [r9+568]
 mov QWORD PTR [r9+568], r13
 add rsi, 128
 cmp rsi, rdi
-jne 211b
+jne 213b
 mov r14, QWORD PTR [r9+2944]
 cmp rsi, r14
-jne 212f
-jmp 213f
-212:
+jne 214f
+jmp 215f
+214:
 mov rax, QWORD PTR [r9+576]
 mov rbx, QWORD PTR [r9+584]
 mov rcx, QWORD PTR [r9+592]
@@ -7425,10 +7444,10 @@ mov QWORD PTR [r9+552], r11
 mov QWORD PTR [r9+560], r12
 mov QWORD PTR [r9+568], r13
 add rsi, 128
-213:
+215:
 mov r14, QWORD PTR [r9+2944]
 cmp rsi, r14
-jne 210b
+jne 212b
 xor rax, QWORD PTR [rsi+64]
 xor rbx, QWORD PTR [rsi+72]
 xor rcx, QWORD PTR [rsi+80]
@@ -7886,16 +7905,16 @@ mov r8, QWORD PTR [r9+2960]
 mov rdi, QWORD PTR [r9+2944]
 movabs rcx, 8
 cmp r8, 8
-jb 214f
-jmp 215f
-214:
+jb 216f
+jmp 217f
+216:
 mov rcx, r8
-215:
+217:
 mov rax, r9
 add rax, 3016
 mov rbx, rdx
 mov r10, rcx
-216:
+218:
 mov rbp, QWORD PTR [rax]
 xor rbp, QWORD PTR [r9+3192]
 mov QWORD PTR [rax], rbp
@@ -7913,13 +7932,13 @@ mov QWORD PTR [rbx+8], rbp
 add rax, 16
 add rbx, 16
 sub rcx, 1
-jne 216b
+jne 218b
 mov rdx, rbx
 sub r8, r10
-jne 26b
-jmp 25f
-24:
-25:
+jne 28b
+jmp 27f
+26:
+27:
 mov rbx, QWORD PTR [r9+3144]
 mov rbp, QWORD PTR [r9+3152]
 mov r12, QWORD PTR [r9+3160]

@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 
 namespace VG
 
-materialize_code Impl.TripleDes.AArch64.cbcEncrypt
-materialize_code Impl.TripleDes.AArch64.cbcDecrypt
+materialize_code Impl.TripleDes.AArch64.cbcEncryptChained
+materialize_code Impl.TripleDes.AArch64.cbcDecryptChained
 
 end VG

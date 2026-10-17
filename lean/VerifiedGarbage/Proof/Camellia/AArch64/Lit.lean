@@ -33,7 +33,7 @@ materialize_flat_code expandKeyCode := Impl.Camellia.AArch64.expandKey
 materialize_flat_code ecbEncrypt := Impl.Camellia.AArch64.ecb .encrypt
 materialize_flat_code ecbDecrypt := Impl.Camellia.AArch64.ecb .decrypt
 materialize_flat_code ctrCode := Impl.Camellia.AArch64.ctr
-materialize_flat_code cbcEncryptCode := Impl.Camellia.AArch64.cbcEncrypt
-materialize_flat_code cbcDecryptCode := Impl.Camellia.AArch64.cbcDecrypt
+materialize_flat_code cbcEncryptChainedCode := Impl.Camellia.AArch64.cbcEncryptChained
+materialize_flat_code cbcDecryptChainedCode := Impl.Camellia.AArch64.cbcDecryptChained
 
 end VG.Proof.Camellia.AArch64

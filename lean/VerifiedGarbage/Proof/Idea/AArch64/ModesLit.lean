@@ -23,8 +23,8 @@ materialize_value Impl.Idea.AArch64.cryptBlock
 
 /-! The functions. -/
 
-materialize_code Impl.Idea.AArch64.cbcEncrypt
-materialize_code Impl.Idea.AArch64.cbcDecrypt
+materialize_code Impl.Idea.AArch64.cbcEncryptChained
+materialize_code Impl.Idea.AArch64.cbcDecryptChained
 materialize_code Impl.Idea.AArch64.ofb
 materialize_code Impl.Idea.AArch64.cfbEncrypt
 materialize_code Impl.Idea.AArch64.cfbDecrypt

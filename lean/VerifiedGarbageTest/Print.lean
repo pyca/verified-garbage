@@ -305,6 +305,21 @@ def sampleA64 : Prog AArch64.isa :=
   "ret"
 ]
 
+-- AArch64 alignment padding before a loop's head: `.p2align k`, ahead of
+-- the label, and refused for any `k` but 4, 5 and 6; a NOP in the model.
+#guard text (AArch64.printer.function
+    (.seq (.block [.align 5]) (.loop (.block [.subImm .x .x2 .x2 1]) (.nonzero .x .x2)))) ==
+  [".p2align 5", "20:", "sub x2, x2, #1", "cbnz x2, 20b", "ret"]
+#guard AArch64.Instr.asm (.align 4) == [".p2align 4"]
+#guard AArch64.Instr.asm (.align 6) == [".p2align 6"]
+#guard [4, 5, 6].all fun k => AArch64.printer.unencodable (.align k) == none
+#guard AArch64.printer.unencodable (.align 3) == some "`.p2align 3`: only 4, 5 and 6 are allowed"
+#guard AArch64.printer.unencodable (.align 7) == some "`.p2align 7`: only 4, 5 and 6 are allowed"
+#guard (AArch64.printer.unencodable (.align 0)).isSome
+#guard AArch64.isa.requires (.align 5) == []
+example (s : AArch64.State) : AArch64.exec (.align 5) s = some s := rfl
+example (s : AArch64.State) : AArch64.addrs (.align 5) s = [] := rfl
+
 /-- Every x86 (32-bit) instruction form, every operand form, and both conditions. -/
 def sampleX86 : Prog X86.isa :=
   .seq (.block [.mov .eax (.mem { base := .esp, disp := 16 }), .alu .test .ebp (.reg .ebp)])

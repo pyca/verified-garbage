@@ -18,15 +18,15 @@ def note : String :=
   generic CBC of `Impl/Modes/AArch64/`."
 
 def artifacts : List Artifact := [
-  Spec.Seed.cbcEncryptApi.artifact AArch64.target {
-    notes := [note]
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cbcEncrypt
+  Spec.Seed.cbcEncryptChainedApi.artifact AArch64.target {
+    notes := [note, "The IV's address is kept in `x25`, which the core keeps in `v31`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cbcEncryptChained
     stack := 1456
-    verified := Proof.Seed.AArch64.cbcEncrypt_framed },
-  Spec.Seed.cbcDecryptApi.artifact AArch64.target {
-    notes := [note]
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cbcDecrypt
+    verified := Proof.Seed.AArch64.cbcEncryptChained_framed },
+  Spec.Seed.cbcDecryptChainedApi.artifact AArch64.target {
+    notes := [note, "The last ciphertext block is copied to the IV before any block is decrypted."]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.cbcDecryptChained
     stack := 1456
-    verified := Proof.Seed.AArch64.cbcDecrypt_framed }]
+    verified := Proof.Seed.AArch64.cbcDecryptChained_framed }]
 
 end VG.Artifacts.SeedCbc.AArch64

@@ -174,6 +174,7 @@ def ok {I : Spec.Hmac.Instance} {D : Nat} {initN : String} {iv : Spec.Sha512.Has
   hDL := by show D + 16 + 4 ≤ 128; omega
   hL4 := by simp only [hash] <;> decide
   hNL := by simp only [hash] <;> decide
+  hPad := by show 16 * (D / 16 + 1) + 16 ≤ 128; omega
   hso := by simp only [hash] <;> decide
   fits := by show 1328 + 48 + 64 + 128 ≤ 8 * I.scratch; omega
   hW := by show I.scratch ≤ 256; omega

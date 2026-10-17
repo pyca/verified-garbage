@@ -23,7 +23,7 @@ The code of CBC encryption and decryption as literals
 
 namespace VG.Proof.Camellia.X86
 
-materialize_flat_code cbcEncryptCode := Impl.Camellia.X86.cbcEncrypt
-materialize_flat_code cbcDecryptCode := Impl.Camellia.X86.cbcDecrypt
+materialize_flat_code cbcEncryptChainedCode := Impl.Camellia.X86.cbcEncryptChained
+materialize_flat_code cbcDecryptChainedCode := Impl.Camellia.X86.cbcDecryptChained
 
 end VG.Proof.Camellia.X86

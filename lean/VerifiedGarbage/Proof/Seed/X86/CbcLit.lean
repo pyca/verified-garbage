@@ -24,7 +24,7 @@ Not flattened (`materialize_flat_code`): its unfolding measured slower here.
 
 namespace VG.Proof.Seed.X86
 
-materialize_code cbcEncryptCode := Impl.Seed.X86.cbcEncrypt
-materialize_code cbcDecryptCode := Impl.Seed.X86.cbcDecrypt
+materialize_code cbcEncryptChainedCode := Impl.Seed.X86.cbcEncryptChained
+materialize_code cbcDecryptChainedCode := Impl.Seed.X86.cbcDecryptChained
 
 end VG.Proof.Seed.X86
