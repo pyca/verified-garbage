@@ -16,8 +16,8 @@ holds `[k]([16^i]B)` for `k ≤ 8` (`combCached64`), affine; the 64 tables are
 the static `combSym` (`combWords`, 768 bytes a table, 48 KiB). The
 accumulator, in slots 0–3, starts at `[17 G]B` (`combStart`), and step `i`
 adds digit `i`'s entry of table `i`: 64 additions of affine cached points,
-each a call of `vg_ed25519_r64_add_affine_ext` (seven multiplications), and
-no doublings.
+each inline on the `_alt` field operations (`combAdd`, seven
+multiplications), and no doublings.
 
 The digits are secret: their entries are selected in constant time. The
 masks of the eight magnitudes `k = 1 … 8` (all ones exactly for `|d|`) and
