@@ -69,8 +69,7 @@ def minv16 (m : Nat) : Nat := (List.range (2 ^ 16)).find? (fun x => (m * x + 1) 
 def machine (n modulus base size : Nat) (extra : Words → Words) : Machine :=
   let words := (List.range (size / 4)).foldl (fun w i =>
     w.insert (base / 4 + i) (0xa5a5a5a5 : BitVec 32)) ({} : Words)
-  let words := extra (put (put (put words (base + 64) (2 * n) modulus) (base + modS n) (2 * n) modulus)
-    base 1 (minv16 modulus))
+  let words := extra (put (put words (base + 64) (2 * n) modulus) base 1 (minv16 modulus))
   let state : State := {
     gpr := fun r => if r == .r12 then BitVec.ofNat 32 base else BitVec.ofNat 32 (0xdead00 + r.ctorIdx)
     sp := 0x8000, n := false, z := false, c := false, v := false
@@ -130,7 +129,8 @@ def checkExp (n modulus a e expWords : Nat) : Except String Unit := do
   let base := 0x10000
   let size := 8000
   let m₀ := machine n modulus base size fun w =>
-    put (put (put w base 1 0x5a5a) (base + baseS n) (2 * n) a) (base + expS n) expWords e
+    put (put (put (put w base 1 0x5a5a) (base + modS n) (2 * n) modulus) (base + baseS n) (2 * n) a)
+      (base + expS n) expWords e
   let r ← evaluate fuel (contextSetup n) m₀
   unless (modulus * get r.words base 1 + 1) % 2 ^ 16 == 0 do throw s!"inverse mismatch: {modulus}"
   unless get r.words (base + rrS n) (2 * n) == 2 ^ (128 * n) % modulus do throw "R² mismatch"
