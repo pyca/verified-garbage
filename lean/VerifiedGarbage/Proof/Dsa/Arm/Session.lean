@@ -36,7 +36,7 @@ structure Input (s : State) (base : Addr) (size : Nat) (p : Pointer) (len v : Na
 
 /-- The working space's memory a schedule may change: the arithmetic's, the
 flag word and the computed values. -/
-def runRanges : List (Nat × Nat) := [(0, 8), (116, 4), (256, 15456)]
+def runRanges : List (Nat × Nat) := [(0, 64), (116, 4), (256, 15456)]
 
 /-- What a schedule keeps. -/
 structure Run (base : Addr) (s t : State) : Prop where
@@ -52,7 +52,7 @@ theorem Stage.run {base : Addr} {s t : State} {output len : Nat} (St : Stage bas
     (ho : output = 116 ∧ len = 4 ∨ 4960 ≤ output ∧ output + len ≤ 15712) : Run base s t :=
   ⟨St.rest, fun x hx => St.mem x fun r hr => by
     simp only [arithRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have h₁ := hx (0, 8) (by simp [runRanges])
+    have h₁ := hx (0, 64) (by simp [runRanges])
     have h₂ := hx (116, 4) (by simp [runRanges])
     have h₃ := hx (256, 15456) (by simp [runRanges])
     simp only at h₁ h₂ h₃

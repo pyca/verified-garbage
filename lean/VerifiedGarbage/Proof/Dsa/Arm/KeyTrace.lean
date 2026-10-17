@@ -164,7 +164,8 @@ theorem subgroup_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {in
   simp only [Validate.subgroup, Core.sequence, List.foldr]
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X.C₁.inp mg).toReady (X.C₂.inp mg).toReady (X.C₁.inp mq).toReady
-      (X.E _ mp) (X.E _ mg) (X.E _ mq))
+      (X.E _ mp) (X.E _ mg) (X.E _ mq)
+      (X.C₂.inp mq).toReady q4 qp qw)
     (power_ok (output := Impl.Dsa.Layout.t) X.C₁.S.ws (by omega) X.C₁.S.wp q4 qp qw (X.C₁.inp mp).toReady
       (X.C₁.inp mg).toReady (X.C₁.inp mq).toReady (X.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega) (by decide))
     (power_ok (output := Impl.Dsa.Layout.t) X.C₂.S.ws (by omega) X.C₁.S.wp q4 qp qw (X.C₂.inp mp).toReady
@@ -179,7 +180,8 @@ theorem subgroup_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {in
   have X₂ := X₁.run (St₁.run (.inl ⟨rfl, rfl⟩)) (St₂.run (.inl ⟨rfl, rfl⟩))
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X₂.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X₂.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X₂.C₁.inp my).toReady (X₂.C₂.inp my).toReady (X₂.C₁.inp mq).toReady
-      (X₂.E _ mp) (X₂.E _ my) (X₂.E _ mq))
+      (X₂.E _ mp) (X₂.E _ my) (X₂.E _ mq)
+      (X₂.C₂.inp mq).toReady q4 qp qw)
     (power_ok (output := Impl.Dsa.Layout.t) X₂.C₁.S.ws (by omega) X.C₁.S.wp q4 qp qw (X₂.C₁.inp mp).toReady
       (X₂.C₁.inp my).toReady (X₂.C₁.inp mq).toReady (X₂.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega) (by decide))
     (power_ok (output := Impl.Dsa.Layout.t) X₂.C₂.S.ws (by omega) X.C₁.S.wp q4 qp qw (X₂.C₂.inp mp).toReady
@@ -229,7 +231,8 @@ theorem privateKey_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ : Nat} {
   have X₂ := X₁.run (St₁.run (.inl ⟨rfl, rfl⟩)) (St₂.run (.inl ⟨rfl, rfl⟩))
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t) (X₂.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo)
       (X₂.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X₂.C₁.inp mg).toReady (X₂.C₂.inp mg).toReady (X₂.C₁.inp mx).toReady
-      (X₂.E _ mp) (X₂.E _ mg) (X₂.E _ mx))
+      (X₂.E _ mp) (X₂.E _ mg) (X₂.E _ mx)
+      (X₂.C₂.inp mx).toReady q4 qp qw)
     (power_ok (output := Impl.Dsa.Layout.t) X₂.C₁.S.ws (by omega) X.C₁.S.wp q4 qp qw (X₂.C₁.inp mp).toReady
       (X₂.C₁.inp mg).toReady (X₂.C₁.inp mx).toReady (X₂.C₁.inp mp).value D₁.hP D₁.hPo ho.1 (by omega) (by decide))
     (power_ok (output := Impl.Dsa.Layout.t) X₂.C₂.S.ws (by omega) X.C₁.S.wp q4 qp qw (X₂.C₂.inp mp).toReady
