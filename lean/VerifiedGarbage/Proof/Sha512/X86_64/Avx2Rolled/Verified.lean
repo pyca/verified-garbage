@@ -17,7 +17,7 @@ import all Init.Data.Vector.Basic
 `compress_verified`: `Impl.Sha512.X86_64.Avx2Rolled.compress` against
 `Proof.Sha512.compressWideX86_64`, the contract of the unrolled code, under
 the plain calling convention: the table of round constants is carried by
-the code (`aluTbl`), not given by the contract.
+the code (`vmovdquTbl`), not given by the contract.
 -/
 
 @[expose] public section

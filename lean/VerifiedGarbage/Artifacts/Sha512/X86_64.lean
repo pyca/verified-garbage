@@ -27,8 +27,8 @@ def artifacts : List Artifact := [
   Spec.Sha512.compressApi.artifact X86_64.target {
     suffix := "_avx2"
     notes := ["This implementation computes the message schedules of two blocks at a time in \
-        the two lanes of the AVX2 registers, and the rounds with BMI1 and BMI2, sixteen to an \
-        iteration of a loop, adding the round constants from a table."]
+        the two lanes of the AVX2 registers, adding the round constants to their words from a \
+        table, and the rounds with BMI1 and BMI2, sixteen to an iteration of a loop."]
     code := Impl.Sha512.X86_64.Avx2Rolled.compress
     verified := Proof.Sha512.X86_64.Shared.compress_avx2
     features := ["avx", "avx2", "bmi1", "bmi2"] },

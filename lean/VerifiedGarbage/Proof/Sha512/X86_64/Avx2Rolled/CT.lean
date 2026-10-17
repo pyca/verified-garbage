@@ -33,7 +33,7 @@ open VG VG.X86_64 VG.Impl.Sha512.X86_64.Avx2Rolled
 open VG.Proof.Sha512.X86_64 (st bp nb scr stR blR retR blkAddr)
 
 /-- The public data: the pointers and the block count. The table's address
-need not be: its reads are observed as offsets in it (`aluTbl`). -/
+need not be: its reads are observed as offsets in it (`vmovdquTbl`). -/
 def PubK (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx
