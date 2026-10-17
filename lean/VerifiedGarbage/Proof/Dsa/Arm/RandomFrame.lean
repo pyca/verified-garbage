@@ -225,6 +225,16 @@ theorem wp_st (h : Ready s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
     WP isa (.block (st r d :: is)) t Q :=
   wp_str (by unfold frameBytes at hd; omega) (h.rf.ea (by omega)) (h.rf.write hd) fun u v => k u v (h.mupd v hd)
 
+/-- `str r, [r11, #d]`, keeping the flags. -/
+theorem wp_stF (h : Ready s₀ t) {r : Reg} {d : Nat} (hd : d + 4 ≤ frameBytes)
+    (k : ∀ u, Mupd t u (t.mem.writeW (off (rBase s₀) d) (t.gpr r)) → Ready s₀ u → u.z = t.z → u.c = t.c →
+      WP isa (.block is) u Q) :
+    WP isa (.block (st r d :: is)) t Q := by
+  have e := h.rf.ea (d := d) (by omega)
+  refine VG.Proof.X25519.Arm.WP.cons (exec_str (by unfold frameBytes at hd; omega) (by rw [e]; exact h.rf.write hd)) ?_
+  rw [e]
+  exact k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ (h.mupd ⟨rfl, rfl, rfl, rfl, rfl⟩ hd) rfl rfl
+
 end
 
 /-! ## Bytes of the caller's buffers -/
