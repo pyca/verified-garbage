@@ -145,6 +145,7 @@ def ok : HashOK hash where
   hDL := by decide
   hL4 := by decide
   hNL := by decide
+  hPad := by decide
   hso := by decide
   fits := by decide
   hW := by decide
