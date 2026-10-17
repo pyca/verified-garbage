@@ -364,94 +364,115 @@ macro "any_eval" loc:(Lean.Parser.Tactic.location)? : tactic =>
   `(tactic| sig_pre [Spec.Ecdsa.Rfc6979.Instance.signAnyContract, Spec.Ecdsa.Rfc6979.Instance.signAnySig,
     X86_64.abi, X86_64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] $[$loc]?)
 
-variable {n : String} {W : List (BitVec 64)}
+/-- The comb's one table, or none (the curves without a comb). -/
+def TblShape (cs : List (String × List (BitVec 64))) : Prop := cs = [] ∨ ∃ n W, cs = [(n, W)]
 
 /-- The contract permits only the numbers of `hashIds`. -/
-theorem any_hash (hcs : A.R.E.combConsts = [(n, W)]) {s : State} (h : A.contract.pre s) :
+theorem any_hash (hcs : TblShape A.R.E.combConsts) {s : State} (h : A.contract.pre s) :
     hashOf s ∈ Spec.Ecdsa.Rfc6979.hashIds := by
   unfold RfcAny.contract at h
-  rw [hcs] at h
-  any_eval at h
-  exact h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+  rcases hcs with h0 | ⟨n, W, h0⟩ <;> rw [h0] at h <;> any_eval at h <;>
+    repeat (first | exact h.1 | replace h := h.2)
 
 /-- The digest is the hash function's output length. -/
-theorem any_len (hcs : A.R.E.combConsts = [(n, W)]) {s : State} (h : A.contract.pre s) {k : Nat}
+theorem any_len (hcs : TblShape A.R.E.combConsts) {s : State} (h : A.contract.pre s) {k : Nat}
     (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) (hks : hashOf s = k) :
     (s.gpr .rcx).toNat = (A.hashAt k hk).H.D := by
-  unfold RfcAny.contract at h
-  rw [hcs] at h
-  any_eval at h
-  have hl := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
-  rw [show ((s.gpr .r9).setWidth 32).toNat = k from hks] at hl
+  have hl : ∀ H, Spec.HashId.mgf1 (hashOf s) = some H → (s.gpr .rcx).toNat = H.len := by
+    unfold RfcAny.contract at h
+    rcases hcs with h0 | ⟨n, W, h0⟩ <;> rw [h0] at h <;> any_eval at h <;>
+      repeat (first | exact h | replace h := h.2)
+  rw [hks] at hl
   exact A.digestLen hk hl
 
-theorem any_pre (hcs : A.R.E.combConsts = [(n, W)]) {s : State} {k : Nat} (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds)
+theorem r9_eq {s : State} {k : Nat} (hks : hashOf s = k) : (s.gpr .r9).setWidth 32 = BitVec.ofNat 32 k := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ofNat, ← hks]
+  exact (Nat.mod_eq_of_lt (BitVec.isLt _)).symm
+
+theorem any_pre (hcs : TblShape A.R.E.combConsts) {s : State} {k : Nat} (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds)
     (hks : hashOf s = k) (h : A.contract.pre s) : (A.K k hk).pre s := by
   have hD := A.any_len hcs h hk hks
   have hsc := A.scratch
   unfold RfcAny.contract at h
-  rw [hcs] at h
-  any_eval at h
-  obtain ⟨hsp, hd, hheld, hfit, hdw, hdr, hds, ht, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd,
-    ng, nc, -, -⟩ := h
-  rw [hD] at ht og gc rg kg ng
-  simp only [hsc, Nat.reduceMul] at hw oc dc gc rc kc nc
   unfold RfcAny.K rfcX86_64
-  rw [hcs]
-  refine ⟨?_, hsp, ?_, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, ?_, ?_⟩
-  · apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_ofNat, ← hks]
-    exact (Nat.mod_eq_of_lt (BitVec.isLt _)).symm
-  · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd, Abi.constRegions_cons, Abi.constRegions_nil]
-    rfl
-  · intro c hc
-    simp only [List.mem_singleton] at hc; subst hc; exact hheld
-  · rw [Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
-    refine ⟨hfit, fun r hr => ?_⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
-    · exact hdw _ (by rw [hw]; exact List.mem_cons_self ..)
-    · exact hdw _ (by rw [hw]; exact List.mem_cons_of_mem _ (List.mem_cons_self ..))
-    · exact hdr
-    · exact hds
+  rcases hcs with h0 | ⟨n, W, h0⟩ <;> rw [h0] at h ⊢ <;> any_eval at h
+  · obtain ⟨hsp, hrd, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, -, -⟩ := h
+    rw [hD] at hrd og gc rg kg ng
+    simp only [hsc, Nat.reduceMul] at hw oc dc gc rc kc nc
+    refine ⟨r9_eq hks, hsp, by rw [hrd, Abi.constRegions_nil]; rfl, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd,
+      kg, kc, no, nd, ng, nc, fun c hc => absurd hc List.not_mem_nil, ?_⟩
+    rw [Abi.constRegions_nil]
+    exact fun t ht => absurd ht List.not_mem_nil
+  · obtain ⟨hsp, hd, hheld, hfit, hdw, hdr, hds, ht, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd,
+      ng, nc, -, -⟩ := h
+    rw [hD] at ht og gc rg kg ng
+    simp only [hsc, Nat.reduceMul] at hw oc dc gc rc kc nc
+    refine ⟨r9_eq hks, hsp, ?_, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, ?_, ?_⟩
+    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd, Abi.constRegions_cons, Abi.constRegions_nil]
+      rfl
+    · intro c hc
+      simp only [List.mem_singleton] at hc; subst hc; exact hheld
+    · rw [Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
+      refine ⟨hfit, fun r hr => ?_⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact hdw _ (by rw [hw]; exact List.mem_cons_self ..)
+      · exact hdw _ (by rw [hw]; exact List.mem_cons_of_mem _ (List.mem_cons_self ..))
+      · exact hdr
+      · exact hds
 
-theorem any_post (hcs : A.R.E.combConsts = [(n, W)]) {s s' : State} {k : Nat}
+theorem any_post (hcs : TblShape A.R.E.combConsts) {s s' : State} {k : Nat}
     (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) (hks : hashOf s = k) (hD : (s.gpr .rcx).toNat = (A.hashAt k hk).H.D)
     (h : (A.K k hk).post s s') : A.contract.post s s' := by
-  unfold RfcAny.contract
-  rw [hcs]
-  sig_post [Spec.Ecdsa.Rfc6979.Instance.signAnyContract, Spec.Ecdsa.Rfc6979.Instance.signAnySig,
-    X86_64.abi, X86_64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
-  rw [show ((s.gpr .r9).setWidth 32).toNat = k from hks, hD, A.anyResult_eq hk]
   dsimp only [RfcAny.K, rfcX86_64] at h
   revert h
-  generalize result (A.hashAt k hk).I s.mem (s.gpr .rsi) (s.gpr .rdx) = r
-  obtain ⟨o, c⟩ := r
-  cases o <;> exact id
+  unfold RfcAny.contract
+  rcases hcs with h0 | ⟨n, W, h0⟩ <;> rw [h0] <;>
+    sig_post [Spec.Ecdsa.Rfc6979.Instance.signAnyContract, Spec.Ecdsa.Rfc6979.Instance.signAnySig,
+      X86_64.abi, X86_64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] <;>
+    rw [show ((s.gpr .r9).setWidth 32).toNat = k from hks, hD, A.anyResult_eq hk] <;>
+    generalize result (A.hashAt k hk).I s.mem (s.gpr .rsi) (s.gpr .rdx) = r <;>
+    obtain ⟨o, c⟩ := r <;> cases o <;> exact id
 
-theorem any_pub (hcs : A.R.E.combConsts = [(n, W)]) {s₁ s₂ : State} (h₁ : A.contract.pre s₁)
+theorem any_res {s₁ s₂ : State} {k : Nat} (hk : k ∈ Spec.Ecdsa.Rfc6979.hashIds) (hk₁ : hashOf s₁ = k)
+    (hk₂ : hashOf s₂ = k) (hD₁ : (s₁.gpr .rcx).toNat = (A.hashAt k hk).H.D)
+    (hD₂ : (s₂.gpr .rcx).toNat = (A.hashAt k hk).H.D)
+    (hl : [(Option.map (fun x => x.snd) (A.I0.anyResult s₁.mem (s₁.gpr .rsi) (s₁.gpr .rdx) (s₁.gpr .rcx).toNat
+        ((s₁.gpr .r9).setWidth 32).toNat)).getD 0] =
+      [(Option.map (fun x => x.snd) (A.I0.anyResult s₂.mem (s₂.gpr .rsi) (s₂.gpr .rdx) (s₂.gpr .rcx).toNat
+        ((s₂.gpr .r9).setWidth 32).toNat)).getD 0]) :
+    (result (A.hashAt k hk).I s₁.mem (s₁.gpr .rsi) (s₁.gpr .rdx)).2 =
+      (result (A.hashAt k hk).I s₂.mem (s₂.gpr .rsi) (s₂.gpr .rdx)).2 := by
+  rw [show ((s₁.gpr .r9).setWidth 32).toNat = k from hk₁, show ((s₂.gpr .r9).setWidth 32).toNat = k from hk₂,
+    hD₁, hD₂, A.anyResult_eq hk, A.anyResult_eq hk] at hl
+  exact (List.cons.inj hl).1
+
+theorem any_pub (hcs : TblShape A.R.E.combConsts) {s₁ s₂ : State} (h₁ : A.contract.pre s₁)
     (h₂ : A.contract.pre s₂) (hp : A.contract.pub s₁ s₂) :
     ∃ hk : hashOf s₁ ∈ Spec.Ecdsa.Rfc6979.hashIds, (A.K _ hk).pre s₁ ∧ (A.K _ hk).pre s₂ ∧ (A.K _ hk).pub s₁ s₂ := by
   have hk := A.any_hash hcs h₁
-  unfold RfcAny.contract at hp
-  rw [hcs] at hp
-  sig_pub [Spec.Ecdsa.Rfc6979.Instance.signAnyContract, Spec.Ecdsa.Rfc6979.Instance.signAnySig,
-    X86_64.abi, X86_64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at hp
-  obtain ⟨hsp, hsy, hl, hdi, hsi, hdx, hcx, h8, h9⟩ := hp
-  have hks : hashOf s₂ = hashOf s₁ := by show ((s₂.gpr .r9).setWidth 32).toNat = _; rw [← h9]
+  have p₁ := A.any_pre hcs hk rfl h₁
   have hD₁ := A.any_len hcs h₁ hk rfl
-  have hD₂ := A.any_len hcs h₂ hk hks
-  refine ⟨hk, A.any_pre hcs hk rfl h₁, A.any_pre hcs hk hks h₂, hsp, hdi, hsi, hdx, h8, ?_, fun c hc => ?_⟩
-  · rw [show ((s₁.gpr .r9).setWidth 32).toNat = hashOf s₁ from rfl,
-      show ((s₂.gpr .r9).setWidth 32).toNat = hashOf s₁ from hks, hD₁, hD₂, A.anyResult_eq hk,
-      A.anyResult_eq hk] at hl
-    exact (List.cons.inj hl).1
-  · rw [hcs] at hc
+  unfold RfcAny.contract at hp
+  unfold RfcAny.K rfcX86_64
+  rcases hcs' : hcs with h0 | ⟨n, W, h0⟩ <;> rw [h0] at hp <;>
+    sig_pub [Spec.Ecdsa.Rfc6979.Instance.signAnyContract, Spec.Ecdsa.Rfc6979.Instance.signAnySig,
+      X86_64.abi, X86_64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at hp
+  · obtain ⟨hsp, hl, hdi, hsi, hdx, -, h8, h9⟩ := hp
+    have hks : hashOf s₂ = hashOf s₁ := by show ((s₂.gpr .r9).setWidth 32).toNat = _; rw [← h9]
+    exact ⟨hk, p₁, A.any_pre hcs hk hks h₂, hsp, hdi, hsi, hdx, h8,
+      A.any_res hk rfl hks hD₁ (A.any_len hcs h₂ hk hks) hl, fun c hc => by rw [h0] at hc; cases hc⟩
+  · obtain ⟨hsp, hsy, hl, hdi, hsi, hdx, -, h8, h9⟩ := hp
+    have hks : hashOf s₂ = hashOf s₁ := by show ((s₂.gpr .r9).setWidth 32).toNat = _; rw [← h9]
+    refine ⟨hk, p₁, A.any_pre hcs hk hks h₂, hsp, hdi, hsi, hdx, h8,
+      A.any_res hk rfl hks hD₁ (A.any_len hcs h₂ hk hks) hl, fun c hc => ?_⟩
+    rw [h0] at hc
     simp only [List.mem_singleton] at hc; subst hc; exact hsy
 
 /-- The code meets the contract with the hash function as an argument, given
 a state the contract permits. -/
-theorem verified (hcs : A.R.E.combConsts = [(n, W)]) (hsat : ∃ s, A.contract.pre s) :
+theorem verified (hcs : TblShape A.R.E.combConsts) (hsat : ∃ s, A.contract.pre s) :
     Verified X86_64.target A.code A.contract :=
   Verified.of_family (ι := {k // k ∈ Spec.Ecdsa.Rfc6979.hashIds}) (fun i => A.K i.1 i.2)
     (fun i => A.correct i.1 i.2) (fun i => A.ct i.1 i.2)
