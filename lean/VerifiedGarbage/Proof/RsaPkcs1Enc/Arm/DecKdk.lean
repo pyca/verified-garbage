@@ -132,7 +132,7 @@ theorem macInit_vp {key : Nat} (hk : 192 ≤ key) (hk' : key + 32 ≤ 8448) {F G
     (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => hi_pub (hF _ _ h₁).2 (hF _ _ h₂).2 (by rw [(hF _ _ h₁).1.2.sp, (hF _ _ h₂).1.2.sp]) _ _)
     (fun σ s s' h st fr _ po => ?_)
   · obtain ⟨hs, ha⟩ := hF σ s h
-    refine hi_pre ha hs.2.sp (Nat.le_trans (by decide : 880 ≤ 3440) hs.1.ok.B56)
+    refine hi_pre ha hs.2.sp (Nat.le_trans (by decide : 1656 ≤ 3440) hs.1.ok.B56)
       (hs.1.sc0_sepW (by decide) (by decide) (by decide) (by decide))
       (hs.1.sc0_sepW (by omega) (by decide) hk' (by omega))
       (hs.1.sc_sepW (.inl (by simp only [sOuter]; omega)) (by decide) hk' (by decide) (by omega)) (fun r hr => ?_)

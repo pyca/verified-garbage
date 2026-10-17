@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Frame
 public import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Sha256
 public import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.AnyKeySha256
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -17,7 +18,8 @@ import all Init.Data.Vector.Basic
 `decFns`: SHA-256's `init`, `update` and `finalize` and HMAC-SHA-256's
 `init` and `finalize`, the ARMv7 artifacts (`Artifacts/Sha256/Arm.lean`,
 `Artifacts/HmacSha256/Arm.lean`), each with the working space in its own
-frame; their proofs, and the stack they use.
+frame; their proofs, and the stack they use. HMAC's `init` is the one for a
+key of any length (`initAnyKeyContract`); decryption's keys are 32 bytes.
 -/
 
 @[expose] public section
@@ -34,9 +36,9 @@ def decFns : Impl.RsaPkcs1Enc.Arm.Decrypt.Fns where
   updC := Impl.StackScratch.Arm.withStackScratch 624 2 Impl.Sha256.Arm.Stream.update
   finN := Spec.Sha256.finalizeApi.name
   finC := Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize
-  hiN := Spec.Hmac.sha256I.initApi.name
-  hiC := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 0
-    Proof.Pbkdf2.Md.Arm.sha256Md.hmacInit
+  hiN := Spec.Hmac.sha256I.initAnyKeyApi.name
+  hiC := Proof.Pbkdf2.Whole.Arm.initCode Spec.Hmac.sha256I Proof.Pbkdf2.Md.Arm.sha256Md.hmacInit
+    Proof.Pbkdf2.Whole.Arm.sha256F
   hfN := Spec.Hmac.sha256I.finalizeApi.name
   hfC := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Md.Arm.frame Spec.Hmac.sha256I) 1
     Proof.Pbkdf2.Md.Arm.sha256Md.hmacFin
@@ -48,10 +50,11 @@ theorem updV : Verified target decFns.updC (Spec.Sha256.updateContract abi 624) 
 theorem finV : Verified target decFns.finC (Spec.Sha256.finalizeContract abi 624) :=
   Proof.Sha256.Arm.Shared.finalize
 
-theorem hiV : Verified target decFns.hiC (Spec.Hmac.sha256I.initContract abi 880) := by
-  have h := Proof.Pbkdf2.Md.Arm.initFramed Proof.Pbkdf2.Md.Arm.Instances.sha256_init
-    Proof.Pbkdf2.Md.Arm.sha256_initFrameSat
-  rw [frame_eq] at h
+theorem anyFrame_eq : 24 + Proof.Pbkdf2.Whole.Arm.Any.anyFrame Spec.Hmac.sha256I = 1656 := by decide
+
+theorem hiV : Verified target decFns.hiC (Spec.Hmac.sha256I.initAnyKeyContract abi 1656) := by
+  have h := Proof.Pbkdf2.Whole.Arm.Any.sha256_initF
+  rw [anyFrame_eq] at h
   exact h
 
 theorem hfV : Verified target decFns.hfC (Spec.Hmac.sha256I.finalizeContract abi 880) := by
@@ -78,12 +81,7 @@ theorem finS : FrameStack.armStack decFns.finC ≤ 624 := by
   simp only [Proof.Pbkdf2.Stream.Arm.sha256H] at this
   omega
 
-theorem hiS : FrameStack.armStack decFns.hiC ≤ 880 := by
-  have := Proof.Pbkdf2.Whole.Arm.sha256OKF.hiSt
-  have e := frame_eq
-  simp only [decFns, Impl.StackScratch.Arm.withStackScratch, FrameStack.armStack] at this ⊢
-  simp only [Proof.Pbkdf2.Whole.Arm.sha256F, Proof.Pbkdf2.Whole.Arm.fnsOf] at this
-  omega
+theorem hiS : FrameStack.armStack decFns.hiC ≤ 1656 := by decide +kernel
 
 theorem hfS : FrameStack.armStack decFns.hfC ≤ 880 := by
   have := Proof.Pbkdf2.Whole.Arm.sha256OKF.hfSt
