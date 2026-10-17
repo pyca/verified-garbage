@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.InitPairs
 import all Init.Data.Array.Basic
 import all Init.Data.Array.DecidableEq
 import all Init.Data.Nat.Bitwise.Basic
@@ -32,7 +33,7 @@ open VG.Impl.MdStream.AArch64
 def oneShotWith (o : List Instr) (iv : Spec.Sha256.HashValue) (name : String) (code : Prog isa) :
     Prog isa :=
   Impl.MdStream.AArch64.OneShot.digest { Stream.params with out := o }
-    (Impl.Sha256.AArch64.Stream.initWith iv) name code
+    (Impl.Sha256.AArch64.Stream.initPairs iv) name code
 
 /-- The one-shot digest is constant time. -/
 abbrev OneShotCT (o : List Instr) (D : Nat) (iv : Spec.Sha256.HashValue) (name : String) (code : Prog isa) :
@@ -86,24 +87,17 @@ theorem fits (o : List Instr) : Fits { Stream.params with out := o } := ⟨by rw
 
 theorem init_ok (iv : Spec.Sha256.HashValue) :
     ∀ s, (initK (P := Stream.params) md iv).pre s → ∃ t s',
-      Exec isa (Impl.Sha256.AArch64.Stream.initWith iv) s t s' ∧ abiPreserved s s' ∧
+      Exec isa (Impl.Sha256.AArch64.Stream.initPairs iv) s t s' ∧ abiPreserved s s' ∧
         (initK (P := Stream.params) md iv).post s s' :=
-  fun s h => by
-    obtain ⟨t, s', he, h⟩ := Stream.init_correct iv h
-    exact ⟨t, s', he, h⟩
+  Stream.initPairs_ok iv
 
 theorem init_writes (iv : Spec.Sha256.HashValue) :
-    ∀ r, r ≠ .x9 → r ≠ .x10 → ∀ i ∈ instrs (Impl.Sha256.AArch64.Stream.initWith iv), clobbers i r = false := by
-  intro r hr _ i hi
-  simp only [Impl.Sha256.AArch64.Stream.initWith, instrs, List.mem_flatMap, List.mem_range,
-    List.mem_cons, List.not_mem_nil, or_false] at hi
-  obtain ⟨k, -, hi⟩ := hi
-  rcases hi with rfl | rfl | rfl <;> simp [clobbers, dstOf, Ne.symm hr]
+    ∀ r, r ≠ .x9 → r ≠ .x10 → ∀ i ∈ instrs (Impl.Sha256.AArch64.Stream.initPairs iv), clobbers i r = false :=
+  Stream.initPairs_writes iv
 
 theorem init_keepsV (iv : Spec.Sha256.HashValue) :
-    (Impl.Sha256.AArch64.Stream.initWith iv).allInstrs VG.AArch64.keepsV = true := by
-  rw [Code.allInstrs_eq]
-  simp [Impl.Sha256.AArch64.Stream.initWith, instrs, VG.AArch64.keepsV, vdstOf]
+    (Impl.Sha256.AArch64.Stream.initPairs iv).allInstrs VG.AArch64.keepsV = true :=
+  Stream.initPairs_keepsV iv
 
 /-- A state satisfying the precondition: an empty message at `0x1000`, the
 digest at `0x2000` and the stack pointer at `0x10000`. -/
