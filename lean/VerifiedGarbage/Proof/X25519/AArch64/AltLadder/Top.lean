@@ -1,6 +1,8 @@
 module
 
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ladder
+public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ends
+public import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Top
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Output
@@ -17,8 +19,8 @@ import all Init.Data.Vector.Basic
 /-!
 # X25519 on AArch64: the `_alt` ladder's whole function
 
-The four-word function's setup, the `_alt` ladder, and the four-word
-function's last swap, inversion and output. No instruction writes a vector
+The four-word function's setup, the `_alt` ladder with its first and last
+iterations, and the four-word function's inversion and output. No instruction writes a vector
 register, so `v8`–`v15` are kept without being saved.
 -/
 
@@ -32,9 +34,6 @@ open VG.Proof.Ed25519.AArch64 (env F Outside ofs clob word off ofs_off' Saved Sm
 open VG.Proof.X25519.AArch64.Word (LoopKeep Good bitOffset localContract Kp Sc saved_of_words
   preservedCases Scratch)
 
-theorem bel_of_small {m : Mem} {base : Addr} (h : Small m base S14) : Bel m base S14 :=
-  fun i hi => Nat.lt_of_lt_of_le (h i hi) (by decide)
-
 theorem correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s₀ : State} (hp : localContract.pre s₀) :
     WP isa VG.Impl.X25519.AArch64.AltLadder.x25519 s₀ fun t =>
       (∀ r ∈ preserved, t.gpr r = s₀.gpr r) ∧ localContract.post s₀ t := by
@@ -45,9 +44,17 @@ theorem correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s₀ : State} (hp : lo
   refine WP.seq (WP.mono (VG.Proof.X25519.AArch64.Word.setup_ok hs hp.2 rfl rfl
     (by rw [pre.rd]; simp) (by rw [pre.rd]; simp) pre.scalar_sc pre.point_sc)
     fun c ⟨hc, gc, wc, oc, bc, svc, kc, sc⟩ => ?_)
-  refine WP.seq (WP.mono (ladder_ok hc gc wc bc (bel_of_small sc)) fun d ⟨kd, gd, wd⟩ => ?_)
+  have kl := length_bytesAt s₀.mem (s₀.gpr .x1) 32
+  refine WP.seq (WP.mono (first_ok (k := decodeScalar25519 (bytesAt s₀.mem (s₀.gpr .x1) 32)) hc gc
+    (by rw [scalar_bit kl (by decide)]; rfl) sc)
+    fun c' ⟨kc', gc', wc', bc'⟩ => ?_)
+  have hc' := kc'.scratch hc
+  refine WP.seq (WP.mono (ladder_ok hc' gc' wc' (fun i hi => by rw [kc'.bit hi]; exact bc i hi) bc')
+    fun d ⟨kd', gd, wd, bd⟩ => ?_)
+  have kd := kc'.trans kd'
   have hd := kd.scratch hc
-  refine WP.seq (WP.mono (VG.Proof.X25519.AArch64.Word.lastSwap_ok hd gd (ladderAfter_swap_le _ _ (by decide)) wd)
+  refine WP.seq (WP.mono (tail_ok hd gd wd bd (by rw [scalar_bit kl (by decide)]; rfl)
+    (by rw [scalar_bit kl (by decide)]; rfl) (by rw [scalar_bit kl (by decide)]; rfl))
     fun e ⟨ke, ex, ez⟩ => ?_)
   have he := ke.scratch hd
   refine WP.seq (WP.mono (VG.Proof.Ed25519.AArch64.Divstep.invert_ok he) fun f ⟨fi, fk, f1, fm⟩ => ?_)

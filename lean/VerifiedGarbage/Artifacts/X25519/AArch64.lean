@@ -25,8 +25,10 @@ def artifacts : List Artifact := [
       `curve25519_x25519_byte_alt`, operation for operation: field elements of four 64-bit \
       words, below 2·(2^255 - 19) between operations, with `mul`/`umulh` products and \
       squares, sums and differences folding one carry, and `mux_4` choosing the point to double \
-      rather than swapping the points. Unlike s2n-bignum, all 255 iterations run (bits 254 down \
-      to 0). The inversion uses Bernstein–Yang divsteps."]
+      rather than swapping the points. As in s2n-bignum, the iterations for the bits clamping \
+      sets and clears are specialized: the one for bit 254 computes both points from `(u, 1)` \
+      directly, and those for bits 2, 1 and 0 double the point the swap chooses three times. \
+      The inversion uses Bernstein–Yang divsteps."]
     code := Impl.X25519.AArch64.AltLadder.x25519
     verified := Proof.X25519.AArch64.AltLadder.x25519_verified },
   Spec.X25519.x25519BaseApi.artifact AArch64.target {

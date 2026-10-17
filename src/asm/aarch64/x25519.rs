@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.X25519.x25519Contract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate.
 ///
-/// The function saves the callee-saved registers it uses (`x19`–`x24`) in `scratch`. The ladder is that of s2n-bignum's `curve25519_x25519_byte_alt`, operation for operation: field elements of four 64-bit words, below 2·(2^255 - 19) between operations, with `mul`/`umulh` products and squares, sums and differences folding one carry, and `mux_4` choosing the point to double rather than swapping the points. Unlike s2n-bignum, all 255 iterations run (bits 254 down to 0). The inversion uses Bernstein–Yang divsteps.
+/// The function saves the callee-saved registers it uses (`x19`–`x24`) in `scratch`. The ladder is that of s2n-bignum's `curve25519_x25519_byte_alt`, operation for operation: field elements of four 64-bit words, below 2·(2^255 - 19) between operations, with `mul`/`umulh` products and squares, sums and differences folding one carry, and `mux_4` choosing the point to double rather than swapping the points. As in s2n-bignum, the iterations for the bits clamping sets and clears are specialized: the one for bit 254 computes both points from `(u, 1)` directly, and those for bits 2, 1 and 0 double the point the swap chooses three times. The inversion uses Bernstein–Yang divsteps.
 ///
 /// # Safety
 ///
@@ -938,7 +938,555 @@ str x6, [x0, #656]
 str x7, [x0, #664]
 movz x2, #0, lsl #0
 str x2, [x0, #768]
-movz x19, #255, lsl #0
+movz x17, #0, lsl #0
+ldp x5, x6, [x0, #160]
+ldp x4, x3, [x0, #192]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #176]
+ldp x4, x3, [x0, #208]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #320]
+stp x7, x8, [x0, #336]
+ldp x3, x4, [x0, #160]
+ldp x7, x8, [x0, #192]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #176]
+ldp x7, x8, [x0, #208]
+adcs x5, x5, x7
+adcs x6, x6, x8
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #96]
+stp x5, x6, [x0, #112]
+add x20, x1, #0
+movz x1, #4, lsl #0
+ldp x7, x8, [x0, #64]
+ldp x9, x10, [x0, #80]
+mul x3, x1, x7
+mul x4, x1, x8
+mul x5, x1, x9
+mul x6, x1, x10
+umulh x7, x1, x7
+umulh x8, x1, x8
+umulh x9, x1, x9
+umulh x10, x1, x10
+adds x4, x4, x7
+adcs x5, x5, x8
+adcs x6, x6, x9
+adc x10, x10, x17
+ldp x7, x8, [x0, #128]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x7, x8, [x0, #144]
+adcs x5, x5, x7
+adcs x6, x6, x8
+adc x10, x10, x17
+adds x7, x6, x6
+lsr x6, x7, #1
+adc x8, x10, x10
+movz w9, #19, lsl #0
+mul x7, x8, x9
+adds x3, x3, x7
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #192]
+stp x5, x6, [x0, #208]
+add x1, x20, #0
+ldp x2, x3, [x0, #320]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #336]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #320]
+stp x10, x11, [x0, #336]
+ldp x2, x3, [x0, #96]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #112]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #96]
+stp x10, x11, [x0, #112]
+ldp x3, x4, [x0, #64]
+ldp x7, x8, [x0, #192]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #208]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #80]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #160]
+stp x14, x15, [x0, #176]
+ldp x5, x6, [x0, #96]
+ldp x4, x3, [x0, #320]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #112]
+ldp x4, x3, [x0, #336]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #288]
+stp x7, x8, [x0, #304]
+add x20, x1, #0
+movz x1, #56130, lsl #0
+movk x1, #1, lsl #16
+ldp x7, x8, [x0, #288]
+ldp x9, x10, [x0, #304]
+mul x3, x1, x7
+mul x4, x1, x8
+mul x5, x1, x9
+mul x6, x1, x10
+umulh x7, x1, x7
+umulh x8, x1, x8
+umulh x9, x1, x9
+umulh x10, x1, x10
+adds x4, x4, x7
+adcs x5, x5, x8
+adcs x6, x6, x9
+adc x10, x10, x17
+ldp x7, x8, [x0, #320]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x7, x8, [x0, #336]
+adcs x5, x5, x7
+adcs x6, x6, x8
+adc x10, x10, x17
+adds x7, x6, x6
+lsr x6, x7, #1
+adc x8, x10, x10
+movz w9, #19, lsl #0
+mul x7, x8, x9
+adds x3, x3, x7
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #128]
+stp x5, x6, [x0, #144]
+add x1, x20, #0
+ldp x3, x4, [x0, #96]
+ldp x7, x8, [x0, #320]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #336]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #112]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #96]
+stp x14, x15, [x0, #112]
+ldp x3, x4, [x0, #288]
+ldp x7, x8, [x0, #128]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #144]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #304]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #128]
+stp x14, x15, [x0, #144]
+movz x2, #1, lsl #0
+str x2, [x0, #768]
+movz x19, #254, lsl #0
 20:
 movz x17, #0, lsl #0
 ldp x5, x6, [x0, #160]
@@ -1873,74 +2421,1280 @@ adcs x14, x14, x3
 adc x15, x15, x17
 stp x12, x13, [x0, #128]
 stp x14, x15, [x0, #144]
-cbnz x19, 20b
+sub x16, x19, #3
+cbnz x16, 20b
+movz x17, #0, lsl #0
 ldr x3, [x0, #768]
-movz x10, #0, lsl #0
-sub x3, x10, x3
-ldr x4, [x0, #96]
-ldr x5, [x0, #104]
-ldr x6, [x0, #112]
-ldr x7, [x0, #120]
-ldr x21, [x0, #160]
-ldr x22, [x0, #168]
-ldr x23, [x0, #176]
-ldr x24, [x0, #184]
-eor x8, x4, x21
-and x8, x8, x3
-eor x4, x4, x8
-eor x21, x21, x8
-eor x8, x5, x22
-and x8, x8, x3
-eor x5, x5, x8
-eor x22, x22, x8
-eor x8, x6, x23
-and x8, x8, x3
-eor x6, x6, x8
-eor x23, x23, x8
-eor x8, x7, x24
-and x8, x8, x3
-eor x7, x7, x8
-eor x24, x24, x8
-str x4, [x0, #96]
-str x5, [x0, #104]
-str x6, [x0, #112]
-str x7, [x0, #120]
-str x21, [x0, #160]
-str x22, [x0, #168]
-str x23, [x0, #176]
-str x24, [x0, #184]
-ldr x4, [x0, #128]
-ldr x5, [x0, #136]
-ldr x6, [x0, #144]
-ldr x7, [x0, #152]
-ldr x21, [x0, #192]
-ldr x22, [x0, #200]
-ldr x23, [x0, #208]
-ldr x24, [x0, #216]
-eor x8, x4, x21
-and x8, x8, x3
-eor x4, x4, x8
-eor x21, x21, x8
-eor x8, x5, x22
-and x8, x8, x3
-eor x5, x5, x8
-eor x22, x22, x8
-eor x8, x6, x23
-and x8, x8, x3
-eor x6, x6, x8
-eor x23, x23, x8
-eor x8, x7, x24
-and x8, x8, x3
-eor x7, x7, x8
-eor x24, x24, x8
-str x4, [x0, #128]
-str x5, [x0, #136]
-str x6, [x0, #144]
-str x7, [x0, #152]
-str x21, [x0, #192]
-str x22, [x0, #200]
-str x23, [x0, #208]
-str x24, [x0, #216]
+movz x2, #0, lsl #0
+subs x3, x3, x2
+ldp x4, x5, [x0, #160]
+ldp x6, x7, [x0, #96]
+csel x4, x4, x6, ne
+csel x5, x5, x7, ne
+stp x4, x5, [x0, #96]
+ldp x4, x5, [x0, #176]
+ldp x6, x7, [x0, #112]
+csel x4, x4, x6, ne
+csel x5, x5, x7, ne
+stp x4, x5, [x0, #112]
+ldp x4, x5, [x0, #192]
+ldp x6, x7, [x0, #128]
+csel x4, x4, x6, ne
+csel x5, x5, x7, ne
+stp x4, x5, [x0, #128]
+ldp x4, x5, [x0, #208]
+ldp x6, x7, [x0, #144]
+csel x4, x4, x6, ne
+csel x5, x5, x7, ne
+stp x4, x5, [x0, #144]
+ldp x5, x6, [x0, #96]
+ldp x4, x3, [x0, #128]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #112]
+ldp x4, x3, [x0, #144]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #320]
+stp x7, x8, [x0, #336]
+ldp x3, x4, [x0, #96]
+ldp x7, x8, [x0, #128]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #112]
+ldp x7, x8, [x0, #144]
+adcs x5, x5, x7
+adcs x6, x6, x8
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #96]
+stp x5, x6, [x0, #112]
+ldp x2, x3, [x0, #320]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #336]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #320]
+stp x10, x11, [x0, #336]
+ldp x2, x3, [x0, #96]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #112]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #96]
+stp x10, x11, [x0, #112]
+ldp x5, x6, [x0, #96]
+ldp x4, x3, [x0, #320]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #112]
+ldp x4, x3, [x0, #336]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #288]
+stp x7, x8, [x0, #304]
+add x20, x1, #0
+movz x1, #56130, lsl #0
+movk x1, #1, lsl #16
+ldp x7, x8, [x0, #288]
+ldp x9, x10, [x0, #304]
+mul x3, x1, x7
+mul x4, x1, x8
+mul x5, x1, x9
+mul x6, x1, x10
+umulh x7, x1, x7
+umulh x8, x1, x8
+umulh x9, x1, x9
+umulh x10, x1, x10
+adds x4, x4, x7
+adcs x5, x5, x8
+adcs x6, x6, x9
+adc x10, x10, x17
+ldp x7, x8, [x0, #320]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x7, x8, [x0, #336]
+adcs x5, x5, x7
+adcs x6, x6, x8
+adc x10, x10, x17
+adds x7, x6, x6
+lsr x6, x7, #1
+adc x8, x10, x10
+movz w9, #19, lsl #0
+mul x7, x8, x9
+adds x3, x3, x7
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #128]
+stp x5, x6, [x0, #144]
+add x1, x20, #0
+ldp x3, x4, [x0, #96]
+ldp x7, x8, [x0, #320]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #336]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #112]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #96]
+stp x14, x15, [x0, #112]
+ldp x3, x4, [x0, #288]
+ldp x7, x8, [x0, #128]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #144]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #304]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #128]
+stp x14, x15, [x0, #144]
+ldp x5, x6, [x0, #96]
+ldp x4, x3, [x0, #128]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #112]
+ldp x4, x3, [x0, #144]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #320]
+stp x7, x8, [x0, #336]
+ldp x3, x4, [x0, #96]
+ldp x7, x8, [x0, #128]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #112]
+ldp x7, x8, [x0, #144]
+adcs x5, x5, x7
+adcs x6, x6, x8
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #96]
+stp x5, x6, [x0, #112]
+ldp x2, x3, [x0, #320]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #336]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #320]
+stp x10, x11, [x0, #336]
+ldp x2, x3, [x0, #96]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #112]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #96]
+stp x10, x11, [x0, #112]
+ldp x5, x6, [x0, #96]
+ldp x4, x3, [x0, #320]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #112]
+ldp x4, x3, [x0, #336]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #288]
+stp x7, x8, [x0, #304]
+add x20, x1, #0
+movz x1, #56130, lsl #0
+movk x1, #1, lsl #16
+ldp x7, x8, [x0, #288]
+ldp x9, x10, [x0, #304]
+mul x3, x1, x7
+mul x4, x1, x8
+mul x5, x1, x9
+mul x6, x1, x10
+umulh x7, x1, x7
+umulh x8, x1, x8
+umulh x9, x1, x9
+umulh x10, x1, x10
+adds x4, x4, x7
+adcs x5, x5, x8
+adcs x6, x6, x9
+adc x10, x10, x17
+ldp x7, x8, [x0, #320]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x7, x8, [x0, #336]
+adcs x5, x5, x7
+adcs x6, x6, x8
+adc x10, x10, x17
+adds x7, x6, x6
+lsr x6, x7, #1
+adc x8, x10, x10
+movz w9, #19, lsl #0
+mul x7, x8, x9
+adds x3, x3, x7
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #128]
+stp x5, x6, [x0, #144]
+add x1, x20, #0
+ldp x3, x4, [x0, #96]
+ldp x7, x8, [x0, #320]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #336]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #112]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #96]
+stp x14, x15, [x0, #112]
+ldp x3, x4, [x0, #288]
+ldp x7, x8, [x0, #128]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #144]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #304]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #128]
+stp x14, x15, [x0, #144]
+ldp x5, x6, [x0, #96]
+ldp x4, x3, [x0, #128]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #112]
+ldp x4, x3, [x0, #144]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #320]
+stp x7, x8, [x0, #336]
+ldp x3, x4, [x0, #96]
+ldp x7, x8, [x0, #128]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x5, x6, [x0, #112]
+ldp x7, x8, [x0, #144]
+adcs x5, x5, x7
+adcs x6, x6, x8
+movz w9, #38, lsl #0
+csel x9, x9, x17, hs
+adds x3, x3, x9
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #96]
+stp x5, x6, [x0, #112]
+ldp x2, x3, [x0, #320]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #336]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #320]
+stp x10, x11, [x0, #336]
+ldp x2, x3, [x0, #96]
+mul x9, x2, x3
+umulh x10, x2, x3
+ldp x4, x5, [x0, #112]
+mul x11, x2, x5
+umulh x12, x2, x5
+mul x7, x2, x4
+umulh x6, x2, x4
+adds x10, x10, x7
+adcs x11, x11, x6
+mul x7, x3, x4
+umulh x6, x3, x4
+adc x6, x6, x17
+adds x11, x11, x7
+mul x13, x4, x5
+umulh x14, x4, x5
+adcs x12, x12, x6
+mul x7, x3, x5
+umulh x6, x3, x5
+adc x6, x6, x17
+adds x12, x12, x7
+adcs x13, x13, x6
+adc x14, x14, x17
+adds x9, x9, x9
+adcs x10, x10, x10
+adcs x11, x11, x11
+adcs x12, x12, x12
+adcs x13, x13, x13
+adcs x14, x14, x14
+adc x6, x17, x17
+umulh x7, x2, x2
+mul x8, x2, x2
+adds x9, x9, x7
+mul x7, x3, x3
+adcs x10, x10, x7
+umulh x7, x3, x3
+adcs x11, x11, x7
+mul x7, x4, x4
+adcs x12, x12, x7
+umulh x7, x4, x4
+adcs x13, x13, x7
+mul x7, x5, x5
+adcs x14, x14, x7
+umulh x7, x5, x5
+adc x6, x6, x7
+movz w3, #38, lsl #0
+mul x7, x3, x12
+umulh x4, x3, x12
+adds x8, x8, x7
+mul x7, x3, x13
+umulh x13, x3, x13
+adcs x9, x9, x7
+mul x7, x3, x14
+umulh x14, x3, x14
+adcs x10, x10, x7
+mul x7, x3, x6
+umulh x6, x3, x6
+adcs x11, x11, x7
+adc x12, x17, x17
+adds x11, x11, x14
+adc x12, x12, x6
+adds x7, x11, x11
+lsr x11, x7, #1
+adc x2, x12, x12
+movz w3, #19, lsl #0
+mul x7, x3, x2
+adds x8, x8, x7
+adcs x9, x9, x4
+adcs x10, x10, x13
+adc x11, x11, x17
+stp x8, x9, [x0, #96]
+stp x10, x11, [x0, #112]
+ldp x5, x6, [x0, #96]
+ldp x4, x3, [x0, #320]
+subs x5, x5, x4
+sbcs x6, x6, x3
+ldp x7, x8, [x0, #112]
+ldp x4, x3, [x0, #336]
+sbcs x7, x7, x4
+sbcs x8, x8, x3
+movz w4, #38, lsl #0
+csel x3, x4, x17, lo
+subs x5, x5, x3
+sbcs x6, x6, x17
+sbcs x7, x7, x17
+sbc x8, x8, x17
+stp x5, x6, [x0, #288]
+stp x7, x8, [x0, #304]
+add x20, x1, #0
+movz x1, #56130, lsl #0
+movk x1, #1, lsl #16
+ldp x7, x8, [x0, #288]
+ldp x9, x10, [x0, #304]
+mul x3, x1, x7
+mul x4, x1, x8
+mul x5, x1, x9
+mul x6, x1, x10
+umulh x7, x1, x7
+umulh x8, x1, x8
+umulh x9, x1, x9
+umulh x10, x1, x10
+adds x4, x4, x7
+adcs x5, x5, x8
+adcs x6, x6, x9
+adc x10, x10, x17
+ldp x7, x8, [x0, #320]
+adds x3, x3, x7
+adcs x4, x4, x8
+ldp x7, x8, [x0, #336]
+adcs x5, x5, x7
+adcs x6, x6, x8
+adc x10, x10, x17
+adds x7, x6, x6
+lsr x6, x7, #1
+adc x8, x10, x10
+movz w9, #19, lsl #0
+mul x7, x8, x9
+adds x3, x3, x7
+adcs x4, x4, x17
+adcs x5, x5, x17
+adc x6, x6, x17
+stp x3, x4, [x0, #128]
+stp x5, x6, [x0, #144]
+add x1, x20, #0
+ldp x3, x4, [x0, #96]
+ldp x7, x8, [x0, #320]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #336]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #112]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #96]
+stp x14, x15, [x0, #112]
+ldp x3, x4, [x0, #288]
+ldp x7, x8, [x0, #128]
+mul x12, x3, x7
+umulh x13, x3, x7
+mul x11, x3, x8
+umulh x14, x3, x8
+adds x13, x13, x11
+ldp x9, x10, [x0, #144]
+mul x11, x3, x9
+umulh x15, x3, x9
+adcs x14, x14, x11
+mul x11, x3, x10
+umulh x16, x3, x10
+adcs x15, x15, x11
+adc x16, x16, x17
+ldp x5, x6, [x0, #304]
+mul x11, x4, x7
+adds x13, x13, x11
+mul x11, x4, x8
+adcs x14, x14, x11
+mul x11, x4, x9
+adcs x15, x15, x11
+mul x11, x4, x10
+adcs x16, x16, x11
+umulh x3, x4, x10
+adc x3, x3, x17
+umulh x11, x4, x7
+adds x14, x14, x11
+umulh x11, x4, x8
+adcs x15, x15, x11
+umulh x11, x4, x9
+adcs x16, x16, x11
+adc x3, x3, x17
+mul x11, x5, x7
+adds x14, x14, x11
+mul x11, x5, x8
+adcs x15, x15, x11
+mul x11, x5, x9
+adcs x16, x16, x11
+mul x11, x5, x10
+adcs x3, x3, x11
+umulh x4, x5, x10
+adc x4, x4, x17
+umulh x11, x5, x7
+adds x15, x15, x11
+umulh x11, x5, x8
+adcs x16, x16, x11
+umulh x11, x5, x9
+adcs x3, x3, x11
+adc x4, x4, x17
+mul x11, x6, x7
+adds x15, x15, x11
+mul x11, x6, x8
+adcs x16, x16, x11
+mul x11, x6, x9
+adcs x3, x3, x11
+mul x11, x6, x10
+adcs x4, x4, x11
+umulh x5, x6, x10
+adc x5, x5, x17
+umulh x11, x6, x7
+adds x16, x16, x11
+umulh x11, x6, x8
+adcs x3, x3, x11
+umulh x11, x6, x9
+adcs x4, x4, x11
+adc x5, x5, x17
+movz w7, #38, lsl #0
+mul x11, x7, x16
+umulh x9, x7, x16
+adds x12, x12, x11
+mul x11, x7, x3
+umulh x3, x7, x3
+adcs x13, x13, x11
+mul x11, x7, x4
+umulh x4, x7, x4
+adcs x14, x14, x11
+mul x11, x7, x5
+umulh x5, x7, x5
+adcs x15, x15, x11
+adc x16, x17, x17
+adds x15, x15, x4
+adc x16, x16, x5
+adds x11, x15, x15
+lsr x15, x11, #1
+adc x8, x16, x16
+movz w7, #19, lsl #0
+mul x11, x7, x8
+adds x12, x12, x11
+adcs x13, x13, x9
+adcs x14, x14, x3
+adc x15, x15, x17
+stp x12, x13, [x0, #128]
+stp x14, x15, [x0, #144]
 add x20, x1, #0
 movz x2, #65517, lsl #0
 movk x2, #65535, lsl #16

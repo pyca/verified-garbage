@@ -81,4 +81,74 @@ theorem altEnv_ok (e : Env) (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) (hg : Go
     simp only [hs, hk, Spec.X25519.cswap] <;>
     refine ⟨trivial, ?_, ?_, ?_, ?_, trivial⟩ <;> grind
 
+/-! The first iteration's updates (bit 254). -/
+def gF8 (e : Env) : Env := Function.update e 8 (e 3 - e 4)
+def gF1 (e : Env) : Env := Function.update e 1 (e 3 + e 4)
+def gF4 (e : Env) : Env := Function.update e 4 (toFe 4 * e 0 + e 2)
+def gF3 (e : Env) : Env := Function.update e 3 (e 0 * e 4)
+
+/-- The slots after the first iteration. -/
+def firstEnv (e : Env) : Env :=
+  gZn (gXn (gE (gP (gF3 (gS2 (gD2 (gF4 (gF1 (gF8 e)))))))))
+
+theorem firstEnv_vals (e : Env) :
+    let d := e 3 - e 4
+    let s := e 3 + e 4
+    let d2 := d * d
+    let s2 := s * s
+    let p := s2 - d2
+    firstEnv e 0 = e 0 ∧ firstEnv e 18 = e 18 ∧
+    firstEnv e 1 = s2 * d2 ∧ firstEnv e 2 = p * (toFe 121666 * p + d2) ∧
+    firstEnv e 3 = e 0 * (toFe 4 * e 0 + e 2) ∧ firstEnv e 4 = toFe 4 * e 0 + e 2 :=
+  ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+theorem toFe_4 : toFe 4 = 4 := rfl
+
+/-- The first iteration is the ladder's for bit 254, when it is set. -/
+theorem firstEnv_ok (e : Env) (k : Nat) (x1 : Fe) (hg : Good e x1 (init x1))
+    (hb : bit k 254 = 1) :
+    Good (firstEnv e) x1 (ladderStep k x1 (init x1) 254) := by
+  obtain ⟨h0, h1, h2, h3, h4, hc⟩ := hg
+  obtain ⟨v0, v18, v1, v2, v3, v4⟩ := firstEnv_vals e
+  unfold Good
+  rw [v0, v18, v1, v2, v3, v4, ladderStep_eq, h0, h2, h3, h4, hc, toFe_121666, toFe_4, hb]
+  simp only [init, Spec.X25519.cswap]
+  refine ⟨trivial, ?_, ?_, ?_, ?_, trivial⟩ <;> grind
+
+/-! A doubling's updates (the iterations for bits 2, 1, 0). -/
+def gDd (e : Env) : Env := Function.update e 8 (e 1 - e 2)
+def gSd (e : Env) : Env := Function.update e 1 (e 1 + e 2)
+
+/-- The slots after a doubling of slots 1 and 2. -/
+def dblEnv (e : Env) : Env := gZn (gXn (gE (gP (gS2 (gD2 (gSd (gDd e)))))))
+
+/-- The doubling of RFC 7748's ladder, of `(x, z)`. -/
+def dblPt (x z : Fe) : Fe × Fe :=
+  let A := x + z
+  let AA := A * A
+  let B := x - z
+  let BB := B * B
+  let E := AA - BB
+  (AA * BB, E * (AA + a24 * E))
+
+theorem dblEnv_vals (e : Env) :
+    dblEnv e 1 = (dblPt (e 1) (e 2)).1 ∧ dblEnv e 2 = (dblPt (e 1) (e 2)).2 := by
+  have h : dblEnv e 1 = (e 1 + e 2) * (e 1 + e 2) * ((e 1 - e 2) * (e 1 - e 2)) ∧
+      dblEnv e 2 = ((e 1 + e 2) * (e 1 + e 2) - (e 1 - e 2) * (e 1 - e 2)) *
+        (toFe 121666 * ((e 1 + e 2) * (e 1 + e 2) - (e 1 - e 2) * (e 1 - e 2)) +
+          (e 1 - e 2) * (e 1 - e 2)) := ⟨rfl, rfl⟩
+  rw [h.1, h.2, dblPt, toFe_121666]
+  exact ⟨rfl, by grind⟩
+
+/-- An iteration for a clear bit doubles the point the swap chooses, and
+leaves the swap clear. -/
+theorem ladderStep_zero (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) (hb : bit k t = 0) :
+    (ladderStep k x1 st t).x2 =
+        (dblPt (Spec.X25519.cswap st.swap st.x2 st.x3).1 (Spec.X25519.cswap st.swap st.z2 st.z3).1).1 ∧
+      (ladderStep k x1 st t).z2 =
+        (dblPt (Spec.X25519.cswap st.swap st.x2 st.x3).1 (Spec.X25519.cswap st.swap st.z2 st.z3).1).2 ∧
+      (ladderStep k x1 st t).swap = 0 := by
+  rw [ladderStep_eq, hb, Nat.xor_zero]
+  exact ⟨rfl, rfl, rfl⟩
+
 end VG.Proof.X25519.AArch64.AltLadder
