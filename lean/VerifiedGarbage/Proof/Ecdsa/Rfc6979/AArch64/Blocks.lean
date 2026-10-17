@@ -326,12 +326,12 @@ theorem zeroH_ok {u : State} (hwr : u.wr = [L.FR, L.LR, L.OUT, L.SCR]) (h15 : u.
       (Offset.contains _ (by simp only [fX]; omega) (by simp only [fX]; omega) (by omega))
 
 /-- `K`, `V` and `h` cleared, and the words at the frame's top, keeping `x0`. -/
-theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {wide : Bool}
-    (hw : Impl.Ecdsa.Rfc6979.AArch64.extra wide = L.e) :
-    WP isa (.block (Cfg.wipe wide)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .x0 = t.gpr .x0 ∧
+theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {wide hHigh : Bool}
+    (hw : Impl.Ecdsa.Rfc6979.AArch64.extra wide hHigh = L.e) :
+    WP isa (.block (Cfg.wipe wide hHigh)) t fun t' => Ctx L g m₀ t' ∧ t'.gpr .x0 = t.gpr .x0 ∧
       Frame [⟨L.B + BitVec.ofNat 64 16, 176⟩, L.HIGH] t.mem t'.mem := by
-  have h := Ctx.of_keep (Q := fun t' => t'.gpr .x0 = t.gpr .x0) hL hc (is := Cfg.wipe wide)
-    (ws := [⟨L.B + BitVec.ofNat 64 16, 176⟩, L.HIGH]) ?_ (by cases wide <;> rfl) fun r hr => by
+  have h := Ctx.of_keep (Q := fun t' => t'.gpr .x0 = t.gpr .x0) hL hc (is := Cfg.wipe wide hHigh)
+    (ws := [⟨L.B + BitVec.ofNat 64 16, 176⟩, L.HIGH]) ?_ (by cases wide <;> cases hHigh <;> rfl) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact safe_low L (by omega)
@@ -348,7 +348,7 @@ theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {wide : Bool}
     exact ⟨by atriv, by atriv, by atriv, by atriv, by atriv, by rw [BitVec.setWidth_eq, BitVec.add_zero]⟩
   refine WP.mono h₁ fun u ⟨hrd, hwr, hsp, hm, ha, h15⟩ => WP.mono (zeroN_ok (hwr.trans hc.wr) h15 22 (by omega))
     fun u' ⟨hrd', hwr', _, hg, hf⟩ => WP.mono (zeroH_ok (((hwr'.trans hwr)).trans hc.wr) (by rw [hg, h15])
-      (extra wide / 8) (by rw [← hw, Impl.Ecdsa.Rfc6979.AArch64.extra]; split <;> omega))
+      (extra wide hHigh / 8) (by rw [← hw, Impl.Ecdsa.Rfc6979.AArch64.extra]; split <;> (try split) <;> omega))
     fun u'' ⟨hrd'', hwr'', _, hg', hf'⟩ => ⟨hrd''.trans (hrd'.trans hrd), hwr''.trans (hwr'.trans hwr), ?_, by
       rw [hg', hg, ha]⟩
   rw [← hm]

@@ -2,7 +2,8 @@
 //!
 //! A [`SigningKey<C>`] holds a private key on the curve `C` (so far
 //! [`P256`], [`P384`], `P521`, `P192`, `P224`, `BrainpoolP256r1`,
-//! `BrainpoolP384r1` and `Secp256k1`, and on x86-64 `BrainpoolP512r1`), and
+//! `BrainpoolP384r1` and `Secp256k1`, and on x86-64 and AArch64
+//! `BrainpoolP512r1`), and
 //! signs with a hash
 //! function `H` that the curve has signatures with ([`SignatureHash<C>`]: for
 //! P-192, SHA-256; for P-224, SHA-224; for P-256, SHA-256 and SHA-384; for P-384, SHA-384; for
@@ -54,7 +55,7 @@ mod p384;
 mod p521;
 mod secp256k1;
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub use crate::ec::BrainpoolP512r1;
 pub use crate::ec::{
     BrainpoolP256r1, BrainpoolP384r1, Curve, P192, P224, P256, P384, P521, Secp256k1,

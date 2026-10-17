@@ -113,15 +113,17 @@ theorem sign_x86 (s : State) (h : (rfcX86_64 P.R.E.combConsts P.I (240 + 8 * P.e
   exact ⟨t, s', he, abiPreserved_of_exec (sign_mx P) he hg, hp⟩
 
 /-- The notes on the implementation, for the documentation of the function
-with the hash function `H`, for scalars of `q` bytes signed by `core`. -/
-def signNotes (H : Impl.Pbkdf2.Md.X86_64.Hash) (q : Nat) (core : String) : String :=
+with the hash function `H`, for scalars of `q` bytes signed by `core`, in a
+stack frame of `frame` bytes. -/
+def signNotes (H : Impl.Pbkdf2.Md.X86_64.Hash) (q : Nat) (core : String) (frame : Nat := 216) : String :=
   "Computes `h = bits2octets(digest)` by a conditional subtraction of `n` from the digest's leftmost " ++
   toString q ++ " bytes, and each HMAC with `" ++ H.hmacInitN ++ "`, `" ++ H.updN ++ "` and `" ++ H.hmacFinN ++ "`, \
   using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, \
   the leftmost " ++ toString q ++ " bytes of `V`, is tried with `" ++ core ++ "`, which uses all of `scratch`; \
   whether to try another is computed without branches from its result and the count of candidates left, so \
-  the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a 216-byte stack \
-  frame, whose secrets are cleared before it is popped; the calls use the 24 bytes below it."
+  the code branches only on that. `K`, `V`, `h`, the count and the pointers are kept in a " ++
+  toString frame ++ "-byte stack frame, whose secrets are cleared before it is popped; the calls use the 24 \
+  bytes below it."
 
 /-- The notes of an instance whose scalars are longer than the hash
 (`wide`): `q` bytes of `nb` bits, from a `D`-byte hash. -/
