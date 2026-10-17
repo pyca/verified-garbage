@@ -1,5 +1,7 @@
 import Lean.Elab.Command
 import VerifiedGarbage.Spec.RsaOaep
+import VerifiedGarbage.Spec.RsaOaep.AnyHash
+import VerifiedGarbage.Spec.RsaPkcs1Sig
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.TCB.Audit
 
@@ -19,6 +21,10 @@ each message:
 * `decrypt` with the vector's CRT key gives the message back, and the
   single error for another label, for `n` itself and for a ciphertext one
   octet longer.
+
+And the numbers of the hash functions that the functions taking them as
+arguments use (`Mgf1.ofId`) are those of `RsaPkcs1Sig.Hash.ofId`, and
+`RsaOaep.hashIds` are SHA-1's and the SHA-2 functions'.
 -/
 
 namespace VG.Test.RsaOaep
@@ -136,5 +142,17 @@ run_cmd do
   | .ok 60 => pure ()
   | .ok n => throwError "oaep-vect.txt: {n} vectors"
   | .error e => throwError "oaep-vect.txt: {e}"
+
+/-- The name of the constructor `h`, as `Mgf1.Hash.rust` spells it. -/
+def ctorName (h : RsaPkcs1Sig.Hash) : String := ((reprStr h).splitOn ".").getLast!
+
+#guard (List.range 16).all fun i =>
+  (Mgf1.ofId i).map (fun H => (H.rust, H.len)) ==
+    (RsaPkcs1Sig.Hash.ofId i).map (fun h => (ctorName h, h.len)) ||
+  (12 ≤ i && (RsaPkcs1Sig.Hash.ofId i).isNone)
+
+#guard RsaOaep.hashIds.map (fun i => (Mgf1.ofId i).map (·.rust)) ==
+  [some "sha1", some "sha224", some "sha256", some "sha384", some "sha512", some "sha512_224",
+    some "sha512_256"]
 
 end VG.Test.RsaOaep
