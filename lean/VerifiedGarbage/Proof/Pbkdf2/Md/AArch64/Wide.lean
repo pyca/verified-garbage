@@ -157,7 +157,7 @@ theorem copy128_ok {src dst : Reg} (hs : src ≠ .x9 ∧ src ≠ .x10) (hd : dst
 
 /-- `copyW src so dst d n` writes the `n` bytes (a multiple of 4) at `src + so` to `dst + d`. -/
 theorem copyW_ok {src dst : Reg} (hs : src ≠ .x9 ∧ src ≠ .x10) (hd : dst ≠ .x9 ∧ dst ≠ .x10)
-    (o₁ o₂ n : Nat) (hn : n % 4 = 0) (h₁ : o₁ % 4 = 0 ∧ o₁ + n ≤ 4096 * 4) (h₂ : o₂ % 4 = 0 ∧ o₂ + n ≤ 4096 * 4)
+    (wide : Bool) (o₁ o₂ n : Nat) (hn : n % 4 = 0) (h₁ : o₁ % 4 = 0 ∧ o₁ + n ≤ 4096 * 4) (h₂ : o₂ % 4 = 0 ∧ o₂ + n ≤ 4096 * 4)
     (rest : List Instr) (s : State) (Q : State → Prop)
     (hin : ∀ a w, 0 < w → a + w ≤ n → InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 o₁ + BitVec.ofNat 64 a) w)
     (hout : ∀ a w, 0 < w → a + w ≤ n → InRegions s.wr (s.gpr dst + BitVec.ofNat 64 o₂ + BitVec.ofNat 64 a) w)
@@ -165,12 +165,12 @@ theorem copyW_ok {src dst : Reg} (hs : src ≠ .x9 ∧ src ≠ .x10) (hd : dst �
     (k : ∀ s', (∀ r, r ≠ .x9 → r ≠ .x10 → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       s'.mem = writeBytes s.mem (s.gpr dst + BitVec.ofNat 64 o₂)
         (bytesAt s.mem (s.gpr src + BitVec.ofNat 64 o₁) n) → WP isa (.block rest) s' Q) :
-    WP isa (.block (Hash.copyW src o₁ dst o₂ n ++ rest)) s Q := by
+    WP isa (.block (Hash.copyW wide src o₁ dst o₂ n ++ rest)) s Q := by
   unfold Hash.copyW
   split
   · rename_i h8
     simp only [List.append_assoc]
-    refine copy128_ok hs hd o₁ o₂ (n / 16) ⟨h8.1, by omega⟩ ⟨h8.2, by omega⟩ _ s Q
+    refine copy128_ok hs hd o₁ o₂ (n / 16) ⟨h8.2.1, by omega⟩ ⟨h8.2.2, by omega⟩ _ s Q
       (fun j hj i hi => hin _ _ (by omega) (by omega)) (fun j hj i hi => hout _ _ (by omega) (by omega))
       (fun x hx hy => hsep x (by omega) (by omega)) fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
     -- The 8 bytes after the 16-byte words, if any.
@@ -381,5 +381,23 @@ theorem padW_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.le
   · rw [m₄, bytesAt_writeBytes_sep _ _ (by
         rw [M.lenBytes_length]; have := S2 (a := 0) (n := H.D) (by omega); rwa [BitVec.add_zero] at this) (by omega),
       bytesAt_writeBytes_sep _ _ (by rw [lpz]; exact S1) (by omega)]
+
+/-- `padSel`: `padW` or `padLen`, which write the same. -/
+theorem padSel_ok {H : Hash} {M : Md H.P.B H.P.N H.P.L} (hs : Shape M) (hok : M.lenOk (H.P.B + H.D))
+    (hD4 : H.D % 4 = 0) (hB16 : H.P.B % 16 = 0) (hL : H.P.L = 8 ∨ H.P.L = 16) (hA : H.padA + 16 ≤ H.P.B)
+    (hpad : H.D + 4 ≤ H.P.B - H.P.L) (hB : H.P.B ≤ 128) {s : State} {p : Addr} (hbp : s.gpr .x21 = p)
+    (hbx : s.gpr .x19 + BitVec.ofNat 64 (H.P.N + H.P.B - H.P.L) = p + BitVec.ofNat 64 (H.P.B - H.P.L))
+    (hw : ∀ a n, a + n ≤ H.P.B → InRegions s.wr (p + BitVec.ofNat 64 a) n) {rest : List Instr}
+    {Q : State → Prop}
+    (k : ∀ s', (∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x12 → r ≠ .x22 → s'.gpr r = s.gpr r) → s'.rd = s.rd →
+      s'.wr = s.wr → s'.sp = s.sp → Frame [⟨p, H.P.B⟩] s.mem s'.mem →
+      bytesAt s'.mem (p + BitVec.ofNat 64 H.D) (H.P.B - H.D) = M.tailPad H.D →
+      bytesAt s'.mem p H.D = bytesAt s.mem p H.D → WP isa (.block rest) s' Q) :
+    WP isa (.block (H.padSel ++ rest)) s Q := by
+  unfold Hash.padSel
+  split
+  · exact padW_ok hs hok hD4 hB16 hL hA hB hbp hbx hw k
+  · exact Pbkdf2.AArch64.padLen_ok hs hok hD4 (by omega) (by omega) hpad hB hbp hbx hw
+      fun s' g rd wr sp f t d => k s' (fun r h9 _ h12 h22 => g r h9 h12 h22) rd wr sp f t d
 
 end VG.Proof.Pbkdf2.Md.AArch64

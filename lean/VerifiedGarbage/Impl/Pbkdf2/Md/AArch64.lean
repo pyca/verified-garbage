@@ -166,11 +166,11 @@ def cp128 (src dst : Reg) (o₁ o₂ k : Nat) : List Instr :=
     else [.str .x .x9 dst (o₂ + 16 * k), .str .x .x10 dst (o₂ + 16 * k + 8)])
 
 /-- `n` bytes (a multiple of 4) from `[src + so]` to `[dst + d]`: when both
-offsets are multiples of 8, 16 at a time (`cp128`), then 8 and 4; otherwise
-32-bit words. A compression function's 16-byte load of a word `stp` wrote
-then reads a single store. -/
-def copyW (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) : List Instr :=
-  if so % 8 = 0 ∧ d % 8 = 0 then
+offsets are multiples of 8 and `wide`, 16 at a time (`cp128`), then 8 and
+4; otherwise 32-bit words. A compression function's 16-byte load of a word
+`stp` wrote then reads a single store. -/
+def copyW (wide : Bool) (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) : List Instr :=
+  if wide ∧ so % 8 = 0 ∧ d % 8 = 0 then
     (List.range (n / 16)).flatMap (cp128 src dst so d) ++
       ((if n % 16 ≥ 8 then [.ldr .x .x9 src (so + 16 * (n / 16)), .str .x .x9 dst (d + 16 * (n / 16))] else []) ++
       (if n % 8 = 4 then cp32 src dst (so + (n - 4)) (d + (n - 4)) 0 else []) : List Instr)
@@ -260,19 +260,26 @@ def padW : List Instr :=
     (if H.P.L = 8 then [.str .x .x10 .x21 (H.P.B - 16)] else []) ++
     .movz .x .x22 (BitVec.ofNat 16 (H.P.B + H.D)) 0 :: H.P.len
 
+/-- Whether `finalize` moves 16 bytes at a time (`copyW`, `padW`): for
+the SHA-512 family's 128-byte blocks. -/
+def wide : Bool := H.P.B == 128
+
+/-- The outer block's padding: `padW` if `wide`, otherwise `padLen`. -/
+def padSel : List Instr := if H.wide then H.padW else Impl.Pbkdf2.AArch64.padLen H.P H.D
+
 /-- The outer hash value over the inner state's, the inner digest into its
-buffer, then the padding after it (`padW`), and the block's address for
+buffer, then the padding after it (`padSel`), and the block's address for
 the compression function. -/
 def finMid : List Instr :=
-  copyW .x20 0 .x19 0 H.P.N ++ copyW .x23 H.stream.buf .x19 H.P.N H.D ++
-    [mov .x24 .x21, .addImm .x .x21 .x19 H.P.N, mov .x20 .x23] ++ H.padW ++
+  copyW H.wide .x20 0 .x19 0 H.P.N ++ copyW H.wide .x23 H.stream.buf .x19 H.P.N H.D ++
+    [mov .x24 .x21, .addImm .x .x21 .x19 H.P.N, mov .x20 .x23] ++ H.padSel ++
     [mov .x1 .x21]
 
 /-- The MAC to `out`: the digest of the hash value, written there directly,
 or for a digest shorter than the hash value (`P.out` writes `N` bytes) into
 the block and its first `D` bytes copied; and our caller's registers back. -/
 def finOut : List Instr :=
-  (if H.D < H.P.N then H.P.out ++ copyW .x21 0 .x24 0 H.D else mov .x21 .x24 :: H.P.out) ++
+  (if H.D < H.P.N then H.P.out ++ copyW H.wide .x21 0 .x24 0 H.D else mov .x21 .x24 :: H.P.out) ++
     H.stream.restore
 
 def hmacFin : Prog isa :=

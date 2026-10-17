@@ -149,7 +149,7 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
   have z : ∀ p : Addr, p + BitVec.ofNat 64 0 = p := BitVec.add_zero
   have tsub : Region.Sub ⟨T (H := H.stream) s₀, H.D⟩ (scR sc s₀) := Offset.sub_base _ (by omega_using [hbuf, hDN])
   simp only [Hash.finMid, List.append_assoc]
-  refine copyW_ok (src := .x20) (dst := .x19) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ 0 0 H.P.N hN4
+  refine copyW_ok (src := .x20) (dst := .x19) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ _ 0 0 H.P.N hN4
     ⟨rfl, by omega_using [hB, hNL]⟩ ⟨rfl, by omega_using [hbuf]⟩ _ s _
     (fun a w hw ha => by
       rw [hk.x20, add_ofNat]
@@ -165,7 +165,7 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
   rw [hk.x20, hk.x19, z, z] at m₁
   have x23 : s₁.gpr .x23 = scr s₀ := by rw [g₁ _ (by decide) (by decide), hk.x23]
   have x19 : s₁.gpr .x19 = inn s₀ := by rw [g₁ _ (by decide) (by decide), hk.x19]
-  refine copyW_ok (src := .x23) (dst := .x19) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ H.stream.buf H.P.N H.D
+  refine copyW_ok (src := .x23) (dst := .x19) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ _ H.stream.buf H.P.N H.D
     hD4 ⟨by omega_using [hbuf], by omega_using [hbuf, hDN]⟩ ⟨hN4, by omega_using [hB, hNL, hpad]⟩ _ s₁ _
     (fun a w hw ha => by
       rw [x23, add_ofNat, rd₁, wr₁, hk.rd, hk.wr]
@@ -186,7 +186,7 @@ theorem mid_ok {s : State} (hk : KR (H := H.stream) s₀ s) :
   have G₅ : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x20 → r ≠ .x21 → r ≠ .x24 → s₅.gpr r = s₁.gpr r :=
     fun r h1 h0 h2 h3 h4 => by rw [u₅.other r h2, u₄.other r h3, u₃.other r h4, g₂ r h1 h0]
   have hB16 : H.P.B % 16 = 0 := by rcases hH.sizes.B with h | h <;> rw [h]
-  refine padW_ok hH.shape (hH.lenOk _ (by omega_using [hB, hpad])) hD4 hB16 hH.L816 hH.hPad hB (s := s₅) x21₅
+  refine padSel_ok hH.shape (hH.lenOk _ (by omega_using [hB, hpad])) hD4 hB16 hH.L816 hH.hPad hpad hB (s := s₅) x21₅
     (by rw [G₅ _ (by decide) (by decide) (by decide) (by decide) (by decide), x19, add_ofNat,
       show H.P.N + (H.P.B - H.P.L) = H.P.N + H.P.B - H.P.L by omega_using [hpad]])
     (fun a n h' => by
@@ -335,7 +335,7 @@ theorem out_ok {s : State} (hk : KO H s₀ s) (h21 : s.gpr .x21 = blk H s₀) :
     have b₁ : bytesAt s₁.mem (blk H s₀) H.D = (hH.md.digest (hH.md.stateAt s.mem (inn s₀))).take H.D := by
       rw [bytesAt_take _ _ (Nat.le_of_lt hDN'), m₁, bytesAt_writeBytes_self' hdl (hH.sizes.N_lt64)]
     have x21₁ : s₁.gpr .x21 = blk H s₀ := by rw [g₁ _ (by decide), h21]
-    refine copyW_ok (src := .x21) (dst := .x24) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ 0 0 H.D hD4
+    refine copyW_ok (src := .x21) (dst := .x24) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ _ 0 0 H.D hD4
       ⟨rfl, by omega_using [hB, hpad]⟩ ⟨rfl, by omega_using [h4k, hDN']⟩ _ s₁ _
       (fun a w hw ha => by
         rw [x21₁, add_ofNat, add_ofNat, rd₁, wr₁, hk.rd, hk.wr]

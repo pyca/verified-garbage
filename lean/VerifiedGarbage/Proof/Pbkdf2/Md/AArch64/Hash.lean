@@ -111,8 +111,8 @@ theorem iterOk : Pbkdf2.AArch64.HashOk H.P H.D H.W hH.SH hH.md hH.iv where
     by have := hH.sizes.pad; have := hH.sizes.NL; omega⟩
 
 /-- `copyW` writes no SIMD register. -/
-theorem copyW_keepsV (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) :
-    (Hash.copyW src so dst d n).all keepsV = true := by
+theorem copyW_keepsV (wide : Bool) (src : Reg) (so : Nat) (dst : Reg) (d n : Nat) :
+    (Hash.copyW wide src so dst d n).all keepsV = true := by
   have h2 : ∀ (c : Prop) [Decidable c] (a b : List Instr), a.all keepsV = true → b.all keepsV = true →
       (if c then a else b).all keepsV = true := fun c _ a b ha hb => by
     split
@@ -139,7 +139,12 @@ theorem finMid_keepsV : H.finMid.all keepsV = true := by
       · simp [Impl.Pbkdf2.AArch64.padFrom, keepsV, vdstOf]
     · simp [keepsV, vdstOf]
     · split <;> rfl
-  simp only [Hash.finMid, List.all_append, copyW_keepsV, hw, Bool.and_true, Bool.true_and]
+  have hsel : H.padSel.all keepsV = true := by
+    unfold Hash.padSel
+    split
+    · exact hw
+    · exact Pbkdf2.AArch64.padLen_keepsV hH.shape
+  simp only [Hash.finMid, List.all_append, copyW_keepsV, hsel, Bool.and_true, Bool.true_and]
   simp [Impl.MdStream.AArch64.mov, keepsV, vdstOf]
 
 include hH in

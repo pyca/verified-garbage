@@ -443,21 +443,49 @@ add x1, x2, #0
 add x2, x23, #216
 add x3, x23, #0
 bl {vg_sha256_finalize_scratch}
-ldp x9, x10, [x20, #0]
-stp x9, x10, [x19, #0]
-ldp x9, x10, [x20, #16]
-stp x9, x10, [x19, #16]
-ldp x9, x10, [x23, #216]
-stp x9, x10, [x19, #32]
-ldp x9, x10, [x23, #232]
-stp x9, x10, [x19, #48]
+ldr w9, [x20, #0]
+str w9, [x19, #0]
+ldr w9, [x20, #4]
+str w9, [x19, #4]
+ldr w9, [x20, #8]
+str w9, [x19, #8]
+ldr w9, [x20, #12]
+str w9, [x19, #12]
+ldr w9, [x20, #16]
+str w9, [x19, #16]
+ldr w9, [x20, #20]
+str w9, [x19, #20]
+ldr w9, [x20, #24]
+str w9, [x19, #24]
+ldr w9, [x20, #28]
+str w9, [x19, #28]
+ldr w9, [x23, #216]
+str w9, [x19, #32]
+ldr w9, [x23, #220]
+str w9, [x19, #36]
+ldr w9, [x23, #224]
+str w9, [x19, #40]
+ldr w9, [x23, #228]
+str w9, [x19, #44]
+ldr w9, [x23, #232]
+str w9, [x19, #48]
+ldr w9, [x23, #236]
+str w9, [x19, #52]
+ldr w9, [x23, #240]
+str w9, [x19, #56]
+ldr w9, [x23, #244]
+str w9, [x19, #60]
 add x24, x21, #0
 add x21, x19, #32
 add x20, x23, #0
 movz x9, #128, lsl #0
-movz x10, #0, lsl #0
-stp x9, x10, [x21, #32]
-str x10, [x21, #48]
+str w9, [x21, #32]
+movz x9, #0, lsl #0
+str w9, [x21, #36]
+str w9, [x21, #40]
+str w9, [x21, #44]
+str w9, [x21, #48]
+str w9, [x21, #52]
 movz x22, #96, lsl #0
 add x9, x22, x22
 add x9, x9, x9
@@ -682,21 +710,49 @@ add x1, x2, #0
 add x2, x23, #216
 add x3, x23, #0
 bl {vg_sha256_finalize_scratch}
-ldp x9, x10, [x20, #0]
-stp x9, x10, [x19, #0]
-ldp x9, x10, [x20, #16]
-stp x9, x10, [x19, #16]
-ldp x9, x10, [x23, #216]
-stp x9, x10, [x19, #32]
-ldp x9, x10, [x23, #232]
-stp x9, x10, [x19, #48]
+ldr w9, [x20, #0]
+str w9, [x19, #0]
+ldr w9, [x20, #4]
+str w9, [x19, #4]
+ldr w9, [x20, #8]
+str w9, [x19, #8]
+ldr w9, [x20, #12]
+str w9, [x19, #12]
+ldr w9, [x20, #16]
+str w9, [x19, #16]
+ldr w9, [x20, #20]
+str w9, [x19, #20]
+ldr w9, [x20, #24]
+str w9, [x19, #24]
+ldr w9, [x20, #28]
+str w9, [x19, #28]
+ldr w9, [x23, #216]
+str w9, [x19, #32]
+ldr w9, [x23, #220]
+str w9, [x19, #36]
+ldr w9, [x23, #224]
+str w9, [x19, #40]
+ldr w9, [x23, #228]
+str w9, [x19, #44]
+ldr w9, [x23, #232]
+str w9, [x19, #48]
+ldr w9, [x23, #236]
+str w9, [x19, #52]
+ldr w9, [x23, #240]
+str w9, [x19, #56]
+ldr w9, [x23, #244]
+str w9, [x19, #60]
 add x24, x21, #0
 add x21, x19, #32
 add x20, x23, #0
 movz x9, #128, lsl #0
-movz x10, #0, lsl #0
-stp x9, x10, [x21, #32]
-str x10, [x21, #48]
+str w9, [x21, #32]
+movz x9, #0, lsl #0
+str w9, [x21, #36]
+str w9, [x21, #40]
+str w9, [x21, #44]
+str w9, [x21, #48]
+str w9, [x21, #52]
 movz x22, #96, lsl #0
 add x9, x22, x22
 add x9, x9, x9
@@ -1199,21 +1255,49 @@ add x1, x2, #0
 add x2, x23, #216
 add x3, x23, #0
 bl {vg_sha256_finalize_scratch_sha2}
-ldp x9, x10, [x20, #0]
-stp x9, x10, [x19, #0]
-ldp x9, x10, [x20, #16]
-stp x9, x10, [x19, #16]
-ldp x9, x10, [x23, #216]
-stp x9, x10, [x19, #32]
-ldp x9, x10, [x23, #232]
-stp x9, x10, [x19, #48]
+ldr w9, [x20, #0]
+str w9, [x19, #0]
+ldr w9, [x20, #4]
+str w9, [x19, #4]
+ldr w9, [x20, #8]
+str w9, [x19, #8]
+ldr w9, [x20, #12]
+str w9, [x19, #12]
+ldr w9, [x20, #16]
+str w9, [x19, #16]
+ldr w9, [x20, #20]
+str w9, [x19, #20]
+ldr w9, [x20, #24]
+str w9, [x19, #24]
+ldr w9, [x20, #28]
+str w9, [x19, #28]
+ldr w9, [x23, #216]
+str w9, [x19, #32]
+ldr w9, [x23, #220]
+str w9, [x19, #36]
+ldr w9, [x23, #224]
+str w9, [x19, #40]
+ldr w9, [x23, #228]
+str w9, [x19, #44]
+ldr w9, [x23, #232]
+str w9, [x19, #48]
+ldr w9, [x23, #236]
+str w9, [x19, #52]
+ldr w9, [x23, #240]
+str w9, [x19, #56]
+ldr w9, [x23, #244]
+str w9, [x19, #60]
 add x24, x21, #0
 add x21, x19, #32
 add x20, x23, #0
 movz x9, #128, lsl #0
-movz x10, #0, lsl #0
-stp x9, x10, [x21, #32]
-str x10, [x21, #48]
+str w9, [x21, #32]
+movz x9, #0, lsl #0
+str w9, [x21, #36]
+str w9, [x21, #40]
+str w9, [x21, #44]
+str w9, [x21, #48]
+str w9, [x21, #52]
 movz x22, #96, lsl #0
 add x9, x22, x22
 add x9, x9, x9
@@ -1450,21 +1534,49 @@ add x1, x2, #0
 add x2, x23, #216
 add x3, x23, #0
 bl {vg_sha256_finalize_scratch_sha2}
-ldp x9, x10, [x20, #0]
-stp x9, x10, [x19, #0]
-ldp x9, x10, [x20, #16]
-stp x9, x10, [x19, #16]
-ldp x9, x10, [x23, #216]
-stp x9, x10, [x19, #32]
-ldp x9, x10, [x23, #232]
-stp x9, x10, [x19, #48]
+ldr w9, [x20, #0]
+str w9, [x19, #0]
+ldr w9, [x20, #4]
+str w9, [x19, #4]
+ldr w9, [x20, #8]
+str w9, [x19, #8]
+ldr w9, [x20, #12]
+str w9, [x19, #12]
+ldr w9, [x20, #16]
+str w9, [x19, #16]
+ldr w9, [x20, #20]
+str w9, [x19, #20]
+ldr w9, [x20, #24]
+str w9, [x19, #24]
+ldr w9, [x20, #28]
+str w9, [x19, #28]
+ldr w9, [x23, #216]
+str w9, [x19, #32]
+ldr w9, [x23, #220]
+str w9, [x19, #36]
+ldr w9, [x23, #224]
+str w9, [x19, #40]
+ldr w9, [x23, #228]
+str w9, [x19, #44]
+ldr w9, [x23, #232]
+str w9, [x19, #48]
+ldr w9, [x23, #236]
+str w9, [x19, #52]
+ldr w9, [x23, #240]
+str w9, [x19, #56]
+ldr w9, [x23, #244]
+str w9, [x19, #60]
 add x24, x21, #0
 add x21, x19, #32
 add x20, x23, #0
 movz x9, #128, lsl #0
-movz x10, #0, lsl #0
-stp x9, x10, [x21, #32]
-str x10, [x21, #48]
+str w9, [x21, #32]
+movz x9, #0, lsl #0
+str w9, [x21, #36]
+str w9, [x21, #40]
+str w9, [x21, #44]
+str w9, [x21, #48]
+str w9, [x21, #52]
 movz x22, #96, lsl #0
 add x9, x22, x22
 add x9, x9, x9
