@@ -24,7 +24,7 @@ open VG VG.AArch64 VG.Proof.Ed25519.Word64 VG.Proof.Ed25519.AArch64 VG.Spec.X255
 open VG.Proof.Mont.AArch64 (KeepRegs Keeps.regs)
 open VG.Proof.X25519.AArch64 (exec_movz)
 open VG.Impl.Ed25519.AArch64 (ld st loads stores const64 offset)
-open VG.Impl.Ed25519.AArch64.Divstep (F G U V DSAVE CNT X1SAVE v0 storeConst fold freeze init finish)
+open VG.Impl.Ed25519.AArch64.Divstep (F G U V DSAVE X1SAVE v0 storeConst fold freeze init finish)
 
 variable {large : Bool}
 
@@ -186,26 +186,21 @@ theorem start_ok {s : State} {base : Addr} (hs : Scr s base large) :
     ((Keeps.regs kt).mono (by decide))
 
 theorem last_ok {s : State} {base : Addr} (hs : Scr s base large) :
-    WP isa (.block [.movz .x .x1 1 0, st .x1 DSAVE, .movz .x .x19 10 0, st .x19 CNT]) s fun t =>
-      t.mem = (s.mem.writeW (off base DSAVE) (1 : Word)).writeW (off base CNT) (BitVec.ofNat 64 10) ∧
-      t.gpr .x19 = BitVec.ofNat 64 10 ∧ KeepRegs [.x1, .x19] s t := by
+    WP isa (.block [.movz .x .x1 1 0, st .x1 DSAVE, .movz .x .x20 10 0]) s fun t =>
+      t.mem = s.mem.writeW (off base DSAVE) (1 : Word) ∧
+      t.gpr .x20 = BitVec.ofNat 64 10 ∧ KeepRegs [.x1, .x20] s t := by
   have _hmin := workSize_ge large
   change WP isa (.block (([.movz .x .x1 1 0] : List Instr) ++ (([st .x1 DSAVE] : List Instr) ++
-    (([.movz .x .x19 10 0] : List Instr) ++ ([st .x19 CNT] : List Instr))))) s _
+    ([.movz .x .x20 10 0] : List Instr)))) s _
   rw [WP.block_append_iff]
   refine WP.mono (movz_ok s .x1 1) fun a ⟨a1, ka⟩ => ?_
   have hsa := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (st_ok hsa (by decide) (by simp only [DSAVE]; omega) .x1) fun b ⟨mb, kb⟩ => ?_
-  have hsb := scr_of hsa kb (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (movz_ok b .x19 10) fun c ⟨c19, kc⟩ => ?_
-  have hsc := hsb.of_keeps kc (by decide)
-  refine WP.mono (st_ok hsc (by decide) (by simp only [CNT]; omega) .x19) fun t ⟨mt, kt⟩ => ?_
-  refine ⟨by rw [mt, c19, kc.mem, mb, a1, ka.mem]; rfl,
-    by rw [kt.gpr _ (by simp), c19]; rfl, ?_⟩
-  exact ((((Keeps.regs ka).mono (by decide)).trans (kb.mono (by simp))).trans
-    ((Keeps.regs kc).mono (by decide))).trans (kt.mono (by simp))
+  refine WP.mono (movz_ok b .x20 10) fun t ⟨t20, kt⟩ => ?_
+  refine ⟨by rw [kt.mem, mb, a1, ka.mem]; rfl, by rw [t20]; rfl, ?_⟩
+  exact (((Keeps.regs ka).mono (by decide)).trans (kb.mono (by simp))).trans
+    ((Keeps.regs kt).mono (by decide))
 
 theorem dsI_init (x : Nat) : dsI x 0 = (1, (P : Int), (x : Int)) := rfl
 
@@ -216,7 +211,7 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
     WP isa (.block init) s fun t =>
       RInv (fe s.mem base 128 % P) 0 (word t.mem base DSAVE) (fe t.mem base F) (fe t.mem base G)
         (fe t.mem base U) (fe t.mem base V) ∧
-      word t.mem base CNT = BitVec.ofNat 64 10 ∧ t.gpr .x19 = BitVec.ofNat 64 10 ∧
+      t.gpr .x20 = BitVec.ofNat 64 10 ∧
       word t.mem base X1SAVE = s.gpr .x1 ∧ Outside base 192 312 s.mem t.mem ∧ KeepRegs batchRegs s t := by
   have _hmin := workSize_ge large
   have _hcap := workSize_le large
@@ -272,7 +267,7 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
   refine WP.mono (storeConst_ok (hsg.setMem _) (o := V) ⟨by decide, by simp only [V]; omega⟩ v0
     (by decide)) fun i ⟨iV, oi, ki⟩ => ?_
   have hsi := scr_of (hsg.setMem _) ki (by decide)
-  refine WP.mono (last_ok hsi) fun t ⟨mt, t19, kt⟩ => ?_
+  refine WP.mono (last_ok hsi) fun t ⟨mt, t20, kt⟩ => ?_
   -- the memory at the end
   have oh : Outside base U 32 g.mem (st4 g.mem base U (g.gpr .x12) (g.gpr .x12) (g.gpr .x12)
       (g.gpr .x12)) := st4_outside _ _ (by decide) _ _ _ _
@@ -280,8 +275,8 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
       (e.gpr .x5)) := st4_outside _ _ (by decide) _ _ _ _
   have o1 : Outside base DSAVE 8 i.mem (i.mem.writeW (off base DSAVE) (1 : Word)) :=
     writeW_outside _ _ _ (by decide)
-  have o2 : Outside base CNT 8 (i.mem.writeW (off base DSAVE) (1 : Word)) t.mem := by
-    rw [mt]; exact writeW_outside _ _ _ (by decide)
+  have o2 : Outside base 496 8 (i.mem.writeW (off base DSAVE) (1 : Word)) t.mem := by
+    rw [mt]; exact Outside.refl _ _ _ _
   have fF : fe t.mem base F = P := by
     rw [o2.fe (by decide) (by decide), o1.fe (by decide) (by decide), oi.fe (by decide) (by decide)]
     exact (oh.fe (by decide) (by decide)).trans gF
@@ -298,7 +293,7 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
   have wD : word t.mem base DSAVE = 1 := by
     rw [o2.word (by decide) (by decide), word_writeW_self]
   have hx : fe s.mem base 128 % P < P := Nat.mod_lt _ (by decide)
-  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, t19, ?_, ?_, ?_⟩
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, t20, ?_, ?_, ?_⟩
   · rw [wD, dsI_init]; rfl
   · rw [fF, dsI_init, sv_small (by decide)]
   · rw [fG, dsI_init, sv_small (by simp only [P] at hx ⊢; omega)]
@@ -318,7 +313,6 @@ theorem init_ok {s : State} {base : Addr} (hs : Scr s base large) :
   · intro _
     rw [fU]
     exact Int.ModEq.refl _
-  · rw [mt, word_writeW_self]
   · rw [o2.word (by decide) (by decide), o1.word (by decide) (by decide), oi.word (by decide) (by decide),
       oh.word (by decide) (by decide), og.word (by decide) (by decide), of.word (by decide) (by decide),
       ke.mem, kd.mem, mc, word_writeW_self]

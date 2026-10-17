@@ -14,7 +14,7 @@ import all Init.Data.Vector.Basic
 A batch keeps the invariant (`batch_ok`): its divsteps are `dsM` (`pwords_ok`),
 its rows are the matrix's combinations (`row_ok`, `rowF_int`, `rowU_int`),
 shifted (`shift_ok`) or reduced (`reduce_ok`, `redV_cong`), so `step_inv`
-applies; and it counts down. It writes only bytes 192 to 495. -/
+applies; and it counts down. It writes only bytes 192 to 487. -/
 
 @[expose] public section
 
@@ -25,13 +25,14 @@ open VG.Proof.Mont.AArch64 (KeepRegs Keeps.regs)
 open VG.Proof.Divstep (MSt msteps)
 open VG.Proof.X25519.AArch64 (exec_movz)
 open VG.Impl.Ed25519.AArch64 (ld st)
-open VG.Impl.Ed25519.AArch64.Divstep (F G U V TF TG TU TV DSAVE CNT batch shift reduce)
+open VG.Impl.Ed25519.AArch64.Divstep (F G U V TF TG TU TV DSAVE batch shift reduce)
 
 variable {large : Bool}
 
 /-- The registers a batch may change. -/
 abbrev batchRegs : List Reg :=
-  [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17, .x19]
+  [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17, .x19,
+    .x20]
 
 /-- The low word of a field element, as an integer modulo `2⁶⁴`. -/
 theorem low_rel {m : Mem} {base : Addr} {o : Nat} {f : Int} (h : sv (fe m base o) = f) :
@@ -172,32 +173,16 @@ theorem scr_of {rs : List Reg} {s s' : State} {base : Addr} (hs : Scr s base lar
   ⟨(h.gpr _ hr).trans hs.x0, h.wr ▸ hs.wr, hs.nowrap⟩
 
 /-- The counter one down. -/
-theorem cnt_ok {s : State} {base : Addr} (hs : Scr s base large) {i : Nat} (hi : i < 10)
-    (hc : word s.mem base CNT = BitVec.ofNat 64 (10 - i)) :
-    WP isa (.block [ld .x19 CNT, .subImm .x .x19 .x19 1, st .x19 CNT]) s fun t =>
-      t.mem = s.mem.writeW (off base CNT) (BitVec.ofNat 64 (10 - (i + 1))) ∧
-      t.gpr .x19 = BitVec.ofNat 64 (10 - (i + 1)) ∧ KeepRegs [.x19] s t := by
-  have _hmin := workSize_ge large
-  change WP isa (.block (([ld .x19 CNT] : List Instr) ++ (([.subImm .x .x19 .x19 1] : List Instr) ++
-    ([st .x19 CNT] : List Instr)))) s _
-  rw [WP.block_append_iff]
-  refine WP.mono (ld_ok hs (by decide) (by simp only [CNT]; omega) .x19) fun a ⟨a1, ka⟩ => ?_
-  have hsa := hs.of_keeps ka (by decide)
-  rw [WP.block_append_iff]
-  have hb : WP isa (.block [.subImm .x .x19 .x19 1]) a fun b =>
-      b.gpr .x19 = BitVec.ofNat 64 (10 - (i + 1)) ∧ Keeps [.x19] a b :=
-    WP.block_cons_iff.mpr ⟨_, exec_subImm_x (imm := 1) (by decide), WP.block_nil
-      ⟨by
-        rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
-        simp only [State.read, a1, hc]
-        exact cnt_val hi,
-        ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr),
-          rfl, rfl, rfl, rfl⟩⟩⟩
-  refine WP.mono hb fun b ⟨b1, kb⟩ => ?_
-  have hsb := hsa.of_keeps kb (by decide)
-  refine WP.mono (st_ok hsb (by decide) (by simp only [CNT]; omega) .x19) fun t ⟨mt, kt⟩ => ?_
-  refine ⟨by rw [mt, b1, kb.mem, ka.mem], by rw [kt.gpr _ (by simp), b1], ?_⟩
-  exact ((Keeps.regs ka).trans (Keeps.regs kb)).trans (kt.mono (by simp))
+theorem cnt_ok (s : State) {i : Nat} (hi : i < 10) (hc : s.gpr .x20 = BitVec.ofNat 64 (10 - i)) :
+    WP isa (.block [.subImm .x .x20 .x20 1]) s fun t =>
+      t.gpr .x20 = BitVec.ofNat 64 (10 - (i + 1)) ∧ Keeps [.x20] s t :=
+  WP.block_cons_iff.mpr ⟨_, exec_subImm_x (imm := 1) (by decide), WP.block_nil
+    ⟨by
+      rw [RegUpd.gpr_write_self, BitVec.setWidth_eq]
+      simp only [State.read, hc]
+      exact cnt_val hi,
+      ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr),
+        rfl, rfl, rfl, rfl⟩⟩⟩
 
 /-- The five words at `t` reduced, as they were before bytes outside them changed. -/
 theorem redV_out {base : Addr} {o n t : Nat} {m m' : Mem} (h : Outside base o n m m')
@@ -216,17 +201,16 @@ abbrev red5 (m : Mem) (base : Addr) (t : Nat) : Nat :=
 
 /-- The rows shifted and reduced, and the counter one down. -/
 theorem outs_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x12 = 0) {i : Nat}
-    (hi : i < 10) (hc : word s.mem base CNT = BitVec.ofNat 64 (10 - i)) :
+    (hi : i < 10) (hc : s.gpr .x20 = BitVec.ofNat 64 (10 - i)) :
     WP isa (.block (shift F TF ++ (shift G TG ++ ([.movz .x .x13 19 0] ++ (reduce U TU ++
-        (reduce V TV ++ ([ld .x19 CNT, .subImm .x .x19 .x19 1, st .x19 CNT] : List Instr))))))) s
+        (reduce V TV ++ ([.subImm .x .x20 .x20 1] : List Instr))))))) s
       fun t =>
         fe t.mem base F = val5 s.mem base TF / 2 ^ 59 % 2 ^ 256 ∧
         fe t.mem base G = val5 s.mem base TG / 2 ^ 59 % 2 ^ 256 ∧
         fe t.mem base U = red5 s.mem base TU ∧ fe t.mem base V = red5 s.mem base TV ∧
-        word t.mem base CNT = BitVec.ofNat 64 (10 - (i + 1)) ∧
-        t.gpr .x19 = BitVec.ofNat 64 (10 - (i + 1)) ∧
+        t.gpr .x20 = BitVec.ofNat 64 (10 - (i + 1)) ∧
         word t.mem base DSAVE = word s.mem base DSAVE ∧
-        Outside base 192 304 s.mem t.mem ∧ KeepRegs batchRegs s t := by
+        Outside base 192 296 s.mem t.mem ∧ KeepRegs batchRegs s t := by
   have _hmin := workSize_ge large
   have _hcap := workSize_le large
   rw [WP.block_append_iff]
@@ -256,12 +240,12 @@ theorem outs_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
     ⟨by decide, by simp only [TV]; omega⟩) fun e ⟨e1, oe, ke⟩ => ?_
   have hse := scr_of hsd ke (by decide)
   have mc : c.mem = b.mem := kc.mem
-  have cnt : word e.mem base CNT = BitVec.ofNat 64 (10 - i) := by
-    rw [oe.word (by decide) (by decide), od.word (by decide) (by decide), mc,
-      ob.word (by decide) (by decide), oa.word (by decide) (by decide), hc]
-  refine WP.mono (cnt_ok hse hi cnt) fun t ⟨mt, t19, kt⟩ => ?_
-  have ot : Outside base CNT 8 e.mem t.mem := by rw [mt]; exact writeW_outside _ _ _ (by decide)
-  refine ⟨?_, ?_, ?_, ?_, ?_, t19, ?_, ?_, ?_⟩
+  have cnt : e.gpr .x20 = BitVec.ofNat 64 (10 - i) := by
+    rw [ke.gpr _ (by decide), kd.gpr _ (by decide), kc.gpr _ (by decide), kb.gpr _ (by decide),
+      ka.gpr _ (by decide), hc]
+  refine WP.mono (cnt_ok e hi cnt) fun t ⟨t20, kt⟩ => ?_
+  have ot : Outside base 488 0 e.mem t.mem := by rw [kt.mem]; exact Outside.refl _ _ _ _
+  refine ⟨?_, ?_, ?_, ?_, t20, ?_, ?_, ?_⟩
   · rw [ot.fe (by decide) (by decide), oe.fe (by decide) (by decide), od.fe (by decide) (by decide),
       mc, ob.fe (by decide) (by decide), a1]
   · rw [ot.fe (by decide) (by decide), oe.fe (by decide) (by decide), od.fe (by decide) (by decide),
@@ -270,7 +254,6 @@ theorem outs_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
       redV_out ob (by decide) (by decide), redV_out oa (by decide) (by decide)]
   · rw [ot.fe (by decide) (by decide), e1, redV_out od (by decide) (by decide), mc,
       redV_out ob (by decide) (by decide), redV_out oa (by decide) (by decide)]
-  · rw [mt, word_writeW_self]
   · rw [ot.word (by decide) (by decide), oe.word (by decide) (by decide),
       od.word (by decide) (by decide), mc, ob.word (by decide) (by decide),
       oa.word (by decide) (by decide)]
@@ -279,20 +262,19 @@ theorem outs_ok {s : State} {base : Addr} (hs : Scr s base large) (hz : s.gpr .x
       (ot.mono (by decide) (by decide))
   · exact ((((ka.mono (by decide)).trans (kb.mono (by decide))).trans
       (((Keeps.regs kc).mono (by decide)).trans (kd.mono (by decide)))).trans (ke.mono (by decide))).trans
-      (kt.mono (by decide))
+      ((Keeps.regs kt).mono (by decide))
 
 /-- A batch: the invariant one batch on, and the counter one down. -/
 theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (hx : x < P)
     (hi : i < 10)
     (h : RInv x i (word s.mem base DSAVE) (fe s.mem base F) (fe s.mem base G) (fe s.mem base U)
       (fe s.mem base V))
-    (hc : word s.mem base CNT = BitVec.ofNat 64 (10 - i)) :
+    (hc : s.gpr .x20 = BitVec.ofNat 64 (10 - i)) :
     WP isa (.block batch) s fun t =>
       RInv x (i + 1) (word t.mem base DSAVE) (fe t.mem base F) (fe t.mem base G) (fe t.mem base U)
         (fe t.mem base V) ∧
-      word t.mem base CNT = BitVec.ofNat 64 (10 - (i + 1)) ∧
-      t.gpr .x19 = BitVec.ofNat 64 (10 - (i + 1)) ∧
-      Outside base 192 304 s.mem t.mem ∧ KeepRegs batchRegs s t := by
+      t.gpr .x20 = BitVec.ofNat 64 (10 - (i + 1)) ∧
+      Outside base 192 296 s.mem t.mem ∧ KeepRegs batchRegs s t := by
   have _hmin := workSize_ge large
   have _hcap := workSize_le large
   obtain ⟨hD, hF, hG, hFl, hGl, hUl, hVl, _, _, _⟩ := id h
@@ -368,11 +350,10 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
   rw [m3.q, m3.sq, m3.r, m3.sr, m3.c1] at r4
   have hWV := rowU_rel (m := e3.mem) (m' := e4.mem) (base := base) (t := TV) (xo := U) (yo := V) bq br r4
   -- the shifts, the reductions and the counter
-  have cnt4 : word e4.mem base CNT = BitVec.ofNat 64 (10 - i) := by
-    rw [o4.word (by decide) (by decide), o3.word (by decide) (by decide),
-      o2.word (by decide) (by decide), o1.word (by decide) (by decide),
-      od.word (by decide) (by decide), hc]
-  refine WP.mono (outs_ok hs4 m4.z hi cnt4) fun t ⟨tF, tG, tU, tV, tc, t19, tD, ot, kt⟩ => ?_
+  have cnt4 : e4.gpr .x20 = BitVec.ofNat 64 (10 - i) := by
+    rw [k4.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ (by decide), k1.gpr _ (by decide),
+      kd.gpr _ (by decide), kc.gpr _ (by decide), kb.gpr _ (by decide), ka.gpr _ (by decide), hc]
+  refine WP.mono (outs_ok hs4 m4.z hi cnt4) fun t ⟨tF, tG, tU, tV, t20, tD, ot, kt⟩ => ?_
   -- what the rows read, as it was in `s`
   have f1 : ∀ o, o + 32 ≤ TF → fe e1.mem base o = fe s.mem base o := fun o ho => by
     rw [o1.fe (Or.inl ho) (by simp only [TF] at ho; omega), fd o (by simp only [TF] at ho; omega)]
@@ -397,7 +378,7 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
   have dD : word t.mem base DSAVE = BitVec.ofInt 64 (dsM x i).d := by
     rw [tD, o4.word (by decide) (by decide), o3.word (by decide) (by decide),
       o2.word (by decide) (by decide), o1.word (by decide) (by decide), mdm, word_writeW_self]
-  refine ⟨?_, tc, t19, ?_, ?_⟩
+  refine ⟨?_, t20, ?_, ?_⟩
   · rw [dD, tF, tG, tU, tV, vF, vG, vU]
     exact hR
   · exact ((((od.mono (by decide) (by decide)).trans (o1.mono (by decide) (by decide))).trans
