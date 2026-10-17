@@ -21,6 +21,11 @@ piece is the last ciphertext block of this one (`Cbc.next`), which the caller
 has (after encryption, the last block at `data`; before decryption, the last
 block it decrypts). Padding is the caller's.
 
+`vg_idea_cbc_encrypt_chained` and `vg_idea_cbc_decrypt_chained` are the
+same but for `iv`, which they replace with the chaining value to continue
+from (`Cbc.next`), as AES-CBC's functions do (`Spec/Cbc/Contract.lean`), so
+that the caller keeps no block of its own between pieces.
+
 Only the pointers and `n` are public: no part of the chaining value may affect
 timing.
 -/
@@ -95,6 +100,74 @@ def cbcDecryptApi : Api where
     decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is \
     removed.\n\n\
     Contract: `VG.Spec.Idea.cbcDecryptContract`. Constant time: only the pointers and `n` \
+    may affect timing, not the subkeys, the chaining value or the data."
+  safety := []
+
+/-! ## Updating the chaining value -/
+
+/-- `vg_idea_cbc_encrypt_chained(schedule: *const [u8; 104], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize)`,
+and `vg_idea_cbc_decrypt_chained` with the same signature: `cbcSig`, but
+for `iv`, which they write. -/
+def cbcChainedSig : Sig where
+  params := [("schedule", .array false .u8 104), ("iv", .array true .u8 8),
+    ("data", .slice true (.array .u8 8) "n")]
+
+/-- With the encryption subkeys at `schedule`: replaces the `n` blocks at
+`data` with their CBC encryption (§6.2) by IDEA, from the chaining value at
+`iv`, and the chaining value with the last ciphertext block (unchanged if
+`n = 0`), as `Cbc.aesEncryptContract` does. -/
+def cbcEncryptChainedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  cbcChainedSig.contract A
+    (post := fun schedule iv data n m m' _ =>
+      let cs := Cbc.encrypt (cipher (scheduleAt m schedule)) (Aes.bytesAt m iv 8)
+        (cbcBlocksAt m data n.toNat)
+      cbcBlocksAt m' data n.toNat = cs ∧
+        Aes.bytesAt m' iv 8 = Cbc.next (Aes.bytesAt m iv 8) cs)
+    (writeArgs := true) (stack := stack)
+
+/-- With the decryption subkeys at `schedule`: replaces the `n` blocks at
+`data` with their CBC decryption (§6.2) by IDEA, from the chaining value at
+`iv`, and the chaining value with the last ciphertext block, the last block
+at `data` on entry (unchanged if `n = 0`), as `Cbc.aesDecryptContract` does. -/
+def cbcDecryptChainedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  cbcChainedSig.contract A
+    (post := fun schedule iv data n m m' _ =>
+      let cs := cbcBlocksAt m data n.toNat
+      cbcBlocksAt m' data n.toNat =
+          Cbc.decrypt (cipher (scheduleAt m schedule)) (Aes.bytesAt m iv 8) cs ∧
+        Aes.bytesAt m' iv 8 = Cbc.next (Aes.bytesAt m iv 8) cs)
+    (writeArgs := true) (stack := stack)
+
+/-- `vg_idea_cbc_encrypt_chained` on every target. -/
+def cbcEncryptChainedApi : Api where
+  module := "idea_cbc"
+  name := "vg_idea_cbc_encrypt_chained"
+  sig := cbcChainedSig
+  writeArgs := true
+  contracts := some fun A stack => cbcEncryptChainedContract A stack
+  summary := "IDEA-CBC encryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: \
+    replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` \
+    is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a \
+    further call continues the message. `CIPH_K` is IDEA under the encryption subkeys at \
+    `schedule`, as `vg_idea_expand_key` writes them. No padding is added.\n\n\
+    Contract: `VG.Spec.Idea.cbcEncryptChainedContract`. Constant time: only the pointers and `n` \
+    may affect timing, not the subkeys, the chaining value or the data."
+  safety := []
+
+/-- `vg_idea_cbc_decrypt_chained` on every target. -/
+def cbcDecryptChainedApi : Api where
+  module := "idea_cbc"
+  name := "vg_idea_cbc_decrypt_chained"
+  sig := cbcChainedSig
+  writeArgs := true
+  contracts := some fun A stack => cbcDecryptChainedContract A stack
+  summary := "IDEA-CBC decryption (NIST SP 800-38A §6.2, Lai 1992 §3.3) of whole blocks, in place: \
+    replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` \
+    is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it \
+    unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is IDEA under \
+    the decryption subkeys at `schedule`, as `vg_idea_invert_key` writes them. No padding is \
+    removed.\n\n\
+    Contract: `VG.Spec.Idea.cbcDecryptChainedContract`. Constant time: only the pointers and `n` \
     may affect timing, not the subkeys, the chaining value or the data."
   safety := []
 

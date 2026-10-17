@@ -3,7 +3,8 @@ module
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Prepared.Verified
-public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Verified
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.Prepared
+public import VerifiedGarbage.Proof.AesGcm.AArch64.Fast.OpenPrepared
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -49,6 +50,12 @@ def fastNote (v : GcmImpl) : List String :=
     the lengths block into the hash with PMULL in registers, calling `" ++ v.gh.fn.name ++ "` once, on the \
     whole blocks of the ciphertext."] else []
 
+/-- How `open` takes the records of TLS, for the implementations with PMULL. -/
+def fastOpenNote (v : GcmImpl) : List String :=
+  if v.gh.pmull then ["For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes \
+    the tag as `seal` does on that path, calling `" ++ v.gh.fn.name ++ "` once, on the whole blocks of the \
+    ciphertext, and decrypts only if it matches."] else []
+
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Gcm.initApi.artifact AArch64.target {
@@ -67,11 +74,10 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     features := v.features },
   Spec.Gcm.openApi.artifact AArch64.target {
     suffix := v.suffix
-    notes := [note v]
-    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
-      (Impl.AesGcm.AArch64.«open» v.callees)
+    notes := [note v] ++ fastOpenNote v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode v)
     stack := 2592
-    verified := open_framed v
+    verified := openCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV
     features := v.features },
   Spec.Gcm.streamInitApi.artifact AArch64.target {
     suffix := v.suffix
@@ -139,6 +145,50 @@ def preparedNote : String :=
     squaring `H'ᵏ`, read back from the context, and each odd power by one multiplication by `H'`; \
     `preparedPower(Hᵏ)` is `Hᵏ · x⁻¹`, so each power is stored as it is computed."
 
+/-- How `vg_aes_gcm_seal_prepared` uses the prepared context. -/
+def sealPreparedNote (v : GcmImpl) (gp : GhashPreparedImpl) : String :=
+  "For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the hash \
+    subkey's `H · x⁻¹` once and multiplies the additional data, the last bytes of the ciphertext and the \
+    lengths block into the hash with PMULL in registers, calling `" ++ gp.fn.name ++ "` once, on the whole \
+    blocks of the ciphertext, which reads the powers of `H` from the context. Otherwise it reads only the \
+    context's first 256 bytes, as `" ++ Spec.Gcm.sealApi.name ++ v.suffix ++ "` does."
+
+/-- How `vg_aes_gcm_open_prepared` uses the prepared context. -/
+def openPreparedNote (v : GcmImpl) (gp : GhashPreparedImpl) : String :=
+  "For a 12-byte nonce and at most 16 bytes of additional data (TLS records), it computes the tag as \
+    `" ++ Spec.Gcm.sealPreparedApi.name ++ v.suffix ++ "` does, calling `" ++ gp.fn.name ++ "` once, on the \
+    whole blocks of the ciphertext, and decrypts only if it matches. Otherwise it reads only the context's \
+    first 256 bytes, as `" ++ Spec.Gcm.openApi.name ++ v.suffix ++ "` does."
+
+/-- `vg_aes_gcm_seal_prepared` and `vg_aes_gcm_open_prepared`, calling `gp`
+on the path for TLS records, and `vg_aes_gcm_seal_gather_prepared`, calling
+the former. -/
+def sealPreparedArtifacts (v : GcmImpl) (gp : GhashPreparedImpl) : List Artifact :=
+  let F := Proof.AesGcm.AArch64.sealPreparedFn v gp Proof.Gcm.AArch64.Pmull.mulV_keyV
+  [Spec.Gcm.sealPreparedApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, sealPreparedNote v gp]
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1
+      (Impl.AesGcm.AArch64.Fast.sealWith v.callees gp.fn)
+    stack := 2576
+    verified := Fast.sealPrepared_framed v gp Proof.Gcm.AArch64.Pmull.mulV_keyV
+    features := v.features },
+  Spec.Gcm.sealGatherPreparedApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [gatherNote F.fn.name]
+    code := Impl.AesGcm.AArch64.SealGather.sealGather F.fn
+    stack := 2592
+    verified := Proof.AesGcm.AArch64.Gather.sealGatherPrepared_verified F
+    features := v.features },
+  Spec.Gcm.openPreparedApi.artifact AArch64.target {
+    suffix := v.suffix
+    notes := [note v, openPreparedNote v gp]
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
+      (Impl.AesGcm.AArch64.Fast.openWith v.callees gp.fn)
+    stack := 2592
+    verified := Fast.openPrepared_framed v gp Proof.Gcm.AArch64.Pmull.mulV_keyV
+    features := v.features }]
+
 /-- The functions with a prepared key context, for the implementations with PMULL. -/
 def artifactsPrepared (v : GcmImpl) : List Artifact :=
   if v.gh.pmull then [
@@ -149,7 +199,7 @@ def artifactsPrepared (v : GcmImpl) : List Artifact :=
         (Impl.AesGcm.AArch64.Prepared.init v.callees)
       stack := 2560
       verified := initPrepared_framed v Proof.Gcm.AArch64.Pmull.prepPow
-      features := v.features }]
+      features := v.features }] ++ ((v.gh.prepared.map (sealPreparedArtifacts v)).getD [])
   else []
 
 /-- The artifacts of a variant, from the implementations it names. -/

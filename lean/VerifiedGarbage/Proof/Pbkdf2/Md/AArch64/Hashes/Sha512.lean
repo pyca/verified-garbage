@@ -206,8 +206,7 @@ def stream (v : Compress) : List StreamFn := [
     code := Proof.Sha512.AArch64.oneShotWith (out64 8) H0_512 v.suffix v.code
     contract := Spec.Sha512.digestContract AArch64.abi 64 Spec.Sha512.sha512 Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
-    verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape.toD v.finalizeKeeps
-      v.oneShot512).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun m =>
+    verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape.toD v.oneShot512).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun m =>
         List.take_of_length_le (Nat.le_of_eq (Hmac.Generic.Common.finalHash_length _ m)))
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
@@ -225,8 +224,7 @@ def stream384 (v : Compress) : List StreamFn := [
     code := Proof.Sha512.AArch64.oneShotWith (out64 6) H0_384 v.suffix v.code
     contract := Spec.Sha512.digestContract AArch64.abi 48 Spec.Sha512.sha384 Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
-    verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape384 v.digest384.keeps
-      v.oneShot384).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
+    verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape384 v.oneShot384).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-- SHA-512/256's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
@@ -244,8 +242,7 @@ def stream512_256 (v : Compress) : List StreamFn := [
     contract := Spec.Sha512.digestContract AArch64.abi 32 Spec.Sha512.sha512_256
       Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
-    verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape512_256 v.digest512_256.keeps
-      v.oneShot512_256).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
+    verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape512_256 v.oneShot512_256).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-- SHA-512/224's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
@@ -264,8 +261,7 @@ def stream512_224 (v : Compress) : List StreamFn := [
     contract := Spec.Sha512.digestContract AArch64.abi 28 Spec.Sha512.sha512_224
       Proof.Sha512.AArch64.OneShot.stack
     stack := Proof.Sha512.AArch64.OneShot.stack
-    verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape512_224 v.digest512_224.keeps
-      v.oneShot512_224).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
+    verified := (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape512_224 v.oneShot512_224).of_implies (Proof.Sha512.AArch64.OneShot.implies (by decide) fun _ => rfl)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 /-! ## SHA-384 -/

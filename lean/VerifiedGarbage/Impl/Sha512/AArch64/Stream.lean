@@ -33,6 +33,13 @@ open VG.Impl.MdStream.AArch64 (Params len128 out64)
 def init (iv : Spec.Sha512.HashValue) : Prog isa :=
   .block ((List.range 8).flatMap fun k => movImm64 .x9 iv[k]! ++ ([.str .x .x9 .x0 (8 * k)] : List Instr))
 
+/-- `init`, storing the hash value sixteen bytes at a time (`stp`), at the
+offsets the compression functions load it from: for the one-shot digests,
+whose first compression reads it right away. -/
+def initPairs (iv : Spec.Sha512.HashValue) : Prog isa :=
+  .block ((List.range 4).flatMap fun k =>
+    movImm64 .x9 iv[2 * k]! ++ movImm64 .x10 iv[2 * k + 1]! ++ ([.stp .x9 .x10 .x0 (16 * k)] : List Instr))
+
 /-- The sizes, the length field and the digest. -/
 def params : Params where
   N := 64

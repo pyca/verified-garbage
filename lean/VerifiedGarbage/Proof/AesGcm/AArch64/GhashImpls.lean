@@ -8,10 +8,11 @@ import all Init.Data.Nat.Bitwise.Basic
 import all Init.Data.Vector.Basic
 
 /-!
-# AES-GCM on AArch64: `vg_ghash_aes`
+# AES-GCM on AArch64: `vg_ghash_aes` and `vg_ghash_prepared_aes`
 
 Untrusted: everything here is checked by Lean. The `GhashImpl` of
-`vg_ghash_aes`, from its proof, apart from `Callee.lean`: only the variants
+`vg_ghash_aes` and the `GhashPreparedImpl` of `vg_ghash_prepared_aes`, from
+their proofs, apart from `Callee.lean`: only the variants
 need it, and its proof imports the algebra of `Proof/Gcm/Poly.lean`, which
 the rest of the AES-GCM proofs then need not import.
 -/
@@ -21,6 +22,14 @@ the rest of the AES-GCM proofs then need not import.
 namespace VG.Proof.AesGcm.AArch64
 
 open VG VG.AArch64
+
+/-- `vg_ghash_prepared_aes`, with PMULL. -/
+def GhashPreparedImpl.aes : GhashPreparedImpl where
+  fn := ⟨"vg_ghash_prepared_aes", Impl.Gcm.AArch64.Pmull.ghashP⟩
+  noFrames := by decide +kernel
+  ok := Proof.Gcm.AArch64.Pmull.ghashP_correct
+  ct := Proof.Gcm.AArch64.Pmull.ghashP_ct
+  keepsV := by decide +kernel
 
 namespace GhashImpl
 
@@ -35,6 +44,7 @@ def aes : GhashImpl where
   suffix := "_aes"
   features := ["aes"]
   pmull := true
+  prepared := some .aes
 
 end GhashImpl
 

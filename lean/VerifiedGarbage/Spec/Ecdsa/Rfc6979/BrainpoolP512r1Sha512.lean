@@ -14,10 +14,10 @@ A candidate is the leftmost 512 bits of `V`, and `n` is well below
 about `0.333` (`2^-1.58`): at most 128 candidates, all of which are
 unsuitable with probability under `2^-203`.
 
-The wrapper receives 8256 bytes of scratch space: the signing core's
-8192 bytes and 64 additional bytes for the reduced digest (`bits2octets`),
-which must survive calls of the core. Unlike the shorter Brainpool curves,
-this digest does not fit the existing wrappers' 48-byte stack slot.
+The wrapper receives the signing core's 8 KiB of scratch space, as the
+other curves' do. Its reduced digest (`bits2octets`, 64 bytes), which must
+survive calls of the core, is an implementation's to keep, in its own
+stack frame (the `stack` of its contract).
 -/
 
 @[expose] public section
@@ -32,7 +32,6 @@ def inst : Instance where
   hashName := "sha512"
   hashTitle := "SHA-512"
   tries := 128
-  scratchWords := 1032
 
 /-- `vg_ecdsa_brainpoolp512r1_sha512_sign` on every target. -/
 def signApi : Api := inst.signApi

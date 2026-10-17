@@ -8797,181 +8797,6 @@ ret
     )
 }
 
-/// ML-DSA-87 verification, `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3): with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, returns 1 if the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5) is valid, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8), and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less). Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`).
-///
-/// Contract: `VG.Spec.MlDsa.verifyMessageContract`. Not constant time: timing may depend on the public key, the message, the context string and the signature.
-///
-/// The function saves its caller's `x28` and `x30` and its arguments in the last 1 KiB of `scratch`, and uses no stack of its own; the functions it calls use the 16 bytes of stack below the stack pointer. It computes `tr = H(pk, 64)` and then the message representative with the SHAKE256 sponge (`vg_keccak_absorb`, `vg_keccak_pad`, `vg_keccak_squeeze`) in that 1 KiB, and calls the verification function on it, which uses the rest of `scratch`.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 2592 bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ctx` must be valid for reads of `ctx_len` bytes.
-/// * `sig` must be valid for reads of 4627 bytes.
-/// * `scratch` must be valid for reads and writes of 145408 bytes.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `msg`, `ctx` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa87_verify_message(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
-    core::arch::naked_asm!(
-        r"lsr x9, x4, #8
-cbnz x9, 20f
-movz x9, #13312, lsl #0
-movk x9, #2, lsl #16
-movk x9, #0, lsl #32
-movk x9, #0, lsl #48
-add x9, x6, x9
-str x28, [x9, #904]
-str x30, [x9, #912]
-add x28, x9, #0
-str x0, [x28, #920]
-str x1, [x28, #928]
-str x2, [x28, #936]
-str x3, [x28, #944]
-str x4, [x28, #952]
-str x5, [x28, #960]
-str x5, [x28, #968]
-str x6, [x28, #976]
-movz x9, #0, lsl #0
-strb w9, [x28, #984]
-strb w4, [x28, #985]
-add x0, x28, #0
-movz x9, #0, lsl #0
-str x9, [x0, #0]
-str x9, [x0, #8]
-str x9, [x0, #16]
-str x9, [x0, #24]
-str x9, [x0, #32]
-str x9, [x0, #40]
-str x9, [x0, #48]
-str x9, [x0, #56]
-str x9, [x0, #64]
-str x9, [x0, #72]
-str x9, [x0, #80]
-str x9, [x0, #88]
-str x9, [x0, #96]
-str x9, [x0, #104]
-str x9, [x0, #112]
-str x9, [x0, #120]
-str x9, [x0, #128]
-str x9, [x0, #136]
-str x9, [x0, #144]
-str x9, [x0, #152]
-str x9, [x0, #160]
-str x9, [x0, #168]
-str x9, [x0, #176]
-str x9, [x0, #184]
-str x9, [x0, #192]
-movz x2, #0, lsl #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-ldr x3, [x28, #920]
-movz x4, #2592, lsl #0
-add x5, x28, #200
-bl {vg_keccak_absorb_scratch}
-movz x2, #8, lsl #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-movz x3, #31, lsl #0
-add x4, x28, #200
-bl {vg_keccak_pad_scratch}
-add x0, x28, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x3, x28, #840
-movz x4, #64, lsl #0
-add x5, x28, #200
-bl {vg_keccak_squeeze_scratch}
-add x0, x28, #0
-movz x9, #0, lsl #0
-str x9, [x0, #0]
-str x9, [x0, #8]
-str x9, [x0, #16]
-str x9, [x0, #24]
-str x9, [x0, #32]
-str x9, [x0, #40]
-str x9, [x0, #48]
-str x9, [x0, #56]
-str x9, [x0, #64]
-str x9, [x0, #72]
-str x9, [x0, #80]
-str x9, [x0, #88]
-str x9, [x0, #96]
-str x9, [x0, #104]
-str x9, [x0, #112]
-str x9, [x0, #120]
-str x9, [x0, #128]
-str x9, [x0, #136]
-str x9, [x0, #144]
-str x9, [x0, #152]
-str x9, [x0, #160]
-str x9, [x0, #168]
-str x9, [x0, #176]
-str x9, [x0, #184]
-str x9, [x0, #192]
-movz x2, #0, lsl #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-add x3, x28, #840
-movz x4, #64, lsl #0
-add x5, x28, #200
-bl {vg_keccak_absorb_scratch}
-movz x2, #64, lsl #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-add x3, x28, #984
-movz x4, #2, lsl #0
-add x5, x28, #200
-bl {vg_keccak_absorb_scratch}
-movz x2, #66, lsl #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-ldr x3, [x28, #944]
-ldr x4, [x28, #952]
-add x5, x28, #200
-bl {vg_keccak_absorb_scratch}
-add x2, x0, #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-ldr x3, [x28, #928]
-ldr x4, [x28, #936]
-add x5, x28, #200
-bl {vg_keccak_absorb_scratch}
-add x2, x0, #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-movz x3, #31, lsl #0
-add x4, x28, #200
-bl {vg_keccak_pad_scratch}
-add x0, x28, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x3, x28, #840
-movz x4, #64, lsl #0
-add x5, x28, #200
-bl {vg_keccak_squeeze_scratch}
-ldr x0, [x28, #920]
-add x1, x28, #840
-ldr x2, [x28, #968]
-ldr x3, [x28, #976]
-bl {vg_mldsa87_verify}
-ldr x30, [x28, #912]
-ldr x28, [x28, #904]
-b 21f
-20:
-movz x0, #2, lsl #0
-21:
-ret
-.p2align 6",
-        vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
-        vg_mldsa87_verify = sym super::mldsa87::vg_mldsa87_verify,
-    )
-}
-
 /// ML-DSA-87 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. The message formatting and verification semantics match `vg_mldsa87_verify_message`.
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
@@ -10346,28 +10171,28 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #128
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #62464, lsl #0
 add x0, x28, x0
 movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #224
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #63488, lsl #0
 add x0, x28, x0
 movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #320
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #64512, lsl #0
 add x0, x28, x0
 movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #416
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #0, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10377,7 +10202,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #512
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #1024, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10387,7 +10212,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #608
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #2048, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10397,7 +10222,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #704
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #3072, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10407,7 +10232,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #800
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #4096, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10417,7 +10242,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #896
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #5120, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10427,7 +10252,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #992
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #6144, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10437,7 +10262,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #1088
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #7168, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10447,7 +10272,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #1184
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #8192, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10457,7 +10282,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #1280
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #9216, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10467,7 +10292,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #1376
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #10240, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10477,7 +10302,7 @@ movz x1, #2, lsl #0
 movz x2, #2, lsl #0
 add x3, x27, #1472
 movz x4, #96, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #61440, lsl #0
 add x0, x28, x0
 bl {vg_mldsa_ntt_positive}
@@ -10529,7 +10354,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10545,7 +10370,7 @@ movk x2, #1, lsl #16
 movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #12288, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10554,7 +10379,7 @@ add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #32
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #13312, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10564,7 +10389,7 @@ movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #1568
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10586,7 +10411,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10602,7 +10427,7 @@ movk x2, #1, lsl #16
 movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #12288, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10611,7 +10436,7 @@ add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #352
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #13312, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10621,7 +10446,7 @@ movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #1984
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10643,7 +10468,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10659,7 +10484,7 @@ movk x2, #1, lsl #16
 movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #12288, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10668,7 +10493,7 @@ add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #672
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #13312, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10678,7 +10503,7 @@ movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #2400
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10700,7 +10525,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10716,7 +10541,7 @@ movk x2, #1, lsl #16
 movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #12288, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10725,7 +10550,7 @@ add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #992
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #13312, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10735,7 +10560,7 @@ movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #2816
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10757,7 +10582,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10773,7 +10598,7 @@ movk x2, #1, lsl #16
 movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #12288, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10782,7 +10607,7 @@ add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #1312
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #13312, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10792,7 +10617,7 @@ movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #3232
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10814,7 +10639,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10830,7 +10655,7 @@ movk x2, #1, lsl #16
 movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #12288, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10839,7 +10664,7 @@ add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #1632
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #13312, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10849,7 +10674,7 @@ movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #3648
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10871,7 +10696,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10887,7 +10712,7 @@ movk x2, #1, lsl #16
 movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #12288, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10896,7 +10721,7 @@ add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #1952
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #13312, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10906,7 +10731,7 @@ movz x1, #4095, lsl #0
 movz x2, #4096, lsl #0
 add x3, x27, #4064
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10928,7 +10753,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_keygen_add}
+bl {vg_mldsa_add}
 movz x0, #11264, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10944,7 +10769,7 @@ movk x2, #1, lsl #16
 movk x2, #0, lsl #32
 movk x2, #0, lsl #48
 add x2, x28, x2
-bl {vg_mldsa_keygen_power2round}
+bl {vg_mldsa_power2round}
 movz x0, #12288, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10953,7 +10778,7 @@ add x0, x28, x0
 movz x1, #1023, lsl #0
 add x2, x26, #2272
 movz x3, #320, lsl #0
-bl {vg_mldsa_keygen_simple_bit_pack}
+bl {vg_mldsa_simple_bit_pack}
 movz x0, #13312, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -10964,7 +10789,7 @@ movz x2, #4096, lsl #0
 movz x3, #4480, lsl #0
 add x3, x27, x3
 movz x4, #416, lsl #0
-bl {vg_mldsa_keygen_bit_pack}
+bl {vg_mldsa_bit_pack}
 add x0, x28, #0
 movz x9, #0, lsl #0
 str x9, [x0, #0]
@@ -11027,12 +10852,12 @@ ret
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
         vg_mldsa_rej_ntt_poly4_sha3 = sym super::mldsa::vg_mldsa_rej_ntt_poly4_sha3,
         vg_mldsa_rej_bounded_poly4_eta2_sha3 = sym super::mldsa::vg_mldsa_rej_bounded_poly4_eta2_sha3,
-        vg_mldsa_keygen_bit_pack = sym super::mldsa::vg_mldsa_keygen_bit_pack,
+        vg_mldsa_bit_pack = sym super::mldsa::vg_mldsa_bit_pack,
         vg_mldsa_ntt_positive = sym super::mldsa::vg_mldsa_ntt_positive,
         vg_mldsa_dot_inverse7 = sym super::mldsa::vg_mldsa_dot_inverse7,
-        vg_mldsa_keygen_add = sym super::mldsa::vg_mldsa_keygen_add,
-        vg_mldsa_keygen_power2round = sym super::mldsa::vg_mldsa_keygen_power2round,
-        vg_mldsa_keygen_simple_bit_pack = sym super::mldsa::vg_mldsa_keygen_simple_bit_pack,
+        vg_mldsa_add = sym super::mldsa::vg_mldsa_add,
+        vg_mldsa_power2round = sym super::mldsa::vg_mldsa_power2round,
+        vg_mldsa_simple_bit_pack = sym super::mldsa::vg_mldsa_simple_bit_pack,
     )
 }
 
@@ -14830,7 +14655,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #15360, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -14903,7 +14728,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #15360, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -14976,7 +14801,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #15360, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -15049,7 +14874,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #15360, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -15125,7 +14950,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #15360, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -15201,7 +15026,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #15360, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -15277,7 +15102,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #15360, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -15353,7 +15178,7 @@ movk x1, #1, lsl #16
 movk x1, #0, lsl #32
 movk x1, #0, lsl #48
 add x1, x28, x1
-bl {vg_mldsa_verify_sub}
+bl {vg_mldsa_sub}
 movz x0, #15360, lsl #0
 movk x0, #1, lsl #16
 movk x0, #0, lsl #32
@@ -15469,193 +15294,12 @@ ret
         vg_mldsa_montgomery_dot7 = sym super::mldsa::vg_mldsa_montgomery_dot7,
         vg_mldsa_unpack_t1 = sym super::mldsa::vg_mldsa_unpack_t1,
         vg_mldsa_montgomery_product = sym super::mldsa::vg_mldsa_montgomery_product,
-        vg_mldsa_verify_sub = sym super::mldsa::vg_mldsa_verify_sub,
+        vg_mldsa_sub = sym super::mldsa::vg_mldsa_sub,
         vg_mldsa_montgomery_inv_ntt = sym super::mldsa::vg_mldsa_montgomery_inv_ntt,
         vg_mldsa_usehint_pack4 = sym super::mldsa::vg_mldsa_usehint_pack4,
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
-    )
-}
-
-/// The CPU features `vg_mldsa87_verify_message_sha3` requires (`Artifact.features`).
-pub(crate) const VG_MLDSA87_VERIFY_MESSAGE_SHA3_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha3"]);
-
-/// ML-DSA-87 verification, `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3): with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, returns 1 if the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5) is valid, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8), and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less). Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`).
-///
-/// Contract: `VG.Spec.MlDsa.verifyMessageContract`. Not constant time: timing may depend on the public key, the message, the context string and the signature.
-///
-/// The function saves its caller's `x28` and `x30` and its arguments in the last 1 KiB of `scratch`, and uses no stack of its own; the functions it calls use the 16 bytes of stack below the stack pointer. It computes `tr = H(pk, 64)` and then the message representative with the SHAKE256 sponge (`vg_keccak_absorb`, `vg_keccak_pad`, `vg_keccak_squeeze`) in that 1 KiB, and calls the verification function on it, which uses the rest of `scratch`.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 2592 bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ctx` must be valid for reads of `ctx_len` bytes.
-/// * `sig` must be valid for reads of 4627 bytes.
-/// * `scratch` must be valid for reads and writes of 145408 bytes.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `msg`, `ctx` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig` and `scratch` may overlap the 16 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mldsa87_verify_message_sha3(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
-    core::arch::naked_asm!(
-        r".arch_extension sha3
-lsr x9, x4, #8
-cbnz x9, 20f
-movz x9, #13312, lsl #0
-movk x9, #2, lsl #16
-movk x9, #0, lsl #32
-movk x9, #0, lsl #48
-add x9, x6, x9
-str x28, [x9, #904]
-str x30, [x9, #912]
-add x28, x9, #0
-str x0, [x28, #920]
-str x1, [x28, #928]
-str x2, [x28, #936]
-str x3, [x28, #944]
-str x4, [x28, #952]
-str x5, [x28, #960]
-str x5, [x28, #968]
-str x6, [x28, #976]
-movz x9, #0, lsl #0
-strb w9, [x28, #984]
-strb w4, [x28, #985]
-add x0, x28, #0
-movz x9, #0, lsl #0
-str x9, [x0, #0]
-str x9, [x0, #8]
-str x9, [x0, #16]
-str x9, [x0, #24]
-str x9, [x0, #32]
-str x9, [x0, #40]
-str x9, [x0, #48]
-str x9, [x0, #56]
-str x9, [x0, #64]
-str x9, [x0, #72]
-str x9, [x0, #80]
-str x9, [x0, #88]
-str x9, [x0, #96]
-str x9, [x0, #104]
-str x9, [x0, #112]
-str x9, [x0, #120]
-str x9, [x0, #128]
-str x9, [x0, #136]
-str x9, [x0, #144]
-str x9, [x0, #152]
-str x9, [x0, #160]
-str x9, [x0, #168]
-str x9, [x0, #176]
-str x9, [x0, #184]
-str x9, [x0, #192]
-movz x2, #0, lsl #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-ldr x3, [x28, #920]
-movz x4, #2592, lsl #0
-add x5, x28, #200
-bl {vg_keccak_absorb_scratch_sha3}
-movz x2, #8, lsl #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-movz x3, #31, lsl #0
-add x4, x28, #200
-bl {vg_keccak_pad_scratch_sha3}
-add x0, x28, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x3, x28, #840
-movz x4, #64, lsl #0
-add x5, x28, #200
-bl {vg_keccak_squeeze_scratch_sha3}
-add x0, x28, #0
-movz x9, #0, lsl #0
-str x9, [x0, #0]
-str x9, [x0, #8]
-str x9, [x0, #16]
-str x9, [x0, #24]
-str x9, [x0, #32]
-str x9, [x0, #40]
-str x9, [x0, #48]
-str x9, [x0, #56]
-str x9, [x0, #64]
-str x9, [x0, #72]
-str x9, [x0, #80]
-str x9, [x0, #88]
-str x9, [x0, #96]
-str x9, [x0, #104]
-str x9, [x0, #112]
-str x9, [x0, #120]
-str x9, [x0, #128]
-str x9, [x0, #136]
-str x9, [x0, #144]
-str x9, [x0, #152]
-str x9, [x0, #160]
-str x9, [x0, #168]
-str x9, [x0, #176]
-str x9, [x0, #184]
-str x9, [x0, #192]
-movz x2, #0, lsl #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-add x3, x28, #840
-movz x4, #64, lsl #0
-add x5, x28, #200
-bl {vg_keccak_absorb_scratch_sha3}
-movz x2, #64, lsl #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-add x3, x28, #984
-movz x4, #2, lsl #0
-add x5, x28, #200
-bl {vg_keccak_absorb_scratch_sha3}
-movz x2, #66, lsl #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-ldr x3, [x28, #944]
-ldr x4, [x28, #952]
-add x5, x28, #200
-bl {vg_keccak_absorb_scratch_sha3}
-add x2, x0, #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-ldr x3, [x28, #928]
-ldr x4, [x28, #936]
-add x5, x28, #200
-bl {vg_keccak_absorb_scratch_sha3}
-add x2, x0, #0
-add x0, x28, #0
-movz x1, #136, lsl #0
-movz x3, #31, lsl #0
-add x4, x28, #200
-bl {vg_keccak_pad_scratch_sha3}
-add x0, x28, #0
-movz x1, #136, lsl #0
-movz x2, #0, lsl #0
-add x3, x28, #840
-movz x4, #64, lsl #0
-add x5, x28, #200
-bl {vg_keccak_squeeze_scratch_sha3}
-ldr x0, [x28, #920]
-add x1, x28, #840
-ldr x2, [x28, #968]
-ldr x3, [x28, #976]
-bl {vg_mldsa87_verify_sha3}
-ldr x30, [x28, #912]
-ldr x28, [x28, #904]
-b 21f
-20:
-movz x0, #2, lsl #0
-21:
-ret
-.arch_extension nosha3
-.p2align 6",
-        vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
-        vg_mldsa87_verify_sha3 = sym super::mldsa87::vg_mldsa87_verify_sha3,
     )
 }
 

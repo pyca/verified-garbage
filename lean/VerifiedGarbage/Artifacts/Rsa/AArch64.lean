@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.SquareHelper
-public import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
 public import VerifiedGarbage.Proof.Rsa.AArch64.FoldedChecked
 public import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowBase
@@ -41,30 +40,19 @@ def windowHelper : Artifact :=
     verified := Proof.Bignum.AArch64.WindowShared.verified }
 
 def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelper,
-  Spec.Rsa.publicCheckedApi.artifact AArch64.target {
-    notes := ["Baseline AArch64: `e` is checked first, its bytes read into a register saturated at \
-        `2^34 - 1` once they reach `2^33`; then Montgomery multiplication on 64-bit words (coarsely \
-        integrated operand scanning with `mul` and `umulh`, the final subtraction selected with \
-        `csel`), and symmetric Montgomery squares using each cross-product once, with four-word \
-        MAC blocks and scalar tails, reusing the accumulator and temporary arrays; below eight \
-        limbs, squares retain the general kernel. Squares of at least sixteen limbs, with a width \
-        divisible by eight, use eight-limb register-blocked reduction; other widths retain the \
-        row-wise reduction. R² mod n by constant-time doublings and squarings, and the exponent scanned \
-        left to right from its first set bit, which starts the result as the input; a square per \
-        later bit and a multiplication per later set bit."]
-    code := Impl.Rsa.AArch64.Checked.publicChecked
-    verified := Proof.Rsa.AArch64.publicChecked_verified },
   Spec.Rsa.publicPrecomputeApi.artifact AArch64.target {
-    notes := ["Baseline AArch64: R² mod n as `vg_rsa_public_checked` computes it."]
+    notes := ["Baseline AArch64: R² mod n from `2^(b - 1)`, for n of `b` bits and `w` words, by \
+        constant-time doublings to `2^w R mod n`, then six Montgomery squarings."]
     code := Impl.Rsa.AArch64.Precompute.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Bignum.AArch64.precompute_verified _ },
   Spec.Rsa.publicPrecomputedCheckedApi.artifact AArch64.target {
-    notes := ["Baseline AArch64: `e` is checked as `vg_rsa_public_checked` checks it; then Montgomery \
-        multiplication; a three-byte exponent 65537 uses sixteen squares and a final multiplication \
-        by the ordinary input that also converts out of Montgomery form. Other exponents retain \
-        the general exponentiation. `pre` is checked (`n` odd, \
-        its top word not zero, `R² mod n` below it) before any arithmetic, so that values of no modulus \
-        are safe."]
+    notes := ["Baseline AArch64: `e` is checked first, its bytes read into a register saturated at \
+        `2^34 - 1` once they reach `2^33`; then Montgomery multiplication. The exponent 65537 (three \
+        bytes) uses sixteen squares and a final multiplication by the ordinary input that also \
+        converts out of Montgomery form; other exponents are scanned left to right from their first \
+        set bit, which starts the result as the input, a square per later bit and a multiplication \
+        per later set bit. `pre` is checked (`n` odd, its top word not zero, `R² mod n` below it) \
+        before any arithmetic, so that values of no modulus are safe."]
     code := Impl.Rsa.AArch64.Folded.checked Proof.Bignum.AArch64.Mont.productEight.mm
     verified := Proof.Rsa.AArch64.FoldedPublic.checked_verified _ },
   Spec.Rsa.privateCrtApi.artifact AArch64.target {
@@ -72,7 +60,7 @@ def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelpe
         below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are \
         replaced by 3 under a clear mask, so that the arithmetic is the same whatever the key, and \
         the result is stored masked. Each prime has its own working space, with its own \
-        Montgomery multiplication (`vg_rsa_public_checked`'s); the input is reduced modulo it by \
+        Montgomery multiplication; the input is reduced modulo it by \
         Montgomery reduction of chunks of its size, and the exponents are scanned left to right \
         over all their bits. Moduli of at least 128 bytes whose two prime byte lengths are \
         multiples of 64 use shared five-bit windows, 32-entry tables within the existing scratch \
@@ -91,7 +79,7 @@ def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelpe
   Spec.Rsa.recoverPrimesApi.artifact AArch64.target {
     notes := ["Baseline AArch64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and \
         the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words \
-        of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by `vg_rsa_public_checked`'s \
+        of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by \
         Montgomery multiplication over all the bits of `r`, a square and a multiplication by `g` or \
         1 (a masked selection) per bit, then `64 Bw` squarings, each kept or not under masks; the \
         candidates stop at the first that finds the factors, which is the only branch on the key. \
@@ -100,8 +88,8 @@ def artifacts : List Artifact := [squareHelper .r2, squareHelper .y, windowHelpe
     code := Impl.Rsa.AArch64.Recover.code Proof.Bignum.AArch64.Mont.base.mm
     verified := Proof.Rsa.AArch64.rp_verified _ },
   Spec.Rsa.checkKeyApi.artifact AArch64.target {
-    notes := ["Baseline AArch64: `e` is checked as `vg_rsa_public_checked` checks it and `n` as \
-        `vg_rsa_public_precompute` checks it, which are the only branches on the key. Then every check \
+    notes := ["Baseline AArch64: `e` is checked as `vg_rsa_public_precomputed_checked` checks it and \
+        `n` as `vg_rsa_public_precompute` checks it, which are the only branches on the key. Then every check \
         of the private key is computed whatever its outcome and and'ed into a mask, in a working space \
         of `W = 2 w + 2` words for `w`-word numbers: the comparisons by a subtraction's borrow, \
         `p q = n` by a product of the two, and each remainder (`d e mod (p - 1)` and the others, \

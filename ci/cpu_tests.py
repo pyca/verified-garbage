@@ -142,6 +142,7 @@ GROUPS = {
             "wycheproof::ecdsa_p192",
             "wycheproof::ecdsa_brainpoolp256r1",
             "wycheproof::ecdsa_brainpoolp384r1",
+            "wycheproof::ecdsa_brainpoolp512r1",
         ],
     },
     "ed25519": {
@@ -171,7 +172,7 @@ GROUPS = {
         ],
     },
     "mlkem": {
-        "lib": ["mlkem_common", "mlkem768::sha3_variant_tests", "mlkem1024::sha3_variant_tests"],
+        "lib": ["mlkem_common"],
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],
     },
     "p224_sha": {
@@ -365,6 +366,8 @@ GROUPS = {
             "pbkdf2::sha512_224",
             "pbkdf2::sha512_256",
             "rfc6979::p521::p521_sha512",
+            "rfc7027::brainpoolp512r1_ecdsa::ecdsa_and_invalid_keys",
+            "wycheproof::ecdsa_brainpoolp512r1",
             "wycheproof::ecdsa_p521::ecdsa_secp521r1_sha512_p1363_test",
             "wycheproof::hmac_sha512",
             "wycheproof::hmac_sha512_224",

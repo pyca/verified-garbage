@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.NttOutVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Ntt
 public import VerifiedGarbage.Proof.Framework.Registration
 
@@ -41,10 +42,10 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.AArch64.Arith.mulAdd
     verified := Proof.MlDsa.AArch64.Arith.mulAdd_verified },
   Spec.MlDsa.addApi.artifact AArch64.target {
-    code := Impl.MlDsa.AArch64.Arith.add
-    verified := Proof.MlDsa.AArch64.Arith.add_verified },
+    code := Impl.MlDsa.AArch64.Optimized.AddSub.code false
+    verified := Proof.MlDsa.AArch64.Optimized.AddSub.add_verified },
   Spec.MlDsa.subApi.artifact AArch64.target {
-    code := Impl.MlDsa.AArch64.Arith.sub
-    verified := Proof.MlDsa.AArch64.Arith.sub_verified }]
+    code := Impl.MlDsa.AArch64.Optimized.AddSub.code true
+    verified := Proof.MlDsa.AArch64.Optimized.AddSub.sub_verified }]
 
 end VG.Artifacts.MlDsaArith.AArch64

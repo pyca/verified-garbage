@@ -70,9 +70,12 @@ Lake rebuilds your changes and anything not yet cached.
   several, like Argon2, matches on each of their enums together): a new
   backend does not compile until everything built on it handles it.
   `ci/check_variants.py` checks the generated code: each caller of a
-  function with a variant has that variant, calling it, and each variant is
-  used by the Rust code. There are no exceptions: never add a caller that
-  calls only the baseline implementation, or a way to excuse one.
+  function with a variant has that variant, which calls it or does its work
+  itself but never calls the baseline (a helper needs none if its callers'
+  variants all do its work themselves), and each variant is used by the
+  Rust code outside its tests (never emit one only a test calls). There are
+  no exceptions: never add a caller that calls only the baseline
+  implementation, or a way to excuse one.
   A variant is chosen by the CPU's features; only when no feature tells
   apart the CPUs it is faster on may the choice also depend on the
   compilation target (`vg_poly1305_update_neon`, faster on Apple's cores and
@@ -152,7 +155,11 @@ instructions in an ISA model) go in their own PR before either.
    from the `Api`, so never restate them. Give a variant's name its
    `suffix` (`suffix := "_avx2"`), any notes on the implementation in
    `notes` (`notes := […]`), the stack its calls and frames use in `stack`,
-   and the tables of constants it reads in `consts`. Its contract is found
+   the tables of constants it reads in `consts`, and, where a caller wipes a
+   writable array the function uses as working space, how much of it the
+   function writes in `written` (`written := [("scratch", 1024)]`, proven by
+   `writtenOk`), which the emitter exports as `<NAME>_<PARAM>_WRITTEN` for
+   the caller to wipe only that much. Its contract is found
    from `verified`'s type, and must be the `Api`'s on the target for
    `consts` and `stack` (`ofApi`, by `rfl`): give `contract` only when
    `verified`'s type does not determine it. `of_sig` proves `ofSig`, and

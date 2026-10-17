@@ -60,10 +60,20 @@ theorem saved_wsR {W : Addr} : ∀ r ∈ wsR W, (savedR W).Disjoint r := by
   · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
   · exact Offset.disjoint W (.inl (by decide)) (by decide) (by decide)
 
-theorem run_ok (v : GcmImpl) (hMK : MulKey) {s s₁ : State} (hs : sealAArch64.pre s) (h₁ : SealEntry s s₁)
-    (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
+/-- `runWith`, for a function `gh` that hashes the whole blocks as `vg_ghash`
+does when called with `vg_ghash`'s arguments from a state with the regions
+of `s`, whose memory differs from `s`'s only in the working space and the
+text (`hgh`). -/
+theorem runWith_ok (v : GcmImpl) (gh : Fn) (hMK : MulKey) {extra : List Region} {s s₁ : State}
+    (hs : sealPreX extra s)
+    (hgh : ∀ (s' : State) {Y Dd S : Addr} {nb : Nat}, GhCall s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb →
+      Region.Sub ⟨Y, 16⟩ (workR (stackArg s 1)) → Region.Sub ⟨S, 256⟩ (workR (stackArg s 1)) →
+      s'.rd = s.rd → s'.wr = s.wr →
+      Frame [workR (stackArg s 1), ⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.mem s'.mem →
+      WP isa (.call gh.name gh.code) s' (GhPost s' (s.gpr .x0 + BitVec.ofNat 64 240) Y Dd S nb))
+    (h₁ : SealEntry s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
     (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) :
-    WP isa (Impl.AesGcm.AArch64.Fast.run v.callees) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' := by
+    WP isa (Impl.AesGcm.AArch64.Fast.runWith v.callees gh) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' := by
   obtain ⟨he₁, x22₁, x23₁, x24₁, x26₁, x27₁, x28₁, sl₁, sl₂, sl₃, sl₄, sl₅, f₁, sv₁, rd₁, wr₁⟩ := h₁
   have hx4 := hx .x4 (by simp)
   have hx5 := hx .x5 (by simp)
@@ -88,7 +98,7 @@ theorem run_ok (v : GcmImpl) (hMK : MulKey) {s s₁ : State} (hs : sealAArch64.p
   subst h12
   have hRb : R = 10 ∨ R = 12 ∨ R = 14 := by rw [← hRR]; exact hR
   have hnlt : n < 2 ^ 64 := hn ▸ (s.gpr .x7).isLt
-  unfold Impl.AesGcm.AArch64.Fast.run
+  unfold Impl.AesGcm.AArch64.Fast.runWith
   rw [← h5] at sl₂ hx5
   rw [← h7] at sl₄ hx7
   have sub16 : Region.Sub ⟨W + BitVec.ofNat 64 16, 80⟩ (workR W) := Lay.wSub (by decide)
@@ -177,7 +187,37 @@ theorem run_ok (v : GcmImpl) (hMK : MulKey) {s s₁ : State} (hs : sealAArch64.p
       by rw [r₅.others _ (by decide), h₄.x25], hdat₅, hH₅, fun ha => by simpa [bytesAt] using ha,
       .inr (by omega), Frame.refl _ _⟩
   refine WP.mono (WP.with_rdwr (absSeg2_ok L (.inr rfl) hM)) fun s₆ ⟨h₆, rd₆, wr₆⟩ => ?_
-  refine WP.seq (WP.mono (WP.with_rdwr (absCall2_ok L (.inr rfl) v h₆)) fun s₇ ⟨⟨h₇, hlt₇⟩, rd₇, wr₇⟩ => ?_)
+  have FW : Frame [workR W, ⟨D, n⟩] s.mem s₆.mem := by
+    have e : ∀ {rs : List Region} {m m' : Mem}, Frame rs m m' →
+        (∀ r ∈ rs, ∃ r' ∈ [workR W, (⟨D, n⟩ : Region)], Region.Sub r r') → Frame [workR W, ⟨D, n⟩] m m' :=
+      fun h hs => h.sub hs
+    have w : ∀ {r : Region}, Region.Sub r (workR W) → ∃ r' ∈ [workR W, (⟨D, n⟩ : Region)], Region.Sub r r' :=
+      fun h => ⟨_, List.mem_cons_self .., h⟩
+    have F1 := e f₁ fun r hr => w (entryR_work W r hr)
+    have F2 := e h₂.frame fun r hr => w (by
+      simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with (rfl | rfl | rfl) | rfl <;> exact Lay.wSub (by decide))
+    have F4 : Frame [workR W, ⟨D, n⟩] s₂.mem s₄.mem := by
+      rw [← r₃.mem]
+      refine e h₄.frame fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
+      · exact w (stW (by decide))
+      · exact w (Lay.wSub (by decide))
+    have F6 : Frame [workR W, ⟨D, n⟩] s₄.mem s₆.mem := by
+      rw [← r₅.mem]
+      refine e h₆.frame fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact w (stW (by decide))
+      · exact w (stW (by decide))
+      · exact w (Lay.wSub (by decide))
+    exact ((F1.trans F2).trans F4).trans F6
+  have rd₆' : s₆.rd = s.rd := by rw [rd₆, r₅.rd, rd₄, r₃.rd, h₂.rd, rd₁]
+  have wr₆' : s₆.wr = s.wr := by rw [wr₆, r₅.wr, wr₄, r₃.wr, h₂.wr, wr₁]
+  refine WP.seq (WP.mono (WP.with_rdwr (absCall2With_ok L (.inr rfl) h₆ (hgh s₆ h₆.call (stW (by decide)) (Lay.wSub (by decide)) rd₆' wr₆' FW)))
+    fun s₇ ⟨⟨h₇, hlt₇⟩, rd₇, wr₇⟩ => ?_)
   rw [Nat.zero_add, Nat.sub_zero] at h₇ hlt₇
   generalize hj : 16 * (n / 16) = j at h₇ hlt₇
   have hjn : j ≤ n := by omega
@@ -241,7 +281,7 @@ theorem run_ok (v : GcmImpl) (hMK : MulKey) {s s₁ : State} (hs : sealAArch64.p
         exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide)) h₁ h₂', m₁₀,
       slot_kept h₇.frame (slots_absFrame L) h₁ h₂', r₅.mem, slot₄ d h₁ h₂']
   -- The lengths block.
-  unfold Impl.AesGcm.AArch64.Fast.lensTag
+  unfold Impl.AesGcm.AArch64.Fast.lensTag Impl.AesGcm.AArch64.Fast.lensTagAt
   rw [WP.seq_iff]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -436,5 +476,11 @@ theorem run_ok (v : GcmImpl) (hMK : MulKey) {s s₁ : State} (hs : sealAArch64.p
     rfl
   rw [hdata, htag, Spec.Gcm.encryptWith, Proof.Gcm.fullTag_eq,
     List.take_of_length_le (by rw [Proof.Cmac.toBytes_length]), ← hJ0]
+
+theorem run_ok (v : GcmImpl) (hMK : MulKey) {extra : List Region} {s s₁ : State} (hs : sealPreX extra s)
+    (h₁ : SealEntry s s₁) (hx : ∀ r ∈ [Reg.x4, .x5, .x6, .x7], s₁.gpr r = s.gpr r)
+    (h12 : (s.gpr .x3).toNat = 12) (h16 : (s.gpr .x5).toNat ≤ 16) :
+    WP isa (Impl.AesGcm.AArch64.Fast.run v.callees) s₁ fun s' => GprAbi s s' ∧ sealAArch64.post s s' :=
+  runWith_ok v v.gh.fn hMK hs (fun _ _ _ _ _ hc _ _ _ _ _ => gh_call v.gh hc) h₁ hx h12 h16
 
 end VG.Proof.AesGcm.AArch64.Fast

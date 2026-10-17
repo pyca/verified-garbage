@@ -10550,7 +10550,7 @@ movabs r9, 478795927687268173
 mov QWORD PTR [r10+248], r9
 mov r14d, 3
 21:
-mov rdi, rbp
+mov rdi, r15
 mov rsi, r13
 mov rdx, r12
 mov rcx, rbx
@@ -10560,13 +10560,11 @@ vpbroadcastd ymm15, xmm15
 mov eax, -217976063
 vmovq xmm14, rax
 vpbroadcastd ymm14, xmm14
-mov eax, 88671561
-vmovq xmm12, rax
-vpbroadcastd ymm12, xmm12
 mov r8, rcx
 add r8, 3328
 mov ecx, 8
 22:
+vmovdqu ymm13, YMMWORD PTR [r8]
 vmovdqu ymm0, YMMWORD PTR [rsi]
 vmovdqu ymm1, YMMWORD PTR [rsi+32]
 vmovdqu ymm2, YMMWORD PTR [rsi+64]
@@ -10591,11 +10589,10 @@ vpshufd ymm8, ymm8, 216
 vpshufd ymm9, ymm9, 216
 vpunpckhqdq ymm10, ymm6, ymm7
 vpunpcklqdq ymm6, ymm6, ymm7
-vpunpckhqdq ymm11, ymm8, ymm9
+vpunpckhqdq ymm5, ymm8, ymm9
 vpunpcklqdq ymm8, ymm8, ymm9
 vpackssdw ymm6, ymm6, ymm8
-vpackssdw ymm10, ymm10, ymm11
-vmovdqu ymm13, YMMWORD PTR [r8]
+vpackssdw ymm10, ymm10, ymm5
 vmovdqa ymm1, ymm4
 vpmullw ymm2, ymm1, ymm10
 vpmullw ymm2, ymm2, ymm14
@@ -10626,270 +10623,153 @@ vpmulhw ymm4, ymm4, ymm6
 vpmulhw ymm3, ymm3, ymm15
 vpsubw ymm4, ymm4, ymm3
 vpaddw ymm2, ymm2, ymm4
-vpmullw ymm3, ymm1, ymm12
+vmovdqa ymm11, ymm1
+vmovdqa ymm12, ymm2
+vmovdqu ymm0, YMMWORD PTR [rsi+1024]
+vmovdqu ymm1, YMMWORD PTR [rsi+1056]
+vmovdqu ymm2, YMMWORD PTR [rsi+1088]
+vmovdqu ymm3, YMMWORD PTR [rsi+1120]
+vpshufd ymm0, ymm0, 216
+vpshufd ymm1, ymm1, 216
+vpshufd ymm2, ymm2, 216
+vpshufd ymm3, ymm3, 216
+vpunpckhqdq ymm4, ymm0, ymm1
+vpunpcklqdq ymm0, ymm0, ymm1
+vpunpckhqdq ymm5, ymm2, ymm3
+vpunpcklqdq ymm2, ymm2, ymm3
+vpackssdw ymm0, ymm0, ymm2
+vpackssdw ymm4, ymm4, ymm5
+vmovdqu ymm6, YMMWORD PTR [rdx+1024]
+vmovdqu ymm7, YMMWORD PTR [rdx+1056]
+vmovdqu ymm8, YMMWORD PTR [rdx+1088]
+vmovdqu ymm9, YMMWORD PTR [rdx+1120]
+vpshufd ymm6, ymm6, 216
+vpshufd ymm7, ymm7, 216
+vpshufd ymm8, ymm8, 216
+vpshufd ymm9, ymm9, 216
+vpunpckhqdq ymm10, ymm6, ymm7
+vpunpcklqdq ymm6, ymm6, ymm7
+vpunpckhqdq ymm5, ymm8, ymm9
+vpunpcklqdq ymm8, ymm8, ymm9
+vpackssdw ymm6, ymm6, ymm8
+vpackssdw ymm10, ymm10, ymm5
+vmovdqa ymm1, ymm4
+vpmullw ymm2, ymm1, ymm10
+vpmullw ymm2, ymm2, ymm14
+vpmulhw ymm1, ymm1, ymm10
+vpmulhw ymm2, ymm2, ymm15
+vpsubw ymm1, ymm1, ymm2
+vpmullw ymm2, ymm1, ymm13
+vpmullw ymm2, ymm2, ymm14
+vpmulhw ymm1, ymm1, ymm13
+vpmulhw ymm2, ymm2, ymm15
+vpsubw ymm1, ymm1, ymm2
+vmovdqa ymm2, ymm0
+vpmullw ymm3, ymm2, ymm6
 vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm1, ymm1, ymm12
-vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm1, ymm1, ymm3
-vpsraw ymm3, ymm1, 15
-vpand ymm3, ymm3, ymm15
-vpaddw ymm1, ymm1, ymm3
-vpmullw ymm3, ymm2, ymm12
-vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm2, ymm2, ymm12
+vpmulhw ymm2, ymm2, ymm6
 vpmulhw ymm3, ymm3, ymm15
 vpsubw ymm2, ymm2, ymm3
-vpsraw ymm3, ymm2, 15
-vpand ymm3, ymm3, ymm15
-vpaddw ymm2, ymm2, ymm3
-vmovdqu YMMWORD PTR [rdi], ymm1
-vmovdqu YMMWORD PTR [rdi+32], ymm2
-add rsi, 128
-add rdx, 128
-add rdi, 64
-add r8, 32
-sub rcx, 1
-jne 22b
-mov rdi, rbp
-mov rsi, r13
-add rsi, 1024
-mov rdx, r12
-add rdx, 1024
-mov rcx, rbx
-mov eax, 218172673
-vmovq xmm15, rax
-vpbroadcastd ymm15, xmm15
-mov eax, -217976063
-vmovq xmm14, rax
-vpbroadcastd ymm14, xmm14
+vpaddw ymm1, ymm1, ymm2
+vmovdqa ymm2, ymm0
+vpmullw ymm3, ymm2, ymm10
+vpmullw ymm3, ymm3, ymm14
+vpmulhw ymm2, ymm2, ymm10
+vpmulhw ymm3, ymm3, ymm15
+vpsubw ymm2, ymm2, ymm3
+vpmullw ymm3, ymm4, ymm6
+vpmullw ymm3, ymm3, ymm14
+vpmulhw ymm4, ymm4, ymm6
+vpmulhw ymm3, ymm3, ymm15
+vpsubw ymm4, ymm4, ymm3
+vpaddw ymm2, ymm2, ymm4
+vpaddw ymm11, ymm11, ymm1
+vpaddw ymm12, ymm12, ymm2
+vmovdqu ymm0, YMMWORD PTR [rsi+2048]
+vmovdqu ymm1, YMMWORD PTR [rsi+2080]
+vmovdqu ymm2, YMMWORD PTR [rsi+2112]
+vmovdqu ymm3, YMMWORD PTR [rsi+2144]
+vpshufd ymm0, ymm0, 216
+vpshufd ymm1, ymm1, 216
+vpshufd ymm2, ymm2, 216
+vpshufd ymm3, ymm3, 216
+vpunpckhqdq ymm4, ymm0, ymm1
+vpunpcklqdq ymm0, ymm0, ymm1
+vpunpckhqdq ymm5, ymm2, ymm3
+vpunpcklqdq ymm2, ymm2, ymm3
+vpackssdw ymm0, ymm0, ymm2
+vpackssdw ymm4, ymm4, ymm5
+vmovdqu ymm6, YMMWORD PTR [rdx+2048]
+vmovdqu ymm7, YMMWORD PTR [rdx+2080]
+vmovdqu ymm8, YMMWORD PTR [rdx+2112]
+vmovdqu ymm9, YMMWORD PTR [rdx+2144]
+vpshufd ymm6, ymm6, 216
+vpshufd ymm7, ymm7, 216
+vpshufd ymm8, ymm8, 216
+vpshufd ymm9, ymm9, 216
+vpunpckhqdq ymm10, ymm6, ymm7
+vpunpcklqdq ymm6, ymm6, ymm7
+vpunpckhqdq ymm5, ymm8, ymm9
+vpunpcklqdq ymm8, ymm8, ymm9
+vpackssdw ymm6, ymm6, ymm8
+vpackssdw ymm10, ymm10, ymm5
+vmovdqa ymm1, ymm4
+vpmullw ymm2, ymm1, ymm10
+vpmullw ymm2, ymm2, ymm14
+vpmulhw ymm1, ymm1, ymm10
+vpmulhw ymm2, ymm2, ymm15
+vpsubw ymm1, ymm1, ymm2
+vpmullw ymm2, ymm1, ymm13
+vpmullw ymm2, ymm2, ymm14
+vpmulhw ymm1, ymm1, ymm13
+vpmulhw ymm2, ymm2, ymm15
+vpsubw ymm1, ymm1, ymm2
+vmovdqa ymm2, ymm0
+vpmullw ymm3, ymm2, ymm6
+vpmullw ymm3, ymm3, ymm14
+vpmulhw ymm2, ymm2, ymm6
+vpmulhw ymm3, ymm3, ymm15
+vpsubw ymm2, ymm2, ymm3
+vpaddw ymm1, ymm1, ymm2
+vmovdqa ymm2, ymm0
+vpmullw ymm3, ymm2, ymm10
+vpmullw ymm3, ymm3, ymm14
+vpmulhw ymm2, ymm2, ymm10
+vpmulhw ymm3, ymm3, ymm15
+vpsubw ymm2, ymm2, ymm3
+vpmullw ymm3, ymm4, ymm6
+vpmullw ymm3, ymm3, ymm14
+vpmulhw ymm4, ymm4, ymm6
+vpmulhw ymm3, ymm3, ymm15
+vpsubw ymm4, ymm4, ymm3
+vpaddw ymm2, ymm2, ymm4
+vpaddw ymm11, ymm11, ymm1
+vpaddw ymm12, ymm12, ymm2
 mov eax, 88671561
-vmovq xmm12, rax
-vpbroadcastd ymm12, xmm12
-mov r8, rcx
-add r8, 3328
-mov ecx, 8
-23:
-vmovdqu ymm0, YMMWORD PTR [rsi]
-vmovdqu ymm1, YMMWORD PTR [rsi+32]
-vmovdqu ymm2, YMMWORD PTR [rsi+64]
-vmovdqu ymm3, YMMWORD PTR [rsi+96]
-vpshufd ymm0, ymm0, 216
-vpshufd ymm1, ymm1, 216
-vpshufd ymm2, ymm2, 216
-vpshufd ymm3, ymm3, 216
-vpunpckhqdq ymm4, ymm0, ymm1
-vpunpcklqdq ymm0, ymm0, ymm1
-vpunpckhqdq ymm5, ymm2, ymm3
-vpunpcklqdq ymm2, ymm2, ymm3
-vpackssdw ymm0, ymm0, ymm2
-vpackssdw ymm4, ymm4, ymm5
-vmovdqu ymm6, YMMWORD PTR [rdx]
-vmovdqu ymm7, YMMWORD PTR [rdx+32]
-vmovdqu ymm8, YMMWORD PTR [rdx+64]
-vmovdqu ymm9, YMMWORD PTR [rdx+96]
-vpshufd ymm6, ymm6, 216
-vpshufd ymm7, ymm7, 216
-vpshufd ymm8, ymm8, 216
-vpshufd ymm9, ymm9, 216
-vpunpckhqdq ymm10, ymm6, ymm7
-vpunpcklqdq ymm6, ymm6, ymm7
-vpunpckhqdq ymm11, ymm8, ymm9
-vpunpcklqdq ymm8, ymm8, ymm9
-vpackssdw ymm6, ymm6, ymm8
-vpackssdw ymm10, ymm10, ymm11
-vmovdqu ymm13, YMMWORD PTR [r8]
-vmovdqa ymm1, ymm4
-vpmullw ymm2, ymm1, ymm10
-vpmullw ymm2, ymm2, ymm14
-vpmulhw ymm1, ymm1, ymm10
-vpmulhw ymm2, ymm2, ymm15
-vpsubw ymm1, ymm1, ymm2
-vpmullw ymm2, ymm1, ymm13
-vpmullw ymm2, ymm2, ymm14
-vpmulhw ymm1, ymm1, ymm13
-vpmulhw ymm2, ymm2, ymm15
-vpsubw ymm1, ymm1, ymm2
-vmovdqa ymm2, ymm0
-vpmullw ymm3, ymm2, ymm6
+vmovq xmm13, rax
+vpbroadcastd ymm13, xmm13
+vpmullw ymm3, ymm11, ymm13
 vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm2, ymm2, ymm6
+vpmulhw ymm11, ymm11, ymm13
 vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm2, ymm2, ymm3
-vpaddw ymm1, ymm1, ymm2
-vmovdqa ymm2, ymm0
-vpmullw ymm3, ymm2, ymm10
-vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm2, ymm2, ymm10
-vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm2, ymm2, ymm3
-vpmullw ymm3, ymm4, ymm6
-vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm4, ymm4, ymm6
-vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm4, ymm4, ymm3
-vpaddw ymm2, ymm2, ymm4
-vpmullw ymm3, ymm1, ymm12
-vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm1, ymm1, ymm12
-vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm1, ymm1, ymm3
-vpsraw ymm3, ymm1, 15
+vpsubw ymm11, ymm11, ymm3
+vpsraw ymm3, ymm11, 15
 vpand ymm3, ymm3, ymm15
-vpaddw ymm1, ymm1, ymm3
-vpmullw ymm3, ymm2, ymm12
+vpaddw ymm11, ymm11, ymm3
+vpmullw ymm3, ymm12, ymm13
 vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm2, ymm2, ymm12
+vpmulhw ymm12, ymm12, ymm13
 vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm2, ymm2, ymm3
-vpsraw ymm3, ymm2, 15
+vpsubw ymm12, ymm12, ymm3
+vpsraw ymm3, ymm12, 15
 vpand ymm3, ymm3, ymm15
-vpaddw ymm2, ymm2, ymm3
-vmovdqu ymm5, YMMWORD PTR [rdi]
-vpaddw ymm1, ymm1, ymm5
-vpsubw ymm1, ymm1, ymm15
-vpsraw ymm3, ymm1, 15
-vpand ymm3, ymm3, ymm15
-vpaddw ymm1, ymm1, ymm3
-vmovdqu YMMWORD PTR [rdi], ymm1
-vmovdqu ymm5, YMMWORD PTR [rdi+32]
-vpaddw ymm2, ymm2, ymm5
-vpsubw ymm2, ymm2, ymm15
-vpsraw ymm3, ymm2, 15
-vpand ymm3, ymm3, ymm15
-vpaddw ymm2, ymm2, ymm3
-vmovdqu YMMWORD PTR [rdi+32], ymm2
-add rsi, 128
-add rdx, 128
-add rdi, 64
-add r8, 32
-sub rcx, 1
-jne 23b
-mov rdi, rbp
-mov rsi, r13
-add rsi, 2048
-mov rdx, r12
-add rdx, 2048
-mov rcx, rbx
-mov eax, 218172673
-vmovq xmm15, rax
-vpbroadcastd ymm15, xmm15
-mov eax, -217976063
-vmovq xmm14, rax
-vpbroadcastd ymm14, xmm14
-mov eax, 88671561
-vmovq xmm12, rax
-vpbroadcastd ymm12, xmm12
-mov r8, rcx
-add r8, 3328
-mov ecx, 8
-24:
-vmovdqu ymm0, YMMWORD PTR [rsi]
-vmovdqu ymm1, YMMWORD PTR [rsi+32]
-vmovdqu ymm2, YMMWORD PTR [rsi+64]
-vmovdqu ymm3, YMMWORD PTR [rsi+96]
-vpshufd ymm0, ymm0, 216
-vpshufd ymm1, ymm1, 216
-vpshufd ymm2, ymm2, 216
-vpshufd ymm3, ymm3, 216
-vpunpckhqdq ymm4, ymm0, ymm1
-vpunpcklqdq ymm0, ymm0, ymm1
-vpunpckhqdq ymm5, ymm2, ymm3
-vpunpcklqdq ymm2, ymm2, ymm3
-vpackssdw ymm0, ymm0, ymm2
-vpackssdw ymm4, ymm4, ymm5
-vmovdqu ymm6, YMMWORD PTR [rdx]
-vmovdqu ymm7, YMMWORD PTR [rdx+32]
-vmovdqu ymm8, YMMWORD PTR [rdx+64]
-vmovdqu ymm9, YMMWORD PTR [rdx+96]
-vpshufd ymm6, ymm6, 216
-vpshufd ymm7, ymm7, 216
-vpshufd ymm8, ymm8, 216
-vpshufd ymm9, ymm9, 216
-vpunpckhqdq ymm10, ymm6, ymm7
-vpunpcklqdq ymm6, ymm6, ymm7
-vpunpckhqdq ymm11, ymm8, ymm9
-vpunpcklqdq ymm8, ymm8, ymm9
-vpackssdw ymm6, ymm6, ymm8
-vpackssdw ymm10, ymm10, ymm11
-vmovdqu ymm13, YMMWORD PTR [r8]
-vmovdqa ymm1, ymm4
-vpmullw ymm2, ymm1, ymm10
-vpmullw ymm2, ymm2, ymm14
-vpmulhw ymm1, ymm1, ymm10
-vpmulhw ymm2, ymm2, ymm15
-vpsubw ymm1, ymm1, ymm2
-vpmullw ymm2, ymm1, ymm13
-vpmullw ymm2, ymm2, ymm14
-vpmulhw ymm1, ymm1, ymm13
-vpmulhw ymm2, ymm2, ymm15
-vpsubw ymm1, ymm1, ymm2
-vmovdqa ymm2, ymm0
-vpmullw ymm3, ymm2, ymm6
-vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm2, ymm2, ymm6
-vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm2, ymm2, ymm3
-vpaddw ymm1, ymm1, ymm2
-vmovdqa ymm2, ymm0
-vpmullw ymm3, ymm2, ymm10
-vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm2, ymm2, ymm10
-vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm2, ymm2, ymm3
-vpmullw ymm3, ymm4, ymm6
-vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm4, ymm4, ymm6
-vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm4, ymm4, ymm3
-vpaddw ymm2, ymm2, ymm4
-vpmullw ymm3, ymm1, ymm12
-vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm1, ymm1, ymm12
-vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm1, ymm1, ymm3
-vpsraw ymm3, ymm1, 15
-vpand ymm3, ymm3, ymm15
-vpaddw ymm1, ymm1, ymm3
-vpmullw ymm3, ymm2, ymm12
-vpmullw ymm3, ymm3, ymm14
-vpmulhw ymm2, ymm2, ymm12
-vpmulhw ymm3, ymm3, ymm15
-vpsubw ymm2, ymm2, ymm3
-vpsraw ymm3, ymm2, 15
-vpand ymm3, ymm3, ymm15
-vpaddw ymm2, ymm2, ymm3
-vmovdqu ymm5, YMMWORD PTR [rdi]
-vpaddw ymm1, ymm1, ymm5
-vpsubw ymm1, ymm1, ymm15
-vpsraw ymm3, ymm1, 15
-vpand ymm3, ymm3, ymm15
-vpaddw ymm1, ymm1, ymm3
-vmovdqu YMMWORD PTR [rdi], ymm1
-vmovdqu ymm5, YMMWORD PTR [rdi+32]
-vpaddw ymm2, ymm2, ymm5
-vpsubw ymm2, ymm2, ymm15
-vpsraw ymm3, ymm2, 15
-vpand ymm3, ymm3, ymm15
-vpaddw ymm2, ymm2, ymm3
-vmovdqu YMMWORD PTR [rdi+32], ymm2
-add rsi, 128
-add rdx, 128
-add rdi, 64
-add r8, 32
-sub rcx, 1
-jne 24b
-mov rdi, r15
-mov rsi, rbp
+vpaddw ymm12, ymm12, ymm3
 mov eax, 3329
 vmovq xmm15, rax
 vpbroadcastd ymm15, xmm15
 vpxor ymm14, ymm14, ymm14
-mov ecx, 8
-25:
-vmovdqu ymm8, YMMWORD PTR [rsi]
-vmovdqu ymm9, YMMWORD PTR [rsi+32]
-vpunpcklwd ymm10, ymm8, ymm9
-vpunpckhwd ymm11, ymm8, ymm9
+vpunpcklwd ymm10, ymm11, ymm12
+vpunpckhwd ymm9, ymm11, ymm12
 vmovdqu ymm0, YMMWORD PTR [rdi]
 vpunpcklwd ymm1, ymm10, ymm14
 vpaddd ymm0, ymm0, ymm1
@@ -10907,7 +10787,7 @@ vpand ymm1, ymm1, ymm15
 vpaddd ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rdi+32], ymm0
 vmovdqu ymm0, YMMWORD PTR [rdi+64]
-vpunpcklwd ymm1, ymm11, ymm14
+vpunpcklwd ymm1, ymm9, ymm14
 vpaddd ymm0, ymm0, ymm1
 vpsubd ymm0, ymm0, ymm15
 vpsrad ymm1, ymm0, 31
@@ -10915,17 +10795,25 @@ vpand ymm1, ymm1, ymm15
 vpaddd ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rdi+64], ymm0
 vmovdqu ymm0, YMMWORD PTR [rdi+96]
-vpunpckhwd ymm1, ymm11, ymm14
+vpunpckhwd ymm1, ymm9, ymm14
 vpaddd ymm0, ymm0, ymm1
 vpsubd ymm0, ymm0, ymm15
 vpsrad ymm1, ymm0, 31
 vpand ymm1, ymm1, ymm15
 vpaddd ymm0, ymm0, ymm1
 vmovdqu YMMWORD PTR [rdi+96], ymm0
-add rsi, 64
+mov eax, 218172673
+vmovq xmm15, rax
+vpbroadcastd ymm15, xmm15
+mov eax, -217976063
+vmovq xmm14, rax
+vpbroadcastd ymm14, xmm14
+add rsi, 128
+add rdx, 128
 add rdi, 128
+add r8, 32
 sub rcx, 1
-jne 25b
+jne 22b
 vzeroupper
 add r13, 3072
 add r15, 1024

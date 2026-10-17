@@ -108,7 +108,7 @@ theorem sieve_shape_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg
   simpa only [VG.Proof.Ffdh.ParameterCandidate.primeShape_sieve hp ho, anyPre] using
     sieve_ok hg hZ hTZ hw hw'
 
-private theorem oddTest_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+theorem oddTest_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z) (hw : 1 ≤ w) :
     WP isa (.block oddTest) s fun t =>
       t.zf = some (decide (wv s.mem B (slot w aN) w % 2 = 1)) ∧ t.mem = s.mem ∧ Keep [.rax] s t := by
