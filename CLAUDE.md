@@ -727,7 +727,7 @@ python3 ci/check_vectors.py
 python3 ci/check_arch_gates.py
 python3 ci/check_variants.py
 python3 ci/check_mcdt.py
-python3 ci/cpu_tests.py lint .github/workflows/ci.yml
+python3 ci/cpu_tests.py lint ci/rust_matrix.toml
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 WYCHEPROOF_ROOT=/path/to/wycheproof cargo test
 ```
