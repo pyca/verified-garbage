@@ -26,6 +26,15 @@ with the same Rust signature (`_shani`, `_avx2`, …).
   field multiplication: `vg_ed25519_verify_avx2_adx` is the variant both of
   `vg_ed25519_verify_avx2` for `vg_ed25519_verify_equation_adx` and of
   `vg_ed25519_verify_adx` for `vg_sha512_update_avx2`).
+  A caller that takes the choice among several functions as an argument
+  (e.g. RSA-OAEP's, calling the hash function its argument names) has
+  variants by *tiers* instead: each variant calls one implementation of
+  each function, the fastest its CPU features allow. Its variants then need
+  not have the names above: a variant `f_<s>` of a function `f` they call
+  reaches them if one of the caller's variants calls it, and none of them
+  that calls the baseline `f` has every CPU feature `f_<s>` needs (its
+  `<NAME>_FEATURES`, in the generated code), so no CPU that could run
+  `f_<s>` runs a variant calling the baseline.
   A caller generic over several interfaces qualifies each suffix with a tag
   for its interface (`Emit.qualifiedName` in `lean/VerifiedGarbage/TCB/Emit.lean`),
   since two interfaces may have variants with the same suffix: its variant
@@ -60,6 +69,11 @@ FN = re.compile(
     re.MULTILINE | re.DOTALL,
 )
 SYM = re.compile(r"\w+ = sym (?:\w+::)*(vg_\w+)")
+FEATURES = re.compile(
+    r"^pub\(crate\) const (VG_\w+)_FEATURES: crate::cpu::Features = "
+    r"crate::cpu::Features::of\(&\[(.*?)\]\);",
+    re.MULTILINE,
+)
 
 
 def functions():
@@ -70,6 +84,17 @@ def functions():
         for m in FN.finditer(path.read_text()):
             name, params, ret, body = m.groups()
             fns[name] = ((params, (ret or "").strip()), set(SYM.findall(body)))
+    return targets
+
+
+def features():
+    """For each target, the CPU features each generated function needs that
+    the target's baseline does not (none for most)."""
+    targets = {}
+    for path in sorted(ASM.glob("*/*.rs")):
+        feats = targets.setdefault(path.parent.name, {})
+        for m in FEATURES.finditer(path.read_text()):
+            feats[m.group(1).lower()] = frozenset(re.findall(r'"(\w+)"', m.group(2)))
     return targets
 
 
@@ -353,9 +378,10 @@ def production_rust(src):
         " ".join(strip_tests(toks[p])) for p in paths if p not in test_only
     )
 
-def check(targets, rust):
+def check(targets, rust, feats=None):
     errors = []
     for target, fns in sorted(targets.items()):
+        feat = (feats or {}).get(target, {})
         var = variants(fns)
         by_base = {}
         for v, (base, suffix) in var.items():
@@ -383,6 +409,18 @@ def check(targets, rust):
                 if r == root and qualified_extension(sufs, suffixes, suffix)
             ]
 
+        def tiered(caller, callee, variant):
+            """Whether the variants of `caller` choose `callee`'s implementation
+            by tiers of CPU features: one of them calls `variant`, and none
+            that calls the baseline `callee` has every feature `variant`
+            needs."""
+            need = feat.get(variant, frozenset())
+            root = chain(var, caller)[0]
+            family = [n for n in fns if chain(var, n)[0] == root]
+            return bool(need) and any(variant in fns[n][1] for n in family) and all(
+                not need <= feat.get(n, frozenset()) for n in family if callee in fns[n][1]
+            )
+
         def unneeded(name, suffix, seen=frozenset()):
             """Whether nothing would call a variant of `name` for `suffix`: the
             Rust code does not use `name`, and every function calling it has a
@@ -409,6 +447,8 @@ def check(targets, rust):
                         continue  # already the variant
                     variant = f"{callee}_{suffix}"
                     found = variants_for(caller, suffix)
+                    if tiered(caller, callee, variant):
+                        continue
                     if not found:
                         if unneeded(caller, suffix):
                             continue
@@ -443,7 +483,7 @@ def check(targets, rust):
 
 
 def main():
-    errors = check(functions(), production_rust(ROOT / "src"))
+    errors = check(functions(), production_rust(ROOT / "src"), features())
     for e in errors:
         print(e, file=sys.stderr)
     if errors:

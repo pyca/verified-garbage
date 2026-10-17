@@ -84,6 +84,16 @@ Lake rebuilds your changes and anything not yet cached.
   Rust code outside its tests (never emit one only a test calls). There are
   no exceptions: never add a caller that calls only the baseline
   implementation, or a way to excuse one.
+  A function that takes the choice among several functions as an argument
+  (a hash function, by its number in `Spec/HashId.lean`) calls the one
+  chosen through a dispatch on it (`Impl/Dispatch.lean`), and is generic over
+  *tiers* rather than over each function's variants: a tier
+  (`Variants/MdHashTier/<Target>/`, `Proof/Pbkdf2/Md/<Target>/Tier.lean`) is
+  the implementation of each of them that `src/hashes/` chooses on a kind of
+  CPU, so the function has one instance per tier, not per combination.
+  `ci/check_variants.py` accepts such a caller's variants for a variant
+  `f_<s>` of a function `f` they call if one of them calls `f_<s>` and none
+  that calls the baseline `f` has every CPU feature `f_<s>` needs.
   A variant is chosen by the CPU's features; only when no feature tells
   apart the CPUs it is faster on may the choice also depend on the
   compilation target (`vg_poly1305_update_neon`, faster on Apple's cores and
