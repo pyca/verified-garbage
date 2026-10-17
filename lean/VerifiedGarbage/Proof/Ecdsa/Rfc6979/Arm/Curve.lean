@@ -18,16 +18,16 @@ import VerifiedGarbage.Spec.X25519
 What the proof needs of the curve (`RfcCurve`), as on x86
 (`Proof/Ecdsa/Rfc6979/X86/Curve.lean`): the code of `vg_ecdsa_<curve>_sign`
 for curves of `n` 64-bit words (`Impl.Ecdsa.Arm.Cfg`), the instance of
-ECDSA it is, its sizes: `n` 3, 4, 6 or 8, the order `n` of its base point of
+ECDSA and of RFC 6979 it is, its sizes: `n` 3, 4, 6 or 8, the order `n` of its base point of
 exactly `64 n` bits and `2^(64 n) < 2 n` (so that `bits2octets` is one
 conditional subtraction), or, if `wide` (P-521), `n` 9, scalars of 66 bytes
 and the order of 521 bits; and what is proven of the code: that it meets the
 contract the proof of each curve is written against (`coreK`: P-256's
 `signArm`, P-384's and P-521's at the curve's sizes), in constant time, that
-it uses no stack, and, unless `wide`, the taint check of the block computing
-`bits2octets`, which holds `n`'s words as immediates. Each curve's file builds one, so that the heavy algebra of
-its proof stays out of the modules generic over the curve and the hash
-function.
+it uses no stack, and the taint checks of the parts of the RFC 6979 code
+that depend on the curve (`CurveBlks`). Each curve's file builds one, so
+that the heavy algebra of its proof stays out of the modules generic over
+the curve and the hash function.
 -/
 
 @[expose] public section
@@ -70,15 +70,36 @@ def coreK (E : Impl.Ecdsa.Arm.Cfg) : Contract Arm.isa where
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0
 
-/-- The code's blocks that depend on neither the hash function nor the
-functions it calls, for scalars of `E`. -/
-def cfgC (E : Impl.Ecdsa.Arm.Cfg) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
+/-- The taint check of `c`, from the taint `τ`. -/
+abbrev TaintC (τ : VG.Arm.Taint.T) (c : Prog isa) : Prop :=
+  ∃ hc, (VG.Taint.check taint τ c hc).isSome = true
+
+/-- The code for scalars of `E` whose signature drops `sh` bits of its
+digest, with no hash functions: its parts that depend on the curve alone. -/
+def cfgE (E : Impl.Ecdsa.Arm.Cfg) (sh : Nat) : Impl.Ecdsa.Rfc6979.Arm.Cfg where
   hs := []
   w := 2 * E.n - (if E.C.len = 28 then 1 else 0)
+  len := E.C.len
+  sh := sh
   n := E.C.n
   tries := 8
   coreN := ""
   coreC := .block []
+
+open Impl.Ecdsa.Rfc6979.Arm in
+/-- The taint checks of the parts of the code that depend on the curve (and
+on neither the hash function nor the functions the code calls): each
+addresses memory only from the registers that hold pointers (and, for the
+digest, `r10`, which holds its address). -/
+structure CurveBlks (c : Cfg) : Prop where
+  digest : TaintC (τr (.r10 :: ptrRegs)) c.digest
+  msg₀ : TaintC (τr ptrRegs) (.block (Cfg.msg c.len 0 true))
+  msg₁ : TaintC (τr ptrRegs) (.block (Cfg.msg c.len 1 true))
+  upd : TaintC (τr ptrRegs) (.block (Cfg.hmacArgs₂ (Impl.Pbkdf2.Stream.Arm.scrAt .r1 sMsg) (2 * c.len + 1)))
+  fin : TaintC (τr ptrRegs) (.block (Cfg.hmacArgs₃ (2 * c.len + 1) fK))
+  more : TaintC (τr ptrRegs) (.block (c.more 1))
+  conv : TaintC (τr ptrRegs) (if c.sh = 0 then .block [] else .block (c.conv fT c.sh))
+  coreArgs : TaintC (τr ptrRegs) (.block c.coreArgs)
 
 /-- A curve, for RFC 6979 on 32-bit ARM. -/
 structure RfcCurve where
@@ -114,9 +135,8 @@ structure RfcCurve where
   coreCT : ConstantTime isa (coreK E).pre (coreK E).pub coreC
   /-- It uses no stack. -/
   coreStack : VG.Arm.FrameStack.armStack coreC = 0
-  /-- Unless `wide`, `bits2octets` addresses memory only from the registers
-  that hold the pointers (the taint analysis, of the block for `n`'s words). -/
-  reduceT : wide = false → ∃ hc, (VG.Taint.check taint (τr ptrRegs) (.block (cfgC E).reduce) hc).isSome = true
+  /-- The taint checks of the code's parts for the curve. -/
+  blks : CurveBlks (cfgE E sh)
 
 namespace RfcCurve
 

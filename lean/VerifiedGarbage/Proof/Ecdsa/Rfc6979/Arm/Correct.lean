@@ -102,25 +102,40 @@ theorem kv0_eq' (P : RfcHash) (L : Lay P.F.H.D) (m₀ : Mem) :
       P.mac (P.mac (K₁ P L m₀) (V₁ P L m₀ ++ [BitVec.ofNat 8 1] ++ (dB P L m₀ ++ hSpec P L m₀))) (V₁ P L m₀)) :=
   kv0_eq P (length_bytesAt _ _ _) rfl rfl
 
-/-- Steps a–c: `h`, `core`'s digest, `V = 0x01…` and `K = 0x00…`. -/
-theorem stageB_ok (hL : L.Ok) (hk : HOk P L) {u : State} (hc : Ctx L g m₀ u) (h10 : u.gpr .r10 = L.dg)
-    {p : Prog isa} {Q : State → Prop} (hQ : ∀ u', Ctx L g m₀ u' → QB P L m₀ u' → WP isa p u' Q) :
-    WP isa (.seq (cfgOf P).digest (.seq (.block Cfg.initKV) p)) u Q := by
+/-- After steps a and b: `h`, and `core`'s digest. -/
+structure QA (P : RfcHash) (L : Lay P.F.H.D) (m₀ : Mem) (u : State) : Prop where
+  h : hOfP P L u.mem = hSpec P L m₀
+  dg : DgOk P L m₀ u.mem
+
+/-- Steps a and b: `h` and `core`'s digest. -/
+theorem stageA_ok (hL : L.Ok) (hk : HOk P L) {u : State} (hc : Ctx L g m₀ u) (h10 : u.gpr .r10 = L.dg) :
+    WP isa (cfgOf P).digest u fun u' => Ctx L g m₀ u' ∧ QA P L m₀ u' :=
+  WP.mono (digest_ok hL hk rfl hc h10) fun _ ⟨hc₁, _, hh₁, hdg₁⟩ => ⟨hc₁, hh₁, hdg₁⟩
+
+/-- Step c: `V = 0x01…` and `K = 0x00…`. -/
+theorem initKV_stage (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (hq : QA P L m₀ u) :
+    WP isa (.block Cfg.initKV) u fun u' => Ctx L g m₀ u' ∧ QB P L m₀ u' := by
   have hb := hL.B_fit
   have hQ' := P.wsizes
   have hD := P.sizes
-  refine WP.seq (WP.mono (digest_ok hL hk rfl hc h10) fun u₁ ⟨hc₁, _, hh₁, hdg₁⟩ => ?_)
-  refine WP.seq (WP.mono (initKV_ok hL hc₁) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
-    hQ u₂ hc₂ ⟨?_, hk₂ _ (by anums), hv₂ _ (by anums), ?_⟩)
-  · refine Eq.trans ?_ hh₁
+  refine WP.mono (initKV_ok hL hc) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
+    ⟨hc₂, ?_, hk₂ _ (by anums), hv₂ _ (by anums), ?_⟩
+  · refine Eq.trans ?_ hq.h
     exact bytesAt_frame hf₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)) (by omega)
-  · exact hdg₁.frame hf₂ fun r hr => by
+  · exact hq.dg.frame hf₂ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       unfold dgAddr; split
       · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
       · exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
+
+/-- Steps a–c: `h`, `core`'s digest, `V = 0x01…` and `K = 0x00…`. -/
+theorem stageB_ok (hL : L.Ok) (hk : HOk P L) {u : State} (hc : Ctx L g m₀ u) (h10 : u.gpr .r10 = L.dg)
+    {p : Prog isa} {Q : State → Prop} (hQ : ∀ u', Ctx L g m₀ u' → QB P L m₀ u' → WP isa p u' Q) :
+    WP isa (.seq (cfgOf P).digest (.seq (.block Cfg.initKV) p)) u Q :=
+  WP.seq (WP.mono (stageA_ok hL hk hc h10) fun _ ⟨hc₁, hq₁⟩ =>
+    WP.seq (WP.mono (initKV_stage hL hc₁ hq₁) fun u₂ ⟨hc₂, hq₂⟩ => hQ u₂ hc₂ hq₂))
 
 /-- `h` in the message, kept by the steps on `K` and `V`. -/
 theorem hOf_kvw (hL : L.Ok) {m m' : Mem} (hf : Frame (KVW L) m m') : hOfP P L m' = hOfP P L m := by
@@ -399,16 +414,19 @@ theorem anyResult_eq {s : State} (hD : (s.gpr .r3).toNat = P.F.H.D) (hk : (stack
   simp only [anyResult, Spec.Ecdsa.Rfc6979.Instance.anyResult, hk, P.hash, Option.map_some, hD, e₂]
   rfl
 
+/-- The digest's length is the hash function's. -/
+theorem digestLen_eq {s : State} (h : (rfcArm P.R.I 456).pre s) (hk : (stackArg s 1).toNat = P.k) :
+    (s.gpr .r3).toNat = P.F.H.D := by
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hm⟩ := h
+  obtain ⟨H, hH, hl⟩ := P.len
+  rw [← hl]; exact hm H (by rw [hk]; exact hH)
+
 /-- `vg_ecdsa_<curve>_rfc6979_sign` with the hash function `P` meets
 `rfcArm` and keeps the callee-saved registers and the stack pointer. -/
 theorem sign_ok {s : State} (h : (rfcArm P.R.I 456).pre s) (hk : (stackArg s 1).toNat = P.k) :
     WP isa (cfgOf P).sign s fun s' => ((∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp) ∧
       (rfcArm P.R.I 456).post s s' := by
-  have hD : (s.gpr .r3).toNat = P.F.H.D := by
-    have h' := h
-    obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hm⟩ := h'
-    obtain ⟨H, hH, hl⟩ := P.len
-    rw [← hl]; exact hm H (by rw [hk]; exact hH)
+  have hD := digestLen_eq h hk
   have hL := lay_ok' h hD
   have hO := hOk_lay hD hk
   have hb : 432 ≤ s.sp.toNat := by have h1 : 456 ≤ s.sp.toNat := hL.nB; omega
