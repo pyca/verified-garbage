@@ -59,7 +59,7 @@ abbrev pzF (P : EP) (τ : State) : Nat := pzJ h P τ (dbN h P)
 
 /-- `acc` after the scan. -/
 abbrev acc2 (P : EP) (τ : State) : BitVec 32 :=
-  (accW P τ ||| ((vzJ h P τ (dbN h P)).setWidth 32 ^^^ 1 ||| nfJ h P τ (dbN h P) >>> 31)) |||
+  (accW P τ ||| ((vzJ h P τ (dbN h P)).setWidth 32 ^^^ (1 : BitVec 32) ||| nfJ h P τ (dbN h P) >>> 31)) |||
     ((BitVec.ofNat 32 (dbN h P) - BitVec.ofNat 32 (pzF h P τ) - 1 ^^^ BitVec.ofNat 32 P.slt) &&& (anyW P - 1))
 
 /-- What the paths after the scan keep. -/
@@ -107,7 +107,6 @@ theorem pos_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       prun [posChk, st, r1, r2, r3, r4, r5, r6, r8, r12, slotAt hi (d := sAcc) (by decide),
         slotAt hi (d := sPos) (by decide), hc.st.inFr (d := sAcc) (n := 4) (by show sAcc + 4 ≤ frameBytes; decide),
         hc.st.inFr (d := sPos) (n := 4) (by show sPos + 4 ≤ frameBytes; decide), dpVal]
-      rfl
     refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
     have fr : Frame [slotR (P.lay h.D) sPos, slotR (P.lay h.D) sAcc] s.mem t.mem := by
       rw [m]

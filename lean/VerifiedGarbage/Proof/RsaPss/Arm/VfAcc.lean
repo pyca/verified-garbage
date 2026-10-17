@@ -164,7 +164,7 @@ abbrev U0 (P : EP) (τ s : State) : Prop :=
 /-- `DB = maskedDB ⊕ MGF1(H, dbLen)`, its top bits cleared. -/
 theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     VP (fun τ s => Ctx (P.lay h.D) P.scr τ s ∧ Ka h P τ s.mem ∧ ∀ i < P.K, s.mem (sa P.scr (oEm + i)) = emv P τ i)
-      (.seq (mgfXor h.H) (.seq (.block topSet) (.block topAnd))) (U0 h P) := by
+      (.seq (.seq (mgfXor h.H) (.block topSet)) (.block topAnd)) (U0 h P) := by
   obtain ⟨σ₀, hi₀⟩ := hP
   have hg := hi₀.geo
   obtain ⟨σ', ok⟩ := hg.ok
@@ -195,15 +195,15 @@ theorem unmask_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
     refine ⟨⟨slot_keep hf'' (fun r hr => (away r hr).1.1) hb.1, slot_keep hf'' (fun r hr => (away r hr).1.2.1) hb.2.1,
       slot_keep hf'' (fun r hr => (away r hr).1.2.2) hb.2.2.1, slot_keep hf'' (fun r hr => (away r hr).2.1) hb.2.2.2⟩,
       slot_keep hf'' (fun r hr => (away r hr).2.2) ha⟩
-  refine (mgf_vp h mp (dbv := fun τ i => emv P τ (lo P + i))).mono (fun τ s ⟨hc, hk, he⟩ => ⟨hc, hk,
-      fun i hi => by rw [Nat.add_assoc]; exact he _ (by omega),
-      fun i hi => by rw [Nat.add_assoc, Nat.add_assoc, he _ (by omega)]; simp [hi, Nat.add_assoc]⟩)
-      (fun _ _ h => h) |>.seq ?_
   refine VP.seq (G := fun τ s => (Ctx (P.lay h.D) P.scr τ s ∧ Ka h P τ s.mem ∧
         (∀ i < dbN h P, s.mem (sa P.scr (oEm + lo P + i)) = emv P τ (lo P + i) ^^^ (mkV h P τ).getD i 0) ∧
         ∀ i < h.D, s.mem (sa P.scr (oEm + lo P + dbN h P + i)) = (seedV h P τ).getD i 0) ∧
       s.gpr .r0 = P.scr + BitVec.ofNat 32 (oEm + lo P) ∧ s.gpr .r1 = cW ((n0 P).setWidth 32))
-    (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hd, hh⟩ => ?_)
+    ((mgf_vp h mp (dbv := fun τ i => emv P τ (lo P + i))).mono (fun τ s ⟨hc, hk, he⟩ => ⟨hc, hk,
+      fun i hi => by rw [Nat.add_assoc]; exact he _ (by omega),
+      fun i hi => by rw [Nat.add_assoc, Nat.add_assoc, he _ (by omega)]; simp [hi, Nat.add_assoc]⟩)
+      (fun _ _ h => h) |>.seq
+    (VP.blk (blkOk rfl) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm) fun τ s ⟨hc, hk, hd, hh⟩ => ?_))
     (VP.taint _ Sg.topAnd_cert (fun _ _ _ _ h₁ h₂ r hr => ?_) fun τ s ⟨⟨hc, hk, hd, hh⟩, r0, r1⟩ => ?_)
   · have hw : WP isa (.block topSet) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
         t.gpr .r0 = P.scr + BitVec.ofNat 32 (oEm + lo P) ∧ t.gpr .r1 = cW ((n0 P).setWidth 32) := by
