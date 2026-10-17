@@ -24,8 +24,8 @@ materialize_value Impl.Cast5.X86_64.decryptBlock
 
 /-! The functions. -/
 
-materialize_code Impl.Cast5.X86_64.cbcEncrypt
-materialize_code Impl.Cast5.X86_64.cbcDecrypt
+materialize_code Impl.Cast5.X86_64.cbcEncryptChained
+materialize_code Impl.Cast5.X86_64.cbcDecryptChained
 materialize_code Impl.Cast5.X86_64.ofb
 materialize_code Impl.Cast5.X86_64.cfbEncrypt
 materialize_code Impl.Cast5.X86_64.cfbDecrypt

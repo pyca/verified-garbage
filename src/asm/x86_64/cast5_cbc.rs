@@ -2,22 +2,24 @@
 //! Verified `cast5_cbc` functions for `x86_64`.
 #![allow(dead_code)]
 
-/// CAST5-CBC encryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on return. `CIPH_K` is CAST-128 encryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is added.
+/// CAST5-CBC encryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is CAST-128 encryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is added.
 ///
-/// Contract: `VG.Spec.Cast5.cbcEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Cast5.cbcEncryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// Baseline x86-64: one block at a time, through the generic CBC of `Impl/Modes/X86_64/` over CAST5's ECB block code (inlined): each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, so no secret is an address. The subkeys are copied into the working space once per call; the number of rounds stays in `rsi`; the 240-byte working space on the stack is zeroed on return.
+///
+/// The IV's address is kept in `xmm15`, and after the last block the core's buffer, the last ciphertext block, goes back to the IV.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_cast5_cbc_encrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cast5_cbc_encrypt_chained(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov r9, rsp
@@ -29,6 +31,7 @@ mov QWORD PTR [r9+184], r12
 mov QWORD PTR [r9+192], r13
 mov QWORD PTR [r9+200], r14
 mov QWORD PTR [r9+208], r15
+movq xmm15, rdx
 test r8, r8
 je 20f
 mov rax, QWORD PTR [rcx]
@@ -553,6 +556,9 @@ jmp 213f
 add r12, 8
 test r13, r13
 jne 24b
+movq rax, xmm15
+mov rbp, QWORD PTR [r9+16]
+mov QWORD PTR [rax], rbp
 jmp 23f
 22:
 23:
@@ -599,22 +605,24 @@ ret
     )
 }
 
-/// CAST5-CBC decryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, which is only read: a further call continues the message from `Cₙ`, the last block at `data` on entry. `CIPH⁻¹_K` is CAST-128 decryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is removed.
+/// CAST5-CBC decryption (NIST SP 800-38A §6.2, RFC 2144 §2) of whole blocks, in place: replaces the `n` 8-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is CAST-128 decryption with `rounds` rounds under the subkeys written by `vg_cast5_expand_key`. No padding is removed.
 ///
-/// Contract: `VG.Spec.Cast5.cbcDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
+/// Contract: `VG.Spec.Cast5.cbcDecryptChainedContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the subkeys, the chaining value or the data.
 ///
 /// Baseline x86-64: one block at a time, through the generic CBC of `Impl/Modes/X86_64/` over CAST5's ECB block code (inlined): each S-box lookup is a scan of the whole table in the static `VG_CAST5_S1234`, so no secret is an address. The subkeys are copied into the working space once per call; the number of rounds stays in `rsi`; the 240-byte working space on the stack is zeroed on return.
+///
+/// The last ciphertext block is copied to the IV before any block is decrypted.
 ///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 128 bytes.
-/// * `iv` must be valid for reads of 8 bytes.
+/// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `rounds` must be 12 (for a key of up to 10 bytes) or 16 (for a longer one).
-/// * `data` must not overlap `schedule` or `iv` (distinct Rust objects never do).
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv` and `data` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_cast5_cbc_decrypt(schedule: *const [u8; 128], rounds: usize, iv: *const [u8; 8], data: *mut [u8; 8], n: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_cast5_cbc_decrypt_chained(schedule: *const [u8; 128], rounds: usize, iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
     core::arch::naked_asm!(
         r"lea rsp, [rsp-240]
 mov r9, rsp
@@ -628,6 +636,17 @@ mov QWORD PTR [r9+200], r14
 mov QWORD PTR [r9+208], r15
 mov rax, QWORD PTR [rdx]
 mov QWORD PTR [r9+216], rax
+test r8, r8
+je 20f
+mov rax, r8
+sub rax, 1
+shl rax, 3
+add rax, rcx
+mov rbx, QWORD PTR [rax]
+mov QWORD PTR [rdx], rbx
+jmp 21f
+20:
+21:
 mov r12, rcx
 mov r13, r8
 mov rax, QWORD PTR [rdi]
@@ -663,26 +682,26 @@ mov QWORD PTR [r9+152], rax
 mov rax, QWORD PTR [rdi+120]
 mov QWORD PTR [r9+160], rax
 test r13, r13
-je 20f
-22:
+je 22f
+24:
 movabs rcx, 1
 cmp r13, 1
-jb 23f
-jmp 24f
-23:
+jb 25f
+jmp 26f
+25:
 mov rcx, r13
-24:
+26:
 mov rax, r9
 add rax, 16
 mov rbx, r12
 mov r10, rcx
-25:
+27:
 mov rbp, QWORD PTR [rbx]
 mov QWORD PTR [rax], rbp
 add rax, 8
 add rbx, 8
 sub rcx, 1
-jne 25b
+jne 27b
 movq rcx, xmm15
 mov r8, r9
 mov QWORD PTR [r8+24], r12
@@ -703,120 +722,11 @@ mov r13, rsi
 shr r13, 2
 add r13, 1
 cmp rsi, 16
-je 26f
-jmp 27f
-26:
+je 28f
+jmp 29f
+28:
 mov eax, DWORD PTR [r12]
 add eax, ebp
-mov r9d, DWORD PTR [r12+64]
-mov r14d, r9d
-and r14d, 1
-sub r14d, 1
-mov r15d, eax
-ror r15d, 31
-xor eax, r15d
-and eax, r14d
-xor eax, r15d
-shr r9d, 1
-mov r14d, r9d
-and r14d, 1
-sub r14d, 1
-mov r15d, eax
-ror r15d, 30
-xor eax, r15d
-and eax, r14d
-xor eax, r15d
-shr r9d, 1
-mov r14d, r9d
-and r14d, 1
-sub r14d, 1
-mov r15d, eax
-ror r15d, 28
-xor eax, r15d
-and eax, r14d
-xor eax, r15d
-shr r9d, 1
-mov r14d, r9d
-and r14d, 1
-sub r14d, 1
-mov r15d, eax
-ror r15d, 24
-xor eax, r15d
-and eax, r14d
-xor eax, r15d
-shr r9d, 1
-mov r14d, r9d
-and r14d, 1
-sub r14d, 1
-mov r15d, eax
-ror r15d, 16
-xor eax, r15d
-and eax, r14d
-xor eax, r15d
-mov r9d, eax
-and r9d, 255
-mov r14d, eax
-shr r14d, 8
-and r14d, 255
-shl r14, 32
-or r9, r14
-movq xmm0, r9
-mov r9d, eax
-shr r9d, 16
-and r9d, 255
-mov r14d, eax
-shr r14d, 24
-shl r14, 32
-or r9, r14
-movq xmm4, r9
-punpcklqdq xmm0, xmm4
-lea r10, [rip + {VG_CAST5_S1234}]
-mov r11d, 64
-pxor xmm1, xmm1
-pxor xmm2, xmm2
-pcmpeqd xmm3, xmm3
-psrld xmm3, 31
-28:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-add r10, 64
-sub r11, 1
-jne 28b
-movdqu XMMWORD PTR [r8], xmm1
-mov eax, DWORD PTR [r8+12]
-xor eax, DWORD PTR [r8+8]
-sub eax, DWORD PTR [r8+4]
-add eax, DWORD PTR [r8]
-xor eax, ebx
-mov ebx, ebp
-mov ebp, eax
-sub r12, 4
-27:
-29:
-mov eax, DWORD PTR [r12]
-sub eax, ebp
 mov r9d, DWORD PTR [r12+64]
 mov r14d, r9d
 and r14d, 1
@@ -915,122 +825,17 @@ sub r11, 1
 jne 210b
 movdqu XMMWORD PTR [r8], xmm1
 mov eax, DWORD PTR [r8+12]
-add eax, DWORD PTR [r8+8]
-xor eax, DWORD PTR [r8+4]
-sub eax, DWORD PTR [r8]
+xor eax, DWORD PTR [r8+8]
+sub eax, DWORD PTR [r8+4]
+add eax, DWORD PTR [r8]
 xor eax, ebx
 mov ebx, ebp
 mov ebp, eax
 sub r12, 4
-mov eax, DWORD PTR [r12]
-xor eax, ebp
-mov r9d, DWORD PTR [r12+64]
-mov r14d, r9d
-and r14d, 1
-sub r14d, 1
-mov r15d, eax
-ror r15d, 31
-xor eax, r15d
-and eax, r14d
-xor eax, r15d
-shr r9d, 1
-mov r14d, r9d
-and r14d, 1
-sub r14d, 1
-mov r15d, eax
-ror r15d, 30
-xor eax, r15d
-and eax, r14d
-xor eax, r15d
-shr r9d, 1
-mov r14d, r9d
-and r14d, 1
-sub r14d, 1
-mov r15d, eax
-ror r15d, 28
-xor eax, r15d
-and eax, r14d
-xor eax, r15d
-shr r9d, 1
-mov r14d, r9d
-and r14d, 1
-sub r14d, 1
-mov r15d, eax
-ror r15d, 24
-xor eax, r15d
-and eax, r14d
-xor eax, r15d
-shr r9d, 1
-mov r14d, r9d
-and r14d, 1
-sub r14d, 1
-mov r15d, eax
-ror r15d, 16
-xor eax, r15d
-and eax, r14d
-xor eax, r15d
-mov r9d, eax
-and r9d, 255
-mov r14d, eax
-shr r14d, 8
-and r14d, 255
-shl r14, 32
-or r9, r14
-movq xmm0, r9
-mov r9d, eax
-shr r9d, 16
-and r9d, 255
-mov r14d, eax
-shr r14d, 24
-shl r14, 32
-or r9, r14
-movq xmm4, r9
-punpcklqdq xmm0, xmm4
-lea r10, [rip + {VG_CAST5_S1234}]
-mov r11d, 64
-pxor xmm1, xmm1
-pxor xmm2, xmm2
-pcmpeqd xmm3, xmm3
-psrld xmm3, 31
+29:
 211:
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+16]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+32]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-movdqa xmm4, xmm0
-pcmpeqd xmm4, xmm2
-movdqu xmm5, XMMWORD PTR [r10+48]
-pand xmm5, xmm4
-por xmm1, xmm5
-paddd xmm2, xmm3
-add r10, 64
-sub r11, 1
-jne 211b
-movdqu XMMWORD PTR [r8], xmm1
-mov eax, DWORD PTR [r8+12]
-sub eax, DWORD PTR [r8+8]
-add eax, DWORD PTR [r8+4]
-xor eax, DWORD PTR [r8]
-xor eax, ebx
-mov ebx, ebp
-mov ebp, eax
-sub r12, 4
 mov eax, DWORD PTR [r12]
-add eax, ebp
+sub eax, ebp
 mov r9d, DWORD PTR [r12+64]
 mov r14d, r9d
 and r14d, 1
@@ -1129,6 +934,220 @@ sub r11, 1
 jne 212b
 movdqu XMMWORD PTR [r8], xmm1
 mov eax, DWORD PTR [r8+12]
+add eax, DWORD PTR [r8+8]
+xor eax, DWORD PTR [r8+4]
+sub eax, DWORD PTR [r8]
+xor eax, ebx
+mov ebx, ebp
+mov ebp, eax
+sub r12, 4
+mov eax, DWORD PTR [r12]
+xor eax, ebp
+mov r9d, DWORD PTR [r12+64]
+mov r14d, r9d
+and r14d, 1
+sub r14d, 1
+mov r15d, eax
+ror r15d, 31
+xor eax, r15d
+and eax, r14d
+xor eax, r15d
+shr r9d, 1
+mov r14d, r9d
+and r14d, 1
+sub r14d, 1
+mov r15d, eax
+ror r15d, 30
+xor eax, r15d
+and eax, r14d
+xor eax, r15d
+shr r9d, 1
+mov r14d, r9d
+and r14d, 1
+sub r14d, 1
+mov r15d, eax
+ror r15d, 28
+xor eax, r15d
+and eax, r14d
+xor eax, r15d
+shr r9d, 1
+mov r14d, r9d
+and r14d, 1
+sub r14d, 1
+mov r15d, eax
+ror r15d, 24
+xor eax, r15d
+and eax, r14d
+xor eax, r15d
+shr r9d, 1
+mov r14d, r9d
+and r14d, 1
+sub r14d, 1
+mov r15d, eax
+ror r15d, 16
+xor eax, r15d
+and eax, r14d
+xor eax, r15d
+mov r9d, eax
+and r9d, 255
+mov r14d, eax
+shr r14d, 8
+and r14d, 255
+shl r14, 32
+or r9, r14
+movq xmm0, r9
+mov r9d, eax
+shr r9d, 16
+and r9d, 255
+mov r14d, eax
+shr r14d, 24
+shl r14, 32
+or r9, r14
+movq xmm4, r9
+punpcklqdq xmm0, xmm4
+lea r10, [rip + {VG_CAST5_S1234}]
+mov r11d, 64
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pcmpeqd xmm3, xmm3
+psrld xmm3, 31
+213:
+movdqa xmm4, xmm0
+pcmpeqd xmm4, xmm2
+movdqu xmm5, XMMWORD PTR [r10]
+pand xmm5, xmm4
+por xmm1, xmm5
+paddd xmm2, xmm3
+movdqa xmm4, xmm0
+pcmpeqd xmm4, xmm2
+movdqu xmm5, XMMWORD PTR [r10+16]
+pand xmm5, xmm4
+por xmm1, xmm5
+paddd xmm2, xmm3
+movdqa xmm4, xmm0
+pcmpeqd xmm4, xmm2
+movdqu xmm5, XMMWORD PTR [r10+32]
+pand xmm5, xmm4
+por xmm1, xmm5
+paddd xmm2, xmm3
+movdqa xmm4, xmm0
+pcmpeqd xmm4, xmm2
+movdqu xmm5, XMMWORD PTR [r10+48]
+pand xmm5, xmm4
+por xmm1, xmm5
+paddd xmm2, xmm3
+add r10, 64
+sub r11, 1
+jne 213b
+movdqu XMMWORD PTR [r8], xmm1
+mov eax, DWORD PTR [r8+12]
+sub eax, DWORD PTR [r8+8]
+add eax, DWORD PTR [r8+4]
+xor eax, DWORD PTR [r8]
+xor eax, ebx
+mov ebx, ebp
+mov ebp, eax
+sub r12, 4
+mov eax, DWORD PTR [r12]
+add eax, ebp
+mov r9d, DWORD PTR [r12+64]
+mov r14d, r9d
+and r14d, 1
+sub r14d, 1
+mov r15d, eax
+ror r15d, 31
+xor eax, r15d
+and eax, r14d
+xor eax, r15d
+shr r9d, 1
+mov r14d, r9d
+and r14d, 1
+sub r14d, 1
+mov r15d, eax
+ror r15d, 30
+xor eax, r15d
+and eax, r14d
+xor eax, r15d
+shr r9d, 1
+mov r14d, r9d
+and r14d, 1
+sub r14d, 1
+mov r15d, eax
+ror r15d, 28
+xor eax, r15d
+and eax, r14d
+xor eax, r15d
+shr r9d, 1
+mov r14d, r9d
+and r14d, 1
+sub r14d, 1
+mov r15d, eax
+ror r15d, 24
+xor eax, r15d
+and eax, r14d
+xor eax, r15d
+shr r9d, 1
+mov r14d, r9d
+and r14d, 1
+sub r14d, 1
+mov r15d, eax
+ror r15d, 16
+xor eax, r15d
+and eax, r14d
+xor eax, r15d
+mov r9d, eax
+and r9d, 255
+mov r14d, eax
+shr r14d, 8
+and r14d, 255
+shl r14, 32
+or r9, r14
+movq xmm0, r9
+mov r9d, eax
+shr r9d, 16
+and r9d, 255
+mov r14d, eax
+shr r14d, 24
+shl r14, 32
+or r9, r14
+movq xmm4, r9
+punpcklqdq xmm0, xmm4
+lea r10, [rip + {VG_CAST5_S1234}]
+mov r11d, 64
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pcmpeqd xmm3, xmm3
+psrld xmm3, 31
+214:
+movdqa xmm4, xmm0
+pcmpeqd xmm4, xmm2
+movdqu xmm5, XMMWORD PTR [r10]
+pand xmm5, xmm4
+por xmm1, xmm5
+paddd xmm2, xmm3
+movdqa xmm4, xmm0
+pcmpeqd xmm4, xmm2
+movdqu xmm5, XMMWORD PTR [r10+16]
+pand xmm5, xmm4
+por xmm1, xmm5
+paddd xmm2, xmm3
+movdqa xmm4, xmm0
+pcmpeqd xmm4, xmm2
+movdqu xmm5, XMMWORD PTR [r10+32]
+pand xmm5, xmm4
+por xmm1, xmm5
+paddd xmm2, xmm3
+movdqa xmm4, xmm0
+pcmpeqd xmm4, xmm2
+movdqu xmm5, XMMWORD PTR [r10+48]
+pand xmm5, xmm4
+por xmm1, xmm5
+paddd xmm2, xmm3
+add r10, 64
+sub r11, 1
+jne 214b
+movdqu XMMWORD PTR [r8], xmm1
+mov eax, DWORD PTR [r8+12]
 xor eax, DWORD PTR [r8+8]
 sub eax, DWORD PTR [r8+4]
 add eax, DWORD PTR [r8]
@@ -1137,7 +1156,7 @@ mov ebx, ebp
 mov ebp, eax
 sub r12, 4
 sub r13, 1
-jne 29b
+jne 211b
 bswap ebp
 mov DWORD PTR [rdx], ebp
 bswap ebx
@@ -1151,16 +1170,16 @@ add rcx, 1
 movq xmm15, rcx
 movabs rcx, 1
 cmp r13, 1
-jb 213f
-jmp 214f
-213:
+jb 215f
+jmp 216f
+215:
 mov rcx, r13
-214:
+216:
 mov rax, r9
 add rax, 16
 mov rbx, r12
 mov r10, rcx
-215:
+217:
 mov rbp, QWORD PTR [rax]
 xor rbp, QWORD PTR [r9+216]
 mov QWORD PTR [rax], rbp
@@ -1171,13 +1190,13 @@ mov QWORD PTR [rbx], rbp
 add rax, 8
 add rbx, 8
 sub rcx, 1
-jne 215b
+jne 217b
 mov r12, rbx
 sub r13, r10
-jne 22b
-jmp 21f
-20:
-21:
+jne 24b
+jmp 23f
+22:
+23:
 mov rbx, QWORD PTR [r9+168]
 mov rbp, QWORD PTR [r9+176]
 mov r12, QWORD PTR [r9+184]
