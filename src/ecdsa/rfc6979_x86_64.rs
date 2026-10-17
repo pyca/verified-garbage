@@ -432,18 +432,9 @@ mod tests {
             assert!(f.contains(p384_chosen(f).1), "p384 {bits:#b}");
             assert!(f.contains(p521_chosen(f).1), "p521 {bits:#b}");
             assert!(f.contains(secp256k1_chosen(f).1), "secp256k1 {bits:#b}");
-            assert!(
-                f.contains(brainpoolp256r1_chosen(f).1),
-                "brainpoolp256r1 {bits:#b}"
-            );
-            assert!(
-                f.contains(brainpoolp384r1_chosen(f).1),
-                "brainpoolp384r1 {bits:#b}"
-            );
-            assert!(
-                f.contains(brainpoolp512r1_chosen(f).1),
-                "brainpoolp512r1 {bits:#b}"
-            );
+            assert!(f.contains(brainpoolp256r1_chosen(f).1), "bp256 {bits:#b}");
+            assert!(f.contains(brainpoolp384r1_chosen(f).1), "bp384 {bits:#b}");
+            assert!(f.contains(brainpoolp512r1_chosen(f).1), "bp512 {bits:#b}");
         }
     }
 }

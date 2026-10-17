@@ -52,6 +52,32 @@ mod x86_64 {
         ) -> Result<(), Error>;
     }
 
+    /// A hash function, by the name RFC 6979 gives it.
+    #[derive(Clone, Copy)]
+    enum Hash {
+        Sha1,
+        Sha224,
+        Sha256,
+        Sha384,
+        Sha512,
+        Sha512_224,
+        Sha512_256,
+    }
+
+    /// The hash function named `name`.
+    fn hash(name: &str) -> Hash {
+        let named = [
+            ("SHA-1", Hash::Sha1),
+            ("SHA-224", Hash::Sha224),
+            ("SHA-256", Hash::Sha256),
+            ("SHA-384", Hash::Sha384),
+            ("SHA-512", Hash::Sha512),
+            ("SHA-512/224", Hash::Sha512_224),
+            ("SHA-512/256", Hash::Sha512_256),
+        ];
+        named.iter().find(|(n, _)| *n == name).unwrap().1
+    }
+
     fn sign_one<C, H>(key: &SigningKey<C>, message: &[u8]) -> Result<C::Signature, Error>
     where
         C: Curve<Signature: PartialEq + core::fmt::Debug>,
@@ -83,34 +109,32 @@ mod x86_64 {
         Sha512_224: SignatureHash<C>,
         Sha512_256: SignatureHash<C>,
     {
-        fn sign(key: &SigningKey<C>, hash: &str, message: &[u8]) -> Result<C::Signature, Error> {
-            match hash {
-                "SHA-1" => sign_one::<C, Sha1>(key, message),
-                "SHA-224" => sign_one::<C, Sha224>(key, message),
-                "SHA-256" => sign_one::<C, Sha256>(key, message),
-                "SHA-384" => sign_one::<C, Sha384>(key, message),
-                "SHA-512" => sign_one::<C, Sha512>(key, message),
-                "SHA-512/224" => sign_one::<C, Sha512_224>(key, message),
-                "SHA-512/256" => sign_one::<C, Sha512_256>(key, message),
-                _ => unreachable!("{hash}"),
+        fn sign(key: &SigningKey<C>, name: &str, message: &[u8]) -> Result<C::Signature, Error> {
+            match hash(name) {
+                Hash::Sha1 => sign_one::<C, Sha1>(key, message),
+                Hash::Sha224 => sign_one::<C, Sha224>(key, message),
+                Hash::Sha256 => sign_one::<C, Sha256>(key, message),
+                Hash::Sha384 => sign_one::<C, Sha384>(key, message),
+                Hash::Sha512 => sign_one::<C, Sha512>(key, message),
+                Hash::Sha512_224 => sign_one::<C, Sha512_224>(key, message),
+                Hash::Sha512_256 => sign_one::<C, Sha512_256>(key, message),
             }
         }
 
         fn verify(
             key: &VerifyingKey<C>,
-            hash: &str,
+            name: &str,
             message: &[u8],
             rs: &C::Signature,
         ) -> Result<(), Error> {
-            match hash {
-                "SHA-1" => verify_one::<C, Sha1>(key, message, rs),
-                "SHA-224" => verify_one::<C, Sha224>(key, message, rs),
-                "SHA-256" => verify_one::<C, Sha256>(key, message, rs),
-                "SHA-384" => verify_one::<C, Sha384>(key, message, rs),
-                "SHA-512" => verify_one::<C, Sha512>(key, message, rs),
-                "SHA-512/224" => verify_one::<C, Sha512_224>(key, message, rs),
-                "SHA-512/256" => verify_one::<C, Sha512_256>(key, message, rs),
-                _ => unreachable!("{hash}"),
+            match hash(name) {
+                Hash::Sha1 => verify_one::<C, Sha1>(key, message, rs),
+                Hash::Sha224 => verify_one::<C, Sha224>(key, message, rs),
+                Hash::Sha256 => verify_one::<C, Sha256>(key, message, rs),
+                Hash::Sha384 => verify_one::<C, Sha384>(key, message, rs),
+                Hash::Sha512 => verify_one::<C, Sha512>(key, message, rs),
+                Hash::Sha512_224 => verify_one::<C, Sha512_224>(key, message, rs),
+                Hash::Sha512_256 => verify_one::<C, Sha512_256>(key, message, rs),
             }
         }
     }
