@@ -26,7 +26,7 @@ def lazyLoads (o : Nat) : List Instr :=
 
 /-- The mask `-T_w` in `r13`; no borrow; `r14 = 0`. -/
 def lazyMask : List Instr :=
-  [.mov32 .r13 (.imm 0), .alu .sub .r13 (.mem (ix .r8 .r12)), .mov32 .rbp (.imm 0), .mov .r14 (.imm 0)]
+  [.mov32 .r13 (.imm 0), .alu .sub .r13 (.mem (ix .r8 .r12)), .mov32 .rbp (.imm 0), .mov .r14 (.imm 0), .align 5]
 
 /-- The registers holding the masked words of a group. -/
 def lazyReg : Nat → Reg

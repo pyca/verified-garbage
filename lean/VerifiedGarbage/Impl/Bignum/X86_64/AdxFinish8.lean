@@ -33,7 +33,7 @@ def subWord8 (k : Nat) : List Instr :=
 
 /-- `subMod`'s result, eight words per iteration. -/
 def subMod8 : Prog isa :=
-  .seq (.block [.mov32 .rbp (.imm 0), .mov .r14 (.imm 0)])
+  .seq (.block [.mov32 .rbp (.imm 0), .mov .r14 (.imm 0), .align 5])
     (.seq (.loop (.block ([cfFromRbp] ++ (List.range 8).flatMap subWord8 ++
         [cfToRbp, .alu .add .r14 (.imm 8), .alu .cmp .r14 (.reg .r12)])) .ne)
       (.block [.mov .rax (.mem (ix .r8 .r12)), cfFromRbp, .alu .sbb .rax (.imm 0), cfToRbp]))
@@ -46,7 +46,7 @@ def selWord8 (k : Nat) : List Instr :=
 
 /-- `selectAcc`'s result, eight words per iteration. -/
 def select8 : Prog isa :=
-  .seq (.block [.mov .r14 (.imm 0)])
+  .seq (.block [.mov .r14 (.imm 0), .align 5])
     (.loop (.block ([cfFromRbp] ++ (List.range 8).flatMap selWord8 ++
       [cfToRbp, .alu .add .r14 (.imm 8), .alu .cmp .r14 (.reg .r12)])) .ne)
 

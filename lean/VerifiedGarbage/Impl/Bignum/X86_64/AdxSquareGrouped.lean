@@ -52,7 +52,7 @@ def group8 : Prog isa := seqs [step 0 initialPair, step 1 pair, step 2 pair, ste
   .block (close ++ ([.alu .add .rbp (.imm 8), .alu .add .r14 (.imm 16), .alu .cmp .rbp (.reg .r10)] : List Instr))]
 
 def diagonal8 : Prog isa :=
-  .seq (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0)])
+  .seq (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0), .align 6])
     (.loop group8 .ne)
 
 end VG.Impl.Bignum.X86_64.AdxSquareGrouped
