@@ -16,10 +16,12 @@ public import VerifiedGarbage.TCB.Artifact
   `(p, q, d)` (`Rsa.crtKey`), for `vg_rsa_private_crt`;
 * `vg_rsa_recover_primes`: the prime factors `(p, q)` of the modulus of the
   private key `(n, e, d)` (`Rsa.primesKey`), for `vg_rsa_crt_values`;
-* `vg_rsa_public_checked` and `vg_rsa_public_precomputed_checked`: RSAEP
-  and RSAVP1 (`Rsa.publicOp`) within BoringSSL's limits on the public
-  exponent (`Rsa.publicOpChecked`), the second from the values
-  `vg_rsa_public_precompute` computed, without computing them again;
+* `vg_rsa_public_precomputed_checked`: RSAEP and RSAVP1 (`Rsa.publicOp`)
+  within BoringSSL's limits on the public exponent (`Rsa.publicOpChecked`),
+  from the values `vg_rsa_public_precompute` computed, without computing
+  them again (`publicCheckedContract` states the same operation given the
+  modulus itself, for the code of the RSA padding functions that call it;
+  it is not a function of the module);
 * `vg_rsa_private_checked`: `vg_rsa_private_crt` given the public exponent
   too, releasing a result only if it passes BoringSSL's check against it
   (`Rsa.privateChecked`);
@@ -407,8 +409,9 @@ def publicPrecomputedCheckedApi : Api where
   sig := publicPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => publicPrecomputedCheckedContract A stack
-  summary := s!"The RSA public-key operation, as `vg_rsa_public_checked`, with the modulus \
-    given by the values `vg_rsa_public_precompute` wrote for it to `pre`. With those values \
+  summary := s!"The RSA public-key operation: RSAEP (RFC 8017 §5.1.1), which is also RSAVP1 \
+    (§5.2.2), for a public key within BoringSSL's limits, with the modulus given by the \
+    values `vg_rsa_public_precompute` wrote for it to `pre`. With those values \
     of a modulus `n` of `out_len` bytes and {exponentDoc}, writes `input^e mod n` \
     (`out_len` bytes, most significant first) to `out` and returns 1; or writes zeros and \
     returns 0 if `e` is not such a number or the input (`out_len` bytes, most significant \
