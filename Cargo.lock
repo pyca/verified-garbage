@@ -126,6 +126,7 @@ name = "verified-garbage"
 version = "0.0.0"
 dependencies = [
  "getrandom",
+ "libc",
  "serde",
  "serde_json",
 ]

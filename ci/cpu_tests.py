@@ -59,7 +59,7 @@ GROUPS = {
     },
     "aes_gcm": {
         "lib": ["aes_gcm", "aes_gcm_siv"],
-        "tests": ["cavp::aes_gcm", "wycheproof::aes_gcm", "wycheproof::aes_gcm_siv"],
+        "tests": ["cavp::aes_gcm", "residue::aes_gcm", "wycheproof::aes_gcm", "wycheproof::aes_gcm_siv"],
     },
     "aes_gcm_siv": {
         "lib": ["aes_gcm_siv"],
@@ -110,6 +110,7 @@ GROUPS = {
         "tests": [
             "rfc8439::chacha20",
             "rfc8439::chacha20poly1305",
+            "residue::chacha20poly1305",
             "wycheproof::chacha20",
             "wycheproof::chacha20poly1305",
         ],
@@ -304,6 +305,8 @@ GROUPS = {
         "lib": ["hashes::sha256", "hmac::sha256", "pbkdf2::sha256", "rsa_pss::sha256"],
         "tests": [
             "cavp::sha256",
+            "residue::hmac",
+            "residue::sha256",
             "secp256k1",
             "rfc7027::brainpoolp256r1::ecdsa_and_invalid_keys",
             "wycheproof::ecdsa_brainpoolp256r1",

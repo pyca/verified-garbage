@@ -21,6 +21,8 @@ mod draft_ribose_sm4;
 mod nessie;
 #[path = "pbkdf2/main.rs"]
 mod pbkdf2;
+#[path = "residue/main.rs"]
+mod residue;
 #[path = "rfc1321/main.rs"]
 mod rfc1321;
 #[path = "rfc2144/main.rs"]
