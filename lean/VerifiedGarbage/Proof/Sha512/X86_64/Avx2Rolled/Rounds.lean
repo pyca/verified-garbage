@@ -24,7 +24,7 @@ namespace VG.Proof.Sha512.X86_64.Avx2.Rolled
 
 open VG VG.X86_64 VG.Impl.Sha512.X86_64.Avx2 VG.Impl.Sha512.X86_64.Avx2Rolled
 open VG.Proof.Sha512.X86_64.Avx2
-open VG.Spec.Sha512 (HashValue Word Block K W)
+open VG.Spec.Sha512 (HashValue Word Block K W bsig1 ch)
 open VG.Proof.Sha512 (roundKW rounds_succ round_eq)
 open VG.Proof.Sha512.X86_64 (ofInt_natCast)
 
@@ -99,13 +99,12 @@ register holding the table's address. -/
 theorem exec_tbl (s : State) (r : XReg) (m : MemOp) {p : Nat} (hp : p < 40)
     (hb : s.gpr m.base = s.syms kSym) (ho : s.ea m = s.gpr m.base + BitVec.ofNat 64 (32 * p)) :
     X86_64.exec (.vmovdquTbl r m kSym ks2) s = some (s.setV .l256 r (kpair p) (kpair p)) := by
-  have e : (s.ea m - s.gpr m.base).toNat = 32 * p := by
-    rw [ho, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
-  simp only [X86_64.exec, e, hb, ks2_length, show 32 * p % 8 = 0 by omega,
-    show 32 * p / 8 + 4 ≤ 160 by omega, and_self, ↓reduceIte, true_and]
-  rw [show 32 * p / 8 = 4 * p + 0 by omega, ks2_getD hp (by decide), ks2_getD hp (by decide),
-    show 4 * p + 0 + 1 = 4 * p + 1 by omega, show 4 * p + 0 + 2 = 4 * p + 2 by omega,
-    show 4 * p + 0 + 3 = 4 * p + 3 by omega, ks2_getD hp (by decide), ks2_getD hp (by decide), ks2_getD hp (by decide)]
+  have e : (s.ea m - s.syms kSym).toNat = 32 * p := by
+    rw [ho, hb, BitVec.add_comm, BitVec.add_sub_cancel, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  simp only [X86_64.exec, hb, e, ks2_length, show 32 * p % 8 = 0 by omega, show 32 * p / 8 + 4 ≤ 160 by omega,
+    and_self, ↓reduceIte]
+  rw [show 32 * p / 8 = 4 * p by omega, ks2_getD hp (q := 0) (by decide), ks2_getD hp (q := 1) (by decide),
+    ks2_getD hp (q := 2) (by decide), ks2_getD hp (q := 3) (by decide)]
   rfl
 
 /-- Adding the constants to `x`'s words and storing them, as `scheduleR` and
@@ -118,11 +117,12 @@ theorem addK_ok (r x : XReg) (hrx : x ≠ r) (m₁ m₂ : MemOp) (s : State) (kp
         (XBinOp.eval .paddq (s.ymmHi x) kp ++ XBinOp.eval .paddq (s.xmm x) kp) ∧
       (∀ q, q ≠ r → s'.xmm q = s.xmm q ∧ s'.ymmHi q = s.ymmHi q) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.syms = s.syms := by
+  simp only [State.ea] at hout
   apply WP.of_runBlock
   rw [runBlock_cons, hk]
   simp only [vb, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec,
     isa, RegUpd.xmm_setV, RegUpd.ymmHi_setV_256, RegUpd.gpr_setV, RegUpd.mem_setV,
-    RegUpd.rd_setV, RegUpd.wr_setV, State.lane, State.ymm, State.store256, hrx, hout,
+    RegUpd.rd_setV, RegUpd.wr_setV, State.lane, State.ymm, State.store256, State.ea, hrx, hout,
     Option.some.injEq, exists_eq_left']
   refine ⟨rfl, fun q hq => by simp [hq], trivial, trivial, trivial, rfl⟩
 
@@ -168,7 +168,7 @@ theorem roundR_ok (j t : Nat) (s : State) (v : HashValue) (k w : Word)
     List.reverse_nil, List.nil_append, List.cons_append, or_false, not_or,
     List.nodup_nil, and_true] at hd hd' ⊢
   simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, runBlock_cons, runStep_some,
-    runBlock_nil, exec, execAlu, execAluW, execRorx, execAndn, readSrc, State.ea,
+    runBlock_nil, exec, execAlu, execRorx, execAndn, readSrc, State.ea,
     isa, State.load64, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
     RegUpd.wr_setReg, RegUpd.xmm_setReg, RegUpd.ymmHi_setReg, arithFlags, RegUpd.gpr_setFlags,
     RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, RegUpd.xmm_setFlags,
@@ -181,6 +181,7 @@ theorem roundR_ok (j t : Nat) (s : State) (v : HashValue) (k w : Word)
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [hd']
   · simp only [roundKW, Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero,
       List.getElem_cons_succ, maj_carry, bsig0_rorx, t1_orderK, and_self]
+    exact ⟨BitVec.add_assoc _ _ _, trivial⟩
 
 /-- Round `t` of block `j` can read `Wₜ + Kₜ` of `M`. -/
 def WKOk (j : Nat) (M : Block) (s : State) (t : Nat) : Prop :=
@@ -226,6 +227,8 @@ theorem scheduleR_eq (i : Nat) :
       ([.vmovdquTbl t2 (kSlot i) kSym ks2, vb .vpaddq t2 (msg i) t2, .vmovdquStore .l256 (sSlot i) t2] :
         List Instr) := rfl
 
+theorem syms_setV (s : State) (l : VLen) (r : XReg) (lo hi : BitVec 128) : (s.setV l r lo hi).syms = s.syms := rfl
+
 theorem msg_ne_t (n : Nat) : msg n ≠ t0 ∧ msg n ≠ t2 := by
   have key : ∀ c < 8, msg c ≠ t0 ∧ msg c ≠ t2 := by decide
   rw [show msg n = msg (n % 8) by simp only [msg, Nat.mod_mod]]
@@ -244,7 +247,7 @@ theorem scheduleD_ok (n : Nat) (s : State) (a b c d e a' b' c' d' e' : BitVec 12
   have hn := msg_nodup n
   have hn' := VG.nodup_reverse hn
   apply WP.of_runBlock
-  simp only [schedule, vb, vs, List.dropLast, List.cons_append, List.nil_append]
+  simp only [schedule, vb, vs, List.dropLast]
   generalize msg n = x₀ at *
   generalize msg (n + 1) = x₁ at *
   generalize msg (n + 4) = x₄ at *
@@ -253,11 +256,11 @@ theorem scheduleD_ok (n : Nat) (s : State) (a b c d e a' b' c' d' e' : BitVec 12
   simp only [t0, t1, t2, t3, mBswap, tmp, List.nodup_cons, List.mem_cons, List.not_mem_nil,
     or_false, not_or, List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hn hn' ⊢
-  simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, and_self, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp only [reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec,
     VOp.exec, isa, RegUpd.xmm_setV, RegUpd.ymmHi_setV_256, RegUpd.gpr_setV, RegUpd.mem_setV,
-    RegUpd.rd_setV, RegUpd.wr_setV, State.lane, State.ymm, hn, hn',
+    RegUpd.rd_setV, RegUpd.wr_setV, syms_setV, State.lane, hn, hn',
     ha, hb, hc, hd, he, ha', hb', hc', hd', he', Option.some.injEq, exists_eq_left']
-  refine ⟨rfl, rfl, fun r h0 h1 h2 h3 h4 => by simp [h0, h1, h2, h3, h4], trivial, trivial, trivial, trivial, rfl⟩
+  exact ⟨rfl, rfl, fun r h0 h1 h2 h3 h4 => by simp [h0, h1, h2, h3, h4], trivial, trivial, trivial, trivial, trivial⟩
 
 /-- `schedule_ok`, storing the words plus their constants through the index. -/
 theorem scheduleR_ok (n : Nat) (s : State) (a b c d e a' b' c' d' e' : BitVec 128) {i p : Nat}

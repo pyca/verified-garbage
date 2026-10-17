@@ -47,7 +47,7 @@ def kSym : String := "VG_SHA512_K2"
 
 /-- The table: `K₂ᵢ, K₂ᵢ₊₁, K₂ᵢ, K₂ᵢ₊₁` at `32 i`, the constants of `W₂ᵢ` and
 `W₂ᵢ₊₁` in both lanes. -/
-def ks2 : List (BitVec 64) := (List.range 160).map fun n => K (2 * (n / 4) + n % 2)
+def ks2 : List (BitVec 64) := (List.range 160).map fun n => Spec.Sha512.K (2 * (n / 4) + n % 2)
 
 /-- Where the `schedule` step `i` of an iteration reads its constants. -/
 def kSlot (i : Nat) : MemOp := { base := .rsi, index := some .rdx, scale := 2, disp := ((32 * i : Nat) : Int) }

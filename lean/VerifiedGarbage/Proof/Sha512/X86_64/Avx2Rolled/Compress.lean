@@ -272,7 +272,7 @@ theorem schedR_step {M₀ M₁ : Block} {scr : Addr} {sB : State} (hrcx : sB.gpr
   refine VG.X86_64.WP.mono_syms (scheduleR_ok (n + 8) s _ _ _ _ _ _ _ _ _ _ (p := 8 * j + n + 8) (by omega) hI
     (by omega) (by rw [h.pub .rsi (by decide), h.syms]; exact hkb) ma mb mc md me ma' mb' mc' md' me'
     (by rw [ea, h.wr]; exact in_scr hR (by omega)))
-    fun s' ⟨ex, ey, hx, hg, hm, hrd, hwr, -⟩ hsy => ⟨?_, hg⟩
+    fun s' ⟨ex, ey, hx, hg, hm, hrd, hwr, _⟩ hsy => ⟨?_, hg⟩
   rw [xupd_pair] at ex ey
   rw [xupd_pair, xupd_pair, ea] at hm
   have hmsg : msg (n + 8) = msg (8 * j + n + 8) := by
@@ -510,7 +510,7 @@ theorem loadD_ok {i : Nat} (hi : i < 8) (s : State) {p₀ p₁ : Addr} {M₀ M�
     or_false, not_or, List.nodup_nil, and_true, List.reverse_cons, List.reverse_nil, List.nil_append,
     List.cons_append] at hd hd' hm hm' ⊢
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec,
-    isa, State.setV, State.lane, State.ymm, State.load128, ea_at, hrsi, hr15, hin₀,
+    isa, State.setV, State.lane, State.load128, ea_at, hrsi, hr15, hin₀,
     hin₁, ite_true, ite_false, hd, hd', hm, hm', VBinOp.sse, q₀, q₁, Option.map_some,
     Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, fun r h1 h2 => by simp [h1, h2], trivial⟩
