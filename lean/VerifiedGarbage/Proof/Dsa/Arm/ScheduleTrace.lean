@@ -60,7 +60,8 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
   -- `t = g^k mod p`
   refine SameTrace.assoc_left (SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t)
       (X.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo) (X.C₁.inp mg).toReady
-      (X.C₂.inp mg).toReady (X.C₁.inp mk).toReady (X.E _ mp) (X.E _ mg) (X.E _ mk))
+      (X.C₂.inp mg).toReady (X.C₁.inp mk).toReady (X.E _ mp) (X.E _ mg) (X.E _ mk)
+      (X.C₂.inp mk).toReady q4 qp qw)
     (power_ok (output := Impl.Dsa.Layout.t) X.C₁.S.ws (by omega) X.C₁.S.wp q4 qp qw (X.C₁.inp mp).toReady
       (X.C₁.inp mg).toReady (X.C₁.inp mk).toReady (X.C₁.inp mp).value D₁.hP D₁.hPo (by omega) (by omega) (by omega))
     (power_ok (output := Impl.Dsa.Layout.t) X.C₂.S.ws (by omega) X.C₁.S.wp q4 qp qw (X.C₂.inp mp).toReady
@@ -90,7 +91,8 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (X₂.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X₂.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
       (X₂.C₁.inp mk).toReady (X₂.C₂.inp mk).toReady
       (localReady (o := Impl.Dsa.Layout.qMinusTwo) X₂.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₂.E _ mq) (X₂.E _ mk) (ptrEq_local X₂.C₁.S.ws X₂.C₂.S.ws _))
+      (X₂.E _ mq) (X₂.E _ mk) (ptrEq_local X₂.C₁.S.ws X₂.C₂.S.ws _)
+      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X₂.C₂.S.ws (by omega) (by omega) (by omega)) q4 (Nat.le_refl _) qw)
     (power_ok (output := Impl.Dsa.Layout.inverse) X₂.C₁.S.ws (by omega) X.C₁.S.wq q4 (Nat.le_refl _) qw
       (X₂.C₁.inp mq).toReady (X₂.C₁.inp mk).toReady
       (localReady (o := Impl.Dsa.Layout.qMinusTwo) X₂.C₁.S.ws (by omega) (by omega) (by omega))
@@ -214,7 +216,8 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (X.C₁.opPre mq X.C₁.S.wq (by omega) D₁.hQo) (X.C₂.opPre mq X.C₁.S.wq (by omega) D₂.hQo)
       (X.C₁.inp ms).toReady (X.C₂.inp ms).toReady
       (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega) (by omega) (by omega))
-      (X.E _ mq) (X.E _ ms) (ws X.C₁.S.ws X.C₂.S.ws _))
+      (X.E _ mq) (X.E _ ms) (ws X.C₁.S.ws X.C₂.S.ws _)
+      (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega) (by omega) (by omega)) q4 (Nat.le_refl _) qw)
     (power_ok (output := Impl.Dsa.Layout.inverse) X.C₁.S.ws (by omega) X.C₁.S.wq q4 (Nat.le_refl _) qw
       (X.C₁.inp mq).toReady (X.C₁.inp ms).toReady
       (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₁.S.ws (by omega) (by omega) (by omega))
@@ -281,7 +284,8 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (X₄.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X₄.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo)
       (X₄.C₁.inp mg).toReady (X₄.C₂.inp mg).toReady
       (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₄.E _ mp) (X₄.E _ mg) (ws X₄.C₁.S.ws X₄.C₂.S.ws _))
+      (X₄.E _ mp) (X₄.E _ mg) (ws X₄.C₁.S.ws X₄.C₂.S.ws _)
+      (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega) (by omega) (by omega)) q4 qp qw)
     (power_ok (output := Impl.Dsa.Layout.t) X₄.C₁.S.ws (by omega) X.C₁.S.wp q4 qp qw (X₄.C₁.inp mp).toReady
       (X₄.C₁.inp mg).toReady (localReady (o := Impl.Dsa.Layout.u) X₄.C₁.S.ws (by omega) (by omega) (by omega))
       (X₄.C₁.inp mp).value D₁.hP D₁.hPo (by omega) (by omega) (by omega))
@@ -295,7 +299,8 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (X₅.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X₅.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo)
       (X₅.C₁.inp my).toReady (X₅.C₂.inp my).toReady
       (localReady (o := Impl.Dsa.Layout.v) X₅.C₁.S.ws (by omega) (by omega) (by omega))
-      (X₅.E _ mp) (X₅.E _ my) (ws X₅.C₁.S.ws X₅.C₂.S.ws _))
+      (X₅.E _ mp) (X₅.E _ my) (ws X₅.C₁.S.ws X₅.C₂.S.ws _)
+      (localReady (o := Impl.Dsa.Layout.v) X₅.C₂.S.ws (by omega) (by omega) (by omega)) q4 qp qw)
     (power_ok (output := Impl.Dsa.Layout.t2) X₅.C₁.S.ws (by omega) X.C₁.S.wp q4 qp qw (X₅.C₁.inp mp).toReady
       (X₅.C₁.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₅.C₁.S.ws (by omega) (by omega) (by omega))
       (X₅.C₁.inp mp).value D₁.hP D₁.hPo (by omega) (by omega) (by omega))

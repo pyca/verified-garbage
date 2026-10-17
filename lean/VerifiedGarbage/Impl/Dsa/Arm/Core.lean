@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Dsa.Arm.Layout
 public import VerifiedGarbage.Impl.Dsa.Arm.Stream
+public import VerifiedGarbage.Impl.Dsa.Arm.Pow
 
 /-! # DSA arithmetic composition on 32-bit ARM
 
@@ -36,11 +37,13 @@ def store (len output : Nat) : Prog isa :=
   .seq (.block (pointer (.local output) ++ allOnes ++ [.mov .r3 (.reg .r4)]))
     (storeComponent len (resS ((len + 7) / 8)))
 
+/-- The modulus, the base and the exponent, then a call of
+`vg_dsa_pow_{n}_{e}` (`Pow.lean`), which sets up their context itself. -/
 def power (len expLen : Nat) (modulus : Field) (a e : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8
-  .seq (setup len modulus)
+  .seq (load n len (modS n) (.input modulus))
   (.seq (.seq (load n len (baseS n) a) (load n expLen (expS n) e))
-  (.seq (exponentiate n ((expLen + 3) / 4)) (store len output)))
+  (.seq (Pow.call n ((expLen + 3) / 4)) (store len output)))
 
 def productMod (len : Nat) (modulus : Field) (a b : Pointer) (output : Nat) : Prog isa :=
   let n := (len + 7) / 8

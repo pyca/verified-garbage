@@ -57,7 +57,7 @@ theorem Output.next {s t : State} {base : Addr} {size len o l : Nat} (O : Output
 
 theorem Outs.arith_run {base : Addr} {m m' : Mem} (O : Outs base arithRanges m m') : Outs base runRanges m m' :=
   fun x hx => O x fun r hr => by
-    have h₁ := hx (0, 8) (by simp [runRanges])
+    have h₁ := hx (0, 64) (by simp [runRanges])
     have h₃ := hx (256, 15456) (by simp [runRanges])
     simp only [arithRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only at h₁ h₃

@@ -18,7 +18,8 @@ An operand is the caller's bytes at a pointer saved in the header of the
 working space, or computed bytes in the working space past the arithmetic
 (`pointerValue`). `Ready` says an operand's bytes can be read and lie apart
 from the arithmetic's 4960 bytes, which every operation may change (with the
-header's first two words, `arithRanges`); the saved pointers, at offsets 64
+header's first 64 bytes, where the exponentiation keeps `m'`, its mask and the
+registers it saves: `arithRanges`); the saved pointers, at offsets 64
 to 120, are kept (`pointerValue_keep`). `pointer_ok`, `load_ok`,
 `store_ok` and `setup_ok` are the steps of every operation of
 `Impl/Dsa/Arm/Core.lean`.
@@ -42,18 +43,18 @@ theorem field_saved {f : Field} (hf : f ≠ .mask) : Impl.Dsa.Arm.Layout.field f
 /-- The registers an operation may write. -/
 def coreClob : List Reg := .r11 :: .lr :: dclob
 
-/-- The memory the arithmetic may change: `m'` and the mask in the header,
+/-- The memory the arithmetic may change: the header's first 64 bytes,
 and the slots of a context of up to 48 words. -/
-def arithRanges : List (Nat × Nat) := [(0, 8), (256, 4704)]
+def arithRanges : List (Nat × Nat) := [(0, 64), (256, 4704)]
 
 theorem contextBytes_le {n : Nat} (hn : n ≤ 48) : contextBytes n ≤ 4960 := by
   simp only [contextBytes, slot, stride]; omega
 
 /-- Ranges within the arithmetic's. -/
 theorem Outs.arith {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (O : Outs base rs m m')
-    (h : ∀ r ∈ rs, r.1 + r.2 ≤ 8 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960)) : Outs base arithRanges m m' :=
+    (h : ∀ r ∈ rs, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960)) : Outs base arithRanges m m' :=
   fun x hx => O x fun r hr => by
-    have h1 := hx (0, 8) (by simp [arithRanges])
+    have h1 := hx (0, 64) (by simp [arithRanges])
     have h2 := hx (256, 4704) (by simp [arithRanges])
     have := h r hr
     simp only at h1 h2
@@ -71,23 +72,30 @@ theorem Outs.of_slot {base : Addr} {n i : Nat} {m m' : Mem} (O : Outside base (s
     omega
 
 theorem setupRanges_arith {n : Nat} (hn : n ≤ 48) :
-    ∀ r ∈ setupRanges n, r.1 + r.2 ≤ 8 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
+    ∀ r ∈ setupRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
   have := contextBytes_le hn
   simp only [setupRanges, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil, or_false] at *
   rintro r (rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega
 
 theorem exponentRanges_arith {n k : Nat} (hn : n ≤ 48) (hk : k ≤ 2 * n) :
-    ∀ r ∈ exponentRanges n k, r.1 + r.2 ≤ 8 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
+    ∀ r ∈ exponentRanges n k, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
   have := contextBytes_le hn
   simp only [exponentRanges, productRanges, maskO, contextBytes, slot, stride, List.cons_append, List.nil_append,
     List.mem_cons, List.not_mem_nil, or_false] at *
   rintro r (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only <;> omega
 
 theorem streamRanges_arith {n : Nat} (hn : n ≤ 48) :
-    ∀ r ∈ streamRanges n, r.1 + r.2 ≤ 8 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
+    ∀ r ∈ streamRanges n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
   have := contextBytes_le hn
   simp only [streamRanges, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil, or_false] at *
   rintro r (rfl | rfl | rfl | rfl) <;> simp only <;> omega
+
+theorem scratch_arith {n : Nat} (hn : n ≤ 48) :
+    ∀ r ∈ Impl.Dsa.Arm.Pow.scratch n, r.1 + r.2 ≤ 64 ∨ (256 ≤ r.1 ∧ r.1 + r.2 ≤ 4960) := by
+  have := contextBytes_le hn
+  simp only [Impl.Dsa.Arm.Pow.scratch, contextBytes, slot, stride, List.mem_cons, List.not_mem_nil,
+    or_false] at *
+  rintro r (rfl | rfl) <;> simp only <;> omega
 
 /-! ## Operands -/
 
