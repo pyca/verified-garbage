@@ -61,6 +61,17 @@ A change to a manifest (`Cargo.toml`, `bench/Cargo.toml`) only inside its
 `[target.'cfg(…)'.*]` tables needs every benchmark on the architectures
 where a changed table's `cfg` can hold, and nothing elsewhere.
 
+The benchmarks are a package of their own, a workspace with its own
+lockfile (`bench/Cargo.toml`'s `[workspace]`, `bench/Cargo.lock`), which
+depends on the library by path: Cargo resolves and builds them from
+`bench/Cargo.lock` and the library's `[dependencies]`, never from the
+library's lockfile (`Cargo.lock`) or its `[dev-dependencies]`, which only
+its own tests use. So a change to `Cargo.lock`, or to the library's
+`[dev-dependencies]` (and `[target.*.dev-dependencies]`) alone, needs
+nothing; one to `bench/Cargo.lock`, or to the benchmarks' own
+`[dev-dependencies]`, which their benchmarks compile with, needs every
+benchmark.
+
 The benchmarks run those that use any of them, and all of them for a module
 none uses (e.g. `lib`, or the generated `src/asm/<arch>/mod.rs`). Any
 other shared change (e.g. executable code in benchmarks' `main.rs`, or a benchmark whose
@@ -250,6 +261,10 @@ INCLUDE = re.compile(r'\binclude(?:_str|_bytes)?!\s*\(\s*"([^"]+)"')
 INCLUSION = re.compile(r"#\[\s*path\b|\binclude(?:_str|_bytes)?!")
 # The manifests whose `[target.'cfg(…)']` tables apply to some architectures.
 MANIFESTS = ("Cargo.toml", "bench/Cargo.toml")
+# The library's manifest and lockfile, which the benchmarks' own workspace
+# does not use but for the library's `[dependencies]` (see above).
+LIBRARY_MANIFEST = "Cargo.toml"
+LIBRARY_LOCK = "Cargo.lock"
 TARGET_CFG = re.compile(r"cfg\((.*)\)", re.S)
 QUOTED = re.compile(r'"([a-z0-9_]+)"')
 # A generated variant's CPU features (a `Features` constant, or a list of
@@ -645,6 +660,13 @@ def manifest_arches(path, base):
     except tomllib.TOMLDecodeError:
         return list(PLATFORMS)
     targets = [old.pop("target", {}), new.pop("target", {})]
+    if path == LIBRARY_MANIFEST:
+        # Only the library's own tests build with its dev-dependencies.
+        for table in [old, new]:
+            table.pop("dev-dependencies", None)
+        targets = [{key: kept for key, table in t.items()
+                    if (kept := {k: v for k, v in table.items() if k != "dev-dependencies"})}
+                   for t in targets]
     if old != new or not base:
         return list(PLATFORMS)
     arches = set()
@@ -997,6 +1019,9 @@ def arches(changed, base=None):
             for a in targets:
                 for m in uses:
                     need(a, m)
+        elif path == LIBRARY_LOCK:
+            # The benchmarks build from `bench/Cargo.lock`.
+            pass
         elif path in MANIFESTS:
             for a in manifest_arches(path, base):
                 needed[a] = ALL

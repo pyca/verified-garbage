@@ -135,7 +135,7 @@ class Selection(unittest.TestCase):
                          [(a, '') for a in planner.PLATFORMS])
 
     def test_shared_and_unknown_dependencies_preserve_full_suite(self):
-        for path in ['Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
+        for path in ['bench/Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
             with self.subTest(path=path):
                 rows = self.rows([path])
                 self.assertEqual(len(rows), self.full_matrix())
@@ -445,8 +445,8 @@ class Selection(unittest.TestCase):
                 del self.files[includer]
 
     def test_manifest_target_tables_select_their_architectures(self):
-        manifest = '[package]\nname = "b"\n\n[dev-dependencies]\nx = "1"\n'
-        target = ('\n[target.\'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))\'.dev-dependencies]\n'
+        manifest = '[package]\nname = "b"\n\n[dependencies]\nx = "1"\n'
+        target = ('\n[target.\'cfg(any(target_arch = "x86_64", target_arch = "aarch64"))\'.dependencies]\n'
                   'x = { version = "1", features = ["all"] }\n')
         for path in planner.MANIFESTS:
             with self.subTest(path=path):
@@ -462,6 +462,34 @@ class Selection(unittest.TestCase):
                             manifest.replace('"1"', '"2"') + target, manifest + '[']:
                     self.files[path] = new
                     self.assertEqual(len(self.rows([path])), self.full_matrix())
+
+    def test_library_lockfile_alone_plans_nothing(self):
+        # The benchmarks build from their own workspace's `bench/Cargo.lock`.
+        self.assertEqual(self.rows(['Cargo.lock']), [])
+        self.assertEqual(len(self.rows(['bench/Cargo.lock'])), self.full_matrix())
+
+    def test_library_dev_dependencies_alone_plan_nothing(self):
+        manifest = ('[package]\nname = "verified-garbage"\n\n[dependencies]\ngetrandom = "0.4"\n\n'
+                    '[dev-dependencies]\nserde = "1"\n')
+        self.base_files['Cargo.toml'] = manifest
+        # Only the library's tests build with its dev-dependencies, plain or
+        # in a target table (a new one, or one that also has others).
+        for new in [manifest + 'libc = "0.2"\n',
+                    manifest + '\n[target.\'cfg(unix)\'.dev-dependencies]\nlibc = "0.2"\n',
+                    manifest.replace('serde = "1"', 'serde = "2"')]:
+            with self.subTest(new=new):
+                self.files['Cargo.toml'] = new
+                self.assertEqual(self.rows(['Cargo.toml', 'Cargo.lock']), [])
+        # Its dependencies are the benchmarks' too: everywhere.
+        for new in [manifest.replace('"0.4"', '"0.5"'),
+                    manifest + '\n[target.\'cfg(unix)\'.dependencies]\nlibc = "0.2"\n']:
+            with self.subTest(new=new):
+                self.files['Cargo.toml'] = new
+                self.assertEqual(len(self.rows(['Cargo.toml', 'Cargo.lock'])), self.full_matrix())
+        # The benchmarks' own dev-dependencies are compiled into them.
+        self.base_files['bench/Cargo.toml'] = manifest
+        self.files['bench/Cargo.toml'] = manifest + 'libc = "0.2"\n'
+        self.assertEqual(len(self.rows(['bench/Cargo.toml'])), self.full_matrix())
 
     def test_manual_runs_select_architectures_and_configurations(self):
         rows = planner.manual()
@@ -527,7 +555,7 @@ class Selection(unittest.TestCase):
         self.assertEqual(bench_compare.shard_groups({'a': 1}, 2, 2), [])
 
     def test_pull_requests_never_run_every_benchmark(self):
-        for path in ['Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
+        for path in ['bench/Cargo.lock', 'ci/bench_compare.py', 'src/unknown.rs']:
             with self.subTest(path=path):
                 rows, skipped = planner.without_full_runs(self.rows([path]))
                 self.assertEqual(rows, [])
