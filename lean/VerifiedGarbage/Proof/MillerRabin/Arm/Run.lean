@@ -23,7 +23,7 @@ variable {s : State}
 theorem roundPre.xCovers (h : roundPre s) : Covers (xRegs s) (pcPushed s).wr := by
   obtain ⟨_, wr, fit, _, _, lay, _⟩ := h
   have hw := lay.2.2.2
-  have len : 256 ≤ 8 * (s.gpr .r1).toNat := by simp only [arrAt, Spec.Rsa.Mont.hdrBytes] at hw; omega
+  have len : 256 ≤ 8 * (s.gpr .r1).toNat := Nat.le_trans (Nat.le_add_right _ _) hw
   have mS : (⟨State.addr (s.gpr .r0), 8 * (s.gpr .r1).toNat⟩ : Region) ∈ (pcPushed s).wr := by
     rw [pushed_wr, wr]; simp
   refine Covers.of_sub fun r hr => ?_
@@ -56,7 +56,7 @@ theorem round_ok (h : roundPre s) : WP isa code s fun t => abiPreserved s t ∧ 
   simp only [State.withRegions_withRegions, State.withRegions_self] at run'
   refine WP.mono (Q := fun x => x = v.withRegions (pcPushed s).rd (pcPushed s).wr) ⟨tr, _, run', rfl⟩ ?_
   rintro _ rfl
-  have ks := done.1
+  obtain ⟨⟨A, L, V, LS, ks⟩, hr0⟩ := done
   have vsp : v.sp = s.sp - BitVec.ofNat 32 56 := ks.sp.trans pre.sp
   have saved : Spill.Saved v.mem (State.addr (s.sp - 56)) s.gpr pcCalleeSaved := by
     intro p hp
@@ -100,25 +100,29 @@ theorem round_ok (h : roundPre s) : WP isa code s fun t => abiPreserved s t ∧ 
     have eσ := h.pushedWs
     have fits := pre.fits
     have fit : ∀ j < 11, arrAt (mkP s).w j + 8 * (mkP s).w ≤ 8 * (mkP s).len := fun j hj => by
-      have : j * (8 * ((mkP s).w + 2)) ≤ 14 * (8 * ((mkP s).w + 2)) := Nat.mul_le_mul_right _ (by omega)
-      simp only [arrAt, Spec.Rsa.Mont.hdrBytes, nArr] at fits ⊢; omega
+      have l := pre.len
+      have : j * (8 * ((mkP s).w + 2)) ≤ 27 * (8 * ((mkP s).w + 2)) := Nat.mul_le_mul_right _ (by omega)
+      have : 8 * (mkP s).w ≤ 8 * ((mkP s).w + 2) := by omega
+      simp only [arrAt, Spec.Rsa.Mont.hdrBytes]
+      generalize 8 * ((mkP s).w + 2) = S at *
+      omega
     have nE : ∀ j < 11, numAt (bodyIn s).mem (State.addr (s.gpr .r0)) (mkP s).w j =
         numAt s.mem (State.addr (s.gpr .r0)) (mkP s).w j := fun j hj => numAt_congr eσ (fit j hj)
-    rw [popped_gpr (by decide), ret, done.2]
+    rw [popped_gpr (by decide), ret, hr0]
     have hc : cOf (mkP s) (bodyIn s).mem = numAt s.mem (State.addr (s.gpr .r0)) (mkP s).w 0 := nE 0 (by decide)
     have hX : xOf (mkP s) (bodyIn s) = numAt s.mem (State.addr (s.gpr .r0)) (mkP s).w 5 := nE 5 (by decide)
-    have hO : oOf (mkP s) (bodyIn s) = numAt s.mem (State.addr (s.gpr .r0)) (mkP s).w 9 := nE 9 (by decide)
-    have hM : mOf (mkP s) (bodyIn s) = numAt s.mem (State.addr (s.gpr .r0)) (mkP s).w 10 := nE 10 (by decide)
-    have one := pre.one
-    have m1 := pre.m1
     have c3 := pre.c3
     have codd := pre.codd
     have cR := pre.c_lt
-    have w4 := pre.w4
-    show (BitVec.ofNat 32 (fseq (cOf (mkP s) (bodyIn s).mem) (mkP s).w (xOf (mkP s) (bodyIn s))
-      (oOf (mkP s) (bodyIn s)) (mOf (mkP s) (bodyIn s)) (64 * (mkP s).w - 1)).toNat).toNat = _
-    rw [fseq_round codd c3 cR (by omega) (by rw [hX, hc]; exact hb) one m1]
-    rw [hc]
+    have key : fl (mkP s) (bodyIn s) = Spec.MillerRabin.round (cOf (mkP s) (bodyIn s).mem) b := by
+      have e1 : rEnd (mkP s) (bodyIn s) = 4 - VG.Proof.RsaKeyGen.sigOf
+          (VG.Proof.RsaKeyGen.mrA (cOf (mkP s) (bodyIn s).mem)) := by
+        simp only [rEnd, tOf]; rw [VG.Proof.RsaKeyGen.sigOf_mod]
+      show (msqs _ _ _ (rEnd (mkP s) (bodyIn s)) 3 (mrun _ _ _ (tp _ _ (xOf (mkP s) (bodyIn s))
+        (oOf (mkP s) (bodyIn s))) (eOf (mkP s) (bodyIn s)) _ _) 3).2 = _
+      rw [e1]
+      exact final_eq codd c3 cR (by rw [hX, hc]; exact hb) pre.one pre.m1
+    rw [key, hc]
     show (BitVec.ofNat 32 (Spec.MillerRabin.round (numAt s.mem (State.addr (s.gpr .r0))
       (wOf s.mem (State.addr (s.gpr .r0))) 0) b).toNat).toNat = _
     generalize Spec.MillerRabin.round (numAt s.mem (State.addr (s.gpr .r0)) (wOf s.mem (State.addr (s.gpr .r0))) 0) b = r
@@ -179,11 +183,13 @@ theorem round_ct : RelCT isa (fun s t => roundPre s ∧ roundPre t ∧ s.sp = t.
       have w1sp : w1.sp = s0.sp - BitVec.ofNat 32 56 := by
         obtain ⟨_, _, run, done⟩ := body_vp.wp (bodyIn s0) (bodyIn s0) ⟨rfl, pre1, rfl⟩
         obtain ⟨-, rfl⟩ := Exec.det runB1 run
-        exact done.1.sp.trans pre1.sp
+        obtain ⟨⟨_, _, _, _, ks⟩, _⟩ := done
+        exact ks.sp.trans pre1.sp
       have w2sp : w2.sp = t0.sp - BitVec.ofNat 32 56 := by
         obtain ⟨_, _, run, done⟩ := body_vp.wp (bodyIn t0) (bodyIn t0) ⟨rfl, in_x ht, rfl⟩
         obtain ⟨-, rfl⟩ := Exec.det runB2 run
-        exact done.1.sp.trans (in_x ht).sp
+        obtain ⟨⟨_, _, _, _, ks⟩, _⟩ := done
+        exact ks.sp.trans (in_x ht).sp
       have trR := ((stackLoads_ct pcCalleeSaved : RelCT isa (fun s t => s.sp = t.sp)
         (.block VG.Impl.Bignum.Arm.PcFn.restore) (fun s t => s.sp = t.sp)) _ _ _ _ _ _
         (by show w1.sp = w2.sp; rw [w1sp, w2sp, sp]) rest1 rest2).1

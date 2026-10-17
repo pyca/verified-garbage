@@ -109,9 +109,11 @@ theorem mrCall_vp (v : RoundImpl) {k : Nat} :
     rw [r2v_eq] at val
     exact x5_val (R_coprime pre) lt (by omega) val
   refine VP.seq wsLen_vp ?_
-  refine VP.seq (round_vp v (by simp) (by simp) (by decide) (fun σ _ => ?_) (fun σ _ => ?_)) ?_
+  refine VP.seq (round_vp v (by simp) (by simp) (by simp) (by decide) (fun σ _ => ?_) (fun σ _ => ?_)
+    (fun σ _ => ?_)) ?_
   · simp (config := {decide := true}) only [upd, ↓reduceIte, AW, AB2]
   · simp (config := {decide := true}) only [upd, ↓reduceIte, AW, AB2]
+  · rfl
   have pS : VP (fun σ s => St P E (fun σ => upd (AF P k σ) (mBase + 1) (AF P k σ aH1)) LF (VF P k) LSF σ s ∧
       (MS P σ s ∧ (s.gpr .r0).toNat = if Spec.MillerRabin.round (cv P σ) (wf P σ k).1 then 1 else 0))
       (.block [.str .r0 .r8 sF])

@@ -109,8 +109,8 @@ theorem VP.ctx {X : State → State → Prop}
 /-- The round on Montgomery multiplication's array 5, the witness `b σ` in
 Montgomery form. -/
 theorem round_vp (v : RoundImpl) {b : State → Nat} (h9 : mBase + 9 ∈ L) (h10 : mBase + 10 ∈ L)
-    (hL : ∀ j ∈ L, j ∉ rJs) (a9 : ∀ σ, E σ → A σ (mBase + 9) = Rm P σ)
-    (a10 : ∀ σ, E σ → A σ (mBase + 10) = cv P σ - Rm P σ) :
+    (h27 : mBase + 27 ∈ L) (hL : ∀ j ∈ L, j ∉ rJs) (a9 : ∀ σ, E σ → A σ (mBase + 9) = Rm P σ)
+    (a10 : ∀ σ, E σ → A σ (mBase + 10) = cv P σ - Rm P σ) (a27 : ∀ σ, E σ → A σ (mBase + 27) = EX P σ) :
     VP (fun σ s => ((E σ ∧ KS P σ (A σ) L (V σ) LS s) ∧ MS P σ s ∧
         numAt s.mem (State.addr P.M0) P.w 5 < cv P σ ∧
         numAt s.mem (State.addr P.M0) P.w 5 = b σ % cv P σ * 2 ^ (64 * P.w) % cv P σ) ∧
@@ -142,8 +142,8 @@ theorem round_vp (v : RoundImpl) {b : State → Nat} (h9 : mBase + 9 ∈ L) (h10
     rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), r1]
   refine VP.of_ct (fun σ₁ σ₂ => RelCT.call v.verified.1 v.verified.2.1 [] [⟨State.addr P.M0, 8 * P.lenR⟩]
     fun s₁ s₂ ⟨⟨⟨⟨e₁, h₁⟩, m₁, x₁, _⟩, r0₁, r1₁⟩, ⟨⟨⟨e₂, h₂⟩, m₂, x₂, _⟩, r0₂, r1₂⟩⟩ =>
-      ⟨round_pre h₁ m₁ r0₁ r1₁ x₁ (nums σ₁ s₁ e₁ h₁).1 (nums σ₁ s₁ e₁ h₁).2,
-        round_pre h₂ m₂ r0₂ r1₂ x₂ (nums σ₂ s₂ e₂ h₂).1 (nums σ₂ s₂ e₂ h₂).2, ?_,
+      ⟨round_pre h₁ m₁ r0₁ r1₁ x₁ (nums σ₁ s₁ e₁ h₁).1 (nums σ₁ s₁ e₁ h₁).2 ((h₁.arrs _ h27).trans (a27 σ₁ e₁)),
+        round_pre h₂ m₂ r0₂ r1₂ x₂ (nums σ₂ s₂ e₂ h₂).1 (nums σ₂ s₂ e₂ h₂).2 ((h₂.arrs _ h27).trans (a27 σ₂ e₂)), ?_,
         (cov σ₁ s₁ h₁).right, cov σ₁ s₁ h₁, (cov σ₂ s₂ h₂).right, cov σ₂ s₂ h₂⟩)
     fun σ s ⟨⟨⟨e, h⟩, m, x5, xv⟩, r0, r1⟩ => ?_
   · refine ⟨?_, by rw [e0 _ r0₁, e0 _ r0₂], by rw [e1 _ r1₁, e1 _ r1₂], ?_⟩
@@ -155,7 +155,8 @@ theorem round_vp (v : RoundImpl) {b : State → Nat} (h9 : mBase + 9 ∈ L) (h10
   have pre := h.pre
   have spw : s.sp = P.sp := h.sp.trans pre.sp
   have lt : P.lenR < 2 ^ 32 := by have := pre.lenR_fit; have := pre.Z_le; omega
-  refine FrameStack.WP.callF v.verified.1 (round_pre h m r0 r1 x5 (nums σ s e h).1 (nums σ s e h).2)
+  refine FrameStack.WP.callF v.verified.1
+    (round_pre h m r0 r1 x5 (nums σ s e h).1 (nums σ s e h).2 ((h.arrs _ h27).trans (a27 σ e)))
     (cov σ s h).right (cov σ s h) (by rw [spw]; have := v.stack; have := pre.spLo; omega)
     fun s' hrd hwr hsp hf _ hpost => ?_
   have fr : Frame [⟨State.addr P.M0, 8 * P.lenR⟩, P.rC] s.mem s'.mem := hf.sub fun r hr => by
