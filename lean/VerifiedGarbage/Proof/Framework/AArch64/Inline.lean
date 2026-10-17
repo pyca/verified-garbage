@@ -40,7 +40,7 @@ def dstOf : Instr → Option Reg
   | .lsr _ d .. | .lsl _ d .. | .madd _ d .. | .mul _ d .. | .rev32 d _ | .rev d _ | .movz _ d ..
   | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. => some d
   | .cselc _ d .. | .csneg _ d .. => some d
-  | .str .. | .strb .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .ldrqTbl .. | .strq .. | .tst .. | .ccmp ..
+  | .str .. | .strb .. | .strSp .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .ldrqTbl .. | .strq .. | .tst .. | .ccmp ..
   | .ldp .. | .stp .. | .align _ => none
 
 /-- The general-purpose registers instruction `i` writes. -/
@@ -135,6 +135,11 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     simp only [exec, Option.bind_eq_some_iff] at h ⊢
     obtain ⟨a, ha, hs⟩ := h
     exact ⟨a, ha, store_widen hw hs⟩
+  | strSp t off =>
+    simp only [exec] at h ⊢
+    split at h <;> [rename_i ho; cases h]
+    simp only [ho, and_self, ite_true]
+    exact store_widen hw h
   | ldrq t n off =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h ⊢
     obtain ⟨a, ha, v, hv, rfl⟩ := h
@@ -208,6 +213,13 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     split at h <;> cases h
     rename_i hi; obtain ⟨r, hr, hc⟩ := hi
     exact ⟨rfl, rfl, rfl, (Frame.refl _ _).write hr _ hc⟩
+  | strSp t off =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [State.store] at h
+    split at h <;> cases h
+    rename_i hi; obtain ⟨r, hr, hc⟩ := hi
+    exact ⟨rfl, rfl, rfl, (Frame.refl _ _).write hr _ hc⟩
   | ldr sz t n off =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h
@@ -278,6 +290,11 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s
   | strb t n off =>
     simp only [exec, Option.bind_eq_some_iff, State.store] at h
     obtain ⟨a, -, h⟩ := h
+    split at h <;> cases h; rfl
+  | strSp t off =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [State.store] at h
     split at h <;> cases h; rfl
   | ldr sz t n off =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h

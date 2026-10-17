@@ -54,6 +54,11 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
     simp only [exec, Option.bind_eq_some_iff, State.store] at h
     obtain ⟨a, -, h⟩ := h
     split at h <;> cases h; rfl
+  | strSp t off =>
+    simp only [exec] at h
+    split at h <;> [skip; cases h]
+    simp only [State.store] at h
+    split at h <;> cases h; rfl
   | ldr sz t n off | ldrb t n off =>
     simp only [exec, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
     obtain ⟨a, -, v, -, rfl⟩ := h

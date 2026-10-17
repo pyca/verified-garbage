@@ -67,6 +67,7 @@ def stepFn : Instr → Step
   | .ldr _ t n _ | .ldrb t n _ => ⟨fun τ => if pub τ n then some (set τ t false) else none⟩
   -- The stack pointer is public, and memory secret.
   | .ldrSp t _ => ⟨fun τ => some (set τ t false)⟩
+  | .strSp _ _ => ⟨fun τ => some τ⟩
   | .str _ _ n _ | .strb _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
   | .ldp t1 t2 n _ => ⟨fun τ => if pub τ n then some (set (set τ t1 false) t2 false) else none⟩
   | .stp _ _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
@@ -276,6 +277,15 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
     simp only [exec, Option.bind_eq_some_iff, State.store] at e₁ e₂
     obtain ⟨a₁, -, e₁⟩ := e₁; obtain ⟨a₂, -, e₂⟩ := e₂
+    split at e₁ <;> [cases e₁; cases e₁]
+    split at e₂ <;> [cases e₂; cases e₂]
+    exact ha
+  | strSp t off =>
+    obtain rfl := Option.some.inj hs
+    refine ⟨by simp [addrs, ha.1], ?_⟩
+    simp only [exec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    rename_i h; simp only [h, and_self, ite_true, State.store] at e₁ e₂
     split at e₁ <;> [cases e₁; cases e₁]
     split at e₂ <;> [cases e₂; cases e₂]
     exact ha
