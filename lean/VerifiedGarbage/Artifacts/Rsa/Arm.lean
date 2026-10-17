@@ -5,6 +5,8 @@ public import VerifiedGarbage.Proof.Bignum.Arm.PublicVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.CrtVerified
 public import VerifiedGarbage.Proof.Bignum.Arm.PdVerified
 public import VerifiedGarbage.Proof.Rsa.Arm.CvVerified
+public import VerifiedGarbage.Proof.Rsa.Arm.CckVerified
+public import VerifiedGarbage.Proof.Rsa.Arm.CkVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 
 /-! # RSA (RFC 8017) on ARMv7 -/
@@ -62,6 +64,32 @@ def artifacts : List Artifact := [
         written out under the mask, cleared if it is not set."]
     code := Impl.Rsa.Arm.CrtValues.code
     stack := 0
-    verified := Proof.Rsa.Arm.CrtValues.crt_values_verified }]
+    verified := Proof.Rsa.Arm.CrtValues.crt_values_verified },
+  Spec.Rsa.checkKeyApi.artifact Arm.target {
+    notes := ["Baseline ARMv7, frameless (the callee-saved registers are kept in the working \
+        space): `n` and `e` are checked first, the only branches on data. The numbers are read \
+        into 32-bit limbs at the width of `n`, and every check computed and and'ed into a mask: \
+        `p q = n` as `p` odd with `n / p = q` and `n mod p = 0`, by a fixed-iteration long \
+        division; `d < n`, `dP < p - 1`, `dQ < q - 1` and `qInv < p` by a subtraction's borrow; \
+        `e dP ≡ 1`, `e dQ ≡ 1` and `q qInv ≡ 1` by binary multiplication modulo `p - 1`, `q - 1` \
+        or `p` (over the 33 bits of `e`, or the bits of `q`), its additions selected under masks; \
+        and `d e ≡ 1` modulo `p - 1` and `q - 1` as `d mod (p - 1) = dP` and \
+        `d mod (q - 1) = dQ`, by the same division, `dP` and `dQ` being the inverses of `e` once \
+        their own checks hold."]
+    code := Impl.Rsa.Arm.CheckKey.code
+    stack := 0
+    verified := Proof.Rsa.Arm.CheckKey.check_key_verified },
+  Spec.Rsa.checkCrtKeyApi.artifact Arm.target {
+    notes := ["Baseline ARMv7, frameless (the callee-saved registers are kept in the working \
+        space): `n` and `e` are checked first, the only branches on data. The numbers are read \
+        into 32-bit limbs at the width of `n`, and every check computed and and'ed into a mask: \
+        `p q = n` as `p` odd with `n / p = q` and `n mod p = 0`, by a fixed-iteration long \
+        division; `dP < p - 1`, `dQ < q - 1` and `qInv < p` by a subtraction's borrow; and \
+        `e dP ≡ 1`, `e dQ ≡ 1` and `q qInv ≡ 1` by binary multiplication modulo `p - 1`, \
+        `q - 1` or `p` (over the 33 bits of `e`, or the bits of `q`), its additions selected \
+        under masks."]
+    code := Impl.Rsa.Arm.CheckCrtKey.code
+    stack := 0
+    verified := Proof.Rsa.Arm.CheckCrtKey.check_crt_key_verified }]
 
 end VG.Artifacts.Rsa.Arm

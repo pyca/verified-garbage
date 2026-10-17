@@ -45,10 +45,10 @@ structure Vals where
   qI : Nat
   d : Nat
 
-/-- The arrays after the numbers are read. -/
+/-- The arrays after the numbers are read (in the order the entry reads them). -/
 def vals (v : Vals) : Nat → Nat :=
-  upd (upd (upd (upd (upd (upd (upd (upd (fun _ => 0) aN v.n) aE v.e) aP v.p) aQ v.q) aDP v.dP) aDQ v.dQ)
-    aQI v.qI) aD v.d
+  upd (upd (upd (upd (upd (upd (upd (upd (fun _ => 0) aE v.e) aD v.d) aP v.p) aQ v.q) aDP v.dP) aDQ v.dQ)
+    aQI v.qI) aN v.n
 
 /-- The header words the checks write. -/
 abbrev bodySlots : List Nat := [0, 4, 8, 12, sB, sC, sT, sF, sMask]

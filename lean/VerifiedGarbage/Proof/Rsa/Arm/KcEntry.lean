@@ -83,7 +83,7 @@ theorem save_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) {rest
 
 /-- The entry's first block and `zero`: every array zero. -/
 theorem entryFirst_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) :
-    WP isa (seqs [.block ([.ldrSp .r12 (4 * iS)] ++ entrySave ++ setup), zero]) σ fun t =>
+    WP isa (seqs [.block (([.ldrSp .r12 (4 * iS)] : List Instr) ++ entrySave ++ setup), zero]) σ fun t =>
       EntSt nA iS ins σ t (fun _ => 0) ∧ t.gpr .r4 = σ.gpr .r2 ∧ t.gpr .r6 = σ.gpr .r3 := by
   have w16 := h.w16
   have kb := h.kb

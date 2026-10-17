@@ -124,7 +124,7 @@ theorem fn_ct {body : Prog isa} {vf : State → Vals} (h4 : 4 * iS < 4096) (hS :
     (hentry : ∃ hc, (VG.Taint.check taint (argTaint [.r0, .r1, .r2, .r3] (4 * nA))
       (entry (4 * iS) (ins.map fun p => (4 * p.1, p.2))) hc).isSome = true)
     (hrestore : ∃ hc, (VG.Taint.check taint (argTaint [] (4 * nA)) (.block (restore (4 * iS))) hc).isSome = true)
-    (hv : ∀ σ, FnPre nA iS ins σ → (List.range nArr).map (aEnt ins σ) = (List.range nArr).map (vals (vf σ)))
+    (hv : ∀ σ, FnPre nA iS ins σ → aEnt ins σ = vals (vf σ))
     (hA : ∀ σ, FnPre nA iS ins σ → ∀ j < nArr, aEnt ins σ j < 2 ^ (32 * (geo iS σ).w))
     (hbody : RelCT isa (LiftB (PubF nA) fun a σ v s => s = σ ∧ FnBase nA iS ins a σ ∧ BodyIn (geo iS a) v s)
       body (LiftB (PubF nA) fun a σ _ t => FnBase nA iS ins a σ ∧ ∃ A live c, Stg (geo iS a) σ A live c t)) :

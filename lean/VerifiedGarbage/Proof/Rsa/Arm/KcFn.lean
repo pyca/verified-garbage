@@ -155,13 +155,10 @@ theorem eCheck_ok {σ s : State} {A : Nat → Nat} (h : Mid nA iS ins σ s A) :
 
 /-- What the checks start from. -/
 theorem Mid.bodyIn {σ s : State} {A : Nat → Nat} (h : Mid nA iS ins σ s A) (v : Vals)
-    (hv : (List.range nArr).map A = (List.range nArr).map (vals v))
-    (hA : ∀ j < nArr, A j < 2 ^ (32 * (geo iS σ).w)) : BodyIn (geo iS σ) v s := by
+    (hv : A = vals v) (hA : ∀ j < nArr, A j < 2 ^ (32 * (geo iS σ).w)) : BodyIn (geo iS σ) v s := by
   have pre := h.base.pre
   have w16 := pre.w16
-  have hvj : ∀ j < nArr, A j = vals v j := fun j hj => by
-    have := congrArg (fun l => l[j]?) hv
-    simpa [hj] using this
+  have hvj : ∀ j < nArr, A j = vals v j := fun j _ => by rw [hv]
   refine ⟨h.ws.nowrap, h.ws.writable, h.ws.fits, pre.kb, h.ws.r8, by rw [h.r11]; simp, h.cnt, fun j hj => ?_,
     ?_⟩
   · have hj' := List.mem_range.mp hj
@@ -270,7 +267,7 @@ def FnPost (σ u : State) (P : Bool → Prop) : Prop :=
 
 /-- A function: the entry, the checks `body`, the exit. -/
 theorem fn_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) {body : Prog isa} {v : Vals}
-    {P : Bool → Prop} (hv : (List.range nArr).map (aEnt ins σ) = (List.range nArr).map (vals v))
+    {P : Bool → Prop} (hv : aEnt ins σ = vals v)
     (hA : ∀ j < nArr, aEnt ins σ j < 2 ^ (32 * (geo iS σ).w))
     (hbody : ∀ s, BodyIn (geo iS σ) v s →
       WP isa body s fun t => ∃ A live c, Stg (geo iS σ) s A live c t ∧ P c) :
