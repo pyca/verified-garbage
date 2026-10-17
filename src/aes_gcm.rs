@@ -86,9 +86,11 @@
 //! `_with_powers` ones (`VG.Spec.Gcm.Powers8Repr`), whose one call of
 //! `vg_ghash_with_powers_aes` loads `H¹` to `H⁸` from a 128-byte buffer of
 //! their own, next to the key context of `vg_aes_gcm_init`, instead of
-//! computing them, which `vg_ghash_store_powers_aes` writes (hashing no
-//! blocks); a key computes them after `POWERS_AFTER` (8) messages of at
-//! least `POWERS_MIN_LEN` (128) bytes, and uses them for those only.
+//! computing them. A key computes them after `POWERS_AFTER` (8) messages of
+//! at least `POWERS_MIN_LEN` (128) bytes, in the next such message with a
+//! 12-byte nonce and at most 16 bytes of additional data (a TLS record):
+//! its `_store_powers` instance stores them while it hashes the text. The
+//! key uses them for those messages only.
 //! `encrypt` with them copies its pieces to its output and seals them there,
 //! as `vg_aes_gcm_seal_gather` does. Streaming keeps the plain functions,
 //! and does not count towards them.
@@ -182,6 +184,12 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_verify_vaes, vg_aes_gcm_stream_verify_vaes_pclmul,
     vg_aes_gcm_stream_verify_vaes_vpclmul, vg_aes_gcm_stream_verify_vpclmul,
 };
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+use crate::arch::gcm::{
+    VG_AES_GCM_SEAL_STORE_POWERS_AES_FEATURES, vg_aes_gcm_open_store_powers_aes,
+    vg_aes_gcm_open_with_powers_aes, vg_aes_gcm_seal_store_powers_aes,
+    vg_aes_gcm_seal_with_powers_aes,
+};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
     VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES, vg_aes_gcm_init_vaes_vpclmul_avx512,
@@ -189,11 +197,6 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_aad_vaes_vpclmul_avx512, vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512, vg_aes_gcm_stream_finish_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_init_vaes_vpclmul_avx512, vg_aes_gcm_stream_verify_vaes_vpclmul_avx512,
-};
-#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-use crate::arch::gcm::{
-    VG_GHASH_STORE_POWERS_AES_FEATURES, vg_aes_gcm_open_with_powers_aes,
-    vg_aes_gcm_seal_with_powers_aes, vg_ghash_store_powers_aes,
 };
 use crate::arch::gcm::{
     vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
@@ -386,7 +389,13 @@ pub(crate) fn select(f: Features) -> Backend {
 ))]
 struct Prepared {
     features: Features,
+    #[cfg(target_arch = "x86_64")]
     init: InitPrepared,
+    /// The `_store_powers` instances of `seal` and `open`, on AArch64.
+    #[cfg(target_arch = "aarch64")]
+    seal_store: SealStore,
+    #[cfg(target_arch = "aarch64")]
+    open_store: OpenStore,
     seal: SealPrepared,
     open: OpenPrepared,
     /// None on AArch64, where `encrypt` copies its pieces and calls `seal`.
@@ -458,9 +467,6 @@ type Ctx = [u64; 16];
 /// `vg_aes_gcm_init_prepared`, from the key.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 type InitPrepared = unsafe extern "sysv64" fn(*const u8, usize, *mut Ctx);
-/// `store_powers`, from the key context of `vg_aes_gcm_init`.
-#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-type InitPrepared = unsafe fn(&[u64; 32], *mut Ctx);
 /// The `_with_powers` instances of `seal` and `open`: `vg_aes_gcm_seal`'s
 /// and `vg_aes_gcm_open`'s arguments, then the powers.
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -491,34 +497,50 @@ type OpenPrepared = unsafe extern "C" fn(
     *const Ctx,
 ) -> u32;
 
-/// Writes the powers of the hash subkey of the key context `key` of
-/// `vg_aes_gcm_init` to `pw`, by `vg_ghash_store_powers_aes` on no blocks.
-///
-/// # Safety
-///
-/// `pw` must be valid for writes of 128 bytes, and not overlap `key`, and
-/// the CPU must have the features of `vg_ghash_store_powers_aes`.
+/// The `_store_powers` instances of `seal` and `open`: their `_with_powers`
+/// instances' arguments, with the powers written.
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
-unsafe fn store_powers(key: &[u64; 32], pw: *mut Ctx) {
-    let mut y: Block = [0; 16];
-    let mut scratch = [0u64; 32];
-    // SAFETY: the hash subkey is bytes 240 to 255 of the key context
-    // (`VG.Spec.Gcm.ctxH`), valid for reads of 16 bytes; `y` and `scratch`
-    // (locals) for reads and writes of 16 and 256; no blocks are read from
-    // `data`; `pw` is the caller's. None of them overlap or wrap around.
-    unsafe {
-        vg_ghash_store_powers_aes(
-            key[30..].as_ptr().cast(),
-            &mut y,
-            core::ptr::null(),
-            0,
-            &mut scratch,
-            pw,
-        )
-    };
-    // `scratch` may hold the powers.
-    zeroize(&mut scratch);
+type SealStore = unsafe extern "C" fn(
+    *const [u64; 32],
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u8,
+    usize,
+    *mut [u8; 16],
+    *mut Ctx,
+);
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+type OpenStore = unsafe extern "C" fn(
+    *const [u64; 32],
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u8,
+    usize,
+    *const u8,
+    usize,
+    *mut Ctx,
+) -> u32;
+
+/// Whether a call with `nonce` and `aad` is one the `_store_powers`
+/// instances take (`VG.Spec.Gcm.storePowersOk`): a TLS record's.
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+#[inline(always)]
+fn store_ok(nonce: &[u8], aad: &[u8]) -> bool {
+    nonce.len() == 12 && aad.len() <= 16
 }
+
+/// A new buffer for the powers, for a `_store_powers` instance to write.
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+fn new_powers() -> Box<Ctx> {
+    Box::new([0; size_of::<Ctx>() / 8])
+}
+
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 type StreamPrepared =
     unsafe extern "sysv64" fn(*const [u64; 128], usize, *mut [u64; 10], u64, u64, *mut u8, usize);
@@ -561,8 +583,9 @@ static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
 
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
 static PREPARED_AES: Prepared = Prepared {
-    features: VG_GHASH_STORE_POWERS_AES_FEATURES,
-    init: store_powers,
+    features: VG_AES_GCM_SEAL_STORE_POWERS_AES_FEATURES,
+    seal_store: vg_aes_gcm_seal_store_powers_aes,
+    open_store: vg_aes_gcm_open_store_powers_aes,
     seal: vg_aes_gcm_seal_with_powers_aes,
     open: vg_aes_gcm_open_with_powers_aes,
     short: false,
@@ -613,9 +636,8 @@ const POWERS_MIN_LEN: usize = 128;
 /// key context of `vg_aes_gcm_init` before it computes the powers of its
 /// hash subkey (`Powers::get`): `vg_aes_gcm_init_prepared` costs about as
 /// much as reading the powers saves over this many calls, so a key used for
-/// a few messages never pays for them. On AArch64, where
-/// `vg_aes_gcm_derive_prepared8` costs less than on x86-64 against what a
-/// call saves, 8.
+/// a few messages never pays for them. On AArch64, where storing them costs
+/// a few nanoseconds in the call that computes them anyway, 8.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 32;
 #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
@@ -629,10 +651,19 @@ const POWERS_AFTER: u32 = 8;
 ))]
 const SHORT_READY: u32 = u32::MAX;
 
+/// What `Powers::get` gives a call on AArch64 with the `_with_powers`
+/// instances: the powers, or that the call computes them.
+#[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+enum Got<'a> {
+    Ready(&'a Ctx),
+    Store,
+}
+
 /// The key context with the powers for a key (that of `vg_aes_gcm_init`,
-/// then encoded pairs of powers of the hash subkey: 24 written by
-/// `vg_aes_gcm_init_prepared` on x86-64, 4 by `vg_aes_gcm_derive_prepared8`
-/// on AArch64), which the `_prepared` instances read, computed once the key
+/// then encoded pairs of powers of the hash subkey, written by
+/// `vg_aes_gcm_init_prepared`, on x86-64; `H¹` to `H⁸`, written by a
+/// `_store_powers` instance, on AArch64), which the `_prepared` instances
+/// read, computed once the key
 /// has been used enough ([`Powers::get`]). It is allocated only then, so
 /// that a key that never computes it stays small (it is moved whole when
 /// it is created).
@@ -679,6 +710,7 @@ impl Powers {
     /// backend has no `_prepared` instances this CPU runs; otherwise the
     /// powers, computed by this call if the key has made `POWERS_AFTER`
     /// such calls and they are not ready yet.
+    #[cfg(target_arch = "x86_64")]
     fn get(&self, rounds: usize, key: &[u64; 32]) -> Option<(&Ctx, &'static Prepared)> {
         let fns = self.fns?;
         let p = self.ctx.load(Ordering::Acquire);
@@ -694,27 +726,41 @@ impl Powers {
         }
         let mut ctx = Box::new([0; size_of::<Ctx>() / 8]);
         let init = fns.init;
-        // SAFETY: on x86-64, the key is the first `key_len` bytes (16, 24 or
-        // 32, from `rounds`) of its key context `key` (`VG.Spec.Gcm.KeyRepr`:
-        // the key schedule, whose first `Nk` words are the key, FIPS 197
-        // §5.2, `VG.Spec.Aes.expandWords`), valid for reads of 256; on
-        // AArch64, `store_powers` reads its hash subkey, whatever the number
-        // of rounds. `ctx` (a new allocation) is valid for reads and writes
-        // of 1024 bytes on x86-64, of 128 on AArch64. They do not overlap
-        // each other or anything on the stack, or wrap around. The CPU has
-        // the features of `backend` and of `init` (`Backend::prepared`).
-        #[cfg(target_arch = "x86_64")]
-        unsafe {
-            init(key.as_ptr().cast(), (rounds - 6) * 4, &mut *ctx)
-        };
-        #[cfg(target_arch = "aarch64")]
-        unsafe {
-            init(key, &mut *ctx)
-        };
-        // (The hash subkey is the same for every key length.)
-        #[cfg(target_arch = "aarch64")]
-        let _ = rounds;
+        // SAFETY: the key is the first `key_len` bytes (16, 24 or 32, from
+        // `rounds`) of its key context `key` (`VG.Spec.Gcm.KeyRepr`: the key
+        // schedule, whose first `Nk` words are the key, FIPS 197 §5.2,
+        // `VG.Spec.Aes.expandWords`), valid for reads of 256; `ctx` (a new
+        // allocation) is valid for reads and writes of 1024 bytes. They do
+        // not overlap each other or anything on the stack, or wrap around.
+        // The CPU has the features of `backend` and of `init`
+        // (`Backend::prepared`).
+        unsafe { init(key.as_ptr().cast(), (rounds - 6) * 4, &mut *ctx) };
         Some((self.publish(ctx), fns))
+    }
+
+    /// The powers and the backend's `_with_powers` instances, for a call
+    /// long enough to gain from them: none if the backend has none this
+    /// CPU runs. Otherwise the powers if they are ready; if not, and the
+    /// key has made `POWERS_AFTER` such calls, `Got::Store` if `store`
+    /// (the call is one the `_store_powers` instances take: a 12-byte nonce
+    /// and at most 16 bytes of additional data), for the caller to compute
+    /// them (`AesGcm::new_powers`); otherwise none, and the call does not
+    /// count.
+    #[cfg(target_arch = "aarch64")]
+    fn get(&self, store: bool) -> Option<(Got<'_>, &'static Prepared)> {
+        let fns = self.fns?;
+        let p = self.ctx.load(Ordering::Acquire);
+        if !p.is_null() {
+            // SAFETY: published powers (see `ctx`), which the acquire load
+            // orders after their writes; they live as long as `self`.
+            return Some((Got::Ready(unsafe { &*p }), fns));
+        }
+        let calls = self.calls.load(Ordering::Relaxed);
+        if calls < POWERS_AFTER - 1 {
+            self.calls.store(calls + 1, Ordering::Relaxed);
+            return None;
+        }
+        store.then_some((Got::Store, fns))
     }
 
     /// Whether messages shorter than `POWERS_MIN_LEN` sealed take the
@@ -1297,7 +1343,10 @@ impl AesGcm {
     /// `Powers::get` gives it.
     #[inline(never)]
     fn seal_prepared(&self, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Option<Block> {
+        #[cfg(target_arch = "x86_64")]
         let (ctx, fns) = self.powers.get(self.rounds, &self.ctx)?;
+        #[cfg(target_arch = "aarch64")]
+        let (ctx, fns) = self.powers.get(store_ok(nonce, aad))?;
         Some(self.seal_with(ctx, fns, nonce, aad, data))
     }
 
@@ -1306,7 +1355,8 @@ impl AesGcm {
     #[inline(always)]
     fn seal_with(
         &self,
-        ctx: &Ctx,
+        #[cfg(target_arch = "x86_64")] ctx: &Ctx,
+        #[cfg(target_arch = "aarch64")] ctx: Got<'_>,
         fns: &Prepared,
         nonce: &[u8],
         aad: &[u8],
@@ -1335,20 +1385,45 @@ impl AesGcm {
             )
         };
         #[cfg(target_arch = "aarch64")]
-        unsafe {
-            seal(
-                &self.ctx,
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                &mut tag,
-                ctx,
-            )
-        };
+        match ctx {
+            Got::Ready(ctx) => unsafe {
+                seal(
+                    &self.ctx,
+                    self.rounds,
+                    nonce.as_ptr(),
+                    nonce.len(),
+                    aad.as_ptr(),
+                    aad.len(),
+                    data.as_mut_ptr(),
+                    data.len(),
+                    &mut tag,
+                    ctx,
+                )
+            },
+            Got::Store => {
+                let mut pw = new_powers();
+                let seal_store = fns.seal_store;
+                // SAFETY: as above, with `pw` (a new allocation) valid for
+                // writes of 128 bytes and overlapping nothing else, and the
+                // nonce and additional data as `seal_store` needs them
+                // (`store_ok`, which `Powers::get` gave `Got::Store` for).
+                unsafe {
+                    seal_store(
+                        &self.ctx,
+                        self.rounds,
+                        nonce.as_ptr(),
+                        nonce.len(),
+                        aad.as_ptr(),
+                        aad.len(),
+                        data.as_mut_ptr(),
+                        data.len(),
+                        &mut tag,
+                        &mut *pw,
+                    )
+                };
+                self.powers.publish(pw);
+            }
+        }
         tag
     }
 
@@ -1362,7 +1437,10 @@ impl AesGcm {
         data: &mut [u8],
         tag: &[u8],
     ) -> Option<Result<(), Error>> {
+        #[cfg(target_arch = "x86_64")]
         let (ctx, fns) = self.powers.get(self.rounds, &self.ctx)?;
+        #[cfg(target_arch = "aarch64")]
+        let (ctx, fns) = self.powers.get(store_ok(nonce, aad))?;
         let open = fns.open;
         // SAFETY: as in `seal_prepared`, with the received tag `tag`
         // valid for reads of its length.
@@ -1382,20 +1460,47 @@ impl AesGcm {
             )
         };
         #[cfg(target_arch = "aarch64")]
-        let ok = unsafe {
-            open(
-                &self.ctx,
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                tag.as_ptr(),
-                tag.len(),
-                ctx,
-            )
+        let ok = match ctx {
+            Got::Ready(ctx) => unsafe {
+                open(
+                    &self.ctx,
+                    self.rounds,
+                    nonce.as_ptr(),
+                    nonce.len(),
+                    aad.as_ptr(),
+                    aad.len(),
+                    data.as_mut_ptr(),
+                    data.len(),
+                    tag.as_ptr(),
+                    tag.len(),
+                    ctx,
+                )
+            },
+            Got::Store => {
+                let mut pw = new_powers();
+                let open_store = fns.open_store;
+                // SAFETY: as in `seal_with`, and the tag's length is one
+                // §5.2.1.2 allows, as `open_store` needs (`open`'s callers
+                // check it at compile time). It writes the powers whether or
+                // not the tag matches.
+                let ok = unsafe {
+                    open_store(
+                        &self.ctx,
+                        self.rounds,
+                        nonce.as_ptr(),
+                        nonce.len(),
+                        aad.as_ptr(),
+                        aad.len(),
+                        data.as_mut_ptr(),
+                        data.len(),
+                        tag.as_ptr(),
+                        tag.len(),
+                        &mut *pw,
+                    )
+                };
+                self.powers.publish(pw);
+                ok
+            }
         };
         // As in `open`.
         Some(if ok == 1 {
@@ -1419,7 +1524,7 @@ impl AesGcm {
         plaintext: &[&[u8]],
         out: &mut [u8],
     ) -> Option<Block> {
-        let (ctx, fns) = self.powers.get(self.rounds, &self.ctx)?;
+        let (ctx, fns) = self.powers.get(store_ok(nonce, aad))?;
         let mut rest = &mut *out;
         for p in plaintext {
             let (dst, tail) = rest.split_at_mut(p.len());
@@ -2472,7 +2577,7 @@ mod tests {
         for key_len in [16, 24, 32] {
             let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap();
             let base = k.with_backend(Backend::Scalar);
-            assert!(base.powers.get(base.rounds, &base.ctx).is_none());
+            assert!(base.powers.fns.is_none());
             for &b in PREPARED {
                 // Without the backend's features (or those of its key setup with
                 // the powers), only what needs none of them.
@@ -2547,10 +2652,14 @@ mod tests {
                 }
                 // A clone copies the powers if they are ready, and not otherwise.
                 let copy = k.clone();
-                let (powers, _) = k.powers.get(k.rounds, &k.ctx).unwrap();
-                let copied = copy.powers.get(copy.rounds, &copy.ctx).map(|(c, _)| c);
-                assert_eq!(copied, Some(powers));
-                assert!(!core::ptr::eq(copied.unwrap(), powers));
+                let (p, q) = (
+                    k.powers.ctx.load(Ordering::Acquire),
+                    copy.powers.ctx.load(Ordering::Acquire),
+                );
+                // SAFETY: published powers (`ready(&k)`, and so the copy's).
+                let (powers, copied) = unsafe { (&*p, &*q) };
+                assert_eq!(copied, powers);
+                assert!(!core::ptr::eq(copied, powers));
                 assert!(!ready(&fresh.clone()));
                 // A key context published second is dropped for the first.
                 let first = fresh.powers.publish(Box::new(*powers));
@@ -2559,6 +2668,77 @@ mod tests {
                     .publish(Box::new([0; size_of::<super::Ctx>() / 8]));
                 assert!(core::ptr::eq(first, second));
                 assert_eq!(second, powers);
+            }
+        }
+    }
+
+    /// On AArch64, the call that computes the powers is the first long one
+    /// after `POWERS_AFTER` with a TLS record's nonce and additional data,
+    /// which its `_store_powers` instance takes, whether it seals or opens,
+    /// and whether or not the tag matches; the others before it take the
+    /// plain instances, and the powers it stores are the key's.
+    #[cfg(all(target_arch = "aarch64", feature = "alloc"))]
+    #[test]
+    fn store_powers() {
+        use super::{POWERS_AFTER, POWERS_MIN_LEN};
+        use core::sync::atomic::Ordering;
+        let msg: [u8; 300] = core::array::from_fn(|i| (i * 13 + 1) as u8);
+        let nonce = [9u8; 13];
+        let aad = [4u8; 17];
+        for &b in PREPARED {
+            if !detected().contains(b.features()) || b.prepared().is_none() {
+                continue;
+            }
+            for key_len in [16, 24, 32] {
+                let key = &[0x5a; 32][..key_len];
+                let base = AesGcm::new(key).unwrap().with_backend(Backend::Scalar);
+                for open in [false, true] {
+                    let k = AesGcm::new(key).unwrap().with_backend(b);
+                    let ready = |k: &AesGcm| !k.powers.ctx.load(Ordering::Acquire).is_null();
+                    for _ in 1..POWERS_AFTER {
+                        k.encrypt_in_place(&nonce[..12], &[], &mut [0; POWERS_MIN_LEN])
+                            .unwrap();
+                    }
+                    // Neither a 13-byte nonce nor 17 bytes of additional
+                    // data computes them.
+                    for (n, a) in [(&nonce[..], &aad[..5]), (&nonce[..12], &aad[..])] {
+                        let mut want = msg;
+                        let want_tag = base.encrypt_in_place(n, a, &mut want).unwrap();
+                        let mut ct = msg;
+                        assert_eq!(k.encrypt_in_place(n, a, &mut ct), Ok(want_tag));
+                        assert_eq!(ct, want);
+                        k.decrypt_in_place(n, a, &mut ct, &want_tag).unwrap();
+                        assert_eq!(ct, msg);
+                        assert!(!ready(&k));
+                    }
+                    let (n, a) = (&nonce[..12], &aad[..16]);
+                    let mut want = msg;
+                    let want_tag = base.encrypt_in_place(n, a, &mut want).unwrap();
+                    let mut ct = msg;
+                    if open {
+                        // A wrong tag stores them too, and leaves the text.
+                        ct = want;
+                        let mut bad = want_tag;
+                        bad[3] ^= 1;
+                        let r = k.decrypt_in_place_truncated::<12>(
+                            n,
+                            a,
+                            &mut ct,
+                            bad[..12].try_into().unwrap(),
+                        );
+                        assert_eq!((r, ct), (Err(Error::TagMismatch), want));
+                    } else {
+                        assert_eq!(k.encrypt_in_place(n, a, &mut ct), Ok(want_tag));
+                        assert_eq!(ct, want);
+                    }
+                    assert!(ready(&k));
+                    // With them, as the baseline.
+                    let mut ct = msg;
+                    assert_eq!(k.encrypt_in_place(n, a, &mut ct), Ok(want_tag));
+                    assert_eq!(ct, want);
+                    k.decrypt_in_place(n, a, &mut ct, &want_tag).unwrap();
+                    assert_eq!(ct, msg);
+                }
             }
         }
     }
