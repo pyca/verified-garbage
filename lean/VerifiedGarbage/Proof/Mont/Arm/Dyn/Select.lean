@@ -58,7 +58,7 @@ theorem selectW_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
       by rw [F.gpr]; exact d, by rw [F.gpr]; exact e, by rw [F.mem]; exact f, by rw [F.mem]; exact g⟩)
     ⟨wt, R, by rw [p8]; exact (BitVec.add_zero _).symm, by rw [p1]; exact (BitVec.add_zero _).symm,
       fun i hi => absurd hi (Nat.not_lt_zero _), by rw [mt]; exact Outside.refl _ _ _ _⟩
-    p10 (by rw [p9, Offset.add_add]) ?_ fun u ⟨a, c, _, _, f, g⟩ => ⟨a, f, g, c⟩
+    p10 (by rw [p9, Offset.add_add]) ?_ fun u ⟨a, c, _, _, f, g⟩ _ => ⟨a, f, g, c⟩
   intro j hj u ⟨wu, Ru, p8u, p1u, Vu, Ou⟩ pu p9u
   have e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
   have r3u : u.gpr .r3 = s.gpr .r3 := Ru.gpr _ (by decide)

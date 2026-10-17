@@ -149,7 +149,7 @@ theorem ptrLoop_ok {s : State} {p : Reg} {body : List Instr} {A : BitVec 32} {st
       t.gpr .r9 = A + BitVec.ofNat 32 (step * k) →
       WP isa (.block body) t fun u => P (j + 1) u ∧ u.gpr p = A + BitVec.ofNat 32 (step * (j + 1)) ∧
         u.gpr .r9 = A + BitVec.ofNat 32 (step * k))
-    (hQ : ∀ u, P k u → Q u) :
+    (hQ : ∀ u, P k u → u.gpr p = A + BitVec.ofNat 32 (step * k) → Q u) :
     WP isa (ptrLoop p body) s Q := by
   unfold ptrLoop
   refine WP.loop (M := isa) (fun m t => ∃ j, m = k - j ∧ j < k ∧ P j t ∧
@@ -165,7 +165,7 @@ theorem ptrLoop_ok {s : State} {p : Reg} {body : List Instr} {A : BitVec 32} {st
   rw [eu, e9u, sub_add_add, cmp_ofNat (by omega) hk32] at z₁
   by_cases hjk : j + 1 = k
   · have : step * (j + 1) = step * k := by rw [hjk]
-    exact .inl ⟨by rw [eval_ne, z₁]; simp [this], hQ _ (hjk ▸ p₁)⟩
+    exact .inl ⟨by rw [eval_ne, z₁]; simp [this], hQ _ (hjk ▸ p₁) (by rw [eu₁, hjk])⟩
   · refine .inr ⟨?_, k - (j + 1), by omega, j + 1, rfl, by omega, p₁, eu₁, e9₁⟩
     rw [eval_ne, z₁]
     have : step * (j + 1) ≠ step * k := fun e => hjk (Nat.eq_of_mul_eq_mul_left hstep e)

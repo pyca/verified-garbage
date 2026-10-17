@@ -315,7 +315,7 @@ theorem csubD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M
   clear u₁ u₂ u₃ u₄ u₅ u₆ mt R
   refine WP.seq (ptrLoop_ok (A := s.gpr .r12 + BitVec.ofNat 32 M.mo) (step := 4) (k := W)
     (DiffInv s base size src M.tmp M.mo) (by decide) hW0 (by omega) (fun _ _ _ h f => h.fupd f) I0 p1 p9 ?_
-    fun u I => ?_)
+    fun u I _ => ?_)
   · -- The difference.
     intro j hj u I pu p9u
     have e12 : u.gpr .r12 = s.gpr .r12 := I.rest.gpr _ (by decide)
@@ -406,7 +406,7 @@ theorem csubD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M
   clear u₁ u₂ u₃ u₆
   refine ptrLoop_ok (A := s.gpr .r12 + BitVec.ofNat 32 M.tmp) (step := 4) (k := W)
     (SelInv s base size src M.tmp o _ u.mem) (by decide) hW0 (by omega) (fun _ _ _ h f => h.fupd f) J0 p8 p9' ?_
-    fun v J => ⟨J.ws, ?_, ?_, J.rest⟩
+    fun v J _ => ⟨J.ws, ?_, ?_, J.rest⟩
   · intro j hj v J pv p9v
     have e12 : v.gpr .r12 = s.gpr .r12 := J.rest.gpr _ (by decide)
     have y0 : w32 v.mem base (src + 8 * j) = w32 s.mem base (src + 8 * j) := by

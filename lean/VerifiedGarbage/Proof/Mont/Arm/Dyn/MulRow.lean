@@ -157,7 +157,7 @@ theorem mulRowD_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) 
   clear u₁ u₂ u₃ u₄ mt R
   refine WP.seq (ptrLoop_ok (A := s.gpr .r12 + BitVec.ofNat 32 src) (step := 4) (k := W)
     (RowInv s base size w src) (by decide) hW0 (by omega) (fun _ _ _ h f => h.fupd f) I0 p8 p9 ?_
-    fun u I => ?_)
+    fun u I _ => ?_)
   · intro j hj u I pu p9u
     simp only [List.cons_append, List.append_assoc, List.nil_append]
     have e12 : u.gpr .r12 = s.gpr .r12 := I.rest.gpr _ (by decide)

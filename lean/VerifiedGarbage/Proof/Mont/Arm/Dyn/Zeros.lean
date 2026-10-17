@@ -72,7 +72,7 @@ theorem zeros_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {o
     (by decide) hk (by omega) (fun j u u' ⟨a, b, c, d, e⟩ f => ⟨a.of_fupd f, by rw [f.gpr]; exact b,
       c.trans (f.rest _), by rw [f.mem]; exact d, by rw [f.mem]; exact e⟩)
     ⟨wt, r7, R, fun i hi => absurd hi (Nat.not_lt_zero _), by rw [mt]; exact Outside.refl _ _ _ _⟩
-    p0 (by rw [p9, Offset.add_add]) ?_ fun u ⟨a, _, c, d, e⟩ => ⟨a, d, e, c⟩
+    p0 (by rw [p9, Offset.add_add]) ?_ fun u ⟨a, _, c, d, e⟩ _ => ⟨a, d, e, c⟩
   intro j hj u ⟨wu, r7u, Ru, Vu, Ou⟩ pu p9u
   have e12 : u.gpr .r12 = s.gpr .r12 := Ru.gpr _ (by decide)
   refine wp_str (by decide) (wu.ea (K := o + 4 * j) (at_ptr pu e12) (by omega)) (wu.write (d := o + 4 * j + 0) (n := 4) (by omega))

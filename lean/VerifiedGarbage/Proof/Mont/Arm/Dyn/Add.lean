@@ -132,7 +132,7 @@ theorem addDigits_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size
   clear u₁ u₂ u₃ u₄ u₅ u₆ mt R
   refine WP.seq (ptrLoop_ok (A := s.gpr .r12 + BitVec.ofNat 32 a) (step := 4) (k := W)
     (AddInv s base size acc a b) (by decide) hW0 (by omega) (fun _ _ _ h f => h.fupd f) I0 p10 p9 ?_
-    fun u I => ?_)
+    fun u I _ => ?_)
   · -- An iteration.
     intro j hj u I pu p9u
     simp only [List.cons_append, List.append_assoc, List.nil_append]
