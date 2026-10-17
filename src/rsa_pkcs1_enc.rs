@@ -38,7 +38,7 @@
 //! allocates the memory the functions work in.
 
 #![cfg(all(
-    any(target_arch = "x86_64", target_arch = "aarch64"),
+    any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"),
     feature = "alloc"
 ))]
 
@@ -212,7 +212,7 @@ type DecryptFn = unsafe extern "sysv64" fn(
     usize,
 ) -> u32;
 /// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
-#[cfg(target_arch = "aarch64")]
+#[cfg(any(target_arch = "aarch64", target_arch = "arm"))]
 type DecryptFn = unsafe extern "C" fn(
     *mut u8,
     usize,
@@ -416,6 +416,11 @@ mod tests {
         #[cfg(target_arch = "aarch64")]
         let (shas, crts) = (
             [Sha256Backend::Scalar, Sha256Backend::Sha2].as_slice(),
+            [Backend::Baseline].as_slice(),
+        );
+        #[cfg(target_arch = "arm")]
+        let (shas, crts) = (
+            [Sha256Backend::Scalar].as_slice(),
             [Backend::Baseline].as_slice(),
         );
         let mut fns = Vec::new();
