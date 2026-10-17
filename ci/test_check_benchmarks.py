@@ -755,8 +755,9 @@ class FreshCopies(unittest.TestCase):
         # HMAC's by 3–4% on Zen 5. ML-KEM's moved by up to 14%. SHA-256's and
         # SHA-224's digests, HMACs and PBKDF2's moved by up to 3.5%, 1.6% and
         # 8.6% on an Arm Neoverse N2; SHA-1's and MD5's are not known to.
-        for group in ['mlkem768_keygen', 'mlkem768_encaps', 'mlkem768_decaps', 'mlkem1024_keygen',
-                      'mlkem1024_encaps', 'mlkem1024_decaps', 'sha384', 'sha512', 'sha512-224', 'sha512-256', 'pbkdf2-hmac-sha384',
+        for group in ['mlkem768_keygen', 'mlkem768_encaps', 'mlkem768_encaps_from_bytes', 'mlkem768_decaps',
+                      'mlkem1024_keygen', 'mlkem1024_encaps', 'mlkem1024_encaps_from_bytes', 'mlkem1024_decaps',
+                      'sha384', 'sha512', 'sha512-224', 'sha512-256', 'pbkdf2-hmac-sha384',
                       'pbkdf2-hmac-sha512', 'pbkdf2-hmac-sha512-224', 'pbkdf2-hmac-sha512-256',
                       'hmac-sha384', 'hmac-sha384-verify', 'hmac-sha512', 'hmac-sha512-verify',
                       'hmac-sha512-224', 'hmac-sha512-224-verify', 'hmac-sha512-256', 'hmac-sha512-256-verify',
@@ -824,7 +825,7 @@ class FreshCopies(unittest.TestCase):
             source = (root / f'bench/benches/primitives/{bench}.rs').read_text()
             self.assertIn(f'"{group}"', source)
         source = (root / 'bench/benches/primitives/mlkem.rs').read_text()
-        for suffix in ['_keygen', '_encaps', '_decaps']:
+        for suffix in ['_keygen', '_encaps', '_encaps_from_bytes', '_decaps']:
             self.assertIn(f'concat!(stringify!($module), "{suffix}")', source)
         source = (root / 'bench/benches/primitives/aes_gcm.rs').read_text()
         for group in ['aes-128-gcm-encrypt', 'aes-128-gcm-decrypt', 'aes-{bits}-gcm-tls-seal',

@@ -4,7 +4,10 @@
 //! OpenSSL implements ML-KEM from version 3.5, which the runners' OpenSSL
 //! (3.0) predates. Enable `openssl-mlkem` on a supported host for the comparison.
 //! Keys are expanded before timing encapsulation/decapsulation; OpenSSL and
-//! aws-lc-rs create a fresh operation context each iteration. All
+//! aws-lc-rs create a fresh operation context each iteration. The
+//! `_encaps_from_bytes` groups also check the encapsulation key's bytes each
+//! iteration (a server's work per TLS handshake): whatever a library
+//! computes from the key when it parses it is timed there. All
 //! encapsulators use fresh randomness. Key generation includes expansion from
 //! the same seed. aws-lc-rs does not wrap AWS-LC's key generation from a seed,
 //! so that benchmark calls AWS-LC through aws-lc-sys, importing the seed as
@@ -139,6 +142,51 @@ macro_rules! mlkem_bench {
         g.bench_function(
             BenchmarkId::new(AWS_LC, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
             |b| b.iter(|| black_box(&aws_lc_public).encapsulate().unwrap()),
+        );
+        g.finish();
+        // What a server does per handshake: check the peer's key, then
+        // encapsulate to it (`_encaps` times encapsulation alone).
+        let ek_bytes = *ek.as_bytes();
+        let mut g = c.benchmark_group(concat!(stringify!($module), "_encaps_from_bytes"));
+        g.bench_function(
+            BenchmarkId::new(VG, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
+            |b| {
+                b.iter(|| {
+                    $EncapsulationKey::from_bytes(black_box(&ek_bytes))
+                        .unwrap()
+                        .encapsulate()
+                        .unwrap()
+                })
+            },
+        );
+        #[cfg(feature = "openssl-mlkem")]
+        g.bench_function(
+            BenchmarkId::new(crate::OPENSSL, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
+            |b| {
+                b.iter(|| {
+                    let public = openssl::pkey::PKey::public_key_from_raw_bytes_ex(
+                        None,
+                        openssl::pkey::KeyType::$key_type,
+                        None,
+                        black_box(&ek_bytes),
+                    )
+                    .unwrap();
+                    crate::mlkem::openssl_encapsulate::<{ $EncapsulationKey::CIPHERTEXT_SIZE }>(
+                        &public,
+                    )
+                })
+            },
+        );
+        g.bench_function(
+            BenchmarkId::new(AWS_LC, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
+            |b| {
+                b.iter(|| {
+                    aws_lc_rs::kem::EncapsulationKey::new(aws_lc_alg, black_box(&ek_bytes))
+                        .unwrap()
+                        .encapsulate()
+                        .unwrap()
+                })
+            },
         );
         g.finish();
         let mut g = c.benchmark_group(concat!(stringify!($module), "_decaps"));
